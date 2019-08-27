@@ -144,8 +144,8 @@ struct _CLIPREADCBREQ
 /**
  * Tell the host that new clipboard formats are available.
  *
- * @param  pCtx      Our context information
- * @param u32Formats The formats to advertise
+ * @param pCtx                  Our context information.
+ * @param u32Formats            The formats to report.
  */
 void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
 {
@@ -228,13 +228,13 @@ int vboxClipboardMain(void)
         {
             switch (Msg)
             {
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS:
+                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE:
                 {
                     /* The host has announced available clipboard formats.
                      * Save the information so that it is available for
                      * future requests from guest applications.
                      */
-                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS fFormats=%x\n", fFormats));
+                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE fFormats=%x\n", fFormats));
                     ClipAnnounceFormatToX11(g_ctx.pBackend, fFormats);
                     break;
                 }

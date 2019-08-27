@@ -594,20 +594,24 @@ typedef struct VBGLR3SHCLCMDCTX
     /** IN/OUT: Context ID to retrieve or to use. */
     uint32_t uContextID;
     /** IN: Protocol version to use. */
-    uint32_t uProtocol;
+    uint32_t uProtocolVer;
+    /** IN: Protocol flags. Currently unused. */
+    uint32_t uProtocolFlags;
     /** IN: Maximum chunk size (in bytes). */
     uint32_t cbChunkSize;
     /** OUT: Number of parameters retrieved. */
     uint32_t uNumParms;
 } VBGLR3SHCLCMDCTX, *PVBGLR3SHCLCMDCTX;
 
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /**
  * Enumeration specifying a Shared Clipboard event type.
  */
 typedef enum _VBGLR3CLIPBOARDEVENTTYPE
 {
     VBGLR3CLIPBOARDEVENTTYPE_INVALID = 0,
+    VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS,
+    VBGLR3CLIPBOARDEVENTTYPE_READ_DATA,
+    VBGLR3CLIPBOARDEVENTTYPE_QUIT,
     VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_HDR_READ,
     VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_HDR_WRITE,
     VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_ENTRY_READ,
@@ -622,36 +626,46 @@ typedef enum _VBGLR3CLIPBOARDEVENTTYPE
     VBGLR3CLIPBOARDEVENTTYPE_32BIT_HACK = 0x7fffffff
 } VBGLR3CLIPBOARDEVENTTYPE;
 
+/**
+ * Structure for keeping a Shared Clipboard VbglR3 event.
+ */
 typedef struct _VBGLR3CLIPBOARDEVENT
 {
     /** The event type the union contains. */
     VBGLR3CLIPBOARDEVENTTYPE enmType;
+    /** Command context bound to this event. */
+    VBGLR3SHCLCMDCTX         cmdCtx;
     union
     {
-        struct
-        {
-            PVBOXCLIPBOARDLISTHDR pHdr;
-        } ListHdrRead, ListHdrWrite;
+        /** Reports available formats from the host. */
+        SHAREDCLIPBOARDFORMATDATA ReportFormats;
+        /** Requests data to be read from the guest. */
+        SHAREDCLIPBOARDDATAREQ ReadData;
     } u;
 } VBGLR3CLIPBOARDEVENT, *PVBGLR3CLIPBOARDEVENT;
 typedef const PVBGLR3CLIPBOARDEVENT CPVBGLR3CLIPBOARDEVENT;
-#  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 VBGLR3DECL(int)     VbglR3ClipboardConnect(HGCMCLIENTID *pidClient);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnect(HGCMCLIENTID idClient);
 VBGLR3DECL(int)     VbglR3ClipboardGetHostMsgOld(HGCMCLIENTID idClient, uint32_t *pMsg, uint32_t *pfFormats);
 VBGLR3DECL(int)     VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb);
-VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 VBGLR3DECL(int)     VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb);
+VBGLR3DECL(int)     VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDDATABLOCK pData);
+VBGLR3DECL(int)     VbglR3ClipboardFormatsSend(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDFORMATDATA pFormats);
+VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFormats);
 
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 VBGLR3DECL(int)     VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx);
-VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer,
-                                                PVBGLR3CLIPBOARDEVENT *ppEvent);
+VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PVBGLR3CLIPBOARDEVENT *ppEvent);
 VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
 
-VBGLR3DECL(int)     VbglR3ClipboardTransferSendStatus(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDURITRANSFERSTATUS uStatus);
+VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
+
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+VBGLR3DECL(int)     VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uMsg, uint32_t cParms,
+                                                 PSHAREDCLIPBOARDURITRANSFER pTransfer);
+VBGLR3DECL(int)     VbglR3ClipboardTransferSendStatus(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                                      SHAREDCLIPBOARDURITRANSFERSTATUS uStatus);
 
 VBGLR3DECL(int)     VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDROOTLIST *ppRootList);
 
@@ -684,8 +698,6 @@ VBGLR3DECL(int)     VbglR3ClipboardObjRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOA
                                                uint32_t *pcbRead);
 VBGLR3DECL(int)     VbglR3ClipboardObjWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf,
                                             uint32_t *pcbWritten);
-
-VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
 #  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 /** @} */
 # endif /* VBOX_WITH_SHARED_CLIPBOARD */

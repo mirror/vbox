@@ -91,9 +91,10 @@ bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
     return fAllowed;
 }
 
-int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uParm)
+#if 0
+int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENT pClient, uint32_t uMsg, uint32_t uParm)
 {
-    AssertPtrReturn(pClientData, VERR_INVALID_POINTER);
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
 
@@ -101,7 +102,7 @@ int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t 
     {
         case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START:
         {
-            Assert(pClientData->State.URI.fTransferStart == false);
+            Assert(pClient->State.URI.fTransferStart == false);
 
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START\n"));
 
@@ -112,8 +113,8 @@ int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t 
                 break;
             }
 
-            pClientData->State.URI.fTransferStart = true;
-            pClientData->State.URI.enmTransferDir = (SHAREDCLIPBOARDURITRANSFERDIR)uParm;
+            pClient->State.URI.fTransferStart = true;
+            pClient->State.URI.enmTransferDir = (SHAREDCLIPBOARDURITRANSFERDIR)uParm;
             break;
 
         }
@@ -128,18 +129,18 @@ int vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t 
     return rc;
 }
 
-bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RT_NOREF(pClientData, cParms, paParms);
+    RT_NOREF(pClient, cParms, paParms);
 
     bool fHandled = false;
 
-    if (   pClientData->State.URI.fTransferStart
+    if (   pClient->State.URI.fTransferStart
         && cParms >= 2)
     {
         HGCMSvcSetU32(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START);
-        HGCMSvcSetU32(&paParms[1], pClientData->State.URI.enmTransferDir);
-        pClientData->State.URI.fTransferStart = false;
+        HGCMSvcSetU32(&paParms[1], pClient->State.URI.enmTransferDir);
+        pClient->State.URI.fTransferStart = false;
 
         fHandled = true;
     }
@@ -147,5 +148,6 @@ bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t
     LogFlowFunc(("fHandled=%RTbool\n", fHandled));
     return fHandled;
 }
+#endif
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 

@@ -121,7 +121,7 @@ static void testGetHostMsg(void)
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    vboxSvcClipboardReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+    vboxSvcClipboardOldReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
@@ -133,7 +133,7 @@ static void testGetHostMsg(void)
 
     RTTestISub("Testing FN_GET_HOST_MSG, one format, no waiting guest calls.");
     RT_ZERO(g_Client.State);
-    vboxSvcClipboardReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+    vboxSvcClipboardOldReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                               VBOX_SHARED_CLIPBOARD_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
@@ -156,7 +156,7 @@ static void testGetHostMsg(void)
     table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    vboxSvcClipboardReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+    vboxSvcClipboardOldReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
@@ -174,7 +174,7 @@ static void testGetHostMsg(void)
 
     RTTestISub("Testing FN_GET_HOST_MSG, two formats, no waiting guest calls.");
     RT_ZERO(g_Client.State);
-    vboxSvcClipboardReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+    vboxSvcClipboardOldReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                               VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
@@ -276,16 +276,16 @@ int main(int argc, char *argv[])
 
 int VBoxClipboardSvcImplInit() { return VINF_SUCCESS; }
 void VBoxClipboardSvcImplDestroy() { }
-int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA)
+int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT)
 { return VINF_SUCCESS; }
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA, bool)
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT, bool)
 { return VINF_SUCCESS; }
-int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA, unsigned int)
+int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDFORMATDATA pFormats)
 { AssertFailed(); return VINF_SUCCESS; }
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA, unsigned int, void *, unsigned int, unsigned int *)
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData, unsigned int *)
 { AssertFailed(); return VERR_WRONG_ORDER; }
-int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA, void *, unsigned int, unsigned int)
+int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData)
 { AssertFailed(); return VINF_SUCCESS; }
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA)
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT)
 { AssertFailed(); return VERR_WRONG_ORDER; }
 

@@ -116,8 +116,9 @@ void UINetworkManagerIndicator::sldRemoveNetworkManagerIndicatorDescription(cons
     int iIndexOfRequiredElement = m_ids.indexOf(uuid);
 
     /* Delete corresponding network-request: */
-    m_ids.remove(iIndexOfRequiredElement);
-    m_data.remove(iIndexOfRequiredElement);
+    RT_NOREF(iIndexOfRequiredElement);
+    //m_ids.remove(iIndexOfRequiredElement);
+    //m_data.remove(iIndexOfRequiredElement);
 
     /* Update appearance: */
     recalculateIndicatorState();

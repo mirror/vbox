@@ -129,7 +129,7 @@ VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwDa
 LRESULT VBoxClipboardWinChainPassToNext(PVBOXCLIPBOARDWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
 
 VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
-int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PVBOXCLIPBOARDFORMAT pfFormats);
+int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PSHAREDCLIPBOARDFORMATDATA pFormats);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);

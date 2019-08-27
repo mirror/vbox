@@ -21,12 +21,352 @@
 
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
+#include <iprt/semaphore.h>
 #include <iprt/path.h>
 
 #include <iprt/errcore.h>
 #include <VBox/log.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
+
+
+/**
+ * Allocates a new event payload.
+ *
+ * @returns VBox status code.
+ * @param   uID                 Event ID to associate payload to.
+ * @param   pvData              Data block to associate to this payload.
+ * @param   cbData              Size (in bytes) of data block to associate.
+ * @param   ppPayload           Where to store the allocated event payload on success.
+ */
+int SharedClipboardPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
+                                PSHAREDCLIPBOARDEVENTPAYLOAD *ppPayload)
+{
+    AssertPtrReturn(pvData, VERR_INVALID_POINTER);
+    AssertReturn   (cbData, VERR_INVALID_PARAMETER);
+
+    PSHAREDCLIPBOARDEVENTPAYLOAD pPayload =
+        (PSHAREDCLIPBOARDEVENTPAYLOAD)RTMemAlloc(sizeof(SHAREDCLIPBOARDEVENTPAYLOAD));
+    if (!pPayload)
+        return VERR_NO_MEMORY;
+
+    pPayload->pvData = RTMemAlloc(cbData);
+    if (pPayload->pvData)
+    {
+        memcpy(pPayload->pvData, pvData, cbData);
+
+        pPayload->cbData = cbData;
+        pPayload->uID    = uID;
+
+        *ppPayload = pPayload;
+
+        return VINF_SUCCESS;
+    }
+
+    RTMemFree(pPayload);
+    return VERR_NO_MEMORY;
+}
+
+/**
+ * Frees an event payload.
+ *
+ * @returns VBox status code.
+ * @param   pPayload            Event payload to free.
+ */
+void SharedClipboardPayloadFree(PSHAREDCLIPBOARDEVENTPAYLOAD pPayload)
+{
+    if (!pPayload)
+        return;
+
+    if (pPayload->pvData)
+    {
+        Assert(pPayload->cbData);
+        RTMemFree(pPayload->pvData);
+        pPayload->pvData = NULL;
+    }
+
+    pPayload->cbData = 0;
+
+    RTMemFree(pPayload);
+    pPayload = NULL;
+}
+
+int SharedClipboardEventCreate(PSHAREDCLIPBOARDEVENT pEvent, uint16_t uID)
+{
+    AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("Event %RU16\n", uID));
+
+    int rc = RTSemEventCreate(&pEvent->hEventSem);
+    if (RT_SUCCESS(rc))
+    {
+        pEvent->uID      = uID;
+        pEvent->pPayload = NULL;
+    }
+
+    return rc;
+}
+
+void SharedClipboardEventDestroy(PSHAREDCLIPBOARDEVENT pEvent)
+{
+    if (!pEvent)
+        return;
+
+    LogFlowFunc(("Event %RU16\n", pEvent->uID));
+
+    if (pEvent->hEventSem != NIL_RTSEMEVENT)
+    {
+        RTSemEventDestroy(pEvent->hEventSem);
+        pEvent->hEventSem = NIL_RTSEMEVENT;
+    }
+
+    SharedClipboardPayloadFree(pEvent->pPayload);
+
+    pEvent->uID = 0;
+}
+
+int SharedClipboardEventSourceCreate(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID)
+{
+    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+
+    LogFlowFunc(("pSource=%p, uID=%RU16\n", pSource, uID));
+
+    int rc = VINF_SUCCESS;
+
+    RTListInit(&pSource->lstEvents);
+
+    pSource->uID          = uID;
+    pSource->uEventIDNext = 1; /* Event ID 0 always is reserved (marks "unused"). */
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+void SharedClipboardEventSourceDestroy(PSHAREDCLIPBOARDEVENTSOURCE pSource)
+{
+    if (!pSource)
+        return;
+
+    LogFlowFunc(("ID=%RU16\n", pSource->uID));
+
+    PSHAREDCLIPBOARDEVENT pEvIt;
+    PSHAREDCLIPBOARDEVENT pEvItNext;
+    RTListForEachSafe(&pSource->lstEvents, pEvIt, pEvItNext, SHAREDCLIPBOARDEVENT, Node)
+    {
+        SharedClipboardEventDestroy(pEvIt);
+        RTMemFree(pEvIt);
+    }
+}
+
+/**
+ * Generates a new event ID for a specific event source.
+ *
+ * @returns New event ID generated, or 0 on error.
+ * @param   pSource             Event source to generate event for.
+ */
+uint16_t SharedClipboardEventIDGenerate(PSHAREDCLIPBOARDEVENTSOURCE pSource)
+{
+    AssertPtrReturn(pSource, 0);
+
+    LogFlowFunc(("uSource=%RU16: New event: %RU16\n", pSource->uID, pSource->uEventIDNext));
+    return pSource->uEventIDNext++; /** @todo Improve this. */
+}
+
+/**
+ * Returns a specific event of a event source.
+ *
+ * @returns Pointer to event if found, or NULL if not found.
+ * @param   pSource             Event source to get event from.
+ * @param   uID                 Event ID to get.
+ */
+inline PSHAREDCLIPBOARDEVENT sharedClipboardEventGet(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID)
+{
+    PSHAREDCLIPBOARDEVENT pEvIt;
+    RTListForEach(&pSource->lstEvents, pEvIt, SHAREDCLIPBOARDEVENT, Node)
+    {
+        if (pEvIt->uID == uID)
+            return pEvIt;
+    }
+
+    return NULL;
+}
+
+/**
+ * Registers an event.
+ *
+ * @returns VBox status code.
+ * @param   pSource             Event source to register event for.
+ * @param   uID                 Event ID to register.
+ */
+int SharedClipboardEventRegister(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID)
+{
+    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+
+    int rc;
+
+    LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+
+    if (sharedClipboardEventGet(pSource, uID) == NULL)
+    {
+        PSHAREDCLIPBOARDEVENT pEvent
+            = (PSHAREDCLIPBOARDEVENT)RTMemAllocZ(sizeof(SHAREDCLIPBOARDEVENT));
+        if (pEvent)
+        {
+            rc = SharedClipboardEventCreate(pEvent, uID);
+            if (RT_SUCCESS(rc))
+            {
+                RTListAppend(&pSource->lstEvents, &pEvent->Node);
+
+                LogFlowFunc(("Event %RU16\n", uID));
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else
+        rc = VERR_ALREADY_EXISTS;
+
+#ifdef DEBUG_andy
+    AssertRC(rc);
+#endif
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Unregisters an event.
+ *
+ * @returns VBox status code.
+ * @param   pSource             Event source to unregister event for.
+ * @param   uID                 Event ID to unregister.
+ */
+int SharedClipboardEventUnregister(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID)
+{
+    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+
+    int rc;
+
+    LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+
+    PSHAREDCLIPBOARDEVENT pEvent = sharedClipboardEventGet(pSource, uID);
+    if (pEvent)
+    {
+        LogFlowFunc(("Event %RU16\n", pEvent->uID));
+
+        SharedClipboardEventDestroy(pEvent);
+        RTMemFree(pEvent);
+
+        RTListNodeRemove(&pEvent->Node);
+
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    AssertRC(rc);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Waits for an event to get signalled.
+ *
+ * @returns VBox status code.
+ * @param   pSource             Event source that contains the event to wait for.
+ * @param   uID                 Event ID to wait for.
+ * @param   uTimeoutMs          Timeout (in ms) to wait.
+ * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
+ *                              SharedClipboardPayloadFree().
+ */
+int SharedClipboardEventWait(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID, RTMSINTERVAL uTimeoutMs,
+                             PSHAREDCLIPBOARDEVENTPAYLOAD* ppPayload)
+{
+    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    int rc;
+
+    PSHAREDCLIPBOARDEVENT pEvent = sharedClipboardEventGet(pSource, uID);
+    if (pEvent)
+    {
+        rc = RTSemEventWait(pEvent->hEventSem, uTimeoutMs);
+        if (RT_SUCCESS(rc))
+        {
+            *ppPayload = pEvent->pPayload;
+
+            pEvent->pPayload = NULL;
+        }
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Signals an event.
+ *
+ * @returns VBox status code.
+ * @param   pSource             Event source of event to signal.
+ * @param   uID                 Event ID to signal.
+ * @param   pPayload            Event payload to associate. Takes ownership. Optional.
+ */
+int SharedClipboardEventSignal(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID,
+                               PSHAREDCLIPBOARDEVENTPAYLOAD pPayload)
+{
+    AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+
+    int rc;
+
+    LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+
+    PSHAREDCLIPBOARDEVENT pEvent = sharedClipboardEventGet(pSource, uID);
+    if (pEvent)
+    {
+        Assert(pEvent->pPayload == NULL);
+
+        pEvent->pPayload = pPayload;
+
+        rc = RTSemEventSignal(pEvent->hEventSem);
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+#ifdef DEBUG_andy
+    AssertRC(rc);
+#endif
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Detaches a payload from an event.
+ *
+ * @returns VBox status code.
+ * @param   pSource             Event source of event to detach payload for.
+ * @param   uID                 Event ID to detach payload for.
+ */
+void SharedClipboardEventPayloadDetach(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID)
+{
+    AssertPtrReturnVoid(pSource);
+
+    LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+
+    PSHAREDCLIPBOARDEVENT pEvent = sharedClipboardEventGet(pSource, uID);
+    if (pEvent)
+    {
+        pEvent->pPayload = NULL;
+    }
+#ifdef DEBUG_andy
+    else
+        AssertMsgFailed(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+#endif
+}
 
 /** @todo use const where appropriate; delinuxify the code (*Lin* -> *Host*); use AssertLogRel*. */
 
@@ -420,7 +760,7 @@ const char *VBoxClipboardHostMsgToStr(uint32_t uMsg)
     {
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_HDR_READ);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_HDR_WRITE);
@@ -452,9 +792,11 @@ const char *VBoxClipboardGuestMsgToStr(uint32_t uMsg)
 {
     switch (uMsg)
     {
-        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_REPORT_FORMATS);
-        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_READ_DATA);
-        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_WRITE_DATA);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_DATA_READ);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_DATA_WRITE);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_CONNECT);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_NOWAIT);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_WAIT);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_GET);
@@ -476,7 +818,7 @@ const char *VBoxClipboardGuestMsgToStr(uint32_t uMsg)
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_WRITE);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_CANCEL);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_ERROR);
-        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT);
     }
     return "Unknown";
 }
+

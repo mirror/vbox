@@ -587,13 +587,13 @@ static void clipUpdateX11Targets(CLIPBACKEND *pCtx, CLIPX11FORMAT *pTargets,
  * @note  This function is treated as API glue, and as such is not part of any
  *        unit test.  So keep it simple, be paranoid and log everything.
  */
-static void clipConvertX11Targets(Widget widget, XtPointer pClientData,
+static void clipConvertX11Targets(Widget widget, XtPointer pClient,
                                   Atom * /* selection */, Atom *atomType,
                                   XtPointer pValue, long unsigned int *pcLen,
                                   int *piFormat)
 {
     RT_NOREF1(piFormat);
-    CLIPBACKEND *pCtx = reinterpret_cast<CLIPBACKEND *>(pClientData);
+    CLIPBACKEND *pCtx = reinterpret_cast<CLIPBACKEND *>(pClient);
     Atom *pAtoms = (Atom *)pValue;
     unsigned i, j;
     LogRel2(("%s: pValue=%p, *pcLen=%u, *atomType=%d%s\n", __FUNCTION__,
@@ -1763,9 +1763,9 @@ typedef struct _CLIPREADX11CBREQ CLIPREADX11CBREQ;
  * @note  X11 backend code, callback for XtGetSelectionValue, for use when
  *        the X11 clipboard contains a format we understand.
  */
-static void clipConvertX11CB(void *pClientData, void *pvSrc, unsigned cbSrc)
+static void clipConvertX11CB(void *pClient, void *pvSrc, unsigned cbSrc)
 {
-    CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *) pClientData;
+    CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *) pClient;
     LogRelFlowFunc(("pReq->mFormat=%02X, pReq->mTextFormat=%u, "
                 "pReq->mBitmapFormat=%u, pReq->mHtmlFormat=%u, pReq->mCtx=%p\n",
                  pReq->mFormat, pReq->mTextFormat, pReq->mBitmapFormat,
@@ -1908,16 +1908,16 @@ static void clipConvertX11CB(void *pClientData, void *pvSrc, unsigned cbSrc)
  * @note  X11 backend code, callback for XtGetSelectionValue, for use when
  *        the X11 clipboard contains a format we understand.
  */
-static void cbConvertX11CB(Widget widget, XtPointer pClientData,
+static void cbConvertX11CB(Widget widget, XtPointer pClient,
                            Atom * /* selection */, Atom *atomType,
                            XtPointer pvSrc, long unsigned int *pcLen,
                            int *piFormat)
 {
     RT_NOREF1(widget);
     if (*atomType == XT_CONVERT_FAIL) /* Xt timeout */
-        clipConvertX11CB(pClientData, NULL, 0);
+        clipConvertX11CB(pClient, NULL, 0);
     else
-        clipConvertX11CB(pClientData, pvSrc, (*pcLen) * (*piFormat) / 8);
+        clipConvertX11CB(pClient, pvSrc, (*pcLen) * (*piFormat) / 8);
 
     XtFree((char *)pvSrc);
 }

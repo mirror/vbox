@@ -30,6 +30,7 @@
 #endif
 
 #include <iprt/cdefs.h>
+#include <iprt/list.h>
 #include <iprt/types.h>
 
 /** A single Shared Clipboard format. */
@@ -57,6 +58,103 @@ typedef VBOXCLIPBOARDFORMATS *PVBOXCLIPBOARDFORMATS;
 /** Shared Clipboard format is an URI list. */
 #define VBOX_SHARED_CLIPBOARD_FMT_URI_LIST      UINT32_C(0x08)
 #endif
+
+/**
+ * Structure for keeping a generic Shared Clipboard data block.
+ */
+typedef struct _SHAREDCLIPBOARDDATABLOCK
+{
+    /** Clipboard format this data block represents. */
+    VBOXCLIPBOARDFORMAT  uFormat;
+    /** Pointer to actual data block. */
+    void                *pvData;
+    /** Size (in bytes) of actual data block. */
+    uint32_t             cbData;
+} SHAREDCLIPBOARDDATABLOCK, *PSHAREDCLIPBOARDDATABLOCK;
+
+/**
+ * Structure for keeping a Shared Clipboard data read request.
+ */
+typedef struct _SHAREDCLIPBOARDDATAREQ
+{
+    /** In which format the data needs to be sent. */
+    VBOXCLIPBOARDFORMAT uFmt;
+    /** Read flags; currently unused. */
+    uint32_t            fFlags;
+    /** Maximum data (in byte) can be sent. */
+    uint32_t            cbSize;
+} SHAREDCLIPBOARDDATAREQ, *PSHAREDCLIPBOARDDATAREQ;
+
+/**
+ * Structure for keeping Shared Clipboard formats specifications.
+ */
+typedef struct _SHAREDCLIPBOARDFORMATDATA
+{
+    /** Available format(s) as bit map. */
+    VBOXCLIPBOARDFORMATS uFormats;
+    /** Formats flags. Currently unused. */
+    uint32_t             fFlags;
+} SHAREDCLIPBOARDFORMATDATA, *PSHAREDCLIPBOARDFORMATDATA;
+
+/**
+ * Structure for an (optional) Shared Clipboard event payload.
+ */
+typedef struct _SHAREDCLIPBOARDEVENTPAYLOAD
+{
+    /** Payload ID; currently unused. */
+    uint32_t uID;
+    /** Pointer to actual payload data. */
+    void    *pvData;
+    /** Size (in bytes) of actual payload data. */
+    uint32_t cbData;
+} SHAREDCLIPBOARDEVENTPAYLOAD, *PSHAREDCLIPBOARDEVENTPAYLOAD;
+
+/**
+ * Structure for maintaining a Shared Clipboard event.
+ */
+typedef struct _SHAREDCLIPBOARDEVENT
+{
+    /** List node. */
+    RTLISTNODE                   Node;
+    /** The event's ID, for self-reference. */
+    uint16_t                     uID;
+    /** Event semaphore for signalling the event. */
+    RTSEMEVENT                   hEventSem;
+    /** Payload to this event. Optional and can be NULL. */
+    PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
+} SHAREDCLIPBOARDEVENT, *PSHAREDCLIPBOARDEVENT;
+
+/**
+ * Structure for maintaining a Shared Clipboard event source.
+ *
+ * Each event source maintains an own counter for events, so that
+ * it can be used in different contexts.
+ */
+typedef struct _SHAREDCLIPBOARDEVENTSOURCE
+{
+    /** The event source' ID. */
+    uint16_t                 uID;
+    /** Next upcoming event ID.
+     *  0 is reserved for invalid event IDs. */
+    uint16_t                 uEventIDNext;
+    /** List of events (PSHAREDCLIPBOARDEVENT). */
+    RTLISTANCHOR             lstEvents;
+} SHAREDCLIPBOARDEVENTSOURCE, *PSHAREDCLIPBOARDEVENTSOURCE;
+
+int SharedClipboardPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
+                                PSHAREDCLIPBOARDEVENTPAYLOAD *ppPayload);
+void SharedClipboardPayloadFree(PSHAREDCLIPBOARDEVENTPAYLOAD pPayload);
+
+int SharedClipboardEventSourceCreate(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID);
+void SharedClipboardEventSourceDestroy(PSHAREDCLIPBOARDEVENTSOURCE pSource);
+
+uint16_t SharedClipboardEventIDGenerate(PSHAREDCLIPBOARDEVENTSOURCE pSource);
+int SharedClipboardEventRegister(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID);
+int SharedClipboardEventUnregister(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID);
+int SharedClipboardEventWait(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID, RTMSINTERVAL uTimeoutMs,
+                             PSHAREDCLIPBOARDEVENTPAYLOAD* ppPayload);
+int SharedClipboardEventSignal(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID, PSHAREDCLIPBOARDEVENTPAYLOAD pPayload);
+void SharedClipboardEventPayloadDetach(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID);
 
 /**
  * Enumeration to specify the Shared Clipboard URI source type.

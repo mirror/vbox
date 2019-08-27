@@ -192,7 +192,7 @@ void UIVMLogPage::deleteBookmark(int index)
 {
     if (m_bookmarkVector.size() <= index)
          return;
-    m_bookmarkVector.remove(index, 1);
+    //m_bookmarkVector.remove(index, 1);
     updateTextEditBookmarkLineSet();
 }
 

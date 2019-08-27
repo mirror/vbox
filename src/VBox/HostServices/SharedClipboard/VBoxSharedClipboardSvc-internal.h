@@ -79,20 +79,11 @@ typedef struct VBOXCLIPBOARDCLIENTURISTATE
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 /**
- * Structure for keeping generic client state data within the Shared Clipboard host service.
- * This structure needs to be serializable by SSM (must be a POD type).
+ * Structure for keeping the old client state tracking,
+ * needed for compatbility to older Guest Additions (for now). Remove this later.
  */
-typedef struct VBOXCLIPBOARDCLIENTSTATE
+typedef struct VBOXCLIPBOARDCLIENTSTATEOLD
 {
-    struct VBOXCLIPBOARDCLIENTSTATE *pNext;
-    struct VBOXCLIPBOARDCLIENTSTATE *pPrev;
-
-    VBOXCLIPBOARDCONTEXT *pCtx;
-
-    uint32_t u32ClientID;
-
-    SHAREDCLIPBOARDSOURCE enmSource;
-
     /** The guest is waiting for a message. */
     bool fAsync;
     /** The guest is waiting for data from the host */
@@ -103,11 +94,6 @@ typedef struct VBOXCLIPBOARDCLIENTSTATE
     bool fHostMsgReadData;
     /** Whether the host host has reported its available formats. */
     bool fHostMsgFormats;
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    /** The client's URI state. */
-    VBOXCLIPBOARDCLIENTURISTATE URI;
-#endif
 
     struct {
         VBOXHGCMCALLHANDLE callHandle;
@@ -129,31 +115,53 @@ typedef struct VBOXCLIPBOARDCLIENTSTATE
 
     uint32_t u32AvailableFormats;
     uint32_t u32RequestedFormat;
-} VBOXCLIPBOARDCLIENTSTATE, *PVBOXCLIPBOARDCLIENTSTATE;
+} VBOXCLIPBOARDCLIENTSTATEOLD;
 
 /**
- * Structure for keeping a HGCM client state within the Shared Clipboard host service.
+ * Structure for keeping generic client state data within the Shared Clipboard host service.
+ * This structure needs to be serializable by SSM (must be a POD type).
  */
-typedef struct _VBOXCLIPBOARDCLIENTDATA
+typedef struct VBOXCLIPBOARDCLIENTSTATE
 {
-    /** General client state data. */
-    VBOXCLIPBOARDCLIENTSTATE          State;
-    /** The client's message queue (FIFO). */
-    RTCList<VBOXCLIPBOARDCLIENTMSG *> queueMsg;
+    struct VBOXCLIPBOARDCLIENTSTATE *pNext;
+    struct VBOXCLIPBOARDCLIENTSTATE *pPrev;
+
+    VBOXCLIPBOARDCONTEXT            *pCtx;
+
+    /** The client's HGCM ID. */
+    uint32_t                         u32ClientID;
+    /** Optional protocol version the client uses. Set to 0 by default. */
+    uint32_t                         uProtocolVer;
+    /** Maximum chunk size to use for data transfers. Set to _64K by default. */
+    uint32_t                         cbChunkSize;
+    SHAREDCLIPBOARDSOURCE            enmSource;
+    /** Old cruft (needed for VBox Guest Additions <= 6.0), remove this some time later. */
+    VBOXCLIPBOARDCLIENTSTATEOLD      Old;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    /** URI context data. */
-    SHAREDCLIPBOARDURICTX             URI;
+    /** The client's URI state. */
+    VBOXCLIPBOARDCLIENTURISTATE      URI;
 #endif
-} VBOXCLIPBOARDCLIENTDATA, *PVBOXCLIPBOARDCLIENTDATA;
+} VBOXCLIPBOARDCLIENTSTATE, *PVBOXCLIPBOARDCLIENTSTATE;
+
+typedef struct _VBOXCLIPBOARDCLIENTCMDCTX
+{
+    uint32_t                          uContextID;
+} VBOXCLIPBOARDCLIENTCMDCTX, *PVBOXCLIPBOARDCLIENTCMDCTX;
 
 typedef struct _VBOXCLIPBOARDCLIENT
 {
     /** The client's HGCM client ID. */
-    uint32_t                 uClientID;
-    /** Pointer to the client'data, owned by HGCM. */
-    PVBOXCLIPBOARDCLIENTDATA pData;
-    /** Optional protocol version the client uses. Set to 0 by default. */
-    uint32_t                 uProtocolVer;
+    uint32_t                          uClientID;
+    /** General client state data. */
+    VBOXCLIPBOARDCLIENTSTATE          State;
+    /** The client's message queue (FIFO). */
+    RTCList<VBOXCLIPBOARDCLIENTMSG *> queueMsg;
+    /** The client's own event source. */
+    SHAREDCLIPBOARDEVENTSOURCE        Events;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    /** URI context data. */
+    SHAREDCLIPBOARDURICTX             URI;
+#endif
     /** Structure for keeping the client's pending (deferred return) state.
      *  A client is in a deferred state when it asks for the next HGCM message,
      *  but the service can't provide it yet. That way a client will block (on the guest side, does not return)
@@ -172,8 +180,12 @@ typedef struct _VBOXCLIPBOARDCLIENT
     } Pending;
 } VBOXCLIPBOARDCLIENT, *PVBOXCLIPBOARDCLIENT;
 
+typedef struct _VBOXCLIPBOARDCLIENTMAPENTRY
+{
+} VBOXCLIPBOARDCLIENTMAPENTRY;
+
 /** Map holding pointers to drag and drop clients. Key is the (unique) HGCM client ID. */
-typedef std::map<uint32_t, VBOXCLIPBOARDCLIENT *> ClipboardClientMap;
+typedef std::map<uint32_t, VBOXCLIPBOARDCLIENTMAPENTRY> ClipboardClientMap;
 
 /** Simple queue (list) which holds deferred (waiting) clients. */
 typedef std::list<uint32_t> ClipboardClientQueue;
@@ -181,16 +193,19 @@ typedef std::list<uint32_t> ClipboardClientQueue;
 /*
  * The service functions. Locking is between the service thread and the platform-dependent (window) thread.
  */
-int vboxSvcClipboardCompleteReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, int rc, uint32_t cbActual);
-uint32_t vboxSvcClipboardGetMode(void);
-int vboxSvcClipboardReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t uMsg, uint32_t uFormats);
-int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENTDATA pClientData, SHAREDCLIPBOARDSOURCE enmSource);
+int vboxSvcClipboardSendFormatsWrite(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDFORMATDATA pFormats);
 
-void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENTDATA pClientData);
+int vboxSvcClipboardOldCompleteReadData(PVBOXCLIPBOARDCLIENT pClient, int rc, uint32_t cbActual);
+int vboxSvcClipboardOldReportMsg(PVBOXCLIPBOARDCLIENT pClient, uint32_t uMsg, uint32_t uFormats);
+
+uint32_t vboxSvcClipboardGetMode(void);
+int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENT pClient, SHAREDCLIPBOARDSOURCE enmSource);
+
+void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENT pClient);
 PVBOXCLIPBOARDCLIENTMSG vboxSvcClipboardMsgAlloc(uint32_t uMsg, uint32_t cParms);
 void vboxSvcClipboardMsgFree(PVBOXCLIPBOARDCLIENTMSG pMsg);
 void vboxSvcClipboardMsgSetPeekReturn(PVBOXCLIPBOARDCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms);
-int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDCLIENTMSG pMsg, bool fAppend);
+int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTMSG pMsg, bool fAppend);
 int vboxSvcClipboardMsgPeek(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fWait);
 int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
@@ -198,8 +213,6 @@ int vboxSvcClipboardClientWakeup(PVBOXCLIPBOARDCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
-int  vboxSvcClipboardURIReportMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Msg, uint32_t u32Formats);
-bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 /*
@@ -208,16 +221,16 @@ bool vboxSvcClipboardURIReturnMsg(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t
 int VBoxClipboardSvcImplInit(void);
 void VBoxClipboardSvcImplDestroy(void);
 
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHeadless);
-int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData);
-int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Formats);
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Format, void *pv, uint32_t cb, uint32_t *pcbActual);
-int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv, uint32_t cb, uint32_t u32Format);
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless);
+int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient);
+int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDFORMATDATA pFormats);
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual);
+int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData);
 /**
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA pClientData);
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 int vboxSvcClipboardURITransferOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx);
@@ -250,8 +263,8 @@ DECLCALLBACK(void) VBoxSvcClipboardURITransferCompleteCallback(PSHAREDCLIPBOARDU
 DECLCALLBACK(void) VBoxSvcClipboardURITransferCanceledCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData);
 DECLCALLBACK(void) VBoxSvcClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
 
-int VBoxClipboardSvcImplURITransferCreate(PVBOXCLIPBOARDCLIENTDATA pClientData, PSHAREDCLIPBOARDURITRANSFER pTransfer);
-int VBoxClipboardSvcImplURITransferDestroy(PVBOXCLIPBOARDCLIENTDATA pClientData, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int VBoxClipboardSvcImplURITransferCreate(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int VBoxClipboardSvcImplURITransferDestroy(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 #endif
 
 /* Host unit testing interface */

@@ -20,6 +20,7 @@
 
 #include <iprt/dir.h>
 #include <iprt/file.h>
+#include <iprt/list.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
 
@@ -30,7 +31,6 @@
 
 static int sharedClipboardURITransferThreadCreate(PSHAREDCLIPBOARDURITRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
 static int sharedClipboardURITransferThreadDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
-static int sharedClipboardURITransferWriteThread(RTTHREAD hThread, void *pvUser);
 static PSHAREDCLIPBOARDURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHAREDCLIPBOARDURICTX pURI, uint32_t uIdx);
 static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode,
                                                  SHAREDCLIPBOARDOBJHANDLE handleInitial, uint64_t *pfOpen);
@@ -697,6 +697,26 @@ void SharedClipboardURIObjectOpenParmsDestroy(PVBOXCLIPBOARDOBJOPENCREATEPARMS p
 }
 
 /**
+ * Returns a specific object handle info of a transfer.
+ *
+ * @returns Pointer to object handle info if found, or NULL if not found.
+ * @param   pTransfer           URI clipboard transfer to get object handle info from.
+ * @param   hObj                Object handle of the object to get handle info for.
+ */
+inline PSHAREDCLIPBOARDURIOBJHANDLEINFO sharedClipboardURIObjectGet(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                                                    SHAREDCLIPBOARDOBJHANDLE hObj)
+{
+    PSHAREDCLIPBOARDURIOBJHANDLEINFO pIt;
+    RTListForEach(&pTransfer->lstObj, pIt, SHAREDCLIPBOARDURIOBJHANDLEINFO, Node)
+    {
+        if (pIt->hObj == hObj)
+            return pIt;
+    }
+
+    return NULL;
+}
+
+/**
  * Opens an URI object.
  *
  * @returns VBox status code.
@@ -743,14 +763,12 @@ int SharedClipboardURIObjectOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PVBOXCLI
 
             if (RT_SUCCESS(rc))
             {
-                const SHAREDCLIPBOARDOBJHANDLE hObj = pTransfer->uObjHandleNext++;
-
+                pInfo->hObj    = pTransfer->uObjHandleNext++;
                 pInfo->enmType = SHAREDCLIPBOARDURIOBJTYPE_FILE;
 
-                pTransfer->pMapObj->insert(
-                    std::pair<SHAREDCLIPBOARDOBJHANDLE, PSHAREDCLIPBOARDURIOBJHANDLEINFO>(hObj, pInfo));
+                RTListAppend(&pTransfer->lstObj, &pInfo->Node);
 
-                *phObj = hObj;
+                *phObj = pInfo->hObj;
             }
 
             if (RT_FAILURE(rc))
@@ -788,12 +806,9 @@ int SharedClipboardURIObjectClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDC
 
     if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        SharedClipboardURIObjMap::iterator itObj = pTransfer->pMapObj->find(hObj);
-        if (itObj != pTransfer->pMapObj->end())
+        PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = sharedClipboardURIObjectGet(pTransfer, hObj);
+        if (pInfo)
         {
-            PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = itObj->second;
-            AssertPtr(pInfo);
-
             switch (pInfo->enmType)
             {
                 case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
@@ -819,7 +834,7 @@ int SharedClipboardURIObjectClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDC
 
             RTMemFree(pInfo);
 
-            pTransfer->pMapObj->erase(itObj);
+            RTListNodeRemove(&pInfo->Node);
         }
         else
             rc = VERR_NOT_FOUND;
@@ -861,12 +876,9 @@ int SharedClipboardURIObjectRead(PSHAREDCLIPBOARDURITRANSFER pTransfer,
 
     if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        SharedClipboardURIObjMap::iterator itObj = pTransfer->pMapObj->find(hObj);
-        if (itObj != pTransfer->pMapObj->end())
+        PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = sharedClipboardURIObjectGet(pTransfer, hObj);
+        if (pInfo)
         {
-            PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = itObj->second;
-            AssertPtr(pInfo);
-
             switch (pInfo->enmType)
             {
                 case SHAREDCLIPBOARDURIOBJTYPE_FILE:
@@ -926,12 +938,9 @@ int SharedClipboardURIObjectWrite(PSHAREDCLIPBOARDURITRANSFER pTransfer,
 
     if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        SharedClipboardURIObjMap::iterator itObj = pTransfer->pMapObj->find(hObj);
-        if (itObj != pTransfer->pMapObj->end())
+        PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = sharedClipboardURIObjectGet(pTransfer, hObj);
+        if (pInfo)
         {
-            PSHAREDCLIPBOARDURIOBJHANDLEINFO pInfo = itObj->second;
-            AssertPtr(pInfo);
-
             switch (pInfo->enmType)
             {
                 case SHAREDCLIPBOARDURIOBJTYPE_FILE:
@@ -1069,7 +1078,6 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHARE
 
     pTransfer->uListHandleNext   = 1;
     pTransfer->uObjHandleNext    = 1;
-    pTransfer->uEventIDNext      = 1;
 
     pTransfer->uTimeoutMs     = 30 * 1000; /* 30s timeout by default. */
     pTransfer->cbMaxChunkSize = _64K; /** @todo Make this configurable. */
@@ -1079,19 +1087,13 @@ int SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHARE
 
     RT_ZERO(pTransfer->Callbacks);
 
-    pTransfer->pMapEvents = new SharedClipboardURITransferEventMap();
-    if (pTransfer->pMapEvents)
-    {
-        pTransfer->pMapLists = new SharedClipboardURIListMap();
-        if (pTransfer->pMapLists)
-        {
-            pTransfer->pMapObj = new SharedClipboardURIObjMap();
-            if (pTransfer->pMapObj)
-                *ppTransfer = pTransfer;
-        }
-    }
-    else
-        rc = VERR_NO_MEMORY;
+    RTListInit(&pTransfer->lstList);
+    RTListInit(&pTransfer->lstObj);
+
+    pTransfer->cRoots = 0;
+    RTListInit(&pTransfer->lstRoots);
+
+    *ppTransfer = pTransfer;
 
     if (RT_FAILURE(rc))
     {
@@ -1125,49 +1127,26 @@ int SharedClipboardURITransferDestroy(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 
     RTStrFree(pTransfer->pszPathRootAbs);
 
-    if (pTransfer->pMapEvents)
+    SharedClipboardEventSourceDestroy(&pTransfer->Events);
+
+    PSHAREDCLIPBOARDURILISTHANDLEINFO pItList, pItListNext;
+    RTListForEachSafe(&pTransfer->lstList, pItList, pItListNext, SHAREDCLIPBOARDURILISTHANDLEINFO, Node)
     {
-        SharedClipboardURITransferEventMap::iterator itEvent = pTransfer->pMapEvents->begin();
-        while (itEvent != pTransfer->pMapEvents->end())
-        {
+        SharedClipboardURIListHandleInfoDestroy(pItList);
 
-            itEvent = pTransfer->pMapEvents->begin();
-        }
+        RTListNodeRemove(&pItList->Node);
 
-        delete pTransfer->pMapEvents;
-        pTransfer->pMapEvents = NULL;
+        RTMemFree(pItList);
     }
 
-    if (pTransfer->pMapLists)
+    PSHAREDCLIPBOARDURIOBJHANDLEINFO pItObj, pItObjNext;
+    RTListForEachSafe(&pTransfer->lstObj, pItObj, pItObjNext, SHAREDCLIPBOARDURIOBJHANDLEINFO, Node)
     {
-        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->begin();
-        while (itList != pTransfer->pMapLists->end())
-        {
-            SharedClipboardURIListHandleInfoDestroy(itList->second);
-            pTransfer->pMapLists->erase(itList);
-            itList = pTransfer->pMapLists->begin();
-        }
+        SharedClipboardURIObjectHandleInfoDestroy(pItObj);
 
-        Assert(pTransfer->pMapLists->size() == 0);
+        RTListNodeRemove(&pItObj->Node);
 
-        delete pTransfer->pMapLists;
-        pTransfer->pMapLists = NULL;
-    }
-
-    if (pTransfer->pMapObj)
-    {
-        SharedClipboardURIObjMap::iterator itObj = pTransfer->pMapObj->begin();
-        while (itObj != pTransfer->pMapObj->end())
-        {
-            SharedClipboardURIObjectHandleInfoDestroy(itObj->second);
-            pTransfer->pMapObj->erase(itObj);
-            itObj = pTransfer->pMapObj->begin();
-        }
-
-        Assert(pTransfer->pMapObj->size() == 0);
-
-        delete pTransfer->pMapObj;
-        pTransfer->pMapObj = NULL;
+        RTMemFree(pItObj);
     }
 
     LogFlowFuncLeave();
@@ -1197,12 +1176,32 @@ int SharedClipboardURITransferClose(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 }
 
 /**
+ * Returns a specific list handle info of a transfer.
+ *
+ * @returns Pointer to list handle info if found, or NULL if not found.
+ * @param   pTransfer           URI clipboard transfer to get list handle info from.
+ * @param   hList               List handle of the list to get handle info for.
+ */
+inline PSHAREDCLIPBOARDURILISTHANDLEINFO sharedClipboardURITransferListGet(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+                                                                           SHAREDCLIPBOARDLISTHANDLE hList)
+{
+    PSHAREDCLIPBOARDURILISTHANDLEINFO pIt;
+    RTListForEach(&pTransfer->lstList, pIt, SHAREDCLIPBOARDURILISTHANDLEINFO, Node)
+    {
+        if (pIt->hList == hList)
+            return pIt;
+    }
+
+    return NULL;
+}
+
+/**
  * Creates a new list handle (local only).
  *
  * @returns New List handle on success, or SHAREDCLIPBOARDLISTHANDLE_INVALID on error.
  * @param   pTransfer           URI clipboard transfer to create new list handle for.
  */
-static SHAREDCLIPBOARDLISTHANDLE sharedClipboardURITransferListHandleNew(PSHAREDCLIPBOARDURITRANSFER pTransfer)
+inline SHAREDCLIPBOARDLISTHANDLE sharedClipboardURITransferListHandleNew(PSHAREDCLIPBOARDURITRANSFER pTransfer)
 {
     return pTransfer->uListHandleNext++; /** @todo Good enough for now. Improve this later. */
 }
@@ -1243,6 +1242,7 @@ int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PV
                     case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
                     {
                         rc = RTDirOpen(&pInfo->u.Local.hDir, pOpenParms->pszPath);
+                        break;
                     }
 
                     case SHAREDCLIPBOARDURIOBJTYPE_FILE:
@@ -1259,10 +1259,9 @@ int SharedClipboardURITransferListOpen(PSHAREDCLIPBOARDURITRANSFER pTransfer, PV
 
                 if (RT_SUCCESS(rc))
                 {
-                    hList = sharedClipboardURITransferListHandleNew(pTransfer);
+                    pInfo->hList = sharedClipboardURITransferListHandleNew(pTransfer);
 
-                    pTransfer->pMapLists->insert(
-                        std::pair<SHAREDCLIPBOARDLISTHANDLE, PSHAREDCLIPBOARDURILISTHANDLEINFO>(hList, pInfo)); /** @todo Can this throw? */
+                    RTListAppend(&pTransfer->lstList, &pInfo->Node);
                 }
                 else
                 {
@@ -1322,12 +1321,9 @@ int SharedClipboardURITransferListClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, S
 
     if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->find(hList);
-        if (itList != pTransfer->pMapLists->end())
+        PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = sharedClipboardURITransferListGet(pTransfer, hList);
+        if (pInfo)
         {
-            PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
-            AssertPtr(pInfo);
-
             switch (pInfo->enmType)
             {
                 case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
@@ -1342,9 +1338,9 @@ int SharedClipboardURITransferListClose(PSHAREDCLIPBOARDURITRANSFER pTransfer, S
                     break;
             }
 
-            RTMemFree(pInfo);
+            RTListNodeRemove(&pInfo->Node);
 
-            pTransfer->pMapLists->erase(itList);
+            RTMemFree(pInfo);
         }
         else
             rc = VERR_NOT_FOUND;
@@ -1558,15 +1554,12 @@ int SharedClipboardURITransferListGetHeader(PSHAREDCLIPBOARDURITRANSFER pTransfe
 
     if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->find(hList);
-        if (itList != pTransfer->pMapLists->end())
+        PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = sharedClipboardURITransferListGet(pTransfer, hList);
+        if (pInfo)
         {
             rc = SharedClipboardURIListHdrInit(pHdr);
             if (RT_SUCCESS(rc))
             {
-                PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
-                AssertPtr(pInfo);
-
                 switch (pInfo->enmType)
                 {
                     case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
@@ -1665,12 +1658,9 @@ int SharedClipboardURITransferListRead(PSHAREDCLIPBOARDURITRANSFER pTransfer, SH
 
     if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->find(hList);
-        if (itList != pTransfer->pMapLists->end())
+        PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = sharedClipboardURITransferListGet(pTransfer, hList);
+        if (pInfo)
         {
-            PSHAREDCLIPBOARDURILISTHANDLEINFO pInfo = itList->second;
-            AssertPtr(pInfo);
-
             switch (pInfo->enmType)
             {
                 case SHAREDCLIPBOARDURIOBJTYPE_DIRECTORY:
@@ -1825,8 +1815,7 @@ bool SharedClipboardURITransferListHandleIsValid(PSHAREDCLIPBOARDURITRANSFER pTr
 
     if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_LOCAL)
     {
-        SharedClipboardURIListMap::iterator itList = pTransfer->pMapLists->find(hList);
-        fIsValid = itList != pTransfer->pMapLists->end();
+        fIsValid = sharedClipboardURITransferListGet(pTransfer, hList) != NULL;
     }
     else if (pTransfer->State.enmSource == SHAREDCLIPBOARDSOURCE_REMOTE)
     {
@@ -1926,7 +1915,18 @@ static void sharedClipboardURIListTransferRootsClear(PSHAREDCLIPBOARDURITRANSFER
         pTransfer->pszPathRootAbs = NULL;
     }
 
-    pTransfer->lstRootEntries.clear();
+    PSHAREDCLIPBOARDURILISTROOT pListRoot, pListRootNext;
+    RTListForEachSafe(&pTransfer->lstRoots, pListRoot, pListRootNext, SHAREDCLIPBOARDURILISTROOT, Node)
+    {
+        RTStrFree(pListRoot->pszPathAbs);
+
+        RTListNodeRemove(&pListRoot->Node);
+
+        RTMemFree(pListRoot);
+        pListRoot = NULL;
+    }
+
+    pTransfer->cRoots = 0;
 }
 
 /**
@@ -1951,17 +1951,20 @@ int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
 
     sharedClipboardURIListTransferRootsClear(pTransfer);
 
-    char *pszPathRootAbs = NULL;
+    char  *pszPathRootAbs = NULL;
 
     RTCList<RTCString> lstRootEntries = RTCString(pszRoots, cbRoots - 1).split("\r\n");
     for (size_t i = 0; i < lstRootEntries.size(); ++i)
     {
-        SHAREDCLIPBOARDURILISTROOT listRoot;
-        listRoot.strPathAbs = lstRootEntries.at(i);
+        PSHAREDCLIPBOARDURILISTROOT pListRoot = (PSHAREDCLIPBOARDURILISTROOT)RTMemAlloc(sizeof(SHAREDCLIPBOARDURILISTROOT));
+        AssertPtrBreakStmt(pListRoot, rc = VERR_NO_MEMORY);
+
+        pListRoot->pszPathAbs = RTStrDup(lstRootEntries.at(i).c_str());
+        AssertPtrBreakStmt(pListRoot->pszPathAbs, rc = VERR_NO_MEMORY);
 
         if (!pszPathRootAbs)
         {
-            pszPathRootAbs = RTStrDup(listRoot.strPathAbs.c_str());
+            pszPathRootAbs = RTStrDup(pListRoot->pszPathAbs);
             if (pszPathRootAbs)
             {
                 RTPathStripFilename(pszPathRootAbs);
@@ -1975,13 +1978,15 @@ int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
             break;
 
         /* Make sure all entries have the same root path. */
-        if (!RTStrStartsWith(listRoot.strPathAbs.c_str(), pszPathRootAbs))
+        if (!RTStrStartsWith(pListRoot->pszPathAbs, pszPathRootAbs))
         {
             rc = VERR_INVALID_PARAMETER;
             break;
         }
 
-        pTransfer->lstRootEntries.append(listRoot);
+        RTListAppend(&pTransfer->lstRoots, &pListRoot->Node);
+
+        pTransfer->cRoots++;
     }
 
     /** @todo Entry rollback on failure? */
@@ -1989,7 +1994,7 @@ int SharedClipboardURILTransferSetRoots(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
     if (RT_SUCCESS(rc))
     {
         pTransfer->pszPathRootAbs = pszPathRootAbs;
-        LogFlowFunc(("pszPathRootAbs=%s, cRoots=%zu\n", pTransfer->pszPathRootAbs, pTransfer->lstRootEntries.size()));
+        LogFlowFunc(("pszPathRootAbs=%s, cRoots=%zu\n", pTransfer->pszPathRootAbs, pTransfer->cRoots));
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2033,7 +2038,26 @@ uint32_t SharedClipboardURILTransferRootsCount(PSHAREDCLIPBOARDURITRANSFER pTran
 {
     AssertPtrReturn(pTransfer, 0);
 
-    return (uint32_t)pTransfer->lstRootEntries.size();
+    return (uint32_t)pTransfer->cRoots;
+}
+
+/**
+ * Returns a specific root list entry of a transfer.
+ *
+ * @returns Pointer to root list entry if found, or NULL if not found.
+ * @param   pTransfer           URI clipboard transfer to get root list entry from.
+ * @param   uIdx                Index of root list entry to return.
+ */
+inline PSHAREDCLIPBOARDURILISTROOT sharedClipboardURILTransferRootsGet(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint32_t uIdx)
+{
+    if (uIdx >= pTransfer->cRoots)
+        return NULL;
+
+    PSHAREDCLIPBOARDURILISTROOT pIt = RTListGetFirst(&pTransfer->lstRoots, SHAREDCLIPBOARDURILISTROOT, Node);
+    while (uIdx--)
+        pIt = RTListGetNext(&pTransfer->lstRoots, pIt, SHAREDCLIPBOARDURILISTROOT, Node);
+
+    return pIt;
 }
 
 /**
@@ -2045,21 +2069,21 @@ uint32_t SharedClipboardURILTransferRootsCount(PSHAREDCLIPBOARDURITRANSFER pTran
  * @param   pEntry              Where to store the returned entry on success.
  */
 int SharedClipboardURILTransferRootsEntry(PSHAREDCLIPBOARDURITRANSFER pTransfer,
-                                          uint32_t uIndex, PVBOXCLIPBOARDROOTLISTENTRY pEntry)
+                                          uint64_t uIndex, PVBOXCLIPBOARDROOTLISTENTRY pEntry)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pEntry,    VERR_INVALID_POINTER);
 
-    if (uIndex >= pTransfer->lstRootEntries.size())
+    if (uIndex >= pTransfer->cRoots)
         return VERR_INVALID_PARAMETER;
 
     int rc;
 
-    PSHAREDCLIPBOARDURILISTROOT pRoot = &pTransfer->lstRootEntries.at(uIndex);
-    AssertPtrReturn(pRoot, VERR_INVALID_POINTER);
+    PSHAREDCLIPBOARDURILISTROOT pRoot = sharedClipboardURILTransferRootsGet(pTransfer, uIndex);
+    AssertPtrReturn(pRoot, VERR_INVALID_PARAMETER);
 
     /* Make sure that we only advertise relative source paths, not absolute ones. */
-    const char *pcszSrcPath = pRoot->strPathAbs.c_str();
+    const char *pcszSrcPath = pRoot->pszPathAbs;
 
     char *pszFileName = RTPathFilename(pcszSrcPath);
     if (pszFileName)
@@ -2123,9 +2147,9 @@ int SharedClipboardURILTransferRootsAsList(PSHAREDCLIPBOARDURITRANSFER pTransfer
         if (!pRootList)
             return VERR_NO_MEMORY;
 
-        const uint32_t cRoots = (uint32_t)pTransfer->lstRootEntries.size();
+        const uint64_t cRoots = (uint32_t)pTransfer->cRoots;
 
-        LogFlowFunc(("cRoots=%RU32\n", cRoots));
+        LogFlowFunc(("cRoots=%RU64\n", cRoots));
 
         if (cRoots)
         {
@@ -2133,7 +2157,7 @@ int SharedClipboardURILTransferRootsAsList(PSHAREDCLIPBOARDURITRANSFER pTransfer
                 = (PVBOXCLIPBOARDROOTLISTENTRY)RTMemAllocZ(cRoots * sizeof(VBOXCLIPBOARDROOTLISTENTRY));
             if (paRootListEntries)
             {
-                for (uint32_t i = 0; i < cRoots; ++i)
+                for (uint64_t i = 0; i < cRoots; ++i)
                 {
                     rc = SharedClipboardURILTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
                     if (RT_FAILURE(rc))
@@ -2246,219 +2270,6 @@ void SharedClipboardURITransferSetCallbacks(PSHAREDCLIPBOARDURITRANSFER pTransfe
 #undef SET_CALLBACK
 
     pTransfer->Callbacks.pvUser = pCallbacks->pvUser;
-}
-
-/**
- * Allocates a new event payload.
- *
- * @returns VBox status code.
- * @param   uID                 Event ID to associate payload to.
- * @param   pvData              Data block to associate to this payload.
- * @param   cbData              Size (in bytes) of data block to associate.
- * @param   ppPayload           Where to store the allocated event payload on success.
- */
-int SharedClipboardURITransferPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
-                                           PSHAREDCLIPBOARDURITRANSFERPAYLOAD *ppPayload)
-{
-    PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload =
-        (PSHAREDCLIPBOARDURITRANSFERPAYLOAD)RTMemAlloc(sizeof(SHAREDCLIPBOARDURITRANSFERPAYLOAD));
-    if (!pPayload)
-        return VERR_NO_MEMORY;
-
-    pPayload->pvData = RTMemAlloc(cbData);
-    if (pPayload->pvData)
-    {
-        memcpy(pPayload->pvData, pvData, cbData);
-
-        pPayload->cbData = cbData;
-        pPayload->uID    = uID;
-
-        *ppPayload = pPayload;
-
-        return VINF_SUCCESS;
-    }
-
-    RTMemFree(pPayload);
-    return VERR_NO_MEMORY;
-}
-
-/**
- * Frees an event payload.
- *
- * @returns VBox status code.
- * @param   pPayload            URI clipboard transfer event payload to free.
- */
-void SharedClipboardURITransferPayloadFree(PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload)
-{
-    if (!pPayload)
-        return;
-
-    if (pPayload->pvData)
-    {
-        Assert(pPayload->cbData);
-        RTMemFree(pPayload->pvData);
-        pPayload->pvData = NULL;
-    }
-
-    pPayload->cbData = 0;
-
-    RTMemFree(pPayload);
-    pPayload = NULL;
-}
-
-/**
- * Generates a new event ID for a specific URI transfer.
- *
- * @returns New event ID generated, or 0 on error.
- * @param   pTransfer           URI clipboard transfer to generate event for.
- */
-uint16_t SharedClipboardURITransferEventIDGenerate(PSHAREDCLIPBOARDURITRANSFER pTransfer)
-{
-    LogFlowFunc(("New event %RU16\n", pTransfer->uEventIDNext));
-    return pTransfer->uEventIDNext++; /** @todo Improve this. */
-}
-
-/**
- * Registers an URI transfer event.
- *
- * @returns VBox status code.
- * @param   pTransfer           URI clipboard transfer to register event for.
- * @param   uID                 Event ID to register.
- */
-int SharedClipboardURITransferEventRegister(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint16_t uID)
-{
-    int rc;
-
-    SharedClipboardURITransferEventMap::iterator itEvent = pTransfer->pMapEvents->find(uID);
-    if (itEvent == pTransfer->pMapEvents->end())
-    {
-        PSHAREDCLIPBOARDURITRANSFEREVENT pEvent
-            = (PSHAREDCLIPBOARDURITRANSFEREVENT)RTMemAllocZ(sizeof(SHAREDCLIPBOARDURITRANSFEREVENT));
-        if (pEvent)
-        {
-            rc = RTSemEventCreate(&pEvent->hEventSem);
-            if (RT_SUCCESS(rc))
-            {
-                pTransfer->pMapEvents->insert(std::pair<uint16_t, PSHAREDCLIPBOARDURITRANSFEREVENT>(uID, pEvent)); /** @todo Can this throw? */
-
-                LogFlowFunc(("Event %RU16\n", uID));
-            }
-        }
-        else
-            rc = VERR_NO_MEMORY;
-    }
-    else
-        rc = VERR_ALREADY_EXISTS;
-
-#ifdef DEBUG_andy
-    AssertRC(rc);
-#endif
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Unregisters an URI transfer event.
- *
- * @returns VBox status code.
- * @param   pTransfer           URI clipboard transfer to unregister event for.
- * @param   uID                 Event ID to unregister.
- */
-int SharedClipboardURITransferEventUnregister(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint16_t uID)
-{
-    int rc;
-
-    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->pMapEvents->find(uID);
-    if (itEvent != pTransfer->pMapEvents->end())
-    {
-        SharedClipboardURITransferPayloadFree(itEvent->second->pPayload);
-
-        RTSemEventDestroy(itEvent->second->hEventSem);
-
-        RTMemFree(itEvent->second);
-
-        pTransfer->pMapEvents->erase(itEvent);
-
-        LogFlowFunc(("Event %RU16\n", uID));
-
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_NOT_FOUND;
-
-    AssertRC(rc);
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Waits for an URI transfer event to get signalled.
- *
- * @returns VBox status code.
- * @param   pTransfer           URI clipboard transfer that contains the event to wait for.
- * @param   uID                 Event ID to wait for.
- * @param   uTimeoutMs          Timeout (in ms) to wait.
- * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
- *                              SharedClipboardURITransferPayloadFree().
- */
-int SharedClipboardURITransferEventWait(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint16_t uID, RTMSINTERVAL uTimeoutMs,
-                                        PSHAREDCLIPBOARDURITRANSFERPAYLOAD *ppPayload)
-{
-    LogFlowFuncEnter();
-
-    int rc;
-
-    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->pMapEvents->find(uID);
-    if (itEvent != pTransfer->pMapEvents->end())
-    {
-        rc = RTSemEventWait(itEvent->second->hEventSem, uTimeoutMs);
-        if (RT_SUCCESS(rc))
-        {
-            *ppPayload = itEvent->second->pPayload;
-
-            itEvent->second->pPayload = NULL;
-        }
-    }
-    else
-        rc = VERR_NOT_FOUND;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Signals an URI transfer event.
- *
- * @returns VBox status code.
- * @param   pTransfer           URI clipboard transfer of event to signal.
- * @param   uID                 Event ID to signal.
- * @param   pPayload            Event payload to associate. Takes ownership. Optional.
- */
-int SharedClipboardURITransferEventSignal(PSHAREDCLIPBOARDURITRANSFER pTransfer, uint16_t uID,
-                                          PSHAREDCLIPBOARDURITRANSFERPAYLOAD pPayload)
-{
-    int rc;
-
-    SharedClipboardURITransferEventMap::const_iterator itEvent = pTransfer->pMapEvents->find(uID);
-    if (itEvent != pTransfer->pMapEvents->end())
-    {
-        Assert(itEvent->second->pPayload == NULL);
-
-        itEvent->second->pPayload = pPayload;
-
-        rc = RTSemEventSignal(itEvent->second->hEventSem);
-    }
-    else
-        rc = VERR_NOT_FOUND;
-
-#ifdef DEBUG_andy
-    AssertRC(rc);
-#endif
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
 }
 
 /**
@@ -2707,7 +2518,7 @@ void SharedClipboardURICtxTransfersCleanup(PSHAREDCLIPBOARDURICTX pURI)
 {
     AssertPtrReturnVoid(pURI);
 
-    LogFlowFunc(("cRunning=%RU32\n", pURI->cRunning));
+    LogFlowFunc(("cTransfers=%RU32, cRunning=%RU32\n", pURI->cTransfers, pURI->cRunning));
 
     /* Remove all transfers which are not in a running state (e.g. only announced). */
     PSHAREDCLIPBOARDURITRANSFER pTransfer, pTransferNext;
@@ -2723,8 +2534,6 @@ void SharedClipboardURICtxTransfersCleanup(PSHAREDCLIPBOARDURICTX pURI)
 
             Assert(pURI->cTransfers);
             pURI->cTransfers--;
-
-            LogFlowFunc(("cTransfers=%RU32\n", pURI->cTransfers));
         }
     }
 }

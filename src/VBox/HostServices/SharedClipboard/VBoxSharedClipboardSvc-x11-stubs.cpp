@@ -53,13 +53,13 @@ void VBoxClipboardSvcImplDestroy(void)
 /**
   * Enable the shared clipboard - called by the hgcm clipboard subsystem.
   *
-  * @param   pClientData    Structure containing context information about the guest system
-  * @param   fHeadless      Whether headless.
   * @returns RT status code
+  * @param   pClient            Structure containing context information about the guest system
+  * @param   fHeadless          Whether headless.
   */
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless)
 {
-    RT_NOREF(pClientData, fHeadless);
+    RT_NOREF(pClient, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
@@ -68,8 +68,9 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENTDATA pClientData, bool fHead
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA /* pClientData */)
+int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
 {
+    RT_NOREF(pClient);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
@@ -77,11 +78,11 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENTDATA /* pClientData */)
 /**
  * Shut down the shared clipboard subsystem and "disconnect" the guest.
  *
- * @param   pClientData    Structure containing context information about the guest system
+ * @param   pClient         Structure containing context information about the guest system
  */
-int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
+int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
 {
-    RT_NOREF(pClientData);
+    RT_NOREF(pClient);
     return VINF_SUCCESS;
 }
 
@@ -89,75 +90,76 @@ int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENTDATA pClientData)
  * The guest is taking possession of the shared clipboard.  Called by the HGCM clipboard
  * subsystem.
  *
- * @param pClientData           Context data for the guest system
- * @param u32Formats            Clipboard formats the guest is offering
+ * @param pClient               Context data for the guest system.
+ * @param pCmdCtx               Command context to use.
+ * @param pFormats              Clipboard formats the guest is offering.
  */
-int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Formats)
+int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
+                                       PSHAREDCLIPBOARDFORMATDATA pFormats)
 {
-    RT_NOREF(pClientData, u32Formats);
+    RT_NOREF(pClient, pCmdCtx, pFormats);
     return VINF_SUCCESS;
 }
 
 /**
  * Called by the HGCM clipboard subsystem when the guest wants to read the host clipboard.
  *
- * @param pClientData   Context information about the guest VM
- * @param u32Format     The format that the guest would like to receive the data in
- * @param pv            Where to write the data to
- * @param cb            The size of the buffer to write the data to
- * @param pcbActual     Where to write the actual size of the written data
+ * @param pClient       Context information about the guest VM
+ * @param pCmdCtx       Command context to use.
+ * @param pData         Data block to put read data into.
  */
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENTDATA pClientData, uint32_t u32Format,
-                                 void *pv, uint32_t cb, uint32_t *pcbActual)
+int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
+                                 PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual)
 {
-    RT_NOREF(pClientData, u32Format, pv, cb);
-    LogFlowFunc(("called, returning VINF_SUCCESS\n"));
+    RT_NOREF(pClient, pCmdCtx, pData);
+
     /* No data available. */
     *pcbActual = 0;
+
     return VINF_SUCCESS;
 }
 
-int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENTDATA pClientData, void *pv, uint32_t cb,
-                                  uint32_t u32Format)
+int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
+                                  PSHAREDCLIPBOARDDATABLOCK pData)
 {
-    RT_NOREF(pClientData, pv, cb, u32Format);
+    RT_NOREF(pClient, pCmdCtx, pData);
     return VERR_NOT_IMPLEMENTED;
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardSvcImplURIReadDir(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDDIRDATA pDirData)
+int VBoxClipboardSvcImplURIReadDir(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDDIRDATA pDirData)
 {
-    RT_NOREF(pClientData, pDirData);
+    RT_NOREF(pClient, pDirData);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIWriteDir(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDDIRDATA pDirData)
+int VBoxClipboardSvcImplURIWriteDir(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDDIRDATA pDirData)
 {
-    RT_NOREF(pClientData, pDirData);
+    RT_NOREF(pClient, pDirData);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIReadFileHdr(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEHDR pFileHdr)
+int VBoxClipboardSvcImplURIReadFileHdr(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDFILEHDR pFileHdr)
 {
-    RT_NOREF(pClientData, pFileHdr);
+    RT_NOREF(pClient, pFileHdr);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIWriteFileHdr(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEHDR pFileHdr)
+int VBoxClipboardSvcImplURIWriteFileHdr(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDFILEHDR pFileHdr)
 {
-    RT_NOREF(pClientData, pFileHdr);
+    RT_NOREF(pClient, pFileHdr);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIReadFileData(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEDATA pFileData)
+int VBoxClipboardSvcImplURIReadFileData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDFILEDATA pFileData)
 {
-    RT_NOREF(pClientData, pFileData);
+    RT_NOREF(pClient, pFileData);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIWriteFileData(PVBOXCLIPBOARDCLIENTDATA pClientData, PVBOXCLIPBOARDFILEDATA pFileData)
+int VBoxClipboardSvcImplURIWriteFileData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDFILEDATA pFileData)
 {
-    RT_NOREF(pClientData, pFileData);
+    RT_NOREF(pClient, pFileData);
     return VERR_NOT_IMPLEMENTED;
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
