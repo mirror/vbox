@@ -41,7 +41,7 @@
 
 /* Forward declarations: */
 class QTimer;
-class QGridLayout;
+class QVBoxLayout;
 class QLabel;
 class UIChart;
 class UISession;
@@ -102,18 +102,22 @@ private:
 
     void composeQueryString();
 
-    /** This list is used to differentiate xml data we get from the IMachineDebugger. */
-    QStringList m_deviceTypeList;
-    /** This is used to select data series of the metric. For example, for network metric
-      * it is ReceiveBytes/TransmitBytes */
-    QStringList m_metricDataSubString;
-    QString m_strQueryPrefix;
+    /** @name The following strings are string list are used while making IMachineDebugger::getStats calls and parsing the resultin
+      * xml stream.
+      * @{ */
+        /** This string is used while calling IMachineDebugger::getStats(..). It is composed of
+        * m_strQueryPrefix, m_deviceTypeList, and  m_metricDataSubString. */
+        QString m_strQueryString;
+        /** This list is used to differentiate xml data we get from the IMachineDebugger. */
+        QStringList m_deviceTypeList;
+        /** This is used to select data series of the metric. For example, for network metric
+         * it is ReceiveBytes/TransmitBytes */
+        QStringList m_metricDataSubString;
+        QString m_strQueryPrefix;
+    /** @} */
 
     QString m_strName;
     QString m_strUnit;
-    /** This string is used while calling IMachineDebugger::getStats(..). It is composed of
-      * m_strQueryPrefix, m_deviceTypeList, and  m_metricDataSubString. */
-    QString m_strQueryString;
     qulonglong m_iMaximum;
     QQueue<qulonglong> m_data[DATA_SERIES_SIZE];
     /** The total data (the counter value we get from IMachineDebugger API). For the metrics
@@ -176,7 +180,7 @@ private:
     CPerformanceCollector m_performanceMonitor;
     CMachineDebugger      m_machineDebugger;
     /** Holds the instance of layout we create. */
-    QGridLayout *m_pMainLayout;
+    QVBoxLayout *m_pMainLayout;
     UIRuntimeInfoWidget *m_pRuntimeInfoWidget;
     QTimer *m_pTimer;
 

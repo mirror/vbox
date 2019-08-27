@@ -22,8 +22,10 @@
 #include <QMenu>
 #include <QPainter>
 #include <QGridLayout>
+#include <QScrollArea>
 #include <QStyle>
 #include <QXmlStreamReader>
+#include <QVBoxLayout>
 #include <QTableWidget>
 #include <QTimer>
 
@@ -430,7 +432,7 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
 
     m_iPieChartRadius = 1.2f * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
     m_iPieChartSpacing = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    m_size = QSize(10 * m_iPieChartRadius,  2 * m_iPieChartRadius);
+    m_size = QSize(10 * m_iPieChartRadius,  3 * m_iPieChartRadius);
     retranslateUi();
 }
 
@@ -992,7 +994,7 @@ void UIInformationRuntime::retranslateUi()
 
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
     /* Add m_iDecimalCount plus 3 characters for the number and 3 for unit string: */
-    iMaximum += (iDecimalCount + 7);
+    iMaximum += (iDecimalCount + 6);
     if (!m_infoLabels.isEmpty())
     {
         QLabel *pLabel = m_infoLabels.begin().value();
@@ -1009,11 +1011,10 @@ void UIInformationRuntime::retranslateUi()
 
 void UIInformationRuntime::prepareObjects()
 {
-    m_pMainLayout = new QGridLayout(this);
-    if (m_pMainLayout)
-    {
-        m_pMainLayout->setSpacing(10);
-    }
+    m_pMainLayout = new QVBoxLayout(this);
+    if (!m_pMainLayout)
+        return;
+    m_pMainLayout->setSpacing(0);
 
     m_pTimer = new QTimer(this);
     if (m_pTimer)
@@ -1022,9 +1023,15 @@ void UIInformationRuntime::prepareObjects()
         m_pTimer->start(1000 * iPeriod);
     }
 
-    UIRuntimeInfoWidget *m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
-    m_pMainLayout->addWidget(m_pRuntimeInfoWidget, 0, 0, 6, 1);
-    m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+    QScrollArea *pScrollArea = new QScrollArea;
+    m_pMainLayout->addWidget(pScrollArea);
+    QWidget *pContainerWidget = new QWidget;
+    QGridLayout *pContainerLayout = new QGridLayout;
+    pContainerWidget->setLayout(pContainerLayout);
+    pContainerLayout->setSpacing(10);
+    pContainerWidget->show();
+    pScrollArea->setWidget(pContainerWidget);
+    pScrollArea->setWidgetResizable(true);
 
     QStringList chartOrder;
     chartOrder << m_strCPUMetricName << m_strRAMMetricName <<
@@ -1032,17 +1039,21 @@ void UIInformationRuntime::prepareObjects()
     int iRow = 0;
     foreach (const QString &strMetricName, chartOrder)
     {
+        QHBoxLayout *pChartLayout = new QHBoxLayout;
+        pChartLayout->setSpacing(0);
+
         if (!m_subMetrics.contains(strMetricName))
             continue;
         QLabel *pLabel = new QLabel;
         pLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-        m_pMainLayout->addWidget(pLabel, iRow, 1);
+        pChartLayout->addWidget(pLabel);
         m_infoLabels.insert(strMetricName, pLabel);
 
         UIChart *pChart = new UIChart(this, &(m_subMetrics[strMetricName]));
         m_charts.insert(strMetricName, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-        m_pMainLayout->addWidget(pChart, iRow, 2);
+        pChartLayout->addWidget(pChart);
+        pContainerLayout->addLayout(pChartLayout, iRow, 0, 1, 2);
         ++iRow;
     }
 
@@ -1052,6 +1063,12 @@ void UIInformationRuntime::prepareObjects()
     if (m_charts.contains(m_strRAMMetricName) && m_charts[m_strRAMMetricName])
         m_charts[m_strRAMMetricName]->setWithPieChart(false);
 
+
+    UIRuntimeInfoWidget *m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
+    pContainerLayout->addWidget(m_pRuntimeInfoWidget, iRow, 0, 2, 2);
+    m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
+
+
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
@@ -1059,8 +1076,7 @@ void UIInformationRuntime::prepareObjects()
     // pal.setColor(QPalette::Background, Qt::green);
     // bottomSpacerWidget->setAutoFillBackground(true);
     // bottomSpacerWidget->setPalette(pal);
-
-    m_pMainLayout->addWidget(bottomSpacerWidget, iRow, 1, 1, 2);
+    pContainerLayout->addWidget(bottomSpacerWidget, iRow, 0, 1, 2);
 }
 
 void UIInformationRuntime::sltTimeout()
@@ -1156,7 +1172,7 @@ void UIInformationRuntime::sltTimeout()
                     }
                     else if (metric.name() == m_strVMExitMetricName)
                     {
-                        if (data.m_strName.contains("all", Qt::CaseInsensitive))
+                        if (data.m_strName.contains("RecordedExits", Qt::CaseInsensitive))
                             uTotalVMExits += data.m_counter;
                     }
                 }
@@ -1237,12 +1253,12 @@ void UIInformationRuntime::prepareMetrics()
     /* VM exits metric */
     {
         UIMetric VMExitsMetric(m_strVMExitMetricName, "times", iMaximumQueueSize);
-        VMExitsMetric.setQueryPrefix("HM");
+        VMExitsMetric.setQueryPrefix("PROF");
         QStringList typeList;
         typeList << "CPU";
         VMExitsMetric.setDeviceTypeList(typeList);
         QStringList subStringList;
-        subStringList << "All";
+        subStringList << "RecordedExits";
         VMExitsMetric.setMetricDataSubString(subStringList);
         m_subMetrics.insert(m_strVMExitMetricName, VMExitsMetric);
     }
@@ -1483,7 +1499,6 @@ QVector<DebuggerMetricData> UIInformationRuntime::getTotalCounterFromDegugger(co
     CMachineDebugger debugger = m_console.GetDebugger();
 
     QString strStats = debugger.GetStats(strQuery, false);
-
     QXmlStreamReader xmlReader;
     xmlReader.addData(strStats);
     qulonglong iTotal = 0;
@@ -1495,6 +1510,14 @@ QVector<DebuggerMetricData> UIInformationRuntime::getTotalCounterFromDegugger(co
             {
                 QXmlStreamAttributes attributes = xmlReader.attributes();
                 qulonglong iCounter = attributes.value("c").toULongLong();
+                iTotal += iCounter;
+                xmlReader.skipCurrentElement();
+                xmlData.push_back(DebuggerMetricData(*(attributes.value("name").string()), iCounter));
+            }
+            else if (xmlReader.name() == "U64")
+            {
+                QXmlStreamAttributes attributes = xmlReader.attributes();
+                qulonglong iCounter = attributes.value("val").toULongLong();
                 iTotal += iCounter;
                 xmlReader.skipCurrentElement();
                 xmlData.push_back(DebuggerMetricData(*(attributes.value("name").string()), iCounter));
