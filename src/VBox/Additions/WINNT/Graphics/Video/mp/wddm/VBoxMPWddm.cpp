@@ -276,11 +276,8 @@ NTSTATUS vboxWddmGhDisplayPostResizeLegacy(PVBOXMP_DEVEXT pDevExt, const VBOXWDD
 
 NTSTATUS vboxWddmGhDisplayPostResizeNew(PVBOXMP_DEVEXT pDevExt, const VBOXWDDM_ALLOC_DATA *pAllocData, const uint32_t *pTargetMap, const POINT * pVScreenPos, uint16_t fFlags)
 {
-    int rc = VBoxCmdVbvaConCmdResize(pDevExt, pAllocData, pTargetMap, pVScreenPos, fFlags);
-    if (RT_SUCCESS(rc))
-        return STATUS_SUCCESS;
-
-    WARN(("VBoxCmdVbvaConCmdResize failed %d", rc));
+    RT_NOREF(pDevExt, pAllocData, pTargetMap, pVScreenPos, fFlags);
+    AssertFailed(); // Should not be here.
     return STATUS_UNSUCCESSFUL;
 }
 
@@ -3545,8 +3542,8 @@ DxgkDdiEscape(
 
                 if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_SETALLOCHOSTID))
                 {
-                    WARN(("invalid buffer size for VBOXDISPIFESCAPE_SHRC_REF, was(%d), but expected (%d)",
-                            pEscape->PrivateDriverDataSize, sizeof (VBOXDISPIFESCAPE_SHRC_REF)));
+                    WARN(("invalid buffer size for VBOXDISPIFESCAPE_SETALLOCHOSTID, was(%d), but expected (%d)",
+                            pEscape->PrivateDriverDataSize, sizeof (VBOXDISPIFESCAPE_SETALLOCHOSTID)));
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
@@ -3590,72 +3587,6 @@ DxgkDdiEscape(
                     }
                 }
 
-                Status = STATUS_SUCCESS;
-                break;
-            }
-            case VBOXESC_SHRC_ADDREF:
-            case VBOXESC_SHRC_RELEASE:
-            {
-                PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)pEscape->hDevice;
-                if (!pDevice)
-                {
-                    WARN(("VBOXESC_SHRC_ADDREF|VBOXESC_SHRC_RELEASE called without no device specified, failing"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-                /* query whether the allocation represanted by the given [wine-generated] shared resource handle still exists */
-                if (pEscape->PrivateDriverDataSize != sizeof (VBOXDISPIFESCAPE_SHRC_REF))
-                {
-                    WARN(("invalid buffer size for VBOXDISPIFESCAPE_SHRC_REF, was(%d), but expected (%d)",
-                            pEscape->PrivateDriverDataSize, sizeof (VBOXDISPIFESCAPE_SHRC_REF)));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-                PVBOXDISPIFESCAPE_SHRC_REF pShRcRef = (PVBOXDISPIFESCAPE_SHRC_REF)pEscapeHdr;
-                PVBOXWDDM_ALLOCATION pAlloc = vboxWddmGetAllocationFromHandle(pDevExt, (D3DKMT_HANDLE)pShRcRef->hAlloc);
-                if (!pAlloc)
-                {
-                    WARN(("failed to get allocation from handle"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-                PVBOXWDDM_OPENALLOCATION pOa = VBoxWddmOaSearch(pDevice, pAlloc);
-                if (!pOa)
-                {
-                    WARN(("failed to get open allocation from alloc"));
-                    Status = STATUS_INVALID_PARAMETER;
-                    break;
-                }
-
-                Assert(pAlloc->cShRcRefs >= pOa->cShRcRefs);
-
-                if (pEscapeHdr->escapeCode == VBOXESC_SHRC_ADDREF)
-                {
-#ifdef DEBUG
-                    Assert(!pAlloc->fAssumedDeletion);
-#endif
-                    ++pAlloc->cShRcRefs;
-                    ++pOa->cShRcRefs;
-                }
-                else
-                {
-                    Assert(pAlloc->cShRcRefs);
-                    Assert(pOa->cShRcRefs);
-                    --pAlloc->cShRcRefs;
-                    --pOa->cShRcRefs;
-#ifdef DEBUG
-                    Assert(!pAlloc->fAssumedDeletion);
-                    if (!pAlloc->cShRcRefs)
-                    {
-                        pAlloc->fAssumedDeletion = TRUE;
-                    }
-#endif
-                }
-
-                pShRcRef->EscapeHdr.u32CmdSpecific = pAlloc->cShRcRefs;
                 Status = STATUS_SUCCESS;
                 break;
             }

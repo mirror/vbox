@@ -34,8 +34,8 @@
 // obsolete                                 0xABCD9008
 // obsolete                                 0xABCD9009
 // obsolete                                 0xABCD900A
-# define VBOXESC_SHRC_ADDREF                0xABCD900B
-# define VBOXESC_SHRC_RELEASE               0xABCD900C
+// obsolete                                 0xABCD900B
+// obsolete                                 0xABCD900C
 # define VBOXESC_DBGDUMPBUF                 0xABCD900D
 // obsolete                                 0xABCD900E
 // obsolete                                 0xABCD900F
