@@ -221,8 +221,14 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 /** Consider hEnv an environment change record to be applied to RTENV_DEFAULT.
  * If hEnv is RTENV_DEFAULT, the flag has no effect. */
 #define RTPROC_FLAGS_ENV_CHANGE_RECORD      RT_BIT(8)
+/** Create process using the current impersonated thread token.
+ * Caller should also specify RTPROC_FLAGS_SERVICE and RTPROC_FLAGS_PROFILE.
+ * Windows only flag, ignored everywhere else. */
+#define RTPROC_FLAGS_AS_IMPERSONATED_TOKEN  RT_BIT(9)
+/** Hint that we don't expect to ever want to wait on the process. */
+#define RTPROC_FLAGS_NO_WAIT                RT_BIT(10)
 /** Valid flag mask. */
-#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x1ff)
+#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x7ff)
 /** @}  */
 
 
