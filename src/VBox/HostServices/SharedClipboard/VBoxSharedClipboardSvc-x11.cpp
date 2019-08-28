@@ -431,6 +431,7 @@ int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void *
  * Called when we have requested data from VBox and that data has arrived.
  *
  * @param pClient               Context information about the guest VM.
+ * @param pCmdCtx               Pointer to the clipboard command context.
  * @param pData                 Data block to write to clipboard.
  */
 int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient,

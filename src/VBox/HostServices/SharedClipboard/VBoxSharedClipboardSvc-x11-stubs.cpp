@@ -107,6 +107,7 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBO
  * @param pClient       Context information about the guest VM
  * @param pCmdCtx       Command context to use.
  * @param pData         Data block to put read data into.
+ * @param pcbActual     Where to store the actual amount of data available.
  */
 int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
                                  PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual)

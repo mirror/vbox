@@ -341,7 +341,7 @@ void VBoxSvcClipboardUnlock(void)
 /**
  * Resets a client's state message queue.
  *
- * @param   pClientData         Pointer to the client data structure to reset message queue for.
+ * @param   pClient             Pointer to the client data structure to reset message queue for.
  */
 void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENT pClient)
 {
@@ -430,7 +430,7 @@ void vboxSvcClipboardMsgSetPeekReturn(PVBOXCLIPBOARDCLIENTMSG pMsg, PVBOXHGCMSVC
  * Adds a new message to a client'S message queue.
  *
  * @returns IPRT status code.
- * @param   pClientData         Pointer to the client data structure to add new message to.
+ * @param   pClient             Pointer to the client data structure to add new message to.
  * @param   pMsg                Pointer to message to add. The queue then owns the pointer.
  * @param   fAppend             Whether to append or prepend the message to the queue.
  */
@@ -1637,7 +1637,7 @@ static void vboxSvcClipboardOldClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClien
 /**
  * Resets a Shared Clipboard service's client state.
  *
- * @param   pClient         Client state to reset.
+ * @param   pClientState    Client state to reset.
  */
 static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientState)
 {
