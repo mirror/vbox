@@ -193,9 +193,6 @@ typedef struct VBOXVDMAHOST
     int32_t volatile i32cHostCrCtlCompleted;
     RTCRITSECT CalloutCritSect;
 //    VBOXVDMA_SOURCE aSources[VBOX_VIDEO_MAX_SCREENS];
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-    PTMTIMERR3 WatchDogTimer;
-#endif
 } VBOXVDMAHOST, *PVBOXVDMAHOST;
 
 
@@ -2939,33 +2936,6 @@ static void vboxVDMAControlProcess(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd)
 }
 # endif
 
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-
-/**
- * @callback_method_impl{TMTIMER, VDMA watchdog timer.}
- */
-static DECLCALLBACK(void) vboxVDMAWatchDogTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
-{
-    VBOXVDMAHOST *pVdma = (VBOXVDMAHOST *)pvUser;
-    PVGASTATE pVGAState = pVdma->pVGAState;
-    VBVARaiseIrq(pVGAState, HGSMIHOSTFLAGS_WATCHDOG);
-}
-
-/**
- * Handles VBOXVDMA_CTL_TYPE_WATCHDOG for vboxVDMAControl.
- */
-static int vboxVDMAWatchDogCtl(struct VBOXVDMAHOST *pVdma, uint32_t cMillis)
-{
-    PPDMDEVINS pDevIns = pVdma->pVGAState->pDevInsR3;
-    if (cMillis)
-        TMTimerSetMillies(pVdma->WatchDogTimer, cMillis);
-    else
-        TMTimerStop(pVdma->WatchDogTimer);
-    return VINF_SUCCESS;
-}
-
-#endif /* VBOX_VDMA_WITH_WATCHDOG */
-
 /**
  * Called by vgaR3Construct() to initialize the state.
  *
@@ -2982,14 +2952,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
         pVdma->pHgsmi    = pVGAState->pHGSMI;
         pVdma->pVGAState = pVGAState;
 
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-        rc = PDMDevHlpTMTimerCreate(pVGAState->pDevInsR3, TMCLOCK_REAL, vboxVDMAWatchDogTimer,
-                                    pVdma, TMTIMER_FLAGS_NO_CRIT_SECT,
-                                    "VDMA WatchDog Timer", &pVdma->WatchDogTimer);
-        AssertRC(rc);
-#else
         rc = VINF_SUCCESS;
-#endif
         if (RT_SUCCESS(rc))
         {
             VBoxVDMAThreadInit(&pVdma->Thread);
@@ -3096,11 +3059,7 @@ void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, VBOXVDMA_CTL RT_UNTRUSTED_VOLAT
                 rc = VINF_SUCCESS;
                 break;
             case VBOXVDMA_CTL_TYPE_WATCHDOG:
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-                rc = vboxVDMAWatchDogCtl(pVdma, pCmd->u32Offset);
-#else
                 rc = VERR_NOT_SUPPORTED;
-#endif
                 break;
             default:
                 AssertFailedBreakStmt(rc = VERR_IPE_NOT_REACHED_DEFAULT_CASE);

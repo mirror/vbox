@@ -165,10 +165,6 @@ typedef struct _VBOXMP_DEVEXT
 
 
 
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-   PKTHREAD pWdThread;
-   KEVENT WdEvent;
-#endif
    BOOL bVSyncTimerEnabled;
    volatile uint32_t fVSyncInVBlank;
    volatile LARGE_INTEGER VSyncTime;

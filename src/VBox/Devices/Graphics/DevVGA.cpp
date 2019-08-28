@@ -3111,9 +3111,6 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
                         PDMDevHlpPCISetIrqNoWait(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
                         HGSMIClearHostGuestFlags(pThis->pHGSMI,
                                                  HGSMIHOSTFLAGS_IRQ
-#  ifdef VBOX_VDMA_WITH_WATCHDOG
-                                                 | HGSMIHOSTFLAGS_WATCHDOG
-#  endif
                                                  | HGSMIHOSTFLAGS_VSYNC
                                                  | HGSMIHOSTFLAGS_HOTPLUG
                                                  | HGSMIHOSTFLAGS_CURSOR_CAPABILITIES

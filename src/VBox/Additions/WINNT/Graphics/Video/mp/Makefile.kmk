@@ -93,9 +93,6 @@ ifdef VBOX_WITH_WDDM
  endif
  VBoxWddm_DEFS            += LOG_TO_BACKDOOR
  VBoxWddm_DEFS            += VBOX_SVN_REV=$(VBOX_SVN_REV)
- ifdef VBOX_VDMA_WITH_WATCHDOG
-  VBoxWddm_DEFS           += VBOX_VDMA_WITH_WATCHDOG
- endif
  VBoxWddm_INCS            += \
  	../../../include \
  	.. \

@@ -819,9 +819,6 @@ static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-            vboxWddmWdInit(pDevExt);
-#endif
             /* can enable it right away since the host does not need any screen/FB info
              * for basic DMA functionality */
             rc = vboxVdmaEnable(pDevExt, &pDevExt->u.primary.Vdma);
@@ -1009,9 +1006,6 @@ static int vboxWddmFreeDisplays(PVBOXMP_DEVEXT pDevExt)
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-            vboxWddmWdTerm(pDevExt);
-#endif
             rc = vboxVdmaDestroy(pDevExt, &pDevExt->u.primary.Vdma);
             AssertRC(rc);
         }
@@ -1585,12 +1579,6 @@ BOOLEAN DxgkDdiInterruptRoutineNew(
 
     if (bOur)
     {
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-        if (flags & HGSMIHOSTFLAGS_WATCHDOG)
-        {
-            Assert(0);
-        }
-#endif
         if (flags & HGSMIHOSTFLAGS_VSYNC)
         {
             Assert(0);
@@ -1758,12 +1746,6 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
 
         if (bOur)
         {
-#ifdef VBOX_VDMA_WITH_WATCHDOG
-            if (flags & HGSMIHOSTFLAGS_WATCHDOG)
-            {
-                Assert(0);
-            }
-#endif
             if (flags & HGSMIHOSTFLAGS_VSYNC)
             {
                 Assert(0);
