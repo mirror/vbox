@@ -14008,7 +14008,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
     if (   fExecuteInhibit
         && rcStrict == VINF_SUCCESS
         && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-        && EMGetInhibitInterruptsPC(pVCpu) == pVCpu->cpum.GstCtx.rip )
+        && EMIsInhibitInterruptsActive(pVCpu))
     {
         rcStrict = iemInitDecoderAndPrefetchOpcodes(pVCpu, pVCpu->iem.s.fBypassHandlers);
         if (rcStrict == VINF_SUCCESS)
@@ -14043,7 +14043,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
         }
         else if (pVCpu->iem.s.cActiveMappings > 0)
             iemMemRollback(pVCpu);
-        EMSetInhibitInterruptsPC(pVCpu, UINT64_C(0x7777555533331111));
+        VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS); /* hope this is correct for all exceptional cases... */
     }
 
     /*
