@@ -1435,10 +1435,9 @@ static int vdmaVBVACtlDisableSync(PVBOXVDMAHOST pVdma)
 
 
 /**
- * @interface_method_impl{VBOXCRCMDCTL_HGCMENABLE_DATA,pfnRHCmd,
- *      Used by vboxVDMACrHgcmNotifyTerminatingCb() and called by
- *      crVBoxServerCrCmdDisablePostProcess() during crServerTearDown() to drain
- *      command queues or something.}
+ * Used by vboxVDMACrHgcmNotifyTerminatingCb() and called by
+ * crVBoxServerCrCmdDisablePostProcess() during crServerTearDown() to drain
+ * command queues or something.
  */
 static DECLCALLBACK(uint8_t *)
 vboxVDMACrHgcmHandleEnableRemainingHostCommand(HVBOXCRCMDCTL_REMAINING_HOST_COMMAND hClient, uint32_t *pcbCtl, int prevCmdRc)
@@ -1462,8 +1461,7 @@ vboxVDMACrHgcmHandleEnableRemainingHostCommand(HVBOXCRCMDCTL_REMAINING_HOST_COMM
 }
 
 /**
- * @interface_method_impl{VBOXCRCMDCTL_HGCMDISABLE_DATA,pfnNotifyTermDone,
- *      Called by crServerTearDown().}
+ * Called by crServerTearDown().
  */
 static DECLCALLBACK(void) vboxVDMACrHgcmNotifyTerminatingDoneCb(HVBOXCRCMDCTL_NOTIFY_TERMINATING hClient)
 {
@@ -1477,8 +1475,7 @@ static DECLCALLBACK(void) vboxVDMACrHgcmNotifyTerminatingDoneCb(HVBOXCRCMDCTL_NO
 }
 
 /**
- * @interface_method_impl{VBOXCRCMDCTL_HGCMDISABLE_DATA,pfnNotifyTerm,
- *      Called by crServerTearDown().}
+ * Called by crServerTearDown().
  */
 static DECLCALLBACK(int) vboxVDMACrHgcmNotifyTerminatingCb(HVBOXCRCMDCTL_NOTIFY_TERMINATING hClient,
                                                            VBOXCRCMDCTL_HGCMENABLE_DATA *pHgcmEnableData)
@@ -3598,7 +3595,7 @@ static DECLCALLBACK(void) vboxCmdVBVACmdHostCtlSyncCb(struct VBOXCRCMDCTL *pCmd,
 }
 
 /**
- * @callback_method_impl{FNVBOXCRCLIENT_CALLOUT, Worker for vboxVDMACrCtlHgsmiSetup }
+ * Worker for vboxVDMACrCtlHgsmiSetup.
  *
  * @note r=bird: not to be confused with the callout function below. sigh.
  */
