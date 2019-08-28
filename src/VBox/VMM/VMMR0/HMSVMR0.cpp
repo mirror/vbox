@@ -964,15 +964,15 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
 #ifdef HMSVM_ALWAYS_TRAP_ALL_XCPTS
     /* If you add any exceptions here, make sure to update hmR0SvmHandleExit(). */
     pVmcbCtrl0->u32InterceptXcpt |= RT_BIT_32(X86_XCPT_BP)
-                                  | RT_BIT_32(X86_XCPT_DE)
-                                  | RT_BIT_32(X86_XCPT_NM)
-                                  | RT_BIT_32(X86_XCPT_UD)
-                                  | RT_BIT_32(X86_XCPT_NP)
-                                  | RT_BIT_32(X86_XCPT_SS)
-                                  | RT_BIT_32(X86_XCPT_GP)
-                                  | RT_BIT_32(X86_XCPT_PF)
-                                  | RT_BIT_32(X86_XCPT_MF)
-                                  ;
+                                 | RT_BIT_32(X86_XCPT_DE)
+                                 | RT_BIT_32(X86_XCPT_NM)
+                                 | RT_BIT_32(X86_XCPT_UD)
+                                 | RT_BIT_32(X86_XCPT_NP)
+                                 | RT_BIT_32(X86_XCPT_SS)
+                                 | RT_BIT_32(X86_XCPT_GP)
+                                 | RT_BIT_32(X86_XCPT_PF)
+                                 | RT_BIT_32(X86_XCPT_MF)
+                                 ;
 #endif
 
     /* Apply the exceptions intercepts needed by the GIM provider. */
@@ -996,13 +996,13 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
     pVmcbCtrl0->LbrVirt.n.u1VirtVmsaveVmload = fUseVirtVmsaveVmload;
     if (!fUseVirtVmsaveVmload)
         pVmcbCtrl0->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
-                                      | SVM_CTRL_INTERCEPT_VMLOAD;
+                                     |  SVM_CTRL_INTERCEPT_VMLOAD;
 
     /* Virtual GIF. */
     pVmcbCtrl0->IntCtrl.n.u1VGifEnable = fUseVGif;
     if (!fUseVGif)
         pVmcbCtrl0->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
-                                      | SVM_CTRL_INTERCEPT_STGI;
+                                     |  SVM_CTRL_INTERCEPT_STGI;
 #endif
 
     /* CR4 writes must always be intercepted for tracking PGM mode changes. */
@@ -1040,7 +1040,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVMCC pVM)
 
         /* Intercept INVLPG and task switches (may change CR3, EFLAGS, LDT). */
         pVmcbCtrl0->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_INVLPG
-                                      | SVM_CTRL_INTERCEPT_TASK_SWITCH;
+                                     |  SVM_CTRL_INTERCEPT_TASK_SWITCH;
 
         /* Page faults must be intercepted to implement shadow paging. */
         pVmcbCtrl0->u32InterceptXcpt |= RT_BIT(X86_XCPT_PF);
@@ -1444,7 +1444,7 @@ static void hmR0SvmExportGuestCR0(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     if (!pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging)
     {
         uShadowCr0 |= X86_CR0_PG      /* Use shadow page tables. */
-                    |  X86_CR0_WP;    /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
+                   |  X86_CR0_WP;     /* Guest CPL 0 writes to its read-only pages should cause a #PF #VMEXIT. */
     }
 
     /*
@@ -2122,9 +2122,9 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
      */
 #ifndef HMSVM_ALWAYS_TRAP_ALL_XCPTS
     pVmcbNstGstCtrl->u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt
-                                        & ~(  RT_BIT(X86_XCPT_UD)
-                                            | RT_BIT(X86_XCPT_BP)
-                                            | (pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv ? RT_BIT(X86_XCPT_GP) : 0));
+                                       & ~(  RT_BIT(X86_XCPT_UD)
+                                           | RT_BIT(X86_XCPT_BP)
+                                           | (pVCpu->hm.s.fTrapXcptGpForLovelyMesaDrv ? RT_BIT(X86_XCPT_GP) : 0));
 #else
     pVmcbNstGstCtrl->u32InterceptXcpt  |= pVmcb->ctrl.u32InterceptXcpt;
 #endif
@@ -2141,7 +2141,7 @@ static void hmR0SvmMergeVmcbCtrlsNested(PVMCPUCC pVCpu)
      */
     pVmcbNstGstCtrl->u64InterceptCtrl  |= (pVmcb->ctrl.u64InterceptCtrl & ~(  SVM_CTRL_INTERCEPT_VINTR
                                                                             | SVM_CTRL_INTERCEPT_VMMCALL))
-                                        | HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
+                                       |  HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS;
 
     Assert(   (pVmcbNstGstCtrl->u64InterceptCtrl & HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS)
            == HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS);
@@ -2504,7 +2504,7 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
          */
         if (!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmVirtVmsaveVmload)
             pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_VMSAVE
-                                               |  SVM_CTRL_INTERCEPT_VMLOAD;
+                                              |  SVM_CTRL_INTERCEPT_VMLOAD;
 
         /*
          * If we don't expose Virtual GIF feature to the outer guest, we need to intercept
@@ -2512,7 +2512,7 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
          */
         if (!pVCpu->CTX_SUFF(pVM)->cpum.ro.GuestFeatures.fSvmVGif)
             pVmcbNstGstCtrl->u64InterceptCtrl |= SVM_CTRL_INTERCEPT_CLGI
-                                               |  SVM_CTRL_INTERCEPT_STGI;
+                                              |  SVM_CTRL_INTERCEPT_STGI;
 
         /* Merge the guest and nested-guest intercepts. */
         hmR0SvmMergeVmcbCtrlsNested(pVCpu);
