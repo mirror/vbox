@@ -107,8 +107,6 @@ DWORD g_VBoxVDbgCfgForceDummyDevCreate = 0;
 PVBOXWDDMDISP_DEVICE g_VBoxVDbgInternalDevice = NULL;
 PVBOXWDDMDISP_RESOURCE g_VBoxVDbgInternalRc = NULL;
 
-DWORD g_VBoxVDbgCfgCreateSwapchainOnDdiOnce = 0;
-
 VOID vboxVDbgDoPrintDmlCmd(const char* pszDesc, const char* pszCmd)
 {
     vboxVDbgPrint(("<?dml?><exec cmd=\"%s\">%s</exec>, ( %s )\n", pszCmd, pszDesc, pszCmd));
@@ -301,36 +299,6 @@ VOID vboxVDbgDoDumpRcRect(const char * pPrefix, PVBOXWDDMDISP_ALLOCATION pAlloc,
     Info.pD3DRc = pD3DRc;
     Info.pRect = pRect;
     vboxVDbgDoDumpPerform(pPrefix, &Info, pSuffix, vboxVDbgRcRectContentsDumperCb, NULL);
-}
-
-VOID vboxVDbgDoDumpBb(const char * pPrefix, IDirect3DSwapChain9 *pSwapchainIf, const char * pSuffix, DWORD fFlags)
-{
-    IDirect3DSurface9 *pBb = NULL;
-    HRESULT hr = pSwapchainIf->GetBackBuffer(0, D3DBACKBUFFER_TYPE_MONO, &pBb);
-    Assert(hr == S_OK);
-    if (FAILED(hr))
-    {
-        return;
-    }
-
-    Assert(pBb);
-    vboxVDbgDoDumpRcRect(pPrefix, NULL, pBb, NULL, pSuffix, fFlags);
-    pBb->Release();
-}
-
-VOID vboxVDbgDoDumpFb(const char * pPrefix, IDirect3DSwapChain9 *pSwapchainIf, const char * pSuffix, DWORD fFlags)
-{
-    IDirect3DSurface9 *pBb = NULL;
-    HRESULT hr = pSwapchainIf->GetBackBuffer(~(UINT)0, D3DBACKBUFFER_TYPE_MONO, &pBb);
-    Assert(hr == S_OK);
-    if (FAILED(hr))
-    {
-        return;
-    }
-
-    Assert(pBb);
-    vboxVDbgDoDumpRcRect(pPrefix, NULL, pBb, NULL, pSuffix, fFlags);
-    pBb->Release();
 }
 
 
@@ -606,12 +574,6 @@ void vboxVDbgDoPrintAlloc(const char * pPrefix, const VBOXWDDMDISP_RESOURCE *pRc
     const VBOXWDDMDISP_ALLOCATION *pAlloc = &pRc->aAllocations[iAlloc];
     BOOL bPrimary = pRc->RcDesc.fFlags.Primary;
     BOOL bFrontBuf = FALSE;
-    if (bPrimary)
-    {
-        PVBOXWDDMDISP_SWAPCHAIN pSwapchain = vboxWddmSwapchainForAlloc((VBOXWDDMDISP_ALLOCATION *)pAlloc);
-        Assert(pSwapchain);
-        bFrontBuf = (vboxWddmSwapchainGetFb(pSwapchain)->pAlloc == pAlloc);
-    }
     vboxVDbgPrint(("%s d3dWidth(%d), width(%d), height(%d), format(%d), usage(%s), %s", pPrefix,
             pAlloc->SurfDesc.d3dWidth, pAlloc->SurfDesc.width, pAlloc->SurfDesc.height, pAlloc->SurfDesc.format,
             bPrimary ?

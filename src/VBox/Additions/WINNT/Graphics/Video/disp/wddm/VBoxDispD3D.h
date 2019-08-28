@@ -28,7 +28,6 @@
 #include <iprt/list.h>
 
 #define VBOXWDDMDISP_MAX_VERTEX_STREAMS 16
-#define VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE 16
 #define VBOXWDDMDISP_MAX_TEX_SAMPLERS 16
 #define VBOXWDDMDISP_TOTAL_SAMPLERS VBOXWDDMDISP_MAX_TEX_SAMPLERS + 5
 #define VBOXWDDMDISP_SAMPLER_IDX_IS_SPECIAL(_i) ((_i) >= D3DDMAPSAMPLER && (_i) <= D3DVERTEXTEXTURESAMPLER3)
@@ -140,42 +139,6 @@ typedef struct VBOXWDDMDISP_RENDERTGT
     VBOXWDDMDISP_RENDERTGT_FLAGS fFlags;
 } VBOXWDDMDISP_RENDERTGT, *PVBOXWDDMDISP_RENDERTGT;
 
-#define VBOXWDDMDISP_INDEX_UNDEFINED (~0U)
-typedef struct VBOXWDDMDISP_SWAPCHAIN_FLAGS
-{
-    union
-    {
-        struct
-        {
-            UINT bChanged                : 1;
-            UINT bRtReportingPresent     : 1; /* use VBox extension method for performing present */
-            UINT bSwitchReportingPresent : 1; /* switch to use VBox extension method for performing present on next present */
-            UINT Reserved                : 29;
-        };
-        uint32_t Value;
-    };
-}VBOXWDDMDISP_SWAPCHAIN_FLAGS;
-
-typedef struct VBOXWDDMDISP_SWAPCHAIN
-{
-    RTLISTNODE ListEntry;
-    UINT iBB; /* Backbuffer index */
-    UINT cRTs; /* Number of render targets in the swapchain */
-    VBOXWDDMDISP_SWAPCHAIN_FLAGS fFlags;
-#ifndef VBOXWDDM_WITH_VISIBLE_FB
-    IDirect3DSurface9 *pRenderTargetFbCopy;
-    BOOL bRTFbCopyUpToDate;
-#endif
-    IDirect3DSwapChain9 *pSwapChainIf;
-    /* a read-only hWnd we receive from wine
-     * we use it for visible region notifications only,
-     * it MUST NOT be destroyed on swapchain destruction,
-     * wine will handle that for us */
-    HWND hWnd;
-    VBOXDISP_KMHANDLE hSwapchainKm;
-    VBOXWDDMDISP_RENDERTGT aRTs[VBOXWDDMDISP_MAX_SWAPCHAIN_SIZE];
-} VBOXWDDMDISP_SWAPCHAIN, *PVBOXWDDMDISP_SWAPCHAIN;
-
 typedef struct VBOXWDDMDISP_DEVICE *PVBOXWDDMDISP_DEVICE;
 typedef HRESULT FNVBOXWDDMCREATEDIRECT3DDEVICE(PVBOXWDDMDISP_DEVICE pDevice);
 typedef FNVBOXWDDMCREATEDIRECT3DDEVICE *PFNVBOXWDDMCREATEDIRECT3DDEVICE;
@@ -190,7 +153,6 @@ typedef struct VBOXWDDMDISP_DEVICE
     PFNVBOXWDDMCREATEDIRECT3DDEVICE pfnCreateDirect3DDevice;
     PFNVBOXWDDMCREATESHAREDPRIMARY pfnCreateSharedPrimary;
     IDirect3DDevice9 *pDevice9If;
-    RTLISTANCHOR SwapchainList;
     UINT u32IfVersion;
     UINT uRtVersion;
     D3DDDI_DEVICECALLBACKS RtCallbacks;
@@ -271,7 +233,6 @@ typedef struct VBOXWDDMDISP_ALLOCATION
     VBOXWDDMDISP_LOCKINFO LockInfo;
     VBOXWDDM_DIRTYREGION DirtyRegion; /* <- dirty region to notify host about */
     VBOXWDDM_SURFACE_DESC SurfDesc;
-    PVBOXWDDMDISP_SWAPCHAIN pSwapchain;
 #ifdef VBOX_WITH_MESA3D
     uint32_t hostID;
 #endif
@@ -311,37 +272,6 @@ typedef struct VBOXWDDMDISP_OVERLAY
 #define VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc) (((pRc)->cAllocations)/6)
 #define VBOXDISP_CUBEMAP_INDEX_TO_FACE(pRc, idx) ((D3DCUBEMAP_FACES)(D3DCUBEMAP_FACE_POSITIVE_X+(idx)/VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc)))
 #define VBOXDISP_CUBEMAP_INDEX_TO_LEVEL(pRc, idx) ((idx)%VBOXDISP_CUBEMAP_LEVELS_COUNT(pRc))
-
-DECLINLINE(PVBOXWDDMDISP_SWAPCHAIN) vboxWddmSwapchainForAlloc(PVBOXWDDMDISP_ALLOCATION pAlloc)
-{
-    return pAlloc->pSwapchain;
-}
-
-DECLINLINE(UINT) vboxWddmSwapchainIdxFb(PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
-{
-    return (pSwapchain->iBB + pSwapchain->cRTs - 1) % pSwapchain->cRTs;
-}
-
-/* if swapchain contains only one surface returns this surface */
-DECLINLINE(PVBOXWDDMDISP_RENDERTGT) vboxWddmSwapchainGetBb(PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
-{
-    if (pSwapchain->cRTs)
-    {
-        Assert(pSwapchain->iBB < pSwapchain->cRTs);
-        return &pSwapchain->aRTs[pSwapchain->iBB];
-    }
-    return NULL;
-}
-
-DECLINLINE(PVBOXWDDMDISP_RENDERTGT) vboxWddmSwapchainGetFb(PVBOXWDDMDISP_SWAPCHAIN pSwapchain)
-{
-    if (pSwapchain->cRTs)
-    {
-        UINT iFb = vboxWddmSwapchainIdxFb(pSwapchain);
-        return &pSwapchain->aRTs[iFb];
-    }
-    return NULL;
-}
 
 void vboxWddmResourceInit(PVBOXWDDMDISP_RESOURCE pRc, UINT cAllocs);
 

@@ -23,10 +23,4 @@
 
 #include <iprt/win/windows.h>
 
-#if 0
-HRESULT vboxDispMpInternalInit();
-HRESULT vboxDispMpInternalTerm();
-HRESULT vboxDispMpInternalCancel(struct VBOXWDDMDISP_CONTEXT *pContext, struct VBOXWDDMDISP_SWAPCHAIN *pSwapchain);
-#endif
-
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_VBoxDispMpInternal_h */

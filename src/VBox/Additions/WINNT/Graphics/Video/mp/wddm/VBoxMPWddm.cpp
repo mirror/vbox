@@ -1110,7 +1110,6 @@ NTSTATUS DxgkDdiStartDevice(
                     vboxVdmaDdiNodesInit(pDevExt);
                     vboxVideoCmInit(&pDevExt->CmMgr);
                     vboxVideoCmInit(&pDevExt->SeamlessCtxMgr);
-                    InitializeListHead(&pDevExt->SwapchainList3D);
                     pDevExt->cContexts3D = 0;
                     pDevExt->cContexts2D = 0;
                     pDevExt->cContextsDispIfResize = 0;
@@ -4697,7 +4696,6 @@ static NTSTATUS APIENTRY DxgkDdiPresentDisplayOnly(
     SrcAllocData.Addr.SegmentId = 0;
     SrcAllocData.Addr.pvMem = pPresentDisplayOnly->pSource;
     SrcAllocData.hostID = 0;
-    SrcAllocData.pSwapchain = NULL;
 
     RECT UpdateRect;
     RT_ZERO(UpdateRect);

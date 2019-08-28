@@ -133,7 +133,6 @@ typedef struct _VBOXMP_DEVEXT
    VBOXVIDEOCM_ALLOC_MGR AllocMgr;
    VBOXVDMADDI_NODE aNodes[VBOXWDDM_NUM_NODES];
    LIST_ENTRY DpcCmdQueue;
-   LIST_ENTRY SwapchainList3D;
    /* mutex for context list operations */
    KSPIN_LOCK ContextLock;
    KSPIN_LOCK SynchLock;
