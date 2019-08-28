@@ -13999,7 +13999,7 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
      * problematic because of the setjmp/longjmp clobbering above.
      */
     if (   rcStrict == VINF_SUCCESS
-        && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW))
+        && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_PREEMPT_TIMER))
         rcStrict = iemHandleNestedInstructionBoundraryFFs(pVCpu, rcStrict);
 #endif
 
