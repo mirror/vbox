@@ -212,21 +212,15 @@
 /** The maximum default chunk size for a single data transfer. */
 #define VBOX_SHARED_CLIPBOARD_MAX_CHUNK_SIZE                  _64K
 
-/** Maximum number of concurrent Shared Clipboard transfers a VM can have.
- *  Number 0 always is reserved for the client itself. */
-#define VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS                   UINT16_MAX - 1
-/** Maximum number of concurrent events a transfer can have. */
-#define VBOX_SHARED_CLIPBOARD_MAX_EVENTS                      UINT16_MAX
-
 /**
- * Creates a context ID out of a source ID.
+ * Creates a context ID out of a source ID and and event ID.
  *
  * ID 0 *always* is reserved for the client itself, whereas
  * IDs > 0 are being used for transfers of this client.
  */
-#define VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(uID, uEvent) \
-    RT_MAKE_U32(uEvent, uID)
-/** Gets the transfer ID out of a context ID. */
+#define VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(uSourceID, uEventID) \
+    RT_MAKE_U32(uEventID, uSourceID)
+/** Gets the source ID out of a context ID. */
 #define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_SOURCE(uContextID) \
     RT_HI_U16(uContextID)
 /** Gets the event ID out of a context ID. */

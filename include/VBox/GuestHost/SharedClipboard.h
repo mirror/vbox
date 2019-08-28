@@ -109,6 +109,24 @@ typedef struct _SHAREDCLIPBOARDEVENTPAYLOAD
     uint32_t cbData;
 } SHAREDCLIPBOARDEVENTPAYLOAD, *PSHAREDCLIPBOARDEVENTPAYLOAD;
 
+/** Defines an event source ID. */
+typedef uint16_t VBOXCLIPBOARDEVENTSOURCEID;
+/** Defines a pointer to a event source ID. */
+typedef VBOXCLIPBOARDEVENTSOURCEID *PVBOXCLIPBOARDEVENTSOURCEID;
+
+/** Defines an event ID. */
+typedef uint16_t VBOXCLIPBOARDEVENTID;
+/** Defines a pointer to a event source ID. */
+typedef VBOXCLIPBOARDEVENTID *PVBOXCLIPBOARDEVENTID;
+
+/** Maximum number of concurrent Shared Clipboard transfers a VM can have.
+ *  Number 0 always is reserved for the client itself. */
+#define VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS                   UINT16_MAX - 1
+/** Maximum number of concurrent event sources. */
+#define VBOX_SHARED_CLIPBOARD_MAX_EVENT_SOURCES               UINT16_MAX
+/** Maximum number of concurrent events a single event source can have. */
+#define VBOX_SHARED_CLIPBOARD_MAX_EVENTS                      UINT16_MAX
+
 /**
  * Structure for maintaining a Shared Clipboard event.
  */
@@ -117,7 +135,7 @@ typedef struct _SHAREDCLIPBOARDEVENT
     /** List node. */
     RTLISTNODE                   Node;
     /** The event's ID, for self-reference. */
-    uint16_t                     uID;
+    VBOXCLIPBOARDEVENTID         uID;
     /** Event semaphore for signalling the event. */
     RTSEMEVENT                   hEventSem;
     /** Payload to this event. Optional and can be NULL. */
@@ -133,28 +151,27 @@ typedef struct _SHAREDCLIPBOARDEVENT
 typedef struct _SHAREDCLIPBOARDEVENTSOURCE
 {
     /** The event source' ID. */
-    uint16_t                 uID;
-    /** Next upcoming event ID.
-     *  0 is reserved for invalid event IDs. */
-    uint16_t                 uEventIDNext;
+    VBOXCLIPBOARDEVENTSOURCEID uID;
+    /** Next upcoming event ID. */
+    VBOXCLIPBOARDEVENTID       uEventIDNext;
     /** List of events (PSHAREDCLIPBOARDEVENT). */
-    RTLISTANCHOR             lstEvents;
+    RTLISTANCHOR               lstEvents;
 } SHAREDCLIPBOARDEVENTSOURCE, *PSHAREDCLIPBOARDEVENTSOURCE;
 
 int SharedClipboardPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
                                 PSHAREDCLIPBOARDEVENTPAYLOAD *ppPayload);
 void SharedClipboardPayloadFree(PSHAREDCLIPBOARDEVENTPAYLOAD pPayload);
 
-int SharedClipboardEventSourceCreate(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID);
+int SharedClipboardEventSourceCreate(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTSOURCEID uID);
 void SharedClipboardEventSourceDestroy(PSHAREDCLIPBOARDEVENTSOURCE pSource);
 
-uint16_t SharedClipboardEventIDGenerate(PSHAREDCLIPBOARDEVENTSOURCE pSource);
-int SharedClipboardEventRegister(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID);
-int SharedClipboardEventUnregister(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID);
-int SharedClipboardEventWait(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID, RTMSINTERVAL uTimeoutMs,
+VBOXCLIPBOARDEVENTID SharedClipboardEventIDGenerate(PSHAREDCLIPBOARDEVENTSOURCE pSource);
+int SharedClipboardEventRegister(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID);
+int SharedClipboardEventUnregister(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID);
+int SharedClipboardEventWait(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID, RTMSINTERVAL uTimeoutMs,
                              PSHAREDCLIPBOARDEVENTPAYLOAD* ppPayload);
-int SharedClipboardEventSignal(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID, PSHAREDCLIPBOARDEVENTPAYLOAD pPayload);
-void SharedClipboardEventPayloadDetach(PSHAREDCLIPBOARDEVENTSOURCE pSource, uint16_t uID);
+int SharedClipboardEventSignal(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID, PSHAREDCLIPBOARDEVENTPAYLOAD pPayload);
+void SharedClipboardEventPayloadDetach(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID);
 
 /**
  * Enumeration to specify the Shared Clipboard URI source type.

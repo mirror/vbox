@@ -185,6 +185,7 @@
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+#include <iprt/rand.h>
 
 #include <VBox/err.h>
 #include <VBox/vmm/ssm.h>
@@ -227,10 +228,36 @@ static bool g_fHeadless = false;
 /** Global map of all connected clients. */
 ClipboardClientMap g_mapClients;
 
+/** Global map of all registered event sources. */
+ClipboardEventSourceMap g_mapEventSources;
+
 /** Global list of all clients which are queued up (deferred return) and ready
  *  to process new commands. The key is the (unique) client ID. */
 ClipboardClientQueue g_listClientsDeferred;
 
+
+/**
+ * Creates a (unique) event source ID.
+ *
+ * @returns VBox status code, or VERR_NOT_FOUND on error.
+ * @param   puID                Where to store the created event source ID on success.
+ */
+int vboxSvcClipboardEventSourceCreateID(PVBOXCLIPBOARDEVENTSOURCEID puID)
+{
+    AssertPtrReturn(puID, VERR_INVALID_POINTER);
+
+    for (uint32_t i = 0; i < 32; i++) /* Don't try too hard. */
+    {
+        VBOXCLIPBOARDEVENTSOURCEID uID = RTRandU32() % VBOX_SHARED_CLIPBOARD_MAX_EVENT_SOURCES;
+        if (g_mapEventSources.find(uID) == g_mapEventSources.end())
+        {
+            *puID = uID;
+            return VINF_SUCCESS;
+        }
+    }
+
+    return VERR_NOT_FOUND;
+}
 
 uint32_t vboxSvcClipboardGetMode(void)
 {
@@ -737,7 +764,7 @@ int vboxSvcClipboardSendFormatsWrite(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBO
     PVBOXCLIPBOARDCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE, 3);
     if (pMsg)
     {
-        uint16_t uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
+        VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
 
         HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pClient->Events.uID, uEvent));
         HGCMSvcSetU32(&pMsg->m_paParms[1], pFormats->uFormats);
@@ -1034,8 +1061,6 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
 {
     RT_NOREF(fRequestor, fRestoring);
 
-    int rc = VINF_SUCCESS;
-
     PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
     AssertPtr(pvClient);
 
@@ -1043,28 +1068,34 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     pClient->uClientID = u32ClientID;
 
     /* Create the client's own event source. */
-    SharedClipboardEventSourceCreate(&pClient->Events, (uint16_t)g_mapClients.size());
-
-    LogFlowFunc(("[Client %RU32] Using event source %RU32\n", u32ClientID, pClient->Events.uID));
-
-    /* Reset the client state. */
-    vboxSvcClipboardClientStateReset(&pClient->State);
-
-    /* (Re-)initialize the client state. */
-    vboxSvcClipboardClientStateInit(&pClient->State, u32ClientID);
-
-    rc = VBoxClipboardSvcImplConnect(pClient, VBoxSvcClipboardGetHeadless());
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    VBOXCLIPBOARDEVENTSOURCEID uEventSourceID;
+    int rc = vboxSvcClipboardEventSourceCreateID(&uEventSourceID);
     if (RT_SUCCESS(rc))
-        rc = SharedClipboardURICtxInit(&pClient->URI);
-#endif
-
+        rc = SharedClipboardEventSourceCreate(&pClient->Events, uEventSourceID);
     if (RT_SUCCESS(rc))
     {
-        VBOXCLIPBOARDCLIENTMAPENTRY ClientEntry;
-        RT_ZERO(ClientEntry);
+        LogFlowFunc(("[Client %RU32] Using event source %RU32\n", u32ClientID, pClient->Events.uID));
 
-        g_mapClients[u32ClientID] = ClientEntry; /** @todo Handle OOM / collisions? */
+        /* Reset the client state. */
+        vboxSvcClipboardClientStateReset(&pClient->State);
+
+        /* (Re-)initialize the client state. */
+        rc = vboxSvcClipboardClientStateInit(&pClient->State, u32ClientID);
+        if (RT_SUCCESS(rc))
+        {
+            rc = VBoxClipboardSvcImplConnect(pClient, VBoxSvcClipboardGetHeadless());
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+            if (RT_SUCCESS(rc))
+                rc = SharedClipboardURICtxInit(&pClient->URI);
+#endif
+            if (RT_SUCCESS(rc))
+            {
+                VBOXCLIPBOARDCLIENTMAPENTRY ClientEntry;
+                RT_ZERO(ClientEntry);
+
+                g_mapClients[u32ClientID] = ClientEntry; /** @todo Handle OOM / collisions? */
+            }
+        }
     }
 
     LogFlowFuncLeaveRC(rc);

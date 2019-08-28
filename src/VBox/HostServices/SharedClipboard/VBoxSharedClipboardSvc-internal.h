@@ -180,12 +180,27 @@ typedef struct _VBOXCLIPBOARDCLIENT
     } Pending;
 } VBOXCLIPBOARDCLIENT, *PVBOXCLIPBOARDCLIENT;
 
+/**
+ * Structure for keeping a single (HGCM) client map entry.
+ * Currently empty.
+ */
 typedef struct _VBOXCLIPBOARDCLIENTMAPENTRY
 {
 } VBOXCLIPBOARDCLIENTMAPENTRY;
 
-/** Map holding pointers to drag and drop clients. Key is the (unique) HGCM client ID. */
+/**
+ * Structure for keeping a single event source map entry.
+ * Currently empty.
+ */
+typedef struct _VBOXCLIPBOARDEVENTSOURCEMAPENTRY
+{
+} VBOXCLIPBOARDEVENTSOURCEMAPENTRY;
+
+/** Map holding information about connected HGCM clients. Key is the (unique) HGCM client ID. */
 typedef std::map<uint32_t, VBOXCLIPBOARDCLIENTMAPENTRY> ClipboardClientMap;
+
+/** Map holding information about event sources. Key is the (unique) event source ID. */
+typedef std::map<VBOXCLIPBOARDEVENTSOURCEID, VBOXCLIPBOARDEVENTSOURCEMAPENTRY> ClipboardEventSourceMap;
 
 /** Simple queue (list) which holds deferred (waiting) clients. */
 typedef std::list<uint32_t> ClipboardClientQueue;

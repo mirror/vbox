@@ -88,22 +88,22 @@ DECLCALLBACK(int) vboxSvcClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, 
                                                                VBOX_SHARED_CLIPBOARD_CPARMS_ROOT_LIST_HDR_READ);
     if (pMsgHdr)
     {
-        uint16_t uEventHdrRead = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
-        HGCMSvcSetU32(&pMsgHdr->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEventHdrRead));
+        HGCMSvcSetU32(&pMsgHdr->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
         HGCMSvcSetU32(&pMsgHdr->m_paParms[1], 0 /* fRoots */);
 
         rc = vboxSvcClipboardMsgAdd(pClient, pMsgHdr, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEventHdrRead);
+            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
             AssertRC(rc2);
 
             rc = vboxSvcClipboardClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 PSHAREDCLIPBOARDEVENTPAYLOAD pPayloadHdr;
-                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEventHdrRead,
+                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent,
                                               pCtx->pTransfer->uTimeoutMs, &pPayloadHdr);
                 if (RT_SUCCESS(rc))
                 {
@@ -127,14 +127,14 @@ DECLCALLBACK(int) vboxSvcClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, 
                                     PVBOXCLIPBOARDCLIENTMSG pMsgEntry = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_ENTRY_READ,
                                                                                                  VBOX_SHARED_CLIPBOARD_CPARMS_ROOT_LIST_ENTRY_READ_REQ);
 
-                                    uint16_t uEventEntryRead = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+                                    uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
                                     HGCMSvcSetU32(&pMsgEntry->m_paParms[0],
-                                                  VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEventEntryRead));
+                                                  VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
                                     HGCMSvcSetU32(&pMsgEntry->m_paParms[1], 0 /* fRoots */);
                                     HGCMSvcSetU32(&pMsgEntry->m_paParms[2], i /* uIndex */);
 
-                                    rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEventEntryRead);
+                                    rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
                                     AssertRC(rc2);
 
                                     rc = vboxSvcClipboardMsgAdd(pClient, pMsgEntry, true /* fAppend */);
@@ -142,7 +142,7 @@ DECLCALLBACK(int) vboxSvcClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, 
                                         break;
 
                                     PSHAREDCLIPBOARDEVENTPAYLOAD pPayloadEntry;
-                                    rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEventEntryRead,
+                                    rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent,
                                                                   pCtx->pTransfer->uTimeoutMs, &pPayloadEntry);
                                     if (RT_FAILURE(rc))
                                         break;
@@ -154,7 +154,7 @@ DECLCALLBACK(int) vboxSvcClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, 
 
                                     SharedClipboardPayloadFree(pPayloadEntry);
 
-                                    SharedClipboardEventUnregister(&pCtx->pTransfer->Events, uEventEntryRead);
+                                    SharedClipboardEventUnregister(&pCtx->pTransfer->Events, uEvent);
 
                                     if (RT_FAILURE(rc))
                                         break;
@@ -181,7 +181,7 @@ DECLCALLBACK(int) vboxSvcClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, 
                 }
             }
 
-            SharedClipboardEventUnregister(&pCtx->pTransfer->Events, uEventHdrRead);
+            SharedClipboardEventUnregister(&pCtx->pTransfer->Events, uEvent);
         }
     }
     else
@@ -205,7 +205,7 @@ DECLCALLBACK(int) vboxSvcClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
                                                             VBOX_SHARED_CLIPBOARD_CPARMS_LIST_OPEN);
     if (pMsg)
     {
-        const uint16_t uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         pMsg->m_Ctx.uContextID = VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent);
 
@@ -262,7 +262,7 @@ DECLCALLBACK(int) vboxSvcClipboardURIListClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
                                                             VBOX_SHARED_CLIPBOARD_CPARMS_LIST_CLOSE);
     if (pMsg)
     {
-        const uint16_t uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         pMsg->m_Ctx.uContextID = VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent);
 
@@ -309,7 +309,7 @@ DECLCALLBACK(int) vboxSvcClipboardURIListHdrRead(PSHAREDCLIPBOARDPROVIDERCTX pCt
                                                             VBOX_SHARED_CLIPBOARD_CPARMS_LIST_HDR_READ_REQ);
     if (pMsg)
     {
-        const uint16_t uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
         HGCMSvcSetU64(&pMsg->m_paParms[1], hList);
@@ -369,7 +369,7 @@ DECLCALLBACK(int) vboxSvcClipboardURIListEntryRead(PSHAREDCLIPBOARDPROVIDERCTX p
                                                             VBOX_SHARED_CLIPBOARD_CPARMS_LIST_ENTRY_READ);
     if (pMsg)
     {
-        const uint16_t uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
         HGCMSvcSetU64(&pMsg->m_paParms[1], hList);
@@ -428,7 +428,7 @@ int vboxSvcClipboardURIObjOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDO
                                                             VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_OPEN);
     if (pMsg)
     {
-        const uint16_t uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pCreateParms->pszPath, pCreateParms->fCreate));
 
@@ -487,7 +487,7 @@ int vboxSvcClipboardURIObjClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOAR
                                                             VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_CLOSE);
     if (pMsg)
     {
-        const uint16_t uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
         HGCMSvcSetU64(&pMsg->m_paParms[1], hObj);
@@ -540,7 +540,7 @@ int vboxSvcClipboardURIObjRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARD
                                                             VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_READ_REQ);
     if (pMsg)
     {
-        const uint16_t uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
         HGCMSvcSetU64(&pMsg->m_paParms[1], hObj);
@@ -598,7 +598,7 @@ int vboxSvcClipboardURIObjWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOAR
                                                             VBOX_SHARED_CLIPBOARD_CPARMS_OBJ_WRITE);
     if (pMsg)
     {
-        const uint16_t uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pCtx->pTransfer->State.uID, uEvent));
         HGCMSvcSetU64(&pMsg->m_paParms[1], hObj);
@@ -1180,7 +1180,7 @@ static int vboxSvcClipboardURITransferHandleReply(PVBOXCLIPBOARDCLIENT pClient, 
                         rc = HGCMSvcGetU32(&paParms[0], &uCID);
                         if (RT_SUCCESS(rc))
                         {
-                            const uint16_t uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
+                            const VBOXCLIPBOARDEVENTID uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
 
                             LogFlowFunc(("uCID=%RU32 -> uEvent=%RU32\n", uCID, uEvent));
 
@@ -1421,7 +1421,7 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                 rc = HGCMSvcGetU32(&paParms[0], &uCID);
                 if (RT_SUCCESS(rc))
                 {
-                    const uint16_t uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
+                    const VBOXCLIPBOARDEVENTID uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
 
                     PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
                     rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
@@ -1470,7 +1470,7 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                 rc = HGCMSvcGetU32(&paParms[0], &uCID);
                 if (RT_SUCCESS(rc))
                 {
-                    const uint16_t uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
+                    const VBOXCLIPBOARDEVENTID uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
 
                     PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
                     rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
@@ -1550,7 +1550,7 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                     rc = HGCMSvcGetU32(&paParms[0], &uCID);
                     if (RT_SUCCESS(rc))
                     {
-                        const uint16_t uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
+                        const VBOXCLIPBOARDEVENTID uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
 
                         PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
                         rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
@@ -1598,7 +1598,7 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                     rc = HGCMSvcGetU32(&paParms[0], &uCID);
                     if (RT_SUCCESS(rc))
                     {
-                        const uint16_t uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
+                        const VBOXCLIPBOARDEVENTID uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
 
                         PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
                         rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
@@ -1644,7 +1644,7 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
                 rc = HGCMSvcGetU32(&paParms[0], &uCID);
                 if (RT_SUCCESS(rc))
                 {
-                    const uint16_t uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
+                    const VBOXCLIPBOARDEVENTID uEvent = VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uCID);
 
                     PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
                     rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
