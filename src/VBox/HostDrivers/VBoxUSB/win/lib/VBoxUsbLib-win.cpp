@@ -499,7 +499,7 @@ static int usbLibDevStrRootHubNameGet(HANDLE hCtl, LPSTR* plpszName)
     return rc;
 }
 
-static int usbLibDevCfgDrGet(HANDLE hHub, ULONG iPort, ULONG iDr, PUSB_CONFIGURATION_DESCRIPTOR *ppDr)
+static int usbLibDevCfgDrGet(HANDLE hHub, LPCSTR lpcszHubName, ULONG iPort, ULONG iDr, PUSB_CONFIGURATION_DESCRIPTOR *ppDr)
 {
     *ppDr = NULL;
 
@@ -518,7 +518,7 @@ static int usbLibDevCfgDrGet(HANDLE hHub, ULONG iPort, ULONG iDr, PUSB_CONFIGURA
                                 &cbReturned, NULL))
     {
         DWORD dwErr = GetLastError();
-        LogRelFunc(("DeviceIoControl 1 fail dwErr (%d)\n", dwErr));
+        LogRelFunc(("DeviceIoControl 1 fail dwErr (%d) on hub %s port %d\n", dwErr, lpcszHubName, iPort));
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         AssertFailed();
 #endif
@@ -555,7 +555,7 @@ static int usbLibDevCfgDrGet(HANDLE hHub, ULONG iPort, ULONG iDr, PUSB_CONFIGURA
                                     &cbReturned, NULL))
         {
             DWORD dwErr = GetLastError();
-            LogRelFunc(("DeviceIoControl 2 fail dwErr (%d)\n", dwErr));
+            LogRelFunc(("DeviceIoControl 2 fail dwErr (%d) on hub %s port %d\n", dwErr, lpcszHubName, iPort));
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
             AssertFailed();
 #endif
@@ -589,7 +589,7 @@ static void usbLibDevCfgDrFree(PUSB_CONFIGURATION_DESCRIPTOR pDr)
     RTMemFree(pRq);
 }
 
-static int usbLibDevStrDrEntryGet(HANDLE hHub, ULONG iPort, ULONG iDr, USHORT idLang, PVBOXUSB_STRING_DR_ENTRY *ppList)
+static int usbLibDevStrDrEntryGet(HANDLE hHub, LPCSTR lpcszHubName, ULONG iPort, ULONG iDr, USHORT idLang, PVBOXUSB_STRING_DR_ENTRY *ppList)
 {
     char szBuf[sizeof (USB_DESCRIPTOR_REQUEST) + MAXIMUM_USB_STRING_LENGTH];
     RT_ZERO(szBuf);
@@ -609,7 +609,7 @@ static int usbLibDevStrDrEntryGet(HANDLE hHub, ULONG iPort, ULONG iDr, USHORT id
                          &cbReturned, NULL))
     {
         DWORD dwErr = GetLastError();
-        LogRel(("Getting USB descriptor (id %u) failed with error %ld\n", iDr, dwErr));
+        LogRel(("Getting USB descriptor (id %u) failed with error %ld on hub %s port %d\n", iDr, dwErr, lpcszHubName, iPort));
         return RTErrConvertFromWin32(dwErr);
     }
 
@@ -658,19 +658,19 @@ static void usbLibDevStrDrEntryFreeList(PVBOXUSB_STRING_DR_ENTRY pDr)
     }
 }
 
-static int usbLibDevStrDrEntryGetForLangs(HANDLE hHub, ULONG iPort, ULONG iDr, ULONG cIdLang, const USHORT *pIdLang, PVBOXUSB_STRING_DR_ENTRY *ppList)
+static int usbLibDevStrDrEntryGetForLangs(HANDLE hHub, LPCSTR lpcszHubName, ULONG iPort, ULONG iDr, ULONG cIdLang, const USHORT *pIdLang, PVBOXUSB_STRING_DR_ENTRY *ppList)
 {
     for (ULONG i = 0; i < cIdLang; ++i)
     {
-        usbLibDevStrDrEntryGet(hHub, iPort, iDr, pIdLang[i], ppList);
+        usbLibDevStrDrEntryGet(hHub, lpcszHubName, iPort, iDr, pIdLang[i], ppList);
     }
     return VINF_SUCCESS;
 }
 
-static int usbLibDevStrDrEntryGetAll(HANDLE hHub, ULONG iPort, PUSB_DEVICE_DESCRIPTOR pDevDr, PUSB_CONFIGURATION_DESCRIPTOR pCfgDr, PVBOXUSB_STRING_DR_ENTRY *ppList)
+static int usbLibDevStrDrEntryGetAll(HANDLE hHub, LPCSTR lpcszHubName, ULONG iPort, PUSB_DEVICE_DESCRIPTOR pDevDr, PUSB_CONFIGURATION_DESCRIPTOR pCfgDr, PVBOXUSB_STRING_DR_ENTRY *ppList)
 {
     /* Read string descriptor zero to determine what languages are available. */
-    int rc = usbLibDevStrDrEntryGet(hHub, iPort, 0, 0, ppList);
+    int rc = usbLibDevStrDrEntryGet(hHub, lpcszHubName, iPort, 0, 0, ppList);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -680,19 +680,19 @@ static int usbLibDevStrDrEntryGetAll(HANDLE hHub, ULONG iPort, PUSB_DEVICE_DESCR
 
     if (pDevDr->iManufacturer)
     {
-        rc = usbLibDevStrDrEntryGetForLangs(hHub, iPort, pDevDr->iManufacturer, cIdLang, pIdLang, ppList);
+        rc = usbLibDevStrDrEntryGetForLangs(hHub, lpcszHubName, iPort, pDevDr->iManufacturer, cIdLang, pIdLang, ppList);
         AssertRC(rc);
     }
 
     if (pDevDr->iProduct)
     {
-        rc = usbLibDevStrDrEntryGetForLangs(hHub, iPort, pDevDr->iProduct, cIdLang, pIdLang, ppList);
+        rc = usbLibDevStrDrEntryGetForLangs(hHub, lpcszHubName, iPort, pDevDr->iProduct, cIdLang, pIdLang, ppList);
         AssertRC(rc);
     }
 
     if (pDevDr->iSerialNumber)
     {
-        rc = usbLibDevStrDrEntryGetForLangs(hHub, iPort, pDevDr->iSerialNumber, cIdLang, pIdLang, ppList);
+        rc = usbLibDevStrDrEntryGetForLangs(hHub, lpcszHubName, iPort, pDevDr->iSerialNumber, cIdLang, pIdLang, ppList);
         AssertRC(rc);
     }
 
@@ -723,7 +723,7 @@ static int usbLibDevStrDrEntryGetAll(HANDLE hHub, ULONG iPort, PUSB_DEVICE_DESCR
                 PUSB_CONFIGURATION_DESCRIPTOR pCurCfgDr = (PUSB_CONFIGURATION_DESCRIPTOR)pCmnDr;
                 if (!pCurCfgDr->iConfiguration)
                     break;
-                rc = usbLibDevStrDrEntryGetForLangs(hHub, iPort, pCurCfgDr->iConfiguration, cIdLang, pIdLang, ppList);
+                rc = usbLibDevStrDrEntryGetForLangs(hHub, lpcszHubName, iPort, pCurCfgDr->iConfiguration, cIdLang, pIdLang, ppList);
                 AssertRC(rc);
                 break;
             }
@@ -737,7 +737,7 @@ static int usbLibDevStrDrEntryGetAll(HANDLE hHub, ULONG iPort, PUSB_DEVICE_DESCR
                 PUSB_INTERFACE_DESCRIPTOR pCurIfDr = (PUSB_INTERFACE_DESCRIPTOR)pCmnDr;
                 if (!pCurIfDr->iInterface)
                     break;
-                rc = usbLibDevStrDrEntryGetForLangs(hHub, iPort, pCurIfDr->iInterface, cIdLang, pIdLang, ppList);
+                rc = usbLibDevStrDrEntryGetForLangs(hHub, lpcszHubName, iPort, pCurIfDr->iInterface, cIdLang, pIdLang, ppList);
                 AssertRC(rc);
                 break;
             }
@@ -768,7 +768,7 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
                                   &cbReturned, NULL))
     {
         DWORD dwErr = GetLastError(); NOREF(dwErr);
-        LogRel(("Getting USB connection information failed with error %ld\n", dwErr));
+        LogRel(("Getting USB connection information failed with error %ld on hub %s\n", dwErr, lpcszHubName));
         AssertMsg(dwErr == ERROR_DEVICE_NOT_CONNECTED, (__FUNCTION__": DeviceIoControl failed dwErr (%d)\n", dwErr));
         return VERR_GENERAL_FAILURE;
     }
@@ -781,13 +781,13 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
 
     if (pConInfo->DeviceIsHub)
     {
-        LPSTR lpszHubName = NULL;
-        rc = usbLibDevStrHubNameGet(hHub, iPort, &lpszHubName);
+        LPSTR lpszChildHubName = NULL;
+        rc = usbLibDevStrHubNameGet(hHub, iPort, &lpszChildHubName);
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
-            rc = usbLibDevGetHubDevices(lpszHubName, ppDevs, pcDevs);
-            usbLibDevStrFree(lpszHubName);
+            rc = usbLibDevGetHubDevices(lpszChildHubName, ppDevs, pcDevs);
+            usbLibDevStrFree(lpszChildHubName);
             AssertRC(rc);
             return rc;
         }
@@ -802,16 +802,17 @@ static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iP
     Assert(!!lpszName == !!RT_SUCCESS(rc));
     if (!lpszName)
     {
+        LogRelFunc(("warning: no DriverKey on hub %s port %d\n", lpcszHubName, iPort));
         lpszName = &nameEmptyBuf;
         fFreeNameBuf = false;
     }
 
     PUSB_CONFIGURATION_DESCRIPTOR pCfgDr = NULL;
     PVBOXUSB_STRING_DR_ENTRY pList = NULL;
-    rc = usbLibDevCfgDrGet(hHub, iPort, 0, &pCfgDr);
+    rc = usbLibDevCfgDrGet(hHub, lpcszHubName, iPort, 0, &pCfgDr);
     if (pCfgDr)
     {
-        rc = usbLibDevStrDrEntryGetAll(hHub, iPort, &pConInfo->DeviceDescriptor, pCfgDr, &pList);
+        rc = usbLibDevStrDrEntryGetAll(hHub, lpcszHubName, iPort, &pConInfo->DeviceDescriptor, pCfgDr, &pList);
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
         AssertRC(rc); // this can fail if device suspended
 #endif
@@ -877,7 +878,7 @@ static int usbLibDevGetHubDevices(LPCSTR lpszName, PUSBDEVICE *ppDevs, uint32_t 
                             &NodeInfo, sizeof (NodeInfo),
                             &cbReturned, NULL))
         {
-            LogRel(("Getting USB node information failed with error %ld\n", GetLastError()));
+            LogRel(("Getting USB node information failed with error %ld on hub %s\n", GetLastError(), lpszName));
             AssertFailed();
             break;
         }
