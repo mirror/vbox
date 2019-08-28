@@ -895,7 +895,7 @@ static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
             VBoxCommonFromDeviceExt(pDevExt)->bHGSMI = FALSE;
     }
 }
-#ifdef VBOX_WITH_CROGL
+
 static NTSTATUS vboxWddmSetupDisplaysNew(PVBOXMP_DEVEXT pDevExt)
 {
     if (!VBoxCommonFromDeviceExt(pDevExt)->bHGSMI)
@@ -918,10 +918,9 @@ static NTSTATUS vboxWddmSetupDisplaysNew(PVBOXMP_DEVEXT pDevExt)
 
     return STATUS_SUCCESS;
 }
-#endif
+
 static NTSTATUS vboxWddmSetupDisplays(PVBOXMP_DEVEXT pDevExt)
 {
-#ifdef VBOX_WITH_CROGL
     if (pDevExt->fCmdVbvaEnabled)
     {
         NTSTATUS Status = vboxWddmSetupDisplaysNew(pDevExt);
@@ -929,7 +928,6 @@ static NTSTATUS vboxWddmSetupDisplays(PVBOXMP_DEVEXT pDevExt)
             VBoxCommonFromDeviceExt(pDevExt)->bHGSMI = FALSE;
         return Status;
     }
-#endif
 
     vboxWddmSetupDisplaysLegacy(pDevExt);
     return VBoxCommonFromDeviceExt(pDevExt)->bHGSMI ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
@@ -1642,9 +1640,7 @@ BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     vboxVtListDetach2List(&pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
 #endif
-#ifdef VBOX_WITH_CROGL
     if (!pDevExt->fCmdVbvaEnabled)
-#endif
     {
         vboxVdmaDdiCmdGetCompletedListIsr(pDevExt, &pdc->data.CompletedDdiCmdQueue);
     }
@@ -2809,13 +2805,11 @@ static BOOLEAN vboxWddmCallIsrCb(PVOID Context)
 {
     PVBOXWDDM_CALL_ISR pdc = (PVBOXWDDM_CALL_ISR)Context;
     PVBOXMP_DEVEXT pDevExt = pdc->pDevExt;
-#ifdef VBOX_WITH_CROGL
     if (pDevExt->fCmdVbvaEnabled)
     {
         AssertFailed(); /* Should not be here, because this is not used with 3D gallium driver. */
         return FALSE;
     }
-#endif
     return DxgkDdiInterruptRoutineLegacy(pDevExt, pdc->MessageNumber);
 }
 

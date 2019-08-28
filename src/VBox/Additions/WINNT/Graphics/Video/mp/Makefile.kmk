@@ -122,9 +122,6 @@ ifdef VBOX_WITH_WDDM
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/VBVABase.cpp \
  	$(PATH_ROOT)/src/VBox/Additions/common/VBoxVideo/Modesetting.cpp
 
- if defined(VBOX_WITH_CROGL)
-   VBoxWddm_DEFS          += VBOX_WITH_CROGL
- endif
  ifdef VBOXWDDM_WITH_VBVA
   VBoxWddm_SOURCES        += \
     wddm/VBoxMPVbva.cpp

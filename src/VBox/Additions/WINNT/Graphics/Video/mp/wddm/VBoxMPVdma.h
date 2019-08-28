@@ -156,9 +156,6 @@ AssertCompile(sizeof (VBOXVDMADDI_CMD) <= RT_SIZEOFMEMB(VBOXVDMACBUF_DR, aGuestD
 #define VBOXVDMACBUF_DR_FROM_DDI_CMD(_pCmd) ((PVBOXVDMACBUF_DR)(((uint8_t*)(_pCmd)) - RT_UOFFSETOF(VBOXVDMACBUF_DR, aGuestData)))
 
 #endif
-#ifdef VBOX_WITH_CROGL
-NTSTATUS vboxVdmaPostHideSwapchain(PVBOXWDDM_SWAPCHAIN pSwapchain);
-#endif
 
 NTSTATUS vboxVdmaGgDmaBltPerform(PVBOXMP_DEVEXT pDevExt, struct VBOXWDDM_ALLOC_DATA * pSrcAlloc, RECT* pSrcRect,
         struct VBOXWDDM_ALLOC_DATA *pDstAlloc, RECT* pDstRect);

@@ -39,9 +39,6 @@ VBoxDisp_DEFS         += LOG_TO_BACKDOOR #LOG_ENABLED
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxDisp_DEFS        += VBOX_WITH_VIDEOHWACCEL
 endif
-ifdef VBOX_WITH_CROGL
- VBoxDisp_DEFS        += VBOX_WITH_CROGL
-endif
 #VBoxDisp_DEFS         += VBOX_VBVA_ADJUST_RECT
 VBoxDisp_INCS          = ../../../include .. $(VBOX_GRAPHICS_INCS)
 VBoxDisp_LDFLAGS.x86   = /Entry:DrvEnableDriver@12
@@ -109,7 +106,6 @@ endif
 VBoxDispD3D_INCS     = \
 	../../../include \
 	.. \
-	$(VBOX_PATH_CROGL_INCLUDE) \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
 	$(VBOX_GRAPHICS_INCS)
 VBoxDispD3D_SOURCES  = \
