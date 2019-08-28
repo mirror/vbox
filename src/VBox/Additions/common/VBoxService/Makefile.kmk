@@ -105,7 +105,8 @@ endif
 ifdef VBOX_WITH_VBOXSERVICE_CLIPBOARD
  VBoxService_DEFS.os2    += VBOX_WITH_VBOXSERVICE_CLIPBOARD VBOX_WITH_SHARED_CLIPBOARD
  VBoxService_SOURCES.os2 += \
-	VBoxServiceClipboard-os2.cpp
+	VBoxServiceClipboard-os2.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-common.cpp
 endif
 
 ifdef VBOX_WITH_VBOXSERVICE_TOOLBOX
@@ -209,4 +210,3 @@ $$(VBoxService_0_OUTDIR)/VBoxService-win-icon.rc: $(VBOX_WINDOWS_ADDITIONS_ICON_
 	$(APPEND) $@ 'IDI_VIRTUALBOX ICON DISCARDABLE "$(subst /,\\,$(VBOX_WINDOWS_ADDITIONS_ICON_FILE))"'
 
 include $(FILE_KBUILD_SUB_FOOTER)
-
