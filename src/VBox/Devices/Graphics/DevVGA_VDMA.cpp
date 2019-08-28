@@ -2018,7 +2018,10 @@ static int vboxVDMACrGuestCtlProcess(struct VBOXVDMAHOST *pVdma, VBVAEXHOSTCTL *
 /**
  * Copies one page in a VBOXCMDVBVA_OPTYPE_PAGING_TRANSFER command.
  *
- * @param fIn - whether this is a page in or out op.
+ * @param pDevIns   Device instance data.
+ * @param uPageNo   Page frame number.
+ * @param pbVram    Pointer to the VRAM.
+ * @param fIn       Flag whether this is a page in or out op.
  * @thread VDMA
  *
  * the direction is VRA#M - related, so fIn == true - transfer to VRAM); false - transfer from VRAM
