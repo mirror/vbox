@@ -222,6 +222,12 @@ void UIAction::updateText()
     }
 }
 
+/* static */
+QString UIAction::simplifyText(QString strText)
+{
+    return strText.remove('.').remove('&');
+}
+
 
 /*********************************************************************************************************************************
 *   Class UIActionMenu implementation.                                                                                           *
@@ -1175,8 +1181,8 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "&Preferences...", "global preferences window"));
         setStatusTip(QApplication::translate("UIActionPool", "Display the global preferences window"));
-        setToolTip(text().remove('&').remove('.') +
-                   (shortcut().toString().isEmpty() ? "" : QString(" (%1)").arg(shortcut().toString())));
+        setToolTip(  QApplication::translate("UIActionPool", "Display Global Preferences")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1204,7 +1210,6 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "&Log"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the log menu"));
     }
 };
 
@@ -1244,7 +1249,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Find"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with searching options"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Find Pane (%1)").arg(shortcut().toString()));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Find Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1284,7 +1290,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Filter"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with filtering options"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Filter Pane (%1)").arg(shortcut().toString()));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Filter Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1324,7 +1331,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Bookmark"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with bookmarking options"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Bookmark Pane (%1)").arg(shortcut().toString()));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Bookmark Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1364,7 +1372,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Open pane with log viewer options"));
-        setToolTip(QApplication::translate("UIActionPool", "Open Options Pane (%1)").arg(shortcut().toString()));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Options Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1404,7 +1413,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Refresh"));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh selected virtual machine log"));
-        setToolTip(QApplication::translate("UIActionPool", "Refresh Virtual Machine Log (%1)").arg(shortcut().toString()));
+        setToolTip(  QApplication::translate("UIActionPool", "Refresh Virtual Machine Log")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1444,7 +1454,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "&Save..."));
         setShortcutScope(QApplication::translate("UIActionPool", "Log Viewer"));
         setStatusTip(QApplication::translate("UIActionPool", "Save selected virtual machine log"));
-        setToolTip(QApplication::translate("UIActionPool", "Save Virtual Machine Log (%1)").arg(shortcut().toString()));
+        setToolTip(  QApplication::translate("UIActionPool", "Save Virtual Machine Log")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1472,7 +1483,6 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the file manager"));
     }
 };
 
@@ -1499,7 +1509,6 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Host"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the file manager host submenu"));
     }
 };
 
@@ -1526,7 +1535,6 @@ protected:
     virtual void retranslateUi() /* override */
     {
         setName(QApplication::translate("UIActionPool", "Guest"));
-        setStatusTip(QApplication::translate("UIActionPool", "Open the file manager guest submenu"));
     }
 };
 
@@ -1563,8 +1571,9 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Copy to guest"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setToolTip(QApplication::translate("UIActionPool", "Copy the Selected Object(s) from Host to Guest"));
         setStatusTip(QApplication::translate("UIActionPool", "Copy the selected object(s) from host to guest"));
+        setToolTip(  QApplication::translate("UIActionPool", "Copy from Host to Guest")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1600,8 +1609,9 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Copy to host"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setToolTip(QApplication::translate("UIActionPool", "Copy the Selected Object(s) from Guest to Host"));
         setStatusTip(QApplication::translate("UIActionPool", "Copy the selected object(s) from guest to host"));
+        setToolTip(  QApplication::translate("UIActionPool", "Copy from Guest to Host")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1641,7 +1651,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Options"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager options"));
-        setToolTip(QApplication::translate("UIActionPool", "Open File Manager Options"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Options Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1681,7 +1692,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Log"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager log"));
-        setToolTip(QApplication::translate("UIActionPool", "Open File Manager Log"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Log Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1721,7 +1733,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Operations"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager operations"));
-        setToolTip(QApplication::translate("UIActionPool", "Open File Manager Operations"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Operations Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1761,7 +1774,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Session"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Open panel with file manager session"));
-        setToolTip(QApplication::translate("UIActionPool", "Open File Manager Session"));
+        setToolTip(  QApplication::translate("UIActionPool", "Open Session Pane")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1799,7 +1813,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Go Up"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Go one level up to parent folder"));
-        setToolTip(QApplication::translate("UIActionPool", "Go One Level Up to Parent Folder"));
+        setToolTip(  QApplication::translate("UIActionPool", "Go One Level Up")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1838,7 +1853,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Go Home"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Go to home folder"));
-        setToolTip(QApplication::translate("UIActionPool", "Go to Home Folder"));
+        setToolTip(  QApplication::translate("UIActionPool", "Go to Home Folder")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1877,7 +1893,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Delete"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Delete selected file object(s)"));
-        setToolTip(QApplication::translate("UIActionPool", "Delete Selected File Object(s)"));
+        setToolTip(  QApplication::translate("UIActionPool", "Delete Selected Object(s)")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1915,7 +1932,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Refresh"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Refresh"));
-        setToolTip(QApplication::translate("UIActionPool", "Refresh"));
+        setToolTip(  QApplication::translate("UIActionPool", "Refresh Contents")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1952,8 +1970,9 @@ protected:
     {
         setName(QApplication::translate("UIActionPool", "Rename"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
-        setStatusTip(QApplication::translate("UIActionPool", "Rename"));
-        setToolTip(QApplication::translate("UIActionPool", "Rename"));
+        setStatusTip(QApplication::translate("UIActionPool", "Rename selected file object"));
+        setToolTip(  QApplication::translate("UIActionPool", "Rename Selected Object")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -1990,7 +2009,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Create New Directory"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Create New Directory"));
-        setToolTip(QApplication::translate("UIActionPool", "Create New Directory"));
+        setToolTip(  QApplication::translate("UIActionPool", "Create New Directory")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -2028,7 +2048,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Copy"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Copy selected file object(s)"));
-        setToolTip(QApplication::translate("UIActionPool", "Copy Selected File Object(s)"));
+        setToolTip(  QApplication::translate("UIActionPool", "Copy Selected Object(s)")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -2065,7 +2086,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Cut"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Cut selected file object(s)"));
-        setToolTip(QApplication::translate("UIActionPool", "Cut Selected File Object(s)"));
+        setToolTip(  QApplication::translate("UIActionPool", "Cut Selected Object(s)")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -2102,7 +2124,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Paste"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Paste copied/cut file object(s)"));
-        setToolTip(QApplication::translate("UIActionPool", "Paste Copied/Cut File Object(s)"));
+        setToolTip(  QApplication::translate("UIActionPool", "Paste Copied/Cut Object(s)")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -2139,7 +2162,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Select All"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Select all files objects"));
-        setToolTip(QApplication::translate("UIActionPool", "Select All Files Objects"));
+        setToolTip(  QApplication::translate("UIActionPool", "Select All Objects")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -2177,7 +2201,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Invert Selection"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Invert the current selection"));
-        setToolTip(QApplication::translate("UIActionPool", "Invert the Current Selection"));
+        setToolTip(  QApplication::translate("UIActionPool", "Invert Current Selection")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 
@@ -2215,7 +2240,8 @@ protected:
         setName(QApplication::translate("UIActionPool", "Show Properties"));
         setShortcutScope(QApplication::translate("UIActionPool", "File Manager"));
         setStatusTip(QApplication::translate("UIActionPool", "Show the properties of currently selected file object(s)"));
-        setToolTip(QApplication::translate("UIActionPool", "Show the Properties of Currently Selected File Object(s)"));
+        setToolTip(  QApplication::translate("UIActionPool", "Show Properties of Current Object(s)")
+                   + (shortcut().isEmpty() ? QString() : QString(" (%1)").arg(shortcut().toString())));
     }
 };
 

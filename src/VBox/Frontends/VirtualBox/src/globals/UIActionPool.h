@@ -274,6 +274,10 @@ protected:
     /** Updates action text accordingly. */
     virtual void updateText();
 
+    /** Simplifies passed @a strText by removing dots and ampersands.
+      * @note Used to simplify action names for tool-tip needs. */
+    static QString simplifyText(QString strText);
+
 private:
 
     /** Holds the action type. */
