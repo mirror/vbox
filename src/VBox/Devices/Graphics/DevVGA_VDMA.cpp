@@ -1266,8 +1266,9 @@ DECLINLINE(int) vboxVDMACrCtlGetRc(PVBOXVDMACMD_CHROMIUM_CTL pCmd)
 }
 
 /**
- * @interface_method_impl{PDMIDISPLAYVBVACALLBACKS,pfnCrHgsmiControlCompleteAsync,
- *      Some indirect completion magic, you gotta love this code! }
+ * @interface_method_impl{PDMIDISPLAYVBVACALLBACKS,pfnCrHgsmiControlCompleteAsync}
+ *
+ * @note Some indirect completion magic, you gotta love this code!
  */
 DECLCALLBACK(int) vboxVDMACrHgsmiControlCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CTL pCmd, int rc)
 {
@@ -2378,8 +2379,9 @@ static int vboxVDMACrCtlHgsmiSetup(struct VBOXVDMAHOST *pVdma)
 }
 
 /**
- * @interface_method_impl{PDMIDISPLAYVBVACALLBACKS,pfnCrHgsmiControlCompleteAsync,
- *      Some indirect completion magic, you gotta love this code! }
+ * @interface_method_impl{PDMIDISPLAYVBVACALLBACKS,pfnCrHgsmiControlCompleteAsync}
+ *
+ * @note Some indirect completion magic, you gotta love this code!
  */
 DECLCALLBACK(int) vboxVDMACrHgsmiCommandCompleteAsync(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVDMACMD_CHROMIUM_CMD pCmd, int rc)
 {
@@ -3574,7 +3576,7 @@ typedef struct VBOXCMDVBVA_CMDHOSTCTL_SYNC
 } VBOXCMDVBVA_CMDHOSTCTL_SYNC;
 
 /**
- * @interface_method_impl{FNCRCTLCOMPLETION, Used by vboxCmdVBVACmdHostCtlSync.}
+ * @callback_method_impl{FNCRCTLCOMPLETION, Used by vboxCmdVBVACmdHostCtlSync.}
  */
 static DECLCALLBACK(void) vboxCmdVBVACmdHostCtlSyncCb(struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd, int rc, void *pvCompletion)
 {
