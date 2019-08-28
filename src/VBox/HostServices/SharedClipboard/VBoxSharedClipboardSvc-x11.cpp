@@ -241,6 +241,7 @@ struct _CLIPREADCBREQ
  * @returns iprt status code on failure
  *
  * @param pClient               Context information about the guest VM
+ * @param pCmdCtx               Command context to use.
  * @param pData                 Data block to put read data into.
  * @param pcbActual             Where to write the actual size of the written data
  *
@@ -251,8 +252,10 @@ struct _CLIPREADCBREQ
  *
  */
 int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient,
-                                 PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual)
+                                 PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual)
 {
+    RT_NOREF(pCmdCtx);
+
     LogFlowFunc(("pClient=%p, uFormat=%02X, pv=%p, cb=%u, pcbActual=%p\n",
                  pClient, pData->uFormat, pData->pvData, pData->cbData, pcbActual));
 
