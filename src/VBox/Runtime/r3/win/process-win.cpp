@@ -981,7 +981,7 @@ static bool rtProcWinLogSecAttr(HANDLE hUserObj)
  *
  * @returns Pointer to the SID on success. Free by calling RTMemFree.
  * @param   hToken              The token..
- * @param   prc                 Optional return code. 
+ * @param   prc                 Optional return code.
  */
 static PSID rtProcWinGetTokenUserSid(HANDLE hToken, int *prc)
 {
