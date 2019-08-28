@@ -150,8 +150,6 @@ typedef struct _VBOXMP_DEVEXT
    BOOLEAN fCmdVbvaEnabled;
    BOOLEAN fComplexTopologiesEnabled;
 
-   VBOXCMDVBVA CmdVbva;
-
    VBOXWDDM_GLOBAL_POINTER_INFO PointerInfo;
 
    VBOXVTLIST CtlList;

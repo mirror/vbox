@@ -1430,144 +1430,6 @@ NTSTATUS DxgkDdiDispatchIoRequest(
     return STATUS_SUCCESS;
 }
 
-#ifdef VBOX_WITH_CROGL
-BOOLEAN DxgkDdiInterruptRoutineNew(
-    IN CONST PVOID MiniportDeviceContext,
-    IN ULONG MessageNumber
-    )
-{
-    RT_NOREF(MessageNumber);
-//    LOGF(("ENTER, context(0x%p), msg(0x%x)", MiniportDeviceContext, MessageNumber));
-
-    vboxVDbgBreakFv();
-
-    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
-    BOOLEAN bOur = FALSE;
-    bool bNeedDpc = FALSE;
-    if (!VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags) /* If HGSMI is enabled at all. */
-    {
-        WARN(("ISR called with hgsmi disabled!"));
-        return FALSE;
-    }
-
-    VBOXVTLIST CtlList;
-    vboxVtListInit(&CtlList);
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    VBOXVTLIST VhwaCmdList;
-    vboxVtListInit(&VhwaCmdList);
-#endif
-
-    uint32_t flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
-    bOur = RT_BOOL(flags & HGSMIHOSTFLAGS_IRQ);
-
-    if (bOur)
-        VBoxHGSMIClearIrq(&VBoxCommonFromDeviceExt(pDevExt)->hostCtx);
-
-    bNeedDpc |= VBoxCmdVbvaCheckCompletedIrq(pDevExt, &pDevExt->CmdVbva);
-
-    do {
-        /* re-read flags right here to avoid host-guest racing,
-         * i.e. the situation:
-         * 1. guest reads flags ant it is HGSMIHOSTFLAGS_IRQ, i.e. HGSMIHOSTFLAGS_GCOMMAND_COMPLETED no set
-         * 2. host completes guest command, sets the HGSMIHOSTFLAGS_GCOMMAND_COMPLETED and raises IRQ
-         * 3. guest clleans IRQ and exits  */
-        flags = VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags->u32HostFlags;
-
-        if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
-        {
-            /* read the command offset */
-            HGSMIOFFSET offCmd = VBVO_PORT_READ_U32(VBoxCommonFromDeviceExt(pDevExt)->guestCtx.port);
-            if (offCmd == HGSMIOFFSET_VOID)
-            {
-                WARN(("void command offset!"));
-                continue;
-            }
-
-            uint16_t chInfo;
-            uint8_t RT_UNTRUSTED_VOLATILE_HOST *pvCmd =
-                HGSMIBufferDataAndChInfoFromOffset(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx.Heap.area, offCmd, &chInfo);
-            if (!pvCmd)
-            {
-                WARN(("zero cmd"));
-                continue;
-            }
-
-            switch (chInfo)
-            {
-                case VBVA_CMDVBVA_CTL:
-                {
-                    int rc = VBoxSHGSMICommandProcessCompletion(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx,
-                                                                (VBOXSHGSMIHEADER *)pvCmd, TRUE /*bool bIrq*/ , &CtlList);
-                    AssertRC(rc);
-                    break;
-                }
-#ifdef VBOX_WITH_VIDEOHWACCEL
-                case VBVA_VHWA_CMD:
-                {
-                    vboxVhwaPutList(&VhwaCmdList, (VBOXVHWACMD*)pvCmd);
-                    break;
-                }
-#endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
-                default:
-                    AssertBreakpoint();
-            }
-        }
-        else if (flags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
-        {
-            AssertBreakpoint();
-            /** @todo FIXME: implement !!! */
-        }
-        else
-            break;
-    } while (1);
-
-    if (!vboxVtListIsEmpty(&CtlList))
-    {
-        vboxVtListCat(&pDevExt->CtlList, &CtlList);
-        bNeedDpc = TRUE;
-        ASMAtomicWriteU32(&pDevExt->fCompletingCommands, 1);
-    }
-
-    if (!vboxVtListIsEmpty(&VhwaCmdList))
-    {
-        vboxVtListCat(&pDevExt->VhwaCmdList, &VhwaCmdList);
-        bNeedDpc = TRUE;
-        ASMAtomicWriteU32(&pDevExt->fCompletingCommands, 1);
-    }
-
-    bNeedDpc |= !vboxVdmaDdiCmdIsCompletedListEmptyIsr(pDevExt);
-
-    if (bOur)
-    {
-        if (flags & HGSMIHOSTFLAGS_VSYNC)
-        {
-            Assert(0);
-            DXGKARGCB_NOTIFY_INTERRUPT_DATA notify;
-            for (UINT i = 0; i < (UINT)VBoxCommonFromDeviceExt(pDevExt)->cDisplays; ++i)
-            {
-                PVBOXWDDM_TARGET pTarget = &pDevExt->aTargets[i];
-                if (pTarget->fConnected)
-                {
-                    memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
-                    notify.InterruptType = DXGK_INTERRUPT_CRTC_VSYNC;
-                    notify.CrtcVsync.VidPnTargetId = i;
-                    pDevExt->u.primary.DxgkInterface.DxgkCbNotifyInterrupt(pDevExt->u.primary.DxgkInterface.DeviceHandle, &notify);
-                    bNeedDpc = TRUE;
-                }
-            }
-        }
-    }
-
-    if (pDevExt->bNotifyDxDpc)
-        bNeedDpc = TRUE;
-
-    if (bNeedDpc)
-        pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
-
-    return bOur;
-}
-#endif
-
 static BOOLEAN DxgkDdiInterruptRoutineLegacy(
     IN CONST PVOID MiniportDeviceContext,
     IN ULONG MessageNumber
@@ -2949,7 +2811,10 @@ static BOOLEAN vboxWddmCallIsrCb(PVOID Context)
     PVBOXMP_DEVEXT pDevExt = pdc->pDevExt;
 #ifdef VBOX_WITH_CROGL
     if (pDevExt->fCmdVbvaEnabled)
-        return DxgkDdiInterruptRoutineNew(pDevExt, pdc->MessageNumber);
+    {
+        AssertFailed(); /* Should not be here, because this is not used with 3D gallium driver. */
+        return FALSE;
+    }
 #endif
     return DxgkDdiInterruptRoutineLegacy(pDevExt, pdc->MessageNumber);
 }

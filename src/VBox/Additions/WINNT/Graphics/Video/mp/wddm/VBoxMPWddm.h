@@ -192,13 +192,6 @@ DECLINLINE(int) vboxWddmScreenInfoInit(VBVAINFOSCREEN RT_UNTRUSTED_VOLATILE_HOST
 
 bool vboxWddmGhDisplayCheckSetInfoFromSource(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_SOURCE pSource);
 
-#ifdef VBOX_WITH_CROGL
-BOOLEAN DxgkDdiInterruptRoutineNew(
-    IN CONST PVOID MiniportDeviceContext,
-    IN ULONG MessageNumber
-    );
-#endif
-
 #define VBOXWDDM_IS_DISPLAYONLY() (g_VBoxDisplayOnly)
 
 # define VBOXWDDM_IS_FB_ALLOCATION(_pDevExt, _pAlloc) ((_pAlloc)->bAssigned)
