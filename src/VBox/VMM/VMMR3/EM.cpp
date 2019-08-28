@@ -2004,39 +2004,42 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
          *        delivered. */
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-        /*
-         * VMX Nested-guest APIC-write pending (can cause VM-exits).
-         * Takes priority over even SMI and INIT signals.
-         * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
-         */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_PREEMPT_TIMER))
         {
-            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
-            if (rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                UPDATE_RC();
-        }
+            /*
+             * VMX Nested-guest APIC-write pending (can cause VM-exits).
+             * Takes priority over even SMI and INIT signals.
+             * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
+             */
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+            {
+                rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitApicWrite(pVCpu));
+                if (rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                    UPDATE_RC();
+            }
 
-        /*
-         * VMX Nested-guest monitor-trap flag (MTF) VM-exit.
-         * Takes priority over "Traps on the previous instruction".
-         * See Intel spec. 6.9 "Priority Among Simultaneous Exceptions And Interrupts".
-         */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
-        {
-            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* uExitQual */));
-            Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-            UPDATE_RC();
-        }
-
-        /*
-         * VMX Nested-guest preemption timer VM-exit.
-         * Takes priority over NMI-window VM-exits.
-         */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
-        {
-            rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitPreemptTimer(pVCpu));
-            if (rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+            /*
+             * VMX Nested-guest monitor-trap flag (MTF) VM-exit.
+             * Takes priority over "Traps on the previous instruction".
+             * See Intel spec. 6.9 "Priority Among Simultaneous Exceptions And Interrupts".
+             */
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
+            {
+                rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* uExitQual */));
+                Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
                 UPDATE_RC();
+            }
+
+            /*
+             * VMX Nested-guest preemption timer VM-exit.
+             * Takes priority over NMI-window VM-exits.
+             */
+            if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
+            {
+                rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitPreemptTimer(pVCpu));
+                if (rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                    UPDATE_RC();
+            }
         }
 #endif
 
