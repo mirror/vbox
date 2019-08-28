@@ -813,47 +813,6 @@ AssertCompile(RT_OFFSETOF(RECT, right) == RT_OFFSETOF(VBOXVHWA_RECTL, right));
 AssertCompile(RT_OFFSETOF(RECT, top) == RT_OFFSETOF(VBOXVHWA_RECTL, top));
 AssertCompile(RT_OFFSETOF(RECT, bottom) == RT_OFFSETOF(VBOXVHWA_RECTL, bottom));
 
-int vboxVhwaHlpColorFill(PVBOXWDDM_OVERLAY pOverlay, PVBOXWDDM_DMA_PRIVATEDATA_CLRFILL pCF)
-{
-    PVBOXWDDM_ALLOCATION pAlloc = pCF->ClrFill.Alloc.pAlloc;
-    Assert(pAlloc->pResource == pOverlay->pResource);
-
-    if (pAlloc->AllocData.Addr.SegmentId != 1)
-    {
-        WARN(("invalid segment id on color fill"));
-        return VERR_INVALID_PARAMETER;
-    }
-
-    Assert(pAlloc->hHostHandle);
-    Assert(pAlloc->pResource);
-    Assert(pAlloc->AllocData.Addr.offVram != VBOXVIDEOOFFSET_VOID);
-
-    int rc;
-    VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd =
-        vboxVhwaCommandCreate(pOverlay->pDevExt, pOverlay->VidPnSourceId, VBOXVHWACMD_TYPE_SURF_FLIP,
-                              RT_OFFSETOF(VBOXVHWACMD_SURF_COLORFILL, u.in.aRects[pCF->ClrFill.Rects.cRects]));
-    Assert(pCmd);
-    if(pCmd)
-    {
-        VBOXVHWACMD_SURF_COLORFILL RT_UNTRUSTED_VOLATILE_HOST *pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_COLORFILL);
-
-        memset((void *)pBody, 0, sizeof(VBOXVHWACMD_SURF_COLORFILL));
-
-        pBody->u.in.hSurf = pAlloc->hHostHandle;
-        pBody->u.in.offSurface = pAlloc->AllocData.Addr.offVram;
-        pBody->u.in.cRects = pCF->ClrFill.Rects.cRects;
-        memcpy((void *)&pBody->u.in.aRects[0], pCF->ClrFill.Rects.aRects,
-               pCF->ClrFill.Rects.cRects * sizeof (pCF->ClrFill.Rects.aRects[0]));
-        vboxVhwaCommandSubmitAsynchAndComplete(pOverlay->pDevExt, pCmd);
-
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_OUT_OF_RESOURCES;
-
-    return rc;
-}
-
 static void vboxVhwaHlpOverlayDstRectSet(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_OVERLAY pOverlay, const RECT *pRect)
 {
     PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pOverlay->VidPnSourceId];
