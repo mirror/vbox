@@ -13771,6 +13771,83 @@ IEM_STATIC void iemLogCurInstr(PVMCPUCC pVCpu, bool fSameCtx, const char *pszFun
 #endif /* LOG_ENABLED */
 
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+/**
+ * Deals with VMCPU_FF_VMX_APIC_WRITE, VMCPU_FF_VMX_MTF, VMCPU_FF_VMX_NMI_WINDOW
+ * and VMCPU_FF_VMX_INT_WINDOW.
+ *
+ * @returns Modified rcStrict.
+ * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
+ * @param   rcStrict    The instruction execution status.
+ */
+static VBOXSTRICTRC iemHandleNestedInstructionBoundraryFFs(PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict)
+{
+    if (!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF))
+    {
+        /* VMX preemption timer takes priority over NMI-window exits. */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
+        {
+            rcStrict = iemVmxVmexitPreemptTimer(pVCpu);
+            if (rcStrict == VINF_VMX_INTERCEPT_NOT_ACTIVE)
+                rcStrict = VINF_SUCCESS;
+            else
+            {
+                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
+                return rcStrict;
+            }
+        }
+        else
+            rcStrict = VINF_SUCCESS;
+
+        /*
+         * Check remaining intercepts.
+         *
+         * NMI-window and Interrupt-window VM-exits.
+         * Interrupt shadow (block-by-STI and Mov SS) inhibits interrupts and may also block NMIs.
+         * Event injection during VM-entry takes priority over NMI-window and interrupt-window VM-exits.
+         *
+         * See Intel spec. 26.7.6 "NMI-Window Exiting".
+         * See Intel spec. 26.7.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
+         */
+        if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW)
+            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+            && !TRPMHasTrap(pVCpu))
+        {
+            Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents);
+            if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
+                && CPUMIsGuestVmxVirtNmiBlocking(pVCpu, &pVCpu->cpum.GstCtx))
+            {
+                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* u64ExitQual */);
+                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
+            }
+            else if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
+                     && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
+            {
+                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* u64ExitQual */);
+                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW));
+            }
+        }
+    }
+    /* TPR-below threshold/APIC write has the highest priority. */
+    else  if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+    {
+        rcStrict = iemVmxApicWriteEmulation(pVCpu);
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
+    }
+    /* MTF takes priority over VMX-preemption timer. */
+    else
+    {
+        rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* u64ExitQual */);
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
+        Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
+    }
+    return rcStrict;
+}
+#endif /* VBOX_WITH_NESTED_HWVIRT_VMX */
+
+
 /**
  * Makes status code addjustments (pass up from I/O and access handler)
  * as well as maintaining statistics.
@@ -13921,68 +13998,9 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
      * problematic because of the setjmp/longjmp clobbering above.
      */
     if (   rcStrict == VINF_SUCCESS
-        && CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
-    {
-        bool fCheckRemainingIntercepts = true;
-        /* TPR-below threshold/APIC write has the highest priority. */
-        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
-        {
-            rcStrict = iemVmxApicWriteEmulation(pVCpu);
-            fCheckRemainingIntercepts = false;
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE));
-        }
-        /* MTF takes priority over VMX-preemption timer. */
-        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
-        {
-            rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* u64ExitQual */);
-            fCheckRemainingIntercepts = false;
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF));
-        }
-        /* VMX preemption timer takes priority over NMI-window exits. */
-        else if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
-        {
-            rcStrict = iemVmxVmexitPreemptTimer(pVCpu);
-            if (rcStrict == VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                rcStrict = VINF_SUCCESS;
-            else
-            {
-                fCheckRemainingIntercepts = false;
-                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
-            }
-        }
-
-        /*
-         * Check remaining intercepts.
-         *
-         * NMI-window and Interrupt-window VM-exits.
-         * Interrupt shadow (block-by-STI and Mov SS) inhibits interrupts and may also block NMIs.
-         * Event injection during VM-entry takes priority over NMI-window and interrupt-window VM-exits.
-         *
-         * See Intel spec. 26.7.6 "NMI-Window Exiting".
-         * See Intel spec. 26.7.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
-         */
-        if (   fCheckRemainingIntercepts
-            && !TRPMHasTrap(pVCpu)
-            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS))
-        {
-            Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents);
-            if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
-                && CPUMIsGuestVmxVirtNmiBlocking(pVCpu, &pVCpu->cpum.GstCtx))
-            {
-                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* u64ExitQual */);
-                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
-            }
-            else if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
-                     && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
-            {
-                rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* u64ExitQual */);
-                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW));
-            }
-        }
-    }
+        && CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu))
+        && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW))
+        rcStrict = iemHandleNestedInstructionBoundraryFFs(pVCpu, rcStrict);
 #endif
 
     /* Execute the next instruction as well if a cli, pop ss or
