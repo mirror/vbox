@@ -466,10 +466,16 @@ typedef struct _VBOXCLIPBOARDLIST
     VBOXCLIPBOARDROOTLISTENTRY *paEntries;
 } VBOXCLIPBOARDLIST, *PVBOXCLIPBOARDLIST;
 
+/**
+ * Structure for keeping a Shared Clipboard object data chunk.
+ */
 typedef struct _VBOXCLIPBOARDOBJDATACHUNK
 {
+    /** Handle of object this data chunk is related to. */
     uint64_t  uHandle;
+    /** Pointer to actual data chunk. */
     void     *pvData;
+    /** Size (in bytes) of data chunk. */
     uint32_t  cbData;
 } VBOXCLIPBOARDOBJDATACHUNK, *PVBOXCLIPBOARDOBJDATACHUNK;
 
