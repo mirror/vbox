@@ -13782,6 +13782,7 @@ IEM_STATIC void iemLogCurInstr(PVMCPUCC pVCpu, bool fSameCtx, const char *pszFun
  */
 static VBOXSTRICTRC iemHandleNestedInstructionBoundraryFFs(PVMCPUCC pVCpu, VBOXSTRICTRC rcStrict)
 {
+    Assert(CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)));
     if (!VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF))
     {
         /* VMX preemption timer takes priority over NMI-window exits. */
@@ -13998,7 +13999,6 @@ DECLINLINE(VBOXSTRICTRC) iemExecOneInner(PVMCPUCC pVCpu, bool fExecuteInhibit, c
      * problematic because of the setjmp/longjmp clobbering above.
      */
     if (   rcStrict == VINF_SUCCESS
-        && CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu))
         && VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW))
         rcStrict = iemHandleNestedInstructionBoundraryFFs(pVCpu, rcStrict);
 #endif
