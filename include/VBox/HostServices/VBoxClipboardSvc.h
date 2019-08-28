@@ -143,13 +143,17 @@
 #define VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD       1
 /** Sends a list of available formats to the host.
  *  Formely known as VBOX_SHARED_CLIPBOARD_GUEST_FN_REPORT_FORMATS. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE         2
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE          2
 /** Reads data in specified format from the host. */
 #define VBOX_SHARED_CLIPBOARD_GUEST_FN_DATA_READ              3
 /** Writes data in requested format to the host. */
 #define VBOX_SHARED_CLIPBOARD_GUEST_FN_DATA_WRITE             4
 
-/** */
+/** Does the actual protocol handshake. If this message is not
+ *  being sent by the guest, the host handles that particular client
+ *  with the legacy protocol (v0).
+ *
+ *  New since protocol v1. */
 #define VBOX_SHARED_CLIPBOARD_GUEST_FN_CONNECT                5
 /** Peeks at the next message, returning immediately.
  *  New since protocol v1. */
