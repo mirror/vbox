@@ -224,6 +224,7 @@ typedef struct _VBOXMP_DEVEXT
    PVBOXWDDM_EXT_GA pGa;                       /* Pointer to Gallium backend data. */
 #endif
 
+   ULONG cbVRAMCpuVisible;                     /* How much video memory is available for the CPU visible segment. */
 } VBOXMP_DEVEXT, *PVBOXMP_DEVEXT;
 
 DECLINLINE(PVBOXMP_DEVEXT) VBoxCommonToPrimaryExt(PVBOXMP_COMMON pCommon)
@@ -243,23 +244,7 @@ DECLINLINE(PVBOXMP_COMMON) VBoxCommonFromDeviceExt(PVBOXMP_DEVEXT pExt)
 #ifdef VBOX_WDDM_MINIPORT
 DECLINLINE(ULONG) vboxWddmVramCpuVisibleSize(PVBOXMP_DEVEXT pDevExt)
 {
-#ifdef VBOX_WITH_CROGL
-    if (pDevExt->fCmdVbvaEnabled)
-    {
-        /* all memory layout info should be initialized */
-        Assert(pDevExt->CmdVbva.Vbva.offVRAMBuffer);
-        /* page aligned */
-        Assert(!(pDevExt->CmdVbva.Vbva.offVRAMBuffer & 0xfff));
-
-        return (ULONG)(pDevExt->CmdVbva.Vbva.offVRAMBuffer & ~0xfffULL);
-    }
-#endif
-    /* all memory layout info should be initialized */
-    Assert(pDevExt->aSources[0].Vbva.Vbva.offVRAMBuffer);
-    /* page aligned */
-    Assert(!(pDevExt->aSources[0].Vbva.Vbva.offVRAMBuffer & 0xfff));
-
-    return (ULONG)(pDevExt->aSources[0].Vbva.Vbva.offVRAMBuffer & ~0xfffULL);
+    return pDevExt->cbVRAMCpuVisible;
 }
 
 DECLINLINE(ULONG) vboxWddmVramCpuVisibleSegmentSize(PVBOXMP_DEVEXT pDevExt)

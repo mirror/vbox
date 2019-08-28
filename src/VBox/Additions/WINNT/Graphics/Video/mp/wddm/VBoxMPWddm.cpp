@@ -882,6 +882,9 @@ static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
         }
 #endif
 
+        /* vboxWddmVramCpuVisibleSize uses this value */
+        pDevExt->cbVRAMCpuVisible = offset;
+
         rc = VBoxMPCmnMapAdapterMemory(VBoxCommonFromDeviceExt(pDevExt), (void**)&pDevExt->pvVisibleVram,
                                        0, vboxWddmVramCpuVisibleSize(pDevExt));
         Assert(rc == VINF_SUCCESS);
@@ -902,48 +905,18 @@ static NTSTATUS vboxWddmSetupDisplaysNew(PVBOXMP_DEVEXT pDevExt)
                             - VBoxCommonFromDeviceExt(pDevExt)->cbMiniportHeap
                             - VBVA_ADAPTER_INFORMATION_SIZE;
 
-    /* Size of the VBVA buffer which is used to pass VBOXCMDVBVA_* commands to the host.
-     * Estimate max 4KB per command.
-     */
-    ULONG cbCmdVbva = VBOXCMDVBVA_BUFFERSIZE(4096);
+    /* vboxWddmVramCpuVisibleSize uses this value */
+    pDevExt->cbVRAMCpuVisible = cbAvailable;
 
-    if (cbCmdVbva >= cbAvailable)
+    int rc = VBoxMPCmnMapAdapterMemory(VBoxCommonFromDeviceExt(pDevExt), (void**)&pDevExt->pvVisibleVram,
+                                   0, vboxWddmVramCpuVisibleSize(pDevExt));
+    if (RT_FAILURE(rc))
     {
-        WARN(("too few VRAM memory fatal, %d, requested for CmdVbva %d", cbAvailable, cbCmdVbva));
+        WARN(("VBoxMPCmnMapAdapterMemory failed, rc %d", rc));
         return STATUS_UNSUCCESSFUL;
     }
 
-
-    ULONG offCmdVbva = cbAvailable - cbCmdVbva;
-
-/// @todo The Gallium 3D driver (which still needs pDevExt->fCmdVbvaEnabled == true) does not (should not) use CmdVbva.
-///       But we still have to create the Vbva structure because code elsewhere in the driver depends on it,
-///       for example vboxWddmVramCpuVisibleSize. CmdVbva will be removed eventually.
-    int rc = VBoxCmdVbvaCreate(pDevExt, &pDevExt->CmdVbva, offCmdVbva, cbCmdVbva);
-    if (RT_SUCCESS(rc))
-    {
-// Do not actually send the request to the host, because the Gallium driver does not need this.
-//        rc = VBoxCmdVbvaEnable(pDevExt, &pDevExt->CmdVbva);
-//        if (RT_SUCCESS(rc))
-//        {
-            rc = VBoxMPCmnMapAdapterMemory(VBoxCommonFromDeviceExt(pDevExt), (void**)&pDevExt->pvVisibleVram,
-                                           0, vboxWddmVramCpuVisibleSize(pDevExt));
-            if (RT_SUCCESS(rc))
-                return STATUS_SUCCESS;
-            else
-                WARN(("VBoxMPCmnMapAdapterMemory failed, rc %d", rc));
-
-//            VBoxCmdVbvaDisable(pDevExt, &pDevExt->CmdVbva);
-//        }
-//        else
-//            WARN(("VBoxCmdVbvaEnable failed, rc %d", rc));
-
-        VBoxCmdVbvaDestroy(pDevExt, &pDevExt->CmdVbva);
-    }
-    else
-        WARN(("VBoxCmdVbvaCreate failed, rc %d", rc));
-
-    return STATUS_UNSUCCESSFUL;
+    return STATUS_SUCCESS;
 }
 #endif
 static NTSTATUS vboxWddmSetupDisplays(PVBOXMP_DEVEXT pDevExt)
@@ -970,20 +943,7 @@ static int vboxWddmFreeDisplays(PVBOXMP_DEVEXT pDevExt)
     if (pDevExt->pvVisibleVram)
         VBoxMPCmnUnmapAdapterMemory(VBoxCommonFromDeviceExt(pDevExt), (void**)&pDevExt->pvVisibleVram);
 
-    if (pDevExt->fCmdVbvaEnabled)
-    {
-//        rc = VBoxCmdVbvaDisable(pDevExt, &pDevExt->CmdVbva);
-//        if (RT_SUCCESS(rc))
-//        {
-//            rc = VBoxCmdVbvaDestroy(pDevExt, &pDevExt->CmdVbva);
-//            if (RT_FAILURE(rc))
-//                WARN(("VBoxCmdVbvaDestroy failed %d", rc));
-//        }
-//        else
-//            WARN(("VBoxCmdVbvaDestroy failed %d", rc));
-
-    }
-    else
+    if (!pDevExt->fCmdVbvaEnabled)
     {
         for (int i = VBoxCommonFromDeviceExt(pDevExt)->cDisplays-1; i >= 0; --i)
         {
