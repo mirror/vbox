@@ -10466,9 +10466,9 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     VMCPU_ASSERT_STATE(pVCpu, VMCPUSTATE_STARTED_HM);
     VMCPU_SET_STATE(pVCpu, VMCPUSTATE_STARTED_EXEC);
 
-    PVMCC        pVM           = pVCpu->CTX_SUFF(pVM);
-    PVMXVMCSINFO pVmcsInfo     = pVmxTransient->pVmcsInfo;
-    PHMPHYSCPU   pHostCpu      = hmR0GetCurrentCpu();
+    PVMCC         pVM          = pVCpu->CTX_SUFF(pVM);
+    PVMXVMCSINFO  pVmcsInfo    = pVmxTransient->pVmcsInfo;
+    PHMPHYSCPU    pHostCpu     = hmR0GetCurrentCpu();
     RTCPUID const idCurrentCpu = pHostCpu->idCpu;
 
     if (!CPUMIsGuestFPUStateActive(pVCpu))
@@ -10551,14 +10551,14 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     ASMAtomicWriteBool(&pVCpu->hm.s.fCheckedTLBFlush, true);    /* Used for TLB flushing, set this across the world switch. */
     hmR0VmxFlushTaggedTlb(pHostCpu, pVCpu, pVmcsInfo);          /* Invalidate the appropriate guest entries from the TLB. */
     Assert(idCurrentCpu == pVCpu->hm.s.idLastCpu);
-    pVCpu->hm.s.vmx.LastError.idCurrentCpu = idCurrentCpu;      /* Update the error reporting info. with the current host CPU. */
+    pVCpu->hm.s.vmx.LastError.idCurrentCpu = idCurrentCpu;      /* Record the error reporting info. with the current host CPU. */
     pVmcsInfo->idHostCpuState = idCurrentCpu;                   /* Record the CPU for which the host-state has been exported. */
     pVmcsInfo->idHostCpuExec  = idCurrentCpu;                   /* Record the CPU on which we shall execute. */
 
     STAM_PROFILE_ADV_STOP_START(&pVCpu->hm.s.StatEntry, &pVCpu->hm.s.StatInGC, x);
 
     TMNotifyStartOfExecution(pVM, pVCpu);                       /* Notify TM to resume its clocks when TSC is tied to execution,
-                                                                   as we're about to start executing the guest . */
+                                                                   as we're about to start executing the guest. */
 
     /*
      * Load the guest TSC_AUX MSR when we are not intercepting RDTSCP.
@@ -10567,7 +10567,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
      * figures out if we can skip intercepting RDTSCP by calculating the number of
      * host CPU ticks till the next virtual sync deadline (for the dynamic case).
      */
-    if (    (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
+    if (   (pVmcsInfo->u32ProcCtls2 & VMX_PROC_CTLS2_RDTSCP)
         && !fIsRdtscIntercepted)
     {
         hmR0VmxImportGuestState(pVCpu, pVmcsInfo, CPUMCTX_EXTRN_TSC_AUX);
