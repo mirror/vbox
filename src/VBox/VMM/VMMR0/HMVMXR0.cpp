@@ -13491,8 +13491,8 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
     int rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
 
-    Log4Func(("#PF: cr2=%#RX64 cs:rip=%#04x:%#RX64 uErrCode %#RX32 cr3=%#RX64\n", pVmxTransient->uExitQual, pCtx->cs.Sel,
-              pCtx->rip, pVmxTransient->uExitIntErrorCode, pCtx->cr3));
+    Log4Func(("#PF: cs:rip=%#04x:%#RX64 err_code=%#RX32 exit_qual=%#RX64 cr3=%#RX64\n", pCtx->cs.Sel, pCtx->rip,
+              pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual, pCtx->cr3));
 
     TRPMAssertXcptPF(pVCpu, pVmxTransient->uExitQual, (RTGCUINT)pVmxTransient->uExitIntErrorCode);
     rc = PGMTrap0eHandler(pVCpu, pVmxTransient->uExitIntErrorCode, CPUMCTX2CORE(pCtx), (RTGCPTR)pVmxTransient->uExitQual);
@@ -16163,7 +16163,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
 
 #ifdef DEBUG_ramshankar
                 hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
-                Log4Func(("exit_int_info=%#x err_code=%#x exit_qual=%#RX64\n", pVmxTransient->uExitIntInfo,
+                Log4Func(("exit_int_info=%#RX32 err_code=%#RX32 exit_qual=%#RX64\n", pVmxTransient->uExitIntInfo,
                           pVmxTransient->uExitIntErrorCode, pVmxTransient->uExitQual));
                 if (VMX_IDT_VECTORING_INFO_IS_VALID(pVmxTransient->uIdtVectoringInfo))
                 {
