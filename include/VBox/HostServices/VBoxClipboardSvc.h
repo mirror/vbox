@@ -214,9 +214,6 @@
 
 /**
  * Creates a context ID out of a source ID and and event ID.
- *
- * ID 0 *always* is reserved for the client itself, whereas
- * IDs > 0 are being used for transfers of this client.
  */
 #define VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(uSourceID, uEventID) \
     RT_MAKE_U32(uEventID, uSourceID)
