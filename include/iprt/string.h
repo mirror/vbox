@@ -1476,12 +1476,17 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *                            64-bit unsigned integer as input.  Does one
  *                            decimal point by default, can do 0-3 via precision
  *                            field.  No rounding when calculating fraction.
+ *                            The space flag add a space between the value and
+ *                            unit.
+ *      - \%RhcB            - Same a \%Rhcb only the 'i' is skipped in the unit.
  *      - \%Rhci            - SI variant of \%Rhcb, fraction is rounded.
  *      - \%Rhub            - Human readable number formatting, using
  *                            binary unit prefixes. Takes a 64-bit unsigned
  *                            integer as input. Does one decimal point by
  *                            default, can do 0-3 via precision field.  No
- *                            rounding when calculating fraction.
+ *                            rounding when calculating fraction.  The space
+ *                            flag add a space between the value and unit.
+ *      - \%RhuB            - Same a \%Rhub only the 'i' is skipped in the unit.
  *      - \%Rhui            - SI variant of \%Rhub, fraction is rounded.
  *
  *      - \%Rrc             - Takes an integer iprt status code as argument. Will insert the

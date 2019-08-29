@@ -988,6 +988,9 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                     }
 #endif /* IN_RING3 */
 
+                    /*
+                     * Human readable sizes.
+                     */
                     case 'c':
                     case 'u':
                     {
@@ -996,21 +999,18 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                         uint64_t    uValue;
                         uint64_t    uFraction = 0;
                         const char *pszPrefix = NULL;
-                        unsigned    cchFixedPart;
                         char        ch2 = *(*ppszFormat)++;
-                        AssertMsgReturn(ch2 == 'b' || ch2 == 'i', ("invalid type '%.10s'!\n", pszFormatOrg), 0);
+                        AssertMsgReturn(ch2 == 'b' || ch2 == 'B' || ch2 == 'i', ("invalid type '%.10s'!\n", pszFormatOrg), 0);
                         uValue = va_arg(*pArgs, uint64_t);
 
                         if (!(fFlags & RTSTR_F_PRECISION))
-                            cchPrecision = 1;
+                            cchPrecision = 1; /** @todo default to flexible decimal point. */
                         else if (cchPrecision > 3)
                             cchPrecision = 3;
                         else if (cchPrecision < 0)
                             cchPrecision = 0;
 
-                        cchFixedPart = cchPrecision + (cchPrecision != 0) + (ch == 'c');
-
-                        if (ch2 == 'b')
+                        if (ch2 == 'b' || ch2 == 'B')
                         {
                             static const struct
                             {
@@ -1039,7 +1039,6 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                     }
                                     uValue  >>= s_aUnits[i].cShift;
                                     pszPrefix = s_aUnits[i].pszPrefix;
-                                    cchFixedPart += 2;
                                     break;
                                 }
                         }
@@ -1074,7 +1073,6 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                         uFraction  /= s_aUnits[i].cbFactor;
                                     }
                                     pszPrefix = s_aUnits[i].pszPrefix;
-                                    cchFixedPart += 1;
                                     break;
                                 }
                         }
@@ -1088,10 +1086,14 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                 cchBuf += RTStrFormatU64(&szBuf[cchBuf], sizeof(szBuf) - cchBuf, uFraction, 10, cchPrecision, 0,
                                                          RTSTR_F_ZEROPAD | RTSTR_F_WIDTH);
                             }
+                            if (fFlags & RTSTR_F_BLANK)
+                                szBuf[cchBuf++] = ' ';
                             szBuf[cchBuf++] = *pszPrefix++;
-                            if (*pszPrefix)
+                            if (*pszPrefix && ch2 != 'B')
                                 szBuf[cchBuf++] = *pszPrefix;
                         }
+                        else if (fFlags & RTSTR_F_BLANK)
+                            szBuf[cchBuf++] = ' ';
                         if (ch == 'c')
                             szBuf[cchBuf++] = 'B';
                         szBuf[cchBuf] = '\0';

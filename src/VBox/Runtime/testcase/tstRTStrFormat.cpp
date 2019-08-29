@@ -774,9 +774,19 @@ int main()
     CHECKSTR("1780TiB42");
     cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10Rhcb%u", UINT64_C(6678345), 42);
     CHECKSTR("    6.3MiB42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10Rhcb%u", UINT64_C(6710886), 42);
+    CHECKSTR("    6.3MiB42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10Rhcb%u", UINT64_C(6710887), 42);
+    CHECKSTR("    6.4MiB42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "% 10Rhcb%u", UINT64_C(6710887), 42);
+    CHECKSTR("   6.4 MiB42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "% 10RhcB%u", UINT64_C(6710887), 42);
+    CHECKSTR("    6.4 MB42");
 
     cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10Rhub%u", UINT64_C(6678345), 42);
     CHECKSTR("     6.3Mi42");
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10RhuB%u", UINT64_C(6678345), 42);
+    CHECKSTR("      6.3M42");
 
     cch = RTStrPrintf(pszBuf, BUF_SIZE, "%10Rhci%u", UINT64_C(6678345), 42);
     CHECKSTR("     6.7MB42"); /* rounded, unlike the binary variant.*/
