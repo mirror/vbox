@@ -39,7 +39,7 @@
 #define VIRTIO_F_RING_INDIRECT_DESC         RT_BIT_64(28)        /**< Doc bug: Goes under two names in spec     */
 #define VIRTIO_F_RING_EVENT_IDX             RT_BIT_64(29)        /**< Doc bug: Goes under two names in spec     */
 
-#define VIRTIO_DEV_INDEPENDENT_FEATURES_OFFERED ( VIRTIO_F_EVENT_IDX ) /**< TBD: Add VIRTIO_F_INDIRECT_DESC     */
+#define VIRTIO_DEV_INDEPENDENT_FEATURES_OFFERED ( 0 )            /**< TBD: Add VIRTIO_F_INDIRECT_DESC     */
 
 #define VIRTIO_ISR_VIRTQ_INTERRUPT           RT_BIT_32(0)        /**< Virtq interrupt bit of ISR register       */
 #define VIRTIO_ISR_DEVICE_CONFIG             RT_BIT_32(1)        /**< Device configuration changed bit of ISR   */
@@ -363,6 +363,7 @@ static void        virtioWriteUsedFlags       (PVIRTIOSTATE pVirtio, uint16_t qI
 static uint16_t    virtioReadUsedAvailEvent   (PVIRTIOSTATE pVirtio, uint16_t qIdx);
 static void        virtioWriteUsedAvailEvent  (PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t uAvailEventIdx);
 
+
 DECLINLINE(int) virtqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uint16_t uDescIdxOld)
 {
     return (uint16_t)(uDescIdxNew - uEventIdx - 1) < (uint16_t)(uDescIdxNew - uDescIdxOld);
@@ -503,6 +504,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx, 
                         + RT_UOFFSETOF_DYN(VIRTQ_USED_T, auRing[pVirtio->uQueueSize[qIdx]]),
                           &uAvailEventIdx, sizeof(uAvailEventIdx));
 }
+
 
 /**
  * Makes the MMIO-mapped Virtio uDeviceStatus registers non-cryptic */

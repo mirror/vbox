@@ -214,7 +214,7 @@ int virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPRTSGBUF ppInSegs, PPR
  * @param qIdx      - Queue number
  * @param pSgBuf    - Caller's sgbuf of one or more virtual memory segments
  *                    to write to the queue. This is useful because some kinds
- *                    of transactions involve variable length sub-components
+ *                    of transactions involve variable length subcomponents
  *                    whose size can only be known near the time of writing.
  * @parame fFence   - If set put up copy fence (memory barrier) after
  *                    copying to guest phys. mem.

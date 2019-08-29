@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Virtio_1_0 - Virtio Common Functions (VirtQ, virtqueue, Virtio PCI)
+ * Virtio_1_0 - Virtio Common (PCI, feature & config mgt, queue mgt & proxy, notification mgt)
  */
 
 /*
@@ -258,8 +258,10 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
     RTSgBufInit(&pVirtqProxy->inSgBuf, (PCRTSGSEG)&pDescChain->aSegsIn,  pDescChain->cSegsIn);
     RTSgBufInit(&pVirtqProxy->outSgBuf,(PCRTSGSEG)&pDescChain->aSegsOut, pDescChain->cSegsOut);
 
-    *ppInSegs  = &pVirtqProxy->inSgBuf;
-    *ppOutSegs = &pVirtqProxy->outSgBuf;
+    if (ppInSegs)
+        *ppInSegs  = &pVirtqProxy->inSgBuf;
+    if (ppOutSegs)
+        *ppOutSegs = &pVirtqProxy->outSgBuf;
 
     Log2Func(("%s -- segs out: %u,  segs in: %u --\n",
               pVirtqProxy->szVirtqName, pDescChain->cSegsOut, pDescChain->cSegsIn));
@@ -360,6 +362,7 @@ static void virtioQueueNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uN
 
     PVIRTQ_PROXY_T pVirtqProxy = &pVirtio->virtqProxy[qIdx];
     Log2Func(("%s\n", pVirtqProxy->szVirtqName));
+
 
     /** Inform client */
     pVirtio->virtioCallbacks.pfnVirtioQueueNotified((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext, qIdx);
@@ -471,9 +474,11 @@ static void virtioResetQueue(PVIRTIOSTATE pVirtio, uint16_t qIdx)
     PVIRTQ_PROXY_T pVirtQ = &pVirtio->virtqProxy[qIdx];
     pVirtQ->uAvailIdx = 0;
     pVirtQ->uUsedIdx  = 0;
+    pVirtio->uQueueEnable[qIdx] = false;
     pVirtio->uQueueSize[qIdx] = VIRTQ_MAX_SIZE;
     pVirtio->uQueueNotifyOff[qIdx] = qIdx;
 }
+
 
 static void virtioResetDevice(PVIRTIOSTATE pVirtio)
 {
@@ -518,7 +523,7 @@ void virtioResetAll(VIRTIOHANDLE hVirtio)
  */
 static void virtioGuestResetted(PVIRTIOSTATE pVirtio)
 {
-    LogFunc(("Guest reset the device"));
+    LogFunc(("Guest reset the device\n"));
 
     /** Let the client know */
     pVirtio->virtioCallbacks.pfnVirtioStatusChanged((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext, false);
@@ -769,9 +774,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     if (fIsr && cb == sizeof(uint8_t))
     {
         *(uint8_t *)pv = pVirtio->uISR;
-        Log2Func(("Read and clear 0x%02x from uISR (interrupt type: virtq: %d, dev config: %d)\n",
-              pVirtio->uISR, pVirtio->uISR & VIRTIO_ISR_VIRTQ_INTERRUPT,
-              !!(pVirtio->uISR & VIRTIO_ISR_DEVICE_CONFIG)));
+        Log2Func(("Read and clear ISR\n"));
         pVirtio->uISR = 0; /** VirtIO specification requires reads of ISR to clear it */
         virtioLowerInterrupt(pVirtio);
     }
