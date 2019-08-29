@@ -15772,7 +15772,6 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitXcpt(PVMCPUCC pVCpu, PCVMXVEXITINFO p
 {
     Assert(pExitInfo);
     Assert(pExitEventInfo);
-    Assert(pExitInfo->uReason == VMX_EXIT_XCPT_OR_NMI);
     VBOXSTRICTRC rcStrict = iemVmxVmexitEventWithInfo(pVCpu, pExitInfo, pExitEventInfo);
     Assert(!pVCpu->iem.s.cActiveMappings);
     return iemExecStatusCodeFiddling(pVCpu, rcStrict);
@@ -15790,8 +15789,10 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecVmxVmexitXcptNmi(PVMCPUCC pVCpu)
 {
     VMXVEXITINFO ExitInfo;
     RT_ZERO(ExitInfo);
+    ExitInfo.uReason = VMX_EXIT_XCPT_OR_NMI;
+
     VMXVEXITEVENTINFO ExitEventInfo;
-    RT_ZERO(ExitInfo);
+    RT_ZERO(ExitEventInfo);
     ExitEventInfo.uExitIntInfo = RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VALID,  1)
                                | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_TYPE,   VMX_EXIT_INT_INFO_TYPE_NMI)
                                | RT_BF_MAKE(VMX_BF_EXIT_INT_INFO_VECTOR, X86_XCPT_NMI);

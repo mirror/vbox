@@ -3604,6 +3604,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEventWithInfo(PVMCPUCC pVCpu, PCVMXVEXITINFO
 {
     Assert(pExitInfo);
     Assert(pExitEventInfo);
+    Assert(pExitInfo->uReason == VMX_EXIT_XCPT_OR_NMI);
     Assert(VMX_EXIT_INT_INFO_IS_VALID(pExitEventInfo->uExitIntInfo));
 
     iemVmxVmcsSetExitInstrLen(pVCpu, pExitInfo->cbInstr);
