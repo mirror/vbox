@@ -1224,9 +1224,10 @@ static int dsoundCaptureTransfer(PDRVHOSTDSOUND pThis, PDSOUNDSTREAM pStreamDS)
 
     uint32_t cbFree = (uint32_t)RTCircBufFree(pCircBuf);
     if (   !cbFree
-        || pStreamDS->In.cOverruns < 32) /** @todo Make this configurable. */
+        && pStreamDS->In.cOverruns < 32) /** @todo Make this configurable. */
     {
-        DSLOG(("DSound: Warning: Capture buffer full, skipping to record data (%RU32 bytes)\n", cbUsed));
+        DSLOG(("DSound: Warning: Ring buffer full, skipping to record data (overflow #%RU32)\n", pStreamDS->In.cOverruns));
+        DSLOG(("DSound: DSound capture buffer currently uses %RU32/%RU32 bytes\n", cbUsed, pStreamDS->cbBufSize));
         pStreamDS->In.cOverruns++;
     }
 
@@ -2748,4 +2749,3 @@ const PDMDRVREG g_DrvHostDSound =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-
