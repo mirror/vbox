@@ -123,9 +123,9 @@ void UIChooserNodeGroup::addNode(UIChooserNode *pNode, int iPosition)
 {
     switch (pNode->type())
     {
-        case UIChooserItemType_Group:   m_nodesGroup.insert(iPosition, pNode); return;
-        case UIChooserItemType_Global:  m_nodesGlobal.insert(iPosition, pNode); return;
-        case UIChooserItemType_Machine: m_nodesMachine.insert(iPosition, pNode); return;
+        case UIChooserItemType_Group:   m_nodesGroup.insert(iPosition == -1 ? m_nodesGroup.size() : iPosition, pNode); return;
+        case UIChooserItemType_Global:  m_nodesGlobal.insert(iPosition == -1 ? m_nodesGlobal.size() : iPosition, pNode); return;
+        case UIChooserItemType_Machine: m_nodesMachine.insert(iPosition == -1 ? m_nodesMachine.size() : iPosition, pNode); return;
         default: break;
     }
     AssertFailedReturnVoid();
