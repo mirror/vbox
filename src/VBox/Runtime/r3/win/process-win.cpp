@@ -450,7 +450,7 @@ static int rtProcWinDuplicateToken(HANDLE hSrcToken, PHANDLE phToken)
 
 /**
  * Get the token assigned to specified thread indicated by @a hThread.
- * 
+ *
  * Only used when RTPROC_FLAGS_AS_IMPERSONATED_TOKEN is in effect and the
  * purpose is to get a duplicate the impersonated token of the current thread.
  *
