@@ -53,11 +53,11 @@ struct DebuggerMetricData
 {
     DebuggerMetricData()
         : m_counter(0){}
-    DebuggerMetricData(const QString & strName, qulonglong counter)
+    DebuggerMetricData(const QString & strName, quint64 counter)
         :m_strName(strName)
         , m_counter(counter){}
     QString m_strName;
-    qulonglong m_counter;
+    quint64 m_counter;
 };
 
 class UIMetric
@@ -68,17 +68,17 @@ public:
     UIMetric();
     const QString &name() const;
 
-    void setMaximum(qulonglong iMaximum);
-    qulonglong maximum() const;
+    void setMaximum(quint64 iMaximum);
+    quint64 maximum() const;
 
     void setUnit(QString strUnit);
     const QString &unit() const;
 
-    void addData(int iDataSeriesIndex, qulonglong fData);
-    const QQueue<qulonglong> *data(int iDataSeriesIndex) const;
+    void addData(int iDataSeriesIndex, quint64 fData);
+    const QQueue<quint64> *data(int iDataSeriesIndex) const;
 
-    void setTotal(int iDataSeriesIndex, qulonglong iTotal);
-    qulonglong total(int iDataSeriesIndex) const;
+    void setTotal(int iDataSeriesIndex, quint64 iTotal);
+    quint64 total(int iDataSeriesIndex) const;
 
     bool requiresGuestAdditions() const;
     void setRequiresGuestAdditions(bool fRequiresGAs);
@@ -118,11 +118,11 @@ private:
 
     QString m_strName;
     QString m_strUnit;
-    qulonglong m_iMaximum;
-    QQueue<qulonglong> m_data[DATA_SERIES_SIZE];
+    quint64 m_iMaximum;
+    QQueue<quint64> m_data[DATA_SERIES_SIZE];
     /** The total data (the counter value we get from IMachineDebugger API). For the metrics
       * we get from IMachineDebugger m_data values are computed as deltas of total values t - (t-1) */
-    qulonglong m_iTotal[DATA_SERIES_SIZE];
+    quint64 m_iTotal[DATA_SERIES_SIZE];
     int m_iMaximumQueueSize;
     bool m_fRequiresGuestAdditions;
     /** Used for metrices whose data is computed as total deltas. That is we receieve only total value and
@@ -163,9 +163,9 @@ private:
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
     void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
     void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
-    void updateNetworkGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal);
-    void updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWritten, qulonglong uDiskIOTotalRead);
-    void updateVMExitMetric(qulonglong uTotalVMExits);
+    void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal);
+    void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
+    void updateVMExitMetric(quint64 uTotalVMExits);
 
     QString dataColorString(const QString &strChartName, int iDataIndex);
     void runTimeAttributes();
@@ -231,7 +231,7 @@ private:
     /** @} */
     /** The following string is used while querrying CMachineDebugger. */
     QString m_strQueryString;
-    qulonglong m_iTimeStep;
+    quint64 m_iTimeStep;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h */

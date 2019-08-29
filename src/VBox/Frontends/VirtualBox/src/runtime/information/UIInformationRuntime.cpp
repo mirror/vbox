@@ -68,10 +68,11 @@ enum InfoLine
 };
 
 
-QString formatNumber(qulonglong number)
+QString formatNumber(quint64 number)
 {
     if (number <= 0)
         return QString();
+    /* See https://en.wikipedia.org/wiki/Metric_prefix for metric suffices:*/
     char suffices[] = {'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
     int zeroCount = (int)log10(number);
     if (zeroCount < 3)
@@ -79,7 +80,7 @@ QString formatNumber(qulonglong number)
     int h = 3 * (zeroCount / 3);
     char result[128];
     sprintf(result, "%.2f", number / (float)pow(10, h));
-    return QString("%1 %2").arg(result).arg(suffices[h / 3 - 1]);
+    return QString("%1%2").arg(result).arg(suffices[h / 3 - 1]);
 }
 
 /*********************************************************************************************************************************
@@ -181,9 +182,9 @@ private:
     /** @name Drawing helper functions.
      * @{ */
        void drawXAxisLabels(QPainter &painter, int iXSubAxisCount);
-       void drawPieChart(QPainter &painter, qulonglong iMaximum, int iDataIndex, const QRectF &chartRect, int iAlpha);
-       void drawCombinedPieCharts(QPainter &painter, qulonglong iMaximum);
-       void drawDoughnutChart(QPainter &painter, qulonglong iMaximum, int iDataIndex,
+       void drawPieChart(QPainter &painter, quint64 iMaximum, int iDataIndex, const QRectF &chartRect, int iAlpha);
+       void drawCombinedPieCharts(QPainter &painter, quint64 iMaximum);
+       void drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
                               const QRectF &chartRect, const QRectF &innerRect, int iAlpha);
 
        /** Drawing an overlay rectangle over the charts to indicate that they are disabled. */
@@ -620,7 +621,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         return;
     }
 
-    qulonglong iMaximum = m_pMetric->maximum();
+    quint64 iMaximum = m_pMetric->maximum();
     if (iMaximum == 0)
         return;
     /* Draw the data lines: */
@@ -636,7 +637,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
             painter.setPen(QPen(gradient, 2.5));
         }
 
-        const QQueue<qulonglong> *data = m_pMetric->data(k);
+        const QQueue<quint64> *data = m_pMetric->data(k);
         if (!m_fUseGradientLineColor)
             painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
         for (int i = 0; i < data->size() - 1; ++i)
@@ -660,11 +661,11 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     {
         int iTextY = 0.5 * iFontHeight + m_iMarginTop + i * m_lineChartRect.height() / (float) (iYSubAxisCount + 1);
         QString strValue;
-        qulonglong iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
+        quint64 iValue = (iYSubAxisCount + 1 - i) * (iMaximum / (float) (iYSubAxisCount + 1));
         if (m_pMetric->unit().compare("%", Qt::CaseInsensitive) == 0)
             strValue = QString::number(iValue);
         else if (m_pMetric->unit().compare("kb", Qt::CaseInsensitive) == 0)
-            strValue = uiCommon().formatSize(_1K * (qulonglong)iValue, iDecimalCount);
+            strValue = uiCommon().formatSize(_1K * (quint64)iValue, iDecimalCount);
         else if (m_pMetric->unit().compare("b", Qt::CaseInsensitive) == 0 ||
                  m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
             strValue = uiCommon().formatSize(iValue, iDecimalCount);
@@ -699,12 +700,12 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
     }
 }
 
-void UIChart::drawPieChart(QPainter &painter, qulonglong iMaximum, int iDataIndex, const QRectF &chartRect, int iAlpha)
+void UIChart::drawPieChart(QPainter &painter, quint64 iMaximum, int iDataIndex, const QRectF &chartRect, int iAlpha)
 {
     if (!m_pMetric)
         return;
     /* First draw a doughnut shaped chart for the 1st data series */
-    const QQueue<qulonglong> *data = m_pMetric->data(iDataIndex);
+    const QQueue<quint64> *data = m_pMetric->data(iDataIndex);
     if (!data || data->isEmpty())
         return;
 
@@ -731,10 +732,10 @@ void UIChart::drawPieChart(QPainter &painter, qulonglong iMaximum, int iDataInde
     painter.drawPath(dataPath);
 }
 
-void UIChart::drawDoughnutChart(QPainter &painter, qulonglong iMaximum, int iDataIndex,
+void UIChart::drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
                                 const QRectF &chartRect, const QRectF &innerRect, int iAlpha)
 {
-    const QQueue<qulonglong> *data = m_pMetric->data(iDataIndex);
+    const QQueue<quint64> *data = m_pMetric->data(iDataIndex);
     if (!data || data->isEmpty())
         return;
 
@@ -784,7 +785,7 @@ void UIChart::drawDoughnutChart(QPainter &painter, qulonglong iMaximum, int iDat
 
 }
 
-void UIChart::drawCombinedPieCharts(QPainter &painter, qulonglong iMaximum)
+void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
 {
     if (!m_pMetric)
         return;
@@ -796,7 +797,7 @@ void UIChart::drawCombinedPieCharts(QPainter &painter, qulonglong iMaximum)
 
     /* First draw a doughnut shaped chart for the 1st data series */
     // int iDataIndex = 0;
-    // const QQueue<qulonglong> *data = m_pMetric->data(iDataIndex);
+    // const QQueue<quint64> *data = m_pMetric->data(iDataIndex);
     // if (!data || data->isEmpty())
     //     return;
     bool fData0 = m_pMetric->data(0) && !m_pMetric->data(0)->isEmpty();
@@ -873,12 +874,12 @@ const QString &UIMetric::name() const
     return m_strName;
 }
 
-void UIMetric::setMaximum(qulonglong iMaximum)
+void UIMetric::setMaximum(quint64 iMaximum)
 {
     m_iMaximum = iMaximum;
 }
 
-qulonglong UIMetric::maximum() const
+quint64 UIMetric::maximum() const
 {
     return m_iMaximum;
 }
@@ -893,7 +894,7 @@ const QString &UIMetric::unit() const
     return m_strUnit;
 }
 
-void UIMetric::addData(int iDataSeriesIndex, qulonglong fData)
+void UIMetric::addData(int iDataSeriesIndex, quint64 fData)
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
@@ -902,21 +903,21 @@ void UIMetric::addData(int iDataSeriesIndex, qulonglong fData)
         m_data[iDataSeriesIndex].dequeue();
 }
 
-const QQueue<qulonglong> *UIMetric::data(int iDataSeriesIndex) const
+const QQueue<quint64> *UIMetric::data(int iDataSeriesIndex) const
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return 0;
     return &m_data[iDataSeriesIndex];
 }
 
-void UIMetric::setTotal(int iDataSeriesIndex, qulonglong iTotal)
+void UIMetric::setTotal(int iDataSeriesIndex, quint64 iTotal)
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return;
     m_iTotal[iDataSeriesIndex] = iTotal;
 }
 
-qulonglong UIMetric::total(int iDataSeriesIndex) const
+quint64 UIMetric::total(int iDataSeriesIndex) const
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return 0;
@@ -1198,8 +1199,8 @@ void UIInformationRuntime::sltTimeout()
                                                                      aReturnSequenceNumbers,
                                                                      aReturnDataIndices,
                                                                      aReturnDataLengths);
-    qulonglong iTotalRAM = 0;
-    qulonglong iFreeRAM = 0;
+    quint64 iTotalRAM = 0;
+    quint64 iFreeRAM = 0;
 
     for (int i = 0; i < aReturnNames.size(); ++i)
     {
@@ -1229,13 +1230,13 @@ void UIInformationRuntime::sltTimeout()
     }
 
     /* Collect the data from IMachineDebugger::getStats(..): */
-    qulonglong uNetworkTotalReceive = 0;
-    qulonglong uNetworkTotalTransmit = 0;
+    quint64 uNetworkTotalReceive = 0;
+    quint64 uNetworkTotalTransmit = 0;
 
-    qulonglong uDiskIOTotalWritten = 0;
-    qulonglong uDiskIOTotalRead = 0;
+    quint64 uDiskIOTotalWritten = 0;
+    quint64 uDiskIOTotalRead = 0;
 
-   qulonglong uTotalVMExits = 0;
+   quint64 uTotalVMExits = 0;
 
     QVector<DebuggerMetricData> xmlData = getTotalCounterFromDegugger(m_strQueryString);
     for (QMap<QString, UIMetric>::iterator iterator =  m_subMetrics.begin();
@@ -1451,12 +1452,12 @@ void UIInformationRuntime::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 i
         m_charts[m_strRAMMetricName]->update();
 }
 
-void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveTotal, qulonglong iTransmitTotal)
+void UIInformationRuntime::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
 {
     UIMetric &NetMetric = m_subMetrics[m_strNetworkMetricName];
 
-    qulonglong iReceiveRate = iReceiveTotal - NetMetric.total(0);
-    qulonglong iTransmitRate = iTransmitTotal - NetMetric.total(1);
+    quint64 iReceiveRate = iReceiveTotal - NetMetric.total(0);
+    quint64 iTransmitRate = iTransmitTotal - NetMetric.total(1);
 
     NetMetric.setTotal(0, iReceiveTotal);
     NetMetric.setTotal(1, iTransmitTotal);
@@ -1470,7 +1471,7 @@ void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveTotal
 
     NetMetric.addData(0, iReceiveRate);
     NetMetric.addData(1, iTransmitRate);
-    qulonglong iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
+    quint64 iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));
     NetMetric.setMaximum(iMaximum);
 
     if (m_infoLabels.contains(m_strNetworkMetricName)  && m_infoLabels[m_strNetworkMetricName])
@@ -1495,12 +1496,12 @@ void UIInformationRuntime::updateNetworkGraphsAndMetric(qulonglong iReceiveTotal
         m_charts[m_strNetworkMetricName]->update();
 }
 
-void UIInformationRuntime::updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWritten, qulonglong uDiskIOTotalRead)
+void UIInformationRuntime::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
 {
     UIMetric &diskMetric = m_subMetrics[m_strDiskIOMetricName];
 
-    qulonglong iWriteRate = uDiskIOTotalWritten - diskMetric.total(0);
-    qulonglong iReadRate = uDiskIOTotalRead - diskMetric.total(1);
+    quint64 iWriteRate = uDiskIOTotalWritten - diskMetric.total(0);
+    quint64 iReadRate = uDiskIOTotalRead - diskMetric.total(1);
 
     diskMetric.setTotal(0, uDiskIOTotalWritten);
     diskMetric.setTotal(1, uDiskIOTotalRead);
@@ -1513,7 +1514,7 @@ void UIInformationRuntime::updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWr
     }
     diskMetric.addData(0, iWriteRate);
     diskMetric.addData(1, iReadRate);
-    qulonglong iMaximum = qMax(diskMetric.maximum(), qMax(iWriteRate, iReadRate));
+    quint64 iMaximum = qMax(diskMetric.maximum(), qMax(iWriteRate, iReadRate));
     diskMetric.setMaximum(iMaximum);
 
     if (m_infoLabels.contains(m_strDiskIOMetricName)  && m_infoLabels[m_strDiskIOMetricName])
@@ -1540,14 +1541,14 @@ void UIInformationRuntime::updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWr
 }
 
 
-void UIInformationRuntime::updateVMExitMetric(qulonglong uTotalVMExits)
+void UIInformationRuntime::updateVMExitMetric(quint64 uTotalVMExits)
 {
     if (uTotalVMExits <= 0)
         return;
 
     UIMetric &VMExitMetric = m_subMetrics[m_strVMExitMetricName];
 
-    qulonglong iRate = uTotalVMExits - VMExitMetric.total(0);
+    quint64 iRate = uTotalVMExits - VMExitMetric.total(0);
 
     VMExitMetric.setTotal(0, uTotalVMExits);
 
@@ -1559,7 +1560,7 @@ void UIInformationRuntime::updateVMExitMetric(qulonglong uTotalVMExits)
     }
 
     VMExitMetric.addData(0, iRate);
-    qulonglong iMaximum = qMax(VMExitMetric.maximum(), iRate);
+    quint64 iMaximum = qMax(VMExitMetric.maximum(), iRate);
     VMExitMetric.setMaximum(iMaximum);
 
     if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
@@ -1598,7 +1599,7 @@ QVector<DebuggerMetricData> UIInformationRuntime::getTotalCounterFromDegugger(co
     QString strStats = debugger.GetStats(strQuery, false);
     QXmlStreamReader xmlReader;
     xmlReader.addData(strStats);
-    qulonglong iTotal = 0;
+    quint64 iTotal = 0;
     if (xmlReader.readNextStartElement())
     {
         while (xmlReader.readNextStartElement())
@@ -1606,7 +1607,7 @@ QVector<DebuggerMetricData> UIInformationRuntime::getTotalCounterFromDegugger(co
             if (xmlReader.name() == "Counter")
             {
                 QXmlStreamAttributes attributes = xmlReader.attributes();
-                qulonglong iCounter = attributes.value("c").toULongLong();
+                quint64 iCounter = attributes.value("c").toULongLong();
                 iTotal += iCounter;
                 xmlReader.skipCurrentElement();
                 xmlData.push_back(DebuggerMetricData(*(attributes.value("name").string()), iCounter));
@@ -1614,7 +1615,7 @@ QVector<DebuggerMetricData> UIInformationRuntime::getTotalCounterFromDegugger(co
             else if (xmlReader.name() == "U64")
             {
                 QXmlStreamAttributes attributes = xmlReader.attributes();
-                qulonglong iCounter = attributes.value("val").toULongLong();
+                quint64 iCounter = attributes.value("val").toULongLong();
                 iTotal += iCounter;
                 xmlReader.skipCurrentElement();
                 xmlData.push_back(DebuggerMetricData(*(attributes.value("name").string()), iCounter));
