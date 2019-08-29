@@ -37,11 +37,14 @@
 #include "UIInformationRuntime.h"
 #include "UISession.h"
 
+/* COM includes: */
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
 #include "CVRDEServerInfo.h"
 
+/* External includes: */
+# include <math.h>
 
 const ULONG iPeriod = 1;
 const int iMaximumQueueSize = 120;
@@ -64,6 +67,20 @@ enum InfoLine
     InfoLine_Max
 };
 
+
+QString formatNumber(qulonglong number)
+{
+    if (number <= 0)
+        return QString();
+    char suffices[] = {'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
+    int zeroCount = (int)log10(number);
+    if (zeroCount < 3)
+        return QString::number(number);
+    int h = 3 * (zeroCount / 3);
+    char result[128];
+    sprintf(result, "%.2f", number / (float)pow(10, h));
+    return QString("%1 %2").arg(result).arg(suffices[h / 3 - 1]);
+}
 
 /*********************************************************************************************************************************
 *   UIRuntimeInfoWidget definition.                                                                                     *
@@ -164,7 +181,11 @@ private:
     /** @name Drawing helper functions.
      * @{ */
        void drawXAxisLabels(QPainter &painter, int iXSubAxisCount);
-       void drawPieCharts(QPainter &painter, qulonglong iMaximum);
+       void drawPieChart(QPainter &painter, qulonglong iMaximum, int iDataIndex, const QRectF &chartRect, int iAlpha);
+       void drawCombinedPieCharts(QPainter &painter, qulonglong iMaximum);
+       void drawDoughnutChart(QPainter &painter, qulonglong iMaximum, int iDataIndex,
+                              const QRectF &chartRect, const QRectF &innerRect, int iAlpha);
+
        /** Drawing an overlay rectangle over the charts to indicate that they are disabled. */
        void drawDisabledChartRectangle(QPainter &painter);
     /** @} */
@@ -430,9 +451,11 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iMarginBottom = 2 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
 
-    m_iPieChartRadius = 1.2f * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
-    m_iPieChartSpacing = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    m_size = QSize(10 * m_iPieChartRadius,  3 * m_iPieChartRadius);
+    float fAppIconSize = qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
+    m_size = QSize(14 * fAppIconSize,  4 * fAppIconSize);
+    m_iPieChartSpacing = 2;
+    m_iPieChartRadius = m_size.height() - (m_iMarginTop + m_iMarginBottom + 2 * m_iPieChartSpacing);
+
     retranslateUi();
 }
 
@@ -646,13 +669,13 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                  m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
             strValue = uiCommon().formatSize(iValue, iDecimalCount);
         else if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
-            strValue = QString::number(iValue);
+            strValue = formatNumber(iValue);
 
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
     if (m_fWithPieChart)
-        drawPieCharts(painter, iMaximum);
+        drawCombinedPieCharts(painter, iMaximum);
 }
 
 void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
@@ -676,50 +699,123 @@ void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
     }
 }
 
-void UIChart::drawPieCharts(QPainter &painter, qulonglong iMaximum)
+void UIChart::drawPieChart(QPainter &painter, qulonglong iMaximum, int iDataIndex, const QRectF &chartRect, int iAlpha)
 {
+    if (!m_pMetric)
+        return;
+    /* First draw a doughnut shaped chart for the 1st data series */
+    const QQueue<qulonglong> *data = m_pMetric->data(iDataIndex);
+    if (!data || data->isEmpty())
+        return;
+
+    /* Draw a whole non-filled circle: */
+    painter.setPen(QPen(QColor(100, 100, 100, iAlpha), 1));
+    painter.drawArc(chartRect, 0, 3600 * 16);
+    painter.setPen(Qt::NoPen);
+    /* Prepare the gradient for the pie chart: */
+    QConicalGradient pieGradient;
+    pieGradient.setCenter(chartRect.center());
+    pieGradient.setAngle(90);
+    pieGradient.setColorAt(0, QColor(0, 0, 0, iAlpha));
+    QColor pieColor(m_dataSeriesColor[iDataIndex]);
+    pieColor.setAlpha(iAlpha);
+    pieGradient.setColorAt(1, pieColor);
+
+    float fAngle = 360.f * data->back() / (float)iMaximum;
+
+    QPainterPath dataPath;
+    dataPath.moveTo(chartRect.center());
+    dataPath.arcTo(chartRect, 90.f/*startAngle*/,
+                   -1.f * fAngle /*sweepLength*/);
+    painter.setBrush(pieGradient);
+    painter.drawPath(dataPath);
+}
+
+void UIChart::drawDoughnutChart(QPainter &painter, qulonglong iMaximum, int iDataIndex,
+                                const QRectF &chartRect, const QRectF &innerRect, int iAlpha)
+{
+    const QQueue<qulonglong> *data = m_pMetric->data(iDataIndex);
+    if (!data || data->isEmpty())
+        return;
+
+    /* Draw a whole non-filled circle: */
+    painter.setPen(QPen(QColor(100, 100, 100, iAlpha), 1));
+    painter.drawArc(chartRect, 0, 3600 * 16);
+    painter.setPen(Qt::NoPen);
+
+    /* First draw a white filled circle and that the arc for data: */
+    QPointF center(chartRect.center());
+    QPainterPath fillPath;
+    fillPath.moveTo(center);
+    fillPath.arcTo(chartRect, 90/*startAngle*/,
+                   -1 * 360 /*sweepLength*/);
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(255, 255, 255, iAlpha));
+    painter.drawPath(fillPath);
+
+    /* Prepare the gradient for the pie chart: */
+    QConicalGradient pieGradient;
+    pieGradient.setCenter(chartRect.center());
+    pieGradient.setAngle(90);
+    pieGradient.setColorAt(0, QColor(0, 0, 0, iAlpha));
+    QColor pieColor(m_dataSeriesColor[iDataIndex]);
+    pieColor.setAlpha(iAlpha);
+    pieGradient.setColorAt(1, pieColor);
+
+
+    float fAngle = 360.f * data->back() / (float)iMaximum;
+
+    QPainterPath subPath1;
+    subPath1.moveTo(chartRect.center());
+    subPath1.arcTo(chartRect, 90.f/*startAngle*/,
+                   -1.f * fAngle /*sweepLength*/);
+    subPath1.closeSubpath();
+
+    QPainterPath subPath2;
+    subPath2.moveTo(innerRect.center());
+    subPath2.arcTo(innerRect, 90.f/*startAngle*/,
+                   -1.f * fAngle /*sweepLength*/);
+    subPath2.closeSubpath();
+
+    QPainterPath dataPath = subPath1.subtracted(subPath2);
+
+    painter.setBrush(pieGradient);
+    painter.drawPath(dataPath);
+
+}
+
+void UIChart::drawCombinedPieCharts(QPainter &painter, qulonglong iMaximum)
+{
+    if (!m_pMetric)
+        return;
+
+    QRectF chartRect(QPointF(m_iPieChartSpacing + m_iMarginLeft, m_iPieChartSpacing + m_iMarginTop),
+                     QSizeF(m_iPieChartRadius, m_iPieChartRadius));
+
     int iAlpha = 80;
-    for (int i = 0; i < DATA_SERIES_SIZE; ++i)
+
+    /* First draw a doughnut shaped chart for the 1st data series */
+    // int iDataIndex = 0;
+    // const QQueue<qulonglong> *data = m_pMetric->data(iDataIndex);
+    // if (!data || data->isEmpty())
+    //     return;
+    bool fData0 = m_pMetric->data(0) && !m_pMetric->data(0)->isEmpty();
+    bool fData1 = m_pMetric->data(0) && !m_pMetric->data(1)->isEmpty();
+
+    if (fData0 && fData1)
     {
-        /* Draw the pie chart for the 0th data series only: */
-        const QQueue<qulonglong> *data = m_pMetric->data(i);
-        if (!data || data->isEmpty())
-            continue;
-        QRect chartRect(QPoint((i+1) * m_iPieChartSpacing + i * m_iPieChartRadius + m_iMarginLeft, m_iPieChartSpacing + m_iMarginTop),
-                        QSize(m_iPieChartRadius, m_iPieChartRadius));
+        QRectF innerRect(QPointF(chartRect.left() + 0.25 * chartRect.width(), chartRect.top() + 0.25 * chartRect.height()),
+                         QSizeF(0.5 * chartRect.width(), 0.5 * chartRect.height()));
 
-        /* Draw a whole non-filled circle: */
-        painter.setPen(QPen(QColor(100, 100, 100, iAlpha), 1));
-        painter.drawArc(chartRect, 0, 3600 * 16);
+        /* Draw a doughnut shaped chart and then pie chart inside it: */
+        drawDoughnutChart(painter, iMaximum, 0 /* iDataIndex */, chartRect, innerRect, iAlpha);
+        drawPieChart(painter, iMaximum, 1 /* iDataIndex */, innerRect, iAlpha);
 
-        QPointF center(chartRect.center());
-        QPainterPath fillPath;
-        fillPath.moveTo(center);
-        fillPath.arcTo(chartRect, 90/*startAngle*/,
-                       -1 * 360 /*sweepLength*/);
-
-        /* First draw a white filled circle and that the arc for data: */
-        painter.setPen(Qt::NoPen);
-        painter.setBrush(QColor(255, 255, 255, iAlpha));
-        painter.drawPath(fillPath);
-
-        /* Prepare the gradient for the pie chart: */
-        QConicalGradient pieGradient;
-        pieGradient.setCenter(chartRect.center());
-        pieGradient.setAngle(90);
-        pieGradient.setColorAt(0, QColor(0, 0, 0, iAlpha));
-        QColor pieColor(m_dataSeriesColor[i]);
-        pieColor.setAlpha(iAlpha);
-        pieGradient.setColorAt(1, pieColor);
-
-        QPainterPath dataPath;
-        dataPath.moveTo(center);
-        float fAngle = 360.f * data->back() / (float)iMaximum;
-        dataPath.arcTo(chartRect, 90/*startAngle*/,
-                       -1 * fAngle /*sweepLength*/);
-        painter.setBrush(pieGradient);
-        painter.drawPath(dataPath);
     }
+    else if (fData0 && !fData1)
+        drawPieChart(painter, iMaximum, 0 /* iDataIndex */, chartRect, iAlpha);
+    else if (!fData0 && fData1)
+        drawPieChart(painter, iMaximum, 1 /* iDataIndex */, chartRect, iAlpha);
 }
 
 void UIChart::drawDisabledChartRectangle(QPainter &painter)
@@ -1060,9 +1156,6 @@ void UIInformationRuntime::prepareObjects()
     /* Configure charts: */
     if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
         m_charts[m_strCPUMetricName]->setWithPieChart(true);
-    if (m_charts.contains(m_strRAMMetricName) && m_charts[m_strRAMMetricName])
-        m_charts[m_strRAMMetricName]->setWithPieChart(false);
-
 
     UIRuntimeInfoWidget *m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
     pContainerLayout->addWidget(m_pRuntimeInfoWidget, iRow, 0, 2, 2);
@@ -1446,8 +1539,12 @@ void UIInformationRuntime::updateDiskIOGraphsAndMetric(qulonglong uDiskIOTotalWr
 
 }
 
+
 void UIInformationRuntime::updateVMExitMetric(qulonglong uTotalVMExits)
 {
+    if (uTotalVMExits <= 0)
+        return;
+
     UIMetric &VMExitMetric = m_subMetrics[m_strVMExitMetricName];
 
     qulonglong iRate = uTotalVMExits - VMExitMetric.total(0);
@@ -1471,8 +1568,8 @@ void UIInformationRuntime::updateVMExitMetric(qulonglong uTotalVMExits)
         if (m_infoLabels[m_strVMExitMetricName]->isEnabled())
             strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
                 .arg(m_strVMExitInfoLabelTitle)
-                .arg(m_strVMExitLabelCurrent).arg(QString::number(iRate)).arg(VMExitMetric.unit())
-                .arg(m_strVMExitLabelTotal).arg(QString::number(uTotalVMExits)).arg(VMExitMetric.unit());
+                .arg(m_strVMExitLabelCurrent).arg(formatNumber(iRate)).arg(VMExitMetric.unit())
+                .arg(m_strVMExitLabelTotal).arg(formatNumber(uTotalVMExits)).arg(VMExitMetric.unit());
         else
             strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strVMExitInfoLabelTitle).arg("--").arg("%");
         m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
