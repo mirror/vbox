@@ -328,6 +328,8 @@ public:
           * @param  enmMode   Brings the conversion mode.
           * @param  cDecimal  Brings the number of decimal digits in result. */
         static QString formatSize(quint64 uSize, uint cDecimal = 2, FormatSize enmMode = FormatSize_Round);
+        /** Formats the given @a uNumber to that 'k' is added for thousand, 'M' for million and so on. */
+        static QString addMetricSuffixToNumber(quint64 uNumber);
 
         /** Returns the list of the standard COM port names (i.e. "COMx"). */
         static QStringList COMPortNames();

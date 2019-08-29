@@ -67,22 +67,6 @@ enum InfoLine
     InfoLine_Max
 };
 
-
-QString formatNumber(quint64 number)
-{
-    if (number <= 0)
-        return QString();
-    /* See https://en.wikipedia.org/wiki/Metric_prefix for metric suffices:*/
-    char suffices[] = {'k', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'};
-    int zeroCount = (int)log10(number);
-    if (zeroCount < 3)
-        return QString::number(number);
-    int h = 3 * (zeroCount / 3);
-    char result[128];
-    sprintf(result, "%.2f", number / (float)pow(10, h));
-    return QString("%1%2").arg(result).arg(suffices[h / 3 - 1]);
-}
-
 /*********************************************************************************************************************************
 *   UIRuntimeInfoWidget definition.                                                                                     *
 ******************************************************************1***************************************************************/
@@ -670,7 +654,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
                  m_pMetric->unit().compare("b/s", Qt::CaseInsensitive) == 0)
             strValue = uiCommon().formatSize(iValue, iDecimalCount);
         else if (m_pMetric->unit().compare("times", Qt::CaseInsensitive) == 0)
-            strValue = formatNumber(iValue);
+            strValue = UICommon::addMetricSuffixToNumber(iValue);
 
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
@@ -1569,8 +1553,8 @@ void UIInformationRuntime::updateVMExitMetric(quint64 uTotalVMExits)
         if (m_infoLabels[m_strVMExitMetricName]->isEnabled())
             strInfo = QString("<b>%1</b></b><br/>%2: %3 %4<br/>%5: %6 %7")
                 .arg(m_strVMExitInfoLabelTitle)
-                .arg(m_strVMExitLabelCurrent).arg(formatNumber(iRate)).arg(VMExitMetric.unit())
-                .arg(m_strVMExitLabelTotal).arg(formatNumber(uTotalVMExits)).arg(VMExitMetric.unit());
+                .arg(m_strVMExitLabelCurrent).arg(UICommon::addMetricSuffixToNumber(iRate)).arg(VMExitMetric.unit())
+                .arg(m_strVMExitLabelTotal).arg(UICommon::addMetricSuffixToNumber(uTotalVMExits)).arg(VMExitMetric.unit());
         else
             strInfo = QString("<b>%1</b><br/>%2%3").arg(m_strVMExitInfoLabelTitle).arg("--").arg("%");
         m_infoLabels[m_strVMExitMetricName]->setText(strInfo);
