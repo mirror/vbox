@@ -542,6 +542,25 @@ DECLINLINE(const char *) virtioGetCtrlRespText(uint32_t vboxRc)
     }
 }
 
+DECLINLINE(const char *) virtioGetScsiStatusText(uint8_t uScsiStatusCode)
+{
+    switch (uScsiStatusCode)
+    {
+        case 0x00:  return "Good";
+        case 0x02:  return "Check Condition";
+        case 0x04:  return "Condition Met";
+        case 0x08:  return "Busy";
+        case 0x10:  return "Intermediate (obsolete)";
+        case 0x14:  return "Condition Met (obsolete)";
+        case 0x18:  return "Reservation Conflict";
+        case 0x22:  return "Command Terminated";
+        case 0x28:  return "Task Set Full";
+        case 0x30:  return "ACA Active";
+        case 0x40:  return "Task Aborted";
+        default:    return "<unknown>";
+    }
+}
+
 DECLINLINE(uint8_t) virtioScsiMapVerrToVirtio(uint32_t vboxRc)
 {
     switch(vboxRc)
@@ -784,7 +803,7 @@ static int virtioScsiSendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEv
 
 }
 
-static int virtioScsiR3ScrapReq(PVIRTIOSCSI pThis, uint16_t qIdx, uint32_t rcReq)
+static int virtioScsiScrapReq(PVIRTIOSCSI pThis, uint16_t qIdx, uint32_t rcReq)
 {
     struct REQ_RESP_HDR respHdr;
     respHdr.uSenseLen = 0;
@@ -821,7 +840,8 @@ static int virtioScsiR3ReqComplete(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int r
     respHdr.uStatus = pReq->uStatus;
     respHdr.uResponse = virtioScsiMapVerrToVirtio(rcReq);
 
-    LogFunc(("SCSI Status = %x (%s)\n", pReq->uStatus, pReq->uStatus != SCSI_STATUS_OK ? "FAILED" : "SCSI_STATUS_OK"));
+
+    LogFunc(("SCSI Status = %x (%s)\n", pReq->uStatus, virtioGetScsiStatusText(pReq->uStatus)));
     LogFunc(("Response code: %s\n", virtioGetReqRespText(respHdr.uResponse)));
 
     if (pReq->cbSense)
@@ -939,8 +959,12 @@ static int virtioScsiSubmitReq(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
              "                     CDB: %.*Rhxs\n",
             pVirtqReq->cmdHdr.uLUN, uTarget, uLUN, pVirtqReq->cmdHdr.uId,
             pVirtqReq->cmdHdr.uTaskAttr, pVirtqReq->cmdHdr.uPrio, pVirtqReq->cmdHdr.uCrn, cbCdb,  pbCdb));
+
     if (uTarget >= pThis->cTargets)
-        virtioScsiR3ScrapReq(pThis, qIdx, VERR_IO_BAD_UNIT);
+    {
+        virtioScsiScrapReq(pThis, qIdx, VERR_IO_BAD_UNIT);
+        return VINF_SUCCESS;
+    }
 
     off_t    uPiOutOff = 0;
     size_t   cbPiHdr = 0;
@@ -1014,9 +1038,14 @@ static int virtioScsiSubmitReq(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
                                             &pReq->uStatus, 30 * RT_MS_1SEC);
 
         if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
-            virtioScsiR3ScrapReq(pThis, qIdx, rc);
+        {
+            virtioScsiScrapReq(pThis, qIdx, rc);
+            return VINF_SUCCESS;
+        }
     } else {
-         virtioScsiR3ScrapReq(pThis, qIdx, VERR_IO_NOT_READY);
+        virtioScsiScrapReq(pThis, qIdx, VERR_IO_NOT_READY);
+        return VINF_SUCCESS;
+
     }
 
     return VINF_SUCCESS;
