@@ -2444,7 +2444,8 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
 {
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && !defined(IN_RING3)
     RT_NOREF3(pVCpu, uExitReason, u64ExitQual);
-    return VINF_EM_RAW_EMULATE_INSTR;
+    AssertMsgFailed(("VM-exit should only be invoked from ring-3 when nested-guest executes only in ring-3!\n"));
+    return VERR_IEM_IPE_7;
 # else
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
