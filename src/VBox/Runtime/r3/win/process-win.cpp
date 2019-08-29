@@ -1592,7 +1592,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
     DWORD   dwErr       = NO_ERROR;
     HANDLE  hTokenLogon = INVALID_HANDLE_VALUE;
     int rc;
-    if (fFlags & RTPROC_FLAGS_AS_IMPERSONATED_TOKEN)
+    if ((fFlags & RTPROC_FLAGS_AS_IMPERSONATED_TOKEN) || pwszUser == NULL)
         rc = rtProcWinGetThreadTokenHandle(GetCurrentThread(), &hTokenLogon);
     else
         rc = rtProcWinUserLogon(pwszUser, pwszPassword, &hTokenLogon);
@@ -1614,7 +1614,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
              * For the token search we need a SID.
              */
             PSID pSid = NULL;
-            if (fFlags & RTPROC_FLAGS_AS_IMPERSONATED_TOKEN)
+            if ((fFlags & RTPROC_FLAGS_AS_IMPERSONATED_TOKEN) || pwszUser == NULL)
                 pSid = rtProcWinGetTokenUserSid(hTokenLogon, &rc);
             else
             {
@@ -1843,7 +1843,7 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
                 PROFILEINFOW ProfileInfo;
                 PRTUTF16     pwszUserFree = NULL;
                 RT_ZERO(ProfileInfo);
-                if (fFlags & RTPROC_FLAGS_PROFILE)
+                if (fFlags & RTPROC_FLAGS_PROFILE) /** @todo r=bird: We probably don't need to load anything if pwszUser is NULL... */
                 {
                     if (!pwszUser)
                     {
@@ -2142,7 +2142,7 @@ static int rtProcWinCreateAsUser1(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
         BOOL fRc = g_pfnCreateProcessWithLogonW(pwszUser,
                                                 NULL,                       /* lpDomain*/
                                                 pwszPassword,
-                                                fFlags & RTPROC_FLAGS_PROFILE ? 1 /*LOGON_WITH_ PROFILE*/ : 0,
+                                                fFlags & RTPROC_FLAGS_PROFILE ? 1 /*LOGON_WITH_PROFILE*/ : 0,
                                                 *ppwszExec,
                                                 pwszCmdLine,
                                                 dwCreationFlags | (fCreatedSuspended ? CREATE_SUSPENDED : 0),
