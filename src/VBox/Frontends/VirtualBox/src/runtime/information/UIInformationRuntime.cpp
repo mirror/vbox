@@ -88,6 +88,8 @@ protected:
 private:
 
     void runTimeAttributes();
+    QString screenResolutions();
+
     void insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo);
     void computeMinimumWidth();
 
@@ -98,6 +100,7 @@ private:
       * @{ */
         QString m_strTableTitle;
         QString m_strScreenResolutionLabel;
+        QString m_strMonitorTurnedOff;
         QString m_strUptimeLabel;
         QString m_strClipboardModeLabel;
         QString m_strDragAndDropLabel;
@@ -105,9 +108,14 @@ private:
         QString m_strNestedPagingLabel;
         QString m_strUnrestrictedExecutionLabel;
         QString m_strParavirtualizationLabel;
+        QString m_strActive;
+        QString m_strInactive;
+        QString m_strNotAvailable;
         QString m_strGuestAdditionsLabel;
         QString m_strGuestOSTypeLabel;
         QString m_strRemoteDesktopLabel;
+        QString m_strNotSet;
+        QString m_strNotDetected;
     /** @} */
 
     int m_iFontHeight;
@@ -235,6 +243,7 @@ void UIRuntimeInfoWidget::retranslateUi()
 {
     m_strTableTitle = QApplication::translate("UIVMInformationDialog", "Runtime Attributes");
     m_strScreenResolutionLabel = QApplication::translate("UIVMInformationDialog", "Screen Resolution");
+    m_strMonitorTurnedOff = QApplication::translate("UIVMInformationDialog", "turned off");
     m_strUptimeLabel = QApplication::translate("UIVMInformationDialog", "VM Uptime");
     m_strClipboardModeLabel = QApplication::translate("UIVMInformationDialog", "Clipboard Mode");
     m_strDragAndDropLabel = QApplication::translate("UIVMInformationDialog", "Drag and Drop Mode");
@@ -242,9 +251,14 @@ void UIRuntimeInfoWidget::retranslateUi()
     m_strNestedPagingLabel = QApplication::translate("UIVMInformationDialog", "Nested Paging");
     m_strUnrestrictedExecutionLabel = QApplication::translate("UIVMInformationDialog", "Unrestricted Execution");
     m_strParavirtualizationLabel = QApplication::translate("UIVMInformationDialog", "Paravirtualization Interface");
+    m_strActive = QApplication::translate("UIVMInformationDialog", "Active");
+    m_strInactive = QApplication::translate("UIVMInformationDialog", "Inactive");
+    m_strNotAvailable = QApplication::translate("UIVMInformationDialog", "Not Available");
     m_strGuestAdditionsLabel = QApplication::translate("UIVMInformationDialog", "Guest Additions");
     m_strGuestOSTypeLabel = QApplication::translate("UIVMInformationDialog", "Guest OS Type");
     m_strRemoteDesktopLabel = QApplication::translate("UIVMInformationDialog", "Remote Desktop Server Port");
+    m_strNotSet = QApplication::translate("UIVMInformationDialog", "not set");
+    m_strNotDetected = QApplication::translate("UIVMInformationDialog", "Not Detected");
 }
 
 QSize UIRuntimeInfoWidget::sizeHint() const
@@ -265,6 +279,12 @@ void UIRuntimeInfoWidget::insertInfoLine(InfoLine enmInfoLine, const QString& st
     setItem(iRow, 0, new QTableWidgetItem(strLabel, enmInfoLine));
     setItem(iRow, 1, new QTableWidgetItem(strInfo, enmInfoLine));
     setRowHeight(iRow, 2 * iMargin + m_iFontHeight);
+}
+
+QString UIRuntimeInfoWidget::screenResolutions()
+{
+    QString strResolutions;
+    return strResolutions;
 }
 
 void UIRuntimeInfoWidget::runTimeAttributes()
@@ -288,7 +308,7 @@ void UIRuntimeInfoWidget::runTimeAttributes()
         if (monitorStatus == KGuestMonitorStatus_Disabled)
         {
             strResolution += QString(" ");
-            strResolution += QString(QApplication::translate("UIVMInformationDialog", "turned off"));
+            strResolution += m_strMonitorTurnedOff;
         }
         aResolutions[iScreen] = strResolution;
     }
@@ -314,8 +334,7 @@ void UIRuntimeInfoWidget::runTimeAttributes()
 
     /* Determine virtualization attributes: */
     QString strVirtualization = debugger.GetHWVirtExEnabled() ?
-        QApplication::translate("UIVMInformationDialog", "Active") :
-        QApplication::translate("UIVMInformationDialog", "Inactive");
+        m_strActive : m_strInactive;
 
     QString strExecutionEngine;
     switch (debugger.GetExecutionEngine())
@@ -333,24 +352,22 @@ void UIRuntimeInfoWidget::runTimeAttributes()
             AssertFailed();
             RT_FALL_THRU();
         case KVMExecutionEngine_NotSet:
-            strExecutionEngine = QApplication::translate("UIVMInformationDialog", "not set");
+            strExecutionEngine = m_strNotSet;
             break;
     }
     QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
-        QApplication::translate("UIVMInformationDialog", "Active"):
-        QApplication::translate("UIVMInformationDialog", "Inactive");
+        m_strActive : m_strInactive;
 
     QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
-        QApplication::translate("UIVMInformationDialog", "Active"):
-        QApplication::translate("UIVMInformationDialog", "Inactive");
+        m_strActive : m_strInactive;
 
-        QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
+    QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
 
     /* Guest information: */
     CGuest guest = m_console.GetGuest();
     QString strGAVersion = guest.GetAdditionsVersion();
     if (strGAVersion.isEmpty())
-        strGAVersion = tr("Not Detected", "guest additions");
+        strGAVersion = m_strNotDetected;
     else
     {
         ULONG uRevision = guest.GetAdditionsRevision();
@@ -359,15 +376,14 @@ void UIRuntimeInfoWidget::runTimeAttributes()
     }
     QString strOSType = guest.GetOSTypeId();
     if (strOSType.isEmpty())
-        strOSType = tr("Not Detected", "guest os type");
+        strOSType = m_strNotDetected;
     else
         strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
 
     /* VRDE information: */
     int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
     QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1)?
-        tr("Not Available", "details report (VRDE server port)") :
-        QString("%1").arg(iVRDEPort);
+        m_strNotAvailable : QString("%1").arg(iVRDEPort);
 
     /* Searching for longest string: */
     QStringList values;
@@ -538,12 +554,9 @@ void UIChart::retranslateUi()
 void UIChart::computeFontSize()
 {
     int iFontSize = 24;
-
-    //const QString &strText = m_pMetric->name();
     foreach (const QString &strText, m_textList)
     {
         m_font.setPixelSize(iFontSize);
-
         do{
             int iWidth = QFontMetrics(m_font).width(strText);
             if (iWidth + m_iMarginLeft + m_iMarginRight > m_size.width())
