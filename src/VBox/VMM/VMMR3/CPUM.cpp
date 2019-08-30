@@ -1909,7 +1909,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxEntryLoadPatMsr       = 0;
     EmuFeat.fVmxExitSaveDebugCtls     = 1;
     EmuFeat.fVmxHostAddrSpaceSize     = 1;
-    EmuFeat.fVmxExitAckExtInt         = 0;
+    EmuFeat.fVmxExitAckExtInt         = 1;
     EmuFeat.fVmxExitSavePatMsr        = 0;
     EmuFeat.fVmxExitLoadPatMsr        = 0;
     EmuFeat.fVmxExitSaveEferMsr       = 1;
