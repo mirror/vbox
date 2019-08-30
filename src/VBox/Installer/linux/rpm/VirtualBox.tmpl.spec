@@ -39,14 +39,22 @@ Requires:  %INITSCRIPTS% %LIBASOUND% %NETTOOLS%
 %endif
 
 %MACROSPYTHON%
+%if %{?__python3:1}%{!?__python3:0}
+%define vbox_python %{__python3}
+%else
+%define vbox_python %{__python}
+%endif
 
 # our Qt5 libs are built on EL5 with ld 2.17 which does not provide --link-id=
 %undefine _missing_build_ids_terminate_build
 
 # Remove source code from debuginfo package, needed for Fedora 27 and later
 # as we build the binaries before creating the RPMs.
-
 %if 0%{?fedora} >= 27
+%undefine _debugsource_packages
+%undefine _debuginfo_subpackages
+%endif
+%if 0%{?rhel} >= 8
 %undefine _debugsource_packages
 %undefine _debuginfo_subpackages
 %endif
@@ -89,7 +97,7 @@ install -m 755 -d $RPM_BUILD_ROOT/usr/share/mime/packages
 %if %{?with_python:1}%{!?with_python:0}
 (export VBOX_INSTALL_PATH=/usr/lib/virtualbox && \
   cd ./sdk/installer && \
-  %{__python} ./vboxapisetup.py install --prefix %{_prefix} --root $RPM_BUILD_ROOT)
+  %{vbox_python} ./vboxapisetup.py install --prefix %{_prefix} --root $RPM_BUILD_ROOT)
 %endif
 rm -rf sdk/installer
 mv nls $RPM_BUILD_ROOT/usr/share/virtualbox
