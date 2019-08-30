@@ -90,21 +90,16 @@ enum {
 enum { PARTITION_TABLE_MBR = 1, PARTITION_TABLE_GPT = 2 };
 
 #define VBOX_EXTPACK                "Oracle VM VirtualBox Extension Pack"
-#define GPT_PTABLE_SIZE             32 * BLOCKSIZE   /** Max size we to read for GPT partition table */
+#define GPT_PTABLE_SIZE             32 * 512         /** Max size we to read for GPT partition table */
 #define MBR_PARTITIONS_MAX          4                /** Fixed number of partitions in Master Boot Record */
 #define BASENAME_MAX                256              /** Maximum name for the basename of a path (for RTStrNLen()*/
 #define VBOXIMG_PARTITION_MAX       256              /** How much storage to allocate to store partition info */
 #define PARTITION_NAME_MAX          72               /** Maximum partition name size (accomodates GPT partition name) */
-#define BLOCKSIZE                   512              /** Commonly used disk block size */
 #define DOS_BOOT_RECORD_SIGNATURE   0xaa55           /** MBR and EBR (partition table) signature [EOT boundary] */
 #define NULL_BOOT_RECORD_SIGNATURE  0x0000           /** MBR or EBR null signature value */
 #define MAX_UUID_LEN                256              /** Max length of a UUID */
-#define LBA(n)                      (n * BLOCKSIZE)
-#define VD_SECTOR_SIZE              512              /** Virtual disk sector/blocksize */
-#define VD_SECTOR_MASK              (VD_SECTOR_SIZE - 1)    /** Masks off a blocks worth of data */
-#define VD_SECTOR_OUT_OF_BOUNDS_MASK  (~UINT64_C(VD_SECTOR_MASK))         /** Masks the overflow of a blocks worth of data */
+#define LBA(n)                      (n * g_cbSector)
 #define VERBOSE                     g_vboximgOpts.fVerbose
-#define IS_BIG_ENDIAN (*(uint16_t *)"\0\xff" < 0x100)
 
 #define PARTTYPE_IS_NULL(parType) ((uint8_t)parType == 0x00)
 #define PARTTYPE_IS_GPT(parType)  ((uint8_t)parType == 0xee)
@@ -120,7 +115,8 @@ static struct fuse_operations g_vboximgOps;         /** FUSE structure that defi
 /* Global variables */
 
 static RTVFSFILE             g_hVfsFileDisk;        /** Disk as VFS file handle. */
-static char                 *g_pszDiskUuid;          /** UUID of image (if known, otherwise NULL) */
+static uint32_t              g_cbSector;            /** Disk sector size. */
+static char                 *g_pszDiskUuid;         /** UUID of image (if known, otherwise NULL) */
 static off_t                 g_vDiskOffset;         /** Biases r/w from start of VD */
 static off_t                 g_vDiskSize;           /** Limits r/w length for VD */
 static int32_t               g_cReaders;            /** Number of readers for VD */
@@ -641,8 +637,8 @@ parsePartitionTable(void)
         PARTITIONINFO *ppi = &g_aParsedPartitionInfo[idxPartition];
 
         ppi->idxPartition = idxPartition;
-        ppi->offPartition = (off_t) pMbrPartitionEntry->partitionLba * BLOCKSIZE;
-        ppi->cbPartition  = (off_t) pMbrPartitionEntry->partitionBlkCnt * BLOCKSIZE;
+        ppi->offPartition = (off_t) pMbrPartitionEntry->partitionLba * g_cbSector;
+        ppi->cbPartition  = (off_t) pMbrPartitionEntry->partitionBlkCnt * g_cbSector;
         ppi->fBootable    = pMbrPartitionEntry->bootIndicator == 0x80;
         ppi->partitionType.legacy = pMbrPartitionEntry->type;
 
@@ -688,8 +684,8 @@ parsePartitionTable(void)
             memcpy(&(ppi->partitionEntry).gptEntry, pEntry, sizeof(GPTPARTITIONENTRY));
             if (!pEntry->firstLba)
                 break;
-            ppi->offPartition = pEntry->firstLba * BLOCKSIZE;
-            ppi->cbPartition = (pEntry->lastLba - pEntry->firstLba) * BLOCKSIZE;
+            ppi->offPartition = pEntry->firstLba * g_cbSector;
+            ppi->cbPartition = (pEntry->lastLba - pEntry->firstLba) * g_cbSector;
             ppi->fBootable = pEntry->attrFlags & (1 << GPT_LEGACY_BIOS_BOOTABLE);
             ppi->partitionType.gptGuidTypeSpecifier = pEntry->partitionTypeGuid;
             size_t cwName = sizeof (pEntry->partitionName) / 2;
@@ -707,7 +703,7 @@ parsePartitionTable(void)
     {
         uint32_t firstEbrLba
             = g_aParsedPartitionInfo[idxEbrPartitionInMbr].partitionEntry.mbrEntry.partitionLba;
-        off_t    firstEbrOffset   = (off_t)firstEbrLba * BLOCKSIZE;
+        off_t    firstEbrOffset   = (off_t)firstEbrLba * g_cbSector;
         off_t    chainedEbrOffset = 0;
 
         if (!firstEbrLba)
@@ -737,8 +733,8 @@ parsePartitionTable(void)
 
             PARTITIONINFO *ppi = &g_aParsedPartitionInfo[idxPartition];
             ppi->idxPartition         = idxPartition;
-            ppi->offPartition         = currentEbrOffset + (off_t)pEbrPartitionEntry->partitionLba * BLOCKSIZE;
-            ppi->cbPartition          = (off_t)pEbrPartitionEntry->partitionBlkCnt * BLOCKSIZE;
+            ppi->offPartition         = currentEbrOffset + (off_t)pEbrPartitionEntry->partitionLba * g_cbSector;
+            ppi->cbPartition          = (off_t)pEbrPartitionEntry->partitionBlkCnt * g_cbSector;
             ppi->fBootable            = pEbrPartitionEntry->bootIndicator == 0x80;
             ppi->partitionType.legacy = pEbrPartitionEntry->type;
 
@@ -750,7 +746,7 @@ parsePartitionTable(void)
             if (!PARTTYPE_IS_EXT(ebr.chainingPartitionEntry.type))
                 return RTMsgErrorExitFailure("Logical partition chain broken");
 
-            chainedEbrOffset = ebr.chainingPartitionEntry.partitionLba * BLOCKSIZE;
+            chainedEbrOffset = ebr.chainingPartitionEntry.partitionLba * g_cbSector;
         }
     }
     return PARTITION_TABLE_MBR;
@@ -824,8 +820,8 @@ displayGptPartitionTable(void)
             tbl.setCell(row, colPartNbr,    idxPartition - 1);
             if (colBoot)
                 tbl.setCell(row, colBoot,   ppi->fBootable ? '*' : ' ');
-            tbl.setCell(row, colStart,      ppi->offPartition / BLOCKSIZE);
-            tbl.setCell(row, colSectors,    ppi->cbPartition / BLOCKSIZE);
+            tbl.setCell(row, colStart,      ppi->offPartition / g_cbSector);
+            tbl.setCell(row, colSectors,    ppi->cbPartition / g_cbSector);
             tbl.setCell(row, colSize,       vboximgScaledSize(ppi->cbPartition));
             tbl.setCell(row, colOffset,     ppi->offPartition);
             tbl.setCell(row, colType,       SAFENULL(pszPartitionTypeDesc));
@@ -874,8 +870,8 @@ displayLegacyPartitionTable(void)
             void *row = tbl.addRow();
             tbl.setCell(row, colPartition,  g_pszBaseImageName, idxPartition);
             tbl.setCell(row, colBoot,       p->fBootable ? '*' : ' ');
-            tbl.setCell(row, colStart,      p->offPartition / BLOCKSIZE);
-            tbl.setCell(row, colSectors,    p->cbPartition / BLOCKSIZE);
+            tbl.setCell(row, colStart,      p->offPartition / g_cbSector);
+            tbl.setCell(row, colSectors,    p->cbPartition / g_cbSector);
             tbl.setCell(row, colSize,       vboximgScaledSize(p->cbPartition));
             tbl.setCell(row, colOffset,     p->offPartition);
             tbl.setCell(row, colId,         p->partitionType.legacy);
@@ -1231,7 +1227,7 @@ main(int argc, char **argv)
             RTPrintf("  Open: %s\n", CSTR(pCurMedium->pImagePath));
 
         rc = VDOpen(pVDisk,
-                    CSTR(pszFormat),
+                    pszFormat,
                     CSTR(pCurMedium->pImagePath),
                     pCurMedium->fWriteable,
                     g_pVdIfs);
@@ -1255,6 +1251,8 @@ main(int argc, char **argv)
     rc = RTVfsFileGetSize(g_hVfsFileDisk, (uint64_t *)&g_cbEntireVDisk);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("Error querying disk image size from VFS wrapper\n");
+
+    g_cbSector = VDGetSectorSize(pVDisk, VD_LAST_IMAGE);
 
     if (g_vboximgOpts.fList)
     {
@@ -1317,7 +1315,7 @@ main(int argc, char **argv)
                      g_vDiskSize = g_vDiskOffset + g_aParsedPartitionInfo[i].cbPartition;
                      if (VERBOSE)
                         RTPrintf("\nPartition %d specified. Only sectors %llu to %llu of disk will be accessible\n",
-                            g_vboximgOpts.idxPartition, g_vDiskOffset / BLOCKSIZE, g_vDiskSize / BLOCKSIZE);
+                            g_vboximgOpts.idxPartition, g_vDiskOffset / g_cbSector, g_vDiskSize / g_cbSector);
                 }
             }
             if (!fFoundPartition)
@@ -1329,7 +1327,7 @@ main(int argc, char **argv)
                 return RTMsgErrorExitFailure("User specified offset out of range of virtual disk\n");
 
             if (VERBOSE)
-                RTPrintf("Setting r/w bias (offset) to user requested value for sector %llu\n", g_vDiskOffset / BLOCKSIZE);
+                RTPrintf("Setting r/w bias (offset) to user requested value for sector %llu\n", g_vDiskOffset / g_cbSector);
 
             g_vDiskOffset = g_vboximgOpts.offset;
         }
@@ -1338,7 +1336,7 @@ main(int argc, char **argv)
                 return RTMsgErrorExitFailure("User specified size out of range of virtual disk\n");
 
             if (VERBOSE)
-                RTPrintf("Setting r/w size limit to user requested value %llu\n", g_vDiskSize / BLOCKSIZE);
+                RTPrintf("Setting r/w size limit to user requested value %llu\n", g_vDiskSize / g_cbSector);
 
             g_vDiskSize = g_vboximgOpts.size;
         }
