@@ -23,7 +23,7 @@
 #define LOG_GROUP LOG_GROUP_DEFAULT /** @todo log group */
 
 #define FUSE_USE_VERSION 27
-#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_FEEBSD)
+#if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 #   define UNIX_DERIVATIVE
 #endif
 #define MAX_READERS (INT32_MAX / 32)
@@ -315,7 +315,7 @@ static int vboxImgMntVfsObjQueryFromPath(const char *pszPath, PRTVFSOBJ phVfsObj
             {
                 /* Retrieve the accessed volume and return the stat data. */
                 uint32_t idxVol;
-                int rcIprt = RTStrToUInt32Full(&pPathSplit->apszComps[1][5], 10, &idxVol);
+                int rcIprt = RTStrToUInt32Full(&pPathSplit->apszComps[1][2], 10, &idxVol);
                 if (   rcIprt == VINF_SUCCESS
                     && idxVol < g_cVolumes
                     && g_paVolumes[idxVol].hVfsDirRoot != NIL_RTVFSDIR)
@@ -668,12 +668,14 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
                     RTVFSDIR hVfsDir = RTVfsObjToDir(hVfsObj);
                     RTDIRENTRYEX DirEntry;
 
+                    rcIprt = RTVfsDirRewind(hVfsDir); AssertRC(rcIprt);
                     rcIprt = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
                     while (RT_SUCCESS(rcIprt))
                     {
                         pfnFiller(pvBuf, DirEntry.szName, NULL, 0);
                         rcIprt = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
                     }
+
                     RTVfsDirRelease(hVfsDir);
                     break;
                 }
