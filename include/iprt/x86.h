@@ -1476,6 +1476,40 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_DS_AREA                    0x600
 /** Running Average Power Limit (RAPL) power units. */
 #define MSR_RAPL_POWER_UNIT                 0x606
+/** Package C3 Interrupt Response Limit. */
+#define MSR_PKGC3_IRTL                      0x60a
+/** Package C6/C7S Interrupt Response Limit 1. */
+#define MSR_PKGC_IRTL1                      0x60b
+/** Package C6/C7S Interrupt Response Limit 2. */
+#define MSR_PKGC_IRTL2                      0x60c
+/** Package C2 Residency Counter. */
+#define MSR_PKG_C2_RESIDENCY                0x60d
+/** PKG RAPL Power Limit Control. */
+#define MSR_PKG_POWER_LIMIT                 0x610
+/** PKG Energy Status. */
+#define MSR_PKG_ENERGY_STATUS               0x611
+/** PKG Perf Status. */
+#define MSR_PKG_PERF_STATUS                 0x613
+/** PKG RAPL Parameters. */
+#define MSR_PKG_POWER_INFO                  0x614
+/** DRAM RAPL Power Limit Control. */
+#define MSR_DRAM_POWER_LIMIT                0x618
+/** DRAM Energy Status. */
+#define MSR_DRAM_ENERGY_STATUS              0x619
+/** DRAM Performance Throttling Status. */
+#define MSR_DRAM_PERF_STATUS                0x61b
+/** DRAM RAPL Parameters. */
+#define MSR_DRAM_POWER_INFO                 0x61c
+/** Package C10 Residency Counter. */
+#define MSR_PKG_C10_RESIDENCY               0x632
+/** PP0 Energy Status. */
+#define MSR_PP0_ENERGY_STATUS               0x639
+/** PP1 Energy Status. */
+#define MSR_PP1_ENERGY_STATUS               0x641
+/** Turbo Activation Ratio. */
+#define MSR_TURBO_ACTIVATION_RATIO          0x64c
+/** Core Performance Limit Reasons. */
+#define MSR_CORE_PERF_LIMIT_REASONS         0x64f
 
 /** X2APIC MSR range start. */
 #define MSR_IA32_X2APIC_START               0x800
