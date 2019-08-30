@@ -1072,7 +1072,19 @@ static void shader_generate_glsl_declarations(const struct wined3d_context *cont
         }
         else
         {
+#ifndef VBOX_WITH_VMSVGA
             if(This->baseShader.reg_maps.usesrelconstF) {
+#else
+            /* If GL supports only 256 constants (seen on macOS drivers for compatibility profile, which we use),
+             * then ignore the need for potential uniforms and always declare VC[256].
+             * This allows to compile Windows 10 shader which use hardcoded constants at 250+ index range.
+             * Fixes drawing problems on Windows 10 desktop.
+             *
+             * This hack is normally active only on macOS, because Windows and Linux OpenGL drivers
+             * have a more usable limit for GL compatibility context (1024+).
+             */
+            if (This->baseShader.reg_maps.usesrelconstF && gl_info->limits.glsl_vs_float_constants > 256) {
+#endif
                 /* Subtract the other potential uniforms from the max available (bools, ints, and 1 row of projection matrix).
                  * Subtract another uniform for immediate values, which have to be loaded via uniform by the driver as well.
                  * The shader code only uses 0.5, 2.0, 1.0, 128 and -128 in vertex shader code, so one vec4 should be enough
