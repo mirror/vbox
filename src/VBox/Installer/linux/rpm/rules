@@ -74,6 +74,7 @@ ifneq ($(MAKECMDGOALS),clean)
  # look for OEL
   rpmrel  := $(shell cat /etc/enterprise-release 2> /dev/null | sed -ne 's/^Enterprise Linux[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
  endif
+ ifeq ($(rpmrel),)
  # look for OL
   rpmrel  := $(shell cat /etc/oracle-release 2> /dev/null | sed -ne 's/^Oracle Linux[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
  endif
