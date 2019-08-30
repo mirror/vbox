@@ -2632,6 +2632,7 @@
 # define RTVfsDirQueryPathInfo                          RT_MANGLER(RTVfsDirQueryPathInfo)
 # define RTVfsDirReadEx                                 RT_MANGLER(RTVfsDirReadEx)
 # define RTVfsDirRemoveDir                              RT_MANGLER(RTVfsDirRemoveDir)
+# define RTVfsDirRewind                                 RT_MANGLER(RTVfsDirRewind)
 # define RTVfsDirSetPathMode                            RT_MANGLER(RTVfsDirSetPathMode)
 # define RTVfsDirToPrivate                              RT_MANGLER(RTVfsDirToPrivate)
 # define RTVfsFileFlush                                 RT_MANGLER(RTVfsFileFlush)

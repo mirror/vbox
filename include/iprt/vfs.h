@@ -746,6 +746,14 @@ RTDECL(int) RTVfsDirRemoveDir(RTVFSDIR hVfsDir, const char *pszRelPath, uint32_t
  */
 RTDECL(int) RTVfsDirReadEx(RTVFSDIR hVfsDir, PRTDIRENTRYEX pDirEntry, size_t *pcbDirEntry, RTFSOBJATTRADD enmAddAttr);
 
+/**
+ * Rewind and restart the directory reading.
+ *
+ * @returns IRPT status code.
+ * @param   hVfsDir         The VFS directory.
+ */
+RTDECL(int) RTVfsDirRewind(RTVFSDIR hVfsDir);
+
 /** @}  */
 
 
