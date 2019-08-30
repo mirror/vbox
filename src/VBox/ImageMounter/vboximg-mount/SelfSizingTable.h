@@ -158,7 +158,7 @@ SELFSIZINGTABLE::~SelfSizingTable()
         while (pColData)
         {
             COLDATA *pColDataNext = pColData->next;
-            delete pColData->pszData;
+            delete[] pColData->pszData;
             delete pColData;
             pColData = pColDataNext;
         }

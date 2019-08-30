@@ -73,6 +73,7 @@
 #include <iprt/path.h>
 #include <iprt/utf16.h>
 #include <iprt/base64.h>
+#include <iprt/vfs.h>
 
 #include "vboximg-mount.h"
 #include "vboximgCrypto.h"
@@ -118,7 +119,7 @@ static struct fuse_operations g_vboximgOps;         /** FUSE structure that defi
 
 /* Global variables */
 
-static PVDISK                g_pVDisk;              /** Handle for Virtual Disk in contet */
+static RTVFSFILE             g_hVfsFileDisk;        /** Disk as VFS file handle. */
 static char                 *g_pszDiskUuid;          /** UUID of image (if known, otherwise NULL) */
 static off_t                 g_vDiskOffset;         /** Biases r/w from start of VD */
 static off_t                 g_vDiskSize;           /** Limits r/w length for VD */
@@ -399,189 +400,6 @@ static int vboximgOp_release(const char *pszPath, struct fuse_file_info *pInfo)
     return 0;
 }
 
-/**
- * VD read Sanitizer taking care of unaligned accesses.
- *
- * @return  VBox bootIndicator code.
- * @param   pDisk    VD disk container.
- * @param   off      Offset to start reading from.
- * @param   pvBuf    Pointer to the buffer to read into.
- * @param   cbRead   Amount of bytes to read.
- */
-static int vdReadSanitizer(PVDISK pDisk, uint64_t off, void *pvBuf, size_t cbRead)
-{
-    int rc;
-
-    uint64_t const cbMisalignmentOfStart = off & VD_SECTOR_MASK;
-    uint64_t const cbMisalignmentOfEnd  = (off + cbRead) & VD_SECTOR_MASK;
-
-    if (cbMisalignmentOfStart + cbMisalignmentOfEnd == 0) /* perfectly aligned request; just read it and done */
-        rc = VDRead(pDisk, off, pvBuf, cbRead);
-    else
-    {
-        uint8_t *pbBuf = (uint8_t *)pvBuf;
-        uint8_t abBuf[VD_SECTOR_SIZE];
-
-        /* If offset not @ sector boundary, read whole sector, then copy unaligned
-         * bytes (requested by user), only up to sector boundary, into user's buffer
-         */
-        if (cbMisalignmentOfStart)
-        {
-            rc = VDRead(pDisk, off - cbMisalignmentOfStart, abBuf, VD_SECTOR_SIZE);
-            if (RT_SUCCESS(rc))
-            {
-                size_t const cbPartial = RT_MIN(VD_SECTOR_SIZE - cbMisalignmentOfStart, cbRead);
-                memcpy(pbBuf, &abBuf[cbMisalignmentOfStart], cbPartial);
-                pbBuf  += cbPartial;
-                off    += cbPartial; /* Beginning of next sector or EOD */
-                cbRead -= cbPartial; /* # left to read */
-            }
-        }
-        else /* user's offset already aligned, did nothing */
-            rc = VINF_SUCCESS;
-
-        /* Read remaining aligned sectors, deferring any tail-skewed bytes */
-        if (RT_SUCCESS(rc) && cbRead >= VD_SECTOR_SIZE)
-        {
-            Assert(!(off % VD_SECTOR_SIZE));
-
-            size_t cbPartial = cbRead - cbMisalignmentOfEnd;
-            Assert(!(cbPartial % VD_SECTOR_SIZE));
-            rc = VDRead(pDisk, off, pbBuf, cbPartial);
-            if (RT_SUCCESS(rc))
-            {
-                pbBuf  += cbPartial;
-                off    += cbPartial;
-                cbRead -= cbPartial;
-            }
-        }
-
-        /* Unaligned buffered read of tail. */
-        if (RT_SUCCESS(rc) && cbRead)
-        {
-            Assert(cbRead == cbMisalignmentOfEnd);
-            Assert(cbRead < VD_SECTOR_SIZE);
-            Assert(!(off % VD_SECTOR_SIZE));
-
-            rc = VDRead(pDisk, off, abBuf, VD_SECTOR_SIZE);
-            if (RT_SUCCESS(rc))
-                memcpy(pbBuf, abBuf, cbRead);
-        }
-    }
-
-    if (RT_FAILURE(rc))
-    {
-        int sysrc = -RTErrConvertToErrno(rc);
-        LogFlowFunc(("error: %s (vbox err: %d)\n", strerror(sysrc), rc));
-        rc = sysrc;
-    }
-    return cbRead;
-}
-
-/**
- * VD write Sanitizer taking care of unaligned accesses.
- *
- * @return  VBox bootIndicator code.
- * @param   pDisk    VD disk container.
- * @param   off      Offset to start writing to.
- * @param   pvSrc    Pointer to the buffer to read from.
- * @param   cbWrite  Amount of bytes to write.
- */
-static int vdWriteSanitizer(PVDISK pDisk, uint64_t off, const void *pvSrc, size_t cbWrite)
-{
-    uint8_t const *pbSrc = (uint8_t const *)pvSrc;
-    uint8_t        abBuf[4096];
-    int rc;
-    int cbRemaining = cbWrite;
-
-    /*
-     * Take direct route if the request is sector aligned.
-     */
-    uint64_t const cbMisalignmentOfStart = off & VD_SECTOR_MASK;
-    size_t   const cbMisalignmentOfEnd  = (off + cbWrite) & VD_SECTOR_MASK;
-    if (!cbMisalignmentOfStart && !cbMisalignmentOfEnd)
-    {
-          rc = VDWrite(pDisk, off, pbSrc, cbWrite);
-          do
-            {
-                size_t cbThisWrite = RT_MIN(cbWrite, sizeof(abBuf));
-                rc = VDWrite(pDisk, off, memcpy(abBuf, pbSrc, cbThisWrite), cbThisWrite);
-                if (RT_SUCCESS(rc))
-                {
-                    pbSrc   += cbThisWrite;
-                    off     += cbThisWrite;
-                    cbRemaining -= cbThisWrite;
-                }
-                else
-                    break;
-            } while (cbRemaining > 0);
-    }
-    else
-    {
-        /*
-         * Unaligned buffered read+write of head.  Aligns the offset.
-         */
-        if (cbMisalignmentOfStart)
-        {
-            rc = VDRead(pDisk, off - cbMisalignmentOfStart, abBuf, VD_SECTOR_SIZE);
-            if (RT_SUCCESS(rc))
-            {
-                size_t const cbPartial = RT_MIN(VD_SECTOR_SIZE - cbMisalignmentOfStart, cbWrite);
-                memcpy(&abBuf[cbMisalignmentOfStart], pbSrc, cbPartial);
-                rc = VDWrite(pDisk, off - cbMisalignmentOfStart, abBuf, VD_SECTOR_SIZE);
-                if (RT_SUCCESS(rc))
-                {
-                    pbSrc   += cbPartial;
-                    off     += cbPartial;
-                    cbRemaining -= cbPartial;
-                }
-            }
-        }
-        else
-            rc = VINF_SUCCESS;
-
-        /*
-         * Aligned direct write.
-         */
-        if (RT_SUCCESS(rc) && cbWrite >= VD_SECTOR_SIZE)
-        {
-            Assert(!(off % VD_SECTOR_SIZE));
-            size_t cbPartial = cbWrite - cbMisalignmentOfEnd;
-            Assert(!(cbPartial % VD_SECTOR_SIZE));
-            rc = VDWrite(pDisk, off, pbSrc, cbPartial);
-            if (RT_SUCCESS(rc))
-            {
-                pbSrc   += cbPartial;
-                off     += cbPartial;
-                cbRemaining -= cbPartial;
-            }
-        }
-
-        /*
-         * Unaligned buffered read + write of tail.
-         */
-        if (   RT_SUCCESS(rc) && cbWrite > 0)
-        {
-            Assert(cbWrite == cbMisalignmentOfEnd);
-            Assert(cbWrite < VD_SECTOR_SIZE);
-            Assert(!(off % VD_SECTOR_SIZE));
-            rc = VDRead(pDisk, off, abBuf, VD_SECTOR_SIZE);
-            if (RT_SUCCESS(rc))
-            {
-                memcpy(abBuf, pbSrc, cbWrite);
-                rc = VDWrite(pDisk, off, abBuf, VD_SECTOR_SIZE);
-            }
-        }
-    }
-    if (RT_FAILURE(rc))
-    {
-        int sysrc = -RTErrConvertToErrno(rc);
-        LogFlowFunc(("error: %s (vbox err: %d)\n", strerror(sysrc), rc));
-        return sysrc;
-    }
-    return cbWrite - cbRemaining;
-}
-
 
 /** @copydoc fuse_operations::read */
 static int vboximgOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
@@ -608,7 +426,13 @@ static int vboximgOp_read(const char *pszPath, char *pbBuf, size_t cbBuf,
         return 0;
 
     if (rc >= 0)
-        rc = vdReadSanitizer(g_pVDisk, adjOff, pbBuf, cbBuf);
+    {
+        int rcIprt = RTVfsFileReadAt(g_hVfsFileDisk, adjOff, pbBuf, cbBuf, NULL);
+        if (RT_FAILURE(rc))
+            rc = -RTErrConvertToErrno(rcIprt);
+        else
+            rc = cbBuf;
+    }
     if (rc < 0)
         LogFlowFunc(("%s\n", strerror(rc)));
     return rc;
@@ -642,7 +466,13 @@ static int vboximgOp_write(const char *pszPath, const char *pbBuf, size_t cbBuf,
         return 0;
 
     if (rc >= 0)
-        rc = vdWriteSanitizer(g_pVDisk, adjOff, pbBuf, cbBuf);
+    {
+        int rcIprt = RTVfsFileWriteAt(g_hVfsFileDisk, adjOff, pbBuf, cbBuf, NULL);
+        if (RT_FAILURE(rc))
+            rc = -RTErrConvertToErrno(rcIprt);
+        else
+            rc = cbBuf;
+    }
     if (rc < 0)
         LogFlowFunc(("%s\n", strerror(rc)));
 
@@ -767,13 +597,16 @@ parsePartitionTable(void)
      */
     g_aParsedPartitionInfo[0].idxPartition = 0;
     g_aParsedPartitionInfo[0].offPartition = 0;
-    g_aParsedPartitionInfo[0].cbPartition = VDGetSize(g_pVDisk, 0);
     g_aParsedPartitionInfo[0].pszName = RTStrDup("EntireDisk");
+
+    int rc = RTVfsFileGetSize(g_hVfsFileDisk, &g_aParsedPartitionInfo[0].cbPartition);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Error querying disk image size\n");
 
     /*
      * Currently only DOS partitioned disks are supported. Ensure this one conforms
      */
-    int rc = vdReadSanitizer(g_pVDisk, 0, &mbr, sizeof (mbr));
+    rc = RTVfsFileReadAt(g_hVfsFileDisk, 0, &mbr, sizeof (mbr), NULL);
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("Error reading MBR block from disk\n");
 
@@ -826,7 +659,7 @@ parsePartitionTable(void)
     {
         g_lastPartNbr = 2;  /* from the 'protective MBR' */
 
-        rc = vdReadSanitizer(g_pVDisk, LBA(1), &parTblHdr, sizeof (parTblHdr));
+        rc = RTVfsFileReadAt(g_hVfsFileDisk, LBA(1), &parTblHdr, sizeof (parTblHdr), NULL);
         if (RT_FAILURE(rc))
             return RTMsgErrorExitFailure("Error reading Partition Table Header (LBA 1) from disk\n");
 
@@ -835,7 +668,7 @@ parsePartitionTable(void)
         if (!pTblBuf)
             return RTMsgErrorExitFailure("Out of memory\n");
 
-        rc = vdReadSanitizer(g_pVDisk, LBA(2), pTblBuf, GPT_PTABLE_SIZE);
+        rc = RTVfsFileReadAt(g_hVfsFileDisk, LBA(2), pTblBuf, GPT_PTABLE_SIZE, NULL);
         if (RT_FAILURE(rc))
             return RTMsgErrorExitFailure("Error reading Partition Table blocks from disk\n");
 
@@ -886,7 +719,7 @@ parsePartitionTable(void)
         {
 
             off_t currentEbrOffset = firstEbrOffset + chainedEbrOffset;
-            vdReadSanitizer(g_pVDisk, currentEbrOffset, &ebr, sizeof (ebr));
+            RTVfsFileReadAt(g_hVfsFileDisk, currentEbrOffset, &ebr, sizeof (ebr), NULL);
 
             if (ebr.signature != DOS_BOOT_RECORD_SIGNATURE)
                 return RTMsgErrorExitFailure("Invalid EBR found on image with signature 0x%04hX\n",
@@ -1381,8 +1214,8 @@ main(int argc, char **argv)
     if (VERBOSE)
         RTPrintf("\nCreating container for base image of format %s\n", pszFormat);
 
-    g_pVDisk = NULL;
-    rc = VDCreate(g_pVdIfs, enmType, &g_pVDisk);
+    PVDISK pVDisk = NULL;
+    rc = VDCreate(g_pVdIfs, enmType, &pVDisk);
     if ((rc))
         return RTMsgErrorExitFailure("ERROR: Couldn't create virtual disk container\n");
 
@@ -1397,7 +1230,7 @@ main(int argc, char **argv)
         if (VERBOSE)
             RTPrintf("  Open: %s\n", CSTR(pCurMedium->pImagePath));
 
-        rc = VDOpen(g_pVDisk,
+        rc = VDOpen(pVDisk,
                     CSTR(pszFormat),
                     CSTR(pCurMedium->pImagePath),
                     pCurMedium->fWriteable,
@@ -1410,13 +1243,22 @@ main(int argc, char **argv)
         pCurMedium = pCurMedium->prev;
     }
 
-    g_cReaders  = VDIsReadOnly(g_pVDisk) ? INT32_MAX / 2 : 0;
+    RTStrFree(pszFormat);
+
+    /* Create the VFS file to use for the disk image access. */
+    rc = VDCreateVfsFileFromDisk(pVDisk, VD_VFSFILE_DESTROY_ON_RELEASE, &g_hVfsFileDisk);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Error creating VFS file wrapper for disk image\n");
+
+    g_cReaders  = VDIsReadOnly(pVDisk) ? INT32_MAX / 2 : 0;
     g_cWriters  = 0;
-    g_cbEntireVDisk  = VDGetSize(g_pVDisk, 0 /* base */);
+    rc = RTVfsFileGetSize(g_hVfsFileDisk, (uint64_t *)&g_cbEntireVDisk);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Error querying disk image size from VFS wrapper\n");
 
     if (g_vboximgOpts.fList)
     {
-        if (g_pVDisk == NULL)
+        if (g_hVfsFileDisk == NIL_RTVFSFILE)
             return RTMsgErrorExitFailure("No valid --image to list partitions from\n");
 
         RTPrintf("\n");
@@ -1458,7 +1300,7 @@ main(int argc, char **argv)
         if (partNbr == 0)
         {
             g_vDiskOffset = 0;
-            g_vDiskSize = VDGetSize(g_pVDisk, 0);
+            g_vDiskSize = g_cbEntireVDisk;
             if (VERBOSE)
                 RTPrintf("\nPartition 0 specified - Whole disk will be accessible\n");
         } else {
@@ -1512,7 +1354,7 @@ main(int argc, char **argv)
 
     rc = fuse_main(args.argc, args.argv, &g_vboximgOps, NULL);
 
-    int rc2 = VDClose(g_pVDisk, false /* fDelete */);
+    int rc2 = RTVfsFileRelease(g_hVfsFileDisk);
     AssertRC(rc2);
     RTPrintf("vboximg-mount: fuse_main -> %d\n", rc);
     return rc;
