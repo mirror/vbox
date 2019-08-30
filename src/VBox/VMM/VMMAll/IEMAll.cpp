@@ -14270,7 +14270,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
 #endif
 
     /** @todo What if we are injecting an exception and not an interrupt? Is that
-     *        possible here? */
+     *        possible here? For now we assert it is indeed only an interrupt. */
     if (   fIntrEnabled
         && TRPMHasTrap(pVCpu)
         && EMGetInhibitInterruptsPC(pVCpu) != pVCpu->cpum.GstCtx.rip)
@@ -14280,6 +14280,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
         RTGCUINT    uErrCode;
         RTGCPTR     uCr2;
         int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /* pu8InstLen */); AssertRC(rc2);
+        Assert(enmType == TRPM_HARDWARE_INT);
         VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /* cbInstr */);
         TRPMResetTrap(pVCpu);
 #if defined(VBOX_WITH_NESTED_HWVIRT_SVM) || defined(VBOX_WITH_NESTED_HWVIRT_VMX)
