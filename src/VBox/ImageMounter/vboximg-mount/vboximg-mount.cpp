@@ -104,6 +104,10 @@ typedef struct VBOXIMGMOUNTVOL
     RTDVMVOLUME                 hVol;
     /** The VFS file associated with the volume. */
     RTVFSFILE                   hVfsFileVol;
+    /** Handle to the VFS root if supported and specified. */
+    RTVFS                       hVfsRoot;
+    /** Handle to the root directory. */
+    RTVFSDIR                    hVfsDirRoot;
 } VBOXIMGMOUNTVOL;
 /** Pointer to a volume data structure. */
 typedef VBOXIMGMOUNTVOL *PVBOXIMGMOUNTVOL;
@@ -132,30 +136,26 @@ VBOXIMGOPTS g_vboximgOpts;
 #define OPTION(fmt, pos, val) { fmt, offsetof(struct vboximgOpts, pos), val }
 
 static struct fuse_opt vboximgOptDefs[] = {
-    OPTION("--image %s",      pszImageUuidOrPath,   0),
-    OPTION("-i %s",           pszImageUuidOrPath,   0),
-    OPTION("--rw",            fRW,                  1),
-    OPTION("--root",          fAllowRoot,           0),
-    OPTION("--vm %s",         pszVm,                0),
-    OPTION("--partition %d",  idxPartition,         1),
-    OPTION("-p %d",           idxPartition,         1),
-    OPTION("--offset %d",     offset,               1),
-    OPTION("-o %d",           offset,               1),
-    OPTION("--size %d",       size,                 1),
-    OPTION("-s %d",           size,                 1),
-    OPTION("-l",              fList,                1),
-    OPTION("--list",          fList,                1),
-    OPTION("--verbose",       fVerbose,             1),
-    OPTION("-v",              fVerbose,             1),
-    OPTION("--wide",          fWide,                1),
-    OPTION("-w",              fWide,                1),
-    OPTION("-lv",             fVerboseList,         1),
-    OPTION("-vl",             fVerboseList,         1),
-    OPTION("-lw",             fWideList,            1),
-    OPTION("-wl",             fWideList,            1),
-    OPTION("-h",              fBriefUsage,          1),
-    FUSE_OPT_KEY("--help",    USAGE_FLAG),
-    FUSE_OPT_KEY("-vm",       FUSE_OPT_KEY_NONOPT),
+    OPTION("--image %s",         pszImageUuidOrPath,   0),
+    OPTION("-i %s",              pszImageUuidOrPath,   0),
+    OPTION("--rw",               fRW,                  1),
+    OPTION("--root",             fAllowRoot,           0),
+    OPTION("--vm %s",            pszVm,                0),
+    OPTION("-l",                 fList,                1),
+    OPTION("--list",             fList,                1),
+    OPTION("-g",                 fGstFs,               1),
+    OPTION("--guest-filesystem", fGstFs,               1),
+    OPTION("--verbose",          fVerbose,             1),
+    OPTION("-v",                 fVerbose,             1),
+    OPTION("--wide",             fWide,                1),
+    OPTION("-w",                 fWide,                1),
+    OPTION("-lv",                fVerboseList,         1),
+    OPTION("-vl",                fVerboseList,         1),
+    OPTION("-lw",                fWideList,            1),
+    OPTION("-wl",                fWideList,            1),
+    OPTION("-h",                 fBriefUsage,          1),
+    FUSE_OPT_KEY("--help",       USAGE_FLAG),
+    FUSE_OPT_KEY("-vm",          FUSE_OPT_KEY_NONOPT),
     FUSE_OPT_END
 };
 
@@ -219,15 +219,11 @@ briefUsage()
         "                                     (reduces vertical scrolling but requires\n"
         "                                     wider than standard 80 column window)\n"
         "\n"
+        "  [ { -g | --guest-filesystem } ]    Exposes supported guest filesystems directly\n"
+        "                                     in the mounted directory without the need\n"
+        "                                     for a filesystem driver on the host\n"
+        "\n"
         "  [ --vm UUID ]                      Restrict media list to specified vm.\n"
-        "\n"
-        "  [ { -p | --partition } <part #> ]  Expose only specified partition via FUSE.\n"
-        "\n"
-        "  [ { -o | --offset } <byte #> ]     Bias disk I/O by offset from disk start.\n"
-        "                                     (incompatible with -p, --partition)\n"
-        "\n"
-        "  [ { -s | --size <bytes> } ]        Specify size of mounted disk.\n"
-        "                                     (incompatible with -p, --partition)\n"
         "\n"
         "  [ --rw ]                           Make image writeable (default = readonly)\n"
         "\n"
@@ -251,14 +247,15 @@ briefUsage()
       "\n"
       "The virtual disk is exposed as a device node within a FUSE-based filesystem\n"
       "that overlays the user-provided mount point. The FUSE filesystem consists of a\n"
-      "directory containing two files: A pseudo HDD device node and a symbolic\n"
-      "link. The device node, named 'vhdd', is the access point to the virtual disk\n"
-      "(i.e. the OS-mountable raw binary). The symbolic link has the same basename(1)\n"
+      "directory containing a number of files and possibly other directories:"
+      "    * vhdd:      Provides access to the raw disk image data as a flat image\n"
+      "    * vol<id>:   Provides access to individual volumes on the accessed disk image\n"
+      "    * fs<id>:    Provides access to a supported filesystem without the need for a"
+      "                 host filesystem driver\n"
+      "\n"
+      "The directory will also contain a symbolic link which has the same basename(1)\n"
       "as the virtual disk base image and points to the location of the\n"
-      "virtual disk base image. If the --partition, --offset, or --size\n"
-      "options are provided, the boundaries of the FUSE-mounted subsection of the\n"
-      "virtual disk will be described as a numeric range in brackets appended to the\n"
-      "symbolic link name.\n"
+      "virtual disk base image.\n"
       "\n"
     );
 }
@@ -298,21 +295,69 @@ static int vboxImgMntVfsObjQueryFromPath(const char *pszPath, PRTVFSOBJ phVfsObj
     if (RT_SUCCESS(rc))
     {
         if (   RTPATH_PROP_HAS_ROOT_SPEC(pPathSplit->fProps)
-            && pPathSplit->cComps == 2)
+            && pPathSplit->cComps >= 2)
         {
             /* Skip the root specifier and start with the component coming afterwards. */
             if (!RTStrCmp(pPathSplit->apszComps[1], "vhdd"))
                 *phVfsObj = RTVfsObjFromFile(g_hVfsFileDisk);
-            else if (!RTStrNCmp(&pszPath[1], "vol", sizeof("vol") - 1))
+            else if (!RTStrNCmp(pPathSplit->apszComps[1], "vol", sizeof("vol") - 1))
             {
                 /* Retrieve the accessed volume and return the stat data. */
                 uint32_t idxVol;
-                int rcIprt = RTStrToUInt32Full(&pszPath[4], 10, &idxVol);
+                int rcIprt = RTStrToUInt32Full(&pPathSplit->apszComps[1][3], 10, &idxVol);
                 if (   rcIprt == VINF_SUCCESS
                     && idxVol < g_cVolumes)
                     *phVfsObj = RTVfsObjFromFile(g_paVolumes[idxVol].hVfsFileVol);
                 else
                     rc = VERR_NOT_FOUND;
+            }
+            else if (!RTStrNCmp(pPathSplit->apszComps[1], "fs", sizeof("fs") - 1))
+            {
+                /* Retrieve the accessed volume and return the stat data. */
+                uint32_t idxVol;
+                int rcIprt = RTStrToUInt32Full(&pPathSplit->apszComps[1][5], 10, &idxVol);
+                if (   rcIprt == VINF_SUCCESS
+                    && idxVol < g_cVolumes
+                    && g_paVolumes[idxVol].hVfsDirRoot != NIL_RTVFSDIR)
+                    *phVfsObj = RTVfsObjFromDir(g_paVolumes[idxVol].hVfsDirRoot);
+                else
+                    rc = VERR_NOT_FOUND;
+
+                /* Is an object inside the guest filesystem requested? */
+                if (pPathSplit->cComps > 2)
+                {
+                    PRTPATHSPLIT pPathSplitVfs = (PRTPATHSPLIT)RTMemTmpAllocZ(RT_UOFFSETOF_DYN(RTPATHSPLIT, apszComps[pPathSplit->cComps - 1]));
+                    if (RT_LIKELY(pPathSplitVfs))
+                    {
+                        pPathSplitVfs->cComps       = pPathSplit->cComps - 1;
+                        pPathSplitVfs->fProps       = pPathSplit->fProps;
+                        pPathSplitVfs->cchPath      = pPathSplit->cchPath - strlen(pPathSplit->apszComps[1]) - 1;
+                        pPathSplitVfs->cbNeeded     = pPathSplit->cbNeeded;
+                        pPathSplitVfs->pszSuffix    = pPathSplit->pszSuffix;
+                        pPathSplitVfs->apszComps[0] = pPathSplit->apszComps[0];
+                        for (uint32_t i = 1; i < pPathSplitVfs->cComps; i++)
+                            pPathSplitVfs->apszComps[i] = pPathSplit->apszComps[i + 1];
+
+                        /* Reassemble the path. */
+                        char *pszPathVfs = (char *)RTMemTmpAllocZ(pPathSplitVfs->cbNeeded);
+                        if (RT_LIKELY(pszPathVfs))
+                        {
+                            rc = RTPathSplitReassemble(pPathSplitVfs, RTPATH_STR_F_STYLE_HOST, pszPathVfs, pPathSplitVfs->cbNeeded);
+                            if (RT_SUCCESS(rc))
+                            {
+                                rc = RTVfsObjOpen(g_paVolumes[idxVol].hVfsRoot, pszPathVfs,
+                                                  RTFILE_O_READWRITE | RTFILE_O_DENY_NONE | RTFILE_O_OPEN,
+                                                  RTVFSOBJ_F_OPEN_ANY | RTVFSOBJ_F_CREATE_NOTHING | RTPATH_F_ON_LINK,
+                                                  phVfsObj);
+                            }
+                            RTMemTmpFree(pszPathVfs);
+                        }
+
+                        RTMemTmpFree(pPathSplitVfs);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
+                }
             }
             else
                 rc = VERR_NOT_FOUND;
@@ -496,46 +541,6 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
         stbuf->st_mode = S_IFDIR | 0755;
         stbuf->st_nlink = 2;
     }
-    else if (RTStrCmp(pszPath + 1, "vhdd") == 0)
-    {
-        rc = stat(g_pszImagePath, stbuf);
-        if (rc < 0)
-            return rc;
-        /*
-         * st_size represents the size of the FUSE FS-mounted portion of the disk.
-         * By default it is the whole disk, but can be a partition or specified
-         * (or overridden) directly by the { -s | --size } option on the command line.
-         */
-        uint64_t cbFile = 0;
-        int rcIprt = RTVfsFileGetSize(g_hVfsFileDisk, &cbFile);
-        if (RT_SUCCESS(rcIprt))
-            stbuf->st_size = cbFile;
-        else
-            rc = -RTErrConvertToErrno(rcIprt);
-        stbuf->st_nlink = 1;
-    }
-    else if (!RTStrNCmp(&pszPath[1], "vol", sizeof("vol") - 1))
-    {
-        /* Retrieve the accessed volume and return the stat data. */
-        uint32_t idxVol;
-        int rcIprt = RTStrToUInt32Full(&pszPath[4], 10, &idxVol);
-        if (   rcIprt == VINF_SUCCESS
-            && idxVol < g_cVolumes)
-        {
-            rc = stat(g_pszImagePath, stbuf);
-            if (rc < 0)
-                return rc;
-            /*
-             * st_size represents the size of the FUSE FS-mounted portion of the disk.
-             * By default it is the whole disk, but can be a partition or specified
-             * (or overridden) directly by the { -s | --size } option on the command line.
-             */
-            stbuf->st_size = RTDvmVolumeGetSize(g_paVolumes[idxVol].hVol);
-            stbuf->st_nlink = 1;
-        }
-        else
-            rc = -ENOENT;
-    }
     else if (RTStrNCmp(pszPath + 1, g_pszImageName, strlen(g_pszImageName)) == 0)
     {
         /* When the disk is partitioned, the symbolic link named from `basename` of
@@ -554,8 +559,47 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
         stbuf->st_nlink = 1;
         stbuf->st_uid = 0;
         stbuf->st_gid = 0;
-    } else
-        rc = -ENOENT;
+    }
+    else
+    {
+        /* Query the VFS object and fill in the data. */
+        RTVFSOBJ hVfsObj = NIL_RTVFSOBJ;
+        int rcIprt = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
+        if (RT_SUCCESS(rcIprt))
+        {
+            switch (RTVfsObjGetType(hVfsObj))
+            {
+                case RTVFSOBJTYPE_FILE:
+                {
+                    RTVFSFILE hVfsFile = RTVfsObjToFile(hVfsObj);
+                    uint64_t cb;
+                    rcIprt = RTVfsFileGetSize(hVfsFile, &cb); AssertRC(rcIprt);
+                    RTVfsFileRelease(hVfsFile);
+
+                    stbuf->st_mode = S_IFREG | 0644;
+                    stbuf->st_size = (off_t)cb;
+                    stbuf->st_nlink = 1;
+                    break;
+                }
+                case RTVFSOBJTYPE_DIR:
+                {
+                    stbuf->st_mode = S_IFDIR | 0755;
+                    stbuf->st_nlink = 2;
+                    break;
+                }
+                default:
+                    rc = -EINVAL;
+            }
+
+            stbuf->st_uid = 0;
+            stbuf->st_gid = 0;
+            RTVfsObjRelease(hVfsObj);
+        }
+        else if (rcIprt == VERR_NOT_FOUND)
+            rc = -ENOENT;
+        else
+            rc = -RTErrConvertToErrno(rcIprt);
+    }
 
     return rc;
 }
@@ -566,42 +610,84 @@ vboximgOp_readdir(const char *pszPath, void *pvBuf, fuse_fill_dir_t pfnFiller,
                               off_t offset, struct fuse_file_info *pInfo)
 
 {
-    NOREF(offset);
-    NOREF(pInfo);
+    RT_NOREF(offset);
+    RT_NOREF(pInfo);
 
-    if (RTStrCmp(pszPath, "/") != 0)
-        return -ENOENT;
+    int rc = 0;
 
-    /*
-     *  mandatory '.', '..', ...
-     */
-    pfnFiller(pvBuf, ".", NULL, 0);
-    pfnFiller(pvBuf, "..", NULL, 0);
-
-    /*
-     * Create FUSE FS dir entry that is depicted here (and exposed via stat()) as
-     * a symbolic link back to the resolved path to the VBox virtual disk image,
-     * whose symlink name is basename that path. This is a convenience so anyone
-     * listing the dir can figure out easily what the vhdd FUSE node entry
-     * represents.
-     */
-    pfnFiller(pvBuf, g_pszImageName, NULL, 0);
-
-    /*
-     * Create entry named "vhdd" denoting the whole disk, which getattr() will describe as a
-     * regular file, and thus will go through the open/release/read/write vectors
-     * to access the VirtualBox image as processed by the IRPT VD API.
-     */
-    pfnFiller(pvBuf, "vhdd", NULL, 0);
-
-    /* Create entries for the individual volumes. */
-    for (uint32_t i = 0; i < g_cVolumes; i++)
+    /* Special root directory handling?. */
+    if (!RTStrCmp(pszPath, "/"))
     {
-        char tmp[64];
-        RTStrPrintf(tmp, sizeof (tmp), "vol%u", i);
-        pfnFiller(pvBuf, tmp, NULL, 0);
+        /*
+         *  mandatory '.', '..', ...
+         */
+        pfnFiller(pvBuf, ".", NULL, 0);
+        pfnFiller(pvBuf, "..", NULL, 0);
+
+        /*
+         * Create FUSE FS dir entry that is depicted here (and exposed via stat()) as
+         * a symbolic link back to the resolved path to the VBox virtual disk image,
+         * whose symlink name is basename that path. This is a convenience so anyone
+         * listing the dir can figure out easily what the vhdd FUSE node entry
+         * represents.
+         */
+        pfnFiller(pvBuf, g_pszImageName, NULL, 0);
+
+        /*
+         * Create entry named "vhdd" denoting the whole disk, which getattr() will describe as a
+         * regular file, and thus will go through the open/release/read/write vectors
+         * to access the VirtualBox image as processed by the IRPT VD API.
+         */
+        pfnFiller(pvBuf, "vhdd", NULL, 0);
+
+        /* Create entries for the individual volumes. */
+        for (uint32_t i = 0; i < g_cVolumes; i++)
+        {
+            char tmp[64];
+            RTStrPrintf(tmp, sizeof (tmp), "vol%u", i);
+            pfnFiller(pvBuf, tmp, NULL, 0);
+
+            if (g_paVolumes[i].hVfsRoot != NIL_RTVFS)
+            {
+                RTStrPrintf(tmp, sizeof (tmp), "fs%u", i);
+                pfnFiller(pvBuf, tmp, NULL, 0);
+            }
+        }
     }
-    return 0;
+    else
+    {
+        /* Query the VFS object and fill in the data. */
+        RTVFSOBJ hVfsObj = NIL_RTVFSOBJ;
+        int rcIprt = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
+        if (RT_SUCCESS(rcIprt))
+        {
+            switch (RTVfsObjGetType(hVfsObj))
+            {
+                case RTVFSOBJTYPE_DIR:
+                {
+                    RTVFSDIR hVfsDir = RTVfsObjToDir(hVfsObj);
+                    RTDIRENTRYEX DirEntry;
+
+                    rcIprt = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
+                    while (RT_SUCCESS(rcIprt))
+                    {
+                        pfnFiller(pvBuf, DirEntry.szName, NULL, 0);
+                        rcIprt = RTVfsDirReadEx(hVfsDir, &DirEntry, NULL, RTFSOBJATTRADD_NOTHING);
+                    }
+                    RTVfsDirRelease(hVfsDir);
+                    break;
+                }
+                default:
+                    rc = -EINVAL;
+            }
+
+            RTVfsObjRelease(hVfsObj);
+        }
+        else
+            rc = -RTErrConvertToErrno(rcIprt);
+    }
+
+    return rc;
 }
 
 /** @copydoc fuse_operations::readlink */
@@ -695,6 +781,8 @@ static int vboxImgMntVolumesSetup(void)
                 g_paVolumes = (PVBOXIMGMOUNTVOL)RTMemAllocZ(g_cVolumes * sizeof(VBOXIMGMOUNTVOL));
                 if (RT_LIKELY(g_paVolumes))
                 {
+                    g_paVolumes[0].hVfsRoot = NIL_RTVFS;
+
                     rc = RTDvmMapQueryFirstVolume(g_hDvmMgr, &g_paVolumes[0].hVol);
                     if (RT_SUCCESS(rc))
                         rc = RTDvmVolumeCreateVfsFile(g_paVolumes[0].hVol,
@@ -703,6 +791,7 @@ static int vboxImgMntVolumesSetup(void)
 
                     for (uint32_t i = 1; i < g_cVolumes && RT_SUCCESS(rc); i++)
                     {
+                        g_paVolumes[i].hVfsRoot = NIL_RTVFS;
                         rc = RTDvmMapQueryNextVolume(g_hDvmMgr, g_paVolumes[i-1].hVol, &g_paVolumes[i].hVol);
                         if (RT_SUCCESS(rc))
                             rc = RTDvmVolumeCreateVfsFile(g_paVolumes[i].hVol,
@@ -758,8 +847,6 @@ main(int argc, char **argv)
 
     struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
     memset(&g_vboximgOpts, 0, sizeof(g_vboximgOpts));
-
-    g_vboximgOpts.idxPartition = -1;
 
     rc = fuse_opt_parse(&args, &g_vboximgOpts, vboximgOptDefs, vboximgOptHandler);
     if (rc < 0 || argc < 2 || RTStrCmp(argv[1], "-?" ) == 0 || g_vboximgOpts.fBriefUsage)
@@ -1113,6 +1200,30 @@ main(int argc, char **argv)
         RTPrintf("\n");
         vboxImgMntVolumesDisplay();
         return 0;
+    }
+
+    /* Try to "mount" supported filesystems inside the disk image if specified. */
+    if (g_vboximgOpts.fGstFs)
+    {
+        for (uint32_t i = 0; i < g_cVolumes; i++)
+        {
+            rc = RTVfsMountVol(g_paVolumes[i].hVfsFileVol,
+                               g_vboximgOpts.fRW ? 0 : RTVFSMNT_F_READ_ONLY,
+                               &g_paVolumes[i].hVfsRoot,
+                               NULL);
+            if (RT_SUCCESS(rc))
+            {
+                rc = RTVfsOpenRoot(g_paVolumes[i].hVfsRoot, &g_paVolumes[i].hVfsDirRoot);
+                if (RT_FAILURE(rc))
+                {
+                    RTPrintf("\nvboximg-mount: Failed to access filesystem on volume %u, ignoring\n", i);
+                    RTVfsRelease(g_paVolumes[i].hVfsRoot);
+                    g_paVolumes[i].hVfsRoot = NIL_RTVFS;
+                }
+            }
+            else
+                RTPrintf("\nvboximg-mount: Failed to access filesystem on volume %u, ignoring\n", i);
+        }
     }
 
     /*

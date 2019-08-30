@@ -27,14 +27,12 @@
 typedef struct vboximgOpts {
      char         *pszVm;                   /** optional VM UUID */
      char         *pszImageUuidOrPath;      /** Virtual Disk image UUID or path */
-     int32_t       idxPartition;            /** Number of partition to constrain FUSE based FS to (optional) 0 - whole disk*/
-     int32_t       offset;                  /** Offset to base virtual disk reads and writes from (altnerative to partition) */
-     int32_t       size;                    /** Size of accessible disk region, starting at offset, default = offset 0 */
      uint32_t      fListMediaLong;          /** Flag to list virtual disks of all known VMs */
      uint32_t      fVerboseList;            /** FUSE parsing doesn't understand combined flags (-lv, -vl), so we kludge it */
      uint32_t      fWideList;               /** FUSE parsing doesn't understand combined flags,(-lw, -wl) so we kludge it */
      uint32_t      fList;                   /** Flag to list virtual disks of all known VMs */
      uint32_t      fListParts;              /** Flag to summarily list partitions associated with pszImage */
+     uint32_t      fGstFs;                  /** Flag to try to exposes supported filesystems directly in the mountpoint inside a subdirectory */
      uint32_t      fAllowRoot;              /** Flag to allow root to access this FUSE FS */
      uint32_t      fRW;                     /** Flag to allow changes to FUSE-mounted Virtual Disk image */
      uint32_t      fWide;                   /** Flag to use wide-format list mode */
