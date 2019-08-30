@@ -71,8 +71,11 @@ ifneq ($(MAKECMDGOALS),clean)
  # look for fedora
  rpmrel  := $(shell cat /etc/fedora-release 2> /dev/null | sed -e 's/^Fedora  *release  *\([1-9][0-9]*\) .*/fedora\1/')
  ifeq ($(rpmrel),)
- # look for OL
+ # look for OEL
   rpmrel  := $(shell cat /etc/enterprise-release 2> /dev/null | sed -ne 's/^Enterprise Linux[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
+ endif
+ # look for OL
+  rpmrel  := $(shell cat /etc/oracle-release 2> /dev/null | sed -ne 's/^Oracle Linux[a-zA-Z ]*\([1-9][0-9]*\).*/el\1/p')
  endif
  ifeq ($(rpmrel),)
  # look for CentOS
@@ -95,7 +98,7 @@ ifneq ($(MAKECMDGOALS),clean)
   $(error Cannot detect package distribution (rpmrel=$(rpmrel)))
  endif
 
- ifeq ($(filter-out el5 el6 el7 fedora18 fedora19 fedora20 fedora21 fedora22 fedora24 fedora25 fedora26 fedora29,$(rpmrel)),)
+ ifeq ($(filter-out el5 el6 el7 el8 fedora18 fedora19 fedora20 fedora21 fedora22 fedora24 fedora25 fedora26 fedora29,$(rpmrel)),)
   rpmspec := rpm_redhat
  endif
  ifeq ($(filter-out openSUSE110 openSUSE111 openSUSE112 openSUSE113 openSUSE114 openSUSE123 openSUSE131 openSUSE132 openSUSE150,$(rpmrel)),)
