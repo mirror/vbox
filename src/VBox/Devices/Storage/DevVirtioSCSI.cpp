@@ -20,7 +20,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#define LOG_GROUP LOG_GROUP_DRV_SCSI
+//#define LOG_GROUP LOG_GROUP_DRV_SCSI
+#define LOG_GROUP LOG_GROUP_DEV_VIRTIO
 
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmstorageifs.h>
@@ -55,22 +56,26 @@
 #define VIRTIO_SCSI_F_T10_PI               RT_BIT_64(3)           /** Add T10 port info (DIF/DIX) in SCSI req hdr      */
 /** @} */
 
-#define VIRTIOSCSI_HOST_SCSI_ALL_FEATURES \
+
+#define VIRTIOSCSI_HOST_SCSI_FEATURES_ALL \
             (VIRTIO_SCSI_F_INOUT | VIRTIO_SCSI_F_HOTPLUG | VIRTIO_SCSI_F_CHANGE | VIRTIO_SCSI_F_T10_PI)
 
-#define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED       0            /**< TBD, support at least hotplug & in/out          */
+#define VIRTIOSCSI_HOST_SCSI_FEATURES_NONE          0
+
+#define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED \
+            VIRTIOSCSI_HOST_SCSI_FEATURES_NONE
 
 /**
  * TEMPORARY NOTE: following parameter is set to 1 for early development. Will be increased later
  */
 #define VIRTIOSCSI_REQ_QUEUE_CNT                    1            /**< Number of req queues exposed by dev.            */
 #define VIRTIOSCSI_QUEUE_CNT                        VIRTIOSCSI_REQ_QUEUE_CNT + 2
-#define VIRTIOSCSI_MAX_TARGETS                      1            /**< Can probably determined from higher layers       */
-#define VIRTIOSCSI_MAX_LUN                          16383        /* < VirtIO specification, section 5.6.4             */
+#define VIRTIOSCSI_MAX_TARGETS                      1            /**< Can probably determined from higher layers      */
+#define VIRTIOSCSI_MAX_LUN                          1            /* < VirtIO specification, section 5.6.4             */
 #define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             1            /* < T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SEG_COUNT                    1024         /* < T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SECTORS_HINT                 0x10000      /* < VirtIO specification, section 5.6.4             */
-#define VIRTIOSCSI_MAX_CHANNEL_HINT                 0            /* < VirtIO specification, section 5.6.4             */
+#define VIRTIOSCSI_MAX_CHANNEL_HINT                 0            /* < VirtIO specification, section 5.6.4 should be 0 */
 #define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01         /**< SSM version #                                   */
 
 #define PCI_DEVICE_ID_VIRTIOSCSI_HOST               0x1048       /**< Informs guest driver of type of VirtIO device   */
@@ -78,6 +83,13 @@
 #define PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER       0x00         /**< PCI SCSI Controller subclass                    */
 #define PCI_CLASS_PROG_UNSPECIFIED                  0x00         /**< Programming interface. N/A.                     */
 #define VIRTIOSCSI_PCI_CLASS                        0x01         /**< Base class Mass Storage?                        */
+
+
+#define VIRTIOSCSI_SENSE_SIZE_DEFAULT               96          /**< VirtIO 1.0: 96 on reset, guest can change       */
+#define VIRTIOSCSI_CDB_SIZE_DEFAULT                 32          /**< VirtIO 1.0: 32 on reset, guest can change       */
+#define VIRTIOSCSI_PI_BYTES_IN                      1           /**< Value TBD (see section 5.6.6.1)                 */
+#define VIRTIOSCSI_PI_BYTES_OUT                     1           /**< Value TBD (see section 5.6.6.1)                 */
+#define VIRTIOSCSI_DATA_OUT                         512         /**< Value TBD (see section 5.6.6.1)                 */
 
 /**
  * VirtIO SCSI Host Device device-specific queue indicies
@@ -90,7 +102,7 @@
 #define EVENTQ_IDX                                  1            /**< Spec-defined Index of event queue               */
 #define VIRTQ_REQ_BASE                              2            /**< Spec-defined base index of request queues       */
 
-#define QUEUENAME(qIdx) (pThis->szQueueNames[qIdx])        /**< Macro to get queue name from its index          */
+#define QUEUENAME(qIdx) (pThis->szQueueNames[qIdx])              /**< Macro to get queue name from its index          */
 #define CBQUEUENAME(qIdx) RTStrNLen(QUEUENAME(qIdx), sizeof(QUEUENAME(qIdx)))
 
 #define IS_REQ_QUEUE(qIdx) (qIdx >= VIRTQ_REQ_BASE && qIdx < VIRTIOSCSI_QUEUE_CNT)
@@ -143,19 +155,12 @@ typedef struct virtio_scsi_event {
 #define VIRTIOSCSI_EVT_RESET_REMOVED                2           /**<                                                 */
 /** @} */
 
-/**
- * Device operation: reqestq
- *
- * The following struct is described in VirtIO 1.0 Specification, section 5.6.6.1
- */
-#define VIRTIOSCSI_SENSE_SIZE_DEFAULT               96          /**< VirtIO 1.0: 96 on reset, guest can change       */
-#define VIRTIOSCSI_CDB_SIZE_DEFAULT                 32          /**< VirtIO 1.0: 32 on reset, guest can change       */
-#define VIRTIOSCSI_PI_BYTES_IN                      1           /**< Value TBD (see section 5.6.6.1)                 */
-#define VIRTIOSCSI_PI_BYTES_OUT                     1           /**< Value TBD (see section 5.6.6.1)                 */
-#define VIRTIOSCSI_DATA_OUT                         512         /**< Value TBD (see section 5.6.6.1)                 */
 
 #pragma pack(1)
 
+/**
+ * Device operation: reqestq
+ */
 struct REQ_CMD_HDR
 {
     uint8_t  uLUN[8];                                           /**< lun                                          */
@@ -803,7 +808,16 @@ static int virtioScsiSendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEv
 
 }
 
-static int virtioScsiScrapReq(PVIRTIOSCSI pThis, uint16_t qIdx, uint32_t rcReq)
+/**
+ * This is called to complete a request buffer immediately
+ *
+ * @param pThis     - PDM driver instance state
+ * @param qIdx      - Queue index
+ * @param rcReq     - VirtualBox code to map to VirtIO response code.
+ *
+ * @returns virtual box status code
+ */
+static int virtioScsiReqComplete(PVIRTIOSCSI pThis, uint16_t qIdx, uint32_t rcReq)
 {
     struct REQ_RESP_HDR respHdr;
     respHdr.uSenseLen = 0;
@@ -814,7 +828,7 @@ static int virtioScsiScrapReq(PVIRTIOSCSI pThis, uint16_t qIdx, uint32_t rcReq)
     RTSGBUF reqSegBuf;
     RTSGSEG aReqSegs[] = { { &respHdr, sizeof(respHdr) } };
     RTSgBufInit(&reqSegBuf, aReqSegs, 1);
-    virtioQueuePut(pThis->hVirtio, qIdx, &reqSegBuf, false /* fFence */);
+    virtioQueuePut(pThis->hVirtio, qIdx, &reqSegBuf, true /* fFence */);
     virtioQueueSync(pThis->hVirtio, qIdx);
     LogFunc(("Response code: %s\n", virtioGetReqRespText(respHdr.uResponse)));
     return VINF_SUCCESS;
@@ -824,14 +838,18 @@ static int virtioScsiR3ReqComplete(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int r
 {
     PVIRTIOSCSITARGET pTarget = pReq->pTarget;
     PPDMIMEDIAEX pIMediaEx = pTarget->pDrvMediaEx;
-    RTSGBUF reqSegBuf;
 
-    Assert(pReq->pbDataIn && pReq->pbSense);
     ASMAtomicDecU32(&pTarget->cReqsInProgress);
 
     size_t cbResidual = 0;
     int rc = pIMediaEx->pfnIoReqQueryResidual(pIMediaEx, pReq->hIoReq, &cbResidual);
     AssertRC(rc); Assert(cbResidual == (uint32_t)cbResidual);
+
+    /**
+     * Linux does not want any sense code if there wasn't problem!
+     */
+    if (pReq->pbSense[2] == SCSI_SENSE_NONE)
+        pReq->cbSense = 0;
 
     struct REQ_RESP_HDR respHdr;
     respHdr.uSenseLen = pReq->cbSense;
@@ -855,25 +873,27 @@ static int virtioScsiR3ReqComplete(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int r
 
     LogFunc(("Residual: %d\n", cbResidual));
 
-    if (pReq->pbPiIn)
+    int cSegs = 0;
+    RTSGSEG aReqSegs[4];
+    aReqSegs[cSegs].pvSeg = &respHdr;
+    aReqSegs[cSegs++].cbSeg = sizeof(respHdr);
+    if (pReq->cbSense)
     {
-        RTSGSEG aReqSegs[] = {
-                { &respHdr,       sizeof(respHdr) },
-                { pReq->pbSense,  pReq->cbSense   },
-                { pReq->pbPiIn,   pReq->cbPiIn    },
-                { pReq->pbDataIn, pReq->cbDataIn  }
-        };
-        RTSgBufInit(&reqSegBuf, aReqSegs, sizeof(aReqSegs) / sizeof(RTSGSEG));
+        aReqSegs[cSegs].pvSeg = pReq->pbSense;
+        aReqSegs[cSegs++].cbSeg = pReq->cbSense;
     }
-    else /** Much easier not to include piIn sgbuf than to account for it during copy! */
+    if (pReq->cbPiIn)
     {
-        RTSGSEG aReqSegs[] = {
-                { &respHdr,       sizeof(respHdr) },
-                { pReq->pbSense,  pReq->cbSense   },
-                { pReq->pbDataIn, pReq->cbDataIn  }
-        };
-        RTSgBufInit(&reqSegBuf, aReqSegs, sizeof(aReqSegs) / sizeof(RTSGSEG));
+        aReqSegs[cSegs].pvSeg = pReq->pbPiIn;
+        aReqSegs[cSegs++].cbSeg = pReq->cbPiIn;
     }
+    if (pReq->cbDataIn)
+    {
+        aReqSegs[cSegs].pvSeg = pReq->pbDataIn;
+        aReqSegs[cSegs++].cbSeg = pReq->cbDataIn;
+    }
+    RTSGBUF reqSegBuf;
+    RTSgBufInit(&reqSegBuf, aReqSegs, cSegs);
 
     /**
      * Fill in the request queue current descriptor chain's IN queue entry/entries
@@ -889,7 +909,7 @@ static int virtioScsiR3ReqComplete(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int r
      * Following doesn't put up memory barrier (fence).
      * VirtIO 1.0 Spec requires mem. barrier for ctrl cmds
      * but doesn't mention fences in regard to requests. */
-    virtioQueuePut(pThis->hVirtio, pReq->qIdx, &reqSegBuf, false /* fFence */);
+    virtioQueuePut(pThis->hVirtio, pReq->qIdx, &reqSegBuf, true /* fFence TBD */);
     virtioQueueSync(pThis->hVirtio, pReq->qIdx);
 
     RTMemFree(pReq->pbSense);
@@ -962,7 +982,12 @@ static int virtioScsiSubmitReq(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
 
     if (uTarget >= pThis->cTargets)
     {
-        virtioScsiScrapReq(pThis, qIdx, VERR_IO_BAD_UNIT);
+        virtioScsiReqComplete(pThis, qIdx, VERR_IO_BAD_UNIT);
+        return VINF_SUCCESS;
+    }
+    if (uLUN != 0)
+    {
+        virtioScsiReqComplete(pThis, qIdx, VERR_IO_BAD_UNIT);
         return VINF_SUCCESS;
     }
 
@@ -1022,14 +1047,21 @@ static int virtioScsiSubmitReq(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
             pReq->pbPiIn = (uint8_t *)RTMemAllocZ(cbPiIn);
             AssertMsgReturn(pReq->pbPiIn, ("Out of memory allocating pi_in buffer"),  VERR_NO_MEMORY);
         }
-        pReq->cbDataIn  = cbDataIn;
-        pReq->pbDataIn  = (uint8_t *)RTMemAllocZ(cbDataIn);
-        AssertMsgReturn(pReq->pbDataIn, ("Out of memory allocating datain buffer"), VERR_NO_MEMORY);
 
-        pReq->cbSense   = cbSense;
-        pReq->pbSense   = (uint8_t *)RTMemAllocZ(cbSense);
-        pReq->pInSgBuf   = pInSgBuf;
-        AssertMsgReturn(pReq->pbSense,  ("Out of memory allocating sense buffer"),  VERR_NO_MEMORY);
+        if (cbDataIn)
+        {
+            pReq->cbDataIn  = cbDataIn;
+            pReq->pbDataIn  = (uint8_t *)RTMemAllocZ(cbDataIn);
+            AssertMsgReturn(pReq->pbDataIn, ("Out of memory allocating datain buffer"), VERR_NO_MEMORY);
+        }
+
+        if (cbSense)
+        {
+            pReq->cbSense   = cbSense;
+            pReq->pbSense   = (uint8_t *)RTMemAllocZ(cbSense);
+            pReq->pInSgBuf   = pInSgBuf;
+            AssertMsgReturn(pReq->pbSense,  ("Out of memory allocating sense buffer"),  VERR_NO_MEMORY);
+        }
 
         LogFunc(("Submitting req (target=%d, LUN=%x) on %s\n", uTarget, uLUN, QUEUENAME(qIdx)));
 
@@ -1039,11 +1071,12 @@ static int virtioScsiSubmitReq(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
 
         if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
         {
-            virtioScsiScrapReq(pThis, qIdx, rc);
+            pIMediaEx->pfnIoReqFree(pIMediaEx, hIoReq);
+            virtioScsiReqComplete(pThis, qIdx, rc);
             return VINF_SUCCESS;
         }
     } else {
-        virtioScsiScrapReq(pThis, qIdx, VERR_IO_NOT_READY);
+        virtioScsiReqComplete(pThis, qIdx, VERR_IO_NOT_READY);
         return VINF_SUCCESS;
 
     }
