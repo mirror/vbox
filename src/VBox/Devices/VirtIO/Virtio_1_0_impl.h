@@ -516,17 +516,17 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
     {
         int primed = 0;
         if (status & VIRTIO_STATUS_ACKNOWLEDGE)
-            Log(("ACKNOWLEDGE",   primed++));
+            Log3(("ACKNOWLEDGE",   primed++));
         if (status & VIRTIO_STATUS_DRIVER)
-            Log(("%sDRIVER",      primed++ ? " | " : ""));
+            Log3(("%sDRIVER",      primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_FEATURES_OK)
-            Log(("%sFEATURES_OK", primed++ ? " | " : ""));
+            Log3(("%sFEATURES_OK", primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_DRIVER_OK)
-            Log(("%sDRIVER_OK",   primed++ ? " | " : ""));
+            Log3(("%sDRIVER_OK",   primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_FAILED)
-            Log(("%sFAILED",      primed++ ? " | " : ""));
+            Log3(("%sFAILED",      primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_DEVICE_NEEDS_RESET)
-            Log(("%sNEEDS_RESET", primed++ ? " | " : ""));
+            Log3(("%sNEEDS_RESET", primed++ ? " | " : ""));
     }
 }
 

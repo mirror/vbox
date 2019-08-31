@@ -319,4 +319,5 @@ void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t u
                             const void *pv, uint32_t cb, uint32_t uOffset,
                             bool fWrite, bool fHasIndex, uint32_t idx);
 
+
 #endif /* !VBOX_INCLUDED_SRC_VirtIO_Virtio_1_0_h */
