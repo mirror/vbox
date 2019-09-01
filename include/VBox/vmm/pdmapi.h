@@ -39,6 +39,9 @@
 #endif
 #include <VBox/sup.h>
 
+#ifdef IN_RING0
+struct PDMDEVMODREGR0;
+#endif
 
 RT_C_DECLS_BEGIN
 
