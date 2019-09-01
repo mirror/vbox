@@ -51,21 +51,21 @@ const int iMaximumQueueSize = 120;
 const int iMetricSetupCount = 1;
 const int iDecimalCount = 2;
 
-enum InfoLine
+enum InfoRow
 {
-    InfoLine_Title = 0,
-    InfoLine_Resolution,
-    InfoLine_Uptime,
-    InfoLine_ClipboardMode,
-    InfoLine_DnDMode,
-    InfoLine_ExecutionEngine,
-    InfoLine_NestedPaging,
-    InfoLine_UnrestrictedExecution,
-    InfoLine_Paravirtualization,
-    InfoLine_GuestAdditions,
-    InfoLine_GuestOSType,
-    InfoLine_RemoteDesktop,
-    InfoLine_Max
+    InfoRow_Title = 0,
+    InfoRow_Resolution,
+    InfoRow_Uptime,
+    InfoRow_ClipboardMode,
+    InfoRow_DnDMode,
+    InfoRow_ExecutionEngine,
+    InfoRow_NestedPaging,
+    InfoRow_UnrestrictedExecution,
+    InfoRow_Paravirtualization,
+    InfoRow_GuestAdditions,
+    InfoRow_GuestOSType,
+    InfoRow_RemoteDesktop,
+    InfoRow_Max
 };
 
 /*********************************************************************************************************************************
@@ -80,6 +80,8 @@ public:
 
     UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine, const CConsole &console);
     void guestMonitorChange(ulong uScreenId);
+    void guestAdditionStateChange();
+    void VRDEChange();
 
 protected:
 
@@ -93,13 +95,18 @@ private slots:
 
 private:
 
-    void runTimeAttributes();
+    void createInfoRows();
     void updateScreenInfo(int iScreenId = -1);
     void updateUpTime();
+    void updateGAsVersion();
+    void updateVRDE();
+    /** Searches the table for the @p item of enmLine and replaces its text. if not found inserts a new
+      * row to the end of the table. Assumes only one line of the @p enmLine exists. */
+    void updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1);
     QString screenResolution(int iScreenId);
-    /** Creates to QTableWidgetItems of tye @enmInfoLine using the @p strLabel and @p strInfo and inserts it
+    /** Creates to QTableWidgetItems of tye @enmInfoRow using the @p strLabel and @p strInfo and inserts it
      * to the row @p iRow. If @p iRow is -1 then the items inserted to the end of the table. */
-    void insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo, int iRow = -1);
+    void insertInfoRow(InfoRow enmInfoRow, const QString& strLabel, const QString &strInfo, int iRow = -1);
     void computeMinimumWidth();
 
     CMachine m_machine;
@@ -248,14 +255,14 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
 
     retranslateUi();
     /* Add the title row: */
-    QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle, InfoLine_Title);
+    QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle, InfoRow_Title);
     QFont titleFont(font());
     titleFont.setBold(true);
     pTitleItem->setFont(titleFont);
     insertRow(0);
     setItem(0, 0, pTitleItem);
     /* Make the API calls and populate the table: */
-    runTimeAttributes();
+    createInfoRows();
     computeMinimumWidth();
 }
 
@@ -263,6 +270,17 @@ void UIRuntimeInfoWidget::guestMonitorChange(ulong uScreenId)
 {
     updateScreenInfo(uScreenId);
 }
+
+void UIRuntimeInfoWidget::guestAdditionStateChange()
+{
+    updateGAsVersion();
+}
+
+void UIRuntimeInfoWidget::VRDEChange()
+{
+    updateVRDE();
+}
+
 
 void UIRuntimeInfoWidget::retranslateUi()
 {
@@ -296,15 +314,15 @@ QSize UIRuntimeInfoWidget::minimumSizeHint() const
     return QSize(m_iMinimumWidth, m_iMinimumWidth);
 }
 
-void UIRuntimeInfoWidget::insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo, int iRow /* = -1 */)
+void UIRuntimeInfoWidget::insertInfoRow(InfoRow enmInfoRow, const QString& strLabel, const QString &strInfo, int iRow /* = -1 */)
 {
     int iMargin = 0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     int iNewRow = rowCount();
     if (iRow != -1 && iRow <= iNewRow)
         iNewRow = iRow;
     insertRow(iNewRow);
-    setItem(iNewRow, 0, new QTableWidgetItem(strLabel, enmInfoLine));
-    setItem(iNewRow, 1, new QTableWidgetItem(strInfo, enmInfoLine));
+    setItem(iNewRow, 0, new QTableWidgetItem(strLabel, enmInfoRow));
+    setItem(iNewRow, 1, new QTableWidgetItem(strInfo, enmInfoRow));
     setRowHeight(iNewRow, 2 * iMargin + m_iFontHeight);
 }
 
@@ -355,7 +373,7 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
     for (int i = iRowCount - 1; i >= 0; --i)
     {
         QTableWidgetItem *pItem = item(i, 0);
-        if (pItem && pItem->type() == InfoLine_Resolution)
+        if (pItem && pItem->type() == InfoRow_Resolution)
             removeRow(i);
     }
 
@@ -365,7 +383,7 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
             QString("%1 %2:").arg(m_strScreenResolutionLabel).arg(QString::number(iScreen)) :
             QString("%1:").arg(m_strScreenResolutionLabel);
         /* Insert the screen resolution row at the top of the table. Row 0 is the title row: */
-        insertInfoLine(InfoLine_Resolution, strLabel, m_screenResolutions[iScreen], iScreen + 1);
+        insertInfoRow(InfoRow_Resolution, strLabel, m_screenResolutions[iScreen], iScreen + 1);
     }
     resizeColumnToContents(1);
 }
@@ -384,23 +402,51 @@ void UIRuntimeInfoWidget::updateUpTime()
     RTStrPrintf(szUptime, sizeof(szUptime), "%dd %02d:%02d:%02d",
                 uUpDays, uUpHours, uUpMins, uUpSecs);
     QString strUptime = QString(szUptime);
+    updateInfoRow(InfoRow_Uptime, QString("%1:").arg(m_strUptimeLabel), strUptime);
+}
 
+void UIRuntimeInfoWidget::updateGAsVersion()
+{
+    CGuest guest = m_console.GetGuest();
+    QString strGAVersion = guest.GetAdditionsVersion();
+    if (strGAVersion.isEmpty())
+        strGAVersion = m_strNotDetected;
+    else
+    {
+        ULONG uRevision = guest.GetAdditionsRevision();
+        if (uRevision != 0)
+            strGAVersion += QString(" r%1").arg(uRevision);
+    }
+   updateInfoRow(InfoRow_GuestAdditions, QString("%1:").arg(m_strGuestAdditionsLabel), strGAVersion);
+}
+
+void UIRuntimeInfoWidget::updateVRDE()
+{
+    /* VRDE information: */
+    int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
+    QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1) ?
+        m_strNotAvailable : QString("%1").arg(iVRDEPort);
+   updateInfoRow(InfoRow_RemoteDesktop, QString("%1:").arg(m_strRemoteDesktopLabel), strVRDEInfo);
+}
+
+void UIRuntimeInfoWidget::updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1)
+{
     QTableWidgetItem *pItem = 0;
     for (int i = 0; i < rowCount() && !pItem; ++i)
     {
         pItem = item(i, 1);
         if (!pItem)
             continue;
-        if (pItem->type() != InfoLine_Uptime)
+        if (pItem->type() != enmLine)
             pItem = 0;
     }
     if (!pItem)
-        insertInfoLine(InfoLine_Uptime, QString("%1:").arg(m_strUptimeLabel), strUptime);
+        insertInfoRow(enmLine, strColumn0, strColumn1);
     else
-        pItem->setText(strUptime);
+        pItem->setText(strColumn1);
 }
 
-void UIRuntimeInfoWidget::runTimeAttributes()
+void UIRuntimeInfoWidget::createInfoRows()
 {
     updateScreenInfo();
     updateUpTime();
@@ -443,38 +489,23 @@ void UIRuntimeInfoWidget::runTimeAttributes()
 
     QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
 
-    /* Guest information: */
-    CGuest guest = m_console.GetGuest();
-    QString strGAVersion = guest.GetAdditionsVersion();
-    if (strGAVersion.isEmpty())
-        strGAVersion = m_strNotDetected;
-    else
-    {
-        ULONG uRevision = guest.GetAdditionsRevision();
-        if (uRevision != 0)
-            strGAVersion += QString(" r%1").arg(uRevision);
-    }
-    QString strOSType = guest.GetOSTypeId();
+    QString strOSType = m_console.GetGuest().GetOSTypeId();
     if (strOSType.isEmpty())
         strOSType = m_strNotDetected;
     else
         strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
 
-    /* VRDE information: */
-    int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
-    QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1)?
-        m_strNotAvailable : QString("%1").arg(iVRDEPort);
 
+    insertInfoRow(InfoRow_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel), strClipboardMode);
+    insertInfoRow(InfoRow_DnDMode, QString("%1:").arg(m_strDragAndDropLabel), strDnDMode);
+    insertInfoRow(InfoRow_ExecutionEngine, QString("%1:").arg(m_strExcutionEngineLabel), strExecutionEngine);
+    insertInfoRow(InfoRow_NestedPaging, QString("%1:").arg(m_strNestedPagingLabel), strNestedPaging);
+    insertInfoRow(InfoRow_UnrestrictedExecution, QString("%1:").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
+    insertInfoRow(InfoRow_Paravirtualization, QString("%1:").arg(m_strParavirtualizationLabel), strParavirtProvider);
+    updateGAsVersion();
+    insertInfoRow(InfoRow_GuestOSType, QString("%1:").arg(m_strGuestOSTypeLabel), strOSType);
+    updateVRDE();
 
-    insertInfoLine(InfoLine_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel), strClipboardMode);
-    insertInfoLine(InfoLine_DnDMode, QString("%1:").arg(m_strDragAndDropLabel), strDnDMode);
-    insertInfoLine(InfoLine_ExecutionEngine, QString("%1:").arg(m_strExcutionEngineLabel), strExecutionEngine);
-    insertInfoLine(InfoLine_NestedPaging, QString("%1:").arg(m_strNestedPagingLabel), strNestedPaging);
-    insertInfoLine(InfoLine_UnrestrictedExecution, QString("%1:").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
-    insertInfoLine(InfoLine_Paravirtualization, QString("%1:").arg(m_strParavirtualizationLabel), strParavirtProvider);
-    insertInfoLine(InfoLine_GuestAdditions, QString("%1:").arg(m_strGuestAdditionsLabel), strGAVersion);
-    insertInfoLine(InfoLine_GuestOSType, QString("%1:").arg(m_strGuestOSTypeLabel), strOSType);
-    insertInfoLine(InfoLine_RemoteDesktop, QString("%1:").arg(m_strRemoteDesktopLabel), strVRDEInfo);
 
     resizeColumnToContents(0);
     resizeColumnToContents(1);
@@ -1086,6 +1117,7 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
     connect(pSession, &UISession::sigAdditionsStateChange, this, &UIInformationRuntime::sltGuestAdditionsStateChange);
     connect(pSession, &UISession::sigGuestMonitorChange, this, &UIInformationRuntime::sltGuestMonitorChange);
+    connect(pSession, &UISession::sigVRDEChange, this, &UIInformationRuntime::sltVRDEChange);
 
     prepareMetrics();
     prepareObjects();
@@ -1337,6 +1369,8 @@ void UIInformationRuntime::sltTimeout()
 
 void UIInformationRuntime::sltGuestAdditionsStateChange()
 {
+    if (m_pRuntimeInfoWidget)
+        m_pRuntimeInfoWidget->guestAdditionStateChange();
     bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
     if (m_fGuestAdditionsAvailable == fGuestAdditionsAvailable)
         return;
@@ -1348,9 +1382,14 @@ void UIInformationRuntime::sltGuestMonitorChange(KGuestMonitorChangedEventType c
 {
     Q_UNUSED(changeType);
     Q_UNUSED(screenGeo);
-    printf("%lu\n", uScreenId);
     if (m_pRuntimeInfoWidget)
         m_pRuntimeInfoWidget->guestMonitorChange(uScreenId);
+}
+
+void UIInformationRuntime::sltVRDEChange()
+{
+    if (m_pRuntimeInfoWidget)
+        m_pRuntimeInfoWidget->VRDEChange();
 }
 
 void UIInformationRuntime::prepareMetrics()
