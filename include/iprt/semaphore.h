@@ -662,7 +662,7 @@ RTDECL(bool) RTSemMutexIsOwned(RTSEMMUTEX hMutexSem);
  * sections).  Unlike critical sections however, they are *not* recursive.
  *
  * @remarks The fast mutexes has sideeffects on IRQL on Windows hosts.  So use
- *          with care and test on windows with driver verifier.
+ *          with care and test on windows with the driver verifier enabled.
  *
  * @{ */
 
@@ -688,10 +688,6 @@ RTDECL(int)  RTSemFastMutexDestroy(RTSEMFASTMUTEX hFastMtx);
 
 /**
  * Request ownership of a fast mutex semaphore.
- *
- * The same thread may request a mutex semaphore multiple times,
- * a nested counter is kept to make sure it's released on the right
- * RTSemMutexRelease() call.
  *
  * @returns iprt status code.
  * @param   hFastMtx            Handle to the fast mutex semaphore.
