@@ -196,11 +196,19 @@ typedef struct GVM
         uint8_t             padding[64];
     } rawpci;
 
+    union
+    {
+#if defined(VMM_INCLUDED_SRC_include_PDMInternal_h) && defined(IN_RING0)
+        struct PDMR0PERVM   s;
+#endif
+        uint8_t             padding[1536];
+    } pdmr0;
+
     /** Padding so aCpus starts on a page boundrary.  */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 256 - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
+    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 256 - 64 - 1536 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 #else
-    uint8_t         abPadding2[4096 - 64 - 256 - 512       - 64 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
+    uint8_t         abPadding2[4096 - 64 - 256 - 512       - 64 - 1536 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 #endif
 
     /** For simplifying CPU enumeration in VMMAll code. */
@@ -222,6 +230,7 @@ AssertCompileMemberAlignment(GVM, gmm,      64);
 AssertCompileMemberAlignment(GVM, nem,      64);
 #endif
 AssertCompileMemberAlignment(GVM, rawpci,   64);
+AssertCompileMemberAlignment(GVM, pdmr0,    64);
 AssertCompileMemberAlignment(GVM, aCpus,    4096);
 AssertCompileSizeAlignment(GVM,             4096);
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)

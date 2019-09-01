@@ -219,6 +219,10 @@ DECLEXPORT(int) ModuleInit(void *hMod)
                 if (RT_SUCCESS(rc))
                 {
                     VMM_CHECK_SMAP_CHECK(RT_NOTHING);
+
+                    PDMR0Init(hMod);
+                    VMM_CHECK_SMAP_CHECK(RT_NOTHING);
+
                     rc = PGMRegisterStringFormatTypes();
                     if (RT_SUCCESS(rc))
                     {
@@ -1993,6 +1997,44 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
             break;
         }
 
+        case VMMR0_DO_PDM_DEVICE_CREATE:
+        {
+            if (!pReqHdr || u64Arg || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = PDMR0DeviceCreateReqHandler(pGVM, (PPDMDEVICECREATEREQ)pReqHdr);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
+        case VMMR0_DO_PDM_DEVICE_GEN_CALL:
+        {
+            if (!pReqHdr || u64Arg || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = PDMR0DeviceGenCallReqHandler(pGVM, (PPDMDEVICEGENCALLREQ)pReqHdr);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
+        /** @todo Remove the once all devices has been converted to new style! @bugref{9218} */
+        case VMMR0_DO_PDM_DEVICE_COMPAT_SET_CRITSECT:
+        {
+            if (!pReqHdr || u64Arg || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = PDMR0DeviceCompatSetCritSectReqHandler(pGVM, (PPDMDEVICECOMPATSETCRITSECTREQ)pReqHdr);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
+        /** @todo Remove the once all devices has been converted to new style! @bugref{9218} */
+        case VMMR0_DO_PDM_DEVICE_COMPAT_REG_PCIDEV:
+        {
+            if (!pReqHdr || u64Arg || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = PDMR0DeviceCompatRegPciDevReqHandler(pGVM, (PPDMDEVICECOMPATREGPCIDEVREQ)pReqHdr);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
         /*
          * Requests to the internal networking service.
          */
@@ -2251,14 +2293,15 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
             /* On the mac we might not have a valid jmp buf, so check these as well. */
             case VMMR0_DO_VMMR0_INIT:
             case VMMR0_DO_VMMR0_TERM:
+
+            case VMMR0_DO_PDM_DEVICE_CREATE:
             {
-                PGVMCPU   pGVCpu = &pGVM->aCpus[idCpu];
-                PVMCPUCC  pVCpu  = pGVCpu;
+                PGVMCPU        pGVCpu        = &pGVM->aCpus[idCpu];
                 RTNATIVETHREAD hNativeThread = RTThreadNativeSelf();
-                if (RT_LIKELY(   pGVCpu->hEMT           == hNativeThread
-                              && pVCpu->hNativeThreadR0 == hNativeThread))
+                if (RT_LIKELY(   pGVCpu->hEMT            == hNativeThread
+                              && pGVCpu->hNativeThreadR0 == hNativeThread))
                 {
-                    if (!pVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack)
+                    if (!pGVCpu->vmm.s.CallRing3JmpBufR0.pvSavedStack)
                         break;
 
                     /** @todo validate this EMT claim... GVM knows. */
@@ -2269,7 +2312,7 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
                     Args.pReq = pReq;
                     Args.u64Arg = u64Arg;
                     Args.pSession = pSession;
-                    return vmmR0CallRing3SetJmpEx(&pVCpu->vmm.s.CallRing3JmpBufR0, vmmR0EntryExWrapper, &Args);
+                    return vmmR0CallRing3SetJmpEx(&pGVCpu->vmm.s.CallRing3JmpBufR0, vmmR0EntryExWrapper, &Args);
                 }
                 return VERR_VM_THREAD_NOT_EMT;
             }

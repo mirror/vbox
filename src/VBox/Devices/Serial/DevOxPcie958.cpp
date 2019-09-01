@@ -597,7 +597,7 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (   fRCEnabled
         && VM_IS_RAW_MODE_ENABLED(pVM))
     {
-        rc = PDMR3LdrGetSymbolRC(pVM, pDevIns->pReg->szRCMod, "ox958IrqReq", &pfnSerialIrqReqRC);
+        rc = PDMR3LdrGetSymbolRC(pVM, pDevIns->pReg->pszRCMod, "ox958IrqReq", &pfnSerialIrqReqRC);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -605,7 +605,7 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     if (fR0Enabled)
     {
-        rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->szR0Mod, "ox958IrqReq", &pfnSerialIrqReqR0);
+        rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->pszR0Mod, "ox958IrqReq", &pfnSerialIrqReqR0);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -623,59 +623,77 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     return VINF_SUCCESS;
 }
 
+#endif /* IN_RING3 */
+
 
 const PDMDEVREG g_DeviceOxPcie958 =
 {
-    /* u32version */
-    PDM_DEVREG_VERSION,
-    /* szName */
-    "oxpcie958uart",
-    /* szRCMod */
-    "VBoxDDRC.rc",
-    /* szR0Mod */
-    "VBoxDDR0.r0",
-    /* pszDescription */
-    "OXPCIe958 based UART controller.\n",
-    /* fFlags */
-    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
-    /* fClass */
-    PDM_DEVREG_CLASS_SERIAL,
-    /* cMaxInstances */
-    ~0U,
-    /* cbInstance */
-    sizeof(DEVOX958),
-    /* pfnConstruct */
-    ox958R3Construct,
-    /* pfnDestruct */
-    ox958R3Destruct,
-    /* pfnRelocate */
-    ox958R3Relocate,
-    /* pfnMemSetup */
-    NULL,
-    /* pfnPowerOn */
-    NULL,
-    /* pfnReset */
-    ox958R3Reset,
-    /* pfnSuspend */
-    NULL,
-    /* pfnResume */
-    NULL,
-    /* pfnAttach */
-    ox958R3Attach,
-    /* pfnDetach */
-    ox958R3Detach,
-    /* pfnQueryInterface */
-    NULL,
-    /* pfnInitComplete */
-    NULL,
-    /* pfnPowerOff */
-    NULL,
-    /* pfnSoftReset */
-    NULL,
-    /* u32VersionEnd */
-    PDM_DEVREG_VERSION
+    /* .u32version = */             PDM_DEVREG_VERSION,
+    /* .uReserved0 = */             0,
+    /* .szName = */                 "oxpcie958uart",
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    /* .fClass = */                 PDM_DEVREG_CLASS_SERIAL,
+    /* .cMaxInstances = */          ~0U,
+    /* .uSharedVersion = */         42,
+    /* .cbInstanceShared = */       sizeof(DEVOX958),
+    /* .cbInstanceCC = */           0,
+    /* .cbInstanceRC = */           0,
+    /* .uReserved1 = */             0,
+    /* .pszDescription = */         "OXPCIe958 based UART controller.\n",
+#if defined(IN_RING3)
+    /* .pszRCMod = */               "VBoxDDRC.rc",
+    /* .pszR0Mod = */               "VBoxDDR0.r0",
+    /* .pfnConstruct = */           ox958R3Construct,
+    /* .pfnDestruct = */            ox958R3Destruct,
+    /* .pfnRelocate = */            ox958R3Relocate,
+    /* .pfnMemSetup = */            NULL,
+    /* .pfnPowerOn = */             NULL,
+    /* .pfnReset = */               ox958R3Reset,
+    /* .pfnSuspend = */             NULL,
+    /* .pfnResume = */              NULL,
+    /* .pfnAttach = */              ox958R3Attach,
+    /* .pfnDetach = */              ox958R3Detach,
+    /* .pfnQueryInterface = */      NULL,
+    /* .pfnInitComplete = */        NULL,
+    /* .pfnPowerOff = */            NULL,
+    /* .pfnSoftReset = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RING0)
+    /* .pfnEarlyConstruct = */      NULL,
+    /* .pfnConstruct = */           NULL,
+    /* .pfnDestruct = */            NULL,
+    /* .pfnFinalDestruct = */       NULL,
+    /* .pfnRequest = */             NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RC)
+    /* .pfnConstruct = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#else
+# error "Not in IN_RING3, IN_RING0 or IN_RC!"
+#endif
+    /* .u32VersionEnd = */          PDM_DEVREG_VERSION
 };
 
-#endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 

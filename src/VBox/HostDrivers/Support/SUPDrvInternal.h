@@ -330,6 +330,8 @@ typedef struct SUPDRVLDRIMAGE
      * pvImage is 32-byte aligned or it may governed by the native loader (this
      * member is NULL then). */
     void                           *pvImageAlloc;
+    /** Magic value (SUPDRVLDRIMAGE_MAGIC). */
+    uint32_t                        uMagic;
     /** Size of the image including the tables. This is mainly for verification
      * of the load request. */
     uint32_t                        cbImageWithTabs;
@@ -383,6 +385,11 @@ typedef struct SUPDRVLDRIMAGE
     char                            szName[32];
 } SUPDRVLDRIMAGE, *PSUPDRVLDRIMAGE;
 
+/** Magic value for SUPDRVLDRIMAGE::uMagic (Charlotte Bronte). */
+#define SUPDRVLDRIMAGE_MAGIC        UINT32_C(0x18160421)
+/** Magic value for SUPDRVLDRIMAGE::uMagic when freed. */
+#define SUPDRVLDRIMAGE_MAGIC_DEAD   UINT32_C(0x18550331)
+
 
 /** Image usage record. */
 typedef struct SUPDRVLDRUSAGE
@@ -391,8 +398,10 @@ typedef struct SUPDRVLDRUSAGE
     struct SUPDRVLDRUSAGE * volatile pNext;
     /** The image. */
     PSUPDRVLDRIMAGE                 pImage;
-    /** Load count. */
-    uint32_t volatile               cUsage;
+    /** Load count (ring-3). */
+    uint32_t volatile               cRing3Usage;
+    /** Ring-0 usage counter. */
+    uint32_t volatile               cRing0Usage;
 } SUPDRVLDRUSAGE, *PSUPDRVLDRUSAGE;
 
 
@@ -646,6 +655,8 @@ typedef struct SUPDRVDEVEXT
     PSUPDRVLDRIMAGE volatile        pLdrInitImage;
     /** The thread currently executing a ModuleInit function. */
     RTNATIVETHREAD volatile         hLdrInitThread;
+    /** The thread currently executing a ModuleTerm function. */
+    RTNATIVETHREAD volatile         hLdrTermThread;
     /** @} */
 
     /** Number of times someone reported bad execution context via SUPR0BadContext.

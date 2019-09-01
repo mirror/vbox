@@ -31,6 +31,7 @@
 # include <VBox/vmm/rem.h>
 #endif
 #include <VBox/vmm/dbgf.h>
+#include <VBox/vmm/ssm.h>
 #include <VBox/vmm/vmapi.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/vmcc.h>
@@ -72,7 +73,7 @@ DECLINLINE(int) pdmR3DevGetSymbolRCLazy(PPDMDEVINS pDevIns, const char *pszSymbo
         return VINF_SUCCESS;
     }
     return PDMR3LdrGetSymbolRCLazy(pVM,
-                                   pDevIns->Internal.s.pDevR3->pReg->szRCMod,
+                                   pDevIns->Internal.s.pDevR3->pReg->pszRCMod,
                                    pDevIns->Internal.s.pDevR3->pszRCSearchPath,
                                    pszSymbol, ppvValue);
 }
@@ -84,7 +85,7 @@ DECLINLINE(int) pdmR3DevGetSymbolRCLazy(PPDMDEVINS pDevIns, const char *pszSymbo
 DECLINLINE(int) pdmR3DevGetSymbolR0Lazy(PPDMDEVINS pDevIns, const char *pszSymbol, PRTR0PTR ppvValue)
 {
     return PDMR3LdrGetSymbolR0Lazy(pDevIns->Internal.s.pVMR3,
-                                   pDevIns->Internal.s.pDevR3->pReg->szR0Mod,
+                                   pDevIns->Internal.s.pDevR3->pReg->pszR0Mod,
                                    pDevIns->Internal.s.pDevR3->pszR0SearchPath,
                                    pszSymbol, ppvValue);
 }
@@ -94,6 +95,33 @@ DECLINLINE(int) pdmR3DevGetSymbolR0Lazy(PPDMDEVINS pDevIns, const char *pszSymbo
  * @{
  */
 
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnIoPortCreateEx} */
+static DECLCALLBACK(int) pdmR3DevHlp_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts,
+                                                    uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
+                                                    PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
+                                                    PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr,
+                                                    RTR3PTR pvUser, const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
+{
+    RT_NOREF(pDevIns, cPorts, fFlags, pPciDev, iPciRegion, pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, phIoPorts);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnIoPortMap} */
+static DECLCALLBACK(int) pdmR3DevHlp_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port)
+{
+    RT_NOREF(pDevIns, hIoPorts, Port);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnIoPortUnmap} */
+static DECLCALLBACK(int) pdmR3DevHlp_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
+{
+    RT_NOREF(pDevIns, hIoPorts);
+    return VERR_NOT_IMPLEMENTED;
+}
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTHCPTR pvUser, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
@@ -127,7 +155,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
                                                       const char *pszOutStr, const char *pszInStr, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Assert(pDevIns->pReg->szRCMod[0]);
+    Assert(pDevIns->pReg->pszRCMod[0]);
     Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC);
     LogFlow(("pdmR3DevHlp_IOPortRegisterRC: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pszOut=%p:{%s} pszIn=%p:{%s} pszOutStr=%p:{%s} pszInStr=%p:{%s} pszDesc=%p:{%s}\n", pDevIns->pReg->szName, pDevIns->iInstance,
              Port, cPorts, pvUser, pszOut, pszOut, pszIn, pszIn, pszOutStr, pszOutStr, pszInStr, pszInStr, pszDesc, pszDesc));
@@ -139,7 +167,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     int rc = VINF_SUCCESS;
-    if (   pDevIns->pReg->szRCMod[0]
+    if (   pDevIns->pReg->pszRCMod[0]
         && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
         && VM_IS_RAW_MODE_ENABLED(pVM))
     {
@@ -147,25 +175,25 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPO
         if (pszIn)
         {
             rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszIn, &RCPtrIn);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pReg->szRCMod, pszIn));
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pReg->pszRCMod, pszIn));
         }
         RTRCPTR RCPtrOut = NIL_RTRCPTR;
         if (pszOut && RT_SUCCESS(rc))
         {
             rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszOut, &RCPtrOut);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pReg->szRCMod, pszOut));
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pReg->pszRCMod, pszOut));
         }
         RTRCPTR RCPtrInStr = NIL_RTRCPTR;
         if (pszInStr && RT_SUCCESS(rc))
         {
             rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszInStr, &RCPtrInStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pReg->szRCMod, pszInStr));
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pReg->pszRCMod, pszInStr));
         }
         RTRCPTR RCPtrOutStr = NIL_RTRCPTR;
         if (pszOutStr && RT_SUCCESS(rc))
         {
             rc = pdmR3DevGetSymbolRCLazy(pDevIns, pszOutStr, &RCPtrOutStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pReg->szRCMod, pszOutStr));
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pReg->pszRCMod, pszOutStr));
         }
 
         if (RT_SUCCESS(rc))
@@ -211,32 +239,32 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPO
      * Resolve the functions (one of the can be NULL).
      */
     int rc = VINF_SUCCESS;
-    if (    pDevIns->pReg->szR0Mod[0]
+    if (    pDevIns->pReg->pszR0Mod[0]
         &&  (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0))
     {
         R0PTRTYPE(PFNIOMIOPORTIN) pfnR0PtrIn = 0;
         if (pszIn)
         {
             rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszIn, &pfnR0PtrIn);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pReg->szR0Mod, pszIn));
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszIn)\n", pDevIns->pReg->pszR0Mod, pszIn));
         }
         R0PTRTYPE(PFNIOMIOPORTOUT) pfnR0PtrOut = 0;
         if (pszOut && RT_SUCCESS(rc))
         {
             rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszOut, &pfnR0PtrOut);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pReg->szR0Mod, pszOut));
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOut)\n", pDevIns->pReg->pszR0Mod, pszOut));
         }
         R0PTRTYPE(PFNIOMIOPORTINSTRING) pfnR0PtrInStr = 0;
         if (pszInStr && RT_SUCCESS(rc))
         {
             rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszInStr, &pfnR0PtrInStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pReg->szR0Mod, pszInStr));
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszInStr)\n", pDevIns->pReg->pszR0Mod, pszInStr));
         }
         R0PTRTYPE(PFNIOMIOPORTOUTSTRING) pfnR0PtrOutStr = 0;
         if (pszOutStr && RT_SUCCESS(rc))
         {
             rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pszOutStr, &pfnR0PtrOutStr);
-            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pReg->szR0Mod, pszOutStr));
+            AssertMsgRC(rc, ("Failed to resolve %s.%s (pszOutStr)\n", pDevIns->pReg->pszR0Mod, pszOutStr));
         }
 
         if (RT_SUCCESS(rc))
@@ -279,6 +307,41 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPO
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnMmioCreateEx} */
+static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
+                                                  uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
+                                                  PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                                  void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
+{
+    RT_NOREF(pDevIns, cbRegion, fFlags, pPciDev, iPciRegion, pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnMmioMap} */
+static DECLCALLBACK(int) pdmR3DevHlp_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys)
+{
+    RT_NOREF(pDevIns, hRegion, GCPhys);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnMmioUnmap} */
+static DECLCALLBACK(int) pdmR3DevHlp_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+{
+    RT_NOREF(pDevIns, hRegion);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnMmioReduce} */
+static DECLCALLBACK(int) pdmR3DevHlp_MmioReduce(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS cbRegion)
+{
+    RT_NOREF(pDevIns, hRegion, cbRegion);
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnMMIORegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange, RTHCPTR pvUser,
                                                   PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
@@ -311,7 +374,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    Assert(pDevIns->pReg->szR0Mod[0]);
+    Assert(pDevIns->pReg->pszR0Mod[0]);
     Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0);
     LogFlow(("pdmR3DevHlp_MMIORegisterRC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%RGp pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
@@ -322,7 +385,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
      * Not all function have to present, leave it to IOM to enforce this.
      */
     int rc = VINF_SUCCESS;
-    if (   pDevIns->pReg->szRCMod[0]
+    if (   pDevIns->pReg->pszRCMod[0]
         && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
         && VM_IS_RAW_MODE_ENABLED(pDevIns->Internal.s.pVMR3))
     {
@@ -344,9 +407,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS
             rc = IOMR3MmioRegisterRC(pDevIns->Internal.s.pVMR3, pDevIns, GCPhysStart, cbRange, pvUser, RCPtrWrite, RCPtrRead, RCPtrFill);
         else
         {
-            AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pReg->szRCMod, pszWrite));
-            AssertMsgRC(rc2, ("Failed to resolve %s.%s (pszRead)\n",  pDevIns->pReg->szRCMod, pszRead));
-            AssertMsgRC(rc3, ("Failed to resolve %s.%s (pszFill)\n",  pDevIns->pReg->szRCMod, pszFill));
+            AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pReg->pszRCMod, pszWrite));
+            AssertMsgRC(rc2, ("Failed to resolve %s.%s (pszRead)\n",  pDevIns->pReg->pszRCMod, pszRead));
+            AssertMsgRC(rc3, ("Failed to resolve %s.%s (pszFill)\n",  pDevIns->pReg->pszRCMod, pszFill));
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
             if (RT_FAILURE(rc3) && RT_SUCCESS(rc))
@@ -373,7 +436,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    Assert(pDevIns->pReg->szR0Mod[0]);
+    Assert(pDevIns->pReg->pszR0Mod[0]);
     Assert(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0);
     LogFlow(("pdmR3DevHlp_MMIORegisterHC: caller='%s'/%d: GCPhysStart=%RGp cbRange=%RGp pvUser=%p pszWrite=%p:{%s} pszRead=%p:{%s} pszFill=%p:{%s}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, GCPhysStart, cbRange, pvUser, pszWrite, pszWrite, pszRead, pszRead, pszFill, pszFill));
@@ -383,7 +446,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
      * Not all function have to present, leave it to IOM to enforce this.
      */
     int rc = VINF_SUCCESS;
-    if (   pDevIns->pReg->szR0Mod[0]
+    if (   pDevIns->pReg->pszR0Mod[0]
         && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0))
     {
         R0PTRTYPE(PFNIOMMMIOWRITE) pfnR0PtrWrite = 0;
@@ -402,9 +465,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
                                      pfnR0PtrWrite, pfnR0PtrRead, pfnR0PtrFill);
         else
         {
-            AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pReg->szR0Mod, pszWrite));
-            AssertMsgRC(rc2, ("Failed to resolve %s.%s (pszRead)\n",  pDevIns->pReg->szR0Mod, pszRead));
-            AssertMsgRC(rc3, ("Failed to resolve %s.%s (pszFill)\n",  pDevIns->pReg->szR0Mod, pszFill));
+            AssertMsgRC(rc,  ("Failed to resolve %s.%s (pszWrite)\n", pDevIns->pReg->pszR0Mod, pszWrite));
+            AssertMsgRC(rc2, ("Failed to resolve %s.%s (pszRead)\n",  pDevIns->pReg->pszR0Mod, pszRead));
+            AssertMsgRC(rc3, ("Failed to resolve %s.%s (pszFill)\n",  pDevIns->pReg->pszR0Mod, pszFill));
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
             if (RT_FAILURE(rc3) && RT_SUCCESS(rc))
@@ -488,10 +551,10 @@ pdmR3DevHlp_MMIOExPreRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t i
      * Resolve the functions.
      */
     AssertLogRelReturn(   (!pszWriteR0 && !pszReadR0 && !pszFillR0)
-                       || (pDevIns->pReg->szR0Mod[0] && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)),
+                       || (pDevIns->pReg->pszR0Mod[0] && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)),
                        VERR_INVALID_PARAMETER);
     AssertLogRelReturn(   (!pszWriteRC && !pszReadRC && !pszFillRC)
-                       || (pDevIns->pReg->szRCMod[0] && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)),
+                       || (pDevIns->pReg->pszRCMod[0] && (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)),
                        VERR_INVALID_PARAMETER);
 
     /* Ring-0 */
@@ -789,6 +852,174 @@ static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK e
 
     LogFlow(("pdmR3DevHlp_TMTimerCreate: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
+}
+
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerCreate} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback,
+                                                 void *pvUser, uint32_t fFlags, const char *pszDesc, PTMTIMERHANDLE phTimer)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT(pVM);
+    LogFlow(("pdmR3DevHlp_TimerCreate: caller='%s'/%d: enmClock=%d pfnCallback=%p pvUser=%p fFlags=%#x pszDesc=%p:{%s} phTimer=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, enmClock, pfnCallback, pvUser, fFlags, pszDesc, pszDesc, phTimer));
+
+    if (pDevIns->iInstance > 0) /** @todo use a string cache here later. */
+    {
+         char *pszDesc2 = MMR3HeapAPrintf(pVM, MM_TAG_PDM_DEVICE_DESC, "%s [%u]", pszDesc, pDevIns->iInstance);
+         if (pszDesc2)
+             pszDesc = pszDesc2;
+    }
+
+    PTMTIMER pTimer = NULL;
+    int rc = TMR3TimerCreateDevice(pVM, pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, &pTimer);
+    *phTimer = (uintptr_t)pTimer;
+
+    LogFlow(("pdmR3DevHlp_TimerCreate: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerToPtr} */
+static DECLCALLBACK(PTMTIMERR3) pdmR3DevHlp_TimerToPtr(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return (PTMTIMERR3)hTimer;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerFromMicro} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TimerFromMicro(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicroSecs)
+{
+    return TMTimerFromMicro(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), cMicroSecs);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerFromMilli} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TimerFromMilli(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMilliSecs)
+{
+    return TMTimerFromMilli(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), cMilliSecs);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerFromNano} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TimerFromNano(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cNanoSecs)
+{
+    return TMTimerFromNano(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), cNanoSecs);
+}
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerGet} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TimerGet(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    return TMTimerGet(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerGetFreq} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TimerGetFreq(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    return TMTimerGetFreq(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerGetNano} */
+static DECLCALLBACK(uint64_t) pdmR3DevHlp_TimerGetNano(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    return TMTimerGetNano(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerIsActive} */
+static DECLCALLBACK(bool) pdmR3DevHlp_TimerIsActive(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    return TMTimerIsActive(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerIsLockOwner} */
+static DECLCALLBACK(bool) pdmR3DevHlp_TimerIsLockOwner(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    return TMTimerIsLockOwner(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerLock} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerLock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, int rcBusy)
+{
+    return TMTimerLock(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerSet} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerSet(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t uExpire)
+{
+    return TMTimerSet(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), uExpire);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerSetFrequencyHint} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerSetFrequencyHint(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint32_t uHz)
+{
+    return TMTimerSetFrequencyHint(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), uHz);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerSetMicro} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerSetMicro(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMicrosToNext)
+{
+    return TMTimerSetMicro(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), cMicrosToNext);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerSetMillies} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerSetMillies(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cMilliesToNext)
+{
+    return TMTimerSetMillies(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), cMilliesToNext);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerSetNano} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerSetNano(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cNanosToNext)
+{
+    return TMTimerSetNano(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), cNanosToNext);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerSetRelative} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerSetRelative(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now)
+{
+    return TMTimerSetRelative(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), cTicksToNext, pu64Now);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerStop} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerStop(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    return TMTimerStop(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerUnlock} */
+static DECLCALLBACK(void) pdmR3DevHlp_TimerUnlock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    TMTimerUnlock(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerSave} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerSave(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
+{
+    return TMR3TimerSave(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), pSSM);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerLoad} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerLoad(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM)
+{
+    return TMR3TimerLoad(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer), pSSM);
 }
 
 
@@ -1578,7 +1809,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
         pPciDev->Int.s.pPdmBusR3 = pBus;
         if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
         {
-            pPciDev->Int.s.pDevInsR0 = MMHyperR3ToR0(pVM, pDevIns);
+            pPciDev->Int.s.pDevInsR0 = pDevIns->pDevInsR0RemoveMe;
             pPciDev->Int.s.pPdmBusR0 = MMHyperR3ToR0(pVM, pBus);
         }
         else
@@ -1587,12 +1818,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
             pPciDev->Int.s.pPdmBusR0 = NIL_RTR0PTR;
         }
 
-        if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        {
-            pPciDev->Int.s.pDevInsRC = MMHyperR3ToRC(pVM, pDevIns);
-            pPciDev->Int.s.pPdmBusRC = MMHyperR3ToRC(pVM, pBus);
-        }
-        else
+        //if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
+        //{
+        //    pPciDev->Int.s.pDevInsRC = MMHyperR3ToRC(pVM, pDevIns);
+        //    pPciDev->Int.s.pPdmBusRC = MMHyperR3ToRC(pVM, pBus);
+        //}
+        //else
         {
             pPciDev->Int.s.pDevInsRC = NIL_RTRCPTR;
             pPciDev->Int.s.pPdmBusRC = NIL_RTRCPTR;
@@ -1617,27 +1848,27 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
             {
                 Assert(!pPrevPciDev->Int.s.pNextR3);
                 pPrevPciDev->Int.s.pNextR3 = pPciDev;
-                if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
-                    pPrevPciDev->Int.s.pNextR0 = MMHyperR3ToR0(pVM, pPciDev);
-                else
-                    pPrevPciDev->Int.s.pNextR0 = NIL_RTR0PTR;
-                if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-                    pPrevPciDev->Int.s.pNextRC = MMHyperR3ToRC(pVM, pPciDev);
-                else
-                    pPrevPciDev->Int.s.pNextRC = NIL_RTRCPTR;
+                pPrevPciDev->Int.s.pNextR0 = NIL_RTRCPTR;
+                pPrevPciDev->Int.s.pNextRC = NIL_RTRCPTR;
             }
             else
             {
                 Assert(!pDevIns->Internal.s.pHeadPciDevR3);
                 pDevIns->Internal.s.pHeadPciDevR3 = pPciDev;
-                if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
-                    pDevIns->Internal.s.pHeadPciDevR0 = MMHyperR3ToR0(pVM, pPciDev);
-                else
-                    pDevIns->Internal.s.pHeadPciDevR0 = NIL_RTR0PTR;
-                if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-                    pDevIns->Internal.s.pHeadPciDevRC = MMHyperR3ToRC(pVM, pPciDev);
-                else
-                    pDevIns->Internal.s.pHeadPciDevRC = NIL_RTRCPTR;
+            }
+
+            Assert(RT_BOOL(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED) == pDevIns->fR0Enabled);
+            if (   (pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED)
+                && !(pDevIns->Internal.s.pDevR3->pReg->fFlags & PDM_DEVREG_FLAGS_NEW_STYLE))
+            {
+                PDMDEVICECOMPATREGPCIDEVREQ Req;
+                Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+                Req.Hdr.cbReq    = sizeof(Req);
+                Req.idxR0Device  = pDevIns->Internal.s.idxR0Device;
+                Req.pDevInsR3    = pDevIns;
+                Req.pPciDevR3    = pPciDev;
+                rc = VMMR3CallR0(pVM, VMMR0_DO_PDM_DEVICE_COMPAT_REG_PCIDEV, 0, &Req.Hdr);
+                AssertLogRelRCReturn(rc, rc);
             }
 
             Log(("PDM: Registered device '%s'/%d as PCI device %d on bus %d\n",
@@ -2209,21 +2440,24 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
      */
     PPDMCRITSECT pOldCritSect = pDevIns->pCritSectRoR3;
     pDevIns->pCritSectRoR3 = pCritSect;
-    if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
-        pDevIns->pCritSectRoR0 = MMHyperCCToR0(pVM, pDevIns->pCritSectRoR3);
-    else
-        Assert(pDevIns->pCritSectRoR0 == NIL_RTRCPTR);
+    pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_CHANGED_CRITSECT;
 
-    if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        pDevIns->pCritSectRoRC = MMHyperCCToRC(pVM, pDevIns->pCritSectRoR3);
-    else
-        Assert(pDevIns->pCritSectRoRC == NIL_RTRCPTR);
+    Assert(RT_BOOL(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED) == pDevIns->fR0Enabled);
+    if (   (pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED)
+        && !(pDevIns->Internal.s.pDevR3->pReg->fFlags & PDM_DEVREG_FLAGS_NEW_STYLE))
+    {
+        PDMDEVICECOMPATSETCRITSECTREQ Req;
+        Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+        Req.Hdr.cbReq    = sizeof(Req);
+        Req.idxR0Device  = pDevIns->Internal.s.idxR0Device;
+        Req.pDevInsR3    = pDevIns;
+        Req.pCritSectR3  = pCritSect;
+        int rc = VMMR3CallR0(pVM, VMMR0_DO_PDM_DEVICE_COMPAT_SET_CRITSECT, 0, &Req.Hdr);
+        AssertLogRelRCReturn(rc, rc);
+    }
 
     PDMR3CritSectDelete(pOldCritSect);
-    if (pDevIns->pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0))
-        MMHyperFree(pVM, pOldCritSect);
-    else
-        MMR3HeapFree(pOldCritSect);
+    Assert((uintptr_t)pOldCritSect - (uintptr_t)pDevIns < pDevIns->cbRing3);
 
     LogFlow(("pdmR3DevHlp_SetDeviceCritSect: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
@@ -2612,7 +2846,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_LdrGetRCInterfaceSymbols(PPDMDEVINS pDevIns
         if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
             rc = PDMR3LdrGetInterfaceSymbols(pDevIns->Internal.s.pVMR3,
                                              pvInterface, cbInterface,
-                                             pDevIns->pReg->szRCMod, pDevIns->Internal.s.pDevR3->pszRCSearchPath,
+                                             pDevIns->pReg->pszRCMod, pDevIns->Internal.s.pDevR3->pszRCSearchPath,
                                              pszSymPrefix, pszSymList,
                                              false /*fRing0OrRC*/);
         else
@@ -2650,7 +2884,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_LdrGetR0InterfaceSymbols(PPDMDEVINS pDevIns
         if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
             rc = PDMR3LdrGetInterfaceSymbols(pDevIns->Internal.s.pVMR3,
                                              pvInterface, cbInterface,
-                                             pDevIns->pReg->szR0Mod, pDevIns->Internal.s.pDevR3->pszR0SearchPath,
+                                             pDevIns->pReg->pszR0Mod, pDevIns->Internal.s.pDevR3->pszR0SearchPath,
                                              pszSymPrefix, pszSymList,
                                              true /*fRing0OrRC*/);
         else
@@ -2862,7 +3096,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     if (pPciBusReg->pszSetIrqRC)
     {
         int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pPciBusReg->pszSetIrqRC, &pPciBus->pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pPciBusReg->pszSetIrqRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszRCMod, pPciBusReg->pszSetIrqRC, rc));
         if (RT_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -2882,7 +3116,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
     if (pPciBusReg->pszSetIrqR0)
     {
         int rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pPciBusReg->pszSetIrqR0, &pPciBus->pfnSetIrqR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szR0Mod, pPciBusReg->pszSetIrqR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszR0Mod, pPciBusReg->pszSetIrqR0, rc));
         if (RT_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -2995,11 +3229,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     if (pPicReg->pszSetIrqRC)
     {
         int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pPicReg->pszSetIrqRC, &pVM->pdm.s.Pic.pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pPicReg->pszSetIrqRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszRCMod, pPicReg->pszSetIrqRC, rc));
         if (RT_SUCCESS(rc))
         {
             rc = pdmR3DevGetSymbolRCLazy(pDevIns, pPicReg->pszGetInterruptRC, &pVM->pdm.s.Pic.pfnGetInterruptRC);
-            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pPicReg->pszGetInterruptRC, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszRCMod, pPicReg->pszGetInterruptRC, rc));
         }
         if (RT_FAILURE(rc))
         {
@@ -3021,11 +3255,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
     if (pPicReg->pszSetIrqR0)
     {
         int rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pPicReg->pszSetIrqR0, &pVM->pdm.s.Pic.pfnSetIrqR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szR0Mod, pPicReg->pszSetIrqR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszR0Mod, pPicReg->pszSetIrqR0, rc));
         if (RT_SUCCESS(rc))
         {
             rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pPicReg->pszGetInterruptR0, &pVM->pdm.s.Pic.pfnGetInterruptR0);
-            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szR0Mod, pPicReg->pszGetInterruptR0, rc));
+            AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszR0Mod, pPicReg->pszGetInterruptR0, rc));
         }
         if (RT_FAILURE(rc))
         {
@@ -3079,7 +3313,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns)
      * Initialize the RC, R0 and HC bits.
      */
     pVM->pdm.s.Apic.pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    Assert(pVM->pdm.s.Apic.pDevInsRC);
+    Assert(pVM->pdm.s.Apic.pDevInsRC || !VM_IS_RAW_MODE_ENABLED(pVM));
 
     pVM->pdm.s.Apic.pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     Assert(pVM->pdm.s.Apic.pDevInsR0);
@@ -3174,6 +3408,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (no APIC)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
+#if 0
     if (    pIoApicReg->pszSetIrqRC
         &&  !pVM->pdm.s.Apic.pDevInsRC)
     {
@@ -3181,6 +3416,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
         LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc (no GC APIC)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
         return VERR_INVALID_PARAMETER;
     }
+#endif
 
     /*
      * Only one I/O APIC device.
@@ -3198,7 +3434,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->pszSetIrqRC)
     {
         int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pIoApicReg->pszSetIrqRC, &pVM->pdm.s.IoApic.pfnSetIrqRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pIoApicReg->pszSetIrqRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszRCMod, pIoApicReg->pszSetIrqRC, rc));
         if (RT_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -3215,7 +3451,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->pszSendMsiRC)
     {
         int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pIoApicReg->pszSendMsiRC, &pVM->pdm.s.IoApic.pfnSendMsiRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pIoApicReg->pszSendMsiRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszRCMod, pIoApicReg->pszSendMsiRC, rc));
         if (RT_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -3230,7 +3466,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->pszSetEoiRC)
     {
         int rc = pdmR3DevGetSymbolRCLazy(pDevIns, pIoApicReg->pszSetEoiRC, &pVM->pdm.s.IoApic.pfnSetEoiRC);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szRCMod, pIoApicReg->pszSetEoiRC, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszRCMod, pIoApicReg->pszSetEoiRC, rc));
         if (RT_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -3248,7 +3484,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->pszSetIrqR0)
     {
         int rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pIoApicReg->pszSetIrqR0, &pVM->pdm.s.IoApic.pfnSetIrqR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szR0Mod, pIoApicReg->pszSetIrqR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszR0Mod, pIoApicReg->pszSetIrqR0, rc));
         if (RT_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -3266,7 +3502,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->pszSendMsiR0)
     {
         int rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pIoApicReg->pszSendMsiR0, &pVM->pdm.s.IoApic.pfnSendMsiR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szR0Mod, pIoApicReg->pszSendMsiR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszR0Mod, pIoApicReg->pszSendMsiR0, rc));
         if (RT_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -3281,7 +3517,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     if (pIoApicReg->pszSetEoiR0)
     {
         int rc = pdmR3DevGetSymbolR0Lazy(pDevIns, pIoApicReg->pszSetEoiR0, &pVM->pdm.s.IoApic.pfnSetEoiR0);
-        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->szR0Mod, pIoApicReg->pszSetEoiR0, rc));
+        AssertMsgRC(rc, ("%s::%s rc=%Rrc\n", pDevIns->pReg->pszR0Mod, pIoApicReg->pszSetEoiR0, rc));
         if (RT_FAILURE(rc))
         {
             LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
@@ -3766,10 +4002,17 @@ static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLea
 const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
 {
     PDM_DEVHLPR3_VERSION,
+    pdmR3DevHlp_IoPortCreateEx,
+    pdmR3DevHlp_IoPortMap,
+    pdmR3DevHlp_IoPortUnmap,
     pdmR3DevHlp_IOPortRegister,
     pdmR3DevHlp_IOPortRegisterRC,
     pdmR3DevHlp_IOPortRegisterR0,
     pdmR3DevHlp_IOPortDeregister,
+    pdmR3DevHlp_MmioCreateEx,
+    pdmR3DevHlp_MmioMap,
+    pdmR3DevHlp_MmioUnmap,
+    pdmR3DevHlp_MmioReduce,
     pdmR3DevHlp_MMIORegister,
     pdmR3DevHlp_MMIORegisterRC,
     pdmR3DevHlp_MMIORegisterR0,
@@ -3785,8 +4028,155 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
+    SSMR3PutStruct,
+    SSMR3PutStructEx,
+    SSMR3PutBool,
+    SSMR3PutU8,
+    SSMR3PutS8,
+    SSMR3PutU16,
+    SSMR3PutS16,
+    SSMR3PutU32,
+    SSMR3PutS32,
+    SSMR3PutU64,
+    SSMR3PutS64,
+    SSMR3PutU128,
+    SSMR3PutS128,
+    SSMR3PutUInt,
+    SSMR3PutSInt,
+    SSMR3PutGCUInt,
+    SSMR3PutGCUIntReg,
+    SSMR3PutGCPhys32,
+    SSMR3PutGCPhys64,
+    SSMR3PutGCPhys,
+    SSMR3PutGCPtr,
+    SSMR3PutGCUIntPtr,
+    SSMR3PutRCPtr,
+    SSMR3PutIOPort,
+    SSMR3PutSel,
+    SSMR3PutMem,
+    SSMR3PutStrZ,
+    SSMR3GetStruct,
+    SSMR3GetStructEx,
+    SSMR3GetBool,
+    SSMR3GetU8,
+    SSMR3GetS8,
+    SSMR3GetU16,
+    SSMR3GetS16,
+    SSMR3GetU32,
+    SSMR3GetS32,
+    SSMR3GetU64,
+    SSMR3GetS64,
+    SSMR3GetU128,
+    SSMR3GetS128,
+    SSMR3GetUInt,
+    SSMR3GetSInt,
+    SSMR3GetGCUInt,
+    SSMR3GetGCUIntReg,
+    SSMR3GetGCPhys32,
+    SSMR3GetGCPhys64,
+    SSMR3GetGCPhys,
+    SSMR3GetGCPtr,
+    SSMR3GetGCUIntPtr,
+    SSMR3GetRCPtr,
+    SSMR3GetIOPort,
+    SSMR3GetSel,
+    SSMR3GetMem,
+    SSMR3GetStrZ,
+    SSMR3GetStrZEx,
+    SSMR3Skip,
+    SSMR3SkipToEndOfUnit,
+    SSMR3SetLoadError,
+    SSMR3SetLoadErrorV,
+    SSMR3SetCfgError,
+    SSMR3SetCfgErrorV,
+    SSMR3HandleGetStatus,
+    SSMR3HandleGetAfter,
+    SSMR3HandleIsLiveSave,
+    SSMR3HandleMaxDowntime,
+    SSMR3HandleHostBits,
+    SSMR3HandleRevision,
+    SSMR3HandleVersion,
     pdmR3DevHlp_TMTimerCreate,
+    pdmR3DevHlp_TimerCreate,
+    pdmR3DevHlp_TimerToPtr,
+    pdmR3DevHlp_TimerFromMicro,
+    pdmR3DevHlp_TimerFromMilli,
+    pdmR3DevHlp_TimerFromNano,
+    pdmR3DevHlp_TimerGet,
+    pdmR3DevHlp_TimerGetFreq,
+    pdmR3DevHlp_TimerGetNano,
+    pdmR3DevHlp_TimerIsActive,
+    pdmR3DevHlp_TimerIsLockOwner,
+    pdmR3DevHlp_TimerLock,
+    pdmR3DevHlp_TimerSet,
+    pdmR3DevHlp_TimerSetFrequencyHint,
+    pdmR3DevHlp_TimerSetMicro,
+    pdmR3DevHlp_TimerSetMillies,
+    pdmR3DevHlp_TimerSetNano,
+    pdmR3DevHlp_TimerSetRelative,
+    pdmR3DevHlp_TimerStop,
+    pdmR3DevHlp_TimerUnlock,
+    pdmR3DevHlp_TimerSave,
+    pdmR3DevHlp_TimerLoad,
     pdmR3DevHlp_TMUtcNow,
+    CFGMR3Exists,
+    CFGMR3QueryType,
+    CFGMR3QuerySize,
+    CFGMR3QueryInteger,
+    CFGMR3QueryIntegerDef,
+    CFGMR3QueryString,
+    CFGMR3QueryStringDef,
+    CFGMR3QueryBytes,
+    CFGMR3QueryU64,
+    CFGMR3QueryU64Def,
+    CFGMR3QueryS64,
+    CFGMR3QueryS64Def,
+    CFGMR3QueryU32,
+    CFGMR3QueryU32Def,
+    CFGMR3QueryS32,
+    CFGMR3QueryS32Def,
+    CFGMR3QueryU16,
+    CFGMR3QueryU16Def,
+    CFGMR3QueryS16,
+    CFGMR3QueryS16Def,
+    CFGMR3QueryU8,
+    CFGMR3QueryU8Def,
+    CFGMR3QueryS8,
+    CFGMR3QueryS8Def,
+    CFGMR3QueryBool,
+    CFGMR3QueryBoolDef,
+    CFGMR3QueryPort,
+    CFGMR3QueryPortDef,
+    CFGMR3QueryUInt,
+    CFGMR3QueryUIntDef,
+    CFGMR3QuerySInt,
+    CFGMR3QuerySIntDef,
+    CFGMR3QueryPtr,
+    CFGMR3QueryPtrDef,
+    CFGMR3QueryGCPtr,
+    CFGMR3QueryGCPtrDef,
+    CFGMR3QueryGCPtrU,
+    CFGMR3QueryGCPtrUDef,
+    CFGMR3QueryGCPtrS,
+    CFGMR3QueryGCPtrSDef,
+    CFGMR3QueryStringAlloc,
+    CFGMR3QueryStringAllocDef,
+    CFGMR3GetParent,
+    CFGMR3GetChild,
+    CFGMR3GetChildF,
+    CFGMR3GetChildFV,
+    CFGMR3GetFirstChild,
+    CFGMR3GetNextChild,
+    CFGMR3GetName,
+    CFGMR3GetNameLen,
+    CFGMR3AreChildrenValid,
+    CFGMR3GetFirstValue,
+    CFGMR3GetNextValue,
+    CFGMR3GetValueName,
+    CFGMR3GetValueNameLen,
+    CFGMR3GetValueType,
+    CFGMR3AreValuesValid,
+    CFGMR3ValidateConfig,
     pdmR3DevHlp_PhysRead,
     pdmR3DevHlp_PhysWrite,
     pdmR3DevHlp_PhysGCPhys2CCPtr,
@@ -3831,6 +4221,16 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CritSectGetNopR0,
     pdmR3DevHlp_CritSectGetNopRC,
     pdmR3DevHlp_SetDeviceCritSect,
+    PDMR3CritSectYield,
+    PDMCritSectEnter,
+    PDMCritSectEnterDebug,
+    PDMCritSectTryEnter,
+    PDMCritSectTryEnterDebug,
+    PDMCritSectLeave,
+    PDMCritSectIsOwner,
+    PDMCritSectIsInitialized,
+    PDMCritSectHasWaiters,
+    PDMCritSectGetRecursion,
     pdmR3DevHlp_ThreadCreate,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
@@ -4041,10 +4441,17 @@ static DECLCALLBACK(void *) pdmR3DevHlp_Untrusted_QueryGenericUserObject(PPDMDEV
 const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
 {
     PDM_DEVHLPR3_VERSION,
+    pdmR3DevHlp_IoPortCreateEx,
+    pdmR3DevHlp_IoPortMap,
+    pdmR3DevHlp_IoPortUnmap,
     pdmR3DevHlp_IOPortRegister,
     pdmR3DevHlp_IOPortRegisterRC,
     pdmR3DevHlp_IOPortRegisterR0,
     pdmR3DevHlp_IOPortDeregister,
+    pdmR3DevHlp_MmioCreateEx,
+    pdmR3DevHlp_MmioMap,
+    pdmR3DevHlp_MmioUnmap,
+    pdmR3DevHlp_MmioReduce,
     pdmR3DevHlp_MMIORegister,
     pdmR3DevHlp_MMIORegisterRC,
     pdmR3DevHlp_MMIORegisterR0,
@@ -4060,8 +4467,155 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_ROMRegister,
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
+    SSMR3PutStruct,
+    SSMR3PutStructEx,
+    SSMR3PutBool,
+    SSMR3PutU8,
+    SSMR3PutS8,
+    SSMR3PutU16,
+    SSMR3PutS16,
+    SSMR3PutU32,
+    SSMR3PutS32,
+    SSMR3PutU64,
+    SSMR3PutS64,
+    SSMR3PutU128,
+    SSMR3PutS128,
+    SSMR3PutUInt,
+    SSMR3PutSInt,
+    SSMR3PutGCUInt,
+    SSMR3PutGCUIntReg,
+    SSMR3PutGCPhys32,
+    SSMR3PutGCPhys64,
+    SSMR3PutGCPhys,
+    SSMR3PutGCPtr,
+    SSMR3PutGCUIntPtr,
+    SSMR3PutRCPtr,
+    SSMR3PutIOPort,
+    SSMR3PutSel,
+    SSMR3PutMem,
+    SSMR3PutStrZ,
+    SSMR3GetStruct,
+    SSMR3GetStructEx,
+    SSMR3GetBool,
+    SSMR3GetU8,
+    SSMR3GetS8,
+    SSMR3GetU16,
+    SSMR3GetS16,
+    SSMR3GetU32,
+    SSMR3GetS32,
+    SSMR3GetU64,
+    SSMR3GetS64,
+    SSMR3GetU128,
+    SSMR3GetS128,
+    SSMR3GetUInt,
+    SSMR3GetSInt,
+    SSMR3GetGCUInt,
+    SSMR3GetGCUIntReg,
+    SSMR3GetGCPhys32,
+    SSMR3GetGCPhys64,
+    SSMR3GetGCPhys,
+    SSMR3GetGCPtr,
+    SSMR3GetGCUIntPtr,
+    SSMR3GetRCPtr,
+    SSMR3GetIOPort,
+    SSMR3GetSel,
+    SSMR3GetMem,
+    SSMR3GetStrZ,
+    SSMR3GetStrZEx,
+    SSMR3Skip,
+    SSMR3SkipToEndOfUnit,
+    SSMR3SetLoadError,
+    SSMR3SetLoadErrorV,
+    SSMR3SetCfgError,
+    SSMR3SetCfgErrorV,
+    SSMR3HandleGetStatus,
+    SSMR3HandleGetAfter,
+    SSMR3HandleIsLiveSave,
+    SSMR3HandleMaxDowntime,
+    SSMR3HandleHostBits,
+    SSMR3HandleRevision,
+    SSMR3HandleVersion,
     pdmR3DevHlp_TMTimerCreate,
+    pdmR3DevHlp_TimerCreate,
+    pdmR3DevHlp_TimerToPtr,
+    pdmR3DevHlp_TimerFromMicro,
+    pdmR3DevHlp_TimerFromMilli,
+    pdmR3DevHlp_TimerFromNano,
+    pdmR3DevHlp_TimerGet,
+    pdmR3DevHlp_TimerGetFreq,
+    pdmR3DevHlp_TimerGetNano,
+    pdmR3DevHlp_TimerIsActive,
+    pdmR3DevHlp_TimerIsLockOwner,
+    pdmR3DevHlp_TimerLock,
+    pdmR3DevHlp_TimerSet,
+    pdmR3DevHlp_TimerSetFrequencyHint,
+    pdmR3DevHlp_TimerSetMicro,
+    pdmR3DevHlp_TimerSetMillies,
+    pdmR3DevHlp_TimerSetNano,
+    pdmR3DevHlp_TimerSetRelative,
+    pdmR3DevHlp_TimerStop,
+    pdmR3DevHlp_TimerUnlock,
+    pdmR3DevHlp_TimerSave,
+    pdmR3DevHlp_TimerLoad,
     pdmR3DevHlp_TMUtcNow,
+    CFGMR3Exists,
+    CFGMR3QueryType,
+    CFGMR3QuerySize,
+    CFGMR3QueryInteger,
+    CFGMR3QueryIntegerDef,
+    CFGMR3QueryString,
+    CFGMR3QueryStringDef,
+    CFGMR3QueryBytes,
+    CFGMR3QueryU64,
+    CFGMR3QueryU64Def,
+    CFGMR3QueryS64,
+    CFGMR3QueryS64Def,
+    CFGMR3QueryU32,
+    CFGMR3QueryU32Def,
+    CFGMR3QueryS32,
+    CFGMR3QueryS32Def,
+    CFGMR3QueryU16,
+    CFGMR3QueryU16Def,
+    CFGMR3QueryS16,
+    CFGMR3QueryS16Def,
+    CFGMR3QueryU8,
+    CFGMR3QueryU8Def,
+    CFGMR3QueryS8,
+    CFGMR3QueryS8Def,
+    CFGMR3QueryBool,
+    CFGMR3QueryBoolDef,
+    CFGMR3QueryPort,
+    CFGMR3QueryPortDef,
+    CFGMR3QueryUInt,
+    CFGMR3QueryUIntDef,
+    CFGMR3QuerySInt,
+    CFGMR3QuerySIntDef,
+    CFGMR3QueryPtr,
+    CFGMR3QueryPtrDef,
+    CFGMR3QueryGCPtr,
+    CFGMR3QueryGCPtrDef,
+    CFGMR3QueryGCPtrU,
+    CFGMR3QueryGCPtrUDef,
+    CFGMR3QueryGCPtrS,
+    CFGMR3QueryGCPtrSDef,
+    CFGMR3QueryStringAlloc,
+    CFGMR3QueryStringAllocDef,
+    CFGMR3GetParent,
+    CFGMR3GetChild,
+    CFGMR3GetChildF,
+    CFGMR3GetChildFV,
+    CFGMR3GetFirstChild,
+    CFGMR3GetNextChild,
+    CFGMR3GetName,
+    CFGMR3GetNameLen,
+    CFGMR3AreChildrenValid,
+    CFGMR3GetFirstValue,
+    CFGMR3GetNextValue,
+    CFGMR3GetValueName,
+    CFGMR3GetValueNameLen,
+    CFGMR3GetValueType,
+    CFGMR3AreValuesValid,
+    CFGMR3ValidateConfig,
     pdmR3DevHlp_PhysRead,
     pdmR3DevHlp_PhysWrite,
     pdmR3DevHlp_PhysGCPhys2CCPtr,
@@ -4106,6 +4660,16 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CritSectGetNopR0,
     pdmR3DevHlp_CritSectGetNopRC,
     pdmR3DevHlp_SetDeviceCritSect,
+    PDMR3CritSectYield,
+    PDMCritSectEnter,
+    PDMCritSectEnterDebug,
+    PDMCritSectTryEnter,
+    PDMCritSectTryEnterDebug,
+    PDMCritSectLeave,
+    PDMCritSectIsOwner,
+    PDMCritSectIsInitialized,
+    PDMCritSectHasWaiters,
+    PDMCritSectGetRecursion,
     pdmR3DevHlp_ThreadCreate,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,

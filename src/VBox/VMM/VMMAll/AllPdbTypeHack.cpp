@@ -93,7 +93,7 @@ DECLEXPORT(uint32_t) PdbTypeHack(PVM pVM, PVMCPU pVCpu, PPDMCRITSECT pCs1, PPDMC
          | (pCs1 == g_PdbTypeHack3)
          | pCs2->s.Core.fFlags
          | (pCs2 == g_PdbTypeHack4)
-         | g_PdbTypeHack5->Internal.s.fIntFlags
+         | g_PdbTypeHack5->Internal.s.idxR0Device
          | (g_PdbTypeHack5 != NULL)
          | (uint32_t)g_PdbTypeHack6->Internal.s.fDetaching
          | (g_PdbTypeHack6 != NULL)

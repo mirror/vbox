@@ -156,15 +156,9 @@ typedef enum XAPICTRIGGERMODE
 
 RT_C_DECLS_BEGIN
 
-#ifdef IN_RING3
-/** @defgroup grp_apic_r3  The APIC Host Context Ring-3 API
- * @{
- */
-VMMR3_INT_DECL(int)         APICR3RegisterDevice(struct PDMDEVREGCB *pCallbacks);
-VMMR3_INT_DECL(void)        APICR3InitIpi(PVMCPU pVCpu);
-VMMR3_INT_DECL(void)        APICR3HvEnable(PVM pVM);
-/** @} */
-#endif /* IN_RING3 */
+#ifdef VBOX_INCLUDED_vmm_pdmdev_h
+extern const PDMDEVREG g_DeviceAPIC;
+#endif
 
 /* These functions are exported as they are called from external modules (recompiler). */
 VMMDECL(void)               APICUpdatePendingInterrupts(PVMCPUCC pVCpu);
@@ -200,6 +194,16 @@ VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetIcr(PVMCPUCC pVCpu, uint64_t uIcr);
 VMM_INT_DECL(uint64_t)      APICHvGetIcr(PVMCPUCC pVCpu);
 VMM_INT_DECL(VBOXSTRICTRC)  APICHvSetEoi(PVMCPUCC pVCpu, uint32_t uEoi);
 /** @} */
+
+#ifdef IN_RING3
+/** @defgroup grp_apic_r3  The APIC Host Context Ring-3 API
+ * @{
+ */
+VMMR3_INT_DECL(int)         APICR3RegisterDevice(struct PDMDEVREGCB *pCallbacks);
+VMMR3_INT_DECL(void)        APICR3InitIpi(PVMCPU pVCpu);
+VMMR3_INT_DECL(void)        APICR3HvEnable(PVM pVM);
+/** @} */
+#endif /* IN_RING3 */
 
 RT_C_DECLS_END
 

@@ -102,6 +102,8 @@
 #define VERR_VERSION_MISMATCH               (-11)
 /** The request function is not implemented. */
 #define VERR_NOT_IMPLEMENTED                (-12)
+/** The request function is not implemented. */
+#define VINF_NOT_IMPLEMENTED                12
 /** Invalid flags was given. */
 #define VERR_INVALID_FLAGS                  (-13)
 
@@ -371,6 +373,12 @@
 #define VERR_PROC_ELEVATION_REQUIRED        (-22419)
 /** Incompatible configuration requested. */
 #define VERR_INCOMPATIBLE_CONFIG            (-22420)
+/** String is not terminated within the buffer bounds. */
+#define VERR_NO_STRING_TERMINATOR           (-22421)
+/** Empty string. */
+#define VERR_EMPTY_STRING                   (-22422)
+/** Too many references to an object. */
+#define VERR_TOO_MANY_REFERENCES            (-22423)
 /** @} */
 
 

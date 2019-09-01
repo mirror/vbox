@@ -7646,8 +7646,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             pIf->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
             pIf->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
             pIf->pControllerR3 = &pThis->aCts[i];
-            pIf->pControllerR0 = MMHyperR3ToR0(PDMDevHlpGetVM(pDevIns), &pThis->aCts[i]);
-            pIf->pControllerRC = MMHyperR3ToRC(PDMDevHlpGetVM(pDevIns), &pThis->aCts[i]);
+            pIf->pControllerR0 = PDMDEVINS_DATA_2_R0_REMOVE_ME(pDevIns, &pThis->aCts[i]);
+            pIf->pControllerRC = PDMDEVINS_DATA_2_R0_REMOVE_ME(pDevIns, &pThis->aCts[i]);
             pIf->IBase.pfnQueryInterface       = ataR3QueryInterface;
             pIf->IMountNotify.pfnMountNotify   = ataR3MountNotify;
             pIf->IMountNotify.pfnUnmountNotify = ataR3UnmountNotify;
@@ -8049,67 +8049,84 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     return ataR3ResetCommon(pDevIns, true /*fConstruct*/);
 }
 
+#endif /* IN_RING3 */
 
 /**
  * The device registration structure.
  */
 const PDMDEVREG g_DevicePIIX3IDE =
 {
-    /* u32Version */
-    PDM_DEVREG_VERSION,
-    /* szName */
-    "piix3ide",
-    /* szRCMod */
-    "VBoxDDRC.rc",
-    /* szR0Mod */
-    "VBoxDDR0.r0",
-    /* pszDescription */
-    "Intel PIIX3 ATA controller.\n"
-    "  LUN #0 is primary master.\n"
-    "  LUN #1 is primary slave.\n"
-    "  LUN #2 is secondary master.\n"
-    "  LUN #3 is secondary slave.\n"
-    "  LUN #999 is the LED/Status connector.",
-    /* fFlags */
-    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 |
-    PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION |
-    PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION,
-    /* fClass */
-    PDM_DEVREG_CLASS_STORAGE,
-    /* cMaxInstances */
-    1,
-    /* cbInstance */
-    sizeof(PCIATAState),
-    /* pfnConstruct */
-    ataR3Construct,
-    /* pfnDestruct */
-    ataR3Destruct,
-    /* pfnRelocate */
-    ataR3Relocate,
-    /* pfnMemSetup */
-    NULL,
-    /* pfnPowerOn */
-    NULL,
-    /* pfnReset */
-    ataR3Reset,
-    /* pfnSuspend */
-    ataR3Suspend,
-    /* pfnResume */
-    ataR3Resume,
-    /* pfnAttach */
-    ataR3Attach,
-    /* pfnDetach */
-    ataR3Detach,
-    /* pfnQueryInterface. */
-    NULL,
-    /* pfnInitComplete */
-    NULL,
-    /* pfnPowerOff */
-    ataR3PowerOff,
-    /* pfnSoftReset */
-    NULL,
-    /* u32VersionEnd */
-    PDM_DEVREG_VERSION
+    /* .u32Version = */             PDM_DEVREG_VERSION,
+    /* .uReserved0 = */             0,
+    /* .szName = */                 "piix3ide",
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 |
+                                    PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION |
+                                    PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION,
+    /* .fClass = */                 PDM_DEVREG_CLASS_STORAGE,
+    /* .cMaxInstances = */          1,
+    /* .uSharedVersion = */         42,
+    /* .cbInstanceShared = */       sizeof(PCIATAState),
+    /* .cbInstanceCC = */           0,
+    /* .cbInstanceRC = */           0,
+    /* .uReserved1 = */             0,
+    /* .pszDescription = */         "Intel PIIX3 ATA controller.\n"
+                                    "  LUN #0 is primary master.\n"
+                                    "  LUN #1 is primary slave.\n"
+                                    "  LUN #2 is secondary master.\n"
+                                    "  LUN #3 is secondary slave.\n"
+                                    "  LUN #999 is the LED/Status connector.",
+#if defined(IN_RING3)
+    /* .pszRCMod = */               "VBoxDDRC.rc",
+    /* .pszR0Mod = */               "VBoxDDR0.r0",
+    /* .pfnConstruct = */           ataR3Construct,
+    /* .pfnDestruct = */            ataR3Destruct,
+    /* .pfnRelocate = */            ataR3Relocate,
+    /* .pfnMemSetup = */            NULL,
+    /* .pfnPowerOn = */             NULL,
+    /* .pfnReset = */               ataR3Reset,
+    /* .pfnSuspend = */             ataR3Suspend,
+    /* .pfnResume = */              ataR3Resume,
+    /* .pfnAttach = */              ataR3Attach,
+    /* .pfnDetach = */              ataR3Detach,
+    /* .pfnQueryInterface = */      NULL,
+    /* .pfnInitComplete = */        NULL,
+    /* .pfnPowerOff = */            ataR3PowerOff,
+    /* .pfnSoftReset = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RING0)
+    /* .pfnEarlyConstruct = */      NULL,
+    /* .pfnConstruct = */           NULL,
+    /* .pfnDestruct = */            NULL,
+    /* .pfnFinalDestruct = */       NULL,
+    /* .pfnRequest = */             NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RC)
+    /* .pfnConstruct = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#else
+# error "Not in IN_RING3, IN_RING0 or IN_RC!"
+#endif
+    /* .u32VersionEnd = */          PDM_DEVREG_VERSION
 };
-#endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

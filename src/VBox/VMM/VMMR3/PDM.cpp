@@ -555,6 +555,7 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Devices & Drivers.
      */
+#ifdef VBOX_WITH_RAW_MODE_KEEP /* needs fixing */
     int rc;
     PCPDMDEVHLPRC pDevHlpRC = NIL_RTRCPTR;
     if (VM_IS_RAW_MODE_ENABLED(pVM))
@@ -623,6 +624,7 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
         }
 
     }
+#endif
 }
 
 
@@ -746,9 +748,21 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
 
         if (pDevIns->pReg->pfnDestruct)
         {
-            LogFlow(("pdmR3DevTerm: Destroying - device '%s'/%d\n",
-                     pDevIns->pReg->szName, pDevIns->iInstance));
+            LogFlow(("pdmR3DevTerm: Destroying - device '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
             pDevIns->pReg->pfnDestruct(pDevIns);
+        }
+
+        if (pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_CONTRUCT)
+        {
+            LogFlow(("pdmR3DevTerm: Destroying (ring-0) - device '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
+            PDMDEVICEGENCALLREQ Req;
+            Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            Req.Hdr.cbReq    = sizeof(Req);
+            Req.enmCall      = PDMDEVICEGENCALL_DESTRUCT;
+            Req.idxR0Device  = pDevIns->Internal.s.idxR0Device;
+            Req.pDevInsR3    = pDevIns;
+            int rc2 = VMMR3CallR0(pVM, VMMR0_DO_PDM_DEVICE_GEN_CALL, 0, &Req.Hdr);
+            AssertRC(rc2);
         }
 
         TMR3TimerDestroyDevice(pVM, pDevIns);

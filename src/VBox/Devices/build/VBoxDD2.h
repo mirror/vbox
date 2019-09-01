@@ -70,4 +70,3 @@ extern const PDMDEVREG g_DeviceLPC;
 RT_C_DECLS_END
 
 #endif /* !VBOX_INCLUDED_SRC_build_VBoxDD2_h */
-

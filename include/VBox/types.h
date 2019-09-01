@@ -364,21 +364,41 @@ typedef int32_t VBOXSTRICTRC;
 #define VBOXSTRICTRC_TODO(rcStrict) VBOXSTRICTRC_VAL(rcStrict)
 
 
+/** A cross context I/O port range handle. */
+typedef uint64_t                IOMIOPORTHANDLE;
+/** Pointer to a cross context I/O port handle. */
+typedef IOMIOPORTHANDLE        *PIOMIOPORTHANDLE;
+/** A NIL I/O port handle. */
+#define NIL_IOMIOPORTHANDLE     ((uint64_t)UINT64_MAX)
+
+/** A cross context MMIO range handle. */
+typedef uint64_t                IOMMMIOHANDLE;
+/** Pointer to a cross context MMIO handle. */
+typedef IOMMMIOHANDLE          *PIOMMMIOHANDLE;
+/** A NIL MMIO handle. */
+#define NIL_IOMMMIOHANDLE       ((uint64_t)UINT64_MAX)
+
 /** Pointer to a PDM Base Interface. */
 typedef struct PDMIBASE *PPDMIBASE;
 /** Pointer to a pointer to a PDM Base Interface. */
 typedef PPDMIBASE *PPPDMIBASE;
 
-/** Pointer to a PDM Device Instance. */
-typedef struct PDMDEVINS *PPDMDEVINS;
-/** Pointer to a pointer to a PDM Device Instance. */
+/** Pointer to a PDM device instance for the current context. */
+#ifdef IN_RING3
+typedef struct PDMDEVINSR3 *PPDMDEVINS;
+#elif defined(IN_RING0) || defined(DOXYGEN_RUNNING)
+typedef struct PDMDEVINSR0 *PPDMDEVINS;
+#else
+typedef struct PDMDEVINSRC *PPDMDEVINS;
+#endif
+/** Pointer to a pointer a PDM device instance for the current context. */
 typedef PPDMDEVINS *PPPDMDEVINS;
-/** R3 pointer to a PDM Device Instance. */
-typedef R3PTRTYPE(PPDMDEVINS) PPDMDEVINSR3;
-/** R0 pointer to a PDM Device Instance. */
-typedef R0PTRTYPE(PPDMDEVINS) PPDMDEVINSR0;
-/** RC pointer to a PDM Device Instance. */
-typedef RCPTRTYPE(PPDMDEVINS) PPDMDEVINSRC;
+/** R3 pointer to a PDM device instance. */
+typedef R3PTRTYPE(struct PDMDEVINSR3 *) PPDMDEVINSR3;
+/** R0 pointer to a PDM device instance. */
+typedef R0PTRTYPE(struct PDMDEVINSR0 *) PPDMDEVINSR0;
+/** RC pointer to a PDM device instance. */
+typedef RCPTRTYPE(struct PDMDEVINSRC *) PPDMDEVINSRC;
 
 /** Pointer to a PDM PCI device structure. */
 typedef struct PDMPCIDEV *PPDMPCIDEV;
@@ -430,9 +450,16 @@ typedef RCPTRTYPE(struct TMTIMER *) PTMTIMERRC;
 typedef PTMTIMERRC *PPTMTIMERRC;
 
 /** Pointer to a timer. */
-typedef CTX_SUFF(PTMTIMER)     PTMTIMER;
+typedef CTX_SUFF(PTMTIMER) PTMTIMER;
 /** Pointer to a pointer to a timer. */
-typedef PTMTIMER              *PPTMTIMER;
+typedef PTMTIMER *PPTMTIMER;
+
+/** A cross context timer handle. */
+typedef uint64_t TMTIMERHANDLE;
+/** Pointer to a cross context timer handle. */
+typedef TMTIMERHANDLE *PTMTIMERHANDLE;
+/** A NIL timer handle. */
+#define NIL_TMTIMERHANDLE ((uint64_t)UINT64_MAX)
 
 /** SSM Operation handle. */
 typedef struct SSMHANDLE *PSSMHANDLE;

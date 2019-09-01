@@ -31,6 +31,7 @@
 #  include <VBox/vmm/rem.h>
 # endif
 #endif
+#include <VBox/vmm/pdmdev.h> /* (for TMTIMER_GET_CRITSECT implementation) */
 #include "TMInternal.h"
 #include <VBox/vmm/vmcc.h>
 
@@ -52,6 +53,22 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+#ifdef VBOX_STRICT
+/** @def TMTIMER_GET_CRITSECT
+ * Helper for safely resolving the critical section for a timer belonging to a
+ * device instance.
+ * @todo needs reworking later as it uses PDMDEVINSR0::pDevInsR0RemoveMe.  */
+# ifdef IN_RING3
+#  define TMTIMER_GET_CRITSECT(pTimer) ((pTimer)->pCritSect)
+# else
+#  define TMTIMER_GET_CRITSECT(pTimer) \
+    (     (pTimer)->enmType == TMTIMERTYPE_DEV \
+       && (pTimer)->pCritSect == ((struct PDMDEVINSR3 *)(pTimer)->u.Dev.pDevIns)->pCritSectRoR3 \
+     ? ((struct PDMDEVINSR3 *)(pTimer)->u.Dev.pDevIns)->pDevInsR0RemoveMe->pCritSectRoR0 \
+     : (PPDMCRITSECT)MMHyperR3ToCC((pTimer)->CTX_SUFF(pVM), (pTimer)->pCritSect) )
+# endif
+#endif
+
 /** @def TMTIMER_ASSERT_CRITSECT
  * Checks that the caller owns the critical section if one is associated with
  * the timer. */
@@ -61,7 +78,7 @@
         if ((pTimer)->pCritSect) \
         { \
             VMSTATE      enmState; \
-            PPDMCRITSECT pCritSect = (PPDMCRITSECT)MMHyperR3ToCC((pTimer)->CTX_SUFF(pVM), (pTimer)->pCritSect); \
+            PPDMCRITSECT pCritSect = TMTIMER_GET_CRITSECT(pTimer); \
             AssertMsg(   pCritSect \
                       && (   PDMCritSectIsOwner(pCritSect) \
                           || (enmState = (pTimer)->CTX_SUFF(pVM)->enmVMState) == VMSTATE_CREATING \
@@ -94,7 +111,7 @@
         if ((pTimer)->pCritSect) \
         { \
             VMSTATE      enmState; \
-            PPDMCRITSECT pCritSect = (PPDMCRITSECT)MMHyperR3ToCC(pVM, (pTimer)->pCritSect); \
+            PPDMCRITSECT pCritSect = TMTIMER_GET_CRITSECT(pTimer); \
             AssertMsg(   pCritSect \
                       && (   !PDMCritSectIsOwner(pCritSect) \
                           || PDMCritSectIsOwner(&pVM->tm.s.VirtualSyncLock) \

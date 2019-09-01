@@ -121,6 +121,77 @@ typedef enum PDMASYNCCOMPLETIONEPCLASSTYPE
 } PDMASYNCCOMPLETIONEPCLASSTYPE;
 
 /**
+ * Private device instance data, ring-3.
+ */
+typedef struct PDMDEVINSINTR3
+{
+    /** Pointer to the next instance.
+     * (Head is pointed to by PDM::pDevInstances.) */
+    R3PTRTYPE(PPDMDEVINS)           pNextR3;
+    /** Pointer to the next per device instance.
+     * (Head is pointed to by PDMDEV::pInstances.) */
+    R3PTRTYPE(PPDMDEVINS)           pPerDeviceNextR3;
+    /** Pointer to device structure. */
+    R3PTRTYPE(PPDMDEV)              pDevR3;
+    /** Pointer to the list of logical units associated with the device. (FIFO) */
+    R3PTRTYPE(PPDMLUN)              pLunsR3;
+    /** Pointer to the asynchronous notification callback set while in
+     * FNPDMDEVSUSPEND or FNPDMDEVPOWEROFF. */
+    R3PTRTYPE(PFNPDMDEVASYNCNOTIFY) pfnAsyncNotify;
+    /** Configuration handle to the instance node. */
+    R3PTRTYPE(PCFGMNODE)            pCfgHandle;
+
+    /** R3 pointer to the VM this instance was created for. */
+    PVMR3                           pVMR3;
+    /** Associated PCI device list head (first is default). */
+    R3PTRTYPE(PPDMPCIDEV)           pHeadPciDevR3;
+
+    /** Flags, see PDMDEVINSINT_FLAGS_XXX. */
+    uint32_t                        fIntFlags;
+    /** The last IRQ tag (for tracing it thru clearing). */
+    uint32_t                        uLastIrqTag;
+    /** The ring-0 device index (for making ring-0 calls). */
+    uint32_t                        idxR0Device;
+} PDMDEVINSINTR3;
+
+
+/**
+ * Private device instance data, ring-0.
+ */
+typedef struct PDMDEVINSINTR0
+{
+    /** Pointer to the VM this instance was created for. */
+    R0PTRTYPE(PGVM)                 pGVM;
+    /** Associated PCI device list head (first is default). */
+    R0PTRTYPE(PPDMPCIDEV)           pHeadPciDevR0;
+    /** Pointer to device structure. */
+    R0PTRTYPE(struct PDMDEVREGR0 const *) pRegR0;
+    /** The ring-0 module reference. */
+    RTR0PTR                         hMod;
+    /** Pointer to the ring-0 mapping of the ring-3 internal data (for uLastIrqTag). */
+    R0PTRTYPE(PDMDEVINSINTR3 *)     pIntR3R0;
+    /** Pointer to the ring-0 mapping of the ring-3 instance (for idTracing). */
+    R0PTRTYPE(struct PDMDEVINSR3 *) pInsR3R0;
+    /** The device instance memory. */
+    RTR0MEMOBJ                      hMemObj;
+    /** The ring-3 mapping object. */
+    RTR0MEMOBJ                      hMapObj;
+    /** Index into PDMR0PERVM::apDevInstances. */
+    uint32_t                        idxR0Device;
+} PDMDEVINSINTR0;
+
+
+/**
+ * Private device instance data, raw-mode
+ */
+typedef struct PDMDEVINSINTRC
+{
+    /** Pointer to the VM this instance was created for. */
+    RGPTRTYPE(PVM)                  pVMRC;
+} PDMDEVINSINTRC;
+
+
+/**
  * Private device instance data.
  */
 typedef struct PDMDEVINSINT
@@ -165,7 +236,7 @@ typedef struct PDMDEVINSINT
 /** @name PDMDEVINSINT::fIntFlags
  * @{ */
 /** Used by pdmR3Load to mark device instances it found in the saved state. */
-#define PDMDEVINSINT_FLAGS_FOUND         RT_BIT_32(0)
+#define PDMDEVINSINT_FLAGS_FOUND            RT_BIT_32(0)
 /** Indicates that the device hasn't been powered on or resumed.
  * This is used by PDMR3PowerOn, PDMR3Resume, PDMR3Suspend and PDMR3PowerOff
  * to make sure each device gets exactly one notification for each of those
@@ -175,9 +246,15 @@ typedef struct PDMDEVINSINT
  * every device gets the power off notification even if it was suspended before with
  * PDMR3Suspend.
  */
-#define PDMDEVINSINT_FLAGS_SUSPENDED     RT_BIT_32(1)
+#define PDMDEVINSINT_FLAGS_SUSPENDED        RT_BIT_32(1)
 /** Indicates that the device has been reset already.  Used by PDMR3Reset. */
-#define PDMDEVINSINT_FLAGS_RESET         RT_BIT_32(2)
+#define PDMDEVINSINT_FLAGS_RESET            RT_BIT_32(2)
+#define PDMDEVINSINT_FLAGS_R0_ENABLED       RT_BIT_32(3)
+#define PDMDEVINSINT_FLAGS_RC_ENABLED       RT_BIT_32(4)
+/** Set if we've called the ring-0 constructor. */
+#define PDMDEVINSINT_FLAGS_R0_CONTRUCT      RT_BIT_32(5)
+/** Set if using non-default critical section.  */
+#define PDMDEVINSINT_FLAGS_CHANGED_CRITSECT RT_BIT_32(6)
 /** @} */
 
 
@@ -437,7 +514,7 @@ RT_C_DECLS_BEGIN
  * This typically the representation of a physical port on a
  * device, like for instance the PS/2 keyboard port on the
  * keyboard controller device. The LUNs are chained on the
- * device the belong to (PDMDEVINSINT::pLunsR3).
+ * device they belong to (PDMDEVINSINT::pLunsR3).
  */
 typedef struct PDMLUN
 {
@@ -462,16 +539,16 @@ typedef struct PDMLUN
 
 
 /**
- * PDM Device.
+ * PDM Device, ring-3.
  */
 typedef struct PDMDEV
 {
     /** Pointer to the next device (R3 Ptr). */
     R3PTRTYPE(PPDMDEV)              pNext;
     /** Device name length. (search optimization) */
-    RTUINT                          cchName;
+    uint32_t                        cchName;
     /** Registration structure. */
-    R3PTRTYPE(const struct PDMDEVREG *) pReg;
+    R3PTRTYPE(const struct PDMDEVREGR3 *) pReg;
     /** Number of instances. */
     uint32_t                        cInstances;
     /** Pointer to chain of instances (R3 Ptr). */
@@ -481,6 +558,26 @@ typedef struct PDMDEV
     /** The search path for ring-0 context modules (';' as separator). */
     char                           *pszR0SearchPath;
 } PDMDEV;
+
+
+#if 0
+/**
+ * PDM Device, ring-0.
+ */
+typedef struct PDMDEVR0
+{
+    /** Pointer to the next device. */
+    R0PTRTYPE(PPDMDEVR0)            pNext;
+    /** Device name length. (search optimization) */
+    uint32_t                        cchName;
+    /** Registration structure. */
+    R3PTRTYPE(const struct PDMDEVREGR0 *) pReg;
+    /** Number of instances. */
+    uint32_t                        cInstances;
+    /** Pointer to chain of instances. */
+    PPDMDEVINSR0                    pInstances;
+} PDMDEVR0;
+#endif
 
 
 /**
@@ -1121,6 +1218,17 @@ AssertCompileMemberAlignment(PDM, StatQueuedCritSectLeaves, 8);
 typedef PDM *PPDM;
 
 
+/**
+ * PDM data kept in the ring-0 GVM.
+ */
+typedef struct PDMR0PERVM
+{
+    /** Number of valid ring-0 device instances (apDevInstances). */
+    uint32_t                        cDevInstances;
+    /** Pointer to ring-0 device instances. */
+    R0PTRTYPE(struct PDMDEVINSR0 *) apDevInstances[190];
+} PDMR0PERVM;
+
 
 /**
  * PDM data kept in the UVM.
@@ -1199,7 +1307,7 @@ extern const PDMPCIRAWHLPR3 g_pdmR3DevPciRawHlp;
     do { \
         AssertPtr(pDevIns); \
         Assert(pDevIns->u32Version == PDM_DEVINS_VERSION); \
-        Assert(pDevIns->CTX_SUFF(pvInstanceData) == (void *)&pDevIns->achInstanceData[0]); \
+        Assert(pDevIns->CTX_SUFF(pvInstanceDataFor) == (void *)&pDevIns->achInstanceData[0]); \
     } while (0)
 #else
 # define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)

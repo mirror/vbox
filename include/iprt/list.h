@@ -73,15 +73,26 @@ typedef RTLISTANCHOR *PRTLISTANCHOR;
 typedef RTLISTANCHOR const *PCRTLISTANCHOR;
 
 /** Version of RTLISTNODE for holding a ring-3 only list in data which gets
- * shared between multiple contexts */
-#if defined(IN_RING3)
+ * shared between multiple contexts. */
+#ifdef IN_RING3
 typedef RTLISTNODE RTLISTNODER3;
 #else
 typedef struct { RTR3PTR aOffLimits[2]; } RTLISTNODER3;
 #endif
 /** Version of RTLISTANCHOR for holding a ring-3 only list in data which gets
- * shared between multiple contexts */
+ * shared between multiple contexts. */
 typedef RTLISTNODER3 RTLISTANCHORR3;
+
+/** Version of RTLISTNODE for holding a ring-0 only list in data which gets
+ * shared between multiple contexts. */
+#ifdef IN_RING0
+typedef RTLISTNODE RTLISTNODER0;
+#else
+typedef struct { RTR0PTR aOffLimits[2]; } RTLISTNODER0;
+#endif
+/** Version of RTLISTANCHOR for holding a ring-0 only list in data which gets
+ * shared between multiple contexts. */
+typedef RTLISTNODER0 RTLISTANCHORR0;
 
 
 /**

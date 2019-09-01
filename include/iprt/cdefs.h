@@ -749,6 +749,13 @@
  */
 #define RCPTRTYPE(RCType)       CTXTYPE(RCType, RTRCPTR, RTRCPTR)
 
+/** @def GCPTRTYPE
+ * This will become RCPTRTYPE once we've convered all uses of RCPTRTYPE to this.
+ *
+ * @param   RCType  The RC type.
+ */
+#define RGPTRTYPE(RCType)       CTXTYPE(RCType, RTGCPTR, RTGCPTR)
+
 /** @def R3R0PTRTYPE
  * Declare a pointer which is used in HC, is explicitly valid in ring 3 and 0,
  * but appears in structure(s) used by both HC and GC. The main purpose is to
@@ -1429,6 +1436,11 @@
 # define DECLRCCALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name)  args
 #else
 # define DECLRCCALLBACKMEMBER(type, name, args)  RTRCPTR name
+#endif
+#ifdef IN_RC
+# define DECLRGCALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name)  args
+#else
+# define DECLRGCALLBACKMEMBER(type, name, args)  RTRGPTR name
 #endif
 
 /** @def DECLR0CALLBACKMEMBER

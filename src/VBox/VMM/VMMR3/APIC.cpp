@@ -1160,7 +1160,7 @@ static DECLCALLBACK(void) apicR3TimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTime
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
-static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
+DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
 {
     PVM pVM = PDMDevHlpGetVM(pDevIns);
     VM_ASSERT_EMT0(pVM);
@@ -1187,7 +1187,7 @@ static DECLCALLBACK(void) apicR3Reset(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnRelocate}
  */
-static DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+DECLCALLBACK(void) apicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     RT_NOREF(pDevIns, offDelta);
 }
@@ -1347,7 +1347,7 @@ static int apicR3InitState(PVM pVM)
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
-static DECLCALLBACK(int) apicR3Destruct(PPDMDEVINS pDevIns)
+DECLCALLBACK(int) apicR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PVM pVM = PDMDevHlpGetVM(pDevIns);
@@ -1361,7 +1361,7 @@ static DECLCALLBACK(int) apicR3Destruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnInitComplete}
  */
-static DECLCALLBACK(int) apicR3InitComplete(PPDMDEVINS pDevIns)
+DECLCALLBACK(int) apicR3InitComplete(PPDMDEVINS pDevIns)
 {
     PVM   pVM   = PDMDevHlpGetVM(pDevIns);
     PAPIC pApic = VM_TO_APIC(pVM);
@@ -1387,7 +1387,7 @@ static DECLCALLBACK(int) apicR3InitComplete(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     /*
      * Validate inputs.
@@ -1406,8 +1406,8 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pApicDev->pDevInsR3 = pDevIns;
     pApicDev->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
 
+    pApic->pApicDevR3   = pApicDev;
     pApic->pApicDevR0   = PDMINS_2_DATA_R0PTR(pDevIns);
-    pApic->pApicDevR3   = (PAPICDEV)PDMINS_2_DATA_R3PTR(pDevIns);
 
     /*
      * Validate APIC settings.
@@ -1592,72 +1592,6 @@ static DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 #endif
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * APIC device registration structure.
- */
-static const PDMDEVREG g_DeviceAPIC =
-{
-    /* u32Version */
-    PDM_DEVREG_VERSION,
-    /* szName */
-    "apic",
-    /* szRCMod */
-    "",
-    /* szR0Mod */
-    "VMMR0.r0",
-    /* pszDescription */
-    "Advanced Programmable Interrupt Controller",
-    /* fFlags */
-      PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32_64 | PDM_DEVREG_FLAGS_PAE36
-    | PDM_DEVREG_FLAGS_R0,
-    /* fClass */
-    PDM_DEVREG_CLASS_PIC,
-    /* cMaxInstances */
-    1,
-    /* cbInstance */
-    sizeof(APICDEV),
-    /* pfnConstruct */
-    apicR3Construct,
-    /* pfnDestruct */
-    apicR3Destruct,
-    /* pfnRelocate */
-    apicR3Relocate,
-    /* pfnMemSetup */
-    NULL,
-    /* pfnPowerOn */
-    NULL,
-    /* pfnReset */
-    apicR3Reset,
-    /* pfnSuspend */
-    NULL,
-    /* pfnResume */
-    NULL,
-    /* pfnAttach */
-    NULL,
-    /* pfnDetach */
-    NULL,
-    /* pfnQueryInterface. */
-    NULL,
-    /* pfnInitComplete */
-    apicR3InitComplete,
-    /* pfnPowerOff */
-    NULL,
-    /* pfnSoftReset */
-    NULL,
-    /* u32VersionEnd */
-    PDM_DEVREG_VERSION
-};
-
-
-/**
- * Called by PDM to register the APIC device.
- */
-VMMR3_INT_DECL(int) APICR3RegisterDevice(PPDMDEVREGCB pCallbacks)
-{
-    return pCallbacks->pfnRegister(pCallbacks, &g_DeviceAPIC);
 }
 
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

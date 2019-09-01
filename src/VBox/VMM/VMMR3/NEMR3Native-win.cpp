@@ -1460,7 +1460,7 @@ int nemR3NativeInitAfterCPUM(PVM pVM)
                 NTSTATUS const rcNtLast  = RTNtLastStatusValue();
                 DWORD const    dwErrLast = RTNtLastErrorValue();
                 return VMSetError(pVM, VERR_NEM_VM_CREATE_FAILED, RT_SRC_POS,
-                                  "Call to WHvSetupPartition failed: %Rhrc (Last=%#x/%u)", hrc, rcNtLast, dwErrLast);
+                                  "Call to VidMessageSlotMap failed: Last=%#x/%u", rcNtLast, dwErrLast);
             }
         }
 #endif

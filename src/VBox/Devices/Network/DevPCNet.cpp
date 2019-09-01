@@ -5531,70 +5531,83 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     return VINF_SUCCESS;
 }
 
+#endif /* IN_RING3 */
 
 /**
  * The device registration structure.
  */
 const PDMDEVREG g_DevicePCNet =
 {
-    /* u32Version */
-    PDM_DEVREG_VERSION,
-    /* szName */
-    "pcnet",
-    /* szRCMod */
+    /* .u32Version = */             PDM_DEVREG_VERSION,
+    /* .uReserved0 = */             0,
+    /* .szName = */                 "pcnet",
 #ifdef PCNET_GC_ENABLED
-    "VBoxDDRC.rc",
-    "VBoxDDR0.r0",
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
 #else
-    "",
-    "",
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
 #endif
-    /* pszDescription */
-    "AMD PCnet Ethernet controller.\n",
-    /* fFlags */
-#ifdef PCNET_GC_ENABLED
-    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    /* .fClass = */                 PDM_DEVREG_CLASS_NETWORK,
+    /* .cMaxInstances = */          ~0U,
+    /* .uSharedVersion = */         42,
+    /* .cbInstanceShared = */       sizeof(PCNETSTATE),
+    /* .cbInstanceCC = */           0,
+    /* .cbInstanceRC = */           0,
+    /* .uReserved1 = */             0,
+    /* .pszDescription = */         "AMD PCnet Ethernet controller.\n",
+#if defined(IN_RING3)
+    /* .pszRCMod = */               "VBoxDDRC.rc",
+    /* .pszR0Mod = */               "VBoxDDR0.r0",
+    /* .pfnConstruct = */           pcnetConstruct,
+    /* .pfnDestruct = */            pcnetDestruct,
+    /* .pfnRelocate = */            pcnetRelocate,
+    /* .pfnMemSetup = */            NULL,
+    /* .pfnPowerOn = */             NULL,
+    /* .pfnReset = */               pcnetReset,
+    /* .pfnSuspend = */             pcnetSuspend,
+    /* .pfnResume = */              NULL,
+    /* .pfnAttach = */              pcnetAttach,
+    /* .pfnDetach = */              pcnetDetach,
+    /* .pfnQueryInterface = */      NULL,
+    /* .pfnInitComplete = */        NULL,
+    /* .pfnPowerOff = */            pcnetPowerOff,
+    /* .pfnSoftReset = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RING0)
+    /* .pfnEarlyConstruct = */      NULL,
+    /* .pfnConstruct = */           NULL,
+    /* .pfnDestruct = */            NULL,
+    /* .pfnFinalDestruct = */       NULL,
+    /* .pfnRequest = */             NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RC)
+    /* .pfnConstruct = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
 #else
-    PDM_DEVREG_FLAGS_DEFAULT_BITS,
+# error "Not in IN_RING3, IN_RING0 or IN_RC!"
 #endif
-    /* fClass */
-    PDM_DEVREG_CLASS_NETWORK,
-    /* cMaxInstances */
-    ~0U,
-    /* cbInstance */
-    sizeof(PCNETSTATE),
-    /* pfnConstruct */
-    pcnetConstruct,
-    /* pfnDestruct */
-    pcnetDestruct,
-    /* pfnRelocate */
-    pcnetRelocate,
-    /* pfnMemSetup */
-    NULL,
-    /* pfnPowerOn */
-    NULL,
-    /* pfnReset */
-    pcnetReset,
-    /* pfnSuspend */
-    pcnetSuspend,
-    /* pfnResume */
-    NULL,
-    /* pfnAttach */
-    pcnetAttach,
-    /* pfnDetach */
-    pcnetDetach,
-    /* pfnQueryInterface. */
-    NULL,
-    /* pfnInitComplete. */
-    NULL,
-    /* pfnPowerOff. */
-    pcnetPowerOff,
-    /* pfnSoftReset */
-    NULL,
-    /* u32VersionEnd */
-    PDM_DEVREG_VERSION
+    /* .u32VersionEnd = */          PDM_DEVREG_VERSION
 };
 
-#endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
 

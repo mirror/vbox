@@ -131,7 +131,6 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	Network/slirp \
  	$(VBOX_GRAPHICS_INCS)
  VBoxDD_DEFS             = \
- 	VBOX_ACPI \
  	VBOX_HGCM_HOST_CODE \
  	$(if $(VBOX_WITH_HGCM),VBOX_WITH_HGCM,) \
  	$(if $(VBOX_BIOS_DMI_FALLBACK),VBOX_BIOS_DMI_FALLBACK,) \
@@ -1096,6 +1095,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	Serial/DevOxPcie958.cpp \
   	Serial/UartCore.cpp \
  	Parallel/DevParallel.cpp \
+	GIMDev/GIMDev.cpp \
   	VMMDev/VMMDev.cpp \
  	VMMDev/VMMDevTesting.cpp \
  	Network/DrvIntNet.cpp \

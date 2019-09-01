@@ -2342,70 +2342,82 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     return VINF_SUCCESS;
 }
 
+#endif /* IN_RING3 */
+
 /**
  * The device registration structure.
  */
 const PDMDEVREG g_DeviceVirtioNet =
 {
-    /* Structure version. PDM_DEVREG_VERSION defines the current version. */
-    PDM_DEVREG_VERSION,
-    /* Device name. */
-    "virtio-net",
-    /* Name of guest context module (no path).
-     * Only evalutated if PDM_DEVREG_FLAGS_RC is set. */
-    "VBoxDDRC.rc",
-    /* Name of ring-0 module (no path).
-     * Only evalutated if PDM_DEVREG_FLAGS_RC is set. */
-    "VBoxDDR0.r0",
-    /* The description of the device. The UTF-8 string pointed to shall, like this structure,
-     * remain unchanged from registration till VM destruction. */
-    "Virtio Ethernet.\n",
-
-    /* Flags, combination of the PDM_DEVREG_FLAGS_* \#defines. */
+    /* .u32version = */             PDM_DEVREG_VERSION,
+    /* .uReserved0 = */             0,
+    /* .szName = */                 "virtio-net",
 #ifdef VNET_GC_SUPPORT
-    PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
 #else
-    PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
 #endif
-    /* Device class(es), combination of the PDM_DEVREG_CLASS_* \#defines. */
-    PDM_DEVREG_CLASS_NETWORK,
-    /* Maximum number of instances (per VM). */
-    ~0U,
-    /* Size of the instance data. */
-    sizeof(VNETSTATE),
-
-    /* pfnConstruct */
-    vnetConstruct,
-    /* pfnDestruct */
-    vnetDestruct,
-    /* pfnRelocate */
-    vnetRelocate,
-    /* pfnMemSetup. */
-    NULL,
-    /* pfnPowerOn */
-    NULL,
-    /* pfnReset */
-    NULL,
-    /* pfnSuspend */
-    vnetSuspend,
-    /* pfnResume */
-    NULL,
-    /* pfnAttach */
-    vnetAttach,
-    /* pfnDetach */
-    vnetDetach,
-    /* pfnQueryInterface */
-    NULL,
-    /* pfnInitComplete */
-    NULL,
-    /* pfnPowerOff */
-    vnetPowerOff,
-    /* pfnSoftReset */
-    NULL,
-
-    /* u32VersionEnd */
-    PDM_DEVREG_VERSION
+    /* .fClass = */                 PDM_DEVREG_CLASS_NETWORK,
+    /* .cMaxInstances = */          ~0U,
+    /* .uSharedVersion = */         42,
+    /* .cbInstanceShared = */       sizeof(VNETSTATE),
+    /* .cbInstanceCC = */           0,
+    /* .cbInstanceRC = */           0,
+    /* .uReserved1 = */             0,
+    /* .pszDescription = */         "Virtio Ethernet.\n",
+#if defined(IN_RING3)
+    /* .pszRCMod = */               "VBoxDDRC.rc",
+    /* .pszR0Mod = */               "VBoxDDR0.r0",
+    /* .pfnConstruct = */           vnetConstruct,
+    /* .pfnDestruct = */            vnetDestruct,
+    /* .pfnRelocate = */            vnetRelocate,
+    /* .pfnMemSetup = */            NULL,
+    /* .pfnPowerOn = */             NULL,
+    /* .pfnReset = */               NULL,
+    /* .pfnSuspend = */             vnetSuspend,
+    /* .pfnResume = */              NULL,
+    /* .pfnAttach = */              vnetAttach,
+    /* .pfnDetach = */              vnetDetach,
+    /* .pfnQueryInterface = */      NULL,
+    /* .pfnInitComplete = */        NULL,
+    /* .pfnPowerOff = */            vnetPowerOff,
+    /* .pfnSoftReset = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RING0)
+    /* .pfnEarlyConstruct = */      NULL,
+    /* .pfnConstruct = */           NULL,
+    /* .pfnDestruct = */            NULL,
+    /* .pfnFinalDestruct = */       NULL,
+    /* .pfnRequest = */             NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#elif defined(IN_RC)
+    /* .pfnConstruct = */           NULL,
+    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved1 = */           NULL,
+    /* .pfnReserved2 = */           NULL,
+    /* .pfnReserved3 = */           NULL,
+    /* .pfnReserved4 = */           NULL,
+    /* .pfnReserved5 = */           NULL,
+    /* .pfnReserved6 = */           NULL,
+    /* .pfnReserved7 = */           NULL,
+#else
+# error "Not in IN_RING3, IN_RING0 or IN_RC!"
+#endif
+    /* .u32VersionEnd = */          PDM_DEVREG_VERSION
 };
 
-#endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */

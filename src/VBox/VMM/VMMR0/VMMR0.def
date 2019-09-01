@@ -36,6 +36,8 @@ EXPORTS
     PGMPhysReadGCPtr
     PGMPhysWriteGCPtr
     PGMPhysSimpleDirtyWriteGCPtr
+    PDMR0DeviceRegisterModule
+    PDMR0DeviceDeregisterModule
     IOMMMIOResetRegion
     IOMMMIOMapMMIO2Page
     RTLogDefaultInstance

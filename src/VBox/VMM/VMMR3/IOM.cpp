@@ -716,7 +716,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         pRange->pfnInCallback   = pfnInCallback;
         pRange->pfnOutStrCallback = pfnOutStrCallback;
         pRange->pfnInStrCallback = pfnInStrCallback;
-        pRange->pDevIns         = MMHyperCCToRC(pVM, pDevIns);
+        pRange->pDevIns         = pDevIns->pDevInsForRC;
         pRange->pszDesc         = pszDesc;
 
         /*
@@ -828,7 +828,7 @@ VMMR3_INT_DECL(int) IOMR3IOPortRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT 
         pRange->pfnInCallback   = pfnInCallback;
         pRange->pfnOutStrCallback = pfnOutStrCallback;
         pRange->pfnInStrCallback = pfnInStrCallback;
-        pRange->pDevIns         = MMHyperR3ToR0(pVM, pDevIns);
+        pRange->pDevIns         = PDMDEVINS_2_R0PTR(pDevIns);
         pRange->pszDesc         = pszDesc;
 
         /*
@@ -1491,7 +1491,7 @@ IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS 
     pRange->pfnReadCallbackRC = pfnReadCallback;
     pRange->pfnWriteCallbackRC= pfnWriteCallback;
     pRange->pfnFillCallbackRC = pfnFillCallback;
-    pRange->pDevInsRC         = MMHyperCCToRC(pVM, pDevIns);
+    pRange->pDevInsRC         = pDevIns->pDevInsForRC;
     IOM_UNLOCK_EXCL(pVM);
 
     return VINF_SUCCESS;
@@ -1551,7 +1551,7 @@ IOMR3MmioRegisterR0(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS 
     pRange->pfnReadCallbackR0 = pfnReadCallback;
     pRange->pfnWriteCallbackR0= pfnWriteCallback;
     pRange->pfnFillCallbackR0 = pfnFillCallback;
-    pRange->pDevInsR0         = MMHyperCCToR0(pVM, pDevIns);
+    pRange->pDevInsR0         = pDevIns->pDevInsR0RemoveMe;
     IOM_UNLOCK_EXCL(pVM);
 
     return VINF_SUCCESS;
@@ -1742,7 +1742,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_
         if (pfnReadCallbackR0 || pfnWriteCallbackR0 || pfnFillCallbackR0)
         {
             pRange->pvUserR0            = pvUserR0;
-            pRange->pDevInsR0           = MMHyperCCToR0(pVM, pDevIns);
+            pRange->pDevInsR0           = pDevIns->pDevInsR0RemoveMe;
             pRange->pfnReadCallbackR0   = pfnReadCallbackR0;
             pRange->pfnWriteCallbackR0  = pfnWriteCallbackR0;
             pRange->pfnFillCallbackR0   = pfnFillCallbackR0;
@@ -1752,7 +1752,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_
         if (pfnReadCallbackRC || pfnWriteCallbackRC || pfnFillCallbackRC)
         {
             pRange->pvUserRC            = pvUserRC;
-            pRange->pDevInsRC           = MMHyperCCToRC(pVM, pDevIns);
+            pRange->pDevInsRC           = pDevIns->pDevInsForRC;
             pRange->pfnReadCallbackRC   = pfnReadCallbackRC;
             pRange->pfnWriteCallbackRC  = pfnWriteCallbackRC;
             pRange->pfnFillCallbackRC   = pfnFillCallbackRC;

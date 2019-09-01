@@ -50,6 +50,7 @@ static uint8_t pciR3MergedFindUnusedDeviceNo(PDEVPCIBUS pBus)
  * This is shared between the pci bus and pci bridge code.
  *
  * @returns VBox status code.
+ * @param   pDevIns         The PCI bus device instance.
  * @param   pBus            The bus to register with.
  * @param   pPciDev         The PCI device structure.
  * @param   fFlags          Reserved for future use, PDMPCIDEVREG_F_MBZ.
@@ -63,7 +64,7 @@ static uint8_t pciR3MergedFindUnusedDeviceNo(PDEVPCIBUS pBus)
  *
  * @remarks Caller enters the PDM critical section.
  */
-static int pciR3MergedRegisterDeviceOnBus(PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, uint32_t fFlags,
+static int pciR3MergedRegisterDeviceOnBus(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                           uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName,
                                           PFNPCICONFIGREAD pfnConfigRead, PFNPCICONFIGWRITE pfnConfigWrite)
 {
@@ -192,8 +193,9 @@ static int pciR3MergedRegisterDeviceOnBus(PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, u
 
     pPciDev->uDevFn                 = VBOX_PCI_DEVFN_MAKE(uPciDevNo, uPciFunNo);
     pPciDev->Int.s.pBusR3           = pBus;
-    pPciDev->Int.s.pBusR0           = MMHyperR3ToR0(PDMDevHlpGetVM(pBus->CTX_SUFF(pDevIns)), pBus);
-    pPciDev->Int.s.pBusRC           = MMHyperR3ToRC(PDMDevHlpGetVM(pBus->CTX_SUFF(pDevIns)), pBus);
+    Assert(pBus == PDMINS_2_DATA(pDevIns, PDEVPCIBUS));
+    pPciDev->Int.s.pBusR0           = PDMINS_2_DATA_R0PTR(pDevIns);
+    pPciDev->Int.s.pBusRC           = PDMINS_2_DATA_RCPTR(pDevIns);
     pPciDev->Int.s.pfnConfigRead    = pfnConfigRead;
     pPciDev->Int.s.pfnConfigWrite   = pfnConfigWrite;
 
@@ -222,7 +224,7 @@ static DECLCALLBACK(int) pciR3MergedRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPci
 {
     PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     AssertCompileMemberOffset(DEVPCIROOT, PciBus, 0);
-    return pciR3MergedRegisterDeviceOnBus(pBus, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName,
+    return pciR3MergedRegisterDeviceOnBus(pDevIns, pBus, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName,
                                           devpciR3CommonDefaultConfigRead, devpciR3CommonDefaultConfigWrite);
 }
 
@@ -234,7 +236,7 @@ static DECLCALLBACK(int) pcibridgeR3MergedRegisterDevice(PPDMDEVINS pDevIns, PPD
                                                          uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)
 {
     PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    return pciR3MergedRegisterDeviceOnBus(pBus, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName,
+    return pciR3MergedRegisterDeviceOnBus(pDevIns, pBus, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName,
                                           devpciR3CommonDefaultConfigRead, devpciR3CommonDefaultConfigWrite);
 }
 

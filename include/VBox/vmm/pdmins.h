@@ -49,22 +49,36 @@
 #endif
 
 /** @def PDMINS_2_DATA
- * Converts a PDM Device, USB Device, or Driver instance pointer to a pointer to the instance data.
+ * Gets the shared instance data for a PDM device, USB device, or driver instance.
  */
-#define PDMINS_2_DATA(pIns, type)   ( (type)(void *)&(pIns)->achInstanceData[0] )
+#define PDMINS_2_DATA(pIns, type)       ( (type)(pIns)->CTX_SUFF(pvInstanceData) )
+
+/** @def PDMINS_2_DATA_CC
+ * Gets the current context instance data for a PDM device, USB device, or driver instance.
+ */
+#define PDMINS_2_DATA_CC(pIns, type)    ( (type)(void *)&(pIns)->achInstanceData[0] )
+
+/* @def PDMINS_2_DATA_RC
+ * Gets the raw-mode context instance data for a PDM device instance.
+ */
+#define PDMINS_2_DATA_RC(pIns, type)    ( (type)(pIns)->CTX_SUFF(pvInstanceDataForRC) )
+
 
 /** @def PDMINS_2_DATA_RCPTR
  * Converts a PDM Device, USB Device, or Driver instance pointer to a RC pointer to the instance data.
+ * @deprecated
  */
 #define PDMINS_2_DATA_RCPTR(pIns)   ( (pIns)->pvInstanceDataRC )
 
 /** @def PDMINS_2_DATA_R3PTR
  * Converts a PDM Device, USB Device, or Driver instance pointer to a HC pointer to the instance data.
+ * @deprecated
  */
 #define PDMINS_2_DATA_R3PTR(pIns)   ( (pIns)->pvInstanceDataR3 )
 
 /** @def PDMINS_2_DATA_R0PTR
  * Converts a PDM Device, USB Device, or Driver instance pointer to a R0 pointer to the instance data.
+ * @deprecated
  */
 #define PDMINS_2_DATA_R0PTR(pIns)   ( (pIns)->pvInstanceDataR0 )
 

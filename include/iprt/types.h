@@ -1878,6 +1878,20 @@ typedef uint32_t                RTRCUINTPTR;
  */
 #define RTRCINTPTR_MAX          ((RTRCINTPTR)INT32_MAX)
 
+/* The following are only temporarily while we clean up RTRCPTR usage: */
+#ifdef IN_RC
+typedef void            RT_FAR *RTRGPTR;
+#else
+typedef uint64_t                RTRGPTR;
+#endif
+typedef RTRGPTR         RT_FAR *PRTRGPTR;
+typedef const RTRGPTR   RT_FAR *PCRTRGPTR;
+#ifdef IN_RC
+# define NIL_RTRGPTR            (NULL)
+#else
+# define NIL_RTRGPTR            ((RTRGPTR)0)
+#endif
+
 /** @} */
 
 

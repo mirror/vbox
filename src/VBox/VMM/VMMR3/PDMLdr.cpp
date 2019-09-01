@@ -737,6 +737,35 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
 }
 
 
+/**
+ * Makes sure a ring-0 module is loaded.
+ *
+ * @returns VBox status code.
+ * @param   pUVM            Pointer to the user mode VM structure.
+ */
+VMMR3_INT_DECL(int) PDMR3LdrLoadR0(PUVM pUVM, const char *pszModule)
+{
+    /*
+     * Find the module.
+     */
+    RTCritSectEnter(&pUVM->pdm.s.ListCritSect);
+    for (PPDMMOD pModule = pUVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
+    {
+        if (   pModule->eType == PDMMOD_TYPE_R0
+            && !strcmp(pModule->szName, pszModule))
+        {
+            RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+            return VINF_SUCCESS;
+        }
+    }
+    RTCritSectLeave(&pUVM->pdm.s.ListCritSect);
+
+    /*
+     * Okay, load it.
+     */
+    return pdmR3LoadR0U(pUVM, NULL, pszModule, NULL);
+}
+
 
 /**
  * Get the address of a symbol in a given HC ring 3 module.
