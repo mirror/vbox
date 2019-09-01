@@ -2800,7 +2800,7 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(uint32_t, pfnSSMHandleHostBits,(PSSMHANDLE pSSM));
     DECLR3CALLBACKMEMBER(uint32_t, pfnSSMHandleRevision,(PSSMHANDLE pSSM));
     DECLR3CALLBACKMEMBER(uint32_t, pfnSSMHandleVersion,(PSSMHANDLE pSSM));
-    /** @} */              
+    /** @} */
 
     /**
      * Creates a timer.

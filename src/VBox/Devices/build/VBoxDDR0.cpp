@@ -129,4 +129,3 @@ DECLEXPORT(void) ModuleTerm(void *hMod)
     PDMR0DeviceDeregisterModule(hMod, &g_VBoxDDR0ModDevReg);
 }
 
-
