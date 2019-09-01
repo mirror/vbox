@@ -153,6 +153,7 @@ private slots:
 
     void sltTimeout();
     void sltGuestAdditionsStateChange();
+    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
 
 private:
 

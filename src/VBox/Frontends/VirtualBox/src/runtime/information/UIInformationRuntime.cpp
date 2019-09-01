@@ -53,6 +53,7 @@ const int iDecimalCount = 2;
 
 enum InfoLine
 {
+    InfoLine_Title = 0,
     InfoLine_Resolution,
     InfoLine_Uptime,
     InfoLine_ClipboardMode,
@@ -78,6 +79,7 @@ class UIRuntimeInfoWidget : public QIWithRetranslateUI<QTableWidget>
 public:
 
     UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine, const CConsole &console);
+    void guestMonitorChange(ulong uScreenId);
 
 protected:
 
@@ -85,12 +87,19 @@ protected:
     virtual QSize sizeHint() const;
     virtual QSize minimumSizeHint() const /* override */;
 
+private slots:
+
+    void sltTimeout();
+
 private:
 
     void runTimeAttributes();
-    QString screenResolutions();
-
-    void insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo);
+    void updateScreenInfo(int iScreenId = -1);
+    void updateUpTime();
+    QString screenResolution(int iScreenId);
+    /** Creates to QTableWidgetItems of tye @enmInfoLine using the @p strLabel and @p strInfo and inserts it
+     * to the row @p iRow. If @p iRow is -1 then the items inserted to the end of the table. */
+    void insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo, int iRow = -1);
     void computeMinimumWidth();
 
     CMachine m_machine;
@@ -121,6 +130,8 @@ private:
     int m_iFontHeight;
     /** Computed by computing the maximum length line. Used to avoid having horizontal scroll bars. */
     int m_iMinimumWidth;
+    QVector<QString> m_screenResolutions;
+    QTimer *m_pTimer;
 };
 
 /*********************************************************************************************************************************
@@ -211,6 +222,7 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     , m_machine(machine)
     , m_console(console)
     , m_iMinimumWidth(0)
+    , m_pTimer(0)
 
 {
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -225,18 +237,31 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     setFocusPolicy(Qt::NoFocus);
     setSelectionMode(QAbstractItemView::NoSelection);
 
+
+    m_pTimer = new QTimer(this);
+    if (m_pTimer)
+    {
+        connect(m_pTimer, &QTimer::timeout, this, &UIRuntimeInfoWidget::sltTimeout);
+        m_pTimer->start(5000);
+    }
+
+
     retranslateUi();
     /* Add the title row: */
-    QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle);
+    QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle, InfoLine_Title);
     QFont titleFont(font());
     titleFont.setBold(true);
     pTitleItem->setFont(titleFont);
     insertRow(0);
     setItem(0, 0, pTitleItem);
-
     /* Make the API calls and populate the table: */
     runTimeAttributes();
     computeMinimumWidth();
+}
+
+void UIRuntimeInfoWidget::guestMonitorChange(ulong uScreenId)
+{
+    updateScreenInfo(uScreenId);
 }
 
 void UIRuntimeInfoWidget::retranslateUi()
@@ -271,49 +296,82 @@ QSize UIRuntimeInfoWidget::minimumSizeHint() const
     return QSize(m_iMinimumWidth, m_iMinimumWidth);
 }
 
-void UIRuntimeInfoWidget::insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo)
+void UIRuntimeInfoWidget::insertInfoLine(InfoLine enmInfoLine, const QString& strLabel, const QString &strInfo, int iRow /* = -1 */)
 {
     int iMargin = 0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    int iRow = rowCount();
-    insertRow(iRow);
-    setItem(iRow, 0, new QTableWidgetItem(strLabel, enmInfoLine));
-    setItem(iRow, 1, new QTableWidgetItem(strInfo, enmInfoLine));
-    setRowHeight(iRow, 2 * iMargin + m_iFontHeight);
+    int iNewRow = rowCount();
+    if (iRow != -1 && iRow <= iNewRow)
+        iNewRow = iRow;
+    insertRow(iNewRow);
+    setItem(iNewRow, 0, new QTableWidgetItem(strLabel, enmInfoLine));
+    setItem(iNewRow, 1, new QTableWidgetItem(strInfo, enmInfoLine));
+    setRowHeight(iNewRow, 2 * iMargin + m_iFontHeight);
 }
 
-QString UIRuntimeInfoWidget::screenResolutions()
+QString UIRuntimeInfoWidget::screenResolution(int iScreenID)
 {
-    QString strResolutions;
-    return strResolutions;
-}
-
-void UIRuntimeInfoWidget::runTimeAttributes()
-{
-    ULONG cGuestScreens = m_machine.GetMonitorCount();
-    QVector<QString> aResolutions(cGuestScreens);
-    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
+    /* Determine resolution: */
+    ULONG uWidth = 0;
+    ULONG uHeight = 0;
+    ULONG uBpp = 0;
+    LONG xOrigin = 0;
+    LONG yOrigin = 0;
+    KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
+    m_console.GetDisplay().GetScreenResolution(iScreenID, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
+    QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
+    if (uBpp)
+        strResolution += QString("x%1").arg(uBpp);
+    strResolution += QString(" @%1,%2").arg(xOrigin).arg(yOrigin);
+    if (monitorStatus == KGuestMonitorStatus_Disabled)
     {
-        /* Determine resolution: */
-        ULONG uWidth = 0;
-        ULONG uHeight = 0;
-        ULONG uBpp = 0;
-        LONG xOrigin = 0;
-        LONG yOrigin = 0;
-        KGuestMonitorStatus monitorStatus = KGuestMonitorStatus_Enabled;
-        m_console.GetDisplay().GetScreenResolution(iScreen, uWidth, uHeight, uBpp, xOrigin, yOrigin, monitorStatus);
-        QString strResolution = QString("%1x%2").arg(uWidth).arg(uHeight);
-        if (uBpp)
-            strResolution += QString("x%1").arg(uBpp);
-        strResolution += QString(" @%1,%2").arg(xOrigin).arg(yOrigin);
-        if (monitorStatus == KGuestMonitorStatus_Disabled)
-        {
-            strResolution += QString(" ");
-            strResolution += m_strMonitorTurnedOff;
-        }
-        aResolutions[iScreen] = strResolution;
+        strResolution += QString(" ");
+        strResolution += m_strMonitorTurnedOff;
     }
 
-    /* Determine uptime: */
+    return strResolution;
+}
+
+void UIRuntimeInfoWidget::sltTimeout()
+{
+    updateUpTime();
+}
+
+void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
+{
+    ULONG uGuestScreens = m_machine.GetMonitorCount();
+    m_screenResolutions.resize(uGuestScreens);
+
+    if (iScreenID != -1 && iScreenID >= (int)uGuestScreens)
+        return;
+    if (iScreenID == -1)
+    {
+        for (ULONG iScreen = 0; iScreen < uGuestScreens; ++iScreen)
+            m_screenResolutions[iScreen] = screenResolution(iScreen);
+    }
+    else
+        m_screenResolutions[iScreenID] = screenResolution(iScreenID);
+    /* Delete all the rows (not only the updated screen's row) and reinsert them: */
+    int iRowCount = rowCount();
+    for (int i = iRowCount - 1; i >= 0; --i)
+    {
+        QTableWidgetItem *pItem = item(i, 0);
+        if (pItem && pItem->type() == InfoLine_Resolution)
+            removeRow(i);
+    }
+
+    for (ULONG iScreen = 0; iScreen < uGuestScreens; ++iScreen)
+    {
+        QString strLabel = uGuestScreens > 1 ?
+            QString("%1 %2:").arg(m_strScreenResolutionLabel).arg(QString::number(iScreen)) :
+            QString("%1:").arg(m_strScreenResolutionLabel);
+        /* Insert the screen resolution row at the top of the table. Row 0 is the title row: */
+        insertInfoLine(InfoLine_Resolution, strLabel, m_screenResolutions[iScreen], iScreen + 1);
+    }
+    resizeColumnToContents(1);
+}
+
+void UIRuntimeInfoWidget::updateUpTime()
+{
     CMachineDebugger debugger = m_console.GetDebugger();
     uint32_t uUpSecs = (debugger.GetUptime() / 5000) * 5;
     char szUptime[32];
@@ -327,12 +385,34 @@ void UIRuntimeInfoWidget::runTimeAttributes()
                 uUpDays, uUpHours, uUpMins, uUpSecs);
     QString strUptime = QString(szUptime);
 
+    QTableWidgetItem *pItem = 0;
+    for (int i = 0; i < rowCount() && !pItem; ++i)
+    {
+        pItem = item(i, 1);
+        if (!pItem)
+            continue;
+        if (pItem->type() != InfoLine_Uptime)
+            pItem = 0;
+    }
+    if (!pItem)
+        insertInfoLine(InfoLine_Uptime, QString("%1:").arg(m_strUptimeLabel), strUptime);
+    else
+        pItem->setText(strUptime);
+}
+
+void UIRuntimeInfoWidget::runTimeAttributes()
+{
+    updateScreenInfo();
+    updateUpTime();
+
     /* Determine clipboard mode: */
     QString strClipboardMode = gpConverter->toString(m_machine.GetClipboardMode());
     /* Determine Drag&Drop mode: */
     QString strDnDMode = gpConverter->toString(m_machine.GetDnDMode());
 
     /* Determine virtualization attributes: */
+    CMachineDebugger debugger = m_console.GetDebugger();
+
     QString strVirtualization = debugger.GetHWVirtExEnabled() ?
         m_strActive : m_strInactive;
 
@@ -385,28 +465,7 @@ void UIRuntimeInfoWidget::runTimeAttributes()
     QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1)?
         m_strNotAvailable : QString("%1").arg(iVRDEPort);
 
-    /* Searching for longest string: */
-    QStringList values;
-    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
-        values << aResolutions[iScreen];
-    values << strUptime
-           << strExecutionEngine << strNestedPaging << strUnrestrictedExecution
-           << strGAVersion << strOSType << strVRDEInfo;
-    int iMaxLength = 0;
-    foreach (const QString &strValue, values)
-        iMaxLength = iMaxLength < QApplication::fontMetrics().width(strValue)
-                                  ? QApplication::fontMetrics().width(strValue) : iMaxLength;
 
-    /* Summary: */
-    for (ULONG iScreen = 0; iScreen < cGuestScreens; ++iScreen)
-    {
-        QString strLabel = cGuestScreens > 1 ?
-            QString("%1 %2:").arg(m_strScreenResolutionLabel).arg(QString::number(iScreen)) :
-            QString("%1:").arg(m_strScreenResolutionLabel);
-        insertInfoLine(InfoLine_Resolution, strLabel, aResolutions[iScreen]);
-    }
-
-    insertInfoLine(InfoLine_Uptime, QString("%1:").arg(m_strUptimeLabel), strUptime);
     insertInfoLine(InfoLine_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel), strClipboardMode);
     insertInfoLine(InfoLine_DnDMode, QString("%1:").arg(m_strDragAndDropLabel), strDnDMode);
     insertInfoLine(InfoLine_ExecutionEngine, QString("%1:").arg(m_strExcutionEngineLabel), strExecutionEngine);
@@ -1025,8 +1084,9 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     if (!m_console.isNull())
         m_comGuest = m_console.GetGuest();
     m_fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
-
     connect(pSession, &UISession::sigAdditionsStateChange, this, &UIInformationRuntime::sltGuestAdditionsStateChange);
+    connect(pSession, &UISession::sigGuestMonitorChange, this, &UIInformationRuntime::sltGuestMonitorChange);
+
     prepareMetrics();
     prepareObjects();
     enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
@@ -1155,7 +1215,7 @@ void UIInformationRuntime::prepareObjects()
     if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
         m_charts[m_strCPUMetricName]->setWithPieChart(true);
 
-    UIRuntimeInfoWidget *m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
+    m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
     pContainerLayout->addWidget(m_pRuntimeInfoWidget, iRow, 0, 2, 2);
     m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
@@ -1282,6 +1342,15 @@ void UIInformationRuntime::sltGuestAdditionsStateChange()
         return;
     m_fGuestAdditionsAvailable = fGuestAdditionsAvailable;
     enableDisableGuestAdditionDependedWidgets(m_fGuestAdditionsAvailable);
+}
+
+void UIInformationRuntime::sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo)
+{
+    Q_UNUSED(changeType);
+    Q_UNUSED(screenGeo);
+    printf("%lu\n", uScreenId);
+    if (m_pRuntimeInfoWidget)
+        m_pRuntimeInfoWidget->guestMonitorChange(uScreenId);
 }
 
 void UIInformationRuntime::prepareMetrics()
