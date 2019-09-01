@@ -749,7 +749,7 @@
  */
 #define RCPTRTYPE(RCType)       CTXTYPE(RCType, RTRCPTR, RTRCPTR)
 
-/** @def GCPTRTYPE
+/** @def RGPTRTYPE
  * This will become RCPTRTYPE once we've convered all uses of RCPTRTYPE to this.
  *
  * @param   RCType  The RC type.
