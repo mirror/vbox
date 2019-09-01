@@ -2174,7 +2174,7 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status.
      * @param   pDevIns     The device instance to register the ports with.
      * @param   cPorts      Number of ports to register.
-     * @param   fFlag       Reserved, MBZ.
+     * @param   fFlags      Reserved, MBZ.
      * @param   pPciDev     The PCI device the range is associated with, if
      *                      applicable.
      * @param   iPciRegion  The PCI device region in the high 16-bit word and
@@ -2324,7 +2324,7 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status.
      * @param   pDevIns     The device instance to register the ports with.
      * @param   cbRegion    The size of the region in bytes.
-     * @param   fFlag       Reserved, MBZ.
+     * @param   fFlags      Reserved, MBZ.
      * @param   pPciDev     The PCI device the range is associated with, if
      *                      applicable.
      * @param   iPciRegion  The PCI device region in the high 16-bit word and
@@ -6582,11 +6582,6 @@ DECLINLINE(uint32_t) PDMDevHlpCritSectGetRecursion(PPDMDEVINS pDevIns, PCPDMCRIT
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnCritSectGetRecursion(pCritSect);
 }
-
-/**
- * @copydoc PDMCritSect
- * @param   pDevIns  The device instance.
- */
 
 /* Strict build: Remap the two enter calls to the debug versions. */
 #ifdef VBOX_STRICT

@@ -742,6 +742,7 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
  *
  * @returns VBox status code.
  * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   pszModule       Module name (no path).
  */
 VMMR3_INT_DECL(int) PDMR3LdrLoadR0(PUVM pUVM, const char *pszModule)
 {
