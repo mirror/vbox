@@ -637,7 +637,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
             pVirtio->uDeviceStatus = *(uint8_t *)pv;
             Log3Func(("Guest wrote uDeviceStatus ................ ("));
             virtioLogDeviceStatus(pVirtio->uDeviceStatus);
-            Log((")\n"));
+            Log3((")\n"));
             if (pVirtio->uDeviceStatus == 0)
                 virtioGuestResetted(pVirtio);
             /**
@@ -655,7 +655,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
             Log3Func(("Guest read  uDeviceStatus ................ ("));
             *(uint32_t *)pv = pVirtio->uDeviceStatus;
             virtioLogDeviceStatus(pVirtio->uDeviceStatus);
-            Log((")\n"));
+            Log3((")\n"));
         }
     }
     else if (MATCH_COMMON_CFG(uMsixConfig))

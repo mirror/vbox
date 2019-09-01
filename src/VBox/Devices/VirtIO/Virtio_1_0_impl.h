@@ -511,7 +511,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx, 
 DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
 {
     if (status == 0)
-        Log(("RESET"));
+        Log3(("RESET"));
     else
     {
         int primed = 0;
