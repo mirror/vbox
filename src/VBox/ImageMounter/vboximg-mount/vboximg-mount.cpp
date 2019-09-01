@@ -22,6 +22,7 @@
 
 #define LOG_GROUP LOG_GROUP_DEFAULT /** @todo log group */
 
+#define RTTIME_INCL_TIMESPEC
 #define FUSE_USE_VERSION 27
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
 #   define UNIX_DERIVATIVE
@@ -37,6 +38,7 @@
 #include <math.h>
 #include <cstdarg>
 #include <sys/stat.h>
+#include <sys/time.h>
 #endif
 #if defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_LINUX)
 # include <sys/param.h>
@@ -75,6 +77,7 @@
 #include <iprt/base64.h>
 #include <iprt/vfs.h>
 #include <iprt/dvm.h>
+#include <iprt/time.h>
 
 #include "vboximgCrypto.h"
 #include "vboximgMedia.h"
@@ -86,6 +89,10 @@ using namespace com;
 enum {
      USAGE_FLAG,
 };
+
+#if !defined(S_ISTXT) && defined(S_ISVTX)
+# define S_ISTXT (S_ISVTX)
+#endif
 
 #define VBOX_EXTPACK                "Oracle VM VirtualBox Extension Pack"
 #define VERBOSE                     g_vboximgOpts.fVerbose
@@ -567,32 +574,114 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
         int rcIprt = vboxImgMntVfsObjQueryFromPath(pszPath, &hVfsObj);
         if (RT_SUCCESS(rcIprt))
         {
-            switch (RTVfsObjGetType(hVfsObj))
-            {
-                case RTVFSOBJTYPE_FILE:
-                {
-                    RTVFSFILE hVfsFile = RTVfsObjToFile(hVfsObj);
-                    uint64_t cb;
-                    rcIprt = RTVfsFileGetSize(hVfsFile, &cb); AssertRC(rcIprt);
-                    RTVfsFileRelease(hVfsFile);
+            RTFSOBJINFO ObjInfo;
 
-                    stbuf->st_mode = S_IFREG | 0644;
-                    stbuf->st_size = (off_t)cb;
-                    stbuf->st_nlink = 1;
-                    break;
-                }
-                case RTVFSOBJTYPE_DIR:
+            rcIprt = RTVfsObjQueryInfo(hVfsObj, &ObjInfo, RTFSOBJATTRADD_UNIX);
+            if (RT_SUCCESS(rcIprt))
+            {
+                stbuf->st_size  = ObjInfo.cbObject;
+                stbuf->st_nlink = 1;
+                stbuf->st_uid   = 0;
+                stbuf->st_gid   = 0;
+
+                RTTimeSpecGetTimespec(&ObjInfo.AccessTime, &stbuf->st_atim);
+                RTTimeSpecGetTimespec(&ObjInfo.ModificationTime, &stbuf->st_mtim);
+                RTTimeSpecGetTimespec(&ObjInfo.ChangeTime, &stbuf->st_ctim);
+                /*RTTimeSpecGetTimespec(&ObjInfo.BirthTime, &stbuf->st_birthtime);*/ /* Not existing on Linux. */
+
+                switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
                 {
-                    stbuf->st_mode = S_IFDIR | 0755;
-                    stbuf->st_nlink = 2;
-                    break;
+                    case RTFS_TYPE_FIFO:
+                    {
+                        stbuf->st_mode = S_IFIFO;
+                        break;
+                    }
+                    case RTFS_TYPE_DEV_CHAR:
+                    {
+                        stbuf->st_mode = S_IFCHR;
+                        break;
+                    }
+                    case RTFS_TYPE_DIRECTORY:
+                    {
+                        stbuf->st_mode = S_IFDIR;
+                        stbuf->st_nlink = 2;
+                        break;
+                    }
+                    case RTFS_TYPE_DEV_BLOCK:
+                    {
+                        stbuf->st_mode = S_IFBLK;
+                        break;
+                    }
+                    case RTFS_TYPE_FILE:
+                    {
+                        stbuf->st_mode = S_IFREG;
+                        break;
+                    }
+                    case RTFS_TYPE_SYMLINK:
+                    {
+                        stbuf->st_mode = S_IFLNK;
+                        break;
+                    }
+                    case RTFS_TYPE_SOCKET:
+                    {
+                        stbuf->st_mode = S_IFSOCK;
+                        break;
+                    }
+#if 0 /* Not existing on Linux. */
+                    case RTFS_TYPE_WHITEOUT:
+                    {
+                        stbuf->st_mode = S_IFWHT;
+                        break;
+                    }
+#endif
+                    default:
+                        stbuf->st_mode = 0;
                 }
-                default:
-                    rc = -EINVAL;
+
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_ISUID)
+                    stbuf->st_mode |= S_ISUID;
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_ISGID)
+                    stbuf->st_mode |= S_ISGID;
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_ISTXT)
+                    stbuf->st_mode |= S_ISTXT;
+
+                /* Owner permissions. */
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IRUSR)
+                    stbuf->st_mode |= S_IRUSR;
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IWUSR)
+                    stbuf->st_mode |= S_IWUSR;
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IXUSR)
+                    stbuf->st_mode |= S_IXUSR;
+
+                /* Group permissions. */
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IRGRP)
+                    stbuf->st_mode |= S_IRGRP;
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IWGRP)
+                    stbuf->st_mode |= S_IWGRP;
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IXGRP)
+                    stbuf->st_mode |= S_IXGRP;
+
+                /* Other permissions. */
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IROTH)
+                    stbuf->st_mode |= S_IROTH;
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IWOTH)
+                    stbuf->st_mode |= S_IWOTH;
+                if (ObjInfo.Attr.fMode & RTFS_UNIX_IXOTH)
+                    stbuf->st_mode |= S_IXOTH;
+
+                if (ObjInfo.Attr.enmAdditional == RTFSOBJATTRADD_UNIX)
+                {
+                    stbuf->st_uid   = ObjInfo.Attr.u.Unix.uid;
+                    stbuf->st_gid   = ObjInfo.Attr.u.Unix.gid;
+                    stbuf->st_nlink = ObjInfo.Attr.u.Unix.cHardlinks;
+                    stbuf->st_ino   = ObjInfo.Attr.u.Unix.INodeId;
+                    stbuf->st_dev   = ObjInfo.Attr.u.Unix.INodeIdDevice;
+                    /*stbuf->st_flags = ObjInfo.Attr.u.Unix.fFlags;*/       /* Not existing on Linux. */
+                    /*stbuf->st_gen   = ObjInfo.Attr.u.Unix.GenerationId;*/ /* Not existing on Linux. */
+                    stbuf->st_rdev  = ObjInfo.Attr.u.Unix.Device;
+                }
             }
 
-            stbuf->st_uid = 0;
-            stbuf->st_gid = 0;
             RTVfsObjRelease(hVfsObj);
         }
         else if (rcIprt == VERR_NOT_FOUND)
