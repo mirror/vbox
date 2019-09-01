@@ -584,10 +584,16 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
                 stbuf->st_uid   = 0;
                 stbuf->st_gid   = 0;
 
+#ifdef RT_OS_DARWIN
+                RTTimeSpecGetTimespec(&ObjInfo.AccessTime, &stbuf->st_atimespec);
+                RTTimeSpecGetTimespec(&ObjInfo.ModificationTime, &stbuf->st_mtimespec);
+                RTTimeSpecGetTimespec(&ObjInfo.ChangeTime, &stbuf->st_ctimespec);
+                RTTimeSpecGetTimespec(&ObjInfo.BirthTime, &stbuf->st_birthtimespec);
+#else
                 RTTimeSpecGetTimespec(&ObjInfo.AccessTime, &stbuf->st_atim);
                 RTTimeSpecGetTimespec(&ObjInfo.ModificationTime, &stbuf->st_mtim);
-                RTTimeSpecGetTimespec(&ObjInfo.ChangeTime, &stbuf->st_ctim);
-                /*RTTimeSpecGetTimespec(&ObjInfo.BirthTime, &stbuf->st_birthtime);*/ /* Not existing on Linux. */
+                RTTimeSpecGetTimespec(&ObjInfo.ChangeTime, &stbuf->st_ctim); 
+#endif
 
                 switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
                 {
