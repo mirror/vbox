@@ -592,7 +592,7 @@ vboximgOp_getattr(const char *pszPath, struct stat *stbuf)
 #else
                 RTTimeSpecGetTimespec(&ObjInfo.AccessTime, &stbuf->st_atim);
                 RTTimeSpecGetTimespec(&ObjInfo.ModificationTime, &stbuf->st_mtim);
-                RTTimeSpecGetTimespec(&ObjInfo.ChangeTime, &stbuf->st_ctim); 
+                RTTimeSpecGetTimespec(&ObjInfo.ChangeTime, &stbuf->st_ctim);
 #endif
 
                 switch (ObjInfo.Attr.fMode & RTFS_TYPE_MASK)
