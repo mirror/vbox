@@ -218,11 +218,13 @@ typedef enum SCSIMAINTENANCEIN
 #define SCSI_ASC_CANNOT_READ_MEDIUM                         0x30
 #define SCSI_ASC_MEDIUM_NOT_PRESENT                         0x3a
 #define SCSI_ASC_SAVING_PARAMETERS_NOT_SUPPORTED            0x39
+#define SCSI_ASC_INTERNAL_TARGET_FAILURE                    0x44
 #define SCSI_ASC_INVALID_MESSAGE                            0x49
 #define SCSI_ASC_MEDIA_LOAD_OR_EJECT_FAILED                 0x53
 #define SCSI_ASC_LOGICAL_UNIT_DOES_NOT_RESPOND_TO_SELECTION 0x00
 #define SCSI_ASC_SYSTEM_RESOURCE_FAILURE                    0x55
 #define SCSI_ASC_ILLEGAL_MODE_FOR_THIS_TRACK                0x64
+#define SCSI_ASC_COMMAND_TO_LOGICAL_UNIT_FAILED             0x6E
 
 /** Additional sense code qualifiers (ASCQ). */
 /* NB: The ASC/ASCQ combination determines the full meaning. */
