@@ -3896,7 +3896,7 @@ IEM_STATIC VBOXSTRICTRC iemHlpTaskSwitchLoadDataSelectorInProtMode(PVMCPUCC pVCp
  * @param   pNewDescTSS     Pointer to the new TSS descriptor.
  */
 IEM_STATIC VBOXSTRICTRC
-iemTaskSwitch(PVMCPUCC          pVCpu,
+iemTaskSwitch(PVMCPUCC        pVCpu,
               IEMTASKSWITCH   enmTaskSwitch,
               uint32_t        uNextEip,
               uint32_t        fFlags,
@@ -3945,7 +3945,7 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
      * The new TSS must have been read and validated (DPL, limits etc.) before a
      * task-switch VM-exit commences.
      *
-     * See Intel spec. 25.4.2 ".Treatment of Task Switches"
+     * See Intel spec. 25.4.2 "Treatment of Task Switches".
      */
     if (IEM_VMX_IS_NON_ROOT_MODE(pVCpu))
     {
@@ -3998,13 +3998,13 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
      * Verify that the new TSS can be accessed and map it. Map only the required contents
      * and not the entire TSS.
      */
-    void     *pvNewTSS;
-    uint32_t  cbNewTSS    = uNewTSSLimitMin + 1;
-    RTGCPTR   GCPtrNewTSS = X86DESC_BASE(&pNewDescTSS->Legacy);
+    void           *pvNewTSS;
+    uint32_t  const cbNewTSS    = uNewTSSLimitMin + 1;
+    RTGCPTR   const GCPtrNewTSS = X86DESC_BASE(&pNewDescTSS->Legacy);
     AssertCompile(sizeof(X86TSS32) == X86_SEL_TYPE_SYS_386_TSS_LIMIT_MIN + 1);
     /** @todo Handle if the TSS crosses a page boundary. Intel specifies that it may
      *        not perform correct translation if this happens. See Intel spec. 7.2.1
-     *        "Task-State Segment" */
+     *        "Task-State Segment". */
     VBOXSTRICTRC rcStrict = iemMemMap(pVCpu, &pvNewTSS, cbNewTSS, UINT8_MAX, GCPtrNewTSS, IEM_ACCESS_SYS_RW);
     if (rcStrict != VINF_SUCCESS)
     {
@@ -4051,7 +4051,7 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
     /*
      * Save the CPU state into the current TSS.
      */
-    RTGCPTR GCPtrCurTSS = pVCpu->cpum.GstCtx.tr.u64Base;
+    RTGCPTR const GCPtrCurTSS = pVCpu->cpum.GstCtx.tr.u64Base;
     if (GCPtrNewTSS == GCPtrCurTSS)
     {
         Log(("iemTaskSwitch: Switching to the same TSS! enmTaskSwitch=%u GCPtr[Cur|New]TSS=%#RGv\n", enmTaskSwitch, GCPtrCurTSS));
@@ -4066,9 +4066,9 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
          * Verify that the current TSS (32-bit) can be accessed, only the minimum required size.
          * See Intel spec. 7.2.1 "Task-State Segment (TSS)" for static and dynamic fields.
          */
-        void    *pvCurTSS32;
-        uint32_t offCurTSS = RT_UOFFSETOF(X86TSS32, eip);
-        uint32_t cbCurTSS  = RT_UOFFSETOF(X86TSS32, selLdt) - RT_UOFFSETOF(X86TSS32, eip);
+        void          *pvCurTSS32;
+        uint32_t const offCurTSS = RT_UOFFSETOF(X86TSS32, eip);
+        uint32_t const cbCurTSS  = RT_UOFFSETOF(X86TSS32, selLdt) - RT_UOFFSETOF(X86TSS32, eip);
         AssertCompile(RTASSERT_OFFSET_OF(X86TSS32, selLdt) - RTASSERT_OFFSET_OF(X86TSS32, eip) == 64);
         rcStrict = iemMemMap(pVCpu, &pvCurTSS32, cbCurTSS, UINT8_MAX, GCPtrCurTSS + offCurTSS, IEM_ACCESS_SYS_RW);
         if (rcStrict != VINF_SUCCESS)
@@ -4110,9 +4110,9 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
         /*
          * Verify that the current TSS (16-bit) can be accessed. Again, only the minimum required size.
          */
-        void    *pvCurTSS16;
-        uint32_t offCurTSS = RT_UOFFSETOF(X86TSS16, ip);
-        uint32_t cbCurTSS  = RT_UOFFSETOF(X86TSS16, selLdt) - RT_UOFFSETOF(X86TSS16, ip);
+        void          *pvCurTSS16;
+        uint32_t const offCurTSS = RT_UOFFSETOF(X86TSS16, ip);
+        uint32_t const cbCurTSS  = RT_UOFFSETOF(X86TSS16, selLdt) - RT_UOFFSETOF(X86TSS16, ip);
         AssertCompile(RTASSERT_OFFSET_OF(X86TSS16, selLdt) - RTASSERT_OFFSET_OF(X86TSS16, ip) == 28);
         rcStrict = iemMemMap(pVCpu, &pvCurTSS16, cbCurTSS, UINT8_MAX, GCPtrCurTSS + offCurTSS, IEM_ACCESS_SYS_RW);
         if (rcStrict != VINF_SUCCESS)
@@ -4168,7 +4168,7 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
     bool     fNewDebugTrap;
     if (fIsNewTSS386)
     {
-        PX86TSS32 pNewTSS32 = (PX86TSS32)pvNewTSS;
+        PCX86TSS32 pNewTSS32 = (PCX86TSS32)pvNewTSS;
         uNewCr3       = (pVCpu->cpum.GstCtx.cr0 & X86_CR0_PG) ? pNewTSS32->cr3 : 0;
         uNewEip       = pNewTSS32->eip;
         uNewEflags    = pNewTSS32->eflags;
@@ -4191,7 +4191,7 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
     }
     else
     {
-        PX86TSS16 pNewTSS16 = (PX86TSS16)pvNewTSS;
+        PCX86TSS16 pNewTSS16 = (PCX86TSS16)pvNewTSS;
         uNewCr3       = 0;
         uNewEip       = pNewTSS16->ip;
         uNewEflags    = pNewTSS16->flags;
@@ -4270,6 +4270,7 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
 
     /* Set the busy bit in TR. */
     pVCpu->cpum.GstCtx.tr.Attr.n.u4Type |= X86_SEL_TYPE_SYS_TSS_BUSY_MASK;
+
     /* Set EFLAGS.NT (Nested Task) in the eflags loaded from the new TSS, if it's a task switch due to a CALL/INT_XCPT. */
     if (   enmTaskSwitch == IEMTASKSWITCH_CALL
         || enmTaskSwitch == IEMTASKSWITCH_INT_XCPT)
@@ -4400,7 +4401,7 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
         iemHlpLoadSelectorInV86Mode(&pVCpu->cpum.GstCtx.fs, uNewFS);
         iemHlpLoadSelectorInV86Mode(&pVCpu->cpum.GstCtx.gs, uNewGS);
 
-        /* quick fix: fake DescSS. */ /** @todo fix the code further down? */
+        /* Quick fix: fake DescSS. */ /** @todo fix the code further down? */
         DescSS.Legacy.u = 0;
         DescSS.Legacy.Gen.u16LimitLow = (uint16_t)pVCpu->cpum.GstCtx.ss.u32Limit;
         DescSS.Legacy.Gen.u4LimitHigh = pVCpu->cpum.GstCtx.ss.u32Limit >> 16;
@@ -4412,7 +4413,7 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
     }
     else
     {
-        uint8_t uNewCpl = (uNewCS & X86_SEL_RPL);
+        uint8_t const uNewCpl = (uNewCS & X86_SEL_RPL);
 
         /*
          * Load the stack segment for the new task.
@@ -4596,7 +4597,7 @@ iemTaskSwitch(PVMCPUCC          pVCpu,
     if (fFlags & IEM_XCPT_FLAGS_ERR)
     {
         Assert(enmTaskSwitch == IEMTASKSWITCH_INT_XCPT);
-        uint32_t cbLimitSS = X86DESC_LIMIT_G(&DescSS.Legacy);
+        uint32_t      cbLimitSS    = X86DESC_LIMIT_G(&DescSS.Legacy);
         uint8_t const cbStackFrame = fIsNewTSS386 ? 4 : 2;
 
         /* Check that there is sufficient space on the stack. */
