@@ -160,7 +160,6 @@ public:
     UIChart(QWidget *pParent, UIMetric *pMetric);
     void setFontSize(int iFontSize);
     int  fontSize() const;
-    void setTextList(const QStringList &textList);
     const QStringList &textList() const;
 
     bool withPieChart() const;
@@ -189,7 +188,6 @@ private slots:
 
 private:
 
-    virtual void computeFontSize();
     /** @name Drawing helper functions.
      * @{ */
        void drawXAxisLabels(QPainter &painter, int iXSubAxisCount);
@@ -209,7 +207,6 @@ private:
     int m_iMarginRight;
     int m_iMarginTop;
     int m_iMarginBottom;
-    QStringList m_textList;
     QRect m_lineChartRect;
     int m_iPieChartRadius;
     int m_iPieChartSpacing;
@@ -245,14 +242,12 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     setFocusPolicy(Qt::NoFocus);
     setSelectionMode(QAbstractItemView::NoSelection);
 
-
     m_pTimer = new QTimer(this);
     if (m_pTimer)
     {
         connect(m_pTimer, &QTimer::timeout, this, &UIRuntimeInfoWidget::sltTimeout);
         m_pTimer->start(5000);
     }
-
 
     retranslateUi();
     /* Add the title row: */
@@ -330,7 +325,6 @@ QString UIRuntimeInfoWidget::screenResolution(int iScreenID)
         strResolution += QString(" ");
         strResolution += m_strMonitorTurnedOff;
     }
-
     return strResolution;
 }
 
@@ -343,7 +337,6 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
 {
     ULONG uGuestScreens = m_machine.GetMonitorCount();
     m_screenResolutions.resize(uGuestScreens);
-
     if (iScreenID != -1 && iScreenID >= (int)uGuestScreens)
         return;
     if (iScreenID == -1)
@@ -361,7 +354,6 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
         if (pItem && pItem->type() == InfoRow_Resolution)
             removeRow(i);
     }
-
     for (ULONG iScreen = 0; iScreen < uGuestScreens; ++iScreen)
     {
         QString strLabel = uGuestScreens > 1 ?
@@ -455,7 +447,6 @@ void UIRuntimeInfoWidget::createInfoRows()
     updateScreenInfo();
     updateUpTime();
 
-
     /* Determine virtualization attributes: */
     CMachineDebugger debugger = m_console.GetDebugger();
 
@@ -536,12 +527,12 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     m_dataSeriesColor[1] = QColor(Qt::blue);
 
     m_iMarginLeft = 1 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    m_iMarginRight = 6 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    m_iMarginRight = 9 * QFontMetrics(font()).width('X');
     m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     m_iMarginBottom = 2 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
 
     float fAppIconSize = qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
-    m_size = QSize(14 * fAppIconSize,  4 * fAppIconSize);
+    m_size = QSize(14 * fAppIconSize,  3.5 * fAppIconSize);
     m_iPieChartSpacing = 2;
     m_iPieChartRadius = m_size.height() - (m_iMarginTop + m_iMarginBottom + 2 * m_iPieChartSpacing);
 
@@ -556,17 +547,6 @@ void UIChart::setFontSize(int iFontSize)
 int UIChart::fontSize() const
 {
     return m_font.pixelSize();
-}
-
-void UIChart::setTextList(const QStringList &textList)
-{
-    m_textList = textList;
-    computeFontSize();
-}
-
-const QStringList &UIChart::textList() const
-{
-    return m_textList;
 }
 
 bool UIChart::withPieChart() const
@@ -637,23 +617,6 @@ void UIChart::retranslateUi()
 {
     m_strGAWarning = QApplication::translate("UIVMInformationDialog", "No guest additions! This metric requires guest additions to work properly.");
     m_strResetActionLabel = QApplication::translate("UIVMInformationDialog", "Reset");
-}
-
-void UIChart::computeFontSize()
-{
-    int iFontSize = 24;
-    foreach (const QString &strText, m_textList)
-    {
-        m_font.setPixelSize(iFontSize);
-        do{
-            int iWidth = QFontMetrics(m_font).width(strText);
-            if (iWidth + m_iMarginLeft + m_iMarginRight > m_size.width())
-                --iFontSize;
-            else
-                break;
-            m_font.setPixelSize(iFontSize);
-        }while(iFontSize > 1);
-    }
 }
 
 void UIChart::paintEvent(QPaintEvent *pEvent)
@@ -1177,7 +1140,6 @@ void UIInformationRuntime::retranslateUi()
     m_strVMExitLabelTotal = QApplication::translate("UIVMInformationDialog", "Total");
     iMaximum = qMax(iMaximum, m_strVMExitLabelTotal.length());
 
-
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
     /* Add m_iDecimalCount plus 3 characters for the number and 3 for unit string: */
     iMaximum += (iDecimalCount + 6);
@@ -1192,7 +1154,6 @@ void UIInformationRuntime::retranslateUi()
                 pInfoLabel->setFixedWidth(iWidth);
         }
     }
-
 }
 
 void UIInformationRuntime::prepareObjects()
@@ -1251,7 +1212,6 @@ void UIInformationRuntime::prepareObjects()
     pContainerLayout->addWidget(m_pRuntimeInfoWidget, iRow, 0, 2, 2);
     m_pRuntimeInfoWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
 
-
     QWidget *bottomSpacerWidget = new QWidget(this);
     bottomSpacerWidget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
     bottomSpacerWidget->setVisible(true);
@@ -1264,7 +1224,6 @@ void UIInformationRuntime::prepareObjects()
 
 void UIInformationRuntime::sltTimeout()
 {
-
     if (m_performanceMonitor.isNull())
         return;
     ++m_iTimeStep;
@@ -1321,11 +1280,9 @@ void UIInformationRuntime::sltTimeout()
     /* Collect the data from IMachineDebugger::getStats(..): */
     quint64 uNetworkTotalReceive = 0;
     quint64 uNetworkTotalTransmit = 0;
-
     quint64 uDiskIOTotalWritten = 0;
     quint64 uDiskIOTotalRead = 0;
-
-   quint64 uTotalVMExits = 0;
+    quint64 uTotalVMExits = 0;
 
     QVector<DebuggerMetricData> xmlData = getTotalCounterFromDegugger(m_strQueryString);
     for (QMap<QString, UIMetric>::iterator iterator =  m_subMetrics.begin();
@@ -1481,7 +1438,6 @@ void UIInformationRuntime::prepareMetrics()
             continue;
         m_strQueryString += iterator.value().queryString();
     }
-
 }
 
 
@@ -1654,9 +1610,7 @@ void UIInformationRuntime::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritt
     }
     if (m_charts.contains(m_strDiskIOMetricName))
         m_charts[m_strDiskIOMetricName]->update();
-
 }
-
 
 void UIInformationRuntime::updateVMExitMetric(quint64 uTotalVMExits)
 {
@@ -1664,22 +1618,17 @@ void UIInformationRuntime::updateVMExitMetric(quint64 uTotalVMExits)
         return;
 
     UIMetric &VMExitMetric = m_subMetrics[m_strVMExitMetricName];
-
     quint64 iRate = uTotalVMExits - VMExitMetric.total(0);
-
     VMExitMetric.setTotal(0, uTotalVMExits);
-
     /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */
     if (!VMExitMetric.isInitialized())
     {
         VMExitMetric.setIsInitialized(true);
         return;
     }
-
     VMExitMetric.addData(0, iRate);
     quint64 iMaximum = qMax(VMExitMetric.maximum(), iRate);
     VMExitMetric.setMaximum(iMaximum);
-
     if (m_infoLabels.contains(m_strVMExitMetricName)  && m_infoLabels[m_strVMExitMetricName])
     {
         QString strInfo;
@@ -1712,7 +1661,6 @@ QVector<DebuggerMetricData> UIInformationRuntime::getTotalCounterFromDegugger(co
     if (strQuery.isEmpty())
         return xmlData;
     CMachineDebugger debugger = m_console.GetDebugger();
-
     QString strStats = debugger.GetStats(strQuery, false);
     QXmlStreamReader xmlReader;
     xmlReader.addData(strStats);
@@ -1739,7 +1687,6 @@ QVector<DebuggerMetricData> UIInformationRuntime::getTotalCounterFromDegugger(co
             }
             else
                 xmlReader.skipCurrentElement();
-
         }
     }
     return xmlData;
