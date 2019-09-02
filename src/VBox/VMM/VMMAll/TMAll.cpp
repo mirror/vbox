@@ -61,11 +61,7 @@
 # ifdef IN_RING3
 #  define TMTIMER_GET_CRITSECT(pTimer) ((pTimer)->pCritSect)
 # else
-#  define TMTIMER_GET_CRITSECT(pTimer) \
-    (     (pTimer)->enmType == TMTIMERTYPE_DEV \
-       && (pTimer)->pCritSect == ((struct PDMDEVINSR3 *)(pTimer)->u.Dev.pDevIns)->pCritSectRoR3 \
-     ? ((struct PDMDEVINSR3 *)(pTimer)->u.Dev.pDevIns)->pDevInsR0RemoveMe->pCritSectRoR0 \
-     : (PPDMCRITSECT)MMHyperR3ToCC((pTimer)->CTX_SUFF(pVM), (pTimer)->pCritSect) )
+#  define TMTIMER_GET_CRITSECT(pTimer) tmRZTimerGetCritSect(pTimer)
 # endif
 #endif
 
@@ -126,6 +122,27 @@
 # define TMTIMER_ASSERT_SYNC_CRITSECT_ORDER(pVM, pTimer) do { } while (0)
 #endif
 
+#if defined(VBOX_STRICT) && defined(IN_RING0)
+/**
+ * Helper for  TMTIMER_GET_CRITSECT
+ * @todo This needs a redo!
+ */
+DECLINLINE(PPDMCRITSECT) tmRZTimerGetCritSect(PTMTIMER pTimer)
+{
+    if (pTimer->enmType == TMTIMERTYPE_DEV)
+    {
+        PPDMDEVINSR0        pDevInsR0 = ((struct PDMDEVINSR3 *)pTimer->u.Dev.pDevIns)->pDevInsR0RemoveMe; /* !ring-3 read! */
+        struct PDMDEVINSR3 *pDevInsR3 = pDevInsR0->pDevInsForR3R0;
+        if (pTimer->pCritSect == pDevInsR3->pCritSectRoR3)
+            return pDevInsR0->pCritSectRoR0;
+        uintptr_t offCritSect = (uintptr_t)pTimer->pCritSect - (uintptr_t)pDevInsR3->pvInstanceDataR3;
+        if (offCritSect < pDevInsR0->pReg->cbInstanceShared)
+            return (PPDMCRITSECT)((uintptr_t)pDevInsR0->pvInstanceDataR0 + offCritSect);
+    }
+    return (PPDMCRITSECT)MMHyperR3ToCC((pTimer)->CTX_SUFF(pVM), pTimer->pCritSect);
+}
+
+#endif /* VBOX_STRICT*/
 
 /**
  * Notification that execution is about to start.
