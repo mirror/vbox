@@ -1599,7 +1599,7 @@ VMMR0_INT_DECL(int) PDMR0DeviceCompatSetCritSectReqHandler(PGVM pGVM, PPDMDEVICE
     {
         size_t offCritSect = pReq->pCritSectR3 - pDevIns->pDevInsForR3R0->pvInstanceDataR3;
         AssertLogRelMsgReturn(   offCritSect                     <  pDevIns->pReg->cbInstanceShared
-                              && offCritSect + sizeof(PDMPCIDEV) <= pDevIns->pReg->cbInstanceShared,
+                              /*&& offCritSect + sizeof(PDMPCIDEV) <= pDevIns->pReg->cbInstanceShared*/,
                               ("offCritSect=%p pCritSectR3=%p cbInstanceShared=%#x (%s)\n",
                                offCritSect, pReq->pCritSectR3, pDevIns->pReg->cbInstanceShared, pDevIns->pReg->szName),
                               VERR_INVALID_POINTER);
