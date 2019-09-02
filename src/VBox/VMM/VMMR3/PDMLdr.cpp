@@ -743,8 +743,10 @@ static int pdmR3LoadR0U(PUVM pUVM, const char *pszFilename, const char *pszName,
  * @returns VBox status code.
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pszModule       Module name (no path).
+ * @param   pszSearchPath   List of directories to search for the module
+ *                          (assumes @a pszModule is also a filename).
  */
-VMMR3_INT_DECL(int) PDMR3LdrLoadR0(PUVM pUVM, const char *pszModule)
+VMMR3_INT_DECL(int) PDMR3LdrLoadR0(PUVM pUVM, const char *pszModule, const char *pszSearchPath)
 {
     /*
      * Find the module.
@@ -764,7 +766,7 @@ VMMR3_INT_DECL(int) PDMR3LdrLoadR0(PUVM pUVM, const char *pszModule)
     /*
      * Okay, load it.
      */
-    return pdmR3LoadR0U(pUVM, NULL, pszModule, NULL);
+    return pdmR3LoadR0U(pUVM, NULL, pszModule, pszSearchPath);
 }
 
 

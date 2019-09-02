@@ -131,7 +131,7 @@ typedef DECLCALLBACK(int) FNPDMR3ENUM(PVM pVM, const char *pszFilename, const ch
 typedef FNPDMR3ENUM *PFNPDMR3ENUM;
 VMMR3DECL(int)          PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
 VMMR3_INT_DECL(void)    PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta);
-VMMR3_INT_DECL(int)     PDMR3LdrLoadR0(PUVM pUVM, const char *pszModule);
+VMMR3_INT_DECL(int)     PDMR3LdrLoadR0(PUVM pUVM, const char *pszModule, const char *pszSearchPath);
 VMMR3_INT_DECL(int)     PDMR3LdrGetSymbolR3(PVM pVM, const char *pszModule, const char *pszSymbol, void **ppvValue);
 VMMR3DECL(int)          PDMR3LdrGetSymbolR0(PVM pVM, const char *pszModule, const char *pszSymbol, PRTR0PTR ppvValue);
 VMMR3DECL(int)          PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const char *pszSearchPath, const char *pszSymbol, PRTR0PTR ppvValue);

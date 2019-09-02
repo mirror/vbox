@@ -332,7 +332,7 @@ int pdmR3DevInit(PVM pVM)
         {
             AssertLogRel(fR0Enabled /* not possible to just enabled raw-mode atm. */);
 
-            rc = PDMR3LdrLoadR0(pVM->pUVM, pReg->pszR0Mod);
+            rc = PDMR3LdrLoadR0(pVM->pUVM, pReg->pszR0Mod, paDevs[i].pDev->pszR0SearchPath);
             if (RT_FAILURE(rc))
                 return VMR3SetError(pVM->pUVM, rc, RT_SRC_POS, "Failed to load ring-0 module '%s' for device '%s'",
                                     pReg->pszR0Mod, pReg->szName);
