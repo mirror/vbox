@@ -156,6 +156,8 @@ private slots:
     void sltGuestAdditionsStateChange();
     void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     void sltVRDEChange();
+    void sltClipboardChange(KClipboardMode enmMode);
+    void sltDnDModeChange(KDnDMode enmMode);
 
 private:
 

@@ -166,6 +166,10 @@ signals:
         void sigShowWindow(qint64 &winId); /* use Qt::DirectConnection */
         /** Notifies about audio adapter state change. */
         void sigAudioAdapterChange();
+        /** Notifies about the clipboard mode change. */
+        void sigClipboardModeChange(KClipboardMode enmClipboardMode);
+        /** Notifies about the drag and drop mode change. */
+        void sigDnDModeChange(KDnDMode enmDnDMode);
     /** @} */
 
     /** @name Progress related signals
@@ -215,4 +219,3 @@ public:
 typedef ListenerImpl<UIMainEventListener, QObject*> UIMainEventListenerImpl;
 
 #endif /* !FEQT_INCLUDED_SRC_globals_UIMainEventListener_h */
-

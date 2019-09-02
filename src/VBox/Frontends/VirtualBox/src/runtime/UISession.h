@@ -335,6 +335,8 @@ signals:
     void sigCPUExecutionCapChange();
     void sigGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
     void sigAudioAdapterChange();
+    void sigClipboardModeChange(KClipboardMode enmMode);
+    void sigDnDModeChange(KDnDMode enmMode);
 
     /** Notifies about host-screen count change. */
     void sigHostScreenCountChange();
@@ -387,6 +389,10 @@ private slots:
     void sltHandleStorageDeviceChange(const CMediumAttachment &attachment, bool fRemoved, bool fSilent);
     /** Handles audio adapter change. */
     void sltAudioAdapterChange();
+    /** Handles clip board mode change. */
+    void sltClipboardModeChange(KClipboardMode enmMode);
+    /** Handles drag and drop mode change. */
+    void sltDnDModeChange(KDnDMode enmMode);
 
     /* Handlers: Display reconfiguration stuff: */
 #ifdef RT_OS_DARWIN

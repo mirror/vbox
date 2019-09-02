@@ -26,7 +26,9 @@
 /* COM includes: */
 #include "COMEnums.h"
 #include "CCanShowWindowEvent.h"
+#include "CClipboardModeChangedEvent.h"
 #include "CCursorPositionChangedEvent.h"
+#include "CDnDModeChangedEvent.h"
 #include "CEvent.h"
 #include "CEventSource.h"
 #include "CEventListener.h"
@@ -522,7 +524,18 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
         {
             break;
         }
-
+        case KVBoxEventType_OnClipboardModeChanged:
+        {
+            CClipboardModeChangedEvent comEventSpecific(pEvent);
+            emit sigClipboardModeChange(comEventSpecific.GetClipboardMode());
+            break;
+        }
+        case KVBoxEventType_OnDnDModeChanged:
+        {
+            CDnDModeChangedEvent comEventSpecific(pEvent);
+            emit sigDnDModeChange(comEventSpecific.GetDndMode());
+            break;
+        }
         default: break;
     }
 
@@ -533,4 +546,3 @@ STDMETHODIMP UIMainEventListener::HandleEvent(VBoxEventType_T, IEvent *pEvent)
 }
 
 #include "UIMainEventListener.moc"
-

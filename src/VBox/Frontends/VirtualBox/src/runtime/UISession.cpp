@@ -801,6 +801,16 @@ void UISession::sltAudioAdapterChange()
 
 }
 
+void UISession::sltClipboardModeChange(KClipboardMode enmMode)
+{
+    emit sigClipboardModeChange(enmMode);
+}
+
+void UISession::sltDnDModeChange(KDnDMode enmMode)
+{
+    emit sigDnDModeChange(enmMode);
+}
+
 #ifdef RT_OS_DARWIN
 /**
  * MacOS X: Restarts display-reconfiguration watchdog timer from the beginning.
@@ -1188,6 +1198,12 @@ void UISession::prepareConsoleEventHandlers()
 
     connect(gConsoleEvents, SIGNAL(sigAudioAdapterChange()),
             this, SLOT(sltAudioAdapterChange()));
+
+    connect(gConsoleEvents, SIGNAL(sigClipboardModeChange(KClipboardMode)),
+            this, SLOT(sltClipboardModeChange(KClipboardMode)));
+
+    connect(gConsoleEvents, SIGNAL(sigDnDModeChange(KDnDMode)),
+            this, SLOT(sltDnDModeChange(KDnDMode)));
 }
 
 void UISession::prepareScreens()

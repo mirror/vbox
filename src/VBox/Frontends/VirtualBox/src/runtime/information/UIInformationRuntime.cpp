@@ -79,9 +79,11 @@ class UIRuntimeInfoWidget : public QIWithRetranslateUI<QTableWidget>
 public:
 
     UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machine, const CConsole &console);
-    void guestMonitorChange(ulong uScreenId);
-    void guestAdditionStateChange();
-    void VRDEChange();
+    void updateScreenInfo(int iScreenId = -1);
+    void updateGAsVersion();
+    void updateVRDE();
+    void updateClipboardMode(KClipboardMode enmMode = KClipboardMode_Max);
+    void updateDnDMode(KDnDMode enmMode = KDnDMode_Max);
 
 protected:
 
@@ -96,10 +98,9 @@ private slots:
 private:
 
     void createInfoRows();
-    void updateScreenInfo(int iScreenId = -1);
     void updateUpTime();
-    void updateGAsVersion();
-    void updateVRDE();
+
+
     /** Searches the table for the @p item of enmLine and replaces its text. if not found inserts a new
       * row to the end of the table. Assumes only one line of the @p enmLine exists. */
     void updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1);
@@ -233,7 +234,7 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
 
 {
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-
+    setAlternatingRowColors(true);
     m_iFontHeight = QFontMetrics(font()).height();
 
     setColumnCount(2);
@@ -265,22 +266,6 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     createInfoRows();
     computeMinimumWidth();
 }
-
-void UIRuntimeInfoWidget::guestMonitorChange(ulong uScreenId)
-{
-    updateScreenInfo(uScreenId);
-}
-
-void UIRuntimeInfoWidget::guestAdditionStateChange()
-{
-    updateGAsVersion();
-}
-
-void UIRuntimeInfoWidget::VRDEChange()
-{
-    updateVRDE();
-}
-
 
 void UIRuntimeInfoWidget::retranslateUi()
 {
@@ -422,11 +407,30 @@ void UIRuntimeInfoWidget::updateGAsVersion()
 
 void UIRuntimeInfoWidget::updateVRDE()
 {
-    /* VRDE information: */
     int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
     QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1) ?
         m_strNotAvailable : QString("%1").arg(iVRDEPort);
    updateInfoRow(InfoRow_RemoteDesktop, QString("%1:").arg(m_strRemoteDesktopLabel), strVRDEInfo);
+}
+
+void UIRuntimeInfoWidget::updateClipboardMode(KClipboardMode enmMode /* = KClipboardMode_Max */)
+{
+    if (enmMode == KClipboardMode_Max)
+        updateInfoRow(InfoRow_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel),
+                      gpConverter->toString(m_machine.GetClipboardMode()));
+    else
+        updateInfoRow(InfoRow_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel),
+                      gpConverter->toString(enmMode));
+}
+
+void UIRuntimeInfoWidget::updateDnDMode(KDnDMode enmMode /* = KDnDMode_Max */)
+{
+    if (enmMode == KDnDMode_Max)
+        updateInfoRow(InfoRow_DnDMode, QString("%1:").arg(m_strDragAndDropLabel),
+                  gpConverter->toString(m_machine.GetDnDMode()));
+    else
+        updateInfoRow(InfoRow_DnDMode, QString("%1:").arg(m_strDragAndDropLabel),
+                      gpConverter->toString(enmMode));
 }
 
 void UIRuntimeInfoWidget::updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1)
@@ -451,10 +455,6 @@ void UIRuntimeInfoWidget::createInfoRows()
     updateScreenInfo();
     updateUpTime();
 
-    /* Determine clipboard mode: */
-    QString strClipboardMode = gpConverter->toString(m_machine.GetClipboardMode());
-    /* Determine Drag&Drop mode: */
-    QString strDnDMode = gpConverter->toString(m_machine.GetDnDMode());
 
     /* Determine virtualization attributes: */
     CMachineDebugger debugger = m_console.GetDebugger();
@@ -495,9 +495,8 @@ void UIRuntimeInfoWidget::createInfoRows()
     else
         strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
 
-
-    insertInfoRow(InfoRow_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel), strClipboardMode);
-    insertInfoRow(InfoRow_DnDMode, QString("%1:").arg(m_strDragAndDropLabel), strDnDMode);
+    updateClipboardMode();
+    updateDnDMode();
     insertInfoRow(InfoRow_ExecutionEngine, QString("%1:").arg(m_strExcutionEngineLabel), strExecutionEngine);
     insertInfoRow(InfoRow_NestedPaging, QString("%1:").arg(m_strNestedPagingLabel), strNestedPaging);
     insertInfoRow(InfoRow_UnrestrictedExecution, QString("%1:").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
@@ -505,7 +504,6 @@ void UIRuntimeInfoWidget::createInfoRows()
     updateGAsVersion();
     insertInfoRow(InfoRow_GuestOSType, QString("%1:").arg(m_strGuestOSTypeLabel), strOSType);
     updateVRDE();
-
 
     resizeColumnToContents(0);
     resizeColumnToContents(1);
@@ -1118,6 +1116,8 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     connect(pSession, &UISession::sigAdditionsStateChange, this, &UIInformationRuntime::sltGuestAdditionsStateChange);
     connect(pSession, &UISession::sigGuestMonitorChange, this, &UIInformationRuntime::sltGuestMonitorChange);
     connect(pSession, &UISession::sigVRDEChange, this, &UIInformationRuntime::sltVRDEChange);
+    connect(pSession, &UISession::sigClipboardModeChange, this, &UIInformationRuntime::sltClipboardChange);
+    connect(pSession, &UISession::sigDnDModeChange, this, &UIInformationRuntime::sltDnDModeChange);
 
     prepareMetrics();
     prepareObjects();
@@ -1370,7 +1370,7 @@ void UIInformationRuntime::sltTimeout()
 void UIInformationRuntime::sltGuestAdditionsStateChange()
 {
     if (m_pRuntimeInfoWidget)
-        m_pRuntimeInfoWidget->guestAdditionStateChange();
+        m_pRuntimeInfoWidget->updateGAsVersion();
     bool fGuestAdditionsAvailable = guestAdditionsAvailable(6 /* minimum major version */);
     if (m_fGuestAdditionsAvailable == fGuestAdditionsAvailable)
         return;
@@ -1383,13 +1383,25 @@ void UIInformationRuntime::sltGuestMonitorChange(KGuestMonitorChangedEventType c
     Q_UNUSED(changeType);
     Q_UNUSED(screenGeo);
     if (m_pRuntimeInfoWidget)
-        m_pRuntimeInfoWidget->guestMonitorChange(uScreenId);
+        m_pRuntimeInfoWidget->updateScreenInfo(uScreenId);
 }
 
 void UIInformationRuntime::sltVRDEChange()
 {
     if (m_pRuntimeInfoWidget)
-        m_pRuntimeInfoWidget->VRDEChange();
+        m_pRuntimeInfoWidget->updateVRDE();
+}
+
+void UIInformationRuntime::sltClipboardChange(KClipboardMode enmMode)
+{
+    if (m_pRuntimeInfoWidget)
+        m_pRuntimeInfoWidget->updateClipboardMode(enmMode);
+}
+
+void UIInformationRuntime::sltDnDModeChange(KDnDMode enmMode)
+{
+    if (m_pRuntimeInfoWidget)
+        m_pRuntimeInfoWidget->updateDnDMode(enmMode);
 }
 
 void UIInformationRuntime::prepareMetrics()
