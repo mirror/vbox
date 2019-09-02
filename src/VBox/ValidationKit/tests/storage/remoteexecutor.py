@@ -254,8 +254,8 @@ class RemoteExecutor(object):
         fRc = True;
         if self.oTxsSession is not None:
             fRc = self.oTxsSession.syncMkDir(sDir, fMode, cMsTimeout);
-        else:
-            fRc = self.execBinaryNoStdOut('mkdir', ('-m', format(fMode, 'o'), sDir));
+        elif not os.path.isdir(sDir):
+            fRc = os.mkdir(sDir, fMode);
 
         return fRc;
 
