@@ -1332,27 +1332,27 @@ static DECLCALLBACK(void) svcCall(void *,
                         else /* Announce simple formats to the OS-specific service implemenation. */
             #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
                         {
-                            if (g_pfnExtension)
-                            {
-                                VBOXCLIPBOARDEXTPARMS parms;
-                                RT_ZERO(parms);
-                                parms.u32Format = u32Formats;
+                        if (g_pfnExtension)
+                        {
+                            VBOXCLIPBOARDEXTPARMS parms;
+                            RT_ZERO(parms);
+                            parms.u32Format = u32Formats;
 
-                                g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof (parms));
-                            }
-
-                            VBOXCLIPBOARDCLIENTCMDCTX cmdCtx;
-                            RT_ZERO(cmdCtx);
-
-                            SHAREDCLIPBOARDFORMATDATA formatData;
-                            RT_ZERO(formatData);
-
-                            formatData.uFormats = u32Formats;
-
-                            rc = VBoxClipboardSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
+                            g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof (parms));
                         }
+
+                        VBOXCLIPBOARDCLIENTCMDCTX cmdCtx;
+                        RT_ZERO(cmdCtx);
+
+                        SHAREDCLIPBOARDFORMATDATA formatData;
+                        RT_ZERO(formatData);
+
+                        formatData.uFormats = u32Formats;
+
+                        rc = VBoxClipboardSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
                     }
                 }
+            }
             }
 
             break;
@@ -1753,7 +1753,8 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     /* This field used to be the length. We're using it as a version field
        with the high bit set. */
     SSMR3PutU32(pSSM, UINT32_C(0x80000002));
-    int rc = SSMR3PutStructEx(pSSM, pClient, sizeof(*pClient), 0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
+    int rc = SSMR3PutStructEx(pSSM, &pClient->State, sizeof(pClient->State), 
+                              0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
     AssertRCReturn(rc, rc);
 
 #else  /* UNIT_TEST */
@@ -1785,7 +1786,8 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     AssertRCReturn(rc, rc);
     if (lenOrVer == UINT32_C(0x80000002))
     {
-        rc = SSMR3GetStructEx(pSSM, pClient, sizeof(*pClient), 0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
+        rc = SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State),
+                              0 /*fFlags*/, &g_aClipboardClientDataFields[0], NULL);
         AssertRCReturn(rc, rc);
     }
     else
