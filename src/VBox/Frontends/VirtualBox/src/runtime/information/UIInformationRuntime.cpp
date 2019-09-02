@@ -70,7 +70,9 @@ enum InfoRow
 
 /*********************************************************************************************************************************
 *   UIRuntimeInfoWidget definition.                                                                                     *
-******************************************************************1***************************************************************/
+*********************************************************************************************************************************/
+/** A QTablWidget extention to show some runtime attributes. Some of these are updated in response to IConsole events. Uptime field
+  * is updated thru a QTimer. */
 class UIRuntimeInfoWidget : public QIWithRetranslateUI<QTableWidget>
 {
 
@@ -1229,7 +1231,6 @@ void UIInformationRuntime::sltTimeout()
     ++m_iTimeStep;
     QVector<QString> allNames;// = new ArrayList<IUnknown>();
     QVector<CUnknown> allObjects;// = new ArrayList<IUnknown>();
-
     QVector<QString>  aReturnNames;
     QVector<CUnknown>  aReturnObjects;
     QVector<QString>  aReturnUnits;
@@ -1237,7 +1238,7 @@ void UIInformationRuntime::sltTimeout()
     QVector<ULONG>  aReturnSequenceNumbers;
     QVector<ULONG>  aReturnDataIndices;
     QVector<ULONG>  aReturnDataLengths;
-
+    /* Make a query to CPerformanceCollector to fetch some metrics (e.g RAM usage): */
     QVector<LONG> returnData = m_performanceMonitor.QueryMetricsData(m_nameList,
                                                                      m_objectList,
                                                                      aReturnNames,
@@ -1249,7 +1250,7 @@ void UIInformationRuntime::sltTimeout()
                                                                      aReturnDataLengths);
     quint64 iTotalRAM = 0;
     quint64 iFreeRAM = 0;
-
+    /* Parse the result we get from CPerformanceCollector to get respective values: */
     for (int i = 0; i < aReturnNames.size(); ++i)
     {
         if (aReturnDataLengths[i] == 0)
@@ -1365,7 +1366,6 @@ void UIInformationRuntime::prepareMetrics()
 {
     m_performanceMonitor = uiCommon().virtualBox().GetPerformanceCollector();
     m_machineDebugger = m_console.GetDebugger();
-
     if (m_performanceMonitor.isNull())
         return;
 
@@ -1391,7 +1391,6 @@ void UIInformationRuntime::prepareMetrics()
 
     m_subMetrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
     {
-
         /* Network metric: */
         UIMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
         networkMetric.setQueryPrefix("Devices");
@@ -1541,7 +1540,6 @@ void UIInformationRuntime::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, q
         NetMetric.setIsInitialized(true);
         return;
     }
-
     NetMetric.addData(0, iReceiveRate);
     NetMetric.addData(1, iTransmitRate);
     quint64 iMaximum = qMax(NetMetric.maximum(), qMax(iReceiveRate, iTransmitRate));

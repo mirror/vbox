@@ -26,6 +26,7 @@
 #endif
 
 /* COM includes: */
+#include "COMEnums.h"
 #include "CEventListener.h"
 #include "CEventSource.h"
 #include "CConsole.h"
@@ -80,6 +81,10 @@ signals:
 #endif /* RT_OS_DARWIN */
     /** Notifies about audio adapter state change. */
     void sigAudioAdapterChange();
+    /** Notifies clipboard mode change. */
+    void sigClipboardModeChange(KClipboardMode enmMode);
+    /** Notifies drag and drop mode change. */
+    void sigDnDModeChange(KDnDMode enmMode);
 
 public:
 
@@ -269,8 +274,14 @@ void UIConsoleEventHandlerProxy::prepareConnections()
     connect(m_pQtListener->getWrapped(), SIGNAL(sigShowWindow(qint64 &)),
             this, SLOT(sltShowWindow(qint64 &)),
             Qt::DirectConnection);
-    connect(m_pQtListener->getWrapped(), SIGNAL(sigAudioAdapterChange()),
-            this, SIGNAL(sigAudioAdapterChange()),
+    connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigAudioAdapterChange,
+            this, &UIConsoleEventHandlerProxy::sigAudioAdapterChange,
+            Qt::DirectConnection);
+   connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigClipboardModeChange,
+            this, &UIConsoleEventHandlerProxy::sigClipboardModeChange,
+            Qt::DirectConnection);
+   connect(m_pQtListener->getWrapped(), &UIMainEventListener::sigDnDModeChange,
+            this, &UIConsoleEventHandlerProxy::sigDnDModeChange,
             Qt::DirectConnection);
 }
 
@@ -433,7 +444,12 @@ void UIConsoleEventHandler::prepareConnections()
     connect(m_pProxy, SIGNAL(sigAudioAdapterChange()),
             this, SIGNAL(sigAudioAdapterChange()),
             Qt::QueuedConnection);
+    connect(m_pProxy, &UIConsoleEventHandlerProxy::sigClipboardModeChange,
+            this, &UIConsoleEventHandler::sigClipboardModeChange,
+            Qt::QueuedConnection);
+    connect(m_pProxy, &UIConsoleEventHandlerProxy::sigDnDModeChange,
+            this, &UIConsoleEventHandler::sigDnDModeChange,
+            Qt::QueuedConnection);
 }
 
 #include "UIConsoleEventHandler.moc"
-

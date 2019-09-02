@@ -151,17 +151,19 @@ protected:
     void retranslateUi();
 
 private slots:
-
+    /** Reads the metric values for several sources and calls corresponding update functions. */
     void sltTimeout();
-    void sltGuestAdditionsStateChange();
-    void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
-    void sltVRDEChange();
-    void sltClipboardChange(KClipboardMode enmMode);
-    void sltDnDModeChange(KDnDMode enmMode);
+    /** @name These functions are connected to API events and implement necessary updates.
+      * @{ */
+        void sltGuestAdditionsStateChange();
+        void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
+        void sltVRDEChange();
+        void sltClipboardChange(KClipboardMode enmMode);
+        void sltDnDModeChange(KDnDMode enmMode);
+    /** @} */
 
 private:
 
-    /** Prepares layout. */
     void prepareObjects();
     void prepareMetrics();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
@@ -174,7 +176,6 @@ private:
 
     QString dataColorString(const QString &strChartName, int iDataIndex);
     void runTimeAttributes();
-
     QVector<DebuggerMetricData> getTotalCounterFromDegugger(const QString &strQuery);
 
     bool m_fGuestAdditionsAvailable;

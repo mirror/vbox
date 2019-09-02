@@ -86,6 +86,10 @@ signals:
 #endif /* RT_OS_DARWIN */
     /** Notifies about audio adapter state change. */
     void sigAudioAdapterChange();
+    /** Notifies clipboard mode change. */
+    void sigClipboardModeChange(KClipboardMode enmMode);
+    /** Notifies drag and drop mode change. */
+    void sigDnDModeChange(KDnDMode enmMode);
 
 public:
 
@@ -122,4 +126,3 @@ private:
 #define gConsoleEvents UIConsoleEventHandler::instance()
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_UIConsoleEventHandler_h */
-
