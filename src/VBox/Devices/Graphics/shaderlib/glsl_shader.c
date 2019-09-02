@@ -340,6 +340,12 @@ static void shader_glsl_dump_shader_source(const struct wined3d_gl_info *gl_info
     WDLOG(("    GL_OBJECT_COMPILE_STATUS_ARB: %d.\n", tmp));
     WDLOG(("\n"));
 
+    if (tmp == 0)
+    {
+        /* Compilation error, print the compiler's error messages. */
+        print_glsl_info_log(gl_info, shader);
+    }
+
     ptr = source;
     cbPtr = source_size;
     GL_EXTCALL(glGetShaderSourceARB(shader, source_size, NULL, source));
