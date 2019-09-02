@@ -316,6 +316,7 @@ typedef const SCSIINQUIRYDATA *PCSCSIINQUIRYDATA;
 
 #if defined(IN_RING3) && (defined(LOG_ENABLED) || defined(RT_STRICT))
 const char * SCSICmdText(uint8_t uCmd);
+const char * SCSIStatusText(uint8_t uStatus);
 const char * SCSISenseText(uint8_t uSense);
 const char * SCSISenseExtText(uint8_t uASC, uint8_t uASCQ);
 int SCSILogModePage(char *pszBuf, size_t cchBuffer, uint8_t *pbModePage,

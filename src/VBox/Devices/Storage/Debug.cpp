@@ -576,6 +576,26 @@ static const char * const g_apszSCSISenseNames[] =
     "(reserved)"
 };
 
+static struct
+{
+    uint8_t uStatus;
+    const char * const pszStatusText;
+} g_aSCSIStatusText[]
+=
+{
+    { 0x00, "GOOD" },
+    { 0x02, "CHECK CONDITION" },
+    { 0x04, "CONDITION MET" },
+    { 0x08, "BUSY" },
+    { 0x10, "INTERMEDIATE"},
+    { 0x14, "CONDITION MET" },
+    { 0x18, "RESERVATION CONFLICT" },
+    { 0x22, "COMMAND TERMINATED" },
+    { 0x28, "TASK SET FULL" },
+    { 0x30, "ACA ACTIVE" },
+    { 0x40, "TASK ABORTED" },
+};
+
 /**
  * SCSI Sense text
  */
@@ -934,6 +954,19 @@ const char * SCSISenseText(uint8_t uSense)
         return g_apszSCSISenseNames[uSense];
 
     return "(SCSI sense out of range)";
+}
+
+const char * SCSIStatusText(uint8_t uStatus)
+{
+    unsigned iIdx;
+
+    /* Linear search. Doesn't hurt as we don't call this function very frequently */
+    for (iIdx = 0; iIdx < RT_ELEMENTS(g_aSCSISenseText); iIdx++)
+    {
+        if (g_aSCSIStatusText[iIdx].uStatus  == uStatus)
+            return g_aSCSIStatusText[iIdx].pszStatusText;
+    }
+    return "(Unknown extended status code)";
 }
 
 /**

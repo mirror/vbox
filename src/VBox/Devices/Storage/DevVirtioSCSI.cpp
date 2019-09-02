@@ -470,7 +470,7 @@ typedef struct VIRTIOSCSIREQ
     uint16_t                       qIdx;                     /**< Index of queue this request arrived on            */
     size_t                         cbPiOut;                  /**< Size of T10 pi in buffer                          */
     uint8_t                       *pbPiOut;                  /**< Address of pi out buffer                          */
-    uint8_t                       *pbDataOut;                /**< dataout */
+    uint8_t                       *pbDataOut;                /**< dataout                                           */
     size_t                         cbPiIn;                   /**< Size of T10 pi buffer                             */
     uint8_t                       *pbPiIn;                   /**< Address of pi in buffer                           */
     size_t                         cbDataIn;                 /**< Size of datain buffer                             */
@@ -479,6 +479,7 @@ typedef struct VIRTIOSCSIREQ
     uint8_t                       *pbSense;                  /**< Pointer to R3 sense buffer                        */
     uint8_t                        uStatus;                  /**< SCSI status code                                  */
     PRTSGBUF                       pInSgBuf;                 /**< Buf vector to return PDM result to VirtIO Guest   */
+    PVIRTIOSCSI_REQ_CMD_T          pVirtqReq;                /**< Allocated to receive translated queued req        */
 } VIRTIOSCSIREQ;
 
 #define PTARGET_FROM_LUN_BUF(lunBuf) &pThis->aTargetInstances[lunBuf[1]];
@@ -525,17 +526,6 @@ DECLINLINE(const char *) virtioGetTMFTypeText(uint32_t uSubType)
     }
 }
 
-DECLINLINE(void) virtioGetControlAsyncMaskText(char *pszOutput, size_t cbOutput, uint32_t uAsyncTypesMask)
-{
-    RTStrPrintf(pszOutput, cbOutput, "%s%s%s%s%s%s",
-        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_OPERATIONAL_CHANGE) ? "CHANGE_OPERATION  "   : "",
-        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_POWER_MGMT)         ? "POWER_MGMT  "         : "",
-        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_EXTERNAL_REQUEST)   ? "EXTERNAL_REQ  "       : "",
-        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_MEDIA_CHANGE)       ? "MEDIA_CHANGE  "       : "",
-        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_MULTI_HOST)         ? "MULTI_HOST  "         : "",
-        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY)        ? "DEVICE_BUSY  "        : "");
-}
-
 DECLINLINE(const char *) virtioGetReqRespText(uint32_t vboxRc)
 {
     switch (vboxRc)
@@ -570,23 +560,15 @@ DECLINLINE(const char *) virtioGetCtrlRespText(uint32_t vboxRc)
     }
 }
 
-DECLINLINE(const char *) virtioGetScsiStatusText(uint8_t uScsiStatusCode)
+DECLINLINE(void) virtioGetControlAsyncMaskText(char *pszOutput, size_t cbOutput, uint32_t uAsyncTypesMask)
 {
-    switch (uScsiStatusCode)
-    {
-        case 0x00:  return "GOOD";
-        case 0x02:  return "CHECK CONDITION";
-        case 0x04:  return "CONDITION MET";
-        case 0x08:  return "BUSY";
-        case 0x10:  return "INTERMEDIATE";
-        case 0x14:  return "CONDITION MET";
-        case 0x18:  return "RESERVATION CONFLICT";
-        case 0x22:  return "COMMAND TERMINATED";
-        case 0x28:  return "TASK SET FULL";
-        case 0x30:  return "ACA ACTIVE";
-        case 0x40:  return "TASK ABORTED";
-        default:    return "<UNKNOWN CODE>";
-    }
+    RTStrPrintf(pszOutput, cbOutput, "%s%s%s%s%s%s",
+        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_OPERATIONAL_CHANGE) ? "CHANGE_OPERATION  "   : "",
+        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_POWER_MGMT)         ? "POWER_MGMT  "         : "",
+        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_EXTERNAL_REQUEST)   ? "EXTERNAL_REQ  "       : "",
+        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_MEDIA_CHANGE)       ? "MEDIA_CHANGE  "       : "",
+        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_MULTI_HOST)         ? "MULTI_HOST  "         : "",
+        (uAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY)        ? "DEVICE_BUSY  "        : "");
 }
 
 uint8_t virtioScsiEstimateCdbLen(uint8_t uCmd, uint8_t cbMax)
@@ -836,7 +818,7 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq
     respHdr.uStatusQualifier = 0;
 
     LogFunc(("status: %s  response: %s  0x%x%x/0x%x%x  cbXfer=%d, cbResidual: %u\n",
-                virtioGetScsiStatusText(pReq->uStatus),  virtioGetReqRespText(respHdr.uResponse),
+                SCSIStatusText(pReq->uStatus),  virtioGetReqRespText(respHdr.uResponse),
                 pReq->uStatus >> 4 & 0xf, pReq->uStatus & 0xf,
                 respHdr.uResponse >> 4 & 0xf, respHdr.uResponse & 0xf,
                 cbXfer, cbResidual));
@@ -897,6 +879,7 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq
     virtioQueuePut(pThis->hVirtio, pReq->qIdx, &reqSegBuf, true /* fFence TBD */);
     virtioQueueSync(pThis->hVirtio, pReq->qIdx);
 
+    RTMemFree(pReq->pVirtqReq);
     RTMemFree(pReq->pbSense);
     RTMemFree(pReq->pbDataIn);
     RTMemFree(pReq->pbPiIn);
@@ -1050,6 +1033,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
         respHdr.uResponse = VIRTIOSCSI_S_OK;
         respHdr.uStatusQualifier = 0;
         virtioScsiReqFinish(pThis, qIdx, &respHdr, pbSense);
+        RTMemFree(pVirtqReq);
         return VINF_SUCCESS;
     }
 
@@ -1069,6 +1053,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
         pReq->pbPiOut   = pbPiOut;
         pReq->pbDataOut = pbDataOut;
         pReq->cbPiIn    = cbPiIn;
+        pReq->pVirtqReq = pVirtqReq;
 
         if (cbPiIn)
         {
@@ -1119,19 +1104,24 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
             }
             uint8_t pbSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED, 0, SCSI_SENSE_VENDOR_SPECIFIC,
                                   0, 0, 0, 0, 10, uASC, uASCQ, 0 };
-            respHdr.cbSense = sizeof(pbSense);
+            respHdr.cbSense   = sizeof(pbSense);
             respHdr.uResidual = cbDataIn + cbDataOut;
             respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
             respHdr.uResponse = VIRTIOSCSI_S_FAILURE;
             respHdr.uStatusQualifier = 0;
             virtioScsiReqFinish(pThis, qIdx, &respHdr,  NULL /* pbSense */);
+            RTMemFree(pVirtqReq);
+            RTMemFree(pReq->pbSense);
+            RTMemFree(pReq->pbDataIn);
+            RTMemFree(pReq->pbPiIn);
+            pIMediaEx->pfnIoReqFree(pIMediaEx, pReq->hIoReq);
             return VINF_SUCCESS;
         }
     } else {
         LogRel(("Error submitting request, target not present!!\n"));
         uint8_t pbSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED, 0, SCSI_SENSE_NOT_READY,
                               0, 0, 0, 0, 10, 0, 0, 0 };
-        respHdr.cbSense = sizeof(pbSense);
+        respHdr.cbSense   = sizeof(pbSense);
         respHdr.uResidual = cbDataIn + cbDataOut;
         respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
