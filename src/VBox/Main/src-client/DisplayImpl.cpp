@@ -3429,6 +3429,10 @@ int Display::processVBVAResize(PCVBVAINFOVIEW pView, PCVBVAINFOSCREEN pScreen, v
 
     DISPLAYFBINFO *pFBInfo = &maFramebuffers[pScreen->u32ViewIndex];
 
+#ifdef DEBUG_sunlover
+    logVBVAResize(pView, pScreen, pFBInfo);
+#endif
+
     if (pScreen->u16Flags & VBVA_SCREEN_F_DISABLED)
     {
         /* Ask the framebuffer to resize using a default format. The framebuffer will be black.
