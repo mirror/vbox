@@ -243,16 +243,11 @@ PVBOXHGCMSVCHELPERS g_pHelpers;
 static RTCRITSECT g_CritSect;
 static uint32_t g_uMode;
 
-PFNHGCMSVCEXT g_pfnExtension;
-void *g_pvExtension;
-
-/* Serialization of data reading and format announcements from the RDP client. */
-static bool g_fReadingData = false;
-static bool g_fDelayedAnnouncement = false;
-static uint32_t g_u32DelayedFormats = 0;
-
 /** Is the clipboard running in headless mode? */
 static bool g_fHeadless = false;
+
+/** Holds the service extension state. */
+VBOXCLIPBOARDEXTSTATE g_ExtState = { 0 };
 
 /** Global map of all connected clients. */
 ClipboardClientMap g_mapClients;
@@ -875,16 +870,16 @@ int vboxSvcClipboardGetDataWrite(PVBOXCLIPBOARDCLIENT pClient, uint32_t cParms, 
 
     if (RT_SUCCESS(rc))
     {
-        if (g_pfnExtension)
+        if (g_ExtState.pfnExtension)
         {
             VBOXCLIPBOARDEXTPARMS parms;
             RT_ZERO(parms);
 
-            parms.u32Format = dataBlock.uFormat;
+            parms.uFormat   = dataBlock.uFormat;
             parms.u.pvData  = dataBlock.pvData;
             parms.cbData    = dataBlock.cbData;
 
-            g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof(parms));
+            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_WRITE, &parms, sizeof(parms));
         }
 
         rc = VBoxClipboardSvcImplWriteData(pClient, &cmdCtx, &dataBlock);
@@ -1119,10 +1114,15 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
 #endif
             if (RT_SUCCESS(rc))
             {
-                VBOXCLIPBOARDCLIENTMAPENTRY ClientEntry;
-                RT_ZERO(ClientEntry);
+                /* Assign weak pointer to client map .*/
+                g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
 
-                g_mapClients[u32ClientID] = ClientEntry; /** @todo Handle OOM / collisions? */
+                /* For now we ASSUME that the first client ever connected is in charge for
+                 * communicating withe the service extension.
+                 *
+                 ** @todo This needs to be fixed ASAP w/o breaking older guest / host combos. */
+                if (g_ExtState.uClientID == 0)
+                    g_ExtState.uClientID = u32ClientID;
             }
         }
     }
@@ -1318,39 +1318,25 @@ static DECLCALLBACK(void) svcCall(void *,
                     rc = vboxSvcClipboardSetSource(pClient, SHAREDCLIPBOARDSOURCE_REMOTE);
                     if (RT_SUCCESS(rc))
                     {
-            #if 0
-                        if (u32Formats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+                        if (g_ExtState.pfnExtension)
                         {
-                            /* Tell the guest that we want to start a reading transfer
-                             * (from guest to the host). */
-                            rc = vboxSvcClipboardReportMsg(pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START,
-                                                           0 /* u32Formats == 0 means reading data */);
+                            VBOXCLIPBOARDEXTPARMS parms;
+                            RT_ZERO(parms);
 
-                            /* Note: Announcing the actual format will be done in the
-                                     host service guest call URI handler (vboxSvcClipboardURIHandler). */
+                            parms.uFormat = u32Formats;
+
+                            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
                         }
-                        else /* Announce simple formats to the OS-specific service implemenation. */
-            #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
-                        {
-                            if (g_pfnExtension)
-                            {
-                                VBOXCLIPBOARDEXTPARMS parms;
-                                RT_ZERO(parms);
-                                parms.u32Format = u32Formats;
 
-                                g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof (parms));
-                            }
+                        VBOXCLIPBOARDCLIENTCMDCTX cmdCtx;
+                        RT_ZERO(cmdCtx);
 
-                            VBOXCLIPBOARDCLIENTCMDCTX cmdCtx;
-                            RT_ZERO(cmdCtx);
+                        SHAREDCLIPBOARDFORMATDATA formatData;
+                        RT_ZERO(formatData);
 
-                            SHAREDCLIPBOARDFORMATDATA formatData;
-                            RT_ZERO(formatData);
+                        formatData.uFormats = u32Formats;
 
-                            formatData.uFormats = u32Formats;
-
-                            rc = VBoxClipboardSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
-                        }
+                        rc = VBoxClipboardSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
                     }
                 }
             }
@@ -1446,34 +1432,46 @@ static DECLCALLBACK(void) svcCall(void *,
                         {
                             uint32_t cbActual = 0;
 
-                            if (g_pfnExtension)
+                            /* If there is a service extension active, try reading data from it first. */
+                            if (g_ExtState.pfnExtension)
                             {
                                 VBOXCLIPBOARDEXTPARMS parms;
                                 RT_ZERO(parms);
 
-                                parms.u32Format = u32Format;
-                                parms.u.pvData  = pv;
-                                parms.cbData    = cb;
+                                parms.uFormat  = u32Format;
+                                parms.u.pvData = pv;
+                                parms.cbData   = cb;
 
-                                g_fReadingData = true;
+                                g_ExtState.fReadingData = true;
 
-                                rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ, &parms, sizeof (parms));
-                                LogFlowFunc(("DATA: g_fDelayedAnnouncement = %d, g_u32DelayedFormats = 0x%x\n", g_fDelayedAnnouncement, g_u32DelayedFormats));
+                                /* Read clipboard data from the extension. */
+                                rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ,
+                                                             &parms, sizeof(parms));
 
-                                if (g_fDelayedAnnouncement)
+                                LogFlowFunc(("g_ExtState.fDelayedAnnouncement=%RTbool, g_ExtState.uDelayedFormats=0x%x\n",
+                                             g_ExtState.fDelayedAnnouncement, g_ExtState.uDelayedFormats));
+
+                                /* Did the extension send the clipboard formats yet?
+                                 * Otherwise, do this now. */
+                                if (g_ExtState.fDelayedAnnouncement)
                                 {
-                                    vboxSvcClipboardOldReportMsg(pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE, g_u32DelayedFormats);
-                                    g_fDelayedAnnouncement = false;
-                                    g_u32DelayedFormats = 0;
+                                    vboxSvcClipboardOldReportMsg(pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE,
+                                                                 g_ExtState.uDelayedFormats);
+
+                                    g_ExtState.fDelayedAnnouncement = false;
+                                    g_ExtState.uDelayedFormats = 0;
                                 }
 
-                                g_fReadingData = false;
+                                g_ExtState.fReadingData = false;
 
-                                if (RT_SUCCESS (rc))
+                                if (RT_SUCCESS(rc))
                                 {
                                     cbActual = parms.cbData;
                                 }
                             }
+
+                            /* Note: The host clipboard *always* has precedence over the service extension above,
+                             *       so data which has been read above might get overridden by the host clipboard eventually. */
 
                             /* Release any other pending read, as we only
                              * support one pending read at one time. */
@@ -1493,9 +1491,10 @@ static DECLCALLBACK(void) svcCall(void *,
                                 rc = VBoxClipboardSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
                             }
 
-                            /* Remember our read request until it is completed.
-                             * See the protocol description above for more
-                             * information. */
+                            /*
+                             * Remember our read request until it is completed.
+                             * See the protocol description above for more information.
+                             */
                             if (rc == VINF_HGCM_ASYNC_EXECUTE)
                             {
                                 if (VBoxSvcClipboardLock())
@@ -1821,40 +1820,46 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
 
     int rc = VINF_SUCCESS;
 
-    PVBOXCLIPBOARDCLIENT pClient = NULL; /** @todo FIX !!! */
-
-    if (pClient != NULL)
+    /* Figure out if the client in charge for the service extension still is connected. */
+    ClipboardClientMap::const_iterator itClient = g_mapClients.find(g_ExtState.uClientID);
+    if (itClient != g_mapClients.end())
     {
+        PVBOXCLIPBOARDCLIENT pClient = itClient->second;
+        AssertPtr(pClient);
+
         switch (u32Function)
         {
+            /* The service extension announces formats to the guest. */
             case VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE:
             {
-                LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE: g_fReadingData=%RTbool\n", g_fReadingData));
-                if (g_fReadingData)
+                LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE: g_ExtState.fReadingData=%RTbool\n", g_ExtState.fReadingData));
+                if (g_ExtState.fReadingData)
                 {
-                    g_fDelayedAnnouncement = true;
-                    g_u32DelayedFormats = u32Format;
+                    g_ExtState.fDelayedAnnouncement = true;
+                    g_ExtState.uDelayedFormats = u32Format;
                 }
-            #if 0
                 else
                 {
-                    vboxSvcClipboardReportMsg(g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS, u32Format);
+                    rc = vboxSvcClipboardOldReportMsg(pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE, u32Format);
                 }
-            #endif
-            } break;
 
-#if 0
+                break;
+            }
+
+            /* The service extension wants read data from the guest. */
             case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
             {
-                vboxSvcClipboardReportMsg(g_pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Format);
-            } break;
-#endif
+                rc = vboxSvcClipboardOldReportMsg(pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, u32Format);
+                break;
+            }
 
             default:
                 /* Just skip other messages. */
                 break;
         }
     }
+    else
+        rc = VERR_NOT_FOUND;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1870,20 +1875,21 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
     if (pfnExtension)
     {
         /* Install extension. */
-        g_pfnExtension = pfnExtension;
-        g_pvExtension = pvExtension;
+        g_ExtState.pfnExtension = pfnExtension;
+        g_ExtState.pvExtension  = pvExtension;
 
         parms.u.pfnCallback = extCallback;
-        g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
+
+        g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
     }
     else
     {
-        if (g_pfnExtension)
-            g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
+        if (g_ExtState.pfnExtension)
+            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK, &parms, sizeof(parms));
 
         /* Uninstall extension. */
-        g_pfnExtension = NULL;
-        g_pvExtension = NULL;
+        g_ExtState.pfnExtension = NULL;
+        g_ExtState.pvExtension = NULL;
     }
 
     return VINF_SUCCESS;

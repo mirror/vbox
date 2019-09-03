@@ -39,10 +39,8 @@
 /*********************************************************************************************************************************
 *   Externals                                                                                                                    *
 *********************************************************************************************************************************/
-extern PFNHGCMSVCEXT g_pfnExtension;
-extern void *g_pvExtension;
+extern VBOXCLIPBOARDEXTSTATE g_ExtState;
 extern PVBOXHGCMSVCHELPERS g_pHelpers;
-
 extern ClipboardClientQueue g_listClientsDeferred;
 
 
@@ -1237,8 +1235,8 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
 {
     RT_NOREF(paParms, tsArrival);
 
-    LogFlowFunc(("uClient=%RU32, u32Function=%RU32 (%s), cParms=%RU32, g_pfnExtension=%p\n",
-                 pClient->uClientID, u32Function, VBoxClipboardGuestMsgToStr(u32Function), cParms, g_pfnExtension));
+    LogFlowFunc(("uClient=%RU32, u32Function=%RU32 (%s), cParms=%RU32, g_ExtState.pfnExtension=%p\n",
+                 pClient->uClientID, u32Function, VBoxClipboardGuestMsgToStr(u32Function), cParms, g_ExtState.pfnExtension));
 
     /* Check if we've the right mode set. */
     if (!vboxSvcClipboardURIMsgIsAllowed(vboxSvcClipboardGetMode(), u32Function))
@@ -1249,10 +1247,10 @@ int vboxSvcClipboardURIHandler(PVBOXCLIPBOARDCLIENT pClient,
 
     /* A (valid) service extension is needed because VBoxSVC needs to keep track of the
      * clipboard areas cached on the host. */
-    if (!g_pfnExtension)
+    if (!g_ExtState.pfnExtension)
     {
 #ifdef DEBUG_andy
-        AssertPtr(g_pfnExtension);
+        AssertPtr(g_ExtState.pfnExtension);
 #endif
         LogFunc(("Invalid / no service extension set, skipping URI handling\n"));
         return VERR_NOT_SUPPORTED;
@@ -1917,7 +1915,7 @@ int vboxSvcClipboardURIAreaRegister(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHA
 
     int rc;
 
-    if (g_pfnExtension)
+    if (g_ExtState.pfnExtension)
     {
         VBOXCLIPBOARDEXTAREAPARMS parms;
         RT_ZERO(parms);
@@ -1925,7 +1923,7 @@ int vboxSvcClipboardURIAreaRegister(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHA
         parms.uID = NIL_SHAREDCLIPBOARDAREAID;
 
         /* As the meta data is now complete, register a new clipboard on the host side. */
-        rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER, &parms, sizeof(parms));
+        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER, &parms, sizeof(parms));
         if (RT_SUCCESS(rc))
         {
             /* Note: Do *not* specify SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST as flags here, as VBoxSVC took care of the
@@ -1962,14 +1960,14 @@ int vboxSvcClipboardURIAreaUnregister(PVBOXCLIPBOARDCLIENTSTATE pClientState, PS
 
     int rc = VINF_SUCCESS;
 
-    if (g_pfnExtension)
+    if (g_ExtState.pfnExtension)
     {
         VBOXCLIPBOARDEXTAREAPARMS parms;
         RT_ZERO(parms);
 
         parms.uID = pTransfer->pArea->GetID();
 
-        rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER, &parms, sizeof(parms));
+        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER, &parms, sizeof(parms));
         if (RT_SUCCESS(rc))
         {
             rc = pTransfer->pArea->Close();
@@ -2015,7 +2013,7 @@ int vboxSvcClipboardURIAreaAttach(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHARE
 
     int rc = VINF_SUCCESS;
 
-    if (g_pfnExtension)
+    if (g_ExtState.pfnExtension)
     {
         VBOXCLIPBOARDEXTAREAPARMS parms;
         RT_ZERO(parms);
@@ -2026,7 +2024,7 @@ int vboxSvcClipboardURIAreaAttach(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHARE
          * to keep a reference to it. The host does the actual book keeping / cleanup then.
          *
          * This might fail if the host does not have a most recent clipboard area (yet). */
-        rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH, &parms, sizeof(parms));
+        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH, &parms, sizeof(parms));
         if (RT_SUCCESS(rc))
             rc = pTransfer->pArea->OpenTemp(parms.uID /* Area ID */);
 
@@ -2060,13 +2058,13 @@ int vboxSvcClipboardURIAreaDetach(PVBOXCLIPBOARDCLIENTSTATE pClientState, PSHARE
 
     int rc = VINF_SUCCESS;
 
-    if (g_pfnExtension)
+    if (g_ExtState.pfnExtension)
     {
         VBOXCLIPBOARDEXTAREAPARMS parms;
         RT_ZERO(parms);
         parms.uID = uAreaID;
 
-        rc = g_pfnExtension(g_pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
+        rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_AREA_DETACH, &parms, sizeof(parms));
 
         LogFlowFunc(("Detached client %RU32 from clipboard area %RU32 with rc=%Rrc\n",
                      pClientState->u32ClientID, uAreaID, rc));

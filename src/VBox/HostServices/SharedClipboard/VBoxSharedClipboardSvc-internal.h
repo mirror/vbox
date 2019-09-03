@@ -181,14 +181,6 @@ typedef struct _VBOXCLIPBOARDCLIENT
 } VBOXCLIPBOARDCLIENT, *PVBOXCLIPBOARDCLIENT;
 
 /**
- * Structure for keeping a single (HGCM) client map entry.
- * Currently empty.
- */
-typedef struct _VBOXCLIPBOARDCLIENTMAPENTRY
-{
-} VBOXCLIPBOARDCLIENTMAPENTRY;
-
-/**
  * Structure for keeping a single event source map entry.
  * Currently empty.
  */
@@ -196,14 +188,40 @@ typedef struct _VBOXCLIPBOARDEVENTSOURCEMAPENTRY
 {
 } VBOXCLIPBOARDEVENTSOURCEMAPENTRY;
 
-/** Map holding information about connected HGCM clients. Key is the (unique) HGCM client ID. */
-typedef std::map<uint32_t, VBOXCLIPBOARDCLIENTMAPENTRY> ClipboardClientMap;
+/** Map holding information about connected HGCM clients. Key is the (unique) HGCM client ID.
+ *  The value is a weak pointer to PVBOXCLIPBOARDCLIENT, which is owned by HGCM. */
+typedef std::map<uint32_t, PVBOXCLIPBOARDCLIENT> ClipboardClientMap;
 
 /** Map holding information about event sources. Key is the (unique) event source ID. */
 typedef std::map<VBOXCLIPBOARDEVENTSOURCEID, VBOXCLIPBOARDEVENTSOURCEMAPENTRY> ClipboardEventSourceMap;
 
 /** Simple queue (list) which holds deferred (waiting) clients. */
 typedef std::list<uint32_t> ClipboardClientQueue;
+
+/**
+ * Structure for keeping the Shared Clipboard service extension state.
+ *
+ * A service extension is optional, and can be installed by a host component
+ * to communicate with the Shared Clipboard host service.
+ */
+typedef struct _VBOXCLIPBOARDEXTSTATE
+{
+    /** Pointer to the actual service extension handle. */
+    PFNHGCMSVCEXT  pfnExtension;
+    /** Opaque pointer to extension-provided data. Don't touch. */
+    void          *pvExtension;
+    /** The HGCM client ID currently assigned to this service extension.
+     *  At the moment only one HGCM client can be assigned per extension. */
+    uint32_t       uClientID;
+    /** Whether the host service is reading clipboard data currently. */
+    bool           fReadingData;
+    /** Whether the service extension has sent the clipboard formats while
+     *  the the host service is reading clipboard data from it. */
+    bool           fDelayedAnnouncement;
+    /** The actual clipboard formats announced while the host service
+     *  is reading clipboard data from the extension. */
+    uint32_t       uDelayedFormats;
+} VBOXCLIPBOARDEXTSTATE, *PVBOXCLIPBOARDEXTSTATE;
 
 /*
  * The service functions. Locking is between the service thread and the platform-dependent (window) thread.
