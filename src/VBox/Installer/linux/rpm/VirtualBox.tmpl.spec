@@ -20,7 +20,7 @@
 %define %PYTHON% 1
 %define VBOXDOCDIR %{_defaultdocdir}/%NAME%
 %global __requires_exclude_from ^/usr/lib/virtualbox/VBoxPython.*$
-%{!?python_sitelib: %define python_sitelib %(%{vbox_python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+%{!?python_sitelib: %define python_sitelib %(%{vbox_python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Summary:   Oracle VM VirtualBox
 Name:      %NAME%
