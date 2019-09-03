@@ -777,18 +777,8 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBO
 
     LogFlowFunc(("uFormats=0x%x, hWnd=%p\n", pFormats->uFormats, pCtx->Win.hWnd));
 
-    if (!(pFormats->uFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST))
-    {
-        /*
-         * The guest announced formats. Forward to the window thread.
-         */
-        PostMessage(pCtx->Win.hWnd, VBOX_CLIPBOARD_WM_REPORT_FORMATS,
-                    0 /* wParam */, pFormats->uFormats /* lParam */);
-
-        rc = VINF_SUCCESS;
-    }
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    else if (pFormats->uFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+    if (pFormats->uFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
     {
         PSHAREDCLIPBOARDURITRANSFER pTransfer;
         rc = vboxSvcClipboardURITransferStart(pClient,
@@ -804,9 +794,24 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBO
                       (ClipboardDataObjectImpl::GetData()). */
         }
     }
+    else
+    {
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+
+        /*
+         * The guest announced formats. Forward to the window thread.
+         */
+        PostMessage(pCtx->Win.hWnd, VBOX_CLIPBOARD_WM_REPORT_FORMATS,
+                    0 /* wParam */, pFormats->uFormats /* lParam */);
+
+        rc = VINF_SUCCESS;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    }
+
     else
         rc = VERR_NOT_SUPPORTED;
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
     LogFlowFuncLeaveRC(rc);
     return rc;
