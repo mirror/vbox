@@ -10289,7 +10289,10 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
      * With nested-guests, evaluating pending events may cause VM-exits.
      */
     if (TRPMHasTrap(pVCpu))
+    {
+        Assert(!pVmxTransient->fIsNestedGuest || !pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents);
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
+    }
 
     uint32_t fIntrState;
     rcStrict = hmR0VmxEvaluatePendingEvent(pVCpu, pVmxTransient, &fIntrState);
