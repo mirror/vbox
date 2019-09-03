@@ -419,6 +419,15 @@ void MyCheckFormatCString(PVFMTCHKSTATE pState, const char *pszFmt)
                 break;
             }
 
+            case 'R':
+                if (   pszFmt[0] == 'h'
+                    && pszFmt[1] == 'X')
+                {
+                    VFmtChkRequirePresentArg(pState, pszPct, iArg, "Expected argument");
+                    iArg++;
+                }
+                RT_FALL_THROUGH();
+
             default:
                 VFmtChkRequirePresentArg(pState, pszPct, iArg, "Expected argument");
                 iArg++;
