@@ -56,7 +56,7 @@ typedef VRDPCLIPBOARDEXTCALLBACK *PFNVRDPCLIPBOARDEXTCALLBACK;
 
 typedef struct _VBOXCLIPBOARDEXTPARMS
 {
-    uint32_t   u32Format;
+    uint32_t                        uFormat;
     union
     {
         void                       *pvData;
