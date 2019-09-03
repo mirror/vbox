@@ -2483,13 +2483,13 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
 
     /*
      * Update the IDT-vectoring information fields if the VM-exit is triggered during delivery of an event.
-     * See Intel spec. 27.2.3 "Information for VM Exits During Event Delivery".
+     * See Intel spec. 27.2.4 "Information for VM Exits During Event Delivery".
      */
     {
         uint8_t    uVector;
         uint32_t   fFlags;
         uint32_t   uErrCode;
-        bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, &uVector, &fFlags,  &uErrCode, NULL /* uCr2 */);
+        bool const fInEventDelivery = IEMGetCurrentXcpt(pVCpu, &uVector, &fFlags, &uErrCode, NULL /* puCr2 */);
         if (fInEventDelivery)
         {
             /*
@@ -2498,7 +2498,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
              * causes the VM exit directly (exception bitmap). Therefore, we must not set the
              * original event information into the IDT-vectoring information fields.
              *
-             * See Intel spec. 27.2.4 Information for VM Exits During Event Delivery
+             * See Intel spec. 27.2.4 "Information for VM Exits During Event Delivery".
              */
             if (   uExitReason != VMX_EXIT_TRIPLE_FAULT
                 && (   uExitReason != VMX_EXIT_XCPT_OR_NMI
@@ -2512,6 +2512,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
                                                  | RT_BF_MAKE(VMX_BF_IDT_VECTORING_INFO_VALID,          1);
                 iemVmxVmcsSetIdtVectoringInfo(pVCpu, uIdtVectoringInfo);
                 iemVmxVmcsSetIdtVectoringErrCode(pVCpu, uErrCode);
+                LogFlow(("vmexit: idt_info=%#RX32 idt_err_code=%#RX32\n", uIdtVectoringInfo, uErrCode));
             }
         }
     }
@@ -2529,7 +2530,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
         Assert(uExitReason != VMX_EXIT_INT_WINDOW);
     }
 
-    /* Paranoia. */
+    /* For exception or NMI VM-exits the VM-exit interruption info. field must be valid. */
     Assert(uExitReason != VMX_EXIT_XCPT_OR_NMI || VMX_EXIT_INT_INFO_IS_VALID(pVmcs->u32RoExitIntInfo));
 
     /*
