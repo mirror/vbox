@@ -831,10 +831,26 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                      * Hex stuff.
                      */
                     case 'x':
+                    case 'X':
                     {
                         uint8_t *pu8 = va_arg(*pArgs, uint8_t *);
+                        uint64_t uMemAddr;
+                        int      cchMemAddrWidth;
+
                         if (cchPrecision < 0)
                             cchPrecision = 16;
+
+                        if (ch == 'x')
+                        {
+                            uMemAddr = (uintptr_t)pu8;
+                            cchMemAddrWidth = sizeof(pu8) * 2;
+                        }
+                        else
+                        {
+                            uMemAddr = va_arg(*pArgs, uint64_t);
+                            cchMemAddrWidth = uMemAddr > UINT32_MAX || uMemAddr + cchPrecision > UINT32_MAX ? 16 : 8;
+                        }
+
                         if (pu8)
                         {
                             switch (*(*ppszFormat)++)
@@ -853,8 +869,8 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                     while (off < cchPrecision)
                                     {
                                         int i;
-                                        cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                                           "%s%0*p %04x:", off ? "\n" : "", sizeof(pu8) * 2, (uintptr_t)pu8, off);
+                                        cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s%0*llx/%04x:",
+                                                           off ? "\n" : "", cchMemAddrWidth, uMemAddr + off, off);
                                         for (i = 0; i < cchWidth && off + i < cchPrecision ; i++)
                                             cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                                off + i < cchPrecision ? !(i & 7) && i ? "-%02x" : " %02x" : "   ",
@@ -903,14 +919,13 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                         {
                                             if (cDuplicates > 0)
                                             {
-                                                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                                                   "\n%.*s ****  <ditto x %u>",
-                                                                   sizeof(pu8) * 2, "****************", cDuplicates);
+                                                cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "\n%.*s ****  <ditto x %u>",
+                                                                   cchMemAddrWidth, "****************", cDuplicates);
                                                 cDuplicates = 0;
                                             }
 
-                                            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                                               "%s%0*p %04x:", off ? "\n" : "", sizeof(pu8) * 2, (uintptr_t)pu8, off);
+                                            cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s%0*llx/%04x:",
+                                                               off ? "\n" : "", cchMemAddrWidth, uMemAddr + off, off);
                                             for (i = 0; i < cchWidth && off + i < cchPrecision ; i++)
                                                 cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
                                                                      off + i < cchPrecision ? !(i & 7) && i
@@ -944,7 +959,11 @@ DECLHIDDEN(size_t) rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, co
                                 {
                                     if (cchPrecision-- > 0)
                                     {
-                                        cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%02x", *pu8++);
+                                        if (ch == 'x')
+                                            cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%02x", *pu8++);
+                                        else
+                                            cch = RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%0*llx: %02x",
+                                                              cchMemAddrWidth, uMemAddr, *pu8++);
                                         for (; cchPrecision > 0; cchPrecision--, pu8++)
                                             cch += RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, " %02x", *pu8);
                                         return cch;

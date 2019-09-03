@@ -1470,6 +1470,15 @@ RTDECL(char *) RTStrPrevCp(const char *pszStart, const char *psz);
  *                            i.e. a series of space separated bytes formatted as two digit hex value.
  *                            Use the precision to specify the length. Default length is 16 bytes.
  *                            The width, if specified, is ignored.
+ *      - \%RhXd            - Same as \%Rhxd, but takes an additional uint64_t
+ *                            value with the memory start address/offset after
+ *                            the memory pointer.
+ *      - \%RhXD            - Same as \%RhxD, but takes an additional uint64_t
+ *                            value with the memory start address/offset after
+ *                            the memory pointer.
+ *      - \%RhXs            - Same as \%Rhxs, but takes an additional uint64_t
+ *                            value with the memory start address/offset after
+ *                            the memory pointer.
  *
  *      - \%Rhcb            - Human readable byte size formatting, using
  *                            binary unit prefixes (GiB, MiB and such).  Takes a
