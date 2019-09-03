@@ -302,9 +302,11 @@ bool VBoxSvcClipboardGetHeadless(void)
     return g_fHeadless;
 }
 
-static void vboxSvcClipboardModeSet(uint32_t u32Mode)
+static int vboxSvcClipboardModeSet(uint32_t uMode)
 {
-    switch (u32Mode)
+    int rc = VERR_NOT_SUPPORTED;
+
+    switch (uMode)
     {
         case VBOX_SHARED_CLIPBOARD_MODE_OFF:
             RT_FALL_THROUGH();
@@ -313,13 +315,22 @@ static void vboxSvcClipboardModeSet(uint32_t u32Mode)
         case VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST:
             RT_FALL_THROUGH();
         case VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL:
-            g_uMode = u32Mode;
+        {
+            g_uMode = uMode;
+
+            rc = VINF_SUCCESS;
             break;
+        }
 
         default:
+        {
             g_uMode = VBOX_SHARED_CLIPBOARD_MODE_OFF;
             break;
+        }
     }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 bool VBoxSvcClipboardLock(void)
@@ -1269,7 +1280,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
         case VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE:
         {
-            uint32_t u32Formats = 0;
+            uint32_t uFormats = 0;
 
             if (pClient->State.uProtocolVer == 0)
             {
@@ -1283,7 +1294,7 @@ static DECLCALLBACK(void) svcCall(void *,
                 }
                 else
                 {
-                    rc = HGCMSvcGetU32(&paParms[0], &u32Formats);
+                    rc = HGCMSvcGetU32(&paParms[0], &uFormats);
                 }
             }
             else
@@ -1300,7 +1311,7 @@ static DECLCALLBACK(void) svcCall(void *,
                 }
                 else
                 {
-                    rc = HGCMSvcGetU32(&paParms[1], &u32Formats);
+                    rc = HGCMSvcGetU32(&paParms[1], &uFormats);
 
                     /** @todo Handle rest. */
                 }
@@ -1323,7 +1334,7 @@ static DECLCALLBACK(void) svcCall(void *,
                             VBOXCLIPBOARDEXTPARMS parms;
                             RT_ZERO(parms);
 
-                            parms.uFormat = u32Formats;
+                            parms.uFormat = uFormats;
 
                             g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
                         }
@@ -1334,7 +1345,7 @@ static DECLCALLBACK(void) svcCall(void *,
                         SHAREDCLIPBOARDFORMATDATA formatData;
                         RT_ZERO(formatData);
 
-                        formatData.uFormats = u32Formats;
+                        formatData.uFormats = uFormats;
 
                         rc = VBoxClipboardSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
                     }
@@ -1660,20 +1671,14 @@ static DECLCALLBACK(int) svcHostCall(void *,
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("u32Function=%RU32, cParms=%RU32, paParms=%p\n", u32Function, cParms, paParms));
+    LogFlowFunc(("u32Function=%RU32 (%s), cParms=%RU32, paParms=%p\n",
+                 u32Function, VBoxClipboardHostMsgToStr(u32Function), cParms, paParms));
 
     switch (u32Function)
     {
         case VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE:
         {
-            LogFunc(("VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE\n"));
-
             if (cParms != 1)
-            {
-                rc = VERR_INVALID_PARAMETER;
-            }
-            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT   /* mode */
-                    )
             {
                 rc = VERR_INVALID_PARAMETER;
             }
@@ -1682,28 +1687,31 @@ static DECLCALLBACK(int) svcHostCall(void *,
                 uint32_t u32Mode = VBOX_SHARED_CLIPBOARD_MODE_OFF;
 
                 rc = HGCMSvcGetU32(&paParms[0], &u32Mode);
-
-                /* The setter takes care of invalid values. */
-                vboxSvcClipboardModeSet(u32Mode);
+                if (RT_SUCCESS(rc))
+                    rc = vboxSvcClipboardModeSet(u32Mode);
             }
-        } break;
+
+            break;
+        }
 
         case VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS:
         {
-            uint32_t u32Headless = g_fHeadless;
-
-            rc = VERR_INVALID_PARAMETER;
             if (cParms != 1)
-                break;
-
-            rc = HGCMSvcGetU32(&paParms[0], &u32Headless);
-            if (RT_SUCCESS(rc))
-                LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, u32Headless=%u\n",
-                            (unsigned) u32Headless));
-
-            g_fHeadless = RT_BOOL(u32Headless);
-
-        } break;
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                uint32_t uHeadless;
+                rc = HGCMSvcGetU32(&paParms[0], &uHeadless);
+                if (RT_SUCCESS(rc))
+                {
+                    g_fHeadless = RT_BOOL(uHeadless);
+                    LogRel(("Shared Clipboard: Service running in %s mode\n", g_fHeadless ? "headless" : "normal"));
+                }
+            }
+            break;
+        }
 
         default:
         {
@@ -1712,7 +1720,8 @@ static DECLCALLBACK(int) svcHostCall(void *,
 #else
             rc = VERR_NOT_IMPLEMENTED;
 #endif
-        } break;
+            break;
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
