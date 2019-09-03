@@ -8426,7 +8426,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
             /* The guest announces clipboard formats. This must be delivered to all clients. */
             if (pThis->mConsoleVRDPServer)
                 pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_FORMAT_ANNOUNCE,
-                                                         pParms->u32Format,
+                                                         pParms->uFormat,
                                                          NULL,
                                                          0,
                                                          NULL);
@@ -8445,7 +8445,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
              */
             if (pThis->mConsoleVRDPServer)
                 pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_DATA_READ,
-                                                         pParms->u32Format,
+                                                         pParms->uFormat,
                                                          pParms->u.pvData,
                                                          pParms->cbData,
                                                          &pParms->cbData);
@@ -8460,7 +8460,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
 
             if (pThis->mConsoleVRDPServer)
                 pThis->mConsoleVRDPServer->SendClipboard(VRDE_CLIPBOARD_FUNCTION_DATA_WRITE,
-                                                         pParms->u32Format,
+                                                         pParms->uFormat,
                                                          pParms->u.pvData,
                                                          pParms->cbData,
                                                          NULL);
