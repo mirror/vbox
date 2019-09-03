@@ -1019,6 +1019,96 @@ int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENT pClient, SHAREDCLIPBOARDSOURC
     return rc;
 }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int vboxSvcClipboardURITransferStart(PVBOXCLIPBOARDCLIENT pClient,
+                                     SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHAREDCLIPBOARDSOURCE enmSource,
+                                     PSHAREDCLIPBOARDURITRANSFER *ppTransfer)
+{
+    LogFlowFuncEnter();
+
+    SharedClipboardURICtxTransfersCleanup(&pClient->URI);
+
+    int rc;
+
+    if (!SharedClipboardURICtxTransfersMaximumReached(&pClient->URI))
+    {
+        PSHAREDCLIPBOARDURITRANSFER pTransfer;
+        rc = SharedClipboardURITransferCreate(enmDir, enmSource, &pTransfer);
+        if (RT_SUCCESS(rc))
+        {
+            SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+            RT_ZERO(creationCtx);
+
+            if (enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
+            {
+                rc = vboxSvcClipboardURIAreaRegister(&pClient->State, pTransfer);
+                if (RT_SUCCESS(rc))
+                {
+                    creationCtx.enmSource = pClient->State.enmSource;
+
+                    creationCtx.Interface.pfnTransferOpen    = vboxSvcClipboardURITransferOpen;
+                    creationCtx.Interface.pfnTransferClose   = vboxSvcClipboardURITransferClose;
+                    creationCtx.Interface.pfnListOpen        = vboxSvcClipboardURIListOpen;
+                    creationCtx.Interface.pfnListClose       = vboxSvcClipboardURIListClose;
+                    creationCtx.Interface.pfnObjOpen         = vboxSvcClipboardURIObjOpen;
+                    creationCtx.Interface.pfnObjClose        = vboxSvcClipboardURIObjClose;
+
+                    creationCtx.Interface.pfnGetRoots        = vboxSvcClipboardURIGetRoots;
+                    creationCtx.Interface.pfnListHdrRead     = vboxSvcClipboardURIListHdrRead;
+                    creationCtx.Interface.pfnListEntryRead   = vboxSvcClipboardURIListEntryRead;
+                    creationCtx.Interface.pfnObjRead         = vboxSvcClipboardURIObjRead;
+
+                    creationCtx.pvUser = pClient;
+                }
+            }
+            else if (enmDir == SHAREDCLIPBOARDURITRANSFERDIR_WRITE)
+            {
+                AssertFailed(); /** @todo Implement this. */
+            }
+
+            /* Register needed callbacks so that we can wait for the meta data to arrive here. */
+            SHAREDCLIPBOARDURITRANSFERCALLBACKS Callbacks;
+            RT_ZERO(Callbacks);
+
+            Callbacks.pvUser                = pClient;
+
+            Callbacks.pfnTransferPrepare    = VBoxSvcClipboardURITransferPrepareCallback;
+            Callbacks.pfnTransferComplete   = VBoxSvcClipboardURITransferCompleteCallback;
+            Callbacks.pfnTransferCanceled   = VBoxSvcClipboardURITransferCanceledCallback;
+            Callbacks.pfnTransferError      = VBoxSvcClipboardURITransferErrorCallback;
+
+            SharedClipboardURITransferSetCallbacks(pTransfer, &Callbacks);
+
+            rc = SharedClipboardURITransferSetInterface(pTransfer, &creationCtx);
+            if (RT_SUCCESS(rc))
+            {
+                rc = SharedClipboardURICtxTransferAdd(&pClient->URI, pTransfer);
+                if (RT_SUCCESS(rc))
+                    rc = VBoxClipboardSvcImplURITransferCreate(pClient, pTransfer);
+
+                if (RT_FAILURE(rc))
+                    VBoxClipboardSvcImplURITransferDestroy(pClient, pTransfer);
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                SharedClipboardURITransferDestroy(pTransfer);
+                pTransfer = NULL;
+            }
+            else
+            {
+                *ppTransfer = pTransfer;
+            }
+        }
+    }
+    else
+        rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+
 static int svcInit(void)
 {
     int rc = RTCritSectInit(&g_CritSect);
@@ -1624,24 +1714,45 @@ static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTSTATE pClientS
 }
 
 /**
+ * Resets the Shared Clipboard data reading porition of the old client state.
+ *
+ * Legacy protocol, do not use anymore.
+ *
+ * @param   pClientState        Client state to reset data reading portion for.
+ */
+void vboxSvcClipboardOldClientStateResetData(PVBOXCLIPBOARDCLIENTSTATE pClientState)
+{
+    if (pClientState->Old.data.pv)
+    {
+        RTMemFree(pClientState->Old.data.pv);
+        pClientState->Old.data.pv = NULL;
+    }
+
+    pClientState->Old.data.cb = 0;
+    pClientState->Old.data.u32Format = 0;
+}
+
+/**
  * Resets a Shared Clipboard service's old client state.
  * Legacy protocol, do not use anymore.
  *
  * @param   pClientState        Client state to reset.
  */
-static void vboxSvcClipboardOldClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientState)
+void vboxSvcClipboardOldClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientState)
 {
     LogFlowFuncEnter();
 
-    pClientState->Old.fAsync                       = false;
-    pClientState->Old.fReadPending                 = false;
+    pClientState->Old.fAsync              = false;
+    pClientState->Old.fReadPending        = false;
 
-    pClientState->Old.fHostMsgQuit                 = false;
-    pClientState->Old.fHostMsgReadData             = false;
-    pClientState->Old.fHostMsgFormats              = false;
+    pClientState->Old.fHostMsgQuit        = false;
+    pClientState->Old.fHostMsgReadData    = false;
+    pClientState->Old.fHostMsgFormats     = false;
 
     pClientState->Old.u32AvailableFormats = 0;
     pClientState->Old.u32RequestedFormat  = 0;
+
+    vboxSvcClipboardOldClientStateResetData(pClientState);
 }
 
 /**

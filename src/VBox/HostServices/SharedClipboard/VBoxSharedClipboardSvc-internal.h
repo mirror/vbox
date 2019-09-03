@@ -230,6 +230,8 @@ int vboxSvcClipboardSendFormatsWrite(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBO
 
 int vboxSvcClipboardOldCompleteReadData(PVBOXCLIPBOARDCLIENT pClient, int rc, uint32_t cbActual);
 int vboxSvcClipboardOldReportMsg(PVBOXCLIPBOARDCLIENT pClient, uint32_t uMsg, uint32_t uFormats);
+void vboxSvcClipboardOldClientStateResetData(PVBOXCLIPBOARDCLIENTSTATE pClientState);
+void vboxSvcClipboardOldClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientState);
 
 uint32_t vboxSvcClipboardGetMode(void);
 int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENT pClient, SHAREDCLIPBOARDSOURCE enmSource);
@@ -245,6 +247,9 @@ int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCal
 int vboxSvcClipboardClientWakeup(PVBOXCLIPBOARDCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+int vboxSvcClipboardURITransferStart(PVBOXCLIPBOARDCLIENT pClient,
+                                     SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHAREDCLIPBOARDSOURCE enmSource,
+                                     PSHAREDCLIPBOARDURITRANSFER *ppTransfer);
 bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
@@ -257,6 +262,7 @@ void VBoxClipboardSvcImplDestroy(void);
 int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless);
 int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient);
 int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDFORMATDATA pFormats);
+/** @todo Document: Can return VINF_HGCM_ASYNC_EXECUTE to defer returning read data.*/
 int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual);
 int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData);
 /**
@@ -267,10 +273,12 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 int vboxSvcClipboardURITransferOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx);
-int vboxSvcClipboardURITransferClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx);
+DECLCALLBACK(int) vboxSvcClipboardURITransferClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx);
+
+int vboxSvcClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDROOTLIST *ppRootList);
 
 int vboxSvcClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
-                                PVBOXCLIPBOARDLISTHDR pListHdr, PSHAREDCLIPBOARDLISTHANDLE phList);
+                                PVBOXCLIPBOARDLISTOPENPARMS pOpenParms, PSHAREDCLIPBOARDLISTHANDLE phList);
 int vboxSvcClipboardURIListClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList);
 int vboxSvcClipboardURIListHdrRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
                                    PVBOXCLIPBOARDLISTHDR pListHdr);
