@@ -65,7 +65,8 @@ ifndef VBOX_ONLY_DOCS
  VBoxManage_DEFS      += $(VBOX_COMMON_VBOXMANAGE_DEFS)
  VBoxManage_DEFS.win   = _WIN32_WINNT=0x0500
  VBoxManage_INCS = \
- 	$(VBoxManage_0_OUTDIR)
+ 	$(VBoxManage_0_OUTDIR) \
+ 	../Common
  VBoxManage_INTERMEDIATES = \
  	$(VBoxManage_0_OUTDIR)/VBoxManageBuiltInHelp.h
  VBoxManage_SOURCES    = \
@@ -93,7 +94,8 @@ ifndef VBOX_ONLY_DOCS
  	VBoxManageUSB.cpp \
  	$(if $(VBOX_WITH_NAT_SERVICE),VBoxManageNATNetwork.cpp,) \
  	$(if $(VBOX_WITH_NAT_SERVICE),../../NetworkServices/NetLib/VBoxNetPortForwardString.cpp,) \
- 	VBoxManageCloud.cpp
+ 	VBoxManageCloud.cpp \
+ 	../Common/PasswordInput.cpp
  VBoxManage_SOURCES.win = \
  	VBoxManage.rc
  VBoxManage_LIBS      += $(LIB_DDU)

@@ -511,7 +511,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 {
     return RTProcCreateEx(pszExec, papszArgs, Env, fFlags,
                           NULL, NULL, NULL,  /* standard handles */
-                          NULL /*pszAsUser*/, NULL /* pszPassword*/,
+                          NULL /*pszAsUser*/, NULL /* pszPassword*/, NULL /*pvExtraData*/,
                           pProcess);
 }
 
@@ -681,7 +681,7 @@ static int rtProcPosixCreateReturn(int rc, RTENV hEnvToUse, RTENV hEnv)
 
 RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
-                               const char *pszPassword, PRTPROCESS phProcess)
+                               const char *pszPassword, void *pvExtraData, PRTPROCESS phProcess)
 {
     int rc;
     LogFlow(("RTProcCreateEx: pszExec=%s pszAsUser=%s\n", pszExec, pszAsUser));
@@ -703,6 +703,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     if (fFlags & RTPROC_FLAGS_DETACHED)
         return VERR_PROC_DETACH_NOT_SUPPORTED;
 #endif
+    AssertReturn(pvExtraData == NULL || (fFlags & RTPROC_FLAGS_DESIRED_SESSION_ID), VERR_INVALID_PARAMETER);
 
     /*
      * Get the file descriptors for the handles we've been passed.

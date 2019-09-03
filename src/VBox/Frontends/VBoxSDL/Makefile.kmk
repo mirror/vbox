@@ -45,7 +45,8 @@ VBoxSDL_SDKS       = LIBSDL
 VBoxSDL_SOURCES    = \
 	VBoxSDL.cpp \
 	Framebuffer.cpp \
-	Helper.cpp
+	Helper.cpp \
+	../Common/PasswordInput.cpp
 VBoxSDL_SOURCES.darwin = \
 	VBoxSDLMain-darwin.m \
        Framebuffer-darwin.m
@@ -69,7 +70,8 @@ VBoxSDL_DEFS.win.amd64 = _WIN32_WINNT=0x0510
 
 VBoxSDL_INCS = \
 	$(VBoxSDL_0_OUTDIR) \
-	$(VBOX_GRAPHICS_INCS)
+	$(VBOX_GRAPHICS_INCS) \
+	../Common
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11
 VBoxSDL_INCS += \
 	$(VBOX_XCURSOR_INCS)

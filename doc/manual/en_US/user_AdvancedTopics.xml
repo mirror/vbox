@@ -5878,6 +5878,60 @@ alice = {
 
     </sect2>
 
+    <sect2 id="autostart-windows">
+
+      <title>Windows: Starting the Autostart Service With windows service</title>
+
+      <para>
+        On Windows, the autostarting is implemented as Windows service.
+        The service is installed for every user with her/his own credentials.
+        Before installing any autostart services on a system you have to define
+        the <computeroutput>VBOXAUTOSTART_CONFIG</computeroutput> environment
+        variable in the system variables with the path to the config file.
+        The config file has the same format as on Linux,
+        see <xref linkend="autostart-linux" />, except the user name
+        can be specified using following formats: "user", "domain\user",
+        ".\user" and "user@domain".
+      </para>
+
+      <para>
+        To activate the autostart ability for particular user a member of
+        administrators group must run the following command:
+      </para>
+
+      <screen>VBoxAutostartSvc install --user=&lt;user&gt; [--password-file=&lt;password_file&gt;]</screen>
+
+      <para>
+        The password file should contain the password followed by a line break.
+        The rest of the file is ignored. The user will be asked for a password
+        if the password file is not specified.
+      </para>
+
+      <para>
+        To remove the autostart ability for particular user a member of
+        administrators group must run the following command:
+      </para>
+
+      <screen>VBoxAutostartSvc delete --user=&lt;user&gt;</screen>
+
+      <para>
+        The user can be specified for both commands using following formats:
+        "user", "domain\user", ".\user" and "user@domain"
+      </para>
+
+      <para>
+        Note:
+      </para>
+
+      <para>
+        If user has changed his password a member of administrators group
+        must either reinstall the service or change the service credentials
+        using windows service manager. The autostart service can not be
+        installed for users with empty passwords due to Windows security policies.
+      </para>
+
+    </sect2>
+
   </sect1>
 
   <sect1 id="vboxexpertstoragemgmt">

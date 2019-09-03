@@ -2507,6 +2507,7 @@ HRESULT ExtPackManager::i_runSetUidToRootHelper(Utf8Str const *a_pstrDisplayInfo
                          &hStdErrPipe,
                          NULL /*pszAsUser*/,
                          NULL /*pszPassword*/,
+                         NULL /*pvExtraData*/,
                          &hProcess);
     if (RT_SUCCESS(vrc))
     {

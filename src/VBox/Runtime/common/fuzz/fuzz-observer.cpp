@@ -473,7 +473,7 @@ static void rtFuzzObsExecCtxDestroy(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExec
 static int rtFuzzObsExecCtxClientRun(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExecCtx, PRTPROCSTATUS pProcStat)
 {
     int rc = RTProcCreateEx(pThis->pszBinary, &pExecCtx->apszArgs[0], pExecCtx->hEnv, 0 /*fFlags*/, &pExecCtx->StdinHandle,
-                            &pExecCtx->StdoutHandle, &pExecCtx->StderrHandle, NULL, NULL, &pExecCtx->hProc);
+                            &pExecCtx->StdoutHandle, &pExecCtx->StderrHandle, NULL, NULL, NULL, &pExecCtx->hProc);
     if (RT_SUCCESS(rc))
     {
         uint64_t tsMilliesStart = RTTimeSystemMilliTS();
@@ -576,7 +576,7 @@ static int rtFuzzObsExecCtxClientRun(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExe
 static int rtFuzzObsExecCtxClientRunFuzzingAware(PRTFUZZOBSINT pThis, PRTFUZZOBSEXECCTX pExecCtx, PRTPROCSTATUS pProcStat)
 {
     int rc = RTProcCreateEx(pThis->pszBinary, &pExecCtx->apszArgs[0], pExecCtx->hEnv, 0 /*fFlags*/, &pExecCtx->StdinHandle,
-                            &pExecCtx->StdoutHandle, &pExecCtx->StderrHandle, NULL, NULL, &pExecCtx->hProc);
+                            &pExecCtx->StdoutHandle, &pExecCtx->StderrHandle, NULL, NULL, NULL, &pExecCtx->hProc);
     if (RT_SUCCESS(rc))
     {
         /* Send the initial fuzzing context state over to the client. */

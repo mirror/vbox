@@ -1547,8 +1547,8 @@ static RTEXITCODE RelaunchElevatedNative(const char *pszExecPath, const char **p
          * program to complete.
          */
         RTPROCESS hProcess;
-        rc = RTProcCreateEx(papszArgs[iSuArg], &papszArgs[iSuArg], RTENV_DEFAULT, 0 /*fFlags*/,
-                            NULL /*phStdIn*/, NULL /*phStdOut*/, NULL /*phStdErr*/, NULL /*pszAsUser*/, NULL /*pszPassword*/,
+        rc = RTProcCreateEx(papszArgs[iSuArg], &papszArgs[iSuArg], RTENV_DEFAULT, 0 /*fFlags*/, NULL /*phStdIn*/,
+                            NULL /*phStdOut*/, NULL /*phStdErr*/, NULL /*pszAsUser*/, NULL /*pszPassword*/, NULL /* pvExtraData*/,
                             &hProcess);
         if (RT_SUCCESS(rc))
         {

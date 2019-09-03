@@ -40,6 +40,10 @@
 #include "ClientToken.h"
 #include "MachineImpl.h"
 
+#ifdef RT_OS_WINDOWS
+# include <sddl.h>
+#endif
+
 Machine::ClientToken::ClientToken()
 {
     AssertReleaseFailed();
@@ -82,15 +86,79 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine,
 {
 #if defined(RT_OS_WINDOWS)
     NOREF(pSessionMachine);
-    Bstr tokenId = pMachine->mData->m_strConfigFileFull;
-    for (size_t i = 0; i < tokenId.length(); i++)
-        if (tokenId.raw()[i] == '\\')
-            tokenId.raw()[i] = '/';
-    mClientToken = ::CreateMutex(NULL, FALSE, tokenId.raw());
+
+    /* Get user's SID to use it as part of the mutex name to distinguish shared machine instances
+     * between users
+     */
+    Utf8Str strUserSid;
+    HANDLE  hProcessToken = INVALID_HANDLE_VALUE;
+    if (::OpenProcessToken(::GetCurrentProcess(), TOKEN_QUERY, &hProcessToken))
+    {
+        DWORD dwSize = 0;
+        BOOL fRc = ::GetTokenInformation(hProcessToken, TokenUser, NULL, 0, &dwSize);
+        DWORD dwErr = ::GetLastError();
+        if (!fRc && dwErr == ERROR_INSUFFICIENT_BUFFER && dwSize > 0)
+        {
+            PTOKEN_USER pTokenUser = (PTOKEN_USER)RTMemTmpAllocZ(dwSize);
+            if (pTokenUser)
+            {
+                if (::GetTokenInformation(hProcessToken, TokenUser, pTokenUser, dwSize, &dwSize))
+                {
+                    PRTUTF16 wstrSid = NULL;
+                    if (::ConvertSidToStringSid(pTokenUser->User.Sid, &wstrSid))
+                    {
+                        strUserSid = wstrSid;
+                        ::LocalFree(wstrSid);
+                    }
+                    else
+                        AssertMsgFailed(("Cannot convert SID to string, err=%u", ::GetLastError()));
+                }
+                else
+                    AssertMsgFailed(("Cannot get thread access token information, err=%u", ::GetLastError()));
+                RTMemFree(pTokenUser);
+            }
+            else
+                AssertMsgFailed(("No memory"));
+        }
+        else
+            AssertMsgFailed(("Cannot get thread access token information, err=%u", ::GetLastError()));
+        CloseHandle(hProcessToken);
+    }
+    else
+        AssertMsgFailed(("Cannot get thread access token, err=%u", ::GetLastError()));
+
+    Bstr tokenId = Bstr(Utf8Str("Global\\") + strUserSid + "/" + pMachine->mData->mUuid.toString());
+
+    /* create security descriptor to allow SYNCHRONIZE access from any windows sessions and users.
+     * otherwise VM can't open the mutex if VBoxSVC and VM are in different session (e.g. some VM
+     * started by autostart service)
+     *
+     * SDDL string contains following ACEs:
+     *   CreateOwner           : MUTEX_ALL_ACCESS
+     *   System                : MUTEX_ALL_ACCESS
+     *   BuiltInAdministrators : MUTEX_ALL_ACCESS
+     *   Everyone              : SYNCHRONIZE|MUTEX_MODIFY_STATE
+     */
+
+    //static const RTUTF16 s_wszSecDesc[] = L"D:(A;;0x1F0001;;;CO)(A;;0x1F0001;;;SY)(A;;0x1F0001;;;BA)(A;;0x100001;;;WD)";
+    com::BstrFmt bstrSecDesc("O:%sD:(A;;0x1F0001;;;CO)(A;;0x1F0001;;;SY)(A;;0x1F0001;;;BA)", strUserSid.c_str());
+    PSECURITY_DESCRIPTOR pSecDesc = NULL;
+    //AssertMsgStmt(::ConvertStringSecurityDescriptorToSecurityDescriptor(s_wszSecDesc, SDDL_REVISION_1, &pSecDesc, NULL),
+    AssertMsgStmt(::ConvertStringSecurityDescriptorToSecurityDescriptor(bstrSecDesc.raw(), SDDL_REVISION_1, &pSecDesc, NULL),
+                  ("Cannot create security descriptor for token '%ls', err=%u", tokenId.raw(), GetLastError()),
+                  pSecDesc = NULL);
+
+    SECURITY_ATTRIBUTES SecAttr;
+    SecAttr.lpSecurityDescriptor = pSecDesc;
+    SecAttr.nLength              = sizeof(SecAttr);
+    SecAttr.bInheritHandle       = FALSE;
+    mClientToken = ::CreateMutex(&SecAttr, FALSE, tokenId.raw());
     mClientTokenId = tokenId;
-    AssertMsg(mClientToken,
-              ("Cannot create token '%s', err=%d",
-               mClientTokenId.c_str(), ::GetLastError()));
+    AssertMsg(mClientToken, ("Cannot create token '%s', err=%d", mClientTokenId.c_str(), ::GetLastError()));
+
+    if (pSecDesc)
+        ::LocalFree(pSecDesc);
+
 #elif defined(RT_OS_OS2)
     NOREF(pSessionMachine);
     Utf8Str ipcSem = Utf8StrFmt("\\SEM32\\VBOX\\VM\\{%RTuuid}",

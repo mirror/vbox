@@ -628,6 +628,7 @@
  *                                      NULL,           // phStdErr
  *                                      NULL,           // pszAsUser
  *                                      NULL,           // pszPassword
+ *                                      NULL,           // pExtraData
  *                                      &hProcess);
  *        @endcode
  *

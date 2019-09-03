@@ -2717,7 +2717,7 @@ static int txsDoExecHlp(PCTXSPKTHDR pPktHdr, uint32_t fFlags, const char *pszExe
         }
         rc = RTProcCreateEx(pszExecName, papszArgs, pTxsExec->hEnv, 0 /*fFlags*/,
                             pTxsExec->StdIn.phChild, pTxsExec->StdOut.phChild, pTxsExec->StdErr.phChild,
-                            *pszUsername ? pszUsername : NULL, NULL,
+                            *pszUsername ? pszUsername : NULL, NULL, NULL,
                             &pTxsExec->hProcess);
         if (RT_SUCCESS(rc))
         {

@@ -418,6 +418,7 @@ int RTProcExecToString(const char *pszExec, const char * const *papszArgs, RTENV
                                 phChildStdErr,
                                 NULL /*pszAsUser*/,
                                 NULL /*pszPassword*/,
+                                NULL /*pvExtraData*/,
                                 &hProc);
             rc2 = RTHandleClose(&hChildStdErr); AssertRC(rc2);
             rc2 = RTHandleClose(&hChildStdOut); AssertRC(rc2);
@@ -555,6 +556,7 @@ int RTProcExec(const char *pszExec, const char * const *papszArgs, RTENV hEnv, u
                             aph[2],
                             NULL /*pszAsUser*/,
                             NULL /*pszPassword*/,
+                            NULL /*pvExtraData*/,
                             &hProc);
 
     for (uint32_t i = 0; i < 3; i++)

@@ -30,12 +30,24 @@
 #include <iprt/asm.h>
 #include <iprt/critsect.h>
 #include <iprt/mem.h>
+#include <iprt/process.h>
 #include <iprt/system.h>
 
 #include <rpcasync.h>
 #include <rpcdcep.h>
 #include <sddl.h>
 #include <lmcons.h> /* UNLEN */
+
+#include "MachineLaunchVMCommonWorker.h"
+
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define INTERACTIVE_SID_FLAG 0x1
+#define LOCAL_SID_FLAG       0x2
+#define LOGON_SID_FLAG       0x4
+#define IS_INTERACTIVE       (LOCAL_SID_FLAG|INTERACTIVE_SID_FLAG|LOGON_SID_FLAG)
 
 
 /**
@@ -391,6 +403,64 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
 }
 
 
+STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, IN_BSTR aFrontend, IN_BSTR aEnvironmentChanges,
+                                            IN_BSTR aCmdOptions, ULONG aSessionId, ULONG *aPid)
+{
+    /*
+     * Convert parameters to UTF-8.
+     */
+    Utf8Str strMachine(aMachine);
+    Utf8Str strComment(aComment);
+    Utf8Str strFrontend(aFrontend);
+    Utf8Str strEnvironmentChanges(aEnvironmentChanges);
+    Utf8Str strCmdOptions(aCmdOptions);
+
+    /*
+     * Impersonate the caller.
+     */
+    HRESULT hrc = CoImpersonateClient();
+    if (SUCCEEDED(hrc))
+    {
+        try
+        {
+            /*
+             * Try launch the VM process as the client.
+             */
+            RTPROCESS pid;
+            AssertCompile(sizeof(aSessionId) == sizeof(uint32_t));
+            int vrc = ::MachineLaunchVMCommonWorker(strMachine, strComment, strFrontend, strEnvironmentChanges,
+                                                    strCmdOptions, Utf8Str(),
+                                                    RTPROC_FLAGS_AS_IMPERSONATED_TOKEN | RTPROC_FLAGS_SERVICE
+                                                    | RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_DESIRED_SESSION_ID,
+                                                    &aSessionId, pid);
+            if (RT_SUCCESS(vrc))
+            {
+                *aPid = (ULONG)pid;
+                LogRel(("VirtualBoxSDS::LaunchVMProcess: launchVM succeeded\n"));
+            }
+            else if (vrc == VERR_INVALID_PARAMETER)
+            {
+                hrc = E_INVALIDARG;
+                LogRel(("VirtualBoxSDS::LaunchVMProcess: launchVM failed: %Rhrc\n", hrc));
+            }
+            else
+            {
+                hrc = VBOX_E_IPRT_ERROR;
+                LogRel(("VirtualBoxSDS::LaunchVMProcess: launchVM failed: %Rhrc (%Rrc)\n", hrc));
+            }
+        }
+        catch (...)
+        {
+            hrc = E_UNEXPECTED;
+        }
+        CoRevertToSelf();
+    }
+    else
+        LogRel(("VirtualBoxSDS::LaunchVMProcess: CoImpersonateClient failed: %Rhrc\n", hrc));
+    return hrc;
+}
+
+
 /*********************************************************************************************************************************
 *   VirtualBoxSDS - Internal Methods                                                                                             *
 *********************************************************************************************************************************/
@@ -590,6 +660,7 @@ VBoxSDSPerUserData *VirtualBoxSDS::i_lookupOrCreatePerUserData(com::Utf8Str cons
 
     return pUserData;
 }
+
 
 #ifdef WITH_WATCHER
 /**

@@ -366,7 +366,7 @@ PRTSTREAM BugReportCommand::getStream(void)
     RTPROCESS hProcess;
     handleRtError(RTProcCreateEx(m_papszArgs[0], m_papszArgs, RTENV_DEFAULT, 0,
                                  NULL, &hStdOutErr, &hStdOutErr,
-                                 NULL, NULL, &hProcess),
+                                 NULL, NULL, NULL, &hProcess),
                   "Failed to create process '%s'", m_papszArgs[0]);
     RTPROCSTATUS status;
     handleRtError(RTProcWait(hProcess, RTPROCWAIT_FLAGS_BLOCK, &status),
@@ -443,7 +443,7 @@ PRTSTREAM BugReportCommandTemp::getStream(void)
     RTPROCESS hProcess;
     handleRtError(RTProcCreateEx(m_papszArgs[0], m_papszArgs, RTENV_DEFAULT, 0,
                                  NULL, &hStdOutErr, &hStdOutErr,
-                                 NULL, NULL, &hProcess),
+                                 NULL, NULL, NULL, &hProcess),
                   "Failed to create process '%s'", m_papszArgs[0]);
     RTPROCSTATUS status;
     handleRtError(RTProcWait(hProcess, RTPROCWAIT_FLAGS_BLOCK, &status),

@@ -21,12 +21,15 @@ include $(KBUILD_PATH)/subheader.kmk
 ifeq ($(KBUILD_TARGET),win)
  PROGRAMS += VBoxAutostartSvc
  VBoxAutostartSvc_TEMPLATE   = VBOXMAINCLIENTEXE
+ VBoxAutostartSvc_INCS       = ../Common
  VBoxAutostartSvc_SOURCES    = \
 	VBoxAutostartCfg.cpp \
 	VBoxAutostartStart.cpp \
 	VBoxAutostartStop.cpp \
 	VBoxAutostartUtils.cpp \
-	VBoxAutostart-win.cpp
+	VBoxAutostart-win.cpp \
+	../Common/PasswordInput.cpp
+ VBoxAutostartSvc_LIBS.win += Secur32.lib	
 else
  PROGRAMS += VBoxAutostart
  VBoxAutostart_TEMPLATE   = VBOXMAINCLIENTEXE

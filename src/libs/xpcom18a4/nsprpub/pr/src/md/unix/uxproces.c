@@ -600,7 +600,7 @@ _MD_CreateUnixProcessDetached(
 
     vrc = RTProcCreateEx(path, (const char **)argv, childEnv,
                          RTPROC_FLAGS_DETACHED, pStdIn, pStdOut, pStdErr,
-                         NULL /* pszAsUser */, NULL /* pszPassword */,
+                         NULL /* pszAsUser */, NULL /* pszPassword */, NULL /* pExtraData */,
                          NULL /* phProcess */);
     if (newEnv != RTENV_DEFAULT) {
         RTEnvDestroy(newEnv);

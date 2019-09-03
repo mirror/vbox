@@ -167,6 +167,9 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
  * @param   pszPassword Password to use to authenticate @a pszAsUser.  Must be
  *                      NULL wif pszAsUser is NULL.  Whether this is actually
  *                      used or not depends on the platform.
+ * @param   pvExtraData Points to additional data as per @a fFlags:
+ *                          - RTPROC_FLAGS_DESIRED_SESSION_ID: Pointing to a
+ *                            uint32_t variable with the desired session ID.
  * @param   phProcess   Where to store the process handle on successful return.
  *                      The content is not changed on failure.  NULL is allowed.
  *
@@ -179,7 +182,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
  */
 RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
-                               const char *pszPassword, PRTPROCESS phProcess);
+                               const char *pszPassword, void *pvExtraData, PRTPROCESS phProcess);
 
 /** @name RTProcCreate and RTProcCreateEx flags
  * @{ */
@@ -227,8 +230,12 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 #define RTPROC_FLAGS_AS_IMPERSONATED_TOKEN  RT_BIT(9)
 /** Hint that we don't expect to ever want to wait on the process. */
 #define RTPROC_FLAGS_NO_WAIT                RT_BIT(10)
+/** For use with RTPROC_FLAGS_SERVICE to specify a desired session ID
+ * (Windows only, ignored elsewhere).  The @a pvExtraData argument points to
+ * a uint32_t containing the session ID, UINT32_MAX means any session. */
+#define RTPROC_FLAGS_DESIRED_SESSION_ID     RT_BIT(11)
 /** Valid flag mask. */
-#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0x7ff)
+#define RTPROC_FLAGS_VALID_MASK             UINT32_C(0xfff)
 /** @}  */
 
 

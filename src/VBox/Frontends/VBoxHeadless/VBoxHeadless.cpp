@@ -60,6 +60,8 @@ using namespace com;
 #include <signal.h>
 #endif
 
+#include "PasswordInput.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LogError(m,rc) \
@@ -524,70 +526,6 @@ static void parse_environ(uint32_t *pulFrameWidth, uint32_t *pulFrameHeight,
         *ppszFilename = pszEnvTemp;
 }
 #endif /* VBOX_WITH_RECORDING defined */
-
-static RTEXITCODE readPasswordFile(const char *pszFilename, com::Utf8Str *pPasswd)
-{
-    size_t cbFile;
-    char szPasswd[512];
-    int vrc = VINF_SUCCESS;
-    RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-    bool fStdIn = !strcmp(pszFilename, "stdin");
-    PRTSTREAM pStrm;
-    if (!fStdIn)
-        vrc = RTStrmOpen(pszFilename, "r", &pStrm);
-    else
-        pStrm = g_pStdIn;
-    if (RT_SUCCESS(vrc))
-    {
-        vrc = RTStrmReadEx(pStrm, szPasswd, sizeof(szPasswd)-1, &cbFile);
-        if (RT_SUCCESS(vrc))
-        {
-            if (cbFile >= sizeof(szPasswd)-1)
-            {
-                RTPrintf("Provided password in file '%s' is too long\n", pszFilename);
-                rcExit = RTEXITCODE_FAILURE;
-            }
-            else
-            {
-                unsigned i;
-                for (i = 0; i < cbFile && !RT_C_IS_CNTRL(szPasswd[i]); i++)
-                    ;
-                szPasswd[i] = '\0';
-                *pPasswd = szPasswd;
-            }
-        }
-        else
-        {
-            RTPrintf("Cannot read password from file '%s': %Rrc\n", pszFilename, vrc);
-            rcExit = RTEXITCODE_FAILURE;
-        }
-        if (!fStdIn)
-            RTStrmClose(pStrm);
-    }
-    else
-    {
-        RTPrintf("Cannot open password file '%s' (%Rrc)\n", pszFilename, vrc);
-        rcExit = RTEXITCODE_FAILURE;
-    }
-
-    return rcExit;
-}
-
-static RTEXITCODE settingsPasswordFile(ComPtr<IVirtualBox> virtualBox, const char *pszFilename)
-{
-    com::Utf8Str passwd;
-    RTEXITCODE rcExit = readPasswordFile(pszFilename, &passwd);
-    if (rcExit == RTEXITCODE_SUCCESS)
-    {
-        int rc;
-        CHECK_ERROR(virtualBox, SetSettingsSecret(com::Bstr(passwd).raw()));
-        if (FAILED(rc))
-            rcExit = RTEXITCODE_FAILURE;
-    }
-
-    return rcExit;
-}
-
 
 #ifdef RT_OS_DARWIN
 /**

@@ -2250,6 +2250,7 @@ static int vgsvcVGSvcGstCtrlSessionThreadCreateProcess(const PVBOXSERVICECTRLSES
                                     &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
                                     !fAnonymous ? pszUser : NULL,
                                     !fAnonymous ? pSessionThread->StartupInfo.szPassword : NULL,
+                                    NULL /*pvExtraData*/,
                                     &pSessionThread->hProcess);
             }
 #ifdef RT_OS_WINDOWS

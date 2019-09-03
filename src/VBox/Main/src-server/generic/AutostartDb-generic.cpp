@@ -189,7 +189,7 @@ int AutostartDb::addAutostartVM(const char *pszVMId)
     RTCritSectEnter(&this->CritSect);
     rc = autostartModifyDb(true /* fAutostart */, true /* fAddVM */);
     RTCritSectLeave(&this->CritSect);
-#elif defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
     NOREF(pszVMId); /* Not needed */
     rc = VINF_SUCCESS;
 #else
@@ -209,7 +209,7 @@ int AutostartDb::removeAutostartVM(const char *pszVMId)
     RTCritSectEnter(&this->CritSect);
     rc = autostartModifyDb(true /* fAutostart */, false /* fAddVM */);
     RTCritSectLeave(&this->CritSect);
-#elif defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_WINDOWS)
     NOREF(pszVMId); /* Not needed */
     rc = VINF_SUCCESS;
 #else
@@ -229,7 +229,7 @@ int AutostartDb::addAutostopVM(const char *pszVMId)
     RTCritSectEnter(&this->CritSect);
     rc = autostartModifyDb(false /* fAutostart */, true /* fAddVM */);
     RTCritSectLeave(&this->CritSect);
-#elif defined(RT_OS_DARWIN)
+#elif defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
     NOREF(pszVMId); /* Not needed */
     rc = VINF_SUCCESS;
 #else
@@ -249,7 +249,7 @@ int AutostartDb::removeAutostopVM(const char *pszVMId)
     RTCritSectEnter(&this->CritSect);
     rc = autostartModifyDb(false /* fAutostart */, false /* fAddVM */);
     RTCritSectLeave(&this->CritSect);
-#elif defined(RT_OS_DARWIN)
+#elif defined(RT_OS_DARWIN) || defined (RT_OS_WINDOWS)
     NOREF(pszVMId); /* Not needed */
     rc = VINF_SUCCESS;
 #else

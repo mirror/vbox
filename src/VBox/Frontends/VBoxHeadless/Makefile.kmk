@@ -45,8 +45,12 @@ VBoxHeadlessHardened_NAME = VBoxHeadless
 #
 VBoxHeadless_TEMPLATE  := $(if $(VBOX_WITH_HARDENING),VBOXMAINCLIENTDLL,VBOXMAINCLIENTEXE)
 VBoxHeadless_DEFS      += $(if $(VBOX_WITH_RECORDING),VBOX_WITH_RECORDING,)
-VBoxHeadless_INCS      = $(VBOX_GRAPHICS_INCS)
-VBoxHeadless_SOURCES    = VBoxHeadless.cpp
+VBoxHeadless_INCS      = \
+	$(VBOX_GRAPHICS_INCS) \
+	../Common
+VBoxHeadless_SOURCES    = \
+	VBoxHeadless.cpp \
+	../Common/PasswordInput.cpp
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxHeadless_DEFS     += VBOX_WITH_GUEST_PROPS
 endif

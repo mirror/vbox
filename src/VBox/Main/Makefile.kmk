@@ -384,6 +384,15 @@ if defined(VBOX_WITH_SDS) && "$(KBUILD_TARGET)" == "win"
 PROGRAMS.win += VBoxSDS
 VBoxSDS_TEMPLATE = VBOXMAINEXE
 VBoxSDS_DEFS += VBOX_COM_OUTOFPROC_MODULE _WIN32_WINNT=0x0600
+ ifdef VBOX_WITH_VBOXSDL
+VBoxSDS_DEFS += VBOX_WITH_VBOXSDL
+ endif
+ ifdef VBOX_WITH_HEADLESS
+VBoxSDS_DEFS += VBOX_WITH_HEADLESS
+ endif
+ ifdef VBOX_WITH_QTGUI
+VBoxSDS_DEFS += VBOX_WITH_QTGUI
+ endif
 VBoxSDS_INCS  = \
 	include \
 	$(VBoxSDS_0_OUTDIR) \
@@ -393,7 +402,8 @@ VBoxSDS_INTERMEDIATES = \
 VBoxSDS_SOURCES = \
 	src-global/win/VBoxSDS.cpp \
 	src-global/win/VirtualBoxSDSImpl.cpp \
-	src-global/win/VBoxSDS.rc
+	src-global/win/VBoxSDS.rc \
+	src-all/MachineLaunchVMCommonWorker.cpp
 $(call KB_FN_DO_PASS0_ON_TARGET,VBoxSDS) # Sets VBoxSDS_0_OUTDIR
 
 src-global/win/VBoxSDS.rc_INCS  = $(VBoxSDS_0_OUTDIR)
@@ -552,6 +562,7 @@ VBoxSVC_SOURCES = \
 	src-server/HostPower.cpp \
 	src-server/HostVideoInputDeviceImpl.cpp \
 	src-server/MachineImpl.cpp \
+	src-all/MachineLaunchVMCommonWorker.cpp \
 	src-server/MachineImplCloneVM.cpp \
 	src-server/MachineImplMoveVM.cpp \
 	src-server/Matching.cpp \

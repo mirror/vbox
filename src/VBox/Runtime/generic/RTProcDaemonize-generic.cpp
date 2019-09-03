@@ -83,7 +83,7 @@ RTR3DECL(int) RTProcDaemonize(const char * const *papszArgs, const char *pszDaem
             rc = RTProcCreateEx(szExecPath, papszNewArgs, RTENV_DEFAULT,
                                 RTPROC_FLAGS_DETACHED | RTPROC_FLAGS_SAME_CONTRACT,
                                 &hStdIn, &hStdOutAndErr, &hStdOutAndErr,
-                                NULL /*pszAsUser*/,  NULL /*pszPassword*/, NULL /*phProcess*/);
+                                NULL /*pszAsUser*/,  NULL /*pszPassword*/, NULL /*pExtraData*/, NULL /*phProcess*/);
 
             RTFileClose(hStdOutAndErr.u.hFile);
         }

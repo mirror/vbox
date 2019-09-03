@@ -249,9 +249,11 @@ DECLCALLBACK(int) ClientTokenHolderThread(RTTHREAD hThreadSelf, void *pvUser)
     Utf8Str strSessionId = (const char *)data[0];
     HANDLE initDoneSem = (HANDLE)data[1];
 
-    HANDLE mutex = ::OpenMutex(MUTEX_ALL_ACCESS, FALSE, Bstr(strSessionId).raw());
-    AssertMsg(mutex, ("cannot open token, err=%d\n", ::GetLastError()));
+    Bstr bstrSessionId(strSessionId);
+    HANDLE mutex = ::OpenMutex(MUTEX_ALL_ACCESS, FALSE, bstrSessionId.raw());
 
+    //AssertMsg(mutex, ("cannot open token, err=%u\n", ::GetLastError()));
+    AssertMsg(mutex, ("cannot open token %ls, err=%u\n", bstrSessionId.raw(), ::GetLastError()));
     if (mutex)
     {
         /* grab the token */

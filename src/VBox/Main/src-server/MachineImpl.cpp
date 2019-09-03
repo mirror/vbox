@@ -48,6 +48,7 @@
 #include "SystemPropertiesImpl.h"
 #include "MachineImplMoveVM.h"
 #include "ExtPackManagerImpl.h"
+#include "MachineLaunchVMCommonWorker.h"
 
 // generated header
 #include "VBoxEvents.h"
@@ -7408,69 +7409,6 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         AssertReturn(!Global::IsOnlineOrTransient(mData->mMachineState), E_FAIL);
     }
 
-    /* get the path to the executable */
-    char szPath[RTPATH_MAX];
-    RTPathAppPrivateArch(szPath, sizeof(szPath) - 1);
-    size_t cchBufLeft = strlen(szPath);
-    szPath[cchBufLeft++] = RTPATH_DELIMITER;
-    szPath[cchBufLeft] = 0;
-    char *pszNamePart = szPath + cchBufLeft;
-    cchBufLeft = sizeof(szPath) - cchBufLeft;
-
-    int vrc = VINF_SUCCESS;
-    RTPROCESS pid = NIL_RTPROCESS;
-
-    RTENV env = RTENV_DEFAULT;
-
-    if (!strEnvironment.isEmpty())
-    {
-        char *newEnvStr = NULL;
-
-        do
-        {
-            /* clone the current environment */
-            int vrc2 = RTEnvClone(&env, RTENV_DEFAULT);
-            AssertRCBreakStmt(vrc2, vrc = vrc2);
-
-            newEnvStr = RTStrDup(strEnvironment.c_str());
-            AssertPtrBreakStmt(newEnvStr, vrc = vrc2);
-
-            /* put new variables to the environment
-             * (ignore empty variable names here since RTEnv API
-             * intentionally doesn't do that) */
-            char *var = newEnvStr;
-            for (char *p = newEnvStr; *p; ++p)
-            {
-                if (*p == '\n' && (p == newEnvStr || *(p - 1) != '\\'))
-                {
-                    *p = '\0';
-                    if (*var)
-                    {
-                        char *val = strchr(var, '=');
-                        if (val)
-                        {
-                            *val++ = '\0';
-                            vrc2 = RTEnvSetEx(env, var, val);
-                        }
-                        else
-                            vrc2 = RTEnvUnsetEx(env, var);
-                        if (RT_FAILURE(vrc2))
-                            break;
-                    }
-                    var = p + 1;
-                }
-            }
-            if (RT_SUCCESS(vrc2) && *var)
-                vrc2 = RTEnvPutEx(env, var);
-
-            AssertRCBreakStmt(vrc2, vrc = vrc2);
-        }
-        while (0);
-
-        if (newEnvStr != NULL)
-            RTStrFree(newEnvStr);
-    }
-
     /* Hardening logging */
 #if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_HARDENING)
     Utf8Str strSupHardeningLogArg("--sup-hardening-log=");
@@ -7492,178 +7430,196 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
         strOldStartupLogFile.append(RTPATH_SLASH_STR "VBoxStartup.log");
         RTFileDelete(strOldStartupLogFile.c_str());
     }
-    const char *pszSupHardeningLogArg = strSupHardeningLogArg.c_str();
 #else
-    const char *pszSupHardeningLogArg = NULL;
+    Utf8Str strSupHardeningLogArg;
 #endif
 
-    Utf8Str strCanonicalName;
+    Utf8Str strAppOverride;
+#ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
+    strAppOverride = i_getExtraData(Utf8Str("VBoxInternal2/VirtualBoxVMAppOverride"));
+#endif
 
+    bool fUseVBoxSDS = false;
+    Utf8Str strCanonicalName;
+    if (false)
+    { }
 #ifdef VBOX_WITH_QTGUI
-    if (   !strFrontend.compare("gui", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("GUI/Qt", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("separate", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("gui/separate", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("GUI/Qt/separate", Utf8Str::CaseInsensitive))
+    else if (   !strFrontend.compare("gui", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("GUI/Qt", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("separate", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("gui/separate", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("GUI/Qt/separate", Utf8Str::CaseInsensitive))
     {
         strCanonicalName = "GUI/Qt";
-# ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
-        /* Modify the base path so that we don't need to use ".." below. */
-        RTPathStripTrailingSlash(szPath);
-        RTPathStripFilename(szPath);
-        cchBufLeft = strlen(szPath);
-        pszNamePart = szPath + cchBufLeft;
-        cchBufLeft = sizeof(szPath) - cchBufLeft;
-
-#  define OSX_APP_NAME "VirtualBoxVM"
-#  define OSX_APP_PATH_FMT "/Resources/%s.app/Contents/MacOS/VirtualBoxVM"
-
-        Utf8Str strAppOverride = i_getExtraData(Utf8Str("VBoxInternal2/VirtualBoxVMAppOverride"));
-        if (   strAppOverride.contains(".")
-            || strAppOverride.contains("/")
-            || strAppOverride.contains("\\")
-            || strAppOverride.contains(":"))
-            strAppOverride.setNull();
-        Utf8Str strAppPath;
-        if (!strAppOverride.isEmpty())
-        {
-            strAppPath = Utf8StrFmt(OSX_APP_PATH_FMT, strAppOverride.c_str());
-            Utf8Str strFullPath(szPath);
-            strFullPath.append(strAppPath);
-            /* there is a race, but people using this deserve the failure */
-            if (!RTFileExists(strFullPath.c_str()))
-                strAppOverride.setNull();
-        }
-        if (strAppOverride.isEmpty())
-            strAppPath = Utf8StrFmt(OSX_APP_PATH_FMT, OSX_APP_NAME);
-        AssertReturn(cchBufLeft > strAppPath.length(), E_UNEXPECTED);
-        strcpy(pszNamePart, strAppPath.c_str());
-# else
-        static const char s_szVirtualBox_exe[] = "VirtualBoxVM" HOSTSUFF_EXE;
-        Assert(cchBufLeft >= sizeof(s_szVirtualBox_exe));
-        strcpy(pszNamePart, s_szVirtualBox_exe);
-# endif
-
-        Utf8Str idStr = mData->mUuid.toString();
-        const char *apszArgs[] =
-        {
-            szPath,
-            "--comment", mUserData->s.strName.c_str(),
-            "--startvm", idStr.c_str(),
-            "--no-startvm-errormsgbox",
-            NULL, /* For "--separate". */
-            NULL, /* For "--sup-startup-log". */
-            NULL
-        };
-        unsigned iArg = 6;
-        if (fSeparate)
-            apszArgs[iArg++] = "--separate";
-        apszArgs[iArg++] = pszSupHardeningLogArg;
-
-        vrc = RTProcCreate(szPath, apszArgs, env, 0, &pid);
+        fUseVBoxSDS = true;
     }
-#else /* !VBOX_WITH_QTGUI */
-    if (0)
-        ;
-#endif /* VBOX_WITH_QTGUI */
-
-    else
-
+#endif
 #ifdef VBOX_WITH_VBOXSDL
-    if (   !strFrontend.compare("sdl", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("GUI/SDL", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("sdl/separate", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("GUI/SDL/separate", Utf8Str::CaseInsensitive))
+    else if (   !strFrontend.compare("sdl", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("GUI/SDL", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("sdl/separate", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("GUI/SDL/separate", Utf8Str::CaseInsensitive))
     {
         strCanonicalName = "GUI/SDL";
-        static const char s_szVBoxSDL_exe[] = "VBoxSDL" HOSTSUFF_EXE;
-        Assert(cchBufLeft >= sizeof(s_szVBoxSDL_exe));
-        strcpy(pszNamePart, s_szVBoxSDL_exe);
-
-        Utf8Str idStr = mData->mUuid.toString();
-        const char *apszArgs[] =
-        {
-            szPath,
-            "--comment", mUserData->s.strName.c_str(),
-            "--startvm", idStr.c_str(),
-            NULL, /* For "--separate". */
-            NULL, /* For "--sup-startup-log". */
-            NULL
-        };
-        unsigned iArg = 5;
-        if (fSeparate)
-            apszArgs[iArg++] = "--separate";
-        apszArgs[iArg++] = pszSupHardeningLogArg;
-
-        vrc = RTProcCreate(szPath, apszArgs, env, 0, &pid);
+        fUseVBoxSDS = true;
     }
-#else /* !VBOX_WITH_VBOXSDL */
-    if (0)
-        ;
-#endif /* !VBOX_WITH_VBOXSDL */
-
-    else
-
+#endif
 #ifdef VBOX_WITH_HEADLESS
-    if (   !strFrontend.compare("headless", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("capture", Utf8Str::CaseInsensitive)
-        || !strFrontend.compare("vrdp", Utf8Str::CaseInsensitive) /* Deprecated. Same as headless. */
-       )
+    else if (   !strFrontend.compare("headless", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("capture", Utf8Str::CaseInsensitive)
+             || !strFrontend.compare("vrdp", Utf8Str::CaseInsensitive) /* Deprecated. Same as headless. */)
     {
         strCanonicalName = "headless";
-        /* On pre-4.0 the "headless" type was used for passing "--vrdp off" to VBoxHeadless to let it work in OSE,
-         * which did not contain VRDP server. In VBox 4.0 the remote desktop server (VRDE) is optional,
-         * and a VM works even if the server has not been installed.
-         * So in 4.0 the "headless" behavior remains the same for default VBox installations.
-         * Only if a VRDE has been installed and the VM enables it, the "headless" will work
-         * differently in 4.0 and 3.x.
-         */
-        static const char s_szVBoxHeadless_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
-        Assert(cchBufLeft >= sizeof(s_szVBoxHeadless_exe));
-        strcpy(pszNamePart, s_szVBoxHeadless_exe);
-
-        Utf8Str idStr = mData->mUuid.toString();
-        const char *apszArgs[] =
-        {
-            szPath,
-            "--comment", mUserData->s.strName.c_str(),
-            "--startvm", idStr.c_str(),
-            "--vrde", "config",
-            NULL, /* For "--capture". */
-            NULL, /* For "--sup-startup-log". */
-            NULL
-        };
-        unsigned iArg = 7;
-        if (!strFrontend.compare("capture", Utf8Str::CaseInsensitive))
-            apszArgs[iArg++] = "--capture";
-        apszArgs[iArg++] = pszSupHardeningLogArg;
-
-# ifdef RT_OS_WINDOWS
-        vrc = RTProcCreate(szPath, apszArgs, env, RTPROC_FLAGS_NO_WINDOW, &pid);
-# else
-        vrc = RTProcCreate(szPath, apszArgs, env, 0, &pid);
-# endif
     }
-#else /* !VBOX_WITH_HEADLESS */
-    if (0)
-        ;
-#endif /* !VBOX_WITH_HEADLESS */
+#endif
     else
+        return setError(E_INVALIDARG, tr("Invalid frontend name: '%s'"), strFrontend.c_str());
+
+    Utf8Str idStr = mData->mUuid.toString();
+    Utf8Str const &strMachineName = mUserData->s.strName;
+    RTPROCESS pid = NIL_RTPROCESS;
+
+#if !defined(VBOX_WITH_SDS) || !defined(RT_OS_WINDOWS)
+    RT_NOREF(fUseVBoxSDS);
+#else
+    DWORD idCallerSession = ~(DWORD)0;
+    if (fUseVBoxSDS)
     {
-        RTEnvDestroy(env);
-        return setError(E_INVALIDARG,
-                        tr("Invalid frontend name: '%s'"),
-                        strFrontend.c_str());
+        /*
+         * The VBoxSDS should be used for process launching the VM with
+         * GUI only if the caller and the VBoxSDS are in different Windows
+         * sessions and the caller in the interactive one.
+         */
+        fUseVBoxSDS = false; 
+
+        /* Get windows session of the current process.  The process token used
+           due to several reasons:
+           1. The token is absent for the current thread except someone set it
+              for us.
+           2. Needs to get the id of the session where the process is started. 
+           We only need to do this once, though. */
+        static DWORD s_idCurrentSession = ~(DWORD)0;
+        DWORD idCurrentSession = s_idCurrentSession;
+        if (idCurrentSession == ~(DWORD)0)
+        {
+            HANDLE hCurrentProcessToken = NULL;
+            if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY | TOKEN_READ, &hCurrentProcessToken))
+            {
+                DWORD cbIgn = 0;
+                if (GetTokenInformation(hCurrentProcessToken, TokenSessionId, &idCurrentSession, sizeof(idCurrentSession), &cbIgn))
+                    s_idCurrentSession = idCurrentSession;
+                else
+                {
+                    idCurrentSession = ~(DWORD)0;
+                    LogRelFunc(("GetTokenInformation/TokenSessionId on self failed: %u\n", GetLastError()));
+                }
+                CloseHandle(hCurrentProcessToken);
+            }
+            else
+                LogRelFunc(("OpenProcessToken/self failed: %u\n", GetLastError()));
+        }
+
+        /* get the caller's session */
+        HRESULT hrc = CoImpersonateClient();
+        if (SUCCEEDED(hrc))
+        {
+            HANDLE hCallerThreadToken;
+            if (OpenThreadToken(GetCurrentThread(), TOKEN_QUERY | TOKEN_READ,
+                                FALSE /* OpenAsSelf - for impersonation at SecurityIdentification level */,
+                                &hCallerThreadToken))
+            {
+                SetLastError(NO_ERROR);
+                DWORD cbIgn = 0;
+                if (GetTokenInformation(hCallerThreadToken, TokenSessionId, &idCallerSession, sizeof(DWORD), &cbIgn))
+                {
+                    /* Only need to use SDS if the session ID differs: */
+                    if (idCurrentSession != idCallerSession)
+                    {
+                        fUseVBoxSDS = false;
+
+                        /* Obtain the groups the access token belongs to so we can see if the session is interactive: */
+                        DWORD         cbTokenGroups = 0;
+                        PTOKEN_GROUPS pTokenGroups  = NULL;
+                        if (   !GetTokenInformation(hCallerThreadToken, TokenGroups, pTokenGroups, 0, &cbTokenGroups)
+                            && GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+                            pTokenGroups = (PTOKEN_GROUPS)RTMemTmpAllocZ(cbTokenGroups);
+                        if (GetTokenInformation(hCallerThreadToken, TokenGroups, pTokenGroups, cbTokenGroups, &cbTokenGroups))
+                        {
+                            /* Well-known interactive SID: SECURITY_INTERACTIVE_RID, S-1-5-4: */
+                            SID_IDENTIFIER_AUTHORITY sidIdNTAuthority = SECURITY_NT_AUTHORITY;
+                            PSID                     pInteractiveSid = NULL;
+                            if (AllocateAndInitializeSid(&sidIdNTAuthority, 1, 4, 0, 0, 0, 0, 0, 0, 0, &pInteractiveSid))
+                            {
+                                /* Iterate over the groups looking for the interactive SID: */
+                                fUseVBoxSDS = false;
+                                for (DWORD dwIndex = 0; dwIndex < pTokenGroups->GroupCount; dwIndex++)
+                                    if (EqualSid(pTokenGroups->Groups[dwIndex].Sid, pInteractiveSid))
+                                    {
+                                        fUseVBoxSDS = true;
+                                        break;
+                                    }
+                                FreeSid(pInteractiveSid);
+                            }
+                        }
+                        else
+                            LogRelFunc(("GetTokenInformation/TokenGroups failed: %u\n", GetLastError()));
+                        RTMemTmpFree(pTokenGroups);
+                    }
+                }
+                else
+                    LogRelFunc(("GetTokenInformation/TokenSessionId failed: %u\n", GetLastError()));
+                CloseHandle(hCallerThreadToken);
+            }
+            else
+                LogRelFunc(("OpenThreadToken/client failed: %u\n", GetLastError()));
+            CoRevertToSelf();
+        }
+        else
+            LogRelFunc(("CoImpersonateClient failed: %Rhrc\n", hrc));
+    }
+    if (fUseVBoxSDS)
+    {
+        /* connect to VBoxSDS */
+        ComPtr<IVirtualBoxSDS> pVBoxSDS;
+        HRESULT rc = pVBoxSDS.createLocalObject(CLSID_VirtualBoxSDS);
+        if (FAILED(rc))
+            return setError(rc, tr("Failed to start the machine '%s'. A connection to VBoxSDS cannot be established"),
+                            strMachineName.c_str());
+
+        /* By default the RPC_C_IMP_LEVEL_IDENTIFY is used for impersonation the client. It allows
+           ACL checking but restricts an access to system objects e.g. files. Call to CoSetProxyBlanket
+           elevates the impersonation level up to RPC_C_IMP_LEVEL_IMPERSONATE allowing the VBoxSDS
+           service to access the files. */
+        rc = CoSetProxyBlanket(pVBoxSDS,
+                               RPC_C_AUTHN_DEFAULT,
+                               RPC_C_AUTHZ_DEFAULT,
+                               COLE_DEFAULT_PRINCIPAL,
+                               RPC_C_AUTHN_LEVEL_DEFAULT,
+                               RPC_C_IMP_LEVEL_IMPERSONATE,
+                               NULL,
+                               EOAC_DEFAULT);
+        if (FAILED(rc))
+            return setError(rc, tr("Failed to start the machine '%s'. CoSetProxyBlanket failed"), strMachineName.c_str());
+        ULONG uPid = 0;
+        rc = pVBoxSDS->LaunchVMProcess(Bstr(idStr).raw(), Bstr(strMachineName).raw(), Bstr(strFrontend).raw(),
+                                       Bstr(strEnvironment).raw(), Bstr(strSupHardeningLogArg).raw(),
+                                       idCallerSession, &uPid);
+        if (FAILED(rc))
+            return setError(rc, tr("Failed to start the machine '%s'. Process creation failed"), strMachineName.c_str());
+        pid = (RTPROCESS)uPid;
+    }
+    else
+#endif /* VBOX_WITH_VBOXSDS && RT_OS_WINDOWS */
+    {
+        int vrc = MachineLaunchVMCommonWorker(idStr, strMachineName, strFrontend, strEnvironment, strSupHardeningLogArg,
+                                              strAppOverride, 0 /*fFlags*/, NULL /*pvExtraData*/, pid);
+        if (RT_FAILURE(vrc))
+            return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                tr("Could not launch the VM process for the machine '%s' (%Rrc)"), strMachineName.c_str(), vrc);
     }
 
-    RTEnvDestroy(env);
-
-    if (RT_FAILURE(vrc))
-        return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
-                            tr("Could not launch a process for the machine '%s' (%Rrc)"),
-                            mUserData->s.strName.c_str(), vrc);
-
-    LogFlowThisFunc(("launched.pid=%d(0x%x)\n", pid, pid));
+    LogRel(("Launched VM: %u pid: %u (%#x) frontend: %s name: %s\n",
+            idStr.c_str(), pid, pid, strFrontend.c_str(), strMachineName.c_str()));
 
     if (!fSeparate)
     {

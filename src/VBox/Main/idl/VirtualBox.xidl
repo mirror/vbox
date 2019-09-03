@@ -27032,7 +27032,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVirtualBoxSDS" extends="$unknown" notdual="yes"
-    uuid="152265b8-fe7d-4077-9dd6-032bc3f1c5a3"
+    uuid="bc1a2773-18f2-4066-08ce-1e44d59d84af"
     wsmap="suppress" internal="yes"
     reservedMethods="0" reservedAttributes="0"
     >
@@ -27067,6 +27067,77 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </param>
         <param name="pid" type="long" dir="in">
           <desc>The process ID of the VBoxSVC instance (same as during registration).</desc>
+        </param>
+      </method>
+
+      <method name="launchVMProcess">
+        <desc>
+          Spawns a new process that will execute the virtual machine in the interactive
+          windows session of calling user. Any additional checks are performed by created
+          process itself
+
+          If launching the VM succeeds, the new VM process will create its own session
+          and write-lock the machine for it, preventing conflicting changes from other
+          processes. If the machine is already locked (because it is already running or
+          because another session has a write lock), launching the VM process will therefore
+          fail. Reversely, future attempts to obtain a write lock will also fail while the
+          machine is running.
+
+          Launching a VM process can take some time (a new VM is started in a new process,
+          for which memory and other resources need to be set up) but the method does
+          not wait for completion and just returns the PID of created process.
+
+          <result name="E_INVALIDARG">
+            Some of the parameters are invalid.
+          </result>
+          <result name="VBOX_E_IPRT_ERROR">
+            Launching process for machine failed.
+          </result>
+        </desc>
+        <param name="machine" type="wstring" dir="in">
+          <desc>
+            The name or id of the machine the VM will start for.
+          </desc>
+        </param>
+        <param name="comment" type="wstring" dir="in">
+          <desc>
+            The comment for VM.
+          </desc>
+        </param>
+        <param name="frontend" type="wstring" dir="in">
+          <desc>
+            Front-end to use for the new VM process. The following are currently supported:
+            <ul>
+              <li><tt>"gui"</tt>: VirtualBox Qt GUI front-end</li>
+              <li><tt>"headless"</tt>: VBoxHeadless (VRDE Server) front-end</li>
+              <li><tt>"sdl"</tt>: VirtualBox SDL front-end</li>
+              <li><tt>""</tt>: use the per-VM default frontend if set, otherwise
+                the global default defined in the system properties. If neither
+                are set, the API will launch a <tt>"gui"</tt> session, which may
+                fail if there is no windowing environment available. See
+                <link to="IMachine::defaultFrontend"/> and
+                <link to="ISystemProperties::defaultFrontend"/>.</li>
+            </ul>
+          </desc>
+        </param>
+        <param name="environmentChanges" type="wstring" dir="in">
+          <desc>
+            Environment changes to pass to the VM process, putenv style using newline as separator.
+            <!-- TODO: make this a safearray so values can safely contain newlines and '\'. -->
+          </desc>
+        </param>
+        <param name="cmdOptions" type="wstring" dir="in">
+          <desc>
+            Additional command line options to pass to the VM process.
+          </desc>
+        </param>
+        <param name="sessionId" type="unsigned long" dir="in">
+          <desc>
+            Windows session where the VM process should be launched.
+          </desc>
+        </param>
+        <param name="pid" type="unsigned long" dir="return">
+          <desc>The PID of created process.</desc>
         </param>
       </method>
 

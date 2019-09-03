@@ -218,7 +218,7 @@ static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
     /* Use the process environment first. */
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/,
-                                         NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         NULL, NULL, NULL, pszAsUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
     RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
@@ -232,7 +232,7 @@ static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
     RTTESTI_CHECK_RC_RETV(RTEnvSetEx(hEnvChange, "testcase-child-6", "changed"), VINF_SUCCESS);
     int rc;
     RTTESTI_CHECK_RC(rc = RTProcCreateEx(g_szExecName, apszArgs, hEnvChange, RTPROC_FLAGS_ENV_CHANGE_RECORD,
-                                         NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         NULL, NULL, NULL, pszAsUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
         ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
@@ -247,7 +247,7 @@ static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
     /* Use profile environment this time. */
     apszArgs[2] = "noinherit";
     RTTESTI_CHECK_RC(rc = RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, RTPROC_FLAGS_PROFILE,
-                                         NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         NULL, NULL, NULL, pszAsUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
         ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
@@ -262,7 +262,7 @@ static void tstRTCreateProcEx6(const char *pszAsUser, const char *pszPassword)
     apszArgs[2] = "noinherit-change-record";
     RTTESTI_CHECK_RC(rc = RTProcCreateEx(g_szExecName, apszArgs, hEnvChange,
                                          RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_ENV_CHANGE_RECORD,
-                                         NULL, NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         NULL, NULL, NULL, pszAsUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
         ProcStatus.enmReason = RTPROCEXITREASON_ABEND;
@@ -385,17 +385,17 @@ static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
     /* Test for invalid logons. */
     RTPROCESS hProc;
     int rc = RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL, NULL, NULL,
-                            "non-existing-user", "wrong-password", &hProc);
+                            "non-existing-user", "wrong-password", NULL, &hProc);
     if (rc != VERR_AUTHENTICATION_FAILURE && rc != VERR_PRIVILEGE_NOT_HELD && rc != VERR_PROC_TCB_PRIV_NOT_HELD)
         RTTestIFailed("rc=%Rrc", rc);
 
     /* Test for invalid application. */
     RTTESTI_CHECK_RC(RTProcCreateEx("non-existing-app", apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                    NULL, NULL, NULL, NULL, &hProc), VERR_FILE_NOT_FOUND);
+                                    NULL, NULL, NULL, NULL, NULL, &hProc), VERR_FILE_NOT_FOUND);
 
     /* Test a (hopefully) valid user/password logon (given by parameters of this function). */
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, NULL, pszUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         NULL, NULL, pszUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
     RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
@@ -430,7 +430,7 @@ static void tstRTCreateProcEx4(const char *pszAsUser, const char *pszPassword)
 
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, g_apszArgs4, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         NULL, NULL, pszAsUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
     RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
@@ -471,7 +471,7 @@ static void tstRTCreateProcEx3(const char *pszAsUser, const char *pszPassword)
     Handle.u.hPipe = hPipeW;
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         &Handle, &Handle, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         &Handle, &Handle, pszAsUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 
     char    szOutput[_4K];
@@ -536,7 +536,7 @@ static void tstRTCreateProcEx2(const char *pszAsUser, const char *pszPassword)
     Handle.u.hPipe = hPipeW;
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, &Handle, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         NULL, &Handle, pszAsUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 
     char    szOutput[_4K];
@@ -602,7 +602,7 @@ static void tstRTCreateProcEx1(const char *pszAsUser, const char *pszPassword)
     Handle.u.hPipe = hPipeW;
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         &Handle, NULL, pszAsUser, pszPassword, &hProc), VINF_SUCCESS);
+                                         &Handle, NULL, pszAsUser, pszPassword, NULL, &hProc), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 
     char    szOutput[_4K];
