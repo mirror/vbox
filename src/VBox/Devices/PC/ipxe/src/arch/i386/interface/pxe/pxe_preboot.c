@@ -262,6 +262,8 @@ pxenv_restart_tftp ( struct s_PXENV_TFTP_READ_FILE *restart_tftp ) {
 
 	/* Restart NBP */
 	rmlongjmp ( pxe_restart_nbp, PXENV_RESTART_TFTP );
+
+	return tftp_exit;
 }
 
 /* PXENV_START_UNDI
