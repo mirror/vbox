@@ -401,7 +401,7 @@ static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx)
         }
         else
         {
-            /** If guest driver hasn't suppressed interrupts, do so */
+            /** If guest driver hasn't suppressed interrupts, interrupt  */
             if (!(virtioReadUsedFlags(pVirtio, qIdx) & VIRTQ_AVAIL_F_NO_INTERRUPT))
             {
                 virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT);

@@ -510,12 +510,13 @@ DECLINLINE(const char *) virtioGetReqRespText(uint32_t vboxRc)
     {
         case VIRTIOSCSI_S_OK:                           return "OK";
         case VIRTIOSCSI_S_OVERRUN:                      return "OVERRRUN";
-        case VIRTIOSCSI_S_BAD_TARGET:                   return "BAD TARGET";
-        case VIRTIOSCSI_S_BUSY:                         return "BUSY";
-        case VIRTIOSCSI_S_RESET:                        return "RESET";
         case VIRTIOSCSI_S_ABORTED:                      return "ABORTED";
-        case VIRTIOSCSI_S_NEXUS_FAILURE:                return "NEXUS FAILURE";
+        case VIRTIOSCSI_S_BAD_TARGET:                   return "BAD TARGET";
+        case VIRTIOSCSI_S_RESET:                        return "RESET";
         case VIRTIOSCSI_S_TRANSPORT_FAILURE:            return "TRANSPORT FAILURE";
+        case VIRTIOSCSI_S_TARGET_FAILURE:               return "TARGET FAILURE";
+        case VIRTIOSCSI_S_NEXUS_FAILURE:                return "NEXUS FAILURE";
+        case VIRTIOSCSI_S_BUSY:                         return "BUSY";
         case VIRTIOSCSI_S_FAILURE:                      return "FAILURE";
         default:                                        return "<unknown>";
     }
@@ -765,7 +766,18 @@ static int virtioScsiSendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEv
     return VINF_SUCCESS;
 
 }
-
+/** TBD: VirtIO 1.0 spec 5.6.6.1.1 requires some request actions on reset that are
+ *       not implemented.  Specifically either canceling outstanding I/O or
+ *       returning VIRTIOSCSI_S_FAILURE for those requests.  Since there's no
+ *       way to cancel I/O on VSCSI at this time the only the only other
+ *       possibility is to wait for the outstanding request count to drop
+ *       and return the failure code for any-and-all until that's done before
+ *       allowing a reset to continue.
+ *
+ *       In the absence of active I/O farmed out to VSCSI
+ *       the device handles a guest driver unload/reload gracefully and has
+ *       been tested.
+ */
 static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq)
 {
     PVIRTIOSCSITARGET pTarget = pReq->pTarget;
@@ -785,26 +797,80 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq
     respHdr.uSenseLen = pReq->uStatus == SCSI_STATUS_CHECK_CONDITION ? SHOULD_FIX_VSCSI_TO_RETURN_SENSE_LEN : 0;
     respHdr.uResidual = cbResidual;
     respHdr.uStatus   = pReq->uStatus;
-    respHdr.uResponse = rcReq;
 
-    Log2Func(("status: %s    response: %s\n",
-              SCSIStatusText(pReq->uStatus),  virtioGetReqRespText(respHdr.uResponse)));
+    /** VirtIO 1.0 spec 5.6.6.1.1 says device MUST return a VirtIO response byte value.
+     *  Some are returned during the submit phase, and a few are not mapped at all,
+     *  wherein anything that can't map specifically gets mapped to VIRTIOSCSI_S_FAILURE */
+    switch(rcReq)
+    {
+        case SCSI_STATUS_OK:
+            if (pReq->uStatus != SCSI_STATUS_CHECK_CONDITION)
+            {
+                respHdr.uResponse = VIRTIOSCSI_S_OK;
+                break;
+            }
+            /* fallthrough */
+        case SCSI_STATUS_BUSY:
+            respHdr.uResponse = VIRTIOSCSI_S_BUSY;
+            break;
+        case SCSI_STATUS_DATA_UNDEROVER_RUN:
+            respHdr.uResponse = VIRTIOSCSI_S_OVERRUN;
+            break;
+        case SCSI_STATUS_TASK_ABORTED:
+            respHdr.uResponse = VIRTIOSCSI_S_ABORTED;
+            break;
+        case SCSI_STATUS_CHECK_CONDITION:
+            {
+                uint8_t uSenseKey = pReq->pbSense[2];
+                switch (uSenseKey)
+                {
+                    case SCSI_SENSE_ABORTED_COMMAND:
+                        respHdr.uResponse = VIRTIOSCSI_S_ABORTED;
+                        break;
+                    case SCSI_SENSE_COPY_ABORTED:
+                        respHdr.uResponse = VIRTIOSCSI_S_ABORTED;
+                        break;
+                    case SCSI_SENSE_UNIT_ATTENTION:
+                        respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
+                        break;
+                    case SCSI_SENSE_HARDWARE_ERROR:
+                        respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
+                        break;
+                    case SCSI_SENSE_NOT_READY:
+                        respHdr.uResponse = VIRTIOSCSI_S_BUSY; /* e.g. try again */
+                        break;
+                    default:
+                        respHdr.uResponse = VIRTIOSCSI_S_FAILURE;
+                        break;
+                }
+            }
+            break;
+
+        default:
+            respHdr.uResponse = VIRTIOSCSI_S_FAILURE;
+            break;
+    }
+
+    Log2Func(("status: %s,   response: (%x) %s\n",
+              SCSIStatusText(pReq->uStatus), respHdr.uResponse, virtioGetReqRespText(respHdr.uResponse)));
+
+    if (RT_FAILURE(rcReq))
+        Log2Func(("rcReq:  %s\n", RTErrGetDefine(rcReq)));
 
     Log3Func(("status:%02x/resp:%02x, xfer=%d, residual: %u, sense (len=%d, alloc=%d)\n",
               pReq->uStatus, respHdr.uResponse, cbXfer, cbResidual,
               respHdr.uSenseLen, pThis->virtioScsiConfig.uSenseSize));
 
-
     if (respHdr.uSenseLen && LogIs2Enabled())
     {
         Log2Func(("Sense: %s\n", SCSISenseText(pReq->pbSense[2])));
         Log2Func(("Sense Ext3: %s\n", SCSISenseExtText(pReq->pbSense[12], pReq->pbSense[13])));
-
     }
 
     int cSegs = 0;
 
-    Assert(pReq->cbDataIn >= cbXfer);
+
+//    Assert(pReq->cbDataIn >= cbXfer);
     Assert(pReq->pbSense != NULL);
 
     RTSGSEG aReqSegs[4];
@@ -869,21 +935,24 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq
  *
  * @returns virtual box status code
  */
-static int virtioScsiReqFinish(PVIRTIOSCSI pThis, uint16_t qIdx, struct REQ_RESP_HDR *respHdr, uint8_t *pbSense)
+static int virtioScsiReqFinish(PVIRTIOSCSI pThis, uint16_t qIdx, struct REQ_RESP_HDR *pRespHdr, uint8_t *pbSense)
 {
     uint8_t *abSenseBuf = (uint8_t *)RTMemAllocZ(pThis->virtioScsiConfig.uSenseSize);
     AssertReturn(abSenseBuf, VERR_NO_MEMORY);
 
+    Log2Func(("status: %s    response: %s\n",
+              SCSIStatusText(pRespHdr->uStatus),  virtioGetReqRespText(pRespHdr->uResponse)));
+
     RTSGSEG aReqSegs[2];
-    aReqSegs[0].cbSeg = sizeof(respHdr);
-    aReqSegs[0].pvSeg = respHdr;
+    aReqSegs[0].cbSeg = sizeof(pRespHdr);
+    aReqSegs[0].pvSeg = pRespHdr;
     aReqSegs[1].cbSeg = pThis->virtioScsiConfig.uSenseSize;
     aReqSegs[1].pvSeg = abSenseBuf;
 
-    if (pbSense && respHdr->uSenseLen)
-        memcpy(abSenseBuf, pbSense, respHdr->uSenseLen);
+    if (pbSense && pRespHdr->uSenseLen)
+        memcpy(abSenseBuf, pbSense, pRespHdr->uSenseLen);
     else
-        respHdr->uSenseLen = 0;
+        pRespHdr->uSenseLen = 0;
 
     RTSGBUF reqSegBuf;
     RTSgBufInit(&reqSegBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
@@ -892,8 +961,6 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, uint16_t qIdx, struct REQ_RESP
     virtioQueueSync(pThis->hVirtio, qIdx);
 
     RTMemFree(abSenseBuf);
-
-    LogFunc(("Response code: %s\n", virtioGetReqRespText(respHdr->uResponse)));
 
     Log(("---------------------------------------------------------------------------------\n"));
 
@@ -913,17 +980,13 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
     PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAlloc(cbOut);
     AssertReturn(pVirtqReq, VERR_NO_MEMORY);
 
-Log(("cbOut = %d\n", cbOut));
-uint32_t seg = 0;
     off_t cbOff = 0;
     size_t cbCopy = cbOut;
     while (cbCopy)
     {
         size_t cbSeg = cbCopy;
         RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(pOutSgBuf, &cbSeg);
-Log(("seg:%03d, GCPhys:%p, virtAddr:%p, cbSeg:%6d, cbOff:%6d, cbCopy:%d\n",
-         seg++, GCPhys,     pVirtqReq + cbOff, cbSeg, cbOff, cbCopy));
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, pVirtqReq + cbOff, cbSeg);
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, ((uint8_t *)pVirtqReq) + cbOff, cbSeg);
         cbCopy -= cbSeg;
         cbOff += cbSeg;
     }
