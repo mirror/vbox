@@ -236,22 +236,22 @@ void UIMachineWindowNormal::prepareSessionConnections()
     UIMachineWindow::prepareSessionConnections();
 
     /* We should watch for console events: */
-    connect(machineLogic()->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment &)),
-            this, SLOT(sltMediumChange(const CMediumAttachment &)));
-    connect(machineLogic()->uisession(), SIGNAL(sigUSBControllerChange()),
-            this, SLOT(sltUSBControllerChange()));
-    connect(machineLogic()->uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
-            this, SLOT(sltUSBDeviceStateChange()));
+    connect(machineLogic()->uisession(), &UISession::sigMediumChange,
+        this, &UIMachineWindowNormal::sltMediumChange);
+    connect(machineLogic()->uisession(), &UISession::sigUSBControllerChange,
+            this, &UIMachineWindowNormal::sltUSBControllerChange);
+    connect(machineLogic()->uisession(), &UISession::sigUSBDeviceStateChange,
+            this, &UIMachineWindowNormal::sltUSBDeviceStateChange);
     connect(machineLogic()->uisession(), &UISession::sigAudioAdapterChange,
             this, &UIMachineWindowNormal::sltAudioAdapterChange);
-    connect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
-            this, SLOT(sltNetworkAdapterChange()));
-    connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
-            this, SLOT(sltSharedFolderChange()));
+    connect(machineLogic()->uisession(), &UISession::sigNetworkAdapterChange,
+            this, &UIMachineWindowNormal::sltNetworkAdapterChange);
+    connect(machineLogic()->uisession(), &UISession::sigSharedFolderChange,
+            this, &UIMachineWindowNormal::sltSharedFolderChange);
     connect(machineLogic()->uisession(), SIGNAL(sigRecordingChange()),
             this, SLOT(sltRecordingChange()));
-    connect(machineLogic()->uisession(), SIGNAL(sigCPUExecutionCapChange()),
-            this, SLOT(sltCPUExecutionCapChange()));
+    connect(machineLogic()->uisession(), &UISession::sigCPUExecutionCapChange,
+            this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
     connect(machineLogic()->uisession(), SIGNAL(sigInitialized()),
             this, SLOT(sltHandleSessionInitialized()));
 }
@@ -445,22 +445,22 @@ void UIMachineWindowNormal::cleanupVisualState()
 void UIMachineWindowNormal::cleanupSessionConnections()
 {
     /* We should stop watching for console events: */
-    disconnect(machineLogic()->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment &)),
-               this, SLOT(sltMediumChange(const CMediumAttachment &)));
-    disconnect(machineLogic()->uisession(), SIGNAL(sigUSBControllerChange()),
-               this, SLOT(sltUSBControllerChange()));
-    disconnect(machineLogic()->uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
-               this, SLOT(sltUSBDeviceStateChange()));
-    disconnect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
-               this, SLOT(sltNetworkAdapterChange()));
+    disconnect(machineLogic()->uisession(), &UISession::sigMediumChange,
+               this, &UIMachineWindowNormal::sltMediumChange);
+    disconnect(machineLogic()->uisession(), &UISession::sigUSBControllerChange,
+               this, &UIMachineWindowNormal::sltUSBControllerChange);
+    disconnect(machineLogic()->uisession(), &UISession::sigUSBDeviceStateChange,
+               this, &UIMachineWindowNormal::sltUSBDeviceStateChange);
+    disconnect(machineLogic()->uisession(), &UISession::sigNetworkAdapterChange,
+               this, &UIMachineWindowNormal::sltNetworkAdapterChange);
     disconnect(machineLogic()->uisession(), &UISession::sigAudioAdapterChange,
                this, &UIMachineWindowNormal::sltAudioAdapterChange);
-    disconnect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
-               this, SLOT(sltSharedFolderChange()));
+    disconnect(machineLogic()->uisession(), &UISession::sigSharedFolderChange,
+               this, &UIMachineWindowNormal::sltSharedFolderChange);
     disconnect(machineLogic()->uisession(), SIGNAL(sigRecordingChange()),
                this, SLOT(sltRecordingChange()));
-    disconnect(machineLogic()->uisession(), SIGNAL(sigCPUExecutionCapChange()),
-               this, SLOT(sltCPUExecutionCapChange()));
+    disconnect(machineLogic()->uisession(), &UISession::sigCPUExecutionCapChange,
+               this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
 
     /* Call to base-class: */
     UIMachineWindow::cleanupSessionConnections();
@@ -658,4 +658,3 @@ bool UIMachineWindowNormal::isMaximizedChecked()
     return isMaximized();
 #endif /* !VBOX_WS_MAC */
 }
-

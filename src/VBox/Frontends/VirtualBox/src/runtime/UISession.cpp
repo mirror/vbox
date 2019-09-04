@@ -1102,8 +1102,8 @@ void UISession::prepareActions()
         AssertPtrReturnVoid(m_pMenuBar);
         {
             /* Configure Mac OS X menu-bar: */
-            connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QUuid &)),
-                    this, SLOT(sltHandleMenuBarConfigurationChange(const QUuid &)));
+            connect(gEDataManager, &UIExtraDataManager::sigMenuBarConfigurationChange,
+                    this, &UISession::sltHandleMenuBarConfigurationChange);
             /* Update Mac OS X menu-bar: */
             updateMenu();
         }
@@ -1113,23 +1113,23 @@ void UISession::prepareActions()
 
 void UISession::prepareConnections()
 {
-    connect(this, SIGNAL(sigInitialized()), this, SLOT(sltMarkInitialized()));
+    connect(this, &UISession::sigInitialized, this, &UISession::sltMarkInitialized);
 
 #ifdef VBOX_WS_MAC
     /* Install native display reconfiguration callback: */
     CGDisplayRegisterReconfigurationCallback(cgDisplayReconfigurationCallback, this);
 #else /* !VBOX_WS_MAC */
     /* Install Qt display reconfiguration callbacks: */
-    connect(gpDesktop, SIGNAL(sigHostScreenCountChanged(int)),
-            this, SLOT(sltHandleHostScreenCountChange()));
-    connect(gpDesktop, SIGNAL(sigHostScreenResized(int)),
-            this, SLOT(sltHandleHostScreenGeometryChange()));
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenCountChanged,
+            this, &UISession::sltHandleHostScreenCountChange);
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenResized,
+            this, &UISession::sltHandleHostScreenGeometryChange);
 # ifdef VBOX_WS_X11
-    connect(gpDesktop, SIGNAL(sigHostScreenWorkAreaRecalculated(int)),
-            this, SLOT(sltHandleHostScreenAvailableAreaChange()));
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaRecalculated,
+            this, &UISession::sltHandleHostScreenAvailableAreaChange);
 # else /* !VBOX_WS_X11 */
-    connect(gpDesktop, SIGNAL(sigHostScreenWorkAreaResized(int)),
-            this, SLOT(sltHandleHostScreenAvailableAreaChange()));
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenWorkAreaResized,
+            this, &UISession::sltHandleHostScreenAvailableAreaChange);
 # endif /* !VBOX_WS_X11 */
 #endif /* !VBOX_WS_MAC */
 }
@@ -1140,70 +1140,70 @@ void UISession::prepareConsoleEventHandlers()
     UIConsoleEventHandler::create(this);
 
     /* Add console event connections: */
-    connect(gConsoleEvents, SIGNAL(sigMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)),
-            this, SLOT(sltMousePointerShapeChange(bool, bool, QPoint, QSize, QVector<uint8_t>)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigMousePointerShapeChange,
+        this, &UISession::sltMousePointerShapeChange);
 
-    connect(gConsoleEvents, SIGNAL(sigMouseCapabilityChange(bool, bool, bool, bool)),
-            this, SLOT(sltMouseCapabilityChange(bool, bool, bool, bool)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigMouseCapabilityChange,
+            this, &UISession::sltMouseCapabilityChange);
 
     connect(gConsoleEvents, &UIConsoleEventHandler::sigCursorPositionChange,
             this, &UISession::sltCursorPositionChange);
 
-    connect(gConsoleEvents, SIGNAL(sigKeyboardLedsChangeEvent(bool, bool, bool)),
-            this, SLOT(sltKeyboardLedsChangeEvent(bool, bool, bool)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigKeyboardLedsChangeEvent,
+            this, &UISession::sltKeyboardLedsChangeEvent);
 
-    connect(gConsoleEvents, SIGNAL(sigStateChange(KMachineState)),
-            this, SLOT(sltStateChange(KMachineState)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigStateChange,
+            this, &UISession::sltStateChange);
 
-    connect(gConsoleEvents, SIGNAL(sigAdditionsChange()),
-            this, SLOT(sltAdditionsChange()));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigAdditionsChange,
+            this, &UISession::sltAdditionsChange);
 
-    connect(gConsoleEvents, SIGNAL(sigVRDEChange()),
-            this, SLOT(sltVRDEChange()));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigVRDEChange,
+            this, &UISession::sltVRDEChange);
 
-    connect(gConsoleEvents, SIGNAL(sigRecordingChange()),
-            this, SLOT(sltRecordingChange()));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigRecordingChange,
+            this, &UISession::sltRecordingChange);
 
-    connect(gConsoleEvents, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)),
-            this, SIGNAL(sigNetworkAdapterChange(CNetworkAdapter)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigNetworkAdapterChange,
+            this, &UISession::sigNetworkAdapterChange);
 
-    connect(gConsoleEvents, SIGNAL(sigStorageDeviceChange(CMediumAttachment, bool, bool)),
-            this, SLOT(sltHandleStorageDeviceChange(CMediumAttachment, bool, bool)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigStorageDeviceChange,
+            this, &UISession::sltHandleStorageDeviceChange);
 
-    connect(gConsoleEvents, SIGNAL(sigMediumChange(CMediumAttachment)),
-            this, SIGNAL(sigMediumChange(CMediumAttachment)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigMediumChange,
+            this, &UISession::sigMediumChange);
 
-    connect(gConsoleEvents, SIGNAL(sigUSBControllerChange()),
-            this, SIGNAL(sigUSBControllerChange()));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigUSBControllerChange,
+            this, &UISession::sigUSBControllerChange);
 
-    connect(gConsoleEvents, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)),
-            this, SIGNAL(sigUSBDeviceStateChange(CUSBDevice, bool, CVirtualBoxErrorInfo)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigUSBDeviceStateChange,
+            this, &UISession::sigUSBDeviceStateChange);
 
-    connect(gConsoleEvents, SIGNAL(sigSharedFolderChange()),
-            this, SIGNAL(sigSharedFolderChange()));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigSharedFolderChange,
+            this, &UISession::sigSharedFolderChange);
 
-    connect(gConsoleEvents, SIGNAL(sigRuntimeError(bool, QString, QString)),
-            this, SIGNAL(sigRuntimeError(bool, QString, QString)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigRuntimeError,
+            this, &UISession::sigRuntimeError);
 
 #ifdef VBOX_WS_MAC
-    connect(gConsoleEvents, SIGNAL(sigShowWindow()),
-            this, SIGNAL(sigShowWindows()), Qt::QueuedConnection);
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigShowWindow,
+            this, &UISession::sigShowWindows, Qt::QueuedConnection);
 #endif /* VBOX_WS_MAC */
 
-    connect(gConsoleEvents, SIGNAL(sigCPUExecutionCapChange()),
-            this, SIGNAL(sigCPUExecutionCapChange()));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigCPUExecutionCapChange,
+            this, &UISession::sigCPUExecutionCapChange);
 
-    connect(gConsoleEvents, SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-            this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigGuestMonitorChange,
+            this, &UISession::sltGuestMonitorChange);
 
-    connect(gConsoleEvents, SIGNAL(sigAudioAdapterChange()),
-            this, SLOT(sltAudioAdapterChange()));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigAudioAdapterChange,
+            this, &UISession::sltAudioAdapterChange);
 
-    connect(gConsoleEvents, SIGNAL(sigClipboardModeChange(KClipboardMode)),
-            this, SLOT(sltClipboardModeChange(KClipboardMode)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigClipboardModeChange,
+        this, &UISession::sltClipboardModeChange);
 
-    connect(gConsoleEvents, SIGNAL(sigDnDModeChange(KDnDMode)),
-            this, SLOT(sltDnDModeChange(KDnDMode)));
+    connect(gConsoleEvents, &UIConsoleEventHandler::sigDnDModeChange,
+            this, &UISession::sltDnDModeChange);
 }
 
 void UISession::prepareScreens()
@@ -1217,8 +1217,8 @@ void UISession::prepareScreens()
     {
         m_pWatchdogDisplayChange->setInterval(500);
         m_pWatchdogDisplayChange->setSingleShot(true);
-        connect(m_pWatchdogDisplayChange, SIGNAL(timeout()),
-                this, SLOT(sltCheckIfHostDisplayChanged()));
+        connect(m_pWatchdogDisplayChange, &QTimer::timeout,
+                this, &UISession::sltCheckIfHostDisplayChanged);
     }
 #endif /* VBOX_WS_MAC */
 
