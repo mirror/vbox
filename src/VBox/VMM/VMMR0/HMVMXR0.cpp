@@ -5283,9 +5283,8 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         /*
          * Figure out fixed CR0 bits in VMX operation.
          */
-        /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
-        uint64_t       fSetCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
-        uint64_t const fZapCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
+        uint64_t       fSetCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed0
+        uint64_t const fZapCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
             fSetCr0 &= ~(uint64_t)(X86_CR0_PE | X86_CR0_PG);
         else
@@ -5578,9 +5577,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PVMXTRANSIENT pV
         /*
          * Figure out fixed CR4 bits in VMX operation.
          */
-        /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
-        uint64_t const fSetCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
-        uint64_t const fZapCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
+        uint64_t const fSetCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed0
+        uint64_t const fZapCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
 
         /*
          * With nested-guests, we may have extended the guest/host mask here (since we
