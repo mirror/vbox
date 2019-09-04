@@ -930,7 +930,7 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq
  *
  * @param pThis     - PDM driver instance state
  * @param qIdx      - Queue index
- * @param respHdr   - Response header
+ * @param pRespHdr  - Response header
  * @param pbSense   - Pointer to sense buffer or NULL if none.
  *
  * @returns virtual box status code
