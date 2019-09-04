@@ -949,11 +949,11 @@ typedef struct PDMIMEDIAEX
      * @param   pbCdb           The SCSI CDB containing the command.
      * @param   cbCdb           Size of the CDB in bytes.
      * @param   enmTxDir        Direction of transfer.
-     * @param   penmTxDir       Where to store the transfer direction as parsed from the CDB, optional.
+     * @param   penmTxDirRet    Where to store the transfer direction as parsed from the CDB, optional.
      * @param   cbBuf           Size of the transfer buffer.
      * @param   pabSense        Where to store the optional sense key.
      * @param   cbSense         Size of the sense key buffer.
-     * @param   pcbSense        Where to store the amount of sense data written, optional.
+     * @param   pcbSenseRet     Where to store the amount of sense data written, optional.
      * @param   pu8ScsiSts      Where to store the SCSI status on success.
      * @param   cTimeoutMillies Command timeout in milliseconds.
      * @thread  Any thread.
