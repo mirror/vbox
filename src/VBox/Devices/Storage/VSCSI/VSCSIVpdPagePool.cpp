@@ -107,6 +107,7 @@ int vscsiVpdPagePoolQueryPage(PVSCSIVPDPOOL pVScsiVpdPool, PVSCSIREQINT pVScsiRe
     {
         if (pPage->abPage[1] == uPage)
         {
+            vscsiReqSetXferSize(pVScsiReq, pPage->cbPage);
             RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, &pPage->abPage[0], pPage->cbPage);
             return VINF_SUCCESS;
         }

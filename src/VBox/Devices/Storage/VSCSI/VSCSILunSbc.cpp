@@ -201,7 +201,6 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         case SCSI_INQUIRY:
         {
             vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
-            vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), scsiBE2H_U16(&pVScsiReq->pbCDB[3])));
 
             /* Check for EVPD bit. */
             if (pVScsiReq->pbCDB[1] & 0x1)
@@ -223,6 +222,7 @@ static DECLCALLBACK(int) vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             {
                 SCSIINQUIRYDATA ScsiInquiryReply;
 
+                vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), scsiBE2H_U16(&pVScsiReq->pbCDB[3])));
                 memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
 
                 ScsiInquiryReply.cbAdditional           = 31;
