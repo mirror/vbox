@@ -178,7 +178,7 @@ struct REQ_CMD_PI
 
 struct REQ_RESP_HDR
 {
-    uint32_t cbSense;                                           /**< sense_len                                    */
+    uint32_t uSenseLen;                                         /**< sense_len                                    */
     uint32_t uResidual;                                         /**< residual                                     */
     uint16_t uStatusQualifier;                                  /**< status_qualifier                             */
     uint8_t  uStatus;                                           /**< status            SCSI status code           */
@@ -487,28 +487,6 @@ typedef struct VIRTIOSCSIREQ
 #define SET_LUN_BUF(target, lun, out) \
      out[0] = 0x01;  out[1] = target; out[2] = (lun >> 8) & 0x40;  out[3] = lun & 0xff;  *((uint16_t *)out + 4) = 0;
 
-/**
- * Do a hex dump of a buffer
- * @param   pv       Pointer to array to dump
- * @param   cb       Number of characters to dump
- * @param   uBase    Base address of offset addresses displayed
- * @param   pszTitle Header line/title for the dump
- *
- */
-void virtioScsiHexDump(uint8_t *pv, size_t cb, uint32_t uBase, const char *pszTitle)
-{
-    if (pszTitle)
-        Log2(("%s [%d bytes]:\n", pszTitle, cb));
-    char pszAsciiRow[16 + 1] = { 0 };
-    for (uint8_t *pbLine = pv; pbLine <= pv + cb; pbLine += 16)
-    {
-        for (uint8_t i = 0; i < 16; i++)
-            pszAsciiRow[i] = pbLine[i] > 0x20 && pbLine[i] <= 0x7e ? pbLine[i] : '.';
-        Log2(("%04x %.*Rhxs  %.*Rhxs %s\n",
-            uBase + (pbLine - pv), 8, pbLine, 8, pbLine + 8, pszAsciiRow));
-    }
-    Log2(("\n"));
-}
 
 DECLINLINE(const char *) virtioGetTMFTypeText(uint32_t uSubType)
 {
@@ -698,8 +676,6 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
     PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
 
     /** DrvSCSI.cpp, that issues this callback, just sticks one segment in the buffer */
-//    memset(pReq->pbDataIn + offDst, 0, cbCopy);
-LogFunc(("*** pSgBuf->cbSegLeft=%d\n", pSgBuf->cbSegLeft));
     memcpy(pReq->pbDataIn + offDst, pSgBuf->paSegs[0].pvSeg, cbCopy);
     return VINF_SUCCESS;
 }
@@ -804,60 +780,49 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq
     rc = pIMediaEx->pfnIoReqQueryXferSize(pIMediaEx, pReq->hIoReq, &cbXfer);
     AssertRC(rc);
 
-    /**
-     * Linux does not want any sense code if there wasn't problem!
-     */
-    if (pReq->pbSense[2] == SCSI_SENSE_NONE)
-        pReq->cbSense = 0;
-
-    struct REQ_RESP_HDR respHdr;
-    respHdr.cbSense   = pReq->cbSense;
+    #define SHOULD_FIX_VSCSI_TO_RETURN_SENSE_LEN 32
+    struct REQ_RESP_HDR respHdr = { 0 };
+    respHdr.uSenseLen = pReq->uStatus == SCSI_STATUS_CHECK_CONDITION ? SHOULD_FIX_VSCSI_TO_RETURN_SENSE_LEN : 0;
     respHdr.uResidual = cbResidual;
     respHdr.uStatus   = pReq->uStatus;
     respHdr.uResponse = rcReq;
-    respHdr.uStatusQualifier = 0;
 
-    LogFunc(("status: %s  response: %s  0x%x%x/0x%x%x  cbXfer=%d, cbResidual: %u\n",
-                SCSIStatusText(pReq->uStatus),  virtioGetReqRespText(respHdr.uResponse),
-                pReq->uStatus >> 4 & 0xf, pReq->uStatus & 0xf,
-                respHdr.uResponse >> 4 & 0xf, respHdr.uResponse & 0xf,
-                cbXfer, cbResidual));
+    Log2Func(("status: %s    response: %s\n",
+              SCSIStatusText(pReq->uStatus),  virtioGetReqRespText(respHdr.uResponse)));
 
-    if (pReq->cbSense)
+    Log3Func(("status:%02x/resp:%02x, xfer=%d, residual: %u, sense (len=%d, alloc=%d)\n",
+              pReq->uStatus, respHdr.uResponse, cbXfer, cbResidual,
+              respHdr.uSenseLen, pThis->virtioScsiConfig.uSenseSize));
+
+
+    if (respHdr.uSenseLen && LogIs2Enabled())
     {
         Log2Func(("Sense: %s\n", SCSISenseText(pReq->pbSense[2])));
         Log2Func(("Sense Ext3: %s\n", SCSISenseExtText(pReq->pbSense[12], pReq->pbSense[13])));
-        virtioScsiHexDump(pReq->pbSense, pReq->cbSense, 0, "\nSense");
+
     }
 
-    if (pReq->cbDataIn)
-        virtioScsiHexDump(pReq->pbDataIn, pReq->cbDataIn, 0, "\ndatain");
-
-    if (pReq->cbPiIn)
-        virtioScsiHexDump(pReq->pbPiIn, pReq->cbPiIn, 0, "\nPi in");
-
-    if (cbResidual)
-        Log(("Residual: %d\n", cbResidual));
-
-    Log(("---------------------------------------------------------------------------------\n"));
     int cSegs = 0;
+
+    Assert(pReq->cbDataIn >= cbXfer);
+    Assert(pReq->pbSense != NULL);
+
     RTSGSEG aReqSegs[4];
-    aReqSegs[cSegs].pvSeg = &respHdr;
+    aReqSegs[cSegs].pvSeg   = &respHdr;
     aReqSegs[cSegs++].cbSeg = sizeof(respHdr);
-    if (pReq->cbSense)
-    {
-        aReqSegs[cSegs].pvSeg = pReq->pbSense;
-        aReqSegs[cSegs++].cbSeg = pReq->cbSense;
-    }
+
+    aReqSegs[cSegs].pvSeg   = pReq->pbSense;
+    aReqSegs[cSegs++].cbSeg = pReq->cbSense; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
+
     if (pReq->cbPiIn)
     {
-        aReqSegs[cSegs].pvSeg = pReq->pbPiIn;
+        aReqSegs[cSegs].pvSeg   = pReq->pbPiIn;
         aReqSegs[cSegs++].cbSeg = pReq->cbPiIn;
     }
     if (pReq->cbDataIn)
     {
-        aReqSegs[cSegs].pvSeg = pReq->pbDataIn;
-        aReqSegs[cSegs++].cbSeg = pReq->cbDataIn;
+        aReqSegs[cSegs].pvSeg   = pReq->pbDataIn;
+        aReqSegs[cSegs++].cbSeg = cbXfer;
     }
     RTSGBUF reqSegBuf;
     RTSgBufInit(&reqSegBuf, aReqSegs, cSegs);
@@ -879,10 +844,12 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq
     virtioQueuePut(pThis->hVirtio, pReq->qIdx, &reqSegBuf, true /* fFence TBD */);
     virtioQueueSync(pThis->hVirtio, pReq->qIdx);
 
-    RTMemFree(pReq->pVirtqReq);
+    Log(("-----------------------------------------------------------------------------------------\n"));
+
     RTMemFree(pReq->pbSense);
     RTMemFree(pReq->pbDataIn);
     RTMemFree(pReq->pbPiIn);
+    RTMemFree(pReq->pVirtqReq);
 
     pIMediaEx->pfnIoReqFree(pIMediaEx, pReq->hIoReq);
 
@@ -904,229 +871,201 @@ static int virtioScsiReqFinish(PVIRTIOSCSI pThis, PVIRTIOSCSIREQ pReq, int rcReq
  */
 static int virtioScsiReqFinish(PVIRTIOSCSI pThis, uint16_t qIdx, struct REQ_RESP_HDR *respHdr, uint8_t *pbSense)
 {
-    int cSegs = 0;
+    uint8_t *abSenseBuf = (uint8_t *)RTMemAllocZ(pThis->virtioScsiConfig.uSenseSize);
+    AssertReturn(abSenseBuf, VERR_NO_MEMORY);
+
     RTSGSEG aReqSegs[2];
-    aReqSegs[cSegs].pvSeg = &respHdr;
-    aReqSegs[cSegs++].cbSeg = sizeof(respHdr);
-    if (respHdr->cbSense)
-    {
-        aReqSegs[cSegs].pvSeg = pbSense;
-        aReqSegs[cSegs++].cbSeg = respHdr->cbSense;
-    }
+    aReqSegs[0].cbSeg = sizeof(respHdr);
+    aReqSegs[0].pvSeg = respHdr;
+    aReqSegs[1].cbSeg = pThis->virtioScsiConfig.uSenseSize;
+    aReqSegs[1].pvSeg = abSenseBuf;
+
+    if (pbSense && respHdr->uSenseLen)
+        memcpy(abSenseBuf, pbSense, respHdr->uSenseLen);
+    else
+        respHdr->uSenseLen = 0;
+
     RTSGBUF reqSegBuf;
-    RTSgBufInit(&reqSegBuf, aReqSegs, cSegs);
+    RTSgBufInit(&reqSegBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
+
     virtioQueuePut(pThis->hVirtio, qIdx, &reqSegBuf, true /* fFence */);
     virtioQueueSync(pThis->hVirtio, qIdx);
+
+    RTMemFree(abSenseBuf);
+
     LogFunc(("Response code: %s\n", virtioGetReqRespText(respHdr->uResponse)));
+
     Log(("---------------------------------------------------------------------------------\n"));
+
     return VINF_SUCCESS;
 }
 
 static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgBuf, PRTSGBUF pOutSgBuf)
 {
-    RT_NOREF(pInSgBuf);
-    RT_NOREF(qIdx);
+    AssertMsgReturn(pOutSgBuf->cSegs, ("Req. has no OUT data, unexpected/TBD\n"), VERR_INVALID_PARAMETER);
 
-    AssertMsgReturn(pOutSgBuf->cSegs, ("Req. has no OUT data, unexpected/TBD\n"), VERR_NOT_IMPLEMENTED);
+    size_t cbOut = RTSgBufCalcTotalLength(pOutSgBuf);
+    size_t cbIn  = RTSgBufCalcTotalLength(pInSgBuf);
 
-    size_t cbOut     = RTSgBufCalcTotalLength(pOutSgBuf);
-    size_t cbIn      = RTSgBufCalcTotalLength(pInSgBuf);
-    size_t cbCdb     = pThis->virtioScsiConfig.uCdbSize;
-    size_t cbSense   = pThis->virtioScsiConfig.uSenseSize;
-    size_t cbCmdHdr  = sizeof(REQ_CMD_HDR);
-    size_t cbRespHdr = sizeof(REQ_RESP_HDR);
+    AssertMsgReturn(cbOut >= sizeof(REQ_CMD_HDR) + pThis->virtioScsiConfig.uCdbSize,
+                        ("Req too short"), VERR_BUFFER_UNDERFLOW);
 
+    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAlloc(cbOut);
+    AssertReturn(pVirtqReq, VERR_NO_MEMORY);
 
-    AssertMsgReturn(cbOut >= RT_SIZEOFMEMB(VIRTIOSCSI_REQ_CMD_T, cmdHdr), ("Req to short"), VERR_BUFFER_UNDERFLOW);
-
-    /** Actual CDB bytes didn't fill negotiated space allocated for it, adjust size */
-    if (cbOut <= cbCmdHdr)
-        cbCdb -= (cbCmdHdr - cbOut);
-
-    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAllocZ(cbOut);
-    off_t  cbOff = 0;
-    size_t cbSeg = 0, cbLeft = cbOut;
-    while (cbLeft)
+Log(("cbOut = %d\n", cbOut));
+uint32_t seg = 0;
+    off_t cbOff = 0;
+    size_t cbCopy = cbOut;
+    while (cbCopy)
     {
-        RTGCPHYS pvSeg = (RTGCPHYS)RTSgBufGetNextSegment(pOutSgBuf, &cbSeg);
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), pvSeg, pVirtqReq + cbOff, cbSeg);
-        cbLeft -= cbSeg;
+        size_t cbSeg = cbCopy;
+        RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(pOutSgBuf, &cbSeg);
+Log(("seg:%03d, GCPhys:%p, virtAddr:%p, cbSeg:%6d, cbOff:%6d, cbCopy:%d\n",
+         seg++, GCPhys,     pVirtqReq + cbOff, cbSeg, cbOff, cbCopy));
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, pVirtqReq + cbOff, cbSeg);
+        cbCopy -= cbSeg;
         cbOff += cbSeg;
     }
 
-    uint8_t *pbCdb = pVirtqReq->uCdb;
-
-    uint8_t  uTarget = pVirtqReq->cmdHdr.uLUN[1];
-    uint32_t uLUN = (pVirtqReq->cmdHdr.uLUN[2] << 8 | pVirtqReq->cmdHdr.uLUN[3]) & 0x3fff;
+    uint8_t  uTarget =  pVirtqReq->cmdHdr.uLUN[1];
+    uint32_t uLUN    = (pVirtqReq->cmdHdr.uLUN[2] << 8 | pVirtqReq->cmdHdr.uLUN[3]) & 0x3fff;
 
     LogFunc(("[%s] (Target: %d LUN: %d)  CDB: %.*Rhxs\n",
-         SCSICmdText(pbCdb[0]), uTarget, uLUN,
-            virtioScsiEstimateCdbLen(pbCdb[0], pThis->virtioScsiConfig.uCdbSize), pbCdb));
+        SCSICmdText(pVirtqReq->uCdb[0]), uTarget, uLUN,
+        virtioScsiEstimateCdbLen(pVirtqReq->uCdb[0], pThis->virtioScsiConfig.uCdbSize), pVirtqReq->uCdb));
 
     Log3Func(("   id: %RX64, attr: %x, prio: %d, crn: %x\n",
         pVirtqReq->cmdHdr.uId, pVirtqReq->cmdHdr.uTaskAttr, pVirtqReq->cmdHdr.uPrio, pVirtqReq->cmdHdr.uCrn));
 
-    off_t    uPiOutOff = 0;
-    size_t   cbPiHdr = 0;
-    size_t   cbPiIn  = 0;
-    size_t   cbPiOut = 0;
-    uint8_t *pbPiOut = NULL;
+    /**
+     * Calculate request offsets
+     */
+    size_t  cbPiIn = 0, cbPiOut = 0, cbPiHdr = 0;
+    off_t   piOutOff = 0;
 
     if (pThis->fHasT10pi)
     {
-        cbPiOut   = pVirtqReq->piHdr.uPiBytesOut;
-        cbPiIn    = pVirtqReq->piHdr.uPiBytesIn;
-        uPiOutOff = cbCmdHdr + cbCdb + cbPiHdr;
-        pbPiOut   = (uint8_t *)((uint64_t)pVirtqReq + uPiOutOff);
-        cbPiHdr   = sizeof(REQ_CMD_PI);
+        cbPiIn   = pVirtqReq->piHdr.uPiBytesOut;
+        cbPiOut  = pVirtqReq->piHdr.uPiBytesIn;
+        cbPiHdr  = sizeof(REQ_CMD_PI) + cbPiOut;
+        piOutOff = sizeof(REQ_CMD_HDR) + pThis->virtioScsiConfig.uCdbSize + sizeof(REQ_CMD_PI);
     }
 
-    off_t uDataOutOff = cbCmdHdr + cbCdb + cbPiHdr + cbPiOut;
-
-    /** Next line works because the OUT s/g buffer doesn't hold writable (e.g. IN) part(s) of req */
-    size_t cbDataOut = cbOut - uDataOutOff;
-
+    off_t   uDataOutOff = sizeof(REQ_CMD_HDR)  + pThis->virtioScsiConfig.uCdbSize + cbPiHdr;
+    off_t   uDataInOff  = sizeof(REQ_RESP_HDR) + pThis->virtioScsiConfig.uSenseSize + cbPiIn;
     uint8_t *pbDataOut = (uint8_t *)((uint64_t)pVirtqReq + uDataOutOff);
+    size_t  cbDataOut = cbOut - uDataOutOff;
+    size_t  cbDataIn  = cbIn  - uDataInOff;
 
-    if (cbDataOut)
-        virtioScsiHexDump(pVirtqReq->uDataOut, cbDataOut, 0, "\ndataout");
-
-
-    if (cbPiOut)
-        virtioScsiHexDump(pVirtqReq->uPiOut, cbPiOut, 0, "\nPi out");
-
-    PDMMEDIAEXIOREQ   hIoReq = NULL;
-    PVIRTIOSCSIREQ    pReq;
-    PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[uTarget];
-    PPDMIMEDIAEX      pIMediaEx = pTarget->pDrvMediaEx;
-
-    size_t cbDataIn  = cbIn - (cbRespHdr + cbSense + cbPiIn);
-
-    if (uTarget >= pThis->cTargets)
+    if (uTarget >= pThis->cTargets || uLUN != 0)
     {
-        struct REQ_RESP_HDR respHdr;
-        respHdr.cbSense = 0;
+        uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
+                              0, SCSI_SENSE_ILLEGAL_REQUEST,
+                              0, 0, 0, 0, 10, SCSI_ASC_LOGICAL_UNIT_NOT_SUPPORTED, 0, 0 };
+        struct REQ_RESP_HDR respHdr = { 0 };
+        respHdr.uSenseLen = sizeof(abSense);
+        respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
+        respHdr.uResponse = (uTarget > pThis->cTargets) ? VIRTIOSCSI_S_BAD_TARGET : VIRTIOSCSI_S_OK;
         respHdr.uResidual = cbDataOut + cbDataIn;
-        respHdr.uStatus = SCSI_STATUS_OK;
-        respHdr.uResponse = VIRTIOSCSI_S_BAD_TARGET;
-        respHdr.uStatusQualifier = 0;
-        virtioScsiReqFinish(pThis, qIdx, &respHdr, NULL /* pbSense */);
+        virtioScsiReqFinish(pThis, qIdx, &respHdr, abSense);
         return VINF_SUCCESS;
     }
 
-    struct REQ_RESP_HDR respHdr = { 0 };
-    if (uLUN != 0)
-    {
-        /**
-         * This is needed for the time being to respond with the right error condition and sense data
-         * at the right time.  It doesn't work to send requests to bad luns down to DrvSCSI. It returs
-         * success for the INQUIRY commands and then starts failing future requests with BAD PARAM errors.
-         * Unfortunately that's too late for Linux. If it doesn't get the bad lun error at inquiry it
-         * seems to mishandle the error on future requests and will create 8 devices for the target and
-         * it gets ugly. */
+    PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[uTarget];
 
-        uint8_t pbSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED, 0, SCSI_SENSE_ILLEGAL_REQUEST,
-                              0, 0, 0, 0, 10, SCSI_ASC_LOGICAL_UNIT_NOT_SUPPORTED, 0, 0 };
-        respHdr.cbSense = sizeof(pbSense);
-        respHdr.uResidual = cbDataIn + cbDataOut;
+    if (RT_UNLIKELY(!pTarget->fPresent))
+    {
+        Log2Func(("Error submitting request, target not present!!\n"));
+        uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
+                              0, SCSI_SENSE_NOT_READY, 0, 0, 0, 0, 10, 0, 0, 0 };
+        struct REQ_RESP_HDR respHdr = { 0 };
+        respHdr.uSenseLen = sizeof(abSense);
         respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
-        respHdr.uResponse = VIRTIOSCSI_S_OK;
-        respHdr.uStatusQualifier = 0;
-        virtioScsiReqFinish(pThis, qIdx, &respHdr, pbSense);
+        respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
+        respHdr.uResidual = cbDataIn + cbDataOut;
+        virtioScsiReqFinish(pThis, qIdx, &respHdr, abSense);
         RTMemFree(pVirtqReq);
         return VINF_SUCCESS;
     }
 
-    if (RT_LIKELY(pTarget->fPresent))
+    PDMMEDIAEXIOREQ   hIoReq = NULL;
+    PVIRTIOSCSIREQ    pReq;
+    PPDMIMEDIAEX      pIMediaEx = pTarget->pDrvMediaEx;
+
+    int rc = pIMediaEx->pfnIoReqAlloc(pIMediaEx, &hIoReq, (void **)&pReq, 0 /* uIoReqId */,
+                                  PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
+
+    AssertMsgRCReturn(rc, ("Failed to allocate I/O request, rc=%Rrc\n", rc), rc);
+
+    if (pThis->fHasT10pi)
     {
-        int rc = pIMediaEx->pfnIoReqAlloc(pIMediaEx, &hIoReq, (void **)&pReq, 0 /* uIoReqId */,
-                                      PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
-
-        AssertMsgRCReturn(rc, ("Failed to allocate I/O request, rc=%Rrc\n", rc), rc);
-
-        ASMAtomicIncU32(&pTarget->cReqsInProgress);
-
-        pReq->hIoReq    = hIoReq;
-        pReq->pTarget   = pTarget;
-        pReq->qIdx      = qIdx;
         pReq->cbPiOut   = cbPiOut;
-        pReq->pbPiOut   = pbPiOut;
-        pReq->pbDataOut = pbDataOut;
+        pReq->pbPiOut   = (uint8_t *)((uint64_t)pVirtqReq + piOutOff);
         pReq->cbPiIn    = cbPiIn;
-        pReq->pVirtqReq = pVirtqReq;
+        pReq->pbPiIn    = (uint8_t *)RTMemAllocZ(cbPiIn);
+        AssertMsgReturn(pReq->pbPiIn, ("Out of memory allocating pi_in buffer"),  VERR_NO_MEMORY);
+    }
 
-        if (cbPiIn)
+    pReq->hIoReq    = hIoReq;
+    pReq->pTarget   = pTarget;
+    pReq->qIdx      = qIdx;
+    pReq->pbDataOut = pbDataOut;
+    pReq->pVirtqReq = pVirtqReq;
+    pReq->pInSgBuf  = pInSgBuf;
+    pReq->cbSense   = pThis->virtioScsiConfig.uSenseSize;
+    pReq->pbSense   = (uint8_t *)RTMemAllocZ(pReq->cbSense);
+    AssertMsgReturn(pReq->pbSense,  ("Out of memory allocating sense buffer"),  VERR_NO_MEMORY);
+
+    if (cbDataIn)
+    {
+        pReq->cbDataIn  = cbDataIn;
+        pReq->pbDataIn  = (uint8_t *)RTMemAllocZ(cbDataIn);
+        AssertMsgReturn(pReq->pbDataIn, ("Out of memory allocating datain buffer"), VERR_NO_MEMORY);
+    }
+
+    ASMAtomicIncU32(&pTarget->cReqsInProgress);
+
+    rc = pIMediaEx->pfnIoReqSendScsiCmd(pIMediaEx, pReq->hIoReq, uLUN,
+                                        pVirtqReq->uCdb, pThis->virtioScsiConfig.uCdbSize,
+                                        PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, cbDataIn,
+                                        pReq->pbSense, pReq->cbSense,
+                                        &pReq->uStatus, 30 * RT_MS_1SEC);
+
+    if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
+    {
+        /**
+         * This rc value from DrvSCSI/send SCSI cmd means the request failed early
+         * (no mem, buf copy callback, request buffer creation, or req enqueue),
+         * and not submitted to lower layers, error it out.
+         */
+        Log2Func(("Error submitting request!\n"));
+        size_t cbResidual;
+        pIMediaEx->pfnIoReqQueryResidual(pIMediaEx, pReq->hIoReq, &cbResidual);
+        uint8_t uASC, uASCQ = 0;
+        switch (rc)
         {
-            pReq->pbPiIn = (uint8_t *)RTMemAllocZ(cbPiIn);
-            AssertMsgReturn(pReq->pbPiIn, ("Out of memory allocating pi_in buffer"),  VERR_NO_MEMORY);
+            case VERR_NO_MEMORY:
+                uASC = SCSI_ASC_SYSTEM_RESOURCE_FAILURE;
+                break;
+            default:
+                uASC = SCSI_ASC_INTERNAL_TARGET_FAILURE;
+                break;
         }
-
-        if (cbDataIn)
-        {
-            pReq->cbDataIn  = cbDataIn;
-            pReq->pbDataIn  = (uint8_t *)RTMemAllocZ(cbDataIn);
-            AssertMsgReturn(pReq->pbDataIn, ("Out of memory allocating datain buffer"), VERR_NO_MEMORY);
-        }
-
-        if (cbSense)
-        {
-            pReq->cbSense   = cbSense;
-            pReq->pbSense   = (uint8_t *)RTMemAllocZ(cbSense);
-            pReq->pInSgBuf   = pInSgBuf;
-            AssertMsgReturn(pReq->pbSense,  ("Out of memory allocating sense buffer"),  VERR_NO_MEMORY);
-        }
-
-        Log3Func(("Submitting req on %s\n", uTarget, uLUN, QUEUENAME(qIdx)));
-
-        rc = pIMediaEx->pfnIoReqSendScsiCmd(pIMediaEx, pReq->hIoReq, uLUN, pbCdb, cbCdb,
-                                            PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, cbDataIn, pReq->pbSense, cbSense,
-                                            &pReq->uStatus, 30 * RT_MS_1SEC);
-
-        if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
-        {
-            /**
-             * This rc value from DrvSCSI/send SCSI cmd means the request failed early
-             * (no mem, buf copy callback, request buffer creation, or req enqueue),
-             * and not submitted to lower layers, error it out.
-             */
-            LogRel(("Error submitting request!\n"));
-            size_t cbResidual;
-            pIMediaEx->pfnIoReqQueryResidual(pIMediaEx, pReq->hIoReq, &cbResidual);
-            uint8_t uASC, uASCQ = 0;
-            switch (rc)
-            {
-                case VERR_NO_MEMORY:
-                    uASC = SCSI_ASC_SYSTEM_RESOURCE_FAILURE;
-                    break;
-                default:
-                    uASC = SCSI_ASC_INTERNAL_TARGET_FAILURE;
-                    break;
-            }
-            uint8_t pbSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED, 0, SCSI_SENSE_VENDOR_SPECIFIC,
-                                  0, 0, 0, 0, 10, uASC, uASCQ, 0 };
-            respHdr.cbSense   = sizeof(pbSense);
-            respHdr.uResidual = cbDataIn + cbDataOut;
-            respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
-            respHdr.uResponse = VIRTIOSCSI_S_FAILURE;
-            respHdr.uStatusQualifier = 0;
-            virtioScsiReqFinish(pThis, qIdx, &respHdr,  NULL /* pbSense */);
-            RTMemFree(pVirtqReq);
-            RTMemFree(pReq->pbSense);
-            RTMemFree(pReq->pbDataIn);
-            RTMemFree(pReq->pbPiIn);
-            pIMediaEx->pfnIoReqFree(pIMediaEx, pReq->hIoReq);
-            return VINF_SUCCESS;
-        }
-    } else {
-        LogRel(("Error submitting request, target not present!!\n"));
-        uint8_t pbSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED, 0, SCSI_SENSE_NOT_READY,
-                              0, 0, 0, 0, 10, 0, 0, 0 };
-        respHdr.cbSense   = sizeof(pbSense);
-        respHdr.uResidual = cbDataIn + cbDataOut;
+        uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
+                              0, SCSI_SENSE_VENDOR_SPECIFIC,
+                              0, 0, 0, 0, 10, uASC, uASCQ, 0 };
+        struct REQ_RESP_HDR respHdr = { 0 };
+        respHdr.uSenseLen = sizeof(abSense);
         respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
-        respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
-        respHdr.uStatusQualifier = 0;
-        virtioScsiReqFinish(pThis, qIdx, &respHdr,  NULL /* pbSense */);
+        respHdr.uResponse = VIRTIOSCSI_S_FAILURE;
+        respHdr.uResidual = cbDataIn + cbDataOut;
+        virtioScsiReqFinish(pThis, qIdx, &respHdr, abSense);
+        RTMemFree(pReq->pbSense);
+        RTMemFree(pReq->pbDataIn);
+        RTMemFree(pReq->pbPiIn);
+        RTMemFree(pVirtqReq);
+        pIMediaEx->pfnIoReqFree(pIMediaEx, pReq->hIoReq);
         return VINF_SUCCESS;
     }
 
@@ -1602,7 +1541,7 @@ static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, void *pC
     pThis->fVirtioReady = fVirtioReady;
     if (fVirtioReady)
     {
-        LogFunc(("VirtIO ready\n---------------------------------------------------------------------------------\n"));
+        LogFunc(("VirtIO ready\n-----------------------------------------------------------------------------------------\n"));
         uint64_t features = virtioGetNegotiatedFeatures(hVirtio);
         pThis->fHasT10pi     = features & VIRTIO_SCSI_F_T10_PI;
         pThis->fHasHotplug   = features & VIRTIO_SCSI_F_HOTPLUG;

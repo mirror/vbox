@@ -195,7 +195,6 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
 
     pDescChain->cSegsIn = pDescChain->cSegsOut = 0;
 
-
     pDescChain->uHeadIdx = virtioReadAvailDescIdx(pVirtio, qIdx, pVirtqProxy->uAvailIdx);
     uint16_t uDescIdx = pDescChain->uHeadIdx;
 
@@ -205,13 +204,14 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
     if (fRemove)
         pVirtqProxy->uAvailIdx++;
 
+    uint32_t cbIn = 0, cbOut = 0;
     VIRTQ_DESC_T desc;
     do
     {
         RTSGSEG *pSeg;
 
         /**
-        * Malicious or inept guests may go beyond aSegsIn or aSegsOut boundaries by linking
+        * Malicious guests may go beyond aSegsIn or aSegsOut boundaries by linking
         * several descriptors into a loop. Since there is no legitimate way to get a sequences of
         * linked descriptors exceeding the total number of descriptors in the ring (see @bugref{8620}),
         * the following aborts I/O if breach and employs a simple log throttling algorithm to notify.
@@ -239,13 +239,14 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
         {
             Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n",
                 QUEUENAME(qIdx), uDescIdx, pDescChain->cSegsIn, desc.pGcPhysBuf, desc.cb));
-
+            cbIn += desc.cb;
             pSeg = &(pDescChain->aSegsIn[pDescChain->cSegsIn++]);
         }
         else
         {
             Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n",
                 QUEUENAME(qIdx), uDescIdx, pDescChain->cSegsOut, desc.pGcPhysBuf, desc.cb));
+            cbOut += desc.cb;
             pSeg = &(pDescChain->aSegsOut[pDescChain->cSegsOut++]);
         }
 
@@ -255,16 +256,17 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
         uDescIdx = desc.uDescIdxNext;
     } while (desc.fFlags & VIRTQ_DESC_F_NEXT);
 
-    RTSgBufInit(&pVirtqProxy->inSgBuf, (PCRTSGSEG)&pDescChain->aSegsIn,  pDescChain->cSegsIn);
-    RTSgBufInit(&pVirtqProxy->outSgBuf,(PCRTSGSEG)&pDescChain->aSegsOut, pDescChain->cSegsOut);
+    RTSgBufInit(&pVirtqProxy->inSgBuf,  (PCRTSGSEG)&pDescChain->aSegsIn,  pDescChain->cSegsIn);
+    RTSgBufInit(&pVirtqProxy->outSgBuf, (PCRTSGSEG)&pDescChain->aSegsOut, pDescChain->cSegsOut);
 
     if (ppInSegs)
         *ppInSegs  = &pVirtqProxy->inSgBuf;
+
     if (ppOutSegs)
         *ppOutSegs = &pVirtqProxy->outSgBuf;
 
-    Log3Func(("%s -- segs out: %u,  segs in: %u --\n",
-              pVirtqProxy->szVirtqName, pDescChain->cSegsOut, pDescChain->cSegsIn));
+    Log3Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
+              pVirtqProxy->szVirtqName, pDescChain->cSegsOut, cbOut, pDescChain->cSegsIn, cbIn));
 
     return VINF_SUCCESS;
 }
@@ -288,7 +290,7 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fF
     PRTSGBUF pBufDst = &pVirtqProxy->inSgBuf;
 
     size_t cbRemain = RTSgBufCalcTotalLength(pBufSrc);
-    uint16_t uUsedIdx  = virtioReadUsedRingIdx(pVirtio, qIdx);
+    uint16_t uUsedIdx = virtioReadUsedRingIdx(pVirtio, qIdx);
     Log3Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
                QUEUENAME(qIdx), uUsedIdx));
 
@@ -308,11 +310,6 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fF
     if (fFence)
         RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
-    /** TBD to avoid wasting cycles how do we wrap this in test for Log2* enabled? */
-    size_t   cbInSgBuf = RTSgBufCalcTotalLength(pBufDst);
-    size_t   cbWritten = cbInSgBuf  - RTSgBufCalcLengthLeft(pBufDst);
-
-
     /** If this write-ahead crosses threshold where the driver wants to get an event flag it */
     if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
         if (pVirtqProxy->uUsedIdx == virtioReadAvailUsedEvent(pVirtio, qIdx))
@@ -325,8 +322,17 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fF
                         pVirtqProxy->uUsedIdx++,
                         pDescChain->uHeadIdx,
                         pDescChain->cSegsIn);
-    Log3Func(("Copied %u bytes to %u byte buffer\n                Write ahead used_idx=%d, %s used_idx=%d\n",
-             cbWritten, cbInSgBuf, pVirtqProxy->uUsedIdx,  QUEUENAME(qIdx), uUsedIdx));
+
+    if (LogIs2Enabled())
+    {
+        size_t cbInSgBuf = RTSgBufCalcTotalLength(pBufDst);
+        size_t cbWritten = cbInSgBuf - RTSgBufCalcLengthLeft(pBufDst);
+        Log2Func(("Copied %u bytes to %u byte buffer, residual=%d\n",
+             cbWritten, cbInSgBuf, cbInSgBuf - cbWritten));
+    }
+    Log3Func(("Write ahead used_idx=%d, %s used_idx=%d\n",
+         pVirtqProxy->uUsedIdx,  QUEUENAME(qIdx), uUsedIdx));
+
     return VINF_SUCCESS;
 }
 
