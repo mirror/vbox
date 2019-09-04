@@ -1978,7 +1978,7 @@ int GuestSessionTaskUpdateAdditions::copyFileToGuest(GuestSession *pSession, RTV
     if (RT_SUCCESS(rc))
     {
         uint64_t cbSrcSize = 0;
-        rc = RTVfsFileGetSize(hVfsFile, &cbSrcSize);
+        rc = RTVfsFileQuerySize(hVfsFile, &cbSrcSize);
         if (RT_SUCCESS(rc))
         {
             LogRel(("Copying Guest Additions installer file \"%s\" to \"%s\" on guest ...\n",

@@ -146,7 +146,7 @@ static int rtIniFileLoad(PRTINIFILEINT pThis)
      * Load the entire file into memory, ensuring two terminating zeros.
      */
     uint64_t cbFile;
-    int rc = RTVfsFileGetSize(pThis->hVfsFile, &cbFile);
+    int rc = RTVfsFileQuerySize(pThis->hVfsFile, &cbFile);
     AssertRCReturn(rc, rc);
 
     if (cbFile > RTINIFILE_MAX_SIZE)

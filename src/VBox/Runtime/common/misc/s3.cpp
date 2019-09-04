@@ -955,7 +955,7 @@ RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
         return rc;
 
     uint64_t cbFileSize;
-    rc = RTFileGetSize(hFile, &cbFileSize);
+    rc = RTFileQuerySize(hFile, &cbFileSize);
     if (RT_FAILURE(rc))
     {
         RTFileClose(hFile);

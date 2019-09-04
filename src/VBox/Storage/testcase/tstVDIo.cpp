@@ -1668,7 +1668,7 @@ static DECLCALLBACK(int) vdScriptHandlerIoPatternCreateFromFile(PVDSCRIPTARG paS
         rc = RTFileOpen(&hFile, pcszFile, RTFILE_O_DENY_NONE | RTFILE_O_OPEN | RTFILE_O_READ);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileGetSize(hFile, &cbPattern);
+            rc = RTFileQuerySize(hFile, &cbPattern);
             if (RT_SUCCESS(rc))
             {
                 pPattern = tstVDIoPatternCreate(pcszName, (size_t)cbPattern);

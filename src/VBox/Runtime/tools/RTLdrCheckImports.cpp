@@ -276,7 +276,7 @@ static int LoadImportModule(PCRTCHECKIMPORTSOPTS pOpts, PRTCHECKIMPORTMODULE pMo
             {
                 /* Read it into a memory buffer. */
                 uint64_t cbFile;
-                rc = RTVfsFileGetSize(hVfsFile, &cbFile);
+                rc = RTVfsFileQuerySize(hVfsFile, &cbFile);
                 if (RT_SUCCESS(rc))
                 {
                     if (cbFile < _4M)
@@ -374,7 +374,7 @@ static int LoadImportModule(PCRTCHECKIMPORTSOPTS pOpts, PRTCHECKIMPORTMODULE pMo
                                           pszImage, szPath, cbFile);
                 }
                 else
-                    RTMsgError("%s: %s: RTVfsFileGetSize failed on export file: %Rrc", pszImage, szPath, rc);
+                    RTMsgError("%s: %s: RTVfsFileQuerySize failed on export file: %Rrc", pszImage, szPath, rc);
                 RTVfsFileRelease(hVfsFile);
                 return rc;
             }

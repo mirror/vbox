@@ -3249,7 +3249,7 @@ static DECLCALLBACK(int) vdIOGetSizeFallback(void *pvUser, void *pvStorage, uint
     RT_NOREF1(pvUser);
     PVDIIOFALLBACKSTORAGE pStorage = (PVDIIOFALLBACKSTORAGE)pvStorage;
 
-    return RTFileGetSize(pStorage->File, pcbSize);
+    return RTFileQuerySize(pStorage->File, pcbSize);
 }
 
 /**

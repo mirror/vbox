@@ -3413,7 +3413,7 @@ void fsPerfChSize(void)
     RTTESTI_CHECK_RC_RETV(RTFileOpen(&hFile1, InDir(RT_STR_TUPLE("file20")),
                                      RTFILE_O_CREATE_REPLACE | RTFILE_O_DENY_NONE | RTFILE_O_READWRITE), VINF_SUCCESS);
     uint64_t cbFile = UINT64_MAX;
-    RTTESTI_CHECK_RC(RTFileGetSize(hFile1, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileQuerySize(hFile1, &cbFile), VINF_SUCCESS);
     RTTESTI_CHECK(cbFile == 0);
 
     uint8_t abBuf[4096];
@@ -3430,7 +3430,7 @@ void fsPerfChSize(void)
             continue;
 
         RTTESTI_CHECK_RC(RTFileSetSize(hFile1, cbNew), VINF_SUCCESS);
-        RTTESTI_CHECK_RC(RTFileGetSize(hFile1, &cbFile), VINF_SUCCESS);
+        RTTESTI_CHECK_RC(RTFileQuerySize(hFile1, &cbFile), VINF_SUCCESS);
         RTTESTI_CHECK_MSG(cbFile == cbNew, ("cbFile=%#RX64 cbNew=%#RX64\n", cbFile, cbNew));
 
         if (cbNew > cbOld)
@@ -6195,7 +6195,7 @@ static void fsPerfRemote(void)
     RTTESTI_CHECK_RC(FsPerfCommsSend("writepattern 0 8000 0 1000" FSPERF_EOF_STR), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 8000), VINF_SUCCESS);
     uint64_t cbFile = 0;
-    RTTESTI_CHECK_RC(RTFileGetSize(hFile0, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileQuerySize(hFile0, &cbFile), VINF_SUCCESS);
     RTTESTI_CHECK_MSG(cbFile == 8000, ("cbFile=%u\n", cbFile));
     RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
 
@@ -6206,7 +6206,7 @@ static void fsPerfRemote(void)
     RTTESTI_CHECK_RC(FsPerfCommsSend("writepattern 0 5000 0 1000" FSPERF_EOF_STR), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 5000), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
-    RTTESTI_CHECK_RC(RTFileGetSize(hFile0, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileQuerySize(hFile0, &cbFile), VINF_SUCCESS);
     RTTESTI_CHECK_MSG(cbFile == 5000, ("cbFile=%u\n", cbFile));
 
     /* Same, but host truncates rather than adding stuff. */
@@ -6214,7 +6214,7 @@ static void fsPerfRemote(void)
     RTTESTI_CHECK_RC(RTFileWrite(hFile0, abBuf, 16384, NULL), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTFileSetSize(hFile0, 10000), VINF_SUCCESS);
     RTTESTI_CHECK_RC(FsPerfCommsSend("truncate 0 4000" FSPERF_EOF_STR), VINF_SUCCESS);
-    RTTESTI_CHECK_RC(RTFileGetSize(hFile0, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(RTFileQuerySize(hFile0, &cbFile), VINF_SUCCESS);
     RTTESTI_CHECK_MSG(cbFile == 4000, ("cbFile=%u\n", cbFile));
     RTTESTI_CHECK_RC(RTFileRead(hFile0, abBuf, 1, NULL), VERR_EOF);
 

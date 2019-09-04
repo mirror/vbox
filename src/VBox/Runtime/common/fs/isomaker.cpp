@@ -6247,7 +6247,7 @@ static int rtFsIsoMakerOutFile_ProduceTransTbl(PRTFSISOMAKEROUTPUTFILE pThis, PR
      * Check that the size matches our estimate.
      */
     uint64_t cbResult = 0;
-    rc = RTVfsFileGetSize(hVfsFile, &cbResult);
+    rc = RTVfsFileQuerySize(hVfsFile, &cbResult);
     if (RT_SUCCESS(rc) && cbResult == pFile->cbData)
     {
         pThis->hVfsSrcFile = hVfsFile;

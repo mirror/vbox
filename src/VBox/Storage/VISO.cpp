@@ -343,7 +343,7 @@ static int visoOpenWorker(PVISOIMAGE pThis)
                                         if (RT_SUCCESS(rc))
                                         {
                                             uint64_t cbImage;
-                                            rc = RTVfsFileGetSize(hVfsFile, &cbImage);
+                                            rc = RTVfsFileQuerySize(hVfsFile, &cbImage);
                                             if (RT_SUCCESS(rc))
                                             {
                                                 /*

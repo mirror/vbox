@@ -306,7 +306,7 @@ static int acpiAmlLoadExternal(PPDMDEVINS pDevIns, const char *pcszCfgName, cons
              * is equal to the size of the DSDT.
              */
             uint64_t cbAmlFile = 0;
-            rc = RTFileGetSize(FileAml, &cbAmlFile);
+            rc = RTFileQuerySize(FileAml, &cbAmlFile);
 
             cbAmlCode = (size_t)cbAmlFile;
 

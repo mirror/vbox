@@ -224,7 +224,7 @@ static int rtldrFileCreate(PRTLDRREADER *ppReader, const char *pszFilename)
         rc = RTFileOpen(&pFileReader->hFile, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileGetSize(pFileReader->hFile, &pFileReader->cbFile);
+            rc = RTFileQuerySize(pFileReader->hFile, &pFileReader->cbFile);
             if (RT_SUCCESS(rc))
             {
                 pFileReader->Core.uMagic     = RTLDRREADER_MAGIC;

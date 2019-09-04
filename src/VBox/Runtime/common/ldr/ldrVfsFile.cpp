@@ -87,7 +87,7 @@ static DECLCALLBACK(uint64_t) rtldrVfsFileSize(PRTLDRREADER pReader)
 {
     PRTLDRREADERVFSFILE pFileReader = (PRTLDRREADERVFSFILE)pReader;
     uint64_t cbFile;
-    int rc = RTVfsFileGetSize(pFileReader->hVfsFile, &cbFile);
+    int rc = RTVfsFileQuerySize(pFileReader->hVfsFile, &cbFile);
     if (RT_SUCCESS(rc))
         return cbFile;
     return 0;

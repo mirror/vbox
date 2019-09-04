@@ -1186,7 +1186,7 @@ RTEXITCODE handleConvertFromRaw(HandlerArg *a)
     if (fReadFromStdIn)
         cbFile = RTStrToUInt64(filesize);
     else
-        rc = RTFileGetSize(File, &cbFile);
+        rc = RTFileQuerySize(File, &cbFile);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Cannot get image size for file \"%s\": %Rrc", srcfilename, rc);

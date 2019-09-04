@@ -1287,7 +1287,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
          * before failing.
          */
         vrc = RTErrConvertFromWin32(GetLastError());
-        if (RT_FAILURE(RTFileGetSize(hRawFile, &cbSize)))
+        if (RT_FAILURE(RTFileQuerySize(hRawFile, &cbSize)))
         {
             RTMsgError("Cannot get the geometry of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);
             goto out;
@@ -1337,7 +1337,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
         }
         else if (S_ISREG(DevStat.st_mode))
         {
-            vrc = RTFileGetSize(hRawFile, &cbSize);
+            vrc = RTFileQuerySize(hRawFile, &cbSize);
             if (RT_FAILURE(vrc))
             {
                 RTMsgError("Failed to get size of file '%s': %Rrc", rawdisk.c_str(), vrc);
@@ -1392,7 +1392,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
         else if (S_ISREG(DevStat.st_mode))
         {
             fRelative = false; /* Must be false for raw image files. */
-            vrc = RTFileGetSize(hRawFile, &cbSize);
+            vrc = RTFileQuerySize(hRawFile, &cbSize);
             if (RT_FAILURE(vrc))
             {
                 RTMsgError("Failed to get size of file '%s': %Rrc", rawdisk.c_str(), vrc);
@@ -1430,7 +1430,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
         }
         else if (S_ISREG(DevStat.st_mode))
         {
-            vrc = RTFileGetSize(hRawFile, &cbSize);
+            vrc = RTFileQuerySize(hRawFile, &cbSize);
             if (RT_FAILURE(vrc))
             {
                 RTMsgError("Failed to get size of file '%s': %Rrc", rawdisk.c_str(), vrc);
@@ -1492,7 +1492,7 @@ static RTEXITCODE CmdCreateRawVMDK(int argc, char **argv, ComPtr<IVirtualBox> aV
 #else /* all unrecognized OSes */
     /* Hopefully this works on all other hosts. If it doesn't, it'll just fail
      * creating the VMDK, so no real harm done. */
-    vrc = RTFileGetSize(hRawFile, &cbSize);
+    vrc = RTFileQuerySize(hRawFile, &cbSize);
     if (RT_FAILURE(vrc))
     {
         RTMsgError("Cannot get the size of the raw disk '%s': %Rrc", rawdisk.c_str(), vrc);

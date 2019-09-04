@@ -5535,7 +5535,7 @@ RTDECL(int) RTFsNtfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t f
         RTListInit(&pThis->CoreUnusedHead);
         RTListInit(&pThis->IdxNodeUnusedHead);
 
-        rc = RTVfsFileGetSize(pThis->hVfsBacking, &pThis->cbBacking);
+        rc = RTVfsFileQuerySize(pThis->hVfsBacking, &pThis->cbBacking);
         if (RT_SUCCESS(rc))
         {
             void *pvBuf = RTMemTmpAlloc(_64K);

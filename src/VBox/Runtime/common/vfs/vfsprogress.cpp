@@ -401,7 +401,7 @@ static DECLCALLBACK(int) rtVfsProgressFile_Seek(void *pvThis, RTFOFF offSeek, un
 static DECLCALLBACK(int) rtVfsProgressFile_QuerySize(void *pvThis, uint64_t *pcbFile)
 {
     PRTVFSPROGRESSFILE pThis = (PRTVFSPROGRESSFILE)pvThis;
-    return RTVfsFileGetSize(pThis->hVfsFile, pcbFile);
+    return RTVfsFileQuerySize(pThis->hVfsFile, pcbFile);
 }
 
 

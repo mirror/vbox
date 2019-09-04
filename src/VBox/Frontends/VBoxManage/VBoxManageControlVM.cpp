@@ -320,7 +320,7 @@ static HRESULT keyboardPutFile(IKeyboard *pKeyboard, const char *pszFilename)
     if (RT_SUCCESS(vrc))
     {
         uint64_t cbFile = 0;
-        vrc = RTFileGetSize(File, &cbFile);
+        vrc = RTFileQuerySize(File, &cbFile);
         if (RT_SUCCESS(vrc))
         {
             const uint64_t cbFileMax = _64K;

@@ -201,7 +201,7 @@ RTDECL(int) RTDvmCreate(PRTDVM phVolMgr, RTVFSFILE hVfsFile, uint32_t cbSector, 
     AssertReturn(cRefs != UINT32_MAX, VERR_INVALID_HANDLE);
 
     uint64_t cbDisk;
-    int rc = RTVfsFileGetSize(hVfsFile, &cbDisk);
+    int rc = RTVfsFileQuerySize(hVfsFile, &cbDisk);
     if (RT_SUCCESS(rc))
     {
         PRTDVMINTERNAL pThis = (PRTDVMINTERNAL)RTMemAllocZ(sizeof(RTDVMINTERNAL));

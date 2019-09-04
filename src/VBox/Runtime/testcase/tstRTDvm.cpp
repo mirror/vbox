@@ -189,11 +189,11 @@ int main(int argc, char **argv)
     }
 
     uint64_t cb = 0;
-    rc = RTVfsFileGetSize(hVfsDisk, &cb);
+    rc = RTVfsFileQuerySize(hVfsDisk, &cb);
     if (   RT_FAILURE(rc)
         || cb % 512 != 0) /* Assume 512 byte sector size. */
     {
-        RTTestIFailed("RTVfsFileGetSize -> %Rrc", rc);
+        RTTestIFailed("RTVfsFileQuerySize -> %Rrc", rc);
         return RTTestSummaryAndDestroy(hTest);
     }
 

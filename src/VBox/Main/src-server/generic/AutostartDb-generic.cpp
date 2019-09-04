@@ -71,7 +71,7 @@ int AutostartDb::autostartModifyDb(bool fAutostart, bool fAddVM)
                  * a number of the amount of VMs with autostart configured, so they
                  * should be really really small. Anything else is bogus.
                  */
-                rc = RTFileGetSize(hAutostartFile, &cbFile);
+                rc = RTFileQuerySize(hAutostartFile, &cbFile);
                 if (   RT_SUCCESS(rc)
                     && cbFile <= 16)
                 {

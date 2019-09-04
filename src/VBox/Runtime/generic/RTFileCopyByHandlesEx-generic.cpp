@@ -58,7 +58,7 @@ RTDECL(int) RTFileCopyByHandlesEx(RTFILE hFileSrc, RTFILE hFileDst, PFNRTPROGRES
      * Get the file size and figure out how much we'll copy at a time.
      */
     uint64_t cbSrc;
-    rc = RTFileGetSize(hFileSrc, &cbSrc);
+    rc = RTFileQuerySize(hFileSrc, &cbSrc);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -83,7 +83,7 @@ RTDECL(int) RTFileCopyByHandlesEx(RTFILE hFileSrc, RTFILE hFileDst, PFNRTPROGRES
          * Prepare the destination file.
          */
         uint64_t cbDst;
-        rc = RTFileGetSize(hFileDst, &cbDst);
+        rc = RTFileQuerySize(hFileDst, &cbDst);
         if (RT_SUCCESS(rc) && cbDst > cbSrc)
             rc = RTFileSetSize(hFileDst, cbSrc);
         if (RT_SUCCESS(rc) && cbDst < cbSrc)

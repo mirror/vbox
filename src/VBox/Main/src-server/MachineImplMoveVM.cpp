@@ -392,7 +392,7 @@ HRESULT MachineMoveVM::init()
             /*if a state file is located in the actual VM folder it will be added to the actual list */
             if (name.contains(strSettingsFilePath))
             {
-                vrc = RTFileQuerySize(name.c_str(), &cbFile);
+                vrc = RTFileQuerySizeByPath(name.c_str(), &cbFile);
                 if (RT_SUCCESS(vrc))
                 {
                     std::pair<std::map<Utf8Str, SAVESTATETASKMOVE>::iterator,bool> ret;
@@ -447,7 +447,7 @@ HRESULT MachineMoveVM::init()
                     strFile.append(RTPATH_DELIMITER).append(it->second.c_str());
 
                     uint64_t cbFile = 0;
-                    vrc = RTFileQuerySize(strFile.c_str(), &cbFile);
+                    vrc = RTFileQuerySizeByPath(strFile.c_str(), &cbFile);
                     if (RT_SUCCESS(vrc))
                     {
                         uCount       += 1;
@@ -1296,7 +1296,7 @@ HRESULT MachineMoveVM::getFolderSize(const Utf8Str& strRootFolder, uint64_t& siz
                 uint64_t cbFile = 0;
                 Utf8Str fullPath =  it->first;
                 fullPath.append(RTPATH_DELIMITER).append(it->second);
-                vrc = RTFileQuerySize(fullPath.c_str(), &cbFile);
+                vrc = RTFileQuerySizeByPath(fullPath.c_str(), &cbFile);
                 if (RT_SUCCESS(vrc))
                 {
                     totalFolderSize += cbFile;
@@ -1481,7 +1481,7 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
         sst.strSaveStateFile = bstrSrcSaveStatePath;
         uint64_t cbSize;
 
-        int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &cbSize);
+        int vrc = RTFileQuerySizeByPath(sst.strSaveStateFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
             return m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                             m_pMachine->tr("Could not get file size of '%s': %Rrc"),

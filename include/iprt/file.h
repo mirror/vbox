@@ -93,9 +93,9 @@ RTDECL(bool) RTFileExists(const char *pszPath);
  * @param   pszPath         The path to the file.
  * @param   pcbFile         Where to return the file size (bytes).
  *
- * @sa      RTFileGetSize, RTPathQueryInfoEx.
+ * @sa      RTFileQuerySize, RTPathQueryInfoEx.
  */
-RTDECL(int) RTFileQuerySize(const char *pszPath, uint64_t *pcbFile);
+RTDECL(int) RTFileQuerySizeByPath(const char *pszPath, uint64_t *pcbFile);
 
 
 /** @name Open flags
@@ -559,7 +559,7 @@ RTDECL(int)  RTFileSetSize(RTFILE File, uint64_t cbSize);
  * @param   File        Handle to the file.
  * @param   pcbSize     Where to store the filesize.
  */
-RTDECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize);
+RTDECL(int)  RTFileQuerySize(RTFILE File, uint64_t *pcbSize);
 
 /**
  * Determine the maximum file size.
@@ -567,7 +567,7 @@ RTDECL(int)  RTFileGetSize(RTFILE File, uint64_t *pcbSize);
  * @returns The max size of the file.
  *          -1 on failure, the file position is undefined.
  * @param   File        Handle to the file.
- * @see     RTFileGetMaxSizeEx.
+ * @see     RTFileQueryMaxSizeEx.
  */
 RTDECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
 
@@ -579,7 +579,7 @@ RTDECL(RTFOFF) RTFileGetMaxSize(RTFILE File);
  * @param   pcbMax      Where to store the max file size.
  * @see     RTFileGetMaxSize.
  */
-RTDECL(int) RTFileGetMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
+RTDECL(int) RTFileQueryMaxSizeEx(RTFILE File, PRTFOFF pcbMax);
 
 /**
  * Determine the maximum file size depending on the file system the file is stored on.

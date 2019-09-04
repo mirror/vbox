@@ -669,7 +669,7 @@ RTR3DECL(int)  RTFileSetSize(RTFILE hFile, uint64_t cbSize)
 }
 
 
-RTR3DECL(int) RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
+RTR3DECL(int) RTFileQuerySize(RTFILE hFile, uint64_t *pcbSize)
 {
     /*
      * Ask fstat() first.
@@ -745,7 +745,7 @@ RTR3DECL(int) RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
 }
 
 
-RTR3DECL(int) RTFileGetMaxSizeEx(RTFILE hFile, PRTFOFF pcbMax)
+RTR3DECL(int) RTFileQueryMaxSizeEx(RTFILE hFile, PRTFOFF pcbMax)
 {
     /*
      * Save the current location

@@ -235,7 +235,7 @@ RTDECL(int) RTFileRead(RTFILE hFile, void *pvBuf, size_t cbToRead, size_t *pcbRe
 }
 
 
-RTDECL(int) RTFileGetSize(RTFILE hFile, uint64_t *pcbSize)
+RTDECL(int) RTFileQuerySize(RTFILE hFile, uint64_t *pcbSize)
 {
     RTFILEINT *pThis = hFile;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -287,7 +287,7 @@ RTDECL(int) RTFileSeek(RTFILE hFile, int64_t offSeek, unsigned uMethod, uint64_t
         case RTFILE_SEEK_END:
         {
             uint64_t cbFile = 0;
-            int rc = RTFileGetSize(hFile, &cbFile);
+            int rc = RTFileQuerySize(hFile, &cbFile);
             if (RT_SUCCESS(rc))
                 offNew = cbFile + offSeek;
             else

@@ -221,7 +221,7 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, b
             sst.snapshotUuid = machine->i_getSnapshotId();
         sst.strSaveStateFile = bstrSrcSaveStatePath;
         uint64_t cbSize;
-        int vrc = RTFileQuerySize(sst.strSaveStateFile.c_str(), &cbSize);
+        int vrc = RTFileQuerySizeByPath(sst.strSaveStateFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
             return p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, p->tr("Could not query file size of '%s' (%Rrc)"),
                                    sst.strSaveStateFile.c_str(), vrc);

@@ -73,7 +73,7 @@ class tdUnitTest1(vbox.TestDriver):
             'testcase/tstRTR0MemUserKernelDriver': '',  # Failes when kernel to kernel buffers.
             'testcase/tstRTSemRW': '',                  # line 338: RTSemRWReleaseRead(hSemRW): got VERR_ACCESS_DENIED
             'testcase/tstRTStrAlloc': '',               # VERR_NO_STR_MEMORY!
-            'testcase/tstRTFileGetSize-1': '',          # VERR_DEV_IO_ERROR on /dev/null!
+            'testcase/tstRTFileQuerySize-1': '',        # VERR_DEV_IO_ERROR on /dev/null!
         },
         'solaris.amd64': {
             'testcase/tstLdr-4': '',        # failed: Failed to get bits for '/home/vbox/test/tmp/bin/testcase/tstLdrObjR0.r0'/0,

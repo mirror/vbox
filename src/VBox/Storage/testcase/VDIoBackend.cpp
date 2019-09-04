@@ -221,7 +221,7 @@ int VDIoBackendStorageGetSize(PVDIOSTORAGE pIoStorage, uint64_t *pcbSize)
         rc = VDMemDiskGetSize(pIoStorage->u.pMemDisk, pcbSize);
     }
     else
-        rc = RTFileGetSize(pIoStorage->u.hFile, pcbSize);
+        rc = RTFileQuerySize(pIoStorage->u.hFile, pcbSize);
 
     return rc;
 }

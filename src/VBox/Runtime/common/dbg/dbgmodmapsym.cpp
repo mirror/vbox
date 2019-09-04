@@ -524,7 +524,7 @@ static DECLCALLBACK(int) rtDbgModMapSym_TryOpen(PRTDBGMODINT pMod, RTLDRARCH enm
     if (RT_SUCCESS(rc))
     {
         uint64_t cbFile = 0;
-        rc = RTFileGetSize(hFile, &cbFile);
+        rc = RTFileQuerySize(hFile, &cbFile);
         if (   RT_SUCCESS(rc)
             && cbFile < _2M)
         {

@@ -3968,7 +3968,7 @@ int Console::i_checkMediumLocation(IMedium *pMedium, bool *pfUseHostIOCache)
             {
                 RTFOFF maxSize;
                 /* Careful: This function will work only on selected local file systems! */
-                rc = RTFileGetMaxSizeEx(file, &maxSize);
+                rc = RTFileQueryMaxSizeEx(file, &maxSize);
                 RTFileClose(file);
                 if (   RT_SUCCESS(rc)
                     && maxSize > 0

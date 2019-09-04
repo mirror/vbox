@@ -448,7 +448,7 @@ DECLINLINE(int) tftpSessionEvaluateOptions(PNATState pData, PTFTPSESSION pTftpSe
         return rc;
     }
 
-    rc = RTFileGetSize(hSessionFile, &cbSessionFile);
+    rc = RTFileQuerySize(hSessionFile, &cbSessionFile);
     RTFileClose(hSessionFile);
     if (RT_FAILURE(rc))
     {

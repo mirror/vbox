@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT Testcase - RTFileGetSize.
+ * IPRT Testcase - RTFileQuerySize.
  */
 
 /*
@@ -57,7 +57,7 @@ static void test1(const char *pszSubTest, const char *pszFilename)
     }
 
     uint64_t    cbFile = UINT64_MAX - 42;
-    RTTESTI_CHECK_RC(rc = RTFileGetSize(hFile, &cbFile), VINF_SUCCESS);
+    RTTESTI_CHECK_RC(rc = RTFileQuerySize(hFile, &cbFile), VINF_SUCCESS);
     if (RT_SUCCESS(rc))
     {
         RTTESTI_CHECK(cbFile != UINT64_MAX - 42);
@@ -72,7 +72,7 @@ static void test1(const char *pszSubTest, const char *pszFilename)
 int main(int argc, char **argv)
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTFileGetSize-1", &hTest);
+    int rc = RTTestInitAndCreate("tstRTFileQuerySize-1", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);

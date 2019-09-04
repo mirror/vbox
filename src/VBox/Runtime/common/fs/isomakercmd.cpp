@@ -1104,7 +1104,7 @@ static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsS
      * Get the image size and setup the copy buffer.
      */
     uint64_t cbImage;
-    int rc = RTVfsFileGetSize(hVfsSrcFile, &cbImage);
+    int rc = RTVfsFileQuerySize(hVfsSrcFile, &cbImage);
     if (RT_SUCCESS(rc))
     {
         rtFsIsoMakerPrintf(pOpts, "Image size: %'RU64 (%#RX64) bytes\n", cbImage, cbImage);
@@ -1159,7 +1159,7 @@ static int rtFsIsoMakerCmdWriteImage(PRTFSISOMAKERCMDOPTS pOpts, RTVFSFILE hVfsS
             rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_NO_TMP_MEMORY, "RTMemTmpAlloc(%zu) failed", cbBuf);
     }
     else
-        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsFileGetSize failed: %Rrc", rc);
+        rc = rtFsIsoMakerCmdErrorRc(pOpts, rc, "RTVfsFileQuerySize failed: %Rrc", rc);
     return rc;
 }
 
@@ -3074,7 +3074,7 @@ static int rtFsIsoMakerCmdParseArgumentFile(PRTFSISOMAKERCMDOPTS pOpts, const ch
         return rtFsIsoMakerCmdChainError(pOpts, "RTVfsChainOpenFile", pszFileSpec, rc, offError, &ErrInfo.Core);
 
     uint64_t cbFile = 0;
-    rc = RTVfsFileGetSize(hVfsFile, &cbFile);
+    rc = RTVfsFileQuerySize(hVfsFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
         if (cbFile < _2M)
@@ -3126,7 +3126,7 @@ static int rtFsIsoMakerCmdParseArgumentFile(PRTFSISOMAKERCMDOPTS pOpts, const ch
             rc = rtFsIsoMakerCmdErrorRc(pOpts, VERR_FILE_TOO_BIG, "%s: file is too big: %'RU64 bytes, max 2MB", pszFileSpec, cbFile);
     }
     else
-        rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s: RTVfsFileGetSize failed: %Rrc", pszFileSpec, rc);
+        rtFsIsoMakerCmdErrorRc(pOpts, rc, "%s: RTVfsFileQuerySize failed: %Rrc", pszFileSpec, rc);
     RTVfsFileRelease(hVfsFile);
     return rc;
 }

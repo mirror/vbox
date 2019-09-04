@@ -123,7 +123,7 @@ RTR3DECL(int) RTSha1DigestFromFile(const char *pszFile, char **ppszDigest, PFNRT
     if (pfnProgressCallback)
     {
         uint64_t cbFile;
-        rc = RTFileGetSize(hFile, &cbFile);
+        rc = RTFileQuerySize(hFile, &cbFile);
         if (RT_FAILURE(rc))
         {
             RTFileClose(hFile);

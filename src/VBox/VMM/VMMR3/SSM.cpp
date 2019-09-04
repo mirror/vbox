@@ -2002,7 +2002,7 @@ static DECLCALLBACK(uint64_t) ssmR3FileTell(void *pvUser)
  */
 static DECLCALLBACK(int) ssmR3FileSize(void *pvUser, uint64_t *pcb)
 {
-    return RTFileGetSize((RTFILE)(uintptr_t)pvUser, pcb);
+    return RTFileQuerySize((RTFILE)(uintptr_t)pvUser, pcb);
 }
 
 

@@ -5617,7 +5617,7 @@ static int rtFsIsoVolTryInit(PRTFSISOVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     /*
      * Get stuff that may fail.
      */
-    int rc = RTVfsFileGetSize(hVfsBacking, &pThis->cbBacking);
+    int rc = RTVfsFileQuerySize(hVfsBacking, &pThis->cbBacking);
     if (RT_SUCCESS(rc))
         pThis->cBackingSectors = pThis->cbBacking / pThis->cbSector;
     else

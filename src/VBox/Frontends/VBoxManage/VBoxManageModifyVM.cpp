@@ -589,7 +589,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     break;
                 }
                 uint64_t cbSize;
-                vrc = RTFileGetSize(iconFile, &cbSize);
+                vrc = RTFileQuerySize(iconFile, &cbSize);
                 if (RT_FAILURE(vrc))
                 {
                     RTMsgError("Cannot get size of file \"%s\": %Rrc", ValueUnion.psz, vrc);

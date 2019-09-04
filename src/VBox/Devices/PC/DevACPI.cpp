@@ -3117,7 +3117,7 @@ static int acpiR3ReadCustomTable(PPDMDEVINS pDevIns, uint8_t **ppu8CustBin, uint
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileGetSize(FileCUSTBin, pcbCustBin);
+        rc = RTFileQuerySize(FileCUSTBin, pcbCustBin);
         if (RT_SUCCESS(rc))
         {
             /* The following checks should be in sync the AssertReleaseMsg's below. */

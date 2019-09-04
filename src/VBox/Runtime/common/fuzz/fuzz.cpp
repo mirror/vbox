@@ -1834,7 +1834,7 @@ RTDECL(int) RTFuzzCtxCorpusInputAddFromVfsFile(RTFUZZCTX hFuzzCtx, RTVFSFILE hVf
 
     uint64_t cbFile = 0;
     void *pvCorpus = NULL;
-    int rc = RTVfsFileGetSize(hVfsFile, &cbFile);
+    int rc = RTVfsFileQuerySize(hVfsFile, &cbFile);
     if (RT_SUCCESS(rc))
     {
         PRTFUZZMUTATION pMutation = rtFuzzMutationCreate(pThis, 0, NULL, cbFile, &pvCorpus);

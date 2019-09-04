@@ -4219,7 +4219,7 @@ RTDECL(int) RTVfsFileSeek(RTVFSFILE hVfsFile, RTFOFF offSeek, uint32_t uMethod, 
 }
 
 
-RTDECL(int) RTVfsFileGetSize(RTVFSFILE hVfsFile, uint64_t *pcbSize)
+RTDECL(int) RTVfsFileQuerySize(RTVFSFILE hVfsFile, uint64_t *pcbSize)
 {
     RTVFSFILEINTERNAL *pThis = hVfsFile;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);

@@ -2520,7 +2520,7 @@ RTDECL(int) RTFsIsoMakerImport(RTFSISOMAKER hIsoMaker, RTVFSFILE hIsoFile, uint3
      * Get the file size.
      */
     uint64_t cbSrcFile = 0;
-    int rc = RTVfsFileGetSize(hIsoFile, &cbSrcFile);
+    int rc = RTVfsFileQuerySize(hIsoFile, &cbSrcFile);
     if (RT_SUCCESS(rc))
     {
         /*

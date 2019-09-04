@@ -3206,7 +3206,7 @@ static int rtlogFileOpen(PRTLOGGER pLogger, PRTERRINFO pErrInfo)
     }
     if (RT_SUCCESS(rc))
     {
-        rc = RTFileGetSize(pLogger->pInt->hFile, &pLogger->pInt->cbHistoryFileWritten);
+        rc = RTFileQuerySize(pLogger->pInt->hFile, &pLogger->pInt->cbHistoryFileWritten);
         if (RT_FAILURE(rc))
         {
             /* Don't complain if this fails, assume the file is empty. */

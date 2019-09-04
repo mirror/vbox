@@ -6679,7 +6679,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                         RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
         if (RT_SUCCESS(rc))
         {
-            rc = RTFileGetSize(FileVgaBios, &pThis->cbVgaBios);
+            rc = RTFileQuerySize(FileVgaBios, &pThis->cbVgaBios);
             if (RT_SUCCESS(rc))
             {
                 if (    RT_ALIGN(pThis->cbVgaBios, _4K) != pThis->cbVgaBios
@@ -7089,7 +7089,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         if (RT_SUCCESS(rc))
         {
             uint64_t cbFile;
-            rc = RTFileGetSize(FileLogo, &cbFile);
+            rc = RTFileQuerySize(FileLogo, &cbFile);
             if (RT_SUCCESS(rc))
             {
                 if (cbFile > 0 && cbFile < 32*_1M)

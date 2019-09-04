@@ -2326,7 +2326,7 @@ RTDECL(int) RTFsXfsVolOpen(RTVFSFILE hVfsFileIn, uint32_t fMntFlags, uint32_t fX
         RTListInit(&pThis->LstInodeLru);
         RTListInit(&pThis->LstBlockLru);
 
-        rc = RTVfsFileGetSize(pThis->hVfsBacking, &pThis->cbBacking);
+        rc = RTVfsFileQuerySize(pThis->hVfsBacking, &pThis->cbBacking);
         if (RT_SUCCESS(rc))
         {
             rc = rtFsXfsVolLoadAndParseSuperblock(pThis, pErrInfo);

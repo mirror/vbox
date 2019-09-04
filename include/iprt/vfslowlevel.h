@@ -1022,7 +1022,7 @@ typedef struct RTVFSFILEOPS
      * @returns IPRT status code.
      * @param   pvThis      The implementation specific file data.
      * @param   pcbFile     Where to store the current file size.
-     * @sa      RTFileGetSize
+     * @sa      RTFileQuerySize
      */
     DECLCALLBACKMEMBER(int, pfnQuerySize)(void *pvThis, uint64_t *pcbFile);
 
@@ -1056,7 +1056,7 @@ typedef struct RTVFSFILEOPS
      * @param   pvThis      The implementation specific file data.
      * @param   pcbMax      Where to return the max file size.
      * @note    Optional.  If NULL, VERR_NOT_IMPLEMENTED will be returned.
-     * @sa      RTFileGetMaxSizeEx
+     * @sa      RTFileQueryMaxSizeEx
      */
     DECLCALLBACKMEMBER(int, pfnQueryMaxSize)(void *pvThis, uint64_t *pcbMax);
 

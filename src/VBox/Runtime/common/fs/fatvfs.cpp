@@ -5619,7 +5619,7 @@ static int rtFsFatVolTryInit(PRTFSFATVOL pThis, RTVFS hVfsSelf, RTVFSFILE hVfsBa
     /*
      * Get stuff that may fail.
      */
-    int rc = RTVfsFileGetSize(hVfsBacking, &pThis->cbBacking);
+    int rc = RTVfsFileQuerySize(hVfsBacking, &pThis->cbBacking);
     if (RT_FAILURE(rc))
         return rc;
     pThis->cbTotalSize = pThis->cbBacking - pThis->offBootSector;
@@ -5815,7 +5815,7 @@ RTDECL(int) RTFsFatVolFormat(RTVFSFILE hVfsFile, uint64_t offVol, uint64_t cbVol
     if (!cbVol)
     {
         uint64_t cbFile;
-        rc = RTVfsFileGetSize(hVfsFile, &cbFile);
+        rc = RTVfsFileQuerySize(hVfsFile, &cbFile);
         AssertRCReturn(rc, rc);
         AssertMsgReturn(cbFile > offVol, ("cbFile=%#RX64 offVol=%#RX64\n", cbFile, offVol), VERR_INVALID_PARAMETER);
         cbVol = cbFile - offVol;

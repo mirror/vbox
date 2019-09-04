@@ -117,7 +117,7 @@ RTR3DECL(int) RTManifestVerify(const char *pszManifestFile, PRTMANIFESTTEST paTe
     do
     {
         uint64_t cbSize;
-        rc = RTFileGetSize(file, &cbSize);
+        rc = RTFileQuerySize(file, &cbSize);
         if (RT_FAILURE(rc))
             break;
 

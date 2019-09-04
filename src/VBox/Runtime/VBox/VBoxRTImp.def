@@ -1022,8 +1022,8 @@ EXPORTS
     RTFileFlush
     RTFileFromNative
     RTFileGetMaxSize
-    RTFileGetMaxSizeEx
-    RTFileGetSize
+    RTFileQueryMaxSizeEx
+    RTFileQuerySizeByPath
     RTFileIoCtl             ; not-win
     RTFileIsValid
     RTFileLock
@@ -2097,7 +2097,7 @@ EXPORTS
     RTVfsFileFromRTFile
     RTVfsFileGetMaxSize
     RTVfsFileGetOpenFlags
-    RTVfsFileGetSize
+    RTVfsFileQuerySize
     RTVfsFileOpen
     RTVfsFileOpenNormal
     RTVfsFilePoll

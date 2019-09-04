@@ -949,7 +949,7 @@ static DECLCALLBACK(int) pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndp
         {
             uint64_t cbSize;
 
-            rc = RTFileGetSize(hFile, &cbSize);
+            rc = RTFileQuerySize(hFile, &cbSize);
 
             if (RT_SUCCESS(rc) && ((cbSize % 512) == 0))
                 fFileFlags |= RTFILE_O_NO_CACHE;
@@ -1007,7 +1007,7 @@ static DECLCALLBACK(int) pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndp
     {
         pEpFile->fFlags = fFileFlags;
 
-        rc = RTFileGetSize(pEpFile->hFile, (uint64_t *)&pEpFile->cbFile);
+        rc = RTFileQuerySize(pEpFile->hFile, (uint64_t *)&pEpFile->cbFile);
         if (RT_SUCCESS(rc))
         {
             /* Initialize the segment cache */

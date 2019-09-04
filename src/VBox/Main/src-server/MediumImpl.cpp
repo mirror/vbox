@@ -5546,10 +5546,10 @@ HRESULT Medium::i_queryPreferredMergeDirection(const ComObjPtr<Medium> &pOther,
 
         if (i_isMediumFormatFile() && pOther->i_isMediumFormatFile())
         {
-            vrc = RTFileQuerySize(this->i_getLocationFull().c_str(), &cbMediumThis);
+            vrc = RTFileQuerySizeByPath(this->i_getLocationFull().c_str(), &cbMediumThis);
             if (RT_SUCCESS(vrc))
             {
-                vrc = RTFileQuerySize(pOther->i_getLocationFull().c_str(),
+                vrc = RTFileQuerySizeByPath(pOther->i_getLocationFull().c_str(),
                                       &cbMediumOther);
             }
 

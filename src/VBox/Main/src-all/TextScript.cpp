@@ -64,7 +64,7 @@ HRESULT BaseTextScript::readFromHandle(RTVFSFILE hVfsFile, const char *pszFilena
      */
     HRESULT  hrc;
     uint64_t cbFile = 0;
-    int vrc = RTVfsFileGetSize(hVfsFile, &cbFile);
+    int vrc = RTVfsFileQuerySize(hVfsFile, &cbFile);
     if (   RT_SUCCESS(vrc)
         && cbFile < _16M)
     {
@@ -107,7 +107,7 @@ HRESULT BaseTextScript::readFromHandle(RTVFSFILE hVfsFile, const char *pszFilena
         hrc = mpSetError->setErrorVrc(VERR_FILE_TOO_BIG,
                                       mpSetError->tr("'%s' is too big (max 16MB): %'RU64"), pszFilename, cbFile);
     else
-        hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("RTVfsFileGetSize failed (%Rrc)"), vrc);
+        hrc = mpSetError->setErrorVrc(vrc, mpSetError->tr("RTVfsFileQuerySize failed (%Rrc)"), vrc);
     return hrc;
 }
 
