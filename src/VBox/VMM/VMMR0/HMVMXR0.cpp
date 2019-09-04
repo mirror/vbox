@@ -7251,7 +7251,7 @@ static void hmR0VmxImportGuestIntrState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint64_t fWhat)
 {
     int      rc   = VINF_SUCCESS;
-    PVMCC      pVM  = pVCpu->CTX_SUFF(pVM);
+    PVMCC    pVM  = pVCpu->CTX_SUFF(pVM);
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     uint32_t u32Val;
 
@@ -7554,7 +7554,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
     /*
      * Honor any pending CR3 updates.
      *
-     * Consider this scenario: VM-exit -> VMMRZCallRing3Enable() -> do stuff that causes a longjmp -> hmR0VmxCallRing3Callback()
+     * Consider this scenario: VM-exit -> VMMRZCallRing3Enable() -> do stuff that causes a longjmp -> VMXR0CallRing3Callback()
      * -> VMMRZCallRing3Disable() -> hmR0VmxImportGuestState() -> Sets VMCPU_FF_HM_UPDATE_CR3 pending -> return from the longjmp
      * -> continue with VM-exit handling -> hmR0VmxImportGuestState() and here we are.
      *
@@ -7872,7 +7872,7 @@ static int hmR0VmxLeave(PVMCPUCC pVCpu, bool fImportState)
 
     /*
      * !!! IMPORTANT !!!
-     * If you modify code here, check whether hmR0VmxCallRing3Callback() needs to be updated too.
+     * If you modify code here, check whether VMXR0CallRing3Callback() needs to be updated too.
      */
 
     /* Save the guest state if necessary. */
@@ -8000,7 +8000,7 @@ static int hmR0VmxLeaveSession(PVMCPUCC pVCpu)
 
     /*
      * !!! IMPORTANT !!!
-     * If you modify code here, make sure to check whether hmR0VmxCallRing3Callback() needs to be updated too.
+     * If you modify code here, make sure to check whether VMXR0CallRing3Callback() needs to be updated too.
      */
 
     /* Deregister hook now that we've left HM context before re-enabling preemption. */
@@ -8009,9 +8009,8 @@ static int hmR0VmxLeaveSession(PVMCPUCC pVCpu)
      *        for calling VMMR0ThreadCtxHookDisable here! */
     VMMR0ThreadCtxHookDisable(pVCpu);
 
-    /* Leave HM context. This takes care of local init (term). */
+    /* Leave HM context. This takes care of local init (term) and deregistering the longjmp-to-ring-3 callback. */
     int rc = HMR0LeaveCpu(pVCpu);
-
     HM_RESTORE_PREEMPT();
     return rc;
 }
@@ -8122,6 +8121,7 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
     /* Thread-context hooks are unregistered at this point!!! */
+    /* Ring-3 callback notifications are unregistered at this point!!! */
 
     /* Sync recompiler state. */
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
@@ -8149,11 +8149,7 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
     }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
-
-    /* We do -not- want any longjmp notifications after this! We must return to ring-3 ASAP. */
-    VMMRZCallRing3RemoveNotification(pVCpu);
     VMMRZCallRing3Enable(pVCpu);
-
     return rc;
 }
 
@@ -8165,11 +8161,9 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
  * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmOperation    The operation causing the ring-3 longjump.
- * @param   pvUser          User argument, currently unused, NULL.
  */
-static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
+VMMR0DECL(int) VMXR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
 {
-    RT_NOREF(pvUser);
     if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
     {
         /*
@@ -8179,8 +8173,7 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 e
          */
         VMMRZCallRing3RemoveNotification(pVCpu);
         VMMRZCallRing3Disable(pVCpu);
-        RTTHREADPREEMPTSTATE PreemptState = RTTHREADPREEMPTSTATE_INITIALIZER;
-        RTThreadPreemptDisable(&PreemptState);
+        HM_DISABLE_PREEMPT(pVCpu);
 
         PVMXVMCSINFO pVmcsInfo = hmGetVmxActiveVmcsInfo(pVCpu);
         hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
@@ -8207,13 +8200,14 @@ static DECLCALLBACK(int) hmR0VmxCallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 e
 
         /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
         VMMR0ThreadCtxHookDisable(pVCpu);
+
+        /* Leave HM context. This takes care of local init (term). */
         HMR0LeaveCpu(pVCpu);
-        RTThreadPreemptRestore(&PreemptState);
+        HM_RESTORE_PREEMPT();
         return VINF_SUCCESS;
     }
 
     Assert(pVCpu);
-    Assert(pvUser);
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
 
@@ -12361,8 +12355,6 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPUCC pVCpu)
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
     Assert(!ASMAtomicUoReadU64(&pCtx->fExtrn));
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
-
-    VMMRZCallRing3SetNotification(pVCpu, hmR0VmxCallRing3Callback, pCtx);
 
     VBOXSTRICTRC rcStrict;
     uint32_t     cLoops = 0;

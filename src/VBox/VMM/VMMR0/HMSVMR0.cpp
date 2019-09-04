@@ -2887,7 +2887,7 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
      * Honor any pending CR3 updates.
      *
      * Consider this scenario: #VMEXIT -> VMMRZCallRing3Enable() -> do stuff that causes a longjmp
-     * -> hmR0SvmCallRing3Callback() -> VMMRZCallRing3Disable() -> hmR0SvmImportGuestState()
+     * -> SVMR0CallRing3Callback() -> VMMRZCallRing3Disable() -> hmR0SvmImportGuestState()
      * -> Sets VMCPU_FF_HM_UPDATE_CR3 pending -> return from the longjmp -> continue with #VMEXIT
      * handling -> hmR0SvmImportGuestState() and here we are.
      *
@@ -2944,7 +2944,7 @@ static void hmR0SvmLeave(PVMCPUCC pVCpu, bool fImportState)
 
     /*
      * !!! IMPORTANT !!!
-     * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
+     * If you modify code here, make sure to check whether SVMR0CallRing3Callback() needs to be updated too.
      */
 
     /* Save the guest state if necessary. */
@@ -3007,7 +3007,7 @@ static int hmR0SvmLeaveSession(PVMCPUCC pVCpu)
 
     /*
      * !!! IMPORTANT !!!
-     * If you modify code here, make sure to check whether hmR0SvmCallRing3Callback() needs to be updated too.
+     * If you modify code here, make sure to check whether SVMR0CallRing3Callback() needs to be updated too.
      */
 
     /** @todo eliminate the need for calling VMMR0ThreadCtxHookDisable here!  */
@@ -3043,12 +3043,9 @@ static int hmR0SvmLongJmpToRing3(PVMCPUCC pVCpu)
  *
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   enmOperation    The operation causing the ring-3 longjump.
- * @param   pvUser          The user argument, NULL (currently unused).
  */
-static DECLCALLBACK(int) hmR0SvmCallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
+VMMR0DECL(int) SVMR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
 {
-    RT_NOREF_PV(pvUser);
-
     if (enmOperation == VMMCALLRING3_VM_R0_ASSERTION)
     {
         /*
@@ -3129,6 +3126,9 @@ static int hmR0SvmExitToRing3(PVMCPUCC pVCpu, int rcExit)
     hmR0SvmLeaveSession(pVCpu);
     STAM_COUNTER_DEC(&pVCpu->hm.s.StatSwitchLongJmpToR3);
 
+    /* Thread-context hooks are unregistered at this point!!! */
+    /* Ring-3 callback notifications are unregistered at this point!!! */
+
     VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
     CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_SYSENTER_MSR
                              | CPUM_CHANGED_LDTR
@@ -3154,9 +3154,6 @@ static int hmR0SvmExitToRing3(PVMCPUCC pVCpu, int rcExit)
     }
 
     STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchExitToR3);
-
-    /* We do -not- want any longjmp notifications after this! We must return to ring-3 ASAP. */
-    VMMRZCallRing3RemoveNotification(pVCpu);
     VMMRZCallRing3Enable(pVCpu);
 
     /*
@@ -4788,8 +4785,6 @@ static int hmR0SvmRunGuestCodeStep(PVMCPUCC pVCpu, uint32_t *pcLoops)
          * Asserts() will still longjmp to ring-3 (but won't return), which is intentional,
          * better than a kernel panic. This also disables flushing of the R0-logger instance.
          */
-        VMMRZCallRing3Disable(pVCpu);
-        VMMRZCallRing3RemoveNotification(pVCpu);
         hmR0SvmPreRunGuestCommitted(pVCpu, &SvmTransient);
 
         rc = hmR0SvmRunGuest(pVCpu, pVCpu->hm.s.svm.HCPhysVmcb);
@@ -4953,14 +4948,16 @@ static int hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
  */
 VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPUCC pVCpu)
 {
+    AssertPtr(pVCpu);
+    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
+    Assert(!ASMAtomicUoReadU64(&pCtx->fExtrn));
     HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
-    VMMRZCallRing3SetNotification(pVCpu, hmR0SvmCallRing3Callback, NULL /* pvUser */);
 
     uint32_t cLoops = 0;
     int      rc;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    if (!CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
+    if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
 #endif
     {
         if (!pVCpu->hm.s.fSingleInstruction)
@@ -4995,6 +4992,7 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPUCC pVCpu)
 
     /* Prepare to return to ring-3. This will remove longjmp notifications. */
     rc = hmR0SvmExitToRing3(pVCpu, rc);
+    Assert(!ASMAtomicUoReadU64(&pCtx->fExtrn));
     Assert(!VMMRZCallRing3IsNotificationSet(pVCpu));
     return rc;
 }

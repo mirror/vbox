@@ -86,16 +86,17 @@ static struct
 
     /** @name Ring-0 method table for AMD-V and VT-x specific operations.
      * @{ */
-    DECLR0CALLBACKMEMBER(int,  pfnEnterSession, (PVMCPUCC pVCpu));
-    DECLR0CALLBACKMEMBER(void, pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu, bool fGlobalInit));
-    DECLR0CALLBACKMEMBER(int,  pfnExportHostState, (PVMCPUCC pVCpu));
+    DECLR0CALLBACKMEMBER(int,          pfnEnterSession, (PVMCPUCC pVCpu));
+    DECLR0CALLBACKMEMBER(void,         pfnThreadCtxCallback, (RTTHREADCTXEVENT enmEvent, PVMCPUCC pVCpu, bool fGlobalInit));
+    DECLR0CALLBACKMEMBER(int,          pfnCallRing3Callback, (PVMCPUCC pVCpu, VMMCALLRING3 enmOperation));
+    DECLR0CALLBACKMEMBER(int,          pfnExportHostState, (PVMCPUCC pVCpu));
     DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPUCC pVCpu));
-    DECLR0CALLBACKMEMBER(int,  pfnEnableCpu, (PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
-                                              bool fEnabledByHost, PCSUPHWVIRTMSRS pHwvirtMsrs));
-    DECLR0CALLBACKMEMBER(int,  pfnDisableCpu, (void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
-    DECLR0CALLBACKMEMBER(int,  pfnInitVM, (PVMCC pVM));
-    DECLR0CALLBACKMEMBER(int,  pfnTermVM, (PVMCC pVM));
-    DECLR0CALLBACKMEMBER(int,  pfnSetupVM, (PVMCC pVM));
+    DECLR0CALLBACKMEMBER(int,          pfnEnableCpu, (PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
+                                                      bool fEnabledByHost, PCSUPHWVIRTMSRS pHwvirtMsrs));
+    DECLR0CALLBACKMEMBER(int,          pfnDisableCpu, (void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
+    DECLR0CALLBACKMEMBER(int,          pfnInitVM, (PVMCC pVM));
+    DECLR0CALLBACKMEMBER(int,          pfnTermVM, (PVMCC pVM));
+    DECLR0CALLBACKMEMBER(int,          pfnSetupVM, (PVMCC pVM));
     /** @} */
 
     /** Hardware-virtualization data. */
@@ -265,6 +266,12 @@ static DECLCALLBACK(int) hmR0DummyTermVM(PVMCC pVM)
 static DECLCALLBACK(int) hmR0DummySetupVM(PVMCC pVM)
 {
     RT_NOREF1(pVM);
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) hmR0DummyCallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation)
+{
+    RT_NOREF2(pVCpu, enmOperation);
     return VINF_SUCCESS;
 }
 
@@ -465,6 +472,7 @@ static int hmR0InitIntel(void)
              */
             g_HmR0.pfnEnterSession      = VMXR0Enter;
             g_HmR0.pfnThreadCtxCallback = VMXR0ThreadCtxCallback;
+            g_HmR0.pfnCallRing3Callback = VMXR0CallRing3Callback;
             g_HmR0.pfnExportHostState   = VMXR0ExportHostState;
             g_HmR0.pfnRunGuestCode      = VMXR0RunGuestCode;
             g_HmR0.pfnEnableCpu         = VMXR0EnableCpu;
@@ -517,6 +525,7 @@ static int hmR0InitAmd(void)
      */
     g_HmR0.pfnEnterSession      = SVMR0Enter;
     g_HmR0.pfnThreadCtxCallback = SVMR0ThreadCtxCallback;
+    g_HmR0.pfnCallRing3Callback = SVMR0CallRing3Callback;
     g_HmR0.pfnExportHostState   = SVMR0ExportHostState;
     g_HmR0.pfnRunGuestCode      = SVMR0RunGuestCode;
     g_HmR0.pfnEnableCpu         = SVMR0EnableCpu;
@@ -587,6 +596,7 @@ VMMR0_INT_DECL(int) HMR0Init(void)
     /* Fill in all callbacks with placeholders. */
     g_HmR0.pfnEnterSession      = hmR0DummyEnter;
     g_HmR0.pfnThreadCtxCallback = hmR0DummyThreadCtxCallback;
+    g_HmR0.pfnCallRing3Callback = hmR0DummyCallRing3Callback;
     g_HmR0.pfnExportHostState   = hmR0DummyExportHostState;
     g_HmR0.pfnRunGuestCode      = hmR0DummyRunGuestCode;
     g_HmR0.pfnEnableCpu         = hmR0DummyEnableCpu;
@@ -1338,6 +1348,23 @@ VMMR0_INT_DECL(int) HMR0SetupVM(PVMCC pVM)
 
 
 /**
+ * Notification callback before performing a longjump to ring-3.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   enmOperation    The operation causing the ring-3 longjump.
+ * @param   pvUser          User argument, currently unused, NULL.
+ */
+static DECLCALLBACK(int) hmR0CallRing3Callback(PVMCPUCC pVCpu, VMMCALLRING3 enmOperation, void *pvUser)
+{
+    RT_NOREF(pvUser);
+    Assert(pVCpu);
+    Assert(g_HmR0.pfnCallRing3Callback);
+    return g_HmR0.pfnCallRing3Callback(pVCpu, enmOperation);
+}
+
+
+/**
  * Turns on HM on the CPU if necessary and initializes the bare minimum state
  * required for entering HM context.
  *
@@ -1358,6 +1385,9 @@ VMMR0_INT_DECL(int) hmR0EnterCpu(PVMCPUCC pVCpu)
     /* Enable VT-x or AMD-V if local init is required, or enable if it's a freshly onlined CPU. */
     if (!pHostCpu->fConfigured)
         rc = hmR0EnableCpu(pVCpu->CTX_SUFF(pVM), idCpu);
+
+    /* Register a callback to fire prior to performing a longjmp to ring-3 so HM can disable VT-x/AMD-V if needed. */
+    VMMRZCallRing3SetNotification(pVCpu, hmR0CallRing3Callback, NULL /* pvUser */);
 
     /* Reload host-state (back from ring-3/migrated CPUs) and shared guest/host bits. */
     if (g_HmR0.hwvirt.u.vmx.fSupported)
@@ -1455,6 +1485,8 @@ VMMR0_INT_DECL(int) HMR0LeaveCpu(PVMCPUCC pVCpu)
     /* Clear it while leaving HM context, hmPokeCpuForTlbFlush() relies on this. */
     pVCpu->hm.s.idEnteredCpu = NIL_RTCPUID;
 
+    /* De-register the longjmp-to-ring 3 callback now that we have reliquished hardware resources. */
+    VMMRZCallRing3RemoveNotification(pVCpu);
     return VINF_SUCCESS;
 }
 
