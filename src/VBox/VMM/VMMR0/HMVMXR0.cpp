@@ -12363,6 +12363,7 @@ VMMR0DECL(VBOXSTRICTRC) VMXR0RunGuestCode(PVMCPUCC pVCpu)
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         bool const fInNestedGuestMode = CPUMIsGuestInVmxNonRootMode(pCtx);
 #else
+        NOREF(pCtx);
         bool const fInNestedGuestMode = false;
 #endif
         if (!fInNestedGuestMode)
