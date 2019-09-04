@@ -125,6 +125,10 @@ typedef struct VSCSIREQINT
     void                *pvVScsiReqUser;
     /** Transfer size determined from the CDB. */
     size_t               cbXfer;
+    /** Number of bytes of sense data written. */
+    size_t               cbSenseWritten;
+    /** Transfer direction as indicated by the CDB. */
+    VSCSIXFERDIR         enmXferDir;
     /** Pointer to the opaque data which may be allocated by the LUN
      * the request is for. */
     void                *pvLun;
@@ -487,6 +491,18 @@ uint32_t vscsiIoReqOutstandingCountGet(PVSCSILUNINT pVScsiLun);
 DECLINLINE(void) vscsiReqSetXferSize(PVSCSIREQINT pVScsiReq, size_t cbXfer)
 {
     pVScsiReq->cbXfer = cbXfer;
+}
+
+/**
+ * Sets the transfer direction for the given request.
+ *
+ * @returns nothing.
+ * @param   pVScsiReq     The SCSI request.
+ * @param   cbXfer        The transfer size for the request.
+ */
+DECLINLINE(void) vscsiReqSetXferDir(PVSCSIREQINT pVScsiReq, VSCSIXFERDIR enmXferDir)
+{
+    pVScsiReq->enmXferDir = enmXferDir;
 }
 
 /**

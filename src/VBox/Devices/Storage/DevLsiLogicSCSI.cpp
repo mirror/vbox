@@ -2274,9 +2274,9 @@ static int lsilogicR3ProcessSCSIIORequest(PLSILOGICSCSI pThis, RTGCPHYS GCPhysMe
                 ASMAtomicIncU32(&pTgtDev->cOutstandingRequests);
                 rc = pTgtDev->pDrvMediaEx->pfnIoReqSendScsiCmd(pTgtDev->pDrvMediaEx, pLsiReq->hIoReq, pLsiReq->GuestRequest.SCSIIO.au8LUN[1],
                                                                &pLsiReq->GuestRequest.SCSIIO.au8CDB[0], pLsiReq->GuestRequest.SCSIIO.u8CDBLength,
-                                                               enmXferDir, pLsiReq->GuestRequest.SCSIIO.u32DataLength,
-                                                               &pLsiReq->abSenseBuffer[0], sizeof(pLsiReq->abSenseBuffer), &pLsiReq->u8ScsiSts,
-                                                               30 * RT_MS_1SEC);
+                                                               enmXferDir, NULL, pLsiReq->GuestRequest.SCSIIO.u32DataLength,
+                                                               &pLsiReq->abSenseBuffer[0], sizeof(pLsiReq->abSenseBuffer), NULL,
+                                                               &pLsiReq->u8ScsiSts, 30 * RT_MS_1SEC);
                 if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
                     lsilogicR3ReqComplete(pThis, pLsiReq, rc);
 
@@ -3904,8 +3904,8 @@ static int lsilogicR3PrepareBiosScsiRequest(PLSILOGICSCSI pThis)
         ASMAtomicIncU32(&pTgtDev->cOutstandingRequests);
 
         rc = pTgtDev->pDrvMediaEx->pfnIoReqSendScsiCmd(pTgtDev->pDrvMediaEx, pReq->hIoReq, uLun,
-                                                       pbCdb, cbCdb, PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN,
-                                                       cbBuf, NULL, 0, &pReq->u8ScsiSts, 30 * RT_MS_1SEC);
+                                                       pbCdb, cbCdb, PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, NULL,
+                                                       cbBuf, NULL, 0, NULL, &pReq->u8ScsiSts, 30 * RT_MS_1SEC);
         if (rc == VINF_SUCCESS || rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
         {
             uint8_t u8ScsiSts = pReq->u8ScsiSts;

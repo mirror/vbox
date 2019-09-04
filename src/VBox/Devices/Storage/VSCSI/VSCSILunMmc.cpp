@@ -1085,6 +1085,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         {
             case SCSI_TEST_UNIT_READY:
                 Assert(!pVScsiLunMmc->Core.fReady); /* Only should get here if LUN isn't ready. */
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_NONE);
                 rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_NOT_READY, SCSI_ASC_MEDIUM_NOT_PRESENT, 0x00);
                 break;
 
@@ -1092,6 +1093,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             {
                 SCSIINQUIRYDATA ScsiInquiryReply;
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), scsiBE2H_U16(&pVScsiReq->pbCDB[3])));
                 memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
 
@@ -1121,6 +1123,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             {
                 uint8_t aReply[8];
                 memset(aReply, 0, sizeof(aReply));
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, sizeof(aReply));
 
                 /*
@@ -1143,6 +1146,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 uint8_t *pu8ReplyPos;
                 bool    fValid = false;
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
                 memset(aReply, 0, sizeof(aReply));
                 aReply[0] = 4; /* Reply length 4. */
@@ -1175,6 +1179,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_MODE_SENSE_10:
             {
                 size_t cbMax = scsiBE2H_U16(&pVScsiReq->pbCDB[7]);
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
                 rcReq = vscsiLunMmcModeSense10(pVScsiLunMmc, pVScsiReq, cbMax);
                 break;
@@ -1182,6 +1187,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_SEEK_10:
             {
                 uint32_t uLba = scsiBE2H_U32(&pVScsiReq->pbCDB[2]);
+
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_NONE);
                 if (uLba > pVScsiLunMmc->cSectors)
                     rcReq = vscsiLunReqSenseErrorSet(pVScsiLun, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST,
                                                      SCSI_ASC_LOGICAL_BLOCK_OOR, 0x00);
@@ -1192,6 +1199,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_MODE_SELECT_6:
             {
                 /** @todo implement!! */
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_I2T);
                 vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
                 rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
                 break;
@@ -1393,6 +1401,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             {
                 uint8_t uDataMode = pVScsiReq->pbCDB[1] & 0x1f;
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, scsiBE2H_U16(&pVScsiReq->pbCDB[6]));
 
                 switch (uDataMode)
@@ -1424,6 +1433,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_START_STOP_UNIT:
             {
                 int rc2 = VINF_SUCCESS;
+
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_NONE);
                 switch (pVScsiReq->pbCDB[4] & 3)
                 {
                     case 0: /* 00 - Stop motor */
@@ -1447,6 +1458,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 uint8_t uPageCode = pVScsiReq->pbCDB[2] & 0x3f;
                 uint8_t uSubPageCode = pVScsiReq->pbCDB[3];
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, scsiBE2H_U16(&pVScsiReq->pbCDB[7]));
 
                 switch (uPageCode)
@@ -1486,6 +1498,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                         scsiH2BE_U32(&aReply[8], _2K);
                         /* Leave the rest 0 */
 
+                        vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                         vscsiReqSetXferSize(pVScsiReq, sizeof(aReply));
                         RTSgBufCopyFromBuf(&pVScsiReq->SgBuf, aReply, sizeof(aReply));
                         rcReq = vscsiLunReqSenseOkSet(pVScsiLun, pVScsiReq);
@@ -1514,6 +1527,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 cbMax  = scsiBE2H_U16(&pVScsiReq->pbCDB[7]);
                 fMSF   = (pVScsiReq->pbCDB[1] >> 1) & 1;
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
                 switch (format)
                 {
@@ -1536,6 +1550,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 /* Only supporting polled mode at the moment. */
                 size_t cbMax = scsiBE2H_U16(&pVScsiReq->pbCDB[7]);
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
                 if (pVScsiReq->pbCDB[1] & 0x1)
                     rcReq = vscsiLunMmcGetEventStatusNotification(pVScsiLunMmc, pVScsiReq, cbMax);
@@ -1548,6 +1563,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 size_t cbMax = scsiBE2H_U16(&pVScsiReq->pbCDB[8]);
                 uint8_t aReply[8];
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
                 scsiH2BE_U16(&aReply[0], 0);
                 /* no current LBA */
@@ -1565,6 +1581,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
                 uint8_t aReply[34];
                 size_t cbMax = scsiBE2H_U16(&pVScsiReq->pbCDB[7]);
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
                 memset(aReply, '\0', sizeof(aReply));
                 scsiH2BE_U16(&aReply[0], 32);
@@ -1587,6 +1604,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_READ_TRACK_INFORMATION:
             {
                 size_t cbMax = scsiBE2H_U16(&pVScsiReq->pbCDB[7]);
+
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
                 rcReq = vscsiLunMmcReadTrackInformation(pVScsiLunMmc, pVScsiReq, cbMax);
                 break;
@@ -1594,6 +1613,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_GET_CONFIGURATION:
             {
                 size_t cbMax = scsiBE2H_U16(&pVScsiReq->pbCDB[7]);
+
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
                 rcReq = vscsiLunMmcGetConfiguration(pVScsiLunMmc, pVScsiReq, cbMax);
                 break;
@@ -1601,6 +1622,8 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
             case SCSI_READ_DVD_STRUCTURE:
             {
                 size_t cbMax = scsiBE2H_U16(&pVScsiReq->pbCDB[8]);
+
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, cbMax);
                 rcReq = vscsiLunMmcReadDvdStructure(pVScsiLunMmc, pVScsiReq, cbMax);
                 break;
@@ -1616,6 +1639,7 @@ static DECLCALLBACK(int) vscsiLunMmcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQ
         LogFlow(("%s: uLbaStart=%llu cSectorTransfer=%u\n",
                  __FUNCTION__, uLbaStart, cSectorTransfer));
 
+        vscsiReqSetXferDir(pVScsiReq, enmTxDir == VSCSIIOREQTXDIR_WRITE ? VSCSIXFERDIR_I2T : VSCSIXFERDIR_T2I);
         vscsiReqSetXferSize(pVScsiReq, cSectorTransfer * cbSector);
         if (RT_UNLIKELY(uLbaStart + cSectorTransfer > pVScsiLunMmc->cSectors))
         {

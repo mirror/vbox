@@ -3630,10 +3630,11 @@ static DECLCALLBACK(int) drvvdIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEXIO
 /**
  * @interface_method_impl{PDMIMEDIAEX,pfnIoReqSendScsiCmd}
  */
-static DECLCALLBACK(int) drvvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint32_t uLun,
-                                               const uint8_t *pbCdb, size_t cbCdb, PDMMEDIAEXIOREQSCSITXDIR enmTxDir,
-                                               size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint8_t *pu8ScsiSts,
-                                               uint32_t cTimeoutMillies)
+static DECLCALLBACK(int) drvvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                               uint32_t uLun, const uint8_t *pbCdb, size_t cbCdb,
+                                               PDMMEDIAEXIOREQSCSITXDIR enmTxDir, PDMMEDIAEXIOREQSCSITXDIR *penmTxDirRet,
+                                               size_t cbBuf, uint8_t *pabSense, size_t cbSense, size_t *pcbSenseRet,
+                                               uint8_t *pu8ScsiSts, uint32_t cTimeoutMillies)
 {
     RT_NOREF10(pInterface, uLun, pbCdb, cbCdb, enmTxDir, cbBuf, pabSense, cbSense, pu8ScsiSts, cTimeoutMillies);
     PPDMMEDIAEXIOREQINT pIoReq = hIoReq;

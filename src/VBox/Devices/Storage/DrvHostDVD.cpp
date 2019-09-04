@@ -189,10 +189,11 @@ static DECLCALLBACK(int) drvHostDvdSendCmd(PPDMIMEDIA pInterface, const uint8_t 
 
 
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqSendScsiCmd} */
-static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint32_t uLun,
-                                                    const uint8_t *pbCdb, size_t cbCdb, PDMMEDIAEXIOREQSCSITXDIR enmTxDir,
-                                                    size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint8_t *pu8ScsiSts,
-                                                    uint32_t cTimeoutMillies)
+static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                    uint32_t uLun, const uint8_t *pbCdb, size_t cbCdb,
+                                                    PDMMEDIAEXIOREQSCSITXDIR enmTxDir, PDMMEDIAEXIOREQSCSITXDIR *penmTxDirRet,
+                                                    size_t cbBuf, uint8_t *pabSense, size_t cbSense, size_t *pcbSenseRet,
+                                                    uint8_t *pu8ScsiSts, uint32_t cTimeoutMillies)
 {
     RT_NOREF3(uLun, cTimeoutMillies, enmTxDir);
 
@@ -408,7 +409,31 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
     if (   *pu8ScsiSts == SCSI_STATUS_CHECK_CONDITION
         && VALID_PTR(pabSense)
         && cbSense > 0)
-        memcpy(pabSense, &pThis->abATAPISense[0], RT_MIN(cbSense, sizeof(pThis->abATAPISense)));
+    {
+        size_t cbSenseCpy = RT_MIN(cbSense, sizeof(pThis->abATAPISense));
+
+        memcpy(pabSense, &pThis->abATAPISense[0], cbSenseCpy);
+        if (pcbSenseRet)
+            *pcbSenseRet = cbSenseCpy;
+    }
+
+    if (penmTxDirRet)
+    {
+        switch (enmXferDir)
+        {
+            case PDMMEDIATXDIR_NONE:
+                *penmTxDirRet = PDMMEDIAEXIOREQSCSITXDIR_NONE;
+                break;
+            case PDMMEDIATXDIR_FROM_DEVICE:
+                *penmTxDirRet = PDMMEDIAEXIOREQSCSITXDIR_FROM_DEVICE;
+                break;
+            case PDMMEDIATXDIR_TO_DEVICE:
+                *penmTxDirRet = PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE;
+                break;
+            default:
+                *penmTxDirRet = PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN;
+        }
+    }
 
     RTCritSectLeave(&pThis->Core.CritSect);
 

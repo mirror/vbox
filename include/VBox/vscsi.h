@@ -86,6 +86,25 @@ typedef enum VSCSIIOREQTXDIR
 typedef VSCSIIOREQTXDIR *PVSCSIIOREQTXDIR;
 
 /**
+ * Virtual SCSI transfer direction as seen from the initiator.
+ */
+typedef enum VSCSIXFERDIR
+{
+    /** Invalid data direction. */
+    PVSCSIXFERDIR_INVALID     = 0,
+    /** Direction is unknown. */
+    VSCSIXFERDIR_UNKNOWN,
+    /** Direction is from target to initiator (aka a read). */
+    VSCSIXFERDIR_T2I,
+    /** Direction is from initiator to device (aka a write). */
+    VSCSIXFERDIR_I2T,
+    /** No data transfer associated with this request. */
+    VSCSIXFERDIR_NONE,
+    /** 32bit hack. */
+    VSCSIXFERDIR_32BIT_HACK  = 0x7fffffff
+} VSCSIXFERDIR;
+
+/**
  * LUN types we support
  */
 typedef enum VSCSILUNTYPE
@@ -276,7 +295,9 @@ typedef DECLCALLBACK(void) FNVSCSIREQCOMPLETED(VSCSIDEVICE hVScsiDevice,
                                                int rcScsiCode,
                                                bool fRedoPossible,
                                                int rcReq,
-                                               size_t cbXfer);
+                                               size_t cbXfer,
+                                               VSCSIXFERDIR enmXferDir,
+                                               size_t cbSense);
 /** Pointer to a virtual SCSI request completed callback. */
 typedef FNVSCSIREQCOMPLETED *PFNVSCSIREQCOMPLETED;
 

@@ -4500,8 +4500,8 @@ static bool ahciR3ReqSubmit(PAHCIPort pAhciPort, PAHCIREQ pAhciReq, PDMMEDIAEXIO
                 pAhciPort->Led.Asserted.s.fWriting = pAhciPort->Led.Actual.s.fWriting = 1;
             rc = pAhciPort->pDrvMediaEx->pfnIoReqSendScsiCmd(pAhciPort->pDrvMediaEx, pAhciReq->hIoReq,
                                                              0, &pAhciReq->aATAPICmd[0], ATAPI_PACKET_SIZE,
-                                                             PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, cbBuf,
-                                                             &pAhciPort->abATAPISense[0], sizeof(pAhciPort->abATAPISense),
+                                                             PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, NULL, cbBuf,
+                                                             &pAhciPort->abATAPISense[0], sizeof(pAhciPort->abATAPISense), NULL,
                                                              &pAhciReq->u8ScsiSts, 30 * RT_MS_1SEC);
         }
     }

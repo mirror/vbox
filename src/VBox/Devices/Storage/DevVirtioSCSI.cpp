@@ -1091,8 +1091,8 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
 
     rc = pIMediaEx->pfnIoReqSendScsiCmd(pIMediaEx, pReq->hIoReq, uLUN,
                                         pVirtqReq->uCdb, pThis->virtioScsiConfig.uCdbSize,
-                                        PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, cbDataIn,
-                                        pReq->pbSense, pReq->cbSense,
+                                        PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, NULL, cbDataIn,
+                                        pReq->pbSense, pReq->cbSense, NULL,
                                         &pReq->uStatus, 30 * RT_MS_1SEC);
 
     if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)

@@ -72,6 +72,10 @@ typedef struct DRVSCSIREQ
     VSCSIREQ                 hVScsiReq;
     /** Where to store the SCSI status code. */
     uint8_t                  *pu8ScsiSts;
+    /** Where to store the amount of sense data written, optional. */
+    size_t                   *pcbSense;
+    /** Where to store the transfer direction determined by the VSCSI layer, optional. */
+    PDMMEDIAEXIOREQSCSITXDIR *penmXferDir;
     /** Transfer size determined by the VSCSI layer. */
     size_t                   cbXfer;
     /** Start of the request data for the device above us. */
@@ -168,6 +172,28 @@ DECLINLINE(bool) drvscsiIsRedoPossible(int rc)
 
     return false;
 }
+
+
+/**
+ * Converts the given VSCSI transfer direction enum to the appropriate PDM extended media interface one.
+ *
+ * @returns The PDM extended media interface transfer direction.
+ * @param   enmVScsiXferDir     The VSCSI transfer direction.
+ */
+static PDMMEDIAEXIOREQSCSITXDIR drvscsiVScsiXferDir2PdmMediaExDir(VSCSIXFERDIR enmVScsiXferDir)
+{
+    switch (enmVScsiXferDir)
+    {
+        case VSCSIXFERDIR_UNKNOWN: return PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN;
+        case VSCSIXFERDIR_T2I:     return PDMMEDIAEXIOREQSCSITXDIR_FROM_DEVICE;
+        case VSCSIXFERDIR_I2T:     return PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE;
+        case VSCSIXFERDIR_NONE:    return PDMMEDIAEXIOREQSCSITXDIR_NONE;
+        default:                   return PDMMEDIAEXIOREQSCSITXDIR_INVALID;
+    }
+
+    return PDMMEDIAEXIOREQSCSITXDIR_INVALID;
+}
+
 
 /* -=-=-=-=- VScsiIoCallbacks -=-=-=-=- */
 
@@ -880,10 +906,11 @@ static DECLCALLBACK(int) drvscsiIoReqDiscard(PPDMIMEDIAEX pInterface, PDMMEDIAEX
 }
 
 /** @interface_method_impl{PDMIMEDIAEX,pfnIoReqSendScsiCmd} */
-static DECLCALLBACK(int) drvscsiIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq, uint32_t uLun,
-                                                 const uint8_t *pbCdb, size_t cbCdb, PDMMEDIAEXIOREQSCSITXDIR enmTxDir,
-                                                 size_t cbBuf, uint8_t *pabSense, size_t cbSense, uint8_t *pu8ScsiSts,
-                                                 uint32_t cTimeoutMillies)
+static DECLCALLBACK(int) drvscsiIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                 uint32_t uLun, const uint8_t *pbCdb, size_t cbCdb,
+                                                 PDMMEDIAEXIOREQSCSITXDIR enmTxDir, PDMMEDIAEXIOREQSCSITXDIR *penmTxDirRet,
+                                                 size_t cbBuf, uint8_t *pabSense, size_t cbSense, size_t *pcbSenseRet,
+                                                 uint8_t *pu8ScsiSts, uint32_t cTimeoutMillies)
 {
     RT_NOREF1(cTimeoutMillies);
 
@@ -897,9 +924,11 @@ static DECLCALLBACK(int) drvscsiIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDMMED
         Log(("pbCdb[%u]=%#x\n", i, pbCdb[i]));
     Log(("cbBuf=%zu\n", cbBuf));
 
-    pReq->enmXferDir = enmTxDir;
-    pReq->cbBuf      = cbBuf;
-    pReq->pu8ScsiSts = pu8ScsiSts;
+    pReq->enmXferDir   = enmTxDir;
+    pReq->cbBuf        = cbBuf;
+    pReq->pu8ScsiSts   = pu8ScsiSts;
+    pReq->pcbSense     = pcbSenseRet;
+    pReq->penmXferDir  = penmTxDirRet;
 
     /* Allocate and sync buffers if a data transfer is indicated. */
     if (cbBuf)
@@ -988,7 +1017,7 @@ static DECLCALLBACK(int) drvscsiIoReqSuspendedLoad(PPDMIMEDIAEX pInterface, PSSM
 
 static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice, void *pVScsiDeviceUser,
                                                         void *pVScsiReqUser, int rcScsiCode, bool fRedoPossible,
-                                                        int rcReq, size_t cbXfer)
+                                                        int rcReq, size_t cbXfer, VSCSIXFERDIR enmXferDir, size_t cbSense)
 {
     RT_NOREF2(hVScsiDevice, fRedoPossible);
     PDRVSCSI pThis = (PDRVSCSI)pVScsiDeviceUser;
@@ -1018,6 +1047,10 @@ static DECLCALLBACK(void) drvscsiIoReqVScsiReqCompleted(VSCSIDEVICE hVScsiDevice
 
     *pReq->pu8ScsiSts = (uint8_t)rcScsiCode;
     pReq->cbXfer      = cbXfer;
+    if (pReq->pcbSense)
+        *pReq->pcbSense = cbSense;
+    if (pReq->penmXferDir)
+        *pReq->penmXferDir = drvscsiVScsiXferDir2PdmMediaExDir(enmXferDir);
     int rc = pThis->pDevMediaExPort->pfnIoReqCompleteNotify(pThis->pDevMediaExPort, (PDMMEDIAEXIOREQ)pReq,
                                                             &pReq->abAlloc[0], rcReq);
     AssertRC(rc); RT_NOREF(rc);

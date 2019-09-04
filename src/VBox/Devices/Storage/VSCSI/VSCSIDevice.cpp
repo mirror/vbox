@@ -66,6 +66,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
                 size_t cbData;
                 SCSIINQUIRYDATA ScsiInquiryReply;
 
+                vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
                 vscsiReqSetXferSize(pVScsiReq, RT_MIN(sizeof(SCSIINQUIRYDATA), scsiBE2H_U16(&pVScsiReq->pbCDB[3])));
                 memset(&ScsiInquiryReply, 0, sizeof(ScsiInquiryReply));
                 ScsiInquiryReply.cbAdditional = 31;
@@ -85,6 +86,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
              * If allocation length is less than 16 bytes SPC compliant devices have
              * to return an error.
              */
+            vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
             vscsiReqSetXferSize(pVScsiReq, scsiBE2H_U32(&pVScsiReq->pbCDB[6]));
             if (pVScsiReq->cbXfer < 16)
                 *prcReq = vscsiReqSenseErrorSet(&pVScsiDevice->VScsiSense, pVScsiReq, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET, 0x00);
@@ -105,6 +107,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_TEST_UNIT_READY:
         {
+            vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_NONE);
             if (   vscsiDeviceLunIsPresent(pVScsiDevice, pVScsiReq->iLun)
                 && pVScsiDevice->papVScsiLun[pVScsiReq->iLun]->fReady)
                 *prcReq = vscsiReqSenseOkSet(&pVScsiDevice->VScsiSense, pVScsiReq);
@@ -114,6 +117,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_REQUEST_SENSE:
         {
+            vscsiReqSetXferDir(pVScsiReq, VSCSIXFERDIR_T2I);
             vscsiReqSetXferSize(pVScsiReq, pVScsiReq->pbCDB[4]);
 
             /* Descriptor format sense data is not supported and results in an error. */
@@ -182,7 +186,7 @@ void vscsiDeviceReqComplete(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq
 {
     pVScsiDevice->pfnVScsiReqCompleted(pVScsiDevice, pVScsiDevice->pvVScsiDeviceUser,
                                        pVScsiReq->pvVScsiReqUser, rcScsiCode, fRedoPossible,
-                                       rcReq, pVScsiReq->cbXfer);
+                                       rcReq, pVScsiReq->cbXfer, pVScsiReq->enmXferDir, pVScsiReq->cbSenseWritten);
 
     if (pVScsiReq->pvLun)
     {
@@ -410,6 +414,8 @@ VBOXDDU_DECL(int) VSCSIDeviceReqCreate(VSCSIDEVICE hVScsiDevice, PVSCSIREQ phVSc
     pVScsiReq->pvVScsiReqUser = pvVScsiReqUser;
     pVScsiReq->cbXfer         = 0;
     pVScsiReq->pvLun          = NULL;
+    pVScsiReq->enmXferDir     = VSCSIXFERDIR_UNKNOWN;
+    pVScsiReq->cbSenseWritten = 0;
     RTSgBufInit(&pVScsiReq->SgBuf, paSGList, cSGListEntries);
 
     *phVScsiReq = pVScsiReq;
