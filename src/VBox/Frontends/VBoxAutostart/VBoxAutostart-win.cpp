@@ -487,7 +487,7 @@ static int autostartSvcWinDelete(int argc, char **argv)
     com::Utf8Str sServiceName;
     int vrc = autostartGetServiceName(pszUser, sServiceName);
     if (!RT_FAILURE(vrc))
-        return autostartSvcDisplayError("delete - DeleteService failed, service name for user %s can not be constructed.\n", 
+        return autostartSvcDisplayError("delete - DeleteService failed, service name for user %s can not be constructed.\n",
                                         pszUser);
     /*
      * Create the service.

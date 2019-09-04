@@ -126,7 +126,7 @@ int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
         for (char *psz = pszEnvMutable; ; ++psz)
         {
             /** @todo r=bird: Broken escaping rule, how to end a variable with '\\'?
-              * E.g. TMP=C:\TEMP\  */
+              * E.g. TMP=C:\\TEMP\\  */
             char const ch = *psz;
             if (   (ch == '\n' && (psz == pszEnvMutable || psz[-1] != '\\'))
                 || ch == '\0')

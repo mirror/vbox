@@ -29,7 +29,7 @@ ifeq ($(KBUILD_TARGET),win)
 	VBoxAutostartUtils.cpp \
 	VBoxAutostart-win.cpp \
 	../Common/PasswordInput.cpp
- VBoxAutostartSvc_LIBS.win += Secur32.lib	
+ VBoxAutostartSvc_LIBS.win += Secur32.lib
 else
  PROGRAMS += VBoxAutostart
  VBoxAutostart_TEMPLATE   = VBOXMAINCLIENTEXE

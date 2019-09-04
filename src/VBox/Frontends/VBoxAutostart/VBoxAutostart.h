@@ -321,4 +321,3 @@ DECLHIDDEN(int) autostartSetup();
 DECLHIDDEN(void) autostartShutdown();
 
 #endif /* !VBOX_INCLUDED_SRC_VBoxAutostart_VBoxAutostart_h */
-

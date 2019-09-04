@@ -7490,13 +7490,13 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
          * GUI only if the caller and the VBoxSDS are in different Windows
          * sessions and the caller in the interactive one.
          */
-        fUseVBoxSDS = false; 
+        fUseVBoxSDS = false;
 
         /* Get windows session of the current process.  The process token used
            due to several reasons:
            1. The token is absent for the current thread except someone set it
               for us.
-           2. Needs to get the id of the session where the process is started. 
+           2. Needs to get the id of the session where the process is started.
            We only need to do this once, though. */
         static DWORD s_idCurrentSession = ~(DWORD)0;
         DWORD idCurrentSession = s_idCurrentSession;
