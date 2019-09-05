@@ -49,6 +49,7 @@
 /* COM includes: */
 #include "CSystemProperties.h"
 
+/** Limit the read string size to avoid bloated log viewer pages. */
 const ULONG uAllowedLogSize = _256M;
 UIVMLogViewerWidget::UIVMLogViewerWidget(EmbedTo enmEmbedding,
                                          UIActionPool *pActionPool,
