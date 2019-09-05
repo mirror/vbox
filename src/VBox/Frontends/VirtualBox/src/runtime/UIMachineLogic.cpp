@@ -892,8 +892,8 @@ void UIMachineLogic::setKeyboardHandler(UIKeyboardHandler *pKeyboardHandler)
     /* Set new handler: */
     m_pKeyboardHandler = pKeyboardHandler;
     /* Connect to session: */
-    connect(m_pKeyboardHandler, SIGNAL(sigStateChange(int)),
-            uisession(), SLOT(setKeyboardState(int)));
+    connect(m_pKeyboardHandler, &UIKeyboardHandler::sigStateChange,
+            uisession(), &UISession::setKeyboardState);
 }
 
 void UIMachineLogic::setMouseHandler(UIMouseHandler *pMouseHandler)
@@ -901,8 +901,8 @@ void UIMachineLogic::setMouseHandler(UIMouseHandler *pMouseHandler)
     /* Set new handler: */
     m_pMouseHandler = pMouseHandler;
     /* Connect to session: */
-    connect(m_pMouseHandler, SIGNAL(sigStateChange(int)),
-            uisession(), SLOT(setMouseState(int)));
+    connect(m_pMouseHandler, &UIMouseHandler::sigStateChange,
+            uisession(), &UISession::setMouseState);
 }
 
 void UIMachineLogic::retranslateUi()
@@ -1260,20 +1260,17 @@ void UIMachineLogic::prepareDock()
     pDockPreviewModeGroup->addAction(pDockEnablePreviewMonitor);
     pDockSettingsMenu->addActions(pDockPreviewModeGroup->actions());
 
-    connect(pDockPreviewModeGroup, SIGNAL(triggered(QAction*)),
-            this, SLOT(sltDockPreviewModeChanged(QAction*)));
-    connect(gEDataManager, SIGNAL(sigDockIconAppearanceChange(bool)),
-            this, SLOT(sltChangeDockIconUpdate(bool)));
+    connect(pDockPreviewModeGroup, &QActionGroup::triggered, this, &UIMachineLogic::sltDockPreviewModeChanged);
+    connect(gEDataManager, &UIExtraDataManager::sigDockIconAppearanceChange, this, &UIMachineLogic::sltChangeDockIconUpdate);
 
     /* Get dock icon disable overlay action: */
     QAction *pDockIconDisableOverlay = actionPool()->action(UIActionIndexRT_M_Dock_M_DockSettings_T_DisableOverlay);
     /* Prepare dock icon disable overlay action with initial data: */
     pDockIconDisableOverlay->setChecked(gEDataManager->dockIconDisableOverlay(uiCommon().managedVMUuid()));
     /* Connect dock icon disable overlay related signals: */
-    connect(pDockIconDisableOverlay, SIGNAL(triggered(bool)),
-            this, SLOT(sltDockIconDisableOverlayChanged(bool)));
-    connect(gEDataManager, SIGNAL(sigDockIconOverlayAppearanceChange(bool)),
-            this, SLOT(sltChangeDockIconOverlayAppearance(bool)));
+    connect(pDockIconDisableOverlay, &QAction::triggered, this, &UIMachineLogic::sltDockIconDisableOverlayChanged);
+    connect(gEDataManager, &UIExtraDataManager::sigDockIconOverlayAppearanceChange,
+            this, &UIMachineLogic::sltChangeDockIconOverlayAppearance);
     /* Add dock icon disable overlay action to the dock settings menu: */
     pDockSettingsMenu->addAction(pDockIconDisableOverlay);
 
@@ -1303,8 +1300,8 @@ void UIMachineLogic::prepareDock()
                 pAction->setChecked(true);
         }
         pDockSettingsMenu->addActions(m_pDockPreviewSelectMonitorGroup->actions());
-        connect(m_pDockPreviewSelectMonitorGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltDockPreviewMonitorChanged(QAction*)));
+        connect(m_pDockPreviewSelectMonitorGroup, &QActionGroup::triggered,
+                this, &UIMachineLogic::sltDockPreviewMonitorChanged);
     }
 
     m_pDockSettingMenuAction = pDockMenu->addMenu(pDockSettingsMenu);
@@ -1417,8 +1414,8 @@ void UIMachineLogic::updateDock()
                 pAction->setChecked(true);
         }
         pDockSettingsMenu->addActions(m_pDockPreviewSelectMonitorGroup->actions());
-        connect(m_pDockPreviewSelectMonitorGroup, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltDockPreviewMonitorChanged(QAction*)));
+        connect(m_pDockPreviewSelectMonitorGroup, &QActionGroup::triggered,
+                this, &UIMachineLogic::sltDockPreviewMonitorChanged);
     }
     else
     {
@@ -1453,7 +1450,7 @@ void UIMachineLogic::loadSettings()
     /* Read cached extra-data value: */
     m_fIsHidLedsSyncEnabled = gEDataManager->hidLedsSyncState(uiCommon().managedVMUuid());
     /* Subscribe to extra-data changes to be able to enable/disable feature dynamically: */
-    connect(gEDataManager, SIGNAL(sigHidLedsSyncStateChange(bool)), this, SLOT(sltHidLedsSyncStateChanged(bool)));
+    connect(gEDataManager, &UIExtraDataManager::sigHidLedsSyncStateChange, this, &UIMachineLogic::sltHidLedsSyncStateChanged);
 #endif /* VBOX_WS_MAC || VBOX_WS_WIN */
     /* HID LEDs sync initialization: */
     sltSwitchKeyboardLedsToGuestLeds();
@@ -1496,35 +1493,32 @@ void UIMachineLogic::cleanupHandlers()
 void UIMachineLogic::cleanupSessionConnections()
 {
     /* We should stop watching for VBoxSVC availability changes: */
-    disconnect(&uiCommon(), SIGNAL(sigVBoxSVCAvailabilityChange()),
-               this, SLOT(sltHandleVBoxSVCAvailabilityChange()));
+    disconnect(&uiCommon(), &UICommon::sigVBoxSVCAvailabilityChange,
+               this, &UIMachineLogic::sltHandleVBoxSVCAvailabilityChange);
 
     /* We should stop watching for requested modes: */
-    disconnect(uisession(), SIGNAL(sigInitialized()), this, SLOT(sltCheckForRequestedVisualStateType()));
-    disconnect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltCheckForRequestedVisualStateType()));
+    disconnect(uisession(), &UISession::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
+    disconnect(uisession(), &UISession::sigAdditionsStateChange, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
 
     /* We should stop watching for console events: */
-    disconnect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-    disconnect(uisession(), SIGNAL(sigAdditionsStateActualChange()), this, SLOT(sltAdditionsStateChanged()));
-    disconnect(uisession(), SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
-    disconnect(uisession(), SIGNAL(sigKeyboardLedsChange()), this, SLOT(sltKeyboardLedsChanged()));
-    disconnect(uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
-               this, SLOT(sltUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)));
-    disconnect(uisession(), SIGNAL(sigRuntimeError(bool, const QString &, const QString &)),
-               this, SLOT(sltRuntimeError(bool, const QString &, const QString &)));
+    disconnect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
+    disconnect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
+    disconnect(uisession(), &UISession::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
+    disconnect(uisession(), &UISession::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
+    disconnect(uisession(), &UISession::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
+    disconnect(uisession(), &UISession::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
 #ifdef VBOX_WS_MAC
-    disconnect(uisession(), SIGNAL(sigShowWindows()), this, SLOT(sltShowWindows()));
+    disconnect(uisession(), &UISession::sigShowWindows, this, &UIMachineLogic::sltShowWindows);
 #endif /* VBOX_WS_MAC */
-    disconnect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-               this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+    disconnect(uisession(), &UISession::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
 
     /* We should stop watching for host-screen-change events: */
-    disconnect(uisession(), SIGNAL(sigHostScreenCountChange()), this, SLOT(sltHostScreenCountChange()));
-    disconnect(uisession(), SIGNAL(sigHostScreenGeometryChange()), this, SLOT(sltHostScreenGeometryChange()));
-    disconnect(uisession(), SIGNAL(sigHostScreenAvailableAreaChange()), this, SLOT(sltHostScreenAvailableAreaChange()));
+    disconnect(uisession(), &UISession::sigHostScreenCountChange, this, &UIMachineLogic::sltHostScreenCountChange);
+    disconnect(uisession(), &UISession::sigHostScreenGeometryChange, this, &UIMachineLogic::sltHostScreenGeometryChange);
+    disconnect(uisession(), &UISession::sigHostScreenAvailableAreaChange, this, &UIMachineLogic::sltHostScreenAvailableAreaChange);
 
     /* We should stop notify about frame-buffer events: */
-    disconnect(this, SIGNAL(sigFrameBufferResize()), uisession(), SIGNAL(sigFrameBufferResize()));
+    disconnect(this, &UIMachineLogic::sigFrameBufferResize, uisession(), &UISession::sigFrameBufferResize);
 }
 
 bool UIMachineLogic::eventFilter(QObject *pWatched, QEvent *pEvent)
@@ -2444,7 +2438,7 @@ void UIMachineLogic::sltInstallGuestAdditions()
         /* Create Additions downloader: */
         UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
         /* After downloading finished => propose to install the Additions: */
-        connect(pDl, SIGNAL(sigDownloadFinished(const QString&)), uisession(), SLOT(sltInstallGuestAdditionsFrom(const QString&)));
+        connect(pDl, &UIDownloaderAdditions::sigDownloadFinished, uisession(), &UISession::sltInstallGuestAdditionsFrom);
         /* Start downloading: */
         pDl->start();
     }
@@ -2926,8 +2920,7 @@ void UIMachineLogic::updateMenuDevicesSharedClipboard(QMenu *pMenu)
             pAction->setCheckable(true);
             pAction->setChecked(machine().GetClipboardMode() == mode);
         }
-        connect(m_pSharedClipboardActions, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltChangeSharedClipboardType(QAction*)));
+        connect(m_pSharedClipboardActions, &QActionGroup::triggered, this, &UIMachineLogic::sltChangeSharedClipboardType);
     }
     /* Subsequent runs: */
     else
@@ -2951,8 +2944,7 @@ void UIMachineLogic::updateMenuDevicesDragAndDrop(QMenu *pMenu)
             pAction->setCheckable(true);
             pAction->setChecked(machine().GetDnDMode() == mode);
         }
-        connect(m_pDragAndDropActions, SIGNAL(triggered(QAction*)),
-                this, SLOT(sltChangeDragAndDropType(QAction*)));
+        connect(m_pDragAndDropActions, &QActionGroup::triggered, this, &UIMachineLogic::sltChangeDragAndDropType);
     }
     /* Subsequent runs: */
     else
