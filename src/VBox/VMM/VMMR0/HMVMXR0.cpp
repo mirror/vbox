@@ -4599,6 +4599,7 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu)
 #endif
 }
 
+
 /**
  * Exports the guest state with appropriate VM-entry and VM-exit controls in the
  * VMCS.
@@ -4645,7 +4646,10 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
              * here rather than while merging the guest VMCS controls.
              */
             if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx))
+            {
+                Assert(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LME);
                 fVal |= VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
+            }
             else
                 Assert(!(fVal & VMX_ENTRY_CTLS_IA32E_MODE_GUEST));
 
@@ -6440,12 +6444,30 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         if (hmR0VmxShouldSwapEferMsr(pVCpu))
         {
             /*
+             * EFER.LME is written by software, while EFER.LMA is set by the CPU to (CR0.PG & EFER.LME).
+             * This means a guest can set EFER.LME=1 while CR0.PG=0 and EFER.LMA can remain 0.
+             * VT-x requires that "IA-32e mode guest" VM-entry control must be identical to EFER.LMA
+             * and to CR0.PG. Without unrestricted execution, CR0.PG (used for VT-x, not the shadow)
+             * must always be 1. This forces us to effectively clear both EFER.LMA and EFER.LME until
+             * the guest has also set CR0.PG=1. Otherwise, we would run into an invalid-guest state
+             * during VM-entry.
+             */
+            uint64_t uGuestEferMsr = pCtx->msrEFER;
+            if (!pVM->hm.s.vmx.fUnrestrictedGuest)
+            {
+                if (!(pCtx->msrEFER & MSR_K6_EFER_LMA))
+                    uGuestEferMsr &= ~MSR_K6_EFER_LME;
+                else
+                    Assert((pCtx->msrEFER & (MSR_K6_EFER_LMA | MSR_K6_EFER_LME)) == (MSR_K6_EFER_LMA | MSR_K6_EFER_LME));
+            }
+
+            /*
              * If the CPU supports VMCS controls for swapping EFER, use it. Otherwise, we have no option
              * but to use the auto-load store MSR area in the VMCS for swapping EFER. See @bugref{7368}.
              */
             if (pVM->hm.s.vmx.fSupportsVmcsEfer)
             {
-                int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_EFER_FULL, pCtx->msrEFER);
+                int rc = VMXWriteVmcs64(VMX_VMCS64_GUEST_EFER_FULL, uGuestEferMsr);
                 AssertRC(rc);
             }
             else
@@ -6454,10 +6476,12 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                  * We shall use the auto-load/store MSR area only for loading the EFER MSR but we must
                  * continue to intercept guest read and write accesses to it, see @bugref{7386#c16}.
                  */
-                int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K6_EFER, pCtx->msrEFER,
+                int rc = hmR0VmxAddAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K6_EFER, uGuestEferMsr,
                                                     false /* fSetReadWrite */, false /* fUpdateHostMsr */);
                 AssertRCReturn(rc, rc);
             }
+
+            Log4Func(("efer=%#RX64 shadow=%#RX64\n", uGuestEferMsr, pCtx->msrEFER));
         }
         else if (!pVM->hm.s.vmx.fSupportsVmcsEfer)
             hmR0VmxRemoveAutoLoadStoreMsr(pVCpu, pVmxTransient, MSR_K6_EFER);
@@ -13411,7 +13435,8 @@ static VBOXSTRICTRC hmR0VmxExitMovToCrX(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, 
     switch (iCrReg)
     {
         case 0:
-            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0);
+            ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_CR0
+                                                     | HM_CHANGED_GUEST_EFER_MSR | HM_CHANGED_VMX_ENTRY_EXIT_CTLS);
             STAM_COUNTER_INC(&pVCpu->hm.s.StatExitCR0Write);
             Log4Func(("CR0 write. rcStrict=%Rrc CR0=%#RX64\n", VBOXSTRICTRC_VAL(rcStrict), pVCpu->cpum.GstCtx.cr0));
             break;
