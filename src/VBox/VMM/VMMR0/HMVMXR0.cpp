@@ -4575,12 +4575,24 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu)
     Assert(hmR0VmxGetFixedCr4Mask(pVCpu) & X86_CR4_PAE);
     Assert(hmR0VmxGetFixedCr0Mask(pVCpu) & X86_CR0_PG);
     if (   (pCtx->cr4 & X86_CR4_PAE)
-        && (pCtx->cr0 & X86_CR0_PG)
-        && (u64GuestEfer & MSR_K6_EFER_NXE) != (u64HostEfer & MSR_K6_EFER_NXE))
+        && (pCtx->cr0 & X86_CR0_PG))
     {
-        /* Assert that host is NX capable. */
-        Assert(pVCpu->CTX_SUFF(pVM)->cpum.ro.HostFeatures.fNoExecute);
-        return true;
+        /*
+         * If nested paging is not used, verify that the guest paging mode matches the
+         * shadow paging mode which is/will be placed in the VMCS (which is what will
+         * actually be used while executing the guest and not the CR4 shadow value).
+         */
+        AssertMsg(pVM->hm.s.fNestedPaging || (   pVCpu->hm.s.enmShadowMode == PGMMODE_PAE
+                                              || pVCpu->hm.s.enmShadowMode == PGMMODE_PAE_NX
+                                              || pVCpu->hm.s.enmShadowMode == PGMMODE_AMD64
+                                              || pVCpu->hm.s.enmShadowMode == PGMMODE_AMD64_NX),
+                  ("enmShadowMode=%u\n", pVCpu->hm.s.enmShadowMode));
+        if ((u64GuestEfer & MSR_K6_EFER_NXE) != (u64HostEfer & MSR_K6_EFER_NXE))
+        {
+            /* Verify that the host is NX capable. */
+            Assert(pVCpu->CTX_SUFF(pVM)->cpum.ro.HostFeatures.fNoExecute);
+            return true;
+        }
     }
 
     return false;
@@ -5649,9 +5661,13 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PVMXTRANSIENT pV
 
                 case PGMMODE_AMD64:             /* 64-bit AMD paging (long mode). */
                 case PGMMODE_AMD64_NX:          /* 64-bit AMD paging (long mode) with NX enabled. */
+                {
 #ifdef VBOX_WITH_64_BITS_GUESTS
+                    /* For our assumption in hmR0VmxShouldSwapEferMsr. */
+                    Assert(u64GuestCr4 & X86_CR4_PAE);
                     break;
 #endif
+                }
                 default:
                     AssertFailed();
                     return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
