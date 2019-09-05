@@ -285,7 +285,6 @@ bool UIWizardNewCloudVMPageExpert::validatePage()
         fResult = comForm.isOk();
         if (!fResult)
             msgCenter().cannotAcquireVirtualSystemDescriptionFormProperty(comForm);
-        UIWizardNewCloudVMPage1::setVSDForm(CVirtualSystemDescriptionForm());
     }
 
     /* Try to create cloud VM: */
