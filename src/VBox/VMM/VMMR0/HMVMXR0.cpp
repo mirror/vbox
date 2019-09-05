@@ -6372,7 +6372,9 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
      *
      * For nested-guests, the guests MSRs from the VM-entry MSR-load area are already
      * loaded (into the guest-CPU context) by the VMLAUNCH/VMRESUME instruction
-     * emulation, nothing to do here.
+     * emulation. The merged MSR permission bitmap will ensure that we get VM-exits
+     * for any MSR that are not part of the lazy MSRs so we do not need to place
+     * those MSRs into the auto-load/store MSR area. Nothing to do here.
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_GUEST_AUTO_MSRS)
     {
