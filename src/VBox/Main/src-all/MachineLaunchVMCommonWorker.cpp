@@ -192,7 +192,7 @@ int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
         if (strAppOverride.isEmpty())
             strAppPath = Utf8StrFmt(OSX_APP_PATH_FMT, OSX_APP_NAME);
         vrc = RTStrCopy(pszNamePart, cbBufLeft, strAppPath.c_str());
-        AssertReturn(vrc, vrc);
+        AssertRCReturn(vrc, vrc);
 # else
         static const char s_szVirtualBox_exe[] = "VirtualBoxVM" HOSTSUFF_EXE;
         vrc = RTStrCopy(pszNamePart, cbBufLeft, s_szVirtualBox_exe);
