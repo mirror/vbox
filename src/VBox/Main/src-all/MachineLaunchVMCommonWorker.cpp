@@ -19,12 +19,13 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <iprt/process.h>
+#include <iprt/dir.h>
+#include <iprt/env.h>
+#include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/log.h>
 #include <iprt/path.h>
-#include <iprt/env.h>
-#include <iprt/file.h>
-#include <iprt/dir.h>
+#include <iprt/process.h>
 #include "MachineLaunchVMCommonWorker.h"
 
 
@@ -87,12 +88,13 @@ int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
     NOREF(aExtraArg);
     NOREF(aFilename);
 
-    /* Get the path to the executable directory: */
+    /* Get the path to the executable directory w/ trailing slash: */
     char szPath[RTPATH_MAX];
-    RTPathAppPrivateArch(szPath, sizeof(szPath) - 1);
+    int vrc = RTPathAppPrivateArch(szPath, sizeof(szPath));
+    AssertRCReturn(vrc, vrc);
+    vrc = RTPathEnsureTrailingSeparator(szPath, sizeof(szPath));
+    AssertRCReturn(vrc, vrc);
     size_t cbBufLeft = strlen(szPath);
-    szPath[cbBufLeft++] = RTPATH_DELIMITER;
-    szPath[cbBufLeft] = '\0';
     char *pszNamePart = &szPath[cbBufLeft]; NOREF(pszNamePart);
     cbBufLeft = sizeof(szPath) - cbBufLeft;
 
@@ -103,7 +105,6 @@ int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
     aPid = NIL_RTPROCESS;
 
     RTENV hEnv = RTENV_DEFAULT;
-    int vrc = VINF_SUCCESS;
     if (!aEnvironment.isEmpty())
     {
         Utf8Str strEnvCopy(aEnvironment); /* auto release trick */
@@ -163,36 +164,31 @@ int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
         || !aFrontend.compare("GUI/Qt/separate", Utf8Str::CaseInsensitive))
     {
 # ifdef RT_OS_DARWIN /* Avoid Launch Services confusing this with the selector by using a helper app. */
+
+#  define OSX_APP_NAME           "VirtualBoxVM"
+#  define OSX_APP_PATH_FMT       "/Resources/%s.app/Contents/MacOS/VirtualBoxVM"
+#  define OSX_APP_PATH_WITH_NAME "/Resources/VirtualBoxVM.app/Contents/MacOS/VirtualBoxVM"
+
         /* Modify the base path so that we don't need to use ".." below. */
         RTPathStripTrailingSlash(szPath);
         RTPathStripFilename(szPath);
         cbBufLeft = strlen(szPath);
-        pszNamePart = szPath + cbBufLeft;
+        pszNamePart = &szPath[cbBufLeft]; Assert(!*pszNamePart);
         cbBufLeft = sizeof(szPath) - cbBufLeft;
 
-#  define OSX_APP_NAME "VirtualBoxVM"
-#  define OSX_APP_PATH_FMT "/Resources/%s.app/Contents/MacOS/VirtualBoxVM"
-
-        Utf8Str strAppOverride = aFilename;
-        if (   strAppOverride.contains(".")
-            || strAppOverride.contains("/")
-            || strAppOverride.contains("\\")
-            || strAppOverride.contains(":"))
-            strAppOverride.setNull();
-        Utf8Str strAppPath;
-        if (!strAppOverride.isEmpty())
+        if (aFilename.isNotEmpty() && strpbrk(aFilename.c_str(), "./\\:") == NULL)
         {
-            strAppPath = Utf8StrFmt(OSX_APP_PATH_FMT, strAppOverride.c_str());
-            Utf8Str strFullPath(szPath);
-            strFullPath.append(strAppPath);
+            ssize_t cch = RTStrPrintf2(pszNamePart, cbBufLeft, OSX_APP_PATH_FMT, aFilename.c_str());
+            AssertReturn(cch > 0, VERR_FILENAME_TOO_LONG);
             /* there is a race, but people using this deserve the failure */
-            if (!RTFileExists(strFullPath.c_str()))
-                strAppOverride.setNull();
+            if (!RTFileExists(szPath))
+                *pszNamePart = '\0';
         }
-        if (strAppOverride.isEmpty())
-            strAppPath = Utf8StrFmt(OSX_APP_PATH_FMT, OSX_APP_NAME);
-        vrc = RTStrCopy(pszNamePart, cbBufLeft, strAppPath.c_str());
-        AssertRCReturn(vrc, vrc);
+        if (!*pszNamePart)
+        {
+            vrc = RTStrCopy(pszNamePart, cbBufLeft, OSX_APP_PATH_WITH_NAME);
+            AssertRCReturn(vrc, vrc);
+        }
 # else
         static const char s_szVirtualBox_exe[] = "VirtualBoxVM" HOSTSUFF_EXE;
         vrc = RTStrCopy(pszNamePart, cbBufLeft, s_szVirtualBox_exe);
