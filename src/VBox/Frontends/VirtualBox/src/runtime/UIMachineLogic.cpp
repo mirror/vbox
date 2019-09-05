@@ -962,35 +962,32 @@ void UIMachineLogic::prepareRequiredFeatures()
 void UIMachineLogic::prepareSessionConnections()
 {
     /* We should watch for VBoxSVC availability changes: */
-    connect(&uiCommon(), SIGNAL(sigVBoxSVCAvailabilityChange()),
-            this, SLOT(sltHandleVBoxSVCAvailabilityChange()));
+    connect(&uiCommon(), &UICommon::sigVBoxSVCAvailabilityChange,
+            this, &UIMachineLogic::sltHandleVBoxSVCAvailabilityChange);
 
     /* We should watch for requested modes: */
-    connect(uisession(), SIGNAL(sigInitialized()), this, SLOT(sltCheckForRequestedVisualStateType()), Qt::QueuedConnection);
-    connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltCheckForRequestedVisualStateType()));
+    connect(uisession(), &UISession::sigInitialized, this, &UIMachineLogic::sltCheckForRequestedVisualStateType, Qt::QueuedConnection);
+    connect(uisession(), &UISession::sigAdditionsStateChange, this, &UIMachineLogic::sltCheckForRequestedVisualStateType);
 
     /* We should watch for console events: */
-    connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-    connect(uisession(), SIGNAL(sigAdditionsStateActualChange()), this, SLOT(sltAdditionsStateChanged()));
-    connect(uisession(), SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
-    connect(uisession(), SIGNAL(sigKeyboardLedsChange()), this, SLOT(sltKeyboardLedsChanged()));
-    connect(uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
-            this, SLOT(sltUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)));
-    connect(uisession(), SIGNAL(sigRuntimeError(bool, const QString &, const QString &)),
-            this, SLOT(sltRuntimeError(bool, const QString &, const QString &)));
+    connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineLogic::sltMachineStateChanged);
+    connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineLogic::sltAdditionsStateChanged);
+    connect(uisession(), &UISession::sigMouseCapabilityChange, this, &UIMachineLogic::sltMouseCapabilityChanged);
+    connect(uisession(), &UISession::sigKeyboardLedsChange, this, &UIMachineLogic::sltKeyboardLedsChanged);
+    connect(uisession(), &UISession::sigUSBDeviceStateChange, this, &UIMachineLogic::sltUSBDeviceStateChange);
+    connect(uisession(), &UISession::sigRuntimeError, this, &UIMachineLogic::sltRuntimeError);
 #ifdef VBOX_WS_MAC
-    connect(uisession(), SIGNAL(sigShowWindows()), this, SLOT(sltShowWindows()));
+    connect(uisession(), &UISession::sigShowWindows, this, &UIMachineLogic::sltShowWindows);
 #endif /* VBOX_WS_MAC */
-    connect(uisession(), SIGNAL(sigGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)),
-            this, SLOT(sltGuestMonitorChange(KGuestMonitorChangedEventType, ulong, QRect)));
+    connect(uisession(), &UISession::sigGuestMonitorChange, this, &UIMachineLogic::sltGuestMonitorChange);
 
     /* We should watch for host-screen-change events: */
-    connect(uisession(), SIGNAL(sigHostScreenCountChange()), this, SLOT(sltHostScreenCountChange()));
-    connect(uisession(), SIGNAL(sigHostScreenGeometryChange()), this, SLOT(sltHostScreenGeometryChange()));
-    connect(uisession(), SIGNAL(sigHostScreenAvailableAreaChange()), this, SLOT(sltHostScreenAvailableAreaChange()));
+    connect(uisession(), &UISession::sigHostScreenCountChange, this, &UIMachineLogic::sltHostScreenCountChange);
+    connect(uisession(), &UISession::sigHostScreenGeometryChange, this, &UIMachineLogic::sltHostScreenGeometryChange);
+    connect(uisession(), &UISession::sigHostScreenAvailableAreaChange, this, &UIMachineLogic::sltHostScreenAvailableAreaChange);
 
     /* We should notify about frame-buffer events: */
-    connect(this, SIGNAL(sigFrameBufferResize()), uisession(), SIGNAL(sigFrameBufferResize()));
+    connect(this, &UIMachineLogic::sigFrameBufferResize, uisession(), &UISession::sigFrameBufferResize);
 }
 
 void UIMachineLogic::prepareActionGroups()
@@ -1088,110 +1085,110 @@ void UIMachineLogic::prepareActionGroups()
 void UIMachineLogic::prepareActionConnections()
 {
     /* 'Application' actions connection: */
-    connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), SIGNAL(triggered()),
-            this, SLOT(sltShowGlobalPreferences()), Qt::UniqueConnection);
-    connect(actionPool()->action(UIActionIndex_M_Application_S_Close), SIGNAL(triggered()),
-            this, SLOT(sltClose()), Qt::QueuedConnection);
+    connect(actionPool()->action(UIActionIndex_M_Application_S_Preferences), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowGlobalPreferences, Qt::UniqueConnection);
+    connect(actionPool()->action(UIActionIndex_M_Application_S_Close), &UIAction::triggered,
+            this, &UIMachineLogic::sltClose, Qt::QueuedConnection);
 
     /* 'Machine' actions connections: */
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenVMSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot), SIGNAL(triggered()),
-            this, SLOT(sltTakeSnapshot()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), SIGNAL(triggered()),
-            this, SLOT(sltShowInformationDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowFileManager), SIGNAL(triggered()),
-            this, SLOT(sltShowFileManagerDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause), SIGNAL(toggled(bool)),
-            this, SLOT(sltPause(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), SIGNAL(triggered()),
-            this, SLOT(sltReset()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Detach), SIGNAL(triggered()),
-            this, SLOT(sltDetach()), Qt::QueuedConnection);
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_SaveState), SIGNAL(triggered()),
-            this, SLOT(sltSaveState()), Qt::QueuedConnection);
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Shutdown), SIGNAL(triggered()),
-            this, SLOT(sltShutdown()));
-    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff), SIGNAL(triggered()),
-            this, SLOT(sltPowerOff()), Qt::QueuedConnection);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings), &UIAction::triggered,
+            [=](){ UIMachineLogic::sltOpenVMSettingsDialog();});
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot), &UIAction::triggered,
+            this, &UIMachineLogic::sltTakeSnapshot);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowInformationDialog);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowFileManager), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowFileManagerDialog);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_T_Pause), &UIAction::toggled,
+            this, &UIMachineLogic::sltPause);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Reset), &UIAction::triggered,
+            this, &UIMachineLogic::sltReset);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Detach), &UIAction::triggered,
+            this, &UIMachineLogic::sltDetach, Qt::QueuedConnection);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_SaveState), &UIAction::triggered,
+            this, &UIMachineLogic::sltSaveState, Qt::QueuedConnection);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Shutdown), &UIAction::triggered,
+            this, &UIMachineLogic::sltShutdown);
+    connect(actionPool()->action(UIActionIndexRT_M_Machine_S_PowerOff), &UIAction::triggered,
+            this, &UIMachineLogic::sltPowerOff, Qt::QueuedConnection);
 
     /* 'View' actions connections: */
 #ifndef VBOX_WS_MAC
-    connect(actionPool()->action(UIActionIndexRT_M_View_S_MinimizeWindow), SIGNAL(triggered()),
-            this, SLOT(sltMinimizeActiveMachineWindow()), Qt::QueuedConnection);
+    connect(actionPool()->action(UIActionIndexRT_M_View_S_MinimizeWindow), &UIAction::triggered,
+            this, &UIMachineLogic::sltMinimizeActiveMachineWindow, Qt::QueuedConnection);
 #endif /* !VBOX_WS_MAC */
-    connect(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow), SIGNAL(triggered()),
-            this, SLOT(sltAdjustMachineWindows()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleGuestAutoresize(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot), SIGNAL(triggered()),
-            this, SLOT(sltTakeScreenshot()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_M_Recording_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenRecordingOptions()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleRecording(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleVRDE(bool)));
+    connect(actionPool()->action(UIActionIndexRT_M_View_S_AdjustWindow), &UIAction::triggered,
+            this, &UIMachineLogic::sltAdjustMachineWindows);
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_GuestAutoresize), &UIAction::toggled,
+            this, &UIMachineLogic::sltToggleGuestAutoresize);
+    connect(actionPool()->action(UIActionIndexRT_M_View_S_TakeScreenshot), &UIAction::triggered,
+            this, &UIMachineLogic::sltTakeScreenshot);
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_Recording_S_Settings), &UIAction::triggered,
+            this, &UIMachineLogic::sltOpenRecordingOptions);
+    connect(actionPool()->action(UIActionIndexRT_M_View_M_Recording_T_Start), &UIAction::toggled,
+            this, &UIMachineLogic::sltToggleRecording);
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_VRDEServer), &UIAction::toggled,
+            this, &UIMachineLogic::sltToggleVRDE);
 
     /* 'Input' actions connections: */
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltShowKeyboardSettings()));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_SoftKeyboard), SIGNAL(triggered()),
-            this, SLOT(sltShowSoftKeyboard()));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD), SIGNAL(triggered()),
-            this, SLOT(sltTypeCAD()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_Settings), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowKeyboardSettings);
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_SoftKeyboard), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowSoftKeyboard);
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCAD), &UIAction::triggered,
+            this, &UIMachineLogic::sltTypeCAD);
 #ifdef VBOX_WS_X11
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS), SIGNAL(triggered()),
-            this, SLOT(sltTypeCABS()));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCABS), &UIAction::triggered,
+            this, &UIMachineLogic::sltTypeCABS);
 #endif /* VBOX_WS_X11 */
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak), SIGNAL(triggered()),
-            this, SLOT(sltTypeCtrlBreak()));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert), SIGNAL(triggered()),
-            this, SLOT(sltTypeInsert()));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen), SIGNAL(triggered()),
-            this, SLOT(sltTypePrintScreen()));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen), SIGNAL(triggered()),
-            this, SLOT(sltTypeAltPrintScreen()));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_T_TypeHostKeyCombo), SIGNAL(toggled(bool)),
-            this, SLOT(sltTypeHostKeyComboPressRelease(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleMouseIntegration(bool)));
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeCtrlBreak), &UIAction::triggered,
+            this, &UIMachineLogic::sltTypeCtrlBreak);
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeInsert), &UIAction::triggered,
+            this, &UIMachineLogic::sltTypeInsert);
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypePrintScreen), &UIAction::triggered,
+            this, &UIMachineLogic::sltTypePrintScreen);
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_S_TypeAltPrintScreen), &UIAction::triggered,
+            this, &UIMachineLogic::sltTypeAltPrintScreen);
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Keyboard_T_TypeHostKeyCombo), &UIAction::toggled,
+            this, &UIMachineLogic::sltTypeHostKeyComboPressRelease);
+    connect(actionPool()->action(UIActionIndexRT_M_Input_M_Mouse_T_Integration), &UIAction::toggled,
+            this, &UIMachineLogic::sltToggleMouseIntegration);
 
     /* 'Devices' actions connections: */
-    connect(actionPool(), SIGNAL(sigNotifyAboutMenuPrepare(int, QMenu*)), this, SLOT(sltHandleMenuPrepare(int, QMenu*)));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenStorageSettingsDialog()));
+    connect(actionPool(), &UIActionPool::sigNotifyAboutMenuPrepare, this, &UIMachineLogic::sltHandleMenuPrepare);
+    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_HardDrives_S_Settings), &UIAction::triggered,
+            this, &UIMachineLogic::sltOpenStorageSettingsDialog);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Output), &UIAction::toggled,
             this, &UIMachineLogic::sltToggleAudioOutput);
     connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Audio_T_Input), &UIAction::toggled,
             this, &UIMachineLogic::sltToggleAudioInput);
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Network_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenNetworkSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenUSBDevicesSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), SIGNAL(triggered()),
-            this, SLOT(sltOpenSharedFoldersSettingsDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), SIGNAL(triggered()),
-            this, SLOT(sltInstallGuestAdditions()));
+    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_Network_S_Settings), &UIAction::triggered,
+            this, &UIMachineLogic::sltOpenNetworkSettingsDialog);
+    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_USBDevices_S_Settings), &UIAction::triggered,
+            this, &UIMachineLogic::sltOpenUSBDevicesSettingsDialog);
+    connect(actionPool()->action(UIActionIndexRT_M_Devices_M_SharedFolders_S_Settings), &UIAction::triggered,
+            this, &UIMachineLogic::sltOpenSharedFoldersSettingsDialog);
+    connect(actionPool()->action(UIActionIndexRT_M_Devices_S_InstallGuestTools), &UIAction::triggered,
+            this, &UIMachineLogic::sltInstallGuestAdditions);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* 'Debug' actions connections: */
-    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowStatistics), SIGNAL(triggered()),
-            this, SLOT(sltShowDebugStatistics()));
-    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowCommandLine), SIGNAL(triggered()),
-            this, SLOT(sltShowDebugCommandLine()));
-    connect(actionPool()->action(UIActionIndexRT_M_Debug_T_Logging), SIGNAL(toggled(bool)),
-            this, SLOT(sltLoggingToggled(bool)));
-    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowLogDialog), SIGNAL(triggered()),
-            this, SLOT(sltShowLogDialog()));
-    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_GuestControlConsole), SIGNAL(triggered()),
-            this, SLOT(sltShowGuestControlConsoleDialog()));
+    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowStatistics), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowDebugStatistics);
+    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowCommandLine), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowDebugCommandLine);
+    connect(actionPool()->action(UIActionIndexRT_M_Debug_T_Logging), &UIAction::toggled,
+            this, &UIMachineLogic::sltLoggingToggled);
+    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_ShowLogDialog), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowLogDialog);
+    connect(actionPool()->action(UIActionIndexRT_M_Debug_S_GuestControlConsole), &UIAction::triggered,
+            this, &UIMachineLogic::sltShowGuestControlConsoleDialog);
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef VBOX_WS_MAC
     /* 'Window' action connections: */
-    connect(actionPool()->action(UIActionIndex_M_Window_S_Minimize), SIGNAL(triggered()),
-            this, SLOT(sltMinimizeActiveMachineWindow()), Qt::QueuedConnection);
+    connect(actionPool()->action(UIActionIndex_M_Window_S_Minimize), &UIAction::triggered,
+            this, &UIMachineLogic::sltMinimizeActiveMachineWindow, Qt::QueuedConnection);
 #endif /* VBOX_WS_MAC */
 }
 
