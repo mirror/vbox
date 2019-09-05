@@ -368,7 +368,6 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
     {
         ComPtr<IAppliance> pAppliance;
         CHECK_ERROR_BREAK(arg->virtualBox, CreateAppliance(pAppliance.asOutParam()));
-
         //in the case of Cloud, append the instance id here because later it's harder to do
         if (actionType == CLOUD)
         {
@@ -1473,6 +1472,13 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
         else
             pszAbsFilePath = RTPathAbsDup(strOutputFile.c_str());
 
+        /*
+         * The first stage - export machine/s to the Cloud or into the
+         * OVA/OVF format on the local host.
+         */
+
+        /* VSDList is needed for the second stage where we launch the cloud instances if it was requested by user */
+        std::list< ComPtr<IVirtualSystemDescription> > VSDList;
         std::list< ComPtr<IMachine> >::iterator itM;
         uint32_t i=0;
         for (itM = llMachines.begin();
@@ -1595,6 +1601,8 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                                              Bstr(itD->second).raw());
                 }
             }
+
+            VSDList.push_back(pVSD);//store vsd for the possible second stage
         }
 
         if (FAILED(rc))
@@ -1649,6 +1657,84 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
         if (SUCCEEDED(rc))
             RTPrintf("Successfully exported %d machine(s).\n", llMachines.size());
 
+        /*
+         *  The second stage for the cloud case
+         */
+        if (actionType == CLOUD)
+        {
+            /* Launch the exported VM if the appropriate flag had been set on the first stage */
+            for (std::list< ComPtr<IVirtualSystemDescription> >::iterator itVSD = VSDList.begin();
+                 itVSD != VSDList.end();
+                 ++itVSD)
+            {
+                ComPtr<IVirtualSystemDescription> pVSD = *itVSD;
+
+                com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
+                com::SafeArray<BSTR> aRefs;
+                com::SafeArray<BSTR> aOvfValues;
+                com::SafeArray<BSTR> aVBoxValues;
+                com::SafeArray<BSTR> aExtraConfigValues;
+
+                CHECK_ERROR_BREAK(pVSD, GetDescriptionByType(VirtualSystemDescriptionType_CloudLaunchInstance,
+                                         ComSafeArrayAsOutParam(retTypes),
+                                         ComSafeArrayAsOutParam(aRefs),
+                                         ComSafeArrayAsOutParam(aOvfValues),
+                                         ComSafeArrayAsOutParam(aVBoxValues),
+                                         ComSafeArrayAsOutParam(aExtraConfigValues)));
+
+                Utf8Str flagCloudLaunchInstance(Bstr(aVBoxValues[0]).raw());
+                retTypes.setNull(); aRefs.setNull(); aOvfValues.setNull(); aVBoxValues.setNull(); aExtraConfigValues.setNull();
+
+                if (flagCloudLaunchInstance.equals("true"))
+                {
+                    /* Getting the short provider name */
+                    Bstr bstrCloudProviderShortName(strOutputFile.c_str(), strOutputFile.find("://"));
+
+                    ComPtr<IVirtualBox> pVirtualBox = a->virtualBox;
+                    ComPtr<ICloudProviderManager> pCloudProviderManager;
+                    CHECK_ERROR_BREAK(pVirtualBox, COMGETTER(CloudProviderManager)(pCloudProviderManager.asOutParam()));
+
+                    ComPtr<ICloudProvider> pCloudProvider;
+                    CHECK_ERROR_BREAK(pCloudProviderManager,
+                                     GetProviderByShortName(bstrCloudProviderShortName.raw(), pCloudProvider.asOutParam()));
+
+                    CHECK_ERROR_BREAK(pVSD, GetDescriptionByType(VirtualSystemDescriptionType_CloudProfileName,
+                                             ComSafeArrayAsOutParam(retTypes),
+                                             ComSafeArrayAsOutParam(aRefs),
+                                             ComSafeArrayAsOutParam(aOvfValues),
+                                             ComSafeArrayAsOutParam(aVBoxValues),
+                                             ComSafeArrayAsOutParam(aExtraConfigValues)));
+
+                    ComPtr<ICloudProfile> pCloudProfile;
+                    CHECK_ERROR_BREAK(pCloudProvider, GetProfileByName(Bstr(aVBoxValues[0]).raw(), pCloudProfile.asOutParam()));
+                    retTypes.setNull(); aRefs.setNull(); aOvfValues.setNull(); aVBoxValues.setNull(); aExtraConfigValues.setNull();
+
+                    ComObjPtr<ICloudClient> oCloudClient;
+                    CHECK_ERROR_BREAK(pCloudProfile, CreateCloudClient(oCloudClient.asOutParam()));
+                    RTPrintf("Creating a cloud instance...\n");
+
+                    ComPtr<IProgress> progress1;
+                    CHECK_ERROR_BREAK(oCloudClient, LaunchVM(pVSD, progress1.asOutParam()));
+                    rc = showProgress(progress1);
+                    CHECK_PROGRESS_ERROR_RET(progress1, ("Creating the cloud instance failed"), RTEXITCODE_FAILURE);
+
+                    if (SUCCEEDED(rc))
+                    {
+                        CHECK_ERROR_BREAK(pVSD, GetDescriptionByType(VirtualSystemDescriptionType_CloudInstanceId,
+                                                 ComSafeArrayAsOutParam(retTypes),
+                                                 ComSafeArrayAsOutParam(aRefs),
+                                                 ComSafeArrayAsOutParam(aOvfValues),
+                                                 ComSafeArrayAsOutParam(aVBoxValues),
+                                                 ComSafeArrayAsOutParam(aExtraConfigValues)));
+
+                        RTPrintf("A cloud instance with id '%s' (provider '%s') was created\n",
+                                 Utf8Str(Bstr(aVBoxValues[0]).raw()).c_str(),
+                                 Utf8Str(bstrCloudProviderShortName.raw()).c_str());
+                        retTypes.setNull(); aRefs.setNull(); aOvfValues.setNull(); aVBoxValues.setNull(); aExtraConfigValues.setNull();
+                    }
+                }
+            }
+        }
     } while (0);
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
