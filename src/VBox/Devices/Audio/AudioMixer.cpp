@@ -134,14 +134,20 @@ static char *dbgAudioMixerSinkStatusToStr(AUDMIXSINKSTS fStatus)
     char *pszFlags = NULL;
     int rc2 = VINF_SUCCESS;
 
-    do
+    if (fStatus == AUDMIXSINK_STS_NONE) /* This is special, as this is value 0. */
     {
-        APPEND_FLAG_TO_STR(NONE);
-        APPEND_FLAG_TO_STR(RUNNING);
-        APPEND_FLAG_TO_STR(PENDING_DISABLE);
-        APPEND_FLAG_TO_STR(DIRTY);
+        rc2 = RTStrAAppend(&pszFlags, "NONE");
+    }
+    else
+    {
+        do
+        {
+            APPEND_FLAG_TO_STR(RUNNING);
+            APPEND_FLAG_TO_STR(PENDING_DISABLE);
+            APPEND_FLAG_TO_STR(DIRTY);
 
-    } while (0);
+        } while (0);
+    }
 
     if (   RT_FAILURE(rc2)
         && pszFlags)
