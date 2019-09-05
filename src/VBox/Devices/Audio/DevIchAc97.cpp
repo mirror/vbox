@@ -662,8 +662,8 @@ AssertCompileMemberAlignment(AC97STATE, StatBytesWritten, 8);
 #ifdef IN_RING3
 static int                ichac97R3StreamCreate(PAC97STATE pThis, PAC97STREAM pStream, uint8_t u8Strm);
 static void               ichac97R3StreamDestroy(PAC97STATE pThis, PAC97STREAM pStream);
-static int                ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream);
-static int                ichac97R3StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream);
+static int                ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream, bool fForce);
+static int                ichac97R3StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream, bool fForce);
 static int                ichac97R3StreamClose(PAC97STATE pThis, PAC97STREAM pStream);
 static void               ichac97R3StreamReset(PAC97STATE pThis, PAC97STREAM pStream);
 static void               ichac97R3StreamLock(PAC97STREAM pStream);
@@ -896,7 +896,7 @@ static int ichac97R3StreamEnable(PAC97STATE pThis, PAC97STREAM pStream, bool fEn
         if (pStream->State.pCircBuf)
             RTCircBufReset(pStream->State.pCircBuf);
 
-        rc = ichac97R3StreamOpen(pThis, pStream);
+        rc = ichac97R3StreamOpen(pThis, pStream, false /* fForce */);
 
         if (pStream->Dbg.Runtime.fEnabled)
         {
@@ -1636,6 +1636,10 @@ static void ichac97MixerSet(PAC97STATE pThis, uint8_t uMixerIdx, uint16_t uVal)
 {
     AssertMsgReturnVoid(uMixerIdx + 2U <= sizeof(pThis->mixer_data),
                          ("Index %RU8 out of bounds (%zu)\n", uMixerIdx, sizeof(pThis->mixer_data)));
+
+    LogRel2(("AC97: Setting mixer index #%RU8 to %RU16 (%RU8 %RU8)\n",
+             uMixerIdx, uVal, RT_HI_U8(uVal), RT_LO_U8(uVal)));
+
     pThis->mixer_data[uMixerIdx + 0] = RT_LO_U8(uVal);
     pThis->mixer_data[uMixerIdx + 1] = RT_HI_U8(uVal);
 }
@@ -2011,8 +2015,10 @@ static void ichac97R3StreamTransferUpdate(PAC97STATE pThis, PAC97STREAM pStream,
  * @returns IPRT status code.
  * @param   pThis               AC'97 device state.
  * @param   pStream             AC'97 stream to open.
+ * @param   fForce              Whether to force re-opening the stream or not.
+ *                              Otherwise re-opening only will happen if the PCM properties have changed.
  */
-static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
+static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream, bool fForce)
 {
     int rc = VINF_SUCCESS;
 
@@ -2073,7 +2079,8 @@ static int ichac97R3StreamOpen(PAC97STATE pThis, PAC97STREAM pStream)
     {
         /* Only (re-)create the stream (and driver chain) if we really have to.
          * Otherwise avoid this and just reuse it, as this costs performance. */
-        if (!DrvAudioHlpPCMPropsAreEqual(&Cfg.Props, &pStream->State.Cfg.Props))
+        if (   !DrvAudioHlpPCMPropsAreEqual(&Cfg.Props, &pStream->State.Cfg.Props)
+            || fForce)
         {
             LogRel2(("AC97: (Re-)Opening stream '%s' (%RU32Hz, %RU8 channels, %s%RU8)\n",
                      Cfg.szName, Cfg.Props.uHz, Cfg.Props.cChannels, Cfg.Props.fSigned ? "S" : "U", Cfg.Props.cBytes * 8));
@@ -2149,14 +2156,16 @@ static int ichac97R3StreamClose(PAC97STATE pThis, PAC97STREAM pStream)
  * @returns IPRT status code.
  * @param   pThis               AC'97 device state.
  * @param   pStream             AC'97 stream to re-open.
+ * @param   fForce              Whether to force re-opening the stream or not.
+ *                              Otherwise re-opening only will happen if the PCM properties have changed.
  */
-static int ichac97R3StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream)
+static int ichac97R3StreamReOpen(PAC97STATE pThis, PAC97STREAM pStream, bool fForce)
 {
     LogFlowFunc(("[SD%RU8]\n", pStream->u8SD));
 
     int rc = ichac97R3StreamClose(pThis, pStream);
     if (RT_SUCCESS(rc))
-        rc = ichac97R3StreamOpen(pThis, pStream);
+        rc = ichac97R3StreamOpen(pThis, pStream, fForce);
 
     return rc;
 }
@@ -3494,34 +3503,49 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     break;
                 case AC97_Extended_Audio_Ctrl_Stat:
 #ifdef IN_RING3
-                    if (!(u32Val & AC97_EACS_VRA))
+                    /*
+                     * Handle VRA bits.
+                     */
+# ifndef VBOX_WITH_AC97_VRA
+                    if (u32Val & AC97_EACS_VRA)
                     {
-                        ichac97MixerSet(pThis, AC97_PCM_Front_DAC_Rate, 48000 /* Default = 0xBB80 */);
-                        ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX]);
-
-                        ichac97MixerSet(pThis, AC97_PCM_LR_ADC_Rate,    48000 /* Default = 0xBB80 */);
-                        ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX]);
+                        u32Val &= ~AC97_EACS_VRA; /* Only clear VRA bit and keep the rest. */
+                        LogRel2(("AC97: Variable rate audio (VRA) is not supported, setting to 0x%x\n", u32Val));
                     }
-                    else
-                        LogRel2(("AC97: Variable rate audio (VRA) is not supported\n"));
 
-                    if (!(u32Val & AC97_EACS_VRM))
+                    ichac97MixerSet(pThis, AC97_PCM_Front_DAC_Rate, 0xbb80); /* Set default (48000 Hz). */
+                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX], true /* fForce */);
+
+                    ichac97MixerSet(pThis, AC97_PCM_LR_ADC_Rate, 0xbb80); /* Set default (48000 Hz). */
+                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX], true /* fForce */);
+# else
+#  error            "Implement EACS VRA support!"
+# endif
+                    /*
+                     * Handle VRM bits.
+                     */
+# ifndef VBOX_WITH_AC97_VRM
+                    if (u32Val & AC97_EACS_VRM)
                     {
-                        ichac97MixerSet(pThis, AC97_MIC_ADC_Rate,       48000 /* Default = 0xBB80 */);
-                        ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX]);
+                        u32Val &= ~AC97_EACS_VRM; /* Only clear VRM bit and keep the rest. */
+                        LogRel2(("AC97: Variable rate microphone audio (VRM) is not supported, setting to 0x%x\n", u32Val));
                     }
-                    else
-                        LogRel2(("AC97: Variable rate microphone audio (VRM) is not supported\n"));
 
-                    LogFunc(("Setting extended audio control to %#x\n", u32Val));
+                    ichac97MixerSet(pThis, AC97_MIC_ADC_Rate, 0xbb80); /* Set default (48000 Hz). */
+                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX], true /* fForce */);
+# else
+#  error            "Implement EACS VRM support!"
+# endif
+                    LogRel2(("AC97: Setting extended audio control to %#x\n", u32Val));
+
                     ichac97MixerSet(pThis, AC97_Extended_Audio_Ctrl_Stat, u32Val);
-#else
+#else /* !IN_RING3 */
                     rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
                     break;
                 case AC97_PCM_Front_DAC_Rate: /* Output slots 3, 4, 6. */
 #ifdef IN_RING3
-                if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRA)
+                    if (ichac97MixerGet(pThis, AC97_Extended_Audio_Ctrl_Stat) & AC97_EACS_VRA)
                     {
                         ichac97MixerSet(pThis, uPortIdx, u32Val);
                         LogRel2(("AC97: Setting front DAC rate to 0x%x\n", u32Val));
@@ -3532,7 +3556,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     /* Note: Some guest OSes seem to ignore our codec capabilities (EACS VRA) and try to
                      *       set the VRA rate nevertheless. So re-open the output stream in any case to avoid
                      *       breaking playback. */
-                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX]);
+                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PO_INDEX], true /* fForce */);
 #else
                     rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -3551,7 +3575,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     /* Note: Some guest OSes seem to ignore our codec capabilities (EACS VRM) and try to
                      *       set the VRM rate nevertheless. So re-open the mic-in stream in any case to avoid
                      *       breaking recording.*/
-                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX]);
+                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_MC_INDEX], true /* fForce */);
 #else
                     rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -3569,7 +3593,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     /* Note: Some guest OSes seem to ignore our codec capabilities (EACS VRA) and try to
                      *       set the VRA rate nevertheless. So re-open the line-in stream in any case to avoid
                      *       breaking recording.*/
-                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX]);
+                    ichac97R3StreamReOpen(pThis, &pThis->aStreams[AC97SOUNDSOURCE_PI_INDEX], true /* fForce */);
 #else
                     rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
