@@ -80,12 +80,12 @@ void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t u
         for (uint8_t i = 0; i < sizeof(pszDepiction); i++)
             if (pszDepiction[i] == ' ' && first++)
                 pszDepiction[i] = '.';
-        Log3Func(("%s: Guest %s %s 0x%s\n",
+        Log6Func(("%s: Guest %s %s 0x%s\n",
                   pszFunc, fWrite ? "wrote" : "read ", pszDepiction, pszFormattedVal));
     }
     else /* odd number or oversized access, ... log inline hex-dump style */
     {
-        Log3Func(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n",
+        Log6Func(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n",
               pszFunc, fWrite ? "wrote" : "read ", pszMember,
               pszIdx, uOffset, uOffset + cb, cb, pv));
     }
@@ -198,7 +198,7 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
     pDescChain->uHeadIdx = virtioReadAvailDescIdx(pVirtio, qIdx, pVirtqProxy->uAvailIdx);
     uint16_t uDescIdx = pDescChain->uHeadIdx;
 
-    Log3Func(("%s DESC CHAIN: (head) desc_idx=%u [avail_idx=%u]\n",
+    Log6Func(("%s DESC CHAIN: (head) desc_idx=%u [avail_idx=%u]\n",
             pVirtqProxy->szVirtqName, pDescChain->uHeadIdx, pVirtqProxy->uAvailIdx));
 
     if (fRemove)
@@ -237,14 +237,14 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
 
         if (desc.fFlags & VIRTQ_DESC_F_WRITE)
         {
-            Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n",
+            Log6Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n",
                 QUEUENAME(qIdx), uDescIdx, pDescChain->cSegsIn, desc.pGcPhysBuf, desc.cb));
             cbIn += desc.cb;
             pSeg = &(pDescChain->aSegsIn[pDescChain->cSegsIn++]);
         }
         else
         {
-            Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n",
+            Log6Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n",
                 QUEUENAME(qIdx), uDescIdx, pDescChain->cSegsOut, desc.pGcPhysBuf, desc.cb));
             cbOut += desc.cb;
             pSeg = &(pDescChain->aSegsOut[pDescChain->cSegsOut++]);
@@ -260,12 +260,12 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove,
     RTSgBufInit(&pVirtqProxy->outSgBuf, (PCRTSGSEG)&pDescChain->aSegsOut, pDescChain->cSegsOut);
 
     if (ppInSegs)
-        *ppInSegs  = &pVirtqProxy->inSgBuf;
+        *ppInSegs = &pVirtqProxy->inSgBuf;
 
     if (ppOutSegs)
         *ppOutSegs = &pVirtqProxy->outSgBuf;
 
-    Log3Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
+    Log6Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
               pVirtqProxy->szVirtqName, pDescChain->cSegsOut, cbOut, pDescChain->cSegsIn, cbIn));
 
     return VINF_SUCCESS;
@@ -291,7 +291,7 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fF
 
     size_t cbRemain = RTSgBufCalcTotalLength(pBufSrc);
     uint16_t uUsedIdx = virtioReadUsedRingIdx(pVirtio, qIdx);
-    Log3Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
+    Log6Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
                QUEUENAME(qIdx), uUsedIdx));
 
     while (cbRemain)
@@ -327,10 +327,10 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fF
     {
         size_t cbInSgBuf = RTSgBufCalcTotalLength(pBufDst);
         size_t cbWritten = cbInSgBuf - RTSgBufCalcLengthLeft(pBufDst);
-        Log2Func(("Copied %u bytes to %u byte buffer, residual=%d\n",
+        Log2Func((".... Copied %u bytes to %u byte buffer, residual=%d\n",
              cbWritten, cbInSgBuf, cbInSgBuf - cbWritten));
     }
-    Log3Func(("Write ahead used_idx=%d, %s used_idx=%d\n",
+    Log6Func(("Write ahead used_idx=%d, %s used_idx=%d\n",
          pVirtqProxy->uUsedIdx,  QUEUENAME(qIdx), uUsedIdx));
 
     return VINF_SUCCESS;
@@ -350,7 +350,7 @@ int virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx)
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
     uint16_t uIdx = virtioReadUsedRingIdx(pVirtio, qIdx);
-    Log3Func(("Updating %s used_idx from %u to %u\n",
+    Log6Func(("Updating %s used_idx from %u to %u\n",
               QUEUENAME(qIdx), uIdx, pVirtqProxy->uUsedIdx));
 
     virtioWriteUsedRingIdx(pVirtio, qIdx, pVirtqProxy->uUsedIdx);
@@ -367,7 +367,7 @@ static void virtioQueueNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uN
     Assert(uNotifyIdx == qIdx);
 
     PVIRTQ_PROXY_T pVirtqProxy = &pVirtio->virtqProxy[qIdx];
-    Log3Func(("%s\n", pVirtqProxy->szVirtqName));
+    Log6Func(("%s\n", pVirtqProxy->szVirtqName));
 
 
     /** Inform client */
@@ -397,7 +397,7 @@ static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx)
                 pVirtqProxy->fEventThresholdReached = false;
                 return;
             }
-            Log3Func(("...skipping interrupt: VIRTIO_F_EVENT_IDX set but threshold not reached\n"));
+            Log6Func(("...skipping interrupt: VIRTIO_F_EVENT_IDX set but threshold not reached\n"));
         }
         else
         {
@@ -407,7 +407,7 @@ static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx)
                 virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT);
                 return;
             }
-            Log3Func(("...skipping interrupt. Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
+            Log6Func(("...skipping interrupt. Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
 
         }
     }
@@ -455,10 +455,10 @@ void virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause)
 {
    if (uCause == VIRTIO_ISR_VIRTQ_INTERRUPT)
-       Log3Func(("reason: buffer added to 'used' ring.\n"));
+       Log6Func(("reason: buffer added to 'used' ring.\n"));
    else
    if (uCause == VIRTIO_ISR_DEVICE_CONFIG)
-       Log3Func(("reason: device config change\n"));
+       Log6Func(("reason: device config change\n"));
 
     pVirtio->uISR |= uCause;
     PDMDevHlpPCISetIrq(pVirtio->CTX_SUFF(pDevIns), 0, 1);
@@ -641,9 +641,9 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
         if (fWrite) /* Guest WRITE pCommonCfg->uDeviceStatus */
         {
             pVirtio->uDeviceStatus = *(uint8_t *)pv;
-            Log3Func(("Guest wrote uDeviceStatus ................ ("));
+            Log6Func(("Guest wrote uDeviceStatus ................ ("));
             virtioLogDeviceStatus(pVirtio->uDeviceStatus);
-            Log3((")\n"));
+            Log6((")\n"));
             if (pVirtio->uDeviceStatus == 0)
                 virtioGuestResetted(pVirtio);
             /**
@@ -658,10 +658,10 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
         }
         else /* Guest READ pCommonCfg->uDeviceStatus */
         {
-            Log3Func(("Guest read  uDeviceStatus ................ ("));
+            Log6Func(("Guest read  uDeviceStatus ................ ("));
             *(uint32_t *)pv = pVirtio->uDeviceStatus;
             virtioLogDeviceStatus(pVirtio->uDeviceStatus);
-            Log3((")\n"));
+            Log6((")\n"));
         }
     }
     else if (MATCH_COMMON_CFG(uMsixConfig))
@@ -763,7 +763,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
         if (pVirtio->fGenUpdatePending || fDevSpecificFieldChanged)
         {
             ++pVirtio->uConfigGeneration;
-            Log3Func(("Bumped cfg. generation to %d because %s%s\n",
+            Log6Func(("Bumped cfg. generation to %d because %s%s\n",
                 pVirtio->uConfigGeneration,
                 fDevSpecificFieldChanged ? "<dev cfg changed> " : "",
                 pVirtio->fGenUpdatePending ? "<update was pending>" : ""));
@@ -780,7 +780,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     if (fIsr && cb == sizeof(uint8_t))
     {
         *(uint8_t *)pv = pVirtio->uISR;
-        Log3Func(("Read and clear ISR\n"));
+        Log6Func(("Read and clear ISR\n"));
         pVirtio->uISR = 0; /** VirtIO specification requires reads of ISR to clear it */
         virtioLowerInterrupt(pVirtio);
     }
@@ -831,7 +831,7 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
     if (fIsr && cb == sizeof(uint8_t))
     {
         pVirtio->uISR = *(uint8_t *)pv;
-        Log3Func(("Setting uISR = 0x%02x (virtq interrupt: %d, dev confg interrupt: %d)\n",
+        Log6Func(("Setting uISR = 0x%02x (virtq interrupt: %d, dev confg interrupt: %d)\n",
               pVirtio->uISR & 0xff,
               pVirtio->uISR & VIRTIO_ISR_VIRTQ_INTERRUPT,
               !!(pVirtio->uISR & VIRTIO_ISR_DEVICE_CONFIG)));
@@ -1044,7 +1044,6 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
 {
 
     int rc = VINF_SUCCESS;
-
 
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)RTMemAllocZ(sizeof(VIRTIOSTATE));
     if (!pVirtio)
@@ -1462,6 +1461,45 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
 
 }
 
+ /**
+  * Do a hex dump of a buffer.
+  *
+  * @param   pv       Pointer to array to dump
+  * @param   cb       Number of characters to dump
+  * @param   uBase    Base address of offset addresses displayed
+  * @param   pszTitle Header line/title for the dump
+  *
+  */
+ void virtioHexDump(uint8_t *pv, size_t cb, uint32_t uBase, const char *pszTitle)
+ {
+     if (pszTitle)
+         Log(("%s [%d bytes]:\n", pszTitle, cb));
+     for (uint32_t row = 0; row < RT_MAX(1, (cb / 16) + 1); row++)
+     {
+         uint32_t uAddr = row * 16 + uBase;
+         Log(("%x%x%x%x: ", (uAddr >> 12) & 0xf, (uAddr >> 8) & 0xf, (uAddr >> 4) & 0xf, uAddr & 0xf));
+         for (int col = 0; col < 16; col++)
+         {
+            uint32_t idx = row * 16 + col;
+            uint8_t u8 = pv[idx];
+            if (idx >= cb)
+                Log(("-- %s", (col + 1) % 8 ? "" : "  "));
+            else
+                Log(("%x%x %s", u8 >> 4 & 0xf, u8 & 0xf, (col + 1) % 8 ? "" : "  "));
+         }
+         for (int col = 0; col < 16; col++)
+         {
+            uint32_t idx = row * 16 + col;
+            uint8_t u8 = pv[idx];
+            if (idx >= cb)
+                Log((" "));
+            else
+                Log(("%c", u8 >= 0x20 && u8 <= 0x7e ? u8 : '.'));
+         }
+         Log(("\n"));
+    }
+    Log(("\n"));
+ }
 
 #endif /* IN_RING3 */
 

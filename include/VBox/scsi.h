@@ -237,6 +237,7 @@ typedef enum SCSIMAINTENANCEIN
 #define SCSI_ASCQ_BOP_BOM_DETECTED                          0x04
 #define SCSI_ASCQ_UNKNOWN_FORMAT                            0x01
 #define SCSI_ASCQ_INCOMPATIBLE_FORMAT                       0x02
+#define SCSI_ASCQ_COPY_TARGET_DEVICE_DATA_OVERRUN           0x0d
 
 /** @name SCSI_INQUIRY
  * @{

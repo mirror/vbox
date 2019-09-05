@@ -408,7 +408,6 @@ DECLINLINE(uint16_t) virtioReadAvailRingIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx)
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),
                       pVirtio->pGcPhysQueueAvail[qIdx] + RT_UOFFSETOF(VIRTQ_AVAIL_T, uIdx),
                       &uIdx, sizeof(uIdx));
-    Log3Func(("%s actual avail_idx=%d\n", pVirtio->virtqProxy[qIdx].szVirtqName, uIdx));
     return uIdx;
 }
 
@@ -511,22 +510,22 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx, 
 DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
 {
     if (status == 0)
-        Log3(("RESET"));
+        Log6(("RESET"));
     else
     {
         int primed = 0;
         if (status & VIRTIO_STATUS_ACKNOWLEDGE)
-            Log3(("ACKNOWLEDGE",   primed++));
+            Log6(("ACKNOWLEDGE",   primed++));
         if (status & VIRTIO_STATUS_DRIVER)
-            Log3(("%sDRIVER",      primed++ ? " | " : ""));
+            Log6(("%sDRIVER",      primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_FEATURES_OK)
-            Log3(("%sFEATURES_OK", primed++ ? " | " : ""));
+            Log6(("%sFEATURES_OK", primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_DRIVER_OK)
-            Log3(("%sDRIVER_OK",   primed++ ? " | " : ""));
+            Log6(("%sDRIVER_OK",   primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_FAILED)
-            Log3(("%sFAILED",      primed++ ? " | " : ""));
+            Log6(("%sFAILED",      primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_DEVICE_NEEDS_RESET)
-            Log3(("%sNEEDS_RESET", primed++ ? " | " : ""));
+            Log6(("%sNEEDS_RESET", primed++ ? " | " : ""));
     }
 }
 
