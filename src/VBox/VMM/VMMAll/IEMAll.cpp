@@ -8114,7 +8114,8 @@ iemMemPageTranslateAndCheckAccess(PVMCPUCC pVCpu, RTGCPTR GCPtrMem, uint32_t fAc
     /** @todo Need a different PGM interface here.  We're currently using
      *        generic / REM interfaces. this won't cut it for R0. */
     /** @todo If/when PGM handles paged real-mode, we can remove the hack in
-     *        iemSvmHandleWorldSwitch to work around raising a page-fault here. */
+     *        iemSvmWorldSwitch/iemVmxWorldSwitch to work around raising a page-fault
+     *        here. */
     RTGCPHYS    GCPhys;
     uint64_t    fFlags;
     int rc = PGMGstGetPage(pVCpu, GCPtrMem, &fFlags, &GCPhys);
