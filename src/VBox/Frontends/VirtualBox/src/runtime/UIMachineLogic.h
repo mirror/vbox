@@ -299,6 +299,7 @@ private slots:
     void sltToggleVRDE(bool fEnabled);
 
     /* "Device" menu functionality: */
+    void sltOpenVMSettingsDialogDefault();
     void sltOpenVMSettingsDialog(const QString &strCategory = QString(), const QString &strControl = QString());
     void sltOpenStorageSettingsDialog();
     void sltToggleAudioOutput(bool fEnabled);

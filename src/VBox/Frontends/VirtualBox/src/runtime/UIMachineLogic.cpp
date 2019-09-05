@@ -1092,7 +1092,7 @@ void UIMachineLogic::prepareActionConnections()
 
     /* 'Machine' actions connections: */
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_Settings), &UIAction::triggered,
-            [=](){ UIMachineLogic::sltOpenVMSettingsDialog();});
+            this, &UIMachineLogic::sltOpenVMSettingsDialogDefault);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_TakeSnapshot), &UIAction::triggered,
             this, &UIMachineLogic::sltTakeSnapshot);
     connect(actionPool()->action(UIActionIndexRT_M_Machine_S_ShowInformation), &UIAction::triggered,
@@ -2141,6 +2141,11 @@ void UIMachineLogic::sltToggleVRDE(bool fEnabled)
         /* Notify about the error: */
         return msgCenter().cannotSaveMachineSettings(machine());
     }
+}
+
+void UIMachineLogic::sltOpenVMSettingsDialogDefault()
+{
+    sltOpenVMSettingsDialog();
 }
 
 void UIMachineLogic::sltOpenVMSettingsDialog(const QString &strCategory /* = QString() */,
