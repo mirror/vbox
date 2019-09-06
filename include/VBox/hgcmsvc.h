@@ -479,7 +479,7 @@ DECLINLINE(int) HGCMSvcSSMR3Put(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
             rc = SSMR3PutU32(pSSM, pParm->u.uint32);
             break;
         case VBOX_HGCM_SVC_PARM_64BIT:
-            rc = SSMR3PutU32(pSSM, pParm->u.uint64);
+            rc = SSMR3PutU64(pSSM, pParm->u.uint64);
             break;
         case VBOX_HGCM_SVC_PARM_PTR:
             rc = SSMR3PutU32(pSSM, pParm->u.pointer.size);
