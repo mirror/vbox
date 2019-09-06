@@ -6314,7 +6314,7 @@ IEM_CIMPL_DEF_1(iemCImpl_invlpg, RTGCPTR, GCPtrPage)
  * @param   uInvpcidType         The invalidation type.
  * @remarks Updates the RIP.
  */
-IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, uint8_t, uInvpcidType)
+IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, uint64_t, uInvpcidType)
 {
     /*
      * Check preconditions.
@@ -6360,7 +6360,7 @@ IEM_CIMPL_DEF_3(iemCImpl_invpcid, uint8_t, iEffSeg, RTGCPTR, GCPtrInvpcidDesc, u
 
     if (uInvpcidType > X86_INVPCID_TYPE_MAX_VALID)
     {
-        Log(("invpcid: invalid/unrecognized invpcid type %#x -> #GP(0)\n", uInvpcidType));
+        Log(("invpcid: invalid/unrecognized invpcid type %#RX64 -> #GP(0)\n", uInvpcidType));
         return iemRaiseGeneralProtectionFault0(pVCpu);
     }
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0 | CPUMCTX_EXTRN_CR3 | CPUMCTX_EXTRN_CR4 | CPUMCTX_EXTRN_EFER);
