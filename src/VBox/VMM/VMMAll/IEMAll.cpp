@@ -15230,6 +15230,31 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpg(PVMCPUCC pVCpu, uint8_t cbInstr,
 
 
 /**
+ * Interface for HM and EM to emulate the INVPCID instruction.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_PGM_SYNC_CR3
+ *
+ * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   cbInstr     The instruction length in bytes.
+ * @param   GCPtrDesc   The effective address of the INVPCID descriptor.
+ * @param   uType       The invalidation type.
+ *
+ * @remarks In ring-0 not all of the state needs to be synced in.
+ */
+VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvpcid(PVMCPUCC pVCpu, uint8_t cbInstr, uint8_t iEffSeg, RTGCPTR GCPtrDesc,
+                                                 uint64_t uType)
+{
+    IEMEXEC_ASSERT_INSTR_LEN_RETURN(cbInstr, 4);
+
+    iemInitExec(pVCpu, false /*fBypassHandlers*/);
+    VBOXSTRICTRC rcStrict = IEM_CIMPL_CALL_3(iemCImpl_invpcid, iEffSeg, GCPtrDesc, uType);
+    Assert(!pVCpu->iem.s.cActiveMappings);
+    return iemUninitExecAndFiddleStatusAndMaybeReenter(pVCpu, rcStrict);
+}
+
+
+/**
  * Interface for HM and EM to emulate the CPUID instruction.
  *
  * @returns Strict VBox status code.
