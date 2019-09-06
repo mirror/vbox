@@ -684,7 +684,7 @@ static DECLCALLBACK(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
     Assert(pTimer == PDMDevHlpTimerToPtr(pDevIns, pThis->hSecondTimer));
-    RT_NOREF(pvUser);
+    RT_NOREF(pvUser, pTimer);
 
     /* if the oscillator is not in normal operation, we do not update */
     if ((pThis->cmos_data[RTC_REG_A] & 0x70) != 0x20)
