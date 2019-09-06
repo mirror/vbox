@@ -743,7 +743,9 @@
   OvmfPkg/Virtio10Dxe/Virtio10.inf
 !ifndef $(VBOX)
   OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+!endif
   OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+!ifndef $(VBOX)
   OvmfPkg/VirtioRngDxe/VirtioRng.inf
   OvmfPkg/XenIoPciDxe/XenIoPciDxe.inf
   OvmfPkg/XenBusDxe/XenBusDxe.inf

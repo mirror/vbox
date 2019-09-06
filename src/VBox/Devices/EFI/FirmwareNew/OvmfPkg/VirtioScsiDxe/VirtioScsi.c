@@ -443,14 +443,26 @@ VirtioScsiPassThru (
   volatile VIRTIO_SCSI_RESP *Response;
   VOID                      *ResponseBuffer;
   DESC_INDICES              Indices;
+#ifndef VBOX
   VOID                      *RequestMapping;
   VOID                      *ResponseMapping;
   VOID                      *InDataMapping;
   VOID                      *OutDataMapping;
+#else
+  VOID                      *RequestMapping  = NULL; /**< Initialize or cl.exe fails (gets confused by goto's). */
+  VOID                      *ResponseMapping = NULL;
+  VOID                      *InDataMapping   = NULL;
+  VOID                      *OutDataMapping  = NULL;
+#endif
   EFI_PHYSICAL_ADDRESS      RequestDeviceAddress;
   EFI_PHYSICAL_ADDRESS      ResponseDeviceAddress;
+#ifndef VBOX
   EFI_PHYSICAL_ADDRESS      InDataDeviceAddress;
   EFI_PHYSICAL_ADDRESS      OutDataDeviceAddress;
+#else
+  EFI_PHYSICAL_ADDRESS      InDataDeviceAddress = 0; /**< Initialize or cl.exe fails (gets confused by goto's). */
+  EFI_PHYSICAL_ADDRESS      OutDataDeviceAddress = 0;
+#endif
   VOID                      *InDataBuffer;
   UINTN                     InDataNumPages;
   BOOLEAN                   OutDataBufferIsMapped;

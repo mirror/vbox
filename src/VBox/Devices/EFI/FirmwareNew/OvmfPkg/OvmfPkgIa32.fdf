@@ -222,10 +222,12 @@ INF  PcAtChipsetPkg/PcatRealTimeClockRuntimeDxe/PcatRealTimeClockRuntimeDxe.inf
 
 INF  OvmfPkg/BlockMmioToBlockIoDxe/BlockIo.inf
 INF  OvmfPkg/VirtioPciDeviceDxe/VirtioPciDeviceDxe.inf
-!ifndef $(VBOX)
 INF  OvmfPkg/Virtio10Dxe/Virtio10.inf
+!ifndef $(VBOX)
 INF  OvmfPkg/VirtioBlkDxe/VirtioBlk.inf
+!endif
 INF  OvmfPkg/VirtioScsiDxe/VirtioScsi.inf
+!ifndef $(VBOX)
 INF  OvmfPkg/VirtioRngDxe/VirtioRng.inf
 INF  OvmfPkg/XenIoPciDxe/XenIoPciDxe.inf
 INF  OvmfPkg/XenBusDxe/XenBusDxe.inf
