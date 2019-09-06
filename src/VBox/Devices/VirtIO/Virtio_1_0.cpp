@@ -1462,7 +1462,7 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
 }
 
  /**
-  * Do a hex dump of a buffer.
+  * Do a hex dump of a buffer
   *
   * @param   pv       Pointer to array to dump
   * @param   cb       Number of characters to dump
@@ -1474,28 +1474,19 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
  {
      if (pszTitle)
          Log(("%s [%d bytes]:\n", pszTitle, cb));
-     for (uint32_t row = 0; row < RT_MAX(1, (cb / 16) + 1); row++)
+     for (uint32_t row = 0; row < RT_MAX(1, (cb / 16) + 1) && row * 16 < cb; row++)
      {
-         uint32_t uAddr = row * 16 + uBase;
-         Log(("%x%x%x%x: ", (uAddr >> 12) & 0xf, (uAddr >> 8) & 0xf, (uAddr >> 4) & 0xf, uAddr & 0xf));
-         for (int col = 0; col < 16; col++)
+         Log(("%04x: ", row * 16 + uBase)); /* line address */
+         for (uint8_t col = 0; col < 16; col++)
          {
             uint32_t idx = row * 16 + col;
-            uint8_t u8 = pv[idx];
             if (idx >= cb)
                 Log(("-- %s", (col + 1) % 8 ? "" : "  "));
             else
-                Log(("%x%x %s", u8 >> 4 & 0xf, u8 & 0xf, (col + 1) % 8 ? "" : "  "));
+                Log(("%02x %s", pv[idx], (col + 1) % 8 ? "" : "  "));
          }
-         for (int col = 0; col < 16; col++)
-         {
-            uint32_t idx = row * 16 + col;
-            uint8_t u8 = pv[idx];
-            if (idx >= cb)
-                Log((" "));
-            else
-                Log(("%c", u8 >= 0x20 && u8 <= 0x7e ? u8 : '.'));
-         }
+         for (uint32_t idx = row * 16; idx < row * 16 + 16; idx++)
+            Log(("%c", (idx >= cb) ? ' ' : (pv[idx] >= 0x20 && pv[idx] <= 0x7e ? pv[idx] : '.')));
          Log(("\n"));
     }
     Log(("\n"));
