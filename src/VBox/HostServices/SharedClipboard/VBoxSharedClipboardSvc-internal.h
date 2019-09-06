@@ -68,54 +68,11 @@ typedef struct _VBOXCLIPBOARDCLIENTMSG
     VBOXSHCLMSGCTX   m_Ctx;
 } VBOXCLIPBOARDCLIENTMSG, *PVBOXCLIPBOARDCLIENTMSG;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 typedef struct VBOXCLIPBOARDCLIENTURISTATE
 {
-    /** Whether to start a new transfer. */
-    bool                          fTransferStart;
     /** Directory of the transfer to start. */
     SHAREDCLIPBOARDURITRANSFERDIR enmTransferDir;
 } VBOXCLIPBOARDCLIENTURISTATE, *PVBOXCLIPBOARDCLIENTURISTATE;
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
-
-/**
- * Structure for keeping the old client state tracking,
- * needed for compatbility to older Guest Additions (for now). Remove this later.
- */
-typedef struct VBOXCLIPBOARDCLIENTSTATEOLD
-{
-    /** The guest is waiting for a message. */
-    bool fAsync;
-    /** The guest is waiting for data from the host */
-    bool fReadPending;
-    /** Whether the host host has sent a quit message. */
-    bool fHostMsgQuit;
-    /** Whether the host host has requested reading clipboard data from the guest. */
-    bool fHostMsgReadData;
-    /** Whether the host host has reported its available formats. */
-    bool fHostMsgFormats;
-
-    struct {
-        VBOXHGCMCALLHANDLE callHandle;
-        uint32_t           cParms;
-        VBOXHGCMSVCPARM   *paParms;
-    } async;
-
-    struct {
-        VBOXHGCMCALLHANDLE callHandle;
-        uint32_t           cParms;
-        VBOXHGCMSVCPARM   *paParms;
-    } asyncRead;
-
-    struct {
-         void *pv;
-         uint32_t cb;
-         uint32_t u32Format;
-    } data;
-
-    uint32_t u32AvailableFormats;
-    uint32_t u32RequestedFormat;
-} VBOXCLIPBOARDCLIENTSTATEOLD;
 
 /**
  * Structure for keeping generic client state data within the Shared Clipboard host service.
@@ -135,10 +92,8 @@ typedef struct VBOXCLIPBOARDCLIENTSTATE
     /** Maximum chunk size to use for data transfers. Set to _64K by default. */
     uint32_t                         cbChunkSize;
     SHAREDCLIPBOARDSOURCE            enmSource;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     /** The client's URI state. */
     VBOXCLIPBOARDCLIENTURISTATE      URI;
-#endif
 } VBOXCLIPBOARDCLIENTSTATE, *PVBOXCLIPBOARDCLIENTSTATE;
 
 typedef struct _VBOXCLIPBOARDCLIENTCMDCTX

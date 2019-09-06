@@ -1698,7 +1698,6 @@ static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientSt
     LogFlowFuncEnter();
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    pClientState->URI.fTransferStart = false;
     pClientState->URI.enmTransferDir = SHAREDCLIPBOARDURITRANSFERDIR_UNKNOWN;
 #else
     RT_NOREF(pClientState);
@@ -1772,21 +1771,45 @@ static DECLCALLBACK(int) svcHostCall(void *,
     return rc;
 }
 
-#ifndef UNIT_TEST
 /**
- * SSM descriptor table for the VBOXCLIPBOARDCLIENTSTATEOLD structure.
- * Legacy, do not use anymore.
+ * SSM descriptor table for the VBOXCLIPBOARDCLIENTSTATE structure.
  */
-static SSMFIELD const g_aClipboardSSMFieldsV0[] =
+static SSMFIELD const s_aShClSSMClientState[] =
 {
-    SSMFIELD_ENTRY_OLD(uClientID,               sizeof(uint32_t)),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATEOLD, fHostMsgQuit),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATEOLD, fHostMsgReadData),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATEOLD, fHostMsgFormats),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATEOLD, u32RequestedFormat),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATE, uProtocolVer),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATE, cbChunkSize),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATE, enmSource),
     SSMFIELD_ENTRY_TERM()
 };
-#endif
+
+/**
+ * SSM descriptor table for the VBOXCLIPBOARDCLIENTURISTATE structure.
+ */
+static SSMFIELD const s_aShClSSMClientURIState[] =
+{
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTURISTATE, enmTransferDir),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * SSM descriptor table for the header of the VBOXCLIPBOARDCLIENTMSG structure.
+ * The actual message parameters will be serialized separately.
+ */
+static SSMFIELD const s_aShClSSMClientMsgHdr[] =
+{
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTMSG, m_uMsg),
+    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTMSG, m_cParms),
+    SSMFIELD_ENTRY_TERM()
+};
+
+/**
+ * SSM descriptor table for the VBOXSHCLMSGCTX structure.
+ */
+static SSMFIELD const s_aShClSSMClientMsgCtx[] =
+{
+    SSMFIELD_ENTRY(VBOXSHCLMSGCTX, uContextID),
+    SSMFIELD_ENTRY_TERM()
+};
 
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
@@ -1801,23 +1824,76 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
      */
     LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
-    //PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
-    RT_NOREF(pvClient);
+    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
+    AssertPtr(pClient);
 
-    /* This field used to be the length. We're using it as a version field
-       with the high bit set. */
-    SSMR3PutU32(pSSM, UINT32_C(0x80000002));
+    /* Write Shared Clipboard saved state version. */
+    SSMR3PutU32(pSSM, VBOX_SHARED_CLIPBOARD_SSM_VER_1);
 
-    VBOXCLIPBOARDCLIENTSTATEOLD Dummy;
-    RT_ZERO(Dummy);
-
-    int rc = SSMR3PutStructEx(pSSM, &Dummy, sizeof(Dummy),
-                              0 /*fFlags*/, &g_aClipboardSSMFieldsV0[0], NULL);
+    int rc = SSMR3PutStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
     AssertRCReturn(rc, rc);
+
+    rc = SSMR3PutStructEx(pSSM, &pClient->State.URI, sizeof(pClient->State.URI), 0 /*fFlags*/, &s_aShClSSMClientURIState[0], NULL);
+    AssertRCReturn(rc, rc);
+
+    /* Serialize the client's internal message queue. */
+    rc = SSMR3PutU64(pSSM, (uint64_t)pClient->queueMsg.size());
+    AssertRCReturn(rc, rc);
+
+    for (size_t i = 0; i < pClient->queueMsg.size(); i++)
+    {
+        PVBOXCLIPBOARDCLIENTMSG pMsg = pClient->queueMsg.at(i);
+        AssertPtr(pMsg);
+
+        rc = SSMR3PutStructEx(pSSM, pMsg, sizeof(VBOXCLIPBOARDCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
+        AssertRCReturn(rc, rc);
+
+        rc = SSMR3PutStructEx(pSSM, &pMsg->m_Ctx, sizeof(VBOXSHCLMSGCTX), 0 /*fFlags*/, &s_aShClSSMClientMsgCtx[0], NULL);
+        AssertRCReturn(rc, rc);
+
+        for (uint32_t p = 0; p < pMsg->m_cParms; p++)
+        {
+            rc = HGCMSvcSSMR3Put(&pMsg->m_paParms[p], pSSM);
+            AssertRCReturn(rc, rc);
+        }
+    }
 
 #else  /* UNIT_TEST */
     RT_NOREF3(u32ClientID, pvClient, pSSM);
 #endif /* UNIT_TEST */
+    return VINF_SUCCESS;
+}
+
+static int svcLoadStateV0(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
+{
+    RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);
+
+    uint32_t uMarker;
+    int rc = SSMR3GetU32(pSSM, &uMarker);   /* Begin marker. */
+    AssertRC(rc);
+    Assert(uMarker == UINT32_C(0x19200102)  /* SSMR3STRUCT_BEGIN */);
+
+    rc = SSMR3Skip(pSSM, sizeof(uint32_t)); /* Client ID */
+    AssertRCReturn(rc, rc);
+
+    bool fValue;
+    rc = SSMR3GetBool(pSSM, &fValue);       /* fHostMsgQuit */
+    AssertRCReturn(rc, rc);
+
+    rc = SSMR3GetBool(pSSM, &fValue);       /* fHostMsgReadData */
+    AssertRCReturn(rc, rc);
+
+    rc = SSMR3GetBool(pSSM, &fValue);       /* fHostMsgFormats */
+    AssertRCReturn(rc, rc);
+
+    uint32_t fFormats;
+    rc = SSMR3GetU32(pSSM, &fFormats);      /* u32RequestedFormat */
+    AssertRCReturn(rc, rc);
+
+    rc = SSMR3GetU32(pSSM, &uMarker);       /* End marker. */
+    AssertRCReturn(rc, rc);
+    Assert(uMarker == UINT32_C(0x19920406) /* SSMR3STRUCT_END */);
+
     return VINF_SUCCESS;
 }
 
@@ -1831,39 +1907,54 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
     AssertPtr(pClient);
 
-    /* Save the client ID for data validation. */
-    /** @todo isn't this the same as u32ClientID? Playing safe for now... */
-    uint32_t const u32ClientIDOld = pClient->State.u32ClientID;
-
     /* Restore the client data. */
     uint32_t lenOrVer;
     int rc = SSMR3GetU32(pSSM, &lenOrVer);
     AssertRCReturn(rc, rc);
-    if (lenOrVer == UINT32_C(0x80000002))
+    if (lenOrVer == VBOX_SHARED_CLIPBOARD_SSM_VER_0)
     {
-        uint32_t uMarker;
-        rc = SSMR3GetU32(pSSM, &uMarker);      /* Begin marker. */
-        AssertRC(rc);
-        Assert(uMarker == UINT32_C(0x19200102) /* SSMR3STRUCT_BEGIN */);
-
-        rc = SSMR3Skip(pSSM, sizeof(uint32_t) + (3 * sizeof(bool)) + sizeof(uint32_t));
+        return svcLoadStateV0(u32ClientID, pvClient, pSSM, uVersion);
+    }
+    else if (lenOrVer == VBOX_SHARED_CLIPBOARD_SSM_VER_1)
+    {
+        rc = SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
         AssertRCReturn(rc, rc);
 
-        rc = SSMR3GetU32(pSSM, &uMarker);      /* End marker. */
-        AssertRC(rc);
-        Assert(uMarker == UINT32_C(0x19920406) /* SSMR3STRUCT_END */);
+        rc = SSMR3GetStructEx(pSSM, &pClient->State.URI, sizeof(pClient->State.URI), 0 /*fFlags*/, &s_aShClSSMClientURIState[0], NULL);
+        AssertRCReturn(rc, rc);
+
+        /* Load the client's internal message queue. */
+        uint64_t cMsg;
+        rc = SSMR3GetU64(pSSM, &cMsg);
+        AssertRCReturn(rc, rc);
+
+        for (uint64_t i = 0; i < cMsg; i++)
+        {
+            PVBOXCLIPBOARDCLIENTMSG pMsg = (PVBOXCLIPBOARDCLIENTMSG)RTMemAlloc(sizeof(VBOXCLIPBOARDCLIENTMSG));
+            AssertPtrReturn(pMsg, VERR_NO_MEMORY);
+
+            rc = SSMR3GetStructEx(pSSM, pMsg, sizeof(VBOXCLIPBOARDCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
+            AssertRCReturn(rc, rc);
+
+            rc = SSMR3GetStructEx(pSSM, &pMsg->m_Ctx, sizeof(VBOXSHCLMSGCTX), 0 /*fFlags*/, &s_aShClSSMClientMsgCtx[0], NULL);
+            AssertRCReturn(rc, rc);
+
+            pMsg->m_paParms = (PVBOXHGCMSVCPARM)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * pMsg->m_cParms);
+            AssertPtrReturn(pMsg->m_paParms, VERR_NO_MEMORY);
+
+            for (uint32_t p = 0; p < pMsg->m_cParms; p++)
+            {
+                rc = HGCMSvcSSMR3Get(&pMsg->m_paParms[p], pSSM);
+                AssertRCReturn(rc, rc);
+            }
+
+            rc = vboxSvcClipboardMsgAdd(pClient, pMsg, true /* fAppend */);
+            AssertRCReturn(rc, rc);
+        }
     }
     else
     {
-        LogFunc(("Client data size mismatch: got %#x\n", lenOrVer));
-        return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-    }
-
-    /* Verify the client ID. */
-    if (pClient->State.u32ClientID != u32ClientIDOld)
-    {
-        LogFunc(("Client ID mismatch: expected %d, got %d\n", u32ClientIDOld, pClient->State.u32ClientID));
-        pClient->State.u32ClientID = u32ClientIDOld;
+        LogRel(("Shared Clipboard: Unknown saved state version (%#x)\n", lenOrVer));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
 

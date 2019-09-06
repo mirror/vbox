@@ -61,6 +61,15 @@
 #endif
 
 /*
+ * The saved state versions.
+ * We're using it as a version field with the high bit set.
+ */
+/** Older saved states (VBox < 6.1). Includes protocol v0 state. */
+#define VBOX_SHARED_CLIPBOARD_SSM_VER_0          UINT32_C(0x80000002)
+/** Protocol v1 is being used. */
+#define VBOX_SHARED_CLIPBOARD_SSM_VER_1          UINT32_C(0x80000003)
+
+/*
  * The mode of operations.
  */
 #define VBOX_SHARED_CLIPBOARD_MODE_OFF           0
