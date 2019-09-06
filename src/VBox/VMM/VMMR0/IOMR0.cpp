@@ -124,8 +124,12 @@ VMMR0_INT_DECL(int)  IOMR0IoPortSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMI
     pGVM->iomr0.s.paIoPortRegs[hIoPorts].pfnInStrCallback   = pfnInStr;
     pGVM->iomr0.s.paIoPortRegs[hIoPorts].cPorts             = cPorts;
     uint16_t const idxStats = pGVM->iomr0.s.paIoPortRing3Regs[hIoPorts].idxStats;
+#ifdef VBOX_WITH_STATISTICS
     pGVM->iomr0.s.paIoPortRegs[hIoPorts].idxStats           = (uint32_t)idxStats + cPorts <= pGVM->iomr0.s.cIoPortStatsAllocation
                                                             ? idxStats : UINT16_MAX;
+#else
+    pGVM->iomr0.s.paIoPortRegs[hIoPorts].idxStats           = UINT16_MAX;
+#endif
     return VINF_SUCCESS;
 }
 
@@ -257,8 +261,12 @@ VMMR0_INT_DECL(int) IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEn
     VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
     AssertReturn(cReqMinEntries <= _64K, VERR_IOM_TOO_MANY_IOPORT_REGISTRATIONS);
     uint32_t cNewEntries = (uint32_t)cReqMinEntries;
+#ifdef VBOX_WITH_STATISTICS
     uint32_t const cOldEntries = pGVM->iomr0.s.cIoPortStatsAllocation;
     ASMCompilerBarrier();
+#else
+    uint32_t const cOldEntries = 0;
+#endif
     AssertReturn(cNewEntries > cOldEntries, VERR_IOM_IOPORT_IPE_1);
     AssertReturn(pGVM->iom.s.cIoPortStatsAllocation == cOldEntries, VERR_IOM_IOPORT_IPE_1);
     AssertReturn(pGVM->iom.s.cIoPortStats <= cOldEntries, VERR_IOM_IOPORT_IPE_2);
