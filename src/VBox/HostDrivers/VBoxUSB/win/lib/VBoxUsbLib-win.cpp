@@ -60,6 +60,10 @@
 # include <Dbt.h>
 #endif
 
+#ifdef VBOX_WITH_NEW_USB_ENUM
+# include <cfgmgr32.h>
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -898,6 +902,220 @@ static int usbLibDevGetHubDevices(LPCSTR lpszName, PUSBDEVICE *ppDevs, uint32_t 
     return rc;
 }
 
+#ifdef VBOX_WITH_NEW_USB_ENUM
+
+/* Get a registry property for a device given its HDEVINFO + SP_DEVINFO_DATA. */
+static void *usbLibGetRegistryProperty(HDEVINFO InfoSet, const PSP_DEVINFO_DATA DevData, DWORD Property)
+{
+    BOOL    rc;
+    DWORD   dwReqLen;
+    void    *PropertyData;
+
+    /* How large a buffer do we need? */
+    rc = SetupDiGetDeviceRegistryProperty(InfoSet, DevData, Property,
+                                          NULL, NULL, 0, &dwReqLen);
+    if (!rc && (GetLastError() != ERROR_INSUFFICIENT_BUFFER))
+    {
+        LogRelFunc(("Failed to query buffer size, error %ld\n", GetLastError()));
+        AssertFailed();
+        return NULL;
+    }
+
+    PropertyData = RTMemAlloc(dwReqLen);
+    if (!PropertyData)
+        return NULL;
+
+    /* Get the actual property data. */
+    rc = SetupDiGetDeviceRegistryProperty(InfoSet, DevData, Property,
+                                          NULL, (PBYTE)PropertyData, dwReqLen, &dwReqLen);
+    if (!rc)
+    {
+        LogRelFunc(("Failed to get property data, error %ld\n", GetLastError()));
+        RTMemFree(PropertyData);
+        return NULL;
+    }
+    return PropertyData;
+}
+
+/* Given a HDEVINFO and SP_DEVICE_INTERFACE_DATA, get the interface detail data. */
+static PSP_DEVICE_INTERFACE_DETAIL_DATA usbLibGetDevDetail(HDEVINFO InfoSet, PSP_DEVICE_INTERFACE_DATA InterfaceData)
+{
+    BOOL                                rc;
+    DWORD                               dwReqLen;
+    PSP_DEVICE_INTERFACE_DETAIL_DATA    DetailData;
+
+    rc = SetupDiGetDeviceInterfaceDetail(InfoSet, InterfaceData, NULL, 0, &dwReqLen, NULL);
+    if (!rc && (GetLastError() != ERROR_INSUFFICIENT_BUFFER))
+    {
+        LogRelFunc(("Failed to get interface detail size, error %ld\n", GetLastError()));
+        return NULL;
+    }
+
+    DetailData = (PSP_DEVICE_INTERFACE_DETAIL_DATA)RTMemAlloc(dwReqLen);
+    if (!DetailData)
+        return NULL;
+
+    memset(DetailData, 0, dwReqLen);
+    DetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
+
+    rc = SetupDiGetDeviceInterfaceDetail(InfoSet, InterfaceData, DetailData, dwReqLen, &dwReqLen, NULL);
+    if (!rc)
+    {
+        LogRelFunc(("Failed to get interface detail, error %ld\n", GetLastError()));
+        RTMemFree(DetailData);
+    }
+
+    return DetailData;
+}
+
+/* Given a hub's PnP device instance, find its device path (file name). */
+static LPCSTR usbLibGetHubPathFromDevInst(LPCSTR DevInst)
+{
+    HDEVINFO                            InfoSet;
+    SP_DEVINFO_DATA                     DeviceData;
+    SP_DEVICE_INTERFACE_DATA            InterfaceData;
+    PSP_DEVICE_INTERFACE_DETAIL_DATA    DetailData;
+    BOOL                                rc;
+    LPSTR                               DevicePath = NULL;
+
+    /* Enumerate the DevInst's USB hub interface. */
+    InfoSet = SetupDiGetClassDevs(&GUID_DEVINTERFACE_USB_HUB, DevInst, NULL,
+                                  DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
+    if (InfoSet == INVALID_HANDLE_VALUE)
+    {
+        LogRelFunc(("Failed to get interface, error %ld\n", GetLastError()));
+        return NULL;
+    }
+
+    memset(&DeviceData, 0, sizeof(DeviceData));
+    DeviceData.cbSize = sizeof(DeviceData);
+    rc = SetupDiEnumDeviceInterfaces(InfoSet, 0, &GUID_DEVINTERFACE_USB_HUB, 0, &InterfaceData);
+    if (!rc)
+    {
+        LogRelFunc(("Failed to get interface data, error %ld\n", GetLastError()));
+        SetupDiDestroyDeviceInfoList(InfoSet);
+        return NULL;
+    }
+
+    DetailData = usbLibGetDevDetail(InfoSet, &InterfaceData);
+    if (!DetailData)
+    {
+        SetupDiDestroyDeviceInfoList(InfoSet);
+        return NULL;
+    }
+
+    /* Copy the device path out of the interface detail. */
+    DevicePath = RTStrDup(DetailData->DevicePath);
+    RTMemFree(DetailData);
+    SetupDiDestroyDeviceInfoList(InfoSet);
+
+    return DevicePath;
+}
+
+
+/* Use the Configuration Manager (CM) to get a devices's parent given its DEVINST and
+ * turn it into a PnP device instance ID string.
+ */
+static LPCSTR usbLibGetParentInstanceID(DEVINST DevInst)
+{
+    LPSTR       InstanceID;
+    DEVINST     ParentInst;
+    ULONG       ulReqChars;
+    ULONG       ulReqBytes;
+    CONFIGRET   cr;
+
+    /* First get the parent DEVINST. */
+    cr = CM_Get_Parent( &ParentInst, DevInst, 0);
+    if (cr != CR_SUCCESS)
+    {
+        LogRelFunc(("Failed to get parent instance, error %ld\n", GetLastError()));
+        return NULL;
+    }
+
+    /* Then convert it to the instance ID string. */
+    cr = CM_Get_Device_ID_Size(&ulReqChars, ParentInst, 0);
+    if (cr != CR_SUCCESS)
+    {
+        LogRelFunc(("Failed to get device ID size, error %ld\n", GetLastError()));
+        return NULL;
+    }
+
+    /* CM_Get_Device_ID_Size gives us the size in characters without terminating null. */
+    ulReqBytes = (ulReqChars + 1) * sizeof(char);
+    InstanceID = (LPSTR)RTMemAlloc(ulReqBytes);
+    if (!InstanceID)
+        return NULL;
+
+    cr = CM_Get_Device_ID(ParentInst, InstanceID, ulReqBytes, 0);
+    if (cr != CR_SUCCESS)
+    {
+        LogRelFunc(("Failed to get device ID, error %ld\n", GetLastError()));
+        RTMemFree(InstanceID);
+        return NULL;
+    }
+
+    return InstanceID;
+}
+
+/*
+ * Enumerate the USB devices in the host system. Since we do not care about the hierarchical
+ * structure of root hubs, other hubs, and devices, we just use ask the USB PnP enumerator to
+ * give us all it has. This includes hubs (though not root hubs) which we filter out. It also
+ * includes USB devices with no driver, which is notably something we cannot get by enumerating
+ * via GUID_DEVINTERFACE_USB_DEVICE.
+ *
+ * This approach also saves us some trouble relative to enumerating via hub IOCTLs and then
+ * hunting  through the PnP manager to find them. Instead, we look up the device's parent which
+ * is inevitably a hub, and that allows us to obtain USB-specific data (descriptors, speeds,
+ * etc.) when combined with the devices PnP "address" (USB port on parent hub).
+ *
+ * NB: Every USB device known to the Windows PnP Manager will have a device instance ID. Typically
+ * it also has a DriverKey but only if it has a driver installed. Hence we ignore the DriverKey, at
+ * least prior to capturing (once VBoxUSB.sys is installed, a DriverKey must by definition be
+ * present). Also note that the device instance ID changes for captured devices since we change
+ * their USB VID/PID, though it is unique at any given point.
+ *
+ * The location information should be a reliable way of identifying a device and does not change
+ * with driver installs, capturing, etc. It is only available on Windows Vista and later; earlier
+ * Windows version had no reliable way of cross-referencing the USB IOCTL and PnP Manager data.
+ */
+static int usbLibDevGetDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
+{
+    HDEVINFO            InfoSet;
+    DWORD               DeviceIndex;
+    SP_DEVINFO_DATA     DeviceData;
+    LPSTR               ClassGUID;
+
+    /* Ask for the USB PnP enumerator for all it has. */
+    InfoSet = SetupDiGetClassDevs(NULL, "USB", NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
+
+    memset(&DeviceData, 0, sizeof(DeviceData));
+    DeviceData.cbSize = sizeof(DeviceData);
+    DeviceIndex = 0;
+
+    /* Enumerate everything in the info set. */
+    while (SetupDiEnumDeviceInfo(InfoSet, DeviceIndex, &DeviceData))
+    {
+        /* Grab the class GUID. If it's a USB hub, we aren't interested. */
+        ClassGUID = (LPSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_CLASSGUID);
+        if (ClassGUID && strcmp(ClassGUID, "{36fc9e60-c465-11cf-8056-444553540000}"))
+        {
+            /* There is a class GUID and it's not a hub. Should be a USB device then. */
+            RTMemFree(ClassGUID);
+        }
+
+        ++DeviceIndex;
+        memset(&DeviceData, 0, sizeof(DeviceData));
+        DeviceData.cbSize = sizeof(DeviceData);
+    }
+
+    if (InfoSet)
+        SetupDiDestroyDeviceInfoList(InfoSet);
+
+    return VINF_SUCCESS;
+}
+
+#else
 static int usbLibDevGetDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
 {
     char CtlName[16];
@@ -925,6 +1143,7 @@ static int usbLibDevGetDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
     }
     return VINF_SUCCESS;
 }
+#endif
 
 static int usbLibMonDevicesCmp(PUSBDEVICE pDev, PVBOXUSB_DEV pDevInfo)
 {
