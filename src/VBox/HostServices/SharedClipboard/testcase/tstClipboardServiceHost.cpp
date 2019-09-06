@@ -96,6 +96,7 @@ static void testSetMode(void)
     table.pfnUnload(NULL);
 }
 
+#if 0 /* Disabled for now. */
 static void testGetHostMsg(void)
 {
     struct VBOXHGCMSVCPARM parms[2];
@@ -197,6 +198,7 @@ static void testGetHostMsg(void)
     table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
     table.pfnUnload(NULL);
 }
+#endif
 
 static void testSetHeadless(void)
 {
@@ -266,7 +268,7 @@ int main(int argc, char *argv[])
      * Run the tests.
      */
     testHostCall();
-    testGetHostMsg();
+    /* testGetHostMsg(); Disabled */
 
     /*
      * Summary

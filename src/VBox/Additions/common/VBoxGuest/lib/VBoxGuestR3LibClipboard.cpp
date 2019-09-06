@@ -167,7 +167,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsWriteRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDC
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
                            VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_GET, 3);
 
-        Msg.uContext.SetUInt32(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE);
+        Msg.uContext.SetUInt32(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT);
         Msg.uFormats.SetUInt32(0);
         Msg.fFlags.SetUInt32(0);
     }
@@ -1476,7 +1476,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PVBGLR3CLIPB
 #endif
         switch (uMsg)
         {
-            case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE:
+            case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
             {
                 rc = VbglR3ClipboardFormatsWriteRecv(&pEvent->cmdCtx, &pEvent->u.ReportFormats);
                 if (RT_SUCCESS(rc))
@@ -1648,12 +1648,12 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsSend(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBO
 
     if (pCtx->uProtocolVer == 0)
     {
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE, 1);
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_REPORT, 1);
         VbglHGCMParmUInt32Set(&Msg.uFormats, pFormats->uFormats);
     }
     else
     {
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE, 3);
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_REPORT, 3);
 
         Msg.uContext.SetUInt32(pCtx->uContextID);
         Msg.uFormats.SetUInt32(pFormats->uFormats);
@@ -1679,7 +1679,7 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
 {
     VBoxClipboardFormatsMsg Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE, 1);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_REPORT, 1);
     VbglHGCMParmUInt32Set(&Msg.uFormats, fFormats);
 
     return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));

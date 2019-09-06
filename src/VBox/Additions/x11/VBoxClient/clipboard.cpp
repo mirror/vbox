@@ -165,7 +165,7 @@ void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
  *                   succeeded (see @a rc)
  * @param  cb        the size of the data in @a pv
  */
-void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+void ClipRequestFromX11CompleteCallback(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF1(pCtx);
     if (RT_SUCCESS(rc))
@@ -191,7 +191,7 @@ int VBoxClipboardSvcImplConnect(void)
     if (!g_ctx.pBackend)
         rc = VERR_NO_MEMORY;
     if (RT_SUCCESS(rc))
-        rc = ClipStartX11(g_ctx.pBackend);
+        rc = ClipStartX11(g_ctx.pBackend, false /* grab */);
     if (RT_SUCCESS(rc))
     {
         rc = VbglR3ClipboardConnect(&g_ctx.client);
@@ -228,7 +228,7 @@ int vboxClipboardMain(void)
         {
             switch (Msg)
             {
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE:
+                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
                 {
                     /* The host has announced available clipboard formats.
                      * Save the information so that it is available for

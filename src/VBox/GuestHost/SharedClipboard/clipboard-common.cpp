@@ -182,6 +182,9 @@ void SharedClipboardEventSourceDestroy(PSHAREDCLIPBOARDEVENTSOURCE pSource)
         SharedClipboardEventDestroy(pEvIt);
         RTMemFree(pEvIt);
     }
+
+    pSource->uID          = 0;
+    pSource->uEventIDNext = 0;
 }
 
 /**
@@ -215,6 +218,22 @@ inline PSHAREDCLIPBOARDEVENT sharedClipboardEventGet(PSHAREDCLIPBOARDEVENTSOURCE
     }
 
     return NULL;
+}
+
+/**
+ * Returns the last (newest) event ID which has been registered for an event source.
+ *
+ * @returns Last registered event ID, or 0 if not found.
+ * @param   pSource             Event source to get last registered event from.
+ */
+VBOXCLIPBOARDEVENTID SharedClipboardEventGetLast(PSHAREDCLIPBOARDEVENTSOURCE pSource)
+{
+    AssertPtrReturn(pSource, 0);
+    PSHAREDCLIPBOARDEVENT pEvent = RTListGetLast(&pSource->lstEvents, SHAREDCLIPBOARDEVENT, Node);
+    if (pEvent)
+        return pEvent->uID;
+
+    return 0;
 }
 
 /**
@@ -280,17 +299,17 @@ int SharedClipboardEventUnregister(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIP
     {
         LogFlowFunc(("Event %RU16\n", pEvent->uID));
 
-        SharedClipboardEventDestroy(pEvent);
-        RTMemFree(pEvent);
-
         RTListNodeRemove(&pEvent->Node);
+
+        SharedClipboardEventDestroy(pEvent);
+
+        RTMemFree(pEvent);
+        pEvent = NULL;
 
         rc = VINF_SUCCESS;
     }
     else
         rc = VERR_NOT_FOUND;
-
-    AssertRC(rc);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -361,10 +380,6 @@ int SharedClipboardEventSignal(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOAR
     }
     else
         rc = VERR_NOT_FOUND;
-
-#ifdef DEBUG_andy
-    AssertRC(rc);
-#endif
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -786,7 +801,7 @@ const char *VBoxClipboardHostMsgToStr(uint32_t uMsg)
     {
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_HDR_READ);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_HDR_WRITE);
@@ -819,7 +834,7 @@ const char *VBoxClipboardGuestMsgToStr(uint32_t uMsg)
     switch (uMsg)
     {
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD);
-        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_REPORT);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_DATA_READ);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_DATA_WRITE);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_GUEST_FN_CONNECT);

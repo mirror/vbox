@@ -379,7 +379,7 @@ status_t VBoxClipboardService::_ServiceThread()
         {
             switch (u32Msg)
             {
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE:
+                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
                 {
                     /*
                      * The host has announced available clipboard formats. Forward

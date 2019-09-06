@@ -1892,8 +1892,8 @@ static void clipConvertX11CB(void *pClient, void *pvSrc, unsigned cbSrc)
     }
     else
         rc = VERR_NOT_IMPLEMENTED;
-    ClipCompleteDataRequestFromX11(pReq->mCtx->pFrontend, rc, pReq->mReq,
-                                   pvDest, cbDest);
+    ClipRequestFromX11CompleteCallback(pReq->mCtx->pFrontend, rc, pReq->mReq,
+                                       pvDest, cbDest);
     RTMemFree(pvDest);
     RTMemFree(pReq);
     LogRelFlowFunc(("rc=%Rrc\n", rc));
@@ -2009,8 +2009,8 @@ static void vboxClipboardReadX11Worker(void *pUserData,
     {
         /* The clipboard callback was never scheduled, so we must signal
          * that the request processing is finished and clean up ourselves. */
-        ClipCompleteDataRequestFromX11(pReq->mCtx->pFrontend, rc, pReq->mReq,
-                                       NULL, 0);
+        ClipRequestFromX11CompleteCallback(pReq->mCtx->pFrontend, rc, pReq->mReq,
+                                           NULL, 0);
         RTMemFree(pReq);
     }
     LogRelFlowFunc(("status %Rrc\n", rc));
@@ -2036,20 +2036,22 @@ int ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format,
      */
     if (!pCtx->fHaveX11)
         return VERR_NO_DATA;
+
     int rc = VINF_SUCCESS;
-    CLIPREADX11CBREQ *pX11Req;
-    pX11Req = (CLIPREADX11CBREQ *)RTMemAllocZ(sizeof(*pX11Req));
-    if (!pX11Req)
-        rc = VERR_NO_MEMORY;
-    else
+
+    CLIPREADX11CBREQ *pX11Req = (CLIPREADX11CBREQ *)RTMemAllocZ(sizeof(CLIPREADX11CBREQ));
+    if (pX11Req)
     {
         pX11Req->mFormat = u32Format;
         pX11Req->mCtx = pCtx;
         pX11Req->mReq = pReq;
+
         /* We use this to schedule a worker function on the event thread. */
-        clipQueueToEventThread(pCtx, vboxClipboardReadX11Worker,
-                               (XtPointer) pX11Req);
+        clipQueueToEventThread(pCtx, vboxClipboardReadX11Worker, (XtPointer) pX11Req);
     }
+    else
+        rc = VERR_NO_MEMORY;
+
     return rc;
 }
 
@@ -2386,7 +2388,7 @@ static int g_completedCB = 0;
 static CLIPREADCBREQ *g_completedReq = NULL;
 static char g_completedBuf[MAX_BUF_SIZE];
 
-void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+void ClipRequestFromX11CompleteCallback(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF1(pCtx);
     if (cb <= MAX_BUF_SIZE)
@@ -2645,7 +2647,7 @@ int main()
     char *pc;
     uint32_t cbActual;
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-    rc = ClipStartX11(pCtx);
+    rc = ClipStartX11(pCtx, false /* fGrab */);
     AssertRCReturn(rc, 1);
 
     /*** Utf-8 from X11 ***/
@@ -2842,7 +2844,7 @@ int main()
     /*** Headless clipboard tests ***/
 
     pCtx = ClipConstructX11(NULL, true);
-    rc = ClipStartX11(pCtx);
+    rc = ClipStartX11(pCtx, false /* fGrab */);
     AssertRCReturn(rc, 1);
 
     /*** Read from X11 ***/
@@ -2893,7 +2895,7 @@ void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
     RT_NOREF2(pCtx, u32Formats);
 }
 
-void ClipCompleteDataRequestFromX11(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+void ClipRequestFromX11CompleteCallback(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF5(pCtx, rc, pReq, pv, cb);
 }
@@ -2923,7 +2925,7 @@ int main()
     }
     CLIPBACKEND *pCtx = ClipConstructX11(NULL, false);
     AssertReturn(pCtx, 1);
-    rc = ClipStartX11(pCtx);
+    rc = ClipStartX11(pCtx, false /* fGrab */);
     AssertRCReturn(rc, 1);
     /* Give the clipboard time to synchronise. */
     RTThreadSleep(500);

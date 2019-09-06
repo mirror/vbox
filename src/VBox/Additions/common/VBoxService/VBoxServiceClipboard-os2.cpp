@@ -774,7 +774,7 @@ static MRESULT EXPENTRY vgsvcClipboardOs2WinProc(HWND hwnd, ULONG msg, MPARAM mp
         /*
          * Listener message - the host has new formats to offer.
          */
-        case WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE:
+        case WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
             vgsvcClipboardOs2AdvertiseHostFormats(LONGFROMMP(mp1));
             break;
 
@@ -894,8 +894,8 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Listener(RTTHREAD ThreadSelf, void *pv
                          * Forward the information to the window, so it can later
                          * respond do WM_RENDERFORMAT message.
                          */
-                        case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE:
-                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE,
+                        case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
+                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT,
                                             MPFROMLONG(fFormats), 0))
                                 VGSvcError("WinPostMsg(%lx, FORMATS,,) failed, lasterr=%#lx\n",
                                            g_hwndWorker, WinGetLastError(g_habListener));

@@ -37,13 +37,11 @@
 struct _VBOXCLIPBOARDCONTEXT
 {
     /** We have a separate thread to poll for new clipboard content */
-    RTTHREAD thread;
-    bool volatile fTerminate;
-
+    RTTHREAD                thread;
+    bool volatile           fTerminate;
     /** The reference to the current pasteboard */
-    PasteboardRef pasteboard;
-
-    PVBOXCLIPBOARDCLIENT pClient;
+    PasteboardRef           pasteboard;
+    PVBOXCLIPBOARDCLIENT    pClient;
 };
 
 
@@ -69,15 +67,20 @@ static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
     bool fChanged = false;
     /* Retrieve the formats currently in the clipboard and supported by vbox */
     int rc = queryNewPasteboardFormats(pCtx->pasteboard, &fFormats, &fChanged);
-    if (RT_SUCCESS(rc) && fChanged)
+    if (   RT_SUCCESS(rc)
+        && fChanged)
     {
-        vboxSvcClipboardOldReportMsg(pCtx->pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE, fFormats);
-        Log(("vboxClipboardChanged fFormats %02X\n", fFormats));
+        SHAREDCLIPBOARDFORMATDATA formatData;
+        RT_ZERO(formatData);
+
+        formatData.uFormats = fFormats;
+
+        rc = vboxSvcClipboardFormatsReport(pCtx->pClient, &formatData);
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
 
 /**
  * The poller thread.
@@ -91,7 +94,7 @@ static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
  */
 static int vboxClipboardThread(RTTHREAD ThreadSelf, void *pvUser)
 {
-    Log(("vboxClipboardThread: starting clipboard thread\n"));
+    LogFlowFuncEnter();
 
     AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
     VBOXCLIPBOARDCONTEXT *pCtx = (VBOXCLIPBOARDCONTEXT *)pvUser;
@@ -108,15 +111,11 @@ static int vboxClipboardThread(RTTHREAD ThreadSelf, void *pvUser)
         RTThreadUserWait(ThreadSelf, 200);
     }
 
-    Log(("vboxClipboardThread: clipboard thread terminated successfully with return code %Rrc\n", VINF_SUCCESS));
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
     return VINF_SUCCESS;
 }
 
-/*
- * Public platform dependent functions.
- */
 
-/** Initialise the host side of the shared clipboard - called by the hgcm layer. */
 int VBoxClipboardSvcImplInit(void)
 {
     Log(("vboxClipboardInit\n"));
@@ -137,11 +136,8 @@ int VBoxClipboardSvcImplInit(void)
     return rc;
 }
 
-/** Terminate the host side of the shared clipboard - called by the hgcm layer. */
 void VBoxClipboardSvcImplDestroy(void)
 {
-    Log(("vboxClipboardDestroy\n"));
-
     /*
      * Signal the termination of the polling thread and wait for it to respond.
      */
@@ -185,7 +181,9 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
 {
     /* Sync the host clipboard content with the client. */
     VBoxSvcClipboardLock();
+
     int rc = vboxClipboardChanged(pClient->State.pCtx);
+
     VBoxSvcClipboardUnlock();
 
     return rc;
@@ -194,20 +192,22 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
 int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
 {
     VBoxSvcClipboardLock();
+
     pClient->State.pCtx->pClient = NULL;
+
     VBoxSvcClipboardUnlock();
 
     return VINF_SUCCESS;
 }
 
-int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
-                                       PSHAREDCLIPBOARDFORMATDATA pFormats)
+int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient,
+                                       PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDFORMATDATA pFormats)
 {
     RT_NOREF(pCmdCtx);
 
     LogFlowFunc(("uFormats=%02X\n", pFormats->uFormats));
 
-    if (pFormats->uFormats == 0)
+    if (pFormats->uFormats == VBOX_SHARED_CLIPBOARD_FMT_NONE)
     {
         /* This is just an automatism, not a genuine announcement */
         return VINF_SUCCESS;
@@ -218,7 +218,13 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBO
         return VINF_SUCCESS;
 #endif
 
-    return vboxSvcClipboardOldReportMsg(pClient, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA, pFormats->uFormats);
+    SHAREDCLIPBOARDDATAREQ dataReq;
+    RT_ZERO(dataReq);
+
+    dataReq.uFmt   = pFormats->uFormats;
+    dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
+
+    return vboxSvcClipboardDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
 }
 
 /**
@@ -255,7 +261,8 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLI
  * @param pCmdCtx               Command context to use for writing the data. Currently unused.
  * @param pData                 Data block to write to clipboard.
  */
-int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData)
+int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient,
+                                  PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData)
 {
     RT_NOREF(pCmdCtx);
 

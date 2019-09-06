@@ -135,8 +135,6 @@ typedef struct VBOXCLIPBOARDCLIENTSTATE
     /** Maximum chunk size to use for data transfers. Set to _64K by default. */
     uint32_t                         cbChunkSize;
     SHAREDCLIPBOARDSOURCE            enmSource;
-    /** Old cruft (needed for VBox Guest Additions <= 6.0), remove this some time later. */
-    VBOXCLIPBOARDCLIENTSTATEOLD      Old;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     /** The client's URI state. */
     VBOXCLIPBOARDCLIENTURISTATE      URI;
@@ -226,12 +224,9 @@ typedef struct _VBOXCLIPBOARDEXTSTATE
 /*
  * The service functions. Locking is between the service thread and the platform-dependent (window) thread.
  */
-int vboxSvcClipboardSendFormatsWrite(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDFORMATDATA pFormats);
-
-int vboxSvcClipboardOldCompleteReadData(PVBOXCLIPBOARDCLIENT pClient, int rc, uint32_t cbActual);
-int vboxSvcClipboardOldReportMsg(PVBOXCLIPBOARDCLIENT pClient, uint32_t uMsg, uint32_t uFormats);
-void vboxSvcClipboardOldClientStateResetData(PVBOXCLIPBOARDCLIENTSTATE pClientState);
-void vboxSvcClipboardOldClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientState);
+int vboxSvcClipboardDataReadRequest(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDDATAREQ pDataReq, PVBOXCLIPBOARDEVENTID puEvent);
+int vboxSvcClipboardDataReadSignal(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData);
+int vboxSvcClipboardFormatsReport(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDFORMATDATA pFormats);
 
 uint32_t vboxSvcClipboardGetMode(void);
 int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENT pClient, SHAREDCLIPBOARDSOURCE enmSource);
@@ -306,7 +301,7 @@ DECLCALLBACK(void) VBoxSvcClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURIT
 
 int VBoxClipboardSvcImplURITransferCreate(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDURITRANSFER pTransfer);
 int VBoxClipboardSvcImplURITransferDestroy(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDURITRANSFER pTransfer);
-#endif
+#endif /*VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 /* Host unit testing interface */
 #ifdef UNIT_TEST

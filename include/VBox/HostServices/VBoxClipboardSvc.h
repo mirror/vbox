@@ -39,9 +39,11 @@
  *           not have the ability to control / handle parallel transfers.
  *
  *     Protocol v1 (VBox >= 6.1):
- *         + Introduces protocol versioning and context IDs for parallel,
+ *         + Adds protocol versioning and context IDs for parallel,
  *           asynchronous transfers.
- *         | Keeps backwards-compatbility with protocol v0 clients.
+ *         | Keeps backwards-compatbility with protocol v0 clients by translating
+ *           messages to protocol v0, to not break compatibility with older
+ *           Guest Additions (VBox < 6.1).
  */
 
 #ifndef VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h
@@ -95,9 +97,7 @@
 #define VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA                    2
 /** Reports available clipboard format from host to the guest.
  *  Formerly known as VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE                3
-/** Reports available clipboard format from host to the guest. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_READ                 4
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT               3
 
 /** Initiates a new transfer (read / write) on the guest side. */
 #define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START           50
@@ -143,7 +143,7 @@
 #define VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD       1
 /** Sends a list of available formats to the host.
  *  Formely known as VBOX_SHARED_CLIPBOARD_GUEST_FN_REPORT_FORMATS. */
-#define VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_WRITE          2
+#define VBOX_SHARED_CLIPBOARD_GUEST_FN_FORMATS_REPORT         2
 /** Reads data in specified format from the host. */
 #define VBOX_SHARED_CLIPBOARD_GUEST_FN_DATA_READ              3
 /** Writes data in requested format to the host. */

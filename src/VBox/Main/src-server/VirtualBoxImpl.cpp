@@ -251,7 +251,7 @@ struct SharedClipboardData
         , uMaxClipboardAreas(32) /** @todo Make this configurable. */
     {
 #ifdef DEBUG_andy
-        uMaxClipboardAreas = ULONG_MAX;
+        uMaxClipboardAreas = 9999;
 #endif
         int rc2 = RTCritSectInit(&CritSect);
         AssertRC(rc2);
