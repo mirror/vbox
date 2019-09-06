@@ -682,7 +682,7 @@ DECLINLINE(void) virtioScsiVirtToSgPhys(PVIRTIOSCSI pThis, PRTSGBUF pSgDst, void
     }
 }
 
-DECLINLINE(void) virtioScsiSgPhysTogVirt(PVIRTIOSCSI pThis, PRTSGBUF pSgSrc, void *pvDst, size_t cb)
+DECLINLINE(void) virtioScsiSgPhysToVirt(PVIRTIOSCSI pThis, PRTSGBUF pSgSrc, void *pvDst, size_t cb)
 {
     while (cb)
     {
@@ -1056,7 +1056,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
     PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAllocZ(cbOut);
     AssertReturn(pVirtqReq, VERR_NO_MEMORY);
 
-    virtioScsiSgPhysTogVirt(pThis, pOutSgBuf, pVirtqReq, cbOut);
+    virtioScsiSgPhysToVirt(pThis, pOutSgBuf, pVirtqReq, cbOut);
 
     uint8_t  uTarget =  pVirtqReq->cmdHdr.uLUN[1];
     uint32_t uLUN    = (pVirtqReq->cmdHdr.uLUN[2] << 8 | pVirtqReq->cmdHdr.uLUN[3]) & 0x3fff;
@@ -1230,7 +1230,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgBuf, P
     PVIRTIOSCSI_CTRL_T pScsiCtrl = (PVIRTIOSCSI_CTRL_T)RTMemAllocZ(cbOut);
     AssertMsgReturn(pScsiCtrl, ("Out of memory"), VERR_NO_MEMORY);
 
-    virtioScsiSgPhysTogVirt(pThis, pOutSgBuf, pScsiCtrl, cbOut);
+    virtioScsiSgPhysToVirt(pThis, pOutSgBuf, pScsiCtrl, cbOut);
 
     uint8_t  uResponse = VIRTIOSCSI_S_OK;
 
