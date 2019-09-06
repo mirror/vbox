@@ -15237,6 +15237,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IEMExecDecodedInvlpg(PVMCPUCC pVCpu, uint8_t cbInstr,
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   cbInstr     The instruction length in bytes.
+ * @param   iEffSeg     The effective segment register.
  * @param   GCPtrDesc   The effective address of the INVPCID descriptor.
  * @param   uType       The invalidation type.
  *
