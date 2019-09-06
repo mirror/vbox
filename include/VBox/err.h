@@ -1144,6 +1144,10 @@
  * VMCPU_FF_IOM for this condition, it's ok to drop this status code for
  * some other VINF_EM_XXX statuses. */
 #define VINF_IOM_R3_MMIO_COMMIT_WRITE       2626
+/** Too many MMIO range registrations. */
+#define VERR_IOM_TOO_MANY_MMIO_REGISTRATIONS (-2627)
+/** Invalid MMIO handle. */
+#define VERR_IOM_INVALID_MMIO_HANDLE        (-2628)
 
 /** IOMGCIOPortHandler was given an unexpected opcode. */
 #define VERR_IOM_IOPORT_UNKNOWN_OPCODE      (-2630)
@@ -1163,6 +1167,15 @@
 #define VERR_IOM_HM_IPE                     (-2637)
 /** Internal processing error while merging status codes. */
 #define VERR_IOM_FF_STATUS_IPE              (-2638)
+
+/** Too many I/O port registrations. */
+#define VERR_IOM_TOO_MANY_IOPORT_REGISTRATIONS (-2650)
+/** Invalid I/O port handle. */
+#define VERR_IOM_INVALID_IOPORT_HANDLE      (-2651)
+/** I/O ports are already mapped. */
+#define VERR_IOM_IOPORTS_ALREADY_MAPPED     (-2652)
+/** I/O ports are not mapped. */
+#define VERR_IOM_IOPORTS_NOT_MAPPED         (-2653)
 /** @} */
 
 

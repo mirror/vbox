@@ -53,13 +53,14 @@
 #include <VBox/vmm/gvmm.h>
 #include <VBox/vmm/gmm.h>
 #include "GVMMR0Internal.h"
+#include <VBox/vmm/iom.h>
 #include <VBox/vmm/pdm.h>
-#include <VBox/vmm/vmcc.h>
-#include <VBox/vmm/vmcpuset.h>
 #include <VBox/vmm/vmm.h>
 #ifdef VBOX_WITH_NEM_R0
 # include <VBox/vmm/nem.h>
 #endif
+#include <VBox/vmm/vmcpuset.h>
+#include <VBox/vmm/vmcc.h>
 #include <VBox/param.h>
 #include <VBox/err.h>
 
@@ -902,6 +903,7 @@ GVMMR0DECL(int) GVMMR0CreateVM(PSUPDRVSESSION pSession, uint32_t cCpus, PGVM *pp
                         gvmmR0InitPerVMData(pGVM, iHandle, cCpus, pSession);
                         GMMR0InitPerVMData(pGVM);
                         PDMR0InitPerVMData(pGVM);
+                        IOMR0InitPerVMData(pGVM);
                         pGVM->gvmm.s.VMMemObj  = hVMMemObj;
 
                         /*
@@ -1293,6 +1295,7 @@ static void gvmmR0CleanupVM(PGVM pGVM)
     NEMR0CleanupVM(pGVM);
 #endif
     PDMR0CleanupVM(pGVM);
+    IOMR0CleanupVM(pGVM);
 
     AssertCompile(NIL_RTTHREADCTXHOOK == (RTTHREADCTXHOOK)0); /* Depends on zero initialized memory working for NIL at the moment. */
     for (VMCPUID idCpu = 0; idCpu < pGVM->cCpus; idCpu++)

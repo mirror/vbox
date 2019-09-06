@@ -126,7 +126,7 @@ struc VM
     .selm                   resb 768
     .mm                     resb 192
     .pdm                    resb 1920
-    .iom                    resb 896
+    .iom                    resb 960
     .em                     resb 256
     .nem                    resb 128
     .tm                     resb 7872
@@ -141,9 +141,9 @@ struc VM
     .cfgm                   resb 8
 
 %ifdef VBOX_WITH_REM
-    .abAlignment2           resb 3032       - RTR0PTR_CB * VMM_MAX_CPU_COUNT
+    .abAlignment2           resb 2968       - RTR0PTR_CB * VMM_MAX_CPU_COUNT
 %else
-    .abAlignment2           resb 3032 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
+    .abAlignment2           resb 2968 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
 %endif
 
     alignb RTR0PTR_CB * VMM_MAX_CPU_COUNT ; ASSUMES VMM_MAX_CPU_COUNT is a power of two.

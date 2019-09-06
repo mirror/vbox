@@ -229,10 +229,12 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
 #endif
             STAM_REG(pVM, &pVM->iom.s.StatRZInstOther,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Inst/Other",           STAMUNIT_OCCURENCES,     "Other instructions counter.");
             STAM_REG(pVM, &pVM->iom.s.StatR3MMIOHandler,      STAMTYPE_COUNTER, "/IOM/R3-MMIOHandler",                      STAMUNIT_OCCURENCES,     "Number of calls to iomR3MmioHandler.");
+#if 0 /* unused */
             STAM_REG(pVM, &pVM->iom.s.StatInstIn,             STAMTYPE_COUNTER, "/IOM/IOWork/In",                           STAMUNIT_OCCURENCES,     "Counter of any IN instructions.");
             STAM_REG(pVM, &pVM->iom.s.StatInstOut,            STAMTYPE_COUNTER, "/IOM/IOWork/Out",                          STAMUNIT_OCCURENCES,     "Counter of any OUT instructions.");
             STAM_REG(pVM, &pVM->iom.s.StatInstIns,            STAMTYPE_COUNTER, "/IOM/IOWork/Ins",                          STAMUNIT_OCCURENCES,     "Counter of any INS instructions.");
             STAM_REG(pVM, &pVM->iom.s.StatInstOuts,           STAMTYPE_COUNTER, "/IOM/IOWork/Outs",                         STAMUNIT_OCCURENCES,     "Counter of any OUTS instructions.");
+#endif
         }
     }
 
@@ -412,6 +414,315 @@ VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
     NOREF(pVM);
     return VINF_SUCCESS;
 }
+
+
+/**
+ * Worker for PDMDEVHLPR3::pfnIoPortCreateEx.
+ */
+VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
+                                       uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
+                                       PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, RTR3PTR pvUser,
+                                       const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
+{
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(phIoPorts, VERR_INVALID_POINTER);
+    *phIoPorts = UINT32_MAX;
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
+
+    AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
+
+    AssertMsgReturn(cPorts > 0 && cPorts <= _8K, ("cPorts=%s\n", cPorts), VERR_OUT_OF_RANGE);
+    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+
+    AssertReturn(pfnOut || pfnIn || pfnOutStr || pfnInStr, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pfnOut, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnIn, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnOutStr, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pfnInStr, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
+    AssertReturn(*pszDesc != '\0', VERR_INVALID_POINTER);
+    AssertReturn(strlen(pszDesc) < 128, VERR_INVALID_POINTER);
+
+    /*
+     * Ensure that we've got table space for it.
+     */
+#ifndef VBOX_WITH_STATISTICS
+    uint16_t const idxStats        = UINT16_MAX;
+#else
+    uint32_t const idxStats        = pVM->iom.s.cIoPortStats;
+    uint32_t const cNewIoPortStats = idxStats + cPorts;
+    AssertReturn(cNewIoPortStats <= _64K, VERR_IOM_TOO_MANY_IOPORT_REGISTRATIONS);
+    if (cNewIoPortStats > pVM->iom.s.cIoPortStatsAllocation)
+    {
+        int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_GROW_IO_PORT_STATS, cNewIoPortStats, NULL);
+        AssertLogRelRCReturn(rc, rc);
+        AssertReturn(idxStats == pVM->iom.s.cIoPortStats, VERR_IOM_IOPORT_IPE_1);
+        AssertReturn(cNewIoPortStats <= pVM->iom.s.cIoPortStatsAllocation, VERR_IOM_IOPORT_IPE_2);
+    }
+#endif
+
+    uint32_t idx = pVM->iom.s.cIoPortRegs;
+    if (idx >= pVM->iom.s.cIoPortAlloc)
+    {
+        int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_GROW_IO_PORTS, pVM->iom.s.cIoPortAlloc + 1, NULL);
+        AssertLogRelRCReturn(rc, rc);
+        AssertReturn(idx == pVM->iom.s.cIoPortRegs, VERR_IOM_IOPORT_IPE_1);
+        AssertReturn(idx < pVM->iom.s.cIoPortAlloc, VERR_IOM_IOPORT_IPE_2);
+    }
+
+    /*
+     * Enter it.
+     */
+    pVM->iom.s.paIoPortRegs[idx].pvUser             = pvUser;
+    pVM->iom.s.paIoPortRegs[idx].pDevIns            = pDevIns;
+    pVM->iom.s.paIoPortRegs[idx].pfnOutCallback     = pfnOut    ? pfnOut    : iomR3IOPortDummyOut;
+    pVM->iom.s.paIoPortRegs[idx].pfnInCallback      = pfnIn     ? pfnIn     : iomR3IOPortDummyIn;
+    pVM->iom.s.paIoPortRegs[idx].pfnOutStrCallback  = pfnOutStr ? pfnOutStr : iomR3IOPortDummyOutStr;
+    pVM->iom.s.paIoPortRegs[idx].pfnInStrCallback   = pfnInStr  ? pfnInStr  : iomR3IOPortDummyInStr;
+    pVM->iom.s.paIoPortRegs[idx].pszDesc            = pszDesc;
+    pVM->iom.s.paIoPortRegs[idx].pPciDev            = pPciDev;
+    pVM->iom.s.paIoPortRegs[idx].iPciRegion         = iPciRegion;
+    pVM->iom.s.paIoPortRegs[idx].cPorts             = cPorts;
+    pVM->iom.s.paIoPortRegs[idx].uPort              = UINT16_MAX;
+    pVM->iom.s.paIoPortRegs[idx].idxStats           = (uint16_t)idxStats;
+    pVM->iom.s.paIoPortRegs[idx].fMapped            = false;
+    pVM->iom.s.paIoPortRegs[idx].idxSelf            = idx;
+
+    pVM->iom.s.cIoPortRegs = idx + 1;
+    *phIoPorts = idx;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Worker for PDMDEVHLPR3::pfnIoPortMap.
+ */
+VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT uPort)
+{
+    /*
+     * Validate input and state.
+     */
+    AssertPtrReturn(pDevIns, VERR_INVALID_HANDLE);
+    AssertReturn(hIoPorts < pVM->iom.s.cIoPortRegs, VERR_IOM_INVALID_IOPORT_HANDLE);
+    PIOMIOPORTENTRYR3 const pRegEntry = &pVM->iom.s.paIoPortRegs[hIoPorts];
+    AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_IOM_INVALID_IOPORT_HANDLE);
+
+    RTIOPORT const cPorts = pRegEntry->cPorts;
+    AssertMsgReturn(cPorts > 0 && cPorts <= _8K, ("cPorts=%s\n", cPorts), VERR_IOM_IOPORT_IPE_1);
+    AssertReturn((uint32_t)uPort + cPorts <= _64K, VERR_OUT_OF_RANGE);
+    RTIOPORT const uLastPort = uPort + cPorts - 1;
+
+    /*
+     * Do the mapping.
+     */
+    int rc = VINF_SUCCESS;
+    IOM_LOCK_EXCL(pVM);
+
+    if (!pRegEntry->fMapped)
+    {
+        uint32_t const cEntries = RT_MIN(pVM->iom.s.cIoPortLookupEntries, pVM->iom.s.cIoPortRegs);
+        Assert(pVM->iom.s.cIoPortLookupEntries == cEntries);
+
+        PIOMIOPORTLOOKUPENTRY paEntries = pVM->iom.s.paIoPortLookup;
+        PIOMIOPORTLOOKUPENTRY pEntry;
+        if (cEntries > 0)
+        {
+            uint32_t iFirst = 0;
+            uint32_t iEnd   = cEntries;
+            uint32_t i      = cEntries / 2;
+            for (;;)
+            {
+                pEntry = &paEntries[i];
+                if (pEntry->uLastPort < uPort)
+                {
+                    i += 1;
+                    if (i < iEnd)
+                        iFirst = i;
+                    else
+                    {
+                        /* Insert after the entry we just considered: */
+                        pEntry += 1;
+                        if (iEnd < cEntries)
+                            memmove(pEntry + 1, pEntry, sizeof(*pEntry) * (cEntries - iEnd));
+                        break;
+                    }
+                }
+                else if (pEntry->uFirstPort > uLastPort)
+                {
+                    if (i > iFirst)
+                        iEnd = i;
+                    else
+                    {
+                        /* Insert at the entry we just considered: */
+                        if (iEnd < cEntries)
+                            memmove(pEntry + 1, pEntry, sizeof(*pEntry) * (cEntries - iEnd));
+                        break;
+                    }
+                }
+                else
+                {
+                    /* Oops! We've got a conflict. */
+                    AssertLogRelMsgFailed(("%u..%u (%s) conflicts with existing mapping %u..%u (%s)\n",
+                                           uPort, uLastPort, pRegEntry->pszDesc,
+                                           pEntry->uFirstPort, pEntry->uLastPort, pVM->iom.s.paIoPortRegs[pEntry->idx].pszDesc));
+                    IOM_UNLOCK_EXCL(pVM);
+                    return VERR_IOM_IOPORT_RANGE_CONFLICT;
+                }
+
+                i = iFirst + (iEnd - iFirst) / 2;
+            }
+        }
+        else
+            pEntry = paEntries;
+
+        /*
+         * Fill in the entry and bump the table size.
+         */
+        pEntry->idx        = hIoPorts;
+        pEntry->uFirstPort = uPort;
+        pEntry->uLastPort  = uLastPort;
+        pVM->iom.s.cIoPortLookupEntries = cEntries + 1;
+
+        pRegEntry->uPort   = uPort;
+        pRegEntry->fMapped = true;
+
+#ifdef VBOX_STRICT
+        /*
+         * Assert table sanity.
+         */
+        AssertMsg(paEntries[0].uLastPort >= paEntries[0].uFirstPort, ("%#x %#x\n", paEntries[0].uLastPort, paEntries[0].uFirstPort));
+        AssertMsg(paEntries[0].idx < pVM->iom.s.cIoPortRegs, ("%#x %#x\n", paEntries[0].idx, pVM->iom.s.cIoPortRegs));
+
+        RTIOPORT uPortPrev = paEntries[0].uLastPort;
+        for (size_t i = 1; i <= cEntries; i++)
+        {
+            AssertMsg(paEntries[i].uLastPort >= paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, paEntries[i].uLastPort, paEntries[i].uFirstPort));
+            AssertMsg(paEntries[i].idx < pVM->iom.s.cIoPortRegs, ("%u: %#x %#x\n", i, paEntries[i].idx, pVM->iom.s.cIoPortRegs));
+            AssertMsg(uPortPrev < paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, uPortPrev, paEntries[i].uFirstPort));
+            uPortPrev = paEntries[i].uLastPort;
+        }
+#endif
+    }
+    else
+    {
+        AssertFailed();
+        rc = VERR_IOM_IOPORTS_ALREADY_MAPPED;
+    }
+
+    IOM_UNLOCK_EXCL(pVM);
+    return rc;
+}
+
+
+/**
+ * Worker for PDMDEVHLPR3::pfnIoPortUnmap.
+ */
+VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
+{
+    /*
+     * Validate input and state.
+     */
+    AssertPtrReturn(pDevIns, VERR_INVALID_HANDLE);
+    AssertReturn(hIoPorts < pVM->iom.s.cIoPortRegs, VERR_IOM_INVALID_IOPORT_HANDLE);
+    PIOMIOPORTENTRYR3 const pRegEntry = &pVM->iom.s.paIoPortRegs[hIoPorts];
+    AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_IOM_INVALID_IOPORT_HANDLE);
+
+    /*
+     * Do the mapping.
+     */
+    int rc;
+    IOM_LOCK_EXCL(pVM);
+
+    if (pRegEntry->fMapped)
+    {
+        RTIOPORT const uPort     = pRegEntry->uPort;
+        RTIOPORT const uLastPort = uPort + pRegEntry->cPorts - 1;
+        uint32_t const cEntries  = RT_MIN(pVM->iom.s.cIoPortLookupEntries, pVM->iom.s.cIoPortRegs);
+        Assert(pVM->iom.s.cIoPortLookupEntries == cEntries);
+        Assert(cEntries > 0);
+
+        PIOMIOPORTLOOKUPENTRY paEntries = pVM->iom.s.paIoPortLookup;
+        uint32_t iFirst = 0;
+        uint32_t iEnd   = cEntries;
+        uint32_t i      = cEntries / 2;
+        for (;;)
+        {
+            PIOMIOPORTLOOKUPENTRY pEntry = &paEntries[i];
+            if (pEntry->uLastPort < uPort)
+            {
+                i += 1;
+                if (i < iEnd)
+                    iFirst = i;
+                else
+                {
+                    rc = VERR_IOM_IOPORT_IPE_1;
+                    AssertLogRelMsgFailedBreak(("%u..%u (%s) not found!\n", uPort, uLastPort, pRegEntry->pszDesc));
+                }
+            }
+            else if (pEntry->uFirstPort > uLastPort)
+            {
+                if (i > iFirst)
+                    iEnd = i;
+                else
+                {
+                    rc = VERR_IOM_IOPORT_IPE_1;
+                    AssertLogRelMsgFailedBreak(("%u..%u (%s) not found!\n", uPort, uLastPort, pRegEntry->pszDesc));
+                }
+            }
+            else if (pEntry->idx == hIoPorts)
+            {
+                Assert(pEntry->uFirstPort == uPort);
+                Assert(pEntry->uLastPort == uLastPort);
+                if (i + 1 < cEntries)
+                    memmove(pEntry, pEntry + 1, sizeof(*pEntry) * (cEntries - i - 1));
+                pVM->iom.s.cIoPortLookupEntries = cEntries - 1;
+                pRegEntry->uPort   = UINT16_MAX;
+                pRegEntry->fMapped = false;
+                rc = VINF_SUCCESS;
+                break;
+            }
+            else
+            {
+                AssertLogRelMsgFailed(("Lookig for %u..%u (%s), found %u..%u (%s) instead!\n",
+                                       uPort, uLastPort, pRegEntry->pszDesc,
+                                       pEntry->uFirstPort, pEntry->uLastPort, pVM->iom.s.paIoPortRegs[pEntry->idx].pszDesc));
+                rc = VERR_IOM_IOPORT_IPE_1;
+                break;
+            }
+
+            i = iFirst + (iEnd - iFirst) / 2;
+        }
+
+#ifdef VBOX_STRICT
+        /*
+         * Assert table sanity.
+         */
+        AssertMsg(paEntries[0].uLastPort >= paEntries[0].uFirstPort, ("%#x %#x\n", paEntries[0].uLastPort, paEntries[0].uFirstPort));
+        AssertMsg(paEntries[0].idx < pVM->iom.s.cIoPortRegs, ("%#x %#x\n", paEntries[0].idx, pVM->iom.s.cIoPortRegs));
+
+        RTIOPORT uPortPrev = paEntries[0].uLastPort;
+        for (i = 1; i <= cEntries; i++)
+        {
+            AssertMsg(paEntries[i].uLastPort >= paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, paEntries[i].uLastPort, paEntries[i].uFirstPort));
+            AssertMsg(paEntries[i].idx < pVM->iom.s.cIoPortRegs, ("%u: %#x %#x\n", i, paEntries[i].idx, pVM->iom.s.cIoPortRegs));
+            AssertMsg(uPortPrev < paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, uPortPrev, paEntries[i].uFirstPort));
+            uPortPrev = paEntries[i].uLastPort;
+        }
+#endif
+    }
+    else
+    {
+        AssertFailed();
+        rc = VERR_IOM_IOPORTS_NOT_MAPPED;
+    }
+
+    IOM_UNLOCK_EXCL(pVM);
+    return rc;
+}
+
 
 #ifdef VBOX_WITH_STATISTICS
 

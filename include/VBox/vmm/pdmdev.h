@@ -5369,10 +5369,10 @@ DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTI
  * Combines PDMDevHlpIoPortCreate() & PDMDevHlpIoPortMap().
  */
 DECLINLINE(int) PDMDevHlpIoPortCreateAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, PFNIOMIOPORTOUT pfnOut,
-                                            PFNIOMIOPORTIN pfnIn, void *pvUser, const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
+                                            PFNIOMIOPORTIN pfnIn, const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
 {
     int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0, NULL, UINT32_MAX,
-                                                pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, phIoPorts);
+                                                pfnOut, pfnIn, NULL, NULL, NULL, pszDesc, phIoPorts);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnIoPortMap(pDevIns, *phIoPorts, Port);
     return rc;

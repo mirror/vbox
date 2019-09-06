@@ -1157,7 +1157,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
  */
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoChecked)
 {
-    PVM             pVM  = pVCpu->CTX_SUFF(pVM);
+    PVMCC           pVM  = pVCpu->CTX_SUFF(pVM);
     VBOXSTRICTRC    rcStrict;
 
     /*
@@ -1249,7 +1249,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoCh
  */
 IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, fIoChecked)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
     IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_ES | CPUMCTX_EXTRN_TR);
 
@@ -1466,7 +1466,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
  */
 IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg, bool, fIoChecked)
 {
-    PVM             pVM  = pVCpu->CTX_SUFF(pVM);
+    PVMCC           pVM  = pVCpu->CTX_SUFF(pVM);
     VBOXSTRICTRC    rcStrict;
 
     /*
@@ -1539,7 +1539,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, i
  */
 IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_t, iEffSeg, bool, fIoChecked)
 {
-    PVM pVM = pVCpu->CTX_SUFF(pVM);
+    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
     /*
      * Setup.

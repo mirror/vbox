@@ -139,6 +139,124 @@ AssertCompileMemberAlignment(IOMMMIOSTATS, Accesses, 8);
 /** Pointer to I/O port statistics. */
 typedef IOMMMIOSTATS *PIOMMMIOSTATS;
 
+/**
+ * I/O port lookup table entry.
+ */
+typedef struct IOMIOPORTLOOKUPENTRY
+{
+    /** The first port in the range. */
+    RTIOPORT                    uFirstPort;
+    /** The last port in the range (inclusive). */
+    RTIOPORT                    uLastPort;
+    /** The registration handle/index. */
+    uint16_t                    idx;
+} IOMIOPORTLOOKUPENTRY;
+/** Pointer to an I/O port lookup table entry. */
+typedef IOMIOPORTLOOKUPENTRY *PIOMIOPORTLOOKUPENTRY;
+/** Pointer to a const I/O port lookup table entry. */
+typedef IOMIOPORTLOOKUPENTRY const *PCIOMIOPORTLOOKUPENTRY;
+
+/**
+ * Ring-0 I/O port handle table entry.
+ */
+typedef struct IOMIOPORTENTRYR0
+{
+    /** Pointer to user argument. */
+    RTR0PTR                             pvUser;
+    /** Pointer to the associated device instance, NULL if entry not used. */
+    R0PTRTYPE(PPDMDEVINS)               pDevIns;
+    /** Pointer to OUT callback function. */
+    R0PTRTYPE(PFNIOMIOPORTOUT)          pfnOutCallback;
+    /** Pointer to IN callback function. */
+    R0PTRTYPE(PFNIOMIOPORTIN)           pfnInCallback;
+    /** Pointer to string OUT callback function. */
+    R0PTRTYPE(PFNIOMIOPORTOUTSTRING)    pfnOutStrCallback;
+    /** Pointer to string IN callback function. */
+    R0PTRTYPE(PFNIOMIOPORTINSTRING)     pfnInStrCallback;
+    /** The entry of the first statistics entry, UINT16_MAX if no stats. */
+    uint16_t                            idxStats;
+    /** The number of ports covered by this entry, 0 if entry not used. */
+    RTIOPORT                            cPorts;
+    /** Same as the handle index. */
+    uint16_t                            idxSelf;
+} IOMIOPORTENTRYR0;
+/** Pointer to a ring-0 I/O port handle table entry. */
+typedef IOMIOPORTENTRYR0 *PIOMIOPORTENTRYR0;
+/** Pointer to a const ring-0 I/O port handle table entry. */
+typedef IOMIOPORTENTRYR0 const *PCIOMIOPORTENTRYR0;
+
+/**
+ * Ring-3 I/O port handle table entry.
+ */
+typedef struct IOMIOPORTENTRYR3
+{
+    /** Pointer to user argument. */
+    RTR3PTR                             pvUser;
+    /** Pointer to the associated device instance. */
+    R3PTRTYPE(PPDMDEVINS)               pDevIns;
+    /** Pointer to OUT callback function. */
+    R3PTRTYPE(PFNIOMIOPORTOUT)          pfnOutCallback;
+    /** Pointer to IN callback function. */
+    R3PTRTYPE(PFNIOMIOPORTIN)           pfnInCallback;
+    /** Pointer to string OUT callback function. */
+    R3PTRTYPE(PFNIOMIOPORTOUTSTRING)    pfnOutStrCallback;
+    /** Pointer to string IN callback function. */
+    R3PTRTYPE(PFNIOMIOPORTINSTRING)     pfnInStrCallback;
+    /** Description / Name. For easing debugging. */
+    R3PTRTYPE(const char *)             pszDesc;
+    /** PCI device the registration is associated with. */
+    R3PTRTYPE(PPDMPCIDEV)               pPciDev;
+    /** The PCI device region (high 16-bit word) and subregion (low word),
+     *  UINT32_MAX if not applicable. */
+    uint32_t                            iPciRegion;
+    /** The number of ports covered by this entry. */
+    RTIOPORT                            cPorts;
+    /** The current port mapping (duplicates lookup table). */
+    RTIOPORT                            uPort;
+    /** The entry of the first statistics entry, UINT16_MAX if no stats. */
+    uint16_t                            idxStats;
+    /** Set if mapped, clear if not.
+     * Only updated when critsect is held exclusively.   */
+    bool                                fMapped;
+    /** Same as the handle index. */
+    uint16_t                            idxSelf;
+} IOMIOPORTENTRYR3;
+/** Pointer to a ring-3 I/O port handle table entry. */
+typedef IOMIOPORTENTRYR3 *PIOMIOPORTENTRYR3;
+/** Pointer to a const ring-3 I/O port handle table entry. */
+typedef IOMIOPORTENTRYR3 const *PCIOMIOPORTENTRYR3;
+
+/**
+ * I/O port statistics entry (one I/O port).
+ */
+typedef struct IOMIOPORTSTATSENTRY
+{
+    /** Number of INs to this port from R3. */
+    STAMCOUNTER                 InR3;
+    /** Profiling IN handler overhead in R3. */
+    STAMPROFILE                 ProfInR3;
+    /** Number of OUTs to this port from R3. */
+    STAMCOUNTER                 OutR3;
+    /** Profiling OUT handler overhead in R3. */
+    STAMPROFILE                 ProfOutR3;
+
+    /** Number of INs to this port from R0/RC. */
+    STAMCOUNTER                 InRZ;
+    /** Profiling IN handler overhead in R0/RC. */
+    STAMPROFILE                 ProfInRZ;
+    /** Number of INs to this port from R0/RC which was serviced in R3. */
+    STAMCOUNTER                 InRZToR3;
+
+    /** Number of OUTs to this port from R0/RC. */
+    STAMCOUNTER                 OutRZ;
+    /** Profiling OUT handler overhead in R0/RC. */
+    STAMPROFILE                 ProfOutRZ;
+    /** Number of OUTs to this port from R0/RC which was serviced in R3. */
+    STAMCOUNTER                 OutRZToR3;
+} IOMIOPORTSTATSENTRY;
+/** Pointer to I/O port statistics entry. */
+typedef IOMIOPORTSTATSENTRY *PIOMIOPORTSTATSENTRY;
+
 
 /**
  * I/O port range descriptor, R3 version.
@@ -280,6 +398,7 @@ typedef IOMIOPORTSTATS *PIOMIOPORTSTATS;
 
 /**
  * The IOM trees.
+ *
  * These are offset based the nodes and root must be in the same
  * memory block in HC. The locations of IOM structure and the hypervisor heap
  * are quite different in R3, R0 and RC.
@@ -305,80 +424,6 @@ typedef struct IOMTREES
 } IOMTREES;
 /** Pointer to the IOM trees. */
 typedef IOMTREES *PIOMTREES;
-
-
-/**
- * Converts an IOM pointer into a VM pointer.
- * @returns Pointer to the VM structure the PGM is part of.
- * @param   pIOM   Pointer to IOM instance data.
- */
-#define IOM2VM(pIOM)  ( (PVM)((char*)pIOM - pIOM->offVM) )
-
-/**
- * IOM Data (part of VM)
- */
-typedef struct IOM
-{
-    /** Pointer to the trees - R3 ptr. */
-    R3PTRTYPE(PIOMTREES)            pTreesR3;
-    /** Pointer to the trees - R0 ptr. */
-    R0PTRTYPE(PIOMTREES)            pTreesR0;
-
-    /** MMIO physical access handler type.   */
-    PGMPHYSHANDLERTYPE              hMmioHandlerType;
-    uint32_t                        u32Padding;
-
-    /** Lock serializing EMT access to IOM. */
-#ifdef IOM_WITH_CRIT_SECT_RW
-    PDMCRITSECTRW                   CritSect;
-#else
-    PDMCRITSECT                     CritSect;
-#endif
-
-    /** @name I/O Port statistics.
-     * @{ */
-    STAMCOUNTER                     StatInstIn;
-    STAMCOUNTER                     StatInstOut;
-    STAMCOUNTER                     StatInstIns;
-    STAMCOUNTER                     StatInstOuts;
-    /** @} */
-
-    /** @name MMIO statistics.
-     * @{ */
-    STAMPROFILE                     StatRZMMIOHandler;
-    STAMCOUNTER                     StatRZMMIOFailures;
-
-    STAMPROFILE                     StatRZInstMov;
-    STAMPROFILE                     StatRZInstCmp;
-    STAMPROFILE                     StatRZInstAnd;
-    STAMPROFILE                     StatRZInstOr;
-    STAMPROFILE                     StatRZInstXor;
-    STAMPROFILE                     StatRZInstBt;
-    STAMPROFILE                     StatRZInstTest;
-    STAMPROFILE                     StatRZInstXchg;
-    STAMPROFILE                     StatRZInstStos;
-    STAMPROFILE                     StatRZInstLods;
-#ifdef IOM_WITH_MOVS_SUPPORT
-    STAMPROFILEADV                  StatRZInstMovs;
-    STAMPROFILE                     StatRZInstMovsToMMIO;
-    STAMPROFILE                     StatRZInstMovsFromMMIO;
-    STAMPROFILE                     StatRZInstMovsMMIO;
-#endif
-    STAMCOUNTER                     StatRZInstOther;
-
-    STAMCOUNTER                     StatRZMMIO1Byte;
-    STAMCOUNTER                     StatRZMMIO2Bytes;
-    STAMCOUNTER                     StatRZMMIO4Bytes;
-    STAMCOUNTER                     StatRZMMIO8Bytes;
-
-    STAMCOUNTER                     StatR3MMIOHandler;
-
-    RTUINT                          cMovsMaxBytes;
-    RTUINT                          cStosMaxBytes;
-    /** @} */
-} IOM;
-/** Pointer to IOM instance data. */
-typedef IOM *PIOM;
 
 
 /**
@@ -432,6 +477,16 @@ typedef struct IOMCPU
     /** @name Caching of I/O Port and MMIO ranges and statistics.
      * (Saves quite some time in rep outs/ins instruction emulation.)
      * @{ */
+    /** I/O port registration index for the last read operation. */
+    uint16_t                            idxIoPortLastRead;
+    /** I/O port registration index for the last write operation. */
+    uint16_t                            idxIoPortLastWrite;
+    /** I/O port registration index for the last read string operation. */
+    uint16_t                            idxIoPortLastReadStr;
+    /** I/O port registration index for the last write string operation. */
+    uint16_t                            idxIoPortLastWriteStr;
+    uint32_t                            u32Padding;
+
     R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastReadR3;
     R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastWriteR3;
     R3PTRTYPE(PIOMIOPORTSTATS)      pStatsLastReadR3;
@@ -449,6 +504,140 @@ typedef struct IOMCPU
 } IOMCPU;
 /** Pointer to IOM per virtual CPU instance data. */
 typedef IOMCPU *PIOMCPU;
+
+
+/**
+ * IOM Data (part of VM)
+ */
+typedef struct IOM
+{
+    /** Pointer to the trees - R3 ptr. */
+    R3PTRTYPE(PIOMTREES)            pTreesR3;
+    /** Pointer to the trees - R0 ptr. */
+    R0PTRTYPE(PIOMTREES)            pTreesR0;
+
+    /** MMIO physical access handler type.   */
+    PGMPHYSHANDLERTYPE              hMmioHandlerType;
+    uint32_t                        u32Padding;
+
+    /** @name I/O ports
+     * @note The updating of these variables is done exclusively from EMT(0).
+     * @{ */
+    /** Number of I/O port registrations. */
+    uint32_t                        cIoPortRegs;
+    /** The size of the paIoPortsRegs allocation (in entries). */
+    uint32_t                        cIoPortAlloc;
+    /** I/O port registration table for ring-3.
+     * There is a parallel table in ring-0, IOMR0PERVM::paIoPortRegs. */
+    R3PTRTYPE(PIOMIOPORTENTRYR3)    paIoPortRegs;
+    /** Number of entries in the lookup table. */
+    uint32_t                        cIoPortLookupEntries;
+    uint32_t                        u32Padding1;
+    /** I/O port lookup table. */
+    R3PTRTYPE(PIOMIOPORTLOOKUPENTRY) paIoPortLookup;
+
+    /** The number of valid entries in paioPortStats. */
+    uint32_t                        cIoPortStats;
+    /** The size of the paIoPortStats allocation (in entries). */
+    uint32_t                        cIoPortStatsAllocation;
+    /** I/O port lookup table.   */
+    R3PTRTYPE(PIOMIOPORTSTATSENTRY) paIoPortStats;
+    /** Dummy stats entry so we don't need to check for NULL pointers so much. */
+    IOMIOPORTSTATSENTRY             IoPortDummyStats;
+    /** @} */
+
+
+    /** Lock serializing EMT access to IOM. */
+#ifdef IOM_WITH_CRIT_SECT_RW
+    PDMCRITSECTRW                   CritSect;
+#else
+    PDMCRITSECT                     CritSect;
+#endif
+
+#if 0 /* unused */
+    /** @name I/O Port statistics.
+     * @{ */
+    STAMCOUNTER                     StatInstIn;
+    STAMCOUNTER                     StatInstOut;
+    STAMCOUNTER                     StatInstIns;
+    STAMCOUNTER                     StatInstOuts;
+    /** @} */
+#endif
+
+    /** @name MMIO statistics.
+     * @{ */
+    STAMPROFILE                     StatRZMMIOHandler;
+    STAMCOUNTER                     StatRZMMIOFailures;
+
+    STAMPROFILE                     StatRZInstMov;
+    STAMPROFILE                     StatRZInstCmp;
+    STAMPROFILE                     StatRZInstAnd;
+    STAMPROFILE                     StatRZInstOr;
+    STAMPROFILE                     StatRZInstXor;
+    STAMPROFILE                     StatRZInstBt;
+    STAMPROFILE                     StatRZInstTest;
+    STAMPROFILE                     StatRZInstXchg;
+    STAMPROFILE                     StatRZInstStos;
+    STAMPROFILE                     StatRZInstLods;
+#ifdef IOM_WITH_MOVS_SUPPORT
+    STAMPROFILEADV                  StatRZInstMovs;
+    STAMPROFILE                     StatRZInstMovsToMMIO;
+    STAMPROFILE                     StatRZInstMovsFromMMIO;
+    STAMPROFILE                     StatRZInstMovsMMIO;
+#endif
+    STAMCOUNTER                     StatRZInstOther;
+
+    STAMCOUNTER                     StatRZMMIO1Byte;
+    STAMCOUNTER                     StatRZMMIO2Bytes;
+    STAMCOUNTER                     StatRZMMIO4Bytes;
+    STAMCOUNTER                     StatRZMMIO8Bytes;
+
+    STAMCOUNTER                     StatR3MMIOHandler;
+
+    RTUINT                          cMovsMaxBytes;
+    RTUINT                          cStosMaxBytes;
+    /** @} */
+} IOM;
+/** Pointer to IOM instance data. */
+typedef IOM *PIOM;
+
+
+/**
+ * IOM data kept in the ring-0 GVM.
+ */
+typedef struct IOMR0PERVM
+{
+    /** @name I/O ports
+     * @{ */
+    /** The higest ring-0 I/O port registration plus one. */
+    uint32_t                        cIoPortMax;
+    /** The size of the paIoPortsRegs allocation (in entries). */
+    uint32_t                        cIoPortAlloc;
+    /** I/O port registration table for ring-0.
+     * There is a parallel table for ring-3, paIoPortRing3Regs. */
+    R0PTRTYPE(PIOMIOPORTENTRYR0)    paIoPortRegs;
+    /** I/O port lookup table. */
+    R0PTRTYPE(PIOMIOPORTLOOKUPENTRY) paIoPortLookup;
+    /** I/O port registration table for ring-3.
+     * Also mapped to ring-3 as IOM::paIoPortRegs. */
+    R0PTRTYPE(PIOMIOPORTENTRYR3)    paIoPortRing3Regs;
+    /** Handle to the allocation backing both the ring-0 and ring-3 registration
+     * tables as well as the lookup table. */
+    RTR0MEMOBJ                      hIoPortMemObj;
+    /** Handle to the ring-3 mapping of the lookup and ring-3 registration table. */
+    RTR0MEMOBJ                      hIoPortMapObj;
+#ifdef VBOX_WITH_STATISTICS
+    /** The size of the paIoPortStats allocation (in entries). */
+    uint32_t                        cIoPortStatsAllocation;
+    /** I/O port lookup table.   */
+    R0PTRTYPE(PIOMIOPORTSTATSENTRY) paIoPortStats;
+    /** Handle to the allocation backing the I/O port statistics. */
+    RTR0MEMOBJ                      hIoPortStatsMemObj;
+    /** Handle to the ring-3 mapping of the I/O port statistics. */
+    RTR0MEMOBJ                      hIoPortStatsMapObj;
+#endif
+    /** @} */
+} IOMR0PERVM;
 
 
 RT_C_DECLS_BEGIN

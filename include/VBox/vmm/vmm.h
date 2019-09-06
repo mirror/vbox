@@ -414,8 +414,13 @@ typedef enum VMMR0OPERATION
     /** Call NEMR0DoExperiment() (host specific, experimental, debug only). */
     VMMR0_DO_NEM_EXPERIMENT,
 
+    /** Grow the I/O port registration tables. */
+    VMMR0_DO_IOM_GROW_IO_PORTS = 640,
+    /** Grow the I/O port statistics tables. */
+    VMMR0_DO_IOM_GROW_IO_PORT_STATS,
+
     /** Official call we use for testing Ring-0 APIs. */
-    VMMR0_DO_TESTS = 640,
+    VMMR0_DO_TESTS = 704,
 
     /** The usual 32-bit type blow up. */
     VMMR0_DO_32BIT_HACK = 0x7fffffff

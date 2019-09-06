@@ -1006,7 +1006,11 @@ AssertCompileSizeAlignment(VMCPU, 4096);
  * Asserts that the current thread IS emulation thread \#0 (EMT0) and returns if
  * it isn't.
  */
-#define VM_ASSERT_EMT0_RETURN(pVM, rc)      VMCPU_ASSERT_EMT_RETURN(&(pVM)->aCpus[0], (rc))
+#ifdef IN_RING3
+# define VM_ASSERT_EMT0_RETURN(pVM, rc)     VMCPU_ASSERT_EMT_RETURN((pVM)->apCpusR3[0], (rc))
+#else
+# define VM_ASSERT_EMT0_RETURN(pVM, rc)     VMCPU_ASSERT_EMT_RETURN(&(pVM)->aCpus[0], (rc))
+#endif
 
 
 /**
@@ -1322,7 +1326,7 @@ typedef struct VM
 #ifdef VMM_INCLUDED_SRC_include_IOMInternal_h
         struct IOM s;
 #endif
-        uint8_t     padding[896];       /* multiple of 64 */
+        uint8_t     padding[960];       /* multiple of 64 */
     } iom;
 
     /** EM part. */
@@ -1446,9 +1450,9 @@ typedef struct VM
 
     /** Padding for aligning the structure size on a page boundrary. */
 #ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[3032       - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[2968       - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 #else
-    uint8_t         abAlignment2[3032 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[2968 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 #endif
 
     /* ---- end small stuff ---- */

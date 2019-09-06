@@ -103,24 +103,50 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT
                                                     PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr,
                                                     RTR3PTR pvUser, const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
 {
-    RT_NOREF(pDevIns, cPorts, fFlags, pPciDev, iPciRegion, pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, phIoPorts);
-    return VERR_NOT_IMPLEMENTED;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_IoPortCreateEx: caller='%s'/%d: cPorts=%#x fFlags=%#x pPciDev=%p iPciRegion=%#x pfnOut=%p pfnIn=%p pfnOutStr=%p pfnInStr=%p pvUser=%p pszDesc=%p:{%s} phIoPorts=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, cPorts, fFlags, pPciDev, iPciRegion, pfnOut, pfnIn, pfnOutStr, pfnInStr,
+             pvUser, pszDesc, pszDesc, phIoPorts));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
+
+    int rc = IOMR3IoPortCreate(pVM, pDevIns, cPorts, fFlags, pPciDev, iPciRegion,
+                               pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, phIoPorts);
+
+    LogFlow(("pdmR3DevHlp_IoPortCreateEx: caller='%s'/%d: returns %Rrc (*phIoPorts=%#x)\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc, *phIoPorts));
+    return rc;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIoPortMap} */
 static DECLCALLBACK(int) pdmR3DevHlp_IoPortMap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port)
 {
-    RT_NOREF(pDevIns, hIoPorts, Port);
-    return VERR_NOT_IMPLEMENTED;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: hIoPorts=%#x Port=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hIoPorts, Port));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+
+    int rc = IOMR3IoPortMap(pVM, pDevIns, hIoPorts, Port);
+
+    LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIoPortUnmap} */
 static DECLCALLBACK(int) pdmR3DevHlp_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
 {
-    RT_NOREF(pDevIns, hIoPorts);
-    return VERR_NOT_IMPLEMENTED;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: hIoPorts=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hIoPorts));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+
+    int rc = IOMR3IoPortUnmap(pVM, pDevIns, hIoPorts);
+
+    LogFlow(("pdmR3DevHlp_IoPortMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
 }
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegister} */
@@ -128,7 +154,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT
                                                     PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_IOPortRegister: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pfnOut=%p pfnIn=%p pfnOutStr=%p pfnInStr=%p p32_tszDesc=%p:{%s}\n", pDevIns->pReg->szName, pDevIns->iInstance,
+    LogFlow(("pdmR3DevHlp_IOPortRegister: caller='%s'/%d: Port=%#x cPorts=%#x pvUser=%p pfnOut=%p pfnIn=%p pfnOutStr=%p pfnInStr=%p pszDesc=%p:{%s}\n", pDevIns->pReg->szName, pDevIns->iInstance,
              Port, cPorts, pvUser, pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc, pszDesc));
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
 

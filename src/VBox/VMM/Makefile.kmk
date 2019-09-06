@@ -483,6 +483,7 @@ VMMR0_SOURCES   = \
 	VMMR0/HMR0A.asm \
 	VMMR0/HMVMXR0.cpp \
 	VMMR0/HMSVMR0.cpp \
+	VMMR0/IOMR0.cpp \
 	VMMR0/PDMR0Device.cpp \
 	VMMR0/PDMR0Driver.cpp \
 	VMMR0/PGMR0.cpp \

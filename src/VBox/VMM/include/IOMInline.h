@@ -28,6 +28,113 @@
  * @{
  */
 
+
+/**
+ * Gets the I/O port entry for the specified I/O port in the current context.
+ *
+ * @returns Pointer to I/O port entry.
+ * @returns NULL if no port registered.
+ *
+ * @param   pVM             The cross context VM structure.
+ * @param   Port            The I/O port lookup.
+ * @param   pidxLastHint    Pointer to IOMCPU::idxIoPortLastRead or
+ *                          IOMCPU::idxIoPortLastWrite.
+ *
+ * @note    In ring-0 it is possible to get an uninitialized entry (pDevIns is
+ *          NULL, cPorts is 0), in which case there should be ring-3 handlers
+ *          for the entry.  Use IOMIOPORTENTRYR0::idxSelf to get the ring-3
+ *          entry.
+ */
+DECLINLINE(CTX_SUFF(PIOMIOPORTENTRY)) iomIoPortGetEntry(PVMCC pVM, RTIOPORT uPort, uint16_t *pidxLastHint)
+{
+    Assert(IOM_IS_SHARED_LOCK_OWNER(pVM));
+
+#ifdef IN_RING0
+    uint32_t              iEnd      = RT_MIN(pVM->iom.s.cIoPortLookupEntries, pVM->iomr0.s.cIoPortAlloc);
+    PIOMIOPORTLOOKUPENTRY paLookup  = pVM->iomr0.s.paIoPortLookup;
+#else
+    uint32_t              iEnd      = pVM->iom.s.cIoPortLookupEntries;
+    PIOMIOPORTLOOKUPENTRY paLookup  = pVM->iom.s.paIoPortLookup;
+#endif
+    if (iEnd > 0)
+    {
+        uint32_t iFirst = 0;
+        uint32_t i      = *pidxLastHint;
+        if (i < iEnd)
+        { /* likely */ }
+        else
+            i = iEnd / 2;
+        for (;;)
+        {
+            PIOMIOPORTLOOKUPENTRY pCur = &paLookup[i];
+            if (pCur->uFirstPort > uPort)
+            {
+                if (i > iFirst)
+                    iEnd = i;
+                else
+                    return NULL;
+            }
+            else if (pCur->uLastPort < uPort)
+            {
+                i += 1;
+                if (i < iEnd)
+                    iFirst = i;
+                else
+                    return NULL;
+            }
+            else
+            {
+                *pidxLastHint = (uint16_t)i;
+
+                /*
+                 * Translate the 'idx' member into a pointer.
+                 */
+                size_t const idx = pCur->idx;
+#ifdef IN_RING0
+                AssertMsg(idx < pVM->iom.s.cIoPortRegs && idx < pVM->iomr0.s.cIoPortAlloc,
+                          ("%#zx vs %#x/%x (port %#x)\n", idx, pVM->iom.s.cIoPortRegs, pVM->iomr0.s.cIoPortMax, uPort));
+                if (idx < pVM->iomr0.s.cIoPortAlloc)
+                    return &pVM->iomr0.s.paIoPortRegs[idx];
+#else
+                if (idx < pVM->iom.s.cIoPortRegs)
+                    return &pVM->iom.s.paIoPortRegs[idx];
+                AssertMsgFailed(("%#zx vs %#x (port %#x)\n", idx, pVM->iom.s.cIoPortRegs, uPort));
+#endif
+                break;
+            }
+
+            i = iFirst + (iEnd - iFirst) / 2;
+        }
+    }
+    return NULL;
+}
+
+
+#ifdef VBOX_WITH_STATISTICS
+/**
+ * Gets the I/O port statistics entry .
+ *
+ * @returns Pointer to stats.  Instead of NULL, a pointer to IoPortDummyStats is
+ *          returned, so the caller does not need to check for NULL.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pRegEntry   The I/O port entry to get stats for.
+ */
+DECLINLINE(PIOMIOPORTSTATSENTRY) iomIoPortGetStats(PVMCC pVM, CTX_SUFF(PIOMIOPORTENTRY) pRegEntry)
+{
+    size_t idxStats = pRegEntry->idxStats;
+# ifdef IN_RING0
+    if (idxStats < pVM->iomr0.s.cIoPortStatsAllocation)
+        return &pVM->iomr0.s.paIoPortStats[idxStats];
+# else
+    if (idxStats < pVM->iom.s.cIoPortStats)
+        return &pVM->iom.s.paIoPortStats[idxStats];
+# endif
+    return &pVM->iom.s.IoPortDummyStats;
+}
+#endif
+
+
 /**
  * Gets the I/O port range for the specified I/O port in the current context.
  *

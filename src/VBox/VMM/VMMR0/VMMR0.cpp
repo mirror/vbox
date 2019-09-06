@@ -22,6 +22,7 @@
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm/vmm.h>
 #include <VBox/sup.h>
+#include <VBox/vmm/iom.h>
 #include <VBox/vmm/trpm.h>
 #include <VBox/vmm/cpum.h>
 #include <VBox/vmm/pdmapi.h>
@@ -2197,6 +2198,27 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
 #endif
 
         /*
+         * IOM requests.
+         */
+        case VMMR0_DO_IOM_GROW_IO_PORTS:
+        {
+            if (pReqHdr || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = IOMR0IoPortGrowRegistrationTables(pGVM, u64Arg);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
+        case VMMR0_DO_IOM_GROW_IO_PORT_STATS:
+        {
+            if (pReqHdr || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = IOMR0IoPortGrowStatisticsTable(pGVM, u64Arg);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
+        /*
          * For profiling.
          */
         case VMMR0_DO_NOP:
@@ -2295,6 +2317,8 @@ VMMR0DECL(int) VMMR0EntryEx(PGVM pGVM, PVMCC pVM, VMCPUID idCpu, VMMR0OPERATION 
             case VMMR0_DO_VMMR0_TERM:
 
             case VMMR0_DO_PDM_DEVICE_CREATE:
+            case VMMR0_DO_IOM_GROW_IO_PORTS:
+            case VMMR0_DO_IOM_GROW_IO_PORT_STATS:
             {
                 PGVMCPU        pGVCpu        = &pGVM->aCpus[idCpu];
                 RTNATIVETHREAD hNativeThread = RTThreadNativeSelf();
