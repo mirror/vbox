@@ -14565,8 +14565,40 @@ HMVMX_EXIT_DECL hmR0VmxExitXsetbv(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 HMVMX_EXIT_DECL hmR0VmxExitInvpcid(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
+
+#if 1
     /** @todo Use VM-exit instruction information. */
     return VERR_EM_INTERPRETER;
+#else
+    hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
+    hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
+    hmR0VmxReadExitQualVmcs(pVmxTransient);
+    int rc = hmR0VmxImportGuestState(pVCpu, pVmxTransient->pVmcsInfo, CPUMCTX_EXTRN_RSP | CPUMCTX_EXTRN_SREG_MASK
+                                                                    | IEM_CPUMCTX_EXTRN_EXEC_DECODED_MEM_MASK);
+    AssertRCReturn(rc, rc);
+
+    /* Paranoia. Ensure this has a memory operand. */
+    Assert(!pVmxTransient->ExitInstrInfo.Inv.u1Cleared0);
+
+    uint8_t const iGReg = pVmxTransient->ExitInstrInfo.VmreadVmwrite.iReg2;
+    Assert(iGReg < RT_ELEMENTS(pVCpu->cpum.GstCtx.aGRegs));
+    uint64_t const uType = CPUMIsGuestIn64BitCode(pVCpu) ? pVCpu->cpum.GstCtx.aGRegs[iGReg].u64
+                                                         : pVCpu->cpum.GstCtx.aGRegs[iGReg].u32;
+
+    RTGCPTR GCPtrDesc;
+    HMVMX_DECODE_MEM_OPERAND(pVCpu, pVmxTransient->ExitInstrInfo.u, pVmxTransient->uExitQual, VMXMEMACCESS_READ, &GCPtrDesc);
+
+    VBOXSTRICTRC rcStrict = IEMExecDecodedInvpcid(pVCpu, pVmxTransient->cbExitInstr, pVmxTransient->ExitInstrInfo.Inv.iSegReg,
+                                                  GCPtrDesc, uType);
+    if (RT_LIKELY(rcStrict == VINF_SUCCESS))
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
+    else if (rcStrict == VINF_IEM_RAISED_XCPT)
+    {
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
+        rcStrict = VINF_SUCCESS;
+    }
+    return rcStrict;
+#endif
 }
 
 
