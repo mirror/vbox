@@ -35,60 +35,6 @@
 #define INSTANCE(pVirtio) pVirtio->szInstance
 #define QUEUENAME(qIdx) (pVirtio->virtqProxy[qIdx].szVirtqName)
 
-/**
- * Formats the logging of a memory-mapped I/O input or output value
- *
- * @param   pszFunc     - To avoid displaying this function's name via __FUNCTION__ or Log2Func()
- * @param   pszMember   - Name of struct member
- * @param   pv          - Pointer to value
- * @param   cb          - Size of value
- * @param   uOffset     - Offset into member where value starts
- * @param   fWrite      - True if write I/O
- * @param   fHasIndex   - True if the member is indexed
- * @param   idx         - The index, if fHasIndex is true
- */
-void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t uMemberSize,
-                        const void *pv, uint32_t cb, uint32_t uOffset, bool fWrite,
-                        bool fHasIndex, uint32_t idx)
-{
-
-#define FMTHEX(fmtout, val, cNybbles) \
-    fmtout[cNybbles] = '\0'; \
-    for (uint8_t i = 0; i < cNybbles; i++) \
-        fmtout[(cNybbles - i) - 1] = "0123456789abcdef"[(val >> (i * 4)) & 0xf];
-
-#define MAX_STRING   64
-    char pszIdx[MAX_STRING] = { 0 };
-    char pszDepiction[MAX_STRING] = { 0 };
-    char pszFormattedVal[MAX_STRING] = { 0 };
-    if (fHasIndex)
-        RTStrPrintf(pszIdx, sizeof(pszIdx), "[%d]", idx);
-    if (cb == 1 || cb == 2 || cb == 4 || cb == 8)
-    {
-        /* manually padding with 0's instead of \b due to different impl of %x precision than printf() */
-        uint64_t val = 0;
-        memcpy((char *)&val, pv, cb);
-        FMTHEX(pszFormattedVal, val, cb * 2);
-        if (uOffset != 0 || cb != uMemberSize) /* display bounds if partial member access */
-            RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%s%s[%d:%d]",
-                        pszMember, pszIdx, uOffset, uOffset + cb - 1);
-        else
-            RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%s%s", pszMember, pszIdx);
-        RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%-30s", pszDepiction);
-        uint32_t first = 0;
-        for (uint8_t i = 0; i < sizeof(pszDepiction); i++)
-            if (pszDepiction[i] == ' ' && first++)
-                pszDepiction[i] = '.';
-        Log6Func(("%s: Guest %s %s 0x%s\n",
-                  pszFunc, fWrite ? "wrote" : "read ", pszDepiction, pszFormattedVal));
-    }
-    else /* odd number or oversized access, ... log inline hex-dump style */
-    {
-        Log6Func(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n",
-              pszFunc, fWrite ? "wrote" : "read ", pszMember,
-              pszIdx, uOffset, uOffset + cb, cb, pv));
-    }
-}
 
 /**
  * See API comments in header file for description
@@ -663,54 +609,42 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
             Log6((")\n"));
         }
     }
-    else if (MATCH_COMMON_CFG(uMsixConfig))
-    {
+    else
+    if (MATCH_COMMON_CFG(uMsixConfig))
         COMMON_CFG_ACCESSOR(uMsixConfig);
-    }
-    else if (MATCH_COMMON_CFG(uDeviceFeaturesSelect))
-    {
+    else
+    if (MATCH_COMMON_CFG(uDeviceFeaturesSelect))
         COMMON_CFG_ACCESSOR(uDeviceFeaturesSelect);
-    }
-    else if (MATCH_COMMON_CFG(uDriverFeaturesSelect))
-    {
+    else
+    if (MATCH_COMMON_CFG(uDriverFeaturesSelect))
         COMMON_CFG_ACCESSOR(uDriverFeaturesSelect);
-    }
-    else if (MATCH_COMMON_CFG(uConfigGeneration))
-    {
+    else
+    if (MATCH_COMMON_CFG(uConfigGeneration))
         COMMON_CFG_ACCESSOR_READONLY(uConfigGeneration);
-    }
-    else if (MATCH_COMMON_CFG(uQueueSelect))
-    {
+    else
+    if (MATCH_COMMON_CFG(uQueueSelect))
         COMMON_CFG_ACCESSOR(uQueueSelect);
-    }
-    else if (MATCH_COMMON_CFG(uQueueSize))
-    {
+    else
+    if (MATCH_COMMON_CFG(uQueueSize))
         COMMON_CFG_ACCESSOR_INDEXED(uQueueSize, pVirtio->uQueueSelect);
-    }
-    else if (MATCH_COMMON_CFG(uQueueMsixVector))
-    {
+    else
+    if (MATCH_COMMON_CFG(uQueueMsixVector))
         COMMON_CFG_ACCESSOR_INDEXED(uQueueMsixVector, pVirtio->uQueueSelect);
-    }
-    else if (MATCH_COMMON_CFG(uQueueEnable))
-    {
+    else
+    if (MATCH_COMMON_CFG(uQueueEnable))
         COMMON_CFG_ACCESSOR_INDEXED(uQueueEnable, pVirtio->uQueueSelect);
-    }
-    else if (MATCH_COMMON_CFG(uQueueNotifyOff))
-    {
+    else
+    if (MATCH_COMMON_CFG(uQueueNotifyOff))
         COMMON_CFG_ACCESSOR_INDEXED_READONLY(uQueueNotifyOff, pVirtio->uQueueSelect);
-    }
-    else if (MATCH_COMMON_CFG(pGcPhysQueueDesc))
-    {
+    else
+    if (MATCH_COMMON_CFG(pGcPhysQueueDesc))
         COMMON_CFG_ACCESSOR_INDEXED(pGcPhysQueueDesc, pVirtio->uQueueSelect);
-    }
-    else if (MATCH_COMMON_CFG(pGcPhysQueueAvail))
-    {
+    else
+    if (MATCH_COMMON_CFG(pGcPhysQueueAvail))
         COMMON_CFG_ACCESSOR_INDEXED(pGcPhysQueueAvail, pVirtio->uQueueSelect);
-    }
-    else if (MATCH_COMMON_CFG(pGcPhysQueueUsed))
-    {
+    else
+    if (MATCH_COMMON_CFG(pGcPhysQueueUsed))
         COMMON_CFG_ACCESSOR_INDEXED(pGcPhysQueueUsed, pVirtio->uQueueSelect);
-    }
     else
     {
         Log2Func(("Bad guest %s access to virtio_pci_common_cfg: uOffset=%d, cb=%d\n",
@@ -1457,7 +1391,6 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     rc = pVirtio->virtioCallbacks.pfnSSMDevLiveExec(pDevIns, pSSM, uPass);
 
     return rc;
-
 }
 
  /**
@@ -1490,6 +1423,62 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     }
     Log(("\n"));
  }
+
+
+/**
+ * Formats the logging of a memory-mapped I/O input or output value
+ *
+ * @param   pszFunc     - To avoid displaying this function's name via __FUNCTION__ or Log2Func()
+ * @param   pszMember   - Name of struct member
+ * @param   pv          - Pointer to value
+ * @param   cb          - Size of value
+ * @param   uOffset     - Offset into member where value starts
+ * @param   fWrite      - True if write I/O
+ * @param   fHasIndex   - True if the member is indexed
+ * @param   idx         - The index, if fHasIndex is true
+ */
+void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t uMemberSize,
+                        const void *pv, uint32_t cb, uint32_t uOffset, bool fWrite,
+                        bool fHasIndex, uint32_t idx)
+{
+
+#define FMTHEX(fmtout, val, cNybbles) \
+    fmtout[cNybbles] = '\0'; \
+    for (uint8_t i = 0; i < cNybbles; i++) \
+        fmtout[(cNybbles - i) - 1] = "0123456789abcdef"[(val >> (i * 4)) & 0xf];
+
+#define MAX_STRING   64
+    char pszIdx[MAX_STRING] = { 0 };
+    char pszDepiction[MAX_STRING] = { 0 };
+    char pszFormattedVal[MAX_STRING] = { 0 };
+    if (fHasIndex)
+        RTStrPrintf(pszIdx, sizeof(pszIdx), "[%d]", idx);
+    if (cb == 1 || cb == 2 || cb == 4 || cb == 8)
+    {
+        /* manually padding with 0's instead of \b due to different impl of %x precision than printf() */
+        uint64_t val = 0;
+        memcpy((char *)&val, pv, cb);
+        FMTHEX(pszFormattedVal, val, cb * 2);
+        if (uOffset != 0 || cb != uMemberSize) /* display bounds if partial member access */
+            RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%s%s[%d:%d]",
+                        pszMember, pszIdx, uOffset, uOffset + cb - 1);
+        else
+            RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%s%s", pszMember, pszIdx);
+        RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%-30s", pszDepiction);
+        uint32_t first = 0;
+        for (uint8_t i = 0; i < sizeof(pszDepiction); i++)
+            if (pszDepiction[i] == ' ' && first++)
+                pszDepiction[i] = '.';
+        Log6Func(("%s: Guest %s %s 0x%s\n",
+                  pszFunc, fWrite ? "wrote" : "read ", pszDepiction, pszFormattedVal));
+    }
+    else /* odd number or oversized access, ... log inline hex-dump style */
+    {
+        Log6Func(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n",
+              pszFunc, fWrite ? "wrote" : "read ", pszMember,
+              pszIdx, uOffset, uOffset + cb, cb, pv));
+    }
+}
 
 #endif /* IN_RING3 */
 

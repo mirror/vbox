@@ -130,6 +130,7 @@
             pv, cb, uIntraOffset, fWrite, false, 0);
 
 #define SCSI_CONFIG_ACCESSOR(member) \
+    do \
     { \
         uint32_t uIntraOffset = uOffset - RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member); \
         if (fWrite) \
@@ -137,9 +138,10 @@
         else \
             memcpy((char *)pv, (const char *)(((char *)&pThis->virtioScsiConfig.member) + uIntraOffset), cb); \
         LOG_ACCESSOR(member); \
-    }
+    } while(0)
 
 #define SCSI_CONFIG_ACCESSOR_READONLY(member) \
+    do \
     { \
         uint32_t uIntraOffset = uOffset - RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member); \
         if (fWrite) \
@@ -149,7 +151,7 @@
             memcpy((char *)pv, (const char *)(((char *)&pThis->virtioScsiConfig.member) + uIntraOffset), cb); \
             LOG_ACCESSOR(member); \
         } \
-    }
+    } while(0)
 
 #define VIRTIO_IN_DIRECTION(pMediaExTxDirEnumValue) \
             pMediaExTxDirEnumValue == PDMMEDIAEXIOREQSCSITXDIR_FROM_DEVICE
@@ -1449,54 +1451,34 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t uOffset,
 {
     int rc = VINF_SUCCESS;
     if (MATCH_SCSI_CONFIG(uNumQueues))
-    {
         SCSI_CONFIG_ACCESSOR_READONLY(uNumQueues);
-    }
     else
     if (MATCH_SCSI_CONFIG(uSegMax))
-    {
         SCSI_CONFIG_ACCESSOR_READONLY(uSegMax);
-    }
     else
     if (MATCH_SCSI_CONFIG(uMaxSectors))
-    {
         SCSI_CONFIG_ACCESSOR_READONLY(uMaxSectors);
-    }
     else
     if (MATCH_SCSI_CONFIG(uCmdPerLun))
-    {
         SCSI_CONFIG_ACCESSOR_READONLY(uCmdPerLun);
-    }
     else
     if (MATCH_SCSI_CONFIG(uEventInfoSize))
-    {
         SCSI_CONFIG_ACCESSOR_READONLY(uEventInfoSize);
-    }
     else
     if (MATCH_SCSI_CONFIG(uSenseSize))
-    {
         SCSI_CONFIG_ACCESSOR(uSenseSize);
-    }
     else
     if (MATCH_SCSI_CONFIG(uCdbSize))
-    {
         SCSI_CONFIG_ACCESSOR(uCdbSize);
-    }
     else
     if (MATCH_SCSI_CONFIG(uMaxChannel))
-    {
         SCSI_CONFIG_ACCESSOR_READONLY(uMaxChannel);
-    }
     else
     if (MATCH_SCSI_CONFIG(uMaxTarget))
-    {
         SCSI_CONFIG_ACCESSOR_READONLY(uMaxTarget);
-    }
     else
     if (MATCH_SCSI_CONFIG(uMaxLun))
-    {
         SCSI_CONFIG_ACCESSOR_READONLY(uMaxLun);
-    }
     else
     {
         LogFunc(("Bad access by guest to virtio_scsi_config: uoff=%d, cb=%d\n", uOffset, cb));
@@ -2109,7 +2091,7 @@ static DECLCALLBACK(int) virtioScsiDestruct(PPDMDEVINS pDevIns)
 
     PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
-    for (int qIdx = 0; qIdx < VIRTQ_MAX_CNT; qIdx++)
+    for (int qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
     {
         PWORKER pWorker = &pThis->aWorker[qIdx];
         if (pWorker->hEvtProcess != NIL_SUPSEMEVENT)

@@ -299,6 +299,7 @@ typedef struct virt_used
                                pv, cb, uIntraOff, fWrite, true, idx);
 
 #define COMMON_CFG_ACCESSOR(member) \
+    do \
     { \
         uint32_t uIntraOff = uOffset - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
@@ -306,9 +307,10 @@ typedef struct virt_used
         else \
             memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + uIntraOff), cb); \
         LOG_COMMON_CFG_ACCESS(member); \
-    }
+    } while(0)
 
 #define COMMON_CFG_ACCESSOR_INDEXED(member, idx) \
+    do \
     { \
         uint32_t uIntraOff = uOffset - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
@@ -316,9 +318,10 @@ typedef struct virt_used
         else \
             memcpy((char *)pv, (const char *)(((char *)(pVirtio->member + idx)) + uIntraOff), cb); \
         LOG_COMMON_CFG_ACCESS_INDEXED(member, idx); \
-    }
+    } while(0)
 
 #define COMMON_CFG_ACCESSOR_READONLY(member) \
+    do \
     { \
         uint32_t uIntraOff = uOffset - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
@@ -328,9 +331,10 @@ typedef struct virt_used
             memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + uIntraOff), cb); \
             LOG_COMMON_CFG_ACCESS(member); \
         } \
-    }
+    } while(0)
 
 #define COMMON_CFG_ACCESSOR_INDEXED_READONLY(member, idx) \
+    do \
     { \
         uint32_t uIntraOff = uOffset - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
@@ -340,7 +344,7 @@ typedef struct virt_used
             memcpy((char *)pv, ((char *)(pVirtio->member + idx)) + uIntraOff, cb); \
             LOG_COMMON_CFG_ACCESS_INDEXED(member, idx); \
         } \
-    }
+    } while(0)
 
 #define DRIVER_OK(pVirtio) (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
 
