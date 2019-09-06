@@ -128,7 +128,7 @@ struct my_tm
     int32_t tm_yday;
 };
 
-#if 0 /* new / old style device selector */
+#if 1 /* new / old style device selector */
 
 typedef struct RTCSTATE
 {
@@ -1204,7 +1204,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register I/O ports.
      */
-    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->IOPortBase, 4, rtcIOPortWrite, rtcIOPortRead, NULL /*pvUser*/,
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->IOPortBase, 4, rtcIOPortWrite, rtcIOPortRead,
                                      "MC146818 RTC/CMOS", &pThis->hIoPorts);
     AssertRCReturn(rc, rc);
 
