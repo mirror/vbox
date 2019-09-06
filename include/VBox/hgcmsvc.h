@@ -465,10 +465,12 @@ DECLINLINE(void) HGCMSvcSetRTCStr(VBOXHGCMSVCPARM *pParm, const RTCString &rStri
  */
 DECLINLINE(int) HGCMSvcSSMR3Put(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
 {
+    int rc;
+
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(pSSM,  VERR_INVALID_POINTER);
 
-    int rc = SSMR3PutU32(pSSM, sizeof(VBOXHGCMSVCPARM));
+    rc = SSMR3PutU32(pSSM, sizeof(VBOXHGCMSVCPARM));
     AssertRCReturn(rc, rc);
     rc = SSMR3PutU32(pSSM, pParm->type);
     AssertRCReturn(rc, rc);
@@ -504,11 +506,13 @@ DECLINLINE(int) HGCMSvcSSMR3Put(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
  */
 DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
 {
+    uint32_t cbParm;
+    int rc;
+
     AssertPtrReturn(pParm, VERR_INVALID_POINTER);
     AssertPtrReturn(pSSM,  VERR_INVALID_POINTER);
 
-    uint32_t cbParm;
-    int rc = SSMR3GetU32(pSSM, &cbParm);
+    rc = SSMR3GetU32(pSSM, &cbParm);
     AssertRCReturn(rc, rc);
     AssertReturn(cbParm == sizeof(VBOXHGCMSVCPARM), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
