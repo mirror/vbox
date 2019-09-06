@@ -36,8 +36,11 @@
 #include <VBox/types.h>
 #include <iprt/err.h>
 #ifdef IN_RING3
+# include <iprt/mem.h>
+# include <VBox/err.h>
 # include <VBox/vmm/stam.h>
 # include <VBox/vmm/dbgf.h>
+# include <VBox/vmm/ssm.h>
 #endif
 #ifdef VBOX_TEST_HGCM_PARMS
 # include <iprt/test.h>
@@ -451,6 +454,111 @@ DECLINLINE(void) HGCMSvcSetRTCStr(VBOXHGCMSVCPARM *pParm, const RTCString &rStri
 }
 # endif
 #endif
+
+#ifdef IN_RING3
+/**
+ * Puts (serializes) a VBOXHGCMSVCPARM struct into SSM.
+ *
+ * @returns VBox status code.
+ * @param   pParm               VBOXHGCMSVCPARM to serialize.
+ * @param   pSSM                SSM handle to serialize to.
+ */
+DECLINLINE(int) HGCMSvcSSMR3Put(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
+{
+    AssertPtrReturn(pParm, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSSM,  VERR_INVALID_POINTER);
+
+    int rc = SSMR3PutU32(pSSM, sizeof(VBOXHGCMSVCPARM));
+    AssertRCReturn(rc, rc);
+    rc = SSMR3PutU32(pSSM, pParm->type);
+    AssertRCReturn(rc, rc);
+
+    switch (pParm->type)
+    {
+        case VBOX_HGCM_SVC_PARM_32BIT:
+            rc = SSMR3PutU32(pSSM, pParm->u.uint32);
+            break;
+        case VBOX_HGCM_SVC_PARM_64BIT:
+            rc = SSMR3PutU32(pSSM, pParm->u.uint64);
+            break;
+        case VBOX_HGCM_SVC_PARM_PTR:
+            rc = SSMR3PutU32(pSSM, pParm->u.pointer.size);
+            if (RT_SUCCESS(rc))
+                rc = SSMR3PutMem(pSSM, pParm->u.pointer.addr, pParm->u.pointer.size);
+            break;
+        default:
+            AssertMsgFailed(("Paramter type %RU32 not implemented yet\n", pParm->type));
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    return rc;
+}
+
+/**
+ * Gets (loads) a VBOXHGCMSVCPARM struct from SSM.
+ *
+ * @returns VBox status code.
+ * @param   pParm               VBOXHGCMSVCPARM to load into. Must be initialied (zero-ed) properly.
+ * @param   pSSM                SSM handle to load from.
+ */
+DECLINLINE(int) HGCMSvcSSMR3Get(VBOXHGCMSVCPARM *pParm, PSSMHANDLE pSSM)
+{
+    AssertPtrReturn(pParm, VERR_INVALID_POINTER);
+    AssertPtrReturn(pSSM,  VERR_INVALID_POINTER);
+
+    uint32_t cbParm;
+    int rc = SSMR3GetU32(pSSM, &cbParm);
+    AssertRCReturn(rc, rc);
+    AssertReturn(cbParm == sizeof(VBOXHGCMSVCPARM), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
+
+    rc = SSMR3GetU32(pSSM, &pParm->type);
+    AssertRCReturn(rc, rc);
+
+    switch (pParm->type)
+    {
+        case VBOX_HGCM_SVC_PARM_32BIT:
+        {
+            rc = SSMR3GetU32(pSSM, &pParm->u.uint32);
+            AssertRCReturn(rc, rc);
+            break;
+        }
+
+        case VBOX_HGCM_SVC_PARM_64BIT:
+        {
+            rc = SSMR3GetU64(pSSM, &pParm->u.uint64);
+            AssertRCReturn(rc, rc);
+            break;
+        }
+
+        case VBOX_HGCM_SVC_PARM_PTR:
+        {
+            AssertMsgReturn(pParm->u.pointer.size == 0,
+                            ("Pointer size parameter already in use (or not initialized)\n"), VERR_INVALID_PARAMETER);
+
+            rc = SSMR3GetU32(pSSM, &pParm->u.pointer.size);
+            AssertRCReturn(rc, rc);
+
+            AssertMsgReturn(pParm->u.pointer.addr == NULL,
+                            ("Pointer parameter already in use (or not initialized)\n"), VERR_INVALID_PARAMETER);
+
+            pParm->u.pointer.addr = RTMemAlloc(pParm->u.pointer.size);
+            AssertPtrReturn(pParm->u.pointer.addr, VERR_NO_MEMORY);
+            rc = SSMR3GetMem(pSSM, pParm->u.pointer.addr, pParm->u.pointer.size);
+
+            AssertRCReturn(rc, rc);
+            break;
+        }
+
+        default:
+            AssertMsgFailed(("Paramter type %RU32 not implemented yet\n", pParm->type));
+            rc = VERR_NOT_IMPLEMENTED;
+            break;
+    }
+
+    return VINF_SUCCESS;
+}
+#endif /* IN_RING3 */
 
 typedef VBOXHGCMSVCPARM *PVBOXHGCMSVCPARM;
 
