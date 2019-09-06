@@ -1864,6 +1864,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     return VINF_SUCCESS;
 }
 
+#ifndef UNIT_TEST
 static int svcLoadStateV0(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
 {
     RT_NOREF(u32ClientID, pvClient, pSSM, uVersion);
@@ -1896,6 +1897,7 @@ static int svcLoadStateV0(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM,
 
     return VINF_SUCCESS;
 }
+#endif /* UNIT_TEST */
 
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
 {
