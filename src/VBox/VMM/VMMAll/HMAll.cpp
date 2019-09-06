@@ -855,10 +855,11 @@ VMM_INT_DECL(void) HMGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pHwvirtMsrs, PSVMM
  */
 VMM_INT_DECL(const char *) HMGetVmxExitName(uint32_t uExit)
 {
-    if (uExit <= MAX_EXITREASON_VTX)
+    uint16_t const uReason = VMX_EXIT_REASON_BASIC(uExit);
+    if (uReason <= MAX_EXITREASON_VTX)
     {
-        Assert(uExit < RT_ELEMENTS(g_apszVmxExitReasons));
-        return g_apszVmxExitReasons[uExit];
+        Assert(uReason < RT_ELEMENTS(g_apszVmxExitReasons));
+        return g_apszVmxExitReasons[uReason];
     }
     return NULL;
 }
