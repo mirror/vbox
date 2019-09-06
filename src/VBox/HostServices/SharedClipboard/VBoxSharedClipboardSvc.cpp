@@ -1771,6 +1771,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
     return rc;
 }
 
+#ifndef UNIT_TEST
 /**
  * SSM descriptor table for the VBOXCLIPBOARDCLIENTSTATE structure.
  */
@@ -1810,6 +1811,7 @@ static SSMFIELD const s_aShClSSMClientMsgCtx[] =
     SSMFIELD_ENTRY(VBOXSHCLMSGCTX, uContextID),
     SSMFIELD_ENTRY_TERM()
 };
+#endif /* !UNIT_TEST */
 
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
