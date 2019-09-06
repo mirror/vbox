@@ -1700,6 +1700,8 @@ static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientSt
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     pClientState->URI.fTransferStart = false;
     pClientState->URI.enmTransferDir = SHAREDCLIPBOARDURITRANSFERDIR_UNKNOWN;
+#else
+    RT_NOREF(pClientState);
 #endif
 }
 
