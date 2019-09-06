@@ -108,7 +108,7 @@ void UIMouseHandler::prepareListener(ulong uIndex, UIMachineWindow *pMachineWind
         /* Install event-filter for machine-view: */
         m_views[uIndex]->installEventFilter(this);
         /* Make machine-view notify mouse-handler about frame-buffer resize: */
-        connect(m_views[uIndex], SIGNAL(sigFrameBufferResize()), this, SLOT(sltMousePointerShapeChanged()));
+        connect(m_views[uIndex], &UIMachineView::sigFrameBufferResize, this, &UIMouseHandler::sltMousePointerShapeChanged);
     }
 
     /* If that viewport is NOT registered yet: */
@@ -517,14 +517,14 @@ UIMouseHandler::UIMouseHandler(UIMachineLogic *pMachineLogic)
 #endif
 {
     /* Machine state-change updater: */
-    connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
+    connect(uisession(), &UISession::sigMachineStateChange, this, &UIMouseHandler::sltMachineStateChanged);
 
     /* Mouse capability state-change updater: */
-    connect(uisession(), SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
+    connect(uisession(), &UISession::sigMouseCapabilityChange, this, &UIMouseHandler::sltMouseCapabilityChanged);
 
     /* Mouse pointer shape state-change updaters: */
-    connect(uisession(), SIGNAL(sigMousePointerShapeChange()), this, SLOT(sltMousePointerShapeChanged()));
-    connect(this, SIGNAL(sigStateChange(int)), this, SLOT(sltMousePointerShapeChanged()));
+    connect(uisession(), &UISession::sigMousePointerShapeChange, this, &UIMouseHandler::sltMousePointerShapeChanged);
+    connect(this, &UIMouseHandler::sigStateChange, this, &UIMouseHandler::sltMousePointerShapeChanged);
 
     /* Mouse cursor position state-change updater: */
     connect(uisession(), &UISession::sigCursorPositionChange, this, &UIMouseHandler::sltMousePointerShapeChanged);

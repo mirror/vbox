@@ -1382,17 +1382,17 @@ void UIFrameBufferPrivate::sltCursorPositionChange()
 void UIFrameBufferPrivate::prepareConnections()
 {
     /* Attach EMT connections: */
-    connect(this, SIGNAL(sigNotifyChange(int, int)),
-            m_pMachineView, SLOT(sltHandleNotifyChange(int, int)),
+    connect(this, &UIFrameBufferPrivate::sigNotifyChange,
+            m_pMachineView, &UIMachineView::sltHandleNotifyChange,
             Qt::QueuedConnection);
-    connect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
-            m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)),
+    connect(this, &UIFrameBufferPrivate::sigNotifyUpdate,
+            m_pMachineView, &UIMachineView::sltHandleNotifyUpdate,
             Qt::QueuedConnection);
-    connect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
-            m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)),
+    connect(this, &UIFrameBufferPrivate::sigSetVisibleRegion,
+            m_pMachineView, &UIMachineView::sltHandleSetVisibleRegion,
             Qt::QueuedConnection);
-    connect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
-            m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)),
+    connect(this, &UIFrameBufferPrivate::sigNotifyAbout3DOverlayVisibilityChange,
+            m_pMachineView, &UIMachineView::sltHandle3DOverlayVisibilityChange,
             Qt::QueuedConnection);
 
     /* Attach GUI connections: */
@@ -1405,14 +1405,14 @@ void UIFrameBufferPrivate::prepareConnections()
 void UIFrameBufferPrivate::cleanupConnections()
 {
     /* Detach EMT connections: */
-    disconnect(this, SIGNAL(sigNotifyChange(int, int)),
-               m_pMachineView, SLOT(sltHandleNotifyChange(int, int)));
-    disconnect(this, SIGNAL(sigNotifyUpdate(int, int, int, int)),
-               m_pMachineView, SLOT(sltHandleNotifyUpdate(int, int, int, int)));
-    disconnect(this, SIGNAL(sigSetVisibleRegion(QRegion)),
-               m_pMachineView, SLOT(sltHandleSetVisibleRegion(QRegion)));
-    disconnect(this, SIGNAL(sigNotifyAbout3DOverlayVisibilityChange(bool)),
-               m_pMachineView, SLOT(sltHandle3DOverlayVisibilityChange(bool)));
+    disconnect(this, &UIFrameBufferPrivate::sigNotifyChange,
+               m_pMachineView, &UIMachineView::sltHandleNotifyChange);
+    disconnect(this, &UIFrameBufferPrivate::sigNotifyUpdate,
+               m_pMachineView, &UIMachineView::sltHandleNotifyUpdate);
+    disconnect(this, &UIFrameBufferPrivate::sigSetVisibleRegion,
+               m_pMachineView, &UIMachineView::sltHandleSetVisibleRegion);
+    disconnect(this, &UIFrameBufferPrivate::sigNotifyAbout3DOverlayVisibilityChange,
+               m_pMachineView, &UIMachineView::sltHandle3DOverlayVisibilityChange);
 
     /* Detach GUI connections: */
     disconnect(m_pMachineView->uisession(), &UISession::sigCursorPositionChange,
@@ -1904,4 +1904,3 @@ void UIFrameBuffer::viewportScrolled(int iX, int iY)
 #endif /* VBOX_WITH_VIDEOHWACCEL */
 
 #include "UIFrameBuffer.moc"
-

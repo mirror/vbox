@@ -464,7 +464,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pCloseEvent)
 void UIMachineWindow::prepareSessionConnections()
 {
     /* We should watch for console events: */
-    connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
+    connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineWindow::sltMachineStateChanged);
 }
 
 void UIMachineWindow::prepareMainLayout()
@@ -510,7 +510,7 @@ void UIMachineWindow::prepareMachineView()
                                            );
 
     /* Listen for frame-buffer resize: */
-    connect(m_pMachineView, SIGNAL(sigFrameBufferResize()), this, SIGNAL(sigFrameBufferResize()));
+    connect(m_pMachineView, &UIMachineView::sigFrameBufferResize, this, &UIMachineWindow::sigFrameBufferResize);
 
     /* Add machine-view into main-layout: */
     m_pMainLayout->addWidget(m_pMachineView, 1, 1, viewAlignment(visualStateType));
@@ -547,7 +547,7 @@ void UIMachineWindow::cleanupMachineView()
 void UIMachineWindow::cleanupSessionConnections()
 {
     /* We should stop watching for console events: */
-    disconnect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
+    disconnect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineWindow::sltMachineStateChanged);
 }
 
 void UIMachineWindow::updateAppearanceOf(int iElement)
