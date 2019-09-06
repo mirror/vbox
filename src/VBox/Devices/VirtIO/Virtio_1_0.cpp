@@ -34,9 +34,8 @@
 
 #define INSTANCE(pVirtio) pVirtio->szInstance
 #define QUEUENAME(qIdx) (pVirtio->virtqProxy[qIdx].szVirtqName)
-#define CBQUEUENAME(qIdx) RTStrNLen(QUEUENAME(qIdx), sizeof(QUEUENAME(qIdx)))
-/**
 
+/**
  * Formats the logging of a memory-mapped I/O input or output value
  *
  * @param   pszFunc     - To avoid displaying this function's name via __FUNCTION__ or Log2Func()

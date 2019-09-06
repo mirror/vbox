@@ -184,8 +184,8 @@ int virtioQueueDetach(VIRTIOHANDLE hVirtio, uint16_t qIdx);
 const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx);
 
 /**
- * Removes descriptor [chain] from queue and converts it to scatter/gather data
- * in the vector whose pointer was returned from VirtioQueueAttach.
+ * Removes descriptor chain from avail ring of indicated queue and converts it to
+ * scatter/gather buffer (whose segments contain guest phys. data pointers)
  *
  * @param hVirtio   - Handle for VirtIO framework
  * @param qIdx      - Queue number
@@ -212,9 +212,12 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove, PPRTSGBUF 
 int virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPRTSGBUF ppInSegs, PPRTSGBUF ppOutSegs);
 
 /**
- * Writes scatter/gather segment contained in queue's bufVec.aSegsIn[] array to
- * physical memory assigned by the guest driver. The data won't be seen by the
- * driver until the next virtioQueueSync() call.
+ * Writes a scatter/gather buffer (whose segments point to virtual memory) to next
+ * available descriptor chain (consisting of segments pointing to guest phys. memory),
+ * for the indicated virtq. The data won't be seen by the guest until the next
+ * client call to virtioQueueSync(), which puts aforementioned descriptor
+ * chain's head index on the indicated virtq's used ring (see VirtIO 1.0
+ * specification, Section 2.4 "Virtqueues").
  *
  * @param hVirtio   - Handle for VirtIO framework
  * @param qIdx      - Queue number
@@ -232,12 +235,14 @@ int virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPRTSGBUF ppInSegs, PPR
 int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fFence);
 
 /**
- * Updates virtq's "used ring" descriptor index to match the current bufVec's
- * index, thus exposing the data added to the used ring by all virtioQueuePut()
- * calls since the last sync. This should be called after one or more virtQueuePut()
- * calls to inform the guest driver there is data in the queue. Explicit
- * notifications will be sent to the guest depending on VirtIO features negotiated
- * and conditions.
+ * Updates the indicated virtq's "used ring" descriptor index to match the
+ * current write-head index, thus exposing the data added to the used ring by all
+ * virtioQueuePut() calls since the last sync. This should be called after one or
+ * more virtQueuePut() calls to inform the guest driver there is data in the queue.
+ * Explicit notifications (e.g. interrupt or MSI-X) will be sent to the guest,
+ * depending on VirtIO features negotiated and conditions, otherwise the guest
+ * will detect the update by polling. (see VirtIO 1.0
+ * specification, Section 2.4 "Virtqueues").
  *
  * @param hVirtio   - Handle for VirtIO framework
  * @param qIdx      - Queue number
@@ -305,12 +310,13 @@ int  virtioConstruct(PPDMDEVINS             pDevIns,
 
 /**
  * Log memory-mapped I/O input or output value.
+ *
  * This is designed to be invoked by macros that can make contextual assumptions
- * (e.g. implicitly derive some of the parameters). It is exposed for the VirtIO
- * client doing the device-specific implementation in order to log in a similar fashion
- * accesses to the device-specific MMIO configuration structure. Macros that leverage
- * this function are in Virtio_1_0_impl.h and can be used as an example of how to use
- * this effectively for the device-specific code.
+ * (e.g. implicitly derive MACRO parameters from the invoking function). It is exposed
+ * for the VirtIO client doing the device-specific implementation in order to log in a
+ * similar fashion accesses to the device-specific MMIO configuration structure. Macros
+ * that leverage this function are in Virtio_1_0_impl.h and can be used as an example
+ * of how to use this effectively for the device-specific code.
  *
  * @param   pszFunc     - To avoid displaying this function's name via __FUNCTION__ or LogFunc()
  * @param   pszMember   - Name of struct member
