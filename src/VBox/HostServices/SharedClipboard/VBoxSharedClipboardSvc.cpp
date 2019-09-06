@@ -1772,6 +1772,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
     return rc;
 }
 
+#ifndef UNIT_TEST
 /**
  * SSM descriptor table for the VBOXCLIPBOARDCLIENTSTATEOLD structure.
  * Legacy, do not use anymore.
@@ -1785,6 +1786,7 @@ static SSMFIELD const g_aClipboardSSMFieldsV0[] =
     SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATEOLD, u32RequestedFormat),
     SSMFIELD_ENTRY_TERM()
 };
+#endif
 
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
