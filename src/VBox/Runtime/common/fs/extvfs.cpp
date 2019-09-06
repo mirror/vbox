@@ -1196,7 +1196,7 @@ static int rtFsExtInodeLoad(PRTFSEXTVOL pThis, uint32_t iInode, PRTFSEXTINODE *p
             if (RT_SUCCESS(rc))
             {
                 bool fIns = RTAvlU32Insert(&pThis->InodeRoot, &pInode->Core);
-                Assert(fIns);
+                Assert(fIns); RT_NOREF(fIns);
             }
         }
         else
