@@ -1227,6 +1227,7 @@ VMMR3DECL(int)  STAMR3RegisterRefreshV(PUVM pUVM, void *pvSample, STAMTYPE enmTy
 VMMR3DECL(int)  STAMR3Deregister(PUVM pUVM, const char *pszPat);
 VMMR3DECL(int)  STAMR3DeregisterF(PUVM pUVM, const char *pszPatFmt, ...) RT_IPRT_FORMAT_ATTR(2, 3);
 VMMR3DECL(int)  STAMR3DeregisterV(PUVM pUVM, const char *pszPatFmt, va_list va) RT_IPRT_FORMAT_ATTR(2, 0);
+VMMR3DECL(int)  STAMR3DeregisterByPrefix(PUVM pUVM, const char *pszPrefix);
 VMMR3DECL(int)  STAMR3DeregisterByAddr(PUVM pUVM, void *pvSample);
 
 VMMR3DECL(int)  STAMR3Reset(PUVM pUVM, const char *pszPat);

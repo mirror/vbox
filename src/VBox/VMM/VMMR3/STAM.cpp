@@ -1127,6 +1127,66 @@ static PSTAMDESC stamR3LookupFindPatternDescRange(PSTAMLOOKUP pRoot, PRTLISTANCH
 
 
 /**
+ * Look up the first descriptors for starts-with name string.
+ *
+ * This is used to optimize deletion.
+ *
+ * @returns Pointer to the first descriptor in the range.
+ * @param   pRoot               The root node.
+ * @param   pchPrefix           The name prefix.
+ * @param   cchPrefix           The name prefix length (can be shorter than the
+ *                              actual string).
+ * @sa      stamR3LookupFindPatternDescRange
+ */
+static PSTAMDESC stamR3LookupFindFirstByPrefix(PSTAMLOOKUP pRoot, const char *pchPrefix, uint32_t cchPrefix)
+{
+    Assert(!pRoot->pParent);
+
+    /*
+     * All statistics starts with a slash.
+     */
+    while (   cchPrefix > 0
+           && *pchPrefix == '/'
+           && pRoot->cDescsInTree > 0
+           && pRoot->cChildren    > 0)
+    {
+        cchPrefix -= 1;
+        pchPrefix += 1;
+
+        const char *pszEnd = (const char *)memchr(pchPrefix, '/', cchPrefix);
+        if (!pszEnd)
+        {
+            /* We've narrowed it down to a sub-tree now. */
+            for (size_t i = 0; i < pRoot->cChildren; i++)
+            {
+                PSTAMLOOKUP pCur = pRoot->papChildren[i];
+                if (pCur->cch >= cchPrefix)
+                {
+                    int iDiff = memcmp(pCur->szName, pchPrefix, cchPrefix);
+                    if (iDiff == 0)
+                        return stamR3LookupFindFirstDescForRange(pCur, pRoot->papChildren[pRoot->cChildren - 1]);
+                    if (iDiff > 0)
+                        break;
+                }
+            }
+            break;
+        }
+
+        uint32_t    cchElement = pszEnd - pchPrefix;
+        PSTAMLOOKUP pChild = stamR3LookupFindChild(pRoot, pchPrefix, cchElement, NULL);
+        if (!pChild)
+            break;
+
+        /* Advance */
+        cchPrefix -= cchElement;
+        pchPrefix  = pszEnd;
+        pRoot      = pChild;
+    }
+    return NULL;
+}
+
+
+/**
  * Increments the cDescInTree member of the given node an all ancestors.
  *
  * @param   pLookup             The lookup node.
@@ -1666,6 +1726,47 @@ VMMR3DECL(int)  STAMR3DeregisterV(PUVM pUVM, const char *pszPatFmt, va_list va)
     AssertReturn(cchPat <= STAM_MAX_NAME_LEN, VERR_OUT_OF_RANGE);
 
     return stamR3DeregisterByPattern(pUVM, szPat);
+}
+
+
+/**
+ * Deregister zero or more samples given their name prefix.
+ *
+ * @returns VBox status code.
+ * @param   pUVM        Pointer to the user mode VM structure.
+ * @param   pszPrefix   The name prefix of the samples to remove.
+ * @sa      STAMR3Deregister, STAMR3DeregisterF, STAMR3DeregisterV
+ */
+VMMR3DECL(int)  STAMR3DeregisterByPrefix(PUVM pUVM, const char *pszPrefix)
+{
+    UVM_ASSERT_VALID_EXT_RETURN(pUVM, VERR_INVALID_VM_HANDLE);
+
+    /* This is a complete waste of time when shutting down. */
+    VMSTATE enmState = VMR3GetStateU(pUVM);
+    if (enmState >= VMSTATE_DESTROYING)
+        return VINF_SUCCESS;
+
+    size_t const cchPrefix = strlen(pszPrefix);
+    int          rc        = VWRN_NOT_FOUND;
+    STAM_LOCK_WR(pUVM);
+
+    PSTAMDESC pCur = stamR3LookupFindFirstByPrefix(pUVM->stam.s.pRoot, pszPrefix, (uint32_t)cchPrefix);
+    while (pCur)
+    {
+        PSTAMDESC const pNext   = RTListNodeGetNext(&pCur->ListEntry, STAMDESC, ListEntry);
+        size_t const    cchName = strlen(pCur->pszName);
+        if (   cchName >= cchPrefix
+            && memcmp(pCur->pszName, pszPrefix, cchPrefix) == 0)
+            rc = stamR3DestroyDesc(pCur);
+        else
+            break;
+
+        /* advance. */
+        pCur = pNext;
+    }
+
+    STAM_UNLOCK_WR(pUVM);
+    return rc;
 }
 
 
