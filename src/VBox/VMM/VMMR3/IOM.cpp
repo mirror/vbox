@@ -137,6 +137,10 @@ static void iomR3FlushCache(PVM pVM);
 static DECLCALLBACK(int) iomR3RelocateIOPortCallback(PAVLROIOPORTNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) iomR3RelocateMMIOCallback(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 #endif
+#ifdef VBOX_WITH_STATISTICS
+static void iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry);
+static void iomR3IoPortDeregStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry, unsigned uPort);
+#endif
 static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) iomR3MMIOInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static FNIOMIOPORTIN        iomR3IOPortDummyIn;
@@ -243,6 +247,33 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
 
     LogFlow(("IOMR3Init: returns %Rrc\n", rc));
     return rc;
+}
+
+
+/**
+ * Called when a VM initialization stage is completed.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The cross context VM structure.
+ * @param   enmWhat         The initialization state that was completed.
+ */
+VMMR3_INT_DECL(int) IOMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
+{
+#ifdef VBOX_WITH_STATISTICS
+    if (enmWhat == VMINITCOMPLETED_RING3)
+    {
+        for (uint32_t i = 0; i < pVM->iom.s.cIoPortRegs; i++)
+        {
+            PIOMIOPORTENTRYR3 pRegEntry = &pVM->iom.s.paIoPortRegs[i];
+            if (   pRegEntry->fMapped
+                && pRegEntry->idxStats != UINT16_MAX)
+                iomR3IoPortRegStats(pVM, pRegEntry);
+        }
+    }
+#else
+    RT_NOREF(pVM, enmWhat);
+#endif
+    return VINF_SUCCESS;
 }
 
 
@@ -589,6 +620,13 @@ VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE
         pRegEntry->uPort   = uPort;
         pRegEntry->fMapped = true;
 
+#ifdef VBOX_WITH_STATISTICS
+        /* Don't register stats here when we're creating the VM as the
+           statistics table may still be reallocated. */
+        if (pVM->enmVMState >= VMSTATE_CREATED)
+            iomR3IoPortRegStats(pVM, pRegEntry);
+#endif
+
 #ifdef VBOX_STRICT
         /*
          * Assert table sanity.
@@ -676,6 +714,9 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
             {
                 Assert(pEntry->uFirstPort == uPort);
                 Assert(pEntry->uLastPort == uLastPort);
+#ifdef VBOX_WITH_STATISTICS
+                iomR3IoPortDeregStats(pVM, pRegEntry, uPort);
+#endif
                 if (i + 1 < cEntries)
                     memmove(pEntry, pEntry + 1, sizeof(*pEntry) * (cEntries - i - 1));
                 pVM->iom.s.cIoPortLookupEntries = cEntries - 1;
@@ -723,7 +764,74 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
     return rc;
 }
 
+#ifdef VBOX_WITH_STATISTICS
 
+/**
+ * Register statistics for an I/O port entry.
+ */
+static void iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry)
+{
+    PIOMIOPORTSTATSENTRY pStats   = &pVM->iom.s.paIoPortStats[pRegEntry->idxStats];
+    const char * const   pszDesc  = pRegEntry->pszDesc;
+    unsigned             uPort    = pRegEntry->uPort;
+    unsigned const       uEndPort = uPort + (unsigned)pRegEntry->cPorts;
+    do
+    {
+        char   szName[80];
+        size_t cchBaseNm = RTStrPrintf(szName, sizeof(szName), "/IOM/NewStylePorts/%04x-", uPort);
+        int    rc;
+
+# define SET_NM_SUFFIX(a_sz) memcpy(&szName[cchBaseNm], a_sz, sizeof(a_sz));
+
+        /* register the statistics counters. */
+        SET_NM_SUFFIX("In-R3");
+        rc = STAMR3Register(pVM, &pStats->InR3,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("Out-R3");
+        rc = STAMR3Register(pVM, &pStats->OutR3,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("In-RZ");
+        rc = STAMR3Register(pVM, &pStats->InRZ,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("Out-RZ");
+        rc = STAMR3Register(pVM, &pStats->OutRZ,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("In-RZtoR3");
+        rc = STAMR3Register(pVM, &pStats->InRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("Out-RZtoR3");
+        rc = STAMR3Register(pVM, &pStats->OutRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+
+        /* Profiling */
+        SET_NM_SUFFIX("In-R3/Prof");
+        rc = STAMR3Register(pVM, &pStats->ProfInR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("Out-R3/Prof");
+        rc = STAMR3Register(pVM, &pStats->ProfOutR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("In-RZ/Prof");
+        rc = STAMR3Register(pVM, &pStats->ProfInRZ,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("Out-RZ/Prof");
+        rc = STAMR3Register(pVM, &pStats->ProfOutRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc); AssertRC(rc);
+
+        pStats++;
+        uPort++;
+    } while (uPort < uEndPort);
+}
+
+
+/**
+ * Deregister statistics for an I/O port entry.
+ */
+static void iomR3IoPortDeregStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry, unsigned uPort)
+{
+    PIOMIOPORTSTATSENTRY pStats   = &pVM->iom.s.paIoPortStats[pRegEntry->idxStats];
+    unsigned const       uEndPort = uPort + (unsigned)pRegEntry->cPorts;
+    do
+    {
+        char szPrefix[80];
+        RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewStylePorts/%04x-", uPort);
+        STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
+
+        pStats++;
+        uPort++;
+    } while (uPort < uEndPort);
+}
+
+#endif /* VBOX_WITH_STATISTICS */
 #ifdef VBOX_WITH_STATISTICS
 
 /**

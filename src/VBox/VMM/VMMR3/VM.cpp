@@ -1041,6 +1041,8 @@ static int vmR3InitDoCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
         rc = CPUMR3InitCompleted(pVM, enmWhat);
     if (RT_SUCCESS(rc))
         rc = EMR3InitCompleted(pVM, enmWhat);
+    if (RT_SUCCESS(rc))
+        rc = IOMR3InitCompleted(pVM, enmWhat);
     if (enmWhat == VMINITCOMPLETED_RING3)
     {
 #ifndef VBOX_WITH_REM

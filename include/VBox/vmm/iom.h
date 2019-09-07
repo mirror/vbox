@@ -312,6 +312,7 @@ VMMDECL(bool)           IOMIsLockWriteOwner(PVM pVM);
  * @{
  */
 VMMR3_INT_DECL(int)  IOMR3Init(PVM pVM);
+VMMR3_INT_DECL(int)  IOMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat);
 VMMR3_INT_DECL(void) IOMR3Reset(PVM pVM);
 VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)  IOMR3Term(PVM pVM);
