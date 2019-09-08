@@ -999,7 +999,7 @@ static PSTAMDESC stamR3LookupFindFirstDescForRange(PSTAMLOOKUP pFirst, PSTAMLOOK
 
 
 /**
- * Finds the first sample descriptor for a given lookup range.
+ * Finds the last sample descriptor for a given lookup range.
  *
  * This is for pattern range lookups.
  *
@@ -1132,20 +1132,32 @@ static PSTAMDESC stamR3LookupFindPatternDescRange(PSTAMLOOKUP pRoot, PRTLISTANCH
  * This is used to optimize deletion.
  *
  * @returns Pointer to the first descriptor in the range.
- * @param   pRoot               The root node.
- * @param   pchPrefix           The name prefix.
- * @param   cchPrefix           The name prefix length (can be shorter than the
- *                              actual string).
+ * @param   pRoot       The root node.
+ * @param   pchPrefix   The name prefix.
+ * @param   cchPrefix   The name prefix length (can be shorter than the
+ *                      actual string).
+ * @param   ppLastDesc  Where to store the address of the last descriptor.
  * @sa      stamR3LookupFindPatternDescRange
  */
-static PSTAMDESC stamR3LookupFindFirstByPrefix(PSTAMLOOKUP pRoot, const char *pchPrefix, uint32_t cchPrefix)
+static PSTAMDESC stamR3LookupFindByPrefixRange(PSTAMLOOKUP pRoot, const char *pchPrefix, uint32_t cchPrefix,
+                                               PSTAMDESC *ppLastDesc)
+
 {
+    *ppLastDesc = NULL;
     Assert(!pRoot->pParent);
+    AssertReturn(cchPrefix > 0, NULL);
 
     /*
-     * All statistics starts with a slash.
+     * We start with a root slash.
      */
-    while (   cchPrefix > 0
+    if (!cchPrefix || *pchPrefix != '/')
+        return NULL;
+
+    /*
+     * Walk thru the prefix component by component, since that's how
+     * the lookup tree is organized.
+     */
+    while (   cchPrefix
            && *pchPrefix == '/'
            && pRoot->cDescsInTree > 0
            && pRoot->cChildren    > 0)
@@ -1156,29 +1168,118 @@ static PSTAMDESC stamR3LookupFindFirstByPrefix(PSTAMLOOKUP pRoot, const char *pc
         const char *pszEnd = (const char *)memchr(pchPrefix, '/', cchPrefix);
         if (!pszEnd)
         {
-            /* We've narrowed it down to a sub-tree now. */
-            for (size_t i = 0; i < pRoot->cChildren; i++)
+            /*
+             * We've narrowed it down to a sub-tree now.  If we've no more prefix to work
+             * with now (e.g. '/Devices/'), the prefix matches all the children.  Otherwise,
+             * traverse the children to find the ones matching the prefix.
+             */
+            if (!cchPrefix)
             {
-                PSTAMLOOKUP pCur = pRoot->papChildren[i];
-                if (pCur->cch >= cchPrefix)
+                *ppLastDesc = stamR3LookupFindLastDescForRange(pRoot->papChildren[0], pRoot->papChildren[pRoot->cChildren - 1]);
+                return stamR3LookupFindFirstDescForRange(pRoot->papChildren[0], pRoot->papChildren[pRoot->cChildren - 1]);
+            }
+
+            size_t iEnd = pRoot->cChildren;
+            if (iEnd < 16)
+            {
+                /* Linear scan of the children: */
+                for (size_t i = 0; i < pRoot->cChildren; i++)
                 {
-                    int iDiff = memcmp(pCur->szName, pchPrefix, cchPrefix);
-                    if (iDiff == 0)
-                        return stamR3LookupFindFirstDescForRange(pCur, pRoot->papChildren[pRoot->cChildren - 1]);
+                    PSTAMLOOKUP pCur = pRoot->papChildren[i];
+                    if (pCur->cch >= cchPrefix)
+                    {
+                        int iDiff = memcmp(pCur->szName, pchPrefix, cchPrefix);
+                        if (iDiff == 0)
+                        {
+                            size_t iLast = i;
+                            while (++iLast < pRoot->cChildren)
+                            {
+                                PSTAMLOOKUP pCur2 = pRoot->papChildren[iLast];
+                                if (   pCur2->cch < cchPrefix
+                                    || memcmp(pCur2->szName, pchPrefix, cchPrefix) != 0)
+                                    break;
+                            }
+                            iLast--;
+
+                            *ppLastDesc = stamR3LookupFindLastDescForRange(pCur, pRoot->papChildren[iLast]);
+                            return stamR3LookupFindFirstDescForRange(pCur, pRoot->papChildren[iLast]);
+                        }
+                        if (iDiff > 0)
+                            break;
+                    }
+                }
+            }
+            else
+            {
+                /* Binary search to find something matching the prefix, followed
+                   by a reverse scan to locate the first child: */
+                size_t iFirst = 0;
+                size_t i      = iEnd / 2;
+                for (;;)
+                {
+                    PSTAMLOOKUP pCur = pRoot->papChildren[i];
+                    int iDiff;
+                    if (pCur->cch >= cchPrefix)
+                        iDiff = memcmp(pCur->szName, pchPrefix, cchPrefix);
+                    else
+                    {
+                        iDiff = memcmp(pCur->szName, pchPrefix, pCur->cch);
+                        if (!iDiff)
+                            iDiff = 1;
+                    }
                     if (iDiff > 0)
-                        break;
+                    {
+                        if (iFirst < i)
+                            iEnd = i;
+                        else
+                            return NULL;
+                    }
+                    else if (iDiff < 0)
+                    {
+                        i += 1;
+                        if (i < iEnd)
+                            iFirst = i;
+                        else
+                            return NULL;
+                    }
+                    else
+                    {
+                        /* Match.  Reverse scan to find the first. */
+                        iFirst = i;
+                        while (   iFirst > 0
+                               && (pCur = pRoot->papChildren[iFirst - 1])->cch >= cchPrefix
+                               && memcmp(pCur->szName, pchPrefix, cchPrefix) == 0)
+                            iFirst--;
+
+                        /* Forward scan to find the last.*/
+                        size_t iLast = i;
+                        while (++iLast < pRoot->cChildren)
+                        {
+                            pCur = pRoot->papChildren[iLast];
+                            if (   pCur->cch < cchPrefix
+                                || memcmp(pCur->szName, pchPrefix, cchPrefix) != 0)
+                                break;
+                        }
+                        iLast--;
+
+                        *ppLastDesc = stamR3LookupFindLastDescForRange(pRoot->papChildren[iFirst], pRoot->papChildren[iLast]);
+                        return stamR3LookupFindFirstDescForRange(pRoot->papChildren[iFirst], pRoot->papChildren[iLast]);
+                    }
+
+                    i = iFirst + (iEnd - iFirst) / 2;
                 }
             }
             break;
         }
 
-        uint32_t    cchElement = pszEnd - pchPrefix;
-        PSTAMLOOKUP pChild = stamR3LookupFindChild(pRoot, pchPrefix, cchElement, NULL);
+        /* Find child matching the path component:  */
+        uint32_t    cchChild = pszEnd - pchPrefix;
+        PSTAMLOOKUP pChild   = stamR3LookupFindChild(pRoot, pchPrefix, cchChild, NULL);
         if (!pChild)
             break;
 
-        /* Advance */
-        cchPrefix -= cchElement;
+        /* Advance: */
+        cchPrefix -= cchChild;
         pchPrefix  = pszEnd;
         pRoot      = pChild;
     }
@@ -1750,20 +1851,21 @@ VMMR3DECL(int)  STAMR3DeregisterByPrefix(PUVM pUVM, const char *pszPrefix)
     int          rc        = VWRN_NOT_FOUND;
     STAM_LOCK_WR(pUVM);
 
-    PSTAMDESC pCur = stamR3LookupFindFirstByPrefix(pUVM->stam.s.pRoot, pszPrefix, (uint32_t)cchPrefix);
-    while (pCur)
-    {
-        PSTAMDESC const pNext   = RTListNodeGetNext(&pCur->ListEntry, STAMDESC, ListEntry);
-        size_t const    cchName = strlen(pCur->pszName);
-        if (   cchName >= cchPrefix
-            && memcmp(pCur->pszName, pszPrefix, cchPrefix) == 0)
-            rc = stamR3DestroyDesc(pCur);
-        else
-            break;
+    PSTAMDESC pLast;
+    PSTAMDESC pCur = stamR3LookupFindByPrefixRange(pUVM->stam.s.pRoot, pszPrefix, (uint32_t)cchPrefix, &pLast);
+    if (pCur)
+        for (;;)
+        {
+            PSTAMDESC const pNext = RTListNodeGetNext(&pCur->ListEntry, STAMDESC, ListEntry);
+            Assert(strncmp(pCur->pszName, pszPrefix, cchPrefix) == 0);
 
-        /* advance. */
-        pCur = pNext;
-    }
+            rc = stamR3DestroyDesc(pCur);
+
+            /* advance. */
+            if (pCur == pLast)
+                break;
+            pCur = pNext;
+        }
 
     STAM_UNLOCK_WR(pUVM);
     return rc;
@@ -2660,19 +2762,6 @@ DECLINLINE(void) stamR3Refresh(PUVM pUVM, PSTAMDESC pCur, uint64_t *pbmRefreshed
 
 
 /**
- * Checks if the string contains a pattern expression or not.
- *
- * @returns true / false.
- * @param   pszPat              The potential pattern.
- */
-static bool stamR3IsPattern(const char *pszPat)
-{
-    return strchr(pszPat, '*') != NULL
-        || strchr(pszPat, '?') != NULL;
-}
-
-
-/**
  * Match a name against an array of patterns.
  *
  * @returns true if it matches, false if it doesn't match.
@@ -2798,7 +2887,10 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
     {
         STAM_LOCK_RD(pUVM);
 #ifdef STAM_WITH_LOOKUP_TREE
-        if (!stamR3IsPattern(pszPat))
+        size_t const cchPat      = strlen(pszPat);
+        const char  *pszAsterisk = (const char *)memchr(pszPat, '*',  cchPat);
+        const char  *pszQuestion = (const char *)memchr(pszPat, '?',  cchPat);
+        if (!pszAsterisk && !pszQuestion)
         {
             pCur = stamR3LookupFindDesc(pUVM->stam.s.pRoot, pszPat);
             if (pCur)
@@ -2808,8 +2900,37 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
                 rc = pfnCallback(pCur, pvArg);
             }
         }
+        /* Is this a prefix expression where we can use the lookup tree to
+           efficiently figure out the exact range? */
+        else if (   pszAsterisk == &pszPat[cchPat - 1]
+                 && pszPat[0] == '/'
+                 && !pszQuestion)
+        {
+            PSTAMDESC pLast;
+            pCur = stamR3LookupFindByPrefixRange(pUVM->stam.s.pRoot, pszPat, (uint32_t)(cchPat - 1), &pLast);
+            if (pCur)
+            {
+                for (;;)
+                {
+                    Assert(strncmp(pCur->pszName, pszPat, cchPat - 1) == 0);
+                    if (fUpdateRing0)
+                        stamR3Refresh(pUVM, pCur, &bmRefreshedGroups);
+                    rc = pfnCallback(pCur, pvArg);
+                    if (rc)
+                        break;
+                    if (pCur == pLast)
+                        break;
+                    pCur = RTListNodeGetNext(&pCur->ListEntry, STAMDESC, ListEntry);
+                }
+                Assert(pLast);
+            }
+            else
+                Assert(!pLast);
+        }
         else
         {
+            /* It's a more complicated pattern.  Find the approximate range
+               and scan it for matches. */
             PSTAMDESC pLast;
             pCur = stamR3LookupFindPatternDescRange(pUVM->stam.s.pRoot, &pUVM->stam.s.List, pszPat, &pLast);
             if (pCur)
@@ -2832,7 +2953,6 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
             }
             else
                 Assert(!pLast);
-
         }
 #else
         RTListForEach(&pUVM->stam.s.List, pCur, STAMDESC, ListEntry)
