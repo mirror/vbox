@@ -107,8 +107,7 @@ HRESULT Guest::init(Console *aParent)
     RT_ZERO(mCurrentGuestCpuIdleStat);
 
     mMagic = GUEST_MAGIC;
-    int vrc = RTTimerLRCreate(&mStatTimer, 1000 /* ms */,
-                              &Guest::i_staticUpdateStats, this);
+    int vrc = RTTimerLRCreateEx(&mStatTimer, RT_NS_1SEC, 0 /*fFlags*/, &Guest::i_staticUpdateStats, this);
     AssertMsgRC(vrc, ("Failed to create guest statistics update timer (%Rrc) - ignored\n", vrc));
 
     hr = unconst(mEventSource).createObject();
@@ -627,21 +626,23 @@ HRESULT Guest::setStatisticsUpdateInterval(ULONG aStatisticsUpdateInterval)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mStatUpdateInterval)
+    {
         if (aStatisticsUpdateInterval == 0)
             RTTimerLRStop(mStatTimer);
         else
-            RTTimerLRChangeInterval(mStatTimer, aStatisticsUpdateInterval);
-    else
-        if (aStatisticsUpdateInterval != 0)
-        {
-            RTTimerLRChangeInterval(mStatTimer, aStatisticsUpdateInterval);
-            RTTimerLRStart(mStatTimer, 0);
-        }
+            RTTimerLRChangeInterval(mStatTimer, aStatisticsUpdateInterval * RT_NS_1SEC_64);
+    }
+    else if (aStatisticsUpdateInterval != 0)
+    {
+        RTTimerLRChangeInterval(mStatTimer, aStatisticsUpdateInterval * RT_NS_1SEC_64);
+        RTTimerLRStart(mStatTimer, 0);
+    }
     mStatUpdateInterval = aStatisticsUpdateInterval;
-    /* forward the information to the VMM device */
+
+    /* Forward the information to the VMM device.
+       MUST release all locks before calling VMM device as its critsect
+       has higher lock order than anything in Main. */
     VMMDev *pVMMDev = mParent->i_getVMMDev();
-    /* MUST release all locks before calling VMM device as its critsect
-     * has higher lock order than anything in Main. */
     alock.release();
     if (pVMMDev)
     {
