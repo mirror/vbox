@@ -117,7 +117,7 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
     UIMachineView::prepareConsoleConnections();
 
     /* Guest additions state-change updater: */
-    connect(uisession(), SIGNAL(sigAdditionsStateActualChange()), this, SLOT(sltAdditionsStateChanged()));
+    connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineViewFullscreen::sltAdditionsStateChanged);
 }
 
 void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
@@ -214,4 +214,3 @@ QSize UIMachineViewFullscreen::calculateMaxGuestSize() const
 {
     return workingArea().size();
 }
-

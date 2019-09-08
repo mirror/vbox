@@ -243,12 +243,12 @@ void UIMachineLogicSeamless::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* Prepare 'View' actions connections: */
-    connect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
-            this, SLOT(sltChangeVisualStateToNormal()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
-            this, SLOT(sltChangeVisualStateToFullscreen()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
-            this, SLOT(sltChangeVisualStateToScale()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), &QAction::triggered,
+            this, &UIMachineLogicSeamless::sltChangeVisualStateToNormal);
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), &QAction::triggered,
+            this, &UIMachineLogicSeamless::sltChangeVisualStateToFullscreen);
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), &QAction::triggered,
+            this, &UIMachineLogicSeamless::sltChangeVisualStateToScale);
 }
 
 void UIMachineLogicSeamless::prepareMachineWindows()
@@ -272,13 +272,13 @@ void UIMachineLogicSeamless::prepareMachineWindows()
 
     /* Listen for frame-buffer resize: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        connect(pMachineWindow, SIGNAL(sigFrameBufferResize()),
-                this, SIGNAL(sigFrameBufferResize()));
+        connect(pMachineWindow, &UIMachineWindow::sigFrameBufferResize,
+                this, &UIMachineLogicSeamless::sigFrameBufferResize);
     emit sigFrameBufferResize();
 
     /* Connect multi-screen layout change handler: */
-    connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChange()),
-            this, SLOT(sltScreenLayoutChanged()));
+    connect(m_pScreenLayout, &UIMultiScreenLayout::sigScreenLayoutChange,
+            this, &UIMachineLogicSeamless::sltScreenLayoutChanged);
 
     /* Mark machine-window(s) created: */
     setMachineWindowsCreated(true);
@@ -342,12 +342,12 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
 void UIMachineLogicSeamless::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
-    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
-               this, SLOT(sltChangeVisualStateToNormal()));
-    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
-               this, SLOT(sltChangeVisualStateToFullscreen()));
-    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
-               this, SLOT(sltChangeVisualStateToScale()));
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), &QAction::triggered,
+               this, &UIMachineLogicSeamless::sltChangeVisualStateToNormal);
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), &QAction::triggered,
+               this, &UIMachineLogicSeamless::sltChangeVisualStateToFullscreen);
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), &QAction::triggered,
+               this, &UIMachineLogicSeamless::sltChangeVisualStateToScale);
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionConnections();
@@ -376,4 +376,3 @@ void UIMachineLogicSeamless::cleanupActionGroups()
     /* Call to base-class: */
     UIMachineLogic::cleanupActionGroups();
 }
-

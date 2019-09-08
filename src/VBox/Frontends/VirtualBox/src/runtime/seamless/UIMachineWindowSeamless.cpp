@@ -138,14 +138,14 @@ void UIMachineWindowSeamless::prepareMiniToolbar()
     {
         /* Configure mini-toolbar: */
         m_pMiniToolBar->addMenus(actionPool()->menus());
-        connect(m_pMiniToolBar, SIGNAL(sigMinimizeAction()),
-                this, SLOT(sltShowMinimized()), Qt::QueuedConnection);
-        connect(m_pMiniToolBar, SIGNAL(sigExitAction()),
-                actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SLOT(trigger()));
-        connect(m_pMiniToolBar, SIGNAL(sigCloseAction()),
-                actionPool()->action(UIActionIndex_M_Application_S_Close), SLOT(trigger()));
-        connect(m_pMiniToolBar, SIGNAL(sigNotifyAboutWindowActivationStolen()),
-                this, SLOT(sltRevokeWindowActivation()), Qt::QueuedConnection);
+        connect(m_pMiniToolBar, &UIMiniToolBar::sigMinimizeAction,
+                this, &UIMachineWindowSeamless::sltShowMinimized, Qt::QueuedConnection);
+        connect(m_pMiniToolBar, &UIMiniToolBar::sigExitAction,
+                actionPool()->action(UIActionIndexRT_M_View_T_Seamless), &UIAction::trigger);
+        connect(m_pMiniToolBar, &UIMiniToolBar::sigCloseAction,
+                actionPool()->action(UIActionIndex_M_Application_S_Close), &UIAction::trigger);
+        connect(m_pMiniToolBar, &UIMiniToolBar::sigNotifyAboutWindowActivationStolen,
+                this, &UIMachineWindowSeamless::sltRevokeWindowActivation, Qt::QueuedConnection);
     }
 }
 #endif /* VBOX_WS_WIN || VBOX_WS_X11 */
@@ -401,4 +401,3 @@ void UIMachineWindowSeamless::setMask(const QRegion &maskGuest)
     }
 }
 #endif /* VBOX_WITH_MASKED_SEAMLESS */
-

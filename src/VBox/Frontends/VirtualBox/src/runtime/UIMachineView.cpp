@@ -820,20 +820,20 @@ void UIMachineView::prepareFilters()
 void UIMachineView::prepareConnections()
 {
     /* Desktop resolution change (e.g. monitor hotplug): */
-    connect(gpDesktop, SIGNAL(sigHostScreenResized(int)), this,
-            SLOT(sltDesktopResized()));
+    connect(gpDesktop, &UIDesktopWidgetWatchdog::sigHostScreenResized,
+            this, &UIMachineView::sltDesktopResized);
     /* Scale-factor change: */
-    connect(gEDataManager, SIGNAL(sigScaleFactorChange(const QUuid &)),
-            this, SLOT(sltHandleScaleFactorChange(const QUuid &)));
+    connect(gEDataManager, &UIExtraDataManager::sigScaleFactorChange,
+            this, &UIMachineView::sltHandleScaleFactorChange);
     /* Scaling-optimization change: */
-    connect(gEDataManager, SIGNAL(sigScalingOptimizationTypeChange(const QUuid &)),
-            this, SLOT(sltHandleScalingOptimizationChange(const QUuid &)));
+    connect(gEDataManager, &UIExtraDataManager::sigScalingOptimizationTypeChange,
+            this, &UIMachineView::sltHandleScalingOptimizationChange);
 }
 
 void UIMachineView::prepareConsoleConnections()
 {
     /* Machine state-change updater: */
-    connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
+    connect(uisession(), &UISession::sigMachineStateChange, this, &UIMachineView::sltMachineStateChanged);
 }
 
 void UIMachineView::cleanupFrameBuffer()

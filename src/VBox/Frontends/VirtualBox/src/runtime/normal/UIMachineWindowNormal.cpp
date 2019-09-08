@@ -248,12 +248,12 @@ void UIMachineWindowNormal::prepareSessionConnections()
             this, &UIMachineWindowNormal::sltNetworkAdapterChange);
     connect(machineLogic()->uisession(), &UISession::sigSharedFolderChange,
             this, &UIMachineWindowNormal::sltSharedFolderChange);
-    connect(machineLogic()->uisession(), SIGNAL(sigRecordingChange()),
-            this, SLOT(sltRecordingChange()));
+    connect(machineLogic()->uisession(), &UISession::sigRecordingChange,
+            this, &UIMachineWindowNormal::sltRecordingChange);
     connect(machineLogic()->uisession(), &UISession::sigCPUExecutionCapChange,
             this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
-    connect(machineLogic()->uisession(), SIGNAL(sigInitialized()),
-            this, SLOT(sltHandleSessionInitialized()));
+    connect(machineLogic()->uisession(), &UISession::sigInitialized,
+            this, &UIMachineWindowNormal::sltHandleSessionInitialized);
 }
 
 #ifndef VBOX_WS_MAC
@@ -265,10 +265,10 @@ void UIMachineWindowNormal::prepareMenu()
     {
         /* Configure menu-bar: */
         menuBar()->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(menuBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltHandleMenuBarContextMenuRequest(const QPoint&)));
-        connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QUuid &)),
-                this, SLOT(sltHandleMenuBarConfigurationChange(const QUuid &)));
+        connect(menuBar(), &UIMenuBar::customContextMenuRequested,
+                this, &UIMachineWindowNormal::sltHandleMenuBarContextMenuRequest);
+        connect(gEDataManager, &UIExtraDataManager::sigMenuBarConfigurationChange,
+                this, &UIMachineWindowNormal::sltHandleMenuBarConfigurationChange);
         /* Update menu-bar: */
         updateMenu();
     }
@@ -286,25 +286,25 @@ void UIMachineWindowNormal::prepareStatusBar()
     {
         /* Configure status-bar: */
         statusBar()->setContextMenuPolicy(Qt::CustomContextMenu);
-        connect(statusBar(), SIGNAL(customContextMenuRequested(const QPoint&)),
-                this, SLOT(sltHandleStatusBarContextMenuRequest(const QPoint&)));
+        connect(statusBar(), &QIStatusBar::customContextMenuRequested,
+                this, &UIMachineWindowNormal::sltHandleStatusBarContextMenuRequest);
         /* Create indicator-pool: */
         m_pIndicatorsPool = new UIIndicatorsPool(machineLogic()->uisession());
         AssertPtrReturnVoid(m_pIndicatorsPool);
         {
             /* Configure indicator-pool: */
-            connect(m_pIndicatorsPool, SIGNAL(sigContextMenuRequest(IndicatorType, const QPoint&)),
-                    this, SLOT(sltHandleIndicatorContextMenuRequest(IndicatorType, const QPoint&)));
+            connect(m_pIndicatorsPool, &UIIndicatorsPool::sigContextMenuRequest,
+                    this, &UIMachineWindowNormal::sltHandleIndicatorContextMenuRequest);
             /* Add indicator-pool into status-bar: */
             statusBar()->addPermanentWidget(m_pIndicatorsPool, 0);
         }
         /* Post-configure status-bar: */
-        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QUuid &)),
-                this, SLOT(sltHandleStatusBarConfigurationChange(const QUuid &)));
+        connect(gEDataManager, &UIExtraDataManager::sigStatusBarConfigurationChange,
+                this, &UIMachineWindowNormal::sltHandleStatusBarConfigurationChange);
 #ifdef VBOX_WS_MAC
         /* Make sure the status-bar is aware of action hovering: */
-        connect(actionPool(), SIGNAL(sigActionHovered(UIAction *)),
-                this, SLOT(sltActionHovered(UIAction *)));
+        connect(actionPool(), &UIActionPool::sigActionHovered,
+                this, &UIMachineWindowNormal::sltActionHovered);
 #endif /* VBOX_WS_MAC */
     }
 
@@ -457,8 +457,8 @@ void UIMachineWindowNormal::cleanupSessionConnections()
                this, &UIMachineWindowNormal::sltAudioAdapterChange);
     disconnect(machineLogic()->uisession(), &UISession::sigSharedFolderChange,
                this, &UIMachineWindowNormal::sltSharedFolderChange);
-    disconnect(machineLogic()->uisession(), SIGNAL(sigRecordingChange()),
-               this, SLOT(sltRecordingChange()));
+    disconnect(machineLogic()->uisession(), &UISession::sigRecordingChange,
+               this, &UIMachineWindowNormal::sltRecordingChange);
     disconnect(machineLogic()->uisession(), &UISession::sigCPUExecutionCapChange,
                this, &UIMachineWindowNormal::sltCPUExecutionCapChange);
 

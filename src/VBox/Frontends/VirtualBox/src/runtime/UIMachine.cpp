@@ -236,8 +236,8 @@ void UIMachine::prepareMachineLogic()
 {
     /* Prepare async visual state type change handler: */
     qRegisterMetaType<UIVisualStateType>();
-    connect(this, SIGNAL(sigRequestAsyncVisualStateChange(UIVisualStateType)),
-            this, SLOT(sltChangeVisualState(UIVisualStateType)),
+    connect(this, &UIMachine::sigRequestAsyncVisualStateChange,
+            this, &UIMachine::sltChangeVisualState,
             Qt::QueuedConnection);
 
     /* Load restricted visual states: */

@@ -379,12 +379,12 @@ int UIDnDHandler::dragStartInternal(const QStringList &lstFormats,
     }
 
     /* Inform the MIME data object of any changes in the current action. */
-    connect(pDrag, SIGNAL(actionChanged(Qt::DropAction)),
-            m_pMIMEData, SLOT(sltDropActionChanged(Qt::DropAction)));
+    connect(pDrag, &QDrag::actionChanged,
+            m_pMIMEData, &UIDnDMIMEData::sltDropActionChanged);
 
     /* Invoke this handler as data needs to be retrieved by our derived QMimeData class. */
-    connect(m_pMIMEData, SIGNAL(sigGetData(Qt::DropAction, const QString&, QVariant::Type, QVariant&)),
-            this, SLOT(sltGetData(Qt::DropAction, const QString&, QVariant::Type, QVariant&)));
+    connect(m_pMIMEData, &UIDnDMIMEData::sigGetData,
+            this, &UIDnDHandler::sltGetData);
 
     /*
      * Set MIME data object and start the (modal) drag'n drop operation on the host.
@@ -806,4 +806,3 @@ Qt::DropActions UIDnDHandler::toQtDnDActions(const QVector<KDnDAction> &vecActio
     LogFlowFunc(("dropActions=0x%x\n", int(dropActs)));
     return dropActs;
 }
-

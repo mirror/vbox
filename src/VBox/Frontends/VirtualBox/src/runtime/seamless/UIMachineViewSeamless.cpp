@@ -128,7 +128,7 @@ void UIMachineViewSeamless::prepareConsoleConnections()
     UIMachineView::prepareConsoleConnections();
 
     /* Guest additions state-change updater: */
-    connect(uisession(), SIGNAL(sigAdditionsStateActualChange()), this, SLOT(sltAdditionsStateChanged()));
+    connect(uisession(), &UISession::sigAdditionsStateActualChange, this, &UIMachineViewSeamless::sltAdditionsStateChanged);
 }
 
 void UIMachineViewSeamless::prepareSeamless()
@@ -218,4 +218,3 @@ QSize UIMachineViewSeamless::calculateMaxGuestSize() const
 {
     return workingArea().size();
 }
-

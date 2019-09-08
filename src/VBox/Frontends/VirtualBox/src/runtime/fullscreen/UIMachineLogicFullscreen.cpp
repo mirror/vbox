@@ -492,12 +492,12 @@ void UIMachineLogicFullscreen::prepareActionConnections()
     UIMachineLogic::prepareActionConnections();
 
     /* Prepare 'View' actions connections: */
-    connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
-            this, SLOT(sltChangeVisualStateToNormal()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
-            this, SLOT(sltChangeVisualStateToSeamless()));
-    connect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
-            this, SLOT(sltChangeVisualStateToScale()));
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), &UIAction::triggered,
+            this, &UIMachineLogicFullscreen::sltChangeVisualStateToNormal);
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), &UIAction::triggered,
+            this, &UIMachineLogicFullscreen::sltChangeVisualStateToSeamless);
+    connect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), &UIAction::triggered,
+            this, &UIMachineLogicFullscreen::sltChangeVisualStateToScale);
 }
 
 void UIMachineLogicFullscreen::prepareMachineWindows()
@@ -531,13 +531,13 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
 
     /* Listen for frame-buffer resize: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
-        connect(pMachineWindow, SIGNAL(sigFrameBufferResize()),
-                this, SIGNAL(sigFrameBufferResize()));
+        connect(pMachineWindow, &UIMachineWindow::sigFrameBufferResize,
+                this, &UIMachineLogicFullscreen::sigFrameBufferResize);
     emit sigFrameBufferResize();
 
     /* Connect multi-screen layout change handler: */
-    connect(m_pScreenLayout, SIGNAL(sigScreenLayoutChange()),
-            this, SLOT(sltScreenLayoutChanged()));
+    connect(m_pScreenLayout, &UIMultiScreenLayout::sigScreenLayoutChange,
+            this, &UIMachineLogicFullscreen::sltScreenLayoutChanged);
 
 #ifdef VBOX_WS_MAC
     /* For ML and next: */
@@ -547,25 +547,25 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
         foreach (UIMachineWindow *pMachineWindow, machineWindows())
         {
             /* Logic => window signals: */
-            connect(this, SIGNAL(sigNotifyAboutNativeFullscreenShouldBeEntered(UIMachineWindow*)),
-                    pMachineWindow, SLOT(sltEnterNativeFullscreen(UIMachineWindow*)));
-            connect(this, SIGNAL(sigNotifyAboutNativeFullscreenShouldBeExited(UIMachineWindow*)),
-                    pMachineWindow, SLOT(sltExitNativeFullscreen(UIMachineWindow*)));
+            connect(this, &UIMachineLogicFullscreen::sigNotifyAboutNativeFullscreenShouldBeEntered,
+                    pMachineWindow, &UIMachineWindow::sltEnterNativeFullscreen);
+            connect(this, &UIMachineLogicFullscreen::sigNotifyAboutNativeFullscreenShouldBeExited,
+                    pMachineWindow, &UIMachineWindow::sltExitNativeFullscreen);
             /* Window => logic signals: */
-            connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenWillEnter()),
-                    this, SLOT(sltHandleNativeFullscreenWillEnter()),
+            connect(pMachineWindow, &UIMachineWindow::sigNotifyAboutNativeFullscreenWillEnter,
+                    this, &UIMachineLogicFullscreen::sltHandleNativeFullscreenWillEnter,
                     Qt::QueuedConnection);
-            connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidEnter()),
-                    this, SLOT(sltHandleNativeFullscreenDidEnter()),
+            connect(pMachineWindow, &UIMachineWindow::sigNotifyAboutNativeFullscreenDidEnter,
+                    this, &UIMachineLogicFullscreen::sltHandleNativeFullscreenDidEnter,
                     Qt::QueuedConnection);
-            connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenWillExit()),
-                    this, SLOT(sltHandleNativeFullscreenWillExit()),
+            connect(pMachineWindow, &UIMachineWindow::sigNotifyAboutNativeFullscreenWillExit,
+                    this, &UIMachineLogicFullscreen::sltHandleNativeFullscreenWillExit,
                     Qt::QueuedConnection);
-            connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenDidExit()),
-                    this, SLOT(sltHandleNativeFullscreenDidExit()),
+            connect(pMachineWindow, &UIMachineWindow::sigNotifyAboutNativeFullscreenDidExit,
+                    this, &UIMachineLogicFullscreen::sltHandleNativeFullscreenDidExit,
                     Qt::QueuedConnection);
-            connect(pMachineWindow, SIGNAL(sigNotifyAboutNativeFullscreenFailToEnter()),
-                    this, SLOT(sltHandleNativeFullscreenFailToEnter()),
+            connect(pMachineWindow, &UIMachineWindow::sigNotifyAboutNativeFullscreenFailToEnter,
+                    this, &UIMachineLogicFullscreen::sltHandleNativeFullscreenFailToEnter,
                     Qt::QueuedConnection);
         }
         /* Revalidate native fullscreen: */
@@ -641,12 +641,12 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
 void UIMachineLogicFullscreen::cleanupActionConnections()
 {
     /* "View" actions disconnections: */
-    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), SIGNAL(triggered(bool)),
-               this, SLOT(sltChangeVisualStateToNormal()));
-    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), SIGNAL(triggered(bool)),
-               this, SLOT(sltChangeVisualStateToSeamless()));
-    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), SIGNAL(triggered(bool)),
-               this, SLOT(sltChangeVisualStateToScale()));
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Fullscreen), &QAction::triggered,
+               this, &UIMachineLogicFullscreen::sltChangeVisualStateToNormal);
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Seamless), &QAction::triggered,
+               this, &UIMachineLogicFullscreen::sltChangeVisualStateToSeamless);
+    disconnect(actionPool()->action(UIActionIndexRT_M_View_T_Scale), &QAction::triggered,
+               this, &UIMachineLogicFullscreen::sltChangeVisualStateToScale);
 
     /* Call to base-class: */
     UIMachineLogic::cleanupActionConnections();
@@ -875,4 +875,3 @@ void UIMachineLogicFullscreen::nativeHandlerForActiveSpaceChange(const QMap<QStr
             revalidateNativeFullScreen(pMachineWindow);
 }
 #endif /* VBOX_WS_MAC */
-

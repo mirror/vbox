@@ -468,8 +468,8 @@ public:
         setStateIcon(KDeviceActivity_Writing, UIIconPool::iconSet(":/nw_write_16px.png"));
         setStateIcon(KDeviceActivity_Null,    UIIconPool::iconSet(":/nw_disabled_16px.png"));
         /* Configure machine state-change listener: */
-        connect(m_pSession, SIGNAL(sigMachineStateChange()),
-                this, SLOT(sltHandleMachineStateChange()));
+        connect(m_pSession, &UISession::sigMachineStateChange,
+                this, &UIIndicatorNetwork::sltHandleMachineStateChange);
         /* Fetch maximum network adapters count: */
         const CVirtualBox vbox = uiCommon().virtualBox();
         const CMachine machine = m_pSession->machine();
@@ -479,7 +479,7 @@ public:
         if (m_pTimerAutoUpdate)
         {
             /* Configure auto-update timer: */
-            connect(m_pTimerAutoUpdate, SIGNAL(timeout()), SLOT(sltUpdateNetworkIPs()));
+            connect(m_pTimerAutoUpdate, &QTimer::timeout, this, &UIIndicatorNetwork::sltUpdateNetworkIPs);
             /* Start timer immediately if machine is running: */
             sltHandleMachineStateChange();
         }
@@ -988,8 +988,8 @@ public:
         setStateIcon(KVMExecutionEngine_NativeApi, UIIconPool::iconSet(":/vm_execution_engine_native_api_16px.png"));
 
         /* Configure machine state-change listener: */
-        connect(m_pSession, SIGNAL(sigMachineStateChange()),
-                this, SLOT(sltHandleMachineStateChange()));
+        connect(m_pSession, &UISession::sigMachineStateChange,
+                this, &UIIndicatorFeatures::sltHandleMachineStateChange);
         m_pTimerAutoUpdate = new QTimer(this);
         if (m_pTimerAutoUpdate)
         {
@@ -1146,7 +1146,8 @@ public:
         setStateIcon(3, UIIconPool::iconSet(":/mouse_can_seamless_16px.png"));
         setStateIcon(4, UIIconPool::iconSet(":/mouse_can_seamless_uncaptured_16px.png"));
         /* Configure connection: */
-        connect(pSession, SIGNAL(sigMouseStateChange(int)), this, SLOT(setState(int)));
+        connect(pSession, &UISession::sigMouseStateChange,
+                this, static_cast<void(UIIndicatorMouse::*)(int)>(&UIIndicatorMouse::setState));
         setState(pSession->mouseState());
         /* Translate finally: */
         retranslateUi();
@@ -1224,7 +1225,8 @@ public:
         setStateIcon(6, UIIconPool::iconSet(":/hostkey_pressed_checked_16px.png"));
         setStateIcon(7, UIIconPool::iconSet(":/hostkey_captured_pressed_checked_16px.png"));
         /* Configure connection: */
-        connect(pSession, SIGNAL(sigKeyboardStateChange(int)), this, SLOT(setState(int)));
+        connect(pSession, &UISession::sigKeyboardStateChange,
+                this, static_cast<void(UIIndicatorKeyboard::*)(int)>(&UIIndicatorKeyboard::setState));
         setState(pSession->keyboardState());
         /* Translate finally: */
         retranslateUi();
@@ -1263,8 +1265,8 @@ public:
     UIIndicatorKeyboardExtension()
     {
         /* Make sure host-combination label will be updated: */
-        connect(gEDataManager, SIGNAL(sigRuntimeUIHostKeyCombinationChange()),
-                this, SLOT(sltUpdateAppearance()));
+        connect(gEDataManager, &UIExtraDataManager::sigRuntimeUIHostKeyCombinationChange,
+                this, &UIIndicatorKeyboardExtension::sltUpdateAppearance);
         /* Translate finally: */
         retranslateUi();
     }
@@ -1426,8 +1428,8 @@ void UIIndicatorsPool::prepare()
 void UIIndicatorsPool::prepareConnections()
 {
     /* Listen for the status-bar configuration changes: */
-    connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QUuid &)),
-            this, SLOT(sltHandleConfigurationChange(const QUuid &)));
+    connect(gEDataManager, &UIExtraDataManager::sigStatusBarConfigurationChange,
+            this, &UIIndicatorsPool::sltHandleConfigurationChange);
 }
 
 void UIIndicatorsPool::prepareContents()
@@ -1455,8 +1457,8 @@ void UIIndicatorsPool::prepareUpdateTimer()
     AssertPtrReturnVoid(m_pTimerAutoUpdate);
     {
         /* Configure auto-update timer: */
-        connect(m_pTimerAutoUpdate, SIGNAL(timeout()),
-                this, SLOT(sltAutoUpdateIndicatorStates()));
+        connect(m_pTimerAutoUpdate, &QTimer::timeout,
+                this, &UIIndicatorsPool::sltAutoUpdateIndicatorStates);
         setAutoUpdateIndicatorStates(true);
     }
 }
@@ -1550,8 +1552,8 @@ void UIIndicatorsPool::updatePool()
                 default: break;
             }
             /* Configure indicator: */
-            connect(m_pool.value(indicatorType), SIGNAL(sigContextMenuRequest(QIStatusBarIndicator*, QContextMenuEvent*)),
-                    this, SLOT(sltContextMenuRequest(QIStatusBarIndicator*, QContextMenuEvent*)));
+            connect(m_pool.value(indicatorType), &QIStatusBarIndicator::sigContextMenuRequest,
+                    this, &UIIndicatorsPool::sltContextMenuRequest);
             /* Insert indicator into main-layout at proper position: */
             m_pMainLayout->insertWidget(indicatorPosition(indicatorType), m_pool.value(indicatorType));
         }
