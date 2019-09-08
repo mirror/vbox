@@ -39,11 +39,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** Enables the lookup tree.
- * This is an optimization for speeding up registration as well as query. */
-#define STAM_WITH_LOOKUP_TREE
-
-
 /** Pointer to sample descriptor. */
 typedef struct STAMDESC    *PSTAMDESC;
 /** Pointer to a sample lookup node. */

@@ -140,9 +140,7 @@ typedef struct STAMR0SAMPLE
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#ifdef STAM_WITH_LOOKUP_TREE
 static void                 stamR3LookupDestroyTree(PSTAMLOOKUP pRoot);
-#endif
 static int                  stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfnReset,
                                             PFNSTAMR3CALLBACKPRINT pfnPrint, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
                                             const char *pszName, STAMUNIT enmUnit, const char *pszDesc, uint8_t iRefreshGrp);
@@ -288,7 +286,6 @@ VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
 
     RTListInit(&pUVM->stam.s.List);
 
-#ifdef STAM_WITH_LOOKUP_TREE
     /*
      * Initialize the root node.
      */
@@ -310,8 +307,6 @@ VMMR3DECL(int) STAMR3InitUVM(PUVM pUVM)
     pRoot->szName[0]    = '\0';
 
     pUVM->stam.s.pRoot = pRoot;
-#endif
-
 
     /*
      * Register the ring-0 statistics (GVMM/GMM).
@@ -348,16 +343,12 @@ VMMR3DECL(void) STAMR3TermUVM(PUVM pUVM)
     PSTAMDESC pCur, pNext;
     RTListForEachSafe(&pUVM->stam.s.List, pCur, pNext, STAMDESC, ListEntry)
     {
-#ifdef STAM_WITH_LOOKUP_TREE
         pCur->pLookup->pDesc = NULL;
-#endif
         RTMemFree(pCur);
     }
 
-#ifdef STAM_WITH_LOOKUP_TREE
     stamR3LookupDestroyTree(pUVM->stam.s.pRoot);
     pUVM->stam.s.pRoot = NULL;
-#endif
 
     Assert(pUVM->stam.s.RWSem != NIL_RTSEMRW);
     RTSemRWDestroy(pUVM->stam.s.RWSem);
@@ -673,8 +664,6 @@ static int stamR3SlashCompare(const char *psz1, const char *psz2)
 }
 #endif /* VBOX_STRICT */
 
-
-#ifdef STAM_WITH_LOOKUP_TREE
 
 /**
  * Compares a lookup node with a name.
@@ -1450,9 +1439,6 @@ static void stamR3LookupDestroyTree(PSTAMLOOKUP pRoot)
     }
 }
 
-#endif /* STAM_WITH_LOOKUP_TREE */
-
-
 
 /**
  * Internal worker for the different register calls.
@@ -1487,7 +1473,6 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
     /*
      * Look up the tree location, populating the lookup tree as we walk it.
      */
-#ifdef STAM_WITH_LOOKUP_TREE
     PSTAMLOOKUP pLookup = pUVM->stam.s.pRoot; Assert(pLookup);
     uint32_t    offName = 1;
     for (;;)
@@ -1530,24 +1515,6 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
     }
 
     PSTAMDESC pCur = stamR3LookupFindNextWithDesc(pLookup);
-
-#else
-    PSTAMDESC pCur;
-    RTListForEach(&pUVM->stam.s.List, pCur, STAMDESC, ListEntry)
-    {
-        int iDiff = strcmp(pCur->pszName, pszName);
-        /* passed it */
-        if (iDiff > 0)
-            break;
-        /* found it. */
-        if (!iDiff)
-        {
-            STAM_UNLOCK_WR(pUVM);
-            AssertMsgFailed(("Duplicate sample name: %s\n", pszName));
-            return VERR_ALREADY_EXISTS;
-        }
-    }
-#endif
 
     /*
      * Check that the name doesn't screw up sorting order when taking
@@ -1644,11 +1611,9 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
         else
             RTListAppend(&pUVM->stam.s.List, &pNew->ListEntry);
 
-#ifdef STAM_WITH_LOOKUP_TREE
         pNew->pLookup       = pLookup;
         pLookup->pDesc      = pNew;
         stamR3LookupIncUsage(pLookup);
-#endif
 
         stamR3ResetOne(pNew, pUVM->pVM);
         rc = VINF_SUCCESS;
@@ -1670,11 +1635,9 @@ static int stamR3RegisterU(PUVM pUVM, void *pvSample, PFNSTAMR3CALLBACKRESET pfn
 static int stamR3DestroyDesc(PSTAMDESC pCur)
 {
     RTListNodeRemove(&pCur->ListEntry);
-#ifdef STAM_WITH_LOOKUP_TREE
     pCur->pLookup->pDesc = NULL; /** @todo free lookup nodes once it's working. */
     stamR3LookupDecUsage(pCur->pLookup);
     stamR3LookupMaybeFree(pCur->pLookup);
-#endif
     RTMemFree(pCur);
 
     return VINF_SUCCESS;
@@ -2850,7 +2813,7 @@ static char **stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, ch
  * @returns The rc from the callback.
  * @param   pUVM            Pointer to the user mode VM structure.
  * @param   pszPat          Pattern.
- * @param   fUpdateRing0    Update the ring-0 .
+ * @param   fUpdateRing0    Update the stats residing in ring-0.
  * @param   pfnCallback     Callback function which shall be called for matching nodes.
  *                          If it returns anything but VINF_SUCCESS the enumeration is
  *                          terminated and the status code returned to the caller.
@@ -2859,14 +2822,17 @@ static char **stamR3SplitPattern(const char *pszPat, unsigned *pcExpressions, ch
 static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
                        int (*pfnCallback)(PSTAMDESC pDesc, void *pvArg), void *pvArg)
 {
-    int         rc                = VINF_SUCCESS;
-    uint64_t    bmRefreshedGroups = 0;
-    PSTAMDESC   pCur;
+    size_t const cchPat            = pszPat ? strlen(pszPat) : 0;
+    int          rc                = VINF_SUCCESS;
+    uint64_t     bmRefreshedGroups = 0;
+    PSTAMDESC    pCur;
 
     /*
      * All.
      */
-    if (!pszPat || !*pszPat || !strcmp(pszPat, "*"))
+    if (   cchPat < 1
+        || (   cchPat == 1
+            && *pszPat == '*'))
     {
         STAM_LOCK_RD(pUVM);
         RTListForEach(&pUVM->stam.s.List, pCur, STAMDESC, ListEntry)
@@ -2883,13 +2849,12 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
     /*
      * Single expression pattern.
      */
-    else if (!strchr(pszPat, '|'))
+    else if (memchr(pszPat, '|', cchPat) == NULL)
     {
-        STAM_LOCK_RD(pUVM);
-#ifdef STAM_WITH_LOOKUP_TREE
-        size_t const cchPat      = strlen(pszPat);
         const char  *pszAsterisk = (const char *)memchr(pszPat, '*',  cchPat);
         const char  *pszQuestion = (const char *)memchr(pszPat, '?',  cchPat);
+
+        STAM_LOCK_RD(pUVM);
         if (!pszAsterisk && !pszQuestion)
         {
             pCur = stamR3LookupFindDesc(pUVM->stam.s.pRoot, pszPat);
@@ -2954,19 +2919,6 @@ static int stamR3EnumU(PUVM pUVM, const char *pszPat, bool fUpdateRing0,
             else
                 Assert(!pLast);
         }
-#else
-        RTListForEach(&pUVM->stam.s.List, pCur, STAMDESC, ListEntry)
-        {
-            if (RTStrSimplePatternMatch(pszPat, pCur->pszName))
-            {
-                if (fUpdateRing0)
-                    stamR3Refresh(pUVM, pCur, &bmRefreshedGroups);
-                rc = pfnCallback(pCur, pvArg);
-                if (rc)
-                    break;
-            }
-        }
-#endif
         STAM_UNLOCK_RD(pUVM);
     }
 
