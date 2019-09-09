@@ -1212,7 +1212,7 @@ DECLCALLBACK(int) VBoxClipboardWorker(void *pInstance, bool volatile *pfShutdown
             }
             else
             {
-                PVBGLR3CLIPBOARDEVENT pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
+                pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
                 if (!pEvent)
                 {
                     rc = VERR_NO_MEMORY;
