@@ -4538,21 +4538,36 @@ static void hmR0VmxExportHostMsrs(PVMCPUCC pVCpu)
  * these two bits are handled by VM-entry, see hmR0VMxExportGuestEntryExitCtls().
  *
  * @returns true if we need to load guest EFER, false otherwise.
- * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmxTransient   The VMX-transient structure.
  *
  * @remarks Requires EFER, CR4.
  * @remarks No-long-jump zone!!!
  */
-static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu)
+static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
 #ifdef HMVMX_ALWAYS_SWAP_EFER
-    RT_NOREF(pVCpu);
+    RT_NOREF2(pVCpu, pVmxTransient);
     return true;
 #else
     PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     uint64_t const u64HostEfer  = pVM->hm.s.vmx.u64HostMsrEfer;
     uint64_t const u64GuestEfer = pCtx->msrEFER;
+
+# ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+    /*
+     * For nested-guests, we shall honor swapping the EFER MSR when requested by
+     * the nested-guest.
+     */
+    if (   pVmxTransient->fIsNestedGuest
+        && (   CPUMIsGuestVmxEntryCtlsSet(pVCpu, pCtx, VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+            || CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_SAVE_EFER_MSR)
+            || CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_LOAD_EFER_MSR)))
+        return true;
+# else
+    RT_NOREF(pVmxTransient);
+#endif
 
     /*
      * For 64-bit guests, if EFER.SCE bit differs, we need to swap the EFER MSR
@@ -4662,7 +4677,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
              * of the VM-entry MSR load area.
              */
             if (   pVM->hm.s.vmx.fSupportsVmcsEfer
-                && hmR0VmxShouldSwapEferMsr(pVCpu))
+                && hmR0VmxShouldSwapEferMsr(pVCpu, pVmxTransient))
                 fVal |= VMX_ENTRY_CTLS_LOAD_EFER_MSR;
             else
                 Assert(!(fVal & VMX_ENTRY_CTLS_LOAD_EFER_MSR));
@@ -4729,7 +4744,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
              * used the "load IA32_EFER" control while exporting VM-entry controls.
              */
             if (   pVM->hm.s.vmx.fSupportsVmcsEfer
-                && hmR0VmxShouldSwapEferMsr(pVCpu))
+                && hmR0VmxShouldSwapEferMsr(pVCpu, pVmxTransient))
             {
                 fVal |= VMX_EXIT_CTLS_SAVE_EFER_MSR
                      |  VMX_EXIT_CTLS_LOAD_EFER_MSR;
@@ -6441,7 +6456,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         Assert(!(ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_ENTRY_EXIT_CTLS));
         HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_EFER);
 
-        if (hmR0VmxShouldSwapEferMsr(pVCpu))
+        if (hmR0VmxShouldSwapEferMsr(pVCpu, pVmxTransient))
         {
             /*
              * EFER.LME is written by software, while EFER.LMA is set by the CPU to (CR0.PG & EFER.LME).
