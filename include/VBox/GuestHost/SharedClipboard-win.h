@@ -82,27 +82,27 @@ typedef FNREMOVECLIPBOARDFORMATLISTENER *PFNREMOVECLIPBOARDFORMATLISTENER;
  * Structure for keeping function pointers for the new clipboard API.
  * If the new API is not available, those function pointer are NULL.
  */
-typedef struct _VBOXCLIPBOARDWINAPINEW
+typedef struct _SHCLWINAPINEW
 {
     PFNADDCLIPBOARDFORMATLISTENER    pfnAddClipboardFormatListener;
     PFNREMOVECLIPBOARDFORMATLISTENER pfnRemoveClipboardFormatListener;
-} VBOXCLIPBOARDWINAPINEW, *PVBOXCLIPBOARDWINAPINEW;
+} SHCLWINAPINEW, *PSHCLWINAPINEW;
 
 /**
  * Structure for keeping variables which are needed to drive the old clipboard API.
  */
-typedef struct _VBOXCLIPBOARDWINAPIOLD
+typedef struct _SHCLWINAPIOLD
 {
     /** Timer ID for the refresh timer. */
     UINT                   timerRefresh;
     /** Whether "pinging" the clipboard chain currently is in progress or not. */
     bool                   fCBChainPingInProcess;
-} VBOXCLIPBOARDWINAPIOLD, *PVBOXCLIPBOARDWINAPIOLD;
+} SHCLWINAPIOLD, *PSHCLWINAPIOLD;
 
 /**
  * Structure for maintaining a Shared Clipboard context on Windows platforms.
  */
-typedef struct _VBOXCLIPBOARDWINCTX
+typedef struct _SHCLWINCTX
 {
     /** Window handle of our (invisible) clipbaord window. */
     HWND                        hWnd;
@@ -111,25 +111,25 @@ typedef struct _VBOXCLIPBOARDWINCTX
     /** Window handle of the clipboard owner *if* we are the owner. */
     HWND                        hWndClipboardOwnerUs;
     /** Structure for maintaining the new clipboard API. */
-    VBOXCLIPBOARDWINAPINEW      newAPI;
+    SHCLWINAPINEW      newAPI;
     /** Structure for maintaining the old clipboard API. */
-    VBOXCLIPBOARDWINAPIOLD      oldAPI;
-} VBOXCLIPBOARDWINCTX, *PVBOXCLIPBOARDWINCTX;
+    SHCLWINAPIOLD      oldAPI;
+} SHCLWINCTX, *PSHCLWINCTX;
 
 int VBoxClipboardWinOpen(HWND hWnd);
 int VBoxClipboardWinClose(void);
 int VBoxClipboardWinClear(void);
 
-int VBoxClipboardWinCheckAndInitNewAPI(PVBOXCLIPBOARDWINAPINEW pAPI);
-bool VBoxClipboardWinIsNewAPI(PVBOXCLIPBOARDWINAPINEW pAPI);
+int VBoxClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI);
+bool VBoxClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI);
 
-int VBoxClipboardWinChainAdd(PVBOXCLIPBOARDWINCTX pCtx);
-int VBoxClipboardWinChainRemove(PVBOXCLIPBOARDWINCTX pCtx);
+int VBoxClipboardWinChainAdd(PSHCLWINCTX pCtx);
+int VBoxClipboardWinChainRemove(PSHCLWINCTX pCtx);
 VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
-LRESULT VBoxClipboardWinChainPassToNext(PVBOXCLIPBOARDWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT VBoxClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
 
-VBOXCLIPBOARDFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
-int VBoxClipboardWinGetFormats(PVBOXCLIPBOARDWINCTX pCtx, PSHAREDCLIPBOARDFORMATDATA pFormats);
+SHCLFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
+int VBoxClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
@@ -140,15 +140,15 @@ bool VBoxClipboardWinIsCFHTML(const char *pszSource);
 int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
 int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
-LRESULT VBoxClipboardWinHandleWMChangeCBChain(PVBOXCLIPBOARDWINCTX pWinCtx, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-int VBoxClipboardWinHandleWMDestroy(PVBOXCLIPBOARDWINCTX pWinCtx);
-int VBoxClipboardWinHandleWMRenderAllFormats(PVBOXCLIPBOARDWINCTX pWinCtx, HWND hWnd);
-int VBoxClipboardWinHandleWMTimer(PVBOXCLIPBOARDWINCTX pWinCtx);
+LRESULT VBoxClipboardWinHandleWMChangeCBChain(PSHCLWINCTX pWinCtx, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+int VBoxClipboardWinHandleWMDestroy(PSHCLWINCTX pWinCtx);
+int VBoxClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd);
+int VBoxClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx);
 
-int VBoxClipboardWinAnnounceFormats(PVBOXCLIPBOARDWINCTX pWinCtx, VBOXCLIPBOARDFORMATS fFormats);
+int VBoxClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinURITransferCreate(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer);
-void VBoxClipboardWinURITransferDestroy(PVBOXCLIPBOARDWINCTX pWinCtx, PSHAREDCLIPBOARDURITRANSFER pTransfer);
+int VBoxClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
+void VBoxClipboardWinURITransferDestroy(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
 #endif
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
@@ -169,7 +169,7 @@ public:
 
 public:
 
-    VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+    VBoxClipboardWinDataObject(PSHCLURITRANSFER pTransfer,
                                LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
     virtual ~VBoxClipboardWinDataObject(void);
 
@@ -217,10 +217,10 @@ protected:
 
     static int Thread(RTTHREAD hThread, void *pvUser);
 
-    int readDir(PSHAREDCLIPBOARDURITRANSFER pTransfer, const Utf8Str &strPath);
+    int readDir(PSHCLURITRANSFER pTransfer, const Utf8Str &strPath);
 
     int copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal);
-    int createFileGroupDescriptorFromTransfer(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+    int createFileGroupDescriptorFromTransfer(PSHCLURITRANSFER pTransfer,
                                               bool fUnicode, HGLOBAL *phGlobal);
 
     bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
@@ -236,7 +236,7 @@ protected:
         /** Relative path of the object. */
         Utf8Str                  strPath;
         /** Related (cached) object information. */
-        SHAREDCLIPBOARDFSOBJINFO objInfo;
+        SHCLFSOBJINFO objInfo;
     };
 
     /** Vector containing file system objects with its (cached) objection information. */
@@ -247,7 +247,7 @@ protected:
     ULONG                       m_cFormats;
     LPFORMATETC                 m_pFormatEtc;
     LPSTGMEDIUM                 m_pStgMedium;
-    PSHAREDCLIPBOARDURITRANSFER m_pTransfer;
+    PSHCLURITRANSFER m_pTransfer;
     IStream                    *m_pStream;
     ULONG                       m_uObjIdx;
     /** List of (cached) file system objects. */
@@ -302,8 +302,8 @@ class VBoxClipboardWinStreamImpl : public IStream
 {
 public:
 
-    VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent, PSHAREDCLIPBOARDURITRANSFER pTransfer,
-                               const Utf8Str &strPath, PSHAREDCLIPBOARDFSOBJINFO pObjInfo);
+    VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer,
+                               const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo);
     virtual ~VBoxClipboardWinStreamImpl(void);
 
 public: /* IUnknown methods. */
@@ -328,8 +328,8 @@ public: /* IStream methods. */
 
 public: /* Own methods. */
 
-    static HRESULT Create(VBoxClipboardWinDataObject *pParent, PSHAREDCLIPBOARDURITRANSFER pTransfer, const Utf8Str &strPath,
-                          PSHAREDCLIPBOARDFSOBJINFO pObjInfo, IStream **ppStream);
+    static HRESULT Create(VBoxClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer, const Utf8Str &strPath,
+                          PSHCLFSOBJINFO pObjInfo, IStream **ppStream);
 private:
 
     /** Pointer to the parent data object. */
@@ -337,13 +337,13 @@ private:
     /** The stream object's current reference count. */
     LONG                           m_lRefCount;
     /** Pointer to the associated URI transfer. */
-    PSHAREDCLIPBOARDURITRANSFER    m_pURITransfer;
+    PSHCLURITRANSFER    m_pURITransfer;
     /** The object handle to use. */
-    SHAREDCLIPBOARDOBJHANDLE       m_hObj;
+    SHCLOBJHANDLE       m_hObj;
     /** Object path. */
     Utf8Str                        m_strPath;
     /** (Cached) object information. */
-    SHAREDCLIPBOARDFSOBJINFO       m_objInfo;
+    SHCLFSOBJINFO       m_objInfo;
     /** Number of bytes already processed. */
     uint64_t                       m_cbProcessed;
     /** Whether we already notified the parent of completion or not. */
@@ -352,7 +352,7 @@ private:
 
 /**
  * Class for Windows-specifics for maintaining a single URI transfer.
- * Set as pvUser / cbUser in SHAREDCLIPBOARDURICTX.
+ * Set as pvUser / cbUser in SHCLURICTX.
  */
 class SharedClipboardWinURITransferCtx
 {

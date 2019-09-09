@@ -34,14 +34,14 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** Global clipboard context information */
-struct _VBOXCLIPBOARDCONTEXT
+struct _SHCLCONTEXT
 {
     /** We have a separate thread to poll for new clipboard content */
     RTTHREAD                thread;
     bool volatile           fTerminate;
     /** The reference to the current pasteboard */
     PasteboardRef           pasteboard;
-    PVBOXCLIPBOARDCLIENT    pClient;
+    PSHCLCLIENT    pClient;
 };
 
 
@@ -49,7 +49,7 @@ struct _VBOXCLIPBOARDCONTEXT
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Only one client is supported. There seems to be no need for more clients. */
-static VBOXCLIPBOARDCONTEXT g_ctx;
+static SHCLCONTEXT g_ctx;
 
 
 /**
@@ -58,7 +58,7 @@ static VBOXCLIPBOARDCONTEXT g_ctx;
  * @returns IPRT status code (ignored).
  * @param   pCtx    The context.
  */
-static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
+static int vboxClipboardChanged(SHCLCONTEXT *pCtx)
 {
     if (pCtx->pClient == NULL)
         return VINF_SUCCESS;
@@ -70,7 +70,7 @@ static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
     if (   RT_SUCCESS(rc)
         && fChanged)
     {
-        SHAREDCLIPBOARDFORMATDATA formatData;
+        SHCLFORMATDATA formatData;
         RT_ZERO(formatData);
 
         formatData.uFormats = fFormats;
@@ -89,7 +89,7 @@ static int vboxClipboardChanged(VBOXCLIPBOARDCONTEXT *pCtx)
  *
  * @returns VINF_SUCCESS (not used).
  * @param   ThreadSelf  Our thread handle.
- * @param   pvUser      Pointer to the VBOXCLIPBOARDCONTEXT structure.
+ * @param   pvUser      Pointer to the SHCLCONTEXT structure.
  *
  */
 static int vboxClipboardThread(RTTHREAD ThreadSelf, void *pvUser)
@@ -97,7 +97,7 @@ static int vboxClipboardThread(RTTHREAD ThreadSelf, void *pvUser)
     LogFlowFuncEnter();
 
     AssertPtrReturn(pvUser, VERR_INVALID_PARAMETER);
-    VBOXCLIPBOARDCONTEXT *pCtx = (VBOXCLIPBOARDCONTEXT *)pvUser;
+    SHCLCONTEXT *pCtx = (SHCLCONTEXT *)pvUser;
 
     while (!pCtx->fTerminate)
     {
@@ -155,7 +155,7 @@ void VBoxClipboardSvcImplDestroy(void)
     g_ctx.pClient = NULL;
 }
 
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     RT_NOREF(fHeadless);
 
@@ -177,7 +177,7 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless)
     return rc;
 }
 
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
+int VBoxClipboardSvcImplSync(PSHCLCLIENT pClient)
 {
     /* Sync the host clipboard content with the client. */
     VBoxSvcClipboardLock();
@@ -189,7 +189,7 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
     return rc;
 }
 
-int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
+int VBoxClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
 {
     VBoxSvcClipboardLock();
 
@@ -200,8 +200,8 @@ int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
     return VINF_SUCCESS;
 }
 
-int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient,
-                                       PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDFORMATDATA pFormats)
+int VBoxClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient,
+                                       PSHCLCLIENTCMDCTX pCmdCtx, PSHCLFORMATDATA pFormats)
 {
     RT_NOREF(pCmdCtx);
 
@@ -218,7 +218,7 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient,
         return VINF_SUCCESS;
 #endif
 
-    SHAREDCLIPBOARDDATAREQ dataReq;
+    SHCLDATAREQ dataReq;
     RT_ZERO(dataReq);
 
     dataReq.uFmt   = pFormats->uFormats;
@@ -235,8 +235,8 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient,
  * @param pData                 Data block to put read data into.
  * @param pcbActual             Where to write the actual size of the written data.
  */
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
-                                 PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual)
+int VBoxClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                                 PSHCLDATABLOCK pData, uint32_t *pcbActual)
 {
     RT_NOREF(pCmdCtx);
 
@@ -261,8 +261,8 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLI
  * @param pCmdCtx               Command context to use for writing the data. Currently unused.
  * @param pData                 Data block to write to clipboard.
  */
-int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient,
-                                  PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData)
+int VBoxClipboardSvcImplWriteData(PSHCLCLIENT pClient,
+                                  PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData)
 {
     RT_NOREF(pCmdCtx);
 
@@ -276,37 +276,37 @@ int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient,
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardSvcImplURIReadDir(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDDIRDATA pDirData)
+int VBoxClipboardSvcImplURIReadDir(PSHCLCLIENT pClient, PSHCLDIRDATA pDirData)
 {
     RT_NOREF(pClient, pDirData);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIWriteDir(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDDIRDATA pDirData)
+int VBoxClipboardSvcImplURIWriteDir(PSHCLCLIENT pClient, PSHCLDIRDATA pDirData)
 {
     RT_NOREF(pClient, pDirData);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIReadFileHdr(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDFILEHDR pFileHdr)
+int VBoxClipboardSvcImplURIReadFileHdr(PSHCLCLIENT pClient, PSHCLFILEHDR pFileHdr)
 {
     RT_NOREF(pClient, pFileHdr);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIWriteFileHdr(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDFILEHDR pFileHdr)
+int VBoxClipboardSvcImplURIWriteFileHdr(PSHCLCLIENT pClient, PSHCLFILEHDR pFileHdr)
 {
     RT_NOREF(pClient, pFileHdr);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIReadFileData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDFILEDATA pFileData)
+int VBoxClipboardSvcImplURIReadFileData(PSHCLCLIENT pClient, PSHCLFILEDATA pFileData)
 {
     RT_NOREF(pClient, pFileData);
     return VERR_NOT_IMPLEMENTED;
 }
 
-int VBoxClipboardSvcImplURIWriteFileData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDFILEDATA pFileData)
+int VBoxClipboardSvcImplURIWriteFileData(PSHCLCLIENT pClient, PSHCLFILEDATA pFileData)
 {
     RT_NOREF(pClient, pFileData);
     return VERR_NOT_IMPLEMENTED;

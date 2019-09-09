@@ -37,7 +37,7 @@ SharedClipboardArea::SharedClipboardArea(void)
     : m_cRefs(0)
     , m_fOpen(0)
     , m_hDir(NIL_RTDIR)
-    , m_uID(NIL_SHAREDCLIPBOARDAREAID)
+    , m_uID(NIL_SHCLAREAID)
 {
     int rc = initInternal();
     if (RT_FAILURE(rc))
@@ -45,8 +45,8 @@ SharedClipboardArea::SharedClipboardArea(void)
 }
 
 SharedClipboardArea::SharedClipboardArea(const char *pszPath,
-                                         SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
-                                         SHAREDCLIPBOARDAREAOPENFLAGS fFlags /* = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE */)
+                                         SHCLAREAID uID /* = NIL_SHCLAREAID */,
+                                         SHCLAREAOPENFLAGS fFlags /* = SHCLAREA_OPEN_FLAGS_NONE */)
     : m_tsCreatedMs(0)
     , m_cRefs(0)
     , m_fOpen(0)
@@ -114,7 +114,7 @@ int SharedClipboardArea::Unlock(void)
     return RTCritSectLeave(&m_CritSect);
 }
 
-int SharedClipboardArea::AddObject(const char *pszPath, const SHAREDCLIPBOARDAREAOBJ &Obj)
+int SharedClipboardArea::AddObject(const char *pszPath, const SHCLAREAOBJ &Obj)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
 
@@ -125,7 +125,7 @@ int SharedClipboardArea::AddObject(const char *pszPath, const SHAREDCLIPBOARDARE
     return VINF_SUCCESS;
 }
 
-int SharedClipboardArea::GetObject(const char *pszPath, PSHAREDCLIPBOARDAREAOBJ pObj)
+int SharedClipboardArea::GetObject(const char *pszPath, PSHCLAREAOBJ pObj)
 {
     SharedClipboardAreaFsObjMap::const_iterator itObj = m_mapObj.find(pszPath);
     if (itObj != m_mapObj.end())
@@ -165,8 +165,8 @@ int SharedClipboardArea::closeInternal(void)
 
     if (RT_SUCCESS(rc))
     {
-        this->m_fOpen = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE;
-        this->m_uID   = NIL_SHAREDCLIPBOARDAREAID;
+        this->m_fOpen = SHCLAREA_OPEN_FLAGS_NONE;
+        this->m_uID   = NIL_SHCLAREAID;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -184,7 +184,7 @@ int SharedClipboardArea::closeInternal(void)
  * @param   cbPath              Size (in bytes) of the constructured area base path.
  */
 /* static */
-int SharedClipboardArea::PathConstruct(const char *pszBase, SHAREDCLIPBOARDAREAID uID, char *pszPath, size_t cbPath)
+int SharedClipboardArea::PathConstruct(const char *pszBase, SHCLAREAID uID, char *pszPath, size_t cbPath)
 {
     LogFlowFunc(("pszBase=%s, uAreaID=%RU32\n", pszBase, uID));
 
@@ -223,7 +223,7 @@ int SharedClipboardArea::Close(void)
     return closeInternal();
 }
 
-SHAREDCLIPBOARDAREAID SharedClipboardArea::GetID(void) const
+SHCLAREAID SharedClipboardArea::GetID(void) const
 {
     return this->m_uID;
 }
@@ -244,18 +244,18 @@ bool SharedClipboardArea::IsOpen(void) const
 }
 
 int SharedClipboardArea::OpenEx(const char *pszPath,
-                                SHAREDCLIPBOARDAREAID uID /* = NIL_SHAREDCLIPBOARDAREAID */,
-                                SHAREDCLIPBOARDAREAOPENFLAGS fFlags /* = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE */)
+                                SHCLAREAID uID /* = NIL_SHCLAREAID */,
+                                SHCLAREAOPENFLAGS fFlags /* = SHCLAREA_OPEN_FLAGS_NONE */)
 {
     AssertPtrReturn(pszPath, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDAREA_OPEN_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~SHCLAREA_OPEN_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     char szAreaDir[RTPATH_MAX];
     int rc = SharedClipboardArea::PathConstruct(pszPath, uID, szAreaDir, sizeof(szAreaDir));
     if (RT_SUCCESS(rc))
     {
         if (   RTDirExists(szAreaDir)
-            && (fFlags & SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST))
+            && (fFlags & SHCLAREA_OPEN_FLAGS_MUST_NOT_EXIST))
         {
             rc = VERR_ALREADY_EXISTS;
         }
@@ -281,10 +281,10 @@ int SharedClipboardArea::OpenEx(const char *pszPath,
     return rc;
 }
 
-int SharedClipboardArea::OpenTemp(SHAREDCLIPBOARDAREAID uID,
-                                  SHAREDCLIPBOARDAREAOPENFLAGS fFlags /* = SHAREDCLIPBOARDAREA_OPEN_FLAGS_NONE */)
+int SharedClipboardArea::OpenTemp(SHCLAREAID uID,
+                                  SHCLAREAOPENFLAGS fFlags /* = SHCLAREA_OPEN_FLAGS_NONE */)
 {
-    AssertReturn(!(fFlags & ~SHAREDCLIPBOARDAREA_OPEN_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~SHCLAREA_OPEN_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     /*
      * Get the user's temp directory. Don't use the user's root directory (or

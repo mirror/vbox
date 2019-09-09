@@ -40,7 +40,7 @@
  *        !!! WARNING: Buggy, doesn't work yet (some memory corruption / garbage in the file name descriptions) !!! */
 //#define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 0
 
-VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+VBoxClipboardWinDataObject::VBoxClipboardWinDataObject(PSHCLURITRANSFER pTransfer,
                                                        LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
     : m_enmStatus(Uninitialized)
     , m_lRefCount(0)
@@ -228,24 +228,24 @@ int VBoxClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbData,
  * @param   pTransfer           URI transfer object to handle.
  * @param   strDir              Directory path to handle.
  */
-int VBoxClipboardWinDataObject::readDir(PSHAREDCLIPBOARDURITRANSFER pTransfer, const Utf8Str &strDir)
+int VBoxClipboardWinDataObject::readDir(PSHCLURITRANSFER pTransfer, const Utf8Str &strDir)
 {
     LogFlowFunc(("strDir=%s\n", strDir.c_str()));
 
-    VBOXCLIPBOARDLISTOPENPARMS openParmsList;
+    SHCLLISTOPENPARMS openParmsList;
     int rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
     if (RT_SUCCESS(rc))
     {
         rc = RTStrCopy(openParmsList.pszPath, openParmsList.cbPath, strDir.c_str());
         if (RT_SUCCESS(rc))
         {
-            SHAREDCLIPBOARDLISTHANDLE hList;
+            SHCLLISTHANDLE hList;
             rc = SharedClipboardURITransferListOpen(pTransfer, &openParmsList, &hList);
             if (RT_SUCCESS(rc))
             {
                 LogFlowFunc(("strDir=%s -> hList=%RU64\n", strDir.c_str(), hList));
 
-                VBOXCLIPBOARDLISTHDR hdrList;
+                SHCLLISTHDR hdrList;
                 rc = SharedClipboardURITransferListGetHeader(pTransfer, hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
@@ -254,12 +254,12 @@ int VBoxClipboardWinDataObject::readDir(PSHAREDCLIPBOARDURITRANSFER pTransfer, c
 
                     for (uint64_t o = 0; o < hdrList.cTotalObjects; o++)
                     {
-                        VBOXCLIPBOARDLISTENTRY entryList;
+                        SHCLLISTENTRY entryList;
                         rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
                         if (RT_SUCCESS(rc))
                         {
-                            PSHAREDCLIPBOARDFSOBJINFO pFsObjInfo = (PSHAREDCLIPBOARDFSOBJINFO)entryList.pvInfo;
-                            Assert(entryList.cbInfo == sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                            PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
+                            Assert(entryList.cbInfo == sizeof(SHCLFSOBJINFO));
 
                             Utf8Str strPath = strDir + Utf8Str("\\") + Utf8Str(entryList.pszName);
 
@@ -319,7 +319,7 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
 
     VBoxClipboardWinDataObject *pThis = (VBoxClipboardWinDataObject *)pvUser;
 
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = pThis->m_pTransfer;
+    PSHCLURITRANSFER pTransfer = pThis->m_pTransfer;
     AssertPtr(pTransfer);
 
     pTransfer->Thread.fStarted = true;
@@ -332,7 +332,7 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
     int rc = SharedClipboardURITransferOpen(pTransfer);
     if (RT_SUCCESS(rc))
     {
-        PVBOXCLIPBOARDROOTLIST pRootList;
+        PSHCLROOTLIST pRootList;
         rc = SharedClipboardURILTransferRootsAsList(pTransfer, &pRootList);
         if (RT_SUCCESS(rc))
         {
@@ -340,11 +340,11 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
 
             for (uint32_t i = 0; i < pRootList->Hdr.cRoots; i++)
             {
-                PVBOXCLIPBOARDLISTENTRY pRootEntry = &pRootList->paEntries[i];
+                PSHCLLISTENTRY pRootEntry = &pRootList->paEntries[i];
                 AssertPtr(pRootEntry);
 
-                Assert(pRootEntry->cbInfo == sizeof(SHAREDCLIPBOARDFSOBJINFO));
-                PSHAREDCLIPBOARDFSOBJINFO pFsObjInfo = (PSHAREDCLIPBOARDFSOBJINFO)pRootEntry->pvInfo;
+                Assert(pRootEntry->cbInfo == sizeof(SHCLFSOBJINFO));
+                PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)pRootEntry->pvInfo;
 
                 LogFlowFunc(("pszRoot=%s, fMode=0x%x\n", pRootEntry->pszName, pFsObjInfo->Attr.fMode));
 
@@ -404,7 +404,7 @@ DECLCALLBACK(int) VBoxClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, vo
  * @param   fUnicode            Whether the FILEGROUPDESCRIPTOR object shall contain Unicode data or not.
  * @param   phGlobal            Where to store the allocated HGLOBAL object on success.
  */
-int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHAREDCLIPBOARDURITRANSFER pTransfer,
+int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLURITRANSFER pTransfer,
                                                                       bool fUnicode, HGLOBAL *phGlobal)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -477,7 +477,7 @@ int VBoxClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHAREDCLI
             pFD->dwFlags     |= FD_UNICODE;
         pFD->dwFileAttributes = FILE_ATTRIBUTE_NORMAL;
 
-        const SHAREDCLIPBOARDFSOBJINFO *pObjInfo = &itRoot->objInfo;
+        const SHCLFSOBJINFO *pObjInfo = &itRoot->objInfo;
 
         if (RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
         {
@@ -557,7 +557,7 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
         int rc;
 
         /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
-        if (SharedClipboardURITransferGetStatus(m_pTransfer) == SHAREDCLIPBOARDURITRANSFERSTATUS_NONE)
+        if (SharedClipboardURITransferGetStatus(m_pTransfer) == SHCLURITRANSFERSTATUS_NONE)
         {
             rc = SharedClipboardURITransferPrepare(m_pTransfer);
             if (RT_SUCCESS(rc))
@@ -614,7 +614,7 @@ STDMETHODIMP VBoxClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTGME
 
             /* Hand-in the provider so that our IStream implementation can continue working with it. */
             hr = VBoxClipboardWinStreamImpl::Create(this /* pParent */, m_pTransfer,
-                                                    fsObjEntry.strPath.c_str()/* File name */, &fsObjEntry.objInfo /* PSHAREDCLIPBOARDFSOBJINFO */,
+                                                    fsObjEntry.strPath.c_str()/* File name */, &fsObjEntry.objInfo /* PSHCLFSOBJINFO */,
                                                     &m_pStream);
             if (SUCCEEDED(hr))
             {

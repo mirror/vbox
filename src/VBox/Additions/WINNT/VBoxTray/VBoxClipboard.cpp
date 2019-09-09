@@ -51,32 +51,32 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 
-typedef struct _VBOXCLIPBOARDCONTEXT
+typedef struct _SHCLCONTEXT
 {
     /** Pointer to the VBoxClient service environment. */
     const VBOXSERVICEENV    *pEnv;
     /** Command context. */
     VBGLR3SHCLCMDCTX         CmdCtx;
     /** Windows-specific context data. */
-    VBOXCLIPBOARDWINCTX      Win;
+    SHCLWINCTX      Win;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     /** URI transfer data. */
-    SHAREDCLIPBOARDURICTX    URI;
+    SHCLURICTX    URI;
 #endif
-} VBOXCLIPBOARDCONTEXT, *PVBOXCLIPBOARDCONTEXT;
+} SHCLCONTEXT, *PSHCLCONTEXT;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-typedef struct _VBOXCLIPBOARDURIREADTHREADCTX
+typedef struct _SHCLURIREADTHREADCTX
 {
-    PVBOXCLIPBOARDCONTEXT       pClipboardCtx;
-    PSHAREDCLIPBOARDURITRANSFER pTransfer;
-} VBOXCLIPBOARDURIREADTHREADCTX, *PVBOXCLIPBOARDURIREADTHREADCTX;
+    PSHCLCONTEXT       pClipboardCtx;
+    PSHCLURITRANSFER pTransfer;
+} SHCLURIREADTHREADCTX, *PSHCLURIREADTHREADCTX;
 
-typedef struct _VBOXCLIPBOARDURIWRITETHREADCTX
+typedef struct _SHCLURIWRITETHREADCTX
 {
-    PVBOXCLIPBOARDCONTEXT       pClipboardCtx;
-    PSHAREDCLIPBOARDURITRANSFER pTransfer;
-} VBOXCLIPBOARDURIWRITETHREADCTX, *PVBOXCLIPBOARDURIWRITETHREADCTX;
+    PSHCLCONTEXT       pClipboardCtx;
+    PSHCLURITRANSFER pTransfer;
+} SHCLURIWRITETHREADCTX, *PSHCLURIWRITETHREADCTX;
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
 
@@ -84,7 +84,7 @@ typedef struct _VBOXCLIPBOARDURIWRITETHREADCTX
 *   Static variables                                                                                                             *
 *********************************************************************************************************************************/
 /** Static clipboard context (since it is the single instance). Directly used in the windows proc. */
-static VBOXCLIPBOARDCONTEXT g_Ctx = { NULL };
+static SHCLCONTEXT g_Ctx = { NULL };
 /** Static window class name. */
 static char s_szClipWndClassName[] = VBOX_CLIPBOARD_WNDCLASS_NAME;
 
@@ -93,8 +93,8 @@ static char s_szClipWndClassName[] = VBOX_CLIPBOARD_WNDCLASS_NAME;
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
-static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc);
+static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHCLURITRANSFERCALLBACKDATA pData, int rc);
+static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHCLURITRANSFERCALLBACKDATA pData, int rc);
 #endif
 
 
@@ -105,10 +105,10 @@ static DECLCALLBACK(int) vboxClipboardURIWriteThread(RTTHREAD ThreadSelf, void *
 
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDURIWRITETHREADCTX pCtx = (PVBOXCLIPBOARDURIWRITETHREADCTX)pvUser;
+    PSHCLURIWRITETHREADCTX pCtx = (PSHCLURIWRITETHREADCTX)pvUser;
     AssertPtr(pCtx);
 
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = pCtx->pTransfer;
+    PSHCLURITRANSFER pTransfer = pCtx->pTransfer;
     AssertPtr(pTransfer);
 
     pTransfer->Thread.fStarted = true;
@@ -119,7 +119,7 @@ static DECLCALLBACK(int) vboxClipboardURIWriteThread(RTTHREAD ThreadSelf, void *
     int rc = VbglR3ClipboardConnectEx(&cmdCtx);
     if (RT_SUCCESS(rc))
     {
-        rc = VbglR3ClipboardTransferSendStatus(&cmdCtx, pTransfer, SHAREDCLIPBOARDURITRANSFERSTATUS_RUNNING);
+        rc = VbglR3ClipboardTransferSendStatus(&cmdCtx, pTransfer, SHCLURITRANSFERSTATUS_RUNNING);
         if (RT_SUCCESS(rc))
         {
             bool     fTerminate = false;
@@ -157,7 +157,7 @@ static DECLCALLBACK(int) vboxClipboardURIWriteThread(RTTHREAD ThreadSelf, void *
     return rc;
 }
 
-static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
+static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHCLURITRANSFERCALLBACKDATA pData, int rc)
 {
     RT_NOREF(rc);
 
@@ -165,10 +165,10 @@ static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHAREDCLIPBO
 
     LogRel2(("Shared Clipboard: Transfer to destination complete\n"));
 
-    PSHAREDCLIPBOARDURICTX pCtx = (PSHAREDCLIPBOARDURICTX)pData->pvUser;
+    PSHCLURICTX pCtx = (PSHCLURICTX)pData->pvUser;
     AssertPtr(pCtx);
 
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = pData->pTransfer;
+    PSHCLURITRANSFER pTransfer = pData->pTransfer;
     AssertPtr(pTransfer);
 
     if (pTransfer->pvUser) /* SharedClipboardWinURITransferCtx */
@@ -181,7 +181,7 @@ static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHAREDCLIPBO
     AssertRC(rc2);
 }
 
-static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHAREDCLIPBOARDURITRANSFERCALLBACKDATA pData, int rc)
+static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHCLURITRANSFERCALLBACKDATA pData, int rc)
 {
     RT_NOREF(rc);
 
@@ -189,10 +189,10 @@ static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHAREDCLIPBOARD
 
     LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rc));
 
-    PSHAREDCLIPBOARDURICTX pCtx = (PSHAREDCLIPBOARDURICTX)pData->pvUser;
+    PSHCLURICTX pCtx = (PSHCLURICTX)pData->pvUser;
     AssertPtr(pCtx);
 
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = pData->pTransfer;
+    PSHCLURITRANSFER pTransfer = pData->pTransfer;
     AssertPtr(pTransfer);
 
     if (pTransfer->pvUser) /* SharedClipboardWinURITransferCtx */
@@ -205,7 +205,7 @@ static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHAREDCLIPBOARD
     AssertRC(rc2);
 }
 
-static int vboxClipboardURITransferOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx)
+static int vboxClipboardURITransferOpen(PSHCLPROVIDERCTX pCtx)
 {
     RT_NOREF(pCtx);
 
@@ -213,7 +213,7 @@ static int vboxClipboardURITransferOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx)
     return VINF_SUCCESS;
 }
 
-static int vboxClipboardURITransferClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx)
+static int vboxClipboardURITransferClose(PSHCLPROVIDERCTX pCtx)
 {
     RT_NOREF(pCtx);
 
@@ -221,14 +221,14 @@ static int vboxClipboardURITransferClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx)
     return VINF_SUCCESS;
 }
 
-static int vboxClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms,
-                                    PSHAREDCLIPBOARDLISTHANDLE phList)
+static int vboxClipboardURIListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
+                                    PSHCLLISTHANDLE phList)
 {
     RT_NOREF(pCtx, pOpenParms, phList);
 
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     RT_NOREF(pThisCtx);
@@ -239,13 +239,13 @@ static int vboxClipboardURIListOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPB
     return rc;
 }
 
-static int vboxClipboardURIListClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList)
+static int vboxClipboardURIListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     RT_NOREF(pCtx, hList);
 
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     RT_NOREF(pThisCtx);
@@ -256,11 +256,11 @@ static int vboxClipboardURIListClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLI
     return rc;
 }
 
-static int vboxClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPBOARDROOTLIST *ppRootList)
+static int vboxClipboardURIGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     int rc = VbglR3ClipboardRootListRead(&pThisCtx->CmdCtx, ppRootList);
@@ -269,14 +269,14 @@ static int vboxClipboardURIGetRoots(PSHAREDCLIPBOARDPROVIDERCTX pCtx, PVBOXCLIPB
     return rc;
 }
 
-static int vboxClipboardURIListHdrRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
-                                       PVBOXCLIPBOARDLISTHDR pListHdr)
+static int vboxClipboardURIListHdrRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList,
+                                       PSHCLLISTHDR pListHdr)
 {
     RT_NOREF(hList);
 
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     RT_NOREF(pThisCtx);
@@ -297,12 +297,12 @@ static int vboxClipboardURIListHdrRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDC
 }
 
 /*
-static int vboxClipboardURIListHdrWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
-                                        PVBOXCLIPBOARDLISTHDR pListHdr)
+static int vboxClipboardURIListHdrWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList,
+                                        PSHCLLISTHDR pListHdr)
 {
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     int rc = VbglR3ClipboardListHdrWrite(pThisCtx->u32ClientID, hList, pListHdr);
@@ -311,14 +311,14 @@ static int vboxClipboardURIListHdrWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHARED
     return rc;
 }*/
 
-static int vboxClipboardURIListEntryRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
-                                         PVBOXCLIPBOARDLISTENTRY pListEntry)
+static int vboxClipboardURIListEntryRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList,
+                                         PSHCLLISTENTRY pListEntry)
 {
     RT_NOREF(hList);
 
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     RT_NOREF(pThisCtx);
@@ -331,12 +331,12 @@ static int vboxClipboardURIListEntryRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHARE
 }
 
 /*
-static int vboxClipboardURIListEntryWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
-                                          PVBOXCLIPBOARDLISTENTRY pListEntry)
+static int vboxClipboardURIListEntryWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList,
+                                          PSHCLLISTENTRY pListEntry)
 {
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     int rc = VbglR3ClipboardListEntryWrite(pThisCtx->u32ClientID, hList, pListEntry);
@@ -346,12 +346,12 @@ static int vboxClipboardURIListEntryWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAR
 }
 */
 
-static int vboxClipboardURIObjOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
-                                   PVBOXCLIPBOARDOBJOPENCREATEPARMS pCreateParms, PSHAREDCLIPBOARDOBJHANDLE phObj)
+static int vboxClipboardURIObjOpen(PSHCLPROVIDERCTX pCtx,
+                                   PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
 {
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     int rc = VbglR3ClipboardObjOpenSend(&pThisCtx->CmdCtx, pCreateParms, phObj);
@@ -360,11 +360,11 @@ static int vboxClipboardURIObjOpen(PSHAREDCLIPBOARDPROVIDERCTX pCtx,
     return rc;
 }
 
-static int vboxClipboardURIObjClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj)
+static int vboxClipboardURIObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     int rc = VbglR3ClipboardObjCloseSend(&pThisCtx->CmdCtx, hObj);
@@ -373,14 +373,14 @@ static int vboxClipboardURIObjClose(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIP
     return rc;
 }
 
-static int vboxClipboardURIObjRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
+static int vboxClipboardURIObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                    void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
 {
     RT_NOREF(fFlags);
 
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     int rc = VbglR3ClipboardObjRead(&pThisCtx->CmdCtx, hObj, pvData, cbData, pcbRead);
@@ -389,14 +389,14 @@ static int vboxClipboardURIObjRead(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPB
     return rc;
 }
 
-static int vboxClipboardURIObjWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
+static int vboxClipboardURIObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                     void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
 {
     RT_NOREF(fFlags);
 
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pThisCtx = (PVBOXCLIPBOARDCONTEXT)pCtx->pvUser;
+    PSHCLCONTEXT pThisCtx = (PSHCLCONTEXT)pCtx->pvUser;
     AssertPtr(pThisCtx);
 
     int rc = VbglR3ClipboardObjWrite(&pThisCtx->CmdCtx, hObj, pvData, cbData, pcbWritten);
@@ -406,11 +406,11 @@ static int vboxClipboardURIObjWrite(PSHAREDCLIPBOARDPROVIDERCTX pCtx, SHAREDCLIP
 }
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 
-static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     AssertPtr(pCtx);
 
-    const PVBOXCLIPBOARDWINCTX pWinCtx = &pCtx->Win;
+    const PSHCLWINCTX pWinCtx = &pCtx->Win;
 
     LRESULT lresultRc = 0;
 
@@ -426,7 +426,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
                /* Clipboard was updated by another application.
                 * Report available formats to the host. */
-               SHAREDCLIPBOARDFORMATDATA Formats;
+               SHCLFORMATDATA Formats;
                int rc = VBoxClipboardWinGetFormats(&pCtx->Win, &Formats);
                if (RT_SUCCESS(rc))
                {
@@ -453,7 +453,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
            {
                /* Clipboard was updated by another application. */
                /* WM_DRAWCLIPBOARD always expects a return code of 0, so don't change "rc" here. */
-               SHAREDCLIPBOARDFORMATDATA Formats;
+               SHCLFORMATDATA Formats;
                int rc = VBoxClipboardWinGetFormats(pWinCtx, &Formats);
                if (RT_SUCCESS(rc))
                    rc = VbglR3ClipboardFormatsSend(&pCtx->CmdCtx, &Formats);
@@ -484,7 +484,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
            /* Insert the requested clipboard format data into the clipboard. */
            const UINT cfFormat = (UINT)wParam;
 
-           const VBOXCLIPBOARDFORMAT fFormat = VBoxClipboardWinClipboardFormatToVBox(cfFormat);
+           const SHCLFORMAT fFormat = VBoxClipboardWinClipboardFormatToVBox(cfFormat);
 
            LogFunc(("WM_RENDERFORMAT: cfFormat=%u -> fFormat=0x%x\n", cfFormat, fFormat));
 
@@ -646,7 +646,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
            AssertPtr(pEvent);
            Assert(pEvent->enmType == VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS);
 
-           const VBOXCLIPBOARDFORMATS fFormats =  pEvent->u.ReportFormats.uFormats;
+           const SHCLFORMATS fFormats =  pEvent->u.ReportFormats.uFormats;
 
            if (fFormats != VBOX_SHARED_CLIPBOARD_FMT_NONE) /* Could arrive with some older GA versions. */
            {
@@ -660,7 +660,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                     {
                         LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_URI_LIST\n"));
 
-                        PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pCtx->URI,
+                        PSHCLURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pCtx->URI,
                                                                                                  0 /* uIdx */);
                         if (pTransfer)
                         {
@@ -697,7 +697,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
            AssertPtr(pEvent);
            Assert(pEvent->enmType == VBGLR3CLIPBOARDEVENTTYPE_READ_DATA);
 
-           const VBOXCLIPBOARDFORMAT uFormat = (uint32_t)pEvent->u.ReadData.uFmt;
+           const SHCLFORMAT uFormat = (uint32_t)pEvent->u.ReadData.uFmt;
 
            HANDLE hClip = NULL;
 
@@ -714,7 +714,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                        LPVOID lp = GlobalLock(hClip);
                        if (lp != NULL)
                        {
-                           SHAREDCLIPBOARDDATABLOCK dataBlock = { uFormat, lp, (uint32_t)GlobalSize(hClip) };
+                           SHCLDATABLOCK dataBlock = { uFormat, lp, (uint32_t)GlobalSize(hClip) };
 
                            rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
 
@@ -734,7 +734,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                        LPWSTR uniString = (LPWSTR)GlobalLock(hClip);
                        if (uniString != NULL)
                        {
-                           SHAREDCLIPBOARDDATABLOCK dataBlock = { uFormat, uniString, ((uint32_t)lstrlenW(uniString) + 1) * 2 };
+                           SHCLDATABLOCK dataBlock = { uFormat, uniString, ((uint32_t)lstrlenW(uniString) + 1) * 2 };
 
                            rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
 
@@ -758,7 +758,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
                            if (lp != NULL)
                            {
-                               SHAREDCLIPBOARDDATABLOCK dataBlock = { uFormat, lp, (uint32_t)GlobalSize(hClip) };
+                               SHCLDATABLOCK dataBlock = { uFormat, lp, (uint32_t)GlobalSize(hClip) };
 
                                rc = VbglR3ClipboardWriteDataEx(&pEvent->cmdCtx, &dataBlock);
 
@@ -779,9 +779,9 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                    int rc = VBoxClipboardWinOpen(hwnd);
                    if (RT_SUCCESS(rc))
                    {
-                       PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                       rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE,
-                                                             SHAREDCLIPBOARDSOURCE_LOCAL,
+                       PSHCLURITRANSFER pTransfer;
+                       rc = SharedClipboardURITransferCreate(SHCLURITRANSFERDIR_WRITE,
+                                                             SHCLSOURCE_LOCAL,
                                                              &pTransfer);
                        if (RT_SUCCESS(rc))
                        {
@@ -808,8 +808,8 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                                                                                     papszList, cbList + 1 /* Include termination */);
                                            if (RT_SUCCESS(rc))
                                            {
-                                               PVBOXCLIPBOARDURIWRITETHREADCTX pThreadCtx
-                                                   = (PVBOXCLIPBOARDURIWRITETHREADCTX)RTMemAllocZ(sizeof(VBOXCLIPBOARDURIWRITETHREADCTX));
+                                               PSHCLURIWRITETHREADCTX pThreadCtx
+                                                   = (PSHCLURIWRITETHREADCTX)RTMemAllocZ(sizeof(SHCLURIWRITETHREADCTX));
                                                if (pThreadCtx)
                                                {
                                                    pThreadCtx->pClipboardCtx = pCtx;
@@ -873,9 +873,9 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
            int rc = VBoxClipboardWinOpen(hwnd);
            if (RT_SUCCESS(rc))
            {
-               PSHAREDCLIPBOARDURITRANSFER pTransfer;
-               rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE,
-                                                     SHAREDCLIPBOARDSOURCE_LOCAL,
+               PSHCLURITRANSFER pTransfer;
+               rc = SharedClipboardURITransferCreate(SHCLURITRANSFERDIR_WRITE,
+                                                     SHCLSOURCE_LOCAL,
                                                      &pTransfer);
                if (RT_SUCCESS(rc))
                {
@@ -902,8 +902,8 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
                                                                             papszList, cbList + 1 /* Include termination */);
                                    if (RT_SUCCESS(rc))
                                    {
-                                       PVBOXCLIPBOARDURIWRITETHREADCTX pThreadCtx
-                                           = (PVBOXCLIPBOARDURIWRITETHREADCTX)RTMemAllocZ(sizeof(VBOXCLIPBOARDURIWRITETHREADCTX));
+                                       PSHCLURIWRITETHREADCTX pThreadCtx
+                                           = (PSHCLURIWRITETHREADCTX)RTMemAllocZ(sizeof(SHCLURIWRITETHREADCTX));
                                        if (pThreadCtx)
                                        {
                                            pThreadCtx->pClipboardCtx = pCtx;
@@ -948,13 +948,13 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
            LogFunc(("VBOX_CLIPBOARD_WM_URI_START_WRITE: cTransfersRunning=%RU32\n",
                     SharedClipboardURICtxGetRunningTransfers(&pCtx->URI)));
 
-           PSHAREDCLIPBOARDURITRANSFER pTransfer;
-           int rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_READ,
-                                                     SHAREDCLIPBOARDSOURCE_LOCAL,
+           PSHCLURITRANSFER pTransfer;
+           int rc = SharedClipboardURITransferCreate(SHCLURITRANSFERDIR_READ,
+                                                     SHCLSOURCE_LOCAL,
                                                      &pTransfer);
            if (RT_SUCCESS(rc))
            {
-               SHAREDCLIPBOARDURITRANSFERCALLBACKS TransferCallbacks;
+               SHCLURITRANSFERCALLBACKS TransferCallbacks;
                RT_ZERO(TransferCallbacks);
 
                TransferCallbacks.pvUser              = &pCtx->URI;
@@ -963,10 +963,10 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
                SharedClipboardURITransferSetCallbacks(pTransfer, &TransferCallbacks);
 
-               SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+               SHCLPROVIDERCREATIONCTX creationCtx;
                RT_ZERO(creationCtx);
 
-               creationCtx.enmSource = SHAREDCLIPBOARDSOURCE_REMOTE;
+               creationCtx.enmSource = SHCLSOURCE_REMOTE;
 
                creationCtx.Interface.pfnGetRoots      = vboxClipboardURIGetRoots;
                creationCtx.Interface.pfnListOpen      = vboxClipboardURIListOpen;
@@ -1028,7 +1028,7 @@ static LRESULT vboxClipboardWinProcessMsg(PVBOXCLIPBOARDCONTEXT pCtx, HWND hwnd,
 
 static LRESULT CALLBACK vboxClipboardWinWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-static int vboxClipboardCreateWindow(PVBOXCLIPBOARDCONTEXT pCtx)
+static int vboxClipboardCreateWindow(PSHCLCONTEXT pCtx)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1057,7 +1057,7 @@ static int vboxClipboardCreateWindow(PVBOXCLIPBOARDCONTEXT pCtx)
 
     if (RT_SUCCESS(rc))
     {
-        const PVBOXCLIPBOARDWINCTX pWinCtx = &pCtx->Win;
+        const PSHCLWINCTX pWinCtx = &pCtx->Win;
 
         /* Create the window. */
         pWinCtx->hWnd = CreateWindowEx(WS_EX_TOOLWINDOW | WS_EX_TRANSPARENT | WS_EX_TOPMOST,
@@ -1083,11 +1083,11 @@ static int vboxClipboardCreateWindow(PVBOXCLIPBOARDCONTEXT pCtx)
     return rc;
 }
 
-static void vboxClipboardDestroy(PVBOXCLIPBOARDCONTEXT pCtx)
+static void vboxClipboardDestroy(PSHCLCONTEXT pCtx)
 {
     AssertPtrReturnVoid(pCtx);
 
-    const PVBOXCLIPBOARDWINCTX pWinCtx = &pCtx->Win;
+    const PSHCLWINCTX pWinCtx = &pCtx->Win;
 
     if (pWinCtx->hWnd)
     {
@@ -1100,7 +1100,7 @@ static void vboxClipboardDestroy(PVBOXCLIPBOARDCONTEXT pCtx)
 
 static LRESULT CALLBACK vboxClipboardWinWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-    PVBOXCLIPBOARDCONTEXT pCtx = &g_Ctx; /** @todo r=andy Make pCtx available through SetWindowLongPtr() / GWL_USERDATA. */
+    PSHCLCONTEXT pCtx = &g_Ctx; /** @todo r=andy Make pCtx available through SetWindowLongPtr() / GWL_USERDATA. */
     AssertPtr(pCtx);
 
     /* Forward with proper context. */
@@ -1111,7 +1111,7 @@ DECLCALLBACK(int) VBoxClipboardInit(const PVBOXSERVICEENV pEnv, void **ppInstanc
 {
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pCtx = &g_Ctx; /* Only one instance for now. */
+    PSHCLCONTEXT pCtx = &g_Ctx; /* Only one instance for now. */
     AssertPtr(pCtx);
 
     if (pCtx->pEnv)
@@ -1181,10 +1181,10 @@ DECLCALLBACK(int) VBoxClipboardWorker(void *pInstance, bool volatile *pfShutdown
      */
     RTThreadUserSignal(RTThreadSelf());
 
-    const PVBOXCLIPBOARDCONTEXT pCtx = (PVBOXCLIPBOARDCONTEXT)pInstance;
+    const PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pInstance;
     AssertPtr(pCtx);
 
-    const PVBOXCLIPBOARDWINCTX pWinCtx = &pCtx->Win;
+    const PSHCLWINCTX pWinCtx = &pCtx->Win;
 
     int rc;
 
@@ -1323,7 +1323,7 @@ DECLCALLBACK(int) VBoxClipboardStop(void *pInstance)
 
     LogFunc(("Stopping pInstance=%p\n", pInstance));
 
-    PVBOXCLIPBOARDCONTEXT pCtx = (PVBOXCLIPBOARDCONTEXT)pInstance;
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pInstance;
     AssertPtr(pCtx);
 
     VbglR3ClipboardDisconnect(pCtx->CmdCtx.uClientID);
@@ -1337,7 +1337,7 @@ DECLCALLBACK(void) VBoxClipboardDestroy(void *pInstance)
 {
     AssertPtrReturnVoid(pInstance);
 
-    PVBOXCLIPBOARDCONTEXT pCtx = (PVBOXCLIPBOARDCONTEXT)pInstance;
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pInstance;
     AssertPtr(pCtx);
 
     /* Make sure that we are disconnected. */

@@ -223,9 +223,9 @@ using namespace HGCM;
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
-static int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pClientState, uint32_t uClientID);
-static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTSTATE pClientState);
-static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientState);
+static int vboxSvcClipboardClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID);
+static int vboxSvcClipboardClientStateDestroy(PSHCLCLIENTSTATE pClientState);
+static void vboxSvcClipboardClientStateReset(PSHCLCLIENTSTATE pClientState);
 
 
 /*********************************************************************************************************************************
@@ -240,7 +240,7 @@ static uint32_t g_uMode;
 static bool g_fHeadless = false;
 
 /** Holds the service extension state. */
-VBOXCLIPBOARDEXTSTATE g_ExtState = { 0 };
+SHCLEXTSTATE g_ExtState = { 0 };
 
 /** Global map of all connected clients. */
 ClipboardClientMap g_mapClients;
@@ -259,13 +259,13 @@ ClipboardClientQueue g_listClientsDeferred;
  * @returns VBox status code, or VERR_NOT_FOUND on error.
  * @param   puID                Where to store the created event source ID on success.
  */
-int vboxSvcClipboardEventSourceCreateID(PVBOXCLIPBOARDEVENTSOURCEID puID)
+int vboxSvcClipboardEventSourceCreateID(PSHCLEVENTSOURCEID puID)
 {
     AssertPtrReturn(puID, VERR_INVALID_POINTER);
 
     for (uint32_t i = 0; i < 32; i++) /* Don't try too hard. */
     {
-        VBOXCLIPBOARDEVENTSOURCEID uID = RTRandU32() % VBOX_SHARED_CLIPBOARD_MAX_EVENT_SOURCES;
+        SHCLEVENTSOURCEID uID = RTRandU32() % VBOX_SHARED_CLIPBOARD_MAX_EVENT_SOURCES;
         if (g_mapEventSources.find(uID) == g_mapEventSources.end())
         {
             *puID = uID;
@@ -342,7 +342,7 @@ void VBoxSvcClipboardUnlock(void)
  *
  * @param   pClient             Pointer to the client data structure to reset message queue for.
  */
-void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENT pClient)
+void vboxSvcClipboardMsgQueueReset(PSHCLCLIENT pClient)
 {
     LogFlowFuncEnter();
 
@@ -360,9 +360,9 @@ void vboxSvcClipboardMsgQueueReset(PVBOXCLIPBOARDCLIENT pClient)
  * @param   uMsg                Message type of message to allocate.
  * @param   cParms              Number of HGCM parameters to allocate.
  */
-PVBOXCLIPBOARDCLIENTMSG vboxSvcClipboardMsgAlloc(uint32_t uMsg, uint32_t cParms)
+PSHCLCLIENTMSG vboxSvcClipboardMsgAlloc(uint32_t uMsg, uint32_t cParms)
 {
-    PVBOXCLIPBOARDCLIENTMSG pMsg = (PVBOXCLIPBOARDCLIENTMSG)RTMemAlloc(sizeof(VBOXCLIPBOARDCLIENTMSG));
+    PSHCLCLIENTMSG pMsg = (PSHCLCLIENTMSG)RTMemAlloc(sizeof(SHCLCLIENTMSG));
     if (pMsg)
     {
         pMsg->m_paParms = (PVBOXHGCMSVCPARM)RTMemAllocZ(sizeof(VBOXHGCMSVCPARM) * cParms);
@@ -385,7 +385,7 @@ PVBOXCLIPBOARDCLIENTMSG vboxSvcClipboardMsgAlloc(uint32_t uMsg, uint32_t cParms)
  * @param   pMsg                Clipboard message to free.
  *                              The pointer will be invalid after calling this function.
  */
-void vboxSvcClipboardMsgFree(PVBOXCLIPBOARDCLIENTMSG pMsg)
+void vboxSvcClipboardMsgFree(PSHCLCLIENTMSG pMsg)
 {
     if (!pMsg)
         return;
@@ -406,7 +406,7 @@ void vboxSvcClipboardMsgFree(PVBOXCLIPBOARDCLIENTMSG pMsg)
  * @param   cDstParms   The number of peek parameters (at least two).
  * @remarks ASSUMES the parameters has been cleared by clientMsgPeek.
  */
-void vboxSvcClipboardMsgSetPeekReturn(PVBOXCLIPBOARDCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
+void vboxSvcClipboardMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
 {
     Assert(cDstParms >= 2);
     if (paDstParms[0].type == VBOX_HGCM_SVC_PARM_32BIT)
@@ -436,7 +436,7 @@ void vboxSvcClipboardMsgSetPeekReturn(PVBOXCLIPBOARDCLIENTMSG pMsg, PVBOXHGCMSVC
  * @param   paDstParms  The peek parameter vector.
  * @param   cDstParms   The number of peek parameters (at least two).
  */
-int vboxSvcClipboardMsgSetGetHostMsgOldReturn(PVBOXCLIPBOARDCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
+int vboxSvcClipboardMsgSetGetHostMsgOldReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
 {
     AssertPtrReturn(pMsg,           VERR_INVALID_POINTER);
     AssertPtrReturn(paDstParms,     VERR_INVALID_POINTER);
@@ -493,7 +493,7 @@ int vboxSvcClipboardMsgSetGetHostMsgOldReturn(PVBOXCLIPBOARDCLIENTMSG pMsg, PVBO
  * @param   pMsg                Pointer to message to add. The queue then owns the pointer.
  * @param   fAppend             Whether to append or prepend the message to the queue.
  */
-int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTMSG pMsg, bool fAppend)
+int vboxSvcClipboardMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
 {
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
 
@@ -526,7 +526,7 @@ int vboxSvcClipboardMsgAdd(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTMSG
  * @param   fWait       Set if we should wait for a message, clear if to return
  *                      immediately.
  */
-int vboxSvcClipboardMsgPeek(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+int vboxSvcClipboardMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                             bool fWait)
 {
     /*
@@ -570,7 +570,7 @@ int vboxSvcClipboardMsgPeek(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCa
      */
     if (!pClient->queueMsg.isEmpty())
     {
-        PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->queueMsg.first();
+        PSHCLCLIENTMSG pFirstMsg = pClient->queueMsg.first();
         if (pFirstMsg)
         {
             vboxSvcClipboardMsgSetPeekReturn(pFirstMsg, paParms, cParms);
@@ -615,7 +615,7 @@ int vboxSvcClipboardMsgPeek(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCa
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int vboxSvcClipboardMsgGetOld(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int vboxSvcClipboardMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc;
 
@@ -632,7 +632,7 @@ int vboxSvcClipboardMsgGetOld(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE h
     {
         if (!pClient->queueMsg.isEmpty())
         {
-            PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->queueMsg.first();
+            PSHCLCLIENTMSG pFirstMsg = pClient->queueMsg.first();
             AssertPtr(pFirstMsg);
 
             LogFlowFunc(("[Client %RU32] uMsg=%RU32 (%s), cParms=%RU32\n",
@@ -691,7 +691,7 @@ int vboxSvcClipboardMsgGetOld(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE h
  * @param   cParms       Number of parameters.
  * @param   paParms      Array of parameters.
  */
-int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int vboxSvcClipboardMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the request.
@@ -705,7 +705,7 @@ int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCal
      */
     if (!pClient->queueMsg.isEmpty())
     {
-        PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->queueMsg.first();
+        PSHCLCLIENTMSG pFirstMsg = pClient->queueMsg.first();
         if (pFirstMsg)
         {
             LogFlowFunc(("First message is: %RU32 (%s), cParms=%RU32\n",
@@ -806,7 +806,7 @@ int vboxSvcClipboardMsgGet(PVBOXCLIPBOARDCLIENT pClient, VBOXHGCMCALLHANDLE hCal
  *
  * @param   pClient             Client to wake up.
  */
-int vboxSvcClipboardClientWakeup(PVBOXCLIPBOARDCLIENT pClient)
+int vboxSvcClipboardClientWakeup(PSHCLCLIENT pClient)
 {
     int rc = VINF_NO_CHANGE;
 
@@ -818,7 +818,7 @@ int vboxSvcClipboardClientWakeup(PVBOXCLIPBOARDCLIENT pClient)
 
         if (!pClient->queueMsg.isEmpty())
         {
-            PVBOXCLIPBOARDCLIENTMSG pFirstMsg = pClient->queueMsg.first();
+            PSHCLCLIENTMSG pFirstMsg = pClient->queueMsg.first();
             if (pFirstMsg)
             {
                 LogFunc(("[Client %RU32] Current host message is %RU32 (%s), cParms=%RU32\n",
@@ -878,8 +878,8 @@ int vboxSvcClipboardClientWakeup(PVBOXCLIPBOARDCLIENT pClient)
  * @param   pDataReq            Data request to send to the guest.
  * @param   puEvent             Event ID for waiting for new data. Optional.
  */
-int vboxSvcClipboardDataReadRequest(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDDATAREQ pDataReq,
-                                    PVBOXCLIPBOARDEVENTID puEvent)
+int vboxSvcClipboardDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
+                                    PSHCLEVENTID puEvent)
 {
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
     AssertPtrReturn(pDataReq, VERR_INVALID_POINTER);
@@ -887,11 +887,11 @@ int vboxSvcClipboardDataReadRequest(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOA
 
     int rc;
 
-    PVBOXCLIPBOARDCLIENTMSG pMsgReadData = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+    PSHCLCLIENTMSG pMsgReadData = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
                                                                     VBOX_SHARED_CLIPBOARD_CPARMS_READ_DATA);
     if (pMsgReadData)
     {
-        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
 
         HGCMSvcSetU32(&pMsgReadData->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pClient->Events.uID, uEvent));
         HGCMSvcSetU32(&pMsgReadData->m_paParms[1], pDataReq->uFmt);
@@ -921,10 +921,10 @@ int vboxSvcClipboardDataReadRequest(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOA
     return rc;
 }
 
-int vboxSvcClipboardDataReadSignal(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
-                                   PSHAREDCLIPBOARDDATABLOCK pData)
+int vboxSvcClipboardDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                                   PSHCLDATABLOCK pData)
 {
-    VBOXCLIPBOARDEVENTID uEvent;
+    SHCLEVENTID uEvent;
     if (pClient->State.uProtocolVer == 0)
     {
         /* Protocol v0 did not have any context ID handling, so we ASSUME that the last event registered
@@ -936,7 +936,7 @@ int vboxSvcClipboardDataReadSignal(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDC
 
     int rc = VINF_SUCCESS;
 
-    PSHAREDCLIPBOARDEVENTPAYLOAD pPayload = NULL;
+    PSHCLEVENTPAYLOAD pPayload = NULL;
     if (pData->cbData)
         rc = SharedClipboardPayloadAlloc(uEvent, pData->pvData, pData->cbData, &pPayload);
 
@@ -951,17 +951,17 @@ int vboxSvcClipboardDataReadSignal(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDC
     return rc;
 }
 
-int vboxSvcClipboardFormatsReport(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDFORMATDATA pFormats)
+int vboxSvcClipboardFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 {
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
     AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
 
     int rc;
 
-    PVBOXCLIPBOARDCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT, 3);
+    PSHCLCLIENTMSG pMsg = vboxSvcClipboardMsgAlloc(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT, 3);
     if (pMsg)
     {
-        VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
+        SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
 
         HGCMSvcSetU32(&pMsg->m_paParms[0], VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(pClient->Events.uID, uEvent));
         HGCMSvcSetU32(&pMsg->m_paParms[1], pFormats->uFormats);
@@ -978,7 +978,7 @@ int vboxSvcClipboardFormatsReport(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARD
     return rc;
 }
 
-int vboxSvcClipboardGetDataWrite(PVBOXCLIPBOARDCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int vboxSvcClipboardGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     LogFlowFuncEnter();
 
@@ -990,10 +990,10 @@ int vboxSvcClipboardGetDataWrite(PVBOXCLIPBOARDCLIENT pClient, uint32_t cParms, 
 
     int rc;
 
-    SHAREDCLIPBOARDDATABLOCK dataBlock;
+    SHCLDATABLOCK dataBlock;
     RT_ZERO(dataBlock);
 
-    VBOXCLIPBOARDCLIENTCMDCTX cmdCtx;
+    SHCLCLIENTCMDCTX cmdCtx;
     RT_ZERO(cmdCtx);
 
     if (pClient->State.uProtocolVer == 0) /* Legacy protocol */
@@ -1043,7 +1043,7 @@ int vboxSvcClipboardGetDataWrite(PVBOXCLIPBOARDCLIENT pClient, uint32_t cParms, 
     {
         if (g_ExtState.pfnExtension)
         {
-            VBOXCLIPBOARDEXTPARMS parms;
+            SHCLEXTPARMS parms;
             RT_ZERO(parms);
 
             parms.uFormat   = dataBlock.uFormat;
@@ -1060,7 +1060,7 @@ int vboxSvcClipboardGetDataWrite(PVBOXCLIPBOARDCLIENT pClient, uint32_t cParms, 
     return rc;
 }
 
-int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENT pClient, SHAREDCLIPBOARDSOURCE enmSource)
+int vboxSvcClipboardSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource)
 {
     if (!pClient) /* If no client connected (anymore), bail out. */
         return VINF_SUCCESS;
@@ -1081,9 +1081,9 @@ int vboxSvcClipboardSetSource(PVBOXCLIPBOARDCLIENT pClient, SHAREDCLIPBOARDSOURC
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int vboxSvcClipboardURITransferStart(PVBOXCLIPBOARDCLIENT pClient,
-                                     SHAREDCLIPBOARDURITRANSFERDIR enmDir, SHAREDCLIPBOARDSOURCE enmSource,
-                                     PSHAREDCLIPBOARDURITRANSFER *ppTransfer)
+int vboxSvcClipboardURITransferStart(PSHCLCLIENT pClient,
+                                     SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSource,
+                                     PSHCLURITRANSFER *ppTransfer)
 {
     LogFlowFuncEnter();
 
@@ -1093,14 +1093,14 @@ int vboxSvcClipboardURITransferStart(PVBOXCLIPBOARDCLIENT pClient,
 
     if (!SharedClipboardURICtxTransfersMaximumReached(&pClient->URI))
     {
-        PSHAREDCLIPBOARDURITRANSFER pTransfer;
+        PSHCLURITRANSFER pTransfer;
         rc = SharedClipboardURITransferCreate(enmDir, enmSource, &pTransfer);
         if (RT_SUCCESS(rc))
         {
-            SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+            SHCLPROVIDERCREATIONCTX creationCtx;
             RT_ZERO(creationCtx);
 
-            if (enmDir == SHAREDCLIPBOARDURITRANSFERDIR_READ)
+            if (enmDir == SHCLURITRANSFERDIR_READ)
             {
                 rc = vboxSvcClipboardURIAreaRegister(&pClient->State, pTransfer);
                 if (RT_SUCCESS(rc))
@@ -1122,13 +1122,13 @@ int vboxSvcClipboardURITransferStart(PVBOXCLIPBOARDCLIENT pClient,
                     creationCtx.pvUser = pClient;
                 }
             }
-            else if (enmDir == SHAREDCLIPBOARDURITRANSFERDIR_WRITE)
+            else if (enmDir == SHCLURITRANSFERDIR_WRITE)
             {
                 AssertFailed(); /** @todo Implement this. */
             }
 
             /* Register needed callbacks so that we can wait for the meta data to arrive here. */
-            SHAREDCLIPBOARDURITRANSFERCALLBACKS Callbacks;
+            SHCLURITRANSFERCALLBACKS Callbacks;
             RT_ZERO(Callbacks);
 
             Callbacks.pvUser                = pClient;
@@ -1209,11 +1209,11 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 
     LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
-    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
+    PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    PSHAREDCLIPBOARDURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClient->URI, 0 /* Index*/);
+    PSHCLURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClient->URI, 0 /* Index*/);
     if (pTransfer)
         vboxSvcClipboardURIAreaDetach(&pClient->State, pTransfer);
 
@@ -1242,14 +1242,14 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
 {
     RT_NOREF(fRequestor, fRestoring);
 
-    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
+    PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pvClient);
 
     /* Assign the client ID. */
     pClient->uClientID = u32ClientID;
 
     /* Create the client's own event source. */
-    VBOXCLIPBOARDEVENTSOURCEID uEventSourceID;
+    SHCLEVENTSOURCEID uEventSourceID;
     int rc = vboxSvcClipboardEventSourceCreateID(&uEventSourceID);
     if (RT_SUCCESS(rc))
         rc = SharedClipboardEventSourceCreate(&pClient->Events, uEventSourceID);
@@ -1301,7 +1301,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
     int rc = VINF_SUCCESS;
 
-    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
+    PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
 
     LogFunc(("u32ClientID=%RU32 (proto %RU32), fn=%RU32 (%s), cParms=%RU32, paParms=%p\n",
@@ -1436,12 +1436,12 @@ static DECLCALLBACK(void) svcCall(void *,
                 }
                 else
                 {
-                    rc = vboxSvcClipboardSetSource(pClient, SHAREDCLIPBOARDSOURCE_REMOTE);
+                    rc = vboxSvcClipboardSetSource(pClient, SHCLSOURCE_REMOTE);
                     if (RT_SUCCESS(rc))
                     {
                         if (g_ExtState.pfnExtension)
                         {
-                            VBOXCLIPBOARDEXTPARMS parms;
+                            SHCLEXTPARMS parms;
                             RT_ZERO(parms);
 
                             parms.uFormat = uFormats;
@@ -1449,10 +1449,10 @@ static DECLCALLBACK(void) svcCall(void *,
                             g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
                         }
 
-                        VBOXCLIPBOARDCLIENTCMDCTX cmdCtx;
+                        SHCLCLIENTCMDCTX cmdCtx;
                         RT_ZERO(cmdCtx);
 
-                        SHAREDCLIPBOARDFORMATDATA formatData;
+                        SHCLFORMATDATA formatData;
                         RT_ZERO(formatData);
 
                         formatData.uFormats = uFormats;
@@ -1498,8 +1498,8 @@ static DECLCALLBACK(void) svcCall(void *,
                         {
                             SharedClipboardURICtxTransfersCleanup(&pClient->URI);
 
-                            PSHAREDCLIPBOARDURITRANSFER pTransfer;
-                            rc = SharedClipboardURITransferCreate(SHAREDCLIPBOARDURITRANSFERDIR_WRITE,
+                            PSHCLURITRANSFER pTransfer;
+                            rc = SharedClipboardURITransferCreate(SHCLURITRANSFERDIR_WRITE,
                                                                   pClient->State.enmSource,
                                                                   &pTransfer);
                             if (RT_SUCCESS(rc))
@@ -1508,7 +1508,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                 rc = vboxSvcClipboardURIAreaAttach(&pClient->State, pTransfer, 0 /* Area ID */);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    SHAREDCLIPBOARDPROVIDERCREATIONCTX creationCtx;
+                                    SHCLPROVIDERCREATIONCTX creationCtx;
                                     RT_ZERO(creationCtx);
 
                                     creationCtx.enmSource = SharedClipboardURITransferGetSource(pTransfer);
@@ -1556,7 +1556,7 @@ static DECLCALLBACK(void) svcCall(void *,
                             /* If there is a service extension active, try reading data from it first. */
                             if (g_ExtState.pfnExtension)
                             {
-                                VBOXCLIPBOARDEXTPARMS parms;
+                                SHCLEXTPARMS parms;
                                 RT_ZERO(parms);
 
                                 parms.uFormat  = uFormat;
@@ -1576,7 +1576,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                  * Otherwise, do this now. */
                                 if (g_ExtState.fDelayedAnnouncement)
                                 {
-                                    SHAREDCLIPBOARDFORMATDATA formatData;
+                                    SHCLFORMATDATA formatData;
                                     RT_ZERO(formatData);
 
                                     formatData.uFormats = g_ExtState.uDelayedFormats;
@@ -1599,14 +1599,14 @@ static DECLCALLBACK(void) svcCall(void *,
                             /* Note: The host clipboard *always* has precedence over the service extension above,
                              *       so data which has been read above might get overridden by the host clipboard eventually. */
 
-                            VBOXCLIPBOARDCLIENTCMDCTX cmdCtx;
+                            SHCLCLIENTCMDCTX cmdCtx;
                             RT_ZERO(cmdCtx);
 
                             /* Release any other pending read, as we only
                              * support one pending read at one time. */
                             if (RT_SUCCESS(rc))
                             {
-                                SHAREDCLIPBOARDDATABLOCK dataBlock;
+                                SHCLDATABLOCK dataBlock;
                                 RT_ZERO(dataBlock);
 
                                 dataBlock.pvData  = pv;
@@ -1659,7 +1659,7 @@ static DECLCALLBACK(void) svcCall(void *,
  * @param   pClientState        Client state to initialize.
  * @param   uClientID           Client ID (HGCM) to use for this client state.
  */
-static int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pClientState, uint32_t uClientID)
+static int vboxSvcClipboardClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
 {
     LogFlowFuncEnter();
 
@@ -1679,7 +1679,7 @@ static int vboxSvcClipboardClientStateInit(PVBOXCLIPBOARDCLIENTSTATE pClientStat
  * @returns VBox status code.
  * @param   pClientState        Client state to destroy.
  */
-static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTSTATE pClientState)
+static int vboxSvcClipboardClientStateDestroy(PSHCLCLIENTSTATE pClientState)
 {
     RT_NOREF(pClientState);
 
@@ -1693,12 +1693,12 @@ static int vboxSvcClipboardClientStateDestroy(PVBOXCLIPBOARDCLIENTSTATE pClientS
  *
  * @param   pClientState    Client state to reset.
  */
-static void vboxSvcClipboardClientStateReset(PVBOXCLIPBOARDCLIENTSTATE pClientState)
+static void vboxSvcClipboardClientStateReset(PSHCLCLIENTSTATE pClientState)
 {
     LogFlowFuncEnter();
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    pClientState->URI.enmTransferDir = SHAREDCLIPBOARDURITRANSFERDIR_UNKNOWN;
+    pClientState->URI.enmTransferDir = SHCLURITRANSFERDIR_UNKNOWN;
 #else
     RT_NOREF(pClientState);
 #endif
@@ -1773,33 +1773,33 @@ static DECLCALLBACK(int) svcHostCall(void *,
 
 #ifndef UNIT_TEST
 /**
- * SSM descriptor table for the VBOXCLIPBOARDCLIENTSTATE structure.
+ * SSM descriptor table for the SHCLCLIENTSTATE structure.
  */
 static SSMFIELD const s_aShClSSMClientState[] =
 {
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATE, uProtocolVer),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATE, cbChunkSize),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTSTATE, enmSource),
+    SSMFIELD_ENTRY(SHCLCLIENTSTATE, uProtocolVer),
+    SSMFIELD_ENTRY(SHCLCLIENTSTATE, cbChunkSize),
+    SSMFIELD_ENTRY(SHCLCLIENTSTATE, enmSource),
     SSMFIELD_ENTRY_TERM()
 };
 
 /**
- * SSM descriptor table for the VBOXCLIPBOARDCLIENTURISTATE structure.
+ * SSM descriptor table for the SHCLCLIENTURISTATE structure.
  */
 static SSMFIELD const s_aShClSSMClientURIState[] =
 {
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTURISTATE, enmTransferDir),
+    SSMFIELD_ENTRY(SHCLCLIENTURISTATE, enmTransferDir),
     SSMFIELD_ENTRY_TERM()
 };
 
 /**
- * SSM descriptor table for the header of the VBOXCLIPBOARDCLIENTMSG structure.
+ * SSM descriptor table for the header of the SHCLCLIENTMSG structure.
  * The actual message parameters will be serialized separately.
  */
 static SSMFIELD const s_aShClSSMClientMsgHdr[] =
 {
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTMSG, m_uMsg),
-    SSMFIELD_ENTRY(VBOXCLIPBOARDCLIENTMSG, m_cParms),
+    SSMFIELD_ENTRY(SHCLCLIENTMSG, m_uMsg),
+    SSMFIELD_ENTRY(SHCLCLIENTMSG, m_cParms),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1826,7 +1826,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
      */
     LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
-    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
+    PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
 
     /* Write Shared Clipboard saved state version. */
@@ -1844,10 +1844,10 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 
     for (size_t i = 0; i < pClient->queueMsg.size(); i++)
     {
-        PVBOXCLIPBOARDCLIENTMSG pMsg = pClient->queueMsg.at(i);
+        PSHCLCLIENTMSG pMsg = pClient->queueMsg.at(i);
         AssertPtr(pMsg);
 
-        rc = SSMR3PutStructEx(pSSM, pMsg, sizeof(VBOXCLIPBOARDCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
+        rc = SSMR3PutStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
         AssertRCReturn(rc, rc);
 
         rc = SSMR3PutStructEx(pSSM, &pMsg->m_Ctx, sizeof(VBOXSHCLMSGCTX), 0 /*fFlags*/, &s_aShClSSMClientMsgCtx[0], NULL);
@@ -1908,7 +1908,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
     LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
-    PVBOXCLIPBOARDCLIENT pClient = (PVBOXCLIPBOARDCLIENT)pvClient;
+    PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
 
     /* Restore the client data. */
@@ -1934,10 +1934,10 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
 
         for (uint64_t i = 0; i < cMsg; i++)
         {
-            PVBOXCLIPBOARDCLIENTMSG pMsg = (PVBOXCLIPBOARDCLIENTMSG)RTMemAlloc(sizeof(VBOXCLIPBOARDCLIENTMSG));
+            PSHCLCLIENTMSG pMsg = (PSHCLCLIENTMSG)RTMemAlloc(sizeof(SHCLCLIENTMSG));
             AssertPtrReturn(pMsg, VERR_NO_MEMORY);
 
-            rc = SSMR3GetStructEx(pSSM, pMsg, sizeof(VBOXCLIPBOARDCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
+            rc = SSMR3GetStructEx(pSSM, pMsg, sizeof(SHCLCLIENTMSG), 0 /*fFlags*/, &s_aShClSSMClientMsgHdr[0], NULL);
             AssertRCReturn(rc, rc);
 
             rc = SSMR3GetStructEx(pSSM, &pMsg->m_Ctx, sizeof(VBOXSHCLMSGCTX), 0 /*fFlags*/, &s_aShClSSMClientMsgCtx[0], NULL);
@@ -1983,7 +1983,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
     ClipboardClientMap::const_iterator itClient = g_mapClients.find(g_ExtState.uClientID);
     if (itClient != g_mapClients.end())
     {
-        PVBOXCLIPBOARDCLIENT pClient = itClient->second;
+        PSHCLCLIENT pClient = itClient->second;
         AssertPtr(pClient);
 
         switch (u32Function)
@@ -1999,7 +1999,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
                 }
                 else
                 {
-                    SHAREDCLIPBOARDFORMATDATA formatData;
+                    SHCLFORMATDATA formatData;
                     RT_ZERO(formatData);
 
                     formatData.uFormats = u32Format;
@@ -2013,7 +2013,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
             /* The service extension wants read data from the guest. */
             case VBOX_CLIPBOARD_EXT_FN_DATA_READ:
             {
-                SHAREDCLIPBOARDDATAREQ dataReq;
+                SHCLDATAREQ dataReq;
                 RT_ZERO(dataReq);
 
                 dataReq.uFmt   = u32Format;
@@ -2039,7 +2039,7 @@ static DECLCALLBACK(int) svcRegisterExtension(void *, PFNHGCMSVCEXT pfnExtension
 {
     LogFlowFunc(("pfnExtension=%p\n", pfnExtension));
 
-    VBOXCLIPBOARDEXTPARMS parms;
+    SHCLEXTPARMS parms;
     RT_ZERO(parms);
 
     if (pfnExtension)
@@ -2088,7 +2088,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
         {
             g_pHelpers = pTable->pHelpers;
 
-            pTable->cbClient = sizeof(VBOXCLIPBOARDCLIENT);
+            pTable->cbClient = sizeof(SHCLCLIENT);
 
             pTable->pfnUnload     = svcUnload;
             pTable->pfnConnect    = svcConnect;

@@ -154,7 +154,7 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx)
 }
 
 
-VBGLR3DECL(int) VbglR3ClipboardFormatsWriteRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDFORMATDATA pFormats)
+VBGLR3DECL(int) VbglR3ClipboardFormatsWriteRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATDATA pFormats)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
@@ -187,7 +187,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsWriteRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDC
 }
 
 
-VBGLR3DECL(int) VbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDDATAREQ pDataReq)
+VBGLR3DECL(int) VbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATAREQ pDataReq)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pDataReq, VERR_INVALID_POINTER);
@@ -365,7 +365,7 @@ static int vbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, 
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 VBGLR3DECL(int) VbglR3ClipboardTransferSendStatus(PVBGLR3SHCLCMDCTX pCtx,
-                                                  PSHAREDCLIPBOARDURITRANSFER pTransfer, SHAREDCLIPBOARDURITRANSFERSTATUS uStatus)
+                                                  PSHCLURITRANSFER pTransfer, SHCLURITRANSFERSTATUS uStatus)
 {
     AssertPtrReturn(pCtx,      VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -387,7 +387,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferSendStatus(PVBGLR3SHCLCMDCTX pCtx,
     return rc;
 }
 
-static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDROOTLISTHDR pRootListHdr)
+static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTHDR pRootListHdr)
 {
     AssertPtrReturn(pCtx,         VERR_INVALID_POINTER);
     AssertPtrReturn(pRootListHdr, VERR_INVALID_POINTER);
@@ -415,7 +415,7 @@ static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARD
     return rc;
 }
 
-static int vbglR3ClipboardRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIndex, PVBOXCLIPBOARDROOTLISTENTRY pRootListEntry)
+static int vbglR3ClipboardRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIndex, PSHCLROOTLISTENTRY pRootListEntry)
 {
     AssertPtrReturn(pCtx,           VERR_INVALID_POINTER);
     AssertPtrReturn(pRootListEntry, VERR_INVALID_POINTER);
@@ -451,17 +451,17 @@ static int vbglR3ClipboardRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIn
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDROOTLIST *ppRootList)
+VBGLR3DECL(int) VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
     AssertPtrReturn(ppRootList, VERR_INVALID_POINTER);
 
     int rc;
 
-    PVBOXCLIPBOARDROOTLIST pRootList = SharedClipboardURIRootListAlloc();
+    PSHCLROOTLIST pRootList = SharedClipboardURIRootListAlloc();
     if (pRootList)
     {
-        VBOXCLIPBOARDROOTLISTHDR srcRootListHdr;
+        SHCLROOTLISTHDR srcRootListHdr;
         rc = vbglR3ClipboardRootListHdrRead(pCtx, &srcRootListHdr);
         if (RT_SUCCESS(rc))
         {
@@ -471,7 +471,7 @@ VBGLR3DECL(int) VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOA
             if (srcRootListHdr.cRoots)
             {
                 pRootList->paEntries =
-                    (PVBOXCLIPBOARDROOTLISTENTRY)RTMemAllocZ(srcRootListHdr.cRoots * sizeof(VBOXCLIPBOARDROOTLISTENTRY));
+                    (PSHCLROOTLISTENTRY)RTMemAllocZ(srcRootListHdr.cRoots * sizeof(SHCLROOTLISTENTRY));
                 if (pRootList->paEntries)
                 {
                     for (uint32_t i = 0; i < srcRootListHdr.cRoots; i++)
@@ -526,7 +526,7 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDROOTLISTHDR pRootListHdr)
+VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTHDR pRootListHdr)
 {
     AssertPtrReturn(pCtx,         VERR_INVALID_POINTER);
     AssertPtrReturn(pRootListHdr, VERR_INVALID_POINTER);
@@ -578,7 +578,7 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReq(PVBGLR3SHCLCMDCTX pCtx, uint
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReply(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIndex, PVBOXCLIPBOARDROOTLISTENTRY pEntry)
+VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReply(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIndex, PSHCLROOTLISTENTRY pEntry)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(pEntry, VERR_INVALID_POINTER);
@@ -603,8 +603,8 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReply(PVBGLR3SHCLCMDCTX pCtx, ui
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms,
-                                            PSHAREDCLIPBOARDLISTHANDLE phList)
+VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
+                                            PSHCLLISTHANDLE phList)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
     AssertPtrReturn(pOpenParms, VERR_INVALID_POINTER);
@@ -633,7 +633,7 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOA
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDLISTOPENPARMS pOpenParms)
+VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPENPARMS pOpenParms)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
     AssertPtrReturn(pOpenParms, VERR_INVALID_POINTER);
@@ -668,7 +668,7 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOA
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHAREDCLIPBOARDLISTHANDLE hList)
+VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHCLLISTHANDLE hList)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -679,7 +679,7 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
                        VBOX_SHARED_CLIPBOARD_GUEST_FN_REPLY, 6);
 
     Msg.uContext.SetUInt32(pCtx->uContextID);
-    Msg.enmType.SetUInt32(VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_LIST_OPEN);
+    Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
@@ -692,7 +692,7 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDLISTHANDLE phList)
+VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHANDLE phList)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(phList, VERR_INVALID_POINTER);
@@ -718,7 +718,7 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIP
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHAREDCLIPBOARDLISTHANDLE hList)
+VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHCLLISTHANDLE hList)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -729,7 +729,7 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcRepl
                        VBOX_SHARED_CLIPBOARD_GUEST_FN_REPLY, 6);
 
     Msg.uContext.SetUInt32(pCtx->uContextID);
-    Msg.enmType.SetUInt32(VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_LIST_CLOSE);
+    Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
@@ -742,7 +742,7 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcRepl
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList)
+VBGLR3DECL(int) VbglR3ClipboardListCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -762,8 +762,8 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPB
 }
 
 
-VBGLR3DECL(int) VbglR3ClipboardListHdrRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList, uint32_t fFlags,
-                                           PVBOXCLIPBOARDLISTHDR pListHdr)
+VBGLR3DECL(int) VbglR3ClipboardListHdrRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList, uint32_t fFlags,
+                                           PSHCLLISTHDR pListHdr)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
@@ -797,7 +797,7 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOA
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDLISTHANDLE phList, uint32_t *pfFlags)
+VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHANDLE phList, uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
     AssertPtrReturn(phList,  VERR_INVALID_POINTER);
@@ -827,8 +827,8 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHARE
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListHdrWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
-                                            PVBOXCLIPBOARDLISTHDR pListHdr)
+VBGLR3DECL(int) VbglR3ClipboardListHdrWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList,
+                                            PSHCLLISTHDR pListHdr)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
@@ -854,8 +854,8 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBO
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListEntryRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
-                                             PVBOXCLIPBOARDLISTENTRY pListEntry)
+VBGLR3DECL(int) VbglR3ClipboardListEntryRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList,
+                                             PSHCLLISTENTRY pListEntry)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
     AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
@@ -884,7 +884,7 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPB
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDLISTHANDLE phList, uint32_t *pfInfo)
+VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHANDLE phList, uint32_t *pfInfo)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(phList, VERR_INVALID_POINTER);
@@ -914,8 +914,8 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHA
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardListEntryWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDLISTHANDLE hList,
-                                              PVBOXCLIPBOARDLISTENTRY pListEntry)
+VBGLR3DECL(int) VbglR3ClipboardListEntryWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList,
+                                              PSHCLLISTENTRY pListEntry)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
     AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
@@ -940,7 +940,7 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIP
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDOBJOPENCREATEPARMS pCreateParms)
+VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms)
 {
     AssertPtrReturn(pCtx,         VERR_INVALID_POINTER);
     AssertPtrReturn(pCreateParms, VERR_INVALID_POINTER);
@@ -971,7 +971,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOAR
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHAREDCLIPBOARDOBJHANDLE hObj)
+VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHCLOBJHANDLE hObj)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -982,7 +982,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply,
                        VBOX_SHARED_CLIPBOARD_GUEST_FN_REPLY, 6);
 
     Msg.uContext.SetUInt32(pCtx->uContextID);
-    Msg.enmType.SetUInt32(VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_OPEN);
+    Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
@@ -995,8 +995,8 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply,
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOARDOBJOPENCREATEPARMS pCreateParms,
-                                           PSHAREDCLIPBOARDOBJHANDLE phObj)
+VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
+                                           PSHCLOBJHANDLE phObj)
 {
     AssertPtrReturn(pCtx,         VERR_INVALID_POINTER);
     AssertPtrReturn(pCreateParms, VERR_INVALID_POINTER);
@@ -1024,7 +1024,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PVBOXCLIPBOAR
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDOBJHANDLE phObj)
+VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHANDLE phObj)
 {
     AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
     AssertPtrReturn(phObj, VERR_INVALID_POINTER);
@@ -1050,7 +1050,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPB
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHAREDCLIPBOARDOBJHANDLE hObj)
+VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHCLOBJHANDLE hObj)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1061,7 +1061,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
                        VBOX_SHARED_CLIPBOARD_GUEST_FN_REPLY, 6);
 
     Msg.uContext.SetUInt32(pCtx->uContextID);
-    Msg.enmType.SetUInt32(VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_CLOSE);
+    Msg.enmType.SetUInt32(VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE);
     Msg.rc.SetUInt32((uint32_t)rcReply); /** int vs. uint32_t */
     Msg.cbPayload.SetUInt32(0);
     Msg.pvPayload.SetPtr(NULL, 0);
@@ -1074,7 +1074,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj)
+VBGLR3DECL(int) VbglR3ClipboardObjCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE hObj)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
 
@@ -1093,7 +1093,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBO
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDOBJHANDLE phObj, uint32_t *pcbToRead,
+VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHANDLE phObj, uint32_t *pcbToRead,
                                            uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx,      VERR_INVALID_POINTER);
@@ -1128,7 +1128,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBO
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
+VBGLR3DECL(int) VbglR3ClipboardObjRead(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE hObj,
                                        void *pvData, uint32_t cbData, uint32_t *pcbRead)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -1165,7 +1165,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjRead(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOB
     return rc;
 }
 
-VBGLR3DECL(int) VbglR3ClipboardObjWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDOBJHANDLE hObj,
+VBGLR3DECL(int) VbglR3ClipboardObjWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE hObj,
                                         void *pvData, uint32_t cbData, uint32_t *pcbWritten)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -1200,7 +1200,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjWrite(PVBGLR3SHCLCMDCTX pCtx, SHAREDCLIPBOARDO
 }
 
 VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uMsg, uint32_t cParms,
-                                             PSHAREDCLIPBOARDURITRANSFER pTransfer)
+                                             PSHCLURITRANSFER pTransfer)
 {
     RT_NOREF(cParms);
 
@@ -1219,7 +1219,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
 
             if (RT_SUCCESS(rc))
             {
-                VBOXCLIPBOARDROOTLISTHDR rootListHdr;
+                SHCLROOTLISTHDR rootListHdr;
                 RT_ZERO(rootListHdr);
 
                 rootListHdr.cRoots = SharedClipboardURILTransferRootsCount(pTransfer);
@@ -1238,7 +1238,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
             rc = VbglR3ClipboardRootListEntryReadReq(pCtx, &uIndex, &fInfo);
             if (RT_SUCCESS(rc))
             {
-                VBOXCLIPBOARDROOTLISTENTRY rootListEntry;
+                SHCLROOTLISTENTRY rootListEntry;
                 rc = SharedClipboardURILTransferRootsEntry(pTransfer, uIndex, &rootListEntry);
                 if (RT_SUCCESS(rc))
                     rc = VbglR3ClipboardRootListEntryReadReply(pCtx, uIndex, &rootListEntry);
@@ -1248,7 +1248,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
 
         case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_OPEN:
         {
-            VBOXCLIPBOARDLISTOPENPARMS openParmsList;
+            SHCLLISTOPENPARMS openParmsList;
             rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
             if (RT_SUCCESS(rc))
             {
@@ -1257,7 +1257,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
                 {
                     LogFlowFunc(("pszPath=%s\n", openParmsList.pszPath));
 
-                    SHAREDCLIPBOARDLISTHANDLE hList = SHAREDCLIPBOARDLISTHANDLE_INVALID;
+                    SHCLLISTHANDLE hList = SHCLLISTHANDLE_INVALID;
                     rc = SharedClipboardURITransferListOpen(pTransfer, &openParmsList, &hList);
 
                     /* Reply in any case. */
@@ -1273,7 +1273,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
 
         case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_CLOSE:
         {
-            SHAREDCLIPBOARDLISTHANDLE hList;
+            SHCLLISTHANDLE hList;
             rc = VbglR3ClipboardListCloseRecv(pCtx, &hList);
             if (RT_SUCCESS(rc))
             {
@@ -1291,12 +1291,12 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
         {
             /** @todo Handle filter + list features. */
 
-            SHAREDCLIPBOARDLISTHANDLE hList  = SHAREDCLIPBOARDLISTHANDLE_INVALID;
+            SHCLLISTHANDLE hList  = SHCLLISTHANDLE_INVALID;
             uint32_t                  fFlags = 0;
             rc = VbglR3ClipboardListHdrReadRecvReq(pCtx, &hList, &fFlags);
             if (RT_SUCCESS(rc))
             {
-                VBOXCLIPBOARDLISTHDR hdrList;
+                SHCLLISTHDR hdrList;
                 rc = SharedClipboardURITransferListGetHeader(pTransfer, hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
@@ -1314,7 +1314,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
         {
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_HDR_WRITE\n"));
 
-            VBOXCLIPBOARDLISTHDR hdrList;
+            SHCLLISTHDR hdrList;
             rc = SharedClipboardURIListHdrInit(&hdrList);
             if (RT_SUCCESS(rc))
             {
@@ -1328,11 +1328,11 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
         {
             LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_LIST_ENTRY_READ\n"));
 
-            VBOXCLIPBOARDLISTENTRY entryList;
+            SHCLLISTENTRY entryList;
             rc = SharedClipboardURIListEntryInit(&entryList);
             if (RT_SUCCESS(rc))
             {
-                SHAREDCLIPBOARDLISTHANDLE hList;
+                SHCLLISTHANDLE hList;
                 uint32_t                  fInfo;
                 rc = VbglR3ClipboardListEntryReadRecvReq(pCtx, &hList, &fInfo);
                 if (RT_SUCCESS(rc))
@@ -1340,8 +1340,8 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
                     rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
                     if (RT_SUCCESS(rc))
                     {
-                        PSHAREDCLIPBOARDFSOBJINFO pObjInfo = (PSHAREDCLIPBOARDFSOBJINFO)entryList.pvInfo;
-                        Assert(entryList.cbInfo == sizeof(SHAREDCLIPBOARDFSOBJINFO));
+                        PSHCLFSOBJINFO pObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
+                        Assert(entryList.cbInfo == sizeof(SHCLFSOBJINFO));
 
                         RT_NOREF(pObjInfo);
 
@@ -1368,14 +1368,14 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
 
         case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_OPEN:
         {
-            VBOXCLIPBOARDOBJOPENCREATEPARMS openParms;
+            SHCLOBJOPENCREATEPARMS openParms;
             rc = SharedClipboardURIObjectOpenParmsInit(&openParms);
             if (RT_SUCCESS(rc))
             {
                 rc = VbglR3ClipboardObjOpenRecv(pCtx, &openParms);
                 if (RT_SUCCESS(rc))
                 {
-                    SHAREDCLIPBOARDOBJHANDLE hObj;
+                    SHCLOBJHANDLE hObj;
                     rc = SharedClipboardURIObjectOpen(pTransfer, &openParms, &hObj);
 
                     /* Reply in any case. */
@@ -1391,7 +1391,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
 
         case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_CLOSE:
         {
-            SHAREDCLIPBOARDOBJHANDLE hObj;
+            SHCLOBJHANDLE hObj;
             rc = VbglR3ClipboardObjCloseRecv(pCtx, &hObj);
             if (RT_SUCCESS(rc))
             {
@@ -1407,7 +1407,7 @@ VBGLR3DECL(int) VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uM
 
         case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_OBJ_READ:
         {
-            SHAREDCLIPBOARDOBJHANDLE hObj;
+            SHCLOBJHANDLE hObj;
             uint32_t cbBuf;
             uint32_t fFlags;
             rc = VbglR3ClipboardObjReadRecv(pCtx, &hObj, &cbBuf, &fFlags);
@@ -1548,7 +1548,7 @@ VBGLR3DECL(void) VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent)
 }
 
 #if 0
-VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecv(HGCMCLIENTID idClient, PVBOXCLIPBOARDLISTHANDLE phList)
+VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecv(HGCMCLIENTID idClient, PSHCLLISTHANDLE phList)
 {
     AssertPtrReturn(phList, VERR_INVALID_POINTER);
 
@@ -1580,7 +1580,7 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecv(HGCMCLIENTID idClient, PVBOXCLIPB
  * @param   pListHdr        List header to send.
  */
 VBGLR3DECL(int) VbglR3ClipboardListHdrSend(HGCMCLIENTID idClient,
-                                           VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTHDR pListHdr)
+                                           SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
 
@@ -1612,7 +1612,7 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrSend(HGCMCLIENTID idClient,
  * @param   pListEntry          List entry to send.
  */
 VBGLR3DECL(int) VbglR3ClipboardSendListEntryWrite(HGCMCLIENTID idClient,
-                                                  VBOXCLIPBOARDLISTHANDLE hList, PVBOXCLIPBOARDLISTENTRY pListEntry)
+                                                  SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
 {
     AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
 
@@ -1642,7 +1642,7 @@ VBGLR3DECL(int) VbglR3ClipboardSendListEntryWrite(HGCMCLIENTID idClient,
  * @param   pCtx                The command context returned by VbglR3ClipboardConnect().
  * @param   pFormats            The formats to send (report).
  */
-VBGLR3DECL(int) VbglR3ClipboardFormatsSend(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDFORMATDATA pFormats)
+VBGLR3DECL(int) VbglR3ClipboardFormatsSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATDATA pFormats)
 {
     VBoxClipboardFormatsMsg Msg;
 
@@ -1724,7 +1724,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
  * @param   pCtx                The command context returned by VbglR3ClipboardConnect().
  * @param   pData               Clipboard data to send.
  */
-VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHAREDCLIPBOARDDATABLOCK pData)
+VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK pData)
 {
     int rc;
 

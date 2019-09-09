@@ -8420,7 +8420,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
         {
             LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE\n"));
 
-            VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
+            SHCLEXTPARMS *pParms = (SHCLEXTPARMS *)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
 
             /* The guest announces clipboard formats. This must be delivered to all clients. */
@@ -8436,7 +8436,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
         {
             LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_DATA_READ\n"));
 
-            VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
+            SHCLEXTPARMS *pParms = (SHCLEXTPARMS *)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
 
             /* The clipboard service expects that the pvData buffer will be filled
@@ -8455,7 +8455,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
         {
             LogFlowFunc(("VBOX_CLIPBOARD_EXT_FN_DATA_WRITE\n"));
 
-            VBOXCLIPBOARDEXTPARMS *pParms = (VBOXCLIPBOARDEXTPARMS *)pvParms;
+            SHCLEXTPARMS *pParms = (SHCLEXTPARMS *)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
 
             if (pThis->mConsoleVRDPServer)
@@ -8474,7 +8474,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
             hrc = pControl->ClipboardAreaRegister(ComSafeArrayAsInParam(abstrParms), &uID);
             if (SUCCEEDED(hrc))
             {
-                PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
+                PSHCLEXTAREAPARMS pParms = (PSHCLEXTAREAPARMS)pvParms;
                 AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
 
                 /* Return the registered area ID back to the caller. */
@@ -8486,7 +8486,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
 
         case VBOX_CLIPBOARD_EXT_FN_AREA_UNREGISTER:
         {
-            PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
+            PSHCLEXTAREAPARMS pParms = (PSHCLEXTAREAPARMS)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
 
             hrc = pControl->ClipboardAreaUnregister(pParms->uID);
@@ -8496,7 +8496,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
 
         case VBOX_CLIPBOARD_EXT_FN_AREA_ATTACH:
         {
-            PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
+            PSHCLEXTAREAPARMS pParms = (PSHCLEXTAREAPARMS)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
 
             hrc = pControl->ClipboardAreaAttach(pParms->uID);
@@ -8506,7 +8506,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
 
         case VBOX_CLIPBOARD_EXT_FN_AREA_DETACH:
         {
-            PVBOXCLIPBOARDEXTAREAPARMS pParms = (PVBOXCLIPBOARDEXTAREAPARMS)pvParms;
+            PSHCLEXTAREAPARMS pParms = (PSHCLEXTAREAPARMS)pvParms;
             AssertPtrBreakStmt(pParms, rc = VERR_INVALID_POINTER);
 
             hrc = pControl->ClipboardAreaDetach(pParms->uID);

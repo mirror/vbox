@@ -205,7 +205,7 @@ static CLIPX11FORMAT clipEnumX11Formats(uint32_t u32VBoxFormats,
 struct _CLIPBACKEND
 {
     /** Opaque data structure describing the front-end. */
-    VBOXCLIPBOARDCONTEXT *pFrontend;
+    SHCLCONTEXT *pFrontend;
     /** Is an X server actually available? */
     bool fHaveX11;
     /** The X Toolkit application context structure */
@@ -925,7 +925,7 @@ static int clipInit(CLIPBACKEND *pCtx)
  * Construct the X11 backend of the shared clipboard.
  * @note  X11 backend code
  */
-CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend, bool fHeadless)
+CLIPBACKEND *ClipConstructX11(SHCLCONTEXT *pFrontend, bool fHeadless)
 {
     CLIPBACKEND *pCtx = (CLIPBACKEND *)RTMemAllocZ(sizeof(CLIPBACKEND));
     if (pCtx && fHeadless)
@@ -2119,7 +2119,7 @@ static int clipSetVBoxUtf16(CLIPBACKEND *pCtx, int retval,
 }
 
 /* Return the data in the simulated VBox clipboard. */
-int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     RT_NOREF2(pCtx, u32Format);
     *pcb = g_vboxDatacb;
@@ -2240,7 +2240,7 @@ void testRequestData(CLIPBACKEND *pCtx, CLIPX11FORMAT target, void *closure)
 /* The formats currently on offer from X11 via the shared clipboard */
 static uint32_t g_fX11Formats = 0;
 
-void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
+void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     RT_NOREF1(pCtx);
     g_fX11Formats = u32Formats;
@@ -2388,7 +2388,7 @@ static int g_completedCB = 0;
 static CLIPREADCBREQ *g_completedReq = NULL;
 static char g_completedBuf[MAX_BUF_SIZE];
 
-void ClipRequestFromX11CompleteCallback(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF1(pCtx);
     if (cb <= MAX_BUF_SIZE)
@@ -2884,18 +2884,18 @@ int main()
 # include <iprt/env.h>
 # include <iprt/test.h>
 
-int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     RT_NOREF4(pCtx, u32Format, ppv, pcb);
     return VERR_NO_DATA;
 }
 
-void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
+void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     RT_NOREF2(pCtx, u32Formats);
 }
 
-void ClipRequestFromX11CompleteCallback(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF5(pCtx, rc, pReq, pv, cb);
 }

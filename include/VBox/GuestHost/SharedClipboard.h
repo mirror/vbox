@@ -34,14 +34,14 @@
 #include <iprt/types.h>
 
 /** A single Shared Clipboard format. */
-typedef uint32_t VBOXCLIPBOARDFORMAT;
+typedef uint32_t SHCLFORMAT;
 /** Pointer to a single Shared Clipboard format. */
-typedef VBOXCLIPBOARDFORMAT *PVBOXCLIPBOARDFORMAT;
+typedef SHCLFORMAT *PSHCLFORMAT;
 
 /** Bit map of Shared Clipboard formats. */
-typedef uint32_t VBOXCLIPBOARDFORMATS;
+typedef uint32_t SHCLFORMATS;
 /** Pointer to a bit map of Shared Clipboard formats. */
-typedef VBOXCLIPBOARDFORMATS *PVBOXCLIPBOARDFORMATS;
+typedef SHCLFORMATS *PSHCLFORMATS;
 
 /**
  * Supported data formats for Shared Clipboard. Bit mask.
@@ -62,44 +62,44 @@ typedef VBOXCLIPBOARDFORMATS *PVBOXCLIPBOARDFORMATS;
 /**
  * Structure for keeping a generic Shared Clipboard data block.
  */
-typedef struct _SHAREDCLIPBOARDDATABLOCK
+typedef struct _SHCLDATABLOCK
 {
     /** Clipboard format this data block represents. */
-    VBOXCLIPBOARDFORMAT  uFormat;
+    SHCLFORMAT  uFormat;
     /** Pointer to actual data block. */
     void                *pvData;
     /** Size (in bytes) of actual data block. */
     uint32_t             cbData;
-} SHAREDCLIPBOARDDATABLOCK, *PSHAREDCLIPBOARDDATABLOCK;
+} SHCLDATABLOCK, *PSHCLDATABLOCK;
 
 /**
  * Structure for keeping a Shared Clipboard data read request.
  */
-typedef struct _SHAREDCLIPBOARDDATAREQ
+typedef struct _SHCLDATAREQ
 {
     /** In which format the data needs to be sent. */
-    VBOXCLIPBOARDFORMAT uFmt;
+    SHCLFORMAT uFmt;
     /** Read flags; currently unused. */
     uint32_t            fFlags;
     /** Maximum data (in byte) can be sent. */
     uint32_t            cbSize;
-} SHAREDCLIPBOARDDATAREQ, *PSHAREDCLIPBOARDDATAREQ;
+} SHCLDATAREQ, *PSHCLDATAREQ;
 
 /**
  * Structure for keeping Shared Clipboard formats specifications.
  */
-typedef struct _SHAREDCLIPBOARDFORMATDATA
+typedef struct _SHCLFORMATDATA
 {
     /** Available format(s) as bit map. */
-    VBOXCLIPBOARDFORMATS uFormats;
+    SHCLFORMATS uFormats;
     /** Formats flags. Currently unused. */
     uint32_t             fFlags;
-} SHAREDCLIPBOARDFORMATDATA, *PSHAREDCLIPBOARDFORMATDATA;
+} SHCLFORMATDATA, *PSHCLFORMATDATA;
 
 /**
  * Structure for an (optional) Shared Clipboard event payload.
  */
-typedef struct _SHAREDCLIPBOARDEVENTPAYLOAD
+typedef struct _SHCLEVENTPAYLOAD
 {
     /** Payload ID; currently unused. */
     uint32_t uID;
@@ -107,17 +107,17 @@ typedef struct _SHAREDCLIPBOARDEVENTPAYLOAD
     void    *pvData;
     /** Size (in bytes) of actual payload data. */
     uint32_t cbData;
-} SHAREDCLIPBOARDEVENTPAYLOAD, *PSHAREDCLIPBOARDEVENTPAYLOAD;
+} SHCLEVENTPAYLOAD, *PSHCLEVENTPAYLOAD;
 
 /** Defines an event source ID. */
-typedef uint16_t VBOXCLIPBOARDEVENTSOURCEID;
+typedef uint16_t SHCLEVENTSOURCEID;
 /** Defines a pointer to a event source ID. */
-typedef VBOXCLIPBOARDEVENTSOURCEID *PVBOXCLIPBOARDEVENTSOURCEID;
+typedef SHCLEVENTSOURCEID *PSHCLEVENTSOURCEID;
 
 /** Defines an event ID. */
-typedef uint16_t VBOXCLIPBOARDEVENTID;
+typedef uint16_t SHCLEVENTID;
 /** Defines a pointer to a event source ID. */
-typedef VBOXCLIPBOARDEVENTID *PVBOXCLIPBOARDEVENTID;
+typedef SHCLEVENTID *PSHCLEVENTID;
 
 /** Maximum number of concurrent Shared Clipboard transfers a VM can have.
  *  Number 0 always is reserved for the client itself. */
@@ -130,17 +130,17 @@ typedef VBOXCLIPBOARDEVENTID *PVBOXCLIPBOARDEVENTID;
 /**
  * Structure for maintaining a Shared Clipboard event.
  */
-typedef struct _SHAREDCLIPBOARDEVENT
+typedef struct _SHCLEVENT
 {
     /** List node. */
     RTLISTNODE                   Node;
     /** The event's ID, for self-reference. */
-    VBOXCLIPBOARDEVENTID         uID;
+    SHCLEVENTID         uID;
     /** Event semaphore for signalling the event. */
     RTSEMEVENT                   hEventSem;
     /** Payload to this event. Optional and can be NULL. */
-    PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
-} SHAREDCLIPBOARDEVENT, *PSHAREDCLIPBOARDEVENT;
+    PSHCLEVENTPAYLOAD pPayload;
+} SHCLEVENT, *PSHCLEVENT;
 
 /**
  * Structure for maintaining a Shared Clipboard event source.
@@ -148,51 +148,51 @@ typedef struct _SHAREDCLIPBOARDEVENT
  * Each event source maintains an own counter for events, so that
  * it can be used in different contexts.
  */
-typedef struct _SHAREDCLIPBOARDEVENTSOURCE
+typedef struct _SHCLEVENTSOURCE
 {
     /** The event source' ID. */
-    VBOXCLIPBOARDEVENTSOURCEID uID;
+    SHCLEVENTSOURCEID uID;
     /** Next upcoming event ID. */
-    VBOXCLIPBOARDEVENTID       uEventIDNext;
-    /** List of events (PSHAREDCLIPBOARDEVENT). */
+    SHCLEVENTID       uEventIDNext;
+    /** List of events (PSHCLEVENT). */
     RTLISTANCHOR               lstEvents;
-} SHAREDCLIPBOARDEVENTSOURCE, *PSHAREDCLIPBOARDEVENTSOURCE;
+} SHCLEVENTSOURCE, *PSHCLEVENTSOURCE;
 
 int SharedClipboardPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
-                                PSHAREDCLIPBOARDEVENTPAYLOAD *ppPayload);
-void SharedClipboardPayloadFree(PSHAREDCLIPBOARDEVENTPAYLOAD pPayload);
+                                PSHCLEVENTPAYLOAD *ppPayload);
+void SharedClipboardPayloadFree(PSHCLEVENTPAYLOAD pPayload);
 
-int SharedClipboardEventSourceCreate(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTSOURCEID uID);
-void SharedClipboardEventSourceDestroy(PSHAREDCLIPBOARDEVENTSOURCE pSource);
+int SharedClipboardEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID);
+void SharedClipboardEventSourceDestroy(PSHCLEVENTSOURCE pSource);
 
-VBOXCLIPBOARDEVENTID SharedClipboardEventIDGenerate(PSHAREDCLIPBOARDEVENTSOURCE pSource);
-VBOXCLIPBOARDEVENTID SharedClipboardEventGetLast(PSHAREDCLIPBOARDEVENTSOURCE pSource);
-int SharedClipboardEventRegister(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID);
-int SharedClipboardEventUnregister(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID);
-int SharedClipboardEventWait(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID, RTMSINTERVAL uTimeoutMs,
-                             PSHAREDCLIPBOARDEVENTPAYLOAD* ppPayload);
-int SharedClipboardEventSignal(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID, PSHAREDCLIPBOARDEVENTPAYLOAD pPayload);
-void SharedClipboardEventPayloadDetach(PSHAREDCLIPBOARDEVENTSOURCE pSource, VBOXCLIPBOARDEVENTID uID);
+SHCLEVENTID SharedClipboardEventIDGenerate(PSHCLEVENTSOURCE pSource);
+SHCLEVENTID SharedClipboardEventGetLast(PSHCLEVENTSOURCE pSource);
+int SharedClipboardEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
+int SharedClipboardEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
+int SharedClipboardEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs,
+                             PSHCLEVENTPAYLOAD* ppPayload);
+int SharedClipboardEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, PSHCLEVENTPAYLOAD pPayload);
+void SharedClipboardEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
 
 /**
  * Enumeration to specify the Shared Clipboard URI source type.
  */
-typedef enum SHAREDCLIPBOARDSOURCE
+typedef enum SHCLSOURCE
 {
     /** Invalid source type. */
-    SHAREDCLIPBOARDSOURCE_INVALID = 0,
+    SHCLSOURCE_INVALID = 0,
     /** Source is local. */
-    SHAREDCLIPBOARDSOURCE_LOCAL,
+    SHCLSOURCE_LOCAL,
     /** Source is remote. */
-    SHAREDCLIPBOARDSOURCE_REMOTE,
+    SHCLSOURCE_REMOTE,
     /** The usual 32-bit hack. */
-    SHAREDCLIPBOARDSOURCE_32Bit_Hack = 0x7fffffff
-} SHAREDCLIPBOARDSOURCE;
+    SHCLSOURCE_32Bit_Hack = 0x7fffffff
+} SHCLSOURCE;
 
 /** Opaque data structure for the X11/VBox frontend/glue code. */
-struct _VBOXCLIPBOARDCONTEXT;
-typedef struct _VBOXCLIPBOARDCONTEXT VBOXCLIPBOARDCONTEXT;
-typedef struct _VBOXCLIPBOARDCONTEXT *PVBOXCLIPBOARDCONTEXT;
+struct _SHCLCONTEXT;
+typedef struct _SHCLCONTEXT SHCLCONTEXT;
+typedef struct _SHCLCONTEXT *PSHCLCONTEXT;
 
 /** Opaque data structure for the X11/VBox backend code. */
 struct _CLIPBACKEND;
@@ -204,16 +204,16 @@ struct _CLIPREADCBREQ;
 typedef struct _CLIPREADCBREQ CLIPREADCBREQ;
 
 /* APIs exported by the X11 backend */
-extern CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend, bool fHeadless);
+extern CLIPBACKEND *ClipConstructX11(SHCLCONTEXT *pFrontend, bool fHeadless);
 extern void ClipDestructX11(CLIPBACKEND *pBackend);
 extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab);
 extern int ClipStopX11(CLIPBACKEND *pBackend);
-extern int ClipAnnounceFormatToX11(CLIPBACKEND *pBackend, VBOXCLIPBOARDFORMATS vboxFormats);
-extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, VBOXCLIPBOARDFORMATS vboxFormat, CLIPREADCBREQ *pReq);
+extern int ClipAnnounceFormatToX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormats);
+extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormat, CLIPREADCBREQ *pReq);
 
 /* APIs exported by the X11/VBox frontend */
-extern int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb);
-extern void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats);
-extern void ClipRequestFromX11CompleteCallback(VBOXCLIPBOARDCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
+extern int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb);
+extern void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats);
+extern void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_h */
 

@@ -229,10 +229,10 @@ typedef std::map<Guid, ComObjPtr<Medium> > HardDiskMap;
 struct SharedClipboardAreaData
 {
     SharedClipboardAreaData()
-        : uID(NIL_SHAREDCLIPBOARDAREAID) { }
+        : uID(NIL_SHCLAREAID) { }
 
     /** The area's (unique) ID.
-     *  Set to NIL_SHAREDCLIPBOARDAREAID if not initialized yet. */
+     *  Set to NIL_SHCLAREAID if not initialized yet. */
     ULONG               uID;
     /** The actual Shared Clipboard area assigned to this ID. */
     SharedClipboardArea Area;
@@ -247,7 +247,7 @@ typedef std::map<ULONG, SharedClipboardAreaData *> SharedClipboardAreaMap;
 struct SharedClipboardData
 {
     SharedClipboardData()
-        : uMostRecentClipboardAreaID(NIL_SHAREDCLIPBOARDAREAID)
+        : uMostRecentClipboardAreaID(NIL_SHCLAREAID)
         , uMaxClipboardAreas(32) /** @todo Make this configurable. */
     {
 #ifdef DEBUG_andy
@@ -270,7 +270,7 @@ struct SharedClipboardData
      */
     ULONG GenerateAreaID(void)
     {
-        ULONG uID = NIL_SHAREDCLIPBOARDAREAID;
+        ULONG uID = NIL_SHCLAREAID;
 
         int rc = RTCritSectEnter(&CritSect);
         if (RT_SUCCESS(rc))
@@ -288,7 +288,7 @@ struct SharedClipboardData
     /** Critical section to serialize access. */
     RTCRITSECT                          CritSect;
     /** The most recent (last created) clipboard area ID.
-     *  NIL_SHAREDCLIPBOARDAREAID if not initialized yet. */
+     *  NIL_SHCLAREAID if not initialized yet. */
     ULONG                               uMostRecentClipboardAreaID;
     /** Maximum of concurrent clipboard areas.
      *  @todo Make this configurable. */
@@ -3423,7 +3423,7 @@ int VirtualBox::i_clipboardAreaCreate(ULONG uAreaID, uint32_t fFlags, SharedClip
     SharedClipboardAreaData *pAreaData = new SharedClipboardAreaData();
     if (pAreaData)
     {
-        vrc = pAreaData->Area.OpenTemp(uAreaID, SHAREDCLIPBOARDAREA_OPEN_FLAGS_MUST_NOT_EXIST);
+        vrc = pAreaData->Area.OpenTemp(uAreaID, SHCLAREA_OPEN_FLAGS_MUST_NOT_EXIST);
         if (RT_SUCCESS(vrc))
         {
             pAreaData->uID = uAreaID;
@@ -3634,7 +3634,7 @@ HRESULT VirtualBox::i_onClipboardAreaDetach(ULONG aID)
 
 /**
  * Returns the ID of the most recent (last created) clipboard area,
- * or NIL_SHAREDCLIPBOARDAREAID if no clipboard area has been created yet.
+ * or NIL_SHCLAREAID if no clipboard area has been created yet.
  *
  * @returns Most recent clipboard area ID.
  */

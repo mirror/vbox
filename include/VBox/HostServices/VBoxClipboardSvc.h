@@ -388,16 +388,16 @@ typedef struct _VBoxClipboardGetHostMsg
 #define VBOX_SHARED_CLIPBOARD_CPARMS_GET_HOST_MSG 3
 
 /** @todo might be necessary for future. */
-#define VBOX_SHAREDCLIPBOARD_LIST_FLAG_NONE          0
-#define VBOX_SHAREDCLIPBOARD_LIST_FLAG_RETURN_ONE    RT_BIT(0)
-#define VBOX_SHAREDCLIPBOARD_LIST_FLAG_RESTART       RT_BIT(1)
+#define VBOX_SHCL_LIST_FLAG_NONE          0
+#define VBOX_SHCL_LIST_FLAG_RETURN_ONE    RT_BIT(0)
+#define VBOX_SHCL_LIST_FLAG_RESTART       RT_BIT(1)
 
-#define VBOX_SHAREDCLIPBOARD_LISTHDR_FLAG_NONE       0
+#define VBOX_SHCL_LISTHDR_FLAG_NONE       0
 
 /** No additional information provided. */
-#define VBOX_SHAREDCLIPBOARD_INFO_FLAG_NONE          0
-/** Get object information of type SHAREDCLIPBOARDFSOBJINFO. */
-#define VBOX_SHAREDCLIPBOARD_INFO_FLAG_FSOBJINFO     RT_BIT(0)
+#define VBOX_SHCL_INFO_FLAG_NONE          0
+/** Get object information of type SHCLFSOBJINFO. */
+#define VBOX_SHCL_INFO_FLAG_FSOBJINFO     RT_BIT(0)
 
 /**
  * Transfert status message.
@@ -408,7 +408,7 @@ typedef struct _VBoxClipboardStatusMsg
 
     /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, in: Transfer status of type SHAREDCLIPBOARDURITRANSFERSTATUS. */
+    /** uint32_t, in: Transfer status of type SHCLURITRANSFERSTATUS. */
     HGCMFunctionParameter uStatus;
     /** uint32_t, in: Size of payload of this status, based on the status type. */
     HGCMFunctionParameter cbPayload;
@@ -418,11 +418,11 @@ typedef struct _VBoxClipboardStatusMsg
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_STATUS 4
 
-#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_INVALID           0
-#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_LIST_OPEN         1
-#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_LIST_CLOSE        2
-#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_OPEN          3
-#define VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_OBJ_CLOSE         4
+#define VBOX_SHCL_REPLYMSGTYPE_INVALID           0
+#define VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN         1
+#define VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE        2
+#define VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN          3
+#define VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE         4
 
 /**
  * Generic reply message.
@@ -433,7 +433,7 @@ typedef struct _VBoxClipboardReplyMsg
 
     /** uint32_t, out: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, out: Message type of type VBOX_SHAREDCLIPBOARD_REPLYMSGTYPE_XXX. */
+    /** uint32_t, out: Message type of type VBOX_SHCL_REPLYMSGTYPE_XXX. */
     HGCMFunctionParameter enmType;
     /** uint32_t, out: IPRT result of overall operation. */
     HGCMFunctionParameter rc;
@@ -498,7 +498,7 @@ typedef struct _VBoxClipboardRootListEntryParms
 {
     /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, in: VBOX_SHAREDCLIPBOARD_INFO_FLAG_XXX. */
+    /** uint32_t, in: VBOX_SHCL_INFO_FLAG_XXX. */
     HGCMFunctionParameter fInfo;
     /** uint32_t, in: Index of root list entry to get (zero-based). */
     HGCMFunctionParameter uIndex;
@@ -530,8 +530,8 @@ typedef struct _VBoxClipboardRootListEntryMsg
     HGCMFunctionParameter           szName;
     /** uint32_t, out: Bytes to be used for information/How many bytes were used.  */
     HGCMFunctionParameter           cbInfo;
-    /** pointer, in/out: Information to be set/get (SHAREDCLIPBOARDFSOBJINFO only currently).
-     *  Do not forget to set the SHAREDCLIPBOARDFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
+    /** pointer, in/out: Information to be set/get (SHCLFSOBJINFO only currently).
+     *  Do not forget to set the SHCLFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
     HGCMFunctionParameter           pvInfo;
 } VBoxClipboardRootListEntryMsg;
 
@@ -546,7 +546,7 @@ typedef struct _VBoxClipboardListOpenMsg
 
     /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, in: Listing flags (see VBOX_SHAREDCLIPBOARD_LIST_FLAG_XXX). */
+    /** uint32_t, in: Listing flags (see VBOX_SHCL_LIST_FLAG_XXX). */
     HGCMFunctionParameter fList;
     /** uint32_t, in: Size (in bytes) of the filter string. */
     HGCMFunctionParameter cbFilter;
@@ -583,7 +583,7 @@ typedef struct _VBoxClipboardListHdrReqParms
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
-    /** uint32_t, in: Flags of type VBOX_SHAREDCLIPBOARD_LISTHDR_FLAG_XXX. */
+    /** uint32_t, in: Flags of type VBOX_SHCL_LISTHDR_FLAG_XXX. */
     HGCMFunctionParameter fFlags;
 } VBoxClipboardListHdrReqParms;
 
@@ -607,7 +607,7 @@ typedef struct _VBoxClipboardListHdrMsg
     VBGLIOCHGCMCALL hdr;
 
     VBoxClipboardListHdrReqParms ReqParms;
-    /** uint32_t, in/out: Feature flags (see VBOX_SHAREDCLIPBOARD_FEATURE_FLAG_XXX). */
+    /** uint32_t, in/out: Feature flags (see VBOX_SHCL_FEATURE_FLAG_XXX). */
     HGCMFunctionParameter        fFeatures;
     /** uint64_t, in/out:  Number of total objects to transfer. */
     HGCMFunctionParameter        cTotalObjects;
@@ -623,7 +623,7 @@ typedef struct _VBoxClipboardListEntryReqParms
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
-    /** uint32_t, in: VBOX_SHAREDCLIPBOARD_INFO_FLAG_XXX. */
+    /** uint32_t, in: VBOX_SHCL_INFO_FLAG_XXX. */
     HGCMFunctionParameter fInfo;
 } VBoxClipboardListEntryReqParms;
 
@@ -652,8 +652,8 @@ typedef struct _VBoxClipboardListEntryMsg
     HGCMFunctionParameter          szName;
     /** uint32_t, out: Bytes to be used for information/How many bytes were used.  */
     HGCMFunctionParameter          cbInfo;
-    /** pointer, in/out: Information to be set/get (SHAREDCLIPBOARDFSOBJINFO only currently).
-     *  Do not forget to set the SHAREDCLIPBOARDFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
+    /** pointer, in/out: Information to be set/get (SHCLFSOBJINFO only currently).
+     *  Do not forget to set the SHCLFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
     HGCMFunctionParameter          pvInfo;
 } VBoxClipboardListEntryMsg;
 
@@ -671,7 +671,7 @@ typedef struct _VBoxClipboardObjOpenMsg
     HGCMFunctionParameter cbPath;
     /** pointer, in/out: Absoulte path of object to open/create. */
     HGCMFunctionParameter szPath;
-    /** uint32_t in/out: Open / Create flags of type SHAREDCLIPBOARD_OBJ_CF_. */
+    /** uint32_t in/out: Open / Create flags of type SHCL_OBJ_CF_. */
     HGCMFunctionParameter fCreate;
 } VBoxClipboardObjOpenMsg;
 
@@ -683,7 +683,7 @@ typedef struct _VBoxClipboardObjCloseMsg
 
     /** uint32_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint64_t, in: SHAREDCLIPBOARDOBJHANDLE of object to close. */
+    /** uint64_t, in: SHCLOBJHANDLE of object to close. */
     HGCMFunctionParameter uHandle;
 } VBoxClipboardObjCloseMsg;
 
@@ -693,7 +693,7 @@ typedef struct _VBoxClipboardObjReadReqParms
 {
     /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint64_t, in: SHAREDCLIPBOARDOBJHANDLE of object to write to. */
+    /** uint64_t, in: SHCLOBJHANDLE of object to write to. */
     HGCMFunctionParameter uHandle;
     /** uint32_t, in: How many bytes to read. */
     HGCMFunctionParameter cbToRead;
@@ -723,7 +723,7 @@ typedef struct _VBoxClipboardObjReadWriteMsg
 
     /** uint32_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint64_t, in/out: SHAREDCLIPBOARDOBJHANDLE of object to write to. */
+    /** uint64_t, in/out: SHCLOBJHANDLE of object to write to. */
     HGCMFunctionParameter uHandle;
     /** uint32_t, in/out: Size (in bytes) of current data chunk. */
     HGCMFunctionParameter cbData;
@@ -759,7 +759,7 @@ typedef struct _VBoxClipboardErrorMsg
 
 #pragma pack()
 
-typedef struct _VBOXCLIPBOARDFILEDATA
+typedef struct _SHCLFILEDATA
 {
     /** Current file data chunk. */
     void                       *pvData;
@@ -769,12 +769,12 @@ typedef struct _VBOXCLIPBOARDFILEDATA
     void                       *pvChecksum;
     /** Size (in bytes) of current data chunk. */
     uint32_t                    cbChecksum;
-} VBOXCLIPBOARDFILEDATA, *PVBOXCLIPBOARDFILEDATA;
+} SHCLFILEDATA, *PSHCLFILEDATA;
 
-typedef struct _VBOXCLIPBOARDERRORDATA
+typedef struct _SHCLERRORDATA
 {
     int32_t                     rc;
-} VBOXCLIPBOARDERRORDATA, *PVBOXCLIPBOARDERRORDATA;
+} SHCLERRORDATA, *PSHCLERRORDATA;
 
 bool VBoxSvcClipboardGetHeadless(void);
 bool VBoxSvcClipboardLock(void);

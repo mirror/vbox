@@ -188,7 +188,7 @@ int VBoxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc);
  * @param   cb                  Size (in bytes) of data to dump.
  * @param   u32Format           Clipboard format to use for dumping.
  */
-void VBoxClipboardDbgDumpData(const void *pv, size_t cb, VBOXCLIPBOARDFORMAT u32Format);
+void VBoxClipboardDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format);
 #endif /* LOG_ENABLED */
 
 /**

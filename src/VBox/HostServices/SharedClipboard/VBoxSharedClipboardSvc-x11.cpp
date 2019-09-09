@@ -41,7 +41,7 @@
 /**
  * Global context information used by the host glue for the X11 clipboard backend.
  */
-struct _VBOXCLIPBOARDCONTEXT
+struct _SHCLCONTEXT
 {
     /** This mutex is grabbed during any critical operations on the clipboard
      * which might clash with others. */
@@ -49,7 +49,7 @@ struct _VBOXCLIPBOARDCONTEXT
     /** Pointer to the opaque X11 backend structure */
     CLIPBACKEND         *pBackend;
     /** Pointer to the VBox host client data structure. */
-    PVBOXCLIPBOARDCLIENT pClient;
+    PSHCLCLIENT pClient;
     /** We set this when we start shutting down as a hint not to post any new
      * requests. */
     bool                 fShuttingDown;
@@ -62,11 +62,11 @@ struct _VBOXCLIPBOARDCONTEXT
  * @param  u32Formats  The formats available
  * @note  Host glue code
  */
-void ClipReportX11Formats(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Formats)
+void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     LogFlowFunc(("pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
 
-    SHAREDCLIPBOARDFORMATDATA formatData;
+    SHCLFORMATDATA formatData;
     RT_ZERO(formatData);
 
     formatData.uFormats = u32Formats;
@@ -99,11 +99,11 @@ void VBoxClipboardSvcImplDestroy(void)
  * @note  on the host, we assume that some other application already owns
  *        the clipboard and leave ownership to X11.
  */
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXCLIPBOARDCONTEXT pCtx = (PVBOXCLIPBOARDCONTEXT)RTMemAllocZ(sizeof(VBOXCLIPBOARDCONTEXT));
+    PSHCLCONTEXT pCtx = (PSHCLCONTEXT)RTMemAllocZ(sizeof(SHCLCONTEXT));
     if (pCtx)
     {
         RTCritSectInit(&pCtx->CritSect);
@@ -141,14 +141,14 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless)
  * after a save and restore of the guest.
  * @note  Host glue code
  */
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
+int VBoxClipboardSvcImplSync(PSHCLCLIENT pClient)
 {
     LogFlowFuncEnter();
 
     /* Tell the guest we have no data in case X11 is not available.  If
      * there is data in the host clipboard it will automatically be sent to
      * the guest when the clipboard starts up. */
-    SHAREDCLIPBOARDFORMATDATA formatData;
+    SHCLFORMATDATA formatData;
     RT_ZERO(formatData);
 
     formatData.uFormats = VBOX_SHARED_CLIPBOARD_FMT_NONE;
@@ -160,11 +160,11 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
  * Shut down the shared clipboard service and "disconnect" the guest.
  * @note  Host glue code
  */
-int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
+int VBoxClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
 {
     LogFlowFuncEnter();
 
-    PVBOXCLIPBOARDCONTEXT pCtx = pClient->State.pCtx;
+    PSHCLCONTEXT pCtx = pClient->State.pCtx;
 
     /* Drop the reference to the client, in case it is still there.  This
      * will cause any outstanding clipboard data requests from X11 to fail
@@ -172,7 +172,7 @@ int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
     pCtx->fShuttingDown = true;
 
     /* If there is a currently pending request, release it immediately. */
-    SHAREDCLIPBOARDDATABLOCK dataBlock = { 0, NULL, 0 };
+    SHCLDATABLOCK dataBlock = { 0, NULL, 0 };
     VBoxClipboardSvcImplWriteData(pClient, NULL, &dataBlock);
 
     int rc = ClipStopX11(pCtx->pBackend);
@@ -198,8 +198,8 @@ int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
  * @param pCmdCtx               Command context to use.
  * @param pFormats              Clipboard formats the guest is offering.
  */
-int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
-                                       PSHAREDCLIPBOARDFORMATDATA pFormats)
+int VBoxClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                                       PSHCLFORMATDATA pFormats)
 {
     RT_NOREF(pCmdCtx);
 
@@ -223,7 +223,7 @@ struct _CLIPREADCBREQ
     /** The actual size of the data written. */
     uint32_t            *pcbActual;
     /** The request's event ID. */
-    VBOXCLIPBOARDEVENTID uEvent;
+    SHCLEVENTID uEvent;
 };
 
 /**
@@ -244,8 +244,8 @@ struct _CLIPREADCBREQ
  *         the backend code.
  *
  */
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient,
-                                 PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual)
+int VBoxClipboardSvcImplReadData(PSHCLCLIENT pClient,
+                                 PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData, uint32_t *pcbActual)
 {
     RT_NOREF(pCmdCtx);
 
@@ -257,7 +257,7 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient,
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
     if (pReq)
     {
-        const VBOXCLIPBOARDEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
 
         pReq->pv        = pData->pvData;
         pReq->cb        = pData->cbData;
@@ -270,7 +270,7 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient,
             rc = SharedClipboardEventRegister(&pClient->Events, uEvent);
             if (RT_SUCCESS(rc))
             {
-                PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
+                PSHCLEVENTPAYLOAD pPayload;
                 rc = SharedClipboardEventWait(&pClient->Events, uEvent, 30 * 1000, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
@@ -298,8 +298,8 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient,
  * @param  pCmdCtx              Pointer to the clipboard command context.
  * @param  pData                Data block to write to clipboard.
  */
-int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient,
-                                  PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx, PSHAREDCLIPBOARDDATABLOCK pData)
+int VBoxClipboardSvcImplWriteData(PSHCLCLIENT pClient,
+                                  PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData)
 {
     LogFlowFunc(("pClient=%p, pv=%p, cb=%RU32, uFormat=%02X\n",
                  pClient, pData->pvData, pData->cbData, pData->uFormat));
@@ -322,12 +322,12 @@ int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient,
  *
  * @todo   Change this to deal with the buffer issues rather than offloading them onto the caller.
  */
-void ClipRequestFromX11CompleteCallback(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
+void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc,
                                         CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     AssertMsgRC(rc, ("Clipboard data completion from X11 failed with %Rrc\n", rc));
 
-    PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
+    PSHCLEVENTPAYLOAD pPayload;
     int rc2 = SharedClipboardPayloadAlloc(pReq->uEvent, pv, cb, &pPayload);
     if (RT_SUCCESS(rc2))
         rc2 = SharedClipboardEventSignal(&pCtx->pClient->Events, pReq->uEvent, pPayload);
@@ -348,7 +348,7 @@ void ClipRequestFromX11CompleteCallback(VBOXCLIPBOARDCONTEXT *pCtx, int rc,
  *                   returned
  * @note   Host glue code.
  */
-int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p\n", pCtx, u32Format, ppv));
 
@@ -360,17 +360,17 @@ int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void *
     }
 
     /* Request data from the guest. */
-    SHAREDCLIPBOARDDATAREQ dataReq;
+    SHCLDATAREQ dataReq;
     RT_ZERO(dataReq);
 
     dataReq.uFmt   = u32Format;
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
-    VBOXCLIPBOARDEVENTID uEvent;
+    SHCLEVENTID uEvent;
     int rc = vboxSvcClipboardDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
     if (RT_SUCCESS(rc))
     {
-        PSHAREDCLIPBOARDEVENTPAYLOAD pPayload;
+        PSHCLEVENTPAYLOAD pPayload;
         rc = SharedClipboardEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
         if (RT_SUCCESS(rc))
         {
@@ -389,13 +389,13 @@ int ClipRequestDataForX11(VBOXCLIPBOARDCONTEXT *pCtx, uint32_t u32Format, void *
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardSvcImplURITransferCreate(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDURITRANSFER pTransfer)
+int VBoxClipboardSvcImplURITransferCreate(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
     return VINF_SUCCESS;
 }
 
-int VBoxClipboardSvcImplURITransferDestroy(PVBOXCLIPBOARDCLIENT pClient, PSHAREDCLIPBOARDURITRANSFER pTransfer)
+int VBoxClipboardSvcImplURITransferDestroy(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
     return VINF_SUCCESS;

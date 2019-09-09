@@ -57,7 +57,7 @@ void VBoxClipboardSvcImplDestroy(void)
   * @param   pClient            Structure containing context information about the guest system
   * @param   fHeadless          Whether headless.
   */
-int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless)
+int VBoxClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     RT_NOREF(pClient, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
@@ -68,7 +68,7 @@ int VBoxClipboardSvcImplConnect(PVBOXCLIPBOARDCLIENT pClient, bool fHeadless)
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
+int VBoxClipboardSvcImplSync(PSHCLCLIENT pClient)
 {
     RT_NOREF(pClient);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
@@ -80,7 +80,7 @@ int VBoxClipboardSvcImplSync(PVBOXCLIPBOARDCLIENT pClient)
  *
  * @param   pClient         Structure containing context information about the guest system
  */
-int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
+int VBoxClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
 {
     RT_NOREF(pClient);
     return VINF_SUCCESS;
@@ -94,8 +94,8 @@ int VBoxClipboardSvcImplDisconnect(PVBOXCLIPBOARDCLIENT pClient)
  * @param pCmdCtx               Command context to use.
  * @param pFormats              Clipboard formats the guest is offering.
  */
-int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
-                                       PSHAREDCLIPBOARDFORMATDATA pFormats)
+int VBoxClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                                       PSHCLFORMATDATA pFormats)
 {
     RT_NOREF(pClient, pCmdCtx, pFormats);
     return VINF_SUCCESS;
@@ -109,8 +109,8 @@ int VBoxClipboardSvcImplFormatAnnounce(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBO
  * @param pData         Data block to put read data into.
  * @param pcbActual     Where to store the actual amount of data available.
  */
-int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
-                                 PSHAREDCLIPBOARDDATABLOCK pData, uint32_t *pcbActual)
+int VBoxClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                                 PSHCLDATABLOCK pData, uint32_t *pcbActual)
 {
     RT_NOREF(pClient, pCmdCtx, pData);
 
@@ -120,8 +120,8 @@ int VBoxClipboardSvcImplReadData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLI
     return VINF_SUCCESS;
 }
 
-int VBoxClipboardSvcImplWriteData(PVBOXCLIPBOARDCLIENT pClient, PVBOXCLIPBOARDCLIENTCMDCTX pCmdCtx,
-                                  PSHAREDCLIPBOARDDATABLOCK pData)
+int VBoxClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                                  PSHCLDATABLOCK pData)
 {
     RT_NOREF(pClient, pCmdCtx, pData);
     return VERR_NOT_IMPLEMENTED;

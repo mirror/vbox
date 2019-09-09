@@ -45,13 +45,13 @@
 
 
 
-VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent, PSHAREDCLIPBOARDURITRANSFER pTransfer,
-                                                       const Utf8Str &strPath, PSHAREDCLIPBOARDFSOBJINFO pObjInfo)
+VBoxClipboardWinStreamImpl::VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer,
+                                                       const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo)
     : m_pParent(pParent)
     , m_lRefCount(1) /* Our IDataObjct *always* holds the last reference to this object; needed for the callbacks. */
     , m_pURITransfer(pTransfer)
     , m_strPath(strPath)
-    , m_hObj(SHAREDCLIPBOARDOBJHANDLE_INVALID)
+    , m_hObj(SHCLOBJHANDLE_INVALID)
     , m_objInfo(*pObjInfo)
     , m_cbProcessed(0)
     , m_fNotifiedComplete(false)
@@ -183,17 +183,17 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRead
 
     try
     {
-        if (   m_hObj == SHAREDCLIPBOARDOBJHANDLE_INVALID
+        if (   m_hObj == SHCLOBJHANDLE_INVALID
             && m_pURITransfer->ProviderIface.pfnObjOpen)
         {
-            VBOXCLIPBOARDOBJOPENCREATEPARMS openParms;
+            SHCLOBJOPENCREATEPARMS openParms;
             rc = SharedClipboardURIObjectOpenParmsInit(&openParms);
             if (RT_SUCCESS(rc))
             {
-                openParms.fCreate = SHAREDCLIPBOARD_OBJ_CF_ACT_OPEN_IF_EXISTS
-                                  | SHAREDCLIPBOARD_OBJ_CF_ACT_FAIL_IF_NEW
-                                  | SHAREDCLIPBOARD_OBJ_CF_ACCESS_READ
-                                  | SHAREDCLIPBOARD_OBJ_CF_ACCESS_DENYWRITE;
+                openParms.fCreate = SHCL_OBJ_CF_ACT_OPEN_IF_EXISTS
+                                  | SHCL_OBJ_CF_ACT_FAIL_IF_NEW
+                                  | SHCL_OBJ_CF_ACCESS_READ
+                                  | SHCL_OBJ_CF_ACCESS_DENYWRITE;
 
                 rc = RTStrCopy(openParms.pszPath, openParms.cbPath, m_strPath.c_str());
                 if (RT_SUCCESS(rc))
@@ -361,8 +361,8 @@ STDMETHODIMP VBoxClipboardWinStreamImpl::Write(const void *pvBuffer, ULONG nByte
  * @param   ppStream            Where to return the created stream object on success.
  */
 /* static */
-HRESULT VBoxClipboardWinStreamImpl::Create(VBoxClipboardWinDataObject *pParent, PSHAREDCLIPBOARDURITRANSFER pTransfer,
-                                           const Utf8Str &strPath, PSHAREDCLIPBOARDFSOBJINFO pObjInfo,
+HRESULT VBoxClipboardWinStreamImpl::Create(VBoxClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer,
+                                           const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo,
                                            IStream **ppStream)
 {
     AssertPtrReturn(pTransfer, E_POINTER);
