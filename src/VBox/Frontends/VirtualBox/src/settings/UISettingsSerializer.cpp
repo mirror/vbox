@@ -47,11 +47,11 @@ UISettingsSerializer::UISettingsSerializer(QObject *pParent, SerializationDirect
         m_pages.insert(pPage->id(), pPage);
 
     /* Handling internal signals, they are also redirected in their handlers: */
-    connect(this, SIGNAL(sigNotifyAboutPageProcessed(int)), this, SLOT(sltHandleProcessedPage(int)), Qt::QueuedConnection);
-    connect(this, SIGNAL(sigNotifyAboutPagesProcessed()), this, SLOT(sltHandleProcessedPages()), Qt::QueuedConnection);
+    connect(this, &UISettingsSerializer::sigNotifyAboutPageProcessed, this, &UISettingsSerializer::sltHandleProcessedPage, Qt::QueuedConnection);
+    connect(this, &UISettingsSerializer::sigNotifyAboutPagesProcessed, this, &UISettingsSerializer::sltHandleProcessedPages, Qt::QueuedConnection);
 
     /* Redirecting unhandled internal signals: */
-    connect(this, SIGNAL(finished()), this, SIGNAL(sigNotifyAboutProcessFinished()), Qt::QueuedConnection);
+    connect(this, &UISettingsSerializer::finished, this, &UISettingsSerializer::sigNotifyAboutProcessFinished, Qt::QueuedConnection);
 }
 
 UISettingsSerializer::~UISettingsSerializer()
@@ -154,10 +154,10 @@ void UISettingsSerializer::run()
         if (m_iIdOfHighPriorityPage != -1)
             m_iIdOfHighPriorityPage = -1;
         /* Process this page if its enabled: */
-        connect(pPage, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
-                this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)));
-        connect(pPage, SIGNAL(sigOperationProgressError(QString)),
-                this, SIGNAL(sigOperationProgressError(QString)));
+        connect(pPage, &UISettingsPage::sigOperationProgressChange,
+                this, &UISettingsSerializer::sigOperationProgressChange);
+        connect(pPage, &UISettingsPage::sigOperationProgressError,
+                this, &UISettingsSerializer::sigOperationProgressError);
         if (pPage->isEnabled())
         {
             if (m_enmDirection == Load)
@@ -166,10 +166,10 @@ void UISettingsSerializer::run()
                 pPage->saveFromCacheTo(m_data);
         }
         /* Remember what page was processed: */
-        disconnect(pPage, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
-                   this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)));
-        disconnect(pPage, SIGNAL(sigOperationProgressError(QString)),
-                   this, SIGNAL(sigOperationProgressError(QString)));
+        disconnect(pPage, &UISettingsPage::sigOperationProgressChange,
+                   this, &UISettingsSerializer::sigOperationProgressChange);
+        disconnect(pPage, &UISettingsPage::sigOperationProgressError,
+                   this, &UISettingsSerializer::sigOperationProgressError);
         pPage->setProcessed(true);
         /* Remove processed page from our map: */
         pages.remove(pPage->id());
@@ -240,20 +240,20 @@ void UISettingsSerializerProgress::prepare()
     /* Configure self: */
     setWindowModality(Qt::WindowModal);
     setWindowTitle(parentWidget()->windowTitle());
-    connect(this, SIGNAL(sigAskForProcessStart()),
-            this, SLOT(sltStartProcess()), Qt::QueuedConnection);
+    connect(this, &UISettingsSerializerProgress::sigAskForProcessStart,
+            this, &UISettingsSerializerProgress::sltStartProcess, Qt::QueuedConnection);
 
     /* Create serializer: */
     m_pSerializer = new UISettingsSerializer(this, m_enmDirection, m_data, m_pages);
     AssertPtrReturnVoid(m_pSerializer);
     {
         /* Install progress handler: */
-        connect(m_pSerializer, SIGNAL(sigNotifyAboutProcessProgressChanged(int)),
-                this, SLOT(sltHandleProcessProgressChange(int)));
-        connect(m_pSerializer, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
-                this, SLOT(sltHandleOperationProgressChange(ulong, QString, ulong, ulong)));
-        connect(m_pSerializer, SIGNAL(sigOperationProgressError(QString)),
-                this, SLOT(sltHandleOperationProgressError(QString)));
+        connect(m_pSerializer, &UISettingsSerializer::sigNotifyAboutProcessProgressChanged,
+                this, &UISettingsSerializerProgress::sltHandleProcessProgressChange);
+        connect(m_pSerializer, &UISettingsSerializer::sigOperationProgressChange,
+                this, &UISettingsSerializerProgress::sltHandleOperationProgressChange);
+        connect(m_pSerializer, &UISettingsSerializer::sigOperationProgressError,
+                this, &UISettingsSerializerProgress::sltHandleOperationProgressError);
     }
 
     /* Create layout: */

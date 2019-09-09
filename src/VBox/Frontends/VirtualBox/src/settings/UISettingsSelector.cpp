@@ -319,8 +319,8 @@ UISettingsSelectorTreeView::UISettingsSelectorTreeView(QWidget *pParent /* = 0 *
     m_pTreeWidget->hideColumn(TreeWidgetSection_Id);
     m_pTreeWidget->hideColumn(TreeWidgetSection_Link);
     /* Setup connections: */
-    connect(m_pTreeWidget, SIGNAL(currentItemChanged(QTreeWidgetItem*, QTreeWidgetItem*)),
-             this, SLOT(sltSettingsGroupChanged(QTreeWidgetItem *, QTreeWidgetItem*)));
+    connect(m_pTreeWidget, &QITreeWidget::currentItemChanged,
+            this, &UISettingsSelectorTreeView::sltSettingsGroupChanged);
 }
 
 UISettingsSelectorTreeView::~UISettingsSelectorTreeView()
@@ -512,8 +512,8 @@ UISettingsSelectorToolBar::UISettingsSelectorToolBar(QWidget *pParent /* = 0 */)
     /* Prepare the action group: */
     m_pActionGroup = new QActionGroup(this);
     m_pActionGroup->setExclusive(true);
-    connect(m_pActionGroup, SIGNAL(triggered(QAction*)),
-            this, SLOT(sltSettingsGroupChanged(QAction*)));
+    connect(m_pActionGroup, &QActionGroup::triggered,
+            this, static_cast<void(UISettingsSelectorToolBar::*)(QAction*)>(&UISettingsSelectorToolBar::sltSettingsGroupChanged));
 }
 
 UISettingsSelectorToolBar::~UISettingsSelectorToolBar()

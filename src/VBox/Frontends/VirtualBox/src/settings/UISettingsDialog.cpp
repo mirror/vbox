@@ -342,9 +342,9 @@ void UISettingsDialog::loadData(QVariant &data)
     AssertPtrReturnVoid(m_pSerializeProcess);
     {
         /* Configure settings loader: */
-        connect(m_pSerializeProcess, SIGNAL(sigNotifyAboutProcessStarted()), this, SLOT(sltHandleProcessStarted()));
-        connect(m_pSerializeProcess, SIGNAL(sigNotifyAboutProcessProgressChanged(int)), this, SLOT(sltHandleProcessProgressChange(int)));
-        connect(m_pSerializeProcess, SIGNAL(sigNotifyAboutProcessFinished()), this, SLOT(sltMarkLoaded()));
+        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessStarted, this, &UISettingsDialog::sltHandleProcessStarted);
+        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessProgressChanged, this, &UISettingsDialog::sltHandleProcessProgressChange);
+        connect(m_pSerializeProcess, &UISettingsSerializer::sigNotifyAboutProcessFinished, this, &UISettingsDialog::sltMarkLoaded);
 
         /* Raise current page priority: */
         m_pSerializeProcess->raisePriorityOfPage(m_pSelector->currentId());
@@ -640,7 +640,7 @@ void UISettingsDialog::prepare()
 
 #endif /* !VBOX_GUI_WITH_TOOLBAR_SETTINGS */
 
-        connect(m_pSelector, SIGNAL(sigCategoryChanged(int)), this, SLOT(sltCategoryChanged(int)));
+        connect(m_pSelector, &UISettingsSelectorTreeView::sigCategoryChanged, this, &UISettingsDialog::sltCategoryChanged);
     }
 
     /* Prepare stack-handler: */
@@ -725,7 +725,7 @@ void UISettingsDialog::assignValidator(UISettingsPage *pPage)
 {
     /* Assign validator: */
     UIPageValidator *pValidator = new UIPageValidator(this, pPage);
-    connect(pValidator, SIGNAL(sigValidityChanged(UIPageValidator*)), this, SLOT(sltHandleValidityChange(UIPageValidator*)));
+    connect(pValidator, &UIPageValidator::sigValidityChanged, this, &UISettingsDialog::sltHandleValidityChange);
     pPage->setValidator(pValidator);
     m_pWarningPane->registerValidator(pValidator);
 
