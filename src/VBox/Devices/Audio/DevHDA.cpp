@@ -4976,12 +4976,10 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Register the PCI device.
      */
     rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM, hdaR3PciIoRegionMap);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_MSI_DEVICES
     PDMMSIREG MsiReg;
@@ -4998,8 +4996,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 #endif
 
     rc = PDMDevHlpSSMRegister(pDevIns, HDA_SSM_VERSION, sizeof(*pThis), hdaR3SaveExec, hdaR3LoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
 #ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
     LogRel(("HDA: Asynchronous I/O enabled\n"));
@@ -5018,340 +5015,310 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             {
                 hdaR3ReattachInternal(pThis, NULL /* pDrv */, uLUN, "NullAudio");
                 PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                    N_("Host audio backend initialization has failed. Selecting the NULL audio backend "
-                       "with the consequence that no sound is audible"));
+                                           N_("Host audio backend initialization has failed. "
+                                              "Selecting the NULL audio backend with the consequence that no sound is audible"));
                 /* Attaching to the NULL audio backend will never fail. */
                 rc = VINF_SUCCESS;
             }
+            else
+                AssertRCReturn(rc, rc);
             break;
         }
     }
 
     LogFunc(("cLUNs=%RU8, rc=%Rrc\n", uLUN, rc));
 
-    if (RT_SUCCESS(rc))
-    {
-        rc = AudioMixerCreate("HDA Mixer", 0 /* uFlags */, &pThis->pMixer);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Add mixer output sinks.
-             */
+    rc = AudioMixerCreate("HDA Mixer", 0 /* uFlags */, &pThis->pMixer);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Add mixer output sinks.
+     */
 #ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Front",
-                                      AUDMIXSINKDIR_OUTPUT, &pThis->SinkFront.pMixSink);
-            AssertRC(rc);
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Center / Subwoofer",
-                                      AUDMIXSINKDIR_OUTPUT, &pThis->SinkCenterLFE.pMixSink);
-            AssertRC(rc);
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Rear",
-                                      AUDMIXSINKDIR_OUTPUT, &pThis->SinkRear.pMixSink);
-            AssertRC(rc);
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Front", AUDMIXSINKDIR_OUTPUT, &pThis->SinkFront.pMixSink);
+    AssertRCReturn(rc, rc);
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Center / Subwoofer", AUDMIXSINKDIR_OUTPUT, &pThis->SinkCenterLFE.pMixSink);
+    AssertRCReturn(rc, rc);
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] Rear", AUDMIXSINKDIR_OUTPUT, &pThis->SinkRear.pMixSink);
+    AssertRCReturn(rc, rc);
 #else
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output",
-                                      AUDMIXSINKDIR_OUTPUT, &pThis->SinkFront.pMixSink);
-            AssertRC(rc);
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Playback] PCM Output", AUDMIXSINKDIR_OUTPUT, &pThis->SinkFront.pMixSink);
+    AssertRCReturn(rc, rc);
 #endif
-            /*
-             * Add mixer input sinks.
-             */
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In",
-                                      AUDMIXSINKDIR_INPUT, &pThis->SinkLineIn.pMixSink);
-            AssertRC(rc);
+
+    /*
+     * Add mixer input sinks.
+     */
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Line In", AUDMIXSINKDIR_INPUT, &pThis->SinkLineIn.pMixSink);
+    AssertRCReturn(rc, rc);
 #ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-            rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In",
-                                      AUDMIXSINKDIR_INPUT, &pThis->SinkMicIn.pMixSink);
-            AssertRC(rc);
+    rc = AudioMixerCreateSink(pThis->pMixer, "[Recording] Microphone In", AUDMIXSINKDIR_INPUT, &pThis->SinkMicIn.pMixSink);
+    AssertRCReturn(rc, rc);
 #endif
-            /* There is no master volume control. Set the master to max. */
-            PDMAUDIOVOLUME vol = { false, 255, 255 };
-            rc = AudioMixerSetMasterVolume(pThis->pMixer, &vol);
-            AssertRC(rc);
-        }
-    }
 
-    if (RT_SUCCESS(rc))
+    /* There is no master volume control. Set the master to max. */
+    PDMAUDIOVOLUME vol = { false, 255, 255 };
+    rc = AudioMixerSetMasterVolume(pThis->pMixer, &vol);
+    AssertRCReturn(rc, rc);
+
+    /* Allocate CORB buffer. */
+    pThis->cbCorbBuf   = HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE;
+    pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->cbCorbBuf);
+    AssertReturn(pThis->pu32CorbBuf, VERR_NO_MEMORY);
+
+    /* Allocate RIRB buffer. */
+    pThis->cbRirbBuf   = HDA_RIRB_SIZE * HDA_RIRB_ELEMENT_SIZE;
+    pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
+    AssertReturn(pThis->pu64RirbBuf, VERR_NO_MEMORY);
+
+    /* Allocate codec. */
+    pThis->pCodec = (PHDACODEC)RTMemAllocZ(sizeof(HDACODEC));
+    AssertReturn(pThis->pCodec, VERR_NO_MEMORY);
+
+    /* Set codec callbacks to this controller. */
+    pThis->pCodec->pfnCbMixerAddStream    = hdaR3MixerAddStream;
+    pThis->pCodec->pfnCbMixerRemoveStream = hdaR3MixerRemoveStream;
+    pThis->pCodec->pfnCbMixerControl      = hdaR3MixerControl;
+    pThis->pCodec->pfnCbMixerSetVolume    = hdaR3MixerSetVolume;
+
+    pThis->pCodec->pHDAState = pThis; /* Assign HDA controller state to codec. */
+
+    /* Construct the codec. */
+    rc = hdaCodecConstruct(pDevIns, pThis->pCodec, 0 /* Codec index */, pCfg);
+    AssertRCReturn(rc, rc);
+
+    /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
+       verb F20 should provide device/codec recognition. */
+    Assert(pThis->pCodec->u16VendorId);
+    Assert(pThis->pCodec->u16DeviceId);
+    PCIDevSetSubSystemVendorId(&pThis->PciDev, pThis->pCodec->u16VendorId); /* 2c ro - intel.) */
+    PCIDevSetSubSystemId(      &pThis->PciDev, pThis->pCodec->u16DeviceId); /* 2e ro. */
+
+    /*
+     * Create all hardware streams.
+     */
+    static const char * const s_apszNames[] =
     {
-        /* Allocate CORB buffer. */
-        pThis->cbCorbBuf   = HDA_CORB_SIZE * HDA_CORB_ELEMENT_SIZE;
-        pThis->pu32CorbBuf = (uint32_t *)RTMemAllocZ(pThis->cbCorbBuf);
-        if (pThis->pu32CorbBuf)
-        {
-            /* Allocate RIRB buffer. */
-            pThis->cbRirbBuf   = HDA_RIRB_SIZE * HDA_RIRB_ELEMENT_SIZE;
-            pThis->pu64RirbBuf = (uint64_t *)RTMemAllocZ(pThis->cbRirbBuf);
-            if (pThis->pu64RirbBuf)
-            {
-                /* Allocate codec. */
-                pThis->pCodec = (PHDACODEC)RTMemAllocZ(sizeof(HDACODEC));
-                if (!pThis->pCodec)
-                    rc = PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating HDA codec state"));
-            }
-            else
-                rc = PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating RIRB"));
-        }
-        else
-            rc = PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("Out of memory allocating CORB"));
-
-        if (RT_SUCCESS(rc))
-        {
-            /* Set codec callbacks to this controller. */
-            pThis->pCodec->pfnCbMixerAddStream    = hdaR3MixerAddStream;
-            pThis->pCodec->pfnCbMixerRemoveStream = hdaR3MixerRemoveStream;
-            pThis->pCodec->pfnCbMixerControl      = hdaR3MixerControl;
-            pThis->pCodec->pfnCbMixerSetVolume    = hdaR3MixerSetVolume;
-
-            pThis->pCodec->pHDAState = pThis; /* Assign HDA controller state to codec. */
-
-            /* Construct the codec. */
-            rc = hdaCodecConstruct(pDevIns, pThis->pCodec, 0 /* Codec index */, pCfg);
-            if (RT_FAILURE(rc))
-                AssertRCReturn(rc, rc);
-
-            /* ICH6 datasheet defines 0 values for SVID and SID (18.1.14-15), which together with values returned for
-               verb F20 should provide device/codec recognition. */
-            Assert(pThis->pCodec->u16VendorId);
-            Assert(pThis->pCodec->u16DeviceId);
-            PCIDevSetSubSystemVendorId(&pThis->PciDev, pThis->pCodec->u16VendorId); /* 2c ro - intel.) */
-            PCIDevSetSubSystemId(      &pThis->PciDev, pThis->pCodec->u16DeviceId); /* 2e ro. */
-        }
-    }
-
-    if (RT_SUCCESS(rc))
+        "HDA SD0", "HDA SD1", "HDA SD2", "HDA SD3",
+        "HDA SD4", "HDA SD5", "HDA SD6", "HDA SD7",
+    };
+    AssertCompile(RT_ELEMENTS(s_apszNames) == HDA_MAX_STREAMS);
+    for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
     {
-        /*
-         * Create all hardware streams.
+        /* Create the emulation timer (per stream).
+         *
+         * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's HDA driver
+         *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
+         *        instead of the LPIB registers.
          */
-        static const char * const s_apszNames[] =
-        {
-            "HDA SD0", "HDA SD1", "HDA SD2", "HDA SD3",
-            "HDA SD4", "HDA SD5", "HDA SD6", "HDA SD7",
-        };
-        AssertCompile(RT_ELEMENTS(s_apszNames) == HDA_MAX_STREAMS);
-        for (uint8_t i = 0; i < HDA_MAX_STREAMS; ++i)
-        {
-            /* Create the emulation timer (per stream).
-             *
-             * Note:  Use TMCLOCK_VIRTUAL_SYNC here, as the guest's HDA driver
-             *        relies on exact (virtual) DMA timing and uses DMA Position Buffers
-             *        instead of the LPIB registers.
-             */
-            rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, &pThis->aStreams[i],
-                                        TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->pTimer[i]);
-            AssertRCReturn(rc, rc);
+        rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, hdaR3Timer, &pThis->aStreams[i],
+                                    TMTIMER_FLAGS_NO_CRIT_SECT, s_apszNames[i], &pThis->pTimer[i]);
+        AssertRCReturn(rc, rc);
 
-            /* Use our own critcal section for the device timer.
-             * That way we can control more fine-grained when to lock what. */
-            rc = TMR3TimerSetCritSect(pThis->pTimer[i], &pThis->CritSect);
-            AssertRCReturn(rc, rc);
+        /* Use our own critcal section for the device timer.
+         * That way we can control more fine-grained when to lock what. */
+        rc = TMR3TimerSetCritSect(pThis->pTimer[i], &pThis->CritSect);
+        AssertRCReturn(rc, rc);
 
-            rc = hdaR3StreamCreate(&pThis->aStreams[i], pThis, i /* u8SD */);
-            AssertRC(rc);
-        }
+        rc = hdaR3StreamCreate(&pThis->aStreams[i], pThis, i /* u8SD */);
+        AssertRCReturn(rc, rc);
+    }
 
 #ifdef VBOX_WITH_AUDIO_HDA_ONETIME_INIT
+    /*
+     * Initialize the driver chain.
+     */
+    PHDADRIVER pDrv;
+    RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
+    {
         /*
-         * Initialize the driver chain.
+         * Only primary drivers are critical for the VM to run. Everything else
+         * might not worth showing an own error message box in the GUI.
          */
-        PHDADRIVER pDrv;
-        RTListForEach(&pThis->lstDrv, pDrv, HDADRIVER, Node)
-        {
-            /*
-             * Only primary drivers are critical for the VM to run. Everything else
-             * might not worth showing an own error message box in the GUI.
-             */
-            if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
-                continue;
+        if (!(pDrv->fFlags & PDMAUDIODRVFLAGS_PRIMARY))
+            continue;
 
-            PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
-            AssertPtr(pCon);
+        PPDMIAUDIOCONNECTOR pCon = pDrv->pConnector;
+        AssertPtr(pCon);
 
-            bool fValidLineIn = AudioMixerStreamIsValid(pDrv->LineIn.pMixStrm);
+        bool fValidLineIn = AudioMixerStreamIsValid(pDrv->LineIn.pMixStrm);
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-            bool fValidMicIn  = AudioMixerStreamIsValid(pDrv->MicIn.pMixStrm);
+        bool fValidMicIn  = AudioMixerStreamIsValid(pDrv->MicIn.pMixStrm);
 # endif
-            bool fValidOut    = AudioMixerStreamIsValid(pDrv->Front.pMixStrm);
+        bool fValidOut    = AudioMixerStreamIsValid(pDrv->Front.pMixStrm);
 # ifdef VBOX_WITH_AUDIO_HDA_51_SURROUND
-            /** @todo Anything to do here? */
+        /** @todo Anything to do here? */
 # endif
 
-            if (    !fValidLineIn
+        if (    !fValidLineIn
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-                 && !fValidMicIn
+             && !fValidMicIn
 # endif
-                 && !fValidOut)
+             && !fValidOut)
+        {
+            LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
+
+            hdaR3Reset(pDevIns);
+            hdaR3ReattachInternal(pThis, pDrv, pDrv->uLUN, "NullAudio");
+
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                       N_("No audio devices could be opened. "
+                                          "Selecting the NULL audio backend with the consequence that no sound is audible"));
+        }
+        else
+        {
+            bool fWarn = false;
+
+            PDMAUDIOBACKENDCFG BackendCfg;
+            int rc2 = pCon->pfnGetConfig(pCon, &BackendCfg);
+            if (RT_SUCCESS(rc2))
             {
-                LogRel(("HDA: Falling back to NULL backend (no sound audible)\n"));
+                if (BackendCfg.cMaxStreamsIn)
+                {
+# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
+                    /* If the audio backend supports two or more input streams at once,
+                     * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
+                    if (BackendCfg.cMaxStreamsIn >= 2)
+                        fWarn = !fValidLineIn || !fValidMicIn;
+                    /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
+                     * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
+                     * One of the two simply is not in use then. */
+                    else if (BackendCfg.cMaxStreamsIn == 1)
+                        fWarn = !fValidLineIn && !fValidMicIn;
+                    /* Don't warn if our backend is not able of supporting any input streams at all. */
+# else  /* !VBOX_WITH_AUDIO_HDA_MIC_IN */
+                    /* We only have line-in as input source. */
+                    fWarn = !fValidLineIn;
+# endif /* !VBOX_WITH_AUDIO_HDA_MIC_IN */
+                }
 
-                hdaR3Reset(pDevIns);
-                hdaR3ReattachInternal(pThis, pDrv, pDrv->uLUN, "NullAudio");
-
-                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                    N_("No audio devices could be opened. Selecting the NULL audio backend "
-                       "with the consequence that no sound is audible"));
+                if (   !fWarn
+                    && BackendCfg.cMaxStreamsOut)
+                    fWarn = !fValidOut;
             }
             else
             {
-                bool fWarn = false;
+                LogRel(("HDA: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
+                fWarn = true;
+            }
 
-                PDMAUDIOBACKENDCFG backendCfg;
-                int rc2 = pCon->pfnGetConfig(pCon, &backendCfg);
-                if (RT_SUCCESS(rc2))
+            if (fWarn)
+            {
+                char   szMissingStreams[255];
+                size_t len = 0;
+                if (!fValidLineIn)
                 {
-                    if (backendCfg.cMaxStreamsIn)
-                    {
+                    LogRel(("HDA: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
+                    len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
+                }
 # ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-                        /* If the audio backend supports two or more input streams at once,
-                         * warn if one of our two inputs (microphone-in and line-in) failed to initialize. */
-                        if (backendCfg.cMaxStreamsIn >= 2)
-                            fWarn = !fValidLineIn || !fValidMicIn;
-                        /* If the audio backend only supports one input stream at once (e.g. pure ALSA, and
-                         * *not* ALSA via PulseAudio plugin!), only warn if both of our inputs failed to initialize.
-                         * One of the two simply is not in use then. */
-                        else if (backendCfg.cMaxStreamsIn == 1)
-                            fWarn = !fValidLineIn && !fValidMicIn;
-                        /* Don't warn if our backend is not able of supporting any input streams at all. */
-# else /* !VBOX_WITH_AUDIO_HDA_MIC_IN */
-                        /* We only have line-in as input source. */
-                        fWarn = !fValidLineIn;
-# endif /* VBOX_WITH_AUDIO_HDA_MIC_IN */
-                    }
-
-                    if (   !fWarn
-                        && backendCfg.cMaxStreamsOut)
-                    {
-                        fWarn = !fValidOut;
-                    }
-                }
-                else
+                if (!fValidMicIn)
                 {
-                    LogRel(("HDA: Unable to retrieve audio backend configuration for LUN #%RU8, rc=%Rrc\n", pDrv->uLUN, rc2));
-                    fWarn = true;
+                    LogRel(("HDA: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
+                    len += RTStrPrintf(szMissingStreams + len,
+                                       sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
                 }
-
-                if (fWarn)
+# endif
+                if (!fValidOut)
                 {
-                    char   szMissingStreams[255];
-                    size_t len = 0;
-                    if (!fValidLineIn)
-                    {
-                        LogRel(("HDA: WARNING: Unable to open PCM line input for LUN #%RU8!\n", pDrv->uLUN));
-                        len = RTStrPrintf(szMissingStreams, sizeof(szMissingStreams), "PCM Input");
-                    }
-# ifdef VBOX_WITH_AUDIO_HDA_MIC_IN
-                    if (!fValidMicIn)
-                    {
-                        LogRel(("HDA: WARNING: Unable to open PCM microphone input for LUN #%RU8!\n", pDrv->uLUN));
-                        len += RTStrPrintf(szMissingStreams + len,
-                                           sizeof(szMissingStreams) - len, len ? ", PCM Microphone" : "PCM Microphone");
-                    }
-# endif /* VBOX_WITH_AUDIO_HDA_MIC_IN */
-                    if (!fValidOut)
-                    {
-                        LogRel(("HDA: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
-                        len += RTStrPrintf(szMissingStreams + len,
-                                           sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
-                    }
-
-                    PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
-                                               N_("Some HDA audio streams (%s) could not be opened. Guest applications generating audio "
-                                                  "output or depending on audio input may hang. Make sure your host audio device "
-                                                  "is working properly. Check the logfile for error messages of the audio "
-                                                  "subsystem"), szMissingStreams);
+                    LogRel(("HDA: WARNING: Unable to open PCM output for LUN #%RU8!\n", pDrv->uLUN));
+                    len += RTStrPrintf(szMissingStreams + len,
+                                       sizeof(szMissingStreams) - len, len ? ", PCM Output" : "PCM Output");
                 }
+
+                PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "HostAudioNotResponding",
+                                           N_("Some HDA audio streams (%s) could not be opened. "
+                                              "Guest applications generating audio output or depending on audio input may hang. "
+                                              "Make sure your host audio device is working properly. "
+                                              "Check the logfile for error messages of the audio subsystem"), szMissingStreams);
             }
         }
-#endif /* VBOX_WITH_AUDIO_HDA_ONETIME_INIT */
     }
+#endif /* VBOX_WITH_AUDIO_HDA_ONETIME_INIT */
 
-    if (RT_SUCCESS(rc))
+    hdaR3Reset(pDevIns);
+
+    /*
+     * Info items and string formatter types.  The latter is non-optional as
+     * the info handles use (at least some of) the custom types and we cannot
+     * accept screwing formatting.
+     */
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hda",         "HDA info. (hda [register case-insensitive])",     hdaR3DbgInfo);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdabdle",     "HDA stream BDLE info. (hdabdle [stream number])", hdaR3DbgInfoBDLE);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdastream",   "HDA stream info. (hdastream [stream number])",    hdaR3DbgInfoStream);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdcnodes",    "HDA codec nodes.",                                hdaR3DbgInfoCodecNodes);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdcselector", "HDA codec's selector states [node number].",      hdaR3DbgInfoCodecSelector);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "hdamixer",    "HDA mixer state.",                                hdaR3DbgInfoMixer);
+
+    rc = RTStrFormatTypeRegister("bdle",    hdaR3StrFmtBDLE,    NULL);
+    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
+    rc = RTStrFormatTypeRegister("sdctl",   hdaR3StrFmtSDCTL,   NULL);
+    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
+    rc = RTStrFormatTypeRegister("sdsts",   hdaR3StrFmtSDSTS,   NULL);
+    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
+    rc = RTStrFormatTypeRegister("sdfifos", hdaR3StrFmtSDFIFOS, NULL);
+    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
+    rc = RTStrFormatTypeRegister("sdfifow", hdaR3StrFmtSDFIFOW, NULL);
+    AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_ALREADY_EXISTS, ("%Rrc\n", rc), rc);
+
+    /*
+     * Asserting sanity.
+     */
+    for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
     {
-        hdaR3Reset(pDevIns);
+        struct HDAREGDESC const *pReg     = &g_aHdaRegMap[i];
+        struct HDAREGDESC const *pNextReg = i + 1 < RT_ELEMENTS(g_aHdaRegMap) ?  &g_aHdaRegMap[i + 1] : NULL;
 
-        /*
-         * Debug and string formatter types.
-         */
-        PDMDevHlpDBGFInfoRegister(pDevIns, "hda",         "HDA info. (hda [register case-insensitive])",     hdaR3DbgInfo);
-        PDMDevHlpDBGFInfoRegister(pDevIns, "hdabdle",     "HDA stream BDLE info. (hdabdle [stream number])", hdaR3DbgInfoBDLE);
-        PDMDevHlpDBGFInfoRegister(pDevIns, "hdastream",   "HDA stream info. (hdastream [stream number])",    hdaR3DbgInfoStream);
-        PDMDevHlpDBGFInfoRegister(pDevIns, "hdcnodes",    "HDA codec nodes.",                                hdaR3DbgInfoCodecNodes);
-        PDMDevHlpDBGFInfoRegister(pDevIns, "hdcselector", "HDA codec's selector states [node number].",      hdaR3DbgInfoCodecSelector);
-        PDMDevHlpDBGFInfoRegister(pDevIns, "hdamixer",    "HDA mixer state.",                                hdaR3DbgInfoMixer);
+        /* binary search order. */
+        AssertReleaseMsg(!pNextReg || pReg->offset + pReg->size <= pNextReg->offset,
+                         ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
+                          i, pReg->offset, pReg->size, i + 1, pNextReg->offset, pNextReg->size));
 
-        rc = RTStrFormatTypeRegister("bdle",    hdaR3StrFmtBDLE,    NULL);
-        AssertRC(rc);
-        rc = RTStrFormatTypeRegister("sdctl",   hdaR3StrFmtSDCTL,   NULL);
-        AssertRC(rc);
-        rc = RTStrFormatTypeRegister("sdsts",   hdaR3StrFmtSDSTS,   NULL);
-        AssertRC(rc);
-        rc = RTStrFormatTypeRegister("sdfifos", hdaR3StrFmtSDFIFOS, NULL);
-        AssertRC(rc);
-        rc = RTStrFormatTypeRegister("sdfifow", hdaR3StrFmtSDFIFOW, NULL);
-        AssertRC(rc);
+        /* alignment. */
+        AssertReleaseMsg(   pReg->size == 1
+                         || (pReg->size == 2 && (pReg->offset & 1) == 0)
+                         || (pReg->size == 3 && (pReg->offset & 3) == 0)
+                         || (pReg->size == 4 && (pReg->offset & 3) == 0),
+                         ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
 
-        /*
-         * Some debug assertions.
-         */
-        for (unsigned i = 0; i < RT_ELEMENTS(g_aHdaRegMap); i++)
+        /* registers are packed into dwords - with 3 exceptions with gaps at the end of the dword. */
+        AssertRelease(((pReg->offset + pReg->size) & 3) == 0 || pNextReg);
+        if (pReg->offset & 3)
         {
-            struct HDAREGDESC const *pReg     = &g_aHdaRegMap[i];
-            struct HDAREGDESC const *pNextReg = i + 1 < RT_ELEMENTS(g_aHdaRegMap) ?  &g_aHdaRegMap[i + 1] : NULL;
-
-            /* binary search order. */
-            AssertReleaseMsg(!pNextReg || pReg->offset + pReg->size <= pNextReg->offset,
-                             ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
-                              i, pReg->offset, pReg->size, i + 1, pNextReg->offset, pNextReg->size));
-
-            /* alignment. */
-            AssertReleaseMsg(   pReg->size == 1
-                             || (pReg->size == 2 && (pReg->offset & 1) == 0)
-                             || (pReg->size == 3 && (pReg->offset & 3) == 0)
-                             || (pReg->size == 4 && (pReg->offset & 3) == 0),
-                             ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
-
-            /* registers are packed into dwords - with 3 exceptions with gaps at the end of the dword. */
-            AssertRelease(((pReg->offset + pReg->size) & 3) == 0 || pNextReg);
-            if (pReg->offset & 3)
-            {
-                struct HDAREGDESC const *pPrevReg = i > 0 ?  &g_aHdaRegMap[i - 1] : NULL;
-                AssertReleaseMsg(pPrevReg, ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
-                if (pPrevReg)
-                    AssertReleaseMsg(pPrevReg->offset + pPrevReg->size == pReg->offset,
-                                     ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
-                                      i - 1, pPrevReg->offset, pPrevReg->size, i + 1, pReg->offset, pReg->size));
-            }
-#if 0
-            if ((pReg->offset + pReg->size) & 3)
-            {
-                AssertReleaseMsg(pNextReg, ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
-                if (pNextReg)
-                    AssertReleaseMsg(pReg->offset + pReg->size == pNextReg->offset,
-                                     ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
-                                      i, pReg->offset, pReg->size, i + 1,  pNextReg->offset, pNextReg->size));
-            }
-#endif
-            /* The final entry is a full DWORD, no gaps! Allows shortcuts. */
-            AssertReleaseMsg(pNextReg || ((pReg->offset + pReg->size) & 3) == 0,
-                             ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+            struct HDAREGDESC const *pPrevReg = i > 0 ?  &g_aHdaRegMap[i - 1] : NULL;
+            AssertReleaseMsg(pPrevReg, ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+            if (pPrevReg)
+                AssertReleaseMsg(pPrevReg->offset + pPrevReg->size == pReg->offset,
+                                 ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
+                                  i - 1, pPrevReg->offset, pPrevReg->size, i + 1, pReg->offset, pReg->size));
         }
+#if 0
+        if ((pReg->offset + pReg->size) & 3)
+        {
+            AssertReleaseMsg(pNextReg, ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
+            if (pNextReg)
+                AssertReleaseMsg(pReg->offset + pReg->size == pNextReg->offset,
+                                 ("[%#x] = {%#x LB %#x}  vs. [%#x] = {%#x LB %#x}\n",
+                                  i, pReg->offset, pReg->size, i + 1,  pNextReg->offset, pNextReg->size));
+        }
+#endif
+        /* The final entry is a full DWORD, no gaps! Allows shortcuts. */
+        AssertReleaseMsg(pNextReg || ((pReg->offset + pReg->size) & 3) == 0,
+                         ("[%#x] = {%#x LB %#x}\n", i, pReg->offset, pReg->size));
     }
 
 # ifdef VBOX_WITH_STATISTICS
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Register statistics.
-         */
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,            STAMTYPE_PROFILE, "/Devices/HDA/Timer",             STAMUNIT_TICKS_PER_CALL, "Profiling hdaR3Timer.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,               STAMTYPE_PROFILE, "/Devices/HDA/Input",             STAMUNIT_TICKS_PER_CALL, "Profiling input.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,              STAMTYPE_PROFILE, "/Devices/HDA/Output",            STAMUNIT_TICKS_PER_CALL, "Profiling output.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "/Devices/HDA/BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read from HDA emulation.");
-        PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten,     STAMTYPE_COUNTER, "/Devices/HDA/BytesWritten",      STAMUNIT_BYTES,          "Bytes written to HDA emulation.");
-    }
+    /*
+     * Register statistics.
+     */
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTimer,            STAMTYPE_PROFILE, "/Devices/HDA/Timer",             STAMUNIT_TICKS_PER_CALL, "Profiling hdaR3Timer.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIn,               STAMTYPE_PROFILE, "/Devices/HDA/Input",             STAMUNIT_TICKS_PER_CALL, "Profiling input.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatOut,              STAMTYPE_PROFILE, "/Devices/HDA/Output",            STAMUNIT_TICKS_PER_CALL, "Profiling output.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesRead,        STAMTYPE_COUNTER, "/Devices/HDA/BytesRead"   ,      STAMUNIT_BYTES,          "Bytes read from HDA emulation.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatBytesWritten,     STAMTYPE_COUNTER, "/Devices/HDA/BytesWritten",      STAMUNIT_BYTES,          "Bytes written to HDA emulation.");
 # endif
 
-    LogFlowFuncLeaveRC(rc);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 #endif /* IN_RING3 */
