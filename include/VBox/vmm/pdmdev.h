@@ -3578,16 +3578,16 @@ typedef struct PDMDEVHLPR3
 
     /** @name Exported PDM Critical Section Functions
      * @{ */
-    DECLR3CALLBACKMEMBER(bool,     pfnCritSectYield,(PPDMCRITSECT pCritSect));
-    DECLR3CALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMCRITSECT pCritSect, int rcBusy));
-    DECLR3CALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
-    DECLR3CALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMCRITSECT pCritSect));
-    DECLR3CALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
-    DECLR3CALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMCRITSECT pCritSect));
-    DECLR3CALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PCPDMCRITSECT pCritSect));
-    DECLR3CALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PCPDMCRITSECT pCritSect));
-    DECLR3CALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PCPDMCRITSECT pCritSect));
-    DECLR3CALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectYield,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
     /** @} */
 
     /**
@@ -4546,15 +4546,15 @@ typedef struct PDMDEVHLPRC
 
     /** @name Exported PDM Critical Section Functions
      * @{ */
-    DECLRCCALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMCRITSECT pCritSect, int rcBusy));
-    DECLRCCALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
-    DECLRCCALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMCRITSECT pCritSect));
-    DECLRCCALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
-    DECLRCCALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMCRITSECT pCritSect));
-    DECLRCCALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PCPDMCRITSECT pCritSect));
-    DECLRCCALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PCPDMCRITSECT pCritSect));
-    DECLRCCALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PCPDMCRITSECT pCritSect));
-    DECLRCCALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PCPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLRCCALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLRCCALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
     /** @} */
 
     /**
@@ -4918,15 +4918,15 @@ typedef struct PDMDEVHLPR0
 
     /** @name Exported PDM Critical Section Functions
      * @{ */
-    DECLR0CALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMCRITSECT pCritSect, int rcBusy));
-    DECLR0CALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
-    DECLR0CALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMCRITSECT pCritSect));
-    DECLR0CALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
-    DECLR0CALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMCRITSECT pCritSect));
-    DECLR0CALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PCPDMCRITSECT pCritSect));
-    DECLR0CALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PCPDMCRITSECT pCritSect));
-    DECLR0CALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PCPDMCRITSECT pCritSect));
-    DECLR0CALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PCPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectEnter,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectEnterDebug,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectTryEnter,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectTryEnterDebug,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL));
+    DECLR0CALLBACKMEMBER(int,      pfnCritSectLeave,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectIsOwner,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLR0CALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
     /** @} */
 
     /**
@@ -6508,7 +6508,7 @@ DECLINLINE(int) PDMDevHlpSetDeviceCritSect(PPDMDEVINS pDevIns, PPDMCRITSECT pCri
  */
 DECLINLINE(int) PDMDevHlpCritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectEnter(pCritSect, rcBusy);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectEnter(pDevIns, pCritSect, rcBusy);
 }
 
 /**
@@ -6517,7 +6517,7 @@ DECLINLINE(int) PDMDevHlpCritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSec
  */
 DECLINLINE(int) PDMDevHlpCritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectEnterDebug(pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectEnterDebug(pDevIns, pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
 }
 
 /**
@@ -6526,7 +6526,7 @@ DECLINLINE(int) PDMDevHlpCritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCr
  */
 DECLINLINE(int)      PDMDevHlpCritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectTryEnter(pCritSect);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectTryEnter(pDevIns, pCritSect);
 }
 
 /**
@@ -6535,7 +6535,7 @@ DECLINLINE(int)      PDMDevHlpCritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT 
  */
 DECLINLINE(int)      PDMDevHlpCritSectTryEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectTryEnterDebug(pCritSect, uId, RT_SRC_POS_ARGS);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectTryEnterDebug(pDevIns, pCritSect, uId, RT_SRC_POS_ARGS);
 }
 
 /**
@@ -6544,7 +6544,7 @@ DECLINLINE(int)      PDMDevHlpCritSectTryEnterDebug(PPDMDEVINS pDevIns, PPDMCRIT
  */
 DECLINLINE(int)      PDMDevHlpCritSectLeave(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectLeave(pCritSect);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectLeave(pDevIns, pCritSect);
 }
 
 /**
@@ -6553,7 +6553,7 @@ DECLINLINE(int)      PDMDevHlpCritSectLeave(PPDMDEVINS pDevIns, PPDMCRITSECT pCr
  */
 DECLINLINE(bool)     PDMDevHlpCritSectIsOwner(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectIsOwner(pCritSect);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectIsOwner(pDevIns, pCritSect);
 }
 
 /**
@@ -6562,7 +6562,7 @@ DECLINLINE(bool)     PDMDevHlpCritSectIsOwner(PPDMDEVINS pDevIns, PCPDMCRITSECT 
  */
 DECLINLINE(bool)     PDMDevHlpCritSectIsInitialized(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectIsInitialized(pCritSect);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectIsInitialized(pDevIns, pCritSect);
 }
 
 /**
@@ -6571,7 +6571,7 @@ DECLINLINE(bool)     PDMDevHlpCritSectIsInitialized(PPDMDEVINS pDevIns, PCPDMCRI
  */
 DECLINLINE(bool)     PDMDevHlpCritSectHasWaiters(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectHasWaiters(pCritSect);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectHasWaiters(pDevIns, pCritSect);
 }
 
 /**
@@ -6580,7 +6580,7 @@ DECLINLINE(bool)     PDMDevHlpCritSectHasWaiters(PPDMDEVINS pDevIns, PCPDMCRITSE
  */
 DECLINLINE(uint32_t) PDMDevHlpCritSectGetRecursion(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
-    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectGetRecursion(pCritSect);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCritSectGetRecursion(pDevIns, pCritSect);
 }
 
 /* Strict build: Remap the two enter calls to the debug versions. */

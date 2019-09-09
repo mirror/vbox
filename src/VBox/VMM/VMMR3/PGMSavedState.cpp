@@ -1371,7 +1371,7 @@ static void pgmR3ScanRamPages(PVM pVM, bool fFinalPass)
 #ifndef PGMLIVESAVERAMPAGE_WITH_CRC32
                         && (iPage & 0x7ff) == 0x100
 #endif
-                        && PDMR3CritSectYield(&pVM->pgm.s.CritSectX)
+                        && PDMR3CritSectYield(pVM, &pVM->pgm.s.CritSectX)
                         && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
                         GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);
@@ -1583,7 +1583,7 @@ static int pgmR3SaveRamPages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_t 
                     /* Do yield first. */
                     if (   uPass != SSM_PASS_FINAL
                         && (iPage & 0x7ff) == 0x100
-                        && PDMR3CritSectYield(&pVM->pgm.s.CritSectX)
+                        && PDMR3CritSectYield(pVM, &pVM->pgm.s.CritSectX)
                         && pVM->pgm.s.idRamRangesGen != idRamRangesGen)
                     {
                         GCPhysCur = pCur->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT);

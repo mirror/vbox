@@ -1003,7 +1003,7 @@ VMMR3_INT_DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RT
         /* Yield the PGM lock every now and then. */
         if (!--cYieldCountDown)
         {
-            fFullWalk = PDMR3CritSectYield(&pVM->pgm.s.CritSectX);
+            fFullWalk = PDMR3CritSectYield(pVM, &pVM->pgm.s.CritSectX);
             cYieldCountDown = cYieldCountDownReload;
         }
     }

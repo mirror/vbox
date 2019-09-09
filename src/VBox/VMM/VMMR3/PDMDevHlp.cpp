@@ -2490,6 +2490,104 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectYield} */
+static DECLCALLBACK(bool)     pdmR3DevHlp_CritSectYield(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return PDMR3CritSectYield(pDevIns->Internal.s.pVMR3, pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectEnter} */
+static DECLCALLBACK(int)      pdmR3DevHlp_CritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pVMR3 to the crit sect code.   */
+    return PDMCritSectEnter(pCritSect, rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectEnterDebug} */
+static DECLCALLBACK(int)      pdmR3DevHlp_CritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pVMR3 to the crit sect code.   */
+    return PDMCritSectEnterDebug(pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectTryEnter} */
+static DECLCALLBACK(int)      pdmR3DevHlp_CritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pVMR3 to the crit sect code.   */
+    return PDMCritSectTryEnter(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectTryEnterDebug} */
+static DECLCALLBACK(int)      pdmR3DevHlp_CritSectTryEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pVMR3 to the crit sect code.   */
+    return PDMCritSectTryEnterDebug(pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectLeave} */
+static DECLCALLBACK(int)      pdmR3DevHlp_CritSectLeave(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pVMR3 to the crit sect code.   */
+    return PDMCritSectLeave(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectIsOwner} */
+static DECLCALLBACK(bool)     pdmR3DevHlp_CritSectIsOwner(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pVMR3 to the crit sect code.   */
+    return PDMCritSectIsOwner(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectIsOwnerEx} */
+static DECLCALLBACK(bool)     pdmR3DevHlp_CritSectIsOwnerEx(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect, PVMCPUCC pVCpu)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pVMR3 to the crit sect code.   */
+    return PDMCritSectIsOwnerEx(pCritSect, pVCpu);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectIsInitialized} */
+static DECLCALLBACK(bool)     pdmR3DevHlp_CritSectIsInitialized(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectIsInitialized(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectHasWaiters} */
+static DECLCALLBACK(bool)     pdmR3DevHlp_CritSectHasWaiters(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectHasWaiters(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectGetRecursion} */
+static DECLCALLBACK(uint32_t) pdmR3DevHlp_CritSectGetRecursion(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectGetRecursion(pCritSect);
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnThreadCreate} */
 static DECLCALLBACK(int) pdmR3DevHlp_ThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                                   PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
@@ -4247,16 +4345,16 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CritSectGetNopR0,
     pdmR3DevHlp_CritSectGetNopRC,
     pdmR3DevHlp_SetDeviceCritSect,
-    PDMR3CritSectYield,
-    PDMCritSectEnter,
-    PDMCritSectEnterDebug,
-    PDMCritSectTryEnter,
-    PDMCritSectTryEnterDebug,
-    PDMCritSectLeave,
-    PDMCritSectIsOwner,
-    PDMCritSectIsInitialized,
-    PDMCritSectHasWaiters,
-    PDMCritSectGetRecursion,
+    pdmR3DevHlp_CritSectYield,
+    pdmR3DevHlp_CritSectEnter,
+    pdmR3DevHlp_CritSectEnterDebug,
+    pdmR3DevHlp_CritSectTryEnter,
+    pdmR3DevHlp_CritSectTryEnterDebug,
+    pdmR3DevHlp_CritSectLeave,
+    pdmR3DevHlp_CritSectIsOwner,
+    pdmR3DevHlp_CritSectIsInitialized,
+    pdmR3DevHlp_CritSectHasWaiters,
+    pdmR3DevHlp_CritSectGetRecursion,
     pdmR3DevHlp_ThreadCreate,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
@@ -4686,16 +4784,16 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CritSectGetNopR0,
     pdmR3DevHlp_CritSectGetNopRC,
     pdmR3DevHlp_SetDeviceCritSect,
-    PDMR3CritSectYield,
-    PDMCritSectEnter,
-    PDMCritSectEnterDebug,
-    PDMCritSectTryEnter,
-    PDMCritSectTryEnterDebug,
-    PDMCritSectLeave,
-    PDMCritSectIsOwner,
-    PDMCritSectIsInitialized,
-    PDMCritSectHasWaiters,
-    PDMCritSectGetRecursion,
+    pdmR3DevHlp_CritSectYield,
+    pdmR3DevHlp_CritSectEnter,
+    pdmR3DevHlp_CritSectEnterDebug,
+    pdmR3DevHlp_CritSectTryEnter,
+    pdmR3DevHlp_CritSectTryEnterDebug,
+    pdmR3DevHlp_CritSectLeave,
+    pdmR3DevHlp_CritSectIsOwner,
+    pdmR3DevHlp_CritSectIsInitialized,
+    pdmR3DevHlp_CritSectHasWaiters,
+    pdmR3DevHlp_CritSectGetRecursion,
     pdmR3DevHlp_ThreadCreate,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,

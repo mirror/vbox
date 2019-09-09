@@ -840,14 +840,16 @@ VMMR3DECL(const char *) PDMR3CritSectRwName(PCPDMCRITSECTRW pCritSect)
  *
  * @retval  true if yielded.
  * @retval  false if not yielded.
+ * @param   pVM                 The cross context VM structure.
  * @param   pCritSect           The critical section.
  */
-VMMR3DECL(bool) PDMR3CritSectYield(PPDMCRITSECT pCritSect)
+VMMR3DECL(bool) PDMR3CritSectYield(PVM pVM, PPDMCRITSECT pCritSect)
 {
     AssertPtrReturn(pCritSect, false);
     AssertReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, false);
     Assert(pCritSect->s.Core.NativeThreadOwner == RTThreadNativeSelf());
     Assert(!(pCritSect->s.Core.fFlags & RTCRITSECT_FLAGS_NOP));
+    RT_NOREF(pVM);
 
     /* No recursion allowed here. */
     int32_t const cNestings = pCritSect->s.Core.cNestings;

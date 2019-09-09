@@ -657,6 +657,7 @@ static DECLCALLBACK(uint64_t) pdmR0DevHlp_TMTimeVirtGetNano(PPDMDEVINS pDevIns)
     return TMVirtualToNano(pDevIns->Internal.s.pGVM, TMVirtualGet(pDevIns->Internal.s.pGVM));
 }
 
+
 /** @interface_method_impl{PDMDEVHLPR0,pfnCritSectGetNop} */
 static DECLCALLBACK(PPDMCRITSECT) pdmR0DevHlp_CritSectGetNop(PPDMDEVINS pDevIns)
 {
@@ -667,6 +668,7 @@ static DECLCALLBACK(PPDMCRITSECT) pdmR0DevHlp_CritSectGetNop(PPDMDEVINS pDevIns)
     LogFlow(("pdmR0DevHlp_CritSectGetNop: caller='%s'/%d: return %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pCritSect));
     return pCritSect;
 }
+
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnSetDeviceCritSect} */
 static DECLCALLBACK(int) pdmR0DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
@@ -698,12 +700,103 @@ static DECLCALLBACK(int) pdmR0DevHlp_SetDeviceCritSect(PPDMDEVINS pDevIns, PPDMC
     return VINF_SUCCESS;
 }
 
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectEnter} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
+    return PDMCritSectEnter(pCritSect, rcBusy);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectEnterDebug} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, int rcBusy, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
+    return PDMCritSectEnterDebug(pCritSect, rcBusy, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectTryEnter} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectTryEnter(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
+    return PDMCritSectTryEnter(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectTryEnterDebug} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectTryEnterDebug(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RTHCUINTPTR uId, RT_SRC_POS_DECL)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
+    return PDMCritSectTryEnterDebug(pCritSect, uId, RT_SRC_POS_ARGS);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectLeave} */
+static DECLCALLBACK(int)      pdmR0DevHlp_CritSectLeave(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
+    return PDMCritSectLeave(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectIsOwner} */
+static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectIsOwner(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
+    return PDMCritSectIsOwner(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectIsOwnerEx} */
+static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectIsOwnerEx(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect, PVMCPUCC pVCpu)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
+    return PDMCritSectIsOwnerEx(pCritSect, pVCpu);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectIsInitialized} */
+static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectIsInitialized(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectIsInitialized(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectHasWaiters} */
+static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectHasWaiters(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectHasWaiters(pCritSect);
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectGetRecursion} */
+static DECLCALLBACK(uint32_t) pdmR0DevHlp_CritSectGetRecursion(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    RT_NOREF(pDevIns);
+    return PDMCritSectGetRecursion(pCritSect);
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR0,pfnDBGFTraceBuf} */
 static DECLCALLBACK(RTTRACEBUF) pdmR0DevHlp_DBGFTraceBuf(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     RTTRACEBUF hTraceBuf = pDevIns->Internal.s.pGVM->hTraceBufR0;
-    LogFlow(("pdmR3DevHlp_DBGFTraceBuf: caller='%p'/%d: returns %p\n", pDevIns, pDevIns->iInstance, hTraceBuf));
+    LogFlow(("pdmR0DevHlp_DBGFTraceBuf: caller='%p'/%d: returns %p\n", pDevIns, pDevIns->iInstance, hTraceBuf));
     return hTraceBuf;
 }
 
@@ -755,15 +848,15 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_TMTimeVirtGetNano,
     pdmR0DevHlp_CritSectGetNop,
     pdmR0DevHlp_SetDeviceCritSect,
-    PDMCritSectEnter,
-    PDMCritSectEnterDebug,
-    PDMCritSectTryEnter,
-    PDMCritSectTryEnterDebug,
-    PDMCritSectLeave,
-    PDMCritSectIsOwner,
-    PDMCritSectIsInitialized,
-    PDMCritSectHasWaiters,
-    PDMCritSectGetRecursion,
+    pdmR0DevHlp_CritSectEnter,
+    pdmR0DevHlp_CritSectEnterDebug,
+    pdmR0DevHlp_CritSectTryEnter,
+    pdmR0DevHlp_CritSectTryEnterDebug,
+    pdmR0DevHlp_CritSectLeave,
+    pdmR0DevHlp_CritSectIsOwner,
+    pdmR0DevHlp_CritSectIsInitialized,
+    pdmR0DevHlp_CritSectHasWaiters,
+    pdmR0DevHlp_CritSectGetRecursion,
     pdmR0DevHlp_DBGFTraceBuf,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
