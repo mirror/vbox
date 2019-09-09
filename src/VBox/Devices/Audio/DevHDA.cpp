@@ -4876,7 +4876,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         LogRel2(("HDA: Debug output will be saved to '%s'\n", pThis->Dbg.szOutPath));
 
     /*
-     * Use an own critical section for the device instead of the default
+     * Use our own critical section for the device instead of the default
      * one provided by PDM. This allows fine-grained locking in combination
      * with TM when timer-specific stuff is being called in e.g. the MMIO handlers.
      */
