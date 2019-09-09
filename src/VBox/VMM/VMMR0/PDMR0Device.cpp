@@ -755,15 +755,6 @@ static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectIsOwner(PPDMDEVINS pDevIns, PC
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR0,pfnCritSectIsOwnerEx} */
-static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectIsOwnerEx(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect, PVMCPUCC pVCpu)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    RT_NOREF(pDevIns); /** @todo pass pDevIns->Internal.s.pGVM to the crit sect code.   */
-    return PDMCritSectIsOwnerEx(pCritSect, pVCpu);
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR0,pfnCritSectIsInitialized} */
 static DECLCALLBACK(bool)     pdmR0DevHlp_CritSectIsInitialized(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
 {
