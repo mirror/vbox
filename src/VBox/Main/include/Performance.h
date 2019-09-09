@@ -581,7 +581,7 @@ namespace pm
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
-        const char *getUnit() { return "mB"; };
+        const char *getUnit() { return "MB"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return INT32_MAX; };
         ULONG getScale() { return 1; }
@@ -602,7 +602,7 @@ namespace pm
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
-        const char *getUnit() { return "mB"; };
+        const char *getUnit() { return "MB"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return INT32_MAX; };
         ULONG getScale() { return 1; }
@@ -733,7 +733,7 @@ namespace pm
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
-        const char *getUnit() { return "mB"; };
+        const char *getUnit() { return "MB"; };
         ULONG getMinValue() { return 0; };
         ULONG getMaxValue() { return INT32_MAX; };
         ULONG getScale() { return 1; }
