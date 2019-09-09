@@ -534,8 +534,8 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
 }
 
 static void virtioResetQueue        (PVIRTIOSTATE pVirtio, uint16_t qIdx);
-static void virtioNotifyGuestDriver (PVIRTIOSTATE pVirtio, uint16_t qIdx);
-static int  virtioRaiseInterrupt    (PVIRTIOSTATE pVirtio, uint8_t uCause);
+static void virtioNotifyGuestDriver (PVIRTIOSTATE pVirtio, uint16_t qIdx, bool fForce);
+static int  virtioRaiseInterrupt    (PVIRTIOSTATE pVirtio, uint8_t uCause, bool fForce);
 static void virtioLowerInterrupt    (PVIRTIOSTATE pVirtio);
 static void virtioQueueNotified     (PVIRTIOSTATE pVirtio, uint16_t qidx, uint16_t uDescIdx);
 static int  virtioCommonCfgAccessed (PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, unsigned cb, void const *pv);

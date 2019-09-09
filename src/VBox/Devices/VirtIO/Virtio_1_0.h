@@ -288,6 +288,14 @@ void virtioQueueEnable(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fEnabled);
  */
 void virtioResetAll(VIRTIOHANDLE hVirtio);
 
+/**
+ * This sends notification ('kicks') guest driver to check queues for any new
+ * elements in the used queue to process.  It should be called after resuming
+ * in case anything was added to the queues during suspend/quiescing and a
+ * notification was missed, to prevent the guest from stalling after suspend.
+ */
+void virtioPropagateResumeNotification(VIRTIOHANDLE hVirtio);
+
 
 
 /** CLIENT MUST CALL ON RELOCATE CALLBACK! */

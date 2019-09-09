@@ -88,6 +88,7 @@ int virtioQueueSkip(VIRTIOHANDLE hVirtio, uint16_t qIdx)
     return VINF_SUCCESS;
 }
 
+
 /**
  * See API comments in header file for description
  */
@@ -293,7 +294,7 @@ int virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx)
               QUEUENAME(qIdx), uIdx, pVirtqProxy->uUsedIdx));
 
     virtioWriteUsedRingIdx(pVirtio, qIdx, pVirtqProxy->uUsedIdx);
-    virtioNotifyGuestDriver(pVirtio, qIdx);
+    virtioNotifyGuestDriver(pVirtio, qIdx, false);
 
     return VINF_SUCCESS;
 }
@@ -308,9 +309,16 @@ static void virtioQueueNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uN
     PVIRTQ_PROXY_T pVirtqProxy = &pVirtio->virtqProxy[qIdx];
     Log6Func(("%s\n", pVirtqProxy->szVirtqName));
 
-
     /** Inform client */
     pVirtio->virtioCallbacks.pfnVirtioQueueNotified((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext, qIdx);
+}
+
+/**
+ * See API comments in header file for description
+ */
+void virtioPropagateResumeNotification(VIRTIOHANDLE hVirtio)
+{
+    virtioNotifyGuestDriver((PVIRTIOSTATE)hVirtio, (uint16_t)NULL /* qIdx */, true /* fForce */);
 }
 
 /**
@@ -318,21 +326,28 @@ static void virtioQueueNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uN
  * the specified virtq, depending on the interrupt configuration of the device
  * and depending on negotiated and realtime constraints flagged by the guest driver.
  * See VirtIO 1.0 specification (section 2.4.7).
+ *
+ * @param pVirtio       - Instance state
+ * @param qIdx          - Queue to check for guest interrupt handling preference
+ * @param fForce        - Overrides qIdx, forcing notification, regardless of driver's
+ *                        notification preferences. This is a safeguard to prevent
+ *                        stalls upon resuming the VM. VirtIO 1.0 specification Section 4.1.5.5
+ *                        indicates spurious interrupts are harmless to guest driver's state,
+ *                        as they only cause the guest driver to scan queues for work to do.
  */
-static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx)
+static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx, bool fForce)
 {
     PVIRTQ_PROXY_T pVirtqProxy = &pVirtio->virtqProxy[qIdx];
 
-    AssertMsgReturnVoid(DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[qIdx],
-                    ("Guest driver not in ready state.\n"));
+    AssertMsgReturnVoid(DRIVER_OK(pVirtio), ("Guest driver not in ready state.\n"));
 
-    if (pVirtio->uQueueMsixVector[qIdx] == VIRTIO_MSI_NO_VECTOR)
+    if (pVirtio->uMsixConfig == VIRTIO_MSI_NO_VECTOR)
     {
         if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
         {
             if (pVirtqProxy->fEventThresholdReached)
             {
-                virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT);
+                virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, fForce);
                 pVirtqProxy->fEventThresholdReached = false;
                 return;
             }
@@ -341,13 +356,12 @@ static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx)
         else
         {
             /** If guest driver hasn't suppressed interrupts, interrupt  */
-            if (!(virtioReadUsedFlags(pVirtio, qIdx) & VIRTQ_AVAIL_F_NO_INTERRUPT))
+            if (fForce || !(virtioReadUsedFlags(pVirtio, qIdx) & VIRTQ_AVAIL_F_NO_INTERRUPT))
             {
-                virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT);
+                virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, fForce);
                 return;
             }
             Log6Func(("...skipping interrupt. Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
-
         }
     }
     else
@@ -391,8 +405,12 @@ void virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  * @param   pVirtio         The device state structure.
  * @param   uCause          Interrupt cause bit mask to set in PCI ISR port.
  */
-static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause)
+static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause, bool fForce)
 {
+
+   if (fForce)
+       Log6Func(("reason: resumed after suspend\n"));
+   else
    if (uCause == VIRTIO_ISR_VIRTQ_INTERRUPT)
        Log6Func(("reason: buffer added to 'used' ring.\n"));
    else
@@ -479,7 +497,7 @@ void virtioResetAll(VIRTIOHANDLE hVirtio)
     if (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
     {
         pVirtio->fGenUpdatePending = true;
-        virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_DEVICE_CONFIG);
+        virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_DEVICE_CONFIG, false /* fForce */);
     }
 }
 

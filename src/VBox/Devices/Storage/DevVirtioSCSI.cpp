@@ -515,12 +515,6 @@ typedef struct VIRTIOSCSI
     /** True if in the process of resetting */
     bool                            fResetting;
 
-    /** True if in the process of suspending  */
-    bool                            fSuspending;
-
-    /** True if in the process of powering off */
-    bool                            fPoweringOff;
-
     /** True if in the process of quiescing I/O */
     bool                            fQuiescing;
 
@@ -1672,32 +1666,24 @@ static DECLCALLBACK(int) virtioScsiLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-/** Let guest to use the queues */
-static void enableQueues(PVIRTIOSCSI pThis)
-{
-    for (int qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
-        virtioQueueEnable(pThis->hVirtio, qIdx, true);
-}
-
-/** Tell guest to stop using the queues */
-static void disableQueues(PVIRTIOSCSI pThis)
-{
-    /** Tell guest to stop sending stuff */
-    for (int qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
-        virtioQueueEnable(pThis->hVirtio, qIdx, false);
-}
-
 /**
- * Handle callback from PDM's async notification mechanism.
- * In this case, the callback is triggered when I/O activity is quiesced.
+ * Is asynchronous handling of suspend or power off notification completed?
  *
- * @returns true if we've quiesced, false if we're still working.
- * @param   pDevIns     The device instance.
+ * This is called to check whether the device has quiesced.  Don't deadlock.
+ * Avoid blocking.  Do NOT wait for anything.
+ *
+ * @returns true if done, false if more work to be done.
+ *
+ * @param   pDevIns             The device instance.
+ * @remarks The caller will enter the device critical section.
+ * @thread  EMT(0)
  */
 static DECLCALLBACK(bool) virtioScsiDeviceQuiesced(PPDMDEVINS pDevIns)
 {
-    LogFunc(("\n"));
+    LogFunc(("Device I/O activity quiesced.\n"));
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    pThis->fQuiescing = false;
 
     if (pThis->fResetting)
     {
@@ -1706,27 +1692,20 @@ static DECLCALLBACK(bool) virtioScsiDeviceQuiesced(PPDMDEVINS pDevIns)
         /** Reset virtio infrastructure */
         virtioResetAll(pThis->hVirtio);
 
-        /** Reset negotiable device-specific config parameters to VirtIO-specified default values */
+        /** Reset locally-owned negotiable device-specific config parameters
+         *  to VirtIO spec-mandated default values */
         pThis->virtioScsiConfig.uSenseSize = VIRTIOSCSI_SENSE_SIZE_DEFAULT;
         pThis->virtioScsiConfig.uCdbSize   = VIRTIOSCSI_CDB_SIZE_DEFAULT;
-
-        pThis->fQuiescing = false;
-
-        /** fQuiescing and fReset flags get cleared during [re-]initialization */
     }
-    else if (pThis->fSuspending || pThis->fPoweringOff)
-    {
-        /* Lower-level driver (DrvVD) has already suspended any I/O on wait queue */
-    }
-    return false;
+    return true;
 }
 
 static void virtioScsiQuiesceDevice(PPDMDEVINS pDevIns)
 {
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
-    pThis->fQuiescing = true;  /* inhibit worker thread's de-queing */
-    disableQueues(pThis);      /* inhibit guest use of virtq's */
+    /** Prevent worker threads from removing/processing elements from virtq's */
+    pThis->fQuiescing = true;
 
     PDMDevHlpSetAsyncNotification(pDevIns, virtioScsiDeviceQuiesced);
 
@@ -1762,81 +1741,71 @@ static DECLCALLBACK(void) virtioScsiIoReqStateChanged(PPDMIMEDIAEXPORT pInterfac
 }
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnResume}
- */
-static DECLCALLBACK(void) virtioScsiResume(PPDMDEVINS pDevIns)
-{
-    LogFunc(("\n"));
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    pThis->fSuspending = pThis->fQuiescing = false;
-    enableQueues(pThis);
-}
-
-/**
- * @interface_method_impl{PDMDEVREG,pfnSuspend}
- */
-static DECLCALLBACK(void) virtioScsiSuspend(PPDMDEVINS pDevIns)
-{
-    LogFunc(("\n"));
-
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-    pThis->fSuspending = true;
-
-    virtioScsiQuiesceDevice(pDevIns);
-
-    for (uint32_t i = 0; i < pThis->cTargets; i++)
-    {
-        PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[i];
-        if (pTarget->pDrvBase)
-            if (pTarget->pDrvMediaEx)
-                pTarget->pDrvMediaEx->pfnNotifySuspend(pTarget->pDrvMediaEx);
-    }
-}
-
- /**
-  * Common worker for virtioScsiSuspend and virtioScsiPowerOff.
-  */
-static void virtioScsiPowerOn(PPDMDEVINS pDevIns)
-{
-    LogFunc(("\n"));
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    pThis->fPoweringOff = pThis->fQuiescing = false;
-    enableQueues(pThis);
-}
-
- /**
-  * Common worker for virtioScsiSuspend and virtioScsiPowerOff.
-  */
-static void virtioScsiPowerOff(PPDMDEVINS pDevIns)
-{
-    LogFunc(("\n"));
-
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-    pThis->fPoweringOff = true;
-    virtioScsiQuiesceDevice(pDevIns);
-
-    for (uint32_t i = 0; i < pThis->cTargets; i++)
-    {
-        PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[i];
-        if (pTarget->pDrvBase)
-            if (pTarget->pDrvMediaEx)
-                pTarget->pDrvMediaEx->pfnNotifySuspend(pTarget->pDrvMediaEx);
-    }
-}
-
-/**
  * @copydoc FNPDMDEVRESET
  */
 static DECLCALLBACK(void) virtioScsiReset(PPDMDEVINS pDevIns)
 {
     LogFunc(("\n"));
-
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
     pThis->fResetting = true;
+    virtioScsiQuiesceDevice(pDevIns);
+}
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnResume}
+ */
+static DECLCALLBACK(void) virtioScsiResume(PPDMDEVINS pDevIns)
+{
+    LogFunc(("\n"));
+
+    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    pThis->fQuiescing = false;
+
+    /** Wake worker threads flagged to skip pulling queue entries during quiesce
+     *  to ensure they re-check their queues. Active request queues may already
+     *  be awake due to new reqs coming in.
+     */
+     for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
+    {
+        PWORKER pWorker = &pThis->aWorker[qIdx];
+
+        if (ASMAtomicReadBool(&pWorker->fSleeping))
+        {
+            Log6Func(("waking %s worker.\n", QUEUENAME(qIdx)));
+            int rc = SUPSemEventSignal(pThis->pSupDrvSession, pWorker->hEvtProcess);
+            AssertRC(rc);
+        }
+    }
+
+    /** Ensure guest is working the queues too. */
+    virtioPropagateResumeNotification(pThis->hVirtio);
+}
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnSuspend}
+ */
+static DECLCALLBACK(void) virtioScsiSuspendOrPoweroff(PPDMDEVINS pDevIns)
+{
+    LogFunc(("\n"));
 
     virtioScsiQuiesceDevice(pDevIns);
+
+    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    /** VM is halted, thus no new I/O being dumped into queues by the guest.
+     *  Workers have been flagged to stop pulling stuff already queued-up by the guest.
+     *  Now tell lower-level to to suspend reqs (for example, DrvVD suspends all reqs
+     *  on its wait queue, and we will get a callback as the state changes to
+     *  suspended (and later, resumed) for each).
+     */
+    for (uint32_t i = 0; i < pThis->cTargets; i++)
+    {
+        PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[i];
+        if (pTarget->pDrvBase)
+            if (pTarget->pDrvMediaEx)
+                pTarget->pDrvMediaEx->pfnNotifySuspend(pTarget->pDrvMediaEx);
+    }
 }
 
 /**
@@ -2278,7 +2247,7 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
             rc = SUPSemEventCreate(pThis->pSupDrvSession, &pThis->aWorker[qIdx].hEvtProcess);
             if (RT_FAILURE(rc))
                 return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                     N_("LsiLogic: Failed to create SUP event semaphore"));
+                                     N_("DevVirtioSCSI: Failed to create SUP event semaphore"));
          }
     }
 
@@ -2420,15 +2389,15 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .pfnDestruct = */            virtioScsiDestruct,
     /* .pfnRelocate = */            virtioScsiRelocate,
     /* .pfnMemSetup = */            NULL,
-    /* .pfnPowerOn = */             virtioScsiPowerOn,
+    /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               virtioScsiReset,
-    /* .pfnSuspend = */             virtioScsiSuspend,
+    /* .pfnSuspend = */             virtioScsiSuspendOrPoweroff,
     /* .pfnResume = */              virtioScsiResume,
     /* .pfnAttach = */              virtioScsiAttach,
     /* .pfnDetach = */              virtioScsiDetach,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            virtioScsiPowerOff,
+    /* .pfnPowerOff = */            virtioScsiSuspendOrPoweroff,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
