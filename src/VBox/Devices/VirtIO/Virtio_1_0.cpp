@@ -63,10 +63,6 @@ int virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName)
  */
 const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 {
-    PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    AssertMsgReturn(DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[qIdx],
-                    ("Guest driver not in ready state.\n"), "<null>");
-
     return (const char *)((PVIRTIOSTATE)hVirtio)->virtqProxy[qIdx].szVirtqName;
 }
 
@@ -92,7 +88,6 @@ int virtioQueueSkip(VIRTIOHANDLE hVirtio, uint16_t qIdx)
     return VINF_SUCCESS;
 }
 
-
 /**
  * See API comments in header file for description
  */
@@ -101,7 +96,6 @@ uint64_t virtioGetNegotiatedFeatures(VIRTIOHANDLE hVirtio)
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
     return pVirtio->uDriverFeatures;
 }
-
 
 /**
  * See API comments in header file for description
@@ -226,7 +220,7 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fF
     PVIRTQ_PROXY_T pVirtqProxy = &pVirtio->virtqProxy[qIdx];
     PVIRTQ_DESC_CHAIN_T pDescChain = pVirtqProxy->pDescChain;
 
-    AssertMsgReturn(DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[qIdx],
+    AssertMsgReturn(DRIVER_OK(pVirtio) /*&& pVirtio->uQueueEnable[qIdx]*/,
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
     /**
      * Copy caller's virtual memory sg buffer to physical memory
@@ -450,6 +444,27 @@ static void virtioResetDevice(PVIRTIOSTATE pVirtio)
     pVirtio->uNumQueues = VIRTQ_MAX_CNT;
     for (uint16_t qIdx = 0; qIdx < pVirtio->uNumQueues; qIdx++)
         virtioResetQueue(pVirtio, qIdx);
+}
+
+/**
+ * See API comments in header file for description
+ */
+bool virtioIsQueueEnabled(VIRTIOHANDLE hVirtio, uint16_t qIdx)
+{
+    PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
+    return pVirtio->uQueueEnable[qIdx];
+}
+
+/**
+ * See API comments in header file for description
+ */
+void virtioQueueEnable(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fEnabled)
+{
+    PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
+    if (fEnabled)
+        pVirtio->uQueueSize[qIdx] = VIRTQ_MAX_SIZE;
+    else
+        pVirtio->uQueueSize[qIdx] = 0;
 }
 
 /**
