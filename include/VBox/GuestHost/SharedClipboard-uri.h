@@ -273,9 +273,9 @@ typedef struct _SHCLFSOBJATTR
 } SHCLFSOBJATTR;
 #pragma pack()
 AssertCompileSize(SHCLFSOBJATTR, 44);
-/** Pointer to a shared folder filesystem object attributes structure. */
+/** Pointer to a Shared Clipboard filesystem object attributes structure. */
 typedef SHCLFSOBJATTR *PSHCLFSOBJATTR;
-/** Pointer to a const shared folder filesystem object attributes structure. */
+/** Pointer to a const Shared Clipboard filesystem object attributes structure. */
 typedef const SHCLFSOBJATTR *PCSHCLFSOBJATTR;
 
 /**
@@ -319,9 +319,9 @@ typedef struct _SHCLFSOBJINFO
 } SHCLFSOBJINFO;
 #pragma pack()
 AssertCompileSize(SHCLFSOBJINFO, 92);
-/** Pointer to a shared folder filesystem object information structure. */
+/** Pointer to a Shared Clipboard filesystem object information structure. */
 typedef SHCLFSOBJINFO *PSHCLFSOBJINFO;
-/** Pointer to a const shared folder filesystem object information
+/** Pointer to a const Shared Clipboard filesystem object information
  *  structure. */
 typedef const SHCLFSOBJINFO *PCSHCLFSOBJINFO;
 

@@ -22,7 +22,7 @@ include $(KBUILD_PATH)/subheader.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
 #
-# The shared folder service DLL.
+# The Shared Clipboard service DLL.
 #
 DLLS += VBoxSharedClipboard
 VBoxSharedClipboard_TEMPLATE  = VBOXR3
