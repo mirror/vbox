@@ -235,15 +235,15 @@ UIMachineSettingsNetwork::UIMachineSettingsNetwork(UIMachineSettingsNetworkPage 
                                UIIconPool::iconSet(":/arrow_down_10px.png"));
 
     /* Setup connections: */
-    connect(m_pEnableAdapterCheckBox, SIGNAL(toggled(bool)), this, SLOT(sltHandleAdapterActivityChange()));
+    connect(m_pEnableAdapterCheckBox, &QCheckBox::toggled, this, &UIMachineSettingsNetwork::sltHandleAdapterActivityChange);
     connect(m_pAttachmentTypeEditor, &UINetworkAttachmentEditor::sigValueTypeChanged,
             this, &UIMachineSettingsNetwork::sltHandleAttachmentTypeChange);
     connect(m_pAttachmentTypeEditor, &UINetworkAttachmentEditor::sigValueNameChanged,
             this, &UIMachineSettingsNetwork::sltHandleAlternativeNameChange);
-    connect(m_pAdvancedArrow, SIGNAL(sigClicked()), this, SLOT(sltHandleAdvancedButtonStateChange()));
-    connect(m_pMACButton, SIGNAL(clicked()), this, SLOT(sltGenerateMac()));
-    connect(m_pPortForwardingButton, SIGNAL(clicked()), this, SLOT(sltOpenPortForwardingDlg()));
-    connect(this, SIGNAL(sigTabUpdated()), m_pParent, SLOT(sltHandleTabUpdate()));
+    connect(m_pAdvancedArrow, &QIArrowButtonSwitch::sigClicked, this, &UIMachineSettingsNetwork::sltHandleAdvancedButtonStateChange);
+    connect(m_pMACButton, &QIToolButton::clicked, this, &UIMachineSettingsNetwork::sltGenerateMac);
+    connect(m_pPortForwardingButton, &QPushButton::clicked, this, &UIMachineSettingsNetwork::sltOpenPortForwardingDlg);
+    connect(this, &UIMachineSettingsNetwork::sigTabUpdated, m_pParent, &UIMachineSettingsNetworkPage::sltHandleTabUpdate);
 
     /* Prepare validation: */
     prepareValidation();
@@ -630,7 +630,7 @@ void UIMachineSettingsNetwork::sltOpenPortForwardingDlg()
 void UIMachineSettingsNetwork::prepareValidation()
 {
     /* Configure validation: */
-    connect(m_pMACEditor, SIGNAL(textChanged(const QString &)), m_pParent, SLOT(revalidate()));
+    connect(m_pMACEditor, &QILineEdit::textChanged, m_pParent, &UIMachineSettingsNetworkPage::revalidate);
 }
 
 void UIMachineSettingsNetwork::populateComboboxes()
@@ -1018,8 +1018,8 @@ void UIMachineSettingsNetworkPage::prepare()
                 AssertPtrReturnVoid(pTab);
                 {
                     /* Configure tab: */
-                    connect(pTab, SIGNAL(sigNotifyAdvancedButtonStateChange(bool)),
-                            this, SLOT(sltHandleAdvancedButtonStateChange(bool)));
+                    connect(pTab, &UIMachineSettingsNetwork::sigNotifyAdvancedButtonStateChange,
+                            this, &UIMachineSettingsNetworkPage::sltHandleAdvancedButtonStateChange);
 
                     /* Add tab into tab-widget: */
                     m_pTabWidget->addTab(pTab, pTab->tabTitle());

@@ -385,7 +385,7 @@ public:
     /* API: Validation stuff: */
     bool isAllShortcutsUnique();
 
-private slots:
+public slots:
 
     /* Handler: Filtering stuff: */
     void sltHandleFilterTextChange(const QString &strText);
@@ -841,7 +841,8 @@ void UIHotKeyTable::prepare()
     horizontalHeader()->setSectionResizeMode(UIHotKeyColumnIndex_Sequence, QHeaderView::Stretch);
 
     /* Connect model: */
-    connect(model(), SIGNAL(sigShortcutsLoaded()), this, SLOT(sltHandleShortcutsLoaded()));
+    connect(qobject_cast<UIHotKeyTableModel*>(model()), &UIHotKeyTableModel::sigShortcutsLoaded,
+            this, &UIHotKeyTable::sltHandleShortcutsLoaded);
 
     /* Check if we do have proper item delegate: */
     QIStyledItemDelegate *pStyledItemDelegate = qobject_cast<QIStyledItemDelegate*>(itemDelegate());
@@ -1148,14 +1149,14 @@ void UIGlobalSettingsInput::prepareTabMachine()
 void UIGlobalSettingsInput::prepareConnections()
 {
     /* Configure 'Selector UI' connections: */
-    connect(m_pSelectorFilterEditor, SIGNAL(textChanged(const QString &)),
-            m_pSelectorModel, SLOT(sltHandleFilterTextChange(const QString &)));
-    connect(m_pSelectorModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
+    connect(m_pSelectorFilterEditor, &QLineEdit::textChanged,
+            m_pSelectorModel, &UIHotKeyTableModel::sltHandleFilterTextChange);
+    connect(m_pSelectorModel, &UIHotKeyTableModel::sigRevalidationRequired, this, &UIGlobalSettingsInput::revalidate);
 
     /* Configure 'Runtime UI' connections: */
-    connect(m_pMachineFilterEditor, SIGNAL(textChanged(const QString &)),
-            m_pMachineModel, SLOT(sltHandleFilterTextChange(const QString &)));
-    connect(m_pMachineModel, SIGNAL(sigRevalidationRequired()), this, SLOT(revalidate()));
+    connect(m_pMachineFilterEditor, &QLineEdit::textChanged,
+            m_pMachineModel, &UIHotKeyTableModel::sltHandleFilterTextChange);
+    connect(m_pMachineModel, &UIHotKeyTableModel::sigRevalidationRequired, this, &UIGlobalSettingsInput::revalidate);
 }
 
 void UIGlobalSettingsInput::cleanup()
@@ -1205,4 +1206,3 @@ bool UIGlobalSettingsInput::saveInputData()
 }
 
 # include "UIGlobalSettingsInput.moc"
-

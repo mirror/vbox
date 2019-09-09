@@ -57,6 +57,11 @@ public:
     /** Returns the NAT network list. */
     const QStringList &natNetworkList() const { return m_natNetworkList; }
 
+ public slots:
+
+    /** Handles particular tab update. */
+    void sltHandleTabUpdate();
+
 protected:
 
     /** Returns whether the page content was changed. */
@@ -86,9 +91,6 @@ protected:
     virtual void polishPage() /* override */;
 
 private slots:
-
-    /** Handles particular tab update. */
-    void sltHandleTabUpdate();
 
     /** Handles whether the advanced button is @a fExpanded. */
     void sltHandleAdvancedButtonStateChange(bool fExpanded);
