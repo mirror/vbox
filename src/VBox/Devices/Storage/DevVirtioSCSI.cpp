@@ -87,9 +87,9 @@
 
 #define VIRTIOSCSI_SENSE_SIZE_DEFAULT               96          /**< VirtIO 1.0: 96 on reset, guest can change       */
 #define VIRTIOSCSI_CDB_SIZE_DEFAULT                 32          /**< VirtIO 1.0: 32 on reset, guest can change       */
-#define virtioScsi_PI_BYTES_IN                      1           /**< Value TBD (see section 5.6.6.1)                 */
-#define virtioScsi_PI_BYTES_OUT                     1           /**< Value TBD (see section 5.6.6.1)                 */
-#define virtioScsi_DATA_OUT                         512         /**< Value TBD (see section 5.6.6.1)                 */
+#define VIRTIOSCSI_PI_BYTES_IN                      1           /**< Value TBD (see section 5.6.6.1)                 */
+#define VIRTIOSCSI_PI_BYTES_OUT                     1           /**< Value TBD (see section 5.6.6.1)                 */
+#define VIRTIOSCSI_DATA_OUT                         512         /**< Value TBD (see section 5.6.6.1)                 */
 
 /**
  * VirtIO SCSI Host Device device-specific queue indicies
