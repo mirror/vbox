@@ -558,14 +558,14 @@ void UIGlobalSettingsNetwork::prepareNATNetworkToolbar()
 void UIGlobalSettingsNetwork::prepareConnections()
 {
     /* Configure 'NAT Network' connections: */
-    connect(m_pTreeNetworkNAT, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
-            this, SLOT(sltHandleCurrentItemChangeNATNetwork()));
-    connect(m_pTreeNetworkNAT, SIGNAL(customContextMenuRequested(const QPoint &)),
-            this, SLOT(sltHandleContextMenuRequestNATNetwork(const QPoint &)));
-    connect(m_pTreeNetworkNAT, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
-            this, SLOT(sltEditNATNetwork()));
-    connect(m_pTreeNetworkNAT, SIGNAL(itemChanged(QTreeWidgetItem *, int)),
-            this, SLOT(sltHandleItemChangeNATNetwork(QTreeWidgetItem *)));
+    connect(m_pTreeNetworkNAT, &QITreeWidget::currentItemChanged,
+            this, &UIGlobalSettingsNetwork::sltHandleCurrentItemChangeNATNetwork);
+    connect(m_pTreeNetworkNAT, &QITreeWidget::customContextMenuRequested,
+            this, &UIGlobalSettingsNetwork::sltHandleContextMenuRequestNATNetwork);
+    connect(m_pTreeNetworkNAT, &QITreeWidget::itemDoubleClicked,
+            this, &UIGlobalSettingsNetwork::sltEditNATNetwork);
+    connect(m_pTreeNetworkNAT, &QITreeWidget::itemChanged,
+            this, &UIGlobalSettingsNetwork::sltHandleItemChangeNATNetwork);
 }
 
 void UIGlobalSettingsNetwork::cleanup()

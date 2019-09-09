@@ -346,10 +346,10 @@ void UIGlobalSettingsLanguage::prepare()
             m_pLanguageTree->hideColumn(2);
             m_pLanguageTree->hideColumn(3);
             m_pLanguageTree->setMinimumHeight(150);
-            connect(m_pLanguageTree, SIGNAL(painted(QTreeWidgetItem *, QPainter *)),
-                    this, SLOT(sltHandleItemPainting(QTreeWidgetItem *, QPainter *)));
-            connect(m_pLanguageTree, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
-                    this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem *)));
+            connect(m_pLanguageTree, &QITreeWidget::painted,
+                    this, &UIGlobalSettingsLanguage::sltHandleItemPainting);
+            connect(m_pLanguageTree, &QITreeWidget::currentItemChanged,
+                    this, &UIGlobalSettingsLanguage::sltHandleCurrentItemChange);
         }
 
         /* Rich-text label created in the .ui file. */

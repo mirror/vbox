@@ -425,10 +425,10 @@ void UIGlobalSettingsExtension::prepare()
             m_pPackagesTree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
             m_pPackagesTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
             m_pPackagesTree->setContextMenuPolicy(Qt::CustomContextMenu);
-            connect(m_pPackagesTree, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
-                    this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem *)));
-            connect(m_pPackagesTree, SIGNAL(customContextMenuRequested(const QPoint &)),
-                    this, SLOT(sltHandleContextMenuRequest(const QPoint &)));
+            connect(m_pPackagesTree, &QITreeWidget::currentItemChanged,
+                    this, &UIGlobalSettingsExtension::sltHandleCurrentItemChange);
+            connect(m_pPackagesTree, &QITreeWidget::customContextMenuRequested,
+                    this, &UIGlobalSettingsExtension::sltHandleContextMenuRequest);
         }
 
         /* Tool-bar created in the .ui file. */
