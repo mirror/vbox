@@ -14675,9 +14675,9 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPUCC pVCpu, PVMXTRANSIE
 HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrUnexpected(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     /*
-     * Cummulative notes of all recognized but unexpected VM-exits.
+     * Cumulative notes of all recognized but unexpected VM-exits.
      *
-     * 1. This does -not- cover scenarios like like a page-fault VM-exit occurring when
+     * 1. This does -not- cover scenarios like a page-fault VM-exit occurring when
      *    nested-paging is used.
      *
      * 2. Any instruction that causes a VM-exit unconditionally (for e.g. VMXON) must be
@@ -14763,7 +14763,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    /** @todo Optimize this: We currently drag in in the whole MSR state
+    /** @todo Optimize this: We currently drag in the whole MSR state
      * (CPUMCTX_EXTRN_ALL_MSRS) here.  We should optimize this to only get
      * MSRs required.  That would require changes to IEM and possibly CPUM too.
      * (Should probably do it lazy fashion from CPUMAllMsrs.cpp). */
@@ -14829,7 +14829,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     HMVMX_VALIDATE_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    /** @todo Optimize this: We currently drag in in the whole MSR state
+    /** @todo Optimize this: We currently drag in the whole MSR state
      * (CPUMCTX_EXTRN_ALL_MSRS) here.  We should optimize this to only get
      * MSRs required.  That would require changes to IEM and possibly CPUM too.
      * (Should probably do it lazy fashion from CPUMAllMsrs.cpp). */
@@ -15660,7 +15660,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
         /*
          * In the unlikely case where delivering an event causes an EPT misconfig (MMIO), go back to
          * instruction emulation to inject the original event. Otherwise, injecting the original event
-         * using hardware-assisted VMX would would trigger the same EPT misconfig VM-exit again.
+         * using hardware-assisted VMX would trigger the same EPT misconfig VM-exit again.
          */
         if (!pVCpu->hm.s.Event.fPending)
         { /* likely */ }
@@ -15682,7 +15682,7 @@ HMVMX_EXIT_DECL hmR0VmxExitEptMisconfig(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     }
 
     /*
-     * Get sufficent state and update the exit history entry.
+     * Get sufficient state and update the exit history entry.
      */
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     hmR0VmxReadGuestPhysicalAddrVmcs(pVmxTransient);
