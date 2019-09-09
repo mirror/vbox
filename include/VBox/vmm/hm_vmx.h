@@ -1451,6 +1451,9 @@ AssertCompileSize(VMXABORT, 4);
 #define VMX_BASIC_MEM_TYPE_UC                                   0
 /** VMCS (and related regions) memory type - Write back. */
 #define VMX_BASIC_MEM_TYPE_WB                                   6
+/** Width of physical addresses used for VMCS and associated memory regions
+ *  (1=32-bit, 0=processor's physical address width). */
+#define VMX_BASIC_PHYSADDR_WIDTH_32BIT                          RT_BIT_64(48)
 
 /** Bit fields for MSR_IA32_VMX_BASIC. */
 /** VMCS revision identifier used by the processor. */
