@@ -107,8 +107,7 @@ HRESULT Guest::init(Console *aParent)
     RT_ZERO(mCurrentGuestCpuIdleStat);
 
     mMagic = GUEST_MAGIC;
-    int vrc = RTTimerLRCreateEx(&mStatTimer, RT_NS_1SEC, 0 /*fFlags*/, &Guest::i_staticUpdateStats, this);
-    AssertMsgRC(vrc, ("Failed to create guest statistics update timer (%Rrc) - ignored\n", vrc));
+    mStatTimer = NIL_RTTIMERLR;
 
     hr = unconst(mEventSource).createObject();
     if (SUCCEEDED(hr))
@@ -167,7 +166,7 @@ void Guest::uninit()
     /* Destroy stat update timer */
     int vrc = RTTimerLRDestroy(mStatTimer);
     AssertMsgRC(vrc, ("Failed to create guest statistics update timer(%Rra)\n", vrc));
-    mStatTimer = NULL;
+    mStatTimer = NIL_RTTIMERLR;
     mMagic     = 0;
 
 #ifdef VBOX_WITH_GUEST_CONTROL
@@ -625,18 +624,36 @@ HRESULT Guest::setStatisticsUpdateInterval(ULONG aStatisticsUpdateInterval)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mStatUpdateInterval)
+    /* Update the timer, creating it the first time we're called with a non-zero value. */
+    int vrc;
+    HRESULT hrc = S_OK;
+    if (aStatisticsUpdateInterval > 0)
     {
-        if (aStatisticsUpdateInterval == 0)
-            RTTimerLRStop(mStatTimer);
-        else
-            RTTimerLRChangeInterval(mStatTimer, aStatisticsUpdateInterval * RT_NS_1SEC_64);
+        if (mStatTimer == NIL_RTTIMERLR)
+        {
+            vrc = RTTimerLRCreate(&mStatTimer, aStatisticsUpdateInterval * RT_MS_1SEC, &Guest::i_staticUpdateStats, this);
+            AssertRCStmt(vrc, hrc = setErrorVrc(vrc, "Failed to create guest statistics update timer (%Rrc)", vrc));
+        }
+        else if (aStatisticsUpdateInterval != mStatUpdateInterval)
+        {
+            vrc = RTTimerLRChangeInterval(mStatTimer, aStatisticsUpdateInterval * RT_NS_1SEC_64);
+            AssertRCStmt(vrc, hrc = setErrorVrc(vrc, "Failed to change guest statistics update timer interval from %u to %u failed (%Rrc)",
+                                                mStatUpdateInterval, aStatisticsUpdateInterval, vrc));
+            if (mStatUpdateInterval == 0)
+            {
+                vrc = RTTimerLRStart(mStatTimer, 0);
+                AssertRCStmt(vrc, hrc = setErrorVrc(vrc, "Failed to start the guest statistics update timer (%Rrc)", vrc));
+            }
+        }
     }
-    else if (aStatisticsUpdateInterval != 0)
+    /* Setting interval to zero - stop the update timer if needed: */
+    else if (mStatUpdateInterval > 0 && mStatTimer != NIL_RTTIMERLR)
     {
-        RTTimerLRChangeInterval(mStatTimer, aStatisticsUpdateInterval * RT_NS_1SEC_64);
-        RTTimerLRStart(mStatTimer, 0);
+        vrc = RTTimerLRStop(mStatTimer);
+        AssertRCStmt(vrc, hrc = setErrorVrc(vrc, "Failed to stop the guest statistics update timer (%Rrc)", vrc));
     }
+
+    /* Update the interval now that the timer is in sync. */
     mStatUpdateInterval = aStatisticsUpdateInterval;
 
     /* Forward the information to the VMM device.
@@ -651,7 +668,7 @@ HRESULT Guest::setStatisticsUpdateInterval(ULONG aStatisticsUpdateInterval)
             pVMMDevPort->pfnSetStatisticsInterval(pVMMDevPort, aStatisticsUpdateInterval);
     }
 
-    return S_OK;
+    return hrc;
 }
 
 
@@ -666,11 +683,11 @@ HRESULT Guest::internalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *
     *aCpuUser    = mCurrentGuestStat[GUESTSTATTYPE_CPUUSER];
     *aCpuKernel  = mCurrentGuestStat[GUESTSTATTYPE_CPUKERNEL];
     *aCpuIdle    = mCurrentGuestStat[GUESTSTATTYPE_CPUIDLE];
-    *aMemTotal   = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K);     /* page (4K) -> 1KB units */
-    *aMemFree    = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] * (_4K/_1K);       /* page (4K) -> 1KB units */
+    *aMemTotal   = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL]   * (_4K/_1K); /* page (4K) -> 1KB units */
+    *aMemFree    = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE]    * (_4K/_1K); /* page (4K) -> 1KB units */
     *aMemBalloon = mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] * (_4K/_1K); /* page (4K) -> 1KB units */
-    *aMemCache   = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K);     /* page (4K) -> 1KB units */
-    *aPageTotal  = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K);   /* page (4K) -> 1KB units */
+    *aMemCache   = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE]   * (_4K/_1K); /* page (4K) -> 1KB units */
+    *aPageTotal  = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL]  * (_4K/_1K); /* page (4K) -> 1KB units */
 
     /* Play safe or smth? */
     *aMemAllocTotal   = 0;
