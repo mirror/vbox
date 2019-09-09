@@ -68,7 +68,7 @@ int VBoxClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
  */
-int VBoxClipboardSvcImplSync(PSHCLCLIENT pClient)
+int SharedClipboardSvcImplSync(PSHCLCLIENT pClient)
 {
     RT_NOREF(pClient);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
@@ -80,7 +80,7 @@ int VBoxClipboardSvcImplSync(PSHCLCLIENT pClient)
  *
  * @param   pClient         Structure containing context information about the guest system
  */
-int VBoxClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
+int SharedClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
 {
     RT_NOREF(pClient);
     return VINF_SUCCESS;
@@ -94,7 +94,7 @@ int VBoxClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
  * @param pCmdCtx               Command context to use.
  * @param pFormats              Clipboard formats the guest is offering.
  */
-int VBoxClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                                        PSHCLFORMATDATA pFormats)
 {
     RT_NOREF(pClient, pCmdCtx, pFormats);
@@ -109,7 +109,7 @@ int VBoxClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pC
  * @param pData         Data block to put read data into.
  * @param pcbActual     Where to store the actual amount of data available.
  */
-int VBoxClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                                  PSHCLDATABLOCK pData, uint32_t *pcbActual)
 {
     RT_NOREF(pClient, pCmdCtx, pData);
@@ -120,7 +120,7 @@ int VBoxClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     return VINF_SUCCESS;
 }
 
-int VBoxClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                                   PSHCLDATABLOCK pData)
 {
     RT_NOREF(pClient, pCmdCtx, pData);

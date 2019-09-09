@@ -51,24 +51,24 @@ using namespace com;
 # define WM_CLIPBOARDUPDATE 0x031D
 #endif
 
-#define VBOX_CLIPBOARD_WNDCLASS_NAME         "VBoxSharedClipboardClass"
+#define SHCL_WIN_WNDCLASS_NAME        "VBoxSharedClipboardClass"
 
 /** See: https://docs.microsoft.com/en-us/windows/desktop/dataxchg/html-clipboard-format
  *       Do *not* change the name, as this will break compatbility with other (legacy) applications! */
-#define VBOX_CLIPBOARD_WIN_REGFMT_HTML       "HTML Format"
+#define SHCL_WIN_REGFMT_HTML          "HTML Format"
 
 /** Default timeout (in ms) for passing down messages down the clipboard chain. */
-#define VBOX_CLIPBOARD_CBCHAIN_TIMEOUT_MS   5000
+#define SHCL_WIN_CBCHAIN_TIMEOUT_MS   5000
 
 /** Reports clipboard formats. */
-#define VBOX_CLIPBOARD_WM_REPORT_FORMATS    WM_USER
+#define SHCL_WIN_WM_REPORT_FORMATS    WM_USER
 /** Reads data from the clipboard and sends it to the destination. */
-#define VBOX_CLIPBOARD_WM_READ_DATA         WM_USER + 1
+#define SHCL_WIN_WM_READ_DATA         WM_USER + 1
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /** Starts a reading transfer from the guest. */
-# define VBOX_CLIPBOARD_WM_URI_START_READ   WM_USER + 2
+# define SHCL_WIN_WM_URI_START_READ   WM_USER + 2
 /** Starts a writing transfer to the guest. */
-# define VBOX_CLIPBOARD_WM_URI_START_WRITE  WM_USER + 3
+# define SHCL_WIN_WM_URI_START_WRITE  WM_USER + 3
 #endif
 
 /* Dynamically load clipboard functions from User32.dll. */
@@ -105,50 +105,50 @@ typedef struct _SHCLWINAPIOLD
 typedef struct _SHCLWINCTX
 {
     /** Window handle of our (invisible) clipbaord window. */
-    HWND                        hWnd;
+    HWND               hWnd;
     /** Window handle which is next to us in the clipboard chain. */
-    HWND                        hWndNextInChain;
+    HWND               hWndNextInChain;
     /** Window handle of the clipboard owner *if* we are the owner. */
-    HWND                        hWndClipboardOwnerUs;
+    HWND               hWndClipboardOwnerUs;
     /** Structure for maintaining the new clipboard API. */
     SHCLWINAPINEW      newAPI;
     /** Structure for maintaining the old clipboard API. */
     SHCLWINAPIOLD      oldAPI;
 } SHCLWINCTX, *PSHCLWINCTX;
 
-int VBoxClipboardWinOpen(HWND hWnd);
-int VBoxClipboardWinClose(void);
-int VBoxClipboardWinClear(void);
+int SharedClipboardWinOpen(HWND hWnd);
+int SharedClipboardWinClose(void);
+int SharedClipboardWinClear(void);
 
-int VBoxClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI);
-bool VBoxClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI);
+int SharedClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI);
+bool SharedClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI);
 
-int VBoxClipboardWinChainAdd(PSHCLWINCTX pCtx);
-int VBoxClipboardWinChainRemove(PSHCLWINCTX pCtx);
-VOID CALLBACK VBoxClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
-LRESULT VBoxClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
+int SharedClipboardWinChainAdd(PSHCLWINCTX pCtx);
+int SharedClipboardWinChainRemove(PSHCLWINCTX pCtx);
+VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dwData, LRESULT lResult);
+LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx, UINT msg, WPARAM wParam, LPARAM lParam);
 
-SHCLFORMAT VBoxClipboardWinClipboardFormatToVBox(UINT uFormat);
-int VBoxClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats);
+SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat);
+int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
+int SharedClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
 #endif
 
-int VBoxClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
-bool VBoxClipboardWinIsCFHTML(const char *pszSource);
-int VBoxClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
-int VBoxClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
+int SharedClipboardWinGetCFHTMLHeaderValue(const char *pszSrc, const char *pszOption, uint32_t *puValue);
+bool SharedClipboardWinIsCFHTML(const char *pszSource);
+int SharedClipboardWinConvertCFHTMLToMIME(const char *pszSource, const uint32_t cch, char **ppszOutput, uint32_t *pcbOutput);
+int SharedClipboardWinConvertMIMEToCFHTML(const char *pszSource, size_t cb, char **ppszOutput, uint32_t *pcbOutput);
 
-LRESULT VBoxClipboardWinHandleWMChangeCBChain(PSHCLWINCTX pWinCtx, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-int VBoxClipboardWinHandleWMDestroy(PSHCLWINCTX pWinCtx);
-int VBoxClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd);
-int VBoxClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx);
+LRESULT SharedClipboardWinHandleWMChangeCBChain(PSHCLWINCTX pWinCtx, HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+int SharedClipboardWinHandleWMDestroy(PSHCLWINCTX pWinCtx);
+int SharedClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd);
+int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx);
 
-int VBoxClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats);
+int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-int VBoxClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
-void VBoxClipboardWinURITransferDestroy(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
+int SharedClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
+void SharedClipboardWinURITransferDestroy(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
 #endif
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
@@ -157,7 +157,7 @@ class SharedClipboardURIList;
 class FILEGROUPDESCRIPTOR;
 #  endif
 
-class VBoxClipboardWinDataObject : public IDataObject //, public IDataObjectAsyncCapability
+class SharedClipboardWinDataObject : public IDataObject //, public IDataObjectAsyncCapability
 {
 public:
 
@@ -169,9 +169,9 @@ public:
 
 public:
 
-    VBoxClipboardWinDataObject(PSHCLURITRANSFER pTransfer,
-                               LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
-    virtual ~VBoxClipboardWinDataObject(void);
+    SharedClipboardWinDataObject(PSHCLURITRANSFER pTransfer,
+                                 LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
+    virtual ~SharedClipboardWinDataObject(void);
 
 public: /* IUnknown methods. */
 
@@ -234,7 +234,7 @@ protected:
     struct FSOBJENTRY
     {
         /** Relative path of the object. */
-        Utf8Str                  strPath;
+        Utf8Str       strPath;
         /** Related (cached) object information. */
         SHCLFSOBJINFO objInfo;
     };
@@ -247,7 +247,7 @@ protected:
     ULONG                       m_cFormats;
     LPFORMATETC                 m_pFormatEtc;
     LPSTGMEDIUM                 m_pStgMedium;
-    PSHCLURITRANSFER m_pTransfer;
+    PSHCLURITRANSFER            m_pTransfer;
     IStream                    *m_pStream;
     ULONG                       m_uObjIdx;
     /** List of (cached) file system objects. */
@@ -261,12 +261,12 @@ protected:
     UINT                        m_cfFileContents;
 };
 
-class VBoxClipboardWinEnumFormatEtc : public IEnumFORMATETC
+class SharedClipboardWinEnumFormatEtc : public IEnumFORMATETC
 {
 public:
 
-    VBoxClipboardWinEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats);
-    virtual ~VBoxClipboardWinEnumFormatEtc(void);
+    SharedClipboardWinEnumFormatEtc(LPFORMATETC pFormatEtc, ULONG cFormats);
+    virtual ~SharedClipboardWinEnumFormatEtc(void);
 
 public: /* IUnknown methods. */
 
@@ -298,13 +298,13 @@ private:
  * Own IStream implementation to implement file-based clipboard operations
  * through HGCM. Needed on Windows hosts and guests.
  */
-class VBoxClipboardWinStreamImpl : public IStream
+class SharedClipboardWinStreamImpl : public IStream
 {
 public:
 
-    VBoxClipboardWinStreamImpl(VBoxClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer,
-                               const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo);
-    virtual ~VBoxClipboardWinStreamImpl(void);
+    SharedClipboardWinStreamImpl(SharedClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer,
+                                 const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo);
+    virtual ~SharedClipboardWinStreamImpl(void);
 
 public: /* IUnknown methods. */
 
@@ -328,22 +328,22 @@ public: /* IStream methods. */
 
 public: /* Own methods. */
 
-    static HRESULT Create(VBoxClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer, const Utf8Str &strPath,
+    static HRESULT Create(SharedClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer, const Utf8Str &strPath,
                           PSHCLFSOBJINFO pObjInfo, IStream **ppStream);
 private:
 
     /** Pointer to the parent data object. */
-    VBoxClipboardWinDataObject    *m_pParent;
+    SharedClipboardWinDataObject  *m_pParent;
     /** The stream object's current reference count. */
     LONG                           m_lRefCount;
     /** Pointer to the associated URI transfer. */
-    PSHCLURITRANSFER    m_pURITransfer;
+    PSHCLURITRANSFER               m_pURITransfer;
     /** The object handle to use. */
-    SHCLOBJHANDLE       m_hObj;
+    SHCLOBJHANDLE                  m_hObj;
     /** Object path. */
     Utf8Str                        m_strPath;
     /** (Cached) object information. */
-    SHCLFSOBJINFO       m_objInfo;
+    SHCLFSOBJINFO                  m_objInfo;
     /** Number of bytes already processed. */
     uint64_t                       m_cbProcessed;
     /** Whether we already notified the parent of completion or not. */
@@ -368,7 +368,7 @@ public:
 
     /** Pointer to data object to use for this transfer.
      *  Can be NULL if not being used. */
-    VBoxClipboardWinDataObject *pDataObj;
+    SharedClipboardWinDataObject *pDataObj;
 };
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_win_h */
