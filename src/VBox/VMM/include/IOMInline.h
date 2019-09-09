@@ -36,7 +36,7 @@
  * @returns NULL if no port registered.
  *
  * @param   pVM             The cross context VM structure.
- * @param   Port            The I/O port lookup.
+ * @param   uPort           The I/O port lookup.
  * @param   pidxLastHint    Pointer to IOMCPU::idxIoPortLastRead or
  *                          IOMCPU::idxIoPortLastWrite.
  *
