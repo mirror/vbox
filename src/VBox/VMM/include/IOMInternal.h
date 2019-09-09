@@ -204,6 +204,8 @@ typedef struct IOMIOPORTENTRYR3
     R3PTRTYPE(PFNIOMIOPORTINSTRING)     pfnInStrCallback;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
+    /** Extended port description table, optional. */
+    R3PTRTYPE(PCIOMIOPORTDESC)          paExtDescs;
     /** PCI device the registration is associated with. */
     R3PTRTYPE(PPDMPCIDEV)               pPciDev;
     /** The PCI device region (high 16-bit word) and subregion (low word),

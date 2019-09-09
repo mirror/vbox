@@ -453,7 +453,7 @@ VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
 VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
                                        uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
                                        PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, RTR3PTR pvUser,
-                                       const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
+                                       const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
     /*
      * Validate input.
@@ -476,6 +476,20 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(*pszDesc != '\0', VERR_INVALID_POINTER);
     AssertReturn(strlen(pszDesc) < 128, VERR_INVALID_POINTER);
+    if (paExtDescs)
+    {
+        AssertPtrReturn(paExtDescs, VERR_INVALID_POINTER);
+        for (size_t i = 0;; i++)
+        {
+            const char *pszIn  = paExtDescs[i].pszIn;
+            const char *pszOut = paExtDescs[i].pszIn;
+            if (!pszIn && !pszOut)
+                break;
+            AssertReturn(i < _8K, VERR_OUT_OF_RANGE);
+            AssertReturn(!pszIn  || strlen(pszIn)  < 128, VERR_INVALID_POINTER);
+            AssertReturn(!pszOut || strlen(pszOut) < 128, VERR_INVALID_POINTER);
+        }
+    }
 
     /*
      * Ensure that we've got table space for it.
@@ -514,6 +528,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
     pVM->iom.s.paIoPortRegs[idx].pfnOutStrCallback  = pfnOutStr ? pfnOutStr : iomR3IOPortDummyOutStr;
     pVM->iom.s.paIoPortRegs[idx].pfnInStrCallback   = pfnInStr  ? pfnInStr  : iomR3IOPortDummyInStr;
     pVM->iom.s.paIoPortRegs[idx].pszDesc            = pszDesc;
+    pVM->iom.s.paIoPortRegs[idx].paExtDescs         = paExtDescs;
     pVM->iom.s.paIoPortRegs[idx].pPciDev            = pPciDev;
     pVM->iom.s.paIoPortRegs[idx].iPciRegion         = iPciRegion;
     pVM->iom.s.paIoPortRegs[idx].cPorts             = cPorts;
@@ -771,44 +786,68 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
  */
 static void iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry)
 {
-    PIOMIOPORTSTATSENTRY pStats   = &pVM->iom.s.paIoPortStats[pRegEntry->idxStats];
-    const char * const   pszDesc  = pRegEntry->pszDesc;
-    unsigned             uPort    = pRegEntry->uPort;
-    unsigned const       uEndPort = uPort + (unsigned)pRegEntry->cPorts;
+    PIOMIOPORTSTATSENTRY pStats     = &pVM->iom.s.paIoPortStats[pRegEntry->idxStats];
+    PCIOMIOPORTDESC      pExtDesc   = pRegEntry->paExtDescs;
+    unsigned             uPort      = pRegEntry->uPort;
+    unsigned const       uFirstPort = uPort;
+    unsigned const       uEndPort   = uPort + pRegEntry->cPorts;
+
+    /* Register a dummy statistics for the prefix. */
+    char                 szName[80];
+    size_t cchPrefix;
+    if (uFirstPort < uEndPort - 1)
+        cchPrefix = RTStrPrintf(szName, sizeof(szName), "/IOM/NewPorts/%04x-%04x", uFirstPort, uEndPort - 1);
+    else
+        cchPrefix = RTStrPrintf(szName, sizeof(szName), "/IOM/NewPorts/%04x", uPort);
+    int rc = STAMR3Register(pVM, &pRegEntry->idxSelf, STAMTYPE_U16, STAMVISIBILITY_ALWAYS, szName,
+                            STAMUNIT_NONE, pRegEntry->pszDesc);
+    AssertRC(rc);
+
+
+    /* Register stats for each port under it */
     do
     {
-        char   szName[80];
-        size_t cchBaseNm = RTStrPrintf(szName, sizeof(szName), "/IOM/NewStylePorts/%04x-", uPort);
-        int    rc;
+        size_t cchBaseNm;
+        if (uFirstPort < uEndPort - 1)
+            cchBaseNm = cchPrefix + RTStrPrintf(&szName[cchPrefix], sizeof(szName) - cchPrefix, "/%04x-", uPort);
+        else
+        {
+            szName[cchPrefix] = '/';
+            cchBaseNm = cchPrefix + 1;
+        }
 
 # define SET_NM_SUFFIX(a_sz) memcpy(&szName[cchBaseNm], a_sz, sizeof(a_sz));
+        const char * const pszInDesc  = pExtDesc ? pExtDesc->pszIn  : NULL;
+        const char * const pszOutDesc = pExtDesc ? pExtDesc->pszOut : NULL;
 
         /* register the statistics counters. */
         SET_NM_SUFFIX("In-R3");
-        rc = STAMR3Register(pVM, &pStats->InR3,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        rc = STAMR3Register(pVM, &pStats->InR3,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszInDesc); AssertRC(rc);
         SET_NM_SUFFIX("Out-R3");
-        rc = STAMR3Register(pVM, &pStats->OutR3,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        rc = STAMR3Register(pVM, &pStats->OutR3,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszOutDesc); AssertRC(rc);
         SET_NM_SUFFIX("In-RZ");
-        rc = STAMR3Register(pVM, &pStats->InRZ,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        rc = STAMR3Register(pVM, &pStats->InRZ,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszInDesc); AssertRC(rc);
         SET_NM_SUFFIX("Out-RZ");
-        rc = STAMR3Register(pVM, &pStats->OutRZ,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        rc = STAMR3Register(pVM, &pStats->OutRZ,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszOutDesc); AssertRC(rc);
         SET_NM_SUFFIX("In-RZtoR3");
-        rc = STAMR3Register(pVM, &pStats->InRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        rc = STAMR3Register(pVM, &pStats->InRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
         SET_NM_SUFFIX("Out-RZtoR3");
-        rc = STAMR3Register(pVM, &pStats->OutRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+        rc = STAMR3Register(pVM, &pStats->OutRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
 
         /* Profiling */
-        SET_NM_SUFFIX("In-R3/Prof");
-        rc = STAMR3Register(pVM, &pStats->ProfInR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc); AssertRC(rc);
-        SET_NM_SUFFIX("Out-R3/Prof");
-        rc = STAMR3Register(pVM, &pStats->ProfOutR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc); AssertRC(rc);
-        SET_NM_SUFFIX("In-RZ/Prof");
-        rc = STAMR3Register(pVM, &pStats->ProfInRZ,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc); AssertRC(rc);
-        SET_NM_SUFFIX("Out-RZ/Prof");
-        rc = STAMR3Register(pVM, &pStats->ProfOutRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszDesc); AssertRC(rc);
+        SET_NM_SUFFIX("In-R3-Prof");
+        rc = STAMR3Register(pVM, &pStats->ProfInR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszInDesc); AssertRC(rc);
+        SET_NM_SUFFIX("Out-R3-Prof");
+        rc = STAMR3Register(pVM, &pStats->ProfOutR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszOutDesc); AssertRC(rc);
+        SET_NM_SUFFIX("In-RZ-Prof");
+        rc = STAMR3Register(pVM, &pStats->ProfInRZ,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszInDesc); AssertRC(rc);
+        SET_NM_SUFFIX("Out-RZ-Prof");
+        rc = STAMR3Register(pVM, &pStats->ProfOutRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszOutDesc); AssertRC(rc);
 
         pStats++;
         uPort++;
+        if (pExtDesc)
+            pExtDesc = pszInDesc || pszOutDesc ? pExtDesc + 1 : NULL;
     } while (uPort < uEndPort);
 }
 
@@ -818,17 +857,13 @@ static void iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry)
  */
 static void iomR3IoPortDeregStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry, unsigned uPort)
 {
-    PIOMIOPORTSTATSENTRY pStats   = &pVM->iom.s.paIoPortStats[pRegEntry->idxStats];
-    unsigned const       uEndPort = uPort + (unsigned)pRegEntry->cPorts;
-    do
-    {
-        char szPrefix[80];
-        RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewStylePorts/%04x-", uPort);
-        STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
-
-        pStats++;
-        uPort++;
-    } while (uPort < uEndPort);
+    char   szPrefix[80];
+    size_t cchPrefix;
+    if (pRegEntry->cPorts > 1)
+        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewPorts/%04x-%04x/", uPort, uPort + pRegEntry->cPorts - 1);
+    else
+        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewPorts/%04x/", uPort);
+    STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
 }
 
 #endif /* VBOX_WITH_STATISTICS */

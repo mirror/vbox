@@ -242,6 +242,25 @@ typedef DECLCALLBACK(int) FNIOMIOPORTOUTSTRING(PPDMDEVINS pDevIns, void *pvUser,
 /** Pointer to a FNIOMIOPORTOUTSTRING(). */
 typedef FNIOMIOPORTOUTSTRING *PFNIOMIOPORTOUTSTRING;
 
+/**
+ * I/O port description.
+ *
+ * If both pszIn and pszOut are NULL, the entry is considered a terminator.
+ */
+typedef struct IOMIOPORTDESC
+{
+    /** Brief description / name of the IN port. */
+    const char *pszIn;
+    /** Brief description / name of the OUT port. */
+    const char *pszOut;
+    /** Detailed description of the IN port, optional. */
+    const char *pszInDetail;
+    /** Detialed description of the OUT port, optional. */
+    const char *pszOutDetail;
+} IOMIOPORTDESC;
+/** Pointer to an I/O port description. */
+typedef IOMIOPORTDESC const *PCIOMIOPORTDESC;
+
 
 /**
  * Memory mapped I/O Handler for read operations.
@@ -320,7 +339,7 @@ VMMR3_INT_DECL(int)  IOMR3Term(PVM pVM);
 VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
                                        uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
                                        PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, RTR3PTR pvUser,
-                                       const char *pszDesc, PIOMIOPORTHANDLE phIoPorts);
+                                       const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts);
 VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port);
 VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts);
 

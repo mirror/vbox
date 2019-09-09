@@ -97,22 +97,21 @@ DECLINLINE(int) pdmR3DevGetSymbolR0Lazy(PPDMDEVINS pDevIns, const char *pszSymbo
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnIoPortCreateEx} */
-static DECLCALLBACK(int) pdmR3DevHlp_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts,
-                                                    uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                                    PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                                    PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr,
-                                                    RTR3PTR pvUser, const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
+static DECLCALLBACK(int) pdmR3DevHlp_IoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
+                                                    uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
+                                                    PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, RTR3PTR pvUser,
+                                                    const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_IoPortCreateEx: caller='%s'/%d: cPorts=%#x fFlags=%#x pPciDev=%p iPciRegion=%#x pfnOut=%p pfnIn=%p pfnOutStr=%p pfnInStr=%p pvUser=%p pszDesc=%p:{%s} phIoPorts=%p\n",
+    LogFlow(("pdmR3DevHlp_IoPortCreateEx: caller='%s'/%d: cPorts=%#x fFlags=%#x pPciDev=%p iPciRegion=%#x pfnOut=%p pfnIn=%p pfnOutStr=%p pfnInStr=%p pvUser=%p pszDesc=%p:{%s} paExtDescs=%p phIoPorts=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, cPorts, fFlags, pPciDev, iPciRegion, pfnOut, pfnIn, pfnOutStr, pfnInStr,
-             pvUser, pszDesc, pszDesc, phIoPorts));
+             pvUser, pszDesc, pszDesc, paExtDescs, phIoPorts));
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
 
     int rc = IOMR3IoPortCreate(pVM, pDevIns, cPorts, fFlags, pPciDev, iPciRegion,
-                               pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, phIoPorts);
+                               pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, paExtDescs, phIoPorts);
 
     LogFlow(("pdmR3DevHlp_IoPortCreateEx: caller='%s'/%d: returns %Rrc (*phIoPorts=%#x)\n",
              pDevIns->pReg->szName, pDevIns->iInstance, rc, *phIoPorts));

@@ -92,11 +92,12 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint
     /*
      * Get the entry for the current context.
      */
-    CTX_SUFF(PIOMIOPORTENTRY) pRegEntry = iomIoPortGetEntry(pVM, Port, &pVCpu->iom.s.idxIoPortLastRead);
+    uint16_t offPort;
+    CTX_SUFF(PIOMIOPORTENTRY) pRegEntry = iomIoPortGetEntry(pVM, Port, &offPort, &pVCpu->iom.s.idxIoPortLastRead);
     if (pRegEntry)
     {
 #ifdef VBOX_WITH_STATISTICS
-        PIOMIOPORTSTATSENTRY  pStats    = iomIoPortGetStats(pVM, pRegEntry);
+        PIOMIOPORTSTATSENTRY  pStats    = iomIoPortGetStats(pVM, pRegEntry, offPort);
 #endif
 
         /*
@@ -336,11 +337,12 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
     /*
      * Get the entry for the current context.
      */
-    CTX_SUFF(PIOMIOPORTENTRY) pRegEntry = iomIoPortGetEntry(pVM, uPort, &pVCpu->iom.s.idxIoPortLastReadStr);
+    uint16_t offPort;
+    CTX_SUFF(PIOMIOPORTENTRY) pRegEntry = iomIoPortGetEntry(pVM, uPort, &offPort, &pVCpu->iom.s.idxIoPortLastReadStr);
     if (pRegEntry)
     {
 #ifdef VBOX_WITH_STATISTICS
-        PIOMIOPORTSTATSENTRY  pStats    = iomIoPortGetStats(pVM, pRegEntry);
+        PIOMIOPORTSTATSENTRY  pStats    = iomIoPortGetStats(pVM, pRegEntry, offPort);
 #endif
 
         /*
@@ -657,11 +659,12 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uin
     /*
      * Get the entry for the current context.
      */
-    CTX_SUFF(PIOMIOPORTENTRY) pRegEntry = iomIoPortGetEntry(pVM, Port, &pVCpu->iom.s.idxIoPortLastWrite);
+    uint16_t offPort;
+    CTX_SUFF(PIOMIOPORTENTRY) pRegEntry = iomIoPortGetEntry(pVM, Port, &offPort, &pVCpu->iom.s.idxIoPortLastWrite);
     if (pRegEntry)
     {
 #ifdef VBOX_WITH_STATISTICS
-        PIOMIOPORTSTATSENTRY  pStats    = iomIoPortGetStats(pVM, pRegEntry);
+        PIOMIOPORTSTATSENTRY  pStats    = iomIoPortGetStats(pVM, pRegEntry, offPort);
 #endif
 
         /*
@@ -877,11 +880,12 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
     /*
      * Get the entry for the current context.
      */
-    CTX_SUFF(PIOMIOPORTENTRY) pRegEntry = iomIoPortGetEntry(pVM, uPort, &pVCpu->iom.s.idxIoPortLastWriteStr);
+    uint16_t offPort;
+    CTX_SUFF(PIOMIOPORTENTRY) pRegEntry = iomIoPortGetEntry(pVM, uPort, &offPort, &pVCpu->iom.s.idxIoPortLastWriteStr);
     if (pRegEntry)
     {
 #ifdef VBOX_WITH_STATISTICS
-        PIOMIOPORTSTATSENTRY  pStats    = iomIoPortGetStats(pVM, pRegEntry);
+        PIOMIOPORTSTATSENTRY  pStats    = iomIoPortGetStats(pVM, pRegEntry, offPort);
 #endif
 
         /*

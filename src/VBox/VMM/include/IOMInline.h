@@ -37,6 +37,8 @@
  *
  * @param   pVM             The cross context VM structure.
  * @param   uPort           The I/O port lookup.
+ * @param   poffPort        Where to the port offset relative to the start of
+ *                          the I/O port range.
  * @param   pidxLastHint    Pointer to IOMCPU::idxIoPortLastRead or
  *                          IOMCPU::idxIoPortLastWrite.
  *
@@ -45,16 +47,16 @@
  *          for the entry.  Use IOMIOPORTENTRYR0::idxSelf to get the ring-3
  *          entry.
  */
-DECLINLINE(CTX_SUFF(PIOMIOPORTENTRY)) iomIoPortGetEntry(PVMCC pVM, RTIOPORT uPort, uint16_t *pidxLastHint)
+DECLINLINE(CTX_SUFF(PIOMIOPORTENTRY)) iomIoPortGetEntry(PVMCC pVM, RTIOPORT uPort, PRTIOPORT poffPort, uint16_t *pidxLastHint)
 {
     Assert(IOM_IS_SHARED_LOCK_OWNER(pVM));
 
 #ifdef IN_RING0
-    uint32_t              iEnd      = RT_MIN(pVM->iom.s.cIoPortLookupEntries, pVM->iomr0.s.cIoPortAlloc);
-    PIOMIOPORTLOOKUPENTRY paLookup  = pVM->iomr0.s.paIoPortLookup;
+    uint32_t               iEnd      = RT_MIN(pVM->iom.s.cIoPortLookupEntries, pVM->iomr0.s.cIoPortAlloc);
+    PCIOMIOPORTLOOKUPENTRY paLookup  = pVM->iomr0.s.paIoPortLookup;
 #else
-    uint32_t              iEnd      = pVM->iom.s.cIoPortLookupEntries;
-    PIOMIOPORTLOOKUPENTRY paLookup  = pVM->iom.s.paIoPortLookup;
+    uint32_t               iEnd      = pVM->iom.s.cIoPortLookupEntries;
+    PCIOMIOPORTLOOKUPENTRY paLookup  = pVM->iom.s.paIoPortLookup;
 #endif
     if (iEnd > 0)
     {
@@ -66,13 +68,13 @@ DECLINLINE(CTX_SUFF(PIOMIOPORTENTRY)) iomIoPortGetEntry(PVMCC pVM, RTIOPORT uPor
             i = iEnd / 2;
         for (;;)
         {
-            PIOMIOPORTLOOKUPENTRY pCur = &paLookup[i];
+            PCIOMIOPORTLOOKUPENTRY pCur = &paLookup[i];
             if (pCur->uFirstPort > uPort)
             {
                 if (i > iFirst)
                     iEnd = i;
                 else
-                    return NULL;
+                    break;
             }
             else if (pCur->uLastPort < uPort)
             {
@@ -80,11 +82,12 @@ DECLINLINE(CTX_SUFF(PIOMIOPORTENTRY)) iomIoPortGetEntry(PVMCC pVM, RTIOPORT uPor
                 if (i < iEnd)
                     iFirst = i;
                 else
-                    return NULL;
+                    break;
             }
             else
             {
                 *pidxLastHint = (uint16_t)i;
+                *poffPort     = uPort - pCur->uFirstPort;
 
                 /*
                  * Translate the 'idx' member into a pointer.
@@ -106,6 +109,7 @@ DECLINLINE(CTX_SUFF(PIOMIOPORTENTRY)) iomIoPortGetEntry(PVMCC pVM, RTIOPORT uPor
             i = iFirst + (iEnd - iFirst) / 2;
         }
     }
+    *poffPort = 0;
     return NULL;
 }
 
@@ -119,10 +123,13 @@ DECLINLINE(CTX_SUFF(PIOMIOPORTENTRY)) iomIoPortGetEntry(PVMCC pVM, RTIOPORT uPor
  *
  * @param   pVM         The cross context VM structure.
  * @param   pRegEntry   The I/O port entry to get stats for.
+ * @param   offPort     The offset of the  port relative to the start of the
+ *                      registration entry.
  */
-DECLINLINE(PIOMIOPORTSTATSENTRY) iomIoPortGetStats(PVMCC pVM, CTX_SUFF(PIOMIOPORTENTRY) pRegEntry)
+DECLINLINE(PIOMIOPORTSTATSENTRY) iomIoPortGetStats(PVMCC pVM, CTX_SUFF(PIOMIOPORTENTRY) pRegEntry, uint16_t offPort)
 {
     size_t idxStats = pRegEntry->idxStats;
+    idxStats += offPort;
 # ifdef IN_RING0
     if (idxStats < pVM->iomr0.s.cIoPortStatsAllocation)
         return &pVM->iomr0.s.paIoPortStats[idxStats];

@@ -2189,6 +2189,8 @@ typedef struct PDMDEVHLPR3
      *                      operations.  Optional.
      * @param   pvUser      User argument to pass to the callbacks.
      * @param   pszDesc     Pointer to description string. This must not be freed.
+     * @param   paExtDescs  Extended per-port descriptions, optional.  Partial range
+     *                      coverage is allowed.  This must not be freed.
      * @param   phIoPorts   Where to return the I/O port range handle.
      *
      * @remarks Caller enters the device critical section prior to invoking the
@@ -2197,11 +2199,10 @@ typedef struct PDMDEVHLPR3
      * @sa      PDMDevHlpIoPortSetUpContext, PDMDevHlpIoPortMap,
      *          PDMDevHlpIoPortUnmap.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIoPortCreateEx,(PPDMDEVINS pDevIns, RTIOPORT cPorts,
-                                                 uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                                 PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                                 PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr,
-                                                 RTR3PTR pvUser, const char *pszDesc, PIOMIOPORTHANDLE phIoPorts));
+    DECLR3CALLBACKMEMBER(int, pfnIoPortCreateEx,(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
+                                                 uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
+                                                 PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, RTR3PTR pvUser,
+                                                 const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts));
 
     /**
      * Maps an I/O port range.
@@ -5369,10 +5370,11 @@ DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTI
  * Combines PDMDevHlpIoPortCreate() & PDMDevHlpIoPortMap().
  */
 DECLINLINE(int) PDMDevHlpIoPortCreateAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, PFNIOMIOPORTOUT pfnOut,
-                                            PFNIOMIOPORTIN pfnIn, const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
+                                            PFNIOMIOPORTIN pfnIn, const char *pszDesc, PCIOMIOPORTDESC paExtDescs,
+                                            PIOMIOPORTHANDLE phIoPorts)
 {
     int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0, NULL, UINT32_MAX,
-                                                pfnOut, pfnIn, NULL, NULL, NULL, pszDesc, phIoPorts);
+                                                pfnOut, pfnIn, NULL, NULL, NULL, pszDesc, paExtDescs, phIoPorts);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnIoPortMap(pDevIns, *phIoPorts, Port);
     return rc;
@@ -5383,10 +5385,10 @@ DECLINLINE(int) PDMDevHlpIoPortCreateAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, R
  */
 DECLINLINE(int) PDMDevHlpIoPortCreate(PPDMDEVINS pDevIns, RTIOPORT cPorts, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
                                       PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn, void *pvUser, const char *pszDesc,
-                                      PIOMIOPORTHANDLE phIoPorts)
+                                      PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
     return pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0, pPciDev, iPciRegion,
-                                              pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, phIoPorts);
+                                              pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, paExtDescs, phIoPorts);
 }
 
 /**
@@ -5394,11 +5396,11 @@ DECLINLINE(int) PDMDevHlpIoPortCreate(PPDMDEVINS pDevIns, RTIOPORT cPorts, PPDMP
  */
 DECLINLINE(int) PDMDevHlpIoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
                                         uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                        PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr,
-                                        void *pvUser, const char *pszDesc, PIOMIOPORTHANDLE phIoPorts)
+                                        PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, void *pvUser,
+                                        const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
     return pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, fFlags, pPciDev, iPciRegion,
-                                              pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, phIoPorts);
+                                              pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, paExtDescs, phIoPorts);
 }
 
 /**
