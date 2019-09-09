@@ -46,6 +46,13 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** The smallest interval for low resolution timers. */
+#define RTTIMERLR_MIN_INTERVAL  RT_NS_100MS
+
+
+/*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
@@ -61,16 +68,11 @@ typedef struct RTTIMERLRINT
     bool volatile           fSuspended;
     /** Flag indicating that the timer has been destroyed. */
     bool volatile           fDestroyed;
-    /** Callback. */
-    PFNRTTIMERLR            pfnTimer;
-    /** User argument. */
-    void                   *pvUser;
-    /** The timer thread. */
-    RTTHREAD                hThread;
-    /** Event semaphore on which the thread is blocked. */
-    RTSEMEVENT              hEvent;
+    /** Set when the thread is blocked. */
+    bool volatile           fBlocked;
+    bool                    fPadding;
     /** The timer interval. 0 if one-shot. */
-    uint64_t                u64NanoInterval;
+    uint64_t volatile       u64NanoInterval;
     /** The start of the current run (ns).
      * This is used to calculate when the timer ought to fire the next time. */
     uint64_t volatile       u64StartTS;
@@ -79,6 +81,15 @@ typedef struct RTTIMERLRINT
     uint64_t volatile       u64NextTS;
     /** The current tick number (since u64StartTS). */
     uint64_t volatile       iTick;
+
+    /** Callback. */
+    PFNRTTIMERLR            pfnTimer;
+    /** User argument. */
+    void                   *pvUser;
+    /** The timer thread. */
+    RTTHREAD                hThread;
+    /** Event semaphore on which the thread is blocked. */
+    RTSEMEVENT              hEvent;
 } RTTIMERLRINT;
 typedef RTTIMERLRINT *PRTTIMERLRINT;
 
@@ -97,10 +108,8 @@ RTDECL(int) RTTimerLRCreateEx(RTTIMERLR *phTimerLR, uint64_t u64NanoInterval, ui
     /*
      * We don't support the fancy MP features, nor intervals lower than 100 ms.
      */
-    if (fFlags & RTTIMER_FLAGS_CPU_SPECIFIC)
-        return VERR_NOT_SUPPORTED;
-    if (u64NanoInterval && u64NanoInterval < 100*1000*1000)
-        return VERR_INVALID_PARAMETER;
+    AssertReturn(!(fFlags & RTTIMER_FLAGS_CPU_SPECIFIC), VERR_NOT_SUPPORTED);
+    AssertReturn(!u64NanoInterval || u64NanoInterval >= RTTIMERLR_MIN_INTERVAL, VERR_OUT_OF_RANGE);
 
     /*
      * Allocate and initialize the timer handle.
@@ -112,6 +121,8 @@ RTDECL(int) RTTimerLRCreateEx(RTTIMERLR *phTimerLR, uint64_t u64NanoInterval, ui
     pThis->u32Magic = RTTIMERLR_MAGIC;
     pThis->fSuspended = true;
     pThis->fDestroyed = false;
+    pThis->fBlocked = false;
+    pThis->fPadding = false;
     pThis->pfnTimer = pfnTimer;
     pThis->pvUser = pvUser;
     pThis->hThread = NIL_RTTHREAD;
@@ -172,19 +183,11 @@ RTDECL(int) RTTimerLRDestroy(RTTIMERLR hTimerLR)
 RT_EXPORT_SYMBOL(RTTimerLRDestroy);
 
 
-RTDECL(int) RTTimerLRStart(RTTIMERLR hTimerLR, uint64_t u64First)
+/**
+ * Internal worker fro RTTimerLRStart and RTTiemrLRChangeInterval.
+ */
+static int rtTimerLRStart(PRTTIMERLRINT pThis, uint64_t u64First)
 {
-    /*
-     * Validate input.
-     */
-    PRTTIMERLRINT pThis = hTimerLR;
-    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
-    AssertReturn(pThis->u32Magic == RTTIMERLR_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(!pThis->fDestroyed, VERR_INVALID_HANDLE);
-
-    if (u64First && u64First < 100*1000*1000)
-        return VERR_INVALID_PARAMETER;
-
     if (!pThis->fSuspended)
         return VERR_TIMER_ACTIVE;
 
@@ -202,7 +205,62 @@ RTDECL(int) RTTimerLRStart(RTTIMERLR hTimerLR, uint64_t u64First)
     AssertRC(rc);
     return rc;
 }
+
+
+RTDECL(int) RTTimerLRStart(RTTIMERLR hTimerLR, uint64_t u64First)
+{
+    /*
+     * Validate input.
+     */
+    PRTTIMERLRINT pThis = hTimerLR;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTTIMERLR_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!pThis->fDestroyed, VERR_INVALID_HANDLE);
+    AssertReturn(!u64First || u64First >= RTTIMERLR_MIN_INTERVAL, VERR_OUT_OF_RANGE);
+
+    /*
+     * Do the job.
+     */
+    return rtTimerLRStart(pThis, u64First);
+}
 RT_EXPORT_SYMBOL(RTTimerLRStart);
+
+
+/**
+ * Internal worker for RTTimerLRStop and RTTimerLRChangeInterval
+ */
+static int rtTimerLRStop(PRTTIMERLRINT pThis, bool fSynchronous)
+{
+    /*
+     * Fail if already suspended.
+     */
+    if (pThis->fSuspended)
+        return VERR_TIMER_SUSPENDED;
+
+    /*
+     * Mark it as suspended and kick the thread.
+     * It's simpler to always reset the thread user semaphore, so we do that first.
+     */
+    int rc = RTThreadUserReset(pThis->hThread);
+    AssertRC(rc);
+
+    ASMAtomicWriteBool(&pThis->fSuspended, true);
+    rc = RTSemEventSignal(pThis->hEvent);
+    if (rc == VERR_ALREADY_POSTED)
+        rc = VINF_SUCCESS;
+    AssertRC(rc);
+
+    /*
+     * Wait for the thread to stop running if synchronous.
+     */
+    if (fSynchronous && RT_SUCCESS(rc))
+    {
+        rc = RTThreadUserWait(pThis->hThread, RT_MS_1MIN);
+        AssertRC(rc);
+    }
+
+    return rc;
+}
 
 
 RTDECL(int) RTTimerLRStop(RTTIMERLR hTimerLR)
@@ -215,58 +273,60 @@ RTDECL(int) RTTimerLRStop(RTTIMERLR hTimerLR)
     AssertReturn(pThis->u32Magic == RTTIMERLR_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(!pThis->fDestroyed, VERR_INVALID_HANDLE);
 
-    if (pThis->fSuspended)
-        return VERR_TIMER_SUSPENDED;
-
     /*
-     * Mark it as suspended and kick the thread.
+     * Do the job.
      */
-    ASMAtomicWriteBool(&pThis->fSuspended, true);
-    int rc = RTSemEventSignal(pThis->hEvent);
-    if (rc == VERR_ALREADY_POSTED)
-        rc = VINF_SUCCESS;
-    AssertRC(rc);
-    return rc;
+    return rtTimerLRStop(pThis, false);
 }
 RT_EXPORT_SYMBOL(RTTimerLRStop);
 
+
 RTDECL(int) RTTimerLRChangeInterval(RTTIMERLR hTimerLR, uint64_t u64NanoInterval)
 {
+    /*
+     * Validate input.
+     */
     PRTTIMERLRINT pThis = hTimerLR;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTTIMERLR_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(!pThis->fDestroyed, VERR_INVALID_HANDLE);
+    AssertReturn(!u64NanoInterval || u64NanoInterval >= RTTIMERLR_MIN_INTERVAL, VERR_OUT_OF_RANGE);
 
-    if (u64NanoInterval && u64NanoInterval < 100*1000*1000)
-        return VERR_INVALID_PARAMETER;
-
-#if 0
-    if (!pThis->fSuspended)
+    /*
+     * Do the job accoring to state and caller.
+     */
+    int rc;
+    if (pThis->fSuspended)
     {
-        int rc = RTTimerLRStop(hTimerLR);
-        if (RT_FAILURE(rc))
-            return rc;
-
+        /* Stopped: Just update the interval. */
         ASMAtomicWriteU64(&pThis->u64NanoInterval, u64NanoInterval);
-
-        rc = RTTimerLRStart(hTimerLR, 0);
-        if (RT_FAILURE(rc))
-            return rc;
+        rc = VINF_SUCCESS;
+    }
+    else if (RTThreadSelf() == pThis->hThread)
+    {
+        /* Running: Updating interval from the callback. */
+        uint64_t u64Now = RTTimeNanoTS();
+        pThis->iTick           = 0;
+        pThis->u64StartTS      = u64Now;
+        pThis->u64NextTS       = u64Now;
+        ASMAtomicWriteU64(&pThis->u64NanoInterval, u64NanoInterval);
+        rc = VINF_SUCCESS;
     }
     else
-#endif
     {
-        uint64_t u64Now = RTTimeNanoTS();
-        ASMAtomicWriteU64(&pThis->iTick, 0);
-        ASMAtomicWriteU64(&pThis->u64StartTS, u64Now);
-        ASMAtomicWriteU64(&pThis->u64NextTS, u64Now);
-        ASMAtomicWriteU64(&pThis->u64NanoInterval, u64NanoInterval);
-        RTSemEventSignal(pThis->hEvent);
+        /* Running: Stopping  */
+        rc = rtTimerLRStop(pThis, true);
+        if (RT_SUCCESS(rc))
+        {
+            ASMAtomicWriteU64(&pThis->u64NanoInterval, u64NanoInterval);
+            rc = rtTimerLRStart(pThis, 0);
+        }
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTTimerLRChangeInterval);
+
 
 static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThreadSelf, void *pvUser)
 {
@@ -280,29 +340,46 @@ static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThreadSelf, void *pvUser)
     {
         if (ASMAtomicUoReadBool(&pThis->fSuspended))
         {
-            int rc = RTSemEventWait(pThis->hEvent, RT_INDEFINITE_WAIT);
+            /* Signal rtTimerLRStop thread. */
+            int rc = RTThreadUserSignal(hThreadSelf);
+            AssertRC(rc);
+
+            ASMAtomicWriteBool(&pThis->fBlocked, true);
+            rc = RTSemEventWait(pThis->hEvent, RT_INDEFINITE_WAIT);
             if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED)
             {
                 AssertRC(rc);
                 RTThreadSleep(1000); /* Don't cause trouble! */
             }
+            ASMAtomicWriteBool(&pThis->fBlocked, false);
         }
         else
         {
             uint64_t        cNanoSeconds;
             const uint64_t  u64NanoTS = RTTimeNanoTS();
-            if (u64NanoTS >= pThis->u64NextTS)
+            uint64_t        u64NextTS = pThis->u64NextTS;
+            if (u64NanoTS >= u64NextTS)
             {
-                pThis->iTick++;
-                pThis->pfnTimer(pThis, pThis->pvUser, pThis->iTick);
+                uint64_t iTick = ++pThis->iTick;
+                pThis->pfnTimer(pThis, pThis->pvUser, iTick);
 
                 /* status changed? */
-                if (    ASMAtomicUoReadBool(&pThis->fSuspended)
-                    ||  ASMAtomicUoReadBool(&pThis->fDestroyed))
+                if (   ASMAtomicUoReadBool(&pThis->fSuspended)
+                    || ASMAtomicUoReadBool(&pThis->fDestroyed))
                     continue;
 
-                /* one shot? */
-                if (!pThis->u64NanoInterval)
+                /*
+                 * Read timer data (it's all volatile and better if we read it all at once):
+                 */
+                iTick = pThis->iTick;
+                uint64_t const u64StartTS       = pThis->u64StartTS;
+                uint64_t const u64NanoInterval  = pThis->u64NanoInterval;
+                ASMCompilerBarrier();
+
+                /*
+                 * Suspend if one shot.
+                 */
+                if (!u64NanoInterval)
                 {
                     ASMAtomicWriteBool(&pThis->fSuspended, true);
                     continue;
@@ -317,26 +394,29 @@ static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThreadSelf, void *pvUser)
                  * does happen during suspend/resume, but it may also happen
                  * if we're using a non-monotonic clock as time source.
                  */
-                pThis->u64NextTS = pThis->u64StartTS + pThis->iTick * pThis->u64NanoInterval;
-                if (RT_LIKELY(pThis->u64NextTS > u64NanoTS))
-                    cNanoSeconds = pThis->u64NextTS - u64NanoTS;
+                u64NextTS = u64StartTS + iTick * u64NanoInterval;
+                if (RT_LIKELY(u64NextTS > u64NanoTS))
+                    cNanoSeconds = u64NextTS - u64NanoTS;
                 else
                 {
-                    uint64_t iActualTick = (u64NanoTS - pThis->u64StartTS) / pThis->u64NanoInterval;
-                    if (iActualTick - pThis->iTick > 60)
+                    uint64_t iActualTick = (u64NanoTS - u64StartTS) / u64NanoInterval;
+                    if (iActualTick - iTick > 60)
                         pThis->iTick = iActualTick - 1;
 #ifdef IN_RING0
                     cNanoSeconds = RTTimerGetSystemGranularity() / 2;
 #else
-                    cNanoSeconds = 1000000; /* 1ms */
+                    cNanoSeconds = RT_NS_1MS;
 #endif
-                    pThis->u64NextTS = u64NanoTS + cNanoSeconds;
+                    u64NextTS = u64NanoTS + cNanoSeconds;
                 }
+
+                pThis->u64NextTS = u64NextTS;
             }
             else
-                cNanoSeconds = pThis->u64NextTS - u64NanoTS;
+                cNanoSeconds = u64NextTS - u64NanoTS;
 
             /* block. */
+            ASMAtomicWriteBool(&pThis->fBlocked, true);
             int rc = RTSemEventWait(pThis->hEvent,
                                     (RTMSINTERVAL)(cNanoSeconds < 1000000 ? 1 : cNanoSeconds / 1000000));
             if (RT_FAILURE(rc) && rc != VERR_INTERRUPTED && rc != VERR_TIMEOUT)
@@ -344,6 +424,7 @@ static DECLCALLBACK(int) rtTimerLRThread(RTTHREAD hThreadSelf, void *pvUser)
                 AssertRC(rc);
                 RTThreadSleep(1000); /* Don't cause trouble! */
             }
+            ASMAtomicWriteBool(&pThis->fBlocked, false);
         }
     }
 
