@@ -4191,8 +4191,8 @@ VMMR0DECL(int) VMXR0SetupVM(PVMCC pVM)
     LogFlowFunc(("pVM=%p\n", pVM));
 
     /*
-     * At least verify if VMX is enabled, since we can't check if we're in
-     * VMX root mode or not without causing a #GP.
+     * At least verify if VMX is enabled, since we can't check if we're in VMX root mode or not
+     * without causing a #GP.
      */
     RTCCUINTREG const uHostCr4 = ASMGetCR4();
     if (RT_LIKELY(uHostCr4 & X86_CR4_VMXE))
