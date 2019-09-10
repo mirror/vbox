@@ -2380,7 +2380,7 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .cbInstanceShared = */       sizeof(VIRTIOSCSI),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "Virtio Host SCSI.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

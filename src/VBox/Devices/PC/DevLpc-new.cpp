@@ -398,7 +398,7 @@ const PDMDEVREG g_DeviceLPC =
     /* .cbInstanceShared = */       sizeof(LPCSTATE),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "Low Pin Count (LPC) Bus",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

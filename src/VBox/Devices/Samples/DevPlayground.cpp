@@ -350,7 +350,7 @@ static const PDMDEVREG g_DevicePlayground =
     /* .cbInstanceShared = */       sizeof(VBOXPLAYGROUNDDEVICE),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "VBox Playground Device.",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

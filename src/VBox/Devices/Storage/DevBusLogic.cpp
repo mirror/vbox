@@ -4503,7 +4503,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* .cbInstanceShared = */       sizeof(BUSLOGIC),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "BusLogic BT-958 SCSI host adapter.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

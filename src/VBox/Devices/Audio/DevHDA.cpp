@@ -5324,7 +5324,7 @@ const PDMDEVREG g_DeviceHDA =
     /* .cbInstanceShared = */       sizeof(HDASTATE),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "Intel HD Audio Controller",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

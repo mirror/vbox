@@ -1410,7 +1410,7 @@ const PDMDEVREG g_DevicePCI =
     /* .cbInstanceShared = */       sizeof(DEVPCIROOT),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         2,
     /* .pszDescription = */         "i440FX PCI bridge and PIIX3 ISA bridge.",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
@@ -1753,7 +1753,7 @@ const PDMDEVREG g_DevicePCIBridge =
     /* .cbInstanceShared = */       sizeof(DEVPCIBUS),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "82801 Mobile PCI to PCI bridge",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

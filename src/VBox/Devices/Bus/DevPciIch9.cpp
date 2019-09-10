@@ -3604,7 +3604,7 @@ const PDMDEVREG g_DevicePciIch9 =
     /* .cbInstanceShared = */       sizeof(DEVPCIROOT),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "ICH9 PCI bridge",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

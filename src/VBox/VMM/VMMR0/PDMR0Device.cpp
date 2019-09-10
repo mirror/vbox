@@ -1807,11 +1807,11 @@ VMMR0DECL(int) PDMR0DeviceRegisterModule(void *hMod, PPDMDEVMODREGR0 pModReg)
         AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE(pDevReg->u32Version, PDM_DEVREGR0_VERSION),
                               ("pDevReg->u32Version=%#x vs %#x\n", pModReg->u32Version, PDM_DEVREGR0_VERSION), VERR_VERSION_MISMATCH);
         AssertLogRelMsgReturn(RT_VALID_PTR(pDevReg->pszDescription), ("[%u]: %p\n", i, pDevReg->pszDescription), VERR_INVALID_POINTER);
-        AssertLogRelMsgReturn(pDevReg->uReserved0   == 0, ("[%u]: %#x\n", i, pDevReg->uReserved0),    VERR_INVALID_PARAMETER);
-        AssertLogRelMsgReturn(pDevReg->uReserved1   == 0, ("[%u]: %#x\n", i, pDevReg->uReserved1),    VERR_INVALID_PARAMETER);
-        AssertLogRelMsgReturn(pDevReg->fClass       != 0, ("[%u]: %#x\n", i, pDevReg->fClass),        VERR_INVALID_PARAMETER);
-        AssertLogRelMsgReturn(pDevReg->fFlags       != 0, ("[%u]: %#x\n", i, pDevReg->fFlags),        VERR_INVALID_PARAMETER);
-        AssertLogRelMsgReturn(pDevReg->cMaxInstances > 0, ("[%u]: %#x\n", i, pDevReg->cMaxInstances), VERR_INVALID_PARAMETER);
+        AssertLogRelMsgReturn(pDevReg->uReserved0     == 0, ("[%u]: %#x\n", i, pDevReg->uReserved0),     VERR_INVALID_PARAMETER);
+        AssertLogRelMsgReturn(pDevReg->fClass         != 0, ("[%u]: %#x\n", i, pDevReg->fClass),         VERR_INVALID_PARAMETER);
+        AssertLogRelMsgReturn(pDevReg->fFlags         != 0, ("[%u]: %#x\n", i, pDevReg->fFlags),         VERR_INVALID_PARAMETER);
+        AssertLogRelMsgReturn(pDevReg->cMaxInstances   > 0, ("[%u]: %#x\n", i, pDevReg->cMaxInstances),  VERR_INVALID_PARAMETER);
+        AssertLogRelMsgReturn(pDevReg->cMaxPciDevices <= 8, ("[%u]: %#x\n", i, pDevReg->cMaxPciDevices), VERR_INVALID_PARAMETER);
 
         /* The name must be printable ascii and correctly terminated. */
         for (size_t off = 0; off < RT_ELEMENTS(pDevReg->szName); off++)

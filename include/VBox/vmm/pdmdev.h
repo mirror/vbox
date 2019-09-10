@@ -330,8 +330,8 @@ typedef struct PDMDEVREGR3
     uint32_t            cbInstanceCC;
     /** Size of the raw-mode instance data. */
     uint32_t            cbInstanceRC;
-    /** Reserved, must be zero. */
-    uint32_t            uReserved1;
+    /** Max number of PCI devices. */
+    uint32_t            cMaxPciDevices;
     /** The description of the device. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
     const char         *pszDescription;
@@ -410,7 +410,7 @@ typedef PDMDEVREGR3 *PPDMDEVREGR3;
 /** Const pointer to a PDM Device Structure. */
 typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 /** Current DEVREGR3 version number. */
-#define PDM_DEVREGR3_VERSION                    PDM_VERSION_MAKE(0xffff, 3, 0)
+#define PDM_DEVREGR3_VERSION                    PDM_VERSION_MAKE(0xffff, 4, 0)
 
 
 /** PDM Device Flags.
@@ -469,6 +469,9 @@ typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 #define PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION    UINT32_C(0x00020000)
 /** Indicates that the device needs to be notified before the drivers when resetting. */
 #define PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION       UINT32_C(0x00040000)
+
+/** MSI-X support (affects PCI device allocation size). */
+#define PDM_DEVREG_FLAGS_MSI_X                          UINT32_C(0x00100000)
 
 /** This flag is used to indicate that the device has been converted to the
  *  new device style. */
@@ -551,8 +554,8 @@ typedef struct PDMDEVREGR0
     uint32_t            cbInstanceCC;
     /** Size of the raw-mode instance data. */
     uint32_t            cbInstanceRC;
-    /** Reserved, must be zero. */
-    uint32_t            uReserved1;
+    /** Max number of PCI devices. */
+    uint32_t            cMaxPciDevices;
     /** The description of the device. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
     const char         *pszDescription;
@@ -659,8 +662,8 @@ typedef struct PDMDEVREGRC
     uint32_t            cbInstanceCC;
     /** Size of the raw-mode instance data. */
     uint32_t            cbInstanceRC;
-    /** Reserved, must be zero. */
-    uint32_t            uReserved1;
+    /** Max number of PCI devices. */
+    uint32_t            cMaxPciDevices;
     /** The description of the device. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
     const char         *pszDescription;
@@ -6215,7 +6218,7 @@ DECLINLINE(void) RT_IPRT_FORMAT_ATTR(7, 8) PDMDevHlpSTAMRegisterF(PPDMDEVINS pDe
     va_end(va);
 }
 
-/*
+/**
  * Registers the device with the default PCI bus.
  *
  * @returns VBox status code.

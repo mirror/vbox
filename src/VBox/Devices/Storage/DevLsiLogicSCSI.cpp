@@ -5750,7 +5750,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* .cbInstanceShared = */       sizeof(LSILOGICSCSI),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "LSI Logic 53c1030 SCSI controller.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

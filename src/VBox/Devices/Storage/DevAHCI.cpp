@@ -6242,7 +6242,7 @@ const PDMDEVREG g_DeviceAHCI =
     /* .cbInstanceShared = */       sizeof(AHCI),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "Intel AHCI controller.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

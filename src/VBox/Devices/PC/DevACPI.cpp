@@ -4194,7 +4194,7 @@ const PDMDEVREG g_DeviceACPI =
     /* .cbInstanceShared = */       sizeof(ACPIState),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "Advanced Configuration and Power Interface",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

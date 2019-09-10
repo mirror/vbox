@@ -5552,7 +5552,7 @@ const PDMDEVREG g_DevicePCNet =
     /* .cbInstanceShared = */       sizeof(PCNETSTATE),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "AMD PCnet Ethernet controller.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

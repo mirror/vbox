@@ -1655,6 +1655,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
     /*
      * Validate input.
      */
+    AssertLogRelMsgReturn(pDevIns->pReg->cMaxPciDevices > 0,
+                          ("'%s'/%d: cMaxPciDevices is 0\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                          VERR_WRONG_ORDER);
     AssertLogRelMsgReturn(RT_VALID_PTR(pPciDev),
                           ("'%s'/%d: Invalid pPciDev value: %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pPciDev),
                           VERR_INVALID_POINTER);
@@ -1920,6 +1923,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCID
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
     LogFlow(("pdmR3DevHlp_PCIRegisterMsi: caller='%s'/%d: pPciDev=%p:{%#x} pMsgReg=%p:{cMsiVectors=%d, cMsixVectors=%d}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, pMsiReg, pMsiReg->cMsiVectors, pMsiReg->cMsixVectors));
+
+    AssertLogRelMsgReturn(pDevIns->pReg->cMaxPciDevices > 0,
+                          ("'%s'/%d: cMaxPciDevices is 0\n", pDevIns->pReg->szName, pDevIns->iInstance),
+                          VERR_WRONG_ORDER);
+    AssertLogRelMsgReturn((pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_MSI_X) || pMsiReg->cMsixVectors == 0,
+                          ("'%s'/%d: PDM_DEVREG_FLAGS_MSI_X not set and cMsixVectors=%u\n",
+                           pDevIns->pReg->szName, pDevIns->iInstance, pMsiReg->cMsixVectors),
+                          VERR_INVALID_FLAGS);
 
     PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3; Assert(pBus);
     PVM        pVM  = pDevIns->Internal.s.pVMR3;
