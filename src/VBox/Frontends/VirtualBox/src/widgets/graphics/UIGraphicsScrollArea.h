@@ -84,6 +84,8 @@ private:
 
     /** Holds the orientation. */
     Qt::Orientation  m_enmOrientation;
+    /** Holds whether scroll-bar is in auto-hide mode. */
+    bool             m_fAutoHideMode;
 
     /** Holds the scroll-bar instance. */
     UIGraphicsScrollBar *m_pScrollBar;

@@ -57,11 +57,13 @@ signals:
 
 public:
 
-    /** Constructs graphics scroll-bar of requested @a enmOrientation, embedding it directly to passed @a pScene. */
-    UIGraphicsScrollBar(Qt::Orientation enmOrientation, QGraphicsScene *pScene);
+    /** Constructs graphics scroll-bar of requested @a enmOrientation, embedding it directly to passed @a pScene.
+      * @param  fAutoHideMode  Brings whether scroll-bar should be created in auto-hide mode. */
+    UIGraphicsScrollBar(Qt::Orientation enmOrientation, bool fAutoHideMode, QGraphicsScene *pScene);
 
-    /** Constructs graphics scroll-bar of requested @a enmOrientation passing @a pParent to the base-class. */
-    UIGraphicsScrollBar(Qt::Orientation enmOrientation, QIGraphicsWidget *pParent = 0);
+    /** Constructs graphics scroll-bar of requested @a enmOrientation passing @a pParent to the base-class.
+      * @param  fAutoHideMode  Brings whether scroll-bar should be created in auto-hide mode. */
+    UIGraphicsScrollBar(Qt::Orientation enmOrientation, bool fAutoHideMode, QIGraphicsWidget *pParent = 0);
 
     /** Returns minimum size-hint. */
     virtual QSizeF minimumSizeHint() const /* override */;
@@ -186,6 +188,8 @@ private:
 
     /** Holds the orientation. */
     const Qt::Orientation  m_enmOrientation;
+    /** Holds whether scroll-bar is in auto-hide mode. */
+    bool                   m_fAutoHideMode;
 
     /** Holds the scroll-bar extent. */
     int  m_iExtent;

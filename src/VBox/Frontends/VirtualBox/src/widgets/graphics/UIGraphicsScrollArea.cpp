@@ -26,6 +26,7 @@
 
 UIGraphicsScrollArea::UIGraphicsScrollArea(Qt::Orientation enmOrientation, QGraphicsScene *pScene /* = 0 */)
     : m_enmOrientation(enmOrientation)
+    , m_fAutoHideMode(true)
     , m_pScrollBar(0)
     , m_pViewport(0)
 {
@@ -36,6 +37,7 @@ UIGraphicsScrollArea::UIGraphicsScrollArea(Qt::Orientation enmOrientation, QGrap
 UIGraphicsScrollArea::UIGraphicsScrollArea(Qt::Orientation enmOrientation, QIGraphicsWidget *pParent /* = 0 */)
     : QIGraphicsWidget(pParent)
     , m_enmOrientation(enmOrientation)
+    , m_fAutoHideMode(true)
     , m_pScrollBar(0)
     , m_pViewport(0)
 {
@@ -54,16 +56,26 @@ QSizeF UIGraphicsScrollArea::minimumSizeHint() const
             {
                 /* Expand it with viewport height: */
                 const int iWidgetHeight = m_pViewport->size().height();
-                if (msh.height() < iWidgetHeight)
-                    msh.setHeight(iWidgetHeight);
+                if (m_fAutoHideMode)
+                {
+                    if (msh.height() < iWidgetHeight)
+                        msh.setHeight(iWidgetHeight);
+                }
+                else
+                    msh.setHeight(msh.height() + iWidgetHeight);
                 break;
             }
             case Qt::Vertical:
             {
                 /* Expand it with viewport width: */
                 const int iWidgetWidth = m_pViewport->size().width();
-                if (msh.width() < iWidgetWidth)
-                    msh.setWidth(iWidgetWidth);
+                if (m_fAutoHideMode)
+                {
+                    if (msh.width() < iWidgetWidth)
+                        msh.setWidth(iWidgetWidth);
+                }
+                else
+                    msh.setWidth(msh.width() + iWidgetWidth);
                 break;
             }
         }
@@ -233,7 +245,7 @@ void UIGraphicsScrollArea::prepare()
 void UIGraphicsScrollArea::prepareWidgets()
 {
     /* Create scroll-bar: */
-    m_pScrollBar = new UIGraphicsScrollBar(m_enmOrientation, this);
+    m_pScrollBar = new UIGraphicsScrollBar(m_enmOrientation, m_fAutoHideMode, this);
     if (m_pScrollBar)
     {
         m_pScrollBar->setZValue(1);
@@ -257,14 +269,20 @@ void UIGraphicsScrollArea::layoutViewport()
             case Qt::Horizontal:
             {
                 /* Align viewport and shift it horizontally: */
-                m_pViewport->resize(m_pViewport->minimumSizeHint().width(), size().height());
+                if (m_fAutoHideMode)
+                    m_pViewport->resize(m_pViewport->minimumSizeHint().width(), size().height());
+                else
+                    m_pViewport->resize(m_pViewport->minimumSizeHint().width(), size().height() - m_pScrollBar->minimumSizeHint().height());
                 m_pViewport->setPos(-m_pScrollBar->value(), 0);
                 break;
             }
             case Qt::Vertical:
             {
                 /* Align viewport and shift it vertically: */
-                m_pViewport->resize(size().width(), m_pViewport->minimumSizeHint().height());
+                if (m_fAutoHideMode)
+                    m_pViewport->resize(size().width(), m_pViewport->minimumSizeHint().height());
+                else
+                    m_pViewport->resize(size().width() - m_pScrollBar->minimumSizeHint().width(), m_pViewport->minimumSizeHint().height());
                 m_pViewport->setPos(0, -m_pScrollBar->value());
                 break;
             }

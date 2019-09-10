@@ -232,8 +232,9 @@ void UIGraphicsScrollBarToken::updateExtent()
 *   Class UIGraphicsScrollBar implementation.                                                                                    *
 *********************************************************************************************************************************/
 
-UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QGraphicsScene *pScene)
+UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, bool fAutoHideMode, QGraphicsScene *pScene)
     : m_enmOrientation(enmOrientation)
+    , m_fAutoHideMode(fAutoHideMode)
     , m_iExtent(-1)
     , m_iMinimum(0)
     , m_iMaximum(100)
@@ -248,7 +249,7 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QGraphi
     , m_fScrollInProgress(false)
 #ifdef VBOX_WS_MAC
     , m_fRevealed(false)
-    , m_iRevealingValue(0)
+    , m_iRevealingValue(m_fAutoHideMode ? 0 : 50)
     , m_iRevealOnTimerId(0)
     , m_iRevealOffTimerId(0)
 #endif
@@ -257,9 +258,10 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QGraphi
     prepare();
 }
 
-UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QIGraphicsWidget *pParent /* = 0 */)
+UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, bool fAutoHideMode, QIGraphicsWidget *pParent /* = 0 */)
     : QIGraphicsWidget(pParent)
     , m_enmOrientation(enmOrientation)
+    , m_fAutoHideMode(fAutoHideMode)
     , m_iExtent(-1)
     , m_iMinimum(0)
     , m_iMaximum(100)
@@ -274,7 +276,7 @@ UIGraphicsScrollBar::UIGraphicsScrollBar(Qt::Orientation enmOrientation, QIGraph
     , m_fScrollInProgress(false)
 #ifdef VBOX_WS_MAC
     , m_fRevealed(false)
-    , m_iRevealingValue(0)
+    , m_iRevealingValue(m_fAutoHideMode ? 0 : 50)
     , m_iRevealOnTimerId(0)
     , m_iRevealOffTimerId(0)
 #endif
@@ -460,7 +462,7 @@ void UIGraphicsScrollBar::hoverMoveEvent(QGraphicsSceneHoverEvent *)
     if (!m_fHovered)
     {
         /* Start hover-on timer, handled in timerEvent() below: */
-        m_iHoverOnTimerId = startTimer(400);
+        m_iHoverOnTimerId = startTimer(m_fAutoHideMode ? 400 : 100);
         m_fHovered = true;
     }
     /* Update in any case: */
@@ -474,7 +476,7 @@ void UIGraphicsScrollBar::hoverLeaveEvent(QGraphicsSceneHoverEvent *)
     if (m_fHovered)
     {
         /* Start hover-off timer, handled in timerEvent() below: */
-        m_iHoverOffTimerId = startTimer(1000);
+        m_iHoverOffTimerId = startTimer(m_fAutoHideMode ? 1000 : 100);
         m_fHovered = false;
     }
     /* Update in any case: */
@@ -536,7 +538,7 @@ void UIGraphicsScrollBar::timerEvent(QTimerEvent *pEvent)
             emit sigRevealLeave();
         /* Restart timer otherwise: */
         else
-            m_iRevealOffTimerId = startTimer(2000);
+            m_iRevealOffTimerId = startTimer(m_fAutoHideMode ? 2000 : 100);
         /* Update in any case: */
         update();
     }
@@ -656,7 +658,7 @@ void UIGraphicsScrollBar::sltHandleRevealingStart()
     }
 
     /* Restart fresh sustain timer: */
-    m_iRevealOnTimerId = startTimer(1000);
+    m_iRevealOnTimerId = startTimer(m_fAutoHideMode ? 1000 : 100);
 }
 
 void UIGraphicsScrollBar::sltStateEnteredFaded()
@@ -668,7 +670,7 @@ void UIGraphicsScrollBar::sltStateEnteredFaded()
 void UIGraphicsScrollBar::sltStateEnteredRevealed()
 {
     /* Start reveal-out timer: */
-    m_iRevealOffTimerId = startTimer(2000);
+    m_iRevealOffTimerId = startTimer(m_fAutoHideMode ? 2000 : 100);
 }
 #endif /* VBOX_WS_MAC */
 
@@ -838,7 +840,7 @@ void UIGraphicsScrollBar::prepareRevealingAnimation()
         if (pStateFaded)
         {
             /* When we entering fade state => we assigning revealingValue to 0: */
-            pStateFaded->assignProperty(this, "revealingValue", 0);
+            pStateFaded->assignProperty(this, "revealingValue", m_fAutoHideMode ? 0 : 50);
             connect(pStateFaded, &QState::propertiesAssigned, this, &UIGraphicsScrollBar::sltStateEnteredFaded);
 
             /* Add state transitions: */
@@ -850,7 +852,7 @@ void UIGraphicsScrollBar::prepareRevealingAnimation()
                 if (pRevealingAnimationForward)
                 {
                     pRevealingAnimationForward->setDuration(200);
-                    pRevealingAnimationForward->setStartValue(0);
+                    pRevealingAnimationForward->setStartValue(m_fAutoHideMode ? 0 : 50);
                     pRevealingAnimationForward->setEndValue(100);
 
                     /* Add to transition: */
@@ -876,7 +878,7 @@ void UIGraphicsScrollBar::prepareRevealingAnimation()
                 {
                     pRevealingAnimationBackward->setDuration(200);
                     pRevealingAnimationBackward->setStartValue(100);
-                    pRevealingAnimationBackward->setEndValue(0);
+                    pRevealingAnimationBackward->setEndValue(m_fAutoHideMode ? 0 : 50);
 
                     /* Add to transition: */
                     pRevealedToFaded->addAnimation(pRevealingAnimationBackward);
@@ -995,14 +997,16 @@ void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &recta
     /* Draw background if necessary: */
     pPainter->save();
     QColor windowColor = pal.color(QPalette::Active, QPalette::Window);
-    windowColor.setAlpha(255 * ((double)m_iHoveringValue / 100));
+    if (m_fAutoHideMode)
+        windowColor.setAlpha(255 * ((double)m_iHoveringValue / 100));
     pPainter->fillRect(rectangle, windowColor);
     pPainter->restore();
 
     /* Draw frame if necessary: */
     pPainter->save();
     QColor frameColor = pal.color(QPalette::Active, QPalette::Window);
-    frameColor.setAlpha(255 * ((double)m_iHoveringValue / 100));
+    if (m_fAutoHideMode)
+        frameColor.setAlpha(255 * ((double)m_iHoveringValue / 100));
     frameColor = frameColor.darker(120);
     pPainter->setPen(frameColor);
     pPainter->drawLine(rectangle.topLeft(), rectangle.bottomLeft());
@@ -1016,8 +1020,16 @@ void UIGraphicsScrollBar::paintBackground(QPainter *pPainter, const QRect &recta
         tokenColor = tokenColor.darker(140);
         QRectF tokenRectangle = QRect(actualTokenPosition(), QSize(m_iExtent, 2 * m_iExtent));
         QRectF actualRectangle = tokenRectangle;
-        actualRectangle.setLeft(tokenRectangle.left() + .22 * tokenRectangle.width() + .22 * tokenRectangle.width() * ((double)100 - m_iHoveringValue) / 100);
-        actualRectangle.setRight(tokenRectangle.right() - .22 * tokenRectangle.width() + .22 * tokenRectangle.width() * ((double)100 - m_iHoveringValue) / 100 - 1);
+        if (m_fAutoHideMode)
+        {
+            actualRectangle.setLeft(tokenRectangle.left() + .22 * tokenRectangle.width() + .22 * tokenRectangle.width() * ((double)100 - m_iHoveringValue) / 100);
+            actualRectangle.setRight(tokenRectangle.right() - .22 * tokenRectangle.width() + .22 * tokenRectangle.width() * ((double)100 - m_iHoveringValue) / 100 - 1);
+        }
+        else
+        {
+            actualRectangle.setLeft(tokenRectangle.left() + .22 * tokenRectangle.width());
+            actualRectangle.setRight(tokenRectangle.right() - .22 * tokenRectangle.width() - 1);
+        }
         const double dRadius = actualRectangle.width() / 2;
         QPainterPath painterPath = QPainterPath(QPoint(actualRectangle.x(), actualRectangle.y() + dRadius));
         painterPath.arcTo(QRectF(actualRectangle.x(), actualRectangle.y(), 2 * dRadius, 2 * dRadius), 180, -180);
