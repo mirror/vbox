@@ -1142,6 +1142,7 @@ RuntimeR3_SOURCES.darwin = \
 	generic/uuid-generic.cpp\
 	generic/RTProcIsRunningByName-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
+	generic/RTSystemFirmware-generic.cpp \
 	r3/darwin/RTCrStoreCreateSnapshotById-darwin.cpp \
 	r3/darwin/filelock-darwin.cpp \
 	r3/darwin/krnlmod-darwin.cpp \
@@ -1149,7 +1150,6 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/pathhost-darwin.cpp \
 	r3/darwin/rtProcInitExePath-darwin.cpp \
 	r3/darwin/RTSystemQueryDmiString-darwin.cpp \
-	r3/generic/RTSystemFirmware-generic.cpp \
 	r3/darwin/sched-darwin.cpp \
 	r3/darwin/systemmem-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
@@ -1395,6 +1395,7 @@ RuntimeR3_SOURCES.solaris = \
 	generic/utf16locale-generic.cpp \
 	generic/uuid-generic.cpp \
 	generic/RTThreadGetNativeState-generic.cpp \
+	generic/RTSystemFirmware-generic.cpp \
 	r3/generic/allocex-r3-generic.cpp \
 	r3/generic/RTLocaleQueryLocaleName-r3-generic.cpp \
 	r3/generic/RTLocaleQueryNormalizedBaseLocaleName-r3-generic.cpp \
@@ -1456,21 +1457,17 @@ RuntimeR3_SOURCES.solaris = \
 RuntimeR3_SOURCES.solaris.amd64 = \
 	common/string/memrchr.asm \
 	r3/solaris/coredumper-solaris.cpp \
-	r3/solaris/RTSystemQueryDmiString-solaris.cpp \
-	r3/generic/RTSystemFirmware-generic.cpp
+	r3/solaris/RTSystemQueryDmiString-solaris.cpp
 RuntimeR3_SOURCES.solaris.x86 = \
 	common/string/memrchr.asm \
 	r3/solaris/coredumper-solaris.cpp \
-	r3/solaris/RTSystemQueryDmiString-solaris.cpp \
-	r3/generic/RTSystemFirmware-generic.cpp
+	r3/solaris/RTSystemQueryDmiString-solaris.cpp
 RuntimeR3_SOURCES.solaris.sparc32 = \
 	common/string/memrchr.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp \
-	generic/RTSystemFirmware-generic.cpp
+	generic/RTSystemQueryDmiString-generic.cpp
 RuntimeR3_SOURCES.solaris.sparc64 = \
 	common/string/memrchr.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp \
-	generic/RTSystemFirmware-generic.cpp
+	generic/RTSystemQueryDmiString-generic.cpp
 
 RuntimeR3_SOURCES.haiku = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
