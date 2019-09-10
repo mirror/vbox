@@ -1183,6 +1183,8 @@ static const RTGETOPTDEF g_aExportOptions[] =
     { "--cloudocisubnet",       'T', RTGETOPT_REQ_STRING },
     { "--cloudkeepobject",      'K', RTGETOPT_REQ_STRING },
     { "--cloudlaunchinstance",  'L', RTGETOPT_REQ_STRING },
+    { "--cloudlaunchmode",      'M', RTGETOPT_REQ_STRING },
+    { "--cloudprivateip",       'i', RTGETOPT_REQ_STRING },
 };
 
 RTEXITCODE handleExportAppliance(HandlerArg *a)
@@ -1378,6 +1380,13 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     mapArgsMapsPerVsys[ulCurVsys]["cloudpublicip"] = ValueUnion.psz;
                     break;
 
+                case 'i': /* --cloudprivateip */
+                    if (actionType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudprivateip"] = ValueUnion.psz;
+                    break;
+
                 case 'F':   // --cloudprofile
                     if (actionType != CLOUD)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
@@ -1404,6 +1413,13 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                         return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
                                            GetState.pDef->pszLong);
                     mapArgsMapsPerVsys[ulCurVsys]["cloudlaunchinstance"] = ValueUnion.psz;
+                    break;
+
+                case 'M': /* --cloudlaunchmode */
+                    if (actionType != CLOUD)
+                        return errorSyntax(USAGE_EXPORTAPPLIANCE, "Option \"%s\" requires preceding --cloud argument.",
+                                           GetState.pDef->pszLong);
+                    mapArgsMapsPerVsys[ulCurVsys]["cloudlaunchmode"] = ValueUnion.psz;
                     break;
 
                 case VINF_GETOPT_NOT_OPTION:
@@ -1583,6 +1599,9 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicIP,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
+                    else if (itD->first == "cloudprivateip")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudPrivateIP,
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudprofile")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
                                              Bstr(itD->second).raw(),
@@ -1595,6 +1614,9 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudKeepObject,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
+                    else if (itD->first == "cloudlaunchmode")
+                        pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCILaunchMode,
+                                             Bstr(itD->second).raw(), NULL);
                     else if (itD->first == "cloudlaunchinstance")
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudLaunchInstance,
                                              Bstr(itD->second).raw(),
