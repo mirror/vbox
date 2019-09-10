@@ -921,8 +921,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
         self._waitForTestManagerConnectivity(30);
 
+        # Upload the log on failure.  Do it early if the extra cleanups below causes trouble.
         if fRc is False and os.path.isfile(sLogFile):
             reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
+            sLogFile = None;
 
         # Log driver service states (should ls \Driver\VBox* and \Device\VBox*).
         fHadLeftovers = False;
@@ -962,6 +964,10 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
         if fHadLeftovers:
             self._waitForTestManagerConnectivity(30);
+
+        # Upload the log if we have any leftovers and didn't upload it already.
+        if sLogFile is not None and (fRc is False or fHadLeftovers) and os.path.isfile(sLogFile):
+            reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
 
         return fRc;
 
