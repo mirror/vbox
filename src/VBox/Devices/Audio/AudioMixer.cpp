@@ -1509,6 +1509,15 @@ static int audioMixerSinkSetRecSourceInternal(PAUDMIXSINK pSink, PAUDMIXSTREAM p
     LogFunc(("[%s] Recording source is now '%s', rc=%Rrc\n",
              pSink->pszName, pSink->In.pStreamRecSource ? pSink->In.pStreamRecSource->pszName : "<None>", rc));
 
+    if (RT_SUCCESS(rc))
+    {
+        LogRel(("Mixer: Setting recording source of sink '%s' to '%s'\n",
+                pSink->pszName, pSink->In.pStreamRecSource ? pSink->In.pStreamRecSource->pszName : "<None>"));
+    }
+    else
+        LogRel(("Mixer: Setting recording source of sink '%s' to '%s' failed with %Rrc\n",
+                pSink->pszName, pSink->In.pStreamRecSource ? pSink->In.pStreamRecSource->pszName : "<None>", rc));
+
     return rc;
 }
 
