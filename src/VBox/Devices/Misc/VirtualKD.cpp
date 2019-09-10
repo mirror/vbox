@@ -236,7 +236,7 @@ const PDMDEVREG g_DeviceVirtualKD =
     /* .cbInstanceShared = */       sizeof(VIRTUALKD),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "Provides fast debugging interface when debugging Windows kernel",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

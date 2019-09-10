@@ -477,7 +477,7 @@ const PDMDEVREG g_DeviceSerialPort =
     /* .cbInstanceShared = */       sizeof(DEVSERIAL),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "Serial Communication Port",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

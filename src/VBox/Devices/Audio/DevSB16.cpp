@@ -2606,7 +2606,7 @@ const PDMDEVREG g_DeviceSB16 =
     /* .cbInstanceShared = */       sizeof(SB16STATE),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "Sound Blaster 16 Controller",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

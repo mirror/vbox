@@ -1053,7 +1053,7 @@ const PDMDEVREG g_DeviceI8259 =
     /* .cbInstanceShared = */       sizeof(DEVPIC),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "Intel 8259 Programmable Interrupt Controller (PIC) Device.",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

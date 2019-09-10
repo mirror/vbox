@@ -531,7 +531,7 @@ const PDMDEVREG g_DeviceFlash =
     /* .cbInstanceShared = */       sizeof(DEVFLASH),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "Flash Memory Device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

@@ -1809,7 +1809,7 @@ const PDMDEVREG g_DevicePcBios =
     /* .cbInstanceShared = */       sizeof(DEVPCBIOS),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "PC BIOS Device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

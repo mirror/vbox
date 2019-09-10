@@ -1136,7 +1136,7 @@ const PDMDEVREG g_DeviceDMA =
     /* .cbInstanceShared = */       sizeof(DMAState),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "DMA Controller Device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

@@ -1057,7 +1057,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
     /* .cbInstanceShared = */       sizeof(KBDState),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "PS/2 Keyboard and Mouse device. Emulates both the keyboard, mouse and the keyboard controller.\n"
                                     "LUN #0 is the keyboard connector.\n"
                                     "LUN #1 is the aux/mouse connector.",

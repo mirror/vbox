@@ -738,7 +738,7 @@ const PDMDEVREG g_DeviceINIP =
     /* .cbInstanceShared = */       sizeof(DEVINTNETIP),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "Internal Network IP stack device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

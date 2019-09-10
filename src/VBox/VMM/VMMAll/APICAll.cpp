@@ -3523,7 +3523,7 @@ const PDMDEVREG g_DeviceAPIC =
     /* .cbInstanceShared = */       sizeof(APICDEV),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         0,
     /* .pszDescription = */         "Advanced Programmable Interrupt Controller",
 #if defined(IN_RING3)
     /* .szRCMod = */                "VMMRC.rc",
