@@ -79,11 +79,6 @@
 # define PageUptodate(a_pPage) Page_Uptodate(a_pPage)
 #endif
 
-#ifdef RHEL_RELEASE_CODE
-# if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 1)
-#  define RHEL_81
-# endif
-#endif
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *

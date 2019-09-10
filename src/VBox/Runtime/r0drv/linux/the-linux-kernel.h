@@ -465,5 +465,13 @@ DECLHIDDEN(void) rtR0LnxWorkqueueFlush(void);
  */
 RTDECL(struct page *) rtR0MemObjLinuxVirtToPage(void *pv);
 
+/*
+ * Guest Additions changes specific to Red Hat 8.1 and later.
+ */
+#ifdef RHEL_RELEASE_CODE
+# if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 1)
+#  define RHEL_81
+# endif
+#endif
 
 #endif /* !IPRT_INCLUDED_SRC_r0drv_linux_the_linux_kernel_h */
