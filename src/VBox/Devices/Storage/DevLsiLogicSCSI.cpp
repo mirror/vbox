@@ -5824,7 +5824,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* .cbInstanceShared = */       sizeof(LSILOGICSCSI),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .uReserved1 = */             0,
+    /* .cMaxPciDevices = */         1,
     /* .pszDescription = */         "LSI Logic SAS1068 controller.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
