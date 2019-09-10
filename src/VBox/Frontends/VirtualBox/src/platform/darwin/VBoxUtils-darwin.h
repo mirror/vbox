@@ -114,6 +114,7 @@ SHARED_LIBRARY_STUFF void darwinToggleWindowZoom(NativeNSWindowRef pWindow);
 SHARED_LIBRARY_STUFF bool darwinIsInFullscreenMode(NativeNSWindowRef pWindow);
 SHARED_LIBRARY_STUFF bool darwinIsOnActiveSpace(NativeNSWindowRef pWindow);
 SHARED_LIBRARY_STUFF bool darwinScreensHaveSeparateSpaces();
+SHARED_LIBRARY_STUFF bool darwinIsScrollerStyleOverlay();
 
 bool darwinOpenFile(NativeNSStringRef pstrFile);
 
