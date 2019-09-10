@@ -915,10 +915,10 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                     if (fSuccess)
                     {
                         pDlg = new UIProgress(comProgress);
-                        connect(pDlg, &UIProgress::sigProgressChange,
+                        connect(pDlg.data(), &UIProgress::sigProgressChange,
                                 this, &UIMachineSettingsGeneral::sigOperationProgressChange,
                                 Qt::QueuedConnection);
-                        connect(pDlg, &UIProgress::sigProgressError,
+                        connect(pDlg.data(), &UIProgress::sigProgressError,
                             this, &UIMachineSettingsGeneral::sigOperationProgressError,
                                 Qt::BlockingQueuedConnection);
                         pDlg->run(350);
