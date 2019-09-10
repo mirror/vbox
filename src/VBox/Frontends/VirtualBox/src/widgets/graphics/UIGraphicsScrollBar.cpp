@@ -122,6 +122,7 @@ private:
 UIGraphicsScrollBarToken::UIGraphicsScrollBarToken(Qt::Orientation enmOrientation, QIGraphicsWidget *pParent /* = 0 */)
     : QIGraphicsWidget(pParent)
     , m_enmOrientation(enmOrientation)
+    , m_iExtent(0)
     , m_fHovered(false)
 {
     prepare();
@@ -933,6 +934,7 @@ void UIGraphicsScrollBar::layoutButtons()
 void UIGraphicsScrollBar::layoutToken()
 {
     m_pToken->setPos(actualTokenPosition());
+    update();
 }
 
 QPoint UIGraphicsScrollBar::actualTokenPosition() const
