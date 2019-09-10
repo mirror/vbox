@@ -42,7 +42,7 @@
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(RHEL_72)
 #include <drm/drm_plane_helper.h>
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0) || defined(RHEL_81)
 #include <drm/drm_probe_helper.h>
 #endif
 
@@ -540,7 +540,7 @@ static void vbox_set_edid(struct drm_connector *connector, int width,
 	for (i = 0; i < EDID_SIZE - 1; ++i)
 		sum += edid[i];
 	edid[EDID_SIZE - 1] = (0x100 - (sum & 0xFF)) & 0xFF;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || defined(OPENSUSE_151)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || defined(OPENSUSE_151) || defined(RHEL_77) || defined(RHEL_81)
 	drm_connector_update_edid_property(connector, (struct edid *)edid);
 #else
 	drm_mode_connector_update_edid_property(connector, (struct edid *)edid);
@@ -715,7 +715,7 @@ static int vbox_connector_init(struct drm_device *dev,
 	drm_connector_register(connector);
 #endif
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || defined(OPENSUSE_151)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0) || defined(OPENSUSE_151) || defined(RHEL_77) || defined(RHEL_81)
 	drm_connector_attach_encoder(connector, encoder);
 #else
 	drm_mode_connector_attach_encoder(connector, encoder);

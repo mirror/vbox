@@ -34,6 +34,11 @@
 #include <iprt/mem.h>
 #include <iprt/errcore.h>
 
+#ifdef RHEL_RELEASE_CODE
+# if RHEL_RELEASE_CODE >= RHEL_RELEASE_VERSION(8, 1)
+#  define RHEL_81
+# endif
+#endif
 
 RTR0DECL(int) RTR0MemUserCopyFrom(void *pvDst, RTR3PTR R3PtrSrc, size_t cb)
 {
@@ -66,7 +71,7 @@ RT_EXPORT_SYMBOL(RTR0MemUserCopyTo);
 RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
 {
     IPRT_LINUX_SAVE_EFL_AC();
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) || defined(RHEL_81)
     bool fRc = access_ok((void *)R3Ptr, 1);
 #else
     bool fRc = access_ok(VERIFY_READ, (void *)R3Ptr, 1);
@@ -86,7 +91,7 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
     return (uintptr_t)pv >= PAGE_OFFSET;
 #else
 # error "PORT ME"
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) || defined(RHEL_81)
     return !access_ok(pv, 1);
 #else
     return !access_ok(VERIFY_READ, pv, 1);

@@ -41,7 +41,7 @@
 
 #include "vbox_drv.h"
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0) || defined(RHEL_81)
 #include <drm/drm_probe_helper.h>
 #endif
 
@@ -307,7 +307,7 @@ static void vbox_master_drop(struct drm_device *dev, struct drm_file *file_priv)
 static struct drm_driver driver = {
 	.driver_features =
 	    DRIVER_MODESET | DRIVER_GEM | DRIVER_HAVE_IRQ |
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && !defined(RHEL_81)
 	    DRIVER_IRQ_SHARED |
 #endif
 	    DRIVER_PRIME,
