@@ -3915,6 +3915,10 @@ static int hmR0VmxSetupVmcsCtlsNested(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
     {
         if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
             hmR0VmxSetupVmcsMsrBitmapAddr(pVmcsInfo);
+
+        /* Paranoia - We've not yet initialized these, they shall be done while merging the VMCS. */
+        Assert(!pVmcsInfo->u64Cr0Mask);
+        Assert(!pVmcsInfo->u64Cr4Mask);
         return VINF_SUCCESS;
     }
     else
@@ -5450,11 +5454,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(!RT_HI_U32(u64GuestCr0));
             Assert(u64GuestCr0 & X86_CR0_NE);
 
-            /*
-             * Apply the hardware specified fixed CR0 bits and enable caching.
-             * Note! We could be altering our VMX emulation's fixed bits. We thus
-             *       need to re-apply them while importing CR0.
-             */
+            /* Apply the hardware specified fixed CR0 bits and enable caching. */
             u64GuestCr0 |= fSetCr0;
             u64GuestCr0 &= fZapCr0;
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
@@ -5693,11 +5693,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PVMXTRANSIENT pV
             }
         }
 
-        /*
-         * Apply the hardware specified fixed CR4 bits (mainly CR4.VMXE).
-         * Note! For nested-guests, we could be altering our VMX emulation's
-         *       fixed bits. We thus need to re-apply them while importing CR4.
-         */
+        /* Apply the hardware specified fixed CR4 bits (mainly CR4.VMXE). */
         u64GuestCr4 |= fSetCr4;
         u64GuestCr4 &= fZapCr4;
 
@@ -7494,17 +7490,27 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                     uint64_t u64Shadow;
                     rc = VMXReadVmcsNw(VMX_VMCS_GUEST_CR0,            &u64Cr0);       AssertRC(rc);
                     rc = VMXReadVmcsNw(VMX_VMCS_CTRL_CR0_READ_SHADOW, &u64Shadow);    AssertRC(rc);
+#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
                     u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
                            | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                    /*
-                     * Reapply the nested-guest's CR0 fixed bits that might have been altered while
-                     * exporting the nested-guest CR0 for executing using hardware-assisted VMX.
-                     */
-                    if (CPUMIsGuestInVmxNonRootMode(pCtx))
+#else
+                    if (!CPUMIsGuestInVmxNonRootMode(pCtx))
                     {
-                        u64Cr0 |= pCtx->hwvirt.vmx.Msrs.u64Cr0Fixed0;
-                        u64Cr0 &= pCtx->hwvirt.vmx.Msrs.u64Cr0Fixed1;
+                        u64Cr0 = (u64Cr0    & ~pVmcsInfo->u64Cr0Mask)
+                               | (u64Shadow &  pVmcsInfo->u64Cr0Mask);
+                    }
+                    else
+                    {
+                        /*
+                         * We've merged the guest and nested-guest's CR0 guest/host mask while executing
+                         * the nested-guest using hardware-assisted VMX. Accordingly we need to
+                         * re-construct CR0. See @bugref{9180#c95} for details.
+                         */
+                        PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hm.s.vmx.VmcsInfo;
+                        PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+                        u64Cr0 = (u64Cr0                     & ~pVmcsInfo->u64Cr0Mask)
+                               | (pVmcsNstGst->u64GuestCr0.u &  pVmcsNstGst->u64Cr0Mask.u)
+                               | (u64Shadow                  & (pVmcsInfoGst->u64Cr0Mask   & ~pVmcsNstGst->u64Cr0Mask.u));
                     }
 #endif
                     VMMRZCallRing3Disable(pVCpu);   /* May call into PGM which has Log statements. */
@@ -7518,17 +7524,27 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                     uint64_t u64Shadow;
                     rc  = VMXReadVmcsNw(VMX_VMCS_GUEST_CR4,            &u64Cr4);      AssertRC(rc);
                     rc |= VMXReadVmcsNw(VMX_VMCS_CTRL_CR4_READ_SHADOW, &u64Shadow);   AssertRC(rc);
+#ifndef VBOX_WITH_NESTED_HWVIRT_VMX
                     u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
                            | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-                    /*
-                     * Reapply the nested-guest's CR4 fixed bits that might have been altered while
-                     * exporting the nested-guest CR4 for executing using hardware-assisted VMX.
-                     */
-                    if (CPUMIsGuestInVmxNonRootMode(pCtx))
+#else
+                    if (!CPUMIsGuestInVmxNonRootMode(pCtx))
                     {
-                        u64Cr4 |= pCtx->hwvirt.vmx.Msrs.u64Cr4Fixed0;
-                        u64Cr4 &= pCtx->hwvirt.vmx.Msrs.u64Cr4Fixed1;
+                        u64Cr4 = (u64Cr4    & ~pVmcsInfo->u64Cr4Mask)
+                               | (u64Shadow &  pVmcsInfo->u64Cr4Mask);
+                    }
+                    else
+                    {
+                        /*
+                         * We've merged the guest and nested-guest's CR4 guest/host mask while executing
+                         * the nested-guest using hardware-assisted VMX. Accordingly we need to
+                         * re-construct CR4. See @bugref{9180#c95} for details.
+                         */
+                        PCVMXVMCSINFO pVmcsInfoGst = &pVCpu->hm.s.vmx.VmcsInfo;
+                        PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+                        u64Cr4 = (u64Cr4                     & ~pVmcsInfo->u64Cr4Mask)
+                               | (pVmcsNstGst->u64GuestCr4.u &  pVmcsNstGst->u64Cr4Mask.u)
+                               | (u64Shadow                  & (pVmcsInfoGst->u64Cr4Mask & ~pVmcsNstGst->u64Cr4Mask.u));
                     }
 #endif
                     pCtx->cr4 = u64Cr4;
