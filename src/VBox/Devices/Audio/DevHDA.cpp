@@ -602,11 +602,7 @@ static void hdaR3ReschedulePendingInterrupts(PHDASTATE pThis)
 
     LogFunc(("fInterrupt=%RTbool\n", fInterrupt));
 
-# ifndef LOG_ENABLED
-    hdaProcessInterrupt(pThis);
-# else
-    hdaProcessInterrupt(pThis, __FUNCTION__);
-# endif
+    HDA_PROCESS_INTERRUPT(pThis->pDevInsR3, pThis);
 }
 #endif /* IN_RING3 */
 
@@ -889,11 +885,7 @@ static int hdaR3CORBCmdProcess(PHDASTATE pThis)
             {
                 HDA_REG(pThis, RIRBSTS) |= HDA_RIRBSTS_RINTFL;
 
-# ifndef LOG_ENABLED
-                rc = hdaProcessInterrupt(pThis);
-# else
-                rc = hdaProcessInterrupt(pThis, __FUNCTION__);
-# endif
+                rc = HDA_PROCESS_INTERRUPT(pThis->pDevInsR3, pThis);
             }
         }
     }
@@ -1536,11 +1528,7 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
         hdaR3StreamPeriodUnlock(pPeriod); /* Unlock before processing interrupt. */
     }
 
-# ifndef LOG_ENABLED
-    hdaProcessInterrupt(pThis);
-# else
-    hdaProcessInterrupt(pThis, __FUNCTION__);
-# endif
+    HDA_PROCESS_INTERRUPT(pDevIns, pThis);
 
     const uint64_t tsNow = TMTimerGet(pThis->pTimer[uSD]);
     Assert(tsNow >= pStream->State.tsTransferLast);
@@ -2261,11 +2249,7 @@ static int hdaRegWriteRIRBSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg
     uint8_t v = HDA_REG(pThis, RIRBSTS);
     HDA_REG(pThis, RIRBSTS) &= ~(v & u32Value);
 
-#ifndef LOG_ENABLED
-    int rc = hdaProcessInterrupt(pThis);
-#else
-    int rc = hdaProcessInterrupt(pThis, __FUNCTION__);
-#endif
+    int rc = HDA_PROCESS_INTERRUPT(pDevIns, pThis);
 
     DEVHDA_UNLOCK(pDevIns, pThis);
     return rc;
@@ -4762,17 +4746,6 @@ static DECLCALLBACK(void) hdaR3Reset(PPDMDEVINS pDevIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnRelocate}
- */
-static DECLCALLBACK(void) hdaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    NOREF(offDelta);
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-}
-
-
-/**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
  */
 static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
@@ -4905,8 +4878,6 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Initialize data (most of it anyway).
      */
     pThis->pDevInsR3                = pDevIns;
-    pThis->pDevInsR0                = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC                = PDMDEVINS_2_RCPTR(pDevIns);
     /* IBase */
     pThis->IBase.pfnQueryInterface  = hdaR3QueryInterface;
 
@@ -5360,7 +5331,7 @@ const PDMDEVREG g_DeviceHDA =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           hdaR3Construct,
     /* .pfnDestruct = */            hdaR3Destruct,
-    /* .pfnRelocate = */            hdaR3Relocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               hdaR3Reset,

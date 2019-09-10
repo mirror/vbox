@@ -104,16 +104,10 @@ typedef struct HDASTATE
 {
     /** The PCI device structure. */
     PDMPCIDEV               PciDev;
-    /** R3 Pointer to the device instance. */
-    PPDMDEVINSR3            pDevInsR3;
-    /** R0 Pointer to the device instance. */
-    PPDMDEVINSR0            pDevInsR0;
-    /** R0 Pointer to the device instance. */
-    PPDMDEVINSRC            pDevInsRC;
-    /** Padding for alignment. */
-    uint32_t                u32Padding;
     /** Critical section protecting the HDA state. */
     PDMCRITSECT             CritSect;
+    /** R3 Pointer to the device instance. */
+    PPDMDEVINSR3            pDevInsR3;
     /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
     RTGCPHYS                MMIOBaseAddr;
@@ -150,13 +144,6 @@ typedef struct HDASTATE
     uint8_t                 cStreamsActive;
     /** The stream timers for pumping data thru the attached LUN drivers. */
     PTMTIMERR3              pTimer[HDA_MAX_STREAMS];
-#ifdef VBOX_WITH_STATISTICS
-    STAMPROFILE             StatTimer;
-    STAMPROFILE             StatIn;
-    STAMPROFILE             StatOut;
-    STAMCOUNTER             StatBytesRead;
-    STAMCOUNTER             StatBytesWritten;
-#endif
     /** Pointer to HDA codec to use. */
     R3PTRTYPE(PHDACODEC)    pCodec;
     /** List of associated LUN drivers (HDADRIVER). */
@@ -210,6 +197,13 @@ typedef struct HDASTATE
     /** Padding for alignment. */
     uint8_t                 au8Padding3[3];
     HDASTATEDBGINFO         Dbg;
+#ifdef VBOX_WITH_STATISTICS
+    STAMPROFILE             StatTimer;
+    STAMPROFILE             StatIn;
+    STAMPROFILE             StatOut;
+    STAMCOUNTER             StatBytesRead;
+    STAMCOUNTER             StatBytesWritten;
+#endif
     /** This is for checking that the build was correctly configured in all contexts.
      *  This is set to HDASTATE_ALIGNMENT_CHECK_MAGIC. */
     uint64_t                uAlignmentCheckMagic;

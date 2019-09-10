@@ -33,24 +33,18 @@
 #include "HDAStream.h"
 
 
-#ifndef LOG_ENABLED
 /**
  * Processes (de/asserts) the interrupt according to the HDA's current state.
  *
  * @returns IPRT status code.
- * @param   pThis               HDA state.
- */
-int hdaProcessInterrupt(PHDASTATE pThis)
-#else
-/**
- * Processes (de/asserts) the interrupt according to the HDA's current state.
- * Debug version.
- *
- * @returns IPRT status code.
+ * @param   pDevIns             The device instance.
  * @param   pThis               HDA state.
  * @param   pszSource           Caller information.
  */
-int hdaProcessInterrupt(PHDASTATE pThis, const char *pszSource)
+#if defined(LOG_ENABLED) || defined(DOXYGEN_RUNNING)
+int hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis, const char *pszSource)
+#else
+int hdaProcessInterrupt(PPDMDEVINS pDevIns, PHDASTATE pThis)
 #endif
 {
     uint32_t uIntSts = hdaGetINTSTS(pThis);
@@ -66,7 +60,7 @@ int hdaProcessInterrupt(PHDASTATE pThis, const char *pszSource)
     {
         Log3Func(("Asserted (%s)\n", pszSource));
 
-        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 1 /* Assert */);
+        PDMDevHlpPCISetIrq(pDevIns, 0, 1 /* Assert */);
         pThis->u8IRQL = 1;
 
 #ifdef DEBUG
@@ -78,7 +72,7 @@ int hdaProcessInterrupt(PHDASTATE pThis, const char *pszSource)
     {
         Log3Func(("Deasserted (%s)\n", pszSource));
 
-        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0 /* Deassert */);
+        PDMDevHlpPCISetIrq(pDevIns, 0, 0 /* Deassert */);
         pThis->u8IRQL = 0;
     }
 

@@ -1333,11 +1333,7 @@ int hdaR3StreamTransfer(PHDASTREAM pStream, uint32_t cbToProcessMax)
 
         /* Trigger an interrupt first and let hdaRegWriteSDSTS() deal with
          * ending / beginning a period. */
-#ifndef LOG_ENABLED
-        hdaProcessInterrupt(pThis);
-#else
-        hdaProcessInterrupt(pThis, __FUNCTION__);
-#endif
+        HDA_PROCESS_INTERRUPT(pThis->pDevInsR3, pThis);
     }
     else /* Transfer still in-flight -- schedule the next timing slot. */
     {
