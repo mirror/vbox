@@ -844,6 +844,7 @@ const PDMDEVREG g_DeviceBusMouse =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Microsoft Bus Mouse controller. LUN #0 is the mouse connector.",
 # if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

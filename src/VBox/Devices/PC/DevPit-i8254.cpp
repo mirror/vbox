@@ -1539,6 +1539,7 @@ const PDMDEVREG g_DeviceI8254 =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Intel 8254 Programmable Interval Timer (PIT) And Dummy Speaker Device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

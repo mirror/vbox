@@ -331,7 +331,9 @@ typedef struct PDMDEVREGR3
     /** Size of the raw-mode instance data. */
     uint32_t            cbInstanceRC;
     /** Max number of PCI devices. */
-    uint32_t            cMaxPciDevices;
+    uint16_t            cMaxPciDevices;
+    /** Max number of MSI-X vectors in any of the PCI devices. */
+    uint16_t            cMaxMsixVectors;
     /** The description of the device. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
     const char         *pszDescription;
@@ -555,7 +557,9 @@ typedef struct PDMDEVREGR0
     /** Size of the raw-mode instance data. */
     uint32_t            cbInstanceRC;
     /** Max number of PCI devices. */
-    uint32_t            cMaxPciDevices;
+    uint16_t            cMaxPciDevices;
+    /** Max number of MSI-X vectors in any of the PCI devices. */
+    uint16_t            cMaxMsixVectors;
     /** The description of the device. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
     const char         *pszDescription;
@@ -663,7 +667,9 @@ typedef struct PDMDEVREGRC
     /** Size of the raw-mode instance data. */
     uint32_t            cbInstanceRC;
     /** Max number of PCI devices. */
-    uint32_t            cMaxPciDevices;
+    uint16_t            cMaxPciDevices;
+    /** Max number of MSI-X vectors in any of the PCI devices. */
+    uint16_t            cMaxMsixVectors;
     /** The description of the device. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
     const char         *pszDescription;

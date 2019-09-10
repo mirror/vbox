@@ -2364,6 +2364,7 @@ const PDMDEVREG g_DeviceVirtioNet =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Virtio Ethernet.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

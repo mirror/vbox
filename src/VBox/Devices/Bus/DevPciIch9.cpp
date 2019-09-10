@@ -3605,6 +3605,7 @@ const PDMDEVREG g_DevicePciIch9 =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "ICH9 PCI bridge",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
@@ -3678,6 +3679,7 @@ const PDMDEVREG g_DevicePciIch9Bridge =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "ICH9 PCI to PCI bridge",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

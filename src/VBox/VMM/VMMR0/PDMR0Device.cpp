@@ -30,10 +30,11 @@
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/vmcc.h>
+#include <VBox/vmm/gvmm.h>
 
 #include <VBox/log.h>
 #include <VBox/err.h>
-#include <VBox/vmm/gvmm.h>
+#include <VBox/msi.h>
 #include <VBox/sup.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -1812,6 +1813,8 @@ VMMR0DECL(int) PDMR0DeviceRegisterModule(void *hMod, PPDMDEVMODREGR0 pModReg)
         AssertLogRelMsgReturn(pDevReg->fFlags         != 0, ("[%u]: %#x\n", i, pDevReg->fFlags),         VERR_INVALID_PARAMETER);
         AssertLogRelMsgReturn(pDevReg->cMaxInstances   > 0, ("[%u]: %#x\n", i, pDevReg->cMaxInstances),  VERR_INVALID_PARAMETER);
         AssertLogRelMsgReturn(pDevReg->cMaxPciDevices <= 8, ("[%u]: %#x\n", i, pDevReg->cMaxPciDevices), VERR_INVALID_PARAMETER);
+        AssertLogRelMsgReturn(pDevReg->cMaxMsixVectors <= VBOX_MSIX_MAX_ENTRIES,
+                              ("[%u]: %#x\n", i, pDevReg->cMaxMsixVectors), VERR_INVALID_PARAMETER);
 
         /* The name must be printable ascii and correctly terminated. */
         for (size_t off = 0; off < RT_ELEMENTS(pDevReg->szName); off++)

@@ -1927,9 +1927,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCID
     AssertLogRelMsgReturn(pDevIns->pReg->cMaxPciDevices > 0,
                           ("'%s'/%d: cMaxPciDevices is 0\n", pDevIns->pReg->szName, pDevIns->iInstance),
                           VERR_WRONG_ORDER);
-    AssertLogRelMsgReturn((pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_MSI_X) || pMsiReg->cMsixVectors == 0,
-                          ("'%s'/%d: PDM_DEVREG_FLAGS_MSI_X not set and cMsixVectors=%u\n",
-                           pDevIns->pReg->szName, pDevIns->iInstance, pMsiReg->cMsixVectors),
+    AssertLogRelMsgReturn(pMsiReg->cMsixVectors <= pDevIns->pReg->cMaxMsixVectors,
+                          ("'%s'/%d: cMsixVectors=%u cMaxMsixVectors=%u\n",
+                           pDevIns->pReg->szName, pDevIns->iInstance, pMsiReg->cMsixVectors, pDevIns->pReg->cMaxMsixVectors),
                           VERR_INVALID_FLAGS);
 
     PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3; Assert(pBus);

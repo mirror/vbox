@@ -631,7 +631,7 @@ const PDMDEVREG g_DeviceOxPcie958 =
     /* .u32version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "oxpcie958uart",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 | PDM_DEVREG_FLAGS_MSI_X,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
     /* .fClass = */                 PDM_DEVREG_CLASS_SERIAL,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
@@ -639,6 +639,7 @@ const PDMDEVREG g_DeviceOxPcie958 =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        VBOX_MSIX_MAX_ENTRIES,
     /* .pszDescription = */         "OXPCIe958 based UART controller.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

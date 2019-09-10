@@ -1384,6 +1384,7 @@ const PDMDEVREG g_DeviceIOAPIC =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "I/O Advanced Programmable Interrupt Controller (IO-APIC) Device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

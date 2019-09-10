@@ -2469,6 +2469,7 @@ const PDMDEVREG g_DeviceEFI =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Extensible Firmware Interface Device.\n"
                                     "LUN#0 - NVRAM port",
 #if defined(IN_RING3)

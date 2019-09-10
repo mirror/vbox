@@ -1507,6 +1507,7 @@ const PDMDEVREG g_DeviceSmc =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Apple System Management Controller",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

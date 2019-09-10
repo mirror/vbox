@@ -5526,6 +5526,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     MsiReg.iMsixCapOffset  = 0x80;
     MsiReg.iMsixNextOffset = 0x00;
     MsiReg.iMsixBar        = 3;
+    Assert(pDevIns->pReg->cMaxMsixVectors >= MsiReg.cMsixVectors); /* fix device registration when enabling this */
 #  else
     MsiReg.cMsiVectors     = 1;
     MsiReg.iMsiCapOffset   = 0x80;
@@ -5751,6 +5752,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "LSI Logic 53c1030 SCSI controller.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
@@ -5825,6 +5827,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "LSI Logic SAS1068 controller.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

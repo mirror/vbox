@@ -1489,6 +1489,7 @@ const PDMDEVREG g_DeviceHPET =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "High Precision Event Timer (HPET) Device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

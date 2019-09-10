@@ -2848,6 +2848,7 @@ const PDMDEVREG g_DeviceFloppyController =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Floppy drive controller (Intel 82078)",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

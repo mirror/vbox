@@ -4555,6 +4555,7 @@ const PDMDEVREG g_DeviceICHAC97 =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "ICH AC'97 Audio Controller",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

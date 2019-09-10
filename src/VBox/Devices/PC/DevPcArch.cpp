@@ -298,6 +298,7 @@ const PDMDEVREG g_DevicePcArch =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "PC Architecture Device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "",

@@ -824,6 +824,7 @@ const PDMDEVREG g_DeviceParallelPort =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Parallel Communication Port",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

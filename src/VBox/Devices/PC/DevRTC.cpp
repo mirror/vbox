@@ -1276,6 +1276,7 @@ const PDMDEVREG g_DeviceMC146818 =
     /* .cbInstanceCC = */           sizeof(RTCSTATECC),
     /* .cbInstanceRC = */           sizeof(RTCSTATERC),
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Motorola MC146818 RTC/CMOS Device.",
 #ifdef IN_RING3
     /* .pszRCMod = */               "VBoxDDRC.rc",

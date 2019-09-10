@@ -422,6 +422,7 @@ const PDMDEVREG g_DeviceGIMDev =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         0,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "VirtualBox GIM Device",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

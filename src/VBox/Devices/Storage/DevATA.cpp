@@ -8069,6 +8069,7 @@ const PDMDEVREG g_DevicePIIX3IDE =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Intel PIIX3 ATA controller.\n"
                                     "  LUN #0 is primary master.\n"
                                     "  LUN #1 is primary slave.\n"

@@ -38,6 +38,7 @@
 
 #include <VBox/version.h>
 #include <VBox/log.h>
+#include <VBox/msi.h>
 #include <VBox/err.h>
 #include <iprt/alloc.h>
 #include <iprt/alloca.h>
@@ -760,6 +761,9 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
                     ("u32VersionEnd=%#x, expected %#x. (szName=%s)\n",
                      pReg->u32VersionEnd, PDM_DEVREG_VERSION, pReg->szName));
     AssertLogRelMsgReturn(pReg->cMaxPciDevices <= 8, ("%#x (szName=%s)\n", pReg->cMaxPciDevices, pReg->szName),
+                          VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertLogRelMsgReturn(pReg->cMaxMsixVectors <= VBOX_MSIX_MAX_ENTRIES,
+                          ("%#x (szName=%s)\n", pReg->cMaxMsixVectors, pReg->szName),
                           VERR_PDM_INVALID_DEVICE_REGISTRATION);
 
     /*

@@ -7280,6 +7280,7 @@ const PDMDEVREG g_DeviceVga =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
+    /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "VGA Adaptor with VESA extensions.",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",

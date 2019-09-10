@@ -100,24 +100,27 @@
 #define VBOX_MSI_CAP_SIZE_64                  0x18
 
 /**
- * MSI-X different from MSI by the fact that dedicated physical page
- * (in device memory) is assigned for MSI-X table, and Pending Bit Array (PBA),
- * which is recommended to be separated from the main table by at least 2K.
+ * MSI-X differs from MSI by the fact that a dedicated physical page (in device
+ * memory) is assigned for MSI-X table, and Pending Bit Array (PBA), which is
+ * recommended to be separated from the main table by at least 2K.
+ *
+ * @{
  */
-/* Size of a MSI-X page */
+/** Size of a MSI-X page */
 #define VBOX_MSIX_PAGE_SIZE                   0x1000
-/* Pending interrupts (PBA) */
+/** Pending interrupts (PBA) */
 #define VBOX_MSIX_PAGE_PENDING                (VBOX_MSIX_PAGE_SIZE / 2)
-/* Maximum number of vectors, per device/function */
+/** Maximum number of vectors, per device/function */
 #define VBOX_MSIX_MAX_ENTRIES                 2048
-/* Size of MSI-X PCI capability */
+/** Size of MSI-X PCI capability */
 #define VBOX_MSIX_CAP_SIZE                    12
-/* Offsets in MSI-X PCI capability structure (VBOX_PCI_CAP_ID_MSIX) */
+/** Offsets in MSI-X PCI capability structure (VBOX_PCI_CAP_ID_MSIX) */
 #define VBOX_MSIX_CAP_MESSAGE_CONTROL         0x02
 #define VBOX_MSIX_TABLE_BIROFFSET             0x04
 #define VBOX_MSIX_PBA_BIROFFSET               0x08
-/* Size of single MSI-X table entry */
+/** Size of single MSI-X table entry */
 #define VBOX_MSIX_ENTRY_SIZE                  16
+/** @} */
 
 
 #endif /* !VBOX_INCLUDED_msi_h */
