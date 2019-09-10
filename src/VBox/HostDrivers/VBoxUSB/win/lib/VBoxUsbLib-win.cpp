@@ -385,6 +385,7 @@ static void usbLibDevStrFree(LPSTR lpszName)
     RTStrFree(lpszName);
 }
 
+#ifndef VBOX_WITH_NEW_USB_ENUM
 static int usbLibDevStrDriverKeyGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
 {
     USB_NODE_CONNECTION_DRIVERKEY_NAME Name;
@@ -430,6 +431,7 @@ static int usbLibDevStrDriverKeyGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
     RTMemFree(pName);
     return rc;
 }
+#endif
 
 static int usbLibDevStrHubNameGet(HANDLE hHub, ULONG iPort, LPSTR* plpszName)
 {
@@ -755,6 +757,7 @@ static int usbLibDevStrDrEntryGetAll(HANDLE hHub, LPCSTR lpcszHubName, ULONG iPo
     return VINF_SUCCESS;
 }
 
+#ifndef VBOX_WITH_NEW_USB_ENUM
 static int usbLibDevGetHubDevices(LPCSTR lpszName, PUSBDEVICE *ppDevs, uint32_t *pcDevs);
 
 static int usbLibDevGetHubPortDevices(HANDLE hHub, LPCSTR lpcszHubName, ULONG iPort, PUSBDEVICE *ppDevs, uint32_t *pcDevs)
@@ -901,6 +904,7 @@ static int usbLibDevGetHubDevices(LPCSTR lpszName, PUSBDEVICE *ppDevs, uint32_t 
 
     return rc;
 }
+#endif
 
 #ifdef VBOX_WITH_NEW_USB_ENUM
 
@@ -917,7 +921,6 @@ static void *usbLibGetRegistryProperty(HDEVINFO InfoSet, const PSP_DEVINFO_DATA 
     if (!rc && (GetLastError() != ERROR_INSUFFICIENT_BUFFER))
     {
         LogRelFunc(("Failed to query buffer size, error %ld\n", GetLastError()));
-        AssertFailed();
         return NULL;
     }
 
@@ -969,30 +972,33 @@ static PSP_DEVICE_INTERFACE_DETAIL_DATA usbLibGetDevDetail(HDEVINFO InfoSet, PSP
 }
 
 /* Given a hub's PnP device instance, find its device path (file name). */
-static LPCSTR usbLibGetHubPathFromDevInst(LPCSTR DevInst)
+static LPCSTR usbLibGetHubPathFromInstanceID(LPCSTR InstanceID)
 {
     HDEVINFO                            InfoSet;
-    SP_DEVINFO_DATA                     DeviceData;
     SP_DEVICE_INTERFACE_DATA            InterfaceData;
     PSP_DEVICE_INTERFACE_DETAIL_DATA    DetailData;
     BOOL                                rc;
     LPSTR                               DevicePath = NULL;
 
     /* Enumerate the DevInst's USB hub interface. */
-    InfoSet = SetupDiGetClassDevs(&GUID_DEVINTERFACE_USB_HUB, DevInst, NULL,
+    InfoSet = SetupDiGetClassDevs(&GUID_DEVINTERFACE_USB_HUB, InstanceID, NULL,
                                   DIGCF_DEVICEINTERFACE | DIGCF_PRESENT);
     if (InfoSet == INVALID_HANDLE_VALUE)
     {
-        LogRelFunc(("Failed to get interface, error %ld\n", GetLastError()));
+        LogRelFunc(("Failed to get interface for InstID %se, error %ld\n", InstanceID, GetLastError()));
         return NULL;
     }
 
-    memset(&DeviceData, 0, sizeof(DeviceData));
-    DeviceData.cbSize = sizeof(DeviceData);
+    memset(&InterfaceData, 0, sizeof(InterfaceData));
+    InterfaceData.cbSize = sizeof(InterfaceData);
     rc = SetupDiEnumDeviceInterfaces(InfoSet, 0, &GUID_DEVINTERFACE_USB_HUB, 0, &InterfaceData);
     if (!rc)
     {
-        LogRelFunc(("Failed to get interface data, error %ld\n", GetLastError()));
+        DWORD   dwErr = GetLastError();
+
+        /* The parent device might not be a hub; that is valid, ignore such errors. */
+        if (dwErr != ERROR_NO_MORE_ITEMS)
+            LogRelFunc(("Failed to get interface data for InstID %s, error %ld\n", InstanceID, dwErr));
         SetupDiDestroyDeviceInfoList(InfoSet);
         return NULL;
     }
@@ -1025,7 +1031,7 @@ static LPCSTR usbLibGetParentInstanceID(DEVINST DevInst)
     CONFIGRET   cr;
 
     /* First get the parent DEVINST. */
-    cr = CM_Get_Parent( &ParentInst, DevInst, 0);
+    cr = CM_Get_Parent(&ParentInst, DevInst, 0);
     if (cr != CR_SUCCESS)
     {
         LogRelFunc(("Failed to get parent instance, error %ld\n", GetLastError()));
@@ -1057,17 +1063,125 @@ static LPCSTR usbLibGetParentInstanceID(DEVINST DevInst)
     return InstanceID;
 }
 
+/* Process a single USB device that's being enumerated and grab its hub-specific data. */
+static int usbLibDevGetDevice(LPCSTR lpcszHubFile, ULONG iPort, LPCSTR Location, PUSBDEVICE *ppDevs, uint32_t *pcDevs)
+{
+    HANDLE                                  HubDevice;
+    BYTE                                    abConBuf[sizeof(USB_NODE_CONNECTION_INFORMATION_EX)];
+    PUSB_NODE_CONNECTION_INFORMATION_EX     pConInfo = PUSB_NODE_CONNECTION_INFORMATION_EX(abConBuf);
+    int                                     rc = VINF_SUCCESS;
+    DWORD                                   cbReturned = 0;
+
+    /* Validate inputs. */
+    if ((iPort < 1) || (iPort > 255))
+    {
+        LogRelFunc(("Port index out of range (%u)\n", iPort));
+        return VERR_INVALID_PARAMETER;
+    }
+    if (!lpcszHubFile)
+    {
+        LogRelFunc(("Hub path is NULL!\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* Try opening the hub file so we can send IOCTLs to it. */
+    HubDevice = CreateFile(lpcszHubFile, GENERIC_WRITE, FILE_SHARE_WRITE,
+                           NULL, OPEN_EXISTING, 0, NULL);
+    if (HubDevice == INVALID_HANDLE_VALUE)
+    {
+        LogRelFunc(("Failed to open hub `%s', dwErr(%d)\n", lpcszHubFile, GetLastError()));
+        return VERR_FILE_NOT_FOUND;
+    }
+
+    /* The shenanigans with abConBuf are due to USB_NODE_CONNECTION_INFORMATION_EX
+     * containing a zero-sized array, triggering compiler warnings.
+     */
+    memset(pConInfo, 0, sizeof(abConBuf));
+    pConInfo->ConnectionIndex = iPort;
+
+    /* We expect that IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX is always available
+     * on any supported Windows version and hardware.
+     * NB: IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX_V2 is Win8 and later only.
+     */
+    if (!DeviceIoControl(HubDevice, IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX,
+                         pConInfo, sizeof(abConBuf), pConInfo, sizeof(abConBuf),
+                         &cbReturned, NULL))
+    {
+        DWORD dwErr = GetLastError(); NOREF(dwErr);
+        LogRel(("IOCTL_USB_GET_NODE_CONNECTION_INFORMATION_EX failed with error %ld on hub %s, port %d\n", dwErr, lpcszHubFile, iPort));
+        AssertMsg(dwErr == ERROR_DEVICE_NOT_CONNECTED, (__FUNCTION__": DeviceIoControl failed dwErr (%d)\n", dwErr));
+        CloseHandle(HubDevice);
+        return VERR_GENERAL_FAILURE;
+    }
+
+    if (pConInfo->ConnectionStatus != DeviceConnected)
+    {
+        /* Ignore this, can't do anything with it. */
+        LogFunc(("Device is not connected, skipping.\n"));
+        CloseHandle(HubDevice);
+        return VINF_SUCCESS;
+    }
+
+    if (pConInfo->DeviceIsHub)
+    {
+        /* We're ignoring hubs, just skip this. */
+        LogFunc(("Device is a hub, skipping.\n"));
+        CloseHandle(HubDevice);
+        return VINF_SUCCESS;
+    }
+
+    PUSB_CONFIGURATION_DESCRIPTOR pCfgDr = NULL;
+    PVBOXUSB_STRING_DR_ENTRY pList = NULL;
+    rc = usbLibDevCfgDrGet(HubDevice, lpcszHubFile, iPort, 0, &pCfgDr);
+    if (pCfgDr)
+    {
+        rc = usbLibDevStrDrEntryGetAll(HubDevice, lpcszHubFile, iPort, &pConInfo->DeviceDescriptor, pCfgDr, &pList);
+#ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
+        AssertRC(rc); // this can fail if device suspended
+#endif
+    }
+
+    /* At this point we're done with the hub device. */
+    CloseHandle(HubDevice);
+
+    PUSBDEVICE pDev = (PUSBDEVICE)RTMemAllocZ(sizeof (*pDev));
+    if (RT_LIKELY(pDev))
+    {
+        rc = usbLibDevPopulate(pDev, pConInfo, iPort, Location, lpcszHubFile, pList);
+        if (RT_SUCCESS(rc))
+        {
+            pDev->pNext = *ppDevs;
+            *ppDevs = pDev;
+            ++*pcDevs;
+        }
+        else
+            RTMemFree(pDev);
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    if (pCfgDr)
+        usbLibDevCfgDrFree(pCfgDr);
+    if (pList)
+        usbLibDevStrDrEntryFreeList(pList);
+
+    return rc;
+}
+
+
 /*
  * Enumerate the USB devices in the host system. Since we do not care about the hierarchical
- * structure of root hubs, other hubs, and devices, we just use ask the USB PnP enumerator to
- * give us all it has. This includes hubs (though not root hubs) which we filter out. It also
- * includes USB devices with no driver, which is notably something we cannot get by enumerating
- * via GUID_DEVINTERFACE_USB_DEVICE.
+ * structure of root hubs, other hubs, and devices, we just ask the USB PnP enumerator to
+ * give us all it has. This includes hubs (though not root hubs), as well as multiple child
+ * interfaces of multi-interface USB devices, which we filter out. It also includes USB
+ * devices with no driver, which is notably something we cannot get by enumerating via
+ * GUID_DEVINTERFACE_USB_DEVICE.
  *
- * This approach also saves us some trouble relative to enumerating via hub IOCTLs and then
- * hunting  through the PnP manager to find them. Instead, we look up the device's parent which
- * is inevitably a hub, and that allows us to obtain USB-specific data (descriptors, speeds,
- * etc.) when combined with the devices PnP "address" (USB port on parent hub).
+ * This approach also saves us some trouble relative to enumerating devices via hub IOCTLs and
+ * then hunting through the PnP manager to find them. Instead, we look up the device's parent
+ * which (for devices we're interested in) is always a hub, and that allows us to obtain
+ * USB-specific data (descriptors, speeds, etc.) when combined with the devices PnP "address"
+ * (USB port on parent hub).
  *
  * NB: Every USB device known to the Windows PnP Manager will have a device instance ID. Typically
  * it also has a DriverKey but only if it has a driver installed. Hence we ignore the DriverKey, at
@@ -1076,15 +1190,19 @@ static LPCSTR usbLibGetParentInstanceID(DEVINST DevInst)
  * their USB VID/PID, though it is unique at any given point.
  *
  * The location information should be a reliable way of identifying a device and does not change
- * with driver installs, capturing, etc. It is only available on Windows Vista and later; earlier
- * Windows version had no reliable way of cross-referencing the USB IOCTL and PnP Manager data.
+ * with driver installs, capturing, etc. USB device location information is only available on
+ * Windows Vista and later; earlier Windows version had no reliable way of cross-referencing the
+ * USB IOCTL and PnP Manager data.
  */
 static int usbLibDevGetDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
 {
     HDEVINFO            InfoSet;
     DWORD               DeviceIndex;
+    LPDWORD             Address;
     SP_DEVINFO_DATA     DeviceData;
-    LPSTR               ClassGUID;
+    LPCSTR              ParentInstID;
+    LPCSTR              HubPath = NULL;
+    LPCSTR              Location;
 
     /* Ask for the USB PnP enumerator for all it has. */
     InfoSet = SetupDiGetClassDevs(NULL, "USB", NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
@@ -1096,13 +1214,38 @@ static int usbLibDevGetDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
     /* Enumerate everything in the info set. */
     while (SetupDiEnumDeviceInfo(InfoSet, DeviceIndex, &DeviceData))
     {
-        /* Grab the class GUID. If it's a USB hub, we aren't interested. */
-        ClassGUID = (LPSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_CLASSGUID);
-        if (ClassGUID && strcmp(ClassGUID, "{36fc9e60-c465-11cf-8056-444553540000}"))
+        /* Use the CM API to get the parent instance ID. */
+        ParentInstID = usbLibGetParentInstanceID(DeviceData.DevInst);
+
+        /* Now figure out the hub's file path fron the instance ID, if there is one. */
+        if (ParentInstID)
+            HubPath = usbLibGetHubPathFromInstanceID(ParentInstID);
+
+        /* If there's no hub interface on the parent, then this might be a child
+         * device of a multi-interface device. Either way, we're not interested.
+         */
+        if (HubPath)
         {
-            /* There is a class GUID and it's not a hub. Should be a USB device then. */
-            RTMemFree(ClassGUID);
+            /* The location information uniquely identifies the USB device, (hub/port). */
+            Location = (LPCSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_LOCATION_INFORMATION);
+
+            /* The device's PnP Manager "address" is the port number on the parent hub. */
+            Address = (LPDWORD)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_ADDRESS);
+            if (Address && Location)
+            {
+                usbLibDevGetDevice(HubPath, *Address, Location, ppDevs, pcDevs);
+            }
+            RTMemFree((void *)HubPath);
+
+            if (Location)
+                RTMemFree((void *)Location);
+            if (Address)
+                RTMemFree((void *)Address);
         }
+
+        /* Clean up after this device. */
+        if (ParentInstID)
+            RTMemFree((void *)ParentInstID);
 
         ++DeviceIndex;
         memset(&DeviceData, 0, sizeof(DeviceData));
