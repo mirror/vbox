@@ -126,6 +126,7 @@ PROGRAMS += \
 	tstRTStrVersion \
 	tstRTSymlink \
 	tstRTSystemQueryDmi \
+	tstRTSystemQueryFirmware \
 	tstRTSystemQueryOsInfo \
 	tstRTTcp-1 \
 	tstRTTemp \
@@ -654,6 +655,9 @@ tstRTSymlink_SOURCES = tstRTSymlink.cpp
 
 tstRTSystemQueryDmi_TEMPLATE = VBOXR3TSTEXE
 tstRTSystemQueryDmi_SOURCES = tstRTSystemQueryDmi.cpp
+
+tstRTSystemQueryFirmware_TEMPLATE = VBOXR3TSTEXE
+tstRTSystemQueryFirmware_SOURCES = tstRTSystemQueryFirmware.cpp
 
 tstRTSystemQueryOsInfo_TEMPLATE = VBOXR3TSTEXE
 tstRTSystemQueryOsInfo_SOURCES = tstRTSystemQueryOsInfo.cpp

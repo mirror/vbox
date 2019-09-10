@@ -872,6 +872,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
 	r3/win/RTSystemShutdown-win.cpp \
 	r3/win/RTSystemQueryDmiString-win.cpp \
+	r3/win/RTSystemFirmware-win.cpp \
 	r3/win/RTSystemQueryTotalRam-win.cpp \
 	r3/win/RTTimeZoneGetCurrent-win.cpp \
 	r3/win/alloc-win.cpp \
@@ -932,6 +933,7 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTProcDaemonize-generic.cpp \
  	generic/RTSemEventMultiWait-2-ex-generic.cpp \
  	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
+	generic/RTSystemFirmware-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTThreadSetAffinityToCpu-generic.cpp \
@@ -1042,6 +1044,7 @@ RuntimeR3_SOURCES.os2   = \
 	generic/RTRandAdvCreateSystemFaster-generic.cpp \
 	generic/RTRandAdvCreateSystemTruer-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemFirmware-generic.cpp \
 	generic/RTSystemShutdown-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
@@ -1146,6 +1149,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/pathhost-darwin.cpp \
 	r3/darwin/rtProcInitExePath-darwin.cpp \
 	r3/darwin/RTSystemQueryDmiString-darwin.cpp \
+	r3/generic/RTSystemFirmware-generic.cpp \
 	r3/darwin/sched-darwin.cpp \
 	r3/darwin/systemmem-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
@@ -1213,6 +1217,7 @@ RuntimeR3_SOURCES.freebsd = \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemFirmware-generic.cpp \
 	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
 	generic/RTThreadSetAffinity-stub-generic.cpp \
@@ -1296,6 +1301,7 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemFirmware-generic.cpp \
 	generic/RTSystemShutdown-generic.cpp \
 	generic/RTThreadGetAffinity-stub-generic.cpp \
 	generic/RTThreadSetAffinity-stub-generic.cpp \
@@ -1450,17 +1456,21 @@ RuntimeR3_SOURCES.solaris = \
 RuntimeR3_SOURCES.solaris.amd64 = \
 	common/string/memrchr.asm \
 	r3/solaris/coredumper-solaris.cpp \
-	r3/solaris/RTSystemQueryDmiString-solaris.cpp
+	r3/solaris/RTSystemQueryDmiString-solaris.cpp \
+	r3/generic/RTSystemFirmware-generic.cpp
 RuntimeR3_SOURCES.solaris.x86 = \
 	common/string/memrchr.asm \
 	r3/solaris/coredumper-solaris.cpp \
-	r3/solaris/RTSystemQueryDmiString-solaris.cpp
+	r3/solaris/RTSystemQueryDmiString-solaris.cpp \
+	r3/generic/RTSystemFirmware-generic.cpp
 RuntimeR3_SOURCES.solaris.sparc32 = \
 	common/string/memrchr.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp
+	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemFirmware-generic.cpp
 RuntimeR3_SOURCES.solaris.sparc64 = \
 	common/string/memrchr.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp
+	generic/RTSystemQueryDmiString-generic.cpp \
+	generic/RTSystemFirmware-generic.cpp
 
 RuntimeR3_SOURCES.haiku = \
 	generic/RTCrStoreCreateSnapshotById-generic.cpp \
@@ -3990,4 +4000,3 @@ taf-template.o taf-template.obj: taf-core.o taf-asn1-decoder.o taf-sanity.o taf-
 tsp-template.o tsp-template.obj: tsp-core.o tsp-asn1-decoder.o tsp-sanity.o tsp-init.o
 x509-template.o x509-template.obj: x509-core.o x509-asn1-decoder.o x509-sanity.o x509-init.o
 pkcs7-template.o pkcs7-template.obj: pkcs7-core.o pkcs7-asn1-decoder.o pkcs7-sanity.o pkcs7-init.o
-

@@ -259,6 +259,87 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
  */
 RTDECL(bool) RTSystemIsInsideVM(void);
 
+/**
+ * Enumeration for defining a system's firmware type.
+ */
+typedef enum RTSYSFWTYPE
+{
+    /** Unknown firmware. */
+    RTSYSFWTYPE_UNKNOWN = 0,
+    /** Firmware is BIOS. */
+    RTSYSFWTYPE_BIOS,
+    /** Firmware is UEFI. */
+    RTSYSFWTYPE_UEFI,
+    /** The usual 32-bit hack.  */
+    RTSYSFWTYP_32_BIT_HACK = 0x7fffffff
+} RTSYSFWTYPE;
+/** Pointer to a system firmware type. */
+typedef RTSYSFWTYPE *PRTSYSFWTYPE;
+
+/**
+ * Queries the system's firmware type.
+ *
+ * @retval  IPRT status code.
+ * @param   pFirmwareType       Where to store the firmware type on success.
+ */
+RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE pFirmwareType);
+
+/**
+ * Enumeration for defining a system firmware value type.
+ */
+typedef enum RTSYSFWVALUETYPE
+{
+    /** Invalid value type. */
+    RTSYSFWVALUETYPE_INVALID = 0,
+    /** Value is of type boolean. */
+    RTSYSFWVALUETYPE_BOOLEAN,
+    /** The usual 32-bit hack.  */
+    RTSYSFWVALUETYPE_32_BIT_HACK = 0x7fffffff
+} RTSYSFWVALUETYPE;
+
+/**
+ * Structure for keeping a system firmware value.
+ */
+typedef struct RTSYSFWVALUE
+{
+    /** Value type. */
+    RTSYSFWVALUETYPE enmType;
+    union
+    {
+        /** Boolean value. */
+        bool fVal;
+    } u;
+} RTSYSFWVALUE;
+/** Pointer to a system firmware value. */
+typedef RTSYSFWVALUE *PRTSYSFWVALUE;
+
+/**
+ * Enumeration for a system firmware property.
+ */
+typedef enum RTSYSFWPRPOP
+{
+    /** Invalid property, do not use. */
+    RTSYSFWPROP_INVALID = 0,
+    /** @todo Not yet implemented. */
+    RTSYSFWPROP_BOOT_CURRENT,
+    /** @todo Not yet implemented. */
+    RTSYSFWPROP_BOOT_ORDER,
+    /** @todo Not yet implemented. */
+    RTSYSFWPROP_BOOT_NEXT,
+    /** boolean: Whether Secure Boot is enabled or not. */
+    RTSYSFWPROP_SECURE_BOOT,
+    /** @todo Not yet implemented. */
+    RTSYSFWPROP_TIMEOUT,
+    /** @todo Not yet implemented. */
+    RTSYSFWPROP_PLATFORM_LANG,
+    /** The usual 32-bit hack.  */
+    RTSYSFWPROP_32_BIT_HACK = 0x7fffffff
+} RTSYSFWPROP;
+
+RTDECL(int) RTSystemFirmwareValueGet(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue);
+
+RTDECL(void) RTSystemFirmwareValueFree(PRTSYSFWVALUE pValue);
+
 #ifdef RT_OS_WINDOWS
 
 /**
