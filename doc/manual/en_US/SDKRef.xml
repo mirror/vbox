@@ -2549,6 +2549,203 @@ es.unregisterListener(listener); </screen></para>
   <xi:include href="SDKRef_apiref.xml" xpointer="xpointer(/book/*)"
     xmlns:xi="http://www.w3.org/2001/XInclude" />
 
+  <chapter id="cloud">
+    <title>Working with the Cloud</title>
+
+    <para>VirtualBox supports and goes towards the Oracle tendencies like "move to the Cloud".</para>
+
+    <sect1>
+      <title>OCI features</title>
+      <para>VirtualBox supports the Oracle Cloud Infrastructure (OCI). See the interfaces:
+      <link linkend="ICloudClient">ICloudClient</link>,
+      <link linkend="ICloudProvider">ICloudProvider</link>,
+      <link linkend="ICloudProfile">ICloudProfile</link>,
+      <link linkend="ICloudProviderManager">ICloudProviderManager</link>.
+      </para>
+      <para>Each cloud interface has own implementation to support OCI features. There are everal functions in the implementation
+      which should be explained in details because OCI requires some special data or settings.
+      </para>
+      <para>
+        Also see the enumeration <link linkend="VirtualSystemDescriptionType">VirtualSystemDescriptionType</link> for the possible values.
+      </para>
+    </sect1>
+
+    <sect1>
+      <title>Function ICloudClient::exportVM</title>
+      <para>
+        See the <link linkend="ICloudClient__exportVM">ICloudClient::exportVM</link>.
+        The function exports an existing virtual machine into OCI. The final result of this operation is creation a custom image
+        from the bootable image of VM. The Id of created image is returned in the parameter "description" (which is
+        <link linkend="IVirtualSystemDescription">IVirtualSystemDescription</link>) as an entry with the type
+        VirtualSystemDescriptionType::CloudImageId. The standard steps here are:
+        <itemizedlist>
+          <listitem>
+            <para>Upload VBox image to OCI Object Storage.</para>
+          </listitem>
+          <listitem>
+            <para>Create OCI custom image from the uploaded object.</para>
+          </listitem>
+        </itemizedlist>
+        Parameter "description" must contain all information and settings needed for creation a custom image in OCI.
+        At least next entries must be presented there before the call:
+        <itemizedlist>
+          <listitem>
+            <para>VirtualSystemDescriptionType::Name - Name of new instance in OCI.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::HardDiskImage - The local path or id of bootable VM image.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudBucket - A cloud bucket name where the exported image is uploaded.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudImageDisplayName - A name which is assigned to a new custom image in the OCI.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudKeepObject - Whether keep or delete an uploaded object after its usage.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudLaunchInstance - Whether launch or not a new instance.</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect1>
+
+    <sect1>
+      <title>Function ICloudClient::launchVM</title>
+      <para>
+        See the <link linkend="ICloudClient__launchVM">ICloudClient::launchVM</link>.
+        The function launches a new instance in OCI with a previously created custom image as a bootable image in OCI.
+        The final result of this operation is a running instance. The id of created instance is returned
+        in the parameter "description" (which is <link linkend="IVirtualSystemDescription">IVirtualSystemDescription</link>)
+        as an entry with the type VirtualSystemDescriptionType::CloudInstanceId.  Parameter "description" must contain all information
+        and settings needed for creation a new instance in OCI. At least next entries must be presented there before the call:
+        <itemizedlist>
+          <listitem>
+            <para>VirtualSystemDescriptionType::Name - Name of new instance in OCI.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudOCISubnet - OCID of existing subnet in OCI which will be used by the instance.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudImageId - OCID of custom image used as a bootable image for the instance.</para>
+          </listitem>
+          <listitem>
+            <para> VirtualSystemDescriptionType::CloudBootDiskSize - The size of instance bootable image in GB.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudInstanceShape - The shape of instance according to OCI documentation,
+            defines the number of CPUs and RAM memory.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudLaunchInstance - Whether launch or not a new instance.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudDomain - Availability domain in OCI where new instance is created.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudPublicIP - Whether the instance will have a public IP or not.</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect1>
+
+    <sect1>
+      <title>Function ICloudClient::getInstanceInfo</title>
+      <para>
+        See the <link linkend="ICloudClient__getInstanceInfo">ICloudClient::getInstanceInfo</link>.
+        The function takes an instance id (parameter "uid"), finds the requested instance in OCI and gets back information
+        about the found instance in the parameter "description" (which is <link linkend="IVirtualSystemDescription">IVirtualSystemDescription</link>)
+        The entries with next types will be presented in the object:
+        <itemizedlist>
+          <listitem>
+            <para>VirtualSystemDescriptionType::Name - Displayed name of the instance.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudDomain - Availability domain in OCI.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudImageId - Name of custom image used for creation this instance.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudInstanceId - The OCID of the instance.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::OS - Guest OS type of the instance.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudBootDiskSize - Size of instance bootable image.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudInstanceState - The instance state according to OCI documentation.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudInstanceShape  - The instance shape according to OCI documentation</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::Memory - RAM memory in GB allocated for the instance.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CPU - Number of virtual CPUs allocated for the instance.</para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect1>
+
+    <sect1>
+      <title>Function ICloudClient::importInstance</title>
+      <para>
+        See the <link linkend="ICloudClient__importInstance">ICloudClient::importInstance</link>.
+        The API function imports an existing instance from the OCI to the local host.
+        The standard steps here are:
+        <itemizedlist>
+          <listitem>
+            <para>Create a custom image from an existing OCI instance.</para>
+          </listitem>
+          <listitem>
+            <para>Export the custom image to OCI object (the object is created in the OCI Object Storage).</para>
+          </listitem>
+          <listitem>
+            <para>Download the OCI object to the local host.</para>
+          </listitem>
+        </itemizedlist>
+          As the result of operation user will have a file with the suffix ".oci" on the local host. This file is a TAR archive which
+          contains a bootable instance image converted into the VMDK format and a JSON file with some metadata related to
+          the imported instance. The function takes the parameter "description"
+          (which is <link linkend="IVirtualSystemDescription">IVirtualSystemDescription</link>)
+          Parameter "description" must contain all information and settings needed for successful operation result.
+          At least next entries must be presented there before the call:
+        <itemizedlist>
+          <listitem>
+            <para>VirtualSystemDescriptionType::Name is used for the several purposes:
+              <itemizedlist>
+                <listitem>
+                  <para>As a custom image name. A custom image is created from an instance.</para>
+                </listitem>
+                <listitem>
+                  <para>As OCI object name. An object is a file in OCI Object Storage. The object is created from the custom image.</para>
+                </listitem>
+                <listitem>
+                  <para>Name of imported instance on the local host. Because the result of import is a file, the file will have this
+                  name and extension ".oci".</para>
+                </listitem>
+             </itemizedlist>
+            </para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudInstanceId - The OCID of the existing instance.</para>
+          </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudBucket - a cloud bucket name in OCI Object Storage where created an OCI object
+            from a custom image.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+    </sect1>
+
+  </chapter>
+
   <chapter id="hgcm">
     <title>Host-Guest Communication Manager</title>
 
