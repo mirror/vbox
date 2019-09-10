@@ -7510,7 +7510,7 @@ static int hmR0VmxImportGuestState(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, uint6
                         PCVMXVVMCS    pVmcsNstGst  = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
                         u64Cr0 = (u64Cr0                     & ~pVmcsInfo->u64Cr0Mask)
                                | (pVmcsNstGst->u64GuestCr0.u &  pVmcsNstGst->u64Cr0Mask.u)
-                               | (u64Shadow                  & (pVmcsInfoGst->u64Cr0Mask   & ~pVmcsNstGst->u64Cr0Mask.u));
+                               | (u64Shadow                  & (pVmcsInfoGst->u64Cr0Mask & ~pVmcsNstGst->u64Cr0Mask.u));
                     }
 #endif
                     VMMRZCallRing3Disable(pVCpu);   /* May call into PGM which has Log statements. */
