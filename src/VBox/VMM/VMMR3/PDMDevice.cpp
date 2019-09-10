@@ -349,6 +349,8 @@ int pdmR3DevInit(PVM pVM)
             Req.cbInstanceShared = pReg->cbInstanceShared;
             Req.cbInstanceR3     = pReg->cbInstanceCC;
             Req.cbInstanceRC     = pReg->cbInstanceRC;
+            Req.cMaxPciDevices   = pReg->cMaxPciDevices;
+            Req.cMaxMsixVectors  = pReg->cMaxMsixVectors;
             Req.iInstance        = paDevs[i].iInstance;
             Req.fRCEnabled       = fRCEnabled;
             Req.afReserved[0]    = false;

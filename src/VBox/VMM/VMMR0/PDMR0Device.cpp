@@ -1272,30 +1272,38 @@ VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PPDMDEVICECALLREQHANDLE
 /**
  * Worker for PDMR0DeviceCreate that does the actual instantiation.
  *
- * Allocates a memory object and devides it up as follows:
+ * Allocates a memory object and divides it up as follows:
  * @verbatim
- *   ----------------------
- *   ring-0 devins
- *   ----------------------
- *   ring-0 instance data
- *   ----------------------
- *   page alignment padding
- *   ----------------------
- *   ring-3 devins
- *   ----------------------
- *   ring-3 instance data
- *   ----------------------
- *  [page alignment padding] -
- *  [----------------------]  \
- *  [raw-mode devins       ]   - Optional, only when raw-mode is enabled.
- *  [----------------------]  /
- *  [raw-mode instance data] -
- *   ----------------------
- *   shared instance data
- *   ----------------------
- *   default crit section
- *   ----------------------
- * @endverbatim
+   -----------------------------------
+   ring-0 devins
+   -----------------------------------
+   ring-0 instance data
+   -----------------------------------
+   ring-0 PCI device data (optional) ?
+   -----------------------------------
+   page alignment padding
+   -----------------------------------
+   ring-3 devins
+   -----------------------------------
+   ring-3 instance data
+   -----------------------------------
+   ring-3 PCI device data (optional) ?
+   -----------------------------------
+  [page alignment padding             ] -
+  [-----------------------------------]  \
+  [raw-mode devins                    ]   \
+  [-----------------------------------]   - Optional, only when raw-mode is enabled.
+  [raw-mode instance data             ]   /
+  [-----------------------------------]  /
+  [raw-mode PCI device data (optional)] -
+   -----------------------------------
+   shared instance data
+   -----------------------------------
+   default crit section
+   -----------------------------------
+   shared PCI device data (optional)
+   -----------------------------------
+   @endverbatim
  *
  * @returns VBox status code.
  * @param   pGVM            The global (ring-0) VM structure.
@@ -1496,6 +1504,9 @@ VMMR0_INT_DECL(int) PDMR0DeviceCreateReqHandler(PGVM pGVM, PPDMDEVICECREATEREQ p
     AssertReturn(pReq->cbInstanceR3 <= _2M, VERR_OUT_OF_RANGE);
     AssertReturn(pReq->cbInstanceRC <= _512K, VERR_OUT_OF_RANGE);
     AssertReturn(pReq->iInstance < 1024, VERR_OUT_OF_RANGE);
+    AssertReturn(pReq->iInstance < pReq->cMaxInstances, VERR_OUT_OF_RANGE);
+    AssertReturn(pReq->cMaxPciDevices <= 8, VERR_OUT_OF_RANGE);
+    AssertReturn(pReq->cMaxMsixVectors <= VBOX_MSIX_MAX_ENTRIES, VERR_OUT_OF_RANGE);
 
     /*
      * Reference the module.
@@ -1550,7 +1561,9 @@ VMMR0_INT_DECL(int) PDMR0DeviceCreateReqHandler(PGVM pGVM, PPDMDEVICECREATEREQ p
                         && pReq->cbInstanceRC     == pDevReg->cbInstanceRC
                         && pReq->fFlags           == pDevReg->fFlags
                         && pReq->fClass           == pDevReg->fClass
-                        && pReq->cMaxInstances    == pDevReg->cMaxInstances)
+                        && pReq->cMaxInstances    == pDevReg->cMaxInstances
+                        && pReq->cMaxPciDevices   == pDevReg->cMaxPciDevices
+                        && pReq->cMaxMsixVectors  == pDevReg->cMaxMsixVectors)
                     {
                         rc = pdmR0DeviceCreateWorker(pGVM, pDevReg, pReq->iInstance, pReq->fRCEnabled,
                                                      pReq->cbInstanceR3, pReq->cbInstanceRC, hMod,
@@ -1566,14 +1579,19 @@ VMMR0_INT_DECL(int) PDMR0DeviceCreateReqHandler(PGVM pGVM, PPDMDEVICECREATEREQ p
                                 "      cbInstanceRC: %#x vs %#x\n"
                                 "            fFlags: %#x vs %#x\n"
                                 "            fClass: %#x vs %#x\n"
-                                "     cMaxInstances: %#x vs %#x\n",
+                                "     cMaxInstances: %#x vs %#x\n"
+                                "    cMaxPciDevices: %#x vs %#x\n"
+                                "   cMaxMsixVectors: %#x vs %#x\n"
+                                ,
                                 pReq->szDevName,
                                 pReq->uSharedVersion,   pDevReg->uSharedVersion,
                                 pReq->cbInstanceShared, pDevReg->cbInstanceShared,
                                 pReq->cbInstanceRC,     pDevReg->cbInstanceRC,
                                 pReq->fFlags,           pDevReg->fFlags,
                                 pReq->fClass,           pDevReg->fClass,
-                                pReq->cMaxInstances,    pDevReg->cMaxInstances));
+                                pReq->cMaxInstances,    pDevReg->cMaxInstances,
+                                pReq->cMaxPciDevices,   pDevReg->cMaxPciDevices,
+                                pReq->cMaxMsixVectors,  pDevReg->cMaxMsixVectors));
                         rc = VERR_INCOMPATIBLE_CONFIG;
                     }
                 }

@@ -276,6 +276,12 @@ typedef struct PDMDEVICECREATEREQ
     /** Copy of PDMDEVREGR3::cbInstanceRC for matching with
      *  PDMDEVREGR0::cbInstanceRC. */
     uint32_t                cbInstanceRC;
+    /** Copy of PDMDEVREGR3::cMaxPciDevices for matching with
+     *  PDMDEVREGR0::cMaxPciDevices. */
+    uint16_t                cMaxPciDevices;
+    /** Copy of PDMDEVREGR3::cMaxMsixVectors for matching with
+     *  PDMDEVREGR0::cMaxMsixVectors. */
+    uint16_t                cMaxMsixVectors;
 
     /** The device instance ordinal. */
     uint32_t                iInstance;
