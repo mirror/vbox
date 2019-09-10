@@ -921,7 +921,7 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
         self._waitForTestManagerConnectivity(30);
 
-        if os.path.isfile(sLogFile):
+        if fRc is False and os.path.isfile(sLogFile):
             reporter.addLogFile(sLogFile, 'log/uninstaller', "Verbose MSI uninstallation log file");
 
         # Log driver service states (should ls \Driver\VBox* and \Device\VBox*).
@@ -1048,3 +1048,4 @@ class VBoxInstallerTestDriver(TestDriverBase):
 
 if __name__ == '__main__':
     sys.exit(VBoxInstallerTestDriver().main(sys.argv));
+
