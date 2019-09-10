@@ -331,6 +331,8 @@ public:
     /** Returns the row value as string. */
     QString valueToString() const;
 
+    /** Returns whether the row is enabled. */
+    bool isEnabled() const;
     /** Returns whether the row is visible. */
     bool isVisible() const;
 
@@ -691,6 +693,11 @@ QString UIFormEditorRow::valueToString() const
     return m_cells.at(UIFormEditorDataType_Value)->text();
 }
 
+bool UIFormEditorRow::isEnabled() const
+{
+    return m_comValue.GetEnabled();
+}
+
 bool UIFormEditorRow::isVisible() const
 {
     return m_comValue.GetVisible();
@@ -1025,9 +1032,13 @@ Qt::ItemFlags UIFormEditorModel::flags(const QModelIndex &index) const
         case UIFormEditorDataType_Name:
             return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
         case UIFormEditorDataType_Value:
-            return   m_dataList[index.row()]->valueType() != KFormValueType_Boolean
-                   ? Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable
-                   : Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable;
+        {
+            Qt::ItemFlags enmFlags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+            if (m_dataList[index.row()]->isEnabled())
+                enmFlags |= m_dataList[index.row()]->valueType() == KFormValueType_Boolean
+                          ? Qt::ItemIsUserCheckable : Qt::ItemIsEditable;
+            return enmFlags;
+        }
         default:
             return Qt::NoItemFlags;
     }
