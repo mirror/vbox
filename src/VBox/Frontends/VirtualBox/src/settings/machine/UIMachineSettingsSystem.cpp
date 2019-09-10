@@ -845,18 +845,21 @@ void UIMachineSettingsSystem::prepareTabAcceleration()
 void UIMachineSettingsSystem::prepareConnections()
 {
     /* Configure 'Motherboard' connections: */
-    connect(m_pComboChipsetType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
-    connect(m_pComboPointingHIDType, SIGNAL(currentIndexChanged(int)), this, SLOT(revalidate()));
+    connect(m_pComboChipsetType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+        this, &UIMachineSettingsSystem::revalidate);
+    connect(m_pComboPointingHIDType, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIMachineSettingsSystem::revalidate);
     connect(m_pBaseMemoryEditor, &UIBaseMemoryEditor::sigValidChanged, this, &UIMachineSettingsSystem::revalidate);
-    connect(m_pCheckBoxApic, SIGNAL(stateChanged(int)), this, SLOT(revalidate()));
+    connect(m_pCheckBoxApic, &QCheckBox::stateChanged, this, &UIMachineSettingsSystem::revalidate);
 
     /* Configure 'Processor' connections: */
-    connect(m_pSliderCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountSliderChange()));
-    connect(m_pEditorCPUCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUCountEditorChange()));
-    connect(m_pSliderCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapSliderChange()));
-    connect(m_pEditorCPUExecCap, SIGNAL(valueChanged(int)), this, SLOT(sltHandleCPUExecCapEditorChange()));
-    connect(m_pCheckBoxNestedVirtualization, &QCheckBox::stateChanged,
-            this, &UIMachineSettingsSystem::revalidate);
+    connect(m_pSliderCPUCount, &QIAdvancedSlider::valueChanged, this, &UIMachineSettingsSystem::sltHandleCPUCountSliderChange);
+    connect(m_pEditorCPUCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIMachineSettingsSystem::sltHandleCPUCountEditorChange);
+    connect(m_pSliderCPUExecCap, &QIAdvancedSlider::valueChanged, this, &UIMachineSettingsSystem::sltHandleCPUExecCapSliderChange);
+    connect(m_pEditorCPUExecCap, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIMachineSettingsSystem::sltHandleCPUExecCapEditorChange);
+    connect(m_pCheckBoxNestedVirtualization, &QCheckBox::stateChanged, this, &UIMachineSettingsSystem::revalidate);
 
     /* Configure 'Acceleration' connections: */
     connect(m_pCheckBoxVirtualization, &QCheckBox::stateChanged,

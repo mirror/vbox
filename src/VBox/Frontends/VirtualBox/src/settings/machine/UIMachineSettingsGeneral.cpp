@@ -628,26 +628,26 @@ void UIMachineSettingsGeneral::prepareTabEncryption()
 void UIMachineSettingsGeneral::prepareConnections()
 {
     /* Configure 'Basic' connections: */
-    connect(m_pNameAndSystemEditor, SIGNAL(sigOsTypeChanged()),
-            this, SLOT(revalidate()));
-    connect(m_pNameAndSystemEditor, SIGNAL(sigNameChanged(const QString &)),
-            this, SLOT(revalidate()));
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigOsTypeChanged,
+            this, &UIMachineSettingsGeneral::revalidate);
+    connect(m_pNameAndSystemEditor, &UINameAndSystemEditor::sigNameChanged,
+            this, &UIMachineSettingsGeneral::revalidate);
 
     /* Configure 'Encryption' connections: */
-    connect(m_pCheckBoxEncryption, SIGNAL(toggled(bool)),
-            this, SLOT(revalidate()));
-    connect(m_pComboCipher, SIGNAL(currentIndexChanged(int)),
-            this, SLOT(sltMarkEncryptionCipherChanged()));
-    connect(m_pComboCipher, SIGNAL(currentIndexChanged(int)),
-            this, SLOT(revalidate()));
-    connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
-            this, SLOT(sltMarkEncryptionPasswordChanged()));
-    connect(m_pEditorEncryptionPassword, SIGNAL(textEdited(const QString&)),
-            this, SLOT(revalidate()));
-    connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
-            this, SLOT(sltMarkEncryptionPasswordChanged()));
-    connect(m_pEditorEncryptionPasswordConfirm, SIGNAL(textEdited(const QString&)),
-            this, SLOT(revalidate()));
+    connect(m_pCheckBoxEncryption, &QCheckBox::toggled,
+            this, &UIMachineSettingsGeneral::revalidate);
+    connect(m_pComboCipher, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIMachineSettingsGeneral::sltMarkEncryptionCipherChanged);
+    connect(m_pComboCipher, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &UIMachineSettingsGeneral::revalidate);
+    connect(m_pEditorEncryptionPassword, &QLineEdit::textEdited,
+            this, &UIMachineSettingsGeneral::sltMarkEncryptionPasswordChanged);
+    connect(m_pEditorEncryptionPassword, &QLineEdit::textEdited,
+            this, &UIMachineSettingsGeneral::revalidate);
+    connect(m_pEditorEncryptionPasswordConfirm, &QLineEdit::textEdited,
+            this, &UIMachineSettingsGeneral::sltMarkEncryptionPasswordChanged);
+    connect(m_pEditorEncryptionPasswordConfirm, &QLineEdit::textEdited,
+            this, &UIMachineSettingsGeneral::revalidate);
 }
 
 void UIMachineSettingsGeneral::cleanup()
@@ -915,11 +915,11 @@ bool UIMachineSettingsGeneral::saveEncryptionData()
                     if (fSuccess)
                     {
                         pDlg = new UIProgress(comProgress);
-                        connect(pDlg, SIGNAL(sigProgressChange(ulong, QString, ulong, ulong)),
-                                this, SIGNAL(sigOperationProgressChange(ulong, QString, ulong, ulong)),
+                        connect(pDlg, &UIProgress::sigProgressChange,
+                                this, &UIMachineSettingsGeneral::sigOperationProgressChange,
                                 Qt::QueuedConnection);
-                        connect(pDlg, SIGNAL(sigProgressError(QString)),
-                                this, SIGNAL(sigOperationProgressError(QString)),
+                        connect(pDlg, &UIProgress::sigProgressError,
+                            this, &UIMachineSettingsGeneral::sigOperationProgressError,
                                 Qt::BlockingQueuedConnection);
                         pDlg->run(350);
                         if (pDlg)
