@@ -2498,10 +2498,15 @@ static void ichac97R3MixerRecordSelect(PAC97STATE pThis, uint32_t val)
 {
     uint8_t rs = val & AC97_REC_MASK;
     uint8_t ls = (val >> 8) & AC97_REC_MASK;
-    PDMAUDIORECSOURCE ars = ichac97R3IdxToRecSource(rs);
-    PDMAUDIORECSOURCE als = ichac97R3IdxToRecSource(ls);
+
+    const PDMAUDIORECSOURCE ars = ichac97R3IdxToRecSource(rs);
+    const PDMAUDIORECSOURCE als = ichac97R3IdxToRecSource(ls);
+
     rs = ichac97R3RecSourceToIdx(ars);
     ls = ichac97R3RecSourceToIdx(als);
+
+    LogRel(("AC97: Record select to left=%s, right=%s\n", DrvAudioHlpRecSrcToStr(ars), DrvAudioHlpRecSrcToStr(als)));
+
     ichac97MixerSet(pThis, AC97_Record_Select, rs | (ls << 8));
 }
 
@@ -2535,8 +2540,10 @@ static int ichac97R3MixerReset(PAC97STATE pThis)
     ichac97MixerSet(pThis, AC97_Powerdown_Ctrl_Stat     , 0x000f);
 
     /* Configure Extended Audio ID (EAID) + Control & Status (EACS) registers. */
-    const uint16_t fEAID = AC97_EAID_REV1;                /* Our hardware is AC'97 rev2.3 compliant. */
-    const uint16_t fEACS = AC97_EAID_VRA | AC97_EAID_VRM; /* Variable Rate PCM Audio (VRA) + Mic-In (VRM) capable. */
+    const uint16_t fEAID = AC97_EAID_REV1 | AC97_EACS_VRA | AC97_EACS_VRM; /* Our hardware is AC'97 rev2.3 compliant. */
+    const uint16_t fEACS = AC97_EACS_VRA | AC97_EACS_VRM;                  /* Variable Rate PCM Audio (VRA) + Mic-In (VRM) capable. */
+
+    LogRel(("AC97: Mixer reset (EAID=0x%x, EACS=0x%x)\n", fEAID, fEACS));
 
     ichac97MixerSet(pThis, AC97_Extended_Audio_ID,        fEAID);
     ichac97MixerSet(pThis, AC97_Extended_Audio_Ctrl_Stat, fEACS);
