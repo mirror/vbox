@@ -2444,6 +2444,7 @@ HRESULT Display::completeVHWACommand(BYTE *aCommand)
     mpDrv->pVBVACallbacks->pfnVHWACommandCompleteAsync(mpDrv->pVBVACallbacks, (VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *)aCommand);
     return S_OK;
 #else
+    RT_NOREF(aCommand);
     return E_NOTIMPL;
 #endif
 }
