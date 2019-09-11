@@ -596,6 +596,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdVideoHorizontalResolution|800
   gEfiMdeModulePkgTokenSpaceGuid.PcdVideoVerticalResolution|600
 !else
+  gEfiMdeModulePkgTokenSpaceGuid.PcdEmuVariableNvModeEnable|TRUE
   gEfiMdeModulePkgTokenSpaceGuid.PcdVideoHorizontalResolution|1024
   gEfiMdeModulePkgTokenSpaceGuid.PcdVideoVerticalResolution|768
 !endif
