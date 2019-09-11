@@ -956,18 +956,22 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     static const RTGETOPTDEF s_aOptions[] =
     {
+        { "--id",             'i', RTGETOPT_REQ_STRING },
         { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
         { "--object-name",    'o', RTGETOPT_REQ_STRING },
-        { "--id",             'i', RTGETOPT_REQ_STRING }
+        { "--display-name",   'd', RTGETOPT_REQ_STRING },
+        { "--launch-mode",    'm', RTGETOPT_REQ_STRING },
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
     int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
     AssertRCReturn(vrc, RTEXITCODE_FAILURE);
 
+    Utf8Str strImageId;   /* XXX: this is vbox "image", i.e. medium */
     Utf8Str strBucketName;
     Utf8Str strObjectName;
-    Utf8Str strImageId;
+    Utf8Str strDisplayName;
+    Utf8Str strLaunchMode;
     com::SafeArray<BSTR> parameters;
 
     int c;
@@ -975,7 +979,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     {
         switch (c)
         {
-            case 'b':
+            case 'b': /* --bucket-name */
             {
                 if (strBucketName.isNotEmpty())
                     return errorArgument("Duplicate parameter: --bucket-name");
@@ -987,7 +991,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 break;
             }
 
-            case 'o':
+            case 'o': /* --object-name */
             {
                 if (strObjectName.isNotEmpty())
                     return errorArgument("Duplicate parameter: --object-name");
@@ -999,7 +1003,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 break;
             }
 
-            case 'i':
+            case 'i': /* --id */
             {
                 if (strImageId.isNotEmpty())
                     return errorArgument("Duplicate parameter: --id");
@@ -1007,6 +1011,30 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 strImageId = ValueUnion.psz;
                 if (strImageId.isEmpty())
                     return errorArgument("Empty parameter: --id");
+
+                break;
+            }
+
+            case 'd': /* --display-name */
+            {
+                if (strDisplayName.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --display-name");
+
+                strDisplayName = ValueUnion.psz;
+                if (strDisplayName.isEmpty())
+                    return errorArgument("Empty parameter: --display-name");
+
+                break;
+            }
+
+            case 'm': /* --launch-mode */
+            {
+                if (strLaunchMode.isNotEmpty())
+                    return errorArgument("Duplicate parameter: --launch-mode");
+
+                strLaunchMode = ValueUnion.psz;
+                if (strLaunchMode.isEmpty())
+                    return errorArgument("Empty parameter: --launch-mode");
 
                 break;
             }
@@ -1019,19 +1047,24 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         }
     }
 
+    if (strImageId.isNotEmpty())
+        BstrFmt("image-id=%s", strImageId.c_str()).detachTo(parameters.appendedRaw());
+    else
+        return errorArgument("Missing parameter: --id");
+
     if (strBucketName.isNotEmpty())
         BstrFmt("bucket-name=%s", strBucketName.c_str()).detachTo(parameters.appendedRaw());
     else
         return errorArgument("Missing parameter: --bucket-name");
 
-    /* API will use display name as object name if not specified */
     if (strObjectName.isNotEmpty())
         BstrFmt("object-name=%s", strObjectName.c_str()).detachTo(parameters.appendedRaw());
 
-    if (strImageId.isNotEmpty())
-        BstrFmt("image-id=%s", strImageId.c_str()).detachTo(parameters.appendedRaw());
-    else
-        return errorArgument("Missing parameter: --id");
+    if (strDisplayName.isNotEmpty())
+        BstrFmt("display-name=%s", strDisplayName.c_str()).detachTo(parameters.appendedRaw());
+
+    if (strLaunchMode.isNotEmpty())
+        BstrFmt("launch-mode=%s", strLaunchMode.c_str()).detachTo(parameters.appendedRaw());
 
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
