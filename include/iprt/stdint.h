@@ -194,17 +194,17 @@ typedef uint64_t            uintmax_t;
 #  if ARCH_BITS == 32 \
    || defined(RT_OS_LINUX) \
    || defined(RT_OS_FREEBSD)
-#   if !defined(_INTPTR_T_DECLARED)  && !defined(_INTPTR_T)
+#   if !defined(_INTPTR_T_DECLARED)  && !defined(_INTPTR_T) && !defined(_INTPTR_T_DEFINED)
 typedef signed long         intptr_t;
 #   endif
-#   if !defined(_UINTPTR_T_DECLARED) && !defined(_UINTPTR_T)
+#   if !defined(_UINTPTR_T_DECLARED) && !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED)
 typedef unsigned long       uintptr_t;
 #   endif
 #  else
-#   if !defined(_INTPTR_T_DECLARED)  && !defined(_INTPTR_T)
+#   if !defined(_INTPTR_T_DECLARED)  && !defined(_INTPTR_T) && !defined(_INTPTR_T_DEFINED)
 typedef int64_t             intptr_t;
 #   endif
-#   if !defined(_UINTPTR_T_DECLARED) && !defined(_UINTPTR_T)
+#   if !defined(_UINTPTR_T_DECLARED) && !defined(_UINTPTR_T) && !defined(_UINTPTR_T_DEFINED)
 typedef uint64_t            uintptr_t;
 #   endif
 #  endif
