@@ -1188,9 +1188,12 @@ void UIMachineSettingsDisplay::prepareTabRecording()
 void UIMachineSettingsDisplay::prepareConnections()
 {
     /* Configure 'Screen' connections: */
-    connect(m_pVideoMemoryEditor, &UIVideoMemoryEditor::sigValidChanged, this, &UIMachineSettingsDisplay::revalidate);
-    connect(m_pSliderVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountSliderChange()));
-    connect(m_pEditorVideoScreenCount, SIGNAL(valueChanged(int)), this, SLOT(sltHandleGuestScreenCountEditorChange()));
+    connect(m_pVideoMemoryEditor, &UIVideoMemoryEditor::sigValidChanged,
+            this, &UIMachineSettingsDisplay::revalidate);
+    connect(m_pSliderVideoScreenCount, &QIAdvancedSlider::valueChanged,
+            this, &UIMachineSettingsDisplay::sltHandleGuestScreenCountSliderChange);
+    connect(m_pEditorVideoScreenCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIMachineSettingsDisplay::sltHandleGuestScreenCountEditorChange);
     connect(m_pGraphicsControllerEditor, &UIGraphicsControllerEditor::sigValueChanged,
             this, &UIMachineSettingsDisplay::sltHandleGraphicsControllerComboChange);
 #ifdef VBOX_WITH_3D_ACCELERATION
@@ -1203,19 +1206,27 @@ void UIMachineSettingsDisplay::prepareConnections()
 #endif
 
     /* Configure 'Remote Display' connections: */
-    connect(m_pCheckboxRemoteDisplay, SIGNAL(toggled(bool)), this, SLOT(revalidate()));
-    connect(m_pEditorRemoteDisplayPort, SIGNAL(textChanged(const QString &)), this, SLOT(revalidate()));
-    connect(m_pEditorRemoteDisplayTimeout, SIGNAL(textChanged(const QString &)), this, SLOT(revalidate()));
+    connect(m_pCheckboxRemoteDisplay, &QCheckBox::toggled, this, &UIMachineSettingsDisplay::revalidate);
+    connect(m_pEditorRemoteDisplayPort, &QLineEdit::textChanged, this, &UIMachineSettingsDisplay::revalidate);
+    connect(m_pEditorRemoteDisplayTimeout, &QLineEdit::textChanged, this, &UIMachineSettingsDisplay::revalidate);
 
     /* Configure 'Recording' connections: */
-    connect(m_pCheckboxVideoCapture, SIGNAL(toggled(bool)), this, SLOT(sltHandleRecordingCheckboxToggle()));
-    connect(m_pComboVideoCaptureSize, SIGNAL(currentIndexChanged(int)), this, SLOT(sltHandleRecordingVideoFrameSizeComboboxChange()));
-    connect(m_pEditorVideoCaptureWidth, SIGNAL(valueChanged(int)), this, SLOT(sltHandleRecordingVideoFrameWidthEditorChange()));
-    connect(m_pEditorVideoCaptureHeight, SIGNAL(valueChanged(int)), this, SLOT(sltHandleRecordingVideoFrameHeightEditorChange()));
-    connect(m_pSliderVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleRecordingVideoFrameRateSliderChange()));
-    connect(m_pEditorVideoCaptureFrameRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleRecordingVideoFrameRateEditorChange()));
-    connect(m_pSliderVideoCaptureQuality, SIGNAL(valueChanged(int)), this, SLOT(sltHandleRecordingVideoQualitySliderChange()));
-    connect(m_pEditorVideoCaptureBitRate, SIGNAL(valueChanged(int)), this, SLOT(sltHandleRecordingVideoBitRateEditorChange()));
+    connect(m_pCheckboxVideoCapture, &QCheckBox::toggled,
+            this, &UIMachineSettingsDisplay::sltHandleRecordingCheckboxToggle);
+    connect(m_pComboVideoCaptureSize, static_cast<void(QComboBox::*)(int)>(&QComboBox:: currentIndexChanged),
+            this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameSizeComboboxChange);
+    connect(m_pEditorVideoCaptureWidth, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameWidthEditorChange);
+    connect(m_pEditorVideoCaptureHeight, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameHeightEditorChange);
+    connect(m_pSliderVideoCaptureFrameRate, &QIAdvancedSlider::valueChanged,
+            this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameRateSliderChange);
+    connect(m_pEditorVideoCaptureFrameRate, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIMachineSettingsDisplay::sltHandleRecordingVideoFrameRateEditorChange);
+    connect(m_pSliderVideoCaptureQuality, &QIAdvancedSlider::valueChanged,
+            this, &UIMachineSettingsDisplay::sltHandleRecordingVideoQualitySliderChange);
+    connect(m_pEditorVideoCaptureBitRate, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIMachineSettingsDisplay::sltHandleRecordingVideoBitRateEditorChange);
 
     connect(m_pComboBoxCaptureMode, static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
                 this, &UIMachineSettingsDisplay::sltHandleRecordingComboBoxChange);
