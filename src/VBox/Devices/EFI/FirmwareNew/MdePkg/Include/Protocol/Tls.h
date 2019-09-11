@@ -7,13 +7,7 @@
   The EFI TLS Protocol provides the ability to manage TLS session.
 
   Copyright (c) 2016, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   This Protocol is introduced in UEFI Specification 2.5
@@ -141,10 +135,12 @@ typedef enum {
 ///       Hello Messages". The value of EFI_TLS_CIPHER is from TLS Cipher
 ///       Suite Registry of IANA.
 ///
+#pragma pack (1)
 typedef struct {
   UINT8                         Data1;
   UINT8                         Data2;
 } EFI_TLS_CIPHER;
+#pragma pack ()
 
 ///
 /// EFI_TLS_COMPRESSION
@@ -157,11 +153,13 @@ typedef UINT8 EFI_TLS_COMPRESSION;
 /// Note: The definition of EFI_TLS_EXTENSION if from "RFC 5246 A.4.1.
 ///       Hello Messages".
 ///
+#pragma pack (1)
 typedef struct {
   UINT16                        ExtensionType;
   UINT16                        Length;
   UINT8                         Data[1];
 } EFI_TLS_EXTENSION;
+#pragma pack ()
 
 ///
 /// EFI_TLS_VERIFY
@@ -194,29 +192,35 @@ typedef UINT32  EFI_TLS_VERIFY;
 /// Note: The definition of EFI_TLS_RANDOM is from "RFC 5246 A.4.1.
 ///       Hello Messages".
 ///
+#pragma pack (1)
 typedef struct {
   UINT32                        GmtUnixTime;
   UINT8                         RandomBytes[28];
 } EFI_TLS_RANDOM;
+#pragma pack ()
 
 ///
 /// EFI_TLS_MASTER_SECRET
 /// Note: The definition of EFI_TLS_MASTER_SECRET is from "RFC 5246 8.1.
 ///       Computing the Master Secret".
 ///
+#pragma pack (1)
 typedef struct {
   UINT8                         Data[48];
 } EFI_TLS_MASTER_SECRET;
+#pragma pack ()
 
 ///
 /// EFI_TLS_SESSION_ID
 /// Note: The definition of EFI_TLS_SESSION_ID is from "RFC 5246 A.4.1. Hello Messages".
 ///
 #define MAX_TLS_SESSION_ID_LENGTH  32
+#pragma pack (1)
 typedef struct {
   UINT16                        Length;
   UINT8                         Data[MAX_TLS_SESSION_ID_LENGTH];
 } EFI_TLS_SESSION_ID;
+#pragma pack ()
 
 ///
 /// EFI_TLS_SESSION_STATE

@@ -2,14 +2,8 @@
 
   XHCI transfer scheduling routines.
 
-Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1411,6 +1405,71 @@ XhciDelAllAsyncIntTransfers (
 }
 
 /**
+  Insert a single asynchronous interrupt transfer for
+  the device and endpoint.
+
+  @param Xhc            The XHCI Instance
+  @param BusAddr        The logical device address assigned by UsbBus driver
+  @param EpAddr         Endpoint addrress
+  @param DevSpeed       The device speed
+  @param MaxPacket      The max packet length of the endpoint
+  @param DataLen        The length of data buffer
+  @param Callback       The function to call when data is transferred
+  @param Context        The context to the callback
+
+  @return Created URB or NULL
+
+**/
+URB *
+XhciInsertAsyncIntTransfer (
+  IN USB_XHCI_INSTANCE                  *Xhc,
+  IN UINT8                              BusAddr,
+  IN UINT8                              EpAddr,
+  IN UINT8                              DevSpeed,
+  IN UINTN                              MaxPacket,
+  IN UINTN                              DataLen,
+  IN EFI_ASYNC_USB_TRANSFER_CALLBACK    Callback,
+  IN VOID                               *Context
+  )
+{
+  VOID      *Data;
+  URB       *Urb;
+
+  Data = AllocateZeroPool (DataLen);
+  if (Data == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: failed to allocate buffer\n", __FUNCTION__));
+    return NULL;
+  }
+
+  Urb = XhcCreateUrb (
+          Xhc,
+          BusAddr,
+          EpAddr,
+          DevSpeed,
+          MaxPacket,
+          XHC_INT_TRANSFER_ASYNC,
+          NULL,
+          Data,
+          DataLen,
+          Callback,
+          Context
+          );
+  if (Urb == NULL) {
+    DEBUG ((DEBUG_ERROR, "%a: failed to create URB\n", __FUNCTION__));
+    FreePool (Data);
+    return NULL;
+  }
+
+  //
+  // New asynchronous transfer must inserted to the head.
+  // Check the comments in XhcMoniteAsyncRequests
+  //
+  InsertHeadList (&Xhc->AsyncIntTransfers, &Urb->UrbList);
+
+  return Urb;
+}
+
+/**
   Update the queue head for next round of asynchronous transfer
 
   @param  Xhc     The XHCI Instance.
@@ -1556,9 +1615,12 @@ XhcMonitorAsyncRequests (
     //
     ProcBuf = NULL;
     if (Urb->Result == EFI_USB_NOERROR) {
-      ASSERT (Urb->Completed <= Urb->DataLen);
-
-      ProcBuf = AllocateZeroPool (Urb->Completed);
+      //
+      // Make sure the data received from HW is no more than expected.
+      //
+      if (Urb->Completed <= Urb->DataLen) {
+        ProcBuf = AllocateZeroPool (Urb->Completed);
+      }
 
       if (ProcBuf == NULL) {
         XhcUpdateAsyncRequest (Xhc, Urb);

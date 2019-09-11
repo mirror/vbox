@@ -1,14 +1,8 @@
 /** @file
   Master header file for SecCore.
 
-  Copyright (c) 2008 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2008 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,14 +11,13 @@
 
 #include <PiPei.h>
 
-#include <Ppi/SecPlatformInformation.h>
 #include <Ppi/SecPlatformInformation2.h>
 #include <Ppi/TemporaryRamDone.h>
 #include <Ppi/SecPerformance.h>
+#include <Ppi/PeiCoreFvLocation.h>
 
 #include <Guid/FirmwarePerformance.h>
 
-#include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 #include <Library/PcdLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -76,6 +69,7 @@ SecTemporaryRamDone (
   @param BootFirmwareVolume  Base address of the Boot Firmware Volume.
 **/
 VOID
+NORETURN
 EFIAPI
 SecStartup (
   IN UINT32                   SizeOfRam,
@@ -89,14 +83,16 @@ SecStartup (
   It also find SEC and PEI Core file debug information. It will report them if
   remote debug is enabled.
 
-  @param  BootFirmwareVolumePtr  Point to the boot firmware volume.
-  @param  PeiCoreEntryPoint      Point to the PEI core entry point.
+  @param   SecCoreFirmwareVolumePtr Point to the firmware volume for finding SecCore.
+  @param   PeiCoreFirmwareVolumePtr Point to the firmware volume for finding PeiCore.
+  @param   PeiCoreEntryPoint        The entry point of the PEI core.
 
 **/
 VOID
 EFIAPI
 FindAndReportEntryPoints (
-  IN  EFI_FIRMWARE_VOLUME_HEADER       *BootFirmwareVolumePtr,
+  IN  EFI_FIRMWARE_VOLUME_HEADER       *SecCoreFirmwareVolumePtr,
+  IN  EFI_FIRMWARE_VOLUME_HEADER       *PeiCoreFirmwareVolumePtr,
   OUT EFI_PEI_CORE_ENTRY_POINT         *PeiCoreEntryPoint
   );
 

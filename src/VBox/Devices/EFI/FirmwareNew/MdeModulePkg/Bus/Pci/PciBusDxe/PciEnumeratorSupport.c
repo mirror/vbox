@@ -1,15 +1,9 @@
 /** @file
   PCI emumeration support functions implementation for PCI Bus module.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -88,7 +82,7 @@ PciDevicePresent (
   root bridge will then be created.
 
   @param Bridge         Parent bridge instance.
-  @param StartBusNumber Bus number of begining.
+  @param StartBusNumber Bus number of beginning.
 
   @retval EFI_SUCCESS   PCI device is found.
   @retval other         Some error occurred when reading PCI bridge information.
@@ -208,7 +202,7 @@ PciPciDeviceInfoCollector (
 }
 
 /**
-  Seach required device and create PCI device instance.
+  Search required device and create PCI device instance.
 
   @param Bridge     Parent bridge instance.
   @param Pci        Input PCI device information block.
@@ -370,14 +364,14 @@ DumpPpbPaddingResource (
 
       if (Descriptor->AddrSpaceGranularity == 32) {
         //
-        // prefechable
+        // prefetchable
         //
         if (Descriptor->SpecificFlag == EFI_ACPI_MEMORY_RESOURCE_SPECIFIC_FLAG_CACHEABLE_PREFETCHABLE) {
           Type = PciBarTypePMem32;
         }
 
         //
-        // Non-prefechable
+        // Non-prefetchable
         //
         if (Descriptor->SpecificFlag == 0) {
           Type = PciBarTypeMem32;
@@ -386,14 +380,14 @@ DumpPpbPaddingResource (
 
       if (Descriptor->AddrSpaceGranularity == 64) {
         //
-        // prefechable
+        // prefetchable
         //
         if (Descriptor->SpecificFlag == EFI_ACPI_MEMORY_RESOURCE_SPECIFIC_FLAG_CACHEABLE_PREFETCHABLE) {
           Type = PciBarTypePMem64;
         }
 
         //
-        // Non-prefechable
+        // Non-prefetchable
         //
         if (Descriptor->SpecificFlag == 0) {
           Type = PciBarTypeMem64;
@@ -568,7 +562,7 @@ GatherPpbInfo (
     PCI_DISABLE_COMMAND_REGISTER (PciIoDevice, EFI_PCI_COMMAND_BITS_OWNED);
 
     //
-    // Initalize the bridge control register
+    // Initialize the bridge control register
     //
     PCI_DISABLE_BRIDGE_CONTROL_REGISTER (PciIoDevice, EFI_PCI_BRIDGE_CONTROL_BITS_OWNED);
 
@@ -722,7 +716,7 @@ GatherP2CInfo (
     PCI_DISABLE_COMMAND_REGISTER (PciIoDevice, EFI_PCI_COMMAND_BITS_OWNED);
 
     //
-    // Initalize the bridge control register
+    // Initialize the bridge control register
     //
     PCI_DISABLE_BRIDGE_CONTROL_REGISTER (PciIoDevice, EFI_PCCARD_BRIDGE_CONTROL_BITS_OWNED);
   }
@@ -746,7 +740,7 @@ GatherP2CInfo (
 }
 
 /**
-  Create device path for pci deivce.
+  Create device path for pci device.
 
   @param ParentDevicePath  Parent bridge's path.
   @param PciIoDevice       Pci device instance.
@@ -922,7 +916,7 @@ BarExisted (
   @param PciIoDevice      Pci device instance.
   @param Command          Input command register value, and
                           returned supported register value.
-  @param BridgeControl    Inout bridge control value for PPB or P2C, and
+  @param BridgeControl    Input bridge control value for PPB or P2C, and
                           returned supported bridge control value.
   @param OldCommand       Returned and stored old command register offset.
   @param OldBridgeControl Returned and stored old Bridge control value for PPB or P2C.
@@ -1205,7 +1199,7 @@ DetermineDeviceAttribute (
   EFI_STATUS      Status;
 
   //
-  // For Root Bridge, just copy it by RootBridgeIo proctocol
+  // For Root Bridge, just copy it by RootBridgeIo protocol
   // so as to keep consistent with the actual attribute
   //
   if (PciIoDevice->Parent == NULL) {
@@ -1254,9 +1248,11 @@ DetermineDeviceAttribute (
     PciSetDeviceAttribute (PciIoDevice, OldCommand, OldBridgeControl, EFI_SET_ATTRIBUTES);
 
     //
-    // Enable other supported attributes but not defined in PCI_IO_PROTOCOL
-    //
-    PCI_ENABLE_COMMAND_REGISTER (PciIoDevice, EFI_PCI_COMMAND_MEMORY_WRITE_AND_INVALIDATE);
+    // Enable other PCI supported attributes but not defined in PCI_IO_PROTOCOL
+    // For PCI Express devices, Memory Write and Invalidate is hardwired to 0b so only enable it for PCI devices.
+    if (!PciIoDevice->IsPciExp) {
+      PCI_ENABLE_COMMAND_REGISTER (PciIoDevice, EFI_PCI_COMMAND_MEMORY_WRITE_AND_INVALIDATE);
+    }
   }
 
   FastB2BSupport = TRUE;
@@ -1280,7 +1276,7 @@ DetermineDeviceAttribute (
       return Status;
     }
     //
-    // Detect Fast Bact to Bact support for the device under the bridge
+    // Detect Fast Back to Back support for the device under the bridge
     //
     Status = GetFastBackToBackSupport (Temp, PCI_PRIMARY_STATUS_OFFSET);
     if (FastB2BSupport && EFI_ERROR (Status)) {
@@ -1693,7 +1689,7 @@ PciIovParseVfBar (
       }
 
       //
-      // Fix the length to support some spefic 64 bit BAR
+      // Fix the length to support some special 64 bit BAR
       //
       Value |= ((UINT32) -1 << HighBitSet32 (Value));
 
@@ -1820,7 +1816,7 @@ PciParseBar (
 
     }
     //
-    // Workaround. Some platforms inplement IO bar with 0 length
+    // Workaround. Some platforms implement IO bar with 0 length
     // Need to treat it as no-bar
     //
     if (PciIoDevice->PciBar[BarIndex].Length == 0) {
@@ -1904,7 +1900,7 @@ PciParseBar (
       }
 
       //
-      // Fix the length to support some spefic 64 bit BAR
+      // Fix the length to support some special 64 bit BAR
       //
       if (Value == 0) {
         DEBUG ((EFI_D_INFO, "[PciBus]BAR probing for upper 32bit of MEM64 BAR returns 0, change to 0xFFFFFFFF.\n"));
@@ -1985,7 +1981,7 @@ InitializePciDevice (
   //
   // Put all the resource apertures
   // Resource base is set to all ones so as to indicate its resource
-  // has not been alloacted
+  // has not been allocated
   //
   for (Offset = 0x10; Offset <= 0x24; Offset += sizeof (UINT32)) {
     PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, Offset, 1, &gAllOne);
@@ -2075,10 +2071,10 @@ InitializeP2C (
 }
 
 /**
-  Create and initiliaze general PCI I/O device instance for
+  Create and initialize general PCI I/O device instance for
   PCI device/bridge device/hotplug bridge device.
 
-  @param PciRootBridgeIo   Pointer to instance of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
+  @param Bridge            Parent bridge instance.
   @param Pci               Input Pci information block.
   @param Bus               Device Bus NO.
   @param Device            Device device NO.
@@ -2441,7 +2437,7 @@ PciEnumeratorLight (
     }
 
     //
-    // Record the root bridgeio protocol
+    // Record the root bridge-io protocol
     //
     RootBridgeDev->PciRootBridgeIo = PciRootBridgeIo;
 
@@ -2474,7 +2470,7 @@ PciEnumeratorLight (
     } else {
 
       //
-      // If unsuccessly, destroy the entire node
+      // If unsuccessfully, destroy the entire node
       //
       DestroyRootBridge (RootBridgeDev);
     }

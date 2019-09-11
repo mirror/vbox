@@ -1,13 +1,7 @@
 /** @file
 
-Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -38,6 +32,23 @@ PAGE_ATTRIBUTE_TABLE mPageAttributeTable[] = {
   {Page1G,  SIZE_1GB, PAGING_1G_ADDRESS_MASK_64},
 };
 
+UINTN  mInternalGr3;
+
+/**
+  Set the internal page table base address.
+  If it is non zero, further MemoryAttribute modification will be on this page table.
+  If it is zero, further MemoryAttribute modification will be on real page table.
+
+  @param Cr3 page table base.
+**/
+VOID
+SetPageTableBase (
+  IN UINTN   Cr3
+  )
+{
+  mInternalGr3 = Cr3;
+}
+
 /**
   Return page table base.
 
@@ -48,6 +59,9 @@ GetPageTableBase (
   VOID
   )
 {
+  if (mInternalGr3 != 0) {
+    return mInternalGr3;
+  }
   return (AsmReadCr3 () & PAGING_4K_ADDRESS_MASK_64);
 }
 
@@ -111,18 +125,36 @@ GetPageTableEntry (
   UINTN                 Index2;
   UINTN                 Index3;
   UINTN                 Index4;
+  UINTN                 Index5;
   UINT64                *L1PageTable;
   UINT64                *L2PageTable;
   UINT64                *L3PageTable;
   UINT64                *L4PageTable;
+  UINT64                *L5PageTable;
+  IA32_CR4              Cr4;
+  BOOLEAN               Enable5LevelPaging;
 
+  Index5 = ((UINTN)RShiftU64 (Address, 48)) & PAGING_PAE_INDEX_MASK;
   Index4 = ((UINTN)RShiftU64 (Address, 39)) & PAGING_PAE_INDEX_MASK;
   Index3 = ((UINTN)Address >> 30) & PAGING_PAE_INDEX_MASK;
   Index2 = ((UINTN)Address >> 21) & PAGING_PAE_INDEX_MASK;
   Index1 = ((UINTN)Address >> 12) & PAGING_PAE_INDEX_MASK;
 
+  Cr4.UintN = AsmReadCr4 ();
+  Enable5LevelPaging = (BOOLEAN) (Cr4.Bits.LA57 == 1);
+
   if (sizeof(UINTN) == sizeof(UINT64)) {
-    L4PageTable = (UINT64 *)GetPageTableBase ();
+    if (Enable5LevelPaging) {
+      L5PageTable = (UINT64 *)GetPageTableBase ();
+      if (L5PageTable[Index5] == 0) {
+        *PageAttribute = PageNone;
+        return NULL;
+      }
+
+      L4PageTable = (UINT64 *)(UINTN)(L5PageTable[Index5] & ~mAddressEncMask & PAGING_4K_ADDRESS_MASK_64);
+    } else {
+      L4PageTable = (UINT64 *)GetPageTableBase ();
+    }
     if (L4PageTable[Index4] == 0) {
       *PageAttribute = PageNone;
       return NULL;
@@ -220,6 +252,17 @@ ConvertPageEntryAttribute (
   if ((Attributes & EFI_MEMORY_RO) != 0) {
     if (IsSet) {
       NewPageEntry &= ~(UINT64)IA32_PG_RW;
+      if (mInternalGr3 != 0) {
+        // Environment setup
+        // ReadOnly page need set Dirty bit for shadow stack
+        NewPageEntry |= IA32_PG_D;
+        // Clear user bit for supervisor shadow stack
+        NewPageEntry &= ~(UINT64)IA32_PG_U;
+      } else {
+        // Runtime update
+        // Clear dirty bit for non shadow stack, to protect RO page.
+        NewPageEntry &= ~(UINT64)IA32_PG_D;
+      }
     } else {
       NewPageEntry |= IA32_PG_RW;
     }
@@ -561,12 +604,12 @@ SmmSetMemoryAttributesEx (
                                 BaseAddress and Length cannot be modified.
   @retval EFI_INVALID_PARAMETER Length is zero.
                                 Attributes specified an illegal combination of attributes that
-                                cannot be set together.
+                                cannot be cleared together.
   @retval EFI_OUT_OF_RESOURCES  There are not enough system resources to modify the attributes of
                                 the memory resource range.
   @retval EFI_UNSUPPORTED       The processor does not support one or more bytes of the memory
                                 resource range specified by BaseAddress and Length.
-                                The bit mask of attributes is not support for the memory resource
+                                The bit mask of attributes is not supported for the memory resource
                                 range specified by BaseAddress and Length.
 
 **/
@@ -613,7 +656,7 @@ SmmClearMemoryAttributesEx (
                                 the memory resource range.
   @retval EFI_UNSUPPORTED       The processor does not support one or more bytes of the memory
                                 resource range specified by BaseAddress and Length.
-                                The bit mask of attributes is not support for the memory resource
+                                The bit mask of attributes is not supported for the memory resource
                                 range specified by BaseAddress and Length.
 
 **/
@@ -641,12 +684,12 @@ SmmSetMemoryAttributes (
                                 BaseAddress and Length cannot be modified.
   @retval EFI_INVALID_PARAMETER Length is zero.
                                 Attributes specified an illegal combination of attributes that
-                                cannot be set together.
+                                cannot be cleared together.
   @retval EFI_OUT_OF_RESOURCES  There are not enough system resources to modify the attributes of
                                 the memory resource range.
   @retval EFI_UNSUPPORTED       The processor does not support one or more bytes of the memory
                                 resource range specified by BaseAddress and Length.
-                                The bit mask of attributes is not support for the memory resource
+                                The bit mask of attributes is not supported for the memory resource
                                 range specified by BaseAddress and Length.
 
 **/
@@ -661,7 +704,59 @@ SmmClearMemoryAttributes (
   return SmmClearMemoryAttributesEx (BaseAddress, Length, Attributes, NULL);
 }
 
+/**
+  Set ShadowStack memory.
 
+  @param[in]  Cr3              The page table base address.
+  @param[in]  BaseAddress      The physical address that is the start address of a memory region.
+  @param[in]  Length           The size in bytes of the memory region.
+
+  @retval EFI_SUCCESS           The shadow stack memory is set.
+**/
+EFI_STATUS
+SetShadowStack (
+  IN  UINTN                                      Cr3,
+  IN  EFI_PHYSICAL_ADDRESS                       BaseAddress,
+  IN  UINT64                                     Length
+  )
+{
+  EFI_STATUS  Status;
+
+  SetPageTableBase (Cr3);
+
+  Status = SmmSetMemoryAttributes (BaseAddress, Length, EFI_MEMORY_RO);
+
+  SetPageTableBase (0);
+
+  return Status;
+}
+
+/**
+  Set not present memory.
+
+  @param[in]  Cr3              The page table base address.
+  @param[in]  BaseAddress      The physical address that is the start address of a memory region.
+  @param[in]  Length           The size in bytes of the memory region.
+
+  @retval EFI_SUCCESS           The not present memory is set.
+**/
+EFI_STATUS
+SetNotPresentPage (
+  IN  UINTN                                      Cr3,
+  IN  EFI_PHYSICAL_ADDRESS                       BaseAddress,
+  IN  UINT64                                     Length
+  )
+{
+  EFI_STATUS  Status;
+
+  SetPageTableBase (Cr3);
+
+  Status = SmmSetMemoryAttributes (BaseAddress, Length, EFI_MEMORY_RP);
+
+  SetPageTableBase (0);
+
+  return Status;
+}
 
 /**
   Retrieves a pointer to the system configuration table from the SMM System Table
@@ -1350,7 +1445,7 @@ IsSmmCommBufferForbiddenAddress (
   @retval EFI_UNSUPPORTED       The processor does not support one or more
                                 bytes of the memory resource range specified
                                 by BaseAddress and Length.
-                                The bit mask of attributes is not support for
+                                The bit mask of attributes is not supported for
                                 the memory resource range specified by
                                 BaseAddress and Length.
 
@@ -1375,17 +1470,17 @@ EdkiiSmmSetMemoryAttributes (
   @param  BaseAddress       The physical address that is the start address of
                             a memory region.
   @param  Length            The size in bytes of the memory region.
-  @param  Attributes        The bit mask of attributes to set for the memory
+  @param  Attributes        The bit mask of attributes to clear for the memory
                             region.
 
-  @retval EFI_SUCCESS           The attributes were set for the memory region.
+  @retval EFI_SUCCESS           The attributes were cleared for the memory region.
   @retval EFI_INVALID_PARAMETER Length is zero.
                                 Attributes specified an illegal combination of
-                                attributes that cannot be set together.
+                                attributes that cannot be cleared together.
   @retval EFI_UNSUPPORTED       The processor does not support one or more
                                 bytes of the memory resource range specified
                                 by BaseAddress and Length.
-                                The bit mask of attributes is not support for
+                                The bit mask of attributes is not supported for
                                 the memory resource range specified by
                                 BaseAddress and Length.
 
@@ -1403,7 +1498,7 @@ EdkiiSmmClearMemoryAttributes (
 }
 
 /**
-  This function retrieve the attributes of the memory region specified by
+  This function retrieves the attributes of the memory region specified by
   BaseAddress and Length. If different attributes are got from different part
   of the memory region, EFI_NO_MAPPING will be returned.
 
@@ -1421,9 +1516,6 @@ EdkiiSmmClearMemoryAttributes (
   @retval EFI_UNSUPPORTED       The processor does not support one or more
                                 bytes of the memory resource range specified
                                 by BaseAddress and Length.
-                                The bit mask of attributes is not support for
-                                the memory resource range specified by
-                                BaseAddress and Length.
 
 **/
 EFI_STATUS

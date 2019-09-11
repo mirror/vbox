@@ -1,14 +1,8 @@
 /** @file
   PCI Rom supporting funtions implementation for PCI Bus module.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -583,23 +577,10 @@ RomDecode (
   )
 {
   UINT32              Value32;
-  UINT32              Offset;
-  UINT32              OffsetMax;
   EFI_PCI_IO_PROTOCOL *PciIo;
 
   PciIo = &PciDevice->PciIo;
   if (Enable) {
-    //
-    // Clear all bars
-    //
-    OffsetMax = 0x24;
-    if (IS_PCI_BRIDGE(&PciDevice->Pci)) {
-      OffsetMax = 0x14;
-    }
-
-    for (Offset = 0x10; Offset <= OffsetMax; Offset += sizeof (UINT32)) {
-      PciIo->Pci.Write (PciIo, EfiPciIoWidthUint32, Offset, 1, &gAllZero);
-    }
 
     //
     // set the Rom base address: now is hardcode
@@ -617,7 +598,7 @@ RomDecode (
     //
     // Programe all upstream bridge
     //
-    ProgrameUpstreamBridgeForRom(PciDevice, RomBar, TRUE);
+    ProgramUpstreamBridgeForRom (PciDevice, RomBar, TRUE);
 
     //
     // Setting the memory space bit in the function's command register
@@ -634,7 +615,7 @@ RomDecode (
     //
     // Destroy the programmed bar in all the upstream bridge.
     //
-    ProgrameUpstreamBridgeForRom(PciDevice, RomBar, FALSE);
+    ProgramUpstreamBridgeForRom (PciDevice, RomBar, FALSE);
 
     //
     // disable rom decode
@@ -709,13 +690,6 @@ ProcessOpRomImage (
     // Skip the image if it is not an EFI PCI Option ROM image
     //
     if (Pcir->CodeType != PCI_CODE_TYPE_EFI_IMAGE) {
-      goto NextImage;
-    }
-
-    //
-    // Skip the EFI PCI Option ROM image if its machine type is not supported
-    //
-    if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (EfiRomHeader->EfiMachineType)) {
       goto NextImage;
     }
 

@@ -11,15 +11,10 @@
         always on the first sector of a media. The first sector also contains
         the legacy boot strap code.
 
+Copyright (c) 2018 Qualcomm Datacenter Technologies, Inc.
 Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -149,6 +144,13 @@ PartitionInstallMbrChildHandles (
   MediaId   = BlockIo->Media->MediaId;
   LastBlock = BlockIo->Media->LastBlock;
 
+  //
+  // Ensure the block size can hold the MBR
+  //
+  if (BlockSize < sizeof (MASTER_BOOT_RECORD)) {
+    return EFI_NOT_FOUND;
+  }
+
   Mbr = AllocatePool (BlockSize);
   if (Mbr == NULL) {
     return Found;
@@ -246,7 +248,8 @@ PartitionInstallMbrChildHandles (
                 &PartitionInfo,
                 HdDev.PartitionStart,
                 HdDev.PartitionStart + HdDev.PartitionSize - 1,
-                MBR_SIZE
+                MBR_SIZE,
+                ((Mbr->Partition[Index].OSIndicator == EFI_PARTITION) ? &gEfiPartTypeSystemPartGuid: NULL)
                 );
 
       if (!EFI_ERROR (Status)) {
@@ -317,7 +320,8 @@ PartitionInstallMbrChildHandles (
                  &PartitionInfo,
                  HdDev.PartitionStart - ParentHdDev.PartitionStart,
                  HdDev.PartitionStart - ParentHdDev.PartitionStart + HdDev.PartitionSize - 1,
-                 MBR_SIZE
+                 MBR_SIZE,
+                 ((Mbr->Partition[0].OSIndicator == EFI_PARTITION) ? &gEfiPartTypeSystemPartGuid: NULL)
                  );
       if (!EFI_ERROR (Status)) {
         Found = EFI_SUCCESS;

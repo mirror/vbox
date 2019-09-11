@@ -2,15 +2,9 @@
 # This file is used to define class objects of INF file [LibraryClasses] section.
 # It will consumed by InfParser.
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfLibraryClassesObject
@@ -38,10 +32,10 @@ def GetArchModuleType(KeyList):
         #
         # Validate Arch
         #
-        if (ArchItem == '' or ArchItem == None):
+        if (ArchItem == '' or ArchItem is None):
             ArchItem = 'COMMON'
 
-        if (ModuleItem == '' or ModuleItem == None):
+        if (ModuleItem == '' or ModuleItem is None):
             ModuleItem = 'COMMON'
 
         if ArchItem not in __SupArchList:
@@ -136,7 +130,7 @@ class InfLibraryClassObject():
                 LibItemObj.CurrentLine.SetLineNo(LibItem[2][1])
                 LibItemObj.CurrentLine.SetLineString(LibItem[2][0])
                 LibItem = LibItem[0]
-                if HelpStringObj != None:
+                if HelpStringObj is not None:
                     LibItemObj.SetHelpString(HelpStringObj)
                 if len(LibItem) >= 1:
                     if LibItem[0].strip() != '':
@@ -238,7 +232,7 @@ class InfLibraryClassObject():
                 LibItemObj.SetVersion(LibItem[1])
                 LibItemObj.SetSupArchList(__SupArchList)
 
-            if self.LibraryClasses.has_key((LibItemObj)):
+            if (LibItemObj) in self.LibraryClasses:
                 LibraryList = self.LibraryClasses[LibItemObj]
                 LibraryList.append(LibItemObj)
                 self.LibraryClasses[LibItemObj] = LibraryList

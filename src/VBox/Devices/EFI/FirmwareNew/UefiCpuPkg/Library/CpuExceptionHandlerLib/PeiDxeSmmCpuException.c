@@ -2,13 +2,7 @@
   CPU Exception Library provides PEI/DXE/SMM CPU common exception handler.
 
 Copyright (c) 2012 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -40,7 +34,8 @@ CommonExceptionHandlerWorker (
   switch (ReservedVectors[ExceptionType].Attribute) {
   case EFI_VECTOR_HANDOFF_HOOK_BEFORE:
     //
-    // Need to jmp to old IDT handler after this exception handler
+    // The new exception handler registered by RegisterCpuInterruptHandler() is executed BEFORE original handler.
+    // Save the original handler to stack so the assembly code can jump to it instead of returning from handler.
     //
     ExceptionHandlerContext->ExceptionDataFlag = (mErrorCodeFlag & (1 << ExceptionType)) ? TRUE : FALSE;
     ExceptionHandlerContext->OldIdtHandler     = ReservedVectors[ExceptionType].ExceptonHandler;
@@ -48,11 +43,13 @@ CommonExceptionHandlerWorker (
   case EFI_VECTOR_HANDOFF_HOOK_AFTER:
     while (TRUE) {
       //
-      // If if anyone has gotten SPIN_LOCK for owner running hook after
+      // If spin-lock can be acquired, it's the first time entering here.
       //
       if (AcquireSpinLockOrFail (&ReservedVectors[ExceptionType].SpinLock)) {
         //
-        // Need to execute old IDT handler before running this exception handler
+        // The new exception handler registered by RegisterCpuInterruptHandler() is executed AFTER original handler.
+        // Save the original handler to stack but skip running the new handler so the original handler is executed
+        // firstly.
         //
         ReservedVectors[ExceptionType].ApicId = GetApicId ();
         ArchSaveExceptionContext (ExceptionType, SystemContext, ExceptionHandlerData);
@@ -61,7 +58,8 @@ CommonExceptionHandlerWorker (
         return;
       }
       //
-      // If failed to acquire SPIN_LOCK, check if it was locked by processor itself
+      // If spin-lock cannot be acquired, it's the second time entering here.
+      // 'break' instead of 'return' is used so the new exception handler can be executed.
       //
       if (ReservedVectors[ExceptionType].ApicId == GetApicId ()) {
         //

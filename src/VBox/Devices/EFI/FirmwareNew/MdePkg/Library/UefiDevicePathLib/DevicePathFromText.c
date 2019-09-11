@@ -2,13 +2,7 @@
   DevicePathFromText protocol as defined in the UEFI 2.0 specification.
 
 Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -919,7 +913,16 @@ DevPathFromTextAcpiExp (
                                                   );
 
   AcpiEx->HID = EisaIdFromText (HIDStr);
-  AcpiEx->CID = EisaIdFromText (CIDStr);
+  //
+  // According to UEFI spec, the CID parametr is optional and has a default value of 0.
+  // So when the CID parametr is not specified or specified as 0 in the text device node.
+  // Set the CID to 0 in the ACPI extension device path structure.
+  //
+  if (*CIDStr == L'\0' || *CIDStr == L'0') {
+    AcpiEx->CID = 0;
+  } else {
+    AcpiEx->CID = EisaIdFromText (CIDStr);
+  }
   AcpiEx->UID = 0;
 
   AsciiStr = (CHAR8 *) ((UINT8 *)AcpiEx + sizeof (ACPI_EXTENDED_HID_DEVICE_PATH));
@@ -1758,12 +1761,12 @@ DevPathFromTextDebugPort (
   IN CHAR16 *TextDeviceNode
   )
 {
-  VENDOR_DEFINED_MESSAGING_DEVICE_PATH  *Vend;
+  VENDOR_DEVICE_PATH  *Vend;
 
-  Vend = (VENDOR_DEFINED_MESSAGING_DEVICE_PATH *) CreateDeviceNode (
+  Vend = (VENDOR_DEVICE_PATH *) CreateDeviceNode (
                                                     MESSAGING_DEVICE_PATH,
                                                     MSG_VENDOR_DP,
-                                                    (UINT16) sizeof (VENDOR_DEFINED_MESSAGING_DEVICE_PATH)
+                                                    (UINT16) sizeof (VENDOR_DEVICE_PATH)
                                                     );
 
   CopyGuid (&Vend->Guid, &gEfiDebugPortProtocolGuid);
@@ -2061,22 +2064,42 @@ ConvertFromTextUsbClass (
   PIDStr      = GetNextParamStr (&TextDeviceNode);
   if (UsbClassText->ClassExist) {
     ClassStr = GetNextParamStr (&TextDeviceNode);
-    UsbClass->DeviceClass = (UINT8) Strtoi (ClassStr);
+    if (*ClassStr == L'\0') {
+      UsbClass->DeviceClass = 0xFF;
+    } else {
+      UsbClass->DeviceClass = (UINT8) Strtoi (ClassStr);
+    }
   } else {
     UsbClass->DeviceClass = UsbClassText->Class;
   }
   if (UsbClassText->SubClassExist) {
     SubClassStr = GetNextParamStr (&TextDeviceNode);
-    UsbClass->DeviceSubClass = (UINT8) Strtoi (SubClassStr);
+    if (*SubClassStr == L'\0') {
+      UsbClass->DeviceSubClass = 0xFF;
+    } else {
+      UsbClass->DeviceSubClass = (UINT8) Strtoi (SubClassStr);
+    }
   } else {
     UsbClass->DeviceSubClass = UsbClassText->SubClass;
   }
 
   ProtocolStr = GetNextParamStr (&TextDeviceNode);
 
-  UsbClass->VendorId        = (UINT16) Strtoi (VIDStr);
-  UsbClass->ProductId       = (UINT16) Strtoi (PIDStr);
-  UsbClass->DeviceProtocol  = (UINT8) Strtoi (ProtocolStr);
+  if (*VIDStr == L'\0') {
+    UsbClass->VendorId        = 0xFFFF;
+  } else {
+    UsbClass->VendorId        = (UINT16) Strtoi (VIDStr);
+  }
+  if (*PIDStr == L'\0') {
+    UsbClass->ProductId       = 0xFFFF;
+  } else {
+    UsbClass->ProductId       = (UINT16) Strtoi (PIDStr);
+  }
+  if (*ProtocolStr == L'\0') {
+    UsbClass->DeviceProtocol  = 0xFF;
+  } else {
+    UsbClass->DeviceProtocol  = (UINT8) Strtoi (ProtocolStr);
+  }
 
   return (EFI_DEVICE_PATH_PROTOCOL *) UsbClass;
 }
@@ -3416,7 +3439,15 @@ DevPathFromTextSata (
                                 (UINT16) sizeof (SATA_DEVICE_PATH)
                                 );
   Sata->HBAPortNumber            = (UINT16) Strtoi (Param1);
-  Sata->PortMultiplierPortNumber = (UINT16) Strtoi (Param2);
+
+  //
+  // According to UEFI spec, if PMPN is not provided, the default is 0xFFFF
+  //
+  if (*Param2 == L'\0' ) {
+    Sata->PortMultiplierPortNumber = 0xFFFF;
+  } else {
+    Sata->PortMultiplierPortNumber = (UINT16) Strtoi (Param2);
+  }
   Sata->Lun                      = (UINT16) Strtoi (Param3);
 
   return (EFI_DEVICE_PATH_PROTOCOL *) Sata;

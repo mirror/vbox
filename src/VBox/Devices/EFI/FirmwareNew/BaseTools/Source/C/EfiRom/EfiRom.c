@@ -1,14 +1,8 @@
 /** @file
 Utility program to create an EFI option ROM image from binary and EFI PE32 files.
 
-Copyright (c) 1999 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available
-under the terms and conditions of the BSD License which accompanies this
-distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 1999 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -351,7 +345,7 @@ Returns:
   } else {
     PciDs30->ImageLength = (UINT16) (TotalSize / 512);
     CodeType = PciDs30->CodeType;
-	}
+  }
 
   //
   // If this is the last image, then set the LAST bit unless requested not
@@ -362,13 +356,13 @@ Returns:
       PciDs23->Indicator = INDICATOR_LAST;
     } else {
       PciDs30->Indicator = INDICATOR_LAST;
-		}
+    }
   } else {
     if (mOptions.Pci23 == 1) {
       PciDs23->Indicator = 0;
     } else {
       PciDs30->Indicator = 0;
-		}
+    }
   }
 
   if (CodeType != PCI_CODE_TYPE_EFI_IMAGE) {
@@ -685,12 +679,12 @@ Returns:
   if ((InFile->Next == NULL) && (mOptions.NoLast == 0)) {
     if (mOptions.Pci23 == 1) {
       PciDs23.Indicator = INDICATOR_LAST;
-	  } else {
+    } else {
     PciDs30.Indicator = INDICATOR_LAST;}
   } else {
     if (mOptions.Pci23 == 1) {
       PciDs23.Indicator = 0;
-	} else {
+  } else {
       PciDs30.Indicator = 0;
     }
   }
@@ -1351,7 +1345,7 @@ Returns:
   //
   // Copyright declaration
   //
-  fprintf (stdout, "Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
@@ -1432,7 +1426,7 @@ Returns:
   ImageCount = 0;
   for (;;) {
     //
-    // Save our postition in the file, since offsets in the headers
+    // Save our position in the file, since offsets in the headers
     // are relative to the particular image.
     //
     ImageStart = ftell (InFptr);

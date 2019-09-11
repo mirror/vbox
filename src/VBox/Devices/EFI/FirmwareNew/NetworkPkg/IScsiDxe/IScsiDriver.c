@@ -1,16 +1,11 @@
 /** @file
   The entry point of IScsi driver.
 
-Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2019, NVIDIA Corporation. All rights reserved.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2017 Hewlett Packard Enterprise Development LP<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1861,28 +1856,18 @@ Error3:
          );
 
 Error2:
-  gBS->UninstallMultipleProtocolInterfaces (
-         gIScsiIp6DriverBinding.DriverBindingHandle,
-         &gEfiDriverBindingProtocolGuid,
-         &gIScsiIp6DriverBinding,
-         &gEfiComponentName2ProtocolGuid,
-         &gIScsiComponentName2,
-         &gEfiComponentNameProtocolGuid,
-         &gIScsiComponentName,
-         NULL
-         );
+  EfiLibUninstallDriverBindingComponentName2 (
+    &gIScsiIp6DriverBinding,
+    &gIScsiComponentName,
+    &gIScsiComponentName2
+    );
 
 Error1:
-  gBS->UninstallMultipleProtocolInterfaces (
-         ImageHandle,
-         &gEfiDriverBindingProtocolGuid,
-         &gIScsiIp4DriverBinding,
-         &gEfiComponentName2ProtocolGuid,
-         &gIScsiComponentName2,
-         &gEfiComponentNameProtocolGuid,
-         &gIScsiComponentName,
-         NULL
-         );
+  EfiLibUninstallDriverBindingComponentName2 (
+    &gIScsiIp4DriverBinding,
+    &gIScsiComponentName,
+    &gIScsiComponentName2
+    );
 
   return Status;
 }

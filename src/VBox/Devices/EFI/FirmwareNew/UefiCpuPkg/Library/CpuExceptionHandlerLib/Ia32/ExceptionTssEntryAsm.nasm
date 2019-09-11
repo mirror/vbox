@@ -1,12 +1,6 @@
 ;------------------------------------------------------------------------------ ;
 ; Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-; This program and the accompanying materials
-; are licensed and made available under the terms and conditions of the BSD License
-; which accompanies this distribution.  The full text of the license may be found at
-; http://opensource.org/licenses/bsd-license.php.
-;
-; THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-; WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ; Module Name:
 ;
@@ -355,10 +349,8 @@ o16 mov     [ecx + IA32_TSS._SS], ax
     movzx  ebx, word [ecx + IA32_TSS._CS]
     mov    [eax - 0x8], ebx                      ; create CS in old stack
     mov    ebx, dword [ecx + IA32_TSS.EFLAGS]
-    bts    ebx, 8
+    bts    ebx, 8                                ; Set TF
     mov    [eax - 0x4], ebx                      ; create eflags in old stack
-    mov    dword [ecx + IA32_TSS.EFLAGS], ebx    ; update eflags in old TSS
-    mov    eax, dword [ecx + IA32_TSS._ESP]      ; Get old stack pointer
     sub    eax, 0xc                              ; minus 12 byte
     mov    dword [ecx + IA32_TSS._ESP], eax      ; Set new stack pointer
 

@@ -1,14 +1,8 @@
 /** @file
 These functions assist in parsing and manipulating a Firmware Volume.
 
-Copyright (c) 2004 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -318,7 +312,7 @@ Routine Description:
 Arguments:
 
   FileType    Type of file to search for.
-  Instance    Instace of the file type to return.
+  Instance    Instance of the file type to return.
   File        Return pointer.  In the case of an error, contents are undefined.
 
 Returns:
@@ -505,7 +499,7 @@ Arguments:
 
   File        The file to search.
   SectionType Type of file to search for.
-  Instance    Instace of the section to return.
+  Instance    Instance of the section to return.
   Section     Return pointer.  In the case of an error, contents are undefined.
 
 Returns:

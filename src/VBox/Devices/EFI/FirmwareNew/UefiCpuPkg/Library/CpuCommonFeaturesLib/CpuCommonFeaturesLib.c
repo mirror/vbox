@@ -2,14 +2,8 @@
   This library registers CPU features defined in Intel(R) 64 and IA-32
   Architectures Software Developer's Manual.
 
-  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -53,7 +47,7 @@ CpuCommonFeaturesLibConstructor (
   if (IsCpuFeatureSupported (CPU_FEATURE_ACPI)) {
     Status = RegisterCpuFeature (
                "ACPI",
-               NULL,
+               ClockModulationGetConfigData,
                ClockModulationSupport,
                ClockModulationInitialize,
                CPU_FEATURE_ACPI,
@@ -97,7 +91,7 @@ CpuCommonFeaturesLibConstructor (
   if (IsCpuFeatureSupported (CPU_FEATURE_LOCK_FEATURE_CONTROL_REGISTER)) {
     Status = RegisterCpuFeature (
                "Lock Feature Control Register",
-               FeatureControlGetConfigData,
+               NULL,
                LockFeatureControlRegisterSupport,
                LockFeatureControlRegisterInitialize,
                CPU_FEATURE_LOCK_FEATURE_CONTROL_REGISTER,
@@ -108,7 +102,7 @@ CpuCommonFeaturesLibConstructor (
   if (IsCpuFeatureSupported (CPU_FEATURE_SMX)) {
     Status = RegisterCpuFeature (
                "SMX",
-               FeatureControlGetConfigData,
+               NULL,
                SmxSupport,
                SmxInitialize,
                CPU_FEATURE_SMX,
@@ -120,7 +114,7 @@ CpuCommonFeaturesLibConstructor (
   if (IsCpuFeatureSupported (CPU_FEATURE_VMX)) {
     Status = RegisterCpuFeature (
                "VMX",
-               FeatureControlGetConfigData,
+               NULL,
                VmxSupport,
                VmxInitialize,
                CPU_FEATURE_VMX,
@@ -209,7 +203,7 @@ CpuCommonFeaturesLibConstructor (
   if (IsCpuFeatureSupported (CPU_FEATURE_PPIN)) {
     Status = RegisterCpuFeature (
                "PPIN",
-               NULL,
+               PpinGetConfigData,
                PpinSupport,
                PpinInitialize,
                CPU_FEATURE_PPIN,

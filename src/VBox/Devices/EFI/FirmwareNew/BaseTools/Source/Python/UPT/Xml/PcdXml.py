@@ -1,15 +1,9 @@
 ## @file
 # This file is used to parse a PCD file of .PKG file
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -25,9 +19,9 @@ from Library.Xml.XmlRoutines import XmlAttribute
 from Library.Xml.XmlRoutines import XmlNode
 from Library.Xml.XmlRoutines import CreateXmlElement
 from Library.Xml.XmlRoutines import XmlList
-from Library.String import GetStringOfList
-from Library.String import ConvertNEToNOTEQ
-from Library.String import ConvertNOTEQToNE
+from Library.StringUtils import GetStringOfList
+from Library.StringUtils import ConvertNEToNOTEQ
+from Library.StringUtils import ConvertNOTEQToNE
 from Library import GlobalData
 from Object.POM.CommonObject import PcdObject
 from Object.POM.CommonObject import PcdErrorObject

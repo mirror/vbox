@@ -2,18 +2,14 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
+from __future__ import print_function
+from __future__ import absolute_import
 import os
 
-from message import *
+from .message import *
 
 class BaseDoxygeItem:
     def __init__(self, name, tag=''):
@@ -58,14 +54,14 @@ class Page(BaseDoxygeItem):
         return subpage
 
     def AddPages(self, pageArray):
-        if pageArray == None:
+        if pageArray is None:
             return
         for page in pageArray:
             self.AddPage(page)
 
     def AddSection(self, section):
         self.mSections.append(section)
-        self.mSections.sort(cmp=lambda x,y: cmp(x.mName.lower(), y.mName.lower()))
+        self.mSections.sort(key=lambda x: x.mName.lower())
 
     def Generate(self):
         if self.mIsMainPage:
@@ -78,7 +74,7 @@ class Page(BaseDoxygeItem):
             self.mText.append(self.mDescription)
         endIndex = len(self.mText)
 
-        self.mSections.sort()
+        self.mSections.sort(key=lambda x: x.mName.lower())
         for sect in self.mSections:
             self.mText += sect.Generate()
 
@@ -90,7 +86,7 @@ class Page(BaseDoxygeItem):
             self.mText.insert(endIndex, '<ul>')
             endIndex += 1
             if self.mIsSort:
-                self.mSubPages.sort(cmp=lambda x,y: cmp(x.mName.lower(), y.mName.lower()))
+                self.mSubPages.sort(key=lambda x: x.mName.lower())
             for page in self.mSubPages:
                 self.mText.insert(endIndex, '<li>\subpage %s \"%s\" </li>' % (page.mTag, page.mName))
                 endIndex += 1
@@ -115,7 +111,7 @@ class DoxygenFile(Page):
             f = open(self.mFilename, 'w')
             f.write('\n'.join(str))
             f.close()
-        except IOError, e:
+        except IOError as e:
             ErrorMsg ('Fail to write file %s' % self.mFilename)
             return False
 
@@ -370,7 +366,7 @@ class DoxygenConfigFile:
         self.mWarningFile = str.replace('\\', '/')
 
     def FileExists(self, path):
-        if path == None:
+        if path is None:
             return False
         if len(path) == 0:
             return False
@@ -382,7 +378,7 @@ class DoxygenConfigFile:
         return False
 
     def AddFile(self, path):
-        if path == None:
+        if path is None:
             return
 
         if len(path) == 0:
@@ -429,7 +425,7 @@ class DoxygenConfigFile:
             f = open(path, 'w')
             f.write(text)
             f.close()
-        except IOError, e:
+        except IOError as e:
             ErrorMsg ('Fail to generate doxygen config file %s' % path)
             return False
 
@@ -446,4 +442,4 @@ if __name__== '__main__':
     p.AddPage(Page('PCD', 'pcds'))
 
     df.Generate()
-    print df
+    print(df)

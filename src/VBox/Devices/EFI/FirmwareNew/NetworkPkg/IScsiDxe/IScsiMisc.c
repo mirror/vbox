@@ -2,13 +2,7 @@
   Miscellaneous routines for iSCSI driver.
 
 Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -616,7 +610,7 @@ IScsiAddNic (
         NicInfo->VlanId == VlanId) {
       mPrivate->CurrentNic = NicInfo->NicIndex;
 
-	    //
+      //
       // Set IPv6 available flag.
       //
       Status = IScsiCheckIpv6Support (Controller, Image, &NicInfo->Ipv6Available);
@@ -845,6 +839,10 @@ IScsiCreateAttempts (
                     );
     FreePool (AttemptConfigOrder);
     if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_ERROR,
+        "%a: Failed to set 'InitialAttemptOrder' with Guid (%g): "
+        "%r\n",
+        __FUNCTION__, &gIScsiConfigGuid, Status));
       return Status;
     }
 
@@ -887,6 +885,10 @@ IScsiCreateAttempts (
                     );
     FreePool (AttemptConfigData);
     if (EFI_ERROR (Status)) {
+        DEBUG ((DEBUG_ERROR,
+          "%a: Failed to set variable (mPrivate->PortString) with Guid (%g): "
+          "%r\n",
+          __FUNCTION__, &gEfiIScsiInitiatorNameProtocolGuid, Status));
       return Status;
     }
   }

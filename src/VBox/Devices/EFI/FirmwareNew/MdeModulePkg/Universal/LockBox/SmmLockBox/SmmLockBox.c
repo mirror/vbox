@@ -11,14 +11,7 @@
 
 Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -77,10 +70,10 @@ SmmLockBoxSave (
     return ;
   }
   //
-  // The AsmLfence() call here is to ensure the above range check for the
-  // CommBuffer have been completed before calling into SaveLockBox().
+  // The SpeculationBarrier() call here is to ensure the above range check for
+  // the CommBuffer have been completed before calling into SaveLockBox().
   //
-  AsmLfence ();
+  SpeculationBarrier ();
 
   //
   // Save data
@@ -166,10 +159,10 @@ SmmLockBoxUpdate (
     return ;
   }
   //
-  // The AsmLfence() call here is to ensure the above range check for the
-  // CommBuffer have been completed before calling into UpdateLockBox().
+  // The SpeculationBarrier() call here is to ensure the above range check for
+  // the CommBuffer have been completed before calling into UpdateLockBox().
   //
-  AsmLfence ();
+  SpeculationBarrier ();
 
   //
   // Update data
@@ -227,7 +220,10 @@ SmmLockBoxRestore (
                (VOID *)(UINTN)TempLockBoxParameterRestore.Buffer,
                (UINTN *)&TempLockBoxParameterRestore.Length
                );
-    if (Status == EFI_BUFFER_TOO_SMALL) {
+    if ((Status == EFI_BUFFER_TOO_SMALL) || (Status == EFI_SUCCESS)) {
+      //
+      // Return the actual Length value.
+      //
       LockBoxParameterRestore->Length = TempLockBoxParameterRestore.Length;
     }
   }

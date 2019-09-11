@@ -1,15 +1,9 @@
 /** @file
   Load option library functions which relate with creating and processing load options.
 
-Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
-(C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2015-2018 Hewlett Packard Enterprise Development LP<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -250,13 +244,16 @@ structure.
     VariableAttributes = EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS;
   }
 
-  return gRT->SetVariable (
-                OptionName,
-                &gEfiGlobalVariableGuid,
-                VariableAttributes,
-                VariableSize,
-                Variable
-                );
+  Status = gRT->SetVariable (
+                  OptionName,
+                  &gEfiGlobalVariableGuid,
+                  VariableAttributes,
+                  VariableSize,
+                  Variable
+                  );
+  FreePool (Variable);
+
+  return Status;
 }
 
 /**
@@ -329,7 +326,11 @@ BmAddOptionNumberToOrderVariable (
   This function will register the new Boot####, Driver#### or SysPrep#### option.
   After the *#### is updated, the *Order will also be updated.
 
-  @param  Option            Pointer to load option to add.
+  @param  Option            Pointer to load option to add. If on input
+                            Option->OptionNumber is LoadOptionNumberUnassigned,
+                            then on output Option->OptionNumber is updated to
+                            the number of the new Boot####,
+                            Driver#### or SysPrep#### option.
   @param  Position          Position of the new load option to put in the ****Order variable.
 
   @retval EFI_SUCCESS           The *#### have been successfully registered.
@@ -338,14 +339,14 @@ BmAddOptionNumberToOrderVariable (
                                 Note: this API only adds new load option, no replacement support.
   @retval EFI_OUT_OF_RESOURCES  There is no free option number that can be used when the
                                 option number specified in the Option is LoadOptionNumberUnassigned.
-  @retval EFI_STATUS            Return the status of gRT->SetVariable ().
+  @return                       Status codes of gRT->SetVariable ().
 
 **/
 EFI_STATUS
 EFIAPI
 EfiBootManagerAddLoadOptionVariable (
-  IN EFI_BOOT_MANAGER_LOAD_OPTION *Option,
-  IN UINTN                        Position
+  IN OUT EFI_BOOT_MANAGER_LOAD_OPTION *Option,
+  IN     UINTN                        Position
   )
 {
   EFI_STATUS                      Status;
@@ -1226,10 +1227,8 @@ BmIsLoadOptionPeHeaderValid (
       // Check PE32 or PE32+ magic, and machine type
       //
       OptionalHeader = (EFI_IMAGE_OPTIONAL_HEADER32 *) &PeHeader->Pe32.OptionalHeader;
-      if ((OptionalHeader->Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC ||
-           OptionalHeader->Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) &&
-          EFI_IMAGE_MACHINE_TYPE_SUPPORTED (PeHeader->Pe32.FileHeader.Machine)
-          ) {
+      if (OptionalHeader->Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC ||
+          OptionalHeader->Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
         //
         // Check the Subsystem:
         //   Driver#### must be of type BootServiceDriver or RuntimeDriver

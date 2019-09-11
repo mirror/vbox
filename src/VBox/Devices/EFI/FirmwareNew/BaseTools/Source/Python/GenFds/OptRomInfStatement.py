@@ -1,30 +1,24 @@
 ## @file
 # process OptionROM generation from INF statement
 #
-#  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
 # Import Modules
 #
-import RuleSimpleFile
-import RuleComplexFile
-import Section
-import OptionRom
+from __future__ import absolute_import
+from . import RuleSimpleFile
+from . import RuleComplexFile
+from . import Section
 import Common.GlobalData as GlobalData
 
 from Common.DataType import *
-from Common.String import *
-from FfsInfStatement import FfsInfStatement
-from GenFdsGlobalVariable import GenFdsGlobalVariable
+from Common.StringUtils import *
+from .FfsInfStatement import FfsInfStatement
+from .GenFdsGlobalVariable import GenFdsGlobalVariable
 
 ##
 #
@@ -45,11 +39,10 @@ class OptRomInfStatement (FfsInfStatement):
     #   @param  self        The object pointer
     #
     def __GetOptRomParams(self):
+        if self.OverrideAttribs is None:
+            self.OverrideAttribs = OverrideAttribs()
 
-        if self.OverrideAttribs == None:
-            self.OverrideAttribs = OptionRom.OverrideAttribs()
-
-        if self.OverrideAttribs.NeedCompress == None:
+        if self.OverrideAttribs.NeedCompress is None:
             self.OverrideAttribs.NeedCompress = self.OptRomDefs.get ('PCI_COMPRESS')
             if self.OverrideAttribs.NeedCompress is not None:
                 if self.OverrideAttribs.NeedCompress.upper() not in ('TRUE', 'FALSE'):
@@ -57,16 +50,16 @@ class OptRomInfStatement (FfsInfStatement):
                 self.OverrideAttribs.NeedCompress = \
                     self.OverrideAttribs.NeedCompress.upper() == 'TRUE'
 
-        if self.OverrideAttribs.PciVendorId == None:
+        if self.OverrideAttribs.PciVendorId is None:
             self.OverrideAttribs.PciVendorId = self.OptRomDefs.get ('PCI_VENDOR_ID')
 
-        if self.OverrideAttribs.PciClassCode == None:
+        if self.OverrideAttribs.PciClassCode is None:
             self.OverrideAttribs.PciClassCode = self.OptRomDefs.get ('PCI_CLASS_CODE')
 
-        if self.OverrideAttribs.PciDeviceId == None:
+        if self.OverrideAttribs.PciDeviceId is None:
             self.OverrideAttribs.PciDeviceId = self.OptRomDefs.get ('PCI_DEVICE_ID')
 
-        if self.OverrideAttribs.PciRevision == None:
+        if self.OverrideAttribs.PciRevision is None:
             self.OverrideAttribs.PciRevision = self.OptRomDefs.get ('PCI_REVISION')
 
 #        InfObj = GenFdsGlobalVariable.WorkSpace.BuildObject[self.PathClassObj, self.CurrentArch]
@@ -93,7 +86,6 @@ class OptRomInfStatement (FfsInfStatement):
         #
         Rule = self.__GetRule__()
         GenFdsGlobalVariable.VerboseLogger( "Packing binaries from inf file : %s" %self.InfFileName)
-        #FileType = Ffs.Ffs.ModuleTypeToFileType[Rule.ModuleType]
         #
         # For the rule only has simpleFile
         #
@@ -121,7 +113,7 @@ class OptRomInfStatement (FfsInfStatement):
         #
 
         OutputFileList = []
-        if Rule.FileName != None:
+        if Rule.FileName is not None:
             GenSecInputFile = self.__ExtendMacro__(Rule.FileName)
             OutputFileList.append(GenSecInputFile)
         else:
@@ -142,8 +134,8 @@ class OptRomInfStatement (FfsInfStatement):
 
         OutputFileList = []
         for Sect in Rule.SectionList:
-            if Sect.SectionType == 'PE32':
-                if Sect.FileName != None:
+            if Sect.SectionType == BINARY_FILE_TYPE_PE32:
+                if Sect.FileName is not None:
                     GenSecInputFile = self.__ExtendMacro__(Sect.FileName)
                     OutputFileList.append(GenSecInputFile)
                 else:
@@ -152,4 +144,16 @@ class OptRomInfStatement (FfsInfStatement):
 
         return OutputFileList
 
-    
+class OverrideAttribs:
+
+    ## The constructor
+    #
+    #   @param  self        The object pointer
+    #
+    def __init__(self):
+
+        self.PciVendorId = None
+        self.PciClassCode = None
+        self.PciDeviceId = None
+        self.PciRevision = None
+        self.NeedCompress = None

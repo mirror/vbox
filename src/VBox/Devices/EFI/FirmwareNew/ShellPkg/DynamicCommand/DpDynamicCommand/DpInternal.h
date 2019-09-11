@@ -8,13 +8,7 @@
 
   Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.
   (C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 #ifndef _DP_INTELNAL_H_
 #define _DP_INTELNAL_H_
@@ -83,6 +77,20 @@ GetDuration (
 BOOLEAN
 IsPhase(
   IN MEASUREMENT_RECORD *Measurement
+  );
+
+/**
+  Determine whether the Measurement record is for core code.
+
+  @param[in] Measurement  A pointer to the Measurement record to test.
+
+  @retval     TRUE        The measurement record is used for core.
+  @retval     FALSE       The measurement record is NOT used for core.
+
+**/
+BOOLEAN
+IsCorePerf(
+  IN MEASUREMENT_RECORD        *Measurement
   );
 
 /**
@@ -302,54 +310,6 @@ ProcessGlobal(
 VOID
 ProcessCumulative(
   IN PERF_CUM_DATA                  *CustomCumulativeData OPTIONAL
-  );
-
-/**
-  Gather and print ALL Profiling Records.
-
-  Displays all "interesting" Profile measurements in order.
-  The number of records displayed is controlled by:
-     - records with a duration less than mInterestThreshold microseconds are not displayed.
-     - No more than Limit records are displayed.  A Limit of zero will not limit the output.
-     - If the ExcludeFlag is TRUE, records matching entries in the CumData array are not
-       displayed.
-
-  @pre    The mInterestThreshold global variable is set to the shortest duration to be printed.
-           The mGaugeString and mUnicodeToken global arrays are used for temporary string storage.
-           They must not be in use by a calling function.
-
-  @param[in]    Limit         The number of records to print.  Zero is ALL.
-  @param[in]    ExcludeFlag   TRUE to exclude individual Cumulative items from display.
-
-**/
-VOID
-DumpAllProfile(
-  IN UINTN          Limit,
-  IN BOOLEAN        ExcludeFlag
-  );
-
-/**
-  Gather and print Raw Profile Records.
-
-  All Profile measurements with a duration greater than or equal to
-  mInterestThreshold are printed without interpretation.
-
-  The number of records displayed is controlled by:
-     - records with a duration less than mInterestThreshold microseconds are not displayed.
-     - No more than Limit records are displayed.  A Limit of zero will not limit the output.
-     - If the ExcludeFlag is TRUE, records matching entries in the CumData array are not
-       displayed.
-
-  @pre    The mInterestThreshold global variable is set to the shortest duration to be printed.
-
-  @param[in]    Limit         The number of records to print.  Zero is ALL.
-  @param[in]    ExcludeFlag   TRUE to exclude individual Cumulative items from display.
-
-**/
-VOID
-DumpRawProfile(
-  IN UINTN          Limit,
-  IN BOOLEAN        ExcludeFlag
   );
 
 #endif

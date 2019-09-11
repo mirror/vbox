@@ -2,13 +2,7 @@
   C1E feature.
 
   Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -67,6 +61,14 @@ C1eInitialize (
   IN BOOLEAN                           State
   )
 {
+  //
+  // The scope of C1EEnable bit in the MSR_NEHALEM_POWER_CTL is Package, only program
+  // MSR_FEATURE_CONFIG for thread 0 core 0 in each package.
+  //
+  if ((CpuInfo->ProcessorInfo.Location.Thread != 0) || (CpuInfo->ProcessorInfo.Location.Core != 0)) {
+  return RETURN_SUCCESS;
+  }
+
   CPU_REGISTER_TABLE_WRITE_FIELD (
     ProcessorNumber,
     Msr,

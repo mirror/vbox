@@ -1,18 +1,34 @@
 /** @file
   Protected Processor Inventory Number(PPIN) feature.
 
-  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2017 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "CpuCommonFeatures.h"
+
+/**
+  Prepares for the data used by CPU feature detection and initialization.
+
+  @param[in]  NumberOfProcessors  The number of CPUs in the platform.
+
+  @return  Pointer to a buffer of CPU related configuration data.
+
+  @note This service could be called by BSP only.
+**/
+VOID *
+EFIAPI
+PpinGetConfigData (
+  IN UINTN               NumberOfProcessors
+  )
+{
+  VOID          *ConfigData;
+
+  ConfigData = AllocateZeroPool (sizeof (MSR_IVY_BRIDGE_PPIN_CTL_REGISTER) * NumberOfProcessors);
+  ASSERT (ConfigData != NULL);
+  return ConfigData;
+}
 
 /**
   Detects if Protected Processor Inventory Number feature supported on current
@@ -40,6 +56,7 @@ PpinSupport (
   )
 {
   MSR_IVY_BRIDGE_PLATFORM_INFO_1_REGISTER    PlatformInfo;
+  MSR_IVY_BRIDGE_PPIN_CTL_REGISTER           *MsrPpinCtrl;
 
   if ((CpuInfo->DisplayFamily == 0x06) &&
       ((CpuInfo->DisplayModel == 0x3E) ||      // Xeon E5 V2
@@ -53,7 +70,12 @@ PpinSupport (
     // Check whether platform support this feature.
     //
     PlatformInfo.Uint64 = AsmReadMsr64 (MSR_IVY_BRIDGE_PLATFORM_INFO_1);
-    return (PlatformInfo.Bits.PPIN_CAP != 0);
+    if (PlatformInfo.Bits.PPIN_CAP != 0) {
+      MsrPpinCtrl = (MSR_IVY_BRIDGE_PPIN_CTL_REGISTER *) ConfigData;
+      ASSERT (MsrPpinCtrl != NULL);
+      MsrPpinCtrl[ProcessorNumber].Uint64 = AsmReadMsr64 (MSR_IVY_BRIDGE_PPIN_CTL);
+      return TRUE;
+    }
   }
 
   return FALSE;
@@ -79,6 +101,7 @@ PpinSupport (
   @retval RETURN_DEVICE_ERROR  Device can't change state because it has been
                                locked.
 
+  @note This service could be called by BSP only.
 **/
 RETURN_STATUS
 EFIAPI
@@ -89,25 +112,52 @@ PpinInitialize (
   IN BOOLEAN                           State
   )
 {
-  MSR_IVY_BRIDGE_PPIN_CTL_REGISTER     MsrPpinCtrl;
+  MSR_IVY_BRIDGE_PPIN_CTL_REGISTER     *MsrPpinCtrl;
+
+  MsrPpinCtrl = (MSR_IVY_BRIDGE_PPIN_CTL_REGISTER *) ConfigData;
+  ASSERT (MsrPpinCtrl != NULL);
 
   //
-  // Check whether device already lock this register.
-  // If already locked, just base on the request state and
+  // Check whether processor already lock this register.
+  // If already locked, just based on the request state and
   // the current state to return the status.
   //
-  MsrPpinCtrl.Uint64 = AsmReadMsr64 (MSR_IVY_BRIDGE_PPIN_CTL);
-  if (MsrPpinCtrl.Bits.LockOut != 0) {
-    return MsrPpinCtrl.Bits.Enable_PPIN == State ? RETURN_SUCCESS : RETURN_DEVICE_ERROR;
+  if (MsrPpinCtrl[ProcessorNumber].Bits.LockOut != 0) {
+    return MsrPpinCtrl[ProcessorNumber].Bits.Enable_PPIN == State ? RETURN_SUCCESS : RETURN_DEVICE_ERROR;
   }
 
-  CPU_REGISTER_TABLE_WRITE_FIELD (
+  //
+  // Support function already check the processor which support PPIN feature, so this function not need
+  // to check the processor again.
+  //
+  // The scope of the MSR_IVY_BRIDGE_PPIN_CTL is package level, only program MSR_IVY_BRIDGE_PPIN_CTL for
+  // thread 0 core 0 in each package.
+  //
+  if ((CpuInfo->ProcessorInfo.Location.Thread != 0) || (CpuInfo->ProcessorInfo.Location.Core != 0)) {
+    return RETURN_SUCCESS;
+  }
+
+  if (State) {
+    //
+    // Enable and Unlock.
+    // According to SDM, once Enable_PPIN is set, attempt to write 1 to LockOut will cause #GP.
+    //
+    MsrPpinCtrl[ProcessorNumber].Bits.Enable_PPIN = 1;
+    MsrPpinCtrl[ProcessorNumber].Bits.LockOut = 0;
+  } else {
+    //
+    // Disable and Lock.
+    // According to SDM, writing 1 to LockOut is permitted only if Enable_PPIN is clear.
+    //
+    MsrPpinCtrl[ProcessorNumber].Bits.Enable_PPIN = 0;
+    MsrPpinCtrl[ProcessorNumber].Bits.LockOut = 1;
+  }
+
+  CPU_REGISTER_TABLE_WRITE64 (
     ProcessorNumber,
     Msr,
     MSR_IVY_BRIDGE_PPIN_CTL,
-    MSR_IVY_BRIDGE_PPIN_CTL_REGISTER,
-    Bits.Enable_PPIN,
-    (State) ? 1 : 0
+    MsrPpinCtrl[ProcessorNumber].Uint64
     );
 
   return RETURN_SUCCESS;

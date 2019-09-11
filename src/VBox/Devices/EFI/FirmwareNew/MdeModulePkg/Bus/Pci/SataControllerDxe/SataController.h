@@ -1,14 +1,9 @@
 /** @file
   Header file for Sata Controller driver.
 
-  Copyright (c) 2011 - 2016, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2018, ARM Ltd. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -43,6 +38,7 @@ extern EFI_COMPONENT_NAME2_PROTOCOL gSataControllerComponentName2;
 #define R_AHCI_CAP 0x0
 #define   B_AHCI_CAP_NPS (BIT4 | BIT3 | BIT2 | BIT1 | BIT0) // Number of Ports
 #define   B_AHCI_CAP_SPM BIT17                              // Supports Port Multiplier
+#define R_AHCI_PI  0xC
 
 ///
 /// AHCI each channel can have up to 1 device
@@ -104,6 +100,17 @@ typedef struct _EFI_SATA_CONTROLLER_PRIVATE_DATA {
   //
   EFI_IDENTIFY_DATA                 *IdentifyData;
   BOOLEAN                           *IdentifyValid;
+
+  //
+  // Track the state so that the PCI attributes that were modified
+  // can be restored to the original value later.
+  //
+  BOOLEAN                           PciAttributesChanged;
+
+  //
+  // Copy of the original PCI Attributes
+  //
+  UINT64                            OriginalPciAttributes;
 } EFI_SATA_CONTROLLER_PRIVATE_DATA;
 
 #define SATA_CONTROLLER_PRIVATE_DATA_FROM_THIS(a) CR(a, EFI_SATA_CONTROLLER_PRIVATE_DATA, IdeInit, SATA_CONTROLLER_SIGNATURE)

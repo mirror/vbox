@@ -2,13 +2,7 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 def GetEdkLogger():
@@ -35,14 +29,14 @@ def WarnMsg(mess, fName=None, fNo=None):
 def NormalMessage(type, mess, fName=None, fNo=None):
     strMsg = type
 
-    if fName != None:
+    if fName is not None:
         strMsg += ' %s' % fName.replace('/', '\\')
-        if fNo != None:
+        if fNo is not None:
             strMsg += '(%d):' % fNo
         else:
             strMsg += ' :'
 
-    if fName == None and fNo == None:
+    if fName is None and fNo is None:
         strMsg += ' '
     strMsg += mess
 

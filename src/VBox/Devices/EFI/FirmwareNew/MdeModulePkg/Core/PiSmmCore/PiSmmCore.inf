@@ -1,14 +1,9 @@
 ## @file
 # This module provide an SMM CIS compliant implementation of SMM Core.
 #
-# Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -63,10 +58,8 @@
   PcdLib
   SmmCorePlatformHookLib
   PerformanceLib
-  TimerLib
   HobLib
   SmmMemLib
-  DxeServicesLib
 
 [Protocols]
   gEfiDxeSmmReadyToLockProtocolGuid             ## UNDEFINED # SmiHandlerRegister
@@ -90,7 +83,6 @@
   gEfiSmmGpiDispatch2ProtocolGuid               ## SOMETIMES_CONSUMES
   gEfiSmmIoTrapDispatch2ProtocolGuid            ## SOMETIMES_CONSUMES
   gEfiSmmUsbDispatch2ProtocolGuid               ## SOMETIMES_CONSUMES
-  gEfiSmmCpuProtocolGuid                        ## SOMETIMES_CONSUMES
   gEdkiiSmmMemoryAttributeProtocolGuid          ## CONSUMES
   gEfiSmmSxDispatch2ProtocolGuid                ## SOMETIMES_CONSUMES
 
@@ -104,6 +96,7 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPageType                   ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPoolType                   ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdHeapGuardPropertyMask               ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiS3Enable                        ## CONSUMES
 
 [Guids]
   gAprioriGuid                                  ## SOMETIMES_CONSUMES   ## File

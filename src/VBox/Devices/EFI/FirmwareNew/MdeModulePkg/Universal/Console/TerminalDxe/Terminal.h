@@ -1,15 +1,9 @@
 /** @file
   Header file for Terminal driver.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 Copyright (C) 2016 Silicon Graphics, Inc. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1131,18 +1125,6 @@ IsUnicodeFiFoFull (
   TERMINAL_DEV  *TerminalDevice
   );
 
-/**
-  Count Unicode FIFO buffer.
-
-  @param  TerminalDevice       Terminal driver private structure
-
-  @return The count in bytes of Unicode FIFO.
-
-**/
-UINT8
-UnicodeFiFoGetKeyCount (
-  TERMINAL_DEV    *TerminalDevice
-  );
 
 /**
   Translate raw data into Unicode (according to different encode), and
@@ -1292,10 +1274,10 @@ VTUTF8TestString (
   Translate one Unicode character into VT-UTF8 characters.
 
   UTF8 Encoding Table
-  Bits per Character | Unicode Character Range | Unicode Binary  Encoding |	UTF8 Binary Encoding
-        0-7	         |     0x0000 - 0x007F	    |     00000000 0xxxxxxx	   |   0xxxxxxx
-        8-11 	       |     0x0080 - 0x07FF	    |     00000xxx xxxxxxxx 	  |   110xxxxx 10xxxxxx
-       12-16	        |     0x0800 - 0xFFFF	    |     xxxxxxxx xxxxxxxx	   |   1110xxxx 10xxxxxx 10xxxxxx
+  Bits per Character | Unicode Character Range | Unicode Binary  Encoding |  UTF8 Binary Encoding
+        0-7           |     0x0000 - 0x007F      |     00000000 0xxxxxxx     |   0xxxxxxx
+        8-11          |     0x0080 - 0x07FF      |     00000xxx xxxxxxxx     |   110xxxxx 10xxxxxx
+       12-16          |     0x0800 - 0xFFFF      |     xxxxxxxx xxxxxxxx     |   1110xxxx 10xxxxxx 10xxxxxx
 
 
   @param  Unicode          Unicode character need translating.
@@ -1331,10 +1313,10 @@ GetOneValidUtf8Char (
   Translate VT-UTF8 characters into one Unicode character.
 
   UTF8 Encoding Table
-  Bits per Character | Unicode Character Range | Unicode Binary  Encoding |	UTF8 Binary Encoding
-        0-7	         |     0x0000 - 0x007F	    |     00000000 0xxxxxxx	   |   0xxxxxxx
-        8-11 	       |     0x0080 - 0x07FF	    |     00000xxx xxxxxxxx 	  |   110xxxxx 10xxxxxx
-       12-16	        |     0x0800 - 0xFFFF	    |     xxxxxxxx xxxxxxxx	   |   1110xxxx 10xxxxxx 10xxxxxx
+  Bits per Character | Unicode Character Range | Unicode Binary  Encoding |  UTF8 Binary Encoding
+        0-7           |     0x0000 - 0x007F      |     00000000 0xxxxxxx     |   0xxxxxxx
+        8-11          |     0x0080 - 0x07FF      |     00000xxx xxxxxxxx     |   110xxxxx 10xxxxxx
+       12-16          |     0x0800 - 0xFFFF      |     xxxxxxxx xxxxxxxx     |   1110xxxx 10xxxxxx 10xxxxxx
 
 
   @param  Utf8Char         VT-UTF8 character set needs translating.

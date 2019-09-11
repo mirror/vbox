@@ -3,17 +3,10 @@
 
   Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include <IndustryStandard/VmwareSvga.h>
 #include "Qemu.h"
 
 STATIC
@@ -61,7 +54,7 @@ QemuVideoCompleteModeData (
 
   Private->PciIo->GetBarAttributes (
                         Private->PciIo,
-                        0,
+                        Private->FrameBufferVramBarIndex,
                         NULL,
                         (VOID**) &FrameBufDesc
                         );
@@ -69,49 +62,15 @@ QemuVideoCompleteModeData (
   Mode->FrameBufferBase = FrameBufDesc->AddrRangeMin;
   Mode->FrameBufferSize = Info->HorizontalResolution * Info->VerticalResolution;
   Mode->FrameBufferSize = Mode->FrameBufferSize * ((ModeData->ColorDepth + 7) / 8);
+  Mode->FrameBufferSize = EFI_PAGES_TO_SIZE (
+                            EFI_SIZE_TO_PAGES (Mode->FrameBufferSize)
+                            );
   DEBUG ((EFI_D_INFO, "FrameBufferBase: 0x%Lx, FrameBufferSize: 0x%Lx\n",
     Mode->FrameBufferBase, (UINT64)Mode->FrameBufferSize));
 
   FreePool (FrameBufDesc);
   return EFI_SUCCESS;
 }
-
-STATIC
-EFI_STATUS
-QemuVideoVmwareSvgaCompleteModeData (
-  IN  QEMU_VIDEO_PRIVATE_DATA           *Private,
-  OUT EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE *Mode
-  )
-{
-  EFI_STATUS                            Status;
-  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION  *Info;
-  EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR     *FrameBufDesc;
-  UINT32                                BytesPerLine, FbOffset, BytesPerPixel;
-
-  Info = Mode->Info;
-  CopyMem (Info, &Private->VmwareSvgaModeInfo[Mode->Mode], sizeof (*Info));
-  BytesPerPixel = Private->ModeData[Mode->Mode].ColorDepth / 8;
-  BytesPerLine = Info->PixelsPerScanLine * BytesPerPixel;
-
-  FbOffset = VmwareSvgaRead (Private, VmwareSvgaRegFbOffset);
-
-  Status = Private->PciIo->GetBarAttributes (
-                             Private->PciIo,
-                             PCI_BAR_IDX1,
-                             NULL,
-                             (VOID**) &FrameBufDesc
-                             );
-  if (EFI_ERROR (Status)) {
-    return EFI_DEVICE_ERROR;
-  }
-
-  Mode->FrameBufferBase = FrameBufDesc->AddrRangeMin + FbOffset;
-  Mode->FrameBufferSize = BytesPerLine * Info->VerticalResolution;
-
-  FreePool (FrameBufDesc);
-  return Status;
-}
-
 
 //
 // Graphics Output Protocol Member Functions
@@ -161,14 +120,10 @@ Routine Description:
 
   *SizeOfInfo = sizeof (EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
 
-  if (Private->Variant == QEMU_VIDEO_VMWARE_SVGA) {
-    CopyMem (*Info, &Private->VmwareSvgaModeInfo[ModeNumber], sizeof (**Info));
-  } else {
-    ModeData = &Private->ModeData[ModeNumber];
-    (*Info)->HorizontalResolution = ModeData->HorizontalResolution;
-    (*Info)->VerticalResolution   = ModeData->VerticalResolution;
-    QemuVideoCompleteModeInfo (ModeData, *Info);
-  }
+  ModeData = &Private->ModeData[ModeNumber];
+  (*Info)->HorizontalResolution = ModeData->HorizontalResolution;
+  (*Info)->VerticalResolution   = ModeData->VerticalResolution;
+  QemuVideoCompleteModeInfo (ModeData, *Info);
 
   return EFI_SUCCESS;
 }
@@ -218,12 +173,6 @@ Routine Description:
   case QEMU_VIDEO_BOCHS:
     InitializeBochsGraphicsMode (Private, &QemuVideoBochsModes[ModeData->InternalModeIndex]);
     break;
-  case QEMU_VIDEO_VMWARE_SVGA:
-    InitializeVmwareSvgaGraphicsMode (
-      Private,
-      &QemuVideoBochsModes[ModeData->InternalModeIndex]
-      );
-    break;
   default:
     ASSERT (FALSE);
     return EFI_DEVICE_ERROR;
@@ -234,11 +183,7 @@ Routine Description:
   This->Mode->Info->VerticalResolution = ModeData->VerticalResolution;
   This->Mode->SizeOfInfo = sizeof(EFI_GRAPHICS_OUTPUT_MODE_INFORMATION);
 
-  if (Private->Variant == QEMU_VIDEO_VMWARE_SVGA) {
-    QemuVideoVmwareSvgaCompleteModeData (Private, This->Mode);
-  } else {
-    QemuVideoCompleteModeData (Private, This->Mode);
-  }
+  QemuVideoCompleteModeData (Private, This->Mode);
 
   //
   // Re-initialize the frame buffer configure when mode changes.
@@ -366,7 +311,7 @@ Returns:
 
   default:
     Status = EFI_INVALID_PARAMETER;
-    ASSERT (FALSE);
+    break;
   }
 
   gBS->RestoreTPL (OriginalTPL);

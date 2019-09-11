@@ -2,15 +2,9 @@
   The implementation for Shell command ifconfig based on IP4Config2 protocol.
 
   (C) Copyright 2013-2015 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1032,6 +1026,7 @@ IfConfigSetInterfaceInfo (
       SubnetMask  = NTOHL (SubnetMask);
       TempGateway = NTOHL (TempGateway);
       if ((SubnetMask != 0) &&
+          (SubnetMask != 0xFFFFFFFFu) &&
           !NetIp4IsUnicast (TempGateway, SubnetMask)) {
         ShellPrintHiiEx (-1, -1, NULL, STRING_TOKEN (STR_IFCONFIG_INVALID_GATEWAY), gShellNetwork1HiiHandle, VarArg->Arg);
         ShellStatus = SHELL_INVALID_PARAMETER;

@@ -2,21 +2,19 @@
   HMAC-MD5 Wrapper Implementation over OpenSSL.
 
 Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "InternalCryptLib.h"
 #include <openssl/hmac.h>
 
-#define HMAC_MD5_CTX_SIZE    sizeof(void *) * 4 + sizeof(unsigned int) + \
-                             sizeof(unsigned char) * HMAC_MAX_MD_CBLOCK
+//
+// NOTE: OpenSSL redefines the size of HMAC_CTX at crypto/hmac/hmac_lcl.h
+//       #define HMAC_MAX_MD_CBLOCK_SIZE     144
+//
+#define HMAC_MD5_CTX_SIZE    (sizeof(void *) * 4 + sizeof(unsigned int) + \
+                             sizeof(unsigned char) * 144)
 
 /**
   Retrieves the size, in bytes, of the context buffer required for HMAC-MD5 operations.

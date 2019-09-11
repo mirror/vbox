@@ -1,23 +1,18 @@
 ## @file
 # This file is used to define common parser functions for meta-data
 #
-# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
+from __future__ import absolute_import
 import Common.LongFilePathOs as os
 from CommonDataClass.DataClass import *
-from EccToolError import *
+from Ecc.EccToolError import *
 from Common.MultipleWorkspace import MultipleWorkspace as mws
-import EccGlobalData
+from Ecc import EccGlobalData
 import re
-## Get the inlcude path list for a source file
+## Get the include path list for a source file
 #
 # 1. Find the source file belongs to which inf file
 # 2. Find the inf's package
@@ -112,7 +107,7 @@ def ParseHeaderCommentSection(CommentList, FileName = None):
     #
     Last = 0
     HeaderCommentStage = HEADER_COMMENT_NOT_STARTED
-    for Index in xrange(len(CommentList)-1, 0, -1):
+    for Index in range(len(CommentList) - 1, 0, -1):
         Line = CommentList[Index][0]
         if _IsCopyrightLine(Line):
             Last = Index

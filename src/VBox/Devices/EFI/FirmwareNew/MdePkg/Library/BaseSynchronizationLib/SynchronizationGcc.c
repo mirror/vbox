@@ -1,15 +1,9 @@
 /** @file
   Implementation of synchronization functions.
 
-  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -247,8 +241,7 @@ ReleaseSpinLock (
 
   Performs an atomic increment of the 32-bit unsigned integer specified by
   Value and returns the incremented value. The increment operation must be
-  performed using MP safe mechanisms. The state of the return value is not
-  guaranteed to be MP safe.
+  performed using MP safe mechanisms.
 
   If Value is NULL, then ASSERT().
 
@@ -272,8 +265,7 @@ InterlockedIncrement (
 
   Performs an atomic decrement of the 32-bit unsigned integer specified by
   Value and returns the decremented value. The decrement operation must be
-  performed using MP safe mechanisms. The state of the return value is not
-  guaranteed to be MP safe.
+  performed using MP safe mechanisms.
 
   If Value is NULL, then ASSERT().
 

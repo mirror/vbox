@@ -2,14 +2,8 @@
   The TPM definition block in ACPI table for physical presence
   and MemoryClear.
 
-Copyright (c) 2011 - 2016, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -95,12 +89,12 @@ DefinitionBlock (
           If (LNot (And (MORD, 0x10)))
           {
             //
-            // Triggle the SMI through ACPI _PTS method.
+            // Trigger the SMI through ACPI _PTS method.
             //
             Store (0x02, MCIP)
 
             //
-            // Triggle the SMI interrupt
+            // Trigger the SMI interrupt
             //
             Store (MCIN, IOB2)
           }
@@ -120,12 +114,12 @@ DefinitionBlock (
       //
       // TCG Hardware Information
       //
-      Method (HINF, 3, Serialized, 0, {BuffObj, PkgObj}, {UnknownObj, UnknownObj, UnknownObj}) // IntObj, IntObj, PkgObj
+      Method (HINF, 1, Serialized, 0, {BuffObj, PkgObj}, {UnknownObj}) // IntObj
       {
         //
         // Switch by function index
         //
-        Switch (ToInteger(Arg1))
+        Switch (ToInteger(Arg0))
         {
           Case (0)
           {
@@ -169,12 +163,12 @@ DefinitionBlock (
       //
       // TCG Physical Presence Interface
       //
-      Method (TPPI, 3, Serialized, 0, {BuffObj, PkgObj, IntObj, StrObj}, {UnknownObj, UnknownObj, UnknownObj}) // IntObj, IntObj, PkgObj
+      Method (TPPI, 2, Serialized, 0, {BuffObj, PkgObj, IntObj, StrObj}, {UnknownObj, UnknownObj}) // IntObj, PkgObj
       {
         //
         // Switch by function index
         //
-        Switch (ToInteger(Arg1))
+        Switch (ToInteger(Arg0))
         {
           Case (0)
           {
@@ -196,11 +190,11 @@ DefinitionBlock (
             // b) Submit TPM Operation Request to Pre-OS Environment
             //
 
-            Store (DerefOf (Index (Arg2, 0x00)), PPRQ)
+            Store (DerefOf (Index (Arg1, 0x00)), PPRQ)
             Store (0x02, PPIP)
 
             //
-            // Triggle the SMI interrupt
+            // Trigger the SMI interrupt
             //
             Store (PPIN, IOB2)
             Return (FRET)
@@ -231,7 +225,7 @@ DefinitionBlock (
             Store (0x05, PPIP)
 
             //
-            // Triggle the SMI interrupt
+            // Trigger the SMI interrupt
             //
             Store (PPIN, IOB2)
 
@@ -256,10 +250,10 @@ DefinitionBlock (
             // g) Submit TPM Operation Request to Pre-OS Environment 2
             //
             Store (7, PPIP)
-            Store (DerefOf (Index (Arg2, 0x00)), PPRQ)
+            Store (DerefOf (Index (Arg1, 0x00)), PPRQ)
 
             //
-            // Triggle the SMI interrupt
+            // Trigger the SMI interrupt
             //
             Store (PPIN, IOB2)
             Return (FRET)
@@ -270,10 +264,10 @@ DefinitionBlock (
             // e) Get User Confirmation Status for Operation
             //
             Store (8, PPIP)
-            Store (DerefOf (Index (Arg2, 0x00)), UCRQ)
+            Store (DerefOf (Index (Arg1, 0x00)), UCRQ)
 
             //
-            // Triggle the SMI interrupt
+            // Trigger the SMI interrupt
             //
             Store (PPIN, IOB2)
 
@@ -285,12 +279,12 @@ DefinitionBlock (
         Return (1)
       }
 
-      Method (TMCI, 3, Serialized, 0, IntObj, {UnknownObj, UnknownObj, UnknownObj}) // IntObj, IntObj, PkgObj
+      Method (TMCI, 2, Serialized, 0, IntObj, {UnknownObj, UnknownObj}) // IntObj, PkgObj
       {
         //
         // Switch by function index
         //
-        Switch (ToInteger (Arg1))
+        Switch (ToInteger (Arg0))
         {
           Case (0)
           {
@@ -304,15 +298,15 @@ DefinitionBlock (
             //
             // Save the Operation Value of the Request to MORD (reserved memory)
             //
-            Store (DerefOf (Index (Arg2, 0x00)), MORD)
+            Store (DerefOf (Index (Arg1, 0x00)), MORD)
 
             //
-            // Triggle the SMI through ACPI _DSM method.
+            // Trigger the SMI through ACPI _DSM method.
             //
             Store (0x01, MCIP)
 
             //
-            // Triggle the SMI interrupt
+            // Trigger the SMI interrupt
             //
             Store (MCIN, IOB2)
             Return (MRET)
@@ -330,7 +324,7 @@ DefinitionBlock (
         //
         If(LEqual(Arg0, ToUUID ("cf8e16a5-c1e8-4e25-b712-4f54a96702c8")))
         {
-          Return (HINF (Arg1, Arg2, Arg3))
+          Return (HINF (Arg2))
         }
 
         //
@@ -338,7 +332,7 @@ DefinitionBlock (
         //
         If(LEqual(Arg0, ToUUID ("3dddfaa6-361b-4eb4-a424-8d10089d1653")))
         {
-          Return (TPPI (Arg1, Arg2, Arg3))
+          Return (TPPI (Arg2, Arg3))
         }
 
         //
@@ -346,7 +340,7 @@ DefinitionBlock (
         //
         If(LEqual(Arg0, ToUUID ("376054ed-cc13-4675-901c-4756d7f2d45d")))
         {
-          Return (TMCI (Arg1, Arg2, Arg3))
+          Return (TMCI (Arg2, Arg3))
         }
 
         Return (Buffer () {0})

@@ -5,18 +5,23 @@
 @REM
 @REM Copyright (c) 2016-2017, Intel Corporation. All rights reserved.<BR>
 @REM
-@REM This program and the accompanying materials are licensed and made available
-@REM under the terms and conditions of the BSD License which accompanies this
-@REM distribution.  The full text of the license may be found at:
-@REM   http://opensource.org/licenses/bsd-license.php
-@REM
-@REM THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-@REM WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR
-@REM IMPLIED.
+@REM SPDX-License-Identifier: BSD-2-Clause-Patent
 @REM
 
 @echo off
 pushd .
+set SCRIPT_ERROR=0
+goto main
+
+:ToolNotInstall
+set SCRIPT_ERROR=1
+goto :EOF
+
+:main
+if /I "%1"=="VS2017" goto SetVS2017
+if /I "%1"=="VS2015" goto SetVS2015
+if /I "%1"=="VS2013" goto SetVS2013
+if /I "%1"=="VS2012" goto SetVS2012
 
 if defined VS71COMNTOOLS (
   if not defined VS2003_PREFIX (
@@ -54,6 +59,7 @@ if defined VS100COMNTOOLS (
   )
 )
 
+:SetVS2012
 if defined VS110COMNTOOLS (
   if not defined VS2012_PREFIX (
     set "VS2012_PREFIX=%VS110COMNTOOLS:~0,-14%"
@@ -64,8 +70,12 @@ if defined VS110COMNTOOLS (
   if not defined WINSDK71x86_PREFIX (
     set "WINSDK71x86_PREFIX=c:\Program Files (x86)\Microsoft SDKs\Windows\v7.1A\Bin\"
   )
+) else (
+  if /I "%1"=="VS2012" goto ToolNotInstall
 )
+if /I "%1"=="VS2012" goto SetWinDDK
 
+:SetVS2013
 if defined VS120COMNTOOLS (
   if not defined VS2013_PREFIX (
     set "VS2013_PREFIX=%VS120COMNTOOLS:~0,-14%"
@@ -76,8 +86,12 @@ if defined VS120COMNTOOLS (
   if not defined WINSDK8x86_PREFIX (
     set "WINSDK8x86_PREFIX=c:\Program Files (x86)\Windows Kits\8.0\bin\"
   )
+) else (
+  if /I "%1"=="VS2013" goto ToolNotInstall
 )
+if /I "%1"=="VS2013" goto SetWinDDK
 
+:SetVS2015
 if defined VS140COMNTOOLS (
   if not defined VS2015_PREFIX (
     set "VS2015_PREFIX=%VS140COMNTOOLS:~0,-14%"
@@ -88,19 +102,35 @@ if defined VS140COMNTOOLS (
   if not defined WINSDK81x86_PREFIX (
     set "WINSDK81x86_PREFIX=c:\Program Files (x86)\Windows Kits\8.1\bin\"
   )
+) else (
+  if /I "%1"=="VS2015" goto ToolNotInstall
 )
+if /I "%1"=="VS2015" goto SetWinDDK
 
-@REM set VS2017
+:SetVS2017
 if not defined VS150COMNTOOLS (
   if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" (
-    for /f "usebackq tokens=1* delims=: " %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"`) do (
-      if /i "%%i"=="installationPath" call "%%j\VC\Auxiliary\Build\vcvars32.bat"
+    if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools" (
+      for /f "usebackq tokens=1* delims=: " %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -products Microsoft.VisualStudio.Product.BuildTools`) do (
+        if /i "%%i"=="installationPath" call "%%j\VC\Auxiliary\Build\vcvars32.bat"
+      )
+    ) else (
+      for /f "usebackq tokens=1* delims=: " %%i in (`"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"`) do (
+        if /i "%%i"=="installationPath" call "%%j\VC\Auxiliary\Build\vcvars32.bat"
+      )
     )
   ) else if exist "%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe" (
-    for /f "usebackq tokens=1* delims=: " %%i in (`"%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"`) do (
-      if /i "%%i"=="installationPath" call "%%j\VC\Auxiliary\Build\vcvars32.bat"
+    if exist "%ProgramFiles%\Microsoft Visual Studio\2017\BuildTools" (
+      for /f "usebackq tokens=1* delims=: " %%i in (`"%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe" -products Microsoft.VisualStudio.Product.BuildTools`) do (
+        if /i "%%i"=="installationPath" call "%%j\VC\Auxiliary\Build\vcvars32.bat"
+      )
+    ) else (
+      for /f "usebackq tokens=1* delims=: " %%i in (`"%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe"`) do (
+        if /i "%%i"=="installationPath" call "%%j\VC\Auxiliary\Build\vcvars32.bat"
+      )
     )
   ) else (
+    if /I "%1"=="VS2017" goto ToolNotInstall
     goto SetWinDDK
   )
 )

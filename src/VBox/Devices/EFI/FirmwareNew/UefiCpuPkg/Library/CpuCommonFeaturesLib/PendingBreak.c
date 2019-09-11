@@ -2,13 +2,7 @@
   Pending Break feature.
 
   Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -74,6 +68,17 @@ PendingBreakInitialize (
   IN BOOLEAN                           State
   )
 {
+  //
+  // The scope of the MSR_ATOM_IA32_MISC_ENABLE is core for below processor type, only program
+  // MSR_ATOM_IA32_MISC_ENABLE for thread 0 in each core.
+  //
+  // Support function has check the processer type for this feature, no need to check again
+  // here.
+  //
+  if (CpuInfo->ProcessorInfo.Location.Thread != 0) {
+    return RETURN_SUCCESS;
+  }
+
   //
   // ATOM, CORE2, CORE, PENTIUM_4 and IS_PENTIUM_M_PROCESSOR have the same MSR index,
   // Simply use MSR_ATOM_IA32_MISC_ENABLE here

@@ -2,15 +2,9 @@
 # This file is used to define class objects of INF file header.
 # It will consumed by InfParser.
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfHeaderObject
@@ -43,7 +37,7 @@ class InfHeaderObject():
     # @param FileName: File Name
     #
     def SetFileName(self, FileName):
-        if not (FileName == '' or FileName == None):
+        if not (FileName == '' or FileName is None):
             self.FileName = FileName
             return True
         else:
@@ -59,7 +53,7 @@ class InfHeaderObject():
     # @param Abstract: Abstract
     #
     def SetAbstract(self, Abstract):
-        if not (Abstract == '' or Abstract == None):
+        if not (Abstract == '' or Abstract is None):
             self.Abstract = Abstract
             return True
         else:
@@ -75,7 +69,7 @@ class InfHeaderObject():
     # @param Description: Description content
     #
     def SetDescription(self, Description):
-        if not (Description == '' or Description == None):
+        if not (Description == '' or Description is None):
             self.Description = Description
             return True
         else:
@@ -91,7 +85,7 @@ class InfHeaderObject():
     # @param Copyright: Copyright content
     #
     def SetCopyright(self, Copyright):
-        if not (Copyright == '' or Copyright == None):
+        if not (Copyright == '' or Copyright is None):
             self.Copyright = Copyright
             return True
         else:
@@ -107,7 +101,7 @@ class InfHeaderObject():
     # @param License: License content
     #
     def SetLicense(self, License):
-        if not (License == '' or License == None):
+        if not (License == '' or License is None):
             self.License = License
             return True
         else:

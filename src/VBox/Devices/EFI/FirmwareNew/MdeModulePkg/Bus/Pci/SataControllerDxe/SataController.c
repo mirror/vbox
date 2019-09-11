@@ -1,14 +1,9 @@
 /** @file
   This driver module produces IDE_CONTROLLER_INIT protocol for Sata Controllers.
 
-  Copyright (c) 2011 - 2016, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2018, ARM Ltd. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -364,6 +359,8 @@ SataControllerStart (
   EFI_SATA_CONTROLLER_PRIVATE_DATA  *Private;
   UINT32                            Data32;
   UINTN                             TotalCount;
+  UINT64                            Supports;
+  UINT8                             MaxPortNumber;
 
   DEBUG ((EFI_D_INFO, "SataControllerStart start\n"));
 
@@ -406,6 +403,52 @@ SataControllerStart (
   Private->IdeInit.CalculateMode  = IdeInitCalculateMode;
   Private->IdeInit.SetTiming      = IdeInitSetTiming;
   Private->IdeInit.EnumAll        = SATA_ENUMER_ALL;
+  Private->PciAttributesChanged   = FALSE;
+
+  //
+  // Save original PCI attributes
+  //
+  Status = PciIo->Attributes (
+                    PciIo,
+                    EfiPciIoAttributeOperationGet,
+                    0,
+                    &Private->OriginalPciAttributes
+                    );
+  if (EFI_ERROR (Status)) {
+      goto Done;
+  }
+
+  DEBUG ((
+    EFI_D_INFO,
+    "Original PCI Attributes = 0x%llx\n",
+    Private->OriginalPciAttributes
+    ));
+
+  Status = PciIo->Attributes (
+                    PciIo,
+                    EfiPciIoAttributeOperationSupported,
+                    0,
+                    &Supports
+                    );
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  DEBUG ((EFI_D_INFO, "Supported PCI Attributes = 0x%llx\n", Supports));
+
+  Supports &= (UINT64)EFI_PCI_DEVICE_ENABLE;
+  Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationEnable,
+                      Supports,
+                      NULL
+                      );
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  DEBUG ((EFI_D_INFO, "Enabled PCI Attributes = 0x%llx\n", Supports));
+  Private->PciAttributesChanged = TRUE;
 
   Status = PciIo->Pci.Read (
                         PciIo,
@@ -414,19 +457,41 @@ SataControllerStart (
                         sizeof (PciData.Hdr.ClassCode),
                         PciData.Hdr.ClassCode
                         );
-  ASSERT_EFI_ERROR (Status);
+  if (EFI_ERROR (Status)) {
+    ASSERT (FALSE);
+    goto Done;
+  }
 
   if (IS_PCI_IDE (&PciData)) {
     Private->IdeInit.ChannelCount = IDE_MAX_CHANNEL;
     Private->DeviceCount          = IDE_MAX_DEVICES;
   } else if (IS_PCI_SATADPA (&PciData)) {
     //
-    // Read Host Capability Register(CAP) to get Number of Ports(NPS) and Supports Port Multiplier(SPM)
-    //   NPS is 0's based value indicating the maximum number of ports supported by the HBA silicon.
-    //   A maximum of 32 ports can be supported. A value of '0h', indicating one port, is the minimum requirement.
+    // Read Ports Implemented(PI) to calculate max port number (0 based).
+    //
+    Data32 = AhciReadReg (PciIo, R_AHCI_PI);
+    DEBUG ((DEBUG_INFO, "Ports Implemented(PI) = 0x%x\n", Data32));
+    if (Data32 == 0) {
+      Status = EFI_UNSUPPORTED;
+      goto Done;
+    }
+    MaxPortNumber = 31;
+    while (MaxPortNumber > 0) {
+      if ((Data32 & ((UINT32)1 << MaxPortNumber)) != 0) {
+        break;
+      }
+      MaxPortNumber--;
+    }
+    //
+    // Make the ChannelCount equal to the max port number (0 based) plus 1.
+    //
+    Private->IdeInit.ChannelCount = MaxPortNumber + 1;
+
+    //
+    // Read HBA Capabilities(CAP) to get Supports Port Multiplier(SPM).
     //
     Data32 = AhciReadReg (PciIo, R_AHCI_CAP);
-    Private->IdeInit.ChannelCount = (UINT8) ((Data32 & B_AHCI_CAP_NPS) + 1);
+    DEBUG ((DEBUG_INFO, "HBA Capabilities(CAP) = 0x%x\n", Data32));
     Private->DeviceCount          = AHCI_MAX_DEVICES;
     if ((Data32 & B_AHCI_CAP_SPM) == B_AHCI_CAP_SPM) {
       Private->DeviceCount = AHCI_MULTI_MAX_DEVICES;
@@ -480,6 +545,17 @@ Done:
       }
       if (Private->IdentifyValid != NULL) {
         FreePool (Private->IdentifyValid);
+      }
+      if (Private->PciAttributesChanged) {
+        //
+        // Restore original PCI attributes
+        //
+        PciIo->Attributes (
+                 PciIo,
+                 EfiPciIoAttributeOperationSet,
+                 Private->OriginalPciAttributes,
+                 NULL
+                 );
       }
       FreePool (Private);
     }
@@ -555,6 +631,17 @@ SataControllerStop (
     }
     if (Private->IdentifyValid != NULL) {
       FreePool (Private->IdentifyValid);
+    }
+    if (Private->PciAttributesChanged) {
+      //
+      // Restore original PCI attributes
+      //
+      Private->PciIo->Attributes (
+                        Private->PciIo,
+                        EfiPciIoAttributeOperationSet,
+                        Private->OriginalPciAttributes,
+                        NULL
+                        );
     }
     FreePool (Private);
   }

@@ -12,13 +12,7 @@
   Copyright (C) 2014, Red Hat, Inc.
   Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
-  WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #include <IndustryStandard/LegacyVgaBios.h>
@@ -102,7 +96,7 @@ InstallVbeShim (
   // The allocation request may fail, eg. if LegacyBiosDxe has already run.
   //
   Segment0Pages = 1;
-  Int0x10       = (IVT_ENTRY *)(UINTN)Segment0 + 0x10;
+  Int0x10       = (IVT_ENTRY *)(UINTN)(Segment0 + 0x10 * sizeof (IVT_ENTRY));
   Segment0AllocationStatus = gBS->AllocatePages (
                                     AllocateAddress,
                                     EfiBootServicesCode,

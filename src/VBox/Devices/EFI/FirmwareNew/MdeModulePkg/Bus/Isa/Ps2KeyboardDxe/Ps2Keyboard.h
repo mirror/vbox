@@ -2,13 +2,7 @@
   PS/2 keyboard driver header file
 
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -300,18 +294,6 @@ InitKeyboard (
   IN BOOLEAN                     ExtendedVerification
   );
 
-/**
-  Disable the keyboard interface of the 8042 controller.
-
-  @param ConsoleIn   - the device instance
-
-  @return status of issuing disable command
-
-**/
-EFI_STATUS
-DisableKeyboard (
-  IN KEYBOARD_CONSOLE_IN_DEV *ConsoleIn
-  );
 
 /**
   Timer event handler: read a series of scancodes from 8042

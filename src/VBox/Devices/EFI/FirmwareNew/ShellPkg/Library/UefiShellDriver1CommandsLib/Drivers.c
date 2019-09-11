@@ -2,14 +2,8 @@
   Main file for Drivers shell Driver1 function.
 
   (C) Copyright 2012-2015 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -269,8 +263,8 @@ ShellCommandRunDrivers (
   EFI_HANDLE          *HandleWalker;
   UINTN               ChildCount;
   UINTN               DeviceCount;
-  CHAR16              ChildCountStr[3];
-  CHAR16              DeviceCountStr[3];
+  CHAR16              ChildCountStr[21];
+  CHAR16              DeviceCountStr[21];
   CHAR16              *Temp2;
   CONST CHAR16        *FullDriverName;
   CHAR16              *TruncatedDriverName;

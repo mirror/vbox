@@ -3,27 +3,20 @@
   DxeRuntimePciSegmentLibSegmentInfo libraries.
 
   Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are
-  licensed and made available under the terms and conditions of
-  the BSD License which accompanies this distribution.  The full
-  text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "PciSegmentLibCommon.h"
 
 typedef struct {
-  UINT64  Register : 12;
-  UINT64  Function : 3;
-  UINT64  Device : 5;
-  UINT64  Bus : 8;
-  UINT64  Reserved1 : 4;
-  UINT64  Segment : 16;
-  UINT64  Reserved2 : 16;
+  UINT32  Register : 12;
+  UINT32  Function : 3;
+  UINT32  Device : 5;
+  UINT32  Bus : 8;
+  UINT32  Reserved1 : 4;
+  UINT32  Segment : 16;
+  UINT32  Reserved2 : 16;
 } PCI_SEGMENT_LIB_ADDRESS_STRUCTURE;
 
 /**

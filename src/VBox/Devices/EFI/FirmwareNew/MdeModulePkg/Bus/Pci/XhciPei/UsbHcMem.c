@@ -4,14 +4,7 @@ which is used to enable recovery function from USB Drivers.
 
 Copyright (c) 2014 - 2016, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -328,31 +321,7 @@ UsbHcIsMemBlockEmpty (
   return TRUE;
 }
 
-/**
-  Unlink the memory block from the pool's list.
 
-  @param  Head          The block list head of the memory's pool.
-  @param  BlockToUnlink The memory block to unlink.
-
-**/
-VOID
-UsbHcUnlinkMemBlock (
-  IN USBHC_MEM_BLOCK    *Head,
-  IN USBHC_MEM_BLOCK    *BlockToUnlink
-  )
-{
-  USBHC_MEM_BLOCK       *Block;
-
-  ASSERT ((Head != NULL) && (BlockToUnlink != NULL));
-
-  for (Block = Head; Block != NULL; Block = Block->Next) {
-    if (Block->Next == BlockToUnlink) {
-      Block->Next         = BlockToUnlink->Next;
-      BlockToUnlink->Next = NULL;
-      break;
-    }
-  }
-}
 
 /**
   Initialize the memory management pool for the host controller.

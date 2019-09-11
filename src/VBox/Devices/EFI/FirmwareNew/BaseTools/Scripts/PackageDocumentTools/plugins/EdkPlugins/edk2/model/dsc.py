@@ -2,16 +2,10 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
-import plugins.EdkPlugins.basemodel.ini as ini
+from plugins.EdkPlugins.basemodel import ini
 import re, os
 from plugins.EdkPlugins.basemodel.message import *
 
@@ -189,7 +183,7 @@ class DSCComponentObject(DSCSectionObject):
                 lines.append('    <%s>\n' % key)
 
                 for name, value in self._OveridePcds[key]:
-                    if value != None:
+                    if value is not None:
                         lines.append('      %s|%s\n' % (name, value))
                     else:
                         lines.append('      %s\n' % name)

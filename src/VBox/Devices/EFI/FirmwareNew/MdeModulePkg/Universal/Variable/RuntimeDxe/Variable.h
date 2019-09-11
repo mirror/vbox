@@ -2,14 +2,8 @@
   The internal header file includes the common header files, defines
   internal structure and functions used by Variable modules.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -45,6 +39,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/VarErrorFlag.h>
 
 #include "PrivilegePolymorphic.h"
+
+#define NV_STORAGE_VARIABLE_BASE (EFI_PHYSICAL_ADDRESS) \
+                                   (PcdGet64 (PcdFlashNvStorageVariableBase64) != 0 ? \
+                                    PcdGet64 (PcdFlashNvStorageVariableBase64) : \
+                                    PcdGet32 (PcdFlashNvStorageVariableBase))
 
 #define EFI_VARIABLE_ATTRIBUTES_MASK (EFI_VARIABLE_NON_VOLATILE | \
                                       EFI_VARIABLE_BOOTSERVICE_ACCESS | \
@@ -87,6 +86,7 @@ typedef struct {
   UINT32                ReentrantState;
   BOOLEAN               AuthFormat;
   BOOLEAN               AuthSupport;
+  BOOLEAN               EmuNvMode;
 } VARIABLE_GLOBAL;
 
 typedef struct {
@@ -101,6 +101,7 @@ typedef struct {
   UINTN           HwErrVariableTotalSize;
   UINTN           MaxVariableSize;
   UINTN           MaxAuthVariableSize;
+  UINTN           MaxVolatileVariableSize;
   UINTN           ScratchBufferSize;
   CHAR8           *PlatformLangCodes;
   CHAR8           *LangCodes;
@@ -461,7 +462,18 @@ GetNonVolatileMaxVariableSize (
   );
 
 /**
-  Initializes variable write service after FVB was ready.
+  Get maximum variable size, covering both non-volatile and volatile variables.
+
+  @return Maximum variable size.
+
+**/
+UINTN
+GetMaxVariableSize (
+  VOID
+  );
+
+/**
+  Initializes variable write service.
 
   @retval EFI_SUCCESS          Function successfully executed.
   @retval Others               Fail to initialize the variable service.
@@ -780,9 +792,14 @@ InitializeVariableQuota (
   VOID
   );
 
-extern VARIABLE_MODULE_GLOBAL  *mVariableModuleGlobal;
+extern VARIABLE_MODULE_GLOBAL       *mVariableModuleGlobal;
+extern EFI_FIRMWARE_VOLUME_HEADER   *mNvFvHeaderCache;
+extern VARIABLE_STORE_HEADER        *mNvVariableCache;
+extern VARIABLE_INFO_ENTRY          *gVariableInfo;
+extern BOOLEAN                      mEndOfDxe;
+extern VAR_CHECK_REQUEST_SOURCE     mRequestSource;
 
-extern AUTH_VAR_LIB_CONTEXT_OUT mAuthContextOut;
+extern AUTH_VAR_LIB_CONTEXT_OUT     mAuthContextOut;
 
 /**
   Finds variable in storage blocks of volatile and non-volatile storage areas.

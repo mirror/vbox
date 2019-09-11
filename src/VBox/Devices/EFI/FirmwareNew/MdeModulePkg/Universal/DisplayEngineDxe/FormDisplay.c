@@ -1,15 +1,9 @@
 /** @file
 Entry and initialization module for the browser.
 
-Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -2882,6 +2876,7 @@ UiDisplayMenu (
       //
       ControlFlag = CfUpdateHelpString;
 
+      ASSERT (NewPos != NULL);
       UpdateHighlightMenuInfo(NewPos, TopOfScreen, SkipValue);
 
       if (SkipHighLight) {
@@ -2910,7 +2905,7 @@ UiDisplayMenu (
         Temp2 = 0;
       }
 
-      if (NewPos != NULL && (MenuOption == NULL || NewPos != &MenuOption->Link)) {
+      if (MenuOption == NULL || NewPos != &MenuOption->Link) {
         if (MenuOption != NULL) {
           //
           // Remove the old highlight menu.
@@ -4221,11 +4216,13 @@ InitializeDisplayEngine (
     NewString         = HiiGetString (gHiiHandle, STRING_TOKEN (FUNCTION_TEN_STRING), NULL);
     ASSERT (NewString != NULL);
     FormBrowserEx2->RegisterHotKey (&HotKey, BROWSER_ACTION_SUBMIT, 0, NewString);
+    FreePool (NewString);
 
     HotKey.ScanCode   = SCAN_F9;
     NewString         = HiiGetString (gHiiHandle, STRING_TOKEN (FUNCTION_NINE_STRING), NULL);
     ASSERT (NewString != NULL);
     FormBrowserEx2->RegisterHotKey (&HotKey, BROWSER_ACTION_DEFAULT, EFI_HII_DEFAULT_CLASS_STANDARD, NewString);
+    FreePool (NewString);
   }
 
   return EFI_SUCCESS;

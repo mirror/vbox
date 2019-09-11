@@ -1,14 +1,8 @@
 /** @file
 Private structures definitions in HiiDatabase.
 
-Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -60,6 +54,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define BITMAP_LEN_4_BIT(Width, Height)  (((Width) + 1) / 2 * (Height))
 #define BITMAP_LEN_8_BIT(Width, Height)  ((Width) * (Height))
 #define BITMAP_LEN_24_BIT(Width, Height) ((Width) * (Height) * 3)
+
+extern EFI_LOCK mHiiDatabaseLock;
 
 //
 // IFR data structure
@@ -2329,12 +2325,12 @@ This function mainly use to get HiiDatabase information.
 
 **/
 EFI_STATUS
-HiiGetDatabaseInfo(
+HiiGetDatabaseInfo (
   IN CONST EFI_HII_DATABASE_PROTOCOL        *This
   );
 
 /**
-This is an internal function,mainly use to get and update configuration settings information.
+This function mainly use to get and update ConfigResp string.
 
 @param  This                   A pointer to the EFI_HII_DATABASE_PROTOCOL instance.
 
@@ -2343,7 +2339,7 @@ This is an internal function,mainly use to get and update configuration settings
 
 **/
 EFI_STATUS
-HiiGetConfigurationSetting(
+HiiGetConfigRespInfo (
   IN CONST EFI_HII_DATABASE_PROTOCOL        *This
   );
 

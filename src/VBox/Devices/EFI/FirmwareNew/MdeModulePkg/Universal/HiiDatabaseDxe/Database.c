@@ -1,14 +1,8 @@
 /** @file
 Implementation for EFI_HII_DATABASE_PROTOCOL.
 
-Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,10 +15,15 @@ EFI_HII_PACKAGE_LIST_HEADER    *gRTDatabaseInfoBuffer = NULL;
 EFI_STRING                     gRTConfigRespBuffer    = NULL;
 UINTN                          gDatabaseInfoSize = 0;
 UINTN                          gConfigRespSize = 0;
-BOOLEAN                        gExportConfigResp = TRUE;
+BOOLEAN                        gExportConfigResp = FALSE;
 UINTN                          gNvDefaultStoreSize = 0;
 SKU_ID                         gSkuId              = 0xFFFFFFFFFFFFFFFF;
 LIST_ENTRY                     gVarStorageList     = INITIALIZE_LIST_HEAD_VARIABLE (gVarStorageList);
+
+//
+// HII database lock.
+//
+EFI_LOCK mHiiDatabaseLock = EFI_INITIALIZE_LOCK_VARIABLE(TPL_NOTIFY);
 
 /**
   This function generates a HII_DATABASE_RECORD node and adds into hii database.
@@ -898,7 +897,7 @@ UpdateDefaultSettingInFormPackage (
       IfrScope         = IfrOpHdr->Scope;
       IfrQuestionType  = IfrOpHdr->OpCode;
       IfrQuestionHdr   = (EFI_IFR_QUESTION_HEADER *) (IfrOpHdr + 1);
-      IfrCheckBox      = (EFI_IFR_CHECKBOX *) (IfrOpHdr + 1);
+      IfrCheckBox      = (EFI_IFR_CHECKBOX *) IfrOpHdr;
       EfiVarStoreIndex = IsEfiVarStoreQuestion (IfrQuestionHdr, EfiVarStoreList, EfiVarStoreNumber);
       Width            = sizeof (BOOLEAN);
       if (EfiVarStoreIndex < EfiVarStoreNumber) {
@@ -3364,14 +3363,19 @@ HiiGetConfigRespInfo(
   if (!EFI_ERROR (Status)){
     ConfigSize = StrSize(ConfigAltResp);
     if (ConfigSize > gConfigRespSize){
-      gConfigRespSize = ConfigSize;
+      //
+      // Do 25% overallocation to minimize the number of memory allocations after ReadyToBoot.
+      // Since lots of allocation after ReadyToBoot may change memory map and cause S4 resume issue.
+      //
+      gConfigRespSize = ConfigSize + (ConfigSize >> 2);
       if (gRTConfigRespBuffer != NULL){
         FreePool(gRTConfigRespBuffer);
+        DEBUG ((DEBUG_WARN, "[HiiDatabase]: Memory allocation is required after ReadyToBoot, which may change memory map and cause S4 resume issue.\n"));
       }
-      gRTConfigRespBuffer = (EFI_STRING)AllocateRuntimeZeroPool(ConfigSize);
+      gRTConfigRespBuffer = (EFI_STRING) AllocateRuntimeZeroPool (gConfigRespSize);
       if (gRTConfigRespBuffer == NULL){
         FreePool(ConfigAltResp);
-        DEBUG ((DEBUG_ERROR, "Not enough memory resource to get the ConfigResp string.\n"));
+        DEBUG ((DEBUG_ERROR, "[HiiDatabase]: No enough memory resource to store the ConfigResp string.\n"));
         return EFI_OUT_OF_RESOURCES;
       }
     } else {
@@ -3415,13 +3419,18 @@ HiiGetDatabaseInfo(
   ASSERT(Status == EFI_BUFFER_TOO_SMALL);
 
   if(DatabaseInfoSize > gDatabaseInfoSize ) {
-    gDatabaseInfoSize = DatabaseInfoSize;
+    //
+    // Do 25% overallocation to minimize the number of memory allocations after ReadyToBoot.
+    // Since lots of allocation after ReadyToBoot may change memory map and cause S4 resume issue.
+    //
+    gDatabaseInfoSize = DatabaseInfoSize + (DatabaseInfoSize >> 2);
     if (gRTDatabaseInfoBuffer != NULL){
       FreePool(gRTDatabaseInfoBuffer);
+      DEBUG ((DEBUG_WARN, "[HiiDatabase]: Memory allocation is required after ReadyToBoot, which may change memory map and cause S4 resume issue.\n"));
     }
-    gRTDatabaseInfoBuffer = AllocateRuntimeZeroPool(DatabaseInfoSize);
+    gRTDatabaseInfoBuffer = AllocateRuntimeZeroPool (gDatabaseInfoSize);
     if (gRTDatabaseInfoBuffer == NULL){
-      DEBUG ((DEBUG_ERROR, "Not enough memory resource to get the HiiDatabase info.\n"));
+      DEBUG ((DEBUG_ERROR, "[HiiDatabase]: No enough memory resource to store the HiiDatabase info.\n"));
       return EFI_OUT_OF_RESOURCES;
     }
   } else {
@@ -3434,39 +3443,6 @@ HiiGetDatabaseInfo(
   return EFI_SUCCESS;
 
 }
-
-/**
-This  function mainly use to get and update configuration settings information.
-
-@param  This                   A pointer to the EFI_HII_DATABASE_PROTOCOL instance.
-
-@retval EFI_SUCCESS            Get the information successfully.
-@retval EFI_OUT_OF_RESOURCES   Not enough memory to store the Configuration Setting data.
-
-**/
-EFI_STATUS
-HiiGetConfigurationSetting(
-  IN CONST EFI_HII_DATABASE_PROTOCOL        *This
-  )
-{
-  EFI_STATUS                          Status;
-
-  //
-  // Get the HiiDatabase info.
-  //
-  Status = HiiGetDatabaseInfo(This);
-
-  //
-  // Get ConfigResp string
-  //
-  if (gExportConfigResp) {
-    Status = HiiGetConfigRespInfo (This);
-    gExportConfigResp = FALSE;
-  }
-  return Status;
-
-}
-
 
 /**
   This function adds the packages in the package list to the database and returns a handle. If there is a
@@ -3526,11 +3502,14 @@ HiiNewPackageList (
     }
   }
 
+  EfiAcquireLock (&mHiiDatabaseLock);
+
   //
   // Build a PackageList node
   //
   Status = GenerateHiiDatabaseRecord (Private, &DatabaseRecord);
   if (EFI_ERROR (Status)) {
+    EfiReleaseLock (&mHiiDatabaseLock);
     return Status;
   }
 
@@ -3540,6 +3519,7 @@ HiiNewPackageList (
   //
   Status = AddPackages (Private, EFI_HII_DATABASE_NOTIFY_NEW_PACK, PackageList, DatabaseRecord);
   if (EFI_ERROR (Status)) {
+    EfiReleaseLock (&mHiiDatabaseLock);
     return Status;
   }
 
@@ -3561,11 +3541,28 @@ HiiNewPackageList (
   *Handle = DatabaseRecord->Handle;
 
   //
-  // Check whether need to get the Database and configuration setting info.
+  // Check whether need to get the Database info.
   // Only after ReadyToBoot, need to do the export.
   //
   if (gExportAfterReadyToBoot) {
-    HiiGetConfigurationSetting(This);
+    HiiGetDatabaseInfo (This);
+  }
+  EfiReleaseLock (&mHiiDatabaseLock);
+
+  //
+  // Notes:
+  // HiiGetDatabaseInfo () will get the contents of HII data base,
+  // belong to the atomic behavior of Hii Database update.
+  // And since HiiGetConfigRespInfo () will get the configuration setting info from HII drivers
+  // we can not think it belong to the atomic behavior of Hii Database update.
+  // That's why EfiReleaseLock (&mHiiDatabaseLock) is callled before HiiGetConfigRespInfo ().
+  //
+
+  // Check whether need to get the configuration setting info from HII drivers.
+  // When after ReadyToBoot and need to do the export for form package add.
+  //
+  if (gExportAfterReadyToBoot && gExportConfigResp) {
+    HiiGetConfigRespInfo (This);
   }
 
   return EFI_SUCCESS;
@@ -3610,6 +3607,8 @@ HiiRemovePackageList (
     return EFI_NOT_FOUND;
   }
 
+  EfiAcquireLock (&mHiiDatabaseLock);
+
   Private = HII_DATABASE_DATABASE_PRIVATE_DATA_FROM_THIS (This);
 
   //
@@ -3627,34 +3626,42 @@ HiiRemovePackageList (
       //
       Status = RemoveGuidPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveFormPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveKeyboardLayoutPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveStringPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveFontPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveImagePackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveSimpleFontPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveDevicePathPackage (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
 
@@ -3674,16 +3681,35 @@ HiiRemovePackageList (
       FreePool (Node);
 
       //
-      // Check whether need to get the Database and configuration setting info.
+      // Check whether need to get the Database info.
       // Only after ReadyToBoot, need to do the export.
       //
       if (gExportAfterReadyToBoot) {
-        HiiGetConfigurationSetting(This);
+        HiiGetDatabaseInfo (This);
+      }
+      EfiReleaseLock (&mHiiDatabaseLock);
+
+      //
+      // Notes:
+      // HiiGetDatabaseInfo () will get the contents of HII data base,
+      // belong to the atomic behavior of Hii Database update.
+      // And since HiiGetConfigRespInfo () will get the configuration setting info from HII drivers
+      // we can not think it belong to the atomic behavior of Hii Database update.
+      // That's why EfiReleaseLock (&mHiiDatabaseLock) is callled before HiiGetConfigRespInfo ().
+      //
+
+      //
+      // Check whether need to get the configuration setting info from HII drivers.
+      // When after ReadyToBoot and need to do the export for form package remove.
+      //
+      if (gExportAfterReadyToBoot && gExportConfigResp) {
+        HiiGetConfigRespInfo (This);
       }
       return EFI_SUCCESS;
     }
   }
 
+  EfiReleaseLock (&mHiiDatabaseLock);
   return EFI_NOT_FOUND;
 }
 
@@ -3736,6 +3762,7 @@ HiiUpdatePackageList (
 
   Status = EFI_SUCCESS;
 
+  EfiAcquireLock (&mHiiDatabaseLock);
   //
   // Get original packagelist to be updated
   //
@@ -3777,6 +3804,7 @@ HiiUpdatePackageList (
         }
 
         if (EFI_ERROR (Status)) {
+          EfiReleaseLock (&mHiiDatabaseLock);
           return Status;
         }
 
@@ -3790,19 +3818,35 @@ HiiUpdatePackageList (
       Status = AddPackages (Private, EFI_HII_DATABASE_NOTIFY_ADD_PACK, PackageList, Node);
 
       //
-      // Check whether need to get the Database and configuration setting info.
+      // Check whether need to get the Database info.
       // Only after ReadyToBoot, need to do the export.
       //
-      if (gExportAfterReadyToBoot) {
-        if (Status == EFI_SUCCESS){
-          HiiGetConfigurationSetting(This);
-        }
+      if (gExportAfterReadyToBoot && Status == EFI_SUCCESS) {
+        HiiGetDatabaseInfo (This);
+      }
+      EfiReleaseLock (&mHiiDatabaseLock);
+
+      //
+      // Notes:
+      // HiiGetDatabaseInfo () will get the contents of HII data base,
+      // belong to the atomic behavior of Hii Database update.
+      // And since HiiGetConfigRespInfo () will get the configuration setting info from HII drivers
+      // we can not think it belong to the atomic behavior of Hii Database update.
+      // That's why EfiReleaseLock (&mHiiDatabaseLock) is callled before HiiGetConfigRespInfo ().
+      //
+
+      //
+      // Check whether need to get the configuration setting info from HII drivers.
+      // When after ReadyToBoot and need to do the export for form package update.
+      //
+      if (gExportAfterReadyToBoot && gExportConfigResp && Status == EFI_SUCCESS) {
+        HiiGetConfigRespInfo (This);
       }
 
       return Status;
     }
   }
-
+  EfiReleaseLock (&mHiiDatabaseLock);
   return EFI_NOT_FOUND;
 }
 

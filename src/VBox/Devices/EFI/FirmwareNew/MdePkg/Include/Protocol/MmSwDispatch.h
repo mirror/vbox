@@ -5,18 +5,12 @@
   This protocol provides the parent dispatch service for a given MMI source generator.
 
   Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#ifndef _MM_SW_DISPATCH2_H_
-#define _MM_SW_DISPATCH2_H_
+#ifndef _MM_SW_DISPATCH_H_
+#define _MM_SW_DISPATCH_H_
 
 #include <Pi/PiMmCis.h>
 
@@ -117,7 +111,7 @@ EFI_STATUS
 ///
 /// Interface structure for the MM Software MMI Dispatch Protocol.
 ///
-/// The EFI_MM_SW_DISPATCH2_PROTOCOL provides the ability to install child handlers for the
+/// The EFI_MM_SW_DISPATCH_PROTOCOL provides the ability to install child handlers for the
 /// given software.  These handlers will respond to software interrupts, and the maximum software
 /// interrupt in the EFI_MM_SW_REGISTER_CONTEXT is denoted by MaximumSwiValue.
 ///

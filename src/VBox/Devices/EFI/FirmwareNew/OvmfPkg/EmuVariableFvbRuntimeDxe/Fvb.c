@@ -3,13 +3,7 @@
   by pretending that a memory buffer is storage for the NV variables.
 
   Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -665,7 +659,7 @@ InitializeFvAndVariableStoreHeaders (
 
       // UINT32  Size;
       (
-        FixedPcdGet32 (PcdVariableStoreSize) -
+        FixedPcdGet32 (PcdFlashNvStorageVariableSize) -
         OFFSET_OF (FVB_FV_HDR_AND_VARS_TEMPLATE, VarHdr)
       ),
 
@@ -733,7 +727,7 @@ FvbInitialize (
   ASSERT (FixedPcdGet32 (PcdFlashNvStorageFtwSpareSize) %
           EMU_FVB_BLOCK_SIZE == 0);
   if (
-       (PcdGet32 (PcdVariableStoreSize) +
+       (PcdGet32 (PcdFlashNvStorageVariableSize) +
         PcdGet32 (PcdFlashNvStorageFtwWorkingSize)
        ) >
        EMU_FVB_NUM_SPARE_BLOCKS * EMU_FVB_BLOCK_SIZE
@@ -788,7 +782,7 @@ FvbInitialize (
   //
   // Initialize the Fault Tolerant Write data area
   //
-  SubPtr = (VOID*) ((UINT8*) Ptr + PcdGet32 (PcdVariableStoreSize));
+  SubPtr = (VOID*) ((UINT8*) Ptr + PcdGet32 (PcdFlashNvStorageVariableSize));
   PcdStatus = PcdSet32S (PcdFlashNvStorageFtwWorkingBase,
                 (UINT32)(UINTN) SubPtr);
   ASSERT_RETURN_ERROR (PcdStatus);

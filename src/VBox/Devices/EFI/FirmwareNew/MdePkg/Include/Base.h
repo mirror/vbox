@@ -6,15 +6,9 @@
   environment. There are a set of base libraries in the Mde Package that can
   be used to implement base modules.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -112,11 +106,10 @@ VERIFY_SIZE_OF (__VERIFY_UINT32_ENUM_SIZE, 4);
 // warnings.
 //
 #ifndef UNREACHABLE
-  #if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4)
+  #ifdef __GNUC__
     ///
     /// Signal compilers and analyzers that this call is not reachable.  It is
     /// up to the compiler to remove any code past that point.
-    /// Not implemented by GCC 4.4 or earlier.
     ///
     #define UNREACHABLE()  __builtin_unreachable ()
   #elif defined (__has_feature)
@@ -215,6 +208,26 @@ VERIFY_SIZE_OF (__VERIFY_UINT32_ENUM_SIZE, 4);
     /// This excludes compilers.
     ///
     #define ANALYZER_NORETURN
+  #endif
+#endif
+
+///
+/// Tell the code optimizer that the function will return twice.
+/// This prevents wrong optimizations which can cause bugs.
+///
+#ifndef RETURNS_TWICE
+  #if defined (__GNUC__) || defined (__clang__)
+    ///
+    /// Tell the code optimizer that the function will return twice.
+    /// This prevents wrong optimizations which can cause bugs.
+    ///
+    #define RETURNS_TWICE  __attribute__((returns_twice))
+  #else
+    ///
+    /// Tell the code optimizer that the function will return twice.
+    /// This prevents wrong optimizations which can cause bugs.
+    ///
+    #define RETURNS_TWICE
   #endif
 #endif
 
@@ -648,6 +661,18 @@ struct _LIST_ENTRY {
 
 #define VA_COPY(Dest, Start)          __va_copy (Dest, Start)
 
+#elif defined(_M_ARM) || defined(_M_ARM64)
+//
+// MSFT ARM variable argument list support.
+//
+
+typedef char* VA_LIST;
+
+#define VA_START(Marker, Parameter)     __va_start (&Marker, &Parameter, _INT_SIZE_OF (Parameter), __alignof(Parameter), &Parameter)
+#define VA_ARG(Marker, TYPE)            (*(TYPE *) ((Marker += _INT_SIZE_OF (TYPE) + ((-(INTN)Marker) & (sizeof(TYPE) - 1))) - _INT_SIZE_OF (TYPE)))
+#define VA_END(Marker)                  (Marker = (VA_LIST) 0)
+#define VA_COPY(Dest, Start)            ((void)((Dest) = (Start)))
+
 #elif defined(__GNUC__)
 
 #if defined(MDE_CPU_X64) && !defined(NO_MSABI_VA_FUNCS)
@@ -837,7 +862,7 @@ typedef UINTN  *BASE_LIST;
   @return  A pointer to the structure from one of it's elements.
 
 **/
-#define BASE_CR(Record, TYPE, Field)  ((TYPE *) ((CHAR8 *) (Record) - (CHAR8 *) &(((TYPE *) 0)->Field)))
+#define BASE_CR(Record, TYPE, Field)  ((TYPE *) ((CHAR8 *) (Record) - OFFSET_OF (TYPE, Field)))
 
 /**
   Rounds a value up to the next boundary using a specified alignment.

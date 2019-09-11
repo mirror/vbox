@@ -3,14 +3,8 @@
   Responsibility of this module is to load the DXE Core from a Firmware Volume.
 
 Copyright (c) 2016 HP Development Company, L.P.
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -271,7 +265,9 @@ DxeLoadCore (
   UINTN                                     DataSize;
   EFI_PEI_S3_RESUME2_PPI                    *S3Resume;
   EFI_PEI_RECOVERY_MODULE_PPI               *PeiRecovery;
+  EDKII_PEI_CAPSULE_ON_DISK_PPI             *PeiCapsuleOnDisk;
   EFI_MEMORY_TYPE_INFORMATION               MemoryData[EfiMaxMemoryType + 1];
+  VOID                                      *CapsuleOnDiskModePpi;
 
   //
   // if in S3 Resume, restore configure
@@ -336,6 +332,32 @@ DxeLoadCore (
     //
     // Now should have a HOB with the DXE core
     //
+  } else if (BootMode == BOOT_ON_FLASH_UPDATE) {
+    //
+    // If Capsule On Disk mode, call storage stack to read Capsule Relocation file
+    // IoMmmu is highly recommmended to enable before reading
+    //
+    Status = PeiServicesLocatePpi (
+               &gEdkiiPeiBootInCapsuleOnDiskModePpiGuid,
+               0,
+               NULL,
+               &CapsuleOnDiskModePpi
+               );
+    if (!EFI_ERROR(Status)) {
+      Status = PeiServicesLocatePpi (
+                 &gEdkiiPeiCapsuleOnDiskPpiGuid,
+                 0,
+                 NULL,
+                 (VOID **) &PeiCapsuleOnDisk
+                 );
+
+      //
+      // Whether failed, still goes to Firmware Update boot path. BDS will clear corresponding indicator and reboot later on
+      //
+      if (!EFI_ERROR (Status)) {
+        Status = PeiCapsuleOnDisk->LoadCapsuleOnDisk (PeiServices, PeiCapsuleOnDisk);
+      }
+    }
   }
 
   if (GetFirstGuidHob ((CONST EFI_GUID *)&gEfiMemoryTypeInformationGuid) == NULL) {

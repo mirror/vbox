@@ -1,15 +1,9 @@
 /** @file
   PCI eunmeration implementation on entire PCI bus system for PCI Bus module.
 
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -528,15 +522,15 @@ DetermineRootBridgeAttributes (
   @return Max size of option rom needed.
 
 **/
-UINT64
+UINT32
 GetMaxOptionRomSize (
   IN PCI_IO_DEVICE   *Bridge
   )
 {
   LIST_ENTRY      *CurrentLink;
   PCI_IO_DEVICE   *Temp;
-  UINT64          MaxOptionRomSize;
-  UINT64          TempOptionRomSize;
+  UINT32          MaxOptionRomSize;
+  UINT32          TempOptionRomSize;
 
   MaxOptionRomSize = 0;
 

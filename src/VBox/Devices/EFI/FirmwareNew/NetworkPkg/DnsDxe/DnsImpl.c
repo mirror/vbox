@@ -1,14 +1,8 @@
 /** @file
 DnsDxe support functions implementation.
 
-Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1114,6 +1108,7 @@ IsValidDnsResponse (
 
   @param  Instance              The DNS instance
   @param  RxString              Received buffer.
+  @param  Length                Received buffer length.
   @param  Completed             Flag to indicate that Dns response is valid.
 
   @retval EFI_SUCCESS           Parse Dns Response successfully.
@@ -1124,12 +1119,14 @@ EFI_STATUS
 ParseDnsResponse (
   IN OUT DNS_INSTANCE              *Instance,
   IN     UINT8                     *RxString,
+  IN     UINT32                    Length,
      OUT BOOLEAN                   *Completed
   )
 {
   DNS_HEADER            *DnsHeader;
 
   CHAR8                 *QueryName;
+  UINT32                QueryNameLen;
   DNS_QUERY_SECTION     *QuerySection;
 
   CHAR8                 *AnswerName;
@@ -1155,6 +1152,7 @@ ParseDnsResponse (
   DNS6_RESOURCE_RECORD  *Dns6RR;
 
   EFI_STATUS            Status;
+  UINT32                RemainingLength;
 
   EFI_TPL               OldTpl;
 
@@ -1178,6 +1176,17 @@ ParseDnsResponse (
 
   *Completed       = TRUE;
   Status           = EFI_SUCCESS;
+  RemainingLength  = Length;
+
+  //
+  // Check whether the remaining packet length is avaiable or not.
+  //
+  if (RemainingLength <= sizeof (DNS_HEADER)) {
+    *Completed = FALSE;
+    return EFI_ABORTED;
+  } else {
+    RemainingLength -= sizeof (DNS_HEADER);
+  }
 
   //
   // Get header
@@ -1192,21 +1201,37 @@ ParseDnsResponse (
   DnsHeader->AditionalNum = NTOHS (DnsHeader->AditionalNum);
 
   //
+  // There is always one QuestionsNum in DNS message. The capability to handle more
+  // than one requires to redesign the message format. Currently, it's not supported.
+  //
+  if (DnsHeader->QuestionsNum > 1) {
+    *Completed = FALSE;
+    return EFI_UNSUPPORTED;
+  }
+
+  //
   // Get Query name
   //
   QueryName = (CHAR8 *) (RxString + sizeof (*DnsHeader));
 
+  QueryNameLen = (UINT32) AsciiStrLen (QueryName) + 1;
+
+  //
+  // Check whether the remaining packet length is avaiable or not.
+  //
+  if (RemainingLength <= QueryNameLen + sizeof (DNS_QUERY_SECTION)) {
+    *Completed = FALSE;
+    return EFI_ABORTED;
+  } else {
+    RemainingLength -= (QueryNameLen + sizeof (DNS_QUERY_SECTION));
+  }
+
   //
   // Get query section
   //
-  QuerySection = (DNS_QUERY_SECTION *) (QueryName + AsciiStrLen (QueryName) + 1);
+  QuerySection = (DNS_QUERY_SECTION *) (QueryName + QueryNameLen);
   QuerySection->Type = NTOHS (QuerySection->Type);
   QuerySection->Class = NTOHS (QuerySection->Class);
-
-  //
-  // Get Answer name
-  //
-  AnswerName = (CHAR8 *) QuerySection + sizeof (*QuerySection);
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
@@ -1342,9 +1367,25 @@ ParseDnsResponse (
   Status = EFI_NOT_FOUND;
 
   //
+  // Get Answer name
+  //
+  AnswerName = (CHAR8 *) QuerySection + sizeof (*QuerySection);
+
+  //
   // Processing AnswerSection.
   //
   while (AnswerSectionNum < DnsHeader->AnswersNum) {
+    //
+    // Check whether the remaining packet length is avaiable or not.
+    //
+    if (RemainingLength <= sizeof (UINT16) + sizeof (DNS_ANSWER_SECTION)) {
+      *Completed = FALSE;
+      Status = EFI_ABORTED;
+      goto ON_EXIT;
+    } else {
+      RemainingLength -= (sizeof (UINT16) + sizeof (DNS_ANSWER_SECTION));
+    }
+
     //
     // Answer name should be PTR, else EFI_UNSUPPORTED returned.
     //
@@ -1361,6 +1402,17 @@ ParseDnsResponse (
     AnswerSection->Class = NTOHS (AnswerSection->Class);
     AnswerSection->Ttl = NTOHL (AnswerSection->Ttl);
     AnswerSection->DataLength = NTOHS (AnswerSection->DataLength);
+
+    //
+    // Check whether the remaining packet length is avaiable or not.
+    //
+    if (RemainingLength < AnswerSection->DataLength) {
+      *Completed = FALSE;
+      Status = EFI_ABORTED;
+      goto ON_EXIT;
+    } else {
+      RemainingLength -= AnswerSection->DataLength;
+    }
 
     //
     // Check whether it's the GeneralLookUp querying.
@@ -1733,6 +1785,7 @@ DnsOnPacketReceived (
   DNS_INSTANCE              *Instance;
 
   UINT8                     *RcvString;
+  UINT32                    Len;
 
   BOOLEAN                   Completed;
 
@@ -1748,9 +1801,7 @@ DnsOnPacketReceived (
 
   ASSERT (Packet != NULL);
 
-  if (Packet->TotalSize <= sizeof (DNS_HEADER)) {
-    goto ON_EXIT;
-  }
+  Len = Packet->TotalSize;
 
   RcvString = NetbufGetByte (Packet, 0, NULL);
   ASSERT (RcvString != NULL);
@@ -1758,7 +1809,7 @@ DnsOnPacketReceived (
   //
   // Parse Dns Response
   //
-  ParseDnsResponse (Instance, RcvString, &Completed);
+  ParseDnsResponse (Instance, RcvString, Len, &Completed);
 
 ON_EXIT:
 

@@ -5,16 +5,10 @@
 #  It also provides the definitions(including PPIs/PROTOCOLs/GUIDs and library classes)
 #  and libraries instances, which are used for those features.
 #
-# Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
 # (C) Copyright 2015 Hewlett Packard Enterprise Development LP <BR>
 # Copyright (c) 2017, Microsoft Corporation.  All rights reserved. <BR>
-# This program and the accompanying materials are licensed and made available under
-# the terms and conditions of the BSD License which accompanies this distribution.
-# The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -139,21 +133,9 @@
   #  Include/Guid/Tcg2PhysicalPresenceData.h
   gEfiTcg2PhysicalPresenceGuid = { 0xaeb9c5c1, 0x94f1, 0x4d02, { 0xbf, 0xd9, 0x46, 0x2, 0xdb, 0x2d, 0x3c, 0x54 }}
 
-  ## GUID used for form browser, password credential and provider identifier.
-  # Include/Guid/PwdCredentialProviderHii.h
-  gPwdCredentialProviderGuid         = { 0x78b9ec8b, 0xc000, 0x46c5, { 0xac, 0x93, 0x24, 0xa0, 0xc1, 0xbb, 0x0, 0xce }}
-
-  ## GUID used for form browser, USB credential and provider identifier.
-  #  Include/Guid/UsbCredentialProviderHii.h
-  gUsbCredentialProviderGuid         = { 0xd0849ed1, 0xa88c, 0x4ba6, { 0xb1, 0xd6, 0xab, 0x50, 0xe2, 0x80, 0xb7, 0xa9 }}
-
   ## GUID used for FormSet guid and user profile variable.
   # Include/Guid/UserIdentifyManagerHii.h
   gUserIdentifyManagerGuid           = { 0x3ccd3dd8, 0x8d45, 0x4fed, { 0x96, 0x2d, 0x2b, 0x38, 0xcd, 0x82, 0xb3, 0xc4 }}
-
-  ## GUID used for FormSet.
-  #  Include/Guid/UserProfileManagerHii.h
-  gUserProfileManagerGuid            = { 0xc35f272c, 0x97c2, 0x465a, { 0xa2, 0x16, 0x69, 0x6b, 0x66, 0x8a, 0x8c, 0xfe }}
 
   ## GUID used for FormSet.
   #  Include/Guid/TcgConfigHii.h
@@ -205,6 +187,9 @@
 
   ## Include/Ppi/FirmwareVolumeInfoPrehashedFV.h
   gEdkiiPeiFirmwareVolumeInfoPrehashedFvPpiGuid = { 0x3ce1e631, 0x7008, 0x477c, { 0xad, 0xa7, 0x5d, 0xcf, 0xc7, 0xc1, 0x49, 0x4b } }
+
+  ## Include/Ppi/FirmwareVolumeInfoStoredHashFv.h
+  gEdkiiPeiFirmwareVolumeInfoStoredHashFvPpiGuid = {0x7f5e4e31, 0x81b1, 0x47e5, { 0x9e, 0x21, 0x1e, 0x4b, 0x5b, 0xc2, 0xf6, 0x1d } }
 
 #
 # [Error.gEfiSecurityPkgTokenSpaceGuid]
@@ -274,6 +259,12 @@
   # @Prompt Status Code for TPM device definitions
   # @ValidList  0x80000003 | 0x010D0000
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice|0x010D0000|UINT32|0x00000007
+
+  ## Progress Code for FV verification result.<BR><BR>
+  #  (EFI_SOFTWARE_PEI_MODULE | EFI_SUBCLASS_SPECIFIC | XXX)
+  # @Prompt Status Code for FV verification result
+  gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeFvVerificationPass|0x0303100A|UINT32|0x00010030
+  gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeFvVerificationFail|0x0303100B|UINT32|0x00010031
 
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## Image verification policy for OptionRom. Only following values are valid:<BR><BR>
@@ -417,7 +408,7 @@
   # @Prompt A physical presence user status
   gEfiSecurityPkgTokenSpaceGuid.PcdUserPhysicalPresence|FALSE|BOOLEAN|0x00010019
 
-  ## Indicate the TPM2 ACPI table revision. Rev 4 is defined in TCG ACPI Specification Rev 00.37.<BR><BR>
+  ## Indicate the TPM2 ACPI table revision. Rev 4 has been defined since TCG ACPI Specification Rev 00.37.<BR><BR>
   # To support configuring from setup page, this PCD can be DynamicHii type and map to a setup option.<BR>
   # For example, map to TCG2_VERSION.Tpm2AcpiTableRev to be configured by Tcg2ConfigDxe driver.<BR>
   # gEfiSecurityPkgTokenSpaceGuid.PcdTpm2AcpiTableRev|L"TCG2_VERSION"|gTcg2ConfigFormSetGuid|0x8|3|NV,BS<BR>
@@ -428,7 +419,7 @@
   # PCD can be configured for different settings in different scenarios
   # Default setting is TCG2_BIOS_TPM_MANAGEMENT_FLAG_DEFAULT | TCG2_BIOS_STORAGE_MANAGEMENT_FLAG_DEFAULT
   # @Prompt Initial setting of TCG2 Persistent Firmware Management Flags
-  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2PhysicalPresenceFlags|0x300E2|UINT32|0x0001001B
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcg2PhysicalPresenceFlags|0x700E2|UINT32|0x0001001B
 
   ## Indicate current TPM2 Interrupt Number reported by _CRS control method.<BR><BR>
   # TPM2 Interrupt feature is disabled If the pcd is set to 0.<BR>
@@ -440,6 +431,18 @@
   # @Prompt Possible TPM2 Interrupt Number buffer
   gEfiSecurityPkgTokenSpaceGuid.PcdTpm2PossibleIrqNumBuf|{0x00, 0x00, 0x00, 0x00}|VOID*|0x0001001D
 
+  ## Indicates if Opal DXE driver skip password prompt.<BR><BR>
+  #   TRUE  - Skip password prompt.<BR>
+  #   FALSE - Does not skip password prompt.<BR>
+  # @Prompt Skip Opal DXE driver password prompt.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSkipOpalPasswordPrompt|FALSE|BOOLEAN|0x00010020
+
+  ## Indicates if Hdd Password driver skip password prompt.<BR><BR>
+  #   TRUE  - Skip password prompt.<BR>
+  #   FALSE - Does not skip password prompt.<BR>
+  # @Prompt Skip Hdd Password prompt.
+  gEfiSecurityPkgTokenSpaceGuid.PcdSkipHddPasswordPrompt|FALSE|BOOLEAN|0x00010021
+
 [PcdsDynamic, PcdsDynamicEx]
 
   ## This PCD indicates Hash mask for TPM 2.0. Bit definition strictly follows TCG Algorithm Registry.<BR><BR>
@@ -450,9 +453,10 @@
   #    BIT1  -  SHA256.<BR>
   #    BIT2  -  SHA384.<BR>
   #    BIT3  -  SHA512.<BR>
+  #    BIT4  -  SM3_256.<BR>
   # @Prompt Hash mask for TPM 2.0
-  # @ValidRange 0x80000001 | 0x00000000 - 0x0000000F
-  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask|0x0000000F|UINT32|0x00010010
+  # @ValidRange 0x80000001 | 0x00000000 - 0x0000001F
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpm2HashMask|0x0000001F|UINT32|0x00010010
 
   ## This PCD indicated final BIOS supported Hash mask.
   #    Bios may choose to register a subset of PcdTpm2HashMask.
@@ -463,6 +467,26 @@
   # linked, and the value of this PCD should be got in module entrypoint.
   # @Prompt Hash Algorithm bitmap.
   gEfiSecurityPkgTokenSpaceGuid.PcdTcg2HashAlgorithmBitmap|0xFFFFFFFF|UINT32|0x00010016
+
+  ## This PCD indicates current active TPM interface type.
+  #  Accodingt to TCG PTP spec 1.3, there are 3 types defined in TPM2_PTP_INTERFACE_TYPE.<BR>
+  #  0x00 - FIFO interface as defined in TIS 1.3 is active.<BR>
+  #  0x01 - FIFO interface as defined in PTP for TPM 2.0 is active.<BR>
+  #  0x02 - CRB interface is active.<BR>
+  #  0xFF - Contains no current active TPM interface type.<BR>
+  #
+  # @Prompt current active TPM interface type.
+  gEfiSecurityPkgTokenSpaceGuid.PcdActiveTpmInterfaceType|0xFF|UINT8|0x0001001E
+
+  ## This PCD records IdleByass status supported by current active TPM interface.
+  #  Accodingt to TCG PTP spec 1.3, TPM with CRB interface can skip idle state and
+  #  diretcly move to CmdReady state. <BR>
+  #  0x00 - Do not support IdleByPass.<BR>
+  #  0x01 - Support IdleByPass.<BR>
+  #  0xFF - IdleByPass State is not synced with TPM hardware.<BR>
+  #
+  # @Prompt IdleByass status supported by current active TPM interface.
+  gEfiSecurityPkgTokenSpaceGuid.PcdCRBIdleByPass|0xFF|UINT8|0x0001001F
 
 [UserExtensions.TianoCore."ExtraFiles"]
   SecurityPkgExtra.uni

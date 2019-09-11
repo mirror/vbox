@@ -1,26 +1,21 @@
 ## @file
 # This file is used to create/update/query/erase a meta file table
 #
-# Copyright (c) 2008, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
 # Import Modules
 #
+from __future__ import absolute_import
 import uuid
 
 import Common.EdkLogger as EdkLogger
-import EccGlobalData
+import Ecc.EccGlobalData as EccGlobalData
 
-from MetaDataTable import Table
-from MetaDataTable import ConvertToSqlString
+from Ecc.MetaFileWorkspace.MetaDataTable import Table
+from Ecc.MetaFileWorkspace.MetaDataTable import ConvertToSqlString
 from CommonDataClass.DataClass import MODEL_FILE_DSC, MODEL_FILE_DEC, MODEL_FILE_INF, \
                                       MODEL_FILE_OTHERS
 
@@ -117,9 +112,9 @@ class ModuleTable(MetaFileTable):
         ConditionString = "Model=%s AND Enabled>=0" % Model
         ValueString = "Value1,Value2,Value3,Usage,Scope1,Scope2,ID,StartLine"
 
-        if Arch != None and Arch != 'COMMON':
+        if Arch is not None and Arch != 'COMMON':
             ConditionString += " AND (Scope1='%s' OR Scope1='COMMON')" % Arch
-        if Platform != None and Platform != 'COMMON':
+        if Platform is not None and Platform != 'COMMON':
             ConditionString += " AND (Scope2='%s' OR Scope2='COMMON' OR Scope2='DEFAULT')" % Platform
 
         SqlCommand = "SELECT %s FROM %s WHERE %s" % (ValueString, self.Table, ConditionString)
@@ -198,7 +193,7 @@ class PackageTable(MetaFileTable):
         ConditionString = "Model=%s AND Enabled>=0" % Model
         ValueString = "Value1,Value2,Value3,Scope1,ID,StartLine"
 
-        if Arch != None and Arch != 'COMMON':
+        if Arch is not None and Arch != 'COMMON':
             ConditionString += " AND (Scope1='%s' OR Scope1='COMMON')" % Arch
 
         SqlCommand = "SELECT %s FROM %s WHERE %s" % (ValueString, self.Table, ConditionString)
@@ -283,17 +278,17 @@ class PlatformTable(MetaFileTable):
         ConditionString = "Model=%s AND Enabled>0" % Model
         ValueString = "Value1,Value2,Value3,Scope1,Scope2,ID,StartLine"
 
-        if Scope1 != None and Scope1 != 'COMMON':
+        if Scope1 is not None and Scope1 != 'COMMON':
             ConditionString += " AND (Scope1='%s' OR Scope1='COMMON')" % Scope1
-        if Scope2 != None and Scope2 != 'COMMON':
+        if Scope2 is not None and Scope2 != 'COMMON':
             ConditionString += " AND (Scope2='%s' OR Scope2='COMMON' OR Scope2='DEFAULT')" % Scope2
 
-        if BelongsToItem != None:
+        if BelongsToItem is not None:
             ConditionString += " AND BelongsToItem=%s" % BelongsToItem
         else:
             ConditionString += " AND BelongsToItem<0"
 
-        if FromItem != None:
+        if FromItem is not None:
             ConditionString += " AND FromItem=%s" % FromItem
 
         SqlCommand = "SELECT %s FROM %s WHERE %s" % (ValueString, self.Table, ConditionString)

@@ -4,13 +4,7 @@
   (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
   Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -200,29 +194,6 @@ PxeBcCacheDhcp6Packet (
   Dst->Length = Src->Length;
 
   return EFI_SUCCESS;
-}
-
-
-/**
-  Free all the nodes in the list for boot file.
-
-  @param[in]  Head            The pointer to the head of list.
-
-**/
-VOID
-PxeBcFreeBootFileOption (
-  IN LIST_ENTRY               *Head
-  )
-{
-  LIST_ENTRY                  *Entry;
-  LIST_ENTRY                  *NextEntry;
-  PXEBC_DHCP6_OPTION_NODE     *Node;
-
-  NET_LIST_FOR_EACH_SAFE (Entry, NextEntry, Head) {
-    Node = NET_LIST_USER_STRUCT (Entry, PXEBC_DHCP6_OPTION_NODE, Link);
-    RemoveEntryList (Entry);
-    FreePool (Node);
-  }
 }
 
 /**

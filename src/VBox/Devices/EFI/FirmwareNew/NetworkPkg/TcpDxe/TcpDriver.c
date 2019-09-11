@@ -1,15 +1,9 @@
 /** @file
   The driver binding and service binding protocol for the TCP driver.
 
-  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -202,16 +196,11 @@ TcpDriverEntryPoint (
              &gTcpComponentName2
              );
   if (EFI_ERROR (Status)) {
-    gBS->UninstallMultipleProtocolInterfaces (
-           ImageHandle,
-           &gEfiDriverBindingProtocolGuid,
-           &gTcp4DriverBinding,
-           &gEfiComponentName2ProtocolGuid,
-           &gTcpComponentName2,
-           &gEfiComponentNameProtocolGuid,
-           &gTcpComponentName,
-           NULL
-           );
+    EfiLibUninstallDriverBindingComponentName2 (
+      &gTcp4DriverBinding,
+      &gTcpComponentName,
+      &gTcpComponentName2
+      );
     return Status;
   }
 

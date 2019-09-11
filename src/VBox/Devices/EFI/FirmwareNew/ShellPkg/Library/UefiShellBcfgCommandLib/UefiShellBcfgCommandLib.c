@@ -2,14 +2,8 @@
   Main file for BCFG command.
 
   (C) Copyright 2014-2015 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1025,7 +1019,7 @@ BcfgAddOpt(
   //
   // Get the index of the variable we are changing.
   //
-  Status = ShellConvertStringToUint64(Walker, &Intermediate, FALSE, TRUE);
+  Status = ShellConvertStringToUint64(Walker, &Intermediate, TRUE, TRUE);
   if (EFI_ERROR(Status) || (((UINT16)Intermediate) != Intermediate) || StrStr(Walker, L" ") == NULL || ((UINT16)Intermediate) > ((UINT16)OrderCount)) {
     ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellBcfgHiiHandle, L"bcfg", L"Option Index");
     ShellStatus = SHELL_INVALID_PARAMETER;

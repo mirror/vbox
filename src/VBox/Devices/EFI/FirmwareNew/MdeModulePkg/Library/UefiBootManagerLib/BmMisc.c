@@ -1,15 +1,9 @@
 /** @file
   Misc library functions.
 
-Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -445,8 +439,6 @@ EfiBootManagerDispatchDeferredImages (
   UINTN                              ImageSize;
   BOOLEAN                            BootOption;
   EFI_HANDLE                         ImageHandle;
-  UINTN                              ExitDataSize;
-  CHAR16                             *ExitData;
   UINTN                              ImageCount;
   UINTN                              LoadCount;
 
@@ -508,10 +500,7 @@ EfiBootManagerDispatchDeferredImages (
         // a 5 Minute period
         //
         gBS->SetWatchdogTimer (5 * 60, 0x0000, 0x00, NULL);
-        Status = gBS->StartImage (ImageHandle, &ExitDataSize, &ExitData);
-        if (ExitData != NULL) {
-          FreePool (ExitData);
-        }
+        gBS->StartImage (ImageHandle, NULL, NULL);
 
         //
         // Clear the Watchdog Timer after the image returns.

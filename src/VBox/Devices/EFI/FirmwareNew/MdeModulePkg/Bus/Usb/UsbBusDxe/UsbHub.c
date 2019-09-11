@@ -3,13 +3,7 @@
     Unified interface for RootHub and Hub.
 
 Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -311,74 +305,6 @@ UsbHubCtrlGetPortStatus (
              (UINT16) (Port + 1),
              State,
              4
-             );
-
-  return Status;
-}
-
-
-/**
-  Usb hub control transfer to reset the TT (Transaction Transaltor).
-
-  @param  HubDev                The hub device.
-  @param  Port                  The port of the hub.
-
-  @retval EFI_SUCCESS           The TT of the hub is reset.
-  @retval Others                Failed to reset the port.
-
-**/
-EFI_STATUS
-UsbHubCtrlResetTT (
-  IN  USB_DEVICE          *HubDev,
-  IN  UINT8               Port
-  )
-{
-  EFI_STATUS              Status;
-
-  Status = UsbCtrlRequest (
-             HubDev,
-             EfiUsbNoData,
-             USB_REQ_TYPE_CLASS,
-             USB_HUB_TARGET_HUB,
-             USB_HUB_REQ_RESET_TT,
-             0,
-             (UINT16) (Port + 1),
-             NULL,
-             0
-             );
-
-  return Status;
-}
-
-
-/**
-  Usb hub control transfer to set the hub feature.
-
-  @param  HubDev                The hub device.
-  @param  Feature               The feature to set.
-
-  @retval EFI_SUCESS            The feature is set for the hub.
-  @retval Others                Failed to set the feature.
-
-**/
-EFI_STATUS
-UsbHubCtrlSetHubFeature (
-  IN  USB_DEVICE          *HubDev,
-  IN  UINT8               Feature
-  )
-{
-  EFI_STATUS              Status;
-
-  Status = UsbCtrlRequest (
-             HubDev,
-             EfiUsbNoData,
-             USB_REQ_TYPE_CLASS,
-             USB_HUB_TARGET_HUB,
-             USB_HUB_REQ_SET_FEATURE,
-             Feature,
-             0,
-             NULL,
-             0
              );
 
   return Status;

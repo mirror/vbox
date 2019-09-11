@@ -1,12 +1,6 @@
 ;------------------------------------------------------------------------------ ;
 ; Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
-; This program and the accompanying materials
-; are licensed and made available under the terms and conditions of the BSD License
-; which accompanies this distribution.  The full text of the license may be found at
-; http://opensource.org/licenses/bsd-license.php.
-;
-; THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-; WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ; Module Name:
 ;
@@ -18,17 +12,16 @@
 ;
 ;-------------------------------------------------------------------------------
 
-%include "StuffRsb.inc"
+%include "StuffRsbNasm.inc"
 
 extern ASM_PFX(SmmInitHandler)
 extern ASM_PFX(mRebasedFlag)
 extern ASM_PFX(mSmmRelocationOriginalAddress)
 
-global ASM_PFX(gSmmCr3)
-global ASM_PFX(gSmmCr4)
-global ASM_PFX(gSmmCr0)
-global ASM_PFX(gSmmJmpAddr)
-global ASM_PFX(gSmmInitStack)
+global ASM_PFX(gPatchSmmCr3)
+global ASM_PFX(gPatchSmmCr4)
+global ASM_PFX(gPatchSmmCr0)
+global ASM_PFX(gPatchSmmInitStack)
 global ASM_PFX(gcSmiInitGdtr)
 global ASM_PFX(gcSmmInitSize)
 global ASM_PFX(gcSmmInitTemplate)
@@ -51,25 +44,22 @@ ASM_PFX(SmmStartup):
     mov     ebx, edx                    ; rdmsr will change edx. keep it in ebx.
     and     ebx, BIT20                  ; extract NX capability bit
     shr     ebx, 9                      ; shift bit to IA32_EFER.NXE[BIT11] position
-    DB      0x66, 0xb8                  ; mov eax, imm32
-ASM_PFX(gSmmCr3): DD 0
+    mov     eax, strict dword 0         ; source operand will be patched
+ASM_PFX(gPatchSmmCr3):
     mov     cr3, eax
 o32 lgdt    [cs:ebp + (ASM_PFX(gcSmiInitGdtr) - ASM_PFX(SmmStartup))]
-    DB      0x66, 0xb8                  ; mov eax, imm32
-ASM_PFX(gSmmCr4): DD 0
+    mov     eax, strict dword 0         ; source operand will be patched
+ASM_PFX(gPatchSmmCr4):
     mov     cr4, eax
     mov     ecx, 0xc0000080             ; IA32_EFER MSR
     rdmsr
     or      eax, ebx                    ; set NXE bit if NX is available
     wrmsr
-    DB      0x66, 0xb8                  ; mov eax, imm32
-ASM_PFX(gSmmCr0): DD 0
+    mov     eax, strict dword 0         ; source operand will be patched
+ASM_PFX(gPatchSmmCr0):
     mov     di, PROTECT_MODE_DS
     mov     cr0, eax
-    DB      0x66, 0xea                  ; jmp far [ptr48]
-ASM_PFX(gSmmJmpAddr):
-    DD      @32bit
-    DW      PROTECT_MODE_CS
+    jmp     PROTECT_MODE_CS : dword @32bit
 
 BITS 32
 @32bit:
@@ -78,8 +68,8 @@ BITS 32
     mov     fs, edi
     mov     gs, edi
     mov     ss, edi
-    DB      0xbc                        ; mov esp, imm32
-ASM_PFX(gSmmInitStack): DD 0
+    mov     esp, strict dword 0         ; source operand will be patched
+ASM_PFX(gPatchSmmInitStack):
     call    ASM_PFX(SmmInitHandler)
     StuffRsb32
     rsm

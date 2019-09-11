@@ -72,7 +72,7 @@
 #
 #      c) OEM specificed storage area:
 #         - The PCD value is stored in OEM specified area which base address is
-#           specified by a FixedAtBuild PCD setting - PcdVpdBaseAddress.
+#           specified by PCD setting - PcdVpdBaseAddress64 or PcdVpdBaseAddress.
 #         - The area is read only for PEI and DXE phase.
 #         - [PcdsDynamicVpd] is used as section name for this type PCD in platform
 #           DSC file. [PcdsDynamicExVpd] is for dynamicex type PCD.
@@ -279,12 +279,7 @@
 #
 #  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution. The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 #
 ##
@@ -302,7 +297,7 @@
 #
 # The following information is for reference only and not required by the build tools.
 #
-#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC (EBC is for build only)
+#  VALID_ARCHITECTURES           = IA32 X64 EBC (EBC is for build only)
 #
 
 [Sources]
@@ -344,6 +339,7 @@
 
 [Pcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdVpdBaseAddress ## SOMETIMES_CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdVpdBaseAddress64 ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdMaxPeiPcdCallBackNumberPerPcdEntry ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdNvStoreDefaultValueBuffer ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdSetNvStoreDefaultId       ## CONSUMES

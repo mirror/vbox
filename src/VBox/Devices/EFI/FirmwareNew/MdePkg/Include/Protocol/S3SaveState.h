@@ -1,18 +1,12 @@
 /** @file
-  S3 Save State Protocol as defined in PI1.2 Specification VOLUME 5 Standard.
+  S3 Save State Protocol as defined in PI 1.6(Errata A) Specification VOLUME 5 Standard.
 
   This protocol is used by DXE PI module to store or record various IO operations
   to be replayed during an S3 resume.
   This protocol is not required for all platforms.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   This PPI is defined in UEFI Platform Initialization Specification 1.2 Volume 5:
@@ -52,7 +46,7 @@ typedef
 EFI_STATUS
 (EFIAPI *EFI_S3_SAVE_STATE_WRITE)(
    IN CONST EFI_S3_SAVE_STATE_PROTOCOL  *This,
-   IN       UINT16                      OpCode,
+   IN       UINTN                       OpCode,
    ...
 );
 
@@ -98,7 +92,7 @@ EFI_STATUS
    IN CONST EFI_S3_SAVE_STATE_PROTOCOL  *This,
    IN       BOOLEAN                     BeforeOrAfter,
    IN OUT   EFI_S3_BOOT_SCRIPT_POSITION *Position       OPTIONAL,
-   IN       UINT16                      OpCode,
+   IN       UINTN                       OpCode,
    ...
 );
 

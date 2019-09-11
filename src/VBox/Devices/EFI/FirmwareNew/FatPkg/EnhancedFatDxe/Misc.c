@@ -1,14 +1,8 @@
 /** @file
   Miscellaneous functions.
 
-Copyright (c) 2005 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available
-under the terms and conditions of the BSD License which accompanies this
-distribution. The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 
 **/
@@ -132,6 +126,7 @@ FatQueueTask (
 {
   EFI_STATUS          Status;
   LIST_ENTRY          *Link;
+  LIST_ENTRY          *NextLink;
   FAT_SUBTASK         *Subtask;
 
   //
@@ -149,9 +144,17 @@ FatQueueTask (
   EfiReleaseLock (&FatTaskLock);
 
   Status = EFI_SUCCESS;
-  for ( Link = GetFirstNode (&Task->Subtasks)
-      ; !IsNull (&Task->Subtasks, Link)
-      ; Link = GetNextNode (&Task->Subtasks, Link)
+  //
+  // Use NextLink to store the next link of the list, because Link might be remove from the
+  // doubly-linked list and get freed in the end of current loop.
+  //
+  // Also, list operation APIs like IsNull() and GetNextNode() are avoided during the loop, since
+  // they may check the validity of doubly-linked lists by traversing them. These APIs cannot
+  // handle list elements being removed during the traverse.
+  //
+  for ( Link = GetFirstNode (&Task->Subtasks), NextLink = GetNextNode (&Task->Subtasks, Link)
+      ; Link != &Task->Subtasks
+      ; Link = NextLink, NextLink = Link->ForwardLink
       ) {
     Subtask = CR (Link, FAT_SUBTASK, Link, FAT_SUBTASK_SIGNATURE);
     if (Subtask->Write) {

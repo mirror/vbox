@@ -5,17 +5,11 @@
   all over this file.
 
   The only place where multi-instance device paths are supported is in
-  environment varibles. Multi-instance device paths should never be placed
+  environment variables. Multi-instance device paths should never be placed
   on a Handle.
 
   Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -36,12 +30,13 @@ CONST EFI_DEVICE_PATH_PROTOCOL  mUefiDevicePathLibEndDevicePath = {
 
 /**
   Determine whether a given device path is valid.
-  If DevicePath is NULL, then ASSERT().
 
   @param  DevicePath  A pointer to a device path data structure.
   @param  MaxSize     The maximum size of the device path data structure.
 
   @retval TRUE        DevicePath is valid.
+  @retval FALSE       DevicePath is NULL.
+  @retval FALSE       Maxsize is less than sizeof(EFI_DEVICE_PATH_PROTOCOL).
   @retval FALSE       The length of any node node in the DevicePath is less
                       than sizeof (EFI_DEVICE_PATH_PROTOCOL).
   @retval FALSE       If MaxSize is not zero, the size of the DevicePath
@@ -59,17 +54,15 @@ IsDevicePathValid (
   UINTN Size;
   UINTN NodeLength;
 
-  ASSERT (DevicePath != NULL);
+  //
+  //  Validate the input whether exists and its size big enough to touch the first node
+  //
+  if (DevicePath == NULL || (MaxSize > 0 && MaxSize < END_DEVICE_PATH_LENGTH)) {
+    return FALSE;
+  }
 
   if (MaxSize == 0) {
-    MaxSize = MAX_UINTN;
- }
-
-  //
-  // Validate the input size big enough to touch the first node.
-  //
-  if (MaxSize < sizeof (EFI_DEVICE_PATH_PROTOCOL)) {
-    return FALSE;
+    MaxSize = MAX_UINT32;
   }
 
   for (Count = 0, Size = 0; !IsDevicePathEnd (DevicePath); DevicePath = NextDevicePathNode (DevicePath)) {
@@ -78,7 +71,7 @@ IsDevicePathValid (
       return FALSE;
     }
 
-    if (NodeLength > MAX_UINTN - Size) {
+    if (NodeLength > MAX_UINT32 - Size) {
       return FALSE;
     }
     Size += NodeLength;

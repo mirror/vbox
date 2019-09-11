@@ -5,14 +5,8 @@
   If a code construct is defined in the UEFI 2.7 specification it must be included
   by this include file.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1020,10 +1014,7 @@ EFI_STATUS
                                 EfiResetShutdown the data buffer starts with a Null-terminated
                                 string, optionally followed by additional binary data.
                                 The string is a description that the caller may use to further
-                                indicate the reason for the system reset. ResetData is only
-                                valid if ResetStatus is something other than EFI_SUCCESS
-                                unless the ResetType is EfiResetPlatformSpecific
-                                where a minimum amount of ResetData is always required.
+                                indicate the reason for the system reset.
                                 For a ResetType of EfiResetPlatformSpecific the data buffer
                                 also starts with a Null-terminated string that is followed
                                 by an EFI_GUID that describes the specific type of reset to perform.
@@ -2204,8 +2195,6 @@ typedef struct {
 
 #if   defined (MDE_CPU_IA32)
   #define EFI_REMOVABLE_MEDIA_FILE_NAME   EFI_REMOVABLE_MEDIA_FILE_NAME_IA32
-#elif defined (MDE_CPU_IPF)
-  #define EFI_REMOVABLE_MEDIA_FILE_NAME   EFI_REMOVABLE_MEDIA_FILE_NAME_IA64
 #elif defined (MDE_CPU_X64)
   #define EFI_REMOVABLE_MEDIA_FILE_NAME   EFI_REMOVABLE_MEDIA_FILE_NAME_X64
 #elif defined (MDE_CPU_EBC)
@@ -2216,6 +2205,11 @@ typedef struct {
 #else
   #error Unknown Processor Type
 #endif
+
+//
+// The directory within the active EFI System Partition defined for delivery of capsule to firmware
+//
+#define EFI_CAPSULE_FILE_DIRECTORY            L"\\EFI\\UpdateCapsule\\"
 
 #include <Uefi/UefiPxe.h>
 #include <Uefi/UefiGpt.h>

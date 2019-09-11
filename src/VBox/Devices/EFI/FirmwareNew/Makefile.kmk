@@ -178,16 +178,6 @@ VBOX_EFI_DEPENDENCIES = \
        $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/VBoxPkg.dec \
        \
        $(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkg.dec \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/BdsBoot.c \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/BdsConnect.c \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/BdsConsole.c \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/BdsMisc.c \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/DevicePath.c \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsLib.inf \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/GenericBdsStrings.uni \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/InternalBdsLib.h \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/String.c \
-	$(VBOX_PATH_EFI_FIRMWARE)/IntelFrameworkModulePkg/Library/GenericBdsLib/String.h \
 
 #
 # The common build.py invocation part.
@@ -228,6 +218,7 @@ VBOX_EFI_BUILD_CMD += \
 	-D VBOX=1 \
 	-D VBOX_WITH_OVMF=1 \
 	-D BUILD_NEW_SHELL=1 \
+	-D NETWORK_ISCSI_ENABLE=0 \
 	-D VBOX_REV=$(VBOX_SVN_REV) \
 	-D "VBOX_OUTPUT_BASE_DIR=$(VBoxEfiFirmware_0_OUTDIR)" \
 	-D "VBOX_PATH_ROOT=$(PATH_ROOT)" \

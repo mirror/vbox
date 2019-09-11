@@ -1,15 +1,9 @@
 ## @file
 # Install distribution package.
 #
-# Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 """
 Install a distribution package
@@ -23,7 +17,7 @@ from os import chmod
 from os import SEEK_SET
 from os import SEEK_END
 import stat
-import md5
+from hashlib import md5
 import copy
 from sys import stdin
 from sys import platform
@@ -91,7 +85,7 @@ def InstallNewPackage(WorkspaceDir, Path, CustomPath = False):
 # @param PathList:       The already installed standalone module Path list
 #
 def InstallNewModule(WorkspaceDir, Path, PathList = None):
-    if PathList == None:
+    if PathList is None:
         PathList = []
     Path = ConvertPath(Path)
     Path = os.path.normpath(Path)
@@ -176,8 +170,8 @@ def UnZipDp(WorkspaceDir, DpPkgFileName, Index=1):
     # verify MD5 signature when existed
     #
     if DistPkg.Header.Signature != '':
-        Md5Sigature = md5.new(__FileHookOpen__(ContentFile, 'rb').read())
-        if DistPkg.Header.Signature != Md5Sigature.hexdigest():
+        Md5Signature = md5(__FileHookOpen__(ContentFile, 'rb').read())
+        if DistPkg.Header.Signature != Md5Signature.hexdigest():
             ContentZipFile.Close()
             Logger.Error("InstallPkg", FILE_CHECKSUM_FAILURE,
                 ExtraData=ContentFile)
@@ -215,8 +209,8 @@ def GetPackageList(DistPkg, Dep, WorkspaceDir, Options, ContentZipFile, ModuleLi
     #
     for Package in PackageList:
         FilePath = PackageToDec(Package, DistPkg.Header)
-        Md5Sigature = md5.new(__FileHookOpen__(str(FilePath), 'rb').read())
-        Md5Sum = Md5Sigature.hexdigest()
+        Md5Signature = md5(__FileHookOpen__(str(FilePath), 'rb').read())
+        Md5Sum = Md5Signature.hexdigest()
         if (FilePath, Md5Sum) not in Package.FileList:
             Package.FileList.append((FilePath, Md5Sum))
 
@@ -275,8 +269,8 @@ def GetModuleList(DistPkg, Dep, WorkspaceDir, ContentZipFile, ModuleList):
     for (Module, Package) in ModuleList:
         CheckCNameInModuleRedefined(Module, DistPkg)
         FilePath = ModuleToInf(Module, Package, DistPkg.Header)
-        Md5Sigature = md5.new(__FileHookOpen__(str(FilePath), 'rb').read())
-        Md5Sum = Md5Sigature.hexdigest()
+        Md5Signature = md5(__FileHookOpen__(str(FilePath), 'rb').read())
+        Md5Sum = Md5Signature.hexdigest()
         if Package:
             if (FilePath, Md5Sum) not in Package.FileList:
                 Package.FileList.append((FilePath, Md5Sum))
@@ -537,7 +531,7 @@ def Main(Options = None):
                       Options, Dep, WorkspaceDir, DataBase)
         ReturnCode = 0
 
-    except FatalError, XExcept:
+    except FatalError as XExcept:
         ReturnCode = XExcept.args[0]
         if Logger.GetLevel() <= Logger.DEBUG_9:
             Logger.Quiet(ST.MSG_PYTHON_ON % (python_version(), platform) + format_exc())
@@ -553,7 +547,7 @@ def Main(Options = None):
                     "\nInstallPkg",
                     CODE_ERROR,
                     ST.ERR_UNKNOWN_FATAL_INSTALL_ERR % Options.PackageFile,
-                    ExtraData=ST.MSG_SEARCH_FOR_HELP,
+                    ExtraData=ST.MSG_SEARCH_FOR_HELP % ST.MSG_EDKII_MAIL_ADDR,
                     RaiseError=False
                     )
         Logger.Quiet(ST.MSG_PYTHON_ON % (python_version(),
@@ -803,8 +797,8 @@ def InstallFile(ContentZipFile, FromFile, ToFile, ReadOnly, Executable=False):
         else:
             chmod(ToFile, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH | stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
 
-    Md5Sigature = md5.new(__FileHookOpen__(str(ToFile), 'rb').read())
-    Md5Sum = Md5Sigature.hexdigest()
+    Md5Signature = md5(__FileHookOpen__(str(ToFile), 'rb').read())
+    Md5Sum = Md5Signature.hexdigest()
 
     return Md5Sum
 
@@ -876,8 +870,8 @@ def InstallPackageContent(FromPath, ToPath, Package, ContentZipFile, Dep,
             chmod(ToFile, stat.S_IRUSR|stat.S_IRGRP|stat.S_IROTH)
         else:
             chmod(ToFile, stat.S_IRUSR|stat.S_IRGRP|stat.S_IROTH|stat.S_IWUSR|stat.S_IWGRP|stat.S_IWOTH)
-        Md5Sigature = md5.new(__FileHookOpen__(str(ToFile), 'rb').read())
-        Md5Sum = Md5Sigature.hexdigest()
+        Md5Signature = md5(__FileHookOpen__(str(ToFile), 'rb').read())
+        Md5Sum = Md5Signature.hexdigest()
         if (ToFile, Md5Sum) not in Package.FileList:
             Package.FileList.append((ToFile, Md5Sum))
     Package.SetIncludeArchList(PackageIncludeArchList)

@@ -4,13 +4,7 @@
   Copyright (c) 2008 - 2015, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -280,7 +274,7 @@ FindFfsFileAndSection (
     }
 
     File = (EFI_FFS_FILE_HEADER*)(UINTN) CurrentAddress;
-    Size = *(UINT32*) File->Size & 0xffffff;
+    Size = FFS_FILE_SIZE (File);
     if (Size < (sizeof (*File) + sizeof (EFI_COMMON_SECTION_HEADER))) {
       return EFI_VOLUME_CORRUPTED;
     }
@@ -611,7 +605,7 @@ FindImageBase (
     }
 
     File = (EFI_FFS_FILE_HEADER*)(UINTN) CurrentAddress;
-    Size = *(UINT32*) File->Size & 0xffffff;
+    Size = FFS_FILE_SIZE (File);
     if (Size < sizeof (*File)) {
       return EFI_NOT_FOUND;
     }
@@ -636,7 +630,7 @@ FindImageBase (
       CurrentAddress = (EndOfSection + 3) & 0xfffffffffffffffcULL;
       Section = (EFI_COMMON_SECTION_HEADER*)(UINTN) CurrentAddress;
 
-      Size = *(UINT32*) Section->Size & 0xffffff;
+      Size = SECTION_SIZE (Section);
       if (Size < sizeof (*Section)) {
         return EFI_NOT_FOUND;
       }

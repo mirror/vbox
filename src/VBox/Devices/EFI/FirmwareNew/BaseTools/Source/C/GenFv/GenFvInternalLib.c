@@ -4,13 +4,7 @@ This file contains the internal functions required to generate a Firmware Volume
 Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 Portions Copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
 Portions Copyright (c) 2016 HP Development Company, L.P.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -110,7 +104,7 @@ CHAR8      *mFvbAlignmentName[] = {
 // This data array will be located at the base of the Firmware Volume Header (FVH)
 // in the boot block.  It must not exceed 14 bytes of code.  The last 2 bytes
 // will be used to keep the FVH checksum consistent.
-// This code will be run in response to a starutp IPI for HT-enabled systems.
+// This code will be run in response to a startup IPI for HT-enabled systems.
 //
 #define SIZEOF_STARTUP_DATA_ARRAY 0x10
 
@@ -465,7 +459,7 @@ Returns:
   case 0:
     //
     // 1 byte alignment
-    //if bit 1 have set, 128K byte alignmnet
+    //if bit 1 have set, 128K byte alignment
     //
     if (FfsFile->Attributes & FFS_ATTRIB_DATA_ALIGNMENT2) {
       *Alignment = 17;
@@ -723,12 +717,12 @@ Returns:
     }
     memcpy ((UINT8 *)PadFile + CurFfsHeaderSize, ExtHeader, ExtHeader->ExtHeaderSize);
     ((EFI_FIRMWARE_VOLUME_HEADER *) FvImage->FileImage)->ExtHeaderOffset = (UINT16) ((UINTN) ((UINT8 *)PadFile + CurFfsHeaderSize) - (UINTN) FvImage->FileImage);
-	  //
-	  // Make next file start at QWord Boundry
-	  //
-	  while (((UINTN) FvImage->CurrentFilePointer & (EFI_FFS_FILE_HEADER_ALIGNMENT - 1)) != 0) {
-	    FvImage->CurrentFilePointer++;
-	  }
+    //
+    // Make next file start at QWord Boundary
+    //
+    while (((UINTN) FvImage->CurrentFilePointer & (EFI_FFS_FILE_HEADER_ALIGNMENT - 1)) != 0) {
+      FvImage->CurrentFilePointer++;
+    }
   }
 
   return EFI_SUCCESS;
@@ -864,21 +858,21 @@ Returns:
   while ((*Cptr != FILE_SEP_CHAR) && (Cptr >= PeMapFileName)) {
     Cptr --;
   }
-	*Cptr2 = '\0';
+  *Cptr2 = '\0';
   if (strlen (Cptr + 1) >= MAX_LINE_LEN) {
     return EFI_ABORTED;
   }
   strncpy (KeyWord, Cptr + 1, MAX_LINE_LEN - 1);
   KeyWord[MAX_LINE_LEN - 1] = 0;
-	*Cptr2 = '.';
+  *Cptr2 = '.';
 
   //
   // AddressOfEntryPoint and Offset in Image
   //
   if (!pImageContext->IsTeImage) {
-  	ImgHdr = (EFI_IMAGE_OPTIONAL_HEADER_UNION *) ((UINT8 *) pImageContext->Handle + pImageContext->PeCoffHeaderOffset);
-  	AddressOfEntryPoint = ImgHdr->Pe32.OptionalHeader.AddressOfEntryPoint;
-  	Offset = 0;
+    ImgHdr = (EFI_IMAGE_OPTIONAL_HEADER_UNION *) ((UINT8 *) pImageContext->Handle + pImageContext->PeCoffHeaderOffset);
+    AddressOfEntryPoint = ImgHdr->Pe32.OptionalHeader.AddressOfEntryPoint;
+    Offset = 0;
     SectionHeader = (EFI_IMAGE_SECTION_HEADER *) (
                        (UINT8 *) ImgHdr +
                        sizeof (UINT32) +
@@ -887,7 +881,7 @@ Returns:
                        );
     Index = ImgHdr->Pe32.FileHeader.NumberOfSections;
   } else {
-  	TEImageHeader = (EFI_TE_IMAGE_HEADER *) pImageContext->Handle;
+    TEImageHeader = (EFI_TE_IMAGE_HEADER *) pImageContext->Handle;
     AddressOfEntryPoint = TEImageHeader->AddressOfEntryPoint;
     Offset = TEImageHeader->StrippedSize - sizeof (EFI_TE_IMAGE_HEADER);
     SectionHeader = (EFI_IMAGE_SECTION_HEADER *) (TEImageHeader + 1);
@@ -905,15 +899,7 @@ Returns:
     fprintf (FvMapFile, "BaseAddress=0x%010llx, ", (unsigned long long) (ImageBaseAddress + Offset));
   }
 
-  if (FfsFile->Type != EFI_FV_FILETYPE_SECURITY_CORE && pImageContext->Machine == EFI_IMAGE_MACHINE_IA64) {
-    //
-    // Process IPF PLABEL to get the real address after the image has been rebased.
-    // PLABEL structure is got by AddressOfEntryPoint offset to ImageBuffer stored in pImageContext->Handle.
-    //
-    fprintf (FvMapFile, "EntryPoint=0x%010llx", (unsigned long long) (*(UINT64 *)((UINTN) pImageContext->Handle + (UINTN) AddressOfEntryPoint)));
-  } else {
-    fprintf (FvMapFile, "EntryPoint=0x%010llx", (unsigned long long) (ImageBaseAddress + AddressOfEntryPoint));
-  }
+  fprintf (FvMapFile, "EntryPoint=0x%010llx", (unsigned long long) (ImageBaseAddress + AddressOfEntryPoint));
   fprintf (FvMapFile, ")\n");
 
   fprintf (FvMapFile, "(GUID=%s", FileGuidName);
@@ -921,12 +907,12 @@ Returns:
   DataVirtualAddress = 0;
   for (; Index > 0; Index --, SectionHeader ++) {
     if (stricmp ((CHAR8 *)SectionHeader->Name, ".text") == 0) {
-  		TextVirtualAddress = SectionHeader->VirtualAddress;
-  	} else if (stricmp ((CHAR8 *)SectionHeader->Name, ".data") == 0) {
-  	  DataVirtualAddress = SectionHeader->VirtualAddress;
-  	} else if (stricmp ((CHAR8 *)SectionHeader->Name, ".sdata") == 0) {
-  	  DataVirtualAddress = SectionHeader->VirtualAddress;
-  	}
+      TextVirtualAddress = SectionHeader->VirtualAddress;
+    } else if (stricmp ((CHAR8 *)SectionHeader->Name, ".data") == 0) {
+      DataVirtualAddress = SectionHeader->VirtualAddress;
+    } else if (stricmp ((CHAR8 *)SectionHeader->Name, ".sdata") == 0) {
+      DataVirtualAddress = SectionHeader->VirtualAddress;
+    }
   }
   fprintf (FvMapFile, " .textbaseaddress=0x%010llx", (unsigned long long) (ImageBaseAddress + TextVirtualAddress));
   fprintf (FvMapFile, " .databaseaddress=0x%010llx", (unsigned long long) (ImageBaseAddress + DataVirtualAddress));
@@ -1226,7 +1212,7 @@ Returns:
   FileBuffer = malloc (FileSize);
   if (FileBuffer == NULL) {
     fclose (NewFile);
-    Error (NULL, 0, 4001, "Resouce", "memory cannot be allocated!");
+    Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
     return EFI_OUT_OF_RESOURCES;
   }
 
@@ -1252,9 +1238,9 @@ Returns:
   if (!FvInfo->IsPiFvImage) {
     memcpy (FvImage->CurrentFilePointer, FileBuffer, FileSize);
     if (FvInfo->SizeofFvFiles[Index] > FileSize) {
-    	FvImage->CurrentFilePointer += FvInfo->SizeofFvFiles[Index];
+      FvImage->CurrentFilePointer += FvInfo->SizeofFvFiles[Index];
     } else {
-    	FvImage->CurrentFilePointer += FileSize;
+      FvImage->CurrentFilePointer += FileSize;
     }
     goto Done;
   }
@@ -1378,10 +1364,10 @@ Returns:
     // Rebase Bs and Rt drivers for the debug genfvmap tool.
     //
     Status = FfsRebase (FvInfo, FvInfo->FvFiles[Index], (EFI_FFS_FILE_HEADER *) FileBuffer, (UINTN) FvImage->CurrentFilePointer - (UINTN) FvImage->FileImage, FvMapFile);
-	if (EFI_ERROR (Status)) {
-	  Error (NULL, 0, 3000, "Invalid", "Could not rebase %s.", FvInfo->FvFiles[Index]);
-	  return Status;
-	}
+  if (EFI_ERROR (Status)) {
+    Error (NULL, 0, 3000, "Invalid", "Could not rebase %s.", FvInfo->FvFiles[Index]);
+    return Status;
+  }
     //
     // Copy the file
     //
@@ -1395,7 +1381,7 @@ Returns:
     return EFI_ABORTED;
   }
   //
-  // Make next file start at QWord Boundry
+  // Make next file start at QWord Boundary
   //
   while (((UINTN) FvImage->CurrentFilePointer & (EFI_FFS_FILE_HEADER_ALIGNMENT - 1)) != 0) {
     FvImage->CurrentFilePointer++;
@@ -1541,7 +1527,6 @@ Returns:
   UINT16                    MachineType;
   EFI_PHYSICAL_ADDRESS      PeiCorePhysicalAddress;
   EFI_PHYSICAL_ADDRESS      SecCorePhysicalAddress;
-  EFI_PHYSICAL_ADDRESS      *SecCoreEntryAddressPtr;
   INT32                     Ia32SecEntryOffset;
   UINT32                    *Ia32ResetAddressPtr;
   UINT8                     *BytePointer;
@@ -1551,8 +1536,6 @@ Returns:
   UINT32                    IpiVector;
   UINTN                     Index;
   EFI_FFS_FILE_STATE        SavedState;
-  UINT64                    FitAddress;
-  FIT_TABLE                 *FitTablePtr;
   BOOLEAN                   Vtf0Detected;
   UINT32                    FfsHeaderSize;
   UINT32                    SecHeaderSize;
@@ -1655,110 +1638,55 @@ Returns:
   //
   // Find the PEI Core
   //
+  PeiCorePhysicalAddress = 0;
   Status = GetFileByType (EFI_FV_FILETYPE_PEI_CORE, 1, &PeiCoreFile);
-  if (EFI_ERROR (Status) || PeiCoreFile == NULL) {
-    Error (NULL, 0, 3000, "Invalid", "could not find the PEI core in the FV.");
-    return EFI_ABORTED;
-  }
-  //
-  // PEI Core found, now find PE32 or TE section
-  //
-  Status = GetSectionByType (PeiCoreFile, EFI_SECTION_PE32, 1, &Pe32Section);
-  if (Status == EFI_NOT_FOUND) {
-    Status = GetSectionByType (PeiCoreFile, EFI_SECTION_TE, 1, &Pe32Section);
-  }
+  if (!EFI_ERROR (Status) && (PeiCoreFile != NULL)) {
+    //
+    // PEI Core found, now find PE32 or TE section
+    //
+    Status = GetSectionByType (PeiCoreFile, EFI_SECTION_PE32, 1, &Pe32Section);
+    if (Status == EFI_NOT_FOUND) {
+      Status = GetSectionByType (PeiCoreFile, EFI_SECTION_TE, 1, &Pe32Section);
+    }
 
-  if (EFI_ERROR (Status)) {
-    Error (NULL, 0, 3000, "Invalid", "could not find either a PE32 or a TE section in PEI core file.");
-    return EFI_ABORTED;
-  }
+    if (EFI_ERROR (Status)) {
+      Error (NULL, 0, 3000, "Invalid", "could not find either a PE32 or a TE section in PEI core file.");
+      return EFI_ABORTED;
+    }
 
-  SecHeaderSize = GetSectionHeaderLength(Pe32Section.CommonHeader);
-  Status = GetPe32Info (
-            (VOID *) ((UINTN) Pe32Section.Pe32Section + SecHeaderSize),
-            &EntryPoint,
-            &BaseOfCode,
-            &MachineType
-            );
+    SecHeaderSize = GetSectionHeaderLength(Pe32Section.CommonHeader);
+    Status = GetPe32Info (
+              (VOID *) ((UINTN) Pe32Section.Pe32Section + SecHeaderSize),
+              &EntryPoint,
+              &BaseOfCode,
+              &MachineType
+              );
 
-  if (EFI_ERROR (Status)) {
-    Error (NULL, 0, 3000, "Invalid", "could not get the PE32 entry point for the PEI core.");
-    return EFI_ABORTED;
-  }
-  //
-  // Physical address is FV base + offset of PE32 + offset of the entry point
-  //
-  PeiCorePhysicalAddress = FvInfo->BaseAddress;
-  PeiCorePhysicalAddress += (UINTN) Pe32Section.Pe32Section + SecHeaderSize - (UINTN) FvImage->FileImage;
-  PeiCorePhysicalAddress += EntryPoint;
-  DebugMsg (NULL, 0, 9, "PeiCore physical entry point address", "Address = 0x%llX", (unsigned long long) PeiCorePhysicalAddress);
-
-  if (MachineType == EFI_IMAGE_MACHINE_IA64) {
-    //
-    // Update PEI_CORE address
-    //
-    //
-    // Set the uncached attribute bit in the physical address
-    //
-    PeiCorePhysicalAddress |= 0x8000000000000000ULL;
-
-    //
-    // Check if address is aligned on a 16 byte boundary
-    //
-    if (PeiCorePhysicalAddress & 0xF) {
-      Error (NULL, 0, 3000, "Invalid",
-        "PEI_CORE entry point is not aligned on a 16 byte boundary, address specified is %llXh.",
-        (unsigned long long) PeiCorePhysicalAddress
-        );
+    if (EFI_ERROR (Status)) {
+      Error (NULL, 0, 3000, "Invalid", "could not get the PE32 entry point for the PEI core.");
       return EFI_ABORTED;
     }
     //
-    // First Get the FIT table address
+    // Physical address is FV base + offset of PE32 + offset of the entry point
     //
-    FitAddress  = (*(UINT64 *) (FvImage->Eof - IPF_FIT_ADDRESS_OFFSET)) & 0xFFFFFFFF;
+    PeiCorePhysicalAddress = FvInfo->BaseAddress;
+    PeiCorePhysicalAddress += (UINTN) Pe32Section.Pe32Section + SecHeaderSize - (UINTN) FvImage->FileImage;
+    PeiCorePhysicalAddress += EntryPoint;
+    DebugMsg (NULL, 0, 9, "PeiCore physical entry point address", "Address = 0x%llX", (unsigned long long) PeiCorePhysicalAddress);
+  }
 
-    FitTablePtr = (FIT_TABLE *) (FvImage->FileImage + (FitAddress - FvInfo->BaseAddress));
+if (MachineType == EFI_IMAGE_MACHINE_IA32 || MachineType == EFI_IMAGE_MACHINE_X64) {
+    if (PeiCorePhysicalAddress != 0) {
+      //
+      // Get the location to update
+      //
+      Ia32ResetAddressPtr  = (UINT32 *) ((UINTN) FvImage->Eof - IA32_PEI_CORE_ENTRY_OFFSET);
 
-    Status      = UpdatePeiCoreEntryInFit (FitTablePtr, PeiCorePhysicalAddress);
-
-    if (!EFI_ERROR (Status)) {
-      UpdateFitCheckSum (FitTablePtr);
+      //
+      // Write lower 32 bits of physical address for Pei Core entry
+      //
+      *Ia32ResetAddressPtr = (UINT32) PeiCorePhysicalAddress;
     }
-
-    //
-    // Update SEC_CORE address
-    //
-    //
-    // Set the uncached attribute bit in the physical address
-    //
-    SecCorePhysicalAddress |= 0x8000000000000000ULL;
-    //
-    // Check if address is aligned on a 16 byte boundary
-    //
-    if (SecCorePhysicalAddress & 0xF) {
-      Error (NULL, 0, 3000, "Invalid",
-        "SALE_ENTRY entry point is not aligned on a 16 byte boundary, address specified is %llXh.",
-        (unsigned long long) SecCorePhysicalAddress
-        );
-      return EFI_ABORTED;
-    }
-    //
-    // Update the address
-    //
-    SecCoreEntryAddressPtr  = (EFI_PHYSICAL_ADDRESS *) ((UINTN) FvImage->Eof - IPF_SALE_ENTRY_ADDRESS_OFFSET);
-    *SecCoreEntryAddressPtr = SecCorePhysicalAddress;
-
-  } else if (MachineType == EFI_IMAGE_MACHINE_IA32 || MachineType == EFI_IMAGE_MACHINE_X64) {
-    //
-    // Get the location to update
-    //
-    Ia32ResetAddressPtr  = (UINT32 *) ((UINTN) FvImage->Eof - IA32_PEI_CORE_ENTRY_OFFSET);
-
-    //
-    // Write lower 32 bits of physical address for Pei Core entry
-    //
-    *Ia32ResetAddressPtr = (UINT32) PeiCorePhysicalAddress;
-
     //
     // Write SecCore Entry point relative address into the jmp instruction in reset vector.
     //
@@ -2262,14 +2190,14 @@ Returns:
         return EFI_ABORTED;
       }
 
-      // Add opcode for an uncondional branch with no link. i.e.: " B SecEntryPoint"
+      // Add opcode for an unconditional branch with no link. i.e.: " B SecEntryPoint"
       ResetVector[0] |= ARMT_UNCONDITIONAL_JUMP_INSTRUCTION;
 
       // SWI handler movs   pc,lr. Just in case a debugger uses SWI
       ResetVector[2] = 0xE1B0F07E;
 
       // Place holder to support a common interrupt handler from ROM.
-      // Currently not suppprted. For this to be used the reset vector would not be in this FV
+      // Currently not supported. For this to be used the reset vector would not be in this FV
       // and the exception vectors would be hard coded in the ROM and just through this address
       // to find a common handler in the a module in the FV.
       ResetVector[3] = 0;
@@ -2301,7 +2229,7 @@ Returns:
     ARMT above has an entry in ResetVector[2] for SWI. The way we are using the ResetVector
     array at the moment, for AArch64, does not allow us space for this as the header only
     allows for a fixed amount of bytes at the start. If we are sure that UEFI will live
-    within the first 4GB of addressable RAM we could potensioally adopt the same ResetVector
+    within the first 4GB of addressable RAM we could potentially adopt the same ResetVector
     layout as above. But for the moment we replace the four 32bit vectors with two 64bit
     vectors in the same area of the Image heasder. This allows UEFI to start from a 64bit
     base.
@@ -2319,7 +2247,7 @@ Returns:
         Error(NULL, 0, 3000, "Invalid", "SEC Entry point must be within 128MB of the start of the FV");
         return EFI_ABORTED;
       }
-      // Add opcode for an uncondional branch with no link. i.e.: " B SecEntryPoint"
+      // Add opcode for an unconditional branch with no link. i.e.: " B SecEntryPoint"
       ResetVector[0] |= ARM64_UNCONDITIONAL_JUMP_INSTRUCTION;
     }
 
@@ -2436,7 +2364,7 @@ Returns:
   //
   // Verify machine type is supported
   //
-  if ((*MachineType != EFI_IMAGE_MACHINE_IA32) && (*MachineType != EFI_IMAGE_MACHINE_IA64) && (*MachineType != EFI_IMAGE_MACHINE_X64) && (*MachineType != EFI_IMAGE_MACHINE_EBC) &&
+  if ((*MachineType != EFI_IMAGE_MACHINE_IA32) &&  (*MachineType != EFI_IMAGE_MACHINE_X64) && (*MachineType != EFI_IMAGE_MACHINE_EBC) &&
       (*MachineType != EFI_IMAGE_MACHINE_ARMT) && (*MachineType != EFI_IMAGE_MACHINE_AARCH64)) {
     Error (NULL, 0, 3000, "Invalid", "Unrecognized machine type in the PE32 file.");
     return EFI_UNSUPPORTED;
@@ -3134,7 +3062,7 @@ Returns:
   }
 
   //
-  // Accumlate every FFS file size.
+  // Accumulate every FFS file size.
   //
   for (Index = 0; FvInfoPtr->FvFiles[Index][0] != 0; Index++) {
     //
@@ -3197,22 +3125,22 @@ Returns:
         CurrentOffset = (CurrentOffset + FfsHeaderSize + sizeof(EFI_FFS_FILE_HEADER) + FfsAlignment - 1) & ~(FfsAlignment - 1);
         CurrentOffset -= FfsHeaderSize;
       }
-	  }
+    }
 
     //
     // Add ffs file size
     //
     if (FvInfoPtr->SizeofFvFiles[Index] > FfsFileSize) {
-    	CurrentOffset += FvInfoPtr->SizeofFvFiles[Index];
+      CurrentOffset += FvInfoPtr->SizeofFvFiles[Index];
     } else {
-    	CurrentOffset += FfsFileSize;
+      CurrentOffset += FfsFileSize;
     }
 
     //
-    // Make next ffs file start at QWord Boundry
+    // Make next ffs file start at QWord Boundary
     //
     if (FvInfoPtr->IsPiFvImage) {
-    	CurrentOffset = (CurrentOffset + EFI_FFS_FILE_HEADER_ALIGNMENT - 1) & ~(EFI_FFS_FILE_HEADER_ALIGNMENT - 1);
+      CurrentOffset = (CurrentOffset + EFI_FFS_FILE_HEADER_ALIGNMENT - 1) & ~(EFI_FFS_FILE_HEADER_ALIGNMENT - 1);
     }
   }
   CurrentOffset += VtfFileSize;
@@ -3300,7 +3228,7 @@ Routine Description:
   their base address to the parent image.
 
 Arguments:
-  FvInfo            A pointer to FV_INFO struture.
+  FvInfo            A pointer to FV_INFO structure.
   FfsFile           A pointer to Ffs file image that may contain FvImage.
   XipOffset         The offset address to the parent FvImage base.
 
@@ -3343,7 +3271,7 @@ Returns:
         return EFI_ABORTED;
       }
 
-      // machine type is ARM, set a flag so ARM reset vector procesing occurs
+      // machine type is ARM, set a flag so ARM reset vector processing occurs
       if ((MachineType == EFI_IMAGE_MACHINE_ARMT) || (MachineType == EFI_IMAGE_MACHINE_AARCH64)) {
         VerboseMsg("Located ARM/AArch64 SEC/PEI core in child FV");
         mArm = TRUE;
@@ -3377,7 +3305,7 @@ Routine Description:
 
 Arguments:
 
-  FvInfo            A pointer to FV_INFO struture.
+  FvInfo            A pointer to FV_INFO structure.
   FileName          Ffs File PathName
   FfsFile           A pointer to Ffs file image.
   XipOffset         The offset address to use for rebasing the XIP file image.

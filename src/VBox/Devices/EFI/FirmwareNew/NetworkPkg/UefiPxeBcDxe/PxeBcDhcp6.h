@@ -1,15 +1,9 @@
 /** @file
   Functions declaration related with DHCPv6 for UefiPxeBc Driver.
 
-  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -116,16 +110,6 @@ typedef struct {
 } PXEBC_DHCP6_PACKET_CACHE;
 
 
-/**
-  Free all the nodes in the boot file list.
-
-  @param[in]  Head            The pointer to the head of the list.
-
-**/
-VOID
-PxeBcFreeBootFileOption (
-  IN LIST_ENTRY               *Head
-  );
 
 
 /**

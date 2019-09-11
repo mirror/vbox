@@ -4,14 +4,8 @@
   to parse RSA 2048 SHA 256 encapsulation section and extract raw data.
   It uses the BaseCrypyLib based on OpenSSL to authenticate the signature.
 
-Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -163,9 +157,9 @@ Rsa2048Sha256GuidedSectionHandler (
     CertBlockRsa2048Sha256 = &((RSA_2048_SHA_256_SECTION2_HEADER *) InputSection)->CertBlockRsa2048Sha256;
     OutputBufferSize       = SECTION2_SIZE (InputSection) - sizeof (RSA_2048_SHA_256_SECTION2_HEADER);
     if ((((EFI_GUID_DEFINED_SECTION *)InputSection)->Attributes & EFI_GUIDED_SECTION_PROCESSING_REQUIRED) != 0) {
-      PERF_START (NULL, "RsaCopy", "DXE", 0);
+      PERF_INMODULE_BEGIN ("DxeRsaCopy");
       CopyMem (*OutputBuffer, (UINT8 *)InputSection + sizeof (RSA_2048_SHA_256_SECTION2_HEADER), OutputBufferSize);
-      PERF_END (NULL, "RsaCopy", "DXE", 0);
+      PERF_INMODULE_END ("DxeRsaCopy");
     } else {
       *OutputBuffer = (UINT8 *)InputSection + sizeof (RSA_2048_SHA_256_SECTION2_HEADER);
     }
@@ -191,9 +185,9 @@ Rsa2048Sha256GuidedSectionHandler (
     CertBlockRsa2048Sha256 = &((RSA_2048_SHA_256_SECTION_HEADER *)InputSection)->CertBlockRsa2048Sha256;
     OutputBufferSize       = SECTION_SIZE (InputSection) - sizeof (RSA_2048_SHA_256_SECTION_HEADER);
     if ((((EFI_GUID_DEFINED_SECTION *)InputSection)->Attributes & EFI_GUIDED_SECTION_PROCESSING_REQUIRED) != 0) {
-      PERF_START (NULL, "RsaCopy", "DXE", 0);
+      PERF_INMODULE_BEGIN ("DxeRsaCopy");
       CopyMem (*OutputBuffer, (UINT8 *)InputSection + sizeof (RSA_2048_SHA_256_SECTION_HEADER), OutputBufferSize);
-      PERF_END (NULL, "RsaCopy", "DXE", 0);
+      PERF_INMODULE_END ("DxeRsaCopy");
     } else {
       *OutputBuffer = (UINT8 *)InputSection + sizeof (RSA_2048_SHA_256_SECTION_HEADER);
     }
@@ -327,9 +321,9 @@ Rsa2048Sha256GuidedSectionHandler (
     *AuthenticationStatus |= EFI_AUTH_STATUS_TEST_FAILED;
     goto Done;
   }
-  PERF_START (NULL, "RsaShaData", "DXE", 0);
+  PERF_INMODULE_BEGIN ("DxeRsaShaData");
   CryptoStatus = Sha256Update (HashContext, *OutputBuffer, OutputBufferSize);
-  PERF_END (NULL, "RsaShaData", "DXE", 0);
+  PERF_INMODULE_END ("DxeRsaShaData");
   if (!CryptoStatus) {
     DEBUG ((DEBUG_ERROR, "DxeRsa2048Sha256: Sha256Update() failed\n"));
     *AuthenticationStatus |= EFI_AUTH_STATUS_TEST_FAILED;
@@ -345,7 +339,7 @@ Rsa2048Sha256GuidedSectionHandler (
   //
   // Verify the RSA 2048 SHA 256 signature.
   //
-  PERF_START (NULL, "RsaVerify", "DXE", 0);
+  PERF_INMODULE_BEGIN ("DxeRsaVerify");
   CryptoStatus = RsaPkcs1Verify (
                    Rsa,
                    Digest,
@@ -353,7 +347,7 @@ Rsa2048Sha256GuidedSectionHandler (
                    CertBlockRsa2048Sha256->Signature,
                    sizeof (CertBlockRsa2048Sha256->Signature)
                    );
-  PERF_END (NULL, "RsaVerify", "DXE", 0);
+  PERF_INMODULE_END ("DxeRsaVerify");
   if (!CryptoStatus) {
     //
     // If RSA 2048 SHA 256 signature verification fails, AUTH tested failed bit is set.

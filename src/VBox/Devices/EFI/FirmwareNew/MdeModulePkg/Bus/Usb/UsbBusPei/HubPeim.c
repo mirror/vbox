@@ -3,14 +3,7 @@ Usb Hub Request Support In PEI Phase
 
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -193,46 +186,7 @@ PeiHubGetHubStatus (
                      );
 }
 
-/**
-  Set specified feature to a given hub.
 
-  @param  PeiServices   General-purpose services that are available to every PEIM.
-  @param  UsbIoPpi      Indicates the PEI_USB_IO_PPI instance.
-  @param  Value         New feature value.
-
-  @retval EFI_SUCCESS       Port feature is set successfully.
-  @retval EFI_DEVICE_ERROR  Cannot set the port feature due to a hardware error.
-  @retval Others            Other failure occurs.
-
-**/
-EFI_STATUS
-PeiHubSetHubFeature (
-  IN EFI_PEI_SERVICES    **PeiServices,
-  IN PEI_USB_IO_PPI      *UsbIoPpi,
-  IN UINT8               Value
-  )
-{
-  EFI_USB_DEVICE_REQUEST      DeviceRequest;
-
-  ZeroMem (&DeviceRequest, sizeof (EFI_USB_DEVICE_REQUEST));
-
-  //
-  // Fill Device request packet
-  //
-  DeviceRequest.RequestType = USB_HUB_SET_HUB_FEATURE_REQ_TYPE;
-  DeviceRequest.Request     = USB_HUB_SET_HUB_FEATURE;
-  DeviceRequest.Value       = Value;
-
-  return UsbIoPpi->UsbControlTransfer (
-                     PeiServices,
-                     UsbIoPpi,
-                     &DeviceRequest,
-                     EfiUsbNoData,
-                     PcdGet32 (PcdUsbTransferTimeoutValue),
-                     NULL,
-                     0
-                     );
-}
 
 /**
   Clear specified feature on a given hub.

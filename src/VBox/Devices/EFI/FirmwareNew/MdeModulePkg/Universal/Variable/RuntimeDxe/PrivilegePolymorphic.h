@@ -9,13 +9,7 @@
   Copyright (c) 2017, Red Hat, Inc.<BR>
   Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
-  WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 #ifndef _PRIVILEGE_POLYMORPHIC_H_
 #define _PRIVILEGE_POLYMORPHIC_H_
@@ -85,13 +79,78 @@ SetVariableCheckHandlerMor (
   );
 
 /**
-  This service is consumed by the variable modules to perform a serializing
-  operation on all load-from-memory instructions that were issued prior to the
-  call of this function.
+  This service is consumed by the variable modules to place a barrier to stop
+  speculative execution.
+
+  Ensures that no later instruction will execute speculatively, until all prior
+  instructions have completed.
 
 **/
 VOID
-MemoryLoadFence (
+VariableSpeculationBarrier (
+  VOID
+  );
+
+/**
+  Notify the system that the SMM variable driver is ready.
+**/
+VOID
+VariableNotifySmmReady (
+  VOID
+  );
+
+/**
+  Notify the system that the SMM variable write driver is ready.
+**/
+VOID
+VariableNotifySmmWriteReady (
+  VOID
+  );
+
+/**
+  Variable Driver main entry point. The Variable driver places the 4 EFI
+  runtime services in the EFI System Table and installs arch protocols
+  for variable read and write services being available. It also registers
+  a notification function for an EVT_SIGNAL_VIRTUAL_ADDRESS_CHANGE event.
+
+  @retval EFI_SUCCESS       Variable service successfully initialized.
+**/
+EFI_STATUS
+EFIAPI
+MmVariableServiceInitialize (
+  VOID
+  );
+
+/**
+  This function checks if the buffer is valid per processor architecture and
+  does not overlap with SMRAM.
+
+  @param Buffer The buffer start address to be checked.
+  @param Length The buffer length to be checked.
+
+  @retval TRUE  This buffer is valid per processor architecture and does not
+                overlap with SMRAM.
+  @retval FALSE This buffer is not valid per processor architecture or overlaps
+                with SMRAM.
+**/
+BOOLEAN
+VariableSmmIsBufferOutsideSmmValid (
+  IN EFI_PHYSICAL_ADDRESS  Buffer,
+  IN UINT64                Length
+  );
+
+/**
+  Whether the TCG or TCG2 protocols are installed in the UEFI protocol database.
+  This information is used by the MorLock code to infer whether an existing
+  MOR variable is legitimate or not.
+
+  @retval TRUE  Either the TCG or TCG2 protocol is installed in the UEFI
+                protocol database
+  @retval FALSE Neither the TCG nor the TCG2 protocol is installed in the UEFI
+                protocol database
+**/
+BOOLEAN
+VariableHaveTcgProtocols (
   VOID
   );
 

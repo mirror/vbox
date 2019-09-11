@@ -4,14 +4,8 @@
   We currently only have one EBC compiler so there may be some Intel compiler
   specific functions in this file.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -102,6 +96,11 @@ typedef unsigned long         UINTN;
 /// Maximum legal EBC address
 ///
 #define MAX_ADDRESS   ((UINTN)(~0ULL >> (64 - sizeof (INTN) * 8)))
+
+///
+/// Maximum usable address at boot time (48 bits using 4 KB pages)
+///
+#define MAX_ALLOC_ADDRESS   MAX_ADDRESS
 
 ///
 /// Maximum legal EBC INTN and UINTN values.

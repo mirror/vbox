@@ -1,14 +1,8 @@
 /** @file
   CPU exception handler library implementation for PEIM module.
 
-Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,13 +11,21 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DebugLib.h>
 #include <Library/HobLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/PcdLib.h>
 
 CONST UINTN    mDoFarReturnFlag  = 0;
 
-EFI_GUID mCpuExceptrionHandlerLibHobGuid = CPU_EXCEPTION_HANDLER_LIB_HOB_GUID;
+typedef struct {
+  UINT8                   ExceptionStubHeader[HOOKAFTER_STUB_SIZE];
+  EXCEPTION_HANDLER_DATA  *ExceptionHandlerData;
+} EXCEPTION0_STUB_HEADER;
 
 /**
-  Get exception handler data pointer from GUIDed HOb.
+  Get exception handler data pointer from IDT[0].
+
+  The exception #0 stub header is duplicated in an allocated pool with extra 4-byte/8-byte to store the
+  exception handler data. The new allocated memory layout follows structure EXCEPTION0_STUB_HEADER.
+  The code assumes that all processors uses the same exception handler for #0 exception.
 
   @return  pointer to exception handler data.
 **/
@@ -32,18 +34,50 @@ GetExceptionHandlerData (
   VOID
   )
 {
-  EFI_HOB_GUID_TYPE       *GuidHob;
-  VOID                    *DataInHob;
-  EXCEPTION_HANDLER_DATA  *ExceptionHandlerData;
+  IA32_DESCRIPTOR                  IdtDescriptor;
+  IA32_IDT_GATE_DESCRIPTOR         *IdtTable;
+  EXCEPTION0_STUB_HEADER           *Exception0StubHeader;
 
-  ExceptionHandlerData = NULL;
-  GuidHob = GetFirstGuidHob (&mCpuExceptrionHandlerLibHobGuid);
-  if (GuidHob != NULL) {
-    DataInHob = GET_GUID_HOB_DATA (GuidHob);
-    ExceptionHandlerData = (EXCEPTION_HANDLER_DATA *)(*(UINTN *)DataInHob);
-  }
-  ASSERT (ExceptionHandlerData != NULL);
-  return ExceptionHandlerData;
+  AsmReadIdtr (&IdtDescriptor);
+  IdtTable = (IA32_IDT_GATE_DESCRIPTOR *)IdtDescriptor.Base;
+
+  Exception0StubHeader = (EXCEPTION0_STUB_HEADER *)ArchGetIdtHandler (&IdtTable[0]);
+  return Exception0StubHeader->ExceptionHandlerData;
+}
+
+/**
+  Set exception handler data pointer to IDT[0].
+
+  The exception #0 stub header is duplicated in an allocated pool with extra 4-byte/8-byte to store the
+  exception handler data. The new allocated memory layout follows structure EXCEPTION0_STUB_HEADER.
+  The code assumes that all processors uses the same exception handler for #0 exception.
+
+  @param ExceptionHandlerData  pointer to exception handler data.
+**/
+VOID
+SetExceptionHandlerData (
+  IN EXCEPTION_HANDLER_DATA        *ExceptionHandlerData
+  )
+{
+  EXCEPTION0_STUB_HEADER           *Exception0StubHeader;
+  IA32_DESCRIPTOR                  IdtDescriptor;
+  IA32_IDT_GATE_DESCRIPTOR         *IdtTable;
+  //
+  // Duplicate the exception #0 stub header in pool and cache the ExceptionHandlerData just after the stub header.
+  // So AP can get the ExceptionHandlerData by reading the IDT[0].
+  //
+  AsmReadIdtr (&IdtDescriptor);
+  IdtTable = (IA32_IDT_GATE_DESCRIPTOR *)IdtDescriptor.Base;
+
+  Exception0StubHeader = AllocatePool (sizeof (*Exception0StubHeader));
+  ASSERT (Exception0StubHeader != NULL);
+  CopyMem (
+    Exception0StubHeader->ExceptionStubHeader,
+    (VOID *)ArchGetIdtHandler (&IdtTable[0]),
+    sizeof (Exception0StubHeader->ExceptionStubHeader)
+    );
+  Exception0StubHeader->ExceptionHandlerData = ExceptionHandlerData;
+  ArchUpdateIdtEntry (&IdtTable[0], (UINTN)Exception0StubHeader->ExceptionStubHeader);
 }
 
 /**
@@ -109,15 +143,7 @@ InitializeCpuExceptionHandlers (
     return Status;
   }
 
-  //
-  // Build location of CPU MP DATA buffer in HOB
-  //
-  BuildGuidDataHob (
-    &mCpuExceptrionHandlerLibHobGuid,
-    (VOID *)&ExceptionHandlerData,
-    sizeof(UINT64)
-    );
-
+  SetExceptionHandlerData (ExceptionHandlerData);
   return EFI_SUCCESS;
 }
 
@@ -208,5 +234,29 @@ InitializeCpuExceptionHandlersEx (
   IN CPU_EXCEPTION_INIT_DATA            *InitData OPTIONAL
   )
 {
-  return InitializeCpuExceptionHandlers (VectorInfo);
+  EFI_STATUS                        Status;
+
+  //
+  // To avoid repeat initialization of default handlers, the caller should pass
+  // an extended init data with InitDefaultHandlers set to FALSE. There's no
+  // need to call this method to just initialize default handlers. Call non-ex
+  // version instead; or this method must be implemented as a simple wrapper of
+  // non-ex version of it, if this version has to be called.
+  //
+  if (InitData == NULL || InitData->Ia32.InitDefaultHandlers) {
+    Status = InitializeCpuExceptionHandlers (VectorInfo);
+  } else {
+    Status = EFI_SUCCESS;
+  }
+
+  if (!EFI_ERROR (Status)) {
+    //
+    // Initializing stack switch is only necessary for Stack Guard functionality.
+    //
+    if (PcdGetBool (PcdCpuStackGuard) && InitData != NULL) {
+      Status = ArchSetupExceptionStack (InitData);
+    }
+  }
+
+  return  Status;
 }

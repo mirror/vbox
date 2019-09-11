@@ -4,14 +4,8 @@
 
   (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
   (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
-  Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -98,40 +92,6 @@ InternalShellProtocolIsSimpleFileSystemPresent(
   return (FALSE);
 }
 
-/**
-  Internal worker debug helper function to print out maps as they are added.
-
-  @param[in] Mapping        string mapping that has been added
-  @param[in] DevicePath     pointer to device path that has been mapped.
-
-  @retval EFI_SUCCESS   the operation was successful.
-  @return other         an error ocurred
-
-  @sa LocateHandle
-  @sa OpenProtocol
-**/
-EFI_STATUS
-InternalShellProtocolDebugPrintMessage (
-  IN CONST CHAR16                   *Mapping,
-  IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath
-  )
-{
-  EFI_STATUS                        Status;
-  CHAR16                            *Temp;
-
-  Status = EFI_SUCCESS;
-  DEBUG_CODE_BEGIN();
-
-  if (Mapping != NULL) {
-    DEBUG((EFI_D_INFO, "Added new map item:\"%S\"\r\n", Mapping));
-  }
-  Temp = ConvertDevicePathToText(DevicePath, TRUE, TRUE);
-  DEBUG((EFI_D_INFO, "DevicePath: %S\r\n", Temp));
-  FreePool(Temp);
-
-  DEBUG_CODE_END();
-  return (Status);
-}
 
 /**
   This function creates a mapping for a device path.
@@ -1333,7 +1293,7 @@ EfiShellOpenFileByName(
   // We are opening a regular file.
   //
   DevicePath = EfiShellGetDevicePathFromFilePath(FileName);
-//  DEBUG_CODE(InternalShellProtocolDebugPrintMessage (NULL, DevicePath););
+
   if (DevicePath == NULL) {
     return (EFI_NOT_FOUND);
   }
@@ -2261,52 +2221,7 @@ EfiShellGetGuidName(
   return (EFI_SUCCESS);
 }
 
-/**
-  Updates a file name to be preceeded by the mapped drive name
 
-  @param[in] BasePath      the Mapped drive name to prepend
-  @param[in, out] Path     pointer to pointer to the file name to update.
-
-  @retval EFI_SUCCESS
-  @retval EFI_OUT_OF_RESOURCES
-**/
-EFI_STATUS
-UpdateFileName(
-  IN CONST CHAR16 *BasePath,
-  IN OUT CHAR16   **Path
-  )
-{
-  CHAR16              *Path2;
-  UINTN               Path2Size;
-
-  Path2Size = 0;
-  Path2 = NULL;
-
-  ASSERT(Path      != NULL);
-  ASSERT(*Path     != NULL);
-  ASSERT(BasePath  != NULL);
-
-  //
-  // convert a local path to an absolute path
-  //
-  if (StrStr(*Path, L":") == NULL) {
-    ASSERT((Path2 == NULL && Path2Size == 0) || (Path2 != NULL));
-    StrnCatGrow(&Path2, &Path2Size, BasePath, 0);
-    if (Path2 == NULL) {
-      return (EFI_OUT_OF_RESOURCES);
-    }
-    ASSERT((Path2 == NULL && Path2Size == 0) || (Path2 != NULL));
-    StrnCatGrow(&Path2, &Path2Size, (*Path)[0] == L'\\'?(*Path) + 1 :*Path, 0);
-    if (Path2 == NULL) {
-      return (EFI_OUT_OF_RESOURCES);
-    }
-  }
-
-  FreePool(*Path);
-  (*Path) = Path2;
-
-  return (EFI_SUCCESS);
-}
 
 /**
   If FileHandle is a directory then the function reads from FileHandle and reads in
@@ -2924,36 +2839,15 @@ EfiShellSetEnv(
   //
   // Make sure we dont 'set' a predefined read only variable
   //
-  if (gUnicodeCollation->StriColl(
-        gUnicodeCollation,
-        (CHAR16*)Name,
-        L"cwd") == 0
-    ||gUnicodeCollation->StriColl(
-        gUnicodeCollation,
-        (CHAR16*)Name,
-        L"Lasterror") == 0
-    ||gUnicodeCollation->StriColl(
-        gUnicodeCollation,
-        (CHAR16*)Name,
-        L"profiles") == 0
-    ||gUnicodeCollation->StriColl(
-        gUnicodeCollation,
-        (CHAR16*)Name,
-        L"uefishellsupport") == 0
-    ||gUnicodeCollation->StriColl(
-        gUnicodeCollation,
-        (CHAR16*)Name,
-        L"uefishellversion") == 0
-    ||gUnicodeCollation->StriColl(
-        gUnicodeCollation,
-        (CHAR16*)Name,
-        L"uefiversion") == 0
-    ||(!ShellInfoObject.ShellInitSettings.BitUnion.Bits.NoNest &&
-      gUnicodeCollation->StriColl(
-        gUnicodeCollation,
-        (CHAR16*)Name,
-        (CHAR16*)mNoNestingEnvVarName) == 0)
-       ){
+  if ((StrCmp (Name, L"cwd") == 0) ||
+      (StrCmp (Name, L"lasterror") == 0) ||
+      (StrCmp (Name, L"profiles") == 0) ||
+      (StrCmp (Name, L"uefishellsupport") == 0) ||
+      (StrCmp (Name, L"uefishellversion") == 0) ||
+      (StrCmp (Name, L"uefiversion") == 0) ||
+      (!ShellInfoObject.ShellInitSettings.BitUnion.Bits.NoNest &&
+       StrCmp (Name, mNoNestingEnvVarName) == 0)
+     ) {
     return (EFI_INVALID_PARAMETER);
   }
   return (InternalEfiShellSetEnv(Name, Value, Volatile));
@@ -3385,7 +3279,7 @@ ToLower (
   @param[out] Volatile          upon return of a single command if TRUE indicates
                                 this is stored in a volatile fashion.  FALSE otherwise.
 
-  @return                      	If Alias is not NULL, it will return a pointer to
+  @return                        If Alias is not NULL, it will return a pointer to
                                 the NULL-terminated command for that alias.
                                 If Alias is NULL, ReturnedData points to a ';'
                                 delimited list of alias (e.g.

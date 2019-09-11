@@ -2,13 +2,7 @@
   Header file for 'dp' command functions.
 
   Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,7 +15,6 @@
 #include <Guid/Performance.h>
 #include <Guid/ExtendedFirmwarePerformance.h>
 #include <Guid/FirmwarePerformance.h>
-#include <Guid/Acpi.h>
 
 #include <Protocol/HiiPackageList.h>
 #include <Protocol/DevicePath.h>
@@ -41,6 +34,7 @@
 #include <Library/HiiLib.h>
 #include <Library/FileHandleLib.h>
 #include <Library/UefiHiiServicesLib.h>
+#include <Library/PerformanceLib.h>
 
 extern EFI_HANDLE mDpHiiHandle;
 
@@ -52,12 +46,6 @@ extern EFI_HANDLE mDpHiiHandle;
   * is generated.  Set it to ZERO to disable.
 **/
 #define DP_DEBUG                0
-
-/**
-  * Set to 1 once Profiling has been implemented in order to enable
-  * profiling related options and report output.
-**/
-#define PROFILING_IMPLEMENTED   0
 
 #define DEFAULT_THRESHOLD       1000    ///< One millisecond.
 #define DEFAULT_DISPLAYCOUNT    50
@@ -97,7 +85,6 @@ typedef struct {
 
 typedef struct {
   UINT32                NumTrace;         ///< Number of recorded TRACE performance measurements.
-  UINT32                NumProfile;       ///< Number of recorded PROFILE performance measurements.
   UINT32                NumIncomplete;    ///< Number of measurements with no END value.
   UINT32                NumSummary;       ///< Number of summary section measurements.
   UINT32                NumHandles;       ///< Number of measurements with handles.

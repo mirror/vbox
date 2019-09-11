@@ -216,7 +216,8 @@ PartitionInstallAppleChildHandles (
               &PartitionInfo,
               CdDev.PartitionStart,
               CdDev.PartitionStart + CdDev.PartitionSize - 1,
-              SubBlockSize);
+              SubBlockSize,
+              NULL);
 
           if (!EFI_ERROR (Status)) {
               Found = EFI_SUCCESS;

@@ -1,16 +1,10 @@
 /** @file
   Ia32-specific functionality for DxeLoad.
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -187,37 +181,6 @@ IsIa32PaeSupport (
 }
 
 /**
-  The function will check if Execute Disable Bit is available.
-
-  @retval TRUE      Execute Disable Bit is available.
-  @retval FALSE     Execute Disable Bit is not available.
-
-**/
-BOOLEAN
-IsExecuteDisableBitAvailable (
-  VOID
-  )
-{
-  UINT32            RegEax;
-  UINT32            RegEdx;
-  BOOLEAN           Available;
-
-  Available = FALSE;
-  AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
-  if (RegEax >= 0x80000001) {
-    AsmCpuid (0x80000001, NULL, NULL, NULL, &RegEdx);
-    if ((RegEdx & BIT20) != 0) {
-      //
-      // Bit 20: Execute Disable Bit available.
-      //
-      Available = TRUE;
-    }
-  }
-
-  return Available;
-}
-
-/**
   The function will check if page table should be setup or not.
 
   @retval TRUE      Page table should be created.
@@ -245,7 +208,7 @@ ToBuildPageTable (
     return TRUE;
   }
 
-  if (PcdGetBool (PcdSetNxForStack) && IsExecuteDisableBitAvailable ()) {
+  if (IsEnableNonExecNeeded ()) {
     return TRUE;
   }
 
@@ -320,9 +283,16 @@ HandOffToDxeCore (
     //
     // End of PEI phase signal
     //
+    PERF_EVENT_SIGNAL_BEGIN (gEndOfPeiSignalPpi.Guid);
     Status = PeiServicesInstallPpi (&gEndOfPeiSignalPpi);
+    PERF_EVENT_SIGNAL_END (gEndOfPeiSignalPpi.Guid);
     ASSERT_EFI_ERROR (Status);
 
+    //
+    // Paging might be already enabled. To avoid conflict configuration,
+    // disable paging first anyway.
+    //
+    AsmWriteCr0 (AsmReadCr0 () & (~BIT31));
     AsmWriteCr3 (PageTables);
 
     //
@@ -429,7 +399,7 @@ HandOffToDxeCore (
     BuildPageTablesIa32Pae = ToBuildPageTable ();
     if (BuildPageTablesIa32Pae) {
       PageTables = Create4GPageTablesIa32Pae (BaseOfStack, STACK_SIZE);
-      if (IsExecuteDisableBitAvailable ()) {
+      if (IsEnableNonExecNeeded ()) {
         EnableExecuteDisableBit();
       }
     }
@@ -437,10 +407,17 @@ HandOffToDxeCore (
     //
     // End of PEI phase signal
     //
+    PERF_EVENT_SIGNAL_BEGIN (gEndOfPeiSignalPpi.Guid);
     Status = PeiServicesInstallPpi (&gEndOfPeiSignalPpi);
+    PERF_EVENT_SIGNAL_END (gEndOfPeiSignalPpi.Guid);
     ASSERT_EFI_ERROR (Status);
 
     if (BuildPageTablesIa32Pae) {
+      //
+      // Paging might be already enabled. To avoid conflict configuration,
+      // disable paging first anyway.
+      //
+      AsmWriteCr0 (AsmReadCr0 () & (~BIT31));
       AsmWriteCr3 (PageTables);
       //
       // Set Physical Address Extension (bit 5 of CR4).

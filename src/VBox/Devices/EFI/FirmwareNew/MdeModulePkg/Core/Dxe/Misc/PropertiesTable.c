@@ -1,14 +1,8 @@
 /** @file
   UEFI PropertiesTable support
 
-Copyright (c) 2015 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -32,6 +26,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Guid/PropertiesTable.h>
 
 #include "DxeMain.h"
+#include "HeapGuard.h"
 
 #define PREVIOUS_MEMORY_DESCRIPTOR(MemoryDescriptor, Size) \
   ((EFI_MEMORY_DESCRIPTOR *)((UINT8 *)(MemoryDescriptor) - (Size)))
@@ -205,16 +200,13 @@ MergeMemoryMap (
     NextMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (MemoryMapEntry, DescriptorSize);
 
     do {
-      MemoryBlockLength = (UINT64) (EfiPagesToSize (MemoryMapEntry->NumberOfPages));
+      MergeGuardPages (NewMemoryMapEntry, NextMemoryMapEntry->PhysicalStart);
+      MemoryBlockLength = (UINT64) (EfiPagesToSize (NewMemoryMapEntry->NumberOfPages));
       if (((UINTN)NextMemoryMapEntry < (UINTN)MemoryMapEnd) &&
-          (MemoryMapEntry->Type == NextMemoryMapEntry->Type) &&
-          (MemoryMapEntry->Attribute == NextMemoryMapEntry->Attribute) &&
-          ((MemoryMapEntry->PhysicalStart + MemoryBlockLength) == NextMemoryMapEntry->PhysicalStart)) {
-        MemoryMapEntry->NumberOfPages += NextMemoryMapEntry->NumberOfPages;
-        if (NewMemoryMapEntry != MemoryMapEntry) {
-          NewMemoryMapEntry->NumberOfPages += NextMemoryMapEntry->NumberOfPages;
-        }
-
+          (NewMemoryMapEntry->Type == NextMemoryMapEntry->Type) &&
+          (NewMemoryMapEntry->Attribute == NextMemoryMapEntry->Attribute) &&
+          ((NewMemoryMapEntry->PhysicalStart + MemoryBlockLength) == NextMemoryMapEntry->PhysicalStart)) {
+        NewMemoryMapEntry->NumberOfPages += NextMemoryMapEntry->NumberOfPages;
         NextMemoryMapEntry = NEXT_MEMORY_DESCRIPTOR (NextMemoryMapEntry, DescriptorSize);
         continue;
       } else {
@@ -1076,7 +1068,6 @@ InsertImageRecord (
   IMAGE_PROPERTIES_RECORD              *ImageRecord;
   CHAR8                                *PdbPointer;
   IMAGE_PROPERTIES_RECORD_CODE_SECTION *ImageRecordCodeSection;
-  UINT16                               Magic;
 
   DEBUG ((EFI_D_VERBOSE, "InsertImageRecord - 0x%x\n", RuntimeImage));
   DEBUG ((EFI_D_VERBOSE, "InsertImageRecord - 0x%016lx - 0x%016lx\n", (EFI_PHYSICAL_ADDRESS)(UINTN)RuntimeImage->ImageBase, RuntimeImage->ImageSize));
@@ -1126,21 +1117,7 @@ InsertImageRecord (
   //
   // Get SectionAlignment
   //
-  if (Hdr.Pe32->FileHeader.Machine == IMAGE_FILE_MACHINE_IA64 && Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
-    //
-    // NOTE: Some versions of Linux ELILO for Itanium have an incorrect magic value
-    //       in the PE/COFF Header. If the MachineType is Itanium(IA64) and the
-    //       Magic value in the OptionalHeader is EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC
-    //       then override the magic value to EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC
-    //
-    Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
-  } else {
-    //
-    // Get the magic value from the PE/COFF Optional Header
-    //
-    Magic = Hdr.Pe32->OptionalHeader.Magic;
-  }
-  if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+  if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
     SectionAlignment  = Hdr.Pe32->OptionalHeader.SectionAlignment;
   } else {
     SectionAlignment  = Hdr.Pe32Plus->OptionalHeader.SectionAlignment;

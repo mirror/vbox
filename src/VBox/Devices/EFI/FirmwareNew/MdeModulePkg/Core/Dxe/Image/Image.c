@@ -1,14 +1,8 @@
 /** @file
   Core image handling services to load and unload PeImage.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,15 +14,15 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 LOADED_IMAGE_PRIVATE_DATA  *mCurrentImage = NULL;
 
-LOAD_PE32_IMAGE_PRIVATE_DATA  mLoadPe32PrivateData = {
-  LOAD_PE32_IMAGE_PRIVATE_DATA_SIGNATURE,
-  NULL,
-  {
-    CoreLoadImageEx,
-    CoreUnloadImageEx
-  }
-};
+typedef struct {
+  LIST_ENTRY                            Link;
+  EDKII_PECOFF_IMAGE_EMULATOR_PROTOCOL  *Emulator;
+  UINT16                                MachineType;
+} EMULATOR_ENTRY;
 
+STATIC LIST_ENTRY                       mAvailableEmulators;
+STATIC EFI_EVENT                        mPeCoffEmuProtocolRegistrationEvent;
+STATIC VOID                             *mPeCoffEmuProtocolNotifyRegistration;
 
 //
 // This code is needed to build the Image handle for the DXE Core
@@ -66,7 +60,7 @@ LOADED_IMAGE_PRIVATE_DATA mCorePrivateImage  = {
   NULL,                       // JumpBuffer
   NULL,                       // JumpContext
   0,                          // Machine
-  NULL,                       // Ebc
+  NULL,                       // PeCoffEmu
   NULL,                       // RuntimeData
   NULL                        // LoadedImageDevicePath
 };
@@ -82,9 +76,6 @@ typedef struct {
   CHAR16  *MachineTypeName;
 } MACHINE_TYPE_INFO;
 
-//
-// EBC machine is not listed in this table, because EBC is in the default supported scopes of other machine type.
-//
 GLOBAL_REMOVE_IF_UNREFERENCED MACHINE_TYPE_INFO  mMachineTypeInfo[] = {
   {EFI_IMAGE_MACHINE_IA32,           L"IA32"},
   {EFI_IMAGE_MACHINE_IA64,           L"IA64"},
@@ -116,6 +107,66 @@ GetMachineTypeName (
   }
 
   return L"<Unknown>";
+}
+
+/**
+  Notification event handler registered by CoreInitializeImageServices () to
+  keep track of which PE/COFF image emulators are available.
+
+  @param  Event          The Event that is being processed, not used.
+  @param  Context        Event Context, not used.
+
+**/
+STATIC
+VOID
+EFIAPI
+PeCoffEmuProtocolNotify (
+  IN  EFI_EVENT       Event,
+  IN  VOID            *Context
+  )
+{
+  EFI_STATUS                            Status;
+  UINTN                                 BufferSize;
+  EFI_HANDLE                            EmuHandle;
+  EDKII_PECOFF_IMAGE_EMULATOR_PROTOCOL  *Emulator;
+  EMULATOR_ENTRY                        *Entry;
+
+  EmuHandle = NULL;
+  Emulator  = NULL;
+
+  while (TRUE) {
+    BufferSize = sizeof (EmuHandle);
+    Status = CoreLocateHandle (
+               ByRegisterNotify,
+               NULL,
+               mPeCoffEmuProtocolNotifyRegistration,
+               &BufferSize,
+               &EmuHandle
+               );
+    if (EFI_ERROR (Status)) {
+      //
+      // If no more notification events exit
+      //
+      return;
+    }
+
+    Status = CoreHandleProtocol (
+               EmuHandle,
+               &gEdkiiPeCoffImageEmulatorProtocolGuid,
+               (VOID **)&Emulator
+               );
+    if (EFI_ERROR (Status) || Emulator == NULL) {
+      continue;
+    }
+
+    Entry = AllocateZeroPool (sizeof (*Entry));
+    ASSERT (Entry != NULL);
+
+    Entry->Emulator    = Emulator;
+    Entry->MachineType = Entry->Emulator->MachineType;
+
+    InsertTailList (&mAvailableEmulators, &Entry->Link);
+  }
 }
 
 /**
@@ -192,17 +243,29 @@ CoreInitializeImageServices (
   gDxeCoreImageHandle = Image->Handle;
   gDxeCoreLoadedImage = &Image->Info;
 
-  if (FeaturePcdGet (PcdFrameworkCompatibilitySupport)) {
-    //
-    // Export DXE Core PE Loader functionality for backward compatibility.
-    //
-    Status = CoreInstallProtocolInterface (
-               &mLoadPe32PrivateData.Handle,
-               &gEfiLoadPeImageProtocolGuid,
-               EFI_NATIVE_INTERFACE,
-               &mLoadPe32PrivateData.Pe32Image
-               );
-  }
+  //
+  // Create the PE/COFF emulator protocol registration event
+  //
+  Status = CoreCreateEvent (
+             EVT_NOTIFY_SIGNAL,
+             TPL_CALLBACK,
+             PeCoffEmuProtocolNotify,
+             NULL,
+             &mPeCoffEmuProtocolRegistrationEvent
+             );
+  ASSERT_EFI_ERROR(Status);
+
+  //
+  // Register for protocol notifications on this event
+  //
+  Status = CoreRegisterProtocolNotify (
+             &gEdkiiPeCoffImageEmulatorProtocolGuid,
+             mPeCoffEmuProtocolRegistrationEvent,
+             &mPeCoffEmuProtocolNotifyRegistration
+             );
+  ASSERT_EFI_ERROR(Status);
+
+  InitializeListHead (&mAvailableEmulators);
 
   ProtectUefiImage (&Image->Info, Image->LoadedImageDevicePath);
 
@@ -411,7 +474,7 @@ GetPeCoffImageFixLoadingAssignedAddress(
          // relative to top address
          //
          if ((INT64)PcdGet64(PcdLoadModuleAtFixAddressEnable) < 0) {
-         	 ImageContext->ImageAddress = gLoadModuleAtFixAddressConfigurationTable.DxeCodeTopAddress + (INT64)(INTN)ImageContext->ImageAddress;
+            ImageContext->ImageAddress = gLoadModuleAtFixAddressConfigurationTable.DxeCodeTopAddress + (INT64)(INTN)ImageContext->ImageAddress;
          }
          //
          // Check if the memory range is available.
@@ -425,6 +488,49 @@ GetPeCoffImageFixLoadingAssignedAddress(
    DEBUG ((EFI_D_INFO|EFI_D_LOAD, "LOADING MODULE FIXED INFO: Loading module at fixed address 0x%11p. Status = %r \n", (VOID *)(UINTN)(ImageContext->ImageAddress), Status));
    return Status;
 }
+
+/**
+  Decides whether a PE/COFF image can execute on this system, either natively
+  or via emulation/interpretation. In the latter case, the PeCoffEmu member
+  of the LOADED_IMAGE_PRIVATE_DATA struct pointer is populated with a pointer
+  to the emulator protocol that supports this image.
+
+  @param[in, out]   Image         LOADED_IMAGE_PRIVATE_DATA struct pointer
+
+  @retval           TRUE          The image is supported
+  @retval           FALSE         The image is not supported
+
+**/
+STATIC
+BOOLEAN
+CoreIsImageTypeSupported (
+  IN OUT LOADED_IMAGE_PRIVATE_DATA  *Image
+  )
+{
+  LIST_ENTRY                        *Link;
+  EMULATOR_ENTRY                    *Entry;
+
+  for (Link = GetFirstNode (&mAvailableEmulators);
+       !IsNull (&mAvailableEmulators, Link);
+       Link = GetNextNode (&mAvailableEmulators, Link)) {
+
+    Entry = BASE_CR (Link, EMULATOR_ENTRY, Link);
+    if (Entry->MachineType != Image->ImageContext.Machine) {
+      continue;
+    }
+
+    if (Entry->Emulator->IsImageSupported (Entry->Emulator,
+                           Image->ImageContext.ImageType,
+                           Image->Info.FilePath)) {
+      Image->PeCoffEmu = Entry->Emulator;
+      return TRUE;
+    }
+  }
+
+  return EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Image->ImageContext.Machine) ||
+         EFI_IMAGE_MACHINE_CROSS_TYPE_SUPPORTED (Image->ImageContext.Machine);
+}
+
 /**
   Loads, relocates, and invokes a PE/COFF image
 
@@ -473,16 +579,15 @@ CoreLoadPeImage (
     return Status;
   }
 
-  if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Image->ImageContext.Machine)) {
-    if (!EFI_IMAGE_MACHINE_CROSS_TYPE_SUPPORTED (Image->ImageContext.Machine)) {
-      //
-      // The PE/COFF loader can support loading image types that can be executed.
-      // If we loaded an image type that we can not execute return EFI_UNSUPORTED.
-      //
-      DEBUG ((EFI_D_ERROR, "Image type %s can't be loaded ", GetMachineTypeName(Image->ImageContext.Machine)));
-      DEBUG ((EFI_D_ERROR, "on %s UEFI system.\n", GetMachineTypeName(mDxeCoreImageMachineType)));
-      return EFI_UNSUPPORTED;
-    }
+  if (!CoreIsImageTypeSupported (Image)) {
+    //
+    // The PE/COFF loader can support loading image types that can be executed.
+    // If we loaded an image type that we can not execute return EFI_UNSUPPORTED.
+    //
+    DEBUG ((DEBUG_ERROR, "Image type %s can't be loaded on %s UEFI system.\n",
+      GetMachineTypeName (Image->ImageContext.Machine),
+      GetMachineTypeName (mDxeCoreImageMachineType)));
+    return EFI_UNSUPPORTED;
   }
 
   //
@@ -541,8 +646,8 @@ CoreLoadPeImage (
 
       if (EFI_ERROR (Status))  {
           //
-      	  // If the code memory is not ready, invoke CoreAllocatePage with AllocateAnyPages to load the driver.
-      	  //
+          // If the code memory is not ready, invoke CoreAllocatePage with AllocateAnyPages to load the driver.
+          //
           DEBUG ((EFI_D_INFO|EFI_D_LOAD, "LOADING MODULE FIXED ERROR: Loading module at fixed address failed since specified memory is not available.\n"));
 
           Status = CoreAllocatePages (
@@ -643,48 +748,22 @@ CoreLoadPeImage (
   InvalidateInstructionCacheRange ((VOID *)(UINTN)Image->ImageContext.ImageAddress, (UINTN)Image->ImageContext.ImageSize);
 
   //
-  // Copy the machine type from the context to the image private data. This
-  // is needed during image unload to know if we should call an EBC protocol
-  // to unload the image.
+  // Copy the machine type from the context to the image private data.
   //
   Image->Machine = Image->ImageContext.Machine;
 
   //
-  // Get the image entry point. If it's an EBC image, then call into the
-  // interpreter to create a thunk for the entry point and use the returned
-  // value for the entry point.
+  // Get the image entry point.
   //
   Image->EntryPoint   = (EFI_IMAGE_ENTRY_POINT)(UINTN)Image->ImageContext.EntryPoint;
-  if (Image->ImageContext.Machine == EFI_IMAGE_MACHINE_EBC) {
-    //
-    // Locate the EBC interpreter protocol
-    //
-    Status = CoreLocateProtocol (&gEfiEbcProtocolGuid, NULL, (VOID **)&Image->Ebc);
-    if (EFI_ERROR(Status) || Image->Ebc == NULL) {
-      DEBUG ((DEBUG_LOAD | DEBUG_ERROR, "CoreLoadPeImage: There is no EBC interpreter for an EBC image.\n"));
-      goto Done;
-    }
-
-    //
-    // Register a callback for flushing the instruction cache so that created
-    // thunks can be flushed.
-    //
-    Status = Image->Ebc->RegisterICacheFlush (Image->Ebc, (EBC_ICACHE_FLUSH)InvalidateInstructionCacheRange);
-    if (EFI_ERROR(Status)) {
-      goto Done;
-    }
-
-    //
-    // Create a thunk for the image's entry point. This will be the new
-    // entry point for the image.
-    //
-    Status = Image->Ebc->CreateThunk (
-                           Image->Ebc,
-                           Image->Handle,
-                           (VOID *)(UINTN) Image->ImageContext.EntryPoint,
-                           (VOID **) &Image->EntryPoint
-                           );
-    if (EFI_ERROR(Status)) {
+  if (Image->PeCoffEmu != NULL) {
+    Status = Image->PeCoffEmu->RegisterImage (Image->PeCoffEmu,
+                                 Image->ImageBasePage,
+                                 EFI_PAGES_TO_SIZE (Image->NumberOfPages),
+                                 &Image->EntryPoint);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_LOAD | DEBUG_ERROR,
+        "CoreLoadPeImage: Failed to register foreign image with emulator.\n"));
       goto Done;
     }
   }
@@ -867,11 +946,11 @@ CoreUnloadAndCloseImage (
 
   UnprotectUefiImage (&Image->Info, Image->LoadedImageDevicePath);
 
-  if (Image->Ebc != NULL) {
+  if (Image->PeCoffEmu != NULL) {
     //
-    // If EBC protocol exists we must perform cleanups for this image.
+    // If the PE/COFF Emulator protocol exists we must unregister the image.
     //
-    Image->Ebc->UnloadImage (Image->Ebc, Image->Handle);
+    Image->PeCoffEmu->UnregisterImage (Image->PeCoffEmu, Image->ImageBasePage);
   }
 
   //
@@ -1436,13 +1515,9 @@ CoreLoadImage (
   )
 {
   EFI_STATUS    Status;
-  UINT64        Tick;
   EFI_HANDLE    Handle;
 
-  Tick = 0;
-  PERF_CODE (
-    Tick = GetPerformanceCounter ();
-  );
+  PERF_LOAD_IMAGE_BEGIN (NULL);
 
   Status = CoreLoadImageCommon (
              BootPolicy,
@@ -1465,102 +1540,10 @@ CoreLoadImage (
     Handle = *ImageHandle;
   }
 
-  PERF_START (Handle, "LoadImage:", NULL, Tick);
-  PERF_END (Handle, "LoadImage:", NULL, 0);
+  PERF_LOAD_IMAGE_END (Handle);
 
   return Status;
 }
-
-
-
-/**
-  Loads an EFI image into memory and returns a handle to the image with extended parameters.
-
-  @param  This                    Calling context
-  @param  ParentImageHandle       The caller's image handle.
-  @param  FilePath                The specific file path from which the image is
-                                  loaded.
-  @param  SourceBuffer            If not NULL, a pointer to the memory location
-                                  containing a copy of the image to be loaded.
-  @param  SourceSize              The size in bytes of SourceBuffer.
-  @param  DstBuffer               The buffer to store the image.
-  @param  NumberOfPages           For input, specifies the space size of the
-                                  image by caller if not NULL. For output,
-                                  specifies the actual space size needed.
-  @param  ImageHandle             Image handle for output.
-  @param  EntryPoint              Image entry point for output.
-  @param  Attribute               The bit mask of attributes to set for the load
-                                  PE image.
-
-  @retval EFI_SUCCESS             The image was loaded into memory.
-  @retval EFI_NOT_FOUND           The FilePath was not found.
-  @retval EFI_INVALID_PARAMETER   One of the parameters has an invalid value.
-  @retval EFI_UNSUPPORTED         The image type is not supported, or the device
-                                  path cannot be parsed to locate the proper
-                                  protocol for loading the file.
-  @retval EFI_OUT_OF_RESOURCES    Image was not loaded due to insufficient
-                                  resources.
-  @retval EFI_LOAD_ERROR          Image was not loaded because the image format was corrupt or not
-                                  understood.
-  @retval EFI_DEVICE_ERROR        Image was not loaded because the device returned a read error.
-  @retval EFI_ACCESS_DENIED       Image was not loaded because the platform policy prohibits the
-                                  image from being loaded. NULL is returned in *ImageHandle.
-  @retval EFI_SECURITY_VIOLATION  Image was loaded and an ImageHandle was created with a
-                                  valid EFI_LOADED_IMAGE_PROTOCOL. However, the current
-                                  platform policy specifies that the image should not be started.
-
-**/
-EFI_STATUS
-EFIAPI
-CoreLoadImageEx (
-  IN  EFI_PE32_IMAGE_PROTOCOL          *This,
-  IN  EFI_HANDLE                       ParentImageHandle,
-  IN  EFI_DEVICE_PATH_PROTOCOL         *FilePath,
-  IN  VOID                             *SourceBuffer       OPTIONAL,
-  IN  UINTN                            SourceSize,
-  IN  EFI_PHYSICAL_ADDRESS             DstBuffer           OPTIONAL,
-  OUT UINTN                            *NumberOfPages      OPTIONAL,
-  OUT EFI_HANDLE                       *ImageHandle,
-  OUT EFI_PHYSICAL_ADDRESS             *EntryPoint         OPTIONAL,
-  IN  UINT32                           Attribute
-  )
-{
-  EFI_STATUS    Status;
-  UINT64        Tick;
-  EFI_HANDLE    Handle;
-
-  Tick = 0;
-  PERF_CODE (
-    Tick = GetPerformanceCounter ();
-  );
-
-  Status = CoreLoadImageCommon (
-           TRUE,
-           ParentImageHandle,
-           FilePath,
-           SourceBuffer,
-           SourceSize,
-           DstBuffer,
-           NumberOfPages,
-           ImageHandle,
-           EntryPoint,
-           Attribute
-           );
-
-  Handle = NULL;
-  if (!EFI_ERROR (Status)) {
-    //
-    // ImageHandle will be valid only Status is success.
-    //
-    Handle = *ImageHandle;
-  }
-
-  PERF_START (Handle, "LoadImage:", NULL, Tick);
-  PERF_END (Handle, "LoadImage:", NULL, 0);
-
-  return Status;
-}
-
 
 /**
   Transfer control to a loaded image's entry point.
@@ -1594,10 +1577,8 @@ CoreStartImage (
   LOADED_IMAGE_PRIVATE_DATA     *LastImage;
   UINT64                        HandleDatabaseKey;
   UINTN                         SetJumpFlag;
-  UINT64                        Tick;
   EFI_HANDLE                    Handle;
 
-  Tick = 0;
   Handle = ImageHandle;
 
   Image = CoreLoadedImageInfo (ImageHandle);
@@ -1611,7 +1592,8 @@ CoreStartImage (
   //
   // The image to be started must have the machine type supported by DxeCore.
   //
-  if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Image->Machine)) {
+  if (!EFI_IMAGE_MACHINE_TYPE_SUPPORTED (Image->Machine) &&
+      Image->PeCoffEmu == NULL) {
     //
     // Do not ASSERT here, because image might be loaded via EFI_IMAGE_MACHINE_CROSS_TYPE_SUPPORTED
     // But it can not be started.
@@ -1621,9 +1603,7 @@ CoreStartImage (
     return EFI_UNSUPPORTED;
   }
 
-  PERF_CODE (
-    Tick = GetPerformanceCounter ();
-  );
+  PERF_START_IMAGE_BEGIN (Handle);
 
 
   //
@@ -1647,8 +1627,7 @@ CoreStartImage (
     // Image may be unloaded after return with failure,
     // then ImageHandle may be invalid, so use NULL handle to record perf log.
     //
-    PERF_START (NULL, "StartImage:", NULL, Tick);
-    PERF_END (NULL, "StartImage:", NULL, 0);
+    PERF_START_IMAGE_END (NULL);
 
     //
     // Pop the current start image context
@@ -1763,8 +1742,7 @@ CoreStartImage (
   //
   // Done
   //
-  PERF_START (Handle, "StartImage:", NULL, Tick);
-  PERF_END (Handle, "StartImage:", NULL, 0);
+  PERF_START_IMAGE_END (Handle);
   return Status;
 }
 
@@ -1926,27 +1904,4 @@ CoreUnloadImage (
 
 Done:
   return Status;
-}
-
-
-
-/**
-  Unload the specified image.
-
-  @param  This                    Indicates the calling context.
-  @param  ImageHandle             The specified image handle.
-
-  @retval EFI_INVALID_PARAMETER   Image handle is NULL.
-  @retval EFI_UNSUPPORTED         Attempt to unload an unsupported image.
-  @retval EFI_SUCCESS             Image successfully unloaded.
-
-**/
-EFI_STATUS
-EFIAPI
-CoreUnloadImageEx (
-  IN EFI_PE32_IMAGE_PROTOCOL  *This,
-  IN EFI_HANDLE                         ImageHandle
-  )
-{
-  return CoreUnloadImage (ImageHandle);
 }

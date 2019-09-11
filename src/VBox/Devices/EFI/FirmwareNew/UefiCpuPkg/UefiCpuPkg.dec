@@ -1,15 +1,9 @@
 ## @file  UefiCpuPkg.dec
 # This Package provides UEFI compatible CPU modules and libraries.
 #
-# Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available under
-# the terms and conditions of the BSD License which accompanies this distribution.
-# The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -80,6 +74,9 @@
 # [Error.gUefiCpuPkgTokenSpaceGuid]
 #   0x80000001 | Invalid value provided.
 #
+
+[Ppis]
+  gEdkiiPeiMpServices2PpiGuid =    { 0x5cb9cb3d, 0x31a4, 0x480c, { 0x94, 0x98, 0x29, 0xd2, 0x69, 0xba, 0xcf, 0xba}}
 
 [PcdsFeatureFlag]
   ## Indicates if SMM Profile will be enabled.
@@ -177,6 +174,10 @@
   # @Prompt Processor stack size in SMM.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmStackSize|0x2000|UINT32|0x32132105
 
+  ## Specifies shadow stack size in bytes for each processor in SMM.
+  # @Prompt Processor shadow stack size in SMM.
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmShadowStackSize|0x2000|UINT32|0x3213210E
+
   ## Indicates if SMM Code Access Check is enabled.
   #  If enabled, the SMM handler cannot execute the code outside SMM regions.
   #  This PCD is suggested to TRUE in production image.<BR><BR>
@@ -209,6 +210,14 @@
   ## Specifies if CPU features will be initialized during S3 resume.
   # @Prompt If CPU features will be initialized during S3 resume.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuFeaturesInitOnS3Resume|FALSE|BOOLEAN|0x0000001D
+
+  ## Specifies CPUID Leaf 0x15 Time Stamp Counter and Nominal Core Crystal Clock Frequency.
+  # TSC Frequency = ECX (core crystal clock frequency) * EBX/EAX.
+  #   Intel Xeon Processor Scalable Family with CPUID signature 06_55H = 25000000 (25MHz)
+  #   6th and 7th generation Intel Core processors and Intel Xeon W Processor Family = 24000000 (24MHz)
+  #   Intel Atom processors based on Goldmont Microarchitecture with CPUID signature 06_5CH = 19200000 (19.2MHz)
+  # @Prompt This PCD is the nominal frequency of the core crystal clock in Hz as is CPUID Leaf 0x15:ECX
+  gUefiCpuPkgTokenSpaceGuid.PcdCpuCoreCrystalClockFrequency|24000000|UINT64|0x32132113
 
 [PcdsFixedAtBuild, PcdsPatchableInModule, PcdsDynamic, PcdsDynamicEx]
   ## Specifies max supported number of Logical Processors.
@@ -258,10 +267,6 @@
   # @Prompt SMM CPU Synchronization Method.
   gUefiCpuPkgTokenSpaceGuid.PcdCpuSmmSyncMode|0x00|UINT8|0x60000014
 
-  ## Specifies user's desired settings for enabling/disabling processor features.
-  # @Prompt User settings for enabling/disabling processor features.
-  gUefiCpuPkgTokenSpaceGuid.PcdCpuFeaturesUserConfiguration|{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}|VOID*|0x00000017
-
   ## Specifies the On-demand clock modulation duty cycle when ACPI feature is enabled.
   # @Prompt The encoded values for target duty cycle modulation.
   # @ValidRange  0x80000001 | 0 - 15
@@ -289,8 +294,9 @@
   # @ValidList   0x80000001 | 0
   gUefiCpuPkgTokenSpaceGuid.PcdCpuFeaturesCapability|{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}|VOID*|0x00000018
 
-  ## Specifies actual settings for processor features, each bit corresponding to a specific feature.
-  # @Prompt Actual processor feature settings.
+  ## As input, specifies user's desired settings for enabling/disabling processor features.
+  ## As output, specifies actual settings for processor features, each bit corresponding to a specific feature.
+  # @Prompt As input, specifies user's desired processor feature settings. As output, specifies actual processor feature settings.
   # @ValidList   0x80000001 | 0
   gUefiCpuPkgTokenSpaceGuid.PcdCpuFeaturesSetting|{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}|VOID*|0x00000019
 

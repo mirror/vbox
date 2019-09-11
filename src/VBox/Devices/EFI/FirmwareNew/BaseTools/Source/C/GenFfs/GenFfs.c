@@ -1,14 +1,8 @@
 /** @file
 This file contains functions required to generate a Firmware File System file.
 
-Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,6 +15,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <io.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#endif
+
+#ifdef __GNUC__
+#include <unistd.h>
 #endif
 
 #include <stdio.h>
@@ -132,7 +130,7 @@ Returns:
   //
   // Copyright declaration
   //
-  fprintf (stdout, "Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
@@ -164,6 +162,8 @@ Returns:
                         128K,256K,512K,1M,2M,4M,8M,16M\n");
   fprintf (stdout, "  -i SectionFile, --sectionfile SectionFile\n\
                         Section file will be contained in this FFS file.\n");
+  fprintf (stdout, "  -oi SectionFile, --optionalsectionfile SectionFile\n\
+                        If the Section file exists, it will be contained in this FFS file, otherwise, it will be ignored.\n");
   fprintf (stdout, "  -n SectionAlign, --sectionalign SectionAlign\n\
                         SectionAlign points to section alignment, which support\n\
                         the alignment scope 0~16M. If SectionAlign is specified\n\
@@ -740,7 +740,7 @@ Returns:
       continue;
     }
 
-    if ((stricmp (argv[0], "-i") == 0) || (stricmp (argv[0], "--sectionfile") == 0)) {
+    if ((stricmp (argv[0], "-oi") == 0) || (stricmp (argv[0], "--optionalsectionfile") == 0) || (stricmp (argv[0], "-i") == 0) || (stricmp (argv[0], "--sectionfile") == 0)) {
       //
       // Get Input file name and its alignment
       //
@@ -748,7 +748,14 @@ Returns:
         Error (NULL, 0, 1003, "Invalid option value", "input section file is missing for -i option");
         goto Finish;
       }
-
+      if ((stricmp (argv[0], "-oi") == 0) || (stricmp (argv[0], "--optionalsectionfile") == 0) ){
+        if (-1 == access(argv[1] , 0)){
+          Warning(NULL, 0, 0001, "File is not found.", argv[1]);
+          argc -= 2;
+          argv += 2;
+          continue;
+        }
+      }
       //
       // Allocate Input file name buffer and its alignment buffer.
       //
@@ -801,7 +808,7 @@ Returns:
       argv += 2;
 
       if (argc <= 0) {
-	      InputFileNum ++;
+        InputFileNum ++;
         break;
       }
 

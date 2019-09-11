@@ -1,17 +1,12 @@
 /** @file
   Partition driver that produces logical BlockIo devices from a physical
   BlockIo device. The logical BlockIo devices are based on the format
-  of the raw block devices media. Currently "El Torito CD-ROM", Legacy
+  of the raw block devices media. Currently "El Torito CD-ROM", UDF, Legacy
   MBR, and GPT partition schemes are supported.
 
+Copyright (c) 2018 Qualcomm Datacenter Technologies, Inc.
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -46,8 +41,8 @@ PARTITION_DETECT_ROUTINE mPartitionDetectRoutineTable[] = {
   PartitionInstallAppleChildHandles,
 #endif
   PartitionInstallGptChildHandles,
-  PartitionInstallElToritoChildHandles,
   PartitionInstallMbrChildHandles,
+  PartitionInstallUdfChildHandles,
   NULL
 };
 
@@ -348,9 +343,9 @@ PartitionDriverBindingStart (
   if (BlockIo->Media->MediaPresent ||
       (BlockIo->Media->RemovableMedia && !BlockIo->Media->LogicalPartition)) {
     //
-    // Try for GPT, then El Torito, and then legacy MBR partition types. If the
-    // media supports a given partition type install child handles to represent
-    // the partitions described by the media.
+    // Try for GPT, then legacy MBR partition types, and then UDF and El Torito.
+    // If the media supports a given partition type install child handles to
+    // represent the partitions described by the media.
     //
     Routine = &mPartitionDetectRoutineTable[0];
     while (*Routine != NULL) {
@@ -456,6 +451,7 @@ PartitionDriverBindingStop (
   BOOLEAN                 AllChildrenStopped;
   PARTITION_PRIVATE_DATA  *Private;
   EFI_DISK_IO_PROTOCOL    *DiskIo;
+  EFI_GUID                *TypeGuid;
 
   BlockIo  = NULL;
   BlockIo2 = NULL;
@@ -548,6 +544,13 @@ PartitionDriverBindingStop (
            This->DriverBindingHandle,
            ChildHandleBuffer[Index]
            );
+
+    if (IsZeroGuid (&Private->TypeGuid)) {
+      TypeGuid = NULL;
+    } else {
+      TypeGuid = &Private->TypeGuid;
+    }
+
     //
     // All Software protocols have be freed from the handle so remove it.
     // Remove the BlockIo Protocol if has.
@@ -571,7 +574,7 @@ PartitionDriverBindingStop (
                          &Private->BlockIo2,
                          &gEfiPartitionInfoProtocolGuid,
                          &Private->PartitionInfo,
-                         Private->EspGuid,
+                         TypeGuid,
                          NULL,
                          NULL
                          );
@@ -585,7 +588,7 @@ PartitionDriverBindingStop (
                        &Private->BlockIo,
                        &gEfiPartitionInfoProtocolGuid,
                        &Private->PartitionInfo,
-                       Private->EspGuid,
+                       TypeGuid,
                        NULL,
                        NULL
                        );
@@ -950,7 +953,7 @@ PartitionCreateAccessTask (
   @param[in]       MediaId    Id of the media, changes every time the media is
                               replaced.
   @param[in]       Lba        The starting Logical Block Address to read from.
-  @param[in, out]  Token	    A pointer to the token associated with the transaction.
+  @param[in, out]  Token      A pointer to the token associated with the transaction.
   @param[in]       BufferSize Size of Buffer, must be a multiple of device block size.
   @param[out]      Buffer     A pointer to the destination buffer for the data. The
                               caller is responsible for either having implicit or
@@ -1159,6 +1162,7 @@ PartitionFlushBlocksEx (
   @param[in]  Start             Start Block.
   @param[in]  End               End Block.
   @param[in]  BlockSize         Child block size.
+  @param[in]  TypeGuid          Partition GUID Type.
 
   @retval EFI_SUCCESS       A child handle was added.
   @retval other             A child handle was not added.
@@ -1177,7 +1181,8 @@ PartitionInstallChildHandle (
   IN  EFI_PARTITION_INFO_PROTOCOL  *PartitionInfo,
   IN  EFI_LBA                      Start,
   IN  EFI_LBA                      End,
-  IN  UINT32                       BlockSize
+  IN  UINT32                       BlockSize,
+  IN  EFI_GUID                     *TypeGuid
   )
 {
   EFI_STATUS              Status;
@@ -1271,13 +1276,10 @@ PartitionInstallChildHandle (
   //
   CopyMem (&Private->PartitionInfo, PartitionInfo, sizeof (EFI_PARTITION_INFO_PROTOCOL));
 
-  if (PartitionInfo->System == 1) {
-    Private->EspGuid = &gEfiPartTypeSystemPartGuid;
+  if (TypeGuid != NULL) {
+    CopyGuid(&(Private->TypeGuid), TypeGuid);
   } else {
-    //
-    // If NULL InstallMultipleProtocolInterfaces will ignore it.
-    //
-    Private->EspGuid = NULL;
+    ZeroMem ((VOID *)&(Private->TypeGuid), sizeof (EFI_GUID));
   }
 
   //
@@ -1295,7 +1297,7 @@ PartitionInstallChildHandle (
                     &Private->BlockIo2,
                     &gEfiPartitionInfoProtocolGuid,
                     &Private->PartitionInfo,
-                    Private->EspGuid,
+                    TypeGuid,
                     NULL,
                     NULL
                     );
@@ -1308,7 +1310,7 @@ PartitionInstallChildHandle (
                     &Private->BlockIo,
                     &gEfiPartitionInfoProtocolGuid,
                     &Private->PartitionInfo,
-                    Private->EspGuid,
+                    TypeGuid,
                     NULL,
                     NULL
                     );

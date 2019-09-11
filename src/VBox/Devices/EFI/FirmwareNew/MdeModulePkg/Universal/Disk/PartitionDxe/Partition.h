@@ -1,17 +1,12 @@
 /** @file
   Partition driver that produces logical BlockIo devices from a physical
   BlockIo device. The logical BlockIo devices are based on the format
-  of the raw block devices media. Currently "El Torito CD-ROM", Legacy
+  of the raw block devices media. Currently "El Torito CD-ROM", UDF, Legacy
   MBR, and GPT partition schemes are supported.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2018 Qualcomm Datacenter Technologies, Inc.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -39,7 +34,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #include <IndustryStandard/Mbr.h>
 #include <IndustryStandard/ElTorito.h>
-
+#include <IndustryStandard/Udf.h>
 
 //
 // Partition private data
@@ -65,7 +60,7 @@ typedef struct {
   UINT32                       BlockSize;
   BOOLEAN                      InStop;
 
-  EFI_GUID                     *EspGuid;
+  EFI_GUID                     TypeGuid;
 
 } PARTITION_PRIVATE_DATA;
 
@@ -327,6 +322,7 @@ PartitionComponentNameGetControllerName (
   @param[in]  Start             Start Block.
   @param[in]  End               End Block.
   @param[in]  BlockSize         Child block size.
+  @param[in]  TypeGuid          Parition Type Guid.
 
   @retval EFI_SUCCESS       A child handle was added.
   @retval other             A child handle was not added.
@@ -345,7 +341,8 @@ PartitionInstallChildHandle (
   IN  EFI_PARTITION_INFO_PROTOCOL  *PartitionInfo,
   IN  EFI_LBA                      Start,
   IN  EFI_LBA                      End,
-  IN  UINT32                       BlockSize
+  IN  UINT32                       BlockSize,
+  IN  EFI_GUID                     *TypeGuid
   );
 
 /**
@@ -436,6 +433,34 @@ PartitionInstallElToritoChildHandles (
 **/
 EFI_STATUS
 PartitionInstallMbrChildHandles (
+  IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
+  IN  EFI_HANDLE                   Handle,
+  IN  EFI_DISK_IO_PROTOCOL         *DiskIo,
+  IN  EFI_DISK_IO2_PROTOCOL        *DiskIo2,
+  IN  EFI_BLOCK_IO_PROTOCOL        *BlockIo,
+  IN  EFI_BLOCK_IO2_PROTOCOL       *BlockIo2,
+  IN  EFI_DEVICE_PATH_PROTOCOL     *DevicePath
+  );
+
+/**
+  Install child handles if the Handle supports UDF/ECMA-167 volume format.
+
+  @param[in]  This        Calling context.
+  @param[in]  Handle      Parent Handle.
+  @param[in]  DiskIo      Parent DiskIo interface.
+  @param[in]  DiskIo2     Parent DiskIo2 interface.
+  @param[in]  BlockIo     Parent BlockIo interface.
+  @param[in]  BlockIo2    Parent BlockIo2 interface.
+  @param[in]  DevicePath  Parent Device Path
+
+
+  @retval EFI_SUCCESS         Child handle(s) was added.
+  @retval EFI_MEDIA_CHANGED   Media changed Detected.
+  @retval other               no child handle was added.
+
+**/
+EFI_STATUS
+PartitionInstallUdfChildHandles (
   IN  EFI_DRIVER_BINDING_PROTOCOL  *This,
   IN  EFI_HANDLE                   Handle,
   IN  EFI_DISK_IO_PROTOCOL         *DiskIo,

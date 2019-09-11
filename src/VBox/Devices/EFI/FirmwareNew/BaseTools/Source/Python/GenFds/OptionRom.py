@@ -1,33 +1,24 @@
 ## @file
 # process OptionROM generation
 #
-#  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
 # Import Modules
 #
+from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import subprocess
-import StringIO
 
-import OptRomInfStatement
-from GenFdsGlobalVariable import GenFdsGlobalVariable
-from GenFds import GenFds
+from . import OptRomInfStatement
+from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from CommonDataClass.FdfClass import OptionRomClassObject
 from Common.Misc import SaveFileOnChange
 from Common import EdkLogger
 from Common.BuildToolError import *
-
-T_CHAR_LF = '\n'
 
 ##
 #
@@ -37,9 +28,9 @@ class OPTIONROM (OptionRomClassObject):
     #
     #   @param  self        The object pointer
     #
-    def __init__(self):
+    def __init__(self, Name = ""):
         OptionRomClassObject.__init__(self)
-
+        self.DriverName = Name
 
     ## AddToBuffer()
     #
@@ -63,7 +54,7 @@ class OPTIONROM (OptionRomClassObject):
                 FilePathNameList = FfsFile.GenFfs(IsMakefile=Flag)
                 if len(FilePathNameList) == 0:
                     EdkLogger.error("GenFds", GENFDS_ERROR, "Module %s not produce .efi files, so NO file could be put into option ROM." % (FfsFile.InfFileName))
-                if FfsFile.OverrideAttribs == None:
+                if FfsFile.OverrideAttribs is None:
                     EfiFileList.extend(FilePathNameList)
                 else:
                     FileName = os.path.basename(FilePathNameList[0])
@@ -84,7 +75,7 @@ class OPTIONROM (OptionRomClassObject):
                     BinFileList.append(TmpOutputFile)
             else:
                 FilePathName = FfsFile.GenFfs(IsMakefile=Flag)
-                if FfsFile.OverrideAttribs != None:
+                if FfsFile.OverrideAttribs is not None:
                     FileName = os.path.basename(FilePathName)
                     TmpOutputDir = os.path.join(GenFdsGlobalVariable.FvDir, self.DriverName, FfsFile.CurrentArch)
                     if not os.path.exists(TmpOutputDir) :
@@ -138,5 +129,3 @@ class OverrideAttribs:
         self.PciDeviceId = None
         self.PciRevision = None
         self.NeedCompress = None
-
-        

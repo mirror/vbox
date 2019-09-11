@@ -4,14 +4,8 @@
   DNSv6 Service Binding Protocol (DNSv6SB)
   DNSv6 Protocol (DNSv6)
 
-  Copyright (c) 2015 - 2016, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   This Protocol is introduced in UEFI Specification 2.5
@@ -121,14 +115,14 @@ typedef struct {
   ///
   /// Number of configured DNS6 servers.
   ///
-  UINT32               	        DnsServerCount;
+  UINT32                         DnsServerCount;
   ///
   /// Pointer to common list of addresses of all configured DNS server used by EFI_DNS6_PROTOCOL
   /// instances. List will include DNS servers configured by this or any other EFI_DNS6_PROTOCOL
   /// instance. The storage for this list is allocated by the driver publishing this protocol,
   /// and must be freed by the caller.
   ///
-  EFI_IPv6_ADDRESS     	        *DnsServerList;
+  EFI_IPv6_ADDRESS               *DnsServerList;
   ///
   /// Number of DNS Cache entries. The DNS Cache is shared among all DNS instances.
   ///

@@ -2,14 +2,8 @@
 
   VfrCompiler Error definition
 
-Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -45,12 +39,12 @@ typedef enum {
   VFR_RETURN_CONSTANT_ONLY,
   VFR_RETURN_VARSTORE_NAME_REDEFINED_ERROR,
   VFR_RETURN_BIT_WIDTH_ERROR,
+  VFR_RETURN_STRING_TO_UINT_OVERFLOW,
   VFR_RETURN_CODEUNDEFINED
 } EFI_VFR_RETURN_CODE;
 
 typedef enum {
   VFR_WARNING_DEFAULT_VALUE_REDEFINED = 0,
-  VFR_WARNING_STRING_TO_UINT_OVERFLOW,
   VFR_WARNING_ACTION_WITH_TEXT_TWO,
   VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
   VFR_WARNING_CODEUNDEFINED

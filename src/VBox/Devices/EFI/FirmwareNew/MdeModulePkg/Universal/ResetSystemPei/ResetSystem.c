@@ -1,15 +1,9 @@
 /** @file
   Implementation of Reset2, ResetFilter and ResetHandler PPIs.
 
-  Copyright (c) 2017 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -271,10 +265,7 @@ InitializeResetSystem (
                                 EfiResetShutdown the data buffer starts with a Null-terminated
                                 string, optionally followed by additional binary data.
                                 The string is a description that the caller may use to further
-                                indicate the reason for the system reset. ResetData is only
-                                valid if ResetStatus is something other than EFI_SUCCESS
-                                unless the ResetType is EfiResetPlatformSpecific
-                                where a minimum amount of ResetData is always required.
+                                indicate the reason for the system reset.
                                 For a ResetType of EfiResetPlatformSpecific the data buffer
                                 also starts with a Null-terminated string that is followed
                                 by an EFI_GUID that describes the specific type of reset to perform.

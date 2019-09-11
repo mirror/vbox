@@ -3,14 +3,7 @@ The DMA memory help functions.
 
 Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -205,29 +198,7 @@ IoMmuAllocateBuffer (
   return Status;
 }
 
-/**
-  Frees memory that was allocated with AllocateBuffer().
 
-  @param IoMmu              Pointer to IOMMU PPI.
-  @param Pages              The number of pages to free.
-  @param HostAddress        The base system memory address of the allocated range.
-  @param Mapping            The mapping value returned from Map().
-
-**/
-VOID
-IoMmuFreeBuffer (
-  IN EDKII_IOMMU_PPI        *IoMmu,
-  IN UINTN                  Pages,
-  IN VOID                   *HostAddress,
-  IN VOID                   *Mapping
-  )
-{
-  if (IoMmu != NULL) {
-    IoMmu->SetAttribute (IoMmu, Mapping, 0);
-    IoMmu->Unmap (IoMmu, Mapping);
-    IoMmu->FreeBuffer (IoMmu, Pages, HostAddress);
-  }
-}
 
 /**
   Initialize IOMMU.

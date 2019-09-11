@@ -1,15 +1,9 @@
 ## @file
 # This file contained the parser for INF file
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -23,8 +17,8 @@ import re
 import os
 from copy import deepcopy
 
-from Library.String import GetSplitValueList
-from Library.String import ConvertSpecialChar
+from Library.StringUtils import GetSplitValueList
+from Library.StringUtils import ConvertSpecialChar
 from Library.Misc import ProcessLineExtender
 from Library.Misc import ProcessEdkComment
 from Library.Parsing import NormPath
@@ -51,7 +45,7 @@ def OpenInfFile(Filename):
     FileLinesList = []
 
     try:
-        FInputfile = open(Filename, "rb", 0)
+        FInputfile = open(Filename, "r")
         try:
             FileLinesList = FInputfile.readlines()
         except BaseException:
@@ -86,7 +80,7 @@ class InfParser(InfSectionParser):
         #
         # Call parent class construct function
         #
-        super(InfParser, self).__init__()
+        InfSectionParser.__init__()
 
         self.WorkspaceDir    = WorkspaceDir
         self.SupArchList     = DT.ARCH_LIST
@@ -97,7 +91,7 @@ class InfParser(InfSectionParser):
         #
         # Load Inf file if filename is not None
         #
-        if Filename != None:
+        if Filename is not None:
             self.ParseInfFile(Filename)
 
     ## Parse INF file

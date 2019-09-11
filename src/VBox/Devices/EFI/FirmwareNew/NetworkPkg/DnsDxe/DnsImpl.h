@@ -1,14 +1,8 @@
 /** @file
 DnsDxe support functions implementation.
 
-Copyright (c) 2015 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -583,6 +577,7 @@ IsValidDnsResponse (
 
   @param  Instance              The DNS instance
   @param  RxString              Received buffer.
+  @param  Length                Received buffer length.
   @param  Completed             Flag to indicate that Dns response is valid.
 
   @retval EFI_SUCCESS           Parse Dns Response successfully.
@@ -593,6 +588,7 @@ EFI_STATUS
 ParseDnsResponse (
   IN OUT DNS_INSTANCE              *Instance,
   IN     UINT8                     *RxString,
+  IN     UINT32                    Length,
      OUT BOOLEAN                   *Completed
   );
 

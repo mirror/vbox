@@ -1,14 +1,8 @@
 /** @file
   Values defined and used by the Opal UEFI Driver.
 
-Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -28,6 +22,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/StorageSecurityCommand.h>
 
 #include <Guid/EventGroup.h>
+#include <Guid/S3StorageDeviceInitList.h>
 
 #include <Library/UefiLib.h>
 #include <Library/UefiBootServicesTableLib.h>
@@ -42,7 +37,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/HiiLib.h>
 #include <Library/UefiHiiServicesLib.h>
 #include <Library/PciLib.h>
-#include <Library/S3BootScriptLib.h>
 #include <Library/LockBoxLib.h>
 #include <Library/TcgStorageOpalLib.h>
 #include <Library/Tcg2PhysicalPresenceLib.h>
@@ -74,6 +68,13 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gOpalComponentName2;
 // PSID Length
 #define PSID_CHARACTER_LENGTH   0x20
 #define MAX_PSID_TRY_COUNT      5
+
+//
+// The max timeout value assume the user can wait for the revert action. The unit of this macro is second.
+// If the revert time value bigger than this one, driver needs to popup a dialog to let user confirm the
+// revert action.
+//
+#define MAX_ACCEPTABLE_REVERTING_TIME    10
 
 #pragma pack(1)
 
@@ -140,6 +141,9 @@ typedef struct {
   TCG_LOCKING_FEATURE_DESCRIPTOR                  LockingFeature;         // Locking Feature Descriptor retrieved from performing a Level 0 Discovery
   UINT8                                           PasswordLength;
   UINT8                                           Password[OPAL_MAX_PASSWORD_SIZE];
+
+  UINT32                                          EstimateTimeCost;
+  BOOLEAN                                         SentBlockSID;           // Check whether BlockSid command has been sent.
 } OPAL_DISK;
 
 //

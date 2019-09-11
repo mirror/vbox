@@ -1,13 +1,7 @@
 /** @file
 
-  Copyright (c) 2014 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2014 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -41,7 +35,8 @@ UFS_PASS_THRU_PRIVATE_DATA gUfsPassThruTemplate = {
   },
   0,                              // UfsHostController
   0,                              // UfsHcBase
-  0,                              // Capabilities
+  {0, 0},                         // UfsHcInfo
+  {NULL, NULL},                   // UfsHcDriverInterface
   0,                              // TaskTag
   0,                              // UtpTrlBase
   0,                              // Nutrs
@@ -97,6 +92,8 @@ UFS_DEVICE_PATH    mUfsDevicePathTemplate = {
 };
 
 UINT8 mUfsTargetId[TARGET_MAX_BYTES];
+
+GLOBAL_REMOVE_IF_UNREFERENCED EDKII_UFS_HC_PLATFORM_PROTOCOL  *mUfsHcPlatform;
 
 /**
   Sends a SCSI Request Packet to a SCSI device that is attached to the SCSI channel. This function
@@ -870,7 +867,26 @@ UfsPassThruDriverBindingStart (
   Private->ExtScsiPassThru.Mode = &Private->ExtScsiPassThruMode;
   Private->UfsHostController    = UfsHc;
   Private->UfsHcBase            = UfsHcBase;
+  Private->Handle               = Controller;
+  Private->UfsHcDriverInterface.UfsHcProtocol = UfsHc;
+  Private->UfsHcDriverInterface.UfsExecUicCommand = UfsHcDriverInterfaceExecUicCommand;
   InitializeListHead (&Private->Queue);
+
+  //
+  // This has to be done before initializing UfsHcInfo or calling the UfsControllerInit
+  //
+  if (mUfsHcPlatform == NULL) {
+    Status = gBS->LocateProtocol (&gEdkiiUfsHcPlatformProtocolGuid, NULL, (VOID**)&mUfsHcPlatform);
+    if (EFI_ERROR (Status)) {
+      DEBUG ((DEBUG_INFO, "No UfsHcPlatformProtocol present\n"));
+    }
+  }
+
+  Status = GetUfsHcInfo (Private);
+  if (EFI_ERROR (Status)) {
+    DEBUG ((DEBUG_ERROR, "Failed to initialize UfsHcInfo\n"));
+    goto Error;
+  }
 
   //
   // Initialize UFS Host Controller H/W.

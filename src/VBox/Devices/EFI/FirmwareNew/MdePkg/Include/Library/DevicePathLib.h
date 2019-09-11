@@ -4,14 +4,8 @@
   This library provides defines, macros, and functions to help create and parse
   EFI_DEVICE_PATH_PROTOCOL structures.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -22,12 +16,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 /**
   Determine whether a given device path is valid.
-  If DevicePath is NULL, then ASSERT().
 
   @param  DevicePath  A pointer to a device path data structure.
   @param  MaxSize     The maximum size of the device path data structure.
 
   @retval TRUE        DevicePath is valid.
+  @retval FALSE       DevicePath is NULL.
+  @retval FALSE       Maxsize is less than sizeof(EFI_DEVICE_PATH_PROTOCOL).
   @retval FALSE       The length of any node node in the DevicePath is less
                       than sizeof (EFI_DEVICE_PATH_PROTOCOL).
   @retval FALSE       If MaxSize is not zero, the size of the DevicePath

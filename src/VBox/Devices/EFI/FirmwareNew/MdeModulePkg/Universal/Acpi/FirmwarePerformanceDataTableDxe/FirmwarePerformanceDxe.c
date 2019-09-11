@@ -5,14 +5,8 @@
   for Firmware Basic Boot Performance Record and other boot performance records,
   and install FPDT to ACPI table.
 
-  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2011 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -25,13 +19,12 @@
 
 #include <Guid/Acpi.h>
 #include <Guid/FirmwarePerformance.h>
-#include <Guid/EventGroup.h>
-#include <Guid/EventLegacyBios.h>
 
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
+#include <Library/DxeServicesLib.h>
 #include <Library/TimerLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/MemoryAllocationLib.h>
@@ -47,7 +40,7 @@ EFI_RSC_HANDLER_PROTOCOL    *mRscHandlerProtocol = NULL;
 BOOLEAN                     mLockBoxReady = FALSE;
 EFI_EVENT                   mReadyToBootEvent;
 EFI_EVENT                   mLegacyBootEvent;
-EFI_EVENT                   mExitBootServicesEvent;
+static EFI_EVENT            mExitBootServicesEvent;
 UINTN                       mFirmwarePerformanceTableTemplateKey  = 0;
 BOOLEAN                     mDxeCoreReportStatusCodeEnable = FALSE;
 
@@ -180,46 +173,6 @@ FpdtAcpiTableChecksum (
 }
 
 /**
-  Allocate EfiReservedMemoryType below 4G memory address.
-
-  This function allocates EfiReservedMemoryType below 4G memory address.
-
-  @param[in]  Size   Size of memory to allocate.
-
-  @return Allocated address for output.
-
-**/
-VOID *
-FpdtAllocateReservedMemoryBelow4G (
-  IN UINTN       Size
-  )
-{
-  UINTN                 Pages;
-  EFI_PHYSICAL_ADDRESS  Address;
-  EFI_STATUS            Status;
-  VOID                  *Buffer;
-
-  Buffer  = NULL;
-  Pages   = EFI_SIZE_TO_PAGES (Size);
-  Address = 0xffffffff;
-
-  Status = gBS->AllocatePages (
-                  AllocateMaxAddress,
-                  EfiReservedMemoryType,
-                  Pages,
-                  &Address
-                  );
-  ASSERT_EFI_ERROR (Status);
-
-  if (!EFI_ERROR (Status)) {
-    Buffer = (VOID *) (UINTN) Address;
-    ZeroMem (Buffer, Size);
-  }
-
-  return Buffer;
-}
-
-/**
   Callback function upon VariableArchProtocol and LockBoxProtocol
   to allocate S3 performance table memory and save the pointer to LockBox.
 
@@ -287,7 +240,10 @@ FpdtAllocateS3PerformanceTableMemory (
         //
         // Fail to allocate at specified address, continue to allocate at any address.
         //
-        mAcpiS3PerformanceTable = (S3_PERFORMANCE_TABLE *) FpdtAllocateReservedMemoryBelow4G (sizeof (S3_PERFORMANCE_TABLE));
+        mAcpiS3PerformanceTable = (S3_PERFORMANCE_TABLE *) AllocatePeiAccessiblePages (
+                                                             EfiReservedMemoryType,
+                                                             EFI_SIZE_TO_PAGES (sizeof (S3_PERFORMANCE_TABLE))
+                                                             );
       }
       DEBUG ((EFI_D_INFO, "FPDT: ACPI S3 Performance Table address = 0x%x\n", mAcpiS3PerformanceTable));
       if (mAcpiS3PerformanceTable != NULL) {
@@ -368,7 +324,10 @@ InstallFirmwarePerformanceDataTable (
       //
       // Fail to allocate at specified address, continue to allocate at any address.
       //
-      mAcpiBootPerformanceTable = (BOOT_PERFORMANCE_TABLE *) FpdtAllocateReservedMemoryBelow4G (BootPerformanceDataSize);
+      mAcpiBootPerformanceTable = (BOOT_PERFORMANCE_TABLE *) AllocatePeiAccessiblePages (
+                                                               EfiReservedMemoryType,
+                                                               EFI_SIZE_TO_PAGES (BootPerformanceDataSize)
+                                                               );
     }
     DEBUG ((DEBUG_INFO, "FPDT: ACPI Boot Performance Table address = 0x%x\n", mAcpiBootPerformanceTable));
     if (mAcpiBootPerformanceTable == NULL) {
@@ -554,6 +513,9 @@ FpdtStatusCodeListenerDxe (
     // Get the Boot performance table and then install it to ACPI table.
     //
     CopyMem (&mReceivedAcpiBootPerformanceTable, Data + 1, Data->Size);
+  } else if (Data != NULL && CompareGuid (&Data->Type, &gEfiFirmwarePerformanceGuid)) {
+    DEBUG ((DEBUG_ERROR, "FpdtStatusCodeListenerDxe: Performance data reported through gEfiFirmwarePerformanceGuid will not be collected by FirmwarePerformanceDataTableDxe\n"));
+    Status = EFI_UNSUPPORTED;
   } else {
     //
     // Ignore else progress code.

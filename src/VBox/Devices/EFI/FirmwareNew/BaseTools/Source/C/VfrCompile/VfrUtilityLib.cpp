@@ -2,14 +2,8 @@
 
   Vfr common library functions.
 
-Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -360,7 +354,7 @@ CVfrBufferConfig::Write (
 
   case 'i' : // set info
     if (mItemListPos->mId != NULL) {
-      delete mItemListPos->mId;
+      delete[] mItemListPos->mId;
     }
     mItemListPos->mId = NULL;
     if (Id != NULL) {
@@ -553,7 +547,7 @@ _STR2U32 (
     //
     // BUG: does not handle overflow here
     //
-	(IsHex == TRUE) ? (Value <<= 4) : (Value *= 10);
+  (IsHex == TRUE) ? (Value <<= 4) : (Value *= 10);
 
     if ((IsHex == TRUE) && (c >= 'a') && (c <= 'f')) {
       Value += (c - 'a' + 10);
@@ -766,17 +760,6 @@ CVfrVarDataTypeDB::GetFieldOffset (
     return VFR_RETURN_FATAL_ERROR;
   }
 
-  //
-  // Framework Vfr file Array Index is from 1.
-  // But Uefi Vfr file Array Index is from 0.
-  //
-  if (VfrCompatibleMode && ArrayIdx != INVALID_ARRAY_INDEX) {
-    if (ArrayIdx == 0) {
-      return VFR_RETURN_ERROR_ARRARY_NUM;
-    }
-    ArrayIdx = ArrayIdx - 1;
-  }
-
   if ((ArrayIdx != INVALID_ARRAY_INDEX) && ((Field->mArrayNum == 0) || (Field->mArrayNum <= ArrayIdx))) {
     return VFR_RETURN_ERROR_ARRARY_NUM;
   }
@@ -984,7 +967,7 @@ CVfrVarDataTypeDB::~CVfrVarDataTypeDB (
       pType->mMembers = pType->mMembers->mNext;
       delete pField;
     }
-	delete pType;
+  delete pType;
   }
 
   while (mPackStack != NULL) {
@@ -1178,7 +1161,7 @@ CVfrVarDataTypeDB::DataTypeAddBitField (
     }
   } else {
     //
-    // Check whether the bit fileds can be contained within one FieldType.
+    // Check whether the bit fields can be contained within one FieldType.
     //
     if (pTmp != NULL && pTmp->mIsBitField && strcmp (pTmp->mFieldType->mTypeName, pNewField->mFieldType->mTypeName) == 0 &&
        (pTmp->mBitOffset - pTmp->mOffset * 8) + pTmp->mBitWidth + pNewField->mBitWidth <= pNewField->mFieldType->mTotalSize * 8) {
@@ -1537,7 +1520,7 @@ CVfrVarDataTypeDB::ParserDB (
       printf ("\t\t\t%s\t%s\n", pFNode->mFieldType->mTypeName, pFNode->mFieldName);
     }
     printf ("\t\t};\n");
-	printf ("---------------------------------------------------------------\n");
+  printf ("---------------------------------------------------------------\n");
   }
   printf ("***************************************************************\n");
 }
@@ -1631,7 +1614,7 @@ SVfrVarStorageNode::~SVfrVarStorageNode (
   }
 
   if (mVarStoreType == EFI_VFR_VARSTORE_NAME) {
-    delete mStorageInfo.mNameSpace.mNameTable;
+    delete[] mStorageInfo.mNameSpace.mNameTable;
   }
 }
 
@@ -1690,17 +1673,7 @@ CVfrDataStorage::GetFreeVarStoreId (
 {
   UINT32  Index, Mask, Offset;
 
-  //
-  // Assign the different ID range for the different type VarStore to support Framework Vfr
-  //
   Index = 0;
-  if ((!VfrCompatibleMode) || (VarType == EFI_VFR_VARSTORE_BUFFER)) {
-    Index = 0;
-  } else if (VarType == EFI_VFR_VARSTORE_EFI) {
-    Index = 1;
-  } else if (VarType == EFI_VFR_VARSTORE_NAME) {
-    Index = 2;
-  }
 
   for (; Index < EFI_FREE_VARSTORE_ID_BITMAP_SIZE; Index++) {
     if (mFreeVarStoreIdBitMap[Index] != 0xFFFFFFFF) {
@@ -1922,13 +1895,6 @@ CVfrDataStorage::GetVarStoreByDataType (
   SVfrVarStorageNode    *pNode;
   SVfrVarStorageNode    *MatchNode;
 
-  //
-  // Framework VFR uses Data type name as varstore name, so don't need check again.
-  //
-  if (VfrCompatibleMode) {
-    return VFR_RETURN_UNDEFINED;
-  }
-
   MatchNode = NULL;
   for (pNode = mBufferVarStoreList; pNode != NULL; pNode = pNode->mNext) {
     if (strcmp (pNode->mStorageInfo.mDataType->mTypeName, DataTypeName) != 0) {
@@ -2059,7 +2025,7 @@ CVfrDataStorage::GetVarStoreId (
   *VarStoreId         = EFI_VARSTORE_ID_INVALID;
 
   //
-  // Assume that Data strucutre name is used as StoreName, and check again.
+  // Assume that Data structure name is used as StoreName, and check again.
   //
   ReturnCode = GetVarStoreByDataType (StoreName, &pNode, StoreGuid);
   if (pNode != NULL) {
@@ -2294,16 +2260,6 @@ CVfrDataStorage::GetNameVarStoreInfo (
 
   if (mCurrVarStorageNode == NULL) {
     return VFR_RETURN_GET_NVVARSTORE_ERROR;
-  }
-
-  //
-  // Framework Vfr file Index is from 1, but Uefi Vfr file Index is from 0.
-  //
-  if (VfrCompatibleMode) {
-    if (Index == 0) {
-      return VFR_RETURN_ERROR_ARRARY_NUM;
-    }
-    Index --;
   }
 
   Info->mInfo.mVarName = mCurrVarStorageNode->mStorageInfo.mNameSpace.mNameTable[Index];
@@ -2650,7 +2606,7 @@ EFI_VARSTORE_INFO::operator == (
   )
 {
   if ((mVarStoreId == Info->mVarStoreId) &&
-  	  (mInfo.mVarName == Info->mInfo.mVarName) &&
+      (mInfo.mVarName == Info->mInfo.mVarName) &&
       (mInfo.mVarOffset == Info->mInfo.mVarOffset) &&
       (mVarType == Info->mVarType) &&
       (mVarTotalSize == Info->mVarTotalSize) &&
@@ -2844,7 +2800,7 @@ CVfrQuestionDB::PrintAllQuestion (
   SVfrQuestionNode *pNode = NULL;
 
   for (pNode = mQuestionList; pNode != NULL; pNode = pNode->mNext) {
-    printf ("Question VarId is %s and QuesitonId is 0x%x\n", pNode->mVarIdStr, pNode->mQuestionId);
+    printf ("Question VarId is %s and QuestionId is 0x%x\n", pNode->mVarIdStr, pNode->mQuestionId);
   }
 }
 
@@ -2868,10 +2824,7 @@ CVfrQuestionDB::RegisterQuestion (
   if (QuestionId == EFI_QUESTION_ID_INVALID) {
     QuestionId = GetFreeQuestionId ();
   } else {
-    //
-    // For Framework Vfr, don't check question ID conflict.
-    //
-    if (!VfrCompatibleMode && ChekQuestionIdFree (QuestionId) == FALSE) {
+    if (ChekQuestionIdFree (QuestionId) == FALSE) {
       delete pNode;
       return VFR_RETURN_QUESTIONID_REDEFINED;
     }
@@ -3041,7 +2994,8 @@ CVfrQuestionDB::RegisterNewDateQuestion (
 
   for (Index = 0; Index < 3; Index++) {
     if (VarIdStr[Index] != NULL) {
-      delete VarIdStr[Index];
+      delete[] VarIdStr[Index];
+      VarIdStr[Index] = NULL;
     }
   }
 
@@ -3058,7 +3012,8 @@ Err:
     }
 
     if (VarIdStr[Index] != NULL) {
-      delete VarIdStr[Index];
+      delete[] VarIdStr [Index];
+      VarIdStr [Index] = NULL;
     }
   }
 }
@@ -3217,7 +3172,8 @@ CVfrQuestionDB::RegisterNewTimeQuestion (
 
   for (Index = 0; Index < 3; Index++) {
     if (VarIdStr[Index] != NULL) {
-      delete VarIdStr[Index];
+      delete[] VarIdStr[Index];
+      VarIdStr[Index] = NULL;
     }
   }
 
@@ -3234,7 +3190,8 @@ Err:
     }
 
     if (VarIdStr[Index] != NULL) {
-      delete VarIdStr[Index];
+      delete[] VarIdStr[Index];
+      VarIdStr[Index] = NULL;
     }
   }
 }
@@ -3371,10 +3328,7 @@ CVfrQuestionDB::UpdateQuestionId (
     return VFR_RETURN_SUCCESS;
   }
 
-  //
-  // For Framework Vfr, don't check question ID conflict.
-  //
-  if (!VfrCompatibleMode && ChekQuestionIdFree (NewQId) == FALSE) {
+  if (ChekQuestionIdFree (NewQId) == FALSE) {
     return VFR_RETURN_REDEFINED;
   }
 
@@ -3429,7 +3383,7 @@ CVfrQuestionDB::GetQuestionId (
       if (strcmp (pNode->mVarIdStr, VarIdStr) != 0) {
         continue;
       }
-  	}
+    }
 
     QuestionId = pNode->mQuestionId;
     BitMask    = pNode->mBitMask;
@@ -3490,7 +3444,7 @@ CVfrStringDB::CVfrStringDB ()
 CVfrStringDB::~CVfrStringDB ()
 {
   if (mStringFileName != NULL) {
-    delete mStringFileName;
+    delete[] mStringFileName;
   }
   mStringFileName = NULL;
 }
@@ -3503,6 +3457,10 @@ CVfrStringDB::SetStringFileName(IN CHAR8 *StringFileName)
 
   if (StringFileName == NULL) {
     return;
+  }
+
+  if (mStringFileName != NULL) {
+    delete[] mStringFileName;
   }
 
   FileLen = strlen (StringFileName) + 1;
@@ -3955,8 +3913,6 @@ CVfrStringDB::GetUnicodeStringTextSize (
 
   return StringSize;
 }
-
-BOOLEAN  VfrCompatibleMode = FALSE;
 
 CVfrVarDataTypeDB gCVfrVarDataTypeDB;
 CVfrDefaultStore  gCVfrDefaultStore;

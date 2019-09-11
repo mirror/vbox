@@ -28,14 +28,8 @@
   Depex - Dependency Expresion.
 
   Copyright (c) 2014, Hewlett-Packard Development Company, L.P.
-  Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -321,12 +315,8 @@ SmmLoadImage (
   EFI_DEVICE_PATH_PROTOCOL       *HandleFilePath;
   EFI_FIRMWARE_VOLUME2_PROTOCOL  *Fv;
   PE_COFF_LOADER_IMAGE_CONTEXT   ImageContext;
-  UINT64                         Tick;
 
-  Tick = 0;
-  PERF_CODE (
-    Tick = GetPerformanceCounter ();
-  );
+  PERF_LOAD_IMAGE_BEGIN (DriverEntry->ImageHandle);
 
   Buffer               = NULL;
   Size                 = 0;
@@ -641,8 +631,7 @@ SmmLoadImage (
              &DriverEntry->SmmLoadedImage
              );
 
-  PERF_START (DriverEntry->ImageHandle, "LoadImage:", NULL, Tick);
-  PERF_END (DriverEntry->ImageHandle, "LoadImage:", NULL, 0);
+  PERF_LOAD_IMAGE_END (DriverEntry->ImageHandle);
 
   //
   // Print the load address and the PDB file name if it is available
@@ -909,9 +898,9 @@ SmmDispatcher (
       // For each SMM driver, pass NULL as ImageHandle
       //
       RegisterSmramProfileImage (DriverEntry, TRUE);
-      PERF_START (DriverEntry->ImageHandle, "StartImage:", NULL, 0);
+      PERF_START_IMAGE_BEGIN (DriverEntry->ImageHandle);
       Status = ((EFI_IMAGE_ENTRY_POINT)(UINTN)DriverEntry->ImageEntryPoint)(DriverEntry->ImageHandle, gST);
-      PERF_END (DriverEntry->ImageHandle, "StartImage:", NULL, 0);
+      PERF_START_IMAGE_END (DriverEntry->ImageHandle);
       if (EFI_ERROR(Status)){
         UnregisterSmramProfileImage (DriverEntry, TRUE);
         SmmFreePages(DriverEntry->ImageBuffer, DriverEntry->NumberOfPage);

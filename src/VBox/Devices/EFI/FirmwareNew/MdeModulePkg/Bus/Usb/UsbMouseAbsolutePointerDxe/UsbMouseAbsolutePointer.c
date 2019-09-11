@@ -1,14 +1,8 @@
 /** @file
   USB Mouse Driver that manages USB mouse and produces Absolute Pointer Protocol.
 
-Copyright (c) 2004 - 2016, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -271,8 +265,8 @@ USBMouseAbsolutePointerDriverBindingStart (
   // Initialize and install EFI Absolute Pointer Protocol.
   //
   UsbMouseAbsolutePointerDevice->AbsolutePointerProtocol.GetState = GetMouseAbsolutePointerState;
-  UsbMouseAbsolutePointerDevice->AbsolutePointerProtocol.Reset	  = UsbMouseAbsolutePointerReset;
-  UsbMouseAbsolutePointerDevice->AbsolutePointerProtocol.Mode	  = &UsbMouseAbsolutePointerDevice->Mode;
+  UsbMouseAbsolutePointerDevice->AbsolutePointerProtocol.Reset    = UsbMouseAbsolutePointerReset;
+  UsbMouseAbsolutePointerDevice->AbsolutePointerProtocol.Mode    = &UsbMouseAbsolutePointerDevice->Mode;
 
   Status = gBS->CreateEvent (
                   EVT_NOTIFY_WAIT,
@@ -813,8 +807,6 @@ OnMouseInterruptComplete (
     return EFI_SUCCESS;
   }
 
-  UsbMouseAbsolutePointerDevice->StateChanged = TRUE;
-
   //
   // Check mouse Data
   // USB HID Specification specifies following data format:
@@ -827,6 +819,12 @@ OnMouseInterruptComplete (
   // 2       0 to 7  Y displacement
   // 3 to n  0 to 7  Device specific (optional)
   //
+  if (DataLength < 3) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  UsbMouseAbsolutePointerDevice->StateChanged = TRUE;
+
   UsbMouseAbsolutePointerDevice->State.ActiveButtons = *(UINT8 *) Data & (BIT0 | BIT1 | BIT2);
 
   UsbMouseAbsolutePointerDevice->State.CurrentX =

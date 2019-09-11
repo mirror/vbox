@@ -1,15 +1,9 @@
 /** @file
   Support functions implementation for UefiPxeBc Driver.
 
-  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -36,16 +30,18 @@ PxeBcFlushStationIp (
 {
   EFI_PXE_BASE_CODE_MODE   *Mode;
   EFI_STATUS               Status;
+  EFI_ARP_CONFIG_DATA      ArpConfigData;
 
   Mode   = Private->PxeBc.Mode;
   Status = EFI_SUCCESS;
+  ZeroMem (&ArpConfigData, sizeof (EFI_ARP_CONFIG_DATA));
 
-  if (Mode->UsingIpv6) {
-
-    if (StationIp != NULL) {
-      CopyMem (&Private->Udp6CfgData.StationAddress, StationIp, sizeof (EFI_IPv6_ADDRESS));
-      CopyMem (&Private->Ip6CfgData.StationAddress, StationIp, sizeof (EFI_IPv6_ADDRESS));
-    }
+  if (Mode->UsingIpv6 && StationIp != NULL) {
+    //
+    // Overwrite Udp6CfgData/Ip6CfgData StationAddress.
+    //
+    CopyMem (&Private->Udp6CfgData.StationAddress, StationIp, sizeof (EFI_IPv6_ADDRESS));
+    CopyMem (&Private->Ip6CfgData.StationAddress, StationIp, sizeof (EFI_IPv6_ADDRESS));
 
     //
     // Reconfigure the Ip6 instance to capture background ICMP6 packets with new station Ip address.
@@ -61,27 +57,55 @@ PxeBcFlushStationIp (
     Status = Private->Ip6->Receive (Private->Ip6, &Private->Icmp6Token);
   } else {
     if (StationIp != NULL) {
+      //
+      // Reconfigure the ARP instance with station Ip address.
+      //
+      ArpConfigData.SwAddressType   = 0x0800;
+      ArpConfigData.SwAddressLength = (UINT8) sizeof (EFI_IPv4_ADDRESS);
+      ArpConfigData.StationAddress = StationIp;
+
+      Private->Arp->Configure (Private->Arp, NULL);
+      Private->Arp->Configure (Private->Arp, &ArpConfigData);
+
+      //
+      // Overwrite Udp4CfgData/Ip4CfgData StationAddress.
+      //
       CopyMem (&Private->Udp4CfgData.StationAddress, StationIp, sizeof (EFI_IPv4_ADDRESS));
       CopyMem (&Private->Ip4CfgData.StationAddress, StationIp, sizeof (EFI_IPv4_ADDRESS));
     }
 
     if (SubnetMask != NULL) {
+      //
+      // Overwrite Udp4CfgData/Ip4CfgData SubnetMask.
+      //
       CopyMem (&Private->Udp4CfgData.SubnetMask, SubnetMask, sizeof (EFI_IPv4_ADDRESS));
       CopyMem (&Private->Ip4CfgData.SubnetMask, SubnetMask, sizeof (EFI_IPv4_ADDRESS));
     }
 
-    //
-    // Reconfigure the Ip4 instance to capture background ICMP packets with new station Ip address.
-    //
-    Private->Ip4->Cancel (Private->Ip4, &Private->IcmpToken);
-    Private->Ip4->Configure (Private->Ip4, NULL);
-
-    Status = Private->Ip4->Configure (Private->Ip4, &Private->Ip4CfgData);
-    if (EFI_ERROR (Status)) {
-      goto ON_EXIT;
+    if (StationIp != NULL && SubnetMask != NULL) {
+      //
+      // Updated the route table.
+      //
+      Mode->RouteTableEntries                = 1;
+      Mode->RouteTable[0].IpAddr.Addr[0]     = StationIp->Addr[0] & SubnetMask->Addr[0];
+      Mode->RouteTable[0].SubnetMask.Addr[0] = SubnetMask->Addr[0];
+      Mode->RouteTable[0].GwAddr.Addr[0]     = 0;
     }
 
-    Status = Private->Ip4->Receive (Private->Ip4, &Private->IcmpToken);
+    if (StationIp != NULL || SubnetMask != NULL) {
+      //
+      // Reconfigure the Ip4 instance to capture background ICMP packets with new station Ip address.
+      //
+      Private->Ip4->Cancel (Private->Ip4, &Private->IcmpToken);
+      Private->Ip4->Configure (Private->Ip4, NULL);
+
+      Status = Private->Ip4->Configure (Private->Ip4, &Private->Ip4CfgData);
+      if (EFI_ERROR (Status)) {
+        goto ON_EXIT;
+      }
+
+      Status = Private->Ip4->Receive (Private->Ip4, &Private->IcmpToken);
+    }
   }
 
 ON_EXIT:
@@ -1480,14 +1504,14 @@ CalcElapsedTime (
   //
   ZeroMem (&Time, sizeof (EFI_TIME));
   gRT->GetTime (&Time, NULL);
-  CurrentStamp = (UINT64)
-    (
-      ((((((Time.Year - 1900) * 360 +
-       (Time.Month - 1)) * 30 +
-       (Time.Day - 1)) * 24 + Time.Hour) * 60 +
-       Time.Minute) * 60 + Time.Second) * 100
-       + DivU64x32(Time.Nanosecond, 10000000)
-    );
+  CurrentStamp = MultU64x32 (
+                   ((((UINT32)(Time.Year - 1900) * 360 + (Time.Month - 1) * 30 + (Time.Day - 1)) * 24 + Time.Hour) * 60 + Time.Minute) * 60 + Time.Second,
+                   100
+                   ) +
+                 DivU64x32 (
+                   Time.Nanosecond,
+                   10000000
+                   );
 
   //
   // Sentinel value of 0 means that this is the first DHCP packet that we are

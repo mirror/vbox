@@ -1,15 +1,9 @@
 ## @file
 # Common routines used by all tools
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2019, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -32,7 +26,7 @@ from os import linesep
 from os import walk
 from os import environ
 import re
-from UserDict import IterableUserDict
+from collections import OrderedDict as Sdict
 
 import Logger.Log as Logger
 from Logger import StringTable as ST
@@ -45,7 +39,7 @@ from Library.DataType import TAB_LANGUAGE_EN_US
 from Library.DataType import TAB_LANGUAGE_EN
 from Library.DataType import TAB_LANGUAGE_EN_X
 from Library.DataType import TAB_UNI_FILE_SUFFIXS
-from Library.String import GetSplitValueList
+from Library.StringUtils import GetSplitValueList
 from Library.ParserValidate import IsValidHexVersion
 from Library.ParserValidate import IsValidPath
 from Object.POM.CommonObject import TextObject
@@ -120,7 +114,7 @@ def GuidStructureStringToGuidString(GuidValue):
 # @param      Directory:   The directory name
 #
 def CreateDirectory(Directory):
-    if Directory == None or Directory.strip() == "":
+    if Directory is None or Directory.strip() == "":
         return True
     try:
         if not access(Directory, F_OK):
@@ -134,7 +128,7 @@ def CreateDirectory(Directory):
 # @param      Directory:   The directory name
 #
 def RemoveDirectory(Directory, Recursively=False):
-    if Directory == None or Directory.strip() == "" or not \
+    if Directory is None or Directory.strip() == "" or not \
     os.path.exists(Directory):
         return
     if Recursively:
@@ -160,23 +154,35 @@ def RemoveDirectory(Directory, Recursively=False):
 #                              or not
 #
 def SaveFileOnChange(File, Content, IsBinaryFile=True):
-    if not IsBinaryFile:
-        Content = Content.replace("\n", linesep)
-
     if os.path.exists(File):
-        try:
-            if Content == __FileHookOpen__(File, "rb").read():
-                return False
-        except BaseException:
-            Logger.Error(None, ToolError.FILE_OPEN_FAILURE, ExtraData=File)
+        if IsBinaryFile:
+            try:
+                if Content == __FileHookOpen__(File, "rb").read():
+                    return False
+            except BaseException:
+                Logger.Error(None, ToolError.FILE_OPEN_FAILURE, ExtraData=File)
+        else:
+            try:
+                if Content == __FileHookOpen__(File, "r").read():
+                    return False
+            except BaseException:
+                Logger.Error(None, ToolError.FILE_OPEN_FAILURE, ExtraData=File)
 
     CreateDirectory(os.path.dirname(File))
-    try:
-        FileFd = __FileHookOpen__(File, "wb")
-        FileFd.write(Content)
-        FileFd.close()
-    except BaseException:
-        Logger.Error(None, ToolError.FILE_CREATE_FAILURE, ExtraData=File)
+    if IsBinaryFile:
+        try:
+            FileFd = __FileHookOpen__(File, "wb")
+            FileFd.write(Content)
+            FileFd.close()
+        except BaseException:
+            Logger.Error(None, ToolError.FILE_CREATE_FAILURE, ExtraData=File)
+    else:
+        try:
+            FileFd = __FileHookOpen__(File, "w")
+            FileFd.write(Content)
+            FileFd.close()
+        except BaseException:
+            Logger.Error(None, ToolError.FILE_CREATE_FAILURE, ExtraData=File)
 
     return True
 
@@ -237,7 +243,7 @@ def GetNonMetaDataFiles(Root, SkipList, FullPath, PrefixPath):
 #
 def ValidFile(File, Ext=None):
     File = File.replace('\\', '/')
-    if Ext != None:
+    if Ext is not None:
         FileExt = os.path.splitext(File)[1]
         if FileExt.lower() != Ext.lower():
             return False
@@ -288,148 +294,6 @@ def RealPath2(File, Dir='', OverrideDir=''):
 
     return None, None
 
-## A dict which can access its keys and/or values orderly
-#
-#  The class implements a new kind of dict which its keys or values can be
-#  accessed in the order they are added into the dict. It guarantees the order
-#  by making use of an internal list to keep a copy of keys.
-#
-class Sdict(IterableUserDict):
-    ## Constructor
-    #
-    def __init__(self):
-        IterableUserDict.__init__(self)
-        self._key_list = []
-
-    ## [] operator
-    #
-    def __setitem__(self, Key, Value):
-        if Key not in self._key_list:
-            self._key_list.append(Key)
-        IterableUserDict.__setitem__(self, Key, Value)
-
-    ## del operator
-    #
-    def __delitem__(self, Key):
-        self._key_list.remove(Key)
-        IterableUserDict.__delitem__(self, Key)
-
-    ## used in "for k in dict" loop to ensure the correct order
-    #
-    def __iter__(self):
-        return self.iterkeys()
-
-    ## len() support
-    #
-    def __len__(self):
-        return len(self._key_list)
-
-    ## "in" test support
-    #
-    def __contains__(self, Key):
-        return Key in self._key_list
-
-    ## indexof support
-    #
-    def index(self, Key):
-        return self._key_list.index(Key)
-
-    ## insert support
-    #
-    def insert(self, Key, Newkey, Newvalue, Order):
-        Index = self._key_list.index(Key)
-        if Order == 'BEFORE':
-            self._key_list.insert(Index, Newkey)
-            IterableUserDict.__setitem__(self, Newkey, Newvalue)
-        elif Order == 'AFTER':
-            self._key_list.insert(Index + 1, Newkey)
-            IterableUserDict.__setitem__(self, Newkey, Newvalue)
-
-    ## append support
-    #
-    def append(self, Sdict2):
-        for Key in Sdict2:
-            if Key not in self._key_list:
-                self._key_list.append(Key)
-            IterableUserDict.__setitem__(self, Key, Sdict2[Key])
-    ## hash key
-    #
-    def has_key(self, Key):
-        return Key in self._key_list
-
-    ## Empty the dict
-    #
-    def clear(self):
-        self._key_list = []
-        IterableUserDict.clear(self)
-
-    ## Return a copy of keys
-    #
-    def keys(self):
-        Keys = []
-        for Key in self._key_list:
-            Keys.append(Key)
-        return Keys
-
-    ## Return a copy of values
-    #
-    def values(self):
-        Values = []
-        for Key in self._key_list:
-            Values.append(self[Key])
-        return Values
-
-    ## Return a copy of (key, value) list
-    #
-    def items(self):
-        Items = []
-        for Key in self._key_list:
-            Items.append((Key, self[Key]))
-        return Items
-
-    ## Iteration support
-    #
-    def iteritems(self):
-        return iter(self.items())
-
-    ## Keys interation support
-    #
-    def iterkeys(self):
-        return iter(self.keys())
-
-    ## Values interation support
-    #
-    def itervalues(self):
-        return iter(self.values())
-
-    ## Return value related to a key, and remove the (key, value) from the dict
-    #
-    def pop(self, Key, *Dv):
-        Value = None
-        if Key in self._key_list:
-            Value = self[Key]
-            self.__delitem__(Key)
-        elif len(Dv) != 0 :
-            Value = Dv[0]
-        return Value
-
-    ## Return (key, value) pair, and remove the (key, value) from the dict
-    #
-    def popitem(self):
-        Key = self._key_list[-1]
-        Value = self[Key]
-        self.__delitem__(Key)
-        return Key, Value
-    ## update method
-    #
-    def update(self, Dict=None, **Kwargs):
-        if Dict != None:
-            for Key1, Val1 in Dict.items():
-                self[Key1] = Val1
-        if len(Kwargs):
-            for Key1, Val1 in Kwargs.items():
-                self[Key1] = Val1
-
 ## CommonPath
 #
 # @param PathList: PathList
@@ -437,7 +301,7 @@ class Sdict(IterableUserDict):
 def CommonPath(PathList):
     Path1 = min(PathList).split(os.path.sep)
     Path2 = max(PathList).split(os.path.sep)
-    for Index in xrange(min(len(Path1), len(Path2))):
+    for Index in range(min(len(Path1), len(Path2))):
         if Path1[Index] != Path2[Index]:
             return os.path.sep.join(Path1[:Index])
     return os.path.sep.join(Path1)
@@ -514,7 +378,7 @@ class PathClass(object):
     # Check whether PathClass are the same
     #
     def __eq__(self, Other):
-        if type(Other) == type(self):
+        if isinstance(Other, type(self)):
             return self.Path == Other.Path
         else:
             return self.Path == str(Other)
@@ -529,7 +393,7 @@ class PathClass(object):
     ## _GetFileKey
     #
     def _GetFileKey(self):
-        if self._Key == None:
+        if self._Key is None:
             self._Key = self.Path.upper()
         return self._Key
     ## Validate
@@ -819,11 +683,11 @@ def ConvertArchList(ArchList):
     if not ArchList:
         return NewArchList
 
-    if type(ArchList) == list:
+    if isinstance(ArchList, list):
         for Arch in ArchList:
             Arch = Arch.upper()
             NewArchList.append(Arch)
-    elif type(ArchList) == str:
+    elif isinstance(ArchList, str):
         ArchList = ArchList.upper()
         NewArchList.append(ArchList)
 
@@ -890,7 +754,7 @@ def ProcessEdkComment(LineList):
             if FindEdkBlockComment:
                 if FirstPos == -1:
                     FirstPos = StartPos
-                for Index in xrange(StartPos, EndPos+1):
+                for Index in range(StartPos, EndPos+1):
                     LineList[Index] = ''
                 FindEdkBlockComment = False
         elif Line.find("//") != -1 and not Line.startswith("#"):
@@ -918,7 +782,7 @@ def GetLibInstanceInfo(String, WorkSpace, LineNo):
     FileGuidString = ""
     VerString = ""
 
-    OrignalString = String
+    OriginalString = String
     String = String.strip()
     if not String:
         return None, None
@@ -938,7 +802,7 @@ def GetLibInstanceInfo(String, WorkSpace, LineNo):
                      ST.ERR_FILELIST_EXIST % (String),
                      File=GlobalData.gINF_MODULE_NAME,
                      Line=LineNo,
-                     ExtraData=OrignalString)
+                     ExtraData=OriginalString)
 
     #
     # Validate file exist/format.
@@ -951,13 +815,13 @@ def GetLibInstanceInfo(String, WorkSpace, LineNo):
                      ST.ERR_INF_PARSER_FILE_NOT_EXIST_OR_NAME_INVALID % (String),
                      File=GlobalData.gINF_MODULE_NAME,
                      Line=LineNo,
-                     ExtraData=OrignalString)
+                     ExtraData=OriginalString)
         return False
     if IsValidFileFlag:
         FileLinesList = []
 
         try:
-            FInputfile = open(FullFileName, "rb", 0)
+            FInputfile = open(FullFileName, "r")
             try:
                 FileLinesList = FInputfile.readlines()
             except BaseException:
@@ -1103,7 +967,7 @@ def ValidateUNIFilePath(Path):
                         ExtraData=Path)
 
     #
-    # Check if '..' in the file name(without suffixe)
+    # Check if '..' in the file name(without suffix)
     #
     if (TAB_SPLIT + TAB_SPLIT) in Path:
         Logger.Error("Unicode File Parser",

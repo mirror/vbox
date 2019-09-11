@@ -1,15 +1,9 @@
 ## @file
 # This file is used to parse DEC file. It will consumed by DecParser
 #
-# Copyright (c) 2011 - 2016, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 '''
 DecParser
 '''
@@ -57,10 +51,10 @@ from Object.Parser.DecObject import DecPcdObject
 from Object.Parser.DecObject import DecPcdItemObject
 from Library.Misc import GuidStructureStringToGuidString
 from Library.Misc import CheckGuidRegFormat
-from Library.String import ReplaceMacro
-from Library.String import GetSplitValueList
-from Library.String import gMACRO_PATTERN
-from Library.String import ConvertSpecialChar
+from Library.StringUtils import ReplaceMacro
+from Library.StringUtils import GetSplitValueList
+from Library.StringUtils import gMACRO_PATTERN
+from Library.StringUtils import ConvertSpecialChar
 from Library.CommentParsing import ParsePcdErrorCode
 
 ##
@@ -620,11 +614,11 @@ class _DecPcd(_DecBase):
         if not IsValidToken(PCD_TOKEN_PATTERN, Token):
             self._LoggerError(ST.ERR_DECPARSE_PCD_TOKEN % Token)
         elif not Token.startswith('0x') and not Token.startswith('0X'):
-            if long(Token) > 4294967295:
+            if int(Token) > 4294967295:
                 self._LoggerError(ST.ERR_DECPARSE_PCD_TOKEN_INT % Token)
-            Token = hex(long(Token))[:-1]
+            Token = '0x%x' % int(Token)
 
-        IntToken = long(Token, 0)
+        IntToken = int(Token, 0)
         if (Guid, IntToken) in self.TokenMap:
             if self.TokenMap[Guid, IntToken] != CName:
                 self._LoggerError(ST.ERR_DECPARSE_PCD_TOKEN_UNIQUE%(Token))
@@ -705,7 +699,7 @@ class _DecGuid(_DecBase):
 
 ## _DecUserExtension
 #
-# Parse user extention section
+# Parse user extension section
 #
 class _DecUserExtension(_DecBase):
     def __init__(self, RawData):
@@ -752,7 +746,7 @@ class _DecUserExtension(_DecBase):
 class Dec(_DecBase, _DecComments):
     def __init__(self, DecFile, Parse = True):
         try:
-            Content = ConvertSpecialChar(open(DecFile, 'rb').readlines())
+            Content = ConvertSpecialChar(open(DecFile, 'r').readlines())
         except BaseException:
             Logger.Error(TOOL_NAME, FILE_OPEN_FAILURE, File=DecFile,
                          ExtraData=ST.ERR_DECPARSE_FILEOPEN % DecFile)
@@ -1033,7 +1027,7 @@ class Dec(_DecBase, _DecComments):
                 SectionNames.append(SectionName)
             #
             # In DEC specification, all section headers have at most two part:
-            # SectionName.Arch except UserExtention
+            # SectionName.Arch except UserExtension
             #
             if len(ItemList) > 2:
                 self._LoggerError(ST.ERR_DECPARSE_SECTION_SUBTOOMANY % Item)

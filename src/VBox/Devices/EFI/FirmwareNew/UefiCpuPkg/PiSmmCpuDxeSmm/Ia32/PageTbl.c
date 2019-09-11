@@ -1,20 +1,32 @@
 /** @file
 Page table manipulation functions for IA-32 processors
 
-Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "PiSmmCpuDxeSmm.h"
+
+/**
+  Disable CET.
+**/
+VOID
+EFIAPI
+DisableCet (
+  VOID
+  );
+
+/**
+  Enable CET.
+**/
+VOID
+EFIAPI
+EnableCet (
+  VOID
+  );
 
 /**
   Create PageTable for SMM use.
@@ -38,7 +50,9 @@ SmmInitPageTable (
 
   mPhysicalAddressBits = 32;
 
-  if (FeaturePcdGet (PcdCpuSmmProfileEnable)) {
+  if (FeaturePcdGet (PcdCpuSmmProfileEnable) ||
+      HEAP_GUARD_NONSTOP_MODE ||
+      NULL_DETECTION_NONSTOP_MODE) {
     //
     // Set own Page Fault entry instead of the default one, because SMM Profile
     // feature depends on IRET instruction to do Single Step
@@ -129,8 +143,14 @@ SmiPFHandler (
           DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextIa32->Eip);
         );
       }
+
+      if (HEAP_GUARD_NONSTOP_MODE) {
+        GuardPagePFHandler (SystemContext.SystemContextIa32->ExceptionData);
+        goto Exit;
+      }
     }
     CpuDeadLoop ();
+    goto Exit;
   }
 
   //
@@ -145,7 +165,29 @@ SmiPFHandler (
         DumpModuleInfoByIp (*(UINTN *)(UINTN)SystemContext.SystemContextIa32->Esp);
       );
       CpuDeadLoop ();
+      goto Exit;
     }
+
+    //
+    // If NULL pointer was just accessed
+    //
+    if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
+        (PFAddress < EFI_PAGE_SIZE)) {
+      DumpCpuContext (InterruptType, SystemContext);
+      DEBUG ((DEBUG_ERROR, "!!! NULL pointer access !!!\n"));
+      DEBUG_CODE (
+        DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextIa32->Eip);
+      );
+
+      if (NULL_DETECTION_NONSTOP_MODE) {
+        GuardPagePFHandler (SystemContext.SystemContextIa32->ExceptionData);
+        goto Exit;
+      }
+
+      CpuDeadLoop ();
+      goto Exit;
+    }
+
     if (IsSmmCommBufferForbiddenAddress (PFAddress)) {
       DumpCpuContext (InterruptType, SystemContext);
       DEBUG ((DEBUG_ERROR, "Access SMM communication forbidden address (0x%x)!\n", PFAddress));
@@ -153,20 +195,8 @@ SmiPFHandler (
         DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextIa32->Eip);
       );
       CpuDeadLoop ();
+      goto Exit;
     }
-  }
-
-  //
-  // If NULL pointer was just accessed
-  //
-  if ((PcdGet8 (PcdNullPointerDetectionPropertyMask) & BIT1) != 0 &&
-      (PFAddress < EFI_PAGE_SIZE)) {
-    DumpCpuContext (InterruptType, SystemContext);
-    DEBUG ((DEBUG_ERROR, "!!! NULL pointer access !!!\n"));
-    DEBUG_CODE (
-      DumpModuleInfoByIp ((UINTN)SystemContext.SystemContextIa32->Eip);
-    );
-    CpuDeadLoop ();
   }
 
   if (FeaturePcdGet (PcdCpuSmmProfileEnable)) {
@@ -179,6 +209,7 @@ SmiPFHandler (
     SmiDefaultPFHandler ();
   }
 
+Exit:
   ReleaseSpinLock (mPFLock);
 }
 
@@ -197,6 +228,7 @@ SetPageTableAttributes (
   UINT64                *L3PageTable;
   BOOLEAN               IsSplitted;
   BOOLEAN               PageTableSplitted;
+  BOOLEAN               CetEnabled;
 
   //
   // Don't mark page table to read-only if heap guard is enabled.
@@ -223,6 +255,13 @@ SetPageTableAttributes (
   // Disable write protection, because we need mark page table to be write protected.
   // We need *write* page table memory, to mark itself to be *read only*.
   //
+  CetEnabled = ((AsmReadCr4() & CR4_CET_ENABLE) != 0) ? TRUE : FALSE;
+  if (CetEnabled) {
+    //
+    // CET must be disabled if WP is disabled.
+    //
+    DisableCet();
+  }
   AsmWriteCr0 (AsmReadCr0() & ~CR0_WP);
 
   do {
@@ -262,6 +301,38 @@ SetPageTableAttributes (
   // Enable write protection, after page table updated.
   //
   AsmWriteCr0 (AsmReadCr0() | CR0_WP);
+  if (CetEnabled) {
+    //
+    // re-enable CET.
+    //
+    EnableCet();
+  }
 
+  return ;
+}
+
+/**
+  This function returns with no action for 32 bit.
+
+  @param[out]  *Cr2  Pointer to variable to hold CR2 register value.
+**/
+VOID
+SaveCr2 (
+  OUT UINTN  *Cr2
+  )
+{
+  return ;
+}
+
+/**
+  This function returns with no action for 32 bit.
+
+  @param[in]  Cr2  Value to write into CR2 register.
+**/
+VOID
+RestoreCr2 (
+  IN UINTN  Cr2
+  )
+{
   return ;
 }

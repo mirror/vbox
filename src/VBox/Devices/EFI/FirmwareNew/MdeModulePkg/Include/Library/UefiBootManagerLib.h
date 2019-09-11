@@ -1,15 +1,9 @@
 /** @file
   Provide Boot Manager related library APIs.
 
-Copyright (c) 2011 - 2016, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2011 - 2019, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -176,20 +170,30 @@ EfiBootManagerLoadOptionToVariable (
   );
 
 /**
-  This function will update the Boot####/Driver####/SysPrep#### and the
-  BootOrder/DriverOrder/SysPrepOrder to add a new load option.
+  This function will register the new Boot####, Driver#### or SysPrep#### option.
+  After the *#### is updated, the *Order will also be updated.
 
-  @param  Option        Pointer to load option to add.
-  @param  Position      Position of the new load option to put in the BootOrder/DriverOrder/SysPrepOrder.
+  @param  Option            Pointer to load option to add. If on input
+                            Option->OptionNumber is LoadOptionNumberUnassigned,
+                            then on output Option->OptionNumber is updated to
+                            the number of the new Boot####,
+                            Driver#### or SysPrep#### option.
+  @param  Position          Position of the new load option to put in the ****Order variable.
 
-  @retval EFI_SUCCESS   The load option has been successfully added.
-  @retval Others        Error status returned by RT->SetVariable.
+  @retval EFI_SUCCESS           The *#### have been successfully registered.
+  @retval EFI_INVALID_PARAMETER The option number exceeds 0xFFFF.
+  @retval EFI_ALREADY_STARTED   The option number of Option is being used already.
+                                Note: this API only adds new load option, no replacement support.
+  @retval EFI_OUT_OF_RESOURCES  There is no free option number that can be used when the
+                                option number specified in the Option is LoadOptionNumberUnassigned.
+  @return                       Status codes of gRT->SetVariable ().
+
 **/
 EFI_STATUS
 EFIAPI
 EfiBootManagerAddLoadOptionVariable (
-  IN EFI_BOOT_MANAGER_LOAD_OPTION  *Option,
-  IN UINTN                         Position
+  IN OUT EFI_BOOT_MANAGER_LOAD_OPTION *Option,
+  IN     UINTN                        Position
   );
 
 /**
@@ -435,6 +439,26 @@ EfiBootManagerGetBootManagerMenu (
   EFI_BOOT_MANAGER_LOAD_OPTION *BootOption
   );
 
+/**
+  Get the next possible full path pointing to the load option.
+  The routine doesn't guarantee the returned full path points to an existing
+  file, and it also doesn't guarantee the existing file is a valid load option.
+  BmGetNextLoadOptionBuffer() guarantees.
+
+  @param FilePath  The device path pointing to a load option.
+                   It could be a short-form device path.
+  @param FullPath  The full path returned by the routine in last call.
+                   Set to NULL in first call.
+
+  @return The next possible full path pointing to the load option.
+          Caller is responsible to free the memory.
+**/
+EFI_DEVICE_PATH_PROTOCOL *
+EFIAPI
+EfiBootManagerGetNextLoadOptionDevicePath (
+  IN  EFI_DEVICE_PATH_PROTOCOL          *FilePath,
+  IN  EFI_DEVICE_PATH_PROTOCOL          *FullPath
+  );
 
 /**
   Get the load option by its device path.

@@ -7,16 +7,10 @@
     3) IA-32 Intel(R) Architecture Software Developer's Manual Volume 3:System Programmer's Guide, Intel
     4) AMD64 Architecture Programmer's Manual Volume 2: System Programming
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 #ifndef _VIRTUAL_MEMORY_H_
@@ -178,6 +172,18 @@ typedef struct {
   UINTN           Offset;
   UINTN           FreePages;
 } PAGE_TABLE_POOL;
+
+/**
+  Check if Execute Disable Bit (IA32_EFER.NXE) should be enabled or not.
+
+  @retval TRUE    IA32_EFER.NXE should be enabled.
+  @retval FALSE   IA32_EFER.NXE should not be enabled.
+
+**/
+BOOLEAN
+IsEnableNonExecNeeded (
+  VOID
+  );
 
 /**
   Enable Execute Disable Bit.

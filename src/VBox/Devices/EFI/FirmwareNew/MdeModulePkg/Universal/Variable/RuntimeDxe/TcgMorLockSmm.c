@@ -4,14 +4,8 @@
   This module initilizes MemoryOverwriteRequestControlLock variable.
   This module adds Variable Hook and check MemoryOverwriteRequestControlLock.
 
-Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,7 +15,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DebugLib.h>
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
-#include <Library/UefiBootServicesTableLib.h>
 #include "Variable.h"
 
 typedef struct {
@@ -419,8 +412,6 @@ MorLockInitAtEndOfDxe (
 {
   UINTN      MorSize;
   EFI_STATUS MorStatus;
-  EFI_STATUS TcgStatus;
-  VOID       *TcgInterface;
 
   if (!mMorLockInitializationRequired) {
     //
@@ -458,20 +449,7 @@ MorLockInitAtEndOfDxe (
     // can be deduced from the absence of the TCG / TCG2 protocols, as edk2's
     // MOR implementation depends on (one of) those protocols.
     //
-    TcgStatus = gBS->LocateProtocol (
-                       &gEfiTcgProtocolGuid,
-                       NULL,                 // Registration
-                       &TcgInterface
-                       );
-    if (EFI_ERROR (TcgStatus)) {
-      TcgStatus = gBS->LocateProtocol (
-                         &gEfiTcg2ProtocolGuid,
-                         NULL,                  // Registration
-                         &TcgInterface
-                         );
-    }
-
-    if (!EFI_ERROR (TcgStatus)) {
+    if (VariableHaveTcgProtocols ()) {
       //
       // The MOR variable originates from the platform firmware; set the MOR
       // Control Lock variable to report the locking capability to the OS.

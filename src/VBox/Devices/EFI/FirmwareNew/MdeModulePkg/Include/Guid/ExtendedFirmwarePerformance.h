@@ -3,13 +3,7 @@
   These records will be added into ACPI FPDT Firmware Basic Boot Performance Table.
 
 Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -31,31 +25,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define LOAD_IMAGE_TOK                  "LoadImage:"      ///< Load a dispatched module
 #define START_IMAGE_TOK                 "StartImage:"     ///< Dispatched Modules Entry Point execution
 #define PEIM_TOK                        "PEIM"            ///< PEIM Modules Entry Point execution
-
-//
-// Public Progress Identifiers for Event Records to map the above known token
-//
-#define MODULE_START_ID                 0x01
-#define MODULE_END_ID                   0x02
-#define MODULE_LOADIMAGE_START_ID       0x03
-#define MODULE_LOADIMAGE_END_ID         0x04
-#define MODULE_DB_START_ID              0x05
-#define MODULE_DB_END_ID                0x06
-#define MODULE_DB_SUPPORT_START_ID      0x07
-#define MODULE_DB_SUPPORT_END_ID        0x08
-#define MODULE_DB_STOP_START_ID         0x09
-#define MODULE_DB_STOP_END_ID           0x0A
-
-#define PERF_EVENTSIGNAL_START_ID       0x10
-#define PERF_EVENTSIGNAL_END_ID         0x11
-#define PERF_CALLBACK_START_ID          0x20
-#define PERF_CALLBACK_END_ID            0x21
-#define PERF_FUNCTION_START_ID          0x30
-#define PERF_FUNCTION_END_ID            0x31
-#define PERF_INMODULE_START_ID          0x40
-#define PERF_INMODULE_END_ID            0x41
-#define PERF_CROSSMODULE_START_ID       0x50
-#define PERF_CROSSMODULE_END_ID         0x51
 
 //
 // Misc defines
@@ -244,12 +213,6 @@ typedef struct {
 } FPDT_GUID_QWORD_STRING_EVENT_RECORD;
 
 #pragma pack()
-
-typedef struct {
-  UINT16                                      ProgressID;
-  UINT16                                      Type;
-  UINT8                                       RecordSize;
-} FPDT_BASIC_RECORD_INFO;
 
 //
 // Union of all FPDT records

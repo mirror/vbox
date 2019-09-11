@@ -1,16 +1,10 @@
 /** @file
   Main file for Dmem shell Debug1 function.
 
-  Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
   (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -19,7 +13,6 @@
 #include <Guid/Acpi.h>
 #include <Guid/Mps.h>
 #include <Guid/SmBios.h>
-#include <Guid/SalSystemTable.h>
 
 /**
   Make a printable character.
@@ -149,7 +142,7 @@ ShellCommandRunDmem (
       Temp1 = ShellCommandLineGetRawValue(Package, 1);
       if (Temp1 == NULL) {
         Address = gST;
-        Size = 512;
+        Size    = sizeof (*gST);
       } else {
         if (!ShellIsHexOrDecimalNumber(Temp1, TRUE, FALSE) || EFI_ERROR(ShellConvertStringToUint64(Temp1, (UINT64*)&Address, TRUE, FALSE))) {
           ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellDebug1HiiHandle, L"dmem", Temp1);
@@ -184,10 +177,6 @@ ShellCommandRunDmem (
             }
             if (CompareGuid(&gST->ConfigurationTable[TableWalker].VendorGuid, &gEfiAcpi10TableGuid)) {
               AcpiTableAddress = (UINT64)(UINTN)gST->ConfigurationTable[TableWalker].VendorTable;
-              continue;
-            }
-            if (CompareGuid(&gST->ConfigurationTable[TableWalker].VendorGuid, &gEfiSalSystemTableGuid)) {
-              SalTableAddress = (UINT64)(UINTN)gST->ConfigurationTable[TableWalker].VendorTable;
               continue;
             }
             if (CompareGuid(&gST->ConfigurationTable[TableWalker].VendorGuid, &gEfiSmbiosTableGuid)) {

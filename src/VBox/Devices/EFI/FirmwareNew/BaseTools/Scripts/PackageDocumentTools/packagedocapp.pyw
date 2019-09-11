@@ -4,13 +4,7 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 import os, sys, wx, logging
@@ -18,8 +12,8 @@ import os, sys, wx, logging
 import wx.stc
 import wx.lib.newevent
 import wx.lib.agw.genericmessagedialog as GMD
-import plugins.EdkPlugins.edk2.model.baseobject as baseobject
-import plugins.EdkPlugins.edk2.model.doxygengen as doxygengen
+from plugins.EdkPlugins.edk2.model import baseobject
+from plugins.EdkPlugins.edk2.model import doxygengen
 
 if hasattr(sys, "frozen"):
     appPath = os.path.abspath(os.path.dirname(sys.executable))
@@ -720,7 +714,7 @@ class ProgressDialog(wx.Dialog):
             lines = f.readlines()
             f.close()
             bfound = False
-            for index in xrange(len(lines)):
+            for index in range(len(lines)):
                 if lines[index].find('<a class="el" href="files.html" target="basefrm">File List</a>') != -1:
                     lines[index] = "<!-- %s" % lines[index]
                     bfound = True
@@ -969,7 +963,7 @@ class ProgressDialog(wx.Dialog):
             fd = open(path, 'r')
             text = fd.read()
             fd.close()
-        except Exception, e:
+        except Exception as e:
             self.LogMessage ("   <<<Fail to open file %s" % path)
             return
         text = text.replace ('.s.dox', '.s')
@@ -982,7 +976,7 @@ class ProgressDialog(wx.Dialog):
             fd = open(path, 'w')
             fd.write(text)
             fd.close()
-        except Exception, e:
+        except Exception as e:
             self.LogMessage ("    <<<Fail to fixup file %s" % path)
             return
         self.LogMessage('    >>> Finish to fixup .dox postfix for file %s \n' % path)
@@ -993,7 +987,7 @@ class ProgressDialog(wx.Dialog):
             fd = open(path, 'r')
             lines = fd.readlines()
             fd.close()
-        except Exception, e:
+        except Exception as e:
             self.LogMessage ("   <<<Fail to open file %s" % path)
             return
         for line in lines:
@@ -1004,7 +998,7 @@ class ProgressDialog(wx.Dialog):
             fd = open(path, 'w')
             fd.write("".join(lines))
             fd.close()
-        except Exception, e:
+        except Exception as e:
             self.LogMessage ("    <<<Fail to fixup file %s" % path)
             return
         self.LogMessage('    >>> Finish to fixup .decdoxygen postfix for file %s \n' % path)

@@ -2,14 +2,8 @@
   NvmExpressDxe driver is used to manage non-volatile memory subsystem which follows
   NVM Express specification.
 
-  Copyright (c) 2013 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2013 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -183,43 +177,7 @@ ReadNvmeControllerStatus (
   return EFI_SUCCESS;
 }
 
-/**
-  Read Nvm Express admin queue attributes register.
 
-  @param  Private          The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
-  @param  Aqa              The buffer used to store admin queue attributes register content.
-
-  @return EFI_SUCCESS      Successfully read the admin queue attributes register content.
-  @return EFI_DEVICE_ERROR Fail to read the admin queue attributes register.
-
-**/
-EFI_STATUS
-ReadNvmeAdminQueueAttributes (
-  IN NVME_CONTROLLER_PRIVATE_DATA     *Private,
-  IN NVME_AQA                         *Aqa
-  )
-{
-  EFI_PCI_IO_PROTOCOL   *PciIo;
-  EFI_STATUS            Status;
-  UINT32                Data;
-
-  PciIo  = Private->PciIo;
-  Status = PciIo->Mem.Read (
-                        PciIo,
-                        EfiPciIoWidthUint32,
-                        NVME_BAR,
-                        NVME_AQA_OFFSET,
-                        1,
-                        &Data
-                        );
-
-  if (EFI_ERROR(Status)) {
-    return Status;
-  }
-
-  WriteUnaligned32 ((UINT32*)Aqa, Data);
-  return EFI_SUCCESS;
-}
 
 /**
   Write Nvm Express admin queue attributes register.
@@ -262,43 +220,6 @@ WriteNvmeAdminQueueAttributes (
   return EFI_SUCCESS;
 }
 
-/**
-  Read Nvm Express admin submission queue base address register.
-
-  @param  Private          The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
-  @param  Asq              The buffer used to store admin submission queue base address register content.
-
-  @return EFI_SUCCESS      Successfully read the admin submission queue base address register content.
-  @return EFI_DEVICE_ERROR Fail to read the admin submission queue base address register.
-
-**/
-EFI_STATUS
-ReadNvmeAdminSubmissionQueueBaseAddress (
-  IN NVME_CONTROLLER_PRIVATE_DATA     *Private,
-  IN NVME_ASQ                         *Asq
-  )
-{
-  EFI_PCI_IO_PROTOCOL   *PciIo;
-  EFI_STATUS            Status;
-  UINT64                Data;
-
-  PciIo  = Private->PciIo;
-  Status = PciIo->Mem.Read (
-                        PciIo,
-                        EfiPciIoWidthUint32,
-                        NVME_BAR,
-                        NVME_ASQ_OFFSET,
-                        2,
-                        &Data
-                        );
-
-  if (EFI_ERROR(Status)) {
-    return Status;
-  }
-
-  WriteUnaligned64 ((UINT64*)Asq, Data);
-  return EFI_SUCCESS;
-}
 
 /**
   Write Nvm Express admin submission queue base address register.
@@ -341,44 +262,7 @@ WriteNvmeAdminSubmissionQueueBaseAddress (
   return EFI_SUCCESS;
 }
 
-/**
-  Read Nvm Express admin completion queue base address register.
 
-  @param  Private          The pointer to the NVME_CONTROLLER_PRIVATE_DATA data structure.
-  @param  Acq              The buffer used to store admin completion queue base address register content.
-
-  @return EFI_SUCCESS      Successfully read the admin completion queue base address register content.
-  @return EFI_DEVICE_ERROR Fail to read the admin completion queue base address register.
-
-**/
-EFI_STATUS
-ReadNvmeAdminCompletionQueueBaseAddress (
-  IN NVME_CONTROLLER_PRIVATE_DATA     *Private,
-  IN NVME_ACQ                         *Acq
-  )
-{
-  EFI_PCI_IO_PROTOCOL   *PciIo;
-  EFI_STATUS            Status;
-  UINT64                Data;
-
-  PciIo  = Private->PciIo;
-
-  Status = PciIo->Mem.Read (
-                        PciIo,
-                        EfiPciIoWidthUint32,
-                        NVME_BAR,
-                        NVME_ACQ_OFFSET,
-                        2,
-                        &Data
-                        );
-
-  if (EFI_ERROR(Status)) {
-    return Status;
-  }
-
-  WriteUnaligned64 ((UINT64*)Acq, Data);
-  return EFI_SUCCESS;
-}
 
 /**
   Write Nvm Express admin completion queue base address register.
@@ -489,6 +373,10 @@ NvmeDisableController (
 
   if (Index == 0) {
     Status = EFI_DEVICE_ERROR;
+    REPORT_STATUS_CODE (
+      (EFI_ERROR_CODE | EFI_ERROR_MAJOR),
+      (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR)
+      );
   }
 
   DEBUG ((EFI_D_INFO, "NVMe controller is disabled with status [%r].\n", Status));
@@ -559,6 +447,10 @@ NvmeEnableController (
 
   if (Index == 0) {
     Status = EFI_TIMEOUT;
+    REPORT_STATUS_CODE (
+      (EFI_ERROR_CODE | EFI_ERROR_MAJOR),
+      (EFI_IO_BUS_SCSI | EFI_IOB_EC_INTERFACE_ERROR)
+      );
   }
 
   DEBUG ((EFI_D_INFO, "NVMe controller is enabled with status [%r].\n", Status));
@@ -694,6 +586,7 @@ NvmeCreateIoCompletionQueue (
   UINT16                                   QueueSize;
 
   Status = EFI_SUCCESS;
+  Private->CreateIoQueue = TRUE;
 
   for (Index = 1; Index < NVME_MAX_QUEUES; Index++) {
     ZeroMem (&CommandPacket, sizeof(EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET));
@@ -737,6 +630,8 @@ NvmeCreateIoCompletionQueue (
     }
   }
 
+  Private->CreateIoQueue = FALSE;
+
   return Status;
 }
 
@@ -763,6 +658,7 @@ NvmeCreateIoSubmissionQueue (
   UINT16                                   QueueSize;
 
   Status = EFI_SUCCESS;
+  Private->CreateIoQueue = TRUE;
 
   for (Index = 1; Index < NVME_MAX_QUEUES; Index++) {
     ZeroMem (&CommandPacket, sizeof(EFI_NVM_EXPRESS_PASS_THRU_COMMAND_PACKET));
@@ -807,6 +703,8 @@ NvmeCreateIoSubmissionQueue (
       break;
     }
   }
+
+  Private->CreateIoQueue = FALSE;
 
   return Status;
 }
@@ -1068,10 +966,7 @@ NvmeControllerInit (
                                 EfiResetShutdown the data buffer starts with a Null-terminated
                                 string, optionally followed by additional binary data.
                                 The string is a description that the caller may use to further
-                                indicate the reason for the system reset. ResetData is only
-                                valid if ResetStatus is something other than EFI_SUCCESS
-                                unless the ResetType is EfiResetPlatformSpecific
-                                where a minimum amount of ResetData is always required.
+                                indicate the reason for the system reset.
                                 For a ResetType of EfiResetPlatformSpecific the data buffer
                                 also starts with a Null-terminated string that is followed
                                 by an EFI_GUID that describes the specific type of reset to perform.

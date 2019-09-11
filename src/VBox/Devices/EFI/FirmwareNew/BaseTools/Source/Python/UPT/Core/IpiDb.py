@@ -1,15 +1,9 @@
 ## @file
 # This file is for installed package information database operations
 #
-# Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -44,7 +38,7 @@ class IpiDatabase(object):
         Dir = os.path.dirname(DbPath)
         if not os.path.isdir(Dir):
             os.mkdir(Dir)
-        self.Conn = sqlite3.connect(unicode(DbPath), isolation_level='DEFERRED')
+        self.Conn = sqlite3.connect(u''.join(DbPath), isolation_level='DEFERRED')
         self.Conn.execute("PRAGMA page_size=4096")
         self.Conn.execute("PRAGMA synchronous=OFF")
         self.Cur = self.Conn.cursor()
@@ -230,7 +224,7 @@ class IpiDatabase(object):
             self._AddDp(DpObj.Header.GetGuid(), DpObj.Header.GetVersion(), \
                         NewDpPkgFileName, DpPkgFileName, RePackage)
 
-        except sqlite3.IntegrityError, DetailMsg:
+        except sqlite3.IntegrityError as DetailMsg:
             Logger.Error("UPT",
                          UPT_DB_UPDATE_ERROR,
                          ST.ERR_UPT_DB_UPDATE_ERROR,
@@ -247,13 +241,13 @@ class IpiDatabase(object):
     def _AddDp(self, Guid, Version, NewDpFileName, DistributionFileName, \
                RePackage):
 
-        if Version == None or len(Version.strip()) == 0:
+        if Version is None or len(Version.strip()) == 0:
             Version = 'N/A'
 
         #
         # Add newly installed DP information to DB.
         #
-        if NewDpFileName == None or len(NewDpFileName.strip()) == 0:
+        if NewDpFileName is None or len(NewDpFileName.strip()) == 0:
             PkgFileName = 'N/A'
         else:
             PkgFileName = NewDpFileName
@@ -295,13 +289,13 @@ class IpiDatabase(object):
     #
     def _AddPackage(self, Guid, Version, DpGuid=None, DpVersion=None, Path=''):
 
-        if Version == None or len(Version.strip()) == 0:
+        if Version is None or len(Version.strip()) == 0:
             Version = 'N/A'
 
-        if DpGuid == None or len(DpGuid.strip()) == 0:
+        if DpGuid is None or len(DpGuid.strip()) == 0:
             DpGuid = 'N/A'
 
-        if DpVersion == None or len(DpVersion.strip()) == 0:
+        if DpVersion is None or len(DpVersion.strip()) == 0:
             DpVersion = 'N/A'
 
         #
@@ -325,13 +319,13 @@ class IpiDatabase(object):
     def _AddModuleInPackage(self, Guid, Version, Name, PkgGuid=None, \
                             PkgVersion=None, Path=''):
 
-        if Version == None or len(Version.strip()) == 0:
+        if Version is None or len(Version.strip()) == 0:
             Version = 'N/A'
 
-        if PkgGuid == None or len(PkgGuid.strip()) == 0:
+        if PkgGuid is None or len(PkgGuid.strip()) == 0:
             PkgGuid = 'N/A'
 
-        if PkgVersion == None or len(PkgVersion.strip()) == 0:
+        if PkgVersion is None or len(PkgVersion.strip()) == 0:
             PkgVersion = 'N/A'
 
         if os.name == 'posix':
@@ -361,13 +355,13 @@ class IpiDatabase(object):
     def _AddStandaloneModule(self, Guid, Version, Name, DpGuid=None, \
                              DpVersion=None, Path=''):
 
-        if Version == None or len(Version.strip()) == 0:
+        if Version is None or len(Version.strip()) == 0:
             Version = 'N/A'
 
-        if DpGuid == None or len(DpGuid.strip()) == 0:
+        if DpGuid is None or len(DpGuid.strip()) == 0:
             DpGuid = 'N/A'
 
-        if DpVersion == None or len(DpVersion.strip()) == 0:
+        if DpVersion is None or len(DpVersion.strip()) == 0:
             DpVersion = 'N/A'
 
         #
@@ -391,10 +385,10 @@ class IpiDatabase(object):
     def _AddModuleDepex(self, Guid, Version, Name, Path, DepexGuid=None, \
                         DepexVersion=None):
 
-        if DepexGuid == None or len(DepexGuid.strip()) == 0:
+        if DepexGuid is None or len(DepexGuid.strip()) == 0:
             DepexGuid = 'N/A'
 
-        if DepexVersion == None or len(DepexVersion.strip()) == 0:
+        if DepexVersion is None or len(DepexVersion.strip()) == 0:
             DepexVersion = 'N/A'
 
         if os.name == 'posix':
@@ -459,7 +453,7 @@ class IpiDatabase(object):
             (select InstallPath from ModInPkgInfo where
             ModInPkgInfo.PackageGuid ='%s'
             and ModInPkgInfo.PackageVersion = '%s')""" \
-                            % (Pkg[0], Pkg[1], Pkg[0], Pkg[1], Pkg[0], Pkg[1],Pkg[0], Pkg[1])
+                            % (Pkg[0], Pkg[1], Pkg[0], Pkg[1], Pkg[0], Pkg[1], Pkg[0], Pkg[1])
 
             self.Cur.execute(SqlCommand)
         #
@@ -510,7 +504,7 @@ class IpiDatabase(object):
     #
     def GetDp(self, Guid, Version):
 
-        if Version == None or len(Version.strip()) == 0:
+        if Version is None or len(Version.strip()) == 0:
             Version = 'N/A'
             Logger.Verbose(ST.MSG_GET_DP_INSTALL_LIST)
             (DpGuid, DpVersion) = (Guid, Version)
@@ -642,7 +636,7 @@ class IpiDatabase(object):
                                             PackageVersion)
             self.Cur.execute(SqlCommand)
 
-        elif Version == None or len(Version.strip()) == 0:
+        elif Version is None or len(Version.strip()) == 0:
 
             SqlCommand = """select * from %s where PackageGuid ='%s'""" % \
             (self.PkgTable, Guid)
@@ -735,8 +729,8 @@ class IpiDatabase(object):
 
     ## Get a list of module information that comes from DP.
     #
-    # @param DpGuid: A Distrabution Guid
-    # @param DpVersion: A Distrabution version
+    # @param DpGuid: A Distribution Guid
+    # @param DpVersion: A Distribution version
     #
     def GetSModInsPathListFromDp(self, DpGuid, DpVersion):
 
@@ -754,8 +748,8 @@ class IpiDatabase(object):
 
     ## Get a list of package information.
     #
-    # @param DpGuid: A Distrabution Guid
-    # @param DpVersion: A Distrabution version
+    # @param DpGuid: A Distribution Guid
+    # @param DpVersion: A Distribution version
     #
     def GetPackageListFromDp(self, DpGuid, DpVersion):
 
@@ -774,8 +768,8 @@ class IpiDatabase(object):
 
     ## Get a list of modules that depends on package information from a DP.
     #
-    # @param DpGuid: A Distrabution Guid
-    # @param DpVersion: A Distrabution version
+    # @param DpGuid: A Distribution Guid
+    # @param DpVersion: A Distribution version
     #
     def GetDpDependentModuleList(self, DpGuid, DpVersion):
 
@@ -831,8 +825,8 @@ class IpiDatabase(object):
 
     ## Get Dp's list of modules.
     #
-    # @param DpGuid: A Distrabution Guid
-    # @param DpVersion: A Distrabution version
+    # @param DpGuid: A Distribution Guid
+    # @param DpVersion: A Distribution version
     #
     def GetDpModuleList(self, DpGuid, DpVersion):
         ModList = []
@@ -921,8 +915,8 @@ class IpiDatabase(object):
     def __ConvertToSqlString(self, StringList):
         if self.DpTable:
             pass
-        return map(lambda s: s.replace("'", "''") , StringList)
+        return list(map(lambda s: s.replace("'", "''"), StringList))
 
 
 
-    
+

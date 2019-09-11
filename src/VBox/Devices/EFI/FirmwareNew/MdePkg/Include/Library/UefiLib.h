@@ -12,19 +12,16 @@
   of size reduction when compiler optimization is disabled. If MDEPKG_NDEBUG is
   defined, then debug and assert related macros wrapped by it are the NULL implementations.
 
+Copyright (c) 2019, NVIDIA Corporation. All rights reserved.
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #ifndef __UEFI_LIB_H__
 #define __UEFI_LIB_H__
+
+#include <IndustryStandard/Acpi.h>
 
 #include <Protocol/DriverBinding.h>
 #include <Protocol/DriverConfiguration.h>
@@ -33,6 +30,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/DriverDiagnostics.h>
 #include <Protocol/DriverDiagnostics2.h>
 #include <Protocol/GraphicsOutput.h>
+#include <Protocol/DevicePath.h>
+#include <Protocol/SimpleFileSystem.h>
 
 #include <Library/BaseLib.h>
 
@@ -587,10 +586,10 @@ LookupUnicodeString2 (
 EFI_STATUS
 EFIAPI
 AddUnicodeString (
-  IN CONST CHAR8               *Language,
-  IN CONST CHAR8               *SupportedLanguages,
-  IN EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
-  IN CONST CHAR16              *UnicodeString
+  IN     CONST CHAR8               *Language,
+  IN     CONST CHAR8               *SupportedLanguages,
+  IN OUT EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
+  IN     CONST CHAR16              *UnicodeString
   );
 
 /**
@@ -638,11 +637,11 @@ AddUnicodeString (
 EFI_STATUS
 EFIAPI
 AddUnicodeString2 (
-  IN CONST CHAR8               *Language,
-  IN CONST CHAR8               *SupportedLanguages,
-  IN EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
-  IN CONST CHAR16              *UnicodeString,
-  IN BOOLEAN                   Iso639Language
+  IN     CONST CHAR8               *Language,
+  IN     CONST CHAR8               *SupportedLanguages,
+  IN OUT EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
+  IN     CONST CHAR16              *UnicodeString,
+  IN     BOOLEAN                   Iso639Language
   );
 
 /**
@@ -732,9 +731,9 @@ GetEfiGlobalVariable (
   @param[out] Value The buffer point saved the variable info.
   @param[out] Size  The buffer size of the variable.
 
-  @return EFI_OUT_OF_RESOURCES      Allocate buffer failed.
-  @return EFI_SUCCESS               Find the specified variable.
-  @return Others Errors             Return errors from call to gRT->GetVariable.
+  @retval EFI_OUT_OF_RESOURCES      Allocate buffer failed.
+  @retval EFI_SUCCESS               Find the specified variable.
+  @retval Others Errors             Return errors from call to gRT->GetVariable.
 
 **/
 EFI_STATUS
@@ -760,9 +759,9 @@ GetVariable2 (
   @param[out] Value The buffer point saved the variable info.
   @param[out] Size  The buffer size of the variable.
 
-  @return EFI_OUT_OF_RESOURCES      Allocate buffer failed.
-  @return EFI_SUCCESS               Find the specified variable.
-  @return Others Errors             Return errors from call to gRT->GetVariable.
+  @retval EFI_OUT_OF_RESOURCES      Allocate buffer failed.
+  @retval EFI_SUCCESS               Find the specified variable.
+  @retval Others Errors             Return errors from call to gRT->GetVariable.
 
 **/
 EFI_STATUS
@@ -771,6 +770,39 @@ GetEfiGlobalVariable2 (
   IN CONST CHAR16    *Name,
   OUT VOID           **Value,
   OUT UINTN          *Size OPTIONAL
+  );
+
+/** Return the attributes of the variable.
+
+  Returns the status whether get the variable success. The function retrieves
+  variable  through the UEFI Runtime Service GetVariable().  The
+  returned buffer is allocated using AllocatePool().  The caller is responsible
+  for freeing this buffer with FreePool().  The attributes are returned if
+  the caller provides a valid Attribute parameter.
+
+  If Name  is NULL, then ASSERT().
+  If Guid  is NULL, then ASSERT().
+  If Value is NULL, then ASSERT().
+
+  @param[in]  Name  The pointer to a Null-terminated Unicode string.
+  @param[in]  Guid  The pointer to an EFI_GUID structure
+  @param[out] Value The buffer point saved the variable info.
+  @param[out] Size  The buffer size of the variable.
+  @param[out] Attr  The pointer to the variable attributes as found in var store
+
+  @retval EFI_OUT_OF_RESOURCES      Allocate buffer failed.
+  @retval EFI_SUCCESS               Find the specified variable.
+  @retval Others Errors             Return errors from call to gRT->GetVariable.
+
+**/
+EFI_STATUS
+EFIAPI
+GetVariable3(
+  IN CONST CHAR16       *Name,
+  IN CONST EFI_GUID     *Guid,
+     OUT VOID           **Value,
+     OUT UINTN          *Size OPTIONAL,
+     OUT UINT32         *Attr OPTIONAL
   );
 
 /**
@@ -789,8 +821,8 @@ GetEfiGlobalVariable2 (
   @param[in]  SupportedLanguages  A pointer to a Null-terminated ASCII string that
                                   contains a set of language codes in the format
                                   specified by Iso639Language.
-  @param[in]  Iso639Language      If TRUE, then all language codes are assumed to be
-                                  in ISO 639-2 format.  If FALSE, then all language
+  @param[in]  Iso639Language      If not zero, then all language codes are assumed to be
+                                  in ISO 639-2 format.  If zero, then all language
                                   codes are assumed to be in RFC 4646 language format
   @param[in]  ...                 A variable argument list that contains pointers to
                                   Null-terminated ASCII strings that contain one or more
@@ -818,7 +850,7 @@ CHAR8 *
 EFIAPI
 GetBestLanguage (
   IN CONST CHAR8  *SupportedLanguages,
-  IN BOOLEAN      Iso639Language,
+  IN UINTN        Iso639Language,
   ...
   );
 
@@ -1279,6 +1311,7 @@ AsciiPrintXY (
   ...
   );
 
+
 /**
   Installs and completes the initialization of a Driver Binding Protocol instance.
 
@@ -1308,6 +1341,25 @@ EfiLibInstallDriverBinding (
   IN CONST EFI_SYSTEM_TABLE       *SystemTable,
   IN EFI_DRIVER_BINDING_PROTOCOL  *DriverBinding,
   IN EFI_HANDLE                   DriverBindingHandle
+  );
+
+
+/**
+  Uninstalls a Driver Binding Protocol instance.
+
+  If DriverBinding is NULL, then ASSERT().
+  If DriverBinding can not be uninstalled, then ASSERT().
+
+  @param  DriverBinding        A Driver Binding Protocol instance that this driver produced.
+
+  @retval EFI_SUCCESS           The protocol uninstallation successfully completed.
+  @retval Others                Status from gBS->UninstallMultipleProtocolInterfaces().
+
+**/
+EFI_STATUS
+EFIAPI
+EfiLibUninstallDriverBinding (
+  IN EFI_DRIVER_BINDING_PROTOCOL  *DriverBinding
   );
 
 
@@ -1350,6 +1402,31 @@ EfiLibInstallAllDriverProtocols (
   );
 
 
+/**
+  Uninstalls a Driver Binding Protocol instance and optionally uninstalls the
+  Component Name, Driver Configuration and Driver Diagnostics Protocols.
+
+  If DriverBinding is NULL, then ASSERT().
+  If the uninstallation fails, then ASSERT().
+
+  @param  DriverBinding        A Driver Binding Protocol instance that this driver produced.
+  @param  ComponentName        A Component Name Protocol instance that this driver produced.
+  @param  DriverConfiguration  A Driver Configuration Protocol instance that this driver produced.
+  @param  DriverDiagnostics    A Driver Diagnostics Protocol instance that this driver produced.
+
+  @retval EFI_SUCCESS           The protocol uninstallation successfully completed.
+  @retval Others                Status from gBS->UninstallMultipleProtocolInterfaces().
+
+**/
+EFI_STATUS
+EFIAPI
+EfiLibUninstallAllDriverProtocols (
+  IN EFI_DRIVER_BINDING_PROTOCOL              *DriverBinding,
+  IN CONST EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
+  IN CONST EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration, OPTIONAL
+  IN CONST EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics    OPTIONAL
+  );
+
 
 /**
   Installs Driver Binding Protocol with optional Component Name and Component Name 2 Protocols.
@@ -1381,6 +1458,29 @@ EfiLibInstallDriverBindingComponentName2 (
   IN CONST EFI_SYSTEM_TABLE                   *SystemTable,
   IN EFI_DRIVER_BINDING_PROTOCOL              *DriverBinding,
   IN EFI_HANDLE                               DriverBindingHandle,
+  IN CONST EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
+  IN CONST EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName2       OPTIONAL
+  );
+
+
+/**
+  Uninstalls Driver Binding Protocol with optional Component Name and Component Name 2 Protocols.
+
+  If DriverBinding is NULL, then ASSERT().
+  If the uninstallation fails, then ASSERT().
+
+  @param  DriverBinding        A Driver Binding Protocol instance that this driver produced.
+  @param  ComponentName        A Component Name Protocol instance that this driver produced.
+  @param  ComponentName2       A Component Name 2 Protocol instance that this driver produced.
+
+  @retval EFI_SUCCESS           The protocol installation successfully completed.
+  @retval Others                Status from gBS->UninstallMultipleProtocolInterfaces().
+
+**/
+EFI_STATUS
+EFIAPI
+EfiLibUninstallDriverBindingComponentName2 (
+  IN EFI_DRIVER_BINDING_PROTOCOL              *DriverBinding,
   IN CONST EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,       OPTIONAL
   IN CONST EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName2       OPTIONAL
   );
@@ -1429,6 +1529,40 @@ EfiLibInstallAllDriverProtocols2 (
   IN CONST EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics,    OPTIONAL
   IN CONST EFI_DRIVER_DIAGNOSTICS2_PROTOCOL   *DriverDiagnostics2    OPTIONAL
   );
+
+
+/**
+  Uninstalls Driver Binding Protocol with optional Component Name, Component Name 2, Driver
+  Configuration, Driver Configuration 2, Driver Diagnostics, and Driver Diagnostics 2 Protocols.
+
+  If DriverBinding is NULL, then ASSERT().
+  If the installation fails, then ASSERT().
+
+
+  @param  DriverBinding         A Driver Binding Protocol instance that this driver produced.
+  @param  ComponentName         A Component Name Protocol instance that this driver produced.
+  @param  ComponentName2        A Component Name 2 Protocol instance that this driver produced.
+  @param  DriverConfiguration   A Driver Configuration Protocol instance that this driver produced.
+  @param  DriverConfiguration2  A Driver Configuration Protocol 2 instance that this driver produced.
+  @param  DriverDiagnostics     A Driver Diagnostics Protocol instance that this driver produced.
+  @param  DriverDiagnostics2    A Driver Diagnostics Protocol 2 instance that this driver produced.
+
+  @retval EFI_SUCCESS           The protocol uninstallation successfully completed.
+  @retval Others                Status from gBS->UninstallMultipleProtocolInterfaces().
+
+**/
+EFI_STATUS
+EFIAPI
+EfiLibUninstallAllDriverProtocols2 (
+  IN EFI_DRIVER_BINDING_PROTOCOL              *DriverBinding,
+  IN CONST EFI_COMPONENT_NAME_PROTOCOL        *ComponentName,        OPTIONAL
+  IN CONST EFI_COMPONENT_NAME2_PROTOCOL       *ComponentName2,       OPTIONAL
+  IN CONST EFI_DRIVER_CONFIGURATION_PROTOCOL  *DriverConfiguration,  OPTIONAL
+  IN CONST EFI_DRIVER_CONFIGURATION2_PROTOCOL *DriverConfiguration2, OPTIONAL
+  IN CONST EFI_DRIVER_DIAGNOSTICS_PROTOCOL    *DriverDiagnostics,    OPTIONAL
+  IN CONST EFI_DRIVER_DIAGNOSTICS2_PROTOCOL   *DriverDiagnostics2    OPTIONAL
+  );
+
 
 /**
   Appends a formatted Unicode string to a Null-terminated Unicode string
@@ -1520,4 +1654,143 @@ EfiLocateProtocolBuffer (
   OUT UINTN     *NoProtocols,
   OUT VOID      ***Buffer
   );
+
+/**
+  Open or create a file or directory, possibly creating the chain of
+  directories leading up to the directory.
+
+  EfiOpenFileByDevicePath() first locates EFI_SIMPLE_FILE_SYSTEM_PROTOCOL on
+  FilePath, and opens the root directory of that filesystem with
+  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.OpenVolume().
+
+  On the remaining device path, the longest initial sequence of
+  FILEPATH_DEVICE_PATH nodes is node-wise traversed with
+  EFI_FILE_PROTOCOL.Open().
+
+  (As a consequence, if OpenMode includes EFI_FILE_MODE_CREATE, and Attributes
+  includes EFI_FILE_DIRECTORY, and each FILEPATH_DEVICE_PATH specifies a single
+  pathname component, then EfiOpenFileByDevicePath() ensures that the specified
+  series of subdirectories exist on return.)
+
+  The EFI_FILE_PROTOCOL identified by the last FILEPATH_DEVICE_PATH node is
+  output to the caller; intermediate EFI_FILE_PROTOCOL instances are closed. If
+  there are no FILEPATH_DEVICE_PATH nodes past the node that identifies the
+  filesystem, then the EFI_FILE_PROTOCOL of the root directory of the
+  filesystem is output to the caller. If a device path node that is different
+  from FILEPATH_DEVICE_PATH is encountered relative to the filesystem, the
+  traversal is stopped with an error, and a NULL EFI_FILE_PROTOCOL is output.
+
+  @param[in,out] FilePath  On input, the device path to the file or directory
+                           to open or create. The caller is responsible for
+                           ensuring that the device path pointed-to by FilePath
+                           is well-formed. On output, FilePath points one past
+                           the last node in the original device path that has
+                           been successfully processed. FilePath is set on
+                           output even if EfiOpenFileByDevicePath() returns an
+                           error.
+
+  @param[out] File         On error, File is set to NULL. On success, File is
+                           set to the EFI_FILE_PROTOCOL of the root directory
+                           of the filesystem, if there are no
+                           FILEPATH_DEVICE_PATH nodes in FilePath; otherwise,
+                           File is set to the EFI_FILE_PROTOCOL identified by
+                           the last node in FilePath.
+
+  @param[in] OpenMode      The OpenMode parameter to pass to
+                           EFI_FILE_PROTOCOL.Open().
+
+  @param[in] Attributes    The Attributes parameter to pass to
+                           EFI_FILE_PROTOCOL.Open().
+
+  @retval EFI_SUCCESS            The file or directory has been opened or
+                                 created.
+
+  @retval EFI_INVALID_PARAMETER  FilePath is NULL; or File is NULL; or FilePath
+                                 contains a device path node, past the node
+                                 that identifies
+                                 EFI_SIMPLE_FILE_SYSTEM_PROTOCOL, that is not a
+                                 FILEPATH_DEVICE_PATH node.
+
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failed.
+
+  @return                        Error codes propagated from the
+                                 LocateDevicePath() and OpenProtocol() boot
+                                 services, and from the
+                                 EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.OpenVolume()
+                                 and EFI_FILE_PROTOCOL.Open() member functions.
+**/
+EFI_STATUS
+EFIAPI
+EfiOpenFileByDevicePath (
+  IN OUT EFI_DEVICE_PATH_PROTOCOL  **FilePath,
+  OUT    EFI_FILE_PROTOCOL         **File,
+  IN     UINT64                    OpenMode,
+  IN     UINT64                    Attributes
+  );
+
+/**
+  This function locates next ACPI table in XSDT/RSDT based on Signature and
+  previous returned Table.
+
+  If PreviousTable is NULL:
+  This function will locate the first ACPI table in XSDT/RSDT based on
+  Signature in gEfiAcpi20TableGuid system configuration table first, and then
+  gEfiAcpi10TableGuid system configuration table.
+  This function will locate in XSDT first, and then RSDT.
+  For DSDT, this function will locate XDsdt in FADT first, and then Dsdt in
+  FADT.
+  For FACS, this function will locate XFirmwareCtrl in FADT first, and then
+  FirmwareCtrl in FADT.
+
+  If PreviousTable is not NULL:
+  1. If it could be located in XSDT in gEfiAcpi20TableGuid system configuration
+     table, then this function will just locate next table in XSDT in
+     gEfiAcpi20TableGuid system configuration table.
+  2. If it could be located in RSDT in gEfiAcpi20TableGuid system configuration
+     table, then this function will just locate next table in RSDT in
+     gEfiAcpi20TableGuid system configuration table.
+  3. If it could be located in RSDT in gEfiAcpi10TableGuid system configuration
+     table, then this function will just locate next table in RSDT in
+     gEfiAcpi10TableGuid system configuration table.
+
+  It's not supported that PreviousTable is not NULL but PreviousTable->Signature
+  is not same with Signature, NULL will be returned.
+
+  @param Signature          ACPI table signature.
+  @param PreviousTable      Pointer to previous returned table to locate next
+                            table, or NULL to locate first table.
+
+  @return Next ACPI table or NULL if not found.
+
+**/
+EFI_ACPI_COMMON_HEADER *
+EFIAPI
+EfiLocateNextAcpiTable (
+  IN UINT32                     Signature,
+  IN EFI_ACPI_COMMON_HEADER     *PreviousTable OPTIONAL
+  );
+
+/**
+  This function locates first ACPI table in XSDT/RSDT based on Signature.
+
+  This function will locate the first ACPI table in XSDT/RSDT based on
+  Signature in gEfiAcpi20TableGuid system configuration table first, and then
+  gEfiAcpi10TableGuid system configuration table.
+  This function will locate in XSDT first, and then RSDT.
+  For DSDT, this function will locate XDsdt in FADT first, and then Dsdt in
+  FADT.
+  For FACS, this function will locate XFirmwareCtrl in FADT first, and then
+  FirmwareCtrl in FADT.
+
+  @param Signature          ACPI table signature.
+
+  @return First ACPI table or NULL if not found.
+
+**/
+EFI_ACPI_COMMON_HEADER *
+EFIAPI
+EfiLocateFirstAcpiTable (
+  IN UINT32                     Signature
+  );
+
 #endif

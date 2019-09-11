@@ -26,14 +26,8 @@
   Depex - Dependency Expresion.
   SOR   - Schedule On Request - Don't schedule if this bit is set.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -184,14 +178,13 @@ CoreAddToDriverList (
   );
 
 /**
-  Get the driver from the FV through driver name, and produce a FVB protocol on FvHandle.
+  Get Fv image(s) from the FV through file name, and produce FVB protocol for every Fv image(s).
 
   @param  Fv                    The FIRMWARE_VOLUME protocol installed on the FV.
   @param  FvHandle              The handle which FVB protocol installed on.
-  @param  DriverName            The driver guid specified.
+  @param  FileName              The file name guid specified.
 
   @retval EFI_OUT_OF_RESOURCES  No enough memory or other resource.
-  @retval EFI_VOLUME_CORRUPTED  Corrupted volume.
   @retval EFI_SUCCESS           Function successfully returned.
 
 **/
@@ -199,7 +192,7 @@ EFI_STATUS
 CoreProcessFvImageFile (
   IN  EFI_FIRMWARE_VOLUME2_PROTOCOL   *Fv,
   IN  EFI_HANDLE                      FvHandle,
-  IN  EFI_GUID                        *DriverName
+  IN  EFI_GUID                        *FileName
   );
 
 
@@ -419,6 +412,7 @@ CoreDispatcher (
   BOOLEAN                         ReadyToRun;
   EFI_EVENT                       DxeDispatchEvent;
 
+  PERF_FUNCTION_BEGIN ();
 
   if (gDispatcherRunning) {
     //
@@ -583,6 +577,8 @@ CoreDispatcher (
   CoreCloseEvent (DxeDispatchEvent);
 
   gDispatcherRunning = FALSE;
+
+  PERF_FUNCTION_END ();
 
   return ReturnStatus;
 }
@@ -1001,14 +997,13 @@ GetFvUsedSize (
 }
 
 /**
-  Get the driver from the FV through driver name, and produce a FVB protocol on FvHandle.
+  Get Fv image(s) from the FV through file name, and produce FVB protocol for every Fv image(s).
 
   @param  Fv                    The FIRMWARE_VOLUME protocol installed on the FV.
   @param  FvHandle              The handle which FVB protocol installed on.
-  @param  DriverName            The driver guid specified.
+  @param  FileName              The file name guid specified.
 
   @retval EFI_OUT_OF_RESOURCES  No enough memory or other resource.
-  @retval EFI_VOLUME_CORRUPTED  Corrupted volume.
   @retval EFI_SUCCESS           Function successfully returned.
 
 **/
@@ -1016,7 +1011,7 @@ EFI_STATUS
 CoreProcessFvImageFile (
   IN  EFI_FIRMWARE_VOLUME2_PROTOCOL   *Fv,
   IN  EFI_HANDLE                      FvHandle,
-  IN  EFI_GUID                        *DriverName
+  IN  EFI_GUID                        *FileName
   )
 {
   EFI_STATUS                          Status;
@@ -1030,141 +1025,158 @@ CoreProcessFvImageFile (
   EFI_DEVICE_PATH_PROTOCOL            *FvFileDevicePath;
   UINT32                              FvUsedSize;
   UINT8                               EraseByte;
+  UINTN                               Index;
 
   //
-  // Read the first (and only the first) firmware volume section
+  // Read firmware volume section(s)
   //
   SectionType   = EFI_SECTION_FIRMWARE_VOLUME_IMAGE;
-  FvHeader      = NULL;
-  FvAlignment   = 0;
-  Buffer        = NULL;
-  BufferSize    = 0;
-  AlignedBuffer = NULL;
-  Status = Fv->ReadSection (
-                 Fv,
-                 DriverName,
-                 SectionType,
-                 0,
-                 &Buffer,
-                 &BufferSize,
-                 &AuthenticationStatus
-                 );
-  if (!EFI_ERROR (Status)) {
-     //
-    // Evaluate the authentication status of the Firmware Volume through
-    // Security Architectural Protocol
-    //
-    if (gSecurity != NULL) {
-      FvFileDevicePath = CoreFvToDevicePath (Fv, FvHandle, DriverName);
-      Status = gSecurity->FileAuthenticationState (
-                            gSecurity,
-                            AuthenticationStatus,
-                            FvFileDevicePath
-                            );
-      if (FvFileDevicePath != NULL) {
-        FreePool (FvFileDevicePath);
-      }
 
-      if (Status != EFI_SUCCESS) {
-        //
-        // Security check failed. The firmware volume should not be used for any purpose.
-        //
-        if (Buffer != NULL) {
-          FreePool (Buffer);
+  Index = 0;
+  do {
+    FvHeader      = NULL;
+    FvAlignment   = 0;
+    Buffer        = NULL;
+    BufferSize    = 0;
+    AlignedBuffer = NULL;
+    Status = Fv->ReadSection (
+                   Fv,
+                   FileName,
+                   SectionType,
+                   Index,
+                   &Buffer,
+                   &BufferSize,
+                   &AuthenticationStatus
+                   );
+    if (!EFI_ERROR (Status)) {
+       //
+      // Evaluate the authentication status of the Firmware Volume through
+      // Security Architectural Protocol
+      //
+      if (gSecurity != NULL) {
+        FvFileDevicePath = CoreFvToDevicePath (Fv, FvHandle, FileName);
+        Status = gSecurity->FileAuthenticationState (
+                              gSecurity,
+                              AuthenticationStatus,
+                              FvFileDevicePath
+                              );
+        if (FvFileDevicePath != NULL) {
+          FreePool (FvFileDevicePath);
         }
-        return Status;
-      }
-    }
 
-    //
-    // FvImage should be at its required alignment.
-    //
-    FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) Buffer;
-    //
-    // If EFI_FVB2_WEAK_ALIGNMENT is set in the volume header then the first byte of the volume
-    // can be aligned on any power-of-two boundary. A weakly aligned volume can not be moved from
-    // its initial linked location and maintain its alignment.
-    //
-    if ((ReadUnaligned32 (&FvHeader->Attributes) & EFI_FVB2_WEAK_ALIGNMENT) != EFI_FVB2_WEAK_ALIGNMENT) {
-      //
-      // Get FvHeader alignment
-      //
-      FvAlignment = 1 << ((ReadUnaligned32 (&FvHeader->Attributes) & EFI_FVB2_ALIGNMENT) >> 16);
-      //
-      // FvAlignment must be greater than or equal to 8 bytes of the minimum FFS alignment value.
-      //
-      if (FvAlignment < 8) {
-        FvAlignment = 8;
-      }
-
-      DEBUG ((
-        DEBUG_INFO,
-        "%a() FV at 0x%x, FvAlignment required is 0x%x\n",
-        __FUNCTION__,
-        FvHeader,
-        FvAlignment
-        ));
-
-      //
-      // Check FvImage alignment.
-      //
-      if ((UINTN) FvHeader % FvAlignment != 0) {
-        //
-        // Allocate the aligned buffer for the FvImage.
-        //
-        AlignedBuffer = AllocateAlignedPages (EFI_SIZE_TO_PAGES (BufferSize), (UINTN) FvAlignment);
-        if (AlignedBuffer == NULL) {
-          FreePool (Buffer);
-          return EFI_OUT_OF_RESOURCES;
-        } else {
+        if (Status != EFI_SUCCESS) {
           //
-          // Move FvImage into the aligned buffer and release the original buffer.
+          // Security check failed. The firmware volume should not be used for any purpose.
           //
-          if (GetFvUsedSize (FvHeader, &FvUsedSize, &EraseByte)) {
-            //
-            // Copy the used bytes and fill the rest with the erase value.
-            //
-            CopyMem (AlignedBuffer, FvHeader, (UINTN) FvUsedSize);
-            SetMem (
-              (UINT8 *) AlignedBuffer + FvUsedSize,
-              (UINTN) (BufferSize - FvUsedSize),
-              EraseByte
-              );
-          } else {
-            CopyMem (AlignedBuffer, Buffer, BufferSize);
+          if (Buffer != NULL) {
+            FreePool (Buffer);
           }
-          FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) AlignedBuffer;
-          CoreFreePool (Buffer);
-          Buffer = NULL;
+          break;
         }
       }
+
+      //
+      // FvImage should be at its required alignment.
+      //
+      FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) Buffer;
+      //
+      // If EFI_FVB2_WEAK_ALIGNMENT is set in the volume header then the first byte of the volume
+      // can be aligned on any power-of-two boundary. A weakly aligned volume can not be moved from
+      // its initial linked location and maintain its alignment.
+      //
+      if ((ReadUnaligned32 (&FvHeader->Attributes) & EFI_FVB2_WEAK_ALIGNMENT) != EFI_FVB2_WEAK_ALIGNMENT) {
+        //
+        // Get FvHeader alignment
+        //
+        FvAlignment = 1 << ((ReadUnaligned32 (&FvHeader->Attributes) & EFI_FVB2_ALIGNMENT) >> 16);
+        //
+        // FvAlignment must be greater than or equal to 8 bytes of the minimum FFS alignment value.
+        //
+        if (FvAlignment < 8) {
+          FvAlignment = 8;
+        }
+
+        DEBUG ((
+          DEBUG_INFO,
+          "%a() FV at 0x%x, FvAlignment required is 0x%x\n",
+          __FUNCTION__,
+          FvHeader,
+          FvAlignment
+          ));
+
+        //
+        // Check FvImage alignment.
+        //
+        if ((UINTN) FvHeader % FvAlignment != 0) {
+          //
+          // Allocate the aligned buffer for the FvImage.
+          //
+          AlignedBuffer = AllocateAlignedPages (EFI_SIZE_TO_PAGES (BufferSize), (UINTN) FvAlignment);
+          if (AlignedBuffer == NULL) {
+            FreePool (Buffer);
+            Status = EFI_OUT_OF_RESOURCES;
+            break;
+          } else {
+            //
+            // Move FvImage into the aligned buffer and release the original buffer.
+            //
+            if (GetFvUsedSize (FvHeader, &FvUsedSize, &EraseByte)) {
+              //
+              // Copy the used bytes and fill the rest with the erase value.
+              //
+              CopyMem (AlignedBuffer, FvHeader, (UINTN) FvUsedSize);
+              SetMem (
+                (UINT8 *) AlignedBuffer + FvUsedSize,
+                (UINTN) (BufferSize - FvUsedSize),
+                EraseByte
+                );
+            } else {
+              CopyMem (AlignedBuffer, Buffer, BufferSize);
+            }
+            FvHeader = (EFI_FIRMWARE_VOLUME_HEADER *) AlignedBuffer;
+            FreePool (Buffer);
+            Buffer = NULL;
+          }
+        }
+      }
+      //
+      // Produce a FVB protocol for the file
+      //
+      Status = ProduceFVBProtocolOnBuffer (
+                (EFI_PHYSICAL_ADDRESS) (UINTN) FvHeader,
+                (UINT64)BufferSize,
+                FvHandle,
+                AuthenticationStatus,
+                NULL
+                );
     }
+
+    if (EFI_ERROR (Status)) {
+      //
+      // ReadSection or Produce FVB failed, Free data buffer
+      //
+      if (Buffer != NULL) {
+        FreePool (Buffer);
+      }
+
+      if (AlignedBuffer != NULL) {
+        FreeAlignedPages (AlignedBuffer, EFI_SIZE_TO_PAGES (BufferSize));
+      }
+
+      break;
+    } else {
+      Index++;
+    }
+  } while (TRUE);
+
+  if (Index > 0) {
     //
-    // Produce a FVB protocol for the file
+    // At least one FvImage has been processed successfully.
     //
-    Status = ProduceFVBProtocolOnBuffer (
-              (EFI_PHYSICAL_ADDRESS) (UINTN) FvHeader,
-              (UINT64)BufferSize,
-              FvHandle,
-              AuthenticationStatus,
-              NULL
-              );
+    return EFI_SUCCESS;
+  } else {
+    return Status;
   }
-
-  if (EFI_ERROR (Status)) {
-    //
-    // ReadSection or Produce FVB failed, Free data buffer
-    //
-    if (Buffer != NULL) {
-      FreePool (Buffer);
-    }
-
-    if (AlignedBuffer != NULL) {
-      FreeAlignedPages (AlignedBuffer, EFI_SIZE_TO_PAGES (BufferSize));
-    }
-  }
-
-  return Status;
 }
 
 
@@ -1437,6 +1449,8 @@ CoreInitializeDispatcher (
   VOID
   )
 {
+  PERF_FUNCTION_BEGIN ();
+
   mFwVolEvent = EfiCreateProtocolNotifyEvent (
                   &gEfiFirmwareVolume2ProtocolGuid,
                   TPL_CALLBACK,
@@ -1444,6 +1458,8 @@ CoreInitializeDispatcher (
                   NULL,
                   &mFwVolEventRegistration
                   );
+
+  PERF_FUNCTION_END ();
 }
 
 //

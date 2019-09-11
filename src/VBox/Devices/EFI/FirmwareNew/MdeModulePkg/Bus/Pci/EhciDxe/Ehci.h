@@ -2,14 +2,8 @@
 
   Provides some data struct used by EHCI controller driver.
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -77,6 +71,8 @@ typedef struct _USB2_HC_DEV  USB2_HC_DEV;
 #define USB_DEBUG_PORT_IN_USE        BIT10
 #define USB_DEBUG_PORT_ENABLE        BIT28
 #define USB_DEBUG_PORT_OWNER         BIT30
+#define USB_DEBUG_PORT_IN_USE_MASK   (USB_DEBUG_PORT_IN_USE | \
+                                      USB_DEBUG_PORT_OWNER)
 
 //
 // EHC raises TPL to TPL_NOTIFY to serialize all its operations

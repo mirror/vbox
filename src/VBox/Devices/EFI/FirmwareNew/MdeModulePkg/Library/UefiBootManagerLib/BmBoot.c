@@ -1,15 +1,9 @@
 /** @file
   Library functions which relates with booting.
 
-Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2011 - 2019, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015-2016 Hewlett Packard Enterprise Development LP<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -45,7 +39,7 @@ BmEndOfBdsPerfCode (
   //
   // Record the performance data for End of BDS
   //
-  PERF_END(NULL, "BDS", NULL, 0);
+  PERF_CROSSMODULE_END("BDS");
 
   return ;
 }
@@ -1069,6 +1063,9 @@ BmExpandMediaDevicePath (
   //
   Status = gBS->HandleProtocol (Handle, &gEfiBlockIoProtocolGuid, (VOID **) &BlockIo);
   ASSERT_EFI_ERROR (Status);
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  }
   Buffer = AllocatePool (BlockIo->Media->BlockSize);
   if (Buffer != NULL) {
     BlockIo->ReadBlocks (
@@ -1668,6 +1665,51 @@ BmIsBootManagerMenuFilePath (
 }
 
 /**
+  Report status code with EFI_RETURN_STATUS_EXTENDED_DATA about LoadImage() or
+  StartImage() failure.
+
+  @param[in] ErrorCode      An Error Code in the Software Class, DXE Boot
+                            Service Driver Subclass. ErrorCode will be used to
+                            compose the Value parameter for status code
+                            reporting. Must be one of
+                            EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR and
+                            EFI_SW_DXE_BS_EC_BOOT_OPTION_FAILED.
+
+  @param[in] FailureStatus  The failure status returned by the boot service
+                            that should be reported.
+**/
+VOID
+BmReportLoadFailure (
+  IN UINT32     ErrorCode,
+  IN EFI_STATUS FailureStatus
+  )
+{
+  EFI_RETURN_STATUS_EXTENDED_DATA ExtendedData;
+
+  if (!ReportErrorCodeEnabled ()) {
+    return;
+  }
+
+  ASSERT (
+    (ErrorCode == EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR) ||
+    (ErrorCode == EFI_SW_DXE_BS_EC_BOOT_OPTION_FAILED)
+    );
+
+  ZeroMem (&ExtendedData, sizeof (ExtendedData));
+  ExtendedData.ReturnStatus = FailureStatus;
+
+  REPORT_STATUS_CODE_EX (
+    (EFI_ERROR_CODE | EFI_ERROR_MINOR),
+    (EFI_SOFTWARE_DXE_BS_DRIVER | ErrorCode),
+    0,
+    NULL,
+    NULL,
+    &ExtendedData.DataHeader + 1,
+    sizeof (ExtendedData) - sizeof (ExtendedData.DataHeader)
+    );
+}
+
+/**
   Attempt to boot the EFI boot option. This routine sets L"BootCurent" and
   also signals the EFI ready to boot event. If the device path for the option
   starts with a BBS device path a legacy boot is attempted via the registered
@@ -1767,7 +1809,7 @@ EfiBootManagerBoot (
     //
     // 4. Repair system through DriverHealth protocol
     //
-    BmRepairAllControllers ();
+    BmRepairAllControllers (0);
   }
 
   PERF_START_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber);
@@ -1820,12 +1862,9 @@ EfiBootManagerBoot (
 
     if (EFI_ERROR (Status)) {
       //
-      // Report Status Code to indicate that the failure to load boot option
+      // Report Status Code with the failure status to indicate that the failure to load boot option
       //
-      REPORT_STATUS_CODE (
-        EFI_ERROR_CODE | EFI_ERROR_MINOR,
-        (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR)
-        );
+      BmReportLoadFailure (EFI_SW_DXE_BS_EC_BOOT_OPTION_LOAD_ERROR, Status);
       BootOption->Status = Status;
       //
       // Destroy the RAM disk
@@ -1904,12 +1943,9 @@ EfiBootManagerBoot (
   BootOption->Status = Status;
   if (EFI_ERROR (Status)) {
     //
-    // Report Status Code to indicate that boot failure
+    // Report Status Code with the failure status to indicate that boot failure
     //
-    REPORT_STATUS_CODE (
-      EFI_ERROR_CODE | EFI_ERROR_MINOR,
-      (EFI_SOFTWARE_DXE_BS_DRIVER | EFI_SW_DXE_BS_EC_BOOT_OPTION_FAILED)
-      );
+    BmReportLoadFailure (EFI_SW_DXE_BS_EC_BOOT_OPTION_FAILED, Status);
   }
   PERF_END_EX (gImageHandle, "BdsAttempt", NULL, 0, (UINT32) OptionNumber);
 
@@ -1979,37 +2015,33 @@ BmMatchPartitionDevicePathNode (
   }
 
   //
-  // find the partition device path node
+  // Match all the partition device path nodes including the nested partition nodes
   //
   while (!IsDevicePathEnd (BlockIoDevicePath)) {
     if ((DevicePathType (BlockIoDevicePath) == MEDIA_DEVICE_PATH) &&
         (DevicePathSubType (BlockIoDevicePath) == MEDIA_HARDDRIVE_DP)
         ) {
-      break;
+      //
+      // See if the harddrive device path in blockio matches the orig Hard Drive Node
+      //
+      Node = (HARDDRIVE_DEVICE_PATH *) BlockIoDevicePath;
+
+      //
+      // Match Signature and PartitionNumber.
+      // Unused bytes in Signature are initiaized with zeros.
+      //
+      if ((Node->PartitionNumber == HardDriveDevicePath->PartitionNumber) &&
+          (Node->MBRType == HardDriveDevicePath->MBRType) &&
+          (Node->SignatureType == HardDriveDevicePath->SignatureType) &&
+          (CompareMem (Node->Signature, HardDriveDevicePath->Signature, sizeof (Node->Signature)) == 0)) {
+        return TRUE;
+      }
     }
 
     BlockIoDevicePath = NextDevicePathNode (BlockIoDevicePath);
   }
 
-  if (IsDevicePathEnd (BlockIoDevicePath)) {
-    return FALSE;
-  }
-
-  //
-  // See if the harddrive device path in blockio matches the orig Hard Drive Node
-  //
-  Node = (HARDDRIVE_DEVICE_PATH *) BlockIoDevicePath;
-
-  //
-  // Match Signature and PartitionNumber.
-  // Unused bytes in Signature are initiaized with zeros.
-  //
-  return (BOOLEAN) (
-    (Node->PartitionNumber == HardDriveDevicePath->PartitionNumber) &&
-    (Node->MBRType == HardDriveDevicePath->MBRType) &&
-    (Node->SignatureType == HardDriveDevicePath->SignatureType) &&
-    (CompareMem (Node->Signature, HardDriveDevicePath->Signature, sizeof (Node->Signature)) == 0)
-    );
+  return FALSE;
 }
 
 /**
@@ -2461,3 +2493,26 @@ EfiBootManagerGetBootManagerMenu (
   }
 }
 
+/**
+  Get the next possible full path pointing to the load option.
+  The routine doesn't guarantee the returned full path points to an existing
+  file, and it also doesn't guarantee the existing file is a valid load option.
+  BmGetNextLoadOptionBuffer() guarantees.
+
+  @param FilePath  The device path pointing to a load option.
+                   It could be a short-form device path.
+  @param FullPath  The full path returned by the routine in last call.
+                   Set to NULL in first call.
+
+  @return The next possible full path pointing to the load option.
+          Caller is responsible to free the memory.
+**/
+EFI_DEVICE_PATH_PROTOCOL *
+EFIAPI
+EfiBootManagerGetNextLoadOptionDevicePath (
+  IN  EFI_DEVICE_PATH_PROTOCOL          *FilePath,
+  IN  EFI_DEVICE_PATH_PROTOCOL          *FullPath
+  )
+{
+  return BmGetNextLoadOptionDevicePath(FilePath, FullPath);
+}

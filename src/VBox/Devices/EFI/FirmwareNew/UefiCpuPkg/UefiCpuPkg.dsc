@@ -1,15 +1,9 @@
 ## @file
 #  UefiCpuPkg Package
 #
-#  Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution. The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -19,7 +13,7 @@
   PLATFORM_VERSION               = 0.90
   DSC_SPECIFICATION              = 0x00010005
   OUTPUT_DIRECTORY               = Build/UefiCpu
-  SUPPORTED_ARCHITECTURES        = IA32|IPF|X64
+  SUPPORTED_ARCHITECTURES        = IA32|X64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
@@ -81,9 +75,6 @@
   PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLibIdt/PeiServicesTablePointerLibIdt.inf
   CpuExceptionHandlerLib|UefiCpuPkg/Library/CpuExceptionHandlerLib/PeiCpuExceptionHandlerLib.inf
 
-[LibraryClasses.IPF.PEIM]
-  PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLibKr7/PeiServicesTablePointerLibKr7.inf
-
 [LibraryClasses.common.DXE_DRIVER]
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
@@ -110,6 +101,9 @@
   UefiCpuPkg/CpuIoPei/CpuIoPei.inf
   UefiCpuPkg/Library/SecPeiDxeTimerLibUefiCpu/SecPeiDxeTimerLibUefiCpu.inf
   UefiCpuPkg/Application/Cpuid/Cpuid.inf
+  UefiCpuPkg/Library/CpuTimerLib/BaseCpuTimerLib.inf
+  UefiCpuPkg/Library/CpuTimerLib/DxeCpuTimerLib.inf
+  UefiCpuPkg/Library/CpuTimerLib/PeiCpuTimerLib.inf
 
 [Components.IA32, Components.X64]
   UefiCpuPkg/CpuDxe/CpuDxe.inf
@@ -133,6 +127,7 @@
   UefiCpuPkg/Library/CpuExceptionHandlerLib/PeiCpuExceptionHandlerLib.inf
   UefiCpuPkg/Library/MpInitLib/PeiMpInitLib.inf
   UefiCpuPkg/Library/MpInitLib/DxeMpInitLib.inf
+  UefiCpuPkg/Library/MpInitLibUp/MpInitLibUp.inf
   UefiCpuPkg/Library/MtrrLib/MtrrLib.inf
   UefiCpuPkg/Library/PlatformSecLibNull/PlatformSecLibNull.inf
   UefiCpuPkg/Library/RegisterCpuFeaturesLib/PeiRegisterCpuFeaturesLib.inf

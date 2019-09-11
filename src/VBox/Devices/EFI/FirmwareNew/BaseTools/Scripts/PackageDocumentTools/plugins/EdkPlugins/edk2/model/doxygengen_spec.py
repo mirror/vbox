@@ -5,15 +5,9 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
-import plugins.EdkPlugins.basemodel.doxygen as doxygen
+from plugins.EdkPlugins.basemodel import doxygen
 import os
 try:
     import wx
@@ -21,8 +15,8 @@ try:
 except:
     gInGui = False
 import re
-import plugins.EdkPlugins.edk2.model.inf as inf
-import plugins.EdkPlugins.edk2.model.dec as dec
+from plugins.EdkPlugins.edk2.model import inf
+from plugins.EdkPlugins.edk2.model import dec
 from plugins.EdkPlugins.basemodel.message import *
 
 _ignore_dir = ['.svn', '_svn', 'cvs']
@@ -66,7 +60,7 @@ class DoxygenAction:
         self._chmCallback     = None
 
     def Log(self, message, level='info'):
-        if self._log != None:
+        if self._log is not None:
             self._log(message, level)
 
     def IsVerbose(self):
@@ -91,7 +85,7 @@ class DoxygenAction:
 
         self.Log("    >>>>>> Generate doxygen index page file...Zzz...\n")
         indexPagePath = self.GenerateIndexPage()
-        if indexPagePath == None:
+        if indexPagePath is None:
             self.Log("Fail to generate index page!\n", 'error')
             return False
         else:
@@ -106,7 +100,7 @@ class DoxygenAction:
         self.Log("    <<<<<< Success Save doxygen config file to %s...\n" % configFilePath)
 
         # launch doxygen tool to generate document
-        if self._doxygenCallback != None:
+        if self._doxygenCallback is not None:
             self.Log("    >>>>>> Start doxygen process...Zzz...\n")
             if not self._doxygenCallback(self._doxPath, configFilePath):
                 return False
@@ -167,9 +161,9 @@ class PackageDocumentAction(DoxygenAction):
             self._configFile.AddPreDefined(macro)
 
         namestr = self._pObj.GetName()
-        if self._arch != None:
+        if self._arch is not None:
             namestr += '[%s]' % self._arch
-        if self._tooltag != None:
+        if self._tooltag is not None:
             namestr += '[%s]' % self._tooltag
         self._configFile.SetProjectName(namestr)
         self._configFile.SetStripPath(self._pObj.GetWorkspace())
@@ -315,7 +309,7 @@ class PackageDocumentAction(DoxygenAction):
         objs = pObj.GetFileObj().GetSectionObjectsByName('libraryclass', self._arch)
         if len(objs) == 0: return []
 
-        if self._arch != None:
+        if self._arch is not None:
             for obj in objs:
                 classPage = doxygen.Page(obj.GetClassName(),
                                          "lc_%s" % obj.GetClassName())
@@ -388,7 +382,7 @@ class PackageDocumentAction(DoxygenAction):
         configFile.AddFile(path)
         return
         no = 0
-        for no in xrange(len(lines)):
+        for no in range(len(lines)):
             if len(lines[no].strip()) == 0:
                 continue
             if lines[no].strip()[:2] in ['##', '//', '/*', '*/']:
@@ -401,7 +395,7 @@ class PackageDocumentAction(DoxygenAction):
             mo = re.match(r"^[#\w\s]+[<\"]([\\/\w.]+)[>\"]$", lines[no].strip())
             filePath = mo.groups()[0]
 
-            if filePath == None or len(filePath) == 0:
+            if filePath is None or len(filePath) == 0:
                 continue
 
             # find header file in module's path firstly.
@@ -419,7 +413,7 @@ class PackageDocumentAction(DoxygenAction):
                     if os.path.exists(incPath):
                         fullPath = incPath
                         break
-                if infObj != None:
+                if infObj is not None:
                     pkgInfObjs = infObj.GetSectionObjectsByName('packages')
                     for obj in  pkgInfObjs:
                         decObj = dec.DECFile(os.path.join(pObj.GetWorkspace(), obj.GetPath()))
@@ -435,10 +429,10 @@ class PackageDocumentAction(DoxygenAction):
                             if os.path.exists(os.path.join(incPath, filePath)):
                                 fullPath = os.path.join(os.path.join(incPath, filePath))
                                 break
-                        if fullPath != None:
+                        if fullPath is not None:
                             break
 
-            if fullPath == None and self.IsVerbose():
+            if fullPath is None and self.IsVerbose():
                 self.Log('Can not resolve header file %s for file %s in package %s\n' % (filePath, path, pObj.GetFileObj().GetFilename()), 'error')
                 return
             else:
@@ -479,7 +473,7 @@ class PackageDocumentAction(DoxygenAction):
                 typeRootPageDict[obj.GetPcdType()] = doxygen.Page(obj.GetPcdType(), 'pcd_%s_root_page' % obj.GetPcdType())
                 pcdRootPage.AddPage(typeRootPageDict[obj.GetPcdType()])
             typeRoot = typeRootPageDict[obj.GetPcdType()]
-            if self._arch != None:
+            if self._arch is not None:
                 pcdPage = doxygen.Page('%s' % obj.GetPcdName(),
                                         'pcd_%s_%s_%s' % (obj.GetPcdType(), obj.GetArch(), obj.GetPcdName().split('.')[1]))
                 pcdPage.AddDescription('<br>\n'.join(obj.GetComment()) + '<br>\n')
@@ -575,7 +569,7 @@ class PackageDocumentAction(DoxygenAction):
         pageRoot = doxygen.Page('GUID', 'guid_root_page')
         objs = pObj.GetFileObj().GetSectionObjectsByName('guids', self._arch)
         if len(objs) == 0: return []
-        if self._arch != None:
+        if self._arch is not None:
             for obj in objs:
                 pageRoot.AddPage(self._GenerateGuidSubPage(pObj, obj, configFile))
         else:
@@ -628,7 +622,7 @@ class PackageDocumentAction(DoxygenAction):
         pageRoot = doxygen.Page('PPI', 'ppi_root_page')
         objs = pObj.GetFileObj().GetSectionObjectsByName('ppis', self._arch)
         if len(objs) == 0: return []
-        if self._arch != None:
+        if self._arch is not None:
             for obj in objs:
                 pageRoot.AddPage(self._GeneratePpiSubPage(pObj, obj, configFile))
         else:
@@ -682,7 +676,7 @@ class PackageDocumentAction(DoxygenAction):
         pageRoot = doxygen.Page('PROTOCOL', 'protocol_root_page')
         objs = pObj.GetFileObj().GetSectionObjectsByName('protocols', self._arch)
         if len(objs) == 0: return []
-        if self._arch != None:
+        if self._arch is not None:
             for obj in objs:
                 pageRoot.AddPage(self._GenerateProtocolSubPage(pObj, obj, configFile))
         else:
@@ -775,7 +769,7 @@ class PackageDocumentAction(DoxygenAction):
             if not infObj.Parse():
                 self.Log('Fail to load INF file %s' % inf)
                 continue
-            if infObj.GetProduceLibraryClass() != None:
+            if infObj.GetProduceLibraryClass() is not None:
                 libObjs.append(infObj)
             else:
                 modObjs.append(infObj)
@@ -799,7 +793,7 @@ class PackageDocumentAction(DoxygenAction):
         Generate page for a module/library.
         @param infObj     INF file object for module/library
         @param configFile doxygen config file object
-        @param isLib      Whether this module is libary
+        @param isLib      Whether this module is library
 
         @param module doxygen page object
         """
@@ -954,7 +948,7 @@ class PackageDocumentAction(DoxygenAction):
             retarr = self.SearchLibraryClassHeaderFile(lcObj.GetClass(),
                                                        workspace,
                                                        refDecObjs)
-            if retarr != None:
+            if retarr is not None:
                 pkgname, hPath = retarr
             else:
                 self.Log('Fail find the library class %s definition from module %s dependent package!' % (lcObj.GetClass(), infObj.GetFilename()), 'error')
@@ -1003,8 +997,8 @@ class PackageDocumentAction(DoxygenAction):
         #file = textfile.TextFile(path)
 
         try:
-            file = open(path, 'rb')
-        except (IOError, OSError), msg:
+            file = open(path, 'r')
+        except (IOError, OSError) as msg:
             return None
 
         t = file.read()

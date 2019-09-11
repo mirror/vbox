@@ -1,15 +1,9 @@
 ## @file
 # This file is used to define a class object to describe a distribution package
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 DistributionPackageClass
@@ -155,7 +149,7 @@ class DistributionPackageClass(object):
                                     ModuleObj.GetName(), \
                                     ModuleObj.GetCombinePath())] = ModuleObj
                         PackageObj.SetModuleDict(ModuleDict)
-                    except FatalError, ErrCode:
+                    except FatalError as ErrCode:
                         if ErrCode.message == EDK1_INF_ERROR:
                             Logger.Warn("UPT",
                                         ST.WRN_EDK1_INF_FOUND%Filename)
@@ -181,7 +175,7 @@ class DistributionPackageClass(object):
                                  ModuleObj.GetName(),
                                  ModuleObj.GetCombinePath())
                     self.ModuleSurfaceArea[ModuleKey] = ModuleObj
-                except FatalError, ErrCode:
+                except FatalError as ErrCode:
                     if ErrCode.message == EDK1_INF_ERROR:
                         Logger.Error("UPT",
                                      EDK1_INF_ERROR,

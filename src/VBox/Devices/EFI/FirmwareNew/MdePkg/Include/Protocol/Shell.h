@@ -2,14 +2,8 @@
   EFI Shell protocol as defined in the UEFI Shell 2.0 specification including errata.
 
   (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1011,7 +1005,7 @@ EFI_STATUS
                                 aliases will be returned in ReturnedData.
   @param[out] Volatile          Upon return of a single command if TRUE indicates
                                 this is stored in a volatile fashion.  FALSE otherwise.
-  @return                      	If Alias is not NULL, it will return a pointer to
+  @return                        If Alias is not NULL, it will return a pointer to
                                 the NULL-terminated command for that alias.
                                 If Alias is NULL, ReturnedData points to a ';'
                                 delimited list of alias (e.g.

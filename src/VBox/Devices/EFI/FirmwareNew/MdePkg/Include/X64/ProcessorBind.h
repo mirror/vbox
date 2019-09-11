@@ -1,14 +1,8 @@
 /** @file
   Processor or Compiler specific defines and types x64 (Intel 64, AMD64).
 
-  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -27,7 +21,7 @@
 #pragma pack()
 #endif
 
-#if defined(__GNUC__) && defined(__pic__) && !defined(USING_LTO)
+#if defined(__GNUC__) && defined(__pic__) && !defined(USING_LTO)  && !defined(__APPLE__)
 //
 // Mark all symbol declarations and references as hidden, meaning they will
 // not be subject to symbol preemption. This allows the compiler to refer to
@@ -259,6 +253,11 @@ typedef INT64   INTN;
 /// Maximum legal x64 address
 ///
 #define MAX_ADDRESS   0xFFFFFFFFFFFFFFFFULL
+
+///
+/// Maximum usable address at boot time
+///
+#define MAX_ALLOC_ADDRESS   MAX_ADDRESS
 
 ///
 /// Maximum legal x64 INTN and UINTN values.

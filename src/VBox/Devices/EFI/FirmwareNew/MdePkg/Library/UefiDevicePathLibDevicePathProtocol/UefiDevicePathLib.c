@@ -2,14 +2,8 @@
   Library instance that implement UEFI Device Path Library class based on protocol
   gEfiDevicePathUtilitiesProtocolGuid.
 
-  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -137,6 +131,15 @@ IsDevicePathValid (
       if (Count >= PcdGet32 (PcdMaximumDevicePathNodeCount)) {
         return FALSE;
       }
+    }
+
+    //
+    // FilePath must be a NULL-terminated string.
+    //
+    if (DevicePathType (DevicePath) == MEDIA_DEVICE_PATH &&
+        DevicePathSubType (DevicePath) == MEDIA_FILEPATH_DP &&
+        *(CHAR16 *)((UINT8 *)DevicePath + NodeLength - 2) != 0) {
+      return FALSE;
     }
   }
 

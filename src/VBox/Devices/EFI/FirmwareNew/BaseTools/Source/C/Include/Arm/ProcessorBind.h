@@ -1,15 +1,9 @@
 /** @file
   Processor or Compiler specific defines and types for ARM.
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -30,7 +24,7 @@
 
 #if _MSC_EXTENSIONS
   //
-  // use Microsoft* C complier dependent integer width types
+  // use Microsoft* C compiler dependent integer width types
   //
   typedef unsigned __int64    UINT64;
   typedef __int64             INT64;
@@ -87,11 +81,6 @@ typedef INT32   INTN;
 /// A value of native width with the two highest bits set.
 ///
 #define MAX_2_BITS   0xC0000000
-
-///
-/// Maximum legal ARM address
-///
-#define MAX_ADDRESS  0xFFFFFFFF
 
 ///
 /// The stack alignment required for ARM

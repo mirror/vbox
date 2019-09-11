@@ -1,15 +1,10 @@
 /** @file
   This is THE shell (application)
 
-  Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2013-2014 Hewlett-Packard Development Company, L.P.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright 2015-2018 Dell Technologies.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1001,7 +996,11 @@ ProcessCommandLine(
                                  ) == 0) {
       ShellInfoObject.ShellInitSettings.BitUnion.Bits.Delay        = TRUE;
       // Check for optional delay value following "-delay"
-      DelayValueStr = gEfiShellParametersProtocol->Argv[LoopVar + 1];
+      if ((LoopVar + 1) >= gEfiShellParametersProtocol->Argc) {
+        DelayValueStr = NULL;
+      } else {
+        DelayValueStr = gEfiShellParametersProtocol->Argv[LoopVar + 1];
+      }
       if (DelayValueStr != NULL){
         if (*DelayValueStr == L':') {
           DelayValueStr++;
@@ -1169,6 +1168,8 @@ LocateStartupScript (
       *TempSpot = CHAR_NULL;
     }
 
+    InternalEfiShellSetEnv(L"homefilesystem", StartupScriptPath, TRUE);
+
     StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, ((FILEPATH_DEVICE_PATH *)FileDevicePath)->PathName, 0);
     PathRemoveLastItem (StartupScriptPath);
     StartupScriptPath = StrnCatGrow (&StartupScriptPath, &Size, mStartupScript, 0);
@@ -1206,6 +1207,7 @@ DoStartupScript(
   UINTN                         Delay;
   EFI_INPUT_KEY                 Key;
   CHAR16                        *FileStringPath;
+  CHAR16                        *FullFileStringPath;
   UINTN                         NewSize;
 
   Key.UnicodeChar = CHAR_NULL;
@@ -1273,7 +1275,13 @@ DoStartupScript(
 
   FileStringPath = LocateStartupScript (ImagePath, FilePath);
   if (FileStringPath != NULL) {
-    Status = RunScriptFile (FileStringPath, NULL, L"", ShellInfoObject.NewShellParametersProtocol);
+    FullFileStringPath = FullyQualifyPath(FileStringPath);
+    if (FullFileStringPath == NULL) {
+      Status = RunScriptFile (FileStringPath, NULL, FileStringPath, ShellInfoObject.NewShellParametersProtocol);
+    } else {
+      Status = RunScriptFile (FullFileStringPath, NULL, FullFileStringPath, ShellInfoObject.NewShellParametersProtocol);
+      FreePool(FullFileStringPath);
+    }
     FreePool (FileStringPath);
   } else {
     //
@@ -2427,6 +2435,7 @@ RunCommandOrFile(
   EFI_STATUS                Status;
   EFI_STATUS                StartStatus;
   CHAR16                    *CommandWithPath;
+  CHAR16                    *FullCommandWithPath;
   EFI_DEVICE_PATH_PROTOCOL  *DevPath;
   SHELL_STATUS              CalleeExitStatus;
 
@@ -2472,7 +2481,13 @@ RunCommandOrFile(
       }
       switch (Type) {
         case   Script_File_Name:
-          Status = RunScriptFile (CommandWithPath, NULL, CmdLine, ParamProtocol);
+          FullCommandWithPath = FullyQualifyPath(CommandWithPath);
+          if (FullCommandWithPath == NULL) {
+            Status = RunScriptFile (CommandWithPath, NULL, CmdLine, ParamProtocol);
+          } else {
+            Status = RunScriptFile (FullCommandWithPath, NULL, CmdLine, ParamProtocol);
+            FreePool(FullCommandWithPath);
+          }
           break;
         case   Efi_Application:
           //
@@ -2750,38 +2765,6 @@ RunCommand(
   return (RunShellCommand(CmdLine, NULL));
 }
 
-
-STATIC CONST UINT16 InvalidChars[] = {L'*', L'?', L'<', L'>', L'\\', L'/', L'\"', 0x0001, 0x0002};
-/**
-  Function determines if the CommandName COULD be a valid command.  It does not determine whether
-  this is a valid command.  It only checks for invalid characters.
-
-  @param[in] CommandName    The name to check
-
-  @retval TRUE              CommandName could be a command name
-  @retval FALSE             CommandName could not be a valid command name
-**/
-BOOLEAN
-IsValidCommandName(
-  IN CONST CHAR16     *CommandName
-  )
-{
-  UINTN Count;
-  if (CommandName == NULL) {
-    ASSERT(FALSE);
-    return (FALSE);
-  }
-  for ( Count = 0
-      ; Count < sizeof(InvalidChars) / sizeof(InvalidChars[0])
-      ; Count++
-     ){
-    if (ScanMem16(CommandName, StrSize(CommandName), InvalidChars[Count]) != NULL) {
-      return (FALSE);
-    }
-  }
-  return (TRUE);
-}
-
 /**
   Function to process a NSH script file via SHELL_FILE_HANDLE.
 
@@ -2842,7 +2825,12 @@ RunScriptFileHandle (
       DeleteScriptFileStruct(NewScriptFile);
       return (EFI_OUT_OF_RESOURCES);
     }
-    for (LoopVar = 0 ; LoopVar < 10 && LoopVar < NewScriptFile->Argc; LoopVar++) {
+    //
+    // Put the full path of the script file into Argv[0] as required by section
+    // 3.6.2 of version 2.2 of the shell specification.
+    //
+    NewScriptFile->Argv[0] = StrnCatGrow(&NewScriptFile->Argv[0], NULL, NewScriptFile->ScriptName, 0);
+    for (LoopVar = 1 ; LoopVar < 10 && LoopVar < NewScriptFile->Argc; LoopVar++) {
       ASSERT(NewScriptFile->Argv[LoopVar] == NULL);
       NewScriptFile->Argv[LoopVar] = StrnCatGrow(&NewScriptFile->Argv[LoopVar], NULL, ShellInfoObject.NewShellParametersProtocol->Argv[LoopVar], 0);
       if (NewScriptFile->Argv[LoopVar] == NULL) {

@@ -2,15 +2,9 @@
   This EFI_PXE_BASE_CODE_PROTOCOL and EFI_LOAD_FILE_PROTOCOL.
   interfaces declaration.
 
-  Copyright (c) 2007 - 2016, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -83,6 +77,9 @@ typedef struct _PXEBC_VIRTUAL_NIC   PXEBC_VIRTUAL_NIC;
 #define PXEBC_PRIVATE_DATA_FROM_PXEBC(a)      CR (a, PXEBC_PRIVATE_DATA, PxeBc, PXEBC_PRIVATE_DATA_SIGNATURE)
 #define PXEBC_PRIVATE_DATA_FROM_ID(a)         CR (a, PXEBC_PRIVATE_DATA, Id, PXEBC_PRIVATE_DATA_SIGNATURE)
 #define PXEBC_VIRTUAL_NIC_FROM_LOADFILE(a)    CR (a, PXEBC_VIRTUAL_NIC, LoadFile, PXEBC_VIRTUAL_NIC_SIGNATURE)
+
+#define PXE_ENABLED                           0x01
+#define PXE_DISABLED                          0x00
 
 typedef union {
   PXEBC_DHCP4_PACKET_CACHE            Dhcp4;

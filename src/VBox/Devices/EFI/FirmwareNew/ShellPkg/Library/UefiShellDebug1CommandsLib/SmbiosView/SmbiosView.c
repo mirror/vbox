@@ -2,14 +2,8 @@
   Tools of clarify the content of the smbios table.
 
   (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2005 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -103,7 +97,7 @@ ShellCommandRunSmbiosView (
       Status1 = LibSmbiosInit ();
       Status2 = LibSmbios64BitInit ();
       if (EFI_ERROR (Status1) && EFI_ERROR (Status2)) {
-      	ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_LIBSMBIOSVIEW_CANNOT_GET_TABLE), gShellDebug1HiiHandle);
+        ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_LIBSMBIOSVIEW_CANNOT_GET_TABLE), gShellDebug1HiiHandle);
         ShellStatus = SHELL_NOT_FOUND;
         goto Done;
       }
@@ -666,7 +660,7 @@ InitSmbiosTableStatistics (
   @param[out] NumberOfSmbios64Structures  The number of structures in 64-bit SMBIOS table.
   @param[out] Smbios64TableLength         The total length of 64-bit SMBIOS table.
 
-  @retval EFI_SUCCESS           					Calculation was successful.
+  @retval EFI_SUCCESS                     Calculation was successful.
 **/
 EFI_STATUS
 CalculateSmbios64BitStructureCountAndLength (
@@ -702,11 +696,11 @@ CalculateSmbios64BitStructureCountAndLength (
     //
     (*Smbios64TableLength) += ((UINTN) Smbios.Raw - (UINTN) Raw);
     if ((*Smbios64TableLength) > Smbios64EntryPoint->TableMaximumSize) {
-    	//
-    	// The actual table length exceeds maximum table size,
-    	// There should be something wrong with SMBIOS table.
-    	//
-    	return EFI_INVALID_PARAMETER;
+      //
+      // The actual table length exceeds maximum table size,
+      // There should be something wrong with SMBIOS table.
+      //
+      return EFI_INVALID_PARAMETER;
     }
     (*NumberOfSmbios64Structures)++;
   }
@@ -727,7 +721,7 @@ InitSmbios64BitTableStatistics (
   UINT16                    Length;
   UINT16                    Offset;
   UINT16                    Index;
-	EFI_STATUS								Status;
+  EFI_STATUS                Status;
   SMBIOS_STRUCTURE_POINTER      SmbiosStruct;
   SMBIOS_TABLE_3_0_ENTRY_POINT  *SMBiosTable;
   STRUCTURE_STATISTICS          *StatisticsPointer;
@@ -755,7 +749,7 @@ InitSmbios64BitTableStatistics (
   //
   Status = CalculateSmbios64BitStructureCountAndLength (SMBiosTable, &mNumberOfSmbios64BitStructures, &mSmbios64BitTableLength);
   if ((EFI_ERROR (Status)) || (mSmbios64BitTableLength > SMBiosTable->TableMaximumSize)) {
-  	return EFI_INVALID_PARAMETER;
+    return EFI_INVALID_PARAMETER;
   }
 
   mSmbios64BitStatisticsTable = (STRUCTURE_STATISTICS *) AllocateZeroPool (mNumberOfSmbios64BitStructures * sizeof (STRUCTURE_STATISTICS));

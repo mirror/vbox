@@ -2,15 +2,9 @@
 # This file is used to define class objects of INF file [Binaries] section.
 # It will consumed by InfParser.
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfBinaryObject
@@ -271,8 +265,8 @@ class InfBinariesObject(InfSectionCommonDef):
                                 #
                                 pass
 
-            if InfBianryVerItemObj != None:
-                if self.Binaries.has_key((InfBianryVerItemObj)):
+            if InfBianryVerItemObj is not None:
+                if (InfBianryVerItemObj) in self.Binaries:
                     BinariesList = self.Binaries[InfBianryVerItemObj]
                     BinariesList.append((InfBianryVerItemObj, VerComment))
                     self.Binaries[InfBianryVerItemObj] = BinariesList
@@ -521,8 +515,8 @@ class InfBinariesObject(InfSectionCommonDef):
 #                                #
 #                                pass
 
-            if InfBianryCommonItemObj != None:
-                if self.Binaries.has_key((InfBianryCommonItemObj)):
+            if InfBianryCommonItemObj is not None:
+                if (InfBianryCommonItemObj) in self.Binaries:
                     BinariesList = self.Binaries[InfBianryCommonItemObj]
                     BinariesList.append((InfBianryCommonItemObj, ItemComment))
                     self.Binaries[InfBianryCommonItemObj] = BinariesList
@@ -538,11 +532,11 @@ class InfBinariesObject(InfSectionCommonDef):
             #
             # Validate Arch
             #
-            if (ArchItem == '' or ArchItem == None):
+            if (ArchItem == '' or ArchItem is None):
                 ArchItem = 'COMMON'
             __SupArchList.append(ArchItem)
 
-        if UiInf != None:
+        if UiInf is not None:
             if len(UiInf) > 0:
                 #
                 # Check UI
@@ -672,8 +666,8 @@ class InfBinariesObject(InfSectionCommonDef):
 #                                        #
 #                                        pass
 
-                    if InfBianryUiItemObj != None:
-                        if self.Binaries.has_key((InfBianryUiItemObj)):
+                    if InfBianryUiItemObj is not None:
+                        if (InfBianryUiItemObj) in self.Binaries:
                             BinariesList = self.Binaries[InfBianryUiItemObj]
                             BinariesList.append((InfBianryUiItemObj, UiComment))
                             self.Binaries[InfBianryUiItemObj] = BinariesList
@@ -681,7 +675,7 @@ class InfBinariesObject(InfSectionCommonDef):
                             BinariesList = []
                             BinariesList.append((InfBianryUiItemObj, UiComment))
                             self.Binaries[InfBianryUiItemObj] = BinariesList
-        if Ver != None and len(Ver) > 0:
+        if Ver is not None and len(Ver) > 0:
             self.CheckVer(Ver, __SupArchList)
         if CommonBinary and len(CommonBinary) > 0:
             self.ParseCommonBinary(CommonBinary, __SupArchList)

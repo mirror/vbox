@@ -3,13 +3,7 @@
   for Bootability, Revision 1.0.
 
 Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -737,6 +731,13 @@ UsbBootDetectMedia (
   }
 
   //
+  // Simply reject device whose block size is unacceptable small (==0) or large (>64K).
+  //
+  if ((Media->BlockSize == 0) || (Media->BlockSize > USB_BOOT_MAX_CARRY_SIZE)) {
+    return EFI_DEVICE_ERROR;
+  }
+
+  //
   // Detect whether it is necessary to reinstall the Block I/O Protocol.
   //
   // MediaId may change in RequestSense for MediaChanged
@@ -792,33 +793,37 @@ UsbBootDetectMedia (
 
 
 /**
-  Read some blocks from the device.
+  Read or write some blocks from the device.
 
-  @param  UsbMass                The USB mass storage device to read from
+  @param  UsbMass                The USB mass storage device to access
+  @param  Write                  TRUE for write operation.
   @param  Lba                    The start block number
-  @param  TotalBlock             Total block number to read
-  @param  Buffer                 The buffer to read to
+  @param  TotalBlock             Total block number to read or write
+  @param  Buffer                 The buffer to read to or write from
 
-  @retval EFI_SUCCESS            Data are read into the buffer
-  @retval Others                 Failed to read all the data
+  @retval EFI_SUCCESS            Data are read into the buffer or writen into the device.
+  @retval Others                 Failed to read or write all the data
 
 **/
 EFI_STATUS
-UsbBootReadBlocks (
+UsbBootReadWriteBlocks (
   IN  USB_MASS_DEVICE       *UsbMass,
+  IN  BOOLEAN               Write,
   IN  UINT32                Lba,
   IN  UINTN                 TotalBlock,
-  OUT UINT8                 *Buffer
+  IN OUT UINT8              *Buffer
   )
 {
-  USB_BOOT_READ10_CMD       ReadCmd;
-  EFI_STATUS                Status;
-  UINT16                    Count;
-  UINT32                    BlockSize;
-  UINT32                    ByteSize;
-  UINT32                    Timeout;
+  USB_BOOT_READ_WRITE_10_CMD Cmd;
+  EFI_STATUS                 Status;
+  UINT32                     Count;
+  UINT32                     CountMax;
+  UINT32                     BlockSize;
+  UINT32                     ByteSize;
+  UINT32                     Timeout;
 
   BlockSize = UsbMass->BlockIoMedia.BlockSize;
+  CountMax  = USB_BOOT_MAX_CARRY_SIZE / BlockSize;
   Status    = EFI_SUCCESS;
 
   while (TotalBlock > 0) {
@@ -827,8 +832,9 @@ UsbBootReadBlocks (
     // on the device. We must split the total block because the READ10
     // command only has 16 bit transfer length (in the unit of block).
     //
-    Count     = (UINT16)((TotalBlock < USB_BOOT_IO_BLOCKS) ? TotalBlock : USB_BOOT_IO_BLOCKS);
-    ByteSize  = (UINT32)Count * BlockSize;
+    Count    = (UINT32)MIN (TotalBlock, CountMax);
+    Count    = MIN (MAX_UINT16, Count);
+    ByteSize = Count * BlockSize;
 
     //
     // USB command's upper limit timeout is 5s. [USB2.0-9.2.6.1]
@@ -838,18 +844,18 @@ UsbBootReadBlocks (
     //
     // Fill in the command then execute
     //
-    ZeroMem (&ReadCmd, sizeof (USB_BOOT_READ10_CMD));
+    ZeroMem (&Cmd, sizeof (USB_BOOT_READ_WRITE_10_CMD));
 
-    ReadCmd.OpCode  = USB_BOOT_READ10_OPCODE;
-    ReadCmd.Lun     = (UINT8) (USB_BOOT_LUN (UsbMass->Lun));
-    WriteUnaligned32 ((UINT32 *) ReadCmd.Lba, SwapBytes32 (Lba));
-    WriteUnaligned16 ((UINT16 *) ReadCmd.TransferLen, SwapBytes16 (Count));
+    Cmd.OpCode  = Write ? USB_BOOT_WRITE10_OPCODE : USB_BOOT_READ10_OPCODE;
+    Cmd.Lun     = (UINT8) (USB_BOOT_LUN (UsbMass->Lun));
+    WriteUnaligned32 ((UINT32 *) Cmd.Lba, SwapBytes32 (Lba));
+    WriteUnaligned16 ((UINT16 *) Cmd.TransferLen, SwapBytes16 ((UINT16)Count));
 
     Status = UsbBootExecCmdWithRetry (
                UsbMass,
-               &ReadCmd,
-               (UINT8) sizeof (USB_BOOT_READ10_CMD),
-               EfiUsbDataIn,
+               &Cmd,
+               (UINT8) sizeof (USB_BOOT_READ_WRITE_10_CMD),
+               Write ? EfiUsbDataOut : EfiUsbDataIn,
                Buffer,
                ByteSize,
                Timeout
@@ -857,86 +863,13 @@ UsbBootReadBlocks (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-    DEBUG ((EFI_D_BLKIO, "UsbBootReadBlocks: LBA (0x%x), Blk (0x%x)\n", Lba, Count));
+    DEBUG ((
+      DEBUG_BLKIO, "UsbBoot%sBlocks: LBA (0x%lx), Blk (0x%x)\n",
+      Write ? L"Write" : L"Read",
+      Lba, Count
+      ));
     Lba        += Count;
-    Buffer     += Count * BlockSize;
-    TotalBlock -= Count;
-  }
-
-  return Status;
-}
-
-
-/**
-  Write some blocks to the device.
-
-  @param  UsbMass                The USB mass storage device to write to
-  @param  Lba                    The start block number
-  @param  TotalBlock             Total block number to write
-  @param  Buffer                 Pointer to the source buffer for the data.
-
-  @retval EFI_SUCCESS            Data are written into the buffer
-  @retval Others                 Failed to write all the data
-
-**/
-EFI_STATUS
-UsbBootWriteBlocks (
-  IN  USB_MASS_DEVICE         *UsbMass,
-  IN  UINT32                  Lba,
-  IN  UINTN                   TotalBlock,
-  IN  UINT8                   *Buffer
-  )
-{
-  USB_BOOT_WRITE10_CMD  WriteCmd;
-  EFI_STATUS            Status;
-  UINT16                Count;
-  UINT32                BlockSize;
-  UINT32                ByteSize;
-  UINT32                Timeout;
-
-  BlockSize = UsbMass->BlockIoMedia.BlockSize;
-  Status    = EFI_SUCCESS;
-
-  while (TotalBlock > 0) {
-    //
-    // Split the total blocks into smaller pieces to ease the pressure
-    // on the device. We must split the total block because the WRITE10
-    // command only has 16 bit transfer length (in the unit of block).
-    //
-    Count     = (UINT16)((TotalBlock < USB_BOOT_IO_BLOCKS) ? TotalBlock : USB_BOOT_IO_BLOCKS);
-    ByteSize  = (UINT32)Count * BlockSize;
-
-    //
-    // USB command's upper limit timeout is 5s. [USB2.0-9.2.6.1]
-    //
-    Timeout = (UINT32) USB_BOOT_GENERAL_CMD_TIMEOUT;
-
-    //
-    // Fill in the write10 command block
-    //
-    ZeroMem (&WriteCmd, sizeof (USB_BOOT_WRITE10_CMD));
-
-    WriteCmd.OpCode = USB_BOOT_WRITE10_OPCODE;
-    WriteCmd.Lun    = (UINT8) (USB_BOOT_LUN (UsbMass->Lun));
-    WriteUnaligned32 ((UINT32 *) WriteCmd.Lba, SwapBytes32 (Lba));
-    WriteUnaligned16 ((UINT16 *) WriteCmd.TransferLen, SwapBytes16 (Count));
-
-    Status = UsbBootExecCmdWithRetry (
-               UsbMass,
-               &WriteCmd,
-               (UINT8) sizeof (USB_BOOT_WRITE10_CMD),
-               EfiUsbDataOut,
-               Buffer,
-               ByteSize,
-               Timeout
-               );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-    DEBUG ((EFI_D_BLKIO, "UsbBootWriteBlocks: LBA (0x%x), Blk (0x%x)\n", Lba, Count));
-
-    Lba        += Count;
-    Buffer     += Count * BlockSize;
+    Buffer     += ByteSize;
     TotalBlock -= Count;
   }
 
@@ -944,41 +877,44 @@ UsbBootWriteBlocks (
 }
 
 /**
-  Read some blocks from the device by SCSI 16 byte cmd.
+  Read or write some blocks from the device by SCSI 16 byte cmd.
 
-  @param  UsbMass                The USB mass storage device to read from
+  @param  UsbMass                The USB mass storage device to access
+  @param  Write                  TRUE for write operation.
   @param  Lba                    The start block number
-  @param  TotalBlock             Total block number to read
-  @param  Buffer                 The buffer to read to
+  @param  TotalBlock             Total block number to read or write
+  @param  Buffer                 The buffer to read to or write from
 
-  @retval EFI_SUCCESS            Data are read into the buffer
-  @retval Others                 Failed to read all the data
-
+  @retval EFI_SUCCESS            Data are read into the buffer or writen into the device.
+  @retval Others                 Failed to read or write all the data
 **/
 EFI_STATUS
-UsbBootReadBlocks16 (
+UsbBootReadWriteBlocks16 (
   IN  USB_MASS_DEVICE       *UsbMass,
+  IN  BOOLEAN               Write,
   IN  UINT64                Lba,
   IN  UINTN                 TotalBlock,
-  OUT UINT8                 *Buffer
+  IN OUT UINT8              *Buffer
   )
 {
-  UINT8                     ReadCmd[16];
+  UINT8                     Cmd[16];
   EFI_STATUS                Status;
-  UINT16                    Count;
+  UINT32                    Count;
+  UINT32                    CountMax;
   UINT32                    BlockSize;
   UINT32                    ByteSize;
   UINT32                    Timeout;
 
   BlockSize = UsbMass->BlockIoMedia.BlockSize;
+  CountMax  = USB_BOOT_MAX_CARRY_SIZE / BlockSize;
   Status    = EFI_SUCCESS;
 
   while (TotalBlock > 0) {
     //
     // Split the total blocks into smaller pieces.
     //
-    Count     = (UINT16)((TotalBlock < USB_BOOT_IO_BLOCKS) ? TotalBlock : USB_BOOT_IO_BLOCKS);
-    ByteSize  = (UINT32)Count * BlockSize;
+    Count    = (UINT32)MIN (TotalBlock, CountMax);
+    ByteSize = Count * BlockSize;
 
     //
     // USB command's upper limit timeout is 5s. [USB2.0-9.2.6.1]
@@ -988,18 +924,18 @@ UsbBootReadBlocks16 (
     //
     // Fill in the command then execute
     //
-    ZeroMem (ReadCmd, sizeof (ReadCmd));
+    ZeroMem (Cmd, sizeof (Cmd));
 
-    ReadCmd[0]  = EFI_SCSI_OP_READ16;
-    ReadCmd[1]  = (UINT8) ((USB_BOOT_LUN (UsbMass->Lun) & 0xE0));
-    WriteUnaligned64 ((UINT64 *) &ReadCmd[2], SwapBytes64 (Lba));
-    WriteUnaligned32 ((UINT32 *) &ReadCmd[10], SwapBytes32 (Count));
+    Cmd[0]  = Write ? EFI_SCSI_OP_WRITE16 : EFI_SCSI_OP_READ16;
+    Cmd[1]  = (UINT8) ((USB_BOOT_LUN (UsbMass->Lun) & 0xE0));
+    WriteUnaligned64 ((UINT64 *) &Cmd[2], SwapBytes64 (Lba));
+    WriteUnaligned32 ((UINT32 *) &Cmd[10], SwapBytes32 (Count));
 
     Status = UsbBootExecCmdWithRetry (
                UsbMass,
-               ReadCmd,
-               (UINT8) sizeof (ReadCmd),
-               EfiUsbDataIn,
+               Cmd,
+               (UINT8) sizeof (Cmd),
+               Write ? EfiUsbDataOut : EfiUsbDataIn,
                Buffer,
                ByteSize,
                Timeout
@@ -1007,83 +943,13 @@ UsbBootReadBlocks16 (
     if (EFI_ERROR (Status)) {
       return Status;
     }
-    DEBUG ((EFI_D_BLKIO, "UsbBootReadBlocks16: LBA (0x%lx), Blk (0x%x)\n", Lba, Count));
+    DEBUG ((
+      DEBUG_BLKIO, "UsbBoot%sBlocks16: LBA (0x%lx), Blk (0x%x)\n",
+      Write ? L"Write" : L"Read",
+      Lba, Count
+      ));
     Lba        += Count;
-    Buffer     += Count * BlockSize;
-    TotalBlock -= Count;
-  }
-
-  return Status;
-}
-
-
-/**
-  Write some blocks to the device by SCSI 16 byte cmd.
-
-  @param  UsbMass                The USB mass storage device to write to
-  @param  Lba                    The start block number
-  @param  TotalBlock             Total block number to write
-  @param  Buffer                 Pointer to the source buffer for the data.
-
-  @retval EFI_SUCCESS            Data are written into the buffer
-  @retval Others                 Failed to write all the data
-
-**/
-EFI_STATUS
-UsbBootWriteBlocks16 (
-  IN  USB_MASS_DEVICE         *UsbMass,
-  IN  UINT64                  Lba,
-  IN  UINTN                   TotalBlock,
-  IN  UINT8                   *Buffer
-  )
-{
-  UINT8                 WriteCmd[16];
-  EFI_STATUS            Status;
-  UINT16                Count;
-  UINT32                BlockSize;
-  UINT32                ByteSize;
-  UINT32                Timeout;
-
-  BlockSize = UsbMass->BlockIoMedia.BlockSize;
-  Status    = EFI_SUCCESS;
-
-  while (TotalBlock > 0) {
-    //
-    // Split the total blocks into smaller pieces.
-    //
-    Count     = (UINT16)((TotalBlock < USB_BOOT_IO_BLOCKS) ? TotalBlock : USB_BOOT_IO_BLOCKS);
-    ByteSize  = (UINT32)Count * BlockSize;
-
-    //
-    // USB command's upper limit timeout is 5s. [USB2.0-9.2.6.1]
-    //
-    Timeout = (UINT32) USB_BOOT_GENERAL_CMD_TIMEOUT;
-
-    //
-    // Fill in the write16 command block
-    //
-    ZeroMem (WriteCmd, sizeof (WriteCmd));
-
-    WriteCmd[0]  = EFI_SCSI_OP_WRITE16;
-    WriteCmd[1]  = (UINT8) ((USB_BOOT_LUN (UsbMass->Lun) & 0xE0));
-    WriteUnaligned64 ((UINT64 *) &WriteCmd[2], SwapBytes64 (Lba));
-    WriteUnaligned32 ((UINT32 *) &WriteCmd[10], SwapBytes32 (Count));
-
-    Status = UsbBootExecCmdWithRetry (
-               UsbMass,
-               WriteCmd,
-               (UINT8) sizeof (WriteCmd),
-               EfiUsbDataOut,
-               Buffer,
-               ByteSize,
-               Timeout
-               );
-    if (EFI_ERROR (Status)) {
-      return Status;
-    }
-    DEBUG ((EFI_D_BLKIO, "UsbBootWriteBlocks: LBA (0x%lx), Blk (0x%x)\n", Lba, Count));
-    Lba        += Count;
-    Buffer     += Count * BlockSize;
+    Buffer     += ByteSize;
     TotalBlock -= Count;
   }
 

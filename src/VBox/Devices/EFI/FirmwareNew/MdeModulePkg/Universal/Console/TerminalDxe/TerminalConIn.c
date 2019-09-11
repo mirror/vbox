@@ -4,13 +4,7 @@
 (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 Copyright (C) 2016 Silicon Graphics, Inc. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -987,6 +981,7 @@ EfiKeyFiFoInsertOneKey (
       //
       EfiKeyFiFoForNotifyInsertOneKey (TerminalDevice->EfiKeyFiFoForNotify, Key);
       gBS->SignalEvent (TerminalDevice->KeyNotifyProcessEvent);
+      break;
     }
   }
   if (IsEfiKeyFiFoFull (TerminalDevice)) {
@@ -1200,31 +1195,6 @@ IsUnicodeFiFoFull (
   return FALSE;
 }
 
-/**
-  Count Unicode FIFO buffer.
-
-  @param  TerminalDevice       Terminal driver private structure
-
-  @return The count in bytes of Unicode FIFO.
-
-**/
-UINT8
-UnicodeFiFoGetKeyCount (
-  TERMINAL_DEV    *TerminalDevice
-  )
-{
-  UINT8 Tail;
-  UINT8 Head;
-
-  Tail  = TerminalDevice->UnicodeFiFo->Tail;
-  Head  = TerminalDevice->UnicodeFiFo->Head;
-
-  if (Tail >= Head) {
-    return (UINT8) (Tail - Head);
-  } else {
-    return (UINT8) (Tail + FIFO_MAX_NUMBER + 1 - Head);
-  }
-}
 
 /**
   Update the Unicode characters from a terminal input device into EFI Keys FIFO.

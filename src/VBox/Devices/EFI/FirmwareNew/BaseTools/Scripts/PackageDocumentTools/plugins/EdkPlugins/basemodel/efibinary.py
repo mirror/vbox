@@ -2,15 +2,10 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
+from __future__ import print_function
 import array
 import uuid
 import re
@@ -250,12 +245,12 @@ class EfiFirmwareVolumeHeader(BinaryItem):
         return list2int(self._arr.tolist()[48:50])
 
     def Dump(self):
-        print 'Signature: %s' % self.GetSigunature()
-        print 'Attribute: 0x%X' % self.GetAttribute()
-        print 'Header Length: 0x%X' % self.GetHeaderLength()
-        print 'File system Guid: ', self.GetFileSystemGuid()
-        print 'Revision: 0x%X' % self.GetRevision()
-        print 'FvLength: 0x%X' % self.GetFvLength()
+        print('Signature: %s' % self.GetSigunature())
+        print('Attribute: 0x%X' % self.GetAttribute())
+        print('Header Length: 0x%X' % self.GetHeaderLength())
+        print('File system Guid: ', self.GetFileSystemGuid())
+        print('Revision: 0x%X' % self.GetRevision())
+        print('FvLength: 0x%X' % self.GetFvLength())
 
     def GetFileSystemGuid(self):
         list = self._arr.tolist()
@@ -348,7 +343,7 @@ class EfiFfs(object):
                 line.append('0x%X' % int(item))
                 count += 1
             else:
-                print ' '.join(line)
+                print(' '.join(line))
                 count = 0
                 line = []
                 line.append('0x%X' % int(item))
@@ -445,11 +440,11 @@ class EfiFfsHeader(BinaryItem):
         return 'Unknown Ffs State'
 
     def Dump(self):
-        print "FFS name: ", self.GetNameGuid()
-        print "FFS type: ", self.GetType()
-        print "FFS attr: 0x%X" % self.GetAttributes()
-        print "FFS size: 0x%X" % self.GetFfsSize()
-        print "FFS state: 0x%X" % self.GetState()
+        print("FFS name: ", self.GetNameGuid())
+        print("FFS type: ", self.GetType())
+        print("FFS attr: 0x%X" % self.GetAttributes())
+        print("FFS size: 0x%X" % self.GetFfsSize())
+        print("FFS state: 0x%X" % self.GetState())
 
     def GetRawData(self):
         return self._arr.tolist()
@@ -528,8 +523,8 @@ class EfiSectionHeader(BinaryItem):
         return self.section_type_map[type]
 
     def Dump(self):
-        print 'size = 0x%X' % self.GetSectionSize()
-        print 'type = 0x%X' % self.GetType()
+        print('size = 0x%X' % self.GetSectionSize())
+        print('type = 0x%X' % self.GetType())
 
 
 
@@ -553,7 +548,7 @@ class EfiFvMapFile(object):
             if line[0] != ' ':
                 # new entry
                 ret = rMapEntry.match(line)
-                if ret != None:
+                if ret is not None:
                     name     = ret.groups()[0]
                     baseaddr = int(ret.groups()[1], 16)
                     entry    = int(ret.groups()[2], 16)

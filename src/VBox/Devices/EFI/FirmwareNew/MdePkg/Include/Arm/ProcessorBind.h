@@ -1,15 +1,9 @@
 /** @file
   Processor or Compiler specific defines and types for ARM.
 
-  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -28,14 +22,63 @@
 #pragma pack()
 #endif
 
+#if defined(_MSC_EXTENSIONS)
+
 //
-// RVCT does not support the __builtin_unreachable() macro
+// Disable some level 4 compilation warnings (same as IA32 and X64)
 //
-#ifdef __ARMCC_VERSION
+
+//
+// Disabling bitfield type checking warnings.
+//
+#pragma warning ( disable : 4214 )
+
+//
+// Disabling the unreferenced formal parameter warnings.
+//
+#pragma warning ( disable : 4100 )
+
+//
+// Disable slightly different base types warning as CHAR8 * can not be set
+// to a constant string.
+//
+#pragma warning ( disable : 4057 )
+
+//
+// ASSERT(FALSE) or while (TRUE) are legal constructs so suppress this warning
+//
+#pragma warning ( disable : 4127 )
+
+//
+// This warning is caused by functions defined but not used. For precompiled header only.
+//
+#pragma warning ( disable : 4505 )
+
+//
+// This warning is caused by empty (after preprocessing) source file. For precompiled header only.
+//
+#pragma warning ( disable : 4206 )
+
+//
+// Disable 'potentially uninitialized local variable X used' warnings
+//
+#pragma warning ( disable : 4701 )
+
+//
+// Disable 'potentially uninitialized local pointer variable X used' warnings
+//
+#pragma warning ( disable : 4703 )
+
+#endif
+
+//
+// RVCT and MSFT don't support the __builtin_unreachable() macro
+//
+#if defined(__ARMCC_VERSION) || defined(_MSC_EXTENSIONS)
 #define UNREACHABLE()
 #endif
 
-#if _MSC_EXTENSIONS
+#if defined(_MSC_EXTENSIONS)
   //
   // use Microsoft* C compiler dependent integer width types
   //
@@ -98,6 +141,11 @@ typedef INT32   INTN;
 /// Maximum legal ARM address
 ///
 #define MAX_ADDRESS  0xFFFFFFFF
+
+///
+/// Maximum usable address at boot time
+///
+#define MAX_ALLOC_ADDRESS   MAX_ADDRESS
 
 ///
 /// Maximum legal ARM INTN and UINTN values.
@@ -164,6 +212,11 @@ typedef INT32   INTN;
     #define GCC_ASM_IMPORT(name)
 
   #endif
+#elif defined(_MSC_EXTENSIONS)
+  //
+  // PRESERVE8 is not supported by the MSFT assembler.
+  //
+  #define PRESERVE8
 #endif
 
 /**

@@ -2,15 +2,9 @@
 #
 # This file is the main entry for UPT
 #
-# Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -21,6 +15,7 @@ UPT
 #
 import locale
 import sys
+from imp import reload
 encoding = locale.getdefaultlocale()[1]
 if encoding:
     reload(sys)
@@ -90,7 +85,7 @@ def SetLogLevel(Opt):
         Logger.SetLevel(Logger.VERBOSE)
     elif Opt.opt_quiet:
         Logger.SetLevel(Logger.QUIET + 1)
-    elif Opt.debug_level != None:
+    elif Opt.debug_level is not None:
         if Opt.debug_level < 0 or Opt.debug_level > 9:
             Logger.Warn("UPT", ST.ERR_DEBUG_LEVEL)
             Logger.SetLevel(Logger.INFO)
@@ -179,7 +174,7 @@ def Main():
 
     try:
         GlobalData.gWORKSPACE, GlobalData.gPACKAGE_PATH = GetWorkspace()
-    except FatalError, XExcept:
+    except FatalError as XExcept:
         if Logger.GetLevel() <= Logger.DEBUG_9:
             Logger.Quiet(ST.MSG_PYTHON_ON % (python_version(), platform) + format_exc())
         return XExcept.args[0]
@@ -294,7 +289,7 @@ def Main():
             return OPTION_MISSING
 
         ReturnCode = RunModule(Opt)
-    except FatalError, XExcept:
+    except FatalError as XExcept:
         ReturnCode = XExcept.args[0]
         if Logger.GetLevel() <= Logger.DEBUG_9:
             Logger.Quiet(ST.MSG_PYTHON_ON % (python_version(), platform) + \
@@ -309,12 +304,12 @@ def Main():
             else:
                 GlobalData.gDB.Commit()
                 Mgr.commit()
-        except StandardError:
+        except Exception:
             Logger.Quiet(ST.MSG_RECOVER_FAIL)
         GlobalData.gDB.CloseDb()
 
         if pf.system() == 'Windows':
-            os.system('subst %s /D' % GlobalData.gWORKSPACE.replace('\\',''))
+            os.system('subst %s /D' % GlobalData.gWORKSPACE.replace('\\', ''))
 
     return ReturnCode
 

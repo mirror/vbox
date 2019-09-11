@@ -1,14 +1,8 @@
 /** @file
   EFI PCI IO protocol functions implementation for PCI Bus module.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1316,7 +1310,7 @@ CheckBarType (
   @param  Operation    Set or Disable.
 
   @retval  EFI_UNSUPPORTED  If root bridge does not support change attribute.
-  @retval  EFI_SUCCESS      Successfully set new attributs.
+  @retval  EFI_SUCCESS      Successfully set new attributes.
 
 **/
 EFI_STATUS
@@ -1419,7 +1413,7 @@ SupportPaletteSnoopAttributes (
 
   if (Temp == NULL) {
     //
-    // If there is no VGA device on the segement, set
+    // If there is no VGA device on the segment, set
     // this graphics card to decode the palette range
     //
     return EFI_SUCCESS;
@@ -1588,7 +1582,7 @@ PciIoAttributes (
   //
   // Just a trick for ENABLE attribute
   // EFI_PCI_DEVICE_ENABLE is not defined in UEFI spec, which is the internal usage.
-  // So, this logic doesn't confrom to UEFI spec, which should be removed.
+  // So, this logic doesn't conform to UEFI spec, which should be removed.
   // But this trick logic is still kept for some binary drivers that depend on it.
   //
   if ((Attributes & EFI_PCI_DEVICE_ENABLE) == EFI_PCI_DEVICE_ENABLE) {
@@ -1725,7 +1719,7 @@ PciIoAttributes (
     Command |= EFI_PCI_COMMAND_BUS_MASTER;
   }
   //
-  // The upstream bridge should be also set to revelant attribute
+  // The upstream bridge should be also set to relevant attribute
   // expect for IO, Mem and BusMaster
   //
   UpStreamAttributes = Attributes &
@@ -1812,10 +1806,14 @@ GetMmioAddressTranslationOffset (
     return (UINT64) -1;
   }
 
+  // According to UEFI 2.7, EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL::Configuration()
+  // returns host address instead of device address, while AddrTranslationOffset
+  // is not zero, and device address = host address + AddrTranslationOffset, so
+  // we convert host address to device address for range compare.
   while (Configuration->Desc == ACPI_ADDRESS_SPACE_DESCRIPTOR) {
     if ((Configuration->ResType == ACPI_ADDRESS_SPACE_TYPE_MEM) &&
-        (Configuration->AddrRangeMin <= AddrRangeMin) &&
-        (Configuration->AddrRangeMin + Configuration->AddrLen >= AddrRangeMin + AddrLen)
+        (Configuration->AddrRangeMin + Configuration->AddrTranslationOffset <= AddrRangeMin) &&
+        (Configuration->AddrRangeMin + Configuration->AddrLen + Configuration->AddrTranslationOffset >= AddrRangeMin + AddrLen)
         ) {
       return Configuration->AddrTranslationOffset;
     }
@@ -1907,7 +1905,7 @@ PciIoGetBarAttributes (
 
     case PciBarTypePMem32:
       //
-      // prefechable
+      // prefetchable
       //
       Descriptor->SpecificFlag = EFI_ACPI_MEMORY_RESOURCE_SPECIFIC_FLAG_CACHEABLE_PREFETCHABLE;
       //
@@ -1926,7 +1924,7 @@ PciIoGetBarAttributes (
 
     case PciBarTypePMem64:
       //
-      // prefechable
+      // prefetchable
       //
       Descriptor->SpecificFlag = EFI_ACPI_MEMORY_RESOURCE_SPECIFIC_FLAG_CACHEABLE_PREFETCHABLE;
       //
@@ -1968,6 +1966,10 @@ PciIoGetBarAttributes (
         return EFI_UNSUPPORTED;
       }
     }
+
+    // According to UEFI spec 2.7, we need return host address for
+    // PciIo->GetBarAttributes, and host address = device address - translation.
+    Descriptor->AddrRangeMin -= Descriptor->AddrTranslationOffset;
   }
 
   return EFI_SUCCESS;
@@ -2034,7 +2036,7 @@ PciIoSetBarAttributes (
     return EFI_UNSUPPORTED;
   }
   //
-  // Attributes must be supported.  Make sure the BAR range describd by BarIndex, Offset, and
+  // Attributes must be supported.  Make sure the BAR range described by BarIndex, Offset, and
   // Length are valid for this PCI device.
   //
   NonRelativeOffset = *Offset;
@@ -2053,47 +2055,6 @@ PciIoSetBarAttributes (
   return EFI_SUCCESS;
 }
 
-/**
-  Program parent bridge's attribute recurrently.
-
-  @param PciIoDevice  Child Pci device instance
-  @param Operation    The operation to perform on the attributes for this PCI controller.
-  @param Attributes   The mask of attributes that are used for Set, Enable, and Disable
-                      operations.
-
-  @retval EFI_SUCCESS           The operation on the PCI controller's attributes was completed.
-  @retval EFI_INVALID_PARAMETER One or more parameters are invalid.
-  @retval EFI_UNSUPPORTED       one or more of the bits set in
-                                Attributes are not supported by this PCI controller or one of
-                                its parent bridges when Operation is Set, Enable or Disable.
-
-**/
-EFI_STATUS
-UpStreamBridgesAttributes (
-  IN PCI_IO_DEVICE                            *PciIoDevice,
-  IN EFI_PCI_IO_PROTOCOL_ATTRIBUTE_OPERATION  Operation,
-  IN UINT64                                   Attributes
-  )
-{
-  PCI_IO_DEVICE       *Parent;
-  EFI_PCI_IO_PROTOCOL *PciIo;
-
-  Parent = PciIoDevice->Parent;
-
-  while (Parent != NULL && IS_PCI_BRIDGE (&Parent->Pci)) {
-
-    //
-    // Get the PciIo Protocol
-    //
-    PciIo = &Parent->PciIo;
-
-    PciIo->Attributes (PciIo, Operation, Attributes, NULL);
-
-    Parent = Parent->Parent;
-  }
-
-  return EFI_SUCCESS;
-}
 
 /**
   Test whether two Pci devices has same parent bridge.

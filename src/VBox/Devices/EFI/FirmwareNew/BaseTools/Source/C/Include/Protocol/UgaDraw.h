@@ -3,15 +3,9 @@
 
   Abstraction of a very simple graphics device.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -133,12 +127,12 @@ typedef enum {
     @param[in] DestinationX  - X coordinate of destination for the BltBuffer.
     @param[in] DestinationY  - Y coordinate of destination for the BltBuffer.
     @param[in] Width         - Width of rectangle in BltBuffer in pixels.
-    @param[in] Height        - Hight of rectangle in BltBuffer in pixels.
+    @param[in] Height        - Height of rectangle in BltBuffer in pixels.
     @param[in] Delta         - OPTIONAL
 
     @retval EFI_SUCCESS           - The Blt operation completed.
     @retval EFI_INVALID_PARAMETER - BltOperation is not valid.
-    @retval EFI_DEVICE_ERROR      - A hardware error occured writting to the video buffer.
+    @retval EFI_DEVICE_ERROR      - A hardware error occurred writing to the video buffer.
 
 --*/
 typedef

@@ -2,15 +2,9 @@
 # This file is used to define class objects of INF file [Guids] section.
 # It will consumed by InfParser.
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfGuidObject
@@ -107,7 +101,7 @@ def ParseGuidComment(CommentsList, InfGuidItemObj):
     #
     # Get/Set Usage and HelpString
     #
-    if CommentsList != None and len(CommentsList) != 0 :
+    if CommentsList is not None and len(CommentsList) != 0 :
         CommentInsList = []
         PreUsage = None
         PreGuidType = None
@@ -126,7 +120,7 @@ def ParseGuidComment(CommentsList, InfGuidItemObj):
                                  [],
                                  True)
 
-            if CommentItemHelpText == None:
+            if CommentItemHelpText is None:
                 CommentItemHelpText = ''
                 if Count == len(CommentsList) and CommentItemUsage == CommentItemGuidType == DT.ITEM_UNDEFINED:
                     CommentItemHelpText = DT.END_OF_LINE
@@ -236,7 +230,7 @@ class InfGuidObject():
             #
             # Validate Arch
             #
-            if (ArchItem == '' or ArchItem == None):
+            if (ArchItem == '' or ArchItem is None):
                 ArchItem = 'COMMON'
 
             __SupportArchList.append(ArchItem)
@@ -338,7 +332,7 @@ class InfGuidObject():
                                 #
                                 pass
 
-            if self.Guids.has_key((InfGuidItemObj)):
+            if (InfGuidItemObj) in self.Guids:
                 GuidList = self.Guids[InfGuidItemObj]
                 GuidList.append(InfGuidItemObj)
                 self.Guids[InfGuidItemObj] = GuidList

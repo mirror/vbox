@@ -5,16 +5,10 @@
   After DxeCore finish DXE phase, gEfiBdsArchProtocolGuid->BdsEntry will be invoked
   to enter BDS phase.
 
-Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2019, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -552,10 +546,18 @@ BdsFormalizeOSIndicationVariable (
   //
   Status = EfiBootManagerGetBootManagerMenu (&BootManagerMenu);
   if (Status != EFI_NOT_FOUND) {
-    OsIndicationSupport = EFI_OS_INDICATIONS_BOOT_TO_FW_UI | EFI_OS_INDICATIONS_START_PLATFORM_RECOVERY;
+    OsIndicationSupport = EFI_OS_INDICATIONS_BOOT_TO_FW_UI;
     EfiBootManagerFreeLoadOption (&BootManagerMenu);
   } else {
-    OsIndicationSupport = EFI_OS_INDICATIONS_START_PLATFORM_RECOVERY;
+    OsIndicationSupport = 0;
+  }
+
+  if (PcdGetBool (PcdPlatformRecoverySupport)) {
+    OsIndicationSupport |= EFI_OS_INDICATIONS_START_PLATFORM_RECOVERY;
+  }
+
+  if (PcdGetBool(PcdCapsuleOnDiskSupport)) {
+    OsIndicationSupport |= EFI_OS_INDICATIONS_FILE_CAPSULE_DELIVERY_SUPPORTED;
   }
 
   Status = gRT->SetVariable (
@@ -635,55 +637,6 @@ BdsFormalizeEfiGlobalVariable (
 }
 
 /**
-  Enter an infinite loop of calling the Boot Manager Menu.
-
-  This is a last resort alternative to BdsEntry() giving up for good. This
-  function never returns.
-
-  @param[in] BootManagerMenu  The EFI_BOOT_MANAGER_LOAD_OPTION located and/or
-                              created by the EfiBootManagerGetBootManagerMenu()
-                              call in BdsEntry().
-**/
-VOID
-BdsBootManagerMenuLoop (
-  IN EFI_BOOT_MANAGER_LOAD_OPTION *BootManagerMenu
-  )
-{
-  EFI_INPUT_KEY Key;
-
-  //
-  // Normally BdsDxe does not print anything to the system console, but this is
-  // a last resort -- the end-user will likely not see any DEBUG messages
-  // logged in this situation.
-  //
-  // AsciiPrint() will NULL-check gST->ConOut internally. We check gST->ConIn
-  // here to see if it makes sense to request and wait for a keypress.
-  //
-  if (gST->ConIn != NULL) {
-    AsciiPrint (
-      "%a: No bootable option or device was found.\n"
-      "%a: Press any key to enter the Boot Manager Menu.\n",
-      gEfiCallerBaseName,
-      gEfiCallerBaseName
-      );
-    BdsWaitForSingleEvent (gST->ConIn->WaitForKey, 0);
-
-    //
-    // Drain any queued keys.
-    //
-    while (!EFI_ERROR (gST->ConIn->ReadKeyStroke (gST->ConIn, &Key))) {
-      //
-      // just throw away Key
-      //
-    }
-  }
-
-  for (;;) {
-    EfiBootManagerBoot (BootManagerMenu);
-  }
-}
-
-/**
 
   Service routine for BdsInstance->Entry(). Devices are connected, the
   consoles are initialized, and the boot options are tried.
@@ -717,6 +670,7 @@ BdsEntry (
   BOOLEAN                         BootSuccess;
   EFI_DEVICE_PATH_PROTOCOL        *FilePath;
   EFI_STATUS                      BootManagerMenuStatus;
+  EFI_BOOT_MANAGER_LOAD_OPTION    PlatformDefaultBootOption;
 
   HotkeyTriggered = NULL;
   Status          = EFI_SUCCESS;
@@ -725,8 +679,8 @@ BdsEntry (
   //
   // Insert the performance probe
   //
-  PERF_END (NULL, "DXE", NULL, 0);
-  PERF_START (NULL, "BDS", NULL, 0);
+  PERF_CROSSMODULE_END("DXE");
+  PERF_CROSSMODULE_BEGIN("BDS");
   DEBUG ((EFI_D_INFO, "[Bds] Entry...\n"));
 
   //
@@ -818,14 +772,13 @@ BdsEntry (
   //
   InitializeLanguage (TRUE);
 
-  //
-  // System firmware must include a PlatformRecovery#### variable specifying
-  // a short-form File Path Media Device Path containing the platform default
-  // file path for removable media
-  //
   FilePath = FileDevicePath (NULL, EFI_REMOVABLE_MEDIA_FILE_NAME);
+  if (FilePath == NULL) {
+    DEBUG ((DEBUG_ERROR, "Fail to allocate memory for defualt boot file path. Unable to boot.\n"));
+    CpuDeadLoop ();
+  }
   Status = EfiBootManagerInitializeLoadOption (
-             &LoadOption,
+             &PlatformDefaultBootOption,
              LoadOptionNumberUnassigned,
              LoadOptionTypePlatformRecovery,
              LOAD_OPTION_ACTIVE,
@@ -835,24 +788,31 @@ BdsEntry (
              0
              );
   ASSERT_EFI_ERROR (Status);
-  LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypePlatformRecovery);
-  if (EfiBootManagerFindLoadOption (&LoadOption, LoadOptions, LoadOptionCount) == -1) {
-    for (Index = 0; Index < LoadOptionCount; Index++) {
-      //
-      // The PlatformRecovery#### options are sorted by OptionNumber.
-      // Find the the smallest unused number as the new OptionNumber.
-      //
-      if (LoadOptions[Index].OptionNumber != Index) {
-        break;
+
+  //
+  // System firmware must include a PlatformRecovery#### variable specifying
+  // a short-form File Path Media Device Path containing the platform default
+  // file path for removable media if the platform supports Platform Recovery.
+  //
+  if (PcdGetBool (PcdPlatformRecoverySupport)) {
+    LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypePlatformRecovery);
+    if (EfiBootManagerFindLoadOption (&PlatformDefaultBootOption, LoadOptions, LoadOptionCount) == -1) {
+      for (Index = 0; Index < LoadOptionCount; Index++) {
+        //
+        // The PlatformRecovery#### options are sorted by OptionNumber.
+        // Find the the smallest unused number as the new OptionNumber.
+        //
+        if (LoadOptions[Index].OptionNumber != Index) {
+          break;
+        }
       }
+      PlatformDefaultBootOption.OptionNumber = Index;
+      Status = EfiBootManagerLoadOptionToVariable (&PlatformDefaultBootOption);
+      ASSERT_EFI_ERROR (Status);
     }
-    LoadOption.OptionNumber = Index;
-    Status = EfiBootManagerLoadOptionToVariable (&LoadOption);
-    ASSERT_EFI_ERROR (Status);
+    EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
   }
-  EfiBootManagerFreeLoadOption (&LoadOption);
   FreePool (FilePath);
-  EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
 
   //
   // Report Status Code to indicate connecting drivers will happen
@@ -888,9 +848,9 @@ BdsEntry (
   // > Signal ReadyToLock event
   // > Authentication action: 1. connect Auth devices; 2. Identify auto logon user.
   //
-  PERF_START (NULL, "PlatformBootManagerBeforeConsole", "BDS", 0);
+  PERF_INMODULE_BEGIN("PlatformBootManagerBeforeConsole");
   PlatformBootManagerBeforeConsole ();
-  PERF_END   (NULL, "PlatformBootManagerBeforeConsole", "BDS", 0);
+  PERF_INMODULE_END("PlatformBootManagerBeforeConsole");
 
   //
   // Initialize hotkey service
@@ -907,7 +867,7 @@ BdsEntry (
   //
   // Connect consoles
   //
-  PERF_START (NULL, "EfiBootManagerConnectAllDefaultConsoles", "BDS", 0);
+  PERF_INMODULE_BEGIN("EfiBootManagerConnectAllDefaultConsoles");
   if (PcdGetBool (PcdConInConnectOnDemand)) {
     EfiBootManagerConnectConsoleVariable (ConOut);
     EfiBootManagerConnectConsoleVariable (ErrOut);
@@ -917,7 +877,7 @@ BdsEntry (
   } else {
     EfiBootManagerConnectAllDefaultConsoles ();
   }
-  PERF_END   (NULL, "EfiBootManagerConnectAllDefaultConsoles", "BDS", 0);
+  PERF_INMODULE_END("EfiBootManagerConnectAllDefaultConsoles");
 
   //
   // Do the platform specific action after the console is ready
@@ -930,9 +890,9 @@ BdsEntry (
   // > Dispatch aditional option roms
   // > Special boot: e.g.: USB boot, enter UI
   //
-  PERF_START (NULL, "PlatformBootManagerAfterConsole", "BDS", 0);
+  PERF_INMODULE_BEGIN("PlatformBootManagerAfterConsole");
   PlatformBootManagerAfterConsole ();
-  PERF_END   (NULL, "PlatformBootManagerAfterConsole", "BDS", 0);
+  PERF_INMODULE_END("PlatformBootManagerAfterConsole");
 
   //
   // If any component set PcdTestKeyUsed to TRUE because use of a test key
@@ -1037,10 +997,9 @@ BdsEntry (
     //
     // Execute Key####
     //
-    PERF_START (NULL, "BdsWait", "BDS", 0);
+    PERF_INMODULE_BEGIN ("BdsWait");
     BdsWait (HotkeyTriggered);
-    PERF_END   (NULL, "BdsWait", "BDS", 0);
-
+    PERF_INMODULE_END ("BdsWait");
     //
     // BdsReadKeys() can be removed after all keyboard drivers invoke callback in timer callback.
     //
@@ -1094,20 +1053,26 @@ BdsEntry (
     } while (BootSuccess);
   }
 
-  if (!BootSuccess) {
-    LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypePlatformRecovery);
-    ProcessLoadOptions (LoadOptions, LoadOptionCount);
-    EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+  if (BootManagerMenuStatus != EFI_NOT_FOUND) {
+    EfiBootManagerFreeLoadOption (&BootManagerMenu);
   }
 
-  //
-  // If BootManagerMenu is available, fall back to it indefinitely.
-  //
-  if (BootManagerMenuStatus != EFI_NOT_FOUND) {
-    BdsBootManagerMenuLoop (&BootManagerMenu);
+  if (!BootSuccess) {
+    if (PlatformRecovery) {
+      LoadOptions = EfiBootManagerGetLoadOptions (&LoadOptionCount, LoadOptionTypePlatformRecovery);
+      ProcessLoadOptions (LoadOptions, LoadOptionCount);
+      EfiBootManagerFreeLoadOptions (LoadOptions, LoadOptionCount);
+    } else {
+      //
+      // When platform recovery is not enabled, still boot to platform default file path.
+      //
+      EfiBootManagerProcessLoadOption (&PlatformDefaultBootOption);
+    }
   }
+  EfiBootManagerFreeLoadOption (&PlatformDefaultBootOption);
 
   DEBUG ((EFI_D_ERROR, "[Bds] Unable to boot!\n"));
+  PlatformBootManagerUnableToBoot ();
   CpuDeadLoop ();
 }
 

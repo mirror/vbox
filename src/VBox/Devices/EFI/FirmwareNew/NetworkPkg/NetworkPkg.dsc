@@ -4,13 +4,7 @@
 # (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
 # Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-#    This program and the accompanying materials
-#    are licensed and made available under the terms and conditions of the BSD License
-#    which accompanies this distribution. The full text of the license may be found at
-#    http://opensource.org/licenses/bsd-license.php
-#
-#    THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#    WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#    SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -20,7 +14,7 @@
   PLATFORM_VERSION               = 0.98
   DSC_SPECIFICATION              = 0x00010005
   OUTPUT_DIRECTORY               = Build/NetworkPkg
-  SUPPORTED_ARCHITECTURES        = IA32|IPF|X64|EBC|ARM|AARCH64
+  SUPPORTED_ARCHITECTURES        = IA32|X64|EBC|ARM|AARCH64
   BUILD_TARGETS                  = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER               = DEFAULT
 
@@ -47,12 +41,6 @@
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
 
-  DpcLib|MdeModulePkg/Library/DxeDpcLib/DxeDpcLib.inf
-  NetLib|MdeModulePkg/Library/DxeNetLib/DxeNetLib.inf
-  IpIoLib|MdeModulePkg/Library/DxeIpIoLib/DxeIpIoLib.inf
-  UdpIoLib|MdeModulePkg/Library/DxeUdpIoLib/DxeUdpIoLib.inf
-  TcpIoLib|MdeModulePkg/Library/DxeTcpIoLib/DxeTcpIoLib.inf
-  HttpLib|MdeModulePkg/Library/DxeHttpLib/DxeHttpLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
   OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
   IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
@@ -78,6 +66,8 @@
   # [LibraryClasses.ARM] and NULL mean link this library into all ARM images.
   #
   NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+  NULL|MdePkg/Library/BaseStackCheckLib/BaseStackCheckLib.inf
+  ArmSoftFloatLib|ArmPkg/Library/ArmSoftFloatLib/ArmSoftFloatLib.inf
 
 [PcdsFeatureFlag]
   gEfiMdePkgTokenSpaceGuid.PcdComponentName2Disable|TRUE
@@ -107,25 +97,10 @@
 ###################################################################################################
 
 [Components]
-  NetworkPkg/Ip6Dxe/Ip6Dxe.inf
-  NetworkPkg/TcpDxe/TcpDxe.inf
-  NetworkPkg/Udp6Dxe/Udp6Dxe.inf
-  NetworkPkg/Dhcp6Dxe/Dhcp6Dxe.inf
-  NetworkPkg/Mtftp6Dxe/Mtftp6Dxe.inf
-  NetworkPkg/DnsDxe/DnsDxe.inf
-  NetworkPkg/HttpDxe/HttpDxe.inf
-  NetworkPkg/HttpUtilitiesDxe/HttpUtilitiesDxe.inf
-  NetworkPkg/HttpBootDxe/HttpBootDxe.inf
-
-  NetworkPkg/Application/IpsecConfig/IpSecConfig.inf
+  NetworkPkg/WifiConnectionManagerDxe/WifiConnectionManagerDxe.inf
   NetworkPkg/Application/VConfig/VConfig.inf
 
-[Components.IA32, Components.X64, Components.IPF]
-  NetworkPkg/IpSecDxe/IpSecDxe.inf
-  NetworkPkg/IScsiDxe/IScsiDxe.inf
-  NetworkPkg/UefiPxeBcDxe/UefiPxeBcDxe.inf
-  NetworkPkg/TlsDxe/TlsDxe.inf
-  NetworkPkg/TlsAuthConfigDxe/TlsAuthConfigDxe.inf
+  !include NetworkPkg/Network.dsc.inc
 
 [BuildOptions]
   *_*_*_CC_FLAGS = -D DISABLE_NEW_DEPRECATED_INTERFACES

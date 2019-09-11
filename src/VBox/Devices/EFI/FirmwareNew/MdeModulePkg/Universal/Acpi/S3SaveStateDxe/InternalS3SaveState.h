@@ -1,16 +1,9 @@
 /** @file
   Internal header file for S3 Boot Script Saver state driver.
 
-  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions
-  of the BSD License which accompanies this distribution.  The
-  full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 #ifndef _INTERNAL_S3_SAVE_STATE_H_
@@ -75,7 +68,7 @@ EFI_STATUS
 EFIAPI
 BootScriptWrite (
   IN CONST EFI_S3_SAVE_STATE_PROTOCOL      *This,
-  IN       UINT16                           OpCode,
+  IN       UINTN                            OpCode,
   ...
   );
 /**
@@ -112,7 +105,7 @@ BootScriptInsert (
   IN CONST EFI_S3_SAVE_STATE_PROTOCOL    *This,
   IN       BOOLEAN                          BeforeOrAfter,
   IN OUT   EFI_S3_BOOT_SCRIPT_POSITION     *Position OPTIONAL,
-  IN       UINT16                           OpCode,
+  IN       UINTN                            OpCode,
   ...
   );
 /**

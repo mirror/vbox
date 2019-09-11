@@ -2,14 +2,8 @@
   The internal header file includes the common header files, defines
   internal structure and functions used by DxeCore module.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -42,7 +36,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/LoadPe32Image.h>
 #include <Protocol/Security.h>
 #include <Protocol/Security2.h>
-#include <Protocol/Ebc.h>
 #include <Protocol/Reset.h>
 #include <Protocol/Cpu.h>
 #include <Protocol/Metronome.h>
@@ -53,6 +46,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/TcgService.h>
 #include <Protocol/HiiPackageList.h>
 #include <Protocol/SmmBase2.h>
+#include <Protocol/PeCoffImageEmulator.h>
 #include <Guid/MemoryTypeInformation.h>
 #include <Guid/FirmwareFileSystem2.h>
 #include <Guid/FirmwareFileSystem3.h>
@@ -89,7 +83,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DevicePathLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/ReportStatusCodeLib.h>
-#include <Library/TimerLib.h>
 #include <Library/DxeServicesLib.h>
 #include <Library/DebugAgentLib.h>
 #include <Library/CpuExceptionHandlerLib.h>
@@ -227,8 +220,8 @@ typedef struct {
   BASE_LIBRARY_JUMP_BUFFER    *JumpContext;
   /// Machine type from PE image
   UINT16                      Machine;
-  /// EBC Protocol pointer
-  EFI_EBC_PROTOCOL            *Ebc;
+  /// PE/COFF Image Emulator Protocol pointer
+  EDKII_PECOFF_IMAGE_EMULATOR_PROTOCOL  *PeCoffEmu;
   /// Runtime image list
   EFI_RUNTIME_IMAGE_ENTRY     *RuntimeData;
   /// Pointer to Loaded Image Device Path Protocol
@@ -2177,19 +2170,6 @@ CoreDisplayDiscoveredNotDispatched (
   VOID
   );
 
-
-/**
-  Place holder function until all the Boot Services and Runtime Services are
-  available.
-
-  @return EFI_NOT_AVAILABLE_YET
-
-**/
-EFI_STATUS
-EFIAPI
-CoreEfiNotAvailableYetArg0 (
-  VOID
-  );
 
 
 /**

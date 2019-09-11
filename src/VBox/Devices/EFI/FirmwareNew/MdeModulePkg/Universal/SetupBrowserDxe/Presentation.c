@@ -1,15 +1,9 @@
 /** @file
 Utility functions for UI presentation.
 
-Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -25,6 +19,38 @@ LIST_ENTRY         mRefreshEventList = INITIALIZE_LIST_HEAD_VARIABLE (mRefreshEv
 UINT16             mCurFakeQestId;
 FORM_DISPLAY_ENGINE_FORM gDisplayFormData;
 BOOLEAN            mFinishRetrieveCall = FALSE;
+
+/**
+  Check whether the ConfigAccess protocol is available.
+
+  @param FormSet           FormSet of which the ConfigAcces protocol need to be checked.
+
+  @retval EFI_SUCCESS     The function executed successfully.
+
+**/
+EFI_STATUS
+CheckConfigAccess(
+  IN FORM_BROWSER_FORMSET  *FormSet
+  )
+{
+  EFI_STATUS                      Status;
+
+  Status = gBS->HandleProtocol (
+                  FormSet->DriverHandle,
+                  &gEfiHiiConfigAccessProtocolGuid,
+                  (VOID **) &FormSet->ConfigAccess
+                  );
+  if (EFI_ERROR (Status)) {
+    //
+    // Configuration Driver don't attach ConfigAccess protocol to its HII package
+    // list, then there will be no configuration action required.
+    // Or the ConfigAccess protocol has been uninstalled.
+    //
+    FormSet->ConfigAccess = NULL;
+  }
+
+  return EFI_SUCCESS;
+}
 
 /**
   Evaluate all expressions in a Form.
@@ -1692,6 +1718,8 @@ DisplayForm (
     return Status;
   }
 
+  CheckConfigAccess(gCurrentSelection->FormSet);
+
   Status = ProcessUserInput (&UserInput);
   FreeDisplayFormData();
   return Status;
@@ -2004,7 +2032,7 @@ ProcessCallBackFunction (
     //
     if (Action == EFI_BROWSER_ACTION_CHANGING) {
       if (HiiValue->Type == EFI_IFR_TYPE_BUFFER) {
-        BackUpBuffer = AllocateCopyPool(Statement->StorageWidth + sizeof(CHAR16), Statement->BufferValue);
+        BackUpBuffer = AllocateCopyPool(Statement->StorageWidth, Statement->BufferValue);
         ASSERT (BackUpBuffer != NULL);
       } else {
         CopyMem (&BackUpValue, &HiiValue->Value, sizeof (EFI_IFR_TYPE_VALUE));
@@ -2130,7 +2158,7 @@ ProcessCallBackFunction (
       //
       if (Action  == EFI_BROWSER_ACTION_CHANGING && Status == EFI_UNSUPPORTED) {
         if (HiiValue->Type == EFI_IFR_TYPE_BUFFER) {
-          CopyMem (Statement->BufferValue, BackUpBuffer, Statement->StorageWidth + sizeof(CHAR16));
+          CopyMem (Statement->BufferValue, BackUpBuffer, Statement->StorageWidth);
         } else {
           CopyMem (&HiiValue->Value, &BackUpValue, sizeof (EFI_IFR_TYPE_VALUE));
         }

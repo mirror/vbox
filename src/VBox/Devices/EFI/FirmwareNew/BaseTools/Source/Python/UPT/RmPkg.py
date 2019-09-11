@@ -1,15 +1,9 @@
 ## @file
 # Install distribution package.
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -23,7 +17,7 @@ import os.path
 from stat import S_IWUSR
 from traceback import format_exc
 from platform import python_version
-import md5
+from hashlib import md5
 from sys import stdin
 from sys import platform
 
@@ -157,7 +151,7 @@ def Main(Options = None):
 
         ReturnCode = 0
 
-    except FatalError, XExcept:
+    except FatalError as XExcept:
         ReturnCode = XExcept.args[0]
         if Logger.GetLevel() <= Logger.DEBUG_9:
             Logger.Quiet(ST.MSG_PYTHON_ON % (python_version(), platform) + \
@@ -172,7 +166,7 @@ def Main(Options = None):
                     "\nRmPkg",
                     CODE_ERROR,
                     ST.ERR_UNKNOWN_FATAL_REMOVING_ERR,
-                    ExtraData=ST.MSG_SEARCH_FOR_HELP,
+                    ExtraData=ST.MSG_SEARCH_FOR_HELP % ST.MSG_EDKII_MAIL_ADDR,
                     RaiseError=False
                     )
         Logger.Quiet(ST.MSG_PYTHON_ON % (python_version(), platform) + \
@@ -242,8 +236,8 @@ def RemoveDist(Guid, Version, StoredDistFile, DataBase, WorkspaceDir, ForceRemov
                 #
                 # check whether modified by users
                 #
-                Md5Sigature = md5.new(open(str(Path), 'rb').read())
-                if Md5Sum != Md5Sigature.hexdigest():
+                Md5Signature = md5(open(str(Path), 'rb').read())
+                if Md5Sum != Md5Signature.hexdigest():
                     Logger.Info(ST.MSG_CONFIRM_REMOVE2 % Path)
                     Input = stdin.readline()
                     Input = Input.replace('\r', '').replace('\n', '')

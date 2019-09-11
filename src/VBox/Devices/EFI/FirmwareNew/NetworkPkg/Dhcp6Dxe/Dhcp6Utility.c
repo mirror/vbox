@@ -2,15 +2,9 @@
   Dhcp6 support functions implementation.
 
   (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -123,7 +117,7 @@ Dhcp6GenerateClientId (
     gRT->GetTime (&Time, NULL);
     Stamp = (UINT32)
       (
-        (((((Time.Year - 2000) * 360 + (Time.Month - 1)) * 30 + (Time.Day - 1)) * 24 + Time.Hour) * 60 + Time.Minute) *
+        ((((UINT32)(Time.Year - 2000) * 360 + (Time.Month - 1) * 30 + (Time.Day - 1)) * 24 + Time.Hour) * 60 + Time.Minute) *
         60 +
         Time.Second
       );
@@ -881,14 +875,14 @@ SetElapsedTime (
   // Generate a time stamp of the centiseconds from 2000/1/1, assume 30day/month.
   //
   gRT->GetTime (&Time, NULL);
-  CurrentStamp = (UINT64)
-    (
-      ((((((Time.Year - 2000) * 360 +
-       (Time.Month - 1)) * 30 +
-       (Time.Day - 1)) * 24 + Time.Hour) * 60 +
-       Time.Minute) * 60 + Time.Second) * 100
-       + DivU64x32(Time.Nanosecond, 10000000)
-    );
+  CurrentStamp = MultU64x32 (
+                   ((((UINT32)(Time.Year - 2000) * 360 + (Time.Month - 1) * 30 + (Time.Day - 1)) * 24 + Time.Hour) * 60 + Time.Minute) * 60 + Time.Second,
+                   100
+                   ) +
+                 DivU64x32(
+                   Time.Nanosecond,
+                   10000000
+                   );
 
   //
   // Sentinel value of 0 means that this is the first DHCP packet that we are

@@ -4,17 +4,10 @@
   This module will execute the boot script saved during last boot and after that,
   control is passed to OS waking up handler.
 
-  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions
-  of the BSD License which accompanies this distribution.  The
-  full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -25,7 +18,6 @@
 #include <Guid/ExtendedFirmwarePerformance.h>
 #include <Guid/EndOfS3Resume.h>
 #include <Guid/S3SmmInitDone.h>
-#include <Ppi/ReadOnlyVariable2.h>
 #include <Ppi/S3Resume2.h>
 #include <Ppi/SmmAccess.h>
 #include <Ppi/PostBootScriptTable.h>
@@ -34,7 +26,6 @@
 
 #include <Library/DebugLib.h>
 #include <Library/BaseLib.h>
-#include <Library/TimerLib.h>
 #include <Library/PeimEntryPoint.h>
 #include <Library/PeiServicesLib.h>
 #include <Library/HobLib.h>
@@ -47,7 +38,7 @@
 #include <Library/DebugAgentLib.h>
 #include <Library/LocalApicLib.h>
 #include <Library/ReportStatusCodeLib.h>
-#include <Library/PrintLib.h>
+
 #include <Library/HobLib.h>
 #include <Library/LockBoxLib.h>
 #include <IndustryStandard/Acpi.h>
@@ -318,7 +309,7 @@ IsLongModeWakingVector (
   if (Facs->XFirmwareWakingVector != 0) {
     if ((Facs->Version == EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION) &&
         ((Facs->Flags & EFI_ACPI_4_0_64BIT_WAKE_SUPPORTED_F) != 0) &&
-        ((Facs->Flags & EFI_ACPI_4_0_OSPM_64BIT_WAKE__F) != 0)) {
+        ((Facs->OspmFlags & EFI_ACPI_4_0_OSPM_64BIT_WAKE__F) != 0)) {
       // Both BIOS and OS wants 64bit vector
       if (FeaturePcdGet (PcdDxeIplSwitchToLongMode)) {
         return TRUE;
@@ -430,17 +421,17 @@ S3ResumeBootOs (
   // by soft debugger.
   //
 
-  PERF_END (NULL, "ScriptExec", NULL, 0);
+  PERF_INMODULE_END ("ScriptExec");
 
   //
   // Install BootScriptDonePpi
   //
-  PERF_START_EX (NULL, "BootScriptDonePpi", NULL, 0, PERF_INMODULE_START_ID);
+  PERF_INMODULE_BEGIN ("BootScriptDonePpi");
 
   Status = PeiServicesInstallPpi (&mPpiListPostScriptTable);
   ASSERT_EFI_ERROR (Status);
 
-  PERF_END_EX (NULL, "BootScriptDonePpi", NULL, 0, PERF_INMODULE_END_ID);
+  PERF_INMODULE_END ("BootScriptDonePpi");
 
   //
   // Get ACPI Table Address
@@ -464,14 +455,14 @@ S3ResumeBootOs (
   //
   // Install EndOfPeiPpi
   //
-  PERF_START_EX (NULL, "EndOfPeiPpi", NULL, 0, PERF_INMODULE_START_ID);
+  PERF_INMODULE_BEGIN("EndOfPeiPpi");
 
   Status = PeiServicesInstallPpi (&mPpiListEndOfPeiTable);
   ASSERT_EFI_ERROR (Status);
 
-  PERF_END_EX (NULL, "EndOfPeiPpi", NULL, 0, PERF_INMODULE_END_ID);
+  PERF_INMODULE_END("EndOfPeiPpi");
 
-  PERF_START_EX (NULL, "EndOfS3Resume", NULL, 0, PERF_INMODULE_START_ID);
+  PERF_INMODULE_BEGIN("EndOfS3Resume");
 
   DEBUG ((DEBUG_INFO, "Signal EndOfS3Resume\n"));
   //
@@ -479,7 +470,7 @@ S3ResumeBootOs (
   //
   SignalToSmmByCommunication (&gEdkiiEndOfS3ResumeGuid);
 
-  PERF_END_EX (NULL, "EndOfS3Resume", NULL, 0, PERF_INMODULE_END_ID);
+  PERF_INMODULE_END ("EndOfS3Resume");
 
   //
   // report status code on S3 resume
@@ -501,7 +492,7 @@ S3ResumeBootOs (
       ));
     if ((Facs->Version == EFI_ACPI_4_0_FIRMWARE_ACPI_CONTROL_STRUCTURE_VERSION) &&
         ((Facs->Flags & EFI_ACPI_4_0_64BIT_WAKE_SUPPORTED_F) != 0) &&
-        ((Facs->Flags & EFI_ACPI_4_0_OSPM_64BIT_WAKE__F) != 0)) {
+        ((Facs->OspmFlags & EFI_ACPI_4_0_OSPM_64BIT_WAKE__F) != 0)) {
       //
       // X64 long mode waking vector
       //
@@ -725,9 +716,9 @@ RestoreS3PageTables (
     }
     return ;
   } else {
-  	//
-  	// If DXE is running 32-bit mode, no need to establish page table.
-  	//
+    //
+    // If DXE is running 32-bit mode, no need to establish page table.
+    //
     return ;
   }
 }
@@ -752,8 +743,6 @@ S3ResumeExecuteBootScript (
   PEI_SMM_ACCESS_PPI         *SmmAccess;
   UINTN                      Index;
   VOID                       *GuidHob;
-  IA32_DESCRIPTOR            *IdtDescriptor;
-  VOID                       *IdtBuffer;
   PEI_S3_RESUME_STATE        *PeiS3ResumeState;
   BOOLEAN                    InterruptStatus;
 
@@ -813,34 +802,6 @@ S3ResumeExecuteBootScript (
     AsmWriteCr3 ((UINTN)AcpiS3Context->S3NvsPageTableAddress);
   }
 
-  if (FeaturePcdGet (PcdFrameworkCompatibilitySupport)) {
-    //
-    // On some platform, such as ECP, a dispatch node in boot script table may execute a 32-bit PEIM which may need PeiServices
-    // pointer. So PeiServices need preserve in (IDTBase- sizeof (UINTN)).
-    //
-    IdtDescriptor = (IA32_DESCRIPTOR *) (UINTN) (AcpiS3Context->IdtrProfile);
-    //
-    // Make sure the newly allocated IDT align with 16-bytes
-    //
-    IdtBuffer = AllocatePages (EFI_SIZE_TO_PAGES((IdtDescriptor->Limit + 1) + 16));
-    if (IdtBuffer == NULL) {
-      REPORT_STATUS_CODE (
-        EFI_ERROR_CODE | EFI_ERROR_MAJOR,
-        (EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_EC_S3_RESUME_FAILED)
-        );
-      ASSERT (FALSE);
-    }
-    //
-    // Additional 16 bytes allocated to save IA32 IDT descriptor and Pei Service Table Pointer
-    // IA32 IDT descriptor will be used to setup IA32 IDT table for 32-bit Framework Boot Script code
-    //
-    ZeroMem (IdtBuffer, 16);
-    AsmReadIdtr ((IA32_DESCRIPTOR *)IdtBuffer);
-    CopyMem ((VOID*)((UINT8*)IdtBuffer + 16),(VOID*)(IdtDescriptor->Base), (IdtDescriptor->Limit + 1));
-    IdtDescriptor->Base = (UINTN)((UINT8*)IdtBuffer + 16);
-    *(UINTN*)(IdtDescriptor->Base - sizeof(UINTN)) = (UINTN)GetPeiServicesTablePointer ();
-  }
-
   InterruptStatus = SaveAndDisableInterrupts ();
   //
   // Need to make sure the GDT is loaded with values that support long mode and real mode.
@@ -880,7 +841,7 @@ S3ResumeExecuteBootScript (
   //
   REPORT_STATUS_CODE (EFI_PROGRESS_CODE, EFI_SOFTWARE_PEI_MODULE | EFI_SW_PEI_PC_S3_BOOT_SCRIPT);
 
-  PERF_START (NULL, "ScriptExec", NULL, 0);
+  PERF_INMODULE_BEGIN ("ScriptExec");
 
   if (FeaturePcdGet (PcdDxeIplSwitchToLongMode)) {
     //
@@ -966,6 +927,7 @@ S3RestoreConfig2 (
   VOID                                          *GuidHob;
   BOOLEAN                                       Build4GPageTableOnly;
   BOOLEAN                                       InterruptStatus;
+  IA32_CR0                                      Cr0;
 
   TempAcpiS3Context = 0;
   TempEfiBootScriptExecutorVariable = 0;
@@ -1047,6 +1009,13 @@ S3RestoreConfig2 (
   //
   GuidHob = GetFirstGuidHob (&gEfiAcpiVariableGuid);
   if (GuidHob != NULL) {
+    //
+    // Below SwitchStack/AsmEnablePaging64 function has
+    // assumption that it's in 32 bits mode now.
+    // Add ASSERT code to indicate this assumption.
+    //
+    ASSERT(sizeof (UINTN) == sizeof (UINT32));
+
     Status = PeiServicesLocatePpi (
                               &gPeiSmmAccessPpiGuid,
                               0,
@@ -1107,6 +1076,15 @@ S3RestoreConfig2 (
       //
       SetInterruptState (InterruptStatus);
 
+      Cr0.UintN = AsmReadCr0 ();
+      if (Cr0.Bits.PG != 0) {
+        //
+        // We're in 32-bit mode, with paging enabled. We can't set CR3 to
+        // the 64-bit page tables without first disabling paging.
+        //
+        Cr0.Bits.PG = 0;
+        AsmWriteCr0 (Cr0.UintN);
+      }
       AsmWriteCr3 ((UINTN)SmmS3ResumeState->SmmS3Cr3);
 
       //

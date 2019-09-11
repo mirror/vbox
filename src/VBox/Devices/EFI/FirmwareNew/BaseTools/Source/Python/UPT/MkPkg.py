@@ -1,15 +1,9 @@
 ## @file
 # Install distribution package.
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -27,7 +21,7 @@ from sys import stdin
 from sys import platform
 from traceback import format_exc
 from platform import python_version
-import md5
+from hashlib import md5
 from time import strftime
 from time import localtime
 from uuid import uuid4
@@ -73,7 +67,7 @@ def CheckForExistingDp(Path):
 #
 #
 def Main(Options = None):
-    if Options == None:
+    if Options is None:
         Logger.Error("\nMkPkg", OPTION_UNKNOWN_ERROR, ST.ERR_OPTION_NOT_FOUND)
     try:
         DataBase = GlobalData.gDB
@@ -194,9 +188,9 @@ def Main(Options = None):
         ContentFileClosed = True
 
         #
-        # Add Md5Sigature
+        # Add Md5Signature
         #
-        DistPkg.Header.Signature = md5.new(open(str(ContentFile), 'rb').read()).hexdigest()
+        DistPkg.Header.Signature = md5(open(str(ContentFile), 'rb').read()).hexdigest()
         #
         # Add current Date
         #
@@ -213,7 +207,7 @@ def Main(Options = None):
         Logger.Quiet(ST.MSG_FINISH)
         ReturnCode = 0
 
-    except FatalError, XExcept:
+    except FatalError as XExcept:
         ReturnCode = XExcept.args[0]
         if Logger.GetLevel() <= Logger.DEBUG_9:
             Logger.Quiet(ST.MSG_PYTHON_ON % \
@@ -231,7 +225,7 @@ def Main(Options = None):
                     CODE_ERROR,
                     ST.ERR_UNKNOWN_FATAL_CREATING_ERR % \
                     Options.PackFileToCreate,
-                    ExtraData=ST.MSG_SEARCH_FOR_HELP,
+                    ExtraData=ST.MSG_SEARCH_FOR_HELP % ST.MSG_EDKII_MAIL_ADDR,
                     RaiseError=False
                     )
         Logger.Quiet(ST.MSG_PYTHON_ON % \

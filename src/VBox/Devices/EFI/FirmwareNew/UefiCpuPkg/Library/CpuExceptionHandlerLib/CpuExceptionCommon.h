@@ -1,14 +1,8 @@
 /** @file
   Common header file for CPU Exception Handler Library.
 
-  Copyright (c) 2012 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2012 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -39,14 +33,10 @@
 #define IA32_PF_EC_RSVD             BIT3
 #define IA32_PF_EC_ID               BIT4
 #define IA32_PF_EC_PK               BIT5
+#define IA32_PF_EC_SS               BIT6
 #define IA32_PF_EC_SGX              BIT15
 
 #include "ArchInterruptDefs.h"
-
-#define CPU_EXCEPTION_HANDLER_LIB_HOB_GUID \
-  { \
-    0xb21d9148, 0x9211, 0x4d8f, { 0xad, 0xd3, 0x66, 0xb1, 0x89, 0xc9, 0x2c, 0x83 } \
-  }
 
 #define CPU_STACK_SWITCH_EXCEPTION_NUMBER \
   FixedPcdGetSize (PcdCpuStackSwitchExceptionList)
@@ -310,7 +300,7 @@ CommonExceptionHandlerWorker (
   @retval EFI_INVALID_PARAMETER   StackSwitchData contains invalid content.
 **/
 EFI_STATUS
-ArchSetupExcpetionStack (
+ArchSetupExceptionStack (
   IN CPU_EXCEPTION_INIT_DATA        *StackSwitchData
   );
 

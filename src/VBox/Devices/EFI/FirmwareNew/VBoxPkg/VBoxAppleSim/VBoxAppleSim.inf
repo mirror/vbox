@@ -43,8 +43,6 @@
 [Packages]
         MdePkg/MdePkg.dec
         MdeModulePkg/MdeModulePkg.dec
-        IntelFrameworkPkg/IntelFrameworkPkg.dec
-        IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
         VBoxPkg/VBoxPkg.dec
 
 [LibraryClasses]
@@ -59,12 +57,8 @@
    PcdLib
    DevicePathLib
 
-[Guids]
-   gEfiProcessorSubClassGuid
-
 [Protocols]
    gEfiDevicePathToTextProtocolGuid
-   gEfiDataHubProtocolGuid
 
 [BuildOptions.common]
 

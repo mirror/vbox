@@ -4,13 +4,7 @@
   Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2011, Andrei Warkentin <andreiw@motorola.com>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -276,7 +270,8 @@ MemMapInitialization (
       ASSERT (PciExBarBase <= MAX_UINT32 - SIZE_256MB);
       PciBase = (UINT32)(PciExBarBase + SIZE_256MB);
     } else {
-      PciBase = (TopOfLowRam < BASE_2GB) ? BASE_2GB : TopOfLowRam;
+      ASSERT (TopOfLowRam <= mQemuUc32Base);
+      PciBase = mQemuUc32Base;
     }
 
     //
@@ -798,6 +793,8 @@ InitializePlatform (
 
   PublishPeiMemory ();
 
+  QemuUc32BaseInitialization ();
+
   InitializeRamRegions ();
 
   if (mXen) {
@@ -814,6 +811,7 @@ InitializePlatform (
     NoexecDxeInitialization ();
   }
 
+  InstallClearCacheCallback ();
   AmdSevInitialize ();
   MiscInitialization ();
   InstallFeatureControlCallback ();

@@ -5,14 +5,8 @@
   (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
   Copyright (C) 2014, Red Hat, Inc.
   (C) Copyright 2013 Hewlett-Packard Development Company, L.P.<BR>
-  Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -165,9 +159,9 @@ DEBUG_CODE_END();
       //
       if (StripQuotation) {
         CopyMem ((CHAR16*)NextDelim, NextDelim + 1, StrSize (NextDelim + 1));
-	  } else{
+    } else{
         NextDelim++;
-	  }
+    }
     }
   }
 
@@ -626,30 +620,6 @@ FixVarName (
   return (FixFileName(Copy));
 }
 
-/**
-  Remove the unicode file tag from the begining of the file buffer since that will not be
-  used by StdIn.
-
-  @param[in]  Handle    Pointer to the handle of the file to be processed.
-
-  @retval EFI_SUCCESS   The unicode file tag has been moved successfully.
-**/
-EFI_STATUS
-RemoveFileTag(
-  IN SHELL_FILE_HANDLE *Handle
-  )
-{
-  UINTN             CharSize;
-  CHAR16            CharBuffer;
-
-  CharSize    = sizeof(CHAR16);
-  CharBuffer  = 0;
-  gEfiShellProtocol->ReadFile(*Handle, &CharSize, &CharBuffer);
-  if (CharBuffer != gUnicodeFileTag) {
-    gEfiShellProtocol->SetFilePosition(*Handle, 0);
-  }
-  return (EFI_SUCCESS);
-}
 
 /**
   Write the unicode file tag to the specified file.

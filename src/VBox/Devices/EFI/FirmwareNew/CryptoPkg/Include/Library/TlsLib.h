@@ -2,13 +2,7 @@
   Defines TLS Library APIs.
 
 Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -348,13 +342,16 @@ TlsSetConnectionEnd (
   This function sets the ciphers for use by a specified TLS object.
 
   @param[in]  Tls          Pointer to a TLS object.
-  @param[in]  CipherId     Pointer to a string that contains one or more
-                           ciphers separated by a colon.
+  @param[in]  CipherId     Array of UINT16 cipher identifiers. Each UINT16
+                           cipher identifier comes from the TLS Cipher Suite
+                           Registry of the IANA, interpreting Byte1 and Byte2
+                           in network (big endian) byte order.
   @param[in]  CipherNum    The number of cipher in the list.
 
   @retval  EFI_SUCCESS           The ciphers list was set successfully.
   @retval  EFI_INVALID_PARAMETER The parameter is invalid.
-  @retval  EFI_UNSUPPORTED       Unsupported TLS cipher in the list.
+  @retval  EFI_UNSUPPORTED       No supported TLS cipher was found in CipherId.
+  @retval  EFI_OUT_OF_RESOURCES  Memory allocation failed.
 
 **/
 EFI_STATUS

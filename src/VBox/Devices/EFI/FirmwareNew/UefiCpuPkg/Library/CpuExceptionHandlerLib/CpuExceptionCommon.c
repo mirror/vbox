@@ -1,14 +1,8 @@
 /** @file
   CPU Exception Handler Library common functions.
 
-  Copyright (c) 2012 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2012 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,7 +14,7 @@
 //
 // 1 means an error code will be pushed, otherwise 0
 //
-CONST UINT32 mErrorCodeFlag = 0x00027d00;
+CONST UINT32 mErrorCodeFlag = 0x00227d00;
 
 //
 // Define the maximum message length
@@ -49,7 +43,8 @@ CONST CHAR8 *mExceptionNameStr[] = {
   "#AC - Alignment Check",
   "#MC - Machine-Check",
   "#XM - SIMD floating-point",
-  "#VE - Virtualization"
+  "#VE - Virtualization",
+  "#CP - Control Protection"
 };
 
 #define EXCEPTION_KNOWN_NAME_NUM  (sizeof (mExceptionNameStr) / sizeof (CHAR8 *))

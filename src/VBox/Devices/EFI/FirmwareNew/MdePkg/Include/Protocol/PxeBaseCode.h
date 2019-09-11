@@ -2,14 +2,8 @@
   EFI PXE Base Code Protocol definitions, which is used to access PXE-compatible
   devices for network access and network booting.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   This Protocol is introduced in EFI Specification 1.10.
@@ -153,8 +147,6 @@ typedef UINT16  EFI_PXE_BASE_CODE_UDP_PORT;
 //
 #if defined (MDE_CPU_IA32)
 #define EFI_PXE_CLIENT_SYSTEM_ARCHITECTURE    0x0006
-#elif defined (MDE_CPU_IPF)
-#define EFI_PXE_CLIENT_SYSTEM_ARCHITECTURE    0x0002
 #elif defined (MDE_CPU_X64)
 #define EFI_PXE_CLIENT_SYSTEM_ARCHITECTURE    0x0007
 #elif defined (MDE_CPU_ARM)

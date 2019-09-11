@@ -4,14 +4,8 @@
   can be found in the Tiano Firmware Volume Generation Utility
   Specification, review draft.
 
-Copyright (c) 2007 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -90,7 +84,7 @@ Returns:
   //
   // Copyright declaration
   //
-  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
@@ -348,20 +342,20 @@ Returns:
       argv += 2;
 
       if (argc > 0) {
-		    if ((stricmp (argv[0], "-s") == 0) || (stricmp (argv[0], "--filetakensize") == 0)) {
-		      if (argv[1] == NULL) {
-		        Error (NULL, 0, 1003, "Invalid option value", "Ffsfile Size can't be null");
-		        return STATUS_ERROR;
-		      }
-		      Status = AsciiStringToUint64 (argv[1], FALSE, &TempNumber);
-		      if (EFI_ERROR (Status)) {
-		        Error (NULL, 0, 1003, "Invalid option value", "%s = %s", argv[0], argv[1]);
-		        return STATUS_ERROR;
-		      }
-		      mFvDataInfo.SizeofFvFiles[Index] = (UINT32) TempNumber;
-	      	DebugMsg (NULL, 0, 9, "FV component file size", "the %uth size is %s", (unsigned) Index + 1, argv[1]);
-	      	argc -= 2;
-	      	argv += 2;
+        if ((stricmp (argv[0], "-s") == 0) || (stricmp (argv[0], "--filetakensize") == 0)) {
+          if (argv[1] == NULL) {
+            Error (NULL, 0, 1003, "Invalid option value", "Ffsfile Size can't be null");
+            return STATUS_ERROR;
+          }
+          Status = AsciiStringToUint64 (argv[1], FALSE, &TempNumber);
+          if (EFI_ERROR (Status)) {
+            Error (NULL, 0, 1003, "Invalid option value", "%s = %s", argv[0], argv[1]);
+            return STATUS_ERROR;
+          }
+          mFvDataInfo.SizeofFvFiles[Index] = (UINT32) TempNumber;
+          DebugMsg (NULL, 0, 9, "FV component file size", "the %uth size is %s", (unsigned) Index + 1, argv[1]);
+          argc -= 2;
+          argv += 2;
         }
       }
       Index ++;

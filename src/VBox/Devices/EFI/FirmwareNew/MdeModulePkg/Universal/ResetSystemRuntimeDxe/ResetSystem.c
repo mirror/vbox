@@ -1,15 +1,9 @@
 /** @file
   Reset Architectural and Reset Notification protocols implementation.
 
-  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -187,7 +181,7 @@ InitializeResetSystem (
   //
   // Hook the runtime service table
   //
-  gRT->ResetSystem = ResetSystem;
+  gRT->ResetSystem = RuntimeServiceResetSystem;
 
   //
   // Now install the Reset RT AP on a new handle
@@ -207,22 +201,6 @@ InitializeResetSystem (
 }
 
 /**
-  Put the system into S3 power state.
-**/
-VOID
-DoS3 (
-  VOID
-  )
-{
-  EnterS3WithImmediateWake ();
-
-  //
-  // Should not return
-  //
-  CpuDeadLoop ();
-}
-
-/**
   Resets the entire platform.
 
   @param[in] ResetType          The type of reset to perform.
@@ -232,31 +210,25 @@ DoS3 (
                                 EfiResetShutdown the data buffer starts with a Null-terminated
                                 string, optionally followed by additional binary data.
                                 The string is a description that the caller may use to further
-                                indicate the reason for the system reset. ResetData is only
-                                valid if ResetStatus is something other than EFI_SUCCESS
-                                unless the ResetType is EfiResetPlatformSpecific
-                                where a minimum amount of ResetData is always required.
+                                indicate the reason for the system reset.
                                 For a ResetType of EfiResetPlatformSpecific the data buffer
                                 also starts with a Null-terminated string that is followed
                                 by an EFI_GUID that describes the specific type of reset to perform.
 **/
 VOID
 EFIAPI
-ResetSystem (
+RuntimeServiceResetSystem (
   IN EFI_RESET_TYPE   ResetType,
   IN EFI_STATUS       ResetStatus,
   IN UINTN            DataSize,
   IN VOID             *ResetData OPTIONAL
   )
 {
-  EFI_STATUS          Status;
-  UINTN               Size;
-  UINTN               CapsuleDataPtr;
   LIST_ENTRY          *Link;
   RESET_NOTIFY_ENTRY  *Entry;
 
   //
-  // Only do REPORT_STATUS_CODE() on first call to ResetSystem()
+  // Only do REPORT_STATUS_CODE() on first call to RuntimeServiceResetSystem()
   //
   if (mResetNotifyDepth == 0) {
     //
@@ -314,25 +286,6 @@ ResetSystem (
 
   switch (ResetType) {
   case EfiResetWarm:
-
-    //
-    //Check if there are pending capsules to process
-    //
-    Size = sizeof (CapsuleDataPtr);
-    Status =  EfiGetVariable (
-                 EFI_CAPSULE_VARIABLE_NAME,
-                 &gEfiCapsuleVendorGuid,
-                 NULL,
-                 &Size,
-                 (VOID *) &CapsuleDataPtr
-                 );
-
-    if (Status == EFI_SUCCESS) {
-      //
-      //Process capsules across a system reset.
-      //
-      DoS3();
-    }
 
     ResetWarm ();
     break;

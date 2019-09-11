@@ -2,13 +2,7 @@
   Routines that access 8042 keyboard controller
 
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1451,6 +1445,7 @@ KeyGetchar (
       //
       PushEfikeyBufTail (&ConsoleIn->EfiKeyQueueForNotify, &KeyData);
       gBS->SignalEvent (ConsoleIn->KeyNotifyProcessEvent);
+      break;
     }
   }
 
@@ -1812,32 +1807,6 @@ Done:
 
 }
 
-/**
-  Disable the keyboard interface of the 8042 controller.
-
-  @param ConsoleIn   The device instance
-
-  @return status of issuing disable command
-
-**/
-EFI_STATUS
-DisableKeyboard (
-  IN KEYBOARD_CONSOLE_IN_DEV *ConsoleIn
-  )
-{
-  EFI_STATUS  Status;
-
-  //
-  // Disable keyboard interface
-  //
-  Status = KeyboardCommand (ConsoleIn, KEYBOARD_8042_COMMAND_DISABLE_KEYBOARD_INTERFACE);
-  if (EFI_ERROR (Status)) {
-    KeyboardError (ConsoleIn, L"\n\r");
-    return EFI_DEVICE_ERROR;
-  }
-
-  return Status;
-}
 
 /**
   Check whether there is Ps/2 Keyboard device in system by 0xF4 Keyboard Command

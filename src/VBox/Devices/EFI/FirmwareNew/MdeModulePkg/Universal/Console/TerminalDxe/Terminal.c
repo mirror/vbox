@@ -2,14 +2,8 @@
   Produces Simple Text Input Protocol, Simple Text Input Extended Protocol and
   Simple Text Output Protocol upon Serial IO Protocol.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -488,6 +482,9 @@ TerminalDriverBindingStart (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   ASSERT ((Status == EFI_SUCCESS) || (Status == EFI_ALREADY_STARTED));
+  if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
+    return Status;
+  }
 
   //
   // Open the Serial I/O Protocol BY_DRIVER.  It might already be started.
@@ -501,6 +498,9 @@ TerminalDriverBindingStart (
                   EFI_OPEN_PROTOCOL_BY_DRIVER
                   );
   ASSERT ((Status == EFI_SUCCESS) || (Status == EFI_ALREADY_STARTED));
+  if (EFI_ERROR (Status) && (Status != EFI_ALREADY_STARTED)) {
+    return Status;
+  }
 
   if (!IsHotPlugDevice (ParentDevicePath)) {
     //

@@ -1,42 +1,25 @@
 /** @file
   Page table management support.
 
-  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
   Copyright (c) 2017, AMD Incorporated. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include <Base.h>
 #include <Uefi.h>
-#include <Library/BaseLib.h>
-#include <Library/CpuLib.h>
-#include <Library/BaseMemoryLib.h>
-#include <Library/MemoryAllocationLib.h>
-#include <Library/DebugLib.h>
-#include <Library/UefiBootServicesTableLib.h>
-#include <Protocol/MpService.h>
+#include <Library/PeCoffGetEntryPointLib.h>
+#include <Library/SerialPortLib.h>
+#include <Library/SynchronizationLib.h>
+#include <Library/PrintLib.h>
 #include <Protocol/SmmBase2.h>
-#include <Register/Cpuid.h>
-#include <Register/Msr.h>
+#include <Register/Intel/Cpuid.h>
+#include <Register/Intel/Msr.h>
 
 #include "CpuDxe.h"
 #include "CpuPageTable.h"
-
-///
-/// Paging registers
-///
-#define CR0_WP                      BIT16
-#define CR0_PG                      BIT31
-#define CR4_PSE                     BIT4
-#define CR4_PAE                     BIT5
 
 ///
 /// Page Table Entry
@@ -73,6 +56,10 @@
 #define PAGING_2M_ADDRESS_MASK_64 0x000FFFFFFFE00000ull
 #define PAGING_1G_ADDRESS_MASK_64 0x000FFFFFC0000000ull
 
+#define MAX_PF_ENTRY_COUNT        10
+#define MAX_DEBUG_MESSAGE_LENGTH  0x100
+#define IA32_PF_EC_ID             BIT4
+
 typedef enum {
   PageNone,
   Page4K,
@@ -99,8 +86,15 @@ PAGE_ATTRIBUTE_TABLE mPageAttributeTable[] = {
 };
 
 PAGE_TABLE_POOL                   *mPageTablePool = NULL;
+BOOLEAN                           mPageTablePoolLock = FALSE;
 PAGE_TABLE_LIB_PAGING_CONTEXT     mPagingContext;
 EFI_SMM_BASE2_PROTOCOL            *mSmmBase2 = NULL;
+
+//
+// Record the page fault exception count for one instruction execution.
+//
+UINTN                     *mPFEntryCount;
+UINT64                    *(*mLastPFEntryPointer)[MAX_PF_ENTRY_COUNT];
 
 /**
  Check if current execution environment is in SMM mode or not, via
@@ -159,6 +153,8 @@ GetCurrentPagingContext (
   UINT32                          RegEax;
   CPUID_EXTENDED_CPU_SIG_EDX      RegEdx;
   MSR_IA32_EFER_REGISTER          MsrEfer;
+  IA32_CR4                        Cr4;
+  IA32_CR0                        Cr0;
 
   //
   // Don't retrieve current paging context from processor if in SMM mode.
@@ -170,20 +166,26 @@ GetCurrentPagingContext (
     } else {
       mPagingContext.MachineType = IMAGE_FILE_MACHINE_I386;
     }
-    if ((AsmReadCr0 () & CR0_PG) != 0) {
+
+    Cr0.UintN = AsmReadCr0 ();
+    Cr4.UintN = AsmReadCr4 ();
+
+    if (Cr0.Bits.PG != 0) {
       mPagingContext.ContextData.X64.PageTableBase = (AsmReadCr3 () & PAGING_4K_ADDRESS_MASK_64);
     } else {
       mPagingContext.ContextData.X64.PageTableBase = 0;
     }
-
-    if ((AsmReadCr4 () & CR4_PSE) != 0) {
+    if (Cr0.Bits.WP  != 0) {
+      mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_WP_ENABLE;
+    }
+    if (Cr4.Bits.PSE != 0) {
       mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PSE;
     }
-    if ((AsmReadCr4 () & CR4_PAE) != 0) {
+    if (Cr4.Bits.PAE != 0) {
       mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_PAE;
     }
-    if ((AsmReadCr0 () & CR0_WP) != 0) {
-      mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_WP_ENABLE;
+    if (Cr4.Bits.LA57 != 0) {
+      mPagingContext.ContextData.Ia32.Attributes |= PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_5_LEVEL;
     }
 
     AsmCpuid (CPUID_EXTENDED_FUNCTION, &RegEax, NULL, NULL, NULL);
@@ -274,14 +276,17 @@ GetPageTableEntry (
   UINTN                 Index2;
   UINTN                 Index3;
   UINTN                 Index4;
+  UINTN                 Index5;
   UINT64                *L1PageTable;
   UINT64                *L2PageTable;
   UINT64                *L3PageTable;
   UINT64                *L4PageTable;
+  UINT64                *L5PageTable;
   UINT64                AddressEncMask;
 
   ASSERT (PagingContext != NULL);
 
+  Index5 = ((UINTN)RShiftU64 (Address, 48)) & PAGING_PAE_INDEX_MASK;
   Index4 = ((UINTN)RShiftU64 (Address, 39)) & PAGING_PAE_INDEX_MASK;
   Index3 = ((UINTN)Address >> 30) & PAGING_PAE_INDEX_MASK;
   Index2 = ((UINTN)Address >> 21) & PAGING_PAE_INDEX_MASK;
@@ -292,7 +297,17 @@ GetPageTableEntry (
   AddressEncMask = PcdGet64 (PcdPteMemoryEncryptionAddressOrMask) & PAGING_1G_ADDRESS_MASK_64;
 
   if (PagingContext->MachineType == IMAGE_FILE_MACHINE_X64) {
-    L4PageTable = (UINT64 *)(UINTN)PagingContext->ContextData.X64.PageTableBase;
+    if ((PagingContext->ContextData.X64.Attributes & PAGE_TABLE_LIB_PAGING_CONTEXT_IA32_X64_ATTRIBUTES_5_LEVEL) != 0) {
+      L5PageTable = (UINT64 *)(UINTN)PagingContext->ContextData.X64.PageTableBase;
+      if (L5PageTable[Index5] == 0) {
+        *PageAttribute = PageNone;
+        return NULL;
+      }
+
+      L4PageTable = (UINT64 *)(UINTN)(L5PageTable[Index5] & ~AddressEncMask & PAGING_4K_ADDRESS_MASK_64);
+    } else {
+      L4PageTable = (UINT64 *)(UINTN)PagingContext->ContextData.X64.PageTableBase;
+    }
     if (L4PageTable[Index4] == 0) {
       *PageAttribute = PageNone;
       return NULL;
@@ -528,7 +543,7 @@ SplitPage (
     ASSERT (SplitAttribute == Page4K);
     if (SplitAttribute == Page4K) {
       NewPageEntry = AllocatePagesFunc (1);
-      DEBUG ((DEBUG_INFO, "Split - 0x%x\n", NewPageEntry));
+      DEBUG ((DEBUG_VERBOSE, "Split - 0x%x\n", NewPageEntry));
       if (NewPageEntry == NULL) {
         return RETURN_OUT_OF_RESOURCES;
       }
@@ -549,7 +564,7 @@ SplitPage (
     ASSERT (SplitAttribute == Page2M || SplitAttribute == Page4K);
     if ((SplitAttribute == Page2M || SplitAttribute == Page4K)) {
       NewPageEntry = AllocatePagesFunc (1);
-      DEBUG ((DEBUG_INFO, "Split - 0x%x\n", NewPageEntry));
+      DEBUG ((DEBUG_VERBOSE, "Split - 0x%x\n", NewPageEntry));
       if (NewPageEntry == NULL) {
         return RETURN_OUT_OF_RESOURCES;
       }
@@ -579,12 +594,14 @@ IsReadOnlyPageWriteProtected (
   VOID
   )
 {
+  IA32_CR0  Cr0;
   //
   // To avoid unforseen consequences, don't touch paging settings in SMM mode
   // in this driver.
   //
   if (!IsInSmm ()) {
-    return ((AsmReadCr0 () & CR0_WP) != 0);
+    Cr0.UintN = AsmReadCr0 ();
+    return (BOOLEAN) (Cr0.Bits.WP != 0);
   }
   return FALSE;
 }
@@ -597,12 +614,15 @@ DisableReadOnlyPageWriteProtect (
   VOID
   )
 {
+  IA32_CR0  Cr0;
   //
   // To avoid unforseen consequences, don't touch paging settings in SMM mode
   // in this driver.
   //
   if (!IsInSmm ()) {
-    AsmWriteCr0 (AsmReadCr0 () & ~CR0_WP);
+    Cr0.UintN = AsmReadCr0 ();
+    Cr0.Bits.WP = 0;
+    AsmWriteCr0 (Cr0.UintN);
   }
 }
 
@@ -614,12 +634,15 @@ EnableReadOnlyPageWriteProtect (
   VOID
   )
 {
+  IA32_CR0  Cr0;
   //
   // To avoid unforseen consequences, don't touch paging settings in SMM mode
   // in this driver.
   //
   if (!IsInSmm ()) {
-    AsmWriteCr0 (AsmReadCr0 () | CR0_WP);
+    Cr0.UintN = AsmReadCr0 ();
+    Cr0.Bits.WP = 1;
+    AsmWriteCr0 (Cr0.UintN);
   }
 }
 
@@ -1040,6 +1063,16 @@ InitializePageTablePool (
   BOOLEAN                   IsModified;
 
   //
+  // Do not allow re-entrance.
+  //
+  if (mPageTablePoolLock) {
+    return FALSE;
+  }
+
+  mPageTablePoolLock = TRUE;
+  IsModified = FALSE;
+
+  //
   // Always reserve at least PAGE_TABLE_POOL_UNIT_PAGES, including one page for
   // header.
   //
@@ -1049,8 +1082,14 @@ InitializePageTablePool (
   Buffer = AllocateAlignedPages (PoolPages, PAGE_TABLE_POOL_ALIGNMENT);
   if (Buffer == NULL) {
     DEBUG ((DEBUG_ERROR, "ERROR: Out of aligned pages\r\n"));
-    return FALSE;
+    goto Done;
   }
+
+  DEBUG ((
+    DEBUG_INFO,
+    "Paging: added %lu pages to page table pool\r\n",
+    (UINT64)PoolPages
+    ));
 
   //
   // Link all pools into a list for easier track later.
@@ -1085,7 +1124,9 @@ InitializePageTablePool (
     );
   ASSERT (IsModified == TRUE);
 
-  return TRUE;
+Done:
+  mPageTablePoolLock = FALSE;
+  return IsModified;
 }
 
 /**
@@ -1136,6 +1177,159 @@ AllocatePageTableMemory (
 }
 
 /**
+  Special handler for #DB exception, which will restore the page attributes
+  (not-present). It should work with #PF handler which will set pages to
+  'present'.
+
+  @param ExceptionType  Exception type.
+  @param SystemContext  Pointer to EFI_SYSTEM_CONTEXT.
+
+**/
+VOID
+EFIAPI
+DebugExceptionHandler (
+  IN EFI_EXCEPTION_TYPE   ExceptionType,
+  IN EFI_SYSTEM_CONTEXT   SystemContext
+  )
+{
+  UINTN     CpuIndex;
+  UINTN     PFEntry;
+  BOOLEAN   IsWpEnabled;
+
+  MpInitLibWhoAmI (&CpuIndex);
+
+  //
+  // Clear last PF entries
+  //
+  IsWpEnabled = IsReadOnlyPageWriteProtected ();
+  if (IsWpEnabled) {
+    DisableReadOnlyPageWriteProtect ();
+  }
+
+  for (PFEntry = 0; PFEntry < mPFEntryCount[CpuIndex]; PFEntry++) {
+    if (mLastPFEntryPointer[CpuIndex][PFEntry] != NULL) {
+      *mLastPFEntryPointer[CpuIndex][PFEntry] &= ~(UINT64)IA32_PG_P;
+    }
+  }
+
+  if (IsWpEnabled) {
+    EnableReadOnlyPageWriteProtect ();
+  }
+
+  //
+  // Reset page fault exception count for next page fault.
+  //
+  mPFEntryCount[CpuIndex] = 0;
+
+  //
+  // Flush TLB
+  //
+  CpuFlushTlb ();
+
+  //
+  // Clear TF in EFLAGS
+  //
+  if (mPagingContext.MachineType == IMAGE_FILE_MACHINE_I386) {
+    SystemContext.SystemContextIa32->Eflags &= (UINT32)~BIT8;
+  } else {
+    SystemContext.SystemContextX64->Rflags &= (UINT64)~BIT8;
+  }
+}
+
+/**
+  Special handler for #PF exception, which will set the pages which caused
+  #PF to be 'present'. The attribute of those pages should be restored in
+  the subsequent #DB handler.
+
+  @param ExceptionType  Exception type.
+  @param SystemContext  Pointer to EFI_SYSTEM_CONTEXT.
+
+**/
+VOID
+EFIAPI
+PageFaultExceptionHandler (
+  IN EFI_EXCEPTION_TYPE   ExceptionType,
+  IN EFI_SYSTEM_CONTEXT   SystemContext
+  )
+{
+  EFI_STATUS                      Status;
+  UINT64                          PFAddress;
+  PAGE_TABLE_LIB_PAGING_CONTEXT   PagingContext;
+  PAGE_ATTRIBUTE                  PageAttribute;
+  UINT64                          Attributes;
+  UINT64                          *PageEntry;
+  UINTN                           Index;
+  UINTN                           CpuIndex;
+  UINTN                           PageNumber;
+  BOOLEAN                         NonStopMode;
+
+  PFAddress = AsmReadCr2 () & ~EFI_PAGE_MASK;
+  if (PFAddress < BASE_4KB) {
+    NonStopMode = NULL_DETECTION_NONSTOP_MODE ? TRUE : FALSE;
+  } else {
+    NonStopMode = HEAP_GUARD_NONSTOP_MODE ? TRUE : FALSE;
+  }
+
+  if (NonStopMode) {
+    MpInitLibWhoAmI (&CpuIndex);
+    GetCurrentPagingContext (&PagingContext);
+    //
+    // Memory operation cross page boundary, like "rep mov" instruction, will
+    // cause infinite loop between this and Debug Trap handler. We have to make
+    // sure that current page and the page followed are both in PRESENT state.
+    //
+    PageNumber = 2;
+    while (PageNumber > 0) {
+      PageEntry = GetPageTableEntry (&PagingContext, PFAddress, &PageAttribute);
+      ASSERT(PageEntry != NULL);
+
+      if (PageEntry != NULL) {
+        Attributes = GetAttributesFromPageEntry (PageEntry);
+        if ((Attributes & EFI_MEMORY_RP) != 0) {
+          Attributes &= ~EFI_MEMORY_RP;
+          Status = AssignMemoryPageAttributes (&PagingContext, PFAddress,
+                                               EFI_PAGE_SIZE, Attributes, NULL);
+          if (!EFI_ERROR(Status)) {
+            Index = mPFEntryCount[CpuIndex];
+            //
+            // Re-retrieve page entry because above calling might update page
+            // table due to table split.
+            //
+            PageEntry = GetPageTableEntry (&PagingContext, PFAddress, &PageAttribute);
+            mLastPFEntryPointer[CpuIndex][Index++] = PageEntry;
+            mPFEntryCount[CpuIndex] = Index;
+          }
+        }
+      }
+
+      PFAddress += EFI_PAGE_SIZE;
+      --PageNumber;
+    }
+  }
+
+  //
+  // Initialize the serial port before dumping.
+  //
+  SerialPortInitialize ();
+  //
+  // Display ExceptionType, CPU information and Image information
+  //
+  DumpCpuContext (ExceptionType, SystemContext);
+  if (NonStopMode) {
+    //
+    // Set TF in EFLAGS
+    //
+    if (mPagingContext.MachineType == IMAGE_FILE_MACHINE_I386) {
+      SystemContext.SystemContextIa32->Eflags |= (UINT32)BIT8;
+    } else {
+      SystemContext.SystemContextX64->Rflags |= (UINT64)BIT8;
+    }
+  } else {
+    CpuDeadLoop ();
+  }
+}
+
+/**
   Initialize the Page Table lib.
 **/
 VOID
@@ -1156,6 +1350,15 @@ InitializePageTableLib (
     DisableReadOnlyPageWriteProtect ();
     InitializePageTablePool (1);
     EnableReadOnlyPageWriteProtect ();
+  }
+
+  if (HEAP_GUARD_NONSTOP_MODE || NULL_DETECTION_NONSTOP_MODE) {
+    mPFEntryCount = (UINTN *)AllocateZeroPool (sizeof (UINTN) * mNumberOfProcessors);
+    ASSERT (mPFEntryCount != NULL);
+
+    mLastPFEntryPointer = (UINT64 *(*)[MAX_PF_ENTRY_COUNT])
+                          AllocateZeroPool (sizeof (mLastPFEntryPointer[0]) * mNumberOfProcessors);
+    ASSERT (mLastPFEntryPointer != NULL);
   }
 
   DEBUG ((DEBUG_INFO, "CurrentPagingContext:\n", CurrentPagingContext.MachineType));

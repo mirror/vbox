@@ -1,14 +1,8 @@
 /** @file
   SMM IPL that produces SMM related runtime protocols and load the SMM Core into SMRAM
 
-  Copyright (c) 2009 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -673,20 +667,9 @@ SmmIplDxeDispatchEventNotify (
     }
 
     //
-    // Attempt to reset SMRAM cacheability to UC
-    // Assume CPU AP is available at this time
-    //
-    Status = gDS->SetMemorySpaceAttributes(
-                    mSmramCacheBase,
-                    mSmramCacheSize,
-                    EFI_MEMORY_UC
-                    );
-    if (EFI_ERROR (Status)) {
-      DEBUG ((DEBUG_WARN, "SMM IPL failed to reset SMRAM window to EFI_MEMORY_UC\n"));
-    }
-
-    //
     // Close all SMRAM ranges to protect SMRAM
+    // NOTE: SMRR is enabled by CPU SMM driver by calling SmmCpuFeaturesInitializeProcessor() from SmmCpuFeaturesLib
+    //       so no need to reset the SMRAM to UC in MTRR.
     //
     Status = mSmmAccess->Close (mSmmAccess);
     ASSERT_EFI_ERROR (Status);

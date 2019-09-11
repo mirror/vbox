@@ -1,18 +1,12 @@
 /** @file
   LZMA Compress/Decompress tool (LzmaCompress)
 
-  Based on LZMA SDK 16.04:
+  Based on LZMA SDK 18.05:
     LzmaUtil.c -- Test application for LZMA compression
-    2016-10-04 : Igor Pavlov : Public domain
+    2018-04-30 : Igor Pavlov : Public domain
 
-  Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -50,7 +44,7 @@ static CONVERTER_TYPE mConType = NoConverter;
 #define UTILITY_MAJOR_VERSION 0
 #define UTILITY_MINOR_VERSION 2
 #define INTEL_COPYRIGHT \
-  "Copyright (c) 2009-2016, Intel Corporation. All rights reserved."
+  "Copyright (c) 2009-2018, Intel Corporation. All rights reserved."
 void PrintHelp(char *buffer)
 {
   strcat(buffer,
@@ -344,14 +338,14 @@ int main2(int numArgs, const char *args[], char *rs)
     if (!mQuietMode) {
       printf("Encoding\n");
     }
-    res = Encode(&outStream.s, &inStream.s, fileSize);
+    res = Encode(&outStream.vt, &inStream.vt, fileSize);
   }
   else
   {
     if (!mQuietMode) {
       printf("Decoding\n");
     }
-    res = Decode(&outStream.s, &inStream.s, fileSize);
+    res = Decode(&outStream.vt, &inStream.vt, fileSize);
   }
 
   File_Close(&outStream.file);

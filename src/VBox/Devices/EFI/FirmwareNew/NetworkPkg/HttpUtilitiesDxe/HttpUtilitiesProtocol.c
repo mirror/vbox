@@ -1,15 +1,9 @@
 /** @file
   Implementation of EFI_HTTP_PROTOCOL protocol interfaces.
 
-  Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
   (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -298,6 +292,7 @@ HttpUtilitiesParse (
   CHAR8                     *FieldName;
   CHAR8                     *FieldValue;
   UINTN                     Index;
+  UINTN                     HttpBufferSize;
 
   Status          = EFI_SUCCESS;
   TempHttpMessage = NULL;
@@ -311,12 +306,17 @@ HttpUtilitiesParse (
     return EFI_INVALID_PARAMETER;
   }
 
-  TempHttpMessage = AllocateZeroPool (HttpMessageSize);
+  //
+  // Append the http response string along with a Null-terminator.
+  //
+  HttpBufferSize = HttpMessageSize + 1;
+  TempHttpMessage = AllocatePool (HttpBufferSize);
   if (TempHttpMessage == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   CopyMem (TempHttpMessage, HttpMessage, HttpMessageSize);
+  *(TempHttpMessage + HttpMessageSize) = '\0';
 
   //
   // Get header number

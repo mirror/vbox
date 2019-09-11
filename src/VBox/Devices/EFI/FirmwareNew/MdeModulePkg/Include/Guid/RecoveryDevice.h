@@ -6,14 +6,7 @@
 
 Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -52,9 +45,18 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
     0x0ffbce19, 0x324c, 0x4690, {0xa0, 0x09, 0x98, 0xc6, 0xae, 0x2e, 0xb1, 0x86 } \
   }
 
+///
+/// The Global ID used to identify a recovery capsule that was loaded from NVM Express device.
+///
+#define RECOVERY_ON_FAT_NVME_DISK_GUID \
+  { \
+    0xc770a27f, 0x956a, 0x497a, {0x85, 0x48, 0xe0, 0x61, 0x97, 0x58, 0x8b, 0xf6 } \
+  }
+
 extern EFI_GUID gRecoveryOnDataCdGuid;
 extern EFI_GUID gRecoveryOnFatFloppyDiskGuid;
 extern EFI_GUID gRecoveryOnFatIdeDiskGuid;
 extern EFI_GUID gRecoveryOnFatUsbDiskGuid;
+extern EFI_GUID gRecoveryOnFatNvmeDiskGuid;
 
 #endif

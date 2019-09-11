@@ -2,14 +2,8 @@
 
   VfrCompiler main class and main function.
 
-Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -80,7 +74,6 @@ CVfrCompiler::OptionInitialization (
   mOptions.IncludePaths                  = NULL;
   mOptions.SkipCPreprocessor             = TRUE;
   mOptions.CPreprocessorOptions          = NULL;
-  mOptions.CompatibleMode                = FALSE;
   mOptions.HasOverrideClassGuid          = FALSE;
   mOptions.WarningAsError                = FALSE;
   mOptions.AutoDefault                   = FALSE;
@@ -148,8 +141,6 @@ CVfrCompiler::OptionInitialization (
       }
 
       AppendCPreprocessorOptions (Argv[Index]);
-    } else if (stricmp(Argv[Index], "-c") == 0 || stricmp(Argv[Index], "--compatible-framework") == 0) {
-      mOptions.CompatibleMode = TRUE;
     } else if (stricmp(Argv[Index], "-s") == 0|| stricmp(Argv[Index], "--string-db") == 0) {
       Index++;
       if ((Index >= Argc) || (Argv[Index][0] == '-')) {
@@ -284,7 +275,7 @@ CVfrCompiler::AppendIncludePath (
   strcat (IncludePaths, " -I ");
   strcat (IncludePaths, PathStr);
   if (mOptions.IncludePaths != NULL) {
-    delete mOptions.IncludePaths;
+    delete[] mOptions.IncludePaths;
   }
   mOptions.IncludePaths = IncludePaths;
 }
@@ -313,7 +304,7 @@ CVfrCompiler::AppendCPreprocessorOptions (
   strcat (Opt, " ");
   strcat (Opt, Options);
   if (mOptions.CPreprocessorOptions != NULL) {
-    delete mOptions.CPreprocessorOptions;
+    delete[] mOptions.CPreprocessorOptions;
   }
   mOptions.CPreprocessorOptions = Opt;
 }
@@ -531,12 +522,12 @@ CVfrCompiler::~CVfrCompiler (
   }
 
   if (mOptions.IncludePaths != NULL) {
-    delete mOptions.IncludePaths;
+    delete[] mOptions.IncludePaths;
     mOptions.IncludePaths = NULL;
   }
 
   if (mOptions.CPreprocessorOptions != NULL) {
-    delete mOptions.CPreprocessorOptions;
+    delete[] mOptions.CPreprocessorOptions;
     mOptions.CPreprocessorOptions = NULL;
   }
 
@@ -567,8 +558,6 @@ CVfrCompiler::Usage (
     "                 create an IFR HII pack file",
     "  -n, --no-pre-processing",
     "                 do not preprocessing input file",
-    "  -c, --compatible-framework",
-    "                 compatible framework vfr file",
     "  -s, --string-db",
     "                 input uni string package file",
     "  -g, --guid",
@@ -624,7 +613,7 @@ CVfrCompiler::PreProcess (
   fclose (pVfrFile);
 
   CmdLen = strlen (mPreProcessCmd) + strlen (mPreProcessOpt) +
-  	       strlen (mOptions.VfrFileName) + strlen (mOptions.PreprocessorOutputFileName);
+           strlen (mOptions.VfrFileName) + strlen (mOptions.PreprocessorOutputFileName);
   if (mOptions.CPreprocessorOptions != NULL) {
     CmdLen += strlen (mOptions.CPreprocessorOptions);
   }
@@ -691,7 +680,6 @@ CVfrCompiler::Compile (
     goto Fail;
   }
 
-  InputInfo.CompatibleMode = mOptions.CompatibleMode;
   if (mOptions.HasOverrideClassGuid) {
     InputInfo.OverrideClassGuid = &mOptions.OverrideClassGuid;
   } else {
@@ -781,27 +769,6 @@ CVfrCompiler::AdjustBin (
     DebugError (NULL, 0, 0001, "Error parsing vfr file", " %s.Buffer not allocated.", mOptions.VfrFileName);
   }
 
-  //
-  // For UEFI mode, not do OpCode Adjust
-  //
-  if (mOptions.CompatibleMode) {
-    //
-    // Adjust Opcode to be compatible with framework vfr
-    //
-    Status = gCIfrRecordInfoDB.IfrRecordAdjust ();
-    if (Status != VFR_RETURN_SUCCESS) {
-      //
-      // Record List Adjust Failed
-      //
-      SET_RUN_STATUS (STATUS_FAILED);
-      return;
-    }
-    //
-    // Re get the IfrRecord Buffer.
-    //
-    gCIfrRecordInfoDB.IfrRecordOutput (gRBuffer);
-  }
-
   return;
 }
 
@@ -859,7 +826,7 @@ CVfrCompiler::GenCFile (
     goto Fail;
   }
 
-  if (!mOptions.CreateIfrPkgFile || mOptions.CompatibleMode) {
+  if (!mOptions.CreateIfrPkgFile) {
     if ((pFile = fopen (LongFilePath (mOptions.COutputFileName), "w")) == NULL) {
       DebugError (NULL, 0, 0001, "Error opening output C file", "%s", mOptions.COutputFileName);
       goto Fail;
@@ -867,10 +834,6 @@ CVfrCompiler::GenCFile (
 
     for (Index = 0; gSourceFileHeader[Index] != NULL; Index++) {
       fprintf (pFile, "%s\n", gSourceFileHeader[Index]);
-    }
-
-    if (mOptions.CompatibleMode) {
-      gCVfrBufferConfig.OutputCFile (pFile, mOptions.VfrBaseFileName);
     }
 
     if (gCFormPkg.GenCFile (mOptions.VfrBaseFileName, pFile, &gRBuffer) != VFR_RETURN_SUCCESS) {
@@ -965,11 +928,11 @@ main (
   }
 
   if (gCBuffer.Buffer != NULL) {
-    delete gCBuffer.Buffer;
+    delete[] gCBuffer.Buffer;
   }
 
   if (gRBuffer.Buffer != NULL) {
-    delete gRBuffer.Buffer;
+    delete[] gRBuffer.Buffer;
   }
 
   return GetUtilityStatus ();

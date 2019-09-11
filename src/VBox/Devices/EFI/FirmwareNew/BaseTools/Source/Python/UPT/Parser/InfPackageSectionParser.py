@@ -1,15 +1,9 @@
 ## @file
 # This file contained the parser for [Packages] sections in INF file
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 '''
 InfPackageSectionParser
@@ -89,7 +83,7 @@ class InfPackageSectionParser(InfParserSectionRoot):
             if PkgLineContent.find(DT.TAB_COMMENT_SPLIT) > -1:
                 TailComments = PkgLineContent[PkgLineContent.find(DT.TAB_COMMENT_SPLIT):]
                 PkgLineContent = PkgLineContent[:PkgLineContent.find(DT.TAB_COMMENT_SPLIT)]
-                if LineComment == None:
+                if LineComment is None:
                     LineComment = InfLineCommentObject()
                 LineComment.SetTailComments(TailComments)
             #
@@ -99,7 +93,7 @@ class InfPackageSectionParser(InfParserSectionRoot):
                                       FileName,
                                       DT.MODEL_META_DATA_PACKAGE,
                                       self.FileLocalMacros)
-            if Name != None:
+            if Name is not None:
                 SectionMacros[Name] = Value
                 LineComment = None
                 HeaderComments = []
@@ -137,4 +131,4 @@ class InfPackageSectionParser(InfParserSectionRoot):
                          ST.ERR_INF_PARSER_MODULE_SECTION_TYPE_ERROR\
                          %("[Packages]"),
                          File=FileName,
-                         Line=Item[3])         
+                         Line=Item[3])

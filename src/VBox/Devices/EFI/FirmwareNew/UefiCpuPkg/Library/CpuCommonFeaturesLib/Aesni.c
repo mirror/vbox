@@ -1,14 +1,8 @@
 /** @file
   AESNI feature.
 
-  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -63,15 +57,9 @@ AesniSupport (
   MSR_SANDY_BRIDGE_FEATURE_CONFIG_REGISTER   *MsrFeatureConfig;
 
   if (CpuInfo->CpuIdVersionInfoEcx.Bits.AESNI == 1) {
-    if (IS_SANDY_BRIDGE_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
-        IS_SILVERMONT_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
-        IS_XEON_5600_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
-        IS_XEON_E7_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
-        IS_XEON_PHI_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel)) {
-      MsrFeatureConfig = (MSR_SANDY_BRIDGE_FEATURE_CONFIG_REGISTER *) ConfigData;
-      ASSERT (MsrFeatureConfig != NULL);
-      MsrFeatureConfig[ProcessorNumber].Uint64 = AsmReadMsr64 (MSR_SANDY_BRIDGE_FEATURE_CONFIG);
-    }
+    MsrFeatureConfig = (MSR_SANDY_BRIDGE_FEATURE_CONFIG_REGISTER *) ConfigData;
+    ASSERT (MsrFeatureConfig != NULL);
+    MsrFeatureConfig[ProcessorNumber].Uint64 = AsmReadMsr64 (MSR_SANDY_BRIDGE_FEATURE_CONFIG);
     return TRUE;
   }
   return FALSE;
@@ -123,7 +111,7 @@ AesniInitialize (
         MSR_SANDY_BRIDGE_FEATURE_CONFIG,
         MSR_SANDY_BRIDGE_FEATURE_CONFIG_REGISTER,
         Bits.AESConfiguration,
-        BIT1 | ((State) ? 0 : BIT0)
+        BIT0 | ((State) ? 0 : BIT1)
         );
     }
   }

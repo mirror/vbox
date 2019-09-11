@@ -1,14 +1,8 @@
 /** @file
   Include file matches things in PI for multiple module types.
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   These elements are defined in UEFI Platform Initialization Specification 1.2.
@@ -181,5 +175,21 @@ VOID
 (EFIAPI *EFI_AP_PROCEDURE)(
   IN OUT VOID  *Buffer
   );
+
+/**
+  The function prototype for invoking a function on an Application Processor.
+
+  This definition is used by the UEFI MM MP Serices Protocol.
+
+  @param[in] ProcedureArgument    The pointer to private data buffer.
+
+  @retval EFI_SUCCESS             Excutive the procedure successfully
+
+**/
+typedef
+EFI_STATUS
+(EFIAPI *EFI_AP_PROCEDURE2)(
+  IN VOID  *ProcedureArgument
+);
 
 #endif

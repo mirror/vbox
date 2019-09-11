@@ -1,14 +1,8 @@
 /** @file
   CPU Common features library header file.
 
-  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -25,8 +19,8 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/LocalApicLib.h>
 
-#include <Register/Cpuid.h>
-#include <Register/Msr.h>
+#include <Register/Intel/Cpuid.h>
+#include <Register/Intel/Msr.h>
 
 /**
   Prepares for the data used by CPU feature detection and initialization.
@@ -91,6 +85,21 @@ AesniInitialize (
   IN REGISTER_CPU_FEATURE_INFORMATION  *CpuInfo,
   IN VOID                              *ConfigData,  OPTIONAL
   IN BOOLEAN                           State
+  );
+
+/**
+  Prepares for the data used by CPU feature detection and initialization.
+
+  @param[in]  NumberOfProcessors  The number of CPUs in the platform.
+
+  @return  Pointer to a buffer of CPU related configuration data.
+
+  @note This service could be called by BSP only.
+**/
+VOID *
+EFIAPI
+ClockModulationGetConfigData (
+  IN UINTN  NumberOfProcessors
   );
 
 /**
@@ -850,7 +859,7 @@ X2ApicInitialize (
 **/
 VOID *
 EFIAPI
-FeatureControlGetConfigData (
+PpinGetConfigData (
   IN UINTN               NumberOfProcessors
   );
 

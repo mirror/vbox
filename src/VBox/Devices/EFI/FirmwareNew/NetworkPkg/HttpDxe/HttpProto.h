@@ -1,15 +1,9 @@
 /** @file
   The header files of miscellaneous routines for HttpDxe driver.
 
-Copyright (c) 2015 - 2017, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
 (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -91,6 +85,15 @@ typedef struct {
   EFI_TLS_SESSION_STATE         SessionState;
 } TLS_CONFIG_DATA;
 
+//
+// Callback data for HTTP_PARSER_CALLBACK()
+//
+typedef struct {
+  UINTN                         ParseDataLength;
+  VOID                          *ParseData;
+  VOID                          *Wrap;
+} HTTP_CALLBACK_DATA;
+
 typedef struct _HTTP_PROTOCOL {
   UINT32                        Signature;
   EFI_HTTP_PROTOCOL             Http;
@@ -149,6 +152,7 @@ typedef struct _HTTP_PROTOCOL {
   // HTTP message-body parser.
   //
   VOID                          *MsgParser;
+  HTTP_CALLBACK_DATA            CallbackData;
 
   EFI_HTTP_VERSION              HttpVersion;
   UINT32                        TimeOutMillisec;

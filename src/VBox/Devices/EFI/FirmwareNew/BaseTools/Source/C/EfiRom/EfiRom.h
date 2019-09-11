@@ -1,14 +1,8 @@
 /** @file
 This file contains the relevant declarations required to generate Option Rom File
 
-Copyright (c) 1999 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available
-under the terms and conditions of the BSD License which accompanies this
-distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 1999 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -115,9 +109,8 @@ typedef struct {
 //
 static STRING_LOOKUP  mMachineTypes[] = {
   { EFI_IMAGE_MACHINE_IA32, "IA32" },
-  { EFI_IMAGE_MACHINE_IA64, "IA64" },
-  { EFI_IMAGE_MACHINE_EBC, "EBC" },
   { EFI_IMAGE_MACHINE_X64, "X64" },
+  { EFI_IMAGE_MACHINE_EBC, "EBC" },
   { EFI_IMAGE_MACHINE_ARMT, "ARM" },
   { EFI_IMAGE_MACHINE_AARCH64, "AA64" },
   { 0, NULL }

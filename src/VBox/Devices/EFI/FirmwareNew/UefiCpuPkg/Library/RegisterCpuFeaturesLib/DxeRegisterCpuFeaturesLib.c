@@ -1,25 +1,19 @@
 /** @file
   CPU Register Table Library functions.
 
-  Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include <PiDxe.h>
 
 #include <Library/UefiBootServicesTableLib.h>
+#include <Library/UefiLib.h>
 
 #include "RegisterCpuFeatures.h"
 
 CPU_FEATURES_DATA          mCpuFeaturesData = {0};
-EFI_MP_SERVICES_PROTOCOL   *mCpuFeaturesMpServices = NULL;
 
 /**
   Worker function to get CPU_FEATURES_DATA pointer.
@@ -37,46 +31,46 @@ GetCpuFeaturesData (
 /**
   Worker function to get EFI_MP_SERVICES_PROTOCOL pointer.
 
-  @return Pointer to EFI_MP_SERVICES_PROTOCOL.
+  @return MP_SERVICES variable.
 **/
-EFI_MP_SERVICES_PROTOCOL *
-GetMpProtocol (
+MP_SERVICES
+GetMpService (
   VOID
   )
 {
-  EFI_STATUS             Status;
+  EFI_STATUS                Status;
+  MP_SERVICES               MpService;
 
-  if (mCpuFeaturesMpServices == NULL) {
-    //
-    // Get MP Services Protocol
-    //
-    Status = gBS->LocateProtocol (
-                  &gEfiMpServiceProtocolGuid,
-                  NULL,
-                  (VOID **)&mCpuFeaturesMpServices
-                  );
-    ASSERT_EFI_ERROR (Status);
-  }
+  //
+  // Get MP Services Protocol
+  //
+  Status = gBS->LocateProtocol (
+                &gEfiMpServiceProtocolGuid,
+                NULL,
+                (VOID **)&MpService.Protocol
+                );
+  ASSERT_EFI_ERROR (Status);
 
-  ASSERT (mCpuFeaturesMpServices != NULL);
-  return mCpuFeaturesMpServices;
+  return MpService;
 }
 
 /**
   Worker function to return processor index.
 
+  @param  CpuFeaturesData    Cpu Feature Data structure.
+
   @return  The processor index.
 **/
 UINTN
 GetProcessorIndex (
-  VOID
+  IN CPU_FEATURES_DATA        *CpuFeaturesData
   )
 {
   EFI_STATUS                           Status;
   UINTN                                ProcessorIndex;
   EFI_MP_SERVICES_PROTOCOL             *MpServices;
 
-  MpServices = GetMpProtocol ();
+  MpServices = CpuFeaturesData->MpService.Protocol;
   Status = MpServices->WhoAmI(MpServices, &ProcessorIndex);
   ASSERT_EFI_ERROR (Status);
   return ProcessorIndex;
@@ -100,8 +94,11 @@ GetProcessorInformation (
 {
   EFI_STATUS                           Status;
   EFI_MP_SERVICES_PROTOCOL             *MpServices;
+  CPU_FEATURES_DATA                    *CpuFeaturesData;
 
-  MpServices = GetMpProtocol ();
+  CpuFeaturesData = GetCpuFeaturesData ();
+  MpServices = CpuFeaturesData->MpService.Protocol;
+
   Status = MpServices->GetProcessorInfo (
                MpServices,
                ProcessorNumber,
@@ -115,16 +112,22 @@ GetProcessorInformation (
 
   @param[in]  Procedure               A pointer to the function to be run on
                                       enabled APs of the system.
+  @param[in]  MpEvent                 A pointer to the event to be used later
+                                      to check whether procedure has done.
 **/
 VOID
-StartupAPsWorker (
-  IN  EFI_AP_PROCEDURE                 Procedure
+StartupAllAPsWorker (
+  IN  EFI_AP_PROCEDURE                 Procedure,
+  IN  EFI_EVENT                        MpEvent
   )
 {
   EFI_STATUS                           Status;
   EFI_MP_SERVICES_PROTOCOL             *MpServices;
+  CPU_FEATURES_DATA                    *CpuFeaturesData;
 
-  MpServices = GetMpProtocol ();
+  CpuFeaturesData = GetCpuFeaturesData ();
+  MpServices = CpuFeaturesData->MpService.Protocol;
+
   //
   // Wakeup all APs
   //
@@ -132,9 +135,9 @@ StartupAPsWorker (
                  MpServices,
                  Procedure,
                  FALSE,
-                 NULL,
+                 MpEvent,
                  0,
-                 NULL,
+                 CpuFeaturesData,
                  NULL
                  );
   ASSERT_EFI_ERROR (Status);
@@ -152,8 +155,11 @@ SwitchNewBsp (
 {
   EFI_STATUS                           Status;
   EFI_MP_SERVICES_PROTOCOL             *MpServices;
+  CPU_FEATURES_DATA                    *CpuFeaturesData;
 
-  MpServices = GetMpProtocol ();
+  CpuFeaturesData = GetCpuFeaturesData ();
+  MpServices = CpuFeaturesData->MpService.Protocol;
+
   //
   // Wakeup all APs
   //
@@ -183,8 +189,10 @@ GetNumberOfProcessor (
 {
   EFI_STATUS                           Status;
   EFI_MP_SERVICES_PROTOCOL             *MpServices;
+  CPU_FEATURES_DATA                    *CpuFeaturesData;
 
-  MpServices = GetMpProtocol ();
+  CpuFeaturesData = GetCpuFeaturesData ();
+  MpServices = CpuFeaturesData->MpService.Protocol;
 
   //
   // Get the number of CPUs
@@ -198,69 +206,71 @@ GetNumberOfProcessor (
 }
 
 /**
-  Allocates ACPI NVS memory to save ACPI_CPU_DATA.
+  Performs CPU features Initialization.
 
-  @return  Pointer to allocated ACPI_CPU_DATA.
+  This service will invoke MP service to perform CPU features
+  initialization on BSP/APs per user configuration.
+
+  @note This service could be called by BSP only.
 **/
-ACPI_CPU_DATA *
-AllocateAcpiCpuData (
+VOID
+EFIAPI
+CpuFeaturesInitialize (
   VOID
   )
 {
-  //
-  // CpuS3DataDxe will do it.
-  //
-  ASSERT (FALSE);
-  return NULL;
-}
+  CPU_FEATURES_DATA          *CpuFeaturesData;
+  UINTN                      OldBspNumber;
+  EFI_EVENT                  MpEvent;
+  EFI_STATUS                 Status;
 
-/**
-  Enlarges CPU register table for each processor.
+  CpuFeaturesData = GetCpuFeaturesData ();
 
-  @param[in, out]  RegisterTable   Pointer processor's CPU register table
-**/
-VOID
-EnlargeRegisterTable (
-  IN OUT CPU_REGISTER_TABLE            *RegisterTable
-  )
-{
-  EFI_STATUS            Status;
-  EFI_PHYSICAL_ADDRESS  Address;
-  UINTN                 AllocatePages;
-
-  Address = BASE_4GB - 1;
-  AllocatePages = RegisterTable->AllocatedSize / EFI_PAGE_SIZE;
-  Status  = gBS->AllocatePages (
-                   AllocateMaxAddress,
-                   EfiACPIMemoryNVS,
-                   AllocatePages + 1,
-                   &Address
-                   );
-  ASSERT_EFI_ERROR (Status);
+  OldBspNumber = GetProcessorIndex (CpuFeaturesData);
+  CpuFeaturesData->BspNumber = OldBspNumber;
 
   //
-  // If there are records existing in the register table, then copy its contents
-  // to new region and free the old one.
   //
-  if (RegisterTable->AllocatedSize > 0) {
-    CopyMem (
-      (VOID *) (UINTN) Address,
-      (VOID *) (UINTN) RegisterTable->RegisterTableEntry,
-      RegisterTable->AllocatedSize
-      );
+  // Initialize MpEvent to suppress incorrect compiler/analyzer warnings.
+  //
+  MpEvent = NULL;
+
+  if (CpuFeaturesData->NumberOfCpus > 1) {
+    Status = gBS->CreateEvent (
+                    EVT_NOTIFY_WAIT,
+                    TPL_CALLBACK,
+                    EfiEventEmptyFunction,
+                    NULL,
+                    &MpEvent
+                    );
+    ASSERT_EFI_ERROR (Status);
+
     //
-    // RegisterTableEntry is allocated by gBS->AllocatePages() service.
-    // So, gBS->FreePages() service is used to free it.
+    // Wakeup all APs for programming.
     //
-    gBS->FreePages (
-      RegisterTable->RegisterTableEntry,
-      AllocatePages
-      );
+    StartupAllAPsWorker (SetProcessorRegister, MpEvent);
   }
 
   //
-  // Adjust the allocated size and register table base address.
+  // Programming BSP
   //
-  RegisterTable->AllocatedSize     += EFI_PAGE_SIZE;
-  RegisterTable->RegisterTableEntry = Address;
+  SetProcessorRegister (CpuFeaturesData);
+
+  if (CpuFeaturesData->NumberOfCpus > 1) {
+    //
+    // Wait all processors to finish the task.
+    //
+    do {
+      Status = gBS->CheckEvent (MpEvent);
+    } while (Status == EFI_NOT_READY);
+    ASSERT_EFI_ERROR (Status);
+  }
+
+  //
+  // Switch to new BSP if required
+  //
+  if (CpuFeaturesData->BspNumber != OldBspNumber) {
+    SwitchNewBsp (CpuFeaturesData->BspNumber);
+  }
 }
+

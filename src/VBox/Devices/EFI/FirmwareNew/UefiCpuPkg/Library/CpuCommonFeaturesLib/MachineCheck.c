@@ -1,14 +1,8 @@
 /** @file
   Machine Check features.
 
-  Copyright (c) 2017 - 2018, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2017 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -139,6 +133,32 @@ McaInitialize (
 {
   MSR_IA32_MCG_CAP_REGISTER  McgCap;
   UINT32                     BankIndex;
+
+  //
+  // The scope of MSR_IA32_MC*_CTL/MSR_IA32_MC*_STATUS is core for below processor type, only program
+  // MSR_IA32_MC*_CTL/MSR_IA32_MC*_STATUS for thread 0 in each core.
+  //
+  if (IS_ATOM_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_SILVERMONT_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_SANDY_BRIDGE_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_SKYLAKE_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_XEON_PHI_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_PENTIUM_4_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_CORE_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel)) {
+    if (CpuInfo->ProcessorInfo.Location.Thread != 0) {
+      return RETURN_SUCCESS;
+    }
+  }
+
+  //
+  // The scope of MSR_IA32_MC*_CTL/MSR_IA32_MC*_STATUS is package for below processor type, only program
+  // MSR_IA32_MC*_CTL/MSR_IA32_MC*_STATUS for thread 0 core 0 in each package.
+  //
+  if (IS_NEHALEM_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel)) {
+    if ((CpuInfo->ProcessorInfo.Location.Thread != 0) || (CpuInfo->ProcessorInfo.Location.Core != 0)) {
+      return RETURN_SUCCESS;
+    }
+  }
 
   if (State) {
     McgCap.Uint64 = AsmReadMsr64 (MSR_IA32_MCG_CAP);
@@ -299,19 +319,26 @@ LmceInitialize (
   IN BOOLEAN                           State
   )
 {
-  MSR_IA32_FEATURE_CONTROL_REGISTER    *MsrRegister;
-
-  ASSERT (ConfigData != NULL);
-  MsrRegister = (MSR_IA32_FEATURE_CONTROL_REGISTER *) ConfigData;
-  if (MsrRegister[ProcessorNumber].Bits.Lock == 0) {
-    CPU_REGISTER_TABLE_WRITE_FIELD (
-      ProcessorNumber,
-      Msr,
-      MSR_IA32_FEATURE_CONTROL,
-      MSR_IA32_FEATURE_CONTROL_REGISTER,
-      Bits.LmceOn,
-      (State) ? 1 : 0
-      );
+  //
+  // The scope of LcmeOn bit in the MSR_IA32_MISC_ENABLE is core for below processor type, only program
+  // MSR_IA32_MISC_ENABLE for thread 0 in each core.
+  //
+  if (IS_SILVERMONT_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_GOLDMONT_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_PENTIUM_4_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel)) {
+    if (CpuInfo->ProcessorInfo.Location.Thread != 0) {
+      return RETURN_SUCCESS;
+    }
   }
+
+  CPU_REGISTER_TABLE_TEST_THEN_WRITE_FIELD (
+    ProcessorNumber,
+    Msr,
+    MSR_IA32_FEATURE_CONTROL,
+    MSR_IA32_FEATURE_CONTROL_REGISTER,
+    Bits.LmceOn,
+    (State) ? 1 : 0
+    );
+
   return RETURN_SUCCESS;
 }

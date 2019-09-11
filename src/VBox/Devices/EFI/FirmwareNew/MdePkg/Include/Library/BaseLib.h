@@ -2,15 +2,9 @@
   Provides string functions, linked list functions, math functions, synchronization
   functions, file path functions, and CPU architecture-specific functions.
 
-Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -31,61 +25,12 @@ typedef struct {
   UINT32                            Ebp;
   UINT32                            Esp;
   UINT32                            Eip;
+  UINT32                            Ssp;
 } BASE_LIBRARY_JUMP_BUFFER;
 
 #define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 4
 
 #endif // defined (MDE_CPU_IA32)
-
-#if defined (MDE_CPU_IPF)
-
-///
-/// The Itanium architecture context buffer used by SetJump() and LongJump().
-///
-typedef struct {
-  UINT64                            F2[2];
-  UINT64                            F3[2];
-  UINT64                            F4[2];
-  UINT64                            F5[2];
-  UINT64                            F16[2];
-  UINT64                            F17[2];
-  UINT64                            F18[2];
-  UINT64                            F19[2];
-  UINT64                            F20[2];
-  UINT64                            F21[2];
-  UINT64                            F22[2];
-  UINT64                            F23[2];
-  UINT64                            F24[2];
-  UINT64                            F25[2];
-  UINT64                            F26[2];
-  UINT64                            F27[2];
-  UINT64                            F28[2];
-  UINT64                            F29[2];
-  UINT64                            F30[2];
-  UINT64                            F31[2];
-  UINT64                            R4;
-  UINT64                            R5;
-  UINT64                            R6;
-  UINT64                            R7;
-  UINT64                            SP;
-  UINT64                            BR0;
-  UINT64                            BR1;
-  UINT64                            BR2;
-  UINT64                            BR3;
-  UINT64                            BR4;
-  UINT64                            BR5;
-  UINT64                            InitialUNAT;
-  UINT64                            AfterSpillUNAT;
-  UINT64                            PFS;
-  UINT64                            BSP;
-  UINT64                            Predicates;
-  UINT64                            LoopCount;
-  UINT64                            FPSR;
-} BASE_LIBRARY_JUMP_BUFFER;
-
-#define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 0x10
-
-#endif // defined (MDE_CPU_IPF)
 
 #if defined (MDE_CPU_X64)
 ///
@@ -104,6 +49,7 @@ typedef struct {
   UINT64                            Rip;
   UINT64                            MxCsr;
   UINT8                             XmmBuffer[160]; ///< XMM6-XMM15.
+  UINT64                            Ssp;
 } BASE_LIBRARY_JUMP_BUFFER;
 
 #define BASE_LIBRARY_JUMP_BUFFER_ALIGNMENT 8
@@ -1119,7 +1065,7 @@ StrnCpy (
   IN      CONST CHAR16              *Source,
   IN      UINTN                     Length
   );
-#endif
+#endif // !defined (DISABLE_NEW_DEPRECATED_INTERFACES)
 
 /**
   Returns the length of a Null-terminated Unicode string.
@@ -1338,7 +1284,7 @@ StrnCat (
   IN      CONST CHAR16              *Source,
   IN      UINTN                     Length
   );
-#endif
+#endif // !defined (DISABLE_NEW_DEPRECATED_INTERFACES)
 
 /**
   Returns the first occurrence of a Null-terminated Unicode sub-string
@@ -1811,7 +1757,7 @@ UnicodeStrToAsciiStr (
   OUT     CHAR8                     *Destination
   );
 
-#endif
+#endif // !defined (DISABLE_NEW_DEPRECATED_INTERFACES)
 
 /**
   Convert a Null-terminated Unicode string to a Null-terminated
@@ -1985,7 +1931,7 @@ AsciiStrnCpy (
   IN      CONST CHAR8               *Source,
   IN      UINTN                     Length
   );
-#endif
+#endif // !defined (DISABLE_NEW_DEPRECATED_INTERFACES)
 
 /**
   Returns the length of a Null-terminated ASCII string.
@@ -2229,7 +2175,7 @@ AsciiStrnCat (
   IN      CONST CHAR8               *Source,
   IN      UINTN                     Length
   );
-#endif
+#endif // !defined (DISABLE_NEW_DEPRECATED_INTERFACES)
 
 /**
   Returns the first occurrence of a Null-terminated ASCII sub-string
@@ -2670,7 +2616,7 @@ AsciiStrToUnicodeStr (
   OUT     CHAR16                    *Destination
   );
 
-#endif
+#endif // !defined (DISABLE_NEW_DEPRECATED_INTERFACES)
 
 /**
   Convert one Null-terminated ASCII string to a Null-terminated
@@ -2768,6 +2714,165 @@ AsciiStrnToUnicodeStrS (
   OUT     CHAR16                    *Destination,
   IN      UINTN                     DestMax,
   OUT     UINTN                     *DestinationLength
+  );
+
+/**
+  Convert a Unicode character to upper case only if
+  it maps to a valid small-case ASCII character.
+
+  This internal function only deal with Unicode character
+  which maps to a valid small-case ASCII character, i.e.
+  L'a' to L'z'. For other Unicode character, the input character
+  is returned directly.
+
+  @param  Char  The character to convert.
+
+  @retval LowerCharacter   If the Char is with range L'a' to L'z'.
+  @retval Unchanged        Otherwise.
+
+**/
+CHAR16
+EFIAPI
+CharToUpper (
+  IN      CHAR16                    Char
+  );
+
+/**
+  Converts a lowercase Ascii character to upper one.
+
+  If Chr is lowercase Ascii character, then converts it to upper one.
+
+  If Value >= 0xA0, then ASSERT().
+  If (Value & 0x0F) >= 0x0A, then ASSERT().
+
+  @param  Chr   one Ascii character
+
+  @return The uppercase value of Ascii character
+
+**/
+CHAR8
+EFIAPI
+AsciiCharToUpper (
+  IN      CHAR8                     Chr
+  );
+
+/**
+  Convert binary data to a Base64 encoded ascii string based on RFC4648.
+
+  Produce a Null-terminated Ascii string in the output buffer specified by Destination and DestinationSize.
+  The Ascii string is produced by converting the data string specified by Source and SourceLength.
+
+  @param Source           Input UINT8 data
+  @param SourceLength     Number of UINT8 bytes of data
+  @param Destination      Pointer to output string buffer
+  @param DestinationSize  Size of ascii buffer. Set to 0 to get the size needed.
+                          Caller is responsible for passing in buffer of DestinationSize
+
+  @retval RETURN_SUCCESS             When ascii buffer is filled in.
+  @retval RETURN_INVALID_PARAMETER   If Source is NULL or DestinationSize is NULL.
+  @retval RETURN_INVALID_PARAMETER   If SourceLength or DestinationSize is bigger than (MAX_ADDRESS - (UINTN)Destination).
+  @retval RETURN_BUFFER_TOO_SMALL    If SourceLength is 0 and DestinationSize is <1.
+  @retval RETURN_BUFFER_TOO_SMALL    If Destination is NULL or DestinationSize is smaller than required buffersize.
+
+**/
+RETURN_STATUS
+EFIAPI
+Base64Encode (
+  IN  CONST UINT8  *Source,
+  IN        UINTN   SourceLength,
+  OUT       CHAR8  *Destination  OPTIONAL,
+  IN OUT    UINTN  *DestinationSize
+  );
+
+/**
+  Decode Base64 ASCII encoded data to 8-bit binary representation, based on
+  RFC4648.
+
+  Decoding occurs according to "Table 1: The Base 64 Alphabet" in RFC4648.
+
+  Whitespace is ignored at all positions:
+  - 0x09 ('\t') horizontal tab
+  - 0x0A ('\n') new line
+  - 0x0B ('\v') vertical tab
+  - 0x0C ('\f') form feed
+  - 0x0D ('\r') carriage return
+  - 0x20 (' ')  space
+
+  The minimum amount of required padding (with ASCII 0x3D, '=') is tolerated
+  and enforced at the end of the Base64 ASCII encoded data, and only there.
+
+  Other characters outside of the encoding alphabet cause the function to
+  reject the Base64 ASCII encoded data.
+
+  @param[in] Source               Array of CHAR8 elements containing the Base64
+                                  ASCII encoding. May be NULL if SourceSize is
+                                  zero.
+
+  @param[in] SourceSize           Number of CHAR8 elements in Source.
+
+  @param[out] Destination         Array of UINT8 elements receiving the decoded
+                                  8-bit binary representation. Allocated by the
+                                  caller. May be NULL if DestinationSize is
+                                  zero on input. If NULL, decoding is
+                                  performed, but the 8-bit binary
+                                  representation is not stored. If non-NULL and
+                                  the function returns an error, the contents
+                                  of Destination are indeterminate.
+
+  @param[in,out] DestinationSize  On input, the number of UINT8 elements that
+                                  the caller allocated for Destination. On
+                                  output, if the function returns
+                                  RETURN_SUCCESS or RETURN_BUFFER_TOO_SMALL,
+                                  the number of UINT8 elements that are
+                                  required for decoding the Base64 ASCII
+                                  representation. If the function returns a
+                                  value different from both RETURN_SUCCESS and
+                                  RETURN_BUFFER_TOO_SMALL, then DestinationSize
+                                  is indeterminate on output.
+
+  @retval RETURN_SUCCESS            SourceSize CHAR8 elements at Source have
+                                    been decoded to on-output DestinationSize
+                                    UINT8 elements at Destination. Note that
+                                    RETURN_SUCCESS covers the case when
+                                    DestinationSize is zero on input, and
+                                    Source decodes to zero bytes (due to
+                                    containing at most ignored whitespace).
+
+  @retval RETURN_BUFFER_TOO_SMALL   The input value of DestinationSize is not
+                                    large enough for decoding SourceSize CHAR8
+                                    elements at Source. The required number of
+                                    UINT8 elements has been stored to
+                                    DestinationSize.
+
+  @retval RETURN_INVALID_PARAMETER  DestinationSize is NULL.
+
+  @retval RETURN_INVALID_PARAMETER  Source is NULL, but SourceSize is not zero.
+
+  @retval RETURN_INVALID_PARAMETER  Destination is NULL, but DestinationSize is
+                                    not zero on input.
+
+  @retval RETURN_INVALID_PARAMETER  Source is non-NULL, and (Source +
+                                    SourceSize) would wrap around MAX_ADDRESS.
+
+  @retval RETURN_INVALID_PARAMETER  Destination is non-NULL, and (Destination +
+                                    DestinationSize) would wrap around
+                                    MAX_ADDRESS, as specified on input.
+
+  @retval RETURN_INVALID_PARAMETER  None of Source and Destination are NULL,
+                                    and CHAR8[SourceSize] at Source overlaps
+                                    UINT8[DestinationSize] at Destination, as
+                                    specified on input.
+
+  @retval RETURN_INVALID_PARAMETER  Invalid CHAR8 element encountered in
+                                    Source.
+**/
+RETURN_STATUS
+EFIAPI
+Base64Decode (
+  IN     CONST CHAR8 *Source          OPTIONAL,
+  IN     UINTN       SourceSize,
+  OUT    UINT8       *Destination     OPTIONAL,
+  IN OUT UINTN       *DestinationSize
   );
 
 /**
@@ -4609,6 +4714,62 @@ BitFieldAndThenOr64 (
   IN      UINT64                    OrData
   );
 
+/**
+  Reads a bit field from a 32-bit value, counts and returns
+  the number of set bits.
+
+  Counts the number of set bits in the  bit field specified by
+  StartBit and EndBit in Operand. The count is returned.
+
+  If StartBit is greater than 31, then ASSERT().
+  If EndBit is greater than 31, then ASSERT().
+  If EndBit is less than StartBit, then ASSERT().
+
+  @param  Operand   Operand on which to perform the bitfield operation.
+  @param  StartBit  The ordinal of the least significant bit in the bit field.
+                    Range 0..31.
+  @param  EndBit    The ordinal of the most significant bit in the bit field.
+                    Range 0..31.
+
+  @return The number of bits set between StartBit and EndBit.
+
+**/
+UINT8
+EFIAPI
+BitFieldCountOnes32 (
+  IN       UINT32                   Operand,
+  IN       UINTN                    StartBit,
+  IN       UINTN                    EndBit
+  );
+
+/**
+   Reads a bit field from a 64-bit value, counts and returns
+   the number of set bits.
+
+   Counts the number of set bits in the  bit field specified by
+   StartBit and EndBit in Operand. The count is returned.
+
+   If StartBit is greater than 63, then ASSERT().
+   If EndBit is greater than 63, then ASSERT().
+   If EndBit is less than StartBit, then ASSERT().
+
+   @param  Operand   Operand on which to perform the bitfield operation.
+   @param  StartBit  The ordinal of the least significant bit in the bit field.
+   Range 0..63.
+   @param  EndBit    The ordinal of the most significant bit in the bit field.
+   Range 0..63.
+
+   @return The number of bits set between StartBit and EndBit.
+
+**/
+UINT8
+EFIAPI
+BitFieldCountOnes64 (
+  IN       UINT64                   Operand,
+  IN       UINTN                    StartBit,
+  IN       UINTN                    EndBit
+  );
+
 //
 // Base Library Checksum Functions
 //
@@ -4903,6 +5064,7 @@ MemoryFence (
   @retval 0 Indicates a return from SetJump().
 
 **/
+RETURNS_TWICE
 UINTN
 EFIAPI
 SetJump (
@@ -5104,1397 +5266,20 @@ CpuDeadLoop (
   VOID
   );
 
-#if defined (MDE_CPU_IPF)
 
 /**
-  Flush a range of  cache lines in the cache coherency domain of the calling
-  CPU.
+  Uses as a barrier to stop speculative execution.
 
-  Flushes the cache lines specified by Address and Length.  If Address is not aligned
-  on a cache line boundary, then entire cache line containing Address is flushed.
-  If Address + Length is not aligned on a cache line boundary, then the entire cache
-  line containing Address + Length - 1 is flushed.  This function may choose to flush
-  the entire cache if that is more efficient than flushing the specified range.  If
-  Length is 0, the no cache lines are flushed.  Address is returned.
-  This function is only available on Itanium processors.
-
-  If Length is greater than (MAX_ADDRESS - Address + 1), then ASSERT().
-
-  @param  Address The base address of the instruction lines to invalidate. If
-                  the CPU is in a physical addressing mode, then Address is a
-                  physical address. If the CPU is in a virtual addressing mode,
-                  then Address is a virtual address.
-
-  @param  Length  The number of bytes to invalidate from the instruction cache.
-
-  @return Address.
-
-**/
-VOID *
-EFIAPI
-AsmFlushCacheRange (
-  IN      VOID                      *Address,
-  IN      UINTN                     Length
-  );
-
-
-/**
-  Executes an FC instruction.
-  Executes an FC instruction on the cache line specified by Address.
-  The cache line size affected is at least 32-bytes (aligned on a 32-byte boundary).
-  An implementation may flush a larger region.  This function is only available on Itanium processors.
-
-  @param Address    The Address of cache line to be flushed.
-
-  @return The address of FC instruction executed.
-
-**/
-UINT64
-EFIAPI
-AsmFc (
-  IN  UINT64  Address
-  );
-
-
-/**
-  Executes an FC.I instruction.
-  Executes an FC.I instruction on the cache line specified by Address.
-  The cache line size affected is at least 32-bytes (aligned on a 32-byte boundary).
-  An implementation may flush a larger region.  This function is only available on Itanium processors.
-
-  @param Address    The Address of cache line to be flushed.
-
-  @return The address of the FC.I instruction executed.
-
-**/
-UINT64
-EFIAPI
-AsmFci (
-  IN  UINT64  Address
-  );
-
-
-/**
-  Reads the current value of a Processor Identifier Register (CPUID).
-
-  Reads and returns the current value of Processor Identifier Register specified by Index.
-  The Index of largest implemented CPUID (One less than the number of implemented CPUID
-  registers) is determined by CPUID [3] bits {7:0}.
-  No parameter checking is performed on Index.  If the Index value is beyond the
-  implemented CPUID register range, a Reserved Register/Field fault may occur.  The caller
-  must either guarantee that Index is valid, or the caller must set up fault handlers to
-  catch the faults.  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Processor Identifier Register index to read.
-
-  @return The current value of Processor Identifier Register specified by Index.
-
-**/
-UINT64
-EFIAPI
-AsmReadCpuid (
-  IN  UINT8   Index
-  );
-
-
-/**
-  Reads the current value of 64-bit Processor Status Register (PSR).
-  This function is only available on Itanium processors.
-
-  @return The current value of PSR.
-
-**/
-UINT64
-EFIAPI
-AsmReadPsr (
-  VOID
-  );
-
-
-/**
-  Writes the current value of 64-bit Processor Status Register (PSR).
-
-  No parameter checking is performed on Value.  All bits of Value corresponding to
-  reserved fields of PSR must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults. This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to PSR.
-
-  @return The 64-bit value written to the PSR.
-
-**/
-UINT64
-EFIAPI
-AsmWritePsr (
-  IN UINT64  Value
-  );
-
-
-/**
-  Reads the current value of 64-bit Kernel Register #0 (KR0).
-
-  Reads and returns the current value of KR0.
-  This function is only available on Itanium processors.
-
-  @return The current value of KR0.
-
-**/
-UINT64
-EFIAPI
-AsmReadKr0 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of 64-bit Kernel Register #1 (KR1).
-
-  Reads and returns the current value of KR1.
-  This function is only available on Itanium processors.
-
-  @return The current value of KR1.
-
-**/
-UINT64
-EFIAPI
-AsmReadKr1 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of 64-bit Kernel Register #2 (KR2).
-
-  Reads and returns the current value of KR2.
-  This function is only available on Itanium processors.
-
-  @return The current value of KR2.
-
-**/
-UINT64
-EFIAPI
-AsmReadKr2 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of 64-bit Kernel Register #3 (KR3).
-
-  Reads and returns the current value of KR3.
-  This function is only available on Itanium processors.
-
-  @return The current value of KR3.
-
-**/
-UINT64
-EFIAPI
-AsmReadKr3 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of 64-bit Kernel Register #4 (KR4).
-
-  Reads and returns the current value of KR4.
-  This function is only available on Itanium processors.
-
-  @return The current value of KR4.
-
-**/
-UINT64
-EFIAPI
-AsmReadKr4 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of 64-bit Kernel Register #5 (KR5).
-
-  Reads and returns the current value of KR5.
-  This function is only available on Itanium processors.
-
-  @return The current value of KR5.
-
-**/
-UINT64
-EFIAPI
-AsmReadKr5 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of 64-bit Kernel Register #6 (KR6).
-
-  Reads and returns the current value of KR6.
-  This function is only available on Itanium processors.
-
-  @return The current value of KR6.
-
-**/
-UINT64
-EFIAPI
-AsmReadKr6 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of 64-bit Kernel Register #7 (KR7).
-
-  Reads and returns the current value of KR7.
-  This function is only available on Itanium processors.
-
-  @return The current value of KR7.
-
-**/
-UINT64
-EFIAPI
-AsmReadKr7 (
-  VOID
-  );
-
-
-/**
-  Write the current value of 64-bit Kernel Register #0 (KR0).
-
-  Writes the current value of KR0.  The 64-bit value written to
-  the KR0 is returned. This function is only available on Itanium processors.
-
-  @param  Value   The 64-bit value to write to KR0.
-
-  @return The 64-bit value written to the KR0.
-
-**/
-UINT64
-EFIAPI
-AsmWriteKr0 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Write the current value of 64-bit Kernel Register #1 (KR1).
-
-  Writes the current value of KR1.  The 64-bit value written to
-  the KR1 is returned. This function is only available on Itanium processors.
-
-  @param  Value   The 64-bit value to write to KR1.
-
-  @return The 64-bit value written to the KR1.
-
-**/
-UINT64
-EFIAPI
-AsmWriteKr1 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Write the current value of 64-bit Kernel Register #2 (KR2).
-
-  Writes the current value of KR2.  The 64-bit value written to
-  the KR2 is returned. This function is only available on Itanium processors.
-
-  @param  Value   The 64-bit value to write to KR2.
-
-  @return The 64-bit value written to the KR2.
-
-**/
-UINT64
-EFIAPI
-AsmWriteKr2 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Write the current value of 64-bit Kernel Register #3 (KR3).
-
-  Writes the current value of KR3.  The 64-bit value written to
-  the KR3 is returned. This function is only available on Itanium processors.
-
-  @param  Value   The 64-bit value to write to KR3.
-
-  @return The 64-bit value written to the KR3.
-
-**/
-UINT64
-EFIAPI
-AsmWriteKr3 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Write the current value of 64-bit Kernel Register #4 (KR4).
-
-  Writes the current value of KR4.  The 64-bit value written to
-  the KR4 is returned. This function is only available on Itanium processors.
-
-  @param  Value   The 64-bit value to write to KR4.
-
-  @return The 64-bit value written to the KR4.
-
-**/
-UINT64
-EFIAPI
-AsmWriteKr4 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Write the current value of 64-bit Kernel Register #5 (KR5).
-
-  Writes the current value of KR5.  The 64-bit value written to
-  the KR5 is returned. This function is only available on Itanium processors.
-
-  @param  Value   The 64-bit value to write to KR5.
-
-  @return The 64-bit value written to the KR5.
-
-**/
-UINT64
-EFIAPI
-AsmWriteKr5 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Write the current value of 64-bit Kernel Register #6 (KR6).
-
-  Writes the current value of KR6.  The 64-bit value written to
-  the KR6 is returned. This function is only available on Itanium processors.
-
-  @param  Value   The 64-bit value to write to KR6.
-
-  @return The 64-bit value written to the KR6.
-
-**/
-UINT64
-EFIAPI
-AsmWriteKr6 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Write the current value of 64-bit Kernel Register #7 (KR7).
-
-  Writes the current value of KR7.  The 64-bit value written to
-  the KR7 is returned. This function is only available on Itanium processors.
-
-  @param  Value   The 64-bit value to write to KR7.
-
-  @return The 64-bit value written to the KR7.
-
-**/
-UINT64
-EFIAPI
-AsmWriteKr7 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Reads the current value of Interval Timer Counter Register (ITC).
-
-  Reads and returns the current value of ITC.
-  This function is only available on Itanium processors.
-
-  @return The current value of ITC.
-
-**/
-UINT64
-EFIAPI
-AsmReadItc (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Interval Timer Vector Register (ITV).
-
-  Reads and returns the current value of ITV.
-  This function is only available on Itanium processors.
-
-  @return The current value of ITV.
-
-**/
-UINT64
-EFIAPI
-AsmReadItv (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Interval Timer Match Register (ITM).
-
-  Reads and returns the current value of ITM.
-  This function is only available on Itanium processors.
-
-  @return The current value of ITM.
-**/
-UINT64
-EFIAPI
-AsmReadItm (
-  VOID
-  );
-
-
-/**
-  Writes the current value of 64-bit Interval Timer Counter Register (ITC).
-
-  Writes the current value of ITC.  The 64-bit value written to the ITC is returned.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to ITC.
-
-  @return The 64-bit value written to the ITC.
-
-**/
-UINT64
-EFIAPI
-AsmWriteItc (
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Interval Timer Match Register (ITM).
-
-  Writes the current value of ITM.  The 64-bit value written to the ITM is returned.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to ITM.
-
-  @return The 64-bit value written to the ITM.
-
-**/
-UINT64
-EFIAPI
-AsmWriteItm (
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Interval Timer Vector Register (ITV).
-
-  Writes the current value of ITV.  The 64-bit value written to the ITV is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding to
-  reserved fields of ITV must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to ITV.
-
-  @return The 64-bit value written to the ITV.
-
-**/
-UINT64
-EFIAPI
-AsmWriteItv (
-  IN UINT64  Value
-  );
-
-
-/**
-  Reads the current value of Default Control Register (DCR).
-
-  Reads and returns the current value of DCR.  This function is only available on Itanium processors.
-
-  @return The current value of DCR.
-
-**/
-UINT64
-EFIAPI
-AsmReadDcr (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Interruption Vector Address Register (IVA).
-
-  Reads and returns the current value of IVA.  This function is only available on Itanium processors.
-
-  @return The current value of IVA.
-**/
-UINT64
-EFIAPI
-AsmReadIva (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Page Table Address Register (PTA).
-
-  Reads and returns the current value of PTA.  This function is only available on Itanium processors.
-
-  @return The current value of PTA.
-
-**/
-UINT64
-EFIAPI
-AsmReadPta (
-  VOID
-  );
-
-
-/**
-  Writes the current value of 64-bit Default Control Register (DCR).
-
-  Writes the current value of DCR.  The 64-bit value written to the DCR is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding to
-  reserved fields of DCR must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to DCR.
-
-  @return The 64-bit value written to the DCR.
-
-**/
-UINT64
-EFIAPI
-AsmWriteDcr (
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Interruption Vector Address Register (IVA).
-
-  Writes the current value of IVA.  The 64-bit value written to the IVA is returned.
-  The size of vector table is 32 K bytes and is 32 K bytes aligned
-  the low 15 bits of Value is ignored when written.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to IVA.
-
-  @return The 64-bit value written to the IVA.
-
-**/
-UINT64
-EFIAPI
-AsmWriteIva (
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Page Table Address Register (PTA).
-
-  Writes the current value of PTA.  The 64-bit value written to the PTA is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding to
-  reserved fields of DCR must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to PTA.
-
-  @return The 64-bit value written to the PTA.
-**/
-UINT64
-EFIAPI
-AsmWritePta (
-  IN UINT64  Value
-  );
-
-
-/**
-  Reads the current value of Local Interrupt ID Register (LID).
-
-  Reads and returns the current value of LID.  This function is only available on Itanium processors.
-
-  @return The current value of LID.
-
-**/
-UINT64
-EFIAPI
-AsmReadLid (
-  VOID
-  );
-
-
-/**
-  Reads the current value of External Interrupt Vector Register (IVR).
-
-  Reads and returns the current value of IVR.  This function is only available on Itanium processors.
-
-  @return The current value of IVR.
-
-**/
-UINT64
-EFIAPI
-AsmReadIvr (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Task Priority Register (TPR).
-
-  Reads and returns the current value of TPR.  This function is only available on Itanium processors.
-
-  @return The current value of TPR.
-
-**/
-UINT64
-EFIAPI
-AsmReadTpr (
-  VOID
-  );
-
-
-/**
-  Reads the current value of External Interrupt Request Register #0 (IRR0).
-
-  Reads and returns the current value of IRR0.  This function is only available on Itanium processors.
-
-  @return The current value of IRR0.
-
-**/
-UINT64
-EFIAPI
-AsmReadIrr0 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of External Interrupt Request Register #1 (IRR1).
-
-  Reads and returns the current value of IRR1.  This function is only available on Itanium processors.
-
-  @return The current value of IRR1.
-
-**/
-UINT64
-EFIAPI
-AsmReadIrr1 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of External Interrupt Request Register #2 (IRR2).
-
-  Reads and returns the current value of IRR2.  This function is only available on Itanium processors.
-
-  @return The current value of IRR2.
-
-**/
-UINT64
-EFIAPI
-AsmReadIrr2 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of External Interrupt Request Register #3 (IRR3).
-
-  Reads and returns the current value of IRR3.  This function is only available on Itanium processors.
-
-  @return The current value of IRR3.
-
-**/
-UINT64
-EFIAPI
-AsmReadIrr3 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Performance Monitor Vector Register (PMV).
-
-  Reads and returns the current value of PMV.  This function is only available on Itanium processors.
-
-  @return The current value of PMV.
-
-**/
-UINT64
-EFIAPI
-AsmReadPmv (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Corrected Machine Check Vector Register (CMCV).
-
-  Reads and returns the current value of CMCV.  This function is only available on Itanium processors.
-
-  @return The current value of CMCV.
-
-**/
-UINT64
-EFIAPI
-AsmReadCmcv (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Local Redirection Register #0 (LRR0).
-
-  Reads and returns the current value of LRR0.  This function is only available on Itanium processors.
-
-  @return The current value of LRR0.
-
-**/
-UINT64
-EFIAPI
-AsmReadLrr0 (
-  VOID
-  );
-
-
-/**
-  Reads the current value of Local Redirection Register #1 (LRR1).
-
-  Reads and returns the current value of LRR1.  This function is only available on Itanium processors.
-
-  @return The current value of LRR1.
-
-**/
-UINT64
-EFIAPI
-AsmReadLrr1 (
-  VOID
-  );
-
-
-/**
-  Writes the current value of 64-bit Page Local Interrupt ID Register (LID).
-
-  Writes the current value of LID.  The 64-bit value written to the LID is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding to
-  reserved fields of LID must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to LID.
-
-  @return The 64-bit value written to the LID.
-
-**/
-UINT64
-EFIAPI
-AsmWriteLid (
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Task Priority Register (TPR).
-
-  Writes the current value of TPR.  The 64-bit value written to the TPR is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding to
-  reserved fields of TPR must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to TPR.
-
-  @return The 64-bit value written to the TPR.
-
-**/
-UINT64
-EFIAPI
-AsmWriteTpr (
-  IN UINT64  Value
-  );
-
-
-/**
-  Performs a write operation on End OF External Interrupt Register (EOI).
-
-  Writes a value of 0 to the EOI Register.  This function is only available on Itanium processors.
+  Ensures that no later instruction will execute speculatively, until all prior
+  instructions have completed.
 
 **/
 VOID
 EFIAPI
-AsmWriteEoi (
+SpeculationBarrier (
   VOID
   );
 
-
-/**
-  Writes the current value of 64-bit Performance Monitor Vector Register (PMV).
-
-  Writes the current value of PMV.  The 64-bit value written to the PMV is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding
-  to reserved fields of PMV must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to PMV.
-
-  @return The 64-bit value written to the PMV.
-
-**/
-UINT64
-EFIAPI
-AsmWritePmv (
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Corrected Machine Check Vector Register (CMCV).
-
-  Writes the current value of CMCV.  The 64-bit value written to the CMCV is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding
-  to reserved fields of CMCV must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to CMCV.
-
-  @return The 64-bit value written to the CMCV.
-
-**/
-UINT64
-EFIAPI
-AsmWriteCmcv (
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Local Redirection Register #0 (LRR0).
-
-  Writes the current value of LRR0.  The 64-bit value written to the LRR0 is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding
-  to reserved fields of LRR0 must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to LRR0.
-
-  @return The 64-bit value written to the LRR0.
-
-**/
-UINT64
-EFIAPI
-AsmWriteLrr0 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Local Redirection Register #1 (LRR1).
-
-  Writes the current value of LRR1.  The 64-bit value written to the LRR1 is returned.
-  No parameter checking is performed on Value.  All bits of Value corresponding
-  to reserved fields of LRR1 must be 0 or a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Value is valid, or the caller must
-  set up fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Value    The 64-bit value to write to LRR1.
-
-  @return The 64-bit value written to the LRR1.
-
-**/
-UINT64
-EFIAPI
-AsmWriteLrr1 (
-  IN UINT64  Value
-  );
-
-
-/**
-  Reads the current value of Instruction Breakpoint Register (IBR).
-
-  The Instruction Breakpoint Registers are used in pairs.  The even numbered
-  registers contain breakpoint addresses, and the odd numbered registers contain
-  breakpoint mask conditions.  At least four instruction registers pairs are implemented
-  on all processor models.   Implemented registers are contiguous starting with
-  register 0.  No parameter checking is performed on Index, and if the Index value
-  is beyond the implemented IBR register range, a Reserved Register/Field fault may
-  occur.  The caller must either guarantee that Index is valid, or the caller must
-  set up fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Instruction Breakpoint Register index to read.
-
-  @return The current value of Instruction Breakpoint Register specified by Index.
-
-**/
-UINT64
-EFIAPI
-AsmReadIbr (
-  IN  UINT8   Index
-  );
-
-
-/**
-  Reads the current value of Data Breakpoint Register (DBR).
-
-  The Data Breakpoint Registers are used in pairs.  The even numbered registers
-  contain breakpoint addresses, and odd numbered registers contain breakpoint
-  mask conditions.  At least four data registers pairs are implemented on all processor
-  models.  Implemented registers are contiguous starting with register 0.
-  No parameter checking is performed on Index.  If the Index value is beyond
-  the implemented DBR register range, a Reserved Register/Field fault may occur.
-  The caller must either guarantee that Index is valid, or the caller must set up
-  fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Data Breakpoint Register index to read.
-
-  @return The current value of Data Breakpoint Register specified by Index.
-
-**/
-UINT64
-EFIAPI
-AsmReadDbr (
-  IN  UINT8   Index
-  );
-
-
-/**
-  Reads the current value of Performance Monitor Configuration Register (PMC).
-
-  All processor implementations provide at least four performance counters
-  (PMC/PMD [4]...PMC/PMD [7] pairs), and four performance monitor counter overflow
-  status registers (PMC [0]... PMC [3]).  Processor implementations may provide
-  additional implementation-dependent PMC and PMD to increase the number of
-  'generic' performance counters (PMC/PMD pairs).  The remainder of PMC and PMD
-  register set is implementation dependent.  No parameter checking is performed
-  on Index.  If the Index value is beyond the implemented PMC register range,
-  zero value will be returned.
-  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Performance Monitor Configuration Register index to read.
-
-  @return   The current value of Performance Monitor Configuration Register
-            specified by Index.
-
-**/
-UINT64
-EFIAPI
-AsmReadPmc (
-  IN  UINT8   Index
-  );
-
-
-/**
-  Reads the current value of Performance Monitor Data Register (PMD).
-
-  All processor implementations provide at least 4 performance counters
-  (PMC/PMD [4]...PMC/PMD [7] pairs), and 4 performance monitor counter
-  overflow status registers (PMC [0]... PMC [3]).  Processor implementations may
-  provide additional implementation-dependent PMC and PMD to increase the number
-  of 'generic' performance counters (PMC/PMD pairs).  The remainder of PMC and PMD
-  register set is implementation dependent.  No parameter checking is performed
-  on Index.  If the Index value is beyond the implemented PMD register range,
-  zero value will be returned.
-  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Performance Monitor Data Register index to read.
-
-  @return The current value of Performance Monitor Data Register specified by Index.
-
-**/
-UINT64
-EFIAPI
-AsmReadPmd (
-  IN  UINT8   Index
-  );
-
-
-/**
-  Writes the current value of 64-bit Instruction Breakpoint Register (IBR).
-
-  Writes current value of Instruction Breakpoint Register specified by Index.
-  The Instruction Breakpoint Registers are used in pairs.  The even numbered
-  registers contain breakpoint addresses, and odd numbered registers contain
-  breakpoint mask conditions.  At least four instruction registers pairs are implemented
-  on all processor models.  Implemented registers are contiguous starting with
-  register 0.  No parameter checking is performed on Index.  If the Index value
-  is beyond the implemented IBR register range, a Reserved Register/Field fault may
-  occur.  The caller must either guarantee that Index is valid, or the caller must
-  set up fault handlers to catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Instruction Breakpoint Register index to write.
-  @param Value    The 64-bit value to write to IBR.
-
-  @return The 64-bit value written to the IBR.
-
-**/
-UINT64
-EFIAPI
-AsmWriteIbr (
-  IN UINT8   Index,
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Data Breakpoint Register (DBR).
-
-  Writes current value of Data Breakpoint Register specified by Index.
-  The Data Breakpoint Registers are used in pairs.  The even numbered registers
-  contain breakpoint addresses, and odd numbered registers contain breakpoint
-  mask conditions.  At least four data registers pairs are implemented on all processor
-  models.  Implemented registers are contiguous starting with register 0.  No parameter
-  checking is performed on Index.  If the Index value is beyond the implemented
-  DBR register range, a Reserved Register/Field fault may occur.  The caller must
-  either guarantee that Index is valid, or the caller must set up fault handlers to
-  catch the faults.
-  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Data Breakpoint Register index to write.
-  @param Value    The 64-bit value to write to DBR.
-
-  @return The 64-bit value written to the DBR.
-
-**/
-UINT64
-EFIAPI
-AsmWriteDbr (
-  IN UINT8   Index,
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Performance Monitor Configuration Register (PMC).
-
-  Writes current value of Performance Monitor Configuration Register specified by Index.
-  All processor implementations provide at least four performance counters
-  (PMC/PMD [4]...PMC/PMD [7] pairs), and four performance monitor counter overflow status
-  registers (PMC [0]... PMC [3]).  Processor implementations may provide additional
-  implementation-dependent PMC and PMD to increase the number of 'generic' performance
-  counters (PMC/PMD pairs).  The remainder of PMC and PMD register set is implementation
-  dependent.  No parameter checking is performed on Index.  If the Index value is
-  beyond the implemented PMC register range, the write is ignored.
-  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Performance Monitor Configuration Register index to write.
-  @param Value    The 64-bit value to write to PMC.
-
-  @return The 64-bit value written to the PMC.
-
-**/
-UINT64
-EFIAPI
-AsmWritePmc (
-  IN UINT8   Index,
-  IN UINT64  Value
-  );
-
-
-/**
-  Writes the current value of 64-bit Performance Monitor Data Register (PMD).
-
-  Writes current value of Performance Monitor Data Register specified by Index.
-  All processor implementations provide at least four performance counters
-  (PMC/PMD [4]...PMC/PMD [7] pairs), and four performance monitor counter overflow
-  status registers (PMC [0]... PMC [3]).  Processor implementations may provide
-  additional implementation-dependent PMC and PMD to increase the number of 'generic'
-  performance counters (PMC/PMD pairs).  The remainder of PMC and PMD register set
-  is implementation dependent.  No parameter checking is performed on Index.  If the
-  Index value is beyond the implemented PMD register range, the write is ignored.
-  This function is only available on Itanium processors.
-
-  @param Index    The 8-bit Performance Monitor Data Register index to write.
-  @param Value    The 64-bit value to write to PMD.
-
-  @return The 64-bit value written to the PMD.
-
-**/
-UINT64
-EFIAPI
-AsmWritePmd (
-  IN UINT8   Index,
-  IN UINT64  Value
-  );
-
-
-/**
-  Reads the current value of 64-bit Global Pointer (GP).
-
-  Reads and returns the current value of GP.
-  This function is only available on Itanium processors.
-
-  @return The current value of GP.
-
-**/
-UINT64
-EFIAPI
-AsmReadGp (
-  VOID
-  );
-
-
-/**
-  Write the current value of 64-bit Global Pointer (GP).
-
-  Writes the current value of GP. The 64-bit value written to the GP is returned.
-  No parameter checking is performed on Value.
-  This function is only available on Itanium processors.
-
-  @param Value  The 64-bit value to write to GP.
-
-  @return The 64-bit value written to the GP.
-
-**/
-UINT64
-EFIAPI
-AsmWriteGp (
-  IN UINT64  Value
-  );
-
-
-/**
-  Reads the current value of 64-bit Stack Pointer (SP).
-
-  Reads and returns the current value of SP.
-  This function is only available on Itanium processors.
-
-  @return The current value of SP.
-
-**/
-UINT64
-EFIAPI
-AsmReadSp (
-  VOID
-  );
-
-
-///
-/// Valid Index value for AsmReadControlRegister().
-///
-#define IPF_CONTROL_REGISTER_DCR   0
-#define IPF_CONTROL_REGISTER_ITM   1
-#define IPF_CONTROL_REGISTER_IVA   2
-#define IPF_CONTROL_REGISTER_PTA   8
-#define IPF_CONTROL_REGISTER_IPSR  16
-#define IPF_CONTROL_REGISTER_ISR   17
-#define IPF_CONTROL_REGISTER_IIP   19
-#define IPF_CONTROL_REGISTER_IFA   20
-#define IPF_CONTROL_REGISTER_ITIR  21
-#define IPF_CONTROL_REGISTER_IIPA  22
-#define IPF_CONTROL_REGISTER_IFS   23
-#define IPF_CONTROL_REGISTER_IIM   24
-#define IPF_CONTROL_REGISTER_IHA   25
-#define IPF_CONTROL_REGISTER_LID   64
-#define IPF_CONTROL_REGISTER_IVR   65
-#define IPF_CONTROL_REGISTER_TPR   66
-#define IPF_CONTROL_REGISTER_EOI   67
-#define IPF_CONTROL_REGISTER_IRR0  68
-#define IPF_CONTROL_REGISTER_IRR1  69
-#define IPF_CONTROL_REGISTER_IRR2  70
-#define IPF_CONTROL_REGISTER_IRR3  71
-#define IPF_CONTROL_REGISTER_ITV   72
-#define IPF_CONTROL_REGISTER_PMV   73
-#define IPF_CONTROL_REGISTER_CMCV  74
-#define IPF_CONTROL_REGISTER_LRR0  80
-#define IPF_CONTROL_REGISTER_LRR1  81
-
-/**
-  Reads a 64-bit control register.
-
-  Reads and returns the control register specified by Index. The valid Index valued
-  are defined above in "Related Definitions".
-  If Index is invalid then 0xFFFFFFFFFFFFFFFF is returned.  This function is only
-  available on Itanium processors.
-
-  @param  Index                     The index of the control register to read.
-
-  @return The control register specified by Index.
-
-**/
-UINT64
-EFIAPI
-AsmReadControlRegister (
-  IN UINT64  Index
-  );
-
-
-///
-/// Valid Index value for AsmReadApplicationRegister().
-///
-#define IPF_APPLICATION_REGISTER_K0        0
-#define IPF_APPLICATION_REGISTER_K1        1
-#define IPF_APPLICATION_REGISTER_K2        2
-#define IPF_APPLICATION_REGISTER_K3        3
-#define IPF_APPLICATION_REGISTER_K4        4
-#define IPF_APPLICATION_REGISTER_K5        5
-#define IPF_APPLICATION_REGISTER_K6        6
-#define IPF_APPLICATION_REGISTER_K7        7
-#define IPF_APPLICATION_REGISTER_RSC       16
-#define IPF_APPLICATION_REGISTER_BSP       17
-#define IPF_APPLICATION_REGISTER_BSPSTORE  18
-#define IPF_APPLICATION_REGISTER_RNAT      19
-#define IPF_APPLICATION_REGISTER_FCR       21
-#define IPF_APPLICATION_REGISTER_EFLAG     24
-#define IPF_APPLICATION_REGISTER_CSD       25
-#define IPF_APPLICATION_REGISTER_SSD       26
-#define IPF_APPLICATION_REGISTER_CFLG      27
-#define IPF_APPLICATION_REGISTER_FSR       28
-#define IPF_APPLICATION_REGISTER_FIR       29
-#define IPF_APPLICATION_REGISTER_FDR       30
-#define IPF_APPLICATION_REGISTER_CCV       32
-#define IPF_APPLICATION_REGISTER_UNAT      36
-#define IPF_APPLICATION_REGISTER_FPSR      40
-#define IPF_APPLICATION_REGISTER_ITC       44
-#define IPF_APPLICATION_REGISTER_PFS       64
-#define IPF_APPLICATION_REGISTER_LC        65
-#define IPF_APPLICATION_REGISTER_EC        66
-
-/**
-  Reads a 64-bit application register.
-
-  Reads and returns the application register specified by Index. The valid Index
-  valued are defined above in "Related Definitions".
-  If Index is invalid then 0xFFFFFFFFFFFFFFFF is returned.  This function is only
-  available on Itanium processors.
-
-  @param  Index                     The index of the application register to read.
-
-  @return The application register specified by Index.
-
-**/
-UINT64
-EFIAPI
-AsmReadApplicationRegister (
-  IN UINT64  Index
-  );
-
-
-/**
-  Reads the current value of a Machine Specific Register (MSR).
-
-  Reads and returns the current value of the Machine Specific Register specified by Index.  No
-  parameter checking is performed on Index, and if the Index value is beyond the implemented MSR
-  register range, a Reserved Register/Field fault may occur.  The caller must either guarantee that
-  Index is valid, or the caller must set up fault handlers to catch the faults.  This function is
-  only available on Itanium processors.
-
-  @param  Index                     The 8-bit Machine Specific Register index to read.
-
-  @return The current value of the Machine Specific Register specified by Index.
-
-**/
-UINT64
-EFIAPI
-AsmReadMsr (
-  IN UINT8   Index
-  );
-
-
-/**
-  Writes the current value of a Machine Specific Register (MSR).
-
-  Writes Value to the Machine Specific Register specified by Index.  Value is returned.  No
-  parameter checking is performed on Index, and if the Index value is beyond the implemented MSR
-  register range, a Reserved Register/Field fault may occur.  The caller must either guarantee that
-  Index is valid, or the caller must set up fault handlers to catch the faults.  This function is
-  only available on Itanium processors.
-
-  @param  Index                     The 8-bit Machine Specific Register index to write.
-  @param  Value                     The 64-bit value to write to the Machine Specific Register.
-
-  @return The 64-bit value to write to the Machine Specific Register.
-
-**/
-UINT64
-EFIAPI
-AsmWriteMsr (
-  IN UINT8   Index,
-  IN UINT64  Value
-  );
-
-
-/**
-  Determines if the CPU is currently executing in virtual, physical, or mixed mode.
-
-  Determines the current execution mode of the CPU.
-  If the CPU is in virtual mode(PSR.RT=1, PSR.DT=1, PSR.IT=1), then 1 is returned.
-  If the CPU is in physical mode(PSR.RT=0, PSR.DT=0, PSR.IT=0), then 0 is returned.
-  If the CPU is not in physical mode or virtual mode, then it is in mixed mode,
-  and -1 is returned.
-  This function is only available on Itanium processors.
-
-  @retval  1  The CPU is in virtual mode.
-  @retval  0  The CPU is in physical mode.
-  @retval -1  The CPU is in mixed mode.
-
-**/
-INT64
-EFIAPI
-AsmCpuVirtual (
-  VOID
-  );
-
-
-/**
-  Makes a PAL procedure call.
-
-  This is a wrapper function to make a PAL procedure call.  Based on the Index
-  value this API will make static or stacked PAL call.  The following table
-  describes the usage of PAL Procedure Index Assignment. Architected procedures
-  may be designated as required or optional.  If a PAL procedure is specified
-  as optional, a unique return code of 0xFFFFFFFFFFFFFFFF is returned in the
-  Status field of the PAL_CALL_RETURN structure.
-  This indicates that the procedure is not present in this PAL implementation.
-  It is the caller's responsibility to check for this return code after calling
-  any optional PAL procedure.
-  No parameter checking is performed on the 5 input parameters, but there are
-  some common rules that the caller should follow when making a PAL call.  Any
-  address passed to PAL as buffers for return parameters must be 8-byte aligned.
-  Unaligned addresses may cause undefined results.  For those parameters defined
-  as reserved or some fields defined as reserved must be zero filled or the invalid
-  argument return value may be returned or undefined result may occur during the
-  execution of the procedure.  If the PalEntryPoint  does not point to a valid
-  PAL entry point then the system behavior is undefined.  This function is only
-  available on Itanium processors.
-
-  @param PalEntryPoint  The PAL procedure calls entry point.
-  @param Index          The PAL procedure Index number.
-  @param Arg2           The 2nd parameter for PAL procedure calls.
-  @param Arg3           The 3rd parameter for PAL procedure calls.
-  @param Arg4           The 4th parameter for PAL procedure calls.
-
-  @return structure returned from the PAL Call procedure, including the status and return value.
-
-**/
-PAL_CALL_RETURN
-EFIAPI
-AsmPalCall (
-  IN UINT64  PalEntryPoint,
-  IN UINT64  Index,
-  IN UINT64  Arg2,
-  IN UINT64  Arg3,
-  IN UINT64  Arg4
-  );
-#endif
 
 #if defined (MDE_CPU_IA32) || defined (MDE_CPU_X64)
 ///
@@ -6602,7 +5387,8 @@ typedef union {
     UINT32  OSXMMEXCPT:1;   ///< Operating System Support for
                             ///< Unmasked SIMD Floating Point
                             ///< Exceptions.
-    UINT32  Reserved_0:2;   ///< Reserved.
+    UINT32  Reserved_2:1;   ///< Reserved.
+    UINT32  LA57:1;         ///< Linear Address 57bit.
     UINT32  VMXE:1;         ///< VMX Enable
     UINT32  Reserved_1:18;  ///< Reserved.
   } Bits;
@@ -6729,7 +5515,7 @@ typedef union {
 } IA32_TSS_DESCRIPTOR;
 #pragma pack ()
 
-#endif
+#endif // defined (MDE_CPU_IA32)
 
 #if defined (MDE_CPU_X64)
 ///
@@ -6791,7 +5577,7 @@ typedef union {
 } IA32_TSS_DESCRIPTOR;
 #pragma pack ()
 
-#endif
+#endif // defined (MDE_CPU_X64)
 
 ///
 /// Byte packed structure for an FP/SSE/SSE2 context.
@@ -6879,6 +5665,20 @@ typedef struct {
 #define THUNK_ATTRIBUTE_BIG_REAL_MODE             0x00000001
 #define THUNK_ATTRIBUTE_DISABLE_A20_MASK_INT_15   0x00000002
 #define THUNK_ATTRIBUTE_DISABLE_A20_MASK_KBD_CTRL 0x00000004
+
+///
+/// Type definition for representing labels in NASM source code that allow for
+/// the patching of immediate operands of IA32 and X64 instructions.
+///
+/// While the type is technically defined as a function type (note: not a
+/// pointer-to-function type), such labels in NASM source code never stand for
+/// actual functions, and identifiers declared with this function type should
+/// never be called. This is also why the EFIAPI calling convention specifier
+/// is missing from the typedef, and why the typedef does not follow the usual
+/// edk2 coding style for function (or pointer-to-function) typedefs. The VOID
+/// return type and the VOID argument list are merely artifacts.
+///
+typedef VOID (X86_ASSEMBLY_PATCH_LABEL) (VOID);
 
 /**
   Retrieves CPUID information.
@@ -9080,7 +7880,47 @@ AsmLfence (
   VOID
   );
 
-#endif
-#endif
+/**
+  Patch the immediate operand of an IA32 or X64 instruction such that the byte,
+  word, dword or qword operand is encoded at the end of the instruction's
+  binary representation.
 
+  This function should be used to update object code that was compiled with
+  NASM from assembly source code. Example:
 
+  NASM source code:
+
+        mov     eax, strict dword 0 ; the imm32 zero operand will be patched
+    ASM_PFX(gPatchCr3):
+        mov     cr3, eax
+
+  C source code:
+
+    X86_ASSEMBLY_PATCH_LABEL gPatchCr3;
+    PatchInstructionX86 (gPatchCr3, AsmReadCr3 (), 4);
+
+  @param[out] InstructionEnd  Pointer right past the instruction to patch. The
+                              immediate operand to patch is expected to
+                              comprise the trailing bytes of the instruction.
+                              If InstructionEnd is closer to address 0 than
+                              ValueSize permits, then ASSERT().
+
+  @param[in] PatchValue       The constant to write to the immediate operand.
+                              The caller is responsible for ensuring that
+                              PatchValue can be represented in the byte, word,
+                              dword or qword operand (as indicated through
+                              ValueSize); otherwise ASSERT().
+
+  @param[in] ValueSize        The size of the operand in bytes; must be 1, 2,
+                              4, or 8. ASSERT() otherwise.
+**/
+VOID
+EFIAPI
+PatchInstructionX86 (
+  OUT X86_ASSEMBLY_PATCH_LABEL *InstructionEnd,
+  IN  UINT64                   PatchValue,
+  IN  UINTN                    ValueSize
+  );
+
+#endif // defined (MDE_CPU_IA32) || defined (MDE_CPU_X64)
+#endif // !defined (__BASE_LIB__)

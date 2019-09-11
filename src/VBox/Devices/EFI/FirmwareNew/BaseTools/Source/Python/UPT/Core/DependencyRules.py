@@ -1,16 +1,9 @@
 ## @file
 # This file is for installed package information database operations
 #
-# Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -104,12 +97,12 @@ class DependencyRules(object):
             # check whether satisfied by current distribution
             #
             if not Exist:
-                if DpObj == None:
+                if DpObj is None:
                     Result = False
                     break
                 for GuidVerPair in DpObj.PackageSurfaceArea.keys():
                     if Dep.GetGuid() == GuidVerPair[0]:
-                        if Dep.GetVersion() == None or \
+                        if Dep.GetVersion() is None or \
                         len(Dep.GetVersion()) == 0:
                             Result = True
                             break
@@ -159,7 +152,7 @@ class DependencyRules(object):
     #
     # @param PkgObj: A package object
     # @param DpObj: A distribution object
-    # @return: True if package depex satisified
+    # @return: True if package depex satisfied
     #          False else
     #
     def CheckPackageDepexSatisfied(self, PkgObj, DpObj=None):
@@ -285,8 +278,8 @@ class DependencyRules(object):
                 pass
             DecPath = dirname(DecFile)
             if DecPath.find(WorkSP) > -1:
-                InstallPath = GetRelativePath(DecPath,WorkSP)
-                DecFileRelaPath = GetRelativePath(DecFile,WorkSP)
+                InstallPath = GetRelativePath(DecPath, WorkSP)
+                DecFileRelaPath = GetRelativePath(DecFile, WorkSP)
             else:
                 InstallPath = DecPath
                 DecFileRelaPath = DecFile
@@ -348,8 +341,8 @@ class DependencyRules(object):
                 pass
             DecPath = dirname(DecFile)
             if DecPath.find(WorkSP) > -1:
-                InstallPath = GetRelativePath(DecPath,WorkSP)
-                DecFileRelaPath = GetRelativePath(DecFile,WorkSP)
+                InstallPath = GetRelativePath(DecPath, WorkSP)
+                DecFileRelaPath = GetRelativePath(DecFile, WorkSP)
             else:
                 InstallPath = DecPath
                 DecFileRelaPath = DecFile
@@ -394,7 +387,7 @@ def VerifyRemoveModuleDep(Path, DpPackagePathList):
                 return False
         else:
             return True
-    except FatalError, ErrCode:
+    except FatalError as ErrCode:
         if ErrCode.message == EDK1_INF_ERROR:
             Logger.Warn("UPT",
                         ST.WRN_EDK1_INF_FOUND%Path)
@@ -446,7 +439,7 @@ def VerifyReplaceModuleDep(Path, DpPackagePathList, OtherPkgList):
                     return False
         else:
             return True
-    except FatalError, ErrCode:
+    except FatalError as ErrCode:
         if ErrCode.message == EDK1_INF_ERROR:
             Logger.Warn("UPT",
                         ST.WRN_EDK1_INF_FOUND%Path)

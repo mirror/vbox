@@ -2,16 +2,11 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
-from message import *
+from __future__ import absolute_import
+from .message import *
 import re
 import os
 
@@ -24,7 +19,7 @@ class BaseINIFile(object):
         @return: instance of this class
 
         """
-        if len(args) == 0: return object.__new__(cls, *args, **kwargs)
+        if len(args) == 0: return object.__new__(cls)
         filename = args[0]
         parent   = None
         if len(args) > 1:
@@ -32,9 +27,9 @@ class BaseINIFile(object):
 
         key = os.path.normpath(filename)
         if key not in cls._objs.keys():
-            cls._objs[key] = object.__new__(cls, *args, **kwargs)
+            cls._objs[key] = object.__new__(cls)
 
-        if parent != None:
+        if parent is not None:
             cls._objs[key].AddParent(parent)
 
         return cls._objs[key]
@@ -47,7 +42,7 @@ class BaseINIFile(object):
         self._isModify = True
 
     def AddParent(self, parent):
-        if parent == None: return
+        if parent is None: return
         if not hasattr(self, "_parents"):
             self._parents = []
 
@@ -122,7 +117,7 @@ class BaseINIFile(object):
                 continue
 
             m = section_re.match(templine)
-            if m!= None: # found a section
+            if m is not None: # found a section
                 inGlobal = False
                 # Finish the latest section first
                 if len(sObjs) != 0:
@@ -140,7 +135,7 @@ class BaseINIFile(object):
                     sObj = self.GetSectionInstance(self, name, (len(sname_arr) > 1))
                     sObj._start = index
                     sObjs.append(sObj)
-                    if not self._sections.has_key(name.lower()):
+                    if name.lower() not in self._sections:
                         self._sections[name.lower()] = [sObj]
                     else:
                         self._sections[name.lower()].append(sObj)
@@ -165,7 +160,7 @@ class BaseINIFile(object):
     def Destroy(self, parent):
 
         # check referenced parent
-        if parent != None:
+        if parent is not None:
             assert parent in self._parents, "when destory ini object, can not found parent reference!"
             self._parents.remove(parent)
 
@@ -307,7 +302,7 @@ class BaseINISection(object):
                 visit += 1
                 continue
             line = line.split('#')[0].strip()
-            if iniObj != None:
+            if iniObj is not None:
                 if line.endswith('}'):
                     iniObj._end = visit - self._start
                     if not iniObj.Parse():

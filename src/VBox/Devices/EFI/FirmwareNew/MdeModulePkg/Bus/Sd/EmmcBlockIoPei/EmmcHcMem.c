@@ -2,14 +2,7 @@
 
 Copyright (c) 2016 - 2017, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -219,31 +212,7 @@ EmmcPeimIsMemBlockEmpty (
   return TRUE;
 }
 
-/**
-  Unlink the memory block from the pool's list.
 
-  @param  Head           The block list head of the memory's pool.
-  @param  BlockToUnlink  The memory block to unlink.
-
-**/
-VOID
-EmmcPeimUnlinkMemBlock (
-  IN EMMC_PEIM_MEM_BLOCK      *Head,
-  IN EMMC_PEIM_MEM_BLOCK      *BlockToUnlink
-  )
-{
-  EMMC_PEIM_MEM_BLOCK         *Block;
-
-  ASSERT ((Head != NULL) && (BlockToUnlink != NULL));
-
-  for (Block = Head; Block != NULL; Block = Block->Next) {
-    if (Block->Next == BlockToUnlink) {
-      Block->Next         = BlockToUnlink->Next;
-      BlockToUnlink->Next = NULL;
-      break;
-    }
-  }
-}
 
 /**
   Initialize the memory management pool for the host controller.
@@ -305,8 +274,6 @@ EmmcPeimFreeMemPool (
 
   //
   // Unlink all the memory blocks from the pool, then free them.
-  // EmmcPeimUnlinkMemBlock can't be used to unlink and free the
-  // first block.
   //
   for (Block = Pool->Head->Next; Block != NULL; Block = Pool->Head->Next) {
     EmmcPeimFreeMemBlock (Pool, Block);

@@ -1,15 +1,9 @@
 /** @file
-IA32, X64 and IPF Specific relocation fixups
+IA32 and X64 Specific relocation fixups
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
 Portions Copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 --*/
 
@@ -99,169 +93,9 @@ Returns:
   return RETURN_UNSUPPORTED;
 }
 
-RETURN_STATUS
-PeCoffLoaderRelocateIpfImage (
-  IN UINT16      *Reloc,
-  IN OUT CHAR8   *Fixup,
-  IN OUT CHAR8   **FixupData,
-  IN UINT64      Adjust
-  )
-/*++
-
-Routine Description:
-
-  Performs an Itanium-based specific relocation fixup
-
-Arguments:
-
-  Reloc      - Pointer to the relocation record
-
-  Fixup      - Pointer to the address to fix up
-
-  FixupData  - Pointer to a buffer to log the fixups
-
-  Adjust     - The offset to adjust the fixup
-
-Returns:
-
-  Status code
-
---*/
-{
-  UINT64      *F64;
-  UINT64      FixupVal;
-
-  switch ((*Reloc) >> 12) {
-
-    case EFI_IMAGE_REL_BASED_IA64_IMM64:
-
-      //
-      // Align it to bundle address before fixing up the
-      // 64-bit immediate value of the movl instruction.
-      //
-
-      Fixup = (CHAR8 *)((UINTN) Fixup & (UINTN) ~(15));
-      FixupVal = (UINT64)0;
-
-      //
-      // Extract the lower 32 bits of IMM64 from bundle
-      //
-      EXT_IMM64(FixupVal,
-                (UINT32 *)Fixup + IMM64_IMM7B_INST_WORD_X,
-                IMM64_IMM7B_SIZE_X,
-                IMM64_IMM7B_INST_WORD_POS_X,
-                IMM64_IMM7B_VAL_POS_X
-                );
-
-      EXT_IMM64(FixupVal,
-                (UINT32 *)Fixup + IMM64_IMM9D_INST_WORD_X,
-                IMM64_IMM9D_SIZE_X,
-                IMM64_IMM9D_INST_WORD_POS_X,
-                IMM64_IMM9D_VAL_POS_X
-                );
-
-      EXT_IMM64(FixupVal,
-                (UINT32 *)Fixup + IMM64_IMM5C_INST_WORD_X,
-                IMM64_IMM5C_SIZE_X,
-                IMM64_IMM5C_INST_WORD_POS_X,
-                IMM64_IMM5C_VAL_POS_X
-                );
-
-      EXT_IMM64(FixupVal,
-                (UINT32 *)Fixup + IMM64_IC_INST_WORD_X,
-                IMM64_IC_SIZE_X,
-                IMM64_IC_INST_WORD_POS_X,
-                IMM64_IC_VAL_POS_X
-                );
-
-      EXT_IMM64(FixupVal,
-                (UINT32 *)Fixup + IMM64_IMM41a_INST_WORD_X,
-                IMM64_IMM41a_SIZE_X,
-                IMM64_IMM41a_INST_WORD_POS_X,
-                IMM64_IMM41a_VAL_POS_X
-                );
-
-      //
-      // Update 64-bit address
-      //
-      FixupVal += Adjust;
-
-      //
-      // Insert IMM64 into bundle
-      //
-      INS_IMM64(FixupVal,
-                ((UINT32 *)Fixup + IMM64_IMM7B_INST_WORD_X),
-                IMM64_IMM7B_SIZE_X,
-                IMM64_IMM7B_INST_WORD_POS_X,
-                IMM64_IMM7B_VAL_POS_X
-                );
-
-      INS_IMM64(FixupVal,
-                ((UINT32 *)Fixup + IMM64_IMM9D_INST_WORD_X),
-                IMM64_IMM9D_SIZE_X,
-                IMM64_IMM9D_INST_WORD_POS_X,
-                IMM64_IMM9D_VAL_POS_X
-                );
-
-      INS_IMM64(FixupVal,
-                ((UINT32 *)Fixup + IMM64_IMM5C_INST_WORD_X),
-                IMM64_IMM5C_SIZE_X,
-                IMM64_IMM5C_INST_WORD_POS_X,
-                IMM64_IMM5C_VAL_POS_X
-                );
-
-      INS_IMM64(FixupVal,
-                ((UINT32 *)Fixup + IMM64_IC_INST_WORD_X),
-                IMM64_IC_SIZE_X,
-                IMM64_IC_INST_WORD_POS_X,
-                IMM64_IC_VAL_POS_X
-                );
-
-      INS_IMM64(FixupVal,
-                ((UINT32 *)Fixup + IMM64_IMM41a_INST_WORD_X),
-                IMM64_IMM41a_SIZE_X,
-                IMM64_IMM41a_INST_WORD_POS_X,
-                IMM64_IMM41a_VAL_POS_X
-                );
-
-      INS_IMM64(FixupVal,
-                ((UINT32 *)Fixup + IMM64_IMM41b_INST_WORD_X),
-                IMM64_IMM41b_SIZE_X,
-                IMM64_IMM41b_INST_WORD_POS_X,
-                IMM64_IMM41b_VAL_POS_X
-                );
-
-      INS_IMM64(FixupVal,
-                ((UINT32 *)Fixup + IMM64_IMM41c_INST_WORD_X),
-                IMM64_IMM41c_SIZE_X,
-                IMM64_IMM41c_INST_WORD_POS_X,
-                IMM64_IMM41c_VAL_POS_X
-                );
-
-      INS_IMM64(FixupVal,
-                ((UINT32 *)Fixup + IMM64_SIGN_INST_WORD_X),
-                IMM64_SIGN_SIZE_X,
-                IMM64_SIGN_INST_WORD_POS_X,
-                IMM64_SIGN_VAL_POS_X
-                );
-
-      F64 = (UINT64 *) Fixup;
-      if (*FixupData != NULL) {
-        *FixupData = ALIGN_POINTER(*FixupData, sizeof(UINT64));
-        *(UINT64 *)(*FixupData) = *F64;
-        *FixupData = *FixupData + sizeof(UINT64);
-      }
-      break;
-
-    default:
-      return RETURN_UNSUPPORTED;
-  }
-
-  return RETURN_SUCCESS;
-}
 
 /**
-  Pass in a pointer to an ARM MOVT or MOVW immediate instruciton and
+  Pass in a pointer to an ARM MOVT or MOVW immediate instruction and
   return the immediate data encoded in the instruction
 
   @param  Instruction   Pointer to ARM MOVT or MOVW immediate instruction
@@ -297,7 +131,7 @@ ThumbMovtImmediateAddress (
   Update an ARM MOVT or MOVW immediate instruction immediate data.
 
   @param  Instruction   Pointer to ARM MOVT or MOVW immediate instruction
-  @param  Address       New addres to patch into the instruction
+  @param  Address       New address to patch into the instruction
 **/
 VOID
 ThumbMovtImmediatePatch (
@@ -307,7 +141,7 @@ ThumbMovtImmediatePatch (
 {
   UINT16  Patch;
 
-  // First 16-bit chunk of instruciton
+  // First 16-bit chunk of instruction
   Patch  = ((Address >> 12) & 0x000f);             // imm4
   Patch |= (((Address & BIT11) != 0) ? BIT10 : 0); // i
   *Instruction = (*Instruction & ~0x040f) | Patch;
@@ -320,10 +154,10 @@ ThumbMovtImmediatePatch (
 }
 
 /**
-  Pass in a pointer to an ARM MOVW/MOVT instruciton pair and
+  Pass in a pointer to an ARM MOVW/MOVT instruction pair and
   return the immediate data encoded in the two` instruction
 
-  @param  Instructions  Pointer to ARM MOVW/MOVT insturction pair
+  @param  Instructions  Pointer to ARM MOVW/MOVT instruction pair
 
   @return Immediate address encoded in the instructions
 
@@ -348,7 +182,7 @@ ThumbMovwMovtImmediateAddress (
   Update an ARM MOVW/MOVT immediate instruction instruction pair.
 
   @param  Instructions  Pointer to ARM MOVW/MOVT instruction pair
-  @param  Address       New addres to patch into the instructions
+  @param  Address       New address to patch into the instructions
 **/
 VOID
 EFIAPI

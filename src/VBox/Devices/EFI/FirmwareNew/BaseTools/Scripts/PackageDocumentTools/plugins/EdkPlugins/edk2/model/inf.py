@@ -2,16 +2,10 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
-import plugins.EdkPlugins.basemodel.ini as ini
+from plugins.EdkPlugins.basemodel import ini
 import re, os
 from plugins.EdkPlugins.basemodel.message import *
 
@@ -23,7 +17,7 @@ class INFFile(ini.BaseINIFile):
 
     def GetProduceLibraryClass(self):
         obj = self.GetDefine("LIBRARY_CLASS")
-        if obj == None: return None
+        if obj is None: return None
 
         return obj.split('|')[0].strip()
 
@@ -59,9 +53,9 @@ class INFFile(ini.BaseINIFile):
         if not ini.BaseINIFile.Parse(self):
             return False
         classname = self.GetProduceLibraryClass()
-        if classname != None:
+        if classname is not None:
             libobjdict = INFFile._libobjs
-            if libobjdict.has_key(classname):
+            if classname in libobjdict:
                 if self not in libobjdict[classname]:
                     libobjdict[classname].append(self)
             else:
@@ -77,7 +71,7 @@ class INFFile(ini.BaseINIFile):
 
     def Clear(self):
         classname = self.GetProduceLibraryClass()
-        if classname != None:
+        if classname is not None:
             libobjdict = INFFile._libobjs
             libobjdict[classname].remove(self)
             if len(libobjdict[classname]) == 0:
@@ -114,7 +108,7 @@ class INFSection(ini.BaseINISection):
         return arr[1]
 
     def IsArchMatch(self, arch):
-        if arch == None or self.GetArch() == 'common':
+        if arch is None or self.GetArch() == 'common':
             return True
 
         if self.GetArch().lower() != arch.lower():
@@ -169,7 +163,7 @@ class INFLibraryClassObject(INFSectionObject):
     def Parse(self):
         self._classname = self.GetLineByOffset(self._start).split('#')[0].strip()
         objdict = INFLibraryClassObject._objs
-        if objdict.has_key(self._classname):
+        if self._classname in objdict:
             objdict[self._classname].append(self)
         else:
             objdict[self._classname] = [self]
@@ -241,7 +235,7 @@ class INFSourceObject(INFSectionObject):
 
         self.mFilename = os.path.basename(self.GetSourceFullPath())
         objdict = INFSourceObject._objs
-        if not objdict.has_key(self.mFilename):
+        if self.mFilename not in objdict:
             objdict[self.mFilename] = [self]
         else:
             objdict[self.mFilename].append(self)
@@ -258,9 +252,9 @@ class INFSourceObject(INFSectionObject):
             del objdict[self.mFilename]
 
     def IsMatchFamily(self, family):
-        if family == None:
+        if family is None:
             return True
-        if self.mFamily != None:
+        if self.mFamily is not None:
             if family.strip().lower() == self.mFamily.lower():
                 return True
             else:
@@ -303,7 +297,7 @@ class INFPcdObject(INFSectionObject):
             self.mDefaultValue = arr[1].strip()
 
         objdict = INFPcdObject._objs
-        if objdict.has_key(self.GetName()):
+        if self.GetName() in objdict:
             if self not in objdict[self.GetName()]:
                 objdict[self.GetName()].append(self)
         else:

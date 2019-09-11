@@ -4,15 +4,9 @@
   @par Revision Reference:
   Version 1.4.
 
-  Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-    http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -306,8 +300,15 @@ typedef struct {
   CHAR16                      VersionString[1];
 } EFI_VERSION_SECTION2;
 
-#define SECTION_SIZE(SectionHeaderPtr) \
-    ((UINT32) (*((UINT32 *) ((EFI_COMMON_SECTION_HEADER *) SectionHeaderPtr)->Size) & 0x00ffffff))
+//
+// The argument passed as the SectionHeaderPtr parameter to the SECTION_SIZE()
+// function-like macro below must not have side effects: SectionHeaderPtr is
+// evaluated multiple times.
+//
+#define SECTION_SIZE(SectionHeaderPtr) ((UINT32) ( \
+    (((EFI_COMMON_SECTION_HEADER *) (SectionHeaderPtr))->Size[0]      ) | \
+    (((EFI_COMMON_SECTION_HEADER *) (SectionHeaderPtr))->Size[1] <<  8) | \
+    (((EFI_COMMON_SECTION_HEADER *) (SectionHeaderPtr))->Size[2] << 16)))
 
 #pragma pack()
 

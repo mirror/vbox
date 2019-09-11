@@ -2,15 +2,9 @@
 # This file is used to define class objects of INF file [Ppis] section.
 # It will consumed by InfParser.
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfPpiObject
@@ -51,7 +45,7 @@ def ParsePpiComment(CommentsList, InfPpiItemObj):
         if CommentItemString:
             pass
 
-        if CommentItemHelpText == None:
+        if CommentItemHelpText is None:
             CommentItemHelpText = ''
             if Count == len(CommentsList) and CommentItemUsage == CommentItemNotify == DT.ITEM_UNDEFINED:
                 CommentItemHelpText = DT.END_OF_LINE
@@ -213,7 +207,7 @@ class InfPpiObject():
             #
             # Validate Arch
             #
-            if (ArchItem == '' or ArchItem == None):
+            if (ArchItem == '' or ArchItem is None):
                 ArchItem = 'COMMON'
             __SupArchList.append(ArchItem)
 
@@ -290,7 +284,7 @@ class InfPpiObject():
             #
             # Get/Set Usage and HelpString for PPI entry
             #
-            if CommentsList != None and len(CommentsList) != 0:
+            if CommentsList is not None and len(CommentsList) != 0:
                 InfPpiItemObj = ParsePpiComment(CommentsList, InfPpiItemObj)
             else:
                 CommentItemIns = InfPpiItemCommentContent()
@@ -327,7 +321,7 @@ class InfPpiObject():
                                 #
                                 pass
 
-            if self.Ppis.has_key((InfPpiItemObj)):
+            if (InfPpiItemObj) in self.Ppis:
                 PpiList = self.Ppis[InfPpiItemObj]
                 PpiList.append(InfPpiItemObj)
                 self.Ppis[InfPpiItemObj] = PpiList

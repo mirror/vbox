@@ -1,14 +1,8 @@
 /** @file
   The XHCI controller driver.
 
-Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -403,7 +397,8 @@ XhcGetRootHubPortStatus (
   State = XhcReadOpReg (Xhc, Offset);
 
   //
-  // According to XHCI 1.0 spec, bit 10~13 of the root port status register identifies the speed of the attached device.
+  // According to XHCI 1.1 spec November 2017,
+  // bit 10~13 of the root port status register identifies the speed of the attached device.
   //
   switch ((State & XHC_PORTSC_PS) >> 10) {
   case 2:
@@ -415,6 +410,7 @@ XhcGetRootHubPortStatus (
     break;
 
   case 4:
+  case 5:
     PortStatus->PortStatus |= USB_PORT_STAT_SUPER_SPEED;
     break;
 
@@ -1344,7 +1340,6 @@ XhcAsyncInterruptTransfer (
   EFI_STATUS              Status;
   UINT8                   SlotId;
   UINT8                   Index;
-  UINT8                   *Data;
   EFI_TPL                 OldTpl;
 
   //
@@ -1411,36 +1406,21 @@ XhcAsyncInterruptTransfer (
     goto ON_EXIT;
   }
 
-  Data = AllocateZeroPool (DataLength);
-
-  if (Data == NULL) {
-    DEBUG ((EFI_D_ERROR, "XhcAsyncInterruptTransfer: failed to allocate buffer\n"));
-    Status = EFI_OUT_OF_RESOURCES;
-    goto ON_EXIT;
-  }
-
-  Urb = XhcCreateUrb (
+  Urb = XhciInsertAsyncIntTransfer (
           Xhc,
           DeviceAddress,
           EndPointAddress,
           DeviceSpeed,
           MaximumPacketLength,
-          XHC_INT_TRANSFER_ASYNC,
-          NULL,
-          Data,
           DataLength,
           CallBackFunction,
           Context
           );
-
   if (Urb == NULL) {
-    DEBUG ((EFI_D_ERROR, "XhcAsyncInterruptTransfer: failed to create URB\n"));
-    FreePool (Data);
     Status = EFI_OUT_OF_RESOURCES;
     goto ON_EXIT;
   }
 
-  InsertHeadList (&Xhc->AsyncIntTransfers, &Urb->UrbList);
   //
   // Ring the doorbell
   //
@@ -1770,6 +1750,7 @@ XhcCreateUsbHc (
   EFI_STATUS              Status;
   UINT32                  PageSize;
   UINT16                  ExtCapReg;
+  UINT8                   ReleaseNumber;
 
   Xhc = AllocateZeroPool (sizeof (USB_XHCI_INSTANCE));
 
@@ -1785,6 +1766,19 @@ XhcCreateUsbHc (
   Xhc->DevicePath            = DevicePath;
   Xhc->OriginalPciAttributes = OriginalPciAttributes;
   CopyMem (&Xhc->Usb2Hc, &gXhciUsb2HcTemplate, sizeof (EFI_USB2_HC_PROTOCOL));
+
+  Status = PciIo->Pci.Read (
+                        PciIo,
+                        EfiPciIoWidthUint8,
+                        XHC_PCI_SBRN_OFFSET,
+                        1,
+                        &ReleaseNumber
+                        );
+
+  if (!EFI_ERROR (Status)) {
+    Xhc->Usb2Hc.MajorRevision = (ReleaseNumber & 0xF0) >> 4;
+    Xhc->Usb2Hc.MinorRevision = (ReleaseNumber & 0x0F);
+  }
 
   InitializeListHead (&Xhc->AsyncIntTransfers);
 

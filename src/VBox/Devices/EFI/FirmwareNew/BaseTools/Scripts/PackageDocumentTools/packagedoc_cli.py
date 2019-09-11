@@ -3,20 +3,15 @@
 #
 # Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
+from __future__ import print_function
 import os, sys, logging, traceback, subprocess
 from optparse import OptionParser
 
-import plugins.EdkPlugins.edk2.model.baseobject as baseobject
-import plugins.EdkPlugins.edk2.model.doxygengen as doxygengen
+from plugins.EdkPlugins.edk2.model import baseobject
+from plugins.EdkPlugins.edk2.model import doxygengen
 
 gArchMarcoDict = {'ALL'      : 'MDE_CPU_IA32 MDE_CPU_X64 MDE_CPU_EBC MDE_CPU_IPF _MSC_EXTENSIONS __GNUC__ __INTEL_COMPILER',
                   'IA32_MSFT': 'MDE_CPU_IA32 _MSC_EXTENSIONS',
@@ -37,7 +32,7 @@ def parseCmdArgs():
                       help='Specify the absolute path of doxygen tools installation. For example: C:\\Program Files\\doxygen\bin\doxygen.exe')
     parser.add_option('-o', '--output', action='store', dest='OutputPath',
                       help='Specify the document output path. For example: c:\\docoutput')
-    parser.add_option('-a', '--arch', action='store', dest='Arch', choices=gArchMarcoDict.keys(),
+    parser.add_option('-a', '--arch', action='store', dest='Arch', choices=list(gArchMarcoDict.keys()),
                       help='Specify the architecture used in preprocess package\'s source. For example: -a IA32_MSFT')
     parser.add_option('-m', '--mode', action='store', dest='DocumentMode', choices=['CHM', 'HTML'],
                       help='Specify the document mode from : CHM or HTML')
@@ -49,27 +44,27 @@ def parseCmdArgs():
 
     # validate the options
     errors = []
-    if options.WorkspacePath == None:
+    if options.WorkspacePath is None:
         errors.append('- Please specify workspace path via option -w!')
     elif not os.path.exists(options.WorkspacePath):
         errors.append("- Invalid workspace path %s! The workspace path should be exist in absolute path!" % options.WorkspacePath)
 
-    if options.PackagePath == None:
+    if options.PackagePath is None:
         errors.append('- Please specify package DEC file path via option -p!')
     elif not os.path.exists(options.PackagePath):
         errors.append("- Invalid package's DEC file path %s! The DEC path should be exist in absolute path!" % options.PackagePath)
 
     default = "C:\\Program Files\\doxygen\\bin\\doxygen.exe"
-    if options.DoxygenPath == None:
+    if options.DoxygenPath is None:
         if os.path.exists(default):
-            print "Warning: Assume doxygen tool is installed at %s. If not, please specify via -x" % default
+            print("Warning: Assume doxygen tool is installed at %s. If not, please specify via -x" % default)
             options.DoxygenPath = default
         else:
             errors.append('- Please specify the path of doxygen tool installation via option -x! or install it in default path %s' % default)
     elif not os.path.exists(options.DoxygenPath):
         errors.append("- Invalid doxygen tool path %s! The doxygen tool path should be exist in absolute path!" % options.DoxygenPath)
 
-    if options.OutputPath != None:
+    if options.OutputPath is not None:
         if not os.path.exists(options.OutputPath):
             # create output
             try:
@@ -77,10 +72,10 @@ def parseCmdArgs():
             except:
                 errors.append('- Fail to create the output directory %s' % options.OutputPath)
     else:
-        if options.PackagePath != None and os.path.exists(options.PackagePath):
+        if options.PackagePath is not None and os.path.exists(options.PackagePath):
             dirpath = os.path.dirname(options.PackagePath)
             default = os.path.join (dirpath, "Document")
-            print 'Warning: Assume document output at %s. If not, please specify via option -o' % default
+            print('Warning: Assume document output at %s. If not, please specify via option -o' % default)
             options.OutputPath = default
             if not os.path.exists(default):
                 try:
@@ -90,23 +85,23 @@ def parseCmdArgs():
         else:
             errors.append('- Please specify document output path via option -o!')
 
-    if options.Arch == None:
+    if options.Arch is None:
         options.Arch = 'ALL'
-        print "Warning: Assume arch is \"ALL\". If not, specify via -a"
+        print("Warning: Assume arch is \"ALL\". If not, specify via -a")
 
-    if options.DocumentMode == None:
+    if options.DocumentMode is None:
         options.DocumentMode = "HTML"
-        print "Warning: Assume document mode is \"HTML\". If not, specify via -m"
+        print("Warning: Assume document mode is \"HTML\". If not, specify via -m")
 
-    if options.IncludeOnly == None:
+    if options.IncludeOnly is None:
         options.IncludeOnly = False
-        print "Warning: Assume generate package document for all package\'s source including publich interfaces and implementation libraries and modules."
+        print("Warning: Assume generate package document for all package\'s source including publich interfaces and implementation libraries and modules.")
 
     if options.DocumentMode.lower() == 'chm':
         default = "C:\\Program Files\\HTML Help Workshop\\hhc.exe"
-        if options.HtmlWorkshopPath == None:
+        if options.HtmlWorkshopPath is None:
             if os.path.exists(default):
-                print 'Warning: Assume the installation path of Microsoft HTML Workshop is %s. If not, specify via option -c.' % default
+                print('Warning: Assume the installation path of Microsoft HTML Workshop is %s. If not, specify via option -c.' % default)
                 options.HtmlWorkshopPath = default
             else:
                 errors.append('- Please specify the installation path of Microsoft HTML Workshop via option -c!')
@@ -114,7 +109,7 @@ def parseCmdArgs():
             errors.append('- The installation path of Microsoft HTML Workshop %s does not exists. ' % options.HtmlWorkshopPath)
 
     if len(errors) != 0:
-        print '\n'
+        print('\n')
         parser.error('Fail to start due to following reasons: \n%s' %'\n'.join(errors))
     return (options.WorkspacePath, options.PackagePath, options.DoxygenPath, options.OutputPath,
             options.Arch, options.DocumentMode, options.IncludeOnly, options.HtmlWorkshopPath)
@@ -130,21 +125,21 @@ def createPackageObject(wsPath, pkgPath):
     return pkgObj
 
 def callbackLogMessage(msg, level):
-    print msg.strip()
+    print(msg.strip())
 
 def callbackCreateDoxygenProcess(doxPath, configPath):
     if sys.platform == 'win32':
         cmd = '"%s" %s' % (doxPath, configPath)
     else:
         cmd = '%s %s' % (doxPath, configPath)
-    print cmd
+    print(cmd)
     subprocess.call(cmd, shell=True)
 
 
 def DocumentFixup(outPath, arch):
     # find BASE_LIBRARY_JUMP_BUFFER structure reference page
 
-    print '\n    >>> Start fixup document \n'
+    print('\n    >>> Start fixup document \n')
 
     for root, dirs, files in os.walk(outPath):
         for dir in dirs:
@@ -172,10 +167,10 @@ def DocumentFixup(outPath, arch):
             if text.find('MdePkg/Include/Library/UefiApplicationEntryPoint.h File Reference') != -1:
                 FixPageUefiApplicationEntryPoint(fullpath, text)
 
-    print '    >>> Finish all document fixing up! \n'
+    print('    >>> Finish all document fixing up! \n')
 
 def FixPageBaseLib(path, text):
-    print '    >>> Fixup BaseLib file page at file %s \n' % path
+    print('    >>> Fixup BaseLib file page at file %s \n' % path)
     lines = text.split('\n')
     lastBaseJumpIndex = -1
     lastIdtGateDescriptor = -1
@@ -211,10 +206,10 @@ def FixPageBaseLib(path, text):
     except:
         logging.getLogger().error("     <<< Fail to fixup file %s\n" % path)
         return
-    print "    <<< Finish to fixup file %s\n" % path
+    print("    <<< Finish to fixup file %s\n" % path)
 
 def FixPageIA32_IDT_GATE_DESCRIPTOR(path, text):
-    print '    >>> Fixup structure reference IA32_IDT_GATE_DESCRIPTOR at file %s \n' % path
+    print('    >>> Fixup structure reference IA32_IDT_GATE_DESCRIPTOR at file %s \n' % path)
     lines = text.split('\n')
     for index in range(len(lines) - 1, -1, -1):
         line = lines[index].strip()
@@ -229,10 +224,10 @@ def FixPageIA32_IDT_GATE_DESCRIPTOR(path, text):
     except:
         logging.getLogger().error("     <<< Fail to fixup file %s\n" % path)
         return
-    print "    <<< Finish to fixup file %s\n" % path
+    print("    <<< Finish to fixup file %s\n" % path)
 
 def FixPageBASE_LIBRARY_JUMP_BUFFER(path, text):
-    print '    >>> Fixup structure reference BASE_LIBRARY_JUMP_BUFFER at file %s \n' % path
+    print('    >>> Fixup structure reference BASE_LIBRARY_JUMP_BUFFER at file %s \n' % path)
     lines = text.split('\n')
     bInDetail = True
     bNeedRemove = False
@@ -266,10 +261,10 @@ def FixPageBASE_LIBRARY_JUMP_BUFFER(path, text):
     except:
         logging.getLogger().error("     <<< Fail to fixup file %s" % path)
         return
-    print "    <<< Finish to fixup file %s\n" % path
+    print("    <<< Finish to fixup file %s\n" % path)
 
 def FixPageUefiDriverEntryPoint(path, text):
-    print '    >>> Fixup file reference MdePkg/Include/Library/UefiDriverEntryPoint.h at file %s \n' % path
+    print('    >>> Fixup file reference MdePkg/Include/Library/UefiDriverEntryPoint.h at file %s \n' % path)
     lines = text.split('\n')
     bInModuleEntry = False
     bInEfiMain     = False
@@ -318,11 +313,11 @@ def FixPageUefiDriverEntryPoint(path, text):
     except:
         logging.getLogger().error("     <<< Fail to fixup file %s" % path)
         return
-    print "    <<< Finish to fixup file %s\n" % path
+    print("    <<< Finish to fixup file %s\n" % path)
 
 
 def FixPageUefiApplicationEntryPoint(path, text):
-    print '    >>> Fixup file reference MdePkg/Include/Library/UefiApplicationEntryPoint.h at file %s \n' % path
+    print('    >>> Fixup file reference MdePkg/Include/Library/UefiApplicationEntryPoint.h at file %s \n' % path)
     lines = text.split('\n')
     bInModuleEntry = False
     bInEfiMain     = False
@@ -371,7 +366,7 @@ def FixPageUefiApplicationEntryPoint(path, text):
     except:
         logging.getLogger().error("     <<< Fail to fixup file %s" % path)
         return
-    print "    <<< Finish to fixup file %s\n" % path
+    print("    <<< Finish to fixup file %s\n" % path)
 
 if __name__ == '__main__':
     wspath, pkgpath, doxpath, outpath, archtag, docmode, isinc, hwpath = parseCmdArgs()
@@ -382,7 +377,7 @@ if __name__ == '__main__':
 
     # create package model object firstly
     pkgObj = createPackageObject(wspath, pkgpath)
-    if pkgObj == None:
+    if pkgObj is None:
         sys.exit(-1)
 
     # create doxygen action model
@@ -424,6 +419,6 @@ if __name__ == '__main__':
         else:
             cmd = '%s %s' % (hwpath, indexpath)
         subprocess.call(cmd)
-        print '\nFinish to generate package document! Please open %s for review' % os.path.join(outpath, 'html', 'index.chm')
+        print('\nFinish to generate package document! Please open %s for review' % os.path.join(outpath, 'html', 'index.chm'))
     else:
-        print '\nFinish to generate package document! Please open %s for review' % os.path.join(outpath, 'html', 'index.html')
+        print('\nFinish to generate package document! Please open %s for review' % os.path.join(outpath, 'html', 'index.html'))

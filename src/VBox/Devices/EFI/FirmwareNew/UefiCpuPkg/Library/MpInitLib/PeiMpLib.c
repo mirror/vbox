@@ -1,14 +1,8 @@
 /** @file
   MP initialize support functions for PEI phase.
 
-  Copyright (c) 2016 - 2018, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2016 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -93,6 +87,8 @@ EnableDebugAgent (
 
 /**
   Get pointer to CPU MP Data structure.
+  For BSP, the pointer is retrieved from HOB.
+  For AP, the structure is just after IDT.
 
   @return  The pointer to CPU MP Data structure.
 **/
@@ -101,10 +97,18 @@ GetCpuMpData (
   VOID
   )
 {
-  CPU_MP_DATA      *CpuMpData;
+  CPU_MP_DATA                  *CpuMpData;
+  MSR_IA32_APIC_BASE_REGISTER  ApicBaseMsr;
+  IA32_DESCRIPTOR              Idtr;
 
-  CpuMpData = GetCpuMpDataFromGuidedHob ();
-  ASSERT (CpuMpData != NULL);
+  ApicBaseMsr.Uint64 = AsmReadMsr64 (MSR_IA32_APIC_BASE);
+  if (ApicBaseMsr.Bits.BSP == 1) {
+    CpuMpData = GetCpuMpDataFromGuidedHob ();
+    ASSERT (CpuMpData != NULL);
+  } else {
+    AsmReadIdtr (&Idtr);
+    CpuMpData = (CPU_MP_DATA *) (Idtr.Base + Idtr.Limit + 1);
+  }
   return CpuMpData;
 }
 
@@ -397,9 +401,10 @@ MpInitLibStartupAllAPs (
     return EFI_UNSUPPORTED;
   }
 
-  return StartupAllAPsWorker (
+  return StartupAllCPUsWorker (
            Procedure,
            SingleThread,
+           TRUE,
            NULL,
            TimeoutInMicroseconds,
            ProcedureArgument,

@@ -1,16 +1,11 @@
 ## @file
 # This file contain unit test for DecParser
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
+from __future__ import print_function
 import os
 import unittest
 
@@ -66,7 +61,7 @@ def TestTemplate(TestString, TestFunc):
         # Close file
         f.close()
     except:
-        print 'Can not create temporary file [%s]!' % Path
+        print('Can not create temporary file [%s]!' % Path)
         exit(-1)
 
     # Call test function to test
@@ -279,6 +274,6 @@ if __name__ == '__main__':
     unittest.FunctionTestCase(TestDecPcd).runTest()
     unittest.FunctionTestCase(TestDecUserExtension).runTest()
 
-    print 'All tests passed...'
+    print('All tests passed...')
 
 

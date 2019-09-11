@@ -1,13 +1,7 @@
 /** @file
 
-  Copyright (c) 2014 - 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2014 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -694,31 +688,7 @@ UfsFindAvailableSlotInTrl (
   return EFI_SUCCESS;
 }
 
-/**
-  Find out available slot in task management transfer list of a UFS device.
 
-  @param[in]  Private       The pointer to the UFS_PEIM_HC_PRIVATE_DATA data structure.
-  @param[out] Slot          The available slot.
-
-  @retval EFI_SUCCESS       The available slot was found successfully.
-
-**/
-EFI_STATUS
-UfsFindAvailableSlotInTmrl (
-  IN     UFS_PEIM_HC_PRIVATE_DATA     *Private,
-     OUT UINT8                        *Slot
-  )
-{
-  ASSERT ((Private != NULL) && (Slot != NULL));
-
-  //
-  // The simplest algo to always use slot 0.
-  // TODO: enhance it to support async transfer with multiple slot.
-  //
-  *Slot = 0;
-
-  return EFI_SUCCESS;
-}
 
 /**
   Start specified slot in transfer list of a UFS device.
@@ -881,6 +851,14 @@ UfsRwDeviceDesc (
     SwapLittleEndianToBigEndian ((UINT8*)&ReturnDataSize, sizeof (UINT16));
 
     if (Read) {
+      //
+      // Make sure the hardware device does not return more data than expected.
+      //
+      if (ReturnDataSize > Packet.InTransferLength) {
+        Status = EFI_DEVICE_ERROR;
+        goto Exit;
+      }
+
       CopyMem (Packet.InDataBuffer, (QueryResp + 1), ReturnDataSize);
       Packet.InTransferLength = ReturnDataSize;
     } else {
@@ -897,113 +875,7 @@ Exit:
   return Status;
 }
 
-/**
-  Read or write specified attribute of a UFS device.
 
-  @param[in]      Private       The pointer to the UFS_PEIM_HC_PRIVATE_DATA data structure.
-  @param[in]      Read          The boolean variable to show r/w direction.
-  @param[in]      AttrId        The ID of Attribute.
-  @param[in]      Index         The Index of Attribute.
-  @param[in]      Selector      The Selector of Attribute.
-  @param[in, out] Attributes    The value of Attribute to be read or written.
-
-  @retval EFI_SUCCESS           The Attribute was read/written successfully.
-  @retval EFI_DEVICE_ERROR      A device error occurred while attempting to r/w the Attribute.
-  @retval EFI_TIMEOUT           A timeout occurred while waiting for the completion of r/w the Attribute.
-
-**/
-EFI_STATUS
-UfsRwAttributes (
-  IN     UFS_PEIM_HC_PRIVATE_DATA     *Private,
-  IN     BOOLEAN                      Read,
-  IN     UINT8                        AttrId,
-  IN     UINT8                        Index,
-  IN     UINT8                        Selector,
-  IN OUT UINT32                       *Attributes
-  )
-{
-  EFI_STATUS                           Status;
-  UFS_DEVICE_MANAGEMENT_REQUEST_PACKET Packet;
-  UINT8                                Slot;
-  UTP_TRD                              *Trd;
-  UINTN                                Address;
-  UTP_QUERY_RESP_UPIU                  *QueryResp;
-  UINT8                                *CmdDescBase;
-  UINT32                               CmdDescSize;
-  UINT32                               ReturnData;
-
-  ZeroMem (&Packet, sizeof (UFS_DEVICE_MANAGEMENT_REQUEST_PACKET));
-
-  if (Read) {
-    Packet.DataDirection     = UfsDataIn;
-    Packet.Opcode            = UtpQueryFuncOpcodeRdAttr;
-  } else {
-    Packet.DataDirection     = UfsDataOut;
-    Packet.Opcode            = UtpQueryFuncOpcodeWrAttr;
-  }
-  Packet.DescId              = AttrId;
-  Packet.Index               = Index;
-  Packet.Selector            = Selector;
-  Packet.Timeout             = UFS_TIMEOUT;
-
-  //
-  // Find out which slot of transfer request list is available.
-  //
-  Status = UfsFindAvailableSlotInTrl (Private, &Slot);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  Trd = ((UTP_TRD*)Private->UtpTrlBase) + Slot;
-  //
-  // Fill transfer request descriptor to this slot.
-  //
-  Status = UfsCreateDMCommandDesc (Private, &Packet, Trd);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  //
-  // Check the transfer request result.
-  //
-  CmdDescBase = (UINT8 *)(UINTN)(LShiftU64 ((UINT64)Trd->UcdBaU, 32) | LShiftU64 ((UINT64)Trd->UcdBa, 7));
-  QueryResp   = (UTP_QUERY_RESP_UPIU*)(CmdDescBase + Trd->RuO * sizeof (UINT32));
-  CmdDescSize = Trd->RuO * sizeof (UINT32) + Trd->RuL * sizeof (UINT32);
-
-  //
-  // Start to execute the transfer request.
-  //
-  UfsStartExecCmd (Private, Slot);
-
-  //
-  // Wait for the completion of the transfer request.
-  //
-  Address = Private->UfsHcBase + UFS_HC_UTRLDBR_OFFSET;
-  Status = UfsWaitMemSet (Address, BIT0 << Slot, 0, Packet.Timeout);
-  if (EFI_ERROR (Status)) {
-    goto Exit;
-  }
-
-  if (QueryResp->QueryResp != 0) {
-    DumpQueryResponseResult (QueryResp->QueryResp);
-    Status = EFI_DEVICE_ERROR;
-    goto Exit;
-  }
-
-  if (Trd->Ocs == 0) {
-    ReturnData = QueryResp->Tsf.Value;
-    SwapLittleEndianToBigEndian ((UINT8*)&ReturnData, sizeof (UINT32));
-    *Attributes = ReturnData;
-  } else {
-    Status = EFI_DEVICE_ERROR;
-  }
-
-Exit:
-  UfsStopExecCmd (Private, Slot);
-  UfsPeimFreeMem (Private->Pool, CmdDescBase, CmdDescSize);
-
-  return Status;
-}
 
 /**
   Read or write specified flag of a UFS device.
@@ -1143,57 +1015,7 @@ UfsSetFlag (
   return Status;
 }
 
-/**
-  Clear specified flag to 0 on a UFS device.
 
-  @param[in]  Private           The pointer to the UFS_PEIM_HC_PRIVATE_DATA data structure.
-  @param[in]  FlagId            The ID of flag to be cleared.
-
-  @retval EFI_SUCCESS           The flag was cleared successfully.
-  @retval EFI_DEVICE_ERROR      A device error occurred while attempting to clear the flag.
-  @retval EFI_TIMEOUT           A timeout occurred while waiting for the completion of clearing the flag.
-
-**/
-EFI_STATUS
-UfsClearFlag (
-  IN  UFS_PEIM_HC_PRIVATE_DATA     *Private,
-  IN  UINT8                        FlagId
-  )
-{
-  EFI_STATUS             Status;
-  UINT8                  Value;
-
-  Value  = 0;
-  Status = UfsRwFlags (Private, FALSE, FlagId, &Value);
-
-  return Status;
-}
-
-/**
-  Read specified flag from a UFS device.
-
-  @param[in]  Private           The pointer to the UFS_PEIM_HC_PRIVATE_DATA data structure.
-  @param[in]  FlagId            The ID of flag to be read.
-  @param[out] Value             The flag's value.
-
-  @retval EFI_SUCCESS           The flag was read successfully.
-  @retval EFI_DEVICE_ERROR      A device error occurred while attempting to read the flag.
-  @retval EFI_TIMEOUT           A timeout occurred while waiting for the completion of reading the flag.
-
-**/
-EFI_STATUS
-UfsReadFlag (
-  IN     UFS_PEIM_HC_PRIVATE_DATA     *Private,
-  IN     UINT8                        FlagId,
-     OUT UINT8                        *Value
-  )
-{
-  EFI_STATUS                           Status;
-
-  Status = UfsRwFlags (Private, TRUE, FlagId, Value);
-
-  return Status;
-}
 
 /**
   Sends NOP IN cmd to a UFS device for initialization process request.
@@ -1350,8 +1172,15 @@ UfsExecScsiCmds (
   SwapLittleEndianToBigEndian ((UINT8*)&SenseDataLen, sizeof (UINT16));
 
   if ((Packet->SenseDataLength != 0) && (Packet->SenseData != NULL)) {
-    CopyMem (Packet->SenseData, Response->SenseData, SenseDataLen);
-    Packet->SenseDataLength = (UINT8)SenseDataLen;
+    //
+    // Make sure the hardware device does not return more data than expected.
+    //
+    if (SenseDataLen <= Packet->SenseDataLength) {
+      CopyMem (Packet->SenseData, Response->SenseData, SenseDataLen);
+      Packet->SenseDataLength = (UINT8)SenseDataLen;
+    } else {
+      Packet->SenseDataLength = 0;
+    }
   }
 
   //

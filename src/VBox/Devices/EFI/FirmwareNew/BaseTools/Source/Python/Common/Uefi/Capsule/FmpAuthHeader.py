@@ -2,14 +2,8 @@
 # Module that encodes and decodes a EFI_FIRMWARE_IMAGE_AUTHENTICATION with
 # certificate data and payload data.
 #
-# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# Copyright (c) 2018 - 2019, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -171,6 +165,18 @@ class FmpAuthHeaderClass (object):
         self.Payload          = Buffer[self._MonotonicCountSize + self.dwLength:]
         self._Valid           = True
         return self.Payload
+
+    def IsSigned (self, Buffer):
+        if len (Buffer) < self._StructSize:
+            return False
+        (MonotonicCount, dwLength, wRevision, wCertificateType, CertType) = \
+            struct.unpack (
+                     self._StructFormat,
+                     Buffer[0:self._StructSize]
+                     )
+        if CertType != self._EFI_CERT_TYPE_PKCS7_GUID.bytes_le:
+            return False
+        return True
 
     def DumpInfo (self):
         if not self._Valid:

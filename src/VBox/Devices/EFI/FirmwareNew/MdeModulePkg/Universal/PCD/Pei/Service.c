@@ -2,14 +2,8 @@
   The driver internal functions are implmented here.
   They build Pei PCD database, and provide access service to PCD database.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -861,6 +855,7 @@ GetWorker (
   UINT32              LocalTokenNumber;
   UINT32              LocalTokenCount;
   UINT8               *VaraiableDefaultBuffer;
+  UINTN               VpdBaseAddress;
 
   //
   // TokenNumber Zero is reserved as PCD_INVALID_TOKEN_NUMBER.
@@ -889,7 +884,19 @@ GetWorker (
     {
       VPD_HEAD *VpdHead;
       VpdHead = (VPD_HEAD *) ((UINT8 *)PeiPcdDb + Offset);
-      return (VOID *) ((UINTN) PcdGet32 (PcdVpdBaseAddress) + VpdHead->Offset);
+
+      //
+      // PcdVpdBaseAddress64 is DynamicEx PCD only. So, PeiPcdGet64Ex() is used to get its value.
+      //
+      VpdBaseAddress = (UINTN) PeiPcdGet64Ex (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdVpdBaseAddress64));
+      if (VpdBaseAddress == 0) {
+        //
+        // PcdVpdBaseAddress64 is not set, get value from PcdVpdBaseAddress.
+        //
+        VpdBaseAddress = (UINTN) PcdGet32 (PcdVpdBaseAddress);
+      }
+      ASSERT (VpdBaseAddress != 0);
+      return (VOID *)(VpdBaseAddress + VpdHead->Offset);
     }
 
     case PCD_TYPE_HII|PCD_TYPE_STRING:

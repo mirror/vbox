@@ -2,15 +2,9 @@
 #
 # PackageFile class represents the zip file of a distribution package.
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -51,12 +45,12 @@ class PackageFile:
             self._Files = {}
             for Filename in self._ZipFile.namelist():
                 self._Files[os.path.normpath(Filename)] = Filename
-        except BaseException, Xstr:
+        except BaseException as Xstr:
             Logger.Error("PackagingTool", FILE_OPEN_FAILURE,
                             ExtraData="%s (%s)" % (FileName, str(Xstr)))
 
         BadFile = self._ZipFile.testzip()
-        if BadFile != None:
+        if BadFile is not None:
             Logger.Error("PackagingTool", FILE_CHECKSUM_FAILURE,
                             ExtraData="[%s] in %s" % (BadFile, FileName))
 
@@ -106,7 +100,7 @@ class PackageFile:
                             ExtraData="[%s] in %s" % (Which, self._FileName))
         try:
             FileContent = self._ZipFile.read(self._Files[Which])
-        except BaseException, Xstr:
+        except BaseException as Xstr:
             Logger.Error("PackagingTool", FILE_DECOMPRESS_FAILURE,
                             ExtraData="[%s] in %s (%s)" % (Which, \
                                                            self._FileName, \
@@ -119,14 +113,14 @@ class PackageFile:
                 return
             else:
                 ToFile = __FileHookOpen__(ToDest, 'wb')
-        except BaseException, Xstr:
+        except BaseException as Xstr:
             Logger.Error("PackagingTool", FILE_OPEN_FAILURE,
                             ExtraData="%s (%s)" % (ToDest, str(Xstr)))
 
         try:
             ToFile.write(FileContent)
             ToFile.close()
-        except BaseException, Xstr:
+        except BaseException as Xstr:
             Logger.Error("PackagingTool", FILE_WRITE_FAILURE,
                             ExtraData="%s (%s)" % (ToDest, str(Xstr)))
 
@@ -228,7 +222,7 @@ class PackageFile:
                     return
             Logger.Info("packing ..." + File)
             self._ZipFile.write(File, ArcName)
-        except BaseException, Xstr:
+        except BaseException as Xstr:
             Logger.Error("PackagingTool", FILE_COMPRESS_FAILURE,
                             ExtraData="%s (%s)" % (File, str(Xstr)))
 
@@ -242,7 +236,7 @@ class PackageFile:
             if os.path.splitext(ArcName)[1].lower() == '.pkg':
                 Data = Data.encode('utf_8')
             self._ZipFile.writestr(ArcName, Data)
-        except BaseException, Xstr:
+        except BaseException as Xstr:
             Logger.Error("PackagingTool", FILE_COMPRESS_FAILURE,
                             ExtraData="%s (%s)" % (ArcName, str(Xstr)))
 

@@ -4,18 +4,13 @@
   Copyright (C) 2016, Red Hat, Inc.
   Copyright (C) 2017, AMD, Inc.
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
-  WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 **/
 
 #ifndef _VIRTIO_1_0_H_
 #define _VIRTIO_1_0_H_
 
+#include <IndustryStandard/Pci23.h>
 #include <IndustryStandard/Virtio095.h>
 
 //
@@ -29,11 +24,7 @@
 //
 #pragma pack (1)
 typedef struct {
-  UINT8 CapId;   // Capability identifier (generic)
-  UINT8 CapNext; // Link to next capability (generic)
-} VIRTIO_PCI_CAP_LINK;
-
-typedef struct {
+  EFI_PCI_CAPABILITY_VENDOR_HDR VendorHdr;
   UINT8  ConfigType; // Identifies the specific VirtIo 1.0 config structure
   UINT8  Bar;        // The BAR that contains the structure
   UINT8  Padding[3];

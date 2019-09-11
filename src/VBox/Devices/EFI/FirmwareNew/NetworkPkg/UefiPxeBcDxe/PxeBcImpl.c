@@ -3,13 +3,7 @@
 
   Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -849,7 +843,7 @@ EfiPxeBcMtftp (
   VOID                            *Config;
   EFI_STATUS                      Status;
   EFI_PXE_BASE_CODE_IP_FILTER     IpFilter;
-
+  UINTN                           WindowSize;
 
   if ((This == NULL) ||
       (Filename == NULL) ||
@@ -872,6 +866,11 @@ EfiPxeBcMtftp (
   Status    = EFI_DEVICE_ERROR;
   Private   = PXEBC_PRIVATE_DATA_FROM_PXEBC (This);
   Mode      = Private->PxeBc.Mode;
+
+  //
+  // Get PcdPxeTftpWindowSize.
+  //
+  WindowSize = (UINTN) PcdGet64 (PcdPxeTftpWindowSize);
 
   if (Mode->UsingIpv6) {
     if (!NetIp6IsValidUnicast (&ServerIp->v6)) {
@@ -930,6 +929,7 @@ EfiPxeBcMtftp (
                Config,
                Filename,
                BlockSize,
+               (WindowSize > 1) ? &WindowSize : NULL,
                BufferSize
                );
 
@@ -944,6 +944,7 @@ EfiPxeBcMtftp (
                Config,
                Filename,
                BlockSize,
+               (WindowSize > 1) ? &WindowSize : NULL,
                BufferPtr,
                BufferSize,
                DontUseBuffer
@@ -976,6 +977,7 @@ EfiPxeBcMtftp (
                Config,
                Filename,
                BlockSize,
+               (WindowSize > 1) ? &WindowSize : NULL,
                BufferPtr,
                BufferSize,
                DontUseBuffer
@@ -1659,7 +1661,7 @@ EfiPxeBcSetIpFilter (
     //
     Udp4Cfg = &Private->Udp4CfgData;
     if ((AcceptPromiscuous != Udp4Cfg->AcceptPromiscuous)   ||
-    	  (AcceptBroadcast != Udp4Cfg->AcceptBroadcast)     || MultiCastUpdate) {
+        (AcceptBroadcast != Udp4Cfg->AcceptBroadcast)     || MultiCastUpdate) {
       //
       // Clear the UDP4 instance configuration, all joined groups will be left
       // during the operation.
@@ -2003,7 +2005,6 @@ EfiPxeBcSetStationIP (
   EFI_STATUS              Status;
   PXEBC_PRIVATE_DATA      *Private;
   EFI_PXE_BASE_CODE_MODE  *Mode;
-  EFI_ARP_CONFIG_DATA     ArpConfigData;
 
   if (This == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -2043,27 +2044,6 @@ EfiPxeBcSetStationIP (
     if (EFI_ERROR (Status)) {
       goto ON_EXIT;
     }
-  } else if (!Mode->UsingIpv6 && NewStationIp != NULL) {
-    //
-    // Configure the corresponding ARP with the IPv4 address.
-    //
-    ZeroMem (&ArpConfigData, sizeof (EFI_ARP_CONFIG_DATA));
-
-    ArpConfigData.SwAddressType   = 0x0800;
-    ArpConfigData.SwAddressLength = (UINT8) sizeof (EFI_IPv4_ADDRESS);
-    ArpConfigData.StationAddress  = &NewStationIp->v4;
-
-    Private->Arp->Configure (Private->Arp, NULL);
-    Private->Arp->Configure (Private->Arp, &ArpConfigData);
-
-    if (NewSubnetMask != NULL) {
-      Mode->RouteTableEntries                = 1;
-      Mode->RouteTable[0].IpAddr.Addr[0]     = NewStationIp->Addr[0] & NewSubnetMask->Addr[0];
-      Mode->RouteTable[0].SubnetMask.Addr[0] = NewSubnetMask->Addr[0];
-      Mode->RouteTable[0].GwAddr.Addr[0]     = 0;
-    }
-
-    Private->IsAddressOk = TRUE;
   }
 
   if (NewStationIp != NULL) {
@@ -2077,6 +2057,10 @@ EfiPxeBcSetStationIP (
   }
 
   Status = PxeBcFlushStationIp (Private, NewStationIp, NewSubnetMask);
+  if (!EFI_ERROR (Status)) {
+    Private->IsAddressOk = TRUE;
+  }
+
 ON_EXIT:
   return Status;
 }

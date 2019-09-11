@@ -1,14 +1,8 @@
 /** @file
   EFI Guid Partition Table Format Definition.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -24,6 +18,10 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 /// EFI Partition Table Signature: "EFI PART".
 ///
 #define EFI_PTAB_HEADER_ID      SIGNATURE_64 ('E','F','I',' ','P','A','R','T')
+///
+/// Minimum bytes reserve for EFI entry array buffer.
+///
+#define EFI_GPT_PART_ENTRY_MIN_SIZE 16384
 
 #pragma pack(1)
 

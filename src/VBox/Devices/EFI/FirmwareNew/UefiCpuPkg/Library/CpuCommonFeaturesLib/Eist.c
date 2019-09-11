@@ -2,13 +2,7 @@
   Enhanced Intel SpeedStep feature.
 
   Copyright (c) 2017, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -69,6 +63,18 @@ EistInitialize (
   IN BOOLEAN                           State
   )
 {
+  //
+  // The scope of the MSR_IA32_MISC_ENABLE is core for below processor type, only program
+  // MSR_IA32_MISC_ENABLE for thread 0 in each core.
+  //
+  if (IS_ATOM_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_CORE_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel) ||
+      IS_CORE2_PROCESSOR (CpuInfo->DisplayFamily, CpuInfo->DisplayModel)) {
+    if (CpuInfo->ProcessorInfo.Location.Thread != 0) {
+      return RETURN_SUCCESS;
+    }
+  }
+
   CPU_REGISTER_TABLE_WRITE_FIELD (
     ProcessorNumber,
     Msr,

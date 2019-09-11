@@ -3,14 +3,8 @@
   produce the implementation of native PCD protocol and EFI_PCD_PROTOCOL defined in
   PI 1.4a Vol3.
 
-Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -109,6 +103,7 @@ EFI_GET_PCD_INFO_PROTOCOL  mEfiGetPcdInfoInstance = {
 };
 
 EFI_HANDLE mPcdHandle = NULL;
+UINTN      mVpdBaseAddress = 0;
 
 /**
   Main entry for PCD DXE driver.
@@ -174,6 +169,21 @@ PcdDxeInit (
     NULL,
     &Registration
     );
+
+  //
+  // Cache VpdBaseAddress in entry point for the following usage.
+  //
+
+  //
+  // PcdVpdBaseAddress64 is DynamicEx PCD only. So, DxePcdGet64Ex() is used to get its value.
+  //
+  mVpdBaseAddress = (UINTN) DxePcdGet64Ex (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdVpdBaseAddress64));
+  if (mVpdBaseAddress == 0) {
+    //
+    // PcdVpdBaseAddress64 is not set, get value from PcdVpdBaseAddress.
+    //
+    mVpdBaseAddress = (UINTN) PcdGet32 (PcdVpdBaseAddress);
+  }
 
   return Status;
 }
@@ -890,6 +900,11 @@ DxePcdSet16Ex (
   IN UINT16            Value
   )
 {
+  //
+  // PcdSetNvStoreDefaultId should be set in PEI phase to take effect.
+  //
+  ASSERT (!(CompareGuid (Guid, &gEfiMdeModulePkgTokenSpaceGuid) &&
+            (ExTokenNumber == PcdToken(PcdSetNvStoreDefaultId))));
   return  ExSetValueWorker (ExTokenNumber, Guid, &Value, sizeof (Value));
 }
 

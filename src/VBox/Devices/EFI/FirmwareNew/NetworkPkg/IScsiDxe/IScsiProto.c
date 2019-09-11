@@ -1,14 +1,8 @@
 /** @file
   The implementation of iSCSI protocol based on RFC3720.
 
-Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -2093,39 +2087,6 @@ IScsiDelTcb (
   RemoveEntryList (&Tcb->Link);
 
   FreePool (Tcb);
-}
-
-
-/**
-  Find the task control block by the initator task tag.
-
-  @param[in]  TcbList         The tcb list.
-  @param[in]  InitiatorTaskTag The initiator task tag.
-
-  @return The task control block found.
-  @retval NULL The task control block cannot be found.
-
-**/
-ISCSI_TCB *
-IScsiFindTcbByITT (
-  IN LIST_ENTRY      *TcbList,
-  IN UINT32          InitiatorTaskTag
-  )
-{
-  ISCSI_TCB       *Tcb;
-  LIST_ENTRY      *Entry;
-
-  Tcb = NULL;
-
-  NET_LIST_FOR_EACH (Entry, TcbList) {
-    Tcb = NET_LIST_USER_STRUCT (Entry, ISCSI_TCB, Link);
-
-    if (Tcb->InitiatorTaskTag == InitiatorTaskTag) {
-      break;
-    }
-  }
-
-  return Tcb;
 }
 
 

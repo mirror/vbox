@@ -8,14 +8,8 @@
 
   PhysicalPresenceCallback() and MemoryClearCallback() will receive untrusted input and do some check.
 
-Copyright (c) 2011 - 2016, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -271,6 +265,10 @@ MemoryClearCallback (
       return EFI_SUCCESS;
     }
     MorControl &= ~MOR_CLEAR_MEMORY_BIT_MASK;
+  } else {
+    mTcgNvs->MemoryClear.ReturnCode = MOR_REQUEST_GENERAL_FAILURE;
+    DEBUG ((EFI_D_ERROR, "[TPM] MOR Parameter error! Parameter = %x\n", mTcgNvs->MemoryClear.Parameter));
+    return EFI_SUCCESS;
   }
 
   DataSize = sizeof (UINT8);

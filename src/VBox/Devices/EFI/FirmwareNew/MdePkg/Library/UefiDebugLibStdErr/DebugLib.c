@@ -1,14 +1,8 @@
 /** @file
   UEFI Debug Lib that sends messages to the Standard Error Device in the EFI System Table.
 
-  Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -16,7 +10,6 @@
 #include <Uefi.h>
 
 #include <Library/DebugLib.h>
-#include <Library/UefiBootServicesTableLib.h>
 #include <Library/PrintLib.h>
 #include <Library/PcdLib.h>
 #include <Library/BaseLib.h>
@@ -28,6 +21,15 @@
 //
 #define MAX_DEBUG_MESSAGE_LENGTH  0x100
 
+
+//
+// VA_LIST can not initialize to NULL for all compiler, so we use this to
+// indicate a null VA_LIST
+//
+VA_LIST     mVaListNull;
+
+extern BOOLEAN                mPostEBS;
+extern EFI_SYSTEM_TABLE       *mDebugST;
 
 /**
   Prints a debug message to the debug output device if the specified error level is enabled.
@@ -52,34 +54,126 @@ DebugPrint (
   ...
   )
 {
-  CHAR16   Buffer[MAX_DEBUG_MESSAGE_LENGTH];
-  VA_LIST  Marker;
+  VA_LIST         Marker;
 
-  //
-  // If Format is NULL, then ASSERT().
-  //
-  ASSERT (Format != NULL);
-
-  //
-  // Check driver debug mask value and global mask
-  //
-  if ((ErrorLevel & GetDebugPrintErrorLevel ()) == 0) {
-    return;
-  }
-
-  //
-  // Convert the DEBUG() message to a Unicode String
-  //
   VA_START (Marker, Format);
-  UnicodeVSPrintAsciiFormat (Buffer, MAX_DEBUG_MESSAGE_LENGTH, Format, Marker);
+  DebugVPrint (ErrorLevel, Format, Marker);
   VA_END (Marker);
+}
 
-  //
-  // Send the print string to the Standard Error device
-  //
-  if ((gST != NULL) && (gST->StdErr != NULL)) {
-    gST->StdErr->OutputString (gST->StdErr, Buffer);
+
+/**
+  Prints a debug message to the debug output device if the specified
+  error level is enabled base on Null-terminated format string and a
+  VA_LIST argument list or a BASE_LIST argument list.
+
+  If any bit in ErrorLevel is also set in DebugPrintErrorLevelLib function
+  GetDebugPrintErrorLevel (), then print the message specified by Format and
+  the associated variable argument list to the debug output device.
+
+  If Format is NULL, then ASSERT().
+
+  @param  ErrorLevel      The error level of the debug message.
+  @param  Format          Format string for the debug message to print.
+  @param  VaListMarker    VA_LIST marker for the variable argument list.
+  @param  BaseListMarker  BASE_LIST marker for the variable argument list.
+
+**/
+VOID
+DebugPrintMarker (
+  IN  UINTN         ErrorLevel,
+  IN  CONST CHAR8   *Format,
+  IN  VA_LIST       VaListMarker,
+  IN  BASE_LIST     BaseListMarker
+  )
+{
+  CHAR16   Buffer[MAX_DEBUG_MESSAGE_LENGTH];
+
+  if (!mPostEBS) {
+    //
+    // If Format is NULL, then ASSERT().
+    //
+    ASSERT (Format != NULL);
+
+    //
+    // Check driver debug mask value and global mask
+    //
+    if ((ErrorLevel & GetDebugPrintErrorLevel ()) == 0) {
+      return;
+    }
+
+    //
+    // Convert the DEBUG() message to a Unicode String
+    //
+    if (BaseListMarker == NULL) {
+      UnicodeVSPrintAsciiFormat (Buffer, MAX_DEBUG_MESSAGE_LENGTH, Format, VaListMarker);
+    } else {
+      UnicodeBSPrintAsciiFormat (Buffer, MAX_DEBUG_MESSAGE_LENGTH, Format, BaseListMarker);
+    }
+
+    //
+    // Send the print string to the Standard Error device
+    //
+    if ((mDebugST != NULL) && (mDebugST->StdErr != NULL)) {
+      mDebugST->StdErr->OutputString (mDebugST->StdErr, Buffer);
+    }
   }
+}
+
+
+/**
+  Prints a debug message to the debug output device if the specified
+  error level is enabled.
+
+  If any bit in ErrorLevel is also set in DebugPrintErrorLevelLib function
+  GetDebugPrintErrorLevel (), then print the message specified by Format and
+  the associated variable argument list to the debug output device.
+
+  If Format is NULL, then ASSERT().
+
+  @param  ErrorLevel    The error level of the debug message.
+  @param  Format        Format string for the debug message to print.
+  @param  VaListMarker  VA_LIST marker for the variable argument list.
+
+**/
+VOID
+EFIAPI
+DebugVPrint (
+  IN  UINTN         ErrorLevel,
+  IN  CONST CHAR8   *Format,
+  IN  VA_LIST       VaListMarker
+  )
+{
+  DebugPrintMarker (ErrorLevel, Format, VaListMarker, NULL);
+}
+
+
+/**
+  Prints a debug message to the debug output device if the specified
+  error level is enabled.
+  This function use BASE_LIST which would provide a more compatible
+  service than VA_LIST.
+
+  If any bit in ErrorLevel is also set in DebugPrintErrorLevelLib function
+  GetDebugPrintErrorLevel (), then print the message specified by Format and
+  the associated variable argument list to the debug output device.
+
+  If Format is NULL, then ASSERT().
+
+  @param  ErrorLevel      The error level of the debug message.
+  @param  Format          Format string for the debug message to print.
+  @param  BaseListMarker  BASE_LIST marker for the variable argument list.
+
+**/
+VOID
+EFIAPI
+DebugBPrint (
+  IN  UINTN         ErrorLevel,
+  IN  CONST CHAR8   *Format,
+  IN  BASE_LIST     BaseListMarker
+  )
+{
+  DebugPrintMarker (ErrorLevel, Format, mVaListNull, BaseListMarker);
 }
 
 
@@ -116,33 +210,35 @@ DebugAssert (
 {
   CHAR16  Buffer[MAX_DEBUG_MESSAGE_LENGTH];
 
-  //
-  // Generate the ASSERT() message in Unicode format
-  //
-  UnicodeSPrintAsciiFormat (
-    Buffer,
-    sizeof (Buffer),
-    "ASSERT [%a] %a(%d): %a\n",
-    gEfiCallerBaseName,
-    FileName,
-    LineNumber,
-    Description
-    );
+  if (!mPostEBS) {
+    //
+    // Generate the ASSERT() message in Unicode format
+    //
+    UnicodeSPrintAsciiFormat (
+      Buffer,
+      sizeof (Buffer),
+      "ASSERT [%a] %a(%d): %a\n",
+      gEfiCallerBaseName,
+      FileName,
+      LineNumber,
+      Description
+      );
 
-  //
-  // Send the print string to the Standard Error device
-  //
-  if ((gST != NULL) && (gST->StdErr != NULL)) {
-    gST->StdErr->OutputString (gST->StdErr, Buffer);
-  }
+    //
+    // Send the print string to the Standard Error device
+    //
+    if ((mDebugST != NULL) && (mDebugST->StdErr != NULL)) {
+      mDebugST->StdErr->OutputString (mDebugST->StdErr, Buffer);
+    }
 
-  //
-  // Generate a Breakpoint, DeadLoop, or NOP based on PCD settings
-  //
-  if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED) != 0) {
-    CpuBreakpoint ();
-  } else if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED) != 0) {
-    CpuDeadLoop ();
+    //
+    // Generate a Breakpoint, DeadLoop, or NOP based on PCD settings
+    //
+    if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_BREAKPOINT_ENABLED) != 0) {
+      CpuBreakpoint ();
+    } else if ((PcdGet8(PcdDebugPropertyMask) & DEBUG_PROPERTY_ASSERT_DEADLOOP_ENABLED) != 0) {
+      CpuDeadLoop ();
+    }
   }
 }
 

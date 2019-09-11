@@ -2,13 +2,7 @@
   SMM Memory page management functions.
 
   Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -451,128 +445,7 @@ GetSmmMemoryMapEntryCount (
   return Count;
 }
 
-/**
-  Dump Smm memory map entry.
-**/
-VOID
-DumpSmmMemoryMapEntry (
-  VOID
-  )
-{
-  LIST_ENTRY               *Link;
-  MEMORY_MAP               *Entry;
-  EFI_PHYSICAL_ADDRESS     Last;
 
-  Last = 0;
-  DEBUG ((DEBUG_INFO, "DumpSmmMemoryMapEntry:\n"));
-  Link = gMemoryMap.ForwardLink;
-  while (Link != &gMemoryMap) {
-    Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
-    Link  = Link->ForwardLink;
-
-    if ((Last != 0) && (Last != (UINT64)-1)) {
-      if (Last + 1 != Entry->Start) {
-        Last = (UINT64)-1;
-      } else {
-        Last = Entry->End;
-      }
-    } else if (Last == 0) {
-      Last = Entry->End;
-    }
-
-    DEBUG ((DEBUG_INFO, "Entry (Link - 0x%x)\n", &Entry->Link));
-    DEBUG ((DEBUG_INFO, "  Signature         - 0x%x\n", Entry->Signature));
-    DEBUG ((DEBUG_INFO, "  Link.ForwardLink  - 0x%x\n", Entry->Link.ForwardLink));
-    DEBUG ((DEBUG_INFO, "  Link.BackLink     - 0x%x\n", Entry->Link.BackLink));
-    DEBUG ((DEBUG_INFO, "  Type              - 0x%x\n", Entry->Type));
-    DEBUG ((DEBUG_INFO, "  Start             - 0x%016lx\n", Entry->Start));
-    DEBUG ((DEBUG_INFO, "  End               - 0x%016lx\n", Entry->End));
-  }
-
-  ASSERT (Last != (UINT64)-1);
-}
-
-/**
-  Dump Smm memory map.
-**/
-VOID
-DumpSmmMemoryMap (
-  VOID
-  )
-{
-  LIST_ENTRY      *Node;
-  FREE_PAGE_LIST  *Pages;
-
-  DEBUG ((DEBUG_INFO, "DumpSmmMemoryMap\n"));
-
-  Pages = NULL;
-  Node = mSmmMemoryMap.ForwardLink;
-  while (Node != &mSmmMemoryMap) {
-    Pages = BASE_CR (Node, FREE_PAGE_LIST, Link);
-    DEBUG ((DEBUG_INFO, "Pages - 0x%x\n", Pages));
-    DEBUG ((DEBUG_INFO, "Pages->NumberOfPages - 0x%x\n", Pages->NumberOfPages));
-    Node = Node->ForwardLink;
-  }
-}
-
-/**
-  Check if a Smm base~length is in Smm memory map.
-
-  @param[in] Base   The base address of Smm memory to be checked.
-  @param[in] Length THe length of Smm memory to be checked.
-
-  @retval TRUE  Smm base~length is in smm memory map.
-  @retval FALSE Smm base~length is in smm memory map.
-**/
-BOOLEAN
-SmmMemoryMapConsistencyCheckRange (
-  IN EFI_PHYSICAL_ADDRESS Base,
-  IN UINTN                Length
-  )
-{
-  LIST_ENTRY               *Link;
-  MEMORY_MAP               *Entry;
-  BOOLEAN                  Result;
-
-  Result = FALSE;
-  Link = gMemoryMap.ForwardLink;
-  while (Link != &gMemoryMap) {
-    Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
-    Link  = Link->ForwardLink;
-
-    if (Entry->Type != EfiConventionalMemory) {
-      continue;
-    }
-    if (Entry->Start == Base && Entry->End == Base + Length - 1) {
-      Result = TRUE;
-      break;
-    }
-  }
-
-  return Result;
-}
-
-/**
-  Check the consistency of Smm memory map.
-**/
-VOID
-SmmMemoryMapConsistencyCheck (
-  VOID
-  )
-{
-  LIST_ENTRY      *Node;
-  FREE_PAGE_LIST  *Pages;
-  BOOLEAN         Result;
-
-  Pages = NULL;
-  Node = mSmmMemoryMap.ForwardLink;
-  while (Node != &mSmmMemoryMap) {
-    Pages = BASE_CR (Node, FREE_PAGE_LIST, Link);
-    Result = SmmMemoryMapConsistencyCheckRange ((EFI_PHYSICAL_ADDRESS)(UINTN)Pages, (UINTN)EFI_PAGES_TO_SIZE(Pages->NumberOfPages));
-    ASSERT (Result);
-    Node = Node->ForwardLink;
-  }
-}
 
 /**
   Internal Function. Allocate n pages from given free page node.
@@ -984,6 +857,41 @@ SmmInternalFreePages (
 }
 
 /**
+  Check whether the input range is in memory map.
+
+  @param  Memory                 Base address of memory being inputed.
+  @param  NumberOfPages          The number of pages.
+
+  @retval TRUE   In memory map.
+  @retval FALSE  Not in memory map.
+
+**/
+BOOLEAN
+InMemMap (
+  IN EFI_PHYSICAL_ADDRESS  Memory,
+  IN UINTN                 NumberOfPages
+  )
+{
+  LIST_ENTRY               *Link;
+  MEMORY_MAP               *Entry;
+  EFI_PHYSICAL_ADDRESS     Last;
+
+  Last = Memory + EFI_PAGES_TO_SIZE (NumberOfPages) - 1;
+
+  Link = gMemoryMap.ForwardLink;
+  while (Link != &gMemoryMap) {
+    Entry = CR (Link, MEMORY_MAP, Link, MEMORY_MAP_SIGNATURE);
+    Link  = Link->ForwardLink;
+
+    if ((Entry->Start <= Memory) && (Entry->End >= Last)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
   Frees previous allocated pages.
 
   @param  Memory                 Base address of memory being freed.
@@ -1003,6 +911,10 @@ SmmFreePages (
 {
   EFI_STATUS  Status;
   BOOLEAN     IsGuarded;
+
+  if (!InMemMap(Memory, NumberOfPages)) {
+    return EFI_NOT_FOUND;
+  }
 
   IsGuarded = IsHeapGuardEnabled () && IsMemoryGuarded (Memory);
   Status = SmmInternalFreePages (Memory, NumberOfPages, IsGuarded);

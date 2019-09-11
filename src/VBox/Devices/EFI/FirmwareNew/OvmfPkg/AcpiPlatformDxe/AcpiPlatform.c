@@ -2,13 +2,7 @@
   OVMF ACPI Platform Driver
 
   Copyright (c) 2008 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -168,12 +162,19 @@ InstallOvmfFvTables (
   }
 
   //
+  // set FwVol (and use an ASSERT() below) to suppress incorrect
+  // compiler/analyzer warnings
+  //
+  FwVol = NULL;
+  //
   // Locate the firmware volume protocol
   //
   Status = LocateFvInstanceWithTables (&FwVol);
   if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
+  ASSERT (FwVol != NULL);
+
   //
   // Read tables from the storage file.
   //
