@@ -649,6 +649,12 @@ VBOX_WITH_QTGUI = 1
 ifeq ($(KBUILD_TARGET),darwin)
  VBOX_WITH_COCOA_QT = 1
 endif
+# VBox Ballooning Control frontend.
+VBOX_WITH_FE_BALLOONCTRL = 1
+# VBox Autostart Service.
+VBOX_WITH_FE_AUTOSTART = 1
+# VBox Bug Report tool.
+VBOX_WITH_FE_BUGREPORT = 1
 # The SDL based GUI.
 VBOX_WITH_VBOXSDL = 1
 # Build VBoxSDL with secure label support.

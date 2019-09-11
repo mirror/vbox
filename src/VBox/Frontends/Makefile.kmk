@@ -24,9 +24,15 @@ ifdef VBOX_WITH_MAIN
 endif
 ifndef VBOX_ONLY_DOCS
  ifdef VBOX_WITH_MAIN
-  include $(PATH_SUB_CURRENT)/VBoxBalloonCtrl/Makefile.kmk
-  include $(PATH_SUB_CURRENT)/VBoxAutostart/Makefile.kmk
-  include $(PATH_SUB_CURRENT)/VBoxBugReport/Makefile.kmk
+  ifdef VBOX_WITH_FE_BALLOONCTRL
+   include $(PATH_SUB_CURRENT)/VBoxBalloonCtrl/Makefile.kmk
+  endif
+  ifdef VBOX_WITH_FE_AUTOSTART
+   include $(PATH_SUB_CURRENT)/VBoxAutostart/Makefile.kmk
+  endif
+  ifdef VBOX_WITH_FE_BUGREPORT
+   include $(PATH_SUB_CURRENT)/VBoxBugReport/Makefile.kmk
+  endif
  endif
  ifdef VBOX_WITH_VBOXSDL
   include $(PATH_SUB_CURRENT)/VBoxSDL/Makefile.kmk
