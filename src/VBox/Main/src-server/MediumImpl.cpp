@@ -8214,9 +8214,9 @@ HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *p
         settings::StringsMap::iterator itKeyStore = pBase->m->mapProperties.find("CRYPT/KeyStore");
         if (itKeyStore != pBase->m->mapProperties.end())
         {
+#ifdef VBOX_WITH_EXTPACK
             settings::StringsMap::iterator itKeyId = pBase->m->mapProperties.find("CRYPT/KeyId");
 
-#ifdef VBOX_WITH_EXTPACK
             ExtPackManager *pExtPackManager = m->pVirtualBox->i_getExtPackManager();
             if (pExtPackManager->i_isExtPackUsable(ORACLE_PUEL_EXTPACK_NAME))
             {
@@ -8240,10 +8240,6 @@ HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *p
                 throw setError(VBOX_E_NOT_SUPPORTED,
                                tr("Encryption is not supported because the extension pack '%s' is missing"),
                                ORACLE_PUEL_EXTPACK_NAME);
-#else
-            throw setError(VBOX_E_NOT_SUPPORTED,
-                           tr("Encryption is not supported because extension pack support is not built in"));
-#endif
 
             if (itKeyId == pBase->m->mapProperties.end())
                 throw setError(VBOX_E_INVALID_OBJECT_STATE,
@@ -8272,6 +8268,11 @@ HRESULT Medium::i_openForIO(bool fWritable, SecretKeyStore *pKeyStore, PVDISK *p
             if (RT_FAILURE(vrc))
                 throw setErrorBoth(VBOX_E_INVALID_OBJECT_STATE, vrc, tr("Failed to load the decryption filter: %s"),
                                    i_vdError(vrc).c_str());
+#else
+            RT_NOREF(pKeyStore, pCryptoSettings);
+            throw setError(VBOX_E_NOT_SUPPORTED,
+                           tr("Encryption is not supported because extension pack support is not built in"));
+#endif /* VBOX_WITH_EXTPACK */
         }
 
         /*
