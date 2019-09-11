@@ -1298,6 +1298,7 @@ RuntimeR3_SOURCES.netbsd = \
 	generic/RTFileCopyPartEx-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
+	generic/RTPathGetCurrentOnDrive-generic.cpp \
 	generic/RTSemEventMultiWait-2-ex-generic.cpp \
 	generic/RTSemEventMultiWaitNoResume-2-ex-generic.cpp \
 	generic/RTSystemQueryDmiString-generic.cpp \
