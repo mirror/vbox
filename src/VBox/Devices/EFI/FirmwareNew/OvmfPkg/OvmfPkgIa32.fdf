@@ -275,7 +275,6 @@ INF  OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe.inf
 !ifdef $(VBOX)
 INF VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
 INF VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
-INF VBoxPkg/VBoxFsDxe/VBoxIso9660.inf
 INF VBoxPkg/VBoxFsDxe/VBoxHfs.inf
 INF VBoxPkg/VBoxSysTables/VBoxSysTables.inf
 #INF VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
