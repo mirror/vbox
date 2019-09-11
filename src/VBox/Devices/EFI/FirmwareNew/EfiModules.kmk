@@ -37,13 +37,6 @@ VBOX_EFI_DEBUG_DIR = DEBUG
 # List of modules that ends up producing .efi, .debug and .pdb files.
 #
 VBOX_EFI_MODULES = \
-	IntelFrameworkModulePkg/Bus/Isa/IsaBusDxe/IsaBusDxe/$(VBOX_EFI_DEBUG_DIR)/IsaBusDxe \
-	IntelFrameworkModulePkg/Bus/Isa/IsaFloppyDxe/IsaFloppyDxe/$(VBOX_EFI_DEBUG_DIR)/IsaFloppyDxe \
-	IntelFrameworkModulePkg/Bus/Isa/IsaIoDxe/IsaIoDxe/$(VBOX_EFI_DEBUG_DIR)/IsaIoDxe \
-	IntelFrameworkModulePkg/Bus/Isa/IsaSerialDxe/IsaSerialDxe/$(VBOX_EFI_DEBUG_DIR)/IsaSerialDxe \
-	IntelFrameworkModulePkg/Bus/Isa/Ps2KeyboardDxe/Ps2keyboardDxe/$(VBOX_EFI_DEBUG_DIR)/Ps2KeyboardDxe \
-	IntelFrameworkModulePkg/Bus/Pci/IdeBusDxe/IdeBusDxe/$(VBOX_EFI_DEBUG_DIR)/IdeBusDxe \
-	IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe/$(VBOX_EFI_DEBUG_DIR)/DataHubDxe \
 	MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru/$(VBOX_EFI_DEBUG_DIR)/AtaAtapiPassThruDxe \
 	MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe/$(VBOX_EFI_DEBUG_DIR)/AtaBusDxe \
 	MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe/$(VBOX_EFI_DEBUG_DIR)/EhciDxe \
@@ -85,19 +78,14 @@ VBOX_EFI_MODULES = \
 	MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe/$(VBOX_EFI_DEBUG_DIR)/SmbiosDxe \
 	MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/StatusCodeHandlerRuntimeDxe \
 	MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer/$(VBOX_EFI_DEBUG_DIR)/WatchdogTimer \
-	OvmfPkg/BlockMmioToBlockIoDxe/BlockIo/$(VBOX_EFI_DEBUG_DIR)/BlockMmioToBlockIoDxe \
 	OvmfPkg/PlatformPei/PlatformPei/$(VBOX_EFI_DEBUG_DIR)/PlatformPei \
 	OvmfPkg/Sec/SecMain/$(VBOX_EFI_DEBUG_DIR)/SecMain \
 	OvmfPkg/SmbiosPlatformDxe/SmbiosPlatformDxe/$(VBOX_EFI_DEBUG_DIR)/SmbiosPlatformDxe \
-	PcAtChipsetPkg/8254TimerDxe/8254Timer/$(VBOX_EFI_DEBUG_DIR)/Timer \
-	PcAtChipsetPkg/8259InterruptControllerDxe/8259/$(VBOX_EFI_DEBUG_DIR)/Legacy8259 \
-	PcAtChipsetPkg/Bus/Pci/IdeControllerDxe/IdeControllerDxe/$(VBOX_EFI_DEBUG_DIR)/IdeController \
-	PcAtChipsetPkg/IsaAcpiDxe/IsaAcpi/$(VBOX_EFI_DEBUG_DIR)/IsaAcpi \
 	PcAtChipsetPkg/PcatRealTimeClockRuntimeDxe/PcatRealTimeClockRuntimeDxe/$(VBOX_EFI_DEBUG_DIR)/PcRtc \
 	ShellPkg/Application/Shell/Shell/$(VBOX_EFI_DEBUG_DIR)/Shell \
 	UefiCpuPkg/CpuDxe/CpuDxe/$(VBOX_EFI_DEBUG_DIR)/CpuDxe \
 	UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe/$(VBOX_EFI_DEBUG_DIR)/CpuIo2Dxe \
-	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \
+#	VBoxPkg/VBoxAppleSim/VBoxAppleSim/$(VBOX_EFI_DEBUG_DIR)/VBoxAppleSim \
 	VBoxPkg/VBoxFsDxe/VBoxHfs/$(VBOX_EFI_DEBUG_DIR)/VBoxHfs \
 	VBoxPkg/VBoxSysTables/VBoxSysTables/$(VBOX_EFI_DEBUG_DIR)/VBoxSysTables \
 	VBoxPkg/VBoxVgaDxe/VBoxVgaDxe/$(VBOX_EFI_DEBUG_DIR)/VBoxVgaDxe \
