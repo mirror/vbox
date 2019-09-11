@@ -3167,7 +3167,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
     AssertMsg(pOpenMediumMenu, ("Can't access open-medium menu!\n"));
     if (pOpenMediumMenu)
     {
-        /* Eraze menu initially: */
+        /* Erase menu initially: */
         pOpenMediumMenu->clear();
         /* Depending on current medium type: */
         switch (m_pMediumIdHolder->type())
@@ -3177,7 +3177,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 /* Add "Create a new virtual hard disk" action: */
                 QAction *pCreateNewHardDisk = pOpenMediumMenu->addAction(tr("Create New Hard Disk..."));
                 pCreateNewHardDisk->setIcon(iconPool()->icon(HDNewEn, HDNewDis));
-                connect(pCreateNewHardDisk, SIGNAL(triggered(bool)), this, SLOT(sltCreateNewHardDisk()));
+                connect(pCreateNewHardDisk, &QAction::triggered, this, &UIMachineSettingsStorage::sltCreateNewHardDisk);
                 /* Add "Choose a virtual hard disk" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Hard Disk..."));
                 /* Add recent media list: */
@@ -3197,7 +3197,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove Disk from Virtual Drive"));
                 pEjectCurrentMedium->setEnabled(!m_pMediumIdHolder->isNull());
                 pEjectCurrentMedium->setIcon(iconPool()->icon(CDUnmountEnabled, CDUnmountDisabled));
-                connect(pEjectCurrentMedium, SIGNAL(triggered(bool)), this, SLOT(sltUnmountDevice()));
+                connect(pEjectCurrentMedium, &QAction::triggered, this, &UIMachineSettingsStorage::sltUnmountDevice);
                 break;
             }
             case UIMediumDeviceType_Floppy:
@@ -3213,7 +3213,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 QAction *pEjectCurrentMedium = pOpenMediumMenu->addAction(tr("Remove Disk from Virtual Drive"));
                 pEjectCurrentMedium->setEnabled(!m_pMediumIdHolder->isNull());
                 pEjectCurrentMedium->setIcon(iconPool()->icon(FDUnmountEnabled, FDUnmountDisabled));
-                connect(pEjectCurrentMedium, SIGNAL(triggered(bool)), this, SLOT(sltUnmountDevice()));
+                connect(pEjectCurrentMedium, &QAction::triggered, this, &UIMachineSettingsStorage::sltUnmountDevice);
                 break;
             }
             default:
@@ -3967,26 +3967,26 @@ void UIMachineSettingsStorage::prepareStorageWidgets()
 void UIMachineSettingsStorage::prepareConnections()
 {
     /* Configure this: */
-    connect(&uiCommon(), SIGNAL(sigMediumEnumerated(const QUuid &)),
-            this, SLOT(sltHandleMediumEnumerated(const QUuid &)));
-    connect(&uiCommon(), SIGNAL(sigMediumDeleted(const QUuid &)),
-            this, SLOT(sltHandleMediumDeleted(const QUuid &)));
+    connect(&uiCommon(), &UICommon::sigMediumEnumerated,
+            this, &UIMachineSettingsStorage::sltHandleMediumEnumerated);
+    connect(&uiCommon(), &UICommon::sigMediumDeleted,
+            this, &UIMachineSettingsStorage::sltHandleMediumDeleted);
 
     /* Configure tree-view: */
-    connect(m_pTreeStorage, SIGNAL(currentItemChanged(const QModelIndex &, const QModelIndex &)),
-             this, SLOT(sltHandleCurrentItemChange()));
-    connect(m_pTreeStorage, SIGNAL(customContextMenuRequested(const QPoint &)),
-             this, SLOT(sltHandleContextMenuRequest(const QPoint &)));
-    connect(m_pTreeStorage, SIGNAL(drawItemBranches(QPainter *, const QRect &, const QModelIndex &)),
-             this, SLOT(sltHandleDrawItemBranches(QPainter *, const QRect &, const QModelIndex &)));
-    connect(m_pTreeStorage, SIGNAL(mouseMoved(QMouseEvent *)),
-             this, SLOT(sltHandleMouseMove(QMouseEvent *)));
+    connect(m_pTreeStorage, &QITreeView::currentItemChanged,
+             this, &UIMachineSettingsStorage::sltHandleCurrentItemChange);
+    connect(m_pTreeStorage, &QITreeView::customContextMenuRequested,
+            this, &UIMachineSettingsStorage::sltHandleContextMenuRequest);
+    connect(m_pTreeStorage, &QITreeView::drawItemBranches,
+            this, &UIMachineSettingsStorage::sltHandleDrawItemBranches);
+    connect(m_pTreeStorage, &QITreeView::mouseMoved,
+            this, &UIMachineSettingsStorage::sltHandleMouseMove);
     connect(m_pTreeStorage, &QITreeView::mousePressed,
             this, &UIMachineSettingsStorage::sltHandleMouseClick);
     connect(m_pTreeStorage, &QITreeView::mouseReleased,
             this, &UIMachineSettingsStorage::sltHandleMouseRelease);
-    connect(m_pTreeStorage, SIGNAL(mouseDoubleClicked(QMouseEvent *)),
-             this, SLOT(sltHandleMouseClick(QMouseEvent *)));
+    connect(m_pTreeStorage, &QITreeView::mouseDoubleClicked,
+            this, &UIMachineSettingsStorage::sltHandleMouseClick);
     connect(m_pTreeStorage, &QITreeView::dragEntered,
             this, &UIMachineSettingsStorage::sltHandleDragEnter);
     connect(m_pTreeStorage, &QITreeView::dragMoved,
@@ -3995,45 +3995,56 @@ void UIMachineSettingsStorage::prepareConnections()
             this, &UIMachineSettingsStorage::sltHandleDragDrop);
 
     /* Create model: */
-    connect(m_pModelStorage, SIGNAL(rowsInserted(const QModelIndex &, int, int)),
-            this, SLOT(sltHandleRowInsertion(const QModelIndex &, int)));
-    connect(m_pModelStorage, SIGNAL(rowsRemoved(const QModelIndex&, int, int)),
-            this, SLOT(sltHandleRowRemoval()));
+    connect(m_pModelStorage, &StorageModel::rowsInserted,
+            this, &UIMachineSettingsStorage::sltHandleRowInsertion);
+    connect(m_pModelStorage, &StorageModel::rowsRemoved,
+            this, &UIMachineSettingsStorage::sltHandleRowRemoval);
 
     /* Configure actions: */
-    connect(m_pActionAddController, SIGNAL(triggered(bool)), this, SLOT(sltAddController()));
-    connect(m_pActionAddControllerIDE, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerIDE()));
-    connect(m_pActionAddControllerSATA, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerSATA()));
-    connect(m_pActionAddControllerSCSI, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerSCSI()));
-    connect(m_pActionAddControllerFloppy, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerFloppy()));
-    connect(m_pActionAddControllerSAS, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerSAS()));
-    connect(m_pActionAddControllerUSB, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerUSB()));
-    connect(m_pActionAddControllerNVMe, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerNVMe()));
-    connect(m_pActionAddControllerVirtioSCSI, SIGNAL(triggered(bool)), this, SLOT(sltAddControllerVirtioSCSI()));
-    connect(m_pActionRemoveController, SIGNAL(triggered(bool)), this, SLOT(sltRemoveController()));
-    connect(m_pActionAddAttachment, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachment()));
-    connect(m_pActionAddAttachmentHD, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachmentHD()));
-    connect(m_pActionAddAttachmentCD, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachmentCD()));
-    connect(m_pActionAddAttachmentFD, SIGNAL(triggered(bool)), this, SLOT(sltAddAttachmentFD()));
-    connect(m_pActionRemoveAttachment, SIGNAL(triggered(bool)), this, SLOT(sltRemoveAttachment()));
+    connect(m_pActionAddController, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddController);
+    connect(m_pActionAddControllerIDE, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerIDE);
+    connect(m_pActionAddControllerSATA, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerSATA);
+    connect(m_pActionAddControllerSCSI, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerSCSI);
+    connect(m_pActionAddControllerFloppy, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerFloppy);
+    connect(m_pActionAddControllerSAS, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerSAS);
+    connect(m_pActionAddControllerUSB, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerUSB);
+    connect(m_pActionAddControllerNVMe, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerNVMe);
+    connect(m_pActionAddControllerVirtioSCSI, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddControllerVirtioSCSI);
+    connect(m_pActionRemoveController, &QAction::triggered, this, &UIMachineSettingsStorage::sltRemoveController);
+    connect(m_pActionAddAttachment, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddAttachment);
+    connect(m_pActionAddAttachmentHD, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddAttachmentHD);
+    connect(m_pActionAddAttachmentCD, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddAttachmentCD);
+    connect(m_pActionAddAttachmentFD, &QAction::triggered, this, &UIMachineSettingsStorage::sltAddAttachmentFD);
+    connect(m_pActionRemoveAttachment, &QAction::triggered, this, &UIMachineSettingsStorage::sltRemoveAttachment);
 
     /* Configure tool-button: */
-    connect(mTbOpen, SIGNAL(clicked(bool)), mTbOpen, SLOT(showMenu()));
+    connect(mTbOpen, &QIToolButton::clicked, mTbOpen, &QIToolButton::showMenu);
     /* Configure menu: */
-    connect(mTbOpen->menu(), SIGNAL(aboutToShow()), this, SLOT(sltPrepareOpenMediumMenu()));
+    connect(mTbOpen->menu(), &QMenu::aboutToShow, this, &UIMachineSettingsStorage::sltPrepareOpenMediumMenu);
 
     /* Configure widgets: */
-    connect(m_pMediumIdHolder, SIGNAL(sigChanged()), this, SLOT(sltSetInformation()));
-    connect(mSbPortCount, SIGNAL(valueChanged(int)), this, SLOT(sltSetInformation()));
-    connect(mLeName, SIGNAL(textEdited(const QString &)), this, SLOT(sltSetInformation()));
-    connect(mCbBus, SIGNAL(activated(int)), this, SLOT(sltSetInformation()));
-    connect(mCbType, SIGNAL(activated(int)), this, SLOT(sltSetInformation()));
-    connect(mCbSlot, SIGNAL(activated(int)), this, SLOT(sltSetInformation()));
-    connect(mCbIoCache, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
-    connect(mCbPassthrough, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
-    connect(mCbTempEject, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
-    connect(mCbNonRotational, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
-    connect(m_pCheckBoxHotPluggable, SIGNAL(stateChanged(int)), this, SLOT(sltSetInformation()));
+    connect(m_pMediumIdHolder, &UIMediumIDHolder::sigChanged,
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mSbPortCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mLeName, &QLineEdit::textEdited,
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mCbBus, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mCbType, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mCbSlot, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mCbIoCache, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mCbPassthrough, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mCbTempEject, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(mCbNonRotational, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsStorage::sltSetInformation);
+    connect(m_pCheckBoxHotPluggable, &QCheckBox::stateChanged,
+            this, &UIMachineSettingsStorage::sltSetInformation);
 }
 
 void UIMachineSettingsStorage::cleanup()
@@ -4184,7 +4195,7 @@ void UIMachineSettingsStorage::addChooseExistingMediumAction(QMenu *pOpenMediumM
 {
     QAction *pChooseExistingMedium = pOpenMediumMenu->addAction(strActionName);
     pChooseExistingMedium->setIcon(iconPool()->icon(ChooseExistingEn, ChooseExistingDis));
-    connect(pChooseExistingMedium, SIGNAL(triggered(bool)), this, SLOT(sltChooseExistingMedium()));
+    connect(pChooseExistingMedium, &QAction::triggered, this, &UIMachineSettingsStorage::sltChooseExistingMedium);
 }
 
 void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
@@ -4196,7 +4207,7 @@ void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
         {
             QAction *pHostDriveAction = pOpenMediumMenu->addAction(medium.name());
             pHostDriveAction->setData(medium.id());
-            connect(pHostDriveAction, SIGNAL(triggered(bool)), this, SLOT(sltChooseHostDrive()));
+            connect(pHostDriveAction, &QAction::triggered, this, &UIMachineSettingsStorage::sltChooseHostDrive);
         }
     }
 }

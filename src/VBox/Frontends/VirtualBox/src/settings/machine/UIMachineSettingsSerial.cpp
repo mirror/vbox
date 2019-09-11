@@ -166,12 +166,12 @@ UIMachineSettingsSerial::UIMachineSettingsSerial(UIMachineSettingsSerialPage *pP
     mCbMode->addItem(""); /* KPortMode_TCP */
 
     /* Setup connections: */
-    connect(mGbSerial, SIGNAL(toggled(bool)),
-            this, SLOT(sltGbSerialToggled(bool)));
-    connect(mCbNumber, SIGNAL(activated(const QString &)),
-            this, SLOT(sltCbNumberActivated(const QString &)));
-    connect(mCbMode, SIGNAL(activated(const QString &)),
-            this, SLOT(sltCbModeActivated(const QString &)));
+    connect(mGbSerial, &QCheckBox::toggled,
+            this, &UIMachineSettingsSerial::sltGbSerialToggled);
+    connect(mCbNumber, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::activated),
+            this, &UIMachineSettingsSerial::sltCbNumberActivated);
+    connect(mCbMode, static_cast<void(QComboBox::*)(const QString&)>(&QComboBox::activated),
+            this, &UIMachineSettingsSerial::sltCbModeActivated);
 
     /* Prepare validation: */
     prepareValidation();
@@ -309,9 +309,9 @@ void UIMachineSettingsSerial::sltCbModeActivated(const QString &strText)
 void UIMachineSettingsSerial::prepareValidation()
 {
     /* Prepare validation: */
-    connect(mLeIRQ, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
-    connect(mLeIOPort, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
-    connect(mLePath, SIGNAL(textChanged(const QString&)), m_pParent, SLOT(revalidate()));
+    connect(mLeIRQ, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
+    connect(mLeIOPort, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
+    connect(mLePath, &QLineEdit::textChanged, m_pParent, &UIMachineSettingsSerialPage::revalidate);
 }
 
 
@@ -686,4 +686,3 @@ bool UIMachineSettingsSerialPage::savePortData(int iSlot)
 }
 
 # include "UIMachineSettingsSerial.moc"
-

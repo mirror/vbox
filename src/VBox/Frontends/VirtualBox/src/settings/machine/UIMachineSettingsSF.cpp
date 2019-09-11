@@ -444,7 +444,7 @@ void UIMachineSettingsSF::showEvent(QShowEvent *pEvent)
     UISettingsPageMachine::showEvent(pEvent);
 
     /* Connect header-resize signal just before widget is shown after all the items properly loaded and initialized: */
-    connect(mTwFolders->header(), SIGNAL(sectionResized(int, int, int)), this, SLOT(sltAdjustTreeFields()));
+    connect(mTwFolders->header(), &QHeaderView::sectionResized, this, &UIMachineSettingsSF::sltAdjustTreeFields);
 
     /* Adjusting size after all pending show events are processed: */
     QTimer::singleShot(0, this, SLOT(sltAdjustTree()));
@@ -750,12 +750,12 @@ void UIMachineSettingsSF::prepareFoldersToolbar()
 void UIMachineSettingsSF::prepareConnections()
 {
     /* Configure tree-widget connections: */
-    connect(mTwFolders, SIGNAL(currentItemChanged(QTreeWidgetItem *, QTreeWidgetItem *)),
-            this, SLOT(sltHandleCurrentItemChange(QTreeWidgetItem *)));
-    connect(mTwFolders, SIGNAL(itemDoubleClicked(QTreeWidgetItem *, int)),
-            this, SLOT(sltHandleDoubleClick(QTreeWidgetItem *)));
-    connect(mTwFolders, SIGNAL(customContextMenuRequested(const QPoint &)),
-            this, SLOT(sltHandleContextMenuRequest(const QPoint &)));
+    connect(mTwFolders, &QITreeWidget::currentItemChanged,
+            this, &UIMachineSettingsSF::sltHandleCurrentItemChange);
+    connect(mTwFolders, &QITreeWidget::itemDoubleClicked,
+            this, &UIMachineSettingsSF::sltHandleDoubleClick);
+    connect(mTwFolders, &QITreeWidget::customContextMenuRequested,
+            this, &UIMachineSettingsSF::sltHandleContextMenuRequest);
 }
 
 void UIMachineSettingsSF::cleanup()
