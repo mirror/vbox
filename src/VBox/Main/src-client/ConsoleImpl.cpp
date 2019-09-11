@@ -5703,8 +5703,9 @@ HRESULT Console::i_onRecordingChange(BOOL fEnabled)
 
         ptrVM.release();
     }
+#else
+    RT_NOREF(fEnabled);
 #endif /* VBOX_WITH_RECORDING */
-
     return rc;
 }
 
