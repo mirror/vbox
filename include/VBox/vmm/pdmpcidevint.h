@@ -131,22 +131,8 @@ typedef struct PDMPCIDEVINT
     PPDMDEVINSR3                    pDevInsR3;
     /** Pointer to the next PDM device associate with the PDM device. (R3 ptr) */
     R3PTRTYPE(PPDMPCIDEV)           pNextR3;
-    /** Pointer to the internal PDM PCI bus for the device. (R3 ptr) */
-    R3PTRTYPE(struct PDMPCIBUS *)   pPdmBusR3;
-
-    /** Pointer to the PDM device the PCI device belongs to. (R0 ptr)  */
-    PPDMDEVINSR0                    pDevInsR0;
     /** Pointer to the next PDM device associate with the PDM device. (R0 ptr) */
     R0PTRTYPE(PPDMPCIDEV)           pNextR0;
-    /** Pointer to the internal PDM PCI bus for the device. (R0 ptr) */
-    R0PTRTYPE(struct PDMPCIBUS *)   pPdmBusR0;
-
-    /** Pointer to the PDM device the PCI device belongs to. (RC ptr)  */
-    PPDMDEVINSRC                    pDevInsRC;
-    /** Pointer to the next PDM device associate with the PDM device. (RC ptr) */
-    RCPTRTYPE(PPDMPCIDEV)           pNextRC;
-    /** Pointer to the internal PDM PCI bus for the device. (RC ptr) */
-    RCPTRTYPE(struct PDMPCIBUS *)   pPdmBusRC;
 
     /** The CFGM device configuration index (default, PciDev1..255).
      * This also works as the internal sub-device ordinal with MMIOEx. */
@@ -155,8 +141,17 @@ typedef struct PDMPCIDEVINT
     bool                            fReassignableDevNo;
     /** Set if the it can be reassigned to a different PCI function number. */
     bool                            fReassignableFunNo;
-    /** Alignment padding.   */
+    /** Alignment padding - used by ICH9 for region swapping (DevVGA hack).   */
     uint8_t                         bPadding0;
+    /** Index into the PDM internal bus array (PDM::aPciBuses). */
+    uint8_t                         idxPdmBus;
+    /** Index into PDMDEVINSR3::apPciDevs. */
+    uint8_t                         idxPciDevs;
+
+    /** Alignment padding. */
+    uint8_t                         abPadding1[2+4+4];
+    RTR0PTR                         apR0PaddingPdm2[2];
+    RTR3PTR                         pR3PaddingPdm3;
     /** @} */
 
     /** @name Owned by the PCI Bus
@@ -165,7 +160,7 @@ typedef struct PDMPCIDEVINT
      */
     /** Pointer to the PCI bus of the device. (R3 ptr) */
     R3PTRTYPE(struct DEVPCIBUS *)   pBusR3;
-    /** Page used for MSI-X state.             (R3 ptr) */
+    /** Page used for MSI-X state.            (R3 ptr) */
     R3PTRTYPE(void *)               pMsixPageR3;
     /** Read config callback. */
     R3PTRTYPE(PFNPCICONFIGREAD)     pfnConfigRead;
@@ -178,14 +173,16 @@ typedef struct PDMPCIDEVINT
      * to devices on another bus. */
     R3PTRTYPE(PFNPCIBRIDGECONFIGWRITE) pfnBridgeConfigWrite;
 
-    /** Pointer to the PCI bus of the device. (R0 ptr) */
+    /** Pointer to the PCI bus of the device. (R0 ptr)
+     * @note Only used by ich9pcibridgeSetIrq to find the host (root) bus. */
     R0PTRTYPE(struct DEVPCIBUS *)   pBusR0;
-    /** Page used for MSI-X state.             (R0 ptr) */
+    /** Page used for MSI-X state.            (R0 ptr) */
     R0PTRTYPE(void *)               pMsixPageR0;
 
-    /** Pointer to the PCI bus of the device. (RC ptr) */
+    /** Pointer to the PCI bus of the device. (RC ptr)
+     * @note Only used by ich9pcibridgeSetIrq to find the host (root) bus. */
     RCPTRTYPE(struct DEVPCIBUS *)   pBusRC;
-    /** Page used for MSI-X state.             (RC ptr) */
+    /** Page used for MSI-X state.            (RC ptr) */
     RCPTRTYPE(void *)               pMsixPageRC;
 
     /** Flags of this PCI device, see PCIDEV_FLAG_XXX constants. */
@@ -211,7 +208,7 @@ typedef struct PDMPCIDEVINT
     uint16_t                        offMsixPba;
 #if HC_ARCH_BITS == 32
     /** Add padding to align aIORegions to an 8 byte boundary. */
-    uint8_t                         abPadding1[12];
+    uint8_t                         abPadding2[12];
 #endif
 
     /** Pointer to bus specific data. (R3 ptr) */

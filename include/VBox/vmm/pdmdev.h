@@ -5034,6 +5034,10 @@ typedef struct PDMDEVINSR3
     /** Ring-3 pointer to the raw-mode instance data. */
     RTR3PTR                         pvInstanceDataForRCR3;
 
+    /** Pointer to the PCI devices for this device.
+     * (Allocated after the shared instance data.)  */
+    R3PTRTYPE(struct PDMPCIDEV *)   apPciDevs[8];
+
     /** Temporarily. */
     R0PTRTYPE(struct PDMDEVINSR0 *) pDevInsR0RemoveMe;
     /** Temporarily. */
@@ -5058,7 +5062,7 @@ typedef struct PDMDEVINSR3
 } PDMDEVINSR3;
 
 /** Current PDMDEVINSR3 version number. */
-#define PDM_DEVINSR3_VERSION        PDM_VERSION_MAKE(0xff82, 1, 0)
+#define PDM_DEVINSR3_VERSION        PDM_VERSION_MAKE(0xff82, 2, 0)
 
 /** Converts a pointer to the PDMDEVINSR3::IBase to a pointer to PDMDEVINS. */
 #define PDMIBASE_2_PDMDEV(pInterface) ( (PPDMDEVINS)((char *)(pInterface) - RT_UOFFSETOF(PDMDEVINS, IBase)) )
@@ -5106,6 +5110,11 @@ typedef struct PDMDEVINSR0
     R0PTRTYPE(struct PDMDEVINSRC *) pDevInsForRCR0;
     /** Ring-0 pointer to the raw-mode instance data. */
     RTR0PTR                         pvInstanceDataForRCR0;
+
+    /** Pointer to the PCI devices for this device.
+     * (Allocated after the shared instance data.)  */
+    R0PTRTYPE(struct PDMPCIDEV *)   apPciDevs[8];
+
 #if HC_ARCH_BITS == 32
     /** Align the internal data more naturally. */
     uint32_t                        au32Padding[HC_ARCH_BITS == 32 ? 3 : 0];
@@ -5126,7 +5135,7 @@ typedef struct PDMDEVINSR0
 } PDMDEVINSR0;
 
 /** Current PDMDEVINSR0 version number. */
-#define PDM_DEVINSR0_VERSION        PDM_VERSION_MAKE(0xff83, 1, 0)
+#define PDM_DEVINSR0_VERSION        PDM_VERSION_MAKE(0xff83, 2, 0)
 
 
 /**
@@ -5157,8 +5166,11 @@ typedef struct PDMDEVINSRC
      * very early on.
      */
     RGPTRTYPE(PPDMCRITSECT)         pCritSectRoRC;
-    /** Pointer to the ring-0 device registration structure.  */
-    RGPTRTYPE(PCPDMDEVREGR0)        pReg;
+    /** Pointer to the raw-mode device registration structure.  */
+    RGPTRTYPE(PCPDMDEVREGRC)        pReg;
+    /** Pointer to the PCI devices for this device.
+     * (Allocated after the shared instance data.)  */
+    RGPTRTYPE(struct PDMPCIDEV *)   apPciDevs[8];
 
     /** Internal data. */
     union
@@ -5175,7 +5187,7 @@ typedef struct PDMDEVINSRC
 } PDMDEVINSRC;
 
 /** Current PDMDEVINSR0 version number. */
-#define PDM_DEVINSRC_VERSION        PDM_VERSION_MAKE(0xff84, 1, 0)
+#define PDM_DEVINSRC_VERSION        PDM_VERSION_MAKE(0xff84, 2, 0)
 
 
 /** @def PDM_DEVINS_VERSION

@@ -1734,7 +1734,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
         if (pPrevPciDev)
         {
             uPciDevNo    = pPrevPciDev->uDevFn >> 3;
-            uDefPciBusNo = pPrevPciDev->Int.s.pPdmBusR3->iBus;
+            uDefPciBusNo = pPrevPciDev->Int.s.idxPdmBus;
         }
         else
         {
@@ -1756,7 +1756,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
             while (pOtherPciDev->Int.s.pNextR3)
                 pOtherPciDev = pOtherPciDev->Int.s.pNextR3;
             uPciDevNo    = pOtherPciDev->uDevFn >> 3;
-            uDefPciBusNo = pOtherPciDev->Int.s.pPdmBusR3->iBus;
+            uDefPciBusNo = pOtherPciDev->Int.s.idxPdmBus;
         }
     }
 
@@ -1779,7 +1779,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
                           ("Configuration error: PCIBusNo=%d, max is %d. (%s/%d)\n", u8Bus,
                            RT_ELEMENTS(pVM->pdm.s.aPciBuses), pDevIns->pReg->szName, pDevIns->iInstance),
                           VERR_PDM_NO_PCI_BUS);
-    PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3 = &pVM->pdm.s.aPciBuses[u8Bus];
+    pPciDev->Int.s.idxPdmBus = u8Bus;
+    PPDMPCIBUS pBus = &pVM->pdm.s.aPciBuses[u8Bus];
     if (pBus->pDevInsR3)
     {
         /*
@@ -1834,28 +1835,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
         pPciDev->Int.s.fReassignableDevNo = uPciDevNoRaw >= VBOX_PCI_MAX_DEVICES;
         pPciDev->Int.s.fReassignableFunNo = uPciFunNo >= VBOX_PCI_MAX_FUNCTIONS;
         pPciDev->Int.s.pDevInsR3 = pDevIns;
-        pPciDev->Int.s.pPdmBusR3 = pBus;
-        if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
-        {
-            pPciDev->Int.s.pDevInsR0 = pDevIns->pDevInsR0RemoveMe;
-            pPciDev->Int.s.pPdmBusR0 = MMHyperR3ToR0(pVM, pBus);
-        }
-        else
-        {
-            pPciDev->Int.s.pDevInsR0 = NIL_RTR0PTR;
-            pPciDev->Int.s.pPdmBusR0 = NIL_RTR0PTR;
-        }
-
-        //if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        //{
-        //    pPciDev->Int.s.pDevInsRC = MMHyperR3ToRC(pVM, pDevIns);
-        //    pPciDev->Int.s.pPdmBusRC = MMHyperR3ToRC(pVM, pBus);
-        //}
-        //else
-        {
-            pPciDev->Int.s.pDevInsRC = NIL_RTRCPTR;
-            pPciDev->Int.s.pPdmBusRC = NIL_RTRCPTR;
-        }
+        pPciDev->Int.s.idxPdmBus = u8Bus;
 
         /* Set some of the public members too. */
         pPciDev->pszNameR3 = pszName;
@@ -1877,7 +1857,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
                 Assert(!pPrevPciDev->Int.s.pNextR3);
                 pPrevPciDev->Int.s.pNextR3 = pPciDev;
                 pPrevPciDev->Int.s.pNextR0 = NIL_RTRCPTR;
-                pPrevPciDev->Int.s.pNextRC = NIL_RTRCPTR;
             }
             else
             {
@@ -1932,8 +1911,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCID
                            pDevIns->pReg->szName, pDevIns->iInstance, pMsiReg->cMsixVectors, pDevIns->pReg->cMaxMsixVectors),
                           VERR_INVALID_FLAGS);
 
-    PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3; Assert(pBus);
-    PVM        pVM  = pDevIns->Internal.s.pVMR3;
+    PVM             pVM    = pDevIns->Internal.s.pVMR3;
+    size_t const    idxBus = pPciDev->Int.s.idxPdmBus;
+    AssertReturn(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses), VERR_WRONG_ORDER);
+    PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
+
     pdmLock(pVM);
     int rc;
     if (pBus->pfnRegisterMsiR3)
@@ -2036,8 +2018,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
     if (cbRegion > cbRegionAligned)
         cbRegion = cbRegionAligned * 2; /* round up */
 
-    PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3;
-    Assert(pBus);
+    size_t const    idxBus = pPciDev->Int.s.idxPdmBus;
+    AssertReturn(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses), VERR_WRONG_ORDER);
+    PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
+
     pdmLock(pVM);
     int rc = pBus->pfnIORegionRegisterR3(pBus->pDevInsR3, pPciDev, iRegion, cbRegion, enmType, pfnCallback);
     pdmUnlock(pVM);
@@ -2069,8 +2053,9 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, 
     AssertPtrNull(ppfnWriteOld);
     AssertPtrNull(pPciDev);
 
-    PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3;
-    AssertRelease(pBus);
+    size_t const    idxBus = pPciDev->Int.s.idxPdmBus;
+    AssertReleaseReturnVoid(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
+    PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
     AssertRelease(VMR3GetState(pVM) != VMSTATE_RUNNING);
 
     /*
@@ -2158,9 +2143,10 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
     /*
      * Must have a PCI device registered!
      */
-    PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3;
-    Assert(pBus);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
+    PVM             pVM    = pDevIns->Internal.s.pVMR3;
+    size_t const    idxBus = pPciDev->Int.s.idxPdmBus;
+    AssertReturnVoid(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
+    PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
 
     pdmLock(pVM);
     uint32_t uTagSrc;
@@ -4882,8 +4868,9 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
             PPDMPCIDEV pPciDev = pTask->u.PciSetIRQ.pPciDevR3;
             if (pPciDev)
             {
-                PPDMPCIBUS pBus = pPciDev->Int.s.pPdmBusR3;
-                Assert(pBus);
+                size_t const    idxBus = pPciDev->Int.s.idxPdmBus;
+                AssertBreak(idxBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses));
+                PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
 
                 pdmLock(pVM);
                 pBus->pfnSetIrqR3(pBus->pDevInsR3, pPciDev, pTask->u.PciSetIRQ.iIrq,
