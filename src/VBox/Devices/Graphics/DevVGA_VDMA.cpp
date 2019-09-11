@@ -2968,11 +2968,13 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, uint32_t cPipeElements)
                     {
                         pVGAState->pVdma = pVdma;
 
+#ifdef VBOX_WITH_VMSVGA
                         /* No HGCM service if VMSVGA is enabled. */
                         if (!pVGAState->fVMSVGAEnabled)
                         {
                             int rcIgnored = vboxVDMACrCtlHgsmiSetup(pVdma); NOREF(rcIgnored); /** @todo is this ignoring intentional? */
                         }
+#endif
                         return VINF_SUCCESS;
                     }
 
@@ -3011,9 +3013,11 @@ void vboxVDMADestruct(struct VBOXVDMAHOST *pVdma)
     if (!pVdma)
         return;
 
+#ifdef VBOX_WITH_VMSVGA
     if (pVdma->pVGAState->fVMSVGAEnabled)
         VBoxVBVAExHSDisable(&pVdma->CmdVbva);
     else
+#endif
     {
         /** @todo Remove. It does nothing because pVdma->CmdVbva is already disabled at this point
          *        as the result of the SharedOpenGL HGCM service unloading.
