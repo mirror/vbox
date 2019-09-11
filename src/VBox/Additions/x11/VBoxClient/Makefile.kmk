@@ -47,6 +47,8 @@ VBoxClient_LIBS.freebsd = \
 	iconv
 VBoxClient_LIBS.linux = \
 	dl
+VBoxClient_LIBS.netbsd = \
+	crypt
 VBoxClient_LIBS.solaris = \
 	dl
 VBoxClient_LIBS = \

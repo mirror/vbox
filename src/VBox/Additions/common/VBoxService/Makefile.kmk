@@ -178,6 +178,7 @@ VBoxService_LIBS         += \
 	dl
  endif
 endif
+VBoxService_LIBS.netbsd  += crypt
 ifdef VBOX_WITH_GUEST_PROPS
 VBoxService_LIBS.win     += \
 	Secur32.lib \
