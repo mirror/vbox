@@ -1520,7 +1520,7 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     if (itD->first == "vmname")
                     {
                         //remove default value if user has specified new name (default value is set in the ExportTo())
-                        pVSD->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
+//                      pVSD->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
                         pVSD->AddDescription(VirtualSystemDescriptionType_Name,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
