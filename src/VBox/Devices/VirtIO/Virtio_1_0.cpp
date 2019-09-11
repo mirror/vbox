@@ -88,7 +88,6 @@ int virtioQueueSkip(VIRTIOHANDLE hVirtio, uint16_t qIdx)
     return VINF_SUCCESS;
 }
 
-
 /**
  * See API comments in header file for description
  */
@@ -329,11 +328,11 @@ void virtioPropagateResumeNotification(VIRTIOHANDLE hVirtio)
  *
  * @param pVirtio       - Instance state
  * @param qIdx          - Queue to check for guest interrupt handling preference
- * @param fForce        - Overrides qIdx, forcing notification, regardless of driver's
+ * @param fForce        - Overrides qIdx, forcing notification regardless of driver's
  *                        notification preferences. This is a safeguard to prevent
  *                        stalls upon resuming the VM. VirtIO 1.0 specification Section 4.1.5.5
  *                        indicates spurious interrupts are harmless to guest driver's state,
- *                        as they only cause the guest driver to scan queues for work to do.
+ *                        as they only cause the guest driver to [re]scan queues for work to do.
  */
 static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx, bool fForce)
 {
@@ -711,12 +710,12 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     if (fDevSpecific)
     {
         uint32_t uOffset = GCPhysAddr - pVirtio->pGcPhysDeviceCap;
-        /**
+        /*
          * Callback to client to manage device-specific configuration.
          */
         rc = pVirtio->virtioCallbacks.pfnVirtioDevCapRead(pDevIns, uOffset, pv, cb);
 
-        /**
+        /*
          * Additionally, anytime any part of the device-specific configuration (which our client maintains)
          * is READ it needs to be checked to see if it changed since the last time any part was read, in
          * order to maintain the config generation (see VirtIO 1.0 spec, section 4.1.4.3.1)
@@ -747,7 +746,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     {
         *(uint8_t *)pv = pVirtio->uISR;
         Log6Func(("Read and clear ISR\n"));
-        pVirtio->uISR = 0; /** VirtIO specification requires reads of ISR to clear it */
+        pVirtio->uISR = 0; /* VirtIO specification requires reads of ISR to clear it */
         virtioLowerInterrupt(pVirtio);
     }
     else {
@@ -782,7 +781,7 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
     if (fDevSpecific)
     {
         uint32_t uOffset = GCPhysAddr - pVirtio->pGcPhysDeviceCap;
-        /**
+        /*
          * Pass this MMIO write access back to the client to handle
          */
         rc = pVirtio->virtioCallbacks.pfnVirtioDevCapWrite(pDevIns, uOffset, pv, cb);
@@ -803,7 +802,7 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
               !!(pVirtio->uISR & VIRTIO_ISR_DEVICE_CONFIG)));
     }
     else
-    /** This *should* be guest driver dropping index of a new descriptor in avail ring */
+    /* This *should* be guest driver dropping index of a new descriptor in avail ring */
     if (fNotify && cb == sizeof(uint16_t))
     {
         uint32_t uNotifyBaseOffset = GCPhysAddr - pVirtio->pGcPhysNotifyCap;
@@ -1020,7 +1019,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
 
     pVirtio->pClientContext = pClientContext;
 
-    /**
+    /*
      * The host features offered include both device-specific features
      * and reserved feature bits (device independent)
      */
@@ -1092,7 +1091,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
                 virtioPciConfigWrite, &pVirtio->pfnPciConfigWriteOld);
 
 
-    /** Construct & map PCI vendor-specific capabilities for virtio host negotiation with guest driver */
+    /* Construct & map PCI vendor-specific capabilities for virtio host negotiation with guest driver */
 
 #if 0 && defined(VBOX_WITH_MSI_DEVICES)  /* T.B.D. */
     uint8_t fMsiSupport = true;
@@ -1100,7 +1099,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     uint8_t fMsiSupport = false;
 #endif
 
-    /** The following capability mapped via VirtIO 1.0: struct virtio_pci_cfg_cap (VIRTIO_PCI_CFG_CAP_T)
+    /* The following capability mapped via VirtIO 1.0: struct virtio_pci_cfg_cap (VIRTIO_PCI_CFG_CAP_T)
      * as a mandatory but suboptimal alternative interface to host device capabilities, facilitating
      * access the memory of any BAR. If the guest uses it (the VirtIO driver on Linux doesn't),
      * Unlike Common, Notify, ISR and Device capabilities, it is accessed directly via PCI Config region.
@@ -1123,7 +1122,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     cbRegion += pCfg->uLength;
     pVirtio->pCommonCfgCap = pCfg;
 
-    /**
+    /*
      * Notify capability (VirtIO 1.0 spec, section 4.1.4.4). Note: uLength is based the choice
      * of this implementation that each queue's uQueueNotifyOff is set equal to (QueueSelect) ordinal
      * value of the queue */
@@ -1140,7 +1139,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     pVirtio->pNotifyCap = (PVIRTIO_PCI_NOTIFY_CAP_T)pCfg;
     pVirtio->pNotifyCap->uNotifyOffMultiplier = VIRTIO_NOTIFY_OFFSET_MULTIPLIER;
 
-    /** ISR capability (VirtIO 1.0 spec, section 4.1.4.5)
+    /* ISR capability (VirtIO 1.0 spec, section 4.1.4.5)
      *
      * VirtIO 1.0 spec says 8-bit, unaligned in MMIO space. Example/diagram
      * of spec shows it as a 32-bit field with upper bits 'reserved'
@@ -1157,10 +1156,10 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     cbRegion += pCfg->uLength;
     pVirtio->pIsrCap = pCfg;
 
-    /** PCI Cfg capability (VirtIO 1.0 spec, section 4.1.4.7)
+    /*  PCI Cfg capability (VirtIO 1.0 spec, section 4.1.4.7)
      *  This capability doesn't get page-MMIO mapped. Instead uBar, uOffset and uLength are intercepted
      *  by trapping PCI configuration I/O and get modulated by consumers to locate fetch and read/write
-     *  values from any region. NOTE: The linux driver not only doesn't use this feature, and will not
+     *  values from any region. NOTE: The linux driver not only doesn't use this feature, it will not
      *  even list it as present if uLength isn't non-zero and 4-byte-aligned as the linux driver is
      *  initializing. */
 
@@ -1177,8 +1176,8 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
 
     if (pVirtio->pDevSpecificCfg)
     {
-        /** Following capability (via VirtIO 1.0, section 4.1.4.6). Client defines the
-         *  device-specific config fields struct and passes size to this constructor */
+        /* Following capability (via VirtIO 1.0, section 4.1.4.6). Client defines the
+         * device-specific config fields struct and passes size to this constructor */
         pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
         pCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
         pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
@@ -1192,7 +1191,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         pVirtio->pDeviceCap = pCfg;
     }
 
-    /** Set offset to first capability and enable PCI dev capabilities */
+    /* Set offset to first capability and enable PCI dev capabilities */
     PCIDevSetCapabilityList    (&pVirtio->dev, 0x40);
     PCIDevSetStatus            (&pVirtio->dev, VBOX_PCI_STATUS_CAP_LIST);
 
@@ -1206,11 +1205,11 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         aMsiReg.cMsixVectors    = 1;
         rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg); /* see MsixR3init() */
         if (RT_FAILURE (rc))
-            /** The following is moot, we need to flag no MSI-X support */
+            /* The following is moot, we need to flag no MSI-X support */
             PCIDevSetCapabilityList(&pVirtio->dev, 0x40);
     }
 
-    /** Linux drivers/virtio/virtio_pci_modern.c tries to map at least a page for the
+    /* Linux drivers/virtio/virtio_pci_modern.c tries to map at least a page for the
      * 'unknown' device-specific capability without querying the capability to figure
      *  out size, so pad with an extra page */
 

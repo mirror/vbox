@@ -63,9 +63,9 @@
 #define VIRTIOSCSI_HOST_SCSI_FEATURES_NONE          0
 
 #define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED \
-            VIRTIOSCSI_HOST_SCSI_FEATURES_NONE
+             VIRTIOSCSI_HOST_SCSI_FEATURES_NONE
 
-/**
+/*
  * TEMPORARY NOTE: following parameter is set to 1 for early development. Will be increased later
  */
 #define VIRTIOSCSI_REQ_QUEUE_CNT                    1            /**< Number of req queues exposed by dev.            */
@@ -335,7 +335,7 @@ typedef struct virtio_scsi_ctrl_an
     // Device-readable part
     uint32_t  uType;                                          /** type                                               */
     uint8_t   uLUN[8];                                        /** lun                                                */
-    uint32_t  uEventsRequested;                                /** event_requested                                    */
+    uint32_t  uEventsRequested;                               /** event_requested                                    */
     // Device-writable part
     uint32_t  uEventActual;                                   /** event_actual                                       */
     uint8_t   uResponse;                                      /** response                                           */
@@ -368,7 +368,7 @@ typedef struct WORKER
 {
     R3PTRTYPE(PPDMTHREAD)           pThread;                  /**< pointer to worker thread's handle                 */
     SUPSEMEVENT                     hEvtProcess;              /**< handle of associated sleep/wake-up semaphore      */
-    bool                            fSleeping;                /**< Flags whether worker  thread is sleeping or not   */
+    bool                            fSleeping;                /**< Flags whether worker thread is sleeping or not    */
     bool                            fNotified;                /**< Flags whether worker thread notified              */
 } WORKER, *PWORKER;
 
@@ -424,8 +424,8 @@ typedef struct VIRTIOSCSITARGET
  */
 typedef struct VIRTIOSCSI
 {
-    /** Opaque handle to VirtIO common framework (must be first item
-     *  in this struct so PDMINS_2_DATA macro's casting works) */
+    /* Opaque handle to VirtIO common framework (must be first item
+     * in this struct so PDMINS_2_DATA macro's casting works) */
     VIRTIOHANDLE                    hVirtio;
 
     /** SCSI target instances data */
@@ -547,17 +547,10 @@ typedef struct VIRTIOSCSIREQ
     PDMMEDIAEXIOREQSCSITXDIR       enmTxDir;                 /**< Receives transfer direction of I/O req            */
     uint8_t                        uStatus;                  /**< SCSI status code                                  */
     PRTSGBUF                       pInSgBuf;                 /**< Buf vector to return PDM result to VirtIO Guest   */
-    PVIRTIOSCSI_REQ_CMD_T          pVirtqReq;                /**< Allocated to receive translated queued req        */
+    PVIRTIOSCSI_REQ_CMD_T          pVirtqReq;                /**< Holds guest's queued req after phys → virt trans  */
 } VIRTIOSCSIREQ;
 
 #define PTARGET_FROM_LUN_BUF(lunBuf) &pThis->aTargetInstances[lunBuf[1]];
-
-#define SET_LUN_BUF(target, lun, out) \
-     out[0] = 0x01;  \
-     out[1] = target; \
-     out[2] = (lun >> 8) & 0x40; \
-     out[3] = lun & 0xff;  \
-     *((uint16_t *)out + 4) = 0;
 
 DECLINLINE(bool) isBufZero(uint8_t *pv, size_t cb)
 {
@@ -578,7 +571,6 @@ DECLINLINE(const char *) virtioGetTxDirText(uint32_t enmTxDir)
         default:                                        return "<BAD ENUM>";
     }
 }
-
 
 DECLINLINE(const char *) virtioGetTMFTypeText(uint32_t uSubType)
 {
@@ -735,66 +727,69 @@ static DECLCALLBACK(int) virtioScsiIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, P
 
 static int virtioScsiSendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEventType, uint32_t uReason)
 {
-    PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[uTarget];
+    uint8_t uLUN = 0;
 
-    VIRTIOSCSI_EVENT_T event = { uEventType, { 0 }, uReason };
-    SET_LUN_BUF(pTarget->iLUN, 0, event.uLUN);
+    VIRTIOSCSI_EVENT_T event;
+    event.uEvent = uEventType;
+    event.uReason = uReason;
+    event.uLUN[0] = 1;
+    event.uLUN[1] = uTarget;
+    event.uLUN[2] = (uLUN >> 8) & 0x40;
+    event.uLUN[3] = uLUN & 0xff;
+    event.uLUN[4] = event.uLUN[5] = event.uLUN[6] = event.uLUN[7] = 0;
 
     switch(uEventType)
     {
         case VIRTIOSCSI_T_NO_EVENT:
             if (uEventType & VIRTIOSCSI_T_EVENTS_MISSED)
-                LogFunc(("LUN: %s Warning driver that events were missed\n", event.uLUN));
+                LogFunc(("Warning driver that events were missed\n", uTarget, uLUN));
             else
-                LogFunc(("LUN: %s Warning driver event info it queued is shorter than configured\n", event.uLUN));
+                LogFunc(("(target=%d, LUN=%d): Warning event info guest queued is shorter than configured\n",
+                          uTarget, uLUN));
             break;
         case VIRTIOSCSI_T_TRANSPORT_RESET:
             switch(uReason)
             {
                 case VIRTIOSCSI_EVT_RESET_REMOVED:
-                    LogFunc(("LUN: %s Target or LUN removed\n", event.uLUN));
+                    LogFunc(("(target=%d, LUN=%d): Target or LUN removed\n", uTarget, uLUN));
                     break;
                 case VIRTIOSCSI_EVT_RESET_RESCAN:
-                    LogFunc(("LUN: %s Target or LUN added\n", event.uLUN));
+                    LogFunc(("(target=%d, LUN=%d): Target or LUN added\n", uTarget, uLUN));
                     break;
                 case VIRTIOSCSI_EVT_RESET_HARD:
-                    LogFunc(("LUN: %s Target was reset\n", event.uLUN));
+                    LogFunc(("(target=%d, LUN=%d): Target was reset\n", uTarget, uLUN));
                     break;
             }
             break;
         case VIRTIOSCSI_T_ASYNC_NOTIFY:
             char szTypeText[128];
             virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), uReason);
-            LogFunc(("LUN: %s Delivering subscribed async notification %s\n", event.uLUN, szTypeText));
+            LogFunc(("(target=%d, LUN=%d): Delivering subscribed async notification %s\n", uTarget, uLUN));
             break;
         case VIRTIOSCSI_T_PARAM_CHANGE:
-            LogFunc(("LUN: %s PARAM_CHANGE sense code: 0x%x sense qualifier: 0x%x\n",
-                        event.uLUN, uReason & 0xff, (uReason >> 8) & 0xff));
+            LogFunc(("(target=%d, LUN=%d): PARAM_CHANGE sense code: 0x%x sense qualifier: 0x%x\n",
+                        uTarget, uLUN, uReason & 0xff, (uReason >> 8) & 0xff));
             break;
         default:
-            LogFunc(("LUN: %s Unknown event type: %d, ignoring\n", event.uLUN, uEventType));
+            LogFunc(("(target=%d, LUN=%d): Unknown event type: %d, ignoring\n", uTarget, uLUN));
             return VINF_SUCCESS;
     }
 
     if (virtioQueueIsEmpty(pThis->hVirtio, EVENTQ_IDX))
     {
-        LogFunc(("eventq is empty, events missed!\n"));
+        LogFunc(("eventq is empty, events missed (driver didn't preload queue)!\n"));
         ASMAtomicWriteBool(&pThis->fEventsMissed, true);
         return VINF_SUCCESS;
     }
 
-    int rc = virtioQueueGet(pThis->hVirtio, EVENTQ_IDX, true, NULL, NULL);
-    AssertRC(rc);
+    virtioQueueGet(pThis->hVirtio, EVENTQ_IDX, true, NULL, NULL);
 
     RTSGBUF reqSegBuf;
     RTSGSEG aReqSegs[] = { { &event, sizeof(event) } };
     RTSgBufInit(&reqSegBuf, aReqSegs, sizeof(aReqSegs) / sizeof(RTSGSEG));
 
-    rc = virtioQueuePut (pThis->hVirtio, EVENTQ_IDX, &reqSegBuf, true);
-    AssertRC(rc);
-
-    rc = virtioQueueSync(pThis->hVirtio, EVENTQ_IDX);
-    AssertRC(rc);
+    virtioQueuePut (pThis->hVirtio, EVENTQ_IDX, &reqSegBuf, true);
+    virtioQueueSync(pThis->hVirtio, EVENTQ_IDX);
 
     return VINF_SUCCESS;
 }
@@ -852,7 +847,7 @@ static int virtioScsiReqErr(PVIRTIOSCSI pThis, uint16_t qIdx, struct REQ_RESP_HD
     if (!ASMAtomicDecU32(&pThis->cActiveReqs) && pThis->fQuiescing)
         PDMDevHlpAsyncNotificationCompleted(pThis->CTX_SUFF(pDevIns));
 
-    Log(("---------------------------------------------------------------------------------\n"));
+    Log2(("---------------------------------------------------------------------------------\n"));
 
     return VINF_SUCCESS;
 }
@@ -877,13 +872,12 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     rc = pIMediaEx->pfnIoReqQueryXferSize(pIMediaEx, hIoReq, &cbXfer);
     AssertRC(rc);
 
-    #define SHOULD_FIX_VSCSI_TO_RETURN_SENSE_LEN 32
     struct REQ_RESP_HDR respHdr = { 0 };
     respHdr.uSenseLen = pReq->pbSense[2] == SCSI_SENSE_NONE ? 0 : pReq->uSenseLen;
     respHdr.uResidual = cbResidual;
     respHdr.uStatus   = pReq->uStatus;
 
-    /** VirtIO 1.0 spec 5.6.6.1.1 says device MUST return a VirtIO response byte value.
+    /*  VirtIO 1.0 spec 5.6.6.1.1 says device MUST return a VirtIO response byte value.
      *  Some are returned during the submit phase, and a few are not mapped at all,
      *  wherein anything that can't map specifically gets mapped to VIRTIOSCSI_S_FAILURE
      */
@@ -981,7 +975,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     if (   (VIRTIO_IN_DIRECTION(pReq->enmTxDir)  && cbXfer > pReq->cbDataIn)
         || (VIRTIO_OUT_DIRECTION(pReq->enmTxDir) && cbXfer > pReq->cbDataOut))
     {
-        /** TBD try to figure out optimal sense info to send back besides response of VIRTIOSCSI_S_OVERRUN */
+        /* TBD try to figure out optimal sense info to send back besides response of VIRTIOSCSI_S_OVERRUN */
         Log2Func((" * * * * Data overrun, returning sense\n"));
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
                               0, SCSI_SENSE_ILLEGAL_REQUEST, 0, 0, 0, 0, 10, 0, 0, 0 };
@@ -1016,7 +1010,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         RTSGBUF reqSegBuf;
         RTSgBufInit(&reqSegBuf, aReqSegs, cSegs);
 
-        /**
+        /*
          * Fill in the request queue current descriptor chain's IN queue entry/entries
          * (phys. memory) with the Req response data in virtual memory.
          */
@@ -1030,7 +1024,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         virtioQueueSync(pThis->hVirtio, pReq->qIdx);
 
 
-        Log(("-----------------------------------------------------------------------------------------\n"));
+        Log2(("-----------------------------------------------------------------------------------------\n"));
     }
 
     virtioScsiFreeReq(pTarget, pReq);
@@ -1051,8 +1045,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
     size_t cbOut = RTSgBufCalcTotalLength(pOutSgBuf);
     size_t cbIn  = RTSgBufCalcTotalLength(pInSgBuf);
 
-    /** MAKE THIS NON-ZERO MALLOCING AFTER DEBUG */
-    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAllocZ(cbOut);
+    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAlloc(cbOut);
     AssertReturn(pVirtqReq, VERR_NO_MEMORY);
 
     virtioScsiSgPhysToVirt(pThis, pOutSgBuf, pVirtqReq, cbOut);
@@ -1070,7 +1063,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
 
     PVIRTIOSCSITARGET pTarget = &pThis->aTargetInstances[uTarget];
 
-    /**
+    /*
      * Calculate request offsets
      */
     size_t  cbPiIn = 0, cbPiOut = 0, cbPiHdr = 0;
@@ -1137,7 +1130,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
         return VINF_SUCCESS;
     }
 
-    /**
+    /*
      * Have underlying driver allocate a req of size set during initialization of this device.
      */
     PDMMEDIAEXIOREQ   hIoReq = NULL;
@@ -1149,7 +1142,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
 
     AssertMsgRCReturn(rc, ("Failed to allocate I/O request, rc=%Rrc\n", rc), rc);
 
-    /**
+    /*
      * Prepare req's parameters for submission
      */
     if (pThis->fHasT10pi)
@@ -1190,7 +1183,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgB
 
     if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
     {
-        /**
+        /*
          * Getting here means the request failed in early in the submission to the lower level driver,
          * and there will be no callback to the finished/completion function for this request
          */
@@ -1227,7 +1220,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgBuf, P
 {
     RT_NOREF3(pThis, qIdx, pInSgBuf);
 
-    /**
+    /*
      * According to the VirtIO 1.0 SCSI Host device, spec, section 5.6.6.2, control packets are
      * extremely small, so more than one segment is highly unlikely but not a bug. Get the
      * the controlq sg buffer into virtual memory. */
@@ -1241,7 +1234,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgBuf, P
 
     uint8_t  uResponse = VIRTIOSCSI_S_OK;
 
-    /**
+    /*
      * Mask of events to tell guest driver this device supports
      * See VirtIO 1.0 specification section 5.6.6.2
      */
@@ -1298,43 +1291,50 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PRTSGBUF pInSgBuf, P
 
             break;
         }
-        case VIRTIOSCSI_T_AN_QUERY: /** Guest SCSI driver is querying supported async event notifications */
+        case VIRTIOSCSI_T_AN_QUERY: /* Guest SCSI driver is querying supported async event notifications */
         {
             PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnQuery = (PVIRTIOSCSI_CTRL_AN_T)pScsiCtrl;
 
-            char szTypeText[128];
-            virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnQuery->uEventsRequested);
-
-            Log3Func(("%s, VirtIO LUN: %.8Rhxs\n%*sAsync Query, types: %s\n",
-                QUEUENAME(qIdx), pScsiCtrlAnQuery->uLUN, CBQUEUENAME(qIdx) + 30, "", szTypeText));
-
             uSubscribedEvents &= pScsiCtrlAnQuery->uEventsRequested;
             uResponse = VIRTIOSCSI_S_FUNCTION_COMPLETE;
+
+            if (LogIs3Enabled())
+            {
+                char szTypeText[128];
+                virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnQuery->uEventsRequested);
+
+                LogFunc(("%s, VirtIO LUN: %.8Rhxs\n%*sAsync Query, types: %s\n",
+                    QUEUENAME(qIdx), pScsiCtrlAnQuery->uLUN, CBQUEUENAME(qIdx) + 30, "", szTypeText));
+            }
 
             RTSGSEG aReqSegs[] = { { &uSubscribedEvents, sizeof(uSubscribedEvents) },  { &uResponse, sizeof(uResponse)  } };
             RTSgBufInit(&reqSegBuf, aReqSegs, sizeof(aReqSegs) / sizeof(RTSGSEG));
 
             break;
         }
-        case VIRTIOSCSI_T_AN_SUBSCRIBE: /** Guest SCSI driver is subscribing to async event notification(s) */
+        case VIRTIOSCSI_T_AN_SUBSCRIBE: /* Guest SCSI driver is subscribing to async event notification(s) */
         {
             PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnSubscribe = (PVIRTIOSCSI_CTRL_AN_T)pScsiCtrl;
 
             if (pScsiCtrlAnSubscribe->uEventsRequested & ~SUBSCRIBABLE_EVENTS)
                 LogFunc(("Unsupported bits in event subscription event mask: 0x%x\n", pScsiCtrlAnSubscribe->uEventsRequested));
 
-            char szTypeText[128];
-            virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnSubscribe->uEventsRequested);
-
-            Log3Func(("%s, VirtIO LUN: %.8Rhxs\n%*sAsync Subscribe, types: %s\n",
-                QUEUENAME(qIdx), pScsiCtrlAnSubscribe->uLUN, CBQUEUENAME(qIdx) + 30, "", szTypeText));
-
             uSubscribedEvents &= pScsiCtrlAnSubscribe->uEventsRequested;
             pThis->uAsyncEvtsEnabled = uSubscribedEvents;
 
-            /**
+            if (LogIs3Enabled())
+            {
+                char szTypeText[128];
+                virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnSubscribe->uEventsRequested);
+
+                LogFunc(("%s, VirtIO LUN: %.8Rhxs\n%*sAsync Subscribe, types: %s\n",
+                    QUEUENAME(qIdx), pScsiCtrlAnSubscribe->uLUN, CBQUEUENAME(qIdx) + 30, "", szTypeText));
+            }
+
+            /*
              * TBD: Verify correct status code if request mask is only partially fulfillable
-             *      and confirm when to use 'complete' vs. 'succeeded' See VirtIO 1.0 spec section 5.6.6.2 and read SAM docs*/
+             *      and confirm when to use 'complete' vs. 'succeeded' See VirtIO 1.0 spec section 5.6.6.2
+             *      and read SAM docs*/
             if (uSubscribedEvents == pScsiCtrlAnSubscribe->uEventsRequested)
                 uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
             else
@@ -1398,7 +1398,7 @@ static int virtioScsiWorker(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
         if (virtioQueueIsEmpty(pThis->hVirtio, qIdx))
         {
-            /** Interlocks avoid missing alarm while going to sleep & notifier doesn't wake the awoken */
+            /* Interlocks avoid missing alarm while going to sleep & notifier doesn't wake the awoken */
             ASMAtomicWriteBool(&pWorker->fSleeping, true);
             bool fNotificationSent = ASMAtomicXchgBool(&pWorker->fNotified, false);
             if (!fNotificationSent)
@@ -1438,15 +1438,14 @@ static int virtioScsiWorker(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 }
 
 
-/*static void virtioScsiEventToClient(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
-{ } */
-
-
 DECLINLINE(void) virtioScsiReportEventsMissed(PVIRTIOSCSI pThis, uint16_t uTarget)
 {
     virtioScsiSendEvent(pThis, uTarget, VIRTIOSCSI_T_NO_EVENT | VIRTIOSCSI_T_EVENTS_MISSED, 0);
 }
 
+/* Only invoke this if VIRTIOSCSI_F_HOTPLUG is negotiated during intiailization
+ * This effectively removes the SCSI Target/LUN on the guest side
+ */
 DECLINLINE(void) virtioScsiReportTargetRemoved(PVIRTIOSCSI pThis, uint16_t uTarget)
 {
     if (pThis->fHasHotplug)
@@ -1454,6 +1453,9 @@ DECLINLINE(void) virtioScsiReportTargetRemoved(PVIRTIOSCSI pThis, uint16_t uTarg
                 VIRTIOSCSI_EVT_RESET_REMOVED);
 }
 
+/* Only invoke thi if VIRTIOSCSI_F_HOTPLUG is negotiated during intiailization
+ * This effectively adds the SCSI Target/LUN on the guest side
+ */
 DECLINLINE(void) virtioScsiReportTargetAdded(PVIRTIOSCSI pThis, uint16_t uTarget)
 {
     if (pThis->fHasHotplug)
@@ -1531,7 +1533,7 @@ static DECLCALLBACK(void) virtioScsiNotified(VIRTIOHANDLE hVirtio, void *pClient
     if (qIdx == CONTROLQ_IDX || IS_REQ_QUEUE(qIdx))
     {
         Log6Func(("%s has available data\n", QUEUENAME(qIdx)));
-        /** Wake queue's worker thread up if sleeping */
+        /* Wake queue's worker thread up if sleeping */
         if (!ASMAtomicXchgBool(&pWorker->fNotified, true))
         {
             if (ASMAtomicReadBool(&pWorker->fSleeping))
@@ -1619,7 +1621,6 @@ static DECLCALLBACK(void) virtioScsiMediumEjected(PPDMIMEDIAEXPORT pInterface)
                                     pThis->pMediaNotify, pTarget->iLUN);
          AssertRC(rc);
     }
-
 }
 
 /** @callback_method_impl{FNSSMDEVLIVEEXEC}  */
@@ -1684,19 +1685,19 @@ static DECLCALLBACK(bool) virtioScsiDeviceQuiesced(PPDMDEVINS pDevIns)
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     pThis->fQuiescing = false;
-
+#if 0 /* This should be unnecessary */
     if (pThis->fResetting)
     {
         Log2Func(("Resetting VirtIO\n"));
 
-        /** Reset virtio infrastructure */
+
+        /* Reset virtio infrastructure */
         virtioResetAll(pThis->hVirtio);
 
-        /** Reset locally-owned negotiable device-specific config parameters
+        /* Reset locally-owned negotiable device-specific config parameters
          *  to VirtIO spec-mandated default values */
-        pThis->virtioScsiConfig.uSenseSize = VIRTIOSCSI_SENSE_SIZE_DEFAULT;
-        pThis->virtioScsiConfig.uCdbSize   = VIRTIOSCSI_CDB_SIZE_DEFAULT;
     }
+#endif
     return true;
 }
 
@@ -1704,12 +1705,12 @@ static void virtioScsiQuiesceDevice(PPDMDEVINS pDevIns)
 {
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
-    /** Prevent worker threads from removing/processing elements from virtq's */
+    /* Prevent worker threads from removing/processing elements from virtq's */
     pThis->fQuiescing = true;
 
     PDMDevHlpSetAsyncNotification(pDevIns, virtioScsiDeviceQuiesced);
 
-    /** If already quiesced invoke async callback.  */
+    /* If already quiesced invoke async callback.  */
     if (!ASMAtomicReadU32(&pThis->cActiveReqs))
         PDMDevHlpAsyncNotificationCompleted(pDevIns);
 }
@@ -1762,7 +1763,7 @@ static DECLCALLBACK(void) virtioScsiResume(PPDMDEVINS pDevIns)
 
     pThis->fQuiescing = false;
 
-    /** Wake worker threads flagged to skip pulling queue entries during quiesce
+    /* Wake worker threads flagged to skip pulling queue entries during quiesce
      *  to ensure they re-check their queues. Active request queues may already
      *  be awake due to new reqs coming in.
      */
@@ -1778,7 +1779,7 @@ static DECLCALLBACK(void) virtioScsiResume(PPDMDEVINS pDevIns)
         }
     }
 
-    /** Ensure guest is working the queues too. */
+    /* Ensure guest is working the queues too. */
     virtioPropagateResumeNotification(pThis->hVirtio);
 }
 
@@ -1793,11 +1794,11 @@ static DECLCALLBACK(void) virtioScsiSuspendOrPoweroff(PPDMDEVINS pDevIns)
 
     PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
-    /** VM is halted, thus no new I/O being dumped into queues by the guest.
-     *  Workers have been flagged to stop pulling stuff already queued-up by the guest.
-     *  Now tell lower-level to to suspend reqs (for example, DrvVD suspends all reqs
-     *  on its wait queue, and we will get a callback as the state changes to
-     *  suspended (and later, resumed) for each).
+    /* VM is halted, thus no new I/O being dumped into queues by the guest.
+     * Workers have been flagged to stop pulling stuff already queued-up by the guest.
+     * Now tell lower-level to to suspend reqs (for example, DrvVD suspends all reqs
+     * on its wait queue, and we will get a callback as the state changes to
+     * suspended (and later, resumed) for each).
      */
     for (uint32_t i = 0; i < pThis->cTargets; i++)
     {
@@ -1987,7 +1988,7 @@ static DECLCALLBACK(void) virtioScsiRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offD
         pTarget->pVirtioScsi = pThis;
     }
 
-    /**
+    /*
      * Important: Forward to virtio framework!
      */
     virtioRelocate(pDevIns, offDelta);
