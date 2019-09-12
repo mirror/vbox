@@ -48,7 +48,7 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           Implemented support for importing a virtual machine from Oracle
-          Cloud Infrastructure.
+          Cloud Infrastructure
         </para>
       </listitem>
 
@@ -58,7 +58,7 @@ technical terms if no non-technical ones are clear enough.
           Cloud Infrastructure, allowing the creation of multiple
           virtual machines without re-uploading. Also added option to
           export a VM to the cloud using the more efficent variant
-          "paravirtialized".
+          "paravirtialized"
         </para>
       </listitem>
 
@@ -66,14 +66,14 @@ technical terms if no non-technical ones are clear enough.
         <para>
           Virtualization core: support for nested hardware-virtualization
           on Intel CPUs (starting with 5th generation Core i, codename
-          Broadwell).
+          Broadwell)
         </para>
       </listitem>
 
       <listitem>
         <para>
           Graphics: new style 3D support (with VBoxSVGA and VMSVGA) remains,
-          old style 3D support (with VBoxVGA) has been completely removed.
+          old style 3D support (with VBoxVGA) has been completely removed
         </para>
       </listitem>
 
@@ -87,7 +87,7 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-            GUI: Improved the VISO creation and file manager dialogs.
+            GUI: Improved the VISO creation and file manager dialogs
         </para>
       </listitem>
 
@@ -96,7 +96,7 @@ technical terms if no non-technical ones are clear enough.
           GUI: Virtual machine list of VirtualBox Manager was improved. Machine
           groups are now more obvious visually and VM search functionality
           has been improved. Global Tools element can now be pinned in place,
-          to avoid scrolling it with rest of machine list.
+          to avoid scrolling it with rest of machine list
         </para>
       </listitem>
 
@@ -105,7 +105,7 @@ technical terms if no non-technical ones are clear enough.
           GUI: Virtual machine details pane is now extended with embedded editors
           for certain VM attributes which we decided as the most
           important, allowing user to edit them on-the-fly by clicking corresponding
-          hyper-links without opening VM settings dialog.
+          hyper-links without opening VM settings dialog
         </para>
       </listitem>
 
@@ -114,41 +114,41 @@ technical terms if no non-technical ones are clear enough.
           GUI: Internal medium enumeration routines were optimized to reduce the load
           and optimize the performance in cases when user have lots
           of media registered. Also, we again allowed to add existing media (and create new)
-          via Virtual Media Manager.
+          via Virtual Media Manager
         </para>
       </listitem>
 
       <listitem>
         <para>
           GUI: VM storage settings page was adjusted a bit in usability regard. User is now
-          allowed to change controller bus type and can move
-          attachments between the controllers by DnD.
+          allowed to change controller bus type and can move attachments between the controllers
+           by using drag and drop
         </para>
       </listitem>
 
       <listitem>
         <para>
-          GUI: Added a new soft (virtual) keyboard enabling keyboard inputs to guests.
+          GUI: Added a new soft (virtual) keyboard enabling keyboard inputs to guests
         </para>
       </listitem>
-      
+
       <listitem>
         <para>
-          GUI: Improved and extended the Session Information dialog.
+          GUI: Improved and extended the Session Information dialog
         </para>
       </listitem>
 
       <listitem>
         <para>Input: Added support for horizontal scrolling in the PS/2 mouse
           device using the IntelliMouse Explorer protocol. Note that this support
-          is automatically used by Linux guests but not by Windows guests.
+          is automatically used by Linux guests but not by Windows guests
         </para>
       </listitem>
 
       <listitem>
         <para>vboximg-mount: Experimental support for direct read-only access
           to NTFS, FAT and ext2/3/4 filesystems inside a disk image without
-          the need for support on the host.
+          the need for support on the host
         </para>
       </listitem>
 
