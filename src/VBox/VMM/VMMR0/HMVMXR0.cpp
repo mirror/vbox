@@ -5315,9 +5315,6 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         PVMCC          pVM       = pVCpu->CTX_SUFF(pVM);
         PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
 
-        /*
-         * Figure out fixed CR0 bits in VMX operation.
-         */
         uint64_t       fSetCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed0;
         uint64_t const fZapCr0 = pVM->hm.s.vmx.Msrs.u64Cr0Fixed1;
         if (pVM->hm.s.vmx.fUnrestrictedGuest)
@@ -5414,7 +5411,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
                 uXcptBitmap |= RT_BIT(X86_XCPT_GP);
             Assert(pVM->hm.s.fNestedPaging || (uXcptBitmap & RT_BIT(X86_XCPT_PF)));
 
-            /* Apply the hardware specified fixed CR0 bits and enable caching. */
+            /* Apply the hardware specified CR0 fixed bits and enable caching. */
             u64GuestCr0 |= fSetCr0;
             u64GuestCr0 &= fZapCr0;
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
@@ -5454,7 +5451,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             Assert(!RT_HI_U32(u64GuestCr0));
             Assert(u64GuestCr0 & X86_CR0_NE);
 
-            /* Apply the hardware specified fixed CR0 bits and enable caching. */
+            /* Apply the hardware specified CR0 fixed bits and enable caching. */
             u64GuestCr0 |= fSetCr0;
             u64GuestCr0 &= fZapCr0;
             u64GuestCr0 &= ~(uint64_t)(X86_CR0_CD | X86_CR0_NW);
@@ -5602,12 +5599,9 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PVMXTRANSIENT pV
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CR4)
     {
-        PCPUMCTX     pCtx        = &pVCpu->cpum.GstCtx;
-        PVMXVMCSINFO pVmcsInfo   = pVmxTransient->pVmcsInfo;
+        PCPUMCTX     pCtx      = &pVCpu->cpum.GstCtx;
+        PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
 
-        /*
-         * Figure out fixed CR4 bits in VMX operation.
-         */
         uint64_t const fSetCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed0;
         uint64_t const fZapCr4 = pVM->hm.s.vmx.Msrs.u64Cr4Fixed1;
 
@@ -5693,7 +5687,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PVMXTRANSIENT pV
             }
         }
 
-        /* Apply the hardware specified fixed CR4 bits (mainly CR4.VMXE). */
+        /* Apply the hardware specified CR4 fixed bits (mainly CR4.VMXE). */
         u64GuestCr4 |= fSetCr4;
         u64GuestCr4 &= fZapCr4;
 
@@ -9246,7 +9240,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /** @todo Why do we need to OR and AND the fixed-0 and fixed-1 bits below? */
         uint64_t       fSetCr0 = (pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 & pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
         uint64_t const fZapCr0 = (pVM->hm.s.vmx.Msrs.u64Cr0Fixed0 | pVM->hm.s.vmx.Msrs.u64Cr0Fixed1);
-        /* Exceptions for unrestricted guest execution for fixed CR0 bits (PE, PG).
+        /* Exceptions for unrestricted guest execution for CR0 fixed bits (PE, PG).
            See Intel spec. 26.3.1 "Checks on Guest Control Registers, Debug Registers and MSRs." */
         if (fUnrestrictedGuest)
             fSetCr0 &= ~(uint64_t)(X86_CR0_PE | X86_CR0_PG);
