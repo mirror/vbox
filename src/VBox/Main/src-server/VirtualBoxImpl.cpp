@@ -1153,7 +1153,7 @@ HRESULT VirtualBox::getAPIRevision(LONG64 *aAPIRevision)
     uint64_t uRevision = ((uint64_t)VBOX_VERSION_MAJOR << 56)
                        | ((uint64_t)VBOX_VERSION_MINOR << 48);
 
-    if (VBOX_VERSION_BUILD >= 51 && (VBOX_VERSION_BUILD & 1)) /* pre-release trunk */
+    if (VBOX_VERSION_BUILD >= 81 && (VBOX_VERSION_BUILD & 1)) /* pre-release trunk */
         uRevision |= (uint64_t)VBOX_VERSION_BUILD << 40;
 
     /** @todo This needs to be the same in OSE and non-OSE, preferrably
