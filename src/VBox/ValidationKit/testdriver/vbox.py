@@ -832,6 +832,7 @@ class TestDriver(base.TestDriver):                                              
         self.fImportedVBoxApi   = False;
         self.fpApiVer           = 3.2;
         self.uRevision          = 0;
+        self.uApiRevision       = 0;
         self.oBuild             = None;
         self.oVBoxMgr           = None;
         self.oVBox              = None;
@@ -991,6 +992,11 @@ class TestDriver(base.TestDriver):                                              
             sUser = os.environ.get('USERNAME', os.environ.get('USER', os.environ.get('LOGNAME', 'unknown')));
             os.environ['VBOX_IPC_SOCKETID'] = sUser + '-VBoxTest';
         return True;
+
+    @staticmethod
+    def makeApiRevision(uMajor, uMinor, uBuild, uApiRevision):
+        """ Calculates an API revision number. """
+        return (long(uMajor) << 56) | (long(uMinor) << 48) | (long(uBuild) << 40) | uApiRevision;
 
     def importVBoxApi(self):
         """
@@ -1374,6 +1380,13 @@ class TestDriver(base.TestDriver):                                              
                 reporter.logXcpt('Failed to get VirtualBox revision, assuming 0');
                 self.uRevision = 0;
             reporter.log("IVirtualBox.revision=%u" % (self.uRevision,));
+
+            try:
+                self.uApiRevision = oVBox.APIRevision;
+            except:
+                reporter.logXcpt('Failed to get VirtualBox APIRevision, faking it.');
+                self.uApiRevision = self.makeApiRevision(aiVerComponents[0], aiVerComponents[1], aiVerComponents[2], 0);
+            reporter.log("IVirtualBox.APIRevision=%#x" % (self.uApiRevision,));
 
             # Patch VBox manage to gloss over portability issues (error constants, etc).
             self._patchVBoxMgr();
