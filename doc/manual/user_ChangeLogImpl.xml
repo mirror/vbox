@@ -131,6 +131,12 @@ technical terms if no non-technical ones are clear enough.
           GUI: Added a new soft (virtual) keyboard enabling keyboard inputs to guests.
         </para>
       </listitem>
+      
+      <listitem>
+        <para>
+          GUI: Improved and extended the Session Information dialog.
+        </para>
+      </listitem>
 
       <listitem>
         <para>Input: Added support for horizontal scrolling in the PS/2 mouse
