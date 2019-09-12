@@ -3468,10 +3468,12 @@ void UIActionPoolRuntime::preparePool()
 void UIActionPoolRuntime::prepareConnections()
 {
     /* Prepare connections: */
-    connect(gShortcutPool, SIGNAL(sigSelectorShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
-    connect(gShortcutPool, SIGNAL(sigMachineShortcutsReloaded()), this, SLOT(sltApplyShortcuts()));
-    connect(gEDataManager, SIGNAL(sigMenuBarConfigurationChange(const QUuid &)),
-            this, SLOT(sltHandleConfigurationChange(const QUuid &)));
+    connect(gShortcutPool, &UIShortcutPool::sigSelectorShortcutsReloaded,
+            this, &UIActionPoolRuntime::sltApplyShortcuts);
+    connect(gShortcutPool, &UIShortcutPool::sigMachineShortcutsReloaded,
+            this, &UIActionPoolRuntime::sltApplyShortcuts);
+    connect(gEDataManager, &UIExtraDataManager::sigMenuBarConfigurationChange,
+            this, &UIActionPoolRuntime::sltHandleConfigurationChange);
 
     /* Call to base-class: */
     UIActionPool::prepareConnections();
@@ -3771,7 +3773,7 @@ void UIActionPoolRuntime::updateMenuView()
                                                                  ":/virtual_screen_disabled_16px.png"),
                                              QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
-            connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
+            connect(pSubMenu, &QMenu::aboutToShow, this, &UIActionPoolRuntime::sltPrepareMenuViewScreen);
         }
     }
 
@@ -3814,7 +3816,7 @@ void UIActionPoolRuntime::updateMenuViewPopup()
                                                                  ":/virtual_screen_disabled_16px.png"),
                                              QApplication::translate("UIMultiScreenLayout", "Virtual Screen %1").arg(iGuestScreenIndex + 1));
             pSubMenu->setProperty("Guest Screen Index", iGuestScreenIndex);
-            connect(pSubMenu, SIGNAL(aboutToShow()), this, SLOT(sltPrepareMenuViewScreen()));
+            connect(pSubMenu, &QMenu::aboutToShow, this, &UIActionPoolRuntime::sltPrepareMenuViewScreen);
         }
     }
 

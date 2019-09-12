@@ -589,8 +589,8 @@ void UIChooserAbstractModel::saveGroupDefinitions()
     /* Save information in other thread: */
     UIThreadGroupDefinitionSave::prepare();
     emit sigGroupSavingStateChanged();
-    connect(UIThreadGroupDefinitionSave::instance(), SIGNAL(sigReload(QUuid)),
-            this, SLOT(sltReloadMachine(QUuid)));
+    connect(UIThreadGroupDefinitionSave::instance(), &UIThreadGroupDefinitionSave::sigReload,
+            this, &UIChooserAbstractModel::sltReloadMachine);
     UIThreadGroupDefinitionSave::instance()->configure(this, m_groups, groups);
     UIThreadGroupDefinitionSave::instance()->start();
     m_groups = groups;
@@ -711,7 +711,8 @@ void UIThreadGroupDefinitionSave::configure(QObject *pParent,
 {
     m_oldLists = oldLists;
     m_newLists = newLists;
-    connect(this, SIGNAL(sigComplete()), pParent, SLOT(sltGroupDefinitionsSaveComplete()));
+    connect(this, &UIThreadGroupDefinitionSave::sigComplete,
+            qobject_cast<UIChooserAbstractModel*>(pParent), &UIChooserAbstractModel::sltGroupDefinitionsSaveComplete);
 }
 
 UIThreadGroupDefinitionSave::UIThreadGroupDefinitionSave()
@@ -836,7 +837,8 @@ void UIThreadGroupOrderSave::configure(QObject *pParent,
                                        const QMap<QString, QStringList> &groups)
 {
     m_groups = groups;
-    connect(this, SIGNAL(sigComplete()), pParent, SLOT(sltGroupOrdersSaveComplete()));
+    connect(this, &UIThreadGroupOrderSave::sigComplete,
+            qobject_cast<UIChooserAbstractModel*>(pParent), &UIChooserAbstractModel::sltGroupOrdersSaveComplete);
 }
 
 UIThreadGroupOrderSave::UIThreadGroupOrderSave()

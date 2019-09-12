@@ -98,6 +98,16 @@ public:
         bool isGroupSavingInProgress() const;
     /** @} */
 
+public slots:
+
+   /** @name Group saving stuff.
+      * @{ */
+        /** Handles group definition saving complete. */
+        void sltGroupDefinitionsSaveComplete();
+        /** Handles group order saving complete. */
+        void sltGroupOrdersSaveComplete();
+    /** @} */
+
 protected slots:
 
     /** @name Main event handling stuff.
@@ -126,10 +136,6 @@ private slots:
       * @{ */
         /** Handles request to start group saving. */
         void sltStartGroupSaving();
-        /** Handles group definition saving complete. */
-        void sltGroupDefinitionsSaveComplete();
-        /** Handles group order saving complete. */
-        void sltGroupOrdersSaveComplete();
     /** @} */
 
 private:
