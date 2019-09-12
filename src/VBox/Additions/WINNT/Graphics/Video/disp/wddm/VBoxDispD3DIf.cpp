@@ -681,7 +681,10 @@ static HRESULT vboxDispD3DGlobalDoOpen(PVBOXWDDMDISP_D3D pD3D, VBOXWDDM_QAI cons
         hr = GaWddmD3DBackendOpen(pD3D, pAdapterInfo, pFormats);
 #endif
     else
+    {
+        RT_NOREF(pFormats);
         hr = E_FAIL;
+    }
 
     if (SUCCEEDED(hr))
     {
