@@ -46,7 +46,35 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
-        <para>dummy</para>
+        <para>
+          Implemented support for importing a virtual machine from Oracle
+          Cloud Infrastructure.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Extended support for exporting a virtual machine to Oracle
+          Cloud Infrastructure, allowing the creation of multiple
+          virtual machines without re-uploading. Also added option to
+          export a VM to the cloud using the more efficent variant
+          "paravirtialized".
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Virtualization core: support for nested hardware-virtualization
+          on Intel CPUs (starting with 5th generation Core i, codename
+          Broadwell).
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Graphics: new style 3D support (with VBoxSVGA and VMSVGA) remains,
+          old style 3D support (with VBoxVGA) has been completely removed.
+        </para>
       </listitem>
 
     </itemizedlist>
@@ -70,6 +98,13 @@ technical terms if no non-technical ones are clear enough.
         <para>Input: Added support for horizontal scrolling in the PS/2 mouse
           device using the IntelliMouse Explorer protocol. Note that this support
           is automatically used by Linux guests but not by Windows guests.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>vboximg-mount: Experimental support for direct read-only access
+          to NTFS, FAT and ext2/3/4 filesystems inside a disk image without
+          the need for support on the host.
         </para>
       </listitem>
 
