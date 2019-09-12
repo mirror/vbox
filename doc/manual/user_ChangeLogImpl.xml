@@ -58,6 +58,15 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
+        <para>
+          User interface: Added a new soft (virtual) keyboard enabling keyboard
+          inputs to guests. Improved the VISO creation and file manager dialogs.
+          Added a search widget to the virtual machine list in the manager UI
+          for locating virtual machine easier especially in a long list.
+        </para>
+      </listitem>
+
+      <listitem>
         <para>Input: Added support for horizontal scrolling in the PS/2 mouse
           device using the IntelliMouse Explorer protocol. Note that this support
           is automatically used by Linux guests but not by Windows guests.
