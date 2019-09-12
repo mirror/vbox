@@ -3234,7 +3234,7 @@ Virtual system 0:
 
       <listitem>
         <para>
-          <computeroutput>setlinkstate&lt;1-N&gt;</computeroutput>:
+          <computeroutput>setlinkstate&lt;1-N&gt; on|off</computeroutput>:
           Connects or disconnects virtual network cables from their
           network interfaces.
         </para>
@@ -3276,10 +3276,14 @@ Virtual system 0:
         </para>
 
         <para>
-          If enabled, you must specify with
+          Before enabling you should specify a file name to which the
+          trace should be logged. This can be done with the
+          <computeroutput>nictracefile&lt;1-N&gt;
+          &lt;filename&gt;</computeroutput> option to <command>VBoxManage
+          controlvm</command> at runtime or with the
           <computeroutput>--nictracefile&lt;1-N&gt;
-          &lt;filename&gt;</computeroutput> the pathname of the file to
-          which the trace should be logged.
+          &lt;filename&gt;</computeroutput> option to <command>VBoxManage
+          modifyvm</command> otherwise.
         </para>
       </listitem>
 
