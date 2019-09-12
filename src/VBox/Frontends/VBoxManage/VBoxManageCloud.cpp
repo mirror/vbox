@@ -886,9 +886,12 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     static const RTGETOPTDEF s_aOptions[] =
     {
+        { "--object-name",    'o', RTGETOPT_REQ_STRING },
+        { "--bucket-name",    'b', RTGETOPT_REQ_STRING },
         { "--compartment-id", 'c', RTGETOPT_REQ_STRING },
         { "--instance-id",    'i', RTGETOPT_REQ_STRING },
-        { "--display-name",   'd', RTGETOPT_REQ_STRING }
+        { "--display-name",   'd', RTGETOPT_REQ_STRING },
+        { "--launch-mode",    'm', RTGETOPT_REQ_STRING },
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -898,6 +901,8 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
     Utf8Str strCompartmentId;
     Utf8Str strInstanceId;
     Utf8Str strDisplayName;
+    Utf8Str strBucketName;
+    Utf8Str strObjectName;
     com::SafeArray<BSTR>  parameters;
 
     int c;
@@ -917,6 +922,18 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
                 strDisplayName=ValueUnion.psz;
                 Bstr(Utf8Str("display-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
                 break;
+            case 'o':
+                strObjectName=ValueUnion.psz;
+                Bstr(Utf8Str("object-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
+                break;
+            case 'b':
+                strBucketName=ValueUnion.psz;
+                Bstr(Utf8Str("bucket-name=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
+                break;
+            case 'm':
+                strBucketName=ValueUnion.psz;
+                Bstr(Utf8Str("launch-mode=").append(ValueUnion.psz)).detachTo(parameters.appendedRaw());
+                break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
@@ -924,14 +941,21 @@ static RTEXITCODE createCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
         }
     }
 
+    if (strInstanceId.isNotEmpty() && strObjectName.isNotEmpty())
+        return errorArgument("Conflicting parameters: --instance-id and --object-name can't be used together. Choose one.");
+
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
     ComObjPtr<ICloudClient> oCloudClient;
     CHECK_ERROR2_RET(hrc, pCloudProfile,
                      CreateCloudClient(oCloudClient.asOutParam()),
                      RTEXITCODE_FAILURE);
-    RTPrintf("Creating cloud image with name \'%s\' from the instance \'%s\'...\n",
-             strDisplayName.c_str(), strInstanceId.c_str());
+    if (strInstanceId.isNotEmpty())
+        RTPrintf("Creating cloud image with name \'%s\' from the instance \'%s\'...\n",
+                 strDisplayName.c_str(), strInstanceId.c_str());
+    else
+        RTPrintf("Creating cloud image with name \'%s\' from the object \'%s\' in the bucket \'%s\'...\n",
+                 strDisplayName.c_str(), strObjectName.c_str(), strBucketName.c_str());
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
