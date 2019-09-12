@@ -909,7 +909,7 @@ typedef struct HMCPU
             /** Whether the nested-guest VMCS has been copied to the shadow VMCS. */
             bool                        fCopiedNstGstToShadowVmcs;
             /** Whether flushing the TLB is required due to switching to/from the
-             *  nested-geust. */
+             *  nested-guest. */
             bool                        fSwitchedNstGstFlushTlb;
             /** Alignment. */
             bool                        afAlignment0[4];
