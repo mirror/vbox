@@ -1706,19 +1706,23 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPUCC pVCpu)
 
     /* CR0. */
     {
-        /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and fixed CR0 bits are not modified. */
+        /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and CR0 fixed bits are not modified. */
         uint64_t const uCr0Mb1       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
         uint64_t const uCr0Mb0       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed1;
         uint64_t const fCr0IgnMask   = UINT64_C(0xffffffff1ffaffc0) | X86_CR0_ET | X86_CR0_CD | X86_CR0_NW | uCr0Mb1 | ~uCr0Mb0;
         uint64_t const uHostCr0      = pVmcs->u64HostCr0.u;
         uint64_t const uGuestCr0     = pVCpu->cpum.GstCtx.cr0;
         uint64_t const uValidHostCr0 = (uHostCr0 & ~fCr0IgnMask) | (uGuestCr0 & fCr0IgnMask);
+
+        /* Verify we have not modified CR0 fixed bits in VMX non-root operation. */
+        Assert((uGuestCr0 &  uCr0Mb1) == uCr0Mb1);
+        Assert((uGuestCr0 & ~uCr0Mb0) == 0);
         CPUMSetGuestCR0(pVCpu, uValidHostCr0);
     }
 
     /* CR4. */
     {
-        /* Fixed CR4 bits are not modified. */
+        /* CR4 fixed bits are not modified. */
         uint64_t const uCr4Mb1       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed0;
         uint64_t const uCr4Mb0       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr4Fixed1;
         uint64_t const fCr4IgnMask   = uCr4Mb1 | ~uCr4Mb0;
@@ -1729,6 +1733,10 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPUCC pVCpu)
             uValidHostCr4 |= X86_CR4_PAE;
         else
             uValidHostCr4 &= ~X86_CR4_PCIDE;
+
+        /* Verify we have not modified CR4 fixed bits in VMX non-root operation. */
+        Assert((uGuestCr4 &  uCr4Mb1) == uCr4Mb1);
+        Assert((uGuestCr4 & ~uCr4Mb0) == 0);
         CPUMSetGuestCR4(pVCpu, uValidHostCr4);
     }
 
@@ -2478,8 +2486,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
     pVmcs->u32RoExitReason = uExitReason;
     pVmcs->u64RoExitQual.u = u64ExitQual;
 
-    Log3(("vmexit: uExitReason=%#RX32 u64ExitQual=%#RX64 cs:rip=%04x:%#RX64\n", uExitReason, pVmcs->u64RoExitQual.u,
-          pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip));
+    Log3(("vmexit: reason=%#RX32 qual=%#RX64 cs:rip=%04x:%#RX64 cr0=%#RX64 cr3=%#RX64 cr4=%#RX64\n", uExitReason,
+          pVmcs->u64RoExitQual.u, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
+          pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4));
 
     /*
      * Update the IDT-vectoring information fields if the VM-exit is triggered during delivery of an event.
@@ -7412,10 +7421,10 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
 # endif
 
                                 /* Finally, done. */
-                                Log(("%s: cs:rip=%#04x:%#RX64 cr3=%#RX64 cr4=%#RX64 (vmcs=%#RX64) efer=%#RX64 (vmcs=%#RX64)\n", pszInstr,
-                                     pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr3,
-                                     pVmcs->u64GuestCr4.u,
-                                     pVCpu->cpum.GstCtx.cr4, pVCpu->cpum.GstCtx.msrEFER, pVmcs->u64GuestEferMsr.u));
+                                Log3(("%s: cs:rip=%#04x:%#RX64 cr0=%#RX64 (%#RX64) cr4=%#RX64 (%#RX64) efer=%#RX64\n",
+                                     pszInstr, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
+                                     pVmcs->u64Cr0ReadShadow.u, pVCpu->cpum.GstCtx.cr4, pVmcs->u64Cr4ReadShadow.u,
+                                     pVCpu->cpum.GstCtx.msrEFER));
                                 return VINF_SUCCESS;
                             }
                             return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED,
