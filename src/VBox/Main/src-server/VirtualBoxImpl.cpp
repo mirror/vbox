@@ -1151,10 +1151,8 @@ HRESULT VirtualBox::getAPIRevision(LONG64 *aAPIRevision)
     AssertCompile(VBOX_VERSION_MAJOR < 128 && VBOX_VERSION_MAJOR > 0);
     AssertCompile((uint64_t)VBOX_VERSION_MINOR < 256);
     uint64_t uRevision = ((uint64_t)VBOX_VERSION_MAJOR << 56)
-                       | ((uint64_t)VBOX_VERSION_MINOR << 48);
-
-    if (VBOX_VERSION_BUILD >= 81 && (VBOX_VERSION_BUILD & 1)) /* pre-release trunk */
-        uRevision |= (uint64_t)VBOX_VERSION_BUILD << 40;
+                       | ((uint64_t)VBOX_VERSION_MINOR << 48)
+                       | ((uint64_t)VBOX_VERSION_BUILD << 40);
 
     /** @todo This needs to be the same in OSE and non-OSE, preferrably
      *        only changing when actual API changes happens. */
