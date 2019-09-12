@@ -85,49 +85,52 @@ technical terms if no non-technical ones are clear enough.
 
     <itemizedlist>
 
-        <listitem>
-            <para>
-                GUI: Improved the VISO creation and file manager dialogs.
-            </para>
-            <para>
-                GUI: Cloud Export wizard (a separate mode of Export Appliance
-                wizard) was improved to provide more actual / flexible functionality.
-            </para>
-            <para>
-                GUI: New Cloud Import wizard (a separate mode of Import Appliance
-                wizard) was implemented, allowing to import cloud VMs locally.
-            </para>
-            <para>
-                GUI: New Cloud VM wizard was implemented, allowing to create
-                cloud VMs directly from previously exported custom images.
-            </para>
-            <para>
-                GUI: Virtual machine list of VirtualBox Manager was improved. Machine
-                groups are now more obvious visually and VM search functionality
-                has been improved. Global Tools element can now be pinned in place,
-                to avoid scrolling it with rest of machine list.
-            </para>
-            <para>
-                GUI: Virtual machine details pane is now extended with embedded editors
-                for certain VM attributes which we decided as the most
-                important, allowing user to edit them on-the-fly by clicking corresponding
-                hyper-links without opening VM settings dialog.
-            </para>
-            <para>
-                GUI: Internal medium enumeration routines were optimized to reduce the load
-                and optimize the performance in cases when user have lots
-                of media registered. Also, we again allowed to add existing media (and create new)
-                via Virtual Media Manager.
-            </para>
-            <para>
-                GUI: VM storage settings page was adjusted a bit in usability regard. User is now
-                allowed to change controller bus type and can move
-                attachments between the controllers by DnD.
-            </para>
-            <para>
-                GUI: Added a new soft (virtual) keyboard enabling keyboard inputs to guests.
-            </para>
-        </listitem>
+      <listitem>
+        <para>
+            GUI: Improved the VISO creation and file manager dialogs.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+            GUI: Virtual machine list of VirtualBox Manager was improved. Machine
+            groups are now more obvious visually and VM search functionality
+            has been improved. Global Tools element can now be pinned in place,
+            to avoid scrolling it with rest of machine list.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+            GUI: Virtual machine details pane is now extended with embedded editors
+            for certain VM attributes which we decided as the most
+            important, allowing user to edit them on-the-fly by clicking corresponding
+            hyper-links without opening VM settings dialog.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+            GUI: Internal medium enumeration routines were optimized to reduce the load
+            and optimize the performance in cases when user have lots
+            of media registered. Also, we again allowed to add existing media (and create new)
+            via Virtual Media Manager.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+            GUI: VM storage settings page was adjusted a bit in usability regard. User is now
+            allowed to change controller bus type and can move
+            attachments between the controllers by DnD.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+            GUI: Added a new soft (virtual) keyboard enabling keyboard inputs to guests.
+        </para>
+      </listitem>
 
       <listitem>
         <para>Input: Added support for horizontal scrolling in the PS/2 mouse
