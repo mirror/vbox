@@ -93,42 +93,42 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-            GUI: Virtual machine list of VirtualBox Manager was improved. Machine
-            groups are now more obvious visually and VM search functionality
-            has been improved. Global Tools element can now be pinned in place,
-            to avoid scrolling it with rest of machine list.
+          GUI: Virtual machine list of VirtualBox Manager was improved. Machine
+          groups are now more obvious visually and VM search functionality
+          has been improved. Global Tools element can now be pinned in place,
+          to avoid scrolling it with rest of machine list.
         </para>
       </listitem>
 
       <listitem>
         <para>
-            GUI: Virtual machine details pane is now extended with embedded editors
-            for certain VM attributes which we decided as the most
-            important, allowing user to edit them on-the-fly by clicking corresponding
-            hyper-links without opening VM settings dialog.
+          GUI: Virtual machine details pane is now extended with embedded editors
+          for certain VM attributes which we decided as the most
+          important, allowing user to edit them on-the-fly by clicking corresponding
+          hyper-links without opening VM settings dialog.
         </para>
       </listitem>
 
       <listitem>
         <para>
-            GUI: Internal medium enumeration routines were optimized to reduce the load
-            and optimize the performance in cases when user have lots
-            of media registered. Also, we again allowed to add existing media (and create new)
-            via Virtual Media Manager.
+          GUI: Internal medium enumeration routines were optimized to reduce the load
+          and optimize the performance in cases when user have lots
+          of media registered. Also, we again allowed to add existing media (and create new)
+          via Virtual Media Manager.
         </para>
       </listitem>
 
       <listitem>
         <para>
-            GUI: VM storage settings page was adjusted a bit in usability regard. User is now
-            allowed to change controller bus type and can move
-            attachments between the controllers by DnD.
+          GUI: VM storage settings page was adjusted a bit in usability regard. User is now
+          allowed to change controller bus type and can move
+          attachments between the controllers by DnD.
         </para>
       </listitem>
 
       <listitem>
         <para>
-            GUI: Added a new soft (virtual) keyboard enabling keyboard inputs to guests.
+          GUI: Added a new soft (virtual) keyboard enabling keyboard inputs to guests.
         </para>
       </listitem>
 
