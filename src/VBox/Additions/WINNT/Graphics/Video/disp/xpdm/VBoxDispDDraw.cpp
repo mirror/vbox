@@ -23,12 +23,12 @@
 /* Called to check if our driver can create surface with requested attributes */
 DWORD APIENTRY VBoxDispDDCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSurface)
 {
-    PVBOXDISPDEV pDev = (PVBOXDISPDEV) lpCanCreateSurface->lpDD->dhpdev;
     LOGF_ENTER();
 
     PDD_SURFACEDESC lpDDS = lpCanCreateSurface->lpDDSurfaceDesc;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
+    PVBOXDISPDEV pDev = (PVBOXDISPDEV) lpCanCreateSurface->lpDD->dhpdev;
     if(pDev->vhwa.bEnabled)
     {
         uint32_t unsupportedSCaps = VBoxDispVHWAUnsupportedDDSCAPS(lpDDS->ddsCaps.dwCaps);
@@ -117,7 +117,6 @@ DWORD APIENTRY VBoxDispDDCanCreateSurface(PDD_CANCREATESURFACEDATA lpCanCreateSu
  */
 DWORD APIENTRY VBoxDispDDCreateSurface(PDD_CREATESURFACEDATA lpCreateSurface)
 {
-    PVBOXDISPDEV pDev = (PVBOXDISPDEV) lpCreateSurface->lpDD->dhpdev;
     LOGF_ENTER();
 
     PDD_SURFACE_LOCAL pSurf = lpCreateSurface->lplpSList[0];
@@ -135,6 +134,7 @@ DWORD APIENTRY VBoxDispDDCreateSurface(PDD_CREATESURFACEDATA lpCreateSurface)
     pSurf->lpGbl->dwReserved1 = 0;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
+    PVBOXDISPDEV pDev = (PVBOXDISPDEV) lpCreateSurface->lpDD->dhpdev;
     if(pDev->vhwa.bEnabled)
     {
         VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST *pCmd
@@ -246,12 +246,12 @@ DWORD APIENTRY VBoxDispDDCreateSurface(PDD_CREATESURFACEDATA lpCreateSurface)
  */
 DWORD APIENTRY VBoxDispDDDestroySurface(PDD_DESTROYSURFACEDATA lpDestroySurface)
 {
-    PVBOXDISPDEV pDev = (PVBOXDISPDEV) lpDestroySurface->lpDD->dhpdev;
     LOGF_ENTER();
 
     lpDestroySurface->ddRVal = DD_OK;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
+    PVBOXDISPDEV pDev = (PVBOXDISPDEV) lpDestroySurface->lpDD->dhpdev;
     if (pDev->vhwa.bEnabled)
     {
         VBOXVHWACMD RT_UNTRUSTED_VOLATILE_HOST  *pCmd
@@ -453,13 +453,12 @@ DWORD APIENTRY VBoxDispDDUnlock(PDD_UNLOCKDATA lpUnlock)
     PVBOXDISPDEV pDev = (PVBOXDISPDEV) lpUnlock->lpDD->dhpdev;
     LOGF_ENTER();
 
-    DD_SURFACE_LOCAL *pSurf = lpUnlock->lpDDSurface;
-
     lpUnlock->ddRVal = DD_OK;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     if(pDev->vhwa.bEnabled)
     {
+        DD_SURFACE_LOCAL *pSurf = lpUnlock->lpDDSurface;
         PVBOXVHWASURFDESC pDesc = (PVBOXVHWASURFDESC) pSurf->lpGbl->dwReserved1;
 
         if (!pDesc)

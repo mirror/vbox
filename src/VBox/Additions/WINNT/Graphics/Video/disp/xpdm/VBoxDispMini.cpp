@@ -277,6 +277,7 @@ int VBoxDispMPHGSMIQueryPortProcs(HANDLE hDriver, HGSMIQUERYCPORTPROCS *pPortPro
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
 int VBoxDispMPVHWAQueryInfo(HANDLE hDriver, VHWAQUERYINFO *pInfo)
 {
     DWORD dwrc;
@@ -292,6 +293,7 @@ int VBoxDispMPVHWAQueryInfo(HANDLE hDriver, VHWAQUERYINFO *pInfo)
     LOGF_LEAVE();
     return VINF_SUCCESS;
 }
+#endif
 
 int VBoxDispMPSetColorRegisters(HANDLE hDriver, PVIDEO_CLUT pClut, DWORD cbClut)
 {

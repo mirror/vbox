@@ -18,7 +18,9 @@
 #include "VBoxMPWddm.h"
 #include "common/VBoxMPCommon.h"
 #include "common/VBoxMPHGSMI.h"
-#include "VBoxMPVhwa.h"
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# include "VBoxMPVhwa.h"
+#endif
 #include "VBoxMPVidPn.h"
 
 #include <iprt/alloc.h>
@@ -1550,12 +1552,13 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
             bNeedDpc = TRUE;
         }
 #endif
+#ifdef VBOX_WITH_VIDEOHWACCEL
         if (!vboxVtListIsEmpty(&VhwaCmdList))
         {
             vboxVtListCat(&pDevExt->VhwaCmdList, &VhwaCmdList);
             bNeedDpc = TRUE;
         }
-
+#endif
         bNeedDpc |= !vboxVdmaDdiCmdIsCompletedListEmptyIsr(pDevExt);
 
         if (pDevExt->bNotifyDxDpc)
@@ -2373,6 +2376,8 @@ NTSTATUS vboxWddmAllocationCreate(PVBOXMP_DEVEXT pDevExt, PVBOXWDDM_RESOURCE pRe
                             else
 #endif
                             {
+                                RT_NOREF(pDevExt);
+
                                 Assert(pAllocation->AllocData.SurfDesc.bpp);
                                 Assert(pAllocation->AllocData.SurfDesc.pitch);
                                 Assert(pAllocation->AllocData.SurfDesc.cbSize);
@@ -4087,6 +4092,8 @@ DxgkDdiCreateOverlay(
     LOGF(("ENTER, hAdapter(0x%p)", hAdapter));
 
     NTSTATUS Status = STATUS_SUCCESS;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)hAdapter;
     PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)vboxWddmMemAllocZero(sizeof (VBOXWDDM_OVERLAY));
     Assert(pOverlay);
@@ -4106,6 +4113,9 @@ DxgkDdiCreateOverlay(
     }
     else
         Status = STATUS_NO_MEMORY;
+#else
+    RT_NOREF(hAdapter, pCreateOverlay);
+#endif
 
     LOGF(("LEAVE, hAdapter(0x%p)", hAdapter));
 
@@ -4207,9 +4217,10 @@ DxgkDdiOpenAllocation(
                     Status = STATUS_INVALID_PARAMETER;
                     break;
                 }
-                PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pInfo->pPrivateDriverData;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
+                PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pInfo->pPrivateDriverData;
+
                 if (pRcInfo->RcDesc.fFlags.Overlay)
                 {
                     /* we have queried host for some surface info, like pitch & size,
@@ -4353,15 +4364,19 @@ DxgkDdiUpdateOverlay(
     LOGF(("ENTER, hOverlay(0x%p)", hOverlay));
 
     NTSTATUS Status = STATUS_SUCCESS;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
     PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)hOverlay;
-    Assert(pOverlay);
+    AssertPtr(pOverlay);
     int rc = vboxVhwaHlpOverlayUpdate(pOverlay, &pUpdateOverlay->OverlayInfo);
     AssertRC(rc);
     if (RT_FAILURE(rc))
         Status = STATUS_UNSUCCESSFUL;
+#else
+    RT_NOREF(hOverlay, pUpdateOverlay);
+#endif
 
     LOGF(("LEAVE, hOverlay(0x%p)", hOverlay));
-
     return Status;
 }
 
@@ -4374,12 +4389,17 @@ DxgkDdiFlipOverlay(
     LOGF(("ENTER, hOverlay(0x%p)", hOverlay));
 
     NTSTATUS Status = STATUS_SUCCESS;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
     PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)hOverlay;
-    Assert(pOverlay);
+    AssertPtr(pOverlay);
     int rc = vboxVhwaHlpOverlayFlip(pOverlay, pFlipOverlay);
     AssertRC(rc);
     if (RT_FAILURE(rc))
         Status = STATUS_UNSUCCESSFUL;
+#else
+    RT_NOREF(hOverlay, pFlipOverlay);
+#endif
 
     LOGF(("LEAVE, hOverlay(0x%p)", hOverlay));
 
@@ -4394,14 +4414,19 @@ DxgkDdiDestroyOverlay(
     LOGF(("ENTER, hOverlay(0x%p)", hOverlay));
 
     NTSTATUS Status = STATUS_SUCCESS;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
     PVBOXWDDM_OVERLAY pOverlay = (PVBOXWDDM_OVERLAY)hOverlay;
-    Assert(pOverlay);
+    AssertPtr(pOverlay);
     int rc = vboxVhwaHlpOverlayDestroy(pOverlay);
     AssertRC(rc);
     if (RT_SUCCESS(rc))
         vboxWddmMemFree(pOverlay);
     else
         Status = STATUS_UNSUCCESSFUL;
+#else
+    RT_NOREF(hOverlay);
+#endif
 
     LOGF(("LEAVE, hOverlay(0x%p)", hOverlay));
 
@@ -4928,8 +4953,19 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     DriverInitializationData.DxgkDdiStopDevice = DxgkDdiStopDevice;
     DriverInitializationData.DxgkDdiRemoveDevice = DxgkDdiRemoveDevice;
     DriverInitializationData.DxgkDdiDispatchIoRequest = DxgkDdiDispatchIoRequest;
-    DriverInitializationData.DxgkDdiInterruptRoutine          = GaDxgkDdiInterruptRoutine;
-    DriverInitializationData.DxgkDdiDpcRoutine                = GaDxgkDdiDpcRoutine;
+
+#ifdef VBOX_WITH_MESA3D
+    DriverInitializationData.DxgkDdiInterruptRoutine  = GaDxgkDdiInterruptRoutine;
+    DriverInitializationData.DxgkDdiDpcRoutine        = GaDxgkDdiDpcRoutine;
+    DriverInitializationData.DxgkDdiPatch             = GaDxgkDdiPatch;
+    DriverInitializationData.DxgkDdiSubmitCommand     = GaDxgkDdiSubmitCommand;
+    DriverInitializationData.DxgkDdiPreemptCommand    = GaDxgkDdiPreemptCommand;
+    DriverInitializationData.DxgkDdiBuildPagingBuffer = GaDxgkDdiBuildPagingBuffer;
+    DriverInitializationData.DxgkDdiQueryCurrentFence = GaDxgkDdiQueryCurrentFence;
+    DriverInitializationData.DxgkDdiRender            = GaDxgkDdiRender;
+    DriverInitializationData.DxgkDdiPresent           = GaDxgkDdiPresent;
+#endif
+
     DriverInitializationData.DxgkDdiQueryChildRelations = DxgkDdiQueryChildRelations;
     DriverInitializationData.DxgkDdiQueryChildStatus = DxgkDdiQueryChildStatus;
     DriverInitializationData.DxgkDdiQueryDeviceDescriptor = DxgkDdiQueryDeviceDescriptor;
@@ -4949,11 +4985,6 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     DriverInitializationData.DxgkDdiAcquireSwizzlingRange = DxgkDdiAcquireSwizzlingRange;
     DriverInitializationData.DxgkDdiReleaseSwizzlingRange = DxgkDdiReleaseSwizzlingRange;
 
-    DriverInitializationData.DxgkDdiPatch                     = GaDxgkDdiPatch;
-    DriverInitializationData.DxgkDdiSubmitCommand             = GaDxgkDdiSubmitCommand;
-    DriverInitializationData.DxgkDdiPreemptCommand            = GaDxgkDdiPreemptCommand;
-    DriverInitializationData.DxgkDdiBuildPagingBuffer         = GaDxgkDdiBuildPagingBuffer;
-
     DriverInitializationData.DxgkDdiSetPalette = DxgkDdiSetPalette;
     DriverInitializationData.DxgkDdiSetPointerPosition = DxgkDdiSetPointerPosition;
     DriverInitializationData.DxgkDdiSetPointerShape = DxgkDdiSetPointerShape;
@@ -4961,7 +4992,6 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     DriverInitializationData.DxgkDdiRestartFromTimeout = DxgkDdiRestartFromTimeout;
     DriverInitializationData.DxgkDdiEscape = DxgkDdiEscape;
     DriverInitializationData.DxgkDdiCollectDbgInfo = DxgkDdiCollectDbgInfo;
-    DriverInitializationData.DxgkDdiQueryCurrentFence         = GaDxgkDdiQueryCurrentFence;
     DriverInitializationData.DxgkDdiIsSupportedVidPn = DxgkDdiIsSupportedVidPn;
     DriverInitializationData.DxgkDdiRecommendFunctionalVidPn = DxgkDdiRecommendFunctionalVidPn;
     DriverInitializationData.DxgkDdiEnumVidPnCofuncModality = DxgkDdiEnumVidPnCofuncModality;
@@ -4979,8 +5009,6 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     DriverInitializationData.DxgkDdiDestroyDevice = DxgkDdiDestroyDevice;
     DriverInitializationData.DxgkDdiOpenAllocation = DxgkDdiOpenAllocation;
     DriverInitializationData.DxgkDdiCloseAllocation = DxgkDdiCloseAllocation;
-    DriverInitializationData.DxgkDdiRender                    = GaDxgkDdiRender;
-    DriverInitializationData.DxgkDdiPresent                   = GaDxgkDdiPresent;
 
     DriverInitializationData.DxgkDdiUpdateOverlay = DxgkDdiUpdateOverlay;
     DriverInitializationData.DxgkDdiFlipOverlay = DxgkDdiFlipOverlay;

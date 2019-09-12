@@ -18,7 +18,9 @@
 #include "VBoxMPWddm.h"
 #include "common/VBoxMPCommon.h"
 #include "VBoxMPVdma.h"
+#ifdef VBOX_WITH_VIDEOHWACCEL
 #include "VBoxMPVhwa.h"
+#endif
 #include <iprt/asm.h>
 #include <iprt/mem.h>
 
