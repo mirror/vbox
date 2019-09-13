@@ -451,34 +451,6 @@ RTDECL(int) RTEnvReset(RTENV hEnv)
 RT_EXPORT_SYMBOL(RTEnvReset);
 
 
-RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
-{
-    int rc;
-    AssertPtrReturn(pszVarEqualValue, VERR_INVALID_POINTER);
-    const char *pszEq = strchr(pszVarEqualValue, '=');
-    if (!pszEq)
-        rc = RTEnvUnsetEx(Env, pszVarEqualValue);
-    else
-    {
-        /*
-         * Make a copy of the variable name so we can terminate it
-         * properly and then pass the request on to RTEnvSetEx.
-         */
-        const char *pszValue = pszEq + 1;
-
-        size_t cchVar = pszEq - pszVarEqualValue;
-        Assert(cchVar < 1024);
-        char *pszVar = (char *)alloca(cchVar + 1);
-        memcpy(pszVar, pszVarEqualValue, cchVar);
-        pszVar[cchVar] = '\0';
-
-        rc = RTEnvSetEx(Env, pszVar, pszValue);
-    }
-    return rc;
-}
-RT_EXPORT_SYMBOL(RTEnvPutEx);
-
-
 /**
  * Appends an already allocated string to papszEnv.
  *
@@ -520,18 +492,17 @@ static int rtEnvIntAppend(PRTENVINTERNAL pIntEnv, char *pszEntry)
 }
 
 
-RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
+/**
+ * Worker for RTEnvSetEx and RTEnvPutEx.
+ */
+static int rtEnvSetExWorker(RTENV Env, const char *pchVar, size_t cchVar, const char *pszValue)
 {
-    AssertPtrReturn(pszVar, VERR_INVALID_POINTER);
-    AssertReturn(*pszVar, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
-    AssertReturn(strchr(pszVar, '=') == NULL, VERR_ENV_INVALID_VAR_NAME);
-
     int rc;
     if (Env == RTENV_DEFAULT)
     {
 #ifdef RT_OS_WINDOWS
-        rc = RTEnvSetUtf8(pszVar, pszValue);
+        extern int rtEnvSetUtf8Worker(const char *pchVar, size_t cchVar, const char *pszValue);
+        rc = rtEnvSetUtf8Worker(pchVar, cchVar, pszValue);
 #else
         /*
          * Since RTEnvPut isn't UTF-8 clean and actually expects the strings
@@ -539,7 +510,7 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
          * conversions here.
          */
         char *pszVarOtherCP;
-        rc = RTStrUtf8ToCurrentCP(&pszVarOtherCP, pszVar);
+        rc = RTStrUtf8ToCurrentCPEx(&pszVarOtherCP, pchVar, cchVar);
         if (RT_SUCCESS(rc))
         {
             char *pszValueOtherCP;
@@ -562,12 +533,11 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
         /*
          * Create the variable string.
          */
-        const size_t cchVar = strlen(pszVar);
         const size_t cchValue = strlen(pszValue);
         char *pszEntry = (char *)RTMemAlloc(cchVar + cchValue + 2);
         if (pszEntry)
         {
-            memcpy(pszEntry, pszVar, cchVar);
+            memcpy(pszEntry, pchVar, cchVar);
             pszEntry[cchVar] = '=';
             memcpy(&pszEntry[cchVar + 1], pszValue, cchValue + 1);
 
@@ -579,7 +549,7 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
             rc = VINF_SUCCESS;
             size_t iVar;
             for (iVar = 0; iVar < pIntEnv->cVars; iVar++)
-                if (    !pIntEnv->pfnCompare(pIntEnv->papszEnv[iVar], pszVar, cchVar)
+                if (    !pIntEnv->pfnCompare(pIntEnv->papszEnv[iVar], pchVar, cchVar)
                     &&  (   pIntEnv->papszEnv[iVar][cchVar] == '='
                          || pIntEnv->papszEnv[iVar][cchVar] == '\0') )
                     break;
@@ -609,6 +579,18 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
             rc = VERR_NO_MEMORY;
     }
     return rc;
+}
+
+
+RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
+{
+    AssertPtrReturn(pszVar, VERR_INVALID_POINTER);
+    AssertReturn(*pszVar, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
+    size_t const cchVar = strlen(pszVar);
+    AssertReturn(memchr(pszVar, '=', cchVar) == NULL, VERR_ENV_INVALID_VAR_NAME);
+
+    return rtEnvSetExWorker(Env, pszVar, cchVar, pszValue);
 }
 RT_EXPORT_SYMBOL(RTEnvSetEx);
 
@@ -699,6 +681,20 @@ RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar)
 
 }
 RT_EXPORT_SYMBOL(RTEnvUnsetEx);
+
+
+RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
+{
+    int rc;
+    AssertPtrReturn(pszVarEqualValue, VERR_INVALID_POINTER);
+    const char *pszEq = strchr(pszVarEqualValue, '=');
+    if (!pszEq)
+        rc = RTEnvUnsetEx(Env, pszVarEqualValue);
+    else
+        rc = rtEnvSetExWorker(Env, pszVarEqualValue, pszEq - pszVarEqualValue, pszEq + 1);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTEnvPutEx);
 
 
 RTDECL(int) RTEnvGetEx(RTENV Env, const char *pszVar, char *pszValue, size_t cbValue, size_t *pcchActual)

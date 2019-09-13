@@ -211,7 +211,7 @@ RT_C_DECLS_BEGIN
 #define RTStrUtf8ToCurrentCP(ppszString, pszString)     RTStrUtf8ToCurrentCPTag((ppszString), (pszString), RTSTR_TAG)
 
 /**
- * Allocates tmp buffer with custom tag, translates pszString from UTF8 to
+ * Allocates tmp buffer with custom tag, translates pszString from UTF-8 to
  * current codepage.
  *
  * @returns iprt status code.
@@ -222,6 +222,37 @@ RT_C_DECLS_BEGIN
  * @param   pszTag          Allocation tag used for statistics and such.
  */
 RTR3DECL(int)  RTStrUtf8ToCurrentCPTag(char **ppszString, const char *pszString, const char *pszTag);
+
+/**
+ * Allocates tmp buffer with default tag, translates pszString from UTF-8 to
+ * current codepage, extended version.
+ *
+ * @returns iprt status code.
+ * @param   ppszString      Receives pointer of allocated native CP string.
+ *                          The returned pointer must be freed using RTStrFree().
+ * @param   pszString       UTF-8 string to convert.
+ * @param   cchString       The maximum size in chars (the type) to convert. The conversion stop
+ *                          when it reaches cchString or the string terminator ('\\0').
+ *                          Use RTSTR_MAX to translate the entire string.
+ */
+#define RTStrUtf8ToCurrentCPEx(ppszString, pszString, cchString) \
+    RTStrUtf8ToCurrentCPExTag((ppszString), (pszString), (cchString), RTSTR_TAG)
+
+/**
+ * Allocates tmp buffer with custom tag, translates pszString from UTF8 to
+ * current codepage.
+ *
+ * @returns iprt status code.
+ * @param   ppszString      Receives pointer of allocated native CP string.
+ *                          The returned pointer must be freed using
+ *                          RTStrFree()., const char *pszTag
+ * @param   pszString       UTF-8 string to convert.
+ * @param   cchString       The maximum size in chars (the type) to convert. The conversion stop
+ *                          when it reaches cchString or the string terminator ('\\0').
+ *                          Use RTSTR_MAX to translate the entire string.
+ * @param   pszTag          Allocation tag used for statistics and such.
+ */
+RTR3DECL(int)  RTStrUtf8ToCurrentCPExTag(char **ppszString, const char *pszString, size_t cchString, const char *pszTag);
 
 /**
  * Allocates tmp buffer, translates pszString from current codepage to UTF-8.

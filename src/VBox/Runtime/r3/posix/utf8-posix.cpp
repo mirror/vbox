@@ -489,6 +489,28 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCPTag(char **ppszString, const char *pszString,
 }
 
 
+RTR3DECL(int)  RTStrUtf8ToCurrentCPExTag(char **ppszString, const char *pszString, size_t cchString, const char *pszTag)
+{
+    Assert(ppszString);
+    Assert(pszString);
+    *ppszString = NULL;
+
+    /*
+     * Assume result string length is not longer than UTF-8 string.
+     */
+    cchString = RTStrNLen(pszString, cchString);
+    if (cchString < 1)
+    {
+        /* zero length string passed. */
+        *ppszString = (char *)RTMemTmpAllocZTag(sizeof(char), pszTag);
+        if (*ppszString)
+            return VINF_SUCCESS;
+        return VERR_NO_TMP_MEMORY;
+    }
+    return rtStrConvertWrapper(pszString, cchString, "UTF-8", ppszString, 0, "", 1, RTSTRICONV_UTF8_TO_LOCALE);
+}
+
+
 RTR3DECL(int)  RTStrCurrentCPToUtf8Tag(char **ppszString, const char *pszString, const char *pszTag)
 {
     Assert(ppszString);

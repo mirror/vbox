@@ -38,7 +38,14 @@
 #include <iprt/utf16.h>
 
 
+
 RTR3DECL(int)  RTStrUtf8ToCurrentCPTag(char **ppszString, const char *pszString, const char *pszTag)
+{
+    return RTStrUtf8ToCurrentCPExTag(ppszString, pszString, RTSTR_MAX, pszTag);
+}
+
+
+RTR3DECL(int)  RTStrUtf8ToCurrentCPExTag(char **ppszString, const char *pszString, size_t cchString, const char *pszTag)
 {
     Assert(ppszString);
     Assert(pszString);
@@ -46,7 +53,7 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCPTag(char **ppszString, const char *pszString,
     /*
      * Check for zero length input string.
      */
-    if (!*pszString)
+    if (cchString < 1 || !*pszString)
     {
         *ppszString = (char *)RTMemTmpAllocZTag(sizeof(char), pszTag);
         if (*ppszString)
@@ -60,7 +67,7 @@ RTR3DECL(int)  RTStrUtf8ToCurrentCPTag(char **ppszString, const char *pszString,
      * Convert to wide char first.
      */
     PRTUTF16 pwszString = NULL;
-    int rc = RTStrToUtf16(pszString, &pwszString);
+    int rc = RTStrToUtf16Ex(pszString, cchString, &pwszString, 0, NULL);
     if (RT_FAILURE(rc))
         return rc;
 
