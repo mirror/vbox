@@ -2499,9 +2499,18 @@
 
     <attribute name="APIRevision" type="long long" readonly="yes">
       <desc>
-        To be defined exactly, but we need something that the Validation Kit
-        can use to figure which methods and attributes can safely be used on a
-        continuously changing trunk (and occasional branch).
+        This is mainly intended for the VBox Validation Kit so it can fluently
+        deal with incompatible API changes and new functionality during
+        development (i.e. on trunk).
+
+        The high 7 bits (62:56) is the major version number, the next 8 bits
+        (55:48) are the minor version number, the next 8 bits (47:40) are the
+        build number, and the rest (39:0) is the API revision number.
+
+        The API revision number is manually increased on trunk when making
+        incompatible changes that the validation kit or others needs to be able
+        to detect and cope with dynamically.  It can also be used to indicate
+        the presence of new features on both trunk and branches.
       </desc>
     </attribute>
 
