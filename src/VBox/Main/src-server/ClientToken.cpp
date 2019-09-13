@@ -127,7 +127,7 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine,
     else
         AssertMsgFailed(("Cannot get thread access token, err=%u", ::GetLastError()));
 
-    Bstr tokenId = Bstr(Utf8Str("Global\\") + strUserSid + "/" + pMachine->mData->mUuid.toString());
+    BstrFmt tokenId("Global\\VBoxSession-%s-VM-%RTuuid", strUserSid.c_str(), pMachine->mData->mUuid.raw());
 
     /* create security descriptor to allow SYNCHRONIZE access from any windows sessions and users.
      * otherwise VM can't open the mutex if VBoxSVC and VM are in different session (e.g. some VM
@@ -141,7 +141,12 @@ Machine::ClientToken::ClientToken(const ComObjPtr<Machine> &pMachine,
      */
 
     //static const RTUTF16 s_wszSecDesc[] = L"D:(A;;0x1F0001;;;CO)(A;;0x1F0001;;;SY)(A;;0x1F0001;;;BA)(A;;0x100001;;;WD)";
-    com::BstrFmt bstrSecDesc("O:%sD:(A;;0x1F0001;;;CO)(A;;0x1F0001;;;SY)(A;;0x1F0001;;;BA)", strUserSid.c_str());
+    com::BstrFmt bstrSecDesc("D:(A;;0x1F0001;;;CO)"
+                             "(A;;0x1F0001;;;SY)"
+                             "(A;;0x1F0001;;;BA)"
+                             "(A;;0x1F0001;;;BA)"
+                             "(A;;0x1F0001;;;%s)"
+                             , strUserSid.c_str());
     PSECURITY_DESCRIPTOR pSecDesc = NULL;
     //AssertMsgStmt(::ConvertStringSecurityDescriptorToSecurityDescriptor(s_wszSecDesc, SDDL_REVISION_1, &pSecDesc, NULL),
     AssertMsgStmt(::ConvertStringSecurityDescriptorToSecurityDescriptor(bstrSecDesc.raw(), SDDL_REVISION_1, &pSecDesc, NULL),
