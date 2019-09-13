@@ -160,8 +160,11 @@ public:
     int  fontSize() const;
     const QStringList &textList() const;
 
-    bool withPieChart() const;
-    void setWithPieChart(bool fWithPieChart);
+    bool isPieChartAllowed() const;
+    void setIsPieChartAllowed(bool fWithPieChart);
+
+    bool drawPieChart() const;
+    void setDrawPieChart(bool fDrawPieChart);
 
     bool useGradientLineColor() const;
     void setUseGradientLineColor(bool fUseGradintLineColor);
@@ -183,6 +186,7 @@ private slots:
 
     void sltCreateContextMenu(const QPoint &point);
     void sltResetMetric();
+    void sltSetDrawPieChart(bool fDrawPieChart);
 
 private:
 
@@ -216,12 +220,17 @@ private:
     QRect m_lineChartRect;
     int m_iPieChartRadius;
     int m_iPieChartSpacing;
-    bool m_fWithPieChart;
+    /** For some chart it is not possible to have a pie chart, Then We dont present the
+      * option to show it to user. see m_fIsPieChartAllowed. */
+    bool m_fIsPieChartAllowed;
+    /**  m_fDrawPieChart is considered only if m_fIsPieChartAllowed is true. */
+    bool m_fDrawPieChart;
     bool m_fUseGradientLineColor;
     QColor m_dataSeriesColor[DATA_SERIES_SIZE];
     QString m_strXAxisLabel;
     QString m_strGAWarning;
     QString m_strResetActionLabel;
+    QString m_strPieChartToggleActionLabel;
 };
 
 /*********************************************************************************************************************************
@@ -523,7 +532,8 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_pMetric(pMetric)
     , m_size(QSize(50, 50))
     , m_iOverlayAlpha(80)
-    , m_fWithPieChart(false)
+    , m_fIsPieChartAllowed(false)
+    , m_fDrawPieChart(true)
     , m_fUseGradientLineColor(false)
 {
     setContextMenuPolicy(Qt::CustomContextMenu);
@@ -556,16 +566,29 @@ int UIChart::fontSize() const
     return m_font.pixelSize();
 }
 
-bool UIChart::withPieChart() const
+bool UIChart::isPieChartAllowed() const
 {
-    return m_fWithPieChart;
+    return m_fIsPieChartAllowed;
 }
 
-void UIChart::setWithPieChart(bool fWithPieChart)
+void UIChart::setIsPieChartAllowed(bool fWithPieChart)
 {
-    if (m_fWithPieChart == fWithPieChart)
+    if (m_fIsPieChartAllowed == fWithPieChart)
         return;
-    m_fWithPieChart = fWithPieChart;
+    m_fIsPieChartAllowed = fWithPieChart;
+    update();
+}
+
+bool UIChart::drawPieChart() const
+{
+    return m_fDrawPieChart;
+}
+
+void UIChart::setDrawPieChart(bool fDrawChart)
+{
+    if (m_fDrawPieChart == fDrawChart)
+        return;
+    m_fDrawPieChart = fDrawChart;
     update();
 }
 
@@ -624,6 +647,7 @@ void UIChart::retranslateUi()
 {
     m_strGAWarning = QApplication::translate("UIVMInformationDialog", "No guest additions! This metric requires guest additions to work properly.");
     m_strResetActionLabel = QApplication::translate("UIVMInformationDialog", "Reset");
+    m_strPieChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Show Pie Chart");
 }
 
 void UIChart::paintEvent(QPaintEvent *pEvent)
@@ -667,7 +691,6 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
     /* Draw XAxis tick labels: */
     painter.setPen(mainAxisColor);
     drawXAxisLabels(painter, iXSubAxisCount);
-
 
     /* Draw a half-transparent rectangle over the whole widget to indicate the it is disabled: */
     if (!isEnabled())
@@ -730,7 +753,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
-    if (m_fWithPieChart)
+    if (m_fIsPieChartAllowed && m_fDrawPieChart)
         drawCombinedPieCharts(painter, iMaximum);
 }
 
@@ -852,11 +875,6 @@ QPainterPath UIChart::wholeArc(const QRectF &rectangle)
 {
     QPainterPath arc;
     QPointF center(rectangle.center());
-
-    // arc.moveTo(center);
-    // arc.arcTo(rectangle, 90/*startAngle*/,
-    //                -1 * 360 /*sweepLength*/);
-
     arc.addEllipse(rectangle);
     return arc;
 }
@@ -937,6 +955,13 @@ void UIChart::sltCreateContextMenu(const QPoint &point)
     QMenu menu;
     QAction *pResetAction = menu.addAction(m_strResetActionLabel);
     connect(pResetAction, &QAction::triggered, this, &UIChart::sltResetMetric);
+    if (m_fIsPieChartAllowed)
+    {
+        QAction *pPieChartToggle = menu.addAction(m_strPieChartToggleActionLabel);
+        pPieChartToggle->setCheckable(true);
+        pPieChartToggle->setChecked(m_fDrawPieChart);
+        connect(pPieChartToggle, &QAction::toggled, this, &UIChart::sltSetDrawPieChart);
+    }
     menu.exec(mapToGlobal(point));
 }
 
@@ -944,6 +969,11 @@ void UIChart::sltResetMetric()
 {
     if (m_pMetric)
         m_pMetric->reset();
+}
+
+void UIChart::sltSetDrawPieChart(bool fDrawPieChart)
+{
+    setDrawPieChart(fDrawPieChart);
 }
 
 /*********************************************************************************************************************************
@@ -1256,7 +1286,7 @@ void UIInformationRuntime::prepareObjects()
 
     /* Configure charts: */
     if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
-        m_charts[m_strCPUMetricName]->setWithPieChart(true);
+        m_charts[m_strCPUMetricName]->setIsPieChartAllowed(true);
 
     m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
     pContainerLayout->addWidget(m_pRuntimeInfoWidget, iRow, 0, 2, 2);
