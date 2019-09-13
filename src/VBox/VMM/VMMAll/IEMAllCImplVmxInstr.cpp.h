@@ -6261,19 +6261,39 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPUCC pVCpu, const char *pszInstr)
     /* I/O bitmaps physical addresses. */
     if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS)
     {
-        if (   !(pVmcs->u64AddrIoBitmapA.u & X86_PAGE_4K_OFFSET_MASK)
-            && !(pVmcs->u64AddrIoBitmapA.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrIoBitmapA.u))
+        RTGCPHYS const GCPhysIoBitmapA = pVmcs->u64AddrIoBitmapA.u;
+        if (   !(GCPhysIoBitmapA & X86_PAGE_4K_OFFSET_MASK)
+            && !(GCPhysIoBitmapA >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysIoBitmapA))
         { /* likely */ }
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrIoBitmapA);
 
-        if (   !(pVmcs->u64AddrIoBitmapB.u & X86_PAGE_4K_OFFSET_MASK)
-            && !(pVmcs->u64AddrIoBitmapB.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrIoBitmapB.u))
+        RTGCPHYS const GCPhysIoBitmapB = pVmcs->u64AddrIoBitmapB.u;
+        if (   !(GCPhysIoBitmapB & X86_PAGE_4K_OFFSET_MASK)
+            && !(GCPhysIoBitmapB >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysIoBitmapB))
         { /* likely */ }
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrIoBitmapB);
+
+        /* Read the IO bitmaps. */
+        /** @todo NSTVMX: Move this to be done later (while loading guest state) when
+         *        implementing fast path. */
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap));
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap),
+                                         GCPhysIoBitmapA, VMX_V_IO_BITMAP_A_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapAPtrReadPhys);
+
+        uint8_t *pbIoBitmapB = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
+        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pbIoBitmapB, GCPhysIoBitmapB, VMX_V_IO_BITMAP_B_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapBPtrReadPhys);
     }
 
     /* MSR bitmap physical address. */
