@@ -1,7 +1,7 @@
 @echo off
 rem $Id$
 rem rem @file
-rem Windows NT batch script for repacking signed amd64 and x86 drivers.
+rem Windows NT batch script for repacking signed amd64 or x86 drivers.
 rem
 
 rem
@@ -38,8 +38,7 @@ set _MY_OPT_EXTPACK=%_MY_OPT_UNTAR_DIR%\Oracle_VM_VirtualBox_Extension_Pack-%_MY
 set _MY_OPT_EXTPACK_ENTERPRISE=%_MY_OPT_UNTAR_DIR%\Oracle_VM_VirtualBox_Extension_Pack-%_MY_VER_REV%-ENTERPRISE.vbox-extpack
 set _MY_OPT_BUILD_TYPE=@KBUILD_TYPE@
 set _MY_OPT_OUTDIR=%_MY_OPT_UNTAR_DIR%\output
-set _MY_OPT_SIGNED_AMD64=
-set _MY_OPT_SIGNED_X86=
+set _MY_OPT_SIGNED=
 
 :argument_loop
 if ".%1" == "."             goto no_more_arguments
@@ -58,8 +57,7 @@ if ".%1" == ".-o"                   goto opt_o
 if ".%1" == ".--outdir"             goto opt_o
 if ".%1" == ".-s"                   goto opt_s
 if ".%1" == ".--extpack-enterprise" goto opt_s
-if ".%1" == ".--signed-amd64"       goto opt_signed_amd64
-if ".%1" == ".--signed-x86"         goto opt_signed_x86
+if ".%1" == ".--signed"             goto opt_signed
 if ".%1" == ".-t"                   goto opt_t
 if ".%1" == ".--build-type"         goto opt_t
 if ".%1" == ".-u"                   goto opt_u
@@ -84,8 +82,7 @@ echo .
 echo Usage: Combined-3-Repack.cmd [-o output-dir] [-e/--extpack puel.vbox-extpack]
 echo            [-s/--extpack-enterprise puel-enterprise.vbox-extpack]
 echo            [-u/--vboxall-dir unpacked-vboxall-dir] [-t build-type]
-echo            [--signed-amd64 signed-amd64.zip]
-echo            [--signed-x86 signed-x86.zip]
+echo            [--signed signed.zip]
 echo
 echo .
 echo Default -e/--extpack value:            %_MY_OPT_EXTPACK%
@@ -106,14 +103,9 @@ if ".%~2" == "."            goto syntax_error_missing_value
 set _MY_OPT_EXTPACK_ENTERPRISE=%~f2
 goto argument_loop_next_with_value
 
-:opt_signed_amd64
+:opt_signed
 if ".%~2" == "."            goto syntax_error_missing_value
-set _MY_OPT_SIGNED_AMD64=%~f2
-goto argument_loop_next_with_value
-
-:opt_signed_x86
-if ".%~2" == "."            goto syntax_error_missing_value
-set _MY_OPT_SIGNED_X86=%~f2
+set _MY_OPT_SIGNED=%~f2
 goto argument_loop_next_with_value
 
 :opt_t
@@ -136,20 +128,12 @@ goto end_failed
 echo syntax error: The VBoxAll untar directory was not found: "%_MY_OPT_UNTAR_DIR%"
 goto end_failed
 
-:error_amd64_bindir_not_found
-echo syntax error: The AMD64 bin directory was not found: "%_MY_BINDIR_AMD64%"
+:error_bindir_not_found
+echo syntax error: The bin directory was not found: "%_MY_BINDIR%"
 goto end_failed
 
-:error_x86_bindir_not_found
-echo syntax error: The X86 bin directory was not found: "%_MY_BINDIR_X86%"
-goto end_failed
-
-:error_amd64_repack_dir_not_found
-echo syntax error: The AMD64 repack directory was not found: "%_MY_REPACK_DIR_AMD64%"
-goto end_failed
-
-:error_x86_repack_dir_not_found
-echo syntax error: The X86 repack directory was not found: "%_MY_REPACK_DIR_X86%"
+:error_repack_dir_not_found
+echo syntax error: The repack directory was not found: "%_MY_REPACK_DIR%"
 goto end_failed
 
 :error_extpack_not_found
@@ -160,12 +144,8 @@ goto end_failed
 echo syntax error: Specified enterprise extension pack not found: "%_MY_OPT_EXTPACK_ENTERPRISE%"
 goto end_failed
 
-:error_signed_amd64_not_found
-echo syntax error: Zip with signed AMD64 drivers not found: "%_MY_OPT_SIGNED_AMD64%"
-goto end_failed
-
-:error_signed_x86_not_found
-echo syntax error: Zip with signed X86 drivers not found: "%_MY_OPT_SIGNED_X86%"
+:error_signed_not_found
+echo syntax error: Zip with signed drivers not found: "%_MY_OPT_SIGNED%"
 goto end_failed
 
 
@@ -176,93 +156,53 @@ rem
 
 if not exist "%_MY_OPT_UNTAR_DIR%"      goto error_vboxall_untar_dir_not_found
 
-set _MY_BINDIR_AMD64=%_MY_OPT_UNTAR_DIR%\win.amd64\%_MY_OPT_BUILD_TYPE%\bin
-set _MY_BINDIR_X86=%_MY_OPT_UNTAR_DIR%\win.x86\%_MY_OPT_BUILD_TYPE%\bin
-if not exist "%_MY_BINDIR_AMD64%"       goto error_amd64_bindir_not_found
-if not exist "%_MY_BINDIR_X86%"         goto error_x86_bindir_not_found
+set _MY_BINDIR=%_MY_OPT_UNTAR_DIR%\bin
+if not exist "%_MY_BINDIR%"             goto error_bindir_not_found
 
-set _MY_REPACK_DIR_AMD64=%_MY_OPT_UNTAR_DIR%\win.amd64\%_MY_OPT_BUILD_TYPE%\repack
-set _MY_REPACK_DIR_X86=%_MY_OPT_UNTAR_DIR%\win.x86\%_MY_OPT_BUILD_TYPE%\repack
-if not exist "%_MY_REPACK_DIR_AMD64%"   goto error_amd64_repack_dir_not_found
-if not exist "%_MY_REPACK_DIR_X86%"     goto error_x86_repack_dir_not_found
+set _MY_REPACK_DIR=%_MY_OPT_UNTAR_DIR%\repack
+if not exist "%_MY_REPACK_DIR%"         goto error_repack_dir_not_found
 
 if not exist "%_MY_OPT_EXTPACK%"        goto error_extpack_not_found
 if not ".%_MY_OPT_EXTPACK_ENTERPRISE%" == "." if not exist "%_MY_OPT_EXTPACK_ENTERPRISE%" goto error_enterprise_extpack_not_found
 
-if not exist "%_MY_OPT_SIGNED_AMD64%"   goto error_signed_amd64_not_found
-if not exist "%_MY_OPT_SIGNED_X86%"     goto error_signed_x86_not_found
+if not exist "%_MY_OPT_SIGNED%"         goto error_signed_not_found
 
 rem Make sure the output dir exists.
 if not exist "%_MY_OPT_OUTDIR%"     (mkdir "%_MY_OPT_OUTDIR%" || goto end_failed)
 
 rem
-rem Unpacking the two driver zips.
+rem Unpacking the driver zip.
 rem
 echo **************************************************************************
-echo * AMD64: Unpacking signed drivers...
+echo * Unpacking signed drivers...
 echo **************************************************************************
-cd /d "%_MY_REPACK_DIR_AMD64%" || goto end_failed
-call "%_MY_REPACK_DIR_AMD64%\UnpackBlessedDrivers.cmd" -b "%_MY_BINDIR_AMD64%" -i "%_MY_OPT_SIGNED_AMD64%" || goto end_failed
-echo .
-
-echo **************************************************************************
-echo * X86: Unpacking signed drivers...
-echo **************************************************************************
-cd /d "%_MY_REPACK_DIR_X86%" || goto end_failed
-call "%_MY_REPACK_DIR_X86%\UnpackBlessedDrivers.cmd" -b "%_MY_BINDIR_X86%" -i "%_MY_OPT_SIGNED_X86%" || goto end_failed
+cd /d "%_MY_REPACK_DIR%" || goto end_failed
+call "%_MY_REPACK_DIR%\UnpackBlessedDrivers.cmd" -b "%_MY_BINDIR%" -i "%_MY_OPT_SIGNED%" || goto end_failed
 echo .
 
 
 rem
-rem Do the AMD64 work.
+rem Do the work.
 rem
 echo **************************************************************************
-echo * AMD64: Repackaging installers
+echo * Repackaging installers
 echo **************************************************************************
-echo * AMD64: Compiling WIX...
-cd /d "%_MY_REPACK_DIR_AMD64%" || goto end_failed
+echo * Compiling WIX...
+cd /d "%_MY_REPACK_DIR%" || goto end_failed
 for %%i in (1-*.cmd) do (call %%i || goto end_failed)
 echo .
 
-echo * AMD64: Linking WIX...
+echo * Linking WIX...
 for %%i in (2-*.cmd) do (call %%i || goto end_failed)
 echo .
 
-echo * AMD64: Applying language patches to MSI...
+echo * Applying language patches to MSI...
 for %%i in (3-*.cmd) do (call %%i || goto end_failed)
 echo .
 
-
-rem
-rem Do the X86 work.
-rem
-echo **************************************************************************
-echo * X86: Repackaging installers
-echo **************************************************************************
-echo * X86: Compiling WIX...
-cd /d "%_MY_REPACK_DIR_X86%" || goto end_failed
-for %%i in (1-*.cmd) do (call %%i || goto end_failed)
-echo .
-
-echo * X86: Linking WIX...
-for %%i in (2-*.cmd) do (call %%i || goto end_failed)
-echo .
-
-echo * X86: Applying language patches to MSI...
-for %%i in (3-*.cmd) do (call %%i || goto end_failed)
-echo .
-
-echo * X86: Creating multi arch installer...
-for %%i in (4-*.cmd) do (call %%i || goto end_failed)
-echo .
 
 set _MY_OUT_FILES=
-cd /d "%_MY_REPACK_DIR_AMD64%" || goto end_failed
-for %%i in (VBoxMerge*msm) do (
-    copy /y "%%i" "%_MY_OPT_OUTDIR%" || goto end_failed
-    call set _MY_OUT_FILES=%%_MY_OUT_FILES%% %%~nxi
-)
-cd /d "%_MY_REPACK_DIR_X86%" || goto end_failed
+cd /d "%_MY_REPACK_DIR%" || goto end_failed
 for %%i in (VBoxMerge*msm) do (
     copy /y "%%i" "%_MY_OPT_OUTDIR%" || goto end_failed
     call set _MY_OUT_FILES=%%_MY_OUT_FILES%% %%~nxi
@@ -279,7 +219,7 @@ rem
 echo **************************************************************************
 echo * Repacking extension packs.
 echo **************************************************************************
-cd /d "%_MY_REPACK_DIR_X86%" || goto end_failed
+cd /d "%_MY_REPACK_DIR%" || goto end_failed
 
 echo * Regular PUEL...
 set _MY_TMP_OUT=%_MY_OPT_EXTPACK%
@@ -287,7 +227,7 @@ for %%i in (%_MY_TMP_OUT%) do (
     set _MY_TMP_OUT=%_MY_OPT_OUTDIR%\%%~nxi
     call set _MY_OUT_FILES=%%_MY_OUT_FILES%% %%~nxi
 )
-call "%_MY_REPACK_DIR_X86%\RepackExtPack.cmd" --bindir-amd64 "%_MY_BINDIR_AMD64%" --bindir-x86 "%_MY_BINDIR_X86%" ^
+call "%_MY_REPACK_DIR%\RepackExtPack.cmd" --bindir-amd64 "%_MY_BINDIR%" --bindir-x86 "%_MY_BINDIR%" ^
     --input "%_MY_OPT_EXTPACK%" --output "%_MY_TMP_OUT%" || goto end_failed
 
 if ".%_MY_OPT_EXTPACK_ENTERPRISE%" == "." goto no_enterprise_repacking
@@ -297,7 +237,7 @@ for %%i in (%_MY_TMP_OUT%) do (
     set _MY_TMP_OUT=%_MY_OPT_OUTDIR%\%%~nxi
     call set _MY_OUT_FILES=%%_MY_OUT_FILES%% %%~nxi
 )
-call "%_MY_REPACK_DIR_X86%\RepackExtPack.cmd" --bindir-amd64 "%_MY_BINDIR_AMD64%" --bindir-x86 "%_MY_BINDIR_X86%" ^
+call "%_MY_REPACK_DIR%\RepackExtPack.cmd" --bindir-amd64 "%_MY_BINDIR%" --bindir-x86 "%_MY_BINDIR%" ^
     --input "%_MY_OPT_EXTPACK_ENTERPRISE%" --output "%_MY_TMP_OUT%" || goto end_failed
 :no_enterprise_repacking
 @cd /d "%_MY_SAVED_CD%"

@@ -1,7 +1,7 @@
 @echo off
 rem $Id$
 rem rem @file
-rem Windows NT batch script for preparing both amd64 and x86 for signing submission.
+rem Windows NT batch script for preparing single build (either amd64 and x86) for signing submission.
 rem
 
 rem
@@ -38,6 +38,7 @@ set _MY_OPT_EXTPACK=%_MY_OPT_UNTAR_DIR%\Oracle_VM_VirtualBox_Extension_Pack-%_MY
 set _MY_OPT_EXTPACK_ENTERPRISE=%_MY_OPT_UNTAR_DIR%\Oracle_VM_VirtualBox_Extension_Pack-%_MY_VER_REV%-ENTERPRISE.vbox-extpack
 set _MY_OPT_BUILD_TYPE=@KBUILD_TYPE@
 set _MY_OPT_OUTDIR=%_MY_OPT_UNTAR_DIR%\output
+set _MY_OPT_ARCH=@KBUILD_TARGET_ARCH@
 
 :argument_loop
 if ".%1" == "."             goto no_more_arguments
@@ -50,6 +51,8 @@ if ".%1" == "./?"           goto opt_h
 if ".%1" == ".-help"        goto opt_h
 if ".%1" == ".--help"       goto opt_h
 
+if ".%1" == ".-a"                   goto opt_a
+if ".%1" == ".--arch"               goto opt_a
 if ".%1" == ".-e"                   goto opt_e
 if ".%1" == ".--extpack"            goto opt_e
 if ".%1" == ".-o"                   goto opt_o
@@ -69,18 +72,26 @@ shift
 shift
 goto argument_loop
 
+:opt_a
+if ".%~2" == "."            goto syntax_error_missing_value
+if not "%2" == "x86" if not "%2" == "amd64" goto syntax_error_unknown_arch
+set _MY_OPT_ARCH=%~2
+goto argument_loop_next_with_value
+
 :opt_e
 if ".%~2" == "."            goto syntax_error_missing_value
 set _MY_OPT_EXTPACK=%~f2
 goto argument_loop_next_with_value
 
 :opt_h
-echo Toplevel combined package: Prepare both x86 and amd64 for submission.
+echo Toplevel single package: Prepare either x86 and amd64 for submission.
 echo .
-echo Usage: Combined-1-Prepare.cmd [-o output-dir] [-e/--extpack puel.vbox-extpack]
+echo Usage: Single-1-Prepare.cmd [-o output-dir] [-e/--extpack puel.vbox-extpack]
 echo            [-s/--extpack-enterprise puel-enterprise.vbox-extpack]
 echo            [-u/--vboxall-dir unpacked-vboxall-dir] [-t build-type]
+echo            [-a x86/amd64]
 echo .
+echo Default -a/--arch value:               %_MY_OPT_ARCH%
 echo Default -e/--extpack value:            %_MY_OPT_EXTPACK%
 echo Default -s/--extpack-enterprise value: %_MY_OPT_EXTPACK_ENTERPRISE%
 echo Default -u/--vboxall-untar-dir value:  %_MY_OPT_UNTAR_DIR%
@@ -114,25 +125,21 @@ goto argument_loop_next_with_value
 echo syntax error: missing or empty option value after %1
 goto end_failed
 
+:syntax_error_unknown_arch
+echo syntax error: Unknown architecture: %2
+goto end_failed
+
 
 :error_vboxall_untar_dir_not_found
 echo syntax error: The VBoxAll untar directory was not found: "%_MY_OPT_UNTAR_DIR%"
 goto end_failed
 
-:error_amd64_bindir_not_found
-echo syntax error: The AMD64 bin directory was not found: "%_MY_BINDIR_AMD64%"
+:error_bindir_not_found
+echo syntax error: The bin directory was not found: "%_MY_BINDIR%"
 goto end_failed
 
-:error_x86_bindir_not_found
-echo syntax error: The X86 bin directory was not found: "%_MY_BINDIR_X86%"
-goto end_failed
-
-:error_amd64_repack_dir_not_found
-echo syntax error: The AMD64 repack directory was not found: "%_MY_REPACK_DIR_AMD64%"
-goto end_failed
-
-:error_x86_repack_dir_not_found
-echo syntax error: The X86 repack directory was not found: "%_MY_REPACK_DIR_X86%"
+:error_repack_dir_not_found
+echo syntax error: The repack directory was not found: "%_MY_REPACK_DIR%"
 goto end_failed
 
 :error_extpack_not_found
@@ -152,15 +159,11 @@ rem
 
 if not exist "%_MY_OPT_UNTAR_DIR%"      goto error_vboxall_untar_dir_not_found
 
-set _MY_BINDIR_AMD64=%_MY_OPT_UNTAR_DIR%\win.amd64\%_MY_OPT_BUILD_TYPE%\bin
-set _MY_BINDIR_X86=%_MY_OPT_UNTAR_DIR%\win.x86\%_MY_OPT_BUILD_TYPE%\bin
-if not exist "%_MY_BINDIR_AMD64%"       goto error_amd64_bindir_not_found
-if not exist "%_MY_BINDIR_X86%"         goto error_x86_bindir_not_found
+set _MY_BINDIR=%_MY_OPT_UNTAR_DIR%\bin
+if not exist "%_MY_BINDIR%"             goto error_bindir_not_found
 
-set _MY_REPACK_DIR_AMD64=%_MY_OPT_UNTAR_DIR%\win.amd64\%_MY_OPT_BUILD_TYPE%\repack
-set _MY_REPACK_DIR_X86=%_MY_OPT_UNTAR_DIR%\win.x86\%_MY_OPT_BUILD_TYPE%\repack
-if not exist "%_MY_REPACK_DIR_AMD64%"   goto error_amd64_repack_dir_not_found
-if not exist "%_MY_REPACK_DIR_X86%"     goto error_x86_repack_dir_not_found
+set _MY_REPACK_DIR=%_MY_OPT_UNTAR_DIR%\repack
+if not exist "%_MY_REPACK_DIR%"         goto error_repack_dir_not_found
 
 if not exist "%_MY_OPT_EXTPACK%"        goto error_extpack_not_found
 if not ".%_MY_OPT_EXTPACK_ENTERPRISE%" == "." if not exist "%_MY_OPT_EXTPACK_ENTERPRISE%" goto error_enterprise_extpack_not_found
@@ -174,35 +177,27 @@ rem Install the extpack in the bin directories.
 rem Note! Not really necessary, but whatever.
 rem
 echo on
-copy /y "%_MY_OPT_EXTPACK%" "%_MY_BINDIR_AMD64%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack" || goto end_failed
-copy /y "%_MY_OPT_EXTPACK%"   "%_MY_BINDIR_X86%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack" || goto end_failed
+copy /y "%_MY_OPT_EXTPACK%" "%_MY_BINDIR%\Oracle_VM_VirtualBox_Extension_Pack.vbox-extpack" || goto end_failed
 @echo off
 
 rem
 rem Do the packing.
 rem
 echo **************************************************************************
-echo Packing AMD64 drivers
+echo Packing drivers
 echo **************************************************************************
-cd /d "%_MY_REPACK_DIR_AMD64%" || goto end_failed
-call "%_MY_REPACK_DIR_AMD64%\PackDriversForSubmission.cmd" -b "%_MY_BINDIR_AMD64%" -a amd64 -e "%_MY_OPT_EXTPACK%" ^
-    -o "%_MY_OPT_OUTDIR%\VBoxDrivers-%_MY_VER_REV%-amd64.cab" || goto end_failed
-echo .
-echo **************************************************************************
-echo Packing X86 drivers
-echo **************************************************************************
-cd /d "%_MY_REPACK_DIR_X86%" || goto end_failed
-call "%_MY_REPACK_DIR_X86%\PackDriversForSubmission.cmd" -b "%_MY_BINDIR_X86%" -a x86 -e "%_MY_OPT_EXTPACK%" ^
-    -o "%_MY_OPT_OUTDIR%\VBoxDrivers-%_MY_VER_REV%-x86.cab" || goto end_failed
+cd /d "%_MY_REPACK_DIR%" || goto end_failed
+call "%_MY_REPACK_DIR%\PackDriversForSubmission.cmd" -b "%_MY_BINDIR%" -a "%_MY_OPT_ARCH%" -e "%_MY_OPT_EXTPACK%" ^
+    -o "%_MY_OPT_OUTDIR%\VBoxDrivers-%_MY_VER_REV%-%_MY_OPT_ARCH%.cab" || goto end_failed
 echo .
 cd /d "%_MY_SAVED_CD%"
 
 rem
 rem Generate script for taking the next step.
 rem
-set _MY_NEXT_SCRIPT=%_MY_OPT_OUTDIR%\Combined-3-Repack.cmd
+set _MY_NEXT_SCRIPT=%_MY_OPT_OUTDIR%\Single-3-Repack.cmd
 echo cd /d "%cd%" > "%_MY_NEXT_SCRIPT%"
-echo call "%_MY_SCRIPT_DIR%\Combined-3-Repack.cmd" --extpack "%_MY_OPT_EXTPACK%" ^
+echo call "%_MY_SCRIPT_DIR%\Single-3-Repack.cmd" --extpack "%_MY_OPT_EXTPACK%" ^
     --extpack-enterprise "%_MY_OPT_EXTPACK_ENTERPRISE%" ^
     --vboxall-untar-dir "%_MY_OPT_UNTAR_DIR%" ^
     --outdir "%_MY_OPT_OUTDIR%" ^
@@ -215,13 +210,12 @@ echo **************************************************************************
 echo * First step is done.
 echo *
 echo * Created:
-echo *     %_MY_OPT_OUTDIR%\VBoxDrivers-%_MY_VER_REV%-amd64.cab
-echo *     %_MY_OPT_OUTDIR%\VBoxDrivers-%_MY_VER_REV%-x86.cab
+echo *     %_MY_OPT_OUTDIR%\VBoxDrivers-%_MY_VER_REV%-%_MY_OPT_ARCH%.cab
 echo *
 echo * Next steps:
 echo *   1. Submit the files to Microsoft for attestation signing.
 echo *   2. Download the signed result.
-echo *   3. "%_MY_NEXT_SCRIPT%" --signed-x86 {zip} --signed-amd64 {zip}
+echo *   3. "%_MY_NEXT_SCRIPT%" --signed {zip}
 
 goto end
 
