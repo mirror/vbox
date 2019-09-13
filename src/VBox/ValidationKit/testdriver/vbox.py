@@ -2805,12 +2805,12 @@ class TestDriver(base.TestDriver):                                              
                     else:
                         oSession = self.oVBoxMgr.getSessionObject();           # pylint: disable=no-member,no-value-for-parameter
                     if self.fpApiVer < 3.3:
-                        oProgress = self.oVBox.openRemoteSession(oSession, sUuid, sType, '\n'.join(asEnv));
+                        oProgress = self.oVBox.openRemoteSession(oSession, sUuid, sType, '\n'.join(asEnvFinal));
                     else:
                         if self.uApiRevision >= self.makeApiRevision(6, 0, 97, 1):
                             oProgress = oVM.launchVMProcess(oSession, sType, asEnvFinal);
                         else:
-                            oProgress = oVM.launchVMProcess(oSession, sType, '\n'.join(asEnv));
+                            oProgress = oVM.launchVMProcess(oSession, sType, '\n'.join(asEnvFinal));
                     break;
                 except:
                     if i == 9:
