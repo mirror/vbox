@@ -4253,6 +4253,8 @@ typedef enum
     kVmxVDiag_Vmentry_HostSegBase,
     kVmxVDiag_Vmentry_HostSs,
     kVmxVDiag_Vmentry_HostSysenterEspEip,
+    kVmxVDiag_Vmentry_IoBitmapAPtrReadPhys,
+    kVmxVDiag_Vmentry_IoBitmapBPtrReadPhys,
     kVmxVDiag_Vmentry_LongModeCS,
     kVmxVDiag_Vmentry_MsrBitmapPtrReadPhys,
     kVmxVDiag_Vmentry_MsrLoad,
