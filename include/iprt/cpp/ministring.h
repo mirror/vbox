@@ -439,7 +439,7 @@ public:
      * @param   ...             Ellipsis containing the arguments specified by
      *                          the format string.
      *
-     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @throws  std::bad_alloc  On allocation error.  Object state is undefined.
      *
      * @returns Reference to the object.
      */
@@ -465,7 +465,7 @@ public:
      * @param   va              Argument vector containing the arguments
      *                          specified by the format string.
      *
-     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @throws  std::bad_alloc  On allocation error.  Object state is undefined.
      *
      * @returns Reference to the object.
      */
@@ -601,7 +601,7 @@ public:
      * @param   ...             Ellipsis containing the arguments specified by
      *                          the format string.
      *
-     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @throws  std::bad_alloc  On allocation error.  Object state is undefined.
      *
      * @returns Reference to the object.
      */
@@ -627,7 +627,7 @@ public:
      * @param   va              Argument vector containing the arguments
      *                          specified by the format string.
      *
-     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @throws  std::bad_alloc  On allocation error.  Object state is undefined.
      *
      * @returns Reference to the object.
      */
