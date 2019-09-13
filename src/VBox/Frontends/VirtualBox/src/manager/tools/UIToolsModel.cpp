@@ -255,10 +255,10 @@ void UIToolsModel::setFocusItem(UIToolsItem *pItem)
 
     /* Disconnect old focus-item (if any): */
     if (pOldFocusItem)
-        disconnect(pOldFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
+        disconnect(pOldFocusItem, &UIToolsItem::destroyed, this, &UIToolsModel::sltFocusItemDestroyed);
     /* Connect new focus-item (if any): */
     if (m_pFocusItem)
-        connect(m_pFocusItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltFocusItemDestroyed()));
+        connect(m_pFocusItem.data(), &UIToolsItem::destroyed, this, &UIToolsModel::sltFocusItemDestroyed);
 
     /* Notify about focus change: */
     emit sigFocusChanged();
@@ -495,12 +495,12 @@ void UIToolsModel::prepareHandlers()
 void UIToolsModel::prepareConnections()
 {
     /* Setup parent connections: */
-    connect(this, SIGNAL(sigSelectionChanged()),
-            parent(), SIGNAL(sigSelectionChanged()));
-    connect(this, SIGNAL(sigExpandingStarted()),
-            parent(), SIGNAL(sigExpandingStarted()));
-    connect(this, SIGNAL(sigExpandingFinished()),
-            parent(), SIGNAL(sigExpandingFinished()));
+    connect(this, &UIToolsModel::sigSelectionChanged,
+        qobject_cast<UITools*>(parent()), &UITools::sigSelectionChanged);
+    connect(this, &UIToolsModel::sigExpandingStarted,
+            qobject_cast<UITools*>(parent()), &UITools::sigExpandingStarted);
+    connect(this, &UIToolsModel::sigExpandingFinished,
+            qobject_cast<UITools*>(parent()), &UITools::sigExpandingFinished);
 }
 
 void UIToolsModel::loadLastSelectedItems()

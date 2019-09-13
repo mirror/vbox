@@ -405,10 +405,10 @@ void UIChooserModel::setCurrentItem(UIChooserItem *pItem)
 
     /* Disconnect old current-item (if any): */
     if (pOldCurrentItem)
-        disconnect(pOldCurrentItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltCurrentItemDestroyed()));
+        disconnect(pOldCurrentItem, &UIChooserItem::destroyed, this, &UIChooserModel::sltCurrentItemDestroyed);
     /* Connect new current-item (if any): */
     if (m_pCurrentItem)
-        connect(m_pCurrentItem, SIGNAL(destroyed(QObject*)), this, SLOT(sltCurrentItemDestroyed()));
+        connect(m_pCurrentItem, &UIChooserItem::destroyed, this, &UIChooserModel::sltCurrentItemDestroyed);
 
     /* If dialog is visible and item exists => make it visible as well: */
     if (view() && view()->window() && root())
@@ -1241,40 +1241,40 @@ void UIChooserModel::prepareHandlers()
 void UIChooserModel::prepareConnections()
 {
     /* Setup parent connections: */
-    connect(this, SIGNAL(sigSelectionChanged()),
-            parent(), SIGNAL(sigSelectionChanged()));
-    connect(this, SIGNAL(sigSelectionInvalidated()),
-            parent(), SIGNAL(sigSelectionInvalidated()));
-    connect(this, SIGNAL(sigToggleStarted()),
-            parent(), SIGNAL(sigToggleStarted()));
-    connect(this, SIGNAL(sigToggleFinished()),
-            parent(), SIGNAL(sigToggleFinished()));
+    connect(this, &UIChooserModel::sigSelectionChanged,
+            qobject_cast<UIChooser*>(parent()), &UIChooser::sigSelectionChanged);
+    connect(this, &UIChooserModel::sigSelectionInvalidated,
+            qobject_cast<UIChooser*>(parent()), &UIChooser::sigSelectionInvalidated);
+    connect(this, &UIChooserModel::sigToggleStarted,
+            qobject_cast<UIChooser*>(parent()), &UIChooser::sigToggleStarted);
+    connect(this, &UIChooserModel::sigToggleFinished,
+            qobject_cast<UIChooser*>(parent()), &UIChooser::sigToggleFinished);
 
     /* Setup action connections: */
-    connect(actionPool()->action(UIActionIndexST_M_Welcome_S_New), SIGNAL(triggered()),
-            this, SLOT(sltCreateNewMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_New), SIGNAL(triggered()),
-            this, SLOT(sltCreateNewMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), SIGNAL(triggered()),
-            this, SLOT(sltCreateNewMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Rename), SIGNAL(triggered()),
-            this, SLOT(sltEditGroupName()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Remove), SIGNAL(triggered()),
-            this, SLOT(sltUngroupSelectedGroup()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Remove), SIGNAL(triggered()),
-            this, SLOT(sltRemoveSelectedMachine()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup), SIGNAL(triggered()),
-            this, SLOT(sltGroupSelectedMachines()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), SIGNAL(triggered()),
-            this, SLOT(sltPerformRefreshAction()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh), SIGNAL(triggered()),
-            this, SLOT(sltPerformRefreshAction()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent), SIGNAL(triggered()),
-            this, SLOT(sltSortParentGroup()));
-    connect(actionPool()->action(UIActionIndexST_M_Group_S_Sort), SIGNAL(triggered()),
-            this, SLOT(sltSortGroup()));
-    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Search), SIGNAL(triggered()),
-            this, SLOT(sltShowHideSearchWidget()));
+    connect(actionPool()->action(UIActionIndexST_M_Welcome_S_New), &UIAction::triggered,
+            this, &UIChooserModel::sltCreateNewMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_New), &UIAction::triggered,
+            this, &UIChooserModel::sltCreateNewMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_New), &UIAction::triggered,
+            this, &UIChooserModel::sltCreateNewMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Rename), &UIAction::triggered,
+            this, &UIChooserModel::sltEditGroupName);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Remove), &UIAction::triggered,
+            this, &UIChooserModel::sltUngroupSelectedGroup);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Remove), &UIAction::triggered,
+            this, &UIChooserModel::sltRemoveSelectedMachine);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_AddGroup), &UIAction::triggered,
+            this, &UIChooserModel::sltGroupSelectedMachines);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Refresh), &UIAction::triggered,
+            this, &UIChooserModel::sltPerformRefreshAction);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Refresh), &UIAction::triggered,
+            this, &UIChooserModel::sltPerformRefreshAction);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_SortParent), &UIAction::triggered,
+            this, &UIChooserModel::sltSortParentGroup);
+    connect(actionPool()->action(UIActionIndexST_M_Group_S_Sort), &UIAction::triggered,
+            this, &UIChooserModel::sltSortGroup);
+    connect(actionPool()->action(UIActionIndexST_M_Machine_S_Search), &UIAction::triggered,
+            this, &UIChooserModel::sltShowHideSearchWidget);
 }
 
 void UIChooserModel::loadLastSelectedItem()

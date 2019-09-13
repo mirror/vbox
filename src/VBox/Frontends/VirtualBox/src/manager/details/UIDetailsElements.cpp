@@ -62,8 +62,8 @@ UIDetailsElementInterface::UIDetailsElementInterface(UIDetailsSet *pParent, Deta
     , m_pTask(0)
 {
     /* Listen for the global thread-pool: */
-    connect(uiCommon().threadPool(), SIGNAL(sigTaskComplete(UITask*)),
-            this, SLOT(sltUpdateAppearanceFinished(UITask*)));
+    connect(uiCommon().threadPool(), &UIThreadPool::sigTaskComplete,
+            this, &UIDetailsElementInterface::sltUpdateAppearanceFinished);
 
     /* Translate finally: */
     retranslateUi();

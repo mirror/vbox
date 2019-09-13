@@ -569,17 +569,17 @@ void UIDetailsSet::prepareSet()
 void UIDetailsSet::prepareConnections()
 {
     /* Global-events connections: */
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QUuid, KMachineState)), this, SLOT(sltMachineStateChange(QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigMachineDataChange(QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigSessionStateChange(QUuid, KSessionState)), this, SLOT(sltMachineAttributesChange(QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotTake(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotDelete(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotChange(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
-    connect(gVBoxEvents, SIGNAL(sigSnapshotRestore(QUuid, QUuid)), this, SLOT(sltMachineAttributesChange(QUuid)));
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange, this, &UIDetailsSet::sltMachineStateChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange, this, &UIDetailsSet::sltMachineAttributesChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSessionStateChange, this, &UIDetailsSet::sltMachineAttributesChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake, this, &UIDetailsSet::sltMachineAttributesChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotDelete, this, &UIDetailsSet::sltMachineAttributesChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotChange, this, &UIDetailsSet::sltMachineAttributesChange);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore, this, &UIDetailsSet::sltMachineAttributesChange);
 
     /* Meidum-enumeration connections: */
-    connect(&uiCommon(), SIGNAL(sigMediumEnumerationStarted()), this, SLOT(sltUpdateAppearance()));
-    connect(&uiCommon(), SIGNAL(sigMediumEnumerationFinished()), this, SLOT(sltUpdateAppearance()));
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationStarted, this, &UIDetailsSet::sltUpdateAppearance);
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished, this, &UIDetailsSet::sltUpdateAppearance);
 }
 
 QVariant UIDetailsSet::data(int iKey) const

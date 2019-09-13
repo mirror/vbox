@@ -261,8 +261,8 @@ void UIDetailsGroup::updateGeometry()
 void UIDetailsGroup::prepareConnections()
 {
     /* Prepare group-item connections: */
-    connect(this, SIGNAL(sigMinimumWidthHintChanged(int)),
-            model(), SIGNAL(sigRootItemMinimumWidthHintChanged(int)));
+    connect(this, &UIDetailsGroup::sigMinimumWidthHintChanged,
+            model(), &UIDetailsModel::sigRootItemMinimumWidthHintChanged);
 }
 
 void UIDetailsGroup::paintBackground(QPainter *pPainter, const QStyleOptionGraphicsItem *pOptions) const
