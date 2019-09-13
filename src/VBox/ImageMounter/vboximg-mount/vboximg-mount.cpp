@@ -28,7 +28,6 @@
 #   define UNIX_DERIVATIVE
 #endif
 #define MAX_READERS (INT32_MAX / 32)
-#include <fuse.h>
 #ifdef UNIX_DERIVATIVE
 #include <errno.h>
 #include <fcntl.h>
@@ -79,6 +78,7 @@
 #include <iprt/dvm.h>
 #include <iprt/time.h>
 
+#include "fuse.h"
 #include "vboximgCrypto.h"
 #include "vboximgMedia.h"
 #include "SelfSizingTable.h"
@@ -933,6 +933,10 @@ main(int argc, char **argv)
     if (RT_FAILURE(rc))
         return RTMsgErrorExitFailure("VDInit failed, rc=%Rrc\n", rc);
 
+    rc = RTFuseLoadLib();
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("Failed to load the fuse library, rc=%Rrc\n", rc);
+
     memset(&g_vboximgOps, 0, sizeof(g_vboximgOps));
     g_vboximgOps.open        = vboximgOp_open;
     g_vboximgOps.read        = vboximgOp_read;
@@ -1329,7 +1333,7 @@ main(int argc, char **argv)
     if (VERBOSE)
         RTPrintf("\nvboximg-mount: Going into background...\n");
 
-    rc = fuse_main(args.argc, args.argv, &g_vboximgOps, NULL);
+    rc = fuse_main_real(args.argc, args.argv, &g_vboximgOps, sizeof(g_vboximgOps), NULL);
 
     int rc2 = RTVfsFileRelease(g_hVfsFileDisk);
     AssertRC(rc2);
