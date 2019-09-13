@@ -874,7 +874,6 @@ void UIChart::drawCombinedDoughnutChart(QPainter &painter, quint64  iMaximum,
 QPainterPath UIChart::wholeArc(const QRectF &rectangle)
 {
     QPainterPath arc;
-    QPointF center(rectangle.center());
     arc.addEllipse(rectangle);
     return arc;
 }
