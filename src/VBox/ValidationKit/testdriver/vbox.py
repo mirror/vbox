@@ -2807,7 +2807,7 @@ class TestDriver(base.TestDriver):                                              
                     if self.fpApiVer < 3.3:
                         oProgress = self.oVBox.openRemoteSession(oSession, sUuid, sType, '\n'.join(asEnvFinal));
                     else:
-                        if self.uApiRevision >= self.makeApiRevision(6, 0, 97, 1):
+                        if self.uApiRevision >= self.makeApiRevision(6, 1, 0, 1):
                             oProgress = oVM.launchVMProcess(oSession, sType, asEnvFinal);
                         else:
                             oProgress = oVM.launchVMProcess(oSession, sType, '\n'.join(asEnvFinal));
