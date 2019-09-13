@@ -283,9 +283,10 @@ UIPrepareStep::UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QUui
     connect(qobject_cast<UIDetailsItem*>(pBuildObject), &UIDetailsItem::sigBuildDone,
             this, &UIPrepareStep::sltStepDone,
             Qt::QueuedConnection);
-    connect(this, &UIPrepareStep::sigStepDone,
-            qobject_cast<UIDetailsGroup*>(pParent), &UIDetailsGroup::sltBuildStep,
-            Qt::QueuedConnection);
+    if (qobject_cast<UIDetailsGroup*>(pParent))
+        connect(this, &UIPrepareStep::sigStepDone,
+                qobject_cast<UIDetailsGroup*>(pParent), &UIDetailsGroup::sltBuildStep,
+                Qt::QueuedConnection);
 }
 
 void UIPrepareStep::sltStepDone()
