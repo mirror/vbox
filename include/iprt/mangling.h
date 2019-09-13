@@ -2207,6 +2207,7 @@
 # define RTStrUniLen                                    RT_MANGLER(RTStrUniLen)
 # define RTStrUniLenEx                                  RT_MANGLER(RTStrUniLenEx)
 # define RTStrUtf8ToCurrentCPTag                        RT_MANGLER(RTStrUtf8ToCurrentCPTag)
+# define RTStrUtf8ToCurrentCPExTag                      RT_MANGLER(RTStrUtf8ToCurrentCPExTag)
 # define RTStrValidateEncoding                          RT_MANGLER(RTStrValidateEncoding)
 # define RTStrValidateEncodingEx                        RT_MANGLER(RTStrValidateEncodingEx)
 # define RTStrVersionCompare                            RT_MANGLER(RTStrVersionCompare)
