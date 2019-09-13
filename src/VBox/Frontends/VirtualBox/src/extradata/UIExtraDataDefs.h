@@ -368,9 +368,7 @@ namespace UIExtraDataDefs
     /** @name Virtual Machine: Information dialog
       * @{ */
         /** Holds information-window geometry. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_InformationWindowGeometry;
-        /** Holds information-window elements. */
-        SHARED_LIBRARY_STUFF extern const char *GUI_InformationWindowElements;
+        SHARED_LIBRARY_STUFF extern const char *GUI_SessionInformationDialogGeometry;
     /** @} */
 
     /** @name Guest Control UI related data

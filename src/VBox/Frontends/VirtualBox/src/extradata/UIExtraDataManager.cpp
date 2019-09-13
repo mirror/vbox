@@ -2022,8 +2022,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_GuruMeditationHandler
            << GUI_HidLedsSync
            << GUI_ScaleFactor << GUI_Scaling_Optimization
-           << GUI_InformationWindowGeometry
-           << GUI_InformationWindowElements
+           << GUI_SessionInformationDialogGeometry
            << GUI_GuestControl_ProcessControlSplitterHints
            << GUI_GuestControl_FileManagerDialogGeometry
            << GUI_GuestControl_FileManagerOptions
@@ -4160,10 +4159,10 @@ ScalingOptimizationType UIExtraDataManager::scalingOptimizationType(const QUuid 
     return gpConverter->fromInternalString<ScalingOptimizationType>(extraDataString(GUI_Scaling_Optimization, uID));
 }
 
-QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QUuid &uID)
+QRect UIExtraDataManager::sessionInformationDialogGeometry(QWidget *pWidget, QWidget *pParentWidget)
 {
     /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_InformationWindowGeometry, uID);
+    const QStringList data = extraDataStringList(GUI_SessionInformationDialogGeometry);
 
     /* Parse loaded data: */
     int iX = 0, iY = 0, iW = 0, iH = 0;
@@ -4210,16 +4209,16 @@ QRect UIExtraDataManager::informationWindowGeometry(QWidget *pWidget, QWidget *p
     return geometry;
 }
 
-bool UIExtraDataManager::informationWindowShouldBeMaximized(const QUuid &uID)
+bool UIExtraDataManager::sessionInformationDialogShouldBeMaximized()
 {
     /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_InformationWindowGeometry, uID);
+    const QStringList data = extraDataStringList(GUI_SessionInformationDialogGeometry);
 
     /* Make sure 5th item has required value: */
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
-void UIExtraDataManager::setInformationWindowGeometry(const QRect &geometry, bool fMaximized, const QUuid &uID)
+void UIExtraDataManager::setSessionInformationDialogGeometry(const QRect &geometry, bool fMaximized)
 {
     /* Serialize passed values: */
     QStringList data;
@@ -4231,7 +4230,7 @@ void UIExtraDataManager::setInformationWindowGeometry(const QRect &geometry, boo
         data << GUI_Geometry_State_Max;
 
     /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_InformationWindowGeometry, data, uID);
+    setExtraDataStringList(GUI_SessionInformationDialogGeometry, data);
 }
 
 
@@ -4435,49 +4434,6 @@ bool UIExtraDataManager::guestProcessControlDialogShouldBeMaximized()
 void UIExtraDataManager::setGuestProcessControlDialogGeometry(const QRect &geometry, bool fMaximized)
 {
     setDialogGeometry(GUI_GuestControl_ProcessControlDialogGeometry, geometry, fMaximized);
-}
-
-
-QMap<InformationElementType, bool> UIExtraDataManager::informationWindowElements()
-{
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_InformationWindowElements);
-
-    /* Desearialize passed elements: */
-    QMap<InformationElementType, bool> elements;
-    foreach (QString strItem, data)
-    {
-        bool fOpened = true;
-        if (strItem.endsWith("Closed", Qt::CaseInsensitive))
-        {
-            fOpened = false;
-            strItem.remove("Closed");
-        }
-        InformationElementType type = gpConverter->fromInternalString<InformationElementType>(strItem);
-        if (type != InformationElementType_Invalid)
-            elements[type] = fOpened;
-    }
-
-    /* Return elements: */
-    return elements;
-}
-
-void UIExtraDataManager::setInformationWindowElements(const QMap<InformationElementType, bool> &elements)
-{
-    /* Prepare corresponding extra-data: */
-    QStringList data;
-
-    /* Searialize passed elements: */
-    foreach (InformationElementType type, elements.keys())
-    {
-        QString strValue = gpConverter->toInternalString(type);
-        if (!elements[type])
-            strValue += "Closed";
-        data << strValue;
-    }
-
-    /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(GUI_InformationWindowElements, data);
 }
 
 MachineCloseAction UIExtraDataManager::defaultMachineCloseAction(const QUuid &uID)

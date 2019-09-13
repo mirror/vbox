@@ -641,19 +641,14 @@ public:
         ScalingOptimizationType scalingOptimizationType(const QUuid &uID);
     /** @} */
 
-    /** @name Virtual Machine: Information dialog
+    /** @name Virtual Machine: Session Information dialog
       * @{ */
-        /** Returns information-window geometry using @a pWidget and @a pParentWidget as hints. */
-        QRect informationWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QUuid &uID);
+        /** Returns session information dialog geometry using @a pWidget and @a pParentWidget as hints. */
+        QRect sessionInformationDialogGeometry(QWidget *pWidget, QWidget *pParentWidget);
         /** Returns whether information-window should be maximized or not. */
-        bool informationWindowShouldBeMaximized(const QUuid &uID);
+        bool sessionInformationDialogShouldBeMaximized();
         /** Defines information-window @a geometry and @a fMaximized state. */
-        void setInformationWindowGeometry(const QRect &geometry, bool fMaximized, const QUuid &uID);
-
-        /** Returns information-window elements. */
-        QMap<InformationElementType, bool> informationWindowElements();
-        /** Defines information-window @a elements. */
-        void setInformationWindowElements(const QMap<InformationElementType, bool> &elements);
+        void setSessionInformationDialogGeometry(const QRect &geometry, bool fMaximized);
     /** @} */
 
     /** @name Guest Control related dialogs

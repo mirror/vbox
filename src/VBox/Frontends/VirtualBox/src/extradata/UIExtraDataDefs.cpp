@@ -193,9 +193,8 @@ const char *UIExtraDataDefs::GUI_HidLedsSync = "GUI/HidLedsSync";
 const char *UIExtraDataDefs::GUI_ScaleFactor = "GUI/ScaleFactor";
 const char *UIExtraDataDefs::GUI_Scaling_Optimization = "GUI/Scaling/Optimization";
 
-/* Virtual Machine: Information dialog: */
-const char *UIExtraDataDefs::GUI_InformationWindowGeometry = "GUI/InformationWindowGeometry";
-const char *UIExtraDataDefs::GUI_InformationWindowElements = "GUI/InformationWindowElements";
+/* Virtual Machine: Session Information Dialog: */
+const char *UIExtraDataDefs::GUI_SessionInformationDialogGeometry = "GUI/SessionInformationDialogGeometry";
 
 /* Guest control UI: */
 const char *UIExtraDataDefs::GUI_GuestControl_FileManagerDialogGeometry = "GUI/GuestControl/FileManagerDialogGeometry";
