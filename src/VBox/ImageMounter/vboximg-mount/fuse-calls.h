@@ -14,12 +14,6 @@
  * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
-#ifndef VBOX_INCLUDED_SRC_vboximg_mount_fuse_calls_h
-#define VBOX_INCLUDED_SRC_vboximg_mount_fuse_calls_h
-#ifndef RT_WITHOUT_PRAGMA_ONCE
-# pragma once
-#endif
-
 /** The file name of the fuse library */
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD) || defined(RT_OS_SOLARIS)
 # define RT_RUNTIME_LOADER_LIB_NAME  "libfuse.so.2"
@@ -59,5 +53,3 @@
 
 #undef RT_RUNTIME_LOADER_LIB_NAME
 #undef RT_RUNTIME_LOADER_INSERT_SYMBOLS
-
-#endif /* !VBOX_INCLUDED_SRC_vboximg_mount_fuse_calls_h */
