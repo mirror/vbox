@@ -2752,13 +2752,17 @@ class TestDriver(base.TestDriver):                                              
         if self.sLogSessionDest:
             sLogDest = self.sLogSessionDest;
         else:
-            sLogDest = 'file=%s' % sLogFile;
-        sEnv = 'VBOX_LOG=%s\nVBOX_LOG_FLAGS=%s\nVBOX_LOG_DEST=nodeny %s\nVBOX_RELEASE_LOG_FLAGS=append time' \
-             % (self.sLogSessionGroups, self.sLogSessionFlags, sLogDest,);
+            sLogDest = 'file=%s' % (sLogFile,);
+        asEnvFinal = [
+            'VBOX_LOG=%s' % (self.sLogSessionGroups,),
+            'VBOX_LOG_FLAGS=%s' % (self.sLogSessionFlags,),
+            'VBOX_LOG_DEST=nodeny %s' % (sLogDest,),
+            'VBOX_RELEASE_LOG_FLAGS=append time',
+        ];
         if sType == 'gui':
-            sEnv += '\nVBOX_GUI_DBG_ENABLED=1'
+            asEnvFinal.append('VBOX_GUI_DBG_ENABLED=1');
         if asEnv is not None and asEnv:
-            sEnv += '\n' + ('\n'.join(asEnv));
+            asEnvFinal += asEnv;
 
         # Shortcuts for local testing.
         oProgress = oWrapped = None;
@@ -2801,9 +2805,12 @@ class TestDriver(base.TestDriver):                                              
                     else:
                         oSession = self.oVBoxMgr.getSessionObject();           # pylint: disable=no-member,no-value-for-parameter
                     if self.fpApiVer < 3.3:
-                        oProgress = self.oVBox.openRemoteSession(oSession, sUuid, sType, sEnv);
+                        oProgress = self.oVBox.openRemoteSession(oSession, sUuid, sType, '\n'.join(asEnv));
                     else:
-                        oProgress = oVM.launchVMProcess(oSession, sType, sEnv);
+                        if self.uApiRevision >= self.makeApiRevision(6, 0, 97, 1):
+                            oProgress = oVM.launchVMProcess(oSession, sType, asEnvFinal);
+                        else:
+                            oProgress = oVM.launchVMProcess(oSession, sType, '\n'.join(asEnv));
                     break;
                 except:
                     if i == 9:
