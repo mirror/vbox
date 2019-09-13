@@ -37,15 +37,38 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
 #define VIRTQ_MAX_SIZE                      1024                 /**< Max size (# desc elements) of a virtq    */
 #define VIRTQ_MAX_CNT                       24                   /**< Max queues we allow guest to create      */
 #define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
-#define VIRTIOSCSI_REGION_MEM_IO            0                    /**< BAR for MMIO (implementation specific)   */
-#define VIRTIOSCSI_REGION_PORT_IO           1                    /**< BAR for PORT I/O (impl specific)         */
-#define VIRTIOSCSI_REGION_PCI_CAP           2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
+#define VIRTIO_REGION_PCI_CAP               2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
 
 #define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) \
     do { \
         if (LogIsItEnabled(logLevel, LOG_GROUP)) \
             virtioHexDump((pv), (cb), (base), (title)); \
     } while (0)
+
+
+/**
+ * The following structure holds the pre-processed context of descriptor chain pulled from a virtio queue
+ * to conduct a transaction between the client of this virtio implementation and the guest VM's virtio driver.
+ * It contains the head index of the descriptor chain, the output data from the client that has been
+ * converted to a contiguous virtual memory and a physical memory scatter-gather buffer for use by by
+ * the virtio framework to complete the transaction in the final phase of round-trip processing.
+ *
+ * The client should not modify the contents of this buffer. The primary field of interest to the
+ * client is pVirtSrc, which contains the VirtIO "OUT" (to device) buffer from the guest.
+ *
+ * Typical use is, When the client (worker thread) detects available data on the queue, it pulls the
+ * next one of these descriptor chain structs off the queue using virtioQueueGet(), processes the
+ * virtual memory buffer pVirtSrc, produces result data to pass back to the guest driver and calls
+ * virtioQueuePut() to return the result data to the client.
+ */
+typedef struct VIRTIO_DESC_CHAIN
+{
+    uint32_t  uHeadIdx;                                    /**< Head idx of associated desc chain        */
+    size_t    cbVirtSrc;                                   /**< Size of virt source buffer               */
+    void     *pVirtSrc;                                    /**< Virt mem buf holding out data from guest */
+    size_t    cbPhysDst;                                   /**< Total size of dst buffer                 */
+    PRTSGBUF  pSgPhysDst;                                  /**< Phys S/G buf to store result for guest   */
+} VIRTIO_DESC_CHAIN_T, *PVIRTIO_DESC_CHAIN_T, **PPVIRTIO_DESC_CHAIN_T;
 
 /**
  * The following structure is used to pass the PCI parameters from the consumer
@@ -154,15 +177,6 @@ typedef struct VIRTIOCALLBACKS
  */
 int virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName);
 
-
-/**
- * Get the features VirtIO is running withnow.
- *
- * @returns Features the guest driver has accepted, finalizing the operational features
- *
- */
-uint64_t virtioGetNegotiatedFeatures(VIRTIOHANDLE hVirtio);
-
 /**
  * Detaches from queue and release resources
  *
@@ -173,66 +187,57 @@ uint64_t virtioGetNegotiatedFeatures(VIRTIOHANDLE hVirtio);
 int virtioQueueDetach(VIRTIOHANDLE hVirtio, uint16_t qIdx);
 
 /**
- * Get name of queue, by qIdx, assigned at virtioQueueAttach()
+ * Removes descriptor chain from avail ring of indicated queue and converts the descriptor
+ * chain into its OUT (to device) and IN to guest components. Additionally it converts
+ * the OUT desc chain data to a contiguous virtual memory buffer for easy consumption
+ * by the caller. The caller must return the descriptor chain pointer via virtioQueuePut()
+ * and then call virtioQueueSync() at some point to return the data to the guest and
+ * complete the transaction.
  *
- * @param hVirtio   - Handle for VirtIO framework
- * @param qIdx      - Queue number
+ * @param hVirtio      - Handle for VirtIO framework
+ * @param qIdx         - Queue number
+ * @param fRemove      - flags whether to remove desc chain from queue (false = peek)
+ * @param ppDescChain  - Address to store pointer to descriptor chain that contains the
+ *                       pre-processed transaction information pulled from the virtq.
  *
- * @returns          Success: Returns pointer to queue name
- *                   Failure: Returns "<null>" (never returns NULL pointer).
+ * @returns status     VINF_SUCCESS         - Success
+ *                     VERR_INVALID_STATE   - VirtIO not in ready state
  */
-const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
+
 
 /**
- * Removes descriptor chain from avail ring of indicated queue and converts it to
- * scatter/gather buffer (whose segments contain guest phys. data pointers)
+ * Returns data to the guest to complete a transaction initiated by virtQueueGet().
+ * The caller passes in a pointer to a scatter-gather buffer of virtual memory segments
+ * and a pointer to the descriptor chain context originally derived from the pulled
+ * queue entry, and this function will put write the virtual memory s/g buffer into the
+ * guest's physical memory free the descriptor chain. The caller handles the freeing
+ * (as needed) of the virtual memory buffer.
  *
- * @param hVirtio   - Handle for VirtIO framework
- * @param qIdx      - Queue number
- * @param ppInSegs  - Address to store pointer to host-to-guest data retrieved from virtq as RTSGBUF
- * @param ppOutSegs - Address to store pointer to host-to-guest data retrieved from virtq as RTSGBUF
+ * NOTE: This does a write-ahead to the used ring of the guest's queue.
+ *       The data written won't be seen by the guest until the next call to virtioQueueSync()
  *
- * @returns status    VINF_SUCCESS         - Success
- *                    VERR_INVALID_STATE   - VirtIO not in ready state
+ *
+ * @param hVirtio       - Handle for VirtIO framework
+ * @param qIdx          - Queue number
+ *
+ * @param pSgVirtReturn - Points toscatter-gather buffer of virtual memory segments
+                          the caller is returning to the guest.
+ *
+ * @param pDescChain    - This contains the context of the scatter-gather buffer
+ *                        originally pulled from the queue.
+ *
+ * @parame fFence       - If true, put up copy fence (memory barrier) after
+ *                        copying to guest phys. mem.
+ *
+ * @returns              VINF_SUCCESS         - Success
+ *                       VERR_INVALID_STATE   - VirtIO not in ready state
+ *                       VERR_NOT_AVAILABLE   - Queue is empty
  */
-int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fRemove, PPRTSGBUF ppInSegs, PPRTSGBUF ppOutSegs);
 
-/**
- * Same as virtioQueueGet() but leaves the item on the avail ring of the queue.
- *
- * @param hVirtio   - Handle for VirtIO framework
- * @param qIdx      - Queue number
- * @param ppInSegs  - Address to store pointer to host-to-guest data retrieved from virtq as RTSGBUF
- * @param ppOutSegs - Address to store pointer to host-to-guest data retrieved from virtq as RTSGBUF
- *
- * @returns           VINF_SUCCESS         - Success
- *                    VERR_INVALID_STATE   - VirtIO not in ready state
- *                    VERR_NOT_AVAILABLE   - Queue is empty
- */
-int virtioQueuePeek(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPRTSGBUF ppInSegs, PPRTSGBUF ppOutSegs);
+ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
+                    PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
 
-/**
- * Writes a scatter/gather buffer (whose segments point to virtual memory) to next
- * available descriptor chain (consisting of segments pointing to guest phys. memory),
- * for the indicated virtq. The data won't be seen by the guest until the next
- * client call to virtioQueueSync(), which puts aforementioned descriptor
- * chain's head index on the indicated virtq's used ring (see VirtIO 1.0
- * specification, Section 2.4 "Virtqueues").
- *
- * @param hVirtio   - Handle for VirtIO framework
- * @param qIdx      - Queue number
- * @param pSgBuf    - Caller's sgbuf of one or more virtual memory segments
- *                    to write to the queue. This is useful because some kinds
- *                    of transactions involve variable length subcomponents
- *                    whose size can only be known near the time of writing.
- * @parame fFence   - If set put up copy fence (memory barrier) after
- *                    copying to guest phys. mem.
- *
- * @returns           VINF_SUCCESS         - Success
- *                    VERR_INVALID_STATE   - VirtIO not in ready state
- *                    VERR_NOT_AVAILABLE   - Queue is empty
- */
-int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgBuf, bool fFence);
 
 /**
  * Updates the indicated virtq's "used ring" descriptor index to match the
@@ -296,6 +301,24 @@ void virtioResetAll(VIRTIOHANDLE hVirtio);
  */
 void virtioPropagateResumeNotification(VIRTIOHANDLE hVirtio);
 
+/**
+ * Get name of queue, by qIdx, assigned at virtioQueueAttach()
+ *
+ * @param hVirtio   - Handle for VirtIO framework
+ * @param qIdx      - Queue number
+ *
+ * @returns          Success: Returns pointer to queue name
+ *                   Failure: Returns "<null>" (never returns NULL pointer).
+ */
+const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx);
+
+/**
+ * Get the features VirtIO is running withnow.
+ *
+ * @returns Features the guest driver has accepted, finalizing the operational features
+ *
+ */
+uint64_t virtioGetNegotiatedFeatures(VIRTIOHANDLE hVirtio);
 
 
 /** CLIENT MUST CALL ON RELOCATE CALLBACK! */

@@ -84,31 +84,15 @@ typedef struct virtio_pci_cap
 }  VIRTIO_PCI_CAP_T, *PVIRTIO_PCI_CAP_T;
 
 /**
- * IN/OUT Descriptor chains descriptor chain associated with one element of virtq avail ring represented
- * as respective arrays of SG segments.
- */
-typedef struct VIRTQ_DESC_CHAIN                                  /**< Describes a single queue element          */
-{
-    RTSGSEG     aSegsIn[VIRTQ_MAX_SIZE];                         /**< List of segments to write to guest        */
-    RTSGSEG     aSegsOut[VIRTQ_MAX_SIZE];                        /**< List of segments read from guest          */
-    uint32_t    uHeadIdx;                                        /**< Index at head desc (source of seg arrays) */
-    uint32_t    cSegsIn;                                         /**< Count of segments in aSegsIn[]            */
-    uint32_t    cSegsOut;                                        /**< Count of segments in aSegsOut[]           */
-} VIRTQ_DESC_CHAIN_T, *PVIRTQ_DESC_CHAIN_T;
-
-/**
  * Local implementation's usage context of a queue (e.g. not part of VirtIO specification)
  */
-typedef struct VIRTQ_PROXY
+typedef struct VIRTQSTATE
 {
-    RTSGBUF     inSgBuf;                                         /**< host-to-guest buffers                     */
-    RTSGBUF     outSgBuf;                                        /**< guest-to-host buffers                     */
     const char  szVirtqName[32];                                 /**< Dev-specific name of queue                */
     uint16_t    uAvailIdx;                                       /**< Consumer's position in avail ring         */
     uint16_t    uUsedIdx;                                        /**< Consumer's position in used ring          */
     bool        fEventThresholdReached;                          /**< Don't lose track while queueing ahead     */
-    PVIRTQ_DESC_CHAIN_T pDescChain;                              /**< Per-queue s/g data.                       */
-} VIRTQ_PROXY_T, *PVIRTQ_PROXY_T;
+} VIRTQSTATE, *PVIRTQSTATE;
 
 /**
  * VirtIO 1.0 Capabilities' related MMIO-mapped structs:
@@ -190,7 +174,7 @@ typedef struct VIRTIOSTATE
     uint8_t                   uPrevDeviceStatus;                 /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                   uConfigGeneration;                 /**< (MMIO) Device config sequencer       HOST */
 
-    VIRTQ_PROXY_T             virtqProxy[VIRTQ_MAX_CNT];         /**< Local impl-specific queue context         */
+    VIRTQSTATE                virtqState[VIRTQ_MAX_CNT];         /**< Local impl-specific queue context         */
     VIRTIOCALLBACKS           virtioCallbacks;                   /**< Callback vectors to client                */
 
     PFNPCICONFIGREAD          pfnPciConfigReadOld;               /**< Prev rd. cb. intercepting PCI Cfg I/O     */
@@ -377,7 +361,7 @@ DECLINLINE(int) virtqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uin
 
 DECLINLINE(bool) virtqIsEmpty(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
-    return virtioReadAvailRingIdx(pVirtio, qIdx) == pVirtio->virtqProxy[qIdx].uAvailIdx;
+    return virtioReadAvailRingIdx(pVirtio, qIdx) == pVirtio->virtqState[qIdx].uAvailIdx;
 }
 
 /**
