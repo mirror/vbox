@@ -2438,7 +2438,7 @@ VMM_INT_DECL(bool) CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void co
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    /** @todo r=ramshankar: Reading 1, 2, 4 bytes at ports 0xffff, 0xfffe and 0xfffc
+    /** @todo r=ramshankar: Reading 1, 2, 4 bytes at ports 0xfffe, 0xfffd and 0xfffb
      *        respectively are valid and do not constitute a wrap around from what I
      *        understand. Verify this later. */
     uint32_t const uPortLast = uPort + cbAccess;
