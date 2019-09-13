@@ -3277,7 +3277,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
         // finalize spawning anyway (this is why we don't return on errors above)
         if (fLaunchingVMProcess)
         {
-            Assert(mData->mSession.mName == strSessionName);
+            Assert(mData->mSession.mName == strSessionName || FAILED(rc));
             /* Note that the progress object is finalized later */
             /** @todo Consider checking mData->mSession.mProgress for cancellation
              *        around here.  */
