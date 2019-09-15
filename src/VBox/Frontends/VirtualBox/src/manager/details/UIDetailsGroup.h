@@ -83,7 +83,7 @@ public:
         virtual int minimumHeightHint() const /* override */;
     /** @} */
 
-public slots:
+protected slots:
 
     /** @name Item stuff.
       * @{ */

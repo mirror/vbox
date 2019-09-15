@@ -128,7 +128,7 @@ public:
         virtual QSizeF sizeHint(Qt::SizeHint enmWhich, const QSizeF &constraint = QSizeF()) const /* override */;
     /** @} */
 
-protected slots:
+public slots:
 
     /** @name Item stuff.
       * @{ */
