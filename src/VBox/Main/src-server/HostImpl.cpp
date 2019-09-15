@@ -390,10 +390,10 @@ HRESULT Host::init(VirtualBox *aParent)
                     m->fUnrestrictedGuestSupported = true;
                 else
                     Assert(m->fUnrestrictedGuestSupported == false);
-                /** @todo r=klaus put accurate condition here and update it as
-                 * the feature becomes available with VT-x. */
-                if (   (fVTCaps & SUPVTCAPS_AMD_V)
-                    && m->fNestedPagingSupported)
+                /** @todo r=klaus put accurate condition here, it's still approximate. */
+                if (   (   (fVTCaps & SUPVTCAPS_AMD_V)
+                        && m->fNestedPagingSupported)
+                    || (fVTCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST))
                     m->fNestedHWVirtSupported = true;
             }
             else
