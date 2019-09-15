@@ -35,6 +35,132 @@ const BSTR g_bstrEmpty = (BSTR)&g_achEmptyBstr[2];
 /* static */
 const Bstr Bstr::Empty; /* default ctor is OK */
 
+
+Bstr &Bstr::printf(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    HRESULT hrc = printfVNoThrow(pszFormat, va);
+    va_end(va);
+    if (hrc == S_OK)
+    { /* likely */ }
+    else
+        throw std::bad_alloc();
+    return *this;
+}
+
+HRESULT Bstr::printfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT
+{
+    va_list va;
+    va_start(va, pszFormat);
+    HRESULT hrc = printfVNoThrow(pszFormat, va);
+    va_end(va);
+    return hrc;
+}
+
+
+Bstr &Bstr::printfV(const char *pszFormat, va_list va)
+{
+    HRESULT hrc = printfVNoThrow(pszFormat, va);
+    if (hrc == S_OK)
+    { /* likely */ }
+    else
+        throw std::bad_alloc();
+    return *this;
+}
+
+struct BSTRNOTHROW
+{
+    Bstr   *pThis;
+    size_t  cwcAlloc;
+    size_t  offDst;
+    HRESULT hrc;
+};
+
+/**
+ * Callback used with RTStrFormatV by Bstr::printfVNoThrow.
+ *
+ * @returns The number of bytes added (not used).
+ *
+ * @param   pvArg           Pointer to a BSTRNOTHROW structure.
+ * @param   pachChars       The characters to append.
+ * @param   cbChars         The number of characters.  0 on the final callback.
+ */
+/*static*/ DECLCALLBACK(size_t)
+Bstr::printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbChars) RT_NOEXCEPT
+{
+    BSTRNOTHROW *pArgs = (BSTRNOTHROW *)pvArg;
+    if (cbChars)
+    {
+        size_t cwcAppend;
+        int rc = ::RTStrCalcUtf16LenEx(pachChars, cbChars, &cwcAppend);
+        AssertRCReturnStmt(rc, pArgs->hrc = E_UNEXPECTED, 0);
+
+        /*
+         * Ensure we've got sufficient memory.
+         */
+        Bstr *pThis = pArgs->pThis;
+        size_t const cwcBoth = pArgs->offDst + cwcAppend;
+        if (cwcBoth >= pArgs->cwcAlloc)
+        {
+            if (pArgs->hrc == S_OK)
+            {
+                /* Double the buffer size, if it's less that _1M. Align sizes like
+                   for append. */
+                size_t cwcAlloc = RT_ALIGN_Z(pArgs->cwcAlloc, 128);
+                cwcAlloc += RT_MIN(cwcAlloc, _1M);
+                if (cwcAlloc <= cwcBoth)
+                    cwcAlloc = RT_ALIGN_Z(cwcBoth + 1, 512);
+                if (pArgs->cwcAlloc)
+                    AssertMsgReturnStmt(::SysReAllocStringLen(&pThis->m_bstr, NULL, (unsigned)cwcAlloc),
+                                        ("cwcAlloc=%#zx\n", cwcAlloc), pArgs->hrc = E_OUTOFMEMORY, 0);
+                else
+                {
+                    Assert(pThis->m_bstr == NULL);
+                    pThis->m_bstr = ::SysAllocStringLen(NULL, (unsigned)cwcAlloc);
+                    AssertMsgReturnStmt(pThis->m_bstr, ("cwcAlloc=%#zx\n", cwcAlloc), pArgs->hrc = E_OUTOFMEMORY, 0);
+                }
+                pArgs->cwcAlloc = cwcAlloc;
+            }
+            else
+                return 0;
+        }
+
+        /*
+         * Do the conversion.
+         */
+        PRTUTF16 pwszDst = pThis->m_bstr + pArgs->offDst;
+        Assert(pArgs->cwcAlloc > pArgs->offDst);
+        rc = ::RTStrToUtf16Ex(pachChars, cbChars, &pwszDst, pArgs->cwcAlloc - pArgs->offDst, &cwcAppend);
+        AssertRCReturnStmt(rc, pArgs->hrc = E_UNEXPECTED, 0);
+    }
+    return cbChars;
+}
+
+HRESULT Bstr::printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
+{
+    cleanup();
+    BSTRNOTHROW Args = { this, 0, 0, S_OK };
+    RTStrFormatV(printfOutputCallbackNoThrow, this, NULL, NULL, pszFormat, va);
+    if (Args.hrc == S_OK)
+    {
+#ifdef RT_OS_WINDOWS
+        if (Args.offDst + 1 == Args.cwcAlloc)
+            return S_OK;
+
+        /* Official way: Reallocate the string.   We could of course just update the size-prefix if we dare... */
+        if (SysReAllocStringLen(&m_bstr, NULL, (unsigned)(Args.offDst + 1)))
+            return S_OK;
+        AssertMsgFailed(("offDst=%#zx\n", Args.offDst));
+        Args.hrc = E_OUTOFMEMORY;
+#else
+        return S_OK;
+#endif
+    }
+    cleanup();
+    return Args.hrc;
+}
+
 void Bstr::copyFromN(const char *a_pszSrc, size_t a_cchMax)
 {
     /*

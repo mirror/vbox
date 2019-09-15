@@ -146,14 +146,14 @@ public:
         setNull();
     }
 
-    Bstr& operator=(const Bstr &that)
+    Bstr &operator=(const Bstr &that)
     {
         cleanup();
         copyFrom((const OLECHAR *)that.m_bstr);
         return *this;
     }
 
-    Bstr& operator=(CBSTR that)
+    Bstr &operator=(CBSTR that)
     {
         cleanup();
         copyFrom((const OLECHAR *)that);
@@ -161,7 +161,7 @@ public:
     }
 
 #if defined(VBOX_WITH_XPCOM)
-    Bstr& operator=(const wchar_t *that)
+    Bstr &operator=(const wchar_t *that)
     {
         cleanup();
         copyFrom((const OLECHAR *)that);
@@ -169,7 +169,7 @@ public:
     }
 #endif
 
-    Bstr& setNull()
+    Bstr &setNull()
     {
         cleanup();
         return *this;
@@ -299,6 +299,58 @@ public:
     bool isNotEmpty() const { return m_bstr != NULL && *m_bstr != 0; }
 
     size_t length() const { return isEmpty() ? 0 : ::RTUtf16Len((PRTUTF16)m_bstr); }
+
+    /**
+     * Assigns the output of the string format operation (RTStrPrintf).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   ...             Ellipsis containing the arguments specified by
+     *                          the format string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  Object state is undefined.
+     *
+     * @returns Reference to the object.
+     */
+    Bstr &printf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+
+    /**
+     * Assigns the output of the string format operation (RTStrPrintf).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   ...             Ellipsis containing the arguments specified by
+     *                          the format string.
+     *
+     * @returns S_OK or E_OUTOFMEMORY
+     */
+    HRESULT printfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 2);
+
+    /**
+     * Assigns the output of the string format operation (RTStrPrintfV).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   va              Argument vector containing the arguments
+     *                          specified by the format string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  Object state is undefined.
+     *
+     * @returns Reference to the object.
+     */
+    Bstr &printfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+
+    /**
+     * Assigns the output of the string format operation (RTStrPrintfV).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   va              Argument vector containing the arguments
+     *                          specified by the format string.
+     *
+     * @returns S_OK or E_OUTOFMEMORY
+     */
+    HRESULT printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 0);
 
 #if defined(VBOX_WITH_XPCOM)
     /**
@@ -521,6 +573,8 @@ protected:
      * @throws  std::bad_alloc - the object is representing an empty string.
      */
     void copyFromN(const char *a_pszSrc, size_t a_cchSrc);
+
+    static DECLCALLBACK(size_t) printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbChars) RT_NOEXCEPT;
 
     BSTR m_bstr;
 
