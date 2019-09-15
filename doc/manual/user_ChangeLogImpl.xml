@@ -57,7 +57,7 @@ technical terms if no non-technical ones are clear enough.
           Extended support for exporting a virtual machine to Oracle
           Cloud Infrastructure, allowing the creation of multiple
           virtual machines without re-uploading. Also added option to
-          export a VM to the cloud using the more efficent variant
+          export a VM to the cloud using the more efficient variant
           "paravirtialized"
         </para>
       </listitem>
