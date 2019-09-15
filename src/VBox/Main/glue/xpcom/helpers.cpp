@@ -16,9 +16,8 @@
  */
 
 #include "VBox/com/defs.h"
-
 #include <nsMemory.h>
-
+#include <iprt/assertcompile.h>
 #include <iprt/utf16.h>
 
 
@@ -33,160 +32,163 @@
 // we don't run into problems.
 
 /**
- * Copies a string into a new memory block including the terminating UCS2 NULL
- * @param sz source string to copy
- * @returns BSTR new string buffer
+ * Copies a string into a new memory block including the terminating UCS2 NULL.
+ *
+ * @param   pwsz    Source string to duplicate.
+ * @returns New BSTR string buffer.
  */
-BSTR SysAllocString(const OLECHAR* sz)
+BSTR SysAllocString(const OLECHAR *pwszSrc)
 {
-    if (!sz)
-    {
-        return NULL;
-    }
-    return SysAllocStringLen(sz, SysStringLen((BSTR)sz));
+    AssertCompile(sizeof(*pwszSrc) == sizeof(PRUnichar));
+    if (pwszSrc)
+        return SysAllocStringLen(pwszSrc, RTUtf16Len((PCRTUTF16)pwszSrc));
+    return NULL;
 }
 
 /**
- * Copies len OLECHARs of a string into a new memory block and
- * adds a terminating UCS2 NULL
- * @param psz source string to copy
- * @param len length of the source string in bytes
- * @returns BSTR new string buffer
+ * Duplicates an ANSI string into a BSTR / allocates a BSTR with a size given in
+ * bytes.
+ *
+ * No conversion is done.
+ *
+ * @param   pszSrc      Source string to copy, optional.
+ * @param   cbSrcReq    Length of the source string / memory request in bytes.
+ * @returns new BSTR string buffer, NULL on failure.
  */
-BSTR SysAllocStringByteLen(char *psz, unsigned int len)
+BSTR SysAllocStringByteLen(char const *pszSrc, unsigned int cbSrcReq)
 {
-    unsigned int *newBuffer;
-    char *newString;
-
-    newBuffer = (unsigned int*)nsMemory::Alloc(len + sizeof(OLECHAR));
-    if (!newBuffer)
+    BSTR pBstrNew = (BSTR)nsMemory::Alloc(RT_ALIGN_Z(cbSrcReq + sizeof(OLECHAR), sizeof(OLECHAR)));
+    AssertCompile(sizeof(*pBstrNew) == sizeof(OLECHAR));
+    if (pBstrNew)
     {
-        return NULL;
+        if (!pszSrc)
+            memset(pBstrNew, 0, cbSrcReq + sizeof(OLECHAR));
+        else
+        {
+            // Copy the string and make sure it is terminated.
+            memcpy(pBstrNew, pszSrc, cbSrcReq);
+            char *pchTerminator = (char *)pBstrNew;
+            pchTerminator[cbSrcReq] = '\0';
+            pchTerminator[cbSrcReq + 1] = '\0';
+        }
     }
-    if (psz)
-    {
-        memcpy(newBuffer, psz, len);
-    }
-    // make sure there is a trailing UCS2 NULL
-    newString = (char*)newBuffer;
-    newString[len] = '\0';
-    newString[len + 1] = '\0';
-    return (BSTR)newString;
+    return pBstrNew;
 }
 
 /**
- * Create a BSTR from the OLECHAR string with a given length in UCS2 characters
- * @param pch pointer to the source string
- * @param cch length of the source string in UCS2 characters
- * @returns BSTR new string buffer
+ * Duplicates a UTF-16 string into a BSTR / Allocates a BSTR with a size given
+ * in UTF-16 characters.
+ *
+ * @param   pwszSrc     Pointer to the source string, optional.
+ * @param   cwcSrcReq   Length of the source string / memory request in UTF-16
+ *                      characters.
+ * @returns new BSTR string buffer, NULL on failure.
  */
-BSTR SysAllocStringLen(const OLECHAR *pch, unsigned int cch)
+BSTR SysAllocStringLen(const OLECHAR *pwszSrc, unsigned int cwcSrcReq)
 {
-    unsigned int bufferSize;
-    unsigned int *newBuffer;
-    OLECHAR *newString;
-
-    // add the trailing UCS2 NULL
-    bufferSize = cch * sizeof(OLECHAR);
-    newBuffer = (unsigned int*)nsMemory::Alloc(bufferSize + sizeof(OLECHAR));
-    if (!newBuffer)
+    size_t const cbReq = (cwcSrcReq + 1) * sizeof(OLECHAR);
+    BSTR pBstrNew = (BSTR)nsMemory::Alloc(cbReq);
+    AssertCompile(sizeof(*pBstrNew) == sizeof(OLECHAR));
+    if (pBstrNew)
     {
-        return NULL;
+        if (!pwszSrc)
+            memset(pBstrNew, 0, cbReq);
+        else
+        {
+            // Copy the string and make sure it is terminated.
+            memcpy(pBstrNew, pwszSrc, cbReq - sizeof(OLECHAR));
+            pBstrNew[cwcSrcReq] = L'\0';
+        }
     }
-    // copy the string, a NULL input string is allowed
-    if (pch)
-    {
-        memcpy(newBuffer, pch, bufferSize);
-
-    } else
-    {
-        memset(newBuffer, 0, bufferSize);
-    }
-    // make sure there is a trailing UCS2 NULL
-    newString = (OLECHAR*)newBuffer;
-    newString[cch] = L'\0';
-
-    return (BSTR)newString;
+    return pBstrNew;
 }
 
 /**
- * Frees the memory associated with the BSTR given
- * @param bstr source string to free
+ * Frees the memory associated with the given BSTR.
+ *
+ * @param   pBstr  The string to free.  NULL is ignored.
  */
-void SysFreeString(BSTR bstr)
+void SysFreeString(BSTR pBstr)
 {
-    if (bstr)
-    {
-        nsMemory::Free(bstr);
-    }
+    if (pBstr)
+        nsMemory::Free(pBstr);
 }
 
 /**
- * Reallocates a string by freeing the old string and copying
- * a new string into a new buffer.
- * @param pbstr old string to free
- * @param psz source string to copy into the new string
- * @returns success indicator
+ * Duplicates @a pwszSrc into an exsting BSTR, adjust its size to make it fit.
+ *
+ * @param   ppBstr  The existing BSTR buffer pointer.
+ * @param   pwszSrc Source string to copy.  If NULL, the existing BSTR is freed.
+ * @returns success indicator (TRUE/FALSE)
  */
-int SysReAllocString(BSTR *pbstr, const OLECHAR *psz)
+int SysReAllocString(BSTR *ppBstr, const OLECHAR *pwszSrc)
 {
-    if (!pbstr)
-    {
-        return 0;
-    }
-    SysFreeString(*pbstr);
-    *pbstr = SysAllocString(psz);
+    if (pwszSrc)
+        return SysReAllocStringLen(ppBstr, pwszSrc, RTUtf16Len((PCRTUTF16)pwszSrc));
+    SysFreeString(*ppBstr);
+    *ppBstr = NULL;
     return 1;
 }
 
-#if 0
-/* Does not work -- we ignore newBuffer! */
 /**
- * Changes the length of a previous created BSTR
- * @param pbstr string to change the length of
- * @param psz source string to copy into the adjusted pbstr
- * @param cch length of the source string in UCS2 characters
- * @returns int success indicator
+ * Duplicates @a pwszSrc into an exsting BSTR / resizing an existing BSTR buffer
+ * into the given size (@a cwcSrcReq).
+ *
+ * @param   ppBstr      The existing BSTR buffer pointer.
+ * @param   pwszSrc     Source string to copy into the adjusted pbstr, optional.
+ * @param   cwcSrcReq   Length of the source string / request in UCS2
+ *                      characters, a zero terminator is always added.
+ * @returns success indicator (TRUE/FALSE)
  */
-int SysReAllocStringLen(BSTR *pbstr, const OLECHAR *psz, unsigned int cch)
+int SysReAllocStringLen(BSTR *ppBstr, const OLECHAR *pwszSrc, unsigned int cwcSrcReq)
 {
-    if (SysStringLen(*pbstr) > 0)
+    BSTR pBstrOld = *ppBstr;
+    AssertCompile(sizeof(*pBstrOld) == sizeof(OLECHAR));
+    if (pBstrOld)
     {
-        unsigned int newByteLen;
-        unsigned int *newBuffer;
-        newByteLen = cch * sizeof(OLECHAR);
-        newBuffer = (unsigned int*)nsMemory::Realloc((void*)*pbstr,
-                                                     newByteLen + sizeof(OLECHAR));
-        if (psz)
+        if ((BSTR)pwszSrc == pBstrOld)
+            pwszSrc = NULL;
+
+        size_t cbReq = (cwcSrcReq + 1) * sizeof(OLECHAR);
+        BSTR pBstrNew = (BSTR)nsMemory::Realloc(pBstrOld, cbReq);
+        if (pBstrNew)
         {
-            memcpy(*pbstr, psz, newByteLen);
-            *pbstr[cch] = 0;
+            if (pwszSrc)
+                memcpy(pBstrNew, pwszSrc, cbReq - sizeof(OLECHAR));
+            pBstrNew[cwcSrcReq] = L'\0';
+            *ppBstr = pBstrNew;
+            return 1;
         }
-    } else
+    }
+    else
     {
         // allocate a new string
-        *pbstr = SysAllocStringLen(psz, cch);
+        *ppBstr = SysAllocStringLen(pwszSrc, cwcSrcReq);
+        if (*ppBstr)
+            return 1;
     }
-    return 1;
-}
-#endif
-
-/**
-  * Returns the string length in bytes without the terminator
-  * @returns unsigned int length in bytes
-  * @param bstr source string
-  */
-unsigned int SysStringByteLen(BSTR bstr)
-{
-    return RTUtf16Len(bstr) * sizeof(OLECHAR);
+    return 0;
 }
 
 /**
-  * Returns the string length in OLECHARs without the terminator
-  * @returns unsigned int length in OLECHARs
-  * @param bstr source string
-  */
-unsigned int SysStringLen(BSTR bstr)
+ * Returns the string length in bytes without the terminator.
+ *
+ * @param   pBstr   The BSTR to get the byte length of.
+ * @returns String length in bytes.
+ */
+unsigned int SysStringByteLen(BSTR pBstr)
 {
-    return RTUtf16Len(bstr);
+    AssertCompile(sizeof(OLECHAR) == sizeof(*pBstr));
+    return RTUtf16Len(pBstr) * sizeof(OLECHAR);
+}
+
+/**
+ * Returns the string length in OLECHARs without the terminator.
+ *
+ * @param   pBstr   The BSTR to get the length of.
+ * @returns String length in OLECHARs.
+ */
+unsigned int SysStringLen(BSTR pBstr)
+{
+    return RTUtf16Len(pBstr);
 }

@@ -397,7 +397,7 @@ typedef nsIID   IID;
 extern "C"
 {
 BSTR SysAllocString(const OLECHAR *sz);
-BSTR SysAllocStringByteLen(char *psz, unsigned int len);
+BSTR SysAllocStringByteLen(char const *psz, unsigned int len);
 BSTR SysAllocStringLen(const OLECHAR *pch, unsigned int cch);
 void SysFreeString(BSTR bstr);
 int SysReAllocString(BSTR *pbstr, const OLECHAR *psz);
