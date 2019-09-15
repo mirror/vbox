@@ -837,6 +837,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
             # ( Whether to stop on hit, reason tuple, needle text. )
             ( True, ktReason_Host_DriverNotUnloading, 'can\'t unload the module: Device busy' ),
             ( True, ktReason_Host_DriverNotUnloading, 'Unloading: Host module ...FAILED!' ),
+            ( True, ktReason_Host_DriverNotUnloading, 'Unloading: NetFilter (Crossbow) module ...FAILED!' ),
             ( True, ktReason_Host_InstallationFailed, 'svcadm: Couldn\'t bind to svc.configd.' ),
             ( True, ktReason_Host_InstallationFailed, 'pkgadd: ERROR: postinstall script did not complete successfully' ),
         ],
@@ -850,6 +851,7 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
         We lump the two together since the installation typically also performs
         an uninstall first and will be seeing similar issues to the uninstall.
         """
+        self.dprint(u'%s + %s <<\n%s\n<<' % (oFailedResult.tsCreated, oFailedResult.tsElapsed, sResultLog,));
 
         if fInstall and oFailedResult.enmStatus == TestSetData.ksTestStatus_TimedOut:
             oCaseFile.noteReasonForId(self.ktReason_Host_Install_Hang, oFailedResult.idTestResult)
