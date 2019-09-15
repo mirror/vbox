@@ -76,7 +76,8 @@ VBoxDrv.sys
 [VBoxDrv_Service]
 DisplayName    = %VBoxDrv.SVCDESC%
 ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
-StartType      = 3                  ; SERVICE_DEMAND_START
+;StartType      = 3                  ; SERVICE_DEMAND_START
+StartType      = 1                  ; autostart to fix Vista problem
 ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
 ServiceBinary  = %12%\VBoxDrv.sys
 
