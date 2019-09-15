@@ -1294,6 +1294,17 @@ void UIChooserModel::saveLastSelectedItem()
     gEDataManager->setSelectorWindowLastItemChosen(firstSelectedItem() ? firstSelectedItem()->definition() : QString());
 }
 
+void UIChooserModel::cleanupConnections()
+{
+    /* Disconnect selection-changed & selection-invalidated signal prematurelly.
+     * Keep in mind, we are using static_cast instead of qobject_cast here to be
+     * sure connection is disconnected even if parent is self-destroyed. */
+    disconnect(this, &UIChooserModel::sigSelectionChanged,
+               static_cast<UIChooser*>(parent()), &UIChooser::sigSelectionChanged);
+    disconnect(this, &UIChooserModel::sigSelectionInvalidated,
+               static_cast<UIChooser*>(parent()), &UIChooser::sigSelectionInvalidated);
+}
+
 void UIChooserModel::cleanupHandlers()
 {
     delete m_pKeyboardHandler;
@@ -1320,6 +1331,7 @@ void UIChooserModel::cleanupScene()
 
 void UIChooserModel::cleanup()
 {
+    cleanupConnections();
     cleanupHandlers();
     cleanupContextMenu();
     cleanupScene();

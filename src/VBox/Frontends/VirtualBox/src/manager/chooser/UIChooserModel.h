@@ -308,6 +308,8 @@ private:
         /** Saves last selected-items. */
         void saveLastSelectedItem();
         /** Cleanups connections. */
+        void cleanupConnections();
+        /** Cleanups handlers. */
         void cleanupHandlers();
         /** Cleanups context-menu. */
         void cleanupContextMenu();

@@ -224,6 +224,8 @@ private:
         /** Saves last selected items. */
         void saveLastSelectedItems();
         /** Cleanups connections. */
+        void cleanupConnections();
+        /** Cleanups connections. */
         void cleanupHandlers();
         /** Cleanups items. */
         void cleanupItems();
