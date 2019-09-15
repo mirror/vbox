@@ -200,6 +200,10 @@ echo * Applying language patches to MSI...
 for %%i in (3-*.cmd) do (call %%i || goto end_failed)
 echo .
 
+echo * Creating multi arch installer...
+for %%i in (4-*.cmd) do (call %%i || goto end_failed)
+echo .
+
 
 set _MY_OUT_FILES=
 cd /d "%_MY_REPACK_DIR%" || goto end_failed

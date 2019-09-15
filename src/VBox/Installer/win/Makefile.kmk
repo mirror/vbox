@@ -1073,7 +1073,6 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b1)' \
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
 		$(if-expr defined(VBOX_WITH_MSM_INSTALL), \
-		,'call sign-dual.cmd ../../../win.amd64/$(KBUILD_TYPE)/repack/$(notdir $(PACKAGE_NAME_MULTIARCH_COMMONCAB)) || exit /b1') \
 		'..\bin\VBoxStubBld.exe ^' \
 		'  -out $(@F) ^' \
 		'  -target-$(KBUILD_TARGET_ARCH) $(PACKAGE_NAME_FINAL) ^' \
