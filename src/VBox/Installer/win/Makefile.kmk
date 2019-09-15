@@ -202,7 +202,7 @@ OTHER_CLEAN += \
 ifdef VBOX_WITH_COMBINED_PACKAGE
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   OTHER_CLEAN += \
-  	$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(@F).cmd \
+  	$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(PACKAGE_NAME_MULTIARCH_FINAL).cmd \
   	$(PATH_MULTIARCH_TEMP)/$(PACKAGE_NAME_MULTIARCH.x86)
  endif
  ifndef VBOX_WITH_MSM_INSTALL
@@ -211,6 +211,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
  endif
 else
  OTHER_CLEAN += \
+  	$(VBOX_WIN_INST_REPACK_DIR)/4-multiarch-$(PACKAGE_NAME_MULTIARCH_FINAL).cmd \
 	$(PACKAGE_NAME_FINAL)
 endif
 
@@ -993,7 +994,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi \
 		'cscript.exe /nologo $(VBOX_PATH_WISUMINFO) $(@F) $(VBOX_INS_PROD_LANG) || exit /b1' \
 		'call sign-sha1.cmd $(@F) || exit /b1' \
 		) ) \
-               'copy /y "$(@F)" "$(notdir $(PACKAGE_NAME_FINAL))" || exit /b1' \
+        $(if VBOX_WITH_COMBINED_PACKAGE,'copy /y "$(@F)" "$(notdir $(PACKAGE_NAME_FINAL))" || exit /b1',) \
 		'@echo Create multilanguage MSI: $(notdir $(PACKAGE_NAME_FINAL))'
 
 # Copy multilingual installer to bin.
