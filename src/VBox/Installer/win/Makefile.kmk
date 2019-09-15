@@ -1072,7 +1072,6 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		'if ".%KBUILD_DEVTOOLS%" == "." (echo KBUILD_DEVTOOLS is not set & exit /b1)' \
 		'if ".%KBUILD_BIN_PATH%" == "." (echo KBUILD_BIN_PATH is not set & exit /b1)' \
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
-		$(if-expr defined(VBOX_WITH_MSM_INSTALL), \
 		'..\bin\VBoxStubBld.exe ^' \
 		'  -out $(@F) ^' \
 		'  -target-$(KBUILD_TARGET_ARCH) $(PACKAGE_NAME_FINAL) ^' \
