@@ -1873,7 +1873,7 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
             aBstrEnv.push_back(BstrFmt("DISPLAY=%s", pszDisplay).raw());
         const char *pszXAuth = RTEnvGet("XAUTHORITY");
         if (pszXAuth)
-            aBstrEnv.push_back(BstrrFmt("XAUTHORITY=%s", pszXAuth).raw());
+            aBstrEnv.push_back(BstrFmt("XAUTHORITY=%s", pszXAuth).raw());
 #endif
         ComPtr<IProgress> ptrProgress;
         CHECK_ERROR2(hrc, ptrMachine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), ComSafeArrayAsInParam(aBstrEnv), ptrProgress.asOutParam()));
