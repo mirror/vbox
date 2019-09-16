@@ -2419,12 +2419,13 @@ VMM_INT_DECL(uint32_t) CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t
 
 
 /**
- * Gets the permission bits for the specified I/O port from the given I/O bitmaps.
+ * Checks the permission bits for the specified I/O port from the given I/O bitmap
+ * to see if causes a VM-exit.
  *
  * @returns @c true if the I/O port access must cause a VM-exit, @c false otherwise.
- * @param   pvIoBitmap      Pointer to I/O bitmap.
- * @param   uPort           The I/O port being accessed.
- * @param   cbAccess        The size of the I/O access in bytes (1, 2 or 4 bytes).
+ * @param   pvIoBitmap  Pointer to I/O bitmap.
+ * @param   uPort       The I/O port being accessed.
+ * @param   cbAccess    e size of the I/O access in bytes (1, 2 or 4 bytes).
  */
 static bool cpumGetVmxIoBitmapPermission(void const *pvIoBitmap, uint16_t uPort, uint8_t cbAccess)
 {
