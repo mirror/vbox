@@ -2449,24 +2449,24 @@ static bool cpumGetVmxIoBitmapPermission(void const *pvIoBitmap, uint16_t uPort,
     /*
      * If any bit corresponding to the I/O access is set, we must cause a VM-exit.
      */
-    uint8_t const *pbIoBitmap   = (uint8_t const *)pvIoBitmap;
-    signed int     cBitsToCheck = cbAccess;                     /* Number of permission bits to check for this access. */
-    while (cBitsToCheck > 0)
-    {
-        uint16_t const offPerm    = uPort >> 3;                 /* Byte offset of the port. */
-        uint16_t const idxPermBit = uPort - (offPerm << 3);     /* Bit offset within byte. */
-        Assert(idxPermBit < 8);
-        uint8_t const  fMask = RT_BIT(idxPermBit);              /* Mask of the permission bit to check within the byte. */
-        uint8_t const  bPerm = *(pbIoBitmap + offPerm);         /* The bitmap content at the byte offset of the port. */
+    uint8_t const *pbIoBitmap = (uint8_t const *)pvIoBitmap;
+    uint16_t const offPerm    = uPort >> 3;                         /* Byte offset of the port. */
+    uint16_t const idxPermBit = uPort - (offPerm << 3);             /* Bit offset within byte. */
+    Assert(idxPermBit < 8);
+    static const uint8_t s_afMask[] = { 0x0, 0x1, 0x3, 0x7, 0xf };  /* Bit-mask for all access sizes. */
+    uint16_t const fMask = s_afMask[cbAccess] << idxPermBit;        /* Bit-mask of the access. */
 
-        /* If any bit for the access is 1, we must cause a VM-exit. */
-        if (bPerm & fMask)
-            return true;
+    /* Fetch 8 or 16-bits depending on whether the access spans 8-bit boundary. */
+    RTUINT16U uPerm;
+    uPerm.s.Lo = *(pbIoBitmap + offPerm);
+    if (idxPermBit + cbAccess > 8)
+        uPerm.s.Hi = *(pbIoBitmap + 1 + offPerm);
+    else
+        uPerm.s.Hi = 0;
 
-        /* Move to the next permission bit. */
-        --cBitsToCheck;
-        ++uPort;
-    }
+    /* If any bit for the access is 1, we must cause a VM-exit. */
+    if (uPerm.u & fMask)
+        return true;
 
     return false;
 }
