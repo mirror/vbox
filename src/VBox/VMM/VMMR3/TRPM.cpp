@@ -412,6 +412,17 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent, bool
     if (RT_SUCCESS(rc))
     {
         *pfInjected = true;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        if (   CPUMIsGuestInVmxNonRootMode(pCtx)
+            && CPUMIsGuestVmxInterceptEvents(pCtx)
+            && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+            && CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
+        {
+            VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
+            Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+            return VBOXSTRICTRC_VAL(rcStrict);
+        }
+#endif
         if (!VM_IS_NEM_ENABLED(pVM))
         {
             rc = TRPMAssertTrap(pVCpu, u8Interrupt, TRPM_HARDWARE_INT);
