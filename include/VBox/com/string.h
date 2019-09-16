@@ -385,17 +385,86 @@ public:
 #endif
 
     /**
-     *  Returns a non-const raw pointer that allows to modify the string directly.
-     *  As opposed to raw(), this DOES return NULL if the member string is empty
-     *  because we cannot return a mutable pointer to the global variable with the
-     *  empty string.
+     * Returns a non-const raw pointer that allows modifying the string directly.
      *
-     *  @warning
-     *      Be sure not to modify data beyond the allocated memory! The
-     *      guaranteed size of the allocated memory is at least #length()
-     *      bytes after creation and after every assignment operation.
+     * @note As opposed to raw(), this DOES return NULL if the member string is
+     *       empty because we cannot return a mutable pointer to the global variable
+     *       with the empty string.
+     *
+     * @note If modifying the string size (only shrinking it is allows), #jolt() or
+     *       #joltNoThrow() must be called!
+     *
+     * @note Do not modify memory beyond the #length() of the string!
+     *
+     * @sa   joltNoThrow(), mutalbleRaw(), reserve(), reserveNoThrow()
      */
     BSTR mutableRaw() { return m_bstr; }
+
+    /**
+     * Correct the embedded length after using mutableRaw().
+     *
+     * This is needed on COM (Windows) to update the embedded string length.  It is
+     * a stub on hosts using XPCOM.
+     *
+     * @param   cwcNew      The new string length, if handy, otherwise a negative
+     *                      number.
+     * @sa      joltNoThrow(), mutalbleRaw(), reserve(), reserveNoThrow()
+     */
+#ifndef VBOX_WITH_XPCOM
+    void jolt(ssize_t cwcNew = -1);
+#else
+    void jolt(ssize_t cwcNew = -1)
+    {
+        Assert(cwcNew < 0 || (cwcNew == 0 && !m_bstr) || m_bstr[cwcNew] == '\0'); RT_NOREF(cwcNew);
+    }
+#endif
+
+    /**
+     * Correct the embedded length after using mutableRaw().
+     *
+     * This is needed on COM (Windows) to update the embedded string length.  It is
+     * a stub on hosts using XPCOM.
+     *
+     * @returns S_OK on success, E_OUTOFMEMORY if shrinking the string failed.
+     * @param   cwcNew      The new string length, if handy, otherwise a negative
+     *                      number.
+     * @sa      jolt(), mutalbleRaw(), reserve(), reserveNoThrow()
+     */
+#ifndef VBOX_WITH_XPCOM
+    HRESULT joltNoThrow(ssize_t cwcNew = -1) RT_NOEXCEPT;
+#else
+    HRESULT joltNoThrow(ssize_t cwcNew = -1) RT_NOEXCEPT
+    {
+        Assert(cwcNew < 0 || (cwcNew == 0 && !m_bstr) || m_bstr[cwcNew] == '\0'); RT_NOREF(cwcNew);
+        return S_OK;
+    }
+#endif
+
+    /**
+     * Make sure at that least @a cwc of buffer space is reserved.
+     *
+     * Requests that the contained memory buffer have at least cb bytes allocated.
+     * This may expand or shrink the string's storage, but will never truncate the
+     * contained string.  In other words, cb will be ignored if it's smaller than
+     * length() + 1.
+     *
+     * @param   cwcMin  The new minimum string length that the can be stored. This
+     *                  does not include the terminator.
+     * @param   fForce  Force this size.
+     *
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     */
+    void reserve(size_t cwcMin, bool fForce = false);
+
+    /**
+     * A C like version of the #reserve() method, i.e. return code instead of throw.
+     *
+     * @returns S_OK or E_OUTOFMEMORY.
+     * @param   cwcMin  The new minimum string length that the can be stored.  This
+     *                  does not include the terminator.
+    * @param   fForce  Force this size.
+     */
+    HRESULT reserveNoThrow(size_t cwcMin, bool fForce = false) RT_NOEXCEPT;
 
     /**
      *  Intended to assign copies of instances to |BSTR| out parameters from

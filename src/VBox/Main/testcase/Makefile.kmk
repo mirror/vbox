@@ -35,6 +35,7 @@ ifndef VBOX_ONLY_SDK
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlParseBuffer,) \
   	$(if $(VBOX_WITH_GUEST_CONTROL),tstGuestCtrlContextID,) \
   	tstMediumLock \
+	tstBstr \
   	tstGuid
   PROGRAMS.linux += \
   	$(if $(VBOX_WITH_USB),tstUSBProxyLinux,)
@@ -250,6 +251,13 @@ tstUSBProxyLinux_LIBS     += \
 #
 tstMediumLock_TEMPLATE = VBOXMAINCLIENTTSTEXE
 tstMediumLock_SOURCES  = tstMediumLock.cpp
+
+
+#
+# tstBstr
+#
+tstBstr_TEMPLATE = VBOXMAINCLIENTTSTEXE
+tstBstr_SOURCES  = tstBstr.cpp
 
 
 #

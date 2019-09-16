@@ -111,15 +111,8 @@ Bstr::printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbC
                 cwcAlloc += RT_MIN(cwcAlloc, _1M);
                 if (cwcAlloc <= cwcBoth)
                     cwcAlloc = RT_ALIGN_Z(cwcBoth + 1, 512);
-                if (pArgs->cwcAlloc)
-                    AssertMsgReturnStmt(::SysReAllocStringLen(&pThis->m_bstr, NULL, (unsigned)cwcAlloc),
-                                        ("cwcAlloc=%#zx\n", cwcAlloc), pArgs->hrc = E_OUTOFMEMORY, 0);
-                else
-                {
-                    Assert(pThis->m_bstr == NULL);
-                    pThis->m_bstr = ::SysAllocStringLen(NULL, (unsigned)cwcAlloc);
-                    AssertMsgReturnStmt(pThis->m_bstr, ("cwcAlloc=%#zx\n", cwcAlloc), pArgs->hrc = E_OUTOFMEMORY, 0);
-                }
+                pArgs->hrc = pThis->reserveNoThrow(cwcAlloc, true /*fForce*/);
+                AssertMsgReturn(pArgs->hrc == S_OK, ("cwcAlloc=%#zx\n", cwcAlloc), 0);
                 pArgs->cwcAlloc = cwcAlloc;
             }
             else
@@ -133,6 +126,7 @@ Bstr::printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbC
         Assert(pArgs->cwcAlloc > pArgs->offDst);
         rc = ::RTStrToUtf16Ex(pachChars, cbChars, &pwszDst, pArgs->cwcAlloc - pArgs->offDst, &cwcAppend);
         AssertRCReturnStmt(rc, pArgs->hrc = E_UNEXPECTED, 0);
+        pArgs->offDst += cwcAppend;
     }
     return cbChars;
 }
@@ -141,21 +135,12 @@ HRESULT Bstr::printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
 {
     cleanup();
     BSTRNOTHROW Args = { this, 0, 0, S_OK };
-    RTStrFormatV(printfOutputCallbackNoThrow, this, NULL, NULL, pszFormat, va);
+    RTStrFormatV(printfOutputCallbackNoThrow, &Args, NULL, NULL, pszFormat, va);
     if (Args.hrc == S_OK)
     {
-#ifdef RT_OS_WINDOWS
-        if (Args.offDst + 1 == Args.cwcAlloc)
+        Args.hrc = joltNoThrow(Args.offDst);
+        if (Args.hrc == S_OK)
             return S_OK;
-
-        /* Official way: Reallocate the string.   We could of course just update the size-prefix if we dare... */
-        if (SysReAllocStringLen(&m_bstr, NULL, (unsigned)(Args.offDst + 1)))
-            return S_OK;
-        AssertMsgFailed(("offDst=%#zx\n", Args.offDst));
-        Args.hrc = E_OUTOFMEMORY;
-#else
-        return S_OK;
-#endif
     }
     cleanup();
     return Args.hrc;
@@ -240,6 +225,78 @@ int Bstr::compareUtf8(const char *a_pszRight, CaseSensitivity a_enmCase /*= Case
 
         return ucLeft < ucRight ? -1 : 1;
     }
+}
+
+
+#ifndef VBOX_WITH_XPCOM
+
+HRESULT Bstr::joltNoThrow(ssize_t cwcNew /* = -1*/)
+{
+    if (m_bstr)
+    {
+        size_t const cwcAlloc  = ::SysStringLen(m_bstr);
+        size_t const cwcActual = cwcNew < 0 ? ::RTUtf16Len(m_bstr) : (size_t)cwcNew;
+        Assert(cwcNew < 0 || cwcActual == ::RTUtf16Len(m_bstr));
+        if (cwcActual != cwcAlloc)
+        {
+            Assert(cwcActual <= cwcAlloc);
+            Assert((unsigned int)cwcActual == cwcActual);
+
+            /* Official way: Reallocate the string.   We could of course just update the size-prefix if we dared... */
+            if (!::SysReAllocStringLen(&m_bstr, NULL, (unsigned int)cwcActual))
+            {
+                AssertFailed();
+                return E_OUTOFMEMORY;
+            }
+        }
+    }
+    else
+        Assert(cwcNew <= 0);
+    return S_OK;
+}
+
+
+void Bstr::jolt(ssize_t cwcNew /* = -1*/)
+{
+    HRESULT hrc = joltNoThrow(cwcNew);
+    if (hrc != S_OK)
+        throw std::bad_alloc();
+}
+
+#endif /* !VBOX_WITH_XPCOM */
+
+
+HRESULT Bstr::reserveNoThrow(size_t cwcMin, bool fForce /*= false*/) RT_NOEXCEPT
+{
+    /* If not forcing the string to the cwcMin length, check cwcMin against the
+       current string length: */
+    if (!fForce)
+    {
+        size_t cwcCur = m_bstr ? ::SysStringLen(m_bstr) : 0;
+        if (cwcCur >= cwcMin)
+            return S_OK;
+    }
+
+    /* The documentation for SysReAllocStringLen hints about it being allergic
+       to NULL in some way or another, so we call SysAllocStringLen directly
+       when appropriate: */
+    if (m_bstr)
+        AssertReturn(::SysReAllocStringLen(&m_bstr, NULL, (unsigned int)cwcMin) != FALSE, E_OUTOFMEMORY);
+    else if (cwcMin > 0)
+    {
+        m_bstr = ::SysAllocStringLen(NULL, (unsigned int)cwcMin);
+        AssertReturn(m_bstr, E_OUTOFMEMORY);
+    }
+
+    return S_OK;
+}
+
+
+void Bstr::reserve(size_t cwcMin, bool fForce /*= false*/)
+{
+    HRESULT hrc = reserveNoThrow(cwcMin, fForce);
+    if (hrc != S_OK)
+        throw std::bad_alloc();
 }
 
 
