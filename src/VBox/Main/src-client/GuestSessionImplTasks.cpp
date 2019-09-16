@@ -800,6 +800,10 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
 
     Utf8Str strDestFinal = strDest;
 
+    /** @todo r=bird: Why do we need to do this here?  It's a waste of time (extra
+     *        IPC) for 99% of the calls, it only does something useful if the
+     *        destination is a directory, and you should be able to handle that just
+     *        as efficiently in the i_fileOpen() failure path. */
     GuestFsObjData dstObjData;
     int rcGuest = VERR_IPE_UNINITIALIZED_STATUS;
     int rc = mSession->i_fsQueryInfo(strDest, TRUE /* fFollowSymlinks */, dstObjData, &rcGuest);
@@ -828,6 +832,8 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
 
                 /** @todo r=bird: You're totally ignoring the guest slash-style here! Callers
                  *        should have this info. */
+                /** @todo r=bird: This is wrong even on windows if strDest is 'C:' and the
+                 *        current working directory (CWD) isn't the root of the drive. :-) */
                 if (   !strDest.endsWith("\\")
                     && !strDest.endsWith("/"))
                     RTStrCat(szDstPath, sizeof(szDstPath), "/");
@@ -848,8 +854,10 @@ int GuestSessionTask::fileCopyToGuest(const Utf8Str &strSource, const Utf8Str &s
                 }
                 break;
 
+            /** @todo r=brent,r=bird: you follow symlinks, so this cannot happen at present.
+             *        That said, maybe it isn't intentional to always follow symlinks? */
             case FsObjType_Symlink:
-                if (!(fFileCopyFlags & FileCopyFlag_FollowLinks))
+                 if (!(fFileCopyFlags & FileCopyFlag_FollowLinks))
                 {
                     setProgressErrorMsg(VBOX_E_IPRT_ERROR,
                                         Utf8StrFmt(GuestSession::tr("Destination file \"%s\" is a symbolic link"),
