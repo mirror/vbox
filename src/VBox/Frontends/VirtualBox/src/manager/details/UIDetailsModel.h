@@ -172,6 +172,9 @@ public slots:
     /** Handle extra-data options change for category of certain @a enmType. */
     void sltHandleExtraDataOptionsChange(DetailsElementType enmType);
 
+    /** Handles request to start toggle details element of certain @a enmType, making element @a fToggled. */
+    void sltToggleElements(DetailsElementType type, bool fToggled);
+
 protected:
 
     /** Preprocesses any Qt @a pEvent for passed @a pObject. */
@@ -179,8 +182,6 @@ protected:
 
 private slots:
 
-    /** Handles request to start toggle details element of certain @a enmType, making element @a fToggled. */
-    void sltToggleElements(DetailsElementType type, bool fToggled);
     /** Handles sigal about details element of certain @a enmType toggling finished, making element @a fToggled. */
     void sltToggleAnimationFinished(DetailsElementType type, bool fToggled);
 

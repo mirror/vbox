@@ -121,8 +121,8 @@ UIDetailsElementPreview::UIDetailsElementPreview(UIDetailsSet *pParent, bool fOp
     AssertPtr(m_pPreview);
     {
         /* Configure preview: */
-        connect(m_pPreview, SIGNAL(sigSizeHintChanged()),
-                this, SLOT(sltPreviewSizeHintChanged()));
+        connect(m_pPreview, &UIMachinePreview::sigSizeHintChanged,
+                this, &UIDetailsElementPreview::sltPreviewSizeHintChanged);
     }
 
     /* Translate finally: */

@@ -1041,10 +1041,10 @@ void UIDetailsElement::prepareElement()
     /* Configure connections: */
     connect(gpManager, &UIVirtualBoxManager::sigWindowRemapped,
             this, &UIDetailsElement::sltHandleWindowRemapped);
-    connect(this, SIGNAL(sigToggleElement(DetailsElementType, bool)),
-            model(), SLOT(sltToggleElements(DetailsElementType, bool)));
-    connect(this, SIGNAL(sigLinkClicked(const QString&, const QString&, const QUuid &)),
-            model(), SIGNAL(sigLinkClicked(const QString&, const QString&, const QUuid &)));
+    connect(this, &UIDetailsElement::sigToggleElement,
+            model(), &UIDetailsModel::sltToggleElements);
+    connect(this, &UIDetailsElement::sigLinkClicked,
+            model(), &UIDetailsModel::sigLinkClicked);
 }
 
 void UIDetailsElement::prepareButton()
@@ -1052,9 +1052,9 @@ void UIDetailsElement::prepareButton()
     /* Setup toggle-button: */
     m_pButton = new UIGraphicsRotatorButton(this, "additionalHeight", !m_fClosed, true /* reflected */);
     m_pButton->setAutoHandleButtonClick(false);
-    connect(m_pButton, SIGNAL(sigButtonClicked()), this, SLOT(sltToggleButtonClicked()));
-    connect(m_pButton, SIGNAL(sigRotationStart()), this, SLOT(sltElementToggleStart()));
-    connect(m_pButton, SIGNAL(sigRotationFinish(bool)), this, SLOT(sltElementToggleFinish(bool)));
+    connect(m_pButton, &UIGraphicsRotatorButton::sigButtonClicked, this, &UIDetailsElement::sltToggleButtonClicked);
+    connect(m_pButton, &UIGraphicsRotatorButton::sigRotationStart, this, &UIDetailsElement::sltElementToggleStart);
+    connect(m_pButton, &UIGraphicsRotatorButton::sigRotationFinish, this, &UIDetailsElement::sltElementToggleFinish);
     m_buttonSize = m_pButton->minimumSizeHint().toSize();
 }
 
@@ -1062,8 +1062,8 @@ void UIDetailsElement::prepareTextPane()
 {
     /* Create text-pane: */
     m_pTextPane = new UIGraphicsTextPane(this, model()->paintDevice());
-    connect(m_pTextPane, SIGNAL(sigGeometryChanged()), this, SLOT(sltUpdateGeometry()));
-    connect(m_pTextPane, SIGNAL(sigAnchorClicked(const QString&)), this, SLOT(sltHandleAnchorClicked(const QString&)));
+    connect(m_pTextPane, &UIGraphicsTextPane::sigGeometryChanged, this, &UIDetailsElement::sltUpdateGeometry);
+    connect(m_pTextPane, &UIGraphicsTextPane::sigAnchorClicked, this, &UIDetailsElement::sltHandleAnchorClicked);
 }
 
 void UIDetailsElement::updateIcon()

@@ -418,9 +418,9 @@ void UIMachinePreview::prepare()
     setUpdateInterval(gEDataManager->selectorWindowPreviewUpdateInterval(), false);
 
     /* Setup connections: */
-    connect(m_pUpdateTimer, SIGNAL(timeout()), this, SLOT(sltRecreatePreview()));
-    connect(gVBoxEvents, SIGNAL(sigMachineStateChange(QUuid, KMachineState)),
-            this, SLOT(sltMachineStateChange(QUuid)));
+    connect(m_pUpdateTimer, &QTimer::timeout, this, &UIMachinePreview::sltRecreatePreview);
+    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineStateChange,
+            this, &UIMachinePreview::sltMachineStateChange);
 
     /* Retranslate the UI */
     retranslateUi();

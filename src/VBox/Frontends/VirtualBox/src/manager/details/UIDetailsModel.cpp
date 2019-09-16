@@ -237,8 +237,8 @@ void UIDetailsModel::sltToggleElements(DetailsElementType type, bool fToggled)
 
     /* Prepare/configure animation callback: */
     m_pAnimationCallback = new UIDetailsElementAnimationCallback(this, type, fToggled);
-    connect(m_pAnimationCallback, SIGNAL(sigAllAnimationFinished(DetailsElementType, bool)),
-            this, SLOT(sltToggleAnimationFinished(DetailsElementType, bool)), Qt::QueuedConnection);
+    connect(m_pAnimationCallback, &UIDetailsElementAnimationCallback::sigAllAnimationFinished,
+            this, &UIDetailsModel::sltToggleAnimationFinished, Qt::QueuedConnection);
     /* For each the set of the group: */
     foreach (UIDetailsItem *pSetItem, m_pRoot->items())
     {
