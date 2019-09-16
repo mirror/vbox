@@ -1591,7 +1591,7 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReaso
         IEM_VMX_VMEXIT_FAILED_RET(pVCpu, uExitReason, pszFailure, kVmxVDiag_Vmexit_MsrStoreCount);
 
     /*
-     * Optimization if the guest hypervisor is using the same guest-physical page for both
+     * Optimization if the nested hypervisor is using the same guest-physical page for both
      * the VM-entry MSR-load area as well as the VM-exit MSR store area.
      */
     PVMXAUTOMSR    pMsrArea;
@@ -1629,7 +1629,7 @@ IEM_STATIC int iemVmxVmexitSaveGuestAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReaso
 
             /*
              * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-exit.
-             * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VMX-abort
+             * If any nested hypervisor loads MSRs that require ring-3 handling, we cause a VMX-abort
              * recording the MSR index in the auxiliary info. field and indicated further by our
              * own, specific diagnostic code. Later, we can try implement handling of the MSR in ring-0
              * if possible, or come up with a better, generic solution.
@@ -1989,7 +1989,7 @@ IEM_STATIC int iemVmxVmexitLoadHostAutoMsrs(PVMCPUCC pVCpu, uint32_t uExitReason
 
                 /*
                  * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-exit.
-                 * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VMX-abort
+                 * If any nested hypervisor loads MSRs that require ring-3 handling, we cause a VMX-abort
                  * recording the MSR index in the auxiliary info. field and indicated further by our
                  * own, specific diagnostic code. Later, we can try implement handling of the MSR in ring-0
                  * if possible, or come up with a better, generic solution.
@@ -6406,7 +6406,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPUCC pVCpu, const char *pszInstr)
          */
         /** @todo r=ramshankar: This is done primarily to simplify recursion scenarios while
          *        redirecting accesses between the APIC-access page and the virtual-APIC
-         *        page. If any guest hypervisor requires this, we can implement it later. */
+         *        page. If any nested hypervisor requires this, we can implement it later. */
         if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
         {
             RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
@@ -6755,7 +6755,7 @@ IEM_STATIC int iemVmxVmentryLoadGuestAutoMsrs(PVMCPUCC pVCpu, const char *pszIns
 
                 /*
                  * If we're in ring-0, we cannot handle returns to ring-3 at this point and continue VM-entry.
-                 * If any guest hypervisor loads MSRs that require ring-3 handling, we cause a VM-entry failure
+                 * If any nested hypervisor loads MSRs that require ring-3 handling, we cause a VM-entry failure
                  * recording the MSR index in the Exit qualification (as per the Intel spec.) and indicated
                  * further by our own, specific diagnostic code. Later, we can try implement handling of the
                  * MSR in ring-0 if possible, or come up with a better, generic solution.
@@ -7170,7 +7170,7 @@ IEM_STATIC void iemVmxVmentryInitReadOnlyFields(PVMCPUCC pVCpu)
 {
     /*
      * Any VMCS field which we do not establish on every VM-exit but may potentially
-     * be used on the VM-exit path of a guest hypervisor -and- is not explicitly
+     * be used on the VM-exit path of a nested hypervisor -and- is not explicitly
      * specified to be undefined needs to be initialized here.
      *
      * Thus, it is especially important to clear the Exit qualification field
@@ -7321,7 +7321,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
     /*
      * We are allowed to cache VMCS related data structures (such as I/O bitmaps, MSR bitmaps)
      * while entering VMX non-root mode. We do some of this while checking VM-execution
-     * controls. The guest hypervisor should not make assumptions and cannot expect
+     * controls. The nested hypervisor should not make assumptions and cannot expect
      * predictable behavior if changes to these structures are made in guest memory while
      * executing in VMX non-root mode. As far as VirtualBox is concerned, the guest cannot
      * modify them anyway as we cache them in host memory.
@@ -7425,7 +7425,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
                                 iemVmxVmentrySetupIntWindow(pVCpu, pszInstr);
 
                                 /*
-                                 * Inject any event that the guest hypervisor wants to inject.
+                                 * Inject any event that the nested hypervisor wants to inject.
                                  * Note! We cannot immediately perform the event injection here as we may have
                                  *       pending PGM operations to perform due to switching page tables and/or
                                  *       mode.
