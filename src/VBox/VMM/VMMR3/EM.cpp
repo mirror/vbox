@@ -2083,7 +2083,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                     && !CPUMIsGuestVmxVirtNmiBlocking(pVCpu, &pVCpu->cpum.GstCtx))
                 {
                     Assert(CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT));
-                    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents);
+                    Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
                     rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* uExitQual */));
                     AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
                               && rc2 != VINF_PGM_CHANGE_MODE
@@ -2148,7 +2148,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                          && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
                 {
                     Assert(CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT));
-                    Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents);
+                    Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
                     rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* uExitQual */));
                     AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
                               && rc2 != VINF_PGM_CHANGE_MODE
@@ -2193,6 +2193,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                             bool fInjected = false;
                             CPUM_IMPORT_EXTRN_RET(pVCpu, IEM_CPUMCTX_EXTRN_XCPT_MASK);
                             /** @todo this really isn't nice, should properly handle this */
+                            /* Note! This can still cause a VM-exit (on Intel). */
                             rc2 = TRPMR3InjectEvent(pVM, pVCpu, TRPM_HARDWARE_INT, &fInjected);
                             fWakeupPending = true;
                             if (   pVM->em.s.fIemExecutesAll
