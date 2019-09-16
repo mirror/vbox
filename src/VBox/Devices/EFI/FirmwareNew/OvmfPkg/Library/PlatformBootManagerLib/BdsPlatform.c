@@ -1476,10 +1476,12 @@ PlatformBootManagerAfterConsole (
   //
   ASSERT (BootMode == BOOT_WITH_FULL_CONFIGURATION);
 
+#ifndef VBOX /* @todo Our graphics controller is started in PlatformBdsConnectSequence(). */
   //
   // Logo show
   //
   BootLogoEnableLogo ();
+#endif
 
   //
   // Set PCI Interrupt Line registers and ACPI SCI_EN
@@ -1500,6 +1502,13 @@ PlatformBootManagerAfterConsole (
   // Perform some platform specific connect sequence
   //
   PlatformBdsConnectSequence ();
+
+#ifdef VBOX /* @todo Our graphics controller is started in PlatformBdsConnectSequence(). */
+  //
+  // Logo show
+  //
+  BootLogoEnableLogo ();
+#endif
 
   EfiBootManagerRefreshAllBootOption ();
 
