@@ -814,7 +814,11 @@
       NULL|OvmfPkg/Csm/LegacyBootManagerLib/LegacyBootManagerLib.inf
 !endif
   }
+!ifndef $(VBOX)
   MdeModulePkg/Logo/LogoDxe.inf
+!else
+  VBoxPkg/Logo/LogoDxe.inf
+!endif
   MdeModulePkg/Application/UiApp/UiApp.inf {
     <LibraryClasses>
       NULL|MdeModulePkg/Library/DeviceManagerUiLib/DeviceManagerUiLib.inf
@@ -890,8 +894,6 @@
  #VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
  # we need it for VBoxAppleSim
  #IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe.inf
- MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe.inf
- MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe.inf
 !endif
 
   #

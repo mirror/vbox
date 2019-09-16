@@ -303,7 +303,11 @@ INF  ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
 !endif
 INF  ShellPkg/Application/Shell/Shell.inf
 
+!ifndef $(VBOX)
 INF MdeModulePkg/Logo/LogoDxe.inf
+!else
+INF VBoxPkg/Logo/LogoDxe.inf
+!endif
 
 #
 # Network modules
