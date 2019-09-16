@@ -2441,7 +2441,6 @@ static bool cpumGetVmxIoBitmapPermission(void const *pvIoBitmap, uint16_t uPort,
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    /** @todo r=ramshankar: . Verify this later. */
     uint32_t const uPortLast = uPort + cbAccess;
     if (uPortLast > 0x10000)
         return true;
