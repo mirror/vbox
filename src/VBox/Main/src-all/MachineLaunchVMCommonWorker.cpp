@@ -74,7 +74,7 @@
 int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
                                 const Utf8Str &aComment,
                                 const Utf8Str &aFrontend,
-                                const Utf8Str &aEnvironment,
+                                const std::vector<com::Utf8Str> &aEnvironmentChanges,
                                 const Utf8Str &aExtraArg,
                                 const Utf8Str &aFilename,
                                 uint32_t      aFlags,
@@ -104,10 +104,8 @@ int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
     aPid = NIL_RTPROCESS;
 
     RTENV hEnv = RTENV_DEFAULT;
-    if (!aEnvironment.isEmpty())
+    if (!aEnvironmentChanges.empty())
     {
-        Utf8Str strEnvCopy(aEnvironment); /* auto release trick */
-
 #ifdef IN_VBOXSVC
         /* VBoxSVC: clone the current environment */
         vrc = RTEnvClone(&hEnv, RTENV_DEFAULT);
@@ -119,39 +117,13 @@ int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
 #endif
         AssertRCReturn(vrc, vrc);
 
-        /* Apply the specified environment changes (ignoring empty variable names
-           as RTEnv intentionally does not support that). */
-        char *pszEnvMutable = strEnvCopy.mutableRaw();
-        char *pszVar = pszEnvMutable;
-        for (char *psz = pszEnvMutable; ; ++psz)
+        /* Apply the specified environment changes. */
+        for (std::vector<com::Utf8Str>::const_iterator itEnv = aEnvironmentChanges.begin();
+             itEnv != aEnvironmentChanges.end();
+             ++itEnv)
         {
-            /** @todo r=bird: Broken escaping rule, how to end a variable with '\\'?
-              * E.g. TMP=C:\\TEMP\\  */
-            char const ch = *psz;
-            if (   (ch == '\n' && (psz == pszEnvMutable || psz[-1] != '\\'))
-                || ch == '\0')
-            {
-                *psz = '\0';
-                if (*pszVar)
-                {
-                    char *val = strchr(pszVar, '=');
-                    if (val)
-                    {
-                        *val++ = '\0';
-                        vrc = RTEnvSetEx(hEnv, pszVar, val);
-                    }
-                    else
-                        vrc = RTEnvUnsetEx(hEnv, pszVar);
-                    if (RT_FAILURE(vrc))
-                    {
-                        RTEnvDestroy(hEnv);
-                        return vrc;
-                    }
-                }
-                if (!ch)
-                    break;
-                pszVar = psz + 1;
-            }
+            vrc = RTEnvPutEx(hEnv, itEnv->c_str());
+            AssertRCReturnStmt(vrc, RTEnvDestroy(hEnv), vrc);
         }
     }
 

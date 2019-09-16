@@ -178,10 +178,11 @@ elsif ($optMode eq "startvm")
 
     print "[$cmd] UUID: $uuid\n";
 
+    my @env = ();
     my $progress = vboxService->IMachine_launchVMProcess($machine,
                                                          $session,
                                                          "headless",
-                                                         "");
+                                                         @env);
     die "[$cmd] Cannot launch VM; stopped"
         if (!$progress);
 

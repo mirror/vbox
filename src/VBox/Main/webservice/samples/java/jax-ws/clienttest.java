@@ -228,7 +228,8 @@ public class clienttest
             {
                 String uuid = oMachine.getId();
                 String sessionType = "gui";
-                String env = "DISPLAY=:0.0";
+                ArrayList<String> env = new ArrayList<String>();
+                env.add("DISPLAY=:0.0");
                 IProgress oProgress =
                     oMachine.launchVMProcess(oSession,
                                              sessionType,

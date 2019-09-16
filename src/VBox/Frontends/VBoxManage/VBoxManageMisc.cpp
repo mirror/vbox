@@ -624,17 +624,17 @@ RTEXITCODE handleStartVM(HandlerArg *a)
     HRESULT rc = S_OK;
     std::list<const char *> VMs;
     Bstr sessionType;
-    Utf8Str strEnv;
+    com::SafeArray<IN_BSTR> aBstrEnv;
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     /* make sure the VM process will by default start on the same display as VBoxManage */
     {
         const char *pszDisplay = RTEnvGet("DISPLAY");
         if (pszDisplay)
-            strEnv = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
+            aBstrEnv.push_back(BstrFmt("DISPLAY=%s", pszDisplay).raw());
         const char *pszXAuth = RTEnvGet("XAUTHORITY");
         if (pszXAuth)
-            strEnv.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
+            aBstrEnv.push_back(BstrFmt("XAUTHORITY=%s", pszXAuth).raw());
     }
 #endif
 
@@ -681,7 +681,7 @@ RTEXITCODE handleStartVM(HandlerArg *a)
 
             case 'E':   // --putenv
                 if (!RTStrStr(ValueUnion.psz, "\n"))
-                    strEnv.append(Utf8StrFmt("%s\n", ValueUnion.psz));
+                    aBstrEnv.push_back(Bstr(ValueUnion.psz).raw());
                 else
                     return errorSyntax(USAGE_STARTVM, "Parameter to option --putenv must not contain any newline character");
                 break;
@@ -724,7 +724,7 @@ RTEXITCODE handleStartVM(HandlerArg *a)
         {
             ComPtr<IProgress> progress;
             CHECK_ERROR(machine, LaunchVMProcess(a->session, sessionType.raw(),
-                                                 Bstr(strEnv).raw(), progress.asOutParam()));
+                                                 ComSafeArrayAsInParam(aBstrEnv), progress.asOutParam()));
             if (SUCCEEDED(rc) && !progress.isNull())
             {
                 RTPrintf("Waiting for VM \"%s\" to power on...\n", pszVM);
@@ -1865,20 +1865,18 @@ RTEXITCODE handleUnattendedInstall(HandlerArg *a)
     }
     else
     {
-        Bstr env;
+        com::SafeArray<IN_BSTR> aBstrEnv;
 #if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
         /* make sure the VM process will start on the same display as VBoxManage */
-        Utf8Str str;
         const char *pszDisplay = RTEnvGet("DISPLAY");
         if (pszDisplay)
-            str = Utf8StrFmt("DISPLAY=%s\n", pszDisplay);
+            aBstrEnv.push_back(BstrFmt("DISPLAY=%s", pszDisplay).raw());
         const char *pszXAuth = RTEnvGet("XAUTHORITY");
         if (pszXAuth)
-            str.append(Utf8StrFmt("XAUTHORITY=%s\n", pszXAuth));
-        env = str;
+            aBstrEnv.push_back(BstrrFmt("XAUTHORITY=%s", pszXAuth).raw());
 #endif
         ComPtr<IProgress> ptrProgress;
-        CHECK_ERROR2(hrc, ptrMachine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), env.raw(), ptrProgress.asOutParam()));
+        CHECK_ERROR2(hrc, ptrMachine, LaunchVMProcess(a->session, Bstr(pszSessionType).raw(), ComSafeArrayAsInParam(aBstrEnv), ptrProgress.asOutParam()));
         if (SUCCEEDED(hrc) && !ptrProgress.isNull())
         {
             RTMsgInfo("Waiting for VM '%ls' to power on...\n", bstrMachineName.raw());

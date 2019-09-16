@@ -2389,7 +2389,7 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     }
 
     /* Configure environment: */
-    QString strEnv;
+    QVector<QString> astrEnv;
 #ifdef Q_OS_WIN
     /* Allow started VM process to be foreground window: */
     AllowSetForegroundWindow(ASFW_ANY);
@@ -2398,10 +2398,10 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     /* Make sure VM process will start on the same display as the VM selector: */
     const char *pDisplay = RTEnvGet("DISPLAY");
     if (pDisplay)
-        strEnv.append(QString("DISPLAY=%1\n").arg(pDisplay));
+        astrEnv.append(QString("DISPLAY=%1").arg(pDisplay));
     const char *pXauth = RTEnvGet("XAUTHORITY");
     if (pXauth)
-        strEnv.append(QString("XAUTHORITY=%1\n").arg(pXauth));
+        astrEnv.append(QString("XAUTHORITY=%1").arg(pXauth));
 #endif
     QString strType;
     switch (enmLaunchMode)
@@ -2413,7 +2413,7 @@ bool UICommon::launchMachine(CMachine &comMachine, LaunchMode enmLaunchMode /* =
     }
 
     /* Prepare "VM spawning" progress: */
-    CProgress comProgress = comMachine.LaunchVMProcess(comSession, strType, strEnv);
+    CProgress comProgress = comMachine.LaunchVMProcess(comSession, strType, astrEnv);
     if (!comMachine.isOk())
     {
         /* If the VM is started separately and the VM process is already running, then it is OK. */

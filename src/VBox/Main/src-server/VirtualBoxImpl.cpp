@@ -1156,7 +1156,7 @@ HRESULT VirtualBox::getAPIRevision(LONG64 *aAPIRevision)
 
     /** @todo This needs to be the same in OSE and non-OSE, preferrably
      *        only changing when actual API changes happens. */
-    uRevision |= 0;
+    uRevision |= 1;
 
     *aAPIRevision = uRevision;
 

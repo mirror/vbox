@@ -3357,7 +3357,7 @@ HRESULT Machine::lockMachine(const ComPtr<ISession> &aSession,
  */
 HRESULT Machine::launchVMProcess(const ComPtr<ISession> &aSession,
                                  const com::Utf8Str &aName,
-                                 const com::Utf8Str &aEnvironment,
+                                 const std::vector<com::Utf8Str> &aEnvironmentChanges,
                                  ComPtr<IProgress> &aProgress)
 {
     Utf8Str strFrontend(aName);
@@ -3434,7 +3434,7 @@ HRESULT Machine::launchVMProcess(const ComPtr<ISession> &aSession,
 
         if (SUCCEEDED(rc))
         {
-            rc = i_launchVMProcess(control, strFrontend, aEnvironment, progress);
+            rc = i_launchVMProcess(control, strFrontend, aEnvironmentChanges, progress);
             if (SUCCEEDED(rc))
             {
                 aProgress = progress;
@@ -7369,7 +7369,7 @@ bool Machine::i_isUSBControllerPresent()
  */
 HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
                                    const Utf8Str &strFrontend,
-                                   const Utf8Str &strEnvironment,
+                                   const std::vector<com::Utf8Str> &aEnvironmentChanges,
                                    ProgressProxy *aProgress)
 {
     LogFlowThisFuncEnter();
@@ -7605,9 +7605,15 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
                                EOAC_DEFAULT);
         if (FAILED(rc))
             return setError(rc, tr("Failed to start the machine '%s'. CoSetProxyBlanket failed"), strMachineName.c_str());
+
+        size_t const            cEnvVars = aEnvironmentChanges.size();
+        com::SafeArray<IN_BSTR> aBstrEnvironmentChanges(cEnvVars);
+        for (size_t i = 0; i < cEnvVars; i++)
+            aBstrEnvironmentChanges[i] = Bstr(aEnvironmentChanges[i]).raw();
+
         ULONG uPid = 0;
         rc = pVBoxSDS->LaunchVMProcess(Bstr(idStr).raw(), Bstr(strMachineName).raw(), Bstr(strFrontend).raw(),
-                                       Bstr(strEnvironment).raw(), Bstr(strSupHardeningLogArg).raw(),
+                                       ComSafeArrayAsInParam(aBstrEnvironmentChanges), Bstr(strSupHardeningLogArg).raw(),
                                        idCallerSession, &uPid);
         if (FAILED(rc))
             return setError(rc, tr("Failed to start the machine '%s'. Process creation failed"), strMachineName.c_str());
@@ -7616,7 +7622,7 @@ HRESULT Machine::i_launchVMProcess(IInternalSessionControl *aControl,
     else
 #endif /* VBOX_WITH_VBOXSDS && RT_OS_WINDOWS */
     {
-        int vrc = MachineLaunchVMCommonWorker(idStr, strMachineName, strFrontend, strEnvironment, strSupHardeningLogArg,
+        int vrc = MachineLaunchVMCommonWorker(idStr, strMachineName, strFrontend, aEnvironmentChanges, strSupHardeningLogArg,
                                               strAppOverride, 0 /*fFlags*/, NULL /*pvExtraData*/, pid);
         if (RT_FAILURE(vrc))
             return setErrorBoth(VBOX_E_IPRT_ERROR, vrc,

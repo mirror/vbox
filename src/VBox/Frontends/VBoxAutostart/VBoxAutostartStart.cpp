@@ -138,7 +138,7 @@ DECLHIDDEN(RTEXITCODE) autostartStartMain(PCFGAST pCfgAst)
                                                              machine.asOutParam()));
 
                 CHECK_ERROR_BREAK(machine, LaunchVMProcess(g_pSession, Bstr("headless").raw(),
-                                                           Bstr("").raw(), progress.asOutParam()));
+                                                           ComSafeArrayNullInParam(), progress.asOutParam()));
                 if (SUCCEEDED(rc) && !progress.isNull())
                 {
                     autostartSvcLogVerbose("Waiting for VM \"%ls\" to power on...\n", (*it).strId.raw());

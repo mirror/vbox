@@ -267,7 +267,8 @@ def startVm(ctx, mach, vmtype):
     vbox = ctx['vb']
     perf = ctx['perf']
     session = ctx['global'].getSessionObject()
-    progress = mach.launchVMProcess(session, vmtype, "")
+    asEnv = []
+    progress = mach.launchVMProcess(session, vmtype, asEnv)
     if progressBar(ctx, progress, 100) and int(progress.resultCode) == 0:
         # we ignore exceptions to allow starting VM even if
         # perf collector cannot be started

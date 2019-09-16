@@ -93,8 +93,9 @@ private:
      * @{ */
     STDMETHOD(RegisterVBoxSVC)(IVBoxSVCRegistration *aVBoxSVC, LONG aPid, IUnknown **aExistingVirtualBox);
     STDMETHOD(DeregisterVBoxSVC)(IVBoxSVCRegistration *aVBoxSVC, LONG aPid);
-    STDMETHOD(LaunchVMProcess)(IN_BSTR aMachine, IN_BSTR aComment, IN_BSTR aFrontend, IN_BSTR aEnvironmentChanges,
-                               IN_BSTR aCmdOptions, ULONG aSessionId, ULONG *aPid);
+    STDMETHOD(LaunchVMProcess)(IN_BSTR aMachine, IN_BSTR aComment, IN_BSTR aFrontend,
+                               ComSafeArrayIn(IN_BSTR, aEnvironmentChanges), IN_BSTR aCmdOptions,
+                               ULONG aSessionId, ULONG *aPid);
     /** @} */
 
 

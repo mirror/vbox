@@ -108,8 +108,10 @@ static int tstStartVM(IVirtualBox *pVBox, ISession *pSession, Bstr machineID, bo
     if(SUCCEEDED(rc))
         rc = TST_COM_EXPR(machine->COMGETTER(Name)(machineName.asOutParam()));
     if(SUCCEEDED(rc))
+    {
         rc = machine->LaunchVMProcess(pSession, Bstr("headless").raw(),
-                                      Bstr("").raw(), progress.asOutParam());
+                                      ComSafeArrayNullInParam(), progress.asOutParam());
+    }
     if (SUCCEEDED(rc) && !progress.isNull())
     {
         CHECK_ERROR_L(progress, WaitForCompletion(-1));

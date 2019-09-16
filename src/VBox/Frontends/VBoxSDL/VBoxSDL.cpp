@@ -1526,7 +1526,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         else
         {
             ComPtr<IProgress> progress;
-            rc = pMachine->LaunchVMProcess(pSession, Bstr("headless").raw(), NULL, progress.asOutParam());
+            rc = pMachine->LaunchVMProcess(pSession, Bstr("headless").raw(), ComSafeArrayNullInParam(), progress.asOutParam());
             if (SUCCEEDED(rc) && !progress.isNull())
             {
                 RTPrintf("Waiting for VM to power on...\n");

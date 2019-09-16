@@ -20,7 +20,6 @@
 
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
-#include <VBox/com/array.h>
 #include <VBox/com/Guid.h>
 #include <VBox/com/ErrorInfo.h>
 #include <VBox/com/errorprint.h>
@@ -1308,7 +1307,7 @@ int main(int argc, char *argv[])
         ComPtr<IProgress> progress;
         RTPrintf("Launching VM process...\n");
         CHECK_ERROR_BREAK(machine, LaunchVMProcess(session, sessionType.raw(),
-                                                   NULL, progress.asOutParam()));
+                                                   ComSafeArrayNullInParam(), progress.asOutParam()));
         RTPrintf("Waiting for the VM to power on...\n");
         CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));
 

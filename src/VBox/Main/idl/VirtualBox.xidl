@@ -5838,7 +5838,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="008d62ad-00dc-4685-00f4-60bf00fc0dbd"
+    uuid="13a7c7cb-02fd-4962-a578-5660a5035776"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -6731,26 +6731,14 @@
         For details on the teleportation progress operation, see
         <link to="IConsole::powerUp"/>.
 
-<!-- TODO/r=bird: What about making @a environment into a smart array?  Guess
-this predates our safe array support by a year or so... Dmitry wrote the text here, right?
-Just rename it to @a environmentChanges and shorten the documentation to say the string
-are applied onto the server environment putenv style, i.e. "VAR=VALUE" for setting/replacing
-and "VAR" for unsetting. -->
-        The @a environment argument is a string containing definitions of
-        environment variables in the following format:
-        <pre>
-        NAME[=VALUE]\n
-        NAME[=VALUE]\n
-        ...
-        </pre>
-        where <tt>\\n</tt> is the new line character. These environment
-        variables will be appended to the environment of the VirtualBox server
-        process. If an environment variable exists both in the server process
-        and in this list, the value from this list takes precedence over the
-        server's variable. If the value of the environment variable is
-        omitted, this variable will be removed from the resulting environment.
-        If the environment string is @c null or empty, the server environment
-        is inherited by the started process as is.
+        The @a environmentChanges argument is a list of strings where every string contains
+        environment variable in the putenv style, i.e. "VAR=VALUE" for setting/replacing
+        and "VAR" for unsetting. These environment variables will be applied to the environment
+        of the VirtualBox server process. If an environment variable exists both in the server
+        process and in this list, the value from this list takes precedence over the
+        server's variable. If the value of the environment variable is omitted, this variable
+        will be removed from the resulting environment. If the list is empty, the server
+        environment is inherited by the started process as is.
 
         <result name="E_UNEXPECTED">
           Virtual machine not registered.
@@ -6798,9 +6786,9 @@ and "VAR" for unsetting. -->
           </ul>
         </desc>
       </param>
-      <param name="environment" type="wstring" dir="in">
+      <param name="environmentChanges" type="wstring" safearray="yes" dir="in">
         <desc>
-          Environment to pass to the VM process.
+          The list of putenv-style changes to the VM process environment.
         </desc>
       </param>
       <param name="progress" type="IProgress" dir="return">
@@ -27041,7 +27029,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IVirtualBoxSDS" extends="$unknown" notdual="yes"
-    uuid="bc1a2773-18f2-4066-08ce-1e44d59d84af"
+    uuid="890ed3dc-cc19-43fa-8ebf-baecb6b9ec87"
     wsmap="suppress" internal="yes"
     reservedMethods="0" reservedAttributes="0"
     >
@@ -27129,10 +27117,10 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
             </ul>
           </desc>
         </param>
-        <param name="environmentChanges" type="wstring" dir="in">
+        <param name="environmentChanges" type="wstring" safearray="yes" dir="in">
           <desc>
-            Environment changes to pass to the VM process, putenv style using newline as separator.
-            <!-- TODO: make this a safearray so values can safely contain newlines and '\'. -->
+            The list of putenv-style changes to the VM process environment.
+            See <link to="IMachine::launchVMProcess" /> for details.
           </desc>
         </param>
         <param name="cmdOptions" type="wstring" dir="in">

@@ -16,6 +16,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+#include <VBox/com/array.h>
 #include <VBox/com/com.h>
 #include <VBox/com/string.h>
 #include <VBox/com/Guid.h>
@@ -120,7 +121,7 @@ int main(int argc, char **argv)
             RTPrintf("Opening a new (remote) session...\n");
             CHECK_ERROR_BREAK(m,
                               LaunchVMProcess(session, Bstr("vrdp").raw(),
-                                              NULL, progress.asOutParam()));
+                                              ComSafeArrayNullInParam(), progress.asOutParam()));
 
             RTPrintf("Waiting for the remote session to open...\n");
             CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));

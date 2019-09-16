@@ -21,12 +21,13 @@
 # pragma once
 #endif
 
+#include <vector>
 #include "VirtualBoxBase.h"
 
 int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
                                 const Utf8Str &aComment,
                                 const Utf8Str &aFrontend,
-                                const Utf8Str &aEnvironment,
+                                const std::vector<com::Utf8Str> &aEnvironmentChanges,
                                 const Utf8Str &aExtraArg,
                                 const Utf8Str &aFilename,
                                 uint32_t      aFlags,

@@ -25,6 +25,7 @@
 
 #include "AutoCaller.h"
 #include "LoggingNew.h"
+#include "Wrapper.h"        /* for ArrayBSTRInConverter */
 
 #include <iprt/errcore.h>
 #include <iprt/asm.h>
@@ -403,7 +404,8 @@ STDMETHODIMP VirtualBoxSDS::DeregisterVBoxSVC(IVBoxSVCRegistration *aVBoxSVC, LO
 }
 
 
-STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, IN_BSTR aFrontend, IN_BSTR aEnvironmentChanges,
+STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, IN_BSTR aFrontend,
+                                            ComSafeArrayIn(IN_BSTR, aEnvironmentChanges),
                                             IN_BSTR aCmdOptions, ULONG aSessionId, ULONG *aPid)
 {
     /*
@@ -412,7 +414,7 @@ STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, 
     Utf8Str strMachine(aMachine);
     Utf8Str strComment(aComment);
     Utf8Str strFrontend(aFrontend);
-    Utf8Str strEnvironmentChanges(aEnvironmentChanges);
+    ArrayBSTRInConverter aStrEnvironmentChanges(ComSafeArrayInArg(aEnvironmentChanges));
     Utf8Str strCmdOptions(aCmdOptions);
 
     /*
@@ -428,7 +430,7 @@ STDMETHODIMP VirtualBoxSDS::LaunchVMProcess(IN_BSTR aMachine, IN_BSTR aComment, 
              */
             RTPROCESS pid;
             AssertCompile(sizeof(aSessionId) == sizeof(uint32_t));
-            int vrc = ::MachineLaunchVMCommonWorker(strMachine, strComment, strFrontend, strEnvironmentChanges,
+            int vrc = ::MachineLaunchVMCommonWorker(strMachine, strComment, strFrontend, aStrEnvironmentChanges.array(),
                                                     strCmdOptions, Utf8Str(),
                                                     RTPROC_FLAGS_AS_IMPERSONATED_TOKEN | RTPROC_FLAGS_SERVICE
                                                     | RTPROC_FLAGS_PROFILE | RTPROC_FLAGS_DESIRED_SESSION_ID,

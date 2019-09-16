@@ -742,7 +742,7 @@ static void startVM(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
     HRESULT rc;
     IMachine  *machine    = NULL;
     IProgress *progress   = NULL;
-    BSTR env              = NULL;
+    SAFEARRAY *env        = NULL;
     BSTR sessionType;
     SAFEARRAY *groupsSA = g_pVBoxFuncs->pfnSafeArrayOutParamAlloc();
 
@@ -779,7 +779,7 @@ static void startVM(const char *argv0, IVirtualBox *virtualBox, ISession *sessio
     }
 
     g_pVBoxFuncs->pfnUtf8ToUtf16("gui", &sessionType);
-    rc = IMachine_LaunchVMProcess(machine, session, sessionType, env, &progress);
+    rc = IMachine_LaunchVMProcess(machine, session, sessionType, ComSafeArrayAsInParam(env), &progress);
     g_pVBoxFuncs->pfnUtf16Free(sessionType);
     if (SUCCEEDED(rc))
     {
