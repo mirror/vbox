@@ -936,7 +936,7 @@ static void hmR0VmxSetProcCtlsVmcs(PVMXTRANSIENT pVmxTransient, uint32_t uProcCt
  * @param   uProcCtls       The Processor-based VM-execution controls to remove.
  *
  * @remarks When executing a nested-guest, this will not remove any of the specified
- *          controls if the guest hypervisor has set any one of them.
+ *          controls if the nested hypervisor has set any one of them.
  */
 static void hmR0VmxRemoveProcCtlsVmcs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t uProcCtls)
 {
@@ -4660,7 +4660,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
              *
              * For nested-guests, the "IA-32e mode guest" control we initialize with what is
              * required to get the nested-guest working with hardware-assisted VMX execution.
-             * It depends on the nested-guest's IA32_EFER.LMA bit. Remember, a guest hypervisor
+             * It depends on the nested-guest's IA32_EFER.LMA bit. Remember, a nested hypervisor
              * can skip intercepting changes to the EFER MSR. This is why it it needs to be done
              * here rather than while merging the guest VMCS controls.
              */
@@ -5256,8 +5256,8 @@ static int hmR0VmxExportGuestHwvirtState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
         if (pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUseVmcsShadowing)
         {
             /*
-             * If the guest hypervisor has loaded a current VMCS and is in VMX root mode,
-             * copy the guest hypervisor's current VMCS into the shadow VMCS and enable
+             * If the nested hypervisor has loaded a current VMCS and is in VMX root mode,
+             * copy the nested hypervisor's current VMCS into the shadow VMCS and enable
              * VMCS shadowing to skip intercepting some or all VMREAD/VMWRITE VM-exits.
              *
              * We check for VMX root mode here in case the guest executes VMXOFF without
@@ -5273,7 +5273,7 @@ static int hmR0VmxExportGuestHwvirtState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
                 Assert(!pVmxTransient->fIsNestedGuest);
 
                 /*
-                 * For performance reasons, also check if the guest hypervisor's current VMCS
+                 * For performance reasons, also check if the nested hypervisor's current VMCS
                  * was newly loaded or modified before copying it to the shadow VMCS.
                  */
                 if (!pVCpu->hm.s.vmx.fCopiedNstGstToShadowVmcs)
@@ -5441,7 +5441,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
             /*
              * With nested-guests, we may have extended the guest/host mask here since we
              * merged in the outer guest's mask. Thus, the merged mask can include more bits
-             * (to read from the nested-guest CR0 read-shadow) than the guest hypervisor
+             * (to read from the nested-guest CR0 read-shadow) than the nested hypervisor
              * originally supplied. We must copy those bits from the nested-guest CR0 into
              * the nested-guest CR0 read-shadow.
              */
@@ -5609,7 +5609,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PVMXTRANSIENT pV
          * With nested-guests, we may have extended the guest/host mask here (since we
          * merged in the outer guest's mask, see hmR0VmxMergeVmcsNested). This means, the
          * mask can include more bits (to read from the nested-guest CR4 read-shadow) than
-         * the guest hypervisor originally supplied. Thus, we should, in essence, copy
+         * the nested hypervisor originally supplied. Thus, we should, in essence, copy
          * those bits from the nested-guest CR4 into the nested-guest CR4 read-shadow.
          */
         HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR4);
@@ -9851,7 +9851,7 @@ static int hmR0VmxExitHostNmi(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
      * after executing guest or nested-guest code for the following reasons:
      *
      *   - We would need to perform VMREADs with interrupts disabled and is orders of
-     *     magnitude worse when we run as a guest hypervisor without VMCS shadowing
+     *     magnitude worse when we run as a nested hypervisor without VMCS shadowing
      *     supported by the host hypervisor.
      *
      *   - It affects the common VM-exit scenario and keeps interrupts disabled for a
@@ -9911,7 +9911,7 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfoN
      *       MSRs. We cannot assume the caller has initialized the nested-guest
      *       MSR bitmap in this case.
      *
-     *       The guest hypervisor may also switch whether it uses MSR bitmaps for
+     *       The nested hypervisor may also switch whether it uses MSR bitmaps for
      *       each VM-entry, hence initializing it once per-VM while setting up the
      *       nested-guest VMCS is not sufficient.
      */
@@ -9939,7 +9939,7 @@ static void hmR0VmxMergeMsrBitmapNested(PCVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfoN
  * For a guest, we don't modify these controls once we set up the VMCS and hence
  * this function is never called.
  *
- * For nested-guests since the guest hypervisor provides these controls on every
+ * For nested-guests since the nested hypervisor provides these controls on every
  * nested-guest VM-entry and could potentially change them everytime we need to
  * merge them before every nested-guest VM-entry.
  *
@@ -9989,13 +9989,13 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
      * VM-entry controls:
      * These controls contains state that depends on the nested-guest state (primarily
      * EFER MSR) and is thus not constant between VMLAUNCH/VMRESUME and the nested-guest
-     * VM-exit. Although the guest hypervisor cannot change it, we need to in order to
+     * VM-exit. Although the nested hypervisor cannot change it, we need to in order to
      * properly continue executing the nested-guest if the EFER MSR changes but does not
      * cause a nested-guest VM-exits.
      *
      * VM-exit controls:
      * These controls specify the host state on return. We cannot use the controls from
-     * the guest hypervisor state as is as it would contain the guest state rather than
+     * the nested hypervisor state as is as it would contain the guest state rather than
      * the host state. Since the host state is subject to change (e.g. preemption, trips
      * to ring-3, longjmp and rescheduling to a different host CPU) they are not constant
      * through VMLAUNCH/VMRESUME and the nested-guest VM-exit.
@@ -10010,7 +10010,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
      *
      * VM-exit MSR-load areas:
      * This must contain the real host MSRs with hardware-assisted VMX execution. Hence, we
-     * can entirely ignore what the guest hypervisor wants to load here.
+     * can entirely ignore what the nested hypervisor wants to load here.
      */
 
     /*
@@ -10070,7 +10070,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
     /*
      * I/O Bitmap.
      *
-     * We do not use the I/O bitmap that may be provided by the guest hypervisor as we always
+     * We do not use the I/O bitmap that may be provided by the nested hypervisor as we always
      * intercept all I/O port accesses.
      */
     Assert(u32ProcCtls & VMX_PROC_CTLS_UNCOND_IO_EXIT);
@@ -10149,7 +10149,7 @@ static int hmR0VmxMergeVmcsNested(PVMCPUCC pVCpu)
 
         /*
          * We must make sure CR8 reads/write must cause VM-exits when TPR shadowing is not
-         * used by the guest hypervisor. Preventing MMIO accesses to the physical APIC will
+         * used by the nested hypervisor. Preventing MMIO accesses to the physical APIC will
          * be taken care of by EPT/shadow paging.
          */
         if (pVM->hm.s.fAllow64BitGuests)
@@ -12632,7 +12632,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT p
 
         /*
          * Instructions that cause VM-exits unconditionally or the condition is
-         * always is taken solely from the guest hypervisor (meaning if the VM-exit
+         * always is taken solely from the nested hypervisor (meaning if the VM-exit
          * happens, it's guaranteed to be a nested-guest VM-exit).
          *
          *   - Provides VM-exit instruction length ONLY.
@@ -12645,13 +12645,13 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT p
         case VMX_EXIT_VMLAUNCH:
         case VMX_EXIT_VMRESUME:
         case VMX_EXIT_VMXOFF:
-        case VMX_EXIT_ENCLS:              /* Condition specified solely by guest hypervisor. */
+        case VMX_EXIT_ENCLS:              /* Condition specified solely by nested hypervisor. */
         case VMX_EXIT_VMFUNC:
             return hmR0VmxExitInstrNested(pVCpu, pVmxTransient);
 
         /*
          * Instructions that cause VM-exits unconditionally or the condition is
-         * always is taken solely from the guest hypervisor (meaning if the VM-exit
+         * always is taken solely from the nested hypervisor (meaning if the VM-exit
          * happens, it's guaranteed to be a nested-guest VM-exit).
          *
          *   - Provides VM-exit instruction length.
@@ -12670,7 +12670,7 @@ DECLINLINE(VBOXSTRICTRC) hmR0VmxHandleExitNested(PVMCPUCC pVCpu, PVMXTRANSIENT p
         case VMX_EXIT_VMPTRLD:
         case VMX_EXIT_VMPTRST:
         case VMX_EXIT_VMXON:
-        case VMX_EXIT_GDTR_IDTR_ACCESS:   /* Condition specified solely by guest hypervisor. */
+        case VMX_EXIT_GDTR_IDTR_ACCESS:   /* Condition specified solely by nested hypervisor. */
         case VMX_EXIT_LDTR_TR_ACCESS:
         case VMX_EXIT_RDRAND:
         case VMX_EXIT_RDSEED:

@@ -1231,10 +1231,10 @@ VMM_INT_DECL(void) HMNotifyVmxNstGstVmexit(PVMCPU pVCpu)
 
 
 /**
- * Notification callback for when the guest hypervisor's current VMCS is loaded or
+ * Notification callback for when the nested hypervisor's current VMCS is loaded or
  * changed outside VMX R0 code (e.g. in IEM).
  *
- * This need -not- be called for modifications to the guest hypervisor's current
+ * This need -not- be called for modifications to the nested hypervisor's current
  * VMCS when the guest is in VMX non-root mode as VMCS shadowing is not applicable
  * there.
  *
@@ -1248,7 +1248,7 @@ VMM_INT_DECL(void) HMNotifyVmxNstGstCurrentVmcsChanged(PVMCPU pVCpu)
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, CPUMCTX_EXTRN_HWVIRT);
 
     /*
-     * Make sure we need to copy the guest hypervisor's current VMCS into the shadow VMCS
+     * Make sure we need to copy the nested hypervisor's current VMCS into the shadow VMCS
      * on the next guest VM-entry.
      */
     pVCpu->hm.s.vmx.fCopiedNstGstToShadowVmcs = false;
