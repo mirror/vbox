@@ -2130,6 +2130,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         Tests the guest session environment changes.
         """
+        enmErrInvalidVarName = vbox.ComError.VBOX_E_IPRT_ERROR if self.oTstDrv.fpApiRev >= 6.1 else vbox.ComError.E_INVALIDARG;
         aoTests = [
             # Check basic operations.
             tdTestSessionEx([ # Initial environment is empty.
@@ -2187,12 +2188,12 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 ]),
             # Invalid variable names.
             tdTestSessionEx([
-                tdStepSessionSetEnv('', 'FOO', vbox.ComError.E_INVALIDARG),
+                tdStepSessionSetEnv('', 'FOO', enmErrInvalidVarName),
                 tdStepSessionCheckEnv(),
                 tdStepRequireMinimumApiVer(5.0), # 4.3 is too relaxed checking input!
-                tdStepSessionBulkEnv(['', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                tdStepSessionBulkEnv(['', 'foo=bar'], enmErrInvalidVarName),
                 tdStepSessionCheckEnv(),
-                tdStepSessionSetEnv('FOO=', 'BAR', vbox.ComError.E_INVALIDARG),
+                tdStepSessionSetEnv('FOO=', 'BAR', enmErrInvalidVarName),
                 tdStepSessionCheckEnv(),
                 ]),
             # A bit more weird keys/values.
@@ -2219,13 +2220,13 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         ];
         # Leading '=' in the name is okay for windows guests in 6.1 and later (for driver letter CWDs).
         if (self.oTstDrv.fpApiVer < 6.1 and self.oTstDrv.fpApiVer >= 5.0) or not oTestVm.isWindows():
-            aoTests.append(tdTestSessionEx([tdStepSessionSetEnv('=', '===', vbox.ComError.E_INVALIDARG),
+            aoTests.append(tdTestSessionEx([tdStepSessionSetEnv('=', '===', enmErrInvalidVarName),
                                             tdStepSessionCheckEnv(),
-                                            tdStepSessionSetEnv('=FOO', 'BAR', vbox.ComError.E_INVALIDARG),
+                                            tdStepSessionSetEnv('=FOO', 'BAR', enmErrInvalidVarName),
                                             tdStepSessionCheckEnv(),
-                                            tdStepSessionBulkEnv(['=', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                                            tdStepSessionBulkEnv(['=', 'foo=bar'], enmErrInvalidVarName),
                                             tdStepSessionCheckEnv(),
-                                            tdStepSessionBulkEnv(['=FOO', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                                            tdStepSessionBulkEnv(['=FOO', 'foo=bar'], enmErrInvalidVarName),
                                             tdStepSessionCheckEnv(),
                                             ]));
         elif self.oTstDrv.fpApiVer >= 6.1 and oTestVm.isWindows():
