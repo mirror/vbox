@@ -2115,6 +2115,30 @@ DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint3
 }
 
 /**
+ * Checks whether events injected in the nested-guest are subject to VM-exit checks.
+ *
+ * @returns @c true if set, @c false otherwise.
+ * @param   pCtx    Pointer to the context.
+ */
+DECLINLINE(bool) CPUMIsGuestVmxInterceptEvents(PCCPUMCTX pCtx)
+{
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    return pCtx->hwvirt.vmx.fInterceptEvents;
+}
+
+/**
+ * Sets whether events injected in the nested-guest are subject to VM-exit checks.
+ *
+ * @param   pCtx        Pointer to the context.
+ * @param   fIntercept  Whether to subject injected events to VM-exits or not.
+ */
+DECLINLINE(void) CPUMSetGuestVmxInterceptEvents(PCPUMCTX pCtx, bool fInterceptEvents)
+{
+    Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
+    pCtx->hwvirt.vmx.fInterceptEvents = fInterceptEvents;
+}
+
+/**
  * Checks whether the given exception causes a VM-exit.
  *
  * The exception type include hardware exceptions, software exceptions (#BP, #OF)
