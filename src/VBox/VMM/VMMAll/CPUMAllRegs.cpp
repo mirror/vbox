@@ -2422,19 +2422,17 @@ VMM_INT_DECL(uint32_t) CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t
  * Gets the permission bits for the specified I/O port from the given I/O bitmaps.
  *
  * @returns @c true if the I/O port access must cause a VM-exit, @c false otherwise.
- * @param   pvIoBitmapA     Pointer to I/O bitmap A.
- * @param   pvIoBitmapB     Pointer to I/O bitmap B.
+ * @param   pvIoBitmap      Pointer to I/O bitmap.
  * @param   uPort           The I/O port being accessed.
  * @param   cbAccess        The size of the I/O access in bytes (1, 2 or 4 bytes).
  */
-VMM_INT_DECL(bool) CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
-                                                uint8_t cbAccess)
+static bool cpumGetVmxIoBitmapPermission(void const *pvIoBitmap, uint16_t uPort, uint8_t cbAccess)
 {
     Assert(cbAccess == 1 || cbAccess == 2 || cbAccess == 4);
 
     /*
-     * If the I/O port access wraps around the 16-bit port I/O space,
-     * we must cause a VM-exit.
+     * If the I/O port access wraps around the 16-bit port I/O space, we must cause a
+     * VM-exit.
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
@@ -2445,9 +2443,29 @@ VMM_INT_DECL(bool) CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void co
     if (uPortLast > 0x10000)
         return true;
 
-    /* Read the appropriate bit from the corresponding IO bitmap. */
-    void const *pvIoBitmap = uPort < 0x8000 ? pvIoBitmapA : pvIoBitmapB;
-    return ASMBitTest(pvIoBitmap, uPort);
+    /*
+     * If any bit corresponding to the I/O access is set, we must cause a VM-exit.
+     */
+    uint8_t const *pbIoBitmap   = (uint8_t const *)pvIoBitmap;
+    signed int     cBitsToCheck = cbAccess;                     /* Number of permission bits to check for this access. */
+    while (cBitsToCheck > 0)
+    {
+        uint16_t const offPerm    = uPort >> 3;                 /* Byte offset of the port. */
+        uint16_t const idxPermBit = uPort - (offPerm << 3);     /* Bit offset within byte. */
+        Assert(idxPermBit < 8);
+        uint8_t const  fMask = RT_BIT(idxPermBit);              /* Mask of the permission bit to check within the byte. */
+        uint8_t const  bPerm = *(pbIoBitmap + offPerm);         /* The bitmap content at the byte offset of the port. */
+
+        /* If any bit for the access is 1, we must cause a VM-exit. */
+        if (bPerm & fMask)
+            return true;
+
+        /* Move to the next permission bit. */
+        --cBitsToCheck;
+        ++uPort;
+    }
+
+    return false;
 }
 
 
@@ -2733,11 +2751,9 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port,
 
     if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_IO_BITMAPS))
     {
-        uint8_t const *pbIoBitmapA = (uint8_t const *)pCtx->hwvirt.vmx.CTX_SUFF(pvIoBitmap);
-        uint8_t const *pbIoBitmapB = (uint8_t const *)pCtx->hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
-        Assert(pbIoBitmapA);
-        Assert(pbIoBitmapB);
-        return CPUMGetVmxIoBitmapPermission(pbIoBitmapA, pbIoBitmapB, u16Port, cbAccess);
+        uint8_t const *pbIoBitmap = (uint8_t const *)pCtx->hwvirt.vmx.CTX_SUFF(pvIoBitmap);
+        Assert(pbIoBitmap);
+        return cpumGetVmxIoBitmapPermission(pbIoBitmap, u16Port, cbAccess);
     }
 
     return false;

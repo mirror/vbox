@@ -1503,8 +1503,6 @@ VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16
 VMM_INT_DECL(bool)      CPUMIsGuestVmxMovToCr3InterceptSet(PVMCPU pVCpu, uint64_t uNewCr3);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
-VMM_INT_DECL(bool)      CPUMGetVmxIoBitmapPermission(void const *pvIoBitmapA, void const *pvIoBitmapB, uint16_t uPort,
-                                                     uint8_t cbAccess);
 /** @} */
 
 /** @name Externalized State Helpers.
