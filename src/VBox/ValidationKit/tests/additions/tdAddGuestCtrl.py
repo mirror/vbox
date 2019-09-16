@@ -2190,18 +2190,9 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                 tdStepSessionSetEnv('', 'FOO', vbox.ComError.E_INVALIDARG),
                 tdStepSessionCheckEnv(),
                 tdStepRequireMinimumApiVer(5.0), # 4.3 is too relaxed checking input!
-                tdStepSessionSetEnv('=', '===', vbox.ComError.E_INVALIDARG),
-                tdStepSessionCheckEnv(),
-                tdStepSessionSetEnv('FOO=', 'BAR', vbox.ComError.E_INVALIDARG),
-                tdStepSessionCheckEnv(),
-                tdStepSessionSetEnv('=FOO', 'BAR', vbox.ComError.E_INVALIDARG),
-                tdStepSessionCheckEnv(),
-                tdStepRequireMinimumApiVer(5.0), # 4.3 is buggy and too relaxed!
                 tdStepSessionBulkEnv(['', 'foo=bar'], vbox.ComError.E_INVALIDARG),
                 tdStepSessionCheckEnv(),
-                tdStepSessionBulkEnv(['=', 'foo=bar'], vbox.ComError.E_INVALIDARG),
-                tdStepSessionCheckEnv(),
-                tdStepSessionBulkEnv(['=FOO', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                tdStepSessionSetEnv('FOO=', 'BAR', vbox.ComError.E_INVALIDARG),
                 tdStepSessionCheckEnv(),
                 ]),
             # A bit more weird keys/values.
@@ -2226,6 +2217,26 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                               tdStepSessionCheckEnv([ 'FOO=BAR', 'BAR=BAZ',]),
                             ]),
         ];
+        # Leading '=' in the name is okay for windows guests in 6.1 and later (for driver letter CWDs).
+        if (self.oTstDrv.fpApiVer < 6.1 and self.oTstDrv.fpApiVer >= 5.0) or not oTestVm.isWindows():
+            aoTests.append(tdTestSessionEx([tdStepSessionSetEnv('=', '===', vbox.ComError.E_INVALIDARG),
+                                            tdStepSessionCheckEnv(),
+                                            tdStepSessionSetEnv('=FOO', 'BAR', vbox.ComError.E_INVALIDARG),
+                                            tdStepSessionCheckEnv(),
+                                            tdStepSessionBulkEnv(['=', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                                            tdStepSessionCheckEnv(),
+                                            tdStepSessionBulkEnv(['=FOO', 'foo=bar'], vbox.ComError.E_INVALIDARG),
+                                            tdStepSessionCheckEnv(),
+                                            ]));
+        elif self.oTstDrv.fpApiVer >= 6.1 and oTestVm.isWindows():
+            aoTests.append(tdTestSessionEx([tdStepSessionSetEnv('=D:', 'D:/tmp'),
+                                            tdStepSessionCheckEnv(['=D:=D:/tmp',]),
+                                            tdStepSessionBulkEnv(['=FOO', 'foo=bar']),
+                                            tdStepSessionCheckEnv(['=D:=D:/tmp', '=FOO', 'foo=bar']),
+                                            tdStepSessionUnsetEnv('=D:'),
+                                            tdStepSessionCheckEnv(['=FOO', 'foo=bar']),
+                                            ]));
+
         return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'SessionEnv');
 
     def testGuestCtrlSession(self, oSession, oTxsSession, oTestVm):
