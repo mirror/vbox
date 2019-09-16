@@ -61,7 +61,7 @@ PROGRAMS += \
 	tstDir-2 \
 	tstDir-3 \
 	tstRTDvm \
-	tstEnv \
+	tstRTEnv \
 	tstRTErrUnique \
 	tstFile \
 	tstRTFileAio \
@@ -346,8 +346,8 @@ tstDir-3_SOURCES = tstDir-3.cpp
 tstRTDvm_TEMPLATE = VBOXR3TSTEXE
 tstRTDvm_SOURCES = tstRTDvm.cpp
 
-tstEnv_TEMPLATE = VBOXR3TSTEXE
-tstEnv_SOURCES = tstEnv.cpp
+tstRTEnv_TEMPLATE = VBOXR3TSTEXE
+tstRTEnv_SOURCES = tstRTEnv.cpp
 
 tstRTErrUnique_SOURCES = tstRTErrUnique.cpp
 tstRTErrUnique_INCS = $(IPRT_OUT_DIR)/

@@ -54,6 +54,28 @@ RT_C_DECLS_BEGIN
 RTDECL(int) RTEnvCreate(PRTENV pEnv);
 
 /**
+ * Creates an empty environment block.
+ *
+ * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
+ *
+ * @param   phEnv       Where to store the handle of the new environment block.
+ * @param   fFlags      Zero or more RTENV_CREATE_F_XXX flags.
+ */
+RTDECL(int) RTEnvCreateEx(PRTENV phEnv, uint32_t fFlags);
+
+/** @name RTENV_CREATE_F_XXX - Flags for RTEnvCreateEx() and RTEnvCreateChangeRecordEx()
+ * @{ */
+/** Allow equal ('=') as the first character of a variable name.
+ * This is useful for compatibility with Windows' handling of CWD on drives, as
+ * these are stored on the form "=D:=D:\tmp\asdf".   It is only really useful
+ * for creating environment blocks for processes and such, since the CRT doesn't
+ * allow us to apply it directly to the process enviornment. */
+#define RTENV_CREATE_F_ALLOW_EQUAL_FIRST_IN_VAR     RT_BIT_32(0)
+/** Valid flags.   */
+#define RTENV_CREATE_F_VALID_MASK                   UINT32_C(0x00000001)
+/** @} */
+
+/**
  * Creates an environment block and fill it with variables from the given
  * environment array.
  *
@@ -379,6 +401,16 @@ RTDECL(const char *) RTEnvGetByIndexRawEx(RTENV hEnv, uint32_t iVar);
  * @param   phEnv       Where to store the handle of the new environment block.
  */
 RTDECL(int) RTEnvCreateChangeRecord(PRTENV phEnv);
+
+/**
+ * Extended version of RTEnvCreateChangeRecord that takes flags.
+ *
+ * @returns IPRT status code. Typical error is VERR_NO_MEMORY.
+ *
+ * @param   phEnv       Where to store the handle of the new environment block.
+ * @param   fFlags      Zero or more RTENV_CREATE_F_XXX flags.
+ */
+RTDECL(int) RTEnvCreateChangeRecordEx(PRTENV phEnv, uint32_t fFlags);
 
 /**
  * Checks if @a hEnv is an environment change record.

@@ -29,22 +29,24 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #include <iprt/env.h>
-#include <iprt/initterm.h>
 #include <iprt/err.h>
 #include <iprt/string.h>
-#include <iprt/stream.h>
+#include <iprt/test.h>
 
 
 int main()
 {
-    RTR3InitExeNoArguments(0);
-    RTPrintf("tstEnv: TESTING...\n");
+    RTTEST hTest;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTEnv", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
+    RTTestBanner(hTest);
 
-    int cErrors = 0;
+#define CHECK(expr)             RTTEST_CHECK(hTest, expr)
+#define CHECK_RC(expr, rc)      RTTEST_CHECK_RC(hTest, expr, rc)
+#define CHECK_STR(str1, str2)  do { if (strcmp(str1, str2)) { RTTestFailed(hTest, "line %u: '%s' != '%s' (*)", __LINE__, str1, str2); } } while (0)
 
-#define CHECK(expr)  do { if (!(expr)) { RTPrintf("tstEnv: error line %d: %s\n", __LINE__, #expr); cErrors++; } } while (0)
-#define CHECK_RC(expr, rc)  do { int rc2 = expr; if (rc2 != (rc)) { RTPrintf("tstEnv: error line %d: %s -> %Rrc expected %Rrc\n", __LINE__, #expr, rc2, rc); cErrors++; } } while (0)
-#define CHECK_STR(str1, str2)  do { if (strcmp(str1, str2)) { RTPrintf("tstEnv: error line %d: '%s' != '%s' (*)\n", __LINE__, str1, str2); cErrors++; } } while (0)
+    RTTestSub(hTest, "Basics");
 
     /*
      * Try mess around with the path a bit.
@@ -172,9 +174,22 @@ int main()
     CHECK_RC(RTEnvGetEx(Env, "IPRTMyNewVar15", szBuf, sizeof(szBuf), &cch), VINF_SUCCESS);
     CHECK_STR(szBuf, "MyValue15");
 
+    RTTestDisableAssertions(hTest);
+#ifdef RT_OS_WINDOWS
+    CHECK_RC(RTEnvSetEx(Env, "=C:", "C:\\Temp"), VINF_SUCCESS);
+    CHECK_RC(RTEnvGetEx(Env, "=C:", szBuf, sizeof(szBuf), &cch), VINF_SUCCESS);
+    CHECK_STR(szBuf, "C:\\Temp");
+#else
+    CHECK_RC(RTEnvSetEx(Env, "=C:", "C:\\Temp"), VERR_ENV_INVALID_VAR_NAME);
+    CHECK_RC(RTEnvSetEx(Env, "=", ""), VERR_ENV_INVALID_VAR_NAME);
+#endif
+    CHECK_RC(RTEnvSetEx(Env, "", ""), VERR_ENV_INVALID_VAR_NAME);
+    RTTestRestoreAssertions(hTest);
+
     /*
      * Put.
      */
+    RTTestSub(hTest, "RTEnvPutEx");
     CHECK_RC(RTEnvPutEx(Env, "IPRTMyNewVar28"), VINF_SUCCESS);
     CHECK(!RTEnvExistEx(Env, "IPRTMyNewVar28"));
     CHECK_RC(RTEnvGetEx(Env, "IPRTMyNewVar32", szBuf, sizeof(szBuf), &cch), VINF_SUCCESS);
@@ -190,9 +205,22 @@ int main()
     CHECK_RC(RTEnvGetEx(Env, "IPRTMyNewVar15", szBuf, sizeof(szBuf), &cch), VINF_SUCCESS);
     CHECK_STR(szBuf, "MyValue15");
 
+    RTTestDisableAssertions(hTest);
+#ifdef RT_OS_WINDOWS
+    CHECK_RC(RTEnvPutEx(Env, "=D:=D:\\Temp"), VINF_SUCCESS);
+    CHECK_RC(RTEnvGetEx(Env, "=D:", szBuf, sizeof(szBuf), &cch), VINF_SUCCESS);
+    CHECK_STR(szBuf, "D:\\Temp");
+#else
+    CHECK_RC(RTEnvPutEx(Env, "=D:=D:\\Temp"), VERR_ENV_INVALID_VAR_NAME);
+    CHECK_RC(RTEnvPutEx(Env, "="), VERR_ENV_INVALID_VAR_NAME);
+#endif
+    CHECK_RC(RTEnvPutEx(Env, ""), VERR_ENV_INVALID_VAR_NAME);
+    RTTestRestoreAssertions(hTest);
+
     /*
      * Dup.
      */
+    RTTestSub(hTest, "RTEnvDupEx");
     char *psz1;
     CHECK(RTEnvDupEx(Env, "NonExistantVariable") == NULL);
     psz1 = RTEnvDupEx(Env, "IPRTMyNewVar15");
@@ -214,6 +242,7 @@ int main()
     /*
      * Another cloning.
      */
+    RTTestSub(hTest, "RTEnvClone");
     RTENV Env2;
     CHECK_RC(RTEnvClone(&Env2, Env), VINF_SUCCESS);
     CHECK_RC(RTEnvDestroy(Env2), VINF_SUCCESS);
@@ -221,6 +250,7 @@ int main()
     /*
      * execve envp and we're done.
      */
+    RTTestSub(hTest, "RTEnvGetExecEnvP");
     const char * const *papsz = RTEnvGetExecEnvP(RTENV_DEFAULT);
     CHECK(papsz != NULL);
     papsz = RTEnvGetExecEnvP(RTENV_DEFAULT);
@@ -236,10 +266,6 @@ int main()
     /*
      * Summary
      */
-    if (!cErrors)
-        RTPrintf("tstEnv: SUCCESS\n");
-    else
-        RTPrintf("tstEnv: FAILURE - %d errors\n", cErrors);
-    return !!cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
