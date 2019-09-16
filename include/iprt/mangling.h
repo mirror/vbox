@@ -1631,6 +1631,7 @@
 # define RTPathCopyComponents                           RT_MANGLER(RTPathCopyComponents)
 # define RTPathCountComponents                          RT_MANGLER(RTPathCountComponents)
 # define RTPathEnsureTrailingSeparator                  RT_MANGLER(RTPathEnsureTrailingSeparator)
+# define RTPathEnsureTrailingSeparatorEx                RT_MANGLER(RTPathEnsureTrailingSeparatorEx)
 # define RTPathExecDir                                  RT_MANGLER(RTPathExecDir)
 # define RTPathExists                                   RT_MANGLER(RTPathExists)
 # define RTPathExistsEx                                 RT_MANGLER(RTPathExistsEx)

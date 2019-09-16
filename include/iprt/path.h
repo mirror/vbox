@@ -431,6 +431,17 @@ RTDECL(char *) RTPathSkipRootSpec(const char *pszPath);
 RTDECL(size_t) RTPathEnsureTrailingSeparator(char *pszPath, size_t cbPath);
 
 /**
+ * Same as RTPathEnsureTrailingSeparator but with selectable path style.
+ *
+ * @returns The length of the path, 0 on buffer overflow.
+ * @param   pszPath     The path.
+ * @param   cbPath      The length of the path buffer @a pszPath points to.
+ * @param   fFlags      The path style, RTPATH_STR_F_STYLE_XXX.
+ * @sa      RTPathEnsureTrailingSeparator
+ */
+RTDECL(size_t) RTPathEnsureTrailingSeparatorEx(char *pszPath, size_t cbPath, uint32_t fFlags);
+
+/**
  * Changes all the slashes in the specified path to DOS style.
  *
  * Unless @a fForce is set, nothing will be done when on a UNIX flavored system

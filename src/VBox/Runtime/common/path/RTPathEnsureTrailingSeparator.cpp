@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTPathEnsureTrailingSeparator
+ * IPRT - RTPathEnsureTrailingSeparator & RTPathEnsureTrailingSeparatorEx
  */
 
 /*
@@ -30,22 +30,49 @@
 *********************************************************************************************************************************/
 #include "internal/iprt.h"
 #include <iprt/path.h>
-#include <iprt/string.h>
+
+#include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/string.h>
 
 
-
-RTDECL(size_t) RTPathEnsureTrailingSeparator(char *pszPath, size_t cbPath)
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+/** Slash character indexed by path style. */
+static char g_achSlashes[] =
 {
+    /*[RTPATH_STR_F_STYLE_HOST] =*/     RTPATH_SLASH,
+    /*[RTPATH_STR_F_STYLE_DOS] =*/      '\\',
+    /*[RTPATH_STR_F_STYLE_UNIX] =*/     '/',
+    /*[RTPATH_STR_F_STYLE_RESERVED] =*/ '!',
+};
+AssertCompile(RTPATH_STR_F_STYLE_HOST == 0);
+AssertCompile(RTPATH_STR_F_STYLE_DOS  == 1);
+AssertCompile(RTPATH_STR_F_STYLE_UNIX == 2);
+
+
+RTDECL(size_t) RTPathEnsureTrailingSeparatorEx(char *pszPath, size_t cbPath, uint32_t fFlags)
+{
+    Assert(RTPATH_STR_F_IS_VALID(fFlags, 0));
+
     size_t off = strlen(pszPath);
     if (off > 0)
     {
         char ch = pszPath[off - 1];
-        if (RTPATH_IS_SLASH(ch) || RTPATH_IS_VOLSEP(ch))
+        if (ch == '/')
             return off;
+        if (   (ch == ':' || ch == '\\')
+            && (   (fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_DOS
+#if RTPATH_STYLE == RTPATH_STR_F_STYLE_DOS
+                || (fFlags & RTPATH_STR_F_STYLE_MASK) == RTPATH_STR_F_STYLE_HOST
+#endif
+               ))
+            return off;
+
         if (off + 2 <= cbPath)
         {
-            pszPath[off++] = RTPATH_SLASH;
+            pszPath[off++] = g_achSlashes[fFlags & RTPATH_STR_F_STYLE_MASK];
             pszPath[off]   = '\0';
             return off;
         }
@@ -53,12 +80,19 @@ RTDECL(size_t) RTPathEnsureTrailingSeparator(char *pszPath, size_t cbPath)
     else if (off + 3 <= cbPath)
     {
         pszPath[off++] = '.';
-        pszPath[off++] = RTPATH_SLASH;
+        pszPath[off++] =  g_achSlashes[fFlags & RTPATH_STR_F_STYLE_MASK];
         pszPath[off]   = '\0';
         return off;
     }
 
     return 0;
+}
+RT_EXPORT_SYMBOL(RTPathEnsureTrailingSeparatorEx);
+
+
+RTDECL(size_t) RTPathEnsureTrailingSeparator(char *pszPath, size_t cbPath)
+{
+    return RTPathEnsureTrailingSeparatorEx(pszPath, cbPath, RTPATH_STR_F_STYLE_HOST);
 }
 RT_EXPORT_SYMBOL(RTPathEnsureTrailingSeparator);
 

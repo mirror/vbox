@@ -284,6 +284,41 @@ static void testPurgeFilename(RTTEST hTest)
 }
 
 
+static void testEnsureTrailingSeparator(RTTEST hTest)
+{
+    static struct
+    {
+        const char *pszIn, *pszOut;
+        uint32_t    fFlags;
+    } const s_aTests[] =
+    {
+        { "/foo",                   "/foo/",                RTPATH_STR_F_STYLE_UNIX },
+        { "/foo\\",                 "/foo\\/",              RTPATH_STR_F_STYLE_UNIX },
+        { "/foo:",                  "/foo:/",               RTPATH_STR_F_STYLE_UNIX },
+        { "/foo/",                  "/foo/",                RTPATH_STR_F_STYLE_UNIX },
+        { "D:/foo",                 "D:/foo\\",             RTPATH_STR_F_STYLE_DOS },
+        { "D:/foo\\",               "D:/foo\\",             RTPATH_STR_F_STYLE_DOS },
+        { "",                       "./",                   RTPATH_STR_F_STYLE_UNIX},
+        { "",                       ".\\",                  RTPATH_STR_F_STYLE_DOS },
+        { "",                       "." RTPATH_SLASH_STR,   RTPATH_STR_F_STYLE_HOST },
+        { ".",                      "." RTPATH_SLASH_STR,   RTPATH_STR_F_STYLE_HOST },
+        { "x",                      "x" RTPATH_SLASH_STR,   RTPATH_STR_F_STYLE_HOST },
+        { "y" RTPATH_SLASH_STR,     "y" RTPATH_SLASH_STR,   RTPATH_STR_F_STYLE_HOST },
+    };
+    RTTestSub(hTest, "RTPathEnsureTrailingSeparatorEx");
+    for (uint32_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        char szPath[RTPATH_MAX];
+        strcpy(szPath, s_aTests[i].pszIn);
+        size_t cchRet = RTPathEnsureTrailingSeparatorEx(szPath, sizeof(szPath), s_aTests[i].fFlags);
+        RTTEST_CHECK(hTest, cchRet == strlen(s_aTests[i].pszOut));
+        if (strcmp(szPath, s_aTests[i].pszOut) != 0)
+            RTTestFailed(hTest, "sub-test #%u: got '%s', expected '%s' (style %#x)",
+                         i, szPath, s_aTests[i].pszOut, s_aTests[i].fFlags);
+    }
+}
+
+
 int main()
 {
     char szPath[RTPATH_MAX];
@@ -1013,6 +1048,7 @@ int main()
     testParserAndSplitter(hTest);
     testParentLength(hTest);
     testPurgeFilename(hTest);
+    testEnsureTrailingSeparator(hTest);
 
     /*
      * Summary.
