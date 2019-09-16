@@ -229,7 +229,8 @@ int GuestSession::init(Guest *pGuest, const GuestSessionStartupInfo &ssInfo,
     int rc = i_objectRegister(NULL /* pObject */, SESSIONOBJECTTYPE_SESSION, &mData.mObjectID);
     if (RT_SUCCESS(rc))
     {
-        rc = mData.mEnvironmentChanges.initChangeRecord();
+        rc = mData.mEnvironmentChanges.initChangeRecord(pGuest->i_isGuestInWindowsNtFamily()
+                                                        ? RTENV_CREATE_F_ALLOW_EQUAL_FIRST_IN_VAR : 0);
         if (RT_SUCCESS(rc))
         {
             rc = RTCritSectInit(&mWaitEventCritSect);
@@ -1835,7 +1836,7 @@ int GuestSession::i_onSessionStatusChange(PVBOXGUESTCTRLHOSTCBCTX pCbCtx, PVBOXG
                 try { pBaseEnv = new GuestEnvironment(); } catch (std::bad_alloc &) { pBaseEnv = NULL; }
                 if (pBaseEnv)
                 {
-                    int vrc = pBaseEnv->initNormal();
+                    int vrc = pBaseEnv->initNormal(Guest.i_isGuestInWindowsNtFamily() ? RTENV_CREATE_F_ALLOW_EQUAL_FIRST_IN_VAR : 0);
                     if (RT_SUCCESS(vrc))
                         vrc = pBaseEnv->copyUtf8Block(pszzEnvBlock, cbEnvBlock);
                     if (RT_SUCCESS(vrc))

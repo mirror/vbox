@@ -82,6 +82,7 @@ public:
     GuestEnvironmentBase(void)
         : m_hEnv(NIL_RTENV)
         , m_cRefs(1)
+        , m_fFlags(0)
     { }
 
     /**
@@ -361,9 +362,10 @@ protected:
      * Copy constructor.
      * @throws HRESULT
      */
-    GuestEnvironmentBase(const GuestEnvironmentBase &rThat, bool fChangeRecord)
+    GuestEnvironmentBase(const GuestEnvironmentBase &rThat, bool fChangeRecord, uint32_t fFlags = 0)
         : m_hEnv(NIL_RTENV)
         , m_cRefs(1)
+        , m_fFlags(fFlags)
     {
         int rc = cloneCommon(rThat, fChangeRecord);
         if (RT_FAILURE(rc))
@@ -393,9 +395,9 @@ protected:
             {
                 /* Need to type convert it. */
                 if (fChangeRecord)
-                    rc = RTEnvCreateChangeRecord(&hNewEnv);
+                    rc = RTEnvCreateChangeRecordEx(&hNewEnv, rThat.m_fFlags);
                 else
-                    rc = RTEnvCreate(&hNewEnv);
+                    rc = RTEnvCreateEx(&hNewEnv, rThat.m_fFlags);
                 if (RT_SUCCESS(rc))
                 {
                     rc = RTEnvApplyChanges(hNewEnv, rThat.m_hEnv);
@@ -411,14 +413,15 @@ protected:
              * (Relevant for GuestProcessStartupInfo and internal commands.)
              */
             if (fChangeRecord)
-                rc = RTEnvCreateChangeRecord(&hNewEnv);
+                rc = RTEnvCreateChangeRecordEx(&hNewEnv, rThat.m_fFlags);
             else
-                rc = RTEnvCreate(&hNewEnv);
+                rc = RTEnvCreateEx(&hNewEnv, rThat.m_fFlags);
         }
         if (RT_SUCCESS(rc))
         {
             RTEnvDestroy(m_hEnv);
             m_hEnv = hNewEnv;
+            m_fFlags = rThat.m_fFlags;
         }
         return rc;
     }
@@ -428,6 +431,8 @@ protected:
     RTENV               m_hEnv;
     /** Reference counter. */
     uint32_t volatile   m_cRefs;
+    /** RTENV_CREATE_F_XXX. */
+    uint32_t            m_fFlags;
 };
 
 class GuestEnvironmentChanges;
@@ -469,11 +474,13 @@ public:
     /**
      * Initialize this as a normal environment block.
      * @returns IPRT status code.
+     * @param   fFlags      RTENV_CREATE_F_XXX
      */
-    int initNormal(void)
+    int initNormal(uint32_t fFlags)
     {
         AssertReturn(m_hEnv == NIL_RTENV, VERR_WRONG_ORDER);
-        return RTEnvCreate(&m_hEnv);
+        m_fFlags = fFlags;
+        return RTEnvCreateEx(&m_hEnv, fFlags);
     }
 
     /**
@@ -493,7 +500,7 @@ public:
      */
     GuestEnvironment &operator=(const GuestEnvironmentBase &rThat)
     {
-        int rc = cloneCommon(rThat, true /*fChangeRecord*/);
+        int rc = copy(rThat);
         if (RT_FAILURE(rc))
             throw (Global::vboxStatusCodeToCOM(rc));
         return *this;
@@ -549,11 +556,13 @@ public:
     /**
      * Initialize this as a environment change record.
      * @returns IPRT status code.
+     * @param   fFlags      RTENV_CREATE_F_XXX
      */
-    int initChangeRecord(void)
+    int initChangeRecord(uint32_t fFlags)
     {
         AssertReturn(m_hEnv == NIL_RTENV, VERR_WRONG_ORDER);
-        return RTEnvCreateChangeRecord(&m_hEnv);
+        m_fFlags = fFlags;
+        return RTEnvCreateChangeRecordEx(&m_hEnv, fFlags);
     }
 
     /**
@@ -573,7 +582,7 @@ public:
      */
     GuestEnvironmentChanges &operator=(const GuestEnvironmentBase &rThat)
     {
-        int rc = cloneCommon(rThat, true /*fChangeRecord*/);
+        int rc = copy(rThat);
         if (RT_FAILURE(rc))
             throw (Global::vboxStatusCodeToCOM(rc));
         return *this;
