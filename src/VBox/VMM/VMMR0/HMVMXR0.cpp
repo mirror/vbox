@@ -10345,11 +10345,14 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
      * If any new events (interrupts/NMI) are pending currently, we try to set up the
      * guest to cause a VM-exit the next time they are ready to receive the event.
      *
-     * With nested-guests, evaluating pending events may cause VM-exits.
+     * With nested-guests, evaluating pending events may cause VM-exits. Also, verify
+     * that the event in TRPM that we will inject using hardware-assisted VMX is -not-
+     * subject to interecption. Otherwise, we should have checked and injected them
+     * manually elsewhere (IEM).
      */
     if (TRPMHasTrap(pVCpu))
     {
-        Assert(!pVmxTransient->fIsNestedGuest || !pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents);
+        Assert(!pVmxTransient->fIsNestedGuest || !CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
         hmR0VmxTrpmTrapToPendingEvent(pVCpu);
     }
 
@@ -10472,7 +10475,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
              * the VM-exit instruction emulation happy.
              */
             if (pVmxTransient->fIsNestedGuest)
-                pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
+                CPUMSetGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx, true);
 #endif
 
             /*
