@@ -1166,7 +1166,6 @@ VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT 
                 break;
 
             default:
-                Assert(uVector == X86_XCPT_DB);
                 uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_SW_INT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
                 break;
         }
