@@ -1054,7 +1054,7 @@ private slots:
         ULONG aPctHalted;
         ULONG aPctOther;
         comMachineDebugger.GetCPULoad(0x7fffffff, aPctExecuting, aPctHalted, aPctOther);
-        m_iCPULoadPercentage = aPctExecuting;
+        m_iCPULoadPercentage = aPctExecuting + aPctOther;
         update();
     }
 
