@@ -994,8 +994,8 @@ $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi \
 		'cscript.exe /nologo $(VBOX_PATH_WISUMINFO) $(@F) $(VBOX_INS_PROD_LANG) || exit /b1' \
 		'call sign-sha1.cmd $(@F) || exit /b1' \
 		) ) \
-        $(if VBOX_WITH_COMBINED_PACKAGE,'copy /y "$(@F)" "$(notdir $(PACKAGE_NAME_FINAL))" || exit /b1',) \
-		'@echo Create multilanguage MSI: $(notdir $(PACKAGE_NAME_FINAL))'
+        $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE),'copy /y "$(@F)" "$(notdir $(PACKAGE_NAME_FINAL))" || exit /b1',) \
+		'@echo Created multilanguage MSI: $(notdir $(PACKAGE_NAME_FINAL))'
 
 # Copy multilingual installer to bin.
 $(PACKAGE_NAME_FINAL): $(VBOX_WIN_INST_OUT_DIR)/$(PACKAGE_NAME_LANG).msi | $$(dir $$@)
@@ -1046,7 +1046,7 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		'$(VBOX_VCC_EDITBIN) /IntegrityCheck:NO $(@F) || exit /b1' \
 		'call sign-dual.cmd $(@F) || exit /b1' \
 		) ) \
-		'@echo Create multiarch EXE: $(@F)'
+		'@echo Created multiarch EXE: $(@F)'
 else
 #
 # We still do the installer stub thing even if we only ship 64-bit, because we've
@@ -1074,12 +1074,12 @@ $(PATH_STAGE_BIN)/$(PACKAGE_NAME_MULTIARCH_FINAL) \
 		$(subst $(KBUILD_BIN_PATH),%KBUILD_BIN_PATH%,$(subst $(KBUILD_DEVTOOLS),%KBUILD_DEVTOOLS%, \
 		'..\bin\VBoxStubBld.exe ^' \
 		'  -out $(@F) ^' \
-		'  -target-$(KBUILD_TARGET_ARCH) $(PACKAGE_NAME_FINAL) ^' \
+		'  -target-$(KBUILD_TARGET_ARCH) $(notdir $(PACKAGE_NAME_FINAL)) ^' \
 		'  -stub ../bin/VBoxStub.exe || exit /b1' \
 		'$(VBOX_VCC_EDITBIN) /IntegrityCheck:NO $(@F) || exit /b1' \
 		'call sign-dual.cmd $(@F) || exit /b1' \
 		) ) \
-		'@echo Create multiarch EXE: $(@F)'
+		'@echo Created multiarch EXE: $(@F)'
 endif
 
 #
