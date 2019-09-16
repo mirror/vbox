@@ -2534,7 +2534,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
     Assert(pVmcs->u64RoIoRip.u == 0);
 
     /* We should not cause an NMI-window/interrupt-window VM-exit when injecting events as part of VM-entry. */
-    if (!pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents)
+    if (!CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx))
     {
         Assert(uExitReason != VMX_EXIT_NMI_WINDOW);
         Assert(uExitReason != VMX_EXIT_INT_WINDOW);
@@ -3514,7 +3514,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitExtInt(PVMCPUCC pVCpu, uint8_t uVector, bool
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
-    Assert(fIntPending || uVector == 0);
+    Assert(!fIntPending || uVector == 0);
 
     /** @todo NSTVMX: r=ramshankar: Consider standardizing check basic/blanket
      *        intercepts for VM-exits. Right now it is not clear which iemVmxVmexitXXX()
@@ -3652,7 +3652,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPUCC pVCpu, uint8_t uVector, uint3
      *
      * See Intel spec. 26.5.1.2 "VM Exits During Event Injection".
      */
-    if (!pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents)
+    if (!CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx))
     {
         /*
          * If the event is a virtual-NMI (which is an NMI being inject during VM-entry)
@@ -3667,7 +3667,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPUCC pVCpu, uint8_t uVector, uint3
         else
             Assert(!pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking);
 
-        pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = true;
+        CPUMSetGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx, true);
         return VINF_VMX_INTERCEPT_NOT_ACTIVE;
     }
 
@@ -7116,7 +7116,7 @@ IEM_STATIC void iemVmxVmentryInjectEvent(PVMCPUCC pVCpu, const char *pszInstr)
     uint32_t const uEntryIntInfo      = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs)->u32EntryIntInfo;
     bool const     fEntryIntInfoValid = VMX_ENTRY_INT_INFO_IS_VALID(uEntryIntInfo);
 
-    pVCpu->cpum.GstCtx.hwvirt.vmx.fInterceptEvents = !fEntryIntInfoValid;
+    CPUMSetGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx, !fEntryIntInfoValid);
     if (fEntryIntInfoValid)
     {
         if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_OTHER_EVENT)
@@ -7442,9 +7442,9 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
 
                                 /* Finally, done. */
                                 Log3(("%s: cs:rip=%#04x:%#RX64 cr0=%#RX64 (%#RX64) cr4=%#RX64 (%#RX64) efer=%#RX64\n",
-                                     pszInstr, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
-                                     pVmcs->u64Cr0ReadShadow.u, pVCpu->cpum.GstCtx.cr4, pVmcs->u64Cr4ReadShadow.u,
-                                     pVCpu->cpum.GstCtx.msrEFER));
+                                      pszInstr, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
+                                      pVmcs->u64Cr0ReadShadow.u, pVCpu->cpum.GstCtx.cr4, pVmcs->u64Cr4ReadShadow.u,
+                                      pVCpu->cpum.GstCtx.msrEFER));
                                 return VINF_SUCCESS;
                             }
                             return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED,
