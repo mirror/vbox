@@ -55,21 +55,21 @@
  *          is buggy, so I wouldn't rely on any exact meaning here!
  * @retval  VERR_INTERNAL_ERROR when something wrong.
  *
- * @param   aNameOrId        The Machine name or id interface the VM will start for.
- * @param   aComment         The comment for new VM process.
- * @param   aFrontend        The desired frontend for started VM.
- * @param   aEnvironment     Additional environment variables=value pairs
- *                           separated by newlines for new VM process.
- * @param   aExtraArg        Extra argument for the VM process.  Ignored if
- *                           empty string.
- * @param   aFilename        Start new VM using specified filename. Only filename
- *                           without path is allowed. Default filename is used if
- *                           empty.
- * @param   aFlags           Flags for RTProcCreateEx functions family if
- *                           required (RTPROC_FLAGS_XXX).
- * @param   aExtraData       Additional data for RTProcCreateX functions family
- *                           if required.  Content is defined by the flags.
- * @param   aPid             The PID of created process is returned here
+ * @param   aNameOrId            The Machine name or id interface the VM will start for.
+ * @param   aComment             The comment for new VM process.
+ * @param   aFrontend            The desired frontend for started VM.
+ * @param   aEnvironmentChanges  Additional environment variables in the putenv style
+ *                               (VAR=VAL for setting, VAR for unsetting) for new VM process.
+ * @param   aExtraArg            Extra argument for the VM process.  Ignored if
+ *                               empty string.
+ * @param   aFilename            Start new VM using specified filename. Only filename
+ *                               without path is allowed. Default filename is used if
+ *                               empty.
+ * @param   aFlags               Flags for RTProcCreateEx functions family if
+ *                               required (RTPROC_FLAGS_XXX).
+ * @param   aExtraData           Additional data for RTProcCreateX functions family
+ *                               if required.  Content is defined by the flags.
+ * @param   aPid                 The PID of created process is returned here
  */
 int MachineLaunchVMCommonWorker(const Utf8Str &aNameOrId,
                                 const Utf8Str &aComment,
