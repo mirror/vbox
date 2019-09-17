@@ -338,15 +338,15 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             if (fFormats & VBOX_SHCL_FMT_URI_LIST)
             {
-                PSHCLURITRANSFER pTransfer;
-                int rc = sharedClipboardSvcURITransferStart(pCtx->pClient,
-                                                            SHCLURITRANSFERDIR_READ, SHCLSOURCE_REMOTE,
-                                                            &pTransfer);
+                PSHCLTRANSFER pTransfer;
+                int rc = sharedClipboardSvcTransferTransferStart(pCtx->pClient,
+                                                                 SHCLTRANSFERDIR_READ, SHCLSOURCE_REMOTE,
+                                                                 &pTransfer);
                 if (RT_SUCCESS(rc))
                 {
                     /* Create the IDataObject implementation the host OS needs and assign
                      * the newly created transfer to this object. */
-                    rc = SharedClipboardWinURITransferCreate(&pCtx->Win, pTransfer);
+                    rc = SharedClipboardWinTransferCreate(&pCtx->Win, pTransfer);
 
                     /*  Note: The actual requesting + retrieving of data will be done in the IDataObject implementation
                               (ClipboardDataObjectImpl::GetData()). */
@@ -842,7 +842,7 @@ int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdC
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int SharedClipboardSvcImplURITransferCreate(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer)
+int SharedClipboardSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
 
@@ -851,11 +851,11 @@ int SharedClipboardSvcImplURITransferCreate(PSHCLCLIENT pClient, PSHCLURITRANSFE
     return VINF_SUCCESS;
 }
 
-int SharedClipboardSvcImplURITransferDestroy(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer)
+int SharedClipboardSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     LogFlowFuncEnter();
 
-    SharedClipboardWinURITransferDestroy(&pClient->State.pCtx->Win, pTransfer);
+    SharedClipboardWinTransferDestroy(&pClient->State.pCtx->Win, pTransfer);
 
     return VINF_SUCCESS;
 }

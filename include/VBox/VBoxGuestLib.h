@@ -640,11 +640,11 @@ typedef struct _VBGLR3CLIPBOARDEVENT
         struct
         {
             /** ID of the trnasfer. */
-            SHCLURITRANSFERID     uID;
+            SHCLTRANSFERID     uID;
             /** Transfer direction. */
-            SHCLURITRANSFERDIR    enmDir;
+            SHCLTRANSFERDIR    enmDir;
             /** Additional reproting information. */
-            SHCLURITRANSFERREPORT Report;
+            SHCLTRANSFERREPORT Report;
         } TransferStatus;
 #endif
     } u;
@@ -670,9 +670,9 @@ VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
 VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
 
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-VBGLR3DECL(int)     VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms, PVBGLR3SHCLCMDCTX pCtx, PSHCLURICTX pTransferCtx, PVBGLR3CLIPBOARDEVENT pEvent);
+VBGLR3DECL(int)     VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms, PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFERCTX pTransferCtx, PVBGLR3CLIPBOARDEVENT pEvent);
 
-VBGLR3DECL(int)     VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLURITRANSFER pTransfer, SHCLURITRANSFERSTATUS uStatus);
+VBGLR3DECL(int)     VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus);
 
 VBGLR3DECL(int)     VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLIST *ppRootList);
 
@@ -1054,7 +1054,7 @@ typedef enum VBGLR3GUESTDNDMETADATATYPE
     VBGLR3GUESTDNDMETADATATYPE_UNKNOWN = 0,
     /** Raw meta data; can be everything. */
     VBGLR3GUESTDNDMETADATATYPE_RAW,
-    /** Meta data is an URI list, specifying objects. */
+    /** Meta data is a transfer list, specifying objects. */
     VBGLR3GUESTDNDMETADATATYPE_URI_LIST,
     /** Blow the type up to 32-bit. */
     VBGLR3GUESTDNDMETADATATYPE_32BIT_HACK = 0x7fffffff

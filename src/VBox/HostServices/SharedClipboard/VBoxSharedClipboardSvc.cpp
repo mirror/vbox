@@ -84,7 +84,7 @@
  *
  * Since VBox x.x.x transferring files via Shared Clipboard is supported.
  * See the VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS define for supported / enabled
- * platforms. This is called "URI transfers".
+ * platforms. This is called "Shared Clipboard transfers".
  *
  * Copying files / directories from guest A to guest B requires the host
  * service to act as a proxy and cache, as we don't allow direct VM-to-VM
@@ -102,7 +102,7 @@
  * - No support for ACLs yet.
  * - No (maybe never) support for NT4.
  *
- * @section sec_uri_areas               Clipboard areas.
+ * @section sec_transfers_areas         Clipboard areas.
  *
  * For larger / longer transfers there might be file data
  * temporarily cached on the host, which has not been transferred to the
@@ -122,21 +122,21 @@
  * @todo We might use some VFS / container (IPRT?) for this instead of the
  *       host's file system directly?
  *
- * @section sec_uri_structure           URI handling structure
+ * @section sec_transfer_structure        Transfer handling structure
  *
  * All structures / classes are designed for running on both, on the guest
  * (via VBoxTray / VBoxClient) or on the host (host service) to avoid code
  * duplication where applicable.
  *
- * Per HGCM client there is a so-called "URI context", which in turn can have
- * one or mulitple so-called "URI transfer" objects. At the moment we only support
- * on concurrent URI transfer per URI context. It's being used for reading from a
- * source or writing to destination, depening on its direction. An URI transfer
+ * Per HGCM client there is a so-called "transfer context", which in turn can have
+ * one or mulitple so-called "Shared Clipboard transfer" objects. At the moment we only support
+ * on concurrent Shared Clipboard transfer per transfer context. It's being used for reading from a
+ * source or writing to destination, depening on its direction. An Shared Clipboard transfer
  * can have optional callbacks which might be needed by various implementations.
  * Also, transfers optionally can run in an asynchronous thread to prevent
  * blocking the UI while running.
  *
- * An URI transfer can maintain its own clipboard area; for the host service such
+ * An Shared Clipboard transfer can maintain its own clipboard area; for the host service such
  * a clipboard area is coupled to a clipboard area registered or attached with
  * VBoxSVC. This is needed because multiple transfers from multiple VMs (n:n) can
  * rely on the same clipboard area, so there needs a master keeping tracking of
@@ -144,15 +144,15 @@
  * at the moment. A clipboard area gets cleaned up (i.e. physically deleted) if
  * no references are held to it  anymore, or if VBoxSVC goes down.
  *
- * @section sec_uri_providers           URI providers
+ * @section sec_transfer_providers        Transfer providers
  *
  * For certain implementations (for example on Windows guests / hosts, using
  * IDataObject and IStream objects) a more flexible approach reqarding reading /
- * writing is needed. For this so-called URI providers abstract the way of how
+ * writing is needed. For this so-called transfer providers abstract the way of how
  * data is being read / written in the current context (host / guest), while
  * the rest of the code stays the same.
  *
- * @section sec_uri_protocol            URI protocol
+ * @section sec_transfer_protocol         Transfer protocol
  *
  * The host service issues commands which the guest has to respond with an own
  * message to. The protocol itself is designed so that it has primitives to list
@@ -169,11 +169,11 @@
  * provider provides appropriate interface for this, even if not all implementations
  * might need this mechanism.
  *
- * An URI transfer has three stages:
- *  - 1. Announcement: An URI transfer-compatible format (currently only one format available)
+ * An Shared Clipboard transfer has three stages:
+ *  - 1. Announcement: An Shared Clipboard transfer-compatible format (currently only one format available)
  *          has been announced, the destination side creates a transfer object, which then,
  *          depending on the actual implementation, can be used to tell the OS that
- *          there is URI (file) data available.
+ *          there is transfer (file) data available.
  *          At this point this just acts as a (kind-of) promise to the OS that we
  *          can provide (file) data at some later point in time.
  *
@@ -1099,11 +1099,11 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
     AssertPtr(pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    PSHCLURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClient->URI, 0 /* Index*/);
+    PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(&pClient->TransferCtx, 0 /* Index*/);
     if (pTransfer)
-        sharedClipboardSvcURIAreaDetach(&pClient->State, pTransfer);
+        sharedClipboardSvcTransferAreaDetach(&pClient->State, pTransfer);
 
-    SharedClipboardURICtxDestroy(&pClient->URI);
+    SharedClipboardTransferCtxDestroy(&pClient->TransferCtx);
 #endif
 
     SharedClipboardSvcImplDisconnect(pClient);
@@ -1150,7 +1150,7 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
             rc = SharedClipboardSvcImplConnect(pClient, VBoxSvcClipboardGetHeadless());
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             if (RT_SUCCESS(rc))
-                rc = SharedClipboardURICtxInit(&pClient->URI);
+                rc = SharedClipboardTransferCtxInit(&pClient->TransferCtx);
 #endif
             if (RT_SUCCESS(rc))
             {
@@ -1377,8 +1377,8 @@ static DECLCALLBACK(void) svcCall(void *,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                     if (uFormat == VBOX_SHCL_FMT_URI_LIST)
                     {
-                        rc = sharedClipboardSvcURITransferStart(pClient, SHCLURITRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
-                                                                NULL /* pTransfer */);
+                        rc = sharedClipboardSvcTransferTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
+                                                                     NULL /* pTransfer */);
                         if (RT_FAILURE(rc))
                             LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));
                     }
@@ -1475,7 +1475,7 @@ static DECLCALLBACK(void) svcCall(void *,
         default:
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = sharedClipboardSvcURIHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
+            rc = sharedClipboardSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
 #else
             rc = VERR_NOT_IMPLEMENTED;
 #endif
@@ -1537,7 +1537,7 @@ static void sharedClipboardSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
     LogFlowFuncEnter();
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    pClientState->URI.enmTransferDir = SHCLURITRANSFERDIR_UNKNOWN;
+    pClientState->Transfers.enmTransferDir = SHCLTRANSFERDIR_UNKNOWN;
 #else
     RT_NOREF(pClientState);
 #endif
@@ -1598,7 +1598,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
         default:
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = sharedClipboardSvcURIHostHandler(u32Function, cParms, paParms);
+            rc = sharedClipboardSvcTransferHostHandler(u32Function, cParms, paParms);
 #else
             rc = VERR_NOT_IMPLEMENTED;
 #endif
@@ -1627,7 +1627,7 @@ static SSMFIELD const s_aShClSSMClientState[] =
  */
 static SSMFIELD const s_aShClSSMClientURIState[] =
 {
-    SSMFIELD_ENTRY(SHCLCLIENTURISTATE, enmTransferDir),
+    SSMFIELD_ENTRY(SHCLCLIENTTRANSFERSTATE, enmTransferDir),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -1674,7 +1674,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     int rc = SSMR3PutStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pClient->State.URI, sizeof(pClient->State.URI), 0 /*fFlags*/, &s_aShClSSMClientURIState[0], NULL);
+    rc = SSMR3PutStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /*fFlags*/, &s_aShClSSMClientURIState[0], NULL);
     AssertRCReturn(rc, rc);
 
     /* Serialize the client's internal message queue. */
@@ -1763,7 +1763,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
         rc = SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
         AssertRCReturn(rc, rc);
 
-        rc = SSMR3GetStructEx(pSSM, &pClient->State.URI, sizeof(pClient->State.URI), 0 /*fFlags*/, &s_aShClSSMClientURIState[0], NULL);
+        rc = SSMR3GetStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /*fFlags*/, &s_aShClSSMClientURIState[0], NULL);
         AssertRCReturn(rc, rc);
 
         /* Load the client's internal message queue. */

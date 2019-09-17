@@ -66,11 +66,11 @@ typedef struct _SHCLCLIENTMSG
     SHCLMSGCTX       Ctx;
 } SHCLCLIENTMSG, *PSHCLCLIENTMSG;
 
-typedef struct SHCLCLIENTURISTATE
+typedef struct SHCLCLIENTTRANSFERSTATE
 {
     /** Directory of the transfer to start. */
-    SHCLURITRANSFERDIR enmTransferDir;
-} SHCLCLIENTURISTATE, *PSHCLCLIENTURISTATE;
+    SHCLTRANSFERDIR enmTransferDir;
+} SHCLCLIENTTRANSFERSTATE, *PSHCLCLIENTTRANSFERSTATE;
 
 /**
  * Structure for keeping generic client state data within the Shared Clipboard host service.
@@ -92,8 +92,8 @@ typedef struct SHCLCLIENTSTATE
     /** Maximum chunk size to use for data transfers. Set to _64K by default. */
     uint32_t                cbChunkSize;
     SHCLSOURCE              enmSource;
-    /** The client's URI state. */
-    SHCLCLIENTURISTATE      URI;
+    /** The client's transfers state. */
+    SHCLCLIENTTRANSFERSTATE Transfers;
 } SHCLCLIENTSTATE, *PSHCLCLIENTSTATE;
 
 typedef struct _SHCLCLIENTCMDCTX
@@ -111,8 +111,8 @@ typedef struct _SHCLCLIENT
      *  Needed for events which are not bound to a specific transfer. */
     SHCLEVENTSOURCE          Events;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    /** URI context data. */
-    SHCLURICTX               URI;
+    /** Transfer contextdata. */
+    SHCLTRANSFERCTX          TransferCtx;
 #endif
     /** Structure for keeping the client's pending (deferred return) state.
      *  A client is in a deferred state when it asks for the next HGCM message,
@@ -196,10 +196,10 @@ int sharedClipboardSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint
 int sharedClipboardSvcClientWakeup(PSHCLCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int sharedClipboardSvcURITransferStart(PSHCLCLIENT pClient,
-                                     SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSource,
-                                     PSHCLURITRANSFER *ppTransfer);
-bool sharedClipboardSvcURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
+int sharedClipboardSvcTransferTransferStart(PSHCLCLIENT pClient,
+                                     SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
+                                     PSHCLTRANSFER *ppTransfer);
+bool sharedClipboardSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /*
@@ -221,35 +221,35 @@ int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdC
 int SharedClipboardSvcImplSync(PSHCLCLIENT pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int sharedClipboardSvcURITransferOpen(PSHCLPROVIDERCTX pCtx);
-DECLCALLBACK(int) sharedClipboardSvcURITransferClose(PSHCLPROVIDERCTX pCtx);
+int sharedClipboardSvcTransferTransferOpen(PSHCLPROVIDERCTX pCtx);
+DECLCALLBACK(int) sharedClipboardSvcTransferTransferClose(PSHCLPROVIDERCTX pCtx);
 
-int sharedClipboardSvcURIGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
+int sharedClipboardSvcTransferGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
 
-int sharedClipboardSvcURIListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
-int sharedClipboardSvcURIListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
-int sharedClipboardSvcURIListHdrRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-int sharedClipboardSvcURIListHdrWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-int sharedClipboardSvcURIListEntryRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
-int sharedClipboardSvcURIListEntryWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int sharedClipboardSvcTransferListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
+int sharedClipboardSvcTransferListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
+int sharedClipboardSvcTransferListHdrRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int sharedClipboardSvcTransferListHdrWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int sharedClipboardSvcTransferListEntryRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int sharedClipboardSvcTransferListEntryWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
 
-int sharedClipboardSvcURIObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
+int sharedClipboardSvcTransferObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
                                  PSHCLOBJHANDLE phObj);
-int sharedClipboardSvcURIObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
-int sharedClipboardSvcURIObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+int sharedClipboardSvcTransferObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
+int sharedClipboardSvcTransferObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                  void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
-int sharedClipboardSvcURIObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+int sharedClipboardSvcTransferObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                   void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
 
-DECLCALLBACK(void) VBoxSvcClipboardURITransferPrepareCallback(PSHCLURITRANSFERCALLBACKDATA pData);
-DECLCALLBACK(void) VBoxSvcClipboardURIDataHeaderCompleteCallback(PSHCLURITRANSFERCALLBACKDATA pData);
-DECLCALLBACK(void) VBoxSvcClipboardURIDataCompleteCallback(PSHCLURITRANSFERCALLBACKDATA pData);
-DECLCALLBACK(void) VBoxSvcClipboardURITransferCompleteCallback(PSHCLURITRANSFERCALLBACKDATA pData, int rc);
-DECLCALLBACK(void) VBoxSvcClipboardURITransferCanceledCallback(PSHCLURITRANSFERCALLBACKDATA pData);
-DECLCALLBACK(void) VBoxSvcClipboardURITransferErrorCallback(PSHCLURITRANSFERCALLBACKDATA pData, int rc);
+DECLCALLBACK(void) VBoxSvcClipboardTransferPrepareCallback(PSHCLTRANSFERCALLBACKDATA pData);
+DECLCALLBACK(void) VBoxSvcClipboardDataHeaderCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData);
+DECLCALLBACK(void) VBoxSvcClipboardDataCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData);
+DECLCALLBACK(void) VBoxSvcClipboardTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
+DECLCALLBACK(void) VBoxSvcClipboardTransferCanceledCallback(PSHCLTRANSFERCALLBACKDATA pData);
+DECLCALLBACK(void) VBoxSvcClipboardTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
 
-int SharedClipboardSvcImplURITransferCreate(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer);
-int SharedClipboardSvcImplURITransferDestroy(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer);
+int SharedClipboardSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+int SharedClipboardSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 #endif /*VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /* Host unit testing interface */

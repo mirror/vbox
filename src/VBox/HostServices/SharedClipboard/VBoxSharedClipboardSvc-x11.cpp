@@ -204,7 +204,7 @@ int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX 
     RT_NOREF(pCmdCtx);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST) /* No URI support yet. */
+    if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST) /* No transfer support yet. */
         return VINF_SUCCESS;
 #endif
 
@@ -389,13 +389,13 @@ int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uin
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int SharedClipboardSvcImplURITransferCreate(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer)
+int SharedClipboardSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
     return VINF_SUCCESS;
 }
 
-int SharedClipboardSvcImplURITransferDestroy(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer)
+int SharedClipboardSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
     return VINF_SUCCESS;

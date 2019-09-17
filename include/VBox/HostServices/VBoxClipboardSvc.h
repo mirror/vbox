@@ -109,39 +109,39 @@
 #define VBOX_SHCL_HOST_MSG_FORMATS_REPORT               3
 
 /** Sends a transfer status to the guest side. */
-#define VBOX_SHCL_HOST_MSG_URI_TRANSFER_STATUS          50
+#define VBOX_SHCL_HOST_MSG_TRANSFER_TRANSFER_STATUS          50
 /** Reads the root list header from the guest. */
-#define VBOX_SHCL_HOST_MSG_URI_ROOT_LIST_HDR_READ       51
+#define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_READ       51
 /** Writes the root list header to the guest. */
-#define VBOX_SHCL_HOST_MSG_URI_ROOT_LIST_HDR_WRITE      52
+#define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_WRITE      52
 /** Reads a root list entry from the guest. */
-#define VBOX_SHCL_HOST_MSG_URI_ROOT_LIST_ENTRY_READ     53
+#define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_READ     53
 /** Writes a root list entry to the guest. */
-#define VBOX_SHCL_HOST_MSG_URI_ROOT_LIST_ENTRY_WRITE    54
-/** Open an URI list on the guest side. */
-#define VBOX_SHCL_HOST_MSG_URI_LIST_OPEN                55
-/** Closes a formerly opened URI list on the guest side. */
-#define VBOX_SHCL_HOST_MSG_URI_LIST_CLOSE               56
+#define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_WRITE    54
+/** Open a transfer list on the guest side. */
+#define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_OPEN                55
+/** Closes a formerly opened transfer list on the guest side. */
+#define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_CLOSE               56
 /** Reads a list header from the guest. */
-#define VBOX_SHCL_HOST_MSG_URI_LIST_HDR_READ            57
+#define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_READ            57
 /** Writes a list header to the guest. */
-#define VBOX_SHCL_HOST_MSG_URI_LIST_HDR_WRITE           58
+#define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_HDR_WRITE           58
 /** Reads a list entry from the guest. */
-#define VBOX_SHCL_HOST_MSG_URI_LIST_ENTRY_READ          59
+#define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_READ          59
 /** Writes a list entry to the guest. */
-#define VBOX_SHCL_HOST_MSG_URI_LIST_ENTRY_WRITE         60
-/** Open an URI object on the guest side. */
-#define VBOX_SHCL_HOST_MSG_URI_OBJ_OPEN                 61
-/** Closes a formerly opened URI object on the guest side. */
-#define VBOX_SHCL_HOST_MSG_URI_OBJ_CLOSE                62
+#define VBOX_SHCL_HOST_MSG_TRANSFER_LIST_ENTRY_WRITE         60
+/** Open a transfer object on the guest side. */
+#define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_OPEN                 61
+/** Closes a formerly opened transfer object on the guest side. */
+#define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_CLOSE                62
 /** Reads from an object on the guest side. */
-#define VBOX_SHCL_HOST_MSG_URI_OBJ_READ                 63
+#define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_READ                 63
 /** Writes to an object on the guest side. */
-#define VBOX_SHCL_HOST_MSG_URI_OBJ_WRITE                64
+#define VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_WRITE                64
 /** Indicates that the host has canceled a transfer. */
-#define VBOX_SHCL_HOST_MSG_URI_CANCEL                   65
+#define VBOX_SHCL_HOST_MSG_TRANSFER_CANCEL                   65
 /** Indicates that the an unrecoverable error on the host occurred . */
-#define VBOX_SHCL_HOST_MSG_URI_ERROR                    66
+#define VBOX_SHCL_HOST_MSG_TRANSFER_ERROR                    66
 
 /*
  * The service functions which are called by guest.
@@ -350,9 +350,9 @@ typedef struct _VBoxShClTransferStatusMsg
 
     /** uint32_t, out: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, out: Direction of transfer; of type SHCLURITRANSFERDIR_. */
+    /** uint32_t, out: Direction of transfer; of type SHCLTRANSFERDIR_. */
     HGCMFunctionParameter enmDir;
-    /** uint32_t, out: Status to report; of type SHCLURITRANSFERSTATUS_. */
+    /** uint32_t, out: Status to report; of type SHCLTRANSFERSTATUS_. */
     HGCMFunctionParameter enmStatus;
     /** uint32_t, out: Result code to report. Optional. */
     HGCMFunctionParameter rc;
@@ -405,7 +405,7 @@ typedef struct _VBoxShClStatusMsg
 
     /** uint32_t, in: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, in: Transfer status of type SHCLURITRANSFERSTATUS. */
+    /** uint32_t, in: Transfer status of type SHCLTRANSFERSTATUS. */
     HGCMFunctionParameter uStatus;
     /** uint32_t, in: Size of payload of this status, based on the status type. */
     HGCMFunctionParameter cbPayload;

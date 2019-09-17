@@ -880,17 +880,17 @@ int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
- * Creates an URI transfer by announcing URI data (via IDataObject) to Windows.
+ * Creates an Shared Clipboard transfer by announcing transfer data  (via IDataObject) to Windows.
  *
  * This creates the necessary IDataObject + IStream implementations and initiates the actual transfers required for getting
  * the meta data. Whether or not the actual (file++) transfer(s) are happening is up to the user (at some point) later then.
  *
  * @returns VBox status code.
  * @param   pWinCtx             Windows context to use.
- * @param   pURICtx             URI context to use.
- * @param   pTransfer           URI transfer to use.
+ * @param   pTransferCtxCtx             transfer contextto use.
+ * @param   pTransfer           Shared Clipboard transfer to use.
  */
-int SharedClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer)
+int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
@@ -900,11 +900,11 @@ int SharedClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pT
 
     AssertReturn(pTransfer->pvUser == NULL, VERR_WRONG_ORDER);
 
-    SharedClipboardWinURITransferCtx *pWinURITransferCtx = new SharedClipboardWinURITransferCtx();
+    SharedClipboardWinTransferCtx *pWinURITransferCtx = new SharedClipboardWinTransferCtx();
     if (pWinURITransferCtx)
     {
         pTransfer->pvUser = pWinURITransferCtx;
-        pTransfer->cbUser = sizeof(SharedClipboardWinURITransferCtx);
+        pTransfer->cbUser = sizeof(SharedClipboardWinTransferCtx);
 
         pWinURITransferCtx->pDataObj = new SharedClipboardWinDataObject(pTransfer);
         if (pWinURITransferCtx->pDataObj)
@@ -970,12 +970,12 @@ int SharedClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pT
 }
 
 /**
- * Destroys implementation-specific data for an URI transfer.
+ * Destroys implementation-specific data for an Shared Clipboard transfer.
  *
  * @param   pWinCtx             Windows context to use.
- * @param   pTransfer           URI transfer to create implementation-specific data for.
+ * @param   pTransfer           Shared Clipboard transfer to create implementation-specific data for.
  */
-void SharedClipboardWinURITransferDestroy(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer)
+void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pWinCtx);
 
@@ -986,8 +986,8 @@ void SharedClipboardWinURITransferDestroy(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER 
 
     if (pTransfer->pvUser)
     {
-        Assert(pTransfer->cbUser == sizeof(SharedClipboardWinURITransferCtx));
-        SharedClipboardWinURITransferCtx *pWinURITransferCtx = (SharedClipboardWinURITransferCtx *)pTransfer->pvUser;
+        Assert(pTransfer->cbUser == sizeof(SharedClipboardWinTransferCtx));
+        SharedClipboardWinTransferCtx *pWinURITransferCtx = (SharedClipboardWinTransferCtx *)pTransfer->pvUser;
         Assert(pWinURITransferCtx);
 
         if (pWinURITransferCtx->pDataObj)

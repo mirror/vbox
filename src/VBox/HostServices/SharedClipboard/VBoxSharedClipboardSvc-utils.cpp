@@ -100,11 +100,11 @@ int vboxSvcClipboardURIReportMsg(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uP
 
     switch (uMsg)
     {
-        case VBOX_SHCL_HOST_MSG_URI_TRANSFER_START:
+        case VBOX_SHCL_HOST_MSG_TRANSFER_TRANSFER_START:
         {
             Assert(pClient->State.URI.fTransferStart == false);
 
-            LogFlowFunc(("VBOX_SHCL_HOST_MSG_URI_TRANSFER_START\n"));
+            LogFlowFunc(("VBOX_SHCL_HOST_MSG_TRANSFER_TRANSFER_START\n"));
 
             if (   sharedClipboardSvcGetMode() != VBOX_SHCL_MODE_HOST_TO_GUEST
                 && sharedClipboardSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
@@ -114,7 +114,7 @@ int vboxSvcClipboardURIReportMsg(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uP
             }
 
             pClient->State.URI.fTransferStart = true;
-            pClient->State.URI.enmTransferDir = (SHCLURITRANSFERDIR)uParm;
+            pClient->State.URI.enmTransferDir = (SHCLTRANSFERDIR)uParm;
             break;
 
         }
@@ -129,7 +129,7 @@ int vboxSvcClipboardURIReportMsg(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uP
     return rc;
 }
 
-bool sharedClipboardSvcURIReturnMsg(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+bool sharedClipboardSvcTransferReturnMsg(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF(pClient, cParms, paParms);
 
@@ -138,7 +138,7 @@ bool sharedClipboardSvcURIReturnMsg(PSHCLCLIENT pClient, uint32_t cParms, VBOXHG
     if (   pClient->State.URI.fTransferStart
         && cParms >= 2)
     {
-        HGCMSvcSetU32(&paParms[0], VBOX_SHCL_HOST_MSG_URI_TRANSFER_START);
+        HGCMSvcSetU32(&paParms[0], VBOX_SHCL_HOST_MSG_TRANSFER_TRANSFER_START);
         HGCMSvcSetU32(&paParms[1], pClient->State.URI.enmTransferDir);
         pClient->State.URI.fTransferStart = false;
 

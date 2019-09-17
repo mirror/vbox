@@ -55,7 +55,7 @@ typedef SHCLFORMATS *PSHCLFORMATS;
 /** Shared Clipboard format is HTML. */
 #define VBOX_SHCL_FMT_HTML          RT_BIT(2)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-/** Shared Clipboard format is an URI list. */
+/** Shared Clipboard format is a transfer list. */
 #define VBOX_SHCL_FMT_URI_LIST      RT_BIT(3)
 #endif
 
@@ -196,7 +196,7 @@ int SharedClipboardEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, PSHCLE
 void SharedClipboardEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
 
 /**
- * Enumeration to specify the Shared Clipboard URI source type.
+ * Enumeration to specify the Shared Clipboard transfer source type.
  */
 typedef enum SHCLSOURCE
 {

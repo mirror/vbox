@@ -151,12 +151,12 @@ int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx);
 
 int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int SharedClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
-void SharedClipboardWinURITransferDestroy(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
+int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
+void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
 #endif
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-class SharedClipboardURIList;
+class SharedClipboardTransferList;
 #  ifndef FILEGROUPDESCRIPTOR
 class FILEGROUPDESCRIPTOR;
 #  endif
@@ -173,7 +173,7 @@ public:
 
 public:
 
-    SharedClipboardWinDataObject(PSHCLURITRANSFER pTransfer,
+    SharedClipboardWinDataObject(PSHCLTRANSFER pTransfer,
                                  LPFORMATETC pFormatEtc = NULL, LPSTGMEDIUM pStgMed = NULL, ULONG cFormats = 0);
     virtual ~SharedClipboardWinDataObject(void);
 
@@ -221,10 +221,10 @@ protected:
 
     static int Thread(RTTHREAD hThread, void *pvUser);
 
-    int readDir(PSHCLURITRANSFER pTransfer, const Utf8Str &strPath);
+    int readDir(PSHCLTRANSFER pTransfer, const Utf8Str &strPath);
 
     int copyToHGlobal(const void *pvData, size_t cbData, UINT fFlags, HGLOBAL *phGlobal);
-    int createFileGroupDescriptorFromTransfer(PSHCLURITRANSFER pTransfer,
+    int createFileGroupDescriptorFromTransfer(PSHCLTRANSFER pTransfer,
                                               bool fUnicode, HGLOBAL *phGlobal);
 
     bool lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex);
@@ -251,7 +251,7 @@ protected:
     ULONG                       m_cFormats;
     LPFORMATETC                 m_pFormatEtc;
     LPSTGMEDIUM                 m_pStgMedium;
-    PSHCLURITRANSFER            m_pTransfer;
+    PSHCLTRANSFER               m_pTransfer;
     IStream                    *m_pStream;
     ULONG                       m_uObjIdx;
     /** List of (cached) file system objects. */
@@ -306,7 +306,7 @@ class SharedClipboardWinStreamImpl : public IStream
 {
 public:
 
-    SharedClipboardWinStreamImpl(SharedClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer,
+    SharedClipboardWinStreamImpl(SharedClipboardWinDataObject *pParent, PSHCLTRANSFER pTransfer,
                                  const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo);
     virtual ~SharedClipboardWinStreamImpl(void);
 
@@ -332,7 +332,7 @@ public: /* IStream methods. */
 
 public: /* Own methods. */
 
-    static HRESULT Create(SharedClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer, const Utf8Str &strPath,
+    static HRESULT Create(SharedClipboardWinDataObject *pParent, PSHCLTRANSFER pTransfer, const Utf8Str &strPath,
                           PSHCLFSOBJINFO pObjInfo, IStream **ppStream);
 private:
 
@@ -340,8 +340,8 @@ private:
     SharedClipboardWinDataObject  *m_pParent;
     /** The stream object's current reference count. */
     LONG                           m_lRefCount;
-    /** Pointer to the associated URI transfer. */
-    PSHCLURITRANSFER               m_pURITransfer;
+    /** Pointer to the associated Shared Clipboard transfer. */
+    PSHCLTRANSFER                  m_pTransfer;
     /** The object handle to use. */
     SHCLOBJHANDLE                  m_hObj;
     /** Object path. */
@@ -355,16 +355,16 @@ private:
 };
 
 /**
- * Class for Windows-specifics for maintaining a single URI transfer.
- * Set as pvUser / cbUser in SHCLURICTX.
+ * Class for Windows-specifics for maintaining a single Shared Clipboard transfer.
+ * Set as pvUser / cbUser in SHCLTRANSFERCTX.
  */
-class SharedClipboardWinURITransferCtx
+class SharedClipboardWinTransferCtx
 {
 public:
-    SharedClipboardWinURITransferCtx()
+    SharedClipboardWinTransferCtx()
         : pDataObj(NULL) { }
 
-    virtual ~SharedClipboardWinURITransferCtx()
+    virtual ~SharedClipboardWinTransferCtx()
     {
         if (pDataObj)
             delete pDataObj;

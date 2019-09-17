@@ -40,7 +40,7 @@
  *        !!! WARNING: Buggy, doesn't work yet (some memory corruption / garbage in the file name descriptions) !!! */
 //#define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 0
 
-SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLURITRANSFER pTransfer,
+SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLTRANSFER pTransfer,
                                                            LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
     : m_enmStatus(Uninitialized)
     , m_lRefCount(0)
@@ -225,28 +225,28 @@ int SharedClipboardWinDataObject::copyToHGlobal(const void *pvData, size_t cbDat
  * objects's entry list.
  *
  * @returns VBox status code.
- * @param   pTransfer           URI transfer object to handle.
+ * @param   pTransfer           Shared Clipboard transfer object to handle.
  * @param   strDir              Directory path to handle.
  */
-int SharedClipboardWinDataObject::readDir(PSHCLURITRANSFER pTransfer, const Utf8Str &strDir)
+int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str &strDir)
 {
     LogFlowFunc(("strDir=%s\n", strDir.c_str()));
 
     SHCLLISTOPENPARMS openParmsList;
-    int rc = SharedClipboardURIListOpenParmsInit(&openParmsList);
+    int rc = SharedClipboardTransferListOpenParmsInit(&openParmsList);
     if (RT_SUCCESS(rc))
     {
         rc = RTStrCopy(openParmsList.pszPath, openParmsList.cbPath, strDir.c_str());
         if (RT_SUCCESS(rc))
         {
             SHCLLISTHANDLE hList;
-            rc = SharedClipboardURITransferListOpen(pTransfer, &openParmsList, &hList);
+            rc = SharedClipboardTransferListOpen(pTransfer, &openParmsList, &hList);
             if (RT_SUCCESS(rc))
             {
                 LogFlowFunc(("strDir=%s -> hList=%RU64\n", strDir.c_str(), hList));
 
                 SHCLLISTHDR hdrList;
-                rc = SharedClipboardURITransferListGetHeader(pTransfer, hList, &hdrList);
+                rc = SharedClipboardTransferListGetHeader(pTransfer, hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
                     LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
@@ -255,7 +255,7 @@ int SharedClipboardWinDataObject::readDir(PSHCLURITRANSFER pTransfer, const Utf8
                     for (uint64_t o = 0; o < hdrList.cTotalObjects; o++)
                     {
                         SHCLLISTENTRY entryList;
-                        rc = SharedClipboardURITransferListRead(pTransfer, hList, &entryList);
+                        rc = SharedClipboardTransferListRead(pTransfer, hList, &entryList);
                         if (RT_SUCCESS(rc))
                         {
                             PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
@@ -290,11 +290,11 @@ int SharedClipboardWinDataObject::readDir(PSHCLURITRANSFER pTransfer, const Utf8
                     }
                 }
 
-                SharedClipboardURITransferListClose(pTransfer, hList);
+                SharedClipboardTransferListClose(pTransfer, hList);
             }
         }
 
-        SharedClipboardURIListOpenParmsDestroy(&openParmsList);
+        SharedClipboardTransferListOpenParmsDestroy(&openParmsList);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -302,8 +302,8 @@ int SharedClipboardWinDataObject::readDir(PSHCLURITRANSFER pTransfer, const Utf8
 }
 
 /**
- * Thread for reading URI data.
- * The data object needs the (high level, root) URI listing at the time of ::GetData(), so we need
+ * Thread for reading transfer data.
+ * The data object needs the (high level, root) transfer listing at the time of ::GetData(), so we need
  * to block and wait until we have this data (via this thread) and continue.
  *
  * @returns VBox status code.
@@ -319,7 +319,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
     SharedClipboardWinDataObject *pThis = (SharedClipboardWinDataObject *)pvUser;
 
-    PSHCLURITRANSFER pTransfer = pThis->m_pTransfer;
+    PSHCLTRANSFER pTransfer = pThis->m_pTransfer;
     AssertPtr(pTransfer);
 
     pTransfer->Thread.fStarted = true;
@@ -329,11 +329,11 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
     LogRel2(("Shared Clipboard: Calculating transfer ...\n"));
 
-    int rc = SharedClipboardURITransferOpen(pTransfer);
+    int rc = SharedClipboardTransferOpen(pTransfer);
     if (RT_SUCCESS(rc))
     {
         PSHCLROOTLIST pRootList;
-        rc = SharedClipboardURILTransferRootsAsList(pTransfer, &pRootList);
+        rc = SharedClipboardTransferLTransferRootsAsList(pTransfer, &pRootList);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("cRoots=%RU32\n\n", pRootList->Hdr.cRoots));
@@ -367,7 +367,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                     break;
             }
 
-            SharedClipboardURIRootListFree(pRootList);
+            SharedClipboardTransferRootListFree(pRootList);
             pRootList = NULL;
 
             if (RT_SUCCESS(rc))
@@ -389,7 +389,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
             }
         }
 
-        SharedClipboardURITransferClose(pTransfer);
+        SharedClipboardTransferClose(pTransfer);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -397,14 +397,14 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 }
 
 /**
- * Creates a FILEGROUPDESCRIPTOR object from a given URI transfer and stores the result into an HGLOBAL object.
+ * Creates a FILEGROUPDESCRIPTOR object from a given Shared Clipboard transfer and stores the result into an HGLOBAL object.
  *
  * @returns VBox status code.
- * @param   pTransfer           URI transfer to create file grou desciprtor for.
+ * @param   pTransfer           Shared Clipboard transfer to create file grou desciprtor for.
  * @param   fUnicode            Whether the FILEGROUPDESCRIPTOR object shall contain Unicode data or not.
  * @param   phGlobal            Where to store the allocated HGLOBAL object on success.
  */
-int SharedClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLURITRANSFER pTransfer,
+int SharedClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLTRANSFER pTransfer,
                                                                         bool fUnicode, HGLOBAL *phGlobal)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -557,13 +557,13 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
         int rc;
 
         /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
-        if (SharedClipboardURITransferGetStatus(m_pTransfer) == SHCLURITRANSFERSTATUS_NONE)
+        if (SharedClipboardTransferGetStatus(m_pTransfer) == SHCLTRANSFERSTATUS_NONE)
         {
-            rc = SharedClipboardURITransferPrepare(m_pTransfer);
+            rc = SharedClipboardTransferPrepare(m_pTransfer);
             if (RT_SUCCESS(rc))
             {
                 /* Start the transfer asynchronously in a separate thread. */
-                rc = SharedClipboardURITransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this);
+                rc = SharedClipboardTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this);
                 if (RT_SUCCESS(rc))
                 {
                     /* Don't block for too long here, as this also will screw other apps running on the OS. */

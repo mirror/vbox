@@ -45,18 +45,18 @@
 
 
 
-SharedClipboardWinStreamImpl::SharedClipboardWinStreamImpl(SharedClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer,
+SharedClipboardWinStreamImpl::SharedClipboardWinStreamImpl(SharedClipboardWinDataObject *pParent, PSHCLTRANSFER pTransfer,
                                                            const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo)
     : m_pParent(pParent)
     , m_lRefCount(1) /* Our IDataObjct *always* holds the last reference to this object; needed for the callbacks. */
-    , m_pURITransfer(pTransfer)
+    , m_pTransfer(pTransfer)
     , m_strPath(strPath)
     , m_hObj(SHCLOBJHANDLE_INVALID)
     , m_objInfo(*pObjInfo)
     , m_cbProcessed(0)
     , m_fNotifiedComplete(false)
 {
-    AssertPtr(m_pURITransfer);
+    AssertPtr(m_pTransfer);
 
     LogFunc(("m_strPath=%s\n", m_strPath.c_str()));
 }
@@ -184,10 +184,10 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
     try
     {
         if (   m_hObj == SHCLOBJHANDLE_INVALID
-            && m_pURITransfer->ProviderIface.pfnObjOpen)
+            && m_pTransfer->ProviderIface.pfnObjOpen)
         {
             SHCLOBJOPENCREATEPARMS openParms;
-            rc = SharedClipboardURIObjectOpenParmsInit(&openParms);
+            rc = SharedClipboardTransferObjectOpenParmsInit(&openParms);
             if (RT_SUCCESS(rc))
             {
                 openParms.fCreate = SHCL_OBJ_CF_ACT_OPEN_IF_EXISTS
@@ -198,10 +198,10 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
                 rc = RTStrCopy(openParms.pszPath, openParms.cbPath, m_strPath.c_str());
                 if (RT_SUCCESS(rc))
                 {
-                    rc = m_pURITransfer->ProviderIface.pfnObjOpen(&m_pURITransfer->ProviderCtx, &openParms, &m_hObj);
+                    rc = m_pTransfer->ProviderIface.pfnObjOpen(&m_pTransfer->ProviderCtx, &openParms, &m_hObj);
                 }
 
-                SharedClipboardURIObjectOpenParmsDestroy(&openParms);
+                SharedClipboardTransferObjectOpenParmsDestroy(&openParms);
             }
         }
         else
@@ -218,8 +218,8 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
         {
             if (cbToRead)
             {
-                rc = m_pURITransfer->ProviderIface.pfnObjRead(&m_pURITransfer->ProviderCtx, m_hObj,
-                                                              pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
+                rc = m_pTransfer->ProviderIface.pfnObjRead(&m_pTransfer->ProviderCtx, m_hObj,
+                                                           pvBuffer, cbToRead, 0 /* fFlags */, &cbRead);
                 if (RT_SUCCESS(rc))
                 {
                     m_cbProcessed += cbRead;
@@ -232,9 +232,9 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
 
             if (fComplete)
             {
-                if (m_pURITransfer->ProviderIface.pfnObjClose)
+                if (m_pTransfer->ProviderIface.pfnObjClose)
                 {
-                    int rc2 = m_pURITransfer->ProviderIface.pfnObjClose(&m_pURITransfer->ProviderCtx, m_hObj);
+                    int rc2 = m_pTransfer->ProviderIface.pfnObjClose(&m_pTransfer->ProviderCtx, m_hObj);
                     AssertRC(rc2);
                 }
 
@@ -355,13 +355,13 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Write(const void *pvBuffer, ULONG nBy
  *
  * @returns HRESULT
  * @param   pParent             Pointer to the parent data object.
- * @param   pTransfer           Pointer to URI transfer object to use.
+ * @param   pTransfer           Pointer to Shared Clipboard transfer object to use.
  * @param   strPath             Path of object to handle for the stream.
  * @param   pObjInfo            Pointer to object information.
  * @param   ppStream            Where to return the created stream object on success.
  */
 /* static */
-HRESULT SharedClipboardWinStreamImpl::Create(SharedClipboardWinDataObject *pParent, PSHCLURITRANSFER pTransfer,
+HRESULT SharedClipboardWinStreamImpl::Create(SharedClipboardWinDataObject *pParent, PSHCLTRANSFER pTransfer,
                                              const Utf8Str &strPath, PSHCLFSOBJINFO pObjInfo,
                                              IStream **ppStream)
 {
