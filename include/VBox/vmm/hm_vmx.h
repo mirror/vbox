@@ -2053,13 +2053,23 @@ AssertCompileSize(VMXVMCSFIELDWIDTH, 4);
 
 /** @name VM-entry register masks.
  * @{ */
-/** CR0 bits ignored on VM-entry (ET, NW, CD and reserved bits bits 6:15, bit 17,
- *  bits 19:28). */
-#define VMX_ENTRY_CR0_IGNORE_MASK                               UINT64_C(0x7ffaffd0)
-/** DR7 bits set here are always cleared on VM-entry (bit 12, bits 14:15). */
-#define VMX_ENTRY_DR7_MBZ_MASK                                  UINT64_C(0xd000)
-/** DR7 bits set here are always set on VM-entry (bit 10). */
-#define VMX_ENTRY_DR7_MB1_MASK                                  UINT64_C(0x400)
+/** CR0 bits ignored on VM-entry while loading guest CR0 (ET, CD, NW, bits 6:15,
+ *  bit 17 and bits 19:28). */
+#define VMX_ENTRY_GUEST_CR0_IGNORE_MASK                         UINT64_C(0x7ffaffd0)
+/** DR7 bits set here are always cleared on VM-entry while loading guest DR7 (bit
+ *  12, bits 14:15). */
+#define VMX_ENTRY_GUEST_DR7_MBZ_MASK                            UINT64_C(0xd000)
+/** DR7 bits set here are always set on VM-entry while loading guest DR7 (bit
+ *  10). */
+#define VMX_ENTRY_GUEST_DR7_MB1_MASK                            UINT64_C(0x400)
+/** @} */
+
+
+/** @name VM-exit register masks.
+ * @{ */
+/** CR0 bits ignored on VM-exit while loading host CR0 (ET, CD, NW, bits 6:15,
+ *  bit 17, bits 19:28 and bits 32:63). */
+#define VMX_EXIT_HOST_CR0_IGNORE_MASK                           UINT64_C(0xffffffff7ffaffd0)
 /** @} */
 
 

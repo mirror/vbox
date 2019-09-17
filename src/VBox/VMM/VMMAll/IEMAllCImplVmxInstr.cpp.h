@@ -1709,7 +1709,7 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPUCC pVCpu)
         /* Bits 63:32, 28:19, 17, 15:6, ET, CD, NW and CR0 fixed bits are not modified. */
         uint64_t const uCr0Mb1       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed0;
         uint64_t const uCr0Mb0       = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.u64Cr0Fixed1;
-        uint64_t const fCr0IgnMask   = UINT64_C(0xffffffff1ffaffc0) | X86_CR0_ET | X86_CR0_CD | X86_CR0_NW | uCr0Mb1 | ~uCr0Mb0;
+        uint64_t const fCr0IgnMask   = VMX_EXIT_HOST_CR0_IGNORE_MASK | uCr0Mb1 | ~uCr0Mb0;
         uint64_t const uHostCr0      = pVmcs->u64HostCr0.u;
         uint64_t const uGuestCr0     = pVCpu->cpum.GstCtx.cr0;
         uint64_t const uValidHostCr0 = (uHostCr0 & ~fCr0IgnMask) | (uGuestCr0 & fCr0IgnMask);
@@ -6531,14 +6531,14 @@ IEM_STATIC void iemVmxVmentryLoadGuestControlRegsMsrs(PVMCPUCC pVCpu)
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
 
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
-    uint64_t const uGstCr0 = (pVmcs->u64GuestCr0.u   & ~VMX_ENTRY_CR0_IGNORE_MASK)
-                           | (pVCpu->cpum.GstCtx.cr0 &  VMX_ENTRY_CR0_IGNORE_MASK);
+    uint64_t const uGstCr0 = (pVmcs->u64GuestCr0.u   & ~VMX_ENTRY_GUEST_CR0_IGNORE_MASK)
+                           | (pVCpu->cpum.GstCtx.cr0 &  VMX_ENTRY_GUEST_CR0_IGNORE_MASK);
     CPUMSetGuestCR0(pVCpu, uGstCr0);
     CPUMSetGuestCR4(pVCpu, pVmcs->u64GuestCr4.u);
     pVCpu->cpum.GstCtx.cr3 = pVmcs->u64GuestCr3.u;
 
     if (pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
-        pVCpu->cpum.GstCtx.dr[7] = (pVmcs->u64GuestDr7.u & ~VMX_ENTRY_DR7_MBZ_MASK) | VMX_ENTRY_DR7_MB1_MASK;
+        pVCpu->cpum.GstCtx.dr[7] = (pVmcs->u64GuestDr7.u & ~VMX_ENTRY_GUEST_DR7_MBZ_MASK) | VMX_ENTRY_GUEST_DR7_MB1_MASK;
 
     pVCpu->cpum.GstCtx.SysEnter.eip = pVmcs->u64GuestSysenterEip.s.Lo;
     pVCpu->cpum.GstCtx.SysEnter.esp = pVmcs->u64GuestSysenterEsp.s.Lo;
