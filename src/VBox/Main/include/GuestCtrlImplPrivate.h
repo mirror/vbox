@@ -194,17 +194,23 @@ public:
      * Applies an array of putenv style strings.
      *
      * @returns IPRT status code.
-     * @param   rArray              The array with the putenv style strings.
-     * @sa      RTEnvPutEnvEx
+     * @param   rArray          The array with the putenv style strings.
+     * @param   pidxError       Where to return the index causing trouble on
+     *                          failure.  Optional.
+     * @sa      RTEnvPutEx
      */
-    int applyPutEnvArray(const std::vector<com::Utf8Str> &rArray)
+    int applyPutEnvArray(const std::vector<com::Utf8Str> &rArray, size_t *pidxError = NULL)
     {
-        size_t cArray = rArray.size();
+        size_t const cArray = rArray.size();
         for (size_t i = 0; i < cArray; i++)
         {
             int rc = RTEnvPutEx(m_hEnv, rArray[i].c_str());
             if (RT_FAILURE(rc))
+            {
+                if (pidxError)
+                    *pidxError = i;
                 return rc;
+            }
         }
         return VINF_SUCCESS;
     }

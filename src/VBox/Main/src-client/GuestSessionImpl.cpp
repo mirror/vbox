@@ -436,9 +436,11 @@ HRESULT GuestSession::getEnvironmentChanges(std::vector<com::Utf8Str> &aEnvironm
 {
     LogFlowThisFuncEnter();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    int vrc = mData.mEnvironmentChanges.queryPutEnvArray(&aEnvironmentChanges);
+    int vrc;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        vrc = mData.mEnvironmentChanges.queryPutEnvArray(&aEnvironmentChanges);
+    }
 
     LogFlowFuncLeaveRC(vrc);
     return Global::vboxStatusCodeToCOM(vrc);
@@ -448,13 +450,22 @@ HRESULT GuestSession::setEnvironmentChanges(const std::vector<com::Utf8Str> &aEn
 {
     LogFlowThisFuncEnter();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    mData.mEnvironmentChanges.reset();
-    int vrc = mData.mEnvironmentChanges.applyPutEnvArray(aEnvironmentChanges);
+    int vrc;
+    size_t idxError = ~(size_t)0;
+    {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        mData.mEnvironmentChanges.reset();
+        vrc = mData.mEnvironmentChanges.applyPutEnvArray(aEnvironmentChanges, &idxError);
+    }
 
     LogFlowFuncLeaveRC(vrc);
-    return Global::vboxStatusCodeToCOM(vrc);
+    if (RT_SUCCESS(vrc))
+        return S_OK;
+    if (vrc == VERR_ENV_INVALID_VAR_NAME)
+        return setError(E_INVALIDARG, tr("Invalid environment variable name '%s', index %zu"),
+                        aEnvironmentChanges[idxError].c_str(), idxError);
+    return setErrorBoth(Global::vboxStatusCodeToCOM(vrc), vrc, tr("Failed to apply '%s', index %zu (%Rrc)"),
+                        aEnvironmentChanges[idxError].c_str(), idxError, vrc);
 }
 
 HRESULT GuestSession::getEnvironmentBase(std::vector<com::Utf8Str> &aEnvironmentBase)
@@ -485,9 +496,9 @@ HRESULT GuestSession::getProcesses(std::vector<ComPtr<IGuestProcess> > &aProcess
 
     aProcesses.resize(mData.mProcesses.size());
     size_t i = 0;
-    for(SessionProcesses::iterator it  = mData.mProcesses.begin();
-                                   it != mData.mProcesses.end();
-                                   ++it, ++i)
+    for (SessionProcesses::iterator it  = mData.mProcesses.begin();
+                                    it != mData.mProcesses.end();
+                                    ++it, ++i)
     {
         it->second.queryInterfaceTo(aProcesses[i].asOutParam());
     }
@@ -3600,28 +3611,19 @@ HRESULT GuestSession::directoryRemoveRecursive(const com::Utf8Str &aPath, const 
 
 HRESULT GuestSession::environmentScheduleSet(const com::Utf8Str &aName, const com::Utf8Str &aValue)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT hrc;
-    if (RT_LIKELY(aName.isNotEmpty()))
+    LogFlowThisFuncEnter();
+    int vrc;
     {
-        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
-        {
-            LogFlowThisFuncEnter();
-
-            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            int vrc = mData.mEnvironmentChanges.setVariable(aName, aValue);
-            if (RT_SUCCESS(vrc))
-                hrc = S_OK;
-            else
-                hrc = setErrorVrc(vrc);
-        }
-        else
-            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        vrc = mData.mEnvironmentChanges.setVariable(aName, aValue);
     }
+    HRESULT hrc;
+    if (RT_SUCCESS(vrc))
+        hrc = S_OK;
+    else if (vrc == VERR_ENV_INVALID_VAR_NAME)
+        hrc = setError(E_INVALIDARG, tr("Invalid environment variable name '%s'"), aName.c_str());
     else
-        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
+        hrc = setErrorVrc(vrc, tr("Failed to schedule setting environment variable '%s' to '%s'"), aName.c_str(), aValue.c_str());
 
     LogFlowThisFuncLeave();
     return hrc;
@@ -3629,28 +3631,19 @@ HRESULT GuestSession::environmentScheduleSet(const com::Utf8Str &aName, const co
 
 HRESULT GuestSession::environmentScheduleUnset(const com::Utf8Str &aName)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    HRESULT hrc;
-    if (RT_LIKELY(aName.isNotEmpty()))
+    LogFlowThisFuncEnter();
+    int vrc;
     {
-        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
-        {
-            LogFlowThisFuncEnter();
-
-            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-            int vrc = mData.mEnvironmentChanges.unsetVariable(aName);
-            if (RT_SUCCESS(vrc))
-                hrc = S_OK;
-            else
-                hrc = setErrorVrc(vrc);
-        }
-        else
-            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+        vrc = mData.mEnvironmentChanges.unsetVariable(aName);
     }
+    HRESULT hrc;
+    if (RT_SUCCESS(vrc))
+        hrc = S_OK;
+    else if (vrc == VERR_ENV_INVALID_VAR_NAME)
+        hrc = setError(E_INVALIDARG, tr("Invalid environment variable name '%s'"), aName.c_str());
     else
-        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
+        hrc = setErrorVrc(vrc, tr("Failed to schedule unsetting environment variable '%s'"), aName.c_str());
 
     LogFlowThisFuncLeave();
     return hrc;
@@ -3658,35 +3651,24 @@ HRESULT GuestSession::environmentScheduleUnset(const com::Utf8Str &aName)
 
 HRESULT GuestSession::environmentGetBaseVariable(const com::Utf8Str &aName, com::Utf8Str &aValue)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    LogFlowThisFuncEnter();
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hrc;
-    if (RT_LIKELY(aName.isNotEmpty()))
+    if (mData.mpBaseEnvironment)
     {
-        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
-        {
-            LogFlowThisFuncEnter();
-
-            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-            if (mData.mpBaseEnvironment)
-            {
-                int vrc = mData.mpBaseEnvironment->getVariable(aName, &aValue);
-                if (RT_SUCCESS(vrc))
-                    hrc = S_OK;
-                else
-                    hrc = setErrorVrc(vrc);
-            }
-            else if (mData.mProtocolVersion < 99999)
-                hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
-            else
-                hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
-        }
+        int vrc = mData.mpBaseEnvironment->getVariable(aName, &aValue);
+        if (RT_SUCCESS(vrc))
+            hrc = S_OK;
+        else if (vrc == VERR_ENV_INVALID_VAR_NAME)
+            hrc = setError(E_INVALIDARG, tr("Invalid environment variable name '%s'"), aName.c_str());
         else
-            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+            hrc = setErrorVrc(vrc);
     }
+    else if (mData.mProtocolVersion < 99999)
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
     else
-        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
+        hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
 
     LogFlowThisFuncLeave();
     return hrc;
@@ -3694,34 +3676,20 @@ HRESULT GuestSession::environmentGetBaseVariable(const com::Utf8Str &aName, com:
 
 HRESULT GuestSession::environmentDoesBaseVariableExist(const com::Utf8Str &aName, BOOL *aExists)
 {
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
+    LogFlowThisFuncEnter();
     *aExists = FALSE;
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT hrc;
-    if (RT_LIKELY(aName.isNotEmpty()))
+    if (mData.mpBaseEnvironment)
     {
-        if (RT_LIKELY(strchr(aName.c_str(), '=') == NULL))
-        {
-            LogFlowThisFuncEnter();
-
-            AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-            if (mData.mpBaseEnvironment)
-            {
-                hrc = S_OK;
-                *aExists = mData.mpBaseEnvironment->doesVariableExist(aName);
-            }
-            else if (mData.mProtocolVersion < 99999)
-                hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
-            else
-                hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
-        }
-        else
-            hrc = setError(E_INVALIDARG, tr("The equal char is not allowed in environment variable names"));
+        hrc = S_OK;
+        *aExists = mData.mpBaseEnvironment->doesVariableExist(aName);
     }
+    else if (mData.mProtocolVersion < 99999)
+        hrc = setError(VBOX_E_NOT_SUPPORTED, tr("The base environment feature is not supported by the guest additions"));
     else
-        hrc = setError(E_INVALIDARG, tr("No variable name specified"));
+        hrc = setError(VBOX_E_INVALID_OBJECT_STATE, tr("The base environment has not yet been reported by the guest"));
 
     LogFlowThisFuncLeave();
     return hrc;
@@ -4211,55 +4179,62 @@ HRESULT GuestSession::processCreateEx(const com::Utf8Str &aExecutable, const std
        and will be applied to the standard environment for the guest user. */
     int vrc = procInfo.mEnvironmentChanges.copy(mData.mEnvironmentChanges);
     if (RT_SUCCESS(vrc))
-        vrc = procInfo.mEnvironmentChanges.applyPutEnvArray(aEnvironment);
-    if (RT_SUCCESS(vrc))
     {
-        /* Convert the flag array into a mask. */
-        if (aFlags.size())
-            for (size_t i = 0; i < aFlags.size(); i++)
-                procInfo.mFlags |= aFlags[i];
-
-        procInfo.mTimeoutMS = aTimeoutMS;
-
-        /** @todo use RTCPUSET instead of archaic 64-bit variables! */
-        if (aAffinity.size())
-            for (size_t i = 0; i < aAffinity.size(); i++)
-                if (aAffinity[i])
-                    procInfo.mAffinity |= (uint64_t)1 << i;
-
-        procInfo.mPriority = aPriority;
-
-        /*
-         * Create a guest process object.
-         */
-        ComObjPtr<GuestProcess> pProcess;
-        vrc = i_processCreateEx(procInfo, pProcess);
+        size_t idxError = ~(size_t)0;
+        vrc = procInfo.mEnvironmentChanges.applyPutEnvArray(aEnvironment, &idxError);
         if (RT_SUCCESS(vrc))
         {
-            ComPtr<IGuestProcess> pIProcess;
-            hr = pProcess.queryInterfaceTo(pIProcess.asOutParam());
-            if (SUCCEEDED(hr))
+            /* Convert the flag array into a mask. */
+            if (aFlags.size())
+                for (size_t i = 0; i < aFlags.size(); i++)
+                    procInfo.mFlags |= aFlags[i];
+
+            procInfo.mTimeoutMS = aTimeoutMS;
+
+            /** @todo use RTCPUSET instead of archaic 64-bit variables! */
+            if (aAffinity.size())
+                for (size_t i = 0; i < aAffinity.size(); i++)
+                    if (aAffinity[i])
+                        procInfo.mAffinity |= (uint64_t)1 << i;
+
+            procInfo.mPriority = aPriority;
+
+            /*
+             * Create a guest process object.
+             */
+            ComObjPtr<GuestProcess> pProcess;
+            vrc = i_processCreateEx(procInfo, pProcess);
+            if (RT_SUCCESS(vrc))
             {
-                /*
-                 * Start the process.
-                 */
-                vrc = pProcess->i_startProcessAsync();
-                if (RT_SUCCESS(vrc))
+                ComPtr<IGuestProcess> pIProcess;
+                hr = pProcess.queryInterfaceTo(pIProcess.asOutParam());
+                if (SUCCEEDED(hr))
                 {
-                    aGuestProcess = pIProcess;
+                    /*
+                     * Start the process.
+                     */
+                    vrc = pProcess->i_startProcessAsync();
+                    if (RT_SUCCESS(vrc))
+                    {
+                        aGuestProcess = pIProcess;
 
-                    LogFlowFuncLeaveRC(vrc);
-                    return S_OK;
+                        LogFlowFuncLeaveRC(vrc);
+                        return S_OK;
+                    }
+
+                    hr = setErrorVrc(vrc, tr("Failed to start guest process: %Rrc"), vrc);
                 }
-
-                hr = setErrorVrc(vrc, tr("Failed to start guest process: %Rrc"), vrc);
             }
+            else if (vrc == VERR_GSTCTL_MAX_CID_OBJECTS_REACHED)
+                hr = setErrorVrc(vrc, tr("Maximum number of concurrent guest processes per session (%u) reached"),
+                                 VBOX_GUESTCTRL_MAX_OBJECTS);
+            else
+                hr = setErrorVrc(vrc, tr("Failed to create guest process object: %Rrc"), vrc);
         }
-        else if (vrc == VERR_GSTCTL_MAX_CID_OBJECTS_REACHED)
-            hr = setErrorVrc(vrc, tr("Maximum number of concurrent guest processes per session (%u) reached"),
-                             VBOX_GUESTCTRL_MAX_OBJECTS);
         else
-            hr = setErrorVrc(vrc, tr("Failed to create guest process object: %Rrc"), vrc);
+            hr = setErrorBoth(vrc == VERR_ENV_INVALID_VAR_NAME ? E_INVALIDARG : Global::vboxStatusCodeToCOM(vrc), vrc,
+                              tr("Failed to apply environment variable '%s', index %u (%Rrc)'"),
+                              aEnvironment[idxError].c_str(), idxError, vrc);
     }
     else
         hr = setErrorVrc(vrc, tr("Failed to set up the environment: %Rrc"), vrc);
