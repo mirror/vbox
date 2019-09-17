@@ -1377,8 +1377,8 @@ static DECLCALLBACK(void) svcCall(void *,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                     if (uFormat == VBOX_SHCL_FMT_URI_LIST)
                     {
-                        rc = sharedClipboardSvcTransferTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
-                                                                     NULL /* pTransfer */);
+                        rc = sharedClipboardSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
+                                                             NULL /* pTransfer */);
                         if (RT_FAILURE(rc))
                             LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));
                     }

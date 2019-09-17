@@ -93,8 +93,8 @@ static char s_szClipWndClassName[] = SHCL_WIN_WNDCLASS_NAME;
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-static DECLCALLBACK(void) vboxClipboardTransferTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
-static DECLCALLBACK(void) vboxClipboardTransferTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
+static DECLCALLBACK(void) vboxClipboardTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
+static DECLCALLBACK(void) vboxClipboardTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
 #endif
 
 
@@ -159,7 +159,7 @@ static DECLCALLBACK(int) vboxClipboardTransferWriteThread(RTTHREAD ThreadSelf, v
 }
 #endif
 
-static void vboxClipboardTransferTransferCallbackCleanup(PSHCLTRANSFERCALLBACKDATA pData)
+static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCALLBACKDATA pData)
 {
     PSHCLTRANSFERCTX pCtx = (PSHCLTRANSFERCTX)pData->pvUser;
     AssertPtr(pCtx);
@@ -182,7 +182,7 @@ static void vboxClipboardTransferTransferCallbackCleanup(PSHCLTRANSFERCALLBACKDA
     pTransfer = NULL;
 }
 
-static DECLCALLBACK(void) vboxClipboardTransferTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
+static DECLCALLBACK(void) vboxClipboardTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
 {
     RT_NOREF(rc);
 
@@ -190,10 +190,10 @@ static DECLCALLBACK(void) vboxClipboardTransferTransferCompleteCallback(PSHCLTRA
 
     LogRel2(("Shared Clipboard: Transfer to destination complete\n"));
 
-    vboxClipboardTransferTransferCallbackCleanup(pData);
+    vboxClipboardTransferCallbackCleanup(pData);
 }
 
-static DECLCALLBACK(void) vboxClipboardTransferTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
+static DECLCALLBACK(void) vboxClipboardTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
 {
     RT_NOREF(rc);
 
@@ -201,10 +201,10 @@ static DECLCALLBACK(void) vboxClipboardTransferTransferErrorCallback(PSHCLTRANSF
 
     LogRel(("Shared Clipboard: Transfer to destination failed with %Rrc\n", rc));
 
-    vboxClipboardTransferTransferCallbackCleanup(pData);
+    vboxClipboardTransferCallbackCleanup(pData);
 }
 
-static int vboxClipboardTransferTransferOpen(PSHCLPROVIDERCTX pCtx)
+static int vboxClipboardTransferOpen(PSHCLPROVIDERCTX pCtx)
 {
     RT_NOREF(pCtx);
 
@@ -212,7 +212,7 @@ static int vboxClipboardTransferTransferOpen(PSHCLPROVIDERCTX pCtx)
     return VINF_SUCCESS;
 }
 
-static int vboxClipboardTransferTransferClose(PSHCLPROVIDERCTX pCtx)
+static int vboxClipboardTransferClose(PSHCLPROVIDERCTX pCtx)
 {
     RT_NOREF(pCtx);
 
@@ -968,8 +968,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                RT_ZERO(TransferCallbacks);
 
                TransferCallbacks.pvUser              = &pCtx->URI;
-               TransferCallbacks.pfnTransferComplete = vboxClipboardTransferTransferCompleteCallback;
-               TransferCallbacks.pfnTransferError    = vboxClipboardTransferTransferErrorCallback;
+               TransferCallbacks.pfnTransferComplete = vboxClipboardTransferCompleteCallback;
+               TransferCallbacks.pfnTransferError    = vboxClipboardTransferErrorCallback;
 
                SharedClipboardTransferSetCallbacks(pTransfer, &TransferCallbacks);
 

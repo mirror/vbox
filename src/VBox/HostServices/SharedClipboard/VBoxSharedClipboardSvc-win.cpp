@@ -339,9 +339,9 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             if (fFormats & VBOX_SHCL_FMT_URI_LIST)
             {
                 PSHCLTRANSFER pTransfer;
-                int rc = sharedClipboardSvcTransferTransferStart(pCtx->pClient,
-                                                                 SHCLTRANSFERDIR_READ, SHCLSOURCE_REMOTE,
-                                                                 &pTransfer);
+                int rc = sharedClipboardSvcTransferStart(pCtx->pClient,
+                                                         SHCLTRANSFERDIR_READ, SHCLSOURCE_REMOTE,
+                                                         &pTransfer);
                 if (RT_SUCCESS(rc))
                 {
                     /* Create the IDataObject implementation the host OS needs and assign

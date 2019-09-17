@@ -57,7 +57,7 @@ static int sharedClipboardSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPA
 *   Provider implementation                                                                                                      *
 *********************************************************************************************************************************/
 
-DECLCALLBACK(int) sharedClipboardSvcTransferTransferOpen(PSHCLPROVIDERCTX pCtx)
+DECLCALLBACK(int) sharedClipboardSvcTransferOpen(PSHCLPROVIDERCTX pCtx)
 {
     RT_NOREF(pCtx);
 
@@ -65,7 +65,7 @@ DECLCALLBACK(int) sharedClipboardSvcTransferTransferOpen(PSHCLPROVIDERCTX pCtx)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) sharedClipboardSvcTransferTransferClose(PSHCLPROVIDERCTX pCtx)
+DECLCALLBACK(int) sharedClipboardSvcTransferClose(PSHCLPROVIDERCTX pCtx)
 {
     RT_NOREF(pCtx);
 
@@ -1161,8 +1161,8 @@ static int sharedClipboardSvcTransferGetError(uint32_t cParms, VBOXHGCMSVCPARM p
  * @param   cParms              Number of function parameters supplied.
  * @param   paParms             Array function parameters supplied.
  */
-static int sharedClipboardSvcTransferTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer,
-                                                         uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+static int sharedClipboardSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer,
+                                                 uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF(pClient);
 
@@ -1365,8 +1365,8 @@ int sharedClipboardSvcTransferHandler(PSHCLCLIENT pClient,
 
                         creationCtx.enmSource = pClient->State.enmSource;
 
-                        creationCtx.Interface.pfnTransferOpen  = sharedClipboardSvcTransferTransferOpen;
-                        creationCtx.Interface.pfnTransferClose = sharedClipboardSvcTransferTransferClose;
+                        creationCtx.Interface.pfnTransferOpen  = sharedClipboardSvcTransferOpen;
+                        creationCtx.Interface.pfnTransferClose = sharedClipboardSvcTransferClose;
                         creationCtx.Interface.pfnListOpen      = sharedClipboardSvcTransferListOpen;
                         creationCtx.Interface.pfnListClose     = sharedClipboardSvcTransferListClose;
                         creationCtx.Interface.pfnObjOpen       = sharedClipboardSvcTransferObjOpen;
@@ -1430,7 +1430,7 @@ int sharedClipboardSvcTransferHandler(PSHCLCLIENT pClient,
 
         case VBOX_SHCL_GUEST_FN_REPLY:
         {
-            rc = sharedClipboardSvcTransferTransferHandleReply(pClient, pTransfer, cParms, paParms);
+            rc = sharedClipboardSvcTransferHandleReply(pClient, pTransfer, cParms, paParms);
 
             /* This message does not need any completion, as it can happen at any time from the guest side. */
             fDoCallComplete = false;
@@ -2098,8 +2098,8 @@ int sharedClipboardSvcTransferAreaDetach(PSHCLCLIENTSTATE pClientState, PSHCLTRA
  * @param   rcTransfer          Result code to report. Optional and depending on status.
  * @param   puEvent             Where to store the created wait event. Optional.
  */
-int sharedClipboardSvcTransferTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
-                                                 int rcTransfer, PSHCLEVENTID puEvent)
+int sharedClipboardSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
+                                         int rcTransfer, PSHCLEVENTID puEvent)
 {
     AssertPtrReturn(pClient,   VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2152,9 +2152,9 @@ int sharedClipboardSvcTransferTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANS
  * @param   enmSource           Transfer source to start.
  * @param   ppTransfer          Where to return the created transfer on success. Optional.
  */
-int sharedClipboardSvcTransferTransferStart(PSHCLCLIENT pClient,
-                                            SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
-                                            PSHCLTRANSFER *ppTransfer)
+int sharedClipboardSvcTransferStart(PSHCLCLIENT pClient,
+                                    SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
+                                    PSHCLTRANSFER *ppTransfer)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     /* ppTransfer is optional. */
@@ -2181,8 +2181,8 @@ int sharedClipboardSvcTransferTransferStart(PSHCLCLIENT pClient,
                 rc = sharedClipboardSvcTransferAreaRegister(&pClient->State, pTransfer);
                 if (RT_SUCCESS(rc))
                 {
-                    creationCtx.Interface.pfnTransferOpen    = sharedClipboardSvcTransferTransferOpen;
-                    creationCtx.Interface.pfnTransferClose   = sharedClipboardSvcTransferTransferClose;
+                    creationCtx.Interface.pfnTransferOpen    = sharedClipboardSvcTransferOpen;
+                    creationCtx.Interface.pfnTransferClose   = sharedClipboardSvcTransferClose;
                     creationCtx.Interface.pfnListOpen        = sharedClipboardSvcTransferListOpen;
                     creationCtx.Interface.pfnListClose       = sharedClipboardSvcTransferListClose;
                     creationCtx.Interface.pfnObjOpen         = sharedClipboardSvcTransferObjOpen;
@@ -2234,9 +2234,9 @@ int sharedClipboardSvcTransferTransferStart(PSHCLCLIENT pClient,
                         if (RT_SUCCESS(rc))
                         {
                             SHCLEVENTID uEvent;
-                            rc = sharedClipboardSvcTransferTransferSendStatus(pClient, pTransfer,
-                                                                              SHCLTRANSFERSTATUS_READY, VINF_SUCCESS,
-                                                                              &uEvent);
+                            rc = sharedClipboardSvcTransferSendStatus(pClient, pTransfer,
+                                                                      SHCLTRANSFERSTATUS_READY, VINF_SUCCESS,
+                                                                      &uEvent);
                             if (RT_SUCCESS(rc))
                             {
                                 LogRel2(("Shared Clipboard: Waiting for start of transfer %RU32 on guest ...\n",
@@ -2303,15 +2303,15 @@ int sharedClipboardSvcTransferTransferStart(PSHCLCLIENT pClient,
  * @param   pClient             Client that owns the transfer.
  * @param   pTransfer           Transfer to stop.
  */
-int sharedClipboardSvcTransferTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int sharedClipboardSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     int rc = SharedClipboardTransferClose(pTransfer);
     if (RT_SUCCESS(rc))
     {
         SHCLEVENTID uEvent;
-        rc = sharedClipboardSvcTransferTransferSendStatus(pClient, pTransfer,
-                                                          SHCLTRANSFERSTATUS_STOPPED, VINF_SUCCESS,
-                                                          &uEvent);
+        rc = sharedClipboardSvcTransferSendStatus(pClient, pTransfer,
+                                                  SHCLTRANSFERSTATUS_STOPPED, VINF_SUCCESS,
+                                                  &uEvent);
         if (RT_SUCCESS(rc))
         {
             LogRel2(("Shared Clipboard: Waiting for stop of transfer %RU32 on guest ...\n", pTransfer->State.uID));

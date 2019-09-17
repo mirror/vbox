@@ -196,9 +196,10 @@ int sharedClipboardSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint
 int sharedClipboardSvcClientWakeup(PSHCLCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int sharedClipboardSvcTransferTransferStart(PSHCLCLIENT pClient,
-                                     SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
-                                     PSHCLTRANSFER *ppTransfer);
+int sharedClipboardSvcTransferStart(PSHCLCLIENT pClient,
+                                    SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
+                                    PSHCLTRANSFER *ppTransfer);
+int sharedClipboardSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 bool sharedClipboardSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
@@ -221,8 +222,8 @@ int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdC
 int SharedClipboardSvcImplSync(PSHCLCLIENT pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int sharedClipboardSvcTransferTransferOpen(PSHCLPROVIDERCTX pCtx);
-DECLCALLBACK(int) sharedClipboardSvcTransferTransferClose(PSHCLPROVIDERCTX pCtx);
+int sharedClipboardSvcTransferOpen(PSHCLPROVIDERCTX pCtx);
+DECLCALLBACK(int) sharedClipboardSvcTransferClose(PSHCLPROVIDERCTX pCtx);
 
 int sharedClipboardSvcTransferGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
 
