@@ -1306,7 +1306,7 @@ int sharedClipboardSvcURIHandler(PSHCLCLIENT pClient,
             if (RT_FAILURE(rc))
                 break;
 
-            const SHCLURITRANSFERID uTransferID = VBO_SHARED_CLIPBOARD_CONTEXTID_GET_TRANSFER(uCID);
+            const SHCLURITRANSFERID uTransferID = VBOX_SHCL_CONTEXTID_GET_TRANSFER(uCID);
 
             pTransfer = SharedClipboardURICtxGetTransfer(&pClient->URI, uTransferID);
             if (!pTransfer)

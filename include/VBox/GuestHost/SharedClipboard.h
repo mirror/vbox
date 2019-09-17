@@ -136,13 +136,13 @@ typedef SHCLEVENTID *PSHCLEVENTID;
      | (uint32_t)((uEventID)    & 0xffff)       \
     )
 /** Creates a context ID out of a session ID. */
-#define VBOX__SHARED_CLIPBOARD_CONTEXTID_MAKE_SESSION(uSessionID) \
+#define VBOX_SHCL_CONTEXTID_MAKE_SESSION(uSessionID) \
     ((uint32_t)((uSessionID) & 0x1f) << 27)
 /** Gets the session ID out of a context ID. */
 #define VBOX_SHCL_CONTEXTID_GET_SESSION(uContextID) \
     (((uContextID) >> 27) & 0x1f)
 /** Gets the transfer ID out of a context ID. */
-#define VBO_SHARED_CLIPBOARD_CONTEXTID_GET_TRANSFER(uContextID) \
+#define VBOX_SHCL_CONTEXTID_GET_TRANSFER(uContextID) \
     (((uContextID) >> 16) & 0x7ff)
 /** Gets the transfer event out of a context ID. */
 #define VBOX_SHCL_CONTEXTID_GET_EVENT(uContextID) \
