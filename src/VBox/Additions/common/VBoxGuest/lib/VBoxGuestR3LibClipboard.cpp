@@ -1375,6 +1375,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                         break;
                     }
 
+                    case SHCLTRANSFERSTATUS_STOPPED:
+                        RT_FALL_THROUGH();
                     case SHCLTRANSFERSTATUS_CANCELED:
                         RT_FALL_THROUGH();
                     case SHCLTRANSFERSTATUS_KILLED:
