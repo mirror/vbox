@@ -42,7 +42,7 @@
 # ifdef VBOX_WITH_SHARED_CLIPBOARD
 #  include <VBox/GuestHost/SharedClipboard.h>
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-#   include <VBox/GuestHost/SharedClipboard-uri.h>
+#   include <VBox/GuestHost/SharedClipboard-transfers.h>
 #  endif
 # endif /* VBOX_WITH_SHARED_CLIPBOARD */
 

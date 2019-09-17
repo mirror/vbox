@@ -31,7 +31,7 @@
 
 #include <VBox/types.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-# include <VBox/GuestHost/SharedClipboard-uri.h>
+# include <VBox/GuestHost/SharedClipboard-transfers.h>
 #endif
 
 #define VBOX_CLIPBOARD_EXT_FN_SET_CALLBACK         (0)

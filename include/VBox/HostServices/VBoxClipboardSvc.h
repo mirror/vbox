@@ -57,7 +57,7 @@
 #include <VBox/hgcmsvc.h>
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-#include <VBox/GuestHost/SharedClipboard-uri.h>
+#include <VBox/GuestHost/SharedClipboard-transfers.h>
 #endif
 
 /*

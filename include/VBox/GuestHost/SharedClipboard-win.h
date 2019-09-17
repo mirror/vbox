@@ -43,7 +43,7 @@
 #  include <VBox/com/string.h>     /* For Utf8Str. */
 #  include <oleidl.h>
 
-# include <VBox/GuestHost/SharedClipboard-uri.h>
+# include <VBox/GuestHost/SharedClipboard-transfers.h>
 
 using namespace com;
 # endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
