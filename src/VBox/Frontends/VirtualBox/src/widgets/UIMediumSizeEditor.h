@@ -22,6 +22,7 @@
 #endif
 
 /* Qt includes: */
+#include <QRegularExpression>
 #include <QWidget>
 
 /* GUI includes: */
@@ -53,7 +54,7 @@ public:
 
     /** Returns the medium size. */
     qulonglong mediumSize() const { return m_uSize; }
-    /** Defines the @a uSize. */
+    /** Sets the initial medium size as the widget is created. */
     void setMediumSize(qulonglong uSize);
 
 protected:
@@ -66,7 +67,7 @@ private slots:
     /** Handles size slider change. */
     void sltSizeSliderChanged(int iValue);
     /** Handles size editor text edit finished signal. */
-    void sltSizeEditorEditingFinished();
+    void sltSizeEditorTextChanged();
 
 private:
 
@@ -107,6 +108,9 @@ private:
     QLabel     *m_pLabelMaxSize;
     /** Holds the size editor. */
     QILineEdit *m_pEditor;
+
+    /* A regular expression used to remove any character from a QString which is neither a digit nor decimal separator. */
+    QRegularExpression m_regExNonDigitOrSeparator;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIMediumSizeEditor_h */

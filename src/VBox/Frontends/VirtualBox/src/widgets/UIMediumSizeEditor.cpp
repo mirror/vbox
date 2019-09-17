@@ -47,6 +47,8 @@ UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent /* = 0 */)
 {
     /* Prepare: */
     prepare();
+    QString strRegEx = QString("[^(\\d|%1)]").arg(uiCommon().decimalSep());
+    m_regExNonDigitOrSeparator = QRegularExpression(strRegEx);
 }
 
 void UIMediumSizeEditor::setMediumSize(qulonglong uSize)
@@ -96,16 +98,16 @@ void UIMediumSizeEditor::sltSizeSliderChanged(int iValue)
     emit sigSizeChanged(m_uSize);
 }
 
-void UIMediumSizeEditor::sltSizeEditorEditingFinished()
+void UIMediumSizeEditor::sltSizeEditorTextChanged()
 {
     QString strSizeString = ensureSizeSuffix(m_pEditor->text());
 
-    if (strSizeString != m_pEditor->text())
-    {
-        m_pEditor->blockSignals(true);
-        m_pEditor->setText(strSizeString);
-        m_pEditor->blockSignals(false);
-    }
+
+    m_pEditor->blockSignals(true);
+    m_pEditor->setText(strSizeString);
+    /* Reposition the cursor to the front of the size suffix (and 1 char for the space) */
+    m_pEditor->setCursorPosition(strSizeString.length() - (gpConverter->toString(m_enmSizeSuffix).length() + 1));
+    m_pEditor->blockSignals(false);
 
     /* Update the current size: */
     m_uSize = checkSectorSizeAlignment(uiCommon().parseSize(strSizeString));
@@ -122,14 +124,13 @@ void UIMediumSizeEditor::sltSizeEditorEditingFinished()
 
 QString UIMediumSizeEditor::ensureSizeSuffix(const QString &strSizeString)
 {
+    /* Try to update the m_enmSizeSuffix: */
     if (uiCommon().hasSizeSuffix(strSizeString))
-    {
-        /* Update the m_enmSizeSuffix: */
         m_enmSizeSuffix = uiCommon().parseSizeSuffix(strSizeString);
-        return strSizeString;
-    }
 
-    return QString("%1 %2").arg(strSizeString).arg(gpConverter->toString(m_enmSizeSuffix));
+    QString strOnlyDigits(strSizeString);
+    /* Remove any chars from the string except digits and decimal separator and then add a space and size suffix: */
+    return QString("%1 %2").arg(strOnlyDigits.remove(m_regExNonDigitOrSeparator)).arg(gpConverter->toString(m_enmSizeSuffix));
 }
 
 void UIMediumSizeEditor::prepare()
@@ -192,12 +193,13 @@ void UIMediumSizeEditor::prepare()
         if (m_pEditor)
         {
             /* Configure editor: */
+            m_pEditor->installEventFilter(this);
             m_pEditor->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
             m_pEditor->setFixedWidthByText("88888.88 MB");
             m_pEditor->setAlignment(Qt::AlignRight);
             m_pEditor->setValidator(new QRegExpValidator(QRegExp(uiCommon().sizeRegexp()), this));
-            connect(m_pEditor, &QILineEdit::editingFinished,
-                    this, &UIMediumSizeEditor::sltSizeEditorEditingFinished);
+            connect(m_pEditor, &QILineEdit::textChanged,
+                    this, &UIMediumSizeEditor::sltSizeEditorTextChanged);
 
             /* Add into layout: */
             pLayout->addWidget(m_pEditor, 0, 2, Qt::AlignTop);
