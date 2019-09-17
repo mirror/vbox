@@ -31,7 +31,7 @@
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-# include <VBox/GuestHost/SharedClipboard-uri.h>
+# include <VBox/GuestHost/SharedClipboard-transfers.h>
 #endif
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #include <VBox/err.h>

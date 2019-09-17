@@ -34,7 +34,7 @@
 
 #include <VBox/HostServices/Service.h>
 #include <VBox/GuestHost/SharedClipboard.h>
-#include <VBox/GuestHost/SharedClipboard-uri.h>
+#include <VBox/GuestHost/SharedClipboard-transfers.h>
 
 using namespace HGCM;
 

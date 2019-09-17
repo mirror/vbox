@@ -21,7 +21,7 @@
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
 #include <VBox/GuestHost/SharedClipboard-win.h>
-#include <VBox/GuestHost/SharedClipboard-uri.h>
+#include <VBox/GuestHost/SharedClipboard-transfers.h>
 
 #include <iprt/win/windows.h>
 #include <iprt/win/shlobj.h>

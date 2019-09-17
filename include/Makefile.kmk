@@ -30,7 +30,7 @@ VBOX_HDRS_CPP_FEATURES := \
 	VBox/HostServices/Service.h \
 	VBox/GuestHost/GuestControl.h \
 	VBox/GuestHost/DragAndDrop.h \
-	VBox/GuestHost/SharedClipboard-uri.h \
+	VBox/GuestHost/SharedClipboard-transfers.h \
 	VBox/dbus.h \
 	VBox/VBoxCrHgsmi.h \
 	VBox/VBoxGuestLibSharedFoldersInline.h \
@@ -72,7 +72,7 @@ VBOX_HDRS_R3_ONLY := \
 	VBox/vscsi.h \
 	VBox/ExtPack/% \
 	VBox/GuestHost/SharedClipboard-win.h \
-	VBox/GuestHost/SharedClipboard-uri.h \
+	VBox/GuestHost/SharedClipboard-transfers.h \
 	VBox/GuestHost/DragAndDrop.h \
 	VBox/HostServices/Service.h \
 	iprt/win/% \

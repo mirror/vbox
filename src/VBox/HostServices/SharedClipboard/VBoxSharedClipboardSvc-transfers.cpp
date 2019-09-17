@@ -33,7 +33,7 @@
 #include <iprt/path.h>
 
 #include "VBoxSharedClipboardSvc-internal.h"
-#include "VBoxSharedClipboardSvc-uri.h"
+#include "VBoxSharedClipboardSvc-transfers.h"
 
 
 /*********************************************************************************************************************************

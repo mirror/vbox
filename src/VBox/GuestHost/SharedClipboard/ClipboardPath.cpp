@@ -20,7 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_SHARED_CLIPBOARD
-#include <VBox/GuestHost/SharedClipboard-uri.h>
+#include <VBox/GuestHost/SharedClipboard-transfers.h>
 
 #include <iprt/err.h>
 #include <iprt/path.h>

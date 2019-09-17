@@ -214,7 +214,7 @@
 
 #include "VBoxSharedClipboardSvc-internal.h"
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-# include "VBoxSharedClipboardSvc-uri.h"
+# include "VBoxSharedClipboardSvc-transfers.h"
 #endif
 
 using namespace HGCM;

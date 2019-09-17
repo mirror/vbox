@@ -27,7 +27,7 @@
 
 #include <VBox/err.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
-#include <VBox/GuestHost/SharedClipboard-uri.h>
+#include <VBox/GuestHost/SharedClipboard-transfers.h>
 
 
 static int sharedClipboardTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);

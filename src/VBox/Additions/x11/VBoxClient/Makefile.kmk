@@ -100,7 +100,7 @@ ifdef VBOX_WITH_SHARED_CLIPBOARD
  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
   VBoxClient_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_GUEST
   VBoxClient_SOURCES += \
-	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-uri.cpp \
+	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/clipboard-transfers.cpp \
 	$(PATH_ROOT)/src/VBox/GuestHost/SharedClipboard/ClipboardPath.cpp
   ifdef VBOX_WITH_LIBFUSE_DISABLED
    VBoxClient_SOURCES += \
