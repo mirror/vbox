@@ -525,7 +525,6 @@ HRESULT Display::init(Console *aParent)
 #ifdef VBOX_WITH_HGSMI
         maFramebuffers[ul].fVBVAEnabled = false;
         maFramebuffers[ul].fVBVAForceResize = false;
-        maFramebuffers[ul].fRenderThreadMode = false;
         maFramebuffers[ul].pVBVAHostFlags = NULL;
 #endif /* VBOX_WITH_HGSMI */
     }
@@ -3150,15 +3149,14 @@ HRESULT Display::notifyHiDPIOutputPolicyChange(BOOL fUnscaledHiDPI)
  * @interface_method_impl{PDMIDISPLAYCONNECTOR,pfnVBVAEnable}
  */
 DECLCALLBACK(int) Display::i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                               VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pHostFlags,
-                                               bool fRenderThreadMode)
+                                               VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pHostFlags)
 {
     LogRelFlowFunc(("uScreenId %d\n", uScreenId));
 
     PDRVMAINDISPLAY pDrv = PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface);
     Display *pThis = pDrv->pDisplay;
 
-    if (pThis->maFramebuffers[uScreenId].fVBVAEnabled && pThis->maFramebuffers[uScreenId].fRenderThreadMode != fRenderThreadMode)
+    if (pThis->maFramebuffers[uScreenId].fVBVAEnabled)
     {
         LogRel(("Enabling different vbva mode\n"));
 #ifdef DEBUG_misha
@@ -3169,7 +3167,6 @@ DECLCALLBACK(int) Display::i_displayVBVAEnable(PPDMIDISPLAYCONNECTOR pInterface,
 
     pThis->maFramebuffers[uScreenId].fVBVAEnabled = true;
     pThis->maFramebuffers[uScreenId].pVBVAHostFlags = pHostFlags;
-    pThis->maFramebuffers[uScreenId].fRenderThreadMode = fRenderThreadMode;
     pThis->maFramebuffers[uScreenId].fVBVAForceResize = true;
 
     vbvaSetMemoryFlagsHGSMI(uScreenId, pThis->mfu32SupportedOrders, pThis->mfVideoAccelVRDP, &pThis->maFramebuffers[uScreenId]);
@@ -3188,8 +3185,6 @@ DECLCALLBACK(void) Display::i_displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterfac
     Display *pThis = pDrv->pDisplay;
 
     DISPLAYFBINFO *pFBInfo = &pThis->maFramebuffers[uScreenId];
-
-    bool fRenderThreadMode = pFBInfo->fRenderThreadMode;
 
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
@@ -3210,13 +3205,12 @@ DECLCALLBACK(void) Display::i_displayVBVADisable(PPDMIDISPLAYCONNECTOR pInterfac
 
     pFBInfo->fVBVAEnabled = false;
     pFBInfo->fVBVAForceResize = false;
-    pFBInfo->fRenderThreadMode = false;
 
     vbvaSetMemoryFlagsHGSMI(uScreenId, 0, false, pFBInfo);
 
     pFBInfo->pVBVAHostFlags = NULL;
 
-    if (!fRenderThreadMode && uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+    if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
     {
         /* Force full screen update, because VGA device must take control, do resize, etc. */
         pThis->mpDrv->pUpPort->pfnUpdateDisplayAll(pThis->mpDrv->pUpPort, /* fFailOnResize = */ false);

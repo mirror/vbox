@@ -736,15 +736,9 @@ typedef struct VBVAINFOVIEW *PVBVAINFOVIEW;
 /** Pointer to a const VBVA guest VRAM area information. */
 typedef const struct VBVAINFOVIEW *PCVBVAINFOVIEW;
 typedef struct VBVAHOSTFLAGS *PVBVAHOSTFLAGS;
-struct VBOXVDMACMD_CHROMIUM_CMD; /* <- chromium [hgsmi] command */
-struct VBOXVDMACMD_CHROMIUM_CTL; /* <- chromium [hgsmi] command */
-
 
 /** Pointer to a display connector interface. */
 typedef struct PDMIDISPLAYCONNECTOR *PPDMIDISPLAYCONNECTOR;
-struct VBOXCRCMDCTL;
-typedef DECLCALLBACK(void) FNCRCTLCOMPLETION(struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd, int rc,  void *pvCompletion);
-typedef FNCRCTLCOMPLETION *PFNCRCTLCOMPLETION;
 
 /**
  * Display connector interface (up).
@@ -865,57 +859,15 @@ typedef struct PDMIDISPLAYCONNECTOR
                                                      VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd));
 
     /**
-     * Process the guest chromium command.
-     *
-     * @param   pInterface          Pointer to this interface.
-     * @param   pCmd                Video HW Acceleration Command to be processed.
-     * @thread  EMT
-     */
-    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiCommandProcess,(PPDMIDISPLAYCONNECTOR pInterface,
-                                                         struct VBOXVDMACMD_CHROMIUM_CMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd,
-                                                         uint32_t cbCmd));
-
-    /**
-     * Process the guest chromium control command.
-     *
-     * @param   pInterface          Pointer to this interface.
-     * @param   pCmd                Video HW Acceleration Command to be processed.
-     * @thread  EMT
-     */
-    DECLR3CALLBACKMEMBER(void, pfnCrHgsmiControlProcess,(PPDMIDISPLAYCONNECTOR pInterface,
-                                                         struct VBOXVDMACMD_CHROMIUM_CTL RT_UNTRUSTED_VOLATILE_GUEST *pCtl,
-                                                         uint32_t cbCtl));
-
-    /**
-     * Process the guest chromium control command.
-     *
-     * @param   pInterface          Pointer to this interface.
-     * @param   pCmd                Video HW Acceleration Command to be processed.
-     * @param   cbCmd               Undocumented!
-     * @param   pfnCompletion       Undocumented!
-     * @param   pvCompletion        Undocumented!
-     * @thread  EMT
-     */
-    DECLR3CALLBACKMEMBER(int, pfnCrHgcmCtlSubmit,(PPDMIDISPLAYCONNECTOR pInterface, struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd,
-                                                  PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion));
-
-    /**
      * The specified screen enters VBVA mode.
      *
      * @param   pInterface          Pointer to this interface.
      * @param   uScreenId           The screen updates are for.
      * @param   pHostFlags          Undocumented!
-     * @param   fRenderThreadMode   if true - the graphics device has a separate thread that does all rendering.
-     *                              This means that:
-     *                              1. most pfnVBVAXxx callbacks (see the individual documentation for each one)
-     *                                 will be called in the context of the render thread rather than the emulation thread
-     *                              2. PDMIDISPLAYCONNECTOR implementor (i.e. DisplayImpl) must NOT notify crogl backend
-     *                                 about vbva-originated events (e.g. resize), because crogl is working in CrCmd mode,
-     *                                 in the context of the render thread as part of the Graphics device, and gets notified about those events directly
-     * @thread  if fRenderThreadMode is TRUE - the render thread, otherwise - the emulation thread.
+     * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnVBVAEnable,(PPDMIDISPLAYCONNECTOR pInterface, unsigned uScreenId,
-                                             struct VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pHostFlags, bool fRenderThreadMode));
+                                             struct VBVAHOSTFLAGS RT_UNTRUSTED_VOLATILE_GUEST *pHostFlags));
 
     /**
      * The specified screen leaves VBVA mode.
@@ -1060,7 +1012,7 @@ typedef struct PDMIDISPLAYCONNECTOR
     DECLR3CALLBACKMEMBER(void, pfnVBVAReportCursorPosition,(PPDMIDISPLAYCONNECTOR pInterface, uint32_t fFlags, uint32_t uScreen, uint32_t x, uint32_t y));
 } PDMIDISPLAYCONNECTOR;
 /** PDMIDISPLAYCONNECTOR interface ID. */
-#define PDMIDISPLAYCONNECTOR_IID                "f2a4c9fc-2613-11e9-bc48-bf934e641fc0"
+#define PDMIDISPLAYCONNECTOR_IID                "b71dc381-99cc-43de-b459-f1e812e73b65"
 
 
 /** Pointer to a secret key interface. */
@@ -2206,21 +2158,9 @@ typedef struct PDMIDISPLAYVBVACALLBACKS
      */
     DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsync,(PPDMIDISPLAYVBVACALLBACKS pInterface,
                                                            VBOXVHWACMD RT_UNTRUSTED_VOLATILE_GUEST *pCmd));
-
-    DECLR3CALLBACKMEMBER(int, pfnCrHgsmiCommandCompleteAsync,(PPDMIDISPLAYVBVACALLBACKS pInterface,
-                                                              struct VBOXVDMACMD_CHROMIUM_CMD *pCmd, int rc));
-
-    DECLR3CALLBACKMEMBER(int, pfnCrHgsmiControlCompleteAsync,(PPDMIDISPLAYVBVACALLBACKS pInterface,
-                                                              struct VBOXVDMACMD_CHROMIUM_CTL *pCmd, int rc));
-
-    DECLR3CALLBACKMEMBER(int, pfnCrCtlSubmit,(PPDMIDISPLAYVBVACALLBACKS pInterface, struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd,
-                                              PFNCRCTLCOMPLETION pfnCompletion, void *pvCompletion));
-
-    DECLR3CALLBACKMEMBER(int, pfnCrCtlSubmitSync,(PPDMIDISPLAYVBVACALLBACKS pInterface,
-                                                  struct VBOXCRCMDCTL *pCmd, uint32_t cbCmd));
 } PDMIDISPLAYVBVACALLBACKS;
 /** PDMIDISPLAYVBVACALLBACKS  */
-#define PDMIDISPLAYVBVACALLBACKS_IID            "ddac0bd0-332d-4671-8853-732921a80216"
+#define PDMIDISPLAYVBVACALLBACKS_IID            "37f34c9c-0491-47dc-a0b3-81697c44a416"
 
 /** Pointer to a PCI raw connector interface. */
 typedef struct PDMIPCIRAWCONNECTOR *PPDMIPCIRAWCONNECTOR;

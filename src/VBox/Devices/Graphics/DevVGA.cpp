@@ -5445,8 +5445,6 @@ static DECLCALLBACK(void) vgaTimerRefresh(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
     vbvaTimerCb(pThis);
 #endif
 
-    vboxCmdVBVATimerRefresh(pThis);
-
 #ifdef VBOX_WITH_VMSVGA
     /*
      * Call the VMSVGA FIFO poller/watchdog so we can wake up the thread if

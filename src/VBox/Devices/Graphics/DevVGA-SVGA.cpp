@@ -1600,7 +1600,7 @@ PDMBOTHCBDECL(int) vmsvgaWritePort(PVGASTATE pThis, uint32_t u32)
 
             /* bird: Whatever this is was added to make screenshot work, ask sunlover should explain... */
             for (uint32_t idScreen = 0; idScreen < pThis->cMonitors; ++idScreen)
-                pThis->pDrv->pfnVBVAEnable(pThis->pDrv, idScreen, NULL /*pHostFlags*/, false /*fRenderThreadMode*/);
+                pThis->pDrv->pfnVBVAEnable(pThis->pDrv, idScreen, NULL /*pHostFlags*/);
         }
         else
         {
