@@ -637,7 +637,6 @@ public:
         return append(pszThat);
     }
 
-#if 0
     /**
      * Shortcut to append(), char variant.
      *
@@ -649,9 +648,20 @@ public:
     {
         return append(ch);
     }
-#endif
 
     /** @} */
+
+    /**
+     * Erases a sequence from the string.
+     *
+     * @returns Reference to the object.
+     * @param   offStart        Where in @a this string to start erasing (UTF-16
+     *                          units, not codepoints).
+     * @param   cwcLength       How much following @a offStart to erase (UTF-16
+     *                          units, not codepoints).
+     */
+    Bstr &erase(size_t offStart = 0, size_t cwcLength = RTSTR_MAX) RT_NOEXCEPT;
+
 
 #if defined(VBOX_WITH_XPCOM)
     /**

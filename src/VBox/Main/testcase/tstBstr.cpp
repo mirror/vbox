@@ -246,6 +246,26 @@ static void testBstrAppend(RTTEST hTest)
 }
 
 
+static void testBstrErase(RTTEST hTest)
+{
+    RTTestSub(hTest, "Bstr::erase");
+
+    com::Bstr bstr1;
+    CHECK_BSTR(bstr1.erase(), bstr1, "");
+    CHECK_BSTR(bstr1.erase(99), bstr1, "");
+    CHECK_BSTR(bstr1.erase(99,999), bstr1, "");
+
+    CHECK_BSTR(bstr1 = "asdlfjhasldfjhaldfhjalhjsdf", bstr1, "asdlfjhasldfjhaldfhjalhjsdf");
+    CHECK_BSTR(bstr1.erase(8, 9),   bstr1, "asdlfjhafhjalhjsdf");
+    CHECK_BSTR(bstr1.erase(17, 20), bstr1, "asdlfjhafhjalhjsd");
+    CHECK_BSTR(bstr1.erase(16, 1),  bstr1, "asdlfjhafhjalhjs");
+    CHECK_BSTR(bstr1.erase(15, 0),  bstr1, "asdlfjhafhjalhjs");
+    CHECK_BSTR(bstr1.erase(13, 3),  bstr1, "asdlfjhafhjal");
+    CHECK_BSTR(bstr1.erase(3, 3),   bstr1, "asdhafhjal");
+    CHECK_BSTR(bstr1.erase(),       bstr1, "");
+}
+
+
 int main()
 {
     RTTEST      hTest;
@@ -256,6 +276,7 @@ int main()
 
         testBstrPrintf(hTest);
         testBstrAppend(hTest);
+        testBstrErase(hTest);
 
         rcExit = RTTestSummaryAndDestroy(hTest);
     }
