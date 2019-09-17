@@ -838,15 +838,16 @@ static const char * const g_apszVmxInstrErrors[HMVMX_INSTR_ERROR_MAX + 1] =
 
 
 /**
- * Get the CR0 guest/host mask that does not change through the lifetime of a VM.
+ * Gets the CR0 guest/host mask.
  *
- * Any bit set in this mask is owned by the host/hypervisor and would cause a
- * VM-exit when modified by the guest.
+ * These bits typically does not change through the lifetime of a VM. Any bit set in
+ * this mask is owned by the host/hypervisor and would cause a VM-exit when modified
+ * by the guest.
  *
- * @returns The static CR0 guest/host mask.
+ * @returns The CR0 guest/host mask.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr0Mask(PCVMCPUCC pVCpu)
+static uint64_t hmR0VmxGetFixedCr0Mask(PCVMCPUCC pVCpu)
 {
     /*
      * Modifications to CR0 bits that VT-x ignores saving/restoring (CD, ET, NW) and
@@ -869,32 +870,55 @@ DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr0Mask(PCVMCPUCC pVCpu)
 
 
 /**
- * Gets the CR4 guest/host mask that does not change through the lifetime of a VM.
+ * Gets the CR4 guest/host mask.
  *
- * Any bit set in this mask is owned by the host/hypervisor and would cause a
- * VM-exit when modified by the guest.
+ * These bits typically does not change through the lifetime of a VM. Any bit set in
+ * this mask is owned by the host/hypervisor and would cause a VM-exit when modified
+ * by the guest.
  *
- * @returns The static CR4 guest/host mask.
+ * @returns The CR4 guest/host mask.
  * @param   pVCpu   The cross context virtual CPU structure.
  */
-DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr4Mask(PCVMCPUCC pVCpu)
+static uint64_t hmR0VmxGetFixedCr4Mask(PCVMCPUCC pVCpu)
 {
     /*
-     * We need to look at the host features here (for e.g. OSXSAVE, PCID) because
-     * these bits are reserved on hardware that does not support them. Since the
-     * CPU cannot refer to our virtual CPUID, we need to intercept CR4 changes to
-     * these  bits and handle it depending on whether we expose them to the guest.
+     * We construct a mask of all CR4 bits that the guest can modify without causing
+     * a VM-exit. Then invert this mask to obtain all CR4 bits that should cause
+     * a VM-exit when the guest attempts to modify them when executing using
+     * hardware-assisted VMX.
+     *
+     * When a feature is not exposed to the guest (and may be present on the host),
+     * we want to intercept guest modifications to the bit so we can emulate proper
+     * behavior (e.g., #GP).
+     *
+     * Furthermore, only modifications to those bits that don't require immediate
+     * emulation is allowed. For e.g., PCIDE is excluded because the behavior
+     * depends on CR3 which might not always be the guest value while executing
+     * using hardware-assisted VMX.
      */
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    bool const fXSaveRstor = pVM->cpum.ro.HostFeatures.fXSaveRstor;
-    bool const fPcid       = pVM->cpum.ro.HostFeatures.fPcid;
-    return (  X86_CR4_VMXE
-            | X86_CR4_VME
-            | X86_CR4_PAE
-            | X86_CR4_PGE
-            | X86_CR4_PSE
-            | (fXSaveRstor ? X86_CR4_OSXSAVE : 0)
-            | (fPcid       ? X86_CR4_PCIDE   : 0));
+    PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    bool const fFsGsBase    = pVM->cpum.ro.GuestFeatures.fFsGsBase;
+    bool const fXSaveRstor  = pVM->cpum.ro.GuestFeatures.fXSaveRstor;
+    bool const fFxSaveRstor = pVM->cpum.ro.GuestFeatures.fFxSaveRstor;
+
+    /*
+     * Paranoia.
+     * Ensure features exposed to the guest are present on the host.
+     */
+    Assert(!fFsGsBase    || pVM->cpum.ro.HostFeatures.fFsGsBase);
+    Assert(!fXSaveRstor  || pVM->cpum.ro.HostFeatures.fXSaveRstor);
+    Assert(!fFxSaveRstor || pVM->cpum.ro.HostFeatures.fFxSaveRstor);
+
+    uint64_t const fGstMask = (  X86_CR4_PVI
+                               | X86_CR4_TSD
+                               | X86_CR4_DE
+                               | X86_CR4_MCE
+                               | X86_CR4_PCE
+                               | X86_CR4_OSXMMEEXCPT
+                               | (fFsGsBase    ? X86_CR4_FSGSBASE : 0)
+                               | (fXSaveRstor  ? X86_CR4_OSXSAVE  : 0)
+                               | (fFxSaveRstor ? X86_CR4_OSFXSR   : 0));
+    return ~fGstMask;
 }
 
 
