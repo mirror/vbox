@@ -168,8 +168,8 @@ void UIMachineSettingsAudio::polishPage()
 {
     /* Polish audio page availability: */
     m_pCheckBoxAudio->setEnabled(isMachineOffline());
-    m_pAudioHostDriverLabel->setEnabled(isMachineOffline());
-    m_pAudioHostDriverEditor->setEnabled(isMachineOffline());
+    m_pAudioHostDriverLabel->setEnabled(isMachineOffline() || isMachineSaved());
+    m_pAudioHostDriverEditor->setEnabled(isMachineOffline() || isMachineSaved());
     m_pAudioControllerLabel->setEnabled(isMachineOffline());
     m_pAudioControllerEditor->setEnabled(isMachineOffline());
     m_pLabelAudioExtended->setEnabled(isMachineInValidMode());
@@ -245,7 +245,7 @@ bool UIMachineSettingsAudio::saveAudioData()
                 fSuccess = comAdapter.isOk();
             }
             /* Save audio driver type: */
-            if (fSuccess && isMachineOffline() && newAudioData.m_audioDriverType != oldAudioData.m_audioDriverType)
+            if (fSuccess && (isMachineOffline() || isMachineSaved()) && newAudioData.m_audioDriverType != oldAudioData.m_audioDriverType)
             {
                 comAdapter.SetAudioDriver(newAudioData.m_audioDriverType);
                 fSuccess = comAdapter.isOk();
