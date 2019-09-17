@@ -322,7 +322,7 @@ public:
      * @param   ...             Ellipsis containing the arguments specified by
      *                          the format string.
      *
-     * @returns S_OK or E_OUTOFMEMORY
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
      */
     HRESULT printfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 2);
 
@@ -348,9 +348,310 @@ public:
      * @param   va              Argument vector containing the arguments
      *                          specified by the format string.
      *
-     * @returns S_OK or E_OUTOFMEMORY
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
      */
     HRESULT printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 0);
+
+    /** @name Append methods and operators
+     *  @{ */
+
+    /**
+     * Appends the string @a that to @a rThat.
+     *
+     * @param   rThat            The string to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(const Bstr &rThat);
+
+    /**
+     * Appends the string @a that to @a rThat.
+     *
+     * @param   rThat            The string to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(const Bstr &rThat) RT_NOEXCEPT;
+
+    /**
+     * Appends the UTF-8 string @a that to @a rThat.
+     *
+     * @param   rThat            The string to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(const RTCString &rThat);
+
+    /**
+     * Appends the UTF-8 string @a that to @a rThat.
+     *
+     * @param   rThat            The string to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(const RTCString &rThat) RT_NOEXCEPT;
+
+    /**
+     * Appends the UTF-16 string @a pszSrc to @a this.
+     *
+     * @param   pwszSrc         The C-style UTF-16 string to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(CBSTR pwszSrc);
+
+    /**
+     * Appends the UTF-16 string @a pszSrc to @a this.
+     *
+     * @param   pwszSrc         The C-style UTF-16 string to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(CBSTR pwszSrc) RT_NOEXCEPT;
+
+    /**
+     * Appends the UTF-8 string @a pszSrc to @a this.
+     *
+     * @param   pszSrc          The C-style string to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(const char *pszSrc);
+
+    /**
+     * Appends the UTF-8 string @a pszSrc to @a this.
+     *
+     * @param   pszSrc          The C-style string to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(const char *pszSrc) RT_NOEXCEPT;
+
+    /**
+     * Appends the a substring from @a rThat to @a this.
+     *
+     * @param   rThat           The string to append a substring from.
+     * @param   offStart        The start of the substring to append (UTF-16
+     *                          offset, not codepoint).
+     * @param   cwcMax          The maximum number of UTF-16 units to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(const Bstr &rThat, size_t offStart, size_t cwcMax = RTSTR_MAX);
+
+    /**
+     * Appends the a substring from @a rThat to @a this.
+     *
+     * @param   rThat           The string to append a substring from.
+     * @param   offStart        The start of the substring to append (UTF-16
+     *                          offset, not codepoint).
+     * @param   cwcMax          The maximum number of UTF-16 units to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(const Bstr &rThat, size_t offStart, size_t cwcMax = RTSTR_MAX) RT_NOEXCEPT;
+
+    /**
+     * Appends the a substring from UTF-8 @a rThat to @a this.
+     *
+     * @param   rThat           The string to append a substring from.
+     * @param   offStart        The start of the substring to append (byte offset,
+     *                          not codepoint).
+     * @param   cchMax          The maximum number of bytes to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(const RTCString &rThat, size_t offStart, size_t cchMax = RTSTR_MAX);
+
+    /**
+     * Appends the a substring from UTF-8 @a rThat to @a this.
+     *
+     * @param   rThat           The string to append a substring from.
+     * @param   offStart        The start of the substring to append (byte offset,
+     *                          not codepoint).
+     * @param   cchMax          The maximum number of bytes to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(const RTCString &rThat, size_t offStart, size_t cchMax = RTSTR_MAX) RT_NOEXCEPT;
+
+    /**
+     * Appends the first @a cchMax chars from UTF-16 string @a pszThat to @a this.
+     *
+     * @param   pwszThat        The C-style UTF-16 string to append.
+     * @param   cchMax          The maximum number of bytes to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(CBSTR pwszThat, size_t cchMax);
+
+    /**
+     * Appends the first @a cchMax chars from UTF-16 string @a pszThat to @a this.
+     *
+     * @param   pwszThat        The C-style UTF-16 string to append.
+     * @param   cchMax          The maximum number of bytes to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(CBSTR pwszThat, size_t cchMax) RT_NOEXCEPT;
+
+    /**
+     * Appends the first @a cchMax chars from string @a pszThat to @a this.
+     *
+     * @param   pszThat         The C-style string to append.
+     * @param   cchMax          The maximum number of bytes to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(const char *pszThat, size_t cchMax);
+
+    /**
+     * Appends the first @a cchMax chars from string @a pszThat to @a this.
+     *
+     * @param   pszThat         The C-style string to append.
+     * @param   cchMax          The maximum number of bytes to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(const char *pszThat, size_t cchMax) RT_NOEXCEPT;
+
+    /**
+     * Appends the given character to @a this.
+     *
+     * @param   ch              The character to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &append(char ch);
+
+    /**
+     * Appends the given character to @a this.
+     *
+     * @param   ch              The character to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendNoThrow(char ch) RT_NOEXCEPT;
+
+    /**
+     * Appends the given unicode code point to @a this.
+     *
+     * @param   uc              The unicode code point to append.
+     * @throws  std::bad_alloc  On allocation error.  The object is left unchanged.
+     * @returns Reference to the object.
+     */
+    Bstr &appendCodePoint(RTUNICP uc);
+
+    /**
+     * Appends the given unicode code point to @a this.
+     *
+     * @param   uc              The unicode code point to append.
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendCodePointNoThrow(RTUNICP uc) RT_NOEXCEPT;
+
+    /**
+     * Appends the output of the string format operation (RTStrPrintf).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   ...             Ellipsis containing the arguments specified by
+     *                          the format string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  Object state is undefined.
+     *
+     * @returns Reference to the object.
+     */
+    Bstr &appendPrintf(const char *pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2);
+
+    /**
+     * Appends the output of the string format operation (RTStrPrintf).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   ...             Ellipsis containing the arguments specified by
+     *                          the format string.
+     *
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendPrintfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 2);
+
+    /**
+     * Appends the output of the string format operation (RTStrPrintfV).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   va              Argument vector containing the arguments
+     *                          specified by the format string.
+     *
+     * @throws  std::bad_alloc  On allocation error.  Object state is undefined.
+     *
+     * @returns Reference to the object.
+     */
+    Bstr &appendPrintfV(const char *pszFormat, va_list va) RT_IPRT_FORMAT_ATTR(1, 0);
+
+    /**
+     * Appends the output of the string format operation (RTStrPrintfV).
+     *
+     * @param   pszFormat       Pointer to the format string,
+     *                          @see pg_rt_str_format.
+     * @param   va              Argument vector containing the arguments
+     *                          specified by the format string.
+     *
+     * @returns S_OK, E_OUTOFMEMORY or E_INVAL (bad encoding).
+     */
+    HRESULT appendPrintfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT RT_IPRT_FORMAT_ATTR(1, 0);
+
+    /**
+     * Shortcut to append(), Bstr variant.
+     *
+     * @param   rThat           The string to append.
+     * @returns Reference to the object.
+     */
+    Bstr &operator+=(const Bstr &rThat)
+    {
+        return append(rThat);
+    }
+
+    /**
+     * Shortcut to append(), RTCString variant.
+     *
+     * @param   rThat           The string to append.
+     * @returns Reference to the object.
+     */
+    Bstr &operator+=(const RTCString &rThat)
+    {
+        return append(rThat);
+    }
+
+    /**
+     * Shortcut to append(), CBSTR variant.
+     *
+     * @param   pwszThat        The C-style string to append.
+     * @returns                 Reference to the object.
+     */
+    Bstr &operator+=(CBSTR pwszThat)
+    {
+        return append(pwszThat);
+    }
+
+    /**
+     * Shortcut to append(), const char * variant.
+     *
+     * @param   pszThat         The C-style string to append.
+     * @returns                 Reference to the object.
+     */
+    Bstr &operator+=(const char *pszThat)
+    {
+        return append(pszThat);
+    }
+
+#if 0
+    /**
+     * Shortcut to append(), char variant.
+     *
+     * @param ch                The character to append.
+     *
+     * @returns                 Reference to the object.
+     */
+    Bstr &operator+=(char ch)
+    {
+        return append(ch);
+    }
+#endif
+
+    /** @} */
 
 #if defined(VBOX_WITH_XPCOM)
     /**
@@ -642,6 +943,11 @@ protected:
      * @throws  std::bad_alloc - the object is representing an empty string.
      */
     void copyFromN(const char *a_pszSrc, size_t a_cchSrc);
+
+    Bstr   &appendWorkerUtf16(PCRTUTF16 pwszSrc, size_t cwcSrc);
+    Bstr   &appendWorkerUtf8(const char *pszSrc, size_t cchSrc);
+    HRESULT appendWorkerUtf16NoThrow(PCRTUTF16 pwszSrc, size_t cwcSrc) RT_NOEXCEPT;
+    HRESULT appendWorkerUtf8NoThrow(const char *pszSrc, size_t cchSrc) RT_NOEXCEPT;
 
     static DECLCALLBACK(size_t) printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbChars) RT_NOEXCEPT;
 

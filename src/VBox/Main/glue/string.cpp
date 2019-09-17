@@ -134,6 +134,7 @@ Bstr::printfOutputCallbackNoThrow(void *pvArg, const char *pachChars, size_t cbC
 HRESULT Bstr::printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
 {
     cleanup();
+
     BSTRNOTHROW Args = { this, 0, 0, S_OK };
     RTStrFormatV(printfOutputCallbackNoThrow, &Args, NULL, NULL, pszFormat, va);
     if (Args.hrc == S_OK)
@@ -142,6 +143,7 @@ HRESULT Bstr::printfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
         if (Args.hrc == S_OK)
             return S_OK;
     }
+
     cleanup();
     return Args.hrc;
 }
@@ -299,6 +301,283 @@ void Bstr::reserve(size_t cwcMin, bool fForce /*= false*/)
         throw std::bad_alloc();
 }
 
+
+Bstr &Bstr::append(const Bstr &rThat)
+{
+    if (rThat.isNotEmpty())
+        return appendWorkerUtf16(rThat.m_bstr, rThat.length());
+    return *this;
+}
+
+
+HRESULT Bstr::appendNoThrow(const Bstr &rThat) RT_NOEXCEPT
+{
+    if (rThat.isNotEmpty())
+        return appendWorkerUtf16NoThrow(rThat.m_bstr, rThat.length());
+    return S_OK;
+}
+
+
+Bstr &Bstr::append(const RTCString &rThat)
+{
+    if (rThat.isNotEmpty())
+        return appendWorkerUtf8(rThat.c_str(), rThat.length());
+    return *this;
+}
+
+
+HRESULT Bstr::appendNoThrow(const RTCString &rThat) RT_NOEXCEPT
+{
+    if (rThat.isNotEmpty())
+        return appendWorkerUtf8NoThrow(rThat.c_str(), rThat.length());
+    return S_OK;
+}
+
+
+Bstr &Bstr::append(CBSTR pwszSrc)
+{
+    if (pwszSrc && *pwszSrc)
+        return appendWorkerUtf16(pwszSrc, RTUtf16Len(pwszSrc));
+    return *this;
+}
+
+
+HRESULT Bstr::appendNoThrow(CBSTR pwszSrc) RT_NOEXCEPT
+{
+    if (pwszSrc && *pwszSrc)
+        return appendWorkerUtf16NoThrow(pwszSrc, RTUtf16Len(pwszSrc));
+    return S_OK;
+}
+
+
+Bstr &Bstr::append(const char *pszSrc)
+{
+    if (pszSrc && *pszSrc)
+        return appendWorkerUtf8(pszSrc, strlen(pszSrc));
+    return *this;
+}
+
+
+HRESULT Bstr::appendNoThrow(const char *pszSrc) RT_NOEXCEPT
+{
+    if (pszSrc && *pszSrc)
+        return appendWorkerUtf8NoThrow(pszSrc, strlen(pszSrc));
+    return S_OK;
+}
+
+
+Bstr &Bstr::append(const Bstr &rThat, size_t offStart, size_t cwcMax /*= RTSTR_MAX*/)
+{
+    size_t cwcSrc = rThat.length();
+    if (offStart < cwcSrc)
+        return appendWorkerUtf16(rThat.raw() + offStart, RT_MIN(cwcSrc - offStart, cwcMax));
+    return *this;
+}
+
+
+HRESULT Bstr::appendNoThrow(const Bstr &rThat, size_t offStart, size_t cwcMax /*= RTSTR_MAX*/) RT_NOEXCEPT
+{
+    size_t cwcSrc = rThat.length();
+    if (offStart < cwcSrc)
+        return appendWorkerUtf16NoThrow(rThat.raw() + offStart, RT_MIN(cwcSrc - offStart, cwcMax));
+    return S_OK;
+}
+
+
+Bstr &Bstr::append(const RTCString &rThat, size_t offStart, size_t cchMax /*= RTSTR_MAX*/)
+{
+    if (offStart < rThat.length())
+        return appendWorkerUtf8(rThat.c_str() + offStart, RT_MIN(rThat.length() - offStart, cchMax));
+    return *this;
+}
+
+
+HRESULT Bstr::appendNoThrow(const RTCString &rThat, size_t offStart, size_t cchMax /*= RTSTR_MAX*/) RT_NOEXCEPT
+{
+    if (offStart < rThat.length())
+        return appendWorkerUtf8NoThrow(rThat.c_str() + offStart, RT_MIN(rThat.length() - offStart, cchMax));
+    return S_OK;
+}
+
+
+Bstr &Bstr::append(CBSTR pwszThat, size_t cchMax)
+{
+    return appendWorkerUtf16(pwszThat, RTUtf16NLen(pwszThat, cchMax));
+}
+
+
+HRESULT Bstr::appendNoThrow(CBSTR pwszThat, size_t cchMax) RT_NOEXCEPT
+{
+    return appendWorkerUtf16NoThrow(pwszThat, RTUtf16NLen(pwszThat, cchMax));
+}
+
+
+Bstr &Bstr::append(const char *pszThat, size_t cchMax)
+{
+    return appendWorkerUtf8(pszThat, RTStrNLen(pszThat, cchMax));
+}
+
+
+HRESULT Bstr::appendNoThrow(const char *pszThat, size_t cchMax) RT_NOEXCEPT
+{
+    return appendWorkerUtf8NoThrow(pszThat, RTStrNLen(pszThat, cchMax));
+}
+
+
+Bstr &Bstr::append(char ch)
+{
+    AssertMsg(ch > 0 && ch < 127, ("%#x\n", ch));
+    return appendWorkerUtf8(&ch, 1);
+}
+
+
+HRESULT Bstr::appendNoThrow(char ch) RT_NOEXCEPT
+{
+    AssertMsg(ch > 0 && ch < 127, ("%#x\n", ch));
+    return appendWorkerUtf8NoThrow(&ch, 1);
+}
+
+
+Bstr &Bstr::appendCodePoint(RTUNICP uc)
+{
+    RTUTF16 wszTmp[3];
+    PRTUTF16 pwszEnd = RTUtf16PutCp(wszTmp, uc);
+    *pwszEnd = '\0';
+    return appendWorkerUtf16(&wszTmp[0], pwszEnd - &wszTmp[0]);
+}
+
+
+HRESULT Bstr::appendCodePointNoThrow(RTUNICP uc) RT_NOEXCEPT
+{
+    RTUTF16 wszTmp[3];
+    PRTUTF16 pwszEnd = RTUtf16PutCp(wszTmp, uc);
+    *pwszEnd = '\0';
+    return appendWorkerUtf16NoThrow(&wszTmp[0], pwszEnd - &wszTmp[0]);
+}
+
+
+Bstr &Bstr::appendWorkerUtf16(PCRTUTF16 pwszSrc, size_t cwcSrc)
+{
+    size_t cwcOld = length();
+    size_t cwcTotal = cwcOld + cwcSrc;
+    reserve(cwcTotal, true /*fForce*/);
+    if (cwcSrc)
+        memcpy(&m_bstr[cwcOld], pwszSrc, cwcSrc * sizeof(RTUTF16));
+    m_bstr[cwcTotal] = '\0';
+    return *this;
+}
+
+
+HRESULT Bstr::appendWorkerUtf16NoThrow(PCRTUTF16 pwszSrc, size_t cwcSrc) RT_NOEXCEPT
+{
+    size_t cwcOld = length();
+    size_t cwcTotal = cwcOld + cwcSrc;
+    HRESULT hrc = reserveNoThrow(cwcTotal, true /*fForce*/);
+    if (hrc == S_OK)
+    {
+        if (cwcSrc)
+            memcpy(&m_bstr[cwcOld], pwszSrc, cwcSrc * sizeof(RTUTF16));
+        m_bstr[cwcTotal] = '\0';
+    }
+    return hrc;
+}
+
+
+Bstr &Bstr::appendWorkerUtf8(const char *pszSrc, size_t cchSrc)
+{
+    size_t cwcSrc;
+    int rc = RTStrCalcUtf16LenEx(pszSrc, cchSrc, &cwcSrc);
+    AssertRCStmt(rc, throw std::bad_alloc());
+
+    size_t cwcOld = length();
+    size_t cwcTotal = cwcOld + cwcSrc;
+    reserve(cwcTotal, true /*fForce*/);
+    if (cwcSrc)
+    {
+        PRTUTF16 pwszDst = &m_bstr[cwcOld];
+        rc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszDst, cwcSrc + 1, NULL);
+        AssertRCStmt(rc, throw std::bad_alloc());
+    }
+    m_bstr[cwcTotal] = '\0';
+    return *this;
+}
+
+
+HRESULT Bstr::appendWorkerUtf8NoThrow(const char *pszSrc, size_t cchSrc) RT_NOEXCEPT
+{
+    size_t cwcSrc;
+    int rc = RTStrCalcUtf16LenEx(pszSrc, cchSrc, &cwcSrc);
+    AssertRCStmt(rc, E_INVALIDARG);
+
+    size_t cwcOld = length();
+    size_t cwcTotal = cwcOld + cwcSrc;
+    HRESULT hrc = reserveNoThrow(cwcTotal, true /*fForce*/);
+    AssertReturn(hrc == S_OK, hrc);
+    if (cwcSrc)
+    {
+        PRTUTF16 pwszDst = &m_bstr[cwcOld];
+        rc = RTStrToUtf16Ex(pszSrc, cchSrc, &pwszDst, cwcSrc + 1, NULL);
+        AssertRCStmt(rc, E_INVALIDARG);
+    }
+    m_bstr[cwcTotal] = '\0';
+    return S_OK;
+}
+
+
+Bstr &Bstr::appendPrintf(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    HRESULT hrc = appendPrintfVNoThrow(pszFormat, va);
+    va_end(va);
+    if (hrc != S_OK)
+        throw std::bad_alloc();
+    return *this;
+}
+
+
+HRESULT Bstr::appendPrintfNoThrow(const char *pszFormat, ...) RT_NOEXCEPT
+{
+    va_list va;
+    va_start(va, pszFormat);
+    HRESULT hrc = appendPrintfVNoThrow(pszFormat, va);
+    va_end(va);
+    return hrc;
+}
+
+
+Bstr &Bstr::appendPrintfV(const char *pszFormat, va_list va)
+{
+    HRESULT hrc = appendPrintfVNoThrow(pszFormat, va);
+    if (hrc != S_OK)
+        throw std::bad_alloc();
+    return *this;
+}
+
+
+HRESULT Bstr::appendPrintfVNoThrow(const char *pszFormat, va_list va) RT_NOEXCEPT
+{
+    size_t const cwcOld = length();
+    BSTRNOTHROW Args = { this, cwcOld, cwcOld, S_OK };
+
+    RTStrFormatV(printfOutputCallbackNoThrow, &Args, NULL, NULL, pszFormat, va);
+    if (Args.hrc == S_OK)
+    {
+        Args.hrc = joltNoThrow(Args.offDst);
+        if (Args.hrc == S_OK)
+            return S_OK;
+    }
+
+    if (m_bstr)
+        m_bstr[cwcOld] = '\0';
+    return Args.hrc;
+}
+
+
+
+/*********************************************************************************************************************************
+*   Utf8Str Implementation                                                                                                       *
+*********************************************************************************************************************************/
 
 /* static */
 const Utf8Str Utf8Str::Empty; /* default ctor is OK */
