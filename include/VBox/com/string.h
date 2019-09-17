@@ -1269,7 +1269,7 @@ private:
 };
 
 /**
- * The BstrFmt class is a shortcut to <tt>Bstr(Utf8StrFmt(...))</tt>.
+ * The BstrFmt class is a shortcut to <tt>Bstr().printf()</tt>.
  */
 class BstrFmt : public Bstr
 {
@@ -1279,22 +1279,23 @@ public:
      * Constructs a new string given the format string and the list of the
      * arguments for the format string.
      *
-     * @param aFormat   printf-like format string (in UTF-8 encoding).
-     * @param ...       List of the arguments for the format string.
+     * @param a_pszFormat   printf-like format string (in UTF-8 encoding), see
+     *                      iprt/string.h for details.
+     * @param ...           List of the arguments for the format string.
      */
-    explicit BstrFmt(const char *aFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2)
+    explicit BstrFmt(const char *a_pszFormat, ...) RT_IPRT_FORMAT_ATTR(1, 2)
     {
-        va_list args;
-        va_start(args, aFormat);
-        copyFrom(Utf8Str(aFormat, args).c_str());
-        va_end(args);
+        va_list va;
+        va_start(va, a_pszFormat);
+        printfV(a_pszFormat, va);
+        va_end(va);
     }
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
 };
 
 /**
- * The BstrFmtVA class is a shortcut to <tt>Bstr(Utf8Str(format,va))</tt>.
+ * The BstrFmtVA class is a shortcut to <tt>Bstr().printfV()</tt>.
  */
 class BstrFmtVA : public Bstr
 {
@@ -1304,12 +1305,13 @@ public:
      * Constructs a new string given the format string and the list of the
      * arguments for the format string.
      *
-     * @param aFormat   printf-like format string (in UTF-8 encoding).
-     * @param aArgs     List of arguments for the format string
+     * @param a_pszFormat   printf-like format string (in UTF-8 encoding), see
+     *                      iprt/string.h for details.
+     * @param a_va          List of arguments for the format string
      */
-    BstrFmtVA(const char *aFormat, va_list aArgs) RT_IPRT_FORMAT_ATTR(1, 0)
+    BstrFmtVA(const char *a_pszFormat, va_list a_va) RT_IPRT_FORMAT_ATTR(1, 0)
     {
-        copyFrom(Utf8Str(aFormat, aArgs).c_str());
+        printfV(a_pszFormat, a_va);
     }
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
