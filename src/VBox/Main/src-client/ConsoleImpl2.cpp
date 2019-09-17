@@ -3070,7 +3070,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                             /* Setup the service. */
                             VBOXHGCMSVCPARM parm;
                             HGCMSvcSetU32(&parm, !i_useHostClipboard());
-                            rc = SHAREDCLIPBOARDINST()->hostCall(VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS, 1, &parm);
+                            rc = SHAREDCLIPBOARDINST()->hostCall(VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, &parm);
                             if (RT_FAILURE(rc))
                                 LogRel(("Shared Clipboard: Unable to set initial headless mode, rc=%Rrc\n", rc));
                         }

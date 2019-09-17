@@ -9256,23 +9256,23 @@ int Console::i_changeClipboardMode(ClipboardMode_T aClipboardMode)
         default:
         case ClipboardMode_Disabled:
             LogRel(("Shared Clipboard: Mode: Off\n"));
-            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_OFF;
+            parm.u.uint32 = VBOX_SHCL_MODE_OFF;
             break;
         case ClipboardMode_GuestToHost:
             LogRel(("Shared Clipboard: Mode: Guest to Host\n"));
-            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST;
+            parm.u.uint32 = VBOX_SHCL_MODE_GUEST_TO_HOST;
             break;
         case ClipboardMode_HostToGuest:
             LogRel(("Shared Clipboard: Mode: Host to Guest\n"));
-            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST;
+            parm.u.uint32 = VBOX_SHCL_MODE_HOST_TO_GUEST;
             break;
         case ClipboardMode_Bidirectional:
             LogRel(("Shared Clipboard: Mode: Bidirectional\n"));
-            parm.u.uint32 = VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
+            parm.u.uint32 = VBOX_SHCL_MODE_BIDIRECTIONAL;
             break;
     }
 
-    int vrc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE, 1, &parm);
+    int vrc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHCL_HOST_FN_SET_MODE, 1, &parm);
     if (RT_FAILURE(vrc))
         LogRel(("Shared Clipboard: Error changing mode: %Rrc\n", vrc));
 

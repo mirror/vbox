@@ -306,7 +306,7 @@ static void vgsvcClipboardOs2AdvertiseHostFormats(uint32_t fFormats)
                 /*
                  * Do the format advertising.
                  */
-                if (fFormats & (VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT/* | VBOX_SHARED_CLIPBOARD_FMT_HTML ?? */))
+                if (fFormats & (VBOX_SHCL_FMT_UNICODETEXT/* | VBOX_SHCL_FMT_HTML ?? */))
                 {
                     if (!WinSetClipbrdData(g_habWorker, 0, CF_TEXT, CFI_POINTER))
                         VGSvcError("WinSetClipbrdData(,,CF_TEXT,) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
@@ -314,7 +314,7 @@ static void vgsvcClipboardOs2AdvertiseHostFormats(uint32_t fFormats)
                         && !WinSetClipbrdData(g_habWorker, 0, g_atomOdin32UnicodeText, CFI_POINTER))
                         VGSvcError("WinSetClipbrdData(,,g_atomOdin32UnicodeText,) failed, lasterr=%lx\n", WinGetLastError(g_habWorker));
                 }
-                if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+                if (fFormats & VBOX_SHCL_FMT_BITMAP)
                 {
                     /** @todo bitmaps */
                 }
@@ -412,7 +412,7 @@ static void *vgsvcClipboardOs2ConvertToPM(uint32_t fFormat, USHORT usFmt, void *
          * here instead of the LC_CTYPE one which iconv uses by default.
          * -lazybird
          */
-        Assert(fFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+        Assert(fFormat & VBOX_SHCL_FMT_UNICODETEXT);
         char *pszUtf8;
         int rc = RTUtf16ToUtf8((PCRTUTF16)pv, &pszUtf8);
         if (RT_SUCCESS(rc))
@@ -463,7 +463,7 @@ static void vgsvcClipboardOs2RenderFormat(USHORT usFmt)
     uint32_t fFormat;
     if (    usFmt == CF_TEXT
         ||  usFmt == g_atomOdin32UnicodeText)
-        fFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+        fFormat = VBOX_SHCL_FMT_UNICODETEXT;
     else /** @todo bitmaps */
         fFormat = 0;
     if (fFormat)
@@ -543,7 +543,7 @@ static void vgsvcClipboardOs2SendDataToHost(uint32_t fFormat)
         void *pv = NULL;
         uint32_t cb = 0;
 
-        if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+        if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
         {
             /* Got any odin32 unicode text? */
             PVOID pvPM;
@@ -606,7 +606,7 @@ static void vgsvcClipboardOs2ReportFormats(void)
     {
         if (    ulFormat == CF_TEXT
             ||  ulFormat == g_atomOdin32UnicodeText)
-            fFormats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+            fFormats |= VBOX_SHCL_FMT_UNICODETEXT;
         /** @todo else bitmaps and stuff. */
     }
     VGSvcVerbose(4, "clipboard: reporting fFormats=%#x\n", fFormats);
@@ -774,14 +774,14 @@ static MRESULT EXPENTRY vgsvcClipboardOs2WinProc(HWND hwnd, ULONG msg, MPARAM mp
         /*
          * Listener message - the host has new formats to offer.
          */
-        case WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
+        case WM_USER + VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
             vgsvcClipboardOs2AdvertiseHostFormats(LONGFROMMP(mp1));
             break;
 
         /*
          * Listener message - the host wish to read our clipboard data.
          */
-        case WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
+        case WM_USER + VBOX_SHCL_HOST_MSG_READ_DATA:
             vgsvcClipboardOs2SendDataToHost(LONGFROMMP(mp1));
             break;
 
@@ -894,8 +894,8 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Listener(RTTHREAD ThreadSelf, void *pv
                          * Forward the information to the window, so it can later
                          * respond do WM_RENDERFORMAT message.
                          */
-                        case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
-                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT,
+                        case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
+                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHCL_HOST_MSG_FORMATS_REPORT,
                                             MPFROMLONG(fFormats), 0))
                                 VGSvcError("WinPostMsg(%lx, FORMATS,,) failed, lasterr=%#lx\n",
                                            g_hwndWorker, WinGetLastError(g_habListener));
@@ -904,8 +904,8 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Listener(RTTHREAD ThreadSelf, void *pv
                         /*
                          * The host needs data in the specified format.
                          */
-                        case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
-                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
+                        case VBOX_SHCL_HOST_MSG_READ_DATA:
+                            if (!WinPostMsg(g_hwndWorker, WM_USER + VBOX_SHCL_HOST_MSG_READ_DATA,
                                             MPFROMLONG(fFormats), 0))
                                 VGSvcError("WinPostMsg(%lx, READ_DATA,,) failed, lasterr=%#lx\n",
                                            g_hwndWorker, WinGetLastError(g_habListener));
@@ -914,7 +914,7 @@ static DECLCALLBACK(int) vgsvcClipboardOs2Listener(RTTHREAD ThreadSelf, void *pv
                         /*
                          * The host is terminating.
                          */
-                        case VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT:
+                        case VBOX_SHCL_HOST_MSG_QUIT:
                             fQuit = true;
                             break;
 

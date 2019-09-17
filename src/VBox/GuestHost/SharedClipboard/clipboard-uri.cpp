@@ -2520,16 +2520,16 @@ int SharedClipboardURICtxTransferRegister(PSHCLURICTX pURI, PSHCLURITRANSFER pTr
      * for a free one, wrapping around.  We've reserved both the zero'th and
      * max-1 IDs.
      */
-    uint32_t idTransfer = RTRandU32Ex(1, VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS - 2);
+    uint32_t idTransfer = RTRandU32Ex(1, VBOX_SHCL_MAX_TRANSFERS - 2);
 
     if (!ASMBitTestAndSet(&pURI->bmTransferIds[0], idTransfer))
     { /* likely */ }
-    else if (pURI->cTransfers < VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS - 2 /* First and last are not used */)
+    else if (pURI->cTransfers < VBOX_SHCL_MAX_TRANSFERS - 2 /* First and last are not used */)
     {
         /* Forward search. */
-        int iHit = ASMBitNextClear(&pURI->bmTransferIds[0], VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS, idTransfer);
+        int iHit = ASMBitNextClear(&pURI->bmTransferIds[0], VBOX_SHCL_MAX_TRANSFERS, idTransfer);
         if (iHit < 0)
-            iHit = ASMBitFirstClear(&pURI->bmTransferIds[0], VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS);
+            iHit = ASMBitFirstClear(&pURI->bmTransferIds[0], VBOX_SHCL_MAX_TRANSFERS);
         AssertLogRelMsgReturn(iHit >= 0, ("Transfer count: %RU16\n", pURI->cTransfers), VERR_SHCLPB_MAX_TRANSFERS_REACHED);
         idTransfer = iHit;
         AssertLogRelMsgReturn(!ASMBitTestAndSet(&pURI->bmTransferIds[0], idTransfer), ("idObject=%#x\n", idTransfer), VERR_INTERNAL_ERROR_2);
@@ -2566,7 +2566,7 @@ int SharedClipboardURICtxTransferRegisterByIndex(PSHCLURICTX pURI, PSHCLURITRANS
 {
     LogFlowFunc(("cTransfers=%RU16, idTransfer=%RU32\n", pURI->cTransfers, idTransfer));
 
-    if (pURI->cTransfers < VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS - 2 /* First and last are not used */)
+    if (pURI->cTransfers < VBOX_SHCL_MAX_TRANSFERS - 2 /* First and last are not used */)
     {
         if (!ASMBitTestAndSet(&pURI->bmTransferIds[0], idTransfer))
         {
@@ -2949,7 +2949,7 @@ static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClF
  * @returns Transfer status string name.
  * @param   uStatus             The transfer status to translate.
  */
-const char *VBoxClipboardTransferStatusToStr(uint32_t uStatus)
+const char *VBoxShClTransferStatusToStr(uint32_t uStatus)
 {
     switch (uStatus)
     {

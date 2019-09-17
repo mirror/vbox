@@ -127,12 +127,12 @@ int queryNewPasteboardFormats(PasteboardRef pPasteboard, uint32_t *pfFormats, bo
                     UTTypeConformsTo(flavorType, kUTTypeUTF16PlainText))
                 {
                     Log(("Unicode flavor detected.\n"));
-                    *pfFormats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+                    *pfFormats |= VBOX_SHCL_FMT_UNICODETEXT;
                 }
                 else if (UTTypeConformsTo(flavorType, kUTTypeBMP))
                 {
                     Log(("BMP flavor detected.\n"));
-                    *pfFormats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+                    *pfFormats |= VBOX_SHCL_FMT_BITMAP;
                 }
             }
             CFRelease(flavorTypeArray);
@@ -176,7 +176,7 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
     if (!(err = PasteboardGetItemIdentifier(pPasteboard, 1, &itemID)))
     {
         /* The guest request unicode */
-        if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+        if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
         {
             CFDataRef outData;
             PRTUTF16 pwszTmp = NULL;
@@ -237,7 +237,7 @@ int readFromPasteboard(PasteboardRef pPasteboard, uint32_t fFormat, void *pv, ui
             }
         }
         /* The guest request BITMAP */
-        else if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+        else if (fFormat & VBOX_SHCL_FMT_BITMAP)
         {
             CFDataRef outData;
             const void *pTmp = NULL;
@@ -304,7 +304,7 @@ int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t
 
     int rc = VERR_NOT_SUPPORTED;
     /* Handle the unicode text */
-    if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    if (fFormat & VBOX_SHCL_FMT_UNICODETEXT)
     {
         PRTUTF16 pwszSrcText = static_cast <PRTUTF16>(pv);
         size_t cwSrc = cb / 2;
@@ -371,7 +371,7 @@ int writeToPasteboard(PasteboardRef pPasteboard, void *pv, uint32_t cb, uint32_t
         rc = VINF_SUCCESS;
     }
     /* Handle the bitmap */
-    else if (fFormat & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+    else if (fFormat & VBOX_SHCL_FMT_BITMAP)
     {
         /* Create a full BMP from it */
         void *pBmp;

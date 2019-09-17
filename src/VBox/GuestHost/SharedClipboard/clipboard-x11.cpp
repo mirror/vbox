@@ -112,20 +112,20 @@ static struct _CLIPFORMATTABLE
 } g_aFormats[] =
 {
     { "INVALID", INVALID, 0 },
-    { "UTF8_STRING", UTF8, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
+    { "UTF8_STRING", UTF8, VBOX_SHCL_FMT_UNICODETEXT },
     { "text/plain;charset=UTF-8", UTF8,
-      VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
+      VBOX_SHCL_FMT_UNICODETEXT },
     { "text/plain;charset=utf-8", UTF8,
-      VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "STRING", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "TEXT", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "text/plain", TEXT, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT },
-    { "text/html", HTML, VBOX_SHARED_CLIPBOARD_FMT_HTML },
+      VBOX_SHCL_FMT_UNICODETEXT },
+    { "STRING", TEXT, VBOX_SHCL_FMT_UNICODETEXT },
+    { "TEXT", TEXT, VBOX_SHCL_FMT_UNICODETEXT },
+    { "text/plain", TEXT, VBOX_SHCL_FMT_UNICODETEXT },
+    { "text/html", HTML, VBOX_SHCL_FMT_HTML },
     { "text/html;charset=utf-8", HTML,
-      VBOX_SHARED_CLIPBOARD_FMT_HTML },
-    { "image/bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
-    { "image/x-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP },
-    { "image/x-MS-bmp", BMP, VBOX_SHARED_CLIPBOARD_FMT_BITMAP }
+      VBOX_SHCL_FMT_HTML },
+    { "image/bmp", BMP, VBOX_SHCL_FMT_BITMAP },
+    { "image/x-bmp", BMP, VBOX_SHCL_FMT_BITMAP },
+    { "image/x-MS-bmp", BMP, VBOX_SHCL_FMT_BITMAP }
 
 
     /** @todo Inkscape exports image/png but not bmp... */
@@ -418,7 +418,7 @@ static CLIPX11FORMAT clipGetTextFormatFromTargets(CLIPBACKEND *pCtx,
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format)
-                            == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+                            == VBOX_SHCL_FMT_UNICODETEXT)
                     && enmBestTextTarget < clipRealFormatForX11Format(format))
             {
                 enmBestTextTarget = clipRealFormatForX11Format(format);
@@ -471,7 +471,7 @@ static CLIPX11FORMAT clipGetBitmapFormatFromTargets(CLIPBACKEND *pCtx,
         if (format != NIL_CLIPX11FORMAT)
         {
             if (   (clipVBoxFormatForX11Format(format)
-                            == VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+                            == VBOX_SHCL_FMT_BITMAP)
                     && enmBestBitmapTarget < clipRealFormatForX11Format(format))
             {
                 enmBestBitmapTarget = clipRealFormatForX11Format(format);
@@ -502,7 +502,7 @@ static CLIPX11FORMAT clipGetHtmlFormatFromTargets(CLIPBACKEND *pCtx,
         CLIPX11FORMAT format = pTargets[i];
         if (format != NIL_CLIPX11FORMAT)
         {
-            if (   (clipVBoxFormatForX11Format(format) == VBOX_SHARED_CLIPBOARD_FMT_HTML)
+            if (   (clipVBoxFormatForX11Format(format) == VBOX_SHCL_FMT_HTML)
                 && enmBestHtmlTarget < clipRealFormatForX11Format(format))
             {
                 enmBestHtmlTarget = clipRealFormatForX11Format(format);
@@ -857,7 +857,7 @@ static int clipInit(CLIPBACKEND *pCtx)
      * that we can fail gracefully if we can't get an X11 display. */
     XtToolkitInitialize();
     pCtx->appContext = XtCreateApplicationContext();
-    pDisplay = XtOpenDisplay(pCtx->appContext, 0, 0, "VBoxClipboard", 0, 0, &cArgc, &pcArgv);
+    pDisplay = XtOpenDisplay(pCtx->appContext, 0, 0, "VBoxShCl", 0, 0, &cArgc, &pcArgv);
     if (NULL == pDisplay)
     {
         LogRel(("Shared clipboard: Failed to connect to the X11 clipboard - the window system may not be running.\n"));
@@ -873,7 +873,7 @@ static int clipInit(CLIPBACKEND *pCtx)
 #endif
     if (RT_SUCCESS(rc))
     {
-        pCtx->widget = XtVaAppCreateShell(0, "VBoxClipboard",
+        pCtx->widget = XtVaAppCreateShell(0, "VBoxShCl",
                                           applicationShellWidgetClass,
                                           pDisplay, XtNwidth, 1, XtNheight,
                                           1, NULL);
@@ -1087,13 +1087,13 @@ static int clipCreateX11Targets(CLIPBACKEND *pCtx, Atom *atomTypeReturn,
 /** This is a wrapper around ClipRequestDataForX11 that will cache the
  * data returned.
  */
-static int clipReadVBoxClipboard(CLIPBACKEND *pCtx, uint32_t u32Format,
+static int clipReadVBoxShCl(CLIPBACKEND *pCtx, uint32_t u32Format,
                                  void **ppv, uint32_t *pcb)
 {
     int rc = VINF_SUCCESS;
     LogRelFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p, pcb=%p\n", pCtx,
                  u32Format, ppv, pcb));
-    if (u32Format == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    if (u32Format == VBOX_SHCL_FMT_UNICODETEXT)
     {
         if (pCtx->pvUnicodeCache == NULL)
             rc = ClipRequestDataForX11(pCtx->pFrontend, u32Format,
@@ -1318,12 +1318,12 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
     CLIPX11FORMAT x11Format = clipFindX11FormatByAtom(pCtx, *atomTarget);
     CLIPFORMAT format = clipRealFormatForX11Format(x11Format);
     if (   ((format == UTF8) || (format == TEXT))
-        && (pCtx->vboxFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT))
+        && (pCtx->vboxFormats & VBOX_SHCL_FMT_UNICODETEXT))
     {
         void *pv = NULL;
         uint32_t cb = 0;
-        rc = clipReadVBoxClipboard(pCtx,
-                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+        rc = clipReadVBoxShCl(pCtx,
+                                   VBOX_SHCL_FMT_UNICODETEXT,
                                    &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
@@ -1337,12 +1337,12 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
         RTMemFree(pv);
     }
     else if (   (format == BMP)
-             && (pCtx->vboxFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP))
+             && (pCtx->vboxFormats & VBOX_SHCL_FMT_BITMAP))
     {
         void *pv = NULL;
         uint32_t cb = 0;
-        rc = clipReadVBoxClipboard(pCtx,
-                                   VBOX_SHARED_CLIPBOARD_FMT_BITMAP,
+        rc = clipReadVBoxShCl(pCtx,
+                                   VBOX_SHCL_FMT_BITMAP,
                                    &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
@@ -1363,12 +1363,12 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
         RTMemFree(pv);
     }
     else if ( (format == HTML)
-            && (pCtx->vboxFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML))
+            && (pCtx->vboxFormats & VBOX_SHCL_FMT_HTML))
     {
         void *pv = NULL;
         uint32_t cb = 0;
-        rc = clipReadVBoxClipboard(pCtx,
-                                   VBOX_SHARED_CLIPBOARD_FMT_HTML,
+        rc = clipReadVBoxShCl(pCtx,
+                                   VBOX_SHCL_FMT_HTML,
                                    &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
@@ -1787,7 +1787,7 @@ static void clipConvertX11CB(void *pClient, void *pvSrc, unsigned cbSrc)
     if (pvSrc == NULL)
         /* The clipboard selection may have changed before we could get it. */
         rc = VERR_NO_DATA;
-    else if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    else if (pReq->mFormat == VBOX_SHCL_FMT_UNICODETEXT)
     {
         /* In which format is the clipboard data? */
         switch (clipRealFormatForX11Format(pReq->mTextFormat))
@@ -1810,7 +1810,7 @@ static void clipConvertX11CB(void *pClient, void *pvSrc, unsigned cbSrc)
                 rc = VERR_INVALID_PARAMETER;
         }
     }
-    else if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+    else if (pReq->mFormat == VBOX_SHCL_FMT_BITMAP)
     {
         /* In which format is the clipboard data? */
         switch (clipRealFormatForX11Format(pReq->mBitmapFormat))
@@ -1838,7 +1838,7 @@ static void clipConvertX11CB(void *pClient, void *pvSrc, unsigned cbSrc)
                 rc = VERR_INVALID_PARAMETER;
         }
     }
-    else if(pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_HTML)
+    else if(pReq->mFormat == VBOX_SHCL_FMT_HTML)
     {
         /* In which format is the clipboard data? */
         switch (clipRealFormatForX11Format(pReq->mHtmlFormat))
@@ -1960,7 +1960,7 @@ static void vboxClipboardReadX11Worker(void *pUserData,
         rc = VERR_TRY_AGAIN;
     else
 #endif
-    if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    if (pReq->mFormat == VBOX_SHCL_FMT_UNICODETEXT)
     {
         /*
          * VBox wants to read data in the given format.
@@ -1974,7 +1974,7 @@ static void vboxClipboardReadX11Worker(void *pUserData,
              * owner */
             getSelectionValue(pCtx, pCtx->X11TextFormat, pReq);
     }
-    else if (pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+    else if (pReq->mFormat == VBOX_SHCL_FMT_BITMAP)
     {
         pReq->mBitmapFormat = pCtx->X11BitmapFormat;
         if (pReq->mBitmapFormat == INVALID)
@@ -1985,7 +1985,7 @@ static void vboxClipboardReadX11Worker(void *pUserData,
              * owner */
             getSelectionValue(pCtx, pCtx->X11BitmapFormat, pReq);
     }
-    else if(pReq->mFormat == VBOX_SHARED_CLIPBOARD_FMT_HTML)
+    else if(pReq->mFormat == VBOX_SHCL_FMT_HTML)
     {
         /* Send out a request for the data to the current clipboard
              * owner */
@@ -2114,7 +2114,7 @@ static int clipSetVBoxUtf16(CLIPBACKEND *pCtx, int retval,
     g_vboxDatapv = pv;
     g_vboxDatacb = cb;
     ClipAnnounceFormatToX11(pCtx,
-                                       VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+                                       VBOX_SHCL_FMT_UNICODETEXT);
     return VINF_SUCCESS;
 }
 
@@ -2434,14 +2434,14 @@ static void testStringFromX11(RTTEST hTest, CLIPBACKEND *pCtx,
 {
     bool retval = true;
     clipSendTargetUpdate(pCtx);
-    if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    if (clipQueryFormats() != VBOX_SHCL_FMT_UNICODETEXT)
         RTTestFailed(hTest, "Wrong targets reported: %02X\n",
                      clipQueryFormats());
     else
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ClipRequestDataFromX11(pCtx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+        ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT,
                                pReq);
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
@@ -2492,14 +2492,14 @@ static void testLatin1FromX11(RTTEST hTest, CLIPBACKEND *pCtx,
 {
     bool retval = false;
     clipSendTargetUpdate(pCtx);
-    if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    if (clipQueryFormats() != VBOX_SHCL_FMT_UNICODETEXT)
         RTTestFailed(hTest, "Wrong targets reported: %02X\n",
                      clipQueryFormats());
     else
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ClipRequestDataFromX11(pCtx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+        ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT,
                                pReq);
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
@@ -2577,7 +2577,7 @@ static void testNoX11(CLIPBACKEND *pCtx, const char *pcszTestCtx)
 {
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq;
     int rc = ClipRequestDataFromX11(pCtx,
-                                    VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+                                    VBOX_SHCL_FMT_UNICODETEXT,
                                     pReq);
     RTTESTI_CHECK_MSG(rc == VERR_NO_DATA, ("context: %s\n", pcszTestCtx));
 }
@@ -2608,7 +2608,7 @@ static void testBadFormatRequestFromHost(RTTEST hTest, CLIPBACKEND *pCtx)
     clipSetSelectionValues("UTF8_STRING", XA_STRING, "hello world",
                            sizeof("hello world"), 8);
     clipSendTargetUpdate(pCtx);
-    if (clipQueryFormats() != VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    if (clipQueryFormats() != VBOX_SHCL_FMT_UNICODETEXT)
         RTTestFailed(hTest, "Wrong targets reported: %02X\n",
                      clipQueryFormats());
     else
@@ -2624,7 +2624,7 @@ static void testBadFormatRequestFromHost(RTTEST hTest, CLIPBACKEND *pCtx)
                          rc);
         clipSetSelectionValues("", XA_STRING, "", sizeof(""), 8);
         clipSendTargetUpdate(pCtx);
-        if (clipQueryFormats() == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+        if (clipQueryFormats() == VBOX_SHCL_FMT_UNICODETEXT)
             RTTestFailed(hTest, "Failed to report targets after bad host request.\n");
     }
 }
@@ -2724,7 +2724,7 @@ int main()
     RTTestSub(hTest, "a data request from an empty X11 clipboard");
     clipSetSelectionValues("UTF8_STRING", XA_STRING, NULL,
                            0, 8);
-    ClipRequestDataFromX11(pCtx, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+    ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT,
                            pReq);
     clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
     RTTEST_CHECK_MSG(hTest, rc == VERR_NO_DATA,

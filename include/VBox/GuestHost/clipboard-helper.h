@@ -179,7 +179,7 @@ int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst,
  * @param   pszSrc              HTML data to dump.
  * @param   cbSrc               Size (in bytes) of HTML data to dump.
  */
-int VBoxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc);
+int VBoxShClDbgDumpHtml(const char *pszSrc, size_t cbSrc);
 
 /**
  * Dumps data using a specified clipboard format.
@@ -188,7 +188,7 @@ int VBoxClipboardDbgDumpHtml(const char *pszSrc, size_t cbSrc);
  * @param   cb                  Size (in bytes) of data to dump.
  * @param   u32Format           Clipboard format to use for dumping.
  */
-void VBoxClipboardDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format);
+void VBoxShClDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format);
 #endif /* LOG_ENABLED */
 
 /**
@@ -197,7 +197,7 @@ void VBoxClipboardDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format);
  * @returns Message ID string name.
  * @param   uMsg                The message to translate.
  */
-const char *VBoxClipboardHostMsgToStr(uint32_t uMsg);
+const char *VBoxShClHostMsgToStr(uint32_t uMsg);
 
 /**
  * Translates a Shared Clipboard guest message enum to a string.
@@ -205,7 +205,7 @@ const char *VBoxClipboardHostMsgToStr(uint32_t uMsg);
  * @returns Message ID string name.
  * @param   uMsg                The message to translate.
  */
-const char *VBoxClipboardGuestMsgToStr(uint32_t uMsg);
+const char *VBoxShClGuestMsgToStr(uint32_t uMsg);
 
 #endif /* !VBOX_INCLUDED_GuestHost_clipboard_helper_h */
 

@@ -368,22 +368,22 @@ LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx,
 /**
  * Converts a (registered or standard) Windows clipboard format to a VBox clipboard format.
  *
- * @returns Converted VBox clipboard format, or VBOX_SHARED_CLIPBOARD_FMT_NONE if not found.
+ * @returns Converted VBox clipboard format, or VBOX_SHCL_FMT_NONE if not found.
  * @param   uFormat             Windows clipboard format to convert.
  */
 SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat)
 {
     /* Insert the requested clipboard format data into the clipboard. */
-    SHCLFORMAT vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_NONE;
+    SHCLFORMAT vboxFormat = VBOX_SHCL_FMT_NONE;
 
     switch (uFormat)
     {
         case CF_UNICODETEXT:
-            vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+            vboxFormat = VBOX_SHCL_FMT_UNICODETEXT;
             break;
 
         case CF_DIB:
-            vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+            vboxFormat = VBOX_SHCL_FMT_BITMAP;
             break;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
@@ -392,7 +392,7 @@ SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat)
          *
          * This does *not* invoke any IDataObject / IStream implementations! */
         case CF_HDROP:
-            vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+            vboxFormat = VBOX_SHCL_FMT_URI_LIST;
             break;
 #endif
 
@@ -406,12 +406,12 @@ SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat)
                     LogFlowFunc(("uFormat=%u -> szFormatName=%s\n", uFormat, szFormatName));
 
                     if (RTStrCmp(szFormatName, SHCL_WIN_REGFMT_HTML) == 0)
-                        vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_HTML;
+                        vboxFormat = VBOX_SHCL_FMT_HTML;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
                     /* These types invoke our IDataObject / IStream implementations. */
                     else if (   (RTStrCmp(szFormatName, CFSTR_FILEDESCRIPTORA) == 0)
                              || (RTStrCmp(szFormatName, CFSTR_FILECONTENTS)    == 0))
-                        vboxFormat = VBOX_SHARED_CLIPBOARD_FMT_URI_LIST;
+                        vboxFormat = VBOX_SHCL_FMT_URI_LIST;
                     /** @todo Do we need to handle CFSTR_FILEDESCRIPTORW here as well? */
 #endif
                 }
@@ -435,7 +435,7 @@ int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats)
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
     AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
 
-    SHCLFORMATS fFormats = VBOX_SHARED_CLIPBOARD_FMT_NONE;
+    SHCLFORMATS fFormats = VBOX_SHCL_FMT_NONE;
 
     /* Query list of available formats and report to host. */
     int rc = SharedClipboardWinOpen(pCtx->hWnd);
@@ -846,19 +846,19 @@ int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
     /** @todo r=andy Only one clipboard format can be set at once, at least on Windows. */
     /** @todo Implement more flexible clipboard precedence for supported formats. */
 
-    if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+    if (fFormats & VBOX_SHCL_FMT_UNICODETEXT)
     {
         LogFunc(("CF_UNICODETEXT\n"));
         hClip = SetClipboardData(CF_UNICODETEXT, NULL);
     }
-    else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+    else if (fFormats & VBOX_SHCL_FMT_BITMAP)
     {
         LogFunc(("CF_DIB\n"));
         hClip = SetClipboardData(CF_DIB, NULL);
     }
-    else if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+    else if (fFormats & VBOX_SHCL_FMT_HTML)
     {
-        LogFunc(("VBOX_SHARED_CLIPBOARD_FMT_HTML\n"));
+        LogFunc(("VBOX_SHCL_FMT_HTML\n"));
         cfFormat = RegisterClipboardFormat(SHCL_WIN_REGFMT_HTML);
         if (cfFormat != 0)
             hClip = SetClipboardData(cfFormat, NULL);

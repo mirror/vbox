@@ -66,10 +66,10 @@ uint32_t vbclClipboardGetAvailableFormats(PasteboardRef pPasteboard)
         rc = PasteboardGetItemIdentifier(pPasteboard, iItem, &iItemID);
         if (rc == noErr)
         {
-            VBOXCL_ADD_FORMAT_IF_PRESENT(kUTTypeUTF16PlainText, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-            VBOXCL_ADD_FORMAT_IF_PRESENT(kUTTypeUTF8PlainText,  VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-            VBOXCL_ADD_FORMAT_IF_PRESENT(kUTTypeBMP,            VBOX_SHARED_CLIPBOARD_FMT_BITMAP     );
-            VBOXCL_ADD_FORMAT_IF_PRESENT(kUTTypeHTML,           VBOX_SHARED_CLIPBOARD_FMT_HTML       );
+            VBOXCL_ADD_FORMAT_IF_PRESENT(kUTTypeUTF16PlainText, VBOX_SHCL_FMT_UNICODETEXT);
+            VBOXCL_ADD_FORMAT_IF_PRESENT(kUTTypeUTF8PlainText,  VBOX_SHCL_FMT_UNICODETEXT);
+            VBOXCL_ADD_FORMAT_IF_PRESENT(kUTTypeBMP,            VBOX_SHCL_FMT_BITMAP     );
+            VBOXCL_ADD_FORMAT_IF_PRESENT(kUTTypeHTML,           VBOX_SHCL_FMT_HTML       );
 
 #ifdef CLIPBOARD_DUMP_CONTENT_FORMATS
             CFArrayRef  flavorTypeArray;
@@ -229,7 +229,7 @@ static int vbclClipboardHostPasteText(uint32_t u32ClientId, PRTUTF16 pwszData, u
 
     rc = vboxClipboardUtf16LinToWin(pwszData, cbData / sizeof(RTUTF16), pwszWinTmp, cwcActual);
     if (RT_SUCCESS(rc))
-        rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT,
+        rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_UNICODETEXT,
                                         pwszWinTmp, cwcActual * sizeof(RTUTF16));
 
     RTMemFree(pwszWinTmp);
@@ -252,7 +252,7 @@ static int vbclClipboardHostPasteBitmap(uint32_t u32ClientId, void *pvData, uint
     int rc = vboxClipboardBmpGetDib(pvData, cbData, &pvDib, &cbDib);
     AssertRCReturn(rc, rc);
 
-    rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHARED_CLIPBOARD_FMT_BITMAP, pvDib, cbDib);
+    rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_BITMAP, pvDib, cbDib);
 
     return rc;
 }
@@ -281,9 +281,9 @@ int vbclClipboardForwardToHost(uint32_t u32ClientId, PasteboardRef pPasteboard, 
     uint32_t  fFormatsLeft = fFormats;
     while (fFormatsLeft)
     {
-        if (fFormatsLeft & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+        if (fFormatsLeft & VBOX_SHCL_FMT_UNICODETEXT)
         {
-            VBoxClientVerbose(3, "requested VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT: %d\n", fFormats);
+            VBoxClientVerbose(3, "requested VBOX_SHCL_FMT_UNICODETEXT: %d\n", fFormats);
 
             RTUTF16 *pUtf16Str = NULL;
 
@@ -323,15 +323,15 @@ int vbclClipboardForwardToHost(uint32_t u32ClientId, PasteboardRef pPasteboard, 
             else
             {
                 /* No data found or error occurred: send empty buffer */
-                rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, NULL, 0);
+                rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_UNICODETEXT, NULL, 0);
             }
 
-            fFormatsLeft &= ~(uint32_t)VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+            fFormatsLeft &= ~(uint32_t)VBOX_SHCL_FMT_UNICODETEXT;
         }
 
-        else if (fFormatsLeft & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+        else if (fFormatsLeft & VBOX_SHCL_FMT_BITMAP)
         {
-            VBoxClientVerbose(3, "requested VBOX_SHARED_CLIPBOARD_FMT_BITMAP: %d\n", fFormats);
+            VBoxClientVerbose(3, "requested VBOX_SHCL_FMT_BITMAP: %d\n", fFormats);
 
             rc = vbclClipboardReadGuestData(pPasteboard, kUTTypeBMP, &pvData, &cbData, &cbAlloc);
             if (RT_SUCCESS(rc))
@@ -342,29 +342,29 @@ int vbclClipboardForwardToHost(uint32_t u32ClientId, PasteboardRef pPasteboard, 
             else
             {
                 /* No data found or error occurred: send empty buffer */
-                rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHARED_CLIPBOARD_FMT_BITMAP, NULL, 0);
+                rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_BITMAP, NULL, 0);
             }
 
-            fFormatsLeft &= ~(uint32_t)VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+            fFormatsLeft &= ~(uint32_t)VBOX_SHCL_FMT_BITMAP;
         }
 
-        else if (fFormatsLeft & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+        else if (fFormatsLeft & VBOX_SHCL_FMT_HTML)
         {
-            VBoxClientVerbose(3, "requested VBOX_SHARED_CLIPBOARD_FMT_HTML: %d\n", fFormats);
+            VBoxClientVerbose(3, "requested VBOX_SHCL_FMT_HTML: %d\n", fFormats);
 
             rc = vbclClipboardReadGuestData(pPasteboard, kUTTypeHTML, &pvData, &cbData, &cbAlloc);
             if (RT_SUCCESS(rc))
             {
-                rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHARED_CLIPBOARD_FMT_HTML, pvData, cbData);
+                rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_HTML, pvData, cbData);
                 vbclClipboardReleaseGuestData(&pvData, cbAlloc);
             }
             else
             {
                 /* No data found or error occurred: send empty buffer */
-                rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHARED_CLIPBOARD_FMT_HTML, NULL, 0);
+                rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_HTML, NULL, 0);
             }
 
-            fFormatsLeft &= ~(uint32_t)VBOX_SHARED_CLIPBOARD_FMT_HTML;
+            fFormatsLeft &= ~(uint32_t)VBOX_SHCL_FMT_HTML;
         }
 
         else

@@ -38,14 +38,14 @@
 
 
 /** Initialise the host side of the shared clipboard - called by the hgcm layer. */
-int VBoxClipboardSvcImplInit(void)
+int VBoxShClSvcImplInit(void)
 {
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 
 /** Terminate the host side of the shared clipboard - called by the hgcm layer. */
-void VBoxClipboardSvcImplDestroy(void)
+void VBoxShClSvcImplDestroy(void)
 {
     LogFlowFunc(("called, returning\n"));
 }
@@ -57,7 +57,7 @@ void VBoxClipboardSvcImplDestroy(void)
   * @param   pClient            Structure containing context information about the guest system
   * @param   fHeadless          Whether headless.
   */
-int VBoxClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
+int VBoxShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     RT_NOREF(pClient, fHeadless);
     LogFlowFunc(("called, returning VINF_SUCCESS\n"));

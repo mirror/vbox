@@ -373,7 +373,7 @@ STDMETHODIMP VBoxDnDDropTarget::Drop(IDataObject *pDataObject, DWORD grfKeyState
                         DROPFILES *pDropFiles = (DROPFILES *)pvData;
                         AssertPtr(pDropFiles);
 
-                        /** @todo Replace / merge the following code with VBoxClipboardWinDropFilesToStringList(). */
+                        /** @todo Replace / merge the following code with VBoxShClWinDropFilesToStringList(). */
 
                         /* Do we need to do Unicode stuff? */
                         const bool fUnicode = RT_BOOL(pDropFiles->fWide);

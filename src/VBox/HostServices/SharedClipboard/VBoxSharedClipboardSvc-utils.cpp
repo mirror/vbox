@@ -41,43 +41,43 @@
  */
 bool vboxSvcClipboardURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
 {
-    const bool fHostToGuest =    uMode == VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST
-                              || uMode == VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
+    const bool fHostToGuest =    uMode == VBOX_SHCL_MODE_HOST_TO_GUEST
+                              || uMode == VBOX_SHCL_MODE_BIDIRECTIONAL;
 
-    const bool fGuestToHost =    uMode == VBOX_SHARED_CLIPBOARD_MODE_GUEST_TO_HOST
-                              || uMode == VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL;
+    const bool fGuestToHost =    uMode == VBOX_SHCL_MODE_GUEST_TO_HOST
+                              || uMode == VBOX_SHCL_MODE_BIDIRECTIONAL;
 
     bool fAllowed = false; /* If in doubt, don't allow. */
 
     switch (uMsg)
     {
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_OPEN:
+        case VBOX_SHCL_GUEST_FN_LIST_OPEN:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_CLOSE:
+        case VBOX_SHCL_GUEST_FN_LIST_CLOSE:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_HDR_READ:
+        case VBOX_SHCL_GUEST_FN_LIST_HDR_READ:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_LIST_ENTRY_READ:
+        case VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_OPEN:
+        case VBOX_SHCL_GUEST_FN_OBJ_OPEN:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_CLOSE:
+        case VBOX_SHCL_GUEST_FN_OBJ_CLOSE:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_OBJ_READ:
+        case VBOX_SHCL_GUEST_FN_OBJ_READ:
             fAllowed = fHostToGuest;
             break;
 
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_WAIT:
+        case VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_PEEK_NOWAIT:
+        case VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_MSG_GET:
+        case VBOX_SHCL_GUEST_FN_MSG_GET:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_STATUS:
+        case VBOX_SHCL_GUEST_FN_STATUS:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_CANCEL:
+        case VBOX_SHCL_GUEST_FN_CANCEL:
             RT_FALL_THROUGH();
-        case VBOX_SHARED_CLIPBOARD_GUEST_FN_ERROR:
+        case VBOX_SHCL_GUEST_FN_ERROR:
             fAllowed = fHostToGuest || fGuestToHost;
             break;
 
@@ -100,14 +100,14 @@ int vboxSvcClipboardURIReportMsg(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uP
 
     switch (uMsg)
     {
-        case VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START:
+        case VBOX_SHCL_HOST_MSG_URI_TRANSFER_START:
         {
             Assert(pClient->State.URI.fTransferStart == false);
 
-            LogFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START\n"));
+            LogFlowFunc(("VBOX_SHCL_HOST_MSG_URI_TRANSFER_START\n"));
 
-            if (   sharedClipboardSvcGetMode() != VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST
-                && sharedClipboardSvcGetMode() != VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL)
+            if (   sharedClipboardSvcGetMode() != VBOX_SHCL_MODE_HOST_TO_GUEST
+                && sharedClipboardSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
             {
                 LogFlowFunc(("Wrong clipboard mode, skipping\n"));
                 break;
@@ -138,7 +138,7 @@ bool sharedClipboardSvcURIReturnMsg(PSHCLCLIENT pClient, uint32_t cParms, VBOXHG
     if (   pClient->State.URI.fTransferStart
         && cParms >= 2)
     {
-        HGCMSvcSetU32(&paParms[0], VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START);
+        HGCMSvcSetU32(&paParms[0], VBOX_SHCL_HOST_MSG_URI_TRANSFER_START);
         HGCMSvcSetU32(&paParms[1], pClient->State.URI.enmTransferDir);
         pClient->State.URI.fTransferStart = false;
 

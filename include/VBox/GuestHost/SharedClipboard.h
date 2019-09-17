@@ -47,16 +47,16 @@ typedef SHCLFORMATS *PSHCLFORMATS;
  * Supported data formats for Shared Clipboard. Bit mask.
  */
 /** No format set. */
-#define VBOX_SHARED_CLIPBOARD_FMT_NONE          0
+#define VBOX_SHCL_FMT_NONE          0
 /** Shared Clipboard format is an Unicode text. */
-#define VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT   RT_BIT(0)
+#define VBOX_SHCL_FMT_UNICODETEXT   RT_BIT(0)
 /** Shared Clipboard format is bitmap (BMP / DIB). */
-#define VBOX_SHARED_CLIPBOARD_FMT_BITMAP        RT_BIT(1)
+#define VBOX_SHCL_FMT_BITMAP        RT_BIT(1)
 /** Shared Clipboard format is HTML. */
-#define VBOX_SHARED_CLIPBOARD_FMT_HTML          RT_BIT(2)
+#define VBOX_SHCL_FMT_HTML          RT_BIT(2)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
 /** Shared Clipboard format is an URI list. */
-#define VBOX_SHARED_CLIPBOARD_FMT_URI_LIST      RT_BIT(3)
+#define VBOX_SHCL_FMT_URI_LIST      RT_BIT(3)
 #endif
 
 /**
@@ -120,17 +120,17 @@ typedef uint32_t     SHCLEVENTID;
 typedef SHCLEVENTID *PSHCLEVENTID;
 
 /** Maximum number of concurrent Shared Clipboard client sessions a VM can have. */
-#define VBOX_SHARED_CLIPBOARD_MAX_SESSIONS                   32
+#define VBOX_SHCL_MAX_SESSIONS                   32
 /** Maximum number of concurrent Shared Clipboard transfers a single
  *  client can have. */
-#define VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS                  _2K
+#define VBOX_SHCL_MAX_TRANSFERS                  _2K
 /** Maximum number of events a single Shared Clipboard transfer can have. */
-#define VBOX_SHARED_CLIPBOARD_MAX_EVENTS                     _64K
+#define VBOX_SHCL_MAX_EVENTS                     _64K
 
 /**
  * Creates a context ID out of a client ID, a transfer ID and a count.
  */
-#define VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(uSessionID, uTransferID, uEventID) \
+#define VBOX_SHCL_CONTEXTID_MAKE(uSessionID, uTransferID, uEventID) \
     (  (uint32_t)((uSessionID)  &   0x1f) << 27 \
      | (uint32_t)((uTransferID) &  0x7ff) << 16 \
      | (uint32_t)((uEventID)    & 0xffff)       \
@@ -139,13 +139,13 @@ typedef SHCLEVENTID *PSHCLEVENTID;
 #define VBOX__SHARED_CLIPBOARD_CONTEXTID_MAKE_SESSION(uSessionID) \
     ((uint32_t)((uSessionID) & 0x1f) << 27)
 /** Gets the session ID out of a context ID. */
-#define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_SESSION(uContextID) \
+#define VBOX_SHCL_CONTEXTID_GET_SESSION(uContextID) \
     (((uContextID) >> 27) & 0x1f)
 /** Gets the transfer ID out of a context ID. */
 #define VBO_SHARED_CLIPBOARD_CONTEXTID_GET_TRANSFER(uContextID) \
     (((uContextID) >> 16) & 0x7ff)
 /** Gets the transfer event out of a context ID. */
-#define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uContextID) \
+#define VBOX_SHCL_CONTEXTID_GET_EVENT(uContextID) \
     ((uContextID) & 0xffff)
 
 /**

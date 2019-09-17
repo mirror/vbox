@@ -228,21 +228,21 @@ int vboxClipboardMain(void)
         {
             switch (Msg)
             {
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
+                case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
                 {
                     /* The host has announced available clipboard formats.
                      * Save the information so that it is available for
                      * future requests from guest applications.
                      */
-                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_WRITE fFormats=%x\n", fFormats));
+                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_FORMATS_WRITE fFormats=%x\n", fFormats));
                     ClipAnnounceFormatToX11(g_ctx.pBackend, fFormats);
                     break;
                 }
 
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
+                case VBOX_SHCL_HOST_MSG_READ_DATA:
                 {
                     /* The host needs data in the specified format. */
-                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA fFormats=%x\n", fFormats));
+                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_READ_DATA fFormats=%x\n", fFormats));
                     CLIPREADCBREQ *pReq;
                     pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(*pReq));
                     if (!pReq)
@@ -259,10 +259,10 @@ int vboxClipboardMain(void)
                     break;
                 }
 
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT:
+                case VBOX_SHCL_HOST_MSG_QUIT:
                 {
                     /* The host is terminating. */
-                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT\n"));
+                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_QUIT\n"));
                     if (RT_SUCCESS(ClipStopX11(g_ctx.pBackend)))
                         ClipDestructX11(g_ctx.pBackend);
                     fExiting = true;

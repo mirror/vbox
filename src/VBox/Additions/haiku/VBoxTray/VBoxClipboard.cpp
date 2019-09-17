@@ -77,8 +77,8 @@
 #endif
 
 
-VBoxClipboardService::VBoxClipboardService()
-     : BHandler("VBoxClipboardService"),
+VBoxShClService::VBoxShClService()
+     : BHandler("VBoxShClService"),
        fClientId(-1),
        fServiceThreadID(-1),
        fExiting(false)
@@ -86,12 +86,12 @@ VBoxClipboardService::VBoxClipboardService()
 }
 
 
-VBoxClipboardService::~VBoxClipboardService()
+VBoxShClService::~VBoxShClService()
 {
 }
 
 
-status_t VBoxClipboardService::Connect()
+status_t VBoxShClService::Connect()
 {
     status_t err;
     LogFlowFunc(("Connect\n"));
@@ -99,7 +99,7 @@ status_t VBoxClipboardService::Connect()
     int rc = VbglR3ClipboardConnect(&fClientId);
     if (RT_SUCCESS(rc))
     {
-        err = fServiceThreadID = spawn_thread(_ServiceThreadNub, "VBoxClipboardService", B_NORMAL_PRIORITY, this);
+        err = fServiceThreadID = spawn_thread(_ServiceThreadNub, "VBoxShClService", B_NORMAL_PRIORITY, this);
         if (err >= B_OK)
         {
             resume_thread(fServiceThreadID);
@@ -108,21 +108,21 @@ status_t VBoxClipboardService::Connect()
             if (err == B_OK)
                 return B_OK;
             else
-                LogRel(("VBoxClipboardService: Error watching the system clipboard: %ld\n", err));
+                LogRel(("VBoxShClService: Error watching the system clipboard: %ld\n", err));
         }
         else
-            LogRel(("VBoxClipboardService: Error starting service thread: %ld\n", err));
+            LogRel(("VBoxShClService: Error starting service thread: %ld\n", err));
 
         //rc = RTErrConvertFromErrno(err);
         VbglR3ClipboardDisconnect(fClientId);
     }
     else
-        LogRel(("VBoxClipboardService: Error starting service thread: %d\n", rc));
+        LogRel(("VBoxShClService: Error starting service thread: %d\n", rc));
     return B_ERROR;
 }
 
 
-status_t VBoxClipboardService::Disconnect()
+status_t VBoxShClService::Disconnect()
 {
     status_t status;
 
@@ -137,7 +137,7 @@ status_t VBoxClipboardService::Disconnect()
 }
 
 
-void VBoxClipboardService::MessageReceived(BMessage *message)
+void VBoxShClService::MessageReceived(BMessage *message)
 {
     uint32_t formats = 0;
     message->PrintToStream();
@@ -167,9 +167,9 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                 break;
             }
 
-            if (formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+            if (formats & VBOX_SHCL_FMT_UNICODETEXT)
             {
-                pv = _VBoxReadHostClipboard(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, &cb);
+                pv = _VBoxReadHostClipboard(VBOX_SHCL_FMT_UNICODETEXT, &cb);
                 if (pv)
                 {
                     char *text;
@@ -189,9 +189,9 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                 }
             }
 
-            if (formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+            if (formats & VBOX_SHCL_FMT_BITMAP)
             {
-                pv = _VBoxReadHostClipboard(VBOX_SHARED_CLIPBOARD_FMT_BITMAP, &cb);
+                pv = _VBoxReadHostClipboard(VBOX_SHCL_FMT_BITMAP, &cb);
                 if (pv)
                 {
                     void  *pBmp  = NULL;
@@ -252,7 +252,7 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
             }
             clip->PrintToStream();
 
-            if (formats & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+            if (formats & VBOX_SHCL_FMT_UNICODETEXT)
             {
                 const char *text;
                 int32 textLen;
@@ -268,13 +268,13 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                     {
                         uint32_t cb = (RTUtf16Len(pwsz) + 1) * sizeof(RTUTF16);
 
-                        rc = VbglR3ClipboardWriteData(fClientId, VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, pwsz, cb);
+                        rc = VbglR3ClipboardWriteData(fClientId, VBOX_SHCL_FMT_UNICODETEXT, pwsz, cb);
                         //printf("VbglR3ClipboardWriteData: %d\n", rc);
                         RTUtf16Free(pwsz);
                     }
                 }
             }
-            else if (formats & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+            else if (formats & VBOX_SHCL_FMT_BITMAP)
             {
                 BMessage archivedBitmap;
                 if (clip->FindMessage("image/bitmap", &archivedBitmap) == B_OK ||
@@ -297,7 +297,7 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
                                 rc = vboxClipboardBmpGetDib(bmpStream.Buffer(), bmpStream.BufferLength(), &pDib, &cbDibSize);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    rc = VbglR3ClipboardWriteData(fClientId, VBOX_SHARED_CLIPBOARD_FMT_BITMAP, (void *)pDib,
+                                    rc = VbglR3ClipboardWriteData(fClientId, VBOX_SHCL_FMT_BITMAP, (void *)pDib,
                                                                   cbDibSize);
                                 }
                             }
@@ -334,12 +334,12 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
             }
 
             if (clip->FindData("text/plain", B_MIME_TYPE, &data, &dataLen) == B_OK)
-                formats |= VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT;
+                formats |= VBOX_SHCL_FMT_UNICODETEXT;
 
             if (   clip->HasMessage("image/bitmap")
                 || clip->HasMessage("image/x-be-bitmap"))
             {
-                formats |= VBOX_SHARED_CLIPBOARD_FMT_BITMAP;
+                formats |= VBOX_SHCL_FMT_BITMAP;
             }
 
             be_clipboard->Unlock();
@@ -358,16 +358,16 @@ void VBoxClipboardService::MessageReceived(BMessage *message)
 }
 
 
-status_t VBoxClipboardService::_ServiceThreadNub(void *_this)
+status_t VBoxShClService::_ServiceThreadNub(void *_this)
 {
-    VBoxClipboardService *service = (VBoxClipboardService *)_this;
+    VBoxShClService *service = (VBoxShClService *)_this;
     return service->_ServiceThread();
 }
 
 
-status_t VBoxClipboardService::_ServiceThread()
+status_t VBoxShClService::_ServiceThread()
 {
-    printf("VBoxClipboardService::%s()\n", __FUNCTION__);
+    printf("VBoxShClService::%s()\n", __FUNCTION__);
 
     /* The thread waits for incoming messages from the host. */
     for (;;)
@@ -379,39 +379,39 @@ status_t VBoxClipboardService::_ServiceThread()
         {
             switch (u32Msg)
             {
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
+                case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
                 {
                     /*
                      * The host has announced available clipboard formats. Forward
                      * the information to the handler.
                      */
-                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS u32Formats=%x\n", u32Formats));
+                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_REPORT_FORMATS u32Formats=%x\n", u32Formats));
                     BMessage msg(VBOX_GUEST_CLIPBOARD_HOST_MSG_FORMATS);
                     msg.AddInt32("Formats", (uint32)u32Formats);
                     Looper()->PostMessage(&msg, this);
                     break;
                 }
 
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
+                case VBOX_SHCL_HOST_MSG_READ_DATA:
                 {
                     /* The host needs data in the specified format. */
-                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA u32Formats=%x\n", u32Formats));
+                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_READ_DATA u32Formats=%x\n", u32Formats));
                     BMessage msg(VBOX_GUEST_CLIPBOARD_HOST_MSG_READ_DATA);
                     msg.AddInt32("Formats", (uint32)u32Formats);
                     Looper()->PostMessage(&msg, this);
                     break;
                 }
 
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT:
+                case VBOX_SHCL_HOST_MSG_QUIT:
                 {
                     /* The host is terminating. */
-                    LogRelFlowFunc(("VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT\n"));
+                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_QUIT\n"));
                     fExiting = true;
                     return VERR_INTERRUPTED;
                 }
 
                 default:
-                    Log(("VBoxClipboardService::%s: Unsupported message from host! Message = %u\n", __FUNCTION__, u32Msg));
+                    Log(("VBoxShClService::%s: Unsupported message from host! Message = %u\n", __FUNCTION__, u32Msg));
             }
         }
         else
@@ -426,7 +426,7 @@ status_t VBoxClipboardService::_ServiceThread()
 }
 
 
-void* VBoxClipboardService::_VBoxReadHostClipboard(uint32_t format, uint32_t *pcb)
+void* VBoxShClService::_VBoxReadHostClipboard(uint32_t format, uint32_t *pcb)
 {
     uint32_t cb = 1024;
     void *pv;

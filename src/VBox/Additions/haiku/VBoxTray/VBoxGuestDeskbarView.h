@@ -91,7 +91,7 @@ class VBoxGuestDeskbarView : public BView
         status_t               _Init(BMessage *archive = NULL);
         BBitmap               *fIcon;
 
-        VBoxClipboardService *fClipboardService;
+        VBoxShClService *fClipboardService;
         VBoxDisplayService *fDisplayService;
 };
 

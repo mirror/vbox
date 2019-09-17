@@ -62,36 +62,36 @@ static void testSetMode(void)
     rc = setupTable(&table);
     RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
     /* Reset global variable which doesn't reset itself. */
-    HGCMSvcSetU32(&parms[0], VBOX_SHARED_CLIPBOARD_MODE_OFF);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+    HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_OFF);
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     u32Mode = TestClipSvcGetMode();
-    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_OFF,
+    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_OFF,
                       ("u32Mode=%u\n", (unsigned) u32Mode));
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE,
                            0, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE,
                            2, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
     HGCMSvcSetU64(&parms[0], 99);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE,
                            1, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
-    HGCMSvcSetU32(&parms[0], VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+    HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_HOST_TO_GUEST);
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     u32Mode = TestClipSvcGetMode();
-    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_HOST_TO_GUEST,
+    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_HOST_TO_GUEST,
                       ("u32Mode=%u\n", (unsigned) u32Mode));
     HGCMSvcSetU32(&parms[0], 99);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE,
                            1, parms);
     RTTESTI_CHECK_RC(rc, VERR_NOT_SUPPORTED);
     u32Mode = TestClipSvcGetMode();
-    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHARED_CLIPBOARD_MODE_OFF,
+    RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_OFF,
                       ("u32Mode=%u\n", (unsigned) u32Mode));
     table.pfnUnload(NULL);
 }
@@ -104,12 +104,12 @@ static void testGetHostMsg(void)
     VBOXHGCMCALLHANDLE_TYPEDEF call;
     int rc;
 
-    RTTestISub("Setting up VBOX_SHARED_CLIPBOARD_FN_GET_HOST_MSG test");
+    RTTestISub("Setting up VBOX_SHCL_FN_GET_HOST_MSG test");
     rc = setupTable(&table);
     RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
     /* Unless we are bidirectional the host message requests will be dropped. */
-    HGCMSvcSetU32(&parms[0], VBOX_SHARED_CLIPBOARD_MODE_BIDIRECTIONAL);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_MODE,
+    HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_BIDIRECTIONAL);
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
 
@@ -119,33 +119,33 @@ static void testGetHostMsg(void)
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
     table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA,
+                                   VBOX_SHCL_FMT_UNICODETEXT);
+    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
+    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
     RTTestISub("Testing FN_GET_HOST_MSG, one format, no waiting guest calls.");
     RT_ZERO(g_Client.State);
-    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                                   VBOX_SHARED_CLIPBOARD_FMT_HTML);
+    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA,
+                                   VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_HTML);
+    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
+    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
@@ -154,45 +154,45 @@ static void testGetHostMsg(void)
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA,
+                                   VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
+    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
+    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_HTML);
+    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
+    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
     RTTestISub("Testing FN_GET_HOST_MSG, two formats, no waiting guest calls.");
     RT_ZERO(g_Client.State);
-    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA,
-                                   VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT | VBOX_SHARED_CLIPBOARD_FMT_HTML);
+    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA,
+                                   VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT);
+    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
+    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
-    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
-    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHARED_CLIPBOARD_FMT_HTML);
+    RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
+    RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHARED_CLIPBOARD_GUEST_FN_GET_HOST_MSG_OLD,
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
                   2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
     table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
@@ -212,29 +212,29 @@ static void testSetHeadless(void)
     RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
     /* Reset global variable which doesn't reset itself. */
     HGCMSvcSetU32(&parms[0], false);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     fHeadless = VBoxSvcClipboardGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == false, ("fHeadless=%RTbool\n", fHeadless));
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            0, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            2, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
     HGCMSvcSetU64(&parms[0], 99);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            1, parms);
     RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
     HGCMSvcSetU32(&parms[0], true);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     fHeadless = VBoxSvcClipboardGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == true, ("fHeadless=%RTbool\n", fHeadless));
     HGCMSvcSetU32(&parms[0], 99);
-    rc = table.pfnHostCall(NULL, VBOX_SHARED_CLIPBOARD_HOST_FN_SET_HEADLESS,
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
     fHeadless = VBoxSvcClipboardGetHeadless();

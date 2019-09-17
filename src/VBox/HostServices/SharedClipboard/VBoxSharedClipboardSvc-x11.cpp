@@ -151,7 +151,7 @@ int SharedClipboardSvcImplSync(PSHCLCLIENT pClient)
     SHCLFORMATDATA formatData;
     RT_ZERO(formatData);
 
-    formatData.uFormats = VBOX_SHARED_CLIPBOARD_FMT_NONE;
+    formatData.uFormats = VBOX_SHCL_FMT_NONE;
 
     return sharedClipboardSvcFormatsReport(pClient, &formatData);
 }
@@ -204,7 +204,7 @@ int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX 
     RT_NOREF(pCmdCtx);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    if (pFormats->uFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST) /* No URI support yet. */
+    if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST) /* No URI support yet. */
         return VINF_SUCCESS;
 #endif
 

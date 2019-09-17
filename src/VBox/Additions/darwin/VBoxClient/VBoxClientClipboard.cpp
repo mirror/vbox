@@ -103,20 +103,20 @@ static DECLCALLBACK(int) vbclClipboardDispatcher(RTTHREAD ThreadSelf, void *pvUs
             switch (Msg)
             {
                 /* The host is terminating */
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT:
+                case VBOX_SHCL_HOST_MSG_QUIT:
                     VBoxClientVerbose(2, "host requested quit\n");
                     fQuit = true;
                     break;
 
                 /* The host needs data in the specified format */
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA:
+                case VBOX_SHCL_HOST_MSG_READ_DATA:
                     VBoxClientVerbose(2, "host requested guest's clipboard read\n");
                     rc = vbclClipboardForwardToHost(g_u32ClientId, g_PasteboardRef, fFormats);
                     AssertMsg(RT_SUCCESS(rc), ("paste to host failed\n"));
                     break;
 
                 /* The host has announced available clipboard formats */
-                case VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT:
+                case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
                     VBoxClientVerbose(2, "host requested guest's clipboard write\n");
                     rc = vbclClipboardForwardToGuest(g_u32ClientId, g_PasteboardRef, fFormats);
                     AssertMsg(RT_SUCCESS(rc), ("paste to guest failed\n"));

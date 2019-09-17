@@ -52,11 +52,11 @@
 
 #include <Handler.h>
 
-class VBoxClipboardService : public BHandler
+class VBoxShClService : public BHandler
 {
     public:
-        VBoxClipboardService();
-        virtual ~VBoxClipboardService();
+        VBoxShClService();
+        virtual ~VBoxShClService();
 
         virtual status_t    Connect();
         virtual status_t    Disconnect();

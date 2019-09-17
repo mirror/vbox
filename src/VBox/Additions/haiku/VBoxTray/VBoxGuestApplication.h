@@ -64,7 +64,7 @@
 
 #include <VBoxGuestInternal.h>
 
-class VBoxClipboardService;
+class VBoxShClService;
 
 class VBoxGuestApplication : public BApplication
 {

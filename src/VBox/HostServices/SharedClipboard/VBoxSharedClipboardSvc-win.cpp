@@ -71,7 +71,7 @@ static void vboxClipboardSvcWinGetData(uint32_t u32Format, const void *pvSrc, ui
 {
     LogFlowFunc(("cbSrc = %d, cbDst = %d\n", cbSrc, cbDst));
 
-    if (   u32Format == VBOX_SHARED_CLIPBOARD_FMT_HTML
+    if (   u32Format == VBOX_SHCL_FMT_HTML
         && SharedClipboardWinIsCFHTML((const char *)pvSrc))
     {
         /** @todo r=bird: Why the double conversion? */
@@ -107,7 +107,7 @@ static void vboxClipboardSvcWinGetData(uint32_t u32Format, const void *pvSrc, ui
     }
 
 #ifdef LOG_ENABLED
-    VBoxClipboardDbgDumpData(pvDst, cbSrc, u32Format);
+    VBoxShClDbgDumpData(pvDst, cbSrc, u32Format);
 #endif
 
     return;
@@ -287,7 +287,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
 
             LogFunc(("WM_RENDERFORMAT: cfFormat=%u -> fFormat=0x%x\n", cfFormat, fFormat));
 
-            if (   fFormat       == VBOX_SHARED_CLIPBOARD_FMT_NONE
+            if (   fFormat       == VBOX_SHCL_FMT_NONE
                 || pCtx->pClient == NULL)
             {
                 /* Unsupported clipboard format is requested. */
@@ -332,11 +332,11 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             SHCLFORMATS fFormats = (uint32_t)lParam;
             LogFunc(("SHCL_WIN_WM_REPORT_FORMATS: fFormats=0x%x\n", fFormats));
 
-            if (fFormats == VBOX_SHARED_CLIPBOARD_FMT_NONE) /* Could arrive with some older GA versions. */
+            if (fFormats == VBOX_SHCL_FMT_NONE) /* Could arrive with some older GA versions. */
                 break;
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-            if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+            if (fFormats & VBOX_SHCL_FMT_URI_LIST)
             {
                 PSHCLURITRANSFER pTransfer;
                 int rc = sharedClipboardSvcURITransferStart(pCtx->pClient,
@@ -571,7 +571,7 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
 
         rc = SharedClipboardWinGetFormats(&pCtx->Win, &Formats);
         if (   RT_SUCCESS(rc)
-            && Formats.uFormats != VBOX_SHARED_CLIPBOARD_FMT_NONE)
+            && Formats.uFormats != VBOX_SHCL_FMT_NONE)
         {
             rc = sharedClipboardSvcFormatsReport(pCtx->pClient, &Formats);
         }
@@ -740,7 +740,7 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
     {
         LogFunc(("Clipboard opened\n"));
 
-        if (pData->uFormat & VBOX_SHARED_CLIPBOARD_FMT_BITMAP)
+        if (pData->uFormat & VBOX_SHCL_FMT_BITMAP)
         {
             hClip = GetClipboardData(CF_DIB);
             if (hClip != NULL)
@@ -751,7 +751,7 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
                 {
                     LogFunc(("CF_DIB\n"));
 
-                    vboxClipboardSvcWinGetData(VBOX_SHARED_CLIPBOARD_FMT_BITMAP, lp, GlobalSize(hClip),
+                    vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_BITMAP, lp, GlobalSize(hClip),
                                                pData->pvData, pData->cbData, pcbActual);
 
                     GlobalUnlock(hClip);
@@ -762,7 +762,7 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
                 }
             }
         }
-        else if (pData->uFormat & VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT)
+        else if (pData->uFormat & VBOX_SHCL_FMT_UNICODETEXT)
         {
             hClip = GetClipboardData(CF_UNICODETEXT);
             if (hClip != NULL)
@@ -773,7 +773,7 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
                 {
                     LogFunc(("CF_UNICODETEXT\n"));
 
-                    vboxClipboardSvcWinGetData(VBOX_SHARED_CLIPBOARD_FMT_UNICODETEXT, uniString, (lstrlenW(uniString) + 1) * 2,
+                    vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_UNICODETEXT, uniString, (lstrlenW(uniString) + 1) * 2,
                                                pData->pvData, pData->cbData, pcbActual);
 
                     GlobalUnlock(hClip);
@@ -784,7 +784,7 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
                 }
             }
         }
-        else if (pData->uFormat & VBOX_SHARED_CLIPBOARD_FMT_HTML)
+        else if (pData->uFormat & VBOX_SHCL_FMT_HTML)
         {
             UINT format = RegisterClipboardFormat(SHCL_WIN_REGFMT_HTML);
             if (format != 0)
@@ -796,11 +796,11 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
                     if (lp != NULL)
                     {
                         /** @todo r=andy Add data overflow handling. */
-                        vboxClipboardSvcWinGetData(VBOX_SHARED_CLIPBOARD_FMT_HTML, lp, GlobalSize(hClip),
+                        vboxClipboardSvcWinGetData(VBOX_SHCL_FMT_HTML, lp, GlobalSize(hClip),
                                                    pData->pvData, pData->cbData, pcbActual);
 #ifdef VBOX_STRICT
                         LogFlowFunc(("Raw HTML clipboard data from host:"));
-                        VBoxClipboardDbgDumpHtml((char *)pData->pvData, pData->cbData);
+                        VBoxShClDbgDumpHtml((char *)pData->pvData, pData->cbData);
 #endif
                         GlobalUnlock(hClip);
                     }
@@ -812,7 +812,7 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
             }
         }
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-        else if (pData->uFormat & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
+        else if (pData->uFormat & VBOX_SHCL_FMT_URI_LIST)
         {
             AssertFailed(); /** @todo */
         }
