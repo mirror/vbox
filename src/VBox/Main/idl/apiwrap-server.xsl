@@ -1228,6 +1228,8 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     i_callHook(__FUNCTION__);</xsl:text>
     </xsl:if>
 <xsl:text>
+    // Clear error info, to make in-process calls behave the same as
+    // cross-apartment calls or out-of-process calls.
     VirtualBoxBase::clearError();
 
     HRESULT hrc;
@@ -1375,6 +1377,8 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     i_callHook(__FUNCTION__);</xsl:text>
     </xsl:if>
 <xsl:text>
+    // Clear error info, to make in-process calls behave the same as
+    // cross-apartment calls or out-of-process calls.
     VirtualBoxBase::clearError();
 
     HRESULT hrc;
@@ -1826,6 +1830,8 @@ Returns empty if not needed, non-empty ('yes') if needed. -->
     i_callHook(__FUNCTION__);</xsl:text>
     </xsl:if>
 <xsl:text>
+    // Clear error info, to make in-process calls behave the same as
+    // cross-apartment calls or out-of-process calls.
     VirtualBoxBase::clearError();
 
     HRESULT hrc;
