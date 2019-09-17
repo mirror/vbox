@@ -2054,6 +2054,7 @@ EXPORTS
     RTUtf16GetCpInternal
     RTUtf16ICmp
     RTUtf16Len
+    RTUtf16NLen
     RTUtf16LocaleICmp
     RTUtf16PutCpInternal
     RTUtf16ToLatin1ExTag
