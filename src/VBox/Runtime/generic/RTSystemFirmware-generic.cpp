@@ -36,6 +36,7 @@
 
 RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmFirmwareType)
 {
+    RT_NOREF(penmFirmwareType);
     return VERR_NOT_SUPPORTED;
 }
 RT_EXPORT_SYMBOL(RTSystemFirmwareQueryType);
