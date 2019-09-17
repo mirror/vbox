@@ -47,7 +47,7 @@ UIMediumSizeEditor::UIMediumSizeEditor(QWidget *pParent /* = 0 */)
 {
     /* Prepare: */
     prepare();
-    QString strRegEx = QString("[^(\\d|%1)]").arg(uiCommon().decimalSep());
+    QString strRegEx = QString("[^\\d%1]").arg(uiCommon().decimalSep());
     m_regExNonDigitOrSeparator = QRegularExpression(strRegEx);
 }
 
@@ -104,9 +104,9 @@ void UIMediumSizeEditor::sltSizeEditorTextChanged()
 
 
     m_pEditor->blockSignals(true);
+    int iCursorPosition = m_pEditor->cursorPosition();
     m_pEditor->setText(strSizeString);
-    /* Reposition the cursor to the front of the size suffix (and 1 char for the space) */
-    m_pEditor->setCursorPosition(strSizeString.length() - (gpConverter->toString(m_enmSizeSuffix).length() + 1));
+    m_pEditor->setCursorPosition(iCursorPosition);
     m_pEditor->blockSignals(false);
 
     /* Update the current size: */
