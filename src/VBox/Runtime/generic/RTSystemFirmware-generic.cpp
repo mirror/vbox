@@ -49,10 +49,10 @@ RTDECL(void) RTSystemFirmwareValueFree(PRTSYSFWVALUE pValue)
 RT_EXPORT_SYMBOL(RTSystemFirmwareValueFree);
 
 
-RTDECL(int) RTSystemFirmwareValueGet(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue)
+RTDECL(int) RTSystemFirmwareValueQuery(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue)
 {
     RT_NOREF(enmProp, ppValue);
     return VERR_NOT_SUPPORTED;
 }
-RT_EXPORT_SYMBOL(RTSystemFirmwareValueGet);
+RT_EXPORT_SYMBOL(RTSystemFirmwareValueQuery);
 

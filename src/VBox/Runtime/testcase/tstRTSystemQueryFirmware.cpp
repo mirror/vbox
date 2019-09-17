@@ -65,7 +65,7 @@ int main()
     }
 
     PRTSYSFWVALUE pValue;
-    rc = RTSystemFirmwareValueGet(RTSYSFWPROP_SECURE_BOOT, &pValue);
+    rc = RTSystemFirmwareValueQuery(RTSYSFWPROP_SECURE_BOOT, &pValue);
     if (RT_SUCCESS(rc))
     {
         RTTestPrintf(hTest, RTTESTLVL_INFO, "Secure Boot enabled: %RTbool\n", pValue->u.fVal);

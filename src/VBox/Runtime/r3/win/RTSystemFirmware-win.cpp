@@ -168,7 +168,7 @@ RTDECL(void) RTSystemFirmwareValueFree(PRTSYSFWVALUE pValue)
 }
 
 
-RTDECL(int) RTSystemFirmwareValueGet(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue)
+RTDECL(int) RTSystemFirmwareValueQuery(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue)
 {
     int rc = rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
     if (RT_FAILURE(rc))

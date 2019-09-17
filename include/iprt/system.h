@@ -336,7 +336,7 @@ typedef enum RTSYSFWPRPOP
     RTSYSFWPROP_32_BIT_HACK = 0x7fffffff
 } RTSYSFWPROP;
 
-RTDECL(int) RTSystemFirmwareValueGet(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue);
+RTDECL(int) RTSystemFirmwareValueQuery(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue);
 
 RTDECL(void) RTSystemFirmwareValueFree(PRTSYSFWVALUE pValue);
 
