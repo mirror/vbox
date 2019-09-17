@@ -155,18 +155,18 @@ void HostNetworkInterface::i_unregisterMetrics(PerformanceCollector *aCollector,
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #ifdef VBOX_WITH_HOSTNETIF_API
-
 #if defined(RT_OS_WINDOWS)
+
 HRESULT HostNetworkInterface::saveAdapterConfigParameter(const char *szParamName, const Utf8Str &strValue)
 {
     AssertReturn(mVirtualBox != NULL, E_POINTER);
-    return mVirtualBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/{%RTuuid}/%s", mGuid, szParamName)).raw(), Bstr(strValue).raw());
+    return mVirtualBox->SetExtraData(BstrFmt("HostOnly/{%RTuuid}/%s", mGuid, szParamName).raw(), Bstr(strValue).raw());
 }
 
 HRESULT HostNetworkInterface::eraseAdapterConfigParameter(const char *szParamName)
 {
     AssertReturn(mVirtualBox != NULL, E_POINTER);
-    return mVirtualBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/{%RTuuid}/%s", mGuid, szParamName)).raw(), NULL);
+    return mVirtualBox->SetExtraData(BstrFmt("HostOnly/{%RTuuid}/%s", mGuid, szParamName).raw(), NULL);
 }
 
 HRESULT HostNetworkInterface::saveAdapterConfigIPv4Dhcp()
@@ -203,7 +203,7 @@ bool HostNetworkInterface::isInConfigFile(void)
     if (mVirtualBox == NULL)
         return false; /* Trigger config update, which will fail with proper return code */
     Bstr tmpName;
-    mVirtualBox->GetExtraData(Bstr(Utf8StrFmt("HostOnly/{%RTuuid}/Name", mGuid)).raw(), tmpName.asOutParam());
+    mVirtualBox->GetExtraData(BstrFmt("HostOnly/{%RTuuid}/Name", mGuid).raw(), tmpName.asOutParam());
     return (tmpName.isNotEmpty() && tmpName == mInterfaceName);
 
 }
@@ -238,6 +238,7 @@ HRESULT HostNetworkInterface::i_updatePersistentConfig(void)
     }
     return hrc;
 }
+
 #endif /* defined(RT_OS_WINDOWS) */
 
 HRESULT HostNetworkInterface::updateConfig()
@@ -331,7 +332,8 @@ HRESULT HostNetworkInterface::init(Utf8Str aInterfaceName, HostNetworkInterfaceT
 
     return S_OK;
 }
-#endif
+
+#endif /* VBOX_WITH_HOSTNETIF_API */
 
 // wrapped IHostNetworkInterface properties
 /////////////////////////////////////////////////////////////////////////////
