@@ -108,8 +108,8 @@
  *  Formerly known as VBOX_SHARED_CLIPBOARD_HOST_MSG_REPORT_FORMATS. */
 #define VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT               3
 
-/** Initiates a new transfer (read / write) on the guest side. */
-#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START           50
+/** Sends a transfer status to the guest side. */
+#define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_STATUS          50
 /** Reads the root list header from the guest. */
 #define VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_HDR_READ       51
 /** Writes the root list header to the guest. */
@@ -224,18 +224,6 @@
 
 /** The maximum default chunk size for a single data transfer. */
 #define VBOX_SHARED_CLIPBOARD_MAX_CHUNK_SIZE                  _64K
-
-/**
- * Creates a context ID out of a source ID and and event ID.
- */
-#define VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(uSourceID, uEventID) \
-    RT_MAKE_U32(uEventID, uSourceID)
-/** Gets the source ID out of a context ID. */
-#define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_SOURCE(uContextID) \
-    RT_HI_U16(uContextID)
-/** Gets the event ID out of a context ID. */
-#define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uContextID) \
-    RT_LO_U16(uContextID)
 
 /*
  * HGCM parameter structures.
@@ -353,17 +341,26 @@ typedef struct _VBoxClipboardWriteDataMsg
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_WRITE_DATA 4
 
-typedef struct _VBoxClipboardTransferReport
+/**
+ * Reports a transfer status.
+ */
+typedef struct _VBoxClipboardTransferStatusMsg
 {
     VBGLIOCHGCMCALL hdr;
 
     /** uint32_t, out: Context ID. */
     HGCMFunctionParameter uContext;
-    /** uint32_t, out: Status to report. */
-    HGCMFunctionParameter uStatus;
-} VBoxClipboardTransferReport;
+    /** uint32_t, out: Direction of transfer; of type SHCLURITRANSFERDIR_. */
+    HGCMFunctionParameter enmDir;
+    /** uint32_t, out: Status to report; of type SHCLURITRANSFERSTATUS_. */
+    HGCMFunctionParameter enmStatus;
+    /** uint32_t, out: Result code to report. Optional. */
+    HGCMFunctionParameter rc;
+    /** uint32_t, out: Reporting flags. Currently unused and must be 0. */
+    HGCMFunctionParameter fFlags;
+} VBoxClipboardTransferStatusMsg;
 
-#define VBOX_SHARED_CLIPBOARD_CPARMS_TRANSFER_REPORT 2
+#define VBOX_SHARED_CLIPBOARD_CPARMS_TRANSFER_STATUS 5
 
 /**
  * Asks the host for the next command to process, along
@@ -400,7 +397,7 @@ typedef struct _VBoxClipboardGetHostMsg
 #define VBOX_SHCL_INFO_FLAG_FSOBJINFO     RT_BIT(0)
 
 /**
- * Transfert status message.
+ * Status messag for lists and objects.
  */
 typedef struct _VBoxClipboardStatusMsg
 {
@@ -418,11 +415,18 @@ typedef struct _VBoxClipboardStatusMsg
 
 #define VBOX_SHARED_CLIPBOARD_CPARMS_STATUS 4
 
+/** Invalid message type, do not use. */
 #define VBOX_SHCL_REPLYMSGTYPE_INVALID           0
-#define VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN         1
-#define VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE        2
-#define VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN          3
-#define VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE         4
+/** Replies a transfer status. */
+#define VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS   1
+/** Replies a list open status. */
+#define VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN         2
+/** Replies a list close status. */
+#define VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE        3
+/** Replies an object open status. */
+#define VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN          4
+/** Replies an object close status. */
+#define VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE         5
 
 /**
  * Generic reply message.
@@ -445,6 +449,10 @@ typedef struct _VBoxClipboardReplyMsg
     {
         struct
         {
+            HGCMFunctionParameter enmStatus;
+        } TransferStatus;
+        struct
+        {
             HGCMFunctionParameter uHandle;
         } ListOpen;
         struct
@@ -458,6 +466,7 @@ typedef struct _VBoxClipboardReplyMsg
     } u;
 } VBoxClipboardReplyMsg;
 
+/** Minimum parameters (HGCM function parameters minus the union) a reply message must have. */
 #define VBOX_SHARED_CLIPBOARD_CPARMS_REPLY_MIN 5
 
 typedef struct _VBoxClipboardRootListParms

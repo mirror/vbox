@@ -179,8 +179,12 @@ void SharedClipboardEventSourceDestroy(PSHCLEVENTSOURCE pSource)
     PSHCLEVENT pEvItNext;
     RTListForEachSafe(&pSource->lstEvents, pEvIt, pEvItNext, SHCLEVENT, Node)
     {
+        RTListNodeRemove(&pEvIt->Node);
+
         SharedClipboardEventDestroy(pEvIt);
+
         RTMemFree(pEvIt);
+        pEvIt = NULL;
     }
 
     pSource->uID          = 0;
@@ -198,7 +202,12 @@ SHCLEVENTID SharedClipboardEventIDGenerate(PSHCLEVENTSOURCE pSource)
     AssertPtrReturn(pSource, 0);
 
     LogFlowFunc(("uSource=%RU16: New event: %RU16\n", pSource->uID, pSource->uEventIDNext));
-    return pSource->uEventIDNext++; /** @todo Handle rollovers? */
+
+    pSource->uEventIDNext++;
+    if (pSource->uEventIDNext == VBOX_SHARED_CLIPBOARD_MAX_EVENTS)
+        pSource->uEventIDNext = 0;
+
+    return pSource->uEventIDNext;
 }
 
 /**
@@ -234,6 +243,18 @@ SHCLEVENTID SharedClipboardEventGetLast(PSHCLEVENTSOURCE pSource)
         return pEvent->uID;
 
     return 0;
+}
+
+/**
+ * Detaches a payload from an event, internal version.
+ *
+ * @param   pEvent              Event to detach payload for.
+ */
+static void sharedClipboardEventPayloadDetachInternal(PSHCLEVENT pEvent)
+{
+    AssertPtrReturnVoid(pEvent);
+
+    pEvent->pPayload = NULL;
 }
 
 /**
@@ -323,12 +344,13 @@ int SharedClipboardEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
  * @param   uID                 Event ID to wait for.
  * @param   uTimeoutMs          Timeout (in ms) to wait.
  * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
- *                              SharedClipboardPayloadFree().
+ *                              SharedClipboardPayloadFree(). Optional.
  */
 int SharedClipboardEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs,
                              PSHCLEVENTPAYLOAD* ppPayload)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
+    /** ppPayload is optional. */
 
     LogFlowFuncEnter();
 
@@ -340,9 +362,13 @@ int SharedClipboardEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTE
         rc = RTSemEventWait(pEvent->hEventSem, uTimeoutMs);
         if (RT_SUCCESS(rc))
         {
-            *ppPayload = pEvent->pPayload;
+            if (ppPayload)
+            {
+                *ppPayload = pEvent->pPayload;
 
-            pEvent->pPayload = NULL;
+                /* Make sure to detach payload here, as the caller now owns the data. */
+                sharedClipboardEventPayloadDetachInternal(pEvent);
+            }
         }
     }
     else
@@ -401,7 +427,7 @@ void SharedClipboardEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID
     PSHCLEVENT pEvent = sharedClipboardEventGet(pSource, uID);
     if (pEvent)
     {
-        pEvent->pPayload = NULL;
+        sharedClipboardEventPayloadDetachInternal(pEvent);
     }
 #ifdef DEBUG_andy
     else
@@ -802,7 +828,7 @@ const char *VBoxClipboardHostMsgToStr(uint32_t uMsg)
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_QUIT);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_READ_DATA);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_FORMATS_REPORT);
-        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_START);
+        RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_TRANSFER_STATUS);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_HDR_READ);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_HDR_WRITE);
         RT_CASE_RET_STR(VBOX_SHARED_CLIPBOARD_HOST_MSG_URI_ROOT_LIST_ENTRY_READ);

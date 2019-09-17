@@ -67,9 +67,9 @@ typedef struct _SHCLDATABLOCK
     /** Clipboard format this data block represents. */
     SHCLFORMAT  uFormat;
     /** Pointer to actual data block. */
-    void                *pvData;
+    void       *pvData;
     /** Size (in bytes) of actual data block. */
-    uint32_t             cbData;
+    uint32_t    cbData;
 } SHCLDATABLOCK, *PSHCLDATABLOCK;
 
 /**
@@ -80,9 +80,9 @@ typedef struct _SHCLDATAREQ
     /** In which format the data needs to be sent. */
     SHCLFORMAT uFmt;
     /** Read flags; currently unused. */
-    uint32_t            fFlags;
+    uint32_t   fFlags;
     /** Maximum data (in byte) can be sent. */
-    uint32_t            cbSize;
+    uint32_t   cbSize;
 } SHCLDATAREQ, *PSHCLDATAREQ;
 
 /**
@@ -93,7 +93,7 @@ typedef struct _SHCLFORMATDATA
     /** Available format(s) as bit map. */
     SHCLFORMATS uFormats;
     /** Formats flags. Currently unused. */
-    uint32_t             fFlags;
+    uint32_t    fFlags;
 } SHCLFORMATDATA, *PSHCLFORMATDATA;
 
 /**
@@ -119,13 +119,34 @@ typedef uint16_t SHCLEVENTID;
 /** Defines a pointer to a event source ID. */
 typedef SHCLEVENTID *PSHCLEVENTID;
 
-/** Maximum number of concurrent Shared Clipboard transfers a VM can have.
- *  Number 0 always is reserved for the client itself. */
-#define VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS                   UINT16_MAX - 1
-/** Maximum number of concurrent event sources. */
-#define VBOX_SHARED_CLIPBOARD_MAX_EVENT_SOURCES               UINT16_MAX
-/** Maximum number of concurrent events a single event source can have. */
-#define VBOX_SHARED_CLIPBOARD_MAX_EVENTS                      UINT16_MAX
+/** Maximum number of concurrent Shared Clipboard client sessions a VM can have. */
+#define VBOX_SHARED_CLIPBOARD_MAX_SESSIONS                   32
+/** Maximum number of concurrent Shared Clipboard transfers a single
+ *  client can have. */
+#define VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS                  _2K
+/** Maximum number of events a single Shared Clipboard transfer can have. */
+#define VBOX_SHARED_CLIPBOARD_MAX_EVENTS                     _64K
+
+/**
+ * Creates a context ID out of a client ID, a transfer ID and a count.
+ */
+#define VBOX_SHARED_CLIPBOARD_CONTEXTID_MAKE(uSessionID, uTransferID, uEventID) \
+    (  (uint32_t)((uSessionID)  &   0x1f) << 27 \
+     | (uint32_t)((uTransferID) &  0x7ff) << 16 \
+     | (uint32_t)((uEventID)    & 0xffff)       \
+    )
+/** Creates a context ID out of a session ID. */
+#define VBOX__SHARED_CLIPBOARD_CONTEXTID_MAKE_SESSION(uSessionID) \
+    ((uint32_t)((uSessionID) & 0x1f) << 27)
+/** Gets the session ID out of a context ID. */
+#define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_SESSION(uContextID) \
+    (((uContextID) >> 27) & 0x1f)
+/** Gets the transfer ID out of a context ID. */
+#define VBO_SHARED_CLIPBOARD_CONTEXTID_GET_TRANSFER(uContextID) \
+    (((uContextID) >> 16) & 0x7ff)
+/** Gets the transfer event out of a context ID. */
+#define VBOX_SHARED_CLIPBOARD_CONTEXTID_GET_EVENT(uContextID) \
+    ((uContextID) & 0xffff)
 
 /**
  * Structure for maintaining a Shared Clipboard event.
@@ -133,11 +154,11 @@ typedef SHCLEVENTID *PSHCLEVENTID;
 typedef struct _SHCLEVENT
 {
     /** List node. */
-    RTLISTNODE                   Node;
+    RTLISTNODE        Node;
     /** The event's ID, for self-reference. */
-    SHCLEVENTID         uID;
+    SHCLEVENTID       uID;
     /** Event semaphore for signalling the event. */
-    RTSEMEVENT                   hEventSem;
+    RTSEMEVENT        hEventSem;
     /** Payload to this event. Optional and can be NULL. */
     PSHCLEVENTPAYLOAD pPayload;
 } SHCLEVENT, *PSHCLEVENT;
@@ -155,7 +176,7 @@ typedef struct _SHCLEVENTSOURCE
     /** Next upcoming event ID. */
     SHCLEVENTID       uEventIDNext;
     /** List of events (PSHCLEVENT). */
-    RTLISTANCHOR               lstEvents;
+    RTLISTANCHOR      lstEvents;
 } SHCLEVENTSOURCE, *PSHCLEVENTSOURCE;
 
 int SharedClipboardPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,

@@ -405,7 +405,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
  * @param   phGlobal            Where to store the allocated HGLOBAL object on success.
  */
 int SharedClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLURITRANSFER pTransfer,
-                                                                      bool fUnicode, HGLOBAL *phGlobal)
+                                                                        bool fUnicode, HGLOBAL *phGlobal)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(phGlobal,  VERR_INVALID_POINTER);

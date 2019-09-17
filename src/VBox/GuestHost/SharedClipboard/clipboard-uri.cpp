@@ -22,6 +22,7 @@
 #include <iprt/file.h>
 #include <iprt/list.h>
 #include <iprt/path.h>
+#include <iprt/rand.h>
 #include <iprt/semaphore.h>
 
 #include <VBox/err.h>
@@ -1039,16 +1040,13 @@ void SharedClipboardURIObjectDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
 }
 
 /**
- * Initializes an URI clipboard transfer struct.
+ * Creates an URI clipboard transfer.
  *
  * @returns VBox status code.
- * @param   enmDir              Specifies the transfer direction of this transfer.
- * @param   enmSource           Specifies the data source of the transfer.
  * @param   ppTransfer          Where to return the created URI transfer struct.
  *                              Must be destroyed by SharedClipboardURITransferDestroy().
  */
-int SharedClipboardURITransferCreate(SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSource,
-                                     PSHCLURITRANSFER *ppTransfer)
+int SharedClipboardURITransferCreate(PSHCLURITRANSFER *ppTransfer)
 {
     AssertPtrReturn(ppTransfer, VERR_INVALID_POINTER);
 
@@ -1062,8 +1060,8 @@ int SharedClipboardURITransferCreate(SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSo
 
     pTransfer->State.uID       = 0;
     pTransfer->State.enmStatus = SHCLURITRANSFERSTATUS_NONE;
-    pTransfer->State.enmDir    = enmDir;
-    pTransfer->State.enmSource = enmSource;
+    pTransfer->State.enmDir    = SHCLURITRANSFERDIR_UNKNOWN;
+    pTransfer->State.enmSource = SHCLSOURCE_INVALID;
 
     LogFlowFunc(("enmDir=%RU32, enmSource=%RU32\n", pTransfer->State.enmDir, pTransfer->State.enmSource));
 
@@ -1093,9 +1091,13 @@ int SharedClipboardURITransferCreate(SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSo
     pTransfer->cRoots = 0;
     RTListInit(&pTransfer->lstRoots);
 
-    *ppTransfer = pTransfer;
+    RT_ZERO(pTransfer->Events);
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        *ppTransfer = pTransfer;
+    }
+    else
     {
         if (pTransfer)
         {
@@ -1153,6 +1155,28 @@ int SharedClipboardURITransferDestroy(PSHCLURITRANSFER pTransfer)
     return VINF_SUCCESS;
 }
 
+/**
+ * Initializes an URI transfer object.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Transfer to initialize.
+ * @param   uID                 ID to use for the transfer. Can be set to 0 if not important.
+ * @param   enmDir              Specifies the transfer direction of this transfer.
+ * @param   enmSource           Specifies the data source of the transfer.
+ */
+int SharedClipboardURITransferInit(PSHCLURITRANSFER pTransfer,
+                                   uint32_t uID, SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSource)
+{
+    pTransfer->State.uID       = uID;
+    pTransfer->State.enmDir    = enmDir;
+    pTransfer->State.enmSource = enmSource;
+
+    int rc = SharedClipboardEventSourceCreate(&pTransfer->Events, pTransfer->State.uID);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 int SharedClipboardURITransferOpen(PSHCLURITRANSFER pTransfer)
 {
     int rc = VINF_SUCCESS;
@@ -1182,8 +1206,7 @@ int SharedClipboardURITransferClose(PSHCLURITRANSFER pTransfer)
  * @param   pTransfer           URI clipboard transfer to get list handle info from.
  * @param   hList               List handle of the list to get handle info for.
  */
-inline PSHCLURILISTHANDLEINFO sharedClipboardURITransferListGet(PSHCLURITRANSFER pTransfer,
-                                                                           SHCLLISTHANDLE hList)
+inline PSHCLURILISTHANDLEINFO sharedClipboardURITransferListGet(PSHCLURITRANSFER pTransfer, SHCLLISTHANDLE hList)
 {
     PSHCLURILISTHANDLEINFO pIt;
     RTListForEach(&pTransfer->lstList, pIt, SHCLURILISTHANDLEINFO, Node)
@@ -1329,7 +1352,10 @@ int SharedClipboardURITransferListClose(PSHCLURITRANSFER pTransfer, SHCLLISTHAND
                 case SHCLURIOBJTYPE_DIRECTORY:
                 {
                     if (RTDirIsValid(pInfo->u.Local.hDir))
+                    {
                         RTDirClose(pInfo->u.Local.hDir);
+                        pInfo->u.Local.hDir = NIL_RTDIR;
+                    }
                     break;
                 }
 
@@ -1369,7 +1395,7 @@ int SharedClipboardURITransferListClose(PSHCLURITRANSFER pTransfer, SHCLLISTHAND
 static int sharedClipboardURITransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
 {
     uint64_t cbSize = 0;
-    int rc = RTFileQuerySize(pszPath, &cbSize);
+    int rc = RTFileQuerySizeByPath(pszPath, &cbSize);
     if (RT_SUCCESS(rc))
     {
         pHdr->cbTotalSize  += cbSize;
@@ -2194,6 +2220,19 @@ int SharedClipboardURILTransferRootsAsList(PSHCLURITRANSFER pTransfer, PSHCLROOT
 }
 
 /**
+ * Returns the transfer's ID.
+ *
+ * @returns The transfer's ID.
+ * @param   pTransfer           URI clipboard transfer to return ID for.
+ */
+SHCLURITRANSFERID SharedClipboardURITransferGetID(PSHCLURITRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, 0);
+
+    return pTransfer->State.uID;
+}
+
+/**
  * Returns the transfer's source.
  *
  * @returns The transfer's source.
@@ -2296,7 +2335,7 @@ static int sharedClipboardURITransferThreadCreate(PSHCLURITRANSFER pTransfer, PF
 
         if (pTransfer->Thread.fStarted) /* Did the thread indicate that it started correctly? */
         {
-            pTransfer->State.enmStatus = SHCLURITRANSFERSTATUS_RUNNING;
+            pTransfer->State.enmStatus = SHCLURITRANSFERSTATUS_STARTED;
         }
         else
             rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
@@ -2351,11 +2390,10 @@ int SharedClipboardURICtxInit(PSHCLURICTX pURI)
         RTListInit(&pURI->List);
 
         pURI->cRunning    = 0;
-        pURI->cMaxRunning = 1; /* For now we only support one transfer per client at a time. */
+        pURI->cMaxRunning = UINT16_MAX;
 
-#ifdef DEBUG_andy
-        pURI->cMaxRunning = UINT32_MAX;
-#endif
+        RT_ZERO(pURI->bmTransferIds);
+
         SharedClipboardURICtxReset(pURI);
     }
 
@@ -2407,69 +2445,22 @@ void SharedClipboardURICtxReset(PSHCLURICTX pURI)
 }
 
 /**
- * Adds a new URI transfer to an clipboard URI transfer.
- *
- * @returns VBox status code.
- * @param   pURI                URI clipboard context to add transfer to.
- * @param   pTransfer           Pointer to URI clipboard transfer to add.
- */
-int SharedClipboardURICtxTransferAdd(PSHCLURICTX pURI, PSHCLURITRANSFER pTransfer)
-{
-    AssertPtrReturn(pURI,      VERR_INVALID_POINTER);
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-
-    LogFlowFuncEnter();
-
-    if (pURI->cRunning == pURI->cMaxRunning)
-        return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
-
-    RTListAppend(&pURI->List, &pTransfer->Node);
-
-    pURI->cTransfers++;
-    LogFlowFunc(("cTransfers=%RU32, cRunning=%RU32\n", pURI->cTransfers, pURI->cRunning));
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Removes an URI transfer from a clipboard URI transfer.
- *
- * @returns VBox status code.
- * @param   pURI                URI clipboard context to remove transfer from.
- * @param   pTransfer           Pointer to URI clipboard transfer to remove.
- */
-int SharedClipboardURICtxTransferRemove(PSHCLURICTX pURI, PSHCLURITRANSFER pTransfer)
-{
-    AssertPtrReturn(pURI,      VERR_INVALID_POINTER);
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-
-    LogFlowFuncEnter();
-
-
-    int rc = SharedClipboardURITransferDestroy(pTransfer);
-    if (RT_SUCCESS(rc))
-    {
-        RTListNodeRemove(&pTransfer->Node);
-
-        RTMemFree(pTransfer);
-        pTransfer = NULL;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
  * Returns a specific URI transfer, internal version.
  *
  * @returns URI transfer, or NULL if not found.
  * @param   pURI                URI clipboard context to return transfer for.
- * @param   uIdx                Index of the transfer to return.
+ * @param   uID                 ID of the transfer to return.
  */
-static PSHCLURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHCLURICTX pURI, uint32_t uIdx)
+static PSHCLURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHCLURICTX pURI, uint32_t uID)
 {
-    AssertReturn(uIdx == 0, NULL); /* Only one transfer allowed at the moment. */
-    return RTListGetFirst(&pURI->List, SHCLURITRANSFER, Node);
+    PSHCLURITRANSFER pTransfer;
+    RTListForEach(&pURI->List, pTransfer, SHCLURITRANSFER, Node) /** @todo Slow, but works for now. */
+    {
+        if (pTransfer->State.uID == uID)
+            return pTransfer;
+    }
+
+    return NULL;
 }
 
 /**
@@ -2477,11 +2468,11 @@ static PSHCLURITRANSFER sharedClipboardURICtxGetTransferInternal(PSHCLURICTX pUR
  *
  * @returns URI transfer, or NULL if not found.
  * @param   pURI                URI clipboard context to return transfer for.
- * @param   uIdx                Index of the transfer to return.
+ * @param   uID                 ID of the transfer to return.
  */
-PSHCLURITRANSFER SharedClipboardURICtxGetTransfer(PSHCLURICTX pURI, uint32_t uIdx)
+PSHCLURITRANSFER SharedClipboardURICtxGetTransfer(PSHCLURICTX pURI, uint32_t uID)
 {
-    return sharedClipboardURICtxGetTransferInternal(pURI, uIdx);
+    return sharedClipboardURICtxGetTransferInternal(pURI, uID);
 }
 
 /**
@@ -2509,6 +2500,118 @@ uint32_t SharedClipboardURICtxGetTotalTransfers(PSHCLURICTX pURI)
 }
 
 /**
+ * Registers an URI transfer with an URI context, i.e. allocates a transfer ID.
+ *
+ * @return  VBox status code.
+ * @retval  VERR_SHCLPB_MAX_TRANSFERS_REACHED if the maximum of concurrent transfers
+ *          is reached.
+ * @param   pURI                URI clipboard context to register transfer to.
+ * @param   pTransfer           Transfer to register.
+ * @param   pidTransfer         Where to return the transfer ID on success. Optional.
+ */
+int SharedClipboardURICtxTransferRegister(PSHCLURICTX pURI, PSHCLURITRANSFER pTransfer, uint32_t *pidTransfer)
+{
+    AssertPtrReturn(pURI,      VERR_INVALID_POINTER);
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    /* pidTransfer is optional. */
+
+    /*
+     * Pick a random bit as starting point.  If it's in use, search forward
+     * for a free one, wrapping around.  We've reserved both the zero'th and
+     * max-1 IDs.
+     */
+    uint32_t idTransfer = RTRandU32Ex(1, VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS - 2);
+
+    if (!ASMBitTestAndSet(&pURI->bmTransferIds[0], idTransfer))
+    { /* likely */ }
+    else if (pURI->cTransfers < VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS - 2 /* First and last are not used */)
+    {
+        /* Forward search. */
+        int iHit = ASMBitNextClear(&pURI->bmTransferIds[0], VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS, idTransfer);
+        if (iHit < 0)
+            iHit = ASMBitFirstClear(&pURI->bmTransferIds[0], VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS);
+        AssertLogRelMsgReturn(iHit >= 0, ("Transfer count: %RU16\n", pURI->cTransfers), VERR_SHCLPB_MAX_TRANSFERS_REACHED);
+        idTransfer = iHit;
+        AssertLogRelMsgReturn(!ASMBitTestAndSet(&pURI->bmTransferIds[0], idTransfer), ("idObject=%#x\n", idTransfer), VERR_INTERNAL_ERROR_2);
+    }
+    else
+    {
+        LogFunc(("Maximum number of transfers reached (%RU16 transfers)\n", pURI->cTransfers));
+        return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+    }
+
+    Log2Func(("pTransfer=%p, idTransfer=%RU32 (%RU16 transfers)\n", pTransfer, idTransfer, pURI->cTransfers));
+
+    RTListAppend(&pURI->List, &pTransfer->Node);
+
+    pURI->cTransfers++;
+
+    if (pidTransfer)
+        *pidTransfer = idTransfer;
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Registers an URI transfer with an URI context by specifying an ID for the transfer.
+ *
+ * @return  VBox status code.
+ * @retval  VERR_ALREADY_EXISTS if a transfer with the given ID already exists.
+ * @retval  VERR_SHCLPB_MAX_TRANSFERS_REACHED if the maximum of concurrent transfers for this context has been reached.
+ * @param   pURI                URI clipboard context to register transfer to.
+ * @param   pTransfer           Transfer to register.
+ * @param   idTransfer          Transfer ID to use for registration.
+ */
+int SharedClipboardURICtxTransferRegisterByIndex(PSHCLURICTX pURI, PSHCLURITRANSFER pTransfer, uint32_t idTransfer)
+{
+    LogFlowFunc(("cTransfers=%RU16, idTransfer=%RU32\n", pURI->cTransfers, idTransfer));
+
+    if (pURI->cTransfers < VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS - 2 /* First and last are not used */)
+    {
+        if (!ASMBitTestAndSet(&pURI->bmTransferIds[0], idTransfer))
+        {
+            RTListAppend(&pURI->List, &pTransfer->Node);
+
+            pURI->cTransfers++;
+            return VINF_SUCCESS;
+        }
+
+        return VERR_ALREADY_EXISTS;
+    }
+
+    LogFunc(("Maximum number of transfers reached (%RU16 transfers)\n", pURI->cTransfers));
+    return VERR_SHCLPB_MAX_TRANSFERS_REACHED;
+}
+
+/**
+ * Unregisters a transfer from an URI clipboard context.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_FOUND if the transfer ID was not found.
+ * @param   pURI                URI clipboard context to unregister transfer from.
+ * @param   idTransfer          Transfer ID to unregister.
+ */
+int SharedClipboardURICtxTransferUnregister(PSHCLURICTX pURI, uint32_t idTransfer)
+{
+    int rc = VINF_SUCCESS;
+    AssertMsgStmt(ASMBitTestAndClear(&pURI->bmTransferIds, idTransfer), ("idTransfer=%#x\n", idTransfer), rc = VERR_NOT_FOUND);
+
+    PSHCLURITRANSFER pTransfer = sharedClipboardURICtxGetTransferInternal(pURI, idTransfer);
+    if (pTransfer)
+    {
+        RTListNodeRemove(&pTransfer->Node);
+
+        Assert(pURI->cTransfers);
+        pURI->cTransfers--;
+    }
+    else
+        rc = VERR_NOT_FOUND;
+
+    LogFlowFunc(("idTransfer=%RU32, rc=%Rrc\n", idTransfer, rc));
+    return rc;
+}
+
+/**
  * Cleans up all associated transfers which are not needed (anymore).
  * This can be due to transfers which only have been announced but not / never being run.
  *
@@ -2524,7 +2627,7 @@ void SharedClipboardURICtxTransfersCleanup(PSHCLURICTX pURI)
     PSHCLURITRANSFER pTransfer, pTransferNext;
     RTListForEachSafe(&pURI->List, pTransfer, pTransferNext, SHCLURITRANSFER, Node)
     {
-        if (SharedClipboardURITransferGetStatus(pTransfer) != SHCLURITRANSFERSTATUS_RUNNING)
+        if (SharedClipboardURITransferGetStatus(pTransfer) != SHCLURITRANSFERSTATUS_STARTED)
         {
             SharedClipboardURITransferDestroy(pTransfer);
             RTListNodeRemove(&pTransfer->Node);
@@ -2840,3 +2943,23 @@ static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClF
     return rc;
 }
 
+/**
+ * Translates a Shared Clipboard transfer status (SHCLURITRANSFERSTATUS_XXX) into a string.
+ *
+ * @returns Transfer status string name.
+ * @param   uStatus             The transfer status to translate.
+ */
+const char *VBoxClipboardTransferStatusToStr(uint32_t uStatus)
+{
+    switch (uStatus)
+    {
+        RT_CASE_RET_STR(SHCLURITRANSFERSTATUS_NONE);
+        RT_CASE_RET_STR(SHCLURITRANSFERSTATUS_READY);
+        RT_CASE_RET_STR(SHCLURITRANSFERSTATUS_STARTED);
+        RT_CASE_RET_STR(SHCLURITRANSFERSTATUS_STOPPED);
+        RT_CASE_RET_STR(SHCLURITRANSFERSTATUS_CANCELED);
+        RT_CASE_RET_STR(SHCLURITRANSFERSTATUS_KILLED);
+        RT_CASE_RET_STR(SHCLURITRANSFERSTATUS_ERROR);
+    }
+    return "Unknown";
+}

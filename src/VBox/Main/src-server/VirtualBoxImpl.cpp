@@ -3584,7 +3584,8 @@ HRESULT VirtualBox::i_onClipboardAreaAttach(ULONG aID)
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
-            uint32_t cRefs = itArea->second->Area.AddRef();
+            const uint32_t cRefs = itArea->second->Area.AddRef();
+            RT_NOREF(cRefs);
             LogFlowThisFunc(("aID=%RU32 -> cRefs=%RU32\n", aID, cRefs));
             vrc = VINF_SUCCESS;
         }
@@ -3615,7 +3616,8 @@ HRESULT VirtualBox::i_onClipboardAreaDetach(ULONG aID)
         SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.find(aID);
         if (itArea != m->SharedClipboard.mapClipboardAreas.end())
         {
-            uint32_t cRefs = itArea->second->Area.Release();
+            const uint32_t cRefs = itArea->second->Area.Release();
+            RT_NOREF(cRefs);
             LogFlowThisFunc(("aID=%RU32 -> cRefs=%RU32\n", aID, cRefs));
             vrc = VINF_SUCCESS;
         }

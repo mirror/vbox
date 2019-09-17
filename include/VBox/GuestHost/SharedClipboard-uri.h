@@ -42,6 +42,31 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 
+
+/** @name Shared Clipboard transfer definitions.
+ *  @{
+ */
+
+/** No status set. */
+#define SHCLURITRANSFERSTATUS_NONE           0
+/** The transfer has been announced but is not running yet. */
+#define SHCLURITRANSFERSTATUS_READY          1
+/** The transfer is active and running. */
+#define SHCLURITRANSFERSTATUS_STARTED        2
+/** The transfer has been stopped. */
+#define SHCLURITRANSFERSTATUS_STOPPED        3
+/** The transfer has been canceled. */
+#define SHCLURITRANSFERSTATUS_CANCELED       4
+/** The transfer has been killed. */
+#define SHCLURITRANSFERSTATUS_KILLED         5
+/** The transfer ran into an unrecoverable error. */
+#define SHCLURITRANSFERSTATUS_ERROR          6
+
+/** Defines a transfer status. */
+typedef uint32_t SHCLURITRANSFERSTATUS;
+
+/** @} */
+
 /** @name Shared Clipboard handles.
  *  @{
  */
@@ -358,6 +383,10 @@ typedef struct _SHCLREPLY
     {
         struct
         {
+            SHCLURITRANSFERSTATUS uStatus;
+        } TransferStatus;
+        struct
+        {
             SHCLLISTHANDLE uHandle;
         } ListOpen;
         struct
@@ -656,7 +685,7 @@ typedef enum _SHCLURITRANSFERDIR
     SHCLURITRANSFERDIR_WRITE,
     /** The usual 32-bit hack. */
     SHCLURITRANSFERDIR_32BIT_HACK = 0x7fffffff
-} SHCLURITRANSFERDIR;
+} SHCLURITRANSFERDIR, *PSHCLURITRANSFERDIR;
 
 struct _SHCLURITRANSFER;
 typedef struct _SHCLURITRANSFER SHCLURITRANSFER;
@@ -672,33 +701,21 @@ typedef struct _SHCLCLIENTURIOBJCTX
 
 typedef struct _SHCLURITRANSFEROBJSTATE
 {
-    uint64_t                    cbProcessed;
+    /** How many bytes were processed (read / write) so far. */
+    uint64_t cbProcessed;
 } SHCLURITRANSFEROBJSTATE, *PSHCLURITRANSFEROBJSTATE;
 
 typedef struct _SHCLURITRANSFEROBJ
 {
     SHCLOBJHANDLE           uHandle;
-    char                              *pszPathAbs;
+    char                   *pszPathAbs;
     SHCLFSOBJINFO           objInfo;
     SHCLSOURCE              enmSource;
     SHCLURITRANSFEROBJSTATE State;
 } SHCLURITRANSFEROBJ, *PSHCLURITRANSFEROBJ;
 
-/** No status set. */
-#define SHCLURITRANSFERSTATUS_NONE           0
-/** The transfer has been announced but is not running yet. */
-#define SHCLURITRANSFERSTATUS_READY          1
-/** The transfer is active and running. */
-#define SHCLURITRANSFERSTATUS_RUNNING        2
-/** The transfer has been completed. */
-#define SHCLURITRANSFERSTATUS_COMPLETED      3
-/** The transfer has been canceled. */
-#define SHCLURITRANSFERSTATUS_CANCELED       4
-/** The transfer ran into an unrecoverable error. */
-#define SHCLURITRANSFERSTATUS_ERROR          5
-
-/** Defines a transfer status. */
-typedef uint32_t SHCLURITRANSFERSTATUS;
+/** Defines a transfer ID. */
+typedef uint16_t SHCLURITRANSFERID;
 
 /**
  * Enumeration for specifying a Shared Clipboard object type.
@@ -724,13 +741,13 @@ typedef enum _SHCLURIOBJTYPE
 typedef struct _SHCLURILISTHANDLEINFO
 {
     /** The list node. */
-    RTLISTNODE                    Node;
+    RTLISTNODE      Node;
     /** The list's handle. */
-    SHCLLISTHANDLE     hList;
+    SHCLLISTHANDLE  hList;
     /** Type of list handle. */
-    SHCLURIOBJTYPE     enmType;
+    SHCLURIOBJTYPE  enmType;
     /** Absolute local path of the list object. */
-    char                         *pszPathLocalAbs;
+    char           *pszPathLocalAbs;
     union
     {
         /** Local data, based on enmType. */
@@ -752,13 +769,13 @@ typedef struct _SHCLURILISTHANDLEINFO
 typedef struct _SHCLURIOBJHANDLEINFO
 {
     /** The list node. */
-    RTLISTNODE                Node;
+    RTLISTNODE     Node;
     /** The object's handle. */
     SHCLOBJHANDLE  hObj;
     /** Type of object handle. */
     SHCLURIOBJTYPE enmType;
     /** Absolute local path of the object. */
-    char                     *pszPathLocalAbs;
+    char          *pszPathLocalAbs;
     union
     {
         /** Local data, based on enmType. */
@@ -791,13 +808,13 @@ typedef struct _SHCLURILISTROOT
 typedef struct _SHCLURITRANSFERSTATE
 {
     /** The transfer's (local) ID. */
-    uint16_t                            uID;
+    SHCLURITRANSFERID     uID;
     /** The transfer's current status. */
-    SHCLURITRANSFERSTATUS    enmStatus;
+    SHCLURITRANSFERSTATUS enmStatus;
     /** The transfer's direction. */
-    SHCLURITRANSFERDIR       enmDir;
+    SHCLURITRANSFERDIR    enmDir;
     /** The transfer's source. */
-    SHCLSOURCE               enmSource;
+    SHCLSOURCE            enmSource;
 } SHCLURITRANSFERSTATE, *PSHCLURITRANSFERSTATE;
 
 struct _SHCLURITRANSFER;
@@ -878,7 +895,7 @@ typedef struct _SHCLPROVIDERCREATIONCTX
     /** The provider interface table. */
     SHCLPROVIDERINTERFACE  Interface;
     /** Provider callback data. */
-    void                             *pvUser;
+    void                  *pvUser;
 } SHCLPROVIDERCREATIONCTX, *PSHCLPROVIDERCREATIONCTX;
 
 struct _SHCLURITRANSFER;
@@ -892,7 +909,7 @@ typedef struct _SHCLURITRANSFERCALLBACKDATA
     /** Pointer to related URI transfer. */
     PSHCLURITRANSFER pTransfer;
     /** Saved user pointer. */
-    void                       *pvUser;
+    void            *pvUser;
 } SHCLURITRANSFERCALLBACKDATA, *PSHCLURITRANSFERCALLBACKDATA;
 
 #define SHCLTRANSFERCALLBACKDECLVOID(a_Name) \
@@ -962,47 +979,61 @@ typedef struct _SHCLURITRANSFERTHREAD
 typedef struct _SHCLURITRANSFER
 {
     /** The node member for using this struct in a RTList. */
-    RTLISTNODE                          Node;
+    RTLISTNODE               Node;
     /** Critical section for serializing access. */
-    RTCRITSECT                          CritSect;
+    RTCRITSECT               CritSect;
     /** The transfer's state (for SSM, later). */
     SHCLURITRANSFERSTATE     State;
     /** Timeout (in ms) for waiting of events. Default is 30s. */
-    RTMSINTERVAL                        uTimeoutMs;
+    RTMSINTERVAL             uTimeoutMs;
     /** Absolute path to root entries. */
-    char                               *pszPathRootAbs;
+    char                    *pszPathRootAbs;
     /** Maximum data chunk size (in bytes) to transfer. Default is 64K. */
-    uint32_t                            cbMaxChunkSize;
+    uint32_t                 cbMaxChunkSize;
     /** The transfer's own event source. */
     SHCLEVENTSOURCE          Events;
     /** Next upcoming list handle. */
     SHCLLISTHANDLE           uListHandleNext;
     /** List of all list handles elated to this transfer. */
-    RTLISTANCHOR                        lstList;
+    RTLISTANCHOR             lstList;
     /** Number of root entries in list. */
-    uint64_t                            cRoots;
+    uint64_t                 cRoots;
     /** List of root entries of this transfer. */
-    RTLISTANCHOR                        lstRoots;
+    RTLISTANCHOR             lstRoots;
     /** Next upcoming object handle. */
     SHCLOBJHANDLE            uObjHandleNext;
     /** Map of all objects handles related to this transfer. */
-    RTLISTANCHOR                        lstObj;
+    RTLISTANCHOR             lstObj;
     /** The transfer's own (local) area, if any (can be NULL if not needed).
      *  The area itself has a clipboard area ID assigned.
      *  On the host this area ID gets shared (maintained / locked) across all VMs via VBoxSVC. */
-    SharedClipboardArea                *pArea;
+    SharedClipboardArea     *pArea;
+    /** The transfer's own provider context. */
     SHCLPROVIDERCTX          ProviderCtx;
     /** The transfer's provider interface. */
     SHCLPROVIDERINTERFACE    ProviderIface;
     /** The transfer's (optional) callback table. */
     SHCLURITRANSFERCALLBACKS Callbacks;
     /** Opaque pointer to implementation-specific parameters. */
-    void                               *pvUser;
+    void                    *pvUser;
     /** Size (in bytes) of implementation-specific parameters. */
-    size_t                              cbUser;
+    size_t                   cbUser;
     /** Contains thread-related attributes. */
     SHCLURITRANSFERTHREAD    Thread;
 } SHCLURITRANSFER, *PSHCLURITRANSFER;
+
+/**
+ * Structure for keeping an URI transfer status report.
+ */
+typedef struct _SHCLURITRANSFERREPORT
+{
+    /** Actual status to report. */
+    SHCLURITRANSFERSTATUS uStatus;
+    /** Result code (rc) to report; might be unused / invalid, based on enmStatus. */
+    int                   rc;
+    /** Reporting flags. Currently unused and must be 0. */
+    uint32_t              fFlags;
+} SHCLURITRANSFERREPORT, *PSHCLURITRANSFERREPORT;
 
 /**
  * Structure for keeping URI clipboard information around.
@@ -1013,14 +1044,14 @@ typedef struct _SHCLURICTX
     RTCRITSECT                  CritSect;
     /** List of transfers. */
     RTLISTANCHOR                List;
-    /** Number of running (concurrent) transfers.
-     *  At the moment we only support only one transfer per client at a time. */
-    uint32_t                    cRunning;
-    /** Maximum Number of running (concurrent) transfers.
-     *  At the moment we only support only one transfer per client at a time. */
-    uint32_t                    cMaxRunning;
+    /** Transfer ID allocation bitmap; clear bits are free, set bits are busy. */
+    uint64_t                    bmTransferIds[VBOX_SHARED_CLIPBOARD_MAX_TRANSFERS / sizeof(uint64_t) / 8];
+    /** Number of running (concurrent) transfers. */
+    uint16_t                    cRunning;
+    /** Maximum Number of running (concurrent) transfers. */
+    uint16_t                    cMaxRunning;
     /** Number of total transfers (in list). */
-    uint32_t                    cTransfers;
+    uint16_t                    cTransfers;
 } SHCLURICTX, *PSHCLURICTX;
 
 int SharedClipboardURIObjCtxInit(PSHCLCLIENTURIOBJCTX pObjCtx);
@@ -1041,10 +1072,10 @@ PSHCLOBJDATACHUNK SharedClipboardURIObjectDataChunkDup(PSHCLOBJDATACHUNK pDataCh
 void SharedClipboardURIObjectDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk);
 void SharedClipboardURIObjectDataChunkFree(PSHCLOBJDATACHUNK pDataChunk);
 
-int SharedClipboardURITransferCreate(SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSource,
-                                     PSHCLURITRANSFER *ppTransfer);
+int SharedClipboardURITransferCreate(PSHCLURITRANSFER *ppTransfer);
 int SharedClipboardURITransferDestroy(PSHCLURITRANSFER pTransfer);
 
+int SharedClipboardURITransferInit(PSHCLURITRANSFER pTransfer, uint32_t uID, SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSource);
 int SharedClipboardURITransferOpen(PSHCLURITRANSFER pTransfer);
 int SharedClipboardURITransferClose(PSHCLURITRANSFER pTransfer);
 
@@ -1072,6 +1103,7 @@ uint32_t SharedClipboardURILTransferRootsCount(PSHCLURITRANSFER pTransfer);
 int SharedClipboardURILTransferRootsEntry(PSHCLURITRANSFER pTransfer, uint64_t uIndex, PSHCLROOTLISTENTRY pEntry);
 int SharedClipboardURILTransferRootsAsList(PSHCLURITRANSFER pTransfer, PSHCLROOTLIST *ppRootList);
 
+SHCLURITRANSFERID SharedClipboardURITransferGetID(PSHCLURITRANSFER pTransfer);
 SHCLSOURCE SharedClipboardURITransferGetSource(PSHCLURITRANSFER pTransfer);
 SHCLURITRANSFERSTATUS SharedClipboardURITransferGetStatus(PSHCLURITRANSFER pTransfer);
 int SharedClipboardURITransferHandleReply(PSHCLURITRANSFER pTransfer, PSHCLREPLY pReply);
@@ -1093,13 +1125,16 @@ uint32_t SharedClipboardURICtxGetRunningTransfers(PSHCLURICTX pURI);
 uint32_t SharedClipboardURICtxGetTotalTransfers(PSHCLURICTX pURI);
 void SharedClipboardURICtxTransfersCleanup(PSHCLURICTX pURI);
 bool SharedClipboardURICtxTransfersMaximumReached(PSHCLURICTX pURI);
-int SharedClipboardURICtxTransferAdd(PSHCLURICTX pURI, PSHCLURITRANSFER pTransfer);
-int SharedClipboardURICtxTransferRemove(PSHCLURICTX pURI, PSHCLURITRANSFER pTransfer);
+int SharedClipboardURICtxTransferRegister(PSHCLURICTX pURI, PSHCLURITRANSFER pTransfer, uint32_t *pidTransfer);
+int SharedClipboardURICtxTransferRegisterByIndex(PSHCLURICTX pURI, PSHCLURITRANSFER pTransfer, uint32_t idTransfer);
+int SharedClipboardURICtxTransferUnregister(PSHCLURICTX pURI, uint32_t idTransfer);
 
 void SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
 
 bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);
+
+const char *VBoxClipboardTransferStatusToStr(uint32_t uStatus);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_uri_h */
 

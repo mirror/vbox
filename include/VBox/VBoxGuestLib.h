@@ -590,17 +590,17 @@ typedef struct VBGLR3SHCLCMDCTX
      *        Use a union for the HGCM stuff then. */
 
     /** IN: HGCM client ID to use for communication. */
-    uint32_t uClientID;
+    uint32_t            uClientID;
     /** IN/OUT: Context ID to retrieve or to use. */
-    uint32_t uContextID;
+    uint32_t            uContextID;
     /** IN: Protocol version to use. */
-    uint32_t uProtocolVer;
+    uint32_t            uProtocolVer;
     /** IN: Protocol flags. Currently unused. */
-    uint32_t uProtocolFlags;
+    uint32_t            uProtocolFlags;
     /** IN: Maximum chunk size (in bytes). */
-    uint32_t cbChunkSize;
+    uint32_t            cbChunkSize;
     /** OUT: Number of parameters retrieved. */
-    uint32_t uNumParms;
+    uint32_t            uNumParms;
 } VBGLR3SHCLCMDCTX, *PVBGLR3SHCLCMDCTX;
 
 /**
@@ -612,16 +612,10 @@ typedef enum _VBGLR3CLIPBOARDEVENTTYPE
     VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS,
     VBGLR3CLIPBOARDEVENTTYPE_READ_DATA,
     VBGLR3CLIPBOARDEVENTTYPE_QUIT,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_HDR_READ,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_HDR_WRITE,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_ENTRY_READ,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_LIST_ENTRY_WRITE,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_OBJ_OPEN,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_OBJ_CLOSE,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_OBJ_READ,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_OBJ_WRITE,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_CANCEL,
-    VBGLR3CLIPBOARDEVENTTYPE_URI_ERROR,
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    /** Reports a transfer status to the guest. */
+    VBGLR3CLIPBOARDEVENTTYPE_URI_TRANSFER_STATUS,
+#endif
     /** Blow the type up to 32-bit. */
     VBGLR3CLIPBOARDEVENTTYPE_32BIT_HACK = 0x7fffffff
 } VBGLR3CLIPBOARDEVENTTYPE;
@@ -638,9 +632,21 @@ typedef struct _VBGLR3CLIPBOARDEVENT
     union
     {
         /** Reports available formats from the host. */
-        SHCLFORMATDATA ReportFormats;
-        /** Requests data to be read from the guest. */
-        SHCLDATAREQ ReadData;
+        SHCLFORMATDATA       ReportedFormats;
+        /** Reports that data needs to be read from the guest. */
+        SHCLDATAREQ          ReadData;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+        /** Reports a transfer status to the guest. */
+        struct
+        {
+            /** ID of the trnasfer. */
+            SHCLURITRANSFERID     uID;
+            /** Transfer direction. */
+            SHCLURITRANSFERDIR    enmDir;
+            /** Additional reproting information. */
+            SHCLURITRANSFERREPORT Report;
+        } TransferStatus;
+#endif
     } u;
 } VBGLR3CLIPBOARDEVENT, *PVBGLR3CLIPBOARDEVENT;
 typedef const PVBGLR3CLIPBOARDEVENT CPVBGLR3CLIPBOARDEVENT;
@@ -656,16 +662,17 @@ VBGLR3DECL(int)     VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t
 
 VBGLR3DECL(int)     VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx);
 VBGLR3DECL(int)     VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx);
-VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(PVBGLR3SHCLCMDCTX pCtx, PVBGLR3CLIPBOARDEVENT *ppEvent);
+
+VBGLR3DECL(int)     VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_t *pcParameters, uint64_t *pidRestoreCheck);
+VBGLR3DECL(int)     VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms, PVBGLR3SHCLCMDCTX pCtx, PVBGLR3CLIPBOARDEVENT pEvent);
 VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
 
 VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
 
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-VBGLR3DECL(int)     VbglR3ClipboardTransferEvent(PVBGLR3SHCLCMDCTX pCtx, uint32_t uMsg, uint32_t cParms,
-                                                 PSHCLURITRANSFER pTransfer);
-VBGLR3DECL(int)     VbglR3ClipboardTransferSendStatus(PVBGLR3SHCLCMDCTX pCtx, PSHCLURITRANSFER pTransfer,
-                                                      SHCLURITRANSFERSTATUS uStatus);
+VBGLR3DECL(int)     VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms, PVBGLR3SHCLCMDCTX pCtx, PSHCLURICTX pTransferCtx, PVBGLR3CLIPBOARDEVENT pEvent);
+
+VBGLR3DECL(int)     VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLURITRANSFER pTransfer, SHCLURITRANSFERSTATUS uStatus);
 
 VBGLR3DECL(int)     VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLIST *ppRootList);
 

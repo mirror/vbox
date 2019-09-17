@@ -29,6 +29,7 @@
 # pragma once
 #endif
 
+#include <iprt/critsect.h>
 #include <iprt/types.h>
 #include <iprt/win/windows.h>
 
@@ -61,14 +62,12 @@ using namespace com;
 #define SHCL_WIN_CBCHAIN_TIMEOUT_MS   5000
 
 /** Reports clipboard formats. */
-#define SHCL_WIN_WM_REPORT_FORMATS    WM_USER
+#define SHCL_WIN_WM_REPORT_FORMATS          WM_USER
 /** Reads data from the clipboard and sends it to the destination. */
-#define SHCL_WIN_WM_READ_DATA         WM_USER + 1
+#define SHCL_WIN_WM_READ_DATA               WM_USER + 1
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-/** Starts a reading transfer from the guest. */
-# define SHCL_WIN_WM_URI_START_READ   WM_USER + 2
-/** Starts a writing transfer to the guest. */
-# define SHCL_WIN_WM_URI_START_WRITE  WM_USER + 3
+/** Reports a transfer status to the guest. */
+# define SHCL_WIN_WM_URI_TRANSFER_STATUS    WM_USER + 2
 #endif
 
 /* Dynamically load clipboard functions from User32.dll. */
@@ -104,6 +103,8 @@ typedef struct _SHCLWINAPIOLD
  */
 typedef struct _SHCLWINCTX
 {
+    /** Critical section to serialize access. */
+    RTCRITSECT         CritSect;
     /** Window handle of our (invisible) clipbaord window. */
     HWND               hWnd;
     /** Window handle which is next to us in the clipboard chain. */
@@ -119,6 +120,9 @@ typedef struct _SHCLWINCTX
 int SharedClipboardWinOpen(HWND hWnd);
 int SharedClipboardWinClose(void);
 int SharedClipboardWinClear(void);
+
+int SharedClipboardWinCtxInit(PSHCLWINCTX pWinCtx);
+void SharedClipboardWinCtxDestroy(PSHCLWINCTX pWinCtx);
 
 int SharedClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI);
 bool SharedClipboardWinIsNewAPI(PSHCLWINAPINEW pAPI);

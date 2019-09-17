@@ -57,11 +57,11 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx);
 struct _SHCLCONTEXT
 {
     /** Handle for window message handling thread. */
-    RTTHREAD                 hThread;
+    RTTHREAD    hThread;
     /** Structure for keeping and communicating with service client. */
-    PSHCLCLIENT     pClient;
+    PSHCLCLIENT pClient;
     /** Windows-specific context data. */
-    SHCLWINCTX      Win;
+    SHCLWINCTX  Win;
 };
 
 
@@ -212,17 +212,35 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
     {
         case WM_CLIPBOARDUPDATE:
         {
-            const HWND hWndClipboardOwner = GetClipboardOwner();
-            if (pWinCtx->hWndClipboardOwnerUs != hWndClipboardOwner)
+            LogFunc(("WM_CLIPBOARDUPDATE: Waiting ...\n"));
+
+            int rc = RTCritSectEnter(&pWinCtx->CritSect);
+            if (RT_SUCCESS(rc))
             {
+                const HWND hWndClipboardOwner = GetClipboardOwner();
+
                 LogFunc(("WM_CLIPBOARDUPDATE: hWndClipboardOwnerUs=%p, hWndNewClipboardOwner=%p\n",
                          pWinCtx->hWndClipboardOwnerUs, hWndClipboardOwner));
 
-                /* Clipboard was updated by another application, retrieve formats and report back. */
-                int rc = vboxClipboardSvcWinSyncInternal(pCtx);
-                if (RT_SUCCESS(rc))
-                    sharedClipboardSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
+                if (pWinCtx->hWndClipboardOwnerUs != hWndClipboardOwner)
+                {
+                    int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
+                    AssertRC(rc2);
+
+                    /* Clipboard was updated by another application, retrieve formats and report back. */
+                    rc = vboxClipboardSvcWinSyncInternal(pCtx);
+                    if (RT_SUCCESS(rc))
+                        rc = sharedClipboardSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
+                }
+                else
+                {
+                    int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
+                    AssertRC(rc2);
+                }
             }
+
+            if (RT_FAILURE(rc))
+                LogRel(("Shared Clipboard: WM_CLIPBOARDUPDATE failed with %Rrc\n", rc));
 
             break;
         }
@@ -310,12 +328,35 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
 
         case SHCL_WIN_WM_REPORT_FORMATS:
         {
-            LogFunc(("VBOX_CLIPBOARD_WM_REPORT_FORMATS\n"));
-
-            /* Announce available formats. Do not insert data -- will be inserted in WM_RENDERFORMAT. */
+            /* Announce available formats. Do not insert data -- will be inserted in WM_RENDERFORMAT (or via IDataObject). */
             SHCLFORMATS fFormats = (uint32_t)lParam;
-            if (fFormats != VBOX_SHARED_CLIPBOARD_FMT_NONE) /* Could arrive with some older GA versions. */
+            LogFunc(("SHCL_WIN_WM_REPORT_FORMATS: fFormats=0x%x\n", fFormats));
+
+            if (fFormats == VBOX_SHARED_CLIPBOARD_FMT_NONE) /* Could arrive with some older GA versions. */
+                break;
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+            if (fFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
             {
+                PSHCLURITRANSFER pTransfer;
+                int rc = sharedClipboardSvcURITransferStart(pCtx->pClient,
+                                                            SHCLURITRANSFERDIR_READ, SHCLSOURCE_REMOTE,
+                                                            &pTransfer);
+                if (RT_SUCCESS(rc))
+                {
+                    /* Create the IDataObject implementation the host OS needs and assign
+                     * the newly created transfer to this object. */
+                    rc = SharedClipboardWinURITransferCreate(&pCtx->Win, pTransfer);
+
+                    /*  Note: The actual requesting + retrieving of data will be done in the IDataObject implementation
+                              (ClipboardDataObjectImpl::GetData()). */
+                }
+                else
+                    LogRel(("Shared Clipboard: Initializing read transfer failed with %Rrc\n", rc));
+            }
+            else
+            {
+#endif
                 int rc = SharedClipboardWinOpen(hWnd);
                 if (RT_SUCCESS(rc))
                 {
@@ -325,10 +366,10 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
 
                     SharedClipboardWinClose();
                 }
-
-                LogFunc(("VBOX_CLIPBOARD_WM_REPORT_FORMATS: fFormats=0x%x, lastErr=%ld\n", fFormats, GetLastError()));
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
             }
-
+#endif
+            LogFunc(("SHCL_WIN_WM_REPORT_FORMATS: lastErr=%ld\n", GetLastError()));
             break;
         }
 
@@ -456,14 +497,13 @@ DECLCALLBACK(int) vboxClipboardSvcWinThread(RTTHREAD hThreadSelf, void *pvUser)
                 HRESULT hr = OleInitialize(NULL);
                 if (FAILED(hr))
                 {
-                    LogRel(("Clipboard: Initializing OLE failed (%Rhrc) -- file transfers unavailable\n"));
+                    LogRel(("Shared Clipboard: Initializing window thread OLE failed (%Rhrc) -- file transfers unavailable\n", hr));
                     /* Not critical, the rest of the clipboard might work. */
                 }
                 else
-                    LogRel(("Clipboard: Initialized OLE\n"));
+                    LogRel(("Shared Clipboard: Initialized window thread OLE\n"));
             }
 #endif
-
             int rc2 = RTThreadUserSignal(hThreadSelf);
             AssertRC(rc2);
 
@@ -549,13 +589,26 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
 
 int SharedClipboardSvcImplInit(void)
 {
-    /* Initialization is done in SharedClipboardSvcImplConnect(). */
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    HRESULT hr = OleInitialize(NULL);
+    if (FAILED(hr))
+    {
+        LogRel(("Shared Clipboard: Initializing OLE failed (%Rhrc) -- file transfers unavailable\n", hr));
+        /* Not critical, the rest of the clipboard might work. */
+    }
+    else
+        LogRel(("Shared Clipboard: Initialized OLE\n"));
+#endif
+
     return VINF_SUCCESS;
 }
 
 void SharedClipboardSvcImplDestroy(void)
 {
-    /* Destruction is done in SharedClipboardSvcImplDisconnect(). */
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+    OleSetClipboard(NULL); /* Make sure to flush the clipboard on destruction. */
+    OleUninitialize();
+#endif
 }
 
 int SharedClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
@@ -569,8 +622,7 @@ int SharedClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)RTMemAllocZ(sizeof(SHCLCONTEXT));
     if (pCtx)
     {
-        /* Check that new Clipboard API is available. */
-        rc = SharedClipboardWinCheckAndInitNewAPI(&pCtx->Win.newAPI);
+        rc = SharedClipboardWinCtxInit(&pCtx->Win);
         if (RT_SUCCESS(rc))
         {
             rc = RTThreadCreate(&pCtx->hThread, vboxClipboardSvcWinThread, pCtx /* pvUser */, _64K /* Stack size */,
@@ -627,6 +679,8 @@ int SharedClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
             pCtx->hThread = NIL_RTTHREAD;
         }
 
+        SharedClipboardWinCtxDestroy(&pCtx->Win);
+
         if (RT_SUCCESS(rc))
         {
             RTMemFree(pCtx);
@@ -653,38 +707,13 @@ int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX 
 
     LogFlowFunc(("uFormats=0x%x, hWnd=%p\n", pFormats->uFormats, pCtx->Win.hWnd));
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    if (pFormats->uFormats & VBOX_SHARED_CLIPBOARD_FMT_URI_LIST)
-    {
-        PSHCLURITRANSFER pTransfer;
-        rc = sharedClipboardSvcURITransferStart(pClient,
-                                                SHCLURITRANSFERDIR_READ, SHCLSOURCE_REMOTE,
-                                                &pTransfer);
-        if (RT_SUCCESS(rc))
-        {
-            /* Create the IDataObject implementation the host OS needs and assign
-             * the newly created transfer to this object. */
-            rc = SharedClipboardWinURITransferCreate(&pCtx->Win, pTransfer);
+    /*
+     * The guest announced formats. Forward to the window thread.
+     */
+    PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_REPORT_FORMATS,
+                0 /* wParam */, pFormats->uFormats /* lParam */);
 
-            /*  Note: The actual requesting + retrieving of data will be done in the IDataObject implementation
-                      (ClipboardDataObjectImpl::GetData()). */
-        }
-    }
-    else
-    {
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
-
-        /*
-         * The guest announced formats. Forward to the window thread.
-         */
-        PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_REPORT_FORMATS,
-                    0 /* wParam */, pFormats->uFormats /* lParam */);
-
-        rc = VINF_SUCCESS;
-
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
-    }
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+    rc = VINF_SUCCESS;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

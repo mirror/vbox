@@ -2941,6 +2941,8 @@
 #define VERR_SHCLPB_LIST_HANDLE_INVALID             (-7102)
 /** A Shared Clipboard objects handle is invalid. */
 #define VERR_SHCLPB_OBJ_HANDLE_INVALID              (-7103)
+/** A Shared Clipboard transfer ID is invalid. */
+#define VERR_SHCLPB_TRANSFER_ID_NOT_FOUND           (-7104)
 /** @} */
 /* SED-END */
 

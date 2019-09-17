@@ -105,11 +105,14 @@ int SharedClipboardWinClose(void)
     {
         const DWORD dwLastErr = GetLastError();
         if (dwLastErr == ERROR_CLIPBOARD_NOT_OPEN)
-            rc = VERR_INVALID_STATE;
+        {
+            rc = VINF_SUCCESS; /* Not important, so just report success instead. */
+        }
         else
+        {
             rc = RTErrConvertFromWin32(dwLastErr);
-
-        LogFunc(("Failed with %Rrc (0x%x)\n", rc, dwLastErr));
+            LogFunc(("Failed with %Rrc (0x%x)\n", rc, dwLastErr));
+        }
     }
     else
         rc = VINF_SUCCESS;
@@ -143,6 +146,48 @@ int SharedClipboardWinClear(void)
         rc = VINF_SUCCESS;
 
     return rc;
+}
+
+/**
+ * Initializes a Shared Clipboard Windows context.
+ *
+ * @returns VBox status code.
+ * @param   pWinCtx             Shared Clipboard Windows context to initialize.
+ */
+int SharedClipboardWinCtxInit(PSHCLWINCTX pWinCtx)
+{
+    int rc = RTCritSectInit(&pWinCtx->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /* Check that new Clipboard API is available. */
+        rc = SharedClipboardWinCheckAndInitNewAPI(&pWinCtx->newAPI);
+        if (RT_SUCCESS(rc))
+        {
+            pWinCtx->hWnd                 = NULL;
+            pWinCtx->hWndClipboardOwnerUs = NULL;
+            pWinCtx->hWndNextInChain      = NULL;
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Destroys a Shared Clipboard Windows context.
+ *
+ * @param   pWinCtx             Shared Clipboard Windows context to destroy.
+ */
+void SharedClipboardWinCtxDestroy(PSHCLWINCTX pWinCtx)
+{
+    if (!pWinCtx)
+        return;
+
+    if (RTCritSectIsInitialized(&pWinCtx->CritSect))
+    {
+        int rc2 = RTCritSectDelete(&pWinCtx->CritSect);
+        AssertRC(rc2);
+    }
 }
 
 /**
@@ -298,7 +343,7 @@ VOID CALLBACK SharedClipboardWinChainPingProc(HWND hWnd, UINT uMsg, ULONG_PTR dw
  * @param   lParam              LPARAM to pass.
  */
 LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx,
-                                        UINT msg, WPARAM wParam, LPARAM lParam)
+                                          UINT msg, WPARAM wParam, LPARAM lParam)
 {
     LogFlowFuncEnter();
 
@@ -873,25 +918,44 @@ int SharedClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pT
                 /** @todo There is a potential race between SharedClipboardWinClose() and OleSetClipboard(),
                  *        where another application could own the clipboard (open), and thus the call to
                  *        OleSetClipboard() will fail. Needs (better) fixing. */
+                HRESULT hr = S_OK;
+
                 for (unsigned uTries = 0; uTries < 3; uTries++)
                 {
-                    HRESULT hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
-                    if (SUCCEEDED(hr))
+                    /* Make sure to enter the critical section before setting the clipboard data, as otherwise WM_CLIPBOARDUPDATE
+                     * might get called *before* we had the opportunity to set pWinCtx->hWndClipboardOwnerUs below. */
+                    rc = RTCritSectEnter(&pWinCtx->CritSect);
+                    if (RT_SUCCESS(rc))
                     {
-                        /*
-                         * Calling OleSetClipboard() changed the clipboard owner, which in turn will let us receive
-                         * a WM_CLIPBOARDUPDATE message. To not confuse ourselves with our own clipboard owner changes,
-                         * save a new window handle and deal with it in WM_CLIPBOARDUPDATE.
-                         */
-                        pWinCtx->hWndClipboardOwnerUs = GetClipboardOwner();
-                        break;
+                        hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
+                        if (SUCCEEDED(hr))
+                        {
+                            Assert(OleIsCurrentClipboard(pWinURITransferCtx->pDataObj) == S_OK); /* Sanity. */
+
+                            /*
+                             * Calling OleSetClipboard() changed the clipboard owner, which in turn will let us receive
+                             * a WM_CLIPBOARDUPDATE message. To not confuse ourselves with our own clipboard owner changes,
+                             * save a new window handle and deal with it in WM_CLIPBOARDUPDATE.
+                             */
+                            pWinCtx->hWndClipboardOwnerUs = GetClipboardOwner();
+
+                            rc = RTCritSectLeave(&pWinCtx->CritSect);
+                            AssertRC(rc);
+                            break;
+                        }
                     }
-                    else
-                    {
-                        rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
-                        LogRel(("Shared Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
-                        RTThreadSleep(100); /* Wait a bit. */
-                    }
+
+                    rc = RTCritSectLeave(&pWinCtx->CritSect);
+                    AssertRCBreak(rc);
+
+                    LogFlowFunc(("Failed with %Rhrc (try %u/3)\n", hr, uTries + 1));
+                    RTThreadSleep(500); /* Wait a bit. */
+                }
+
+                if (FAILED(hr))
+                {
+                    rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
+                    LogRel(("Shared Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
                 }
             }
         }

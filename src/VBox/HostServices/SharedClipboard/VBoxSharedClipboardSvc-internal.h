@@ -57,13 +57,13 @@ typedef struct _SHCLMSGCTX
 typedef struct _SHCLCLIENTMSG
 {
     /** Stored message type. */
-    uint32_t         m_uMsg;
+    uint32_t         uMsg;
     /** Number of stored HGCM parameters. */
-    uint32_t         m_cParms;
+    uint32_t         cParms;
     /** Stored HGCM parameters. */
-    PVBOXHGCMSVCPARM m_paParms;
+    PVBOXHGCMSVCPARM paParms;
     /** Message context. */
-    SHCLMSGCTX       m_Ctx;
+    SHCLMSGCTX       Ctx;
 } SHCLCLIENTMSG, *PSHCLCLIENTMSG;
 
 typedef struct SHCLCLIENTURISTATE
@@ -83,35 +83,36 @@ typedef struct SHCLCLIENTSTATE
 
     SHCLCONTEXT            *pCtx;
 
-    /** The client's HGCM ID. */
-    uint32_t                         u32ClientID;
+    /** The client's HGCM ID. Not related to the session ID below! */
+    uint32_t                uClientID;
+    /** The client's session ID. */
+    uint32_t                uSessionID;
     /** Optional protocol version the client uses. Set to 0 by default. */
-    uint32_t                         uProtocolVer;
+    uint32_t                uProtocolVer;
     /** Maximum chunk size to use for data transfers. Set to _64K by default. */
-    uint32_t                         cbChunkSize;
-    SHCLSOURCE            enmSource;
+    uint32_t                cbChunkSize;
+    SHCLSOURCE              enmSource;
     /** The client's URI state. */
     SHCLCLIENTURISTATE      URI;
 } SHCLCLIENTSTATE, *PSHCLCLIENTSTATE;
 
 typedef struct _SHCLCLIENTCMDCTX
 {
-    uint32_t                          uContextID;
+    uint32_t uContextID;
 } SHCLCLIENTCMDCTX, *PSHCLCLIENTCMDCTX;
 
 typedef struct _SHCLCLIENT
 {
-    /** The client's HGCM client ID. */
-    uint32_t                          uClientID;
     /** General client state data. */
     SHCLCLIENTSTATE          State;
     /** The client's message queue (FIFO). */
     RTCList<SHCLCLIENTMSG *> queueMsg;
-    /** The client's own event source. */
-    SHCLEVENTSOURCE        Events;
+    /** The client's own event source.
+     *  Needed for events which are not bound to a specific transfer. */
+    SHCLEVENTSOURCE          Events;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
     /** URI context data. */
-    SHCLURICTX             URI;
+    SHCLURICTX               URI;
 #endif
     /** Structure for keeping the client's pending (deferred return) state.
      *  A client is in a deferred state when it asks for the next HGCM message,
@@ -225,25 +226,20 @@ DECLCALLBACK(int) sharedClipboardSvcURITransferClose(PSHCLPROVIDERCTX pCtx);
 
 int sharedClipboardSvcURIGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
 
-int sharedClipboardSvcURIListOpen(PSHCLPROVIDERCTX pCtx,
-                                PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
+int sharedClipboardSvcURIListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
 int sharedClipboardSvcURIListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
-int sharedClipboardSvcURIListHdrRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList,
-                                   PSHCLLISTHDR pListHdr);
-int sharedClipboardSvcURIListHdrWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList,
-                                    PSHCLLISTHDR pListHdr);
-int sharedClipboardSvcURIListEntryRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList,
-                                     PSHCLLISTENTRY pListEntry);
-int sharedClipboardSvcURIListEntryWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList,
-                                      PSHCLLISTENTRY pListEntry);
+int sharedClipboardSvcURIListHdrRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int sharedClipboardSvcURIListHdrWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int sharedClipboardSvcURIListEntryRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int sharedClipboardSvcURIListEntryWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
 
 int sharedClipboardSvcURIObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
-                               PSHCLOBJHANDLE phObj);
+                                 PSHCLOBJHANDLE phObj);
 int sharedClipboardSvcURIObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
 int sharedClipboardSvcURIObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
-                               void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
+                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
 int sharedClipboardSvcURIObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
-                                void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
+                                  void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
 
 DECLCALLBACK(void) VBoxSvcClipboardURITransferPrepareCallback(PSHCLURITRANSFERCALLBACKDATA pData);
 DECLCALLBACK(void) VBoxSvcClipboardURIDataHeaderCompleteCallback(PSHCLURITRANSFERCALLBACKDATA pData);
