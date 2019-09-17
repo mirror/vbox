@@ -355,13 +355,13 @@ static void pciSetIrqInternal(PDEVPCIROOT pGlobals, uint8_t uDevFn, PPDMPCIDEV p
         /* the pic level is the logical OR of all the PCI irqs mapped to it */
         pic_level = 0;
         if (pic_irq == pbCfg[0x60])
-            pic_level |= get_pci_irq_level(pGlobals, 0);
+            pic_level |= get_pci_irq_level(pGlobals, 0);    /* PIRQA */
         if (pic_irq == pbCfg[0x61])
-            pic_level |= get_pci_irq_level(pGlobals, 1);
+            pic_level |= get_pci_irq_level(pGlobals, 1);    /* PIRQB */
         if (pic_irq == pbCfg[0x62])
-            pic_level |= get_pci_irq_level(pGlobals, 2);
+            pic_level |= get_pci_irq_level(pGlobals, 2);    /* PIRQC */
         if (pic_irq == pbCfg[0x63])
-            pic_level |= get_pci_irq_level(pGlobals, 3);
+            pic_level |= get_pci_irq_level(pGlobals, 3);    /* PIRQD */
         if (pic_irq == pGlobals->Piix3.iAcpiIrq)
             pic_level |= pGlobals->Piix3.iAcpiIrqLevel;
 
@@ -1188,6 +1188,19 @@ static DECLCALLBACK(void) pciR3IrqRouteInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
     }
 }
 
+/**
+ * @callback_method_impl{FNDBGFHANDLERDEV, 'pirq'}
+ */
+DECLCALLBACK(void) devpciR3InfoPIRQ(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
+{
+    PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    NOREF(pszArgs);
+
+    pHlp->pfnPrintf(pHlp, "PCI IRQ levels:\n");
+    for (int i = 0; i < DEVPCI_LEGACY_IRQ_PINS; ++i)
+        pHlp->pfnPrintf(pHlp, "  IRQ%c: %u\n", 'A' + i, pGlobals->Piix3.auPciLegacyIrqLevels[i]);
+}
+
 
 /* -=-=-=-=-=- PDMDEVREG  -=-=-=-=-=- */
 
@@ -1354,6 +1367,7 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "Display PCI bus status. Recognizes 'basic' or 'verbose' as arguments, defaults to 'basic'.",
                               devpciR3InfoPci);
     PDMDevHlpDBGFInfoRegister(pDevIns, "pciirq", "Display PCI IRQ state. (no arguments)", devpciR3InfoPciIrq);
+    PDMDevHlpDBGFInfoRegister(pDevIns, "pirq", "Display PIRQ state. (no arguments)", devpciR3InfoPIRQ);
     PDMDevHlpDBGFInfoRegister(pDevIns, "irqroute", "Display PCI IRQ routing. (no arguments)", pciR3IrqRouteInfo);
 
     return VINF_SUCCESS;
