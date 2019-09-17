@@ -41,7 +41,7 @@
 # endif
 # ifdef VBOX_WITH_SHARED_CLIPBOARD
 #  include <VBox/GuestHost/SharedClipboard.h>
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 #   include <VBox/GuestHost/SharedClipboard-uri.h>
 #  endif
 # endif /* VBOX_WITH_SHARED_CLIPBOARD */
@@ -612,7 +612,7 @@ typedef enum _VBGLR3CLIPBOARDEVENTTYPE
     VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS,
     VBGLR3CLIPBOARDEVENTTYPE_READ_DATA,
     VBGLR3CLIPBOARDEVENTTYPE_QUIT,
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Reports a transfer status to the guest. */
     VBGLR3CLIPBOARDEVENTTYPE_URI_TRANSFER_STATUS,
 #endif
@@ -635,7 +635,7 @@ typedef struct _VBGLR3CLIPBOARDEVENT
         SHCLFORMATDATA       ReportedFormats;
         /** Reports that data needs to be read from the guest. */
         SHCLDATAREQ          ReadData;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         /** Reports a transfer status to the guest. */
         struct
         {
@@ -669,7 +669,7 @@ VBGLR3DECL(void)    VbglR3ClipboardEventFree(PVBGLR3CLIPBOARDEVENT pEvent);
 
 VBGLR3DECL(int)     VbglR3ClipboardWriteError(HGCMCLIENTID idClient, int rcErr);
 
-#  ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 VBGLR3DECL(int)     VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms, PVBGLR3SHCLCMDCTX pCtx, PSHCLURICTX pTransferCtx, PVBGLR3CLIPBOARDEVENT pEvent);
 
 VBGLR3DECL(int)     VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLURITRANSFER pTransfer, SHCLURITRANSFERSTATUS uStatus);
@@ -705,7 +705,7 @@ VBGLR3DECL(int)     VbglR3ClipboardObjRead(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE
                                                uint32_t *pcbRead);
 VBGLR3DECL(int)     VbglR3ClipboardObjWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf,
                                             uint32_t *pcbWritten);
-#  endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#  endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 /** @} */
 # endif /* VBOX_WITH_SHARED_CLIPBOARD */
 

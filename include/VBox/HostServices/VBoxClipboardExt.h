@@ -30,7 +30,7 @@
 #endif
 
 #include <VBox/types.h>
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <VBox/GuestHost/SharedClipboard-uri.h>
 #endif
 
@@ -65,7 +65,7 @@ typedef struct _SHCLEXTPARMS
     uint32_t   cbData;
 } SHCLEXTPARMS;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 typedef uint32_t SHCLEXTAREAREGISTETRFLAGS;
 /** No clipboard register area flags specified. */
 #define SHCLEXTAREA_REGISTER_FLAGS_NONE        0
@@ -97,6 +97,6 @@ typedef struct _SHCLEXTAREAPARMS
         } fn_attach;
     } u;
 } SHCLEXTAREAPARMS, *PSHCLEXTAREAPARMS;
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardExt_h */

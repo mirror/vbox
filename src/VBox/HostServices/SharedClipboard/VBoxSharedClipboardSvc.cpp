@@ -83,7 +83,7 @@
  * @section sec_uri_intro               Transferring files
  *
  * Since VBox x.x.x transferring files via Shared Clipboard is supported.
- * See the VBOX_WITH_SHARED_CLIPBOARD_URI_LIST define for supported / enabled
+ * See the VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS define for supported / enabled
  * platforms. This is called "URI transfers".
  *
  * Copying files / directories from guest A to guest B requires the host
@@ -213,7 +213,7 @@
 #include <VBox/vmm/ssm.h>
 
 #include "VBoxSharedClipboardSvc-internal.h"
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include "VBoxSharedClipboardSvc-uri.h"
 #endif
 
@@ -1098,7 +1098,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     PSHCLURITRANSFER pTransfer = SharedClipboardURICtxGetTransfer(&pClient->URI, 0 /* Index*/);
     if (pTransfer)
         sharedClipboardSvcURIAreaDetach(&pClient->State, pTransfer);
@@ -1148,7 +1148,7 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
         if (RT_SUCCESS(rc))
         {
             rc = SharedClipboardSvcImplConnect(pClient, VBoxSvcClipboardGetHeadless());
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             if (RT_SUCCESS(rc))
                 rc = SharedClipboardURICtxInit(&pClient->URI);
 #endif
@@ -1374,7 +1374,7 @@ static DECLCALLBACK(void) svcCall(void *,
                 rc = HGCMSvcGetU32(&paParms[0], &uFormat);
                 if (RT_SUCCESS(rc))
                 {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                     if (uFormat == VBOX_SHCL_FMT_URI_LIST)
                     {
                         rc = sharedClipboardSvcURITransferStart(pClient, SHCLURITRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
@@ -1384,7 +1384,7 @@ static DECLCALLBACK(void) svcCall(void *,
                     }
                     else
                     {
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
                         void    *pv;
                         uint32_t cb;
                         rc = HGCMSvcGetBuf(&paParms[1], &pv, &cb);
@@ -1457,7 +1457,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                     HGCMSvcSetU32(&paParms[2], cbActual);
                             }
                         }
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                     }
 #endif
                 }
@@ -1474,7 +1474,7 @@ static DECLCALLBACK(void) svcCall(void *,
 
         default:
         {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             rc = sharedClipboardSvcURIHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
 #else
             rc = VERR_NOT_IMPLEMENTED;
@@ -1536,7 +1536,7 @@ static void sharedClipboardSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
 {
     LogFlowFuncEnter();
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     pClientState->URI.enmTransferDir = SHCLURITRANSFERDIR_UNKNOWN;
 #else
     RT_NOREF(pClientState);
@@ -1597,7 +1597,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
 
         default:
         {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             rc = sharedClipboardSvcURIHostHandler(u32Function, cParms, paParms);
 #else
             rc = VERR_NOT_IMPLEMENTED;

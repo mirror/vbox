@@ -126,7 +126,7 @@
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
 #include <VBox/HostServices/VBoxClipboardSvc.h>
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 #  include "SharedClipboardPrivate.h"
 # endif
 #endif
@@ -8404,9 +8404,9 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
 
     int rc = VINF_SUCCESS;
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     HRESULT hrc = S_OK;
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     LogFunc(("mConsoleVRDPServer=%p\n", pThis->mConsoleVRDPServer));
 
@@ -8467,7 +8467,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
                                                          NULL);
         } break;
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         case VBOX_CLIPBOARD_EXT_FN_AREA_REGISTER:
         {
             com::SafeArray<BSTR> abstrParms; /* Empty for now. */
@@ -8514,7 +8514,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
             if (FAILED(hrc))
                 LogFunc(("Detaching from clipboard area %RU32 failed with %Rhrc\n", pParms->uID, hrc));
         } break;
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
         default:
         {
@@ -8522,7 +8522,7 @@ DECLCALLBACK(int) Console::i_sharedClipboardServiceCallback(void *pvExtension, u
         } break;
     }
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     if (FAILED(hrc))
     {
         LogRel(("Shared Clipboard: Area handling failed with %Rhrc\n", hrc));

@@ -45,7 +45,7 @@
 #include <VBox/settings.h>
 #include <VBox/version.h>
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <VBox/GuestHost/SharedClipboard-uri.h>
 #endif
 
@@ -222,7 +222,7 @@ typedef ObjectsList<NATNetwork> NATNetworksOList;
 typedef std::map<Guid, ComPtr<IProgress> > ProgressMap;
 typedef std::map<Guid, ComObjPtr<Medium> > HardDiskMap;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
  * Structure for keeping Shared Clipboard area data within the VirtualBox object.
  */
@@ -296,7 +296,7 @@ struct SharedClipboardData
     /** Map of clipboard areas. The key is the area ID. */
     SharedClipboardAreaMap              mapClipboardAreas;
 };
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /**
  *  Main VirtualBox data structure.
@@ -445,7 +445,7 @@ struct VirtualBox::Data
     bool                                fWatcherIsReliable;
 #endif
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Data related to Shared Clipboard handling. */
     SharedClipboardData                 SharedClipboard;
 #endif
@@ -1048,7 +1048,7 @@ void VirtualBox::uninit()
     }
 #endif
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     LogFlowThisFunc(("Destroying Shared Clipboard areas...\n"));
     SharedClipboardAreaMap::iterator itArea = m->SharedClipboard.mapClipboardAreas.begin();
     while (itArea != m->SharedClipboard.mapClipboardAreas.end())
@@ -3403,7 +3403,7 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
     Bstr name, value, flags;
 };
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
  * Generates a new clipboard area on the host by opening (and locking) a new, temporary directory.
  *
@@ -3676,7 +3676,7 @@ ULONG VirtualBox::i_onClipboardAreaGetRefCount(ULONG aID)
     LogFlowThisFunc(("aID=%RU32, cRefCount=%RU32\n", aID, cRefCount));
     return cRefCount;
 }
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /**
  *  @note Doesn't lock any object.

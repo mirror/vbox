@@ -28,7 +28,7 @@ DLLS += VBoxSharedClipboard
 VBoxSharedClipboard_TEMPLATE  = VBOXR3
 VBoxSharedClipboard_DEFS      = \
 	VBOX_WITH_HGCM \
-	$(if $(VBOX_WITH_SHARED_CLIPBOARD_URI_LIST),VBOX_WITH_SHARED_CLIPBOARD_URI_LIST,)
+	$(if $(VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS),VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS,)
 VBoxSharedClipboard_INCS.win  = \
 	$(VBOX_PATH_SDK)
 
@@ -43,7 +43,7 @@ VBoxSharedClipboard_SOURCES.win = \
 VBoxSharedClipboard_SOURCES.darwin = \
 	VBoxSharedClipboardSvc-darwin.cpp \
 	darwin-pasteboard.cpp
-ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
  VBoxSharedClipboard_DEFS    += VBOX_WITH_SHARED_CLIPBOARD_HOST
  VBoxSharedClipboard_SOURCES += \
 	VBoxSharedClipboardSvc-uri.cpp \

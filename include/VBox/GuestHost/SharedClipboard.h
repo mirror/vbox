@@ -54,7 +54,7 @@ typedef SHCLFORMATS *PSHCLFORMATS;
 #define VBOX_SHCL_FMT_BITMAP        RT_BIT(1)
 /** Shared Clipboard format is HTML. */
 #define VBOX_SHCL_FMT_HTML          RT_BIT(2)
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /** Shared Clipboard format is an URI list. */
 #define VBOX_SHCL_FMT_URI_LIST      RT_BIT(3)
 #endif

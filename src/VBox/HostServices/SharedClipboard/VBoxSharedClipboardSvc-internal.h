@@ -38,9 +38,9 @@
 
 using namespace HGCM;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 struct SHCLCLIENTSTATE;
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /**
  * Structure for keeping a Shared Clipboard HGCM message context.
@@ -110,7 +110,7 @@ typedef struct _SHCLCLIENT
     /** The client's own event source.
      *  Needed for events which are not bound to a specific transfer. */
     SHCLEVENTSOURCE          Events;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** URI context data. */
     SHCLURICTX               URI;
 #endif
@@ -195,12 +195,12 @@ int sharedClipboardSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint
 
 int sharedClipboardSvcClientWakeup(PSHCLCLIENT pClient);
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int sharedClipboardSvcURITransferStart(PSHCLCLIENT pClient,
                                      SHCLURITRANSFERDIR enmDir, SHCLSOURCE enmSource,
                                      PSHCLURITRANSFER *ppTransfer);
 bool sharedClipboardSvcURIMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /*
  * Platform-dependent implementations.
@@ -220,7 +220,7 @@ int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdC
  */
 int SharedClipboardSvcImplSync(PSHCLCLIENT pClient);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int sharedClipboardSvcURITransferOpen(PSHCLPROVIDERCTX pCtx);
 DECLCALLBACK(int) sharedClipboardSvcURITransferClose(PSHCLPROVIDERCTX pCtx);
 
@@ -250,7 +250,7 @@ DECLCALLBACK(void) VBoxSvcClipboardURITransferErrorCallback(PSHCLURITRANSFERCALL
 
 int SharedClipboardSvcImplURITransferCreate(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer);
 int SharedClipboardSvcImplURITransferDestroy(PSHCLCLIENT pClient, PSHCLURITRANSFER pTransfer);
-#endif /*VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /*VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /* Host unit testing interface */
 #ifdef UNIT_TEST

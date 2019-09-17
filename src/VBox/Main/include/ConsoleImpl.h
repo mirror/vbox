@@ -876,7 +876,7 @@ private:
     static DECLCALLBACK(int) i_sharedClipboardServiceCallback(void *pvExtension, uint32_t u32Function,
                                                               void *pvParms, uint32_t cbParms);
     /** @} */
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     /** @name Disk encryption support
      * @{ */

@@ -71,7 +71,7 @@ namespace settings
 class VirtualBoxClassFactory; /* See ../src-server/win/svcmain.cpp  */
 #endif
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 struct SharedClipboardAreaData;
 #endif
 
@@ -173,7 +173,7 @@ public:
     void i_onSnapshotRestored(const Guid &aMachineId, const Guid &aSnapshotId);
     void i_onSnapshotChange(const Guid &aMachineId, const Guid &aSnapshotId);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     int i_clipboardAreaCreate(ULONG uAreaID, uint32_t fFlags, SharedClipboardAreaData **ppAreaData);
     int i_clipboardAreaDestroy(SharedClipboardAreaData *pAreaData);
 
@@ -183,7 +183,7 @@ public:
     HRESULT i_onClipboardAreaDetach(ULONG aID);
     ULONG i_onClipboardAreaGetMostRecent(void);
     ULONG i_onClipboardAreaGetRefCount(ULONG aID);
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
     void i_onGuestPropertyChange(const Guid &aMachineId, IN_BSTR aName, IN_BSTR aValue,
                                  IN_BSTR aFlags);

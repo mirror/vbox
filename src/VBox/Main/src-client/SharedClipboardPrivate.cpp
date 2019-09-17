@@ -22,7 +22,7 @@
 
 #include <VBox/err.h>
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <VBox/GuestHost/SharedClipboard-uri.h>
 #endif
 

@@ -35,7 +35,7 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 #  include <vector>
 
 #  include <iprt/cpp/ministring.h> /* For RTCString. */
@@ -46,7 +46,7 @@
 # include <VBox/GuestHost/SharedClipboard-uri.h>
 
 using namespace com;
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 #ifndef WM_CLIPBOARDUPDATE
 # define WM_CLIPBOARDUPDATE 0x031D
@@ -65,7 +65,7 @@ using namespace com;
 #define SHCL_WIN_WM_REPORT_FORMATS          WM_USER
 /** Reads data from the clipboard and sends it to the destination. */
 #define SHCL_WIN_WM_READ_DATA               WM_USER + 1
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /** Reports a transfer status to the guest. */
 # define SHCL_WIN_WM_URI_TRANSFER_STATUS    WM_USER + 2
 #endif
@@ -135,7 +135,7 @@ LRESULT SharedClipboardWinChainPassToNext(PSHCLWINCTX pWinCtx, UINT msg, WPARAM 
 SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat);
 int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int SharedClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
 #endif
 
@@ -150,12 +150,12 @@ int SharedClipboardWinHandleWMRenderAllFormats(PSHCLWINCTX pWinCtx, HWND hWnd);
 int SharedClipboardWinHandleWMTimer(PSHCLWINCTX pWinCtx);
 
 int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats);
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int SharedClipboardWinURITransferCreate(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
 void SharedClipboardWinURITransferDestroy(PSHCLWINCTX pWinCtx, PSHCLURITRANSFER pTransfer);
 #endif
 
-# ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 class SharedClipboardURIList;
 #  ifndef FILEGROUPDESCRIPTOR
 class FILEGROUPDESCRIPTOR;
@@ -374,6 +374,6 @@ public:
      *  Can be NULL if not being used. */
     SharedClipboardWinDataObject *pDataObj;
 };
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_win_h */
 

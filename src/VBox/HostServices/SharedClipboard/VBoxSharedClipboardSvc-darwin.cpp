@@ -213,7 +213,7 @@ int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient,
         return VINF_SUCCESS;
     }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST) /* No URI support yet. */
         return VINF_SUCCESS;
 #endif
@@ -275,7 +275,7 @@ int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient,
     return VINF_SUCCESS;
 }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int SharedClipboardSvcImplURIReadDir(PSHCLCLIENT pClient, PSHCLDIRDATA pDirData)
 {
     RT_NOREF(pClient, pDirData);
@@ -311,5 +311,5 @@ int SharedClipboardSvcImplURIWriteFileData(PSHCLCLIENT pClient, PSHCLFILEDATA pF
     RT_NOREF(pClient, pFileData);
     return VERR_NOT_IMPLEMENTED;
 }
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

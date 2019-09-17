@@ -21,7 +21,7 @@
 #include <iprt/ldr.h>
 #include <iprt/thread.h>
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <iprt/win/windows.h>
 # include <iprt/win/shlobj.h> /* For CFSTR_FILEDESCRIPTORXXX + CFSTR_FILECONTENTS. */
 # include <iprt/utf16.h>
@@ -33,7 +33,7 @@
 #include <iprt/errcore.h>
 
 #include <VBox/GuestHost/SharedClipboard.h>
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <VBox/GuestHost/SharedClipboard-uri.h>
 #endif
 #include <VBox/GuestHost/SharedClipboard-win.h>
@@ -386,7 +386,7 @@ SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat)
             vboxFormat = VBOX_SHCL_FMT_BITMAP;
             break;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         /* CF_HDROP handles file system entries which are locally present
          * on source for transferring to the target.
          *
@@ -407,7 +407,7 @@ SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat)
 
                     if (RTStrCmp(szFormatName, SHCL_WIN_REGFMT_HTML) == 0)
                         vboxFormat = VBOX_SHCL_FMT_HTML;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                     /* These types invoke our IDataObject / IStream implementations. */
                     else if (   (RTStrCmp(szFormatName, CFSTR_FILEDESCRIPTORA) == 0)
                              || (RTStrCmp(szFormatName, CFSTR_FILECONTENTS)    == 0))
@@ -878,7 +878,7 @@ int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
     return rc;
 }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /**
  * Creates an URI transfer by announcing URI data (via IDataObject) to Windows.
  *
@@ -1135,5 +1135,5 @@ int SharedClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszL
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

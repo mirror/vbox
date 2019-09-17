@@ -35,13 +35,13 @@
 #include <VBox/GuestHost/SharedClipboard-win.h>
 #include <VBox/GuestHost/clipboard-helper.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h> /* Temp, remove. */
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <VBox/GuestHost/SharedClipboard-uri.h>
 #endif
 
 #include <strsafe.h>
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <iprt/win/shlobj.h>
 # include <iprt/win/shlwapi.h>
 #endif
@@ -59,13 +59,13 @@ typedef struct _SHCLCONTEXT
     VBGLR3SHCLCMDCTX      CmdCtx;
     /** Windows-specific context data. */
     SHCLWINCTX            Win;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Associated transfer data. */
     SHCLURICTX            URI;
 #endif
 } SHCLCONTEXT, *PSHCLCONTEXT;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 typedef struct _SHCLURIREADTHREADCTX
 {
     PSHCLCONTEXT     pClipboardCtx;
@@ -77,7 +77,7 @@ typedef struct _SHCLURIWRITETHREADCTX
     PSHCLCONTEXT     pClipboardCtx;
     PSHCLURITRANSFER pTransfer;
 } SHCLURIWRITETHREADCTX, *PSHCLURIWRITETHREADCTX;
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 
 /*********************************************************************************************************************************
@@ -92,13 +92,13 @@ static char s_szClipWndClassName[] = SHCL_WIN_WNDCLASS_NAME;
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 static DECLCALLBACK(void) vboxClipboardURITransferCompleteCallback(PSHCLURITRANSFERCALLBACKDATA pData, int rc);
 static DECLCALLBACK(void) vboxClipboardURITransferErrorCallback(PSHCLURITRANSFERCALLBACKDATA pData, int rc);
 #endif
 
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 #if 0
 static DECLCALLBACK(int) vboxClipboardURIWriteThread(RTTHREAD ThreadSelf, void *pvUser)
 {
@@ -403,7 +403,7 @@ static int vboxClipboardURIObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -654,7 +654,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                {
                    SharedClipboardWinClear();
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                     if (fFormats & VBOX_SHCL_FMT_URI_LIST)
                     {
                         LogFunc(("VBOX_SHCL_FMT_URI_LIST\n"));
@@ -678,7 +678,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                         rc = SharedClipboardWinAnnounceFormats(pWinCtx, fFormats);
 
                         SharedClipboardWinClose();
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                     }
 #endif
                }
@@ -769,7 +769,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                        }
                    }
                }
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                else if (uFormat == VBOX_SHCL_FMT_URI_LIST)
                {
                    LogFunc(("cTransfersRunning=%RU32\n", SharedClipboardURICtxGetRunningTransfers(&pCtx->URI)));
@@ -847,7 +847,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                    if (RT_FAILURE(rc))
                        LogFunc(("SHCL_WIN_WM_READ_DATA: Failed with rc=%Rrc\n", rc));
                }
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_URI_LIST */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
                if (hClip == NULL)
                {
@@ -865,7 +865,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
            break;
        }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
        case SHCL_WIN_WM_URI_TRANSFER_STATUS:
        {
            LogFunc(("SHCL_WIN_WM_URI_TRANSFER_STATUS\n"));
@@ -1142,7 +1142,7 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
 
     int rc = VINF_SUCCESS;
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     HRESULT hr = OleInitialize(NULL);
     if (FAILED(hr))
     {
@@ -1164,7 +1164,7 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
             rc = vboxClipboardCreateWindow(pCtx);
             if (RT_SUCCESS(rc))
             {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                 rc = SharedClipboardURICtxInit(&pCtx->URI);
                 if (RT_SUCCESS(rc))
 #endif
@@ -1258,7 +1258,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
             rc = VbglR3ClipboardMsgPeekWait(&pCtx->CmdCtx, &uMsg, &cParms, NULL /* pidRestoreCheck */);
             if (RT_SUCCESS(rc))
             {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                 rc = VbglR3ClipboardEventGetNextEx(uMsg, cParms, &pCtx->CmdCtx, &pCtx->URI, pEvent);
 #else
                 rc = VbglR3ClipboardEventGetNext(uMsg, cParms, &pCtx->CmdCtx, pEvent);
@@ -1303,7 +1303,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
                    break;
                }
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                case VBGLR3CLIPBOARDEVENTTYPE_URI_TRANSFER_STATUS:
                {
                    ::PostMessage(pWinCtx->hWnd, SHCL_WIN_WM_URI_TRANSFER_STATUS,
@@ -1367,7 +1367,7 @@ DECLCALLBACK(void) VBoxShClDestroy(void *pInstance)
 
     vboxClipboardDestroy(pCtx);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_URI_LIST
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     OleSetClipboard(NULL); /* Make sure to flush the clipboard on destruction. */
     OleUninitialize();
 
