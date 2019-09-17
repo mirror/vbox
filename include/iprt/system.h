@@ -279,7 +279,7 @@ typedef RTSYSFWTYPE *PRTSYSFWTYPE;
 /**
  * Queries the system's firmware type.
  *
- * @returns  IPRT status code.
+ * @returns IPRT status code.
  * @param   penmType    Where to return the firmware type on success.
  */
 RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmType);
