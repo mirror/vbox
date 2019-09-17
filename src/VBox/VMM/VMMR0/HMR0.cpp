@@ -404,8 +404,8 @@ static int hmR0InitIntel(void)
                 LogRel(("hmR0InitIntel: RTR0MemObjAllocCont(,PAGE_SIZE,false) -> %Rrc\n", rc));
                 return rc;
             }
-            void      *pvScatchPage      = RTR0MemObjAddress(hScatchMemObj);
-            RTHCPHYS   HCPhysScratchPage = RTR0MemObjGetPagePhysAddr(hScatchMemObj, 0);
+            void          *pvScatchPage      = RTR0MemObjAddress(hScatchMemObj);
+            RTHCPHYS const HCPhysScratchPage = RTR0MemObjGetPagePhysAddr(hScatchMemObj, 0);
             ASMMemZeroPage(pvScatchPage);
 
             /* Set revision dword at the beginning of the VMXON structure. */
@@ -414,14 +414,8 @@ static int hmR0InitIntel(void)
             /* Make sure we don't get rescheduled to another CPU during this probe. */
             RTCCUINTREG const fEFlags = ASMIntDisableFlags();
 
-            /* Check CR4.VMXE. */
-            g_HmR0.hwvirt.u.vmx.u64HostCr4 = ASMGetCR4();
-            if (!(g_HmR0.hwvirt.u.vmx.u64HostCr4 & X86_CR4_VMXE))
-            {
-                /* In theory this bit could be cleared behind our back. Which would cause #UD
-                   faults when we try to execute the VMX instructions... */
-                ASMSetCR4(g_HmR0.hwvirt.u.vmx.u64HostCr4 | X86_CR4_VMXE);
-            }
+            /* Enable CR4.VMXE if it isn't already set. */
+            RTCCUINTREG const uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, RTCCUINTREG_MAX);
 
             /*
              * The only way of checking if we're in VMX root mode or not is to try and enter it.
@@ -451,11 +445,11 @@ static int hmR0InitIntel(void)
                 Assert(g_HmR0.hwvirt.u.vmx.fSupported == false);
             }
 
-            /*
-             * Restore CR4 again; don't leave the X86_CR4_VMXE flag set if it was not
-             * set before (some software could incorrectly think it is in VMX mode).
-             */
-            ASMSetCR4(g_HmR0.hwvirt.u.vmx.u64HostCr4);
+            /* Restore CR4.VMXE if it wasn't set prior to us setting it above. */
+            if (!(uOldCr4 & X86_CR4_VMXE))
+                SUPR0ChangeCR4(0 /* fOrMask */, ~X86_CR4_VMXE);
+
+            /* Restore interrupts. */
             ASMSetFlags(fEFlags);
 
             RTR0MemObjFree(hScatchMemObj, false);
