@@ -447,7 +447,7 @@ static int hmR0InitIntel(void)
 
             /* Restore CR4.VMXE if it wasn't set prior to us setting it above. */
             if (!(uOldCr4 & X86_CR4_VMXE))
-                SUPR0ChangeCR4(0 /* fOrMask */, ~X86_CR4_VMXE);
+                SUPR0ChangeCR4(0 /* fOrMask */, ~(uint64_t)X86_CR4_VMXE);
 
             /* Restore interrupts. */
             ASMSetFlags(fEFlags);
