@@ -115,7 +115,7 @@ typedef uint16_t SHCLEVENTSOURCEID;
 typedef SHCLEVENTSOURCEID *PSHCLEVENTSOURCEID;
 
 /** Defines an event ID. */
-typedef uint16_t SHCLEVENTID;
+typedef uint32_t     SHCLEVENTID;
 /** Defines a pointer to a event source ID. */
 typedef SHCLEVENTID *PSHCLEVENTID;
 
