@@ -148,23 +148,20 @@ public:
 
     Bstr &operator=(const Bstr &that)
     {
-        cleanup();
-        copyFrom((const OLECHAR *)that.m_bstr);
+        cleanupAndCopyFrom((const OLECHAR *)that.m_bstr);
         return *this;
     }
 
     Bstr &operator=(CBSTR that)
     {
-        cleanup();
-        copyFrom((const OLECHAR *)that);
+        cleanupAndCopyFrom((const OLECHAR *)that);
         return *this;
     }
 
 #if defined(VBOX_WITH_XPCOM)
     Bstr &operator=(const wchar_t *that)
     {
-        cleanup();
-        copyFrom((const OLECHAR *)that);
+        cleanupAndCopyFrom((const OLECHAR *)that);
         return *this;
     }
 #endif
@@ -886,14 +883,7 @@ public:
 
 protected:
 
-    void cleanup()
-    {
-        if (m_bstr)
-        {
-            ::SysFreeString(m_bstr);
-            m_bstr = NULL;
-        }
-    }
+    void cleanup();
 
     /**
      * Protected internal helper to copy a string. This ignores the previous object
@@ -909,19 +899,10 @@ protected:
      *
      * @throws  std::bad_alloc - the object is representing an empty string.
      */
-    void copyFrom(const OLECHAR *a_bstrSrc)
-    {
-        if (a_bstrSrc && *a_bstrSrc)
-        {
-            m_bstr = ::SysAllocString(a_bstrSrc);
-#ifdef RT_EXCEPTIONS_ENABLED
-            if (!m_bstr)
-                throw std::bad_alloc();
-#endif
-        }
-        else
-            m_bstr = NULL;
-    }
+    void copyFrom(const OLECHAR *a_bstrSrc);
+
+    /** cleanup() + copyFrom() - for assignment operators.  */
+    void cleanupAndCopyFrom(const OLECHAR *a_bstrSrc);
 
     /**
      * Protected internal helper to copy a string. This ignores the previous object
