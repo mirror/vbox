@@ -2130,7 +2130,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
         """
         Tests the guest session environment changes.
         """
-        enmErrInvalidVarName = vbox.ComError.VBOX_E_IPRT_ERROR if self.oTstDrv.fpApiRev >= 6.1 else vbox.ComError.E_INVALIDARG;
+        enmErrInvalidVarName = vbox.ComError.VBOX_E_IPRT_ERROR if self.oTstDrv.fpApiVer >= 6.1 else vbox.ComError.E_INVALIDARG;
         aoTests = [
             # Check basic operations.
             tdTestSessionEx([ # Initial environment is empty.
