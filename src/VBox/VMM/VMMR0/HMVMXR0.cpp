@@ -851,18 +851,20 @@ DECL_FORCE_INLINE(uint64_t) hmR0VmxGetFixedCr0Mask(PCVMCPUCC pVCpu)
     /*
      * Modifications to CR0 bits that VT-x ignores saving/restoring (CD, ET, NW) and
      * to CR0 bits that we require for shadow paging (PG) by the guest must cause VM-exits.
+     *
+     * Furthermore, modifications to any bits that are reserved/unspecified currently
+     * by the Intel spec. must also cause a VM-exit. This prevents unpredictable behavior
+     * when future CPUs specify and use currently reserved/unspecified bits.
      */
     /** @todo Avoid intercepting CR0.PE with unrestricted guest execution. Fix PGM
      *        enmGuestMode to be in-sync with the current mode. See @bugref{6398}
      *        and @bugref{6944}. */
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
+    PCVMCC pVM = pVCpu->CTX_SUFF(pVM);
     return (  X86_CR0_PE
             | X86_CR0_NE
             | (pVM->hm.s.fNestedPaging ? 0 : X86_CR0_WP)
             | X86_CR0_PG
-            | X86_CR0_ET     /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.ET */
-            | X86_CR0_CD     /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.CD */
-            | X86_CR0_NW);   /* Bit ignored on VM-entry and VM-exit. Don't let the guest modify the host CR0.NW */
+            | VMX_EXIT_HOST_CR0_IGNORE_MASK);
 }
 
 
