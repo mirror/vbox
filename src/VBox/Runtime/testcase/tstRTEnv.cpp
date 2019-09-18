@@ -65,6 +65,7 @@ int main()
 
     CHECK(RTEnvGet(k_pszPathVar) != NULL);
     char szBuf[8192];
+    char szBuf2[1024];
     size_t cch;
     CHECK_RC(RTEnvGetEx(RTENV_DEFAULT, k_pszPathVar, NULL, 0, &cch), VINF_SUCCESS);
     CHECK(cch < sizeof(szBuf));
@@ -76,6 +77,10 @@ int main()
     /* ditto for a clone. */
     RTENV Env;
     CHECK_RC(RTEnvClone(&Env, RTENV_DEFAULT), VINF_SUCCESS);
+    RTENV hEnvEq;
+    CHECK_RC(RTEnvCreateEx(&hEnvEq, RTENV_CREATE_F_ALLOW_EQUAL_FIRST_IN_VAR), VINF_SUCCESS);
+    RTENV hEnvNoEq;
+    CHECK_RC(RTEnvCreateEx(&hEnvNoEq, 0), VINF_SUCCESS);
 
     CHECK(RTEnvExistEx(Env, k_pszPathVar));
     CHECK(!RTEnvExistEx(Env, k_pszNonExistantVar));
@@ -86,6 +91,15 @@ int main()
     CHECK_RC(RTEnvGetEx(Env, k_pszPathVar, szBuf, sizeof(szBuf), NULL), VINF_SUCCESS);
     CHECK_RC(RTEnvGetEx(Env, k_pszPathVar, szBuf, 1, &cch), VERR_BUFFER_OVERFLOW);
     CHECK_RC(RTEnvGetEx(Env, k_pszPathVar, szBuf, 1, NULL), VERR_BUFFER_OVERFLOW);
+
+    CHECK_RC(RTEnvGetEx(hEnvEq, k_pszPathVar, szBuf, sizeof(szBuf), NULL), VERR_ENV_VAR_NOT_FOUND);
+    CHECK_RC(RTEnvGetEx(hEnvEq, k_pszPathVar, szBuf, 0, &cch), VERR_ENV_VAR_NOT_FOUND);
+    CHECK_RC(RTEnvGetEx(hEnvEq, "=D:", szBuf, 1, NULL), VERR_ENV_VAR_NOT_FOUND);
+    CHECK_RC(RTEnvGetEx(hEnvNoEq, k_pszPathVar, szBuf, sizeof(szBuf), &cch), VERR_ENV_VAR_NOT_FOUND);
+    CHECK_RC(RTEnvGetEx(hEnvNoEq, k_pszPathVar, szBuf, 1, NULL), VERR_ENV_VAR_NOT_FOUND);
+    RTTestDisableAssertions(hTest);
+    CHECK_RC(RTEnvGetEx(hEnvNoEq, "=D:", szBuf, 1, NULL), VERR_ENV_INVALID_VAR_NAME);
+    RTTestRestoreAssertions(hTest);
 
     /*
      * Set and Unset
@@ -186,6 +200,21 @@ int main()
     CHECK_RC(RTEnvSetEx(Env, "", ""), VERR_ENV_INVALID_VAR_NAME);
     RTTestRestoreAssertions(hTest);
 
+    CHECK_RC(RTEnvSetEx(hEnvEq, "=D:", "D:\\TMP"), VINF_SUCCESS);
+    CHECK_RC(RTEnvGetEx(hEnvEq, "=D:", szBuf, sizeof(szBuf), &cch), VINF_SUCCESS);
+    CHECK_STR(szBuf, "D:\\TMP");
+    RTTESTI_CHECK(RTEnvExistEx(hEnvEq, "=D:") == true);
+    CHECK_RC(RTEnvUnsetEx(hEnvEq, "=D:"), VINF_SUCCESS);
+    CHECK_RC(RTEnvUnsetEx(hEnvEq, "=D:"), VINF_ENV_VAR_NOT_FOUND);
+    RTTESTI_CHECK(RTEnvExistEx(hEnvEq, "=D:") == false);
+
+    RTTestDisableAssertions(hTest);
+    CHECK_RC(RTEnvSetEx(hEnvNoEq, "=D:", "D:\\TMP"), VERR_ENV_INVALID_VAR_NAME);
+    CHECK_RC(RTEnvGetEx(hEnvNoEq, "=D:", szBuf, sizeof(szBuf), &cch), VERR_ENV_INVALID_VAR_NAME);
+    CHECK_RC(RTEnvUnsetEx(hEnvNoEq, "=D:"), VERR_ENV_INVALID_VAR_NAME);
+    RTTESTI_CHECK(RTEnvExistEx(hEnvNoEq, "=D:") == false);
+    RTTestRestoreAssertions(hTest);
+
     /*
      * Put.
      */
@@ -215,6 +244,29 @@ int main()
     CHECK_RC(RTEnvPutEx(Env, "="), VERR_ENV_INVALID_VAR_NAME);
 #endif
     CHECK_RC(RTEnvPutEx(Env, ""), VERR_ENV_INVALID_VAR_NAME);
+    RTTestRestoreAssertions(hTest);
+
+    CHECK_RC(RTEnvPutEx(hEnvEq, "=C:=C:\\"), VINF_SUCCESS);
+    CHECK_RC(RTEnvPutEx(hEnvEq, "=E:=E:\\TEMP"), VINF_SUCCESS);
+    CHECK_RC(RTEnvGetEx(hEnvEq, "=E:", szBuf, sizeof(szBuf), &cch), VINF_SUCCESS);
+    CHECK_STR(szBuf, "E:\\TEMP");
+    RTTESTI_CHECK(RTEnvExistEx(hEnvEq, "=E:") == true);
+    CHECK_RC(RTEnvPutEx(hEnvEq, "=E:"), VINF_SUCCESS);
+    CHECK_RC(RTEnvPutEx(hEnvEq, "=E:"), VINF_ENV_VAR_NOT_FOUND);
+    CHECK_RC(RTEnvGetEx(hEnvEq, "=E:", szBuf, sizeof(szBuf), &cch), VERR_ENV_VAR_NOT_FOUND);
+    CHECK_RC(RTEnvGetEx(hEnvEq, "=C:", szBuf, sizeof(szBuf), &cch), VINF_SUCCESS);
+    CHECK_STR(szBuf, "C:\\");
+    CHECK_RC(RTEnvGetByIndexEx(hEnvEq, 0, szBuf2, sizeof(szBuf2), szBuf, sizeof(szBuf)), VINF_SUCCESS);
+    CHECK_STR(szBuf2, "=C:");
+    CHECK_STR(szBuf, "C:\\");
+    CHECK_RC(RTEnvGetByIndexEx(hEnvEq, 1, szBuf2, sizeof(szBuf2), szBuf, sizeof(szBuf)), VERR_ENV_VAR_NOT_FOUND);
+    RTTESTI_CHECK(RTEnvExistEx(hEnvEq, "=C:") == true);
+
+    RTTestDisableAssertions(hTest);
+    CHECK_RC(RTEnvPutEx(hEnvNoEq, "=C:=C:\\"), VERR_ENV_INVALID_VAR_NAME);
+    CHECK_RC(RTEnvPutEx(hEnvNoEq, "=E:=E:\\TEMP"), VERR_ENV_INVALID_VAR_NAME);
+    CHECK_RC(RTEnvPutEx(hEnvNoEq, "=E:"), VERR_ENV_INVALID_VAR_NAME);
+    RTTESTI_CHECK(RTEnvExistEx(hEnvNoEq, "=C:") == false);
     RTTestRestoreAssertions(hTest);
 
     /*

@@ -80,8 +80,8 @@ RT_C_DECLS_END
 
 
 /** @def RTENV_ALLOW_EQUAL_FIRST_IN_VAR
- * Allows a variable to start with an '=' sign.  This is used by windows to
- * maintain CWDs of non-current drives.
+ * Allows a variable to start with an '=' sign by default.  This is used by
+ * windows to maintain CWDs of non-current drives.
  * @note Not supported by _wputenv AFAIK. */
 #if defined(RT_OS_WINDOWS) || defined(DOXYGEN_RUNNING)
 # define RTENV_ALLOW_EQUAL_FIRST_IN_VAR 1
@@ -625,7 +625,6 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
     AssertPtrReturn(pszValue, VERR_INVALID_POINTER);
     size_t const cchVar = strlen(pszVar);
     AssertReturn(cchVar > 0, VERR_ENV_INVALID_VAR_NAME);
-#ifdef RTENV_ALLOW_EQUAL_FIRST_IN_VAR
     char const *pszEq = (char const *)memchr(pszVar, '=', cchVar);
     if (!pszEq)
     { /* likely */ }
@@ -638,9 +637,6 @@ RTDECL(int) RTEnvSetEx(RTENV Env, const char *pszVar, const char *pszValue)
         AssertReturn(pIntEnv->fFirstEqual, VERR_ENV_INVALID_VAR_NAME);
         AssertReturn(memchr(pszVar + 1, '=', cchVar - 1) == NULL, VERR_ENV_INVALID_VAR_NAME);
     }
-#else
-    AssertReturn(memchr(pszVar, '=', cchVar) == NULL, VERR_ENV_INVALID_VAR_NAME);
-#endif
 
     return rtEnvSetExWorker(Env, pszVar, cchVar, pszValue);
 }
@@ -741,7 +737,6 @@ RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
     int rc;
     AssertPtrReturn(pszVarEqualValue, VERR_INVALID_POINTER);
     const char *pszEq = strchr(pszVarEqualValue, '=');
-#ifdef RTENV_ALLOW_EQUAL_FIRST_IN_VAR
     if (   pszEq == pszVarEqualValue
         && Env != RTENV_DEFAULT)
     {
@@ -751,7 +746,6 @@ RTDECL(int) RTEnvPutEx(RTENV Env, const char *pszVarEqualValue)
         if (pIntEnv->fFirstEqual)
             pszEq = strchr(pszVarEqualValue + 1, '=');
     }
-#endif
     if (!pszEq)
         rc = RTEnvUnsetEx(Env, pszVarEqualValue);
     else
@@ -1224,6 +1218,8 @@ RTDECL(int) RTEnvGetByIndexEx(RTENV hEnv, uint32_t iVar, char *pszVar, size_t cb
     {
         const char *pszSrcVar   = pIntEnv->papszEnv[iVar];
         const char *pszSrcValue = strchr(pszSrcVar, '=');
+        if (pszSrcValue == pszSrcVar && pIntEnv->fFirstEqual)
+            pszSrcValue = strchr(pszSrcVar + 1, '=');
         bool        fHasEqual   = pszSrcValue != NULL;
         if (pszSrcValue)
         {
