@@ -498,10 +498,10 @@ typedef struct _VBoxShClRootListHdrMsg
 
     VBoxShClRootListParms ReqParms;
     /** uint64_t, in/out: Number of total root list entries. */
-    HGCMFunctionParameter      cRoots;
+    HGCMFunctionParameter cRoots;
 } VBoxShClRootListHdrMsg;
 
-#define VBOX_SHCL_CPARMS_ROOT_LIST_HDR 2
+#define VBOX_SHCL_CPARMS_ROOT_LIST_HDR 3
 
 typedef struct _VBoxShClRootListEntryParms
 {
@@ -771,18 +771,18 @@ typedef struct _VBoxShClErrorMsg
 typedef struct _SHCLFILEDATA
 {
     /** Current file data chunk. */
-    void                       *pvData;
+    void    *pvData;
     /** Size (in bytes) of current data chunk. */
-    uint32_t                    cbData;
+    uint32_t cbData;
     /** Checksum for current file data chunk. */
-    void                       *pvChecksum;
+    void    *pvChecksum;
     /** Size (in bytes) of current data chunk. */
-    uint32_t                    cbChecksum;
+    uint32_t cbChecksum;
 } SHCLFILEDATA, *PSHCLFILEDATA;
 
 typedef struct _SHCLERRORDATA
 {
-    int32_t                     rc;
+    int32_t rc;
 } SHCLERRORDATA, *PSHCLERRORDATA;
 
 bool VBoxSvcClipboardGetHeadless(void);

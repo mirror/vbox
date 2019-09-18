@@ -800,8 +800,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
                                    if (RT_SUCCESS(rc))
                                    {
-                                       rc = SharedClipboardTransferLTransferSetRoots(pTransfer,
-                                                                                     papszList, cbList + 1 /* Include termination */);
+                                       rc = SharedClipboardTransferSetRoots(pTransfer,
+                                                                            papszList, cbList + 1 /* Include termination */);
                                        if (RT_SUCCESS(rc))
                                        {
                                            PSHCLWRITETHREADCTX pThreadCtx
@@ -909,8 +909,8 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
                                if (RT_SUCCESS(rc))
                                {
-                                   rc = SharedClipboardTransferLTransferSetRoots(pTransfer,
-                                                                                 papszList, cbList + 1 /* Include termination */);
+                                   rc = SharedClipboardTransferSetRoots(pTransfer,
+                                                                        papszList, cbList + 1 /* Include termination */);
                                    if (RT_SUCCESS(rc))
                                    {
                                        PSHCLWRITETHREADCTX pThreadCtx

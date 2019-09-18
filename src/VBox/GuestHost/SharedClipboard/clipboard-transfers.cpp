@@ -1931,7 +1931,7 @@ int SharedClipboardTransferSetInterface(PSHCLTRANSFER pTransfer,
  *
  * @param   pTransfer           Transfer to clear transfer root list for.
  */
-static void sharedClipboardTransferListTransferRootsClear(PSHCLTRANSFER pTransfer)
+static void sharedClipboardTransferListRootsClear(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturnVoid(pTransfer);
 
@@ -1964,7 +1964,7 @@ static void sharedClipboardTransferListTransferRootsClear(PSHCLTRANSFER pTransfe
  *                              All entries must have the same root path.
  * @param   cbRoots             Size (in bytes) of string list.
  */
-int SharedClipboardTransferLTransferSetRoots(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
+int SharedClipboardTransferSetRoots(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
 {
     AssertPtrReturn(pTransfer,      VERR_INVALID_POINTER);
     AssertPtrReturn(pszRoots,       VERR_INVALID_POINTER);
@@ -1975,7 +1975,7 @@ int SharedClipboardTransferLTransferSetRoots(PSHCLTRANSFER pTransfer, const char
 
     int rc = VINF_SUCCESS;
 
-    sharedClipboardTransferListTransferRootsClear(pTransfer);
+    sharedClipboardTransferListRootsClear(pTransfer);
 
     char  *pszPathRootAbs = NULL;
 
@@ -2038,7 +2038,7 @@ void SharedClipboardTransferReset(PSHCLTRANSFER pTransfer)
 
     LogFlowFuncEnter();
 
-    sharedClipboardTransferListTransferRootsClear(pTransfer);
+    sharedClipboardTransferListRootsClear(pTransfer);
 }
 
 /**
@@ -2060,7 +2060,7 @@ SharedClipboardArea *SharedClipboardTransferGetArea(PSHCLTRANSFER pTransfer)
  * @returns Root list entry count.
  * @param   pTransfer           Clipboard transfer to return root entry count for.
  */
-uint32_t SharedClipboardTransferLTransferRootsCount(PSHCLTRANSFER pTransfer)
+uint32_t SharedClipboardTransferRootsCount(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, 0);
 
@@ -2074,7 +2074,7 @@ uint32_t SharedClipboardTransferLTransferRootsCount(PSHCLTRANSFER pTransfer)
  * @param   pTransfer           Clipboard transfer to get root list entry from.
  * @param   uIdx                Index of root list entry to return.
  */
-inline PSHCLLISTROOT sharedClipboardTransferLTransferRootsGet(PSHCLTRANSFER pTransfer, uint32_t uIdx)
+inline PSHCLLISTROOT sharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, uint32_t uIdx)
 {
     if (uIdx >= pTransfer->cRoots)
         return NULL;
@@ -2094,7 +2094,7 @@ inline PSHCLLISTROOT sharedClipboardTransferLTransferRootsGet(PSHCLTRANSFER pTra
  * @param   uIndex              Index (zero-based) of entry to get.
  * @param   pEntry              Where to store the returned entry on success.
  */
-int SharedClipboardTransferLTransferRootsEntry(PSHCLTRANSFER pTransfer,
+int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer,
                                                uint64_t uIndex, PSHCLROOTLISTENTRY pEntry)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2105,7 +2105,7 @@ int SharedClipboardTransferLTransferRootsEntry(PSHCLTRANSFER pTransfer,
 
     int rc;
 
-    PSHCLLISTROOT pRoot = sharedClipboardTransferLTransferRootsGet(pTransfer, uIndex);
+    PSHCLLISTROOT pRoot = sharedClipboardTransferRootsGet(pTransfer, uIndex);
     AssertPtrReturn(pRoot, VERR_INVALID_PARAMETER);
 
     /* Make sure that we only advertise relative source paths, not absolute ones. */
@@ -2158,7 +2158,7 @@ int SharedClipboardTransferLTransferRootsEntry(PSHCLTRANSFER pTransfer,
  * @param   pTransfer           Clipboard transfer to return root entries for.
  * @param   ppRootList          Where to store the root list on success.
  */
-int SharedClipboardTransferLTransferRootsAsList(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
+int SharedClipboardTransferRootsAsList(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
 {
     AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
     AssertPtrReturn(ppRootList, VERR_INVALID_POINTER);
@@ -2185,7 +2185,7 @@ int SharedClipboardTransferLTransferRootsAsList(PSHCLTRANSFER pTransfer, PSHCLRO
             {
                 for (uint64_t i = 0; i < cRoots; ++i)
                 {
-                    rc = SharedClipboardTransferLTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
+                    rc = SharedClipboardTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
                     if (RT_FAILURE(rc))
                         break;
                 }

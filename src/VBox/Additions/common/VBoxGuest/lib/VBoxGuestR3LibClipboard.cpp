@@ -1420,12 +1420,12 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             {
                 PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                 SHCLROOTLISTHDR rootListHdr;
                 RT_ZERO(rootListHdr);
 
-                rootListHdr.cRoots = SharedClipboardTransferLTransferRootsCount(pTransfer);
+                rootListHdr.cRoots = SharedClipboardTransferRootsCount(pTransfer);
 
                 LogFlowFunc(("cRoots=%RU32\n", rootListHdr.cRoots));
 
@@ -1443,10 +1443,10 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             {
                 PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                 SHCLROOTLISTENTRY rootListEntry;
-                rc = SharedClipboardTransferLTransferRootsEntry(pTransfer, uIndex, &rootListEntry);
+                rc = SharedClipboardTransferRootsEntry(pTransfer, uIndex, &rootListEntry);
                 if (RT_SUCCESS(rc))
                     rc = VbglR3ClipboardRootListEntryReadReply(pCmdCtx, uIndex, &rootListEntry);
             }
@@ -1464,7 +1464,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 {
                     PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                     VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                    AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                    AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     LogFlowFunc(("pszPath=%s\n", openParmsList.pszPath));
 
@@ -1490,7 +1490,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             {
                 PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                 rc = SharedClipboardTransferListClose(pTransfer, hList);
 
@@ -1513,7 +1513,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             {
                 PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                 SHCLLISTHDR hdrList;
                 rc = SharedClipboardTransferListGetHeader(pTransfer, hList, &hdrList);
@@ -1558,7 +1558,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 {
                     PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                     VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                    AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                    AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     rc = SharedClipboardTransferListRead(pTransfer, hList, &entryList);
                     if (RT_SUCCESS(rc))
@@ -1600,7 +1600,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                 {
                     PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                     VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                    AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                    AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                     SHCLOBJHANDLE hObj;
                     rc = SharedClipboardTransferObjectOpen(pTransfer, &openParms, &hObj);
@@ -1624,7 +1624,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             {
                 PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                 rc = SharedClipboardTransferObjectClose(pTransfer, hObj);
 
@@ -1646,7 +1646,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             {
                 PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(pTransferCtx,
                                                                                 VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID));
-                AssertPtrBreakStmt(pTransfer, VERR_NOT_FOUND);
+                AssertPtrBreakStmt(pTransfer, rc = VERR_NOT_FOUND);
 
                 AssertBreakStmt(pCmdCtx->cbChunkSize, rc = VERR_INVALID_PARAMETER);
 

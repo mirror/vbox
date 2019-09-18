@@ -1094,13 +1094,13 @@ bool SharedClipboardTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTH
 int SharedClipboardTransferPrepare(PSHCLTRANSFER pTransfer);
 int SharedClipboardTransferSetInterface(PSHCLTRANSFER pTransfer,
                                            PSHCLPROVIDERCREATIONCTX pCreationCtx);
-int SharedClipboardTransferLTransferSetRoots(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
+int SharedClipboardTransferSetRoots(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
 void SharedClipboardTransferReset(PSHCLTRANSFER pTransfer);
 SharedClipboardArea *SharedClipboardTransferGetArea(PSHCLTRANSFER pTransfer);
 
-uint32_t SharedClipboardTransferLTransferRootsCount(PSHCLTRANSFER pTransfer);
-int SharedClipboardTransferLTransferRootsEntry(PSHCLTRANSFER pTransfer, uint64_t uIndex, PSHCLROOTLISTENTRY pEntry);
-int SharedClipboardTransferLTransferRootsAsList(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList);
+uint32_t SharedClipboardTransferRootsCount(PSHCLTRANSFER pTransfer);
+int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer, uint64_t uIndex, PSHCLROOTLISTENTRY pEntry);
+int SharedClipboardTransferRootsAsList(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList);
 
 SHCLTRANSFERID SharedClipboardTransferGetID(PSHCLTRANSFER pTransfer);
 SHCLSOURCE SharedClipboardTransferGetSource(PSHCLTRANSFER pTransfer);
