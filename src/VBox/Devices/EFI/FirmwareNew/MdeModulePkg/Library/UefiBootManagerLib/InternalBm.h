@@ -81,6 +81,11 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
     #endif
 #endif
 
+#ifdef VBOX
+/* Support for booting Apple macOS. */
+# define VBOX_EFI_APPLE_MEDIA_FILE_NAME L"\\System\\Library\\CoreServices\\boot.efi"
+#endif
+
 typedef enum {
   BmAcpiFloppyBoot,
   BmHardwareDeviceBoot,

@@ -993,6 +993,45 @@ BmExpandPartitionDevicePath (
   return FullPath;
 }
 
+#ifdef VBOX
+/**
+ * Checks which filename to try loading by inspecting what is existing on the provided
+ * simple filesystem protocol provider.
+ *
+ * This is required to support booting macOS as it stores the efi OS loader in a non standard location
+ * and we have to support both styles without rewriting half of the boot manager library.
+ */
+EFI_STATUS VBoxBmQueryMediaFileNameForSFs(EFI_HANDLE hSFs, CHAR16 **ppwszFileName)
+{
+  EFI_STATUS                          Status = EFI_SUCCESS;
+  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL     *pSFs  = NULL;
+  EFI_FILE_PROTOCOL                   *pRoot = NULL;
+  EFI_FILE_PROTOCOL                   *pFile = NULL;
+
+  *ppwszFileName = EFI_REMOVABLE_MEDIA_FILE_NAME;
+
+  Status = gBS->HandleProtocol(hSFs, &gEfiSimpleFileSystemProtocolGuid, &pSFs);
+  if (!EFI_ERROR(Status))
+  {
+    Status = pSFs->OpenVolume(pSFs, &pRoot);
+    if (!EFI_ERROR(Status))
+    {
+      Status = pRoot->Open(pRoot, &pFile, VBOX_EFI_APPLE_MEDIA_FILE_NAME, EFI_FILE_MODE_READ,
+                           EFI_FILE_READ_ONLY | EFI_FILE_HIDDEN | EFI_FILE_SYSTEM);
+      if (!EFI_ERROR(Status))
+      {
+        *ppwszFileName = VBOX_EFI_APPLE_MEDIA_FILE_NAME;
+        pFile->Close(pFile);
+      }
+
+      pRoot->Close(pRoot);
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+#endif
+
 /**
   Expand the media device path which points to a BlockIo or SimpleFileSystem instance
   by appending EFI_REMOVABLE_MEDIA_FILE_NAME.
@@ -1022,8 +1061,12 @@ BmExpandMediaDevicePath (
   UINTN                               NumberSimpleFileSystemHandles;
   UINTN                               Index;
   BOOLEAN                             GetNext;
+#ifdef VBOX
+  CHAR16                              *pwszFilename = NULL;
+#endif
 
   GetNext = (BOOLEAN)(FullPath == NULL);
+
   //
   // Check whether the device is connected
   //
@@ -1032,7 +1075,15 @@ BmExpandMediaDevicePath (
   if (!EFI_ERROR (Status)) {
     ASSERT (IsDevicePathEnd (TempDevicePath));
 
+#ifndef VBOX
     NextFullPath = FileDevicePath (Handle, EFI_REMOVABLE_MEDIA_FILE_NAME);
+#else
+    Status = VBoxBmQueryMediaFileNameForSFs(Handle, &pwszFilename);
+    if (!EFI_ERROR(Status))
+      NextFullPath = FileDevicePath (Handle, pwszFilename);
+    else
+      return NULL;
+#endif
     //
     // For device path pointing to simple file system, it only expands to one full path.
     //
@@ -1100,7 +1151,15 @@ BmExpandMediaDevicePath (
     // Check whether the device path of boot option is part of the SimpleFileSystem handle's device path
     //
     if ((Size <= TempSize) && (CompareMem (TempDevicePath, DevicePath, Size) == 0)) {
+#ifndef VBOX
       NextFullPath = FileDevicePath (SimpleFileSystemHandles[Index], EFI_REMOVABLE_MEDIA_FILE_NAME);
+#else
+      Status = VBoxBmQueryMediaFileNameForSFs(SimpleFileSystemHandles[Index], &pwszFilename);
+      if (!EFI_ERROR(Status))
+        NextFullPath = FileDevicePath (SimpleFileSystemHandles[Index], pwszFilename);
+      else
+        return NULL;
+#endif
       if (GetNext) {
         break;
       } else {
