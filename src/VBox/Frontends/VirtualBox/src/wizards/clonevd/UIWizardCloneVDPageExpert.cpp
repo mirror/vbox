@@ -29,7 +29,6 @@
 #include "QIToolButton.h"
 #include "UIConverter.h"
 #include "UIIconPool.h"
-#include "UIMediaComboBox.h"
 #include "UIMessageCenter.h"
 #include "UIWizardCloneVD.h"
 #include "UIWizardCloneVDPageExpert.h"

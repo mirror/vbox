@@ -33,6 +33,8 @@
 
 /* GUI includes: */
 #include "QITreeView.h"
+#include "UIDefs.h"
+#include "UIMediumDefs.h"
 #include "UISettingsPage.h"
 #include "UIMachineSettingsStorage.gen.h"
 
