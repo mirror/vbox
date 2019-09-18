@@ -184,8 +184,6 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
     else
     {
         m_fFullMediumEnumerationRequested = false;
-        addMediaToMap(uiCommon().host().GetDVDDrives(), guiMedia);
-        addMediaToMap(uiCommon().virtualBox().GetDVDImages(), guiMedia);
         addMediaToMap(comMedia, guiMedia);
     }
 

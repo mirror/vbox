@@ -60,9 +60,13 @@ void UIMediaComboBox::repopulate()
 {
     /* Start medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().startMediumEnumeration();
-    else
-        refresh();
+    {
+        CMediumVector comMedia;
+        comMedia << uiCommon().host().GetDVDDrives();
+        comMedia << uiCommon().virtualBox().GetDVDImages();
+        uiCommon().enumerateAdditionalMedia(comMedia);
+    }
+    refresh();
 }
 
 void UIMediaComboBox::setCurrentItem(const QUuid &uItemId)
