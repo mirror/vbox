@@ -277,9 +277,7 @@ INF VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
 INF VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
 INF VBoxPkg/VBoxFsDxe/VBoxHfs.inf
 INF VBoxPkg/VBoxSysTables/VBoxSysTables.inf
-#INF VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
- # we need it for VBoxAppleSim
-#INF IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe.inf
+INF VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
 INF MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
 !endif
 

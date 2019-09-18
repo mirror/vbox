@@ -891,9 +891,7 @@
  }
  VBoxPkg/VBoxFsDxe/VBoxHfs.inf
  VBoxPkg/VBoxSysTables/VBoxSysTables.inf
- #VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
- # we need it for VBoxAppleSim
- #IntelFrameworkModulePkg/Universal/DataHubDxe/DataHubDxe.inf
+ VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
 !endif
 
   #

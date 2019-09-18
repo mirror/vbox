@@ -39,6 +39,7 @@
         VBoxAppleSim.c
         Cpu.c
         Console.c
+        DataHub.c
 
 [Packages]
         MdePkg/MdePkg.dec
