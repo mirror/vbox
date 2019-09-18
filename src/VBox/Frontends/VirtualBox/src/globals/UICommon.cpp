@@ -2563,7 +2563,7 @@ void UICommon::startMediumEnumeration(const CMediumVector &comMedia /* = CMedium
     }
 }
 
-void UICommon::enumerateAdditionalMedium(const CMedium &comMedium)
+void UICommon::enumerateAdditionalMedia(const CMediumVector &comMedia)
 {
     /* Make sure UICommon is already valid: */
     AssertReturnVoid(m_fValid);
@@ -2582,7 +2582,7 @@ void UICommon::enumerateAdditionalMedium(const CMedium &comMedium)
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         if (m_pMediumEnumerator)
-            m_pMediumEnumerator->enumerateAdditionalMedium(comMedium);
+            m_pMediumEnumerator->enumerateAdditionalMedia(comMedia);
         m_meCleanupProtectionToken.unlock();
     }
 }
@@ -3347,7 +3347,7 @@ QString UICommon::details(const CMedium &comMedium, bool fPredictDiff, bool fUse
     if (!comMedium.isNull() && guiMedium.isNull())
     {
         /* UI medium may be new and not among our media, request enumeration: */
-        enumerateAdditionalMedium(comMedium);
+        enumerateAdditionalMedia(CMediumVector() << comMedium);
 
         /* Search for corresponding UI medium again: */
         guiMedium = medium(uMediumID);
