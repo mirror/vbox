@@ -245,10 +245,9 @@ NTSTATUS VBoxUsbMonQueryBusRelations(PDEVICE_OBJECT pDevObj, PFILE_OBJECT pFileO
     return Status;
 }
 
-VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULONG fFlags)
+VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker)
 {
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
-    RT_NOREF1(fFlags);
     PWSTR szwHubList;
     Status = IoGetDeviceInterfaces(&GUID_DEVINTERFACE_USB_HUB, NULL, 0, &szwHubList);
     if (Status != STATUS_SUCCESS)
@@ -272,7 +271,7 @@ VOID vboxUsbMonHubDevWalk(PFNVBOXUSBMONDEVWALKER pfnWalker, PVOID pvWalker, ULON
                  * It is the paged memory and we cannot use it in logger cause it increases the IRQL
                  */
                 LOG(("IoGetDeviceObjectPointer returned %p %p", pHubDevObj, pHubFileObj));
-                if (!pfnWalker(pHubFileObj, pHubDevObj, pHubDevObj, pvWalker))
+                if (!pfnWalker(pHubFileObj, pHubDevObj, pvWalker))
                 {
                     LOG(("the walker said to stop"));
                     ObDereferenceObject(pHubFileObj);
@@ -767,9 +766,9 @@ static void vboxUsbMonLogError(NTSTATUS ErrCode, NTSTATUS ReturnedStatus, ULONG 
     }
 }
 
-static DECLCALLBACK(BOOLEAN) vboxUsbMonHookDrvObjWalker(PFILE_OBJECT pFile, PDEVICE_OBJECT pTopDo, PDEVICE_OBJECT pHubDo, PVOID pvContext)
+static DECLCALLBACK(BOOLEAN) vboxUsbMonHookDrvObjWalker(PFILE_OBJECT pHubFile, PDEVICE_OBJECT pHubDo, PVOID pvContext)
 {
-    RT_NOREF3(pFile, pTopDo, pvContext);
+    RT_NOREF2(pHubFile, pvContext);
     PDRIVER_OBJECT pDrvObj = pHubDo->DriverObject;
 
     /* First we try to figure out if we are already hooked to this driver. */
@@ -823,7 +822,7 @@ static DECLCALLBACK(BOOLEAN) vboxUsbMonHookDrvObjWalker(PFILE_OBJECT pFile, PDEV
  */
 static NTSTATUS vboxUsbMonInstallAllHooks()
 {
-    vboxUsbMonHubDevWalk(vboxUsbMonHookDrvObjWalker, NULL, VBOXUSBMONHUBWALK_F_ALL);
+    vboxUsbMonHubDevWalk(vboxUsbMonHookDrvObjWalker, NULL);
     return STATUS_SUCCESS;
 }
 

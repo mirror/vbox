@@ -856,20 +856,19 @@ typedef struct VBOXUSBFLTCHECKWALKER
     PVBOXUSBFLTCTX pContext;
 } VBOXUSBFLTCHECKWALKER, *PVBOXUSBFLTCHECKWALKER;
 
-static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pFile, PDEVICE_OBJECT pTopDo,
+static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pHubFile,
                                                          PDEVICE_OBJECT pHubDo, PVOID pvContext)
 {
-    RT_NOREF1(pHubDo);
     PVBOXUSBFLTCHECKWALKER pData = (PVBOXUSBFLTCHECKWALKER)pvContext;
     PVBOXUSBFLTCTX pContext = pData->pContext;
 
-    LOG(("Visiting pFile(0x%p), pTopDo(0x%p), pHubDo(0x%p), oContext(0x%p)", pFile, pTopDo, pHubDo, pContext));
+    LOG(("Visiting pHubFile(0x%p), pHubDo(0x%p), oContext(0x%p)", pHubFile, pHubDo, pContext));
     KIRQL Irql = KeGetCurrentIrql();
     ASSERT_WARN(Irql == PASSIVE_LEVEL, ("unexpected IRQL (%d)", Irql));
 
     PDEVICE_RELATIONS pDevRelations = NULL;
 
-    NTSTATUS Status = VBoxUsbMonQueryBusRelations(pTopDo, pFile, &pDevRelations);
+    NTSTATUS Status = VBoxUsbMonQueryBusRelations(pHubDo, pHubFile, &pDevRelations);
     if (Status == STATUS_SUCCESS && pDevRelations)
     {
         ULONG cReplugPdos = pDevRelations->Count;
@@ -965,13 +964,13 @@ static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pFile, PDE
                     continue;
 
                 Status = vboxUsbFltPdoReplug(pDevRelations->Objects[k]);
-                ASSERT_WARN(Status == STATUS_SUCCESS, ("vboxUsbFltPdoReplug ailed Status(0x%x)", Status));
+                ASSERT_WARN(Status == STATUS_SUCCESS, ("vboxUsbFltPdoReplug failed! Status(0x%x)", Status));
                 ObDereferenceObject(pDevRelations->Objects[k]);
                 if (!--cReplugPdos)
                     break;
             }
 
-            ASSERT_WARN(!cReplugPdos, ("cReplugPdosreached zero!"));
+            ASSERT_WARN(!cReplugPdos, ("cReplugPdos reached zero!"));
         }
 
         vboxUsbFltReplugList(&ReplugDevList);
@@ -980,11 +979,11 @@ static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pFile, PDE
     }
     else
     {
-        WARN(("VBoxUsbMonQueryBusRelations failed for DO(0x%p), Status(0x%x), pDevRelations(0x%p)",
-                pTopDo, Status, pDevRelations));
+        WARN(("VBoxUsbMonQueryBusRelations failed for hub DO(0x%p), Status(0x%x), pDevRelations(0x%p)",
+                pHubDo, Status, pDevRelations));
     }
 
-    LOG(("Done Visiting pFile(0x%p), pTopDo(0x%p), pHubDo(0x%p), oContext(0x%p)", pFile, pTopDo, pHubDo, pContext));
+    LOG(("Done Visiting pHubFile(0x%p), pHubDo(0x%p), oContext(0x%p)", pHubFile, pHubDo, pContext));
 
     return TRUE;
 }
@@ -998,7 +997,7 @@ NTSTATUS VBoxUsbFltFilterCheck(PVBOXUSBFLTCTX pContext)
 
     VBOXUSBFLTCHECKWALKER Data;
     Data.pContext = pContext;
-    vboxUsbMonHubDevWalk(vboxUsbFltFilterCheckWalker, &Data, VBOXUSBMONHUBWALK_F_FDO);
+    vboxUsbMonHubDevWalk(vboxUsbFltFilterCheckWalker, &Data);
 
     LOG(("DONE Running filters, Context (0x%p)", pContext));
 
