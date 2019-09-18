@@ -487,10 +487,10 @@ public:
         void enumerateAdditionalMedium(const CMedium &comMedium);
         /** Calls refresh for each medium which has been already enumerated. */
         void refreshMedia();
-        /** Returns whether medium-enumeration is in progress. */
-        bool isMediumEnumerationInProgress() const;
         /** Returns whether full medium-enumeration is requested. */
         bool isFullMediumEnumerationRequested() const;
+        /** Returns whether any medium-enumeration is in progress. */
+        bool isMediumEnumerationInProgress() const;
         /** Returns enumerated medium with certain @a uMediumID. */
         UIMedium medium(const QUuid &uMediumID) const;
         /** Returns enumerated medium IDs. */

@@ -2610,18 +2610,18 @@ void UICommon::refreshMedia()
     m_pMediumEnumerator->refreshMedia();
 }
 
-bool UICommon::isMediumEnumerationInProgress() const
-{
-    /* Redirect request to medium-enumerator: */
-    return    m_pMediumEnumerator
-           && m_pMediumEnumerator->isMediumEnumerationInProgress();
-}
-
 bool UICommon::isFullMediumEnumerationRequested() const
 {
     /* Redirect request to medium-enumerator: */
     return    m_pMediumEnumerator
            && m_pMediumEnumerator->isFullMediumEnumerationRequested();
+}
+
+bool UICommon::isMediumEnumerationInProgress() const
+{
+    /* Redirect request to medium-enumerator: */
+    return    m_pMediumEnumerator
+           && m_pMediumEnumerator->isMediumEnumerationInProgress();
 }
 
 UIMedium UICommon::medium(const QUuid &uMediumID) const

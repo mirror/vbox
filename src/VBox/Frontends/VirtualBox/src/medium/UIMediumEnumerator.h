@@ -75,10 +75,10 @@ public:
     /** Creates UIMedium thus caching it internally on the basis of passed @a guiMedium information. */
     void createMedium(const UIMedium &guiMedium);
 
-    /** Returns whether consolidated medium-enumeration process is in progress. */
-    bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
     /** Returns whether full consolidated medium-enumeration process is requested. */
-    bool isFullMediumEnumerationRequested() const { return m_fMediumEnumerationRequested; }
+    bool isFullMediumEnumerationRequested() const { return m_fFullMediumEnumerationRequested; }
+    /** Returns whether any consolidated medium-enumeration process is in progress. */
+    bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
     /** Makes a request to enumerate specified @a comMedia.
       * @note  Previous map will be replaced with the new one, values present in both
       *        maps will be merged from the previous to new one, keep that all in mind.
@@ -154,10 +154,10 @@ private:
       *                 IDs to be appended with newly enumerated. */
     void enumerateAllMediaOfMediumWithId(const QUuid &uMediumId, QList<QUuid> &result);
 
-    /** Holds whether consolidated medium-enumeration process is in progress. */
-    bool  m_fMediumEnumerationInProgress;
     /** Holds whether full consolidated medium-enumeration process is requested. */
-    bool  m_fMediumEnumerationRequested;
+    bool  m_fFullMediumEnumerationRequested;
+    /** Holds whether any consolidated medium-enumeration process is in progress. */
+    bool  m_fMediumEnumerationInProgress;
 
     /** Holds a set of current medium-enumeration tasks. */
     QSet<UITask*>  m_tasks;

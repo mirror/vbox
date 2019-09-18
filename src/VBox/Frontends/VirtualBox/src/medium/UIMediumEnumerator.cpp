@@ -96,8 +96,8 @@ private:
 *********************************************************************************************************************************/
 
 UIMediumEnumerator::UIMediumEnumerator()
-    : m_fMediumEnumerationInProgress(false)
-    , m_fMediumEnumerationRequested(false)
+    : m_fFullMediumEnumerationRequested(false)
+    , m_fMediumEnumerationInProgress(false)
 {
     /* Allow UIMedium to be used in inter-thread signals: */
     qRegisterMetaType<UIMedium>();
@@ -174,7 +174,7 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
      * wizard instead and enumerate only comMedia in 'else' case. */
     if (comMedia.isEmpty())
     {
-        m_fMediumEnumerationRequested = true;
+        m_fFullMediumEnumerationRequested = true;
         addMediaToMap(uiCommon().virtualBox().GetHardDisks(), media);
         addMediaToMap(uiCommon().host().GetDVDDrives(), media);
         addMediaToMap(uiCommon().virtualBox().GetDVDImages(), media);
@@ -183,7 +183,7 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
     }
     else
     {
-        m_fMediumEnumerationRequested = false;
+        m_fFullMediumEnumerationRequested = false;
         addMediaToMap(uiCommon().host().GetDVDDrives(), media);
         addMediaToMap(uiCommon().virtualBox().GetDVDImages(), media);
         addMediaToMap(comMedia, media);
