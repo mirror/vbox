@@ -195,10 +195,9 @@ void VBoxAboutDlg::prepareCloseButton()
         QPushButton *pCloseButton = pButtonBox->addButton(QDialogButtonBox::Close);
         AssertPtrReturnVoid(pCloseButton);
         /* Prepare close-button: */
-        connect(pButtonBox, SIGNAL(rejected()), this, SLOT(reject()));
+        connect(pButtonBox, &QDialogButtonBox::rejected, this, &VBoxAboutDlg::reject);
 
         /* Add button-box to the main-layout: */
         m_pMainLayout->addWidget(pButtonBox);
     }
 }
-
