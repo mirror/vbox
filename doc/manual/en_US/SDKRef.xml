@@ -1541,7 +1541,7 @@ virtualBoxManager = VirtualBoxManager("WEBSERVICE",
 
         <screen>from vboxapi import VirtualBoxManager
 mgr = VirtualBoxManager(None, None)
-vbox = mgr.vbox
+vbox = mgr.getVirtualBox()
 name = "Linux"
 mach = vbox.findMachine(name)
 session = mgr.getSessionObject(vbox)
@@ -1555,7 +1555,7 @@ mgr.closeMachineSession(session)
         </para>
         <screen>from vboxapi import VirtualBoxManager
 mgr = VirtualBoxManager(None, None)
-vbox = mgr.vbox
+vbox = mgr.getVirtualBox()
 
 for m in mgr.getArray(vbox, 'machines'):
     print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
