@@ -2172,26 +2172,28 @@ QList<int> UISession::listOfVisibleWindows() const
     return visibleWindows;
 }
 
-CMediumVector UISession::getMachineMedia() const
+CMediumVector UISession::machineMedia() const
 {
-    CMediumVector media;
+    CMediumVector comMedia;
+    /* Enumerate all the controllers: */
     foreach (const CStorageController &comController, m_machine.GetStorageControllers())
     {
-        QString strAttData;
         /* Enumerate all the attachments: */
         foreach (const CMediumAttachment &comAttachment, m_machine.GetMediumAttachmentsOfController(comController.GetName()))
         {
-            /* Skip unrelated attachments: */
-            if (comAttachment.GetType() != KDeviceType_HardDisk &&
-                comAttachment.GetType() != KDeviceType_Floppy &&
-                comAttachment.GetType() != KDeviceType_DVD)
+            /* Skip unrelated device types: */
+            const KDeviceType enmDeviceType = comAttachment.GetType();
+            if (   enmDeviceType != KDeviceType_HardDisk
+                && enmDeviceType != KDeviceType_Floppy
+                && enmDeviceType != KDeviceType_DVD)
                 continue;
-            if (comAttachment.GetIsEjected() || comAttachment.GetMedium().isNull())
+            if (   comAttachment.GetIsEjected()
+                || comAttachment.GetMedium().isNull())
                 continue;
-            media.append(comAttachment.GetMedium());
+            comMedia.append(comAttachment.GetMedium());
         }
     }
-    return media;
+    return comMedia;
 }
 
 void UISession::loadVMSettings()

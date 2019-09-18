@@ -297,7 +297,7 @@ public:
     QList<int> listOfVisibleWindows() const;
 
     /** Returns a vector of media attached to the machine. */
-    CMediumVector getMachineMedia() const;
+    CMediumVector machineMedia() const;
 
 signals:
 
