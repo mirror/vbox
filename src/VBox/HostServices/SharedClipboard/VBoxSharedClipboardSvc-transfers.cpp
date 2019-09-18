@@ -1238,7 +1238,7 @@ static int sharedClipboardSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANS
 /**
  * transfer client (guest) handler for the Shared Clipboard host service.
  *
- * @returns VBox status code.
+ * @returns VBox status code, or VINF_HGCM_ASYNC_EXECUTE if returning to the client will be deferred.
  * @param   pClient             Pointer to associated client.
  * @param   callHandle          The client's call handle of this call.
  * @param   u32Function         Function number being called.
@@ -1247,13 +1247,13 @@ static int sharedClipboardSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANS
  * @param   tsArrival           Timestamp of arrival.
  */
 int sharedClipboardSvcTransferHandler(PSHCLCLIENT pClient,
-                                VBOXHGCMCALLHANDLE callHandle,
-                                uint32_t u32Function,
-                                uint32_t cParms,
-                                VBOXHGCMSVCPARM paParms[],
-                                uint64_t tsArrival)
+                                      VBOXHGCMCALLHANDLE callHandle,
+                                      uint32_t u32Function,
+                                      uint32_t cParms,
+                                      VBOXHGCMSVCPARM paParms[],
+                                      uint64_t tsArrival)
 {
-    RT_NOREF(paParms, tsArrival);
+    RT_NOREF(callHandle, paParms, tsArrival);
 
     LogFlowFunc(("uClient=%RU32, u32Function=%RU32 (%s), cParms=%RU32, g_ExtState.pfnExtension=%p\n",
                  pClient->State.uClientID, u32Function, VBoxShClGuestMsgToStr(u32Function), cParms, g_ExtState.pfnExtension));
@@ -1283,7 +1283,7 @@ int sharedClipboardSvcTransferHandler(PSHCLCLIENT pClient,
     /*
      * Pre-check: For certain messages we need to make sure that a (right) transfer is present.
      */
-    uint32_t         uCID      = 0; /* Context ID */
+    uint32_t      uCID      = 0; /* Context ID */
     PSHCLTRANSFER pTransfer = NULL;
 
     switch (u32Function)
@@ -1322,8 +1322,6 @@ int sharedClipboardSvcTransferHandler(PSHCLCLIENT pClient,
         return rc;
 
     rc = VERR_INVALID_PARAMETER; /* Play safe. */
-
-    bool fDoCallComplete = true;
 
     switch (u32Function)
     {
@@ -1431,9 +1429,6 @@ int sharedClipboardSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_REPLY:
         {
             rc = sharedClipboardSvcTransferHandleReply(pClient, pTransfer, cParms, paParms);
-
-            /* This message does not need any completion, as it can happen at any time from the guest side. */
-            fDoCallComplete = false;
             break;
         }
 
@@ -1857,14 +1852,6 @@ int sharedClipboardSvcTransferHandler(PSHCLCLIENT pClient,
         default:
             LogFunc(("Not implemented\n"));
             break;
-    }
-
-    if (fDoCallComplete)
-    {
-        /* Tell the client that the call is complete (unblocks waiting). */
-        LogFlowFunc(("[Client %RU32] Calling pfnCallComplete w/ rc=%Rrc\n", pClient->State.uClientID, rc));
-        AssertPtr(g_pHelpers);
-        g_pHelpers->pfnCallComplete(callHandle, rc);
     }
 
     LogFlowFunc(("[Client %RU32] Returning rc=%Rrc\n", pClient->State.uClientID, rc));

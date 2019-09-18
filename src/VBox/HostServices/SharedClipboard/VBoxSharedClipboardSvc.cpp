@@ -1200,15 +1200,11 @@ static DECLCALLBACK(void) svcCall(void *,
     }
 #endif
 
-    bool fDoCallComplete = true;
-
     switch (u32Function)
     {
         case VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD:
         {
             rc = sharedClipboardSvcMsgGetOld(pClient, callHandle, cParms, paParms);
-            if (rc == VINF_HGCM_ASYNC_EXECUTE)
-                fDoCallComplete = false;
             break;
         }
 
@@ -1258,16 +1254,12 @@ static DECLCALLBACK(void) svcCall(void *,
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT:
         {
             rc = sharedClipboardSvcMsgPeek(pClient, callHandle, cParms, paParms, true /*fWait*/);
-            if (rc == VINF_HGCM_ASYNC_EXECUTE)
-                fDoCallComplete = false;
             break;
         }
 
         case VBOX_SHCL_GUEST_FN_MSG_GET:
         {
             rc = sharedClipboardSvcMsgGet(pClient, callHandle, cParms, paParms);
-            if (rc == VINF_HGCM_ASYNC_EXECUTE)
-                fDoCallComplete = false;
             break;
         }
 
@@ -1483,12 +1475,10 @@ static DECLCALLBACK(void) svcCall(void *,
         }
     }
 
-    LogFlowFunc(("u32ClientID=%RU32, fDoCallComplete=%RTbool, rc=%Rrc\n", pClient->State.uClientID, fDoCallComplete, rc));
+    LogFlowFunc(("[Client %RU32] rc=%Rrc\n", pClient->State.uClientID, rc));
 
-    if (fDoCallComplete)
+    if (rc != VINF_HGCM_ASYNC_EXECUTE)
         g_pHelpers->pfnCallComplete(callHandle, rc);
-
-    LogFlowFuncLeaveRC(rc);
 }
 
 /**
