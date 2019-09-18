@@ -81,7 +81,7 @@ DataHubLogData (
 
     pEntry->RecHdr.Version    = EFI_DATA_RECORD_HEADER_VERSION;
     pEntry->RecHdr.HeaderSize = sizeof(EFI_DATA_RECORD_HEADER);
-    pEntry->RecHdr.RecordSize = RawDataSize + sizeof(EFI_DATA_RECORD_HEADER); 
+    pEntry->RecHdr.RecordSize = RawDataSize + sizeof(EFI_DATA_RECORD_HEADER);
     CopyMem(&pEntry->RecHdr.DataRecordGuid, DataRecordGuid, sizeof(pEntry->RecHdr.DataRecordGuid));
     CopyMem(&pEntry->RecHdr.ProducerName, ProducerName, sizeof(pEntry->RecHdr.ProducerName));
     pEntry->RecHdr.DataRecordClass = DataRecordClass;
@@ -190,7 +190,7 @@ InitializeDataHub (
 {
     EFI_STATUS              Status;
 
-   
+
     InitializeListHead(&mDataHubInstance.LstEntries);
     EfiInitializeLock (&mDataHubInstance.Lck, TPL_NOTIFY);
 
