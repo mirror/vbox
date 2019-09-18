@@ -196,25 +196,29 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
     /* Replace existing media map: */
     m_media = guiMedia;
 
-    /* Notify listener about enumeration started: */
-    LogRel(("GUI: UIMediumEnumerator: Medium-enumeration started...\n"));
-    m_fMediumEnumerationInProgress = true;
-    emit sigMediumEnumerationStarted();
-
-    /* Make sure we really have more than one UIMedium (which is NULL): */
-    if (   m_media.size() == 1
-        && m_media.first().id() == UIMedium::nullID())
+    /* If enumeration hasn't yet started: */
+    if (!m_fMediumEnumerationInProgress)
     {
-        /* Notify listener about enumeration finished instantly: */
-        LogRel(("GUI: UIMediumEnumerator: Medium-enumeration finished!\n"));
-        m_fMediumEnumerationInProgress = false;
-        emit sigMediumEnumerationFinished();
+        /* Notify listener about enumeration started: */
+        LogRel(("GUI: UIMediumEnumerator: Medium-enumeration started...\n"));
+        m_fMediumEnumerationInProgress = true;
+        emit sigMediumEnumerationStarted();
+
+        /* Make sure we really have more than one UIMedium (which is NULL): */
+        if (   guiMedia.size() == 1
+            && guiMedia.first().id() == UIMedium::nullID())
+        {
+            /* Notify listener about enumeration finished instantly: */
+            LogRel(("GUI: UIMediumEnumerator: Medium-enumeration finished!\n"));
+            m_fMediumEnumerationInProgress = false;
+            emit sigMediumEnumerationFinished();
+        }
     }
 
     /* Start enumeration for media with non-NULL ID: */
-    foreach (const QUuid &uMediumID, m_media.keys())
+    foreach (const QUuid &uMediumID, guiMedia.keys())
         if (!uMediumID.isNull())
-            createMediumEnumerationTask(m_media[uMediumID]);
+            createMediumEnumerationTask(guiMedia[uMediumID]);
 }
 
 void UIMediumEnumerator::enumerateAdditionalMedia(const CMediumVector &comMedia)
@@ -231,6 +235,25 @@ void UIMediumEnumerator::enumerateAdditionalMedia(const CMediumVector &comMedia)
     /* Throw the media to existing map: */
     foreach (const QUuid &uMediumId, guiMedia.keys())
         m_media[uMediumId] = guiMedia.value(uMediumId);
+
+    /* If enumeration hasn't yet started: */
+    if (!m_fMediumEnumerationInProgress)
+    {
+        /* Notify listener about enumeration started: */
+        LogRel(("GUI: UIMediumEnumerator: Medium-enumeration started...\n"));
+        m_fMediumEnumerationInProgress = true;
+        emit sigMediumEnumerationStarted();
+
+        /* Make sure we really have more than one UIMedium (which is NULL): */
+        if (   guiMedia.size() == 1
+            && guiMedia.first().id() == UIMedium::nullID())
+        {
+            /* Notify listener about enumeration finished instantly: */
+            LogRel(("GUI: UIMediumEnumerator: Medium-enumeration finished!\n"));
+            m_fMediumEnumerationInProgress = false;
+            emit sigMediumEnumerationFinished();
+        }
+    }
 
     /* Start enumeration for media with non-NULL ID: */
     foreach (const QUuid &uMediumID, guiMedia.keys())
