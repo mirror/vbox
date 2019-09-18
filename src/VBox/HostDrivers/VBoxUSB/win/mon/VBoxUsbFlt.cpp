@@ -676,24 +676,6 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
     return Status;
 }
 
-static void vboxUsbFltSignalChangeLocked()
-{
-    for (PLIST_ENTRY pEntry = g_VBoxUsbFltGlobals.ContextList.Flink;
-            pEntry != &g_VBoxUsbFltGlobals.ContextList;
-            pEntry = pEntry->Flink)
-    {
-        PVBOXUSBFLTCTX pCtx = PVBOXUSBFLTCTX_FROM_LE(pEntry);
-        /* the removed context can not be in a list */
-        Assert(!pCtx->bRemoved);
-        if (pCtx->pChangeEvent)
-        {
-            KeSetEvent(pCtx->pChangeEvent,
-                    0, /* increment*/
-                    FALSE /* wait */);
-        }
-    }
-}
-
 static bool vboxUsbFltDevCheckReplugLocked(PVBOXUSBFLT_DEVICE pDevice, PVBOXUSBFLTCTX pContext)
 {
     ASSERT_WARN(pContext, ("context is NULL!"));
@@ -1037,17 +1019,6 @@ NTSTATUS VBoxUsbFltClose(PVBOXUSBFLTCTX pContext)
     VBOXUSBFLT_LOCK_ACQUIRE();
 
     pContext->bRemoved = TRUE;
-    if (pContext->pChangeEvent)
-    {
-        LOG(("seting & closing change event (0x%p)", pContext->pChangeEvent));
-        KeSetEvent(pContext->pChangeEvent,
-                0, /* increment*/
-                FALSE /* wait */);
-        ObDereferenceObject(pContext->pChangeEvent);
-        pContext->pChangeEvent = NULL;
-    }
-    else
-        LOG(("no change event"));
     RemoveEntryList(&pContext->ListEntry);
 
     LOG(("removing owner filters"));
@@ -1209,36 +1180,6 @@ int VBoxUsbFltRemove(PVBOXUSBFLTCTX pContext, uintptr_t uId)
     return rc;
 }
 
-NTSTATUS VBoxUsbFltSetNotifyEvent(PVBOXUSBFLTCTX pContext, HANDLE hEvent)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-    PKEVENT pEvent = NULL;
-    PKEVENT pOldEvent = NULL;
-    if (hEvent)
-    {
-        Status = ObReferenceObjectByHandle(hEvent,
-                    EVENT_MODIFY_STATE,
-                    *ExEventObjectType, UserMode,
-                    (PVOID*)&pEvent,
-                    NULL);
-        Assert(Status == STATUS_SUCCESS);
-        if (!NT_SUCCESS(Status))
-            return Status;
-    }
-
-    VBOXUSBFLT_LOCK_ACQUIRE();
-    pOldEvent = pContext->pChangeEvent;
-    pContext->pChangeEvent = pEvent;
-    VBOXUSBFLT_LOCK_RELEASE();
-
-    if (pOldEvent)
-    {
-        ObDereferenceObject(pOldEvent);
-    }
-
-    return STATUS_SUCCESS;
-}
-
 static USBDEVICESTATE vboxUsbDevGetUserState(PVBOXUSBFLTCTX pContext, PVBOXUSBFLT_DEVICE pDevice)
 {
     if (vboxUsbFltDevStateIsNotFiltered(pDevice))
@@ -1398,15 +1339,6 @@ NTSTATUS VBoxUsbFltPdoAdd(PDEVICE_OBJECT pPdo, BOOLEAN *pbFiltered)
     return STATUS_SUCCESS;
 }
 
-NTSTATUS VBoxUsbFltPdoAddCompleted(PDEVICE_OBJECT pPdo)
-{
-    RT_NOREF1(pPdo);
-    VBOXUSBFLT_LOCK_ACQUIRE();
-    vboxUsbFltSignalChangeLocked();
-    VBOXUSBFLT_LOCK_RELEASE();
-    return STATUS_SUCCESS;
-}
-
 BOOLEAN VBoxUsbFltPdoIsFiltered(PDEVICE_OBJECT pPdo)
 {
     VBOXUSBFLT_DEVSTATE enmState = VBOXUSBFLT_DEVSTATE_REMOVED;
@@ -1433,18 +1365,6 @@ NTSTATUS VBoxUsbFltPdoRemove(PDEVICE_OBJECT pPdo)
         RemoveEntryList(&pDevice->GlobalLe);
         enmOldState = pDevice->enmState;
         pDevice->enmState = VBOXUSBFLT_DEVSTATE_REMOVED;
-        if (enmOldState != VBOXUSBFLT_DEVSTATE_REPLUGGING)
-        {
-            vboxUsbFltSignalChangeLocked();
-        }
-        else
-        {
-            /* the device *should* reappear, do signlling on re-appear only
-             * to avoid extra signaling. still there might be a situation
-             * when the device will not re-appear if it gets physically removed
-             * before it re-appears
-             * @todo: set a timer callback to do a notification from it */
-        }
     }
     VBOXUSBFLT_LOCK_RELEASE();
     if (pDevice)
@@ -1470,7 +1390,6 @@ HVBOXUSBFLTDEV VBoxUsbFltProxyStarted(PDEVICE_OBJECT pPdo)
         pDevice->enmState = VBOXUSBFLT_DEVSTATE_CAPTURED;
         LOG(("The proxy notified proxy start for the captured device 0x%x", pDevice));
         vboxUsbFltDevRetain(pDevice);
-        vboxUsbFltSignalChangeLocked();
     }
     else
     {
@@ -1500,7 +1419,6 @@ void VBoxUsbFltProxyStopped(HVBOXUSBFLTDEV hDev)
         /* this is due to devie was physically removed */
         LOG(("The proxy notified proxy stop for the captured device 0x%x, current state %d", pDevice, pDevice->enmState));
         pDevice->enmState = VBOXUSBFLT_DEVSTATE_CAPTURING;
-        vboxUsbFltSignalChangeLocked();
     }
     else
     {

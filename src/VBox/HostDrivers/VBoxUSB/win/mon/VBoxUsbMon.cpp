@@ -632,15 +632,7 @@ NTSTATUS _stdcall VBoxUsbPnPCompletion(DEVICE_OBJECT *pDevObj, IRP *pIrp, void *
         /* IRP_MN_START_DEVICE only arrives if it's a USB device of a known class or with a present host driver */
         case IRP_MN_QUERY_RESOURCE_REQUIREMENTS:
         case IRP_MN_QUERY_RESOURCES:
-            if (NT_SUCCESS(pIrp->IoStatus.Status) || pIrp->IoStatus.Status == STATUS_NOT_SUPPORTED)
-            {
-                VBoxUsbFltPdoAddCompleted(pRealDevObj);
-            }
-            else
-            {
-                AssertFailed();
-            }
-            break;
+            /* There used to be code to support SUPUSBFLT_IOCTL_SET_NOTIFY_EVENT but it was not reliable. */
 
         default:
             break;
@@ -1104,12 +1096,6 @@ static NTSTATUS _stdcall VBoxUsbMonCreate(PDEVICE_OBJECT pDevObj, PIRP pIrp)
     return Status;
 }
 
-static int VBoxUsbMonSetNotifyEvent(PVBOXUSBMONCTX pContext, HANDLE hEvent)
-{
-    int rc = VBoxUsbFltSetNotifyEvent(&pContext->FltCtx, hEvent);
-    return rc;
-}
-
 static int VBoxUsbMonFltAdd(PVBOXUSBMONCTX pContext, PUSBFILTER pFilter, uintptr_t *pId)
 {
 #ifdef VBOXUSBMON_DBG_NO_FILTERS
@@ -1255,23 +1241,6 @@ static NTSTATUS vboxUsbMonIoctlDispatch(PVBOXUSBMONCTX pContext, ULONG Ctl, PVOI
             {
                 WARN(("VBoxUsbMonGetDevice fail 0x%x", Status));
             }
-            break;
-        }
-
-        case SUPUSBFLT_IOCTL_SET_NOTIFY_EVENT:
-        {
-            PUSBSUP_SET_NOTIFY_EVENT pSne = (PUSBSUP_SET_NOTIFY_EVENT)pvBuffer;
-            if (!pvBuffer || cbInBuffer != sizeof (*pSne) || cbOutBuffer != sizeof (*pSne))
-            {
-                WARN(("SUPUSBFLT_IOCTL_SET_NOTIFY_EVENT: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected %d.",
-                        cbInBuffer, sizeof (*pSne), cbOutBuffer, sizeof (*pSne)));
-                Status = STATUS_INVALID_PARAMETER;
-                break;
-            }
-
-            pSne->u.rc = VBoxUsbMonSetNotifyEvent(pContext, pSne->u.hEvent);
-            Info = sizeof (*pSne);
-            ASSERT_WARN(Status == STATUS_SUCCESS, ("unexpected status, 0x%x", Status));
             break;
         }
 
