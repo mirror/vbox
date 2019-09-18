@@ -1269,7 +1269,7 @@ private:
 };
 
 /**
- * The BstrFmt class is a shortcut to <tt>Bstr().printf()</tt>.
+ * Class with Bstr::printf as constructor for your convenience.
  */
 class BstrFmt : public Bstr
 {
@@ -1292,10 +1292,14 @@ public:
     }
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
+
+protected:
+    BstrFmt()
+    { }
 };
 
 /**
- * The BstrFmtVA class is a shortcut to <tt>Bstr().printfV()</tt>.
+ * Class with Bstr::printfV as constructor for your convenience.
  */
 class BstrFmtVA : public Bstr
 {
@@ -1315,6 +1319,10 @@ public:
     }
 
     RTMEMEF_NEW_AND_DELETE_OPERATORS();
+
+protected:
+    BstrFmtVA()
+    { }
 };
 
 } /* namespace com */
