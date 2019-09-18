@@ -59,7 +59,8 @@ void UIMediaComboBox::refresh()
 void UIMediaComboBox::repopulate()
 {
     /* Start medium-enumeration (if necessary): */
-    if (!uiCommon().isFullMediumEnumerationRequested())
+    if (   m_enmMediaType == UIMediumDeviceType_DVD
+        && !uiCommon().isFullMediumEnumerationRequested())
     {
         CMediumVector comMedia;
         comMedia << uiCommon().host().GetDVDDrives();
