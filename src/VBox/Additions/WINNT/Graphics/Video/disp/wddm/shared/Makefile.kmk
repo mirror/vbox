@@ -25,7 +25,7 @@ include $(KBUILD_PATH)/subheader.kmk
 LIBRARIES += VBoxDispMpLogger
 VBoxDispMpLogger_TEMPLATE    = VBoxGuestR3Lib
 VBoxDispMpLogger_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
-VBoxDispMpLogger_DEFS        = UNICODE _UNICODE VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
+VBoxDispMpLogger_DEFS        = UNICODE _UNICODE VBOX_WITH_WDDM VBOX_WITH_HGCM
 VBoxDispMpLogger_INCS        = \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
 	$(VBOX_GRAPHICS_INCS)
@@ -48,7 +48,7 @@ VBoxDispMpLogger-x86_DEFS = $(VBoxDispMpLogger_DEFS) VBOX_WDDM_WOW64
 LIBRARIES += VBoxWddmUmKmt
 VBoxWddmUmKmt_TEMPLATE    = VBoxGuestR3Lib
 VBoxWddmUmKmt_SDKS        = ReorderCompilerIncs $(VBOX_WINDDK_GST_WLH)
-VBoxWddmUmKmt_DEFS        = UNICODE _UNICODE VBOX_WITH_WDDM VBOX_WITH_VDMA VBOX_WITH_HGCM
+VBoxWddmUmKmt_DEFS        = UNICODE _UNICODE VBOX_WITH_WDDM VBOX_WITH_HGCM
 VBoxWddmUmKmt_INCS        = \
 	$(PATH_ROOT)/src/VBox/Additions/WINNT/Graphics/Video/disp/wddm/shared \
 	$(VBOX_GRAPHICS_INCS)

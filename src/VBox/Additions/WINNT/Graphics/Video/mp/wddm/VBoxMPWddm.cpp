@@ -626,10 +626,6 @@ void vboxWddmGhDisplayCheckSetInfo(PVBOXMP_DEVEXT pDevExt)
 
 PVBOXSHGSMI vboxWddmHgsmiGetHeapFromCmdOffset(PVBOXMP_DEVEXT pDevExt, HGSMIOFFSET offCmd)
 {
-#ifdef VBOX_WITH_VDMA
-    if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.Heap.area, offCmd))
-        return &pDevExt->u.primary.Vdma.CmdHeap;
-#endif
     if (HGSMIAreaContainsOffset(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx.Heap.area, offCmd))
         return &VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx;
     return NULL;
@@ -639,17 +635,10 @@ typedef enum
 {
     VBOXWDDM_HGSMICMD_TYPE_UNDEFINED = 0,
     VBOXWDDM_HGSMICMD_TYPE_CTL       = 1,
-#ifdef VBOX_WITH_VDMA
-    VBOXWDDM_HGSMICMD_TYPE_DMACMD    = 2
-#endif
 } VBOXWDDM_HGSMICMD_TYPE;
 
 VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PVBOXMP_DEVEXT pDevExt, HGSMIOFFSET offCmd)
 {
-#ifdef VBOX_WITH_VDMA
-    if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.Heap.area, offCmd))
-        return VBOXWDDM_HGSMICMD_TYPE_DMACMD;
-#endif
     if (HGSMIAreaContainsOffset(&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx.Heap.area, offCmd))
         return VBOXWDDM_HGSMICMD_TYPE_CTL;
     return VBOXWDDM_HGSMICMD_TYPE_UNDEFINED;
@@ -800,23 +789,8 @@ static void vboxWddmSetupDisplaysLegacy(PVBOXMP_DEVEXT pDevExt)
 
         ULONG ulSize;
         ULONG offset;
-#ifdef VBOX_WITH_VDMA
-        ulSize = ulAvailable / 2;
-        if (ulSize > VBOXWDDM_C_VDMA_BUFFER_SIZE)
-            ulSize = VBOXWDDM_C_VDMA_BUFFER_SIZE;
-
-        /* Align down to 4096 bytes. */
-        ulSize &= ~0xFFF;
-        offset = ulAvailable - ulSize;
-
-        Assert(!(offset & 0xFFF));
-#else
         offset = ulAvailable;
-#endif
         rc = vboxVdmaCreate (pDevExt, &pDevExt->u.primary.Vdma
-#ifdef VBOX_WITH_VDMA
-                , offset, ulSize
-#endif
                 );
         AssertRC(rc);
         if (RT_SUCCESS(rc))
@@ -1109,7 +1083,6 @@ NTSTATUS DxgkDdiStartDevice(
                     *NumberOfChildren = VBoxCommonFromDeviceExt(pDevExt)->cDisplays;
                     LOG(("sources(%d), children(%d)", *NumberOfVideoPresentSources, *NumberOfChildren));
 
-                    vboxVdmaDdiNodesInit(pDevExt);
                     vboxVideoCmInit(&pDevExt->CmMgr);
                     vboxVideoCmInit(&pDevExt->SeamlessCtxMgr);
                     pDevExt->cContexts3D = 0;
@@ -1445,13 +1418,7 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
     if (VBoxCommonFromDeviceExt(pDevExt)->hostCtx.pfHostFlags) /* If HGSMI is enabled at all. */
     {
         VBOXVTLIST CtlList;
-#ifdef VBOX_WITH_VDMA
-        VBOXVTLIST DmaCmdList;
-#endif
         vboxVtListInit(&CtlList);
-#ifdef VBOX_WITH_VDMA
-        vboxVtListInit(&DmaCmdList);
-#endif
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
         VBOXVTLIST VhwaCmdList;
@@ -1478,12 +1445,6 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
                     PVBOXSHGSMI pHeap;
                     switch (enmType)
                     {
-#ifdef VBOX_WITH_VDMA
-                        case VBOXWDDM_HGSMICMD_TYPE_DMACMD:
-                            pList = &DmaCmdList;
-                            pHeap = &pDevExt->u.primary.Vdma.CmdHeap;
-                            break;
-#endif
                         case VBOXWDDM_HGSMICMD_TYPE_CTL:
                             pList = &CtlList;
                             pHeap = &VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx;
@@ -1505,16 +1466,6 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
                         {
                             switch (chInfo)
                             {
-#ifdef VBOX_WITH_VDMA
-                                case VBVA_VDMA_CMD:
-                                case VBVA_VDMA_CTL:
-                                {
-                                    int rc = VBoxSHGSMICommandProcessCompletion(pHeap, (VBOXSHGSMIHEADER*)pvCmd,
-                                                                                TRUE /*bool bIrq*/ , pList);
-                                    AssertRC(rc);
-                                    break;
-                                }
-#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                 case VBVA_VHWA_CMD:
                                 {
@@ -1545,13 +1496,6 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
             vboxVtListCat(&pDevExt->CtlList, &CtlList);
             bNeedDpc = TRUE;
         }
-#ifdef VBOX_WITH_VDMA
-        if (!vboxVtListIsEmpty(&DmaCmdList))
-        {
-            vboxVtListCat(&pDevExt->DmaCmdList, &DmaCmdList);
-            bNeedDpc = TRUE;
-        }
-#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
         if (!vboxVtListIsEmpty(&VhwaCmdList))
         {
@@ -1559,7 +1503,6 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
             bNeedDpc = TRUE;
         }
 #endif
-        bNeedDpc |= !vboxVdmaDdiCmdIsCompletedListEmptyIsr(pDevExt);
 
         if (pDevExt->bNotifyDxDpc)
         {
@@ -1615,9 +1558,6 @@ static BOOLEAN DxgkDdiInterruptRoutineLegacy(
 typedef struct VBOXWDDM_DPCDATA
 {
     VBOXVTLIST CtlList;
-#ifdef VBOX_WITH_VDMA
-    VBOXVTLIST DmaCmdList;
-#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     VBOXVTLIST VhwaCmdList;
 #endif
@@ -1636,16 +1576,9 @@ BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
     PVBOXWDDM_GETDPCDATA_CONTEXT pdc = (PVBOXWDDM_GETDPCDATA_CONTEXT)Context;
     PVBOXMP_DEVEXT pDevExt = pdc->pDevExt;
     vboxVtListDetach2List(&pDevExt->CtlList, &pdc->data.CtlList);
-#ifdef VBOX_WITH_VDMA
-    vboxVtListDetach2List(&pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
-#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     vboxVtListDetach2List(&pDevExt->VhwaCmdList, &pdc->data.VhwaCmdList);
 #endif
-    if (!pDevExt->fCmdVbvaEnabled)
-    {
-        vboxVdmaDdiCmdGetCompletedListIsr(pDevExt, &pdc->data.CompletedDdiCmdQueue);
-    }
 
     pdc->data.bNotifyDpc = pDevExt->bNotifyDxDpc;
     pDevExt->bNotifyDxDpc = FALSE;
@@ -1687,21 +1620,12 @@ static VOID DxgkDdiDpcRoutineLegacy(
         int rc = VBoxSHGSMICommandPostprocessCompletion (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, &context.data.CtlList);
         AssertRC(rc);
     }
-#ifdef VBOX_WITH_VDMA
-    if (!vboxVtListIsEmpty(&context.data.DmaCmdList))
-    {
-        int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.Vdma.CmdHeap, &context.data.DmaCmdList);
-        AssertRC(rc);
-    }
-#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     if (!vboxVtListIsEmpty(&context.data.VhwaCmdList))
     {
         vboxVhwaCompletionListProcess(pDevExt, &context.data.VhwaCmdList);
     }
 #endif
-
-    vboxVdmaDdiCmdHandleCompletedList(pDevExt, &context.data.CompletedDdiCmdQueue);
 
 //    LOGF(("LEAVE, context(0x%p)", MiniportDeviceContext));
 }
@@ -4321,31 +4245,6 @@ DxgkDdiCloseAllocation(
 
 #define VBOXVDMACMD_DMA_PRESENT_BLT_MINSIZE() (VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_PRESENT_BLT))
 #define VBOXVDMACMD_DMA_PRESENT_BLT_SIZE(_c) (VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects[_c]))
-
-#ifdef VBOX_WITH_VDMA
-DECLINLINE(VOID) vboxWddmRectlFromRect(const RECT *pRect, PVBOXVDMA_RECTL pRectl)
-{
-    pRectl->left = (int16_t)pRect->left;
-    pRectl->width = (uint16_t)(pRect->right - pRect->left);
-    pRectl->top = (int16_t)pRect->top;
-    pRectl->height = (uint16_t)(pRect->bottom - pRect->top);
-}
-
-DECLINLINE(VBOXVDMA_PIXEL_FORMAT) vboxWddmFromPixFormat(D3DDDIFORMAT format)
-{
-    return (VBOXVDMA_PIXEL_FORMAT)format;
-}
-
-DECLINLINE(VOID) vboxWddmSurfDescFromAllocation(PVBOXWDDM_ALLOCATION pAllocation, PVBOXVDMA_SURF_DESC pDesc)
-{
-    pDesc->width = pAllocation->AllocData.SurfDesc.width;
-    pDesc->height = pAllocation->AllocData.SurfDesc.height;
-    pDesc->format = vboxWddmFromPixFormat(pAllocation->AllocData.SurfDesc.format);
-    pDesc->bpp = pAllocation->AllocData.SurfDesc.bpp;
-    pDesc->pitch = pAllocation->AllocData.SurfDesc.pitch;
-    pDesc->fFlags = 0;
-}
-#endif
 
 DECLINLINE(BOOLEAN) vboxWddmPixFormatConversionSupported(D3DDDIFORMAT From, D3DDDIFORMAT To)
 {

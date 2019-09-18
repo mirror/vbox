@@ -88,9 +88,6 @@ ifdef VBOX_WITH_WDDM
    VBoxWddm_DEFS          += VBOXVDMA_WITH_VBVA
   endif
  endif
- ifdef VBOX_WITH_VDMA
-  VBoxWddm_DEFS           += VBOX_WITH_VDMA
- endif
  VBoxWddm_DEFS            += LOG_TO_BACKDOOR
  VBoxWddm_DEFS            += VBOX_SVN_REV=$(VBOX_SVN_REV)
  VBoxWddm_INCS            += \
