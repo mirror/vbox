@@ -2617,14 +2617,12 @@ bool UICommon::isMediumEnumerationInProgress() const
            && m_pMediumEnumerator->isMediumEnumerationInProgress();
 }
 
-#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
 bool UICommon::isFullMediumEnumerationRequested() const
 {
     /* Redirect request to medium-enumerator: */
     return    m_pMediumEnumerator
            && m_pMediumEnumerator->isFullMediumEnumerationRequested();
 }
-#endif
 
 UIMedium UICommon::medium(const QUuid &uMediumID) const
 {
@@ -2664,19 +2662,6 @@ void UICommon::createMedium(const UIMedium &guiMedium)
         m_meCleanupProtectionToken.unlock();
     }
 }
-
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-void UICommon::deleteMedium(const QUuid &uMediumID)
-{
-    if (m_meCleanupProtectionToken.tryLockForRead())
-    {
-        /* Delete medium from medium-enumerator: */
-        if (m_pMediumEnumerator)
-            m_pMediumEnumerator->deleteMedium(uMediumID);
-        m_meCleanupProtectionToken.unlock();
-    }
-}
-#endif
 
 QUuid UICommon::openMedium(UIMediumDeviceType enmMediumType, QString strMediumLocation, QWidget *pParent /* = 0 */)
 {

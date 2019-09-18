@@ -97,28 +97,12 @@ private:
 
 UIMediumEnumerator::UIMediumEnumerator()
     : m_fMediumEnumerationInProgress(false)
-#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     , m_fMediumEnumerationRequested(false)
-#endif
 {
     /* Allow UIMedium to be used in inter-thread signals: */
     qRegisterMetaType<UIMedium>();
 
     /* Prepare Main event handlers: */
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
-            this, &UIMediumEnumerator::sltHandleMachineUpdate);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotTake,
-            this, &UIMediumEnumerator::sltHandleMachineUpdate);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotDelete,
-            this, &UIMediumEnumerator::sltHandleSnapshotDeleted);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotChange,
-            this, &UIMediumEnumerator::sltHandleMachineUpdate);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigSnapshotRestore,
-            this, &UIMediumEnumerator::sltHandleSnapshotDeleted);
-    connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineRegistered,
-            this, &UIMediumEnumerator::sltHandleMachineRegistration);
-#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
     /* Machine related events: */
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
             this, &UIMediumEnumerator::sltHandleMachineDataChange);
@@ -133,7 +117,6 @@ UIMediumEnumerator::UIMediumEnumerator()
             this, &UIMediumEnumerator::sltHandleMediumConfigChange);
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMediumRegistered,
             this, &UIMediumEnumerator::sltHandleMediumRegistered);
-#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /* Prepare global thread-pool listener: */
     connect(uiCommon().threadPool(), &UIThreadPool::sigTaskComplete,
@@ -174,23 +157,6 @@ void UIMediumEnumerator::createMedium(const UIMedium &guiMedium)
     emit sigMediumCreated(uMediumID);
 }
 
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-void UIMediumEnumerator::deleteMedium(const QUuid &uMediumID)
-{
-    /* Do not delete UIMedium(s) with incorrect ID: */
-    AssertReturnVoid(!uMediumID.isNull());
-    /* Make sure UIMedium still exists: */
-    AssertReturnVoid(m_media.contains(uMediumID));
-
-    /* Remove UIMedium: */
-    m_media.remove(uMediumID);
-    LogRel(("GUI: UIMediumEnumerator: Medium with key={%s} deleted\n", uMediumID.toString().toUtf8().constData()));
-
-    /* Notify listener: */
-    emit sigMediumDeleted(uMediumID);
-}
-#endif
-
 void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure we are not already in progress: */
@@ -208,9 +174,7 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
      * wizard instead and enumerate only comMedia in 'else' case. */
     if (comMedia.isEmpty())
     {
-#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
         m_fMediumEnumerationRequested = true;
-#endif
         addMediaToMap(uiCommon().virtualBox().GetHardDisks(), media);
         addMediaToMap(uiCommon().host().GetDVDDrives(), media);
         addMediaToMap(uiCommon().virtualBox().GetDVDImages(), media);
@@ -219,9 +183,7 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
     }
     else
     {
-#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
         m_fMediumEnumerationRequested = false;
-#endif
         addMediaToMap(uiCommon().host().GetDVDDrives(), media);
         addMediaToMap(uiCommon().virtualBox().GetDVDImages(), media);
         addMediaToMap(comMedia, media);
@@ -295,109 +257,6 @@ void UIMediumEnumerator::retranslateUi()
     if (m_media.contains(UIMedium::nullID()))
         m_media[UIMedium::nullID()] = UIMedium();
 }
-
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-
-void UIMediumEnumerator::sltHandleMachineUpdate(const QUuid &uMachineID)
-{
-    LogRel2(("GUI: UIMediumEnumerator: Machine (or snapshot) event received, ID = %s\n",
-             uMachineID.toString().toUtf8().constData()));
-
-    /* Gather previously used UIMedium IDs: */
-    QList<QUuid> previousUIMediumIDs;
-    calculateCachedUsage(uMachineID, previousUIMediumIDs, true /* take into account current state only */);
-    LogRel2(("GUI: UIMediumEnumerator:  Old usage: %s\n",
-             previousUIMediumIDs.isEmpty() ? "<empty>" : toStringList(previousUIMediumIDs).join(", ").toUtf8().constData()));
-
-    /* Gather currently used CMediums and their IDs: */
-    CMediumMap currentCMediums;
-    QList<QUuid> currentCMediumIDs;
-    calculateActualUsage(uMachineID, currentCMediums, currentCMediumIDs, true /* take into account current state only */);
-    LogRel2(("GUI: UIMediumEnumerator:  New usage: %s\n",
-             currentCMediumIDs.isEmpty() ? "<empty>" : toStringList(currentCMediumIDs).join(", ").toUtf8().constData()));
-
-    /* Determine excluded media: */
-    const QSet<QUuid> previousSet = previousUIMediumIDs.toSet();
-    const QSet<QUuid> currentSet = currentCMediumIDs.toSet();
-    const QSet<QUuid> excludedSet = previousSet - currentSet;
-    const QList<QUuid> excludedUIMediumIDs = excludedSet.toList();
-    if (!excludedUIMediumIDs.isEmpty())
-        LogRel2(("GUI: UIMediumEnumerator:  Items excluded from usage: %s\n", toStringList(excludedUIMediumIDs).join(", ").toUtf8().constData()));
-    if (!currentCMediumIDs.isEmpty())
-        LogRel2(("GUI: UIMediumEnumerator:  Items currently in usage: %s\n", toStringList(currentCMediumIDs).join(", ").toUtf8().constData()));
-
-    /* Update cache for excluded UIMediums: */
-    recacheFromCachedUsage(excludedUIMediumIDs);
-
-    /* Update cache for current CMediums: */
-    recacheFromActualUsage(currentCMediums, currentCMediumIDs);
-
-    LogRel2(("GUI: UIMediumEnumerator: Machine (or snapshot) event processed, ID = %s\n",
-             uMachineID.toString().toUtf8().constData()));
-}
-
-void UIMediumEnumerator::sltHandleMachineRegistration(const QUuid &uMachineID, const bool fRegistered)
-{
-    LogRel2(("GUI: UIMediumEnumerator: Machine %s event received, ID = %s\n",
-             fRegistered ? "registration" : "unregistration",
-             uMachineID.toString().toUtf8().constData()));
-
-    /* Machine was registered: */
-    if (fRegistered)
-    {
-        /* Gather currently used CMediums and their IDs: */
-        CMediumMap currentCMediums;
-        QList<QUuid> currentCMediumIDs;
-        calculateActualUsage(uMachineID, currentCMediums, currentCMediumIDs, false /* take into account current state only */);
-        LogRel2(("GUI: UIMediumEnumerator:  New usage: %s\n",
-                 currentCMediumIDs.isEmpty() ? "<empty>" : toStringList(currentCMediumIDs).join(", ").toUtf8().constData()));
-        /* Update cache with currently used CMediums: */
-        recacheFromActualUsage(currentCMediums, currentCMediumIDs);
-    }
-    /* Machine was unregistered: */
-    else
-    {
-        /* Gather previously used UIMedium IDs: */
-        QList<QUuid> previousUIMediumIDs;
-        calculateCachedUsage(uMachineID, previousUIMediumIDs, false /* take into account current state only */);
-        LogRel2(("GUI: UIMediumEnumerator:  Old usage: %s\n",
-                 previousUIMediumIDs.isEmpty() ? "<empty>" : toStringList(previousUIMediumIDs).join(", ").toUtf8().constData()));
-        /* Update cache for previously used UIMediums: */
-        recacheFromCachedUsage(previousUIMediumIDs);
-    }
-
-    LogRel2(("GUI: UIMediumEnumerator: Machine %s event processed, ID = %s\n",
-             fRegistered ? "registration" : "unregistration",
-             uMachineID.toString().toUtf8().constData()));
-}
-
-void UIMediumEnumerator::sltHandleSnapshotDeleted(const QUuid &uMachineID, const QUuid &uSnapshotID)
-{
-    LogRel2(("GUI: UIMediumEnumerator: Snapshot-deleted event received, Machine ID = {%s}, Snapshot ID = {%s}\n",
-             uMachineID.toString().toUtf8().constData(), uSnapshotID.toString().toUtf8().constData()));
-
-    /* Gather previously used UIMedium IDs: */
-    QList<QUuid> previousUIMediumIDs;
-    calculateCachedUsage(uMachineID, previousUIMediumIDs, false /* take into account current state only */);
-    LogRel2(("GUI: UIMediumEnumerator:  Old usage: %s\n",
-             previousUIMediumIDs.isEmpty() ? "<empty>" : toStringList(previousUIMediumIDs).join(", ").toUtf8().constData()));
-
-    /* Gather currently used CMediums and their IDs: */
-    CMediumMap currentCMediums;
-    QList<QUuid> currentCMediumIDs;
-    calculateActualUsage(uMachineID, currentCMediums, currentCMediumIDs, true /* take into account current state only */);
-    LogRel2(("GUI: UIMediumEnumerator:  New usage: %s\n",
-             currentCMediumIDs.isEmpty() ? "<empty>" : toStringList(currentCMediumIDs).join(", ").toUtf8().constData()));
-
-    /* Update everything: */
-    recacheFromCachedUsage(previousUIMediumIDs);
-    recacheFromActualUsage(currentCMediums, currentCMediumIDs);
-
-    LogRel2(("GUI: UIMediumEnumerator: Snapshot-deleted event processed, Machine ID = {%s}, Snapshot ID = {%s}\n",
-             uMachineID.toString().toUtf8().constData(), uSnapshotID.toString().toUtf8().constData()));
-}
-
-#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
 void UIMediumEnumerator::sltHandleMachineDataChange(const QUuid &uMachineId)
 {
@@ -534,8 +393,6 @@ void UIMediumEnumerator::sltHandleMediumRegistered(const QUuid &uMediumId, KDevi
     }
 }
 
-#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
-
 void UIMediumEnumerator::sltHandleMediumEnumerationTaskComplete(UITask *pTask)
 {
     /* Make sure that is one of our tasks: */
@@ -652,156 +509,6 @@ void UIMediumEnumerator::addMediaToMap(const CMediumVector &inputMedia, UIMedium
         addMediaToMap(comMedium.GetChildren(), outputMedia);
     }
 }
-
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-
-void UIMediumEnumerator::calculateCachedUsage(const QUuid &uMachineID,
-                                              QList<QUuid> &previousUIMediumIDs,
-                                              const bool fTakeIntoAccountCurrentStateOnly) const
-{
-    /* For each the cached UIMedium we have: */
-    foreach (const QUuid &uUIMediumID, mediumIDs())
-    {
-        /* Get corresponding UIMedium: */
-        const UIMedium &guiMedium = m_media[uUIMediumID];
-        /* Get the list of the machines this UIMedium attached to.
-         * Take into account current-state only if necessary. */
-        const QList<QUuid> &machineIDs = fTakeIntoAccountCurrentStateOnly
-                                       ? guiMedium.curStateMachineIds()
-                                       : guiMedium.machineIds();
-        /* Add this UIMedium ID to previous usage if necessary: */
-        if (machineIDs.contains(uMachineID))
-            previousUIMediumIDs.append(uUIMediumID);
-    }
-}
-
-void UIMediumEnumerator::calculateActualUsage(const QUuid &uMachineID,
-                                              CMediumMap &currentCMediums,
-                                              QList<QUuid> &currentCMediumIDs,
-                                              const bool fTakeIntoAccountCurrentStateOnly) const
-{
-    /* Search for corresponding machine: */
-    CMachine comMachine = uiCommon().virtualBox().FindMachine(uMachineID.toString());
-    if (comMachine.isNull())
-    {
-        /* Usually means the machine is already gone, not harmful. */
-        return;
-    }
-
-    /* Calculate actual usage starting from root-snapshot if necessary: */
-    if (!fTakeIntoAccountCurrentStateOnly)
-        calculateActualUsage(comMachine.FindSnapshot(QString()), currentCMediums, currentCMediumIDs);
-
-    /* Calculate actual usage for current machine state: */
-    calculateActualUsage(comMachine, currentCMediums, currentCMediumIDs);
-}
-
-void UIMediumEnumerator::calculateActualUsage(const CSnapshot &comSnapshot,
-                                              CMediumMap &currentCMediums,
-                                              QList<QUuid> &currentCMediumIDs) const
-{
-    /* Check passed snapshot: */
-    if (comSnapshot.isNull())
-        return;
-
-    /* Calculate actual usage for passed snapshot machine: */
-    calculateActualUsage(comSnapshot.GetMachine(), currentCMediums, currentCMediumIDs);
-
-    /* Iterate through passed snapshot children: */
-    foreach (const CSnapshot &comChildSnapshot, comSnapshot.GetChildren())
-        calculateActualUsage(comChildSnapshot, currentCMediums, currentCMediumIDs);
-}
-
-void UIMediumEnumerator::calculateActualUsage(const CMachine &comMachine,
-                                              CMediumMap &currentCMediums,
-                                              QList<QUuid> &currentCMediumIDs) const
-{
-    /* Check passed machine: */
-    AssertReturnVoid(!comMachine.isNull());
-
-    /* For each the attachment machine have: */
-    foreach (const CMediumAttachment &comAttachment, comMachine.GetMediumAttachments())
-    {
-        /* Get corresponding CMedium: */
-        CMedium comMedium = comAttachment.GetMedium();
-        if (!comMedium.isNull())
-        {
-            /* Make sure that CMedium was not yet closed: */
-            const QUuid &uCMediumID = comMedium.GetId();
-            if (comMedium.isOk() && !uCMediumID.isNull())
-            {
-                /* Add this CMedium to current usage: */
-                currentCMediums.insert(uCMediumID, comMedium);
-                currentCMediumIDs.append(uCMediumID);
-            }
-        }
-    }
-}
-
-void UIMediumEnumerator::recacheFromCachedUsage(const QList<QUuid> &previousUIMediumIDs)
-{
-    /* For each of previously used UIMedium ID: */
-    foreach (const QUuid &uUIMediumID, previousUIMediumIDs)
-    {
-        /* Make sure this ID still in our map: */
-        if (m_media.contains(uUIMediumID))
-        {
-            /* Get corresponding UIMedium: */
-            UIMedium &guiMedium = m_media[uUIMediumID];
-
-            /* If corresponding CMedium still exists: */
-            CMedium comMedium = guiMedium.medium();
-            if (!comMedium.GetId().isNull() && comMedium.isOk())
-            {
-                /* Refresh UIMedium parent first of all: */
-                guiMedium.updateParentID();
-                /* Enumerate corresponding UIMedium: */
-                createMediumEnumerationTask(guiMedium);
-            }
-            /* If corresponding CMedium was closed already: */
-            else
-            {
-                /* Uncache corresponding UIMedium: */
-                m_media.remove(uUIMediumID);
-                LogRel2(("GUI: UIMediumEnumerator:  Medium with key={%s} uncached\n",
-                         uUIMediumID.toString().toUtf8().constData()));
-
-                /* And notify listeners: */
-                emit sigMediumDeleted(uUIMediumID);
-            }
-        }
-    }
-}
-
-void UIMediumEnumerator::recacheFromActualUsage(const CMediumMap &currentCMediums,
-                                                const QList<QUuid> &currentCMediumIDs)
-{
-    /* For each of currently used CMedium ID: */
-    foreach (const QUuid &uCMediumID, currentCMediumIDs)
-    {
-        /* If that ID is not in our map: */
-        if (!m_media.contains(uCMediumID))
-        {
-            /* Create new UIMedium: */
-            const CMedium &comMedium = currentCMediums[uCMediumID];
-            const UIMedium guiMedium(comMedium, UIMediumDefs::mediumTypeToLocal(comMedium.GetDeviceType()));
-            const QUuid &uUIMediumKey = guiMedium.key();
-
-            /* Cache created UIMedium: */
-            m_media.insert(uUIMediumKey, guiMedium);
-            LogRel2(("GUI: UIMediumEnumerator:  Medium with key={%s} cached\n",
-                     uUIMediumKey.toString().toUtf8().constData()));
-
-            /* And notify listeners: */
-            emit sigMediumCreated(uUIMediumKey);
-        }
-
-        /* Enumerate corresponding UIMedium: */
-        createMediumEnumerationTask(m_media[uCMediumID]);
-    }
-}
-
-#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
 void UIMediumEnumerator::parseAttachment(CMediumAttachment comAttachment, QList<QUuid> &result)
 {
@@ -946,8 +653,6 @@ void UIMediumEnumerator::enumerateAllMediaOfMediumWithId(const QUuid &uParentMed
         }
     }
 }
-
-#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
 
 #include "UIMediumEnumerator.moc"

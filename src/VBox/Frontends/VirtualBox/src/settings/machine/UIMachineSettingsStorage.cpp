@@ -3707,14 +3707,9 @@ void UIMachineSettingsStorage::prepare()
     /* Create icon-pool: */
     UIIconPoolStorageSettings::create();
 
-#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /* Start medium-enumeration (only if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
-#endif
-    /* Enumerate Media. We need at least the MediaList filled, so this is the
-     * lasted point, where we can start. The rest of the media checking is done
-     * in a background thread. */
-    uiCommon().startMediumEnumeration();
+        uiCommon().startMediumEnumeration();
 
     /* Layout created in the .ui file. */
     AssertPtrReturnVoid(mLtStorage);

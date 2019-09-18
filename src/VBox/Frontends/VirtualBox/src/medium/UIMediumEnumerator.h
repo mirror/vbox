@@ -31,10 +31,8 @@
 #include "UIMedium.h"
 
 /* COM includes: */
-#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
 # include "CMedium.h"
 # include "CMediumAttachment.h"
-#endif
 
 /* Forward declarations: */
 class UITask;
@@ -76,17 +74,11 @@ public:
 
     /** Creates UIMedium thus caching it internally on the basis of passed @a guiMedium information. */
     void createMedium(const UIMedium &guiMedium);
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    /** Deletes UIMedium with specified @a uMediumID thus removing it from internal cache. */
-    void deleteMedium(const QUuid &uMediumID);
-#endif
 
     /** Returns whether consolidated medium-enumeration process is in progress. */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
-#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /** Returns whether full consolidated medium-enumeration process is requested. */
     bool isFullMediumEnumerationRequested() const { return m_fMediumEnumerationRequested; }
-#endif
     /** Makes a request to enumerate specified @a comMedia.
       * @note  Previous map will be replaced with the new one, values present in both
       *        maps will be merged from the previous to new one, keep that all in mind.
@@ -110,15 +102,6 @@ protected:
 
 private slots:
 
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    /** Handles machine-data-change and snapshot-change events for a machine with specified @a uMachineID. */
-    void sltHandleMachineUpdate(const QUuid &uMachineID);
-    /** Handles machine-[un]registration events for a machine with specified @a uMachineID.
-      * @param  fRegistered  Specifies whether the machine was registered or unregistered otherwise. */
-    void sltHandleMachineRegistration(const QUuid &uMachineID, const bool fRegistered);
-    /** Handles snapshot-deleted events for a machine with specified @a uMachineID and a snapshot with specified @a uSnapshotID. */
-    void sltHandleSnapshotDeleted(const QUuid &uMachineID, const QUuid &uSnapshotID);
-#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
     /** Handles machine-data-change event for a machine with specified @a uMachineId. */
     void sltHandleMachineDataChange(const QUuid &uMachineId);
 
@@ -140,7 +123,6 @@ private slots:
       * @param  enmMediumType  Brings corresponding medium type.
       * @param  fRegistered    Brings whether medium is registered or unregistered. */
     void sltHandleMediumRegistered(const QUuid &uMediumId, KDeviceType enmMediumType, bool fRegistered);
-#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /** Handles medium-enumeration @a pTask complete signal. */
     void sltHandleMediumEnumerationTaskComplete(UITask *pTask);
@@ -154,43 +136,6 @@ private:
     /** Adds @a inputMedia to specified @a outputMedia map. */
     void addMediaToMap(const CMediumVector &inputMedia, UIMediumMap &outputMedia);
 
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    /** Updates usage for machine with specified @a uMachineID on the basis of cached data.
-      * @param  previousUIMediumIDs               Brings UIMedium IDs used in cached data.
-      * @param  fTakeIntoAccountCurrentStateOnly  Brings whether we should take into accound current VM state only. */
-    void calculateCachedUsage(const QUuid &uMachineID,
-                              QList<QUuid> &previousUIMediumIDs,
-                              const bool fTakeIntoAccountCurrentStateOnly) const;
-    /** Updates usage for machine with specified @a uMachineID on the basis of actual data.
-      * @param  currentCMediums                   Brings CMedium used in actual data.
-      * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data.
-      * @param  fTakeIntoAccountCurrentStateOnly  Brings whether we should take into accound current VM state only. */
-    void calculateActualUsage(const QUuid &uMachineID,
-                              CMediumMap &currentCMediums,
-                              QList<QUuid> &currentCMediumIDs,
-                              const bool fTakeIntoAccountCurrentStateOnly) const;
-    /** Updates usage for machine specified by its @a comSnapshot reference on the basis of actual data.
-      * @param  currentCMediums                   Brings CMedium used in actual data.
-      * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data. */
-    void calculateActualUsage(const CSnapshot &comSnapshot,
-                              CMediumMap &currentCMediums,
-                              QList<QUuid> &currentCMediumIDs) const;
-    /** Updates usage for machine specified by own @a comMachine reference on the basis of actual data.
-      * @param  currentCMediums                   Brings CMedium used in actual data.
-      * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data. */
-    void calculateActualUsage(const CMachine &comMachine,
-                              CMediumMap &currentCMediums,
-                              QList<QUuid> &currentCMediumIDs) const;
-
-    /** Updates cache using known changes in cached data.
-      * @param  previousUIMediumIDs               Brings UIMedium IDs used in cached data. */
-    void recacheFromCachedUsage(const QList<QUuid> &previousUIMediumIDs);
-    /** Updates cache using known changes in actual data.
-      * @param  currentCMediums                   Brings CMedium used in actual data.
-      * @param  currentCMediumIDs                 Brings CMedium IDs used in actual data. */
-    void recacheFromActualUsage(const CMediumMap &currentCMediums,
-                                const QList<QUuid> &currentCMediumIDs);
-#else /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
     /** Parses incoming @a comAttachment, enumerating the media it has attached.
       * @param  result  Brings the list of previously enumerated media
       *                 IDs to be appended with newly enumerated. */
@@ -208,14 +153,11 @@ private:
       * @param  result  Brings the list of previously enumerated media
       *                 IDs to be appended with newly enumerated. */
     void enumerateAllMediaOfMediumWithId(const QUuid &uMediumId, QList<QUuid> &result);
-#endif /* VBOX_GUI_WITH_NEW_MEDIA_EVENTS */
 
     /** Holds whether consolidated medium-enumeration process is in progress. */
     bool  m_fMediumEnumerationInProgress;
-#ifdef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
     /** Holds whether full consolidated medium-enumeration process is requested. */
     bool  m_fMediumEnumerationRequested;
-#endif
 
     /** Holds a set of current medium-enumeration tasks. */
     QSet<UITask*>  m_tasks;

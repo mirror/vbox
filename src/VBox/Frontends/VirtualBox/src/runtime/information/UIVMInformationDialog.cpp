@@ -168,11 +168,7 @@ void UIVMInformationDialog::prepare()
     loadSettings();
 
     /* This is needed at least for some VM to show correct storage info. */
-#ifndef VBOX_GUI_WITH_NEW_MEDIA_EVENTS
-    if (uiCommon().uiType() == UICommon::UIType_RuntimeUI)
-#else
     if (!uiCommon().isFullMediumEnumerationRequested())
-#endif
         uiCommon().startMediumEnumeration();
 }
 
