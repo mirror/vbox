@@ -27,6 +27,7 @@
 #include <iprt/win/shlobj.h>
 #include <iprt/win/shlwapi.h>
 
+#include <iprt/asm.h>
 #include <iprt/err.h>
 #include <iprt/path.h>
 #include <iprt/semaphore.h>
@@ -363,6 +364,12 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                     pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
                 }
 
+                if (ASMAtomicReadBool(&pTransfer->Thread.fStop))
+                {
+                    LogRel2(("Shared Clipboard: Stopping transfer calculating ...\n"));
+                    break;
+                }
+
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -372,7 +379,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
             if (RT_SUCCESS(rc))
             {
-                LogRel2(("Shared Clipboard: Calculation complete, starting transfer ...\n"));
+                LogRel2(("Shared Clipboard: Transfer calculation complete (%zu root entries)\n", pThis->m_lstEntries.size()));
 
                 /*
                  * Signal the "list complete" event so that this data object can return (valid) data via ::GetData().
@@ -381,12 +388,21 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                 int rc2 = RTSemEventSignal(pThis->m_EventListComplete);
                 AssertRC(rc2);
 
-                LogFlowFunc(("Waiting for transfer to complete ...\n"));
+                if (pThis->m_lstEntries.size())
+                {
+                    LogRel2(("Shared Clipboard: Starting transfer ...\n"));
 
-                /* Transferring stuff can take a while, so don't use any timeout here. */
-                rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
-                AssertRC(rc2);
+                    LogFlowFunc(("Waiting for transfer to complete ...\n"));
+
+                    /* Transferring stuff can take a while, so don't use any timeout here. */
+                    rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
+                    AssertRC(rc2);
+                }
+                else
+                   LogRel(("Shared Clipboard: No transfer root entries found -- should not happen, please file a bug report\n"));
             }
+            else
+                LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
         }
 
         SharedClipboardTransferClose(pTransfer);
@@ -418,7 +434,8 @@ int SharedClipboardWinDataObject::createFileGroupDescriptorFromTransfer(PSHCLTRA
     const UINT   cItems = (UINT)m_lstEntries.size(); /** UINT vs. size_t. */
     if (!cItems)
         return VERR_NOT_FOUND;
-          UINT   curIdx = 0; /* Current index of the handled file group descriptor (FGD). */
+
+    UINT         curIdx = 0; /* Current index of the handled file group descriptor (FGD). */
 
     const size_t cbFGD  = cbFileGroupDescriptor + (cbFileDescriptor * (cItems - 1));
 
@@ -568,12 +585,10 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
                 {
                     /* Don't block for too long here, as this also will screw other apps running on the OS. */
                     LogFunc(("Waiting for listing to arrive ...\n"));
-                    rc = RTSemEventWait(m_EventListComplete, 10 * 1000 /* 10s timeout */);
+                    rc = RTSemEventWait(m_EventListComplete, 30 * 1000 /* 30s timeout */);
                     if (RT_SUCCESS(rc))
                     {
                         LogFunc(("Listing complete\n"));
-
-
                     }
                 }
             }
@@ -593,6 +608,8 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
 
                 hr = S_OK;
             }
+            else /* We can't tell any better to the caller, unfortunately. */
+                hr = E_UNEXPECTED;
         }
 
         if (RT_FAILURE(rc))
@@ -625,17 +642,8 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
         }
     }
 
-    /* Error handling; at least return some basic data. */
     if (FAILED(hr))
-    {
-        LogFunc(("Failed; copying medium ...\n"));
-
-        //pMedium->tymed          = pThisFormat->tymed;
-        //pMedium->pUnkForRelease = NULL;
-    }
-
-    if (hr == DV_E_FORMATETC)
-        LogRel(("Shared Clipboard: Error handling format\n"));
+        LogRel(("Shared Clipboard: Error returning data from data object (%Rhrc)\n", hr));
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
