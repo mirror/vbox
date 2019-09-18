@@ -44,8 +44,9 @@ void UIMediaComboBox::refresh()
     foreach (const QUuid &uMediumId, uiCommon().mediumIDs())
         sltHandleMediumCreated(uMediumId);
 
-    /* If at least one real medium present, remove null medium: */
-    if (count() > 1 && m_enmMediaType == UIMediumDeviceType_HardDisk)
+    /* If at least one real medium present,
+     * remove null medium: */
+    if (count() > 1)
     {
         removeItem(0);
         m_media.erase(m_media.begin());
