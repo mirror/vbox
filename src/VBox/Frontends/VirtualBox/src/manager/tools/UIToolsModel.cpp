@@ -494,13 +494,17 @@ void UIToolsModel::prepareHandlers()
 
 void UIToolsModel::prepareConnections()
 {
-    /* Setup parent connections: */
-    connect(this, &UIToolsModel::sigSelectionChanged,
-            qobject_cast<UITools*>(parent()), &UITools::sigSelectionChanged);
-    connect(this, &UIToolsModel::sigExpandingStarted,
-            qobject_cast<UITools*>(parent()), &UITools::sigExpandingStarted);
-    connect(this, &UIToolsModel::sigExpandingFinished,
-            qobject_cast<UITools*>(parent()), &UITools::sigExpandingFinished);
+    UITools* pTools = qobject_cast<UITools*>(parent());
+    AssertPtrReturnVoid(pTools);
+    {
+        /* Setup parent connections: */
+        connect(this, &UIToolsModel::sigSelectionChanged,
+                pTools, &UITools::sigSelectionChanged);
+        connect(this, &UIToolsModel::sigExpandingStarted,
+                pTools, &UITools::sigExpandingStarted);
+        connect(this, &UIToolsModel::sigExpandingFinished,
+                pTools, &UITools::sigExpandingFinished);
+    }
 }
 
 void UIToolsModel::loadLastSelectedItems()

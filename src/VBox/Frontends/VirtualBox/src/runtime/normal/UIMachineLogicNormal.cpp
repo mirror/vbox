@@ -295,10 +295,14 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, &UIMachineLogicNormal::sltOpenStatusBarSettings);
     connect(actionPool()->action(UIActionIndexRT_M_View_M_StatusBar_T_Visibility), &UIAction::triggered,
             this, &UIMachineLogicNormal::sltToggleStatusBar);
-    connect(qobject_cast<UIActionPoolRuntime*>(actionPool()), &UIActionPoolRuntime::sigNotifyAboutTriggeringViewScreenToggle,
-            this, &UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle);
-    connect(qobject_cast<UIActionPoolRuntime*>(actionPool()), &UIActionPoolRuntime::sigNotifyAboutTriggeringViewScreenResize,
-            this, &UIMachineLogicNormal::sltHandleActionTriggerViewScreenResize);
+    UIActionPoolRuntime* pActionPoolRuntime = qobject_cast<UIActionPoolRuntime*>(actionPool());
+    AssertPtrReturnVoid(pActionPoolRuntime);
+    {
+        connect(pActionPoolRuntime, &UIActionPoolRuntime::sigNotifyAboutTriggeringViewScreenToggle,
+                this, &UIMachineLogicNormal::sltHandleActionTriggerViewScreenToggle);
+        connect(pActionPoolRuntime, &UIActionPoolRuntime::sigNotifyAboutTriggeringViewScreenResize,
+                this, &UIMachineLogicNormal::sltHandleActionTriggerViewScreenResize);
+    }
 }
 
 void UIMachineLogicNormal::prepareMachineWindows()

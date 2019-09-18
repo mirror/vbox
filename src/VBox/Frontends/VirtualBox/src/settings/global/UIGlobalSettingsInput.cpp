@@ -841,8 +841,12 @@ void UIHotKeyTable::prepare()
     horizontalHeader()->setSectionResizeMode(UIHotKeyColumnIndex_Sequence, QHeaderView::Stretch);
 
     /* Connect model: */
-    connect(qobject_cast<UIHotKeyTableModel*>(model()), &UIHotKeyTableModel::sigShortcutsLoaded,
-            this, &UIHotKeyTable::sltHandleShortcutsLoaded);
+    UIHotKeyTableModel *pHotKeyTableModel = qobject_cast<UIHotKeyTableModel*>(model());
+    AssertPtrReturnVoid(pHotKeyTableModel);
+    {
+        connect(pHotKeyTableModel, &UIHotKeyTableModel::sigShortcutsLoaded,
+                this, &UIHotKeyTable::sltHandleShortcutsLoaded);
+    }
 
     /* Check if we do have proper item delegate: */
     QIStyledItemDelegate *pStyledItemDelegate = qobject_cast<QIStyledItemDelegate*>(itemDelegate());

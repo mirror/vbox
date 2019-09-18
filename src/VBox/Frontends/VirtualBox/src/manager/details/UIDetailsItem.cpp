@@ -283,9 +283,14 @@ UIPrepareStep::UIPrepareStep(QObject *pParent, QObject *pBuildObject, const QUui
     connect(qobject_cast<UIDetailsItem*>(pBuildObject), &UIDetailsItem::sigBuildDone,
             this, &UIPrepareStep::sltStepDone,
             Qt::QueuedConnection);
-    connect(this, &UIPrepareStep::sigStepDone,
-            qobject_cast<UIDetailsItem*>(pParent), &UIDetailsItem::sltBuildStep,
-            Qt::QueuedConnection);
+
+    UIDetailsItem *pDetailsItem = qobject_cast<UIDetailsItem*>(pParent);
+    AssertPtrReturnVoid(pDetailsItem);
+    {
+        connect(this, &UIPrepareStep::sigStepDone,
+                pDetailsItem, &UIDetailsItem::sltBuildStep,
+                Qt::QueuedConnection);
+    }
 }
 
 void UIPrepareStep::sltStepDone()

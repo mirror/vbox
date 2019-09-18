@@ -79,9 +79,9 @@ void UIVMLogPage::prepareWidgets()
     m_pTextEdit = new UIVMLogViewerTextEdit(this);
     m_pMainLayout->addWidget(m_pTextEdit);
 
-    connect(qobject_cast<UIVMLogViewerTextEdit*>(m_pTextEdit), &UIVMLogViewerTextEdit::sigAddBookmark,
+    connect(m_pTextEdit, &UIVMLogViewerTextEdit::sigAddBookmark,
             this, &UIVMLogPage::sltAddBookmark);
-    connect(qobject_cast<UIVMLogViewerTextEdit*>(m_pTextEdit), &UIVMLogViewerTextEdit::sigDeleteBookmark,
+    connect(m_pTextEdit, &UIVMLogViewerTextEdit::sigDeleteBookmark,
             this, &UIVMLogPage::sltDeleteBookmark);
 }
 
