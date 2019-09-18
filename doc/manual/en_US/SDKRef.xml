@@ -1558,7 +1558,7 @@ mgr = VirtualBoxManager(None, None)
 vbox = mgr.vbox
 
 for m in mgr.getArray(vbox, 'machines'):
-print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
+    print "Machine '%s' logs in '%s'" %(m.name, m.logFolder)
         </screen>
 
         <para>Code above demonstrates cross-platform access to array properties
