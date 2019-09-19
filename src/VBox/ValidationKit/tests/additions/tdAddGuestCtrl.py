@@ -2238,7 +2238,7 @@ class SubTstDrvAddGuestCtrl(base.SubTestDriverBase):
                                             tdStepSessionBulkEnv(['=D:=D:/temp', '=FOO', 'foo=bar']),
                                             tdStepSessionCheckEnv(['=D:=D:/temp', '=FOO', 'foo=bar']),
                                             tdStepSessionUnsetEnv('=D:'),
-                                            tdStepSessionCheckEnv(['=FOO', 'foo=bar']),
+                                            tdStepSessionCheckEnv(['=D:', '=FOO', 'foo=bar']),
                                             ]));
 
         return tdTestSessionEx.executeListTestSessions(aoTests, self.oTstDrv, oSession, oTxsSession, oTestVm, 'SessionEnv');
