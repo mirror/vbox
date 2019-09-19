@@ -249,6 +249,15 @@
 # define FSPERF_VERR_PATH_NOT_FOUND     VERR_FILE_NOT_FOUND
 #endif
 
+#ifdef RT_OS_WINDOWS
+/** @def CHECK_WINAPI
+ * Checks a windows API call, reporting the last error on failure. */
+# define CHECK_WINAPI_CALL(a_CallAndTestExpr) \
+    if (!(a_CallAndTestExpr)) { \
+        RTTestIFailed("line %u: %s failed - last error %u, last status %#x", \
+                      __LINE__, #a_CallAndTestExpr, GetLastError(), RTNtLastStatusValue()); \
+    } else do {} while (0)
+#endif
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -5372,7 +5381,7 @@ DECL_FORCE_INLINE(int) fsPerfMSyncWorker(uint8_t *pbMapping, size_t offMapping, 
     for (size_t offFlush = 0; offFlush < cbFlush; offFlush += PAGE_SIZE)
         *(size_t volatile *)&pbCur[offFlush + 8] = cbFlush;
 # ifdef RT_OS_WINDOWS
-    RTTESTI_CHECK(FlushViewOfFile(pbCur, cbFlush));
+    CHECK_WINAPI_CALL(FlushViewOfFile(pbCur, cbFlush) == TRUE);
 # else
     RTTESTI_CHECK(msync(pbCur, cbFlush, MS_SYNC) == 0);
 # endif
@@ -5420,7 +5429,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                 if (pbMapping)
                     break;
                 dwErr2 = GetLastError();
-                CloseHandle(hSection);
+                CHECK_WINAPI_CALL(CloseHandle(hSection) == TRUE);
             }
             if (cbMapping <= _2M)
             {
@@ -5478,7 +5487,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                     fsPerfCheckReadBuf(__LINE__, off, abBuf, sizeof(abBuf), 0xf7);
                 }
 # ifdef RT_OS_WINDOWS
-                RTTESTI_CHECK(FlushViewOfFile(pbMapping, _2M));
+                CHECK_WINAPI_CALL(FlushViewOfFile(pbMapping, _2M) == TRUE);
 # else
                 RTTESTI_CHECK(msync(pbMapping, _2M, MS_SYNC) == 0);
 # endif
@@ -5549,7 +5558,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                 RTTestIPrintf(RTTESTLVL_ALWAYS, "Restoring content...\n");
                 fsPerfFillWriteBuf(0, pbMapping, cbMapping, 0xf6);
 #  ifdef RT_OS_WINDOWS
-                RTTESTI_CHECK(FlushViewOfFile(pbMapping, cbMapping));
+                CHECK_WINAPI_CALL(FlushViewOfFile(pbMapping, cbMapping) == TRUE);
 #  else
                 RTTESTI_CHECK(msync(pbMapping, cbMapping, MS_SYNC) == 0);
 #  endif
@@ -5610,8 +5619,8 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
          * Unmap it.
          */
 # ifdef RT_OS_WINDOWS
-        RTTESTI_CHECK(UnmapViewOfFile(pbMapping));
-        RTTESTI_CHECK(CloseHandle(hSection));
+        CHECK_WINAPI_CALL(UnmapViewOfFile(pbMapping) == TRUE);
+        CHECK_WINAPI_CALL(CloseHandle(hSection) == TRUE);
 # else
         RTTESTI_CHECK(munmap(pbMapping, cbMapping) == 0);
 # endif
@@ -5658,10 +5667,10 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
             /* Memory map it read-write (no COW). */
 #ifdef RT_OS_WINDOWS
             HANDLE hSection = CreateFileMapping((HANDLE)RTFileToNative(hFile2), NULL, PAGE_READWRITE, 0, cbContent, NULL);
-            RTTESTI_CHECK_MSG(hSection  != NULL, ("last error %u\n", GetLastError));
+            CHECK_WINAPI_CALL(hSection != NULL);
             uint8_t *pbMapping = (uint8_t *)MapViewOfFile(hSection, FILE_MAP_WRITE, 0, 0, cbContent);
-            RTTESTI_CHECK_MSG(pbMapping != NULL, ("last error %u\n", GetLastError));
-            RTTESTI_CHECK_MSG(CloseHandle(hSection), ("last error %u\n", GetLastError));
+            CHECK_WINAPI_CALL(pbMapping != NULL);
+            CHECK_WINAPI_CALL(CloseHandle(hSection) == TRUE);
 # else
             uint8_t *pbMapping = (uint8_t *)mmap(NULL, cbContent, PROT_READ | PROT_WRITE, MAP_SHARED,
                                                  (int)RTFileToNative(hFile2), 0);
@@ -5700,14 +5709,14 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
 
                 /* Sync it all. */
 #  ifdef RT_OS_WINDOWS
-                RTTESTI_CHECK(FlushViewOfFile(pbMapping, cbContent));
+                CHECK_WINAPI_CALL(FlushViewOfFile(pbMapping, cbContent) == TRUE);
 #  else
                 RTTESTI_CHECK(msync(pbMapping, cbContent, MS_SYNC) == 0);
 #  endif
 
                 /* Unmap it. */
 # ifdef RT_OS_WINDOWS
-                RTTESTI_CHECK(UnmapViewOfFile(pbMapping));
+                CHECK_WINAPI_CALL(UnmapViewOfFile(pbMapping) == TRUE);
 # else
                 RTTESTI_CHECK(munmap(pbMapping, cbContent) == 0);
 # endif
