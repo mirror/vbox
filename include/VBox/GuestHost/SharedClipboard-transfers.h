@@ -47,20 +47,26 @@
  *  @{
  */
 
-/** No status set. */
-#define SHCLTRANSFERSTATUS_NONE           0
-/** The transfer has been announced but is not running yet. */
-#define SHCLTRANSFERSTATUS_READY          1
-/** The transfer is active and running. */
-#define SHCLTRANSFERSTATUS_STARTED        2
-/** The transfer has been stopped. */
-#define SHCLTRANSFERSTATUS_STOPPED        3
-/** The transfer has been canceled. */
-#define SHCLTRANSFERSTATUS_CANCELED       4
-/** The transfer has been killed. */
-#define SHCLTRANSFERSTATUS_KILLED         5
-/** The transfer ran into an unrecoverable error. */
-#define SHCLTRANSFERSTATUS_ERROR          6
+/**
+ * Defines the transfer status codes.
+ */
+typedef enum
+{
+    /** No status set. */
+    SHCLTRANSFERSTATUS_NONE = 0,
+    /** The transfer has been initialized but is not running yet. */
+    SHCLTRANSFERSTATUS_INITIALIZED,
+    /** The transfer is active and running. */
+    SHCLTRANSFERSTATUS_STARTED,
+    /** The transfer has been stopped. */
+    SHCLTRANSFERSTATUS_STOPPED,
+    /** The transfer has been canceled. */
+    SHCLTRANSFERSTATUS_CANCELED,
+    /** The transfer has been killed. */
+    SHCLTRANSFERSTATUS_KILLED,
+    /** The transfer ran into an unrecoverable error. */
+    SHCLTRANSFERSTATUS_ERROR
+} SHCLTRANSFERSTATUSENUM;
 
 /** Defines a transfer status. */
 typedef uint32_t SHCLTRANSFERSTATUS;
@@ -872,7 +878,7 @@ typedef struct _SHCLPROVIDERINTERFACE
 {
     SHCLPROVIDERFUNCMEMBER(TRANSFEROPEN, pfnTransferOpen)
     SHCLPROVIDERFUNCMEMBER(TRANSFERCLOSE, pfnTransferClose)
-    SHCLPROVIDERFUNCMEMBER(GETROOTS, pfnGetRoots)
+    SHCLPROVIDERFUNCMEMBER(GETROOTS, pfnRootsGet)
     SHCLPROVIDERFUNCMEMBER(LISTOPEN, pfnListOpen)
     SHCLPROVIDERFUNCMEMBER(LISTCLOSE, pfnListClose)
     SHCLPROVIDERFUNCMEMBER(LISTHDRREAD, pfnListHdrRead)
@@ -912,24 +918,20 @@ typedef struct _SHCLTRANSFERCALLBACKDATA
     void         *pvUser;
 } SHCLTRANSFERCALLBACKDATA, *PSHCLTRANSFERCALLBACKDATA;
 
-#define SHCLTRANSFERCALLBACKDECLVOID(a_Name) \
-    typedef DECLCALLBACK(void) RT_CONCAT(FNSHCLCALLBACK, a_Name)(PSHCLTRANSFERCALLBACKDATA pData); \
-    typedef RT_CONCAT(FNSHCLCALLBACK, a_Name) RT_CONCAT(*PFNSHCLCALLBACK, a_Name);
-
-#define SHCLTRANSFERCALLBACKDECL(a_Name, ...) \
-    typedef DECLCALLBACK(void) RT_CONCAT(FNSHCLCALLBACK, a_Name)(PSHCLTRANSFERCALLBACKDATA pData, __VA_ARGS__); \
+#define SHCLTRANSFERCALLBACKDECL(a_Ret, a_Name, ...) \
+    typedef DECLCALLBACK(a_Ret) RT_CONCAT(FNSHCLCALLBACK, a_Name)(PSHCLTRANSFERCALLBACKDATA pData, __VA_ARGS__); \
     typedef RT_CONCAT(FNSHCLCALLBACK, a_Name) RT_CONCAT(*PFNSHCLCALLBACK, a_Name);
 
 #define SHCLTRANSFERCALLBACKMEMBER(a_Name, a_Member) \
     RT_CONCAT(PFNSHCLCALLBACK, a_Name) a_Member;
 
-SHCLTRANSFERCALLBACKDECLVOID(TRANSFERPREPARE)
-SHCLTRANSFERCALLBACKDECLVOID(TRANSFERSTARTED)
-SHCLTRANSFERCALLBACKDECLVOID(LISTHEADERCOMPLETE)
-SHCLTRANSFERCALLBACKDECLVOID(LISTENTRYCOMPLETE)
-SHCLTRANSFERCALLBACKDECL    (TRANSFERCOMPLETE, int rc)
-SHCLTRANSFERCALLBACKDECLVOID(TRANSFERCANCELED)
-SHCLTRANSFERCALLBACKDECL    (TRANSFERERROR, int rc)
+SHCLTRANSFERCALLBACKDECL(int,  TRANSFERINITIALIZE)
+SHCLTRANSFERCALLBACKDECL(int,  TRANSFERSTART)
+SHCLTRANSFERCALLBACKDECL(void, LISTHEADERCOMPLETE)
+SHCLTRANSFERCALLBACKDECL(void, LISTENTRYCOMPLETE)
+SHCLTRANSFERCALLBACKDECL(void, TRANSFERCOMPLETE, int rc)
+SHCLTRANSFERCALLBACKDECL(void, TRANSFERCANCELED)
+SHCLTRANSFERCALLBACKDECL(void, TRANSFERERROR, int rc)
 
 /**
  * Structure acting as a function callback table for Shared Clipboard transfers.
@@ -937,12 +939,12 @@ SHCLTRANSFERCALLBACKDECL    (TRANSFERERROR, int rc)
  */
 typedef struct _SHCLTRANSFERCALLBACKS
 {
-    /** Saved user pointer. */
+    /** Saved user pointer. Optional and can be NULL. */
     void *pvUser;
-    /** Function pointer, called when the transfer is going to be prepared. */
-    SHCLTRANSFERCALLBACKMEMBER(TRANSFERPREPARE, pfnTransferPrepare)
-    /** Function pointer, called when the transfer has been started. */
-    SHCLTRANSFERCALLBACKMEMBER(TRANSFERSTARTED, pfnTransferStarted)
+    /** Function pointer, called after the transfer has been initialized. */
+    SHCLTRANSFERCALLBACKMEMBER(TRANSFERINITIALIZE, pfnTransferInitialize)
+    /** Function pointer, called before the transfer will be started. */
+    SHCLTRANSFERCALLBACKMEMBER(TRANSFERSTART, pfnTransferStart)
     /** Function pointer, called when reading / writing the list header is complete. */
     SHCLTRANSFERCALLBACKMEMBER(LISTHEADERCOMPLETE, pfnListHeaderComplete)
     /** Function pointer, called when reading / writing a list entry is complete. */
@@ -1078,35 +1080,29 @@ int SharedClipboardTransferInit(PSHCLTRANSFER pTransfer, uint32_t uID, SHCLTRANS
 int SharedClipboardTransferOpen(PSHCLTRANSFER pTransfer);
 int SharedClipboardTransferClose(PSHCLTRANSFER pTransfer);
 
-int SharedClipboardTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
-                                       PSHCLLISTHANDLE phList);
+int SharedClipboardTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
 int SharedClipboardTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
-int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
-                                            PSHCLLISTHDR pHdr);
-PSHCLTRANSFEROBJ SharedClipboardTransferListGetObj(PSHCLTRANSFER pTransfer,
-                                                                    SHCLLISTHANDLE hList, uint64_t uIdx);
-int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
-                                       PSHCLLISTENTRY pEntry);
-int SharedClipboardTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
-                                        PSHCLLISTENTRY pEntry);
+int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTHDR pHdr);
+PSHCLTRANSFEROBJ SharedClipboardTransferListGetObj(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, uint64_t uIdx);
+int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
+int SharedClipboardTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
 bool SharedClipboardTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
 
-int SharedClipboardTransferPrepare(PSHCLTRANSFER pTransfer);
-int SharedClipboardTransferSetInterface(PSHCLTRANSFER pTransfer,
-                                           PSHCLPROVIDERCREATIONCTX pCreationCtx);
-int SharedClipboardTransferSetRoots(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
+int SharedClipboardTransferSetInterface(PSHCLTRANSFER pTransfer, PSHCLPROVIDERCREATIONCTX pCreationCtx);
+int SharedClipboardTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
 void SharedClipboardTransferReset(PSHCLTRANSFER pTransfer);
 SharedClipboardArea *SharedClipboardTransferGetArea(PSHCLTRANSFER pTransfer);
 
 uint32_t SharedClipboardTransferRootsCount(PSHCLTRANSFER pTransfer);
 int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer, uint64_t uIndex, PSHCLROOTLISTENTRY pEntry);
-int SharedClipboardTransferRootsAsList(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList);
+int SharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList);
 
 SHCLTRANSFERID SharedClipboardTransferGetID(PSHCLTRANSFER pTransfer);
 SHCLSOURCE SharedClipboardTransferGetSource(PSHCLTRANSFER pTransfer);
 SHCLTRANSFERSTATUS SharedClipboardTransferGetStatus(PSHCLTRANSFER pTransfer);
 int SharedClipboardTransferHandleReply(PSHCLTRANSFER pTransfer, PSHCLREPLY pReply);
 int SharedClipboardTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
+int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer);
 void SharedClipboardTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKS pCallbacks);
 
 int SharedClipboardTransferRead(PSHCLTRANSFER pTransfer);
@@ -1132,7 +1128,7 @@ void SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
 bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
 bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);
 
-const char *VBoxShClTransferStatusToStr(uint32_t uStatus);
+const char *VBoxShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_transfers_h */
 

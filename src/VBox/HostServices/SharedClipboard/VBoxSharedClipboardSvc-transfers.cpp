@@ -89,7 +89,7 @@ DECLCALLBACK(int) sharedClipboardSvcTransferGetRoots(PSHCLPROVIDERCTX pCtx, PSHC
         SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsgHdr->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                                   pCtx->pTransfer->State.uID, uEvent));
+                                                                     pCtx->pTransfer->State.uID, uEvent));
         HGCMSvcSetU32(&pMsgHdr->paParms[1], 0 /* fRoots */);
 
         rc = sharedClipboardSvcMsgAdd(pClient, pMsgHdr, true /* fAppend */);
@@ -643,45 +643,6 @@ int sharedClipboardSvcTransferObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj
 
     LogFlowFuncLeaveRC(rc);
     return rc;
-}
-
-
-/*********************************************************************************************************************************
-*   transfer callbacks                                                                                                                *
-*********************************************************************************************************************************/
-
-DECLCALLBACK(void) VBoxSvcClipboardTransferPrepareCallback(PSHCLTRANSFERCALLBACKDATA pData)
-{
-    RT_NOREF(pData);
-
-    LogFlowFuncEnter();
-}
-
-DECLCALLBACK(void) VBoxSvcClipboardTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
-{
-    RT_NOREF(pData, rc);
-
-    LogFlowFuncEnter();
-
-    LogRel2(("Shared Clipboard: Transfer complete\n"));
-}
-
-DECLCALLBACK(void) VBoxSvcClipboardTransferCanceledCallback(PSHCLTRANSFERCALLBACKDATA pData)
-{
-    LogFlowFuncEnter();
-
-    RT_NOREF(pData);
-
-    LogRel2(("Shared Clipboard: Transfer canceled\n"));
-}
-
-DECLCALLBACK(void) VBoxSvcClipboardTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc)
-{
-    LogFlowFuncEnter();
-
-    RT_NOREF(pData, rc);
-
-    LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
 }
 
 
@@ -1372,7 +1333,7 @@ int sharedClipboardSvcTransferHandler(PSHCLCLIENT pClient,
 
                         if (enmDir == SHCLTRANSFERDIR_READ)
                         {
-                            creationCtx.Interface.pfnGetRoots        = sharedClipboardSvcTransferGetRoots;
+                            creationCtx.Interface.pfnRootsGet        = sharedClipboardSvcTransferGetRoots;
                             creationCtx.Interface.pfnListHdrRead     = sharedClipboardSvcTransferListHdrRead;
                             creationCtx.Interface.pfnListEntryRead   = sharedClipboardSvcTransferListEntryRead;
                             creationCtx.Interface.pfnObjRead         = sharedClipboardSvcTransferObjRead;
@@ -2175,7 +2136,7 @@ int sharedClipboardSvcTransferStart(PSHCLCLIENT pClient,
                     creationCtx.Interface.pfnObjOpen         = sharedClipboardSvcTransferObjOpen;
                     creationCtx.Interface.pfnObjClose        = sharedClipboardSvcTransferObjClose;
 
-                    creationCtx.Interface.pfnGetRoots        = sharedClipboardSvcTransferGetRoots;
+                    creationCtx.Interface.pfnRootsGet        = sharedClipboardSvcTransferGetRoots;
                     creationCtx.Interface.pfnListHdrRead     = sharedClipboardSvcTransferListHdrRead;
                     creationCtx.Interface.pfnListEntryRead   = sharedClipboardSvcTransferListEntryRead;
                     creationCtx.Interface.pfnObjRead         = sharedClipboardSvcTransferObjRead;
@@ -2193,19 +2154,6 @@ int sharedClipboardSvcTransferStart(PSHCLCLIENT pClient,
             creationCtx.enmSource = pClient->State.enmSource;
             creationCtx.pvUser    = pClient;
 
-            /* Register needed callbacks so that we can wait for the meta data to arrive here. */
-            SHCLTRANSFERCALLBACKS Callbacks;
-            RT_ZERO(Callbacks);
-
-            Callbacks.pvUser                = pClient;
-
-            Callbacks.pfnTransferPrepare    = VBoxSvcClipboardTransferPrepareCallback;
-            Callbacks.pfnTransferComplete   = VBoxSvcClipboardTransferCompleteCallback;
-            Callbacks.pfnTransferCanceled   = VBoxSvcClipboardTransferCanceledCallback;
-            Callbacks.pfnTransferError      = VBoxSvcClipboardTransferErrorCallback;
-
-            SharedClipboardTransferSetCallbacks(pTransfer, &Callbacks);
-
             uint32_t uTransferID = 0;
 
             rc = SharedClipboardTransferSetInterface(pTransfer, &creationCtx);
@@ -2222,7 +2170,7 @@ int sharedClipboardSvcTransferStart(PSHCLCLIENT pClient,
                         {
                             SHCLEVENTID uEvent;
                             rc = sharedClipboardSvcTransferSendStatus(pClient, pTransfer,
-                                                                      SHCLTRANSFERSTATUS_READY, VINF_SUCCESS,
+                                                                      SHCLTRANSFERSTATUS_INITIALIZED, VINF_SUCCESS,
                                                                       &uEvent);
                             if (RT_SUCCESS(rc))
                             {
@@ -2239,7 +2187,7 @@ int sharedClipboardSvcTransferStart(PSHCLCLIENT pClient,
 
                                     Assert(pReply->uType == VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS);
 
-                                    if (pReply->u.TransferStatus.uStatus)
+                                    if (pReply->u.TransferStatus.uStatus == SHCLTRANSFERSTATUS_STARTED)
                                     {
                                         LogRel2(("Shared Clipboard: Started transfer %RU32 on guest\n", pTransfer->State.uID));
                                     }

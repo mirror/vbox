@@ -334,7 +334,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
     if (RT_SUCCESS(rc))
     {
         PSHCLROOTLIST pRootList;
-        rc = SharedClipboardTransferLTransferRootsAsList(pTransfer, &pRootList);
+        rc = SharedClipboardTransferRootsGet(pTransfer, &pRootList);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("cRoots=%RU32\n\n", pRootList->Hdr.cRoots));
@@ -569,27 +569,26 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
     {
         const bool fUnicode = pFormatEtc->cfFormat == m_cfFileDescriptorW;
 
-        LogFlowFunc(("FormatIndex_FileDescriptor%s\n", fUnicode ? "W" : "A"));
+        const uint32_t enmTransferStatus = SharedClipboardTransferGetStatus(m_pTransfer);
+
+        LogFlowFunc(("FormatIndex_FileDescriptor%s, transfer status is %s\n",
+                     fUnicode ? "W" : "A", VBoxShClTransferStatusToStr(enmTransferStatus)));
 
         int rc;
 
         /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
-        if (SharedClipboardTransferGetStatus(m_pTransfer) == SHCLTRANSFERSTATUS_NONE)
+        if (enmTransferStatus == SHCLTRANSFERSTATUS_INITIALIZED)
         {
-            rc = SharedClipboardTransferPrepare(m_pTransfer);
+            /* Start the transfer asynchronously in a separate thread. */
+            rc = SharedClipboardTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this);
             if (RT_SUCCESS(rc))
             {
-                /* Start the transfer asynchronously in a separate thread. */
-                rc = SharedClipboardTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this);
+                /* Don't block for too long here, as this also will screw other apps running on the OS. */
+                LogFunc(("Waiting for listing to arrive ...\n"));
+                rc = RTSemEventWait(m_EventListComplete, 30 * 1000 /* 30s timeout */);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Don't block for too long here, as this also will screw other apps running on the OS. */
-                    LogFunc(("Waiting for listing to arrive ...\n"));
-                    rc = RTSemEventWait(m_EventListComplete, 30 * 1000 /* 30s timeout */);
-                    if (RT_SUCCESS(rc))
-                    {
-                        LogFunc(("Listing complete\n"));
-                    }
+                    LogFunc(("Listing complete\n"));
                 }
             }
         }

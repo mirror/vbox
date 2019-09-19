@@ -575,6 +575,17 @@ VBGLR3DECL(int)     VbglR3GetSessionId(uint64_t *pu64IdSession);
 /** @name Shared Clipboard
  * @{ */
 
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+/**
+ * Structure containing context parameters for Shared Clipboard transfers.
+ */
+typedef struct VBGLR3SHCLTRANSFERCMDCTX
+{
+    /** Callback table to use for all transfers. */
+    SHCLTRANSFERCALLBACKS Callbacks;
+} VBGLR3SHCLTRANSFERCMDCTX, *PVBGLR3SHCLTRANSFERCMDCTX;
+#  endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
+
 /**
  * Structure containing the context required for
  * either retrieving or sending a HGCM shared clipboard
@@ -590,17 +601,20 @@ typedef struct VBGLR3SHCLCMDCTX
      *        Use a union for the HGCM stuff then. */
 
     /** IN: HGCM client ID to use for communication. */
-    uint32_t            uClientID;
+    uint32_t                  uClientID;
     /** IN/OUT: Context ID to retrieve or to use. */
-    uint32_t            uContextID;
+    uint32_t                  uContextID;
     /** IN: Protocol version to use. */
-    uint32_t            uProtocolVer;
+    uint32_t                  uProtocolVer;
     /** IN: Protocol flags. Currently unused. */
-    uint32_t            uProtocolFlags;
+    uint32_t                  uProtocolFlags;
     /** IN: Maximum chunk size (in bytes). */
-    uint32_t            cbChunkSize;
+    uint32_t                  cbChunkSize;
     /** OUT: Number of parameters retrieved. */
-    uint32_t            uNumParms;
+    uint32_t                  uNumParms;
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    VBGLR3SHCLTRANSFERCMDCTX  Transfers;
+#  endif
 } VBGLR3SHCLCMDCTX, *PVBGLR3SHCLCMDCTX;
 
 /**
@@ -612,10 +626,10 @@ typedef enum _VBGLR3CLIPBOARDEVENTTYPE
     VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS,
     VBGLR3CLIPBOARDEVENTTYPE_READ_DATA,
     VBGLR3CLIPBOARDEVENTTYPE_QUIT,
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Reports a transfer status to the guest. */
     VBGLR3CLIPBOARDEVENTTYPE_URI_TRANSFER_STATUS,
-#endif
+#  endif
     /** Blow the type up to 32-bit. */
     VBGLR3CLIPBOARDEVENTTYPE_32BIT_HACK = 0x7fffffff
 } VBGLR3CLIPBOARDEVENTTYPE;
@@ -635,7 +649,7 @@ typedef struct _VBGLR3CLIPBOARDEVENT
         SHCLFORMATDATA       ReportedFormats;
         /** Reports that data needs to be read from the guest. */
         SHCLDATAREQ          ReadData;
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+#  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         /** Reports a transfer status to the guest. */
         struct
         {
@@ -646,7 +660,7 @@ typedef struct _VBGLR3CLIPBOARDEVENT
             /** Additional reproting information. */
             SHCLTRANSFERREPORT Report;
         } TransferStatus;
-#endif
+#  endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
     } u;
 } VBGLR3CLIPBOARDEVENT, *PVBGLR3CLIPBOARDEVENT;
 typedef const PVBGLR3CLIPBOARDEVENT CPVBGLR3CLIPBOARDEVENT;

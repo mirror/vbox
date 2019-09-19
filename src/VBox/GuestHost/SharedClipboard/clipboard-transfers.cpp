@@ -1156,7 +1156,7 @@ int SharedClipboardTransferDestroy(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Initializes an Shared Clipboard transfer object.
+ * Initializes a shared Clipboard transfer object.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to initialize.
@@ -1172,6 +1172,16 @@ int SharedClipboardTransferInit(PSHCLTRANSFER pTransfer,
     pTransfer->State.enmSource = enmSource;
 
     int rc = SharedClipboardEventSourceCreate(&pTransfer->Events, pTransfer->State.uID);
+    if (RT_SUCCESS(rc))
+    {
+        pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_INITIALIZED; /* Now we're ready to run. */
+
+        if (pTransfer->Callbacks.pfnTransferInitialize)
+        {
+            SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser };
+            rc = pTransfer->Callbacks.pfnTransferInitialize(&Data);
+        }
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1643,7 +1653,7 @@ int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE
 }
 
 /**
- * Returns the current transfer object for a clipboard Shared Clipboard transfer list.
+ * Returns the current transfer object for a Shared Clipboard transfer list.
  *
  * Currently not implemented and wil return NULL.
  *
@@ -1852,42 +1862,6 @@ bool SharedClipboardTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTH
 }
 
 /**
- * Prepares everything needed for a read / write transfer to begin.
- *
- * @returns VBox status code.
- * @param   pTransfer           Clipboard transfer to prepare.
- */
-int SharedClipboardTransferPrepare(PSHCLTRANSFER pTransfer)
-{
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-
-    LogFlowFuncEnter();
-
-    int rc = VINF_SUCCESS;
-
-    AssertMsgReturn(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_NONE,
-                    ("Transfer has wrong state (%RU32)\n", pTransfer->State.enmStatus), VERR_WRONG_ORDER);
-
-    LogFlowFunc(("pTransfer=%p, enmDir=%RU32\n", pTransfer, pTransfer->State.enmDir));
-
-    if (pTransfer->Callbacks.pfnTransferPrepare)
-    {
-        SHCLTRANSFERCALLBACKDATA callbackData = { pTransfer, pTransfer->Callbacks.pvUser };
-        pTransfer->Callbacks.pfnTransferPrepare(&callbackData);
-    }
-
-    if (RT_SUCCESS(rc))
-    {
-        pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_READY;
-
-        /** @todo Add checksum support. */
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
  * Sets the transfer provider interface for a given transfer.
  *
  * @returns VBox status code.
@@ -1912,7 +1886,7 @@ int SharedClipboardTransferSetInterface(PSHCLTRANSFER pTransfer,
 
     LOG_IFACE_PTR(pfnTransferOpen);
     LOG_IFACE_PTR(pfnTransferClose);
-    LOG_IFACE_PTR(pfnGetRoots);
+    LOG_IFACE_PTR(pfnRootsGet);
     LOG_IFACE_PTR(pfnListOpen);
     LOG_IFACE_PTR(pfnListClose);
 
@@ -1927,7 +1901,7 @@ int SharedClipboardTransferSetInterface(PSHCLTRANSFER pTransfer,
 }
 
 /**
- * Clears (resets) the root list of an Shared Clipboard transfer.
+ * Clears (resets) the root list of a shared Clipboard transfer.
  *
  * @param   pTransfer           Transfer to clear transfer root list for.
  */
@@ -1956,6 +1930,199 @@ static void sharedClipboardTransferListRootsClear(PSHCLTRANSFER pTransfer)
 }
 
 /**
+ * Resets a shared Clipboard transfer.
+ *
+ * @param   pTransfer           Clipboard transfer to reset.
+ */
+void SharedClipboardTransferReset(PSHCLTRANSFER pTransfer)
+{
+    AssertPtrReturnVoid(pTransfer);
+
+    LogFlowFuncEnter();
+
+    sharedClipboardTransferListRootsClear(pTransfer);
+}
+
+/**
+ * Returns the clipboard area for a Shared Clipboard transfer.
+ *
+ * @returns Current clipboard area, or NULL if none.
+ * @param   pTransfer           Clipboard transfer to return clipboard area for.
+ */
+SharedClipboardArea *SharedClipboardTransferGetArea(PSHCLTRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, NULL);
+
+    return pTransfer->pArea;
+}
+
+/**
+ * Returns the number of transfer root list entries.
+ *
+ * @returns Root list entry count.
+ * @param   pTransfer           Clipboard transfer to return root entry count for.
+ */
+uint32_t SharedClipboardTransferRootsCount(PSHCLTRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, 0);
+
+    return (uint32_t)pTransfer->cRoots;
+}
+
+/**
+ * Returns a specific root list entry of a transfer.
+ *
+ * @returns Pointer to root list entry if found, or NULL if not found.
+ * @param   pTransfer           Clipboard transfer to get root list entry from.
+ * @param   uIdx                Index of root list entry to return.
+ */
+inline PSHCLLISTROOT sharedClipboardTransferRootsGetInternal(PSHCLTRANSFER pTransfer, uint32_t uIdx)
+{
+    if (uIdx >= pTransfer->cRoots)
+        return NULL;
+
+    PSHCLLISTROOT pIt = RTListGetFirst(&pTransfer->lstRoots, SHCLLISTROOT, Node);
+    while (uIdx--) /** @todo Slow, but works for now. */
+        pIt = RTListGetNext(&pTransfer->lstRoots, pIt, SHCLLISTROOT, Node);
+
+    return pIt;
+}
+
+/**
+ * Get a specific root list entry.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to get root list entry of.
+ * @param   uIndex              Index (zero-based) of entry to get.
+ * @param   pEntry              Where to store the returned entry on success.
+ */
+int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer,
+                                      uint64_t uIndex, PSHCLROOTLISTENTRY pEntry)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pEntry,    VERR_INVALID_POINTER);
+
+    if (uIndex >= pTransfer->cRoots)
+        return VERR_INVALID_PARAMETER;
+
+    int rc;
+
+    PSHCLLISTROOT pRoot = sharedClipboardTransferRootsGetInternal(pTransfer, uIndex);
+    AssertPtrReturn(pRoot, VERR_INVALID_PARAMETER);
+
+    /* Make sure that we only advertise relative source paths, not absolute ones. */
+    const char *pcszSrcPath = pRoot->pszPathAbs;
+
+    char *pszFileName = RTPathFilename(pcszSrcPath);
+    if (pszFileName)
+    {
+        Assert(pszFileName >= pcszSrcPath);
+        size_t cchDstBase = pszFileName - pcszSrcPath;
+        const char *pszDstPath = &pcszSrcPath[cchDstBase];
+
+        LogFlowFunc(("pcszSrcPath=%s, pszDstPath=%s\n", pcszSrcPath, pszDstPath));
+
+        rc = SharedClipboardTransferListEntryInit(pEntry);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pszDstPath);
+            if (RT_SUCCESS(rc))
+            {
+                pEntry->cbInfo = sizeof(SHCLFSOBJINFO);
+                pEntry->pvInfo = (PSHCLFSOBJINFO)RTMemAlloc(pEntry->cbInfo);
+                if (pEntry->pvInfo)
+                {
+                    RTFSOBJINFO fsObjInfo;
+                    rc = RTPathQueryInfo(pcszSrcPath, & fsObjInfo, RTFSOBJATTRADD_NOTHING);
+                    if (RT_SUCCESS(rc))
+                    {
+                        SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &fsObjInfo);
+
+                        pEntry->fInfo  = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
+                    }
+                }
+                else
+                    rc = VERR_NO_MEMORY;
+            }
+        }
+    }
+    else
+        rc = VERR_INVALID_POINTER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Returns the root entries of a shared Clipboard transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to return root entries for.
+ * @param   ppRootList          Where to store the root list on success.
+ */
+int SharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
+{
+    AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
+    AssertPtrReturn(ppRootList, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
+
+    int rc = VINF_SUCCESS;
+
+    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
+    {
+        PSHCLROOTLIST pRootList = SharedClipboardTransferRootListAlloc();
+        if (!pRootList)
+            return VERR_NO_MEMORY;
+
+        const uint64_t cRoots = (uint32_t)pTransfer->cRoots;
+
+        LogFlowFunc(("cRoots=%RU64\n", cRoots));
+
+        if (cRoots)
+        {
+            PSHCLROOTLISTENTRY paRootListEntries
+                = (PSHCLROOTLISTENTRY)RTMemAllocZ(cRoots * sizeof(SHCLROOTLISTENTRY));
+            if (paRootListEntries)
+            {
+                for (uint64_t i = 0; i < cRoots; ++i)
+                {
+                    rc = SharedClipboardTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+
+                if (RT_SUCCESS(rc))
+                    pRootList->paEntries = paRootListEntries;
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_NOT_FOUND;
+
+        if (RT_SUCCESS(rc))
+        {
+            pRootList->Hdr.cRoots = cRoots;
+            pRootList->Hdr.fRoots = 0; /** @todo Implement this. */
+
+            *ppRootList = pRootList;
+        }
+    }
+    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
+    {
+        if (pTransfer->ProviderIface.pfnRootsGet)
+            rc = pTransfer->ProviderIface.pfnRootsGet(&pTransfer->ProviderCtx, ppRootList);
+        else
+            rc = VERR_NOT_SUPPORTED;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+
+/**
  * Sets transfer root list entries for a given transfer.
  *
  * @returns VBox status code.
@@ -1964,7 +2131,7 @@ static void sharedClipboardTransferListRootsClear(PSHCLTRANSFER pTransfer)
  *                              All entries must have the same root path.
  * @param   cbRoots             Size (in bytes) of string list.
  */
-int SharedClipboardTransferSetRoots(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
+int SharedClipboardTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
 {
     AssertPtrReturn(pTransfer,      VERR_INVALID_POINTER);
     AssertPtrReturn(pszRoots,       VERR_INVALID_POINTER);
@@ -2028,198 +2195,6 @@ int SharedClipboardTransferSetRoots(PSHCLTRANSFER pTransfer, const char *pszRoot
 }
 
 /**
- * Resets an clipboard Shared Clipboard transfer.
- *
- * @param   pTransfer           Clipboard transfer to reset.
- */
-void SharedClipboardTransferReset(PSHCLTRANSFER pTransfer)
-{
-    AssertPtrReturnVoid(pTransfer);
-
-    LogFlowFuncEnter();
-
-    sharedClipboardTransferListRootsClear(pTransfer);
-}
-
-/**
- * Returns the clipboard area for a clipboard Shared Clipboard transfer.
- *
- * @returns Current clipboard area, or NULL if none.
- * @param   pTransfer           Clipboard transfer to return clipboard area for.
- */
-SharedClipboardArea *SharedClipboardTransferGetArea(PSHCLTRANSFER pTransfer)
-{
-    AssertPtrReturn(pTransfer, NULL);
-
-    return pTransfer->pArea;
-}
-
-/**
- * Returns the number of transfer root list entries.
- *
- * @returns Root list entry count.
- * @param   pTransfer           Clipboard transfer to return root entry count for.
- */
-uint32_t SharedClipboardTransferRootsCount(PSHCLTRANSFER pTransfer)
-{
-    AssertPtrReturn(pTransfer, 0);
-
-    return (uint32_t)pTransfer->cRoots;
-}
-
-/**
- * Returns a specific root list entry of a transfer.
- *
- * @returns Pointer to root list entry if found, or NULL if not found.
- * @param   pTransfer           Clipboard transfer to get root list entry from.
- * @param   uIdx                Index of root list entry to return.
- */
-inline PSHCLLISTROOT sharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, uint32_t uIdx)
-{
-    if (uIdx >= pTransfer->cRoots)
-        return NULL;
-
-    PSHCLLISTROOT pIt = RTListGetFirst(&pTransfer->lstRoots, SHCLLISTROOT, Node);
-    while (uIdx--)
-        pIt = RTListGetNext(&pTransfer->lstRoots, pIt, SHCLLISTROOT, Node);
-
-    return pIt;
-}
-
-/**
- * Get a specific root list entry.
- *
- * @returns VBox status code.
- * @param   pTransfer           Clipboard transfer to get root list entry of.
- * @param   uIndex              Index (zero-based) of entry to get.
- * @param   pEntry              Where to store the returned entry on success.
- */
-int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer,
-                                               uint64_t uIndex, PSHCLROOTLISTENTRY pEntry)
-{
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
-    AssertPtrReturn(pEntry,    VERR_INVALID_POINTER);
-
-    if (uIndex >= pTransfer->cRoots)
-        return VERR_INVALID_PARAMETER;
-
-    int rc;
-
-    PSHCLLISTROOT pRoot = sharedClipboardTransferRootsGet(pTransfer, uIndex);
-    AssertPtrReturn(pRoot, VERR_INVALID_PARAMETER);
-
-    /* Make sure that we only advertise relative source paths, not absolute ones. */
-    const char *pcszSrcPath = pRoot->pszPathAbs;
-
-    char *pszFileName = RTPathFilename(pcszSrcPath);
-    if (pszFileName)
-    {
-        Assert(pszFileName >= pcszSrcPath);
-        size_t cchDstBase = pszFileName - pcszSrcPath;
-        const char *pszDstPath = &pcszSrcPath[cchDstBase];
-
-        LogFlowFunc(("pcszSrcPath=%s, pszDstPath=%s\n", pcszSrcPath, pszDstPath));
-
-        rc = SharedClipboardTransferListEntryInit(pEntry);
-        if (RT_SUCCESS(rc))
-        {
-            rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pszDstPath);
-            if (RT_SUCCESS(rc))
-            {
-                pEntry->cbInfo = sizeof(SHCLFSOBJINFO);
-                pEntry->pvInfo = (PSHCLFSOBJINFO)RTMemAlloc(pEntry->cbInfo);
-                if (pEntry->pvInfo)
-                {
-                    RTFSOBJINFO fsObjInfo;
-                    rc = RTPathQueryInfo(pcszSrcPath, & fsObjInfo, RTFSOBJATTRADD_NOTHING);
-                    if (RT_SUCCESS(rc))
-                    {
-                        SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &fsObjInfo);
-
-                        pEntry->fInfo  = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
-                    }
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-        }
-    }
-    else
-        rc = VERR_INVALID_POINTER;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Returns the root entries of an Shared Clipboard transfer.
- *
- * @returns VBox status code.
- * @param   pTransfer           Clipboard transfer to return root entries for.
- * @param   ppRootList          Where to store the root list on success.
- */
-int SharedClipboardTransferRootsAsList(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
-{
-    AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
-    AssertPtrReturn(ppRootList, VERR_INVALID_POINTER);
-
-    LogFlowFuncEnter();
-
-    int rc = VINF_SUCCESS;
-
-    if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
-    {
-        PSHCLROOTLIST pRootList = SharedClipboardTransferRootListAlloc();
-        if (!pRootList)
-            return VERR_NO_MEMORY;
-
-        const uint64_t cRoots = (uint32_t)pTransfer->cRoots;
-
-        LogFlowFunc(("cRoots=%RU64\n", cRoots));
-
-        if (cRoots)
-        {
-            PSHCLROOTLISTENTRY paRootListEntries
-                = (PSHCLROOTLISTENTRY)RTMemAllocZ(cRoots * sizeof(SHCLROOTLISTENTRY));
-            if (paRootListEntries)
-            {
-                for (uint64_t i = 0; i < cRoots; ++i)
-                {
-                    rc = SharedClipboardTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
-                    if (RT_FAILURE(rc))
-                        break;
-                }
-
-                if (RT_SUCCESS(rc))
-                    pRootList->paEntries = paRootListEntries;
-            }
-            else
-                rc = VERR_NO_MEMORY;
-        }
-        else
-            rc = VERR_NOT_FOUND;
-
-        if (RT_SUCCESS(rc))
-        {
-            pRootList->Hdr.cRoots = cRoots;
-            pRootList->Hdr.fRoots = 0; /** @todo Implement this. */
-
-            *ppRootList = pRootList;
-        }
-    }
-    else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
-    {
-        if (pTransfer->ProviderIface.pfnGetRoots)
-            rc = pTransfer->ProviderIface.pfnGetRoots(&pTransfer->ProviderCtx, ppRootList);
-        else
-            rc = VERR_NOT_SUPPORTED;
-    }
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
  * Returns the transfer's ID.
  *
  * @returns The transfer's ID.
@@ -2259,7 +2234,7 @@ SHCLTRANSFERSTATUS SharedClipboardTransferGetStatus(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Runs (starts) an Shared Clipboard transfer thread.
+ * Starts (runs) a Shared Clipboard transfer in a dedicated thread.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to run.
@@ -2270,17 +2245,47 @@ int SharedClipboardTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFun
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
-    AssertMsgReturn(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_READY,
-                    ("Wrong status (currently is %RU32)\n", pTransfer->State.enmStatus), VERR_WRONG_ORDER);
-
-    int rc = sharedClipboardTransferThreadCreate(pTransfer, pfnThreadFunc, pvUser);
+    int rc = SharedClipboardTransferStart(pTransfer);
+    if (RT_SUCCESS(rc))
+        rc = sharedClipboardTransferThreadCreate(pTransfer, pfnThreadFunc, pvUser);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 /**
- * Sets or unsets the callback table to be used for a clipboard Shared Clipboard transfer.
+ * Starts an initialized transfer.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to start.
+ */
+int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    /* Ready to start? */
+    AssertMsgReturn(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_INITIALIZED,
+                    ("Wrong status (currently is %s)\n", VBoxShClTransferStatusToStr(pTransfer->State.enmStatus)),
+                    VERR_WRONG_ORDER);
+
+    int rc;
+
+    if (pTransfer->Callbacks.pfnTransferStart)
+    {
+        SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser };
+        rc = pTransfer->Callbacks.pfnTransferStart(&Data);
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    /* Nothing else to do here right now. */
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Sets or unsets the callback table to be used for a Shared Clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to set callbacks for.
@@ -2298,13 +2303,12 @@ void SharedClipboardTransferSetCallbacks(PSHCLTRANSFER pTransfer,
     if (pCallbacks->a_pfnCallback)              \
         pTransfer->Callbacks.a_pfnCallback = pCallbacks->a_pfnCallback
 
-    SET_CALLBACK(pfnTransferPrepare);
-    SET_CALLBACK(pfnTransferStarted);
+    SET_CALLBACK(pfnTransferInitialize);
+    SET_CALLBACK(pfnTransferStart);
     SET_CALLBACK(pfnListHeaderComplete);
     SET_CALLBACK(pfnListEntryComplete);
     SET_CALLBACK(pfnTransferCanceled);
     SET_CALLBACK(pfnTransferError);
-    SET_CALLBACK(pfnTransferStarted);
 
 #undef SET_CALLBACK
 
@@ -2312,7 +2316,7 @@ void SharedClipboardTransferSetCallbacks(PSHCLTRANSFER pTransfer,
 }
 
 /**
- * Creates a thread for a clipboard Shared Clipboard transfer.
+ * Creates a thread for a Shared Clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to create thread for.
@@ -2346,7 +2350,7 @@ static int sharedClipboardTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHR
 }
 
 /**
- * Destroys a thread of a clipboard Shared Clipboard transfer.
+ * Destroys a thread of a Shared Clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to destroy thread for.
@@ -2373,7 +2377,7 @@ static int sharedClipboardTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINT
 }
 
 /**
- * Initializes a clipboard Shared Clipboard transfer.
+ * Initializes a Shared Clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransferCtx                Transfer context to initialize.
@@ -2401,7 +2405,7 @@ int SharedClipboardTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Destroys an Shared Clipboard transfer context context struct.
+ * Destroys a shared Clipboard transfer context context struct.
  *
  * @param   pTransferCtx                Transfer context to destroy.
  */
@@ -2429,7 +2433,7 @@ void SharedClipboardTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Resets an clipboard Shared Clipboard transfer.
+ * Resets a shared Clipboard transfer.
  *
  * @param   pTransferCtx                Transfer context to reset.
  */
@@ -2500,7 +2504,7 @@ uint32_t SharedClipboardTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferC
 }
 
 /**
- * Registers an Shared Clipboard transfer with a transfer context, i.e. allocates a transfer ID.
+ * Registers a shared Clipboard transfer with a transfer context, i.e. allocates a transfer ID.
  *
  * @return  VBox status code.
  * @retval  VERR_SHCLPB_MAX_TRANSFERS_REACHED if the maximum of concurrent transfers
@@ -2553,7 +2557,7 @@ int SharedClipboardTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PS
 }
 
 /**
- * Registers an Shared Clipboard transfer with a transfer contextby specifying an ID for the transfer.
+ * Registers a shared Clipboard transfer with a transfer contextby specifying an ID for the transfer.
  *
  * @return  VBox status code.
  * @retval  VERR_ALREADY_EXISTS if a transfer with the given ID already exists.
@@ -2947,14 +2951,14 @@ static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClF
  * Translates a Shared Clipboard transfer status (SHCLTRANSFERSTATUS_XXX) into a string.
  *
  * @returns Transfer status string name.
- * @param   uStatus             The transfer status to translate.
+ * @param   enmStatus           The transfer status to translate.
  */
-const char *VBoxShClTransferStatusToStr(uint32_t uStatus)
+const char *VBoxShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus)
 {
-    switch (uStatus)
+    switch (enmStatus)
     {
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_NONE);
-        RT_CASE_RET_STR(SHCLTRANSFERSTATUS_READY);
+        RT_CASE_RET_STR(SHCLTRANSFERSTATUS_INITIALIZED);
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_STARTED);
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_STOPPED);
         RT_CASE_RET_STR(SHCLTRANSFERSTATUS_CANCELED);
