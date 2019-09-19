@@ -160,6 +160,11 @@ static DECLCALLBACK(int) vboxClipboardTransferWriteThread(RTTHREAD ThreadSelf, v
 }
 #endif
 
+/**
+ * Cleanup helper function for transfer callbacks.
+ *
+ * @param   pData               Callback data to cleanup.
+ */
 static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCALLBACKDATA pData)
 {
     PSHCLTRANSFERCTX pCtx = (PSHCLTRANSFERCTX)pData->pvUser;
@@ -193,38 +198,30 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     int rc = SharedClipboardWinOpen(pCtx->Win.hWnd);
     if (RT_SUCCESS(rc))
     {
-        PSHCLTRANSFER pTransfer;
-        rc = SharedClipboardTransferCreate(&pTransfer);
-        if (RT_SUCCESS(rc))
-            rc = SharedClipboardTransferInit(pTransfer, 0 /* uID */,
-                                             SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL);
-        if (RT_SUCCESS(rc))
+        /* The data data in CF_HDROP format, as the files are locally present and don't need to be
+         * presented as a IDataObject or IStream. */
+        HANDLE hClip = hClip = GetClipboardData(CF_HDROP);
+        if (hClip)
         {
-            /* The data data in CF_HDROP format, as the files are locally present and don't need to be
-             * presented as a IDataObject or IStream. */
-            HANDLE hClip = hClip = GetClipboardData(CF_HDROP);
-            if (hClip)
+            HDROP hDrop = (HDROP)GlobalLock(hClip);
+            if (hDrop)
             {
-                HDROP hDrop = (HDROP)GlobalLock(hClip);
-                if (hDrop)
-                {
-                    char    *papszList = NULL;
-                    uint32_t cbList;
-                    rc = SharedClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &papszList, &cbList);
+                char    *papszList = NULL;
+                uint32_t cbList;
+                rc = SharedClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &papszList, &cbList);
 
-                    GlobalUnlock(hClip);
+                GlobalUnlock(hClip);
 
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = SharedClipboardTransferRootsSet(pTransfer,
-                                                             papszList, cbList + 1 /* Include termination */);
-                        RTStrFree(papszList);
-                    }
-                }
-                else
+                if (RT_SUCCESS(rc))
                 {
-                    hClip = NULL;
+                    rc = SharedClipboardTransferRootsSet(pData->pTransfer,
+                                                         papszList, cbList + 1 /* Include termination */);
+                    RTStrFree(papszList);
                 }
+            }
+            else
+            {
+                hClip = NULL;
             }
         }
 

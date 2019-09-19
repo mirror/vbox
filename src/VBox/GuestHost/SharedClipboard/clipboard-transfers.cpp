@@ -833,9 +833,10 @@ int SharedClipboardTransferObjectClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hO
                     break;
             }
 
-            RTMemFree(pInfo);
-
             RTListNodeRemove(&pInfo->Node);
+
+            RTMemFree(pInfo);
+            pInfo = NULL;
         }
         else
             rc = VERR_NOT_FOUND;

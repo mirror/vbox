@@ -109,7 +109,7 @@
 #define VBOX_SHCL_HOST_MSG_FORMATS_REPORT               3
 
 /** Sends a transfer status to the guest side. */
-#define VBOX_SHCL_HOST_MSG_TRANSFER_TRANSFER_STATUS          50
+#define VBOX_SHCL_HOST_MSG_TRANSFER_STATUS                   50
 /** Reads the root list header from the guest. */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_READ       51
 /** Writes the root list header to the guest. */

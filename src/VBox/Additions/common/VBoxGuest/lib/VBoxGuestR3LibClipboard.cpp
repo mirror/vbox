@@ -116,6 +116,10 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx)
         }
 
         LogFlowFunc(("uProtocolVer=%RU32, cbChunkSize=%RU32\n", pCtx->uProtocolVer, pCtx->cbChunkSize));
+
+        LogRel(("Shared Clipboard: Client %RU32 connected, using protocol v%RU32 (cbChunkSize=%RU32\n)",
+                pCtx->uClientID, pCtx->uProtocolVer, pCtx->cbChunkSize));
+
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -490,7 +494,7 @@ VBGLR3DECL(int) VbglR3ClipboarTransferStatusRecv(PVBGLR3SHCLCMDCTX pCtx,
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
                        VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_TRANSFER_STATUS);
 
-    Msg.uContext.SetUInt32(VBOX_SHCL_HOST_MSG_TRANSFER_TRANSFER_STATUS);
+    Msg.uContext.SetUInt32(VBOX_SHCL_HOST_MSG_TRANSFER_STATUS);
     Msg.enmDir.SetUInt32(0);
     Msg.enmStatus.SetUInt32(0);
     Msg.rc.SetUInt32(0);
@@ -1351,7 +1355,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
 
     switch (idMsg)
     {
-        case VBOX_SHCL_HOST_MSG_TRANSFER_TRANSFER_STATUS:
+        case VBOX_SHCL_HOST_MSG_TRANSFER_STATUS:
         {
             SHCLTRANSFERDIR    enmDir;
             SHCLTRANSFERREPORT transferReport;
@@ -1374,10 +1378,6 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
 
                         rc = vbglR3ClipboardTransferStart(pCmdCtx, pTransferCtx, uTransferID,
                                                           enmDir, enmSource, NULL /* ppTransfer */);
-                        if (RT_SUCCESS(rc))
-                        {
-
-                        }
                         break;
                     }
 
