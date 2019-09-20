@@ -1,16 +1,9 @@
 /** @file
 Pei USB ATATPI command implementations.
 
-Copyright (c) 1999 - 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 1999 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -73,9 +66,15 @@ PeiUsbInquiry (
   if ((Idata.peripheral_type & 0x1f) == 0x05) {
     PeiBotDevice->DeviceType      = USBCDROM;
     PeiBotDevice->Media.BlockSize = 0x800;
+    PeiBotDevice->Media2.ReadOnly       = TRUE;
+    PeiBotDevice->Media2.RemovableMedia = TRUE;
+    PeiBotDevice->Media2.BlockSize      = 0x800;
   } else {
     PeiBotDevice->DeviceType      = USBFLOPPY;
     PeiBotDevice->Media.BlockSize = 0x200;
+    PeiBotDevice->Media2.ReadOnly       = FALSE;
+    PeiBotDevice->Media2.RemovableMedia = TRUE;
+    PeiBotDevice->Media2.BlockSize      = 0x200;
   }
 
   return EFI_SUCCESS;
@@ -148,10 +147,10 @@ PeiUsbRequestSense (
   IN  UINT8             *SenseKeyBuffer
   )
 {
-  EFI_STATUS            Status;
-  ATAPI_PACKET_COMMAND  Packet;
-  UINT8                 *Ptr;
-  BOOLEAN               SenseReq;
+  EFI_STATUS                  Status;
+  ATAPI_PACKET_COMMAND        Packet;
+  UINT8                       *Ptr;
+  BOOLEAN                     SenseReq;
   ATAPI_REQUEST_SENSE_DATA    *Sense;
 
   *SenseCounts = 0;
@@ -241,9 +240,10 @@ PeiUsbReadCapacity (
   IN  PEI_BOT_DEVICE    *PeiBotDevice
   )
 {
-  EFI_STATUS            Status;
-  ATAPI_PACKET_COMMAND  Packet;
+  EFI_STATUS                  Status;
+  ATAPI_PACKET_COMMAND        Packet;
   ATAPI_READ_CAPACITY_DATA    Data;
+  UINT32                      LastBlock;
 
   ZeroMem (&Data, sizeof (ATAPI_READ_CAPACITY_DATA));
   ZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
@@ -267,10 +267,17 @@ PeiUsbReadCapacity (
   if (EFI_ERROR (Status)) {
     return EFI_DEVICE_ERROR;
   }
+  LastBlock = ((UINT32) Data.LastLba3 << 24) | (Data.LastLba2 << 16) | (Data.LastLba1 << 8) | Data.LastLba0;
 
-  PeiBotDevice->Media.LastBlock     = (Data.LastLba3 << 24) | (Data.LastLba2 << 16) | (Data.LastLba1 << 8) | Data.LastLba0;
+  if (LastBlock == 0xFFFFFFFF) {
+    DEBUG ((EFI_D_INFO, "The usb device LBA count is larger than 0xFFFFFFFF!\n"));
+  }
 
-  PeiBotDevice->Media.MediaPresent  = TRUE;
+  PeiBotDevice->Media.LastBlock    = LastBlock;
+  PeiBotDevice->Media.MediaPresent = TRUE;
+
+  PeiBotDevice->Media2.LastBlock    = LastBlock;
+  PeiBotDevice->Media2.MediaPresent = TRUE;
 
   return EFI_SUCCESS;
 }
@@ -293,9 +300,10 @@ PeiUsbReadFormattedCapacity (
   IN  PEI_BOT_DEVICE    *PeiBotDevice
   )
 {
-  EFI_STATUS                Status;
-  ATAPI_PACKET_COMMAND      Packet;
+  EFI_STATUS                      Status;
+  ATAPI_PACKET_COMMAND            Packet;
   ATAPI_READ_FORMAT_CAPACITY_DATA FormatData;
+  UINT32                          LastBlock;
 
   ZeroMem (&FormatData, sizeof (ATAPI_READ_FORMAT_CAPACITY_DATA));
   ZeroMem (&Packet, sizeof (ATAPI_PACKET_COMMAND));
@@ -327,14 +335,23 @@ PeiUsbReadFormattedCapacity (
     //
     PeiBotDevice->Media.MediaPresent  = FALSE;
     PeiBotDevice->Media.LastBlock     = 0;
+    PeiBotDevice->Media2.MediaPresent  = FALSE;
+    PeiBotDevice->Media2.LastBlock     = 0;
 
   } else {
+    LastBlock = ((UINT32) FormatData.LastLba3 << 24) | (FormatData.LastLba2 << 16) | (FormatData.LastLba1 << 8) | FormatData.LastLba0;
+    if (LastBlock == 0xFFFFFFFF) {
+      DEBUG ((EFI_D_INFO, "The usb device LBA count is larger than 0xFFFFFFFF!\n"));
+    }
 
-    PeiBotDevice->Media.LastBlock = (FormatData.LastLba3 << 24) | (FormatData.LastLba2 << 16) | (FormatData.LastLba1 << 8) | FormatData.LastLba0;
+    PeiBotDevice->Media.LastBlock = LastBlock;
 
     PeiBotDevice->Media.LastBlock--;
 
     PeiBotDevice->Media.MediaPresent = TRUE;
+
+    PeiBotDevice->Media2.MediaPresent = TRUE;
+    PeiBotDevice->Media2.LastBlock    = PeiBotDevice->Media.LastBlock;
   }
 
   return EFI_SUCCESS;
@@ -468,8 +485,8 @@ IsNoMedia (
   )
 {
   ATAPI_REQUEST_SENSE_DATA  *SensePtr;
-  UINTN               Index;
-  BOOLEAN             NoMedia;
+  UINTN                     Index;
+  BOOLEAN                   NoMedia;
 
   NoMedia   = FALSE;
   SensePtr  = SenseData;
@@ -515,12 +532,12 @@ IsNoMedia (
 BOOLEAN
 IsMediaError (
   IN  ATAPI_REQUEST_SENSE_DATA    *SenseData,
-  IN  UINTN                 SenseCounts
+  IN  UINTN                       SenseCounts
   )
 {
   ATAPI_REQUEST_SENSE_DATA  *SensePtr;
-  UINTN               Index;
-  BOOLEAN             Error;
+  UINTN                     Index;
+  BOOLEAN                   Error;
 
   SensePtr  = SenseData;
   Error     = FALSE;

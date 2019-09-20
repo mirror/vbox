@@ -1,15 +1,8 @@
 /** @file
   PCI Library using SMM PCI Root Bridge I/O Protocol.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are
-  licensed and made available under the terms and conditions of
-  the BSD License which accompanies this distribution.  The full
-  text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 #include <PiSmm.h>
@@ -112,7 +105,7 @@ SmmPciLibPciRootBridgeIoReadWorker (
 
   This function wraps EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.Pci.Write() service.
   It writes the PCI configuration register specified by Address with the
-  value specified by Data. The width of data is specifed by Width.
+  value specified by Data. The width of data is specified by Width.
   Data is returned.
 
   @param  Address The address that encodes the PCI Bus, Device, Function and

@@ -1,15 +1,9 @@
 ## @file
 # This file contained the parser for [Pcds] sections in INF file
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 '''
 InfPcdSectionParser
@@ -26,7 +20,7 @@ from Library import DataType as DT
 from Library.Parsing import MacroParser
 from Library.Misc import GetSplitValueList
 from Library import GlobalData
-from Library.String import SplitPcdEntry
+from Library.StringUtils import SplitPcdEntry
 from Parser.InfParserMisc import InfParserSectionRoot
 
 class InfPcdSectionParser(InfParserSectionRoot):
@@ -95,7 +89,7 @@ class InfPcdSectionParser(InfParserSectionRoot):
                                               FileName,
                                               DT.MODEL_EFI_PCD,
                                               self.FileLocalMacros)
-                    if Name != None:
+                    if Name is not None:
                         SectionMacros[Name] = Value
                         ValueList = []
                         CommentsList = []
@@ -181,4 +175,4 @@ class InfPcdSectionParser(InfParserSectionRoot):
                          ST.ERR_INF_PARSER_MODULE_SECTION_TYPE_ERROR%("[PCD]"),
                          File=FileName,
                          Line=LineIndex)
-    
+

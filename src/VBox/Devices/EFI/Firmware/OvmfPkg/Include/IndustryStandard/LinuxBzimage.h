@@ -1,13 +1,7 @@
 /** @file
 
   Copyright (c) 2011 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -45,7 +39,7 @@ struct setup_header {
 	UINT16 movesize;
 	UINT32 code32_start;	/* Start of code loaded high */
 	UINT32 ramdisk_start;	/* Start of initial ramdisk */
-	UINT32 ramdisk_len;	/* Lenght of initial ramdisk */
+	UINT32 ramdisk_len;	/* Length of initial ramdisk */
 	UINT32 bootsect_kludge;
 	UINT16 heap_end;
 	UINT8 ext_loader_ver;  /* Extended boot loader version */

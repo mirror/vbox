@@ -1,15 +1,10 @@
 /** @file
   The driver binding and service binding protocol for IP6 driver.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -23,6 +18,38 @@ EFI_DRIVER_BINDING_PROTOCOL gIp6DriverBinding = {
   NULL,
   NULL
 };
+
+BOOLEAN  mIpSec2Installed = FALSE;
+
+/**
+   Callback function for IpSec2 Protocol install.
+
+   @param[in] Event           Event whose notification function is being invoked
+   @param[in] Context         Pointer to the notification function's context
+
+**/
+VOID
+EFIAPI
+IpSec2InstalledCallback (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  )
+{
+  EFI_STATUS    Status;
+  //
+  // Test if protocol was even found.
+  // Notification function will be called at least once.
+  //
+  Status = gBS->LocateProtocol (&gEfiIpSec2ProtocolGuid, NULL, (VOID **)&mIpSec);
+  if (Status == EFI_SUCCESS && mIpSec != NULL) {
+    //
+    // Close the event so it does not get called again.
+    //
+    gBS->CloseEvent (Event);
+
+    mIpSec2Installed = TRUE;
+  }
+}
 
 /**
   This is the declaration of an EFI image entry point. This entry point is
@@ -46,6 +73,16 @@ Ip6DriverEntryPoint (
   IN EFI_SYSTEM_TABLE       *SystemTable
   )
 {
+  VOID            *Registration;
+
+  EfiCreateProtocolNotifyEvent (
+    &gEfiIpSec2ProtocolGuid,
+    TPL_CALLBACK,
+    IpSec2InstalledCallback,
+    NULL,
+    &Registration
+    );
+
   return EfiLibInstallDriverBindingComponentName2 (
            ImageHandle,
            SystemTable,
@@ -112,6 +149,22 @@ Ip6CleanService (
   EFI_IPv6_ADDRESS          AllNodes;
   IP6_NEIGHBOR_ENTRY        *NeighborCache;
 
+  IpSb->State     = IP6_SERVICE_DESTROY;
+
+  if (IpSb->Timer != NULL) {
+    gBS->SetTimer (IpSb->Timer, TimerCancel, 0);
+    gBS->CloseEvent (IpSb->Timer);
+
+    IpSb->Timer = NULL;
+  }
+
+  if (IpSb->FasterTimer != NULL) {
+    gBS->SetTimer (IpSb->FasterTimer, TimerCancel, 0);
+    gBS->CloseEvent (IpSb->FasterTimer);
+
+    IpSb->FasterTimer = NULL;
+  }
+
   Ip6ConfigCleanInstance (&IpSb->Ip6ConfigInstance);
 
   if (!IpSb->LinkLocalDadFail) {
@@ -177,19 +230,6 @@ Ip6CleanService (
     gBS->CloseEvent (IpSb->RecvRequest.MnpToken.Event);
   }
 
-  if (IpSb->Timer != NULL) {
-    gBS->SetTimer (IpSb->Timer, TimerCancel, 0);
-    gBS->CloseEvent (IpSb->Timer);
-
-    IpSb->Timer = NULL;
-  }
-
-  if (IpSb->FasterTimer != NULL) {
-    gBS->SetTimer (IpSb->FasterTimer, TimerCancel, 0);
-    gBS->CloseEvent (IpSb->FasterTimer);
-
-    IpSb->FasterTimer = NULL;
-  }
   //
   // Free the Neighbor Discovery resources
   //
@@ -225,7 +265,6 @@ Ip6CreateService (
   EFI_STATUS                            Status;
   EFI_MANAGED_NETWORK_COMPLETION_TOKEN  *MnpToken;
   EFI_MANAGED_NETWORK_CONFIG_DATA       *Config;
-  IP6_CONFIG_DATA_ITEM                  *DataItem;
 
   ASSERT (Service != NULL);
 
@@ -439,30 +478,6 @@ Ip6CreateService (
     goto ON_ERROR;
   }
 
-  //
-  // If there is any manual address, set it.
-  //
-  DataItem = &IpSb->Ip6ConfigInstance.DataItem[Ip6ConfigDataTypeManualAddress];
-  if (DataItem->Data.Ptr != NULL) {
-    DataItem->SetData (
-                &IpSb->Ip6ConfigInstance,
-                DataItem->DataSize,
-                DataItem->Data.Ptr
-                );
-  }
-
-  //
-  // If there is any gateway address, set it.
-  //
-  DataItem = &IpSb->Ip6ConfigInstance.DataItem[Ip6ConfigDataTypeGateway];
-  if (DataItem->Data.Ptr != NULL) {
-    DataItem->SetData (
-                &IpSb->Ip6ConfigInstance,
-                DataItem->DataSize,
-                DataItem->Data.Ptr
-                );
-  }
-
   InsertHeadList (&IpSb->Interfaces, &IpSb->DefaultInterface->Link);
 
   *Service = IpSb;
@@ -498,6 +513,12 @@ Ip6DriverBindingStart (
 {
   IP6_SERVICE               *IpSb;
   EFI_STATUS                Status;
+  EFI_IP6_CONFIG_PROTOCOL   *Ip6Cfg;
+  IP6_CONFIG_DATA_ITEM      *DataItem;
+
+  IpSb     = NULL;
+  Ip6Cfg   = NULL;
+  DataItem = NULL;
 
   //
   // Test for the Ip6 service binding protocol
@@ -523,6 +544,8 @@ Ip6DriverBindingStart (
 
   ASSERT (IpSb != NULL);
 
+  Ip6Cfg  = &IpSb->Ip6ConfigInstance.Ip6Config;
+
   //
   // Install the Ip6ServiceBinding Protocol onto ControlerHandle
   //
@@ -531,52 +554,122 @@ Ip6DriverBindingStart (
                   &gEfiIp6ServiceBindingProtocolGuid,
                   &IpSb->ServiceBinding,
                   &gEfiIp6ConfigProtocolGuid,
-                  &IpSb->Ip6ConfigInstance.Ip6Config,
+                  Ip6Cfg,
                   NULL
                   );
-
-  if (!EFI_ERROR (Status)) {
-    //
-    // ready to go: start the receiving and timer
-    //
-    Status = Ip6ReceiveFrame (Ip6AcceptFrame, IpSb);
-    if (EFI_ERROR (Status)) {
-      goto ON_ERROR;
-    }
-
-    //
-    // The timer expires every 100 (IP6_TIMER_INTERVAL_IN_MS) milliseconds.
-    //
-    Status = gBS->SetTimer (
-                    IpSb->FasterTimer,
-                    TimerPeriodic,
-                    TICKS_PER_MS * IP6_TIMER_INTERVAL_IN_MS
-                    );
-    if (EFI_ERROR (Status)) {
-      goto ON_ERROR;
-    }
-
-    //
-    // The timer expires every 1000 (IP6_ONE_SECOND_IN_MS) milliseconds.
-    //
-    Status = gBS->SetTimer (
-                    IpSb->Timer,
-                    TimerPeriodic,
-                    TICKS_PER_MS * IP6_ONE_SECOND_IN_MS
-                    );
-    if (EFI_ERROR (Status)) {
-      goto ON_ERROR;
-    }
-
-    //
-    // Initialize the IP6 ID
-    //
-    mIp6Id = NET_RANDOM (NetRandomInitSeed ());
-
-    return EFI_SUCCESS;
+  if (EFI_ERROR (Status)) {
+    goto FREE_SERVICE;
   }
 
-ON_ERROR:
+  //
+  // Read the config data from NV variable again.
+  // The default data can be changed by other drivers.
+  //
+  Status = Ip6ConfigReadConfigData (IpSb->MacString, &IpSb->Ip6ConfigInstance);
+  if (EFI_ERROR (Status)) {
+    goto UNINSTALL_PROTOCOL;
+  }
+
+  //
+  // If there is any default manual address, set it.
+  //
+  DataItem = &IpSb->Ip6ConfigInstance.DataItem[Ip6ConfigDataTypeManualAddress];
+  if (DataItem->Data.Ptr != NULL) {
+    Status = Ip6Cfg->SetData (
+                       Ip6Cfg,
+                       Ip6ConfigDataTypeManualAddress,
+                       DataItem->DataSize,
+                       DataItem->Data.Ptr
+                       );
+    if (Status == EFI_INVALID_PARAMETER || Status == EFI_BAD_BUFFER_SIZE) {
+      //
+      // Clean the invalid ManualAddress configuration.
+      //
+      Status = Ip6Cfg->SetData (
+                         Ip6Cfg,
+                         Ip6ConfigDataTypeManualAddress,
+                         0,
+                         NULL
+                         );
+      DEBUG ((EFI_D_WARN, "Ip6DriverBindingStart: Clean the invalid ManualAddress configuration.\n"));
+    }
+  }
+
+  //
+  // If there is any default gateway address, set it.
+  //
+  DataItem = &IpSb->Ip6ConfigInstance.DataItem[Ip6ConfigDataTypeGateway];
+  if (DataItem->Data.Ptr != NULL) {
+    Status = Ip6Cfg->SetData (
+                       Ip6Cfg,
+                       Ip6ConfigDataTypeGateway,
+                       DataItem->DataSize,
+                       DataItem->Data.Ptr
+                       );
+    if (Status == EFI_INVALID_PARAMETER || Status == EFI_BAD_BUFFER_SIZE) {
+      //
+      // Clean the invalid Gateway configuration.
+      //
+      Status = Ip6Cfg->SetData (
+                         Ip6Cfg,
+                         Ip6ConfigDataTypeGateway,
+                         0,
+                         NULL
+                         );
+      DEBUG ((EFI_D_WARN, "Ip6DriverBindingStart: Clean the invalid Gateway configuration.\n"));
+    }
+  }
+
+  //
+  // ready to go: start the receiving and timer
+  //
+  Status = Ip6ReceiveFrame (Ip6AcceptFrame, IpSb);
+  if (EFI_ERROR (Status)) {
+    goto UNINSTALL_PROTOCOL;
+  }
+
+  //
+  // The timer expires every 100 (IP6_TIMER_INTERVAL_IN_MS) milliseconds.
+  //
+  Status = gBS->SetTimer (
+                  IpSb->FasterTimer,
+                  TimerPeriodic,
+                  TICKS_PER_MS * IP6_TIMER_INTERVAL_IN_MS
+                  );
+  if (EFI_ERROR (Status)) {
+    goto UNINSTALL_PROTOCOL;
+  }
+
+  //
+  // The timer expires every 1000 (IP6_ONE_SECOND_IN_MS) milliseconds.
+  //
+  Status = gBS->SetTimer (
+                  IpSb->Timer,
+                  TimerPeriodic,
+                  TICKS_PER_MS * IP6_ONE_SECOND_IN_MS
+                  );
+  if (EFI_ERROR (Status)) {
+    goto UNINSTALL_PROTOCOL;
+  }
+
+  //
+  // Initialize the IP6 ID
+  //
+  mIp6Id = NET_RANDOM (NetRandomInitSeed ());
+
+  return EFI_SUCCESS;
+
+UNINSTALL_PROTOCOL:
+  gBS->UninstallMultipleProtocolInterfaces (
+         ControllerHandle,
+         &gEfiIp6ServiceBindingProtocolGuid,
+         &IpSb->ServiceBinding,
+         &gEfiIp6ConfigProtocolGuid,
+         Ip6Cfg,
+         NULL
+         );
+
+FREE_SERVICE:
   Ip6CleanService (IpSb);
   FreePool (IpSb);
   return Status;
@@ -697,8 +790,6 @@ Ip6DriverBindingStop (
                );
   } else if (IsListEmpty (&IpSb->Children)) {
     State           = IpSb->State;
-    IpSb->State     = IP6_SERVICE_DESTROY;
-
     Status = Ip6CleanService (IpSb);
     if (EFI_ERROR (Status)) {
       IpSb->State = State;
@@ -733,7 +824,7 @@ Exit:
                                  the existing child handle.
 
   @retval EFI_SUCCES             The child handle was created with the I/O services.
-  @retval EFI_OUT_OF_RESOURCES   There are not enough resources availabe to create
+  @retval EFI_OUT_OF_RESOURCES   There are not enough resources available to create
                                  the child.
   @retval other                  The child handle was not created.
 

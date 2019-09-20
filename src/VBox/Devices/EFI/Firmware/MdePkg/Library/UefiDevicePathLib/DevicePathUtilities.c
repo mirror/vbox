@@ -8,14 +8,8 @@
   environment varibles. Multi-instance device paths should never be placed
   on a Handle.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -35,12 +29,13 @@ GLOBAL_REMOVE_IF_UNREFERENCED CONST EFI_DEVICE_PATH_PROTOCOL  mUefiDevicePathLib
 
 /**
   Determine whether a given device path is valid.
-  If DevicePath is NULL, then ASSERT().
 
   @param  DevicePath  A pointer to a device path data structure.
   @param  MaxSize     The maximum size of the device path data structure.
 
   @retval TRUE        DevicePath is valid.
+  @retval FALSE       DevicePath is NULL.
+  @retval FALSE       Maxsize is less than sizeof(EFI_DEVICE_PATH_PROTOCOL).
   @retval FALSE       The length of any node node in the DevicePath is less
                       than sizeof (EFI_DEVICE_PATH_PROTOCOL).
   @retval FALSE       If MaxSize is not zero, the size of the DevicePath
@@ -59,7 +54,16 @@ IsDevicePathValid (
   UINTN Size;
   UINTN NodeLength;
 
-  ASSERT (DevicePath != NULL);
+  //
+  //Validate the input whether exists and its size big enough to touch the first node
+  //
+  if (DevicePath == NULL || (MaxSize > 0 && MaxSize < END_DEVICE_PATH_LENGTH)) {
+    return FALSE;
+  }
+
+  if (MaxSize == 0) {
+    MaxSize = MAX_UINTN;
+  }
 
   for (Count = 0, Size = 0; !IsDevicePathEnd (DevicePath); DevicePath = NextDevicePathNode (DevicePath)) {
     NodeLength = DevicePathNodeLength (DevicePath);
@@ -67,11 +71,16 @@ IsDevicePathValid (
       return FALSE;
     }
 
-    if (MaxSize > 0) {
-      Size += NodeLength;
-      if (Size + END_DEVICE_PATH_LENGTH > MaxSize) {
-        return FALSE;
-      }
+    if (NodeLength > MAX_UINTN - Size) {
+      return FALSE;
+    }
+    Size += NodeLength;
+
+    //
+    // Validate next node before touch it.
+    //
+    if (Size > MaxSize - END_DEVICE_PATH_LENGTH ) {
+      return FALSE;
     }
 
     if (PcdGet32 (PcdMaximumDevicePathNodeCount) > 0) {
@@ -80,6 +89,15 @@ IsDevicePathValid (
         return FALSE;
       }
     }
+
+    //
+    // FilePath must be a NULL-terminated string.
+    //
+    if (DevicePathType (DevicePath) == MEDIA_DEVICE_PATH &&
+        DevicePathSubType (DevicePath) == MEDIA_FILEPATH_DP &&
+        *(CHAR16 *)((UINT8 *)DevicePath + NodeLength - 2) != 0) {
+      return FALSE;
+    }
   }
 
   //
@@ -87,6 +105,7 @@ IsDevicePathValid (
   //
   return (BOOLEAN) (DevicePathNodeLength (DevicePath) == END_DEVICE_PATH_LENGTH);
 }
+
 
 /**
   Returns the Type field of a device path node.

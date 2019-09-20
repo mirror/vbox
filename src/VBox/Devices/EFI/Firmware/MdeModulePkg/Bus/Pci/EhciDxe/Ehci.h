@@ -2,14 +2,8 @@
 
   Provides some data struct used by EHCI controller driver.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -66,10 +60,10 @@ typedef struct _USB2_HC_DEV  USB2_HC_DEV;
 
 //
 // Sync and Async transfer polling interval, set by experience,
-// and the unit of Async is 100us, means 50ms as interval.
+// and the unit of Async is 100us, means 1ms as interval.
 //
 #define EHC_SYNC_POLL_INTERVAL       (1 * EHC_1_MILLISECOND)
-#define EHC_ASYNC_POLL_INTERVAL      (50 * 10000U)
+#define EHC_ASYNC_POLL_INTERVAL      EFI_TIMER_PERIOD_MILLISECONDS(1)
 
 //
 // EHCI debug port control status register bit definition
@@ -77,6 +71,8 @@ typedef struct _USB2_HC_DEV  USB2_HC_DEV;
 #define USB_DEBUG_PORT_IN_USE        BIT10
 #define USB_DEBUG_PORT_ENABLE        BIT28
 #define USB_DEBUG_PORT_OWNER         BIT30
+#define USB_DEBUG_PORT_IN_USE_MASK   (USB_DEBUG_PORT_IN_USE | \
+                                      USB_DEBUG_PORT_OWNER)
 
 //
 // EHC raises TPL to TPL_NOTIFY to serialize all its operations
@@ -85,13 +81,13 @@ typedef struct _USB2_HC_DEV  USB2_HC_DEV;
 #define  EHC_TPL                     TPL_NOTIFY
 
 //
-//Iterate through the doule linked list. NOT delete safe
+//Iterate through the double linked list. NOT delete safe
 //
 #define EFI_LIST_FOR_EACH(Entry, ListHead)    \
   for(Entry = (ListHead)->ForwardLink; Entry != (ListHead); Entry = Entry->ForwardLink)
 
 //
-//Iterate through the doule linked list. This is delete-safe.
+//Iterate through the double linked list. This is delete-safe.
 //Don't touch NextEntry
 //
 #define EFI_LIST_FOR_EACH_SAFE(Entry, NextEntry, ListHead)            \
@@ -146,7 +142,7 @@ struct _USB2_HC_DEV {
   EHC_QH                   *ReclaimHead;
 
   //
-  // Peroidic (interrupt) transfer schedule data:
+  // Periodic (interrupt) transfer schedule data:
   //
   VOID                      *PeriodFrame;     // the buffer pointed by this pointer is used to store pci bus address of the QH descriptor.
   VOID                      *PeriodFrameHost; // the buffer pointed by this pointer is used to store host memory address of the QH descriptor.
@@ -173,6 +169,8 @@ struct _USB2_HC_DEV {
   UINT16                    DebugPortOffset; // The offset of debug port mmio register
   UINT8                     DebugPortBarNum; // The bar number of debug port mmio register
   UINT8                     DebugPortNum;    // The port number of usb debug port
+
+  BOOLEAN                   Support64BitDma; // Whether 64 bit DMA may be used with this device
 };
 
 
@@ -223,7 +221,7 @@ EhcDriverBindingStart (
   );
 
 /**
-  Stop this driver on ControllerHandle. Support stoping any child handles
+  Stop this driver on ControllerHandle. Support stopping any child handles
   created by this driver.
 
   @param  This                 Protocol instance pointer.

@@ -1,19 +1,29 @@
 /** @file
 Implementation for EFI_HII_DATABASE_PROTOCOL.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 
 #include "HiiDatabase.h"
+
+#define BASE_NUMBER        10
+
+EFI_HII_PACKAGE_LIST_HEADER    *gRTDatabaseInfoBuffer = NULL;
+EFI_STRING                     gRTConfigRespBuffer    = NULL;
+UINTN                          gDatabaseInfoSize = 0;
+UINTN                          gConfigRespSize = 0;
+BOOLEAN                        gExportConfigResp = FALSE;
+UINTN                          gNvDefaultStoreSize = 0;
+SKU_ID                         gSkuId              = 0xFFFFFFFFFFFFFFFF;
+LIST_ENTRY                     gVarStorageList     = INITIALIZE_LIST_HEAD_VARIABLE (gVarStorageList);
+
+//
+// HII database lock.
+//
+EFI_LOCK mHiiDatabaseLock = EFI_INITIALIZE_LOCK_VARIABLE(TPL_NOTIFY);
 
 /**
   This function generates a HII_DATABASE_RECORD node and adds into hii database.
@@ -350,7 +360,7 @@ InvokeRegisteredFunction (
   @param  NotifyType             The type of change concerning the database.
   @param  PackageList            Pointer to a package list which will be inserted
                                  to.
-  @param  Package                Created GUID pacakge
+  @param  Package                Created GUID package
 
   @retval EFI_SUCCESS            Guid Package is inserted successfully.
   @retval EFI_OUT_OF_RESOURCES   Unable to allocate necessary resources for the new
@@ -525,6 +535,528 @@ RemoveGuidPackages (
   return EFI_SUCCESS;
 }
 
+/**
+  Check the input question related to EFI variable
+
+  @param IfrQuestionHdr     Point to Question header
+  @param EfiVarStoreList    Point to EFI VarStore List
+  @param EfiVarStoreNumber  The number of EFI VarStore
+
+  @retval Index             The index of the found EFI varstore in EFI varstore list
+                            EfiVarStoreNumber will return if no EFI varstore is found.
+**/
+UINTN
+IsEfiVarStoreQuestion (
+  EFI_IFR_QUESTION_HEADER *IfrQuestionHdr,
+  EFI_IFR_VARSTORE_EFI    **EfiVarStoreList,
+  UINTN                   EfiVarStoreNumber
+  )
+{
+  UINTN Index;
+  for (Index = 0; Index < EfiVarStoreNumber; Index ++) {
+    if (IfrQuestionHdr->VarStoreId == EfiVarStoreList[Index]->VarStoreId) {
+      return Index;
+    }
+  }
+
+  return EfiVarStoreNumber;
+}
+
+/**
+  Find the matched variable from the input variable storage.
+
+  @param[in] VariableStorage Point to the variable storage header.
+  @param[in] VarGuid         A unique identifier for the variable.
+  @param[in] VarAttribute    The attributes bitmask for the variable.
+  @param[in] VarName         A Null-terminated ascii string that is the name of the variable.
+
+  @return Pointer to the matched variable header or NULL if not found.
+**/
+VARIABLE_HEADER *
+FindVariableData (
+  IN  VARIABLE_STORE_HEADER  *VariableStorage,
+  IN  EFI_GUID               *VarGuid,
+  IN  UINT32                 VarAttribute,
+  IN  CHAR16                 *VarName
+  )
+{
+  VARIABLE_HEADER *VariableHeader;
+  VARIABLE_HEADER *VariableEnd;
+
+  VariableEnd    = (VARIABLE_HEADER *) ((UINT8 *) VariableStorage + VariableStorage->Size);
+  VariableHeader = (VARIABLE_HEADER *) (VariableStorage + 1);
+  VariableHeader = (VARIABLE_HEADER *) HEADER_ALIGN (VariableHeader);
+  while (VariableHeader < VariableEnd) {
+    if (CompareGuid (&VariableHeader->VendorGuid, VarGuid) &&
+        VariableHeader->Attributes == VarAttribute &&
+        StrCmp (VarName, (CHAR16 *) (VariableHeader + 1)) == 0) {
+      return VariableHeader;
+    }
+    VariableHeader = (VARIABLE_HEADER *) ((UINT8 *) VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + VariableHeader->DataSize);
+    VariableHeader = (VARIABLE_HEADER *) HEADER_ALIGN (VariableHeader);
+  }
+
+  return NULL;
+}
+
+/**
+  Find question default value from PcdNvStoreDefaultValueBuffer
+
+  @param DefaultId          Default store ID
+  @param EfiVarStore        Point to EFI VarStore header
+  @param IfrQuestionHdr     Point to Question header
+  @param ValueBuffer        Point to Buffer includes the found default setting
+  @param Width              Width of the default value
+  @param BitFieldQuestion   Whether the Question is stored in Bit field.
+
+  @retval EFI_SUCCESS       Question default value is found.
+  @retval EFI_NOT_FOUND     Question default value is not found.
+**/
+EFI_STATUS
+FindQuestionDefaultSetting (
+  IN  UINT16                  DefaultId,
+  IN  EFI_IFR_VARSTORE_EFI    *EfiVarStore,
+  IN  EFI_IFR_QUESTION_HEADER *IfrQuestionHdr,
+  OUT VOID                    *ValueBuffer,
+  IN  UINTN                   Width,
+  IN  BOOLEAN                 BitFieldQuestion
+  )
+{
+  VARIABLE_HEADER            *VariableHeader;
+  VARIABLE_STORE_HEADER      *VariableStorage;
+  LIST_ENTRY                 *Link;
+  VARSTORAGE_DEFAULT_DATA    *Entry;
+  VARIABLE_STORE_HEADER      *NvStoreBuffer;
+  UINT8        *DataBuffer;
+  UINT8        *BufferEnd;
+  BOOLEAN      IsFound;
+  UINTN        Index;
+  UINT32       BufferValue;
+  UINT32       BitFieldVal;
+  UINTN        BitOffset;
+  UINTN        ByteOffset;
+  UINTN        BitWidth;
+  UINTN        StartBit;
+  UINTN        EndBit;
+  PCD_DEFAULT_DATA *DataHeader;
+  PCD_DEFAULT_INFO *DefaultInfo;
+  PCD_DATA_DELTA   *DeltaData;
+
+  if (gSkuId == 0xFFFFFFFFFFFFFFFF) {
+    gSkuId = LibPcdGetSku ();
+  }
+
+  //
+  // Find the DefaultId setting from the full DefaultSetting
+  //
+  VariableStorage = NULL;
+  Link = gVarStorageList.ForwardLink;
+  while (Link != &gVarStorageList) {
+    Entry = BASE_CR (Link, VARSTORAGE_DEFAULT_DATA, Entry);
+    if (Entry->DefaultId == DefaultId) {
+      VariableStorage = Entry->VariableStorage;
+      break;
+    }
+    Link = Link->ForwardLink;
+  }
+
+  if (Link == &gVarStorageList) {
+    DataBuffer = (UINT8 *) PcdGetPtr (PcdNvStoreDefaultValueBuffer);
+    gNvDefaultStoreSize = ((PCD_NV_STORE_DEFAULT_BUFFER_HEADER *)DataBuffer)->Length;
+    //
+    // The first section data includes NV storage default setting.
+    //
+    DataHeader = (PCD_DEFAULT_DATA *) (DataBuffer + sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER));
+    NvStoreBuffer  = (VARIABLE_STORE_HEADER *) ((UINT8 *) DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize);
+    VariableStorage   = AllocatePool (NvStoreBuffer->Size);
+    ASSERT (VariableStorage != NULL);
+    CopyMem (VariableStorage, NvStoreBuffer, NvStoreBuffer->Size);
+
+    //
+    // Find the matched SkuId and DefaultId in the first section
+    //
+    IsFound = FALSE;
+    DefaultInfo    = &(DataHeader->DefaultInfo[0]);
+    BufferEnd      = (UINT8 *) DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
+    while ((UINT8 *) DefaultInfo < BufferEnd) {
+      if (DefaultInfo->DefaultId == DefaultId && DefaultInfo->SkuId == gSkuId) {
+        IsFound = TRUE;
+        break;
+      }
+      DefaultInfo ++;
+    }
+    //
+    // Find the matched SkuId and DefaultId in the remaining section
+    //
+    Index = sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER) + ((DataHeader->DataSize + 7) & (~7));
+    DataHeader = (PCD_DEFAULT_DATA *) (DataBuffer + Index);
+    while (!IsFound && Index < gNvDefaultStoreSize && DataHeader->DataSize != 0xFFFF) {
+      DefaultInfo = &(DataHeader->DefaultInfo[0]);
+      BufferEnd   = (UINT8 *) DataHeader + sizeof (DataHeader->DataSize) + DataHeader->HeaderSize;
+      while ((UINT8 *) DefaultInfo < BufferEnd) {
+        if (DefaultInfo->DefaultId == DefaultId && DefaultInfo->SkuId == gSkuId) {
+          IsFound = TRUE;
+          break;
+        }
+        DefaultInfo ++;
+      }
+      if (IsFound) {
+        DeltaData = (PCD_DATA_DELTA *) BufferEnd;
+        BufferEnd = (UINT8 *) DataHeader + DataHeader->DataSize;
+        while ((UINT8 *) DeltaData < BufferEnd) {
+          *((UINT8 *) VariableStorage + DeltaData->Offset) = (UINT8) DeltaData->Value;
+          DeltaData ++;
+        }
+        break;
+      }
+      Index      = (Index + DataHeader->DataSize + 7) & (~7);
+      DataHeader = (PCD_DEFAULT_DATA *) (DataBuffer + Index);
+    }
+    //
+    // Cache the found result in VarStorageList
+    //
+    if (!IsFound) {
+      FreePool (VariableStorage);
+      VariableStorage = NULL;
+    }
+    Entry = AllocatePool (sizeof (VARSTORAGE_DEFAULT_DATA));
+    if (Entry != NULL) {
+      Entry->DefaultId = DefaultId;
+      Entry->VariableStorage = VariableStorage;
+      InsertTailList (&gVarStorageList, &Entry->Entry);
+    } else if (VariableStorage != NULL) {
+      FreePool (VariableStorage);
+      VariableStorage = NULL;
+    }
+  }
+  //
+  // The matched variable storage is not found.
+  //
+  if (VariableStorage == NULL) {
+    return EFI_NOT_FOUND;
+  }
+
+  //
+  // Find the question default value from the variable storage
+  //
+  VariableHeader = FindVariableData (VariableStorage, &EfiVarStore->Guid, EfiVarStore->Attributes, (CHAR16 *) EfiVarStore->Name);
+  if (VariableHeader == NULL) {
+    return EFI_NOT_FOUND;
+  }
+  StartBit   = 0;
+  EndBit     = 0;
+  ByteOffset = IfrQuestionHdr->VarStoreInfo.VarOffset;
+  if (BitFieldQuestion) {
+    BitOffset  = IfrQuestionHdr->VarStoreInfo.VarOffset;
+    ByteOffset = BitOffset / 8;
+    BitWidth   = Width;
+    StartBit   = BitOffset % 8;
+    EndBit     = StartBit + BitWidth - 1;
+    Width      = EndBit / 8 + 1;
+  }
+  if (VariableHeader->DataSize < ByteOffset + Width) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Copy the question value
+  //
+  if (ValueBuffer != NULL) {
+    if (BitFieldQuestion) {
+      CopyMem (&BufferValue, (UINT8 *) VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + ByteOffset, Width);
+      BitFieldVal = BitFieldRead32 (BufferValue, StartBit, EndBit);
+      CopyMem (ValueBuffer, &BitFieldVal, Width);
+    } else {
+      CopyMem (ValueBuffer, (UINT8 *) VariableHeader + sizeof (VARIABLE_HEADER) + VariableHeader->NameSize + IfrQuestionHdr->VarStoreInfo.VarOffset, Width);
+    }
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Update IFR default setting in Form Package.
+
+  @param  FormPackage              Form Package to be updated
+
+**/
+VOID
+UpdateDefaultSettingInFormPackage (
+  HII_IFR_PACKAGE_INSTANCE *FormPackage
+  )
+{
+  UINTN                    IfrOffset;
+  UINTN                    PackageLength;
+  EFI_IFR_VARSTORE_EFI     *IfrEfiVarStore;
+  EFI_IFR_OP_HEADER        *IfrOpHdr;
+  EFI_IFR_ONE_OF_OPTION    *IfrOneOfOption;
+  UINT8                    IfrQuestionType;
+  UINT8                    IfrScope;
+  EFI_IFR_QUESTION_HEADER  *IfrQuestionHdr;
+  EFI_IFR_VARSTORE_EFI     **EfiVarStoreList;
+  UINTN                    EfiVarStoreMaxNum;
+  UINTN                    EfiVarStoreNumber;
+  UINT16                   *DefaultIdList;
+  UINTN                    DefaultIdNumber;
+  UINTN                    DefaultIdMaxNum;
+  UINTN                    Index;
+  UINTN                    EfiVarStoreIndex;
+  EFI_IFR_TYPE_VALUE       IfrValue;
+  EFI_IFR_TYPE_VALUE       IfrManufactValue;
+  BOOLEAN                  StandardDefaultIsSet;
+  BOOLEAN                  ManufactDefaultIsSet;
+  EFI_IFR_CHECKBOX         *IfrCheckBox;
+  EFI_STATUS               Status;
+  EFI_IFR_DEFAULT          *IfrDefault;
+  UINTN                    Width;
+  EFI_IFR_QUESTION_HEADER  VarStoreQuestionHeader;
+  BOOLEAN                  QuestionReferBitField;
+
+  //
+  // If no default setting, do nothing
+  //
+  if (gNvDefaultStoreSize == 0) {
+    gNvDefaultStoreSize = PcdGetSize (PcdNvStoreDefaultValueBuffer);
+  }
+  if (gNvDefaultStoreSize < sizeof (PCD_NV_STORE_DEFAULT_BUFFER_HEADER)) {
+    return;
+  }
+
+  ZeroMem (&VarStoreQuestionHeader, sizeof (VarStoreQuestionHeader));
+  PackageLength = FormPackage->FormPkgHdr.Length - sizeof (EFI_HII_PACKAGE_HEADER);
+  Width         = 0;
+  IfrOffset     = 0;
+  IfrScope      = 0;
+  IfrOpHdr      = (EFI_IFR_OP_HEADER *) FormPackage->IfrData;
+  IfrQuestionHdr    = NULL;
+  IfrQuestionType   = 0;
+  EfiVarStoreMaxNum = 0;
+  EfiVarStoreNumber = 0;
+  DefaultIdMaxNum   = 0;
+  DefaultIdNumber   = 0;
+  EfiVarStoreList   = NULL;
+  DefaultIdList     = NULL;
+  StandardDefaultIsSet = FALSE;
+  ManufactDefaultIsSet = FALSE;
+  QuestionReferBitField = FALSE;
+
+  while (IfrOffset < PackageLength) {
+    switch (IfrOpHdr->OpCode) {
+    case EFI_IFR_VARSTORE_EFI_OP:
+      if (EfiVarStoreNumber >= EfiVarStoreMaxNum) {
+        //
+        // Reallocate EFI VarStore Buffer
+        //
+        EfiVarStoreList   = ReallocatePool (EfiVarStoreMaxNum * sizeof (UINTN), (EfiVarStoreMaxNum + BASE_NUMBER) * sizeof (UINTN), EfiVarStoreList);
+        if (EfiVarStoreList == NULL) {
+          goto Done;
+        }
+        EfiVarStoreMaxNum = EfiVarStoreMaxNum + BASE_NUMBER;
+      }
+      IfrEfiVarStore = (EFI_IFR_VARSTORE_EFI *) IfrOpHdr;
+      //
+      // Convert VarStore Name from ASCII string to Unicode string.
+      //
+      EfiVarStoreList [EfiVarStoreNumber] = AllocatePool (IfrEfiVarStore->Header.Length + AsciiStrSize ((CHAR8 *)IfrEfiVarStore->Name));
+      if (EfiVarStoreList [EfiVarStoreNumber] == NULL) {
+        break;
+      }
+      CopyMem (EfiVarStoreList [EfiVarStoreNumber], IfrEfiVarStore, IfrEfiVarStore->Header.Length);
+      AsciiStrToUnicodeStrS ((CHAR8 *)IfrEfiVarStore->Name, (CHAR16 *) &(EfiVarStoreList [EfiVarStoreNumber]->Name[0]), AsciiStrSize ((CHAR8 *)IfrEfiVarStore->Name) * sizeof (CHAR16));
+      Status = FindQuestionDefaultSetting (EFI_HII_DEFAULT_CLASS_STANDARD, EfiVarStoreList[EfiVarStoreNumber], &VarStoreQuestionHeader, NULL, IfrEfiVarStore->Size, FALSE);
+      if (!EFI_ERROR (Status)) {
+        EfiVarStoreNumber ++;
+      } else {
+        FreePool (EfiVarStoreList [EfiVarStoreNumber]);
+        EfiVarStoreList [EfiVarStoreNumber] = NULL;
+      }
+      break;
+    case EFI_IFR_DEFAULTSTORE_OP:
+      if (DefaultIdNumber >= DefaultIdMaxNum) {
+        //
+        // Reallocate DefaultIdNumber
+        //
+        DefaultIdList   = ReallocatePool (DefaultIdMaxNum * sizeof (UINT16), (DefaultIdMaxNum + BASE_NUMBER) * sizeof (UINT16), DefaultIdList);
+        if (DefaultIdList == NULL) {
+          goto Done;
+        }
+        DefaultIdMaxNum = DefaultIdMaxNum + BASE_NUMBER;
+      }
+      DefaultIdList[DefaultIdNumber ++] = ((EFI_IFR_DEFAULTSTORE *) IfrOpHdr)->DefaultId;
+      break;
+    case EFI_IFR_FORM_OP:
+    case EFI_IFR_FORM_MAP_OP:
+      //
+      // No EFI varstore is found and directly return.
+      //
+      if (EfiVarStoreNumber == 0 || DefaultIdNumber == 0) {
+        goto Done;
+      }
+      break;
+    case EFI_IFR_CHECKBOX_OP:
+      IfrScope         = IfrOpHdr->Scope;
+      IfrQuestionType  = IfrOpHdr->OpCode;
+      IfrQuestionHdr   = (EFI_IFR_QUESTION_HEADER *) (IfrOpHdr + 1);
+      IfrCheckBox      = (EFI_IFR_CHECKBOX *) IfrOpHdr;
+      EfiVarStoreIndex = IsEfiVarStoreQuestion (IfrQuestionHdr, EfiVarStoreList, EfiVarStoreNumber);
+      Width            = sizeof (BOOLEAN);
+      if (EfiVarStoreIndex < EfiVarStoreNumber) {
+        for (Index = 0; Index < DefaultIdNumber; Index ++) {
+          if (DefaultIdList[Index] == EFI_HII_DEFAULT_CLASS_STANDARD) {
+            Status = FindQuestionDefaultSetting (DefaultIdList[Index], EfiVarStoreList[EfiVarStoreIndex], IfrQuestionHdr, &IfrValue, sizeof (BOOLEAN), QuestionReferBitField);
+            if (!EFI_ERROR (Status)) {
+              if (IfrValue.b) {
+                IfrCheckBox->Flags = IfrCheckBox->Flags | EFI_IFR_CHECKBOX_DEFAULT;
+              } else {
+                IfrCheckBox->Flags = IfrCheckBox->Flags & (~EFI_IFR_CHECKBOX_DEFAULT);
+              }
+            }
+          } else if (DefaultIdList[Index] == EFI_HII_DEFAULT_CLASS_MANUFACTURING) {
+            Status = FindQuestionDefaultSetting (DefaultIdList[Index], EfiVarStoreList[EfiVarStoreIndex], IfrQuestionHdr, &IfrValue, sizeof (BOOLEAN), QuestionReferBitField);
+            if (!EFI_ERROR (Status)) {
+              if (IfrValue.b) {
+                IfrCheckBox->Flags = IfrCheckBox->Flags | EFI_IFR_CHECKBOX_DEFAULT_MFG;
+              } else {
+                IfrCheckBox->Flags = IfrCheckBox->Flags & (~EFI_IFR_CHECKBOX_DEFAULT_MFG);
+              }
+            }
+          }
+        }
+      }
+      break;
+    case EFI_IFR_NUMERIC_OP:
+      IfrScope         = IfrOpHdr->Scope;
+      IfrQuestionType  = IfrOpHdr->OpCode;
+      IfrQuestionHdr   = (EFI_IFR_QUESTION_HEADER *) (IfrOpHdr + 1);
+      if (QuestionReferBitField) {
+        Width          = (UINTN) (((EFI_IFR_ONE_OF *) IfrOpHdr)->Flags & EDKII_IFR_NUMERIC_SIZE_BIT);
+      } else {
+        Width          = (UINTN) ((UINT32) 1 << (((EFI_IFR_ONE_OF *) IfrOpHdr)->Flags & EFI_IFR_NUMERIC_SIZE));
+      }
+      break;
+    case EFI_IFR_ONE_OF_OP:
+      IfrScope         = IfrOpHdr->Scope;
+      IfrQuestionType  = IfrOpHdr->OpCode;
+      IfrQuestionHdr   = (EFI_IFR_QUESTION_HEADER *) (IfrOpHdr + 1);
+      if (QuestionReferBitField) {
+        Width          = (UINTN) (((EFI_IFR_ONE_OF *) IfrOpHdr)->Flags & EDKII_IFR_NUMERIC_SIZE_BIT);
+      } else {
+        Width          = (UINTN) ((UINT32) 1 << (((EFI_IFR_ONE_OF *) IfrOpHdr)->Flags & EFI_IFR_NUMERIC_SIZE));
+      }
+      EfiVarStoreIndex = IsEfiVarStoreQuestion (IfrQuestionHdr, EfiVarStoreList, EfiVarStoreNumber);
+      StandardDefaultIsSet = FALSE;
+      ManufactDefaultIsSet = FALSE;
+      //
+      // Find Default and Manufacturing default for OneOf question
+      //
+      if (EfiVarStoreIndex < EfiVarStoreNumber) {
+        for (Index = 0; Index < DefaultIdNumber; Index ++) {
+          if (DefaultIdList[Index] == EFI_HII_DEFAULT_CLASS_STANDARD) {
+            Status = FindQuestionDefaultSetting (EFI_HII_DEFAULT_CLASS_STANDARD, EfiVarStoreList[EfiVarStoreIndex], IfrQuestionHdr, &IfrValue, Width, QuestionReferBitField);
+            if (!EFI_ERROR (Status)) {
+              StandardDefaultIsSet = TRUE;
+            }
+          } else if (DefaultIdList[Index] == EFI_HII_DEFAULT_CLASS_MANUFACTURING) {
+            Status = FindQuestionDefaultSetting (EFI_HII_DEFAULT_CLASS_MANUFACTURING, EfiVarStoreList[EfiVarStoreIndex], IfrQuestionHdr, &IfrManufactValue, Width, QuestionReferBitField);
+            if (!EFI_ERROR (Status)) {
+              ManufactDefaultIsSet = TRUE;
+            }
+          }
+        }
+      }
+      break;
+    case EFI_IFR_ORDERED_LIST_OP:
+      IfrScope         = IfrOpHdr->Scope;
+      IfrQuestionType  = IfrOpHdr->OpCode;
+      IfrQuestionHdr   = (EFI_IFR_QUESTION_HEADER *) (IfrOpHdr + 1);
+      break;
+    case EFI_IFR_ONE_OF_OPTION_OP:
+      if (IfrQuestionHdr != NULL && IfrScope > 0) {
+        IfrOneOfOption = (EFI_IFR_ONE_OF_OPTION *) IfrOpHdr;
+        if (IfrQuestionType == EFI_IFR_ONE_OF_OP) {
+          Width = (UINTN) ((UINT32) 1 << (IfrOneOfOption->Flags & EFI_IFR_NUMERIC_SIZE));
+          if (StandardDefaultIsSet) {
+            if (CompareMem (&IfrOneOfOption->Value, &IfrValue, Width) == 0) {
+              IfrOneOfOption->Flags |= EFI_IFR_OPTION_DEFAULT;
+            } else {
+              IfrOneOfOption->Flags &= ~EFI_IFR_OPTION_DEFAULT;
+            }
+          }
+          if (ManufactDefaultIsSet) {
+            if (CompareMem (&IfrOneOfOption->Value, &IfrManufactValue, Width) == 0) {
+              IfrOneOfOption->Flags |= EFI_IFR_OPTION_DEFAULT_MFG;
+            } else {
+              IfrOneOfOption->Flags &= ~EFI_IFR_OPTION_DEFAULT_MFG;
+            }
+          }
+        }
+      }
+      break;
+    case EFI_IFR_DEFAULT_OP:
+      if (IfrQuestionHdr != NULL && IfrScope > 0) {
+        IfrDefault = (EFI_IFR_DEFAULT *) IfrOpHdr;
+        //
+        // Collect default value width
+        //
+        if (!QuestionReferBitField) {
+          Width = 0;
+          if (IfrDefault->Type == EFI_IFR_TYPE_NUM_SIZE_8 || IfrDefault->Type == EFI_IFR_TYPE_BOOLEAN) {
+            Width = 1;
+          } else if (IfrDefault->Type == EFI_IFR_TYPE_NUM_SIZE_16) {
+            Width = 2;
+          } else if (IfrDefault->Type == EFI_IFR_TYPE_NUM_SIZE_32) {
+            Width = 4;
+          } else if (IfrDefault->Type == EFI_IFR_TYPE_NUM_SIZE_64) {
+            Width = 8;
+          } else if (IfrDefault->Type == EFI_IFR_TYPE_BUFFER) {
+            Width = IfrDefault->Header.Length - OFFSET_OF (EFI_IFR_DEFAULT, Value);
+          }
+        }
+        //
+        // Update the default value
+        //
+        if (Width > 0) {
+          EfiVarStoreIndex = IsEfiVarStoreQuestion (IfrQuestionHdr, EfiVarStoreList, EfiVarStoreNumber);
+          if (EfiVarStoreIndex < EfiVarStoreNumber) {
+            Status = FindQuestionDefaultSetting (IfrDefault->DefaultId, EfiVarStoreList[EfiVarStoreIndex], IfrQuestionHdr, &IfrDefault->Value, Width, QuestionReferBitField);
+          }
+        }
+      }
+      break;
+    case EFI_IFR_END_OP:
+      if (IfrQuestionHdr != NULL) {
+        if (IfrScope > 0) {
+          IfrScope --;
+        }
+        if (IfrScope == 0) {
+          IfrQuestionHdr = NULL;
+          QuestionReferBitField = FALSE;
+        }
+      }
+      break;
+    case EFI_IFR_GUID_OP:
+      if (CompareGuid ((EFI_GUID *)((UINT8 *)IfrOpHdr + sizeof (EFI_IFR_OP_HEADER)), &gEdkiiIfrBitVarstoreGuid)) {
+        QuestionReferBitField = TRUE;
+      }
+      break;
+    default:
+      break;
+    }
+    IfrOffset = IfrOffset + IfrOpHdr->Length;
+    IfrOpHdr  = (EFI_IFR_OP_HEADER *) ((UINT8 *) IfrOpHdr + IfrOpHdr->Length);
+    if (IfrScope > 0) {
+      IfrScope += IfrOpHdr->Scope;
+    }
+  }
+
+Done:
+  if (EfiVarStoreList != NULL) {
+    for (Index = 0; Index < EfiVarStoreNumber; Index ++) {
+      FreePool (EfiVarStoreList [Index]);
+    }
+  }
+  return;
+}
 
 /**
   This function insert a Form package to a package list node.
@@ -594,6 +1126,11 @@ InsertFormPackage (
 
   InsertTailList (&PackageList->FormPkgHdr, &FormPackage->IfrEntry);
   *Package = FormPackage;
+
+  //
+  // Update FormPackage with the default setting
+  //
+  UpdateDefaultSettingInFormPackage (FormPackage);
 
   if (NotifyType == EFI_HII_DATABASE_NOTIFY_ADD_PACK) {
     PackageList->PackageListHdr.PackageLength += FormPackage->FormPkgHdr.Length;
@@ -734,7 +1271,16 @@ RemoveFormPackages (
     PackageList->PackageListHdr.PackageLength -= Package->FormPkgHdr.Length;
     FreePool (Package->IfrData);
     FreePool (Package);
-
+    //
+    // If Hii runtime support feature is enabled,
+    // will export Hii info for runtime use after ReadyToBoot event triggered.
+    // If some driver add/update/remove packages from HiiDatabase after ReadyToBoot,
+    // will need to export the content of HiiDatabase.
+    // But if form packages removed, also need to export the ConfigResp string
+    //
+    if (gExportAfterReadyToBoot) {
+      gExportConfigResp = TRUE;
+    }
   }
 
   return EFI_SUCCESS;
@@ -798,7 +1344,7 @@ InsertStringPackage (
   if (Language == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
-  AsciiStrCpy (Language, (CHAR8 *) PackageHdr + HeaderSize - LanguageSize);
+  AsciiStrCpyS (Language, LanguageSize / sizeof (CHAR8), (CHAR8 *) PackageHdr + HeaderSize - LanguageSize);
   for (Link = PackageList->StringPkgHdr.ForwardLink; Link != &PackageList->StringPkgHdr; Link = Link->ForwardLink) {
     StringPackage = CR (Link, HII_STRING_PACKAGE_INSTANCE, StringEntry, HII_STRING_PACKAGE_SIGNATURE);
     if (HiiCompareLanguage (Language, StringPackage->StringPkgHdr->Language)) {
@@ -888,7 +1434,7 @@ Error:
  @param  PackageList        Pointer to a package list which will be adjusted.
 
  @retval EFI_SUCCESS  Adjust all string packages successfully.
- @retval others       Can't adjust string packges.
+ @retval others       Can't adjust string packages.
 
 **/
 EFI_STATUS
@@ -1182,7 +1728,7 @@ InsertFontPackage (
   }
   FontInfo->FontStyle = FontPkgHdr->FontStyle;
   FontInfo->FontSize  = FontPkgHdr->Cell.Height;
-  StrCpy (FontInfo->FontName, FontPkgHdr->FontFamily);
+  StrCpyS (FontInfo->FontName, (FontInfoSize - OFFSET_OF(EFI_FONT_INFO,FontName)) / sizeof (CHAR16), FontPkgHdr->FontFamily);
 
   if (IsFontInfoExisted (Private, FontInfo, NULL, NULL, NULL)) {
     Status = EFI_UNSUPPORTED;
@@ -1537,7 +2083,7 @@ InsertImagePackage (
   if (ImageInfoOffset != 0) {
     ImageSize = ImagePackage->ImagePkgHdr.Header.Length -
                 sizeof (EFI_HII_IMAGE_PACKAGE_HDR) - PaletteSize;
-    ImagePackage->ImageBlock = (UINT8 *) AllocateZeroPool (ImageSize);
+    ImagePackage->ImageBlock = AllocateZeroPool (ImageSize);
     if (ImagePackage->ImageBlock == NULL) {
       FreePool (ImagePackage->PaletteBlock);
       FreePool (ImagePackage);
@@ -2481,6 +3027,16 @@ AddPackages (
                  (UINT8) (PackageHeader.Type),
                  DatabaseRecord->Handle
                  );
+      //
+      // If Hii runtime support feature is enabled,
+      // will export Hii info for runtime use after ReadyToBoot event triggered.
+      // If some driver add/update/remove packages from HiiDatabase after ReadyToBoot,
+      // will need to export the content of HiiDatabase.
+      // But if form packages added/updated, also need to export the ConfigResp string.
+      //
+      if (gExportAfterReadyToBoot) {
+        gExportConfigResp = TRUE;
+      }
       break;
     case EFI_HII_PACKAGE_KEYBOARD_LAYOUT:
       Status = InsertKeyboardLayoutPackage (
@@ -2775,6 +3331,118 @@ ExportPackageList (
   return EFI_SUCCESS;
 }
 
+/**
+This function mainly use to get and update ConfigResp string.
+
+@param  This                   A pointer to the EFI_HII_DATABASE_PROTOCOL instance.
+
+@retval EFI_SUCCESS            Get the information successfully.
+@retval EFI_OUT_OF_RESOURCES   Not enough memory to store the Configuration Setting data.
+
+**/
+EFI_STATUS
+HiiGetConfigRespInfo(
+  IN CONST EFI_HII_DATABASE_PROTOCOL        *This
+  )
+{
+  EFI_STATUS                          Status;
+  HII_DATABASE_PRIVATE_DATA           *Private;
+  EFI_STRING                          ConfigAltResp;
+  UINTN                               ConfigSize;
+
+  ConfigAltResp        = NULL;
+  ConfigSize           = 0;
+
+  Private = HII_DATABASE_DATABASE_PRIVATE_DATA_FROM_THIS (This);
+
+  //
+  // Get ConfigResp string
+  //
+  Status = HiiConfigRoutingExportConfig(&Private->ConfigRouting,&ConfigAltResp);
+
+  if (!EFI_ERROR (Status)){
+    ConfigSize = StrSize(ConfigAltResp);
+    if (ConfigSize > gConfigRespSize){
+      //
+      // Do 25% overallocation to minimize the number of memory allocations after ReadyToBoot.
+      // Since lots of allocation after ReadyToBoot may change memory map and cause S4 resume issue.
+      //
+      gConfigRespSize = ConfigSize + (ConfigSize >> 2);
+      if (gRTConfigRespBuffer != NULL){
+        FreePool(gRTConfigRespBuffer);
+        DEBUG ((DEBUG_WARN, "[HiiDatabase]: Memory allocation is required after ReadyToBoot, which may change memory map and cause S4 resume issue.\n"));
+      }
+      gRTConfigRespBuffer = (EFI_STRING) AllocateRuntimeZeroPool (gConfigRespSize);
+      if (gRTConfigRespBuffer == NULL){
+        FreePool(ConfigAltResp);
+        DEBUG ((DEBUG_ERROR, "[HiiDatabase]: No enough memory resource to store the ConfigResp string.\n"));
+        return EFI_OUT_OF_RESOURCES;
+      }
+    } else {
+      ZeroMem(gRTConfigRespBuffer,gConfigRespSize);
+    }
+    CopyMem(gRTConfigRespBuffer,ConfigAltResp,ConfigSize);
+    gBS->InstallConfigurationTable (&gEfiHiiConfigRoutingProtocolGuid, gRTConfigRespBuffer);
+    FreePool(ConfigAltResp);
+  }
+
+  return EFI_SUCCESS;
+
+}
+
+/**
+This is an internal function,mainly use to get HiiDatabase information.
+
+@param  This                   A pointer to the EFI_HII_DATABASE_PROTOCOL instance.
+
+@retval EFI_SUCCESS            Get the information successfully.
+@retval EFI_OUT_OF_RESOURCES   Not enough memory to store the Hiidatabase data.
+
+**/
+EFI_STATUS
+HiiGetDatabaseInfo(
+  IN CONST EFI_HII_DATABASE_PROTOCOL        *This
+  )
+{
+  EFI_STATUS                          Status;
+  EFI_HII_PACKAGE_LIST_HEADER         *DatabaseInfo;
+  UINTN                               DatabaseInfoSize;
+
+  DatabaseInfo         = NULL;
+  DatabaseInfoSize     = 0;
+
+  //
+  // Get HiiDatabase information.
+  //
+  Status = HiiExportPackageLists(This, NULL, &DatabaseInfoSize, DatabaseInfo);
+
+  ASSERT(Status == EFI_BUFFER_TOO_SMALL);
+
+  if(DatabaseInfoSize > gDatabaseInfoSize ) {
+    //
+    // Do 25% overallocation to minimize the number of memory allocations after ReadyToBoot.
+    // Since lots of allocation after ReadyToBoot may change memory map and cause S4 resume issue.
+    //
+    gDatabaseInfoSize = DatabaseInfoSize + (DatabaseInfoSize >> 2);
+    if (gRTDatabaseInfoBuffer != NULL){
+      FreePool(gRTDatabaseInfoBuffer);
+      DEBUG ((DEBUG_WARN, "[HiiDatabase]: Memory allocation is required after ReadyToBoot, which may change memory map and cause S4 resume issue.\n"));
+    }
+    gRTDatabaseInfoBuffer = AllocateRuntimeZeroPool (gDatabaseInfoSize);
+    if (gRTDatabaseInfoBuffer == NULL){
+      DEBUG ((DEBUG_ERROR, "[HiiDatabase]: No enough memory resource to store the HiiDatabase info.\n"));
+      return EFI_OUT_OF_RESOURCES;
+    }
+  } else {
+    ZeroMem(gRTDatabaseInfoBuffer,gDatabaseInfoSize);
+  }
+  Status = HiiExportPackageLists(This, NULL, &DatabaseInfoSize, gRTDatabaseInfoBuffer);
+  ASSERT_EFI_ERROR (Status);
+  gBS->InstallConfigurationTable (&gEfiHiiDatabaseProtocolGuid, gRTDatabaseInfoBuffer);
+
+  return EFI_SUCCESS;
+
+}
 
 /**
   This function adds the packages in the package list to the database and returns a handle. If there is a
@@ -2834,11 +3502,14 @@ HiiNewPackageList (
     }
   }
 
+  EfiAcquireLock (&mHiiDatabaseLock);
+
   //
   // Build a PackageList node
   //
   Status = GenerateHiiDatabaseRecord (Private, &DatabaseRecord);
   if (EFI_ERROR (Status)) {
+    EfiReleaseLock (&mHiiDatabaseLock);
     return Status;
   }
 
@@ -2848,6 +3519,7 @@ HiiNewPackageList (
   //
   Status = AddPackages (Private, EFI_HII_DATABASE_NOTIFY_NEW_PACK, PackageList, DatabaseRecord);
   if (EFI_ERROR (Status)) {
+    EfiReleaseLock (&mHiiDatabaseLock);
     return Status;
   }
 
@@ -2867,12 +3539,38 @@ HiiNewPackageList (
   }
 
   *Handle = DatabaseRecord->Handle;
+
+  //
+  // Check whether need to get the Database info.
+  // Only after ReadyToBoot, need to do the export.
+  //
+  if (gExportAfterReadyToBoot) {
+    HiiGetDatabaseInfo (This);
+  }
+  EfiReleaseLock (&mHiiDatabaseLock);
+
+  //
+  // Notes:
+  // HiiGetDatabaseInfo () will get the contents of HII data base,
+  // belong to the atomic behavior of Hii Database update.
+  // And since HiiGetConfigRespInfo () will get the configuration setting info from HII drivers
+  // we can not think it belong to the atomic behavior of Hii Database update.
+  // That's why EfiReleaseLock (&mHiiDatabaseLock) is callled before HiiGetConfigRespInfo ().
+  //
+
+  // Check whether need to get the configuration setting info from HII drivers.
+  // When after ReadyToBoot and need to do the export for form package add.
+  //
+  if (gExportAfterReadyToBoot && gExportConfigResp) {
+    HiiGetConfigRespInfo (This);
+  }
+
   return EFI_SUCCESS;
 }
 
 
 /**
-  This function removes the package list that is associated with a handle Handle
+  This function removes the package list that is associated with Handle
   from the HII database. Before removing the package, any registered functions
   with the notification type REMOVE_PACK and the same package type will be called.
 
@@ -2883,7 +3581,7 @@ HiiNewPackageList (
 
   @retval EFI_SUCCESS            The data associated with the Handle was removed
                                  from  the HII database.
-  @retval EFI_NOT_FOUND          The specified andle is not in database.
+  @retval EFI_NOT_FOUND          The specified handle is not in database.
   @retval EFI_INVALID_PARAMETER  The Handle was not valid.
 
 **/
@@ -2909,6 +3607,8 @@ HiiRemovePackageList (
     return EFI_NOT_FOUND;
   }
 
+  EfiAcquireLock (&mHiiDatabaseLock);
+
   Private = HII_DATABASE_DATABASE_PRIVATE_DATA_FROM_THIS (This);
 
   //
@@ -2926,34 +3626,42 @@ HiiRemovePackageList (
       //
       Status = RemoveGuidPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveFormPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveKeyboardLayoutPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveStringPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveFontPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveImagePackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveSimpleFontPackages (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
       Status = RemoveDevicePathPackage (Private, Handle, PackageList);
       if (EFI_ERROR (Status)) {
+        EfiReleaseLock (&mHiiDatabaseLock);
         return Status;
       }
 
@@ -2972,10 +3680,36 @@ HiiRemovePackageList (
       FreePool (Node->PackageList);
       FreePool (Node);
 
+      //
+      // Check whether need to get the Database info.
+      // Only after ReadyToBoot, need to do the export.
+      //
+      if (gExportAfterReadyToBoot) {
+        HiiGetDatabaseInfo (This);
+      }
+      EfiReleaseLock (&mHiiDatabaseLock);
+
+      //
+      // Notes:
+      // HiiGetDatabaseInfo () will get the contents of HII data base,
+      // belong to the atomic behavior of Hii Database update.
+      // And since HiiGetConfigRespInfo () will get the configuration setting info from HII drivers
+      // we can not think it belong to the atomic behavior of Hii Database update.
+      // That's why EfiReleaseLock (&mHiiDatabaseLock) is callled before HiiGetConfigRespInfo ().
+      //
+
+      //
+      // Check whether need to get the configuration setting info from HII drivers.
+      // When after ReadyToBoot and need to do the export for form package remove.
+      //
+      if (gExportAfterReadyToBoot && gExportConfigResp) {
+        HiiGetConfigRespInfo (This);
+      }
       return EFI_SUCCESS;
     }
   }
 
+  EfiReleaseLock (&mHiiDatabaseLock);
   return EFI_NOT_FOUND;
 }
 
@@ -3028,6 +3762,7 @@ HiiUpdatePackageList (
 
   Status = EFI_SUCCESS;
 
+  EfiAcquireLock (&mHiiDatabaseLock);
   //
   // Get original packagelist to be updated
   //
@@ -3069,6 +3804,7 @@ HiiUpdatePackageList (
         }
 
         if (EFI_ERROR (Status)) {
+          EfiReleaseLock (&mHiiDatabaseLock);
           return Status;
         }
 
@@ -3079,10 +3815,38 @@ HiiUpdatePackageList (
       //
       // Add all of the packages within the new package list
       //
-      return AddPackages (Private, EFI_HII_DATABASE_NOTIFY_ADD_PACK, PackageList, Node);
+      Status = AddPackages (Private, EFI_HII_DATABASE_NOTIFY_ADD_PACK, PackageList, Node);
+
+      //
+      // Check whether need to get the Database info.
+      // Only after ReadyToBoot, need to do the export.
+      //
+      if (gExportAfterReadyToBoot && Status == EFI_SUCCESS) {
+        HiiGetDatabaseInfo (This);
+      }
+      EfiReleaseLock (&mHiiDatabaseLock);
+
+      //
+      // Notes:
+      // HiiGetDatabaseInfo () will get the contents of HII data base,
+      // belong to the atomic behavior of Hii Database update.
+      // And since HiiGetConfigRespInfo () will get the configuration setting info from HII drivers
+      // we can not think it belong to the atomic behavior of Hii Database update.
+      // That's why EfiReleaseLock (&mHiiDatabaseLock) is callled before HiiGetConfigRespInfo ().
+      //
+
+      //
+      // Check whether need to get the configuration setting info from HII drivers.
+      // When after ReadyToBoot and need to do the export for form package update.
+      //
+      if (gExportAfterReadyToBoot && gExportConfigResp && Status == EFI_SUCCESS) {
+        HiiGetConfigRespInfo (This);
+      }
+
+      return Status;
     }
   }
-
+  EfiReleaseLock (&mHiiDatabaseLock);
   return EFI_NOT_FOUND;
 }
 
@@ -3106,7 +3870,7 @@ HiiUpdatePackageList (
                                  buffer that is required for the handles found.
   @param  Handle                 An array of EFI_HII_HANDLE instances returned.
 
-  @retval EFI_SUCCESS            The matching handles are outputed successfully.
+  @retval EFI_SUCCESS            The matching handles are outputted successfully.
                                  HandleBufferLength is updated with the actual length.
   @retval EFI_BUFFER_TO_SMALL    The HandleBufferLength parameter indicates that
                                  Handle is too small to support the number of
@@ -3212,7 +3976,7 @@ HiiListPackageLists (
         }
         break;
         //
-        // Pesudo-type EFI_HII_PACKAGE_TYPE_ALL will cause all package handles
+        // Pseudo-type EFI_HII_PACKAGE_TYPE_ALL will cause all package handles
         // to be listed.
         //
       case EFI_HII_PACKAGE_TYPE_ALL:
@@ -3269,7 +4033,7 @@ HiiListPackageLists (
                                  Handle is too small to support the number of
                                  handles.      HandleBufferLength is updated with a
                                  value that will enable the data to fit.
-  @retval EFI_NOT_FOUND          The specifiecd Handle could not be found in the
+  @retval EFI_NOT_FOUND          The specified Handle could not be found in the
                                  current database.
   @retval EFI_INVALID_PARAMETER  BufferSize was NULL.
   @retval EFI_INVALID_PARAMETER  The value referenced by BufferSize was not zero

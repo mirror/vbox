@@ -10,14 +10,9 @@
   for Security Protocol Specific layout. This implementation uses big endian for
   Cylinder register.
 
-  Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 
 **/
@@ -413,7 +408,7 @@ DiscoverAtaDevice (
   //
   Acb = ZeroMem (&AtaDevice->Acb, sizeof (EFI_ATA_COMMAND_BLOCK));
   Acb->AtaCommand = ATA_CMD_IDENTIFY_DRIVE;
-  Acb->AtaDeviceHead = (UINT8) (BIT7 | BIT6 | BIT5 | (AtaDevice->PortMultiplierPort << 4));
+  Acb->AtaDeviceHead = (UINT8) (BIT7 | BIT6 | BIT5 | (AtaDevice->PortMultiplierPort == 0xFFFF ? 0 : (AtaDevice->PortMultiplierPort << 4)));
 
   //
   // Prepare for ATA pass through packet.
@@ -494,7 +489,7 @@ TransferAtaDevice (
   Acb->AtaSectorNumber = (UINT8) StartLba;
   Acb->AtaCylinderLow = (UINT8) RShiftU64 (StartLba, 8);
   Acb->AtaCylinderHigh = (UINT8) RShiftU64 (StartLba, 16);
-  Acb->AtaDeviceHead = (UINT8) (BIT7 | BIT6 | BIT5 | (AtaDevice->PortMultiplierPort << 4));
+  Acb->AtaDeviceHead = (UINT8) (BIT7 | BIT6 | BIT5 | (AtaDevice->PortMultiplierPort == 0xFFFF ? 0 : (AtaDevice->PortMultiplierPort << 4)));
   Acb->AtaSectorCount = (UINT8) TransferLength;
   if (AtaDevice->Lba48Bit) {
     Acb->AtaSectorNumberExp = (UINT8) RShiftU64 (StartLba, 24);
@@ -1026,7 +1021,7 @@ TrustTransferAtaDevice (
   //
   Acb->AtaCylinderHigh  = (UINT8) SecurityProtocolSpecificData;
   Acb->AtaCylinderLow   = (UINT8) (SecurityProtocolSpecificData >> 8);
-  Acb->AtaDeviceHead    = (UINT8) (BIT7 | BIT6 | BIT5 | (AtaDevice->PortMultiplierPort << 4));
+  Acb->AtaDeviceHead = (UINT8) (BIT7 | BIT6 | BIT5 | (AtaDevice->PortMultiplierPort == 0xFFFF ? 0 : (AtaDevice->PortMultiplierPort << 4)));
 
   //
   // Prepare for ATA pass through packet.

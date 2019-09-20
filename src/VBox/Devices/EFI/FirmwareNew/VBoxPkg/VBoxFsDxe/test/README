@@ -1,2 +1,0 @@
-This folder contains tests for VBoxFsDxe module, allowing up 
-and test filesystems without EFI environment and launching whole VBox. 

@@ -2,13 +2,7 @@
   Defines for EFI shell environment 2 ported to EDK II build environment. (no spec)
 
   Copyright (c) 2005 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -124,7 +118,7 @@ GUID for the shell environment2 extension (main GUID above).
   @param[in] ParentImageHandle  Handle of the image executing this operation.
   @param[in] CommandLine        The string command line to execute.
   @param[in] DebugOutput        TRUE indicates that errors should be printed directly.
-                                FALSE supresses error messages.
+                                FALSE suppresses error messages.
 
   @retval EFI_SUCCESS           The command line executed and completed.
   @retval EFI_ABORTED           The operation aborted.

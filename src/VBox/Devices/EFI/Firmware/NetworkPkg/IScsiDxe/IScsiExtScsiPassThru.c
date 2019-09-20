@@ -1,14 +1,8 @@
 /** @file
   The implementation of EFI_EXT_SCSI_PASS_THRU_PROTOCOL.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -219,7 +213,7 @@ IScsiExtScsiPassThruBuildDevicePath (
   EFI_DEV_PATH                  *Node;
   UINTN                         DevPathNodeLen;
 
-  if ((DevicePath == NULL)) {
+  if (DevicePath == NULL) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -273,7 +267,7 @@ IScsiExtScsiPassThruBuildDevicePath (
 
   CopyMem (&Node->Iscsi.Lun, ConfigNvData->BootLun, sizeof (UINT64));
   Node->Iscsi.TargetPortalGroupTag = Session->TargetPortalGroupTag;
-  AsciiStrCpy ((CHAR8 *) Node + sizeof (ISCSI_DEVICE_PATH), ConfigNvData->TargetName);
+  AsciiStrCpyS ((CHAR8 *) Node + sizeof (ISCSI_DEVICE_PATH), AsciiStrLen (ConfigNvData->TargetName) + 1, ConfigNvData->TargetName);
 
   *DevicePath = (EFI_DEVICE_PATH_PROTOCOL *) Node;
 

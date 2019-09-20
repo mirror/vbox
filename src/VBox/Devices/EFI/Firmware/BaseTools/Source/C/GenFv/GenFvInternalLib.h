@@ -2,14 +2,8 @@
 This file contains describes the public interfaces to the GenFvImage Library.
 The basic purpose of the library is to create Firmware Volume images.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -34,7 +28,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "EfiUtilityMsgs.h"
 
 //
-// Different file separater for Linux and Windows
+// Different file separator for Linux and Windows
 //
 #define FILE_SEP_CHAR '/'
 
@@ -172,16 +166,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // Defines to calculate the offset for IA32 SEC CORE entry point
 //
 #define IA32_SEC_CORE_ENTRY_OFFSET     0xD
-
-//
-// Defines to calculate the FIT table
-//
-#define IPF_FIT_ADDRESS_OFFSET        0x20
-
-//
-// Defines to calculate the offset for SALE_ENTRY
-//
-#define IPF_SALE_ENTRY_ADDRESS_OFFSET 0x18
 
 //
 // Symbol file definitions, current max size if 512K

@@ -4,33 +4,13 @@
   It installs the Capsule Architectural Protocol defined in PI1.0a to signify
   the capsule runtime services are ready.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include <Uefi.h>
+#include "CapsuleService.h"
 
-#include <Protocol/Capsule.h>
-#include <Guid/CapsuleVendor.h>
-#include <Guid/FmpCapsule.h>
-
-#include <Library/DebugLib.h>
-#include <Library/PcdLib.h>
-#include <Library/CapsuleLib.h>
-#include <Library/UefiDriverEntryPoint.h>
-#include <Library/UefiBootServicesTableLib.h>
-#include <Library/UefiRuntimeServicesTableLib.h>
-#include <Library/UefiRuntimeLib.h>
-#include <Library/BaseLib.h>
-#include <Library/PrintLib.h>
-#include <Library/BaseMemoryLib.h>
 //
 // Handle for the installation of Capsule Architecture Protocol.
 //
@@ -43,15 +23,6 @@ UINTN       mTimes      = 0;
 
 UINT32      mMaxSizePopulateCapsule     = 0;
 UINT32      mMaxSizeNonPopulateCapsule  = 0;
-
-/**
-  Create the variable to save the base address of page table and stack
-  for transferring into long mode in IA32 PEI.
-**/
-VOID
-SaveLongModeContext (
-  VOID
-  );
 
 /**
   Passes capsules to the firmware with both virtual and physical mapping. Depending on the intended
@@ -99,6 +70,14 @@ UpdateCapsule (
   BOOLEAN                   InitiateReset;
   CHAR16                    CapsuleVarName[30];
   CHAR16                    *TempVarName;
+
+  //
+  // Check if platform support Capsule In RAM or not.
+  // Platform could choose to drop CapsulePei/CapsuleX64 and do not support Capsule In RAM.
+  //
+  if (!PcdGetBool(PcdCapsuleInRamSupport)) {
+    return EFI_UNSUPPORTED;
+  }
 
   //
   // Capsule Count can't be less than one.
@@ -194,18 +173,26 @@ UpdateCapsule (
   //
   // Check if the platform supports update capsule across a system reset
   //
-  if (!FeaturePcdGet(PcdSupportUpdateCapsuleReset)) {
+  if (!IsPersistAcrossResetCapsuleSupported ()) {
     return EFI_UNSUPPORTED;
   }
+
+  CapsuleCacheWriteBack (ScatterGatherList);
 
   //
   // Construct variable name CapsuleUpdateData, CapsuleUpdateData1, CapsuleUpdateData2...
   // if user calls UpdateCapsule multiple times.
   //
-  StrCpy (CapsuleVarName, EFI_CAPSULE_VARIABLE_NAME);
+  StrCpyS (CapsuleVarName, sizeof(CapsuleVarName)/sizeof(CHAR16), EFI_CAPSULE_VARIABLE_NAME);
   TempVarName = CapsuleVarName + StrLen (CapsuleVarName);
   if (mTimes > 0) {
-    UnicodeValueToString (TempVarName, 0, mTimes, 0);
+    UnicodeValueToStringS (
+      TempVarName,
+      sizeof (CapsuleVarName) - ((UINTN)TempVarName - (UINTN)CapsuleVarName),
+      0,
+      mTimes,
+      0
+      );
   }
 
   //
@@ -239,6 +226,8 @@ UpdateCapsule (
 
 /**
   Returns if the capsule can be supported via UpdateCapsule().
+  Notice: When PcdCapsuleInRamSupport is unsupported, even this routine returns a valid answer,
+  the capsule still is unsupported via UpdateCapsule().
 
   @param  CapsuleHeaderArray    Virtual pointer to an array of virtual pointers to the capsules
                                 being passed into update capsule.
@@ -338,7 +327,7 @@ QueryCapsuleCapabilities (
     //
     //Check if the platform supports update capsule across a system reset
     //
-    if (!FeaturePcdGet(PcdSupportUpdateCapsuleReset)) {
+    if (!IsPersistAcrossResetCapsuleSupported ()) {
       return EFI_UNSUPPORTED;
     }
     *ResetType = EfiResetWarm;

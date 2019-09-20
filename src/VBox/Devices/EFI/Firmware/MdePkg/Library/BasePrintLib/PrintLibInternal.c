@@ -1,14 +1,8 @@
 /** @file
   Print Library internal worker functions.
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,9 +11,23 @@
 #define WARNING_STATUS_NUMBER         5
 #define ERROR_STATUS_NUMBER           33
 
+//
+// Safe print checks
+//
+#define RSIZE_MAX             (PcdGet32 (PcdMaximumUnicodeStringLength))
+#define ASCII_RSIZE_MAX       (PcdGet32 (PcdMaximumAsciiStringLength))
+
+#define SAFE_PRINT_CONSTRAINT_CHECK(Expression, RetVal)  \
+  do { \
+    ASSERT (Expression); \
+    if (!(Expression)) { \
+      return RetVal; \
+    } \
+  } while (FALSE)
+
 GLOBAL_REMOVE_IF_UNREFERENCED CONST CHAR8 mHexStr[] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
 
-GLOBAL_REMOVE_IF_UNREFERENCED CONST CHAR8 *mStatusString[] = {
+GLOBAL_REMOVE_IF_UNREFERENCED CONST CHAR8 * CONST mStatusString[] = {
   "Success",                      //  RETURN_SUCCESS                = 0
   "Warning Unknown Glyph",        //  RETURN_WARN_UNKNOWN_GLYPH     = 1
   "Warning Delete Failure",       //  RETURN_WARN_DELETE_FAILURE    = 2
@@ -278,6 +286,210 @@ BasePrintLibConvertValueToString (
 }
 
 /**
+  Internal function that converts a decimal value to a Null-terminated string.
+
+  Converts the decimal number specified by Value to a Null-terminated string
+  specified by Buffer containing at most Width characters. If Width is 0 then a
+  width of MAXIMUM_VALUE_CHARACTERS is assumed. If the conversion contains more
+  than Width characters, then only the first Width characters are placed in
+  Buffer. Additional conversion parameters are specified in Flags.
+  The Flags bit LEFT_JUSTIFY is always ignored.
+  All conversions are left justified in Buffer.
+  If Width is 0, PREFIX_ZERO is ignored in Flags.
+  If COMMA_TYPE is set in Flags, then PREFIX_ZERO is ignored in Flags, and
+  commas are inserted every 3rd digit starting from the right.
+  If Value is < 0, then the fist character in Buffer is a '-'.
+  If PREFIX_ZERO is set in Flags and PREFIX_ZERO is not being ignored,
+  then Buffer is padded with '0' characters so the combination of the optional
+  '-' sign character, '0' characters, digit characters for Value, and the
+  Null-terminator add up to Width characters.
+
+  If an error would be returned, the function will ASSERT().
+
+  @param  Buffer      The pointer to the output buffer for the produced
+                      Null-terminated string.
+  @param  BufferSize  The size of Buffer in bytes, including the
+                      Null-terminator.
+  @param  Flags       The bitmask of flags that specify left justification,
+                      zero pad, and commas.
+  @param  Value       The 64-bit signed value to convert to a string.
+  @param  Width       The maximum number of characters to place in Buffer,
+                      not including the Null-terminator.
+  @param  Increment   The character increment in Buffer.
+
+  @retval RETURN_SUCCESS           The decimal value is converted.
+  @retval RETURN_BUFFER_TOO_SMALL  If BufferSize cannot hold the converted
+                                   value.
+  @retval RETURN_INVALID_PARAMETER If Buffer is NULL.
+                                   If Increment is 1 and
+                                   PcdMaximumAsciiStringLength is not zero,
+                                   BufferSize is greater than
+                                   PcdMaximumAsciiStringLength.
+                                   If Increment is not 1 and
+                                   PcdMaximumUnicodeStringLength is not zero,
+                                   BufferSize is greater than
+                                   (PcdMaximumUnicodeStringLength *
+                                   sizeof (CHAR16) + 1).
+                                   If unsupported bits are set in Flags.
+                                   If both COMMA_TYPE and RADIX_HEX are set in
+                                   Flags.
+                                   If Width >= MAXIMUM_VALUE_CHARACTERS.
+
+**/
+RETURN_STATUS
+BasePrintLibConvertValueToStringS (
+  IN OUT CHAR8   *Buffer,
+  IN UINTN       BufferSize,
+  IN UINTN       Flags,
+  IN INT64       Value,
+  IN UINTN       Width,
+  IN UINTN       Increment
+  )
+{
+  CHAR8  *EndBuffer;
+  CHAR8  ValueBuffer[MAXIMUM_VALUE_CHARACTERS];
+  CHAR8  *ValueBufferPtr;
+  UINTN  Count;
+  UINTN  Digits;
+  UINTN  Index;
+  UINTN  Radix;
+
+  //
+  // 1. Buffer shall not be a null pointer.
+  //
+  SAFE_PRINT_CONSTRAINT_CHECK ((Buffer != NULL), RETURN_INVALID_PARAMETER);
+
+  //
+  // 2. BufferSize shall not be greater than (RSIZE_MAX * sizeof (CHAR16)) for
+  //    Unicode output string or shall not be greater than ASCII_RSIZE_MAX for
+  //    Ascii output string.
+  //
+  if (Increment == 1) {
+    //
+    // Ascii output string
+    //
+    if (ASCII_RSIZE_MAX != 0) {
+      SAFE_PRINT_CONSTRAINT_CHECK ((BufferSize <= ASCII_RSIZE_MAX), RETURN_INVALID_PARAMETER);
+    }
+  } else {
+    //
+    // Unicode output string
+    //
+    if (RSIZE_MAX != 0) {
+      SAFE_PRINT_CONSTRAINT_CHECK ((BufferSize <= RSIZE_MAX * sizeof (CHAR16) + 1), RETURN_INVALID_PARAMETER);
+    }
+  }
+
+  //
+  // 3. Flags shall be set properly.
+  //
+  SAFE_PRINT_CONSTRAINT_CHECK (((Flags & ~(LEFT_JUSTIFY | COMMA_TYPE | PREFIX_ZERO | RADIX_HEX)) == 0), RETURN_INVALID_PARAMETER);
+  SAFE_PRINT_CONSTRAINT_CHECK ((((Flags & COMMA_TYPE) == 0) || ((Flags & RADIX_HEX) == 0)), RETURN_INVALID_PARAMETER);
+
+  //
+  // 4. Width shall be smaller than MAXIMUM_VALUE_CHARACTERS.
+  //
+  SAFE_PRINT_CONSTRAINT_CHECK ((Width < MAXIMUM_VALUE_CHARACTERS), RETURN_INVALID_PARAMETER);
+
+  //
+  // Width is 0 or COMMA_TYPE is set, PREFIX_ZERO is ignored.
+  //
+  if (Width == 0 || (Flags & COMMA_TYPE) != 0) {
+    Flags &= ~((UINTN) PREFIX_ZERO);
+  }
+  //
+  // If Width is 0 then a width of MAXIMUM_VALUE_CHARACTERS is assumed.
+  //
+  if (Width == 0) {
+    Width = MAXIMUM_VALUE_CHARACTERS - 1;
+  }
+
+  //
+  // Count the characters of the output string.
+  //
+  Count = 0;
+  Radix = ((Flags & RADIX_HEX) == 0)? 10 : 16;
+
+  if ((Flags & PREFIX_ZERO) != 0) {
+    Count = Width;
+  } else {
+    if ((Value < 0) && ((Flags & RADIX_HEX) == 0)) {
+      Count++;  // minus sign
+      ValueBufferPtr = BasePrintLibValueToString (ValueBuffer, -Value, Radix);
+    } else {
+      ValueBufferPtr = BasePrintLibValueToString (ValueBuffer, Value, Radix);
+    }
+    Digits = ValueBufferPtr - ValueBuffer;
+    Count += Digits;
+
+    if ((Flags & COMMA_TYPE) != 0) {
+      Count += (Digits - 1) / 3;  // commas
+    }
+  }
+
+  Width = MIN (Count, Width);
+
+  //
+  // 5. BufferSize shall be large enough to hold the converted string.
+  //
+  SAFE_PRINT_CONSTRAINT_CHECK ((BufferSize >= (Width + 1) * Increment), RETURN_BUFFER_TOO_SMALL);
+
+  //
+  // Set the tag for the end of the input Buffer.
+  //
+  EndBuffer = Buffer + Width * Increment;
+
+  //
+  // Convert decimal negative
+  //
+  if ((Value < 0) && ((Flags & RADIX_HEX) == 0)) {
+    Value = -Value;
+    Buffer = BasePrintLibFillBuffer (Buffer, EndBuffer, 1, '-', Increment);
+    Width--;
+  }
+
+  //
+  // Count the length of the value string.
+  //
+  ValueBufferPtr = BasePrintLibValueToString (ValueBuffer, Value, Radix);
+  Count = ValueBufferPtr - ValueBuffer;
+
+  //
+  // Append Zero
+  //
+  if ((Flags & PREFIX_ZERO) != 0) {
+    Buffer = BasePrintLibFillBuffer (Buffer, EndBuffer, Width - Count, '0', Increment);
+  }
+
+  //
+  // Print Comma type for every 3 characters
+  //
+  Digits = Count % 3;
+  if (Digits != 0) {
+    Digits = 3 - Digits;
+  }
+  for (Index = 0; Index < Count; Index++) {
+    Buffer = BasePrintLibFillBuffer (Buffer, EndBuffer, 1, *ValueBufferPtr--, Increment);
+    if ((Flags & COMMA_TYPE) != 0) {
+      Digits++;
+      if (Digits == 3) {
+        Digits = 0;
+        if ((Index + 1) < Count) {
+          Buffer = BasePrintLibFillBuffer (Buffer, EndBuffer, 1, ',', Increment);
+        }
+      }
+    }
+  }
+
+  //
+  // Print Null-terminator
+  //
+  BasePrintLibFillBuffer (Buffer, EndBuffer + Increment, 1, 0, Increment);
+
+  return RETURN_SUCCESS;
+}
+
+/**
   Worker function that produces a Null-terminated string in an output buffer
   based on a Null-terminated format string and a VA_LIST argument list.
 
@@ -352,6 +564,56 @@ BasePrintLibSPrintMarker (
   // DxePrintLibPrint2Protocol (both PrintLib instances).
   //
 
+  //
+  // 1. Buffer shall not be a null pointer when both BufferSize > 0 and
+  //    COUNT_ONLY_NO_PRINT is not set in Flags.
+  //
+  if ((BufferSize > 0) && ((Flags & COUNT_ONLY_NO_PRINT) == 0)) {
+    SAFE_PRINT_CONSTRAINT_CHECK ((Buffer != NULL), 0);
+  }
+
+  //
+  // 2. Format shall not be a null pointer when BufferSize > 0 or when
+  //    COUNT_ONLY_NO_PRINT is set in Flags.
+  //
+  if ((BufferSize > 0) || ((Flags & COUNT_ONLY_NO_PRINT) != 0)) {
+    SAFE_PRINT_CONSTRAINT_CHECK ((Format != NULL), 0);
+  }
+
+  //
+  // 3. BufferSize shall not be greater than RSIZE_MAX for Unicode output or
+  //    ASCII_RSIZE_MAX for Ascii output.
+  //
+  if ((Flags & OUTPUT_UNICODE) != 0) {
+    if (RSIZE_MAX != 0) {
+      SAFE_PRINT_CONSTRAINT_CHECK ((BufferSize <= RSIZE_MAX), 0);
+    }
+    BytesPerOutputCharacter = 2;
+  } else {
+    if (ASCII_RSIZE_MAX != 0) {
+      SAFE_PRINT_CONSTRAINT_CHECK ((BufferSize <= ASCII_RSIZE_MAX), 0);
+    }
+    BytesPerOutputCharacter = 1;
+  }
+
+  //
+  // 4. Format shall not contain more than RSIZE_MAX Unicode characters or
+  //    ASCII_RSIZE_MAX Ascii characters.
+  //
+  if ((Flags & FORMAT_UNICODE) != 0) {
+    if (RSIZE_MAX != 0) {
+      SAFE_PRINT_CONSTRAINT_CHECK ((StrnLenS ((CHAR16 *)Format, RSIZE_MAX + 1) <= RSIZE_MAX), 0);
+    }
+    BytesPerFormatCharacter = 2;
+    FormatMask = 0xffff;
+  } else {
+    if (ASCII_RSIZE_MAX != 0) {
+      SAFE_PRINT_CONSTRAINT_CHECK ((AsciiStrnLenS (Format, ASCII_RSIZE_MAX + 1) <= ASCII_RSIZE_MAX), 0);
+    }
+    BytesPerFormatCharacter = 1;
+    FormatMask = 0xff;
+  }
+
   if ((Flags & COUNT_ONLY_NO_PRINT) != 0) {
     if (BufferSize == 0) {
       Buffer = NULL;
@@ -363,13 +625,6 @@ BasePrintLibSPrintMarker (
     if (BufferSize == 0) {
       return 0;
     }
-    ASSERT (Buffer != NULL);
-  }
-
-  if ((Flags & OUTPUT_UNICODE) != 0) {
-    BytesPerOutputCharacter = 2;
-  } else {
-    BytesPerOutputCharacter = 1;
   }
 
   LengthToReturn = 0;
@@ -389,28 +644,10 @@ BasePrintLibSPrintMarker (
     EndBuffer = Buffer + BufferSize * BytesPerOutputCharacter;
   }
 
-  if ((Flags & FORMAT_UNICODE) != 0) {
-    //
-    // Make sure format string cannot contain more than PcdMaximumUnicodeStringLength
-    // Unicode characters if PcdMaximumUnicodeStringLength is not zero.
-    //
-    ASSERT (StrSize ((CHAR16 *) Format) != 0);
-    BytesPerFormatCharacter = 2;
-    FormatMask = 0xffff;
-  } else {
-    //
-    // Make sure format string cannot contain more than PcdMaximumAsciiStringLength
-    // Ascii characters if PcdMaximumAsciiStringLength is not zero.
-    //
-    ASSERT (AsciiStrSize (Format) != 0);
-    BytesPerFormatCharacter = 1;
-    FormatMask = 0xff;
-  }
-
   //
   // Get the first character from the format string
   //
-  FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
+  FormatCharacter = ((*Format & 0xff) | ((BytesPerFormatCharacter == 1) ? 0 : (*(Format + 1) << 8))) & FormatMask;
 
   //
   // Loop until the end of the format string is reached or the output buffer is full
@@ -442,7 +679,7 @@ BasePrintLibSPrintMarker (
       //
       for (Done = FALSE; !Done; ) {
         Format += BytesPerFormatCharacter;
-        FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
+        FormatCharacter = ((*Format & 0xff) | ((BytesPerFormatCharacter == 1) ? 0 : (*(Format + 1) << 8))) & FormatMask;
         switch (FormatCharacter) {
         case '.':
           Flags |= PRECISION;
@@ -495,7 +732,7 @@ BasePrintLibSPrintMarker (
           for (Count = 0; ((FormatCharacter >= '0') &&  (FormatCharacter <= '9')); ){
             Count = (Count * 10) + FormatCharacter - '0';
             Format += BytesPerFormatCharacter;
-            FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
+            FormatCharacter = ((*Format & 0xff) | ((BytesPerFormatCharacter == 1) ? 0 : (*(Format + 1) << 8))) & FormatMask;
           }
           Format -= BytesPerFormatCharacter;
           if ((Flags & PRECISION) == 0) {
@@ -547,10 +784,18 @@ BasePrintLibSPrintMarker (
         //
         // break skipped on purpose
         //
+      case 'u':
+        if ((Flags & RADIX_HEX) == 0) {
+          Flags &= ~((UINTN) (PREFIX_SIGN));
+          Flags |= UNSIGNED_TYPE;
+        }
+        //
+        // break skipped on purpose
+        //
       case 'd':
         if ((Flags & LONG_TYPE) == 0) {
           //
-          // 'd','x', and 'X' that are not preceded by 'l' or 'L' are assumed to be type "int".
+          // 'd', 'u', 'x', and 'X' that are not preceded by 'l' or 'L' are assumed to be type "int".
           // This assumption is made so the format string definition is compatible with the ANSI C
           // Specification for formatted strings.  It is recommended that the Base Types be used
           // everywhere, but in this one case, compliance with ANSI C is more important, and
@@ -584,17 +829,27 @@ BasePrintLibSPrintMarker (
             Flags &= ~((UINTN) PREFIX_ZERO);
             Precision = 1;
           }
-          if (Value < 0) {
+          if (Value < 0 && (Flags & UNSIGNED_TYPE) == 0) {
             Flags |= PREFIX_SIGN;
             Prefix = '-';
             Value = -Value;
+          } else if ((Flags & UNSIGNED_TYPE) != 0 && (Flags & LONG_TYPE) == 0) {
+            //
+            // 'd', 'u', 'x', and 'X' that are not preceded by 'l' or 'L' are assumed to be type "int".
+            // This assumption is made so the format string definition is compatible with the ANSI C
+            // Specification for formatted strings.  It is recommended that the Base Types be used
+            // everywhere, but in this one case, compliance with ANSI C is more important, and
+            // provides an implementation that is compatible with that largest possible set of CPU
+            // architectures.  This is why the type "unsigned int" is used in this one case.
+            //
+            Value = (unsigned int)Value;
           }
         } else {
           Radix = 16;
           Comma = FALSE;
           if ((Flags & LONG_TYPE) == 0 && Value < 0) {
             //
-            // 'd','x', and 'X' that are not preceded by 'l' or 'L' are assumed to be type "int".
+            // 'd', 'u', 'x', and 'X' that are not preceded by 'l' or 'L' are assumed to be type "int".
             // This assumption is made so the format string definition is compatible with the ANSI C
             // Specification for formatted strings.  It is recommended that the Base Types be used
             // everywhere, but in this one case, compliance with ANSI C is more important, and
@@ -756,7 +1011,7 @@ BasePrintLibSPrintMarker (
 
       case '\r':
         Format += BytesPerFormatCharacter;
-        FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
+        FormatCharacter = ((*Format & 0xff) | ((BytesPerFormatCharacter == 1) ? 0 : (*(Format + 1) << 8))) & FormatMask;
         if (FormatCharacter == '\n') {
           //
           // Translate '\r\n' to '\r\n'
@@ -777,7 +1032,7 @@ BasePrintLibSPrintMarker (
         //
         ArgumentString = "\r\n";
         Format += BytesPerFormatCharacter;
-        FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
+        FormatCharacter = ((*Format & 0xff) | ((BytesPerFormatCharacter == 1) ? 0 : (*(Format + 1) << 8))) & FormatMask;
         if (FormatCharacter != '\r') {
           Format   -= BytesPerFormatCharacter;
         }
@@ -796,7 +1051,7 @@ BasePrintLibSPrintMarker (
 
     case '\r':
       Format += BytesPerFormatCharacter;
-      FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
+      FormatCharacter = ((*Format & 0xff) | ((BytesPerFormatCharacter == 1) ? 0 : (*(Format + 1) << 8))) & FormatMask;
       if (FormatCharacter == '\n') {
         //
         // Translate '\r\n' to '\r\n'
@@ -817,7 +1072,7 @@ BasePrintLibSPrintMarker (
       //
       ArgumentString = "\r\n";
       Format += BytesPerFormatCharacter;
-      FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
+      FormatCharacter = ((*Format & 0xff) | ((BytesPerFormatCharacter == 1) ? 0 : (*(Format + 1) << 8))) & FormatMask;
       if (FormatCharacter != '\r') {
         Format   -= BytesPerFormatCharacter;
       }
@@ -846,7 +1101,12 @@ BasePrintLibSPrintMarker (
       // Compute the number of characters in ArgumentString and store it in Count
       // ArgumentString is either null-terminated, or it contains Precision characters
       //
-      for (Count = 0; Count < Precision || ((Flags & PRECISION) == 0); Count++) {
+      for (Count = 0;
+            (ArgumentString[Count * BytesPerArgumentCharacter] != '\0' ||
+             (BytesPerArgumentCharacter > 1 &&
+              ArgumentString[Count * BytesPerArgumentCharacter + 1]!= '\0')) &&
+            (Count < Precision || ((Flags & PRECISION) == 0));
+              Count++) {
         ArgumentCharacter = ((ArgumentString[Count * BytesPerArgumentCharacter] & 0xff) | ((ArgumentString[Count * BytesPerArgumentCharacter + 1]) << 8)) & ArgumentMask;
         if (ArgumentCharacter == 0) {
           break;
@@ -903,8 +1163,10 @@ BasePrintLibSPrintMarker (
     //
     // Copy the string into the output buffer performing the required type conversions
     //
-    while (Index < Count) {
-      ArgumentCharacter = ((*ArgumentString & 0xff) | (*(ArgumentString + 1) << 8)) & ArgumentMask;
+    while (Index < Count &&
+           (ArgumentString[0] != '\0' ||
+            (BytesPerArgumentCharacter > 1 && ArgumentString[1] != '\0'))) {
+      ArgumentCharacter = ((*ArgumentString & 0xff) | (((UINT8)*(ArgumentString + 1)) << 8)) & ArgumentMask;
 
       LengthToReturn += (1 * BytesPerOutputCharacter);
       if ((Flags & COUNT_ONLY_NO_PRINT) == 0 && Buffer != NULL) {
@@ -945,7 +1207,7 @@ BasePrintLibSPrintMarker (
     //
     // Get the next character from the format string
     //
-    FormatCharacter = ((*Format & 0xff) | (*(Format + 1) << 8)) & FormatMask;
+    FormatCharacter = ((*Format & 0xff) | ((BytesPerFormatCharacter == 1) ? 0 : (*(Format + 1) << 8))) & FormatMask;
   }
 
   if ((Flags & COUNT_ONLY_NO_PRINT) != 0) {
@@ -957,16 +1219,6 @@ BasePrintLibSPrintMarker (
   // Null terminate the Unicode or ASCII string
   //
   BasePrintLibFillBuffer (Buffer, EndBuffer + BytesPerOutputCharacter, 1, 0, BytesPerOutputCharacter);
-  //
-  // Make sure output buffer cannot contain more than PcdMaximumUnicodeStringLength
-  // Unicode characters if PcdMaximumUnicodeStringLength is not zero.
-  //
-  ASSERT ((((Flags & OUTPUT_UNICODE) == 0)) || (StrSize ((CHAR16 *) OriginalBuffer) != 0));
-  //
-  // Make sure output buffer cannot contain more than PcdMaximumAsciiStringLength
-  // ASCII characters if PcdMaximumAsciiStringLength is not zero.
-  //
-  ASSERT ((((Flags & OUTPUT_UNICODE) != 0)) || (AsciiStrSize (OriginalBuffer) != 0));
 
   return ((Buffer - OriginalBuffer) / BytesPerOutputCharacter);
 }

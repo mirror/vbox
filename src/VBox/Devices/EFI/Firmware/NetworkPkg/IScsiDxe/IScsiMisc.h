@@ -1,14 +1,8 @@
 /** @file
   Miscellaneous definitions for iSCSI driver.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -16,6 +10,23 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define _ISCSI_MISC_H_
 
 typedef struct _ISCSI_DRIVER_DATA ISCSI_DRIVER_DATA;
+
+///
+/// IPv4 Device Path Node Length
+///
+#define IP4_NODE_LEN_NEW_VERSIONS    27
+
+///
+/// IPv6 Device Path Node Length
+///
+#define IP6_NODE_LEN_OLD_VERSIONS    43
+#define IP6_NODE_LEN_NEW_VERSIONS    60
+
+///
+/// The ignored field StaticIpAddress's offset in old IPv6 Device Path
+///
+#define IP6_OLD_IPADDRESS_OFFSET      42
+
 
 #pragma pack(1)
 typedef struct _ISCSI_SESSION_CONFIG_NVDATA {
@@ -29,14 +40,23 @@ typedef struct _ISCSI_SESSION_CONFIG_NVDATA {
 
   BOOLEAN           InitiatorInfoFromDhcp;
   BOOLEAN           TargetInfoFromDhcp;
+
   CHAR8             TargetName[ISCSI_NAME_MAX_SIZE];
   EFI_IP_ADDRESS    TargetIp;
   UINT8             PrefixLength;
   UINT8             BootLun[8];
 
-  UINT16            ConnectTimeout; ///< timout value in milliseconds
+  UINT16            ConnectTimeout; ///< timout value in milliseconds.
   UINT8             ConnectRetryCount;
   UINT8             IsId[6];
+
+  BOOLEAN           RedirectFlag;
+  UINT16            OriginalTargetPort;     // The port of proxy/virtual target.
+  EFI_IP_ADDRESS    OriginalTargetIp;       // The address of proxy/virtual target.
+
+  BOOLEAN           DnsMode;  // Flag indicate whether the Target address is expressed as URL format.
+  CHAR8             TargetUrl[ISCSI_TARGET_URI_MAX_SIZE];
+
 } ISCSI_SESSION_CONFIG_NVDATA;
 #pragma pack()
 
@@ -191,6 +211,7 @@ IScsiGenRandom (
   Record the NIC information in a global structure.
 
   @param[in]  Controller         The handle of the controller.
+  @param[in]  Image              Handle of the image.
 
   @retval EFI_SUCCESS            The operation is completed.
   @retval EFI_OUT_OF_RESOURCES   Do not have sufficient resource to finish this
@@ -199,7 +220,8 @@ IScsiGenRandom (
 **/
 EFI_STATUS
 IScsiAddNic (
-  IN EFI_HANDLE  Controller
+  IN EFI_HANDLE  Controller,
+  IN EFI_HANDLE  Image
   );
 
 /**
@@ -218,6 +240,44 @@ IScsiRemoveNic (
   );
 
 /**
+  Create and initialize the Attempts.
+
+  @param[in]  AttemptNum          The number of Attempts will be created.
+
+  @retval EFI_SUCCESS             The Attempts have been created successfully.
+  @retval Others                  Failed to create the Attempt.
+
+**/
+EFI_STATUS
+IScsiCreateAttempts (
+  IN UINTN            AttemptNum
+  );
+
+/**
+  Create the iSCSI configuration Keywords for each attempt.
+
+  @param[in]  KeywordNum          The number Sets of Keywords will be created.
+
+  @retval EFI_SUCCESS             The operation is completed.
+  @retval Others                  Failed to create the Keywords.
+
+**/
+EFI_STATUS
+IScsiCreateKeywords (
+  IN UINTN            KeywordNum
+  );
+
+/**
+
+  Free the attempt configure data variable.
+
+**/
+VOID
+IScsiCleanAttemptVariable (
+  IN   VOID
+  );
+
+/**
   Get the recorded NIC information from a global structure by the Index.
 
   @param[in]  NicIndex          The index indicates the position of NIC info.
@@ -232,7 +292,7 @@ IScsiGetNicInfoByIndex (
 
 
 /**
-  Get the NIC's PCI location and return it accroding to the composited
+  Get the NIC's PCI location and return it according to the composited
   format defined in iSCSI Boot Firmware Table.
 
   @param[in]   Controller        The handle of the controller.
@@ -290,10 +350,13 @@ IScsiCreateDriverData (
 /**
   Clean the iSCSI driver data.
 
-  @param[in]  Private The iSCSI driver data.
+  @param[in]              Private The iSCSI driver data.
+
+  @retval EFI_SUCCES      The clean operation is successful.
+  @retval Others          Other errors as indicated.
 
 **/
-VOID
+EFI_STATUS
 IScsiCleanDriverData (
   IN ISCSI_DRIVER_DATA  *Private
   );
@@ -312,6 +375,20 @@ BOOLEAN
 IScsiDhcpIsConfigured (
   IN EFI_HANDLE  Controller,
   IN UINT8       IpVersion
+  );
+
+/**
+  Check wheather the Controller handle is configured to use DNS protocol.
+
+  @param[in]  Controller           The handle of the controller.
+
+  @retval TRUE                     The handle of the controller need the DNS protocol.
+  @retval FALSE                    The handle of the controller does not need the DNS protocol.
+
+**/
+BOOLEAN
+IScsiDnsIsConfigured (
+  IN EFI_HANDLE  Controller
   );
 
 /**

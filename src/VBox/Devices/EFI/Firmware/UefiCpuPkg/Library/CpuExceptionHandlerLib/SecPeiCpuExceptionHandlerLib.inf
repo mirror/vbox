@@ -1,14 +1,8 @@
 ## @file
 #  CPU Exception Handler library instance for SEC/PEI modules.
 #
-#  Copyright (c) 2012 - 2014, Intel Corporation. All rights reserved.<BR>
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  Copyright (c) 2012 - 2018, Intel Corporation. All rights reserved.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -18,7 +12,7 @@
   MODULE_UNI_FILE                = SecPeiCpuExceptionHandlerLib.uni
   FILE_GUID                      = CA4BBC99-DFC6-4234-B553-8B6586B7B113
   MODULE_TYPE                    = PEIM
-  VERSION_STRING                 = 1.0
+  VERSION_STRING                 = 1.1
   LIBRARY_CLASS                  = CpuExceptionHandlerLib|SEC PEI_CORE PEIM
 
 #
@@ -28,14 +22,13 @@
 #
 
 [Sources.Ia32]
-  Ia32/ExceptionHandlerAsm.asm
-  Ia32/ExceptionHandlerAsm.S   |GCC
+  Ia32/ExceptionHandlerAsm.nasm
+  Ia32/ExceptionTssEntryAsm.nasm
   Ia32/ArchExceptionHandler.c
   Ia32/ArchInterruptDefs.h
 
 [Sources.X64]
-  X64/ExceptionHandlerAsm.asm
-  X64/ExceptionHandlerAsm.S   |GCC
+  X64/ExceptionHandlerAsm.nasm
   X64/ArchExceptionHandler.c
   X64/ArchInterruptDefs.h
 

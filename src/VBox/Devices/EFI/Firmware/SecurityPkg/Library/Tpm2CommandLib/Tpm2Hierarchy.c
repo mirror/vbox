@@ -1,14 +1,8 @@
 /** @file
   Implement TPM2 Hierarchy related command.
 
-Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved. <BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved. <BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -186,19 +180,27 @@ Tpm2SetPrimaryPolicy (
   RecvBufferSize = sizeof (RecvBuffer);
   Status = Tpm2SubmitCommand (SendBufferSize, (UINT8 *)&SendBuffer, &RecvBufferSize, (UINT8 *)&RecvBuffer);
   if (EFI_ERROR (Status)) {
-    return Status;
+    goto Done;
   }
 
   if (RecvBufferSize < sizeof (TPM2_RESPONSE_HEADER)) {
     DEBUG ((EFI_D_ERROR, "Tpm2SetPrimaryPolicy - RecvBufferSize Error - %x\n", RecvBufferSize));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
   if (SwapBytes32(RecvBuffer.Header.responseCode) != TPM_RC_SUCCESS) {
     DEBUG ((EFI_D_ERROR, "Tpm2SetPrimaryPolicy - responseCode - %x\n", SwapBytes32(RecvBuffer.Header.responseCode)));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
 
-  return EFI_SUCCESS;
+Done:
+  //
+  // Clear AuthSession Content
+  //
+  ZeroMem (&SendBuffer, sizeof(SendBuffer));
+  ZeroMem (&RecvBuffer, sizeof(RecvBuffer));
+  return Status;
 }
 
 /**
@@ -246,12 +248,13 @@ Tpm2Clear (
   ResultBufSize = sizeof(Res);
   Status = Tpm2SubmitCommand (CmdSize, (UINT8 *)&Cmd, &ResultBufSize, (UINT8 *)&Res);
   if (EFI_ERROR(Status)) {
-    return Status;
+    goto Done;
   }
 
   if (ResultBufSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "Clear: Failed ExecuteCommand: Buffer Too Small\r\n"));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -260,7 +263,8 @@ Tpm2Clear (
   RespSize = SwapBytes32(Res.Header.paramSize);
   if (RespSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "Clear: Response size too large! %d\r\n", RespSize));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -268,7 +272,8 @@ Tpm2Clear (
   //
   if (SwapBytes32(Res.Header.responseCode) != TPM_RC_SUCCESS) {
     DEBUG ((EFI_D_ERROR, "Clear: Response Code error! 0x%08x\r\n", SwapBytes32(Res.Header.responseCode)));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
 
   //
@@ -276,8 +281,13 @@ Tpm2Clear (
   //
 
   // None
-
-  return EFI_SUCCESS;
+Done:
+  //
+  // Clear AuthSession Content
+  //
+  ZeroMem (&Cmd, sizeof(Cmd));
+  ZeroMem (&Res, sizeof(Res));
+  return Status;
 }
 
 /**
@@ -332,12 +342,13 @@ Tpm2ClearControl (
   ResultBufSize = sizeof(Res);
   Status = Tpm2SubmitCommand (CmdSize, (UINT8 *)&Cmd, &ResultBufSize, (UINT8 *)&Res);
   if (EFI_ERROR(Status)) {
-    return Status;
+    goto Done;
   }
 
   if (ResultBufSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "ClearControl: Failed ExecuteCommand: Buffer Too Small\r\n"));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -346,7 +357,8 @@ Tpm2ClearControl (
   RespSize = SwapBytes32(Res.Header.paramSize);
   if (RespSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "ClearControl: Response size too large! %d\r\n", RespSize));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -354,7 +366,8 @@ Tpm2ClearControl (
   //
   if (SwapBytes32(Res.Header.responseCode) != TPM_RC_SUCCESS) {
     DEBUG ((EFI_D_ERROR, "ClearControl: Response Code error! 0x%08x\r\n", SwapBytes32(Res.Header.responseCode)));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
 
   //
@@ -362,8 +375,13 @@ Tpm2ClearControl (
   //
 
   // None
-
-  return EFI_SUCCESS;
+Done:
+  //
+  // Clear AuthSession Content
+  //
+  ZeroMem (&Cmd, sizeof(Cmd));
+  ZeroMem (&Res, sizeof(Res));
+  return Status;
 }
 
 /**
@@ -436,10 +454,14 @@ Tpm2HierarchyChangeAuth (
              &ResultBufSize,
              ResultBuf
              );
+  if (EFI_ERROR(Status)) {
+    goto Done;
+  }
 
   if (ResultBufSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "HierarchyChangeAuth: Failed ExecuteCommand: Buffer Too Small\r\n"));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -448,7 +470,8 @@ Tpm2HierarchyChangeAuth (
   RespSize = SwapBytes32(Res.Header.paramSize);
   if (RespSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "HierarchyChangeAuth: Response size too large! %d\r\n", RespSize));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -456,10 +479,17 @@ Tpm2HierarchyChangeAuth (
   //
   if (SwapBytes32(Res.Header.responseCode) != TPM_RC_SUCCESS) {
     DEBUG((EFI_D_ERROR,"HierarchyChangeAuth: Response Code error! 0x%08x\r\n", SwapBytes32(Res.Header.responseCode)));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
 
-  return EFI_SUCCESS;
+Done:
+  //
+  // Clear AuthSession Content
+  //
+  ZeroMem (&Cmd, sizeof(Cmd));
+  ZeroMem (&Res, sizeof(Res));
+  return Status;
 }
 
 /**
@@ -522,10 +552,14 @@ Tpm2ChangeEPS (
              &ResultBufSize,
              ResultBuf
              );
+  if (EFI_ERROR(Status)) {
+    goto Done;
+  }
 
   if (ResultBufSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "ChangeEPS: Failed ExecuteCommand: Buffer Too Small\r\n"));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -534,7 +568,8 @@ Tpm2ChangeEPS (
   RespSize = SwapBytes32(Res.Header.paramSize);
   if (RespSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "ChangeEPS: Response size too large! %d\r\n", RespSize));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -542,10 +577,17 @@ Tpm2ChangeEPS (
   //
   if (SwapBytes32(Res.Header.responseCode) != TPM_RC_SUCCESS) {
     DEBUG((EFI_D_ERROR,"ChangeEPS: Response Code error! 0x%08x\r\n", SwapBytes32(Res.Header.responseCode)));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
 
-  return EFI_SUCCESS;
+Done:
+  //
+  // Clear AuthSession Content
+  //
+  ZeroMem (&Cmd, sizeof(Cmd));
+  ZeroMem (&Res, sizeof(Res));
+  return Status;
 }
 
 /**
@@ -608,10 +650,14 @@ Tpm2ChangePPS (
              &ResultBufSize,
              ResultBuf
              );
+  if (EFI_ERROR(Status)) {
+    goto Done;
+  }
 
   if (ResultBufSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "ChangePPS: Failed ExecuteCommand: Buffer Too Small\r\n"));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -620,7 +666,8 @@ Tpm2ChangePPS (
   RespSize = SwapBytes32(Res.Header.paramSize);
   if (RespSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "ChangePPS: Response size too large! %d\r\n", RespSize));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -628,10 +675,17 @@ Tpm2ChangePPS (
   //
   if (SwapBytes32(Res.Header.responseCode) != TPM_RC_SUCCESS) {
     DEBUG((EFI_D_ERROR,"ChangePPS: Response Code error! 0x%08x\r\n", SwapBytes32(Res.Header.responseCode)));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
 
-  return EFI_SUCCESS;
+Done:
+  //
+  // Clear AuthSession Content
+  //
+  ZeroMem (&Cmd, sizeof(Cmd));
+  ZeroMem (&Res, sizeof(Res));
+  return Status;
 }
 
 /**
@@ -704,10 +758,14 @@ Tpm2HierarchyControl (
              &ResultBufSize,
              ResultBuf
              );
+  if (EFI_ERROR(Status)) {
+    goto Done;
+  }
 
   if (ResultBufSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "HierarchyControl: Failed ExecuteCommand: Buffer Too Small\r\n"));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -716,7 +774,8 @@ Tpm2HierarchyControl (
   RespSize = SwapBytes32(Res.Header.paramSize);
   if (RespSize > sizeof(Res)) {
     DEBUG ((EFI_D_ERROR, "HierarchyControl: Response size too large! %d\r\n", RespSize));
-    return EFI_BUFFER_TOO_SMALL;
+    Status = EFI_BUFFER_TOO_SMALL;
+    goto Done;
   }
 
   //
@@ -724,8 +783,15 @@ Tpm2HierarchyControl (
   //
   if (SwapBytes32(Res.Header.responseCode) != TPM_RC_SUCCESS) {
     DEBUG((EFI_D_ERROR,"HierarchyControl: Response Code error! 0x%08x\r\n", SwapBytes32(Res.Header.responseCode)));
-    return EFI_DEVICE_ERROR;
+    Status = EFI_DEVICE_ERROR;
+    goto Done;
   }
 
-  return EFI_SUCCESS;
+Done:
+  //
+  // Clear AuthSession Content
+  //
+  ZeroMem (&Cmd, sizeof(Cmd));
+  ZeroMem (&Res, sizeof(Res));
+  return Status;
 }

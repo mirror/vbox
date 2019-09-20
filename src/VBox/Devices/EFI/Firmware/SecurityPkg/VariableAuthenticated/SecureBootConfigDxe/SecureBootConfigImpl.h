@@ -2,14 +2,8 @@
   The header file of HII Config Access protocol implementation of SecureBoot
   configuration module.
 
-Copyright (c) 2011 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2017, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -39,11 +33,15 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/PrintLib.h>
 #include <Library/PlatformSecureLib.h>
 #include <Library/BaseCryptLib.h>
+#include <Library/FileExplorerLib.h>
+#include <Library/PeCoffLib.h>
+
 #include <Guid/MdeModuleHii.h>
 #include <Guid/AuthenticatedVariableFormat.h>
 #include <Guid/FileSystemVolumeLabelInfo.h>
 #include <Guid/ImageAuthentication.h>
 #include <Guid/FileInfo.h>
+#include <Guid/WinCertificate.h>
 
 #include "SecureBootConfigNvData.h"
 
@@ -63,84 +61,38 @@ extern  EFI_IFR_GUID_LABEL         *mEndLabel;
 
 #define MAX_CHAR              480
 #define TWO_BYTE_ENCODE       0x82
+#define BUFFER_MAX_SIZE       100
 
-//
-// SHA-1 digest size in bytes.
-//
-#define SHA1_DIGEST_SIZE    20
 //
 // SHA-256 digest size in bytes
 //
 #define SHA256_DIGEST_SIZE  32
 //
-// Set max digest size as SHA256 Output (32 bytes) by far
+// SHA-384 digest size in bytes
 //
-#define MAX_DIGEST_SIZE    SHA256_DIGEST_SIZE
+#define SHA384_DIGEST_SIZE  48
+//
+// SHA-512 digest size in bytes
+//
+#define SHA512_DIGEST_SIZE  64
+
+//
+// Set max digest size as SHA512 Output (64 bytes) by far
+//
+#define MAX_DIGEST_SIZE    SHA512_DIGEST_SIZE
 
 #define WIN_CERT_UEFI_RSA2048_SIZE               256
 
 //
 // Support hash types
 //
-#define HASHALG_SHA1                           0x00000000
-#define HASHALG_SHA224                         0x00000001
-#define HASHALG_SHA256                         0x00000002
-#define HASHALG_SHA384                         0x00000003
-#define HASHALG_SHA512                         0x00000004
-#define HASHALG_MAX                            0x00000005
+#define HASHALG_SHA224                         0x00000000
+#define HASHALG_SHA256                         0x00000001
+#define HASHALG_SHA384                         0x00000002
+#define HASHALG_SHA512                         0x00000003
+#define HASHALG_RAW                            0x00000004
+#define HASHALG_MAX                            0x00000004
 
-
-#define SECUREBOOT_MENU_OPTION_SIGNATURE   SIGNATURE_32 ('S', 'b', 'M', 'u')
-#define SECUREBOOT_MENU_ENTRY_SIGNATURE    SIGNATURE_32 ('S', 'b', 'M', 'r')
-
-typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL  Header;
-  EFI_GUID                  Guid;
-  UINT8                     VendorDefinedData[1];
-} VENDOR_DEVICE_PATH_WITH_DATA;
-
-typedef struct {
-  EFI_DEVICE_PATH_PROTOCOL  Header;
-  UINT16                    NetworkProtocol;
-  UINT16                    LoginOption;
-  UINT64                    Lun;
-  UINT16                    TargetPortalGroupTag;
-  CHAR16                    TargetName[1];
-} ISCSI_DEVICE_PATH_WITH_NAME;
-
-typedef enum _FILE_EXPLORER_DISPLAY_CONTEXT {
-  FileExplorerDisplayFileSystem,
-  FileExplorerDisplayDirectory,
-  FileExplorerDisplayUnknown
-} FILE_EXPLORER_DISPLAY_CONTEXT;
-
-typedef enum _FILE_EXPLORER_STATE {
-  FileExplorerStateInActive                      = 0,
-  FileExplorerStateEnrollPkFile,
-  FileExplorerStateEnrollKekFile,
-  FileExplorerStateEnrollSignatureFileToDb,
-  FileExplorerStateEnrollSignatureFileToDbx,
-  FileExplorerStateUnknown
-} FILE_EXPLORER_STATE;
-
-typedef struct {
-  CHAR16  *Str;
-  UINTN   Len;
-  UINTN   Maxlen;
-} POOL_PRINT;
-
-typedef
-VOID
-(*DEV_PATH_FUNCTION) (
-  IN OUT POOL_PRINT       *Str,
-  IN VOID                 *DevPath
-  );
-
-typedef struct {
-  UINT8             Type;
-  UINT8             SubType;
-  DEV_PATH_FUNCTION Function;
-} DEVICE_PATH_STRING_TABLE;
 
 typedef struct {
   UINTN             Signature;
@@ -148,34 +100,29 @@ typedef struct {
   UINTN             MenuNumber;
 } SECUREBOOT_MENU_OPTION;
 
-extern  SECUREBOOT_MENU_OPTION     FsOptionMenu;
-extern  SECUREBOOT_MENU_OPTION     DirectoryMenu;
-
 typedef struct {
-  UINTN             Signature;
-  LIST_ENTRY        Link;
-  UINTN             OptionNumber;
-  UINT16            *DisplayString;
-  UINT16            *HelpString;
-  EFI_STRING_ID     DisplayStringToken;
-  EFI_STRING_ID     HelpStringToken;
-  VOID              *FileContext;
-} SECUREBOOT_MENU_ENTRY;
-
-typedef struct {
-  EFI_HANDLE                        Handle;
-  EFI_DEVICE_PATH_PROTOCOL          *DevicePath;
   EFI_FILE_HANDLE                   FHandle;
   UINT16                            *FileName;
-  EFI_FILE_SYSTEM_VOLUME_LABEL      *Info;
-
-  BOOLEAN                           IsRoot;
-  BOOLEAN                           IsDir;
-  BOOLEAN                           IsRemovableMedia;
-  BOOLEAN                           IsLoadFile;
-  BOOLEAN                           IsBootLegacy;
+  UINT8                             FileType;
 } SECUREBOOT_FILE_CONTEXT;
 
+#define SECUREBOOT_FREE_NON_NULL(Pointer)   \
+  do {                                      \
+    if ((Pointer) != NULL) {                \
+      FreePool((Pointer));                  \
+      (Pointer) = NULL;                     \
+    }                                       \
+  } while (FALSE)
+
+#define SECUREBOOT_FREE_NON_OPCODE(Handle)  \
+  do{                                       \
+    if ((Handle) != NULL) {                 \
+      HiiFreeOpCodeHandle((Handle));        \
+    }                                       \
+  } while (FALSE)
+
+#define SIGNATURE_DATA_COUNTS(List)         \
+  (((List)->SignatureListSize - sizeof(EFI_SIGNATURE_LIST) - (List)->SignatureHeaderSize) / (List)->SignatureSize)
 
 //
 // We define another format of 5th directory entry: security directory
@@ -198,6 +145,19 @@ typedef struct {
   EFI_DEVICE_PATH_PROTOCOL          End;
 } HII_VENDOR_DEVICE_PATH;
 
+typedef enum {
+  Variable_DB,
+  Variable_DBX,
+  Variable_DBT,
+  Variable_MAX
+} CURRENT_VARIABLE_NAME;
+
+typedef enum {
+  Delete_Signature_List_All,
+  Delete_Signature_List_One,
+  Delete_Signature_Data
+}SIGNATURE_DELETE_TYPE;
+
 typedef struct {
   UINTN                             Signature;
 
@@ -205,16 +165,18 @@ typedef struct {
   EFI_HII_HANDLE                    HiiHandle;
   EFI_HANDLE                        DriverHandle;
 
-  FILE_EXPLORER_STATE               FeCurrentState;
-  FILE_EXPLORER_DISPLAY_CONTEXT     FeDisplayContext;
-
-  SECUREBOOT_MENU_ENTRY             *MenuEntry;
   SECUREBOOT_FILE_CONTEXT           *FileContext;
 
   EFI_GUID                          *SignatureGUID;
+
+  CURRENT_VARIABLE_NAME             VariableName;     // The variable name we are processing.
+  UINT32                            ListCount;        // Record current variable has how many signature list.
+  UINTN                             ListIndex;        // Record which signature list is processing.
+  BOOLEAN                           *CheckArray;      // Record whcih siganture data checked.
 } SECUREBOOT_CONFIG_PRIVATE_DATA;
 
 extern SECUREBOOT_CONFIG_PRIVATE_DATA      mSecureBootConfigPrivateDateTemplate;
+extern SECUREBOOT_CONFIG_PRIVATE_DATA      *gSecureBootPrivateData;
 
 #define SECUREBOOT_CONFIG_PRIVATE_DATA_SIGNATURE     SIGNATURE_32 ('S', 'E', 'C', 'B')
 #define SECUREBOOT_CONFIG_PRIVATE_FROM_THIS(a)  CR (a, SECUREBOOT_CONFIG_PRIVATE_DATA, ConfigAccess, SECUREBOOT_CONFIG_PRIVATE_DATA_SIGNATURE)
@@ -485,35 +447,6 @@ CleanUpPage (
 
 
 /**
-  Update the file explorer page with the refreshed file system.
-
-  @param[in] PrivateData     Module private data.
-  @param[in] KeyValue        Key value to identify the type of data to expect.
-
-  @retval  TRUE           Inform the caller to create a callback packet to exit file explorer.
-  @retval  FALSE          Indicate that there is no need to exit file explorer.
-
-**/
-BOOLEAN
-UpdateFileExplorer (
-  IN SECUREBOOT_CONFIG_PRIVATE_DATA   *PrivateData,
-  IN UINT16                           KeyValue
-  );
-
-
-/**
-  Free resources allocated in Allocate Rountine.
-
-  @param[in, out]  MenuOption        Menu to be freed
-
-**/
-VOID
-FreeMenu (
-  IN OUT SECUREBOOT_MENU_OPTION        *MenuOption
-  );
-
-
-/**
   Read file content into BufferPtr, the size of the allocate buffer
   is *FileSize plus AddtionAllocateSize.
 
@@ -573,26 +506,6 @@ Int2OctStr (
   IN     UINTN             OSSizeInBytes
   );
 
-
-/**
-  Convert a String to Guid Value.
-
-  @param[in]   Str        Specifies the String to be converted.
-  @param[in]   StrLen     Number of Unicode Characters of String (exclusive \0)
-  @param[out]  Guid       Return the result Guid value.
-
-  @retval    EFI_SUCCESS           The operation is finished successfully.
-  @retval    EFI_NOT_FOUND         Invalid string.
-
-**/
-EFI_STATUS
-StringToGuid (
-  IN   CHAR16           *Str,
-  IN   UINTN            StrLen,
-  OUT  EFI_GUID         *Guid
-  );
-
-
 /**
   Worker function that prints an EFI_GUID into specified Buffer.
 
@@ -608,6 +521,76 @@ GuidToString (
   IN  EFI_GUID  *Guid,
   IN  CHAR16    *Buffer,
   IN  UINTN     BufferSize
+  );
+
+/**
+  Update the PK form base on the input file path info.
+
+  @param FilePath    Point to the file path.
+
+  @retval TRUE   Exit caller function.
+  @retval FALSE  Not exit caller function.
+**/
+BOOLEAN
+EFIAPI
+UpdatePKFromFile (
+  IN EFI_DEVICE_PATH_PROTOCOL    *FilePath
+  );
+
+/**
+  Update the KEK form base on the input file path info.
+
+  @param FilePath    Point to the file path.
+
+  @retval TRUE   Exit caller function.
+  @retval FALSE  Not exit caller function.
+**/
+BOOLEAN
+EFIAPI
+UpdateKEKFromFile (
+  IN EFI_DEVICE_PATH_PROTOCOL    *FilePath
+  );
+
+/**
+  Update the DB form base on the input file path info.
+
+  @param FilePath    Point to the file path.
+
+  @retval TRUE   Exit caller function.
+  @retval FALSE  Not exit caller function.
+**/
+BOOLEAN
+EFIAPI
+UpdateDBFromFile (
+  IN EFI_DEVICE_PATH_PROTOCOL    *FilePath
+  );
+
+/**
+  Update the DBX form base on the input file path info.
+
+  @param FilePath    Point to the file path.
+
+  @retval TRUE   Exit caller function.
+  @retval FALSE  Not exit caller function.
+**/
+BOOLEAN
+EFIAPI
+UpdateDBXFromFile (
+  IN EFI_DEVICE_PATH_PROTOCOL    *FilePath
+  );
+
+/**
+  Update the DBT form base on the input file path info.
+
+  @param FilePath    Point to the file path.
+
+  @retval TRUE   Exit caller function.
+  @retval FALSE  Not exit caller function.
+**/
+BOOLEAN
+EFIAPI
+UpdateDBTFromFile (
+  IN EFI_DEVICE_PATH_PROTOCOL    *FilePath
   );
 
 #endif

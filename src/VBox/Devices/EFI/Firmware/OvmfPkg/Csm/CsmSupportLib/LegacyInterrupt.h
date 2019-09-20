@@ -3,13 +3,7 @@
 
   Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials are
-  licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,12 +14,16 @@
 
 #include <Protocol/LegacyInterrupt.h>
 
+#include <Library/PcdLib.h>
 #include <Library/PciLib.h>
 #include <Library/DebugLib.h>
 #include <Library/UefiBootServicesTableLib.h>
+#include <OvmfPlatforms.h>
+
 
 #define LEGACY_INT_BUS  0
-#define LEGACY_INT_DEV  1
+#define LEGACY_INT_DEV_PIIX4  0x01
+#define LEGACY_INT_DEV_Q35    0x1f
 #define LEGACY_INT_FUNC 0
 
 #define PIRQN           0x00  // PIRQ Null

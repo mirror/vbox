@@ -1,14 +1,8 @@
 /** @file
 The tool dumps the contents of a firmware volume
 
-Copyright (c) 1999 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 1999 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,6 +11,11 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#ifdef __GNUC__
+#include <unistd.h>
+#else
+#include <direct.h>
+#endif
 
 #include <FvLib.h>
 #include <Common/UefiBaseTypes.h>
@@ -36,6 +35,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "OsPath.h"
 #include "ParseGuidedSectionTools.h"
 #include "StringFuncs.h"
+#include "ParseInf.h"
+#include "PeCoffLib.h"
+
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
 
 //
 // Utility global variables
@@ -43,8 +48,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 EFI_GUID  gEfiCrc32GuidedSectionExtractionProtocolGuid = EFI_CRC32_GUIDED_SECTION_EXTRACTION_PROTOCOL_GUID;
 
-#define UTILITY_MAJOR_VERSION      0
-#define UTILITY_MINOR_VERSION      83
+#define UTILITY_MAJOR_VERSION      1
+#define UTILITY_MINOR_VERSION      0
 
 #define UTILITY_NAME         "VolInfo"
 
@@ -69,6 +74,9 @@ static GUID_TO_BASENAME *mGuidBaseNameList = NULL;
 EFI_HANDLE mParsedGuidedSectionTools = NULL;
 
 CHAR8* mUtilityFilename = NULL;
+
+BOOLEAN EnableHash = FALSE;
+CHAR8 *OpenSslPath = NULL;
 
 EFI_STATUS
 ParseGuidBaseNameFile (
@@ -126,10 +134,76 @@ LoadGuidedSectionToolsTxt (
   IN CHAR8* FirmwareVolumeFilename
   );
 
+EFI_STATUS
+CombinePath (
+  IN  CHAR8* DefaultPath,
+  IN  CHAR8* AppendPath,
+  OUT CHAR8* NewPath
+);
+
 void
 Usage (
   VOID
   );
+
+UINT32
+UnicodeStrLen (
+  IN CHAR16 *String
+  )
+  /*++
+
+  Routine Description:
+
+  Returns the length of a null-terminated unicode string.
+
+  Arguments:
+
+    String - The pointer to a null-terminated unicode string.
+
+  Returns:
+
+    N/A
+
+  --*/
+{
+  UINT32  Length;
+
+  for (Length = 0; *String != L'\0'; String++, Length++) {
+    ;
+  }
+  return Length;
+}
+
+VOID
+Unicode2AsciiString (
+  IN  CHAR16 *Source,
+  OUT CHAR8  *Destination
+  )
+  /*++
+
+  Routine Description:
+
+  Convert a null-terminated unicode string to a null-terminated ascii string.
+
+  Arguments:
+
+    Source      - The pointer to the null-terminated input unicode string.
+    Destination - The pointer to the null-terminated output ascii string.
+
+  Returns:
+
+    N/A
+
+  --*/
+{
+  while (*Source != '\0') {
+    *(Destination++) = (CHAR8) *(Source++);
+  }
+  //
+  // End the ascii with a NULL.
+  //
+  *Destination = '\0';
+}
 
 int
 main (
@@ -160,27 +234,45 @@ Returns:
   EFI_STATUS                  Status;
   int                         Offset;
   BOOLEAN                     ErasePolarity;
+  UINT64                      LogLevel;
+  CHAR8                       *OpenSslEnv;
+  CHAR8                       *OpenSslCommand;
 
   SetUtilityName (UTILITY_NAME);
   //
   // Print utility header
   //
-  printf ("%s Version %d.%d %s, %s\n",
+  printf ("%s Version %d.%d Build %s\n",
     UTILITY_NAME,
     UTILITY_MAJOR_VERSION,
     UTILITY_MINOR_VERSION,
-    __BUILD_VERSION,
-    __DATE__
+    __BUILD_VERSION
     );
 
-  //
-  // Save, and then skip filename arg
-  //
-  mUtilityFilename = argv[0];
+  if (argc == 1) {
+    Usage ();
+    return -1;
+  }
+
   argc--;
   argv++;
-
+  LogLevel = 0;
   Offset = 0;
+
+  //
+  // Look for help options
+  //
+  if ((strcmp(argv[0], "-h") == 0) || (strcmp(argv[0], "--help") == 0) ||
+      (strcmp(argv[0], "-?") == 0) || (strcmp(argv[0], "/?") == 0)) {
+    Usage();
+    return  STATUS_SUCCESS;
+  }
+  //
+  // Version has already be printed, so just return success
+  //
+  if (strcmp(argv[0], "--version") == 0) {
+    return  STATUS_SUCCESS;
+  }
 
   //
   // If they specified -x xref guid/basename cross-reference files, process it.
@@ -188,13 +280,15 @@ Returns:
   // -x xref_filename to processdsc, then use xref_filename as a parameter
   // here.
   //
-  while (argc > 2) {
+  while (argc > 0) {
     if ((strcmp(argv[0], "-x") == 0) || (strcmp(argv[0], "--xref") == 0)) {
       ParseGuidBaseNameFile (argv[1]);
       printf("ParseGuidBaseNameFile: %s\n", argv[1]);
       argc -= 2;
       argv += 2;
-    } else if (strcmp(argv[0], "--offset") == 0) {
+      continue;
+    }
+    if (strcmp(argv[0], "--offset") == 0) {
       //
       // Hex or decimal?
       //
@@ -218,33 +312,88 @@ Returns:
 
       argc -= 2;
       argv += 2;
-    } else {
-      Usage ();
-      return -1;
+      continue;
     }
-  }
-  //
-  // Check for proper number of arguments
-  //
-  if (argc != 1) {
-    Usage ();
-    return -1;
-  }
-  //
-  // Look for help options
-  //
-  if ((strcmp(argv[0], "-h") == 0) || (strcmp(argv[0], "--help") == 0) ||
-      (strcmp(argv[0], "-?") == 0) || (strcmp(argv[0], "/?") == 0)) {
-    Usage();
-    return STATUS_ERROR;
+    if ((stricmp (argv[0], "--hash") == 0)) {
+      if (EnableHash == TRUE) {
+        //
+        // --hash already given in the option, ignore this one
+        //
+        argc --;
+        argv ++;
+        continue;
+      }
+      EnableHash = TRUE;
+      OpenSslCommand = "openssl";
+      OpenSslEnv = getenv("OPENSSL_PATH");
+      if (OpenSslEnv == NULL) {
+        OpenSslPath = OpenSslCommand;
+      } else {
+        //
+        // We add quotes to the Openssl Path in case it has space characters
+        //
+        OpenSslPath = malloc(2+strlen(OpenSslEnv)+strlen(OpenSslCommand)+1);
+        if (OpenSslPath == NULL) {
+          Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+          return GetUtilityStatus ();
+        }
+        CombinePath(OpenSslEnv, OpenSslCommand, OpenSslPath);
+      }
+      if (OpenSslPath == NULL){
+        Error (NULL, 0, 3000, "Open SSL command not available.  Please verify PATH or set OPENSSL_PATH.", NULL);
+        return GetUtilityStatus ();
+      }
+      argc --;
+      argv ++;
+      continue;
+    }
+
+    if ((stricmp (argv[0], "-v") == 0) || (stricmp (argv[0], "--verbose") == 0)) {
+      SetPrintLevel (VERBOSE_LOG_LEVEL);
+      argc --;
+      argv ++;
+      continue;
+    }
+
+    if ((stricmp (argv[0], "-q") == 0) || (stricmp (argv[0], "--quiet") == 0)) {
+      SetPrintLevel (KEY_LOG_LEVEL);
+      argc --;
+      argv ++;
+      continue;
+    }
+
+    if ((stricmp (argv[0], "-d") == 0) || (stricmp (argv[0], "--debug") == 0)) {
+      Status = AsciiStringToUint64 (argv[1], FALSE, &LogLevel);
+      if (EFI_ERROR (Status)) {
+        Error (NULL, 0, 1003, "Invalid option value", "%s = %s", argv[0], argv[1]);
+        return -1;
+      }
+      if (LogLevel > 9) {
+        Error (NULL, 0, 1003, "Invalid option value", "Debug Level range is 0-9, current input level is %d", (int) LogLevel);
+        return -1;
+      }
+      SetPrintLevel (LogLevel);
+      DebugMsg (NULL, 0, 9, "Debug Mode Set", "Debug Output Mode Level %s is set!", argv[1]);
+      argc -= 2;
+      argv += 2;
+      continue;
+    }
+
+    mUtilityFilename = argv[0];
+    argc --;
+    argv ++;
   }
 
   //
   // Open the file containing the FV
   //
-  InputFile = fopen (LongFilePath (argv[0]), "rb");
+  if (mUtilityFilename == NULL) {
+    Error (NULL, 0, 1001, "Missing option", "Input files are not specified");
+    return GetUtilityStatus ();
+  }
+  InputFile = fopen (LongFilePath (mUtilityFilename), "rb");
   if (InputFile == NULL) {
-    Error (NULL, 0, 0001, "Error opening the input file", argv[0]);
+    Error (NULL, 0, 0001, "Error opening the input file", mUtilityFilename);
     return GetUtilityStatus ();
   }
   //
@@ -259,7 +408,7 @@ Returns:
   //
   Status = ReadHeader (InputFile, &FvSize, &ErasePolarity);
   if (EFI_ERROR (Status)) {
-    Error (NULL, 0, 0003, "error parsing FV image", "%s Header is invalid", argv[0]);
+    Error (NULL, 0, 0003, "error parsing FV image", "%s Header is invalid", mUtilityFilename);
     fclose (InputFile);
     return GetUtilityStatus ();
   }
@@ -279,12 +428,12 @@ Returns:
   BytesRead = fread (FvImage, 1, FvSize, InputFile);
   fclose (InputFile);
   if ((unsigned int) BytesRead != FvSize) {
-    Error (NULL, 0, 0004, "error reading FvImage from", argv[0]);
+    Error (NULL, 0, 0004, "error reading FvImage from", mUtilityFilename);
     free (FvImage);
     return GetUtilityStatus ();
   }
 
-  LoadGuidedSectionToolsTxt (argv[0]);
+  LoadGuidedSectionToolsTxt (mUtilityFilename);
 
   PrintFvInfo (FvImage, FALSE);
 
@@ -606,6 +755,7 @@ Returns:
   UINTN                       Signature[2];
   UINTN                       BytesRead;
   UINT32                      Size;
+  size_t                      ReadSize;
 
   BytesRead = 0;
   Size      = 0;
@@ -619,7 +769,10 @@ Returns:
   //
   // Read the header
   //
-  fread (&VolumeHeader, sizeof (EFI_FIRMWARE_VOLUME_HEADER) - sizeof (EFI_FV_BLOCK_MAP_ENTRY), 1, InputFile);
+  ReadSize = fread (&VolumeHeader, sizeof (EFI_FIRMWARE_VOLUME_HEADER) - sizeof (EFI_FV_BLOCK_MAP_ENTRY), 1, InputFile);
+  if (ReadSize != 1) {
+    return EFI_ABORTED;
+  }
   BytesRead     = sizeof (EFI_FIRMWARE_VOLUME_HEADER) - sizeof (EFI_FV_BLOCK_MAP_ENTRY);
   Signature[0]  = VolumeHeader.Signature;
   Signature[1]  = 0;
@@ -908,7 +1061,10 @@ Returns:
   printf ("Revision:              0x%04X\n", VolumeHeader.Revision);
 
   do {
-    fread (&BlockMap, sizeof (EFI_FV_BLOCK_MAP_ENTRY), 1, InputFile);
+    ReadSize = fread (&BlockMap, sizeof (EFI_FV_BLOCK_MAP_ENTRY), 1, InputFile);
+    if (ReadSize != 1) {
+      return EFI_ABORTED;
+    }
     BytesRead += sizeof (EFI_FV_BLOCK_MAP_ENTRY);
 
     if (BlockMap.NumBlocks != 0) {
@@ -1153,6 +1309,14 @@ Returns:
     printf ("EFI_FV_FILETYPE_SMM_CORE\n");
     break;
 
+  case EFI_FV_FILETYPE_MM_STANDALONE:
+    printf ("EFI_FV_FILETYPE_MM_STANDALONE\n");
+    break;
+
+  case EFI_FV_FILETYPE_MM_CORE_STANDALONE:
+    printf ("EFI_FV_FILETYPE_MM_CORE_STANDALONE\n");
+    break;
+
   case EFI_FV_FILETYPE_FFS_PAD:
     printf ("EFI_FV_FILETYPE_FFS_PAD\n");
     break;
@@ -1187,6 +1351,280 @@ Returns:
     break;
   }
 
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+RebaseImageRead (
+  IN     VOID    *FileHandle,
+  IN     UINTN   FileOffset,
+  IN OUT UINT32  *ReadSize,
+  OUT    VOID    *Buffer
+  )
+/*++
+
+Routine Description:
+
+  Support routine for the PE/COFF Loader that reads a buffer from a PE/COFF file
+
+Arguments:
+
+  FileHandle - The handle to the PE/COFF file
+
+  FileOffset - The offset, in bytes, into the file to read
+
+  ReadSize   - The number of bytes to read from the file starting at FileOffset
+
+  Buffer     - A pointer to the buffer to read the data into.
+
+Returns:
+
+  EFI_SUCCESS - ReadSize bytes of data were read into Buffer from the PE/COFF file starting at FileOffset
+
+--*/
+{
+  CHAR8   *Destination8;
+  CHAR8   *Source8;
+  UINT32  Length;
+
+  Destination8  = Buffer;
+  Source8       = (CHAR8 *) ((UINTN) FileHandle + FileOffset);
+  Length        = *ReadSize;
+  while (Length--) {
+    *(Destination8++) = *(Source8++);
+  }
+
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+SetAddressToSectionHeader (
+  IN     CHAR8   *FileName,
+  IN OUT UINT8   *FileBuffer,
+  IN     UINT64  NewPe32BaseAddress
+  )
+/*++
+
+Routine Description:
+
+  Set new base address into the section header of PeImage
+
+Arguments:
+
+  FileName           - Name of file
+  FileBuffer         - Pointer to PeImage.
+  NewPe32BaseAddress - New Base Address for PE image.
+
+Returns:
+
+  EFI_SUCCESS          Set new base address into this image successfully.
+
+--*/
+{
+  EFI_STATUS                            Status;
+  PE_COFF_LOADER_IMAGE_CONTEXT          ImageContext;
+  UINTN                                 Index;
+  EFI_IMAGE_OPTIONAL_HEADER_UNION       *ImgHdr;
+  EFI_IMAGE_SECTION_HEADER              *SectionHeader;
+
+  //
+  // Initialize context
+  //
+  memset (&ImageContext, 0, sizeof (ImageContext));
+  ImageContext.Handle     = (VOID *) FileBuffer;
+  ImageContext.ImageRead  = (PE_COFF_LOADER_READ_FILE) RebaseImageRead;
+  Status                  = PeCoffLoaderGetImageInfo (&ImageContext);
+  if (EFI_ERROR (Status)) {
+    Error (NULL, 0, 3000, "Invalid", "The input PeImage %s is not valid", FileName);
+    return Status;
+  }
+
+  if (ImageContext.RelocationsStripped) {
+    Error (NULL, 0, 3000, "Invalid", "The input PeImage %s has no relocation to be fixed up", FileName);
+    return Status;
+  }
+
+  //
+  // Get PeHeader pointer
+  //
+  ImgHdr = (EFI_IMAGE_OPTIONAL_HEADER_UNION *)(FileBuffer + ImageContext.PeCoffHeaderOffset);
+
+  //
+  // Get section header list
+  //
+  SectionHeader = (EFI_IMAGE_SECTION_HEADER *) (
+    (UINTN) ImgHdr +
+    sizeof (UINT32) +
+    sizeof (EFI_IMAGE_FILE_HEADER) +
+    ImgHdr->Pe32.FileHeader.SizeOfOptionalHeader
+    );
+
+  //
+  // Set base address into the first section header that doesn't point to code section.
+  //
+  for (Index = 0; Index < ImgHdr->Pe32.FileHeader.NumberOfSections; Index ++, SectionHeader ++) {
+    if ((SectionHeader->Characteristics & EFI_IMAGE_SCN_CNT_CODE) == 0) {
+      *(UINT64 *) &SectionHeader->PointerToRelocations = NewPe32BaseAddress;
+      break;
+    }
+  }
+
+  //
+  // BaseAddress is set to section header.
+  //
+  return EFI_SUCCESS;
+}
+
+EFI_STATUS
+RebaseImage (
+  IN     CHAR8   *FileName,
+  IN OUT UINT8   *FileBuffer,
+  IN     UINT64  NewPe32BaseAddress
+  )
+/*++
+
+Routine Description:
+
+  Set new base address into PeImage, and fix up PeImage based on new address.
+
+Arguments:
+
+  FileName           - Name of file
+  FileBuffer         - Pointer to PeImage.
+  NewPe32BaseAddress - New Base Address for PE image.
+
+Returns:
+
+  EFI_INVALID_PARAMETER   - BaseAddress is not valid.
+  EFI_SUCCESS             - Update PeImage is correctly.
+
+--*/
+{
+  EFI_STATUS                            Status;
+  PE_COFF_LOADER_IMAGE_CONTEXT          ImageContext;
+  UINTN                                 Index;
+  EFI_IMAGE_OPTIONAL_HEADER_UNION       *ImgHdr;
+  UINT8                                 *MemoryImagePointer;
+  EFI_IMAGE_SECTION_HEADER              *SectionHeader;
+
+  //
+  // Initialize context
+  //
+  memset (&ImageContext, 0, sizeof (ImageContext));
+  ImageContext.Handle     = (VOID *) FileBuffer;
+  ImageContext.ImageRead  = (PE_COFF_LOADER_READ_FILE) RebaseImageRead;
+  Status                  = PeCoffLoaderGetImageInfo (&ImageContext);
+  if (EFI_ERROR (Status)) {
+    Error (NULL, 0, 3000, "Invalid", "The input PeImage %s is not valid", FileName);
+    return Status;
+  }
+
+  if (ImageContext.RelocationsStripped) {
+    Error (NULL, 0, 3000, "Invalid", "The input PeImage %s has no relocation to be fixed up", FileName);
+    return Status;
+  }
+
+  //
+  // Get PeHeader pointer
+  //
+  ImgHdr = (EFI_IMAGE_OPTIONAL_HEADER_UNION *)(FileBuffer + ImageContext.PeCoffHeaderOffset);
+
+  //
+  // Load and Relocate Image Data
+  //
+  MemoryImagePointer = (UINT8 *) malloc ((UINTN) ImageContext.ImageSize + ImageContext.SectionAlignment);
+  if (MemoryImagePointer == NULL) {
+    Error (NULL, 0, 4001, "Resource", "memory cannot be allocated on rebase of %s", FileName);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  memset ((VOID *) MemoryImagePointer, 0, (UINTN) ImageContext.ImageSize + ImageContext.SectionAlignment);
+  ImageContext.ImageAddress = ((UINTN) MemoryImagePointer + ImageContext.SectionAlignment - 1) & (~((INT64)ImageContext.SectionAlignment - 1));
+
+  Status =  PeCoffLoaderLoadImage (&ImageContext);
+  if (EFI_ERROR (Status)) {
+    Error (NULL, 0, 3000, "Invalid", "LocateImage() call failed on rebase of %s", FileName);
+    free ((VOID *) MemoryImagePointer);
+    return Status;
+  }
+
+  ImageContext.DestinationAddress = NewPe32BaseAddress;
+  Status                          = PeCoffLoaderRelocateImage (&ImageContext);
+  if (EFI_ERROR (Status)) {
+    Error (NULL, 0, 3000, "Invalid", "RelocateImage() call failed on rebase of %s", FileName);
+    free ((VOID *) MemoryImagePointer);
+    return Status;
+  }
+
+  //
+  // Copy Relocated data to raw image file.
+  //
+  SectionHeader = (EFI_IMAGE_SECTION_HEADER *) (
+    (UINTN) ImgHdr +
+    sizeof (UINT32) +
+    sizeof (EFI_IMAGE_FILE_HEADER) +
+    ImgHdr->Pe32.FileHeader.SizeOfOptionalHeader
+    );
+
+  for (Index = 0; Index < ImgHdr->Pe32.FileHeader.NumberOfSections; Index ++, SectionHeader ++) {
+    CopyMem (
+      FileBuffer + SectionHeader->PointerToRawData,
+      (VOID*) (UINTN) (ImageContext.ImageAddress + SectionHeader->VirtualAddress),
+      SectionHeader->SizeOfRawData
+      );
+  }
+
+  free ((VOID *) MemoryImagePointer);
+
+  //
+  // Update Image Base Address
+  //
+  if (ImgHdr->Pe32.OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    ImgHdr->Pe32.OptionalHeader.ImageBase = (UINT32) NewPe32BaseAddress;
+  } else if (ImgHdr->Pe32Plus.OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC) {
+    ImgHdr->Pe32Plus.OptionalHeader.ImageBase = NewPe32BaseAddress;
+  } else {
+    Error (NULL, 0, 3000, "Invalid", "unknown PE magic signature %X in PE32 image %s",
+      ImgHdr->Pe32.OptionalHeader.Magic,
+      FileName
+      );
+    return EFI_ABORTED;
+  }
+
+  //
+  // Set new base address into section header
+  //
+  Status = SetAddressToSectionHeader (FileName, FileBuffer, NewPe32BaseAddress);
+
+  return Status;
+}
+
+EFI_STATUS
+CombinePath (
+  IN  CHAR8* DefaultPath,
+  IN  CHAR8* AppendPath,
+  OUT CHAR8* NewPath
+)
+{
+  UINT32 DefaultPathLen;
+  UINT64 Index;
+  CHAR8  QuotesStr[] = "\"";
+  strcpy(NewPath, QuotesStr);
+  DefaultPathLen = strlen(DefaultPath);
+  strcat(NewPath, DefaultPath);
+  Index = 0;
+  for (; Index < DefaultPathLen + 1; Index ++) {
+    if (NewPath[Index] == '\\' || NewPath[Index] == '/') {
+      if (NewPath[Index + 1] != '\0') {
+        NewPath[Index] = '/';
+      }
+    }
+  }
+  if (NewPath[Index -1] != '/') {
+    NewPath[Index] = '/';
+    NewPath[Index + 1] = '\0';
+  }
+  strcat(NewPath, AppendPath);
+  strcat(NewPath, QuotesStr);
   return EFI_SUCCESS;
 }
 
@@ -1240,14 +1678,19 @@ Returns:
   CHAR8               *ExtractionTool;
   CHAR8               *ToolInputFile;
   CHAR8               *ToolOutputFile;
-  CHAR8               *SystemCommandFormatString;
   CHAR8               *SystemCommand;
   EFI_GUID            *EfiGuid;
   UINT16              DataOffset;
   UINT16              Attributes;
   UINT32              RealHdrLen;
+  CHAR8               *ToolInputFileName;
+  CHAR8               *ToolOutputFileName;
+  CHAR8               *UIFileName;
 
   ParsedLength = 0;
+  ToolInputFileName = NULL;
+  ToolOutputFileName = NULL;
+
   while (ParsedLength < BufferLength) {
     Ptr           = SectionBuffer + ParsedLength;
 
@@ -1271,21 +1714,94 @@ Returns:
     SectionHeaderLen = GetSectionHeaderLength((EFI_COMMON_SECTION_HEADER *)Ptr);
 
     SectionName = SectionNameToStr (Type);
-    printf ("------------------------------------------------------------\n");
-    printf ("  Type:  %s\n  Size:  0x%08X\n", SectionName, (unsigned) SectionLength);
-    free (SectionName);
+    if (SectionName != NULL) {
+      printf ("------------------------------------------------------------\n");
+      printf ("  Type:  %s\n  Size:  0x%08X\n", SectionName, (unsigned) SectionLength);
+      free (SectionName);
+    }
 
     switch (Type) {
     case EFI_SECTION_RAW:
-    case EFI_SECTION_PE32:
     case EFI_SECTION_PIC:
     case EFI_SECTION_TE:
       // default is no more information
       break;
 
+    case EFI_SECTION_PE32:
+      if (EnableHash) {
+        ToolInputFileName  = "edk2Temp_InputEfi.tmp";
+        ToolOutputFileName = "edk2Temp_OutputHash.tmp";
+        RebaseImage(ToolInputFileName, (UINT8*)Ptr + SectionHeaderLen, 0);
+        PutFileImage (
+          ToolInputFileName,
+          (CHAR8*)Ptr + SectionHeaderLen,
+          SectionLength - SectionHeaderLen
+          );
+
+        SystemCommand = malloc (
+          strlen (OPENSSL_COMMAND_FORMAT_STRING) +
+          strlen (OpenSslPath) +
+          strlen (ToolInputFileName) +
+          strlen (ToolOutputFileName) +
+          1
+          );
+        if (SystemCommand == NULL) {
+          Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+          return EFI_OUT_OF_RESOURCES;
+        }
+        sprintf (
+          SystemCommand,
+          OPENSSL_COMMAND_FORMAT_STRING,
+          OpenSslPath,
+          ToolOutputFileName,
+          ToolInputFileName
+          );
+
+        if (system (SystemCommand) != EFI_SUCCESS) {
+          Error (NULL, 0, 3000, "Open SSL command not available.  Please verify PATH or set OPENSSL_PATH.", NULL);
+        }
+        else {
+          FILE *fp;
+          CHAR8 *StrLine;
+          CHAR8 *NewStr;
+          UINT32 nFileLen;
+          if((fp = fopen(ToolOutputFileName,"r")) == NULL) {
+            Error (NULL, 0, 0004, "Hash the PE32 image failed.", NULL);
+          }
+          else {
+            fseek(fp,0,SEEK_SET);
+            fseek(fp,0,SEEK_END);
+            nFileLen = ftell(fp);
+            fseek(fp,0,SEEK_SET);
+            StrLine = malloc(nFileLen);
+            if (StrLine == NULL) {
+              fclose(fp);
+              free (SystemCommand);
+              Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+              return EFI_OUT_OF_RESOURCES;
+            }
+            fgets(StrLine, nFileLen, fp);
+            NewStr = strrchr (StrLine, '=');
+            printf ("  SHA1: %s\n", NewStr + 1);
+            free (StrLine);
+            fclose(fp);
+          }
+        }
+        remove(ToolInputFileName);
+        remove(ToolOutputFileName);
+        free (SystemCommand);
+      }
+      break;
+
     case EFI_SECTION_USER_INTERFACE:
-      // name = &((EFI_USER_INTERFACE_SECTION *) Ptr)->FileNameString;
-      // printf ("  String: %s\n", &name);
+      UIFileName = (CHAR8 *) malloc (UnicodeStrLen (((EFI_USER_INTERFACE_SECTION *) Ptr)->FileNameString) + 1);
+      if (UIFileName == NULL) {
+        Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+        return EFI_OUT_OF_RESOURCES;
+      }
+      Unicode2AsciiString (((EFI_USER_INTERFACE_SECTION *) Ptr)->FileNameString, UIFileName);
+      printf ("  String: %s\n", UIFileName);
+      free (UIFileName);
       break;
 
     case EFI_SECTION_FIRMWARE_VOLUME_IMAGE:
@@ -1361,8 +1877,14 @@ Returns:
         }
 
         ScratchBuffer       = malloc (ScratchSize);
+        if (ScratchBuffer == NULL) {
+          Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+          return EFI_OUT_OF_RESOURCES;
+        }
         UncompressedBuffer  = malloc (UncompressedLength);
-        if ((ScratchBuffer == NULL) || (UncompressedBuffer == NULL)) {
+        if (UncompressedBuffer == NULL) {
+          free (ScratchBuffer);
+          Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
           return EFI_OUT_OF_RESOURCES;
         }
         Status = DecompressFunction (
@@ -1422,24 +1944,56 @@ Returns:
           );
 
       if (ExtractionTool != NULL) {
-
+       #ifndef __GNUC__
         ToolInputFile = CloneString (tmpnam (NULL));
         ToolOutputFile = CloneString (tmpnam (NULL));
+       #else
+        char tmp1[] = "/tmp/fileXXXXXX";
+        char tmp2[] = "/tmp/fileXXXXXX";
+        int fd1;
+        int fd2;
+        fd1 = mkstemp(tmp1);
+        fd2 = mkstemp(tmp2);
+        ToolInputFile = CloneString(tmp1);
+        ToolOutputFile = CloneString(tmp2);
+        close(fd1);
+        close(fd2);
+       #endif
+
+        if ((ToolInputFile == NULL) || (ToolOutputFile == NULL)) {
+          if (ToolInputFile != NULL) {
+            free (ToolInputFile);
+          }
+          if (ToolOutputFile != NULL) {
+            free (ToolOutputFile);
+          }
+          free (ExtractionTool);
+
+          Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+          return EFI_OUT_OF_RESOURCES;
+        }
 
         //
         // Construction 'system' command string
         //
-        SystemCommandFormatString = "%s -d -o %s %s";
         SystemCommand = malloc (
-          strlen (SystemCommandFormatString) +
+          strlen (EXTRACT_COMMAND_FORMAT_STRING) +
           strlen (ExtractionTool) +
           strlen (ToolInputFile) +
           strlen (ToolOutputFile) +
           1
           );
+        if (SystemCommand == NULL) {
+          free (ToolInputFile);
+          free (ToolOutputFile);
+          free (ExtractionTool);
+
+          Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+          return EFI_OUT_OF_RESOURCES;
+        }
         sprintf (
           SystemCommand,
-          SystemCommandFormatString,
+          EXTRACT_COMMAND_FORMAT_STRING,
           ExtractionTool,
           ToolOutputFile,
           ToolInputFile
@@ -1465,6 +2019,7 @@ Returns:
             );
         remove (ToolOutputFile);
         free (ToolOutputFile);
+        free (SystemCommand);
         if (EFI_ERROR (Status)) {
           Error (NULL, 0, 0004, "unable to read decoded GUIDED section", NULL);
           return EFI_SECTION_ERROR;
@@ -1707,6 +2262,7 @@ Returns:
 {
   FILE              *Fptr;
   CHAR8             Line[MAX_LINE_LEN];
+  CHAR8             FormatString[MAX_LINE_LEN];
   GUID_TO_BASENAME  *GPtr;
 
   if ((Fptr = fopen (LongFilePath (FileName), "r")) == NULL) {
@@ -1714,17 +2270,28 @@ Returns:
     return EFI_DEVICE_ERROR;
   }
 
+  //
+  // Generate the format string for fscanf
+  //
+  sprintf (
+    FormatString,
+    "%%%us %%%us",
+    (unsigned) sizeof (GPtr->Guid) - 1,
+    (unsigned) sizeof (GPtr->BaseName) - 1
+    );
+
   while (fgets (Line, sizeof (Line), Fptr) != NULL) {
     //
     // Allocate space for another guid/basename element
     //
     GPtr = malloc (sizeof (GUID_TO_BASENAME));
     if (GPtr == NULL) {
+      fclose (Fptr);
       return EFI_OUT_OF_RESOURCES;
     }
 
     memset ((char *) GPtr, 0, sizeof (GUID_TO_BASENAME));
-    if (sscanf (Line, "%s %s", GPtr->Guid, GPtr->BaseName) == 2) {
+    if (sscanf (Line, FormatString, GPtr->Guid, GPtr->BaseName) == 2) {
       GPtr->Next        = mGuidBaseNameList;
       mGuidBaseNameList = GPtr;
     } else {
@@ -1831,19 +2398,34 @@ Returns:
   //
   // Copyright declaration
   //
-  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.\n\n");
   fprintf (stdout, "  Display Tiano Firmware Volume FFS image information\n\n");
 
   //
   // Details Option
   //
-  fprintf (stdout, "Options:\n");
-  fprintf (stdout, "  -x xref, --xref xref\n\
-            Parse basename to file-guid cross reference file(s).\n");
-  fprintf (stdout, "  --offset offset\n\
-            Offset of file to start processing FV at.\n");
+  fprintf (stdout, "optional arguments:\n");
   fprintf (stdout, "  -h, --help\n\
-            Show this help message and exit.\n");
-
+            Show this help message and exit\n");
+  fprintf (stdout, "  --version\n\
+           Show program's version number and exit\n");
+  fprintf (stdout, "  -d [DEBUG], --debug [DEBUG]\n\
+            Output DEBUG statements, where DEBUG_LEVEL is 0 (min) - 9 (max)\n");
+  fprintf (stdout, "  -v, --verbose\n\
+            Print informational statements\n");
+  fprintf (stdout, "  -q, --quiet\n\
+            Returns the exit code, error messages will be displayed\n");
+  fprintf (stdout, "  -s, --silent\n\
+            Returns only the exit code; informational and error\n\
+            messages are not displayed\n");
+  fprintf (stdout, "  -x XREF_FILENAME, --xref XREF_FILENAME\n\
+            Parse the basename to file-guid cross reference file(s)\n");
+  fprintf (stdout, "  -f OFFSET, --offset OFFSET\n\
+            The offset from the start of the input file to start \n\
+            processing an FV\n");
+  fprintf (stdout, "  --hash\n\
+            Generate HASH value of the entire PE image\n");
+  fprintf (stdout, "  --sfo\n\
+            Reserved for future use\n");
 }
 

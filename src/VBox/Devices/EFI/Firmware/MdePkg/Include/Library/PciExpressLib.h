@@ -5,19 +5,15 @@
   configuration cycles must be through the 256 MB PCI Express MMIO window whose base address
   is defined by PcdPciExpressBaseAddress.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #ifndef __PCI_EXPRESS_LIB_H__
 #define __PCI_EXPRESS_LIB_H__
+
+#include <IndustryStandard/PciExpress21.h>
 
 /**
   Macro that converts PCI Bus, PCI Device, PCI Function and PCI Register to an
@@ -35,8 +31,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @return The encode PCI address.
 
 **/
-#define PCI_EXPRESS_LIB_ADDRESS(Bus,Device,Function,Offset) \
-  (((Offset) & 0xfff) | (((Function) & 0x07) << 12) | (((Device) & 0x1f) << 15) | (((Bus) & 0xff) << 20))
+#define PCI_EXPRESS_LIB_ADDRESS(Bus,Device,Function,Offset) PCI_ECAM_ADDRESS ((Bus), (Device), (Function), (Offset))
 
 /**
   Registers a PCI device so PCI configuration registers may be accessed after

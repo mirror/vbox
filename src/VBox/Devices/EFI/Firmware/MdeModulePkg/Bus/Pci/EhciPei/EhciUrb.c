@@ -2,16 +2,9 @@
 PEIM to produce gPeiUsb2HostControllerPpiGuid based on gPeiUsbControllerPpiGuid
 which is used to enable recovery function from USB Drivers.
 
-Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -301,7 +294,7 @@ EhcFreeQtds (
     Qtd = EFI_LIST_CONTAINER (Entry, PEI_EHC_QTD, QtdList);
 
     RemoveEntryList (&Qtd->QtdList);
-    UsbHcFreeMem (Ehc->MemPool, Qtd, sizeof (PEI_EHC_QTD));
+    UsbHcFreeMem (Ehc, Ehc->MemPool, Qtd, sizeof (PEI_EHC_QTD));
   }
 }
 
@@ -318,13 +311,21 @@ EhcFreeUrb (
   IN PEI_URB              *Urb
   )
 {
+  if (Urb->RequestPhy != NULL) {
+    IoMmuUnmap (Ehc->IoMmu, Urb->RequestMap);
+  }
+
+  if (Urb->DataMap != NULL) {
+    IoMmuUnmap (Ehc->IoMmu, Urb->DataMap);
+  }
+
   if (Urb->Qh != NULL) {
     //
     // Ensure that this queue head has been unlinked from the
     // schedule data structures. Free all the associated QTDs
     //
     EhcFreeQtds (Ehc, &Urb->Qh->Qtds);
-    UsbHcFreeMem (Ehc->MemPool, Urb->Qh, sizeof (PEI_EHC_QH));
+    UsbHcFreeMem (Ehc, Ehc->MemPool, Urb->Qh, sizeof (PEI_EHC_QH));
   }
 }
 
@@ -527,13 +528,11 @@ EhcCreateUrb (
 {
   USB_ENDPOINT                  *Ep;
   EFI_PHYSICAL_ADDRESS          PhyAddr;
+  EDKII_IOMMU_OPERATION         MapOp;
   EFI_STATUS                    Status;
   UINTN                         Len;
   PEI_URB                       *Urb;
   VOID                          *Map;
-
-
-  Map = NULL;
 
   Urb = Ehc->Urb;
   Urb->Signature  = EHC_URB_SIG;
@@ -571,13 +570,20 @@ EhcCreateUrb (
     goto ON_ERROR;
   }
 
+  Urb->RequestPhy = NULL;
+  Urb->RequestMap = NULL;
+  Urb->DataPhy  = NULL;
+  Urb->DataMap  = NULL;
+
   //
   // Map the request and user data
   //
   if (Request != NULL) {
     Len     = sizeof (EFI_USB_DEVICE_REQUEST);
-    PhyAddr =  (EFI_PHYSICAL_ADDRESS) (UINTN) Request ;
-    if ( (Len != sizeof (EFI_USB_DEVICE_REQUEST))) {
+    MapOp   = EdkiiIoMmuOperationBusMasterRead;
+    Status  = IoMmuMap (Ehc->IoMmu, MapOp, Request, &Len, &PhyAddr, &Map);
+
+    if (EFI_ERROR (Status) || (Len != sizeof (EFI_USB_DEVICE_REQUEST))) {
       goto ON_ERROR;
     }
 
@@ -587,8 +593,16 @@ EhcCreateUrb (
 
   if (Data != NULL) {
     Len      = DataLen;
-    PhyAddr  =  (EFI_PHYSICAL_ADDRESS) (UINTN) Data ;
-    if ( (Len != DataLen)) {
+
+    if (Ep->Direction == EfiUsbDataIn) {
+      MapOp = EdkiiIoMmuOperationBusMasterWrite;
+    } else {
+      MapOp = EdkiiIoMmuOperationBusMasterRead;
+    }
+
+    Status  = IoMmuMap (Ehc->IoMmu, MapOp, Data, &Len, &PhyAddr, &Map);
+
+    if (EFI_ERROR (Status) || (Len != DataLen)) {
       goto ON_ERROR;
     }
 

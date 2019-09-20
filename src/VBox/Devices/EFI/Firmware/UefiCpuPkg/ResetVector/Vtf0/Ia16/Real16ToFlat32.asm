@@ -3,13 +3,7 @@
 ; Transition from 16 bit real mode into 32 bit flat protected mode
 ;
 ; Copyright (c) 2008 - 2010, Intel Corporation. All rights reserved.<BR>
-; This program and the accompanying materials
-; are licensed and made available under the terms and conditions of the BSD License
-; which accompanies this distribution.  The full text of the license may be found at
-; http://opensource.org/licenses/bsd-license.php
-;
-; THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-; WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ;------------------------------------------------------------------------------
 
@@ -20,6 +14,12 @@ BITS    16
 
 ;
 ; Modified:  EAX, EBX
+;
+; @param[out]     DS       Selector allowing flat access to all addresses
+; @param[out]     ES       Selector allowing flat access to all addresses
+; @param[out]     FS       Selector allowing flat access to all addresses
+; @param[out]     GS       Selector allowing flat access to all addresses
+; @param[out]     SS       Selector allowing flat access to all addresses
 ;
 TransitionFromReal16To32BitFlat:
 
@@ -37,11 +37,7 @@ o32 lgdt    [cs:bx]
     mov     eax, SEC_DEFAULT_CR0
     mov     cr0, eax
 
-%ifdef __YASM__ ; VBox
-    jmp     dword LINEAR_CODE_SEL:ADDR_OF(jumpTo32BitAndLandHere)
-%else
     jmp     LINEAR_CODE_SEL:dword ADDR_OF(jumpTo32BitAndLandHere)
-%endif
 BITS    32
 jumpTo32BitAndLandHere:
 

@@ -1,14 +1,8 @@
 /** @file
   Specific relocation fixups for none Itanium architecture.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -57,7 +51,7 @@ PeCoffLoaderImageFormatSupported (
   )
 {
   if ((Machine == IMAGE_FILE_MACHINE_I386) || (Machine == IMAGE_FILE_MACHINE_X64) ||
-      (Machine ==  IMAGE_FILE_MACHINE_EBC)) {
+      (Machine == IMAGE_FILE_MACHINE_EBC) || (Machine == IMAGE_FILE_MACHINE_ARM64)) {
     return TRUE;
   }
 

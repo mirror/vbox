@@ -2,19 +2,14 @@
   This module contains EBC support routines that are customized based on
   the target ia32 processor.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "EbcInt.h"
 #include "EbcExecute.h"
+#include "EbcDebuggerHook.h"
 
 //
 // NOTE: This is the stack size allocated for the interpreter
@@ -332,10 +327,11 @@ EbcInterpret (
   //
   // Begin executing the EBC code
   //
+  EbcDebuggerHookEbcInterpret (&VmContext);
   EbcExecute (&VmContext);
 
   //
-  // Return the value in R[7] unless there was an error
+  // Return the value in Gpr[7] unless there was an error
   //
   ReturnEBCStack(StackIndex);
   return (UINT64) VmContext.Gpr[7];
@@ -432,10 +428,11 @@ ExecuteEbcImageEntryPoint (
   //
   // Begin executing the EBC code
   //
+  EbcDebuggerHookExecuteEbcImageEntryPoint (&VmContext);
   EbcExecute (&VmContext);
 
   //
-  // Return the value in R[7] unless there was an error
+  // Return the value in Gpr[7] unless there was an error
   //
   ReturnEBCStack(StackIndex);
   return (UINT64) VmContext.Gpr[7];
@@ -481,7 +478,7 @@ EbcCreateThunks (
 
   ThunkSize = sizeof(mInstructionBufferTemplate);
 
-  Ptr = AllocatePool (sizeof(mInstructionBufferTemplate));
+  Ptr = EbcAllocatePoolForThunk (sizeof(mInstructionBufferTemplate));
 
   if (Ptr == NULL) {
     return EFI_OUT_OF_RESOURCES;

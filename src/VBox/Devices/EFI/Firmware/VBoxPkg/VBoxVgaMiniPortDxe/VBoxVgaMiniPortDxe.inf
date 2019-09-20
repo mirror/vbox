@@ -44,7 +44,7 @@
 
 [Packages]
         MdePkg/MdePkg.dec
-        IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
+        OvmfPkg/OvmfPkg.dec
         VBoxPkg/VBoxPkg.dec
 
 [LibraryClasses]

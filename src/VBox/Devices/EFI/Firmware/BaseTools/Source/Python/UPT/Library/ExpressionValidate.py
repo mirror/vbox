@@ -1,19 +1,14 @@
 ## @file
 # This file is used to check PCD logical expression
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 ExpressionValidate
 '''
+from __future__ import print_function
 
 ##
 # Import Modules
@@ -297,7 +292,7 @@ class _LogicalExpressionParser(_ExprBase):
         try:
             if self.LogicalExpression() not in [self.ARITH, self.LOGICAL, self.REALLOGICAL, self.STRINGITEM]:
                 return False, ST.ERR_EXPR_LOGICAL % self.Token
-        except _ExprError, XExcept:
+        except _ExprError as XExcept:
             return False, XExcept.Error
         self.SkipWhitespace()
         if self.Index != self.Len:
@@ -327,7 +322,7 @@ class _ValidRangeExpressionParser(_ExprBase):
         try:
             if self.RangeExpression() not in [self.HEX, self.INT]:
                 return False, ST.ERR_EXPR_RANGE % self.Token
-        except _ExprError, XExcept:
+        except _ExprError as XExcept:
             return False, XExcept.Error
 
         self.SkipWhitespace()
@@ -423,7 +418,7 @@ class _ValidListExpressionParser(_ExprBase):
         try:
             if self.ListExpression() not in [self.NUM]:
                 return False, ST.ERR_EXPR_LIST % self.Token
-        except _ExprError, XExcept:
+        except _ExprError as XExcept:
             return False, XExcept.Error
 
         self.SkipWhitespace()
@@ -457,7 +452,7 @@ class _StringTestParser(_ExprBase):
             return False, ST.ERR_EXPR_EMPTY
         try:
             self.StringTest()
-        except _ExprError, XExcept:
+        except _ExprError as XExcept:
             return False, XExcept.Error
         return True, ''
 
@@ -566,7 +561,7 @@ def IsValidFeatureFlagExp(Token, Flag=False):
 
 if __name__ == '__main__':
 #    print IsValidRangeExpr('LT 9')
-    print _LogicalExpressionParser('gCrownBayTokenSpaceGuid.PcdPciDevice1BridgeAddressLE0').IsValidLogicalExpression()
+    print(_LogicalExpressionParser('gCrownBayTokenSpaceGuid.PcdPciDevice1BridgeAddressLE0').IsValidLogicalExpression())
 
 
 

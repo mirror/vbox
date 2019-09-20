@@ -6,14 +6,8 @@
 # and host, PeCoffExtraActionLib instance to report symbol path information,
 # etc.
 #
-# Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials are licensed and made available under
-# the terms and conditions of the BSD License that accompanies this distribution.
-# The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php.
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -22,7 +16,7 @@
   PACKAGE_NAME                   = SourceLevelDebugPkg
   PACKAGE_UNI_FILE               = SourceLevelDebugPkg.uni
   PACKAGE_GUID                   = DBF00C27-D8D7-443d-918B-4E85CDA1373B
-  PACKAGE_VERSION                = 0.86
+  PACKAGE_VERSION                = 0.96
 
 [Includes]
   Include
@@ -92,7 +86,7 @@
 
   ## The memory BAR of xhci host controller, in which usb debug feature is enabled.
   ## Note that the memory BAR address is only used before Pci bus resource allocation.
-  # @Prompt Configure ehci host controller memory BAR.
+  # @Prompt Configure xhci host controller memory BAR.
   gEfiSourceLevelDebugPkgTokenSpaceGuid.PcdUsbXhciMemorySpaceBase|0xD0000000|UINT64|0x00000007
 
   ## The pci address of xhci host controller, in which usb debug feature is enabled.
@@ -111,6 +105,13 @@
   ## connection and the DbC Run transition to 1. This PCD specifies the timeout value in microsecond.
   # @Prompt Configure debug device detection timeout value.
   gEfiSourceLevelDebugPkgTokenSpaceGuid.PcdUsbXhciDebugDetectTimeout|3000000|UINT64|0x00000009
+
+  ## Default revision of the debug agent transfer protocol.
+  #  The upper 16 bits indicate the major revision and the lower 16 bits indicate the minor revision.
+  #  For example, a value of 0x00000004 stands for revision 0.4.
+  #  Debug packet compression and decompression is supported since revision 0.4.
+  # @Prompt Default revision of the debug agent transfer protocol.
+  gEfiSourceLevelDebugPkgTokenSpaceGuid.PcdTransferProtocolRevision|0x00000004|UINT32|0x0000000a
 
 [UserExtensions.TianoCore."ExtraFiles"]
   SourceLevelDebugPkgExtra.uni

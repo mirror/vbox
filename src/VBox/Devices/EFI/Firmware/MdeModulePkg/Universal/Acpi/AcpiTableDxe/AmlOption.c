@@ -1,14 +1,8 @@
 /** @file
   ACPI Sdt Protocol Driver
 
-  Copyright (c) 2010, Intel Corporation. All rights reserved. <BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved. <BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -343,7 +337,7 @@ AmlGetObjectName (
   ASSERT ((AmlByteEncoding->Attribute & AML_IN_NAMESPACE) != 0);
 
   //
-  // Find out Last Name index, accroding to OpCode table.
+  // Find out Last Name index, according to OpCode table.
   // The last name will be the node name by design.
   //
   TermIndex = AmlByteEncoding->MaxIndex;

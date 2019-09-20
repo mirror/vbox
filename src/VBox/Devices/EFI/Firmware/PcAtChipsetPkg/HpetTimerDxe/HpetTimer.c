@@ -1,14 +1,8 @@
 /** @file
   Timer Architectural Protocol module using High Precesion Event Timer (HPET)
 
-  Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -142,7 +136,7 @@ TimerDriverGetTimerPeriod (
   @param  This  The EFI_TIMER_ARCH_PROTOCOL instance.
 
   @retval  EFI_SUCCESS       The soft timer interrupt was generated.
-  @retval  EFI_UNSUPPORTEDT  The platform does not support the generation of soft
+  @retval  EFI_UNSUPPORTED   The platform does not support the generation of soft
                              timer interrupts.
 
 **/
@@ -288,8 +282,8 @@ HpetEnable (
   HPET interrupt is passed to that notification function in 100 ns units.  The HPET
   time is updated to generate another interrupt in the required time period.
 
-  @param  InterruptType  The type of interrupt that occured.
-  @param  SystemContext  A pointer to the system context when the interrupt occured.
+  @param  InterruptType  The type of interrupt that occurred.
+  @param  SystemContext  A pointer to the system context when the interrupt occurred.
 **/
 VOID
 EFIAPI
@@ -492,10 +486,16 @@ TimerDriverSetTimerPeriod (
   IN UINT64                   TimerPeriod
   )
 {
+  EFI_TPL                        Tpl;
   UINT64                         MainCounter;
   UINT64                         Delta;
   UINT64                         CurrentComparator;
   HPET_TIMER_MSI_ROUTE_REGISTER  HpetTimerMsiRoute;
+
+  //
+  // Disable interrupts
+  //
+  Tpl = gBS->RaiseTPL (TPL_HIGH_LEVEL);
 
   //
   // Disable HPET timer when adjusting the timer period
@@ -617,6 +617,11 @@ TimerDriverSetTimerPeriod (
   //
   HpetEnable (TRUE);
 
+  //
+  // Restore interrupts
+  //
+  gBS->RestoreTPL (Tpl);
+
   return EFI_SUCCESS;
 }
 
@@ -662,7 +667,7 @@ TimerDriverGetTimerPeriod (
   @param  This  The EFI_TIMER_ARCH_PROTOCOL instance.
 
   @retval  EFI_SUCCESS       The soft timer interrupt was generated.
-  @retval  EFI_UNSUPPORTEDT  The platform does not support the generation of soft
+  @retval  EFI_UNSUPPORTED   The platform does not support the generation of soft
                              timer interrupts.
 
 **/
@@ -742,7 +747,7 @@ TimerDriverGenerateSoftInterrupt (
 
   @retval  EFI_SUCCESS           Timer Architectural Protocol created
   @retval  EFI_OUT_OF_RESOURCES  Not enough resources available to initialize driver.
-  @retval  EFI_DEVICE_ERROR      A device error occured attempting to initialize the driver.
+  @retval  EFI_DEVICE_ERROR      A device error occurred attempting to initialize the driver.
 
 **/
 EFI_STATUS

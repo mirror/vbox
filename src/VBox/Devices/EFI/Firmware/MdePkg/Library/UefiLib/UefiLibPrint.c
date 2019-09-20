@@ -2,14 +2,8 @@
   Mde UEFI library API implementation.
   Print to StdErr or ConOut defined in EFI_SYSTEM_TABLE
 
-  Copyright (c) 2007 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -474,7 +468,14 @@ InternalPrintGraphic (
   } else if (FeaturePcdGet (PcdUgaConsumeSupport)) {
     ASSERT (UgaDraw!= NULL);
 
-    Blt->Image.Bitmap = AllocateZeroPool (Blt->Width * Blt->Height * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
+    //
+    // Ensure Width * Height * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL) doesn't overflow.
+    //
+    if (Blt->Width > DivU64x32 (MAX_UINTN, Blt->Height * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL))) {
+      goto Error;
+    }
+
+    Blt->Image.Bitmap = AllocateZeroPool ((UINT32) Blt->Width * Blt->Height * sizeof (EFI_GRAPHICS_OUTPUT_BLT_PIXEL));
     ASSERT (Blt->Image.Bitmap != NULL);
 
     //
@@ -754,14 +755,16 @@ CatVSPrint (
     SizeRequired = sizeof(CHAR16) + (CharactersRequired * sizeof(CHAR16));
   }
 
-  BufferToReturn = AllocateZeroPool(SizeRequired);
+  BufferToReturn = AllocatePool(SizeRequired);
 
   if (BufferToReturn == NULL) {
     return NULL;
+  } else {
+    BufferToReturn[0] = L'\0';
   }
 
   if (String != NULL) {
-    StrCpy(BufferToReturn, String);
+    StrCpyS(BufferToReturn, SizeRequired / sizeof(CHAR16), String);
   }
 
   UnicodeVSPrint(BufferToReturn + StrLen(BufferToReturn), (CharactersRequired+1) * sizeof(CHAR16), FormatString, Marker);

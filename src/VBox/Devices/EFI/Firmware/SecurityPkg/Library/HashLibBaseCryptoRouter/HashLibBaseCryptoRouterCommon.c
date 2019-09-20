@@ -1,14 +1,8 @@
 /** @file
-  Ihis is BaseCrypto router support function.
+  This is BaseCrypto router support function.
 
-Copyright (c) 2013, Intel Corporation. All rights reserved. <BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2016, Intel Corporation. All rights reserved. <BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -19,7 +13,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DebugLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/HashLib.h>
-#include <Protocol/TrEEProtocol.h>
+#include <Protocol/Tcg2Protocol.h>
 
 typedef struct {
   EFI_GUID  Guid;
@@ -27,10 +21,11 @@ typedef struct {
 } TPM2_HASH_MASK;
 
 TPM2_HASH_MASK mTpm2HashMask[] = {
-  {HASH_ALGORITHM_SHA1_GUID,         TREE_BOOT_HASH_ALG_SHA1},
-  {HASH_ALGORITHM_SHA256_GUID,       TREE_BOOT_HASH_ALG_SHA256},
-  {HASH_ALGORITHM_SHA384_GUID,       TREE_BOOT_HASH_ALG_SHA384},
-  {HASH_ALGORITHM_SHA512_GUID,       TREE_BOOT_HASH_ALG_SHA512},
+  {HASH_ALGORITHM_SHA1_GUID,         HASH_ALG_SHA1},
+  {HASH_ALGORITHM_SHA256_GUID,       HASH_ALG_SHA256},
+  {HASH_ALGORITHM_SHA384_GUID,       HASH_ALG_SHA384},
+  {HASH_ALGORITHM_SHA512_GUID,       HASH_ALG_SHA512},
+  {HASH_ALGORITHM_SM3_256_GUID,      HASH_ALG_SM3_256},
 };
 
 /**

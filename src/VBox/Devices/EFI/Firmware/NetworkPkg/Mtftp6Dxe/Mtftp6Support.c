@@ -1,15 +1,9 @@
 /** @file
   Mtftp6 support functions implementation.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -158,8 +152,8 @@ Mtftp6SetLastBlockNum (
 
   @param[in]  Head                   The block range list to remove from.
   @param[in]  Num                    The block number to remove.
-  @param[in]  Completed              Whether Num is the last block number
-  @param[out] TotalBlock             The continuous block number in all
+  @param[in]  Completed              Whether Num is the last block number.
+  @param[out] BlockCounter           The continuous block counter instead of the value after roll-over.
 
   @retval EFI_NOT_FOUND          The block number isn't in the block range list.
   @retval EFI_SUCCESS            The block number has been removed from the list.
@@ -171,7 +165,7 @@ Mtftp6RemoveBlockNum (
   IN LIST_ENTRY             *Head,
   IN UINT16                 Num,
   IN BOOLEAN                Completed,
-  OUT UINT64                *TotalBlock
+  OUT UINT64                *BlockCounter
   )
 {
   MTFTP6_BLOCK_RANGE        *Range;
@@ -220,10 +214,10 @@ Mtftp6RemoveBlockNum (
       // wrap to zero, because this is the simplest to implement. Here we choose
       // this solution.
       //
-      *TotalBlock  = Num;
+      *BlockCounter  = Num;
 
       if (Range->Round > 0) {
-        *TotalBlock += Range->Bound +  MultU64x32 ((UINT64) (Range->Round -1), (UINT32)(Range->Bound + 1)) + 1;
+        *BlockCounter += Range->Bound +  MultU64x32 (Range->Round - 1, (UINT32)(Range->Bound + 1)) + 1;
       }
 
       if (Range->Start > Range->Bound) {
@@ -319,6 +313,29 @@ Mtftp6GetMapping (
     Status = Udp6->GetModeData (Udp6, NULL, &Ip6Mode, NULL, NULL);
 
     if (!EFI_ERROR (Status)) {
+      if (Ip6Mode.AddressList != NULL) {
+        FreePool (Ip6Mode.AddressList);
+      }
+
+      if (Ip6Mode.GroupTable != NULL) {
+        FreePool (Ip6Mode.GroupTable);
+      }
+
+      if (Ip6Mode.RouteTable != NULL) {
+        FreePool (Ip6Mode.RouteTable);
+      }
+
+      if (Ip6Mode.NeighborCache != NULL) {
+        FreePool (Ip6Mode.NeighborCache);
+      }
+
+      if (Ip6Mode.PrefixTable != NULL) {
+        FreePool (Ip6Mode.PrefixTable);
+      }
+
+      if (Ip6Mode.IcmpTypeList != NULL) {
+        FreePool (Ip6Mode.IcmpTypeList);
+      }
 
       if  (Ip6Mode.IsConfigured) {
         //
@@ -452,13 +469,16 @@ Mtftp6SendRequest (
   EFI_MTFTP6_PACKET         *Packet;
   EFI_MTFTP6_OPTION         *Options;
   EFI_MTFTP6_TOKEN          *Token;
+  RETURN_STATUS             Status;
   NET_BUF                   *Nbuf;
   UINT8                     *Mode;
   UINT8                     *Cur;
-  UINT32                    Len1;
-  UINT32                    Len2;
-  UINT32                    Len;
   UINTN                     Index;
+  UINT32                    BufferLength;
+  UINTN                     FileNameLength;
+  UINTN                     ModeLength;
+  UINTN                     OptionStrLength;
+  UINTN                     ValueStrLength;
 
   Token   = Instance->Token;
   Options = Token->OptionList;
@@ -487,44 +507,59 @@ Mtftp6SendRequest (
   //
   // Compute the size of new Mtftp6 packet.
   //
-  Len1 = (UINT32) AsciiStrLen ((CHAR8 *) Token->Filename);
-  Len2 = (UINT32) AsciiStrLen ((CHAR8 *) Mode);
-  Len  = Len1 + Len2 + 4;
+  FileNameLength = AsciiStrLen ((CHAR8 *) Token->Filename);
+  ModeLength     = AsciiStrLen ((CHAR8 *) Mode);
+  BufferLength   = (UINT32) FileNameLength + (UINT32) ModeLength + 4;
 
   for (Index = 0; Index < Token->OptionCount; Index++) {
-    Len1  = (UINT32) AsciiStrLen ((CHAR8 *) Options[Index].OptionStr);
-    Len2  = (UINT32) AsciiStrLen ((CHAR8 *) Options[Index].ValueStr);
-    Len  += Len1 + Len2 + 2;
+    OptionStrLength = AsciiStrLen ((CHAR8 *) Options[Index].OptionStr);
+    ValueStrLength  = AsciiStrLen ((CHAR8 *) Options[Index].ValueStr);
+    BufferLength   += (UINT32) OptionStrLength + (UINT32) ValueStrLength + 2;
   }
 
   //
   // Allocate a packet then copy the data.
   //
-  if ((Nbuf = NetbufAlloc (Len)) == NULL) {
+  if ((Nbuf = NetbufAlloc (BufferLength)) == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }
 
   //
   // Copy the opcode, filename and mode into packet.
   //
-  Packet         = (EFI_MTFTP6_PACKET *) NetbufAllocSpace (Nbuf, Len, FALSE);
+  Packet         = (EFI_MTFTP6_PACKET *) NetbufAllocSpace (Nbuf, BufferLength, FALSE);
   ASSERT (Packet != NULL);
 
   Packet->OpCode = HTONS (Operation);
+  BufferLength  -= sizeof (Packet->OpCode);
+
   Cur            = Packet->Rrq.Filename;
-  Cur            = (UINT8 *) AsciiStrCpy ((CHAR8 *) Cur, (CHAR8 *) Token->Filename);
-  Cur           += AsciiStrLen ((CHAR8 *) Token->Filename) + 1;
-  Cur            = (UINT8 *) AsciiStrCpy ((CHAR8 *) Cur, (CHAR8 *) Mode);
-  Cur           += AsciiStrLen ((CHAR8 *) Mode) + 1;
+  Status         = AsciiStrCpyS ((CHAR8 *) Cur, BufferLength, (CHAR8 *) Token->Filename);
+  ASSERT_EFI_ERROR (Status);
+  BufferLength  -= (UINT32) (FileNameLength + 1);
+  Cur           += FileNameLength + 1;
+  Status         = AsciiStrCpyS ((CHAR8 *) Cur, BufferLength, (CHAR8 *) Mode);
+  ASSERT_EFI_ERROR (Status);
+  BufferLength  -= (UINT32) (ModeLength + 1);
+  Cur           += ModeLength + 1;
 
   //
   // Copy all the extension options into the packet.
   //
   for (Index = 0; Index < Token->OptionCount; ++Index) {
-    Cur  = (UINT8 *) AsciiStrCpy ((CHAR8 *) Cur, (CHAR8 *) Options[Index].OptionStr);
-    Cur += AsciiStrLen ((CHAR8 *) Options[Index].OptionStr) + 1;
-    Cur  = (UINT8 *) AsciiStrCpy ((CHAR8 *) Cur, (CHAR8 *) Options[Index].ValueStr);
-    Cur += AsciiStrLen ((CHAR8 *) (CHAR8 *) Options[Index].ValueStr) + 1;
+    OptionStrLength = AsciiStrLen ((CHAR8 *) Options[Index].OptionStr);
+    ValueStrLength  = AsciiStrLen ((CHAR8 *) Options[Index].ValueStr);
+
+    Status          = AsciiStrCpyS ((CHAR8 *) Cur, BufferLength, (CHAR8 *) Options[Index].OptionStr);
+    ASSERT_EFI_ERROR (Status);
+    BufferLength   -= (UINT32) (OptionStrLength + 1);
+    Cur            += OptionStrLength + 1;
+
+    Status          = AsciiStrCpyS ((CHAR8 *) Cur, BufferLength, (CHAR8 *) Options[Index].ValueStr);
+    ASSERT_EFI_ERROR (Status);
+    BufferLength   -= (UINT32) (ValueStrLength + 1);
+    Cur            += ValueStrLength + 1;
+
   }
 
   //
@@ -584,7 +619,7 @@ Mtftp6SendError (
   TftpError->OpCode          = HTONS (EFI_MTFTP6_OPCODE_ERROR);
   TftpError->Error.ErrorCode = HTONS (ErrCode);
 
-  AsciiStrCpy ((CHAR8 *) TftpError->Error.ErrorMessage, (CHAR8 *) ErrInfo);
+  AsciiStrCpyS ((CHAR8 *) TftpError->Error.ErrorMessage, AsciiStrLen ((CHAR8 *) ErrInfo) + 1 , (CHAR8 *) ErrInfo);
 
   //
   // Save the packet buf for retransmit
@@ -938,6 +973,10 @@ Mtftp6OperationClean (
   Instance->ServerDataPort = 0;
   Instance->McastPort      = 0;
   Instance->BlkSize        = 0;
+  Instance->Operation      = 0;
+  Instance->WindowSize     = 1;
+  Instance->TotalBlock     = 0;
+  Instance->AckedBlock     = 0;
   Instance->LastBlk        = 0;
   Instance->PacketToLive   = 0;
   Instance->MaxRetry       = 0;
@@ -1010,6 +1049,8 @@ Mtftp6OperationStart (
   Status           = EFI_SUCCESS;
   Instance->OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
+  Instance->Operation = OpCode;
+
   //
   // Parse the extension options in the request packet.
   //
@@ -1019,6 +1060,7 @@ Mtftp6OperationStart (
                Token->OptionList,
                Token->OptionCount,
                TRUE,
+               Instance->Operation,
                &Instance->ExtInfo
                );
 
@@ -1063,6 +1105,9 @@ Mtftp6OperationStart (
   }
   if (Instance->BlkSize == 0) {
     Instance->BlkSize = MTFTP6_DEFAULT_BLK_SIZE;
+  }
+  if (Instance->WindowSize == 0) {
+    Instance->WindowSize = MTFTP6_DEFAULT_WINDOWSIZE;
   }
   if (Instance->MaxRetry == 0) {
     Instance->MaxRetry = MTFTP6_DEFAULT_MAX_RETRY;

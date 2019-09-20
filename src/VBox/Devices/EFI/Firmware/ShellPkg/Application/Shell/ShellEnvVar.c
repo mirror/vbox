@@ -1,14 +1,8 @@
 /** @file
   function declarations for shell environment functions.
 
-  Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,24 +11,32 @@
 #define INIT_NAME_BUFFER_SIZE  128
 #define INIT_DATA_BUFFER_SIZE  1024
 
+//
+// The list is used to cache the environment variables.
+//
+ENV_VAR_LIST                   gShellEnvVarList;
+
 /**
   Reports whether an environment variable is Volatile or Non-Volatile.
 
   @param EnvVarName             The name of the environment variable in question
+  @param Volatile               Return TRUE if the environment variable is volatile
 
-  @retval TRUE                  This environment variable is Volatile
-  @retval FALSE                 This environment variable is NON-Volatile
+  @retval EFI_SUCCESS           The volatile attribute is returned successfully
+  @retval others                Some errors happened.
 **/
-BOOLEAN
-EFIAPI
+EFI_STATUS
 IsVolatileEnv (
-  IN CONST CHAR16 *EnvVarName
+  IN CONST CHAR16 *EnvVarName,
+  OUT BOOLEAN     *Volatile
   )
 {
   EFI_STATUS  Status;
   UINTN       Size;
   VOID        *Buffer;
   UINT32      Attribs;
+
+  ASSERT (Volatile != NULL);
 
   Size = 0;
   Buffer = NULL;
@@ -49,7 +51,9 @@ IsVolatileEnv (
                             Buffer);
   if (Status == EFI_BUFFER_TOO_SMALL) {
     Buffer = AllocateZeroPool(Size);
-    ASSERT(Buffer != NULL);
+    if (Buffer == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
     Status = gRT->GetVariable((CHAR16*)EnvVarName,
                               &gShellVariableGuid,
                               &Attribs,
@@ -61,21 +65,18 @@ IsVolatileEnv (
   // not found means volatile
   //
   if (Status == EFI_NOT_FOUND) {
-    return (TRUE);
+    *Volatile = TRUE;
+    return EFI_SUCCESS;
   }
-  ASSERT_EFI_ERROR(Status);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
 
   //
   // check for the Non Volatile bit
   //
-  if ((Attribs & EFI_VARIABLE_NON_VOLATILE) == EFI_VARIABLE_NON_VOLATILE) {
-    return (FALSE);
-  }
-
-  //
-  // everything else is volatile
-  //
-  return (TRUE);
+  *Volatile = !(BOOLEAN) ((Attribs & EFI_VARIABLE_NON_VOLATILE) == EFI_VARIABLE_NON_VOLATILE);
+  return EFI_SUCCESS;
 }
 
 /**
@@ -84,7 +85,6 @@ IsVolatileEnv (
   @param[in] List               The pointer to pointer to list.
 **/
 VOID
-EFIAPI
 FreeEnvironmentVariableList(
   IN LIST_ENTRY *List
   )
@@ -121,7 +121,6 @@ FreeEnvironmentVariableList(
   @retval EFI_SUCCESS           the list was created sucessfully.
 **/
 EFI_STATUS
-EFIAPI
 GetEnvironmentVariableList(
   IN OUT LIST_ENTRY *ListHead
   )
@@ -173,7 +172,10 @@ GetEnvironmentVariableList(
         Status = EFI_OUT_OF_RESOURCES;
       } else {
         ValSize = ValBufferSize;
-        VarList->Val = AllocateZeroPool(ValSize);
+        //
+        // We need another CHAR16 to save '\0' in VarList->Val.
+        //
+        VarList->Val = AllocateZeroPool (ValSize + sizeof (CHAR16));
         if (VarList->Val == NULL) {
             SHELL_FREE_NON_NULL(VarList);
             Status = EFI_OUT_OF_RESOURCES;
@@ -183,7 +185,10 @@ GetEnvironmentVariableList(
         if (Status == EFI_BUFFER_TOO_SMALL){
           ValBufferSize = ValSize > ValBufferSize * 2 ? ValSize : ValBufferSize * 2;
           SHELL_FREE_NON_NULL (VarList->Val);
-          VarList->Val = AllocateZeroPool(ValBufferSize);
+          //
+          // We need another CHAR16 to save '\0' in VarList->Val.
+          //
+          VarList->Val = AllocateZeroPool (ValBufferSize + sizeof (CHAR16));
           if (VarList->Val == NULL) {
             SHELL_FREE_NON_NULL(VarList);
             Status = EFI_OUT_OF_RESOURCES;
@@ -231,7 +236,6 @@ GetEnvironmentVariableList(
   @retval EFI_SUCCESS           the list was Set sucessfully.
 **/
 EFI_STATUS
-EFIAPI
 SetEnvironmentVariableList(
   IN LIST_ENTRY *ListHead
   )
@@ -268,7 +272,7 @@ SetEnvironmentVariableList(
       ; !IsNull(ListHead, &Node->Link)
       ; Node = (ENV_VAR_LIST*)GetNextNode(ListHead, &Node->Link)
      ){
-    Size = StrSize(Node->Val);
+    Size = StrSize (Node->Val) - sizeof (CHAR16);
     if (Node->Atts & EFI_VARIABLE_NON_VOLATILE) {
       Status = SHELL_SET_ENVIRONMENT_VARIABLE_NV(Node->Key, Size, Node->Val);
     } else {
@@ -295,7 +299,6 @@ SetEnvironmentVariableList(
   @sa SetEnvironmentVariableList
 **/
 EFI_STATUS
-EFIAPI
 SetEnvironmentVariables(
   IN CONST CHAR16 **Environment
   )
@@ -339,7 +342,11 @@ SetEnvironmentVariables(
     //
     // Copy the string into the Key, leaving the last character allocated as NULL to terminate
     //
-    StrnCpy(Node->Key, CurrentString, StrStr(CurrentString, L"=") - CurrentString);
+    StrnCpyS( Node->Key,
+              StrStr(CurrentString, L"=") - CurrentString + 1,
+              CurrentString,
+              StrStr(CurrentString, L"=") - CurrentString
+              );
 
     //
     // ValueSize = TotalSize - already removed size - size for '=' + size for terminator (the last 2 items cancel each other)
@@ -375,3 +382,191 @@ SetEnvironmentVariables(
   //
   return (SetEnvironmentVariableList(&VarList->Link));
 }
+
+/**
+  Find an environment variable in the gShellEnvVarList.
+
+  @param Key        The name of the environment variable.
+  @param Value      The value of the environment variable, the buffer
+                    shoule be freed by the caller.
+  @param ValueSize  The size in bytes of the environment variable
+                    including the tailing CHAR_NELL.
+  @param Atts       The attributes of the variable.
+
+  @retval EFI_SUCCESS       The command executed successfully.
+  @retval EFI_NOT_FOUND     The environment variable is not found in
+                            gShellEnvVarList.
+
+**/
+EFI_STATUS
+ShellFindEnvVarInList (
+  IN  CONST CHAR16    *Key,
+  OUT CHAR16          **Value,
+  OUT UINTN           *ValueSize,
+  OUT UINT32          *Atts OPTIONAL
+  )
+{
+  ENV_VAR_LIST      *Node;
+
+  if (Key == NULL || Value == NULL || ValueSize == NULL) {
+    return SHELL_INVALID_PARAMETER;
+  }
+
+  for ( Node = (ENV_VAR_LIST*)GetFirstNode(&gShellEnvVarList.Link)
+      ; !IsNull(&gShellEnvVarList.Link, &Node->Link)
+      ; Node = (ENV_VAR_LIST*)GetNextNode(&gShellEnvVarList.Link, &Node->Link)
+     ){
+    if (Node->Key != NULL && StrCmp(Key, Node->Key) == 0) {
+      *Value      = AllocateCopyPool(StrSize(Node->Val), Node->Val);
+      *ValueSize  = StrSize(Node->Val);
+      if (Atts != NULL) {
+        *Atts = Node->Atts;
+      }
+      return EFI_SUCCESS;
+    }
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+/**
+  Add an environment variable into gShellEnvVarList.
+
+  @param Key        The name of the environment variable.
+  @param Value      The value of environment variable.
+  @param ValueSize  The size in bytes of the environment variable
+                    including the tailing CHAR_NULL
+  @param Atts       The attributes of the variable.
+
+  @retval EFI_SUCCESS  The environment variable was added to list successfully.
+  @retval others       Some errors happened.
+
+**/
+EFI_STATUS
+ShellAddEnvVarToList (
+  IN CONST CHAR16     *Key,
+  IN CONST CHAR16     *Value,
+  IN UINTN            ValueSize,
+  IN UINT32           Atts
+  )
+{
+  ENV_VAR_LIST      *Node;
+  CHAR16            *LocalKey;
+  CHAR16            *LocalValue;
+
+  if (Key == NULL || Value == NULL || ValueSize == 0) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  LocalValue = AllocateCopyPool (ValueSize, Value);
+  if (LocalValue == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Update the variable value if it exists in gShellEnvVarList.
+  //
+  for ( Node = (ENV_VAR_LIST*)GetFirstNode(&gShellEnvVarList.Link)
+      ; !IsNull(&gShellEnvVarList.Link, &Node->Link)
+      ; Node = (ENV_VAR_LIST*)GetNextNode(&gShellEnvVarList.Link, &Node->Link)
+     ){
+    if (Node->Key != NULL && StrCmp(Key, Node->Key) == 0) {
+      Node->Atts = Atts;
+      SHELL_FREE_NON_NULL(Node->Val);
+      Node->Val  = LocalValue;
+      return EFI_SUCCESS;
+    }
+  }
+
+  //
+  // If the environment varialbe key doesn't exist in list just insert
+  // a new node.
+  //
+  LocalKey = AllocateCopyPool (StrSize(Key), Key);
+  if (LocalKey == NULL) {
+    FreePool (LocalValue);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  Node = (ENV_VAR_LIST*)AllocateZeroPool (sizeof(ENV_VAR_LIST));
+  if (Node == NULL) {
+    FreePool (LocalKey);
+    FreePool (LocalValue);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  Node->Key = LocalKey;
+  Node->Val = LocalValue;
+  Node->Atts = Atts;
+  InsertTailList(&gShellEnvVarList.Link, &Node->Link);
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Remove a specified environment variable in gShellEnvVarList.
+
+  @param Key        The name of the environment variable.
+
+  @retval EFI_SUCCESS       The command executed successfully.
+  @retval EFI_NOT_FOUND     The environment variable is not found in
+                            gShellEnvVarList.
+**/
+EFI_STATUS
+ShellRemvoeEnvVarFromList (
+  IN CONST CHAR16           *Key
+  )
+{
+  ENV_VAR_LIST      *Node;
+
+  if (Key == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  for ( Node = (ENV_VAR_LIST*)GetFirstNode(&gShellEnvVarList.Link)
+      ; !IsNull(&gShellEnvVarList.Link, &Node->Link)
+      ; Node = (ENV_VAR_LIST*)GetNextNode(&gShellEnvVarList.Link, &Node->Link)
+     ){
+    if (Node->Key != NULL && StrCmp(Key, Node->Key) == 0) {
+      SHELL_FREE_NON_NULL(Node->Key);
+      SHELL_FREE_NON_NULL(Node->Val);
+      RemoveEntryList(&Node->Link);
+      SHELL_FREE_NON_NULL(Node);
+      return EFI_SUCCESS;
+    }
+  }
+
+  return EFI_NOT_FOUND;
+}
+
+/**
+  Initialize the gShellEnvVarList and cache all Shell-Guid-based environment
+  variables.
+
+**/
+EFI_STATUS
+ShellInitEnvVarList (
+  VOID
+  )
+{
+  EFI_STATUS    Status;
+
+  InitializeListHead(&gShellEnvVarList.Link);
+  Status = GetEnvironmentVariableList (&gShellEnvVarList.Link);
+
+  return Status;
+}
+
+/**
+  Destructe the gShellEnvVarList.
+
+**/
+VOID
+ShellFreeEnvVarList (
+  VOID
+  )
+{
+  FreeEnvironmentVariableList (&gShellEnvVarList.Link);
+  InitializeListHead(&gShellEnvVarList.Link);
+
+  return;
+}
+

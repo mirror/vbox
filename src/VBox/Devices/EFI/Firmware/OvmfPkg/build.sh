@@ -1,15 +1,9 @@
 #!/usr/bin/env bash
 #
 # Copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-# Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2010 - 2019, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 set -e
@@ -46,7 +40,7 @@ ARCH_X64=no
 BUILDTARGET=DEBUG
 BUILD_OPTIONS=
 PLATFORMFILE=
-THREADNUMBER=1
+THREADNUMBER=0
 LAST_ARG=
 RUN_QEMU=no
 ENABLE_FLASH=no
@@ -61,7 +55,13 @@ case `uname` in
     ;;
   Darwin*)
     Major=$(uname -r | cut -f 1 -d '.')
+    # Major is Darwin version, not OS X version.
+    # OS X Yosemite 10.10.2 returns 14.
     case $Major in
+      [156789])
+        echo OvmfPkg requires OS X Snow Leopard 10.6 or newer OS
+        exit 1
+        ;;
       10)
         TARGET_TOOLS=XCODE32
         ;;
@@ -69,31 +69,26 @@ case `uname` in
         TARGET_TOOLS=XCLANG
         ;;
        *)
-        echo OvmfPkg requires Snow Leopard or later OS
-        exit 1
+        # Mavericks and future assume XCODE5 (clang + lldb)
+        TARGET_TOOLS=XCODE5
         ;;
     esac
     ;;
   Linux*)
     gcc_version=$(gcc -v 2>&1 | tail -1 | awk '{print $3}')
     case $gcc_version in
-      4.5.*)
-        TARGET_TOOLS=GCC45
-        ;;
-      4.6.*)
-        TARGET_TOOLS=GCC46
-        ;;
-      4.7.*)
-        TARGET_TOOLS=GCC47
+      [1-3].*|4.[0-7].*)
+        echo OvmfPkg requires GCC4.8 or later
+        exit 1
         ;;
       4.8.*)
         TARGET_TOOLS=GCC48
         ;;
-      4.9.*|4.1[0-9].*)
+      4.9.*|6.[0-2].*)
         TARGET_TOOLS=GCC49
         ;;
       *)
-        TARGET_TOOLS=GCC44
+        TARGET_TOOLS=GCC5
         ;;
     esac
 esac
@@ -210,23 +205,14 @@ if [ -z "$PLATFORMFILE" ]; then
 fi
 
 if [[ "$RUN_QEMU" == "yes" ]]; then
-  qemu_version=$($QEMU_COMMAND -version 2>&1 | tail -1 | awk '{print $4}')
+  qemu_version=$($QEMU_COMMAND -version 2>&1 | \
+                   grep -o -E 'version [0-9]+\.[0-9]+\.[0-9]+' | \
+                     awk '{print $2}')
   case $qemu_version in
-    1.[6-9].*|1.[1-9][0-9].*|2.*.*)
+    1.[6-9].*|[2-9].*.*|[1-9][0-9]*.*.*)
       ENABLE_FLASH=yes
       ;;
   esac
-
-  ADD_QEMU_HDA=yes
-  for arg in "$@"
-  do
-    case $arg in
-      -hd[a-d]|-fd[ab]|-cdrom)
-        ADD_QEMU_HDA=no
-        break
-        ;;
-    esac
-  done
 fi
 
 #
@@ -266,16 +252,12 @@ if [[ "$RUN_QEMU" == "yes" ]]; then
   fi
   ln -sf $FV_DIR/OVMF.fd $QEMU_FIRMWARE_DIR/bios.bin
   if [[ "$ENABLE_FLASH" == "yes" ]]; then
-    QEMU_COMMAND="$QEMU_COMMAND -pflash $QEMU_FIRMWARE_DIR/bios.bin"
+    QEMU_COMMAND="$QEMU_COMMAND -drive if=pflash,format=raw,file=$QEMU_FIRMWARE_DIR/bios.bin"
   else
     QEMU_COMMAND="$QEMU_COMMAND -L $QEMU_FIRMWARE_DIR"
   fi
-  if [[ "$ADD_QEMU_HDA" == "yes" ]]; then
-    QEMU_COMMAND="$QEMU_COMMAND -hda fat:$BUILD_ROOT_ARCH"
-  fi
-  QEMU_COMMAND="$QEMU_COMMAND $*"
-  echo Running: $QEMU_COMMAND
-  $QEMU_COMMAND
+  echo Running: $QEMU_COMMAND "$@"
+  $QEMU_COMMAND "$@"
   exit $?
 fi
 

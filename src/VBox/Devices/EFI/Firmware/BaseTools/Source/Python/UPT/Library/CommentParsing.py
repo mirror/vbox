@@ -1,15 +1,9 @@
 ## @file
 # This file is used to define comment parsing interface
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -21,8 +15,8 @@ CommentParsing
 #
 import re
 
-from Library.String import GetSplitValueList
-from Library.String import CleanString2
+from Library.StringUtils import GetSplitValueList
+from Library.StringUtils import CleanString2
 from Library.DataType import HEADER_COMMENT_NOT_STARTED
 from Library.DataType import TAB_COMMENT_SPLIT
 from Library.DataType import HEADER_COMMENT_LICENSE
@@ -74,7 +68,7 @@ def ParseHeaderCommentSection(CommentList, FileName = None, IsBinaryHeader = Fal
     # first find the last copyright line
     #
     Last = 0
-    for Index in xrange(len(CommentList)-1, 0, -1):
+    for Index in range(len(CommentList)-1, 0, -1):
         Line = CommentList[Index][0]
         if _IsCopyrightLine(Line):
             Last = Index
@@ -206,18 +200,16 @@ def ParsePcdErrorCode (Value = None, ContainerFile = None, LineNum = None):
             Base = 16
         else:
             Base = 10
-        ErrorCode = long(Value, Base)
+        ErrorCode = int(Value, Base)
         if ErrorCode > PCD_ERR_CODE_MAX_SIZE or ErrorCode < 0:
             Logger.Error('Parser',
                         FORMAT_NOT_SUPPORTED,
                         "The format %s of ErrorCode is not valid, should be UNIT32 type or long type" % Value,
                         File = ContainerFile,
                         Line = LineNum)
-        #
-        # To delete the tailing 'L'
-        #
-        return hex(ErrorCode)[:-1]
-    except ValueError, XStr:
+        ErrorCode = '0x%x' % ErrorCode
+        return ErrorCode
+    except ValueError as XStr:
         if XStr:
             pass
         Logger.Error('Parser',
@@ -428,7 +420,7 @@ def _CheckListExpression(Expression):
 
     return IsValidListExpr(ListExpr)
 
-## _CheckExpreesion
+## _CheckExpression
 #
 # @param Expression: Pcd value expression
 #
@@ -478,11 +470,11 @@ def _ValidateCopyright(Line):
 
 def GenerateTokenList (Comment):
     #
-    # Tokenize Comment using '#' and ' ' as token seperators
+    # Tokenize Comment using '#' and ' ' as token separators
     #
-    RelplacedComment = None
-    while Comment != RelplacedComment:
-        RelplacedComment = Comment
+    ReplacedComment = None
+    while Comment != ReplacedComment:
+        ReplacedComment = Comment
         Comment = Comment.replace('##', '#').replace('  ', ' ').replace(' ', '#').strip('# ')
     return Comment.split('#')
 
@@ -540,13 +532,13 @@ def ParseComment (Comment, UsageTokens, TypeTokens, RemoveTokens, ParseVariable)
                 NumTokens = 1
 
     #
-    # Initialze HelpText to Comment.
+    # Initialize HelpText to Comment.
     # Content will be remove from HelpText as matching tokens are found
     #
     HelpText = Comment
 
     #
-    # Tokenize Comment using '#' and ' ' as token seperators
+    # Tokenize Comment using '#' and ' ' as token separators
     #
     List = GenerateTokenList (Comment)
 
@@ -555,15 +547,15 @@ def ParseComment (Comment, UsageTokens, TypeTokens, RemoveTokens, ParseVariable)
     # from HelpText
     #
     for Token in List[0:NumTokens]:
-        if Usage == None and Token in UsageTokens:
+        if Usage is None and Token in UsageTokens:
             Usage = UsageTokens[Token]
             HelpText = HelpText.replace(Token, '')
-    if Usage != None or not ParseVariable:
+    if Usage is not None or not ParseVariable:
         for Token in List[0:NumTokens]:
-            if Type == None and Token in TypeTokens:
+            if Type is None and Token in TypeTokens:
                 Type = TypeTokens[Token]
                 HelpText = HelpText.replace(Token, '')
-            if Usage != None:
+            if Usage is not None:
                 for Token in List[0:NumTokens]:
                     if Token in RemoveTokens:
                         HelpText = HelpText.replace(Token, '')
@@ -571,13 +563,13 @@ def ParseComment (Comment, UsageTokens, TypeTokens, RemoveTokens, ParseVariable)
     #
     # If no Usage token is present and set Usage to UNDEFINED
     #
-    if Usage == None:
+    if Usage is None:
         Usage = 'UNDEFINED'
 
     #
     # If no Type token is present and set Type to UNDEFINED
     #
-    if Type == None:
+    if Type is None:
         Type = 'UNDEFINED'
 
     #

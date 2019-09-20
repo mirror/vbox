@@ -1,14 +1,8 @@
 /** @file
   ACPI Sdt Protocol Driver
 
-  Copyright (c) 2010, Intel Corporation. All rights reserved. <BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved. <BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -155,15 +149,18 @@ struct _AML_BYTE_ENCODING {
   - Root System Description Table (RSDT)
   - Extended System Description Table (XSDT)
   Version is updated with a bit map containing all the versions of ACPI of which the table is a
-  member.
+  member. For tables installed via the EFI_ACPI_TABLE_PROTOCOL.InstallAcpiTable() interface,
+  the function returns the value of EFI_ACPI_STD_PROTOCOL.AcpiVersion.
 
   @param[in]    Index       The zero-based index of the table to retrieve.
   @param[out]   Table       Pointer for returning the table buffer.
   @param[out]   Version     On return, updated with the ACPI versions to which this table belongs. Type
                             EFI_ACPI_TABLE_VERSION is defined in "Related Definitions" in the
                             EFI_ACPI_SDT_PROTOCOL.
-  @param[out]   TableKey    On return, points to the table key for the specified ACPI system definition table. This
-                            is identical to the table key used in the EFI_ACPI_TABLE_PROTOCOL.
+  @param[out]   TableKey    On return, points to the table key for the specified ACPI system definition table.
+                            This is identical to the table key used in the EFI_ACPI_TABLE_PROTOCOL.
+                            The TableKey can be passed to EFI_ACPI_TABLE_PROTOCOL.UninstallAcpiTable()
+                            to uninstall the table.
 
   @retval EFI_SUCCESS       The function completed successfully.
   @retval EFI_NOT_FOUND     The requested index is too large and a table was not found.

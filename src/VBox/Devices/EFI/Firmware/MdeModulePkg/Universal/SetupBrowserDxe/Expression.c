@@ -1,14 +1,8 @@
 /** @file
 Utility functions for expression evaluation.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -751,6 +745,7 @@ PopExpression (
 **/
 UINTN
 SaveExpressionEvaluationStackOffset (
+  VOID
   )
 {
   UINTN TempStackOffset;
@@ -1324,6 +1319,7 @@ IfrCatenate (
   UINT16         Length0;
   UINT16         Length1;
   UINT8          *TmpBuf;
+  UINTN          MaxLen;
 
   //
   // String[0] - The second string
@@ -1363,10 +1359,11 @@ IfrCatenate (
 
   if (Value[0].Type == EFI_IFR_TYPE_STRING) {
     Size = StrSize (String[0]);
-    StringPtr= AllocatePool (StrSize (String[1]) + Size);
+    MaxLen = (StrSize (String[1]) + Size) / sizeof (CHAR16);
+    StringPtr= AllocatePool (MaxLen * sizeof (CHAR16));
     ASSERT (StringPtr != NULL);
-    StrCpy (StringPtr, String[1]);
-    StrCat (StringPtr, String[0]);
+    StrCpyS (StringPtr, MaxLen, String[1]);
+    StrCatS (StringPtr, MaxLen, String[0]);
 
     Result->Type = EFI_IFR_TYPE_STRING;
     Result->Value.string = NewString (StringPtr, FormSet->HiiHandle);
@@ -1475,6 +1472,180 @@ Done:
   return Status;
 }
 
+/**
+  Evaluate opcode EFI_IFR_MATCH2.
+
+  @param  FormSet                Formset which contains this opcode.
+  @param  SyntaxType             Syntax type for match2.
+  @param  Result                 Evaluation result for this opcode.
+
+  @retval EFI_SUCCESS            Opcode evaluation success.
+  @retval Other                  Opcode evaluation failed.
+
+**/
+EFI_STATUS
+IfrMatch2 (
+  IN FORM_BROWSER_FORMSET  *FormSet,
+  IN EFI_GUID              *SyntaxType,
+  OUT  EFI_HII_VALUE       *Result
+  )
+{
+  EFI_STATUS                       Status;
+  EFI_HII_VALUE                    Value[2];
+  CHAR16                           *String[2];
+  UINTN                            Index;
+  UINTN                            GuidIndex;
+  EFI_HANDLE                       *HandleBuffer;
+  UINTN                            BufferSize;
+  EFI_REGULAR_EXPRESSION_PROTOCOL  *RegularExpressionProtocol;
+  UINTN                            RegExSyntaxTypeListSize;
+  EFI_REGEX_SYNTAX_TYPE            *RegExSyntaxTypeList;
+  UINTN                            CapturesCount;
+
+  //
+  // String[0] - The string to search
+  // String[1] - pattern
+  //
+  String[0] = NULL;
+  String[1] = NULL;
+  HandleBuffer = NULL;
+  RegExSyntaxTypeList = NULL;
+  Status = EFI_SUCCESS;
+  ZeroMem (Value, sizeof (Value));
+
+  Status = PopExpression (&Value[0]);
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  Status = PopExpression (&Value[1]);
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  for (Index = 0; Index < 2; Index++) {
+    if (Value[Index].Type != EFI_IFR_TYPE_STRING) {
+      Result->Type = EFI_IFR_TYPE_UNDEFINED;
+      Status = EFI_SUCCESS;
+      goto Done;
+    }
+
+    String[Index] = GetToken (Value[Index].Value.string, FormSet->HiiHandle);
+    if (String [Index] == NULL) {
+      Status = EFI_NOT_FOUND;
+      goto Done;
+    }
+  }
+
+  BufferSize    = 0;
+  HandleBuffer  = NULL;
+  Status = gBS->LocateHandle(
+                      ByProtocol,
+                      &gEfiRegularExpressionProtocolGuid,
+                      NULL,
+                      &BufferSize,
+                      HandleBuffer);
+  if (Status == EFI_BUFFER_TOO_SMALL) {
+    HandleBuffer = AllocateZeroPool(BufferSize);
+    if (HandleBuffer == NULL) {
+      Status = EFI_OUT_OF_RESOURCES;
+      goto Done;
+    }
+    Status = gBS->LocateHandle(
+                        ByProtocol,
+                        &gEfiRegularExpressionProtocolGuid,
+                        NULL,
+                        &BufferSize,
+                        HandleBuffer);
+
+  }
+
+  if (EFI_ERROR (Status)) {
+    Result->Type = EFI_IFR_TYPE_UNDEFINED;
+    Status = EFI_SUCCESS;
+    goto Done;
+  }
+
+  ASSERT (HandleBuffer != NULL);
+  for ( Index = 0; Index < BufferSize / sizeof(EFI_HANDLE); Index ++) {
+    Status = gBS->HandleProtocol (
+                  HandleBuffer[Index],
+                  &gEfiRegularExpressionProtocolGuid,
+                  (VOID**)&RegularExpressionProtocol
+                 );
+    if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+
+    RegExSyntaxTypeListSize = 0;
+    RegExSyntaxTypeList = NULL;
+
+    Status = RegularExpressionProtocol->GetInfo (
+                                          RegularExpressionProtocol,
+                                          &RegExSyntaxTypeListSize,
+                                          RegExSyntaxTypeList
+                                          );
+    if (Status == EFI_BUFFER_TOO_SMALL) {
+      RegExSyntaxTypeList = AllocateZeroPool(RegExSyntaxTypeListSize);
+      if (RegExSyntaxTypeList == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        goto Done;
+      }
+      Status = RegularExpressionProtocol->GetInfo (
+                                            RegularExpressionProtocol,
+                                            &RegExSyntaxTypeListSize,
+                                            RegExSyntaxTypeList
+                                            );
+    } else if (EFI_ERROR (Status)) {
+      goto Done;
+    }
+
+    for (GuidIndex = 0; GuidIndex < RegExSyntaxTypeListSize / sizeof(EFI_GUID); GuidIndex++) {
+      if (CompareGuid (&RegExSyntaxTypeList[GuidIndex], SyntaxType)) {
+        //
+        // Find the match type, return the value.
+        //
+        Result->Type = EFI_IFR_TYPE_BOOLEAN;
+        Status = RegularExpressionProtocol->MatchString (
+                                              RegularExpressionProtocol,
+                                              String[0],
+                                              String[1],
+                                              SyntaxType,
+                                              &Result->Value.b,
+                                              NULL,
+                                              &CapturesCount
+                                              );
+        goto Done;
+      }
+    }
+
+    if (RegExSyntaxTypeList != NULL) {
+      FreePool (RegExSyntaxTypeList);
+    }
+  }
+
+  //
+  // Type specified by SyntaxType is not supported
+  // in any of the EFI_REGULAR_EXPRESSION_PROTOCOL instances.
+  //
+  Result->Type = EFI_IFR_TYPE_UNDEFINED;
+  Status = EFI_SUCCESS;
+
+Done:
+  if (String[0] != NULL) {
+    FreePool (String[0]);
+  }
+  if (String[1] != NULL) {
+    FreePool (String[1]);
+  }
+  if (RegExSyntaxTypeList != NULL) {
+    FreePool (RegExSyntaxTypeList);
+  }
+  if (HandleBuffer != NULL) {
+    FreePool (HandleBuffer);
+  }
+  return Status;
+}
 
 /**
   Evaluate opcode EFI_IFR_FIND.
@@ -2307,7 +2478,7 @@ GetQuestionValueFromForm (
   //
   // Get the question value.
   //
-  Status = GetQuestionValue(FormSet, Form, Question, GetSetValueWithHiiDriver);
+  Status = GetQuestionValue(FormSet, Form, Question, GetSetValueWithEditBuffer);
   if (EFI_ERROR (Status)) {
     GetTheVal = FALSE;
     goto Done;
@@ -2653,7 +2824,7 @@ EvaluateExpression (
         if (StrPtr != NULL) {
           FreePool (StrPtr);
         }
-      } else if (CompareGuid (&OpCode->Guid, &gZeroGuid) != 0) {
+      } else if (IsZeroGuid (&OpCode->Guid)) {
         if (!GetQuestionValueFromForm(NULL, FormSet->HiiHandle, &OpCode->Guid, Value->Value.u16, &QuestionVal)){
           Value->Type = EFI_IFR_TYPE_UNDEFINED;
           break;
@@ -2960,14 +3131,21 @@ EvaluateExpression (
         case EFI_HII_VARSTORE_NAME_VALUE:
           if (OpCode->ValueType != EFI_IFR_TYPE_STRING) {
             NameValue = AllocateZeroPool ((OpCode->ValueWidth * 2 + 1) * sizeof (CHAR16));
-            ASSERT (Value != NULL);
+            ASSERT (NameValue != NULL);
             //
             // Convert Buffer to Hex String
             //
             TempBuffer = (UINT8 *) &Value->Value + OpCode->ValueWidth - 1;
             StrPtr = NameValue;
             for (Index = 0; Index < OpCode->ValueWidth; Index ++, TempBuffer --) {
-              StrPtr += UnicodeValueToString (StrPtr, PREFIX_ZERO | RADIX_HEX, *TempBuffer, 2);
+              UnicodeValueToStringS (
+                StrPtr,
+                (OpCode->ValueWidth * 2 + 1) * sizeof (CHAR16) - ((UINTN)StrPtr - (UINTN)NameValue),
+                PREFIX_ZERO | RADIX_HEX,
+                *TempBuffer,
+                2
+                );
+              StrPtr += StrnLenS (StrPtr, OpCode->ValueWidth * 2 + 1 - ((UINTN)StrPtr - (UINTN)NameValue) / sizeof (CHAR16));
             }
             Status = SetValueByName (OpCode->VarStorage, OpCode->ValueName, NameValue, GetSetValueWithEditBuffer, NULL);
             FreePool (NameValue);
@@ -2994,7 +3172,6 @@ EvaluateExpression (
           //
           Status = EFI_UNSUPPORTED;
           goto Done;
-          break;
         }
       } else {
         //
@@ -3265,6 +3442,10 @@ EvaluateExpression (
       }
 
       Status = IfrMatch (FormSet, Value);
+      break;
+
+    case EFI_IFR_MATCH2_OP:
+      Status = IfrMatch2 (FormSet, &OpCode->Guid, Value);
       break;
 
     case EFI_IFR_CATENATE_OP:

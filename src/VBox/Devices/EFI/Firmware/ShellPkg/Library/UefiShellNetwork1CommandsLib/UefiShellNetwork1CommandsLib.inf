@@ -1,14 +1,9 @@
 ##  @file
 # Provides shell network1 functions
 #
-# Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved. <BR>
+# Copyright (c) 2010 - 2019, Intel Corporation. All rights reserved. <BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution. The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 #
 ##
@@ -17,7 +12,7 @@
   INF_VERSION                    = 0x00010006
   BASE_NAME                      = UefiShellNetwork1CommandsLib
   FILE_GUID                      = 9A929F7E-3861-45ce-87AB-7371219AE255
-  MODULE_TYPE                    = UEFI_DRIVER
+  MODULE_TYPE                    = UEFI_APPLICATION
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = NULL|UEFI_APPLICATION UEFI_DRIVER
   CONSTRUCTOR                    = ShellNetwork1CommandsLibConstructor
@@ -34,6 +29,7 @@
   MdePkg/MdePkg.dec
   ShellPkg/ShellPkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  NetworkPkg/NetworkPkg.dec
 
 [LibraryClasses]
   MemoryAllocationLib
@@ -55,13 +51,14 @@
 
 [Protocols]
   gEfiCpuArchProtocolGuid                       ## CONSUMES
+  gEfiTimerArchProtocolGuid                     ## CONSUMES
   gEfiIp6ProtocolGuid                           ## SOMETIMES_CONSUMES
   gEfiIp6ServiceBindingProtocolGuid             ## SOMETIMES_CONSUMES
   gEfiIp6ConfigProtocolGuid                     ## SOMETIMES_CONSUMES
 
-  gEfiIp6ProtocolGuid                           ## SOMETIMES_CONSUMES
-  gEfiIp6ServiceBindingProtocolGuid             ## SOMETIMES_CONSUMES
-  gEfiIp6ConfigProtocolGuid                     ## SOMETIMES_CONSUMES
+  gEfiIp4ProtocolGuid                           ## SOMETIMES_CONSUMES
+  gEfiIp4ServiceBindingProtocolGuid             ## SOMETIMES_CONSUMES
+  gEfiIp4Config2ProtocolGuid                    ## SOMETIMES_CONSUMES
 
 [Guids]
   gShellNetwork1HiiGuid                         ## SOMETIMES_CONSUMES ## HII

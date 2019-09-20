@@ -1,22 +1,19 @@
 /** @file
   Provides generic security measurement functions for DXE module.
 
-Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include <PiDxe.h>
+#include <Protocol/LoadFile.h>
 #include <Library/DebugLib.h>
 #include <Library/DxeServicesLib.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/SecurityManagementLib.h>
+#include <Library/DevicePathLib.h>
+#include <Library/UefiBootServicesTableLib.h>
 
 #define SECURITY_HANDLER_TABLE_SIZE   0x10
 
@@ -58,6 +55,7 @@ SECURITY2_INFO *mSecurity2Table      = NULL;
 RETURN_STATUS
 EFIAPI
 ReallocateSecurityHandlerTable (
+  VOID
   )
 {
   //
@@ -219,6 +217,9 @@ ExecuteSecurityHandlers (
   UINT32        HandlerAuthenticationStatus;
   VOID          *FileBuffer;
   UINTN         FileSize;
+  EFI_HANDLE    Handle;
+  EFI_DEVICE_PATH_PROTOCOL        *Node;
+  EFI_DEVICE_PATH_PROTOCOL        *FilePathToVerfiy;
 
   if (FilePath == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -235,6 +236,7 @@ ExecuteSecurityHandlers (
   FileBuffer                  = NULL;
   FileSize                    = 0;
   HandlerAuthenticationStatus = AuthenticationStatus;
+  FilePathToVerfiy            = (EFI_DEVICE_PATH_PROTOCOL *) FilePath;
   //
   // Run security handler in same order to their registered list
   //
@@ -244,6 +246,8 @@ ExecuteSecurityHandlers (
       // Try get file buffer when the handler requires image buffer.
       //
       if (FileBuffer == NULL) {
+        Node   = FilePathToVerfiy;
+        Status = gBS->LocateDevicePath (&gEfiLoadFileProtocolGuid, &Node, &Handle);
         //
         // Try to get image by FALSE boot policy for the exact boot file path.
         //
@@ -254,11 +258,17 @@ ExecuteSecurityHandlers (
           //
           FileBuffer = GetFileBufferByFilePath (TRUE, FilePath, &FileSize, &AuthenticationStatus);
         }
+        if ((FileBuffer != NULL) && (!EFI_ERROR (Status))) {
+          //
+          // LoadFile () may cause the device path of the Handle be updated.
+          //
+          FilePathToVerfiy = AppendDevicePath (DevicePathFromHandle (Handle), Node);
+        }
       }
     }
     Status = mSecurityTable[Index].SecurityHandler (
                HandlerAuthenticationStatus,
-               FilePath,
+               FilePathToVerfiy,
                FileBuffer,
                FileSize
                );
@@ -269,6 +279,9 @@ ExecuteSecurityHandlers (
 
   if (FileBuffer != NULL) {
     FreePool (FileBuffer);
+  }
+  if (FilePathToVerfiy != FilePath) {
+    FreePool (FilePathToVerfiy);
   }
 
   return Status;
@@ -283,6 +296,7 @@ ExecuteSecurityHandlers (
 RETURN_STATUS
 EFIAPI
 ReallocateSecurity2HandlerTable (
+  VOID
   )
 {
   //

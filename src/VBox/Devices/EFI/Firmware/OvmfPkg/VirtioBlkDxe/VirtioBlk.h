@@ -5,13 +5,7 @@
 
   Copyright (C) 2012, Red Hat, Inc.
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
-  WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -37,9 +31,11 @@ typedef struct {
   //                     ---------------------    ------------------  ---------
   UINT32                 Signature;            // DriverBindingStart  0
   VIRTIO_DEVICE_PROTOCOL *VirtIo;              // DriverBindingStart  0
+  EFI_EVENT              ExitBoot;             // DriverBindingStart  0
   VRING                  Ring;                 // VirtioRingInit      2
   EFI_BLOCK_IO_PROTOCOL  BlockIo;              // VirtioBlkInit       1
   EFI_BLOCK_IO_MEDIA     BlockIoMedia;         // VirtioBlkInit       1
+  VOID                   *RingMap;             // VirtioRingMap       2
 } VBLK_DEV;
 
 #define VIRTIO_BLK_FROM_BLOCK_IO(BlockIoPointer) \
@@ -95,7 +91,7 @@ VirtioBlkDriverBindingSupported (
 
   After we've pronounced support for a specific device in
   DriverBindingSupported(), we start managing said device (passed in by the
-  Driver Exeuction Environment) with the following service.
+  Driver Execution Environment) with the following service.
 
   See DriverBindingSupported() for specification references.
 
@@ -110,7 +106,7 @@ VirtioBlkDriverBindingSupported (
 
   @retval EFI_SUCCESS           Driver instance has been created and
                                 initialized  for the virtio-blk device, it
-                                is now accessibla via EFI_BLOCK_IO_PROTOCOL.
+                                is now accessible via EFI_BLOCK_IO_PROTOCOL.
 
   @retval EFI_OUT_OF_RESOURCES  Memory allocation failed.
 

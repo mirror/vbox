@@ -2,14 +2,8 @@
 
   This library class defines a set of interfaces to customize Display module
 
-Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 #include "CustomizedDisplayLibInternal.h"
@@ -135,7 +129,6 @@ RefreshKeyHelp (
 {
   UINTN                  SecCol;
   UINTN                  ThdCol;
-  UINTN                  LeftColumnOfHelp;
   UINTN                  RightColumnOfHelp;
   UINTN                  TopRowOfHelp;
   UINTN                  BottomRowOfHelp;
@@ -169,7 +162,6 @@ RefreshKeyHelp (
   // + 2 means leave 1 space before the first hotkey info.
   //
   StartColumnOfHelp = gScreenDimensions.LeftColumn + 2;
-  LeftColumnOfHelp  = gScreenDimensions.LeftColumn + 1;
   RightColumnOfHelp = gScreenDimensions.RightColumn - 1;
   TopRowOfHelp      = gScreenDimensions.BottomRow - STATUS_BAR_HEIGHT - gFooterHeight + 1;
   BottomRowOfHelp   = gScreenDimensions.BottomRow - STATUS_BAR_HEIGHT - 2;
@@ -680,7 +672,7 @@ PrintStringAtWithWidth (
 }
 
 /**
-  Prints a chracter to the default console, at
+  Prints a character to the default console, at
   the supplied cursor position, using L"%c" format.
 
   @param  Column     The cursor position to print the string at. When it is -1, use current Position.

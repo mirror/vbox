@@ -3,13 +3,7 @@
 
   Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -144,18 +138,18 @@ UINT16 Seq_1024_768_32bpp_60[15] = {
 /// Table of supported video modes
 ///
 QEMU_VIDEO_CIRRUS_MODES  QemuVideoCirrusModes[] = {
-//  {  640, 480, 8, 60, Crtc_640_480_256_60,  Seq_640_480_256_60,  0xe3 },
-//  {  800, 600, 8, 60, Crtc_800_600_256_60,  Seq_800_600_256_60,  0xef },
-  {  640, 480, 32, 60, Crtc_640_480_32bpp_60,  Seq_640_480_32bpp_60,  0xef },
-  {  800, 600, 32, 60, Crtc_800_600_32bpp_60,  Seq_800_600_32bpp_60,  0xef },
-//  { 1024, 768, 8, 60, Crtc_1024_768_256_60, Seq_1024_768_256_60, 0xef }
-  { 1024, 768, 24, 60, Crtc_1024_768_24bpp_60, Seq_1024_768_24bpp_60, 0xef }
-//  { 1024, 768, 32, 60, Crtc_1024_768_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
-//  { 960, 720, 32, 60, Crtc_960_720_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
+//  {  640, 480, 8, Crtc_640_480_256_60,  Seq_640_480_256_60,  0xe3 },
+//  {  800, 600, 8, Crtc_800_600_256_60,  Seq_800_600_256_60,  0xef },
+  {  640, 480, 32, Crtc_640_480_32bpp_60,  Seq_640_480_32bpp_60,  0xef },
+  {  800, 600, 32, Crtc_800_600_32bpp_60,  Seq_800_600_32bpp_60,  0xef },
+//  { 1024, 768, 8, Crtc_1024_768_256_60, Seq_1024_768_256_60, 0xef }
+  { 1024, 768, 24, Crtc_1024_768_24bpp_60, Seq_1024_768_24bpp_60, 0xef }
+//  { 1024, 768, 32, Crtc_1024_768_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
+//  { 960, 720, 32, Crtc_960_720_32bpp_60, Seq_1024_768_32bpp_60, 0xef }
 };
 
 #define QEMU_VIDEO_CIRRUS_MODE_COUNT \
-  (sizeof (QemuVideoCirrusModes) / sizeof (QemuVideoCirrusModes[0]))
+  (ARRAY_SIZE (QemuVideoCirrusModes))
 
 /**
   Construct the valid video modes for QemuVideo.
@@ -186,15 +180,13 @@ QemuVideoCirrusModeSetup (
     ModeData->HorizontalResolution          = VideoMode->Width;
     ModeData->VerticalResolution            = VideoMode->Height;
     ModeData->ColorDepth                    = VideoMode->ColorDepth;
-    ModeData->RefreshRate                   = VideoMode->RefreshRate;
     DEBUG ((EFI_D_INFO,
-      "Adding Mode %d as Cirrus Internal Mode %d: %dx%d, %d-bit, %d Hz\n",
+      "Adding Mode %d as Cirrus Internal Mode %d: %dx%d, %d-bit\n",
       (INT32) (ModeData - Private->ModeData),
       ModeData->InternalModeIndex,
       ModeData->HorizontalResolution,
       ModeData->VerticalResolution,
-      ModeData->ColorDepth,
-      ModeData->RefreshRate
+      ModeData->ColorDepth
       ));
 
     ModeData ++ ;
@@ -249,7 +241,7 @@ QEMU_VIDEO_BOCHS_MODES  QemuVideoBochsModes[] = {
 };
 
 #define QEMU_VIDEO_BOCHS_MODE_COUNT \
-  (sizeof (QemuVideoBochsModes) / sizeof (QemuVideoBochsModes[0]))
+  (ARRAY_SIZE (QemuVideoBochsModes))
 
 EFI_STATUS
 QemuVideoBochsModeSetup (
@@ -305,7 +297,7 @@ QemuVideoBochsModeSetup (
     AvailableFbSize  = BochsRead (Private, VBE_DISPI_INDEX_VIDEO_MEMORY_64K);
     AvailableFbSize *= SIZE_64KB;
   }
-  DEBUG ((EFI_D_VERBOSE, "%a: AvailableFbSize=0x%x\n", __FUNCTION__,
+  DEBUG ((EFI_D_INFO, "%a: AvailableFbSize=0x%x\n", __FUNCTION__,
     AvailableFbSize));
 
   //
@@ -330,15 +322,13 @@ QemuVideoBochsModeSetup (
       ModeData->HorizontalResolution = VideoMode->Width;
       ModeData->VerticalResolution   = VideoMode->Height;
       ModeData->ColorDepth           = VideoMode->ColorDepth;
-      ModeData->RefreshRate          = 60;
       DEBUG ((EFI_D_INFO,
-        "Adding Mode %d as Bochs Internal Mode %d: %dx%d, %d-bit, %d Hz\n",
+        "Adding Mode %d as Bochs Internal Mode %d: %dx%d, %d-bit\n",
         (INT32) (ModeData - Private->ModeData),
         ModeData->InternalModeIndex,
         ModeData->HorizontalResolution,
         ModeData->VerticalResolution,
-        ModeData->ColorDepth,
-        ModeData->RefreshRate
+        ModeData->ColorDepth
         ));
 
       ModeData ++ ;

@@ -5,14 +5,8 @@
   EFI Driver Model related protocols, manage Unicode string tables for UEFI Drivers,
   and print messages on the console output and standard error devices.
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -302,6 +296,67 @@ EfiNamedEventSignal (
   ASSERT_EFI_ERROR (Status);
 
   return Status;
+}
+
+/**
+  Signals an event group by placing a new event in the group temporarily and
+  signaling it.
+
+  @param[in] EventGroup          Supplies the unique identifier of the event
+                                 group to signal.
+
+  @retval EFI_SUCCESS            The event group was signaled successfully.
+  @retval EFI_INVALID_PARAMETER  EventGroup is NULL.
+  @return                        Error codes that report problems about event
+                                 creation or signaling.
+**/
+EFI_STATUS
+EFIAPI
+EfiEventGroupSignal (
+  IN CONST EFI_GUID *EventGroup
+  )
+{
+  EFI_STATUS Status;
+  EFI_EVENT  Event;
+
+  if (EventGroup == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Status = gBS->CreateEventEx (
+                  EVT_NOTIFY_SIGNAL,
+                  TPL_CALLBACK,
+                  EfiEventEmptyFunction,
+                  NULL,
+                  EventGroup,
+                  &Event
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  Status = gBS->SignalEvent (Event);
+  gBS->CloseEvent (Event);
+
+  return Status;
+}
+
+/**
+  An empty function that can be used as NotifyFunction parameter of
+  CreateEvent() or CreateEventEx().
+
+  @param Event              Event whose notification function is being invoked.
+  @param Context            The pointer to the notification function's context,
+                            which is implementation-dependent.
+
+**/
+VOID
+EFIAPI
+EfiEventEmptyFunction (
+  IN EFI_EVENT              Event,
+  IN VOID                   *Context
+  )
+{
 }
 
 /**
@@ -827,10 +882,10 @@ LookupUnicodeString2 (
 EFI_STATUS
 EFIAPI
 AddUnicodeString (
-  IN CONST CHAR8               *Language,
-  IN CONST CHAR8               *SupportedLanguages,
-  IN EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
-  IN CONST CHAR16              *UnicodeString
+  IN     CONST CHAR8               *Language,
+  IN     CONST CHAR8               *SupportedLanguages,
+  IN OUT EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
+  IN     CONST CHAR16              *UnicodeString
   )
 {
   UINTN                     NumberOfEntries;
@@ -1004,11 +1059,11 @@ AddUnicodeString (
 EFI_STATUS
 EFIAPI
 AddUnicodeString2 (
-  IN CONST CHAR8               *Language,
-  IN CONST CHAR8               *SupportedLanguages,
-  IN EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
-  IN CONST CHAR16              *UnicodeString,
-  IN BOOLEAN                   Iso639Language
+  IN     CONST CHAR8               *Language,
+  IN     CONST CHAR8               *SupportedLanguages,
+  IN OUT EFI_UNICODE_STRING_TABLE  **UnicodeStringTable,
+  IN     CONST CHAR16              *UnicodeString,
+  IN     BOOLEAN                   Iso639Language
   )
 {
   UINTN                     NumberOfEntries;
@@ -1378,6 +1433,87 @@ GetVariable2 (
   return Status;
 }
 
+/** Return the attributes of the variable.
+
+  Returns the status whether get the variable success. The function retrieves
+  variable  through the UEFI Runtime Service GetVariable().  The
+  returned buffer is allocated using AllocatePool().  The caller is responsible
+  for freeing this buffer with FreePool().  The attributes are returned if
+  the caller provides a valid Attribute parameter.
+
+  If Name  is NULL, then ASSERT().
+  If Guid  is NULL, then ASSERT().
+  If Value is NULL, then ASSERT().
+
+  @param[in]  Name  The pointer to a Null-terminated Unicode string.
+  @param[in]  Guid  The pointer to an EFI_GUID structure
+  @param[out] Value The buffer point saved the variable info.
+  @param[out] Size  The buffer size of the variable.
+  @param[out] Attr  The pointer to the variable attributes as found in var store
+
+  @retval EFI_OUT_OF_RESOURCES      Allocate buffer failed.
+  @retval EFI_SUCCESS               Find the specified variable.
+  @retval Others Errors             Return errors from call to gRT->GetVariable.
+
+**/
+EFI_STATUS
+EFIAPI
+GetVariable3(
+  IN CONST CHAR16       *Name,
+  IN CONST EFI_GUID     *Guid,
+     OUT VOID           **Value,
+     OUT UINTN          *Size OPTIONAL,
+     OUT UINT32         *Attr OPTIONAL
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       BufferSize;
+
+  ASSERT(Name != NULL && Guid != NULL && Value != NULL);
+
+  //
+  // Try to get the variable size.
+  //
+  BufferSize = 0;
+  *Value = NULL;
+  if (Size != NULL) {
+    *Size = 0;
+  }
+
+  if (Attr != NULL) {
+    *Attr = 0;
+  }
+
+  Status = gRT->GetVariable((CHAR16 *)Name, (EFI_GUID *)Guid, Attr, &BufferSize, *Value);
+  if (Status != EFI_BUFFER_TOO_SMALL) {
+    return Status;
+  }
+
+  //
+  // Allocate buffer to get the variable.
+  //
+  *Value = AllocatePool(BufferSize);
+  ASSERT(*Value != NULL);
+  if (*Value == NULL) {
+    return EFI_OUT_OF_RESOURCES;
+  }
+
+  //
+  // Get the variable data.
+  //
+  Status = gRT->GetVariable((CHAR16 *)Name, (EFI_GUID *)Guid, Attr, &BufferSize, *Value);
+  if (EFI_ERROR(Status)) {
+    FreePool(*Value);
+    *Value = NULL;
+  }
+
+  if (Size != NULL) {
+    *Size = BufferSize;
+  }
+
+  return Status;
+}
+
 /**
   Returns a pointer to an allocated buffer that contains the contents of a
   variable retrieved through the UEFI Runtime Service GetVariable().  This
@@ -1424,8 +1560,8 @@ GetEfiGlobalVariable2 (
   @param[in]  SupportedLanguages  A pointer to a Null-terminated ASCII string that
                                   contains a set of language codes in the format
                                   specified by Iso639Language.
-  @param[in]  Iso639Language      If TRUE, then all language codes are assumed to be
-                                  in ISO 639-2 format.  If FALSE, then all language
+  @param[in]  Iso639Language      If not zero, then all language codes are assumed to be
+                                  in ISO 639-2 format.  If zero, then all language
                                   codes are assumed to be in RFC 4646 language format
   @param[in]  ...                 A variable argument list that contains pointers to
                                   Null-terminated ASCII strings that contain one or more
@@ -1453,7 +1589,7 @@ CHAR8 *
 EFIAPI
 GetBestLanguage (
   IN CONST CHAR8  *SupportedLanguages,
-  IN BOOLEAN      Iso639Language,
+  IN UINTN        Iso639Language,
   ...
   )
 {
@@ -1477,7 +1613,7 @@ GetBestLanguage (
     //
     // If in RFC 4646 mode, then determine the length of the first RFC 4646 language code in Language
     //
-    if (!Iso639Language) {
+    if (Iso639Language == 0) {
       for (LanguageLength = 0; Language[LanguageLength] != 0 && Language[LanguageLength] != ';'; LanguageLength++);
     }
 
@@ -1492,7 +1628,7 @@ GetBestLanguage (
         //
         // In RFC 4646 mode, then Loop through all language codes in SupportedLanguages
         //
-        if (!Iso639Language) {
+        if (Iso639Language == 0) {
           //
           // Skip ';' characters in Supported
           //
@@ -1524,7 +1660,7 @@ GetBestLanguage (
         }
       }
 
-      if (Iso639Language) {
+      if (Iso639Language != 0) {
         //
         // If ISO 639 mode, then each language can only be tested once
         //
@@ -1545,3 +1681,315 @@ GetBestLanguage (
   return NULL;
 }
 
+/**
+  Returns an array of protocol instance that matches the given protocol.
+
+  @param[in]  Protocol      Provides the protocol to search for.
+  @param[out] NoProtocols   The number of protocols returned in Buffer.
+  @param[out] Buffer        A pointer to the buffer to return the requested
+                            array of protocol instances that match Protocol.
+                            The returned buffer is allocated using
+                            EFI_BOOT_SERVICES.AllocatePool().  The caller is
+                            responsible for freeing this buffer with
+                            EFI_BOOT_SERVICES.FreePool().
+
+  @retval EFI_SUCCESS            The array of protocols was returned in Buffer,
+                                 and the number of protocols in Buffer was
+                                 returned in NoProtocols.
+  @retval EFI_NOT_FOUND          No protocols found.
+  @retval EFI_OUT_OF_RESOURCES   There is not enough pool memory to store the
+                                 matching results.
+  @retval EFI_INVALID_PARAMETER  Protocol is NULL.
+  @retval EFI_INVALID_PARAMETER  NoProtocols is NULL.
+  @retval EFI_INVALID_PARAMETER  Buffer is NULL.
+
+**/
+EFI_STATUS
+EFIAPI
+EfiLocateProtocolBuffer (
+  IN  EFI_GUID  *Protocol,
+  OUT UINTN     *NoProtocols,
+  OUT VOID      ***Buffer
+  )
+{
+  EFI_STATUS  Status;
+  UINTN       NoHandles;
+  EFI_HANDLE  *HandleBuffer;
+  UINTN       Index;
+
+  //
+  // Check input parameters
+  //
+  if (Protocol == NULL || NoProtocols == NULL || Buffer == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Initialze output parameters
+  //
+  *NoProtocols = 0;
+  *Buffer = NULL;
+
+  //
+  // Retrieve the array of handles that support Protocol
+  //
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  Protocol,
+                  NULL,
+                  &NoHandles,
+                  &HandleBuffer
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Allocate array of protocol instances
+  //
+  Status = gBS->AllocatePool (
+                  EfiBootServicesData,
+                  NoHandles * sizeof (VOID *),
+                  (VOID **)Buffer
+                  );
+  if (EFI_ERROR (Status)) {
+    //
+    // Free the handle buffer
+    //
+    gBS->FreePool (HandleBuffer);
+    return EFI_OUT_OF_RESOURCES;
+  }
+  ZeroMem (*Buffer, NoHandles * sizeof (VOID *));
+
+  //
+  // Lookup Protocol on each handle in HandleBuffer to fill in the array of
+  // protocol instances.  Handle case where protocol instance was present when
+  // LocateHandleBuffer() was called, but is not present when HandleProtocol()
+  // is called.
+  //
+  for (Index = 0, *NoProtocols = 0; Index < NoHandles; Index++) {
+    Status = gBS->HandleProtocol (
+                    HandleBuffer[Index],
+                    Protocol,
+                    &((*Buffer)[*NoProtocols])
+                    );
+    if (!EFI_ERROR (Status)) {
+      (*NoProtocols)++;
+    }
+  }
+
+  //
+  // Free the handle buffer
+  //
+  gBS->FreePool (HandleBuffer);
+
+  //
+  // Make sure at least one protocol instance was found
+  //
+  if (*NoProtocols == 0) {
+    gBS->FreePool (*Buffer);
+    *Buffer = NULL;
+    return EFI_NOT_FOUND;
+  }
+
+  return EFI_SUCCESS;
+}
+
+/**
+  Open or create a file or directory, possibly creating the chain of
+  directories leading up to the directory.
+
+  EfiOpenFileByDevicePath() first locates EFI_SIMPLE_FILE_SYSTEM_PROTOCOL on
+  FilePath, and opens the root directory of that filesystem with
+  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.OpenVolume().
+
+  On the remaining device path, the longest initial sequence of
+  FILEPATH_DEVICE_PATH nodes is node-wise traversed with
+  EFI_FILE_PROTOCOL.Open().
+
+  (As a consequence, if OpenMode includes EFI_FILE_MODE_CREATE, and Attributes
+  includes EFI_FILE_DIRECTORY, and each FILEPATH_DEVICE_PATH specifies a single
+  pathname component, then EfiOpenFileByDevicePath() ensures that the specified
+  series of subdirectories exist on return.)
+
+  The EFI_FILE_PROTOCOL identified by the last FILEPATH_DEVICE_PATH node is
+  output to the caller; intermediate EFI_FILE_PROTOCOL instances are closed. If
+  there are no FILEPATH_DEVICE_PATH nodes past the node that identifies the
+  filesystem, then the EFI_FILE_PROTOCOL of the root directory of the
+  filesystem is output to the caller. If a device path node that is different
+  from FILEPATH_DEVICE_PATH is encountered relative to the filesystem, the
+  traversal is stopped with an error, and a NULL EFI_FILE_PROTOCOL is output.
+
+  @param[in,out] FilePath  On input, the device path to the file or directory
+                           to open or create. The caller is responsible for
+                           ensuring that the device path pointed-to by FilePath
+                           is well-formed. On output, FilePath points one past
+                           the last node in the original device path that has
+                           been successfully processed. FilePath is set on
+                           output even if EfiOpenFileByDevicePath() returns an
+                           error.
+
+  @param[out] File         On error, File is set to NULL. On success, File is
+                           set to the EFI_FILE_PROTOCOL of the root directory
+                           of the filesystem, if there are no
+                           FILEPATH_DEVICE_PATH nodes in FilePath; otherwise,
+                           File is set to the EFI_FILE_PROTOCOL identified by
+                           the last node in FilePath.
+
+  @param[in] OpenMode      The OpenMode parameter to pass to
+                           EFI_FILE_PROTOCOL.Open().
+
+  @param[in] Attributes    The Attributes parameter to pass to
+                           EFI_FILE_PROTOCOL.Open().
+
+  @retval EFI_SUCCESS            The file or directory has been opened or
+                                 created.
+
+  @retval EFI_INVALID_PARAMETER  FilePath is NULL; or File is NULL; or FilePath
+                                 contains a device path node, past the node
+                                 that identifies
+                                 EFI_SIMPLE_FILE_SYSTEM_PROTOCOL, that is not a
+                                 FILEPATH_DEVICE_PATH node.
+
+  @retval EFI_OUT_OF_RESOURCES   Memory allocation failed.
+
+  @return                        Error codes propagated from the
+                                 LocateDevicePath() and OpenProtocol() boot
+                                 services, and from the
+                                 EFI_SIMPLE_FILE_SYSTEM_PROTOCOL.OpenVolume()
+                                 and EFI_FILE_PROTOCOL.Open() member functions.
+**/
+EFI_STATUS
+EFIAPI
+EfiOpenFileByDevicePath (
+  IN OUT EFI_DEVICE_PATH_PROTOCOL  **FilePath,
+  OUT    EFI_FILE_PROTOCOL         **File,
+  IN     UINT64                    OpenMode,
+  IN     UINT64                    Attributes
+  )
+{
+  EFI_STATUS                      Status;
+  EFI_HANDLE                      FileSystemHandle;
+  EFI_SIMPLE_FILE_SYSTEM_PROTOCOL *FileSystem;
+  EFI_FILE_PROTOCOL               *LastFile;
+  FILEPATH_DEVICE_PATH            *FilePathNode;
+  CHAR16                          *AlignedPathName;
+  CHAR16                          *PathName;
+  EFI_FILE_PROTOCOL               *NextFile;
+
+  if (File == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+  *File = NULL;
+
+  if (FilePath == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  //
+  // Look up the filesystem.
+  //
+  Status = gBS->LocateDevicePath (
+                  &gEfiSimpleFileSystemProtocolGuid,
+                  FilePath,
+                  &FileSystemHandle
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+  Status = gBS->OpenProtocol (
+                  FileSystemHandle,
+                  &gEfiSimpleFileSystemProtocolGuid,
+                  (VOID **)&FileSystem,
+                  gImageHandle,
+                  NULL,
+                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
+                  );
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Open the root directory of the filesystem. After this operation succeeds,
+  // we have to release LastFile on error.
+  //
+  Status = FileSystem->OpenVolume (FileSystem, &LastFile);
+  if (EFI_ERROR (Status)) {
+    return Status;
+  }
+
+  //
+  // Traverse the device path nodes relative to the filesystem.
+  //
+  while (!IsDevicePathEnd (*FilePath)) {
+    if (DevicePathType (*FilePath) != MEDIA_DEVICE_PATH ||
+        DevicePathSubType (*FilePath) != MEDIA_FILEPATH_DP) {
+      Status = EFI_INVALID_PARAMETER;
+      goto CloseLastFile;
+    }
+    FilePathNode = (FILEPATH_DEVICE_PATH *)*FilePath;
+
+    //
+    // FilePathNode->PathName may be unaligned, and the UEFI specification
+    // requires pointers that are passed to protocol member functions to be
+    // aligned. Create an aligned copy of the pathname if necessary.
+    //
+    if ((UINTN)FilePathNode->PathName % sizeof *FilePathNode->PathName == 0) {
+      AlignedPathName = NULL;
+      PathName = FilePathNode->PathName;
+    } else {
+      AlignedPathName = AllocateCopyPool (
+                          (DevicePathNodeLength (FilePathNode) -
+                           SIZE_OF_FILEPATH_DEVICE_PATH),
+                          FilePathNode->PathName
+                          );
+      if (AlignedPathName == NULL) {
+        Status = EFI_OUT_OF_RESOURCES;
+        goto CloseLastFile;
+      }
+      PathName = AlignedPathName;
+    }
+
+    //
+    // Open or create the file corresponding to the next pathname fragment.
+    //
+    Status = LastFile->Open (
+                         LastFile,
+                         &NextFile,
+                         PathName,
+                         OpenMode,
+                         Attributes
+                         );
+
+    //
+    // Release any AlignedPathName on both error and success paths; PathName is
+    // no longer needed.
+    //
+    if (AlignedPathName != NULL) {
+      FreePool (AlignedPathName);
+    }
+    if (EFI_ERROR (Status)) {
+      goto CloseLastFile;
+    }
+
+    //
+    // Advance to the next device path node.
+    //
+    LastFile->Close (LastFile);
+    LastFile = NextFile;
+    *FilePath = NextDevicePathNode (FilePathNode);
+  }
+
+  *File = LastFile;
+  return EFI_SUCCESS;
+
+CloseLastFile:
+  LastFile->Close (LastFile);
+
+  //
+  // We are on the error path; we must have set an error Status for returning
+  // to the caller.
+  //
+  ASSERT (EFI_ERROR (Status));
+  return Status;
+}

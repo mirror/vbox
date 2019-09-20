@@ -1,79 +1,40 @@
 /** @file
-  Support routines for memory allocation routines based on SMM Core internal functions.
+  Support routines for memory allocation routines based on SMM Core internal functions,
+  with memory profile support.
 
-  Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
+  The PI System Management Mode Core Interface Specification only allows the use
+  of EfiRuntimeServicesCode and EfiRuntimeServicesData memory types for memory
+  allocations as the SMRAM space should be reserved after BDS phase.  The functions
+  in the Memory Allocation Library use EfiBootServicesData as the default memory
+  allocation type.  For this SMM specific instance of the Memory Allocation Library,
+  EfiRuntimeServicesData is used as the default memory type for all allocations.
+  In addition, allocation for the Reserved memory types are not supported and will
+  always return NULL.
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include <PiSmm.h>
 
-#include <Protocol/SmmAccess2.h>
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include "PiSmmCoreMemoryAllocationServices.h"
 
-EFI_SMRAM_DESCRIPTOR  *mSmramRanges    = NULL;
-UINTN                 mSmramRangeCount = 0;
+#include <Library/MemoryProfileLib.h>
 
-/**
-  This function gets and caches SMRAM ranges that are present in the system.
-
-  It will ASSERT() if SMM Access2 Protocol doesn't exist.
-  It will ASSERT() if SMRAM ranges can't be got.
-  It will ASSERT() if Resource can't be allocated for cache SMRAM range.
-
-**/
-VOID
-EFIAPI
-GetSmramRanges (
-  VOID
-  )
-{
-  EFI_STATUS                Status;
-  EFI_SMM_ACCESS2_PROTOCOL  *SmmAccess;
-  UINTN                     Size;
-
-  //
-  // Locate SMM Access2 Protocol
-  //
-  Status = gBS->LocateProtocol (
-                  &gEfiSmmAccess2ProtocolGuid,
-                  NULL,
-                  (VOID **)&SmmAccess
-                  );
-  ASSERT_EFI_ERROR (Status);
-
-  //
-  // Get SMRAM range information
-  //
-  Size = 0;
-  Status = SmmAccess->GetCapabilities (SmmAccess, &Size, NULL);
-  ASSERT (Status == EFI_BUFFER_TOO_SMALL);
-
-  mSmramRanges = (EFI_SMRAM_DESCRIPTOR *) AllocatePool (Size);
-  ASSERT (mSmramRanges != NULL);
-
-  Status = SmmAccess->GetCapabilities (SmmAccess, &Size, mSmramRanges);
-  ASSERT_EFI_ERROR (Status);
-
-  mSmramRangeCount = Size / sizeof (EFI_SMRAM_DESCRIPTOR);
-}
+EFI_SMRAM_DESCRIPTOR  *mSmmCoreMemoryAllocLibSmramRanges    = NULL;
+UINTN                 mSmmCoreMemoryAllocLibSmramRangeCount = 0;
 
 /**
   Check whether the start address of buffer is within any of the SMRAM ranges.
 
   @param[in]  Buffer   The pointer to the buffer to be checked.
 
-  @retval     TURE     The buffer is in SMRAM ranges.
+  @retval     TRUE     The buffer is in SMRAM ranges.
   @retval     FALSE    The buffer is out of SMRAM ranges.
 **/
 BOOLEAN
@@ -84,16 +45,9 @@ BufferInSmram (
 {
   UINTN  Index;
 
-  if (mSmramRanges == NULL) {
-    //
-    // SMRAM ranges is not got. Try to get them all.
-    //
-    GetSmramRanges();
-  }
-
-  for (Index = 0; Index < mSmramRangeCount; Index ++) {
-    if (((EFI_PHYSICAL_ADDRESS) (UINTN) Buffer >= mSmramRanges[Index].CpuStart) &&
-        ((EFI_PHYSICAL_ADDRESS) (UINTN) Buffer < (mSmramRanges[Index].CpuStart + mSmramRanges[Index].PhysicalSize))) {
+  for (Index = 0; Index < mSmmCoreMemoryAllocLibSmramRangeCount; Index ++) {
+    if (((EFI_PHYSICAL_ADDRESS) (UINTN) Buffer >= mSmmCoreMemoryAllocLibSmramRanges[Index].CpuStart) &&
+        ((EFI_PHYSICAL_ADDRESS) (UINTN) Buffer < (mSmmCoreMemoryAllocLibSmramRanges[Index].CpuStart + mSmmCoreMemoryAllocLibSmramRanges[Index].PhysicalSize))) {
       return TRUE;
     }
   }
@@ -135,9 +89,9 @@ InternalAllocatePages (
 }
 
 /**
-  Allocates one or more 4KB pages of type EfiBootServicesData.
+  Allocates one or more 4KB pages of type EfiRuntimeServicesData.
 
-  Allocates the number of 4KB pages of type EfiBootServicesData and returns a pointer to the
+  Allocates the number of 4KB pages of type EfiRuntimeServicesData and returns a pointer to the
   allocated buffer.  The buffer returned is aligned on a 4KB boundary.  If Pages is 0, then NULL
   is returned.  If there is not enough memory remaining to satisfy the request, then NULL is
   returned.
@@ -153,7 +107,20 @@ AllocatePages (
   IN UINTN  Pages
   )
 {
-  return InternalAllocatePages (EfiRuntimeServicesData, Pages);
+  VOID  *Buffer;
+
+  Buffer = InternalAllocatePages (EfiRuntimeServicesData, Pages);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_PAGES,
+      EfiRuntimeServicesData,
+      Buffer,
+      EFI_PAGES_TO_SIZE(Pages),
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -175,7 +142,20 @@ AllocateRuntimePages (
   IN UINTN  Pages
   )
 {
-  return InternalAllocatePages (EfiRuntimeServicesData, Pages);
+  VOID  *Buffer;
+
+  Buffer = InternalAllocatePages (EfiRuntimeServicesData, Pages);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_RUNTIME_PAGES,
+      EfiRuntimeServicesData,
+      Buffer,
+      EFI_PAGES_TO_SIZE(Pages),
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -285,7 +265,7 @@ InternalAllocateAlignedPages (
   }
   if (Alignment > EFI_PAGE_SIZE) {
     //
-    // Caculate the total number of pages since alignment is larger than page size.
+    // Calculate the total number of pages since alignment is larger than page size.
     //
     AlignmentMask  = Alignment - 1;
     RealPages      = Pages + EFI_SIZE_TO_PAGES (Alignment);
@@ -307,7 +287,7 @@ InternalAllocateAlignedPages (
       Status = SmmFreePages (Memory, UnalignedPages);
       ASSERT_EFI_ERROR (Status);
     }
-    Memory         = (EFI_PHYSICAL_ADDRESS) (AlignedMemory + EFI_PAGES_TO_SIZE (Pages));
+    Memory         = AlignedMemory + EFI_PAGES_TO_SIZE (Pages);
     UnalignedPages = RealPages - Pages - UnalignedPages;
     if (UnalignedPages > 0) {
       //
@@ -330,9 +310,9 @@ InternalAllocateAlignedPages (
 }
 
 /**
-  Allocates one or more 4KB pages of type EfiBootServicesData at a specified alignment.
+  Allocates one or more 4KB pages of type EfiRuntimeServicesData at a specified alignment.
 
-  Allocates the number of 4KB pages specified by Pages of type EfiBootServicesData with an
+  Allocates the number of 4KB pages specified by Pages of type EfiRuntimeServicesData with an
   alignment specified by Alignment.  The allocated buffer is returned.  If Pages is 0, then NULL is
   returned.  If there is not enough memory at the specified alignment remaining to satisfy the
   request, then NULL is returned.
@@ -354,7 +334,20 @@ AllocateAlignedPages (
   IN UINTN  Alignment
   )
 {
-  return InternalAllocateAlignedPages (EfiRuntimeServicesData, Pages, Alignment);
+  VOID  *Buffer;
+
+  Buffer = InternalAllocateAlignedPages (EfiRuntimeServicesData, Pages, Alignment);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_ALIGNED_PAGES,
+      EfiRuntimeServicesData,
+      Buffer,
+      EFI_PAGES_TO_SIZE(Pages),
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -382,7 +375,20 @@ AllocateAlignedRuntimePages (
   IN UINTN  Alignment
   )
 {
-  return InternalAllocateAlignedPages (EfiRuntimeServicesData, Pages, Alignment);
+  VOID  *Buffer;
+
+  Buffer = InternalAllocateAlignedPages (EfiRuntimeServicesData, Pages, Alignment);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_ALIGNED_RUNTIME_PAGES,
+      EfiRuntimeServicesData,
+      Buffer,
+      EFI_PAGES_TO_SIZE(Pages),
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -488,9 +494,9 @@ InternalAllocatePool (
 }
 
 /**
-  Allocates a buffer of type EfiBootServicesData.
+  Allocates a buffer of type EfiRuntimeServicesData.
 
-  Allocates the number bytes specified by AllocationSize of type EfiBootServicesData and returns a
+  Allocates the number bytes specified by AllocationSize of type EfiRuntimeServicesData and returns a
   pointer to the allocated buffer.  If AllocationSize is 0, then a valid buffer of 0 size is
   returned.  If there is not enough memory remaining to satisfy the request, then NULL is returned.
 
@@ -505,7 +511,20 @@ AllocatePool (
   IN UINTN  AllocationSize
   )
 {
-  return InternalAllocatePool (EfiRuntimeServicesData, AllocationSize);
+  VOID  *Buffer;
+
+  Buffer = InternalAllocatePool (EfiRuntimeServicesData, AllocationSize);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_POOL,
+      EfiRuntimeServicesData,
+      Buffer,
+      AllocationSize,
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -526,7 +545,20 @@ AllocateRuntimePool (
   IN UINTN  AllocationSize
   )
 {
-  return InternalAllocatePool (EfiRuntimeServicesData, AllocationSize);
+  VOID  *Buffer;
+
+  Buffer = InternalAllocatePool (EfiRuntimeServicesData, AllocationSize);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_RUNTIME_POOL,
+      EfiRuntimeServicesData,
+      Buffer,
+      AllocationSize,
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -580,9 +612,9 @@ InternalAllocateZeroPool (
 }
 
 /**
-  Allocates and zeros a buffer of type EfiBootServicesData.
+  Allocates and zeros a buffer of type EfiRuntimeServicesData.
 
-  Allocates the number bytes specified by AllocationSize of type EfiBootServicesData, clears the
+  Allocates the number bytes specified by AllocationSize of type EfiRuntimeServicesData, clears the
   buffer with zeros, and returns a pointer to the allocated buffer.  If AllocationSize is 0, then a
   valid buffer of 0 size is returned.  If there is not enough memory remaining to satisfy the
   request, then NULL is returned.
@@ -598,7 +630,20 @@ AllocateZeroPool (
   IN UINTN  AllocationSize
   )
 {
-  return InternalAllocateZeroPool (EfiRuntimeServicesData, AllocationSize);
+  VOID  *Buffer;
+
+  Buffer = InternalAllocateZeroPool (EfiRuntimeServicesData, AllocationSize);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_ZERO_POOL,
+      EfiRuntimeServicesData,
+      Buffer,
+      AllocationSize,
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -620,7 +665,20 @@ AllocateRuntimeZeroPool (
   IN UINTN  AllocationSize
   )
 {
-  return InternalAllocateZeroPool (EfiRuntimeServicesData, AllocationSize);
+  VOID  *Buffer;
+
+  Buffer = InternalAllocateZeroPool (EfiRuntimeServicesData, AllocationSize);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_RUNTIME_ZERO_POOL,
+      EfiRuntimeServicesData,
+      Buffer,
+      AllocationSize,
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -682,9 +740,9 @@ InternalAllocateCopyPool (
 }
 
 /**
-  Copies a buffer to an allocated buffer of type EfiBootServicesData.
+  Copies a buffer to an allocated buffer of type EfiRuntimeServicesData.
 
-  Allocates the number bytes specified by AllocationSize of type EfiBootServicesData, copies
+  Allocates the number bytes specified by AllocationSize of type EfiRuntimeServicesData, copies
   AllocationSize bytes from Buffer to the newly allocated buffer, and returns a pointer to the
   allocated buffer.  If AllocationSize is 0, then a valid buffer of 0 size is returned.  If there
   is not enough memory remaining to satisfy the request, then NULL is returned.
@@ -705,7 +763,20 @@ AllocateCopyPool (
   IN CONST VOID  *Buffer
   )
 {
-  return InternalAllocateCopyPool (EfiRuntimeServicesData, AllocationSize, Buffer);
+  VOID  *NewBuffer;
+
+  NewBuffer = InternalAllocateCopyPool (EfiRuntimeServicesData, AllocationSize, Buffer);
+  if (NewBuffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_COPY_POOL,
+      EfiRuntimeServicesData,
+      NewBuffer,
+      AllocationSize,
+      NULL
+      );
+  }
+  return NewBuffer;
 }
 
 /**
@@ -732,7 +803,20 @@ AllocateRuntimeCopyPool (
   IN CONST VOID  *Buffer
   )
 {
-  return InternalAllocateCopyPool (EfiRuntimeServicesData, AllocationSize, Buffer);
+  VOID  *NewBuffer;
+
+  NewBuffer = InternalAllocateCopyPool (EfiRuntimeServicesData, AllocationSize, Buffer);
+  if (NewBuffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_ALLOCATE_RUNTIME_COPY_POOL,
+      EfiRuntimeServicesData,
+      NewBuffer,
+      AllocationSize,
+      NULL
+      );
+  }
+  return NewBuffer;
 }
 
 /**
@@ -803,10 +887,10 @@ InternalReallocatePool (
 }
 
 /**
-  Reallocates a buffer of type EfiBootServicesData.
+  Reallocates a buffer of type EfiRuntimeServicesData.
 
   Allocates and zeros the number bytes specified by NewSize from memory of type
-  EfiBootServicesData.  If OldBuffer is not NULL, then the smaller of OldSize and
+  EfiRuntimeServicesData.  If OldBuffer is not NULL, then the smaller of OldSize and
   NewSize bytes are copied from OldBuffer to the newly allocated buffer, and
   OldBuffer is freed.  A pointer to the newly allocated buffer is returned.
   If NewSize is 0, then a valid buffer of 0 size is  returned.  If there is not
@@ -831,7 +915,20 @@ ReallocatePool (
   IN VOID   *OldBuffer  OPTIONAL
   )
 {
-  return InternalReallocatePool (EfiRuntimeServicesData, OldSize, NewSize, OldBuffer);
+  VOID  *Buffer;
+
+  Buffer = InternalReallocatePool (EfiRuntimeServicesData, OldSize, NewSize, OldBuffer);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_REALLOCATE_POOL,
+      EfiRuntimeServicesData,
+      Buffer,
+      NewSize,
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -863,7 +960,20 @@ ReallocateRuntimePool (
   IN VOID   *OldBuffer  OPTIONAL
   )
 {
-  return InternalReallocatePool (EfiRuntimeServicesData, OldSize, NewSize, OldBuffer);
+  VOID  *Buffer;
+
+  Buffer = InternalReallocatePool (EfiRuntimeServicesData, OldSize, NewSize, OldBuffer);
+  if (Buffer != NULL) {
+    MemoryProfileLibRecord (
+      (PHYSICAL_ADDRESS) (UINTN) RETURN_ADDRESS(0),
+      MEMORY_PROFILE_ACTION_LIB_REALLOCATE_RUNTIME_POOL,
+      EfiRuntimeServicesData,
+      Buffer,
+      NewSize,
+      NULL
+      );
+  }
+  return Buffer;
 }
 
 /**
@@ -952,12 +1062,44 @@ PiSmmCoreMemoryAllocationLibConstructor (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
+  EFI_STATUS             Status;
   SMM_CORE_PRIVATE_DATA  *SmmCorePrivate;
+  UINTN                  Size;
+  VOID                   *BootServicesData;
 
   SmmCorePrivate = (SMM_CORE_PRIVATE_DATA *)ImageHandle;
+
+  //
+  // The FreePool()/FreePages() will need use SmramRanges data to know whether
+  // the buffer to free is in SMRAM range or not. And there may be FreePool()/
+  // FreePages() indrectly during calling SmmInitializeMemoryServices(), but
+  // no SMRAM could be allocated before calling SmmInitializeMemoryServices(),
+  // so temporarily use BootServicesData to hold the SmramRanges data.
+  //
+  mSmmCoreMemoryAllocLibSmramRangeCount = SmmCorePrivate->SmramRangeCount;
+  Size = mSmmCoreMemoryAllocLibSmramRangeCount * sizeof (EFI_SMRAM_DESCRIPTOR);
+  Status = gBS->AllocatePool (EfiBootServicesData, Size, (VOID **) &mSmmCoreMemoryAllocLibSmramRanges);
+  ASSERT_EFI_ERROR (Status);
+  ASSERT (mSmmCoreMemoryAllocLibSmramRanges != NULL);
+  CopyMem (mSmmCoreMemoryAllocLibSmramRanges, SmmCorePrivate->SmramRanges, Size);
+
   //
   // Initialize memory service using free SMRAM
   //
   SmmInitializeMemoryServices (SmmCorePrivate->SmramRangeCount, SmmCorePrivate->SmramRanges);
+
+  //
+  // Move the SmramRanges data from BootServicesData to SMRAM.
+  //
+  BootServicesData = mSmmCoreMemoryAllocLibSmramRanges;
+  mSmmCoreMemoryAllocLibSmramRanges = (EFI_SMRAM_DESCRIPTOR *) AllocateCopyPool (Size, (VOID *) BootServicesData);
+  ASSERT (mSmmCoreMemoryAllocLibSmramRanges != NULL);
+
+  //
+  // Free the temporarily used BootServicesData.
+  //
+  Status = gBS->FreePool (BootServicesData);
+  ASSERT_EFI_ERROR (Status);
+
   return EFI_SUCCESS;
 }

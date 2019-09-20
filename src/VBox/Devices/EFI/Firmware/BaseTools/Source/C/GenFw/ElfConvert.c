@@ -1,15 +1,9 @@
 /** @file
 Elf convert solution
 
-Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials are licensed and made available
-under the terms and conditions of the BSD License which accompanies this
-distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -24,6 +18,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <string.h>
 #include <time.h>
 #include <ctype.h>
+#include <assert.h>
 
 #include <Common/UefiBaseTypes.h>
 #include <IndustryStandard/PeImage.h>
@@ -55,6 +50,11 @@ UINT32 mCoffOffset;
 // Offset in Coff file of headers and sections.
 //
 UINT32 mTableOffset;
+
+//
+//mFileBufferSize
+//
+UINT32 mFileBufferSize;
 
 //
 //*****************************************************************************
@@ -96,11 +96,15 @@ CoffAddFixup(
 
     mCoffFile = realloc (
       mCoffFile,
-      mCoffOffset + sizeof(EFI_IMAGE_BASE_RELOCATION) + 2*0x1000
+      mCoffOffset + sizeof(EFI_IMAGE_BASE_RELOCATION) + 2 * MAX_COFF_ALIGNMENT
       );
+    if (mCoffFile == NULL) {
+      Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+    }
+    assert (mCoffFile != NULL);
     memset (
       mCoffFile + mCoffOffset, 0,
-      sizeof(EFI_IMAGE_BASE_RELOCATION) + 2*0x1000
+      sizeof(EFI_IMAGE_BASE_RELOCATION) + 2 * MAX_COFF_ALIGNMENT
       );
 
     mCoffBaseRel = (EFI_IMAGE_BASE_RELOCATION*)(mCoffFile + mCoffOffset);
@@ -168,6 +172,7 @@ ConvertElf (
   ELF_FUNCTION_TABLE              ElfFunctions;
   UINT8                           EiClass;
 
+  mFileBufferSize = *FileLength;
   //
   // Determine ELF type and set function table pointer correctly.
   //
@@ -196,9 +201,15 @@ ConvertElf (
   // Write and relocate sections.
   //
   VerboseMsg ("Write and relocate sections.");
-  ElfFunctions.WriteSections (SECTION_TEXT);
-  ElfFunctions.WriteSections (SECTION_DATA);
-  ElfFunctions.WriteSections (SECTION_HII);
+  if (!ElfFunctions.WriteSections (SECTION_TEXT)) {
+    return FALSE;
+  }
+  if (!ElfFunctions.WriteSections (SECTION_DATA)) {
+    return FALSE;
+  }
+  if (!ElfFunctions.WriteSections (SECTION_HII)) {
+    return FALSE;
+  }
 
   //
   // Translate and write relocations.

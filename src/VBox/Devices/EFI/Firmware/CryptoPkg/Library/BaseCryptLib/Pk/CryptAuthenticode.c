@@ -10,13 +10,7 @@
   data structure.
 
 Copyright (c) 2011 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -34,7 +28,7 @@ UINT8 mSpcIndirectOidValue[] = {
   };
 
 /**
-  Verifies the validility of a PE/COFF Authenticode Signature as described in "Windows
+  Verifies the validity of a PE/COFF Authenticode Signature as described in "Windows
   Authenticode Portable Executable Signature Format".
 
   If AuthData is NULL, then return FALSE.
@@ -50,7 +44,7 @@ UINT8 mSpcIndirectOidValue[] = {
   @param[in]  TrustedCert  Pointer to a trusted/root certificate encoded in DER, which
                            is used for certificate chain verification.
   @param[in]  CertSize     Size of the trusted certificate in bytes.
-  @param[in]  ImageHash    Pointer to the original image file hash value. The procudure
+  @param[in]  ImageHash    Pointer to the original image file hash value. The procedure
                            for calculating the image hash value is described in Authenticode
                            specification.
   @param[in]  HashSize     Size of Image hash value in bytes.
@@ -77,7 +71,7 @@ AuthenticodeVerify (
   UINT8        *SpcIndirectDataContent;
   UINT8        Asn1Byte;
   UINTN        ContentSize;
-  UINT8        *SpcIndirectDataOid;
+  CONST UINT8  *SpcIndirectDataOid;
 
   //
   // Check input parameters.
@@ -115,8 +109,9 @@ AuthenticodeVerify (
   //       some authenticode-specific structure. Use opaque ASN.1 string to retrieve
   //       PKCS#7 ContentInfo here.
   //
-  SpcIndirectDataOid = (UINT8 *)(Pkcs7->d.sign->contents->type->data);
-  if (CompareMem (
+  SpcIndirectDataOid = OBJ_get0_data(Pkcs7->d.sign->contents->type);
+  if (OBJ_length(Pkcs7->d.sign->contents->type) != sizeof(mSpcIndirectOidValue) ||
+      CompareMem (
         SpcIndirectDataOid,
         mSpcIndirectOidValue,
         sizeof (mSpcIndirectOidValue)

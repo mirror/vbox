@@ -5,14 +5,8 @@
   and PCI Configuration cycles on a PCI Root Bridge. It also provides services to perform
   defferent types of bus mastering DMA.
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -396,11 +390,11 @@ EFI_STATUS
   );
 
 /**
-  Retrieves the current resource settings of this PCI root bridge in the form of a set of ACPI 2.0
+  Retrieves the current resource settings of this PCI root bridge in the form of a set of ACPI
   resource descriptors.
 
   @param  This                  A pointer to the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
-  @param  Resources             A pointer to the ACPI 2.0 resource descriptors that describe the current
+  @param  Resources             A pointer to the resource descriptors that describe the current
                                 configuration of this PCI root bridge.
 
   @retval EFI_SUCCESS           The current configuration of this PCI root bridge was returned in

@@ -4,21 +4,16 @@
 
   The PI System Management Mode Core Interface Specification only allows the use
   of EfiRuntimeServicesCode and EfiRuntimeServicesData memory types for memory
-  allocations through the SMM Services Table.  The functions in the Memory
-  Allocation Library use EfiBootServicesData as the default memory allocation
-  type.  For this SMM specific instance of the Memory Allocation Library,
-  EfiRuntimeServicesData is used as the default memory type for all allocations.
-  In addition, allocation for the Reserved memory types are not supported and
-  will always return NULL.
+  allocations through the SMM Services Table as the SMRAM space should be
+  reserved after BDS phase.  The functions in the Memory Allocation Library use
+  EfiBootServicesData as the default memory allocation type.  For this SMM
+  specific instance of the Memory Allocation Library, EfiRuntimeServicesData
+  is used as the default memory type for all allocations. In addition,
+  allocation for the Reserved memory types are not supported and will always
+  return NULL.
 
-  Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -113,7 +108,7 @@ SmmMemoryAllocationLibDestructor (
 
   @param[in]  Buffer   The pointer to the buffer to be checked.
 
-  @retval     TURE     The buffer is in SMRAM ranges.
+  @retval     TRUE     The buffer is in SMRAM ranges.
   @retval     FALSE    The buffer is out of SMRAM ranges.
 **/
 BOOLEAN
@@ -169,9 +164,9 @@ InternalAllocatePages (
 }
 
 /**
-  Allocates one or more 4KB pages of type EfiBootServicesData.
+  Allocates one or more 4KB pages of type EfiRuntimeServicesData.
 
-  Allocates the number of 4KB pages of type EfiBootServicesData and returns a pointer
+  Allocates the number of 4KB pages of type EfiRuntimeServicesData and returns a pointer
   to the allocated buffer.  The buffer returned is aligned on a 4KB boundary.  If
   Pages is 0, then NULL is returned.  If there is not enough memory remaining to
   satisfy the request, then NULL is returned.
@@ -320,7 +315,7 @@ InternalAllocateAlignedPages (
   }
   if (Alignment > EFI_PAGE_SIZE) {
     //
-    // Caculate the total number of pages since alignment is larger than page size.
+    // Calculate the total number of pages since alignment is larger than page size.
     //
     AlignmentMask  = Alignment - 1;
     RealPages      = Pages + EFI_SIZE_TO_PAGES (Alignment);
@@ -342,7 +337,7 @@ InternalAllocateAlignedPages (
       Status = gSmst->SmmFreePages (Memory, UnalignedPages);
       ASSERT_EFI_ERROR (Status);
     }
-    Memory         = (EFI_PHYSICAL_ADDRESS) (AlignedMemory + EFI_PAGES_TO_SIZE (Pages));
+    Memory         = AlignedMemory + EFI_PAGES_TO_SIZE (Pages);
     UnalignedPages = RealPages - Pages - UnalignedPages;
     if (UnalignedPages > 0) {
       //
@@ -365,9 +360,9 @@ InternalAllocateAlignedPages (
 }
 
 /**
-  Allocates one or more 4KB pages of type EfiBootServicesData at a specified alignment.
+  Allocates one or more 4KB pages of type EfiRuntimeServicesData at a specified alignment.
 
-  Allocates the number of 4KB pages specified by Pages of type EfiBootServicesData
+  Allocates the number of 4KB pages specified by Pages of type EfiRuntimeServicesData
   with an alignment specified by Alignment.  The allocated buffer is returned.
   If Pages is 0, then NULL is returned.  If there is not enough memory at the
   specified alignment remaining to satisfy the request, then NULL is returned.
@@ -525,9 +520,9 @@ InternalAllocatePool (
 }
 
 /**
-  Allocates a buffer of type EfiBootServicesData.
+  Allocates a buffer of type EfiRuntimeServicesData.
 
-  Allocates the number bytes specified by AllocationSize of type EfiBootServicesData
+  Allocates the number bytes specified by AllocationSize of type EfiRuntimeServicesData
   and returns a pointer to the allocated buffer.  If AllocationSize is 0, then a
   valid buffer of 0 size is returned.  If there is not enough memory remaining to
   satisfy the request, then NULL is returned.
@@ -620,9 +615,9 @@ InternalAllocateZeroPool (
 }
 
 /**
-  Allocates and zeros a buffer of type EfiBootServicesData.
+  Allocates and zeros a buffer of type EfiRuntimeServicesData.
 
-  Allocates the number bytes specified by AllocationSize of type EfiBootServicesData,
+  Allocates the number bytes specified by AllocationSize of type EfiRuntimeServicesData,
   clears the buffer with zeros, and returns a pointer to the allocated buffer.
   If AllocationSize is 0, then a valid buffer of 0 size is returned.  If there is
   not enough memory remaining to satisfy the request, then NULL is returned.
@@ -722,9 +717,9 @@ InternalAllocateCopyPool (
 }
 
 /**
-  Copies a buffer to an allocated buffer of type EfiBootServicesData.
+  Copies a buffer to an allocated buffer of type EfiRuntimeServicesData.
 
-  Allocates the number bytes specified by AllocationSize of type EfiBootServicesData,
+  Allocates the number bytes specified by AllocationSize of type EfiRuntimeServicesData,
   copies AllocationSize bytes from Buffer to the newly allocated buffer, and returns
   a pointer to the allocated buffer.  If AllocationSize is 0, then a valid buffer
   of 0 size is returned.  If there is not enough memory remaining to satisfy the
@@ -846,10 +841,10 @@ InternalReallocatePool (
 }
 
 /**
-  Reallocates a buffer of type EfiBootServicesData.
+  Reallocates a buffer of type EfiRuntimeServicesData.
 
   Allocates and zeros the number bytes specified by NewSize from memory of type
-  EfiBootServicesData.  If OldBuffer is not NULL, then the smaller of OldSize and
+  EfiRuntimeServicesData.  If OldBuffer is not NULL, then the smaller of OldSize and
   NewSize bytes are copied from OldBuffer to the newly allocated buffer, and
   OldBuffer is freed.  A pointer to the newly allocated buffer is returned.
   If NewSize is 0, then a valid buffer of 0 size is  returned.  If there is not

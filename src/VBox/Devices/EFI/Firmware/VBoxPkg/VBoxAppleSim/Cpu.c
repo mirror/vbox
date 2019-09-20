@@ -28,9 +28,6 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
-#include <Framework/FrameworkInternalFormRepresentation.h>
-
-#include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -39,30 +36,18 @@
 #include <Library/HiiLib.h>
 #include <Library/BaseLib.h>
 
-#include <Guid/DataHubRecords.h>
-
 #include <Protocol/Cpu.h>
-#include <Protocol/DataHub.h>
-#include <Protocol/FrameworkHii.h>
-#include <Protocol/CpuIo.h>
+
+#include "DataHub.h"
 
 #define EFI_CPU_DATA_MAXIMUM_LENGTH 0x100
 
-typedef union {
-    EFI_CPU_DATA_RECORD *DataRecord;
-    UINT8               *Raw;
-} EFI_CPU_DATA_RECORD_BUFFER;
-
-EFI_SUBCLASS_TYPE1_HEADER mCpuDataRecordHeader = {
-    EFI_PROCESSOR_SUBCLASS_VERSION,       // Version
-    sizeof (EFI_SUBCLASS_TYPE1_HEADER),   // Header Size
-    0,                                    // Instance, Initialize later
-    EFI_SUBCLASS_INSTANCE_NON_APPLICABLE, // SubInstance
-    0                                     // RecordType, Initialize later
-};
-
 EFI_GUID gEfiAppleMagicHubGuid = {
     0x64517cc8, 0x6561, 0x4051, {0xb0, 0x3c, 0x59, 0x64, 0xb6, 0x0f, 0x4c, 0x7a }
+};
+
+EFI_GUID gEfiProcessorSubClassGuid = {
+    0x26fdeb7e, 0xb8af, 0x4ccf, { 0xaa, 0x97, 0x02, 0x63, 0x3c, 0xe4, 0x8c, 0xa7 }
 };
 
 #pragma pack(1)
@@ -100,7 +85,7 @@ LogData(EFI_DATA_HUB_PROTOCOL       *DataHub,
         DataHub,
         &gEfiProcessorSubClassGuid, /* DataRecordGuid */
         &gEfiAppleMagicHubGuid,     /* ProducerName */
-        EFI_DATA_RECORD_CLASS_DATA,
+        EFI_DATA_CLASS_DATA,
         MagicData,
         RecordSize
                                );

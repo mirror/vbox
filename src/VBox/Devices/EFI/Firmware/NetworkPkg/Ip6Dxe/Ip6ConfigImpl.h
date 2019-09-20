@@ -1,15 +1,9 @@
 /** @file
   Definitions for EFI IPv6 Configuartion Protocol implementation.
 
-  Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,8 +15,6 @@
 #define IP6_CONFIG_VARIABLE_ATTRIBUTE    (EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS)
 
 #define IP6_CONFIG_DEFAULT_DAD_XMITS        1
-#define IP6_CONFIG_DHCP6_OPTION_ORO         6
-#define IP6_CONFIG_DHCP6_OPTION_DNS_SERVERS 23
 
 #define DATA_ATTRIB_SIZE_FIXED              0x1
 #define DATA_ATTRIB_VOLATILE                0x2
@@ -214,6 +206,26 @@ struct _IP6_CONFIG_INSTANCE {
   IP6_FORM_CALLBACK_INFO                    CallbackInfo;
   IP6_CONFIG_NVDATA                         Ip6NvData;
 };
+
+/**
+  Read the configuration data from variable storage according to the VarName and
+  gEfiIp6ConfigProtocolGuid. It checks the integrity of variable data. If the
+  data is corrupted, it clears the variable data to ZERO. Othewise, it outputs the
+  configuration data to IP6_CONFIG_INSTANCE.
+
+  @param[in]      VarName  The pointer to the variable name
+  @param[in, out] Instance The pointer to the IP6 config instance data.
+
+  @retval EFI_NOT_FOUND         The variable can not be found or already corrupted.
+  @retval EFI_OUT_OF_RESOURCES  Fail to allocate resource to complete the operation.
+  @retval EFI_SUCCESS           The configuration data was retrieved successfully.
+
+**/
+EFI_STATUS
+Ip6ConfigReadConfigData (
+  IN     CHAR16               *VarName,
+  IN OUT IP6_CONFIG_INSTANCE  *Instance
+  );
 
 /**
   The event process routine when the DHCPv6 server is answered with a reply packet

@@ -1,14 +1,9 @@
 @REM @file
 @REM   Windows batch file to setup a WORKSPACE environment
 @REM
-@REM Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-@REM This program and the accompanying materials
-@REM are licensed and made available under the terms and conditions of the BSD License
-@REM which accompanies this distribution.  The full text of the license may be found at
-@REM http://opensource.org/licenses/bsd-license.php
-@REM
-@REM THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-@REM WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+@REM Copyright (c) 2006 - 2016, Intel Corporation. All rights reserved.<BR>
+@REM (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
+@REM SPDX-License-Identifier: BSD-2-Clause-Patent
 @REM
 
 @REM set CYGWIN_HOME=C:\cygwin
@@ -41,10 +36,9 @@ if %WORKSPACE% == %CD% (
 
 :SetWorkSpace
 @REM set new workspace
-@REM clear EFI_SOURCE and EDK_SOURCE for the new workspace
-set WORKSPACE=%CD%
-set EFI_SOURCE=
-set EDK_SOURCE=
+if not defined WORKSPACE (
+  set WORKSPACE=%CD%
+)
 
 :ParseArgs
 if /I "%1"=="-h" goto Usage
@@ -54,49 +48,46 @@ if /I "%1"=="/h" goto Usage
 if /I "%1"=="/?" goto Usage
 if /I "%1"=="/help" goto Usage
 
-if /I not "%1"=="--nt32" goto no_nt32
+if /I "%1"=="NewBuild" shift
+if not defined EDK_TOOLS_PATH (
+  goto SetEdkToolsPath
+) else (
+  goto checkNt32Flag
+)
 
-@REM Flag, --nt32 is set
-@REM The Nt32 Emluation Platform requires Microsoft Libraries
-@REM and headers to interface with Windows.
-
-if not defined VCINSTALLDIR (
-  if defined VS120COMNTOOLS (
-    call "%VS120COMNTOOLS%\vsvars32.bat"
-  ) else (
-    if defined VS110COMNTOOLS (
-      call "%VS110COMNTOOLS%\vsvars32.bat"
-    ) else (
-      if defined VS100COMNTOOLS (
-        call "%VS100COMNTOOLS%\vsvars32.bat"
-      ) else (
-        if defined VS90COMNTOOLS (
-          call "%VS90COMNTOOLS%\vsvars32.bat"
-        ) else (
-          if defined VS80COMNTOOLS (
-            call "%VS80COMNTOOLS%\vsvars32.bat"
-          ) else (
-            if defined VS71COMNTOOLS (
-              call "%VS71COMNTOOLS%\vsvars32.bat"
-            ) else (
-              echo.
-              echo !!! WARNING !!! Cannot find Visual Studio !!!
-              echo.
-            )
-          )
-        )
+:SetEdkToolsPath
+if %WORKSPACE:~-1% EQU \ (
+  @set EDK_BASETOOLS=%WORKSPACE%BaseTools
+) else (
+  @set EDK_BASETOOLS=%WORKSPACE%\BaseTools
+)
+if exist %EDK_BASETOOLS% (
+  set EDK_TOOLS_PATH=%EDK_BASETOOLS%
+  set EDK_BASETOOLS=
+) else (
+  if defined PACKAGES_PATH (
+    for %%i IN (%PACKAGES_PATH%) DO (
+      if exist %%~fi\BaseTools (
+        set EDK_TOOLS_PATH=%%~fi\BaseTools
+        goto checkNt32Flag
       )
     )
+  ) else (
+    echo.
+    echo !!! ERROR !!! Cannot find BaseTools !!!
+    echo.
+    goto BadBaseTools
   )
 )
-shift
 
-:no_nt32
-if /I "%1"=="NewBuild" shift
-set EDK_TOOLS_PATH=%WORKSPACE%\BaseTools
+:checkNt32Flag
+if exist %EDK_TOOLS_PATH%\Source set BASE_TOOLS_PATH=%EDK_TOOLS_PATH%
+
+:checkBaseTools
 IF NOT EXIST "%EDK_TOOLS_PATH%\toolsetup.bat" goto BadBaseTools
 call %EDK_TOOLS_PATH%\toolsetup.bat %*
 if /I "%1"=="Reconfig" shift
+goto check_NASM
 goto check_cygwin
 
 :BadBaseTools
@@ -112,6 +103,15 @@ goto check_cygwin
   @echo The setup script, toolsetup.bat must reside in this folder.
   @echo.
   goto end
+
+:check_NASM
+if not defined NASM_PREFIX (
+    @echo.
+    @echo !!! WARNING !!! NASM_PREFIX environment variable is not set
+    @if exist "C:\nasm\nasm.exe" @set "NASM_PREFIX=C:\nasm\"
+    @if exist "C:\nasm\nasm.exe" @echo   Found nasm.exe, setting the environment variable to C:\nasm\
+    @if not exist "C:\nasm\nasm.exe" echo   Attempting to build modules that require NASM will fail.
+)
 
 :check_cygwin
 if defined CYGWIN_HOME (
@@ -131,14 +131,25 @@ if defined CYGWIN_HOME (
 )
 
 :cygwin_done
+if /I "%1"=="Rebuild" shift
+if /I "%1"=="ForceRebuild" shift
+if /I "%1"=="VS2017" shift
+if /I "%1"=="VS2015" shift
+if /I "%1"=="VS2013" shift
+if /I "%1"=="VS2012" shift
 if "%1"=="" goto end
 
 :Usage
   @echo.
-  @echo  Usage: "%0 [-h | -help | --help | /h | /help | /?] [--nt32] [Reconfig]"
-  @echo         --nt32         Call vsvars32.bat for NT32 platform build.
+  @echo  Usage: "%0 [-h | -help | --help | /h | /help | /?] [Reconfig] [Rebuild] [ForceRebuild] [VS2017] [VS2015] [VS2013] [VS2012]"
   @echo.
   @echo         Reconfig       Reinstall target.txt, tools_def.txt and build_rule.txt.
+  @echo         Rebuild        Perform incremental rebuild of BaseTools binaries.
+  @echo         ForceRebuild   Force a full rebuild of BaseTools binaries.
+  @echo         VS2012         Set the env for VS2012 build.
+  @echo         VS2013         Set the env for VS2013 build.
+  @echo         VS2015         Set the env for VS2015 build.
+  @echo         VS2017         Set the env for VS2017 build.
   @echo.
   @echo  Note that target.template, tools_def.template and build_rules.template
   @echo  will only be copied to target.txt, tools_def.txt and build_rule.txt
@@ -148,4 +159,3 @@ if "%1"=="" goto end
 
 :end
   popd
-

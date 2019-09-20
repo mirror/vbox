@@ -3,14 +3,11 @@
   to send ATA Command Blocks to any ATA device attached to that ATA controller. The information
   includes the attributes of the ATA controller.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  @par Revision Reference:
+  This Protocol was introduced in UEFI Specification 2.3.
 
 **/
 
@@ -180,7 +177,7 @@ typedef struct {
   @param[in]     This                A pointer to the EFI_ATA_PASS_THRU_PROTOCOL instance.
   @param[in]     Port                The port number of the ATA device to send the command.
   @param[in]     PortMultiplierPort  The port multiplier port number of the ATA device to send the command.
-                                     If there is no port multiplier, then specify 0.
+                                     If there is no port multiplier, then specify 0xFFFF.
   @param[in,out] Packet              A pointer to the ATA command to send to the ATA device specified by Port
                                      and PortMultiplierPort.
   @param[in]     Event               If non-blocking I/O is not supported then Event is ignored, and blocking
@@ -317,7 +314,7 @@ EFI_STATUS
                                      device path node is to be allocated and built.
   @param[in]     PortMultiplierPort  The port multiplier port number of the ATA device for which a
                                      device path node is to be allocated and built. If there is no
-                                     port multiplier, then specify 0.
+                                     port multiplier, then specify 0xFFFF.
   @param[in,out] DevicePath          A pointer to a single device path node that describes the ATA
                                      device specified by Port and PortMultiplierPort. This function
                                      is responsible for allocating the buffer DevicePath with the
@@ -437,7 +434,7 @@ EFI_STATUS
   @param[in] This                A pointer to the EFI_ATA_PASS_THRU_PROTOCOL instance.
   @param[in] Port                Port represents the port number of the ATA device to be reset.
   @param[in] PortMultiplierPort  The port multiplier port number of the ATA device to reset.
-                                 If there is no port multiplier, then specify 0.
+                                 If there is no port multiplier, then specify 0xFFFF.
   @retval EFI_SUCCESS            The ATA device specified by Port and PortMultiplierPort was reset.
   @retval EFI_UNSUPPORTED        The ATA controller does not support a device reset operation.
   @retval EFI_INVALID_PARAMETER  Port or PortMultiplierPort are invalid.

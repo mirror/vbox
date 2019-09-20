@@ -1,33 +1,24 @@
 ## @file
 # process OptionROM generation
 #
-#  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
 # Import Modules
 #
+from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import subprocess
-import StringIO
 
-import OptRomInfStatement
-from GenFdsGlobalVariable import GenFdsGlobalVariable
-from GenFds import GenFds
+from . import OptRomInfStatement
+from .GenFdsGlobalVariable import GenFdsGlobalVariable
 from CommonDataClass.FdfClass import OptionRomClassObject
 from Common.Misc import SaveFileOnChange
 from Common import EdkLogger
 from Common.BuildToolError import *
-
-T_CHAR_LF = '\n'
 
 ##
 #
@@ -37,9 +28,9 @@ class OPTIONROM (OptionRomClassObject):
     #
     #   @param  self        The object pointer
     #
-    def __init__(self):
+    def __init__(self, Name = ""):
         OptionRomClassObject.__init__(self)
-
+        self.DriverName = Name
 
     ## AddToBuffer()
     #
@@ -49,9 +40,9 @@ class OPTIONROM (OptionRomClassObject):
     #   @param  Buffer      The buffer generated OptROM data will be put
     #   @retval string      Generated OptROM file path
     #
-    def AddToBuffer (self, Buffer) :
-
-        GenFdsGlobalVariable.InfLogger( "\nGenerating %s Option ROM ..." %self.DriverName)
+    def AddToBuffer (self, Buffer, Flag=False) :
+        if not Flag:
+            GenFdsGlobalVariable.InfLogger( "\nGenerating %s Option ROM ..." %self.DriverName)
 
         EfiFileList = []
         BinFileList = []
@@ -60,14 +51,14 @@ class OPTIONROM (OptionRomClassObject):
         for FfsFile in self.FfsList :
 
             if isinstance(FfsFile, OptRomInfStatement.OptRomInfStatement):
-                FilePathNameList = FfsFile.GenFfs()
+                FilePathNameList = FfsFile.GenFfs(IsMakefile=Flag)
                 if len(FilePathNameList) == 0:
                     EdkLogger.error("GenFds", GENFDS_ERROR, "Module %s not produce .efi files, so NO file could be put into option ROM." % (FfsFile.InfFileName))
-                if FfsFile.OverrideAttribs == None:
+                if FfsFile.OverrideAttribs is None:
                     EfiFileList.extend(FilePathNameList)
                 else:
                     FileName = os.path.basename(FilePathNameList[0])
-                    TmpOutputDir = os.path.join(GenFdsGlobalVariable.FvDir, self.DriverName)
+                    TmpOutputDir = os.path.join(GenFdsGlobalVariable.FvDir, self.DriverName, FfsFile.CurrentArch)
                     if not os.path.exists(TmpOutputDir) :
                         os.makedirs(TmpOutputDir)
                     TmpOutputFile = os.path.join(TmpOutputDir, FileName+'.tmp')
@@ -79,13 +70,14 @@ class OPTIONROM (OptionRomClassObject):
                                                            FfsFile.OverrideAttribs.PciClassCode,
                                                            FfsFile.OverrideAttribs.PciRevision,
                                                            FfsFile.OverrideAttribs.PciDeviceId,
-                                                           FfsFile.OverrideAttribs.PciVendorId)
+                                                           FfsFile.OverrideAttribs.PciVendorId,
+                                                           IsMakefile = Flag)
                     BinFileList.append(TmpOutputFile)
             else:
-                FilePathName = FfsFile.GenFfs()
-                if FfsFile.OverrideAttribs != None:
+                FilePathName = FfsFile.GenFfs(IsMakefile=Flag)
+                if FfsFile.OverrideAttribs is not None:
                     FileName = os.path.basename(FilePathName)
-                    TmpOutputDir = os.path.join(GenFdsGlobalVariable.FvDir, self.DriverName)
+                    TmpOutputDir = os.path.join(GenFdsGlobalVariable.FvDir, self.DriverName, FfsFile.CurrentArch)
                     if not os.path.exists(TmpOutputDir) :
                         os.makedirs(TmpOutputDir)
                     TmpOutputFile = os.path.join(TmpOutputDir, FileName+'.tmp')
@@ -97,7 +89,8 @@ class OPTIONROM (OptionRomClassObject):
                                                            FfsFile.OverrideAttribs.PciClassCode,
                                                            FfsFile.OverrideAttribs.PciRevision,
                                                            FfsFile.OverrideAttribs.PciDeviceId,
-                                                           FfsFile.OverrideAttribs.PciVendorId)
+                                                           FfsFile.OverrideAttribs.PciVendorId,
+                                                           IsMakefile=Flag)
                     BinFileList.append(TmpOutputFile)
                 else:
                     if FfsFile.FileType == 'EFI':
@@ -114,10 +107,11 @@ class OPTIONROM (OptionRomClassObject):
         GenFdsGlobalVariable.GenerateOptionRom(
                                 OutputFile,
                                 EfiFileList,
-                                BinFileList
-                                )
+                                BinFileList,
+                                IsMakefile=Flag)
 
-        GenFdsGlobalVariable.InfLogger( "\nGenerate %s Option ROM Successfully" %self.DriverName)
+        if not Flag:
+            GenFdsGlobalVariable.InfLogger( "\nGenerate %s Option ROM Successfully" %self.DriverName)
         GenFdsGlobalVariable.SharpCounter = 0
 
         return OutputFile
@@ -135,5 +129,3 @@ class OverrideAttribs:
         self.PciDeviceId = None
         self.PciRevision = None
         self.NeedCompress = None
-
-        

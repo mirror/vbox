@@ -2,15 +2,9 @@
   This EFI_PXE_BASE_CODE_PROTOCOL and EFI_LOAD_FILE_PROTOCOL.
   interfaces declaration.
 
-  Copyright (c) 2007 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2007 - 2019, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,15 +15,18 @@
 
 #include <Guid/SmBios.h>
 #include <IndustryStandard/SmBios.h>
+#include <IndustryStandard/Dhcp.h>
 #include <Protocol/NetworkInterfaceIdentifier.h>
 #include <Protocol/Arp.h>
 #include <Protocol/Ip4.h>
+#include <Protocol/Ip4Config2.h>
 #include <Protocol/Ip6.h>
 #include <Protocol/Ip6Config.h>
 #include <Protocol/Udp4.h>
 #include <Protocol/Udp6.h>
 #include <Protocol/Dhcp4.h>
 #include <Protocol/Dhcp6.h>
+#include <Protocol/Dns6.h>
 #include <Protocol/Mtftp4.h>
 #include <Protocol/Mtftp6.h>
 #include <Protocol/PxeBaseCode.h>
@@ -37,6 +34,7 @@
 #include <Protocol/PxeBaseCodeCallBack.h>
 #include <Protocol/ServiceBinding.h>
 #include <Protocol/DriverBinding.h>
+#include <Protocol/AdapterInformation.h>
 
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -72,11 +70,16 @@ typedef struct _PXEBC_VIRTUAL_NIC   PXEBC_VIRTUAL_NIC;
 #define PXEBC_MENU_MAX_NUM            24
 #define PXEBC_OFFER_MAX_NUM           16
 
+#define PXEBC_CHECK_MEDIA_WAITING_TIME        EFI_TIMER_PERIOD_SECONDS(20)
+
 #define PXEBC_PRIVATE_DATA_SIGNATURE          SIGNATURE_32 ('P', 'X', 'E', 'P')
 #define PXEBC_VIRTUAL_NIC_SIGNATURE           SIGNATURE_32 ('P', 'X', 'E', 'V')
 #define PXEBC_PRIVATE_DATA_FROM_PXEBC(a)      CR (a, PXEBC_PRIVATE_DATA, PxeBc, PXEBC_PRIVATE_DATA_SIGNATURE)
 #define PXEBC_PRIVATE_DATA_FROM_ID(a)         CR (a, PXEBC_PRIVATE_DATA, Id, PXEBC_PRIVATE_DATA_SIGNATURE)
 #define PXEBC_VIRTUAL_NIC_FROM_LOADFILE(a)    CR (a, PXEBC_VIRTUAL_NIC, LoadFile, PXEBC_VIRTUAL_NIC_SIGNATURE)
+
+#define PXE_ENABLED                           0x01
+#define PXE_DISABLED                          0x00
 
 typedef union {
   PXEBC_DHCP4_PACKET_CACHE            Dhcp4;
@@ -115,6 +118,7 @@ struct _PXEBC_PRIVATE_DATA {
 
   EFI_ARP_PROTOCOL                          *Arp;
   EFI_IP4_PROTOCOL                          *Ip4;
+  EFI_IP4_CONFIG2_PROTOCOL                  *Ip4Config2;
   EFI_DHCP4_PROTOCOL                        *Dhcp4;
   EFI_MTFTP4_PROTOCOL                       *Mtftp4;
   EFI_UDP4_PROTOCOL                         *Udp4Read;
@@ -132,6 +136,7 @@ struct _PXEBC_PRIVATE_DATA {
   EFI_MTFTP6_PROTOCOL                       *Mtftp6;
   EFI_UDP6_PROTOCOL                         *Udp6Read;
   EFI_UDP6_PROTOCOL                         *Udp6Write;
+  EFI_DNS6_PROTOCOL                         *Dns6;
 
   EFI_NETWORK_INTERFACE_IDENTIFIER_PROTOCOL *Nii;
   EFI_PXE_BASE_CODE_PROTOCOL                PxeBc;
@@ -160,10 +165,12 @@ struct _PXEBC_PRIVATE_DATA {
   BOOLEAN                                   IsProxyRecved;
   BOOLEAN                                   IsDoDiscover;
 
+  EFI_IP_ADDRESS                            TmpStationIp;
   EFI_IP_ADDRESS                            StationIp;
   EFI_IP_ADDRESS                            SubnetMask;
   EFI_IP_ADDRESS                            GatewayIp;
   EFI_IP_ADDRESS                            ServerIp;
+  EFI_IPv6_ADDRESS                          *DnsServer;
   UINT16                                    CurSrcPort;
   UINT32                                    IaId;
 

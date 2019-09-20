@@ -2,14 +2,9 @@
   MDE DXE Services Library provides functions that simplify the development of DXE Drivers.
   These functions help access data from sections of FFS files or from file path.
 
-  Copyright (c) 2007 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -61,6 +56,12 @@ InternalImageHandleToFvHandle (
 
   ASSERT_EFI_ERROR (Status);
 
+  //
+  // The LoadedImage->DeviceHandle may be NULL.
+  // For example for DxeCore, there is LoadedImage protocol installed for it, but the
+  // LoadedImage->DeviceHandle could not be initialized before the FV2 (contain DxeCore)
+  // protocol is installed.
+  //
   return LoadedImage->DeviceHandle;
 
 }
@@ -83,7 +84,6 @@ InternalImageHandleToFvHandle (
   The data and size is returned by Buffer and Size. The caller is responsible to free the Buffer allocated
   by this function. This function can be only called at TPL_NOTIFY and below.
 
-  If FvHandle is NULL, then ASSERT ();
   If NameGuid is NULL, then ASSERT();
   If Buffer is NULL, then ASSERT();
   If Size is NULL, then ASSERT().
@@ -127,7 +127,12 @@ InternalGetSectionFromFv (
   ASSERT (Buffer != NULL);
   ASSERT (Size != NULL);
 
-  ASSERT (FvHandle != NULL);
+  if (FvHandle == NULL) {
+    //
+    // Return EFI_NOT_FOUND directly for NULL FvHandle.
+    //
+    return EFI_NOT_FOUND;
+  }
 
   Status = gBS->HandleProtocol (
                   FvHandle,
@@ -241,6 +246,9 @@ GetSectionFromAnyFvByFileType  (
   EFI_GUID                      NameGuid;
   EFI_FV_FILE_ATTRIBUTES        Attributes;
   EFI_FIRMWARE_VOLUME2_PROTOCOL *Fv;
+
+  ASSERT (Buffer != NULL);
+  ASSERT (Size != NULL);
 
   //
   // Locate all available FVs.
@@ -796,18 +804,20 @@ GetFileBufferByFilePath (
           }
 
           if (!EFI_ERROR (Status) && (FileInfo != NULL)) {
-            //
-            // Allocate space for the file
-            //
-            ImageBuffer = AllocatePool ((UINTN)FileInfo->FileSize);
-            if (ImageBuffer == NULL) {
-              Status = EFI_OUT_OF_RESOURCES;
-            } else {
+            if ((FileInfo->Attribute & EFI_FILE_DIRECTORY) == 0) {
               //
-              // Read the file into the buffer we allocated
+              // Allocate space for the file
               //
-              ImageBufferSize = (UINTN)FileInfo->FileSize;
-              Status          = FileHandle->Read (FileHandle, &ImageBufferSize, ImageBuffer);
+              ImageBuffer = AllocatePool ((UINTN)FileInfo->FileSize);
+              if (ImageBuffer == NULL) {
+                Status = EFI_OUT_OF_RESOURCES;
+              } else {
+                //
+                // Read the file into the buffer we allocated
+                //
+                ImageBufferSize = (UINTN)FileInfo->FileSize;
+                Status          = FileHandle->Read (FileHandle, &ImageBufferSize, ImageBuffer);
+              }
             }
           }
         }
@@ -924,4 +934,159 @@ Finish:
   FreePool (OrigDevicePathNode);
 
   return ImageBuffer;
+}
+
+/**
+  Searches all the available firmware volumes and returns the file device path of first matching
+  FFS section.
+
+  This function searches all the firmware volumes for FFS files with an FFS filename specified by NameGuid.
+  The order that the firmware volumes is searched is not deterministic. For each FFS file found a search
+  is made for FFS sections of type SectionType.
+
+  If SectionType is EFI_SECTION_TE, and the search with an FFS file fails,
+  the search will be retried with a section type of EFI_SECTION_PE32.
+  This function must be called with a TPL <= TPL_NOTIFY.
+
+  If NameGuid is NULL, then ASSERT().
+
+   @param  NameGuid             A pointer to to the FFS filename GUID to search for
+                                within any of the firmware volumes in the platform.
+   @param  SectionType          Indicates the FFS section type to search for within
+                                the FFS file specified by NameGuid.
+   @param  SectionInstance      Indicates which section instance within the FFS file
+                                specified by NameGuid to retrieve.
+   @param  FvFileDevicePath     Device path for the target FFS
+                                file.
+
+   @retval  EFI_SUCCESS           The specified file device path of FFS section was returned.
+   @retval  EFI_NOT_FOUND         The specified file device path of FFS section could not be found.
+   @retval  EFI_DEVICE_ERROR      The FFS section could not be retrieves due to a
+                                  device error.
+   @retval  EFI_ACCESS_DENIED     The FFS section could not be retrieves because the
+                                  firmware volume that contains the matching FFS section does not
+                                  allow reads.
+   @retval  EFI_INVALID_PARAMETER FvFileDevicePath is NULL.
+
+**/
+EFI_STATUS
+EFIAPI
+GetFileDevicePathFromAnyFv (
+  IN CONST  EFI_GUID                  *NameGuid,
+  IN        EFI_SECTION_TYPE          SectionType,
+  IN        UINTN                     SectionInstance,
+  OUT       EFI_DEVICE_PATH_PROTOCOL  **FvFileDevicePath
+  )
+{
+  EFI_STATUS                        Status;
+  EFI_HANDLE                        *HandleBuffer;
+  UINTN                             HandleCount;
+  UINTN                             Index;
+  EFI_HANDLE                        FvHandle;
+  EFI_DEVICE_PATH_PROTOCOL          *FvDevicePath;
+  MEDIA_FW_VOL_FILEPATH_DEVICE_PATH *TempFvFileDevicePath;
+  VOID                              *Buffer;
+  UINTN                             Size;
+
+  if (FvFileDevicePath == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  HandleBuffer         = NULL;
+  FvDevicePath         = NULL;
+  TempFvFileDevicePath = NULL;
+  Buffer               = NULL;
+  Size                 = 0;
+
+  //
+  // Search the FV that contain the caller's FFS first.
+  // FV builder can choose to build FFS into the this FV
+  // so that this implementation of GetSectionFromAnyFv
+  // will locate the FFS faster.
+  //
+  FvHandle = InternalImageHandleToFvHandle (gImageHandle);
+  Status = InternalGetSectionFromFv (
+             FvHandle,
+             NameGuid,
+             SectionType,
+             SectionInstance,
+             &Buffer,
+             &Size
+             );
+  if (!EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  Status = gBS->LocateHandleBuffer (
+                  ByProtocol,
+                  &gEfiFirmwareVolume2ProtocolGuid,
+                  NULL,
+                  &HandleCount,
+                  &HandleBuffer
+                  );
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  for (Index = 0; Index < HandleCount; Index++) {
+    //
+    // Skip the FV that contain the caller's FFS
+    //
+    if (HandleBuffer[Index] != FvHandle) {
+      Status = InternalGetSectionFromFv (
+                 HandleBuffer[Index],
+                 NameGuid,
+                 SectionType,
+                 SectionInstance,
+                 &Buffer,
+                 &Size
+                 );
+
+      if (!EFI_ERROR (Status)) {
+        //
+        // Update FvHandle to the current handle.
+        //
+        FvHandle = HandleBuffer[Index];
+        goto Done;
+      }
+    }
+  }
+
+  if (Index == HandleCount) {
+    Status = EFI_NOT_FOUND;
+  }
+
+Done:
+  if (Status == EFI_SUCCESS) {
+    //
+    // Build a device path to the file in the FV to pass into gBS->LoadImage
+    //
+    Status = gBS->HandleProtocol (FvHandle, &gEfiDevicePathProtocolGuid, (VOID **)&FvDevicePath);
+    if (EFI_ERROR (Status)) {
+      *FvFileDevicePath = NULL;
+    } else {
+      TempFvFileDevicePath = AllocateZeroPool (sizeof (MEDIA_FW_VOL_FILEPATH_DEVICE_PATH) + END_DEVICE_PATH_LENGTH);
+      if (TempFvFileDevicePath == NULL) {
+        *FvFileDevicePath = NULL;
+        return EFI_OUT_OF_RESOURCES;
+      }
+      EfiInitializeFwVolDevicepathNode ((MEDIA_FW_VOL_FILEPATH_DEVICE_PATH*)TempFvFileDevicePath, NameGuid);
+      SetDevicePathEndNode (NextDevicePathNode (TempFvFileDevicePath));
+      *FvFileDevicePath = AppendDevicePath (
+                            FvDevicePath,
+                            (EFI_DEVICE_PATH_PROTOCOL *)TempFvFileDevicePath
+                            );
+      FreePool (TempFvFileDevicePath);
+    }
+  }
+
+  if (Buffer != NULL) {
+    FreePool (Buffer);
+  }
+
+  if (HandleBuffer != NULL) {
+    FreePool (HandleBuffer);
+  }
+
+  return Status;
 }

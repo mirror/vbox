@@ -1,14 +1,8 @@
 /** @file
   This driver produces Security2 and Security architectural protocol based on SecurityManagementLib.
 
-  Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,6 +14,7 @@
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiDriverEntryPoint.h>
 #include <Library/SecurityManagementLib.h>
+#include "Defer3rdPartyImageLoad.h"
 
 //
 // Handle for the Security Architectural Protocol instance produced by this driver
@@ -140,6 +135,15 @@ Security2StubAuthenticate (
   IN BOOLEAN                           BootPolicy
   )
 {
+  EFI_STATUS                           Status;
+
+  if (FileBuffer != NULL) {
+    Status = Defer3rdPartyImageLoad (File, BootPolicy);
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
+  }
+
   return ExecuteSecurity2Handlers (EFI_AUTH_OPERATION_VERIFY_IMAGE |
                                    EFI_AUTH_OPERATION_DEFER_IMAGE_LOAD |
                                    EFI_AUTH_OPERATION_MEASURE_IMAGE |
@@ -199,6 +203,8 @@ SecurityStubInitialize (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  Defer3rdPartyImageLoadInitialize ();
 
   return EFI_SUCCESS;
 }

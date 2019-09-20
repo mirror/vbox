@@ -39,7 +39,18 @@ Fix for Borland C++ 4.x & 5.x compiling with ALL warnings enabled
 #pragma warn -aus  /* unused assignment of 'xxx' */
 #endif
 
-int	action_no = 0;	   /* keep track of actions outputed */
+#ifdef VBOX
+#  ifdef _MSC_VER
+#    pragma warning(disable : 4068) /* Unguarded '#pragma clang' below */
+#  endif
+#  ifdef __GNUC__
+#    pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#  endif
+#endif
+
+#pragma clang diagnostic ignored "-Wparentheses-equality"
+
+int	action_no = 0;	   /* keep track of actions outputted */
 int	nfa_allocated = 0; /* keeps track of number of nfa nodes */
 nfa_node **nfa_array = NULL;/* root of binary tree that stores nfa array */
 nfa_node nfa_model_node;   /* model to initialize new nodes */
@@ -811,7 +822,7 @@ new_nfa_node()
   if (nfa_size<=nfa_allocated){
     /* need to redo array */
     if (!nfa_array){
-      /* need some to do inital allocation */
+      /* need some to do initial allocation */
       nfa_size=nfa_allocated+NFA_MIN;
       nfa_array=(nfa_node **) malloc(sizeof(nfa_node*)*
       nfa_size);

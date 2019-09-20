@@ -1,14 +1,8 @@
 /** @file
   Provides library functions for all PEI Services.
 
-Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -73,7 +67,7 @@ EFIAPI
 PeiServicesLocatePpi (
   IN CONST EFI_GUID                   *Guid,
   IN UINTN                      Instance,
-  IN OUT EFI_PEI_PPI_DESCRIPTOR **PpiDescriptor,
+  IN OUT EFI_PEI_PPI_DESCRIPTOR **PpiDescriptor, OPTIONAL
   IN OUT VOID                   **Ppi
   );
 
@@ -264,16 +258,16 @@ PeiServicesInstallPeiMemory (
   );
 
 /**
-  This service enables PEIMs to allocate memory after the permanent memory has been installed by a
-  PEIM.
+  This service enables PEIMs to allocate memory.
 
   @param  MemoryType            Type of memory to allocate.
-  @param  Pages                 Number of pages to allocate.
+  @param  Pages                 The number of pages to allocate.
   @param  Memory                Pointer of memory allocated.
 
   @retval EFI_SUCCESS           The memory range was successfully allocated.
-  @retval EFI_INVALID_PARAMETER Type is not equal to AllocateAnyPages.
-  @retval EFI_NOT_AVAILABLE_YET Called with permanent memory not available.
+  @retval EFI_INVALID_PARAMETER Type is not equal to EfiLoaderCode, EfiLoaderData, EfiRuntimeServicesCode,
+                                EfiRuntimeServicesData, EfiBootServicesCode, EfiBootServicesData,
+                                EfiACPIReclaimMemory, EfiReservedMemoryType, or EfiACPIMemoryNVS.
   @retval EFI_OUT_OF_RESOURCES  The pages could not be allocated.
 
 **/
@@ -283,6 +277,25 @@ PeiServicesAllocatePages (
   IN EFI_MEMORY_TYPE            MemoryType,
   IN UINTN                      Pages,
   OUT EFI_PHYSICAL_ADDRESS      *Memory
+  );
+
+/**
+  This service enables PEIMs to free memory.
+
+  @param Memory                 Memory to be freed.
+  @param Pages                  The number of pages to free.
+
+  @retval EFI_SUCCESS           The requested pages were freed.
+  @retval EFI_INVALID_PARAMETER Memory is not a page-aligned address or Pages is invalid.
+  @retval EFI_NOT_FOUND         The requested memory pages were not allocated with
+                                AllocatePages().
+
+**/
+EFI_STATUS
+EFIAPI
+PeiServicesFreePages (
+  IN EFI_PHYSICAL_ADDRESS       Memory,
+  IN UINTN                      Pages
   );
 
 /**
@@ -519,6 +532,28 @@ PeiServicesInstallFvInfo2Ppi (
   IN CONST EFI_GUID                *ParentFvName, OPTIONAL
   IN CONST EFI_GUID                *ParentFileName, OPTIONAL
   IN       UINT32                  AuthenticationStatus
+  );
+
+/**
+  Resets the entire platform.
+
+  @param[in] ResetType      The type of reset to perform.
+  @param[in] ResetStatus    The status code for the reset.
+  @param[in] DataSize       The size, in bytes, of ResetData.
+  @param[in] ResetData      For a ResetType of EfiResetCold, EfiResetWarm, or EfiResetShutdown
+                            the data buffer starts with a Null-terminated string, optionally
+                            followed by additional binary data. The string is a description
+                            that the caller may use to further indicate the reason for the
+                            system reset.
+
+**/
+VOID
+EFIAPI
+PeiServicesResetSystem2 (
+  IN EFI_RESET_TYPE     ResetType,
+  IN EFI_STATUS         ResetStatus,
+  IN UINTN              DataSize,
+  IN VOID               *ResetData OPTIONAL
   );
 
 #endif

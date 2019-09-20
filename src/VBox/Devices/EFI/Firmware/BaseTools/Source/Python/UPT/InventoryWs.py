@@ -1,15 +1,9 @@
 ## @file
 # Inventory workspace's distribution package information.
 #
-# Copyright (c) 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2014 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 """
 Inventory workspace's distribution package information.
@@ -92,7 +86,7 @@ def Main(Options = None):
         DataBase = GlobalData.gDB
         InventoryDistInstalled(DataBase)
         ReturnCode = 0
-    except FatalError, XExcept:
+    except FatalError as XExcept:
         ReturnCode = XExcept.args[0]
         if Logger.GetLevel() <= Logger.DEBUG_9:
             Logger.Quiet(ST.MSG_PYTHON_ON % (python_version(), platform) + format_exc())
@@ -105,7 +99,7 @@ def Main(Options = None):
         Logger.Error("\nInventoryWs",
                     CODE_ERROR,
                     ST.ERR_UNKNOWN_FATAL_INVENTORYWS_ERR,
-                    ExtraData=ST.MSG_SEARCH_FOR_HELP,
+                    ExtraData=ST.MSG_SEARCH_FOR_HELP % ST.MSG_EDKII_MAIL_ADDR,
                     RaiseError=False
                     )
         Logger.Quiet(ST.MSG_PYTHON_ON % (python_version(),

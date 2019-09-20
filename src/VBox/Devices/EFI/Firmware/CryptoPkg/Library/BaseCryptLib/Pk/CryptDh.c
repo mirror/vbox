@@ -1,20 +1,14 @@
 /** @file
   Diffie-Hellman Wrapper Implementation over OpenSSL.
 
-Copyright (c) 2010 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "InternalCryptLib.h"
+#include <openssl/bn.h>
 #include <openssl/dh.h>
-
 
 /**
   Allocates and Initializes one Diffie-Hellman Context for subsequent use.
@@ -72,7 +66,7 @@ DhFree (
   @param[in]       PrimeLength  Length in bits of prime to be generated.
   @param[out]      Prime        Pointer to the buffer to receive the generated prime number.
 
-  @retval TRUE   DH pamameter generation succeeded.
+  @retval TRUE   DH parameter generation succeeded.
   @retval FALSE  Value of Generator is not supported.
   @retval FALSE  PRNG fails to generate random prime number with PrimeLength.
 
@@ -87,6 +81,7 @@ DhGenerateParameter (
   )
 {
   BOOLEAN RetVal;
+  BIGNUM  *BnP;
 
   //
   // Check input parameters.
@@ -104,7 +99,8 @@ DhGenerateParameter (
     return FALSE;
   }
 
-  BN_bn2bin (((DH *) DhContext)->p, Prime);
+  DH_get0_pqg (DhContext, (const BIGNUM **)&BnP, NULL, NULL);
+  BN_bn2bin (BnP, Prime);
 
   return TRUE;
 }
@@ -123,7 +119,7 @@ DhGenerateParameter (
   @param[in]       PrimeLength  Length in bits of prime to be generated.
   @param[in]       Prime        Pointer to the prime number.
 
-  @retval TRUE   DH pamameter setting succeeded.
+  @retval TRUE   DH parameter setting succeeded.
   @retval FALSE  Value of Generator is not supported.
   @retval FALSE  Value of Generator is not suitable for the Prime.
   @retval FALSE  Value of Prime is not a prime number.
@@ -140,7 +136,8 @@ DhSetParameter (
   )
 {
   DH      *Dh;
-  BIGNUM  *Bn;
+  BIGNUM  *BnP;
+  BIGNUM  *BnG;
 
   //
   // Check input parameters.
@@ -153,44 +150,21 @@ DhSetParameter (
     return FALSE;
   }
 
-  Bn = NULL;
-
-  Dh = (DH *) DhContext;
-  Dh->g = NULL;
-  Dh->p = BN_new ();
-  if (Dh->p == NULL) {
-    goto Error;
-  }
-
-  Dh->g = BN_new ();
-  if (Dh->g == NULL) {
-    goto Error;
-  }
-
-  Bn = BN_bin2bn (Prime, (UINT32) (PrimeLength / 8), Dh->p);
-  if (Bn == NULL) {
-    goto Error;
-  }
-
-  if (BN_set_word (Dh->g, (UINT32) Generator) == 0) {
+  //
+  // Set the generator and prime parameters for DH object.
+  //
+  Dh  = (DH *)DhContext;
+  BnP = BN_bin2bn ((const unsigned char *)Prime, (int)(PrimeLength / 8), NULL);
+  BnG = BN_bin2bn ((const unsigned char *)&Generator, 1, NULL);
+  if ((BnP == NULL) || (BnG == NULL) || !DH_set0_pqg (Dh, BnP, NULL, BnG)) {
     goto Error;
   }
 
   return TRUE;
 
 Error:
-
-  if (Dh->p != NULL) {
-    BN_free (Dh->p);
-  }
-
-  if (Dh->g != NULL) {
-    BN_free (Dh->g);
-  }
-
-  if (Bn != NULL) {
-    BN_free (Bn);
-  }
+  BN_free (BnP);
+  BN_free (BnG);
 
   return FALSE;
 }
@@ -227,6 +201,7 @@ DhGenerateKey (
 {
   BOOLEAN RetVal;
   DH      *Dh;
+  BIGNUM  *DhPubKey;
   INTN    Size;
 
   //
@@ -244,13 +219,16 @@ DhGenerateKey (
 
   RetVal = (BOOLEAN) DH_generate_key (DhContext);
   if (RetVal) {
-    Size = BN_num_bytes (Dh->pub_key);
+    DH_get0_key (Dh, (const BIGNUM **)&DhPubKey, NULL);
+    Size = BN_num_bytes (DhPubKey);
     if ((Size > 0) && (*PublicKeySize < (UINTN) Size)) {
       *PublicKeySize = Size;
       return FALSE;
     }
 
-    BN_bn2bin (Dh->pub_key, PublicKey);
+    if (PublicKey != NULL) {
+      BN_bn2bin (DhPubKey, PublicKey);
+    }
     *PublicKeySize = Size;
   }
 

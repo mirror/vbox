@@ -4,15 +4,9 @@
   @par Revision Reference:
   Version 1.2C
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-    http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -148,10 +142,16 @@ typedef struct {
   EFI_GUID                          FormatType;
 
   //
-  // An arry of bytes of length Length.
+  // An array of bytes of length Length.
   //
   // UINT8                             Data[1];
   //
 } EFI_FIRMWARE_VOLUME_EXT_ENTRY_GUID_TYPE;
+
+#define EFI_FV_EXT_TYPE_USED_SIZE_TYPE 0x03
+typedef struct {
+  EFI_FIRMWARE_VOLUME_EXT_ENTRY Hdr;
+  UINT32 UsedSize;
+} EFI_FIRMWARE_VOLUME_EXT_ENTRY_USED_SIZE_TYPE;
 
 #endif

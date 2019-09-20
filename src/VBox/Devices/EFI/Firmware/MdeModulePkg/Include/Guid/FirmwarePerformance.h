@@ -1,14 +1,8 @@
 /** @file
   ACPI Firmware Performance Data Table (FPDT) implementation specific definitions.
 
-  Copyright (c) 2011 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -95,6 +89,17 @@ typedef struct {
 } BOOT_PERFORMANCE_TABLE;
 
 ///
+/// Boot performance table for the performance record in SMM phase.
+///
+///
+typedef struct {
+  EFI_ACPI_5_0_FPDT_PERFORMANCE_TABLE_HEADER   Header;     ///< Common ACPI table header.
+  //
+  // one or more boot performance records.
+  //
+} SMM_BOOT_PERFORMANCE_TABLE;
+
+///
 /// Performance data pointed by Performance Pointer Record.
 ///
 typedef struct {
@@ -116,14 +121,16 @@ typedef struct {
 //
 // Log BOOT RECORD from SMM driver on boot time.
 //
-#define SMM_FPDT_FUNCTION_GET_BOOT_RECORD_SIZE          1
-#define SMM_FPDT_FUNCTION_GET_BOOT_RECORD_DATA          2
+#define SMM_FPDT_FUNCTION_GET_BOOT_RECORD_SIZE           1
+#define SMM_FPDT_FUNCTION_GET_BOOT_RECORD_DATA           2
+#define SMM_FPDT_FUNCTION_GET_BOOT_RECORD_DATA_BY_OFFSET 3
 
 typedef struct {
   UINTN             Function;
   EFI_STATUS        ReturnStatus;
   UINTN             BootRecordSize;
   VOID              *BootRecordData;
+  UINTN             BootRecordOffset;
 } SMM_BOOT_RECORD_COMMUNICATE;
 
 extern EFI_GUID gEfiFirmwarePerformanceGuid;

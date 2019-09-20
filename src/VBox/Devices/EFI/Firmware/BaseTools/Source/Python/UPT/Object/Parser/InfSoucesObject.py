@@ -2,15 +2,9 @@
 # This file is used to define class objects of INF file [Sources] section.
 # It will consumed by InfParser.
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfSourcesObject
@@ -211,7 +205,7 @@ class InfSourcesObject(InfSectionCommonDef):
             #
             # Validate Arch
             #
-            if (ArchItem == '' or ArchItem == None):
+            if (ArchItem == '' or ArchItem is None):
                 ArchItem = 'COMMON'
             __SupArchList.append(ArchItem)
 
@@ -224,7 +218,7 @@ class InfSourcesObject(InfSectionCommonDef):
 
             ItemObj.SetSupArchList(__SupArchList)
 
-            if self.Sources.has_key((ItemObj)):
+            if (ItemObj) in self.Sources:
                 SourceContent = self.Sources[ItemObj]
                 SourceContent.append(ItemObj)
                 self.Sources[ItemObj] = SourceContent
@@ -237,4 +231,3 @@ class InfSourcesObject(InfSectionCommonDef):
 
     def GetSources(self):
         return self.Sources
-    

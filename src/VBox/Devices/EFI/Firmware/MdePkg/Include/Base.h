@@ -6,15 +6,9 @@
   environment. There are a set of base libraries in the Mde Package that can
   be used to implement base modules.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -27,6 +21,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 //
 #include <ProcessorBind.h>
 
+#if defined(_MSC_EXTENSIONS)
+//
+// Disable warning when last field of data structure is a zero sized array.
+//
+#pragma warning ( disable : 4200 )
+#endif
 
 /**
   Verifies the storage size of a given data type.
@@ -58,11 +58,34 @@ VERIFY_SIZE_OF (CHAR8, 1);
 VERIFY_SIZE_OF (CHAR16, 2);
 
 //
+// The following three enum types are used to verify that the compiler
+// configuration for enum types is compliant with Section 2.3.1 of the
+// UEFI 2.3 Specification. These enum types and enum values are not
+// intended to be used. A prefix of '__' is used avoid conflicts with
+// other types.
+//
+typedef enum {
+  __VerifyUint8EnumValue = 0xff
+} __VERIFY_UINT8_ENUM_SIZE;
+
+typedef enum {
+  __VerifyUint16EnumValue = 0xffff
+} __VERIFY_UINT16_ENUM_SIZE;
+
+typedef enum {
+  __VerifyUint32EnumValue = 0xffffffff
+} __VERIFY_UINT32_ENUM_SIZE;
+
+VERIFY_SIZE_OF (__VERIFY_UINT8_ENUM_SIZE, 4);
+VERIFY_SIZE_OF (__VERIFY_UINT16_ENUM_SIZE, 4);
+VERIFY_SIZE_OF (__VERIFY_UINT32_ENUM_SIZE, 4);
+
+//
 // The Microsoft* C compiler can removed references to unreferenced data items
 //  if the /OPT:REF linker option is used. We defined a macro as this is a
 //  a non standard extension
 //
-#if defined(_MSC_EXTENSIONS) && !defined (MDE_CPU_EBC)
+#if defined(_MSC_EXTENSIONS) && _MSC_VER < 1800 && !defined (MDE_CPU_EBC)
   ///
   /// Remove global variable from the linked image if there are no references to
   /// it after all compiler and linker optimizations have been performed.
@@ -76,6 +99,136 @@ VERIFY_SIZE_OF (CHAR16, 2);
   ///
   ///
   #define GLOBAL_REMOVE_IF_UNREFERENCED
+#endif
+
+//
+// Should be used in combination with NORETURN to avoid 'noreturn' returns
+// warnings.
+//
+#ifndef UNREACHABLE
+  #ifdef __GNUC__
+    ///
+    /// Signal compilers and analyzers that this call is not reachable.  It is
+    /// up to the compiler to remove any code past that point.
+    ///
+    #define UNREACHABLE()  __builtin_unreachable ()
+  #elif defined (__has_feature)
+    #if __has_builtin (__builtin_unreachable)
+      ///
+      /// Signal compilers and analyzers that this call is not reachable.  It is
+      /// up to the compiler to remove any code past that point.
+      ///
+      #define UNREACHABLE()  __builtin_unreachable ()
+    #endif
+  #endif
+
+  #ifndef UNREACHABLE
+    ///
+    /// Signal compilers and analyzers that this call is not reachable.  It is
+    /// up to the compiler to remove any code past that point.
+    ///
+    #define UNREACHABLE()
+  #endif
+#endif
+
+//
+// Signaling compilers and analyzers that a certain function cannot return may
+// remove all following code and thus lead to better optimization and less
+// false positives.
+//
+#ifndef NORETURN
+  #if defined (__GNUC__) || defined (__clang__)
+    ///
+    /// Signal compilers and analyzers that the function cannot return.
+    /// It is up to the compiler to remove any code past a call to functions
+    /// flagged with this attribute.
+    ///
+    #define NORETURN  __attribute__((noreturn))
+  #elif defined(_MSC_EXTENSIONS) && !defined(MDE_CPU_EBC)
+    ///
+    /// Signal compilers and analyzers that the function cannot return.
+    /// It is up to the compiler to remove any code past a call to functions
+    /// flagged with this attribute.
+    ///
+    #define NORETURN  __declspec(noreturn)
+  #else
+    ///
+    /// Signal compilers and analyzers that the function cannot return.
+    /// It is up to the compiler to remove any code past a call to functions
+    /// flagged with this attribute.
+    ///
+    #define NORETURN
+  #endif
+#endif
+
+//
+// Should be used in combination with ANALYZER_NORETURN to avoid 'noreturn'
+// returns warnings.
+//
+#ifndef ANALYZER_UNREACHABLE
+  #ifdef __clang_analyzer__
+    #if __has_builtin (__builtin_unreachable)
+      ///
+      /// Signal the analyzer that this call is not reachable.
+      /// This excludes compilers.
+      ///
+      #define ANALYZER_UNREACHABLE()  __builtin_unreachable ()
+    #endif
+  #endif
+
+  #ifndef ANALYZER_UNREACHABLE
+    ///
+    /// Signal the analyzer that this call is not reachable.
+    /// This excludes compilers.
+    ///
+    #define ANALYZER_UNREACHABLE()
+  #endif
+#endif
+
+//
+// Static Analyzers may issue errors about potential NULL-dereferences when
+// dereferencing a pointer, that has been checked before, outside of a
+// NULL-check.  This may lead to false positives, such as when using ASSERT()
+// for verification.
+//
+#ifndef ANALYZER_NORETURN
+  #ifdef __has_feature
+    #if __has_feature (attribute_analyzer_noreturn)
+      ///
+      /// Signal analyzers that the function cannot return.
+      /// This excludes compilers.
+      ///
+      #define ANALYZER_NORETURN  __attribute__((analyzer_noreturn))
+    #endif
+  #endif
+
+  #ifndef ANALYZER_NORETURN
+    ///
+    /// Signal the analyzer that the function cannot return.
+    /// This excludes compilers.
+    ///
+    #define ANALYZER_NORETURN
+  #endif
+#endif
+
+///
+/// Tell the code optimizer that the function will return twice.
+/// This prevents wrong optimizations which can cause bugs.
+///
+#ifndef RETURNS_TWICE
+  #if defined (__GNUC__) || defined (__clang__)
+    ///
+    /// Tell the code optimizer that the function will return twice.
+    /// This prevents wrong optimizations which can cause bugs.
+    ///
+    #define RETURNS_TWICE  __attribute__((returns_twice))
+  #else
+    ///
+    /// Tell the code optimizer that the function will return twice.
+    /// This prevents wrong optimizations which can cause bugs.
+    ///
+    #define RETURNS_TWICE
+  #endif
 #endif
 
 //
@@ -124,6 +277,20 @@ typedef struct {
   UINT16  Data3;
   UINT8   Data4[8];
 } GUID;
+
+///
+/// 4-byte buffer. An IPv4 internet protocol address.
+///
+typedef struct {
+  UINT8 Addr[4];
+} IPv4_ADDRESS;
+
+///
+/// 16-byte buffer. An IPv6 internet protocol address.
+///
+typedef struct {
+  UINT8 Addr[16];
+} IPv6_ADDRESS;
 
 //
 // 8-bytes unsigned value that represents a physical system address.
@@ -185,7 +352,7 @@ struct _LIST_ENTRY {
 
 //
 //  UEFI specification claims 1 and 0. We are concerned about the
-//  complier portability so we did it this way.
+//  compiler portability so we did it this way.
 //
 
 ///
@@ -205,6 +372,11 @@ struct _LIST_ENTRY {
 ///
 #define NULL  ((VOID *) 0)
 
+//
+// Null character
+//
+#define CHAR_NULL             0x0000
+
 ///
 /// Maximum values for common UEFI Data Types
 ///
@@ -216,6 +388,14 @@ struct _LIST_ENTRY {
 #define MAX_UINT32  ((UINT32)0xFFFFFFFF)
 #define MAX_INT64   ((INT64)0x7FFFFFFFFFFFFFFFULL)
 #define MAX_UINT64  ((UINT64)0xFFFFFFFFFFFFFFFFULL)
+
+///
+/// Minimum values for the signed UEFI Data Types
+///
+#define MIN_INT8   (((INT8)  -127) - 1)
+#define MIN_INT16  (((INT16) -32767) - 1)
+#define MIN_INT32  (((INT32) -2147483647) - 1)
+#define MIN_INT64  (((INT64) -9223372036854775807LL) - 1)
 
 #define  BIT0     0x00000001
 #define  BIT1     0x00000002
@@ -393,21 +573,24 @@ struct _LIST_ENTRY {
 #define  BASE_8EB    0x8000000000000000ULL
 
 //
-//  Support for variable length argument lists using the ANSI standard.
+//  Support for variable argument lists in freestanding edk2 modules.
 //
-//  Since we are using the ANSI standard we used the standard naming and
-//  did not follow the coding convention
+//  For modules that use the ISO C library interfaces for variable
+//  argument lists, refer to "StdLib/Include/stdarg.h".
 //
 //  VA_LIST  - typedef for argument list.
 //  VA_START (VA_LIST Marker, argument before the ...) - Init Marker for use.
 //  VA_END (VA_LIST Marker) - Clear Marker
-//  VA_ARG (VA_LIST Marker, var arg size) - Use Marker to get an argument from
-//    the ... list. You must know the size and pass it in this macro.
+//  VA_ARG (VA_LIST Marker, var arg type) - Use Marker to get an argument from
+//    the ... list. You must know the type and pass it in this macro.  Type
+//    must be compatible with the type of the actual next argument (as promoted
+//    according to the default argument promotions.)
 //  VA_COPY (VA_LIST Dest, VA_LIST Start) - Initialize Dest as a copy of Start.
 //
-//  example:
+//  Example:
 //
 //  UINTN
+//  EFIAPI
 //  ExampleVarArg (
 //    IN UINTN  NumberOfArgs,
 //    ...
@@ -423,14 +606,20 @@ struct _LIST_ENTRY {
 //    VA_START (Marker, NumberOfArgs);
 //    for (Index = 0, Result = 0; Index < NumberOfArgs; Index++) {
 //      //
-//      // The ... list is a series of UINTN values, so average them up.
+//      // The ... list is a series of UINTN values, so sum them up.
 //      //
 //      Result += VA_ARG (Marker, UINTN);
 //    }
 //
 //    VA_END (Marker);
-//    return Result
+//    return Result;
 //  }
+//
+//  Notes:
+//  - Functions that call VA_START() / VA_END() must have a variable
+//    argument list and must be declared EFIAPI.
+//  - Functions that call VA_COPY() / VA_END() must be declared EFIAPI.
+//  - Functions that only use VA_LIST and VA_ARG() need not be EFIAPI.
 //
 
 /**
@@ -472,7 +661,43 @@ struct _LIST_ENTRY {
 
 #define VA_COPY(Dest, Start)          __va_copy (Dest, Start)
 
-#elif defined(__GNUC__) && !defined(NO_BUILTIN_VA_FUNCS)
+#elif defined(_M_ARM) || defined(_M_ARM64)
+//
+// MSFT ARM variable argument list support.
+//
+
+typedef char* VA_LIST;
+
+#define VA_START(Marker, Parameter)     __va_start (&Marker, &Parameter, _INT_SIZE_OF (Parameter), __alignof(Parameter), &Parameter)
+#define VA_ARG(Marker, TYPE)            (*(TYPE *) ((Marker += _INT_SIZE_OF (TYPE) + ((-(INTN)Marker) & (sizeof(TYPE) - 1))) - _INT_SIZE_OF (TYPE)))
+#define VA_END(Marker)                  (Marker = (VA_LIST) 0)
+#define VA_COPY(Dest, Start)            ((void)((Dest) = (Start)))
+
+#elif defined(__GNUC__)
+
+#if defined(MDE_CPU_X64) && !defined(NO_MSABI_VA_FUNCS)
+//
+// X64 only. Use MS ABI version of GCC built-in macros for variable argument lists.
+//
+///
+/// Both GCC and LLVM 3.8 for X64 support new variable argument intrinsics for Microsoft ABI
+///
+
+///
+/// Variable used to traverse the list of arguments. This type can vary by
+/// implementation and could be an array or structure.
+///
+typedef __builtin_ms_va_list VA_LIST;
+
+#define VA_START(Marker, Parameter)  __builtin_ms_va_start (Marker, Parameter)
+
+#define VA_ARG(Marker, TYPE)         ((sizeof (TYPE) < sizeof (UINTN)) ? (TYPE)(__builtin_va_arg (Marker, UINTN)) : (TYPE)(__builtin_va_arg (Marker, TYPE)))
+
+#define VA_END(Marker)               __builtin_ms_va_end (Marker)
+
+#define VA_COPY(Dest, Start)         __builtin_ms_va_copy (Dest, Start)
+
+#else
 //
 // Use GCC built-in macros for variable argument lists.
 //
@@ -490,6 +715,8 @@ typedef __builtin_va_list VA_LIST;
 #define VA_END(Marker)               __builtin_va_end (Marker)
 
 #define VA_COPY(Dest, Start)         __builtin_va_copy (Dest, Start)
+
+#endif
 
 #else
 ///
@@ -635,7 +862,7 @@ typedef UINTN  *BASE_LIST;
   @return  A pointer to the structure from one of it's elements.
 
 **/
-#define BASE_CR(Record, TYPE, Field)  ((TYPE *) ((CHAR8 *) (Record) - (CHAR8 *) &(((TYPE *) 0)->Field)))
+#define BASE_CR(Record, TYPE, Field)  ((TYPE *) ((CHAR8 *) (Record) - OFFSET_OF (TYPE, Field)))
 
 /**
   Rounds a value up to the next boundary using a specified alignment.
@@ -935,6 +1162,11 @@ typedef UINTN RETURN_STATUS;
 #define RETURN_COMPROMISED_DATA      ENCODE_ERROR (33)
 
 ///
+/// A HTTP error occurred during the network operation.
+///
+#define RETURN_HTTP_ERROR            ENCODE_ERROR (35)
+
+///
 /// The string contained one or more characters that
 /// the device could not render and were skipped.
 ///
@@ -962,6 +1194,12 @@ typedef UINTN RETURN_STATUS;
 /// local policy for this type of data.
 ///
 #define RETURN_WARN_STALE_DATA       ENCODE_WARNING (5)
+
+///
+/// The resulting buffer contains UEFI-compliant file system.
+///
+#define RETURN_WARN_FILE_SYSTEM      ENCODE_WARNING (6)
+
 
 /**
   Returns a 16-bit signature built from 2 ASCII characters.
@@ -1016,10 +1254,11 @@ typedef UINTN RETURN_STATUS;
 #define SIGNATURE_64(A, B, C, D, E, F, G, H) \
     (SIGNATURE_32 (A, B, C, D) | ((UINT64) (SIGNATURE_32 (E, F, G, H)) << 32))
 
-#if defined(_MSC_EXTENSIONS) && !defined (MDE_CPU_EBC)
+#if defined(_MSC_EXTENSIONS) && !defined (__INTEL_COMPILER) && !defined (MDE_CPU_EBC)
+  void * _ReturnAddress(void);
   #pragma intrinsic(_ReturnAddress)
   /**
-    Get the return address of the calling funcation.
+    Get the return address of the calling function.
 
     Based on intrinsic function _ReturnAddress that provides the address of
     the instruction in the calling function that will be executed after
@@ -1027,27 +1266,27 @@ typedef UINTN RETURN_STATUS;
 
     @param L    Return Level.
 
-    @return The return address of the calling funcation or 0 if L != 0.
+    @return The return address of the calling function or 0 if L != 0.
 
   **/
   #define RETURN_ADDRESS(L)     ((L == 0) ? _ReturnAddress() : (VOID *) 0)
 #elif defined(__GNUC__)
   void * __builtin_return_address (unsigned int level);
   /**
-    Get the return address of the calling funcation.
+    Get the return address of the calling function.
 
     Based on built-in Function __builtin_return_address that returns
     the return address of the current function, or of one of its callers.
 
     @param L    Return Level.
 
-    @return The return address of the calling funcation.
+    @return The return address of the calling function.
 
   **/
   #define RETURN_ADDRESS(L)     __builtin_return_address (L)
 #else
   /**
-    Get the return address of the calling funcation.
+    Get the return address of the calling function.
 
     @param L    Return Level.
 
@@ -1056,6 +1295,19 @@ typedef UINTN RETURN_STATUS;
   **/
   #define RETURN_ADDRESS(L)     ((VOID *) 0)
 #endif
+
+/**
+  Return the number of elements in an array.
+
+  @param  Array  An object of array type. Array is only used as an argument to
+                 the sizeof operator, therefore Array is never evaluated. The
+                 caller is responsible for ensuring that Array's type is not
+                 incomplete; that is, Array must have known constant size.
+
+  @return The number of elements in Array. The result has type UINTN.
+
+**/
+#define ARRAY_SIZE(Array) (sizeof (Array) / sizeof ((Array)[0]))
 
 #endif
 

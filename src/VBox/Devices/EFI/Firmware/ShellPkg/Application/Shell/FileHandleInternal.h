@@ -2,13 +2,7 @@
   internal worker functions for FileHandleWrappers to use
 
   Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -23,7 +17,6 @@
   @param[in, out] Row         Current row of the cursor position
 **/
 VOID
-EFIAPI
 MoveCursorBackward (
   IN     UINTN                   LineLength,
   IN OUT UINTN                   *Column,
@@ -39,7 +32,6 @@ MoveCursorBackward (
   @param[in, out] Row         Current row of the cursor position
 **/
 VOID
-EFIAPI
 MoveCursorForward (
   IN     UINTN                   LineLength,
   IN     UINTN                   TotalRow,
@@ -57,7 +49,6 @@ MoveCursorForward (
   @param[in] StartColumn  which column to start at
 **/
 VOID
-EFIAPI
 PrintCommandHistory (
   IN CONST UINTN TotalCols,
   IN CONST UINTN TotalRows,

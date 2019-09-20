@@ -1,14 +1,9 @@
 /** @file
   Main file for stall shell level 1 function.
 
-  Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -50,7 +45,7 @@ ShellCommandRunStall (
   Status = ShellCommandLineParse (EmptyParamList, &Package, &ProblemParam, TRUE);
   if (EFI_ERROR(Status)) {
     if (Status == EFI_VOLUME_CORRUPTED && ProblemParam != NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellLevel1HiiHandle, ProblemParam);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellLevel1HiiHandle, L"stall", ProblemParam);
       FreePool(ProblemParam);
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
@@ -58,20 +53,20 @@ ShellCommandRunStall (
     }
   } else {
     if (ShellCommandLineGetRawValue(Package, 2) != NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel1HiiHandle);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel1HiiHandle, L"stall");
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else if (ShellCommandLineGetRawValue(Package, 1) == NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_FEW), gShellLevel1HiiHandle);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_FEW), gShellLevel1HiiHandle, L"stall");
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       Status = ShellConvertStringToUint64(ShellCommandLineGetRawValue(Package, 1), &Intermediate, FALSE, FALSE);
       if (EFI_ERROR(Status) || ((UINT64)(UINTN)(Intermediate)) != Intermediate) {
-        ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM_VAL), gShellLevel1HiiHandle, ShellCommandLineGetRawValue(Package, 1));
+        ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PARAM_INV), gShellLevel1HiiHandle, L"stall", ShellCommandLineGetRawValue(Package, 1));
         ShellStatus = SHELL_INVALID_PARAMETER;
       } else {
         Status = gBS->Stall((UINTN)Intermediate);
         if (EFI_ERROR(Status)) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_STALL_FAILED), gShellLevel1HiiHandle, Status);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_STALL_FAILED), gShellLevel1HiiHandle, L"stall");
           ShellStatus = SHELL_DEVICE_ERROR;
         }
       }

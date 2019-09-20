@@ -2,15 +2,10 @@
   This includes some definitions introduced in UEFI that will be used in both PEI
   and DXE phases.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-    http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -35,6 +30,7 @@ typedef enum {
   EfiMemoryMappedIO,
   EfiMemoryMappedIOPortSpace,
   EfiPalCode,
+  EfiPersistentMemory,
   EfiMaxMemoryType
 } EFI_MEMORY_TYPE;
 
@@ -151,7 +147,7 @@ typedef struct _EFI_CERT_BLOCK_RSA_2048_SHA256 {
 typedef struct _WIN_CERTIFICATE_UEFI_GUID {
   WIN_CERTIFICATE   Hdr;
   EFI_GUID          CertType;
-  // UINT8            CertData[ANYSIZE_ARRAY];
+  UINT8             CertData[1];
 } WIN_CERTIFICATE_UEFI_GUID;
 
 
@@ -199,7 +195,7 @@ typedef struct _WIN_CERTIFICATE_EFI_PKCS1_15 {
   EFI_CERT_TYPE_RSA2048_SHA256. If the attribute specifies
   authenticated access, then the Data buffer should begin with an
   authentication descriptor prior to the data payload and DataSize
-  should reflect the the data.and descriptor size. The caller
+  should reflect the data.and descriptor size. The caller
   shall digest the Monotonic Count value and the associated data
   for the variable update using the SHA-256 1-way hash algorithm.
   The ensuing the 32-byte digest will be signed using the private

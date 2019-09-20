@@ -2,13 +2,7 @@
   OVMF ACPI Platform Driver
 
   Copyright (c) 2008 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -130,14 +124,20 @@ LocateFvInstanceWithTables (
 
 
 /**
-  Find ACPI tables in an FV and parses them. This function is useful for QEMU and KVM.
+  Find ACPI tables in an FV and install them.
+
+  This is now a fall-back path. Normally, we will search for tables provided
+  by the VMM first.
+
+  If that fails, we use this function to load the ACPI tables from an FV. The
+  sources for the FV based tables is located under OvmfPkg/AcpiTables.
 
   @param  AcpiTable     Protocol instance pointer
 
 **/
 EFI_STATUS
 EFIAPI
-FindAcpiTablesInFv (
+InstallOvmfFvTables (
   IN  EFI_ACPI_TABLE_PROTOCOL     *AcpiTable
   )
 {
@@ -162,12 +162,19 @@ FindAcpiTablesInFv (
   }
 
   //
+  // set FwVol (and use an ASSERT() below) to suppress incorrect
+  // compiler/analyzer warnings
+  //
+  FwVol = NULL;
+  //
   // Locate the firmware volume protocol
   //
   Status = LocateFvInstanceWithTables (&FwVol);
   if (EFI_ERROR (Status)) {
     return EFI_ABORTED;
   }
+  ASSERT (FwVol != NULL);
+
   //
   // Read tables from the storage file.
   //
@@ -222,7 +229,7 @@ FindAcpiTablesInFv (
 }
 
 /**
-  Entrypoint of Acpi Platform driver.
+  Effective entrypoint of Acpi Platform driver.
 
   @param  ImageHandle
   @param  SystemTable
@@ -234,34 +241,20 @@ FindAcpiTablesInFv (
 **/
 EFI_STATUS
 EFIAPI
-AcpiPlatformEntryPoint (
-  IN EFI_HANDLE         ImageHandle,
-  IN EFI_SYSTEM_TABLE   *SystemTable
+InstallAcpiTables (
+  IN   EFI_ACPI_TABLE_PROTOCOL       *AcpiTable
   )
 {
   EFI_STATUS                         Status;
-  EFI_ACPI_TABLE_PROTOCOL            *AcpiTable;
-
-  //
-  // Find the AcpiTable protocol
-  //
-  Status = gBS->LocateProtocol (
-                  &gEfiAcpiTableProtocolGuid,
-                  NULL,
-                  (VOID**)&AcpiTable
-                  );
-  if (EFI_ERROR (Status)) {
-    return EFI_ABORTED;
-  }
 
   if (XenDetected ()) {
     Status = InstallXenTables (AcpiTable);
   } else {
-    Status = InstallAllQemuLinkedTables (AcpiTable);
+    Status = InstallQemuFwCfgTables (AcpiTable);
   }
 
   if (EFI_ERROR (Status)) {
-    Status = FindAcpiTablesInFv (AcpiTable);
+    Status = InstallOvmfFvTables (AcpiTable);
   }
 
   return Status;

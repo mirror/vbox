@@ -1,14 +1,8 @@
 /** @file
   SMM Services Table Library.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -18,7 +12,6 @@
 #include <Library/DebugLib.h>
 
 EFI_SMM_SYSTEM_TABLE2   *gSmst             = NULL;
-EFI_SMM_BASE2_PROTOCOL  *mInternalSmmBase2 = NULL;
 
 /**
   The constructor function caches the pointer of SMM Services Table.
@@ -36,8 +29,10 @@ SmmServicesTableLibConstructor (
   IN EFI_SYSTEM_TABLE  *SystemTable
   )
 {
-  EFI_STATUS  Status;
+  EFI_STATUS              Status;
+  EFI_SMM_BASE2_PROTOCOL  *InternalSmmBase2;
 
+  InternalSmmBase2 = NULL;
   //
   // Retrieve SMM Base2 Protocol,  Do not use gBS from UefiBootServicesTableLib on purpose
   // to prevent inclusion of gBS, gST, and gImageHandle from SMM Drivers unless the
@@ -46,25 +41,15 @@ SmmServicesTableLibConstructor (
   Status = SystemTable->BootServices->LocateProtocol (
                                         &gEfiSmmBase2ProtocolGuid,
                                         NULL,
-                                        (VOID **)&mInternalSmmBase2
+                                        (VOID **)&InternalSmmBase2
                                         );
   ASSERT_EFI_ERROR (Status);
-  ASSERT (mInternalSmmBase2 != NULL);
-
-  //
-  // Check to see if we are already in SMM
-  //
-  if (!InSmm ()) {
-    //
-    // We are not in SMM, so SMST is not needed
-    //
-    return EFI_SUCCESS;
-  }
+  ASSERT (InternalSmmBase2 != NULL);
 
   //
   // We are in SMM, retrieve the pointer to SMM System Table
   //
-  mInternalSmmBase2->GetSmstLocation (mInternalSmmBase2, &gSmst);
+  InternalSmmBase2->GetSmstLocation (InternalSmmBase2, &gSmst);
   ASSERT (gSmst != NULL);
 
   return EFI_SUCCESS;
@@ -87,11 +72,8 @@ InSmm (
   VOID
   )
 {
-  BOOLEAN  InSmm;
-
   //
-  // Check to see if we are already in SMM
+  // We are already in SMM
   //
-  mInternalSmmBase2->InSmm (mInternalSmmBase2, &InSmm);
-  return InSmm;
+  return TRUE;
 }

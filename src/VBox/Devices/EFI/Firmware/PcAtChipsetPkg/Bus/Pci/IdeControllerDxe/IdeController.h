@@ -1,14 +1,8 @@
 /** @file
   Header file for IDE controller driver.
 
-  Copyright (c) 2008 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -59,7 +53,7 @@ extern EFI_COMPONENT_NAME2_PROTOCOL gIdeControllerComponentName2;
                                 driver but used by bus driver
 
   @retval EFI_SUCCESS           Driver loaded.
-  @retval !EFI_SUCESS           Driver not loaded.
+  @retval !EFI_SUCCESS          Driver not loaded.
 **/
 EFI_STATUS
 EFIAPI
@@ -100,7 +94,7 @@ IdeControllerStart (
   @param NumberOfChildren   Not used
   @param ChildHandleBuffer  Not used
 
-  @retval EFI_SUCESS        This driver is removed DeviceHandle
+  @retval EFI_SUCCESS       This driver is removed DeviceHandle
   @retval !EFI_SUCCESS      This driver was not removed from this device
 **/
 EFI_STATUS

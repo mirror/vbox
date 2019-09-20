@@ -1,14 +1,9 @@
 /** @file
   Main file for Edit shell Debug1 function.
 
-  Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved. <BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved. <BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -58,7 +53,7 @@ ShellCommandRunEdit (
   Status = ShellCommandLineParse (EmptyParamList, &Package, &ProblemParam, TRUE);
   if (EFI_ERROR(Status)) {
     if (Status == EFI_VOLUME_CORRUPTED && ProblemParam != NULL) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDebug1HiiHandle, ProblemParam);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_PROBLEM), gShellDebug1HiiHandle, L"edit", ProblemParam);
       FreePool(ProblemParam);
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
@@ -66,7 +61,7 @@ ShellCommandRunEdit (
     }
   } else {
     if (ShellCommandLineGetCount(Package) > 2) {
-      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellDebug1HiiHandle);
+      ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellDebug1HiiHandle, L"edit");
       ShellStatus = SHELL_INVALID_PARAMETER;
     } else {
       Cwd = gEfiShellProtocol->GetCurDir(NULL);
@@ -134,7 +129,7 @@ ShellCommandRunEdit (
         //
         if (Status == EFI_SUCCESS) {
         } else if (Status == EFI_OUT_OF_RESOURCES) {
-          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_GEN_OUT_MEM), gShellDebug1HiiHandle);
+          ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN(STR_GEN_OUT_MEM), gShellDebug1HiiHandle, L"edit");
         } else {
           if (Buffer != NULL) {
             if (StrCmp (Buffer, L"") != 0) {

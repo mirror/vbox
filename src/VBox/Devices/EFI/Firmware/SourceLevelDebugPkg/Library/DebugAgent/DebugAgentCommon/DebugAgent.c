@@ -4,14 +4,8 @@
   read/write debug packet to communication with HOST based on transfer
   protocol.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -19,7 +13,7 @@
 #include "Ia32/DebugException.h"
 
 GLOBAL_REMOVE_IF_UNREFERENCED CHAR8 mErrorMsgVersionAlert[]       = "\rThe SourceLevelDebugPkg you are using requires a newer version of the Intel(R) UDK Debugger Tool.\r\n";
-GLOBAL_REMOVE_IF_UNREFERENCED CHAR8 mErrorMsgSendInitPacket[]     = "\rSend INIT break packet and try to connect the HOST (Intel(R) UDK Debugger Tool v1.4) ...\r\n";
+GLOBAL_REMOVE_IF_UNREFERENCED CHAR8 mErrorMsgSendInitPacket[]     = "\rSend INIT break packet and try to connect the HOST (Intel(R) UDK Debugger Tool v1.5) ...\r\n";
 GLOBAL_REMOVE_IF_UNREFERENCED CHAR8 mErrorMsgConnectOK[]          = "HOST connection is successful!\r\n";
 GLOBAL_REMOVE_IF_UNREFERENCED CHAR8 mErrorMsgConnectFail[]        = "HOST connection is failed!\r\n";
 GLOBAL_REMOVE_IF_UNREFERENCED CHAR8 mWarningMsgIngoreBreakpoint[] = "Ignore break point in SMM for SMI issued during DXE debugging!\r\n";
@@ -201,55 +195,17 @@ FindAndReportModuleImageInfo (
   )
 {
   UINTN                                Pe32Data;
-  EFI_IMAGE_DOS_HEADER                 *DosHdr;
-  EFI_IMAGE_OPTIONAL_HEADER_PTR_UNION  Hdr;
   PE_COFF_LOADER_IMAGE_CONTEXT         ImageContext;
 
   //
   // Find Image Base
   //
-  Pe32Data = ((UINTN)mErrorMsgVersionAlert) & ~(AlignSize - 1);
-  while (Pe32Data != 0) {
-    DosHdr = (EFI_IMAGE_DOS_HEADER *) Pe32Data;
-    if (DosHdr->e_magic == EFI_IMAGE_DOS_SIGNATURE) {
-      //
-      // DOS image header is present, so read the PE header after the DOS image header.
-      //
-      Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)(Pe32Data + (UINTN) ((DosHdr->e_lfanew) & 0x0ffff));
-      //
-      // Make sure PE header address does not overflow and is less than the initial address.
-      //
-      if (((UINTN)Hdr.Pe32 > Pe32Data) && ((UINTN)Hdr.Pe32 < (UINTN)mErrorMsgVersionAlert)) {
-        if (Hdr.Pe32->Signature == EFI_IMAGE_NT_SIGNATURE) {
-          //
-          // It's PE image.
-          //
-          break;
-        }
-      }
-    } else {
-      //
-      // DOS image header is not present, TE header is at the image base.
-      //
-      Hdr.Pe32 = (EFI_IMAGE_NT_HEADERS32 *)Pe32Data;
-      if ((Hdr.Te->Signature == EFI_TE_IMAGE_HEADER_SIGNATURE) &&
-          ((Hdr.Te->Machine == IMAGE_FILE_MACHINE_I386) || Hdr.Te->Machine == IMAGE_FILE_MACHINE_X64)) {
-        //
-        // It's TE image, it TE header and Machine type match
-        //
-        break;
-      }
-    }
-
-    //
-    // Not found the image base, check the previous aligned address
-    //
-    Pe32Data -= AlignSize;
+  Pe32Data = PeCoffSearchImageBase ((UINTN) mErrorMsgVersionAlert);
+  if (Pe32Data != 0) {
+    ImageContext.ImageAddress = Pe32Data;
+    ImageContext.PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageContext.ImageAddress);
+    PeCoffLoaderRelocateImageExtraAction (&ImageContext);
   }
-
-  ImageContext.ImageAddress = Pe32Data;
-  ImageContext.PdbPointer = PeCoffLoaderGetPdbPointer ((VOID*) (UINTN) ImageContext.ImageAddress);
-  PeCoffLoaderRelocateImageExtraAction (&ImageContext);
 }
 
 /**
@@ -293,7 +249,7 @@ TriggerSoftInterrupt (
 }
 
 /**
-  Caculate Mailbox checksum and update the checksum field.
+  Calculate Mailbox checksum and update the checksum field.
 
   @param[in]  Mailbox  Debug Agent Mailbox pointer.
 
@@ -380,10 +336,92 @@ UpdateMailboxContent (
                                               - CalculateSum8 ((UINT8 *)&Value, sizeof(UINT8));
     Mailbox->HostSequenceNo = (UINT8) Value;
     break;
+  case DEBUG_MAILBOX_DEBUG_TIMER_FREQUENCY:
+    Mailbox->ToBeCheckSum = Mailbox->CheckSum + CalculateSum8 ((UINT8 *)&Mailbox->DebugTimerFrequency, sizeof(UINT32))
+                                              - CalculateSum8 ((UINT8 *)&Value, sizeof(UINT32));
+    Mailbox->DebugTimerFrequency = (UINT32) Value;
+    break;
   }
   UpdateMailboxChecksum (Mailbox);
   ReleaseMpSpinLock (&mDebugMpContext.MailboxSpinLock);
 }
+
+/**
+  Read data from debug device and save the data in buffer.
+
+  Reads NumberOfBytes data bytes from a debug device into the buffer
+  specified by Buffer. The number of bytes actually read is returned.
+  If the return value is less than NumberOfBytes, then the rest operation failed.
+  If NumberOfBytes is zero, then return 0.
+
+  @param  Handle           Debug port handle.
+  @param  Buffer           Pointer to the data buffer to store the data read from the debug device.
+  @param  NumberOfBytes    Number of bytes which will be read.
+  @param  Timeout          Timeout value for reading from debug device. It unit is Microsecond.
+
+  @retval 0                Read data failed, no data is to be read.
+  @retval >0               Actual number of bytes read from debug device.
+
+**/
+UINTN
+DebugAgentReadBuffer (
+  IN DEBUG_PORT_HANDLE     Handle,
+  IN UINT8                 *Buffer,
+  IN UINTN                 NumberOfBytes,
+  IN UINTN                 Timeout
+  )
+{
+  UINTN                    Index;
+  UINT32                   Begin;
+  UINT32                   TimeoutTicker;
+  UINT32                   TimerRound;
+  UINT32                   TimerFrequency;
+  UINT32                   TimerCycle;
+
+  Begin         = 0;
+  TimeoutTicker = 0;
+  TimerRound    = 0;
+  TimerFrequency = GetMailboxPointer()->DebugTimerFrequency;
+  TimerCycle = GetApicTimerInitCount ();
+
+  if (Timeout != 0) {
+    Begin = GetApicTimerCurrentCount ();
+    TimeoutTicker = (UINT32) DivU64x32 (
+                      MultU64x64 (
+                        TimerFrequency,
+                        Timeout
+                        ),
+                      1000000u
+                      );
+    TimerRound = (UINT32) DivU64x32Remainder (TimeoutTicker,  TimerCycle / 2, &TimeoutTicker);
+  }
+  Index = 0;
+  while (Index < NumberOfBytes) {
+    if (DebugPortPollBuffer (Handle)) {
+      DebugPortReadBuffer (Handle, Buffer + Index, 1, 0);
+      Index ++;
+      continue;
+    }
+    if (Timeout != 0) {
+      if (TimerRound == 0) {
+        if (IsDebugTimerTimeout (TimerCycle, Begin, TimeoutTicker)) {
+          //
+          // If time out occurs.
+          //
+          return 0;
+        }
+      } else {
+        if (IsDebugTimerTimeout (TimerCycle, Begin, TimerCycle / 2)) {
+          TimerRound --;
+          Begin = GetApicTimerCurrentCount ();
+        }
+      }
+    }
+  }
+
+  return Index;
+}
+
 /**
   Set debug flag in mailbox.
 
@@ -589,7 +627,7 @@ ReadRemainingBreakPacket (
   //
   // Has received start symbol, try to read the rest part
   //
-  if (DebugPortReadBuffer (Handle, (UINT8 *)DebugHeader + OFFSET_OF (DEBUG_PACKET_HEADER, Command), sizeof (DEBUG_PACKET_HEADER) - OFFSET_OF (DEBUG_PACKET_HEADER, Command), READ_PACKET_TIMEOUT) == 0) {
+  if (DebugAgentReadBuffer (Handle, (UINT8 *)DebugHeader + OFFSET_OF (DEBUG_PACKET_HEADER, Command), sizeof (DEBUG_PACKET_HEADER) - OFFSET_OF (DEBUG_PACKET_HEADER, Command), READ_PACKET_TIMEOUT) == 0) {
     //
     // Timeout occur, exit
     //
@@ -605,19 +643,20 @@ ReadRemainingBreakPacket (
     return EFI_CRC_ERROR;
   }
   Mailbox = GetMailboxPointer();
-  if (((DebugHeader->Command & DEBUG_COMMAND_RESPONSE) == 0) &&
-       (DebugHeader->SequenceNo == (UINT8) (Mailbox->HostSequenceNo + 1))) {
-    //
-    // Only updagte HostSequenceNo for new command packet
-    //
-    UpdateMailboxContent (Mailbox, DEBUG_MAILBOX_HOST_SEQUENCE_NO_INDEX, DebugHeader->SequenceNo);
-    return EFI_SUCCESS;
-  } else {
-    //
-    // If one old command or response packet received, skip it
-    //
-    return EFI_DEVICE_ERROR;
+  if (IS_REQUEST (DebugHeader)) {
+    if (DebugHeader->SequenceNo == (UINT8) (Mailbox->HostSequenceNo + 1)) {
+      //
+      // Only updagte HostSequenceNo for new command packet
+      //
+      UpdateMailboxContent (Mailbox, DEBUG_MAILBOX_HOST_SEQUENCE_NO_INDEX, DebugHeader->SequenceNo);
+      return EFI_SUCCESS;
+    }
+    if (DebugHeader->SequenceNo == Mailbox->HostSequenceNo) {
+      return EFI_SUCCESS;
+    }
   }
+
+  return EFI_DEVICE_ERROR;
 }
 
 /**
@@ -702,7 +741,7 @@ CommandGo (
 }
 
 /**
-  Exectue Stepping command.
+  Execute Stepping command.
 
   @param[in] CpuContext        Pointer to saved CPU context.
 
@@ -717,6 +756,39 @@ CommandStepping (
   Eflags = (IA32_EFLAGS32 *) &CpuContext->Eflags;
   Eflags->Bits.TF = 1;
   Eflags->Bits.RF = 1;
+  //
+  // Save and clear EFLAGS.IF to avoid interrupt happen when executing Stepping
+  //
+  SetDebugFlag (DEBUG_AGENT_FLAG_INTERRUPT_FLAG, Eflags->Bits.IF);
+  Eflags->Bits.IF = 0;
+  //
+  // Set Stepping Flag
+  //
+  SetDebugFlag (DEBUG_AGENT_FLAG_STEPPING, 1);
+}
+
+/**
+  Do some cleanup after Stepping command done.
+
+  @param[in] CpuContext        Pointer to saved CPU context.
+
+**/
+VOID
+CommandSteppingCleanup (
+  IN DEBUG_CPU_CONTEXT          *CpuContext
+  )
+{
+  IA32_EFLAGS32                *Eflags;
+
+  Eflags = (IA32_EFLAGS32 *) &CpuContext->Eflags;
+  //
+  // Restore EFLAGS.IF
+  //
+  Eflags->Bits.IF = GetDebugFlag (DEBUG_AGENT_FLAG_INTERRUPT_FLAG);
+  //
+  // Clear Stepping flag
+  //
+  SetDebugFlag (DEBUG_AGENT_FLAG_STEPPING, 0);
 }
 
 /**
@@ -956,6 +1028,51 @@ SendAckPacket (
 }
 
 /**
+  Decompress the Data in place.
+
+  @param[in, out] Data   The compressed data buffer.
+                         The buffer is assumed large enough to hold the uncompressed data.
+  @param[in]      Length The length of the compressed data buffer.
+
+  @return   The length of the uncompressed data buffer.
+**/
+UINT8
+DecompressDataInPlace (
+  IN OUT UINT8   *Data,
+  IN UINTN       Length
+  )
+{
+  UINTN  Index;
+  UINT16 LastChar;
+  UINTN  LastCharCount;
+  UINT8  CurrentChar;
+
+  LastChar = (UINT16) -1;
+  LastCharCount = 0;
+  for (Index = 0; Index < Length; Index++) {
+    CurrentChar = Data[Index];
+    if (LastCharCount == 2) {
+      LastCharCount = 0;
+      CopyMem (&Data[Index + CurrentChar], &Data[Index + 1], Length - Index - 1);
+      SetMem (&Data[Index], CurrentChar, (UINT8) LastChar);
+      LastChar = (UINT16) -1;
+      Index += CurrentChar - 1;
+      Length += CurrentChar - 1;
+    } else {
+      if (LastChar != CurrentChar) {
+        LastCharCount = 0;
+      }
+      LastCharCount++;
+      LastChar = CurrentChar;
+    }
+  }
+
+  ASSERT (Length <= DEBUG_DATA_MAXIMUM_REAL_DATA);
+
+  return (UINT8) Length;
+}
+
+/**
   Receive valid packet from HOST.
 
   @param[out] InputPacket         Buffer to receive packet.
@@ -1000,13 +1117,13 @@ ReceivePacket (
     //
     // Find the valid start symbol
     //
-    Received = DebugPortReadBuffer (Handle, &DebugHeader->StartSymbol, sizeof (DebugHeader->StartSymbol), TimeoutForStartSymbol);
+    Received = DebugAgentReadBuffer (Handle, &DebugHeader->StartSymbol, sizeof (DebugHeader->StartSymbol), TimeoutForStartSymbol);
     if (Received < sizeof (DebugHeader->StartSymbol)) {
-      DebugAgentMsgPrint (DEBUG_AGENT_WARNING, "DebugPortReadBuffer(StartSymbol) timeout\n");
+      DebugAgentMsgPrint (DEBUG_AGENT_WARNING, "DebugAgentReadBuffer(StartSymbol) timeout\n");
       return RETURN_TIMEOUT;
     }
 
-    if (DebugHeader->StartSymbol != DEBUG_STARTING_SYMBOL_NORMAL) {
+    if ((DebugHeader->StartSymbol != DEBUG_STARTING_SYMBOL_NORMAL) && (DebugHeader->StartSymbol != DEBUG_STARTING_SYMBOL_COMPRESS)) {
       DebugAgentMsgPrint (DEBUG_AGENT_WARNING, "Invalid start symbol received [%02x]\n", DebugHeader->StartSymbol);
       continue;
     }
@@ -1014,14 +1131,14 @@ ReceivePacket (
     //
     // Read Package header till field Length
     //
-    Received = DebugPortReadBuffer (
+    Received = DebugAgentReadBuffer (
                  Handle,
-                 (UINT8 *)DebugHeader + OFFSET_OF (DEBUG_PACKET_HEADER, Command),
+                 (UINT8 *) DebugHeader + OFFSET_OF (DEBUG_PACKET_HEADER, Command),
                  OFFSET_OF (DEBUG_PACKET_HEADER, Length) + sizeof (DebugHeader->Length) - sizeof (DebugHeader->StartSymbol),
                  Timeout
                  );
     if (Received == 0) {
-      DebugAgentMsgPrint (DEBUG_AGENT_ERROR, "DebugPortReadBuffer(Command) timeout\n");
+      DebugAgentMsgPrint (DEBUG_AGENT_ERROR, "DebugAgentReadBuffer(Command) timeout\n");
       return RETURN_TIMEOUT;
     }
     if (DebugHeader->Length < sizeof (DEBUG_PACKET_HEADER)) {
@@ -1040,9 +1157,9 @@ ReceivePacket (
       //
       // Read the payload data include the CRC field
       //
-      Received = DebugPortReadBuffer (Handle, &DebugHeader->SequenceNo, (UINT8) (DebugHeader->Length - OFFSET_OF (DEBUG_PACKET_HEADER, SequenceNo)), Timeout);
+      Received = DebugAgentReadBuffer (Handle, &DebugHeader->SequenceNo, (UINT8) (DebugHeader->Length - OFFSET_OF (DEBUG_PACKET_HEADER, SequenceNo)), Timeout);
       if (Received == 0) {
-        DebugAgentMsgPrint (DEBUG_AGENT_ERROR, "DebugPortReadBuffer(SequenceNo) timeout\n");
+        DebugAgentMsgPrint (DEBUG_AGENT_ERROR, "DebugAgentReadBuffer(SequenceNo) timeout\n");
         return RETURN_TIMEOUT;
       }
       //
@@ -1060,6 +1177,12 @@ ReceivePacket (
 
   DebugAgentDataMsgPrint (DEBUG_AGENT_VERBOSE, FALSE, (UINT8 *) DebugHeader, DebugHeader->Length);
 
+  if (DebugHeader->StartSymbol == DEBUG_STARTING_SYMBOL_COMPRESS) {
+    DebugHeader->StartSymbol = DEBUG_STARTING_SYMBOL_NORMAL;
+    DebugHeader->Length      = DecompressDataInPlace (
+                                 (UINT8 *) (DebugHeader + 1), DebugHeader->Length - sizeof (DEBUG_PACKET_HEADER)
+                                 ) + sizeof (DEBUG_PACKET_HEADER);
+  }
   return RETURN_SUCCESS;
 }
 
@@ -1168,8 +1291,12 @@ GetBreakCause (
       if ((CpuContext->Dr6 & BIT14) != 0) {
         Cause = DEBUG_DATA_BREAK_CAUSE_STEPPING;
         //
-        // If it's single step, no need to check DR0, to ensure single step work in PeCoffExtraActionLib
-        // (right after triggering a breakpoint to report image load/unload).
+        // DR6.BIT14 Indicates (when set) that the debug exception was
+        // triggered by the single step execution mode.
+        // The single-step mode is the highest priority debug exception.
+        // This is single step, no need to check DR0, to ensure single step
+        // work in PeCoffExtraActionLib (right after triggering a breakpoint
+        // to report image load/unload).
         //
         return Cause;
 
@@ -1290,42 +1417,114 @@ CopyMemByWidth (
 }
 
 /**
+  Compress the data buffer but do not modify the original buffer.
+
+  The compressed data is directly send to the debug channel.
+  Compressing in place doesn't work because the data may become larger
+  during compressing phase. ("3 3 ..." --> "3 3 0 ...")
+  The routine is expected to be called three times:
+  1. Compute the length of the compressed data buffer;
+  2. Compute the CRC of the compressed data buffer;
+  3. Compress the data and send to the debug channel.
+
+  @param[in]  Handle           The debug channel handle to send the compressed data buffer.
+  @param[in]  Data             The data buffer.
+  @param[in]  Length           The length of the data buffer.
+  @param[in]  Send             TRUE to send the compressed data buffer.
+  @param[out] CompressedLength Return the length of the compressed data buffer.
+                               It may be larger than the Length in some cases.
+  @param[out] CompressedCrc    Return the CRC of the compressed data buffer.
+**/
+VOID
+CompressData (
+  IN  DEBUG_PORT_HANDLE Handle,
+  IN  UINT8             *Data,
+  IN  UINT8             Length,
+  IN  BOOLEAN           Send,
+  OUT UINTN             *CompressedLength,  OPTIONAL
+  OUT UINT16            *CompressedCrc      OPTIONAL
+  )
+{
+  UINTN                 Index;
+  UINT8                 LastChar;
+  UINT8                 LastCharCount;
+  UINT8                 CurrentChar;
+  UINTN                 CompressedIndex;
+
+  ASSERT (Length > 0);
+  LastChar      = Data[0] + 1; // Just ensure it's different from the first byte.
+  LastCharCount = 0;
+
+  for (Index = 0, CompressedIndex = 0; Index <= Length; Index++) {
+    if (Index < Length) {
+      CurrentChar = Data[Index];
+    } else {
+      CurrentChar = (UINT8) LastChar + 1; // just ensure it's different from LastChar
+    }
+    if (LastChar != CurrentChar) {
+      if (LastCharCount == 1) {
+        CompressedIndex++;
+        if (CompressedCrc != NULL) {
+          *CompressedCrc = CalculateCrc16 (&LastChar, 1, *CompressedCrc);
+        }
+        if (Send) {
+          DebugPortWriteBuffer (Handle, &LastChar, 1);
+        }
+
+      } else if (LastCharCount >= 2) {
+        CompressedIndex += 3;
+        LastCharCount -= 2;
+        if (CompressedCrc != NULL) {
+          *CompressedCrc = CalculateCrc16 (&LastChar, 1, *CompressedCrc);
+          *CompressedCrc = CalculateCrc16 (&LastChar, 1, *CompressedCrc);
+          *CompressedCrc = CalculateCrc16 (&LastCharCount, 1, *CompressedCrc);
+        }
+        if (Send) {
+          DebugPortWriteBuffer (Handle, &LastChar, 1);
+          DebugPortWriteBuffer (Handle, &LastChar, 1);
+          DebugPortWriteBuffer (Handle, &LastCharCount, 1);
+        }
+      }
+      LastCharCount = 0;
+    }
+    LastCharCount++;
+    LastChar = CurrentChar;
+  }
+
+  if (CompressedLength != NULL) {
+    *CompressedLength = CompressedIndex;
+  }
+}
+
+/**
   Read memory with speicifed width and send packet with response data to HOST.
 
   @param[in] Data        Pointer to response data buffer.
   @param[in] Count       The number of data with specified Width.
   @param[in] Width       Data width in byte.
+  @param[in] DebugHeader Pointer to a buffer for creating response packet and receiving ACK packet,
+                         to minimize the stack usage.
 
   @retval RETURN_SUCCESS      Response data was sent successfully.
 
 **/
 RETURN_STATUS
 ReadMemoryAndSendResponsePacket (
-  IN UINT8                *Data,
-  IN UINT16               Count,
-  IN UINT8                Width
+  IN UINT8                   *Data,
+  IN UINT16                  Count,
+  IN UINT8                   Width,
+  IN DEBUG_PACKET_HEADER     *DebugHeader
   )
 {
   RETURN_STATUS        Status;
-  DEBUG_PACKET_HEADER  *DebugHeader;
   BOOLEAN              LastPacket;
-  DEBUG_PACKET_HEADER  *AckDebugHeader;
-  UINT8                DebugPacket[DEBUG_DATA_UPPER_LIMIT + sizeof (UINT64) - 1];
-  UINT8                InputPacketBuffer[DEBUG_DATA_UPPER_LIMIT];
   DEBUG_PORT_HANDLE    Handle;
   UINT8                SequenceNo;
   UINTN                RemainingDataSize;
-  UINTN                CurrentDataSize;
+  UINT8                CurrentDataSize;
+  UINTN                CompressedDataSize;
 
   Handle = GetDebugPortHandle();
-
-  //
-  // Data is appended end of Debug Packet header,  make sure data address
-  // in Debug Packet 8-byte alignment always
-  //
-  DebugHeader = (DEBUG_PACKET_HEADER *) (ALIGN_VALUE ((UINTN)&DebugPacket + sizeof (DEBUG_PACKET_HEADER), sizeof (UINT64))
-                                         - sizeof (DEBUG_PACKET_HEADER));
-  DebugHeader->StartSymbol = DEBUG_STARTING_SYMBOL_NORMAL;
 
   RemainingDataSize = Count * Width;
   while (TRUE) {
@@ -1334,7 +1533,7 @@ ReadMemoryAndSendResponsePacket (
       //
       // If the remaining data is less one real packet size, this is the last data packet
       //
-      CurrentDataSize = RemainingDataSize;
+      CurrentDataSize = (UINT8) RemainingDataSize;
       LastPacket = TRUE;
       DebugHeader->Command = DEBUG_COMMAND_OK;
     } else {
@@ -1349,45 +1548,95 @@ ReadMemoryAndSendResponsePacket (
     //
     // Construct the rest Debug header
     //
-    DebugHeader->Length     = (UINT8)(CurrentDataSize + sizeof (DEBUG_PACKET_HEADER));
-    DebugHeader->SequenceNo = SequenceNo;
-    DebugHeader->Crc        = 0;
-    CopyMemByWidth ((UINT8 *)(DebugHeader + 1), Data, (UINT16) CurrentDataSize / Width, Width);
-    //
-    // Calculate and fill the checksum, DebugHeader->Crc should be 0 before invoking CalculateCrc16 ()
-    //
-    DebugHeader->Crc = CalculateCrc16 ((UINT8 *) DebugHeader, DebugHeader->Length, 0);
+    DebugHeader->StartSymbol = DEBUG_STARTING_SYMBOL_NORMAL;
+    DebugHeader->Length      = CurrentDataSize + sizeof (DEBUG_PACKET_HEADER);
+    DebugHeader->SequenceNo  = SequenceNo;
+    DebugHeader->Crc         = 0;
+    CopyMemByWidth ((UINT8 *) (DebugHeader + 1), Data, CurrentDataSize / Width, Width);
 
-    DebugAgentDataMsgPrint (DEBUG_AGENT_VERBOSE, TRUE, (UINT8 *) DebugHeader, DebugHeader->Length);
+    //
+    // Compression/decompression support was added since revision 0.4.
+    // Revision 0.3 shouldn't compress the packet.
+    //
+    if (PcdGet32(PcdTransferProtocolRevision) >= DEBUG_AGENT_REVISION_04) {
+      //
+      // Get the compressed data size without modifying the packet.
+      //
+      CompressData (
+        Handle,
+        (UINT8 *) (DebugHeader + 1),
+        CurrentDataSize,
+        FALSE,
+        &CompressedDataSize,
+        NULL
+        );
+    } else {
+      CompressedDataSize = CurrentDataSize;
+    }
+    if (CompressedDataSize < CurrentDataSize) {
+      DebugHeader->Length = (UINT8) CompressedDataSize + sizeof (DEBUG_PACKET_HEADER);
+      DebugHeader->StartSymbol = DEBUG_STARTING_SYMBOL_COMPRESS;
+      //
+      // Compute the CRC of the packet head without modifying the packet.
+      //
+      DebugHeader->Crc = CalculateCrc16 ((UINT8 *) DebugHeader, sizeof (DEBUG_PACKET_HEADER), 0);
+      CompressData (
+        Handle,
+        (UINT8 *) (DebugHeader + 1),
+        CurrentDataSize,
+        FALSE,
+        NULL,
+        &DebugHeader->Crc
+        );
+      //
+      // Send out the packet head.
+      //
+      DebugPortWriteBuffer (Handle, (UINT8 *) DebugHeader, sizeof (DEBUG_PACKET_HEADER));
+      //
+      // Compress and send out the packet data.
+      //
+      CompressData (
+        Handle,
+        (UINT8 *) (DebugHeader + 1),
+        CurrentDataSize,
+        TRUE,
+        NULL,
+        NULL
+        );
+    } else {
 
-    DebugPortWriteBuffer (Handle, (UINT8 *) DebugHeader, DebugHeader->Length);
+      //
+      // Calculate and fill the checksum, DebugHeader->Crc should be 0 before invoking CalculateCrc16 ()
+      //
+      DebugHeader->Crc = CalculateCrc16 ((UINT8 *) DebugHeader, DebugHeader->Length, 0);
+
+      DebugAgentDataMsgPrint (DEBUG_AGENT_VERBOSE, TRUE, (UINT8 *) DebugHeader, DebugHeader->Length);
+
+      DebugPortWriteBuffer (Handle, (UINT8 *) DebugHeader, DebugHeader->Length);
+    }
 
     while (TRUE) {
-      Status = ReceivePacket (InputPacketBuffer, NULL, NULL, READ_PACKET_TIMEOUT, FALSE);
+      Status = ReceivePacket ((UINT8 *) DebugHeader, NULL, NULL, READ_PACKET_TIMEOUT, FALSE);
       if (Status == RETURN_TIMEOUT) {
         DebugAgentMsgPrint (DEBUG_AGENT_WARNING, "TARGET: Timeout in SendDataResponsePacket()\n");
         break;
       }
-      AckDebugHeader = (DEBUG_PACKET_HEADER *) InputPacketBuffer;
-      SequenceNo = AckDebugHeader->SequenceNo;
-      if (AckDebugHeader->Command == DEBUG_COMMAND_OK &&
-          SequenceNo == DebugHeader->SequenceNo &&
-          LastPacket) {
+      if ((DebugHeader->Command == DEBUG_COMMAND_OK) && (DebugHeader->SequenceNo == SequenceNo) && LastPacket) {
         //
         // If this is the last packet, return RETURN_SUCCESS.
         //
         return RETURN_SUCCESS;
       }
-      if ((SequenceNo == (UINT8) (DebugHeader->SequenceNo + 1)) && (AckDebugHeader->Command == DEBUG_COMMAND_CONTINUE)) {
+      if ((DebugHeader->Command == DEBUG_COMMAND_CONTINUE) && (DebugHeader->SequenceNo == (UINT8) (SequenceNo + 1))) {
         //
         // Calculate the rest data size
         //
         Data              += CurrentDataSize;
         RemainingDataSize -= CurrentDataSize;
-        UpdateMailboxContent (GetMailboxPointer(), DEBUG_MAILBOX_HOST_SEQUENCE_NO_INDEX, (UINT8) SequenceNo);
+        UpdateMailboxContent (GetMailboxPointer(), DEBUG_MAILBOX_HOST_SEQUENCE_NO_INDEX, DebugHeader->SequenceNo);
         break;
       }
-      if (SequenceNo >= DebugHeader->SequenceNo) {
+      if (DebugHeader->SequenceNo >= SequenceNo) {
         DebugAgentMsgPrint (DEBUG_AGENT_WARNING, "TARGET: Received one old or new command(SequenceNo is %x, last SequenceNo is %x)\n", SequenceNo, DebugHeader->SequenceNo);
         break;
       }
@@ -1398,43 +1647,22 @@ ReadMemoryAndSendResponsePacket (
 /**
   Send packet with response data to HOST.
 
-  @param[in] Data        Pointer to response data buffer.
-  @param[in] DataSize    Size of response data in byte.
+  @param[in]      Data        Pointer to response data buffer.
+  @param[in]      DataSize    Size of response data in byte.
+  @param[in, out] DebugHeader Pointer to a buffer for creating response packet and receiving ACK packet,
+                              to minimize the stack usage.
 
   @retval RETURN_SUCCESS      Response data was sent successfully.
 
 **/
 RETURN_STATUS
 SendDataResponsePacket (
-  IN UINT8                *Data,
-  IN UINT16               DataSize
+  IN UINT8                   *Data,
+  IN UINT16                  DataSize,
+  IN OUT DEBUG_PACKET_HEADER *DebugHeader
   )
 {
-  return ReadMemoryAndSendResponsePacket (Data, DataSize, 1);
-}
-
-/**
-  Send break cause packet to HOST.
-
-  @param[in] Vector      Vector value of exception or interrutp.
-  @param[in] CpuContext  Pointer to save CPU context.
-
-  @retval RETURN_SUCCESS      Response data was sent successfully.
-  @retval RETURN_DEVICE_ERROR Cannot receive DEBUG_COMMAND_OK from HOST.
-
-**/
-RETURN_STATUS
-SendBreakCausePacket (
-  IN UINTN                    Vector,
-  IN DEBUG_CPU_CONTEXT        *CpuContext
-  )
-{
-  DEBUG_DATA_RESPONSE_BREAK_CAUSE    DebugDataBreakCause;
-
-  DebugDataBreakCause.StopAddress = CpuContext->Eip;
-  DebugDataBreakCause.Cause       = GetBreakCause (Vector, CpuContext);
-
-  return SendDataResponsePacket ((UINT8 *) &DebugDataBreakCause, (UINT16) sizeof (DEBUG_DATA_RESPONSE_BREAK_CAUSE));
+  return ReadMemoryAndSendResponsePacket (Data, DataSize, 1, DebugHeader);
 }
 
 /**
@@ -1477,7 +1705,7 @@ AttachHost (
   }
   if (IncompatibilityFlag) {
     //
-    // If the incompatible Debug Packet received, the HOST should be running transfer protocol before DEBUG_AGENT_REVISION.
+    // If the incompatible Debug Packet received, the HOST should be running transfer protocol before PcdTransferProtocolRevision.
     // It could be UDK Debugger for Windows v1.1/v1.2 or for Linux v0.8/v1.2.
     //
     DebugPortWriteBuffer (Handle, (UINT8 *) mErrorMsgVersionAlert, AsciiStrLen (mErrorMsgVersionAlert));
@@ -1532,7 +1760,7 @@ SendBreakPacketToHost (
     // Poll Attach symbols from HOST and ack OK
     //
     do {
-      DebugPortReadBuffer (Handle, &InputCharacter, 1, 0);
+      DebugAgentReadBuffer (Handle, &InputCharacter, 1, 0);
     } while (InputCharacter != DEBUG_STARTING_SYMBOL_ATTACH);
     SendAckPacket (DEBUG_COMMAND_OK);
 
@@ -1579,6 +1807,7 @@ CommandCommunication (
   DEBUG_DATA_READ_MSR               *MsrRegisterRead;
   DEBUG_DATA_WRITE_MSR              *MsrRegisterWrite;
   DEBUG_DATA_CPUID                  *Cpuid;
+  DEBUG_DATA_RESPONSE_BREAK_CAUSE   BreakCause;
   DEBUG_DATA_RESPONSE_CPUID         CpuidResponse;
   DEBUG_DATA_SEARCH_SIGNATURE       *SearchSignature;
   DEBUG_DATA_RESPONSE_GET_EXCEPTION Exception;
@@ -1586,7 +1815,6 @@ CommandCommunication (
   DEBUG_DATA_SET_VIEWPOINT          *SetViewPoint;
   BOOLEAN                           HaltDeferred;
   UINT32                            ProcessorIndex;
-  DEBUG_PORT_HANDLE                 Handle;
   DEBUG_AGENT_EXCEPTION_BUFFER      AgentExceptionBuffer;
   UINT32                            IssuedViewPoint;
   DEBUG_AGENT_MAILBOX               *Mailbox;
@@ -1613,8 +1841,6 @@ CommandCommunication (
     //
     SetDebugFlag (DEBUG_AGENT_FLAG_AGENT_IN_PROGRESS, 1);
   }
-
-  Handle = GetDebugPortHandle();
 
   while (TRUE) {
 
@@ -1645,8 +1871,8 @@ CommandCommunication (
     DebugHeader =(DEBUG_PACKET_HEADER *) InputPacketBuffer;
 
     DebugAgentMsgPrint (DEBUG_AGENT_INFO, "TARGET: Try to get command from HOST...\n");
-    Status = ReceivePacket ((UINT8 *)DebugHeader, &BreakReceived, NULL, READ_PACKET_TIMEOUT, TRUE);
-    if (Status != RETURN_SUCCESS || (DebugHeader->Command & DEBUG_COMMAND_RESPONSE) != 0) {
+    Status = ReceivePacket ((UINT8 *) DebugHeader, &BreakReceived, NULL, READ_PACKET_TIMEOUT, TRUE);
+    if (Status != RETURN_SUCCESS || !IS_REQUEST (DebugHeader)) {
       DebugAgentMsgPrint (DEBUG_AGENT_WARNING, "TARGET: Get command[%x] sequenceno[%x] returned status is [%x] \n", DebugHeader->Command, DebugHeader->SequenceNo, Status);
       DebugAgentMsgPrint (DEBUG_AGENT_WARNING, "TARGET: Get command failed or it's response packet not expected! \n");
       ReleaseMpSpinLock (&mDebugMpContext.DebugPortSpinLock);
@@ -1720,10 +1946,6 @@ CommandCommunication (
       if (Data8 == DEBUG_DATA_BREAK_CAUSE_IMAGE_LOAD || Data8 == DEBUG_DATA_BREAK_CAUSE_IMAGE_UNLOAD) {
         CpuContext->Dr0 = 0;
       }
-      //
-      // Clear Stepping Flag
-      //
-      SetDebugFlag (DEBUG_AGENT_FLAG_STEPPING, 0);
 
       if (!HaltDeferred) {
         //
@@ -1807,14 +2029,13 @@ CommandCommunication (
       break;
 
     case DEBUG_COMMAND_BREAK_CAUSE:
-
+      BreakCause.StopAddress = CpuContext->Eip;
       if (MultiProcessorDebugSupport() && ProcessorIndex != mDebugMpContext.BreakAtCpuIndex) {
-        Status = SendBreakCausePacket (DEBUG_TIMER_VECTOR, CpuContext);
-
+        BreakCause.Cause       = GetBreakCause (DEBUG_TIMER_VECTOR, CpuContext);
       } else {
-        Status = SendBreakCausePacket (Vector, CpuContext);
+        BreakCause.Cause       = GetBreakCause (Vector, CpuContext);
       }
-
+      SendDataResponsePacket ((UINT8 *) &BreakCause, (UINT16) sizeof (DEBUG_DATA_RESPONSE_BREAK_CAUSE), DebugHeader);
       break;
 
     case DEBUG_COMMAND_SET_HW_BREAKPOINT:
@@ -1839,10 +2060,6 @@ CommandCommunication (
       }
 
       mDebugMpContext.BreakAtCpuIndex = (UINT32) (-1);
-      //
-      // Set Stepping Flag
-      //
-      SetDebugFlag (DEBUG_AGENT_FLAG_STEPPING, 1);
       ReleaseMpSpinLock (&mDebugMpContext.DebugPortSpinLock);
       //
       // Executing stepping command directly without sending ACK packet,
@@ -1854,12 +2071,12 @@ CommandCommunication (
       Data64 = (UINTN) (((DEBUG_DATA_SET_SW_BREAKPOINT *) (DebugHeader + 1))->Address);
       Data8 = *(UINT8 *) (UINTN) Data64;
       *(UINT8 *) (UINTN) Data64 = DEBUG_SW_BREAKPOINT_SYMBOL;
-      Status = SendDataResponsePacket ((UINT8 *) &Data8, (UINT16) sizeof (UINT8));
+      Status = SendDataResponsePacket ((UINT8 *) &Data8, (UINT16) sizeof (UINT8), DebugHeader);
       break;
 
     case DEBUG_COMMAND_READ_MEMORY:
       MemoryRead = (DEBUG_DATA_READ_MEMORY *) (DebugHeader + 1);
-      Status = ReadMemoryAndSendResponsePacket ((UINT8 *) (UINTN) MemoryRead->Address, MemoryRead->Count, MemoryRead->Width);
+      Status = ReadMemoryAndSendResponsePacket ((UINT8 *) (UINTN) MemoryRead->Address, MemoryRead->Count, MemoryRead->Width, DebugHeader);
       break;
 
     case DEBUG_COMMAND_WRITE_MEMORY:
@@ -1893,7 +2110,7 @@ CommandCommunication (
       default:
         Data64  = (UINT64) -1;
       }
-      Status = SendDataResponsePacket ((UINT8 *) &Data64, IoRead->Width);
+      Status = SendDataResponsePacket ((UINT8 *) &Data64, IoRead->Width, DebugHeader);
       break;
 
     case DEBUG_COMMAND_WRITE_IO:
@@ -1918,7 +2135,7 @@ CommandCommunication (
       break;
 
     case DEBUG_COMMAND_READ_ALL_REGISTERS:
-      Status = SendDataResponsePacket ((UINT8 *) CpuContext, sizeof (*CpuContext));
+      Status = SendDataResponsePacket ((UINT8 *) CpuContext, sizeof (*CpuContext), DebugHeader);
       break;
 
     case DEBUG_COMMAND_READ_REGISTER:
@@ -1926,7 +2143,7 @@ CommandCommunication (
 
       if (RegisterRead->Index <= SOFT_DEBUGGER_REGISTER_MAX) {
         RegisterBuffer = ArchReadRegisterBuffer (CpuContext, RegisterRead->Index, &Width);
-        Status = SendDataResponsePacket (RegisterBuffer, Width);
+        Status = SendDataResponsePacket (RegisterBuffer, Width, DebugHeader);
       } else {
         Status = RETURN_UNSUPPORTED;
       }
@@ -1946,13 +2163,13 @@ CommandCommunication (
 
     case DEBUG_COMMAND_ARCH_MODE:
       Data8 = DEBUG_ARCH_SYMBOL;
-      Status = SendDataResponsePacket ((UINT8 *) &Data8, (UINT16) sizeof (UINT8));
+      Status = SendDataResponsePacket ((UINT8 *) &Data8, (UINT16) sizeof (UINT8), DebugHeader);
       break;
 
     case DEBUG_COMMAND_READ_MSR:
       MsrRegisterRead = (DEBUG_DATA_READ_MSR *) (DebugHeader + 1);
       Data64 = AsmReadMsr64 (MsrRegisterRead->Index);
-      Status = SendDataResponsePacket ((UINT8 *) &Data64, (UINT16) sizeof (UINT64));
+      Status = SendDataResponsePacket ((UINT8 *) &Data64, (UINT16) sizeof (UINT64), DebugHeader);
       break;
 
     case DEBUG_COMMAND_WRITE_MSR:
@@ -1969,15 +2186,15 @@ CommandCommunication (
       break;
 
     case DEBUG_COMMAND_GET_REVISION:
-      DebugAgentRevision.Revision = DEBUG_AGENT_REVISION;
+      DebugAgentRevision.Revision = PcdGet32(PcdTransferProtocolRevision);
       DebugAgentRevision.Capabilities = DEBUG_AGENT_CAPABILITIES;
-      Status = SendDataResponsePacket ((UINT8 *) &DebugAgentRevision, (UINT16) sizeof (DEBUG_DATA_RESPONSE_GET_REVISION));
+      Status = SendDataResponsePacket ((UINT8 *) &DebugAgentRevision, (UINT16) sizeof (DEBUG_DATA_RESPONSE_GET_REVISION), DebugHeader);
       break;
 
     case DEBUG_COMMAND_GET_EXCEPTION:
       Exception.ExceptionNum  = (UINT8) Vector;
       Exception.ExceptionData = (UINT32) CpuContext->ExceptionData;
-      Status = SendDataResponsePacket ((UINT8 *) &Exception, (UINT16) sizeof (DEBUG_DATA_RESPONSE_GET_EXCEPTION));
+      Status = SendDataResponsePacket ((UINT8 *) &Exception, (UINT16) sizeof (DEBUG_DATA_RESPONSE_GET_EXCEPTION), DebugHeader);
       break;
 
     case DEBUG_COMMAND_SET_VIEWPOINT:
@@ -2003,12 +2220,12 @@ CommandCommunication (
 
     case DEBUG_COMMAND_GET_VIEWPOINT:
       Data32 = mDebugMpContext.ViewPointIndex;
-      SendDataResponsePacket((UINT8 *) &Data32, (UINT16) sizeof (UINT32));
+      SendDataResponsePacket((UINT8 *) &Data32, (UINT16) sizeof (UINT32), DebugHeader);
       break;
 
     case DEBUG_COMMAND_MEMORY_READY:
       Data8 = (UINT8) GetDebugFlag (DEBUG_AGENT_FLAG_MEMORY_READY);
-      SendDataResponsePacket (&Data8, (UINT16) sizeof (UINT8));
+      SendDataResponsePacket (&Data8, (UINT16) sizeof (UINT8), DebugHeader);
       break;
 
     case DEBUG_COMMAND_DETACH:
@@ -2023,7 +2240,7 @@ CommandCommunication (
         &CpuidResponse.Eax, &CpuidResponse.Ebx,
         &CpuidResponse.Ecx, &CpuidResponse.Edx
         );
-      SendDataResponsePacket ((UINT8 *) &CpuidResponse, (UINT16) sizeof (CpuidResponse));
+      SendDataResponsePacket ((UINT8 *) &CpuidResponse, (UINT16) sizeof (CpuidResponse), DebugHeader);
       break;
 
    case DEBUG_COMMAND_SEARCH_SIGNATURE:
@@ -2058,7 +2275,7 @@ CommandCommunication (
             Data64 = (UINT64) -1;
           }
         }
-        SendDataResponsePacket ((UINT8 *) &Data64, (UINT16) sizeof (Data64));
+        SendDataResponsePacket ((UINT8 *) &Data64, (UINT16) sizeof (Data64), DebugHeader);
       } else {
         Status = RETURN_UNSUPPORTED;
       }
@@ -2136,9 +2353,16 @@ InterruptProcess (
     // Check if this exception is issued by Debug Agent itself
     // If yes, fill the debug agent exception buffer and LongJump() back to
     // the saved CPU content in CommandCommunication()
+    // If exception is issued when executing Stepping, will be handled in
+    // exception handle procedure.
     //
     if (GetDebugFlag (DEBUG_AGENT_FLAG_AGENT_IN_PROGRESS) == 1) {
-      DebugAgentMsgPrint (DEBUG_AGENT_ERROR, "Debug agent meet one Exception, ExceptionNum is %d, EIP = 0x%x.\n", Vector, (UINTN)CpuContext->Eip);
+      DebugAgentMsgPrint (
+        DEBUG_AGENT_ERROR,
+        "Debug agent meet one Exception, ExceptionNum is %d, EIP = 0x%x.\n",
+        Vector,
+        (UINTN)CpuContext->Eip
+        );
       ExceptionBuffer = (DEBUG_AGENT_EXCEPTION_BUFFER *) (UINTN) GetMailboxPointer()->ExceptionBufferPointer;
       ExceptionBuffer->ExceptionContent.ExceptionNum  = (UINT8) Vector;
       ExceptionBuffer->ExceptionContent.ExceptionData = (UINT32) CpuContext->ExceptionData;
@@ -2178,6 +2402,10 @@ InterruptProcess (
       if (MultiProcessorDebugSupport()) {
         mDebugMpContext.BreakAtCpuIndex = ProcessorIndex;
       }
+      //
+      // Clear Stepping Flag and restore EFLAGS.IF
+      //
+      CommandSteppingCleanup (CpuContext);
       SendAckPacket (DEBUG_COMMAND_OK);
       CommandCommunication (Vector, CpuContext, BreakReceived);
       break;
@@ -2251,7 +2479,7 @@ InterruptProcess (
     AcquireMpSpinLock (&mDebugMpContext.DebugPortSpinLock);
 
     if (MultiProcessorDebugSupport()) {
-      if (IsBsp (ProcessorIndex)) {
+      if (DebugAgentIsBsp (ProcessorIndex)) {
         //
         // If current processor is BSP, check Apic timer's init count if changed,
         // it may be re-written when switching BSP.
@@ -2259,11 +2487,12 @@ InterruptProcess (
         //
         CurrentDebugTimerInitCount = GetApicTimerInitCount ();
         if (mDebugMpContext.DebugTimerInitCount != CurrentDebugTimerInitCount) {
-          InitializeDebugTimer ();
+          InitializeDebugTimer (NULL, FALSE);
+          SaveAndSetDebugTimerInterrupt (TRUE);
         }
       }
 
-      if (!IsBsp (ProcessorIndex) || mDebugMpContext.IpiSentByAp) {
+      if (!DebugAgentIsBsp (ProcessorIndex) || mDebugMpContext.IpiSentByAp) {
         ReleaseMpSpinLock (&mDebugMpContext.DebugPortSpinLock);
         //
         // If current processor is not BSP or this is one IPI sent by AP
@@ -2344,13 +2573,24 @@ InterruptProcess (
 
   default:
     if (Vector <= DEBUG_EXCEPT_SIMD) {
+      DebugAgentMsgPrint (
+        DEBUG_AGENT_ERROR,
+        "Exception happened, ExceptionNum is %d, EIP = 0x%x.\n",
+        Vector,
+        (UINTN) CpuContext->Eip
+        );
       if (BreakCause == DEBUG_DATA_BREAK_CAUSE_STEPPING) {
         //
-        // Stepping is finished, send Ack package.
+        // If exception happened when executing Stepping, send Ack package.
+        // HOST consider Stepping command was finished.
         //
         if (MultiProcessorDebugSupport()) {
           mDebugMpContext.BreakAtCpuIndex = ProcessorIndex;
         }
+        //
+        // Clear Stepping flag and restore EFLAGS.IF
+        //
+        CommandSteppingCleanup (CpuContext);
         SendAckPacket (DEBUG_COMMAND_OK);
       } else {
         //

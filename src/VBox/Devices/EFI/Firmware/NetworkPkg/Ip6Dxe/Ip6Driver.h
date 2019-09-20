@@ -1,15 +1,9 @@
 /** @file
   The driver binding and service binding protocol for IP6 driver.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -141,7 +135,7 @@ Ip6DriverBindingStop (
   );
 
 //
-// Function ptototypes for the ServiceBinding Prococol
+// Function prototypes for the ServiceBinding Protocol
 //
 
 /**
@@ -154,7 +148,7 @@ Ip6DriverBindingStop (
                                  the existing child handle.
 
   @retval EFI_SUCCES             The child handle was created with the I/O services.
-  @retval EFI_OUT_OF_RESOURCES   There are not enough resources availabe to create
+  @retval EFI_OUT_OF_RESOURCES   There are not enough resources available to create
                                  the child.
   @retval other                  The child handle was not created.
 

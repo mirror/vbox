@@ -3,14 +3,8 @@
 
   This code abstracts the DXE core from processor implementation details.
 
-  Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -81,7 +75,7 @@ VOID
 
   @retval EFI_SUCCESS           The address range from Start to Start+Length was flushed from
                                 the processor's data cache.
-  @retval EFI_UNSUPPORTEDT      The processor does not support the cache flush type specified
+  @retval EFI_UNSUPPORTED       The processor does not support the cache flush type specified
                                 by FlushType.
   @retval EFI_DEVICE_ERROR      The address range from Start to Start+Length could not be flushed
                                 from the processor's data cache.

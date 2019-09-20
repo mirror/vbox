@@ -3,7 +3,8 @@ EFI firmware
 ============
 
 EFI firmware based on the opensource EDK2 project.  The current base is
-revision 18601 from: https://svn.code.sf.net/p/edk2/code/branches/UDK2014.SP1
+git commit 49fa59e82e4c6ea798f65fc4e5948eae63ad6e07
+from: https://github.com/tianocore/edk2/tree/UDK2018
 
 We have removed the following files and directories because we don't need them
 and they take up space:
@@ -16,18 +17,25 @@ and they take up space:
         ./EdkCompatibilityPkg/ \
         ./ArmPkg/ \
         ./ArmPlatformPkg/ \
+        ./ArmVirtPkg/ \
         ./BeagleBoardPkg/ \
+        ./CoreBootModulePkg/ \
+        ./CoreBootPayloadPkg/ \
         ./Omap35xxPkg/ \
         ./DuetPkg/ \
         ./EmbeddedPkg/ \
         ./EmulatorPkg/ \
+        ./FmpDevicePkg/ \
         ./Nt32Pkg/ \
         ./UnixPkg/ \
         ./EdkShellPkg/ \
         ./EdkShellBinPkg/ \
         ./ShellBinPkg/ \
+        ./SignedCapsulePkg/ \
         ./Vlv2DeviceRefCodePkg/ \
         ./Vlv2TbltDevicePkg/ \
+        ./QuarkPlatformPkg/ \
+        ./QuarkSocPkg/ \
         ./AppPkg/Applications/Python/Python-*/ \
 
 :Status: $Id$

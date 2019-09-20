@@ -1,14 +1,8 @@
 /** @file
   Implementation of Generic Memory Test Protocol which does not perform real memory test.
 
-Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -59,6 +53,41 @@ GenericMemoryTestEntryPoint (
 }
 
 /**
+  Convert the memory range to tested.
+
+  @param BaseAddress  Base address of the memory range.
+  @param Length       Length of the memory range.
+  @param Capabilities Capabilities of the memory range.
+
+  @retval EFI_SUCCESS The memory range is converted to tested.
+  @retval others      Error happens.
+**/
+EFI_STATUS
+ConvertToTestedMemory (
+  IN UINT64           BaseAddress,
+  IN UINT64           Length,
+  IN UINT64           Capabilities
+  )
+{
+  EFI_STATUS Status;
+  Status = gDS->RemoveMemorySpace (
+                  BaseAddress,
+                  Length
+                  );
+  if (!EFI_ERROR (Status)) {
+    Status = gDS->AddMemorySpace (
+                    ((Capabilities & EFI_MEMORY_MORE_RELIABLE) == EFI_MEMORY_MORE_RELIABLE) ?
+                    EfiGcdMemoryTypeMoreReliable : EfiGcdMemoryTypeSystemMemory,
+                    BaseAddress,
+                    Length,
+                    Capabilities &~
+                    (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
+                    );
+  }
+  return Status;
+}
+
+/**
   Initialize the generic memory test.
 
   This function implements EFI_GENERIC_MEMORY_TEST_PROTOCOL.MemoryTestInit.
@@ -83,6 +112,7 @@ InitializeMemoryTest (
   OUT BOOLEAN                                  *RequireSoftECCInit
   )
 {
+  EFI_STATUS                      Status;
   UINTN                           NumberOfDescriptors;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR *MemorySpaceMap;
   UINTN                           Index;
@@ -96,22 +126,16 @@ InitializeMemoryTest (
       //
       // For those reserved memory that have not been tested, simply promote to system memory.
       //
-      gDS->RemoveMemorySpace (
-            MemorySpaceMap[Index].BaseAddress,
-            MemorySpaceMap[Index].Length
-            );
-
-      gDS->AddMemorySpace (
-            EfiGcdMemoryTypeSystemMemory,
-            MemorySpaceMap[Index].BaseAddress,
-            MemorySpaceMap[Index].Length,
-            MemorySpaceMap[Index].Capabilities &~
-            (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
-            );
-
+      Status = ConvertToTestedMemory (
+                 MemorySpaceMap[Index].BaseAddress,
+                 MemorySpaceMap[Index].Length,
+                 MemorySpaceMap[Index].Capabilities
+                 );
+      ASSERT_EFI_ERROR (Status);
       mTestedSystemMemory += MemorySpaceMap[Index].Length;
       mTotalSystemMemory += MemorySpaceMap[Index].Length;
-    } else if (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeSystemMemory) {
+    } else if ((MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeSystemMemory) ||
+               (MemorySpaceMap[Index].GcdMemoryType == EfiGcdMemoryTypeMoreReliable)) {
       mTotalSystemMemory += MemorySpaceMap[Index].Length;
     }
   }
@@ -204,22 +228,57 @@ EFI_STATUS
 EFIAPI
 GenCompatibleRangeTest (
   IN EFI_GENERIC_MEMORY_TEST_PROTOCOL          *This,
-  IN  EFI_PHYSICAL_ADDRESS                     StartAddress,
-  IN  UINT64                                   Length
+  IN EFI_PHYSICAL_ADDRESS                      StartAddress,
+  IN UINT64                                    Length
   )
 {
+  EFI_STATUS                      Status;
   EFI_GCD_MEMORY_SPACE_DESCRIPTOR Descriptor;
+  EFI_PHYSICAL_ADDRESS            CurrentBase;
+  UINT64                          CurrentLength;
 
-  gDS->GetMemorySpaceDescriptor (StartAddress, &Descriptor);
+  //
+  // Check if the parameter is below 16MB
+  //
+  if (StartAddress + Length > SIZE_16MB) {
+    return EFI_INVALID_PARAMETER;
+  }
+  CurrentBase = StartAddress;
+  do {
+    //
+    // Check the required memory range status; if the required memory range span
+    // the different GCD memory descriptor, it may be cause different action.
+    //
+    Status = gDS->GetMemorySpaceDescriptor (
+                    CurrentBase,
+                    &Descriptor
+                    );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
 
-  gDS->RemoveMemorySpace (StartAddress, Length);
-
-  gDS->AddMemorySpace (
-        EfiGcdMemoryTypeSystemMemory,
-        StartAddress,
-        Length,
-        Descriptor.Capabilities &~(EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED | EFI_MEMORY_RUNTIME)
-        );
-
+    if (Descriptor.GcdMemoryType == EfiGcdMemoryTypeReserved &&
+        (Descriptor.Capabilities & (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED | EFI_MEMORY_TESTED)) ==
+          (EFI_MEMORY_PRESENT | EFI_MEMORY_INITIALIZED)
+          ) {
+      CurrentLength = Descriptor.BaseAddress + Descriptor.Length - CurrentBase;
+      if (CurrentBase + CurrentLength > StartAddress + Length) {
+        CurrentLength = StartAddress + Length - CurrentBase;
+      }
+      Status = ConvertToTestedMemory (
+                 CurrentBase,
+                 CurrentLength,
+                 Descriptor.Capabilities
+                 );
+      if (EFI_ERROR (Status)) {
+        return Status;
+      }
+    }
+    CurrentBase = Descriptor.BaseAddress + Descriptor.Length;
+  } while (CurrentBase < StartAddress + Length);
+  //
+  // Here means the required range already be tested, so just return success.
+  //
   return EFI_SUCCESS;
 }
+

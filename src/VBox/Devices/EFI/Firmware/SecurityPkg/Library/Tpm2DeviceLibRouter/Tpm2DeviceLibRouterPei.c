@@ -1,16 +1,10 @@
 /** @file
-  Ihis library is TPM2 device router. Platform can register multi TPM2 instance to it
+  This library is TPM2 device router. Platform can register multi TPM2 instance to it
   via PcdTpmInstanceGuid. Platform need make choice that which one will be final one.
   At most one TPM2 instance can be finally registered, and other will return unsupported.
 
-Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved. <BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved. <BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -120,7 +114,7 @@ Tpm2RegisterTpm2DeviceLib (
   TPM2_DEVICE_INTERFACE *Tpm2DeviceInterface;
 
   if (!CompareGuid (PcdGetPtr(PcdTpmInstanceGuid), &Tpm2Device->ProviderGuid)){
-    DEBUG ((EFI_D_ERROR, "WARNING: Tpm2RegisterTpm2DeviceLib - does not support %g registration\n", &Tpm2Device->ProviderGuid));
+    DEBUG ((DEBUG_WARN, "WARNING: Tpm2RegisterTpm2DeviceLib - does not support %g registration\n", &Tpm2Device->ProviderGuid));
     return EFI_UNSUPPORTED;
   }
 

@@ -1,15 +1,9 @@
 ## @file
 # This file contain unit test for CommentParsing
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 import unittest
 
@@ -19,7 +13,7 @@ from Library.CommentParsing import ParseHeaderCommentSection, \
                                    ParseDecPcdGenericComment, \
                                    ParseDecPcdTailComment
 from Library.CommentParsing import _IsCopyrightLine
-from Library.String import GetSplitValueList
+from Library.StringUtils import GetSplitValueList
 from Library.DataType import TAB_SPACE_SPLIT
 from Library.DataType import TAB_LANGUAGE_EN_US
 
@@ -46,7 +40,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         #
         # example description
         #
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         #
         # License3
         #'''
@@ -88,7 +82,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         #
         # example description
         #
-        #Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        #Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         #
         ##'''
 
@@ -109,7 +103,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         self.assertEqual(Description, ExpectedDescription)
 
         ExpectedCopyright = \
-            'Copyright (c) 2007 - 2010, Intel Corporation.'\
+            'Copyright (c) 2007 - 2018, Intel Corporation.'\
             ' All rights reserved.<BR>'
         self.assertEqual(Copyright, ExpectedCopyright)
 
@@ -127,7 +121,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         # License2
         #
         ## @file
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         #
         # License3 Line1
         # License3 Line2
@@ -172,7 +166,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         #
         # Description
         #
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         #
         # License
         #
@@ -195,7 +189,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         self.assertEqual(Description, ExpectedDescription)
 
         ExpectedCopyright = \
-            'Copyright (c) 2007 - 2010, Intel Corporation.'\
+            'Copyright (c) 2007 - 2018, Intel Corporation.'\
             ' All rights reserved.<BR>'
         self.assertEqual(Copyright, ExpectedCopyright)
 
@@ -214,9 +208,9 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         #
         # Description
         #
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         # other line
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         #
         # License
         #
@@ -239,9 +233,9 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         self.assertEqual(Description, ExpectedDescription)
 
         ExpectedCopyright = \
-            'Copyright (c) 2007 - 2010, Intel Corporation.'\
+            'Copyright (c) 2007 - 2018, Intel Corporation.'\
             ' All rights reserved.<BR>\n'\
-            'Copyright (c) 2007 - 2010, Intel Corporation.'\
+            'Copyright (c) 2007 - 2018, Intel Corporation.'\
             ' All rights reserved.<BR>'
         self.assertEqual(Copyright, ExpectedCopyright)
 
@@ -260,7 +254,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         #
         # Description
         #
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         # Copyright (c) 2007 - 2010, FOO1 Corporation. All rights reserved.<BR>
         # Copyright (c) 2007 - 2010, FOO2 Corporation. All rights reserved.<BR>
         #
@@ -285,7 +279,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         self.assertEqual(Description, ExpectedDescription)
 
         ExpectedCopyright = \
-            'Copyright (c) 2007 - 2010, Intel Corporation.'\
+            'Copyright (c) 2007 - 2018, Intel Corporation.'\
             ' All rights reserved.<BR>\n'\
             'Copyright (c) 2007 - 2010, FOO1 Corporation.'\
             ' All rights reserved.<BR>\n'\
@@ -307,7 +301,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         #
         # Description
         #
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         # Copyright (c) 2007 - 2010, FOO1 Corporation. All rights reserved.<BR>
         # Copyright (c) 2007 - 2010, FOO2 Corporation. All rights reserved.<BR>
         #
@@ -332,7 +326,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         self.assertEqual(Description, ExpectedDescription)
 
         ExpectedCopyright = \
-            'Copyright (c) 2007 - 2010, Intel Corporation.'\
+            'Copyright (c) 2007 - 2018, Intel Corporation.'\
             ' All rights reserved.<BR>\n'\
             'Copyright (c) 2007 - 2010, FOO1 Corporation.'\
             ' All rights reserved.<BR>\n'\
@@ -353,7 +347,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         ## @file
         # Abstact
         #
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         #
         # License
         #
@@ -376,7 +370,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         self.assertEqual(Description, ExpectedDescription)
 
         ExpectedCopyright = \
-            'Copyright (c) 2007 - 2010, Intel Corporation.'\
+            'Copyright (c) 2007 - 2018, Intel Corporation.'\
             ' All rights reserved.<BR>'
         self.assertEqual(Copyright, ExpectedCopyright)
 
@@ -423,7 +417,7 @@ class ParseHeaderCommentSectionTest(unittest.TestCase):
         this is invalid line
         # Description
         #
-        # Copyright (c) 2007 - 2010, Intel Corporation. All rights reserved.<BR>
+        # Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
         # License
         #
         ##'''

@@ -2,20 +2,15 @@
   Light-weight Memory Management Routines for OpenSSL-based Crypto
   Library at Runtime Phase.
 
-Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include <OpenSslSupport.h>
+#include <CrtLibSupport.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeLib.h>
+#include <Library/MemoryAllocationLib.h>
 #include <Guid/EventGroup.h>
 
 //----------------------------------------------------------------
@@ -64,7 +59,7 @@ RT_MEMORY_PAGE_TABLE  *mRTPageTable = NULL;
 //
 // Event for Runtime Address Conversion.
 //
-EFI_EVENT             mVirtualAddressChangeEvent;
+STATIC EFI_EVENT      mVirtualAddressChangeEvent;
 
 
 /**
@@ -140,6 +135,12 @@ LookupFreeMemRegion (
 
   StartPageIndex = RT_SIZE_TO_PAGES (mRTPageTable->LastEmptyPageOffset);
   ReqPages       = RT_SIZE_TO_PAGES (AllocationSize);
+  if (ReqPages > mRTPageTable->PageCount) {
+    //
+    // No enough region for object allocation.
+    //
+    return (UINTN)(-1);
+  }
 
   //
   // Look up the free memory region with in current memory map table.
@@ -175,6 +176,12 @@ LookupFreeMemRegion (
   // Look up the free memory region from the beginning of the memory table
   // until the StartCursorOffset
   //
+  if (ReqPages > StartPageIndex) {
+    //
+    // No enough region for object allocation.
+    //
+    return (UINTN)(-1);
+  }
   for (Index = 0; Index < (StartPageIndex - ReqPages); ) {
     //
     // Check Consecutive ReqPages Pages.
@@ -204,7 +211,7 @@ LookupFreeMemRegion (
   }
 
   //
-  // No availabe region for object allocation!
+  // No available region for object allocation!
   //
   return (UINTN)(-1);
 }
@@ -282,7 +289,7 @@ RuntimeFreeMem (
   UINTN  StartOffset;
   UINTN  StartPageIndex;
 
-  StartOffset    = (UINTN) ((UINT8 *)Buffer - mRTPageTable->DataAreaBase);
+  StartOffset    = (UINTN)Buffer - (UINTN)mRTPageTable->DataAreaBase;
   StartPageIndex = RT_SIZE_TO_PAGES (mRTPageTable->Pages[RT_SIZE_TO_PAGES(StartOffset)].StartPageOffset);
 
   while (StartPageIndex < mRTPageTable->PageCount) {
@@ -396,10 +403,14 @@ void *realloc (void *ptr, size_t size)
   UINTN  StartPageIndex;
   UINTN  PageCount;
 
+  if (ptr == NULL) {
+    return malloc (size);
+  }
+
   //
   // Get Original Size of ptr
   //
-  StartOffset    = (UINTN) ((UINT8 *)ptr - mRTPageTable->DataAreaBase);
+  StartOffset    = (UINTN)ptr - (UINTN)mRTPageTable->DataAreaBase;
   StartPageIndex = RT_SIZE_TO_PAGES (mRTPageTable->Pages[RT_SIZE_TO_PAGES (StartOffset)].StartPageOffset);
   PageCount      = 0;
   while (StartPageIndex < mRTPageTable->PageCount) {
@@ -434,5 +445,11 @@ void *realloc (void *ptr, size_t size)
 /* Deallocates or frees a memory block */
 void free (void *ptr)
 {
-  RuntimeFreeMem (ptr);
+  //
+  // In Standard C, free() handles a null pointer argument transparently. This
+  // is not true of RuntimeFreeMem() below, so protect it.
+  //
+  if (ptr != NULL) {
+    RuntimeFreeMem (ptr);
+  }
 }

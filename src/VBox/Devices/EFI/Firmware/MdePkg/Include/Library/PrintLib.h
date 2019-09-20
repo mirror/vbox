@@ -2,14 +2,8 @@
   Provides services to print a formatted string to a buffer. All combinations of
   Unicode and ASCII strings are supported.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
   The Print Library functions provide a simple means to produce formatted output
   strings.  Many of the output functions use a format string to describe how to
@@ -88,6 +82,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
         This does not follow ANSI C.
     - d
       - The argument is a signed decimal number.  If the flag 'L' is not specified,
+        then the argument is assumed to be size int.
+    - u
+      - The argument is a unsigned decimal number.  If the flag 'L' is not specified,
         then the argument is assumed to be size int.
     - p
       - The argument is a pointer that is a (VOID *), and it is printed as an
@@ -204,33 +201,39 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   Produces a Null-terminated Unicode string in an output buffer based on
   a Null-terminated Unicode format string and a VA_LIST argument list.
 
+  This function is similar as vsnprintf_s defined in C11.
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list specified by Marker based on the
   contents of the format string.
-  The number of Unicode characters in the produced output buffer is returned, not including
+  The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
-  If BufferSize > 1 and FormatString is NULL, then ASSERT().
-  If BufferSize > 1 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
+  If StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
+  If FormatString is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 1 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumUnicodeStringLength is not zero, and BufferSize >
+  (PcdMaximumUnicodeStringLength * sizeof (CHAR16) + 1), then ASSERT(). Also, the output
+  buffer is unmodified and 0 is returned.
   If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
-  contains more than PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0 or 1, then the output buffer is unmodified and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    Null-terminated Unicode format string.
+  @param  FormatString    A Null-terminated Unicode format string.
   @param  Marker          VA_LIST marker for the variable argument list.
 
-  @return The number of Unicode characters in the produced output buffer, not including the
+  @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -252,28 +255,32 @@ UnicodeVSPrint (
   The Unicode string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list specified by Marker based on the
   contents of the format string.
-  The number of Unicode characters in the produced output buffer is returned, not including
+  The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
-  If BufferSize > 1 and FormatString is NULL, then ASSERT().
-  If BufferSize > 1 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
+  If StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
+  If FormatString is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 1 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumUnicodeStringLength is not zero, and BufferSize >
+  (PcdMaximumUnicodeStringLength * sizeof (CHAR16) + 1), then ASSERT(). Also, the output
+  buffer is unmodified and 0 is returned.
   If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
-  contains more than PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0 or 1, then the output buffer is unmodified and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    Null-terminated Unicode format string.
+  @param  FormatString    A Null-terminated Unicode format string.
   @param  Marker          BASE_LIST marker for the variable argument list.
 
-  @return The number of Unicode characters in the produced output buffer, not including the
+  @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -290,33 +297,39 @@ UnicodeBSPrint (
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
   Unicode format string and variable argument list.
 
+  This function is similar as snprintf_s defined in C11.
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list based on the contents of the format string.
-  The number of Unicode characters in the produced output buffer is returned, not including
+  The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
-  If BufferSize > 1 and FormatString is NULL, then ASSERT().
-  If BufferSize > 1 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
+  If StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
+  If FormatString is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 1 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumUnicodeStringLength is not zero, and BufferSize >
+  (PcdMaximumUnicodeStringLength * sizeof (CHAR16) + 1), then ASSERT(). Also, the output
+  buffer is unmodified and 0 is returned.
   If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
   PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
-  contains more than PcdMaximumUnicodeStringLength Unicode characters not including the
-  Null-terminator, then ASSERT().
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0 or 1, then the output buffer is unmodified and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated Unicode format string.
-  @param  ...             The variable argument list whose contents are accessed based on the
+  @param  FormatString    A Null-terminated Unicode format string.
+  @param  ...             Variable argument list whose contents are accessed based on the
                           format string specified by FormatString.
 
-  @return The number of Unicode characters in the produced output buffer, not including the
+  @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -331,31 +344,37 @@ UnicodeSPrint (
 
 /**
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
-  ASCII format string and a VA_LIST argument list
+  ASCII format string and a VA_LIST argument list.
+
+  This function is similar as vsnprintf_s defined in C11.
 
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list specified by Marker based on the
   contents of the format string.
-  The number of Unicode characters in the produced output buffer is returned, not including
+  The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
-  If BufferSize > 1 and FormatString is NULL, then ASSERT().
+  If StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 1 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumUnicodeStringLength is not zero, and BufferSize >
+  (PcdMaximumUnicodeStringLength * sizeof (CHAR16) + 1), then ASSERT(). Also, the output
+  buffer is unmodified and 0 is returned.
   If PcdMaximumAsciiStringLength is not zero, and FormatString contains more than
-  PcdMaximumAsciiStringLength ASCII characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
-  contains more than PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumAsciiStringLength Ascii characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated ASCII format string.
+  @param  FormatString    A Null-terminated ASCII format string.
   @param  Marker          VA_LIST marker for the variable argument list.
 
   @return The number of Unicode characters in the produced output buffer not including the
@@ -373,34 +392,38 @@ UnicodeVSPrintAsciiFormat (
 
 /**
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
-  ASCII format string and a BASE_LIST argument list
+  ASCII format string and a BASE_LIST argument list.
 
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list specified by Marker based on the
   contents of the format string.
-  The number of Unicode characters in the produced output buffer is returned, not including
+  The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
-  If BufferSize > 1 and FormatString is NULL, then ASSERT().
+  If StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 1 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumUnicodeStringLength is not zero, and BufferSize >
+  (PcdMaximumUnicodeStringLength * sizeof (CHAR16) + 1), then ASSERT(). Also, the output
+  buffer is unmodified and 0 is returned.
   If PcdMaximumAsciiStringLength is not zero, and FormatString contains more than
-  PcdMaximumAsciiStringLength ASCII characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
-  contains more than PcdMaximumUnicodeStringLength Unicode characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumAsciiStringLength Ascii characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated ASCII format string.
-  @param  Marker          A BASE_LIST marker for the variable argument list.
+  @param  FormatString    A Null-terminated ASCII format string.
+  @param  Marker          BASE_LIST marker for the variable argument list.
 
-  @return The number of Unicode characters in the produced output buffer, not including the
+  @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -417,33 +440,39 @@ UnicodeBSPrintAsciiFormat (
   Produces a Null-terminated Unicode string in an output buffer based on a Null-terminated
   ASCII format string and  variable argument list.
 
+  This function is similar as snprintf_s defined in C11.
+
   Produces a Null-terminated Unicode string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The Unicode string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list based on the contents of the
   format string.
-  The number of Unicode characters in the produced output buffer is returned, not including
+  The number of Unicode characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 1 and StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
-  If BufferSize > 1 and FormatString is NULL, then ASSERT().
+  If StartOfBuffer is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 1 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 1 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumUnicodeStringLength is not zero, and BufferSize >
+  (PcdMaximumUnicodeStringLength * sizeof (CHAR16) + 1), then ASSERT(). Also, the output
+  buffer is unmodified and 0 is returned.
   If PcdMaximumAsciiStringLength is not zero, and FormatString contains more than
-  PcdMaximumAsciiStringLength ASCII characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumUnicodeStringLength is not zero, and produced Null-terminated Unicode string
-  contains more than PcdMaximumUnicodeStringLength Unicode characters, the
-  Null-terminator, then ASSERT().
+  PcdMaximumAsciiStringLength Ascii characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0 or 1, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           Unicode string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated ASCII format string.
+  @param  FormatString    A Null-terminated ASCII format string.
   @param  ...             Variable argument list whose contents are accessed based on the
                           format string specified by FormatString.
 
-  @return The number of Unicode characters in the produced output buffer, not including the
+  @return The number of Unicode characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -456,7 +485,11 @@ UnicodeSPrintAsciiFormat (
   ...
   );
 
+#ifndef DISABLE_NEW_DEPRECATED_INTERFACES
+
 /**
+  [ATTENTION] This function is deprecated for security reason.
+
   Converts a decimal value to a Null-terminated Unicode string.
 
   Converts the decimal number specified by Value to a Null-terminated Unicode
@@ -506,35 +539,103 @@ UnicodeValueToString (
   IN UINTN       Width
   );
 
+#endif
+
+/**
+  Converts a decimal value to a Null-terminated Unicode string.
+
+  Converts the decimal number specified by Value to a Null-terminated Unicode
+  string specified by Buffer containing at most Width characters. No padding of
+  spaces is ever performed. If Width is 0 then a width of
+  MAXIMUM_VALUE_CHARACTERS is assumed. If the conversion contains more than
+  Width characters, then only the first Width characters are placed in Buffer.
+  Additional conversion parameters are specified in Flags.
+
+  The Flags bit LEFT_JUSTIFY is always ignored.
+  All conversions are left justified in Buffer.
+  If Width is 0, PREFIX_ZERO is ignored in Flags.
+  If COMMA_TYPE is set in Flags, then PREFIX_ZERO is ignored in Flags, and
+  commas are inserted every 3rd digit starting from the right.
+  If RADIX_HEX is set in Flags, then the output buffer will be formatted in
+  hexadecimal format.
+  If Value is < 0 and RADIX_HEX is not set in Flags, then the fist character in
+  Buffer is a '-'.
+  If PREFIX_ZERO is set in Flags and PREFIX_ZERO is not being ignored, then
+  Buffer is padded with '0' characters so the combination of the optional '-'
+  sign character, '0' characters, digit characters for Value, and the
+  Null-terminator add up to Width characters.
+
+  If Buffer is not aligned on a 16-bit boundary, then ASSERT().
+  If an error would be returned, then the function will also ASSERT().
+
+  @param  Buffer      The pointer to the output buffer for the produced
+                      Null-terminated Unicode string.
+  @param  BufferSize  The size of Buffer in bytes, including the
+                      Null-terminator.
+  @param  Flags       The bitmask of flags that specify left justification,
+                      zero pad, and commas.
+  @param  Value       The 64-bit signed value to convert to a string.
+  @param  Width       The maximum number of Unicode characters to place in
+                      Buffer, not including the Null-terminator.
+
+  @retval RETURN_SUCCESS           The decimal value is converted.
+  @retval RETURN_BUFFER_TOO_SMALL  If BufferSize cannot hold the converted
+                                   value.
+  @retval RETURN_INVALID_PARAMETER If Buffer is NULL.
+                                   If PcdMaximumUnicodeStringLength is not
+                                   zero, and BufferSize is greater than
+                                   (PcdMaximumUnicodeStringLength *
+                                   sizeof (CHAR16) + 1).
+                                   If unsupported bits are set in Flags.
+                                   If both COMMA_TYPE and RADIX_HEX are set in
+                                   Flags.
+                                   If Width >= MAXIMUM_VALUE_CHARACTERS.
+
+**/
+RETURN_STATUS
+EFIAPI
+UnicodeValueToStringS (
+  IN OUT CHAR16  *Buffer,
+  IN UINTN       BufferSize,
+  IN UINTN       Flags,
+  IN INT64       Value,
+  IN UINTN       Width
+  );
+
 /**
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   ASCII format string and a VA_LIST argument list.
+
+  This function is similar as vsnprintf_s defined in C11.
 
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list specified by Marker based on
   the contents of the format string.
-  The number of ASCII characters in the produced output buffer is returned, not including
+  The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is NULL, then ASSERT().
+  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 0 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumAsciiStringLength is not zero, and BufferSize >
+  (PcdMaximumAsciiStringLength * sizeof (CHAR8)), then ASSERT(). Also, the output buffer
+  is unmodified and 0 is returned.
   If PcdMaximumAsciiStringLength is not zero, and FormatString contains more than
-  PcdMaximumAsciiStringLength ASCII characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and produced Null-terminated ASCII string
-  contains more than PcdMaximumAsciiStringLength ASCII characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumAsciiStringLength Ascii characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated ASCII format string.
+  @param  FormatString    A Null-terminated ASCII format string.
   @param  Marker          VA_LIST marker for the variable argument list.
 
-  @return The number of ASCII characters in the produced output buffer, not including the
+  @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -556,26 +657,29 @@ AsciiVSPrint (
   The ASCII string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list specified by Marker based on
   the contents of the format string.
-  The number of ASCII characters in the produced output buffer is returned, not including
+  The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is NULL, then ASSERT().
+  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 0 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumAsciiStringLength is not zero, and BufferSize >
+  (PcdMaximumAsciiStringLength * sizeof (CHAR8)), then ASSERT(). Also, the output buffer
+  is unmodified and 0 is returned.
   If PcdMaximumAsciiStringLength is not zero, and FormatString contains more than
-  PcdMaximumAsciiStringLength ASCII characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and produced Null-terminated ASCII string
-  contains more than PcdMaximumAsciiStringLength ASCII characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumAsciiStringLength Ascii characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated ASCII format string.
+  @param  FormatString    A Null-terminated ASCII format string.
   @param  Marker          BASE_LIST marker for the variable argument list.
 
-  @return The number of ASCII characters in the produced output buffer, not including the
+  @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -592,32 +696,37 @@ AsciiBSPrint (
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   ASCII format string and  variable argument list.
 
+  This function is similar as snprintf_s defined in C11.
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list based on the contents of the
   format string.
-  The number of ASCII characters in the produced output buffer is returned, not including
+  The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is NULL, then ASSERT().
+  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 0 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumAsciiStringLength is not zero, and BufferSize >
+  (PcdMaximumAsciiStringLength * sizeof (CHAR8)), then ASSERT(). Also, the output buffer
+  is unmodified and 0 is returned.
   If PcdMaximumAsciiStringLength is not zero, and FormatString contains more than
-  PcdMaximumAsciiStringLength ASCII characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and produced Null-terminated ASCII string
-  contains more than PcdMaximumAsciiStringLength ASCII characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumAsciiStringLength Ascii characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated ASCII format string.
-  @param  ...             The variable argument list whose contents are accessed based on the
+  @param  FormatString    A Null-terminated ASCII format string.
+  @param  ...             Variable argument list whose contents are accessed based on the
                           format string specified by FormatString.
 
-  @return The number of ASCII characters in the produced output buffer, not including the
+  @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -634,32 +743,38 @@ AsciiSPrint (
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   Unicode format string and a VA_LIST argument list.
 
+  This function is similar as vsnprintf_s defined in C11.
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list specified by Marker based on
   the contents of the format string.
-  The number of ASCII characters in the produced output buffer is returned, not including
+  The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
+  If FormatString is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 0 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumAsciiStringLength is not zero, and BufferSize >
+  (PcdMaximumAsciiStringLength * sizeof (CHAR8)), then ASSERT(). Also, the output buffer
+  is unmodified and 0 is returned.
   If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and produced Null-terminated ASCII string
-  contains more than PcdMaximumAsciiStringLength ASCII characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated Unicode format string.
+  @param  FormatString    A Null-terminated Unicode format string.
   @param  Marker          VA_LIST marker for the variable argument list.
 
-  @return The number of ASCII characters in the produced output buffer, not including the
+  @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -681,27 +796,31 @@ AsciiVSPrintUnicodeFormat (
   The ASCII string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list specified by Marker based on
   the contents of the format string.
-  The number of ASCII characters in the produced output buffer is returned, not including
+  The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
+  If FormatString is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 0 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumAsciiStringLength is not zero, and BufferSize >
+  (PcdMaximumAsciiStringLength * sizeof (CHAR8)), then ASSERT(). Also, the output buffer
+  is unmodified and 0 is returned.
   If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and produced Null-terminated ASCII string
-  contains more than PcdMaximumAsciiStringLength ASCII characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated Unicode format string.
+  @param  FormatString    A Null-terminated Unicode format string.
   @param  Marker          BASE_LIST marker for the variable argument list.
 
-  @return The number of ASCII characters in the produced output buffer, not including the
+  @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -718,33 +837,39 @@ AsciiBSPrintUnicodeFormat (
   Produces a Null-terminated ASCII string in an output buffer based on a Null-terminated
   Unicode format string and  variable argument list.
 
+  This function is similar as snprintf_s defined in C11.
+
   Produces a Null-terminated ASCII string in the output buffer specified by StartOfBuffer
   and BufferSize.
   The ASCII string is produced by parsing the format string specified by FormatString.
   Arguments are pulled from the variable argument list based on the contents of the
   format string.
-  The number of ASCII characters in the produced output buffer is returned, not including
+  The number of ASCII characters in the produced output buffer is returned not including
   the Null-terminator.
-  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
-  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is NULL, then ASSERT().
-  If BufferSize > 0 and FormatString is not aligned on a 16-bit boundary, then ASSERT().
+  If FormatString is not aligned on a 16-bit boundary, then ASSERT().
+
+  If BufferSize > 0 and StartOfBuffer is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If BufferSize > 0 and FormatString is NULL, then ASSERT(). Also, the output buffer is
+  unmodified and 0 is returned.
+  If PcdMaximumAsciiStringLength is not zero, and BufferSize >
+  (PcdMaximumAsciiStringLength * sizeof (CHAR8)), then ASSERT(). Also, the output buffer
+  is unmodified and 0 is returned.
   If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more than
-  PcdMaximumUnicodeStringLength Unicode characters, not including the Null-terminator, then
-  ASSERT().
-  If PcdMaximumAsciiStringLength is not zero, and produced Null-terminated ASCII string
-  contains more than PcdMaximumAsciiStringLength ASCII characters, not including the
-  Null-terminator, then ASSERT().
+  PcdMaximumUnicodeStringLength Unicode characters not including the Null-terminator, then
+  ASSERT(). Also, the output buffer is unmodified and 0 is returned.
+
+  If BufferSize is 0, then no output buffer is produced and 0 is returned.
 
   @param  StartOfBuffer   A pointer to the output buffer for the produced Null-terminated
                           ASCII string.
   @param  BufferSize      The size, in bytes, of the output buffer specified by StartOfBuffer.
-  @param  FormatString    A null-terminated Unicode format string.
+  @param  FormatString    A Null-terminated Unicode format string.
   @param  ...             Variable argument list whose contents are accessed based on the
                           format string specified by FormatString.
 
-  @return The number of ASCII characters in the produced output buffer, not including the
+  @return The number of ASCII characters in the produced output buffer not including the
           Null-terminator.
 
 **/
@@ -757,7 +882,11 @@ AsciiSPrintUnicodeFormat (
   ...
   );
 
+#ifndef DISABLE_NEW_DEPRECATED_INTERFACES
+
 /**
+  [ATTENTION] This function is deprecated for security reason.
+
   Converts a decimal value to a Null-terminated ASCII string.
 
   Converts the decimal number specified by Value to a Null-terminated ASCII string
@@ -806,12 +935,77 @@ AsciiValueToString (
   IN  UINTN      Width
   );
 
+#endif
+
+/**
+  Converts a decimal value to a Null-terminated Ascii string.
+
+  Converts the decimal number specified by Value to a Null-terminated Ascii
+  string specified by Buffer containing at most Width characters. No padding of
+  spaces is ever performed. If Width is 0 then a width of
+  MAXIMUM_VALUE_CHARACTERS is assumed. If the conversion contains more than
+  Width characters, then only the first Width characters are placed in Buffer.
+  Additional conversion parameters are specified in Flags.
+
+  The Flags bit LEFT_JUSTIFY is always ignored.
+  All conversions are left justified in Buffer.
+  If Width is 0, PREFIX_ZERO is ignored in Flags.
+  If COMMA_TYPE is set in Flags, then PREFIX_ZERO is ignored in Flags, and
+  commas are inserted every 3rd digit starting from the right.
+  If RADIX_HEX is set in Flags, then the output buffer will be formatted in
+  hexadecimal format.
+  If Value is < 0 and RADIX_HEX is not set in Flags, then the fist character in
+  Buffer is a '-'.
+  If PREFIX_ZERO is set in Flags and PREFIX_ZERO is not being ignored, then
+  Buffer is padded with '0' characters so the combination of the optional '-'
+  sign character, '0' characters, digit characters for Value, and the
+  Null-terminator add up to Width characters.
+
+  If an error would be returned, then the function will ASSERT().
+
+  @param  Buffer      The pointer to the output buffer for the produced
+                      Null-terminated Ascii string.
+  @param  BufferSize  The size of Buffer in bytes, including the
+                      Null-terminator.
+  @param  Flags       The bitmask of flags that specify left justification,
+                      zero pad, and commas.
+  @param  Value       The 64-bit signed value to convert to a string.
+  @param  Width       The maximum number of Ascii characters to place in
+                      Buffer, not including the Null-terminator.
+
+  @retval RETURN_SUCCESS           The decimal value is converted.
+  @retval RETURN_BUFFER_TOO_SMALL  If BufferSize cannot hold the converted
+                                   value.
+  @retval RETURN_INVALID_PARAMETER If Buffer is NULL.
+                                   If PcdMaximumAsciiStringLength is not
+                                   zero, and BufferSize is greater than
+                                   PcdMaximumAsciiStringLength.
+                                   If unsupported bits are set in Flags.
+                                   If both COMMA_TYPE and RADIX_HEX are set in
+                                   Flags.
+                                   If Width >= MAXIMUM_VALUE_CHARACTERS.
+
+**/
+RETURN_STATUS
+EFIAPI
+AsciiValueToStringS (
+  IN OUT CHAR8   *Buffer,
+  IN UINTN       BufferSize,
+  IN UINTN       Flags,
+  IN INT64       Value,
+  IN UINTN       Width
+  );
+
 /**
   Returns the number of characters that would be produced by if the formatted
   output were produced not including the Null-terminator.
 
-  If Format is NULL, then ASSERT().
-  If Format is not aligned on a 16-bit boundary, then ASSERT().
+  If FormatString is not aligned on a 16-bit boundary, then ASSERT().
+
+  If FormatString is NULL, then ASSERT() and 0 is returned.
+  If PcdMaximumUnicodeStringLength is not zero, and FormatString contains more
+  than PcdMaximumUnicodeStringLength Unicode characters not including the
+  Null-terminator, then ASSERT() and 0 is returned.
 
   @param[in]  FormatString    A Null-terminated Unicode format string.
   @param[in]  Marker          VA_LIST marker for the variable argument list.
@@ -830,7 +1024,10 @@ SPrintLength (
   Returns the number of characters that would be produced by if the formatted
   output were produced not including the Null-terminator.
 
-  If Format is NULL, then ASSERT().
+  If FormatString is NULL, then ASSERT() and 0 is returned.
+  If PcdMaximumAsciiStringLength is not zero, and FormatString contains more
+  than PcdMaximumAsciiStringLength Ascii characters not including the
+  Null-terminator, then ASSERT() and 0 is returned.
 
   @param[in]  FormatString    A Null-terminated ASCII format string.
   @param[in]  Marker          VA_LIST marker for the variable argument list.

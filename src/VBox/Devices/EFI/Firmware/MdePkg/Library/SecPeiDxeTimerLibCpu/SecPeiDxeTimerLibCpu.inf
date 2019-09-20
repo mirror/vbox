@@ -13,14 +13,9 @@
 # Note that for IA-32 and x64, this library only supports xAPIC mode. If x2APIC
 # support is desired, the SecPeiDxeTimerLibUefiCpu library can be used.
 #
-# Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution. The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php.
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 #
 ##
@@ -36,15 +31,11 @@
 
 
 #
-#  VALID_ARCHITECTURES           = IA32 X64 IPF
+#  VALID_ARCHITECTURES           = IA32 X64
 #
 
 [Sources.Ia32, Sources.X64]
   X86TimerLib.c
-
-[Sources.IPF]
-  IpfTimerLib.c
-
 
 [Packages]
   MdePkg/MdePkg.dec
@@ -57,10 +48,6 @@
   PcdLib
   IoLib
   DebugLib
-
-[LibraryClasses.IPF]
-  PalLib
-
 
 [Pcd.IA32, Pcd.X64]
   gEfiMdePkgTokenSpaceGuid.PcdFSBClock  ## CONSUMES

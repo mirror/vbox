@@ -1,15 +1,9 @@
 ## @file
 # This file contained the parser for [Sources] sections in INF file
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 '''
 InfSourceSectionParser
@@ -86,7 +80,7 @@ class InfSourceSectionParser(InfParserSectionRoot):
             if SrcLineContent.find(DT.TAB_COMMENT_SPLIT) > -1:
                 TailComments = SrcLineContent[SrcLineContent.find(DT.TAB_COMMENT_SPLIT):]
                 SrcLineContent = SrcLineContent[:SrcLineContent.find(DT.TAB_COMMENT_SPLIT)]
-                if LineComment == None:
+                if LineComment is None:
                     LineComment = InfLineCommentObject()
                 LineComment.SetTailComments(TailComments)
 
@@ -97,7 +91,7 @@ class InfSourceSectionParser(InfParserSectionRoot):
                                       FileName,
                                       DT.MODEL_EFI_SOURCE_FILE,
                                       self.FileLocalMacros)
-            if Name != None:
+            if Name is not None:
                 SectionMacros[Name] = Value
                 LineComment = None
                 HeaderComments = []
@@ -142,4 +136,4 @@ class InfSourceSectionParser(InfParserSectionRoot):
                          FORMAT_INVALID,
                          ST.ERR_INF_PARSER_MODULE_SECTION_TYPE_ERROR % ("[Sources]"),
                          File=FileName,
-                         Line=Item[3])            
+                         Line=Item[3])

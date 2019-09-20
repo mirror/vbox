@@ -1,14 +1,8 @@
 /** @file
-  Internal include file for Tiano Decompress Libary.
+  Internal include file for Tiano Decompress Library.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -361,7 +355,7 @@ DecodeP (
 /**
   Reads code lengths for the Extra Set or the Position Set.
 
-  Read in the Extra Set or Pointion Set Length Arrary, then
+  Read in the Extra Set or Position Set Length Array, then
   generate the Huffman code mapping for them.
 
   @param  Sd      The global scratch data.
@@ -427,7 +421,7 @@ Decode (
 
 RETURN_STATUS
 EFIAPI
-Decompress (
+TDecompress (
   IN VOID  *Source,
   IN OUT VOID    *Destination,
   IN OUT VOID    *Scratch,

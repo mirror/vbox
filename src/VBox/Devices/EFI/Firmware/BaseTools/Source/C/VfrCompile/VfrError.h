@@ -2,14 +2,8 @@
 
   VfrCompiler Error definition
 
-Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -44,12 +38,13 @@ typedef enum {
   VFR_RETURN_DEFAULT_VALUE_REDEFINED,
   VFR_RETURN_CONSTANT_ONLY,
   VFR_RETURN_VARSTORE_NAME_REDEFINED_ERROR,
+  VFR_RETURN_BIT_WIDTH_ERROR,
+  VFR_RETURN_STRING_TO_UINT_OVERFLOW,
   VFR_RETURN_CODEUNDEFINED
 } EFI_VFR_RETURN_CODE;
 
 typedef enum {
   VFR_WARNING_DEFAULT_VALUE_REDEFINED = 0,
-  VFR_WARNING_STRING_TO_UINT_OVERFLOW,
   VFR_WARNING_ACTION_WITH_TEXT_TWO,
   VFR_WARNING_OBSOLETED_FRAMEWORK_OPCODE,
   VFR_WARNING_CODEUNDEFINED
@@ -73,6 +68,10 @@ struct SVfrFileScopeRecord {
 
   SVfrFileScopeRecord (IN CHAR8 *, IN UINT32);
   ~SVfrFileScopeRecord();
+
+private:
+  SVfrFileScopeRecord (IN CONST SVfrFileScopeRecord&);             // Prevent copy-construction
+  SVfrFileScopeRecord& operator= (IN CONST SVfrFileScopeRecord&);  // Prevent assignment
 };
 
 class CVfrErrorHandle {
@@ -95,6 +94,10 @@ public:
   UINT8 HandleError (IN EFI_VFR_RETURN_CODE, IN UINT32 LineNum = 0, IN CHAR8 *TokName = NULL);
   UINT8 HandleWarning (IN EFI_VFR_WARNING_CODE, IN UINT32 LineNum = 0, IN CHAR8 *TokName = NULL);
   VOID  PrintMsg (IN UINT32 LineNum = 0, IN CHAR8 *TokName = NULL, IN CONST CHAR8 *MsgType = "Error", IN CONST CHAR8 *ErrorMsg = "");
+
+private:
+  CVfrErrorHandle (IN CONST CVfrErrorHandle&);             // Prevent copy-construction
+  CVfrErrorHandle& operator= (IN CONST CVfrErrorHandle&);  // Prevent assignment
 };
 
 #define CHECK_ERROR_RETURN(f, v) do { EFI_VFR_RETURN_CODE r; if ((r = (f)) != (v)) { return r; } } while (0)

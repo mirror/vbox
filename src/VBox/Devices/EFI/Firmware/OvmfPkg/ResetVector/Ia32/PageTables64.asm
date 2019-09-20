@@ -3,13 +3,7 @@
 ; Sets the CR3 register for 64-bit paging
 ;
 ; Copyright (c) 2008 - 2013, Intel Corporation. All rights reserved.<BR>
-; This program and the accompanying materials
-; are licensed and made available under the terms and conditions of the BSD License
-; which accompanies this distribution.  The full text of the license may be found at
-; http://opensource.org/licenses/bsd-license.php
-;
-; THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-; WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ;------------------------------------------------------------------------------
 
@@ -37,23 +31,72 @@ BITS    32
                        PAGE_READ_WRITE + \
                        PAGE_PRESENT)
 
+; Check if Secure Encrypted Virtualization (SEV) feature is enabled
+;
+; If SEV is enabled then EAX will be at least 32
+; If SEV is disabled then EAX will be zero.
+;
+CheckSevFeature:
+    ; Check if we have a valid (0x8000_001F) CPUID leaf
+    mov       eax, 0x80000000
+    cpuid
+
+    ; This check should fail on Intel or Non SEV AMD CPUs. In future if
+    ; Intel CPUs supports this CPUID leaf then we are guranteed to have exact
+    ; same bit definition.
+    cmp       eax, 0x8000001f
+    jl        NoSev
+
+    ; Check for memory encryption feature:
+    ;  CPUID  Fn8000_001F[EAX] - Bit 1
+    ;
+    mov       eax,  0x8000001f
+    cpuid
+    bt        eax, 1
+    jnc       NoSev
+
+    ; Check if memory encryption is enabled
+    ;  MSR_0xC0010131 - Bit 0 (SEV enabled)
+    mov       ecx, 0xc0010131
+    rdmsr
+    bt        eax, 0
+    jnc       NoSev
+
+    ; Get pte bit position to enable memory encryption
+    ; CPUID Fn8000_001F[EBX] - Bits 5:0
+    ;
+    mov       eax, ebx
+    and       eax, 0x3f
+    jmp       SevExit
+
+NoSev:
+    xor       eax, eax
+
+SevExit:
+    OneTimeCallRet CheckSevFeature
 
 ;
-; Modified:  EAX, ECX
+; Modified:  EAX, EBX, ECX, EDX
 ;
 SetCr3ForPageTables64:
 
+    OneTimeCall   CheckSevFeature
+    xor     edx, edx
+    test    eax, eax
+    jz      SevNotActive
+
+    ; If SEV is enabled, C-bit is always above 31
+    sub     eax, 32
+    bts     edx, eax
+
+SevNotActive:
+
     ;
-%ifdef VBOX
-    ; For OVMF, build some initial page tables at 0x2000000-0x2006000.
-    ; Required because we had to relocate MEMFD where the page table resides 
-    ; from 0x800000 to not interfere with certain OS X bootloaders.
-%else
-    ; For OVMF, build some initial page tables at 0x800000-0x806000.
-%endif
+    ; For OVMF, build some initial page tables at
+    ; PcdOvmfSecPageTablesBase - (PcdOvmfSecPageTablesBase + 0x6000).
     ;
-    ; This range should match with PcdOvmfSecPageTablesBase and
-    ; PcdOvmfSecPageTablesSize which are declared in the FDF files.
+    ; This range should match with PcdOvmfSecPageTablesSize which is
+    ; declared in the FDF files.
     ;
     ; At the end of PEI, the pages tables will be rebuilt into a
     ; more permanent location by DxeIpl.
@@ -62,36 +105,26 @@ SetCr3ForPageTables64:
     mov     ecx, 6 * 0x1000 / 4
     xor     eax, eax
 clearPageTablesMemoryLoop:
-%ifdef VBOX
-    mov     dword[ecx * 4 + 0x2000000 - 4], eax
-%else
-    mov     dword[ecx * 4 + 0x800000 - 4], eax
-%endif
+    mov     dword[ecx * 4 + PT_ADDR (0) - 4], eax
     loop    clearPageTablesMemoryLoop
 
     ;
     ; Top level Page Directory Pointers (1 * 512GB entry)
     ;
-%ifdef VBOX
-    mov     dword[0x2000000], 0x2001000 + PAGE_PDP_ATTR
-%else
-    mov     dword[0x800000], 0x801000 + PAGE_PDP_ATTR
-%endif
+    mov     dword[PT_ADDR (0)], PT_ADDR (0x1000) + PAGE_PDP_ATTR
+    mov     dword[PT_ADDR (4)], edx
 
     ;
     ; Next level Page Directory Pointers (4 * 1GB entries => 4GB)
     ;
-%ifdef VBOX
-    mov     dword[0x2001000], 0x2002000 + PAGE_PDP_ATTR
-    mov     dword[0x2001008], 0x2003000 + PAGE_PDP_ATTR
-    mov     dword[0x2001010], 0x2004000 + PAGE_PDP_ATTR
-    mov     dword[0x2001018], 0x2005000 + PAGE_PDP_ATTR
-%else
-    mov     dword[0x801000], 0x802000 + PAGE_PDP_ATTR
-    mov     dword[0x801008], 0x803000 + PAGE_PDP_ATTR
-    mov     dword[0x801010], 0x804000 + PAGE_PDP_ATTR
-    mov     dword[0x801018], 0x805000 + PAGE_PDP_ATTR
-%endif
+    mov     dword[PT_ADDR (0x1000)], PT_ADDR (0x2000) + PAGE_PDP_ATTR
+    mov     dword[PT_ADDR (0x1004)], edx
+    mov     dword[PT_ADDR (0x1008)], PT_ADDR (0x3000) + PAGE_PDP_ATTR
+    mov     dword[PT_ADDR (0x100C)], edx
+    mov     dword[PT_ADDR (0x1010)], PT_ADDR (0x4000) + PAGE_PDP_ATTR
+    mov     dword[PT_ADDR (0x1014)], edx
+    mov     dword[PT_ADDR (0x1018)], PT_ADDR (0x5000) + PAGE_PDP_ATTR
+    mov     dword[PT_ADDR (0x101C)], edx
 
     ;
     ; Page Table Entries (2048 * 2MB entries => 4GB)
@@ -102,21 +135,14 @@ pageTableEntriesLoop:
     dec     eax
     shl     eax, 21
     add     eax, PAGE_2M_PDE_ATTR
-%ifdef VBOX
-    mov     [ecx * 8 + 0x2002000 - 8], eax
-%else
-    mov     [ecx * 8 + 0x802000 - 8], eax
-%endif
+    mov     [ecx * 8 + PT_ADDR (0x2000 - 8)], eax
+    mov     [(ecx * 8 + PT_ADDR (0x2000 - 8)) + 4], edx
     loop    pageTableEntriesLoop
 
     ;
     ; Set CR3 now that the paging structures are available
     ;
-%ifdef VBOX
-    mov     eax, 0x2000000
-%else
-    mov     eax, 0x800000
-%endif
+    mov     eax, PT_ADDR (0)
     mov     cr3, eax
 
     OneTimeCallRet SetCr3ForPageTables64

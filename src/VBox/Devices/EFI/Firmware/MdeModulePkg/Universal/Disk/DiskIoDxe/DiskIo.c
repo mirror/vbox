@@ -9,14 +9,8 @@
     Aligned  - A read of N contiguous sectors.
     OverRun  - The last byte is not on a sector boundary.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -832,14 +826,6 @@ DiskIo2ReadWriteDisk (
   Media     = BlockIo->Media;
   Status    = EFI_SUCCESS;
   Blocking  = (BOOLEAN) ((Token == NULL) || (Token->Event == NULL));
-
-  if (Media->MediaId != MediaId) {
-    return EFI_MEDIA_CHANGED;
-  }
-
-  if (Write && Media->ReadOnly) {
-    return EFI_WRITE_PROTECTED;
-  }
 
   if (Blocking) {
     //

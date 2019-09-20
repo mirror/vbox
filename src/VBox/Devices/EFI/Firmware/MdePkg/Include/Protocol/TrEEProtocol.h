@@ -1,14 +1,8 @@
 /** @file
-  Ihis protocol is defined to abstract TPM2 hardware access in boot phase.
+  This protocol is defined to abstract TPM2 hardware access in boot phase.
 
-Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -92,22 +86,6 @@ typedef TREE_BOOT_SERVICE_CAPABILITY_1_0 TREE_BOOT_SERVICE_CAPABILITY;
 // This bit shall be set when the intent is to measure a PE/COFF image.
 //
 #define PE_COFF_IMAGE     0x0000000000000010
-
-//#define EV_EFI_VARIABLE_DRIVER_CONFIG 0x80000001  // Defined in TCG
-//#define EV_EFI_ACTION                 0x80000007  // Defined in TCG
-#define EV_EFI_VARIABLE_AUTHORITY     0x800000E0
-
-#define  FIRMWARE_DEBUGGER_EVENT_STRING  "UEFI Debug Mode"
-
-#pragma pack(1)
-typedef struct {
-  EFI_GUID                          VariableName;
-  UINT64                            UnicodeNameLength;   // The TCG Definition used UINTN
-  UINT64                            VariableDataLength;  // The TCG Definition used UINTN
-  CHAR16                            UnicodeName[1];
-  INT8                              VariableData[1];
-} EFI_VARIABLE_DATA_TREE;
-#pragma pack()
 
 typedef UINT32 TrEE_PCRINDEX;
 typedef UINT32 TrEE_EVENTTYPE;

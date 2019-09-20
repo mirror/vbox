@@ -27,14 +27,8 @@
   3) A support protocol is not found, and the data is not available to be read
      without it.  This results in EFI_PROTOCOL_ERROR.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -1166,7 +1160,7 @@ FindStreamNode (
                                 non-null on input, then the buffer is caller
                                 allocated.  If Buffer is NULL, then the buffer
                                 is callee allocated.  In either case, the
-                                requried buffer size is returned in *BufferSize.
+                                required buffer size is returned in *BufferSize.
   @param  BufferSize            On input, indicates the size of *Buffer if
                                 *Buffer is non-null on input.  On output,
                                 indicates the required size (allocated size if
@@ -1551,7 +1545,9 @@ CustomGuidedSectionExtract (
     //
     AllocatedOutputBuffer = AllocatePool (OutputBufferSize);
     if (AllocatedOutputBuffer == NULL) {
-      FreePool (ScratchBuffer);
+      if (ScratchBuffer != NULL) {
+        FreePool (ScratchBuffer);
+      }
       return EFI_OUT_OF_RESOURCES;
     }
     *OutputBuffer = AllocatedOutputBuffer;

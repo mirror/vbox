@@ -2,14 +2,8 @@
   The header file of HII Config Access protocol implementation of TCG
   configuration module.
 
-Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -34,7 +28,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/DevicePathLib.h>
 #include <Library/PcdLib.h>
 #include <Library/PrintLib.h>
-#include <Library/TpmCommLib.h>
+#include <Library/Tpm12DeviceLib.h>
 
 #include <Guid/MdeModuleHii.h>
 
@@ -61,6 +55,7 @@ typedef struct {
   EFI_HII_HANDLE                    HiiHandle;
   EFI_HANDLE                        DriverHandle;
 
+  TCG_CONFIGURATION                 *Configuration;
   EFI_TCG_PROTOCOL                  *TcgProtocol;
 } TCG_CONFIG_PRIVATE_DATA;
 

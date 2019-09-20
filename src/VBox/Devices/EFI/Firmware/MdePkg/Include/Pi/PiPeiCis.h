@@ -1,18 +1,11 @@
 /** @file
   PI PEI master include file. This file should match the PI spec.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
-  PI Version 1.2.
+  PI Version 1.6.
 
 **/
 
@@ -73,6 +66,7 @@ EFI_STATUS
   @param  Ppi              Address of the PPI that was installed.
 
   @return Status of the notification.
+          The status code returned from this function is ignored.
 **/
 typedef
 EFI_STATUS
@@ -229,7 +223,7 @@ EFI_STATUS
 
   @retval EFI_SUCCESS           The interface was successfully installed.
   @retval EFI_INVALID_PARAMETER The PpiList pointer is NULL, or any of the PEI PPI descriptors in the
-                                list do not have the EFI_PEI_PPI_DESCRIPTOR_PPI bit set in the Flags field.
+                                list do not have the EFI_PEI_PPI_DESCRIPTOR_NOTIFY_TYPES bit set in the Flags field.
   @retval EFI_OUT_OF_RESOURCES  There is no additional space in the PPI database.
 
 **/
@@ -451,6 +445,11 @@ EFI_STATUS
   The purpose of the service is to publish an interface that allows
   PEIMs to allocate memory ranges that are managed by the PEI Foundation.
 
+  Prior to InstallPeiMemory() being called, PEI will allocate pages from the heap.
+  After InstallPeiMemory() is called, PEI will allocate pages within the region
+  of memory provided by InstallPeiMemory() service in a best-effort fashion.
+  Location-specific allocations are not managed by the PEI foundation code.
+
   @param  PeiServices      An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
   @param  MemoryType       The type of memory to allocate.
   @param  Pages            The number of contiguous 4 KB pages to allocate.
@@ -461,7 +460,7 @@ EFI_STATUS
   @retval EFI_OUT_OF_RESOURCES  The pages could not be allocated.
   @retval EFI_INVALID_PARAMETER The type is not equal to EfiLoaderCode, EfiLoaderData, EfiRuntimeServicesCode,
                                 EfiRuntimeServicesData, EfiBootServicesCode, EfiBootServicesData,
-                                EfiACPIReclaimMemory, or EfiACPIMemoryNVS.
+                                EfiACPIReclaimMemory, EfiReservedMemoryType, or EfiACPIMemoryNVS.
 
 **/
 typedef
@@ -471,6 +470,27 @@ EFI_STATUS
   IN EFI_MEMORY_TYPE            MemoryType,
   IN UINTN                      Pages,
   OUT EFI_PHYSICAL_ADDRESS      *Memory
+  );
+
+/**
+  Frees memory pages.
+
+  @param[in] PeiServices        An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param[in] Memory             The base physical address of the pages to be freed.
+  @param[in] Pages              The number of contiguous 4 KB pages to free.
+
+  @retval EFI_SUCCESS           The requested pages were freed.
+  @retval EFI_INVALID_PARAMETER Memory is not a page-aligned address or Pages is invalid.
+  @retval EFI_NOT_FOUND         The requested memory pages were not allocated with
+                                AllocatePages().
+
+**/
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FREE_PAGES) (
+  IN CONST EFI_PEI_SERVICES     **PeiServices,
+  IN EFI_PHYSICAL_ADDRESS       Memory,
+  IN UINTN                      Pages
   );
 
 /**
@@ -582,6 +602,28 @@ typedef
 EFI_STATUS
 (EFIAPI *EFI_PEI_RESET_SYSTEM)(
   IN CONST EFI_PEI_SERVICES   **PeiServices
+  );
+
+/**
+  Resets the entire platform.
+
+  @param[in] ResetType      The type of reset to perform.
+  @param[in] ResetStatus    The status code for the reset.
+  @param[in] DataSize       The size, in bytes, of ResetData.
+  @param[in] ResetData      For a ResetType of EfiResetCold, EfiResetWarm, or EfiResetShutdown
+                            the data buffer starts with a Null-terminated string, optionally
+                            followed by additional binary data. The string is a description
+                            that the caller may use to further indicate the reason for the
+                            system reset.
+
+**/
+typedef
+VOID
+(EFIAPI *EFI_PEI_RESET2_SYSTEM) (
+  IN EFI_RESET_TYPE     ResetType,
+  IN EFI_STATUS         ResetStatus,
+  IN UINTN              DataSize,
+  IN VOID               *ResetData OPTIONAL
   );
 
 /**
@@ -808,7 +850,7 @@ EFI_STATUS
 // PEI Specification Revision information
 //
 #define PEI_SPECIFICATION_MAJOR_REVISION  1
-#define PEI_SPECIFICATION_MINOR_REVISION  30
+#define PEI_SPECIFICATION_MINOR_REVISION  60
 ///
 /// Specification inconsistency here:
 /// In the PI1.0 spec, PEI_SERVICES_SIGNATURE is defined as 0x5652455320494550. But
@@ -903,6 +945,8 @@ struct _EFI_PEI_SERVICES {
   EFI_PEI_REGISTER_FOR_SHADOW     RegisterForShadow;
   EFI_PEI_FFS_FIND_SECTION_DATA3  FindSectionData3;
   EFI_PEI_FFS_GET_FILE_INFO2      FfsGetFileInfo2;
+  EFI_PEI_RESET2_SYSTEM           ResetSystem2;
+  EFI_PEI_FREE_PAGES              FreePages;
 };
 
 
@@ -978,13 +1022,14 @@ typedef struct _EFI_SEC_PEI_HAND_OFF {
   allows the SEC phase to pass information about the stack,
   temporary RAM and the Boot Firmware Volume. In addition, it also
   allows the SEC phase to pass services and data forward for use
-  during the PEI phase in the form of one or more PPIs. There is
-  no limit to the number of additional PPIs that can be passed
-  from SEC into the PEI Foundation. As part of its initialization
-  phase, the PEI Foundation will add these SEC-hosted PPIs to its
-  PPI database such that both the PEI Foundation and any modules
-  can leverage the associated service calls and/or code in these
-  early PPIs.
+  during the PEI phase in the form of one or more PPIs. These PPI's
+  will be installed and/or immediately signaled if they are
+  notification type. There is no limit to the number of additional
+  PPIs that can be passed from SEC into the PEI Foundation. As part
+  of its initialization phase, the PEI Foundation will add these
+  SEC-hosted PPIs to its PPI database such that both the PEI
+  Foundation and any modules can leverage the associated service
+  calls and/or code in these early PPIs.
 
   @param SecCoreData    Points to a data structure containing
                         information about the PEI core's

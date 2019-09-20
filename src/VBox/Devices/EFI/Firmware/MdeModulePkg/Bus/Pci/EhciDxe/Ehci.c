@@ -11,14 +11,8 @@
   and companion host controller when UHCI or OHCI gets attached earlier than EHCI and a
   USB 2.0 device inserts.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -89,7 +83,7 @@ EhcGetCapability (
 
   *MaxSpeed       = EFI_USB_SPEED_HIGH;
   *PortNumber     = (UINT8) (Ehc->HcStructParams & HCSP_NPORTS);
-  *Is64BitCapable = (UINT8) (Ehc->HcCapParams & HCCP_64BIT);
+  *Is64BitCapable = (UINT8) Ehc->Support64BitDma;
 
   DEBUG ((EFI_D_INFO, "EhcGetCapability: %d ports, 64 bit %d\n", *PortNumber, *Is64BitCapable));
 
@@ -121,7 +115,6 @@ EhcReset (
   USB2_HC_DEV             *Ehc;
   EFI_TPL                 OldTpl;
   EFI_STATUS              Status;
-  UINT32                  DbgCtrlStatus;
 
   Ehc = EHC_FROM_THIS (This);
 
@@ -147,12 +140,9 @@ EhcReset (
     //
     // Host Controller must be Halt when Reset it
     //
-    if (Ehc->DebugPortNum != 0) {
-      DbgCtrlStatus = EhcReadDbgRegister(Ehc, 0);
-      if ((DbgCtrlStatus & (USB_DEBUG_PORT_IN_USE | USB_DEBUG_PORT_OWNER)) == (USB_DEBUG_PORT_IN_USE | USB_DEBUG_PORT_OWNER)) {
-        Status = EFI_SUCCESS;
-        goto ON_EXIT;
-      }
+    if (EhcIsDebugPortInUse (Ehc, NULL)) {
+      Status = EFI_SUCCESS;
+      goto ON_EXIT;
     }
 
     if (!EhcIsHalt (Ehc)) {
@@ -345,7 +335,6 @@ EhcGetRootHubPortStatus (
   UINTN                   Index;
   UINTN                   MapSize;
   EFI_STATUS              Status;
-  UINT32                  DbgCtrlStatus;
 
   if (PortStatus == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -367,11 +356,8 @@ EhcGetRootHubPortStatus (
   PortStatus->PortStatus        = 0;
   PortStatus->PortChangeStatus  = 0;
 
-  if ((Ehc->DebugPortNum != 0) && (PortNumber == (Ehc->DebugPortNum - 1))) {
-    DbgCtrlStatus = EhcReadDbgRegister(Ehc, 0);
-    if ((DbgCtrlStatus & (USB_DEBUG_PORT_IN_USE | USB_DEBUG_PORT_OWNER)) == (USB_DEBUG_PORT_IN_USE | USB_DEBUG_PORT_OWNER)) {
-      goto ON_EXIT;
-    }
+  if (EhcIsDebugPortInUse (Ehc, &PortNumber)) {
+    goto ON_EXIT;
   }
 
   State                         = EhcReadOpReg (Ehc, Offset);
@@ -1005,7 +991,6 @@ EhcAsyncInterruptTransfer (
   URB                     *Urb;
   EFI_TPL                 OldTpl;
   EFI_STATUS              Status;
-  UINT8                   *Data;
 
   //
   // Validate parameters
@@ -1054,16 +1039,7 @@ EhcAsyncInterruptTransfer (
 
   EhcAckAllInterrupt (Ehc);
 
-  Data = AllocatePool (DataLength);
-
-  if (Data == NULL) {
-    DEBUG ((EFI_D_ERROR, "EhcAsyncInterruptTransfer: failed to allocate buffer\n"));
-
-    Status = EFI_OUT_OF_RESOURCES;
-    goto ON_EXIT;
-  }
-
-  Urb = EhcCreateUrb (
+  Urb = EhciInsertAsyncIntTransfer (
           Ehc,
           DeviceAddress,
           EndPointAddress,
@@ -1071,9 +1047,6 @@ EhcAsyncInterruptTransfer (
           *DataToggle,
           MaximumPacketLength,
           Translator,
-          EHC_INT_TRANSFER_ASYNC,
-          NULL,
-          Data,
           DataLength,
           CallBackFunction,
           Context,
@@ -1081,19 +1054,9 @@ EhcAsyncInterruptTransfer (
           );
 
   if (Urb == NULL) {
-    DEBUG ((EFI_D_ERROR, "EhcAsyncInterruptTransfer: failed to create URB\n"));
-
-    gBS->FreePool (Data);
     Status = EFI_OUT_OF_RESOURCES;
     goto ON_EXIT;
   }
-
-  //
-  // New asynchronous transfer must inserted to the head.
-  // Check the comments in EhcMoniteAsyncRequests
-  //
-  EhcLinkQhToPeriod (Ehc, Urb->Qh);
-  InsertHeadList (&Ehc->AsyncIntTransfers, &Urb->UrbList);
 
 ON_EXIT:
   Ehc->PciIo->Flush (Ehc->PciIo);
@@ -1159,10 +1122,6 @@ EhcSyncInterruptTransfer (
     return EFI_INVALID_PARAMETER;
   }
 
-  if (!EHCI_IS_DATAIN (EndPointAddress)) {
-    return EFI_INVALID_PARAMETER;
-  }
-
   if ((*DataToggle != 1) && (*DataToggle != 0)) {
     return EFI_INVALID_PARAMETER;
   }
@@ -1224,6 +1183,7 @@ EhcSyncInterruptTransfer (
     Status = EFI_SUCCESS;
   }
 
+  EhcFreeUrb (Ehc, Urb);
 ON_EXIT:
   Ehc->PciIo->Flush (Ehc->PciIo);
   gBS->RestoreTPL (OldTpl);
@@ -1619,7 +1579,7 @@ EhcCreateUsb2Hc (
   //
   Status = gBS->CreateEvent (
                   EVT_TIMER | EVT_NOTIFY_SIGNAL,
-                  TPL_CALLBACK,
+                  TPL_NOTIFY,
                   EhcMonitorAsyncRequests,
                   Ehc,
                   &Ehc->PollTimer
@@ -1699,7 +1659,6 @@ EhcDriverBindingStart (
   UINTN                   EhciBusNumber;
   UINTN                   EhciDeviceNumber;
   UINTN                   EhciFunctionNumber;
-  UINT32                  State;
   EFI_DEVICE_PATH_PROTOCOL  *HcDevicePath;
 
   //
@@ -1881,6 +1840,26 @@ EhcDriverBindingStart (
     goto CLOSE_PCIIO;
   }
 
+  //
+  // Enable 64-bit DMA support in the PCI layer if this controller
+  // supports it.
+  //
+  if (EHC_BIT_IS_SET (Ehc->HcCapParams, HCCP_64BIT)) {
+    Status = PciIo->Attributes (
+                      PciIo,
+                      EfiPciIoAttributeOperationEnable,
+                      EFI_PCI_IO_ATTRIBUTE_DUAL_ADDRESS_CYCLE,
+                      NULL
+                      );
+    if (!EFI_ERROR (Status)) {
+      Ehc->Support64BitDma = TRUE;
+    } else {
+      DEBUG ((EFI_D_WARN,
+        "%a: failed to enable 64-bit DMA on 64-bit capable controller @ %p (%r)\n",
+        __FUNCTION__, Controller, Status));
+    }
+  }
+
   Status = gBS->InstallProtocolInterface (
                   &Controller,
                   &gEfiUsb2HcProtocolGuid,
@@ -1901,11 +1880,8 @@ EhcDriverBindingStart (
     EhcClearLegacySupport (Ehc);
   }
 
-  if (Ehc->DebugPortNum != 0) {
-    State = EhcReadDbgRegister(Ehc, 0);
-    if ((State & (USB_DEBUG_PORT_IN_USE | USB_DEBUG_PORT_OWNER)) != (USB_DEBUG_PORT_IN_USE | USB_DEBUG_PORT_OWNER)) {
-      EhcResetHC (Ehc, EHC_RESET_TIMEOUT);
-    }
+  if (!EhcIsDebugPortInUse (Ehc, NULL)) {
+    EhcResetHC (Ehc, EHC_RESET_TIMEOUT);
   }
 
   Status = EhcInitHC (Ehc);
@@ -2002,7 +1978,7 @@ CLOSE_PCIIO:
 
 
 /**
-  Stop this driver on ControllerHandle. Support stoping any child handles
+  Stop this driver on ControllerHandle. Support stopping any child handles
   created by this driver.
 
   @param  This                 Protocol instance pointer.

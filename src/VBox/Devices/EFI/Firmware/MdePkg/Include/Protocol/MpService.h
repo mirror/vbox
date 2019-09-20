@@ -27,14 +27,8 @@
   APs to help test system memory in parallel with other device initialization.
   Diagnostics applications may also use this protocol for multi-processor.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2017, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   This Protocol is defined in the UEFI Platform Initialization Specification 1.2,
@@ -388,8 +382,8 @@ EFI_STATUS
 
   @param[in]  This                    A pointer to the EFI_MP_SERVICES_PROTOCOL
                                       instance.
-  @param[in]  Procedure               A pointer to the function to be run on
-                                      enabled APs of the system. See type
+  @param[in]  Procedure               A pointer to the function to be run on the
+                                      designated AP of the system. See type
                                       EFI_AP_PROCEDURE.
   @param[in]  ProcessorNumber         The handle number of the AP. The range is
                                       from 0 to the total number of logical
@@ -398,13 +392,13 @@ EFI_STATUS
                                       EFI_MP_SERVICES_PROTOCOL.GetNumberOfProcessors().
   @param[in]  WaitEvent               The event created by the caller with CreateEvent()
                                       service.  If it is NULL, then execute in
-                                      blocking mode. BSP waits until all APs finish
+                                      blocking mode. BSP waits until this AP finish
                                       or TimeoutInMicroSeconds expires.  If it's
                                       not NULL, then execute in non-blocking mode.
                                       BSP requests the function specified by
-                                      Procedure to be started on all the enabled
-                                      APs, and go on executing immediately. If
-                                      all return from Procedure or TimeoutInMicroSeconds
+                                      Procedure to be started on this AP,
+                                      and go on executing immediately. If this AP
+                                      return from Procedure or TimeoutInMicroSeconds
                                       expires, this event is signaled. The BSP
                                       can use the CheckEvent() or WaitForEvent()
                                       services to check the state of event.  Type
@@ -412,20 +406,20 @@ EFI_STATUS
                                       the Unified Extensible Firmware Interface
                                       Specification.
   @param[in]  TimeoutInMicrosecsond   Indicates the time limit in microseconds for
-                                      APs to return from Procedure, either for
+                                      this AP to finish this Procedure, either for
                                       blocking or non-blocking mode. Zero means
                                       infinity.  If the timeout expires before
-                                      all APs return from Procedure, then Procedure
-                                      on the failed APs is terminated. All enabled
-                                      APs are available for next function assigned
+                                      this AP returns from Procedure, then Procedure
+                                      on the AP is terminated. The
+                                      AP is available for next function assigned
                                       by EFI_MP_SERVICES_PROTOCOL.StartupAllAPs()
                                       or EFI_MP_SERVICES_PROTOCOL.StartupThisAP().
                                       If the timeout expires in blocking mode,
                                       BSP returns EFI_TIMEOUT.  If the timeout
                                       expires in non-blocking mode, WaitEvent
                                       is signaled with SignalEvent().
-  @param[in]  ProcedureArgument       The parameter passed into Procedure for
-                                      all APs.
+  @param[in]  ProcedureArgument       The parameter passed into Procedure on the
+                                      specified AP.
   @param[out] Finished                If NULL, this parameter is ignored.  In
                                       blocking mode, this parameter is ignored.
                                       In non-blocking mode, if AP returns from
@@ -491,7 +485,7 @@ EFI_STATUS
   @retval EFI_UNSUPPORTED         Switching the BSP cannot be completed prior to
                                   this service returning.
   @retval EFI_UNSUPPORTED         Switching the BSP is not supported.
-  @retval EFI_SUCCESS             The calling processor is an AP.
+  @retval EFI_DEVICE_ERROR        The calling processor is an AP.
   @retval EFI_NOT_FOUND           The processor with the handle specified by
                                   ProcessorNumber does not exist.
   @retval EFI_INVALID_PARAMETER   ProcessorNumber specifies the current BSP or
@@ -523,8 +517,8 @@ EFI_STATUS
   from this service, then EFI_UNSUPPORTED must be returned.
 
   @param[in] This              A pointer to the EFI_MP_SERVICES_PROTOCOL instance.
-  @param[in] ProcessorNumber   The handle number of AP that is to become the new
-                               BSP. The range is from 0 to the total number of
+  @param[in] ProcessorNumber   The handle number of AP.
+                               The range is from 0 to the total number of
                                logical processors minus 1. The total number of
                                logical processors can be retrieved by
                                EFI_MP_SERVICES_PROTOCOL.GetNumberOfProcessors().
@@ -570,8 +564,8 @@ EFI_STATUS
   ProcessorNumber, and EFI_SUCCESS is returned.
 
   @param[in] This              A pointer to the EFI_MP_SERVICES_PROTOCOL instance.
-  @param[in] ProcessorNumber   The handle number of AP that is to become the new
-                               BSP. The range is from 0 to the total number of
+  @param[in] ProcessorNumber   Pointer to the handle number of AP.
+                               The range is from 0 to the total number of
                                logical processors minus 1. The total number of
                                logical processors can be retrieved by
                                EFI_MP_SERVICES_PROTOCOL.GetNumberOfProcessors().

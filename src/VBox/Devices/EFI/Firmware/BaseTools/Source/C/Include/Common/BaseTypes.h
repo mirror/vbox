@@ -3,14 +3,8 @@
 
   This file is stand alone self consistent set of definitions.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -50,7 +44,7 @@
 #ifndef TRUE
 //
 // BugBug: UEFI specification claims 1 and 0. We are concerned about the
-//  complier portability so we did it this way.
+//  compiler portability so we did it this way.
 //
 #define TRUE  ((BOOLEAN)(1==1))
 #endif
@@ -122,6 +116,34 @@
 
 #endif
 
+#ifndef GUID_DEFINED
+#define GUID_DEFINED
+///
+/// 128 bit buffer containing a unique identifier value.
+/// Unless otherwise specified, aligned on a 64 bit boundary.
+///
+typedef struct {
+  UINT32  Data1;
+  UINT16  Data2;
+  UINT16  Data3;
+  UINT8   Data4[8];
+} GUID;
+#endif
+
+///
+/// 4-byte buffer. An IPv4 internet protocol address.
+///
+typedef struct {
+  UINT8 Addr[4];
+} IPv4_ADDRESS;
+
+///
+/// 16-byte buffer. An IPv6 internet protocol address.
+///
+typedef struct {
+  UINT8 Addr[16];
+} IPv6_ADDRESS;
+
 //
 // Macro that returns the byte offset of a field in a data structure.
 //
@@ -129,7 +151,7 @@
 
 ///
 ///  _CR - returns a pointer to the structure
-///      from one of it's elements.
+///      from one of its elements.
 ///
 #define _CR(Record, TYPE, Field)  ((TYPE *) ((CHAR8 *) (Record) - (CHAR8 *) &(((TYPE *) 0)->Field)))
 
@@ -170,15 +192,15 @@
 // EFI Error Codes common to all execution phases
 //
 
-typedef INTN RETURN_STATUS;
+typedef UINTN RETURN_STATUS;
 
 ///
 /// Set the upper bit to indicate EFI Error.
 ///
-#define ENCODE_ERROR(a)              (MAX_BIT | (a))
+#define ENCODE_ERROR(a)              ((RETURN_STATUS)(MAX_BIT | (a)))
 
-#define ENCODE_WARNING(a)            (a)
-#define RETURN_ERROR(a)              ((a) < 0)
+#define ENCODE_WARNING(a)            ((RETURN_STATUS)(a))
+#define RETURN_ERROR(a)              (((INTN)(RETURN_STATUS)(a)) < 0)
 
 #define RETURN_SUCCESS               0
 #define RETURN_LOAD_ERROR            ENCODE_ERROR (1)

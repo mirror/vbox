@@ -6,20 +6,16 @@
 #  file of PCD layout for use during the build when the platform integrator selects to use
 #  automatic offset calculation.
 #
-#  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
+#  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution.  The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
 # Import Modules
 #
+from __future__ import print_function
+from __future__ import absolute_import
 import Common.LongFilePathOs as os
 import sys
 import encodings.ascii
@@ -29,11 +25,11 @@ from Common import EdkLogger
 from Common.BuildToolError import *
 from Common.BuildVersion import gBUILD_VERSION
 
-import StringTable as st
-import GenVpd
+from . import StringTable as st
+from . import GenVpd
 
 PROJECT_NAME       = st.LBL_BPDG_LONG_UNI
-VERSION            = (st.LBL_BPDG_VERSION + " " + gBUILD_VERSION)
+VERSION            = (st.LBL_BPDG_VERSION + " Build " + gBUILD_VERSION)
 
 ## Tool entrance method
 #
@@ -57,21 +53,21 @@ def main():
         EdkLogger.SetLevel(EdkLogger.VERBOSE)
     elif Options.opt_quiet:
         EdkLogger.SetLevel(EdkLogger.QUIET)
-    elif Options.debug_level != None:
+    elif Options.debug_level is not None:
         EdkLogger.SetLevel(Options.debug_level + 1)
     else:
         EdkLogger.SetLevel(EdkLogger.INFO)
 
-    if Options.bin_filename == None:
+    if Options.bin_filename is None:
         EdkLogger.error("BPDG", ATTRIBUTE_NOT_AVAILABLE, "Please use the -o option to specify the file name for the VPD binary file")
-    if Options.filename == None:
+    if Options.filename is None:
         EdkLogger.error("BPDG", ATTRIBUTE_NOT_AVAILABLE, "Please use the -m option to specify the file name for the mapping file")
 
     Force = False
-    if Options.opt_force != None:
+    if Options.opt_force is not None:
         Force = True
 
-    if (Args[0] != None) :
+    if (Args[0] is not None) :
         StartBpdg(Args[0], Options.filename, Options.bin_filename, Force)
     else :
         EdkLogger.error("BPDG", ATTRIBUTE_NOT_AVAILABLE, "Please specify the file which contain the VPD pcd info.",
@@ -91,7 +87,7 @@ def MyOptionParser():
     #
     # Process command line firstly.
     #
-    parser = OptionParser(version="%s - Version %s\n" % (PROJECT_NAME, VERSION),
+    parser = OptionParser(version="%s - Version %s" % (PROJECT_NAME, VERSION),
                           description='',
                           prog='BPDG',
                           usage=st.LBL_BPDG_USAGE
@@ -132,7 +128,7 @@ def MyOptionParser():
 #
 def StartBpdg(InputFileName, MapFileName, VpdFileName, Force):
     if os.path.exists(VpdFileName) and not Force:
-        print "\nFile %s already exist, Overwrite(Yes/No)?[Y]: " % VpdFileName
+        print("\nFile %s already exist, Overwrite(Yes/No)?[Y]: " % VpdFileName)
         choice = sys.stdin.readline()
         if choice.strip().lower() not in ['y', 'yes', '']:
             return
@@ -151,7 +147,10 @@ def StartBpdg(InputFileName, MapFileName, VpdFileName, Force):
     EdkLogger.info("- Vpd pcd fixed done! -")
 
 if __name__ == '__main__':
-    r = main()
+    try:
+        r = main()
+    except FatalError as e:
+        r = e
     ## 0-127 is a safe return range, and 1 is a standard default error
     if r < 0 or r > 127: r = 1
     sys.exit(r)

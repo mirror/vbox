@@ -2,14 +2,8 @@
     Defines BufferImage - the view of the file that is visible at any point,
     as well as the event handlers for editing the file
 
-  Copyright (c) 2005 - 2011, Intel Corporation. All rights reserved. <BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved. <BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -97,7 +91,6 @@ HBufferImageBackup (
   @return EFI_SUCCESS     The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 HBufferImageRead (
   IN CONST CHAR16                   *FileName,
   IN CONST CHAR16                   *DiskName,
@@ -215,7 +208,6 @@ HBufferImageAddCharacterToBuffer (
   @retval EFI_OUT_OF_RESOURCES  A memory allocation failed.
 **/
 EFI_STATUS
-EFIAPI
 HBufferImageBufferToList (
   IN VOID   *Buffer,
   IN UINTN  Bytes
@@ -230,7 +222,6 @@ HBufferImageBufferToList (
   @retval EFI_SUCCESS   The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 HBufferImageListToBuffer (
   IN VOID   *Buffer,
   IN UINTN  Bytes
@@ -243,7 +234,6 @@ HBufferImageListToBuffer (
   @param[in] TextY    The y-coordinate.
 **/
 VOID
-EFIAPI
 HBufferImageAdjustMousePosition (
   IN INT32 TextX,
   IN INT32 TextY

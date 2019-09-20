@@ -4,14 +4,8 @@
   The EFI_FORM_BROWSER2_PROTOCOL is the interface to call for drivers to
   leverage the EFI configuration driver interface.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -63,6 +57,7 @@ typedef UINTN EFI_BROWSER_ACTION_REQUEST;
 #define EFI_BROWSER_ACTION_REQUEST_FORM_DISCARD_EXIT 5
 #define EFI_BROWSER_ACTION_REQUEST_FORM_APPLY        6
 #define EFI_BROWSER_ACTION_REQUEST_FORM_DISCARD      7
+#define EFI_BROWSER_ACTION_REQUEST_RECONNECT         8
 
 
 /**

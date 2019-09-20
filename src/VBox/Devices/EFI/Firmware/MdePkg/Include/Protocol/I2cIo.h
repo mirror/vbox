@@ -4,14 +4,8 @@
   The EFI I2C I/O protocol enables the user to manipulate a single
   I2C device independent of the host controller and I2C design.
 
-  Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   This protocol is from PI Version 1.3.
@@ -100,14 +94,11 @@ typedef struct _EFI_I2C_IO_PROTOCOL  EFI_I2C_IO_PROTOCOL;
                                 queued when Event is not NULL.
   @retval EFI_SUCCESS           The transaction completed successfully when
                                 Event is NULL.
-  @retval EFI_ABORTED           The request did not complete because the driver
-                                binding Stop() routine was called.
   @retval EFI_BAD_BUFFER_SIZE   The RequestPacket->LengthInBytes value is too
                                 large.
   @retval EFI_DEVICE_ERROR      There was an I2C error (NACK) during the
                                 transaction.
-  @retval EFI_INVALID_PARAMETER RequestPacket is NULL
-  @retval EFI_NOT_FOUND         Reserved bit set in the SlaveAddress parameter
+  @retval EFI_INVALID_PARAMETER RequestPacket is NULL.
   @retval EFI_NO_MAPPING        The EFI_I2C_HOST_PROTOCOL could not set the
                                 bus configuration required to access this I2C
                                 device.

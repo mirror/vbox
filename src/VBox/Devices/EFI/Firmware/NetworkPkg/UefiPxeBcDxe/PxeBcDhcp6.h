@@ -1,15 +1,9 @@
 /** @file
   Functions declaration related with DHCPv6 for UefiPxeBc Driver.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -18,35 +12,13 @@
 
 #define PXEBC_DHCP6_OPTION_MAX_NUM        16
 #define PXEBC_DHCP6_OPTION_MAX_SIZE       312
-#define PXEBC_DHCP6_PACKET_MAX_SIZE       1472
+#define PXEBC_DHCP6_PACKET_MAX_SIZE       (sizeof (EFI_PXE_BASE_CODE_PACKET))
 #define PXEBC_IP6_POLICY_MAX              0xff
+#define PXEBC_IP6_ROUTE_TABLE_TIMEOUT     10
 
 #define PXEBC_DHCP6_S_PORT                547
 #define PXEBC_DHCP6_C_PORT                546
 
-#define PXEBC_DHCP6_OPT_CLIENT_ID         1
-#define PXEBC_DHCP6_OPT_SERVER_ID         2
-#define PXEBC_DHCP6_OPT_IA_NA             3
-#define PXEBC_DHCP6_OPT_IA_TA             4
-#define PXEBC_DHCP6_OPT_IAADDR            5
-#define PXEBC_DHCP6_OPT_ORO               6
-#define PXEBC_DHCP6_OPT_PREFERENCE        7
-#define PXEBC_DHCP6_OPT_ELAPSED_TIME      8
-#define PXEBC_DHCP6_OPT_REPLAY_MSG        9
-#define PXEBC_DHCP6_OPT_AUTH              11
-#define PXEBC_DHCP6_OPT_UNICAST           12
-#define PXEBC_DHCP6_OPT_STATUS_CODE       13
-#define PXEBC_DHCP6_OPT_RAPID_COMMIT      14
-#define PXEBC_DHCP6_OPT_USER_CLASS        15
-#define PXEBC_DHCP6_OPT_VENDOR_CLASS      16
-#define PXEBC_DHCP6_OPT_VENDOR_OPTS       17
-#define PXEBC_DHCP6_OPT_INTERFACE_ID      18
-#define PXEBC_DHCP6_OPT_RECONFIG_MSG      19
-#define PXEBC_DHCP6_OPT_RECONFIG_ACCEPT   20
-#define PXEBC_DHCP6_OPT_BOOT_FILE_URL     59    // Assigned by IANA, RFC 5970
-#define PXEBC_DHCP6_OPT_BOOT_FILE_PARAM   60    // Assigned by IANA, RFC 5970
-#define PXEBC_DHCP6_OPT_ARCH              61    // Assigned by IANA, RFC 5970
-#define PXEBC_DHCP6_OPT_UNDI              62    // Assigned by IANA, RFC 5970
 #define PXEBC_DHCP6_ENTERPRISE_NUM        343   // TODO: IANA TBD: temporarily using Intel's
 #define PXEBC_DHCP6_MAX_BOOT_FILE_SIZE    65535 //   It's a limitation of bit length, 65535*512 bytes.
 
@@ -55,7 +27,8 @@
 #define PXEBC_DHCP6_IDX_BOOT_FILE_URL     1
 #define PXEBC_DHCP6_IDX_BOOT_FILE_PARAM   2
 #define PXEBC_DHCP6_IDX_VENDOR_CLASS      3
-#define PXEBC_DHCP6_IDX_MAX               4
+#define PXEBC_DHCP6_IDX_DNS_SERVER        4
+#define PXEBC_DHCP6_IDX_MAX               5
 
 #define PXEBC_DHCP6_BOOT_FILE_URL_PREFIX  "tftp://"
 #define PXEBC_TFTP_URL_SEPARATOR          '/'
@@ -122,10 +95,12 @@ typedef struct {
   UINT8                   Precedence;
 } PXEBC_DHCP6_OPTION_NODE;
 
+#define PXEBC_CACHED_DHCP6_PACKET_MAX_SIZE  (OFFSET_OF (EFI_DHCP6_PACKET, Dhcp6) + PXEBC_DHCP6_PACKET_MAX_SIZE)
+
 typedef union {
   EFI_DHCP6_PACKET        Offer;
   EFI_DHCP6_PACKET        Ack;
-  UINT8                   Buffer[PXEBC_DHCP6_PACKET_MAX_SIZE];
+  UINT8                   Buffer[PXEBC_CACHED_DHCP6_PACKET_MAX_SIZE];
 } PXEBC_DHCP6_PACKET;
 
 typedef struct {
@@ -135,21 +110,12 @@ typedef struct {
 } PXEBC_DHCP6_PACKET_CACHE;
 
 
-/**
-  Free all the nodes in the boot file list.
-
-  @param[in]  Head            The pointer to the head of the list.
-
-**/
-VOID
-PxeBcFreeBootFileOption (
-  IN LIST_ENTRY               *Head
-  );
 
 
 /**
   Parse the Boot File URL option.
 
+  @param[in]      Private             Pointer to PxeBc private data.
   @param[out]     FileName     The pointer to the boot file name.
   @param[in, out] SrvAddr      The pointer to the boot server address.
   @param[in]      BootFile     The pointer to the boot file URL option data.
@@ -162,6 +128,7 @@ PxeBcFreeBootFileOption (
 **/
 EFI_STATUS
 PxeBcExtractBootFileUrl (
+  IN PXEBC_PRIVATE_DATA      *Private,
      OUT UINT8               **FileName,
   IN OUT EFI_IPv6_ADDRESS    *SrvAddr,
   IN     CHAR8               *BootFile,
@@ -254,6 +221,33 @@ PxeBcDhcp6Discover (
   IN  EFI_IP_ADDRESS                *DestIp
   );
 
+/**
+  Set the IP6 policy to Automatic.
+
+  @param[in]  Private             The pointer to PXEBC_PRIVATE_DATA.
+
+  @retval     EFI_SUCCESS         Switch the IP policy succesfully.
+  @retval     Others              Unexpect error happened.
+
+**/
+EFI_STATUS
+PxeBcSetIp6Policy (
+  IN PXEBC_PRIVATE_DATA            *Private
+  );
+
+/**
+  This function will register the station IP address and flush IP instance to start using the new IP address.
+
+  @param[in]  Private             The pointer to PXEBC_PRIVATE_DATA.
+
+  @retval     EFI_SUCCESS         The new IP address has been configured successfully.
+  @retval     Others              Failed to configure the address.
+
+**/
+EFI_STATUS
+PxeBcSetIp6Address (
+  IN  PXEBC_PRIVATE_DATA              *Private
+  );
 
 /**
   Start the DHCPv6 S.A.R.R. process to acquire the IPv6 address and other PXE boot information.

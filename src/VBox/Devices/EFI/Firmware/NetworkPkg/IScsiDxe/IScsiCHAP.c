@@ -1,21 +1,15 @@
 /** @file
   This file is for Challenge-Handshake Authentication Protocol (CHAP) Configuration.
 
-Copyright (c) 2004 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "IScsiImpl.h"
 
 /**
-  Initator caculates its own expected hash value.
+  Initator calculates its own expected hash value.
 
   @param[in]   ChapIdentifier     iSCSI CHAP identifier sent by authenticator.
   @param[in]   ChapSecret         iSCSI CHAP secret of the authenticator.
@@ -24,7 +18,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   @param[in]   ChallengeLength    The length of iSCSI CHAP challenge message.
   @param[out]  ChapResponse       The calculation of the expected hash value.
 
-  @retval EFI_SUCCESS             The expected hash value was caculatedly successfully.
+  @retval EFI_SUCCESS             The expected hash value was calculatedly successfully.
   @retval EFI_PROTOCOL_ERROR      The length of the secret should be at least the
                                   length of the hash value for the hashing algorithm chosen.
   @retval EFI_PROTOCOL_ERROR      MD5 hash operation fail.

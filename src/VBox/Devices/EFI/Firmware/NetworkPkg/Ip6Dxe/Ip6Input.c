@@ -1,15 +1,10 @@
 /** @file
   IP6 internal functions to process the incoming packets.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -525,6 +520,12 @@ Ip6IpSecProcessPacket (
   EFI_IP6_HEADER            ZeroHead;
 
   Status        = EFI_SUCCESS;
+
+  if (!mIpSec2Installed) {
+    goto ON_EXIT;
+  }
+  ASSERT (mIpSec != NULL);
+
   Packet        = *Netbuf;
   RecycleEvent  = NULL;
   IpSecWrap     = NULL;
@@ -534,17 +535,6 @@ Ip6IpSecProcessPacket (
   TxWrap        = (IP6_TXTOKEN_WRAP *) Context;
   FragmentCount = Packet->BlockOpNum;
   ZeroMem (&ZeroHead, sizeof (EFI_IP6_HEADER));
-
-  if (mIpSec == NULL) {
-    gBS->LocateProtocol (&gEfiIpSec2ProtocolGuid, NULL, (VOID **) &mIpSec);
-
-    //
-    // Check whether the ipsec protocol is available.
-    //
-    if (mIpSec == NULL) {
-      goto ON_EXIT;
-    }
-  }
 
   //
   // Check whether the ipsec enable variable is set.

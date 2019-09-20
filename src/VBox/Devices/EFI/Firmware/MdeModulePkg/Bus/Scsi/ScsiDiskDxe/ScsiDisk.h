@@ -1,14 +1,8 @@
 /** @file
   Header file for SCSI Disk Driver.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -22,6 +16,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/ScsiIo.h>
 #include <Protocol/ComponentName.h>
 #include <Protocol/BlockIo.h>
+#include <Protocol/BlockIo2.h>
+#include <Protocol/EraseBlock.h>
 #include <Protocol/DriverBinding.h>
 #include <Protocol/ScsiPassThruExt.h>
 #include <Protocol/ScsiPassThru.h>
@@ -42,6 +38,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 
 #define IS_DEVICE_FIXED(a)        (a)->FixedDevice ? 1 : 0
 
+typedef struct {
+  UINT32                    MaxLbaCnt;
+  UINT32                    MaxBlkDespCnt;
+  UINT32                    GranularityAlignment;
+} SCSI_UNMAP_PARAM_INFO;
+
 #define SCSI_DISK_DEV_SIGNATURE SIGNATURE_32 ('s', 'c', 'd', 'k')
 
 typedef struct {
@@ -50,7 +52,9 @@ typedef struct {
   EFI_HANDLE                Handle;
 
   EFI_BLOCK_IO_PROTOCOL     BlkIo;
+  EFI_BLOCK_IO2_PROTOCOL    BlkIo2;
   EFI_BLOCK_IO_MEDIA        BlkIoMedia;
+  EFI_ERASE_BLOCK_PROTOCOL  EraseBlock;
   EFI_SCSI_IO_PROTOCOL      *ScsiIo;
   UINT8                     DeviceType;
   BOOLEAN                   FixedDevice;
@@ -72,14 +76,85 @@ typedef struct {
   ATAPI_IDENTIFY_DATA       IdentifyData;
 
   //
+  // Scsi UNMAP command parameters information
+  //
+  SCSI_UNMAP_PARAM_INFO     UnmapInfo;
+  BOOLEAN                   BlockLimitsVpdSupported;
+
+  //
   // The flag indicates if 16-byte command can be used
   //
   BOOLEAN                   Cdb16Byte;
+
+  //
+  // The queue for asynchronous task requests
+  //
+  LIST_ENTRY                AsyncTaskQueue;
 } SCSI_DISK_DEV;
 
-#define SCSI_DISK_DEV_FROM_THIS(a)  CR (a, SCSI_DISK_DEV, BlkIo, SCSI_DISK_DEV_SIGNATURE)
+#define SCSI_DISK_DEV_FROM_BLKIO(a)  CR (a, SCSI_DISK_DEV, BlkIo, SCSI_DISK_DEV_SIGNATURE)
+#define SCSI_DISK_DEV_FROM_BLKIO2(a)  CR (a, SCSI_DISK_DEV, BlkIo2, SCSI_DISK_DEV_SIGNATURE)
+#define SCSI_DISK_DEV_FROM_ERASEBLK(a)  CR (a, SCSI_DISK_DEV, EraseBlock, SCSI_DISK_DEV_SIGNATURE)
 
 #define SCSI_DISK_DEV_FROM_DISKINFO(a) CR (a, SCSI_DISK_DEV, DiskInfo, SCSI_DISK_DEV_SIGNATURE)
+
+//
+// Asynchronous I/O request
+//
+//
+// Private data structure for a BlockIo2 request
+//
+typedef struct {
+  EFI_BLOCK_IO2_TOKEN                  *Token;
+  //
+  // The flag indicates if the last Scsi Read/Write sub-task for a BlockIo2
+  // request is sent to device
+  //
+  BOOLEAN                              LastScsiRW;
+
+  //
+  // The queue for Scsi Read/Write sub-tasks of a BlockIo2 request
+  //
+  LIST_ENTRY                           ScsiRWQueue;
+
+  LIST_ENTRY                           Link;
+} SCSI_BLKIO2_REQUEST;
+
+//
+// Private data structure for a SCSI Read/Write request
+//
+typedef struct {
+  SCSI_DISK_DEV                        *ScsiDiskDevice;
+  UINT64                               Timeout;
+  EFI_SCSI_SENSE_DATA                  *SenseData;
+  UINT8                                SenseDataLength;
+  UINT8                                HostAdapterStatus;
+  UINT8                                TargetStatus;
+  UINT8                                *InBuffer;
+  UINT8                                *OutBuffer;
+  UINT32                               DataLength;
+  UINT64                               StartLba;
+  UINT32                               SectorCount;
+  UINT8                                TimesRetry;
+
+  //
+  // The BlockIo2 request this SCSI command belongs to
+  //
+  SCSI_BLKIO2_REQUEST                  *BlkIo2Req;
+
+  LIST_ENTRY                           Link;
+} SCSI_ASYNC_RW_REQUEST;
+
+//
+// Private data structure for an EraseBlock request
+//
+typedef struct {
+  EFI_ERASE_BLOCK_TOKEN                *Token;
+
+  EFI_SCSI_IO_SCSI_REQUEST_PACKET      CommandPacket;
+
+  LIST_ENTRY                           Link;
+} SCSI_ERASEBLK_REQUEST;
 
 //
 // Global Variables
@@ -102,7 +177,11 @@ extern EFI_COMPONENT_NAME2_PROTOCOL  gScsiDiskComponentName2;
 //
 // SCSI Disk Timeout Experience Value
 //
-#define SCSI_DISK_TIMEOUT           EFI_TIMER_PERIOD_SECONDS (3)
+// As ScsiDisk and ScsiBus driver are used to manage SCSI or ATAPI devices, the timout
+// value is updated to 30s to follow ATA/ATAPI spec in which the device may take up to 30s
+// to respond command.
+//
+#define SCSI_DISK_TIMEOUT           EFI_TIMER_PERIOD_SECONDS (30)
 
 /**
   Test to see if this driver supports ControllerHandle.
@@ -407,6 +486,155 @@ EFI_STATUS
 EFIAPI
 ScsiDiskFlushBlocks (
   IN  EFI_BLOCK_IO_PROTOCOL   *This
+  );
+
+
+/**
+  Reset SCSI Disk.
+
+  @param  This                 The pointer of EFI_BLOCK_IO2_PROTOCOL.
+  @param  ExtendedVerification The flag about if extend verificate.
+
+  @retval EFI_SUCCESS          The device was reset.
+  @retval EFI_DEVICE_ERROR     The device is not functioning properly and could
+                               not be reset.
+  @return EFI_STATUS is returned from EFI_SCSI_IO_PROTOCOL.ResetDevice().
+
+**/
+EFI_STATUS
+EFIAPI
+ScsiDiskResetEx (
+  IN  EFI_BLOCK_IO2_PROTOCOL  *This,
+  IN  BOOLEAN                 ExtendedVerification
+  );
+
+/**
+  The function is to Read Block from SCSI Disk.
+
+  @param  This       The pointer of EFI_BLOCK_IO_PROTOCOL.
+  @param  MediaId    The Id of Media detected.
+  @param  Lba        The logic block address.
+  @param  Token      A pointer to the token associated with the transaction.
+  @param  BufferSize The size of Buffer.
+  @param  Buffer     The buffer to fill the read out data.
+
+  @retval EFI_SUCCESS           The read request was queued if Token-> Event is
+                                not NULL. The data was read correctly from the
+                                device if theToken-> Event is NULL.
+  @retval EFI_DEVICE_ERROR      The device reported an error while attempting
+                                to perform the read operation.
+  @retval EFI_NO_MEDIA          There is no media in the device.
+  @retval EFI_MEDIA_CHANGED     The MediaId is not for the current media.
+  @retval EFI_BAD_BUFFER_SIZE   The BufferSize parameter is not a multiple of
+                                the intrinsic block size of the device.
+  @retval EFI_INVALID_PARAMETER The read request contains LBAs that are not
+                                valid, or the buffer is not on proper
+                                alignment.
+  @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a
+                                lack of resources.
+
+**/
+EFI_STATUS
+EFIAPI
+ScsiDiskReadBlocksEx (
+  IN     EFI_BLOCK_IO2_PROTOCOL   *This,
+  IN     UINT32                   MediaId,
+  IN     EFI_LBA                  Lba,
+  IN OUT EFI_BLOCK_IO2_TOKEN      *Token,
+  IN     UINTN                    BufferSize,
+  OUT    VOID                     *Buffer
+  );
+
+/**
+  The function is to Write Block to SCSI Disk.
+
+  @param  This       The pointer of EFI_BLOCK_IO_PROTOCOL.
+  @param  MediaId    The Id of Media detected.
+  @param  Lba        The logic block address.
+  @param  Token      A pointer to the token associated with the transaction.
+  @param  BufferSize The size of Buffer.
+  @param  Buffer     The buffer to fill the read out data.
+
+  @retval EFI_SUCCESS           The data were written correctly to the device.
+  @retval EFI_WRITE_PROTECTED   The device cannot be written to.
+  @retval EFI_NO_MEDIA          There is no media in the device.
+  @retval EFI_MEDIA_CHANGED     The MediaId is not for the current media.
+  @retval EFI_DEVICE_ERROR      The device reported an error while attempting
+                                to perform the write operation.
+  @retval EFI_BAD_BUFFER_SIZE   The BufferSize parameter is not a multiple of
+                                the intrinsic block size of the device.
+  @retval EFI_INVALID_PARAMETER The write request contains LBAs that are not
+                                valid, or the buffer is not on proper
+                                alignment.
+
+**/
+EFI_STATUS
+EFIAPI
+ScsiDiskWriteBlocksEx (
+  IN     EFI_BLOCK_IO2_PROTOCOL *This,
+  IN     UINT32                 MediaId,
+  IN     EFI_LBA                Lba,
+  IN OUT EFI_BLOCK_IO2_TOKEN    *Token,
+  IN     UINTN                  BufferSize,
+  IN     VOID                   *Buffer
+  );
+
+/**
+  Flush the Block Device.
+
+  @param  This       Indicates a pointer to the calling context.
+  @param  Token      A pointer to the token associated with the transaction.
+
+  @retval EFI_SUCCESS         All outstanding data was written to the device.
+  @retval EFI_DEVICE_ERROR    The device reported an error while attempting to
+                              write data.
+  @retval EFI_WRITE_PROTECTED The device cannot be written to.
+  @retval EFI_NO_MEDIA        There is no media in the device.
+  @retval EFI_MEDIA_CHANGED   The MediaId is not for the current media.
+
+**/
+EFI_STATUS
+EFIAPI
+ScsiDiskFlushBlocksEx (
+  IN     EFI_BLOCK_IO2_PROTOCOL  *This,
+  IN OUT EFI_BLOCK_IO2_TOKEN     *Token
+  );
+
+/**
+  Erase a specified number of device blocks.
+
+  @param[in]       This           Indicates a pointer to the calling context.
+  @param[in]       MediaId        The media ID that the erase request is for.
+  @param[in]       Lba            The starting logical block address to be
+                                  erased. The caller is responsible for erasing
+                                  only legitimate locations.
+  @param[in, out]  Token          A pointer to the token associated with the
+                                  transaction.
+  @param[in]       Size           The size in bytes to be erased. This must be
+                                  a multiple of the physical block size of the
+                                  device.
+
+  @retval EFI_SUCCESS             The erase request was queued if Event is not
+                                  NULL. The data was erased correctly to the
+                                  device if the Event is NULL.to the device.
+  @retval EFI_WRITE_PROTECTED     The device cannot be erased due to write
+                                  protection.
+  @retval EFI_DEVICE_ERROR        The device reported an error while attempting
+                                  to perform the erase operation.
+  @retval EFI_INVALID_PARAMETER   The erase request contains LBAs that are not
+                                  valid.
+  @retval EFI_NO_MEDIA            There is no media in the device.
+  @retval EFI_MEDIA_CHANGED       The MediaId is not for the current media.
+
+**/
+EFI_STATUS
+EFIAPI
+ScsiDiskEraseBlocks (
+  IN     EFI_ERASE_BLOCK_PROTOCOL      *This,
+  IN     UINT32                        MediaId,
+  IN     EFI_LBA                       Lba,
+  IN OUT EFI_ERASE_BLOCK_TOKEN         *Token,
+  IN     UINTN                         Size
   );
 
 
@@ -718,6 +946,54 @@ ScsiDiskWriteSectors (
   );
 
 /**
+  Asynchronously read sector from SCSI Disk.
+
+  @param  ScsiDiskDevice  The pointer of SCSI_DISK_DEV.
+  @param  Buffer          The buffer to fill in the read out data.
+  @param  Lba             Logic block address.
+  @param  NumberOfBlocks  The number of blocks to read.
+  @param  Token           A pointer to the token associated with the
+                          non-blocking read request.
+
+  @retval EFI_INVALID_PARAMETER  Token is NULL or Token->Event is NULL.
+  @retval EFI_DEVICE_ERROR       Indicates a device error.
+  @retval EFI_SUCCESS            Operation is successful.
+
+**/
+EFI_STATUS
+ScsiDiskAsyncReadSectors (
+  IN   SCSI_DISK_DEV         *ScsiDiskDevice,
+  OUT  VOID                  *Buffer,
+  IN   EFI_LBA               Lba,
+  IN   UINTN                 NumberOfBlocks,
+  IN   EFI_BLOCK_IO2_TOKEN   *Token
+  );
+
+/**
+  Asynchronously write sector to SCSI Disk.
+
+  @param  ScsiDiskDevice  The pointer of SCSI_DISK_DEV.
+  @param  Buffer          The buffer of data to be written into SCSI Disk.
+  @param  Lba             Logic block address.
+  @param  NumberOfBlocks  The number of blocks to read.
+  @param  Token           A pointer to the token associated with the
+                          non-blocking read request.
+
+  @retval EFI_INVALID_PARAMETER  Token is NULL or Token->Event is NULL
+  @retval EFI_DEVICE_ERROR  Indicates a device error.
+  @retval EFI_SUCCESS       Operation is successful.
+
+**/
+EFI_STATUS
+ScsiDiskAsyncWriteSectors (
+  IN  SCSI_DISK_DEV          *ScsiDiskDevice,
+  IN  VOID                   *Buffer,
+  IN  EFI_LBA                Lba,
+  IN  UINTN                  NumberOfBlocks,
+  IN  EFI_BLOCK_IO2_TOKEN    *Token
+  );
+
+/**
   Submit Read(10) command.
 
   @param  ScsiDiskDevice     The pointer of ScsiDiskDevice
@@ -813,6 +1089,138 @@ ScsiDiskWrite16 (
   IN OUT UINT32                *DataLength,
   IN     UINT64                StartLba,
   IN     UINT32                SectorCount
+  );
+
+/**
+  Submit Async Read(10) command.
+
+  @param  ScsiDiskDevice     The pointer of ScsiDiskDevice.
+  @param  Timeout            The time to complete the command.
+  @param  TimesRetry         The number of times the command has been retried.
+  @param  DataBuffer         The buffer to fill with the read out data.
+  @param  DataLength         The length of buffer.
+  @param  StartLba           The start logic block address.
+  @param  SectorCount        The number of blocks to read.
+  @param  BlkIo2Req          The upstream BlockIo2 request.
+  @param  Token              The pointer to the token associated with the
+                             non-blocking read request.
+
+  @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a
+                                lack of resources.
+  @return others                Status returned by calling
+                                ScsiRead10CommandEx().
+
+**/
+EFI_STATUS
+ScsiDiskAsyncRead10 (
+  IN     SCSI_DISK_DEV         *ScsiDiskDevice,
+  IN     UINT64                Timeout,
+  IN     UINT8                 TimesRetry,
+     OUT UINT8                 *DataBuffer,
+  IN     UINT32                DataLength,
+  IN     UINT32                StartLba,
+  IN     UINT32                SectorCount,
+  IN OUT SCSI_BLKIO2_REQUEST   *BlkIo2Req,
+  IN     EFI_BLOCK_IO2_TOKEN   *Token
+  );
+
+/**
+  Submit Async Write(10) command.
+
+  @param  ScsiDiskDevice     The pointer of ScsiDiskDevice.
+  @param  Timeout            The time to complete the command.
+  @param  TimesRetry         The number of times the command has been retried.
+  @param  DataBuffer         The buffer contains the data to write.
+  @param  DataLength         The length of buffer.
+  @param  StartLba           The start logic block address.
+  @param  SectorCount        The number of blocks to write.
+  @param  BlkIo2Req          The upstream BlockIo2 request.
+  @param  Token              The pointer to the token associated with the
+                             non-blocking read request.
+
+  @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a
+                                lack of resources.
+  @return others                Status returned by calling
+                                ScsiWrite10CommandEx().
+
+**/
+EFI_STATUS
+ScsiDiskAsyncWrite10 (
+  IN     SCSI_DISK_DEV         *ScsiDiskDevice,
+  IN     UINT64                Timeout,
+  IN     UINT8                 TimesRetry,
+  IN     UINT8                 *DataBuffer,
+  IN     UINT32                DataLength,
+  IN     UINT32                StartLba,
+  IN     UINT32                SectorCount,
+  IN OUT SCSI_BLKIO2_REQUEST   *BlkIo2Req,
+  IN     EFI_BLOCK_IO2_TOKEN   *Token
+  );
+
+/**
+  Submit Async Read(16) command.
+
+  @param  ScsiDiskDevice     The pointer of ScsiDiskDevice.
+  @param  Timeout            The time to complete the command.
+  @param  TimesRetry         The number of times the command has been retried.
+  @param  DataBuffer         The buffer to fill with the read out data.
+  @param  DataLength         The length of buffer.
+  @param  StartLba           The start logic block address.
+  @param  SectorCount        The number of blocks to read.
+  @param  BlkIo2Req          The upstream BlockIo2 request.
+  @param  Token              The pointer to the token associated with the
+                             non-blocking read request.
+
+  @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a
+                                lack of resources.
+  @return others                Status returned by calling
+                                ScsiRead16CommandEx().
+
+**/
+EFI_STATUS
+ScsiDiskAsyncRead16 (
+  IN     SCSI_DISK_DEV         *ScsiDiskDevice,
+  IN     UINT64                Timeout,
+  IN     UINT8                 TimesRetry,
+     OUT UINT8                 *DataBuffer,
+  IN     UINT32                DataLength,
+  IN     UINT64                StartLba,
+  IN     UINT32                SectorCount,
+  IN OUT SCSI_BLKIO2_REQUEST   *BlkIo2Req,
+  IN     EFI_BLOCK_IO2_TOKEN   *Token
+  );
+
+/**
+  Submit Async Write(16) command.
+
+  @param  ScsiDiskDevice     The pointer of ScsiDiskDevice.
+  @param  Timeout            The time to complete the command.
+  @param  TimesRetry         The number of times the command has been retried.
+  @param  DataBuffer         The buffer contains the data to write.
+  @param  DataLength         The length of buffer.
+  @param  StartLba           The start logic block address.
+  @param  SectorCount        The number of blocks to write.
+  @param  BlkIo2Req          The upstream BlockIo2 request.
+  @param  Token              The pointer to the token associated with the
+                             non-blocking read request.
+
+  @retval EFI_OUT_OF_RESOURCES  The request could not be completed due to a
+                                lack of resources.
+  @return others                Status returned by calling
+                                ScsiWrite16CommandEx().
+
+**/
+EFI_STATUS
+ScsiDiskAsyncWrite16 (
+  IN     SCSI_DISK_DEV         *ScsiDiskDevice,
+  IN     UINT64                Timeout,
+  IN     UINT8                 TimesRetry,
+  IN     UINT8                 *DataBuffer,
+  IN     UINT32                DataLength,
+  IN     UINT64                StartLba,
+  IN     UINT32                SectorCount,
+  IN OUT SCSI_BLKIO2_REQUEST   *BlkIo2Req,
+  IN     EFI_BLOCK_IO2_TOKEN   *Token
   );
 
 /**
@@ -1002,6 +1410,22 @@ EFIAPI
 GetParentProtocol (
   IN  EFI_GUID                          *ProtocolGuid,
   IN  EFI_HANDLE                        ChildHandle
+  );
+
+/**
+  Determine if EFI Erase Block Protocol should be produced.
+
+  @param   ScsiDiskDevice    The pointer of SCSI_DISK_DEV.
+  @param   ChildHandle       Handle of device.
+
+  @retval  TRUE    Should produce EFI Erase Block Protocol.
+  @retval  FALSE   Should not produce EFI Erase Block Protocol.
+
+**/
+BOOLEAN
+DetermineInstallEraseBlock (
+  IN  SCSI_DISK_DEV          *ScsiDiskDevice,
+  IN  EFI_HANDLE             ChildHandle
   );
 
 #endif

@@ -1,14 +1,8 @@
 /** @file
   Language related HII Library implementation.
 
-  Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -27,9 +21,9 @@
   @param[in]  HiiHandle  A handle that was previously registered in the HII Database.
 
   @retval NULL   HiiHandle is not registered in the HII database
-  @retval NULL   There are not enough resources available to retrieve the suported
+  @retval NULL   There are not enough resources available to retrieve the supported
                  languages.
-  @retval NULL   The list of suported languages could not be retrieved.
+  @retval NULL   The list of supported languages could not be retrieved.
   @retval Other  A pointer to the Null-terminated ASCII string of supported languages.
 
 **/

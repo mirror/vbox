@@ -1,14 +1,9 @@
 /** @file
   Main file for endfor and for shell level 1 functions.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -24,7 +19,6 @@
   @retval FALSE   The number is not valid.
 **/
 BOOLEAN
-EFIAPI
 ShellIsValidForNumber (
   IN CONST CHAR16 *Number
   )
@@ -75,12 +69,12 @@ ShellCommandRunEndFor (
   ASSERT_EFI_ERROR(Status);
 
   if (!gEfiShellProtocol->BatchIsActive()) {
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_NO_SCRIPT), gShellLevel1HiiHandle, L"EndFor");
+    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_NO_SCRIPT), gShellLevel1HiiHandle, L"endfor");
     return (SHELL_UNSUPPORTED);
   }
 
   if (gEfiShellParametersProtocol->Argc > 1) {
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel1HiiHandle);
+    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_MANY), gShellLevel1HiiHandle, L"endfor");
     return (SHELL_INVALID_PARAMETER);
   }
 
@@ -128,7 +122,6 @@ typedef struct {
   @retval EFI_OUT_OF_RESOURCES  There was not enough free memory.
 **/
 EFI_STATUS
-EFIAPI
 InternalUpdateAliasOnList(
   IN CONST CHAR16       *Alias,
   IN CONST CHAR16       *CommandString,
@@ -184,7 +177,6 @@ InternalUpdateAliasOnList(
   @retval FALSE                 The alias is not on the list.
 **/
 BOOLEAN
-EFIAPI
 InternalIsAliasOnList(
   IN CONST CHAR16       *Alias,
   IN CONST LIST_ENTRY   *List
@@ -220,7 +212,6 @@ InternalIsAliasOnList(
   @param[in, out] List           The list to search.
 **/
 BOOLEAN
-EFIAPI
 InternalRemoveAliasFromList(
   IN CONST CHAR16       *Alias,
   IN OUT LIST_ENTRY     *List
@@ -263,7 +254,6 @@ InternalRemoveAliasFromList(
   @retval (UINTN)(-1) An error ocurred.
 **/
 UINTN
-EFIAPI
 ReturnUintn(
   IN CONST CHAR16 *String
   )
@@ -323,12 +313,12 @@ ShellCommandRunFor (
   ASSERT_EFI_ERROR(Status);
 
   if (!gEfiShellProtocol->BatchIsActive()) {
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_NO_SCRIPT), gShellLevel1HiiHandle, L"For");
+    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_NO_SCRIPT), gShellLevel1HiiHandle, L"for");
     return (SHELL_UNSUPPORTED);
   }
 
   if (gEfiShellParametersProtocol->Argc < 4) {
-    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_FEW), gShellLevel1HiiHandle);
+    ShellPrintHiiEx(-1, -1, NULL, STRING_TOKEN (STR_GEN_TOO_FEW), gShellLevel1HiiHandle, L"for");
     return (SHELL_INVALID_PARAMETER);
   }
 
@@ -413,7 +403,10 @@ ShellCommandRunFor (
         NewSize = StrSize(ArgSet);
         NewSize += sizeof(SHELL_FOR_INFO)+StrSize(gEfiShellParametersProtocol->Argv[1]);
         Info = AllocateZeroPool(NewSize);
-        ASSERT(Info != NULL);
+        if (Info == NULL) {
+          FreePool (ArgSet);
+          return SHELL_OUT_OF_RESOURCES;
+        }
         Info->Signature = SHELL_FOR_INFO_SIGNATURE;
         CopyMem(Info->Set, ArgSet, StrSize(ArgSet));
         NewSize = StrSize(gEfiShellParametersProtocol->Argv[1]);
@@ -437,6 +430,11 @@ ShellCommandRunFor (
         gEfiShellParametersProtocol->Argv[2]) == 0) {
       for (LoopVar = 0x3 ; LoopVar < gEfiShellParametersProtocol->Argc ; LoopVar++) {
         ASSERT((ArgSet == NULL && ArgSize == 0) || (ArgSet != NULL));
+        if (StrStr (gEfiShellParametersProtocol->Argv[LoopVar], L")") != NULL &&
+            (LoopVar + 1) < gEfiShellParametersProtocol->Argc
+           ) {
+          return (SHELL_INVALID_PARAMETER);
+        }
         if (ArgSet == NULL) {
 //        ArgSet = StrnCatGrow(&ArgSet, &ArgSize, L"\"", 0);
         } else {
@@ -452,7 +450,10 @@ ShellCommandRunFor (
         // set up for a 'run' for loop
         //
         Info = AllocateZeroPool(sizeof(SHELL_FOR_INFO)+StrSize(gEfiShellParametersProtocol->Argv[1]));
-        ASSERT(Info != NULL);
+        if (Info == NULL) {
+          FreePool (ArgSet);
+          return SHELL_OUT_OF_RESOURCES;
+        }
         Info->Signature = SHELL_FOR_INFO_SIGNATURE;
         CopyMem(Info->Set, gEfiShellParametersProtocol->Argv[1], StrSize(gEfiShellParametersProtocol->Argv[1]));
         Info->ReplacementName = Info->Set;
@@ -617,7 +618,9 @@ ShellCommandRunFor (
   if (CurrentScriptFile != NULL && CurrentScriptFile->CurrentCommand != NULL) {
     Info = (SHELL_FOR_INFO*)CurrentScriptFile->CurrentCommand->Data;
     if (CurrentScriptFile->CurrentCommand->Reset) {
-      Info->CurrentValue  = (CHAR16*)Info->Set;
+      if (Info != NULL) {
+        Info->CurrentValue = (CHAR16*)Info->Set;
+      }
       FirstPass = TRUE;
       CurrentScriptFile->CurrentCommand->Reset = FALSE;
     }

@@ -1,14 +1,8 @@
 /** @file
   VFR file used by the SecureBoot configuration component.
 
-Copyright (c) 2011 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -39,21 +33,9 @@ formset
         text   = STRING_TOKEN(STR_SECURE_BOOT_STATE_CONTENT);
 
     //
-    // Define of Check Box: Attempt Secure Boot
-    //
-    suppressif TRUE;
-      checkbox varid   = SECUREBOOT_CONFIGURATION.HideSecureBoot,
-              questionid = KEY_HIDE_SECURE_BOOT,
-              prompt   = STRING_TOKEN(STR_NULL),
-              help     = STRING_TOKEN(STR_NULL),
-              flags    = INTERACTIVE,
-      endcheckbox;
-    endif;
-
-    //
     // Display of Check Box: Attempt Secure Boot
     //
-    grayoutif ideqval SECUREBOOT_CONFIGURATION.HideSecureBoot == 1;
+    grayoutif ideqval SECUREBOOT_CONFIGURATION.HideSecureBoot == 1 OR NOT ideqval SECUREBOOT_CONFIGURATION.PhysicalPresent == 1;
     checkbox varid = SECUREBOOT_CONFIGURATION.AttemptSecureBoot,
           questionid = KEY_SECURE_BOOT_ENABLE,
           prompt = STRING_TOKEN(STR_SECURE_BOOT_PROMPT),
@@ -65,37 +47,28 @@ formset
     //
     // Display of Oneof: 'Secure Boot Mode'
     //
-    disableif TRUE;
-      oneof varid  = SECUREBOOT_CONFIGURATION.SecureBootMode,
-            prompt = STRING_TOKEN(STR_SECURE_BOOT_MODE_PROMPT),
-            help   = STRING_TOKEN(STR_SECURE_BOOT_MODE_HELP),
-            flags  = INTERACTIVE,
-            option text = STRING_TOKEN(STR_STANDARD_MODE),    value = SECURE_BOOT_MODE_STANDARD, flags = 0;
-            option text = STRING_TOKEN(STR_CUSTOM_MODE),      value = SECURE_BOOT_MODE_CUSTOM,   flags = 0;
-      endoneof;
-    endif;
-      oneof name = SecureBootMode,
-            questionid = KEY_SECURE_BOOT_MODE,
-            prompt = STRING_TOKEN(STR_SECURE_BOOT_MODE_PROMPT),
-            help   = STRING_TOKEN(STR_SECURE_BOOT_MODE_HELP),
-            flags  = INTERACTIVE | NUMERIC_SIZE_1,
-            option text = STRING_TOKEN(STR_STANDARD_MODE),    value = SECURE_BOOT_MODE_STANDARD, flags = DEFAULT;
-            option text = STRING_TOKEN(STR_CUSTOM_MODE),      value = SECURE_BOOT_MODE_CUSTOM,   flags = 0;
-      endoneof;
+    oneof name = SecureBootMode,
+          questionid = KEY_SECURE_BOOT_MODE,
+          prompt = STRING_TOKEN(STR_SECURE_BOOT_MODE_PROMPT),
+          help   = STRING_TOKEN(STR_SECURE_BOOT_MODE_HELP),
+          flags  = INTERACTIVE | NUMERIC_SIZE_1,
+          option text = STRING_TOKEN(STR_STANDARD_MODE),    value = SECURE_BOOT_MODE_STANDARD, flags = DEFAULT;
+          option text = STRING_TOKEN(STR_CUSTOM_MODE),      value = SECURE_BOOT_MODE_CUSTOM,   flags = 0;
+    endoneof;
 
-    //
     //
     // Display of 'Current Secure Boot Mode'
     //
     suppressif questionref(SecureBootMode) == SECURE_BOOT_MODE_STANDARD;
-      grayoutif NOT ideqval SECUREBOOT_CONFIGURATION.PhysicalPresent == 1;
-      goto FORMID_SECURE_BOOT_OPTION_FORM,
-           prompt = STRING_TOKEN(STR_SECURE_BOOT_OPTION),
-           help   = STRING_TOKEN(STR_SECURE_BOOT_OPTION_HELP),
-           flags  = INTERACTIVE,
-           key    = KEY_SECURE_BOOT_OPTION;
-      endif;
+    grayoutif NOT ideqval SECUREBOOT_CONFIGURATION.PhysicalPresent == 1;
+    goto FORMID_SECURE_BOOT_OPTION_FORM,
+         prompt = STRING_TOKEN(STR_SECURE_BOOT_OPTION),
+         help   = STRING_TOKEN(STR_SECURE_BOOT_OPTION_HELP),
+         flags  = INTERACTIVE,
+         key    = KEY_SECURE_BOOT_OPTION;
     endif;
+    endif;
+
   endform;
 
   //
@@ -136,6 +109,14 @@ formset
          flags  = INTERACTIVE,
          key    = KEY_SECURE_BOOT_DBX_OPTION;
 
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    goto FORMID_SECURE_BOOT_DBT_OPTION_FORM,
+         prompt = STRING_TOKEN(STR_SECURE_BOOT_DBT_OPTION),
+         help   = STRING_TOKEN(STR_SECURE_BOOT_DBT_OPTION_HELP),
+         flags  = INTERACTIVE,
+         key    = KEY_SECURE_BOOT_DBT_OPTION;
+
   endform;
 
   //
@@ -147,15 +128,8 @@ formset
     subtitle text = STRING_TOKEN(STR_NULL);
 
     //
-    // Define of Check Box: 'Delete PK'
+    // Display of 'Enroll PK'
     //
-    suppressif TRUE;
-      checkbox varid   = SECUREBOOT_CONFIGURATION.DeletePk,
-               prompt   = STRING_TOKEN(STR_NULL),
-               help     = STRING_TOKEN(STR_NULL),
-      endcheckbox;
-    endif;
-
     grayoutif ideqval SECUREBOOT_CONFIGURATION.HasPk == 1;
     goto FORMID_ENROLL_PK_FORM,
          prompt = STRING_TOKEN(STR_ENROLL_PK),
@@ -187,11 +161,29 @@ formset
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    goto FORM_FILE_EXPLORER_ID_PK,
+    goto FORMID_ENROLL_PK_FORM,
          prompt = STRING_TOKEN(STR_SECURE_BOOT_ENROLL_PK_FILE),
          help = STRING_TOKEN(STR_SECURE_BOOT_ENROLL_PK_FILE),
          flags = INTERACTIVE,
-         key = SECUREBOOT_ADD_PK_FILE_FORM_ID;
+         key = FORMID_ENROLL_PK_FORM;
+
+    subtitle text = STRING_TOKEN(STR_NULL);
+    label FORMID_ENROLL_PK_FORM;
+    label LABEL_END;
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    goto FORMID_SECURE_BOOT_OPTION_FORM,
+      prompt = STRING_TOKEN(STR_SAVE_AND_EXIT),
+      help   = STRING_TOKEN(STR_SAVE_AND_EXIT),
+      flags  = INTERACTIVE| RESET_REQUIRED,
+      key    = KEY_VALUE_SAVE_AND_EXIT_PK;
+
+    goto FORMID_SECURE_BOOT_OPTION_FORM,
+      prompt = STRING_TOKEN(STR_NO_SAVE_AND_EXIT),
+      help   = STRING_TOKEN(STR_NO_SAVE_AND_EXIT),
+      flags  = INTERACTIVE,
+      key    = KEY_VALUE_NO_SAVE_AND_EXIT_PK;
+
   endform;
 
   //
@@ -230,7 +222,7 @@ formset
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    goto FORM_FILE_EXPLORER_ID_KEK,
+    goto FORMID_ENROLL_KEK_FORM,
          prompt = STRING_TOKEN(STR_FORM_ENROLL_KEK_FROM_FILE_TITLE),
          help   = STRING_TOKEN(STR_FORM_ENROLL_KEK_FROM_FILE_TITLE_HELP),
          flags  = INTERACTIVE,
@@ -318,11 +310,34 @@ formset
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    goto SECUREBOOT_DELETE_SIGNATURE_FROM_DBX,
+    goto SECUREBOOT_DELETE_SIGNATURE_LIST_FORM,
     prompt = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
     help   = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
     flags  = INTERACTIVE,
-    key    = SECUREBOOT_DELETE_SIGNATURE_FROM_DBX;
+    key    = KEY_VALUE_FROM_DBX_TO_LIST_FORM;
+
+  endform;
+
+  //
+  // ##9 Form: 'DBT Options'
+  //
+  form formid = FORMID_SECURE_BOOT_DBT_OPTION_FORM,
+    title = STRING_TOKEN(STR_SECURE_BOOT_DBT_OPTION);
+
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    goto SECUREBOOT_ENROLL_SIGNATURE_TO_DBT,
+    prompt = STRING_TOKEN (STR_SECURE_BOOT_ENROLL_SIGNATURE),
+    help   = STRING_TOKEN (STR_SECURE_BOOT_ENROLL_SIGNATURE),
+    flags  = 0;
+
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    goto SECUREBOOT_DELETE_SIGNATURE_FROM_DBT,
+    prompt = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
+    help   = STRING_TOKEN (STR_SECURE_BOOT_DELETE_SIGNATURE),
+    flags  = INTERACTIVE,
+    key    = SECUREBOOT_DELETE_SIGNATURE_FROM_DBT;
 
   endform;
 
@@ -339,12 +354,65 @@ formset
   endform;
 
   //
-  // Form: 'Delete Signature' for DBX Options.
+  // Form: Display Signature List.
   //
-  form formid = SECUREBOOT_DELETE_SIGNATURE_FROM_DBX,
+  form formid = SECUREBOOT_DELETE_SIGNATURE_LIST_FORM,
+    title  = STRING_TOKEN(STR_SECURE_BOOT_DELETE_LIST_FORM);
+
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    grayoutif ideqval SECUREBOOT_CONFIGURATION.ListCount == 0;
+      label LABEL_DELETE_ALL_LIST_BUTTON;
+      //
+      // Will create a goto button dynamically here.
+      //
+      label LABEL_END;
+   endif;
+
+   subtitle text = STRING_TOKEN(STR_NULL);
+   label LABEL_SIGNATURE_LIST_START;
+   label LABEL_END;
+   subtitle text = STRING_TOKEN(STR_NULL);
+
+  endform;
+
+  //
+  // Form: Display Signature Data.
+  //
+  form formid = SECUREBOOT_DELETE_SIGNATURE_DATA_FORM,
+    title = STRING_TOKEN(STR_SECURE_BOOT_DELETE_DATA_FORM);
+
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    goto SECUREBOOT_DELETE_SIGNATURE_LIST_FORM,
+      prompt = STRING_TOKEN(STR_SECURE_BOOT_DELETE_ALL_DATA),
+      help   = STRING_TOKEN(STR_SECURE_BOOT_DELETE_ALL_DATA_HELP),
+      flags  = INTERACTIVE,
+      key    = KEY_SECURE_BOOT_DELETE_ALL_DATA;
+
+    grayoutif ideqval SECUREBOOT_CONFIGURATION.CheckedDataCount == 0;
+      goto SECUREBOOT_DELETE_SIGNATURE_LIST_FORM,
+        prompt = STRING_TOKEN(STR_SECURE_BOOT_DELETE_CHECK_DATA),
+        help   = STRING_TOKEN(STR_SECURE_BOOT_DELETE_CHECK_DATA_HELP),
+        flags  = INTERACTIVE,
+        key    = KEY_SECURE_BOOT_DELETE_CHECK_DATA;
+    endif;
+
+    subtitle text = STRING_TOKEN(STR_NULL);
+    label LABEL_SIGNATURE_DATA_START;
+    label LABEL_END;
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+  endform;
+
+
+  //
+  // Form: 'Delete Signature' for DBT Options.
+  //
+  form formid = SECUREBOOT_DELETE_SIGNATURE_FROM_DBT,
     title  = STRING_TOKEN(STR_SECURE_BOOT_DELETE_SIGNATURE);
 
-    label LABEL_DBX_DELETE;
+    label LABEL_DBT_DELETE;
     label LABEL_END;
     subtitle text = STRING_TOKEN(STR_NULL);
 
@@ -358,7 +426,7 @@ formset
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    goto FORM_FILE_EXPLORER_ID_DB,
+    goto SECUREBOOT_ENROLL_SIGNATURE_TO_DB,
          prompt = STRING_TOKEN(STR_SECURE_BOOT_ADD_SIGNATURE_FILE),
          help = STRING_TOKEN(STR_SECURE_BOOT_ADD_SIGNATURE_FILE),
          flags = INTERACTIVE,
@@ -403,25 +471,74 @@ formset
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    goto FORM_FILE_EXPLORER_ID_DBX,
+    goto SECUREBOOT_ENROLL_SIGNATURE_TO_DBX,
          prompt = STRING_TOKEN(STR_SECURE_BOOT_ADD_SIGNATURE_FILE),
          help = STRING_TOKEN(STR_SECURE_BOOT_ADD_SIGNATURE_FILE),
          flags = INTERACTIVE,
          key = SECUREBOOT_ENROLL_SIGNATURE_TO_DBX;
 
-    subtitle text = STRING_TOKEN(STR_NULL);
     label SECUREBOOT_ENROLL_SIGNATURE_TO_DBX;
     label LABEL_END;
     subtitle text = STRING_TOKEN(STR_NULL);
 
-    string  varid   = SECUREBOOT_CONFIGURATION.SignatureGuid,
-            prompt  = STRING_TOKEN(STR_SECURE_BOOT_SIGNATURE_GUID),
-            help    = STRING_TOKEN(STR_SECURE_BOOT_SIGNATURE_GUID_HELP),
-            flags   = INTERACTIVE,
-            key     = KEY_SECURE_BOOT_SIGNATURE_GUID_DBX,
-            minsize = SECURE_BOOT_GUID_SIZE,
-            maxsize = SECURE_BOOT_GUID_SIZE,
-    endstring;
+    grayoutif ideqval SECUREBOOT_CONFIGURATION.FileEnrollType == 3;
+      string  varid   = SECUREBOOT_CONFIGURATION.SignatureGuid,
+              prompt  = STRING_TOKEN(STR_SECURE_BOOT_SIGNATURE_GUID),
+              help    = STRING_TOKEN(STR_SECURE_BOOT_SIGNATURE_GUID_HELP),
+              flags   = INTERACTIVE,
+              key     = KEY_SECURE_BOOT_SIGNATURE_GUID_DBX,
+              minsize = SECURE_BOOT_GUID_SIZE,
+              maxsize = SECURE_BOOT_GUID_SIZE,
+      endstring;
+    endif;
+
+    disableif NOT ideqval SECUREBOOT_CONFIGURATION.FileEnrollType == 1;
+      oneof name = X509SignatureFormatInDbx,
+            varid       = SECUREBOOT_CONFIGURATION.CertificateFormat,
+            prompt      = STRING_TOKEN(STR_DBX_CERTIFICATE_FORMAT_PROMPT),
+            help        = STRING_TOKEN(STR_DBX_CERTIFICATE_FORMAT_HELP),
+            option text = STRING_TOKEN(STR_DBX_CERTIFICATE_FORMAT_SHA256), value = 0x1, flags = DEFAULT;
+            option text = STRING_TOKEN(STR_DBX_CERTIFICATE_FORMAT_SHA384), value = 0x2, flags = 0;
+            option text = STRING_TOKEN(STR_DBX_CERTIFICATE_FORMAT_SHA512), value = 0x3, flags = 0;
+            option text = STRING_TOKEN(STR_DBX_CERTIFICATE_FORMAT_RAW), value = 0x4, flags = 0;
+      endoneof;
+    endif;
+
+    disableif NOT ideqval SECUREBOOT_CONFIGURATION.FileEnrollType == 2;
+      text
+        help   = STRING_TOKEN(STR_DBX_PE_IMAGE_FORMAT_HELP),          // Help string
+        text   = STRING_TOKEN(STR_DBX_CERTIFICATE_FORMAT_PROMPT),     // Prompt string
+        text   = STRING_TOKEN(STR_DBX_PE_FORMAT_SHA256);              // PE image type
+    endif;
+
+    disableif NOT ideqval SECUREBOOT_CONFIGURATION.FileEnrollType == 3;
+      text
+        help   = STRING_TOKEN(STR_DBX_AUTH_2_FORMAT_HELP),            // Help string
+        text   = STRING_TOKEN(STR_DBX_CERTIFICATE_FORMAT_PROMPT),     // Prompt string
+        text   = STRING_TOKEN(STR_DBX_AUTH_2_FORMAT);                 // AUTH_2 image type
+    endif;
+
+    suppressif ideqval SECUREBOOT_CONFIGURATION.CertificateFormat == 4;
+        checkbox varid  = SECUREBOOT_CONFIGURATION.AlwaysRevocation,
+               prompt = STRING_TOKEN(STR_ALWAYS_CERTIFICATE_REVOCATION_PROMPT),
+               help   = STRING_TOKEN(STR_ALWAYS_CERTIFICATE_REVOCATION_HELP),
+               flags  = INTERACTIVE,
+        endcheckbox;
+
+        suppressif ideqval SECUREBOOT_CONFIGURATION.AlwaysRevocation == 1;
+            date  varid  = SECUREBOOT_CONFIGURATION.RevocationDate,
+                  prompt = STRING_TOKEN(STR_CERTIFICATE_REVOCATION_DATE_PROMPT),
+                  help   = STRING_TOKEN(STR_CERTIFICATE_REVOCATION_DATE_HELP),
+                  flags  = STORAGE_NORMAL,
+            enddate;
+
+            time varid   = SECUREBOOT_CONFIGURATION.RevocationTime,
+                 prompt  = STRING_TOKEN(STR_CERTIFICATE_REVOCATION_TIME_PROMPT),
+                 help    = STRING_TOKEN(STR_CERTIFICATE_REVOCATION_TIME_HELP),
+                 flags   = STORAGE_NORMAL,
+            endtime;
+        endif;
+    endif;
 
     subtitle text = STRING_TOKEN(STR_NULL);
     subtitle text = STRING_TOKEN(STR_NULL);
@@ -441,68 +558,47 @@ formset
   endform;
 
   //
-  // File Explorer for PK
+  // Form: 'Enroll Signature' for DBT options.
   //
-  form formid = FORM_FILE_EXPLORER_ID_PK,
-       title = STRING_TOKEN(STR_FILE_EXPLORER_TITLE);
-
-       label FORM_FILE_EXPLORER_ID;
-       label LABEL_END;
-  endform;
-
-  //
-  // File Explorer for KEK
-  //
-  form formid = FORM_FILE_EXPLORER_ID_KEK,
-       title = STRING_TOKEN(STR_FILE_EXPLORER_TITLE);
-
-       label FORM_FILE_EXPLORER_ID;
-       label LABEL_END;
-  endform;
-
-  //
-  // File Explorer for DB
-  //
-  form formid = FORM_FILE_EXPLORER_ID_DB,
-       title = STRING_TOKEN(STR_FILE_EXPLORER_TITLE);
-
-       label FORM_FILE_EXPLORER_ID;
-       label LABEL_END;
-  endform;
-
-  //
-  // File Explorer for DBX
-  //
-  form formid = FORM_FILE_EXPLORER_ID_DBX,
-       title = STRING_TOKEN(STR_FILE_EXPLORER_TITLE);
-
-       label FORM_FILE_EXPLORER_ID;
-       label LABEL_END;
-  endform;
-
-
-  //
-  // Enroll Pk from File Commit Form
-  //
-  form formid = SECUREBOOT_ADD_PK_FILE_FORM_ID,
-    title = STRING_TOKEN(STR_SAVE_PK_FILE);
-
-    label SECUREBOOT_ADD_PK_FILE_FORM_ID;
-    label LABEL_END;
+  form formid = SECUREBOOT_ENROLL_SIGNATURE_TO_DBT,
+    title = STRING_TOKEN(STR_SECURE_BOOT_ENROLL_SIGNATURE);
 
     subtitle text = STRING_TOKEN(STR_NULL);
 
-     text
-       help   = STRING_TOKEN(STR_SAVE_AND_EXIT),
-       text   = STRING_TOKEN(STR_SAVE_AND_EXIT),
-       flags  = INTERACTIVE,
-       key    = KEY_VALUE_SAVE_AND_EXIT_PK;
+    goto SECUREBOOT_ENROLL_SIGNATURE_TO_DBT,
+         prompt = STRING_TOKEN(STR_SECURE_BOOT_ADD_SIGNATURE_FILE),
+         help = STRING_TOKEN(STR_SECURE_BOOT_ADD_SIGNATURE_FILE),
+         flags = INTERACTIVE,
+         key = SECUREBOOT_ENROLL_SIGNATURE_TO_DBT;
 
-     text
-       help   = STRING_TOKEN(STR_NO_SAVE_AND_EXIT),
-       text   = STRING_TOKEN(STR_NO_SAVE_AND_EXIT),
-       flags  = INTERACTIVE,
-       key    = KEY_VALUE_NO_SAVE_AND_EXIT_PK;
+    subtitle text = STRING_TOKEN(STR_NULL);
+    label SECUREBOOT_ENROLL_SIGNATURE_TO_DBT;
+    label LABEL_END;
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    string  varid   = SECUREBOOT_CONFIGURATION.SignatureGuid,
+            prompt  = STRING_TOKEN(STR_SECURE_BOOT_SIGNATURE_GUID),
+            help    = STRING_TOKEN(STR_SECURE_BOOT_SIGNATURE_GUID_HELP),
+            flags   = INTERACTIVE,
+            key     = KEY_SECURE_BOOT_SIGNATURE_GUID_DBT,
+            minsize = SECURE_BOOT_GUID_SIZE,
+            maxsize = SECURE_BOOT_GUID_SIZE,
+    endstring;
+
+    subtitle text = STRING_TOKEN(STR_NULL);
+    subtitle text = STRING_TOKEN(STR_NULL);
+
+    goto FORMID_SECURE_BOOT_OPTION_FORM,
+         prompt = STRING_TOKEN(STR_SAVE_AND_EXIT),
+         help   = STRING_TOKEN(STR_SAVE_AND_EXIT),
+         flags  = INTERACTIVE,
+         key    = KEY_VALUE_SAVE_AND_EXIT_DBT;
+
+    goto FORMID_SECURE_BOOT_OPTION_FORM,
+         prompt = STRING_TOKEN(STR_NO_SAVE_AND_EXIT),
+         help   = STRING_TOKEN(STR_NO_SAVE_AND_EXIT),
+         flags  = INTERACTIVE,
+         key    = KEY_VALUE_NO_SAVE_AND_EXIT_DBT;
 
   endform;
 

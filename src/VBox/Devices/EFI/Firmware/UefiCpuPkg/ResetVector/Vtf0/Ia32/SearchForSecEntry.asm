@@ -3,13 +3,7 @@
 ; Search for the SEC Core entry point
 ;
 ; Copyright (c) 2008 - 2011, Intel Corporation. All rights reserved.<BR>
-; This program and the accompanying materials
-; are licensed and made available under the terms and conditions of the BSD License
-; which accompanies this distribution.  The full text of the license may be found at
-; http://opensource.org/licenses/bsd-license.php
-;
-; THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-; WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+; SPDX-License-Identifier: BSD-2-Clause-Patent
 ;
 ;------------------------------------------------------------------------------
 
@@ -168,11 +162,7 @@ getEntryPointOfFfsFileFoundPe32Section:
     add     ebx, eax
 
     ; if (Hdr.Pe32->Signature == EFI_IMAGE_NT_SIGNATURE)
-%ifdef __YASM__ ; VBox
-    cmp     dword [ebx], 0x00004550
-%else
     cmp     dword [ebx], `PE\x00\x00`
-%endif
     jne     getEntryPointOfFfsFileErrorReturn
 
     ; *EntryPoint = (VOID *)((UINTN)Pe32Data +

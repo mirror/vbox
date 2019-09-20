@@ -5,14 +5,8 @@
   from a software point of view. The path must persist from boot to boot, so
   it can not contain things like PCI bus numbers that change from boot to boot.
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,6 +14,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define __EFI_DEVICE_PATH_PROTOCOL_H__
 
 #include <Guid/PcAnsi.h>
+#include <IndustryStandard/Bluetooth.h>
+#include <IndustryStandard/Acpi60.h>
 
 ///
 /// Device Path protocol.
@@ -170,6 +166,26 @@ typedef struct {
 } CONTROLLER_DEVICE_PATH;
 
 ///
+/// BMC Device Path SubType.
+///
+#define HW_BMC_DP                 0x06
+
+///
+/// BMC Device Path.
+///
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  ///
+  /// Interface Type.
+  ///
+  UINT8                           InterfaceType;
+  ///
+  /// Base Address.
+  ///
+  UINT8                           BaseAddress[8];
+} BMC_DEVICE_PATH;
+
+///
 /// ACPI Device Paths.
 ///
 #define ACPI_DEVICE_PATH          0x02
@@ -273,14 +289,14 @@ typedef struct {
 #define ACPI_ADR_DISPLAY_TYPE_INTERNAL_DIGITAL  4
 
 #define ACPI_DISPLAY_ADR(_DeviceIdScheme, _HeadId, _NonVgaOutput, _BiosCanDetect, _VendorInfo, _Type, _Port, _Index) \
-          ((UINT32)( (((_DeviceIdScheme) & 0x1) << 31) |  \
-                      (((_HeadId)         & 0x7) << 18) |  \
-                      (((_NonVgaOutput)   & 0x1) << 17) |  \
-                      (((_BiosCanDetect)  & 0x1) << 16) |  \
-                      (((_VendorInfo)     & 0xf) << 12) |  \
-                      (((_Type)           & 0xf) << 8)  |  \
-                      (((_Port)           & 0xf) << 4)  |  \
-                       ((_Index)          & 0xf) ))
+          ((UINT32)(  ((UINT32)((_DeviceIdScheme) & 0x1) << 31) |  \
+                      (((_HeadId)                 & 0x7) << 18) |  \
+                      (((_NonVgaOutput)           & 0x1) << 17) |  \
+                      (((_BiosCanDetect)          & 0x1) << 16) |  \
+                      (((_VendorInfo)             & 0xf) << 12) |  \
+                      (((_Type)                   & 0xf) << 8)  |  \
+                      (((_Port)                   & 0xf) << 4)  |  \
+                       ((_Index)                  & 0xf) ))
 
 ///
 /// Messaging Device Paths.
@@ -487,7 +503,7 @@ typedef struct {
   UINT16                          HBAPortNumber;
   ///
   /// The Port multiplier port number that facilitates the connection
-  /// to the device. Bit 15 should be set if the device is directly
+  /// to the device. Must be set to 0xFFFF if the device is directly
   /// connected to the HBA.
   ///
   UINT16                          PortMultiplierPortNumber;
@@ -796,6 +812,34 @@ typedef struct {
 } NVME_NAMESPACE_DEVICE_PATH;
 
 ///
+/// DNS Device Path SubType
+///
+#define MSG_DNS_DP                0x1F
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  ///
+  /// Indicates the DNS server address is IPv4 or IPv6 address.
+  ///
+  UINT8                           IsIPv6;
+  ///
+  /// Instance of the DNS server address.
+  ///
+  EFI_IP_ADDRESS                  DnsServerIp[];
+} DNS_DEVICE_PATH;
+
+///
+/// Uniform Resource Identifiers (URI) Device Path SubType
+///
+#define MSG_URI_DP                0x18
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  ///
+  /// Instance of the URI pursuant to RFC 3986.
+  ///
+  CHAR8                           Uri[];
+} URI_DEVICE_PATH;
+
+///
 /// Universal Flash Storage (UFS) Device Path SubType.
 ///
 #define MSG_UFS_DP                0x19
@@ -810,6 +854,24 @@ typedef struct {
   ///
   UINT8                           Lun;
 } UFS_DEVICE_PATH;
+
+///
+/// SD (Secure Digital) Device Path SubType.
+///
+#define MSG_SD_DP                 0x1A
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT8                           SlotNumber;
+} SD_DEVICE_PATH;
+
+///
+/// EMMC (Embedded MMC) Device Path SubType.
+///
+#define MSG_EMMC_DP                 0x1D
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  UINT8                           SlotNumber;
+} EMMC_DEVICE_PATH;
 
 ///
 /// iSCSI Device Path SubType
@@ -861,6 +923,39 @@ typedef struct {
   ///
   UINT16                          VlanId;
 } VLAN_DEVICE_PATH;
+
+///
+/// Bluetooth Device Path SubType.
+///
+#define MSG_BLUETOOTH_DP     0x1b
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  ///
+  /// 48bit Bluetooth device address.
+  ///
+  BLUETOOTH_ADDRESS               BD_ADDR;
+} BLUETOOTH_DEVICE_PATH;
+
+///
+/// Wi-Fi Device Path SubType.
+///
+#define MSG_WIFI_DP               0x1C
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  ///
+  /// Service set identifier. A 32-byte octets string.
+  ///
+  UINT8                           SSId[32];
+} WIFI_DEVICE_PATH;
+
+///
+/// Bluetooth LE Device Path SubType.
+///
+#define MSG_BLUETOOTH_LE_DP       0x1E
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  BLUETOOTH_LE_ADDRESS            Address;
+} BLUETOOTH_LE_DEVICE_PATH;
 
 //
 // Media Device Path
@@ -1031,6 +1126,62 @@ typedef struct {
 } MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH;
 
 ///
+/// This GUID defines a RAM Disk supporting a raw disk format in volatile memory.
+///
+#define EFI_VIRTUAL_DISK_GUID               EFI_ACPI_6_0_NFIT_GUID_RAM_DISK_SUPPORTING_VIRTUAL_DISK_REGION_VOLATILE
+
+extern  EFI_GUID                            gEfiVirtualDiskGuid;
+
+///
+/// This GUID defines a RAM Disk supporting an ISO image in volatile memory.
+///
+#define EFI_VIRTUAL_CD_GUID                 EFI_ACPI_6_0_NFIT_GUID_RAM_DISK_SUPPORTING_VIRTUAL_CD_REGION_VOLATILE
+
+extern  EFI_GUID                            gEfiVirtualCdGuid;
+
+///
+/// This GUID defines a RAM Disk supporting a raw disk format in persistent memory.
+///
+#define EFI_PERSISTENT_VIRTUAL_DISK_GUID    EFI_ACPI_6_0_NFIT_GUID_RAM_DISK_SUPPORTING_VIRTUAL_DISK_REGION_PERSISTENT
+
+extern  EFI_GUID                            gEfiPersistentVirtualDiskGuid;
+
+///
+/// This GUID defines a RAM Disk supporting an ISO image in persistent memory.
+///
+#define EFI_PERSISTENT_VIRTUAL_CD_GUID      EFI_ACPI_6_0_NFIT_GUID_RAM_DISK_SUPPORTING_VIRTUAL_CD_REGION_PERSISTENT
+
+extern  EFI_GUID                            gEfiPersistentVirtualCdGuid;
+
+///
+/// Media ram disk device path.
+///
+#define MEDIA_RAM_DISK_DP         0x09
+
+///
+/// Used to describe the ram disk device path.
+///
+typedef struct {
+  EFI_DEVICE_PATH_PROTOCOL        Header;
+  ///
+  /// Starting Memory Address.
+  ///
+  UINT32                          StartingAddr[2];
+  ///
+  /// Ending Memory Address.
+  ///
+  UINT32                          EndingAddr[2];
+  ///
+  /// GUID that defines the type of the RAM Disk.
+  ///
+  EFI_GUID                        TypeGuid;
+  ///
+  /// RAM Diskinstance number, if supported. The default value is zero.
+  ///
+  UINT16                          Instance;
+} MEDIA_RAM_DISK_DEVICE_PATH;
+
+///
 /// BIOS Boot Specification Device Path.
 ///
 #define BBS_DEVICE_PATH           0x05
@@ -1083,6 +1234,7 @@ typedef union {
   VENDOR_DEVICE_PATH                         Vendor;
 
   CONTROLLER_DEVICE_PATH                     Controller;
+  BMC_DEVICE_PATH                            Bmc;
   ACPI_HID_DEVICE_PATH                       Acpi;
   ACPI_EXTENDED_HID_DEVICE_PATH              ExtendedAcpi;
   ACPI_ADR_DEVICE_PATH                       AcpiAdr;
@@ -1110,7 +1262,13 @@ typedef union {
   SAS_DEVICE_PATH                            Sas;
   SASEX_DEVICE_PATH                          SasEx;
   NVME_NAMESPACE_DEVICE_PATH                 NvmeNamespace;
+  DNS_DEVICE_PATH                            Dns;
+  URI_DEVICE_PATH                            Uri;
+  BLUETOOTH_DEVICE_PATH                      Bluetooth;
+  WIFI_DEVICE_PATH                           WiFi;
   UFS_DEVICE_PATH                            Ufs;
+  SD_DEVICE_PATH                             Sd;
+  EMMC_DEVICE_PATH                           Emmc;
   HARDDRIVE_DEVICE_PATH                      HardDrive;
   CDROM_DEVICE_PATH                          CD;
 
@@ -1120,7 +1278,7 @@ typedef union {
   MEDIA_FW_VOL_DEVICE_PATH                   FirmwareVolume;
   MEDIA_FW_VOL_FILEPATH_DEVICE_PATH          FirmwareFile;
   MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH    Offset;
-
+  MEDIA_RAM_DISK_DEVICE_PATH                 RamDisk;
   BBS_BBS_DEVICE_PATH                        Bbs;
 } EFI_DEV_PATH;
 
@@ -1134,6 +1292,7 @@ typedef union {
   VENDOR_DEVICE_PATH                         *Vendor;
 
   CONTROLLER_DEVICE_PATH                     *Controller;
+  BMC_DEVICE_PATH                            *Bmc;
   ACPI_HID_DEVICE_PATH                       *Acpi;
   ACPI_EXTENDED_HID_DEVICE_PATH              *ExtendedAcpi;
   ACPI_ADR_DEVICE_PATH                       *AcpiAdr;
@@ -1161,7 +1320,13 @@ typedef union {
   SAS_DEVICE_PATH                            *Sas;
   SASEX_DEVICE_PATH                          *SasEx;
   NVME_NAMESPACE_DEVICE_PATH                 *NvmeNamespace;
+  DNS_DEVICE_PATH                            *Dns;
+  URI_DEVICE_PATH                            *Uri;
+  BLUETOOTH_DEVICE_PATH                      *Bluetooth;
+  WIFI_DEVICE_PATH                           *WiFi;
   UFS_DEVICE_PATH                            *Ufs;
+  SD_DEVICE_PATH                             *Sd;
+  EMMC_DEVICE_PATH                           *Emmc;
   HARDDRIVE_DEVICE_PATH                      *HardDrive;
   CDROM_DEVICE_PATH                          *CD;
 
@@ -1171,7 +1336,7 @@ typedef union {
   MEDIA_FW_VOL_DEVICE_PATH                   *FirmwareVolume;
   MEDIA_FW_VOL_FILEPATH_DEVICE_PATH          *FirmwareFile;
   MEDIA_RELATIVE_OFFSET_RANGE_DEVICE_PATH    *Offset;
-
+  MEDIA_RAM_DISK_DEVICE_PATH                 *RamDisk;
   BBS_BBS_DEVICE_PATH                        *Bbs;
   UINT8                                      *Raw;
 } EFI_DEV_PATH_PTR;

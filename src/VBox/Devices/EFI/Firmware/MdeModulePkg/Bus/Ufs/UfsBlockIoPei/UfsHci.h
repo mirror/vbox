@@ -2,14 +2,8 @@
   UfsPassThruDxe driver is used to produce EFI_EXT_SCSI_PASS_THRU protocol interface
   for upper layer application to execute UFS-supported SCSI cmds.
 
-  Copyright (c) 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2014 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -75,6 +69,12 @@
 #define UFS_HC_CAP_NUTRS           (BIT0 | BIT1 | BIT2 | BIT3 | BIT4)
 #define UFS_HC_UTMRLRSR            BIT0
 #define UFS_HC_UTRLRSR             BIT0
+
+//
+// The initial value of the OCS field of UTP TRD or TMRD descriptor
+// defined in JEDEC JESD223 specification
+//
+#define UFS_HC_TRD_OCS_INIT_VALUE  0x0F
 
 //
 // A maximum of length of 256KB is supported by PRDT entry

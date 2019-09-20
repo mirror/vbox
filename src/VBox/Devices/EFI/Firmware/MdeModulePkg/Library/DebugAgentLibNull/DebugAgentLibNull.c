@@ -2,13 +2,7 @@
   Debug Agent library implementition with empty functions.
 
   Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -24,7 +18,7 @@
   function and pass it into InitializeDebugAgent(). InitializeDebugAgent() is
   responsible to invoke the passing-in function at the end of InitializeDebugAgent().
 
-  If the parameter Function is not NULL, Debug Agent Libary instance will invoke it by
+  If the parameter Function is not NULL, Debug Agent Library instance will invoke it by
   passing in the Context to be its parameter.
 
   If Function() is NULL, Debug Agent Library instance will return after setup debug

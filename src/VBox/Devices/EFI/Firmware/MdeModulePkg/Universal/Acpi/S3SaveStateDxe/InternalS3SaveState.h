@@ -1,16 +1,9 @@
 /** @file
   Internal header file for S3 Boot Script Saver state driver.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions
-  of the BSD License which accompanies this distribution.  The
-  full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 #ifndef _INTERNAL_S3_SAVE_STATE_H_
@@ -26,7 +19,24 @@
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/S3BootScriptLib.h>
 #include <Library/SmbusLib.h>
+#include <Library/PcdLib.h>
 #include <IndustryStandard/SmBus.h>
+#include <Guid/EventGroup.h>
+
+/**
+  Callback function executed when the EndOfDxe event group is signaled.
+
+  @param[in] Event      Event whose notification function is being invoked.
+  @param[in] Context    The pointer to the notification function's context, which
+                        is implementation-dependent.
+**/
+VOID
+EFIAPI
+AcpiS3ContextSaveOnEndOfDxe (
+  IN EFI_EVENT  Event,
+  IN VOID       *Context
+  );
+
 /**
   Adds a record into S3 boot script table.
 
@@ -58,7 +68,7 @@ EFI_STATUS
 EFIAPI
 BootScriptWrite (
   IN CONST EFI_S3_SAVE_STATE_PROTOCOL      *This,
-  IN       UINT16                           OpCode,
+  IN       UINTN                            OpCode,
   ...
   );
 /**
@@ -95,7 +105,7 @@ BootScriptInsert (
   IN CONST EFI_S3_SAVE_STATE_PROTOCOL    *This,
   IN       BOOLEAN                          BeforeOrAfter,
   IN OUT   EFI_S3_BOOT_SCRIPT_POSITION     *Position OPTIONAL,
-  IN       UINT16                           OpCode,
+  IN       UINTN                            OpCode,
   ...
   );
 /**

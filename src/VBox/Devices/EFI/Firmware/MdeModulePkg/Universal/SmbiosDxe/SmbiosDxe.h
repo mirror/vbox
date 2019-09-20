@@ -1,14 +1,8 @@
 /** @file
   This code supports the implementation of the Smbios protocol
 
-Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -30,13 +24,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/PcdLib.h>
-
-//
-// The length of the entire structure table (including all strings) must be reported
-// in the Structure Table Length field of the SMBIOS Structure Table Entry Point,
-// which is a WORD field limited to 65,535 bytes.
-//
-#define SMBIOS_TABLE_MAX_LENGTH 0xFFFF
 
 #define SMBIOS_INSTANCE_SIGNATURE SIGNATURE_32 ('S', 'B', 'i', 's')
 typedef struct {
@@ -89,6 +76,11 @@ typedef struct {
   LIST_ENTRY                Link;
   EFI_SMBIOS_RECORD_HEADER  *RecordHeader;
   UINTN                     RecordSize;
+  //
+  // Indicate which table this record is added to.
+  //
+  BOOLEAN                   Smbios32BitTable;
+  BOOLEAN                   Smbios64BitTable;
 } EFI_SMBIOS_ENTRY;
 
 #define SMBIOS_ENTRY_FROM_LINK(link)  CR (link, EFI_SMBIOS_ENTRY, Link, EFI_SMBIOS_ENTRY_SIGNATURE)
@@ -117,11 +109,16 @@ typedef struct {
 
 /**
   Create Smbios Table and installs the Smbios Table to the System Table.
+
+  @param  Smbios32BitTable    The flag to update 32-bit table.
+  @param  Smbios64BitTable    The flag to update 64-bit table.
+
 **/
 VOID
 EFIAPI
 SmbiosTableConstruction (
-  VOID
+  BOOLEAN     Smbios32BitTable,
+  BOOLEAN     Smbios64BitTable
   );
 
 #endif

@@ -12,14 +12,8 @@
     PeiMemoryLib
     UefiMemoryLib
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -139,4 +133,33 @@ ScanGuid (
     GuidPtr++;
   }
   return NULL;
+}
+
+/**
+  Checks if the given GUID is a zero GUID.
+
+  This function checks whether the given GUID is a zero GUID. If the GUID is
+  identical to a zero GUID then TRUE is returned. Otherwise, FALSE is returned.
+
+  If Guid is NULL, then ASSERT().
+
+  @param  Guid        The pointer to a 128 bit GUID.
+
+  @retval TRUE        Guid is a zero GUID.
+  @retval FALSE       Guid is not a zero GUID.
+
+**/
+BOOLEAN
+EFIAPI
+IsZeroGuid (
+  IN CONST GUID  *Guid
+  )
+{
+  UINT64  LowPartOfGuid;
+  UINT64  HighPartOfGuid;
+
+  LowPartOfGuid  = ReadUnaligned64 ((CONST UINT64*) Guid);
+  HighPartOfGuid = ReadUnaligned64 ((CONST UINT64*) Guid + 1);
+
+  return (BOOLEAN) (LowPartOfGuid == 0 && HighPartOfGuid == 0);
 }

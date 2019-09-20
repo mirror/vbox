@@ -1,21 +1,14 @@
 /** @file
-  Measure TrEE required variable.
+  Measure TCG required variable.
 
-Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include <PiDxe.h>
 #include <Guid/ImageAuthentication.h>
 #include <IndustryStandard/UefiTcgPlatform.h>
-#include <Protocol/TrEEProtocol.h>
 
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -230,18 +223,18 @@ MeasureVariable (
 {
   EFI_STATUS                        Status;
   UINTN                             VarNameLength;
-  EFI_VARIABLE_DATA_TREE            *VarLog;
+  UEFI_VARIABLE_DATA                *VarLog;
   UINT32                            VarLogSize;
 
   //
-  // The EFI_VARIABLE_DATA_TREE.VariableData value shall be the EFI_SIGNATURE_DATA value
+  // The UEFI_VARIABLE_DATA.VariableData value shall be the EFI_SIGNATURE_DATA value
   // from the EFI_SIGNATURE_LIST that contained the authority that was used to validate the image
   //
   VarNameLength      = StrLen (VarName);
   VarLogSize = (UINT32)(sizeof (*VarLog) + VarNameLength * sizeof (*VarName) + VarSize
                         - sizeof (VarLog->UnicodeName) - sizeof (VarLog->VariableData));
 
-  VarLog = (EFI_VARIABLE_DATA_TREE *) AllocateZeroPool (VarLogSize);
+  VarLog = (UEFI_VARIABLE_DATA *) AllocateZeroPool (VarLogSize);
   if (VarLog == NULL) {
     return EFI_OUT_OF_RESOURCES;
   }

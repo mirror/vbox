@@ -2,16 +2,9 @@
 PEIM to produce gPeiUsb2HostControllerPpiGuid based on gPeiUsbControllerPpiGuid
 which is used to enable recovery function from USB Drivers.
 
-Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -79,16 +72,18 @@ UsbHcAllocMemBlock (
 
   Block->Bits  = (UINT8 *)(UINTN)TempPtr;
 
-
-  Status = PeiServicesAllocatePages (
-             EfiBootServicesCode,
+  Status = IoMmuAllocateBuffer (
+             Ehc->IoMmu,
              Pages,
-             &TempPtr
+             (VOID **) &BufHost,
+             &MappedAddr,
+             &Mapping
              );
-  ZeroMem ((VOID   *)(UINTN)TempPtr, Pages*EFI_PAGE_SIZE);
+  if (EFI_ERROR (Status)) {
+    return NULL;
+  }
+  ZeroMem (BufHost, Pages*EFI_PAGE_SIZE);
 
-  BufHost  = (VOID *)(UINTN)TempPtr;
-  MappedAddr = (EFI_PHYSICAL_ADDRESS) (UINTN) BufHost;
   //
   // Check whether the data structure used by the host controller
   // should be restricted into the same 4G
@@ -109,17 +104,21 @@ UsbHcAllocMemBlock (
 /**
   Free the memory block from the memory pool.
 
+  @param  Ehc            The EHCI device.
   @param  Pool           The memory pool to free the block from.
   @param  Block          The memory block to free.
 
 **/
 VOID
 UsbHcFreeMemBlock (
+  IN PEI_USB2_HC_DEV      *Ehc,
   IN USBHC_MEM_POOL       *Pool,
   IN USBHC_MEM_BLOCK      *Block
   )
 {
   ASSERT ((Pool != NULL) && (Block != NULL));
+
+  IoMmuFreeBuffer (Ehc->IoMmu, EFI_SIZE_TO_PAGES (Block->BufLen), Block->BufHost, Block->Mapping);
 }
 
 /**
@@ -196,6 +195,54 @@ UsbHcAllocMemFromBlock (
 }
 
 /**
+  Calculate the corresponding pci bus address according to the Mem parameter.
+
+  @param  Pool           The memory pool of the host controller.
+  @param  Mem            The pointer to host memory.
+  @param  Size           The size of the memory region.
+
+  @return the pci memory address
+**/
+EFI_PHYSICAL_ADDRESS
+UsbHcGetPciAddressForHostMem (
+  IN USBHC_MEM_POOL       *Pool,
+  IN VOID                 *Mem,
+  IN UINTN                Size
+  )
+{
+  USBHC_MEM_BLOCK         *Head;
+  USBHC_MEM_BLOCK         *Block;
+  UINTN                   AllocSize;
+  EFI_PHYSICAL_ADDRESS    PhyAddr;
+  UINTN                   Offset;
+
+  Head      = Pool->Head;
+  AllocSize = USBHC_MEM_ROUND (Size);
+
+  if (Mem == NULL) {
+    return 0;
+  }
+
+  for (Block = Head; Block != NULL; Block = Block->Next) {
+    //
+    // scan the memory block list for the memory block that
+    // completely contains the allocated memory.
+    //
+    if ((Block->BufHost <= (UINT8 *) Mem) && (((UINT8 *) Mem + AllocSize) <= (Block->BufHost + Block->BufLen))) {
+      break;
+    }
+  }
+
+  ASSERT ((Block != NULL));
+  //
+  // calculate the pci memory address for host memory address.
+  //
+  Offset = (UINT8 *)Mem - Block->BufHost;
+  PhyAddr = (EFI_PHYSICAL_ADDRESS)(UINTN) (Block->Buf + Offset);
+  return PhyAddr;
+}
+
+/**
   Insert the memory block to the pool's list of the blocks.
 
   @param  Head           The head of the memory pool's block list.
@@ -239,31 +286,6 @@ UsbHcIsMemBlockEmpty (
   return TRUE;
 }
 
-/**
-  Unlink the memory block from the pool's list.
-
-  @param  Head           The block list head of the memory's pool.
-  @param  BlockToUnlink  The memory block to unlink.
-
-**/
-VOID
-UsbHcUnlinkMemBlock (
-  IN USBHC_MEM_BLOCK      *Head,
-  IN USBHC_MEM_BLOCK      *BlockToUnlink
-  )
-{
-  USBHC_MEM_BLOCK         *Block;
-
-  ASSERT ((Head != NULL) && (BlockToUnlink != NULL));
-
-  for (Block = Head; Block != NULL; Block = Block->Next) {
-    if (Block->Next == BlockToUnlink) {
-      Block->Next         = BlockToUnlink->Next;
-      BlockToUnlink->Next = NULL;
-      break;
-    }
-  }
-}
 
 /**
   Initialize the memory management pool for the host controller.
@@ -317,6 +339,7 @@ UsbHcInitMemPool (
 /**
   Release the memory management pool.
 
+  @param  Ehc                   The EHCI device.
   @param  Pool                  The USB memory pool to free.
 
   @retval EFI_DEVICE_ERROR      Fail to free the memory pool.
@@ -325,6 +348,7 @@ UsbHcInitMemPool (
 **/
 EFI_STATUS
 UsbHcFreeMemPool (
+  IN PEI_USB2_HC_DEV      *Ehc,
   IN USBHC_MEM_POOL       *Pool
   )
 {
@@ -334,14 +358,12 @@ UsbHcFreeMemPool (
 
   //
   // Unlink all the memory blocks from the pool, then free them.
-  // UsbHcUnlinkMemBlock can't be used to unlink and free the
-  // first block.
   //
-  for (Block = Pool->Head->Next; Block != NULL; Block = Pool->Head->Next) {
-    UsbHcFreeMemBlock (Pool, Block);
+  for (Block = Pool->Head->Next; Block != NULL; Block = Block->Next) {
+    UsbHcFreeMemBlock (Ehc, Pool, Block);
   }
 
-  UsbHcFreeMemBlock (Pool, Pool->Head);
+  UsbHcFreeMemBlock (Ehc, Pool, Pool->Head);
 
   return EFI_SUCCESS;
 }
@@ -425,6 +447,7 @@ UsbHcAllocateMem (
 /**
   Free the allocated memory back to the memory pool.
 
+  @param  Ehc            The EHCI device.
   @param  Pool           The memory pool of the host controller.
   @param  Mem            The memory to free.
   @param  Size           The size of the memory to free.
@@ -432,6 +455,7 @@ UsbHcAllocateMem (
 **/
 VOID
 UsbHcFreeMem (
+  IN PEI_USB2_HC_DEV      *Ehc,
   IN USBHC_MEM_POOL       *Pool,
   IN VOID                 *Mem,
   IN UINTN                Size
@@ -462,7 +486,7 @@ UsbHcFreeMem (
       Bit   = ((ToFree - Block->Buf) / USBHC_MEM_UNIT) % 8;
 
       //
-      // reset associated bits in bit arry
+      // reset associated bits in bit array
       //
       for (Count = 0; Count < (AllocSize / USBHC_MEM_UNIT); Count++) {
         ASSERT (USB_HC_BIT_IS_SET (Block->Bits[Byte], Bit));
@@ -486,7 +510,7 @@ UsbHcFreeMem (
   // Release the current memory block if it is empty and not the head
   //
   if ((Block != Head) && UsbHcIsMemBlockEmpty (Block)) {
-    UsbHcFreeMemBlock (Pool, Block);
+    UsbHcFreeMemBlock (Ehc, Pool, Block);
   }
 
   return ;

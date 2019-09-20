@@ -1,19 +1,14 @@
 /** @file
   Module for clarifying the content of the smbios structure element information.
 
-  Copyright (c) 2005 - 2015, Intel Corporation. All rights reserved.<BR>
-  Copyright (c) 2014, Hewlett-Packard Development Company, L.P.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2005 - 2018, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
+  (C) Copyright 2015-2017 Hewlett Packard Enterprise Development LP<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include "../UefiShellDebug1CommandsLib.h"
+#include "UefiShellDebug1CommandsLib.h"
 #include "PrintInfo.h"
 #include "LibSmbiosView.h"
 #include "QueryTable.h"
@@ -200,6 +195,75 @@ SmbiosPrintEPSInfo (
 }
 
 /**
+  Print the info of 64-bit EPS(Entry Point Structure).
+
+  @param[in] SmbiosTable    Pointer to the SMBIOS table entry point.
+  @param[in] Option         Display option.
+**/
+VOID
+Smbios64BitPrintEPSInfo (
+  IN  SMBIOS_TABLE_3_0_ENTRY_POINT  *SmbiosTable,
+  IN  UINT8                         Option
+  )
+{
+  UINT8 Anchor[5];
+
+  if (SmbiosTable == NULL) {
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_SMBIOSTABLE_NULL), gShellDebug1HiiHandle);
+    return ;
+  }
+
+  if (Option == SHOW_NONE) {
+    return ;
+  }
+
+  if (Option >= SHOW_NORMAL) {
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_64_BIT_ENTRY_POINT_SIGN), gShellDebug1HiiHandle);
+
+    MemToString (Anchor, SmbiosTable->AnchorString, 5);
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_ANCHOR_STR), gShellDebug1HiiHandle, Anchor);
+
+    ShellPrintHiiEx(-1,-1,NULL,
+      STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_EPS_CHECKSUM),
+      gShellDebug1HiiHandle,
+      SmbiosTable->EntryPointStructureChecksum
+     );
+
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_ENTRY_POINT_LEN), gShellDebug1HiiHandle, SmbiosTable->EntryPointLength);
+
+    ShellPrintHiiEx(-1,-1,NULL,
+      STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_VERSION),
+      gShellDebug1HiiHandle,
+      SmbiosTable->MajorVersion,
+      SmbiosTable->MinorVersion
+     );
+
+    ShellPrintHiiEx(-1,-1,NULL,
+      STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DOCREV),
+      gShellDebug1HiiHandle,
+      SmbiosTable->DocRev
+     );
+
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_TABLE_MAX_SIZE), gShellDebug1HiiHandle, SmbiosTable->TableMaximumSize);
+
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_TABLE_ADDR), gShellDebug1HiiHandle, SmbiosTable->TableAddress);
+
+  }
+  //
+  // If SHOW_ALL, also print followings.
+  //
+  if (Option >= SHOW_DETAIL) {
+    ShellPrintHiiEx(-1,-1,NULL,
+      STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_ENTRY_POINT_REVISION),
+      gShellDebug1HiiHandle,
+      SmbiosTable->EntryPointRevision
+     );
+  }
+
+  Print (L"\n");
+}
+
+/**
   This function print the content of the structure pointed by Struct.
 
   @param[in] Struct       Point to the structure to be printed.
@@ -246,7 +310,7 @@ SmbiosPrintStructure (
   case 0:
     PRINT_PENDING_STRING (Struct, Type0, Vendor);
     PRINT_PENDING_STRING (Struct, Type0, BiosVersion);
-    PRINT_STRUCT_VALUE (Struct, Type0, BiosSegment);
+    PRINT_STRUCT_VALUE_H (Struct, Type0, BiosSegment);
     PRINT_PENDING_STRING (Struct, Type0, BiosReleaseDate);
     ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_BIOS_SIZE), gShellDebug1HiiHandle, 64 * (Struct->Type0->BiosSize + 1));
 
@@ -265,7 +329,17 @@ SmbiosPrintStructure (
       PRINT_STRUCT_VALUE (Struct, Type0, EmbeddedControllerFirmwareMajorRelease);
       PRINT_STRUCT_VALUE (Struct, Type0, EmbeddedControllerFirmwareMinorRelease);
     }
-
+    if (AE_SMBIOS_VERSION (0x3, 0x1) && (Struct->Hdr->Length > 0x18)) {
+      ShellPrintHiiEx (
+        -1,
+        -1,
+        NULL,
+        STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_EXTENDED_BIOS_SIZE),
+        gShellDebug1HiiHandle,
+        Struct->Type0->ExtendedBiosSize.Size,
+        (Struct->Type0->ExtendedBiosSize.Unit == 0x0) ? L"MB": L"GB"
+        );
+    }
     break;
 
   //
@@ -320,8 +394,21 @@ SmbiosPrintStructure (
     DisplaySystemEnclosureStatus (Struct->Type3->ThermalState, Option);
     ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_SECURITY_STATUS), gShellDebug1HiiHandle);
     DisplaySESecurityStatus (Struct->Type3->SecurityStatus, Option);
-    if (AE_SMBIOS_VERSION (0x2, 0x3) && (Struct->Hdr->Length > 0xD)) {
-      PRINT_BIT_FIELD (Struct, Type3, OemDefined, 4);
+    if (AE_SMBIOS_VERSION (0x2, 0x3)) {
+      if (Struct->Hdr->Length > 0xD) {
+        PRINT_BIT_FIELD (Struct, Type3, OemDefined, 4);
+      }
+      if (Struct->Hdr->Length > 0x11) {
+        PRINT_STRUCT_VALUE (Struct, Type3, Height);
+      }
+      if (Struct->Hdr->Length > 0x12) {
+        PRINT_STRUCT_VALUE (Struct, Type3, NumberofPowerCords);
+      }
+    }
+    if (AE_SMBIOS_VERSION (0x2, 0x7) && (Struct->Hdr->Length > 0x13)) {
+      if (Struct->Hdr->Length > (0x15 + (Struct->Type3->ContainedElementCount * Struct->Type3->ContainedElementRecordLength))) {
+        PRINT_SMBIOS_STRING (Struct, Buffer[0x15 + (Struct->Type3->ContainedElementCount * Struct->Type3->ContainedElementRecordLength)], SKUNumber);
+      }
     }
     break;
 
@@ -329,7 +416,7 @@ SmbiosPrintStructure (
   // Processor Information (Type 4)
   //
   case 4:
-    PRINT_PENDING_STRING (Struct, Type4, Socket);
+    PRINT_SMBIOS_STRING (Struct, Struct->Type4->Socket, SocketDesignation)
     DisplayProcessorType (Struct->Type4->ProcessorType, Option);
     if (AE_SMBIOS_VERSION (0x2, 0x6) && (Struct->Hdr->Length > 0x28) &&
         (Struct->Type4->ProcessorFamily == 0xFE)) {
@@ -427,6 +514,10 @@ SmbiosPrintStructure (
     DisplayCacheErrCorrectingType (Struct->Type7->ErrorCorrectionType, Option);
     DisplayCacheSystemCacheType (Struct->Type7->SystemCacheType, Option);
     DisplayCacheAssociativity (Struct->Type7->Associativity, Option);
+    if (AE_SMBIOS_VERSION (0x3, 0x1) && (Struct->Hdr->Length > 0x13)) {
+      PRINT_STRUCT_VALUE_H (Struct, Type7, MaximumCacheSize2);
+      PRINT_STRUCT_VALUE_H (Struct, Type7, InstalledSize2);
+    }
     break;
 
   //
@@ -446,22 +537,45 @@ SmbiosPrintStructure (
   // System Slots (Type 9)
   //
   case 9:
-    PRINT_PENDING_STRING (Struct, Type9, SlotDesignation);
-    DisplaySystemSlotType (Struct->Type9->SlotType, Option);
-    DisplaySystemSlotDataBusWidth (Struct->Type9->SlotDataBusWidth, Option);
-    DisplaySystemSlotCurrentUsage (Struct->Type9->CurrentUsage, Option);
-    DisplaySystemSlotLength (Struct->Type9->SlotLength, Option);
-    DisplaySystemSlotId (
-      Struct->Type9->SlotID,
-      Struct->Type9->SlotType,
-      Option
-     );
-    DisplaySlotCharacteristics1 (*(UINT8 *) &(Struct->Type9->SlotCharacteristics1), Option);
-    DisplaySlotCharacteristics2 (*(UINT8 *) &(Struct->Type9->SlotCharacteristics2), Option);
-    if (AE_SMBIOS_VERSION (0x2, 0x6) && (Struct->Hdr->Length > 0xD)) {
-      PRINT_STRUCT_VALUE_H (Struct, Type9, SegmentGroupNum);
-      PRINT_STRUCT_VALUE_H (Struct, Type9, BusNum);
-      PRINT_STRUCT_VALUE_H (Struct, Type9, DevFuncNum);
+    {
+      MISC_SLOT_PEER_GROUP  *PeerGroupPtr;
+      UINT8                 PeerGroupCount;
+
+      PRINT_PENDING_STRING (Struct, Type9, SlotDesignation);
+      DisplaySystemSlotType (Struct->Type9->SlotType, Option);
+      DisplaySystemSlotDataBusWidth (Struct->Type9->SlotDataBusWidth, Option);
+      DisplaySystemSlotCurrentUsage (Struct->Type9->CurrentUsage, Option);
+      DisplaySystemSlotLength (Struct->Type9->SlotLength, Option);
+      DisplaySystemSlotId (
+        Struct->Type9->SlotID,
+        Struct->Type9->SlotType,
+        Option
+       );
+      DisplaySlotCharacteristics1 (*(UINT8 *) &(Struct->Type9->SlotCharacteristics1), Option);
+      DisplaySlotCharacteristics2 (*(UINT8 *) &(Struct->Type9->SlotCharacteristics2), Option);
+      if (AE_SMBIOS_VERSION (0x2, 0x6) && (Struct->Hdr->Length > 0xD)) {
+        PRINT_STRUCT_VALUE_H (Struct, Type9, SegmentGroupNum);
+        PRINT_STRUCT_VALUE_H (Struct, Type9, BusNum);
+        PRINT_STRUCT_VALUE_H (Struct, Type9, DevFuncNum);
+      }
+      if (AE_SMBIOS_VERSION (0x3, 0x2)) {
+        if (Struct->Hdr->Length > 0x11) {
+          PRINT_STRUCT_VALUE (Struct, Type9, DataBusWidth);
+        }
+        if (Struct->Hdr->Length > 0x12) {
+          PRINT_STRUCT_VALUE (Struct, Type9, PeerGroupingCount);
+
+          PeerGroupCount = Struct->Type9->PeerGroupingCount;
+          PeerGroupPtr   = Struct->Type9->PeerGroups;
+          for (Index = 0; Index < PeerGroupCount; Index++) {
+            ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_SLOT_PEER_GROUPS), gShellDebug1HiiHandle, Index + 1);
+            ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_SEGMENT_GROUP_NUM), gShellDebug1HiiHandle, PeerGroupPtr[Index].SegmentGroupNum);
+            ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_BUS_NUM), gShellDebug1HiiHandle, PeerGroupPtr[Index].BusNum);
+            ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DEV_FUNC_NUM), gShellDebug1HiiHandle, PeerGroupPtr[Index].DevFuncNum);
+            ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DATA_BUS_WIDTH), gShellDebug1HiiHandle, PeerGroupPtr[Index].DataBusWidth);
+          }
+        }
+      }
     }
     break;
 
@@ -473,7 +587,8 @@ SmbiosPrintStructure (
       UINTN NumOfDevice;
       NumOfDevice = (Struct->Type10->Hdr.Length - sizeof (SMBIOS_STRUCTURE)) / (2 * sizeof (UINT8));
       for (Index = 0; Index < NumOfDevice; Index++) {
-        DisplayOnboardDeviceTypes (Struct->Type10->Device[Index].DeviceType, Option);
+        ShellPrintEx(-1,-1,(((Struct->Type10->Device[Index].DeviceType) & 0x80) != 0) ? L"Device Enabled\n": L"Device Disabled\n");
+        DisplayOnboardDeviceTypes ((Struct->Type10->Device[Index].DeviceType) & 0x7F, Option);
         ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_DESC_STRING), gShellDebug1HiiHandle);
         ShellPrintEx(-1,-1,L"%a\n",LibGetSmbiosString (Struct, Struct->Type10->Device[Index].DescriptionString));
       }
@@ -651,6 +766,34 @@ SmbiosPrintStructure (
     if (AE_SMBIOS_VERSION (0x2, 0x7) && (Struct->Hdr->Length > 0x1C)) {
       PRINT_STRUCT_VALUE (Struct, Type17, ExtendedSize);
       PRINT_STRUCT_VALUE (Struct, Type17, ConfiguredMemoryClockSpeed);
+    }
+    if (AE_SMBIOS_VERSION (0x2, 0x8) && (Struct->Hdr->Length > 0x22)) {
+      PRINT_STRUCT_VALUE (Struct, Type17, MinimumVoltage);
+      PRINT_STRUCT_VALUE (Struct, Type17, MaximumVoltage);
+      PRINT_STRUCT_VALUE (Struct, Type17, ConfiguredVoltage);
+    }
+    if (AE_SMBIOS_VERSION (0x3, 0x2)) {
+      if (Struct->Hdr->Length > 0x28) {
+        DisplayMemoryDeviceMemoryTechnology (Struct->Type17->MemoryTechnology, Option);
+        DisplayMemoryDeviceMemoryOperatingModeCapability (Struct->Type17->MemoryOperatingModeCapability.Uint16, Option);
+        PRINT_PENDING_STRING (Struct, Type17, FirwareVersion);
+        PRINT_STRUCT_VALUE_H (Struct, Type17, ModuleManufacturerID);
+        PRINT_STRUCT_VALUE_H (Struct, Type17, ModuleProductID);
+        PRINT_STRUCT_VALUE_H (Struct, Type17, MemorySubsystemControllerManufacturerID);
+        PRINT_STRUCT_VALUE_H (Struct, Type17, MemorySubsystemControllerProductID);
+      }
+      if (Struct->Hdr->Length > 0x34) {
+        PRINT_STRUCT_VALUE_H (Struct, Type17, NonVolatileSize);
+      }
+      if (Struct->Hdr->Length > 0x3C) {
+        PRINT_STRUCT_VALUE_H (Struct, Type17, VolatileSize);
+      }
+      if (Struct->Hdr->Length > 0x44) {
+        PRINT_STRUCT_VALUE_H (Struct, Type17, CacheSize);
+      }
+      if (Struct->Hdr->Length > 0x4C) {
+        PRINT_STRUCT_VALUE_H (Struct, Type17, LogicalSize);
+      }
     }
     break;
 
@@ -1004,7 +1147,25 @@ SmbiosPrintStructure (
   // Management Controller Host Interface (Type 42)
   //
   case 42:
-    PRINT_STRUCT_VALUE_H (Struct, Type42, InterfaceType);
+    DisplayMCHostInterfaceType (Struct->Type42->InterfaceType, Option);
+    if (AE_SMBIOS_VERSION (0x3, 0x2)) {
+      PRINT_STRUCT_VALUE_H (Struct, Type42, InterfaceTypeSpecificDataLength);
+      PRINT_BIT_FIELD (Struct, Type42, InterfaceTypeSpecificData, Struct->Type42->InterfaceTypeSpecificDataLength);
+    }
+    break;
+
+  //
+  // TPM Device (Type 43)
+  //
+  case 43:
+    PRINT_BIT_FIELD (Struct, Type43, VendorID, 4);
+    PRINT_STRUCT_VALUE_H (Struct, Type43, MajorSpecVersion);
+    PRINT_STRUCT_VALUE_H (Struct, Type43, MinorSpecVersion);
+    PRINT_STRUCT_VALUE_H (Struct, Type43, FirmwareVersion1);
+    PRINT_STRUCT_VALUE_H (Struct, Type43, FirmwareVersion2);
+    PRINT_PENDING_STRING (Struct, Type43, Description);
+    DisplayTpmDeviceCharacteristics (ReadUnaligned64 ((UINT64 *) (UINTN) &(Struct->Type43->Characteristics)), Option);
+    PRINT_STRUCT_VALUE_H (Struct, Type43, OemDefined);
     break;
 
   //
@@ -1478,6 +1639,22 @@ DisplayProcessorFamily (
     ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INTEL_ATOM), gShellDebug1HiiHandle);
     break;
 
+  case 0x2C:
+    Print (L"Intel(R) Core(TM) M processor\n");
+    break;
+
+  case 0x2D:
+    Print (L"Intel(R) Core(TM) m3 processor\n");
+    break;
+
+  case 0x2E:
+    Print (L"Intel(R) Core(TM) m5 processor\n");
+    break;
+
+  case 0x2F:
+    Print (L"Intel(R) Core(TM) m7 processor\n");
+    break;
+
   case 0x30:
     ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_ALPHA_FAMILY_2), gShellDebug1HiiHandle);
     break;
@@ -1664,6 +1841,30 @@ DisplayProcessorFamily (
 
   case 0x65:
     Print (L"68030\n");
+    break;
+
+  case 0x66:
+    Print (L"AMD Athlon(TM) X4 Quad-Core Processor Family\n");
+    break;
+
+  case 0x67:
+    Print (L"AMD Opteron(TM) X1000 Series Processor\n");
+    break;
+
+  case 0x68:
+    Print (L"AMD Opteron(TM) X2000 Series APU\n");
+    break;
+
+  case 0x69:
+    Print (L"AMD Opteron(TM) A-Series Processor\n");
+    break;
+
+  case 0x6A:
+    Print (L"AMD Opteron(TM) X3000 Series APU\n");
+    break;
+
+  case 0x6B:
+    Print (L"AMD Zen Processor Family\n");
     break;
 
   case 0x70:
@@ -1954,6 +2155,10 @@ DisplayProcessorFamily (
     Print (L"Intel Core i3 processor\n");
     break;
 
+  case 0xCF:
+    Print (L"Intel Core i9 processor\n");
+    break;
+
   case 0xD2:
     Print (L"ViaC7M\n");
     break;
@@ -2097,6 +2302,14 @@ DisplayProcessorFamily2 (
   // Use switch to check
   //
   switch (Family2) {
+    case 0x100:
+      Print (L"ARMv7\n");
+      break;
+
+    case 0x101:
+      Print (L"ARMv8\n");
+      break;
+
     case 0x104:
       Print (L"SH-3\n");
       break;
@@ -3025,7 +3238,7 @@ DisplaySPSCharacteristics (
   // Bits 13:10 - DMTF Power Supply Type
   //
   ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_TYPE), gShellDebug1HiiHandle);
-  Temp = (Characteristics & 0x1C00) << 10;
+  Temp = (Characteristics & 0x1C00) >> 10;
   switch (Temp) {
   case 1:
     ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_OTHER_SPACE), gShellDebug1HiiHandle);
@@ -3066,7 +3279,7 @@ DisplaySPSCharacteristics (
   // Bits 9:7 - Status
   //
   ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_STATUS_DASH), gShellDebug1HiiHandle);
-  Temp = (Characteristics & 0x380) << 7;
+  Temp = (Characteristics & 0x380) >> 7;
   switch (Temp) {
   case 1:
     ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_OTHER_SPACE), gShellDebug1HiiHandle);
@@ -3095,7 +3308,7 @@ DisplaySPSCharacteristics (
   // Bits 6:3 - DMTF Input Voltage Range Switching
   //
   ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_INPUT_VOLTAGE_RANGE), gShellDebug1HiiHandle);
-  Temp = (Characteristics & 0x78) << 3;
+  Temp = (Characteristics & 0x78) >> 3;
   switch (Temp) {
   case 1:
     ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_OTHER_SPACE), gShellDebug1HiiHandle);
@@ -3149,4 +3362,60 @@ DisplaySPSCharacteristics (
   } else {
     ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_POWER_SUPPLY_NOT_REPLACE), gShellDebug1HiiHandle);
   }
+}
+
+/**
+  Display TPM Device (Type 43) Characteristics.
+
+  @param[in] Chara    The information bits.
+  @param[in] Option   The optional information.
+**/
+VOID
+DisplayTpmDeviceCharacteristics (
+  IN UINT64  Chara,
+  IN UINT8   Option
+  )
+{
+  //
+  // Print header
+  //
+  ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_TPM_DEVICE_CHAR), gShellDebug1HiiHandle);
+  //
+  // print option
+  //
+  PRINT_INFO_OPTION (Chara, Option);
+
+  //
+  // Check all the bits and print information
+  // This function does not use Table because table of bits
+  //   are designed not to deal with UINT64
+  //
+  if (BIT (Chara, 0) != 0) {
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_RESERVED_BIT), gShellDebug1HiiHandle);
+  }
+
+  if (BIT (Chara, 1) != 0) {
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_RESERVED_BIT), gShellDebug1HiiHandle);
+  }
+  if (BIT (Chara, 2) != 0) {
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_TPM_DEVICE_CHAR_NOT_SUPPORTED), gShellDebug1HiiHandle);
+  }
+
+  if (BIT (Chara, 3) != 0) {
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_TPM_DEVICE_CONFIG_FWU), gShellDebug1HiiHandle);
+  }
+
+  if (BIT (Chara, 4) != 0) {
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_TPM_DEVICE_CONFIG_PLAT_SW), gShellDebug1HiiHandle);
+  }
+
+  if (BIT (Chara, 5) != 0) {
+    ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_TPM_DEVICE_CONFIG_OEM), gShellDebug1HiiHandle);
+  }
+
+  //
+  // Just print the Reserved
+  //
+  ShellPrintHiiEx(-1,-1,NULL,STRING_TOKEN (STR_SMBIOSVIEW_PRINTINFO_BITS_06_63), gShellDebug1HiiHandle);
+
 }

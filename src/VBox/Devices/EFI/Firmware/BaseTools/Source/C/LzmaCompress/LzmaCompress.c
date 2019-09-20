@@ -1,18 +1,12 @@
 /** @file
   LZMA Compress/Decompress tool (LzmaCompress)
 
-  Based on LZMA SDK 4.65:
+  Based on LZMA SDK 18.05:
     LzmaUtil.c -- Test application for LZMA compression
-    2008-11-23 : Igor Pavlov : Public domain
+    2018-04-30 : Igor Pavlov : Public domain
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -43,10 +37,6 @@ const char *kCantWriteMessage = "Can not write output file";
 const char *kCantAllocateMessage = "Can not allocate memory";
 const char *kDataErrorMessage = "Data error";
 
-static void *SzAlloc(void *p, size_t size) { (void)p; return MyAlloc(size); }
-static void SzFree(void *p, void *address) { (void)p; MyFree(address); }
-static ISzAlloc g_Alloc = { SzAlloc, SzFree };
-
 static Bool mQuietMode = False;
 static CONVERTER_TYPE mConType = NoConverter;
 
@@ -54,7 +44,7 @@ static CONVERTER_TYPE mConType = NoConverter;
 #define UTILITY_MAJOR_VERSION 0
 #define UTILITY_MINOR_VERSION 2
 #define INTEL_COPYRIGHT \
-  "Copyright (c) 2009-2012, Intel Corporation. All rights reserved."
+  "Copyright (c) 2009-2018, Intel Corporation. All rights reserved."
 void PrintHelp(char *buffer)
 {
   strcat(buffer,
@@ -336,8 +326,10 @@ int main2(int numArgs, const char *args[], char *rs)
   if (InFile_Open(&inStream.file, inputFile) != 0)
     return PrintError(rs, "Can not open input file");
 
-  if (OutFile_Open(&outStream.file, outputFile) != 0)
+  if (OutFile_Open(&outStream.file, outputFile) != 0) {
+    File_Close(&inStream.file);
     return PrintError(rs, "Can not open output file");
+  }
 
   File_GetLength(&inStream.file, &fileSize);
 
@@ -346,14 +338,14 @@ int main2(int numArgs, const char *args[], char *rs)
     if (!mQuietMode) {
       printf("Encoding\n");
     }
-    res = Encode(&outStream.s, &inStream.s, fileSize);
+    res = Encode(&outStream.vt, &inStream.vt, fileSize);
   }
   else
   {
     if (!mQuietMode) {
       printf("Decoding\n");
     }
-    res = Decode(&outStream.s, &inStream.s, fileSize);
+    res = Decode(&outStream.vt, &inStream.vt, fileSize);
   }
 
   File_Close(&outStream.file);

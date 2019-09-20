@@ -5,18 +5,13 @@ and Pointers to repeated strings.
 This sequence is further divided into Blocks and Huffman codings are applied to
 each Block.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "Compress.h"
+#include "Decompress.h"
 #include "TianoCompress.h"
 #include "EfiUtilityMsgs.h"
 #include "ParseInf.h"
@@ -65,6 +60,7 @@ static BOOLEAN QuietMode = FALSE;
 //
 STATIC BOOLEAN ENCODE = FALSE;
 STATIC BOOLEAN DECODE = FALSE;
+STATIC BOOLEAN UEFIMODE = FALSE;
 STATIC UINT8  *mSrc, *mDst, *mSrcUpperLimit, *mDstUpperLimit;
 STATIC UINT8  *mLevel, *mText, *mChildCount, *mBuf, mCLen[NC], mPTLen[NPT], *mLen;
 STATIC INT16  mHeap[NC + 1];
@@ -227,7 +223,7 @@ Routine Description:
 
   Allocate memory spaces for data structures used in compression process
 
-Argements:
+Arguments:
   VOID
 
 Returns:
@@ -240,6 +236,10 @@ Returns:
   UINT32  Index;
 
   mText = malloc (WNDSIZ * 2 + MAXMATCH);
+  if (mText == NULL) {
+    Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+    return EFI_OUT_OF_RESOURCES;
+  }
   for (Index = 0; Index < WNDSIZ * 2 + MAXMATCH; Index++) {
     mText[Index] = 0;
   }
@@ -250,6 +250,11 @@ Returns:
   mParent     = malloc (WNDSIZ * 2 * sizeof (*mParent));
   mPrev       = malloc (WNDSIZ * 2 * sizeof (*mPrev));
   mNext       = malloc ((MAX_HASH_VAL + 1) * sizeof (*mNext));
+  if (mLevel == NULL || mChildCount == NULL || mPosition == NULL ||
+    mParent == NULL || mPrev == NULL || mNext == NULL) {
+    Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!");
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   mBufSiz     = BLKSIZ;
   mBuf        = malloc (mBufSiz);
@@ -496,7 +501,7 @@ Returns: (VOID)
   if (mMatchLen >= 4) {
     //
     // We have just got a long match, the target tree
-    // can be located by MatchPos + 1. Travese the tree
+    // can be located by MatchPos + 1. Traverse the tree
     // from bottom up to get to a proper starting point.
     // The usage of PERC_FLAG ensures proper node deletion
     // in DeleteNode() later.
@@ -1688,14 +1693,16 @@ Returns:
   //
   // Copyright declaration
   //
-  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
   //
   fprintf (stdout, "Options:\n");
+  fprintf (stdout, "  --uefi\n\
+            Enable UefiCompress, use TianoCompress when without this option\n");
   fprintf (stdout, "  -o FileName, --output FileName\n\
-            File will be created to store the ouput content.\n");
+            File will be created to store the output content.\n");
   fprintf (stdout, "  -v, --verbose\n\
            Turn on verbose output with informational messages.\n");
   fprintf (stdout, "  -q, --quiet\n\
@@ -1744,6 +1751,7 @@ Returns:
   SCRATCH_DATA      *Scratch;
   UINT8      *Src;
   UINT32     OrigSize;
+  UINT32     CompSize;
 
   SetUtilityName(UTILITY_NAME);
 
@@ -1752,9 +1760,12 @@ Returns:
   OutBuffer = NULL;
   Scratch   = NULL;
   OrigSize = 0;
+  CompSize = 0;
   InputLength = 0;
   InputFileName = NULL;
   OutputFileName = NULL;
+  InputFile = NULL;
+  OutputFile = NULL;
   DstSize=0;
   DebugLevel = 0;
   DebugMode = FALSE;
@@ -1806,6 +1817,13 @@ Returns:
   while (argc > 0) {
     if ((strcmp(argv[0], "-v") == 0) || (stricmp(argv[0], "--verbose") == 0)) {
       VerboseMode = TRUE;
+      argc--;
+      argv++;
+      continue;
+    }
+
+    if (stricmp(argv[0], "--uefi") == 0) {
+      UEFIMODE = TRUE;
       argc--;
       argv++;
       continue;
@@ -1897,7 +1915,7 @@ Returns:
     FileBuffer = (UINT8 *) malloc (InputLength);
     if (FileBuffer == NULL) {
       Error (NULL, 0, 4001, "Resource:", "Memory cannot be allocated!");
-      return 1;
+      goto ERROR;
     }
 
     Status = GetFileContents (
@@ -1908,23 +1926,18 @@ Returns:
   }
 
   if (EFI_ERROR(Status)) {
-    free(FileBuffer);
-    return 1;
+    Error (NULL, 0, 0004, "Error getting contents of file: %s", InputFileName);
+    goto ERROR;
   }
 
-  if (OutputFileName != NULL) {
-    OutputFile = fopen (LongFilePath (OutputFileName), "wb");
-    if (OutputFile == NULL) {
-      Error (NULL, 0, 0001, "Error opening output file for writing", OutputFileName);
-    if (InputFile != NULL) {
-      fclose (InputFile);
-      }
-      goto ERROR;
-      }
-    } else {
-      OutputFileName = DEFAULT_OUTPUT_FILE;
-      OutputFile = fopen (LongFilePath (OutputFileName), "wb");
-    }
+  if (OutputFileName == NULL) {
+    OutputFileName = DEFAULT_OUTPUT_FILE;
+  }
+  OutputFile = fopen (LongFilePath (OutputFileName), "wb");
+  if (OutputFile == NULL) {
+    Error (NULL, 0, 0001, "Error opening output file for writing", OutputFileName);
+    goto ERROR;
+  }
 
   if (ENCODE) {
   //
@@ -1933,7 +1946,11 @@ Returns:
   if (DebugMode) {
     DebugMsg(UTILITY_NAME, 0, DebugLevel, "Encoding", NULL);
   }
-  Status = TianoCompress ((UINT8 *)FileBuffer, InputLength, OutBuffer, &DstSize);
+  if (UEFIMODE) {
+    Status = EfiCompress ((UINT8 *)FileBuffer, InputLength, OutBuffer, &DstSize);
+  } else {
+    Status = TianoCompress ((UINT8 *)FileBuffer, InputLength, OutBuffer, &DstSize);
+  }
 
   if (Status == EFI_BUFFER_TOO_SMALL) {
     OutBuffer = (UINT8 *) malloc (DstSize);
@@ -1942,13 +1959,25 @@ Returns:
       goto ERROR;
     }
   }
-  Status = TianoCompress ((UINT8 *)FileBuffer, InputLength, OutBuffer, &DstSize);
+
+  if (UEFIMODE) {
+    Status = EfiCompress ((UINT8 *)FileBuffer, InputLength, OutBuffer, &DstSize);
+  } else {
+    Status = TianoCompress ((UINT8 *)FileBuffer, InputLength, OutBuffer, &DstSize);
+  }
   if (Status != EFI_SUCCESS) {
     Error (NULL, 0, 0007, "Error compressing file", NULL);
     goto ERROR;
   }
 
+  if (OutBuffer == NULL) {
+    Error (NULL, 0, 4001, "Resource:", "Memory cannot be allocated!");
+    goto ERROR;
+  }
+
   fwrite(OutBuffer,(size_t)DstSize, 1, OutputFile);
+  fclose(OutputFile);
+  fclose(InputFile);
   free(Scratch);
   free(FileBuffer);
   free(OutBuffer);
@@ -1965,30 +1994,55 @@ Returns:
   if (DebugMode) {
     DebugMsg(UTILITY_NAME, 0, DebugLevel, "Decoding\n", NULL);
   }
-  //
-  // Get Compressed file original size
-  //
-  Src     = (UINT8 *)FileBuffer;
-  OrigSize  = Src[4] + (Src[5] << 8) + (Src[6] << 16) + (Src[7] << 24);
 
-  //
-  // Allocate OutputBuffer
-  //
-  OutBuffer = (UINT8 *)malloc(OrigSize);
-  if (OutBuffer == NULL) {
-    Error (NULL, 0, 4001, "Resource:", "Memory cannot be allocated!");
-    goto ERROR;
-   }
+  if (UEFIMODE) {
+    Status = Extract((VOID *)FileBuffer, InputLength, (VOID *)&OutBuffer, &DstSize, 1);
+    if (Status != EFI_SUCCESS) {
+      goto ERROR;
+    }
+    fwrite(OutBuffer, (size_t)(DstSize), 1, OutputFile);
+  } else {
+    if (InputLength < 8){
+      Error (NULL, 0, 3000, "Invalid", "The input file %s is too small.", InputFileName);
+      goto ERROR;
+    }
+    //
+    // Get Compressed file original size
+    //
+    Src     = (UINT8 *)FileBuffer;
+    OrigSize  = Src[4] + (Src[5] << 8) + (Src[6] << 16) + (Src[7] << 24);
+    CompSize  = Src[0] + (Src[1] << 8) + (Src[2] <<16) + (Src[3] <<24);
 
-  Status = Decompress((VOID *)FileBuffer, (VOID *)OutBuffer, (VOID *)Scratch, 2);
-  if (Status != EFI_SUCCESS) {
-   goto ERROR;
+    //
+    // Allocate OutputBuffer
+    //
+    if (InputLength < CompSize + 8 || (CompSize + 8) < 8) {
+      Error (NULL, 0, 3000, "Invalid", "The input file %s data is invalid.", InputFileName);
+      goto ERROR;
+    }
+    OutBuffer = (UINT8 *)malloc(OrigSize);
+    if (OutBuffer == NULL) {
+      Error (NULL, 0, 4001, "Resource:", "Memory cannot be allocated!");
+      goto ERROR;
+     }
+
+    Status = TDecompress((VOID *)FileBuffer, (VOID *)OutBuffer, (VOID *)Scratch, 2);
+    if (Status != EFI_SUCCESS) {
+      goto ERROR;
+    }
+    fwrite(OutBuffer, (size_t)(Scratch->mOrigSize), 1, OutputFile);
   }
-
-  fwrite(OutBuffer, (size_t)(Scratch->mOrigSize), 1, OutputFile);
-  free(Scratch);
-  free(FileBuffer);
-  free(OutBuffer);
+  fclose(OutputFile);
+  fclose(InputFile);
+  if (Scratch != NULL) {
+    free(Scratch);
+  }
+  if (FileBuffer != NULL) {
+    free(FileBuffer);
+  }
+  if (OutBuffer != NULL) {
+    free(OutBuffer);
+  }
 
   if (DebugMode) {
     DebugMsg(UTILITY_NAME, 0, DebugLevel, "Encoding successful!\n", NULL);
@@ -2007,6 +2061,12 @@ ERROR:
     } else if (DECODE) {
       DebugMsg(UTILITY_NAME, 0, DebugLevel, "Decoding Error\n", NULL);
     }
+  }
+  if (OutputFile != NULL) {
+    fclose(OutputFile);
+  }
+  if (InputFile != NULL) {
+    fclose (InputFile);
   }
   if (Scratch != NULL) {
     free(Scratch);
@@ -2044,11 +2104,11 @@ Returns: (VOID)
 
 --*/
 {
-  Sd->mBitBuf = (UINT32) (Sd->mBitBuf << NumOfBits);
+  Sd->mBitBuf = (UINT32) (((UINT64)Sd->mBitBuf) << NumOfBits);
 
   while (NumOfBits > Sd->mBitCount) {
 
-    Sd->mBitBuf |= (UINT32) (Sd->mSubBitBuf << (NumOfBits = (UINT16) (NumOfBits - Sd->mBitCount)));
+    Sd->mBitBuf |= (UINT32) (((UINT64)Sd->mSubBitBuf) << (NumOfBits = (UINT16) (NumOfBits - Sd->mBitCount)));
 
     if (Sd->mCompSize > 0) {
       //
@@ -2140,7 +2200,7 @@ Returns:
   UINT16  Start[18];
   UINT16  *Pointer;
   UINT16  Index3;
-  volatile UINT16  Index;
+  UINT16  Index;
   UINT16  Len;
   UINT16  Char;
   UINT16  JuBits;
@@ -2149,15 +2209,20 @@ Returns:
   UINT16  Mask;
   UINT16  WordOfStart;
   UINT16  WordOfCount;
+  UINT16  MaxTableLength;
 
-  for (Index = 1; Index <= 16; Index++) {
+  for (Index = 0; Index <= 16; Index++) {
     Count[Index] = 0;
   }
 
   for (Index = 0; Index < NumOfChar; Index++) {
+    if (BitLen[Index] > 16) {
+      return (UINT16) BAD_TABLE;
+    }
     Count[BitLen[Index]]++;
   }
 
+  Start[0] = 0;
   Start[1] = 0;
 
   for (Index = 1; Index <= 16; Index++) {
@@ -2175,6 +2240,7 @@ Returns:
 
   JuBits = (UINT16) (16 - TableBits);
 
+  Weight[0] = 0;
   for (Index = 1; Index <= TableBits; Index++) {
     Start[Index] >>= JuBits;
     Weight[Index] = (UINT16) (1U << (TableBits - Index));
@@ -2196,17 +2262,22 @@ Returns:
 
   Avail = NumOfChar;
   Mask  = (UINT16) (1U << (15 - TableBits));
+  MaxTableLength = (UINT16) (1U << TableBits);
 
   for (Char = 0; Char < NumOfChar; Char++) {
 
     Len = BitLen[Char];
-    if (Len == 0) {
+    if (Len == 0 || Len >= 17) {
       continue;
     }
 
     NextCode = (UINT16) (Start[Len] + Weight[Len]);
 
     if (Len <= TableBits) {
+
+      if (Start[Len] >= NextCode || NextCode > MaxTableLength){
+        return (UINT16) BAD_TABLE;
+      }
 
       for (Index = Start[Len]; Index < NextCode; Index++) {
         Table[Index] = Char;
@@ -2330,6 +2401,8 @@ Returns:
   UINT16  CharC;
   volatile UINT16  Index;
   UINT32  Mask;
+
+  assert (nn <= NPT);
 
   Number = (UINT16) GetBits (Sd, nbit);
 
@@ -2591,13 +2664,24 @@ Returns: (VOID)
       DataIdx     = Sd->mOutBuf - DecodeP (Sd) - 1;
 
       BytesRemain--;
+
       while ((INT16) (BytesRemain) >= 0) {
-        Sd->mDstBase[Sd->mOutBuf++] = Sd->mDstBase[DataIdx++];
         if (Sd->mOutBuf >= Sd->mOrigSize) {
           goto Done ;
         }
+        if (DataIdx >= Sd->mOrigSize) {
+          Sd->mBadTableFlag = (UINT16) BAD_TABLE;
+          goto Done ;
+        }
+        Sd->mDstBase[Sd->mOutBuf++] = Sd->mDstBase[DataIdx++];
 
         BytesRemain--;
+      }
+      //
+      // Once mOutBuf is fully filled, directly return
+      //
+      if (Sd->mOutBuf >= Sd->mOrigSize) {
+        goto Done ;
       }
     }
   }
@@ -2608,7 +2692,7 @@ Done:
 
 RETURN_STATUS
 EFIAPI
-Decompress (
+TDecompress (
   IN VOID  *Source,
   IN OUT VOID    *Destination,
   IN OUT VOID    *Scratch,
@@ -2625,11 +2709,11 @@ Arguments:
   Source          - The source buffer containing the compressed data.
   Destination     - The destination buffer to store the decompressed data
   Scratch         - The buffer used internally by the decompress routine. This  buffer is needed to store intermediate data.
-  Version         - 1 for EFI1.1 Decompress algoruthm, 2 for Tiano Decompress algorithm
+  Version         - 1 for EFI1.1 Decompress algorithm, 2 for Tiano Decompress algorithm
 
 Returns:
 
-  RETURN_SUCCESS           - Decompression is successfull
+  RETURN_SUCCESS           - Decompression is successful
   RETURN_INVALID_PARAMETER - The source data is corrupted
 
 --*/

@@ -1,14 +1,8 @@
 /** @file
   Provides interface to advanced shell functionality for parsing both handle and protocol database.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -306,7 +300,7 @@ ParseHandleDatabaseForChildDevices(
   Gets handles for any child controllers of the passed in controller.
 
   @param[in] ControllerHandle       The handle of the "parent controller".
-  @param[in] MatchingHandleCount    The pointer to the number of handles in
+  @param[out] MatchingHandleCount   The pointer to the number of handles in
                                     MatchingHandleBuffer on return.
   @param[out] MatchingHandleBuffer  The buffer containing handles on a successful
                                     return.
@@ -317,7 +311,7 @@ EFI_STATUS
 EFIAPI
 ParseHandleDatabaseForChildControllers(
   IN CONST EFI_HANDLE       ControllerHandle,
-  IN UINTN                  *MatchingHandleCount,
+  OUT UINTN                 *MatchingHandleCount,
   OUT EFI_HANDLE            **MatchingHandleBuffer OPTIONAL
   );
 
@@ -357,6 +351,8 @@ ConvertHandleIndexToHandle(
 /**
   Function to get all handles that support a given protocol or all handles.
 
+  The caller is responsible to free this memory.
+
   @param[in] ProtocolGuid The guid of the protocol to get handles for.  If NULL
                           then the function will return all handles.
 
@@ -372,6 +368,8 @@ GetHandleListByProtocol (
 /**
   Function to get all handles that support some protocols.
 
+  The caller is responsible to free this memory.
+
   @param[in] ProtocolGuids  A NULL terminated list of protocol GUIDs.
 
   @retval NULL              A memory allocation failed.
@@ -382,6 +380,25 @@ EFI_HANDLE*
 EFIAPI
 GetHandleListByProtocolList (
   IN CONST EFI_GUID **ProtocolGuids
+  );
+
+
+/**
+  Return all supported GUIDs.
+
+  @param[out]      Guids  The buffer to return all supported GUIDs.
+  @param[in, out]  Count  On input, the count of GUIDs the buffer can hold,
+                         On output, the count of GUIDs to return.
+
+  @retval EFI_INVALID_PARAMETER Count is NULL.
+  @retval EFI_BUFFER_TOO_SMALL  Buffer is not enough to hold all GUIDs.
+  @retval EFI_SUCCESS           GUIDs are returned successfully.
+**/
+EFI_STATUS
+EFIAPI
+GetAllMappingGuids (
+  OUT EFI_GUID *Guids,
+  IN OUT UINTN *Count
   );
 
 #endif // __HANDLE_PARSING_LIB__

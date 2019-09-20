@@ -2,13 +2,7 @@
   Serialize Variables Library implementation
 
   Copyright (c) 2004 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -218,9 +212,9 @@ IterateVariablesInBuffer (
   if (TotalSizeUsed != MaxSize) {
     DEBUG ((
       EFI_D_ERROR,
-      "Deserialize variables error: TotalSizeUsed(%d) != MaxSize(%d)\n",
-      TotalSizeUsed,
-      MaxSize
+      "Deserialize variables error: TotalSizeUsed(%Lu) != MaxSize(%Lu)\n",
+      (UINT64)TotalSizeUsed,
+      (UINT64)MaxSize
       ));
     return EFI_INVALID_PARAMETER;
   }
@@ -300,6 +294,11 @@ IterateVariablesCallbackSetSystemVariable (
   if (Status == EFI_SECURITY_VIOLATION && (Attributes & AuthMask) != 0) {
     DEBUG ((DEBUG_WARN, "%a: setting authenticated variable \"%s\" "
             "failed with EFI_SECURITY_VIOLATION, ignoring\n", __FUNCTION__,
+            VariableName));
+    Status = EFI_SUCCESS;
+  } else if (Status == EFI_WRITE_PROTECTED) {
+    DEBUG ((DEBUG_WARN, "%a: setting ReadOnly variable \"%s\" "
+            "failed with EFI_WRITE_PROTECTED, ignoring\n", __FUNCTION__,
             VariableName));
     Status = EFI_SUCCESS;
   }

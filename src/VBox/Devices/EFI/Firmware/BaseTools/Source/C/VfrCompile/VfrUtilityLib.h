@@ -2,14 +2,8 @@
 
   Vfr common library functions.
 
-Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,8 +15,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "EfiVfr.h"
 #include "VfrError.h"
 
-extern BOOLEAN  VfrCompatibleMode;
+static EFI_GUID gEdkiiIfrBitVarGuid = EDKII_IFR_BIT_VARSTORE_GUID;
 
+#define MAX_BIT_WIDTH                      32
 #define MAX_NAME_LEN                       64
 #define MAX_STRING_LEN                     0x100
 #define DEFAULT_ALIGN                      1
@@ -33,6 +28,8 @@ extern BOOLEAN  VfrCompatibleMode;
 #define EFI_BITS_PER_UINT32                (1 << EFI_BITS_SHIFT_PER_UINT32)
 
 #define BUFFER_SAFE_FREE(Buf)              do { if ((Buf) != NULL) { delete (Buf); } } while (0);
+#define ARRAY_SAFE_FREE(Buf)               do { if ((Buf) != NULL) { delete[] (Buf); } } while (0);
+
 
 class CVfrBinaryOutput {
 public:
@@ -53,6 +50,10 @@ struct SConfigInfo {
 
   SConfigInfo (IN UINT8, IN UINT16, IN UINT32, IN EFI_IFR_TYPE_VALUE);
   ~SConfigInfo (VOID);
+
+private:
+  SConfigInfo (IN CONST SConfigInfo&);             // Prevent copy-construction
+  SConfigInfo& operator= (IN CONST SConfigInfo&);  // Prevent assignment
 };
 
 struct SConfigItem {
@@ -66,6 +67,10 @@ public:
   SConfigItem (IN CHAR8 *, IN EFI_GUID *, IN CHAR8 *);
   SConfigItem (IN CHAR8 *, IN EFI_GUID *, IN CHAR8 *, IN UINT8, IN UINT16, IN UINT16, IN EFI_IFR_TYPE_VALUE);
   virtual ~SConfigItem ();
+
+private:
+  SConfigItem (IN CONST SConfigItem&);             // Prevent copy-construction
+  SConfigItem& operator= (IN CONST SConfigItem&);  // Prevent assignment
 };
 
 class CVfrBufferConfig {
@@ -88,6 +93,10 @@ public:
 #endif
   virtual VOID    Close (VOID);
   virtual VOID    OutputCFile (IN FILE *, IN CHAR8 *);
+
+private:
+  CVfrBufferConfig (IN CONST CVfrBufferConfig&);             // Prevent copy-construction
+  CVfrBufferConfig& operator= (IN CONST CVfrBufferConfig&);  // Prevent assignment
 };
 
 extern CVfrBufferConfig gCVfrBufferConfig;
@@ -102,6 +111,9 @@ struct SVfrDataField {
   SVfrDataType              *mFieldType;
   UINT32                    mOffset;
   UINT32                    mArrayNum;
+  BOOLEAN                   mIsBitField;
+  UINT8                     mBitWidth;
+  UINT32                    mBitOffset;
   SVfrDataField             *mNext;
 };
 
@@ -110,6 +122,7 @@ struct SVfrDataType {
   UINT8                     mType;
   UINT32                    mAlign;
   UINT32                    mTotalSize;
+  BOOLEAN                   mHasBitField;
   SVfrDataField             *mMembers;
   SVfrDataType              *mNext;
 };
@@ -139,7 +152,7 @@ struct SVfrPackStackNode {
 
   ~SVfrPackStackNode (VOID) {
     if (mIdentifier != NULL) {
-      delete mIdentifier;
+      delete[] mIdentifier;
     }
     mNext = NULL;
   }
@@ -155,6 +168,10 @@ struct SVfrPackStackNode {
       return FALSE;
     }
   }
+
+private:
+  SVfrPackStackNode (IN CONST SVfrPackStackNode&);             // Prevent copy-construction
+  SVfrPackStackNode& operator= (IN CONST SVfrPackStackNode&);  // Prevent assignment
 };
 
 class CVfrVarDataTypeDB {
@@ -177,9 +194,9 @@ private:
 
   EFI_VFR_RETURN_CODE ExtractStructTypeName (IN CHAR8 *&, OUT CHAR8 *);
   EFI_VFR_RETURN_CODE GetTypeField (IN CONST CHAR8 *, IN SVfrDataType *, IN SVfrDataField *&);
-  EFI_VFR_RETURN_CODE GetFieldOffset (IN SVfrDataField *, IN UINT32, OUT UINT32 &);
+  EFI_VFR_RETURN_CODE GetFieldOffset (IN SVfrDataField *, IN UINT32, OUT UINT32 &, IN BOOLEAN);
   UINT8               GetFieldWidth (IN SVfrDataField *);
-  UINT32              GetFieldSize (IN SVfrDataField *, IN UINT32);
+  UINT32              GetFieldSize (IN SVfrDataField *, IN UINT32, IN BOOLEAN);
 
 public:
   CVfrVarDataTypeDB (VOID);
@@ -187,16 +204,19 @@ public:
 
   VOID                DeclareDataTypeBegin (VOID);
   EFI_VFR_RETURN_CODE SetNewTypeName (IN CHAR8 *);
-  EFI_VFR_RETURN_CODE DataTypeAddField (IN CHAR8 *, IN CHAR8 *, IN UINT32);
+  EFI_VFR_RETURN_CODE DataTypeAddField (IN CHAR8 *, IN CHAR8 *, IN UINT32, IN BOOLEAN);
+  EFI_VFR_RETURN_CODE DataTypeAddBitField (IN CHAR8 *, IN CHAR8 *, IN UINT32, IN BOOLEAN);
   VOID                DeclareDataTypeEnd (VOID);
 
   EFI_VFR_RETURN_CODE GetDataType (IN CHAR8 *, OUT SVfrDataType **);
   EFI_VFR_RETURN_CODE GetDataTypeSize (IN CHAR8 *, OUT UINT32 *);
   EFI_VFR_RETURN_CODE GetDataTypeSize (IN UINT8, OUT UINT32 *);
-  EFI_VFR_RETURN_CODE GetDataFieldInfo (IN CHAR8 *, OUT UINT16 &, OUT UINT8 &, OUT UINT32 &);
+  EFI_VFR_RETURN_CODE GetDataFieldInfo (IN CHAR8 *, OUT UINT16 &, OUT UINT8 &, OUT UINT32 &, OUT BOOLEAN &);
 
   EFI_VFR_RETURN_CODE GetUserDefinedTypeNameList (OUT CHAR8 ***, OUT UINT32 *);
   EFI_VFR_RETURN_CODE ExtractFieldNameAndArrary (IN CHAR8 *&, OUT CHAR8 *, OUT UINT32 &);
+  BOOLEAN             DataTypeHasBitField (IN  CHAR8 *);
+  BOOLEAN             IsThisBitField (IN  CHAR8 *);
 
   BOOLEAN             IsTypeNameDefined (IN CHAR8 *);
 
@@ -208,6 +228,10 @@ public:
 #ifdef CVFR_VARDATATYPEDB_DEBUG
   VOID ParserDB ();
 #endif
+
+private:
+  CVfrVarDataTypeDB (IN CONST CVfrVarDataTypeDB&);             // Prevent copy-construction
+  CVfrVarDataTypeDB& operator= (IN CONST CVfrVarDataTypeDB&);  // Prevent assignment
 };
 
 extern CVfrVarDataTypeDB  gCVfrVarDataTypeDB;
@@ -216,7 +240,8 @@ typedef enum {
   EFI_VFR_VARSTORE_INVALID,
   EFI_VFR_VARSTORE_BUFFER,
   EFI_VFR_VARSTORE_EFI,
-  EFI_VFR_VARSTORE_NAME
+  EFI_VFR_VARSTORE_NAME,
+  EFI_VFR_VARSTORE_BUFFER_BITS
 } EFI_VFR_VARSTORE_TYPE;
 
 struct SVfrVarStorageNode {
@@ -238,7 +263,7 @@ struct SVfrVarStorageNode {
     SVfrDataType            *mDataType;
 
     // NameValue Storage
-	struct {
+  struct {
       EFI_STRING_ID         *mNameTable;
       UINT32                mTableSize;
     } mNameSpace;
@@ -246,9 +271,13 @@ struct SVfrVarStorageNode {
 
 public:
   SVfrVarStorageNode (IN EFI_GUID *, IN CHAR8 *, IN EFI_VARSTORE_ID, IN EFI_STRING_ID, IN UINT32, IN BOOLEAN Flag = TRUE);
-  SVfrVarStorageNode (IN EFI_GUID *, IN CHAR8 *, IN EFI_VARSTORE_ID, IN SVfrDataType *, IN BOOLEAN Flag = TRUE);
+  SVfrVarStorageNode (IN EFI_GUID *, IN CHAR8 *, IN EFI_VARSTORE_ID, IN SVfrDataType *,IN BOOLEAN, IN BOOLEAN Flag = TRUE);
   SVfrVarStorageNode (IN CHAR8 *, IN EFI_VARSTORE_ID);
   ~SVfrVarStorageNode (VOID);
+
+private:
+  SVfrVarStorageNode (IN CONST SVfrVarStorageNode&);             // Prevent copy-construction
+  SVfrVarStorageNode& operator= (IN CONST SVfrVarStorageNode&);  // Prevent assignment
 };
 
 struct EFI_VARSTORE_INFO {
@@ -259,10 +288,20 @@ struct EFI_VARSTORE_INFO {
   } mInfo;
   UINT8                     mVarType;
   UINT32                    mVarTotalSize;
+  BOOLEAN                   mIsBitVar;
 
   EFI_VARSTORE_INFO (VOID);
   EFI_VARSTORE_INFO (IN EFI_VARSTORE_INFO &);
+  EFI_VARSTORE_INFO& operator=(IN CONST EFI_VARSTORE_INFO &);
   BOOLEAN operator == (IN EFI_VARSTORE_INFO *);
+};
+
+struct BufferVarStoreFieldInfoNode {
+  EFI_VARSTORE_INFO  mVarStoreInfo;
+  struct BufferVarStoreFieldInfoNode *mNext;
+
+  BufferVarStoreFieldInfoNode( IN EFI_VARSTORE_INFO  *Info );
+  ~BufferVarStoreFieldInfoNode ();
 };
 
 #define EFI_VARSTORE_ID_MAX              0xFFFF
@@ -278,6 +317,8 @@ private:
 
   struct SVfrVarStorageNode *mCurrVarStorageNode;
   struct SVfrVarStorageNode *mNewVarStorageNode;
+  BufferVarStoreFieldInfoNode    *mBufferFieldInfoListHead;
+  BufferVarStoreFieldInfoNode    *mBufferFieldInfoListTail;
 
 private:
 
@@ -306,7 +347,7 @@ public:
 
   EFI_VFR_RETURN_CODE DeclareEfiVarStore (IN CHAR8 *, IN EFI_GUID *, IN EFI_STRING_ID, IN UINT32, IN BOOLEAN Flag = TRUE);
 
-  EFI_VFR_RETURN_CODE DeclareBufferVarStore (IN CHAR8 *, IN EFI_GUID *, IN CVfrVarDataTypeDB *, IN CHAR8 *, IN EFI_VARSTORE_ID, IN BOOLEAN Flag = TRUE);
+  EFI_VFR_RETURN_CODE DeclareBufferVarStore (IN CHAR8 *, IN EFI_GUID *, IN CVfrVarDataTypeDB *, IN CHAR8 *, IN EFI_VARSTORE_ID, IN BOOLEAN, IN BOOLEAN Flag = TRUE);
 
   EFI_VFR_RETURN_CODE GetVarStoreId (IN CHAR8 *, OUT EFI_VARSTORE_ID *, IN EFI_GUID *VarGuid = NULL);
   EFI_VFR_VARSTORE_TYPE GetVarStoreType (IN EFI_VARSTORE_ID);
@@ -317,7 +358,15 @@ public:
   EFI_VFR_RETURN_CODE GetBufferVarStoreDataTypeName (IN EFI_VARSTORE_ID, OUT CHAR8 **);
   EFI_VFR_RETURN_CODE GetEfiVarStoreInfo (IN EFI_VARSTORE_INFO *);
   EFI_VFR_RETURN_CODE GetNameVarStoreInfo (IN EFI_VARSTORE_INFO *, IN UINT32);
+  EFI_VFR_RETURN_CODE AddBufferVarStoreFieldInfo (IN EFI_VARSTORE_INFO *);
+  EFI_VFR_RETURN_CODE GetBufferVarStoreFieldInfo (IN OUT EFI_VARSTORE_INFO *);
+
+private:
+  CVfrDataStorage (IN CONST CVfrDataStorage&);             // Prevent copy-construction
+  CVfrDataStorage& operator= (IN CONST CVfrDataStorage&);  // Prevent assignment
 };
+
+extern CVfrDataStorage gCVfrDataStorage;
 
 #define EFI_QUESTION_ID_MAX              0xFFFF
 #define EFI_FREE_QUESTION_ID_BITMAP_SIZE ((EFI_QUESTION_ID_MAX + 1) / EFI_BITS_PER_UINT32)
@@ -340,6 +389,10 @@ struct SVfrQuestionNode {
 
   SVfrQuestionNode (IN CHAR8 *, IN CHAR8 *, IN UINT32 BitMask = 0);
   ~SVfrQuestionNode ();
+
+private:
+  SVfrQuestionNode (IN CONST SVfrQuestionNode&);             // Prevent copy-construction
+  SVfrQuestionNode& operator= (IN CONST SVfrQuestionNode&);  // Prevent assignment
 };
 
 class CVfrQuestionDB {
@@ -370,9 +423,9 @@ public:
   VOID                PrintAllQuestion (IN VOID);
   VOID                ResetInit (IN VOID);
 
-  VOID SetCompatibleMode (IN BOOLEAN Mode) {
-    VfrCompatibleMode = Mode;
-  }
+private:
+  CVfrQuestionDB (IN CONST CVfrQuestionDB&);             // Prevent copy-construction
+  CVfrQuestionDB& operator= (IN CONST CVfrQuestionDB&);  // Prevent assignment
 };
 
 struct SVfrDefaultStoreNode {
@@ -385,6 +438,10 @@ struct SVfrDefaultStoreNode {
 
   SVfrDefaultStoreNode (IN EFI_IFR_DEFAULTSTORE *, IN CHAR8 *, IN EFI_STRING_ID, IN UINT16);
   ~SVfrDefaultStoreNode();
+
+private:
+  SVfrDefaultStoreNode (IN CONST SVfrDefaultStoreNode&);             // Prevent copy-construction
+  SVfrDefaultStoreNode& operator= (IN CONST SVfrDefaultStoreNode&);  // Prevent assignment
 };
 
 class CVfrDefaultStore {
@@ -400,7 +457,13 @@ public:
   BOOLEAN             DefaultIdRegistered (IN UINT16);
   EFI_VFR_RETURN_CODE GetDefaultId (IN CHAR8 *, OUT UINT16 *);
   EFI_VFR_RETURN_CODE BufferVarStoreAltConfigAdd (IN EFI_VARSTORE_ID, IN EFI_VARSTORE_INFO &, IN CHAR8 *, IN EFI_GUID *, IN UINT8, IN EFI_IFR_TYPE_VALUE);
+
+private:
+  CVfrDefaultStore (IN CONST CVfrDefaultStore&);             // Prevent copy-construction
+  CVfrDefaultStore& operator= (IN CONST CVfrDefaultStore&);  // Prevent assignment
 };
+
+extern CVfrDefaultStore gCVfrDefaultStore;
 
 #define EFI_RULE_ID_START    0x01
 #define EFI_RULE_ID_INVALID  0x00
@@ -412,6 +475,10 @@ struct SVfrRuleNode {
 
   SVfrRuleNode(IN CHAR8 *, IN UINT8);
   ~SVfrRuleNode();
+
+private:
+  SVfrRuleNode (IN CONST SVfrRuleNode&);             // Prevent copy-construction
+  SVfrRuleNode& operator= (IN CONST SVfrRuleNode&);  // Prevent assignment
 };
 
 class CVfrRulesDB {
@@ -425,6 +492,10 @@ public:
 
   VOID RegisterRule (IN CHAR8 *);
   UINT8 GetRuleId (IN CHAR8 *);
+
+private:
+  CVfrRulesDB (IN CONST CVfrRulesDB&);             // Prevent copy-construction
+  CVfrRulesDB& operator= (IN CONST CVfrRulesDB&);  // Prevent assignment
 };
 
 class CVfrStringDB {
@@ -459,6 +530,9 @@ public:
     IN EFI_STRING_ID StringId
     );
 
+private:
+  CVfrStringDB (IN CONST CVfrStringDB&);             // Prevent copy-construction
+  CVfrStringDB& operator= (IN CONST CVfrStringDB&);  // Prevent assignment
 };
 
 #endif

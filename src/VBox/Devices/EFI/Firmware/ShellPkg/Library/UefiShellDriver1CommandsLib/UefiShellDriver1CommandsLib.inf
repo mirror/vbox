@@ -3,12 +3,7 @@
 #
 # Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved.<BR>
 #
-#  This program and the accompanying materials
-#  are licensed and made available under the terms and conditions of the BSD License
-#  which accompanies this distribution. The full text of the license may be found at
-#  http://opensource.org/licenses/bsd-license.php
-#  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 #
 ##
@@ -16,7 +11,7 @@
   INF_VERSION                    = 0x00010006
   BASE_NAME                      = UefiShellDriver1CommandsLib
   FILE_GUID                      = 313D3674-3ED4-48fd-BF97-7DB35D4190D1
-  MODULE_TYPE                    = UEFI_DRIVER
+  MODULE_TYPE                    = UEFI_APPLICATION
   VERSION_STRING                 = 1.0
   LIBRARY_CLASS                  = NULL|UEFI_APPLICATION UEFI_DRIVER
   CONSTRUCTOR                    = UefiShellDriver1CommandsLibConstructor
@@ -61,13 +56,13 @@
   gEfiShellPkgTokenSpaceGuid.PcdShellProfileMask  ## CONSUMES
 
 [Protocols]
-  gEfiDriverHealthProtocolGuid                    ## CONSUMES
-  gEfiDriverFamilyOverrideProtocolGuid            ## CONSUMES
-  gEfiHiiConfigAccessProtocolGuid                 ## CONSUMES
+  gEfiDriverHealthProtocolGuid                    ## UNDEFINED
+  gEfiDriverFamilyOverrideProtocolGuid            ## UNDEFINED
+  gEfiHiiConfigAccessProtocolGuid                 ## SOMETIMES_CONSUMES
   gEfiHiiDatabaseProtocolGuid                     ## CONSUMES
 
 [Guids]
-  gEfiGlobalVariableGuid                          ## CONSUMES ## GUID
+  gEfiGlobalVariableGuid                          ## SOMETIMES_CONSUMES ## GUID
   gEfiConsoleInDeviceGuid                         ## CONSUMES ## GUID
   gEfiConsoleOutDeviceGuid                        ## CONSUMES ## GUID
   gShellDriver1HiiGuid                            ## PRODUCES ## HII

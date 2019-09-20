@@ -1,14 +1,8 @@
 /** @file
   Implementation of the shared functions to do the platform driver vverride mapping.
 
-  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -147,7 +141,7 @@ CheckExistInStack (
 
   According to a file GUID, check a Fv file device path is valid. If it is invalid,
   try to return the valid device path.
-  FV address maybe changes for memory layout adjust from time to time, use this funciton
+  FV address maybe changes for memory layout adjust from time to time, use this function
   could promise the Fv file device path is right.
 
   @param  DevicePath               On input, the FV file device path to check
@@ -1004,7 +998,6 @@ SaveOverridesMapping (
       //
       if ((VariableNeededSize +
            OneItemNeededSize +
-           sizeof (VARIABLE_HEADER) +
            StrSize (L"PlatDriOver ")
            ) >= MaximumVariableSize
           ) {
@@ -1116,7 +1109,7 @@ SaveOverridesMapping (
                                If Binding protocol is not found, it is set to NULL.
 
   @return                      Pointer into the Binding Protocol interface
-  @retval NULL                 The paramter is not valid or the binding protocol is not found.
+  @retval NULL                 The parameter is not valid or the binding protocol is not found.
 
 **/
 EFI_DRIVER_BINDING_PROTOCOL *
@@ -1316,7 +1309,7 @@ GetDriverFromMapping (
   //
   if (CheckExistInStack (OverrideItem->ControllerDevicePath)) {
     //
-    // There is a dependecy dead loop if the ControllerDevicePath appear in stack twice
+    // There is a dependency dead loop if the ControllerDevicePath appear in stack twice
     //
     return EFI_UNSUPPORTED;
   }
@@ -1338,7 +1331,7 @@ GetDriverFromMapping (
         // If the image device path contains an FV node, check the FV file device path is valid.
         // If it is invalid, try to return the valid device path.
         // FV address maybe changes for memory layout adjust from time to time,
-        // use this funciton could promise the FV file device path is right.
+        // use this function could promise the FV file device path is right.
         //
         Status = UpdateFvFileDevicePath (&TempDriverImagePath, NULL, CallerImageHandle);
         if (!EFI_ERROR (Status)) {

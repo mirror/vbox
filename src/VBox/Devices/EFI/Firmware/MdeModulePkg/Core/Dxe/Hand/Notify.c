@@ -2,19 +2,14 @@
   Support functions for UEFI protocol notification infrastructure.
 
 Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+(C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 #include "DxeMain.h"
 #include "Handle.h"
-
+#include "Event.h"
 
 /**
   Signal event for every protocol in protocol entry.
@@ -135,7 +130,7 @@ CoreRegisterProtocolNotify (
     //
     ProtNotify = AllocatePool (sizeof(PROTOCOL_NOTIFY));
     if (ProtNotify != NULL) {
-
+      ((IEVENT *)Event)->ExFlag |= EVT_EXFLAG_EVENT_PROTOCOL_NOTIFICATION;
       ProtNotify->Signature = PROTOCOL_NOTIFY_SIGNATURE;
       ProtNotify->Protocol = ProtEntry;
       ProtNotify->Event = Event;

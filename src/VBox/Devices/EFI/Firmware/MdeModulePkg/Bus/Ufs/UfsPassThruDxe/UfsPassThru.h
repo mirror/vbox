@@ -1,13 +1,7 @@
 /** @file
 
-  Copyright (c) 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2014 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,7 +11,9 @@
 #include <Uefi.h>
 
 #include <Protocol/ScsiPassThruExt.h>
+#include <Protocol/UfsDeviceConfig.h>
 #include <Protocol/UfsHostController.h>
+#include <Protocol/UfsHostControllerPlatform.h>
 
 #include <Library/DebugLib.h>
 #include <Library/UefiDriverEntryPoint.h>
@@ -27,7 +23,6 @@
 #include <Library/MemoryAllocationLib.h>
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/DevicePathLib.h>
-#include <Library/IoLib.h>
 #include <Library/TimerLib.h>
 
 #include "UfsPassThruHci.h"
@@ -51,14 +46,24 @@ typedef struct {
   UINT16   Rsvd:4;
 } UFS_EXPOSED_LUNS;
 
+//
+// Iterate through the double linked list. This is delete-safe.
+// Do not touch NextEntry
+//
+#define EFI_LIST_FOR_EACH_SAFE(Entry, NextEntry, ListHead)            \
+  for(Entry = (ListHead)->ForwardLink, NextEntry = Entry->ForwardLink;\
+      Entry != (ListHead); Entry = NextEntry, NextEntry = Entry->ForwardLink)
+
 typedef struct _UFS_PASS_THRU_PRIVATE_DATA {
   UINT32                              Signature;
   EFI_HANDLE                          Handle;
   EFI_EXT_SCSI_PASS_THRU_MODE         ExtScsiPassThruMode;
   EFI_EXT_SCSI_PASS_THRU_PROTOCOL     ExtScsiPassThru;
+  EFI_UFS_DEVICE_CONFIG_PROTOCOL      UfsDevConfig;
   EDKII_UFS_HOST_CONTROLLER_PROTOCOL  *UfsHostController;
   UINTN                               UfsHcBase;
-  UINT32                              Capabilities;
+  EDKII_UFS_HC_INFO                   UfsHcInfo;
+  EDKII_UFS_HC_DRIVER_INTERFACE       UfsHcDriverInterface;
 
   UINT8                               TaskTag;
 
@@ -70,9 +75,39 @@ typedef struct _UFS_PASS_THRU_PRIVATE_DATA {
   VOID                                *TmrlMapping;
 
   UFS_EXPOSED_LUNS                    Luns;
+
+  //
+  // For Non-blocking operation.
+  //
+  EFI_EVENT                           TimerEvent;
+  LIST_ENTRY                          Queue;
 } UFS_PASS_THRU_PRIVATE_DATA;
 
+#define UFS_PASS_THRU_TRANS_REQ_SIG   SIGNATURE_32 ('U', 'F', 'S', 'T')
+
+typedef struct {
+  UINT32                                        Signature;
+  LIST_ENTRY                                    TransferList;
+
+  UINT8                                         Slot;
+  UTP_TRD                                       *Trd;
+  UINT32                                        CmdDescSize;
+  VOID                                          *CmdDescHost;
+  VOID                                          *CmdDescMapping;
+  VOID                                          *AlignedDataBuf;
+  UINTN                                         AlignedDataBufSize;
+  VOID                                          *DataBufMapping;
+
+  EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET    *Packet;
+  UINT64                                        TimeoutRemain;
+  EFI_EVENT                                     CallerEvent;
+} UFS_PASS_THRU_TRANS_REQ;
+
+#define UFS_PASS_THRU_TRANS_REQ_FROM_THIS(a) \
+    CR(a, UFS_PASS_THRU_TRANS_REQ, TransferList, UFS_PASS_THRU_TRANS_REQ_SIG)
+
 #define UFS_TIMEOUT                   EFI_TIMER_PERIOD_SECONDS(3)
+#define UFS_HC_ASYNC_TIMER            EFI_TIMER_PERIOD_MILLISECONDS(1)
 
 #define ROUNDUP8(x) (((x) % 8 == 0) ? (x) : ((x) / 8 + 1) * 8)
 
@@ -85,18 +120,29 @@ typedef struct _UFS_PASS_THRU_PRIVATE_DATA {
       UFS_PASS_THRU_SIG \
       )
 
+#define UFS_PASS_THRU_PRIVATE_DATA_FROM_DEV_CONFIG(a) \
+  CR (a, \
+      UFS_PASS_THRU_PRIVATE_DATA, \
+      UfsDevConfig, \
+      UFS_PASS_THRU_SIG \
+      )
+
+#define UFS_PASS_THRU_PRIVATE_DATA_FROM_DRIVER_INTF(a) \
+  CR (a, \
+      UFS_PASS_THRU_PRIVATE_DATA, \
+      UfsHcDriverInterface, \
+      UFS_PASS_THRU_SIG \
+      )
+
 typedef struct _UFS_DEVICE_MANAGEMENT_REQUEST_PACKET {
   UINT64           Timeout;
-  VOID             *InDataBuffer;
-  VOID             *OutDataBuffer;
+  VOID             *DataBuffer;
   UINT8            Opcode;
   UINT8            DescId;
   UINT8            Index;
   UINT8            Selector;
-  UINT32           InTransferLength;
-  UINT32           OutTransferLength;
+  UINT32           TransferLength;
   UINT8            DataDirection;
-  UINT8            Ocs;
 } UFS_DEVICE_MANAGEMENT_REQUEST_PACKET;
 
 //
@@ -588,6 +634,11 @@ UfsPassThruGetNextTarget (
   @param[in]      Lun           The LUN of the UFS device to send the SCSI Request Packet.
   @param[in, out] Packet        A pointer to the SCSI Request Packet to send to a specified Lun of the
                                 UFS device.
+  @param[in]      Event         If nonblocking I/O is not supported then Event is ignored, and blocking
+                                I/O is performed. If Event is NULL, then blocking I/O is performed. If
+                                Event is not NULL and non blocking I/O is supported, then
+                                nonblocking I/O is performed, and Event will be signaled when the
+                                SCSI Request Packet completes.
 
   @retval EFI_SUCCESS           The SCSI Request Packet was sent by the host. For bi-directional
                                 commands, InTransferLength bytes were transferred from
@@ -604,7 +655,8 @@ EFI_STATUS
 UfsExecScsiCmds (
   IN     UFS_PASS_THRU_PRIVATE_DATA                  *Private,
   IN     UINT8                                       Lun,
-  IN OUT EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET  *Packet
+  IN OUT EFI_EXT_SCSI_PASS_THRU_SCSI_REQUEST_PACKET  *Packet,
+  IN     EFI_EVENT                                   Event    OPTIONAL
   );
 
 /**
@@ -676,6 +728,46 @@ UfsSetFlag (
   );
 
 /**
+  Read specified flag from a UFS device.
+
+  @param[in]  Private           The pointer to the UFS_PASS_THRU_PRIVATE_DATA data structure.
+  @param[in]  FlagId            The ID of flag to be read.
+  @param[out] Value             The flag's value.
+
+  @retval EFI_SUCCESS           The flag was read successfully.
+  @retval EFI_DEVICE_ERROR      A device error occurred while attempting to read the flag.
+  @retval EFI_TIMEOUT           A timeout occurred while waiting for the completion of reading the flag.
+
+**/
+EFI_STATUS
+UfsReadFlag (
+  IN     UFS_PASS_THRU_PRIVATE_DATA   *Private,
+  IN     UINT8                        FlagId,
+     OUT UINT8                        *Value
+  );
+
+/**
+  Read or write specified flag of a UFS device.
+
+  @param[in]      Private       The pointer to the UFS_PASS_THRU_PRIVATE_DATA data structure.
+  @param[in]      Read          The boolean variable to show r/w direction.
+  @param[in]      FlagId        The ID of flag to be read or written.
+  @param[in, out] Value         The value to set or clear flag.
+
+  @retval EFI_SUCCESS           The flag was read/written successfully.
+  @retval EFI_DEVICE_ERROR      A device error occurred while attempting to r/w the flag.
+  @retval EFI_TIMEOUT           A timeout occurred while waiting for the completion of r/w the flag.
+
+**/
+EFI_STATUS
+UfsRwFlags (
+  IN     UFS_PASS_THRU_PRIVATE_DATA   *Private,
+  IN     BOOLEAN                      Read,
+  IN     UINT8                        FlagId,
+  IN OUT UINT8                        *Value
+  );
+
+/**
   Read or write specified device descriptor of a UFS device.
 
   @param[in]      Private       The pointer to the UFS_PASS_THRU_PRIVATE_DATA data structure.
@@ -684,7 +776,9 @@ UfsSetFlag (
   @param[in]      Index         The Index of device descriptor.
   @param[in]      Selector      The Selector of device descriptor.
   @param[in, out] Descriptor    The buffer of device descriptor to be read or written.
-  @param[in]      DescSize      The size of device descriptor buffer.
+  @param[in, out] DescSize      The size of device descriptor buffer. On input, the size, in bytes,
+                                of the data buffer specified by Descriptor. On output, the number
+                                of bytes that were actually transferred.
 
   @retval EFI_SUCCESS           The device descriptor was read/written successfully.
   @retval EFI_DEVICE_ERROR      A device error occurred while attempting to r/w the device descriptor.
@@ -699,7 +793,32 @@ UfsRwDeviceDesc (
   IN     UINT8                        Index,
   IN     UINT8                        Selector,
   IN OUT VOID                         *Descriptor,
-  IN     UINT32                       DescSize
+  IN OUT UINT32                       *DescSize
+  );
+
+/**
+  Read or write specified attribute of a UFS device.
+
+  @param[in]      Private       The pointer to the UFS_PASS_THRU_PRIVATE_DATA data structure.
+  @param[in]      Read          The boolean variable to show r/w direction.
+  @param[in]      AttrId        The ID of Attribute.
+  @param[in]      Index         The Index of Attribute.
+  @param[in]      Selector      The Selector of Attribute.
+  @param[in, out] Attributes    The value of Attribute to be read or written.
+
+  @retval EFI_SUCCESS           The Attribute was read/written successfully.
+  @retval EFI_DEVICE_ERROR      A device error occurred while attempting to r/w the Attribute.
+  @retval EFI_TIMEOUT           A timeout occurred while waiting for the completion of r/w the Attribute.
+
+**/
+EFI_STATUS
+UfsRwAttributes (
+  IN     UFS_PASS_THRU_PRIVATE_DATA   *Private,
+  IN     BOOLEAN                      Read,
+  IN     UINT8                        AttrId,
+  IN     UINT8                        Index,
+  IN     UINT8                        Selector,
+  IN OUT UINT32                       *Attributes
   );
 
 /**
@@ -720,8 +839,167 @@ UfsExecNopCmds (
   IN  UFS_PASS_THRU_PRIVATE_DATA       *Private
   );
 
-extern GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME_PROTOCOL  gUfsPassThruComponentName;
-extern GLOBAL_REMOVE_IF_UNREFERENCED EFI_COMPONENT_NAME2_PROTOCOL gUfsPassThruComponentName2;
-extern EFI_DRIVER_BINDING_PROTOCOL   gUfsPassThruDriverBinding;
+/**
+  Call back function when the timer event is signaled.
+
+  @param[in]  Event     The Event this notify function registered to.
+  @param[in]  Context   Pointer to the context data registered to the Event.
+
+**/
+VOID
+EFIAPI
+ProcessAsyncTaskList (
+  IN EFI_EVENT          Event,
+  IN VOID               *Context
+  );
+
+/**
+  Internal helper function which will signal the caller event and clean up
+  resources.
+
+  @param[in] Private   The pointer to the UFS_PASS_THRU_PRIVATE_DATA data
+                       structure.
+  @param[in] TransReq  The pointer to the UFS_PASS_THRU_TRANS_REQ data
+                       structure.
+
+**/
+VOID
+EFIAPI
+SignalCallerEvent (
+  IN UFS_PASS_THRU_PRIVATE_DATA      *Private,
+  IN UFS_PASS_THRU_TRANS_REQ         *TransReq
+  );
+
+/**
+  Read or write specified device descriptor of a UFS device.
+
+  The function is used to read/write UFS device descriptors. The consumer of this API is
+  responsible for allocating the data buffer pointed by Descriptor.
+
+  @param[in]      This          The pointer to the EFI_UFS_DEVICE_CONFIG_PROTOCOL instance.
+  @param[in]      Read          The boolean variable to show r/w direction.
+  @param[in]      DescId        The ID of device descriptor.
+  @param[in]      Index         The Index of device descriptor.
+  @param[in]      Selector      The Selector of device descriptor.
+  @param[in, out] Descriptor    The buffer of device descriptor to be read or written.
+  @param[in, out] DescSize      The size of device descriptor buffer. On input, the size, in bytes,
+                                of the data buffer specified by Descriptor. On output, the number
+                                of bytes that were actually transferred.
+
+  @retval EFI_SUCCESS           The device descriptor is read/written successfully.
+  @retval EFI_INVALID_PARAMETER This is NULL or Descriptor is NULL or DescSize is NULL.
+                                DescId, Index and Selector are invalid combination to point to a
+                                type of UFS device descriptor.
+  @retval EFI_DEVICE_ERROR      The device descriptor is not read/written successfully.
+
+**/
+EFI_STATUS
+EFIAPI
+UfsRwUfsDescriptor (
+  IN EFI_UFS_DEVICE_CONFIG_PROTOCOL    *This,
+  IN BOOLEAN                           Read,
+  IN UINT8                             DescId,
+  IN UINT8                             Index,
+  IN UINT8                             Selector,
+  IN OUT UINT8                         *Descriptor,
+  IN OUT UINT32                        *DescSize
+  );
+
+/**
+  Read or write specified flag of a UFS device.
+
+  The function is used to read/write UFS flag descriptors. The consumer of this API is responsible
+  for allocating the buffer pointed by Flag. The buffer size is 1 byte as UFS flag descriptor is
+  just a single Boolean value that represents a TRUE or FALSE, '0' or '1', ON or OFF type of value.
+
+  @param[in]      This          The pointer to the EFI_UFS_DEVICE_CONFIG_PROTOCOL instance.
+  @param[in]      Read          The boolean variable to show r/w direction.
+  @param[in]      FlagId        The ID of flag to be read or written.
+  @param[in, out] Flag          The buffer to set or clear flag.
+
+  @retval EFI_SUCCESS           The flag descriptor is set/clear successfully.
+  @retval EFI_INVALID_PARAMETER This is NULL or Flag is NULL.
+                                FlagId is an invalid UFS flag ID.
+  @retval EFI_DEVICE_ERROR      The flag is not set/clear successfully.
+
+**/
+EFI_STATUS
+EFIAPI
+UfsRwUfsFlag (
+  IN EFI_UFS_DEVICE_CONFIG_PROTOCOL    *This,
+  IN BOOLEAN                           Read,
+  IN UINT8                             FlagId,
+  IN OUT UINT8                         *Flag
+  );
+
+/**
+  Read or write specified attribute of a UFS device.
+
+  The function is used to read/write UFS attributes. The consumer of this API is responsible for
+  allocating the data buffer pointed by Attribute.
+
+  @param[in]      This          The pointer to the EFI_UFS_DEVICE_CONFIG_PROTOCOL instance.
+  @param[in]      Read          The boolean variable to show r/w direction.
+  @param[in]      AttrId        The ID of Attribute.
+  @param[in]      Index         The Index of Attribute.
+  @param[in]      Selector      The Selector of Attribute.
+  @param[in, out] Attribute     The buffer of Attribute to be read or written.
+  @param[in, out] AttrSize      The size of Attribute buffer. On input, the size, in bytes, of the
+                                data buffer specified by Attribute. On output, the number of bytes
+                                that were actually transferred.
+
+  @retval EFI_SUCCESS           The attribute is read/written successfully.
+  @retval EFI_INVALID_PARAMETER This is NULL or Attribute is NULL or AttrSize is NULL.
+                                AttrId, Index and Selector are invalid combination to point to a
+                                type of UFS attribute.
+  @retval EFI_DEVICE_ERROR      The attribute is not read/written successfully.
+
+**/
+EFI_STATUS
+EFIAPI
+UfsRwUfsAttribute (
+  IN EFI_UFS_DEVICE_CONFIG_PROTOCOL    *This,
+  IN BOOLEAN                           Read,
+  IN UINT8                             AttrId,
+  IN UINT8                             Index,
+  IN UINT8                             Selector,
+  IN OUT UINT8                         *Attribute,
+  IN OUT UINT32                        *AttrSize
+  );
+
+/**
+  Execute UIC command.
+
+  @param[in]      This        Pointer to driver interface produced by the UFS controller.
+  @param[in, out] UicCommand  Descriptor of the command that will be executed.
+
+  @retval EFI_SUCCESS            Command executed successfully.
+  @retval EFI_INVALID_PARAMETER  This or UicCommand is NULL.
+  @retval Others                 Command failed to execute.
+**/
+EFI_STATUS
+EFIAPI
+UfsHcDriverInterfaceExecUicCommand (
+  IN     EDKII_UFS_HC_DRIVER_INTERFACE  *This,
+  IN OUT EDKII_UIC_COMMAND              *UicCommand
+  );
+
+/**
+  Initializes UfsHcInfo field in private data.
+
+  @param[in] Private  Pointer to host controller private data.
+
+  @retval EFI_SUCCESS  UfsHcInfo initialized successfully.
+  @retval Others       Failed to initalize UfsHcInfo.
+**/
+EFI_STATUS
+GetUfsHcInfo (
+  IN UFS_PASS_THRU_PRIVATE_DATA  *Private
+  );
+
+extern EFI_COMPONENT_NAME_PROTOCOL  gUfsPassThruComponentName;
+extern EFI_COMPONENT_NAME2_PROTOCOL gUfsPassThruComponentName2;
+extern EFI_DRIVER_BINDING_PROTOCOL  gUfsPassThruDriverBinding;
+extern EDKII_UFS_HC_PLATFORM_PROTOCOL  *mUfsHcPlatform;
 
 #endif

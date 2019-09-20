@@ -2,15 +2,9 @@
 # This file is used to define class objects of INF file [Packages] section.
 # It will consumed by InfParser.
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfPackageObject
@@ -75,7 +69,7 @@ class InfPackageObject():
             #
             # Validate Arch
             #
-            if (ArchItem == '' or ArchItem == None):
+            if (ArchItem == '' or ArchItem is None):
                 ArchItem = 'COMMON'
             SupArchList.append(ArchItem)
 
@@ -84,7 +78,7 @@ class InfPackageObject():
             HelpStringObj = PackageItem[1]
             CurrentLineOfPackItem = PackageItem[2]
             PackageItem = PackageItem[0]
-            if HelpStringObj != None:
+            if HelpStringObj is not None:
                 HelpString = HelpStringObj.HeaderComments + HelpStringObj.TailComments
                 PackageItemObj.SetHelpString(HelpString)
             if len(PackageItem) >= 1:
@@ -171,7 +165,7 @@ class InfPackageObject():
                                 #
                                 pass
 
-            if self.Packages.has_key((PackageItemObj)):
+            if (PackageItemObj) in self.Packages:
                 PackageList = self.Packages[PackageItemObj]
                 PackageList.append(PackageItemObj)
                 self.Packages[PackageItemObj] = PackageList
@@ -183,5 +177,5 @@ class InfPackageObject():
         return True
 
     def GetPackages(self, Arch = None):
-        if Arch == None:
+        if Arch is None:
             return self.Packages

@@ -1,14 +1,8 @@
 /** @file
   Pseudorandom Number Generator Wrapper Implementation over OpenSSL.
 
-Copyright (c) 2012 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2012 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -87,7 +81,7 @@ RandomSeed (
   If Output is NULL, then return FALSE.
 
   @param[out]  Output  Pointer to buffer to receive random value.
-  @param[in]   Size    Size of randome bytes to generate.
+  @param[in]   Size    Size of random bytes to generate.
 
   @retval TRUE   Pseudorandom byte stream generated successfully.
   @retval FALSE  Pseudorandom number generator fails to generate due to lack of entropy.

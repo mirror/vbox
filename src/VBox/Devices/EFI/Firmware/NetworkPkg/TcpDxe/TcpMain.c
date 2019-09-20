@@ -1,15 +1,10 @@
 /** @file
   Implementation of EFI_TCP4_PROTOCOL and EFI_TCP6_PROTOCOL.
 
-  Copyright (c) 2009 - 2011, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -39,6 +34,9 @@ TcpChkDataBuf (
   UINT32 Len;
 
   for (Index = 0, Len = 0; Index < FragmentCount; Index++) {
+    if (FragmentTable[Index].FragmentBuffer == NULL) {
+      return EFI_INVALID_PARAMETER;
+    }
     Len = Len + FragmentTable[Index].FragmentLength;
   }
 
@@ -146,7 +144,7 @@ Tcp4Configure (
   if (NULL != TcpConfigData) {
 
     CopyMem (&Ip, &TcpConfigData->AccessPoint.RemoteAddress, sizeof (IP4_ADDR));
-    if ((Ip != 0) && !NetIp4IsUnicast (NTOHL (Ip), 0)) {
+    if (IP4_IS_LOCAL_BROADCAST (NTOHL (Ip))) {
       return EFI_INVALID_PARAMETER;
     }
 
@@ -158,7 +156,8 @@ Tcp4Configure (
 
       CopyMem (&Ip, &TcpConfigData->AccessPoint.StationAddress, sizeof (IP4_ADDR));
       CopyMem (&SubnetMask, &TcpConfigData->AccessPoint.SubnetMask, sizeof (IP4_ADDR));
-      if (!NetIp4IsUnicast (NTOHL (Ip), 0) || !IP4_IS_VALID_NETMASK (NTOHL (SubnetMask))) {
+      if (!IP4_IS_VALID_NETMASK (NTOHL (SubnetMask)) ||
+          (SubnetMask != 0 && !NetIp4IsUnicast (NTOHL (Ip), NTOHL (SubnetMask)))) {
         return EFI_INVALID_PARAMETER;
       }
     }
@@ -483,14 +482,25 @@ Tcp4Close (
 /**
   Abort an asynchronous connection, listen, transmission or receive request.
 
-  @param[in]  This                 Pointer to the EFI_TCP4_PROTOCOL instance.
-  @param[in]  Token                Pointer to a token that has been issued by
-                                   Connect(), Accept(), Transmit() or Receive(). If
-                                   NULL, all pending tokens issued by the four
-                                   functions listed above will be aborted.
+  @param  This  The pointer to the EFI_TCP4_PROTOCOL instance.
+  @param  Token The pointer to a token that has been issued by
+                EFI_TCP4_PROTOCOL.Connect(),
+                EFI_TCP4_PROTOCOL.Accept(),
+                EFI_TCP4_PROTOCOL.Transmit() or
+                EFI_TCP4_PROTOCOL.Receive(). If NULL, all pending
+                tokens issued by above four functions will be aborted. Type
+                EFI_TCP4_COMPLETION_TOKEN is defined in
+                EFI_TCP4_PROTOCOL.Connect().
 
-  @retval EFI_UNSUPPORTED          The operation is not supported in the current
-                                   implementation.
+  @retval  EFI_SUCCESS             The asynchronous I/O request is aborted and Token->Event
+                                   is signaled.
+  @retval  EFI_INVALID_PARAMETER   This is NULL.
+  @retval  EFI_NOT_STARTED         This instance hasn't been configured.
+  @retval  EFI_NO_MAPPING          When using the default address, configuration
+                                   (DHCP, BOOTP,RARP, etc.) hasn't finished yet.
+  @retval  EFI_NOT_FOUND           The asynchronous I/O request isn't found in the
+                                   transmission or receive queue. It has either
+                                   completed or wasn't issued by Transmit() and Receive().
 
 **/
 EFI_STATUS
@@ -500,7 +510,15 @@ Tcp4Cancel (
   IN EFI_TCP4_COMPLETION_TOKEN     *Token OPTIONAL
   )
 {
-  return EFI_UNSUPPORTED;
+  SOCKET  *Sock;
+
+  if (NULL == This) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Sock = SOCK_FROM_THIS (This);
+
+  return SockCancel (Sock, Token);
 }
 
 /**
@@ -997,20 +1015,20 @@ Tcp6Close (
 }
 
 /**
-  Abort an asynchronous connection, listen, transmission, or receive request.
+  Abort an asynchronous connection, listen, transmission or receive request.
 
-  The Cancel() function aborts a pending connection, listen, transmit, or
+  The Cancel() function aborts a pending connection, listen, transmit or
   receive request.
 
-  If Token is not NULL and the token is in the connection, listen, transmission,
+  If Token is not NULL and the token is in the connection, listen, transmission
   or receive queue when it is being cancelled, its Token->Status will be set
-  to EFI_ABORTED, and then Token->Event will be signaled.
+  to EFI_ABORTED and then Token->Event will be signaled.
 
   If the token is not in one of the queues, which usually means that the
   asynchronous operation has completed, EFI_NOT_FOUND is returned.
 
   If Token is NULL all asynchronous token issued by Connect(), Accept(),
-  Transmit(), and Receive() will be aborted.
+  Transmit() and Receive() will be aborted.
 
   @param[in] This                Pointer to the EFI_TCP6_PROTOCOL instance.
   @param[in] Token               Pointer to a token that has been issued by
@@ -1022,7 +1040,13 @@ Tcp6Close (
                                  EFI_TCP6_COMPLETION_TOKEN is defined in
                                  EFI_TCP_PROTOCOL.Connect().
 
-  @retval EFI_UNSUPPORTED        The implementation does not support this function.
+  @retval EFI_SUCCESS            The asynchronous I/O request is aborted and Token->Event
+                                 is signaled.
+  @retval EFI_INVALID_PARAMETER  This is NULL.
+  @retval EFI_NOT_STARTED        This instance hasn't been configured.
+  @retval EFI_NOT_FOUND          The asynchronous I/O request isn't found in the transmission or
+                                 receive queue. It has either completed or wasn't issued by
+                                 Transmit() and Receive().
 
 **/
 EFI_STATUS
@@ -1032,7 +1056,15 @@ Tcp6Cancel (
   IN EFI_TCP6_COMPLETION_TOKEN   *Token OPTIONAL
   )
 {
-  return EFI_UNSUPPORTED;
+  SOCKET  *Sock;
+
+  if (NULL == This) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  Sock = SOCK_FROM_THIS (This);
+
+  return SockCancel (Sock, Token);
 }
 
 /**

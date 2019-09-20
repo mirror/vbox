@@ -1,15 +1,9 @@
 ## @file
 # This file is used to define comment generating interface
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -19,7 +13,7 @@ CommentGenerating
 ##
 # Import Modules
 #
-from Library.String import GetSplitValueList
+from Library.StringUtils import GetSplitValueList
 from Library.DataType import TAB_SPACE_SPLIT
 from Library.DataType import TAB_INF_GUIDTYPE_VAR
 from Library.DataType import USAGE_ITEM_NOTIFY
@@ -124,10 +118,8 @@ def GenHeaderCommentSection(Abstract, Description, Copyright, License, IsBinaryH
     #
     # Convert special character to (c), (r) and (tm).
     #
-    if isinstance(Abstract, unicode):
-        Abstract = ConvertSpecialUnicodes(Abstract)
-    if isinstance(Description, unicode):
-        Description = ConvertSpecialUnicodes(Description)
+    Abstract = ConvertSpecialUnicodes(Abstract)
+    Description = ConvertSpecialUnicodes(Description)
     if IsBinaryHeader:
         Content += CommChar * 2 + TAB_SPACE_SPLIT + TAB_BINARY_HEADER_COMMENT + '\r\n'
     elif CommChar == TAB_COMMENT_EDK1_SPLIT:

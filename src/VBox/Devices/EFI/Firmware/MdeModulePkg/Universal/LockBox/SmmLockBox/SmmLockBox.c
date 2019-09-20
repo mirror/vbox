@@ -9,16 +9,9 @@
   SmmLockBoxHandler(), SmmLockBoxRestore(), SmmLockBoxUpdate(), SmmLockBoxSave()
   will receive untrusted input and do basic validation.
 
-Copyright (c) 2010 - 2015, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -76,6 +69,11 @@ SmmLockBoxSave (
     LockBoxParameterSave->Header.ReturnStatus = (UINT64)EFI_ACCESS_DENIED;
     return ;
   }
+  //
+  // The SpeculationBarrier() call here is to ensure the above range check for
+  // the CommBuffer have been completed before calling into SaveLockBox().
+  //
+  SpeculationBarrier ();
 
   //
   // Save data
@@ -160,6 +158,11 @@ SmmLockBoxUpdate (
     LockBoxParameterUpdate->Header.ReturnStatus = (UINT64)EFI_ACCESS_DENIED;
     return ;
   }
+  //
+  // The SpeculationBarrier() call here is to ensure the above range check for
+  // the CommBuffer have been completed before calling into UpdateLockBox().
+  //
+  SpeculationBarrier ();
 
   //
   // Update data
@@ -217,6 +220,12 @@ SmmLockBoxRestore (
                (VOID *)(UINTN)TempLockBoxParameterRestore.Buffer,
                (UINTN *)&TempLockBoxParameterRestore.Length
                );
+    if ((Status == EFI_BUFFER_TOO_SMALL) || (Status == EFI_SUCCESS)) {
+      //
+      // Return the actual Length value.
+      //
+      LockBoxParameterRestore->Length = TempLockBoxParameterRestore.Length;
+    }
   }
   LockBoxParameterRestore->Header.ReturnStatus = (UINT64)Status;
   return ;
@@ -267,7 +276,7 @@ SmmLockBoxHandler (
   EFI_SMM_LOCK_BOX_PARAMETER_HEADER *LockBoxParameterHeader;
   UINTN                             TempCommBufferSize;
 
-  DEBUG ((EFI_D_ERROR, "SmmLockBox SmmLockBoxHandler Enter\n"));
+  DEBUG ((DEBUG_INFO, "SmmLockBox SmmLockBoxHandler Enter\n"));
 
   //
   // If input is invalid, stop processing this SMI
@@ -294,9 +303,9 @@ SmmLockBoxHandler (
 
   LockBoxParameterHeader->ReturnStatus = (UINT64)-1;
 
-  DEBUG ((EFI_D_ERROR, "SmmLockBox LockBoxParameterHeader - %x\n", (UINTN)LockBoxParameterHeader));
+  DEBUG ((DEBUG_INFO, "SmmLockBox LockBoxParameterHeader - %x\n", (UINTN)LockBoxParameterHeader));
 
-  DEBUG ((EFI_D_ERROR, "SmmLockBox Command - %x\n", (UINTN)LockBoxParameterHeader->Command));
+  DEBUG ((DEBUG_INFO, "SmmLockBox Command - %x\n", (UINTN)LockBoxParameterHeader->Command));
 
   switch (LockBoxParameterHeader->Command) {
   case EFI_SMM_LOCK_BOX_COMMAND_SAVE:
@@ -341,7 +350,7 @@ SmmLockBoxHandler (
 
   LockBoxParameterHeader->Command = (UINT32)-1;
 
-  DEBUG ((EFI_D_ERROR, "SmmLockBox SmmLockBoxHandler Exit\n"));
+  DEBUG ((DEBUG_INFO, "SmmLockBox SmmLockBoxHandler Exit\n"));
 
   return EFI_SUCCESS;
 }

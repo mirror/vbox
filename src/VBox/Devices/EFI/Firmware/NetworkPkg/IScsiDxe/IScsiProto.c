@@ -1,14 +1,8 @@
 /** @file
   The implementation of iSCSI protocol based on RFC3720.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -138,7 +132,11 @@ IScsiConnLogin (
   //
   // Start the timer, and wait Timeout seconds to establish the TCP connection.
   //
-  Status = gBS->SetTimer (Conn->TimeoutEvent, TimerRelative, Timeout * TICKS_PER_MS);
+  Status = gBS->SetTimer (
+                  Conn->TimeoutEvent,
+                  TimerRelative,
+                  MultU64x32 (Timeout, TICKS_PER_MS)
+                  );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -250,6 +248,23 @@ IScsiCreateConnection (
   Conn->MaxRecvDataSegmentLength  = DEFAULT_MAX_RECV_DATA_SEG_LEN;
   Conn->HeaderDigest              = IScsiDigestNone;
   Conn->DataDigest                = IScsiDigestNone;
+
+  if (NvData->DnsMode) {
+    //
+    // perform dns process if target address expressed by domain name.
+    //
+    if (!Conn->Ipv6Flag) {
+      Status = IScsiDns4 (Private->Image, Private->Controller, NvData);
+    } else {
+      Status = IScsiDns6 (Private->Image, Private->Controller, NvData);
+    }
+
+    if (EFI_ERROR(Status)) {
+      DEBUG ((EFI_D_ERROR, "The configuration of Target address or DNS server address is invalid!\n"));
+      FreePool (Conn);
+      return NULL;
+    }
+  }
 
   if (!Conn->Ipv6Flag) {
     Tcp4IoConfig = &TcpIoConfig.Tcp4IoConfigData;
@@ -423,14 +438,14 @@ IScsiSessionLogin (
   VOID              *Tcp;
   EFI_GUID          *ProtocolGuid;
   UINT8             RetryCount;
-  BOOLEAN           MediaPresent;
+  EFI_STATUS        MediaStatus;
 
   //
   // Check media status before session login.
   //
-  MediaPresent = TRUE;
-  NetLibDetectMedia (Session->Private->Controller, &MediaPresent);
-  if (!MediaPresent) {
+  MediaStatus = EFI_SUCCESS;
+  NetLibDetectMediaWaitTimeout (Session->Private->Controller, ISCSI_CHECK_MEDIA_LOGIN_WAITING_TIME, &MediaStatus);
+  if (MediaStatus != EFI_SUCCESS) {
     return EFI_NO_MEDIA;
   }
 
@@ -731,7 +746,10 @@ IScsiPrepareLoginReq (
   }
 
   LoginReq = (ISCSI_LOGIN_REQUEST *) NetbufAllocSpace (Nbuf, sizeof (ISCSI_LOGIN_REQUEST), NET_BUF_TAIL);
-  ASSERT (LoginReq != NULL);
+  if (LoginReq == NULL) {
+    NetbufFree (Nbuf);
+    return NULL;
+  }
   ZeroMem (LoginReq, sizeof (ISCSI_LOGIN_REQUEST));
 
   //
@@ -779,7 +797,7 @@ IScsiPrepareLoginReq (
 
   case ISCSI_LOGIN_OPERATIONAL_NEGOTIATION:
     //
-    // Only negotiate the paramter once.
+    // Only negotiate the parameter once.
     //
     if (!Conn->ParamNegotiated) {
       IScsiFillOpParams (Conn, Nbuf);
@@ -1062,12 +1080,13 @@ IScsiUpdateTargetAddress (
   IN     UINT32                Len
   )
 {
-  LIST_ENTRY      *KeyValueList;
-  CHAR8           *TargetAddress;
-  CHAR8           *IpStr;
-  EFI_STATUS      Status;
-  UINTN           Number;
-  UINT8           IpMode;
+  LIST_ENTRY                   *KeyValueList;
+  CHAR8                        *TargetAddress;
+  CHAR8                        *IpStr;
+  EFI_STATUS                   Status;
+  UINTN                        Number;
+  UINT8                        IpMode;
+  ISCSI_SESSION_CONFIG_NVDATA  *NvData;
 
   KeyValueList = IScsiBuildKeyValueList (Data, Len);
   if (KeyValueList == NULL) {
@@ -1075,6 +1094,7 @@ IScsiUpdateTargetAddress (
   }
 
   Status = EFI_NOT_FOUND;
+  NvData = &Session->ConfigData->SessionConfigData;
 
   while (TRUE) {
     TargetAddress = IScsiGetValueByKeyFromList (KeyValueList, ISCSI_KEY_TARGET_ADDRESS);
@@ -1082,23 +1102,59 @@ IScsiUpdateTargetAddress (
       break;
     }
 
-    if (!NET_IS_DIGIT (TargetAddress[0])) {
+    //
+    // RFC 3720 defines format of the TargetAddress=domainname[:port][,portal-group-tag]
+    // The domainname can be specified as either a DNS host name, adotted-decimal IPv4 address,
+    // or a bracketed IPv6 address as specified in [RFC2732].
+    //
+    if (NET_IS_DIGIT (TargetAddress[0])) {
       //
-      // The domainname of the target may be presented in three formats: a DNS host name,
-      // a dotted-decimal IPv4 address, or a bracketed IPv6 address. Only accept dotted
-      // IPv4 address.
+      // The domainname of the target is presented in a dotted-decimal IPv4 address format.
       //
-      continue;
+      IpStr = TargetAddress;
+
+      while ((*TargetAddress != '\0') && (*TargetAddress != ':') && (*TargetAddress != ',')) {
+        //
+        // NULL, ':', or ',' ends the IPv4 string.
+        //
+        TargetAddress++;
+      }
+    } else if (*TargetAddress == ISCSI_REDIRECT_ADDR_START_DELIMITER){
+      //
+      // The domainname of the target is presented in a bracketed IPv6 address format.
+      //
+      TargetAddress ++;
+      IpStr = TargetAddress;
+      while ((*TargetAddress != '\0') && (*TargetAddress != ISCSI_REDIRECT_ADDR_END_DELIMITER)) {
+        //
+        // ']' ends the IPv6 string.
+        //
+        TargetAddress++;
+      }
+
+      if (*TargetAddress != ISCSI_REDIRECT_ADDR_END_DELIMITER) {
+        continue;
+      }
+
+      *TargetAddress = '\0';
+      TargetAddress ++;
+
+    } else {
+      //
+      // The domainname of the target is presented in the format of a DNS host name.
+      //
+      IpStr = TargetAddress;
+
+      while ((*TargetAddress != '\0') && (*TargetAddress != ':') && (*TargetAddress != ',')) {
+        TargetAddress++;
+      }
+      NvData->DnsMode = TRUE;
     }
 
-    IpStr = TargetAddress;
-
-    while ((*TargetAddress != 0) && (*TargetAddress != ':') && (*TargetAddress != ',')) {
-      //
-      // NULL, ':', or ',' ends the IPv4 string.
-      //
-      TargetAddress++;
-    }
+    //
+    // Save the origial user setting which specifies the proxy/virtual iSCSI target.
+    //
+    NvData->OriginalTargetPort = NvData->TargetPort;
 
     if (*TargetAddress == ',') {
       //
@@ -1115,33 +1171,51 @@ IScsiUpdateTargetAddress (
       if (Number > 0xFFFF) {
         continue;
       } else {
-        Session->ConfigData->SessionConfigData.TargetPort = (UINT16) Number;
+        NvData->TargetPort = (UINT16) Number;
       }
     } else {
       //
-      // The string only contains the IPv4 address. Use the well-known port.
+      // The string only contains the Target address. Use the well-known port.
       //
-      Session->ConfigData->SessionConfigData.TargetPort = ISCSI_WELL_KNOWN_PORT;
+      NvData->TargetPort = ISCSI_WELL_KNOWN_PORT;
     }
+
+    //
+    // Save the origial user setting which specifies the proxy/virtual iSCSI target.
+    //
+    CopyMem (&NvData->OriginalTargetIp, &NvData->TargetIp, sizeof (EFI_IP_ADDRESS));
+
     //
     // Update the target IP address.
     //
-    if (Session->ConfigData->SessionConfigData.IpMode < IP_MODE_AUTOCONFIG) {
-      IpMode = Session->ConfigData->SessionConfigData.IpMode;
+    if (NvData->IpMode < IP_MODE_AUTOCONFIG) {
+      IpMode = NvData->IpMode;
     } else {
       IpMode = Session->ConfigData->AutoConfigureMode;
     }
 
-    Status = IScsiAsciiStrToIp (
-               IpStr,
-               IpMode,
-               &Session->ConfigData->SessionConfigData.TargetIp
-               );
-
-    if (EFI_ERROR (Status)) {
-      continue;
+    if (NvData->DnsMode) {
+      //
+      // Target address is expressed as URL format, just save it and
+      // do DNS resolution when creating a TCP connection.
+      //
+      if (AsciiStrSize (IpStr) > sizeof (Session->ConfigData->SessionConfigData.TargetUrl)){
+        return EFI_INVALID_PARAMETER;
+      }
+      CopyMem (&Session->ConfigData->SessionConfigData.TargetUrl, IpStr, AsciiStrSize (IpStr));
     } else {
-      break;
+      Status = IScsiAsciiStrToIp (
+                 IpStr,
+                 IpMode,
+                 &Session->ConfigData->SessionConfigData.TargetIp
+                 );
+
+      if (EFI_ERROR (Status)) {
+        continue;
+      } else {
+        NvData->RedirectFlag = TRUE;
+        break;
+      }
     }
   }
 
@@ -1245,7 +1319,10 @@ IScsiReceivePdu (
   }
 
   Header = NetbufAllocSpace (PduHdr, Len, NET_BUF_TAIL);
-  ASSERT (Header != NULL);
+  if (Header == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto ON_EXIT;
+  }
   InsertTailList (NbufList, &PduHdr->List);
 
   //
@@ -2014,39 +2091,6 @@ IScsiDelTcb (
 
 
 /**
-  Find the task control block by the initator task tag.
-
-  @param[in]  TcbList         The tcb list.
-  @param[in]  InitiatorTaskTag The initiator task tag.
-
-  @return The task control block found.
-  @retval NULL The task control block cannot be found.
-
-**/
-ISCSI_TCB *
-IScsiFindTcbByITT (
-  IN LIST_ENTRY      *TcbList,
-  IN UINT32          InitiatorTaskTag
-  )
-{
-  ISCSI_TCB       *Tcb;
-  LIST_ENTRY      *Entry;
-
-  Tcb = NULL;
-
-  NET_LIST_FOR_EACH (Entry, TcbList) {
-    Tcb = NET_LIST_USER_STRUCT (Entry, ISCSI_TCB, Link);
-
-    if (Tcb->InitiatorTaskTag == InitiatorTaskTag) {
-      break;
-    }
-  }
-
-  return Tcb;
-}
-
-
-/**
   Create a data segment, pad it, and calculate the CRC if needed.
 
   @param[in]  Data       The data to fill into the data segment.
@@ -2093,7 +2137,7 @@ IScsiNewDataSegment (
 
   @param[in]  Packet The EXT SCSI PASS THRU request packet containing the SCSI command.
   @param[in]  Lun    The LUN.
-  @param[in]  Tcb    The tcb assocated with this SCSI command.
+  @param[in]  Tcb    The tcb associated with this SCSI command.
 
   @return The  created iSCSI SCSI command PDU.
   @retval NULL Other errors as indicated.
@@ -2316,7 +2360,10 @@ IScsiNewDataOutPdu (
   InsertTailList (NbufList, &PduHdr->List);
 
   DataOutHdr  = (ISCSI_SCSI_DATA_OUT *) NetbufAllocSpace (PduHdr, sizeof (ISCSI_SCSI_DATA_OUT), NET_BUF_TAIL);
-  ASSERT (DataOutHdr != NULL);
+  if (DataOutHdr == NULL) {
+    IScsiFreeNbufList (NbufList);
+    return NULL;
+  }
   XferContext = &Tcb->XferContext;
 
   ZeroMem (DataOutHdr, sizeof (ISCSI_SCSI_DATA_OUT));

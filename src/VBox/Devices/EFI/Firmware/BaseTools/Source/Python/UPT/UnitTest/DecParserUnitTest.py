@@ -1,15 +1,9 @@
 ## @file
 # This file contain unit test for DecParser
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 import os
 import unittest
@@ -61,9 +55,9 @@ class MacroParserTestCase(unittest.TestCase):
         self.dec = _DecBase(FileContent('dummy', []))
 
     def testCorrectMacro(self):
-        self.dec._MacroParser('DEFINE MARCRO1 = test1')
-        self.failIf('MARCRO1' not in self.dec._LocalMacro)
-        self.assertEqual(self.dec._LocalMacro['MARCRO1'], 'test1')
+        self.dec._MacroParser('DEFINE MACRO1 = test1')
+        self.failIf('MACRO1' not in self.dec._LocalMacro)
+        self.assertEqual(self.dec._LocalMacro['MACRO1'], 'test1')
 
     def testErrorMacro1(self):
         # Raise fatal error, macro name must be upper case letter

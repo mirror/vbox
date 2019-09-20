@@ -1,14 +1,8 @@
 /** @file
   Implement TPM2 Sequences related command.
 
-Copyright (c) 2013, Intel Corporation. All rights reserved. <BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved. <BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -375,6 +369,11 @@ Tpm2EventSequenceComplete (
 
   // count
   Results->count = SwapBytes32(ReadUnaligned32 ((UINT32 *)BufferPtr));
+  if (Results->count > HASH_COUNT) {
+    DEBUG ((DEBUG_ERROR, "Tpm2EventSequenceComplete - Results->count error %x\n", Results->count));
+    return EFI_DEVICE_ERROR;
+  }
+
   BufferPtr += sizeof(UINT32);
 
   for (Index = 0; Index < Results->count; Index++) {
@@ -496,6 +495,11 @@ Tpm2SequenceComplete (
 
   // digestSize
   Result->size = SwapBytes16(ReadUnaligned16 ((UINT16 *)BufferPtr));
+  if (Result->size > sizeof(TPMU_HA)){
+    DEBUG ((DEBUG_ERROR, "Tpm2SequenceComplete - Result->size error %x\n", Result->size));
+    return EFI_DEVICE_ERROR;
+  }
+
   BufferPtr += sizeof(UINT16);
 
   CopyMem(

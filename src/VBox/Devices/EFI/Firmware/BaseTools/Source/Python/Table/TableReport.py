@@ -1,25 +1,20 @@
 ## @file
 # This file is used to create/update/query/erase table for ECC reports
 #
-# Copyright (c) 2008 - 2014, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 ##
 # Import Modules
 #
+from __future__ import absolute_import
 import Common.EdkLogger as EdkLogger
 import Common.LongFilePathOs as os, time
-from Table import Table
-from Common.String import ConvertToSqlString2
-import EccToolError as EccToolError
-import EccGlobalData as EccGlobalData
+from Table.Table import Table
+from Common.StringUtils import ConvertToSqlString2
+import Ecc.EccToolError as EccToolError
+import Ecc.EccGlobalData as EccGlobalData
 from Common.LongFilePathSupport import OpenLongFilePath as open
 
 ## TableReport
@@ -68,7 +63,7 @@ class TableReport(Table):
     # @param Enabled:        If this error enabled
     # @param Corrected:      if this error corrected
     #
-    def Insert(self, ErrorID, OtherMsg = '', BelongsToTable = '', BelongsToItem = -1, Enabled = 0, Corrected = -1):
+    def Insert(self, ErrorID, OtherMsg='', BelongsToTable='', BelongsToItem= -1, Enabled=0, Corrected= -1):
         self.ID = self.ID + 1
         SqlCommand = """insert into %s values(%s, %s, '%s', '%s', %s, %s, %s)""" \
                      % (self.Table, self.ID, ErrorID, ConvertToSqlString2(OtherMsg), BelongsToTable, BelongsToItem, Enabled, Corrected)
@@ -85,13 +80,20 @@ class TableReport(Table):
                         where Enabled > -1 order by ErrorID, BelongsToItem""" % (self.Table)
         return self.Exec(SqlCommand)
 
+    ## Update table
+    #
+    def UpdateBelongsToItemByFile(self, ItemID=-1, File=""):
+        SqlCommand = """update Report set BelongsToItem=%s where BelongsToTable='File' and BelongsToItem=-2
+                        and OtherMsg like '%%%s%%'""" % (ItemID, File)
+        return self.Exec(SqlCommand)
+
     ## Convert to CSV
     #
     # Get all enabled records from table report and save them to a .csv file
     #
     # @param Filename:  To filename to save the report content
     #
-    def ToCSV(self, Filename = 'Report.csv'):
+    def ToCSV(self, Filename='Report.csv'):
         try:
             File = open(Filename, 'w+')
             File.write("""No, Error Code, Error Message, File, LineNo, Other Error Message\n""")

@@ -2,14 +2,8 @@
   The driver internal functions are implmented here.
   They build Pei PCD database, and provide access service to PCD database.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -30,8 +24,6 @@ GetLocalTokenNumber (
   )
 {
   UINT32                LocalTokenNumber;
-  UINTN                 Size;
-  UINTN                 MaxSize;
 
   //
   // TokenNumber Zero is reserved as PCD_INVALID_TOKEN_NUMBER.
@@ -41,17 +33,6 @@ GetLocalTokenNumber (
   TokenNumber--;
 
   LocalTokenNumber = *((UINT32 *)((UINT8 *)Database + Database->LocalTokenNumberTableOffset) + TokenNumber);
-
-  Size = (LocalTokenNumber & PCD_DATUM_TYPE_ALL_SET) >> PCD_DATUM_TYPE_SHIFT;
-
-  if ((LocalTokenNumber & PCD_TYPE_SKU_ENABLED) == PCD_TYPE_SKU_ENABLED) {
-    if (Size == 0) {
-      GetPtrTypeSize (TokenNumber, &MaxSize, Database);
-    } else {
-      MaxSize = Size;
-    }
-    LocalTokenNumber = GetSkuEnabledTokenNumber (LocalTokenNumber & ~PCD_TYPE_SKU_ENABLED, MaxSize);
-  }
 
   return LocalTokenNumber;
 }
@@ -107,10 +88,18 @@ GetPcdName (
   )
 {
   UINT8             *StringTable;
+  UINTN             NameSize;
   PCD_NAME_INDEX    *PcdNameIndex;
   CHAR8             *TokenSpaceName;
   CHAR8             *PcdName;
   CHAR8             *Name;
+
+  //
+  // Return NULL when PCD name table is absent.
+  //
+  if (Database->PcdNameTableOffset == 0) {
+    return NULL;
+  }
 
   //
   // TokenNumber Zero is reserved as PCD_INVALID_TOKEN_NUMBER.
@@ -137,14 +126,15 @@ GetPcdName (
     //
     // Need to get the full PCD name.
     //
-    Name = AllocateZeroPool (AsciiStrSize (TokenSpaceName) + AsciiStrSize (PcdName));
+    NameSize = AsciiStrSize (TokenSpaceName) + AsciiStrSize (PcdName);
+    Name = AllocateZeroPool (NameSize);
     ASSERT (Name != NULL);
     //
     // Catenate TokenSpaceCName and PcdCName with a '.' to form the full PCD name.
     //
-    AsciiStrCat (Name, TokenSpaceName);
+    AsciiStrCatS (Name, NameSize, TokenSpaceName);
     Name[AsciiStrSize (TokenSpaceName) - sizeof (CHAR8)] = '.';
-    AsciiStrCat (Name, PcdName);
+    AsciiStrCatS (Name, NameSize, PcdName);
   }
 
   return Name;
@@ -524,89 +514,6 @@ GetHiiVariable (
 }
 
 /**
-  Find the local token number according to system SKU ID.
-
-  @param LocalTokenNumber PCD token number
-  @param Size             The size of PCD entry.
-
-  @return Token number according to system SKU ID.
-
-**/
-UINT32
-GetSkuEnabledTokenNumber (
-  UINT32 LocalTokenNumber,
-  UINTN  Size
-  )
-{
-  PEI_PCD_DATABASE      *PeiPcdDb;
-  SKU_HEAD              *SkuHead;
-  SKU_ID                *SkuIdTable;
-  INTN                  Index;
-  UINT8                 *Value;
-  BOOLEAN               FoundSku;
-
-  PeiPcdDb = GetPcdDatabase ();
-
-  ASSERT ((LocalTokenNumber & PCD_TYPE_SKU_ENABLED) == 0);
-
-  SkuHead     = (SKU_HEAD *) ((UINT8 *)PeiPcdDb + (LocalTokenNumber & PCD_DATABASE_OFFSET_MASK));
-  Value       = (UINT8 *) ((UINT8 *)PeiPcdDb + (SkuHead->SkuDataStartOffset));
-  SkuIdTable  = (SKU_ID *) ((UINT8 *)PeiPcdDb + (SkuHead->SkuIdTableOffset));
-
-  //
-  // Find the current system's SKU ID entry in SKU ID table.
-  //
-  FoundSku = FALSE;
-  for (Index = 0; Index < SkuIdTable[0]; Index++) {
-    if (PeiPcdDb->SystemSkuId == SkuIdTable[Index + 1]) {
-      FoundSku = TRUE;
-      break;
-    }
-  }
-
-  //
-  // Find the default SKU ID entry in SKU ID table.
-  //
-  if(!FoundSku) {
-    for (Index = 0; Index < SkuIdTable[0]; Index++) {
-      if (0 == SkuIdTable[Index + 1]) {
-        break;
-      }
-    }
-  }
-  ASSERT (Index < SkuIdTable[0]);
-
-  switch (LocalTokenNumber & PCD_TYPE_ALL_SET) {
-    case PCD_TYPE_VPD:
-      Value = (UINT8 *) &(((VPD_HEAD *) Value)[Index]);
-      return (UINT32) ((Value - (UINT8 *) PeiPcdDb) | PCD_TYPE_VPD);
-
-    case PCD_TYPE_HII:
-      Value = (UINT8 *) &(((VARIABLE_HEAD *) Value)[Index]);
-      return (UINT32) ((Value - (UINT8 *) PeiPcdDb) | PCD_TYPE_HII);
-
-    case PCD_TYPE_HII|PCD_TYPE_STRING:
-      Value = (UINT8 *) &(((VARIABLE_HEAD *) Value)[Index]);
-      return (UINT32) ((Value - (UINT8 *) PeiPcdDb) | PCD_TYPE_HII | PCD_TYPE_STRING);
-
-    case PCD_TYPE_STRING:
-      Value = (UINT8 *) &(((STRING_HEAD *) Value)[Index]);
-      return (UINT32) ((Value - (UINT8 *) PeiPcdDb) | PCD_TYPE_STRING);
-
-    case PCD_TYPE_DATA:
-      Value += Size * Index;
-      return (UINT32) ((Value - (UINT8 *) PeiPcdDb) | PCD_TYPE_DATA);
-
-    default:
-      ASSERT (FALSE);
-  }
-
-  ASSERT (FALSE);
-
-  return 0;
-}
-
-/**
   Invoke the callback function when dynamic PCD entry was set, if this PCD entry
   has registered callback function.
 
@@ -948,6 +855,7 @@ GetWorker (
   UINT32              LocalTokenNumber;
   UINT32              LocalTokenCount;
   UINT8               *VaraiableDefaultBuffer;
+  UINTN               VpdBaseAddress;
 
   //
   // TokenNumber Zero is reserved as PCD_INVALID_TOKEN_NUMBER.
@@ -976,7 +884,19 @@ GetWorker (
     {
       VPD_HEAD *VpdHead;
       VpdHead = (VPD_HEAD *) ((UINT8 *)PeiPcdDb + Offset);
-      return (VOID *) (UINTN) (PcdGet32 (PcdVpdBaseAddress) + VpdHead->Offset);
+
+      //
+      // PcdVpdBaseAddress64 is DynamicEx PCD only. So, PeiPcdGet64Ex() is used to get its value.
+      //
+      VpdBaseAddress = (UINTN) PeiPcdGet64Ex (&gEfiMdeModulePkgTokenSpaceGuid, PcdToken (PcdVpdBaseAddress64));
+      if (VpdBaseAddress == 0) {
+        //
+        // PcdVpdBaseAddress64 is not set, get value from PcdVpdBaseAddress.
+        //
+        VpdBaseAddress = (UINTN) PcdGet32 (PcdVpdBaseAddress);
+      }
+      ASSERT (VpdBaseAddress != 0);
+      return (VOID *)(VpdBaseAddress + VpdHead->Offset);
     }
 
     case PCD_TYPE_HII|PCD_TYPE_STRING:
@@ -1109,34 +1029,6 @@ GetPcdDatabase (
 }
 
 /**
-  Get SKU ID table from PCD database.
-
-  @param LocalTokenNumberTableIdx Index of local token number in token number table.
-  @param Database                 PCD database.
-
-  @return Pointer to SKU ID array table
-
-**/
-SKU_ID *
-GetSkuIdArray (
-  IN    UINTN             LocalTokenNumberTableIdx,
-  IN    PEI_PCD_DATABASE  *Database
-  )
-{
-  SKU_HEAD *SkuHead;
-  UINTN     LocalTokenNumber;
-
-  LocalTokenNumber = *((UINT32 *)((UINT8 *)Database + Database->LocalTokenNumberTableOffset) + LocalTokenNumberTableIdx);
-
-  ASSERT ((LocalTokenNumber & PCD_TYPE_SKU_ENABLED) != 0);
-
-  SkuHead = (SKU_HEAD *) ((UINT8 *)Database + (LocalTokenNumber & PCD_DATABASE_OFFSET_MASK));
-
-  return (SKU_ID *) ((UINT8 *)Database + SkuHead->SkuIdTableOffset);
-
-}
-
-/**
   Get index of PCD entry in size table.
 
   @param LocalTokenNumberTableIdx Index of this PCD in local token number table.
@@ -1154,7 +1046,6 @@ GetSizeTableIndex (
   UINTN       Index;
   UINTN       SizeTableIdx;
   UINTN       LocalTokenNumber;
-  SKU_ID      *SkuIdTable;
 
   SizeTableIdx = 0;
 
@@ -1175,22 +1066,12 @@ GetSizeTableIndex (
           //
           SizeTableIdx += 2;
       } else {
-        if ((LocalTokenNumber & PCD_TYPE_SKU_ENABLED) == 0) {
           //
           // We have only two entry for Non-Sku enabled PCD entry:
           // 1) MAX SIZE
           // 2) Current Size
           //
           SizeTableIdx += 2;
-        } else {
-          //
-          // We have these entry for SKU enabled PCD entry
-          // 1) MAX SIZE
-          // 2) Current Size for each SKU_ID (It is equal to MaxSku).
-          //
-          SkuIdTable = GetSkuIdArray (Index, Database);
-          SizeTableIdx += (UINTN)*SkuIdTable + 1;
-        }
       }
     }
 

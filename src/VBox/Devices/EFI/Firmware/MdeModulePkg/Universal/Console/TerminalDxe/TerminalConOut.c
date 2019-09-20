@@ -1,14 +1,9 @@
 /** @file
   Implementation for EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL protocol.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+Copyright (C) 2016 Silicon Graphics, Inc. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -65,15 +60,15 @@ UNICODE_TO_CHAR  UnicodeToPcAnsiOrAscii[] = {
   { BLOCKELEMENT_FULL_BLOCK,            0xdb, L'*' },
   { BLOCKELEMENT_LIGHT_SHADE,           0xb0, L'+' },
 
-  { GEOMETRICSHAPE_UP_TRIANGLE,         0x1e, L'^' },
-  { GEOMETRICSHAPE_RIGHT_TRIANGLE,      0x10, L'>' },
-  { GEOMETRICSHAPE_DOWN_TRIANGLE,       0x1f, L'v' },
-  { GEOMETRICSHAPE_LEFT_TRIANGLE,       0x11, L'<' },
+  { GEOMETRICSHAPE_UP_TRIANGLE,         '^', L'^' },
+  { GEOMETRICSHAPE_RIGHT_TRIANGLE,      '>', L'>' },
+  { GEOMETRICSHAPE_DOWN_TRIANGLE,       'v', L'v' },
+  { GEOMETRICSHAPE_LEFT_TRIANGLE,       '<', L'<' },
 
-  { ARROW_LEFT,                         0x3c, L'<' },
-  { ARROW_UP,                           0x18, L'^' },
-  { ARROW_RIGHT,                        0x3e, L'>' },
-  { ARROW_DOWN,                         0x19, L'v' },
+  { ARROW_LEFT,                         '<', L'<' },
+  { ARROW_UP,                           '^', L'^' },
+  { ARROW_RIGHT,                        '>', L'>' },
+  { ARROW_DOWN,                         'v', L'v' },
 
   { 0x0000,                             0x00, L'\0' }
 };
@@ -82,6 +77,8 @@ CHAR16 mSetModeString[]            = { ESC, '[', '=', '3', 'h', 0 };
 CHAR16 mSetAttributeString[]       = { ESC, '[', '0', 'm', ESC, '[', '4', '0', 'm', ESC, '[', '4', '0', 'm', 0 };
 CHAR16 mClearScreenString[]        = { ESC, '[', '2', 'J', 0 };
 CHAR16 mSetCursorPositionString[]  = { ESC, '[', '0', '0', ';', '0', '0', 'H', 0 };
+CHAR16 mCursorForwardString[]      = { ESC, '[', '0', '0', 'C', 0 };
+CHAR16 mCursorBackwardString[]     = { ESC, '[', '0', '0', 'D', 0 };
 
 //
 // Body of the ConOut functions
@@ -185,6 +182,7 @@ TerminalConOutOutputString (
   CHAR8                       AsciiChar;
   EFI_STATUS                  Status;
   UINT8                       ValidBytes;
+  CHAR8                       CrLfStr[2];
   //
   //  flag used to indicate whether condition happens which will cause
   //  return EFI_WARN_UNKNOWN_GLYPH
@@ -220,9 +218,10 @@ TerminalConOutOutputString (
 
     switch (TerminalDevice->TerminalType) {
 
-    case PCANSITYPE:
-    case VT100TYPE:
-    case VT100PLUSTYPE:
+    case TerminalTypePcAnsi:
+    case TerminalTypeVt100:
+    case TerminalTypeVt100Plus:
+    case TerminalTypeTtyTerm:
 
       if (!TerminalIsValidTextGraphics (*WString, &GraphicChar, &AsciiChar)) {
         //
@@ -248,7 +247,7 @@ TerminalConOutOutputString (
 
       }
 
-      if (TerminalDevice->TerminalType != PCANSITYPE) {
+      if (TerminalDevice->TerminalType != TerminalTypePcAnsi) {
         GraphicChar = AsciiChar;
       }
 
@@ -266,7 +265,7 @@ TerminalConOutOutputString (
 
       break;
 
-    case VTUTF8TYPE:
+    case TerminalTypeVtUtf8:
       UnicodeToUtf8 (*WString, &Utf8Char, &ValidBytes);
       Length = ValidBytes;
       Status = TerminalDevice->SerialIo->Write (
@@ -312,6 +311,31 @@ TerminalConOutOutputString (
           Mode->CursorRow++;
         }
 
+        if (TerminalDevice->TerminalType == TerminalTypeTtyTerm &&
+            !TerminalDevice->OutputEscChar) {
+          //
+          // We've written the last character on the line.  The
+          // terminal doesn't actually wrap its cursor until we print
+          // the next character, but the driver thinks it has wrapped
+          // already.  Print CR LF to synchronize the terminal with
+          // the driver, but only if we're not in the middle of
+          // printing an escape sequence.
+          //
+          CrLfStr[0] = '\r';
+          CrLfStr[1] = '\n';
+
+          Length = sizeof(CrLfStr);
+
+          Status = TerminalDevice->SerialIo->Write (
+                                                TerminalDevice->SerialIo,
+                                                &Length,
+                                                CrLfStr
+                                                );
+
+          if (EFI_ERROR (Status)) {
+            goto OutputError;
+          }
+        }
       }
       break;
 
@@ -368,13 +392,14 @@ TerminalConOutTestString (
 
   switch (TerminalDevice->TerminalType) {
 
-  case PCANSITYPE:
-  case VT100TYPE:
-  case VT100PLUSTYPE:
+  case TerminalTypePcAnsi:
+  case TerminalTypeVt100:
+  case TerminalTypeVt100Plus:
+  case TerminalTypeTtyTerm:
     Status = AnsiTestString (TerminalDevice, WString);
     break;
 
-  case VTUTF8TYPE:
+  case TerminalTypeVtUtf8:
     Status = VTUTF8TestString (TerminalDevice, WString);
     break;
 
@@ -728,6 +753,7 @@ TerminalConOutSetCursorPosition (
   UINTN                       MaxRow;
   EFI_STATUS                  Status;
   TERMINAL_DEV                *TerminalDevice;
+  CHAR16                      *String;
 
   TerminalDevice = TERMINAL_CON_OUT_DEV_FROM_THIS (This);
 
@@ -755,13 +781,36 @@ TerminalConOutSetCursorPosition (
   //
   // control sequence to move the cursor
   //
-  mSetCursorPositionString[ROW_OFFSET + 0]    = (CHAR16) ('0' + ((Row + 1) / 10));
-  mSetCursorPositionString[ROW_OFFSET + 1]    = (CHAR16) ('0' + ((Row + 1) % 10));
-  mSetCursorPositionString[COLUMN_OFFSET + 0] = (CHAR16) ('0' + ((Column + 1) / 10));
-  mSetCursorPositionString[COLUMN_OFFSET + 1] = (CHAR16) ('0' + ((Column + 1) % 10));
+  // Optimize cursor motion control sequences for TtyTerm.  Move
+  // within the current line if possible, and don't output anyting if
+  // it isn't necessary.
+  //
+  if (TerminalDevice->TerminalType == TerminalTypeTtyTerm &&
+      (UINTN)Mode->CursorRow == Row) {
+    if ((UINTN)Mode->CursorColumn > Column) {
+      mCursorBackwardString[FW_BACK_OFFSET + 0] = (CHAR16) ('0' + ((Mode->CursorColumn - Column) / 10));
+      mCursorBackwardString[FW_BACK_OFFSET + 1] = (CHAR16) ('0' + ((Mode->CursorColumn - Column) % 10));
+      String = mCursorBackwardString;
+    }
+    else if (Column > (UINTN)Mode->CursorColumn) {
+      mCursorForwardString[FW_BACK_OFFSET + 0] = (CHAR16) ('0' + ((Column - Mode->CursorColumn) / 10));
+      mCursorForwardString[FW_BACK_OFFSET + 1] = (CHAR16) ('0' + ((Column - Mode->CursorColumn) % 10));
+      String = mCursorForwardString;
+    }
+    else {
+      String = L"";  // No cursor motion necessary
+    }
+  }
+  else {
+    mSetCursorPositionString[ROW_OFFSET + 0]    = (CHAR16) ('0' + ((Row + 1) / 10));
+    mSetCursorPositionString[ROW_OFFSET + 1]    = (CHAR16) ('0' + ((Row + 1) % 10));
+    mSetCursorPositionString[COLUMN_OFFSET + 0] = (CHAR16) ('0' + ((Column + 1) / 10));
+    mSetCursorPositionString[COLUMN_OFFSET + 1] = (CHAR16) ('0' + ((Column + 1) % 10));
+    String = mSetCursorPositionString;
+  }
 
   TerminalDevice->OutputEscChar               = TRUE;
-  Status = This->OutputString (This, mSetCursorPositionString);
+  Status = This->OutputString (This, String);
   TerminalDevice->OutputEscChar = FALSE;
 
   if (EFI_ERROR (Status)) {

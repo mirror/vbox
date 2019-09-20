@@ -5,14 +5,8 @@ power failure happens during the boot block update, the swapped backup block (no
 can boot the machine with the old boot block backed up in it. The swap operation is platform dependent, so
 other protocols such as FTW (Fault Tolerant Write) should use this protocol instead of handling hardware directly.
 
-Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 

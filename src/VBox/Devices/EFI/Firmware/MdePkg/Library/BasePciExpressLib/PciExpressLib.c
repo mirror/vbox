@@ -5,14 +5,8 @@
   All assertions for I/O operations are handled in MMIO functions in the IoLib
   Library.
 
-  Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -35,6 +29,31 @@
 **/
 #define ASSERT_INVALID_PCI_ADDRESS(A) \
   ASSERT (((A) & ~0xfffffff) == 0)
+
+#ifdef VBOX
+
+STATIC UINT64 mPciExpressBaseAddress;
+
+RETURN_STATUS
+EFIAPI
+PciExpressLibConstructor (
+  VOID
+  )
+{
+  //
+  // Accessing PciExpressBaseAddress as a dynamic PCD does not work
+  // because LibPcdGet64() worker tries to raise the TPL to 16 when
+  // it was already set to 31 by caller further up the chain. We need
+  // to read the value (which won't change) and cache it here.
+  //
+  mPciExpressBaseAddress = PcdGet64 (PcdPciExpressBaseAddress);
+  if (!mPciExpressBaseAddress)
+    return RETURN_LOAD_ERROR;
+
+  return RETURN_SUCCESS;
+}
+#endif
+
 
 /**
   Registers a PCI device so PCI configuration registers may be accessed after
@@ -82,7 +101,11 @@ GetPciExpressBaseAddress (
   VOID
   )
 {
+#ifdef VBOX
+  return (VOID*)(UINTN) mPciExpressBaseAddress;
+#else
   return (VOID*)(UINTN) PcdGet64 (PcdPciExpressBaseAddress);
+#endif
 }
 
 /**

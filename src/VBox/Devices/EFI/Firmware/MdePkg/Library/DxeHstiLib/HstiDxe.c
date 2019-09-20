@@ -1,13 +1,7 @@
 /** @file
 
-  Copyright (c) 2015, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2015 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -206,12 +200,12 @@ InternalHstiIsValidTable (
     }
   }
   if (Index == sizeof(Hsti->ImplementationID)/sizeof(Hsti->ImplementationID[0])) {
-    DEBUG ((EFI_D_ERROR, "ImplementationID is no NUL CHAR\n"));
+    DEBUG ((EFI_D_ERROR, "ImplementationID has no NUL CHAR\n"));
     return FALSE;
   }
 
   ErrorStringSize = HstiSize - sizeof(ADAPTER_INFO_PLATFORM_SECURITY) - Hsti->SecurityFeaturesSize * 3;
-  ErrorString = (CHAR16 *)((UINTN)Hsti + sizeof(ADAPTER_INFO_PLATFORM_SECURITY) - Hsti->SecurityFeaturesSize * 3);
+  ErrorString = (CHAR16 *)((UINTN)Hsti + sizeof(ADAPTER_INFO_PLATFORM_SECURITY) + Hsti->SecurityFeaturesSize * 3);
 
   //
   // basic check for ErrorString
@@ -297,7 +291,7 @@ HstiLibSetTable (
     return EFI_OUT_OF_RESOURCES;
   }
   HstiAip->Hsti = AllocateCopyPool (HstiSize, Hsti);
-  if (HstiAip == NULL) {
+  if (HstiAip->Hsti == NULL) {
     FreePool (HstiAip);
     return EFI_OUT_OF_RESOURCES;
   }
@@ -416,6 +410,7 @@ InternalHstiRecordFeaturesVerified (
                   Hsti,
                   HstiSize
                   );
+  FreePool (Hsti);
   return Status;
 }
 
@@ -545,6 +540,8 @@ InternalHstiRecordErrorString (
                   NewHsti,
                   NewHstiSize
                   );
+  FreePool (Hsti);
+  FreePool (NewHsti);
   return Status;
 }
 

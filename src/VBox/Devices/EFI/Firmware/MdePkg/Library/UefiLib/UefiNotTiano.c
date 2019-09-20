@@ -6,41 +6,14 @@
   (EDK/EFI 1.10) and new (EDK II/UEFI 2.0) way. This module is a DXE driver as
   it contains DXE enum extensions for EFI event services.
 
-Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
 
 
 #include "UefiLibInternal.h"
-
-/**
-  An empty function to pass error checking of CreateEventEx ().
-
-  This empty function ensures that EVT_NOTIFY_SIGNAL_ALL is error
-  checked correctly since it is now mapped into CreateEventEx() in UEFI 2.0.
-
-  @param  Event                 Event whose notification function is being invoked.
-  @param  Context               The pointer to the notification function's context,
-                                which is implementation-dependent.
-
-**/
-VOID
-EFIAPI
-InternalEmptyFunction (
-  IN EFI_EVENT                Event,
-  IN VOID                     *Context
-  )
-{
-  return;
-}
 
 /**
   Creates an EFI event in the Legacy Boot Event Group.
@@ -67,7 +40,7 @@ EfiCreateEventLegacyBoot (
 {
   return EfiCreateEventLegacyBootEx (
            TPL_CALLBACK,
-           InternalEmptyFunction,
+           EfiEventEmptyFunction,
            NULL,
            LegacyBootEvent
            );
@@ -120,7 +93,7 @@ EfiCreateEventLegacyBootEx (
       // CreateEventEx will check NotifyFunction is NULL or not and return error.
       // Use dummy routine for the case NotifyFunction is NULL.
       //
-      WorkerNotifyFunction = InternalEmptyFunction;
+      WorkerNotifyFunction = EfiEventEmptyFunction;
     } else {
       WorkerNotifyFunction = NotifyFunction;
     }
@@ -162,7 +135,7 @@ EfiCreateEventReadyToBoot (
 {
   return EfiCreateEventReadyToBootEx (
            TPL_CALLBACK,
-           InternalEmptyFunction,
+           EfiEventEmptyFunction,
            NULL,
            ReadyToBootEvent
            );
@@ -215,7 +188,7 @@ EfiCreateEventReadyToBootEx (
       // CreateEventEx will check NotifyFunction is NULL or not and return error.
       // Use dummy routine for the case NotifyFunction is NULL.
       //
-      WorkerNotifyFunction = InternalEmptyFunction;
+      WorkerNotifyFunction = EfiEventEmptyFunction;
     } else {
       WorkerNotifyFunction = NotifyFunction;
     }

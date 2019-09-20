@@ -2,17 +2,11 @@
   Provides the basic interfaces to abstract platform information regarding an
   IDE controller.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
-  This Protocol is defined in UEFI Platform Initialization Specification 1.2
+  This Protocol is defined in UEFI Platform Initialization Specification 1.6
   Volume 5: Standards
 
 **/
@@ -79,6 +73,14 @@ typedef struct _EFI_DISK_INFO_PROTOCOL  EFI_DISK_INFO_PROTOCOL;
 #define EFI_DISK_INFO_UFS_INTERFACE_GUID \
   { \
     0x4b3029cc, 0x6b98, 0x47fb, { 0xbc, 0x96, 0x76, 0xdc, 0xb8, 0x4, 0x41, 0xf0 } \
+  }
+
+///
+/// Global ID for an SD/MMC interface.  Used to fill in EFI_DISK_INFO_PROTOCOL.Interface
+///
+#define EFI_DISK_INFO_SD_MMC_INTERFACE_GUID \
+  { \
+    0x8deec992, 0xd39c, 0x4a5c, { 0xab, 0x6b, 0x98, 0x6e, 0x14, 0x24, 0x2b, 0x9d } \
   }
 
 /**
@@ -214,5 +216,6 @@ extern EFI_GUID gEfiDiskInfoUsbInterfaceGuid;
 extern EFI_GUID gEfiDiskInfoAhciInterfaceGuid;
 extern EFI_GUID gEfiDiskInfoNvmeInterfaceGuid;
 extern EFI_GUID gEfiDiskInfoUfsInterfaceGuid;
+extern EFI_GUID gEfiDiskInfoSdMmcInterfaceGuid;
 
 #endif

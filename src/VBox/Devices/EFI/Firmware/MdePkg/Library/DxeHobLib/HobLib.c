@@ -1,14 +1,8 @@
 /** @file
   HOB Library implemenation for Dxe Phase.
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -24,35 +18,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 VOID  *mHobList = NULL;
 
 /**
-  The constructor function caches the pointer to HOB list.
-
-  The constructor function gets the start address of HOB list from system configuration table.
-  It will ASSERT() if that operation fails and it will always return EFI_SUCCESS.
-
-  @param  ImageHandle   The firmware allocated handle for the EFI image.
-  @param  SystemTable   A pointer to the EFI System Table.
-
-  @retval EFI_SUCCESS   The constructor successfully gets HobList.
-  @retval Other value   The constructor can't get HobList.
-
-**/
-EFI_STATUS
-EFIAPI
-HobLibConstructor (
-  IN EFI_HANDLE        ImageHandle,
-  IN EFI_SYSTEM_TABLE  *SystemTable
-  )
-{
-  EFI_STATUS  Status;
-
-  Status = EfiGetSystemConfigurationTable (&gEfiHobListGuid, &mHobList);
-  ASSERT_EFI_ERROR (Status);
-  ASSERT (mHobList != NULL);
-
-  return Status;
-}
-
-/**
   Returns the pointer to the HOB list.
 
   This function returns the pointer to first HOB in the list.
@@ -65,6 +30,8 @@ HobLibConstructor (
 
   If the pointer to the HOB list is NULL, then ASSERT().
 
+  This function also caches the pointer to the HOB list retrieved.
+
   @return The pointer to the HOB list.
 
 **/
@@ -74,8 +41,36 @@ GetHobList (
   VOID
   )
 {
-  ASSERT (mHobList != NULL);
+  EFI_STATUS  Status;
+
+  if (mHobList == NULL) {
+    Status = EfiGetSystemConfigurationTable (&gEfiHobListGuid, &mHobList);
+    ASSERT_EFI_ERROR (Status);
+    ASSERT (mHobList != NULL);
+  }
   return mHobList;
+}
+
+/**
+  The constructor function caches the pointer to HOB list by calling GetHobList()
+  and will always return EFI_SUCCESS.
+
+  @param  ImageHandle   The firmware allocated handle for the EFI image.
+  @param  SystemTable   A pointer to the EFI System Table.
+
+  @retval EFI_SUCCESS   The constructor successfully gets HobList.
+
+**/
+EFI_STATUS
+EFIAPI
+HobLibConstructor (
+  IN EFI_HANDLE        ImageHandle,
+  IN EFI_SYSTEM_TABLE  *SystemTable
+  )
+{
+  GetHobList ();
+
+  return EFI_SUCCESS;
 }
 
 /**
@@ -418,6 +413,7 @@ BuildGuidDataHob (
   for DXE phase, it will ASSERT() since PEI HOB is read-only for DXE phase.
 
   If there is no additional space for HOB creation, then ASSERT().
+  If the FvImage buffer is not at its required alignment, then ASSERT().
 
   @param  BaseAddress   The base address of the Firmware Volume.
   @param  Length        The size of the Firmware Volume in bytes.
@@ -444,6 +440,7 @@ BuildFvHob (
   for DXE phase, it will ASSERT() since PEI HOB is read-only for DXE phase.
 
   If there is no additional space for HOB creation, then ASSERT().
+  If the FvImage buffer is not at its required alignment, then ASSERT().
 
   @param  BaseAddress   The base address of the Firmware Volume.
   @param  Length        The size of the Firmware Volume in bytes.
@@ -463,6 +460,40 @@ BuildFv2Hob (
   ASSERT (FALSE);
 }
 
+/**
+  Builds a EFI_HOB_TYPE_FV3 HOB.
+
+  This function builds a EFI_HOB_TYPE_FV3 HOB.
+  It can only be invoked during PEI phase;
+  for DXE phase, it will ASSERT() since PEI HOB is read-only for DXE phase.
+
+  If there is no additional space for HOB creation, then ASSERT().
+  If the FvImage buffer is not at its required alignment, then ASSERT().
+
+  @param BaseAddress            The base address of the Firmware Volume.
+  @param Length                 The size of the Firmware Volume in bytes.
+  @param AuthenticationStatus   The authentication status.
+  @param ExtractedFv            TRUE if the FV was extracted as a file within
+                                another firmware volume. FALSE otherwise.
+  @param FvName                 The name of the Firmware Volume.
+                                Valid only if IsExtractedFv is TRUE.
+  @param FileName               The name of the file.
+                                Valid only if IsExtractedFv is TRUE.
+
+**/
+VOID
+EFIAPI
+BuildFv3Hob (
+  IN          EFI_PHYSICAL_ADDRESS        BaseAddress,
+  IN          UINT64                      Length,
+  IN          UINT32                      AuthenticationStatus,
+  IN          BOOLEAN                     ExtractedFv,
+  IN CONST    EFI_GUID                    *FvName, OPTIONAL
+  IN CONST    EFI_GUID                    *FileName OPTIONAL
+  )
+{
+  ASSERT (FALSE);
+}
 
 /**
   Builds a Capsule Volume HOB.

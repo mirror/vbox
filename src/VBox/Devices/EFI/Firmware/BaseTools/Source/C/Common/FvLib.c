@@ -1,14 +1,8 @@
 /** @file
 These functions assist in parsing and manipulating a Firmware Volume.
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -194,7 +188,7 @@ Returns:
   //
   // Get next file, compensate for 8 byte alignment if necessary.
   //
-  *NextFile = (EFI_FFS_FILE_HEADER *) ((((UINTN) CurrentFile - (UINTN) mFvHeader + GetFfsFileLength(CurrentFile) + 0x07) & (-1 << 3)) + (UINT8 *) mFvHeader);
+  *NextFile = (EFI_FFS_FILE_HEADER *) ((((UINTN) CurrentFile - (UINTN) mFvHeader + GetFfsFileLength(CurrentFile) + 0x07) & (~(UINTN) 7)) + (UINT8 *) mFvHeader);
 
   //
   // Verify file is in this FV.
@@ -318,7 +312,7 @@ Routine Description:
 Arguments:
 
   FileType    Type of file to search for.
-  Instance    Instace of the file type to return.
+  Instance    Instance of the file type to return.
   File        Return pointer.  In the case of an error, contents are undefined.
 
 Returns:
@@ -479,7 +473,7 @@ Returns:
     //
     // Find next section (including compensating for alignment issues.
     //
-    CurrentSection.CommonHeader = (EFI_COMMON_SECTION_HEADER *) ((((UINTN) CurrentSection.CommonHeader) + GetSectionFileLength(CurrentSection.CommonHeader) + 0x03) & (-1 << 2));
+    CurrentSection.CommonHeader = (EFI_COMMON_SECTION_HEADER *) ((((UINTN) CurrentSection.CommonHeader) + GetSectionFileLength(CurrentSection.CommonHeader) + 0x03) & (~(UINTN) 3));
   }
 
   return EFI_NOT_FOUND;
@@ -505,7 +499,7 @@ Arguments:
 
   File        The file to search.
   SectionType Type of file to search for.
-  Instance    Instace of the section to return.
+  Instance    Instance of the section to return.
   Section     Return pointer.  In the case of an error, contents are undefined.
 
 Returns:
@@ -784,7 +778,7 @@ Returns:
     return 0;
   }
   if (FfsHeader->Attributes & FFS_ATTRIB_LARGE_FILE) {
-    return ((EFI_FFS_FILE_HEADER2 *)FfsHeader)->ExtendedSize;
+    return (UINT32) ((EFI_FFS_FILE_HEADER2 *)FfsHeader)->ExtendedSize;
   } else {
     return GetLength(FfsHeader->Size);
   }

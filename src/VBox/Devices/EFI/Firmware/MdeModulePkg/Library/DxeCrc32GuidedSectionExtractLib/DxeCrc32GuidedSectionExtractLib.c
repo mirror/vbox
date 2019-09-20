@@ -4,14 +4,8 @@
   to parse CRC32 encapsulation section and extract raw data.
   It uses UEFI boot service CalculateCrc32 to authenticate 32 bit CRC value.
 
-Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -48,7 +42,7 @@ typedef struct {
   @param SectionAttribute   The attribute of the input guided section.
 
   @retval EFI_SUCCESS            The size of destination buffer, the size of scratch buffer and
-                                 the attribute of the input section are successull retrieved.
+                                 the attribute of the input section are successfully retrieved.
   @retval EFI_INVALID_PARAMETER  The GUID in InputSection does not match this instance guid.
 
 **/

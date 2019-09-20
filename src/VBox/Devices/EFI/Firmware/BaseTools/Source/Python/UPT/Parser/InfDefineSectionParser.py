@@ -1,15 +1,9 @@
 ## @file
 # This file contained the parser for define sections in INF file
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
@@ -133,7 +127,7 @@ class InfDefinSectionParser(InfParserSectionRoot):
             if LineContent.find(DT.TAB_COMMENT_SPLIT) > -1:
                 TailComments = LineContent[LineContent.find(DT.TAB_COMMENT_SPLIT):]
                 LineContent = LineContent[:LineContent.find(DT.TAB_COMMENT_SPLIT)]
-                if LineComment == None:
+                if LineComment is None:
                     LineComment = InfLineCommentObject()
                 LineComment.SetTailComments(TailComments)
 
@@ -144,7 +138,7 @@ class InfDefinSectionParser(InfParserSectionRoot):
                                       FileName,
                                       DT.MODEL_META_DATA_HEADER,
                                       self.FileLocalMacros)
-            if Name != None:
+            if Name is not None:
                 self.FileLocalMacros[Name] = Value
                 continue
 
@@ -173,7 +167,7 @@ class InfDefinSectionParser(InfParserSectionRoot):
             Name, Value = _ValueList[0], _ValueList[1]
 
             InfDefMemberObj = InfDefMember(Name, Value)
-            if (LineComment != None):
+            if (LineComment is not None):
                 InfDefMemberObj.Comments.SetHeaderComments(LineComment.GetHeaderComments())
                 InfDefMemberObj.Comments.SetTailComments(LineComment.GetTailComments())
 
@@ -194,4 +188,4 @@ class InfDefinSectionParser(InfParserSectionRoot):
         InfSectionObject.SetAllContent(SectionContent)
 
         InfSectionObject.SetDefines(_ContentList, Arch=ArchList)
-        
+

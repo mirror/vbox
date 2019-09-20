@@ -3,14 +3,8 @@
 
   This library uses the local APIC library so that it supports x2APIC mode.
 
-  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -45,6 +39,9 @@ InternalX86GetTimerFrequency (
   Stalls the CPU for at least the given number of ticks. It's invoked by
   MicroSecondDelay() and NanoSecondDelay().
 
+  This function will ASSERT if the APIC timer intial count returned from
+  GetApicTimerInitCount() is zero.
+
   @param  Delay     A period of time to delay in ticks.
 
 **/
@@ -67,6 +64,7 @@ InternalX86Delay (
   // Delay and the Init Count.
   //
   InitCount = GetApicTimerInitCount ();
+  ASSERT (InitCount != 0);
   Times     = Delay / (InitCount / 2);
   Delay     = Delay % (InitCount / 2);
 

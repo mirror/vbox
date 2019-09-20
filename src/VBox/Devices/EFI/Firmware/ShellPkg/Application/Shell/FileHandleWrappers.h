@@ -2,13 +2,7 @@
   EFI_FILE_PROTOCOL wrappers for other items (Like Environment Variables, StdIn, StdOut, StdErr, etc...)
 
   Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -55,7 +49,6 @@ extern EFI_FILE_PROTOCOL FileInterfaceNulFile;
   @return other     a pointer to an EFI_FILE_PROTOCOL structure
 **/
 EFI_FILE_PROTOCOL*
-EFIAPI
 CreateFileInterfaceEnv(
   CONST CHAR16 *EnvName
   );
@@ -70,7 +63,6 @@ CreateFileInterfaceEnv(
   @return other     a pointer to an EFI_FILE_PROTOCOL structure
 **/
 EFI_FILE_PROTOCOL*
-EFIAPI
 CreateFileInterfaceMem(
   IN CONST BOOLEAN Unicode
   );

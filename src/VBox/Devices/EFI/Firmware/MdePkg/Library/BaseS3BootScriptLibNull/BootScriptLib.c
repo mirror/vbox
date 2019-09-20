@@ -1,16 +1,9 @@
 /** @file
   Null function implementation for EFI S3 boot script.
 
-  Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions
-  of the BSD License which accompanies this distribution.  The
-  full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -38,7 +31,7 @@ S3BootScriptSaveIoWrite (
   IN  VOID                              *Buffer
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 
 /**
@@ -61,7 +54,7 @@ S3BootScriptSaveIoReadWrite (
   IN  VOID                            *DataMask
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 
 /**
@@ -84,7 +77,7 @@ S3BootScriptSaveMemWrite (
   IN  VOID                              *Buffer
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for a memory modify operation into a specified boot script table.
@@ -106,7 +99,7 @@ S3BootScriptSaveMemReadWrite (
   IN  VOID                              *DataMask
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for a PCI configuration space write operation into a specified boot script table.
@@ -128,7 +121,7 @@ S3BootScriptSavePciCfgWrite (
   IN  VOID                            *Buffer
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 
 /**
@@ -151,7 +144,7 @@ S3BootScriptSavePciCfgReadWrite (
   IN  VOID                              *DataMask
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for a PCI configuration space modify operation into a specified boot script table.
@@ -175,7 +168,7 @@ S3BootScriptSavePciCfg2Write (
   IN VOID                           *Buffer
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for a PCI configuration space modify operation into a specified boot script table.
@@ -199,7 +192,7 @@ S3BootScriptSavePciCfg2ReadWrite (
   IN VOID                           *DataMask
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for an SMBus command execution into a specified boot script table.
@@ -222,7 +215,7 @@ S3BootScriptSaveSmbusExecute (
   IN  VOID                              *Buffer
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for an execution stall on the processor into a specified boot script table.
@@ -238,7 +231,7 @@ S3BootScriptSaveStall (
   IN  UINTN                             Duration
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for dispatching specified arbitrary code into a specified boot script table.
@@ -272,7 +265,7 @@ S3BootScriptSaveDispatch2 (
   IN  VOID                              *Context
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 
 /**
@@ -303,10 +296,10 @@ S3BootScriptSaveMemPoll (
   IN  VOID                              *BitMask,
   IN  VOID                              *BitValue,
   IN  UINTN                             Duration,
-  IN  UINTN                             LoopTimes
+  IN  UINT64                            LoopTimes
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 
 /**
@@ -328,7 +321,7 @@ S3BootScriptSaveInformation (
   IN  VOID                    *Information
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for I/O reads the I/O location and continues when the exit criteria is satisfied or after a
@@ -356,7 +349,7 @@ S3BootScriptSaveIoPoll (
   IN UINT64                     Delay
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 
 /**
@@ -385,7 +378,7 @@ S3BootScriptSavePciPoll (
    IN UINT64                     Delay
  )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Adds a record for PCI configuration space reads and continues when the exit criteria is satisfied or
@@ -418,7 +411,7 @@ S3BootScriptSavePci2Poll (
    IN UINT64                        Delay
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Save ASCII string information specified by Buffer to
@@ -436,7 +429,7 @@ S3BootScriptSaveInformationAsciiString (
   IN  CONST CHAR8               *String
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   This is an function to close the S3 boot script table. The function could only be called in
@@ -469,7 +462,7 @@ S3BootScriptCloseTable (
   VOID
   )
 {
-	return 0;
+  return 0;
 }
 /**
   Executes the S3 boot script table.
@@ -483,7 +476,7 @@ S3BootScriptExecute (
    VOID
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Move the last boot script entry to the position
@@ -507,7 +500,7 @@ S3BootScriptMoveLastOpcode (
   IN OUT VOID                         **Position OPTIONAL
 )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Find a label within the boot script table and, if not present, optionally create it.
@@ -540,7 +533,7 @@ S3BootScriptLabel (
   IN CONST CHAR8                       *Label
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }
 /**
   Compare two positions in the boot script table and return their relative position.
@@ -564,5 +557,5 @@ S3BootScriptCompare (
   OUT UINTN                       *RelativePosition
   )
 {
-	return RETURN_SUCCESS;
+  return RETURN_SUCCESS;
 }

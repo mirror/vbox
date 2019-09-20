@@ -2,15 +2,9 @@
 # This file is used to define class objects for DEC file. It will consumed by
 #DecParser
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 DecObject
@@ -171,7 +165,7 @@ class _DecItemBaseObject(_DecComments):
 
 ## DecDefineObject
 #
-# Class to hold define section infomation
+# Class to hold define section information
 #
 class DecDefineObject(_DecBaseObject):
     def __init__(self, PkgFullName):
@@ -520,7 +514,7 @@ class DecGuidObject(DecGuidObjectBase):
 
 ## DecPpiObject
 #
-# Class for PPI seciont
+# Class for PPI section
 #
 # @param DecGuidObjectBase: Dec Guid Object Base
 #

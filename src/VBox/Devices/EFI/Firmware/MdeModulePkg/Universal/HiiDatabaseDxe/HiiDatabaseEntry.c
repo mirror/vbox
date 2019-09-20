@@ -2,14 +2,8 @@
 This file contains the entry code to the HII database, which is defined by
 UEFI 2.1 specification.
 
-Copyright (c) 2007 - 2008, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,6 +14,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // Global variables
 //
 EFI_EVENT gHiiKeyboardLayoutChanged;
+BOOLEAN   gExportAfterReadyToBoot = FALSE;
 
 HII_DATABASE_PRIVATE_DATA mPrivate = {
   HII_DATABASE_PRIVATE_DATA_SIGNATURE,
@@ -38,11 +33,19 @@ HII_DATABASE_PRIVATE_DATA mPrivate = {
     HiiGetFontInfo
   },
   {
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL
+    HiiNewImage,
+    HiiGetImage,
+    HiiSetImage,
+    HiiDrawImage,
+    HiiDrawImageId
+  },
+  {
+    HiiNewImageEx,
+    HiiGetImageEx,
+    HiiSetImageEx,
+    HiiDrawImageEx,
+    HiiDrawImageIdEx,
+    HiiGetImageInfo
   },
   {
     HiiNewString,
@@ -73,6 +76,10 @@ HII_DATABASE_PRIVATE_DATA mPrivate = {
     HiiGetAltCfg
   },
   {
+    EfiConfigKeywordHandlerSetData,
+    EfiConfigKeywordHandlerGetData
+  },
+  {
     (LIST_ENTRY *) NULL,
     (LIST_ENTRY *) NULL
   },
@@ -89,14 +96,6 @@ HII_DATABASE_PRIVATE_DATA mPrivate = {
     {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
   },
   NULL
-};
-
-GLOBAL_REMOVE_IF_UNREFERENCED CONST EFI_HII_IMAGE_PROTOCOL mImageProtocol = {
-  HiiNewImage,
-  HiiGetImage,
-  HiiSetImage,
-  HiiDrawImage,
-  HiiDrawImageId
 };
 
 /**
@@ -120,6 +119,33 @@ KeyboardLayoutChangeNullEvent (
 }
 
 /**
+  On Ready To Boot Services Event notification handler.
+
+  To trigger the function that to export the Hii Configuration setting.
+
+  @param[in]  Event     Event whose notification function is being invoked
+  @param[in]  Context   Pointer to the notification function's context
+
+**/
+VOID
+EFIAPI
+OnReadyToBoot (
+  IN      EFI_EVENT                         Event,
+  IN      VOID                              *Context
+  )
+{
+  //
+  // When ready to boot, we begin to export the HiiDatabase date.
+  // And hook all the possible HiiDatabase change actions to export data.
+  //
+  HiiGetDatabaseInfo (&mPrivate.HiiDatabase);
+  HiiGetConfigRespInfo (&mPrivate.HiiDatabase);
+  gExportAfterReadyToBoot = TRUE;
+
+  gBS->CloseEvent (Event);
+}
+
+/**
   Initialize HII Database.
 
 
@@ -129,8 +155,10 @@ KeyboardLayoutChangeNullEvent (
   @retval EFI_SUCCESS    The Hii database is setup correctly.
   @return Other value if failed to create the default event for
           gHiiKeyboardLayoutChanged. Check gBS->CreateEventEx for
-          details. Or failed to insatll the protocols.
+          details. Or failed to install the protocols.
           Check gBS->InstallMultipleProtocolInterfaces for details.
+          Or failed to create Ready To Boot Event.
+          Check EfiCreateEventReadyToBootEx for details.
 
 **/
 EFI_STATUS
@@ -142,6 +170,7 @@ InitializeHiiDatabase (
 {
   EFI_STATUS                             Status;
   EFI_HANDLE                             Handle;
+  EFI_EVENT                              ReadyToBootEvent;
 
   //
   // There will be only one HII Database in the system
@@ -153,6 +182,7 @@ InitializeHiiDatabase (
   ASSERT_PROTOCOL_ALREADY_INSTALLED (NULL, &gEfiHiiImageProtocolGuid);
   ASSERT_PROTOCOL_ALREADY_INSTALLED (NULL, &gEfiHiiStringProtocolGuid);
   ASSERT_PROTOCOL_ALREADY_INSTALLED (NULL, &gEfiHiiConfigRoutingProtocolGuid);
+  ASSERT_PROTOCOL_ALREADY_INSTALLED (NULL, &gEfiConfigKeywordHandlerProtocolGuid);
 
   InitializeListHead (&mPrivate.DatabaseList);
   InitializeListHead (&mPrivate.DatabaseNotifyList);
@@ -185,6 +215,8 @@ InitializeHiiDatabase (
                   &mPrivate.HiiDatabase,
                   &gEfiHiiConfigRoutingProtocolGuid,
                   &mPrivate.ConfigRouting,
+                  &gEfiConfigKeywordHandlerProtocolGuid,
+                  &mPrivate.ConfigKeywordHandler,
                   NULL
                   );
 
@@ -193,15 +225,25 @@ InitializeHiiDatabase (
   }
 
   if (FeaturePcdGet (PcdSupportHiiImageProtocol)) {
-    CopyMem (&mPrivate.HiiImage, &mImageProtocol, sizeof (mImageProtocol));
-
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &Handle,
-                    &gEfiHiiImageProtocolGuid,
-                    &mPrivate.HiiImage,
+                    &gEfiHiiImageProtocolGuid, &mPrivate.HiiImage,
+                    &gEfiHiiImageExProtocolGuid, &mPrivate.HiiImageEx,
                     NULL
                     );
 
+  }
+
+  if (FeaturePcdGet(PcdHiiOsRuntimeSupport)) {
+    Status = EfiCreateEventReadyToBootEx (
+               TPL_CALLBACK,
+               OnReadyToBoot,
+               NULL,
+               &ReadyToBootEvent
+               );
+    if (EFI_ERROR (Status)) {
+      return Status;
+    }
   }
 
   return Status;

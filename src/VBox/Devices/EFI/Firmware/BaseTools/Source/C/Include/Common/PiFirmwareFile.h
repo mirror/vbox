@@ -2,17 +2,11 @@
   The firmware file related definitions in PI.
 
   @par Revision Reference:
-  Version 1.0.
+  Version 1.4.
 
-  Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-    http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -52,6 +46,8 @@ typedef UINT8 EFI_FFS_FILE_STATE;
 #define EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE 0x0B
 #define EFI_FV_FILETYPE_COMBINED_SMM_DXE      0x0C
 #define EFI_FV_FILETYPE_SMM_CORE              0x0D
+#define EFI_FV_FILETYPE_MM_STANDALONE         0x0E
+#define EFI_FV_FILETYPE_MM_CORE_STANDALONE    0x0F
 #define EFI_FV_FILETYPE_OEM_MIN               0xc0
 #define EFI_FV_FILETYPE_OEM_MAX               0xdf
 #define EFI_FV_FILETYPE_DEBUG_MIN             0xe0
@@ -63,6 +59,7 @@ typedef UINT8 EFI_FFS_FILE_STATE;
 // FFS File Attributes.
 //
 #define FFS_ATTRIB_LARGE_FILE         0x01
+#define FFS_ATTRIB_DATA_ALIGNMENT2    0x02
 #define FFS_ATTRIB_FIXED              0x04
 #define FFS_ATTRIB_DATA_ALIGNMENT     0x38
 #define FFS_ATTRIB_CHECKSUM           0x40
@@ -110,7 +107,7 @@ typedef struct {
   EFI_FFS_FILE_ATTRIBUTES Attributes;
   UINT8                   Size[3];
   EFI_FFS_FILE_STATE      State;
-  UINT32                  ExtendedSize;
+  UINT64                  ExtendedSize;
 } EFI_FFS_FILE_HEADER2;
 
 #define MAX_FFS_SIZE        0x1000000
@@ -303,8 +300,15 @@ typedef struct {
   CHAR16                      VersionString[1];
 } EFI_VERSION_SECTION2;
 
-#define SECTION_SIZE(SectionHeaderPtr) \
-    ((UINT32) (*((UINT32 *) ((EFI_COMMON_SECTION_HEADER *) SectionHeaderPtr)->Size) & 0x00ffffff))
+//
+// The argument passed as the SectionHeaderPtr parameter to the SECTION_SIZE()
+// function-like macro below must not have side effects: SectionHeaderPtr is
+// evaluated multiple times.
+//
+#define SECTION_SIZE(SectionHeaderPtr) ((UINT32) ( \
+    (((EFI_COMMON_SECTION_HEADER *) (SectionHeaderPtr))->Size[0]      ) | \
+    (((EFI_COMMON_SECTION_HEADER *) (SectionHeaderPtr))->Size[1] <<  8) | \
+    (((EFI_COMMON_SECTION_HEADER *) (SectionHeaderPtr))->Size[2] << 16)))
 
 #pragma pack()
 

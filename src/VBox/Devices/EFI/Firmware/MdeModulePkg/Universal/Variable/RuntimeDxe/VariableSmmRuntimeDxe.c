@@ -1,5 +1,4 @@
 /** @file
-
   Implement all four UEFI Runtime Variable services for the nonvolatile
   and volatile storage space and install variable architecture protocol
   based on SMM variable module.
@@ -14,14 +13,8 @@
 
   InitCommunicateBuffer() is really function to check the variable data size.
 
-Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2010 - 2017, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 #include <PiDxe.h>
@@ -30,6 +23,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/SmmCommunication.h>
 #include <Protocol/SmmVariable.h>
 #include <Protocol/VariableLock.h>
+#include <Protocol/VarCheck.h>
 
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/UefiRuntimeServicesTableLib.h>
@@ -38,13 +32,13 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiRuntimeLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/DebugLib.h>
-#include <Library/PcdLib.h>
 #include <Library/UefiLib.h>
 #include <Library/BaseLib.h>
 
 #include <Guid/EventGroup.h>
-#include <Guid/VariableFormat.h>
 #include <Guid/SmmVariableCommon.h>
+
+#include "PrivilegePolymorphic.h"
 
 EFI_HANDLE                       mHandle                    = NULL;
 EFI_SMM_VARIABLE_PROTOCOL       *mSmmVariable               = NULL;
@@ -56,6 +50,18 @@ UINTN                            mVariableBufferSize;
 UINTN                            mVariableBufferPayloadSize;
 EFI_LOCK                         mVariableServicesLock;
 EDKII_VARIABLE_LOCK_PROTOCOL     mVariableLock;
+EDKII_VAR_CHECK_PROTOCOL         mVarCheck;
+
+/**
+  Some Secure Boot Policy Variable may update following other variable changes(SecureBoot follows PK change, etc).
+  Record their initial State when variable write service is ready.
+
+**/
+VOID
+EFIAPI
+RecordSecureBootPolicyVarData(
+  VOID
+  );
 
 /**
   Acquires lock only at boot time. Simply returns at runtime.
@@ -245,6 +251,180 @@ Done:
 }
 
 /**
+  Register SetVariable check handler.
+
+  @param[in] Handler            Pointer to check handler.
+
+  @retval EFI_SUCCESS           The SetVariable check handler was registered successfully.
+  @retval EFI_INVALID_PARAMETER Handler is NULL.
+  @retval EFI_ACCESS_DENIED     EFI_END_OF_DXE_EVENT_GROUP_GUID or EFI_EVENT_GROUP_READY_TO_BOOT has
+                                already been signaled.
+  @retval EFI_OUT_OF_RESOURCES  There is not enough resource for the SetVariable check handler register request.
+  @retval EFI_UNSUPPORTED       This interface is not implemented.
+                                For example, it is unsupported in VarCheck protocol if both VarCheck and SmmVarCheck protocols are present.
+
+**/
+EFI_STATUS
+EFIAPI
+VarCheckRegisterSetVariableCheckHandler (
+  IN VAR_CHECK_SET_VARIABLE_CHECK_HANDLER   Handler
+  )
+{
+  return EFI_UNSUPPORTED;
+}
+
+/**
+  Variable property set.
+
+  @param[in] Name               Pointer to the variable name.
+  @param[in] Guid               Pointer to the vendor GUID.
+  @param[in] VariableProperty   Pointer to the input variable property.
+
+  @retval EFI_SUCCESS           The property of variable specified by the Name and Guid was set successfully.
+  @retval EFI_INVALID_PARAMETER Name, Guid or VariableProperty is NULL, or Name is an empty string,
+                                or the fields of VariableProperty are not valid.
+  @retval EFI_ACCESS_DENIED     EFI_END_OF_DXE_EVENT_GROUP_GUID or EFI_EVENT_GROUP_READY_TO_BOOT has
+                                already been signaled.
+  @retval EFI_OUT_OF_RESOURCES  There is not enough resource for the variable property set request.
+
+**/
+EFI_STATUS
+EFIAPI
+VarCheckVariablePropertySet (
+  IN CHAR16                         *Name,
+  IN EFI_GUID                       *Guid,
+  IN VAR_CHECK_VARIABLE_PROPERTY    *VariableProperty
+  )
+{
+  EFI_STATUS                                Status;
+  UINTN                                     VariableNameSize;
+  UINTN                                     PayloadSize;
+  SMM_VARIABLE_COMMUNICATE_VAR_CHECK_VARIABLE_PROPERTY *CommVariableProperty;
+
+  if (Name == NULL || Name[0] == 0 || Guid == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (VariableProperty == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (VariableProperty->Revision != VAR_CHECK_VARIABLE_PROPERTY_REVISION) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  VariableNameSize = StrSize (Name);
+  CommVariableProperty = NULL;
+
+  //
+  // If VariableName exceeds SMM payload limit. Return failure
+  //
+  if (VariableNameSize > mVariableBufferPayloadSize - OFFSET_OF (SMM_VARIABLE_COMMUNICATE_VAR_CHECK_VARIABLE_PROPERTY, Name)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  AcquireLockOnlyAtBootTime (&mVariableServicesLock);
+
+  //
+  // Init the communicate buffer. The buffer data size is:
+  // SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + PayloadSize.
+  //
+  PayloadSize = OFFSET_OF (SMM_VARIABLE_COMMUNICATE_VAR_CHECK_VARIABLE_PROPERTY, Name) + VariableNameSize;
+  Status = InitCommunicateBuffer ((VOID **) &CommVariableProperty, PayloadSize, SMM_VARIABLE_FUNCTION_VAR_CHECK_VARIABLE_PROPERTY_SET);
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+  ASSERT (CommVariableProperty != NULL);
+
+  CopyGuid (&CommVariableProperty->Guid, Guid);
+  CopyMem (&CommVariableProperty->VariableProperty, VariableProperty, sizeof (*VariableProperty));
+  CommVariableProperty->NameSize = VariableNameSize;
+  CopyMem (CommVariableProperty->Name, Name, CommVariableProperty->NameSize);
+
+  //
+  // Send data to SMM.
+  //
+  Status = SendCommunicateBuffer (PayloadSize);
+
+Done:
+  ReleaseLockOnlyAtBootTime (&mVariableServicesLock);
+  return Status;
+}
+
+/**
+  Variable property get.
+
+  @param[in]  Name              Pointer to the variable name.
+  @param[in]  Guid              Pointer to the vendor GUID.
+  @param[out] VariableProperty  Pointer to the output variable property.
+
+  @retval EFI_SUCCESS           The property of variable specified by the Name and Guid was got successfully.
+  @retval EFI_INVALID_PARAMETER Name, Guid or VariableProperty is NULL, or Name is an empty string.
+  @retval EFI_NOT_FOUND         The property of variable specified by the Name and Guid was not found.
+
+**/
+EFI_STATUS
+EFIAPI
+VarCheckVariablePropertyGet (
+  IN CHAR16                         *Name,
+  IN EFI_GUID                       *Guid,
+  OUT VAR_CHECK_VARIABLE_PROPERTY   *VariableProperty
+  )
+{
+  EFI_STATUS                                Status;
+  UINTN                                     VariableNameSize;
+  UINTN                                     PayloadSize;
+  SMM_VARIABLE_COMMUNICATE_VAR_CHECK_VARIABLE_PROPERTY *CommVariableProperty;
+
+  if (Name == NULL || Name[0] == 0 || Guid == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  if (VariableProperty == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  VariableNameSize = StrSize (Name);
+  CommVariableProperty = NULL;
+
+  //
+  // If VariableName exceeds SMM payload limit. Return failure
+  //
+  if (VariableNameSize > mVariableBufferPayloadSize - OFFSET_OF (SMM_VARIABLE_COMMUNICATE_VAR_CHECK_VARIABLE_PROPERTY, Name)) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  AcquireLockOnlyAtBootTime (&mVariableServicesLock);
+
+  //
+  // Init the communicate buffer. The buffer data size is:
+  // SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + PayloadSize.
+  //
+  PayloadSize = OFFSET_OF (SMM_VARIABLE_COMMUNICATE_VAR_CHECK_VARIABLE_PROPERTY, Name) + VariableNameSize;
+  Status = InitCommunicateBuffer ((VOID **) &CommVariableProperty, PayloadSize, SMM_VARIABLE_FUNCTION_VAR_CHECK_VARIABLE_PROPERTY_GET);
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+  ASSERT (CommVariableProperty != NULL);
+
+  CopyGuid (&CommVariableProperty->Guid, Guid);
+  CommVariableProperty->NameSize = VariableNameSize;
+  CopyMem (CommVariableProperty->Name, Name, CommVariableProperty->NameSize);
+
+  //
+  // Send data to SMM.
+  //
+  Status = SendCommunicateBuffer (PayloadSize);
+  if (Status == EFI_SUCCESS) {
+    CopyMem (VariableProperty, &CommVariableProperty->VariableProperty, sizeof (*VariableProperty));
+  }
+
+Done:
+  ReleaseLockOnlyAtBootTime (&mVariableServicesLock);
+  return Status;
+}
+
+/**
   This code finds variable in storage blocks (Volatile or Non-Volatile).
 
   Caution: This function may receive untrusted input.
@@ -280,10 +460,6 @@ RuntimeServiceGetVariable (
   UINTN                                     VariableNameSize;
 
   if (VariableName == NULL || VendorGuid == NULL || DataSize == NULL) {
-    return EFI_INVALID_PARAMETER;
-  }
-
-  if ((*DataSize != 0) && (Data == NULL)) {
     return EFI_INVALID_PARAMETER;
   }
 
@@ -351,7 +527,11 @@ RuntimeServiceGetVariable (
     goto Done;
   }
 
-  CopyMem (Data, (UINT8 *)SmmVariableHeader->Name + SmmVariableHeader->NameSize, SmmVariableHeader->DataSize);
+  if (Data != NULL) {
+    CopyMem (Data, (UINT8 *)SmmVariableHeader->Name + SmmVariableHeader->NameSize, SmmVariableHeader->DataSize);
+  } else {
+    Status = EFI_INVALID_PARAMETER;
+  }
 
 Done:
   ReleaseLockOnlyAtBootTime (&mVariableServicesLock);
@@ -417,7 +597,6 @@ RuntimeServiceGetNextVariableName (
   // Payload should be Guid + NameSize + MAX of Input & Output buffer
   //
   PayloadSize = OFFSET_OF (SMM_VARIABLE_COMMUNICATE_GET_NEXT_VARIABLE_NAME, Name) + MAX (OutVariableNameSize, InVariableNameSize);
-
 
   Status = InitCommunicateBuffer ((VOID **)&SmmGetNextVariableName, PayloadSize, SMM_VARIABLE_FUNCTION_GET_NEXT_VARIABLE_NAME);
   if (EFI_ERROR (Status)) {
@@ -550,6 +729,15 @@ RuntimeServiceSetVariable (
 
 Done:
   ReleaseLockOnlyAtBootTime (&mVariableServicesLock);
+
+  if (!EfiAtRuntime ()) {
+    if (!EFI_ERROR (Status)) {
+      SecureBootHook (
+        VariableName,
+        VendorGuid
+        );
+    }
+  }
   return Status;
 }
 
@@ -681,6 +869,8 @@ OnReadyToBoot (
   // Send data to SMM.
   //
   SendCommunicateBuffer (0);
+
+  gBS->CloseEvent (Event);
 }
 
 
@@ -705,6 +895,79 @@ VariableAddressChangeEvent (
   EfiConvertPointer (0x0, (VOID **) &mSmmCommunication);
 }
 
+/**
+  This code gets variable payload size.
+
+  @param[out] VariablePayloadSize   Output pointer to variable payload size.
+
+  @retval EFI_SUCCESS               Get successfully.
+  @retval Others                    Get unsuccessfully.
+
+**/
+EFI_STATUS
+EFIAPI
+GetVariablePayloadSize (
+  OUT UINTN                         *VariablePayloadSize
+  )
+{
+  EFI_STATUS                                Status;
+  SMM_VARIABLE_COMMUNICATE_GET_PAYLOAD_SIZE *SmmGetPayloadSize;
+  EFI_SMM_COMMUNICATE_HEADER                *SmmCommunicateHeader;
+  SMM_VARIABLE_COMMUNICATE_HEADER           *SmmVariableFunctionHeader;
+  UINTN                                     CommSize;
+  UINT8                                     *CommBuffer;
+
+  SmmGetPayloadSize = NULL;
+  CommBuffer = NULL;
+
+  if(VariablePayloadSize == NULL) {
+    return EFI_INVALID_PARAMETER;
+  }
+
+  AcquireLockOnlyAtBootTime(&mVariableServicesLock);
+
+  //
+  // Init the communicate buffer. The buffer data size is:
+  // SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + sizeof (SMM_VARIABLE_COMMUNICATE_GET_PAYLOAD_SIZE);
+  //
+  CommSize = SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + sizeof (SMM_VARIABLE_COMMUNICATE_GET_PAYLOAD_SIZE);
+  CommBuffer = AllocateZeroPool (CommSize);
+  if (CommBuffer == NULL) {
+    Status = EFI_OUT_OF_RESOURCES;
+    goto Done;
+  }
+
+  SmmCommunicateHeader = (EFI_SMM_COMMUNICATE_HEADER *) CommBuffer;
+  CopyGuid (&SmmCommunicateHeader->HeaderGuid, &gEfiSmmVariableProtocolGuid);
+  SmmCommunicateHeader->MessageLength = SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + sizeof (SMM_VARIABLE_COMMUNICATE_GET_PAYLOAD_SIZE);
+
+  SmmVariableFunctionHeader = (SMM_VARIABLE_COMMUNICATE_HEADER *) SmmCommunicateHeader->Data;
+  SmmVariableFunctionHeader->Function = SMM_VARIABLE_FUNCTION_GET_PAYLOAD_SIZE;
+  SmmGetPayloadSize = (SMM_VARIABLE_COMMUNICATE_GET_PAYLOAD_SIZE *) SmmVariableFunctionHeader->Data;
+
+  //
+  // Send data to SMM.
+  //
+  Status = mSmmCommunication->Communicate (mSmmCommunication, CommBuffer, &CommSize);
+  ASSERT_EFI_ERROR (Status);
+
+  Status = SmmVariableFunctionHeader->ReturnStatus;
+  if (EFI_ERROR (Status)) {
+    goto Done;
+  }
+
+  //
+  // Get data from SMM.
+  //
+  *VariablePayloadSize = SmmGetPayloadSize->VariablePayloadSize;
+
+Done:
+  if (CommBuffer != NULL) {
+    FreePool (CommBuffer);
+  }
+  ReleaseLockOnlyAtBootTime (&mVariableServicesLock);
+  return Status;
+}
 
 /**
   Initialize variable service and install Variable Architectural protocol.
@@ -733,8 +996,8 @@ SmmVariableReady (
   //
   // Allocate memory for variable communicate buffer.
   //
-  mVariableBufferPayloadSize = MAX (PcdGet32 (PcdMaxVariableSize), PcdGet32 (PcdMaxHardwareErrorVariableSize)) +
-                               OFFSET_OF (SMM_VARIABLE_COMMUNICATE_ACCESS_VARIABLE, Name) - sizeof (VARIABLE_HEADER);
+  Status = GetVariablePayloadSize (&mVariableBufferPayloadSize);
+  ASSERT_EFI_ERROR (Status);
   mVariableBufferSize  = SMM_COMMUNICATE_HEADER_SIZE + SMM_VARIABLE_COMMUNICATE_HEADER_SIZE + mVariableBufferPayloadSize;
   mVariableBuffer      = AllocateRuntimePool (mVariableBufferSize);
   ASSERT (mVariableBuffer != NULL);
@@ -759,6 +1022,28 @@ SmmVariableReady (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  mVariableLock.RequestToLock = VariableLockRequestToLock;
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &mHandle,
+                  &gEdkiiVariableLockProtocolGuid,
+                  &mVariableLock,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  mVarCheck.RegisterSetVariableCheckHandler = VarCheckRegisterSetVariableCheckHandler;
+  mVarCheck.VariablePropertySet = VarCheckVariablePropertySet;
+  mVarCheck.VariablePropertyGet = VarCheckVariablePropertyGet;
+  Status = gBS->InstallMultipleProtocolInterfaces (
+                  &mHandle,
+                  &gEdkiiVarCheckProtocolGuid,
+                  &mVarCheck,
+                  NULL
+                  );
+  ASSERT_EFI_ERROR (Status);
+
+  gBS->CloseEvent (Event);
 }
 
 
@@ -787,6 +1072,12 @@ SmmVariableWriteReady (
     return;
   }
 
+  //
+  // Some Secure Boot Policy Var (SecureBoot, etc) updates following other
+  // Secure Boot Policy Variable change.  Record their initial value.
+  //
+  RecordSecureBootPolicyVarData();
+
   Status = gBS->InstallProtocolInterface (
                   &mHandle,
                   &gEfiVariableWriteArchProtocolGuid,
@@ -794,6 +1085,8 @@ SmmVariableWriteReady (
                   NULL
                   );
   ASSERT_EFI_ERROR (Status);
+
+  gBS->CloseEvent (Event);
 }
 
 
@@ -816,22 +1109,13 @@ VariableSmmRuntimeInitialize (
   IN EFI_SYSTEM_TABLE                       *SystemTable
   )
 {
-  EFI_STATUS                                Status;
   VOID                                      *SmmVariableRegistration;
   VOID                                      *SmmVariableWriteRegistration;
   EFI_EVENT                                 OnReadyToBootEvent;
   EFI_EVENT                                 ExitBootServiceEvent;
+  EFI_EVENT                                 LegacyBootEvent;
 
   EfiInitializeLock (&mVariableServicesLock, TPL_NOTIFY);
-
-  mVariableLock.RequestToLock = VariableLockRequestToLock;
-  Status = gBS->InstallMultipleProtocolInterfaces (
-                  &mHandle,
-                  &gEdkiiVariableLockProtocolGuid,
-                  &mVariableLock,
-                  NULL
-                  );
-  ASSERT_EFI_ERROR (Status);
 
   //
   // Smm variable service is ready
@@ -876,6 +1160,17 @@ VariableSmmRuntimeInitialize (
          &gEfiEventExitBootServicesGuid,
          &ExitBootServiceEvent
          );
+
+  //
+  // Register the event to inform SMM variable that it is at runtime for legacy boot.
+  // Reuse OnExitBootServices() here.
+  //
+  EfiCreateEventLegacyBootEx(
+    TPL_NOTIFY,
+    OnExitBootServices,
+    NULL,
+    &LegacyBootEvent
+    );
 
   //
   // Register the event to convert the pointer for runtime.

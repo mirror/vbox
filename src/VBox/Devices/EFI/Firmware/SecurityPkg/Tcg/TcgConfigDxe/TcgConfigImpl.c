@@ -1,14 +1,8 @@
 /** @file
   HII Config Access protocol implementation of TCG configuration module.
 
-Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2011 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -149,8 +143,6 @@ TcgExtractConfig (
   )
 {
   EFI_STATUS                 Status;
-  UINTN                      BufferSize;
-  TCG_CONFIGURATION          Configuration;
   TCG_CONFIG_PRIVATE_DATA    *PrivateData;
   EFI_STRING                 ConfigRequestHdr;
   EFI_STRING                 ConfigRequest;
@@ -158,7 +150,6 @@ TcgExtractConfig (
   UINTN                      Size;
   BOOLEAN                    TpmEnable;
   BOOLEAN                    TpmActivate;
-  CHAR16                     State[32];
 
   if (Progress == NULL || Results == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -179,12 +170,10 @@ TcgExtractConfig (
   //
   // Convert buffer data to <ConfigResp> by helper function BlockToConfig()
   //
-  ZeroMem (&Configuration, sizeof (TCG_CONFIGURATION));
-
-  Configuration.TpmOperation    = PHYSICAL_PRESENCE_ENABLE;
+  PrivateData->Configuration->TpmOperation = PHYSICAL_PRESENCE_NO_ACTION;
 
   //
-  // Display current TPM state.
+  // Get current TPM state.
   //
   if (PrivateData->TcgProtocol != NULL) {
     Status = GetTpmState (PrivateData->TcgProtocol, &TpmEnable, &TpmActivate);
@@ -192,20 +181,10 @@ TcgExtractConfig (
       return Status;
     }
 
-    UnicodeSPrint (
-      State,
-      sizeof (State),
-      L"%s, and %s",
-      TpmEnable   ? L"Enabled"   : L"Disabled",
-      TpmActivate ? L"Activated" : L"Deactivated"
-      );
-    Configuration.TpmEnable   = TpmEnable;
-    Configuration.TpmActivate = TpmActivate;
-
-    HiiSetString (PrivateData->HiiHandle, STRING_TOKEN (STR_TPM_STATE_CONTENT), State, NULL);
+    PrivateData->Configuration->TpmEnable   = TpmEnable;
+    PrivateData->Configuration->TpmActivate = TpmActivate;
   }
 
-  BufferSize = sizeof (Configuration);
   ConfigRequest = Request;
   if ((Request == NULL) || (StrStr (Request, L"OFFSET") == NULL)) {
     //
@@ -218,15 +197,15 @@ TcgExtractConfig (
     ConfigRequest = AllocateZeroPool (Size);
     ASSERT (ConfigRequest != NULL);
     AllocatedRequest = TRUE;
-    UnicodeSPrint (ConfigRequest, Size, L"%s&OFFSET=0&WIDTH=%016LX", ConfigRequestHdr, (UINT64) BufferSize);
+    UnicodeSPrint (ConfigRequest, Size, L"%s&OFFSET=0&WIDTH=%016LX", ConfigRequestHdr, sizeof (TCG_CONFIGURATION));
     FreePool (ConfigRequestHdr);
   }
 
   Status = gHiiConfigRouting->BlockToConfig (
                                 gHiiConfigRouting,
                                 ConfigRequest,
-                                (UINT8 *) &Configuration,
-                                BufferSize,
+                                (UINT8 *) PrivateData->Configuration,
+                                sizeof (TCG_CONFIGURATION),
                                 Results,
                                 Progress
                                 );
@@ -386,8 +365,27 @@ TcgCallback (
      OUT EFI_BROWSER_ACTION_REQUEST            *ActionRequest
   )
 {
+  TCG_CONFIG_PRIVATE_DATA    *PrivateData;
+  CHAR16                     State[32];
+
   if ((This == NULL) || (Value == NULL) || (ActionRequest == NULL)) {
     return EFI_INVALID_PARAMETER;
+  }
+
+  if (Action == EFI_BROWSER_ACTION_FORM_OPEN) {
+    if (QuestionId == KEY_TPM_ACTION) {
+
+      PrivateData = TCG_CONFIG_PRIVATE_DATA_FROM_THIS (This);
+      UnicodeSPrint (
+        State,
+        sizeof (State),
+        L"%s, and %s",
+        PrivateData->Configuration->TpmEnable   ? L"Enabled"   : L"Disabled",
+        PrivateData->Configuration->TpmActivate ? L"Activated" : L"Deactivated"
+        );
+      HiiSetString (PrivateData->HiiHandle, STRING_TOKEN (STR_TPM_STATE_CONTENT), State, NULL);
+    }
+    return EFI_SUCCESS;
   }
 
   if ((Action != EFI_BROWSER_ACTION_CHANGED) || (QuestionId != KEY_TPM_ACTION)) {
@@ -498,5 +496,8 @@ UninstallTcgConfigForm (
     PrivateData->DriverHandle = NULL;
   }
 
+  if (PrivateData->Configuration != NULL) {
+    FreePool(PrivateData->Configuration);
+  }
   FreePool (PrivateData);
 }

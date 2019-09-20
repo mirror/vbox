@@ -1,15 +1,17 @@
 /* 7zFile.c -- File IO
-2008-11-22 : Igor Pavlov : Public domain */
+2017-04-03 : Igor Pavlov : Public domain */
+
+#include "Precomp.h"
 
 #include "7zFile.h"
 
 #ifndef USE_WINDOWS_FILE
 
+#ifndef UNDER_CE
 #include <errno.h>
-
 #endif
 
-#ifdef USE_WINDOWS_FILE
+#else
 
 /*
    ReadFile and WriteFile functions in Windows have BUG:
@@ -34,6 +36,7 @@ void File_Construct(CSzFile *p)
   #endif
 }
 
+#if !defined(UNDER_CE) || !defined(USE_WINDOWS_FILE)
 static WRes File_Open(CSzFile *p, const char *name, int writeMode)
 {
   #ifdef USE_WINDOWS_FILE
@@ -45,12 +48,32 @@ static WRes File_Open(CSzFile *p, const char *name, int writeMode)
   return (p->handle != INVALID_HANDLE_VALUE) ? 0 : GetLastError();
   #else
   p->file = fopen(name, writeMode ? "wb+" : "rb");
-  return (p->file != 0) ? 0 : errno;
+  return (p->file != 0) ? 0 :
+    #ifdef UNDER_CE
+    2; /* ENOENT */
+    #else
+    errno;
+    #endif
   #endif
 }
 
 WRes InFile_Open(CSzFile *p, const char *name) { return File_Open(p, name, 0); }
 WRes OutFile_Open(CSzFile *p, const char *name) { return File_Open(p, name, 1); }
+#endif
+
+#ifdef USE_WINDOWS_FILE
+static WRes File_OpenW(CSzFile *p, const WCHAR *name, int writeMode)
+{
+  p->handle = CreateFileW(name,
+      writeMode ? GENERIC_WRITE : GENERIC_READ,
+      FILE_SHARE_READ, NULL,
+      writeMode ? CREATE_ALWAYS : OPEN_EXISTING,
+      FILE_ATTRIBUTE_NORMAL, NULL);
+  return (p->handle != INVALID_HANDLE_VALUE) ? 0 : GetLastError();
+}
+WRes InFile_OpenW(CSzFile *p, const WCHAR *name) { return File_OpenW(p, name, 0); }
+WRes OutFile_OpenW(CSzFile *p, const WCHAR *name) { return File_OpenW(p, name, 1); }
+#endif
 
 WRes File_Close(CSzFile *p)
 {
@@ -215,49 +238,49 @@ WRes File_GetLength(CSzFile *p, UInt64 *length)
 
 /* ---------- FileSeqInStream ---------- */
 
-static SRes FileSeqInStream_Read(void *pp, void *buf, size_t *size)
+static SRes FileSeqInStream_Read(const ISeqInStream *pp, void *buf, size_t *size)
 {
-  CFileSeqInStream *p = (CFileSeqInStream *)pp;
+  CFileSeqInStream *p = CONTAINER_FROM_VTBL(pp, CFileSeqInStream, vt);
   return File_Read(&p->file, buf, size) == 0 ? SZ_OK : SZ_ERROR_READ;
 }
 
 void FileSeqInStream_CreateVTable(CFileSeqInStream *p)
 {
-  p->s.Read = FileSeqInStream_Read;
+  p->vt.Read = FileSeqInStream_Read;
 }
 
 
 /* ---------- FileInStream ---------- */
 
-static SRes FileInStream_Read(void *pp, void *buf, size_t *size)
+static SRes FileInStream_Read(const ISeekInStream *pp, void *buf, size_t *size)
 {
-  CFileInStream *p = (CFileInStream *)pp;
+  CFileInStream *p = CONTAINER_FROM_VTBL(pp, CFileInStream, vt);
   return (File_Read(&p->file, buf, size) == 0) ? SZ_OK : SZ_ERROR_READ;
 }
 
-static SRes FileInStream_Seek(void *pp, Int64 *pos, ESzSeek origin)
+static SRes FileInStream_Seek(const ISeekInStream *pp, Int64 *pos, ESzSeek origin)
 {
-  CFileInStream *p = (CFileInStream *)pp;
+  CFileInStream *p = CONTAINER_FROM_VTBL(pp, CFileInStream, vt);
   return File_Seek(&p->file, pos, origin);
 }
 
 void FileInStream_CreateVTable(CFileInStream *p)
 {
-  p->s.Read = FileInStream_Read;
-  p->s.Seek = FileInStream_Seek;
+  p->vt.Read = FileInStream_Read;
+  p->vt.Seek = FileInStream_Seek;
 }
 
 
 /* ---------- FileOutStream ---------- */
 
-static size_t FileOutStream_Write(void *pp, const void *data, size_t size)
+static size_t FileOutStream_Write(const ISeqOutStream *pp, const void *data, size_t size)
 {
-  CFileOutStream *p = (CFileOutStream *)pp;
+  CFileOutStream *p = CONTAINER_FROM_VTBL(pp, CFileOutStream, vt);
   File_Write(&p->file, data, &size);
   return size;
 }
 
 void FileOutStream_CreateVTable(CFileOutStream *p)
 {
-  p->s.Write = FileOutStream_Write;
+  p->vt.Write = FileOutStream_Write;
 }

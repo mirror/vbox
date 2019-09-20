@@ -1,15 +1,8 @@
 /** @file
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -24,6 +17,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Ppi/ReadOnlyVariable2.h>
 #include <Guid/CapsuleVendor.h>
 
+#include <Library/BaseLib.h>
 #include <Library/DebugLib.h>
 #include <Library/PeimEntryPoint.h>
 #include <Library/PeiServicesLib.h>
@@ -36,6 +30,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/PcdLib.h>
 #include <Library/ReportStatusCodeLib.h>
 #include <Library/DebugAgentLib.h>
+#include <Library/MemoryAllocationLib.h>
 #include <IndustryStandard/PeImage.h>
 #include "Common/CommonHeader.h"
 
@@ -119,10 +114,8 @@ typedef union {
 typedef
 EFI_STATUS
 (*COALESCE_ENTRY) (
-  IN EFI_PEI_SERVICES                **PeiServices,
-  IN EFI_CAPSULE_BLOCK_DESCRIPTOR    *BlockList,
-  IN OUT VOID                        **MemoryBase,
-  IN OUT UINTN                       *MemorySize
+  SWITCH_32_TO_64_CONTEXT       *EntrypointContext,
+  SWITCH_64_TO_32_CONTEXT       *ReturnContext
   );
 
 #endif

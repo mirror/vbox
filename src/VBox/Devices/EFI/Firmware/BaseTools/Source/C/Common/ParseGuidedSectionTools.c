@@ -1,14 +1,8 @@
 /** @file
 Helper functions for parsing GuidedSectionTools.txt
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -36,7 +30,7 @@ typedef struct _GUID_SEC_TOOL_ENTRY {
 } GUID_SEC_TOOL_ENTRY;
 
 //
-// Functin Implementation
+// Function Implementation
 //
 
 EFI_HANDLE
@@ -125,10 +119,12 @@ Returns:
 
     Status = StripInfDscStringInPlace (NextLine);
     if (EFI_ERROR (Status)) {
+      free (NextLine);
       break;
     }
 
     if (NextLine[0] == '\0') {
+      free (NextLine);
       continue;
     }
 
@@ -144,16 +140,21 @@ Returns:
           NewGuidTool->Name = CloneString(Tool->Strings[1]);
           NewGuidTool->Path = CloneString(Tool->Strings[2]);
           NewGuidTool->Next = NULL;
+
+          if (FirstGuidTool == NULL) {
+            FirstGuidTool = NewGuidTool;
+          } else {
+            LastGuidTool->Next = NewGuidTool;
+          }
+          LastGuidTool = NewGuidTool;
         }
-        if (FirstGuidTool == NULL) {
-          FirstGuidTool = NewGuidTool;
-        } else {
-          LastGuidTool->Next = NewGuidTool;
-        }
-        LastGuidTool = NewGuidTool;
       }
+    }
+
+    if (Tool != NULL) {
       FreeStringList (Tool);
     }
+    free (NextLine);
   }
 
   return FirstGuidTool;

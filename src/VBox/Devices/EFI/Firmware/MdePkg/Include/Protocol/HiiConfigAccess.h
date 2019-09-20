@@ -5,14 +5,11 @@
   This protocol is published by drivers providing and requesting
   configuration data from HII. It may only be invoked by HII.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  @par Revision Reference:
+  This Protocol was introduced in UEFI Specification 2.1.
 
 **/
 
@@ -34,6 +31,7 @@ typedef UINTN EFI_BROWSER_ACTION;
 #define EFI_BROWSER_ACTION_RETRIEVE   2
 #define EFI_BROWSER_ACTION_FORM_OPEN  3
 #define EFI_BROWSER_ACTION_FORM_CLOSE 4
+#define EFI_BROWSER_ACTION_SUBMITTED  5
 #define EFI_BROWSER_ACTION_DEFAULT_STANDARD      0x1000
 #define EFI_BROWSER_ACTION_DEFAULT_MANUFACTURING 0x1001
 #define EFI_BROWSER_ACTION_DEFAULT_SAFE          0x1002

@@ -1,14 +1,9 @@
 /** @file
   PCI eunmeration implementation on entire PCI bus system for PCI Bus module.
 
-Copyright (c) 2006 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -18,7 +13,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
   This routine is used to enumerate entire pci bus system
   in a given platform.
 
-  @param Controller  Parent controller handle.
+  @param Controller          Parent controller handle.
+  @param HostBridgeHandle    Host bridge handle.
 
   @retval EFI_SUCCESS    PCI enumeration finished successfully.
   @retval other          Some error occurred when enumerating the pci bus system.
@@ -26,41 +22,12 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 **/
 EFI_STATUS
 PciEnumerator (
-  IN EFI_HANDLE                    Controller
+  IN EFI_HANDLE                    Controller,
+  IN EFI_HANDLE                    HostBridgeHandle
   )
 {
-  EFI_HANDLE                                        HostBridgeHandle;
   EFI_STATUS                                        Status;
   EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL  *PciResAlloc;
-  EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL                   *PciRootBridgeIo;
-
-  //
-  // If PCI bus has already done the full enumeration, never do it again
-  //
-  if (!gFullEnumeration) {
-    return PciEnumeratorLight (Controller);
-  }
-
-  //
-  // Get the rootbridge Io protocol to find the host bridge handle
-  //
-  Status = gBS->OpenProtocol (
-                  Controller,
-                  &gEfiPciRootBridgeIoProtocolGuid,
-                  (VOID **) &PciRootBridgeIo,
-                  gPciBusDriverBinding.DriverBindingHandle,
-                  Controller,
-                  EFI_OPEN_PROTOCOL_GET_PROTOCOL
-                  );
-
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  //
-  // Get the host bridge handle
-  //
-  HostBridgeHandle = PciRootBridgeIo->ParentHandle;
 
   //
   // Get the pci host bridge resource allocation protocol
@@ -127,18 +94,6 @@ PciEnumerator (
   // Process attributes for devices on this host bridge
   //
   Status = PciHostBridgeDeviceAttribute (PciResAlloc);
-  if (EFI_ERROR (Status)) {
-    return Status;
-  }
-
-  gFullEnumeration = FALSE;
-
-  Status = gBS->InstallProtocolInterface (
-                  &HostBridgeHandle,
-                  &gEfiPciEnumerationCompleteProtocolGuid,
-                  EFI_NATIVE_INTERFACE,
-                  NULL
-                  );
   if (EFI_ERROR (Status)) {
     return Status;
   }
@@ -407,6 +362,13 @@ PciAssignBusNumber (
                 Func
                 );
 
+      if (EFI_ERROR (Status) && Func == 0) {
+        //
+        // go to next device if there is no Function 0
+        //
+        break;
+      }
+
       if (!EFI_ERROR (Status)   &&
           (IS_PCI_BRIDGE (&Pci) || IS_CARDBUS_BRIDGE (&Pci))) {
 
@@ -560,15 +522,15 @@ DetermineRootBridgeAttributes (
   @return Max size of option rom needed.
 
 **/
-UINT64
+UINT32
 GetMaxOptionRomSize (
   IN PCI_IO_DEVICE   *Bridge
   )
 {
   LIST_ENTRY      *CurrentLink;
   PCI_IO_DEVICE   *Temp;
-  UINT64          MaxOptionRomSize;
-  UINT64          TempOptionRomSize;
+  UINT32          MaxOptionRomSize;
+  UINT32          TempOptionRomSize;
 
   MaxOptionRomSize = 0;
 
@@ -954,7 +916,7 @@ GetMaxResourceConsumerDevice (
   @param Mem64ResStatus   Status of 64-bit memory resource node.
   @param PMem64ResStatus  Status of 64-bit Prefetchable memory resource node.
 
-  @retval EFI_SUCCESS     Successfully adjusted resoruce on host bridge.
+  @retval EFI_SUCCESS     Successfully adjusted resource on host bridge.
   @retval EFI_ABORTED     Host bridge hasn't this resource type or no resource be adjusted.
 
 **/
@@ -1083,7 +1045,7 @@ PciHostBridgeAdjustAllocation (
 }
 
 /**
-  Summary requests for all resource type, and contruct ACPI resource
+  Summary requests for all resource type, and construct ACPI resource
   requestor instance.
 
   @param Bridge           detecting bridge
@@ -1095,7 +1057,7 @@ PciHostBridgeAdjustAllocation (
   @param Config           Output buffer holding new constructed APCI resource requestor
 
   @retval EFI_SUCCESS           Successfully constructed ACPI resource.
-  @retval EFI_OUT_OF_RESOURCES  No memory availabe.
+  @retval EFI_OUT_OF_RESOURCES  No memory available.
 
 **/
 EFI_STATUS
@@ -1299,15 +1261,12 @@ ConstructAcpiResourceRequestor (
     //
     // If there is no resource request
     //
-    Configuration = AllocateZeroPool (sizeof (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR) + sizeof (EFI_ACPI_END_TAG_DESCRIPTOR));
+    Configuration = AllocateZeroPool (sizeof (EFI_ACPI_END_TAG_DESCRIPTOR));
     if (Configuration == NULL) {
       return EFI_OUT_OF_RESOURCES;
     }
 
-    Ptr               = (EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *) (Configuration);
-    Ptr->Desc         = ACPI_ADDRESS_SPACE_DESCRIPTOR;
-
-    PtrEnd            = (EFI_ACPI_END_TAG_DESCRIPTOR *) (Ptr + 1);
+    PtrEnd            = (EFI_ACPI_END_TAG_DESCRIPTOR *) (Configuration);
     PtrEnd->Desc      = ACPI_END_TAG_DESCRIPTOR;
     PtrEnd->Checksum  = 0;
   }

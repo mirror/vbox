@@ -1,14 +1,8 @@
 /** @file
   Implement TPM2 help.
 
-Copyright (c) 2013 - 2014, Intel Corporation. All rights reserved. <BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved. <BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -22,14 +16,15 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 typedef struct {
   TPMI_ALG_HASH              HashAlgo;
   UINT16                     HashSize;
+  UINT32                     HashMask;
 } INTERNAL_HASH_INFO;
 
 STATIC INTERNAL_HASH_INFO mHashInfo[] = {
-  {TPM_ALG_SHA1,          SHA1_DIGEST_SIZE},
-  {TPM_ALG_SHA256,        SHA256_DIGEST_SIZE},
-  {TPM_ALG_SM3_256,       SM3_256_DIGEST_SIZE},
-  {TPM_ALG_SHA384,        SHA384_DIGEST_SIZE},
-  {TPM_ALG_SHA512,        SHA512_DIGEST_SIZE},
+  {TPM_ALG_SHA1,          SHA1_DIGEST_SIZE,     HASH_ALG_SHA1},
+  {TPM_ALG_SHA256,        SHA256_DIGEST_SIZE,   HASH_ALG_SHA256},
+  {TPM_ALG_SM3_256,       SM3_256_DIGEST_SIZE,  HASH_ALG_SM3_256},
+  {TPM_ALG_SHA384,        SHA384_DIGEST_SIZE,   HASH_ALG_SHA384},
+  {TPM_ALG_SHA512,        SHA512_DIGEST_SIZE,   HASH_ALG_SHA512},
 };
 
 /**
@@ -50,6 +45,29 @@ GetHashSizeFromAlgo (
   for (Index = 0; Index < sizeof(mHashInfo)/sizeof(mHashInfo[0]); Index++) {
     if (mHashInfo[Index].HashAlgo == HashAlgo) {
       return mHashInfo[Index].HashSize;
+    }
+  }
+  return 0;
+}
+
+/**
+  Get hash mask from algorithm.
+
+  @param[in] HashAlgo   Hash algorithm
+
+  @return Hash mask
+**/
+UINT32
+EFIAPI
+GetHashMaskFromAlgo (
+  IN TPMI_ALG_HASH     HashAlgo
+  )
+{
+  UINTN  Index;
+
+  for (Index = 0; Index < sizeof(mHashInfo)/sizeof(mHashInfo[0]); Index++) {
+    if (mHashInfo[Index].HashAlgo == HashAlgo) {
+      return mHashInfo[Index].HashMask;
     }
   }
   return 0;
@@ -117,7 +135,7 @@ CopyAuthSessionCommand (
     Buffer += sizeof(UINT16);
   }
 
-  return (UINT32)(UINTN)(Buffer - (UINT8 *)AuthSessionOut);
+  return (UINT32)((UINTN)Buffer - (UINTN)AuthSessionOut);
 }
 
 /**
@@ -126,7 +144,8 @@ CopyAuthSessionCommand (
   @param [in]  AuthSessionIn   Input AuthSession data in TPM2 response buffer
   @param [out] AuthSessionOut  Output AuthSession data
 
-  @return AuthSession size
+  @return 0    copy failed
+          else AuthSession size
 **/
 UINT32
 EFIAPI
@@ -147,6 +166,10 @@ CopyAuthSessionResponse (
   // nonce
   AuthSessionOut->nonce.size = SwapBytes16 (ReadUnaligned16 ((UINT16 *)Buffer));
   Buffer += sizeof(UINT16);
+  if (AuthSessionOut->nonce.size > sizeof(TPMU_HA)) {
+    DEBUG ((DEBUG_ERROR, "CopyAuthSessionResponse - nonce.size error %x\n", AuthSessionOut->nonce.size));
+    return 0;
+  }
 
   CopyMem (AuthSessionOut->nonce.buffer, Buffer, AuthSessionOut->nonce.size);
   Buffer += AuthSessionOut->nonce.size;
@@ -158,9 +181,164 @@ CopyAuthSessionResponse (
   // hmac
   AuthSessionOut->hmac.size = SwapBytes16 (ReadUnaligned16 ((UINT16 *)Buffer));
   Buffer += sizeof(UINT16);
+  if (AuthSessionOut->hmac.size > sizeof(TPMU_HA)) {
+    DEBUG ((DEBUG_ERROR, "CopyAuthSessionResponse - hmac.size error %x\n", AuthSessionOut->hmac.size));
+    return 0;
+  }
 
   CopyMem (AuthSessionOut->hmac.buffer, Buffer, AuthSessionOut->hmac.size);
   Buffer += AuthSessionOut->hmac.size;
 
-  return (UINT32)(UINTN)(Buffer - (UINT8 *)AuthSessionIn);
+  return (UINT32)((UINTN)Buffer - (UINTN)AuthSessionIn);
+}
+
+/**
+  Return if hash alg is supported in HashAlgorithmMask.
+
+  @param HashAlg            Hash algorithm to be checked.
+  @param HashAlgorithmMask  Bitfield of allowed hash algorithms.
+
+  @retval TRUE  Hash algorithm is supported.
+  @retval FALSE Hash algorithm is not supported.
+**/
+BOOLEAN
+EFIAPI
+IsHashAlgSupportedInHashAlgorithmMask(
+  IN TPMI_ALG_HASH  HashAlg,
+  IN UINT32         HashAlgorithmMask
+  )
+{
+  switch (HashAlg) {
+  case TPM_ALG_SHA1:
+    if ((HashAlgorithmMask & HASH_ALG_SHA1) != 0) {
+      return TRUE;
+    }
+    break;
+  case TPM_ALG_SHA256:
+    if ((HashAlgorithmMask & HASH_ALG_SHA256) != 0) {
+      return TRUE;
+    }
+    break;
+  case TPM_ALG_SHA384:
+    if ((HashAlgorithmMask & HASH_ALG_SHA384) != 0) {
+      return TRUE;
+    }
+    break;
+  case TPM_ALG_SHA512:
+    if ((HashAlgorithmMask & HASH_ALG_SHA512) != 0) {
+      return TRUE;
+    }
+    break;
+  case TPM_ALG_SM3_256:
+    if ((HashAlgorithmMask & HASH_ALG_SM3_256) != 0) {
+      return TRUE;
+    }
+    break;
+  }
+
+  return FALSE;
+}
+
+/**
+  Copy TPML_DIGEST_VALUES into a buffer
+
+  @param[in,out] Buffer             Buffer to hold copied TPML_DIGEST_VALUES compact binary.
+  @param[in]     DigestList         TPML_DIGEST_VALUES to be copied.
+  @param[in]     HashAlgorithmMask  HASH bits corresponding to the desired digests to copy.
+
+  @return The end of buffer to hold TPML_DIGEST_VALUES.
+**/
+VOID *
+EFIAPI
+CopyDigestListToBuffer (
+  IN OUT VOID                       *Buffer,
+  IN TPML_DIGEST_VALUES             *DigestList,
+  IN UINT32                         HashAlgorithmMask
+  )
+{
+  UINTN  Index;
+  UINT16 DigestSize;
+  UINT32 DigestListCount;
+  UINT32 *DigestListCountPtr;
+
+  DigestListCountPtr = (UINT32 *) Buffer;
+  DigestListCount = 0;
+  Buffer = (UINT8 *)Buffer + sizeof(DigestList->count);
+  for (Index = 0; Index < DigestList->count; Index++) {
+    if (!IsHashAlgSupportedInHashAlgorithmMask(DigestList->digests[Index].hashAlg, HashAlgorithmMask)) {
+      DEBUG ((EFI_D_ERROR, "WARNING: TPM2 Event log has HashAlg unsupported by PCR bank (0x%x)\n", DigestList->digests[Index].hashAlg));
+      continue;
+    }
+    CopyMem (Buffer, &DigestList->digests[Index].hashAlg, sizeof(DigestList->digests[Index].hashAlg));
+    Buffer = (UINT8 *)Buffer + sizeof(DigestList->digests[Index].hashAlg);
+    DigestSize = GetHashSizeFromAlgo (DigestList->digests[Index].hashAlg);
+    CopyMem (Buffer, &DigestList->digests[Index].digest, DigestSize);
+    Buffer = (UINT8 *)Buffer + DigestSize;
+    DigestListCount++;
+  }
+  WriteUnaligned32 (DigestListCountPtr, DigestListCount);
+
+  return Buffer;
+}
+
+/**
+  Get TPML_DIGEST_VALUES data size.
+
+  @param[in]     DigestList    TPML_DIGEST_VALUES data.
+
+  @return TPML_DIGEST_VALUES data size.
+**/
+UINT32
+EFIAPI
+GetDigestListSize (
+  IN TPML_DIGEST_VALUES             *DigestList
+  )
+{
+  UINTN  Index;
+  UINT16 DigestSize;
+  UINT32 TotalSize;
+
+  TotalSize = sizeof(DigestList->count);
+  for (Index = 0; Index < DigestList->count; Index++) {
+    DigestSize = GetHashSizeFromAlgo (DigestList->digests[Index].hashAlg);
+    TotalSize += sizeof(DigestList->digests[Index].hashAlg) + DigestSize;
+  }
+
+  return TotalSize;
+}
+
+/**
+  This function get digest from digest list.
+
+  @param[in]  HashAlg       Digest algorithm
+  @param[in]  DigestList    Digest list
+  @param[out] Digest        Digest
+
+  @retval EFI_SUCCESS       Digest is found and returned.
+  @retval EFI_NOT_FOUND     Digest is not found.
+**/
+EFI_STATUS
+EFIAPI
+GetDigestFromDigestList (
+  IN TPMI_ALG_HASH      HashAlg,
+  IN TPML_DIGEST_VALUES *DigestList,
+  OUT VOID              *Digest
+  )
+{
+  UINTN  Index;
+  UINT16 DigestSize;
+
+  DigestSize = GetHashSizeFromAlgo (HashAlg);
+  for (Index = 0; Index < DigestList->count; Index++) {
+    if (DigestList->digests[Index].hashAlg == HashAlg) {
+      CopyMem (
+        Digest,
+        &DigestList->digests[Index].digest,
+        DigestSize
+        );
+      return EFI_SUCCESS;
+    }
+  }
+
+  return EFI_NOT_FOUND;
 }

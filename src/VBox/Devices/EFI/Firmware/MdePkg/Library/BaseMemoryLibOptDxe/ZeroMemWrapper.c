@@ -12,14 +12,8 @@
     PeiMemoryLib
     UefiMemoryLib
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -46,7 +40,11 @@ ZeroMem (
   IN UINTN  Length
   )
 {
-  ASSERT (!(Buffer == NULL && Length > 0));
+  if (Length == 0) {
+    return Buffer;
+  }
+
+  ASSERT (Buffer != NULL);
   ASSERT (Length <= (MAX_ADDRESS - (UINTN)Buffer + 1));
   return InternalMemZeroMem (Buffer, Length);
 }

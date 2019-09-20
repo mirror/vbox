@@ -1,14 +1,8 @@
 /** @file
 EFI tools utility functions to display warning, error, and informational messages
 
-Copyright (c) 2004 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2017, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 --*/
 
@@ -21,7 +15,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include "EfiUtilityMsgs.h"
 
 //
-// Declare module globals for keeping track of the the utility's
+// Declare module globals for keeping track of the utility's
 // name and other settings.
 //
 STATIC STATUS mStatus                 = STATUS_SUCCESS;
@@ -61,7 +55,7 @@ Arguments:
   at least something valid is not specified.
 
   FileName - name of the file or application. If not specified, then the
-             utilty name (as set by the utility calling SetUtilityName()
+             utility name (as set by the utility calling SetUtilityName()
              earlier) is used. Otherwise "Unknown utility" is used.
 
   LineNumber - the line number of error, typically used by parsers. If the
@@ -384,7 +378,7 @@ Routine Description:
 Arguments:
   Type        - "warning" or "error" string to insert into the message to be
                 printed. The first character of this string (converted to uppercase)
-                is used to preceed the MessageCode value in the output string.
+                is used to precede the MessageCode value in the output string.
 
   FileName    - name of the file where the warning was detected, or the name
                 of the application that detected the warning
@@ -451,19 +445,22 @@ Notes:
     //
     time (&CurrentTime);
     NewTime = localtime (&CurrentTime);
-    fprintf (stdout, "%04d-%02d-%02d %02d:%02d:%02d",
-                     NewTime->tm_year + 1900,
-                     NewTime->tm_mon + 1,
-                     NewTime->tm_mday,
-                     NewTime->tm_hour,
-                     NewTime->tm_min,
-                     NewTime->tm_sec
-                     );
+    if (NewTime != NULL) {
+      fprintf (stdout, "%04d-%02d-%02d %02d:%02d:%02d",
+                       NewTime->tm_year + 1900,
+                       NewTime->tm_mon + 1,
+                       NewTime->tm_mday,
+                       NewTime->tm_hour,
+                       NewTime->tm_min,
+                       NewTime->tm_sec
+                       );
+    }
     if (Cptr != NULL) {
-      sprintf (Line, ": %s", Cptr);
+      strcpy (Line, ": ");
+      strncat (Line, Cptr, MAX_LINE_LEN - strlen (Line) - 1);
       if (LineNumber != 0) {
         sprintf (Line2, "(%u)", (unsigned) LineNumber);
-        strcat (Line, Line2);
+        strncat (Line, Line2, MAX_LINE_LEN - strlen (Line) - 1);
       }
     }
   } else {
@@ -474,14 +471,16 @@ Notes:
       if (mUtilityName[0] != '\0') {
         fprintf (stdout, "%s...\n", mUtilityName);
       }
-      sprintf (Line, "%s", Cptr);
+      strncpy (Line, Cptr, MAX_LINE_LEN - 1);
+      Line[MAX_LINE_LEN - 1] = 0;
       if (LineNumber != 0) {
         sprintf (Line2, "(%u)", (unsigned) LineNumber);
-        strcat (Line, Line2);
+        strncat (Line, Line2, MAX_LINE_LEN - strlen (Line) - 1);
       }
     } else {
       if (mUtilityName[0] != '\0') {
-        sprintf (Line, "%s", mUtilityName);
+        strncpy (Line, mUtilityName, MAX_LINE_LEN - 1);
+        Line[MAX_LINE_LEN - 1] = 0;
       }
     }
 
@@ -499,12 +498,12 @@ Notes:
   // Have to print an error code or Visual Studio won't find the
   // message for you. It has to be decimal digits too.
   //
+  strncat (Line, ": ", MAX_LINE_LEN - strlen (Line) - 1);
+  strncat (Line, Type, MAX_LINE_LEN - strlen (Line) - 1);
   if (MessageCode != 0) {
-    sprintf (Line2, ": %s %04u", Type, (unsigned) MessageCode);
-  } else {
-    sprintf (Line2, ": %s", Type);
+    sprintf (Line2, " %04u", (unsigned) MessageCode);
+    strncat (Line, Line2, MAX_LINE_LEN - strlen (Line) - 1);
   }
-  strcat (Line, Line2);
   fprintf (stdout, "%s", Line);
   //
   // If offending text was provided, then print it
@@ -592,7 +591,7 @@ Routine Description:
 
 Arguments:
   UtilityName  -  name of the utility, which will be printed with all
-                  error/warning/debug messags.
+                  error/warning/debug messages.
 
 Returns:
   NA
@@ -606,12 +605,9 @@ Returns:
   if (UtilityName != NULL) {
     if (strlen (UtilityName) >= sizeof (mUtilityName)) {
       Error (UtilityName, 0, 0, "application error", "utility name length exceeds internal buffer size");
-      strncpy (mUtilityName, UtilityName, sizeof (mUtilityName) - 1);
-      mUtilityName[sizeof (mUtilityName) - 1] = 0;
-      return ;
-    } else {
-      strcpy (mUtilityName, UtilityName);
     }
+    strncpy (mUtilityName, UtilityName, sizeof (mUtilityName) - 1);
+    mUtilityName[sizeof (mUtilityName) - 1] = 0;
   } else {
     Error (NULL, 0, 0, "application error", "SetUtilityName() called with NULL utility name");
   }

@@ -1,20 +1,15 @@
 ## @file DecPomAlignment.py
 # This file contained the adapter for convert INF parser object to POM Object
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
 DecPomAlignment
 '''
+from __future__ import print_function
 
 ##
 # Import Modules
@@ -63,6 +58,7 @@ from Library.DataType import TAB_STR_TOKENHELP
 from Library.DataType import TAB_STR_TOKENERR
 from Library.DataType import TAB_HEX_START
 from Library.DataType import TAB_SPLIT
+import Library.DataType as DT
 from Library.CommentParsing import ParseHeaderCommentSection
 from Library.CommentParsing import ParseGenericComment
 from Library.CommentParsing import ParseDecPcdGenericComment
@@ -221,6 +217,14 @@ class DecPomAlignment(PackageObject):
             self.SetUserExtensionList(
                 self.GetUserExtensionList() + [UserExtension]
             )
+
+        # Add Private sections to UserExtension
+        if self.DecParser.GetPrivateSections():
+            PrivateUserExtension = UserExtensionObject()
+            PrivateUserExtension.SetStatement(self.DecParser.GetPrivateSections())
+            PrivateUserExtension.SetIdentifier(DT.TAB_PRIVATE)
+            PrivateUserExtension.SetUserID(DT.TAB_INTEL)
+            self.SetUserExtensionList(self.GetUserExtensionList() + [PrivateUserExtension])
 
     ## Generate miscellaneous files on DEC file
     #
@@ -399,12 +403,11 @@ class DecPomAlignment(PackageObject):
         #
         PackagePath = os.path.split(self.GetFullPath())[0]
         IncludePathList = \
-            [os.path.normpath(Path) + sep for Path in IncludesDict.keys()]
-        IncludePathList.sort()
+            sorted([os.path.normpath(Path) + sep for Path in IncludesDict.keys()])
 
         #
         # get a non-overlap set of include path, IncludePathList should be
-        # sorted, and path should be end with path seperator '\'
+        # sorted, and path should be end with path separator '\'
         #
         NonOverLapList = []
         for Path1 in IncludePathList:
@@ -415,7 +418,7 @@ class DecPomAlignment(PackageObject):
                 NonOverLapList.append(Path1)
         #
         # revert the list so the longest path shown first in list, also need
-        # to remove the extra path seperator '\'
+        # to remove the extra path separator '\'
         # as this list is used to search the supported Arch info
         #
         for IndexN in range (0, len(IncludePathList)):
@@ -638,7 +641,7 @@ class DecPomAlignment(PackageObject):
                         ContainerFile,
                         (Item.TokenSpaceGuidCName, Item.TokenCName,
                         Item.DefaultValue, Item.DatumType, Item.TokenValue,
-                        Type, Item.GetHeadComment(), Item.GetTailComment(),''),
+                        Type, Item.GetHeadComment(), Item.GetTailComment(), ''),
                         Language,
                         self.DecParser.GetDefineSectionMacro()
                         )
@@ -893,47 +896,47 @@ class DecPomAlignment(PackageObject):
     # Print all members and their values of Package class
     #
     def ShowPackage(self):
-        print '\nName =', self.GetName()
-        print '\nBaseName =', self.GetBaseName()
-        print '\nVersion =', self.GetVersion()
-        print '\nGuid =', self.GetGuid()
+        print('\nName =', self.GetName())
+        print('\nBaseName =', self.GetBaseName())
+        print('\nVersion =', self.GetVersion())
+        print('\nGuid =', self.GetGuid())
 
-        print '\nStandardIncludes = %d ' \
-            % len(self.GetStandardIncludeFileList()),
+        print('\nStandardIncludes = %d ' \
+            % len(self.GetStandardIncludeFileList()), end=' ')
         for Item in self.GetStandardIncludeFileList():
-            print Item.GetFilePath(), '  ', Item.GetSupArchList()
-        print '\nPackageIncludes = %d \n' \
-            % len(self.GetPackageIncludeFileList()),
+            print(Item.GetFilePath(), '  ', Item.GetSupArchList())
+        print('\nPackageIncludes = %d \n' \
+            % len(self.GetPackageIncludeFileList()), end=' ')
         for Item in self.GetPackageIncludeFileList():
-            print Item.GetFilePath(), '  ', Item.GetSupArchList()
+            print(Item.GetFilePath(), '  ', Item.GetSupArchList())
 
-        print '\nGuids =', self.GetGuidList()
+        print('\nGuids =', self.GetGuidList())
         for Item in self.GetGuidList():
-            print Item.GetCName(), Item.GetGuid(), Item.GetSupArchList()
-        print '\nProtocols =', self.GetProtocolList()
+            print(Item.GetCName(), Item.GetGuid(), Item.GetSupArchList())
+        print('\nProtocols =', self.GetProtocolList())
         for Item in self.GetProtocolList():
-            print Item.GetCName(), Item.GetGuid(), Item.GetSupArchList()
-        print '\nPpis =', self.GetPpiList()
+            print(Item.GetCName(), Item.GetGuid(), Item.GetSupArchList())
+        print('\nPpis =', self.GetPpiList())
         for Item in self.GetPpiList():
-            print Item.GetCName(), Item.GetGuid(), Item.GetSupArchList()
-        print '\nLibraryClasses =', self.GetLibraryClassList()
+            print(Item.GetCName(), Item.GetGuid(), Item.GetSupArchList())
+        print('\nLibraryClasses =', self.GetLibraryClassList())
         for Item in self.GetLibraryClassList():
-            print Item.GetLibraryClass(), Item.GetRecommendedInstance(), \
-            Item.GetSupArchList()
-        print '\nPcds =', self.GetPcdList()
+            print(Item.GetLibraryClass(), Item.GetRecommendedInstance(), \
+            Item.GetSupArchList())
+        print('\nPcds =', self.GetPcdList())
         for Item in self.GetPcdList():
-            print 'CName=', Item.GetCName(), 'TokenSpaceGuidCName=', \
+            print('CName=', Item.GetCName(), 'TokenSpaceGuidCName=', \
                 Item.GetTokenSpaceGuidCName(), \
                 'DefaultValue=', Item.GetDefaultValue(), \
                 'ValidUsage=', Item.GetValidUsage(), \
                 'SupArchList', Item.GetSupArchList(), \
-                'Token=', Item.GetToken(), 'DatumType=', Item.GetDatumType()
+                'Token=', Item.GetToken(), 'DatumType=', Item.GetDatumType())
 
         for Item in self.GetMiscFileList():
-            print Item.GetName()
+            print(Item.GetName())
             for FileObjectItem in Item.GetFileList():
-                print FileObjectItem.GetURI()
-        print '****************\n'
+                print(FileObjectItem.GetURI())
+        print('****************\n')
 
 ## GenPcdDeclaration
 #

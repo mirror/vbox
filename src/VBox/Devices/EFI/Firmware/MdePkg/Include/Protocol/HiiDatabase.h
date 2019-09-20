@@ -2,14 +2,11 @@
   The file provides Database manager for HII-related data
   structures.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  @par Revision Reference:
+  This Protocol was introduced in UEFI Specification 2.1.
 
 **/
 
@@ -214,7 +211,7 @@ EFI_STATUS
 
   @param Handle               An array of EFI_HII_HANDLE instances returned.
 
-  @retval EFI_SUCCESS           The matching handles are outputed successfully.
+  @retval EFI_SUCCESS           The matching handles are outputted successfully.
                                 HandleBufferLength is updated with the actual length.
   @retval EFI_BUFFER_TOO_SMALL  The HandleBufferLength parameter
                                 indicates that Handle is too
@@ -273,7 +270,7 @@ EFI_STATUS
 
   @retval EFI_OUT_OF_RESOURCES  BufferSize is too small to hold the package.
 
-  @retval EFI_NOT_FOUND         The specifiecd Handle could not be found in the
+  @retval EFI_NOT_FOUND         The specified Handle could not be found in the
                                 current database.
 
   @retval EFI_INVALID_PARAMETER BufferSize was NULL.

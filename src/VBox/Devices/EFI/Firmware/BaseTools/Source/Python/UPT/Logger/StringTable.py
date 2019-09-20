@@ -1,15 +1,9 @@
 ## @file
 # This file is used to define strings used in the UPT tool
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 """
 This file contains user visible strings in a format that can be used for
@@ -32,22 +26,25 @@ import gettext
 _ = gettext.gettext
 
 MSG_USAGE_STRING = _("\n"
-    "Intel(r) UEFI Packaging Tool (Intel(r) UEFIPT)\n"
+    "UEFI Packaging Tool (UEFIPT)\n"
     "%prog [options]"
     )
 
 ##
 # Version and Copyright
 #
-MSG_VERSION_NUMBER = _("1.0")
-MSG_VERSION = _("Intel(r) UEFI Packaging Tool (Intel(r) UEFIPT) - Revision " + \
+MSG_VERSION_NUMBER = _("1.1")
+MSG_VERSION = _("UEFI Packaging Tool (UEFIPT) - Revision " + \
                 MSG_VERSION_NUMBER)
-MSG_COPYRIGHT = _("Copyright (c) 2011 Intel Corporation All Rights Reserved.")
+MSG_COPYRIGHT = _("Copyright (c) 2011 - 2018 Intel Corporation All Rights Reserved.")
 MSG_VERSION_COPYRIGHT = _("\n  %s\n  %s" % (MSG_VERSION, MSG_COPYRIGHT))
 MSG_USAGE = _("%s [options]\n%s" % ("UPT", MSG_VERSION_COPYRIGHT))
-MSG_DESCRIPTION = _("The Intel(r) UEFIUPT is used to create, " + \
-                    "install or remove a UEFI Distribution Package.")
-
+MSG_DESCRIPTION = _("The UEFIPT is used to create, " + \
+                    "install or remove a UEFI Distribution Package. " + \
+                    "If WORKSPACE environment variable is present, " + \
+                    "then UPT will install packages to the location specified by WORKSPACE, " + \
+                    "otherwise UPT will install packages to the current directory. " + \
+                    "Option -n will override this default installation location")
 
 #
 # INF Parser related strings.
@@ -132,7 +129,7 @@ ERR_INF_PARSER_LIBRARY_SECTION_CONTENT_ERROR = \
 ERR_INF_PARSER_LIBRARY_SECTION_LIBNAME_MISSING = \
     _("Format invalid. Please specify a library name.")
 ERR_INF_PARSER_SOURCES_SECTION_CONTENT_ERROR = \
-    _("The format is incorrect. It should be formated as follows: "
+    _("The format is incorrect. It should be formatted as follows: "
       "FileName, Family | TagName | ToolCode | FeatureFlagExpr.")
 ERR_INF_PARSER_PCD_SECTION_TYPE_ERROR = \
     _("The PCD section type is incorrect. The value should be this list: %s")
@@ -144,10 +141,10 @@ ERR_INF_PARSER_PCD_NAME_FORMAT_ERROR = \
       "Should like following: <TokenSpaceGuidCName>.<PcdCName> ")
 ERR_INF_PARSER_GUID_PPI_PROTOCOL_SECTION_CONTENT_ERROR = \
     _("The format is incorrect. "
-      "It should be formated as follows: CName | FeatureFlag.")
+      "It should be formatted as follows: CName | FeatureFlag.")
 ERR_INF_PARSER_PACKAGE_SECTION_CONTENT_ERROR = \
     _("The format is incorrect. "
-      "It should be formated as follows:  <TokenSpaceGuidCName>.<PcdCName>")
+      "It should be formatted as follows:  <TokenSpaceGuidCName>.<PcdCName>")
 ERR_INF_PARSER_PCD_TAIL_COMMENTS_INVALID = \
     _("The format is incorrect. "
       "Multiple usage descriptions must be described on subsequent lines.")
@@ -194,7 +191,7 @@ ERR_INF_PARSER_FILE_MISS_DEFINE = \
     _("The following file listed in the module "
       "directory is not listed in the INF: %s")
 ERR_INF_PARSER_VERSION_NUMBER_DEPRICATED = \
-    _("VERSION_NUMBER depricated.  "
+    _("VERSION_NUMBER deprecated.  "
       "The INF file %s should be modified to use the VERSION_STRING instead.")
 ERR_INF_PARSER_VER_EXIST_BOTH_NUM_STR = \
     _("The INF file %s defines both VERSION_NUMBER and VERSION_STRING, "
@@ -254,7 +251,7 @@ ERR_ASBUILD_PCD_SECTION_TYPE = _("The AsBuilt INF file contains a PCD section ty
 ERR_ASBUILD_PATCHPCD_FORMAT_INVALID = _("The AsBuilt PatchPcd entry must contain 3 elements: PcdName|Value|Offset")
 ERR_ASBUILD_PCDEX_FORMAT_INVALID = _("The AsBuilt PcdEx entry must contain one element: PcdName")
 ERR_ASBUILD_PCD_VALUE_INVALID = \
-    _("The AsBuilt PCD value %s is incorrect or not align with it's datum type %s. "
+    _("The AsBuilt PCD value %s is incorrect or not align with its datum type %s. "
       "It must be corrected before continuing.")
 ERR_ASBUILD_PCD_TOKENSPACE_GUID_VALUE_MISS = _("Package file value could not be retrieved for %s.")
 ERR_ASBUILD_PCD_DECLARITION_MISS = _("PCD Declaration in DEC files could not be found for: %s.")
@@ -319,8 +316,9 @@ MSG_NEW_FILE_NAME_FOR_DIST      = _(
     "Provide new filename for distribution file to be saved:\n")
 MSG_UPDATE_PACKAGE_DATABASE    = _("Update Distribution Package Database ...")
 MSG_PYTHON_ON                  = _("(Python %s on %s) ")
+MSG_EDKII_MAIL_ADDR            = 'devel@edk2.groups.io'
 MSG_SEARCH_FOR_HELP            = _(
-    "\n(Please send email to edk2-devel@lists.sourceforge.net for\n"
+    "\n(Please send email to %s for\n"
     " help, attach the following call stack trace.)\n")
 MSG_REMOVE_TEMP_FILE_STARTED   = _("Removing temp files started ... ")
 MSG_REMOVE_TEMP_FILE_DONE   = _("Removing temp files ... Done.")
@@ -582,7 +580,7 @@ _("Only a distribution file name without a path is allowed for "
   "the distribution to be replaced during replace. Current given: '%s'.")
 ERR_UNIPARSE_DBLQUOTE_UNMATCHED = \
 _("Only Language entry can contain a couple of matched quote in one line")
-ERR_UNIPARSE_NO_SECTION_EXIST = _("No PakcageDef or ModuleDef section exists in the UNI file.")
+ERR_UNIPARSE_NO_SECTION_EXIST = _("No PackageDef or ModuleDef section exists in the UNI file.")
 ERR_UNIPARSE_STRNAME_FORMAT_ERROR = _("The String Token Name %s must start with \"STR_\"")
 ERR_UNIPARSE_SEP_LANGENTRY_LINE = _("Each <LangEntry> should be in a separate line :%s.")
 ERR_UNIPARSE_MULTI_ENTRY_EXIST = \
@@ -593,6 +591,7 @@ _("The string entry order in UNI file should be <AbstractStrings>, <DescriptionS
 ERR_UNIPARSE_STRTOKEN_FORMAT_ERROR = _("The String Token Type %s must be one of the '_PROMPT', '_HELP' and '_ERR_'.")
 ERR_UNIPARSE_LINEFEED_UNDER_EXIST = _("Line feed should not exist under this line: %s.")
 ERR_UNIPARSE_LINEFEED_UP_EXIST = _("Line feed should not exist up this line: %s.")
+ERR_UNI_MISS_STRING_ENTRY = _("String entry missed in this Entry, %s.")
 ERR_UNI_MISS_LANGENTRY = _("Language entry missed in this Entry, %s.")
 ERR_BINARY_HEADER_ORDER           = _("Binary header must follow the file header.")
 ERR_NO_SOURCE_HEADER              = _("File header statement \"## @file\" must exist at the first place.")
@@ -652,7 +651,7 @@ _("Wrong define section format, must be KEY = Value.")
 ERR_DECPARSE_DEFINE_UNKNOWKEY       = \
 _("Unknown key [%s] in define section.")
 ERR_DECPARSE_DEFINE_SPEC            = \
-_("Specification value must be HEX numbers.")
+_("Specification value must be HEX numbers or decimal numbers.")
 ERR_DECPARSE_DEFINE_PKGNAME         = \
 _("Package name must be AlphaNumeric characters.")
 ERR_DECPARSE_DEFINE_PKGGUID         = \
@@ -720,7 +719,7 @@ _("Incorrect GUID value format, must be <GuidValueInCFormat:"
 ERR_DECPARSE_CGUID_NOT_FOUND = _("Unable to find the GUID value of this GUID CName : '%s'.")
 ERR_DECPARSE_FILEOPEN               = _("Unable to open: [%s].")
 ERR_DECPARSE_SECTION_EMPTY          = _("Empty sections are not allowed.")
-ERR_DECPARSE_SECTION_UE             = _("Incorrect UserExtentions format. "
+ERR_DECPARSE_SECTION_UE             = _("Incorrect UserExtensions format. "
                             "Must be UserExtenxions.UserId.IdString[.Arch]+.")
 ERR_DECPARSE_SECTION_UE_USERID      = _("Invalid UserId, must be underscore"
                                         "or alphanumeric characters.")
@@ -781,7 +780,7 @@ WRN_MODULE_EXISTED        = _("This module already exists: %s")
 WRN_FILE_EXISTED          = _("This file already exists: %s")
 WRN_FILE_NOT_OVERWRITTEN  = \
 _("This file already exist and cannot be overwritten: %s")
-WRN_DIST_PKG_INSTALLED    = _("This distribution package has been installed")
+WRN_DIST_PKG_INSTALLED = _("This distribution package %s has previously been installed.")
 WRN_DIST_NOT_FOUND         = _(
     "Distribution is not found at location %s")
 WRN_MULTI_PCD_RANGES      = _(
@@ -854,3 +853,8 @@ HLP_SPECIFY_PACKAGE_NAME_TO_BE_REPLACED = _(
     "Specify the UEFI Distribution Package file name to be replaced")
 HLP_USE_GUIDED_PATHS = _(
     "Install packages to the following directory path by default: <PackageName>_<PACKAGE_GUID>_<PACKAGE_VERSION>")
+HLP_TEST_INSTALL = _(
+    "Specify the UEFI Distribution Package filenames to install")
+
+MSG_TEST_INSTALL_PASS = _("All distribution package file are satisfied for dependence check.")
+MSG_TEST_INSTALL_FAIL = _("NOT all distribution package file are satisfied for dependence check.")

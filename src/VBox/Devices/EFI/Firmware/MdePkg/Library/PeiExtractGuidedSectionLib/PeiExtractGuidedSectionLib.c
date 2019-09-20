@@ -1,14 +1,8 @@
 /** @file
   Provide generic extract guided section functions for PEI phase.
 
-  Copyright (c) 2007 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -198,7 +192,7 @@ ExtractGuidedSectionRegisterHandlers (
   PEI_EXTRACT_GUIDED_SECTION_HANDLER_INFO *HandlerInfo;
 
   //
-  // Check input paramter
+  // Check input parameter
   //
   ASSERT (SectionGuid != NULL);
   ASSERT (GetInfoHandler != NULL);
@@ -305,7 +299,7 @@ ExtractGuidedSectionGetInfo (
   EFI_GUID *SectionDefinitionGuid;
 
   //
-  // Check input paramter
+  // Check input parameter
   //
   ASSERT (InputSection != NULL);
   ASSERT (OutputBufferSize != NULL);

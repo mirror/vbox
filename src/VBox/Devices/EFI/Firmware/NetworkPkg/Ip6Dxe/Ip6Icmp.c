@@ -1,15 +1,10 @@
 /** @file
   The ICMPv6 handle routines to process the ICMPv6 control messages.
 
-  Copyright (c) 2009 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -472,14 +467,14 @@ Ip6GetPrefix (
   UINT8                     Mask;
   UINT8                     Value;
 
-  ASSERT ((Prefix != NULL) && (PrefixLength < IP6_PREFIX_NUM));
+  ASSERT ((Prefix != NULL) && (PrefixLength < IP6_PREFIX_MAX));
 
   if (PrefixLength == 0) {
     ZeroMem (Prefix, sizeof (EFI_IPv6_ADDRESS));
     return ;
   }
 
-  if (PrefixLength == IP6_PREFIX_NUM - 1) {
+  if (PrefixLength >= IP6_PREFIX_MAX) {
     return ;
   }
 
@@ -487,7 +482,7 @@ Ip6GetPrefix (
   Bit   = (UINT8) (PrefixLength % 8);
   Value = Prefix->Addr[Byte];
 
-  if ((Byte > 0) && (Byte < 16)) {
+  if (Byte > 0) {
     ZeroMem (Prefix->Addr + Byte, 16 - Byte);
   }
 

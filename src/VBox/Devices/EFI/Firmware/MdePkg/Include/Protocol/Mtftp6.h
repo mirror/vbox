@@ -1,16 +1,12 @@
 /** @file
-  UEFI Multicast Trivial File Tranfer Protocol v6 Definition, which is built upon
+  UEFI Multicast Trivial File Transfer Protocol v6 Definition, which is built upon
   the EFI UDPv6 Protocol and provides basic services for client-side unicast and/or
   multicast TFTP operations.
 
   Copyright (c) 2008 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
+  (C) Copyright 2016 Hewlett Packard Enterprise Development LP<BR>
 
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   This Protocol is introduced in UEFI Specification 2.2
@@ -70,7 +66,7 @@ typedef struct _EFI_MTFTP6_TOKEN    EFI_MTFTP6_TOKEN;
 ///
 /// The MTFTPv6 operation was illegal.
 ///
-#define EFI_MTFTP6_ERRORCODE_ILLEGAL_OPERATION     6
+#define EFI_MTFTP6_ERRORCODE_ILLEGAL_OPERATION     4
 ///
 /// The transfer ID is unknown.
 ///
@@ -323,7 +319,7 @@ typedef struct {
   @param[in] PacketLen     Indicates the length of the packet.
   @param[in] Packet        Pointer to an MTFTPv6 packet.
 
-  @retval EFI_SUCCESS      Operation sucess.
+  @retval EFI_SUCCESS      Operation success.
   @retval Others           Aborts session.
 
 **/
@@ -350,7 +346,7 @@ EFI_STATUS
                            EFI_MTFTP6_PROTOCOL.WriteFile() or EFI_MTFTP6_PROTOCOL.ReadDirectory()
                            functions by the caller.
 
-  @retval EFI_SUCCESS      Operation sucess.
+  @retval EFI_SUCCESS      Operation success.
   @retval Others           Aborts session.
 
 **/
@@ -377,7 +373,7 @@ EFI_STATUS
                            length the data available on output.
   @param[out]     Buffer   Pointer to the buffer where the data is stored.
 
-  @retval EFI_SUCCESS      Operation sucess.
+  @retval EFI_SUCCESS      Operation success.
   @retval Others           Aborts session.
 
 **/

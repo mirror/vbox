@@ -1,14 +1,8 @@
 /** @file
   Header files and data structures needed by PCI Bus module.
 
-Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -32,6 +26,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/IncompatiblePciDeviceSupport.h>
 #include <Protocol/PciOverride.h>
 #include <Protocol/PciEnumerationComplete.h>
+#include <Protocol/IoMmu.h>
 
 #include <Library/DebugLib.h>
 #include <Library/UefiDriverEntryPoint.h>
@@ -43,7 +38,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiBootServicesTableLib.h>
 #include <Library/DevicePathLib.h>
 #include <Library/PcdLib.h>
-#include <Library/PeCoffLib.h>
 
 #include <IndustryStandard/Pci.h>
 #include <IndustryStandard/PeImage.h>
@@ -67,6 +61,7 @@ typedef enum {
   PciBarTypePMem32,
   PciBarTypeMem64,
   PciBarTypePMem64,
+  PciBarTypeOpRom,
   PciBarTypeIo,
   PciBarTypeMem,
   PciBarTypeMaxType
@@ -102,8 +97,7 @@ struct _PCI_BAR {
   UINT64        Length;
   UINT64        Alignment;
   PCI_BAR_TYPE  BarType;
-  BOOLEAN       Prefetchable;
-  UINT8         MemType;
+  BOOLEAN       BarTypeFixed;
   UINT16        Offset;
 };
 
@@ -204,7 +198,7 @@ struct _PCI_IO_DEVICE {
   LIST_ENTRY                                ChildList;
 
   //
-  // TURE if the PCI bus driver creates the handle for this PCI device
+  // TRUE if the PCI bus driver creates the handle for this PCI device
   //
   BOOLEAN                                   Registered;
 
@@ -237,12 +231,7 @@ struct _PCI_IO_DEVICE {
   //
   // The OptionRom Size
   //
-  UINT64                                    RomSize;
-
-  //
-  // The OptionRom Size
-  //
-  UINT64                                    RomBase;
+  UINT32                                    RomSize;
 
   //
   // TRUE if all OpROM (in device or in platform specific position) have been processed
@@ -286,7 +275,7 @@ struct _PCI_IO_DEVICE {
   UINT16                                    ReservedBusNum;
   //
   // Per PCI to PCI Bridge spec, I/O window is 4K aligned,
-  // but some chipsets support non-stardard I/O window aligments less than 4K.
+  // but some chipsets support non-standard I/O window alignments less than 4K.
   // This field is used to support this case.
   //
   UINT16                                    BridgeIoAlignment;
@@ -309,7 +298,7 @@ struct _PCI_IO_DEVICE {
 //
 // Global Variables
 //
-extern EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL *gEfiIncompatiblePciDeviceSupport;
+extern EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL *gIncompatiblePciDeviceSupport;
 extern EFI_DRIVER_BINDING_PROTOCOL                  gPciBusDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL                  gPciBusComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL                 gPciBusComponentName2;
@@ -328,8 +317,8 @@ extern BOOLEAN                                      mReserveVgaAliases;
 
   @param  _p      Specified device.
 
-  @retval TRUE    Device is a a GFX device.
-  @retval FALSE   Device is not a a GFX device.
+  @retval TRUE    Device is a GFX device.
+  @retval FALSE   Device is not a GFX device.
 
 **/
 #define IS_PCI_GFX(_p)     IS_CLASS2 (_p, PCI_CLASS_DISPLAY, PCI_CLASS_DISPLAY_OTHER)
@@ -340,7 +329,7 @@ extern BOOLEAN                                      mReserveVgaAliases;
 
   @param  This                Protocol instance pointer.
   @param  Controller          Handle of device to test.
-  @param  RemainingDevicePath Optional parameter use to pick a specific child.
+  @param  RemainingDevicePath Optional parameter use to pick a specific child
                               device to start.
 
   @retval EFI_SUCCESS         This driver supports this device.
@@ -362,7 +351,7 @@ PciBusDriverBindingSupported (
 
   @param  This                 Protocol instance pointer.
   @param  Controller           Handle of device to bind driver to.
-  @param  RemainingDevicePath  Optional parameter use to pick a specific child.
+  @param  RemainingDevicePath  Optional parameter use to pick a specific child
                                device to start.
 
   @retval EFI_SUCCESS          This driver is added to ControllerHandle.
@@ -379,7 +368,7 @@ PciBusDriverBindingStart (
   );
 
 /**
-  Stop this driver on ControllerHandle. Support stoping any child handles
+  Stop this driver on ControllerHandle. Support stopping any child handles
   created by this driver.
 
   @param  This              Protocol instance pointer.

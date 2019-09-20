@@ -2,14 +2,9 @@
   MDE DXE Services Library provides functions that simplify the development of DXE Drivers.
   These functions help access data from sections of FFS files or from file path.
 
-Copyright (c) 2006 - 2012, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+(C) Copyright 2015 Hewlett Packard Enterprise Development LP<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -262,5 +257,68 @@ GetFileBufferByFilePath (
   OUT UINT32                           *AuthenticationStatus
   );
 
-#endif
+/**
+  Searches all the available firmware volumes and returns the file device path of first matching
+  FFS section.
 
+  This function searches all the firmware volumes for FFS files with an FFS filename specified by NameGuid.
+  The order that the firmware volumes is searched is not deterministic. For each FFS file found a search
+  is made for FFS sections of type SectionType.
+
+  If SectionType is EFI_SECTION_TE, and the search with an FFS file fails,
+  the search will be retried with a section type of EFI_SECTION_PE32.
+  This function must be called with a TPL <= TPL_NOTIFY.
+
+  If NameGuid is NULL, then ASSERT().
+
+   @param  NameGuid             A pointer to to the FFS filename GUID to search for
+                                within any of the firmware volumes in the platform.
+   @param  SectionType          Indicates the FFS section type to search for within
+                                the FFS file specified by NameGuid.
+   @param  SectionInstance      Indicates which section instance within the FFS file
+                                specified by NameGuid to retrieve.
+   @param  FvFileDevicePath     Device path for the target FFS
+                                file.
+
+   @retval  EFI_SUCCESS           The specified file device path of FFS section was returned.
+   @retval  EFI_NOT_FOUND         The specified file device path of FFS section could not be found.
+   @retval  EFI_DEVICE_ERROR      The FFS section could not be retrieves due to a
+                                  device error.
+   @retval  EFI_ACCESS_DENIED     The FFS section could not be retrieves because the
+                                  firmware volume that contains the matching FFS section does not
+                                  allow reads.
+   @retval  EFI_INVALID_PARAMETER FvFileDevicePath is NULL.
+
+**/
+EFI_STATUS
+EFIAPI
+GetFileDevicePathFromAnyFv (
+  IN CONST  EFI_GUID                  *NameGuid,
+  IN        EFI_SECTION_TYPE          SectionType,
+  IN        UINTN                     SectionInstance,
+  OUT       EFI_DEVICE_PATH_PROTOCOL  **FvFileDevicePath
+  );
+
+/**
+  Allocates one or more 4KB pages of a given type from a memory region that is
+  accessible to PEI.
+
+  Allocates the number of 4KB pages of type 'MemoryType' and returns a
+  pointer to the allocated buffer.  The buffer returned is aligned on a 4KB
+  boundary.  If Pages is 0, then NULL is returned.  If there is not enough
+  memory remaining to satisfy the request, then NULL is returned.
+
+  @param[in]  MemoryType            The memory type to allocate
+  @param[in]  Pages                 The number of 4 KB pages to allocate.
+
+  @return A pointer to the allocated buffer or NULL if allocation fails.
+
+**/
+VOID *
+EFIAPI
+AllocatePeiAccessiblePages (
+  IN EFI_MEMORY_TYPE  MemoryType,
+  IN UINTN            Pages
+  );
+
+#endif

@@ -1,14 +1,8 @@
 /** @file
   ACPI Timer implements one instance of Timer Library.
 
-  Copyright (c) 2013 - 2015, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,6 +14,8 @@
 #include <Library/IoLib.h>
 #include <Library/DebugLib.h>
 #include <IndustryStandard/Acpi.h>
+
+GUID mFrequencyHobGuid = { 0x3fca54f6, 0xe1a2, 0x4b20, { 0xbe, 0x76, 0x92, 0x6b, 0x4b, 0x48, 0xbf, 0xaa }};
 
 /**
   Internal function to retrieves the 64-bit frequency in Hz.
@@ -89,7 +85,7 @@ AcpiTimerLibConstructor (
   //
   // If ACPI I/O space is not enabled yet, program ACPI I/O base address and enable it.
   //
-  if ((PciRead8 (PCI_LIB_ADDRESS (Bus, Device, Function, EnableRegister) & EnableMask) != EnableMask)) {
+  if ((PciRead8 (PCI_LIB_ADDRESS (Bus, Device, Function, EnableRegister)) & EnableMask) != EnableMask) {
     PciWrite16 (
       PCI_LIB_ADDRESS (Bus, Device, Function, PcdGet16 (PcdAcpiIoPciBarRegisterOffset)),
       PcdGet16 (PcdAcpiIoPortBaseAddress)
@@ -162,14 +158,14 @@ InternalAcpiDelay (
     //
     // The target timer count is calculated here
     //
-    Ticks = IoRead32 (Port) + Delay;
+    Ticks = IoBitFieldRead32 (Port, 0, 23) + Delay;
     Delay = BIT22;
     //
     // Wait until time out
     // Delay >= 2^23 could not be handled by this function
     // Timer wrap-arounds are handled correctly by this function
     //
-    while (((Ticks - IoRead32 (Port)) & BIT23) == 0) {
+    while (((Ticks - IoBitFieldRead32 (Port, 0, 23)) & BIT23) == 0) {
       CpuPause ();
     }
   } while (Times-- > 0);
@@ -335,3 +331,63 @@ GetTimeInNanoSecond (
 
   return NanoSeconds;
 }
+
+/**
+  Calculate TSC frequency.
+
+  The TSC counting frequency is determined by comparing how far it counts
+  during a 101.4 us period as determined by the ACPI timer.
+  The ACPI timer is used because it counts at a known frequency.
+  The TSC is sampled, followed by waiting 363 counts of the ACPI timer,
+  or 101.4 us. The TSC is then sampled again. The difference multiplied by
+  9861 is the TSC frequency. There will be a small error because of the
+  overhead of reading the ACPI timer. An attempt is made to determine and
+  compensate for this error.
+
+  @return The number of TSC counts per second.
+
+**/
+UINT64
+InternalCalculateTscFrequency (
+  VOID
+  )
+{
+  UINT64      StartTSC;
+  UINT64      EndTSC;
+  UINT16      TimerAddr;
+  UINT32      Ticks;
+  UINT64      TscFrequency;
+  BOOLEAN     InterruptState;
+
+  InterruptState = SaveAndDisableInterrupts ();
+
+  TimerAddr = InternalAcpiGetAcpiTimerIoPort ();
+  //
+  // Compute the number of ticks to wait to measure TSC frequency.
+  // Use 363 * 9861 = 3579543 Hz which is within 2 Hz of ACPI_TIMER_FREQUENCY.
+  // 363 counts is a calibration time of 101.4 uS.
+  //
+  Ticks = IoBitFieldRead32 (TimerAddr, 0, 23) + 363;
+
+  StartTSC = AsmReadTsc ();                                         // Get base value for the TSC
+  //
+  // Wait until the ACPI timer has counted 101.4 us.
+  // Timer wrap-arounds are handled correctly by this function.
+  // When the current ACPI timer value is greater than 'Ticks',
+  // the while loop will exit.
+  //
+  while (((Ticks - IoBitFieldRead32 (TimerAddr, 0, 23)) & BIT23) == 0) {
+    CpuPause();
+  }
+  EndTSC = AsmReadTsc ();                                           // TSC value 101.4 us later
+
+  TscFrequency = MultU64x32 (
+                   (EndTSC - StartTSC),                             // Number of TSC counts in 101.4 us
+                   9861                                             // Number of 101.4 us in a second
+                   );
+
+  SetInterruptState (InterruptState);
+
+  return TscFrequency;
+}
+

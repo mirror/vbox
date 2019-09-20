@@ -43,8 +43,6 @@
 [Packages]
         MdePkg/MdePkg.dec
         MdeModulePkg/MdeModulePkg.dec
-        IntelFrameworkPkg/IntelFrameworkPkg.dec
-        IntelFrameworkModulePkg/IntelFrameworkModulePkg.dec
         VBoxPkg/VBoxPkg.dec
 
 [LibraryClasses]
@@ -63,7 +61,6 @@
    gEfiSmbiosTableGuid
    gEfiAcpiTableGuid
    gEfiAcpi20TableGuid
-   gEfiProcessorSubClassGuid
    gEfiMpsTableGuid
 
 [Protocols]

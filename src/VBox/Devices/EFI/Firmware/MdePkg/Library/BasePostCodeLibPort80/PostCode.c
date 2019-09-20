@@ -1,14 +1,8 @@
 /** @file
   Post Code Library instance that writes post code values to I/O port 0x80.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,6 +11,7 @@
 #include <Library/PostCodeLib.h>
 #include <Library/PcdLib.h>
 #include <Library/IoLib.h>
+#include <Library/DebugLib.h>
 
 /**
   Sends an 32-bit value to a POST card.
@@ -42,7 +37,24 @@ PostCode (
   IN UINT32  Value
   )
 {
-  IoWrite8 (0x80, (UINT8)(Value));
+  switch (PcdGet8 (PcdPort80DataWidth)) {
+  case 8:
+    IoWrite8 (0x80, (UINT8)(Value));
+    break;
+  case 16:
+    IoWrite16 (0x80, (UINT16)(Value));
+    break;
+  case 32:
+    IoWrite32 (0x80, Value);
+    break;
+  default:
+    //
+    // Assert on the invalid data width
+    //
+    ASSERT (FALSE);
+    break;
+  }
+
   return Value;
 }
 
@@ -78,7 +90,7 @@ PostCodeWithDescription (
   IN CONST CHAR8  *Description  OPTIONAL
   )
 {
-  IoWrite8 (0x80, (UINT8)(Value));
+  PostCode (Value);
   return Value;
 }
 

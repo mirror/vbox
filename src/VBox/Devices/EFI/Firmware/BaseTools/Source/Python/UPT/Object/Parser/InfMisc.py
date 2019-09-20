@@ -2,15 +2,9 @@
 # This file is used to define class objects of INF file miscellaneous.
 # Include BootMode/HOB/Event and others. It will consumed by InfParser.
 #
-# Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfMisc
@@ -114,7 +108,7 @@ class InfSpecialCommentObject(InfSectionCommonDef):
            Type == DT.TYPE_EVENT_SECTION or \
            Type == DT.TYPE_BOOTMODE_SECTION:
             for Item in SepcialSectionList:
-                if self.SpecialComments.has_key(Type):
+                if Type in self.SpecialComments:
                     ObjList = self.SpecialComments[Type]
                     ObjList.append(Item)
                     self.SpecialComments[Type] = ObjList
@@ -135,9 +129,9 @@ class InfSpecialCommentObject(InfSectionCommonDef):
 # An encapsulate of Error for INF parser.
 #
 def ErrorInInf(Message=None, ErrorCode=None, LineInfo=None, RaiseError=True):
-    if ErrorCode == None:
+    if ErrorCode is None:
         ErrorCode = ToolError.FORMAT_INVALID
-    if LineInfo == None:
+    if LineInfo is None:
         LineInfo = ['', -1, '']
     Logger.Error("InfParser",
                  ErrorCode,

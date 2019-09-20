@@ -1,14 +1,8 @@
 /** @file
   Header file for Console Platfrom DXE Driver.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -21,6 +15,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/DevicePath.h>
 #include <Protocol/SimpleTextIn.h>
 #include <Protocol/PciIo.h>
+#include <Protocol/UsbIo.h>
 #include <Protocol/GraphicsOutput.h>
 
 #include <Guid/GlobalVariable.h>
@@ -36,6 +31,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Library/UefiRuntimeServicesTableLib.h>
 #include <Library/DevicePathLib.h>
 #include <Library/MemoryAllocationLib.h>
+#include <Library/UefiBootManagerLib.h>
 
 //
 // Driver Binding Externs
@@ -118,8 +114,7 @@ ConPlatformTextOutDriverBindingSupported (
   Start this driver on ControllerHandle by opening Simple Text Input Protocol,
   reading Device Path, and installing Console In Devcice GUID on ControllerHandle.
 
-  If this devcie is not one hot-plug devce, append its device path into the
-  console environment variables ConInDev.
+  Append its device path into the console environment variables ConInDev.
 
   @param  This                 Protocol instance pointer.
   @param  ControllerHandle     Handle of device to bind driver to
@@ -140,14 +135,13 @@ ConPlatformTextInDriverBindingStart (
   );
 
 /**
-  Start this driver on the device for console output and stardard error output.
+  Start this driver on the device for console output and standard error output.
 
   Start this driver on ControllerHandle by opening Simple Text Output Protocol,
   reading Device Path, and installing Console Out Devcic GUID, Standard Error
   Device GUID on ControllerHandle.
 
-  If this devcie is not one hot-plug devce, append its device path into the
-  console environment variables ConOutDev, StdErrDev.
+  Append its device path into the console environment variables ConOutDev, ErrOutDev.
 
   @param  This                 Protocol instance pointer.
   @param  ControllerHandle     Handle of device to bind driver to
@@ -291,23 +285,6 @@ ConPlatformUpdateDeviceVariable (
   IN  CHAR16                    *VariableName,
   IN  EFI_DEVICE_PATH_PROTOCOL  *DevicePath,
   IN  CONPLATFORM_VAR_OPERATION Operation
-  );
-
-/**
-  Check if the device supports hot-plug through its device path.
-
-  This function could be updated to check more types of Hot Plug devices.
-  Currently, it checks USB and PCCard device.
-
-  @param  DevicePath            Pointer to device's device path.
-
-  @retval TRUE                  The devcie is a hot-plug device
-  @retval FALSE                 The devcie is not a hot-plug device.
-
-**/
-BOOLEAN
-IsHotPlugDevice (
-  IN  EFI_DEVICE_PATH_PROTOCOL    *DevicePath
   );
 
 //

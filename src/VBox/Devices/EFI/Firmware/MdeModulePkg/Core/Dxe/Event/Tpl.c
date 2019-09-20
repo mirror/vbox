@@ -1,14 +1,8 @@
 /** @file
   Task priority (TPL) functions.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -65,7 +59,10 @@ CoreRaiseTpl (
   EFI_TPL     OldTpl;
 
   OldTpl = gEfiCurrentTpl;
-  ASSERT (OldTpl <= NewTpl);
+  if (OldTpl > NewTpl) {
+    DEBUG ((EFI_D_ERROR, "FATAL ERROR - RaiseTpl with OldTpl(0x%x) > NewTpl(0x%x)\n", OldTpl, NewTpl));
+    ASSERT (FALSE);
+  }
   ASSERT (VALID_TPL (NewTpl));
 
   //
@@ -100,9 +97,13 @@ CoreRestoreTpl (
   )
 {
   EFI_TPL     OldTpl;
+  EFI_TPL     PendingTpl;
 
   OldTpl = gEfiCurrentTpl;
-  ASSERT (NewTpl <= OldTpl);
+  if (NewTpl > OldTpl) {
+    DEBUG ((EFI_D_ERROR, "FATAL ERROR - RestoreTpl with NewTpl(0x%x) > OldTpl(0x%x)\n", NewTpl, OldTpl));
+    ASSERT (FALSE);
+  }
   ASSERT (VALID_TPL (NewTpl));
 
   //
@@ -117,8 +118,13 @@ CoreRestoreTpl (
   //
   // Dispatch any pending events
   //
-  while (((-2 << NewTpl) & gEventPending) != 0) {
-    gEfiCurrentTpl = (UINTN) HighBitSet64 (gEventPending);
+  while (gEventPending != 0) {
+    PendingTpl = (UINTN) HighBitSet64 (gEventPending);
+    if (PendingTpl <= NewTpl) {
+      break;
+    }
+
+    gEfiCurrentTpl = PendingTpl;
     if (gEfiCurrentTpl < TPL_HIGH_LEVEL) {
       CoreSetInterruptState (TRUE);
     }

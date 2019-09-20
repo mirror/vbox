@@ -1,14 +1,8 @@
 /** @file
   SMM Periodic SMI Library.
 
-  Copyright (c) 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -146,19 +140,6 @@ typedef struct {
 
 /**
  Macro that returns a pointer to a PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT
- structure based on a pointer to a RegisterContext field.
-
-**/
-#define PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT_FROM_REGISTER_CONTEXT(a) \
-  CR (                                                                \
-    a,                                                                \
-    PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT,                             \
-    RegisterContext,                                                  \
-    PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT_SIGNATURE                    \
-    )
-
-/**
- Macro that returns a pointer to a PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT
  structure based on a pointer to a Link field.
 
 **/
@@ -280,26 +261,31 @@ LookupPeriodicSmiLibraryHandler (
 
 /**
   Internal worker function that sets that active periodic SMI handler based on
-  the Context used when the periodic SMI handler was registered with the
-  SMM Periodic Timer Dispatch 2 Protocol.  If Context is NULL, then the
+  the DispatchHandle that was returned when the periodic SMI handler was enabled
+  with PeriodicSmiEnable(). If DispatchHandle is NULL, then the
   state is updated to show that there is not active periodic SMI handler.
   A pointer to the active PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT structure
   is returned.
 
-  @retval  NULL   Context is NULL.
+  @param [in] DispatchHandle DispatchHandle that was returned when the periodic
+                             SMI handler was enabled with PeriodicSmiEnable().
+                             This is an optional parameter that may be NULL.
+                             If this parameter is NULL, then the state is updated
+                             to show that there is not active periodic SMI handler.
+  @retval  NULL   DispatchHandle is NULL.
   @retval  other  Pointer to the PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT
-                  associated with Context.
+                  associated with DispatchHandle.
 
 **/
 PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT *
 SetActivePeriodicSmiLibraryHandler (
-  IN CONST VOID  *Context  OPTIONAL
+  IN EFI_HANDLE                         DispatchHandle    OPTIONAL
   )
 {
-  if (Context == NULL) {
+  if (DispatchHandle == NULL) {
     gActivePeriodicSmiLibraryHandler = NULL;
   } else {
-    gActivePeriodicSmiLibraryHandler = PERIODIC_SMI_LIBRARY_HANDLER_CONTEXT_FROM_REGISTER_CONTEXT (Context);
+    gActivePeriodicSmiLibraryHandler = LookupPeriodicSmiLibraryHandler (DispatchHandle);
   }
   return gActivePeriodicSmiLibraryHandler;
 }
@@ -545,7 +531,7 @@ PeriodicSmiExit (
   If this function is not called from within an enabled periodic SMI handler,
   then 0 is returned.
 
-  @return  The actual time in 100ns units elasped since this function was
+  @return  The actual time in 100ns units elapsed since this function was
            called.  A value of 0 indicates an unknown amount of time.
 
 **/
@@ -798,7 +784,7 @@ PeriodicSmiDispatchFunction (
   //
   // Set the active periodic SMI handler
   //
-  PeriodicSmiLibraryHandler = SetActivePeriodicSmiLibraryHandler (Context);
+  PeriodicSmiLibraryHandler = SetActivePeriodicSmiLibraryHandler (DispatchHandle);
   if (PeriodicSmiLibraryHandler == NULL) {
     return EFI_NOT_FOUND;
   }

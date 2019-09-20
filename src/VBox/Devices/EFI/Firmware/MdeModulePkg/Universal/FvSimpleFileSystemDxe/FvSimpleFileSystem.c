@@ -12,15 +12,9 @@
   from the UEFI shell. It is entirely read-only.
 
 Copyright (c) 2014, ARM Limited. All rights reserved.
-Copyright (c) 2014, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2014 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -483,6 +477,10 @@ FvSimpleFileSystemOpen (
   FV_FILESYSTEM_FILE          *NewFile;
   FV_FILESYSTEM_FILE_INFO     *FvFileInfo;
   LIST_ENTRY                  *FvFileInfoLink;
+  EFI_STATUS                  Status;
+  UINTN                       FileNameLength;
+  UINTN                       NewFileNameLength;
+  CHAR16                      *FileNameWithExtension;
 
   //
   // Check for a valid mode
@@ -522,7 +520,10 @@ FvSimpleFileSystemOpen (
     InitializeListHead (&NewFile->Link);
     InsertHeadList (&Instance->FileHead, &NewFile->Link);
 
-    NewFile->DirReadNext = FVFS_GET_FIRST_FILE_INFO (Instance);
+    NewFile->DirReadNext = NULL;
+    if (!IsListEmpty (&Instance->FileInfoHead)) {
+      NewFile->DirReadNext = FVFS_GET_FIRST_FILE_INFO (Instance);
+    }
 
     *NewHandle = &NewFile->FileProtocol;
     return EFI_SUCCESS;
@@ -531,26 +532,61 @@ FvSimpleFileSystemOpen (
   //
   // Do a linear search for a file in the FV with a matching filename
   //
+  Status     = EFI_NOT_FOUND;
+  FvFileInfo = NULL;
   for (FvFileInfoLink = GetFirstNode (&Instance->FileInfoHead);
       !IsNull (&Instance->FileInfoHead, FvFileInfoLink);
        FvFileInfoLink = GetNextNode (&Instance->FileInfoHead, FvFileInfoLink)) {
     FvFileInfo = FVFS_FILE_INFO_FROM_LINK (FvFileInfoLink);
     if (mUnicodeCollation->StriColl (mUnicodeCollation, &FvFileInfo->FileInfo.FileName[0], FileName) == 0) {
-      NewFile = AllocateZeroPool (sizeof (FV_FILESYSTEM_FILE));
-      if (NewFile == NULL) {
-        return EFI_OUT_OF_RESOURCES;
-      }
-
-      NewFile->Signature = FVFS_FILE_SIGNATURE;
-      NewFile->Instance  = Instance;
-      NewFile->FvFileInfo = FvFileInfo;
-      CopyMem (&NewFile->FileProtocol, &mFileSystemTemplate, sizeof (mFileSystemTemplate));
-      InitializeListHead (&NewFile->Link);
-      InsertHeadList (&Instance->FileHead, &NewFile->Link);
-
-      *NewHandle = &NewFile->FileProtocol;
-      return EFI_SUCCESS;
+      Status = EFI_SUCCESS;
+      break;
     }
+  }
+
+  // If the file has not been found check if the filename exists with an extension
+  // in case there was no extension present.
+  // FvFileSystem adds a 'virtual' extension '.EFI' to EFI applications and drivers
+  // present in the Firmware Volume
+  if (Status == EFI_NOT_FOUND) {
+    FileNameLength = StrLen (FileName);
+
+    // Does the filename already contain the '.EFI' extension?
+    if (mUnicodeCollation->StriColl (mUnicodeCollation, FileName + FileNameLength - 4, L".efi") != 0) {
+      // No, there was no extension. So add one and search again for the file
+      // NewFileNameLength = FileNameLength + 1 + 4 = (Number of non-null character) + (file extension) + (a null character)
+      NewFileNameLength = FileNameLength + 1 + 4;
+      FileNameWithExtension = AllocatePool (NewFileNameLength * 2);
+      StrCpyS (FileNameWithExtension, NewFileNameLength, FileName);
+      StrCatS (FileNameWithExtension, NewFileNameLength, L".EFI");
+
+      for (FvFileInfoLink = GetFirstNode (&Instance->FileInfoHead);
+          !IsNull (&Instance->FileInfoHead, FvFileInfoLink);
+           FvFileInfoLink = GetNextNode (&Instance->FileInfoHead, FvFileInfoLink)) {
+        FvFileInfo = FVFS_FILE_INFO_FROM_LINK (FvFileInfoLink);
+        if (mUnicodeCollation->StriColl (mUnicodeCollation, &FvFileInfo->FileInfo.FileName[0], FileNameWithExtension) == 0) {
+          Status = EFI_SUCCESS;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!EFI_ERROR (Status)) {
+    NewFile = AllocateZeroPool (sizeof (FV_FILESYSTEM_FILE));
+    if (NewFile == NULL) {
+      return EFI_OUT_OF_RESOURCES;
+    }
+
+    NewFile->Signature = FVFS_FILE_SIGNATURE;
+    NewFile->Instance  = Instance;
+    NewFile->FvFileInfo = FvFileInfo;
+    CopyMem (&NewFile->FileProtocol, &mFileSystemTemplate, sizeof (mFileSystemTemplate));
+    InitializeListHead (&NewFile->Link);
+    InsertHeadList (&Instance->FileHead, &NewFile->Link);
+
+    *NewHandle = &NewFile->FileProtocol;
+    return EFI_SUCCESS;
   }
 
   return EFI_NOT_FOUND;
@@ -662,6 +698,7 @@ FvSimpleFileSystemRead (
 
     Status = FvFsReadFile (File->Instance->FvProtocol, File->FvFileInfo, &FileSize, &FileBuffer);
     if (EFI_ERROR (Status)) {
+      FreePool (FileBuffer);
       return EFI_DEVICE_ERROR;
     }
 
@@ -671,6 +708,8 @@ FvSimpleFileSystemRead (
 
     CopyMem (Buffer, (UINT8*)FileBuffer + File->Position, *BufferSize);
     File->Position += *BufferSize;
+
+    FreePool (FileBuffer);
 
     return EFI_SUCCESS;
   }
@@ -783,7 +822,9 @@ FvSimpleFileSystemSetPosition (
     //
     // Reset directory position to first entry
     //
-    File->DirReadNext = FVFS_GET_FIRST_FILE_INFO (Instance);
+    if (File->DirReadNext) {
+      File->DirReadNext = FVFS_GET_FIRST_FILE_INFO (Instance);
+    }
   } else if (Position == 0xFFFFFFFFFFFFFFFFull) {
     File->Position = File->FvFileInfo->FileInfo.FileSize;
   } else {
@@ -898,7 +939,11 @@ FvSimpleFileSystemGetInfo (
     FsInfoOut = (EFI_FILE_SYSTEM_INFO *) Buffer;
 
     CopyMem (FsInfoOut, &mFsInfoTemplate, sizeof (EFI_FILE_SYSTEM_INFO));
-    Status = StrnCpyS (FsInfoOut->VolumeLabel, (*BufferSize - OFFSET_OF (EFI_FILE_SYSTEM_INFO, VolumeLabel)) / sizeof (CHAR16), Instance->VolumeLabel, StrLen (Instance->VolumeLabel));
+    Status = StrnCpyS ( FsInfoOut->VolumeLabel,
+                        (*BufferSize - OFFSET_OF (EFI_FILE_SYSTEM_INFO, VolumeLabel)) / sizeof (CHAR16),
+                        Instance->VolumeLabel,
+                        StrLen (Instance->VolumeLabel)
+                        );
     ASSERT_EFI_ERROR (Status);
     FsInfoOut->Size = Size;
     return Status;
@@ -919,7 +964,11 @@ FvSimpleFileSystemGetInfo (
     }
 
     FsVolumeLabel = (EFI_FILE_SYSTEM_VOLUME_LABEL*) Buffer;
-    Status        = StrnCpyS (FsVolumeLabel->VolumeLabel, (*BufferSize - OFFSET_OF (EFI_FILE_SYSTEM_VOLUME_LABEL, VolumeLabel)) / sizeof (CHAR16), Instance->VolumeLabel, StrLen (Instance->VolumeLabel));
+    Status        = StrnCpyS (FsVolumeLabel->VolumeLabel,
+                              (*BufferSize - OFFSET_OF (EFI_FILE_SYSTEM_VOLUME_LABEL, VolumeLabel)) / sizeof (CHAR16),
+                              Instance->VolumeLabel,
+                              StrLen (Instance->VolumeLabel)
+                              );
     ASSERT_EFI_ERROR (Status);
     return Status;
   } else {

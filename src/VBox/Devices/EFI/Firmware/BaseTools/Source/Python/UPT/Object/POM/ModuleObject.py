@@ -1,15 +1,9 @@
 ## @file
 # This file is used to define a class object to describe a module
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 ModuleObject
@@ -105,6 +99,7 @@ class ModuleHeaderObject(IdentificationObject, CommonHeaderObject, BinaryHeaderO
         self.PiSpecificationVersion = ''
         self.UefiSpecificationVersion = ''
         self.UNIFlag = False
+        self.ModuleUniFile = ''
         #
         # SpecObject
         #
@@ -208,6 +203,11 @@ class ModuleHeaderObject(IdentificationObject, CommonHeaderObject, BinaryHeaderO
     def GetSupArchList(self):
         return self.SupArchList
 
+    def SetModuleUniFile(self, ModuleUniFile):
+        self.ModuleUniFile = ModuleUniFile
+
+    def GetModuleUniFile(self):
+        return self.ModuleUniFile
 ##
 # SourceFileObject
 #

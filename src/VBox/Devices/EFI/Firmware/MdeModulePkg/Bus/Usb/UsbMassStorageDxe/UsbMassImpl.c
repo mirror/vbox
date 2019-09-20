@@ -1,14 +1,8 @@
 /** @file
   USB Mass Storage Driver that manages USB Mass Storage Device and produces Block I/O Protocol.
 
-Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -60,10 +54,10 @@ UsbMassReset (
   EFI_STATUS      Status;
 
   //
-  // Raise TPL to TPL_NOTIFY to serialize all its operations
+  // Raise TPL to TPL_CALLBACK to serialize all its operations
   // to protect shared data structures.
   //
-  OldTpl  = gBS->RaiseTPL (TPL_NOTIFY);
+  OldTpl  = gBS->RaiseTPL (TPL_CALLBACK);
 
   UsbMass = USB_MASS_DEVICE_FROM_BLOCK_IO (This);
   Status  = UsbMass->Transport->Reset (UsbMass->Context, ExtendedVerification);
@@ -114,10 +108,10 @@ UsbMassReadBlocks (
   UINTN               TotalBlock;
 
   //
-  // Raise TPL to TPL_NOTIFY to serialize all its operations
+  // Raise TPL to TPL_CALLBACK to serialize all its operations
   // to protect shared data structures.
   //
-  OldTpl  = gBS->RaiseTPL (TPL_NOTIFY);
+  OldTpl  = gBS->RaiseTPL (TPL_CALLBACK);
   UsbMass = USB_MASS_DEVICE_FROM_BLOCK_IO (This);
   Media   = &UsbMass->BlockIoMedia;
 
@@ -172,9 +166,9 @@ UsbMassReadBlocks (
   }
 
   if (UsbMass->Cdb16Byte) {
-    Status = UsbBootReadBlocks16 (UsbMass, Lba, TotalBlock, Buffer);
+    Status = UsbBootReadWriteBlocks16 (UsbMass, FALSE, Lba, TotalBlock, Buffer);
   } else {
-    Status = UsbBootReadBlocks (UsbMass, (UINT32) Lba, TotalBlock, Buffer);
+    Status = UsbBootReadWriteBlocks (UsbMass, FALSE, (UINT32) Lba, TotalBlock, Buffer);
   }
 
   if (EFI_ERROR (Status)) {
@@ -230,10 +224,10 @@ UsbMassWriteBlocks (
   UINTN               TotalBlock;
 
   //
-  // Raise TPL to TPL_NOTIFY to serialize all its operations
+  // Raise TPL to TPL_CALLBACK to serialize all its operations
   // to protect shared data structures.
   //
-  OldTpl  = gBS->RaiseTPL (TPL_NOTIFY);
+  OldTpl  = gBS->RaiseTPL (TPL_CALLBACK);
   UsbMass = USB_MASS_DEVICE_FROM_BLOCK_IO (This);
   Media   = &UsbMass->BlockIoMedia;
 
@@ -292,9 +286,9 @@ UsbMassWriteBlocks (
   // and clear the status should the write succeed.
   //
   if (UsbMass->Cdb16Byte) {
-    Status = UsbBootWriteBlocks16 (UsbMass, Lba, TotalBlock, Buffer);
+    Status = UsbBootReadWriteBlocks16 (UsbMass, TRUE, Lba, TotalBlock, Buffer);
   } else {
-    Status = UsbBootWriteBlocks (UsbMass, (UINT32) Lba, TotalBlock, Buffer);
+    Status = UsbBootReadWriteBlocks (UsbMass, TRUE, (UINT32) Lba, TotalBlock, Buffer);
   }
 
   if (EFI_ERROR (Status)) {
@@ -361,6 +355,14 @@ UsbMassInitMedia (
   Media->MediaId          = 1;
 
   Status = UsbBootGetParams (UsbMass);
+  DEBUG ((DEBUG_INFO, "UsbMassInitMedia: UsbBootGetParams (%r)\n", Status));
+  if (Status == EFI_MEDIA_CHANGED) {
+    //
+    // Some USB storage devices may report MEDIA_CHANGED sense key when hot-plugged.
+    // Treat it as SUCCESS
+    //
+    Status = EFI_SUCCESS;
+  }
   return Status;
 }
 

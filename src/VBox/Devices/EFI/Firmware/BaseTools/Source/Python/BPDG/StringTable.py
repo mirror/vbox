@@ -1,14 +1,8 @@
 ## @file
 # This file is used to define strings used in the BPDG tool
 #
-# Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution.  The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 ##
 
 
@@ -32,7 +26,7 @@ MAP_FILE_COMMENT_TEMPLATE = \
 #
 #  This file lists all VPD informations for a platform fixed/adjusted by BPDG tool.
 #
-# Copyright (c) 2010, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2010 -2018, Intel Corporation. All rights reserved.<BR>
 # This program and the accompanying materials
 # are licensed and made available under the terms and conditions of the BSD License
 # which accompanies this distribution.  The full text of the license may be found at
@@ -46,13 +40,13 @@ MAP_FILE_COMMENT_TEMPLATE = \
 
 
 LBL_BPDG_LONG_UNI           = (u"Intel(r) Binary Product Data Generation Tool (Intel(r) BPDG)")
-LBL_BPDG_VERSION            = (u"0.1")
+LBL_BPDG_VERSION            = (u"1.0")
 LBL_BPDG_USAGE              = \
 (
-"""
-BPDG options -o Filename.bin -m Filename.map Filename.txt
-Intel(r) Binary Product Data Generation Tool (Intel(r) BPDG)
-Copyright (c) 2010 Intel Corporation All Rights Reserved.
+"""BPDG options -o Filename.bin -m Filename.map Filename.txt
+Copyright (c) 2010 - 2018, Intel Corporation All Rights Reserved.
+
+  Intel(r) Binary Product Data Generation Tool (Intel(r) BPDG)
 
 Required Flags:
   -o BIN_FILENAME, --vpd-filename=BIN_FILENAME

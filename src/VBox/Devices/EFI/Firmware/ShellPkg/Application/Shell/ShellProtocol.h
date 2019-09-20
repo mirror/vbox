@@ -2,15 +2,9 @@
   Member functions of EFI_SHELL_PROTOCOL and functions for creation,
   manipulation, and initialization of EFI_SHELL_PROTOCOL.
 
-  (C) Copyright 2014, Hewlett-Packard Development Company, L.P.
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  (C) Copyright 2014 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -43,7 +37,6 @@ typedef struct {
   @return                 An error from LocateHandle, CreateEvent, or other core function.
 **/
 EFI_STATUS
-EFIAPI
 CreatePopulateInstallShellProtocol (
   IN OUT EFI_SHELL_PROTOCOL  **NewShell
   );
@@ -59,8 +52,19 @@ CreatePopulateInstallShellProtocol (
   @retval EFI_SUCCESS       The operation was successful.
 **/
 EFI_STATUS
-EFIAPI
 CleanUpShellProtocol (
+  IN OUT EFI_SHELL_PROTOCOL  *NewShell
+  );
+
+/**
+  Cleanup the shell environment.
+
+  @param[in, out] NewShell   The pointer to the new shell protocol structure.
+
+  @retval EFI_SUCCESS       The operation was successful.
+**/
+EFI_STATUS
+CleanUpShellEnvironment (
   IN OUT EFI_SHELL_PROTOCOL  *NewShell
   );
 
@@ -283,7 +287,6 @@ EfiShellBatchIsActive (
   @retval other                   an error ocurred.
 **/
 EFI_STATUS
-EFIAPI
 InternalOpenFileDevicePath(
   IN OUT EFI_DEVICE_PATH_PROTOCOL *DevicePath2,
   OUT SHELL_FILE_HANDLE             *FileHandle,
@@ -453,7 +456,6 @@ EfiShellEnablePageBreak (
   @retval EFI_UNSUPPORTED   Nested shell invocations are not allowed.
 **/
 EFI_STATUS
-EFIAPI
 InternalShellExecuteDevicePath(
   IN CONST EFI_HANDLE               *ParentImageHandle,
   IN CONST EFI_DEVICE_PATH_PROTOCOL *DevicePath,
@@ -511,7 +513,6 @@ EfiShellExecute(
   @param FileListNode     pointer to the list node to free
 **/
 VOID
-EFIAPI
 FreeShellFileInfoNode(
   IN EFI_SHELL_FILE_INFO *FileListNode
   );
@@ -562,7 +563,6 @@ EfiShellRemoveDupInFileList(
 
 **/
 EFI_SHELL_FILE_INFO *
-EFIAPI
 CreateAndPopulateShellFileInfo(
   IN CONST CHAR16 *BasePath,
   IN CONST EFI_STATUS Status,
@@ -813,7 +813,7 @@ EfiShellIsRootShell(
                                 aliases will be returned in ReturnedData.
   @param[out] Volatile          upon return of a single command if TRUE indicates
                                 this is stored in a volatile fashion.  FALSE otherwise.
-  @return                      	If Alias is not NULL, it will return a pointer to
+  @return                        If Alias is not NULL, it will return a pointer to
                                 the NULL-terminated command for that alias.
                                 If Alias is NULL, ReturnedData points to a ';'
                                 delimited list of alias (e.g.
@@ -845,7 +845,6 @@ EfiShellGetAlias(
   @retval EFI_NOT_FOUND         the Alias intended to be deleted was not found
 **/
 EFI_STATUS
-EFIAPI
 InternalSetAlias(
   IN CONST CHAR16 *Command,
   IN CONST CHAR16 *Alias OPTIONAL,
@@ -890,7 +889,6 @@ EfiShellSetAlias(
   @param FileListNode     pointer to the list node to free
 **/
 VOID
-EFIAPI
 InternalFreeShellFileInfoNode(
   IN EFI_SHELL_FILE_INFO *FileListNode
   );
@@ -906,7 +904,6 @@ InternalFreeShellFileInfoNode(
   @retval EFI_SUCCESS           The environment variable was successfully updated.
 **/
 EFI_STATUS
-EFIAPI
 InternalEfiShellSetEnv(
   IN CONST CHAR16 *Name,
   IN CONST CHAR16 *Value,
@@ -921,7 +918,6 @@ InternalEfiShellSetEnv(
   @retval EFI_OUT_OF_RESOURCES  There is not enough mnemory available.
 **/
 EFI_STATUS
-EFIAPI
 InernalEfiShellStartMonitor(
   VOID
   );

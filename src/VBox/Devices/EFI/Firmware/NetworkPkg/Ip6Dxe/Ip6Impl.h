@@ -1,15 +1,10 @@
 /** @file
   Implementation of EFI_IP6_PROTOCOL protocol interfaces and type definitions.
 
-  Copyright (c) 2009 - 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2009 - 2016, Intel Corporation. All rights reserved.<BR>
+  (C) Copyright 2015 Hewlett-Packard Development Company, L.P.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,6 +12,8 @@
 #define __EFI_IP6_IMPL_H__
 
 #include <Uefi.h>
+
+#include <IndustryStandard/Dhcp.h>
 
 #include <Protocol/ServiceBinding.h>
 #include <Protocol/ManagedNetwork.h>
@@ -89,6 +86,7 @@
 #define IP6_NO_MAPPING(IpInstance) (!(IpInstance)->Interface->Configured)
 
 extern EFI_IPSEC2_PROTOCOL *mIpSec;
+extern BOOLEAN             mIpSec2Installed;
 
 //
 // IP6_TXTOKEN_WRAP wraps the upper layer's transmit token.

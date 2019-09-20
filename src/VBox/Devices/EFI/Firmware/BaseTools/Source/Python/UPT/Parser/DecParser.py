@@ -1,15 +1,9 @@
 ## @file
 # This file is used to parse DEC file. It will consumed by DecParser
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 '''
 DecParser
 '''
@@ -29,6 +23,7 @@ from Library.ParserValidate import IsValidIdString
 from Library.ParserValidate import IsValidUserId
 from Library.ParserValidate import IsValidArch
 from Library.ParserValidate import IsValidWord
+from Library.ParserValidate import IsValidDecVersionVal
 from Parser.DecParserMisc import TOOL_NAME
 from Parser.DecParserMisc import CleanString
 from Parser.DecParserMisc import IsValidPcdDatum
@@ -56,10 +51,10 @@ from Object.Parser.DecObject import DecPcdObject
 from Object.Parser.DecObject import DecPcdItemObject
 from Library.Misc import GuidStructureStringToGuidString
 from Library.Misc import CheckGuidRegFormat
-from Library.String import ReplaceMacro
-from Library.String import GetSplitValueList
-from Library.String import gMACRO_PATTERN
-from Library.String import ConvertSpecialChar
+from Library.StringUtils import ReplaceMacro
+from Library.StringUtils import GetSplitValueList
+from Library.StringUtils import gMACRO_PATTERN
+from Library.StringUtils import ConvertSpecialChar
 from Library.CommentParsing import ParsePcdErrorCode
 
 ##
@@ -269,7 +264,21 @@ class _DecBase:
                     self._LoggerError(ST.ERR_DECPARSE_BACKSLASH_EMPTY)
                 CatLine += Line
 
-        self._RawData.CurrentLine = self._ReplaceMacro(CatLine)
+        #
+        # All MACRO values defined by the DEFINE statements in any section
+        # (except [Userextensions] sections for Intel) of the INF or DEC file
+        # must be expanded before processing of the file.
+        #
+        __IsReplaceMacro = True
+        Header = self._RawData.CurrentScope[0] if self._RawData.CurrentScope else None
+        if Header and len(Header) > 2:
+            if Header[0].upper() == 'USEREXTENSIONS' and not (Header[1] == 'TianoCore' and Header[2] == '"ExtraFiles"'):
+                __IsReplaceMacro = False
+        if __IsReplaceMacro:
+            self._RawData.CurrentLine = self._ReplaceMacro(CatLine)
+        else:
+            self._RawData.CurrentLine = CatLine
+
         return CatLine, CommentList
 
     ## Parse
@@ -452,7 +461,8 @@ class _DecDefine(_DecBase):
         if self.ItemObject.GetPackageSpecification():
             self._LoggerError(ST.ERR_DECPARSE_DEFINE_DEFINED % DT.TAB_DEC_DEFINES_DEC_SPECIFICATION)
         if not IsValidToken('0[xX][0-9a-fA-F]{8}', Token):
-            self._LoggerError(ST.ERR_DECPARSE_DEFINE_SPEC)
+            if not IsValidDecVersionVal(Token):
+                self._LoggerError(ST.ERR_DECPARSE_DEFINE_SPEC)
         self.ItemObject.SetPackageSpecification(Token)
 
     def _SetPackageName(self, Token):
@@ -604,11 +614,11 @@ class _DecPcd(_DecBase):
         if not IsValidToken(PCD_TOKEN_PATTERN, Token):
             self._LoggerError(ST.ERR_DECPARSE_PCD_TOKEN % Token)
         elif not Token.startswith('0x') and not Token.startswith('0X'):
-            if long(Token) > 4294967295:
+            if int(Token) > 4294967295:
                 self._LoggerError(ST.ERR_DECPARSE_PCD_TOKEN_INT % Token)
-            Token = hex(long(Token))[:-1]
+            Token = '0x%x' % int(Token)
 
-        IntToken = long(Token, 0)
+        IntToken = int(Token, 0)
         if (Guid, IntToken) in self.TokenMap:
             if self.TokenMap[Guid, IntToken] != CName:
                 self._LoggerError(ST.ERR_DECPARSE_PCD_TOKEN_UNIQUE%(Token))
@@ -689,7 +699,7 @@ class _DecGuid(_DecBase):
 
 ## _DecUserExtension
 #
-# Parse user extention section
+# Parse user extension section
 #
 class _DecUserExtension(_DecBase):
     def __init__(self, RawData):
@@ -736,11 +746,30 @@ class _DecUserExtension(_DecBase):
 class Dec(_DecBase, _DecComments):
     def __init__(self, DecFile, Parse = True):
         try:
-            Content = ConvertSpecialChar(open(DecFile, 'rb').readlines())
+            Content = ConvertSpecialChar(open(DecFile, 'r').readlines())
         except BaseException:
             Logger.Error(TOOL_NAME, FILE_OPEN_FAILURE, File=DecFile,
                          ExtraData=ST.ERR_DECPARSE_FILEOPEN % DecFile)
-        RawData = FileContent(DecFile, Content)
+
+        #
+        # Pre-parser for Private section
+        #
+        self._Private = ''
+        __IsFoundPrivate = False
+        NewContent = []
+        for Line in Content:
+            Line = Line.strip()
+            if Line.startswith(DT.TAB_SECTION_START) and Line.endswith(DT.TAB_PRIVATE + DT.TAB_SECTION_END):
+                __IsFoundPrivate = True
+            if Line.startswith(DT.TAB_SECTION_START) and Line.endswith(DT.TAB_SECTION_END)\
+               and not Line.endswith(DT.TAB_PRIVATE + DT.TAB_SECTION_END):
+                __IsFoundPrivate = False
+            if __IsFoundPrivate:
+                self._Private += Line + '\r'
+            if not __IsFoundPrivate:
+                NewContent.append(Line + '\r')
+
+        RawData = FileContent(DecFile, NewContent)
 
         _DecComments.__init__(self)
         _DecBase.__init__(self, RawData)
@@ -998,7 +1027,7 @@ class Dec(_DecBase, _DecComments):
                 SectionNames.append(SectionName)
             #
             # In DEC specification, all section headers have at most two part:
-            # SectionName.Arch except UserExtention
+            # SectionName.Arch except UserExtension
             #
             if len(ItemList) > 2:
                 self._LoggerError(ST.ERR_DECPARSE_SECTION_SUBTOOMANY % Item)
@@ -1058,3 +1087,5 @@ class Dec(_DecBase, _DecComments):
         return self._Define.GetDataObject().GetPackageVersion()
     def GetPackageUniFile(self):
         return self._Define.GetDataObject().GetPackageUniFile()
+    def GetPrivateSections(self):
+        return self._Private

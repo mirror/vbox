@@ -2,14 +2,8 @@
 
     Usb Bus Driver Binding and Bus IO Protocol.
 
-Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -76,6 +70,7 @@ UsbIoControlTransfer (
   USB_ENDPOINT_DESC       *EpDesc;
   EFI_TPL                 OldTpl;
   EFI_STATUS              Status;
+  UINTN                   RequestedDataLength;
 
   if (UsbStatus == NULL) {
     return EFI_INVALID_PARAMETER;
@@ -86,6 +81,7 @@ UsbIoControlTransfer (
   UsbIf  = USB_INTERFACE_FROM_USBIO (This);
   Dev    = UsbIf->Device;
 
+  RequestedDataLength = DataLength;
   Status = UsbHcControlTransfer (
              Dev->Bus,
              Dev->Address,
@@ -99,6 +95,18 @@ UsbIoControlTransfer (
              &Dev->Translator,
              UsbStatus
              );
+  //
+  // If the request completed sucessfully and the Direction of the request is
+  // EfiUsbDataIn or EfiUsbDataOut, then make sure the actual number of bytes
+  // transfered is the same as the number of bytes requested.  If a different
+  // number of bytes were transfered, then return EFI_DEVICE_ERROR.
+  //
+  if (!EFI_ERROR (Status)) {
+    if (Direction != EfiUsbNoData && DataLength != RequestedDataLength) {
+      Status = EFI_DEVICE_ERROR;
+      goto ON_EXIT;
+    }
+  }
 
   if (EFI_ERROR (Status) || (*UsbStatus != EFI_USB_NOERROR)) {
     //
@@ -975,9 +983,6 @@ UsbBusBuildProtocol (
       UsbBus->MaxDevices = 256;
     }
   }
-
-  UsbHcReset (UsbBus, EFI_USB_HC_RESET_GLOBAL);
-  UsbHcSetState (UsbBus, EfiUsbHcStateOperational);
 
   //
   // Install an EFI_USB_BUS_PROTOCOL to host controller to identify it.

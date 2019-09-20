@@ -3,14 +3,8 @@
 
   This code is used to provide the timer tick for the DXE core.
 
-  Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -30,7 +24,7 @@ typedef struct _EFI_TIMER_ARCH_PROTOCOL   EFI_TIMER_ARCH_PROTOCOL;
 
 /**
   This function of this type is called when a timer interrupt fires.  This
-  function executes at TPL_HIGH_LEVEL.  The DXE Core will register a funtion
+  function executes at TPL_HIGH_LEVEL.  The DXE Core will register a function
   of this type to be called for the timer interrupt, so it can know how much
   time has passed.  This information is used to signal timer based events.
 
@@ -150,7 +144,7 @@ EFI_STATUS
   @param  This                  The EFI_TIMER_ARCH_PROTOCOL instance.
 
   @retval EFI_SUCCESS           The soft timer interrupt was generated.
-  @retval EFI_UNSUPPORTEDT      The platform does not support the generation of soft timer interrupts.
+  @retval EFI_UNSUPPORTED       The platform does not support the generation of soft timer interrupts.
 
 **/
 typedef

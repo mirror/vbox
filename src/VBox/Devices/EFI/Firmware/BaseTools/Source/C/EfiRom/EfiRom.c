@@ -1,14 +1,8 @@
 /** @file
 Utility program to create an EFI option ROM image from binary and EFI PE32 files.
 
-Copyright (c) 1999 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available
-under the terms and conditions of the BSD License which accompanies this
-distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 1999 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -95,24 +89,34 @@ Returns:
   // the command line, or the first input filename with a different extension.
   //
   if (!mOptions.OutFileName[0]) {
-    strcpy (mOptions.OutFileName, mOptions.FileList->FileName);
-    //
-    // Find the last . on the line and replace the filename extension with
-    // the default
-    //
-    for (Ext = mOptions.OutFileName + strlen (mOptions.OutFileName) - 1;
-         (Ext >= mOptions.OutFileName) && (*Ext != '.') && (*Ext != '\\');
-         Ext--
-        )
-      ;
-    //
-    // If dot here, then insert extension here, otherwise append
-    //
-    if (*Ext != '.') {
-      Ext = mOptions.OutFileName + strlen (mOptions.OutFileName);
-    }
+    if (mOptions.FileList != NULL) {
+      if (strlen (mOptions.FileList->FileName) >= MAX_PATH) {
+        Status = STATUS_ERROR;
+        Error (NULL, 0, 2000, "Invalid parameter", "Input file name is too long - %s.", mOptions.FileList->FileName);
+        goto BailOut;
+      }
+      strncpy (mOptions.OutFileName, mOptions.FileList->FileName, MAX_PATH - 1);
+      mOptions.OutFileName[MAX_PATH - 1] = 0;
+      //
+      // Find the last . on the line and replace the filename extension with
+      // the default
+      //
+      Ext = mOptions.OutFileName + strlen (mOptions.OutFileName) - 1;
+      while (Ext >= mOptions.OutFileName) {
+        if ((*Ext == '.') || (*Ext == '\\')) {
+          break;
+        }
+        Ext--;
+      }
+      //
+      // If dot here, then insert extension here, otherwise append
+      //
+      if (*Ext != '.') {
+        Ext = mOptions.OutFileName + strlen (mOptions.OutFileName);
+      }
 
-    strcpy (Ext, DEFAULT_OUTPUT_EXTENSION);
+      strcpy (Ext, DEFAULT_OUTPUT_EXTENSION);
+    }
   }
   //
   // Make sure we don't have the same filename for input and output files
@@ -120,7 +124,7 @@ Returns:
   for (FList = mOptions.FileList; FList != NULL; FList = FList->Next) {
     if (stricmp (mOptions.OutFileName, FList->FileName) == 0) {
       Status = STATUS_ERROR;
-      Error (NULL, 0, 1002, "Invalid input paramter", "Input and output file names must be different - %s = %s.", FList->FileName, mOptions.OutFileName);
+      Error (NULL, 0, 1002, "Invalid input parameter", "Input and output file names must be different - %s = %s.", FList->FileName, mOptions.OutFileName);
       goto BailOut;
     }
   }
@@ -142,7 +146,7 @@ Returns:
         VerboseMsg("Processing EFI file    %s\n", FList->FileName);
       }
 
-      Status = ProcessEfiFile (FptrOut, FList, mOptions.VendId, mOptions.DevId, &Size);
+      Status = ProcessEfiFile (FptrOut, FList, mOptions.VendId, mOptions.DevIdList[0], &Size);
     } else if ((FList->FileFlags & FILE_FLAG_BINARY) !=0 ) {
       if (mOptions.Verbose) {
         VerboseMsg("Processing binary file %s\n", FList->FileName);
@@ -168,15 +172,12 @@ Returns:
   // Check total size
   //
   if (TotalSize > MAX_OPTION_ROM_SIZE) {
-    Error (NULL, 0, 2000, "Invalid paramter", "Option ROM image size exceeds limit of 0x%X bytes.", MAX_OPTION_ROM_SIZE);
+    Error (NULL, 0, 2000, "Invalid parameter", "Option ROM image size exceeds limit of 0x%X bytes.", MAX_OPTION_ROM_SIZE);
     Status = STATUS_ERROR;
   }
 
 BailOut:
   if (Status == STATUS_SUCCESS) {
-    if (FptrOut != NULL) {
-      fclose (FptrOut);
-    }
     //
     // Clean up our file list
     //
@@ -185,6 +186,16 @@ BailOut:
       free (mOptions.FileList);
       mOptions.FileList = FList;
     }
+
+    //
+    // Clean up device ID list
+    //
+    if (mOptions.DevIdList != NULL) {
+      free (mOptions.DevIdList);
+    }
+  }
+  if (FptrOut != NULL) {
+    fclose (FptrOut);
   }
 
   if (mOptions.Verbose) {
@@ -239,7 +250,7 @@ Returns:
   // Try to open the input file
   //
   if ((InFptr = fopen (LongFilePath (InFile->FileName), "rb")) == NULL) {
-    Error (NULL, 0, 0001, "Error opening file", InFile->FileName);
+    Error (NULL, 0, 0001, "Error opening file", "%s", InFile->FileName);
     return STATUS_ERROR;
   }
   //
@@ -334,7 +345,7 @@ Returns:
   } else {
     PciDs30->ImageLength = (UINT16) (TotalSize / 512);
     CodeType = PciDs30->CodeType;
-	}
+  }
 
   //
   // If this is the last image, then set the LAST bit unless requested not
@@ -345,13 +356,13 @@ Returns:
       PciDs23->Indicator = INDICATOR_LAST;
     } else {
       PciDs30->Indicator = INDICATOR_LAST;
-		}
+    }
   } else {
     if (mOptions.Pci23 == 1) {
       PciDs23->Indicator = 0;
     } else {
       PciDs30->Indicator = 0;
-		}
+    }
   }
 
   if (CodeType != PCI_CODE_TYPE_EFI_IMAGE) {
@@ -448,6 +459,7 @@ Returns:
   UINT32                        HeaderPadBytes;
   UINT32                        PadBytesBeforeImage;
   UINT32                        PadBytesAfterImage;
+  UINT32                        DevIdListSize;
 
   //
   // Try to open the input file
@@ -491,7 +503,16 @@ Returns:
   if (mOptions.Pci23 == 1) {
     HeaderSize = sizeof (PCI_DATA_STRUCTURE) + HeaderPadBytes + sizeof (EFI_PCI_EXPANSION_ROM_HEADER);
   } else {
-    HeaderSize = sizeof (PCI_3_0_DATA_STRUCTURE) + HeaderPadBytes + sizeof (EFI_PCI_EXPANSION_ROM_HEADER);
+    if (mOptions.DevIdCount > 1) {
+      //
+      // Write device ID list when more than one device ID is specified.
+      // Leave space for list plus terminator.
+      //
+      DevIdListSize = (mOptions.DevIdCount + 1) * sizeof (UINT16);
+    } else {
+      DevIdListSize = 0;
+    }
+    HeaderSize = sizeof (PCI_3_0_DATA_STRUCTURE) + HeaderPadBytes + DevIdListSize + sizeof (EFI_PCI_EXPANSION_ROM_HEADER);
   }
 
   if (mOptions.Verbose) {
@@ -628,7 +649,14 @@ Returns:
     PciDs30.Signature = PCI_DATA_STRUCTURE_SIGNATURE;
     PciDs30.VendorId  = VendId;
     PciDs30.DeviceId  = DevId;
-    PciDs30.DeviceListOffset = 0; // to be fixed
+    if (mOptions.DevIdCount > 1) {
+      //
+      // Place device list immediately after PCI structure
+      //
+      PciDs30.DeviceListOffset = (UINT16) sizeof (PCI_3_0_DATA_STRUCTURE);
+    } else {
+      PciDs30.DeviceListOffset = 0;
+    }
     PciDs30.Length    = (UINT16) sizeof (PCI_3_0_DATA_STRUCTURE);
     PciDs30.Revision  = 0x3;
     //
@@ -651,12 +679,12 @@ Returns:
   if ((InFile->Next == NULL) && (mOptions.NoLast == 0)) {
     if (mOptions.Pci23 == 1) {
       PciDs23.Indicator = INDICATOR_LAST;
-	  } else {
+    } else {
     PciDs30.Indicator = INDICATOR_LAST;}
   } else {
     if (mOptions.Pci23 == 1) {
       PciDs23.Indicator = 0;
-	} else {
+  } else {
       PciDs30.Indicator = 0;
     }
   }
@@ -697,6 +725,26 @@ Returns:
       goto BailOut;
     }
   }
+
+  //
+  // Write the Device ID list to the output file
+  //
+  if (mOptions.DevIdCount > 1) {
+    if (fwrite (mOptions.DevIdList, sizeof (UINT16), mOptions.DevIdCount, OutFptr) != mOptions.DevIdCount) {
+      Error (NULL, 0, 0002, "Failed to write PCI device list to output file!", NULL);
+      Status = STATUS_ERROR;
+      goto BailOut;
+    }
+    //
+    // Write two-byte terminating 0 at the end of the device list
+    //
+    if (putc (0, OutFptr) == EOF || putc (0, OutFptr) == EOF) {
+      Error (NULL, 0, 0002, "Failed to write PCI device list to output file!", NULL);
+      Status = STATUS_ERROR;
+      goto BailOut;
+    }
+  }
+
 
   //
   // Pad head to make it a multiple of 512 bytes
@@ -881,9 +929,13 @@ Returns:
   UINT32    ClassCode;
   UINT32    CodeRevision;
   EFI_STATUS Status;
+  INTN       ReturnStatus;
   BOOLEAN    EfiRomFlag;
   UINT64     TempValue;
+  char       *OptionName;
+  UINT16     *DevIdList;
 
+  ReturnStatus = 0;
   FileFlags = 0;
   EfiRomFlag = FALSE;
 
@@ -896,6 +948,9 @@ Returns:
   // To avoid compile warnings
   //
   FileList                = PrevFileList = NULL;
+
+  Options->DevIdList      = NULL;
+  Options->DevIdCount     = 0;
 
   ClassCode               = 0;
   CodeRevision            = 0;
@@ -938,11 +993,13 @@ Returns:
         Status = AsciiStringToUint64(Argv[1], FALSE, &TempValue);
         if (EFI_ERROR (Status)) {
           Error (NULL, 0, 2000, "Invalid option value", "%s = %s", Argv[0], Argv[1]);
-          return 1;
+          ReturnStatus = 1;
+          goto Done;
         }
         if (TempValue >= 0x10000) {
           Error (NULL, 0, 2000, "Invalid option value", "Vendor Id %s out of range!", Argv[1]);
-          return 1;
+          ReturnStatus = 1;
+          goto Done;
         }
         Options->VendId       = (UINT16) TempValue;
         Options->VendIdValid  = 1;
@@ -950,24 +1007,53 @@ Returns:
         Argv++;
         Argc--;
       } else if (stricmp (Argv[0], "-i") == 0) {
-        //
-        // Device ID specified with -i
-        // Make sure there's another parameter
-        //
-        Status = AsciiStringToUint64(Argv[1], FALSE, &TempValue);
-        if (EFI_ERROR (Status)) {
-          Error (NULL, 0, 2000, "Invalid option value", "%s = %s", Argv[0], Argv[1]);
-          return 1;
-        }
-        if (TempValue >= 0x10000) {
-          Error (NULL, 0, 2000, "Invalid option value", "Device Id %s out of range!", Argv[1]);
-          return 1;
-        }
-        Options->DevId      = (UINT16) TempValue;
-        Options->DevIdValid = 1;
 
-        Argv++;
-        Argc--;
+        OptionName = Argv[0];
+
+        //
+        // Device IDs specified with -i
+        // Make sure there's at least one more parameter
+        //
+        if (Argc < 1) {
+          Error (NULL, 0, 2000, "Invalid parameter", "Missing Device Id with %s option!", OptionName);
+          ReturnStatus = 1;
+          goto Done;
+        }
+
+        //
+        // Process until another dash-argument parameter or the end of the list
+        //
+        while (Argc > 1 && Argv[1][0] != '-') {
+          Status = AsciiStringToUint64(Argv[1], FALSE, &TempValue);
+          if (EFI_ERROR (Status)) {
+            Error (NULL, 0, 2000, "Invalid option value", "%s = %s", OptionName, Argv[1]);
+            ReturnStatus = 1;
+            goto Done;
+          }
+          //
+          // Don't allow device IDs greater than 16 bits
+          // Don't allow 0, since it is used as a list terminator
+          //
+          if (TempValue >= 0x10000 || TempValue == 0) {
+            Error (NULL, 0, 2000, "Invalid option value", "Device Id %s out of range!", Argv[1]);
+            ReturnStatus = 1;
+            goto Done;
+          }
+
+          DevIdList = (UINT16*) realloc (Options->DevIdList, (Options->DevIdCount + 1) * sizeof (UINT16));
+          if (DevIdList == NULL) {
+            Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!", NULL);
+            ReturnStatus = 1;
+            goto Done;
+          }
+          Options->DevIdList = DevIdList;
+
+          Options->DevIdList[Options->DevIdCount++] = (UINT16) TempValue;
+
+          Argv++;
+          Argc--;
+        }
+
       } else if ((stricmp (Argv[0], "-o") == 0) || (stricmp (Argv[0], "--output") == 0)) {
         //
         // Output filename specified with -o
@@ -975,9 +1061,16 @@ Returns:
         //
         if (Argv[1] == NULL || Argv[1][0] == '-') {
           Error (NULL, 0, 2000, "Invalid parameter", "Missing output file name with %s option!", Argv[0]);
-          return STATUS_ERROR;
+          ReturnStatus = STATUS_ERROR;
+          goto Done;
         }
-        strcpy (Options->OutFileName, Argv[1]);
+        if (strlen (Argv[1]) > MAX_PATH - 1) {
+          Error (NULL, 0, 2000, "Invalid parameter", "Output file name %s is too long!", Argv[1]);
+          ReturnStatus = STATUS_ERROR;
+          goto Done;
+        }
+        strncpy (Options->OutFileName, Argv[1], MAX_PATH - 1);
+        Options->OutFileName[MAX_PATH - 1] = 0;
 
         Argv++;
         Argc--;
@@ -986,7 +1079,8 @@ Returns:
         // Help option
         //
         Usage ();
-        return STATUS_ERROR;
+        ReturnStatus = STATUS_ERROR;
+        goto Done;
       } else if (stricmp (Argv[0], "-b") == 0) {
         //
         // Specify binary files with -b
@@ -1014,11 +1108,13 @@ Returns:
         Status = AsciiStringToUint64(Argv[1], FALSE, &DebugLevel);
         if (EFI_ERROR (Status)) {
           Error (NULL, 0, 2000, "Invalid option value", "%s = %s", Argv[0], Argv[1]);
-          return 1;
+          ReturnStatus = 1;
+          goto Done;
         }
         if (DebugLevel > 9)  {
           Error (NULL, 0, 2000, "Invalid option value", "Debug Level range is 0-9, current input level is %d", Argv[1]);
-          return 1;
+          ReturnStatus = 1;
+          goto Done;
         }
         if (DebugLevel>=5 && DebugLevel<=9) {
           Options->Debug = TRUE;
@@ -1038,7 +1134,7 @@ Returns:
         Options->DumpOption   = 1;
 
         Options->VendIdValid  = 1;
-        Options->DevIdValid   = 1;
+        Options->DevIdCount   = 1;
         FileFlags             = FILE_FLAG_BINARY;
       } else if ((stricmp (Argv[0], "-l") == 0) || (stricmp (Argv[0], "--class-code") == 0)) {
         //
@@ -1048,12 +1144,14 @@ Returns:
         Status = AsciiStringToUint64(Argv[1], FALSE, &TempValue);
         if (EFI_ERROR (Status)) {
           Error (NULL, 0, 2000, "Invalid option value", "%s = %s", Argv[0], Argv[1]);
-          return 1;
+          ReturnStatus = 1;
+          goto Done;
         }
         ClassCode = (UINT32) TempValue;
         if (ClassCode & 0xFF000000) {
           Error (NULL, 0, 2000, "Invalid parameter", "Class code %s out of range!", Argv[1]);
-          return STATUS_ERROR;
+          ReturnStatus = STATUS_ERROR;
+          goto Done;
         }
         if (FileList != NULL && FileList->ClassCode == 0) {
           FileList->ClassCode = ClassCode;
@@ -1069,12 +1167,14 @@ Returns:
         Status = AsciiStringToUint64(Argv[1], FALSE, &TempValue);
         if (EFI_ERROR (Status)) {
           Error (NULL, 0, 2000, "Invalid option value", "%s = %s", Argv[0], Argv[1]);
-          return 1;
+          ReturnStatus = 1;
+          goto Done;
         }
         CodeRevision = (UINT32) TempValue;
         if (CodeRevision & 0xFFFF0000) {
           Error (NULL, 0, 2000, "Invalid parameter", "Code revision %s out of range!", Argv[1]);
-          return STATUS_ERROR;
+          ReturnStatus = STATUS_ERROR;
+          goto Done;
         }
         if (FileList != NULL && FileList->CodeRevision == 0) {
           FileList->CodeRevision = (UINT16) CodeRevision;
@@ -1088,7 +1188,8 @@ Returns:
         mOptions.Pci23 = 1;
       } else {
         Error (NULL, 0, 2000, "Invalid parameter", "Invalid option specified: %s", Argv[0]);
-        return STATUS_ERROR;
+        ReturnStatus = STATUS_ERROR;
+        goto Done;
       }
     } else {
       //
@@ -1097,7 +1198,8 @@ Returns:
       //
       if ((FileFlags & (FILE_FLAG_BINARY | FILE_FLAG_EFI)) == 0) {
         Error (NULL, 0, 2000, "Invalid parameter", "Missing -e or -b with input file %s!", Argv[0]);
-        return STATUS_ERROR;
+        ReturnStatus = STATUS_ERROR;
+        goto Done;
       }
       //
       // Check Efi Option RomImage
@@ -1111,7 +1213,8 @@ Returns:
       FileList = (FILE_LIST *) malloc (sizeof (FILE_LIST));
       if (FileList == NULL) {
         Error (NULL, 0, 4001, "Resource", "memory cannot be allocated!", NULL);
-        return STATUS_ERROR;
+        ReturnStatus = STATUS_ERROR;
+        goto Done;
       }
 
       //
@@ -1149,6 +1252,9 @@ Returns:
   //
   if (Options->FileList == NULL) {
     Error (NULL, 0, 2000, "Invalid parameter", "Missing input file name!");
+    //
+    // No memory allocation, return directly.
+    //
     return STATUS_ERROR;
   }
 
@@ -1158,16 +1264,33 @@ Returns:
   if (EfiRomFlag) {
     if (!Options->VendIdValid) {
       Error (NULL, 0, 2000, "Missing Vendor ID in command line", NULL);
-      return STATUS_ERROR;
+      ReturnStatus = STATUS_ERROR;
+      goto Done;
     }
 
-    if (!Options->DevIdValid) {
+    if (!Options->DevIdCount) {
       Error (NULL, 0, 2000, "Missing Device ID in command line", NULL);
-      return STATUS_ERROR;
+      ReturnStatus = STATUS_ERROR;
+      goto Done;
     }
   }
 
-  return 0;
+   if (Options->DevIdCount > 1 && Options->Pci23) {
+     Error (NULL, 0, 2000, "Invalid parameter", "PCI 3.0 is required when specifying multiple Device IDs");
+     ReturnStatus = STATUS_ERROR;
+     goto Done;
+   }
+
+Done:
+  if (ReturnStatus != 0) {
+    while (Options->FileList != NULL) {
+      FileList = Options->FileList->Next;
+      free (Options->FileList);
+      Options->FileList = FileList;
+    }
+  }
+
+  return ReturnStatus;
 }
 
 static
@@ -1222,7 +1345,7 @@ Returns:
   //
   // Copyright declaration
   //
-  fprintf (stdout, "Copyright (c) 2007 - 2014, Intel Corporation. All rights reserved.\n\n");
+  fprintf (stdout, "Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.\n\n");
 
   //
   // Details Option
@@ -1243,7 +1366,7 @@ Returns:
   fprintf (stdout, "  -f VendorId\n\
             Hex PCI Vendor ID for the device OpROM, must be specified\n");
   fprintf (stdout, "  -i DeviceId\n\
-            Hex PCI Device ID for the device OpROM, must be specified\n");
+            One or more hex PCI Device IDs for the device OpROM, must be specified\n");
   fprintf (stdout, "  -p, --pci23\n\
             Default layout meets PCI 3.0 specifications\n\
             specifying this flag will for a PCI 2.3 layout.\n");
@@ -1288,6 +1411,7 @@ Returns:
   EFI_PCI_EXPANSION_ROM_HEADER  EfiRomHdr;
   PCI_DATA_STRUCTURE            PciDs23;
   PCI_3_0_DATA_STRUCTURE        PciDs30;
+  UINT16                        DevId;
 
   //
   // Open the input file
@@ -1302,7 +1426,7 @@ Returns:
   ImageCount = 0;
   for (;;) {
     //
-    // Save our postition in the file, since offsets in the headers
+    // Save our position in the file, since offsets in the headers
     // are relative to the particular image.
     //
     ImageStart = ftell (InFptr);
@@ -1386,6 +1510,30 @@ Returns:
     fprintf (stdout, "    Length                  0x%04X\n", PciDs30.Length);
     fprintf (stdout, "    Revision                0x%04X\n", PciDs30.Revision);
     fprintf (stdout, "    DeviceListOffset        0x%02X\n", PciDs30.DeviceListOffset);
+    if (PciDs30.DeviceListOffset) {
+      //
+      // Print device ID list
+      //
+      fprintf (stdout, "    Device list contents\n");
+      if (fseek (InFptr, ImageStart + PciRomHdr.PcirOffset + PciDs30.DeviceListOffset, SEEK_SET)) {
+        Error (NULL, 0, 3001, "Not supported", "Failed to seek to PCI device ID list!");
+        goto BailOut;
+      }
+
+      //
+      // Loop until terminating 0
+      //
+      do {
+        if (fread (&DevId, sizeof (DevId), 1, InFptr) != 1) {
+          Error (NULL, 0, 3001, "Not supported", "Failed to read PCI device ID list from file %s!", InFile->FileName);
+          goto BailOut;
+        }
+        if (DevId) {
+          fprintf (stdout, "      0x%04X\n", DevId);
+        }
+      } while (DevId);
+
+    }
     fprintf (
       stdout,
       "    Class Code              0x%06X\n",

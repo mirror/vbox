@@ -1,14 +1,8 @@
 /** @file
   Header file for ATA/ATAPI PASS THRU driver.
 
-  Copyright (c) 2010 - 2012, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 #ifndef __ATA_ATAPI_PASS_THRU_H__
@@ -24,6 +18,7 @@
 #include <Protocol/IdeControllerInit.h>
 #include <Protocol/AtaPassThru.h>
 #include <Protocol/ScsiPassThruExt.h>
+#include <Protocol/AtaAtapiPolicy.h>
 
 #include <Library/DebugLib.h>
 #include <Library/BaseLib.h>
@@ -44,6 +39,8 @@
 extern EFI_DRIVER_BINDING_PROTOCOL  gAtaAtapiPassThruDriverBinding;
 extern EFI_COMPONENT_NAME_PROTOCOL  gAtaAtapiPassThruComponentName;
 extern EFI_COMPONENT_NAME2_PROTOCOL gAtaAtapiPassThruComponentName2;
+
+extern EDKII_ATA_ATAPI_POLICY_PROTOCOL *mAtaAtapiPolicy;
 
 #define ATA_ATAPI_PASS_THRU_SIGNATURE  SIGNATURE_32 ('a', 'a', 'p', 't')
 #define ATA_ATAPI_DEVICE_SIGNATURE     SIGNATURE_32 ('a', 'd', 'e', 'v')
@@ -100,6 +97,7 @@ typedef struct {
   // The attached device list
   //
   LIST_ENTRY                        DeviceList;
+  UINT64                            EnabledPciAttributes;
   UINT64                            OriginalPciAttributes;
 
   //
@@ -147,6 +145,7 @@ struct _ATA_NONBLOCK_TASK {
 // It means 3 second span.
 //
 #define ATA_ATAPI_TIMEOUT           EFI_TIMER_PERIOD_SECONDS(3)
+#define ATA_SPINUP_TIMEOUT          EFI_TIMER_PERIOD_SECONDS(10)
 
 #define IS_ALIGNED(addr, size)      (((UINTN) (addr) & (size - 1)) == 0)
 
@@ -437,7 +436,7 @@ AtaAtapiPassThruStop (
   @param[in]  Instance            A pointer to the ATA_ATAPI_PASS_THRU_INSTANCE instance.
   @param[in]  Port                The port number of the ATA device to send the command.
   @param[in]  PortMultiplierPort  The port multiplier port number of the ATA device to send the command.
-                                  If there is no port multiplier, then specify 0.
+                                  If there is no port multiplier, then specify 0xFFFF.
   @param[in]  DeviceType          The device type of the ATA device.
 
   @retval     The pointer to the data structure of the device info to access.
@@ -459,7 +458,7 @@ SearchDeviceInfoList (
   @param[in]  Instance            A pointer to the ATA_ATAPI_PASS_THRU_INSTANCE instance.
   @param[in]  Port                The port number of the ATA device to send the command.
   @param[in]  PortMultiplierPort  The port multiplier port number of the ATA device to send the command.
-                                  If there is no port multiplier, then specify 0.
+                                  If there is no port multiplier, then specify 0xFFFF.
   @param[in]  DeviceType          The device type of the ATA device.
   @param[in]  IdentifyData        The data buffer to store the output of the IDENTIFY cmd.
 
@@ -544,7 +543,7 @@ AsyncNonBlockingTransferRoutine (
   @param[in]      This               A pointer to the EFI_ATA_PASS_THRU_PROTOCOL instance.
   @param[in]      Port               The port number of the ATA device to send the command.
   @param[in]      PortMultiplierPort The port multiplier port number of the ATA device to send the command.
-                                     If there is no port multiplier, then specify 0.
+                                     If there is no port multiplier, then specify 0xFFFF.
   @param[in, out] Packet             A pointer to the ATA command to send to the ATA device specified by Port
                                      and PortMultiplierPort.
   @param[in]      Event              If non-blocking I/O is not supported then Event is ignored, and blocking
@@ -681,7 +680,7 @@ AtaPassThruGetNextDevice (
                                      device path node is to be allocated and built.
   @param[in]      PortMultiplierPort The port multiplier port number of the ATA device for which a
                                      device path node is to be allocated and built. If there is no
-                                     port multiplier, then specify 0.
+                                     port multiplier, then specify 0xFFFF.
   @param[in, out] DevicePath         A pointer to a single device path node that describes the ATA
                                      device specified by Port and PortMultiplierPort. This function
                                      is responsible for allocating the buffer DevicePath with the
@@ -802,7 +801,7 @@ AtaPassThruResetPort (
   @param[in] This                A pointer to the EFI_ATA_PASS_THRU_PROTOCOL instance.
   @param[in] Port                Port represents the port number of the ATA device to be reset.
   @param[in] PortMultiplierPort  The port multiplier port number of the ATA device to reset.
-                                 If there is no port multiplier, then specify 0.
+                                 If there is no port multiplier, then specify 0xFFFF.
   @retval EFI_SUCCESS            The ATA device specified by Port and PortMultiplierPort was reset.
   @retval EFI_UNSUPPORTED        The ATA controller does not support a device reset operation.
   @retval EFI_INVALID_PARAMETER  Port or PortMultiplierPort are invalid.

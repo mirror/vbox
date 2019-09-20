@@ -15,14 +15,8 @@
   TcgMeasureGptTable() function will receive untrusted GPT partition table, and parse
   partition data carefully.
 
-Copyright (c) 2009 - 2015, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -50,10 +44,9 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 // Flag to check GPT partition. It only need be measured once.
 //
 BOOLEAN                           mMeasureGptTableFlag = FALSE;
-EFI_GUID                          mZeroGuid = {0, 0, 0, {0, 0, 0, 0, 0, 0, 0, 0}};
 UINTN                             mMeasureGptCount = 0;
 VOID                              *mFileBuffer;
-UINTN                             mImageSize;
+UINTN                             mTpmImageSize;
 //
 // Measured FV handle cache
 //
@@ -95,11 +88,11 @@ DxeTpmMeasureBootLibImageRead (
   }
 
   EndPosition = FileOffset + *ReadSize;
-  if (EndPosition > mImageSize) {
-    *ReadSize = (UINT32)(mImageSize - FileOffset);
+  if (EndPosition > mTpmImageSize) {
+    *ReadSize = (UINT32)(mTpmImageSize - FileOffset);
   }
 
-  if (FileOffset >= mImageSize) {
+  if (FileOffset >= mTpmImageSize) {
     *ReadSize = 0;
   }
 
@@ -202,7 +195,7 @@ TcgMeasureGptTable (
   PartitionEntry    = (EFI_PARTITION_ENTRY *)EntryPtr;
   NumberOfPartition = 0;
   for (Index = 0; Index < PrimaryHeader->NumberOfPartitionEntries; Index++) {
-    if (!CompareGuid (&PartitionEntry->PartitionTypeGUID, &mZeroGuid)) {
+    if (!IsZeroGuid (&PartitionEntry->PartitionTypeGUID)) {
       NumberOfPartition++;
     }
     PartitionEntry = (EFI_PARTITION_ENTRY *)((UINT8 *)PartitionEntry + PrimaryHeader->SizeOfPartitionEntry);
@@ -236,7 +229,7 @@ TcgMeasureGptTable (
   PartitionEntry    = (EFI_PARTITION_ENTRY*)EntryPtr;
   NumberOfPartition = 0;
   for (Index = 0; Index < PrimaryHeader->NumberOfPartitionEntries; Index++) {
-    if (!CompareGuid (&PartitionEntry->PartitionTypeGUID, &mZeroGuid)) {
+    if (!IsZeroGuid (&PartitionEntry->PartitionTypeGUID)) {
       CopyMem (
         (UINT8 *)&GptData->Partitions + NumberOfPartition * PrimaryHeader->SizeOfPartitionEntry,
         (UINT8 *)PartitionEntry,
@@ -279,6 +272,9 @@ TcgMeasureGptTable (
   PE/COFF image is external input, so this function will validate its data structure
   within this image buffer before use.
 
+  Notes: PE/COFF image has been checked by BasePeCoffLib PeCoffLoaderGetImageInfo() in
+  its caller function DxeTpmMeasureBootHandler().
+
   @param[in] TcgProtocol    Pointer to the located TCG protocol instance.
   @param[in] ImageAddress   Start address of image buffer.
   @param[in] ImageSize      Image size
@@ -318,7 +314,6 @@ TcgMeasurePeImage (
   EFI_IMAGE_SECTION_HEADER             *SectionHeader;
   UINTN                                Index;
   UINTN                                Pos;
-  UINT16                               Magic;
   UINT32                               EventSize;
   UINT32                               EventNumber;
   EFI_PHYSICAL_ADDRESS                 EventLogLastEntry;
@@ -416,38 +411,24 @@ TcgMeasurePeImage (
   // Measuring PE/COFF Image Header;
   // But CheckSum field and SECURITY data directory (certificate) are excluded
   //
-  if (Hdr.Pe32->FileHeader.Machine == IMAGE_FILE_MACHINE_IA64 && Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
-    //
-    // NOTE: Some versions of Linux ELILO for Itanium have an incorrect magic value
-    //       in the PE/COFF Header. If the MachineType is Itanium(IA64) and the
-    //       Magic value in the OptionalHeader is EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC
-    //       then override the magic value to EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC
-    //
-    Magic = EFI_IMAGE_NT_OPTIONAL_HDR64_MAGIC;
-  } else {
-    //
-    // Get the magic value from the PE/COFF Optional Header
-    //
-    Magic = Hdr.Pe32->OptionalHeader.Magic;
-  }
 
   //
   // 3.  Calculate the distance from the base of the image header to the image checksum address.
   // 4.  Hash the image header from its base to beginning of the image checksum.
   //
   HashBase = (UINT8 *) (UINTN) ImageAddress;
-  if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+  if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
     //
     // Use PE32 offset
     //
     NumberOfRvaAndSizes = Hdr.Pe32->OptionalHeader.NumberOfRvaAndSizes;
-    HashSize = (UINTN) ((UINT8 *)(&Hdr.Pe32->OptionalHeader.CheckSum) - HashBase);
+    HashSize = (UINTN) (&Hdr.Pe32->OptionalHeader.CheckSum) - (UINTN) HashBase;
   } else {
     //
     // Use PE32+ offset
     //
     NumberOfRvaAndSizes = Hdr.Pe32Plus->OptionalHeader.NumberOfRvaAndSizes;
-    HashSize = (UINTN) ((UINT8 *)(&Hdr.Pe32Plus->OptionalHeader.CheckSum) - HashBase);
+    HashSize = (UINTN) (&Hdr.Pe32Plus->OptionalHeader.CheckSum) - (UINTN) HashBase;
   }
 
   HashStatus = Sha1Update (Sha1Ctx, HashBase, HashSize);
@@ -463,7 +444,7 @@ TcgMeasurePeImage (
     // 6.  Since there is no Cert Directory in optional header, hash everything
     //     from the end of the checksum to the end of image header.
     //
-    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //
       // Use PE32 offset.
       //
@@ -487,18 +468,18 @@ TcgMeasurePeImage (
     //
     // 7.  Hash everything from the end of the checksum to the start of the Cert Directory.
     //
-    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //
       // Use PE32 offset
       //
       HashBase = (UINT8 *) &Hdr.Pe32->OptionalHeader.CheckSum + sizeof (UINT32);
-      HashSize = (UINTN) ((UINT8 *)(&Hdr.Pe32->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY]) - HashBase);
+      HashSize = (UINTN) (&Hdr.Pe32->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY]) - (UINTN) HashBase;
     } else {
       //
       // Use PE32+ offset
       //
       HashBase = (UINT8 *) &Hdr.Pe32Plus->OptionalHeader.CheckSum + sizeof (UINT32);
-      HashSize = (UINTN) ((UINT8 *)(&Hdr.Pe32Plus->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY]) - HashBase);
+      HashSize = (UINTN) (&Hdr.Pe32Plus->OptionalHeader.DataDirectory[EFI_IMAGE_DIRECTORY_ENTRY_SECURITY]) - (UINTN) HashBase;
     }
 
     if (HashSize != 0) {
@@ -512,7 +493,7 @@ TcgMeasurePeImage (
     // 8.  Skip over the Cert Directory. (It is sizeof(IMAGE_DATA_DIRECTORY) bytes.)
     // 9.  Hash everything from the end of the Cert Directory to the end of image header.
     //
-    if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
       //
       // Use PE32 offset
       //
@@ -537,7 +518,7 @@ TcgMeasurePeImage (
   //
   // 10. Set the SUM_OF_BYTES_HASHED to the size of the header
   //
-  if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+  if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
     //
     // Use PE32 offset
     //
@@ -619,7 +600,7 @@ TcgMeasurePeImage (
     if (NumberOfRvaAndSizes <= EFI_IMAGE_DIRECTORY_ENTRY_SECURITY) {
       CertSize = 0;
     } else {
-      if (Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+      if (Hdr.Pe32->OptionalHeader.Magic == EFI_IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
         //
         // Use PE32 offset.
         //
@@ -908,7 +889,7 @@ DxeTpmMeasureBootHandler (
     goto Finish;
   }
 
-  mImageSize  = FileSize;
+  mTpmImageSize  = FileSize;
   mFileBuffer = FileBuffer;
 
   //

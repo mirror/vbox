@@ -2,20 +2,15 @@
 # This file is used to define common parsing related functions used in parsing
 # INF/DEC/DSC process
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 
 '''
 Parsing
 '''
+from __future__ import absolute_import
 
 ##
 # Import Modules
@@ -23,12 +18,12 @@ Parsing
 import os.path
 import re
 
-from Library.String import RaiseParserError
-from Library.String import GetSplitValueList
-from Library.String import CheckFileType
-from Library.String import CheckFileExist
-from Library.String import CleanString
-from Library.String import NormPath
+from Library.StringUtils import RaiseParserError
+from Library.StringUtils import GetSplitValueList
+from Library.StringUtils import CheckFileType
+from Library.StringUtils import CheckFileExist
+from Library.StringUtils import CleanString
+from Library.StringUtils import NormPath
 
 from Logger.ToolError import FILE_NOT_FOUND
 from Logger.ToolError import FatalError
@@ -42,7 +37,7 @@ from Logger import StringTable as ST
 import Logger.Log as Logger
 
 from Parser.DecParser import Dec
-import GlobalData
+from . import GlobalData
 
 gPKG_INFO_DICT = {}
 
@@ -134,7 +129,7 @@ def GetLibraryClassOfInf(Item, ContainerFile, WorkspaceDir, LineNo= -1):
 #
 def CheckPcdTokenInfo(TokenInfoString, Section, File, LineNo= -1):
     Format = '<TokenSpaceGuidCName>.<PcdCName>'
-    if TokenInfoString != '' and TokenInfoString != None:
+    if TokenInfoString != '' and TokenInfoString is not None:
         TokenInfoList = GetSplitValueList(TokenInfoString, DataType.TAB_SPLIT)
         if len(TokenInfoList) == 2:
             return True
@@ -433,7 +428,7 @@ def GetComponents(Lines, KeyValues, CommentCharacter):
     LineList = Lines.split('\n')
     for Line in LineList:
         Line = CleanString(Line, CommentCharacter)
-        if Line == None or Line == '':
+        if Line is None or Line == '':
             continue
 
         if FindBlock == False:
@@ -827,21 +822,23 @@ def GetPkgInfoFromDec(Path):
 def GetWorkspacePackage():
     DecFileList = []
     WorkspaceDir = GlobalData.gWORKSPACE
-    for Root, Dirs, Files in os.walk(WorkspaceDir):
-        if 'CVS' in Dirs:
-            Dirs.remove('CVS')
-        if '.svn' in Dirs:
-            Dirs.remove('.svn')
-        for Dir in Dirs:
-            if Dir.startswith('.'):
-                Dirs.remove(Dir)
-        for FileSp in Files:
-            if FileSp.startswith('.'):
-                continue
-            Ext = os.path.splitext(FileSp)[1]
-            if Ext.lower() in ['.dec']:
-                DecFileList.append\
-                (os.path.normpath(os.path.join(Root, FileSp)))
+    PackageDir = GlobalData.gPACKAGE_PATH
+    for PkgRoot in [WorkspaceDir] + PackageDir:
+        for Root, Dirs, Files in os.walk(PkgRoot):
+            if 'CVS' in Dirs:
+                Dirs.remove('CVS')
+            if '.svn' in Dirs:
+                Dirs.remove('.svn')
+            for Dir in Dirs:
+                if Dir.startswith('.'):
+                    Dirs.remove(Dir)
+            for FileSp in Files:
+                if FileSp.startswith('.'):
+                    continue
+                Ext = os.path.splitext(FileSp)[1]
+                if Ext.lower() in ['.dec']:
+                    DecFileList.append\
+                    (os.path.normpath(os.path.join(Root, FileSp)))
     #
     # abstract package guid, version info from DecFile List
     #
@@ -919,7 +916,7 @@ def MacroParser(Line, FileName, SectionType, FileLocalMacros):
         FileLocalMacros[Name] = Value
 
     ReIsValidMacroName = re.compile(r"^[A-Z][A-Z0-9_]*$", re.DOTALL)
-    if ReIsValidMacroName.match(Name) == None:
+    if ReIsValidMacroName.match(Name) is None:
         Logger.Error('Parser',
                      FORMAT_INVALID,
                      ST.ERR_MACRONAME_INVALID % (Name),
@@ -938,7 +935,7 @@ def MacroParser(Line, FileName, SectionType, FileLocalMacros):
     # <UnicodeString>, <CArray> are subset of <AsciiString>.
     #
     ReIsValidMacroValue = re.compile(r"^[\x20-\x7e]*$", re.DOTALL)
-    if ReIsValidMacroValue.match(Value) == None:
+    if ReIsValidMacroValue.match(Value) is None:
         Logger.Error('Parser',
                      FORMAT_INVALID,
                      ST.ERR_MACROVALUE_INVALID % (Value),
@@ -956,7 +953,7 @@ def MacroParser(Line, FileName, SectionType, FileLocalMacros):
 #                       INF, DEC specs
 # @param  SectionDict:  section statement dict, key is SectionAttrs(arch,
 #                       moduletype or platform may exist as needed) list
-#                       seperated by space,
+#                       separated by space,
 #                       value is statement
 #
 def GenSection(SectionName, SectionDict, SplitArch=True, NeedBlankLine=False):
@@ -971,13 +968,13 @@ def GenSection(SectionName, SectionDict, SplitArch=True, NeedBlankLine=False):
                     ArchList = GetSplitValueList(SectionAttrs, DataType.TAB_COMMENT_SPLIT)
                 else:
                     ArchList = [SectionAttrs]
-            for Index in xrange(0, len(ArchList)):
+            for Index in range(0, len(ArchList)):
                 ArchList[Index] = ConvertArchForInstall(ArchList[Index])
             Section = '[' + SectionName + '.' + (', ' + SectionName + '.').join(ArchList) + ']'
         else:
             Section = '[' + SectionName + ']'
         Content += '\n' + Section + '\n'
-        if StatementList != None:
+        if StatementList is not None:
             for Statement in StatementList:
                 LineList = Statement.split('\n')
                 NewStatement = ""

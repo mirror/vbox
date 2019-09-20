@@ -1,14 +1,8 @@
 /** @file
   Implementation for iSCSI Boot Firmware Table publication.
 
-Copyright (c) 2004 - 2013, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2004 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -456,10 +450,12 @@ IScsiPublishIbft (
   EFI_ACPI_ISCSI_BOOT_FIRMWARE_TABLE_HEADER     *Table;
   EFI_ACPI_3_0_ROOT_SYSTEM_DESCRIPTION_POINTER  *Rsdp;
   EFI_ACPI_DESCRIPTION_HEADER                   *Rsdt;
+  EFI_ACPI_DESCRIPTION_HEADER                   *Xsdt;
   UINT8                                         *Heap;
   UINT8                                         Checksum;
-  UINTN                                         Index;
 
+  Rsdt = NULL;
+  Xsdt = NULL;
 
   Status = gBS->LocateProtocol (&gEfiAcpiTableProtocolGuid, NULL, (VOID **) &AcpiTableProtocol);
   if (EFI_ERROR (Status)) {
@@ -469,23 +465,21 @@ IScsiPublishIbft (
   //
   // Find ACPI table RSD_PTR from the system table.
   //
-  for (Index = 0, Rsdp = NULL; Index < gST->NumberOfTableEntries; Index++) {
-    if (CompareGuid (&(gST->ConfigurationTable[Index].VendorGuid), &gEfiAcpi20TableGuid) ||
-      CompareGuid (&(gST->ConfigurationTable[Index].VendorGuid), &gEfiAcpi10TableGuid) ||
-      CompareGuid (&(gST->ConfigurationTable[Index].VendorGuid), &gEfiAcpiTableGuid)
-      ) {
-      //
-      // A match was found.
-      //
-      Rsdp = (EFI_ACPI_3_0_ROOT_SYSTEM_DESCRIPTION_POINTER *) gST->ConfigurationTable[Index].VendorTable;
-      break;
-    }
+  Status = EfiGetSystemConfigurationTable (&gEfiAcpiTableGuid, (VOID **) &Rsdp);
+  if (EFI_ERROR (Status)) {
+    Status = EfiGetSystemConfigurationTable (&gEfiAcpi10TableGuid, (VOID **) &Rsdp);
   }
 
-  if (Rsdp == NULL) {
+  if (EFI_ERROR (Status) || (Rsdp == NULL)) {
     return ;
-  } else {
+  } else if (Rsdp->Revision >= EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION && Rsdp->XsdtAddress != 0) {
+    Xsdt = (EFI_ACPI_DESCRIPTION_HEADER *) (UINTN) Rsdp->XsdtAddress;
+  } else if (Rsdp->RsdtAddress != 0) {
     Rsdt = (EFI_ACPI_DESCRIPTION_HEADER *) (UINTN) Rsdp->RsdtAddress;
+  }
+
+  if ((Xsdt == NULL) && (Rsdt == NULL)) {
+    return ;
   }
 
   if (mIbftInstalled) {
@@ -520,7 +514,12 @@ IScsiPublishIbft (
   //
   // Fill in the various section of the iSCSI Boot Firmware Table.
   //
-  IScsiInitIbfTableHeader (Table, Rsdt->OemId, &Rsdt->OemTableId);
+  if (Rsdp->Revision >= EFI_ACPI_2_0_ROOT_SYSTEM_DESCRIPTION_POINTER_REVISION) {
+    IScsiInitIbfTableHeader (Table, Xsdt->OemId, &Xsdt->OemTableId);
+  } else {
+    IScsiInitIbfTableHeader (Table, Rsdt->OemId, &Rsdt->OemTableId);
+  }
+
   IScsiInitControlSection (Table);
   IScsiFillInitiatorSection (Table, &Heap);
   IScsiFillNICAndTargetSections (Table, &Heap);

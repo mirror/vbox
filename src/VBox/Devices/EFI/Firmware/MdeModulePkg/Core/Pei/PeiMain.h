@@ -1,14 +1,8 @@
 /** @file
   Definition of Pei Core Structures and Services
 
-Copyright (c) 2006 - 2014, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,6 +14,7 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Ppi/MemoryDiscovered.h>
 #include <Ppi/StatusCode.h>
 #include <Ppi/Reset.h>
+#include <Ppi/Reset2.h>
 #include <Ppi/FirmwareVolume.h>
 #include <Ppi/FirmwareVolumeInfo.h>
 #include <Ppi/FirmwareVolumeInfo2.h>
@@ -29,6 +24,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Ppi/Security2.h>
 #include <Ppi/TemporaryRamSupport.h>
 #include <Ppi/TemporaryRamDone.h>
+#include <Ppi/SecHobData.h>
+#include <Ppi/PeiCoreFvLocation.h>
 #include <Library/DebugLib.h>
 #include <Library/PeiCoreEntryPoint.h>
 #include <Library/BaseLib.h>
@@ -64,36 +61,59 @@ typedef union {
 } PEI_PPI_LIST_POINTERS;
 
 ///
-/// PPI database structure which contains two link: PpiList and NotifyList. PpiList
-/// is in head of PpiListPtrs array and notify is in end of PpiListPtrs.
+/// Number of PEI_PPI_LIST_POINTERS to grow by each time we run out of room
+///
+#define PPI_GROWTH_STEP             64
+#define CALLBACK_NOTIFY_GROWTH_STEP 32
+#define DISPATCH_NOTIFY_GROWTH_STEP 8
+
+typedef struct {
+  UINTN                 CurrentCount;
+  UINTN                 MaxCount;
+  UINTN                 LastDispatchedCount;
+  ///
+  /// MaxCount number of entries.
+  ///
+  PEI_PPI_LIST_POINTERS *PpiPtrs;
+} PEI_PPI_LIST;
+
+typedef struct {
+  UINTN                 CurrentCount;
+  UINTN                 MaxCount;
+  ///
+  /// MaxCount number of entries.
+  ///
+  PEI_PPI_LIST_POINTERS *NotifyPtrs;
+} PEI_CALLBACK_NOTIFY_LIST;
+
+typedef struct {
+  UINTN                 CurrentCount;
+  UINTN                 MaxCount;
+  UINTN                 LastDispatchedCount;
+  ///
+  /// MaxCount number of entries.
+  ///
+  PEI_PPI_LIST_POINTERS *NotifyPtrs;
+} PEI_DISPATCH_NOTIFY_LIST;
+
+///
+/// PPI database structure which contains three links:
+/// PpiList, CallbackNotifyList and DispatchNotifyList.
 ///
 typedef struct {
   ///
-  /// index of end of PpiList link list.
+  /// PPI List.
   ///
-  INTN                    PpiListEnd;
+  PEI_PPI_LIST              PpiList;
   ///
-  /// index of end of notify link list.
+  /// Notify List at dispatch level.
   ///
-  INTN                    NotifyListEnd;
+  PEI_CALLBACK_NOTIFY_LIST  CallbackNotifyList;
   ///
-  /// index of the dispatched notify list.
+  /// Notify List at callback level.
   ///
-  INTN                    DispatchListEnd;
-  ///
-  /// index of last installed Ppi description in PpiList link list.
-  ///
-  INTN                    LastDispatchedInstall;
-  ///
-  /// index of last dispatched notify in Notify link list.
-  ///
-  INTN                    LastDispatchedNotify;
-  ///
-  /// Ppi database has the PcdPeiCoreMaxPpiSupported number of entries.
-  ///
-  PEI_PPI_LIST_POINTERS   *PpiListPtrs;
+  PEI_DISPATCH_NOTIFY_LIST  DispatchNotifyList;
 } PEI_PPI_DATABASE;
-
 
 //
 // PEI_CORE_FV_HANDE.PeimState
@@ -102,19 +122,25 @@ typedef struct {
 //
 #define PEIM_STATE_NOT_DISPATCHED         0x00
 #define PEIM_STATE_DISPATCHED             0x01
-#define PEIM_STATE_REGISITER_FOR_SHADOW   0x02
+#define PEIM_STATE_REGISTER_FOR_SHADOW    0x02
 #define PEIM_STATE_DONE                   0x03
+
+//
+// Number of FV instances to grow by each time we run out of room
+//
+#define FV_GROWTH_STEP 8
 
 typedef struct {
   EFI_FIRMWARE_VOLUME_HEADER          *FvHeader;
   EFI_PEI_FIRMWARE_VOLUME_PPI         *FvPpi;
   EFI_PEI_FV_HANDLE                   FvHandle;
+  UINTN                               PeimCount;
   //
-  // Ponter to the buffer with the PcdPeiCoreMaxPeimPerFv number of Entries.
+  // Ponter to the buffer with the PeimCount number of Entries.
   //
   UINT8                               *PeimState;
   //
-  // Ponter to the buffer with the PcdPeiCoreMaxPeimPerFv number of Entries.
+  // Ponter to the buffer with the PeimCount number of Entries.
   //
   EFI_PEI_FILE_HANDLE                 *FvFileHandles;
   BOOLEAN                             ScanFv;
@@ -174,6 +200,11 @@ EFI_STATUS
   IN PEI_CORE_INSTANCE              *OldCoreData
   );
 
+//
+// Number of files to grow by each time we run out of room
+//
+#define TEMP_FILE_GROWTH_STEP 32
+
 #define PEI_CORE_HANDLE_SIGNATURE  SIGNATURE_32('P','e','i','C')
 
 ///
@@ -194,20 +225,26 @@ struct _PEI_CORE_INSTANCE {
   UINTN                              FvCount;
 
   ///
-  /// Pointer to the buffer with the PcdPeiCoreMaxFvSupported number of entries.
+  /// The max count of FVs which contains FFS and could be dispatched by PeiCore.
+  ///
+  UINTN                              MaxFvCount;
+
+  ///
+  /// Pointer to the buffer with the MaxFvCount number of entries.
   /// Each entry is for one FV which contains FFS and could be dispatched by PeiCore.
   ///
   PEI_CORE_FV_HANDLE                 *Fv;
 
   ///
-  /// Pointer to the buffer with the PcdPeiCoreMaxFvSupported number of entries.
+  /// Pointer to the buffer with the MaxUnknownFvInfoCount number of entries.
   /// Each entry is for one FV which could not be dispatched by PeiCore.
   ///
   PEI_CORE_UNKNOW_FORMAT_FV_INFO     *UnknownFvInfo;
+  UINTN                              MaxUnknownFvInfoCount;
   UINTN                              UnknownFvInfoCount;
 
   ///
-  /// Pointer to the buffer with the PcdPeiCoreMaxPeimPerFv number of entries.
+  /// Pointer to the buffer FvFileHandlers in PEI_CORE_FV_HANDLE specified by CurrentPeimFvCount.
   ///
   EFI_PEI_FILE_HANDLE                *CurrentFvFileHandles;
   UINTN                              AprioriCount;
@@ -231,6 +268,10 @@ struct _PEI_CORE_INSTANCE {
   BOOLEAN                            HeapOffsetPositive;
   UINTN                              StackOffset;
   BOOLEAN                            StackOffsetPositive;
+  //
+  // Information for migrating memory pages allocated in pre-memory phase.
+  //
+  HOLE_MEMORY_DATA                   MemoryPages;
   PEICORE_FUNCTION_POINTER           ShadowedPeiCore;
   CACHE_SECTION_DATA                 CacheSection;
   //
@@ -250,18 +291,20 @@ struct _PEI_CORE_INSTANCE {
   //
   PE_COFF_LOADER_READ_FILE          ShadowedImageRead;
 
+  UINTN                             TempPeimCount;
+
   //
-  // Pointer to the temp buffer with the PcdPeiCoreMaxPeimPerFv + 1 number of entries.
+  // Pointer to the temp buffer with the TempPeimCount number of entries.
   //
-  EFI_PEI_FILE_HANDLE               *FileHandles;
+  EFI_PEI_FILE_HANDLE               *TempFileHandles;
   //
-  // Pointer to the temp buffer with the PcdPeiCoreMaxPeimPerFv number of entries.
+  // Pointer to the temp buffer with the TempPeimCount number of entries.
   //
-  EFI_GUID                          *FileGuid;
+  EFI_GUID                          *TempFileGuid;
 
   //
   // Temp Memory Range is not covered by PeiTempMem and Stack.
-  // Those Memory Range will be migrated into phisical memory.
+  // Those Memory Range will be migrated into physical memory.
   //
   HOLE_MEMORY_DATA                  HoleData[HOLE_MAX_NUMBER];
 };
@@ -421,7 +464,7 @@ InitializePpiServices (
 
 /**
 
-  Migrate the Hob list from the temporary memory stack to PEI installed memory.
+  Migrate the Hob list from the temporary memory to PEI installed memory.
 
   @param SecCoreData     Points to a data structure containing SEC to PEI handoff data, such as the size
                          and location of temporary RAM, the stack location and the BFV location.
@@ -530,13 +573,13 @@ PeiNotifyPpi (
 
 **/
 VOID
-ProcessNotifyList (
+ProcessDispatchNotifyList (
   IN PEI_CORE_INSTANCE  *PrivateData
   );
 
 /**
 
-  Dispatch notifications.
+  Process notifications.
 
   @param PrivateData        PeiCore's private data structure
   @param NotifyType         Type of notify to fire.
@@ -547,13 +590,27 @@ ProcessNotifyList (
 
 **/
 VOID
-DispatchNotify (
+ProcessNotify (
   IN PEI_CORE_INSTANCE  *PrivateData,
   IN UINTN               NotifyType,
   IN INTN                InstallStartIndex,
   IN INTN                InstallStopIndex,
   IN INTN                NotifyStartIndex,
   IN INTN                NotifyStopIndex
+  );
+
+/**
+  Process PpiList from SEC phase.
+
+  @param PeiServices    An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param PpiList        Points to a list of one or more PPI descriptors to be installed initially by the PEI core.
+                        These PPI's will be installed and/or immediately signaled if they are notification type.
+
+**/
+VOID
+ProcessPpiListFromSec (
+  IN CONST EFI_PEI_SERVICES         **PeiServices,
+  IN CONST EFI_PEI_PPI_DESCRIPTOR   *PpiList
   );
 
 //
@@ -706,6 +763,22 @@ PeiCoreBuildHobHandoffInfoTable (
   IN UINT64                MemoryLength
   );
 
+/**
+  Install SEC HOB data to the HOB List.
+
+  @param PeiServices    An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param SecHobList     Pointer to SEC HOB List.
+
+  @return EFI_SUCCESS           Success to install SEC HOB data.
+  @retval EFI_OUT_OF_RESOURCES  If there is no more memory to grow the Hoblist.
+
+**/
+EFI_STATUS
+PeiInstallSecHobData (
+  IN CONST EFI_PEI_SERVICES     **PeiServices,
+  IN EFI_HOB_GENERIC_HEADER     *SecHobList
+  );
+
 
 //
 // FFS Fw Volume support functions
@@ -845,30 +918,81 @@ PeiInstallPeiMemory (
   );
 
 /**
+  Migrate memory pages allocated in pre-memory phase.
+  Copy memory pages at temporary heap top to permanent heap top.
 
-  Memory allocation service on permanent memory,
-  not usable prior to the memory installation.
+  @param[in] Private                Pointer to the private data passed in from caller.
+  @param[in] TemporaryRamMigrated   Temporary memory has been migrated to permanent memory.
 
+**/
+VOID
+MigrateMemoryPages (
+  IN PEI_CORE_INSTANCE      *Private,
+  IN BOOLEAN                TemporaryRamMigrated
+  );
 
-  @param PeiServices               An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
-  @param MemoryType                Type of memory to allocate.
-  @param Pages                     Number of pages to allocate.
-  @param Memory                    Pointer of memory allocated.
+/**
+  Migrate MemoryBaseAddress in memory allocation HOBs
+  from the temporary memory to PEI installed memory.
 
-  @retval EFI_SUCCESS              The allocation was successful
-  @retval EFI_INVALID_PARAMETER    Only AllocateAnyAddress is supported.
-  @retval EFI_NOT_AVAILABLE_YET    Called with permanent memory not available
-  @retval EFI_OUT_OF_RESOURCES     There is not enough HOB heap to satisfy the requirement
-                                   to allocate the number of pages.
+  @param[in] PrivateData        Pointer to PeiCore's private data structure.
+
+**/
+VOID
+ConvertMemoryAllocationHobs (
+  IN PEI_CORE_INSTANCE          *PrivateData
+  );
+
+/**
+  The purpose of the service is to publish an interface that allows
+  PEIMs to allocate memory ranges that are managed by the PEI Foundation.
+
+  Prior to InstallPeiMemory() being called, PEI will allocate pages from the heap.
+  After InstallPeiMemory() is called, PEI will allocate pages within the region
+  of memory provided by InstallPeiMemory() service in a best-effort fashion.
+  Location-specific allocations are not managed by the PEI foundation code.
+
+  @param  PeiServices      An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param  MemoryType       The type of memory to allocate.
+  @param  Pages            The number of contiguous 4 KB pages to allocate.
+  @param  Memory           Pointer to a physical address. On output, the address is set to the base
+                           of the page range that was allocated.
+
+  @retval EFI_SUCCESS           The memory range was successfully allocated.
+  @retval EFI_OUT_OF_RESOURCES  The pages could not be allocated.
+  @retval EFI_INVALID_PARAMETER Type is not equal to EfiLoaderCode, EfiLoaderData, EfiRuntimeServicesCode,
+                                EfiRuntimeServicesData, EfiBootServicesCode, EfiBootServicesData,
+                                EfiACPIReclaimMemory, EfiReservedMemoryType, or EfiACPIMemoryNVS.
 
 **/
 EFI_STATUS
 EFIAPI
 PeiAllocatePages (
-  IN CONST EFI_PEI_SERVICES           **PeiServices,
-  IN EFI_MEMORY_TYPE            MemoryType,
-  IN UINTN                      Pages,
-  OUT EFI_PHYSICAL_ADDRESS      *Memory
+  IN CONST EFI_PEI_SERVICES     **PeiServices,
+  IN       EFI_MEMORY_TYPE      MemoryType,
+  IN       UINTN                Pages,
+  OUT      EFI_PHYSICAL_ADDRESS *Memory
+  );
+
+/**
+  Frees memory pages.
+
+  @param[in] PeiServices        An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+  @param[in] Memory             The base physical address of the pages to be freed.
+  @param[in] Pages              The number of contiguous 4 KB pages to free.
+
+  @retval EFI_SUCCESS           The requested pages were freed.
+  @retval EFI_INVALID_PARAMETER Memory is not a page-aligned address or Pages is invalid.
+  @retval EFI_NOT_FOUND         The requested memory pages were not allocated with
+                                AllocatePages().
+
+**/
+EFI_STATUS
+EFIAPI
+PeiFreePages (
+  IN CONST EFI_PEI_SERVICES     **PeiServices,
+  IN EFI_PHYSICAL_ADDRESS       Memory,
+  IN UINTN                      Pages
   );
 
 /**
@@ -961,6 +1085,28 @@ EFI_STATUS
 EFIAPI
 PeiResetSystem (
   IN CONST EFI_PEI_SERVICES   **PeiServices
+  );
+
+/**
+  Resets the entire platform.
+
+  @param[in] ResetType      The type of reset to perform.
+  @param[in] ResetStatus    The status code for the reset.
+  @param[in] DataSize       The size, in bytes, of ResetData.
+  @param[in] ResetData      For a ResetType of EfiResetCold, EfiResetWarm, or EfiResetShutdown
+                            the data buffer starts with a Null-terminated string, optionally
+                            followed by additional binary data. The string is a description
+                            that the caller may use to further indicate the reason for the
+                            system reset.
+
+**/
+VOID
+EFIAPI
+PeiResetSystem2 (
+  IN EFI_RESET_TYPE     ResetType,
+  IN EFI_STATUS         ResetStatus,
+  IN UINTN              DataSize,
+  IN VOID               *ResetData OPTIONAL
   );
 
 /**
@@ -1094,7 +1240,7 @@ PeiRegisterForShadow (
   @param OldCoreData     Pointer to Old PeiCore's private data.
                          If NULL, PeiCore is entered at first time, stack/heap in temporary memory.
                          If not NULL, PeiCore is entered at second time, stack/heap has been moved
-                         to permenent memory.
+                         to permanent memory.
 
 **/
 VOID
@@ -1147,7 +1293,7 @@ SecurityPpiNotifyCallback (
   );
 
 /**
-  Get Fv image from the FV type file, then install FV INFO(2) ppi, Build FV hob.
+  Get Fv image(s) from the FV type file, then install FV INFO(2) ppi, Build FV(2, 3) hob.
 
   @param PrivateData          PeiCore's private data structure
   @param ParentFvCoreHandle   Pointer of EFI_CORE_FV_HANDLE to parent Fv image that contain this Fv image.
@@ -1707,7 +1853,7 @@ extern EFI_PEI_PCI_CFG2_PPI gPeiDefaultPciCfg2Ppi;
 /**
   After PeiCore image is shadowed into permanent memory, all build-in FvPpi should
   be re-installed with the instance in permanent memory and all cached FvPpi pointers in
-  PrivateData->Fv[] array should be fixed up to be pointed to the one in permenant
+  PrivateData->Fv[] array should be fixed up to be pointed to the one in permanent
   memory.
 
   @param PrivateData   Pointer to PEI_CORE_INSTANCE.

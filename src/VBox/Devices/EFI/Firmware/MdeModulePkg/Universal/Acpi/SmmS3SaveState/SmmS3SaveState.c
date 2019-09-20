@@ -1,16 +1,9 @@
 /** @file
   Implementation for S3 SMM Boot Script Saver state driver.
 
-  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions
-  of the BSD License which accompanies this distribution.  The
-  full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 #include "InternalSmmSaveState.h"
@@ -209,10 +202,10 @@ BootScriptWritePciCfg2Write (
   UINT16                Segment;
 
   Width       = VA_ARG (Marker, S3_BOOT_SCRIPT_LIB_WIDTH);
+  Segment     = VA_ARG (Marker, UINT16);
   Address     = VA_ARG (Marker, UINT64);
   Count       = VA_ARG (Marker, UINTN);
   Buffer      = VA_ARG (Marker, UINT8 *);
-  Segment     = VA_ARG (Marker, UINT16);
 
   return S3BootScriptSavePciCfg2Write (Width, Segment, Address, Count, Buffer);
 }
@@ -239,15 +232,15 @@ BootScriptWritePciCfg2ReadWrite (
   UINT8                 *DataMask;
 
   Width       = VA_ARG (Marker, S3_BOOT_SCRIPT_LIB_WIDTH);
-  Address     = VA_ARG (Marker, UINT64);
   Segment     = VA_ARG (Marker, UINT16);
+  Address     = VA_ARG (Marker, UINT64);
   Data        = VA_ARG (Marker, UINT8 *);
   DataMask    = VA_ARG (Marker, UINT8 *);
 
   return S3BootScriptSavePciCfg2ReadWrite (Width, Segment, Address, Data, DataMask);
 }
 /**
-  Internal function to add smbus excute opcode to the table.
+  Internal function to add smbus execute opcode to the table.
 
   @param  Marker                The variable argument list to get the opcode
                                 and associated attributes.
@@ -342,15 +335,15 @@ BootScriptWriteMemPoll (
   UINT64                     Address;
   VOID                      *Data;
   VOID                      *DataMask;
-  UINTN                      Delay;
-  UINTN                      LoopTimes;
+  UINT64                     Delay;
+  UINT64                     LoopTimes;
   UINT32                     Remainder;
 
   Width    = VA_ARG (Marker, S3_BOOT_SCRIPT_LIB_WIDTH);
   Address  = VA_ARG (Marker, UINT64);
   Data     = VA_ARG (Marker, VOID *);
   DataMask = VA_ARG (Marker, VOID *);
-  Delay    = (UINTN)VA_ARG (Marker, UINT64);
+  Delay    = VA_ARG (Marker, UINT64);
   //
   // According to the spec, the interval between 2 polls is 100ns,
   // but the unit of Duration for S3BootScriptSaveMemPoll() is microsecond(1000ns).
@@ -358,7 +351,7 @@ BootScriptWriteMemPoll (
   // Duration will be minimum 1(microsecond) to be minimum deviation,
   // so LoopTimes = Delay / 10.
   //
-  LoopTimes = (UINTN) DivU64x32Remainder (
+  LoopTimes = DivU64x32Remainder (
                 Delay,
                 10,
                 &Remainder
@@ -540,7 +533,7 @@ EFI_STATUS
 EFIAPI
 BootScriptWrite (
   IN CONST EFI_S3_SAVE_STATE_PROTOCOL         *This,
-  IN UINT16                                    OpCode,
+  IN UINTN                                     OpCode,
   ...
   )
 {
@@ -695,7 +688,7 @@ BootScriptInsert (
   IN CONST EFI_S3_SAVE_STATE_PROTOCOL    *This,
   IN       BOOLEAN                          BeforeOrAfter,
   IN OUT   EFI_S3_BOOT_SCRIPT_POSITION     *Position OPTIONAL,
-  IN       UINT16                           OpCode,
+  IN       UINTN                            OpCode,
   ...
   )
 {
@@ -856,7 +849,7 @@ BootScriptLabel (
   IN CONST CHAR8                                *Label
   )
 {
-	return S3BootScriptLabel (BeforeOrAfter, CreateIfNotFound, Position, Label);
+  return S3BootScriptLabel (BeforeOrAfter, CreateIfNotFound, Position, Label);
 }
 /**
   Compare two positions in the boot script table and return their relative position.
@@ -884,7 +877,7 @@ BootScriptCompare (
   OUT      UINTN                           *RelativePosition
   )
 {
-	return S3BootScriptCompare (Position1, Position2, RelativePosition);
+  return S3BootScriptCompare (Position1, Position2, RelativePosition);
 }
 /**
   This routine is entry point of ScriptSave driver.
@@ -906,6 +899,9 @@ InitializeSmmS3SaveState (
 {
   EFI_HANDLE   Handle;
 
+  if (!PcdGetBool (PcdAcpiS3Enable)) {
+    return EFI_UNSUPPORTED;
+  }
 
   Handle  = NULL;
   return  gSmst->SmmInstallProtocolInterface (

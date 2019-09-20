@@ -1,14 +1,8 @@
 /** @file
   Support functions for UEFI protocol notification infrastructure.
 
-  Copyright (c) 2009 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -91,9 +85,9 @@ SmmRemoveInterfaceFromProtocol (
   @param  Function               Points to the notification function
   @param  Registration           Returns the registration record
 
-  @retval EFI_INVALID_PARAMETER  Invalid parameter
   @retval EFI_SUCCESS            Successfully returned the registration record
-                                 that has been added
+                                 that has been added or unhooked
+  @retval EFI_INVALID_PARAMETER  Protocol is NULL or Registration is NULL
   @retval EFI_OUT_OF_RESOURCES   Not enough memory resource to finish the request
   @retval EFI_NOT_FOUND          If the registration is not found when Function == NULL
 
@@ -116,7 +110,7 @@ SmmRegisterProtocolNotify (
   }
 
   if (Function == NULL) {
-  	//
+    //
     // Get the protocol entry per Protocol
     //
     ProtEntry = SmmFindProtocolEntry ((EFI_GUID *) Protocol, FALSE);

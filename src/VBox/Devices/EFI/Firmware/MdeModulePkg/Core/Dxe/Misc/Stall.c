@@ -1,14 +1,8 @@
 /** @file
   UEFI Miscellaneous boot Services Stall service implementation
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -67,11 +61,7 @@ CoreStall (
   // Counter = Microseconds * 10 / gMetronome->TickPeriod
   // 0x1999999999999999 = (2^64 - 1) / 10
   //
-#if MAX_ADDRESS > 0x1999999999999999ULL /* VBox: Annoying GCC range warnings. */
-  if (Microseconds > 0x1999999999999999ULL) {
-#else
-  if (0) {
-#endif
+  if ((UINT64) Microseconds > 0x1999999999999999ULL) {
     //
     // Microseconds is too large to multiple by 10 first.  Perform the divide
     // operation first and loop 10 times to avoid 64-bit math overflow.

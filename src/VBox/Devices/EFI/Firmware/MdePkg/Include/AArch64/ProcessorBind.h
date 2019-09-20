@@ -1,17 +1,11 @@
 /** @file
   Processor or Compiler specific defines and types for AArch64.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
   Portions copyright (c) 2008 - 2009, Apple Inc. All rights reserved.<BR>
   Portions copyright (c) 2011 - 2013, ARM Ltd. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -26,13 +20,59 @@
 //
 // Make sure we are using the correct packing rules per EFI specification
 //
-#ifndef __GNUC__
+#if !defined(__GNUC__) && !defined(__ASSEMBLER__)
 #pragma pack()
 #endif
 
-#if _MSC_EXTENSIONS
+#if defined(_MSC_EXTENSIONS)
+
+//
+// Disable some level 4 compilation warnings (same as IA32 and X64)
+//
+
+//
+// Disabling bitfield type checking warnings.
+//
+#pragma warning ( disable : 4214 )
+
+//
+// Disabling the unreferenced formal parameter warnings.
+//
+#pragma warning ( disable : 4100 )
+
+//
+// Disable slightly different base types warning as CHAR8 * can not be set
+// to a constant string.
+//
+#pragma warning ( disable : 4057 )
+
+//
+// ASSERT(FALSE) or while (TRUE) are legal constructs so suppress this warning
+//
+#pragma warning ( disable : 4127 )
+
+//
+// This warning is caused by functions defined but not used. For precompiled header only.
+//
+#pragma warning ( disable : 4505 )
+
+//
+// This warning is caused by empty (after preprocessing) source file. For precompiled header only.
+//
+#pragma warning ( disable : 4206 )
+
+//
+// Disable 'potentially uninitialized local variable X used' warnings
+//
+#pragma warning ( disable : 4701 )
+
+//
+// Disable 'potentially uninitialized local pointer variable X used' warnings
+//
+#pragma warning ( disable : 4703 )
+
   //
-  // use Microsoft* C complier dependent integer width types
+  // use Microsoft* C compiler dependent integer width types
   //
   typedef unsigned __int64    UINT64;
   typedef __int64             INT64;
@@ -45,7 +85,9 @@
   typedef unsigned char       UINT8;
   typedef char                CHAR8;
   typedef signed char         INT8;
+
 #else
+
   //
   // Assume standard AARCH64 alignment.
   //
@@ -60,6 +102,7 @@
   typedef unsigned char       UINT8;
   typedef char                CHAR8;
   typedef signed char         INT8;
+
 #endif
 
 ///
@@ -94,15 +137,31 @@ typedef INT64   INTN;
 #define MAX_ADDRESS   0xFFFFFFFFFFFFFFFFULL
 
 ///
+/// Maximum usable address at boot time (48 bits using 4 KB pages)
+///
+#define MAX_ALLOC_ADDRESS   0xFFFFFFFFFFFFULL
+
+///
 /// Maximum legal AArch64 INTN and UINTN values.
 ///
 #define MAX_INTN   ((INTN)0x7FFFFFFFFFFFFFFFULL)
 #define MAX_UINTN  ((UINTN)0xFFFFFFFFFFFFFFFFULL)
 
 ///
+/// Minimum legal AArch64 INTN value.
+///
+#define MIN_INTN   (((INTN)-9223372036854775807LL) - 1)
+
+///
 /// The stack alignment required for AARCH64
 ///
 #define CPU_STACK_ALIGNMENT  16
+
+///
+/// Page allocation granularity for AARCH64
+///
+#define DEFAULT_PAGE_ALLOCATION_GRANULARITY   (0x1000)
+#define RUNTIME_PAGE_ALLOCATION_GRANULARITY   (0x10000)
 
 //
 // Modifier to ensure that all protocol member functions and EFI intrinsics
@@ -111,7 +170,9 @@ typedef INT64   INTN;
 //
 #define EFIAPI
 
-#if defined(__GNUC__)
+// When compiling with Clang, we still use GNU as for the assembler, so we still
+// need to define the GCC_ASM* macros.
+#if defined(__GNUC__) || defined(__clang__)
   ///
   /// For GNU assembly code, .global or .globl can declare global symbols.
   /// Define this macro to unify the usage.

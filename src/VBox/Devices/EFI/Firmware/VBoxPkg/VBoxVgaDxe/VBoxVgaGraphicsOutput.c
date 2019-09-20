@@ -500,8 +500,8 @@ VBoxVgaGraphicsOutputConstructor (
     Private->ModeData[Private->GraphicsOutput.Mode->Mode].VerticalResolution
     );
 
-  PcdSet32(PcdVideoHorizontalResolution, Private->ModeData[Private->GraphicsOutput.Mode->Mode].HorizontalResolution);
-  PcdSet32(PcdVideoVerticalResolution, Private->ModeData[Private->GraphicsOutput.Mode->Mode].VerticalResolution);
+  PcdSet32S(PcdVideoHorizontalResolution, Private->ModeData[Private->GraphicsOutput.Mode->Mode].HorizontalResolution);
+  PcdSet32S(PcdVideoVerticalResolution, Private->ModeData[Private->GraphicsOutput.Mode->Mode].VerticalResolution);
 
   return EFI_SUCCESS;
 }

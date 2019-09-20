@@ -1,14 +1,8 @@
 /** @file
   Debug Communication Library definitions.
 
-  Copyright (c) 2010 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,10 +14,10 @@ typedef VOID *    DEBUG_PORT_HANDLE;
 /**
   Caller provided function to be invoked at the end of DebugPortInitialize().
 
-  Refer to the descrption for DebugPortInitialize() for more details.
+  Refer to the description for DebugPortInitialize() for more details.
 
   @param[in] Context           The first input argument of DebugPortInitialize().
-  @param[in] DebugPortHandle   Debug port handle created by Debug Communication Libary.
+  @param[in] DebugPortHandle   Debug port handle created by Debug Communication Library.
 
 **/
 typedef
@@ -41,9 +35,9 @@ VOID
   stack, this function must work on the mode that doesn't return to the caller, then
   the caller needs to wrap up all rest of logic after DebugPortInitialize() into one
   function and pass it into DebugPortInitialize(). DebugPortInitialize() is
-  responsible to invoke the passing-in funciton at the end of DebugPortInitialize().
+  responsible to invoke the passing-in function at the end of DebugPortInitialize().
 
-  If the paramter Function is not NULL, Debug Communication Libary instance will
+  If the parameter Function is not NULL, Debug Communication Library instance will
   invoke it by passing in the Context to be the first parameter. Debug Communication
   Library instance could create one debug port handle to be the second parameter
   passing into the Function. Debug Communication Library instance also could pass
@@ -88,7 +82,7 @@ DebugPortInitialize (
   @param  Handle           Debug port handle.
   @param  Buffer           Pointer to the data buffer to store the data read from the debug device.
   @param  NumberOfBytes    Number of bytes which will be read.
-  @param  Timeout          Timeout value for reading from debug device. It unit is Microsecond.
+  @param  Timeout          Timeout value for reading from debug device. Its unit is Microsecond.
 
   @retval 0                Read data failed, no data is to be read.
   @retval >0               Actual number of bytes read from debug device.
@@ -118,7 +112,7 @@ DebugPortReadBuffer (
 
   @retval 0                NumberOfBytes is 0.
   @retval >0               The number of bytes written to the debug device.
-                           If this value is less than NumberOfBytes, then the read operation failed.
+                           If this value is less than NumberOfBytes, then the write operation failed.
 
 **/
 UINTN
@@ -139,7 +133,7 @@ DebugPortWriteBuffer (
   @param  Handle           Debug port handle.
 
   @retval TRUE             Data is waiting to be read from the debug device.
-  @retval FALSE            There is no data waiting to be read from the serial device.
+  @retval FALSE            There is no data waiting to be read from the debug device.
 
 **/
 BOOLEAN

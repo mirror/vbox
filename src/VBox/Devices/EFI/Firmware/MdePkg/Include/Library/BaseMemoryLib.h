@@ -5,14 +5,8 @@
   These functions should be used in place of coding your own loops to do equivalent common functions.
   This allows optimized library implementations to help increase performance.
 
-Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials are licensed and made available under
-the terms and conditions of the BSD License that accompanies this distribution.
-The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php.
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -441,6 +435,49 @@ ScanGuid (
   IN CONST VOID  *Buffer,
   IN UINTN       Length,
   IN CONST GUID  *Guid
+  );
+
+/**
+  Checks if the given GUID is a zero GUID.
+
+  This function checks whether the given GUID is a zero GUID. If the GUID is
+  identical to a zero GUID then TRUE is returned. Otherwise, FALSE is returned.
+
+  If Guid is NULL, then ASSERT().
+
+  @param  Guid        The pointer to a 128 bit GUID.
+
+  @retval TRUE        Guid is a zero GUID.
+  @retval FALSE       Guid is not a zero GUID.
+
+**/
+BOOLEAN
+EFIAPI
+IsZeroGuid (
+  IN CONST GUID  *Guid
+  );
+
+/**
+  Checks if the contents of a buffer are all zeros.
+
+  This function checks whether the contents of a buffer are all zeros. If the
+  contents are all zeros, return TRUE. Otherwise, return FALSE.
+
+  If Length > 0 and Buffer is NULL, then ASSERT().
+  If Length is greater than (MAX_ADDRESS - Buffer + 1), then ASSERT().
+
+  @param  Buffer      The pointer to the buffer to be checked.
+  @param  Length      The size of the buffer (in bytes) to be checked.
+
+  @retval TRUE        Contents of the buffer are all zeros.
+  @retval FALSE       Contents of the buffer are not all zeros.
+
+**/
+BOOLEAN
+EFIAPI
+IsZeroBuffer (
+  IN CONST VOID  *Buffer,
+  IN UINTN       Length
   );
 
 #endif

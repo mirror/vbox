@@ -2,16 +2,9 @@
   Define the PPI to abstract the functions that enable IDE and SATA channels, and to retrieve
   the base I/O port address for each of the enabled IDE and SATA channels.
 
-Copyright (c) 2006 - 2011, Intel Corporation. All rights reserved.<BR>
+Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
 
-This program and the accompanying materials
-are licensed and made available under the terms and conditions
-of the BSD License which accompanies this distribution.  The
-full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -106,7 +99,7 @@ typedef struct {
   @param[in] PeiServices   The pointer to the PEI Services Table.
   @param[in] This          The pointer to this instance of the PEI_ATA_CONTROLLER_PPI.
   @param[in] ChannelMask   The bitmask that identifies the IDE and SATA channels to
-                           enable or disable. This paramter is optional.
+                           enable or disable. This parameter is optional.
 
   @retval EFI_SUCCESS        The IDE or SATA channels were enabled or disabled successfully.
   @retval EFI_DEVICE_ERROR   The IDE or SATA channels could not be enabled or disabled.

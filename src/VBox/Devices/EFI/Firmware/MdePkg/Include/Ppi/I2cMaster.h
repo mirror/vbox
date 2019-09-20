@@ -2,14 +2,8 @@
   This PPI manipulates the I2C host controller to perform transactions as a master
   on the I2C bus using the current state of any switches or multiplexers in the I2C bus.
 
-  Copyright (c) 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2013 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
   @par Revision Reference:
   This PPI is introduced in PI Version 1.3.
@@ -72,15 +66,15 @@ EFI_STATUS
                                  bits 0-9 are used for 10-bit I2C slave addresses.
   @param  RequestPacket          Pointer to an EFI_I2C_REQUEST_PACKET structure describing the I2C transaction.
 
-  @retval EFI_SUCCESS	           The transaction completed successfully.
-  @retval EFI_BAD_BUFFER_SIZE	   The RequestPacket->LengthInBytes value is too large.
-  @retval EFI_DEVICE_ERROR	     There was an I2C error (NACK) during the transaction.
-  @retval EFI_INVALID_PARAMETER	 RequestPacket is NULL
-  @retval EFI_NO_RESPONSE	       The I2C device is not responding to the slave address.
+  @retval EFI_SUCCESS             The transaction completed successfully.
+  @retval EFI_BAD_BUFFER_SIZE     The RequestPacket->LengthInBytes value is too large.
+  @retval EFI_DEVICE_ERROR       There was an I2C error (NACK) during the transaction.
+  @retval EFI_INVALID_PARAMETER   RequestPacket is NULL
+  @retval EFI_NO_RESPONSE         The I2C device is not responding to the slave address.
                                  EFI_DEVICE_ERROR will be returned if the controller cannot distinguish when the NACK occurred.
-  @retval EFI_NOT_FOUND	         Reserved bit set in the SlaveAddress parameter
-  @retval EFI_OUT_OF_RESOURCES	 Insufficient memory for I2C transaction
-  @retval EFI_UNSUPPORTED	       The controller does not support the requested transaction.
+  @retval EFI_NOT_FOUND           Reserved bit set in the SlaveAddress parameter
+  @retval EFI_OUT_OF_RESOURCES   Insufficient memory for I2C transaction
+  @retval EFI_UNSUPPORTED         The controller does not support the requested transaction.
 
 **/
 typedef

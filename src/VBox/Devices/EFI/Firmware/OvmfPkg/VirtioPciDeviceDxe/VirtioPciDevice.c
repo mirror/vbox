@@ -3,16 +3,11 @@
   This driver produces Virtio Device Protocol instances for Virtio PCI devices.
 
   Copyright (C) 2012, Red Hat, Inc.
-  Copyright (c) 2012, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2012 - 2016, Intel Corporation. All rights reserved.<BR>
   Copyright (C) 2013, ARM Ltd.
+  Copyright (C) 2017, AMD Inc, All rights reserved.<BR>
 
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS, WITHOUT
-  WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -30,7 +25,6 @@ STATIC VIRTIO_DEVICE_PROTOCOL mDeviceProtocolTemplate = {
   0,                                    // SubSystemDeviceId
   VirtioPciGetDeviceFeatures,           // GetDeviceFeatures
   VirtioPciSetGuestFeatures,            // SetGuestFeatures
-  VirtioPciGetQueueAddress,             // GetQueueAddress
   VirtioPciSetQueueAddress,             // SetQueueAddress
   VirtioPciSetQueueSel,                 // SetQueueSel
   VirtioPciSetQueueNotify,              // SetQueueNotify
@@ -41,7 +35,11 @@ STATIC VIRTIO_DEVICE_PROTOCOL mDeviceProtocolTemplate = {
   VirtioPciGetDeviceStatus,             // GetDeviceStatus
   VirtioPciSetDeviceStatus,             // SetDeviceStatus
   VirtioPciDeviceWrite,                 // WriteDevice
-  VirtioPciDeviceRead                   // ReadDevice
+  VirtioPciDeviceRead,                  // ReadDevice
+  VirtioPciAllocateSharedPages,         // AllocateSharedPages
+  VirtioPciFreeSharedPages,             // FreeSharedPages
+  VirtioPciMapSharedBuffer,             // MapSharedBuffer
+  VirtioPciUnmapSharedBuffer,           // UnmapSharedBuffer
 };
 
 /**
@@ -394,7 +392,7 @@ VirtioPciUninit (
 
   After we've pronounced support for a specific device in
   DriverBindingSupported(), we start managing said device (passed in by the
-  Driver Exeuction Environment) with the following service.
+  Driver Execution Environment) with the following service.
 
   See DriverBindingSupported() for specification references.
 
@@ -459,9 +457,13 @@ VirtioPciDeviceBindingStart (
     goto ClosePciIo;
   }
 
-  Status = Device->PciIo->Attributes (Device->PciIo,
-                         EfiPciIoAttributeOperationEnable,
-                         EFI_PCI_IO_ATTRIBUTE_IO, NULL);
+  Status = Device->PciIo->Attributes (
+                            Device->PciIo,
+                            EfiPciIoAttributeOperationEnable,
+                            (EFI_PCI_IO_ATTRIBUTE_IO |
+                             EFI_PCI_IO_ATTRIBUTE_BUS_MASTER),
+                            NULL
+                            );
   if (EFI_ERROR (Status)) {
     goto ClosePciIo;
   }

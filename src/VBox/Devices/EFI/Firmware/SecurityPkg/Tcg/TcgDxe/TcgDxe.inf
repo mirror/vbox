@@ -2,13 +2,8 @@
 #  Produces TCG protocol and measures boot environment
 #  This module will produce TCG protocol and measure boot environment.
 #
-# Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
-# This program and the accompanying materials
-# are licensed and made available under the terms and conditions of the BSD License
-# which accompanies this distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# Copyright (c) 2006 - 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
@@ -24,18 +19,16 @@
 #
 # The following information is for reference only and not required by the build tools.
 #
-#  VALID_ARCHITECTURES           = IA32 X64 IPF
+#  VALID_ARCHITECTURES           = IA32 X64
 #
 
 [Sources]
   TcgDxe.c
-  TisDxe.c
-  TpmComm.c
-  TpmComm.h
 
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  CryptoPkg/CryptoPkg.dec
   SecurityPkg/SecurityPkg.dec
 
 [LibraryClasses]
@@ -47,17 +40,15 @@
   UefiRuntimeServicesTableLib
   BaseMemoryLib
   DebugLib
-  TpmCommLib
+  Tpm12DeviceLib
+  BaseCryptLib
   PrintLib
   UefiLib
   PcdLib
   ReportStatusCodeLib
+  Tpm12CommandLib
 
 [Guids]
-  ## SOMETIMES_CONSUMES     ## SystemTable           # Smbios Table
-  ## SOMETIMES_CONSUMES     ## GUID                  # Handoff Table for measurement.
-  gEfiSmbiosTableGuid
-
   gEfiGlobalVariableGuid                             ## SOMETIMES_CONSUMES  ## Variable:L"BootXXXX"
   gTcgEventEntryHobGuid                              ## SOMETIMES_CONSUMES  ## HOB
   gTpmErrorHobGuid                                   ## SOMETIMES_CONSUMES  ## HOB
@@ -73,16 +64,18 @@
 [Pcd]
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmPlatformClass              ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdTpmInstanceGuid               ## CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTpmBaseAddress                ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemId             ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemTableId        ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultOemRevision       ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorId         ## SOMETIMES_CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdAcpiDefaultCreatorRevision   ## SOMETIMES_CONSUMES
   gEfiSecurityPkgTokenSpaceGuid.PcdStatusCodeSubClassTpmDevice   ## SOMETIMES_CONSUMES
+  gEfiSecurityPkgTokenSpaceGuid.PcdTcgLogAreaMinLen              ## CONSUMES
 
 [Depex]
   TRUE
 
 [UserExtensions.TianoCore."ExtraFiles"]
   TcgDxeExtra.uni
-  
+

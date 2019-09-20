@@ -1,14 +1,8 @@
 /** @file
 Private structures definitions in HiiDatabase.
 
-Copyright (c) 2007 - 2011, Intel Corporation. All rights reserved.<BR>
-This program and the accompanying materials
-are licensed and made available under the terms and conditions of the BSD License
-which accompanies this distribution.  The full text of the license may be found at
-http://opensource.org/licenses/bsd-license.php
-
-THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+Copyright (c) 2007 - 2018, Intel Corporation. All rights reserved.<BR>
+SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -20,15 +14,20 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #include <Protocol/DevicePath.h>
 #include <Protocol/HiiFont.h>
 #include <Protocol/HiiImage.h>
+#include <Protocol/HiiImageEx.h>
+#include <Protocol/HiiImageDecoder.h>
 #include <Protocol/HiiString.h>
 #include <Protocol/HiiDatabase.h>
 #include <Protocol/HiiConfigRouting.h>
 #include <Protocol/HiiConfigAccess.h>
+#include <Protocol/HiiConfigKeyword.h>
 #include <Protocol/SimpleTextOut.h>
 
 #include <Guid/HiiKeyBoardLayout.h>
 #include <Guid/GlobalVariable.h>
-
+#include <Guid/MdeModuleHii.h>
+#include <Guid/VariableFormat.h>
+#include <Guid/PcdDataBaseSignatureGuid.h>
 
 #include <Library/DebugLib.h>
 #include <Library/BaseMemoryLib.h>
@@ -56,10 +55,18 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define BITMAP_LEN_8_BIT(Width, Height)  ((Width) * (Height))
 #define BITMAP_LEN_24_BIT(Width, Height) ((Width) * (Height) * 3)
 
+extern EFI_LOCK mHiiDatabaseLock;
+
 //
 // IFR data structure
 //
 // BASE_CR (a, IFR_DEFAULT_VALUE_DATA, Entry) to get the whole structure.
+
+typedef struct {
+  LIST_ENTRY            Entry;             // Link to VarStorage Default Data
+  UINT16                DefaultId;
+  VARIABLE_STORE_HEADER *VariableStorage;
+} VARSTORAGE_DEFAULT_DATA;
 
 typedef struct {
   LIST_ENTRY          Entry;             // Link to VarStorage
@@ -74,11 +81,14 @@ typedef struct {
   LIST_ENTRY          Entry;             // Link to Block array
   UINT16              Offset;
   UINT16              Width;
+  UINT16              BitOffset;
+  UINT16              BitWidth;
   EFI_QUESTION_ID     QuestionId;
   UINT8               OpCode;
   UINT8               Scope;
   LIST_ENTRY          DefaultValueEntry; // Link to its default value array
   CHAR16              *Name;
+  BOOLEAN             IsBitVar;
 } IFR_BLOCK_DATA;
 
 //
@@ -86,7 +96,9 @@ typedef struct {
 //
 typedef enum {
   DefaultValueFromDefault = 0,     // Get from the minimum or first one when not set default value.
-  DefaultValueFromFlag,            // Get default value from the defalut flag.
+  DefaultValueFromOtherDefault,    // Get default vale from other default when no default(When other
+                                   // defaults are more than one, use the default with smallest default id).
+  DefaultValueFromFlag,            // Get default value from the default flag.
   DefaultValueFromOpcode           // Get default value from default opcode, highest priority.
 } DEFAULT_VALUE_TYPE;
 
@@ -107,6 +119,19 @@ typedef struct {
 #define EFI_HII_VARSTORE_NAME_VALUE          1
 #define EFI_HII_VARSTORE_EFI_VARIABLE        2
 #define EFI_HII_VARSTORE_EFI_VARIABLE_BUFFER 3
+
+//
+// Keyword handler protocol filter type.
+//
+#define EFI_KEYWORD_FILTER_READONY           0x01
+#define EFI_KEYWORD_FILTER_REAWRITE          0x02
+#define EFI_KEYWORD_FILTER_BUFFER            0x10
+#define EFI_KEYWORD_FILTER_NUMERIC           0x20
+#define EFI_KEYWORD_FILTER_NUMERIC_1         0x30
+#define EFI_KEYWORD_FILTER_NUMERIC_2         0x40
+#define EFI_KEYWORD_FILTER_NUMERIC_4         0x50
+#define EFI_KEYWORD_FILTER_NUMERIC_8         0x60
+
 
 #define HII_FORMSET_STORAGE_SIGNATURE           SIGNATURE_32 ('H', 'S', 'T', 'G')
 typedef struct {
@@ -207,12 +232,12 @@ typedef struct _HII_IMAGE_PACKAGE_INSTANCE {
   EFI_HII_IMAGE_PACKAGE_HDR             ImagePkgHdr;
   UINT32                                ImageBlockSize;
   UINT32                                PaletteInfoSize;
-  UINT8                                 *ImageBlock;
+  EFI_HII_IMAGE_BLOCK                   *ImageBlock;
   UINT8                                 *PaletteBlock;
 } HII_IMAGE_PACKAGE_INSTANCE;
 
 //
-// Keyboard Layout Pacakge definitions
+// Keyboard Layout Package definitions
 //
 #define HII_KB_LAYOUT_PACKAGE_SIGNATURE SIGNATURE_32 ('h','k','l','p')
 typedef struct _HII_KEYBOARD_LAYOUT_PACKAGE_INSTANCE {
@@ -285,9 +310,11 @@ typedef struct _HII_DATABASE_PRIVATE_DATA {
   LIST_ENTRY                            DatabaseNotifyList;
   EFI_HII_FONT_PROTOCOL                 HiiFont;
   EFI_HII_IMAGE_PROTOCOL                HiiImage;
+  EFI_HII_IMAGE_EX_PROTOCOL             HiiImageEx;
   EFI_HII_STRING_PROTOCOL               HiiString;
   EFI_HII_DATABASE_PROTOCOL             HiiDatabase;
   EFI_HII_CONFIG_ROUTING_PROTOCOL       ConfigRouting;
+  EFI_CONFIG_KEYWORD_HANDLER_PROTOCOL   ConfigKeywordHandler;
   LIST_ENTRY                            HiiHandleList;
   INTN                                  HiiHandleCount;
   LIST_ENTRY                            FontInfoList;  // global font info list
@@ -307,6 +334,13 @@ typedef struct _HII_DATABASE_PRIVATE_DATA {
   CR (a, \
       HII_DATABASE_PRIVATE_DATA, \
       HiiImage, \
+      HII_DATABASE_PRIVATE_DATA_SIGNATURE \
+      )
+
+#define HII_IMAGE_EX_DATABASE_PRIVATE_DATA_FROM_THIS(a) \
+  CR (a, \
+      HII_DATABASE_PRIVATE_DATA, \
+      HiiImageEx, \
       HII_DATABASE_PRIVATE_DATA_SIGNATURE \
       )
 
@@ -331,9 +365,47 @@ typedef struct _HII_DATABASE_PRIVATE_DATA {
       HII_DATABASE_PRIVATE_DATA_SIGNATURE \
       )
 
+#define CONFIG_KEYWORD_HANDLER_DATABASE_PRIVATE_DATA_FROM_THIS(a) \
+  CR (a, \
+      HII_DATABASE_PRIVATE_DATA, \
+      ConfigKeywordHandler, \
+      HII_DATABASE_PRIVATE_DATA_SIGNATURE \
+      )
+
 //
 // Internal function prototypes.
 //
+
+/**
+  Generate a sub string then output it.
+
+  This is a internal function.
+
+  @param  String                 A constant string which is the prefix of the to be
+                                 generated string, e.g. GUID=
+
+  @param  BufferLen              The length of the Buffer in bytes.
+
+  @param  Buffer                 Points to a buffer which will be converted to be the
+                                 content of the generated string.
+
+  @param  Flag                   If 1, the buffer contains data for the value of GUID or PATH stored in
+                                 UINT8 *; if 2, the buffer contains unicode string for the value of NAME;
+                                 if 3, the buffer contains other data.
+
+  @param  SubStr                 Points to the output string. It's caller's
+                                 responsibility to free this buffer.
+
+
+**/
+VOID
+GenerateSubStr (
+  IN CONST EFI_STRING              String,
+  IN  UINTN                        BufferLen,
+  IN  VOID                         *Buffer,
+  IN  UINT8                        Flag,
+  OUT EFI_STRING                   *SubStr
+  );
 
 /**
   This function checks whether a handle is a valid EFI_HII_HANDLE.
@@ -365,7 +437,7 @@ IsHiiHandleValid (
   @param  FontHandle              On entry, Points to the font handle returned by a
                                   previous  call to GetFontInfo() or NULL to start
                                   with the first font.
-  @param  GlobalFontInfo          If not NULL, output the corresponding globa font
+  @param  GlobalFontInfo          If not NULL, output the corresponding global font
                                   info.
 
   @retval TRUE                    Existed
@@ -477,7 +549,7 @@ FindStringBlock (
   @param  CharValue               Unicode character value, which identifies a glyph
                                   block.
   @param  GlyphBuffer             Output the corresponding bitmap data of the found
-                                  block. It is the caller's responsiblity to free
+                                  block. It is the caller's responsibility to free
                                   this buffer.
   @param  Cell                    Output cell information of the encoded bitmap.
   @param  GlyphBufferLen          If not NULL, output the length of GlyphBuffer.
@@ -758,6 +830,82 @@ HiiGetFontInfo (
 // EFI_HII_IMAGE_PROTOCOL interfaces
 //
 
+/**
+  Get the image id of last image block: EFI_HII_IIBT_END_BLOCK when input
+  ImageId is zero, otherwise return the address of the
+  corresponding image block with identifier specified by ImageId.
+
+  This is a internal function.
+
+  @param ImageBlocks     Points to the beginning of a series of image blocks stored in order.
+  @param ImageId         If input ImageId is 0, output the image id of the EFI_HII_IIBT_END_BLOCK;
+                         else use this id to find its corresponding image block address.
+
+  @return The image block address when input ImageId is not zero; otherwise return NULL.
+
+**/
+EFI_HII_IMAGE_BLOCK *
+GetImageIdOrAddress (
+  IN EFI_HII_IMAGE_BLOCK *ImageBlocks,
+  IN OUT EFI_IMAGE_ID    *ImageId
+  );
+
+/**
+  Return the HII package list identified by PackageList HII handle.
+
+  @param Database    Pointer to HII database list header.
+  @param PackageList HII handle of the package list to locate.
+
+  @retval The HII package list instance.
+**/
+HII_DATABASE_PACKAGE_LIST_INSTANCE *
+LocatePackageList (
+  IN  LIST_ENTRY                     *Database,
+  IN  EFI_HII_HANDLE                 PackageList
+  );
+
+/**
+  This function retrieves the image specified by ImageId which is associated with
+  the specified PackageList and copies it into the buffer specified by Image.
+
+  @param  Database               A pointer to the database list header.
+  @param  PackageList            Handle of the package list where this image will
+                                 be searched.
+  @param  ImageId                The image's id,, which is unique within
+                                 PackageList.
+  @param  Image                  Points to the image.
+  @param  BitmapOnly             TRUE to only return the bitmap type image.
+                                 FALSE to locate image decoder instance to decode image.
+
+  @retval EFI_SUCCESS            The new image was returned successfully.
+  @retval EFI_NOT_FOUND          The image specified by ImageId is not in the
+                                 database. The specified PackageList is not in the database.
+  @retval EFI_BUFFER_TOO_SMALL   The buffer specified by ImageSize is too small to
+                                 hold the image.
+  @retval EFI_INVALID_PARAMETER  The Image or ImageSize was NULL.
+  @retval EFI_OUT_OF_RESOURCES   The bitmap could not be retrieved because there was not
+                                 enough memory.
+**/
+EFI_STATUS
+IGetImage (
+  IN  LIST_ENTRY                     *Database,
+  IN  EFI_HII_HANDLE                 PackageList,
+  IN  EFI_IMAGE_ID                   ImageId,
+  OUT EFI_IMAGE_INPUT                *Image,
+  IN  BOOLEAN                        BitmapOnly
+  );
+
+/**
+  Return the first HII image decoder instance which supports the DecoderName.
+
+  @param BlockType  The image block type.
+
+  @retval Pointer to the HII image decoder instance.
+**/
+EFI_HII_IMAGE_DECODER_PROTOCOL *
+LocateHiiImageDecoder (
+  UINT8                          BlockType
+  );
 
 /**
   This function adds the image Image to the group of images owned by PackageList, and returns
@@ -929,10 +1077,213 @@ HiiDrawImageId (
   IN OUT EFI_IMAGE_OUTPUT            **Blt,
   IN UINTN                           BltX,
   IN UINTN                           BltY
-  )
+  );
 
-;
+/**
+  The prototype of this extension function is the same with EFI_HII_IMAGE_PROTOCOL.NewImage().
+  This protocol invokes EFI_HII_IMAGE_PROTOCOL.NewImage() implicitly.
 
+  @param  This                   A pointer to the EFI_HII_IMAGE_EX_PROTOCOL instance.
+  @param  PackageList            Handle of the package list where this image will
+                                 be added.
+  @param  ImageId                On return, contains the new image id, which is
+                                 unique within PackageList.
+  @param  Image                  Points to the image.
+
+  @retval EFI_SUCCESS            The new image was added successfully.
+  @retval EFI_NOT_FOUND          The PackageList could not be found.
+  @retval EFI_OUT_OF_RESOURCES   Could not add the image due to lack of resources.
+  @retval EFI_INVALID_PARAMETER  Image is NULL or ImageId is NULL.
+**/
+EFI_STATUS
+EFIAPI
+HiiNewImageEx (
+  IN  CONST EFI_HII_IMAGE_EX_PROTOCOL *This,
+  IN  EFI_HII_HANDLE                  PackageList,
+  OUT EFI_IMAGE_ID                    *ImageId,
+  IN  CONST EFI_IMAGE_INPUT           *Image
+  );
+
+/**
+  Return the information about the image, associated with the package list.
+  The prototype of this extension function is the same with EFI_HII_IMAGE_PROTOCOL.GetImage().
+
+  This function is similar to EFI_HII_IMAGE_PROTOCOL.GetImage(). The difference is that
+  this function will locate all EFI_HII_IMAGE_DECODER_PROTOCOL instances installed in the
+  system if the decoder of the certain image type is not supported by the
+  EFI_HII_IMAGE_EX_PROTOCOL. The function will attempt to decode the image to the
+  EFI_IMAGE_INPUT using the first EFI_HII_IMAGE_DECODER_PROTOCOL instance that
+  supports the requested image type.
+
+  @param  This                   A pointer to the EFI_HII_IMAGE_EX_PROTOCOL instance.
+  @param  PackageList            The package list in the HII database to search for the
+                                 specified image.
+  @param  ImageId                The image's id, which is unique within PackageList.
+  @param  Image                  Points to the image.
+
+  @retval EFI_SUCCESS            The new image was returned successfully.
+  @retval EFI_NOT_FOUND          The image specified by ImageId is not available. The specified
+                                 PackageList is not in the Database.
+  @retval EFI_INVALID_PARAMETER  Image was NULL or ImageId was 0.
+  @retval EFI_OUT_OF_RESOURCES   The bitmap could not be retrieved because there
+                                 was not enough memory.
+
+**/
+EFI_STATUS
+EFIAPI
+HiiGetImageEx (
+  IN  CONST EFI_HII_IMAGE_EX_PROTOCOL *This,
+  IN  EFI_HII_HANDLE                  PackageList,
+  IN  EFI_IMAGE_ID                    ImageId,
+  OUT EFI_IMAGE_INPUT                 *Image
+  );
+
+/**
+  Change the information about the image.
+
+  Same with EFI_HII_IMAGE_PROTOCOL.SetImage(), this protocol invokes
+  EFI_HII_IMAGE_PROTOCOL.SetImage()implicitly.
+
+  @param  This                   A pointer to the EFI_HII_IMAGE_EX_PROTOCOL instance.
+  @param  PackageList            The package list containing the images.
+  @param  ImageId                The image's id, which is unique within PackageList.
+  @param  Image                  Points to the image.
+
+  @retval EFI_SUCCESS            The new image was successfully updated.
+  @retval EFI_NOT_FOUND          The image specified by ImageId is not in the
+                                 database. The specified PackageList is not in
+                                 the database.
+  @retval EFI_INVALID_PARAMETER  The Image was NULL, the ImageId was 0 or
+                                 the Image->Bitmap was NULL.
+
+**/
+EFI_STATUS
+EFIAPI
+HiiSetImageEx (
+  IN CONST EFI_HII_IMAGE_EX_PROTOCOL *This,
+  IN EFI_HII_HANDLE                  PackageList,
+  IN EFI_IMAGE_ID                    ImageId,
+  IN CONST EFI_IMAGE_INPUT           *Image
+  );
+
+/**
+  Renders an image to a bitmap or to the display.
+
+  The prototype of this extension function is the same with
+  EFI_HII_IMAGE_PROTOCOL.DrawImage(). This protocol invokes
+  EFI_HII_IMAGE_PROTOCOL.DrawImage() implicitly.
+
+  @param  This                   A pointer to the EFI_HII_IMAGE_EX_PROTOCOL instance.
+  @param  Flags                  Describes how the image is to be drawn.
+  @param  Image                  Points to the image to be displayed.
+  @param  Blt                    If this points to a non-NULL on entry, this points
+                                 to the image, which is Width pixels wide and
+                                 Height pixels high.  The image will be drawn onto
+                                 this image and  EFI_HII_DRAW_FLAG_CLIP is implied.
+                                 If this points to a NULL on entry, then a buffer
+                                 will be allocated to hold the generated image and
+                                 the pointer updated on exit. It is the caller's
+                                 responsibility to free this buffer.
+  @param  BltX                   Specifies the offset from the left and top edge of
+                                 the output image of the first pixel in the image.
+  @param  BltY                   Specifies the offset from the left and top edge of
+                                 the output image of the first pixel in the image.
+
+  @retval EFI_SUCCESS            The image was successfully drawn.
+  @retval EFI_OUT_OF_RESOURCES   Unable to allocate an output buffer for Blt.
+  @retval EFI_INVALID_PARAMETER  The Image or Blt was NULL.
+
+**/
+EFI_STATUS
+EFIAPI
+HiiDrawImageEx (
+  IN CONST EFI_HII_IMAGE_EX_PROTOCOL *This,
+  IN EFI_HII_DRAW_FLAGS              Flags,
+  IN CONST EFI_IMAGE_INPUT           *Image,
+  IN OUT EFI_IMAGE_OUTPUT            **Blt,
+  IN UINTN                           BltX,
+  IN UINTN                           BltY
+  );
+
+/**
+  Renders an image to a bitmap or the screen containing the contents of the specified
+  image.
+
+  This function is similar to EFI_HII_IMAGE_PROTOCOL.DrawImageId(). The difference is that
+  this function will locate all EFI_HII_IMAGE_DECODER_PROTOCOL instances installed in the
+  system if the decoder of the certain image type is not supported by the
+  EFI_HII_IMAGE_EX_PROTOCOL. The function will attempt to decode the image to the
+  EFI_IMAGE_INPUT using the first EFI_HII_IMAGE_DECODER_PROTOCOL instance that
+  supports the requested image type.
+
+  @param  This                   A pointer to the EFI_HII_IMAGE_EX_PROTOCOL instance.
+  @param  Flags                  Describes how the image is to be drawn.
+  @param  PackageList            The package list in the HII database to search for
+                                 the  specified image.
+  @param  ImageId                The image's id, which is unique within PackageList.
+  @param  Blt                    If this points to a non-NULL on entry, this points
+                                 to the image, which is Width pixels wide and
+                                 Height pixels high. The image will be drawn onto
+                                 this image and EFI_HII_DRAW_FLAG_CLIP is implied.
+                                 If this points to a NULL on entry, then a buffer
+                                 will be allocated to hold  the generated image
+                                 and the pointer updated on exit. It is the caller's
+                                 responsibility to free this buffer.
+  @param  BltX                   Specifies the offset from the left and top edge of
+                                 the output image of the first pixel in the image.
+  @param  BltY                   Specifies the offset from the left and top edge of
+                                 the output image of the first pixel in the image.
+
+  @retval EFI_SUCCESS            The image was successfully drawn.
+  @retval EFI_OUT_OF_RESOURCES   Unable to allocate an output buffer for Blt.
+  @retval EFI_INVALID_PARAMETER  The Blt was NULL or ImageId was 0.
+  @retval EFI_NOT_FOUND          The image specified by ImageId is not in the database.
+                                 The specified PackageList is not in the database.
+
+**/
+EFI_STATUS
+EFIAPI
+HiiDrawImageIdEx (
+  IN CONST EFI_HII_IMAGE_EX_PROTOCOL *This,
+  IN EFI_HII_DRAW_FLAGS              Flags,
+  IN EFI_HII_HANDLE                  PackageList,
+  IN EFI_IMAGE_ID                    ImageId,
+  IN OUT EFI_IMAGE_OUTPUT            **Blt,
+  IN UINTN                           BltX,
+  IN UINTN                           BltY
+  );
+
+/**
+  This function returns the image information to EFI_IMAGE_OUTPUT. Only the width
+  and height are returned to the EFI_IMAGE_OUTPUT instead of decoding the image
+  to the buffer. This function is used to get the geometry of the image. This function
+  will try to locate all of the EFI_HII_IMAGE_DECODER_PROTOCOL installed on the
+  system if the decoder of image type is not supported by the EFI_HII_IMAGE_EX_PROTOCOL.
+
+  @param  This                   A pointer to the EFI_HII_IMAGE_EX_PROTOCOL instance.
+  @param  PackageList            Handle of the package list where this image will
+                                 be searched.
+  @param  ImageId                The image's id, which is unique within PackageList.
+  @param  Image                  Points to the image.
+
+  @retval EFI_SUCCESS            The new image was returned successfully.
+  @retval EFI_NOT_FOUND          The image specified by ImageId is not in the
+                                 database. The specified PackageList is not in the database.
+  @retval EFI_BUFFER_TOO_SMALL   The buffer specified by ImageSize is too small to
+                                 hold the image.
+  @retval EFI_INVALID_PARAMETER  The Image was NULL or the ImageId was 0.
+  @retval EFI_OUT_OF_RESOURCES   The bitmap could not be retrieved because there
+                                 was not enough memory.
+
+**/
+EFI_STATUS
+EFIAPI
+HiiGetImageInfo (
+  IN CONST  EFI_HII_IMAGE_EX_PROTOCOL       *This,
+  IN        EFI_HII_HANDLE                  PackageList,
+  IN        EFI_IMAGE_ID                    ImageId,
+  OUT       EFI_IMAGE_OUTPUT                *Image
+  );
 //
 // EFI_HII_STRING_PROTOCOL
 //
@@ -1247,7 +1598,7 @@ HiiUpdatePackageList (
                                   buffer that is required for the handles found.
   @param  Handle                  An array of EFI_HII_HANDLE instances returned.
 
-  @retval EFI_SUCCESS             The matching handles are outputed successfully.
+  @retval EFI_SUCCESS             The matching handles are outputted successfully.
                                   HandleBufferLength is updated with the actual length.
   @retval EFI_BUFFER_TO_SMALL     The HandleBufferLength parameter indicates that
                                   Handle is too small to support the number of
@@ -1296,7 +1647,7 @@ HiiListPackageLists (
                                   Handle is too small to support the number of
                                   handles.      HandleBufferLength is updated with
                                   a value that will enable the data to fit.
-  @retval EFI_NOT_FOUND           The specifiecd Handle could not be found in the
+  @retval EFI_NOT_FOUND           The specified Handle could not be found in the
                                   current database.
   @retval EFI_INVALID_PARAMETER   BufferSize was NULL.
   @retval EFI_INVALID_PARAMETER   The value referenced by BufferSize was not zero
@@ -1776,6 +2127,153 @@ HiiGetAltCfg (
   OUT EFI_STRING                               *AltCfgResp
   );
 
+/**
+
+  This function accepts a <MultiKeywordResp> formatted string, finds the associated
+  keyword owners, creates a <MultiConfigResp> string from it and forwards it to the
+  EFI_HII_ROUTING_PROTOCOL.RouteConfig function.
+
+  If there is an issue in resolving the contents of the KeywordString, then the
+  function returns an error and also sets the Progress and ProgressErr with the
+  appropriate information about where the issue occurred and additional data about
+  the nature of the issue.
+
+  In the case when KeywordString containing multiple keywords, when an EFI_NOT_FOUND
+  error is generated during processing the second or later keyword element, the system
+  storage associated with earlier keywords is not modified. All elements of the
+  KeywordString must successfully pass all tests for format and access prior to making
+  any modifications to storage.
+
+  In the case when EFI_DEVICE_ERROR is returned from the processing of a KeywordString
+  containing multiple keywords, the state of storage associated with earlier keywords
+  is undefined.
+
+
+  @param This             Pointer to the EFI_KEYWORD_HANDLER _PROTOCOL instance.
+
+  @param KeywordString    A null-terminated string in <MultiKeywordResp> format.
+
+  @param Progress         On return, points to a character in the KeywordString.
+                          Points to the string's NULL terminator if the request
+                          was successful. Points to the most recent '&' before
+                          the first failing name / value pair (or the beginning
+                          of the string if the failure is in the first name / value
+                          pair) if the request was not successful.
+
+  @param ProgressErr      If during the processing of the KeywordString there was
+                          a failure, this parameter gives additional information
+                          about the possible source of the problem. The various
+                          errors are defined in "Related Definitions" below.
+
+
+  @retval EFI_SUCCESS             The specified action was completed successfully.
+
+  @retval EFI_INVALID_PARAMETER   One or more of the following are TRUE:
+                                  1. KeywordString is NULL.
+                                  2. Parsing of the KeywordString resulted in an
+                                     error. See Progress and ProgressErr for more data.
+
+  @retval EFI_NOT_FOUND           An element of the KeywordString was not found.
+                                  See ProgressErr for more data.
+
+  @retval EFI_OUT_OF_RESOURCES    Required system resources could not be allocated.
+                                  See ProgressErr for more data.
+
+  @retval EFI_ACCESS_DENIED       The action violated system policy. See ProgressErr
+                                  for more data.
+
+  @retval EFI_DEVICE_ERROR        An unexpected system error occurred. See ProgressErr
+                                  for more data.
+
+**/
+EFI_STATUS
+EFIAPI
+EfiConfigKeywordHandlerSetData (
+  IN EFI_CONFIG_KEYWORD_HANDLER_PROTOCOL *This,
+  IN CONST EFI_STRING                    KeywordString,
+  OUT EFI_STRING                         *Progress,
+  OUT UINT32                             *ProgressErr
+  );
+
+/**
+
+  This function accepts a <MultiKeywordRequest> formatted string, finds the underlying
+  keyword owners, creates a <MultiConfigRequest> string from it and forwards it to the
+  EFI_HII_ROUTING_PROTOCOL.ExtractConfig function.
+
+  If there is an issue in resolving the contents of the KeywordString, then the function
+  returns an EFI_INVALID_PARAMETER and also set the Progress and ProgressErr with the
+  appropriate information about where the issue occurred and additional data about the
+  nature of the issue.
+
+  In the case when KeywordString is NULL, or contains multiple keywords, or when
+  EFI_NOT_FOUND is generated while processing the keyword elements, the Results string
+  contains values returned for all keywords processed prior to the keyword generating the
+  error but no values for the keyword with error or any following keywords.
+
+
+  @param This           Pointer to the EFI_KEYWORD_HANDLER _PROTOCOL instance.
+
+  @param NameSpaceId    A null-terminated string containing the platform configuration
+                        language to search through in the system. If a NULL is passed
+                        in, then it is assumed that any platform configuration language
+                        with the prefix of "x-UEFI-" are searched.
+
+  @param KeywordString  A null-terminated string in <MultiKeywordRequest> format. If a
+                        NULL is passed in the KeywordString field, all of the known
+                        keywords in the system for the NameSpaceId specified are
+                        returned in the Results field.
+
+  @param Progress       On return, points to a character in the KeywordString. Points
+                        to the string's NULL terminator if the request was successful.
+                        Points to the most recent '&' before the first failing name / value
+                        pair (or the beginning of the string if the failure is in the first
+                        name / value pair) if the request was not successful.
+
+  @param ProgressErr    If during the processing of the KeywordString there was a
+                        failure, this parameter gives additional information about the
+                        possible source of the problem. See the definitions in SetData()
+                        for valid value definitions.
+
+  @param Results        A null-terminated string in <MultiKeywordResp> format is returned
+                        which has all the values filled in for the keywords in the
+                        KeywordString. This is a callee-allocated field, and must be freed
+                        by the caller after being used.
+
+  @retval EFI_SUCCESS             The specified action was completed successfully.
+
+  @retval EFI_INVALID_PARAMETER   One or more of the following are TRUE:
+                                  1.Progress, ProgressErr, or Results is NULL.
+                                  2.Parsing of the KeywordString resulted in an error. See
+                                    Progress and ProgressErr for more data.
+
+
+  @retval EFI_NOT_FOUND           An element of the KeywordString was not found. See
+                                  ProgressErr for more data.
+
+  @retval EFI_NOT_FOUND           The NamespaceId specified was not found.  See ProgressErr
+                                  for more data.
+
+  @retval EFI_OUT_OF_RESOURCES    Required system resources could not be allocated.  See
+                                  ProgressErr for more data.
+
+  @retval EFI_ACCESS_DENIED       The action violated system policy.  See ProgressErr for
+                                  more data.
+
+  @retval EFI_DEVICE_ERROR        An unexpected system error occurred.  See ProgressErr
+                                  for more data.
+
+**/
+EFI_STATUS
+EFIAPI
+EfiConfigKeywordHandlerGetData (
+  IN EFI_CONFIG_KEYWORD_HANDLER_PROTOCOL  *This,
+  IN CONST EFI_STRING                     NameSpaceId, OPTIONAL
+  IN CONST EFI_STRING                     KeywordString, OPTIONAL
+  OUT EFI_STRING                          *Progress,
+  OUT UINT32                              *ProgressErr,
+  OUT EFI_STRING                          *Results
+  );
 
 /**
   Compare whether two names of languages are identical.
@@ -1794,8 +2292,61 @@ HiiCompareLanguage (
   )
 ;
 
+/**
+  Retrieves a pointer to a Null-terminated ASCII string containing the list
+  of languages that an HII handle in the HII Database supports.  The returned
+  string is allocated using AllocatePool().  The caller is responsible for freeing
+  the returned string using FreePool().  The format of the returned string follows
+  the language format assumed the HII Database.
+
+  If HiiHandle is NULL, then ASSERT().
+
+  @param[in]  HiiHandle  A handle that was previously registered in the HII Database.
+
+  @retval NULL   HiiHandle is not registered in the HII database
+  @retval NULL   There are not enough resources available to retrieve the supported
+                 languages.
+  @retval NULL   The list of supported languages could not be retrieved.
+  @retval Other  A pointer to the Null-terminated ASCII string of supported languages.
+
+**/
+CHAR8 *
+GetSupportedLanguages (
+  IN EFI_HII_HANDLE           HiiHandle
+  );
+
+/**
+This function mainly use to get HiiDatabase information.
+
+@param  This                   A pointer to the EFI_HII_DATABASE_PROTOCOL instance.
+
+@retval EFI_SUCCESS            Get the information successfully.
+@retval EFI_OUT_OF_RESOURCES   Not enough memory to store the Hiidatabase data.
+
+**/
+EFI_STATUS
+HiiGetDatabaseInfo (
+  IN CONST EFI_HII_DATABASE_PROTOCOL        *This
+  );
+
+/**
+This function mainly use to get and update ConfigResp string.
+
+@param  This                   A pointer to the EFI_HII_DATABASE_PROTOCOL instance.
+
+@retval EFI_SUCCESS            Get the information successfully.
+@retval EFI_OUT_OF_RESOURCES   Not enough memory to store the Configuration Setting data.
+
+**/
+EFI_STATUS
+HiiGetConfigRespInfo (
+  IN CONST EFI_HII_DATABASE_PROTOCOL        *This
+  );
+
 //
 // Global variables
 //
 extern EFI_EVENT gHiiKeyboardLayoutChanged;
+extern BOOLEAN   gExportAfterReadyToBoot;
+
 #endif

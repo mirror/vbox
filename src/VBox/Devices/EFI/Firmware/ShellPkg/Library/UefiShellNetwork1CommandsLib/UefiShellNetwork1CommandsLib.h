@@ -1,15 +1,9 @@
 /** @file
   header file for NULL named library for network1 shell command functions.
 
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved. <BR>
+  Copyright (c) 2010 - 2016, Intel Corporation. All rights reserved. <BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -17,7 +11,6 @@
 #define _UEFI_SHELL_NETWORK1_COMMANDS_LIB_H_
 
 #include <Uefi.h>
-#include <ShellBase.h>
 
 #include <Guid/ShellLibHiiGuid.h>
 
@@ -26,9 +19,7 @@
 #include <Protocol/Ip6.h>
 #include <Protocol/Ip6Config.h>
 #include <Protocol/Ip4.h>
-#include <Protocol/Ip4Config.h>
-#include <Protocol/HiiConfigAccess.h>
-#include <Protocol/HiiConfigRouting.h>
+#include <Protocol/Ip4Config2.h>
 #include <Protocol/Arp.h>
 
 #include <Library/BaseLib.h>
@@ -46,8 +37,6 @@
 #include <Library/NetLib.h>
 #include <Library/DevicePathLib.h>
 #include <Library/PrintLib.h>
-
-#include <Guid/NicIp4ConfigNvData.h>
 
 extern EFI_HANDLE gShellNetwork1HiiHandle;
 

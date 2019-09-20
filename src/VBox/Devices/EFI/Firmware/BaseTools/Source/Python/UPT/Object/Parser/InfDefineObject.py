@@ -2,15 +2,9 @@
 # This file is used to define class objects of [Defines] section for INF file.
 # It will consumed by InfParser
 #
-# Copyright (c) 2011 - 2014, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2011 - 2018, Intel Corporation. All rights reserved.<BR>
 #
-# This program and the accompanying materials are licensed and made available
-# under the terms and conditions of the BSD License which accompanies this
-# distribution. The full text of the license may be found at
-# http://opensource.org/licenses/bsd-license.php
-#
-# THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-# WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+# SPDX-License-Identifier: BSD-2-Clause-Patent
 
 '''
 InfDefineObject
@@ -23,7 +17,7 @@ from Logger import StringTable as ST
 from Logger import ToolError
 from Library import GlobalData
 from Library import DataType as DT
-from Library.String import GetSplitValueList
+from Library.StringUtils import GetSplitValueList
 from Library.Misc import CheckGuidRegFormat
 from Library.Misc import Sdict
 from Library.Misc import ConvPathFromAbsToRel
@@ -62,7 +56,7 @@ class InfDefSectionOptionRomInfo():
         #
         # Value has been set before.
         #
-        if self.PciVendorId != None:
+        if self.PciVendorId is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND%(DT.TAB_INF_DEFINES_PCI_VENDOR_ID),
                        LineInfo=self.CurrentLine)
             return False
@@ -86,7 +80,7 @@ class InfDefSectionOptionRomInfo():
         #
         # Value has been set before.
         #
-        if self.PciDeviceId != None:
+        if self.PciDeviceId is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND%(DT.TAB_INF_DEFINES_PCI_DEVICE_ID),
                        LineInfo=self.CurrentLine)
             return False
@@ -110,7 +104,7 @@ class InfDefSectionOptionRomInfo():
         #
         # Value has been set before.
         #
-        if self.PciClassCode != None:
+        if self.PciClassCode is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND%(DT.TAB_INF_DEFINES_PCI_CLASS_CODE),
                        LineInfo=self.CurrentLine)
             return False
@@ -135,7 +129,7 @@ class InfDefSectionOptionRomInfo():
         #
         # Value has been set before.
         #
-        if self.PciRevision != None:
+        if self.PciRevision is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND%(DT.TAB_INF_DEFINES_PCI_REVISION),
                        LineInfo=self.CurrentLine)
             return False
@@ -159,7 +153,7 @@ class InfDefSectionOptionRomInfo():
         #
         # Value has been set before.
         #
-        if self.PciCompress != None:
+        if self.PciCompress is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND%(DT.TAB_INF_DEFINES_PCI_COMPRESS),
                        LineInfo=self.CurrentLine)
             return False
@@ -215,11 +209,11 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.BaseName != None:
+        if self.BaseName is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND%(DT.TAB_INF_DEFINES_BASE_NAME),
                        LineInfo=self.CurrentLine)
             return False
-        if not (BaseName == '' or BaseName == None):
+        if not (BaseName == '' or BaseName is None):
             if IsValidWord(BaseName) and not BaseName.startswith("_"):
                 self.BaseName = InfDefMember()
                 self.BaseName.SetValue(BaseName)
@@ -243,7 +237,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.FileGuid != None:
+        if self.FileGuid is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND\
                        %(DT.TAB_INF_DEFINES_FILE_GUID),
                        LineInfo=self.CurrentLine)
@@ -274,7 +268,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.ModuleType != None:
+        if self.ModuleType is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND\
                        %(DT.TAB_INF_DEFINES_MODULE_TYPE),
                        LineInfo=self.CurrentLine)
@@ -309,7 +303,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
     def SetModuleUniFileName(self, ModuleUniFileName, Comments):
         if Comments:
             pass
-        if self.ModuleUniFileName != None:
+        if self.ModuleUniFileName is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND%(DT.TAB_INF_DEFINES_MODULE_UNI_FILE),
                        LineInfo=self.CurrentLine)
         self.ModuleUniFileName = ModuleUniFileName
@@ -327,7 +321,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.InfVersion != None:
+        if self.InfVersion is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND\
                        %(DT.TAB_INF_DEFINES_INF_VERSION),
                        LineInfo=self.CurrentLine)
@@ -340,15 +334,20 @@ class InfDefSection(InfDefSectionOptionRomInfo):
                 ErrorInInf(ST.ERR_INF_PARSER_NOT_SUPPORT_EDKI_INF,
                            ErrorCode=ToolError.EDK1_INF_ERROR,
                            LineInfo=self.CurrentLine)
-
-            self.InfVersion = InfDefMember()
-            self.InfVersion.SetValue(InfVersion)
-            self.InfVersion.Comments = Comments
-            return True
+        elif IsValidDecVersionVal(InfVersion):
+            if (InfVersion < 65541):
+                ErrorInInf(ST.ERR_INF_PARSER_NOT_SUPPORT_EDKI_INF,
+                           ErrorCode=ToolError.EDK1_INF_ERROR,
+                           LineInfo=self.CurrentLine)
         else:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_FROMAT_INVALID%(InfVersion),
                        LineInfo=self.CurrentLine)
             return False
+
+        self.InfVersion = InfDefMember()
+        self.InfVersion.SetValue(InfVersion)
+        self.InfVersion.Comments = Comments
+        return True
 
     ## GetInfVersion
     #
@@ -363,7 +362,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.EdkReleaseVersion != None:
+        if self.EdkReleaseVersion is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND\
                        %(DT.TAB_INF_DEFINES_EDK_RELEASE_VERSION),
                        LineInfo=self.CurrentLine)
@@ -396,7 +395,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.UefiSpecificationVersion != None:
+        if self.UefiSpecificationVersion is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND\
                        %(DT.TAB_INF_DEFINES_UEFI_SPECIFICATION_VERSION),
                        LineInfo=self.CurrentLine)
@@ -429,7 +428,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.PiSpecificationVersion != None:
+        if self.PiSpecificationVersion is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND\
                        %(DT.TAB_INF_DEFINES_PI_SPECIFICATION_VERSION),
                        LineInfo=self.CurrentLine)
@@ -490,7 +489,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.VersionString != None:
+        if self.VersionString is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND\
                        %(DT.TAB_INF_DEFINES_VERSION_STRING),
                        LineInfo=self.CurrentLine)
@@ -512,7 +511,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.PcdIsDriver != None:
+        if self.PcdIsDriver is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND\
                        %(DT.TAB_INF_DEFINES_PCD_IS_DRIVER),
                        LineInfo=self.CurrentLine)
@@ -705,7 +704,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.Shadow != None:
+        if self.Shadow is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND%(DT.TAB_INF_DEFINES_SHADOW),
                        LineInfo=self.CurrentLine)
             return False
@@ -726,7 +725,7 @@ class InfDefSection(InfDefSectionOptionRomInfo):
     # <CustomMake>           ::=  [<Family> "|"] <Filename>
     #
     def SetCustomMakefile(self, CustomMakefile, Comments):
-        if not (CustomMakefile == '' or CustomMakefile == None):
+        if not (CustomMakefile == '' or CustomMakefile is None):
             ValueList = GetSplitValueList(CustomMakefile)
             if len(ValueList) == 1:
                 FileName = ValueList[0]
@@ -806,12 +805,12 @@ class InfDefSection(InfDefSectionOptionRomInfo):
         #
         # Value has been set before.
         #
-        if self.UefiHiiResourceSection != None:
+        if self.UefiHiiResourceSection is not None:
             ErrorInInf(ST.ERR_INF_PARSER_DEFINE_ITEM_MORE_THAN_ONE_FOUND
                        %(DT.TAB_INF_DEFINES_UEFI_HII_RESOURCE_SECTION),
                        LineInfo=self.CurrentLine)
             return False
-        if not (UefiHiiResourceSection == '' or UefiHiiResourceSection == None):
+        if not (UefiHiiResourceSection == '' or UefiHiiResourceSection is None):
             if (IsValidBoolType(UefiHiiResourceSection)):
                 self.UefiHiiResourceSection = InfDefMember()
                 self.UefiHiiResourceSection.SetValue(UefiHiiResourceSection)
@@ -943,7 +942,7 @@ class InfDefObject(InfSectionCommonDef):
                            RaiseError=True)
             if Name == DT.TAB_INF_DEFINES_INF_VERSION:
                 HasFoundInfVersionFalg = True
-            if not (Name == '' or Name == None):
+            if not (Name == '' or Name is None):
                 #
                 # Process "SPEC" Keyword definition.
                 #
@@ -952,7 +951,7 @@ class InfDefObject(InfSectionCommonDef):
                     SpecValue = Name[Name.find("SPEC") + len("SPEC"):].strip()
                     Name = "SPEC"
                     Value = SpecValue + " = " + Value
-                if self.Defines.has_key(ArchListString):
+                if ArchListString in self.Defines:
                     DefineList = self.Defines[ArchListString]
                     LineInfo[0] = InfDefMemberObj.CurrentLine.GetFileName()
                     LineInfo[1] = InfDefMemberObj.CurrentLine.GetLineNo()
@@ -966,7 +965,7 @@ class InfDefObject(InfSectionCommonDef):
                                    LineInfo=LineInfo)
                     else:
                         ProcessFunc = gFUNCTION_MAPPING_FOR_DEFINE_SECTION[Name]
-                    if (ProcessFunc != None):
+                    if (ProcessFunc is not None):
                         ProcessFunc(DefineList, Value, InfLineCommentObj)
                     self.Defines[ArchListString] = DefineList
                 else:
@@ -986,7 +985,7 @@ class InfDefObject(InfSectionCommonDef):
                     #
                     else:
                         ProcessFunc = gFUNCTION_MAPPING_FOR_DEFINE_SECTION[Name]
-                    if (ProcessFunc != None):
+                    if (ProcessFunc is not None):
                         ProcessFunc(DefineList, Value, InfLineCommentObj)
                     self.Defines[ArchListString] = DefineList
         #
@@ -1000,4 +999,4 @@ class InfDefObject(InfSectionCommonDef):
 
     def GetDefines(self):
         return self.Defines
-        
+

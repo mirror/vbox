@@ -1,14 +1,8 @@
 /** @file
   64-bit logical right shift function for IA-32
 
-  Copyright (c) 2006 - 2008, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2006 - 2015, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -40,8 +34,10 @@ InternalMathRShiftU64 (
     xor     edx, edx
     mov     eax, dword ptr [Operand + 4]
     test    cl, 32
-    cmovz   edx, eax
-    cmovz   eax, dword ptr [Operand + 0]
+    jnz     L0
+    mov     edx, eax
+    mov     eax, dword ptr [Operand + 0]
+L0:
     shrd    eax, edx, cl
     shr     edx, cl
   }

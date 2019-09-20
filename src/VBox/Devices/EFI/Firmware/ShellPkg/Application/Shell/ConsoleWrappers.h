@@ -1,15 +1,9 @@
 /** @file
   Function definitions for shell simple text in and out on top of file handles.
 
-  Copyright (c) 2013 Hewlett-Packard Development Company, L.P.
-  Copyright (c) 2010 - 2011, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  (C) Copyright 2013 Hewlett-Packard Development Company, L.P.<BR>
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -27,7 +21,6 @@
   @return                     A pointer to the allocated protocol structure;
 **/
 EFI_SIMPLE_TEXT_INPUT_PROTOCOL*
-EFIAPI
 CreateSimpleTextInOnFile(
   IN SHELL_FILE_HANDLE  FileHandleToUse,
   IN EFI_HANDLE         *HandleLocation
@@ -42,7 +35,6 @@ CreateSimpleTextInOnFile(
   @retval EFI_SUCCESS         The object was closed.
 **/
 EFI_STATUS
-EFIAPI
 CloseSimpleTextInOnFile(
   IN EFI_SIMPLE_TEXT_INPUT_PROTOCOL  *SimpleTextIn
   );
@@ -59,7 +51,6 @@ CloseSimpleTextInOnFile(
   @return                     A pointer to the allocated protocol structure;
 **/
 EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL*
-EFIAPI
 CreateSimpleTextOutOnFile(
   IN SHELL_FILE_HANDLE               FileHandleToUse,
   IN EFI_HANDLE                      *HandleLocation,
@@ -75,7 +66,6 @@ CreateSimpleTextOutOnFile(
   @retval EFI_SUCCESS         The object was closed.
 **/
 EFI_STATUS
-EFIAPI
 CloseSimpleTextOutOnFile(
   IN EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL  *SimpleTextOut
   );

@@ -2,14 +2,8 @@
   The internal header file includes the common header files, defines
   internal structure and functions used by SmmCore module.
 
-  Copyright (c) 2009 - 2014, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials are licensed and made available
-  under the terms and conditions of the BSD License which accompanies this
-  distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2009 - 2019, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -29,16 +23,25 @@
 #include <Protocol/DevicePath.h>
 #include <Protocol/Security.h>
 #include <Protocol/Security2.h>
+#include <Protocol/SmmExitBootServices.h>
+#include <Protocol/SmmLegacyBoot.h>
+#include <Protocol/SmmReadyToBoot.h>
+#include <Protocol/SmmMemoryAttribute.h>
+#include <Protocol/SmmSxDispatch2.h>
 
 #include <Guid/Apriori.h>
 #include <Guid/EventGroup.h>
 #include <Guid/EventLegacyBios.h>
-#include <Guid/ZeroGuid.h>
 #include <Guid/MemoryProfile.h>
+#include <Guid/LoadModuleAtFixedAddress.h>
+#include <Guid/SmiHandlerProfile.h>
+#include <Guid/EndOfS3Resume.h>
+#include <Guid/S3SmmInitDone.h>
 
 #include <Library/BaseLib.h>
 #include <Library/BaseMemoryLib.h>
 #include <Library/PeCoffLib.h>
+#include <Library/PeCoffGetEntryPointLib.h>
 #include <Library/CacheMaintenanceLib.h>
 #include <Library/DebugLib.h>
 #include <Library/ReportStatusCodeLib.h>
@@ -49,11 +52,11 @@
 #include <Library/PcdLib.h>
 #include <Library/SmmCorePlatformHookLib.h>
 #include <Library/PerformanceLib.h>
-#include <Library/TimerLib.h>
 #include <Library/HobLib.h>
 #include <Library/SmmMemLib.h>
 
 #include "PiSmmCorePrivateData.h"
+#include "HeapGuard.h"
 
 //
 // Used to build a table of SMI Handlers that the SMM Core registers
@@ -64,6 +67,32 @@ typedef struct {
   EFI_HANDLE                    DispatchHandle;
   BOOLEAN                       UnRegister;
 } SMM_CORE_SMI_HANDLERS;
+
+//
+// SMM_HANDLER - used for each SMM handler
+//
+
+#define SMI_ENTRY_SIGNATURE  SIGNATURE_32('s','m','i','e')
+
+ typedef struct {
+  UINTN       Signature;
+  LIST_ENTRY  AllEntries;  // All entries
+
+  EFI_GUID    HandlerType; // Type of interrupt
+  LIST_ENTRY  SmiHandlers; // All handlers
+} SMI_ENTRY;
+
+#define SMI_HANDLER_SIGNATURE  SIGNATURE_32('s','m','i','h')
+
+ typedef struct {
+  UINTN                         Signature;
+  LIST_ENTRY                    Link;        // Link on SMI_ENTRY.SmiHandlers
+  EFI_SMM_HANDLER_ENTRY_POINT2  Handler;     // The smm handler's entry point
+  UINTN                         CallerAddr;  // The address of caller who register the SMI handler.
+  SMI_ENTRY                     *SmiEntry;
+  VOID                          *Context;    // for profile
+  UINTN                         ContextSize; // for profile
+} SMI_HANDLER;
 
 //
 // Structure for recording the state of an SMM Driver
@@ -107,9 +136,11 @@ typedef struct {
   // Image Page Number
   //
   UINTN                           NumberOfPage;
+  EFI_HANDLE                      SmmImageHandle;
+  EFI_LOADED_IMAGE_PROTOCOL       SmmLoadedImage;
 } EFI_SMM_DRIVER_ENTRY;
 
-#define EFI_HANDLE_SIGNATURE            SIGNATURE_32('h','n','d','l')
+#define EFI_HANDLE_SIGNATURE            SIGNATURE_32('s','h','d','l')
 
 ///
 /// IHANDLE - contains a list of protocol handles
@@ -125,7 +156,7 @@ typedef struct {
 
 #define ASSERT_IS_HANDLE(a)  ASSERT((a)->Signature == EFI_HANDLE_SIGNATURE)
 
-#define PROTOCOL_ENTRY_SIGNATURE        SIGNATURE_32('p','r','t','e')
+#define PROTOCOL_ENTRY_SIGNATURE        SIGNATURE_32('s','p','t','e')
 
 ///
 /// PROTOCOL_ENTRY - each different protocol has 1 entry in the protocol
@@ -144,7 +175,7 @@ typedef struct {
   LIST_ENTRY          Notify;
 } PROTOCOL_ENTRY;
 
-#define PROTOCOL_INTERFACE_SIGNATURE  SIGNATURE_32('p','i','f','c')
+#define PROTOCOL_INTERFACE_SIGNATURE  SIGNATURE_32('s','p','i','f')
 
 ///
 /// PROTOCOL_INTERFACE - each protocol installed on a handle is tracked
@@ -164,7 +195,7 @@ typedef struct {
   VOID                        *Interface;
 } PROTOCOL_INTERFACE;
 
-#define PROTOCOL_NOTIFY_SIGNATURE       SIGNATURE_32('p','r','t','n')
+#define PROTOCOL_NOTIFY_SIGNATURE       SIGNATURE_32('s','p','t','n')
 
 ///
 /// PROTOCOL_NOTIFY - used for each register notification for a protocol
@@ -284,6 +315,7 @@ SmmAllocatePages (
   @param  NumberOfPages          The number of pages to allocate
   @param  Memory                 A pointer to receive the base allocated memory
                                  address
+  @param  NeedGuard              Flag to indicate Guard page is needed or not
 
   @retval EFI_INVALID_PARAMETER  Parameters violate checking rules defined in spec.
   @retval EFI_NOT_FOUND          Could not allocate pages match the requirement.
@@ -297,7 +329,8 @@ SmmInternalAllocatePages (
   IN      EFI_ALLOCATE_TYPE         Type,
   IN      EFI_MEMORY_TYPE           MemoryType,
   IN      UINTN                     NumberOfPages,
-  OUT     EFI_PHYSICAL_ADDRESS      *Memory
+  OUT     EFI_PHYSICAL_ADDRESS      *Memory,
+  IN      BOOLEAN                   NeedGuard
   );
 
 /**
@@ -307,7 +340,7 @@ SmmInternalAllocatePages (
   @param  NumberOfPages          The number of pages to free
 
   @retval EFI_NOT_FOUND          Could not find the entry that covers the range
-  @retval EFI_INVALID_PARAMETER  Address not aligned
+  @retval EFI_INVALID_PARAMETER  Address not aligned, Address is zero or NumberOfPages is zero.
   @return EFI_SUCCESS            Pages successfully freed.
 
 **/
@@ -323,9 +356,11 @@ SmmFreePages (
 
   @param  Memory                 Base address of memory being freed
   @param  NumberOfPages          The number of pages to free
+  @param  IsGuarded              Flag to indicate if the memory is guarded
+                                 or not
 
   @retval EFI_NOT_FOUND          Could not find the entry that covers the range
-  @retval EFI_INVALID_PARAMETER  Address not aligned
+  @retval EFI_INVALID_PARAMETER  Address not aligned, Address is zero or NumberOfPages is zero.
   @return EFI_SUCCESS            Pages successfully freed.
 
 **/
@@ -333,7 +368,8 @@ EFI_STATUS
 EFIAPI
 SmmInternalFreePages (
   IN      EFI_PHYSICAL_ADDRESS      Memory,
-  IN      UINTN                     NumberOfPages
+  IN      UINTN                     NumberOfPages,
+  IN      BOOLEAN                   IsGuarded
   );
 
 /**
@@ -548,6 +584,38 @@ SmmLocateProtocol (
   );
 
 /**
+  Function returns an array of handles that support the requested protocol
+  in a buffer allocated from pool. This is a version of SmmLocateHandle()
+  that allocates a buffer for the caller.
+
+  @param  SearchType             Specifies which handle(s) are to be returned.
+  @param  Protocol               Provides the protocol to search by.    This
+                                 parameter is only valid for SearchType
+                                 ByProtocol.
+  @param  SearchKey              Supplies the search key depending on the
+                                 SearchType.
+  @param  NumberHandles          The number of handles returned in Buffer.
+  @param  Buffer                 A pointer to the buffer to return the requested
+                                 array of  handles that support Protocol.
+
+  @retval EFI_SUCCESS            The result array of handles was returned.
+  @retval EFI_NOT_FOUND          No handles match the search.
+  @retval EFI_OUT_OF_RESOURCES   There is not enough pool memory to store the
+                                 matching results.
+  @retval EFI_INVALID_PARAMETER  One or more paramters are not valid.
+
+**/
+EFI_STATUS
+EFIAPI
+SmmLocateHandleBuffer (
+  IN     EFI_LOCATE_SEARCH_TYPE  SearchType,
+  IN     EFI_GUID                *Protocol OPTIONAL,
+  IN     VOID                    *SearchKey OPTIONAL,
+  IN OUT UINTN                   *NumberHandles,
+  OUT    EFI_HANDLE              **Buffer
+  );
+
+/**
   Manage SMI of a particular type.
 
   @param  HandlerType    Points to the handler type or NULL for root SMI handlers.
@@ -690,6 +758,96 @@ SmmEndOfDxeHandler (
   IN     CONST VOID               *Context,        OPTIONAL
   IN OUT VOID                     *CommBuffer,     OPTIONAL
   IN OUT UINTN                    *CommBufferSize  OPTIONAL
+  );
+
+/**
+  This function is the main entry point for an SMM handler dispatch
+  or communicate-based callback.
+
+  @param  DispatchHandle  The unique handle assigned to this handler by SmiHandlerRegister().
+  @param  Context         Points to an optional handler context which was specified when the handler was registered.
+  @param  CommBuffer      A pointer to a collection of data in memory that will
+                          be conveyed from a non-SMM environment into an SMM environment.
+  @param  CommBufferSize  The size of the CommBuffer.
+
+  @return Status Code
+
+**/
+EFI_STATUS
+EFIAPI
+SmmExitBootServicesHandler (
+  IN     EFI_HANDLE               DispatchHandle,
+  IN     CONST VOID               *Context,        OPTIONAL
+  IN OUT VOID                     *CommBuffer,     OPTIONAL
+  IN OUT UINTN                    *CommBufferSize  OPTIONAL
+  );
+
+/**
+  This function is the main entry point for an SMM handler dispatch
+  or communicate-based callback.
+
+  @param  DispatchHandle  The unique handle assigned to this handler by SmiHandlerRegister().
+  @param  Context         Points to an optional handler context which was specified when the handler was registered.
+  @param  CommBuffer      A pointer to a collection of data in memory that will
+                          be conveyed from a non-SMM environment into an SMM environment.
+  @param  CommBufferSize  The size of the CommBuffer.
+
+  @return Status Code
+
+**/
+EFI_STATUS
+EFIAPI
+SmmReadyToBootHandler (
+  IN     EFI_HANDLE               DispatchHandle,
+  IN     CONST VOID               *Context,        OPTIONAL
+  IN OUT VOID                     *CommBuffer,     OPTIONAL
+  IN OUT UINTN                    *CommBufferSize  OPTIONAL
+  );
+
+/**
+  Software SMI handler that is called when the S3SmmInitDone signal is triggered.
+  This function installs the SMM S3SmmInitDone Protocol so SMM Drivers are informed that
+  S3 SMM initialization has been done.
+
+  @param  DispatchHandle  The unique handle assigned to this handler by SmiHandlerRegister().
+  @param  Context         Points to an optional handler context which was specified when the handler was registered.
+  @param  CommBuffer      A pointer to a collection of data in memory that will
+                          be conveyed from a non-SMM environment into an SMM environment.
+  @param  CommBufferSize  The size of the CommBuffer.
+
+  @return Status Code
+
+**/
+EFI_STATUS
+EFIAPI
+SmmS3SmmInitDoneHandler (
+  IN     EFI_HANDLE  DispatchHandle,
+  IN     CONST VOID  *Context,        OPTIONAL
+  IN OUT VOID        *CommBuffer,     OPTIONAL
+  IN OUT UINTN       *CommBufferSize  OPTIONAL
+  );
+
+/**
+  Software SMI handler that is called when the EndOfS3Resume event is trigged.
+  This function installs the SMM EndOfS3Resume Protocol so SMM Drivers are informed that
+  S3 resume has finished.
+
+  @param  DispatchHandle  The unique handle assigned to this handler by SmiHandlerRegister().
+  @param  Context         Points to an optional handler context which was specified when the handler was registered.
+  @param  CommBuffer      A pointer to a collection of data in memory that will
+                          be conveyed from a non-SMM environment into an SMM environment.
+  @param  CommBufferSize  The size of the CommBuffer.
+
+  @return Status Code
+
+**/
+EFI_STATUS
+EFIAPI
+SmmEndOfS3ResumeHandler (
+  IN     EFI_HANDLE  DispatchHandle,
+  IN     CONST VOID  *Context,        OPTIONAL
+  IN OUT VOID        *CommBuffer,     OPTIONAL
+  IN OUT UINTN       *CommBufferSize  OPTIONAL
   );
 
 /**
@@ -838,16 +996,27 @@ SmramProfileInit (
   );
 
 /**
+  Install SMRAM profile protocol.
+
+**/
+VOID
+SmramProfileInstallProtocol (
+  VOID
+  );
+
+/**
   Register SMM image to SMRAM profile.
 
   @param DriverEntry    SMM image info.
   @param RegisterToDxe  Register image to DXE.
 
-  @retval TRUE          Register success.
-  @retval FALSE         Register fail.
+  @return EFI_SUCCESS           Register successfully.
+  @return EFI_UNSUPPORTED       Memory profile unsupported,
+                                or memory profile for the image is not required.
+  @return EFI_OUT_OF_RESOURCES  No enough resource for this register.
 
 **/
-BOOLEAN
+EFI_STATUS
 RegisterSmramProfileImage (
   IN EFI_SMM_DRIVER_ENTRY   *DriverEntry,
   IN BOOLEAN                RegisterToDxe
@@ -859,11 +1028,13 @@ RegisterSmramProfileImage (
   @param DriverEntry        SMM image info.
   @param UnregisterToDxe    Unregister image from DXE.
 
-  @retval TRUE              Unregister success.
-  @retval FALSE             Unregister fail.
+  @return EFI_SUCCESS           Unregister successfully.
+  @return EFI_UNSUPPORTED       Memory profile unsupported,
+                                or memory profile for the image is not required.
+  @return EFI_NOT_FOUND         The image is not found.
 
 **/
-BOOLEAN
+EFI_STATUS
 UnregisterSmramProfileImage (
   IN EFI_SMM_DRIVER_ENTRY   *DriverEntry,
   IN BOOLEAN                UnregisterToDxe
@@ -875,20 +1046,31 @@ UnregisterSmramProfileImage (
   @param CallerAddress  Address of caller who call Allocate or Free.
   @param Action         This Allocate or Free action.
   @param MemoryType     Memory type.
+                        EfiMaxMemoryType means the MemoryType is unknown.
   @param Size           Buffer size.
   @param Buffer         Buffer address.
+  @param ActionString   String for memory profile action.
+                        Only needed for user defined allocate action.
 
-  @retval TRUE          Profile udpate success.
-  @retval FALSE         Profile update fail.
+  @return EFI_SUCCESS           Memory profile is updated.
+  @return EFI_UNSUPPORTED       Memory profile is unsupported,
+                                or memory profile for the image is not required,
+                                or memory profile for the memory type is not required.
+  @return EFI_ACCESS_DENIED     It is during memory profile data getting.
+  @return EFI_ABORTED           Memory profile recording is not enabled.
+  @return EFI_OUT_OF_RESOURCES  No enough resource to update memory profile for allocate action.
+  @return EFI_NOT_FOUND         No matched allocate info found for free action.
 
 **/
-BOOLEAN
+EFI_STATUS
+EFIAPI
 SmmCoreUpdateProfile (
-  IN EFI_PHYSICAL_ADDRESS CallerAddress,
-  IN MEMORY_PROFILE_ACTION Action,
-  IN EFI_MEMORY_TYPE      MemoryType, // Valid for AllocatePages/AllocatePool
-  IN UINTN                Size,       // Valid for AllocatePages/FreePages/AllocatePool
-  IN VOID                 *Buffer
+  IN PHYSICAL_ADDRESS       CallerAddress,
+  IN MEMORY_PROFILE_ACTION  Action,
+  IN EFI_MEMORY_TYPE        MemoryType, // Valid for AllocatePages/AllocatePool
+  IN UINTN                  Size,       // Valid for AllocatePages/FreePages/AllocatePool
+  IN VOID                   *Buffer,
+  IN CHAR8                  *ActionString OPTIONAL
   );
 
 /**
@@ -910,15 +1092,262 @@ SmramProfileReadyToLock (
   );
 
 /**
-  Dump SMRAM infromation.
-
+  Initialize MemoryAttributes support.
 **/
 VOID
-DumpSmramInfo (
+EFIAPI
+SmmCoreInitializeMemoryAttributesTable (
   VOID
+  );
+
+/**
+  This function returns a copy of the current memory map. The map is an array of
+  memory descriptors, each of which describes a contiguous block of memory.
+
+  @param[in, out]  MemoryMapSize          A pointer to the size, in bytes, of the
+                                          MemoryMap buffer. On input, this is the size of
+                                          the buffer allocated by the caller.  On output,
+                                          it is the size of the buffer returned by the
+                                          firmware  if the buffer was large enough, or the
+                                          size of the buffer needed  to contain the map if
+                                          the buffer was too small.
+  @param[in, out]  MemoryMap              A pointer to the buffer in which firmware places
+                                          the current memory map.
+  @param[out]      MapKey                 A pointer to the location in which firmware
+                                          returns the key for the current memory map.
+  @param[out]      DescriptorSize         A pointer to the location in which firmware
+                                          returns the size, in bytes, of an individual
+                                          EFI_MEMORY_DESCRIPTOR.
+  @param[out]      DescriptorVersion      A pointer to the location in which firmware
+                                          returns the version number associated with the
+                                          EFI_MEMORY_DESCRIPTOR.
+
+  @retval EFI_SUCCESS            The memory map was returned in the MemoryMap
+                                 buffer.
+  @retval EFI_BUFFER_TOO_SMALL   The MemoryMap buffer was too small. The current
+                                 buffer size needed to hold the memory map is
+                                 returned in MemoryMapSize.
+  @retval EFI_INVALID_PARAMETER  One of the parameters has an invalid value.
+
+**/
+EFI_STATUS
+EFIAPI
+SmmCoreGetMemoryMap (
+  IN OUT UINTN                  *MemoryMapSize,
+  IN OUT EFI_MEMORY_DESCRIPTOR  *MemoryMap,
+  OUT UINTN                     *MapKey,
+  OUT UINTN                     *DescriptorSize,
+  OUT UINT32                    *DescriptorVersion
+  );
+
+/**
+  Initialize SmiHandler profile feature.
+**/
+VOID
+SmmCoreInitializeSmiHandlerProfile (
+  VOID
+  );
+
+/**
+  This function is called by SmmChildDispatcher module to report
+  a new SMI handler is registered, to SmmCore.
+
+  @param This            The protocol instance
+  @param HandlerGuid     The GUID to identify the type of the handler.
+                         For the SmmChildDispatch protocol, the HandlerGuid
+                         must be the GUID of SmmChildDispatch protocol.
+  @param Handler         The SMI handler.
+  @param CallerAddress   The address of the module who registers the SMI handler.
+  @param Context         The context of the SMI handler.
+                         For the SmmChildDispatch protocol, the Context
+                         must match the one defined for SmmChildDispatch protocol.
+  @param ContextSize     The size of the context in bytes.
+                         For the SmmChildDispatch protocol, the Context
+                         must match the one defined for SmmChildDispatch protocol.
+
+  @retval EFI_SUCCESS           The information is recorded.
+  @retval EFI_OUT_OF_RESOURCES  There is no enough resource to record the information.
+**/
+EFI_STATUS
+EFIAPI
+SmiHandlerProfileRegisterHandler (
+  IN SMI_HANDLER_PROFILE_PROTOCOL   *This,
+  IN EFI_GUID                       *HandlerGuid,
+  IN EFI_SMM_HANDLER_ENTRY_POINT2   Handler,
+  IN PHYSICAL_ADDRESS               CallerAddress,
+  IN VOID                           *Context, OPTIONAL
+  IN UINTN                          ContextSize OPTIONAL
+  );
+
+/**
+  This function is called by SmmChildDispatcher module to report
+  an existing SMI handler is unregistered, to SmmCore.
+
+  @param This            The protocol instance
+  @param HandlerGuid     The GUID to identify the type of the handler.
+                         For the SmmChildDispatch protocol, the HandlerGuid
+                         must be the GUID of SmmChildDispatch protocol.
+  @param Handler         The SMI handler.
+  @param Context         The context of the SMI handler.
+                         If it is NOT NULL, it will be used to check what is registered.
+  @param ContextSize     The size of the context in bytes.
+                         If Context is NOT NULL, it will be used to check what is registered.
+
+  @retval EFI_SUCCESS           The original record is removed.
+  @retval EFI_NOT_FOUND         There is no record for the HandlerGuid and handler.
+**/
+EFI_STATUS
+EFIAPI
+SmiHandlerProfileUnregisterHandler (
+  IN SMI_HANDLER_PROFILE_PROTOCOL   *This,
+  IN EFI_GUID                       *HandlerGuid,
+  IN EFI_SMM_HANDLER_ENTRY_POINT2   Handler,
+  IN VOID                           *Context, OPTIONAL
+  IN UINTN                          ContextSize OPTIONAL
   );
 
 extern UINTN                    mFullSmramRangeCount;
 extern EFI_SMRAM_DESCRIPTOR     *mFullSmramRanges;
+
+extern EFI_SMM_DRIVER_ENTRY       *mSmmCoreDriverEntry;
+
+extern EFI_LOADED_IMAGE_PROTOCOL  *mSmmCoreLoadedImage;
+
+//
+// Page management
+//
+
+typedef struct {
+  LIST_ENTRY  Link;
+  UINTN       NumberOfPages;
+} FREE_PAGE_LIST;
+
+extern LIST_ENTRY  mSmmMemoryMap;
+
+//
+// Pool management
+//
+
+//
+// MIN_POOL_SHIFT must not be less than 5
+//
+#define MIN_POOL_SHIFT  6
+#define MIN_POOL_SIZE   (1 << MIN_POOL_SHIFT)
+
+//
+// MAX_POOL_SHIFT must not be less than EFI_PAGE_SHIFT - 1
+//
+#define MAX_POOL_SHIFT  (EFI_PAGE_SHIFT - 1)
+#define MAX_POOL_SIZE   (1 << MAX_POOL_SHIFT)
+
+//
+// MAX_POOL_INDEX are calculated by maximum and minimum pool sizes
+//
+#define MAX_POOL_INDEX  (MAX_POOL_SHIFT - MIN_POOL_SHIFT + 1)
+
+#define POOL_HEAD_SIGNATURE   SIGNATURE_32('s','p','h','d')
+
+typedef struct {
+  UINT32            Signature;
+  BOOLEAN           Available;
+  EFI_MEMORY_TYPE   Type;
+  UINTN             Size;
+} POOL_HEADER;
+
+#define POOL_TAIL_SIGNATURE   SIGNATURE_32('s','p','t','l')
+
+typedef struct {
+  UINT32            Signature;
+  UINT32            Reserved;
+  UINTN             Size;
+} POOL_TAIL;
+
+#define POOL_OVERHEAD (sizeof(POOL_HEADER) + sizeof(POOL_TAIL))
+
+#define HEAD_TO_TAIL(a)   \
+  ((POOL_TAIL *) (((CHAR8 *) (a)) + (a)->Size - sizeof(POOL_TAIL)));
+
+typedef struct {
+  POOL_HEADER  Header;
+  LIST_ENTRY   Link;
+} FREE_POOL_HEADER;
+
+typedef enum {
+  SmmPoolTypeCode,
+  SmmPoolTypeData,
+  SmmPoolTypeMax,
+} SMM_POOL_TYPE;
+
+extern LIST_ENTRY  mSmmPoolLists[SmmPoolTypeMax][MAX_POOL_INDEX];
+
+/**
+  Internal Function. Allocate n pages from given free page node.
+
+  @param  Pages                  The free page node.
+  @param  NumberOfPages          Number of pages to be allocated.
+  @param  MaxAddress             Request to allocate memory below this address.
+
+  @return Memory address of allocated pages.
+
+**/
+UINTN
+InternalAllocPagesOnOneNode (
+  IN OUT FREE_PAGE_LIST   *Pages,
+  IN     UINTN            NumberOfPages,
+  IN     UINTN            MaxAddress
+  );
+
+/**
+  Update SMM memory map entry.
+
+  @param[in]  Type                   The type of allocation to perform.
+  @param[in]  Memory                 The base of memory address.
+  @param[in]  NumberOfPages          The number of pages to allocate.
+  @param[in]  AddRegion              If this memory is new added region.
+**/
+VOID
+ConvertSmmMemoryMapEntry (
+  IN EFI_MEMORY_TYPE       Type,
+  IN EFI_PHYSICAL_ADDRESS  Memory,
+  IN UINTN                 NumberOfPages,
+  IN BOOLEAN               AddRegion
+  );
+
+/**
+  Internal function.  Moves any memory descriptors that are on the
+  temporary descriptor stack to heap.
+
+**/
+VOID
+CoreFreeMemoryMapStack (
+  VOID
+  );
+
+/**
+  Frees previous allocated pages.
+
+  @param[in]  Memory                 Base address of memory being freed.
+  @param[in]  NumberOfPages          The number of pages to free.
+  @param[in]  AddRegion              If this memory is new added region.
+
+  @retval EFI_NOT_FOUND          Could not find the entry that covers the range.
+  @retval EFI_INVALID_PARAMETER  Address not aligned, Address is zero or NumberOfPages is zero.
+  @return EFI_SUCCESS            Pages successfully freed.
+
+**/
+EFI_STATUS
+SmmInternalFreePagesEx (
+  IN EFI_PHYSICAL_ADDRESS  Memory,
+  IN UINTN                 NumberOfPages,
+  IN BOOLEAN               AddRegion
+  );
+
+/**
+  Hook function used to set all Guard pages after entering SMM mode.
+**/
+VOID
+SmmEntryPointMemoryManagementHook (
+  VOID
+  );
 
 #endif

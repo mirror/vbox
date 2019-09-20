@@ -1,14 +1,8 @@
 /** @file
   Supporting functions for X64 architecture.
 
-  Copyright (c) 2010 - 2013, Intel Corporation. All rights reserved.<BR>
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution.  The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php.
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  Copyright (c) 2010 - 2018, Intel Corporation. All rights reserved.<BR>
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
@@ -28,6 +22,7 @@ InitializeDebugIdt (
   IA32_DESCRIPTOR            IdtDescriptor;
   UINTN                      Index;
   UINT16                     CodeSegment;
+  UINT32                     RegEdx;
 
   AsmReadIdtr (&IdtDescriptor);
 
@@ -61,9 +56,13 @@ InitializeDebugIdt (
   IdtEntry[DEBUG_TIMER_VECTOR].Bits.GateType        = IA32_IDT_GATE_TYPE_INTERRUPT_32;
 
   //
+  // If the CPU supports Debug Extensions(CPUID:01 EDX:BIT2), then
   // Set DE flag in CR4 to enable IO breakpoint
   //
-  AsmWriteCr4 (AsmReadCr4 () | BIT3);
+  AsmCpuid (1, NULL, NULL, NULL, &RegEdx);
+  if ((RegEdx & BIT2) != 0) {
+    AsmWriteCr4 (AsmReadCr4 () | BIT3);
+  }
 }
 
 /**
