@@ -5714,7 +5714,7 @@ void fsPerfMMap(RTFILE hFile1, RTFILE hFileNoCache, uint64_t cbFile)
                 SetLastError(0);
                 if (FlushViewOfFile(pbMapping, cbContent) != TRUE)
                     RTTestIFailed("line %u, i=%u: FlushViewOfFile(%p, %#zx) failed: %u / %#x", __LINE__, i,
-                                  GetLastError(), RTNtLastStatusValue());
+                                  pbMapping, cbContent, GetLastError(), RTNtLastStatusValue());
 #  else
                 RTTESTI_CHECK(msync(pbMapping, cbContent, MS_SYNC) == 0);
 #  endif
