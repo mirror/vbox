@@ -143,11 +143,7 @@
 !ifndef $(VBOX)
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
-!ifdef $(SOURCE_DEBUG_ENABLE)
-  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
-!else
   PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
-!endif
 !endif
   CacheMaintenanceLib|MdePkg/Library/BaseCacheMaintenanceLib/BaseCacheMaintenanceLib.inf
   UefiDecompressLib|MdePkg/Library/BaseUefiDecompressLib/BaseUefiDecompressLib.inf
@@ -195,7 +191,11 @@
   FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
 
 !ifdef $(SOURCE_DEBUG_ENABLE)
+!ifdef $(VBOX)
+  PeCoffExtraActionLib|VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.inf
+!else
   PeCoffExtraActionLib|SourceLevelDebugPkg/Library/PeCoffExtraActionLibDebug/PeCoffExtraActionLibDebug.inf
+!endif
   DebugCommunicationLib|SourceLevelDebugPkg/Library/DebugCommunicationLibSerialPort/DebugCommunicationLibSerialPort.inf
 !else
 !ifdef $(VBOX)
@@ -303,12 +303,11 @@
 !endif
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
+  PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
 !ifdef $(SOURCE_DEBUG_ENABLE)
   DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
-  PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
-  PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
 !endif
 !endif
 
