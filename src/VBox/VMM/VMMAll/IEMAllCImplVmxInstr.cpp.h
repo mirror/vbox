@@ -1732,7 +1732,7 @@ IEM_STATIC void iemVmxVmexitLoadHostControlRegsMsrs(PVMCPUCC pVCpu)
         if (fHostInLongMode)
             uValidHostCr4 |= X86_CR4_PAE;
         else
-            uValidHostCr4 &= ~X86_CR4_PCIDE;
+            uValidHostCr4 &= ~(uint64_t)X86_CR4_PCIDE;
 
         /* Verify we have not modified CR4 fixed bits in VMX non-root operation. */
         Assert((uGuestCr4 &  uCr4Mb1) == uCr4Mb1);
