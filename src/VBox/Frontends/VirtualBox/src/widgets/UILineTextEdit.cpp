@@ -98,7 +98,7 @@ UILineTextEdit::UILineTextEdit(QWidget *pParent /* = NULL */)
   : QIWithRetranslateUI<QPushButton>(pParent)
 {
     connect(this, &UILineTextEdit::clicked,
-        this, &UILineTextEdit::edit);
+            this, &UILineTextEdit::edit);
 
     /* Don't interpret the Enter Key. */
     setAutoDefault(false);
