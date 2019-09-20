@@ -328,7 +328,7 @@ bool UIPopupPane::eventFilter(QObject *pObject, QEvent *pEvent)
         && pObject != m_pMessagePane
         && pObject != m_pButtonPane
         && pObject != m_pDetailsPane)
-        QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
+        return QIWithRetranslateUI<QWidget>::eventFilter(pObject, pEvent);
 
     /* Depending on event-type: */
     switch (pEvent->type())
