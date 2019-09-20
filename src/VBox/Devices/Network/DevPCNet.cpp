@@ -3424,6 +3424,21 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
     int      i;
     uint16_t checksum;
 
+    /* Lower any raised interrupts, see @bugref(9556) */
+    if (RT_UNLIKELY(pThis->iISR))
+    {
+        pThis->iISR = 0;
+        if (!PCNET_IS_ISA(pThis))
+        {
+            Log(("#%d INTA=%d\n", PCNET_INST_NR, pThis->iISR));
+            PDMDevHlpPCISetIrq(PCNETSTATE_2_DEVINS(pThis), 0, pThis->iISR);
+        }
+        else
+        {
+            Log(("#%d IRQ=%d, state=%d\n", PCNET_INST_NR, pThis->uIsaIrq, pThis->iISR));
+            PDMDevHlpISASetIrq(PCNETSTATE_2_DEVINS(pThis), pThis->uIsaIrq, pThis->iISR);
+        }
+    }
     /* Initialize the PROM */
     Assert(sizeof(pThis->MacConfigured) == 6);
     memcpy(pThis->aPROM, &pThis->MacConfigured, sizeof(pThis->MacConfigured));

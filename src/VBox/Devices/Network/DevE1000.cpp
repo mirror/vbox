@@ -1637,6 +1637,14 @@ static void e1kWakeupReceive(PPDMDEVINS pDevIns)
 static void e1kHardReset(PE1KSTATE pThis)
 {
     E1kLog(("%s Hard reset triggered\n", pThis->szPrf));
+    /* No interrupts should survive device reset, see @bugref(9556). */
+    if (pThis->fIntRaised)
+    {
+        /* Lower(0) INTA(0) */
+        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0);
+        pThis->fIntRaised = false;
+        E1kLog(("%s e1kHardReset: Lowered IRQ: ICR=%08x\n", pThis->szPrf, ICR));
+    }
     memset(pThis->auRegs,        0, sizeof(pThis->auRegs));
     memset(pThis->aRecAddr.au32, 0, sizeof(pThis->aRecAddr.au32));
 #ifdef E1K_INIT_RA0
