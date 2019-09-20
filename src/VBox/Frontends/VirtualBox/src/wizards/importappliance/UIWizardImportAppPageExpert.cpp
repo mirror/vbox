@@ -64,7 +64,7 @@ UIWizardImportAppPageExpert::UIWizardImportAppPageExpert(bool fImportFromOCIByDe
                 }
 
                 /* Create stacked layout: */
-                m_pStackedLayout = new QStackedLayout(m_pCntSource);
+                m_pStackedLayout = new QStackedLayout;
                 if (m_pStackedLayout)
                 {
                     /* Create local container: */
