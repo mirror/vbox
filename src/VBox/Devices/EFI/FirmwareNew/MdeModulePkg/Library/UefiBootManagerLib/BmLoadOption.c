@@ -1209,6 +1209,18 @@ BmIsLoadOptionPeHeaderValid (
     return FALSE;
   }
 
+#ifdef VBOX
+  /*
+   * Check for Fat/Universal EFI binaries provided by older macOS versions
+   * (Mountain Lion and older).
+   *
+   * @todo More checks here? (VBoxPeCoffLib will do more thorough checks
+   *       when the image is actually loaded).
+   */
+  if (*(UINT32 *)FileBuffer == 0x0ef1fab9)
+    return TRUE;
+#endif
+
   //
   // Read dos header
   //
