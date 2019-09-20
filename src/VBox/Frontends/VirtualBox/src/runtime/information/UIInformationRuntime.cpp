@@ -101,13 +101,13 @@ private:
 
     void createInfoRows();
     void updateUpTime();
-
+    void updateTitleRow();
 
     /** Searches the table for the @p item of enmLine and replaces its text. if not found inserts a new
       * row to the end of the table. Assumes only one line of the @p enmLine exists. */
     void updateInfoRow(InfoRow enmLine, const QString &strColumn0, const QString &strColumn1);
     QString screenResolution(int iScreenId);
-    /** Creates to QTableWidgetItems of tye @enmInfoRow using the @p strLabel and @p strInfo and inserts it
+    /** Creates to QTableWidgetItems of the @enmInfoRow using the @p strLabel and @p strInfo and inserts it
      * to the row @p iRow. If @p iRow is -1 then the items inserted to the end of the table. */
     void insertInfoRow(InfoRow enmInfoRow, const QString& strLabel, const QString &strInfo, int iRow = -1);
     void computeMinimumWidth();
@@ -243,7 +243,6 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     , m_console(console)
     , m_iMinimumWidth(0)
     , m_pTimer(0)
-
 {
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setAlternatingRowColors(true);
@@ -265,15 +264,6 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
     }
 
     retranslateUi();
-    /* Add the title row: */
-    QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle, InfoRow_Title);
-    QFont titleFont(font());
-    titleFont.setBold(true);
-    pTitleItem->setFont(titleFont);
-    insertRow(0);
-    setItem(0, 0, pTitleItem);
-    /* Make the API calls and populate the table: */
-    createInfoRows();
     computeMinimumWidth();
 }
 
@@ -297,6 +287,9 @@ void UIRuntimeInfoWidget::retranslateUi()
     m_strRemoteDesktopLabel = QApplication::translate("UIVMInformationDialog", "Remote Desktop Server Port");
     m_strNotSet = QApplication::translate("UIVMInformationDialog", "not set");
     m_strNotDetected = QApplication::translate("UIVMInformationDialog", "Not Detected");
+
+    /* Make the API calls and populate the table: */
+    createInfoRows();
 }
 
 QSize UIRuntimeInfoWidget::sizeHint() const
@@ -311,13 +304,13 @@ QSize UIRuntimeInfoWidget::minimumSizeHint() const
 
 void UIRuntimeInfoWidget::insertInfoRow(InfoRow enmInfoRow, const QString& strLabel, const QString &strInfo, int iRow /* = -1 */)
 {
-    int iMargin = 0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     int iNewRow = rowCount();
     if (iRow != -1 && iRow <= iNewRow)
         iNewRow = iRow;
     insertRow(iNewRow);
     setItem(iNewRow, 0, new QTableWidgetItem(strLabel, enmInfoRow));
     setItem(iNewRow, 1, new QTableWidgetItem(strInfo, enmInfoRow));
+    int iMargin = 0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     setRowHeight(iNewRow, 2 * iMargin + m_iFontHeight);
 }
 
@@ -397,6 +390,18 @@ void UIRuntimeInfoWidget::updateUpTime()
     updateInfoRow(InfoRow_Uptime, QString("%1:").arg(m_strUptimeLabel), strUptime);
 }
 
+void UIRuntimeInfoWidget::updateTitleRow()
+{
+    /* Add the title row always as 0th row: */
+    QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle, InfoRow_Title);
+    QFont titleFont(font());
+    titleFont.setBold(true);
+    pTitleItem->setFont(titleFont);
+    if (rowCount() < 1)
+        insertRow(0);
+    setItem(0, 0, pTitleItem);
+}
+
 void UIRuntimeInfoWidget::updateGAsVersion()
 {
     CGuest guest = m_console.GetGuest();
@@ -459,6 +464,10 @@ void UIRuntimeInfoWidget::updateInfoRow(InfoRow enmLine, const QString &strColum
 
 void UIRuntimeInfoWidget::createInfoRows()
 {
+    clear();
+    setRowCount(0);
+    setColumnCount(2);
+    updateTitleRow();
     updateScreenInfo();
     updateUpTime();
 
@@ -648,6 +657,7 @@ void UIChart::retranslateUi()
     m_strGAWarning = QApplication::translate("UIVMInformationDialog", "No guest additions! This metric requires guest additions to work properly.");
     m_strResetActionLabel = QApplication::translate("UIVMInformationDialog", "Reset");
     m_strPieChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Show Pie Chart");
+    update();
 }
 
 void UIChart::paintEvent(QPaintEvent *pEvent)
@@ -1233,6 +1243,7 @@ void UIInformationRuntime::retranslateUi()
                 pInfoLabel->setFixedWidth(iWidth);
         }
     }
+    sltTimeout();
 }
 
 void UIInformationRuntime::prepareObjects()

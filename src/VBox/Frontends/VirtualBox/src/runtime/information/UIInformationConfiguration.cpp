@@ -46,14 +46,12 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
 {
     prepareObjects();
     retranslateUi();
-    createTableItems();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
             this, &UIInformationConfiguration::sltMachineDataChanged);
 }
 
 void UIInformationConfiguration::sltMachineDataChanged()
 {
-    resetTable();
     createTableItems();
 }
 
@@ -68,12 +66,14 @@ void UIInformationConfiguration::retranslateUi()
     m_strSerialPortsTitle = QApplication::translate("UIVMInformationDialog", "Serial Ports");
     m_strUSBTitle = QApplication::translate("UIVMInformationDialog", "USB");
     m_strSharedFoldersTitle = QApplication::translate("UIVMInformationDialog", "Shared Folders");
+    createTableItems();
 }
 
 void UIInformationConfiguration::createTableItems()
 {
     if (!m_pTableWidget)
         return;
+    resetTable();
     QFontMetrics fontMetrics(m_pTableWidget->font());
     QTextDocument textDocument;
 
