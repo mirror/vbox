@@ -53,8 +53,8 @@ void UIPopupStackViewport::createPopupPane(const QString &strID,
 
     /* Attach popup-pane connection: */
     connect(this, &UIPopupStackViewport::sigProposePopupPaneSize, pPopupPane, &UIPopupPane::sltHandleProposalForSize);
-    connect(pPopupPane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltAdjustGeometry()));
-    connect(pPopupPane, SIGNAL(sigDone(int)), this, SLOT(sltPopupPaneDone(int)));
+    connect(pPopupPane, &UIPopupPane::sigSizeHintChanged, this, &UIPopupStackViewport::sltAdjustGeometry);
+    connect(pPopupPane, &UIPopupPane::sigDone, this, &UIPopupStackViewport::sltPopupPaneDone);
 
     /* Show popup-pane: */
     pPopupPane->show();
@@ -208,4 +208,3 @@ void UIPopupStackViewport::layoutContent()
         iY += (iPaneHeight + m_iLayoutSpacing);
     }
 }
-

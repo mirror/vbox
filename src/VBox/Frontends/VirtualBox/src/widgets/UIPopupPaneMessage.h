@@ -71,10 +71,12 @@ public:
     /** Returns the expanded size-hint. */
     QSize expandedSizeHint() const { return m_expandedSizeHint; }
 
-private slots:
+public slots:
 
     /** Handles proposal for @a iWidth. */
     void sltHandleProposalForWidth(int iWidth);
+
+private slots:
 
     /** Handles focus enter. */
     void sltFocusEnter();
@@ -127,4 +129,3 @@ private:
 };
 
 #endif /* !FEQT_INCLUDED_SRC_widgets_UIPopupPaneMessage_h */
-

@@ -109,7 +109,7 @@ void UIPopupPaneButtonPane::prepareButtons()
         {
             m_pButtonLayout->addWidget(pButton);
             m_buttons[iButtonID] = pButton;
-            connect(pButton, SIGNAL(clicked(bool)), this, SLOT(sltButtonClicked()));
+            connect(pButton, &QIToolButton::clicked, this, &UIPopupPaneButtonPane::sltButtonClicked);
             if (pButton->property("default").toBool())
                 m_iDefaultButton = iButtonID;
             if (pButton->property("escape").toBool())
@@ -230,4 +230,3 @@ QIcon UIPopupPaneButtonPane::defaultIcon(int iButtonID)
     }
     return icon;
 }
-

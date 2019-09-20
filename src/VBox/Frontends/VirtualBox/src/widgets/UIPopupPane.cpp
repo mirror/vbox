@@ -250,8 +250,8 @@ void UIPopupPane::prepareContent()
     m_pMessagePane = new UIPopupPaneMessage(this, m_strMessage, m_fFocused);
     {
         /* Configure message-pane: */
-        connect(this, SIGNAL(sigProposePaneWidth(int)), m_pMessagePane, SLOT(sltHandleProposalForWidth(int)));
-        connect(m_pMessagePane, SIGNAL(sigSizeHintChanged()), this, SLOT(sltUpdateSizeHint()));
+        connect(this, &UIPopupPane::sigProposePaneWidth, m_pMessagePane, &UIPopupPaneMessage::sltHandleProposalForWidth);
+        connect(m_pMessagePane, &UIPopupPaneMessage::sigSizeHintChanged, this, &UIPopupPane::sltUpdateSizeHint);
         m_pMessagePane->installEventFilter(this);
     }
 
@@ -259,7 +259,7 @@ void UIPopupPane::prepareContent()
     m_pButtonPane = new UIPopupPaneButtonPane(this);
     {
         /* Configure button-box: */
-        connect(m_pButtonPane, SIGNAL(sigButtonClicked(int)), this, SLOT(sltButtonClicked(int)));
+        connect(m_pButtonPane, &UIPopupPaneButtonPane::sigButtonClicked, this, &UIPopupPane::sltButtonClicked);
         m_pButtonPane->installEventFilter(this);
         m_pButtonPane->setButtons(m_buttonDescriptions);
     }
@@ -293,7 +293,7 @@ void UIPopupPane::prepareAnimation()
     connect(this, SIGNAL(sigToShow()), this, SIGNAL(sigShow()), Qt::QueuedConnection);
     m_pShowAnimation = UIAnimation::installPropertyAnimation(this, "minimumSizeHint", "hiddenSizeHint", "shownSizeHint",
                                                              SIGNAL(sigShow()), SIGNAL(sigHide()));
-    connect(m_pShowAnimation, SIGNAL(sigStateEnteredFinal()), this, SLOT(sltMarkAsShown()));
+    connect(m_pShowAnimation, &UIAnimation::sigStateEnteredFinal, this, &UIPopupPane::sltMarkAsShown);
 
     /* Install 'hover' animation for 'opacity' property: */
     UIAnimation::installPropertyAnimation(this, "opacity", "defaultOpacity", "hoveredOpacity",
@@ -539,4 +539,3 @@ void UIPopupPane::prepareDetailsList(QStringPairList &aDetailsList) const
         aDetailsList << QStringPair(aParts.at(0), aParts.at(1));
     }
 }
-
