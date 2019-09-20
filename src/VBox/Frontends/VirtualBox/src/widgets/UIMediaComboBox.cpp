@@ -65,7 +65,7 @@ void UIMediaComboBox::repopulate()
         CMediumVector comMedia;
         comMedia << uiCommon().host().GetDVDDrives();
         comMedia << uiCommon().virtualBox().GetDVDImages();
-        uiCommon().enumerateAdditionalMedia(comMedia);
+        uiCommon().enumerateMedia(comMedia);
     }
     refresh();
 }

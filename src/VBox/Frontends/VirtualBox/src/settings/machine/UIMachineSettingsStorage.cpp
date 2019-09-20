@@ -3709,7 +3709,7 @@ void UIMachineSettingsStorage::prepare()
 
     /* Start medium-enumeration (only if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().startMediumEnumeration();
+        uiCommon().enumerateMedia();
 
     /* Layout created in the .ui file. */
     AssertPtrReturnVoid(mLtStorage);

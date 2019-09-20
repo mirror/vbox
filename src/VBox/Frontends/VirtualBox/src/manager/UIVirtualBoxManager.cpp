@@ -1271,7 +1271,7 @@ void UIVirtualBoxManager::prepare()
 
     /* Cache medium data early if necessary: */
     if (uiCommon().agressiveCaching())
-        uiCommon().startMediumEnumeration();
+        uiCommon().enumerateMedia();
 
     /* Prepare: */
     prepareIcon();

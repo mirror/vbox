@@ -157,24 +157,15 @@ void UIMediumEnumerator::createMedium(const UIMedium &guiMedium)
     emit sigMediumCreated(uMediumID);
 }
 
-void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
+void UIMediumEnumerator::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
 {
-    /* Make sure we are not already in progress: */
-    AssertReturnVoid(!m_fMediumEnumerationInProgress);
-
     /* Compose new map of currently cached media & their children.
      * While composing we are using data from already cached media. */
     UIMediumMap guiMedia;
     addNullMediumToMap(guiMedia);
-    /* If @p comMedia is empty we start the medium-enumeration with all
-     * known hard disk media. Otherwise only passed comMedia will be
-     * enumerated. But be aware we will enumerate all the optical media
-     * in any case to make them listed within the first run wizard for
-     * now. But I think later we can add proper enumeration call to the
-     * wizard instead and enumerate only comMedia in 'else' case. */
     if (comMedia.isEmpty())
     {
-        m_fFullMediumEnumerationRequested = true;
+        /* Compose new map of all known media & their children: */
         addMediaToMap(uiCommon().virtualBox().GetHardDisks(), guiMedia);
         addMediaToMap(uiCommon().host().GetDVDDrives(), guiMedia);
         addMediaToMap(uiCommon().virtualBox().GetDVDImages(), guiMedia);
@@ -183,7 +174,7 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
     }
     else
     {
-        m_fFullMediumEnumerationRequested = false;
+        /* Compose new map of passed media & their children: */
         addMediaToMap(comMedia, guiMedia);
     }
 
@@ -191,48 +182,19 @@ void UIMediumEnumerator::startMediumEnumeration(const CMediumVector &comMedia /*
     if (UICommon::isCleaningUp())
         return;
 
-    /* Replace existing media map: */
-    m_media = guiMedia;
-
-    /* If enumeration hasn't yet started: */
-    if (!m_fMediumEnumerationInProgress)
+    if (comMedia.isEmpty())
     {
-        /* Notify listener about enumeration started: */
-        LogRel(("GUI: UIMediumEnumerator: Medium-enumeration started...\n"));
-        m_fMediumEnumerationInProgress = true;
-        emit sigMediumEnumerationStarted();
-
-        /* Make sure we really have more than one UIMedium (which is NULL): */
-        if (   guiMedia.size() == 1
-            && guiMedia.first().id() == UIMedium::nullID())
-        {
-            /* Notify listener about enumeration finished instantly: */
-            LogRel(("GUI: UIMediumEnumerator: Medium-enumeration finished!\n"));
-            m_fMediumEnumerationInProgress = false;
-            emit sigMediumEnumerationFinished();
-        }
+        /* Replace existing media map since
+         * we have full medium enumeration: */
+        m_fFullMediumEnumerationRequested = true;
+        m_media = guiMedia;
     }
-
-    /* Start enumeration for media with non-NULL ID: */
-    foreach (const QUuid &uMediumID, guiMedia.keys())
-        if (!uMediumID.isNull())
-            createMediumEnumerationTask(guiMedia[uMediumID]);
-}
-
-void UIMediumEnumerator::enumerateAdditionalMedia(const CMediumVector &comMedia)
-{
-    /* Compose new map of passed medium & it's children.
-     * While composing we are using data from already cached media. */
-    UIMediumMap guiMedia;
-    addMediaToMap(comMedia, guiMedia);
-
-    /* UICommon is cleaning up, abort immediately: */
-    if (UICommon::isCleaningUp())
-        return;
-
-    /* Throw the media to existing map: */
-    foreach (const QUuid &uMediumId, guiMedia.keys())
-        m_media[uMediumId] = guiMedia.value(uMediumId);
+    else
+    {
+        /* Throw the media to existing map: */
+        foreach (const QUuid &uMediumId, guiMedia.keys())
+            m_media[uMediumId] = guiMedia.value(uMediumId);
+    }
 
     /* If enumeration hasn't yet started: */
     if (!m_fMediumEnumerationInProgress)

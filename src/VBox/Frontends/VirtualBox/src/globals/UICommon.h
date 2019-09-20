@@ -481,10 +481,8 @@ public:
 
     /** @name COM: Virtual Media stuff.
      * @{ */
-        /** Starts medium-enumeration. */
-        void startMediumEnumeration(const CMediumVector &comMedia = CMediumVector());
-        /** Enumerates additional media. */
-        void enumerateAdditionalMedia(const CMediumVector &comMedia);
+        /** Enumerates passed @a comMedia. */
+        void enumerateMedia(const CMediumVector &comMedia = CMediumVector());
         /** Calls refresh for each medium which has been already enumerated. */
         void refreshMedia();
         /** Returns whether full medium-enumeration is requested. */

@@ -2536,34 +2536,7 @@ CSession UICommon::tryToOpenSessionFor(CMachine &comMachine)
     return comSession;
 }
 
-void UICommon::startMediumEnumeration(const CMediumVector &comMedia /* = CMediumVector() */)
-{
-    /* Make sure UICommon is already valid: */
-    AssertReturnVoid(m_fValid);
-    /* Ignore the request during UICommon cleanup: */
-    if (s_fCleaningUp)
-        return;
-    /* Ignore the request during startup snapshot restoring: */
-    if (shouldRestoreCurrentSnapshot())
-        return;
-
-    /* Make sure medium-enumerator is already created: */
-    if (!m_pMediumEnumerator)
-        return;
-    /* Make sure enumeration is not already started: */
-    if (m_pMediumEnumerator->isMediumEnumerationInProgress())
-        return;
-
-    /* Redirect request to medium-enumerator under proper lock: */
-    if (m_meCleanupProtectionToken.tryLockForRead())
-    {
-        if (m_pMediumEnumerator)
-            m_pMediumEnumerator->startMediumEnumeration(comMedia);
-        m_meCleanupProtectionToken.unlock();
-    }
-}
-
-void UICommon::enumerateAdditionalMedia(const CMediumVector &comMedia)
+void UICommon::enumerateMedia(const CMediumVector &comMedia /* = CMediumVector() */)
 {
     /* Make sure UICommon is already valid: */
     AssertReturnVoid(m_fValid);
@@ -2582,7 +2555,7 @@ void UICommon::enumerateAdditionalMedia(const CMediumVector &comMedia)
     if (m_meCleanupProtectionToken.tryLockForRead())
     {
         if (m_pMediumEnumerator)
-            m_pMediumEnumerator->enumerateAdditionalMedia(comMedia);
+            m_pMediumEnumerator->enumerateMedia(comMedia);
         m_meCleanupProtectionToken.unlock();
     }
 }
@@ -3347,7 +3320,7 @@ QString UICommon::details(const CMedium &comMedium, bool fPredictDiff, bool fUse
     if (!comMedium.isNull() && guiMedium.isNull())
     {
         /* UI medium may be new and not among our media, request enumeration: */
-        enumerateAdditionalMedia(CMediumVector() << comMedium);
+        enumerateMedia(CMediumVector() << comMedium);
 
         /* Search for corresponding UI medium again: */
         guiMedium = medium(uMediumID);

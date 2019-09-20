@@ -169,7 +169,7 @@ void UIVMInformationDialog::prepare()
 
     /* This is needed at least for some VM to show correct storage info. */
     if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().startMediumEnumeration();
+        uiCommon().enumerateMedia();
 }
 
 void UIVMInformationDialog::prepareThis()

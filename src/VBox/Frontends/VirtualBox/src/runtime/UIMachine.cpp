@@ -209,7 +209,7 @@ bool UIMachine::prepare()
     if (uiCommon().agressiveCaching())
     {
         AssertReturn(m_pSession, false);
-        uiCommon().startMediumEnumeration(m_pSession->machineMedia());
+        uiCommon().enumerateMedia(m_pSession->machineMedia());
     }
 
     /* Prepare machine-logic: */

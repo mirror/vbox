@@ -80,15 +80,13 @@ public:
     /** Returns whether any consolidated medium-enumeration process is in progress. */
     bool isMediumEnumerationInProgress() const { return m_fMediumEnumerationInProgress; }
     /** Makes a request to enumerate specified @a comMedia.
-      * @note  Previous map will be replaced with the new one, values present in both
-      *        maps will be merged from the previous to new one, keep that all in mind.
-      * @note  Empty passed map means that full/overall medium-enumeration is requested. */
-    void startMediumEnumeration(const CMediumVector &comMedia = CMediumVector());
-    /** Makes a request to enumerate additionally specified @a comMedia.
-      * @note  Previous map will be extended with the new one, composed of passed
-      *        media and their children, values present in both maps will be merged
-      *        from the previous to new one, keep that all in mind. */
-    void enumerateAdditionalMedia(const CMediumVector &comMedia);
+      * @note  Empty passed map means that full/overall medium-enumeration is requested.
+      *        In that case previous map will be replaced with the new one, values
+      *        present in both maps will be merged from the previous to new one.
+      * @note  Non-empty passed map means that additional medium-enumeration is requested.
+      *        In that case previous map will be extended with the new one, values
+      *        present in both maps will be merged from the previous to new one. */
+    void enumerateMedia(const CMediumVector &comMedia = CMediumVector());
     /** Refresh all the lightweight UIMedium information for all the cached UIMedium(s).
       * @note  Please note that this is a lightweight version, which doesn't perform
       *        heavy state/accessibility checks thus doesn't require to be performed

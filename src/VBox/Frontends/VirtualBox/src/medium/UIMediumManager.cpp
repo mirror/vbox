@@ -579,7 +579,7 @@ void UIMediumManagerWidget::sltToggleMediumSearchVisibility(bool fVisible)
 void UIMediumManagerWidget::sltRefreshAll()
 {
     /* Start medium-enumeration: */
-    uiCommon().startMediumEnumeration();
+    uiCommon().enumerateMedia();
 }
 
 void UIMediumManagerWidget::sltHandleCurrentTabChanged()
@@ -695,7 +695,7 @@ void UIMediumManagerWidget::prepare()
 
     /* Start medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().startMediumEnumeration();
+        uiCommon().enumerateMedia();
     /* Emulate medium-enumeration otherwise: */
     else
     {

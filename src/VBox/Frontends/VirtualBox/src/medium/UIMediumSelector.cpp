@@ -81,7 +81,7 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
 {
     /* Start medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().startMediumEnumeration();
+        uiCommon().enumerateMedia();
     configure();
     finalize();
 }
@@ -496,7 +496,7 @@ void UIMediumSelector::sltHandleMediumEnumerationFinish()
 void UIMediumSelector::sltHandleRefresh()
 {
     /* Initialize media enumation: */
-    uiCommon().startMediumEnumeration();
+    uiCommon().enumerateMedia();
     /* Update the search: */
     m_pSearchWidget->search(m_pTreeWidget);
 }
