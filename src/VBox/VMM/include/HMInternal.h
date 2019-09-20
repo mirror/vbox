@@ -274,6 +274,8 @@ typedef struct HMPHYSCPU
     bool                fConfigured;
     /** Set if the VBOX_HWVIRTEX_IGNORE_SVM_IN_USE hack is active. */
     bool                fIgnoreAMDVInUseError;
+    /** Whether CR4.VMXE was already enabled prior to us enabling it. */
+    bool                fVmxeAlreadyEnabled;
     /** In use by our code. (for power suspend) */
     bool volatile       fInUse;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM

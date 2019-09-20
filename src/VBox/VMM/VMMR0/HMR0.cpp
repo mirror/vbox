@@ -93,7 +93,7 @@ static struct
     DECLR0CALLBACKMEMBER(VBOXSTRICTRC, pfnRunGuestCode, (PVMCPUCC pVCpu));
     DECLR0CALLBACKMEMBER(int,          pfnEnableCpu, (PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvCpuPage, RTHCPHYS HCPhysCpuPage,
                                                       bool fEnabledByHost, PCSUPHWVIRTMSRS pHwvirtMsrs));
-    DECLR0CALLBACKMEMBER(int,          pfnDisableCpu, (void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
+    DECLR0CALLBACKMEMBER(int,          pfnDisableCpu, (PHMPHYSCPU pHostCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage));
     DECLR0CALLBACKMEMBER(int,          pfnInitVM, (PVMCC pVM));
     DECLR0CALLBACKMEMBER(int,          pfnTermVM, (PVMCC pVM));
     DECLR0CALLBACKMEMBER(int,          pfnSetupVM, (PVMCC pVM));
@@ -245,9 +245,9 @@ static DECLCALLBACK(int) hmR0DummyEnableCpu(PHMPHYSCPU pHostCpu, PVMCC pVM, void
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) hmR0DummyDisableCpu(void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+static DECLCALLBACK(int) hmR0DummyDisableCpu(PHMPHYSCPU pHostCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
-    RT_NOREF2(pvCpuPage, HCPhysCpuPage);
+    RT_NOREF3(pHostCpu, pvCpuPage, HCPhysCpuPage);
     return VINF_SUCCESS;
 }
 
@@ -996,7 +996,7 @@ static int hmR0DisableCpu(RTCPUID idCpu)
     int rc;
     if (pHostCpu->fConfigured)
     {
-        rc = g_HmR0.pfnDisableCpu(pHostCpu->pvMemObj, pHostCpu->HCPhysMemObj);
+        rc = g_HmR0.pfnDisableCpu(pHostCpu, pHostCpu->pvMemObj, pHostCpu->HCPhysMemObj);
         AssertRCReturn(rc, rc);
 
         pHostCpu->fConfigured = false;

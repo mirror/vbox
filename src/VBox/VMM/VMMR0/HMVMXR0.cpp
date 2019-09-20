@@ -1590,13 +1590,15 @@ static void hmR0VmxReadAllRoFieldsVmcs(PVMXTRANSIENT pVmxTransient)
  * Enters VMX root mode operation on the current CPU.
  *
  * @returns VBox status code.
+ * @param   pHostCpu        The HM physical-CPU structure.
  * @param   pVM             The cross context VM structure. Can be
  *                          NULL, after a resume.
  * @param   HCPhysCpuPage   Physical address of the VMXON region.
  * @param   pvCpuPage       Pointer to the VMXON region.
  */
-static int hmR0VmxEnterRootMode(PVMCC pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage)
+static int hmR0VmxEnterRootMode(PHMPHYSCPU pHostCpu, PVMCC pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPage)
 {
+    Assert(pHostCpu);
     Assert(HCPhysCpuPage && HCPhysCpuPage != NIL_RTHCPHYS);
     Assert(RT_ALIGN_T(HCPhysCpuPage, _4K, RTHCPHYS) == HCPhysCpuPage);
     Assert(pvCpuPage);
@@ -1614,12 +1616,15 @@ static int hmR0VmxEnterRootMode(PVMCC pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPa
     /* Enable the VMX bit in CR4 if necessary. */
     RTCCUINTREG const uOldCr4 = SUPR0ChangeCR4(X86_CR4_VMXE, RTCCUINTREG_MAX);
 
+    /* Record whether VMXE was already prior to us enabling it above. */
+    pHostCpu->fVmxeAlreadyEnabled = RT_BOOL(uOldCr4 & X86_CR4_VMXE);
+
     /* Enter VMX root mode. */
     int rc = VMXEnable(HCPhysCpuPage);
     if (RT_FAILURE(rc))
     {
         /* Restore CR4.VMXE if it was not set prior to our attempt to set it above. */
-        if (!(uOldCr4 & X86_CR4_VMXE))
+        if (!pHostCpu->fVmxeAlreadyEnabled)
             SUPR0ChangeCR4(0 /* fOrMask */, ~(uint64_t)X86_CR4_VMXE);
 
         if (pVM)
@@ -1636,8 +1641,9 @@ static int hmR0VmxEnterRootMode(PVMCC pVM, RTHCPHYS HCPhysCpuPage, void *pvCpuPa
  * Exits VMX root mode operation on the current CPU.
  *
  * @returns VBox status code.
+ * @param   pHostCpu        The HM physical-CPU structure.
  */
-static int hmR0VmxLeaveRootMode(void)
+static int hmR0VmxLeaveRootMode(PHMPHYSCPU pHostCpu)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
@@ -1652,7 +1658,11 @@ static int hmR0VmxLeaveRootMode(void)
     {
         /* Exit VMX root mode and clear the VMX bit in CR4. */
         VMXDisable();
-        SUPR0ChangeCR4(0 /* fOrMask */, ~(uint64_t)X86_CR4_VMXE);
+
+        /* Clear CR4.VMXE only if it was clear prior to use setting it. */
+        if (!pHostCpu->fVmxeAlreadyEnabled)
+            SUPR0ChangeCR4(0 /* fOrMask */, ~(uint64_t)X86_CR4_VMXE);
+
         rc = VINF_SUCCESS;
     }
     else
@@ -4118,7 +4128,7 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvCpuPage, R
     /* Enable VT-x if it's not already enabled by the host. */
     if (!fEnabledByHost)
     {
-        int rc = hmR0VmxEnterRootMode(pVM, HCPhysCpuPage, pvCpuPage);
+        int rc = hmR0VmxEnterRootMode(pHostCpu, pVM, HCPhysCpuPage, pvCpuPage);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -4147,18 +4157,19 @@ VMMR0DECL(int) VMXR0EnableCpu(PHMPHYSCPU pHostCpu, PVMCC pVM, void *pvCpuPage, R
  * Deactivates VT-x on the current CPU.
  *
  * @returns VBox status code.
+ * @param   pHostCpu        The HM physical-CPU structure.
  * @param   pvCpuPage       Pointer to the VMXON region.
  * @param   HCPhysCpuPage   Physical address of the VMXON region.
  *
  * @remarks This function should never be called when SUPR0EnableVTx() or
  *          similar was used to enable VT-x on the host.
  */
-VMMR0DECL(int) VMXR0DisableCpu(void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
+VMMR0DECL(int) VMXR0DisableCpu(PHMPHYSCPU pHostCpu, void *pvCpuPage, RTHCPHYS HCPhysCpuPage)
 {
     RT_NOREF2(pvCpuPage, HCPhysCpuPage);
 
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
-    return hmR0VmxLeaveRootMode();
+    return hmR0VmxLeaveRootMode(pHostCpu);
 }
 
 
