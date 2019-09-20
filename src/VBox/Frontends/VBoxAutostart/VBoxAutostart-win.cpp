@@ -486,7 +486,7 @@ static int autostartSvcWinDelete(int argc, char **argv)
 
     com::Utf8Str sServiceName;
     int vrc = autostartGetServiceName(pszUser, sServiceName);
-    if (!RT_FAILURE(vrc))
+    if (RT_FAILURE(vrc))
         return autostartSvcDisplayError("delete - DeleteService failed, service name for user %s can not be constructed.\n",
                                         pszUser);
     /*
@@ -613,19 +613,25 @@ static RTEXITCODE autostartSvcWinCreate(int argc, char **argv)
              * Add service name as command line parameter for the service
              */
             com::Utf8StrFmt sCmdLine("\"%s\" --service=%s", szExecPath, sServiceName.c_str());
+            com::Bstr bstrServiceName(sServiceName);
+            com::Bstr bstrDisplayName(sDisplayName);
+            com::Bstr bstrCmdLine(sCmdLine);
+            com::Bstr bstrUserFullName(sUserFullName);
+            com::Bstr bstrPwd(strPwd);
+
             SC_HANDLE hSvc = CreateServiceW(hSCM,                            /* hSCManager */
-                                            com::Bstr(sServiceName).raw(),   /* lpServiceName */
-                                            com::Bstr(sDisplayName).raw(),   /* lpDisplayName */
+                                            bstrServiceName.raw(),           /* lpServiceName */
+                                            bstrDisplayName.raw(),           /* lpDisplayName */
                                             SERVICE_CHANGE_CONFIG | SERVICE_QUERY_STATUS | SERVICE_QUERY_CONFIG, /* dwDesiredAccess */
                                             SERVICE_WIN32_OWN_PROCESS,       /* dwServiceType ( | SERVICE_INTERACTIVE_PROCESS? ) */
                                             SERVICE_AUTO_START,              /* dwStartType */
                                             SERVICE_ERROR_NORMAL,            /* dwErrorControl */
-                                            com::Bstr(sCmdLine).raw(),       /* lpBinaryPathName */
+                                            bstrCmdLine.raw(),               /* lpBinaryPathName */
                                             NULL,                            /* lpLoadOrderGroup */
                                             NULL,                            /* lpdwTagId */
                                             NULL,                            /* lpDependencies */
-                                            com::Bstr(sUserFullName).raw(),  /* lpServiceStartName (NULL => LocalSystem) */
-                                            com::Bstr(strPwd).raw());        /* lpPassword */
+                                            bstrUserFullName.raw(),          /* lpServiceStartName (NULL => LocalSystem) */
+                                            bstrPwd.raw());                  /* lpPassword */
             if (hSvc)
             {
                 RTPrintf("Successfully created the %s service.\n", sServiceName.c_str());
