@@ -2109,7 +2109,7 @@ int sharedClipboardSvcTransferStart(PSHCLCLIENT pClient,
 
     LogFlowFuncEnter();
 
-    SharedClipboardTransferCtxTransfersCleanup(&pClient->TransferCtx);
+    SharedClipboardTransferCtxCleanup(&pClient->TransferCtx);
 
     int rc;
 

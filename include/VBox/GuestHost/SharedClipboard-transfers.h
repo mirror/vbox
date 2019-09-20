@@ -1105,6 +1105,7 @@ int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer, uint64_t uIndex, 
 int SharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList);
 
 SHCLTRANSFERID SharedClipboardTransferGetID(PSHCLTRANSFER pTransfer);
+SHCLTRANSFERDIR SharedClipboardTransferGetDir(PSHCLTRANSFER pTransfer);
 SHCLSOURCE SharedClipboardTransferGetSource(PSHCLTRANSFER pTransfer);
 SHCLTRANSFERSTATUS SharedClipboardTransferGetStatus(PSHCLTRANSFER pTransfer);
 int SharedClipboardTransferHandleReply(PSHCLTRANSFER pTransfer, PSHCLREPLY pReply);
@@ -1124,7 +1125,7 @@ void SharedClipboardTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx);
 PSHCLTRANSFER SharedClipboardTransferCtxGetTransfer(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
 uint32_t SharedClipboardTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx);
 uint32_t SharedClipboardTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx);
-void SharedClipboardTransferCtxTransfersCleanup(PSHCLTRANSFERCTX pTransferCtx);
+void SharedClipboardTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx);
 bool SharedClipboardTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx);
 int SharedClipboardTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t *pidTransfer);
 int SharedClipboardTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t idTransfer);

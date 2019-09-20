@@ -2209,6 +2209,19 @@ SHCLTRANSFERID SharedClipboardTransferGetID(PSHCLTRANSFER pTransfer)
 }
 
 /**
+ * Returns the transfer's direction.
+ *
+ * @returns The transfer's direction.
+ * @param   pTransfer           Clipboard transfer to return direction for.
+ */
+SHCLTRANSFERDIR SharedClipboardTransferGetDir(PSHCLTRANSFER pTransfer)
+{
+    AssertPtrReturn(pTransfer, SHCLTRANSFERDIR_UNKNOWN);
+
+    return pTransfer->State.enmDir;
+}
+
+/**
  * Returns the transfer's source.
  *
  * @returns The transfer's source.
@@ -2387,7 +2400,7 @@ int SharedClipboardTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturn(pTransferCtx, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("%p\n", pTransferCtx));
+    LogFlowFunc(("pTransferCtx=%p\n", pTransferCtx));
 
     int rc = RTCritSectInit(&pTransferCtx->CritSect);
     if (RT_SUCCESS(rc))
@@ -2414,7 +2427,7 @@ void SharedClipboardTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturnVoid(pTransferCtx);
 
-    LogFlowFunc(("%p\n", pTransferCtx));
+    LogFlowFunc(("pTransferCtx=%p\n", pTransferCtx));
 
     RTCritSectDelete(&pTransferCtx->CritSect);
 
@@ -2622,11 +2635,12 @@ int SharedClipboardTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, 
  *
  * @param   pTransferCtx                Transfer context to cleanup transfers for.
  */
-void SharedClipboardTransferCtxTransfersCleanup(PSHCLTRANSFERCTX pTransferCtx)
+void SharedClipboardTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturnVoid(pTransferCtx);
 
-    LogFlowFunc(("cTransfers=%RU32, cRunning=%RU32\n", pTransferCtx->cTransfers, pTransferCtx->cRunning));
+    LogFlowFunc(("pTransferCtx=%p, cTransfers=%RU32, cRunning=%RU32\n",
+                 pTransferCtx, pTransferCtx->cTransfers, pTransferCtx->cRunning));
 
     /* Remove all transfers which are not in a running state (e.g. only announced). */
     PSHCLTRANSFER pTransfer, pTransferNext;

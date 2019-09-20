@@ -101,12 +101,12 @@
  * The host messages for the guest.
  */
 /** Asks the client to quit / terminate. */
-#define VBOX_SHCL_HOST_MSG_QUIT                         1
+#define VBOX_SHCL_HOST_MSG_QUIT                              1
 /** Reads (simple) data from the guest. */
-#define VBOX_SHCL_HOST_MSG_READ_DATA                    2
+#define VBOX_SHCL_HOST_MSG_READ_DATA                         2
 /** Reports available clipboard format from host to the guest.
  *  Formerly known as VBOX_SHCL_HOST_MSG_REPORT_FORMATS. */
-#define VBOX_SHCL_HOST_MSG_FORMATS_REPORT               3
+#define VBOX_SHCL_HOST_MSG_FORMATS_REPORT                    3
 
 /** Sends a transfer status to the guest side. */
 #define VBOX_SHCL_HOST_MSG_TRANSFER_STATUS                   50

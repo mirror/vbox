@@ -868,7 +868,7 @@ int sharedClipboardSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq
         const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
 
         HGCMSvcSetU32(&pMsgReadData->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                                      pClient->Events.uID, uEvent));
+                                                                          pClient->Events.uID, uEvent));
         HGCMSvcSetU32(&pMsgReadData->paParms[1], pDataReq->uFmt);
         HGCMSvcSetU32(&pMsgReadData->paParms[2], pClient->State.cbChunkSize);
 
@@ -939,13 +939,25 @@ int sharedClipboardSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormat
         SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
 
         HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                              pClient->Events.uID, uEvent));
+                                                                  pClient->Events.uID, uEvent));
         HGCMSvcSetU32(&pMsg->paParms[1], pFormats->uFormats);
         HGCMSvcSetU32(&pMsg->paParms[2], 0 /* fFlags */);
 
         rc = sharedClipboardSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
-            rc = sharedClipboardSvcClientWakeup(pClient);
+        {
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+            if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST)
+            {
+                rc = sharedClipboardSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
+                                                     NULL /* pTransfer */);
+                if (RT_FAILURE(rc))
+                    LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));
+            }
+#endif
+            if (RT_SUCCESS(rc))
+                rc = sharedClipboardSvcClientWakeup(pClient);
+        }
     }
     else
         rc = VERR_NO_MEMORY;
@@ -1366,92 +1378,78 @@ static DECLCALLBACK(void) svcCall(void *,
                 rc = HGCMSvcGetU32(&paParms[0], &uFormat);
                 if (RT_SUCCESS(rc))
                 {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                    if (uFormat == VBOX_SHCL_FMT_URI_LIST)
+                    void    *pv;
+                    uint32_t cb;
+                    rc = HGCMSvcGetBuf(&paParms[1], &pv, &cb);
+                    if (RT_SUCCESS(rc))
                     {
-                        rc = sharedClipboardSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
-                                                             NULL /* pTransfer */);
-                        if (RT_FAILURE(rc))
-                            LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));
-                    }
-                    else
-                    {
-#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
-                        void    *pv;
-                        uint32_t cb;
-                        rc = HGCMSvcGetBuf(&paParms[1], &pv, &cb);
-                        if (RT_SUCCESS(rc))
+                        uint32_t cbActual = 0;
+
+                        /* If there is a service extension active, try reading data from it first. */
+                        if (g_ExtState.pfnExtension)
                         {
-                            uint32_t cbActual = 0;
+                            SHCLEXTPARMS parms;
+                            RT_ZERO(parms);
 
-                            /* If there is a service extension active, try reading data from it first. */
-                            if (g_ExtState.pfnExtension)
+                            parms.uFormat  = uFormat;
+                            parms.u.pvData = pv;
+                            parms.cbData   = cb;
+
+                            g_ExtState.fReadingData = true;
+
+                            /* Read clipboard data from the extension. */
+                            rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ,
+                                                         &parms, sizeof(parms));
+
+                            LogFlowFunc(("g_ExtState.fDelayedAnnouncement=%RTbool, g_ExtState.uDelayedFormats=0x%x\n",
+                                         g_ExtState.fDelayedAnnouncement, g_ExtState.uDelayedFormats));
+
+                            /* Did the extension send the clipboard formats yet?
+                             * Otherwise, do this now. */
+                            if (g_ExtState.fDelayedAnnouncement)
                             {
-                                SHCLEXTPARMS parms;
-                                RT_ZERO(parms);
+                                SHCLFORMATDATA formatData;
+                                RT_ZERO(formatData);
 
-                                parms.uFormat  = uFormat;
-                                parms.u.pvData = pv;
-                                parms.cbData   = cb;
+                                formatData.uFormats = g_ExtState.uDelayedFormats;
 
-                                g_ExtState.fReadingData = true;
+                                int rc2 = sharedClipboardSvcFormatsReport(pClient, &formatData);
+                                AssertRC(rc2);
 
-                                /* Read clipboard data from the extension. */
-                                rc = g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_DATA_READ,
-                                                             &parms, sizeof(parms));
-
-                                LogFlowFunc(("g_ExtState.fDelayedAnnouncement=%RTbool, g_ExtState.uDelayedFormats=0x%x\n",
-                                             g_ExtState.fDelayedAnnouncement, g_ExtState.uDelayedFormats));
-
-                                /* Did the extension send the clipboard formats yet?
-                                 * Otherwise, do this now. */
-                                if (g_ExtState.fDelayedAnnouncement)
-                                {
-                                    SHCLFORMATDATA formatData;
-                                    RT_ZERO(formatData);
-
-                                    formatData.uFormats = g_ExtState.uDelayedFormats;
-
-                                    int rc2 = sharedClipboardSvcFormatsReport(pClient, &formatData);
-                                    AssertRC(rc2);
-
-                                    g_ExtState.fDelayedAnnouncement = false;
-                                    g_ExtState.uDelayedFormats = 0;
-                                }
-
-                                g_ExtState.fReadingData = false;
-
-                                if (RT_SUCCESS(rc))
-                                {
-                                    cbActual = parms.cbData;
-                                }
+                                g_ExtState.fDelayedAnnouncement = false;
+                                g_ExtState.uDelayedFormats = 0;
                             }
 
-                            /* Note: The host clipboard *always* has precedence over the service extension above,
-                             *       so data which has been read above might get overridden by the host clipboard eventually. */
+                            g_ExtState.fReadingData = false;
 
-                            SHCLCLIENTCMDCTX cmdCtx;
-                            RT_ZERO(cmdCtx);
-
-                            /* Release any other pending read, as we only
-                             * support one pending read at one time. */
                             if (RT_SUCCESS(rc))
                             {
-                                SHCLDATABLOCK dataBlock;
-                                RT_ZERO(dataBlock);
-
-                                dataBlock.pvData  = pv;
-                                dataBlock.cbData  = cb;
-                                dataBlock.uFormat = uFormat;
-
-                                rc = SharedClipboardSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
-                                if (RT_SUCCESS(rc))
-                                    HGCMSvcSetU32(&paParms[2], cbActual);
+                                cbActual = parms.cbData;
                             }
                         }
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+
+                        /* Note: The host clipboard *always* has precedence over the service extension above,
+                         *       so data which has been read above might get overridden by the host clipboard eventually. */
+
+                        SHCLCLIENTCMDCTX cmdCtx;
+                        RT_ZERO(cmdCtx);
+
+                        /* Release any other pending read, as we only
+                         * support one pending read at one time. */
+                        if (RT_SUCCESS(rc))
+                        {
+                            SHCLDATABLOCK dataBlock;
+                            RT_ZERO(dataBlock);
+
+                            dataBlock.pvData  = pv;
+                            dataBlock.cbData  = cb;
+                            dataBlock.uFormat = uFormat;
+
+                            rc = SharedClipboardSvcImplReadData(pClient, &cmdCtx, &dataBlock, &cbActual);
+                            if (RT_SUCCESS(rc))
+                                HGCMSvcSetU32(&paParms[2], cbActual);
+                        }
                     }
-#endif
                 }
             }
 

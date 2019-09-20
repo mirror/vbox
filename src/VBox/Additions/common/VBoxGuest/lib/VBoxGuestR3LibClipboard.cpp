@@ -117,8 +117,8 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx)
 
         LogFlowFunc(("uProtocolVer=%RU32, cbChunkSize=%RU32\n", pCtx->uProtocolVer, pCtx->cbChunkSize));
 
-        LogRel(("Shared Clipboard: Client %RU32 connected, using protocol v%RU32 (cbChunkSize=%RU32\n)",
-                pCtx->uClientID, pCtx->uProtocolVer, pCtx->cbChunkSize));
+        LogRel2(("Shared Clipboard: Client %RU32 connected, using protocol v%RU32 (cbChunkSize=%RU32)\n",
+                 pCtx->uClientID, pCtx->uProtocolVer, pCtx->cbChunkSize));
 
     }
 
@@ -1286,7 +1286,10 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
         if (ppTransfer)
             *ppTransfer = pTransfer;
 
-        LogRel2(("Shared Clipboard: Transfer ID=%RU16 successfully started\n", uTransferID));
+        LogRel2(("Shared Clipboard: Transfer ID=%RU16 (%s %s) successfully started\n",
+                 uTransferID,
+                 enmDir    == SHCLTRANSFERDIR_READ ? "reading from" : "writing to",
+                 enmSource == SHCLSOURCE_LOCAL     ? "local"   : "remote"));
     }
     else
         LogRel(("Shared Clipboard: Unable to start transfer ID=%RU16, rc=%Rrc\n", uTransferID, rc));
@@ -1372,9 +1375,21 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
                         RT_FALL_THROUGH();
                     case SHCLTRANSFERSTATUS_STARTED:
                     {
-                        SHCLSOURCE enmSource = enmDir == SHCLTRANSFERDIR_READ
-                                             ? SHCLSOURCE_LOCAL
-                                             : SHCLSOURCE_REMOTE;
+                        SHCLSOURCE enmSource = SHCLSOURCE_INVALID;
+
+                        /* The host announces the transfer direction from its point of view, so inverse the direction here. */
+                        if (enmDir == SHCLTRANSFERDIR_WRITE)
+                        {
+                            enmDir = SHCLTRANSFERDIR_READ;
+                            enmSource = SHCLSOURCE_REMOTE;
+                        }
+                        else if (enmDir == SHCLTRANSFERDIR_READ)
+                        {
+                            enmDir = SHCLTRANSFERDIR_WRITE;
+                            enmSource = SHCLSOURCE_LOCAL;
+                        }
+                        else
+                            AssertFailedBreakStmt(rc = VERR_INVALID_PARAMETER);
 
                         rc = vbglR3ClipboardTransferStart(pCmdCtx, pTransferCtx, uTransferID,
                                                           enmDir, enmSource, NULL /* ppTransfer */);

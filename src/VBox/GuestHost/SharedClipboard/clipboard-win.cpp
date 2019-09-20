@@ -98,8 +98,6 @@ int SharedClipboardWinClose(void)
 {
     int rc;
 
-    LogFlowFuncEnter();
-
     const BOOL fRc = CloseClipboard();
     if (RT_UNLIKELY(!fRc))
     {
@@ -117,6 +115,7 @@ int SharedClipboardWinClose(void)
     else
         rc = VINF_SUCCESS;
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
