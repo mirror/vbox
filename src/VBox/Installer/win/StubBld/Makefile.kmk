@@ -18,11 +18,8 @@
 SUB_DEPTH = ../../../../..
 include $(KBUILD_PATH)/subheader.kmk
 
-if !defined(VBOX_WITH_COMBINED_BUILD) || "$(KBUILD_TARGET_ARCH)" == "x86"
+# Not a build program as it is needed for repacking after we Get the MS driver blessing.
 PROGRAMS += VBoxStubBld
-else
-BLDPROGS += VBoxStubBld
-endif
 VBoxStubBld_TEMPLATE= VBoxBldProg
 VBoxStubBld_DEFS    = _WIN32_WINNT=0x0400 VBOX_SVN_REV=$(VBOX_SVN_REV) $(VBOX_SVN_REV_KMK)
 VBoxStubBld_SOURCES = VBoxStubBld.cpp
