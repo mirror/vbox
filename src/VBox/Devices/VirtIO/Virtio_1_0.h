@@ -64,9 +64,9 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
 typedef struct VIRTIO_DESC_CHAIN
 {
     uint32_t  uHeadIdx;                                    /**< Head idx of associated desc chain        */
-    size_t    cbVirtSrc;                                   /**< Size of virt source buffer               */
+    uint32_t    cbVirtSrc;                                   /**< Size of virt source buffer               */
     void     *pVirtSrc;                                    /**< Virt mem buf holding out data from guest */
-    size_t    cbPhysDst;                                   /**< Total size of dst buffer                 */
+    uint32_t    cbPhysDst;                                   /**< Total size of dst buffer                 */
     PRTSGBUF  pSgPhysDst;                                  /**< Phys S/G buf to store result for guest   */
 } VIRTIO_DESC_CHAIN_T, *PVIRTIO_DESC_CHAIN_T, **PPVIRTIO_DESC_CHAIN_T;
 
@@ -118,7 +118,7 @@ typedef FNVIRTIOQUEUENOTIFIED *PFNVIRTIOQUEUENOTIFIED;
  * @param   pvBuf       Buffer in which to save read data
  * @param   cbWrite     Number of bytes to write
  */
-typedef DECLCALLBACK(int)   FNVIRTIODEVCAPWRITE(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbWrite);
+typedef DECLCALLBACK(int)   FNVIRTIODEVCAPWRITE(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbWrite);
 typedef FNVIRTIODEVCAPWRITE *PFNVIRTIODEVCAPWRITE;
 
 /**
@@ -130,7 +130,7 @@ typedef FNVIRTIODEVCAPWRITE *PFNVIRTIODEVCAPWRITE;
  * @param   pvBuf       Buffer in which to save read data
  * @param   cbRead      Number of bytes to read
  */
-typedef DECLCALLBACK(int)   FNVIRTIODEVCAPREAD(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbRead);
+typedef DECLCALLBACK(int)   FNVIRTIODEVCAPREAD(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbRead);
 typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
 
 
@@ -143,9 +143,9 @@ typedef struct VIRTIOCALLBACKS
      DECLCALLBACKMEMBER(void, pfnVirtioQueueNotified)
                                   (VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx);
      DECLCALLBACKMEMBER(int,  pfnVirtioDevCapRead)
-                                  (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbRead);
+                                  (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbRead);
      DECLCALLBACKMEMBER(int,  pfnVirtioDevCapWrite)
-                                  (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, size_t cbWrite);
+                                  (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbWrite);
      DECLCALLBACKMEMBER(int,  pfnSSMDevLiveExec)
                                   (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass);
      DECLCALLBACKMEMBER(int,  pfnSSMDevSaveExec)
@@ -380,7 +380,7 @@ int  virtioConstruct(PPDMDEVINS             pDevIns,
  * @param   fHasIndex   - True if the member is indexed
  * @param   idx         - The index if fHasIndex
  */
-void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t uMemberSize,
+void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
                             const void *pv, uint32_t cb, uint32_t uOffset,
                             bool fWrite, bool fHasIndex, uint32_t idx);
 
@@ -394,6 +394,6 @@ void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t u
  * @param   pszTitle    - Optional title. If present displays title that lists
  *                        provided text with value of cb to indicate size next to it.
  */
-void virtioHexDump(uint8_t *pv, size_t cb, uint32_t uBase, const char *pszTitle);
+void virtioHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle);
 
 #endif /* !VBOX_INCLUDED_SRC_VirtIO_Virtio_1_0_h */

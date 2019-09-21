@@ -516,6 +516,7 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
             Log6(("%sFAILED",      primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_DEVICE_NEEDS_RESET)
             Log6(("%sNEEDS_RESET", primed++ ? " | " : ""));
+        (void)primed;
     }
 }
 

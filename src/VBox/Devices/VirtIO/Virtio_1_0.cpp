@@ -38,36 +38,6 @@
 /**
  * See API comments in header file for description
  */
-void virtioVirtToSgPhys(VIRTIOHANDLE hVirtio, PRTSGBUF pSgDst, void *pvSrc, size_t cb)
-{
-    while (cb)
-    {
-        size_t cbSeg = cb;
-        RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(pSgDst, &cbSeg);
-        PDMDevHlpPhysWrite(((PVIRTIOSTATE)hVirtio)->CTX_SUFF(pDevIns), GCPhys, pvSrc, cbSeg);
-        pvSrc = ((uint8_t *)pvSrc) + cbSeg;
-        cb -= cbSeg;
-    }
-}
-
-/**
- * See API comments in header file for description
- */
-void virtioSgPhysToVirt(VIRTIOHANDLE hVirtio, PRTSGBUF pSgSrc, void *pvDst, size_t cb)
-{
-    while (cb)
-    {
-        size_t cbSeg = cb;
-        RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(pSgSrc, &cbSeg);
-        PDMDevHlpPhysRead(((PVIRTIOSTATE)hVirtio)->CTX_SUFF(pDevIns), GCPhys, pvDst, cbSeg);
-        pvDst = ((uint8_t *)pvDst) + cbSeg;
-        cb -= cbSeg;
-    }
-}
-
-/**
- * See API comments in header file for description
- */
 int virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName)
 {
     LogFunc(("%s\n", pcszName));
@@ -78,7 +48,6 @@ int virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName)
     pVirtq->fEventThresholdReached = false;
     RTStrCopy((char *)pVirtq->szVirtqName, sizeof(pVirtq->szVirtqName), pcszName);
     return VINF_SUCCESS;
-
 }
 
 /**
@@ -156,7 +125,7 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T pp
     uint16_t uHeadIdx = virtioReadAvailDescIdx(pVirtio, qIdx, pVirtq->uAvailIdx);
     uint16_t uDescIdx = uHeadIdx;
 
-    Log6Func(("%s DESC CHAIN: (head) desc_idx=%u [avail_idx=%u]\n",
+    Log3Func(("%s DESC CHAIN: (head) desc_idx=%u [avail_idx=%u]\n",
             pVirtq->szVirtqName, uHeadIdx, pVirtq->uAvailIdx));
 
     if (fRemove)
@@ -197,14 +166,14 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T pp
 
         if (desc.fFlags & VIRTQ_DESC_F_WRITE)
         {
-            Log6Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n",
+            Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n",
                 QUEUENAME(qIdx), uDescIdx, cSegsIn, desc.pGcPhysBuf, desc.cb));
             cbIn += desc.cb;
             pSeg = &(paSegsIn[cSegsIn++]);
         }
         else
         {
-            Log6Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n",
+            Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n",
                 QUEUENAME(qIdx), uDescIdx, cSegsOut, desc.pGcPhysBuf, desc.cb));
             cbOut += desc.cb;
             pSeg = &(paSegsOut[cSegsOut++]);
@@ -222,14 +191,25 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T pp
 
     RTSgBufInit(pSgPhysIn, (PCRTSGSEG)paSegsIn, cSegsIn);
 
-    void *pSgVirtOut = RTMemAlloc(cbOut);
-    AssertReturn(pSgVirtOut, VERR_NO_MEMORY);
+    void *pVirtOut = RTMemAlloc(cbOut);
+    AssertReturn(pVirtOut, VERR_NO_MEMORY);
+
+    /* If there's any guest → device data in phys. memory pulled
+     * from queue, copy it into virtual memory to return to caller */
 
     if (cSegsOut)
     {
+        uint8_t *outSgVirt = (uint8_t *)pVirtOut;
         RTSGBUF outSgPhys;
         RTSgBufInit(&outSgPhys, (PCRTSGSEG)paSegsOut, cSegsOut);
-        virtioSgPhysToVirt((PVIRTIOSTATE)hVirtio, &outSgPhys, pSgVirtOut, cbOut);
+        for (size_t cb = cbOut; cb;)
+        {
+            size_t cbSeg = cb;
+            RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(&outSgPhys, &cbSeg);
+            PDMDevHlpPhysRead(((PVIRTIOSTATE)hVirtio)->CTX_SUFF(pDevIns), GCPhys, outSgVirt, cbSeg);
+            outSgVirt = ((uint8_t *)outSgVirt) + cbSeg;
+            cb -= cbSeg;
+        }
         RTMemFree(paSegsOut);
     }
 
@@ -238,12 +218,12 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T pp
 
     pDescChain->uHeadIdx   = uHeadIdx;
     pDescChain->cbVirtSrc  = cbOut;
-    pDescChain->pVirtSrc   = pSgVirtOut;
+    pDescChain->pVirtSrc   = pVirtOut;
     pDescChain->cbPhysDst  = cbIn;
     pDescChain->pSgPhysDst = pSgPhysIn;
     *ppDescChain = pDescChain;
 
-    Log6Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
+    Log3Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
               pVirtq->szVirtqName, cSegsOut, cbOut, cSegsIn, cbIn));
 
     return VINF_SUCCESS;
@@ -263,16 +243,16 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
     uint16_t uUsedIdx = virtioReadUsedRingIdx(pVirtio, qIdx);
-    Log6Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
+    Log3Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
                QUEUENAME(qIdx), uUsedIdx));
 
     /*
      * Copy virtual memory s/g buffer containing data to return to the guest
      * to phys. memory described by (IN direction ) s/g buffer of the descriptor chain
-     * original pulled from the queue, to 'send back' to the guest driver.
+     * (pulled from avail ring of queue), essentially giving result back to the guest driver.
      */
-    size_t cbRemain = RTSgBufCalcTotalLength(pSgVirtReturn);
-    size_t cbCopy = 0;
+    uint32_t cbRemain = RTSgBufCalcTotalLength(pSgVirtReturn);
+    uint32_t cbCopy = 0;
     while (cbRemain)
     {
         PCRTSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
@@ -287,7 +267,6 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
         cbRemain -= cbCopy;
     }
 
-
     if (fFence)
         RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
 
@@ -301,12 +280,9 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
      * That will be done with a subsequent client call to virtioQueueSync() */
     virtioWriteUsedElem(pVirtio, qIdx, pVirtq->uUsedIdx++, pDescChain->uHeadIdx, cbCopy);
 
+    Log2Func((".... Copied %u bytes to %u byte buffer, residual=%d\n",
+         cbCopy, pDescChain->cbPhysDst, pDescChain->cbPhysDst - cbCopy));
 
-    if (LogIs2Enabled())
-    {
-        Log2Func((".... Copied %u bytes to %u byte buffer, residual=%d\n",
-             cbCopy, pDescChain->cbPhysDst, pDescChain->cbPhysDst - cbCopy));
-    }
     Log6Func(("Write ahead used_idx=%d, %s used_idx=%d\n",
          pVirtq->uUsedIdx,  QUEUENAME(qIdx), uUsedIdx));
 
@@ -1476,7 +1452,7 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
   * @param   pszTitle Header line/title for the dump
   *
   */
- void virtioHexDump(uint8_t *pv, size_t cb, uint32_t uBase, const char *pszTitle)
+ void virtioHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle)
  {
      if (pszTitle)
          Log(("%s [%d bytes]:\n", pszTitle, cb));
@@ -1511,7 +1487,7 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
  * @param   fHasIndex   - True if the member is indexed
  * @param   idx         - The index, if fHasIndex is true
  */
-void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, size_t uMemberSize,
+void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
                         const void *pv, uint32_t cb, uint32_t uOffset, bool fWrite,
                         bool fHasIndex, uint32_t idx)
 {
