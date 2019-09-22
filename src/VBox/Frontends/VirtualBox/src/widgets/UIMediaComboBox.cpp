@@ -58,7 +58,7 @@ void UIMediaComboBox::refresh()
 
 void UIMediaComboBox::repopulate()
 {
-    /* Start medium-enumeration (if necessary): */
+    /* Start medium-enumeration for optical drives/images (if necessary): */
     if (   m_enmMediaType == UIMediumDeviceType_DVD
         && !uiCommon().isFullMediumEnumerationRequested())
     {

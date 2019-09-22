@@ -3707,7 +3707,7 @@ void UIMachineSettingsStorage::prepare()
     /* Create icon-pool: */
     UIIconPoolStorageSettings::create();
 
-    /* Start medium-enumeration (only if necessary): */
+    /* Start full medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
         uiCommon().enumerateMedia();
 

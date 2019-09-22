@@ -167,7 +167,7 @@ void UIVMInformationDialog::prepare()
     /* Load settings: */
     loadSettings();
 
-    /* This is needed at least for some VM to show correct storage info. */
+    /* Start full medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
         uiCommon().enumerateMedia();
 }

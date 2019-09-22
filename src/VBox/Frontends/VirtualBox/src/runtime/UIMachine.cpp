@@ -205,7 +205,7 @@ bool UIMachine::prepare()
     if (!prepareSession())
         return false;
 
-    /* Cache medium data early if necessary: */
+    /* Cache media data early if necessary: */
     if (uiCommon().agressiveCaching())
     {
         AssertReturn(m_pSession, false);

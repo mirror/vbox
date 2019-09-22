@@ -3319,7 +3319,7 @@ QString UICommon::details(const CMedium &comMedium, bool fPredictDiff, bool fUse
     UIMedium guiMedium = medium(uMediumID);
     if (!comMedium.isNull() && guiMedium.isNull())
     {
-        /* UI medium may be new and not among our media, request enumeration: */
+        /* UI medium may be new and not among cached media, request enumeration: */
         enumerateMedia(CMediumVector() << comMedium);
 
         /* Search for corresponding UI medium again: */

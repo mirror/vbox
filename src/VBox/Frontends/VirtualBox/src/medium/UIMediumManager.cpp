@@ -578,7 +578,7 @@ void UIMediumManagerWidget::sltToggleMediumSearchVisibility(bool fVisible)
 
 void UIMediumManagerWidget::sltRefreshAll()
 {
-    /* Start medium-enumeration: */
+    /* Restart full medium-enumeration: */
     uiCommon().enumerateMedia();
 }
 
@@ -693,16 +693,16 @@ void UIMediumManagerWidget::prepare()
     /* Apply language settings: */
     retranslateUi();
 
-    /* Start medium-enumeration (if necessary): */
+    /* Start full medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
         uiCommon().enumerateMedia();
     /* Emulate medium-enumeration otherwise: */
     else
     {
-        /* Start medium-enumeration: */
+        /* Emulate medium-enumeration start: */
         sltHandleMediumEnumerationStart();
 
-        /* Finish medium-enumeration (if necessary): */
+        /* Emulate medium-enumeration finish (if necessary): */
         if (!uiCommon().isMediumEnumerationInProgress())
             sltHandleMediumEnumerationFinish();
     }

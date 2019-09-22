@@ -1269,7 +1269,7 @@ void UIVirtualBoxManager::prepare()
     qApp->installEventFilter(this);
 #endif
 
-    /* Cache medium data early if necessary: */
+    /* Cache media data early if necessary: */
     if (uiCommon().agressiveCaching())
         uiCommon().enumerateMedia();
 
