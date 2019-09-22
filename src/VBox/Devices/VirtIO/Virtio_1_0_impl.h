@@ -239,7 +239,7 @@ typedef struct virt_used
 
 /**
 * This macro returns true if the implied parameter GCPhysAddr address and access length are
-* within mapped capability struct specified with the explicit parameters.
+* within the range of the mapped capability struct specified with the explicit parameters.
 *
 * Actual Parameters:
 *     @oaram    pPhysCapStruct - [input]  Pointer to MMIO mapped capability struct
@@ -282,7 +282,7 @@ typedef struct virt_used
 
 #define LOG_COMMON_CFG_ACCESS_INDEXED(member, idx) \
         virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
-                               pv, cb, uIntraOff, fWrite, true, idx);
+                                pv, cb, uIntraOff, fWrite, true, idx);
 
 #define COMMON_CFG_ACCESSOR(member) \
     do \
@@ -520,12 +520,12 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
     }
 }
 
+static int  virtioCommonCfgAccessed (PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, unsigned cb, void const *pv);
 static void virtioResetQueue        (PVIRTIOSTATE pVirtio, uint16_t qIdx);
 static void virtioNotifyGuestDriver (PVIRTIOSTATE pVirtio, uint16_t qIdx, bool fForce);
 static int  virtioRaiseInterrupt    (PVIRTIOSTATE pVirtio, uint8_t uCause, bool fForce);
 static void virtioLowerInterrupt    (PVIRTIOSTATE pVirtio);
 static void virtioQueueNotified     (PVIRTIOSTATE pVirtio, uint16_t qidx, uint16_t uDescIdx);
-static int  virtioCommonCfgAccessed (PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, unsigned cb, void const *pv);
 static void virtioGuestResetted     (PVIRTIOSTATE pVirtio);
 
 static DECLCALLBACK(int) virtioR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);

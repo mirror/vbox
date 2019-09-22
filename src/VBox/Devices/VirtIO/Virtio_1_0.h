@@ -64,9 +64,9 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
 typedef struct VIRTIO_DESC_CHAIN
 {
     uint32_t  uHeadIdx;                                    /**< Head idx of associated desc chain        */
-    uint32_t    cbVirtSrc;                                   /**< Size of virt source buffer               */
+    uint32_t  cbVirtSrc;                                   /**< Size of virt source buffer               */
     void     *pVirtSrc;                                    /**< Virt mem buf holding out data from guest */
-    uint32_t    cbPhysDst;                                   /**< Total size of dst buffer                 */
+    uint32_t  cbPhysDst;                                   /**< Total size of dst buffer                 */
     PRTSGBUF  pSgPhysDst;                                  /**< Phys S/G buf to store result for guest   */
 } VIRTIO_DESC_CHAIN_T, *PVIRTIO_DESC_CHAIN_T, **PPVIRTIO_DESC_CHAIN_T;
 
@@ -95,7 +95,7 @@ typedef struct VIRTIOPCIPARAMS
  * @param fDriverOk     True if guest driver is okay (thus queues, etc... are valid)
  * @param pClient       Pointer to opaque client data (state)
  */
-typedef DECLCALLBACK(void)   FNVIRTIOSTATUSCHANGED(VIRTIOHANDLE hVirtio, void *pClient, bool fDriverOk);
+typedef DECLCALLBACK(void)   FNVIRTIOSTATUSCHANGED(VIRTIOHANDLE hVirtio, void *pClient, uint32_t fDriverOk);
 typedef FNVIRTIOSTATUSCHANGED *PFNVIRTIOSTATUSCHANGED;
 
 /**
@@ -139,7 +139,7 @@ typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
 typedef struct VIRTIOCALLBACKS
 {
      DECLCALLBACKMEMBER(void, pfnVirtioStatusChanged)
-                                  (VIRTIOHANDLE hVirtio, void *pClient, bool fDriverOk);
+                                  (VIRTIOHANDLE hVirtio, void *pClient, uint32_t fDriverOk);
      DECLCALLBACKMEMBER(void, pfnVirtioQueueNotified)
                                   (VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx);
      DECLCALLBACKMEMBER(int,  pfnVirtioDevCapRead)
@@ -320,7 +320,6 @@ const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx);
  */
 uint64_t virtioGetNegotiatedFeatures(VIRTIOHANDLE hVirtio);
 
-
 /** CLIENT MUST CALL ON RELOCATE CALLBACK! */
 void virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 
@@ -382,8 +381,7 @@ int  virtioConstruct(PPDMDEVINS             pDevIns,
  */
 void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
                             const void *pv, uint32_t cb, uint32_t uOffset,
-                            bool fWrite, bool fHasIndex, uint32_t idx);
-
+                            int fWrite, int fHasIndex, uint32_t idx);
 /**
  * Does a formatted hex dump using Log(()), recommend using VIRTIO_HEX_DUMP() macro to
  * control enabling of logging efficiently.

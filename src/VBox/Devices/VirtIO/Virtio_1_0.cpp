@@ -35,6 +35,7 @@
 #define INSTANCE(pVirtio) pVirtio->szInstance
 #define QUEUENAME(qIdx) (pVirtio->virtqState[qIdx].szVirtqName)
 
+
 /**
  * See API comments in header file for description
  */
@@ -245,21 +246,22 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
     uint16_t uUsedIdx = virtioReadUsedRingIdx(pVirtio, qIdx);
     Log3Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
                QUEUENAME(qIdx), uUsedIdx));
+    (void)uUsedIdx;
 
     /*
      * Copy virtual memory s/g buffer containing data to return to the guest
      * to phys. memory described by (IN direction ) s/g buffer of the descriptor chain
      * (pulled from avail ring of queue), essentially giving result back to the guest driver.
      */
-    uint32_t cbRemain = RTSgBufCalcTotalLength(pSgVirtReturn);
-    uint32_t cbCopy = 0;
+    size_t cbCopy = 0;
+    size_t cbRemain = RTSgBufCalcTotalLength(pSgVirtReturn);
     while (cbRemain)
     {
         PCRTSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
         uint64_t dstSgStart = (uint64_t)paSeg->pvSeg;
         uint64_t dstSgLen   = (uint64_t)paSeg->cbSeg;
         uint64_t dstSgCur   = (uint64_t)pSgPhysReturn->pvSegCur;
-        cbCopy = RT_MIN(pSgVirtReturn->cbSegLeft, dstSgLen - (dstSgCur - dstSgStart));
+        cbCopy = RT_MIN((uint64_t)pSgVirtReturn->cbSegLeft, dstSgLen - (dstSgCur - dstSgStart));
         PDMDevHlpPhysWrite(pVirtio->CTX_SUFF(pDevIns),
                           (RTGCPHYS)pSgPhysReturn->pvSegCur, pSgVirtReturn->pvSegCur, cbCopy);
         RTSgBufAdvance(pSgVirtReturn, cbCopy);
@@ -275,12 +277,14 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
         if (pVirtq->uUsedIdx == virtioReadAvailUsedEvent(pVirtio, qIdx))
             pVirtq->fEventThresholdReached = true;
 
+    Assert(!(cbCopy & 0xffffffff00000000));
     /**
      * Place used buffer's descriptor in used ring but don't update used ring's slot index.
      * That will be done with a subsequent client call to virtioQueueSync() */
-    virtioWriteUsedElem(pVirtio, qIdx, pVirtq->uUsedIdx++, pDescChain->uHeadIdx, cbCopy);
+    virtioWriteUsedElem(pVirtio, qIdx, pVirtq->uUsedIdx++, pDescChain->uHeadIdx,
+            (uint32_t)(cbCopy & 0xffffffff));
 
-    Log2Func((".... Copied %u bytes to %u byte buffer, residual=%d\n",
+    Log2Func((".... Copied %ul bytes to %ul byte buffer, residual=%ul\n",
          cbCopy, pDescChain->cbPhysDst, pDescChain->cbPhysDst - cbCopy));
 
     Log6Func(("Write ahead used_idx=%d, %s used_idx=%d\n",
@@ -309,6 +313,7 @@ int virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx)
     uint16_t uIdx = virtioReadUsedRingIdx(pVirtio, qIdx);
     Log6Func(("Updating %s used_idx from %u to %u\n",
               QUEUENAME(qIdx), uIdx, pVirtq->uUsedIdx));
+    (void)uIdx;
 
     virtioWriteUsedRingIdx(pVirtio, qIdx, pVirtq->uUsedIdx);
     virtioNotifyGuestDriver(pVirtio, qIdx, false);
@@ -322,9 +327,11 @@ int virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 static void virtioQueueNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uNotifyIdx)
 {
     Assert(uNotifyIdx == qIdx);
+    (void)uNotifyIdx;
 
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[qIdx];
     Log6Func(("%s\n", pVirtq->szVirtqName));
+    (void)pVirtq;
 
     /** Inform client */
     pVirtio->virtioCallbacks.pfnVirtioQueueNotified((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext, qIdx);
@@ -487,7 +494,7 @@ static void virtioResetDevice(PVIRTIOSTATE pVirtio)
 bool virtioIsQueueEnabled(VIRTIOHANDLE hVirtio, uint16_t qIdx)
 {
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
-    return pVirtio->uQueueEnable[qIdx];
+    return pVirtio->uQueueEnable[qIdx] != 0;
 }
 
 /**
@@ -527,7 +534,7 @@ static void virtioGuestResetted(PVIRTIOSTATE pVirtio)
     LogFunc(("Guest reset the device\n"));
 
     /** Let the client know */
-    pVirtio->virtioCallbacks.pfnVirtioStatusChanged((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext, false);
+    pVirtio->virtioCallbacks.pfnVirtioStatusChanged((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext, 0);
     virtioResetDevice(pVirtio);
 }
 
@@ -644,11 +651,11 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
             /**
              * Notify client only if status actually changed from last time.
              */
-            bool fOkayNow = pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK;
-            bool fWasOkay = pVirtio->uPrevDeviceStatus & VIRTIO_STATUS_DRIVER_OK;
+            uint32_t fOkayNow = pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK;
+            uint32_t fWasOkay = pVirtio->uPrevDeviceStatus & VIRTIO_STATUS_DRIVER_OK;
+            uint32_t fDrvOk = pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK;
             if ((fOkayNow && !fWasOkay) || (!fOkayNow && fWasOkay))
-                pVirtio->virtioCallbacks.pfnVirtioStatusChanged((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext,
-                       pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK);
+                pVirtio->virtioCallbacks.pfnVirtioStatusChanged((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext, fDrvOk);
             pVirtio->uPrevDeviceStatus = pVirtio->uDeviceStatus;
         }
         else /* Guest READ pCommonCfg->uDeviceStatus */
@@ -757,7 +764,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     if (fCommonCfg)
     {
         uint32_t uOffset = GCPhysAddr - pVirtio->pGcPhysCommonCfg;
-        virtioCommonCfgAccessed(pVirtio, 0 /* fWrite */, uOffset, cb, pv);
+        virtioCommonCfgAccessed(pVirtio, 0 /* fWrite */, uOffset, cb, (void const *)pv);
     }
     else
     if (fIsr && cb == sizeof(uint8_t))
@@ -1072,7 +1079,6 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     pVirtio->virtioCallbacks.pfnSSMDevLoadExec      = ssmLoadExecCallback;
     pVirtio->virtioCallbacks.pfnSSMDevLoadDone      = ssmLoadDoneCallback;
 
-
     /* Set PCI config registers (assume 32-bit mode) */
     PCIDevSetRevisionId        (&pVirtio->dev, DEVICE_PCI_REVISION_ID_VIRTIO);
     PCIDevSetVendorId          (&pVirtio->dev, DEVICE_PCI_VENDOR_ID_VIRTIO);
@@ -1307,8 +1313,10 @@ static DECLCALLBACK(int) virtioR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
 
     int rc = VINF_SUCCESS;
-    virtioDumpState(pVirtio, "virtioSaveExec");
 
+#ifdef DEBUG
+    virtioDumpState(pVirtio, (const char *)"virtioSaveExec");
+#endif
     rc = SSMR3PutBool(pSSM,   pVirtio->fGenUpdatePending);
     rc = SSMR3PutU8(pSSM,     pVirtio->uDeviceStatus);
     rc = SSMR3PutU8(pSSM,     pVirtio->uConfigGeneration);
@@ -1364,7 +1372,10 @@ static DECLCALLBACK(int) virtioR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
 
     int rc = VINF_SUCCESS;
+
+#ifdef DEBUG
     virtioDumpState(pVirtio, "virtioLoadExec");
+#endif
 
     if (uPass == SSM_PASS_FINAL)
     {
@@ -1423,8 +1434,9 @@ static DECLCALLBACK(int) virtioR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
 
     int rc = VINF_SUCCESS;
+#ifdef DEBUG
     virtioDumpState(pVirtio, "virtioLoadDone");
-
+#endif
     rc = pVirtio->virtioCallbacks.pfnSSMDevLoadDone(pDevIns, pSSM);
 
     return rc;
@@ -1436,8 +1448,10 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
 
     int rc = VINF_SUCCESS;
-    virtioDumpState(pVirtio, "virtioLiveExec");
 
+#ifdef DEBUG
+    virtioDumpState(pVirtio, "virtioLiveExec");
+#endif
     rc = pVirtio->virtioCallbacks.pfnSSMDevLiveExec(pDevIns, pSSM, uPass);
 
     return rc;
@@ -1472,6 +1486,7 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
          Log(("\n"));
     }
     Log(("\n"));
+    RT_NOREF2(uBase, pv);
  }
 
 
@@ -1488,8 +1503,8 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
  * @param   idx         - The index, if fHasIndex is true
  */
 void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
-                        const void *pv, uint32_t cb, uint32_t uOffset, bool fWrite,
-                        bool fHasIndex, uint32_t idx)
+                        const void *pv, uint32_t cb, uint32_t uOffset, int fWrite,
+                        int fHasIndex, uint32_t idx)
 {
 
 #define FMTHEX(fmtout, val, cNybbles) \
@@ -1528,6 +1543,7 @@ void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t
               pszFunc, fWrite ? "wrote" : "read ", pszMember,
               pszIdx, uOffset, uOffset + cb, cb, pv));
     }
+    RT_NOREF2(fWrite, pszFunc);
 }
 
 #endif /* IN_RING3 */
