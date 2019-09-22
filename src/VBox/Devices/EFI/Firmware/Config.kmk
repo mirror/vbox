@@ -72,19 +72,7 @@ endif
 ifeq ($(KBUILD_HOST),win)
  VBOX_EFI_TOOL_CHAIN := VS2010
 else
- VBOX_EFI_TOOL_CHAIN = UNIXGCC
- if !defined(VBOX_PATH_PREFIX_MINGW32) && !defined(VBOX_PATH_PREFIX_MINGW64)
-  $(info Requires VBOX_PATH_PREFIX_MINGW32 and/or VBOX_PATH_PREFIX_MINGW64 to point something mingw like or there must be some mingw like in the PATH.)
-  $(info )
-  $(info Recent Fedora: sudo yum install mingw64-gcc mingw64-gcc-c++ mingw64-binutils mingw32-gcc mingw32-gcc-c++ mingw32-binutils)
-  $(info )
-  $(info Newer Debian and forks: sudo apt-get install binutils-mingw-w64 gcc-mingw-w64 g++-mingw-w64 )
-  $(info Older Debian and forks: sudo apt-get install mingw32-binutils mingw32 mingw32-runtime )
-  $(info )
-  $(info Gentoo: crossdev -S -P -v -t i686-pc-mingw32 && crossdev -S -P -v -t x86_64-pc-mingw32)
-  $(info )
-  $(error Needs mingw32/64)
- endif
+ VBOX_EFI_TOOL_CHAIN = GCC48
 endif
 
 

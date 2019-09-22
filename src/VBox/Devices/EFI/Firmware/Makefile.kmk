@@ -251,11 +251,8 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/tools_def.txt: \
 		-e 's,@VBOX_NASMCMD@,$(VBOX_NASMCMD),' \
 		-e 's,@KMK@,$(MAKE),' \
                \
-		-e 's,@VBOX_PATH_PREFIX_MINGW32@,$(VBOX_PATH_PREFIX_MINGW32),' \
-		-e 's,@VBOX_PATH_PREFIX_MINGW64@,$(VBOX_PATH_PREFIX_MINGW64),' \
-		-e 's,@VBOX_MINGW32_Wno@,-Wno-address $(VBOX_MINGW32_Wno-unused-but-set-variable) $(VBOX_MINGW32_Wno-maybe-uninitialized) $(VBOX_MINGW32_Wno-array-bounds),' \
-		-e 's,@VBOX_MINGW64_Wno@,-Wno-address $(VBOX_MINGW64_Wno-unused-but-set-variable) $(VBOX_MINGW64_Wno-maybe-uninitialized) $(VBOX_MINGW64_Wno-array-bounds),' \
-		-e 's,@VBOX_MINGW64_USER_LABEL_PREFIX@,$(VBOX_MINGW64_USER_LABEL_PREFIX),' \
+		-e 's,@VBOX_PATH_PREFIX_GCC32@,$(PATH_TOOL_$(VBOX_GCC_TOOL)),' \
+		-e 's,@VBOX_PATH_PREFIX_GCC64@,$(PATH_TOOL_$(VBOX_GCC_TOOL)),' \
                \
 		-e 's,@PATH_VS2010@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
 		-e 's,@PATH_VS2010_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL))/bin/$(subst x86,x86_amd64,$(KBUILD_HOST_ARCH)),' \
@@ -274,11 +271,8 @@ $(VBoxEfiFirmware_0_OUTDIR)/amd64/Conf/build_rule.txt: \
 		-e 's,@VBOX_NASMCMD@,$(VBOX_NASMCMD),' \
 		-e 's,@KMK@,$(MAKE),' \
                \
-		-e 's,@VBOX_PATH_PREFIX_MINGW32@,$(VBOX_PATH_PREFIX_MINGW32),' \
-		-e 's,@VBOX_PATH_PREFIX_MINGW64@,$(VBOX_PATH_PREFIX_MINGW64),' \
-		-e 's,@VBOX_MINGW32_Wno@,-Wno-address $(VBOX_MINGW32_Wno-unused-but-set-variable) $(VBOX_MINGW32_Wno-maybe-uninitialized) $(VBOX_MINGW32_Wno-array-bounds),' \
-		-e 's,@VBOX_MINGW64_Wno@,-Wno-address $(VBOX_MINGW64_Wno-unused-but-set-variable) $(VBOX_MINGW64_Wno-maybe-uninitialized) $(VBOX_MINGW64_Wno-array-bounds),' \
-		-e 's,@VBOX_MINGW64_USER_LABEL_PREFIX@,$(VBOX_MINGW64_USER_LABEL_PREFIX),' \
+		-e 's,@VBOX_PATH_PREFIX_GCC32@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
+		-e 's,@VBOX_PATH_PREFIX_GCC64@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
                \
 		-e 's,@PATH_VS2010@,$(PATH_TOOL_$(VBOX_VCC_TOOL)),' \
 		-e 's,@PATH_VS2010_AMD64_BIN@,$(PATH_TOOL_$(VBOX_VCC_TOOL))/bin/$(subst x86,x86_amd64,$(KBUILD_HOST_ARCH)),' \
