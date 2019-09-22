@@ -253,13 +253,16 @@ MemMapInitialization (
 
   if (!mXen) {
     UINT32  TopOfLowRam;
+#ifndef VBOX
     UINT64  PciExBarBase;
+#endif
     UINT32  PciBase;
     UINT32  PciSize;
 
     TopOfLowRam = GetSystemMemorySizeBelow4gb ();
-    PciExBarBase = 0;
 #ifndef VBOX
+    PciExBarBase = 0;
+
     if (mHostBridgeDevId == INTEL_Q35_MCH_DEVICE_ID) {
       //
       // The MMCONFIG area is expected to fall between the top of low RAM and

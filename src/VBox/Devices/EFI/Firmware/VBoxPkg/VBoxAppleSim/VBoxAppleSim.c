@@ -244,48 +244,52 @@ EFI_STATUS (EFIAPI *gUnknownProtoHandler[])() =
 EFI_STATUS EFIAPI
 SetProperVariables(IN EFI_HANDLE ImageHandle, EFI_RUNTIME_SERVICES * rs)
 {
-     EFI_STATUS          rc;
-     UINT32              vBackgroundClear = 0x00000000;
-     UINT32              vFwFeatures      = 0x80000015;
-     UINT32              vFwFeaturesMask  = 0x800003ff;
+    EFI_STATUS          rc;
+    UINT32              vBackgroundClear = 0x00000000;
+    UINT32              vFwFeatures      = 0x80000015;
+    UINT32              vFwFeaturesMask  = 0x800003ff;
 
-     // -legacy acpi=0xffffffff acpi_debug=0xfffffff panic_io_port=0xef11 io=0xfffffffe trace=4096  io=0xffffffef -v serial=2 serialbaud=9600
-     // 0x10 makes kdb default, thus 0x15e for kdb, 0x14e for gdb
-     // usb=0x800 is required to work around default behavior of the Apple xHCI driver which rejects high-speed
-     // USB devices and tries to force them to EHCI when running on the Intel Panther Point chipset.
+    // -legacy acpi=0xffffffff acpi_debug=0xfffffff panic_io_port=0xef11 io=0xfffffffe trace=4096  io=0xffffffef -v serial=2 serialbaud=9600
+    // 0x10 makes kdb default, thus 0x15e for kdb, 0x14e for gdb
+    // usb=0x800 is required to work around default behavior of the Apple xHCI driver which rejects high-speed
+    // USB devices and tries to force them to EHCI when running on the Intel Panther Point chipset.
 
-     //static const CHAR8  vBootArgs[]      = "debug=0x15e keepsyms=1 acpi=0xffffffff acpi_debug=0xff acpi_level=7 -v -x32 -s"; // or just "debug=0x8 -legacy"
-     // 0x14e for serial output
-     //static const CHAR8  vDefBootArgs[]      = "debug=0x146 usb=0x800 keepsyms=1 -v -serial=0x1";
-     static const CHAR8  vDefBootArgs[]      = "usb=0x800 keepsyms=1 -v -serial=0x1";
-     CHAR8  vBootArgs[256];
-     UINT32 BootArgsLen;
+    //static const CHAR8  vBootArgs[]      = "debug=0x15e keepsyms=1 acpi=0xffffffff acpi_debug=0xff acpi_level=7 -v -x32 -s"; // or just "debug=0x8 -legacy"
+    // 0x14e for serial output
+    //static const CHAR8  vDefBootArgs[]      = "debug=0x146 usb=0x800 keepsyms=1 -v -serial=0x1";
+    static const CHAR8  vDefBootArgs[]      = "usb=0x800 keepsyms=1 -v -serial=0x1";
+    CHAR8  vBootArgs[256];
+    UINT32 BootArgsLen;
 
-     BootArgsLen = GetVmVariable(EFI_INFO_INDEX_BOOT_ARGS, vBootArgs, sizeof vBootArgs);
-     if (BootArgsLen <= 1)
-     {
-         BootArgsLen = sizeof vDefBootArgs;
-         CopyMem(vBootArgs, vDefBootArgs, BootArgsLen);
-     }
-     rc = rs->SetVariable(L"BackgroundClear",
-                          &gEfiAppleNvramGuid,
-                          /* EFI_VARIABLE_NON_VOLATILE | */ EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                          sizeof(vBackgroundClear), &vBackgroundClear);
+    BootArgsLen = GetVmVariable(EFI_INFO_INDEX_BOOT_ARGS, vBootArgs, sizeof vBootArgs);
+    if (BootArgsLen <= 1)
+    {
+        BootArgsLen = sizeof vDefBootArgs;
+        CopyMem(vBootArgs, vDefBootArgs, BootArgsLen);
+    }
+    rc = rs->SetVariable(L"BackgroundClear",
+                         &gEfiAppleNvramGuid,
+                         /* EFI_VARIABLE_NON_VOLATILE | */ EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                         sizeof(vBackgroundClear), &vBackgroundClear);
+    ASSERT_EFI_ERROR (rc);
 
-     rc = rs->SetVariable(L"FirmwareFeatures",
-                          &gEfiAppleNvramGuid,
-                          EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                          sizeof(vFwFeatures), &vFwFeatures);
+    rc = rs->SetVariable(L"FirmwareFeatures",
+                         &gEfiAppleNvramGuid,
+                         EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                         sizeof(vFwFeatures), &vFwFeatures);
+    ASSERT_EFI_ERROR (rc);
 
-     rc = rs->SetVariable(L"FirmwareFeaturesMask",
-                          &gEfiAppleNvramGuid,
-                          EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                          sizeof(vFwFeaturesMask), &vFwFeaturesMask);
+    rc = rs->SetVariable(L"FirmwareFeaturesMask",
+                         &gEfiAppleNvramGuid,
+                         EFI_VARIABLE_NON_VOLATILE | EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                         sizeof(vFwFeaturesMask), &vFwFeaturesMask);
+    ASSERT_EFI_ERROR (rc);
 
-     rc = rs->SetVariable(L"boot-args",
-                          &gEfiAppleBootGuid,
-                          EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
-                          BootArgsLen, &vBootArgs);
+    rc = rs->SetVariable(L"boot-args",
+                         &gEfiAppleBootGuid,
+                         EFI_VARIABLE_BOOTSERVICE_ACCESS | EFI_VARIABLE_RUNTIME_ACCESS,
+                         BootArgsLen, &vBootArgs);
+    ASSERT_EFI_ERROR (rc);
 
      return EFI_SUCCESS;
 }

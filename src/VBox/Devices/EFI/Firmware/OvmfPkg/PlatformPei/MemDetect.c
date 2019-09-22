@@ -764,8 +764,6 @@ VBoxInitializeRam (
 {
   UINT64                      LowerMemorySize;
   UINT64                      UpperMemorySize;
-  EFI_PHYSICAL_ADDRESS        MemoryBase;
-  UINT64                      MemorySize;
 
   DEBUG ((EFI_D_INFO, "%a called\n", __FUNCTION__));
 
@@ -797,8 +795,6 @@ VBoxInitializeRam (
     // looking for an area to borrow.
     //
     AddMemoryRangeHob (0, BASE_512KB + BASE_128KB);
-    MemoryBase = 0;
-    MemorySize = BASE_512KB + BASE_128KB;
   } else {
     LowerMemorySize = GetSystemMemorySizeBelow4gb ();
   }

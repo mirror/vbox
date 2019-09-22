@@ -1010,7 +1010,7 @@ EFI_STATUS VBoxBmQueryMediaFileNameForSFs(EFI_HANDLE hSFs, CHAR16 **ppwszFileNam
 
   *ppwszFileName = EFI_REMOVABLE_MEDIA_FILE_NAME;
 
-  Status = gBS->HandleProtocol(hSFs, &gEfiSimpleFileSystemProtocolGuid, &pSFs);
+  Status = gBS->HandleProtocol(hSFs, &gEfiSimpleFileSystemProtocolGuid, (void **)&pSFs);
   if (!EFI_ERROR(Status))
   {
     Status = pSFs->OpenVolume(pSFs, &pRoot);

@@ -102,7 +102,6 @@ PartitionInstallAppleChildHandles (
   EFI_STATUS                Found;
   UINT32                    Partition;
   UINT32                    PartitionEntries;
-  UINT32                    VolSpaceSize;
   UINT32                    SubBlockSize;
   UINT32                    BlkPerSec;
   EFI_PARTITION_INFO_PROTOCOL  PartitionInfo;
@@ -110,7 +109,6 @@ PartitionInstallAppleChildHandles (
   VBoxLogFlowFuncEnter();
   Found         = EFI_NOT_FOUND;
   Media         = BlockIo->Media;
-  VolSpaceSize  = 0;
 
   Block = AllocatePool ((UINTN) Media->BlockSize);
 
