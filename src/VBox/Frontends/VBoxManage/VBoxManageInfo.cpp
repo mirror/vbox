@@ -2506,7 +2506,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 if (FAILED(rc))
                     uRevision = 0;
                 RTStrPrintf(szValue, sizeof(szValue), "%ls r%u", guestString.raw(), uRevision);
-                SHOW_UTF8_STRING("GuestAdditionsVersion", "Additions version", szValue);
+                SHOW_UTF8_STRING("GuestAdditionsVersion", "Additions version:", szValue);
             }
 
             if (details != VMINFO_MACHINEREADABLE)
