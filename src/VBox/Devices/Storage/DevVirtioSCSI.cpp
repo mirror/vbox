@@ -1005,7 +1005,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
          */
         size_t cbReqSgBuf = RTSgBufCalcTotalLength(&reqSegBuf);
         AssertMsgReturn(cbReqSgBuf <= pReq->pDescChain->cbPhysDst,
-                       ("Guest expected less req data (space needed: %ld, avail: %d)\n",
+                       ("Guest expected less req data (space needed: %d, avail: %d)\n",
                          cbReqSgBuf, pReq->pDescChain->cbPhysDst),
                        VERR_BUFFER_OVERFLOW);
 
@@ -1372,10 +1372,7 @@ static int virtioScsiWorker(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         {
             LogFunc(("%s queue not attached, worker aborting...\n", QUEUENAME(qIdx)));
             break;
-        } else {
-            LogFunc(("%s queue is still attached!\n", QUEUENAME(qIdx)));
         }
-
         if (!pThis->fQuiescing)
         {
              Log6Func(("fetching next descriptor chain from %s\n", QUEUENAME(qIdx)));
