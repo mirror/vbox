@@ -109,7 +109,7 @@ RT_C_DECLS_END
 #define PCI_MAX_LAT         0x3f    /* 8 bits */
 
 
-static int pci_data_write(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, uint32_t addr, uint32_t u32Value, int cb)
+static VBOXSTRICTRC pci_data_write(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, uint32_t addr, uint32_t u32Value, int cb)
 {
     LogFunc(("addr=%08x u32Value=%08x cb=%d\n", pGlobals->uConfigReg, u32Value, cb));
 
@@ -165,7 +165,7 @@ static int pci_data_write(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, uint32_t add
     return rcStrict;
 }
 
-static int pci_data_read(PDEVPCIROOT pGlobals, uint32_t addr, int cb, uint32_t *pu32Value)
+static VBOXSTRICTRC pci_data_read(PDEVPCIROOT pGlobals, uint32_t addr, int cb, uint32_t *pu32Value)
 {
     *pu32Value = UINT32_MAX;
 
@@ -854,16 +854,16 @@ PDMBOTHCBDECL(int) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 {
     LogFunc(("Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
     NOREF(pvUser);
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (!(Port % cb))
     {
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
-        rc = pci_data_write(pDevIns, PDMINS_2_DATA(pDevIns, PDEVPCIROOT), Port, u32, cb);
+        rcStrict = pci_data_write(pDevIns, PDMINS_2_DATA(pDevIns, PDEVPCIROOT), Port, u32, cb);
         PCI_UNLOCK(pDevIns);
     }
     else
         AssertMsgFailed(("Write to port %#x u32=%#x cb=%d\n", Port, u32, cb));
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
@@ -876,10 +876,10 @@ PDMBOTHCBDECL(int) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     if (!(Port % cb))
     {
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
-        int rc = pci_data_read(PDMINS_2_DATA(pDevIns, PDEVPCIROOT), Port, cb, pu32);
+        VBOXSTRICTRC rcStrict = pci_data_read(PDMINS_2_DATA(pDevIns, PDEVPCIROOT), Port, cb, pu32);
         PCI_UNLOCK(pDevIns);
-        LogFunc(("Port=%#x cb=%#x -> %#x (%Rrc)\n", Port, cb, *pu32, rc));
-        return rc;
+        LogFunc(("Port=%#x cb=%#x -> %#x (%Rrc)\n", Port, cb, *pu32, VBOXSTRICTRC_VAL(rcStrict)));
+        return VBOXSTRICTRC_TODO(rcStrict);
     }
     AssertMsgFailed(("Read from port %#x cb=%d\n", Port, cb));
     return VERR_IOM_IOPORT_UNUSED;
