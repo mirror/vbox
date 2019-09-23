@@ -361,12 +361,12 @@ PDMBOTHCBDECL(int) ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
     PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
     LogFlowFunc(("Port=%#x u32=%#x cb=%d (config=%#10x)\n", uPort, u32, cb, pThis->uConfigReg));
     NOREF(pvUser);
-    int rc = VINF_SUCCESS;
+    VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (!(uPort % cb))
     {
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
 
-        do
+        do /* do-brain-dead-while-false-utter-stupidity-loop */
         {
             /* Configuration space mapping enabled? */
             if (!(pThis->uConfigReg & (1 << 31)))
@@ -377,14 +377,14 @@ PDMBOTHCBDECL(int) ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
             ich9pciStateToPciAddr(pThis, uPort, &aPciAddr);
 
             /* Perform configuration space write */
-            rc = ich9pciConfigWrite(pDevIns, pThis, &aPciAddr, u32, cb, VINF_IOM_R3_IOPORT_WRITE);
+            rcStrict = ich9pciConfigWrite(pDevIns, pThis, &aPciAddr, u32, cb, VINF_IOM_R3_IOPORT_WRITE);
         } while (0);
 
         PCI_UNLOCK(pDevIns);
     }
     else
         AssertMsgFailed(("Unaligned write to port %#x u32=%#x cb=%d\n", uPort, u32, cb));
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
@@ -472,9 +472,9 @@ PDMBOTHCBDECL(int) ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
 
         /* Configuration space mapping enabled? */
-        int rc;
+        VBOXSTRICTRC rcStrict;
         if (!(pThis->uConfigReg & (1 << 31)))
-            rc = VINF_SUCCESS;
+            rcStrict = VINF_SUCCESS;
         else
         {
             /* Decode target device and configuration space register */
@@ -482,13 +482,13 @@ PDMBOTHCBDECL(int) ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             ich9pciStateToPciAddr(pThis, uPort, &aPciAddr);
 
             /* Perform configuration space read */
-            rc = ich9pciConfigRead(pThis, &aPciAddr, cb, pu32, VINF_IOM_R3_IOPORT_READ);
+            rcStrict = ich9pciConfigRead(pThis, &aPciAddr, cb, pu32, VINF_IOM_R3_IOPORT_READ);
         }
 
         PCI_UNLOCK(pDevIns);
 
-        LogFlowFunc(("Port=%#x cb=%#x (config=%#10x) -> %#x (%Rrc)\n", uPort, cb, *pu32, pThis->uConfigReg, rc));
-        return rc;
+        LogFlowFunc(("Port=%#x cb=%#x (config=%#10x) -> %#x (%Rrc)\n", uPort, cb, *pu32, pThis->uConfigReg, VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
     }
     AssertMsgFailed(("Unaligned read from port %#x cb=%d\n", uPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
@@ -671,10 +671,10 @@ PDMBOTHCBDECL(int) ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPH
     }
 
     /* Perform configuration space write */
-    int rc = ich9pciConfigWrite(pDevIns, pPciRoot, &aDest, u32, cb, VINF_IOM_R3_MMIO_WRITE);
+    VBOXSTRICTRC rcStrict = ich9pciConfigWrite(pDevIns, pPciRoot, &aDest, u32, cb, VINF_IOM_R3_MMIO_WRITE);
     PCI_UNLOCK(pDevIns);
 
-    return rc;
+    return VBOXSTRICTRC_TODO(rcStrict);
 }
 
 
@@ -695,7 +695,6 @@ PDMBOTHCBDECL(int) ich9pciMcfgMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPH
 PDMBOTHCBDECL(int) ich9pciMcfgMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     PDEVPCIROOT pPciRoot = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    uint32_t    rv;
     NOREF(pvUser);
 
     LogFlowFunc(("%RGp(%d) \n", GCPhysAddr, cb));
@@ -707,29 +706,29 @@ PDMBOTHCBDECL(int) ich9pciMcfgMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHY
     ich9pciPhysToPciAddr(pPciRoot, GCPhysAddr, &aDest);
 
     /* Perform configuration space read */
-    int rc = ich9pciConfigRead(pPciRoot, &aDest, cb, &rv, VINF_IOM_R3_MMIO_READ);
-
-    if (RT_SUCCESS(rc))
+    uint32_t     u32Value;
+    VBOXSTRICTRC rcStrict = ich9pciConfigRead(pPciRoot, &aDest, cb, &u32Value, VINF_IOM_R3_MMIO_READ);
+    if (RT_SUCCESS(rcStrict)) /** @todo this is wrong, though it probably works fine due to double buffering... */
     {
         switch (cb)
         {
             case 1:
-                *(uint8_t*)pv   = (uint8_t)rv;
+                *(uint8_t *)pv   = (uint8_t)u32Value;
                 break;
             case 2:
-                *(uint16_t*)pv  = (uint16_t)rv;
+                *(uint16_t *)pv  = (uint16_t)u32Value;
                 break;
             case 4:
-                *(uint32_t*)pv  = (uint32_t)rv;
+                *(uint32_t *)pv  = u32Value;
                 break;
             default:
-                Assert(false);
+                AssertFailed();
                 break;
         }
     }
-    PCI_UNLOCK(pDevIns);
 
-    return rc;
+    PCI_UNLOCK(pDevIns);
+    return rcStrict;
 }
 
 #ifdef IN_RING3
