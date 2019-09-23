@@ -177,15 +177,8 @@ typedef struct PDMPCIDEVINT
      * to devices on another bus. */
     R3PTRTYPE(PFNPCIBRIDGECONFIGWRITE) pfnBridgeConfigWrite;
 
-    /** Pointer to the PCI bus of the device. (R0 ptr)
-     * @note Only used by ich9pcibridgeSetIrq to find the host (root) bus. */
-    R0PTRTYPE(struct DEVPCIBUS *)   pBusR0;
     /** Page used for MSI-X state.            (R0 ptr) */
     R0PTRTYPE(void *)               pMsixPageR0;
-
-    /** Pointer to the PCI bus of the device. (RC ptr)
-     * @note Only used by ich9pcibridgeSetIrq to find the host (root) bus. */
-    RCPTRTYPE(struct DEVPCIBUS *)   pBusRC;
     /** Page used for MSI-X state.            (RC ptr) */
     RCPTRTYPE(void *)               pMsixPageRC;
 
@@ -210,10 +203,8 @@ typedef struct PDMPCIDEVINT
     uint16_t                        cbMsixRegion;
     /** Offset to the PBA for MSI-X.   */
     uint16_t                        offMsixPba;
-#if HC_ARCH_BITS == 32
-    /** Add padding to align aIORegions to an 8 byte boundary. */
-    uint8_t                         abPadding2[12];
-#endif
+    /** Add padding to align aIORegions to an 16 byte boundary. */
+    uint8_t                         abPadding2[HC_ARCH_BITS == 32 ? 4+8 : 4+8];
 
     /** Pointer to bus specific data. (R3 ptr) */
     R3PTRTYPE(const void *)         pPciBusPtrR3;

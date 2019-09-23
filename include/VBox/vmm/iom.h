@@ -242,6 +242,80 @@ typedef DECLCALLBACK(int) FNIOMIOPORTOUTSTRING(PPDMDEVINS pDevIns, void *pvUser,
 /** Pointer to a FNIOMIOPORTOUTSTRING(). */
 typedef FNIOMIOPORTOUTSTRING *PFNIOMIOPORTOUTSTRING;
 
+
+/**
+ * Port I/O Handler for IN operations.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_*.
+ * @returns VERR_IOM_IOPORT_UNUSED if the port is really unused and a ~0 value should be returned.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   pu32        Where to store the result.  This is always a 32-bit
+ *                      variable regardless of what @a cb might say.
+ * @param   cb          Number of bytes read.
+ * @remarks Caller enters the device critical section.
+ */
+typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWIN(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb);
+/** Pointer to a FNIOMIOPORTNEWIN(). */
+typedef FNIOMIOPORTNEWIN *PFNIOMIOPORTNEWIN;
+
+/**
+ * Port I/O Handler for string IN operations.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_*.
+ * @returns VERR_IOM_IOPORT_UNUSED if the port is really unused and a ~0 value should be returned.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the IN operation.
+ * @param   pbDst       Pointer to the destination buffer.
+ * @param   pcTransfers Pointer to the number of transfer units to read, on
+ *                      return remaining transfer units.
+ * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
+ * @remarks Caller enters the device critical section.
+ */
+typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWINSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint8_t *pbDst,
+                                                          uint32_t *pcTransfers, unsigned cb);
+/** Pointer to a FNIOMIOPORTNEWINSTRING(). */
+typedef FNIOMIOPORTNEWINSTRING *PFNIOMIOPORTNEWINSTRING;
+
+/**
+ * Port I/O Handler for OUT operations.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_*.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the OUT operation.
+ * @param   u32         The value to output.
+ * @param   cb          The value size in bytes.
+ * @remarks Caller enters the device critical section.
+ */
+typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWOUT(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb);
+/** Pointer to a FNIOMIOPORTNEWOUT(). */
+typedef FNIOMIOPORTNEWOUT *PFNIOMIOPORTNEWOUT;
+
+/**
+ * Port I/O Handler for string OUT operations.
+ *
+ * @returns VINF_SUCCESS or VINF_EM_*.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   pvUser      User argument.
+ * @param   uPort       Port number used for the OUT operation.
+ * @param   pbSrc       Pointer to the source buffer.
+ * @param   pcTransfers Pointer to the number of transfer units to write, on
+ *                      return remaining transfer units.
+ * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
+ * @remarks Caller enters the device critical section.
+ */
+typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWOUTSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, const uint8_t *pbSrc,
+                                                           uint32_t *pcTransfers, unsigned cb);
+/** Pointer to a FNIOMIOPORTNEWOUTSTRING(). */
+typedef FNIOMIOPORTNEWOUTSTRING *PFNIOMIOPORTNEWOUTSTRING;
+
 /**
  * I/O port description.
  *
@@ -337,8 +411,8 @@ VMMR3_INT_DECL(void) IOMR3Relocate(PVM pVM, RTGCINTPTR offDelta);
 VMMR3_INT_DECL(int)  IOMR3Term(PVM pVM);
 
 VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
-                                       uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                       PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, RTR3PTR pvUser,
+                                       uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                       PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, RTR3PTR pvUser,
                                        const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts);
 VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts, RTIOPORT Port);
 VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts);
@@ -408,8 +482,8 @@ VMMR3_INT_DECL(void) IOMR3NotifyDebugEventChange(PVM pVM, DBGFEVENT enmEvent, bo
 VMMR0_INT_DECL(void) IOMR0InitPerVMData(PGVM pGVM);
 VMMR0_INT_DECL(void) IOMR0CleanupVM(PGVM pGVM);
 VMMR0_INT_DECL(int)  IOMR0IoPortSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
-                                             PFNIOMIOPORTOUT pfnOut,  PFNIOMIOPORTIN pfnIn,
-                                             PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, void *pvUser);
+                                             PFNIOMIOPORTNEWOUT pfnOut,  PFNIOMIOPORTNEWIN pfnIn,
+                                             PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, void *pvUser);
 VMMR0_INT_DECL(int)  IOMR0IoPortGrowRegistrationTables(PGVM pGVM, uint64_t cMinEntries);
 VMMR0_INT_DECL(int)  IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cMinEntries);
 

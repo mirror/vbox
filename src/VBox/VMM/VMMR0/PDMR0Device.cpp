@@ -191,8 +191,8 @@ VMMR0_INT_DECL(void) PDMR0CleanupVM(PGVM pGVM)
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnIoPortSetUpContextEx} */
 static DECLCALLBACK(int) pdmR0DevHlp_IoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
-                                                          PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                                          PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr,
+                                                          PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                          PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr,
                                                           void *pvUser)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1109,6 +1109,18 @@ static DECLCALLBACK(void) pdmR0PciHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMPCIHLPR0,pfnGetBusByNo} */
+static DECLCALLBACK(PPDMDEVINS) pdmR0PciHlp_GetBusByNo(PPDMDEVINS pDevIns, uint32_t idxPdmBus)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+    AssertReturn(idxPdmBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses), NULL);
+    PPDMDEVINS pRetDevIns = pGVM->pdmr0.s.aPciBuses[idxPdmBus].pDevInsR0;
+    LogFlow(("pdmR3PciHlp_GetBusByNo: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pRetDevIns));
+    return pRetDevIns;
+}
+
+
 /**
  * The Ring-0 PCI Bus Helper Callbacks.
  */
@@ -1120,6 +1132,7 @@ extern DECLEXPORT(const PDMPCIHLPR0) g_pdmR0PciHlp =
     pdmR0PciHlp_IoApicSendMsi,
     pdmR0PciHlp_Lock,
     pdmR0PciHlp_Unlock,
+    pdmR0PciHlp_GetBusByNo,
     PDM_PCIHLPR0_VERSION, /* the end */
 };
 

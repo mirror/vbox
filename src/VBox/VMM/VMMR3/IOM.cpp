@@ -147,6 +147,10 @@ static FNIOMIOPORTIN        iomR3IOPortDummyIn;
 static FNIOMIOPORTOUT       iomR3IOPortDummyOut;
 static FNIOMIOPORTINSTRING  iomR3IOPortDummyInStr;
 static FNIOMIOPORTOUTSTRING iomR3IOPortDummyOutStr;
+static FNIOMIOPORTNEWIN        iomR3IOPortDummyNewIn;
+static FNIOMIOPORTNEWOUT       iomR3IOPortDummyNewOut;
+static FNIOMIOPORTNEWINSTRING  iomR3IOPortDummyNewInStr;
+static FNIOMIOPORTNEWOUTSTRING iomR3IOPortDummyNewOutStr;
 
 #ifdef VBOX_WITH_STATISTICS
 static const char *iomR3IOPortGetStandardName(RTIOPORT Port);
@@ -451,8 +455,8 @@ VMMR3_INT_DECL(int) IOMR3Term(PVM pVM)
  * Worker for PDMDEVHLPR3::pfnIoPortCreateEx.
  */
 VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
-                                       uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                       PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, RTR3PTR pvUser,
+                                       uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                       PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, RTR3PTR pvUser,
                                        const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
     /*
@@ -523,10 +527,10 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
      */
     pVM->iom.s.paIoPortRegs[idx].pvUser             = pvUser;
     pVM->iom.s.paIoPortRegs[idx].pDevIns            = pDevIns;
-    pVM->iom.s.paIoPortRegs[idx].pfnOutCallback     = pfnOut    ? pfnOut    : iomR3IOPortDummyOut;
-    pVM->iom.s.paIoPortRegs[idx].pfnInCallback      = pfnIn     ? pfnIn     : iomR3IOPortDummyIn;
-    pVM->iom.s.paIoPortRegs[idx].pfnOutStrCallback  = pfnOutStr ? pfnOutStr : iomR3IOPortDummyOutStr;
-    pVM->iom.s.paIoPortRegs[idx].pfnInStrCallback   = pfnInStr  ? pfnInStr  : iomR3IOPortDummyInStr;
+    pVM->iom.s.paIoPortRegs[idx].pfnOutCallback     = pfnOut    ? pfnOut    : iomR3IOPortDummyNewOut;
+    pVM->iom.s.paIoPortRegs[idx].pfnInCallback      = pfnIn     ? pfnIn     : iomR3IOPortDummyNewIn;
+    pVM->iom.s.paIoPortRegs[idx].pfnOutStrCallback  = pfnOutStr ? pfnOutStr : iomR3IOPortDummyNewOutStr;
+    pVM->iom.s.paIoPortRegs[idx].pfnInStrCallback   = pfnInStr  ? pfnInStr  : iomR3IOPortDummyNewInStr;
     pVM->iom.s.paIoPortRegs[idx].pszDesc            = pszDesc;
     pVM->iom.s.paIoPortRegs[idx].paExtDescs         = paExtDescs;
     pVM->iom.s.paIoPortRegs[idx].pPciDev            = pPciDev;
@@ -591,8 +595,8 @@ VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE
                     {
                         /* Insert after the entry we just considered: */
                         pEntry += 1;
-                        if (iEnd < cEntries)
-                            memmove(pEntry + 1, pEntry, sizeof(*pEntry) * (cEntries - iEnd));
+                        if (i < cEntries)
+                            memmove(pEntry + 1, pEntry, sizeof(*pEntry) * (cEntries - i));
                         break;
                     }
                 }
@@ -603,8 +607,8 @@ VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE
                     else
                     {
                         /* Insert at the entry we just considered: */
-                        if (iEnd < cEntries)
-                            memmove(pEntry + 1, pEntry, sizeof(*pEntry) * (cEntries - iEnd));
+                        if (i < cEntries)
+                            memmove(pEntry + 1, pEntry, sizeof(*pEntry) * (cEntries - i));
                         break;
                     }
                 }
@@ -760,7 +764,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
         AssertMsg(paEntries[0].idx < pVM->iom.s.cIoPortRegs, ("%#x %#x\n", paEntries[0].idx, pVM->iom.s.cIoPortRegs));
 
         RTIOPORT uPortPrev = paEntries[0].uLastPort;
-        for (i = 1; i <= cEntries; i++)
+        for (i = 1; i < cEntries - 1; i++)
         {
             AssertMsg(paEntries[i].uLastPort >= paEntries[i].uFirstPort, ("%u: %#x %#x\n", i, paEntries[i].uLastPort, paEntries[i].uFirstPort));
             AssertMsg(paEntries[i].idx < pVM->iom.s.cIoPortRegs, ("%u: %#x %#x\n", i, paEntries[i].idx, pVM->iom.s.cIoPortRegs));
@@ -1689,6 +1693,63 @@ static DECLCALLBACK(int) iomR3IOPortDummyOut(PPDMDEVINS pDevIns, void *pvUser, R
  */
 static DECLCALLBACK(int) iomR3IOPortDummyOutStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t const *pbSrc,
                                                 uint32_t *pcTransfer, unsigned cb)
+{
+    NOREF(pDevIns); NOREF(pvUser); NOREF(Port); NOREF(pbSrc); NOREF(pcTransfer); NOREF(cb);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ *      Dummy Port I/O Handler for IN operations.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+iomR3IOPortDummyNewIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+{
+    NOREF(pDevIns); NOREF(pvUser); NOREF(Port);
+    switch (cb)
+    {
+        case 1: *pu32 = 0xff; break;
+        case 2: *pu32 = 0xffff; break;
+        case 4: *pu32 = UINT32_C(0xffffffff); break;
+        default:
+            AssertReleaseMsgFailed(("cb=%d\n", cb));
+            return VERR_IOM_IOPORT_IPE_2;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWINSTRING,
+ *      Dummy Port I/O Handler for string IN operations.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+iomR3IOPortDummyNewInStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t *pbDst, uint32_t *pcTransfer, unsigned cb)
+{
+    NOREF(pDevIns); NOREF(pvUser); NOREF(Port); NOREF(pbDst); NOREF(pcTransfer); NOREF(cb);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ *      Dummy Port I/O Handler for OUT operations.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+iomR3IOPortDummyNewOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+{
+    NOREF(pDevIns); NOREF(pvUser); NOREF(Port); NOREF(u32); NOREF(cb);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUTSTRING,
+ *      Dummy Port I/O Handler for string OUT operations.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+iomR3IOPortDummyNewOutStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t const *pbSrc, uint32_t *pcTransfer, unsigned cb)
 {
     NOREF(pDevIns); NOREF(pvUser); NOREF(Port); NOREF(pbSrc); NOREF(pcTransfer); NOREF(cb);
     return VINF_SUCCESS;

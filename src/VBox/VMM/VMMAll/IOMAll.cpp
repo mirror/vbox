@@ -103,8 +103,8 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint
         /*
          * Found an entry, get the data so we can leave the IOM lock.
          */
-        PFNIOMIOPORTIN pfnInCallback = pRegEntry->pfnInCallback;
-        PPDMDEVINS     pDevIns       = pRegEntry->pDevIns;
+        PFNIOMIOPORTNEWIN pfnInCallback = pRegEntry->pfnInCallback;
+        PPDMDEVINS        pDevIns       = pRegEntry->pDevIns;
 #ifndef IN_RING3
         if (   pfnInCallback
             && pDevIns
@@ -348,9 +348,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
         /*
          * Found an entry, get the data so we can leave the IOM lock.
          */
-        PFNIOMIOPORTINSTRING pfnInStrCallback = pRegEntry->pfnInStrCallback;
-        PFNIOMIOPORTIN       pfnInCallback    = pRegEntry->pfnInCallback;
-        PPDMDEVINS           pDevIns          = pRegEntry->pDevIns;
+        PFNIOMIOPORTNEWINSTRING pfnInStrCallback = pRegEntry->pfnInStrCallback;
+        PFNIOMIOPORTNEWIN       pfnInCallback    = pRegEntry->pfnInCallback;
+        PPDMDEVINS              pDevIns          = pRegEntry->pDevIns;
 #ifndef IN_RING3
         if (   pfnInCallback
             && pDevIns
@@ -670,8 +670,8 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uin
         /*
          * Found an entry, get the data so we can leave the IOM lock.
          */
-        PFNIOMIOPORTOUT pfnOutCallback   = pRegEntry->pfnOutCallback;
-        PPDMDEVINS      pDevIns          = pRegEntry->pDevIns;
+        PFNIOMIOPORTNEWOUT pfnOutCallback   = pRegEntry->pfnOutCallback;
+        PPDMDEVINS         pDevIns          = pRegEntry->pDevIns;
 #ifndef IN_RING3
         if (   pfnOutCallback
             && pDevIns
@@ -891,9 +891,9 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
         /*
          * Found an entry, get the data so we can leave the IOM lock.
          */
-        PFNIOMIOPORTOUTSTRING   pfnOutStrCallback = pRegEntry->pfnOutStrCallback;
-        PFNIOMIOPORTOUT         pfnOutCallback    = pRegEntry->pfnOutCallback;
-        PPDMDEVINS              pDevIns           = pRegEntry->pDevIns;
+        PFNIOMIOPORTNEWOUTSTRING   pfnOutStrCallback = pRegEntry->pfnOutStrCallback;
+        PFNIOMIOPORTNEWOUT         pfnOutCallback    = pRegEntry->pfnOutCallback;
+        PPDMDEVINS                 pDevIns           = pRegEntry->pDevIns;
 #ifndef IN_RING3
         if (   pfnOutCallback
             && pDevIns

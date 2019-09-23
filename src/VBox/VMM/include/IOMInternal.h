@@ -166,13 +166,13 @@ typedef struct IOMIOPORTENTRYR0
     /** Pointer to the associated device instance, NULL if entry not used. */
     R0PTRTYPE(PPDMDEVINS)               pDevIns;
     /** Pointer to OUT callback function. */
-    R0PTRTYPE(PFNIOMIOPORTOUT)          pfnOutCallback;
+    R0PTRTYPE(PFNIOMIOPORTNEWOUT)       pfnOutCallback;
     /** Pointer to IN callback function. */
-    R0PTRTYPE(PFNIOMIOPORTIN)           pfnInCallback;
+    R0PTRTYPE(PFNIOMIOPORTNEWIN)        pfnInCallback;
     /** Pointer to string OUT callback function. */
-    R0PTRTYPE(PFNIOMIOPORTOUTSTRING)    pfnOutStrCallback;
+    R0PTRTYPE(PFNIOMIOPORTNEWOUTSTRING) pfnOutStrCallback;
     /** Pointer to string IN callback function. */
-    R0PTRTYPE(PFNIOMIOPORTINSTRING)     pfnInStrCallback;
+    R0PTRTYPE(PFNIOMIOPORTNEWINSTRING)  pfnInStrCallback;
     /** The entry of the first statistics entry, UINT16_MAX if no stats. */
     uint16_t                            idxStats;
     /** The number of ports covered by this entry, 0 if entry not used. */
@@ -195,13 +195,13 @@ typedef struct IOMIOPORTENTRYR3
     /** Pointer to the associated device instance. */
     R3PTRTYPE(PPDMDEVINS)               pDevIns;
     /** Pointer to OUT callback function. */
-    R3PTRTYPE(PFNIOMIOPORTOUT)          pfnOutCallback;
+    R3PTRTYPE(PFNIOMIOPORTNEWOUT)       pfnOutCallback;
     /** Pointer to IN callback function. */
-    R3PTRTYPE(PFNIOMIOPORTIN)           pfnInCallback;
+    R3PTRTYPE(PFNIOMIOPORTNEWIN)        pfnInCallback;
     /** Pointer to string OUT callback function. */
-    R3PTRTYPE(PFNIOMIOPORTOUTSTRING)    pfnOutStrCallback;
+    R3PTRTYPE(PFNIOMIOPORTNEWOUTSTRING) pfnOutStrCallback;
     /** Pointer to string IN callback function. */
-    R3PTRTYPE(PFNIOMIOPORTINSTRING)     pfnInStrCallback;
+    R3PTRTYPE(PFNIOMIOPORTNEWINSTRING)  pfnInStrCallback;
     /** Description / Name. For easing debugging. */
     R3PTRTYPE(const char *)             pszDesc;
     /** Extended port description table, optional. */

@@ -294,40 +294,15 @@ static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @interface_method_impl{PDMPCIHLPR3,pfnGetRCHelpers} */
-static DECLCALLBACK(PCPDMPCIHLPRC) pdmR3PciHlp_GetRCHelpers(PPDMDEVINS pDevIns)
+/** @interface_method_impl{PDMPCIHLPR3,pfnGetBusByNo} */
+static DECLCALLBACK(PPDMDEVINS) pdmR3PciHlp_GetBusByNo(PPDMDEVINS pDevIns, uint32_t idxPdmBus)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-
-    RTRCPTR pRCHelpers = NIL_RTRCPTR;
-    if (VM_IS_RAW_MODE_ENABLED(pVM))
-    {
-        int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCPciHlp", &pRCHelpers);
-        AssertReleaseRC(rc);
-        AssertRelease(pRCHelpers);
-    }
-
-    LogFlow(("pdmR3PciHlp_GetRCHelpers: caller='%s'/%d: returns %RRv\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pRCHelpers));
-    return pRCHelpers;
-}
-
-
-/** @interface_method_impl{PDMPCIHLPR3,pfnGetR0Helpers} */
-static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-    PCPDMPCIHLPR0 pR0Helpers = 0;
-    int rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0PciHlp", &pR0Helpers);
-    AssertReleaseRC(rc);
-    AssertRelease(pR0Helpers);
-    LogFlow(("pdmR3PciHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pR0Helpers));
-    return pR0Helpers;
+    AssertReturn(idxPdmBus < RT_ELEMENTS(pVM->pdm.s.aPciBuses), NULL);
+    PPDMDEVINS pRetDevIns = pVM->pdm.s.aPciBuses[idxPdmBus].pDevInsR3;
+    LogFlow(("pdmR3PciHlp_GetBusByNo: caller='%s'/%d: returns %p\n", pDevIns->pReg->szName, pDevIns->iInstance, pRetDevIns));
+    return pRetDevIns;
 }
 
 
@@ -341,10 +316,9 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
     pdmR3PciHlp_IoApicSetIrq,
     pdmR3PciHlp_IoApicSendMsi,
     pdmR3PciHlp_IsMMIO2Base,
-    pdmR3PciHlp_GetRCHelpers,
-    pdmR3PciHlp_GetR0Helpers,
     pdmR3PciHlp_Lock,
     pdmR3PciHlp_Unlock,
+    pdmR3PciHlp_GetBusByNo,
     PDM_PCIHLPR3_VERSION, /* the end */
 };
 

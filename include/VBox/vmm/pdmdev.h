@@ -1057,6 +1057,15 @@ typedef struct PDMPCIHLPRC
      */
     DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
+    /**
+     * Gets a bus by it's PDM ordinal (typically the parent bus).
+     *
+     * @returns Pointer to the device instance of the bus.
+     * @param   pDevIns         The PCI bus device instance.
+     * @param   idxPdmBus       The PDM ordinal value of the bus to get.
+     */
+    DECLRCCALLBACKMEMBER(PPDMDEVINS, pfnGetBusByNo,(PPDMDEVINS pDevIns, uint32_t idxPdmBus));
+
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
 } PDMPCIHLPRC;
@@ -1110,7 +1119,6 @@ typedef struct PDMPCIHLPR0
      */
     DECLR0CALLBACKMEMBER(void,  pfnIoApicSendMsi,(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc));
 
-
     /**
      * Acquires the PDM lock.
      *
@@ -1128,6 +1136,15 @@ typedef struct PDMPCIHLPR0
      */
     DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
+    /**
+     * Gets a bus by it's PDM ordinal (typically the parent bus).
+     *
+     * @returns Pointer to the device instance of the bus.
+     * @param   pDevIns         The PCI bus device instance.
+     * @param   idxPdmBus       The PDM ordinal value of the bus to get.
+     */
+    DECLR0CALLBACKMEMBER(PPDMDEVINS, pfnGetBusByNo,(PPDMDEVINS pDevIns, uint32_t idxPdmBus));
+
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
 } PDMPCIHLPR0;
@@ -1137,7 +1154,7 @@ typedef R0PTRTYPE(PDMPCIHLPR0 *) PPDMPCIHLPR0;
 typedef R0PTRTYPE(const PDMPCIHLPR0 *) PCPDMPCIHLPR0;
 
 /** Current PDMPCIHLPR0 version number. */
-#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 3, 0)
+#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 4, 0)
 
 /**
  * PCI device helpers.
@@ -1189,30 +1206,6 @@ typedef struct PDMPCIHLPR3
     DECLR3CALLBACKMEMBER(bool,  pfnIsMMIOExBase,(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys));
 
     /**
-     * Gets the address of the RC PCI Bus helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the RC helpers.
-     *
-     * @returns RC pointer to the PCI Bus helpers.
-     * @param   pDevIns         Device instance of the PCI Bus.
-     * @thread  EMT only.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMPCIHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
-
-    /**
-     * Gets the address of the R0 PCI Bus helpers.
-     *
-     * This should be called at both construction and relocation time
-     * to obtain the correct address of the R0 helpers.
-     *
-     * @returns R0 pointer to the PCI Bus helpers.
-     * @param   pDevIns         Device instance of the PCI Bus.
-     * @thread  EMT only.
-     */
-    DECLR3CALLBACKMEMBER(PCPDMPCIHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
-
-    /**
      * Acquires the PDM lock.
      *
      * @returns VINF_SUCCESS on success.
@@ -1229,6 +1222,15 @@ typedef struct PDMPCIHLPR3
      */
     DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
 
+    /**
+     * Gets a bus by it's PDM ordinal (typically the parent bus).
+     *
+     * @returns Pointer to the device instance of the bus.
+     * @param   pDevIns         The PCI bus device instance.
+     * @param   idxPdmBus       The PDM ordinal value of the bus to get.
+     */
+    DECLR3CALLBACKMEMBER(PPDMDEVINS, pfnGetBusByNo,(PPDMDEVINS pDevIns, uint32_t idxPdmBus));
+
     /** Just a safety precaution. */
     uint32_t                    u32TheEnd;
 } PDMPCIHLPR3;
@@ -1238,7 +1240,7 @@ typedef R3PTRTYPE(PDMPCIHLPR3 *) PPDMPCIHLPR3;
 typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 
 /** Current PDMPCIHLPR3 version number. */
-#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 3, 1)
+#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 4, 0)
 
 
 /**
@@ -2296,8 +2298,8 @@ typedef struct PDMDEVHLPR3
      *          PDMDevHlpIoPortUnmap.
      */
     DECLR3CALLBACKMEMBER(int, pfnIoPortCreateEx,(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
-                                                 uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                                 PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, RTR3PTR pvUser,
+                                                 uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                 PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, RTR3PTR pvUser,
                                                  const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts));
 
     /**
@@ -4409,8 +4411,8 @@ typedef struct PDMDEVHLPRC
      *          PDMDevHlpIoPortUnmap.
      */
     DECLRCCALLBACKMEMBER(int, pfnIoPortSetUpContextEx,(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
-                                                       PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                                       PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr,
+                                                       PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                       PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr,
                                                        void *pvUser));
 
     /**
@@ -4765,8 +4767,8 @@ typedef struct PDMDEVHLPR0
      *          PDMDevHlpIoPortUnmap.
      */
     DECLR0CALLBACKMEMBER(int, pfnIoPortSetUpContextEx,(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
-                                                       PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                                       PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr,
+                                                       PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                                       PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr,
                                                        void *pvUser));
 
     /**
@@ -5531,8 +5533,8 @@ DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTI
 /**
  * Combines PDMDevHlpIoPortCreate() & PDMDevHlpIoPortMap().
  */
-DECLINLINE(int) PDMDevHlpIoPortCreateAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, PFNIOMIOPORTOUT pfnOut,
-                                            PFNIOMIOPORTIN pfnIn, const char *pszDesc, PCIOMIOPORTDESC paExtDescs,
+DECLINLINE(int) PDMDevHlpIoPortCreateAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, PFNIOMIOPORTNEWOUT pfnOut,
+                                            PFNIOMIOPORTNEWIN pfnIn, const char *pszDesc, PCIOMIOPORTDESC paExtDescs,
                                             PIOMIOPORTHANDLE phIoPorts)
 {
     int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0, NULL, UINT32_MAX,
@@ -5546,7 +5548,7 @@ DECLINLINE(int) PDMDevHlpIoPortCreateAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, R
  * @sa PDMDevHlpIoPortCreateEx
  */
 DECLINLINE(int) PDMDevHlpIoPortCreate(PPDMDEVINS pDevIns, RTIOPORT cPorts, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                      PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn, void *pvUser, const char *pszDesc,
+                                      PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn, void *pvUser, const char *pszDesc,
                                       PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
     return pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0, pPciDev, iPciRegion,
@@ -5557,8 +5559,8 @@ DECLINLINE(int) PDMDevHlpIoPortCreate(PPDMDEVINS pDevIns, RTIOPORT cPorts, PPDMP
  * @copydoc PDMDEVHLPR3::pfnIoPortCreateEx
  */
 DECLINLINE(int) PDMDevHlpIoPortCreateEx(PPDMDEVINS pDevIns, RTIOPORT cPorts, uint32_t fFlags, PPDMPCIDEV pPciDev,
-                                        uint32_t iPciRegion, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                        PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, void *pvUser,
+                                        uint32_t iPciRegion, PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                        PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, void *pvUser,
                                         const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
     return pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, fFlags, pPciDev, iPciRegion,
@@ -5588,7 +5590,7 @@ DECLINLINE(int) PDMDevHlpIoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPort
  * @sa PDMDevHlpIoPortSetUpContextEx
  */
 DECLINLINE(int) PDMDevHlpIoPortSetUpContext(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
-                                            PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn, void *pvUser)
+                                            PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn, void *pvUser)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnIoPortSetUpContextEx(pDevIns, hIoPorts, pfnOut, pfnIn, NULL, NULL, pvUser);
 }
@@ -5597,8 +5599,8 @@ DECLINLINE(int) PDMDevHlpIoPortSetUpContext(PPDMDEVINS pDevIns, IOMIOPORTHANDLE 
  * @copydoc PDMDEVHLPR3::pfnIoPortCreateEx
  */
 DECLINLINE(int) PDMDevHlpIoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
-                                              PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
-                                              PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, void *pvUser)
+                                              PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
+                                              PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, void *pvUser)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnIoPortSetUpContextEx(pDevIns, hIoPorts, pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser);
 }

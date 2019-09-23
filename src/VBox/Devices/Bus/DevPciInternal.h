@@ -168,6 +168,13 @@ typedef struct DEVPCIROOT
         PIIX3ISABRIDGE      PIIX3State;
     } Piix3;
 
+    /** The address I/O port handle. */
+    IOMIOPORTHANDLE         hIoPortAddress;
+    /** The data I/O port handle. */
+    IOMIOPORTHANDLE         hIoPortData;
+    /** The magic I/O port handle. */
+    IOMIOPORTHANDLE         hIoPortMagic;
+
 #if 1 /* Will be moved into the BIOS "soon". */
     /** Current bus number - obsolete (still used by DevPCI, but merge will fix that). */
     uint8_t             uPciBiosBus;
