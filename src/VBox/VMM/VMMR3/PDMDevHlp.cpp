@@ -2120,7 +2120,7 @@ pdmR3DevHlp_PCIConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddr
     VBOXSTRICTRC rcStrict = pBus->pfnConfigRead(pBus->pDevInsR3, pPciDev, uAddress, cb, pu32Value);
 
     LogFlow(("pdmR3DevHlp_PCIConfigRead: caller='%s'/%d: returns %Rrc (*pu32Value=%#x)\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, VBOXSTRICTRC_VAL(rcStrict), pu32Value, *pu32Value));
+             pDevIns->pReg->szName, pDevIns->iInstance, VBOXSTRICTRC_VAL(rcStrict), *pu32Value));
     return rcStrict;
 }
 
