@@ -776,7 +776,7 @@ uint32_t devpciR3GetCfg(PPDMPCIDEV pPciDev, int32_t iRegister, int cb)
         rcStrict = pPciDev->Int.s.pfnConfigRead(pPciDev->Int.s.CTX_SUFF(pDevIns), pPciDev, iRegister, cb, &u32Value);
     if (rcStrict == VINF_PDM_PCI_DO_DEFAULT)
         rcStrict = devpciR3CommonConfigReadWorker(pPciDev, iRegister, cb, &u32Value);
-    AssertRCSuccess(rcStrict);
+    AssertRCSuccess(VBOXSTRICTRC_VAL(rcStrict));
     return u32Value;
 }
 

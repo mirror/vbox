@@ -36,7 +36,7 @@ DECLINLINE(uint16_t) msiGetMessageControl(PPDMPCIDEV pDev)
     {
         uint32_t u32Value = 0;
         VBOXSTRICTRC rcStrict = pDev->Int.s.pfnConfigRead(pDev->Int.s.CTX_SUFF(pDevIns), pDev, idxMessageControl, 2, &u32Value);
-        AssertRCSuccess(rcStrict);
+        AssertRCSuccess(VBOXSTRICTRC_VAL(rcStrict));
         return (uint16_t)u32Value;
     }
 #endif
