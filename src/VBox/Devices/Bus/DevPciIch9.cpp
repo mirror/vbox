@@ -251,7 +251,7 @@ ich9pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, ui
 
 /**
  * @callback_method_impl{FNIOMIOPORTNEWOUT,
- *                       Port I/O Handler for PCI address OUT operations.}
+ *      Port I/O Handler for PCI address OUT operations.}
  *
  * Emulates writes to Configuration Address Port at 0CF8h for Configuration
  * Mechanism \#1.
@@ -282,7 +282,7 @@ ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint
 
 /**
  * @callback_method_impl{FNIOMIOPORTNEWIN,
- *                       Port I/O Handler for PCI data IN operations.}
+ *      Port I/O Handler for PCI data IN operations.}
  *
  * Emulates reads from Configuration Address Port at 0CF8h for Configuration
  * Mechanism \#1.
@@ -362,7 +362,7 @@ static VBOXSTRICTRC ich9pciConfigWrite(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot,
 
 /**
  * @callback_method_impl{FNIOMIOPORTNEWOUT,
- *                       Port I/O Handler for PCI data OUT operations.
+ *      Port I/O Handler for PCI data OUT operations.}
  *
  * Emulates writes to Configuration Data Port at 0CFCh for Configuration
  * Mechanism \#1.
@@ -460,7 +460,7 @@ static VBOXSTRICTRC ich9pciConfigRead(PDEVPCIROOT pPciRoot, PciAddress* pPciAddr
 
 /**
  * @callback_method_impl{FNIOMIOPORTNEWIN,
- *                       Port I/O Handler for PCI data IN operations.
+ *      Port I/O Handler for PCI data IN operations.}
  *
  * Emulates reads from Configuration Data Port at 0CFCh for Configuration
  * Mechanism \#1.
@@ -2108,11 +2108,12 @@ static void ich9pciBiosInitAllDevicesOnBus(PPDMDEVINS pDevIns, PDEVPCIROOT pPciR
  * simpler to have the two numbers match one another by default.
  *
  * @returns Max subordinate bus number.
- * @param   pPciRoot         Global device instance data used to generate unique bus numbers.
- * @param   pBus             The PCI bus to initialize.
- * @param   pbmUsed          Pointer to a 32-bit bitmap tracking which device
- *                           (ranges) has been used.
- * @param   uBusPrimary      The primary bus number the bus is connected to.
+ * @param   pDevIns         The device instance of the bus.
+ * @param   pPciRoot        Global device instance data used to generate unique bus numbers.
+ * @param   pBus            The PCI bus to initialize.
+ * @param   pbmUsed         Pointer to a 32-bit bitmap tracking which device
+ *                          (ranges) has been used.
+ * @param   uBusPrimary     The primary bus number the bus is connected to.
  */
 static uint8_t ich9pciBiosInitBridgeTopology(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot, PDEVPCIBUS pBus,
                                              uint32_t *pbmUsed, uint8_t uBusPrimary)

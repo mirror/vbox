@@ -804,10 +804,11 @@ static int pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
 /**
  * @callback_method_impl{FNIOMIOPORTNEWOUT, PCI address}
  */
-static DECLCALLBACK(VBOXSTRICTRC) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    LogFunc(("Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
-    RT_NOREF2(Port, pvUser);
+    LogFunc(("uPort=%#x u32=%#x cb=%d\n", uPort, u32, cb));
+    RT_NOREF2(uPort, pvUser);
     if (cb == 4)
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
@@ -824,21 +825,22 @@ static DECLCALLBACK(VBOXSTRICTRC) pciIOPortAddressWrite(PPDMDEVINS pDevIns, void
 /**
  * @callback_method_impl{FNIOMIOPORTNEWIN, PCI address}
  */
-static DECLCALLBACK(VBOXSTRICTRC) pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF2(Port, pvUser);
+    RT_NOREF2(uPort, pvUser);
     if (cb == 4)
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
         *pu32 = pThis->uConfigReg;
         PCI_UNLOCK(pDevIns);
-        LogFunc(("Port=%#x cb=%d -> %#x\n", Port, cb, *pu32));
+        LogFunc(("uPort=%#x cb=%d -> %#x\n", uPort, cb, *pu32));
         return VINF_SUCCESS;
     }
     /* else: 440FX does "pass through to the bus" for other writes, what ever that means.
      * Linux probes for cmd640 using byte writes/reads during ide init. We'll just ignore it. */
-    LogFunc(("Port=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", Port, cb));
+    LogFunc(("uPort=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", uPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -846,19 +848,20 @@ static DECLCALLBACK(VBOXSTRICTRC) pciIOPortAddressRead(PPDMDEVINS pDevIns, void 
 /**
  * @callback_method_impl{FNIOMIOPORTNEWOUT, PCI data}
  */
-static DECLCALLBACK(VBOXSTRICTRC) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    LogFunc(("Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
+    LogFunc(("uPort=%#x u32=%#x cb=%d\n", uPort, u32, cb));
     NOREF(pvUser);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    if (!(Port % cb))
+    if (!(uPort % cb))
     {
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
-        rcStrict = pci_data_write(pDevIns, PDMINS_2_DATA(pDevIns, PDEVPCIROOT), Port, u32, cb);
+        rcStrict = pci_data_write(pDevIns, PDMINS_2_DATA(pDevIns, PDEVPCIROOT), uPort, u32, cb);
         PCI_UNLOCK(pDevIns);
     }
     else
-        AssertMsgFailed(("Write to port %#x u32=%#x cb=%d\n", Port, u32, cb));
+        AssertMsgFailed(("Write to port %#x u32=%#x cb=%d\n", uPort, u32, cb));
     return rcStrict;
 }
 
@@ -866,18 +869,19 @@ static DECLCALLBACK(VBOXSTRICTRC) pciIOPortDataWrite(PPDMDEVINS pDevIns, void *p
 /**
  * @callback_method_impl{FNIOMIOPORTNEWIN, PCI data}
  */
-static DECLCALLBACK(VBOXSTRICTRC) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
-    if (!(Port % cb))
+    if (!(uPort % cb))
     {
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_READ);
-        VBOXSTRICTRC rcStrict = pci_data_read(PDMINS_2_DATA(pDevIns, PDEVPCIROOT), Port, cb, pu32);
+        VBOXSTRICTRC rcStrict = pci_data_read(PDMINS_2_DATA(pDevIns, PDEVPCIROOT), uPort, cb, pu32);
         PCI_UNLOCK(pDevIns);
-        LogFunc(("Port=%#x cb=%#x -> %#x (%Rrc)\n", Port, cb, *pu32, VBOXSTRICTRC_VAL(rcStrict)));
+        LogFunc(("uPort=%#x cb=%#x -> %#x (%Rrc)\n", uPort, cb, *pu32, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
-    AssertMsgFailed(("Read from port %#x cb=%d\n", Port, cb));
+    AssertMsgFailed(("Read from port %#x cb=%d\n", uPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -887,13 +891,13 @@ static DECLCALLBACK(VBOXSTRICTRC) pciIOPortDataRead(PPDMDEVINS pDevIns, void *pv
  * @callback_method_impl{FNIOMIOPORTNEWOUT, PCI data}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-pciR3IOPortMagicPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+pciR3IOPortMagicPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF2(pvUser, Port);
-    LogFunc(("Port=%#x u32=%#x cb=%d\n", Port, u32, cb));
+    RT_NOREF2(pvUser, uPort);
+    LogFunc(("uPort=%#x u32=%#x cb=%d\n", uPort, u32, cb));
     if (cb == 4)
     {
-        if (u32 == UINT32_C(19200509)) // Richard Adams
+        if (u32 == UINT32_C(19200509)) // Richard Adams - Note! In decimal rather hex.
         {
             int rc = pciR3FakePCIBIOS(pDevIns);
             AssertRC(rc);
@@ -907,10 +911,10 @@ pciR3IOPortMagicPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32
  * @callback_method_impl{FNIOMIOPORTNEWIN, PCI data}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF5(pDevIns, pvUser, Port, pu32, cb);
-    LogFunc(("Port=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", Port, cb));
+    RT_NOREF5(pDevIns, pvUser, uPort, pu32, cb);
+    LogFunc(("uPort=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", uPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
