@@ -149,7 +149,15 @@ HRESULT GaD3DResourceSynchMem(PVBOXWDDMDISP_RESOURCE pRc, bool fToBackend)
 
     const DWORD dwLockFlags = fToBackend ? D3DLOCK_DISCARD : D3DLOCK_READONLY;
 
-    if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE)
+    if (   pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_TEXTURE
+        || pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_CUBE_TEXTURE)
+    {
+        /* Exclude plain textures and cube textures because they actually
+         * use (share) the supplied memory buffer (pRc->aAllocations[].pvMem).
+         */
+        /* do nothing */
+    }
+    else if (pRc->aAllocations[0].enmD3DIfType == VBOXDISP_D3DIFTYPE_VOLUME_TEXTURE)
     {
         HRESULT hr;
         IDirect3DVolumeTexture9 *pVolTex = (IDirect3DVolumeTexture9 *)pRc->aAllocations[0].pD3DIf;
@@ -579,7 +587,8 @@ HRESULT GaD3DIfCreateForRc(struct VBOXWDDMDISP_RESOURCE *pRc)
     {
         if (pRc->RcDesc.enmPool == D3DDDIPOOL_SYSTEMMEM)
         {
-            GaD3DResourceSynchMem(pRc, true);
+            /* Copy the content of the supplied memory buffer to the Gallium backend. */
+            GaD3DResourceSynchMem(pRc, /*fToBackend=*/ true);
         }
     }
     else
