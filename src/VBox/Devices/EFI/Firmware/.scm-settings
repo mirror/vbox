@@ -122,6 +122,9 @@
 --filter-out-files /BaseTools/Source/Python/Rsa2048Sha256Sign/TestSigningPrivateKey.pem
 --filter-out-dirs  /StdLib/Efi/StdLib/etc/.
 
+# @todo Temporary until openssl is updated and we can cleanup the eol style mess
+--filter-out-dirs  /CryptoPkg/Library/OpensslLib
+
 #
 # VBoxPkg
 #
