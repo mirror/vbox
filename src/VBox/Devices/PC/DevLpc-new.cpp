@@ -59,11 +59,6 @@ typedef struct LPCSTATE
     /** Explicit padding. */
     uint8_t         abPadding[HC_ARCH_BITS == 32 ? 2 : 6];
 
-    /** Pointer to generic PCI config reader. */
-    R3PTRTYPE(PFNPCICONFIGREAD)  pfnPciConfigReadFallback;
-    /** Pointer to generic PCI config write. */
-    R3PTRTYPE(PFNPCICONFIGWRITE) pfnPciConfigWriteFallback;
-
     /** Number of MMIO reads. */
     STAMCOUNTER     StatMmioReads;
     /** Number of MMIO writes. */
@@ -139,28 +134,29 @@ PDMBOTHCBDECL(int) lpcMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 /**
  * @callback_method_impl{FNPCICONFIGREAD}
  */
-static DECLCALLBACK(uint32_t) lpcPciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) lpcR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                     uint32_t uAddress, unsigned cb, uint32_t *pu32Value)
 {
     PLPCSTATE pThis = PDMINS_2_DATA(pDevIns, PLPCSTATE);
     Assert(pPciDev == &pThis->PciDev);
 
     STAM_REL_COUNTER_INC(&pThis->StatPciCfgReads);
-    uint32_t uValue = pThis->pfnPciConfigReadFallback(pDevIns, pPciDev, uAddress, cb);
+    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
     switch (cb)
     {
-        case 1: Log(("lpcPciConfigRead: %#04x -> %#04x\n",  uAddress, uValue)); break;
-        case 2: Log(("lpcPciConfigRead: %#04x -> %#06x\n",  uAddress, uValue)); break;
-        case 4: Log(("lpcPciConfigRead: %#04x -> %#010x\n", uAddress, uValue)); break;
+        case 1: Log(("lpcR3PciConfigRead: %#04x -> %#04x (%Rrc)\n",  uAddress, *pu32Value, VBOXSTRICTRC_VAL(rcStrict))); break;
+        case 2: Log(("lpcR3PciConfigRead: %#04x -> %#06x (%Rrc)\n",  uAddress, *pu32Value, VBOXSTRICTRC_VAL(rcStrict))); break;
+        case 4: Log(("lpcR3PciConfigRead: %#04x -> %#010x (%Rrc)\n", uAddress, *pu32Value, VBOXSTRICTRC_VAL(rcStrict))); break;
     }
-    return uValue;
+    return rcStrict;
 }
 
 
 /**
  * @callback_method_impl{FNPCICONFIGWRITE}
  */
-static DECLCALLBACK(VBOXSTRICTRC)
-lpcPciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, uint32_t u32Value, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) lpcR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                      uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
     PLPCSTATE pThis = PDMINS_2_DATA(pDevIns, PLPCSTATE);
     Assert(pPciDev == &pThis->PciDev);
@@ -168,12 +164,12 @@ lpcPciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, uin
     STAM_REL_COUNTER_INC(&pThis->StatPciCfgWrites);
     switch (cb)
     {
-        case 1: Log(("lpcPciConfigWrite: %#04x <- %#04x\n",  uAddress, u32Value)); break;
-        case 2: Log(("lpcPciConfigWrite: %#04x <- %#06x\n",  uAddress, u32Value)); break;
-        case 4: Log(("lpcPciConfigWrite: %#04x <- %#010x\n", uAddress, u32Value)); break;
+        case 1: Log(("lpcR3PciConfigWrite: %#04x <- %#04x\n",  uAddress, u32Value)); break;
+        case 2: Log(("lpcR3PciConfigWrite: %#04x <- %#06x\n",  uAddress, u32Value)); break;
+        case 4: Log(("lpcR3PciConfigWrite: %#04x <- %#010x\n", uAddress, u32Value)); break;
     }
 
-    return pThis->pfnPciConfigWriteFallback(pDevIns, pPciDev, uAddress, u32Value, cb);
+    return PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
 }
 
 
@@ -353,9 +349,8 @@ static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpPCIRegisterEx(pDevIns, &pThis->PciDev, PDMPCIDEVREG_CFG_PRIMARY, PDMPCIDEVREG_F_NOT_MANDATORY_NO,
                                 31 /*uPciDevNo*/, 0 /*uPciFunNo*/, "lpc");
     AssertRCReturn(rc, rc);
-    PDMDevHlpPCISetConfigCallbacks(pDevIns, &pThis->PciDev,
-                                   lpcPciConfigRead, &pThis->pfnPciConfigReadFallback,
-                                   lpcPciConfigWrite, &pThis->pfnPciConfigWriteFallback);
+    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, &pThis->PciDev, lpcR3PciConfigRead, lpcR3PciConfigWrite);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register the MMIO regions.

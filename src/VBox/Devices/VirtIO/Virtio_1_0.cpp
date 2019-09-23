@@ -544,11 +544,11 @@ static void virtioGuestResetted(PVIRTIOSTATE pVirtio)
  * @returns VBox status code
  *
  * @param   pVirtio     Virtio instance state
- * @param   fWrite      If write access (otherwise read access)
+ * @param   fWrite      Set if write access, clear if read access.
  * @param   pv          Pointer to location to write to or read from
  * @param   cb          Number of bytes to read or write
  */
-static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, unsigned cb, void const *pv)
+static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, bool fWrite, off_t uOffset, unsigned cb, void const *pv)
 {
     int rc = VINF_SUCCESS;
     uint64_t val;
@@ -764,7 +764,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     if (fCommonCfg)
     {
         uint32_t uOffset = GCPhysAddr - pVirtio->pGcPhysCommonCfg;
-        virtioCommonCfgAccessed(pVirtio, 0 /* fWrite */, uOffset, cb, (void const *)pv);
+        virtioCommonCfgAccessed(pVirtio, false /* fWrite */, uOffset, cb, (void const *)pv);
     }
     else
     if (fIsr && cb == sizeof(uint8_t))
@@ -815,7 +815,7 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
     if (fCommonCfg)
     {
         uint32_t uOffset = GCPhysAddr - pVirtio->pGcPhysCommonCfg;
-        virtioCommonCfgAccessed(pVirtio, 1 /* fWrite */, uOffset, cb, pv);
+        virtioCommonCfgAccessed(pVirtio, true /* fWrite */, uOffset, cb, pv);
     }
     else
     if (fIsr && cb == sizeof(uint8_t))
@@ -883,23 +883,15 @@ static DECLCALLBACK(int) virtioR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uin
 }
 
 /**
-  * Callback function for reading from the PCI configuration space.
-  *
-  * @returns The register value.
-  * @param   pDevIns         Pointer to the device instance the PCI device
-  *                          belongs to.
-  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
-  * @param   uAddress        The configuration space register address. [0..4096]
-  * @param   cb              The register size. [1,2,4]
-  *
-  * @remarks Called with the PDM lock held.  The device lock is NOT take because
-  *          that is very likely be a lock order violation.
-  */
-static DECLCALLBACK(uint32_t) virtioPciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                       uint32_t uAddress, unsigned cb)
+ * @callback_method_impl{FNPCICONFIGRead}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                        uint32_t uAddress, unsigned cb, uint32_t *pu32Value)
 {
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
+    RT_NOREF(pPciDev);
 
+    /** @todo r=bird: this comparison just cannot be correct.   */
     if (uAddress == (uint64_t)&pVirtio->pPciCfgCap->uPciCfgData)
     {
         /* VirtIO 1.0 spec section 4.1.4.7 describes a required alternative access capability
@@ -908,42 +900,28 @@ static DECLCALLBACK(uint32_t) virtioPciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV
         uint32_t uLength = pVirtio->pPciCfgCap->pciCap.uLength;
         uint32_t uOffset = pVirtio->pPciCfgCap->pciCap.uOffset;
         uint8_t  uBar    = pVirtio->pPciCfgCap->pciCap.uBar;
-        uint32_t pv = 0;
+        *pu32Value = 0;
         if (uBar == VIRTIO_REGION_PCI_CAP)
-            (void)virtioR3MmioRead(pDevIns, NULL, (RTGCPHYS)((uint32_t)pVirtio->pGcPhysPciCapBase + uOffset),
-                                    &pv, uLength);
-        else
         {
-            Log2Func(("Guest read virtio_pci_cfg_cap.pci_cfg_data using unconfigured BAR. Ignoring"));
-            return 0;
+            virtioR3MmioRead(pDevIns, NULL, (RTGCPHYS)((uint32_t)pVirtio->pGcPhysPciCapBase + uOffset), pu32Value, uLength);
+            Log2Func(("virtio: Guest read  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%d, length=%d, result=%d\n",
+                      uBar, uOffset, uLength, *pu32Value));
         }
-        Log2Func(("virtio: Guest read  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%d, length=%d, result=%d\n",
-                uBar, uOffset, uLength, pv));
-        return pv;
+        else
+            Log2Func(("Guest read virtio_pci_cfg_cap.pci_cfg_data using unconfigured BAR. Ignoring"));
+        return VINF_SUCCESS;
     }
-    return pVirtio->pfnPciConfigReadOld(pDevIns, pPciDev, uAddress, cb);
+    return VINF_PDM_PCI_DO_DEFAULT;
 }
 
 /**
- * Callback function for writing to the PCI configuration space.
- *
- * @returns VINF_SUCCESS or PDMDevHlpDBGFStop status.
- *
- * @param   pDevIns         Pointer to the device instance the PCI device
- *                          belongs to.
- * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
- * @param   uAddress        The configuration space register address. [0..4096]
- * @param   u32Value        The value that's being written. The number of bits actually used from
- *                          this value is determined by the cb parameter.
- * @param   cb              The register size. [1,2,4]
- *
- * @remarks Called with the PDM lock held.  The device lock is NOT take because
- *          that is very likely be a lock order violation.
+ * @callback_method_impl{FNPCICONFIGWRITE}
  */
-static DECLCALLBACK(VBOXSTRICTRC) virtioPciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                        uint32_t uAddress, uint32_t u32Value, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                         uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
+    RT_NOREF(pPciDev);
 
     if (uAddress == pVirtio->uPciCfgDataOff)
     {
@@ -954,8 +932,10 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioPciConfigWrite(PPDMDEVINS pDevIns, PPDMP
         uint32_t uOffset = pVirtio->pPciCfgCap->pciCap.uOffset;
         uint8_t  uBar    = pVirtio->pPciCfgCap->pciCap.uBar;
         if (uBar == VIRTIO_REGION_PCI_CAP)
-            (void)virtioR3MmioWrite(pDevIns, NULL, (RTGCPHYS)((uint32_t)pVirtio->pGcPhysPciCapBase + uOffset),
-                                    (void *)&u32Value, uLength);
+        {
+            Assert(uLength <= sizeof(u32Value));
+            virtioR3MmioWrite(pDevIns, NULL, (RTGCPHYS)((uint32_t)pVirtio->pGcPhysPciCapBase + uOffset), &u32Value, uLength);
+        }
         else
         {
             Log2Func(("Guest wrote virtio_pci_cfg_cap.pci_cfg_data using unconfigured BAR. Ignoring"));
@@ -965,7 +945,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioPciConfigWrite(PPDMDEVINS pDevIns, PPDMP
                 uBar, uOffset, uLength, u32Value));
         return VINF_SUCCESS;
     }
-    return pVirtio->pfnPciConfigWriteOld(pDevIns, pPciDev, uAddress, u32Value, cb);
+    return VINF_PDM_PCI_DO_DEFAULT;
 }
 
 /**
@@ -1096,8 +1076,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     if (RT_FAILURE(rc))
     {
         RTMemFree(pVirtio);
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-            N_("virtio: cannot register PCI Device")); /* can we put params in this error? */
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: cannot register PCI Device")); /* can we put params in this error? */
     }
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, VIRTIO_SAVEDSTATE_VERSION, sizeof(*pVirtio), NULL,
@@ -1106,13 +1085,11 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     if (RT_FAILURE(rc))
     {
         RTMemFree(pVirtio);
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-            N_("virtio: cannot register SSM callbacks"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: cannot register SSM callbacks"));
     }
 
-    PDMDevHlpPCISetConfigCallbacks(pDevIns, &pVirtio->dev,
-                virtioPciConfigRead,  &pVirtio->pfnPciConfigReadOld,
-                virtioPciConfigWrite, &pVirtio->pfnPciConfigWriteOld);
+    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, &pVirtio->dev, virtioR3PciConfigRead, virtioR3PciConfigWrite);
+    AssertRCReturnStmt(rc, RTMemFree(pVirtio), rc);
 
 
     /* Construct & map PCI vendor-specific capabilities for virtio host negotiation with guest driver */
@@ -1271,7 +1248,6 @@ static void virtioDumpState(PVIRTIOSTATE pVirtio, const char *pcszCaller)
               "  pfnVirtioDevCapRead      = %p\n  pfnVirtioDevCapWrite     = %p\n"
               "  pfnSSMDevLiveExec        = %p\n  pfnSSMDevSaveExec        = %p\n"
               "  pfnSSMDevLoadExec        = %p\n  pfnSSMDevLoadDone        = %p\n"
-              "  pfnPciConfigReadOld      = %p\n  pfnPciConfigWriteOld     = %p\n",
                     pcszCaller ? pcszCaller : "<unspecified>",
                     pVirtio->uDeviceFeatures, pVirtio->uDriverFeatures, pVirtio->uDeviceFeaturesSelect,
                     pVirtio->uDriverFeaturesSelect, pVirtio->uDeviceStatus, pVirtio->uConfigGeneration,
@@ -1282,8 +1258,7 @@ static void virtioDumpState(PVIRTIOSTATE pVirtio, const char *pcszCaller)
                     pVirtio->virtioCallbacks.pfnVirtioQueueNotified, pVirtio->virtioCallbacks.pfnVirtioDevCapRead,
                     pVirtio->virtioCallbacks.pfnVirtioDevCapWrite, pVirtio->virtioCallbacks.pfnSSMDevLiveExec,
                     pVirtio->virtioCallbacks.pfnSSMDevSaveExec, pVirtio->virtioCallbacks.pfnSSMDevLoadExec,
-                    pVirtio->virtioCallbacks.pfnSSMDevLoadDone, pVirtio->pfnPciConfigReadOld,
-                    pVirtio->pfnPciConfigWriteOld
+                    pVirtio->virtioCallbacks.pfnSSMDevLoadDone
     ));
 
     for (uint16_t i = 0; i < pVirtio->uNumQueues; i++)
@@ -1338,8 +1313,6 @@ static DECLCALLBACK(int) virtioR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnSSMDevSaveExec);
     rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnSSMDevLoadExec);
     rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnSSMDevLoadDone);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->pfnPciConfigReadOld);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->pfnPciConfigWriteOld);
     rc = SSMR3PutGCPhys(pSSM, pVirtio->pGcPhysCommonCfg);
     rc = SSMR3PutGCPhys(pSSM, pVirtio->pGcPhysNotifyCap);
     rc = SSMR3PutGCPhys(pSSM, pVirtio->pGcPhysIsrCap);
@@ -1400,8 +1373,6 @@ static DECLCALLBACK(int) virtioR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
         rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnSSMDevSaveExec);
         rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnSSMDevLoadExec);
         rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnSSMDevLoadDone);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->pfnPciConfigReadOld);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->pfnPciConfigWriteOld);
         rc = SSMR3GetGCPhys(pSSM, &pVirtio->pGcPhysCommonCfg);
         rc = SSMR3GetGCPhys(pSSM, &pVirtio->pGcPhysNotifyCap);
         rc = SSMR3GetGCPhys(pSSM, &pVirtio->pGcPhysIsrCap);

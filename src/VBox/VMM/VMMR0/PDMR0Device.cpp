@@ -282,12 +282,13 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
     AssertReturnVoid(pPciDev);
     LogFlow(("pdmR0DevHlp_PCISetIrq: caller=%p/%d: pPciDev=%p:{%#x} iIrq=%d iLevel=%d\n",
              pDevIns, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iIrq, iLevel));
-    PGVM         pGVM    = pDevIns->Internal.s.pGVM;
-    size_t const idxBus  = pPciDev->Int.s.idxPdmBus;
-    AssertReturnVoid(idxBus < RT_ELEMENTS(pGVM->pdm.s.aPciBuses));
-    PPDMPCIBUS   pPciBus = &pGVM->pdm.s.aPciBuses[idxBus];
+    PGVM         pGVM      = pDevIns->Internal.s.pGVM;
+    size_t const idxBus    = pPciDev->Int.s.idxPdmBus;
+    AssertReturnVoid(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
+    PPDMPCIBUSR0 pPciBusR0 = &pGVM->pdmr0.s.aPciBuses[idxBus];
 
     pdmLock(pGVM);
+
     uint32_t uTagSrc;
     if (iLevel & PDM_IRQ_LEVEL_HIGH)
     {
@@ -300,10 +301,9 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
     else
         uTagSrc = pDevIns->Internal.s.pIntR3R0->uLastIrqTag;
 
-    if (    pPciBus
-        &&  pPciBus->pDevInsR0)
+    if (pPciBusR0->pDevInsR0)
     {
-        pPciBus->pfnSetIrqR0(pPciBus->pDevInsR0, pPciDev, iIrq, iLevel, uTagSrc);
+        pPciBusR0->pfnSetIrqR0(pPciBusR0->pDevInsR0, pPciDev, iIrq, iLevel, uTagSrc);
 
         pdmUnlock(pGVM);
 
@@ -795,6 +795,61 @@ static DECLCALLBACK(RTTRACEBUF) pdmR0DevHlp_DBGFTraceBuf(PPDMDEVINS pDevIns)
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnPCIBusSetUpContext} */
+static DECLCALLBACK(int) pdmR0DevHlp_PCIBusSetUpContext(PPDMDEVINS pDevIns, PPDMPCIBUSREGR0 pPciBusReg, PCPDMPCIHLPR0 *ppPciHlp)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_PCIBusSetUpContext: caller='%p'/%d: pPciBusReg=%p{.u32Version=%#x, .iBus=%#u, .pfnSetIrq=%p, u32EnvVersion=%#x} ppPciHlp=%p\n",
+             pDevIns, pDevIns->iInstance, pPciBusReg, pPciBusReg->u32Version, pPciBusReg->iBus, pPciBusReg->pfnSetIrq,
+             pPciBusReg->u32EndVersion, ppPciHlp));
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+
+    /*
+     * Validate input.
+     */
+    AssertPtrReturn(pPciBusReg, VERR_INVALID_POINTER);
+    AssertLogRelMsgReturn(pPciBusReg->u32Version == PDM_PCIBUSREGCC_VERSION,
+                          ("%#x vs %#x\n", pPciBusReg->u32Version, PDM_PCIBUSREGCC_VERSION), VERR_VERSION_MISMATCH);
+    AssertPtrReturn(pPciBusReg->pfnSetIrq, VERR_INVALID_POINTER);
+    AssertLogRelMsgReturn(pPciBusReg->u32EndVersion == PDM_PCIBUSREGCC_VERSION,
+                          ("%#x vs %#x\n", pPciBusReg->u32EndVersion, PDM_PCIBUSREGCC_VERSION), VERR_VERSION_MISMATCH);
+
+    AssertPtrReturn(ppPciHlp, VERR_INVALID_POINTER);
+
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_WRONG_ORDER);
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+
+    /* Check the shared bus data (registered earlier from ring-3): */
+    uint32_t iBus = pPciBusReg->iBus;
+    ASMCompilerBarrier();
+    AssertLogRelMsgReturn(iBus < RT_ELEMENTS(pGVM->pdm.s.aPciBuses), ("iBus=%#x\n", iBus), VERR_OUT_OF_RANGE);
+    PPDMPCIBUS pPciBusShared = &pGVM->pdm.s.aPciBuses[iBus];
+    AssertLogRelMsgReturn(pPciBusShared->iBus == iBus, ("%u vs %u\n", pPciBusShared->iBus, iBus), VERR_INVALID_PARAMETER);
+    AssertLogRelMsgReturn(pPciBusShared->pDevInsR3 == pDevIns->pDevInsForR3,
+                          ("%p vs %p (iBus=%u)\n", pPciBusShared->pDevInsR3, pDevIns->pDevInsForR3, iBus), VERR_NOT_OWNER);
+
+    /* Check that the bus isn't already registered in ring-0: */
+    AssertCompile(RT_ELEMENTS(pGVM->pdm.s.aPciBuses) == RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
+    PPDMPCIBUSR0 pPciBusR0 = &pGVM->pdmr0.s.aPciBuses[iBus];
+    AssertLogRelMsgReturn(pPciBusR0->pDevInsR0 == NULL,
+                          ("%p (caller pDevIns=%p, iBus=%u)\n", pPciBusR0->pDevInsR0, pDevIns, iBus),
+                          VERR_ALREADY_EXISTS);
+
+    /*
+     * Do the registering.
+     */
+    pPciBusR0->iBus        = iBus;
+    pPciBusR0->uPadding0   = 0xbeefbeef;
+    pPciBusR0->pfnSetIrqR0 = pPciBusReg->pfnSetIrq;
+    pPciBusR0->pDevInsR0   = pDevIns;
+
+    *ppPciHlp = &g_pdmR0PciHlp;
+
+    LogFlow(("pdmR0DevHlp_PCIBusSetUpContext: caller='%p'/%d: returns VINF_SUCCESS\n", pDevIns, pDevIns->iInstance));
+    return VINF_SUCCESS;
+}
+
+
 /**
  * The Ring-0 Device Helper Callbacks.
  */
@@ -852,6 +907,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     pdmR0DevHlp_CritSectHasWaiters,
     pdmR0DevHlp_CritSectGetRecursion,
     pdmR0DevHlp_DBGFTraceBuf,
+    pdmR0DevHlp_PCIBusSetUpContext,
     NULL /*pfnReserved1*/,
     NULL /*pfnReserved2*/,
     NULL /*pfnReserved3*/,

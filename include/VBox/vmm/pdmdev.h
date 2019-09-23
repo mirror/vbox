@@ -805,9 +805,9 @@ typedef PDMMSIREG *PPDMMSIREG;
  * PCI Bus registration structure.
  * All the callbacks, except the PCIBIOS hack, are working on PCI devices.
  */
-typedef struct PDMPCIBUSREG
+typedef struct PDMPCIBUSREGR3
 {
-    /** Structure version number. PDM_PCIBUSREG_VERSION defines the current version. */
+    /** Structure version number. PDM_PCIBUSREGR3_VERSION defines the current version. */
     uint32_t            u32Version;
 
     /**
@@ -867,24 +867,52 @@ typedef struct PDMPCIBUSREG
                                                      PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
 
     /**
-     * Register PCI configuration space read/write callbacks.
+     * Register PCI configuration space read/write intercept callbacks.
      *
      * @param   pDevIns         Device instance of the PCI Bus.
      * @param   pPciDev         The PCI device structure.
      * @param   pfnRead         Pointer to the user defined PCI config read function.
-     * @param   ppfnReadOld     Pointer to function pointer which will receive the old (default)
-     *                          PCI config read function. This way, user can decide when (and if)
-     *                          to call default PCI config read function. Can be NULL.
      * @param   pfnWrite        Pointer to the user defined PCI config write function.
-     * @param   ppfnWriteOld    Pointer to function pointer which will receive the old (default)
-     *                          PCI config write function. This way, user can decide when (and if)
      *                          to call default PCI config write function. Can be NULL.
      * @remarks Caller enters the PDM critical section.
      * @thread  EMT
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetConfigCallbacksR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                        PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
-                                                        PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
+    DECLR3CALLBACKMEMBER(void, pfnInterceptConfigAccesses,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                           PFNPCICONFIGREAD pfnRead, PFNPCICONFIGWRITE pfnWrite));
+
+    /**
+     * Perform a PCI configuration space write, bypassing interception.
+     *
+     * This is for devices that make use of PDMDevHlpPCIInterceptConfigAccesses().
+     *
+     * @returns Strict VBox status code (mainly DBGFSTOP).
+     * @param   pDevIns         Device instance of the PCI Bus.
+     * @param   pPciDev         The PCI device which config space is being read.
+     * @param   uAddress        The config space address.
+     * @param   cb              The size of the read: 1, 2 or 4 bytes.
+     * @param   u32Value        The value to write.
+     * @note    The caller (PDM) does not enter the PDM critsect, but it is possible
+     *          that the (root) bus will have done that already.
+     */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnConfigWrite,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                       uint32_t uAddress, unsigned cb, uint32_t u32Value));
+
+    /**
+     * Perform a PCI configuration space read, bypassing interception.
+     *
+     * This is for devices that make use of PDMDevHlpPCIInterceptConfigAccesses().
+     *
+     * @returns Strict VBox status code (mainly DBGFSTOP).
+     * @param   pDevIns         Device instance of the PCI Bus.
+     * @param   pPciDev         The PCI device which config space is being read.
+     * @param   uAddress        The config space address.
+     * @param   cb              The size of the read: 1, 2 or 4 bytes.
+     * @param   pu32Value       Where to return the value.
+     * @note    The caller (PDM) does not enter the PDM critsect, but it is possible
+     *          that the (root) bus will have done that already.
+     */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnConfigRead,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                      uint32_t uAddress, unsigned cb, uint32_t *pu32Value));
 
     /**
      * Set the IRQ for a PCI device.
@@ -898,18 +926,77 @@ typedef struct PDMPCIBUSREG
      */
     DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
 
-    /** The name of the SetIrq RC entry point. */
-    const char         *pszSetIrqRC;
-
-    /** The name of the SetIrq R0 entry point. */
-    const char         *pszSetIrqR0;
-
-} PDMPCIBUSREG;
+    /** Marks the end of the structure with PDM_PCIBUSREGR3_VERSION. */
+    uint32_t            u32EndVersion;
+} PDMPCIBUSREGR3;
 /** Pointer to a PCI bus registration structure. */
-typedef PDMPCIBUSREG *PPDMPCIBUSREG;
+typedef PDMPCIBUSREGR3 *PPDMPCIBUSREGR3;
+/** Current PDMPCIBUSREGR3 version number. */
+#define PDM_PCIBUSREGR3_VERSION                 PDM_VERSION_MAKE(0xff86, 1, 0)
 
-/** Current PDMPCIBUSREG version number. */
-#define PDM_PCIBUSREG_VERSION                   PDM_VERSION_MAKE(0xfffe, 7, 0)
+/**
+ * PCI Bus registration structure for ring-0.
+ */
+typedef struct PDMPCIBUSREGR0
+{
+    /** Structure version number. PDM_PCIBUSREGR0_VERSION defines the current version. */
+    uint32_t            u32Version;
+    /** The PCI bus number (from ring-3 registration). */
+    uint32_t            iBus;
+    /**
+     * Set the IRQ for a PCI device.
+     *
+     * @param   pDevIns         Device instance of the PCI Bus.
+     * @param   pPciDev         The PCI device structure.
+     * @param   iIrq            IRQ number to set.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
+     * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @remarks Caller enters the PDM critical section.
+     */
+    DECLR0CALLBACKMEMBER(void, pfnSetIrq,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
+    /** Marks the end of the structure with PDM_PCIBUSREGR0_VERSION. */
+    uint32_t            u32EndVersion;
+} PDMPCIBUSREGR0;
+/** Pointer to a PCI bus ring-0 registration structure. */
+typedef PDMPCIBUSREGR0 *PPDMPCIBUSREGR0;
+/** Current PDMPCIBUSREGR0 version number. */
+#define PDM_PCIBUSREGR0_VERSION                  PDM_VERSION_MAKE(0xff87, 1, 0)
+
+/**
+ * PCI Bus registration structure for raw-mode.
+ */
+typedef struct PDMPCIBUSREGRC
+{
+    /** Structure version number. PDM_PCIBUSREGRC_VERSION defines the current version. */
+    uint32_t            u32Version;
+    /** The PCI bus number (from ring-3 registration). */
+    uint32_t            iBus;
+    /**
+     * Set the IRQ for a PCI device.
+     *
+     * @param   pDevIns         Device instance of the PCI Bus.
+     * @param   pPciDev         The PCI device structure.
+     * @param   iIrq            IRQ number to set.
+     * @param   iLevel          IRQ level. See the PDM_IRQ_LEVEL_* \#defines.
+     * @param   uTagSrc         The IRQ tag and source (for tracing).
+     * @remarks Caller enters the PDM critical section.
+     */
+    DECLRCCALLBACKMEMBER(void, pfnSetIrq,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
+    /** Marks the end of the structure with PDM_PCIBUSREGRC_VERSION. */
+    uint32_t            u32EndVersion;
+} PDMPCIBUSREGRC;
+/** Pointer to a PCI bus raw-mode registration structure. */
+typedef PDMPCIBUSREGRC *PPDMPCIBUSREGRC;
+/** Current PDMPCIBUSREGRC version number. */
+#define PDM_PCIBUSREGRC_VERSION                  PDM_VERSION_MAKE(0xff88, 1, 0)
+
+/** PCI bus registration structure for the current context. */
+typedef CTX_SUFF(PDMPCIBUSREG)  PDMPCIBUSREGCC;
+/** Pointer to a PCI bus registration structure for the current context. */
+typedef CTX_SUFF(PPDMPCIBUSREG) PPDMPCIBUSREGCC;
+/** PCI bus registration structure version for the current context. */
+#define PDM_PCIBUSREGCC_VERSION CTX_MID(PDM_PCIBUSREG,_VERSION)
+
 
 /**
  * PCI Bus RC helpers.
@@ -3373,25 +3460,51 @@ typedef struct PDMDEVHLPR3
     /**
      * Register PCI configuration space read/write callbacks.
      *
+     * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   pPciDev             The PCI device structure.  If NULL the default
      *                              PCI device for this device instance is used.
      * @param   pfnRead             Pointer to the user defined PCI config read function.
-     * @param   ppfnReadOld         Pointer to function pointer which will receive the old (default)
-     *                              PCI config read function. This way, user can decide when (and if)
      *                              to call default PCI config read function. Can be NULL.
      * @param   pfnWrite            Pointer to the user defined PCI config write function.
-     * @param   ppfnWriteOld        Pointer to function pointer which will receive
-     *                              the old (default) PCI config write function.
-     *                              This way, user can decide when (and if) to call
-     *                              default PCI config write function. Can be NULL.
      * @remarks The callbacks will be invoked holding the PDM lock. The device lock
      *          is NOT take because that is very likely be a lock order violation.
-     * @thread  EMT
+     * @thread  EMT(0)
+     * @note    Only callable during VM creation.
+     * @sa      PDMDevHlpPCIConfigRead, PDMDevHlpPCIConfigWrite
      */
-    DECLR3CALLBACKMEMBER(void, pfnPCISetConfigCallbacks,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                         PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
-                                                         PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
+    DECLR3CALLBACKMEMBER(int, pfnPCIInterceptConfigAccesses,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                             PFNPCICONFIGREAD pfnRead, PFNPCICONFIGWRITE pfnWrite));
+
+    /**
+     * Perform a PCI configuration space write.
+     *
+     * This is for devices that make use of PDMDevHlpPCIInterceptConfigAccesses().
+     *
+     * @returns Strict VBox status code (mainly DBGFSTOP).
+     * @param   pDevIns             The device instance.
+     * @param   pPciDev             The PCI device which config space is being read.
+     * @param   uAddress            The config space address.
+     * @param   cb                  The size of the read: 1, 2 or 4 bytes.
+     * @param   u32Value            The value to write.
+     */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnPCIConfigWrite,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                          uint32_t uAddress, unsigned cb, uint32_t u32Value));
+
+    /**
+     * Perform a PCI configuration space read.
+     *
+     * This is for devices that make use of PDMDevHlpPCIInterceptConfigAccesses().
+     *
+     * @returns Strict VBox status code (mainly DBGFSTOP).
+     * @param   pDevIns             The device instance.
+     * @param   pPciDev             The PCI device which config space is being read.
+     * @param   uAddress            The config space address.
+     * @param   cb                  The size of the read: 1, 2 or 4 bytes.
+     * @param   pu32Value           Where to return the value.
+     */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnPCIConfigRead,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                         uint32_t uAddress, unsigned cb, uint32_t *pu32Value));
 
     /**
      * Bus master physical memory read.
@@ -3670,8 +3783,8 @@ typedef struct PDMDEVHLPR3
      *                              helpers.
      * @param   piBus               Where to return the PDM bus number. Optional.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPCIBusRegister,(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg,
-                                                 PCPDMPCIHLPR3 *ppPciHlpR3, uint32_t *piBus));
+    DECLR3CALLBACKMEMBER(int, pfnPCIBusRegister,(PPDMDEVINS pDevIns, PPDMPCIBUSREGR3 pPciBusReg,
+                                                 PCPDMPCIHLPR3 *ppPciHlp, uint32_t *piBus));
 
     /**
      * Register the PIC device.
@@ -4578,6 +4691,20 @@ typedef struct PDMDEVHLPRC
      */
     DECLRCCALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
 
+    /**
+     * Sets up the PCI bus for the raw-mode context.
+     *
+     * This must be called after ring-3 has registered the PCI bus using
+     * PDMDevHlpPCIBusRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pPciBusReg  The PCI bus registration information for raw-mode,
+     *                      considered volatile.
+     * @param   ppPciHlp    Where to return the raw-mode PCI bus helpers.
+     */
+    DECLRCCALLBACKMEMBER(int, pfnPCIBusSetUpContext,(PPDMDEVINS pDevIns, PPDMPCIBUSREGRC pPciBusReg, PCPDMPCIHLPRC *ppPciHlp));
+
     /** Space reserved for future members.
      * @{ */
     DECLRCCALLBACKMEMBER(void, pfnReserved1,(void));
@@ -4950,6 +5077,20 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
 
+    /**
+     * Sets up the PCI bus for the ring-0 context.
+     *
+     * This must be called after ring-3 has registered the PCI bus using
+     * PDMDevHlpPCIBusRegister().
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   pPciBusReg  The PCI bus registration information for ring-0,
+     *                      considered volatile.
+     * @param   ppPciHlp    Where to return the ring-0 PCI bus helpers.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnPCIBusSetUpContext,(PPDMDEVINS pDevIns, PPDMPCIBUSREGR0 pPciBusReg, PCPDMPCIHLPR0 *ppPciHlp));
+
     /** Space reserved for future members.
      * @{ */
     DECLR0CALLBACKMEMBER(void, pfnReserved1,(void));
@@ -5223,9 +5364,9 @@ typedef PDMDEVINSRC                 PDMDEVINS;
         AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION), \
                               ("DevIns=%#x  mine=%#x\n", (pDevIns)->u32Version, PDM_DEVINS_VERSION), \
                               VERR_PDM_DEVINS_VERSION_MISMATCH); \
-        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION), \
-                              ("DevHlp=%#x  mine=%#x\n", (pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION), \
-                              VERR_PDM_DEVHLPR3_VERSION_MISMATCH); \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->CTX_SUFF(pHlp)->u32Version, CTX_MID(PDM_DEVHLP,_VERSION)), \
+                              ("DevHlp=%#x  mine=%#x\n", (pDevIns)->CTX_SUFF(pHlp)->u32Version, CTX_MID(PDM_DEVHLP,_VERSION)), \
+                              VERR_PDM_DEVHLP_VERSION_MISMATCH); \
     } while (0)
 
 /**
@@ -5242,8 +5383,8 @@ typedef PDMDEVINSRC                 PDMDEVINS;
         PPDMDEVINS pDevInsTypeCheck = (pDevIns); NOREF(pDevInsTypeCheck); \
         if (RT_LIKELY(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION) )) \
         { /* likely */ } else return VERR_PDM_DEVINS_VERSION_MISMATCH; \
-        if (RT_LIKELY(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION) )) \
-        { /* likely */ } else return VERR_PDM_DEVHLPR3_VERSION_MISMATCH; \
+        if (RT_LIKELY(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->CTX_SUFF(pHlp)->u32Version, CTX_MID(PDM_DEVHLP,_VERSION)) )) \
+        { /* likely */ } else return VERR_PDM_DEVHLP_VERSION_MISMATCH; \
     } while (0)
 
 /**
@@ -6309,13 +6450,30 @@ DECLINLINE(int) PDMDevHlpPCIRegisterMsiEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnPCISetConfigCallbacks
+ * @copydoc PDMDEVHLPR3::pfnPCIInterceptConfigAccesses
  */
-DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
-                                                PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
+DECLINLINE(int) PDMDevHlpPCIInterceptConfigAccesses(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                    PFNPCICONFIGREAD pfnRead, PFNPCICONFIGWRITE pfnWrite)
 {
-    pDevIns->pHlpR3->pfnPCISetConfigCallbacks(pDevIns, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld);
+    return pDevIns->pHlpR3->pfnPCIInterceptConfigAccesses(pDevIns, pPciDev, pfnRead, pfnWrite);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIConfigRead
+ */
+DECLINLINE(VBOXSTRICTRC) PDMDevHlpPCIConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
+                                                unsigned cb, uint32_t *pu32Value)
+{
+    return pDevIns->pHlpR3->pfnPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIConfigWrite
+ */
+DECLINLINE(VBOXSTRICTRC) PDMDevHlpPCIConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
+                                                 unsigned cb, uint32_t u32Value)
+{
+    return pDevIns->pHlpR3->pfnPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
 }
 
 #endif /* IN_RING3 */
@@ -6663,9 +6821,9 @@ DECLINLINE(int) PDMDevHlpRTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG pRtcReg, PC
 /**
  * @copydoc PDMDEVHLPR3::pfnPCIBusRegister
  */
-DECLINLINE(int) PDMDevHlpPCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3, uint32_t *piBus)
+DECLINLINE(int) PDMDevHlpPCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREGR3 pPciBusReg, PCPDMPCIHLPR3 *ppPciHlp, uint32_t *piBus)
 {
-    return pDevIns->pHlpR3->pfnPCIBusRegister(pDevIns, pPciBusReg, ppPciHlpR3, piBus);
+    return pDevIns->pHlpR3->pfnPCIBusRegister(pDevIns, pPciBusReg, ppPciHlp, piBus);
 }
 
 /**
@@ -6812,7 +6970,17 @@ DECLINLINE(PUVM) PDMDevHlpGetUVM(PPDMDEVINS pDevIns)
     return pDevIns->CTX_SUFF(pHlp)->pfnGetUVM(pDevIns);
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @copydoc PDMDEVHLPR0::pfnPCIBusSetUp
+ */
+DECLINLINE(int) PDMDevHlpPCIBusSetUpContext(PPDMDEVINS pDevIns, CTX_SUFF(PPDMPCIBUSREG) pPciBusReg, CTX_SUFF(PCPDMPCIHLP) *ppPciHlp)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnPCIBusSetUpContext(pDevIns, pPciBusReg, ppPciHlp);
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnGetVM

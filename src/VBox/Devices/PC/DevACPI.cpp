@@ -435,11 +435,6 @@ typedef struct ACPIState
     /** Pointer to the driver connector interface. */
     R3PTRTYPE(PPDMIACPICONNECTOR) pDrv;
 
-    /** Pointer to default PCI config read function. */
-    R3PTRTYPE(PFNPCICONFIGREAD)   pfnAcpiPciConfigRead;
-    /** Pointer to default PCI config write function. */
-    R3PTRTYPE(PFNPCICONFIGWRITE)  pfnAcpiPciConfigWrite;
-
     /** Number of custom ACPI tables */
     uint8_t             cCustTbls;
     /** ACPI OEM ID */
@@ -3357,19 +3352,19 @@ static int acpiR3PlantTables(ACPIState *pThis)
 /**
  * @callback_method_impl{FNPCICONFIGREAD}
  */
-static DECLCALLBACK(uint32_t) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                      uint32_t uAddress, unsigned cb, uint32_t *pu32Value)
 {
-    ACPIState *pThis   = PDMINS_2_DATA(pDevIns, ACPIState *);
-
-    Log2(("acpi: PCI config read: 0x%x (%d)\n", uAddress, cb));
-    return pThis->pfnAcpiPciConfigRead(pDevIns, pPciDev, uAddress, cb);
+    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigRead(pDevIns, pPciDev, uAddress, cb, pu32Value);
+    Log2(("acpi: PCI config read: %#x (%d) -> %#x %Rrc\n", uAddress, cb, *pu32Value, VBOXSTRICTRC_VAL(rcStrict)));
+    return rcStrict;
 }
 
 /**
  * @callback_method_impl{FNPCICONFIGWRITE}
  */
-static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress,
-                                                       uint32_t u32Value, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                       uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
     ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
 
@@ -3382,7 +3377,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
         u32Value = SCI_INT;
     }
 
-    VBOXSTRICTRC rcBase = pThis->pfnAcpiPciConfigWrite(pDevIns, pPciDev, uAddress, u32Value, cb);
+    VBOXSTRICTRC rcStrict = PDMDevHlpPCIConfigWrite(pDevIns, pPciDev, uAddress, cb, u32Value);
 
     /* Assume that the base address is only changed when the corresponding
      * hardware functionality is disabled. The IO region is mapped when the
@@ -3417,7 +3412,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
     }
 
     DEVACPI_UNLOCK(pThis);
-    return rcBase;
+    return rcStrict;
 }
 
 /**
@@ -4141,9 +4136,8 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return rc;
 
-    PDMDevHlpPCISetConfigCallbacks(pDevIns, &pThis->dev,
-                                   acpiR3PciConfigRead,  &pThis->pfnAcpiPciConfigRead,
-                                   acpiR3PciConfigWrite, &pThis->pfnAcpiPciConfigWrite);
+    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, &pThis->dev, acpiR3PciConfigRead, acpiR3PciConfigWrite);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register the saved state.

@@ -541,18 +541,6 @@ VMMR3_INT_DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     }
 
     /*
-     * The register PCI Buses.
-     */
-    for (unsigned i = 0; i < RT_ELEMENTS(pVM->pdm.s.aPciBuses); i++)
-    {
-        if (pVM->pdm.s.aPciBuses[i].pDevInsRC)
-        {
-            pVM->pdm.s.aPciBuses[i].pDevInsRC   += offDelta;
-            pVM->pdm.s.aPciBuses[i].pfnSetIrqRC += offDelta;
-        }
-    }
-
-    /*
      * Devices & Drivers.
      */
 #ifdef VBOX_WITH_RAW_MODE_KEEP /* needs fixing */

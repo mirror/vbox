@@ -39,19 +39,24 @@
  */
 
 /**
- * Callback function for reading from the PCI configuration space.
+ * Callback function for intercept reading from the PCI configuration space.
  *
- * @returns The register value.
+ * @returns VINF_SUCCESS or PDMDevHlpDBGFStop status (maybe others later).
+ * @retval  VINF_PDM_PCI_DO_DEFAULT to do default read (same as calling
+ *          PDMDevHlpPCIConfigRead()).
+ *
  * @param   pDevIns         Pointer to the device instance the PCI device
  *                          belongs to.
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
  * @param   uAddress        The configuration space register address. [0..4096]
  * @param   cb              The register size. [1,2,4]
+ * @param   pu32Value       Where to return the register value.
  *
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
  *          that is very likely be a lock order violation.
  */
-typedef DECLCALLBACK(uint32_t) FNPCICONFIGREAD(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNPCICONFIGREAD(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                   uint32_t uAddress, unsigned cb, uint32_t *pu32Value);
 /** Pointer to a FNPCICONFIGREAD() function. */
 typedef FNPCICONFIGREAD *PFNPCICONFIGREAD;
 /** Pointer to a PFNPCICONFIGREAD. */
@@ -60,21 +65,23 @@ typedef PFNPCICONFIGREAD *PPFNPCICONFIGREAD;
 /**
  * Callback function for writing to the PCI configuration space.
  *
- * @returns VINF_SUCCESS or PDMDevHlpDBGFStop status.
+ * @returns VINF_SUCCESS or PDMDevHlpDBGFStop status (maybe others later).
+ * @retval  VINF_PDM_PCI_DO_DEFAULT to do default read (same as calling
+ *          PDMDevHlpPCIConfigWrite()).
  *
  * @param   pDevIns         Pointer to the device instance the PCI device
  *                          belongs to.
  * @param   pPciDev         Pointer to PCI device. Use pPciDev->pDevIns to get the device instance.
  * @param   uAddress        The configuration space register address. [0..4096]
+ * @param   cb              The register size. [1,2,4]
  * @param   u32Value        The value that's being written. The number of bits actually used from
  *                          this value is determined by the cb parameter.
- * @param   cb              The register size. [1,2,4]
  *
  * @remarks Called with the PDM lock held.  The device lock is NOT take because
  *          that is very likely be a lock order violation.
  */
 typedef DECLCALLBACK(VBOXSTRICTRC) FNPCICONFIGWRITE(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                    uint32_t uAddress, uint32_t u32Value, unsigned cb);
+                                                    uint32_t uAddress, unsigned cb, uint32_t u32Value);
 /** Pointer to a FNPCICONFIGWRITE() function. */
 typedef FNPCICONFIGWRITE *PFNPCICONFIGWRITE;
 /** Pointer to a PFNPCICONFIGWRITE. */

@@ -523,7 +523,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  ifdef VBOX_WITH_VIRTIO_SCSI
   VBoxDD_DEFS           += VBOX_WITH_VIRTIO_SCSI
   VBoxDD_SOURCES        += \
-    Virtio/Virtio_1_0.cpp \
+  	Virtio/Virtio_1_0.cpp \
   	Storage/DevVirtioSCSI.cpp
  endif
 

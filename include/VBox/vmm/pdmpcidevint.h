@@ -62,14 +62,16 @@ typedef PCIIOREGION *PPCIIOREGION;
 /**
  * Callback function for reading from the PCI configuration space.
  *
- * @returns The register value.
+ * @returns Strict VBox status code.
  * @param   pDevIns         Pointer to the device instance of the PCI bus.
  * @param   iBus            The bus number this device is on.
  * @param   iDevice         The number of the device on the bus.
  * @param   u32Address      The configuration space register address. [0..255]
  * @param   cb              The register size. [1,2,4]
+ * @param   pu32Value       Where to return the register value.
  */
-typedef DECLCALLBACK(uint32_t) FNPCIBRIDGECONFIGREAD(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, unsigned cb);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNPCIBRIDGECONFIGREAD(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
+                                                         uint32_t u32Address, unsigned cb, uint32_t *pu32Value);
 /** Pointer to a FNPCICONFIGREAD() function. */
 typedef FNPCIBRIDGECONFIGREAD *PFNPCIBRIDGECONFIGREAD;
 /** Pointer to a PFNPCICONFIGREAD. */
@@ -78,15 +80,17 @@ typedef PFNPCIBRIDGECONFIGREAD *PPFNPCIBRIDGECONFIGREAD;
 /**
  * Callback function for writing to the PCI configuration space.
  *
+ * @returns Strict VBox status code.
  * @param   pDevIns         Pointer to the device instance of the PCI bus.
  * @param   iBus            The bus number this device is on.
  * @param   iDevice         The number of the device on the bus.
  * @param   u32Address      The configuration space register address. [0..255]
+ * @param   cb              The register size. [1,2,4]
  * @param   u32Value        The value that's being written. The number of bits actually used from
  *                          this value is determined by the cb parameter.
- * @param   cb              The register size. [1,2,4]
  */
-typedef DECLCALLBACK(void) FNPCIBRIDGECONFIGWRITE(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice, uint32_t u32Address, uint32_t u32Value, unsigned cb);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNPCIBRIDGECONFIGWRITE(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
+                                                          uint32_t u32Address, unsigned cb, uint32_t u32Value);
 /** Pointer to a FNPCICONFIGWRITE() function. */
 typedef FNPCIBRIDGECONFIGWRITE *PFNPCIBRIDGECONFIGWRITE;
 /** Pointer to a PFNPCICONFIGWRITE. */

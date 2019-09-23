@@ -177,9 +177,6 @@ typedef struct VIRTIOSTATE
     VIRTQSTATE                virtqState[VIRTQ_MAX_CNT];         /**< Local impl-specific queue context         */
     VIRTIOCALLBACKS           virtioCallbacks;                   /**< Callback vectors to client                */
 
-    PFNPCICONFIGREAD          pfnPciConfigReadOld;               /**< Prev rd. cb. intercepting PCI Cfg I/O     */
-    PFNPCICONFIGWRITE         pfnPciConfigWriteOld;              /**< Prev wr. cb. intercepting PCI Cfg I/O     */
-
     PVIRTIO_PCI_CFG_CAP_T     pPciCfgCap;                        /**< Pointer to struct in configuration area   */
     PVIRTIO_PCI_NOTIFY_CAP_T  pNotifyCap;                        /**< Pointer to struct in configuration area   */
     PVIRTIO_PCI_CAP_T         pCommonCfgCap;                     /**< Pointer to struct in configuration area   */

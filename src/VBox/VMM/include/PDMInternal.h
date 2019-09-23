@@ -717,41 +717,54 @@ typedef PDMFW *PPDMFW;
 
 
 /**
- * PDM PCI Bus instance.
+ * PDM PCI bus instance.
  */
 typedef struct PDMPCIBUS
 {
     /** PCI bus number. */
-    RTUINT          iBus;
-    RTUINT          uPadding0; /**< Alignment padding.*/
+    uint32_t                   iBus;
+    uint32_t                   uPadding0; /**< Alignment padding.*/
 
-    /** Pointer to PCI Bus device instance. */
-    PPDMDEVINSR3                    pDevInsR3;
-    /** @copydoc PDMPCIBUSREG::pfnSetIrqR3 */
-    DECLR3CALLBACKMEMBER(void,      pfnSetIrqR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
-    /** @copydoc PDMPCIBUSREG::pfnRegisterR3 */
-    DECLR3CALLBACKMEMBER(int,       pfnRegisterR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
-                                                   uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName));
-    /** @copydoc PDMPCIBUSREG::pfnRegisterMsiR3 */
-    DECLR3CALLBACKMEMBER(int,       pfnRegisterMsiR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PPDMMSIREG pMsiReg));
-    /** @copydoc PDMPCIBUSREG::pfnIORegionRegisterR3 */
-    DECLR3CALLBACKMEMBER(int,       pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
-                                                           PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
-    /** @copydoc PDMPCIBUSREG::pfnSetConfigCallbacksR3 */
-    DECLR3CALLBACKMEMBER(void,      pfnSetConfigCallbacksR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PFNPCICONFIGREAD pfnRead,
-                                                             PPFNPCICONFIGREAD ppfnReadOld, PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld));
+    /** Pointer to PCI bus device instance. */
+    PPDMDEVINSR3               pDevInsR3;
+    /** @copydoc PDMPCIBUSREGR3::pfnSetIrqR3 */
+    DECLR3CALLBACKMEMBER(void, pfnSetIrqR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
 
-    /** Pointer to the PIC device instance - R0. */
-    R0PTRTYPE(PPDMDEVINS)           pDevInsR0;
-    /** @copydoc PDMPCIBUSREG::pfnSetIrqR3 */
-    DECLR0CALLBACKMEMBER(void,      pfnSetIrqR0,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
-
-    /** Pointer to PCI Bus device instance. */
-    PPDMDEVINSRC                    pDevInsRC;
-    /** @copydoc PDMPCIBUSREG::pfnSetIrqR3 */
-    DECLRCCALLBACKMEMBER(void,      pfnSetIrqRC,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
+    /** @copydoc PDMPCIBUSREGR3::pfnRegisterR3 */
+    DECLR3CALLBACKMEMBER(int,  pfnRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
+                                            uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName));
+    /** @copydoc PDMPCIBUSREGR3::pfnRegisterMsiR3 */
+    DECLR3CALLBACKMEMBER(int,  pfnRegisterMsi,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, PPDMMSIREG pMsiReg));
+    /** @copydoc PDMPCIBUSREGR3::pfnIORegionRegisterR3 */
+    DECLR3CALLBACKMEMBER(int,  pfnIORegionRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
+                                                    PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
+    /** @copydoc PDMPCIBUSREGR3::pfnInterceptConfigAccesses */
+    DECLR3CALLBACKMEMBER(void, pfnInterceptConfigAccesses,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                           PFNPCICONFIGREAD pfnRead, PFNPCICONFIGWRITE pfnWrite));
+    /** @copydoc PDMPCIBUSREGR3::pfnConfigWrite */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnConfigWrite,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                       uint32_t uAddress, unsigned cb, uint32_t u32Value));
+    /** @copydoc PDMPCIBUSREGR3::pfnConfigRead */
+    DECLR3CALLBACKMEMBER(VBOXSTRICTRC, pfnConfigRead,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                      uint32_t uAddress, unsigned cb, uint32_t *pu32Value));
 } PDMPCIBUS;
 
+
+/**
+ * Ring-0 PDM PCI bus instance data.
+ */
+typedef struct PDMPCIBUSR0
+{
+    /** PCI bus number. */
+    uint32_t                   iBus;
+    uint32_t                   uPadding0; /**< Alignment padding.*/
+    /** Pointer to PCI bus device instance. */
+    PPDMDEVINSR0               pDevInsR0;
+    /** @copydoc PDMPCIBUSREGR0::pfnSetIrqR0 */
+    DECLR0CALLBACKMEMBER(void, pfnSetIrqR0,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
+} PDMPCIBUSR0;
+/** Pointer to the ring-0 PCI bus data. */
+typedef PDMPCIBUSR0 *PPDMPCIBUSR0;
 
 #ifdef IN_RING3
 /**
@@ -1223,8 +1236,11 @@ typedef PDM *PPDM;
  */
 typedef struct PDMR0PERVM
 {
+    /** PCI Buses, ring-0 data. */
+    PDMPCIBUSR0                     aPciBuses[PDM_PCI_BUSSES_MAX];
     /** Number of valid ring-0 device instances (apDevInstances). */
     uint32_t                        cDevInstances;
+    uint32_t                        u32Padding;
     /** Pointer to ring-0 device instances. */
     R0PTRTYPE(struct PDMDEVINSR0 *) apDevInstances[190];
 } PDMR0PERVM;

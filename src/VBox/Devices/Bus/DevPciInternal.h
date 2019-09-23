@@ -28,7 +28,7 @@
 
 
 /**
- * PCI bus instance (common to both).
+ * PCI bus shared instance data (common to both PCI buses).
  */
 typedef struct DEVPCIBUS
 {
@@ -41,40 +41,68 @@ typedef struct DEVPCIBUS
     /** Set if PIIX3 type. */
     uint32_t                fTypePiix3 : 1;
     /** Set if ICH9 type. */
-    uint32_t                fTypeIch9: 1;
+    uint32_t                fTypeIch9 : 1;
     /** Set if this is a pure bridge, i.e. not part of DEVPCIGLOBALS struct. */
     uint32_t                fPureBridge : 1;
     /** Reserved for future config flags. */
     uint32_t                uReservedConfigFlags : 29;
 
-    /** R3 pointer to the device instance. */
-    PPDMDEVINSR3            pDevInsR3;
-    /** Pointer to the PCI R3  helpers. */
-    PCPDMPCIHLPR3           pPciHlpR3;
-
-    /** R0 pointer to the device instance. */
-    PPDMDEVINSR0            pDevInsR0;
-    /** Pointer to the PCI R0 helpers. */
-    PCPDMPCIHLPR0           pPciHlpR0;
-
-    /** RC pointer to the device instance. */
-    PPDMDEVINSRC            pDevInsRC;
-    /** Pointer to the PCI RC helpers. */
-    PCPDMPCIHLPRC           pPciHlpRC;
-
     /** Array of bridges attached to the bus. */
     R3PTRTYPE(PPDMPCIDEV *) papBridgesR3;
-#if HC_ARCH_BITS == 32
-    uint32_t                au32Alignment1[5]; /**< Cache line align apDevices. */
-#endif
+    /** Cache line align apDevices. */
+    uint32_t                au32Alignment1[HC_ARCH_BITS == 32 ? 3+8 : 2+8];
     /** Array of PCI devices. We assume 32 slots, each with 8 functions. */
     R3PTRTYPE(PPDMPCIDEV)   apDevices[256];
 
     /** The PCI device for the PCI bridge. */
     PDMPCIDEV               PciDev;
 } DEVPCIBUS;
-/** Pointer to a PCI bus instance.   */
+/** Pointer to PCI bus shared instance data. */
 typedef DEVPCIBUS *PDEVPCIBUS;
+
+/**
+ * PCI bus ring-3 instance data (common to both PCI buses).
+ */
+typedef struct DEVPCIBUSR3
+{
+    /** R3 pointer to the device instance. */
+    PPDMDEVINSR3            pDevInsR3;
+    /** Pointer to the PCI R3  helpers. */
+    PCPDMPCIHLPR3           pPciHlpR3;
+} DEVPCIBUSR3;
+/** Pointer to PCI bus ring-3 instance data. */
+typedef DEVPCIBUSR3 *PDEVPCIBUSR3;
+
+/**
+ * PCI bus ring-0 instance data (common to both PCI buses).
+ */
+typedef struct DEVPCIBUSR0
+{
+    /** R0 pointer to the device instance. */
+    PPDMDEVINSR0            pDevInsR0;
+    /** Pointer to the PCI R0 helpers. */
+    PCPDMPCIHLPR0           pPciHlpR0;
+} DEVPCIBUSR0;
+/** Pointer to PCI bus ring-0 instance data. */
+typedef DEVPCIBUSR0 *PDEVPCIBUSR0;
+
+/**
+ * PCI bus raw-mode instance data (common to both PCI buses).
+ */
+typedef struct DEVPCIBUSRC
+{
+    /** R0 pointer to the device instance. */
+    PPDMDEVINSRC            pDevInsRC;
+    /** Pointer to the PCI raw-mode helpers. */
+    PCPDMPCIHLPRC           pPciHlpRC;
+} DEVPCIBUSRC;
+/** Pointer to PCI bus raw-mode instance data. */
+typedef DEVPCIBUSRC *PDEVPCIBUSRC;
+
+/** DEVPCIBUSR3, DEVPCIBUSR0 or DEVPCIBUSRC depending on context.  */
+typedef CTX_SUFF(DEVPCIBUS)  DEVPCIBUSCC;
+/** PDEVPCIBUSR3, PDEVPCIBUSR0 or PDEVPCIBUSRC depending on context.  */
+typedef CTX_SUFF(PDEVPCIBUS) PDEVPCIBUSCC;
 
 
 /** @def DEVPCI_APIC_IRQ_PINS
@@ -98,7 +126,7 @@ typedef struct PIIX3ISABRIDGE
 
 
 /**
- * PCI Globals - This is the host-to-pci bridge and the root bus.
+ * PCI Globals - This is the host-to-pci bridge and the root bus, shared data.
  *
  * @note Only used by the root bus, not the bridges.
  */
@@ -108,17 +136,10 @@ typedef struct DEVPCIROOT
      * @note This must come first so we can share more code with the bridges!  */
     DEVPCIBUS           PciBus;
 
-    /** R3 pointer to the device instance. */
-    PPDMDEVINSR3        pDevInsR3;
-    /** R0 pointer to the device instance. */
-    PPDMDEVINSR0        pDevInsR0;
-    /** RC pointer to the device instance. */
-    PPDMDEVINSRC        pDevInsRC;
-
     /** I/O APIC usage flag (always true of ICH9, see constructor). */
     bool                fUseIoApic;
     /** Reserved for future config flags. */
-    bool                afFutureFlags[3];
+    bool                afFutureFlags[3+4];
     /** Physical address of PCI config space MMIO region. */
     uint64_t            u64PciConfigMMioAddress;
     /** Length of PCI config space MMIO region. */
@@ -162,8 +183,6 @@ typedef struct DEVPCIROOT
 } DEVPCIROOT;
 /** Pointer to PCI device globals. */
 typedef DEVPCIROOT *PDEVPCIROOT;
-
-
 /** Converts a PCI bus device instance pointer to a DEVPCIBUS pointer. */
 #define DEVINS_2_DEVPCIBUS(pDevIns)     (&PDMINS_2_DATA(pDevIns, PDEVPCIROOT)->PciBus)
 /** Converts a pointer to a PCI bus instance to a DEVPCIROOT pointer. */
@@ -175,12 +194,12 @@ typedef DEVPCIROOT *PDEVPCIROOT;
  * Releases the PDM lock. This is a NOP if locking is disabled. */
 #define PCI_LOCK(pDevIns, rc) \
     do { \
-        int rc2 = DEVINS_2_DEVPCIBUS(pDevIns)->CTX_SUFF(pPciHlp)->pfnLock((pDevIns), rc); \
+        int rc2 = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC)->CTX_SUFF(pPciHlp)->pfnLock((pDevIns), rc); \
         if (rc2 != VINF_SUCCESS) \
             return rc2; \
     } while (0)
 #define PCI_UNLOCK(pDevIns) \
-    DEVINS_2_DEVPCIBUS(pDevIns)->CTX_SUFF(pPciHlp)->pfnUnlock(pDevIns)
+    PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC)->CTX_SUFF(pPciHlp)->pfnUnlock(pDevIns)
 
 
 #ifdef IN_RING3
@@ -191,18 +210,21 @@ DECLCALLBACK(void) devpciR3InfoPci(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const
 DECLCALLBACK(void) devpciR3InfoPciIrq(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
 DECLCALLBACK(int)  devpciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
                                                   PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback);
-DECLCALLBACK(void) devpciR3CommonSetConfigCallbacks(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                    PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
-                                                    PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld);
-DECLCALLBACK(uint32_t) devpciR3CommonDefaultConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb);
-DECLCALLBACK(VBOXSTRICTRC) devpciR3CommonDefaultConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
-                                                            uint32_t uAddress, uint32_t u32Value, unsigned cb);
-void devpciR3CommonRestoreConfig(PPDMPCIDEV pDev, uint8_t const *pbSrcConfig);
+DECLCALLBACK(void) devpciR3CommonInterceptConfigAccesses(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                         PFNPCICONFIGREAD pfnRead, PFNPCICONFIGWRITE pfnWrite);
+DECLCALLBACK(VBOXSTRICTRC) devpciR3CommonConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                    uint32_t uAddress, unsigned cb, uint32_t *pu32Value);
+DECLHIDDEN(VBOXSTRICTRC)   devpciR3CommonConfigReadWorker(PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb, uint32_t *pu32Value);
+DECLCALLBACK(VBOXSTRICTRC) devpciR3CommonConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
+                                                     uint32_t uAddress, unsigned cb, uint32_t u32Value);
+DECLHIDDEN(VBOXSTRICTRC)   devpciR3CommonConfigWriteWorker(PPDMDEVINS pDevIns, PDEVPCIBUSCC pBusCC,
+                                                           PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb, uint32_t u32Value);
+void devpciR3CommonRestoreConfig(PPDMDEVINS pDevIns, PPDMPCIDEV pDev, uint8_t const *pbSrcConfig);
 int  devpciR3CommonRestoreRegions(PSSMHANDLE pSSM, PPDMPCIDEV pPciDev, PPCIIOREGION paIoRegions, bool fNewState);
-void devpciR3ResetDevice(PPDMPCIDEV pDev);
-void devpciR3BiosInitSetRegionAddress(PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, int iRegion, uint64_t addr);
+void devpciR3ResetDevice(PPDMDEVINS pDevIns, PPDMPCIDEV pDev);
+void devpciR3BiosInitSetRegionAddress(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, int iRegion, uint64_t addr);
 uint32_t devpciR3GetCfg(PPDMPCIDEV pPciDev, int32_t iRegister, int cb);
-void devpciR3SetCfg(PPDMPCIDEV pPciDev, int32_t iRegister, uint32_t u32, int cb);
+void devpciR3SetCfg(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int32_t iRegister, uint32_t u32, int cb);
 
 DECLINLINE(uint8_t) devpciR3GetByte(PPDMPCIDEV pPciDev, int32_t iRegister)
 {
@@ -219,19 +241,19 @@ DECLINLINE(uint32_t) devpciR3GetDWord(PPDMPCIDEV pPciDev, int32_t iRegister)
     return (uint32_t)devpciR3GetCfg(pPciDev, iRegister, 4);
 }
 
-DECLINLINE(void) devpciR3SetByte(PPDMPCIDEV pPciDev, int32_t iRegister, uint8_t u8)
+DECLINLINE(void) devpciR3SetByte(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int32_t iRegister, uint8_t u8)
 {
-    devpciR3SetCfg(pPciDev, iRegister, u8, 1);
+    devpciR3SetCfg(pDevIns, pPciDev, iRegister, u8, 1);
 }
 
-DECLINLINE(void) devpciR3SetWord(PPDMPCIDEV pPciDev, int32_t iRegister, uint16_t u16)
+DECLINLINE(void) devpciR3SetWord(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int32_t iRegister, uint16_t u16)
 {
-    devpciR3SetCfg(pPciDev, iRegister, u16, 2);
+    devpciR3SetCfg(pDevIns, pPciDev, iRegister, u16, 2);
 }
 
-DECLINLINE(void) devpciR3SetDWord(PPDMPCIDEV pPciDev, int32_t iRegister, uint32_t u32)
+DECLINLINE(void) devpciR3SetDWord(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int32_t iRegister, uint32_t u32)
 {
-    devpciR3SetCfg(pPciDev, iRegister, u32, 4);
+    devpciR3SetCfg(pDevIns, pPciDev, iRegister, u32, 4);
 }
 
 #endif /* IN_RING3 */

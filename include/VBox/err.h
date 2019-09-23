@@ -1435,7 +1435,7 @@
  * If you have upgraded VirtualBox recently, please make sure you have
  * terminated all VMs and upgraded any extension packs.  If this error
  * persists, try re-installing VirtualBox. */
-#define VERR_PDM_DEVHLPR3_VERSION_MISMATCH          (-2871)
+#define VERR_PDM_DEVHLP_VERSION_MISMATCH            (-2871)
 /** The USB device instance structure version has changed.
  *
  * If you have upgraded VirtualBox recently, please make sure you have
@@ -1522,6 +1522,9 @@
 #define VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS          2898
 /** The I/O request is in an invalid state for this operation. */
 #define VERR_PDM_MEDIAEX_IOREQ_INVALID_STATE        (-2899)
+
+/** Returned by PCI config space callbacks to indicate taking default action. */
+#define VINF_PDM_PCI_DO_DEFAULT                     (7200)
 /** @} */
 
 
