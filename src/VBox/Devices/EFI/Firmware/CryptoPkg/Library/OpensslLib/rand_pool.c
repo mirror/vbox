@@ -119,7 +119,11 @@ RandGetSeed128 (
   OUT UINT8        *SeedBuffer
   )
 {
+#ifndef VBOX
   BOOLEAN     Ret;
+#else
+  BOOLEAN     Ret = 0; // MSFT thinks it can be used uninitialized
+#endif
   UINT8       RandByte[16];
   UINT8       Key[16];
   UINT8       Ffv[16];
