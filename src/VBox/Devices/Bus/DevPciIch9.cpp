@@ -799,7 +799,7 @@ void devpciR3SetCfg(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int32_t iRegister, u
     if (rcStrict == VINF_PDM_PCI_DO_DEFAULT)
         rcStrict = devpciR3CommonConfigWriteWorker(pDevIns, PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC),
                                                    pPciDev, iRegister, cb, u32Value);
-    AssertRCSuccess(rcStrict);
+    AssertRCSuccess(VBOXSTRICTRC_VAL(rcStrict));
 }
 
 
