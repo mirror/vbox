@@ -1224,7 +1224,14 @@ static NTSTATUS vboxUsbMonIoctlDispatch(PVBOXUSBMONCTX pContext, ULONG Ctl, PVOI
             PUSBSUP_GETDEV_MON pOut = (PUSBSUP_GETDEV_MON)pvBuffer;
             if (!pvBuffer || cbInBuffer != sizeof (hDevice) || cbOutBuffer < sizeof (*pOut))
             {
-                WARN(("SUPUSBFLT_IOCTL_GET_DEVICE: Invalid input/output sizes. cbIn=%d expected %d. cbOut=%d expected >= %d.",
+                WARN(("SUPUSBFLT_IOCTL_GET_DEVICE: Invalid input/output sizes! cbIn=%d expected %d. cbOut=%d expected >= %d.",
+                        cbInBuffer, sizeof (hDevice), cbOutBuffer, sizeof (*pOut)));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+            }
+            if (!hDevice)
+            {
+                WARN(("SUPUSBFLT_IOCTL_GET_DEVICE: hDevice is NULL!",
                         cbInBuffer, sizeof (hDevice), cbOutBuffer, sizeof (*pOut)));
                 Status = STATUS_INVALID_PARAMETER;
                 break;
