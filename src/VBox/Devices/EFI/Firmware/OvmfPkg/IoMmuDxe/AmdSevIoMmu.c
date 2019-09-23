@@ -35,6 +35,7 @@ STATIC LIST_ENTRY mMapInfos = INITIALIZE_LIST_HEAD_VARIABLE (mMapInfos);
 
 #define COMMON_BUFFER_SIG SIGNATURE_64 ('C', 'M', 'N', 'B', 'U', 'F', 'F', 'R')
 
+#ifndef MDEPKG_NDEBUG /* VBox addition to silence compiler warnings. */
 //
 // ASCII names for EDKII_IOMMU_OPERATION constants, for debug logging.
 //
@@ -47,6 +48,7 @@ mBusMasterOperationName[EdkiiIoMmuOperationMaximum] = {
   "Write64",
   "CommonBuffer64"
 };
+#endif
 
 //
 // The following structure enables Map() and Unmap() to perform in-place
