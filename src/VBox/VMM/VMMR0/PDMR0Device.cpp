@@ -1567,9 +1567,8 @@ VMMR0_INT_DECL(int) PDMR0DeviceCreateReqHandler(PGVM pGVM, PPDMDEVICECREATEREQ p
                         && pReq->cMaxPciDevices   == pDevReg->cMaxPciDevices
                         && pReq->cMaxMsixVectors  == pDevReg->cMaxMsixVectors)
                     {
-                        rc = pdmR0DeviceCreateWorker(pGVM, pDevReg, pReq->iInstance, pReq->fRCEnabled,
-                                                     pReq->cbInstanceR3, pReq->cbInstanceRC, hMod,
-                                                     &pReq->pDevInsR3);
+                        rc = pdmR0DeviceCreateWorker(pGVM, pDevReg, pReq->iInstance, pReq->cbInstanceR3, pReq->cbInstanceRC,
+                                                     NIL_RTRCPTR /** @todo new raw-mode */, hMod, &pReq->pDevInsR3);
                         if (RT_SUCCESS(rc))
                             hMod = NULL; /* keep the module reference */
                     }
