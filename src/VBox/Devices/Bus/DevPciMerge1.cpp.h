@@ -65,6 +65,8 @@ static uint8_t pciR3MergedFindUnusedDeviceNo(PDEVPCIBUS pBus)
 static int pciR3MergedRegisterDeviceOnBus(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                           uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)
 {
+    RT_NOREF(pDevIns);
+
     /*
      * Validate input.
      */
