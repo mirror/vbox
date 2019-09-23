@@ -31,6 +31,22 @@
   </refnamediv>
 
   <refsynopsisdiv>
+     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-create" sepchar=" ">
+      <command moreinfo="none">VBoxManage cloud</command>
+      <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--profile=<replaceable>name</replaceable></arg>
+      <arg choice="plain" rep="norepeat">instance</arg>
+      <arg choice="plain" rep="norepeat">create</arg>
+      <arg choice="req" rep="norepeat">--domain-name=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--image-id=<replaceable>unique id</replaceable></arg>
+      <arg choice="req" rep="norepeat">--display-name=<replaceable>name</replaceable></arg>
+      <arg choice="req" rep="norepeat">--shape=<replaceable>type</replaceable></arg>
+      <arg choice="req" rep="norepeat">--subnet=<replaceable>unique id</replaceable></arg>
+      <arg choice="req" rep="norepeat">--boot-disk-size=<replaceable>size in GB</replaceable></arg>
+      <arg choice="req" rep="norepeat">--publicip=<replaceable>true/false</replaceable></arg>
+      <arg choice="req" rep="norepeat">--privateip=<replaceable>IP address</replaceable></arg>
+      <arg choice="req" rep="norepeat">--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
+    </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-info" sepchar=" ">
       <command moreinfo="none">VBoxManage cloud</command>
       <arg choice="req" rep="norepeat">--provider=<replaceable>name</replaceable></arg>
@@ -81,6 +97,50 @@
         <varlistentry>
           <term>--profile=<replaceable>name</replaceable></term>
           <listitem><para>Cloud profile name. </para></listitem>
+        </varlistentry>
+      </variablelist>
+    </refsect2>
+
+    <refsect2 id="vboxmanage-cloudinstance-create">
+      <title>cloud instance create</title>
+      <remark role="help-copy-synopsis"/>
+      <para>
+        Creates new instance in the Cloud.
+        There are two standard ways to create an instance in the Cloud:
+         1. Create an instance from an existing custom image.
+         2. Create an instance from an existing bootable volume.
+        For the 1st approach next parameters are required: image-id and  boot-disk-size.
+        For the 2nd approach next parameters are required: boot-volume-id;
+        The rest parameters are common for both cases:
+         display-name, launch-mode, subnet-id, publicIP, privateIP, shape, domain.
+      </para>
+      <variablelist>
+        <varlistentry>
+          <term><option>--domain-name</option></term><listitem><para>Cloud domain where new instance is created.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--image-id</option></term><listitem><para>Unique identifier which fully identifies a custom image in the Cloud.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--display-name</option></term><listitem><para>Name for new instance in the Cloud.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--shape</option></term><listitem><para> The shape of instance, defines the number of CPUs and RAM memory.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--subnet</option></term><listitem><para> Unique identifier which fully identifies an existing subnet in the Cloud which will be used by the instance.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--boot-disk-size</option></term><listitem><para> The size of bootable image in GB. Default is 50GB.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--publicip</option></term><listitem><para>Whether the instance will have a public IP or not.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--privateip</option></term><listitem><para>Private IP address for the created instance.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--launch-mode</option></term><listitem><para>The most known values here may be EMULATED, NATIVE, PARAVIRTUALIZED. </para></listitem>
         </varlistentry>
       </variablelist>
     </refsect2>
