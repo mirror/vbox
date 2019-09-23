@@ -844,8 +844,8 @@ void UIStatusBarEditorWidget::prepareStatusButtons()
         setStatusBarConfiguration(gEDataManager->restrictedStatusBarIndicators(machineID()),
                                   gEDataManager->statusBarIndicatorOrder(machineID()));
         /* And listen for the status-bar configuration changes after that: */
-        connect(gEDataManager, SIGNAL(sigStatusBarConfigurationChange(const QUuid &)),
-                this, SLOT(sltHandleConfigurationChange(const QUuid &)));
+        connect(gEDataManager, &UIExtraDataManager::sigStatusBarConfigurationChange,
+                this, &UIStatusBarEditorWidget::sltHandleConfigurationChange);
     }
 }
 
@@ -856,8 +856,8 @@ void UIStatusBarEditorWidget::prepareStatusButton(IndicatorType enmType)
     AssertPtrReturnVoid(pButton);
     {
         /* Configure status button: */
-        connect(pButton, SIGNAL(sigClick()), this, SLOT(sltHandleButtonClick()));
-        connect(pButton, SIGNAL(sigDragObjectDestroy()), this, SLOT(sltHandleDragObjectDestroy()));
+        connect(pButton, &UIStatusBarEditorButton::sigClick, this, &UIStatusBarEditorWidget::sltHandleButtonClick);
+        connect(pButton, &UIStatusBarEditorButton::sigDragObjectDestroy, this, &UIStatusBarEditorWidget::sltHandleDragObjectDestroy);
         /* Add status button into button-layout: */
         m_pButtonLayout->addWidget(pButton);
         /* Insert status button into map: */

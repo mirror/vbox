@@ -889,11 +889,11 @@ void UIMiniToolBar::prepare()
         pal.setColor(QPalette::Window, palette().color(QPalette::Window));
         m_pToolbar->setPalette(pal);
         /* Configure child connections: */
-        connect(m_pToolbar, SIGNAL(sigResized()), this, SLOT(sltHandleToolbarResize()));
-        connect(m_pToolbar, SIGNAL(sigAutoHideToggled()), this, SLOT(sltAutoHideToggled()));
-        connect(m_pToolbar, SIGNAL(sigMinimizeAction()), this, SIGNAL(sigMinimizeAction()));
-        connect(m_pToolbar, SIGNAL(sigExitAction()), this, SIGNAL(sigExitAction()));
-        connect(m_pToolbar, SIGNAL(sigCloseAction()), this, SIGNAL(sigCloseAction()));
+        connect(m_pToolbar, &UIMiniToolBarPrivate::sigResized, this, &UIMiniToolBar::sltHandleToolbarResize);
+        connect(m_pToolbar, &UIMiniToolBarPrivate::sigAutoHideToggled, this, &UIMiniToolBar::sltAutoHideToggled);
+        connect(m_pToolbar, &UIMiniToolBarPrivate::sigMinimizeAction, this, &UIMiniToolBar::sigMinimizeAction);
+        connect(m_pToolbar, &UIMiniToolBarPrivate::sigExitAction, this, &UIMiniToolBar::sigExitAction);
+        connect(m_pToolbar, &UIMiniToolBarPrivate::sigCloseAction, this, &UIMiniToolBar::sigCloseAction);
         /* Add child to area: */
         m_pToolbar->setParent(m_pArea);
         /* Make sure we have no focus: */
@@ -905,13 +905,13 @@ void UIMiniToolBar::prepare()
     {
         m_pHoverEnterTimer->setSingleShot(true);
         m_pHoverEnterTimer->setInterval(500);
-        connect(m_pHoverEnterTimer, SIGNAL(timeout()), this, SLOT(sltHoverEnter()));
+        connect(m_pHoverEnterTimer, &QTimer::timeout, this, &UIMiniToolBar::sltHoverEnter);
     }
     m_pHoverLeaveTimer = new QTimer(this);
     {
         m_pHoverLeaveTimer->setSingleShot(true);
         m_pHoverLeaveTimer->setInterval(500);
-        connect(m_pHoverLeaveTimer, SIGNAL(timeout()), this, SLOT(sltHoverLeave()));
+        connect(m_pHoverLeaveTimer, &QTimer::timeout, this, &UIMiniToolBar::sltHoverLeave);
     }
 
     /* Install 'auto-hide' animation to 'toolbarPosition' property: */
@@ -1187,4 +1187,3 @@ bool UIMiniToolBar::isParentMinimized() const
 }
 
 #include "UIMiniToolBar.moc"
-

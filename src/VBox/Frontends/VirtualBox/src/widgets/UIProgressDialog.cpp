@@ -338,7 +338,7 @@ void UIProgressDialog::prepareWidgets()
                     m_fCancelEnabled = m_comProgress.GetCancelable();
                     m_pButtonCancel->setEnabled(m_fCancelEnabled);
                     m_pButtonCancel->setFocusPolicy(Qt::ClickFocus);
-                    connect(m_pButtonCancel, SIGNAL(clicked()), this, SLOT(sltCancelOperation()));
+                    connect(m_pButtonCancel, &UIMiniCancelButton::clicked, this, &UIProgressDialog::sltCancelOperation);
 
                     /* Add into layout: */
                     pProgressLayout->addWidget(m_pButtonCancel, 0, Qt::AlignVCenter);

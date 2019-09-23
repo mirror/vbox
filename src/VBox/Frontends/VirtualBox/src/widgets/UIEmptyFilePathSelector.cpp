@@ -61,7 +61,7 @@ UIEmptyFilePathSelector::UIEmptyFilePathSelector (QWidget *aParent /* = NULL */)
     mSelectButton->setAutoRaise(true);
 #endif
     mSelectButton->setIcon(UIIconPool::iconSet(":/select_file_16px.png", ":/select_file_disabled_16px.png"));
-    connect(mSelectButton, SIGNAL(clicked()), this, SLOT(choose()));
+    connect(mSelectButton, &QToolButton::clicked, this, &UIEmptyFilePathSelector::choose);
     mMainLayout->addWidget(mSelectButton);
 
     setEditable (false);
@@ -253,4 +253,3 @@ void UIEmptyFilePathSelector::textChanged (const QString& aPath)
         emit pathChanged (mPath);
     }
 }
-

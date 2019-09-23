@@ -23,6 +23,7 @@
 #include "UISlidingToolBar.h"
 #include "UIAnimationFramework.h"
 #include "UIMachineWindow.h"
+#include "UIMenuBarEditorWindow.h"
 #ifdef VBOX_WS_MAC
 # include "VBoxUtils-darwin.h"
 #endif
@@ -165,7 +166,9 @@ void UISlidingToolBar::prepareContents()
                 QPalette pal2 = m_pWidget->palette();
                 pal2.setColor(QPalette::Window, palette().color(QPalette::Window));
                 m_pWidget->setPalette(pal2);
-                connect(m_pWidget, SIGNAL(sigCancelClicked()), this, SLOT(close()));
+                UIMenuBarEditorWidget *pEditorWidget = qobject_cast<UIMenuBarEditorWidget*>(m_pWidget);
+                if (pEditorWidget)
+                    connect(pEditorWidget, &UIMenuBarEditorWidget::sigCancelClicked, this, &UISlidingToolBar::close);
                 /* Add child-widget into area: */
                 m_pWidget->setParent(m_pArea);
             }
@@ -212,9 +215,10 @@ void UISlidingToolBar::prepareGeometry()
 #endif
 
     /* Activate window after it was shown: */
-    connect(this, SIGNAL(sigShown()), this,
-            SLOT(sltActivateWindow()), Qt::QueuedConnection);
+    connect(this, &UISlidingToolBar::sigShown,
+            this, &UISlidingToolBar::sltActivateWindow, Qt::QueuedConnection);
     /* Update window geometry after parent geometry changed: */
+    /* Leave this in the old connection syntax for now: */
     connect(parent(), SIGNAL(sigGeometryChange(const QRect&)),
             this, SLOT(sltParentGeometryChanged(const QRect&)));
 }
@@ -227,8 +231,8 @@ void UISlidingToolBar::prepareAnimation()
                                                          "widgetGeometry",
                                                          "startWidgetGeometry", "finalWidgetGeometry",
                                                          SIGNAL(sigExpand()), SIGNAL(sigCollapse()));
-    connect(m_pAnimation, SIGNAL(sigStateEnteredStart()), this, SLOT(sltMarkAsCollapsed()));
-    connect(m_pAnimation, SIGNAL(sigStateEnteredFinal()), this, SLOT(sltMarkAsExpanded()));
+    connect(m_pAnimation, &UIAnimation::sigStateEnteredStart, this, &UISlidingToolBar::sltMarkAsCollapsed);
+    connect(m_pAnimation, &UIAnimation::sigStateEnteredFinal, this, &UISlidingToolBar::sltMarkAsExpanded);
     /* Update geometry animation: */
     updateAnimation();
 }

@@ -1012,8 +1012,8 @@ void UIPortForwardingTable::prepareTableView()
 
         /* Finish configure table-view (after model is configured): */
         m_pTableView->setModel(m_pTableModel);
-        connect(m_pTableView, SIGNAL(sigCurrentChanged(const QModelIndex &, const QModelIndex &)), this, SLOT(sltCurrentChanged()));
-        connect(m_pTableView, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(sltShowTableContexMenu(const QPoint &)));
+        connect(m_pTableView, &UIPortForwardingView::sigCurrentChanged, this, &UIPortForwardingTable::sltCurrentChanged);
+        connect(m_pTableView, &UIPortForwardingView::customContextMenuRequested, this, &UIPortForwardingTable::sltShowTableContexMenu);
 
         /* Prepare delegates: */
         prepareTableDelegates();
@@ -1109,7 +1109,7 @@ void UIPortForwardingTable::prepareToolbar()
             /* Configure action: */
             m_pActionAdd->setShortcut(QKeySequence("Ins"));
             m_pActionAdd->setIcon(UIIconPool::iconSet(":/controller_add_16px.png", ":/controller_add_disabled_16px.png"));
-            connect(m_pActionAdd, SIGNAL(triggered(bool)), this, SLOT(sltAddRule()));
+            connect(m_pActionAdd, &QAction::triggered, this, &UIPortForwardingTable::sltAddRule);
             m_pToolBar->addAction(m_pActionAdd);
         }
 
@@ -1119,7 +1119,7 @@ void UIPortForwardingTable::prepareToolbar()
         {
             /* Configure action: */
             m_pActionCopy->setIcon(UIIconPool::iconSet(":/controller_add_16px.png", ":/controller_add_disabled_16px.png"));
-            connect(m_pActionCopy, SIGNAL(triggered(bool)), this, SLOT(sltCopyRule()));
+            connect(m_pActionCopy, &QAction::triggered, this, &UIPortForwardingTable::sltCopyRule);
         }
 
         /* Create 'Remove' action: */
@@ -1129,7 +1129,7 @@ void UIPortForwardingTable::prepareToolbar()
             /* Configure action: */
             m_pActionRemove->setShortcut(QKeySequence("Del"));
             m_pActionRemove->setIcon(UIIconPool::iconSet(":/controller_remove_16px.png", ":/controller_remove_disabled_16px.png"));
-            connect(m_pActionRemove, SIGNAL(triggered(bool)), this, SLOT(sltRemoveRule()));
+            connect(m_pActionRemove, &QAction::triggered, this, &UIPortForwardingTable::sltRemoveRule);
             m_pToolBar->addAction(m_pActionRemove);
         }
 

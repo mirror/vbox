@@ -95,8 +95,8 @@ UIFilePathSelector::UIFilePathSelector(QWidget *pParent /* = 0 */)
     setMinimumWidth(200);
 
     /* Setup connections: */
-    connect(this, SIGNAL(activated(int)), this, SLOT(onActivated(int)));
-    connect(m_pCopyAction, SIGNAL(triggered(bool)), this, SLOT(copyToClipboard()));
+    connect(this, static_cast<void(UIFilePathSelector::*)(int)>(&UIFilePathSelector::activated), this, &UIFilePathSelector::onActivated);
+    connect(m_pCopyAction, &QAction::triggered, this, &UIFilePathSelector::copyToClipboard);
 
     /* Editable by default: */
     setEditable(true);
@@ -126,8 +126,8 @@ void UIFilePathSelector::setEditable(bool fEditable)
 
         /* Install line-edit connection/event-filter: */
         Assert(lineEdit());
-        connect(lineEdit(), SIGNAL(textEdited(const QString &)),
-                this, SLOT(onTextEdited(const QString &)));
+        connect(lineEdit(), &QLineEdit::textEdited,
+                this, &UIFilePathSelector::onTextEdited);
         lineEdit()->installEventFilter(this);
     }
     else
@@ -136,8 +136,8 @@ void UIFilePathSelector::setEditable(bool fEditable)
         {
             /* Remove line-edit event-filter/connection: */
             lineEdit()->removeEventFilter(this);
-            disconnect(lineEdit(), SIGNAL(textEdited(const QString &)),
-                       this, SLOT(onTextEdited(const QString &)));
+            disconnect(lineEdit(), &QLineEdit::textEdited,
+                       this, &UIFilePathSelector::onTextEdited);
         }
         if (comboBox())
         {

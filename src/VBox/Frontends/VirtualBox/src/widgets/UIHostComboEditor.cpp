@@ -491,7 +491,7 @@ void UIHostComboEditor::prepare()
         {
             /* Configure UIHostComboEditorPrivate instance: */
             setFocusProxy(m_pEditor);
-            connect(m_pEditor, SIGNAL(sigDataChanged()), this, SLOT(sltCommitData()));
+            connect(m_pEditor, &UIHostComboEditorPrivate::sigDataChanged, this, &UIHostComboEditor::sltCommitData);
         }
         /* Create 'clear' tool-button: */
         m_pButtonClear = new QIToolButton;
@@ -499,7 +499,7 @@ void UIHostComboEditor::prepare()
             /* Configure 'clear' tool-button: */
             m_pButtonClear->removeBorder();
             m_pButtonClear->setIcon(UIIconPool::iconSet(":/eraser_16px.png"));
-            connect(m_pButtonClear, SIGNAL(clicked(bool)), m_pEditor, SLOT(sltClear()));
+            connect(m_pButtonClear, &QIToolButton::clicked, m_pEditor, &UIHostComboEditorPrivate::sltClear);
         }
         /* Add widgets to layout: */
         pLayout->addWidget(m_pEditor);
@@ -540,12 +540,12 @@ UIHostComboEditorPrivate::UIHostComboEditorPrivate()
     setAttribute(Qt::WA_NativeWindow);
     setContextMenuPolicy(Qt::NoContextMenu);
     setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Expanding);
-    connect(this, SIGNAL(selectionChanged()), this, SLOT(sltDeselect()));
+    connect(this, &UIHostComboEditorPrivate::selectionChanged, this, &UIHostComboEditorPrivate::sltDeselect);
 
     /* Setup release-pending-keys timer: */
     m_pReleaseTimer = new QTimer(this);
     m_pReleaseTimer->setInterval(200);
-    connect(m_pReleaseTimer, SIGNAL(timeout()), this, SLOT(sltReleasePendingKeys()));
+    connect(m_pReleaseTimer, &QTimer::timeout, this, &UIHostComboEditorPrivate::sltReleasePendingKeys);
 
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     /* Prepare private event filter: */

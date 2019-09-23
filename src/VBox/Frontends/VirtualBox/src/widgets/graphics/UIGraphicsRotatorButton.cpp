@@ -112,11 +112,11 @@ UIGraphicsRotatorButton::UIGraphicsRotatorButton(QIGraphicsWidget *pParent,
 void UIGraphicsRotatorButton::setAutoHandleButtonClick(bool fEnabled)
 {
     /* Disconnect button-click signal: */
-    disconnect(this, SIGNAL(sigButtonClicked()), this, SLOT(sltButtonClicked()));
+    disconnect(this, &UIGraphicsRotatorButton::sigButtonClicked, this, &UIGraphicsRotatorButton::sltButtonClicked);
     if (fEnabled)
     {
         /* Connect button-click signal: */
-        connect(this, SIGNAL(sigButtonClicked()), this, SLOT(sltButtonClicked()));
+        connect(this, &UIGraphicsRotatorButton::sigButtonClicked, this, &UIGraphicsRotatorButton::sltButtonClicked);
     }
 }
 
@@ -229,4 +229,3 @@ void UIGraphicsRotatorButton::setState(UIGraphicsRotatorButtonState state)
         default: break;
     }
 }
-

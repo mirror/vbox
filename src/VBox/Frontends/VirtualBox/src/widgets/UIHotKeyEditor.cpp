@@ -70,7 +70,7 @@ UIHotKeyLineEdit::UIHotKeyLineEdit(QWidget *pParent)
     setContextMenuPolicy(Qt::NoContextMenu);
 
     /* Connect selection preserver: */
-    connect(this, SIGNAL(selectionChanged()), this, SLOT(sltDeselect()));
+    connect(this, &UIHotKeyLineEdit::selectionChanged, this, &UIHotKeyLineEdit::sltDeselect);
 }
 
 void UIHotKeyLineEdit::keyPressEvent(QKeyEvent *pEvent)
@@ -154,10 +154,10 @@ UIHotKeyEditor::UIHotKeyEditor(QWidget *pParent)
     /* Configure tool-buttons: */
     m_pResetButton->removeBorder();
     m_pResetButton->setIcon(UIIconPool::iconSet(":/import_16px.png"));
-    connect(m_pResetButton, SIGNAL(clicked(bool)), this, SLOT(sltReset()));
+    connect(m_pResetButton, &QToolButton::clicked, this, &UIHotKeyEditor::sltReset);
     m_pClearButton->removeBorder();
     m_pClearButton->setIcon(UIIconPool::iconSet(":/eraser_16px.png"));
-    connect(m_pClearButton, SIGNAL(clicked(bool)), this, SLOT(sltClear()));
+    connect(m_pClearButton, &QToolButton::clicked, this, &UIHotKeyEditor::sltClear);
 
     /* Translate finally: */
     retranslateUi();
