@@ -760,7 +760,7 @@ typedef struct PDMPCIBUSR0
     uint32_t                   uPadding0; /**< Alignment padding.*/
     /** Pointer to PCI bus device instance. */
     PPDMDEVINSR0               pDevInsR0;
-    /** @copydoc PDMPCIBUSREGR0::pfnSetIrqR0 */
+    /** @copydoc PDMPCIBUSREGR0::pfnSetIrq */
     DECLR0CALLBACKMEMBER(void, pfnSetIrqR0,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc));
 } PDMPCIBUSR0;
 /** Pointer to the ring-0 PCI bus data. */

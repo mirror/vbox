@@ -3781,7 +3781,7 @@ typedef struct PDMDEVHLPR3
      *          bus number rather than informational status codes.
      * @param   pDevIns             The device instance.
      * @param   pPciBusReg          Pointer to PCI bus registration structure.
-     * @param   ppPciHlpR3          Where to store the pointer to the PCI Bus
+     * @param   ppPciHlp            Where to store the pointer to the PCI Bus
      *                              helpers.
      * @param   piBus               Where to return the PDM bus number. Optional.
      */

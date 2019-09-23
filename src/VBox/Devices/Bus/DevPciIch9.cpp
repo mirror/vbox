@@ -213,15 +213,8 @@ static void ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq
 #ifdef IN_RING3
 
 /**
- * Port I/O Handler for Fake PCI BIOS trigger OUT operations at 0410h
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     ICH9 device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the OUT operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ *      Port I/O Handler for Fake PCI BIOS trigger OUT operations at 0410h.}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
 ich9pciR3IOPortMagicPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
@@ -242,15 +235,8 @@ ich9pciR3IOPortMagicPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, u
 
 
 /**
- * Port I/O Handler for Fake PCI BIOS trigger IN operations at 0410h
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     ICH9 device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ *      Port I/O Handler for Fake PCI BIOS trigger IN operations at 0410h.}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
 ich9pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
@@ -264,18 +250,11 @@ ich9pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, ui
 
 
 /**
- * Port I/O Handler for PCI address OUT operations.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ *                       Port I/O Handler for PCI address OUT operations.}
  *
- * Emulates writes to Configuration Address Port at 0CF8h for
- * Configuration Mechanism #1.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     ICH9 device instance.
- * @param   pvUser      User argument - ignored.
- * @param   uPort       Port number used for the OUT operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * Emulates writes to Configuration Address Port at 0CF8h for Configuration
+ * Mechanism \#1.
  */
 static DECLCALLBACK(VBOXSTRICTRC)
 ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
@@ -303,7 +282,7 @@ ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint
 
 /**
  * @callback_method_impl{FNIOMIOPORTNEWIN,
- *                       Port I/O Handler for PCI data IN operations.
+ *                       Port I/O Handler for PCI data IN operations.}
  *
  * Emulates reads from Configuration Address Port at 0CF8h for Configuration
  * Mechanism \#1.
@@ -846,7 +825,7 @@ static DECLCALLBACK(int) ich9pciRegisterMsi(PPDMDEVINS pDevIns, PPDMPCIDEV pPciD
 
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnIORegionRegisterR3}
+ * @interface_method_impl{PDMPCIBUSREGR3,pfnIORegionRegisterR3}
  */
 DECLCALLBACK(int) devpciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
                                                  PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
@@ -911,7 +890,7 @@ DECLCALLBACK(int) devpciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
 
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnInterceptConfigAccesses}
+ * @interface_method_impl{PDMPCIBUSREGR3,pfnInterceptConfigAccesses}
  */
 DECLCALLBACK(void) devpciR3CommonInterceptConfigAccesses(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                          PFNPCICONFIGREAD pfnRead, PFNPCICONFIGWRITE pfnWrite)
@@ -1016,29 +995,29 @@ static DECLCALLBACK(int) ich9pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE 
 /**
  * @callback_method_impl{FNPCIBRIDGECONFIGWRITE}
  */
-static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t uBus, uint8_t uDevice,
+static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
                                                            uint32_t u32Address, unsigned cb, uint32_t u32Value)
 {
     PDEVPCIBUS   pBus     = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    LogFlowFunc(("pDevIns=%p uBus=%d uDevice=%d u32Address=%#x cb=%d u32Value=%#x\n", pDevIns, uBus, uDevice, u32Address, cb, u32Value));
+    LogFlowFunc(("pDevIns=%p iBus=%d iDevice=%d u32Address=%#x cb=%d u32Value=%#x\n", pDevIns, iBus, iDevice, u32Address, cb, u32Value));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
     /* safe, only needs to go to the config space array */
-    if (uBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
+    if (iBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
     {
-        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, uBus);
+        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, iBus);
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigWrite);
-            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), uBus, uDevice,
+            pBridgeDevice->Int.s.pfnBridgeConfigWrite(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice,
                                                       u32Address, cb, u32Value);
         }
     }
     else
     {
         /* This is the target bus, pass the write to the device. */
-        PPDMPCIDEV pPciDev = pBus->apDevices[uDevice];
+        PPDMPCIDEV pPciDev = pBus->apDevices[iDevice];
         if (pPciDev)
         {
             LogFunc(("%s: addr=%02x val=%08x len=%d\n", pPciDev->pszNameR3, u32Address, u32Value, cb));
@@ -1056,22 +1035,22 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigWrite(PPDMDEVINSR3 pDevIns,
 /**
  * @callback_method_impl{FNPCIBRIDGECONFIGREAD}
  */
-static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t uBus, uint8_t uDevice,
+static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, uint8_t iBus, uint8_t iDevice,
                                                           uint32_t u32Address, unsigned cb, uint32_t *pu32Value)
 {
     PDEVPCIBUS   pBus     = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    LogFlowFunc(("pDevIns=%p uBus=%d uDevice=%d u32Address=%#x cb=%d\n", pDevIns, uBus, uDevice, u32Address, cb));
+    LogFlowFunc(("pDevIns=%p iBus=%d iDevice=%d u32Address=%#x cb=%d\n", pDevIns, iBus, iDevice, u32Address, cb));
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
     /* safe, only needs to go to the config space array */
-    if (uBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
+    if (iBus != PDMPciDevGetByte(&pBus->PciDev, VBOX_PCI_SECONDARY_BUS))
     {
-        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, uBus);
+        PPDMPCIDEV pBridgeDevice = ich9pciFindBridge(pBus, iBus);
         if (pBridgeDevice)
         {
             AssertPtr(pBridgeDevice->Int.s.pfnBridgeConfigRead);
-            rcStrict = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), uBus, uDevice,
+            rcStrict = pBridgeDevice->Int.s.pfnBridgeConfigRead(pBridgeDevice->Int.s.CTX_SUFF(pDevIns), iBus, iDevice,
                                                                 u32Address, cb, pu32Value);
         }
         else
@@ -1080,7 +1059,7 @@ static DECLCALLBACK(VBOXSTRICTRC) ich9pcibridgeConfigRead(PPDMDEVINSR3 pDevIns, 
     else
     {
         /* This is the target bus, pass the read to the device. */
-        PPDMPCIDEV pPciDev = pBus->apDevices[uDevice];
+        PPDMPCIDEV pPciDev = pBus->apDevices[iDevice];
         if (pPciDev)
         {
             rcStrict = VINF_PDM_PCI_DO_DEFAULT;
