@@ -106,16 +106,6 @@ VMMR3DECL(int)      TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent,
 /** @} */
 #endif
 
-
-#ifdef IN_RING0
-/** @defgroup grp_trpm_r0   TRPM Host Context Ring 0 API
- * @{
- */
-VMMR0DECL(void)     TRPMR0DispatchHostInterrupt(PVM pVM);
-VMMR0DECL(void)     TRPMR0SetupInterruptDispatcherFrame(PVM pVM, void *pvRet);
-/** @} */
-#endif
-
 /** @} */
 RT_C_DECLS_END
 

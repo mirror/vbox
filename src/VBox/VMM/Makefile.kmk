@@ -488,8 +488,6 @@ VMMR0_SOURCES   = \
 	VMMR0/PDMR0Driver.cpp \
 	VMMR0/PGMR0.cpp \
 	VMMR0/PGMR0SharedPage.cpp \
-	VMMR0/TRPMR0.cpp \
-	VMMR0/TRPMR0A.asm \
 	VMMR0/VMMR0.cpp \
 	VMMRZ/CPUMRZ.cpp \
 	VMMRZ/CPUMRZA.asm \

@@ -548,7 +548,6 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.mac: \
 		$(DEPTH)/include/VBox/sup.mac \
 		$(DEPTH)/include/iprt/x86.mac \
 		$(VBOX_PATH_VMM_SRC)/include/CPUMInternal.mac \
-		$(VBOX_PATH_VMM_SRC)/include/TRPMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/HMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/include/VMMInternal.mac \
 		$(VBOX_PATH_VMM_SRC)/testcase/Makefile.kmk \
@@ -575,7 +574,6 @@ $(VBOX_VMM_TESTCASE_OUT_DIR)/tstAsmStructsAsm.o: \
 		$(DEPTH)/include/VBox/vmm/cpum.mac \
 		$(DEPTH)/include/VBox/vmm/hm_vmx.mac \
 		$(DEPTH)/include/VBox/vmm/stam.mac \
-		$(DEPTH)/include/VBox/vmm/trpm.mac \
 		$(DEPTH)/include/VBox/vmm/vm.mac \
 		$(DEPTH)/include/VBox/sup.mac \
 		$(DEPTH)/include/iprt/x86.mac \

@@ -21,8 +21,6 @@
 *********************************************************************************************************************************/
 #include <VBox/vmm/cpum.h>
 #include "CPUMInternal.h"
-#include <VBox/vmm/trpm.h>
-#include "TRPMInternal.h"
 #include "HMInternal.h"
 #include "VMMInternal.h"
 #include <VBox/vmm/vm.h>

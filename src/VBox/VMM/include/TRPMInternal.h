@@ -36,30 +36,6 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** First interrupt handler. Used for validating input. */
-#define TRPM_HANDLER_INT_BASE  0x20
-
-
-/** @name   TRPMGCTrapIn* flags.
- * The lower bits are offsets into the CPUMCTXCORE structure.
- * @{ */
-/** The mask for the operation. */
-#define TRPM_TRAP_IN_OP_MASK    0xffff
-/** Traps on MOV GS, eax. */
-#define TRPM_TRAP_IN_MOV_GS     1
-/** Traps on MOV FS, eax. */
-#define TRPM_TRAP_IN_MOV_FS     2
-/** Traps on MOV ES, eax. */
-#define TRPM_TRAP_IN_MOV_ES     3
-/** Traps on MOV DS, eax. */
-#define TRPM_TRAP_IN_MOV_DS     4
-/** Traps on IRET. */
-#define TRPM_TRAP_IN_IRET       5
-/** Set if this is a V86 resume. */
-#define TRPM_TRAP_IN_V86        RT_BIT(30)
-/** @} */
-
-
 /**
  * TRPM Data (part of VM)
  *
@@ -128,27 +104,6 @@ typedef struct TRPMCPU
 
 /** Pointer to TRPMCPU Data. */
 typedef TRPMCPU *PTRPMCPU;
-
-
-#ifdef IN_RING0
-
-/**
- * Calls the interrupt gate as if we received an interrupt while in Ring-0.
- *
- * @param   uIP     The interrupt gate IP.
- * @param   SelCS   The interrupt gate CS.
- * @param   RSP     The interrupt gate RSP. ~0 if no stack switch should take place. (only AMD64)
- */
-DECLASM(void) trpmR0DispatchHostInterrupt(RTR0UINTPTR uIP, RTSEL SelCS, RTR0UINTPTR RSP);
-
-/**
- * Issues a software interrupt to the specified interrupt vector.
- *
- * @param   uActiveVector   The vector number.
- */
-DECLASM(void) trpmR0DispatchHostInterruptSimple(RTUINT uActiveVector);
-
-#endif /* IN_RING0 */
 
 /** @} */
 

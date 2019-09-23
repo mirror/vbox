@@ -24,7 +24,6 @@ BITS 64
 
 %include "CPUMInternal.mac"
 %include "HMInternal.mac"
-%include "TRPMInternal.mac"
 %include "VMMInternal.mac"
 %include "VBox/vmm/cpum.mac"
 %include "VBox/vmm/vm.mac"
