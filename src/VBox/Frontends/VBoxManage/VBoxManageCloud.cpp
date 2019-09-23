@@ -461,10 +461,149 @@ static RTEXITCODE handleCloudLists(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
 static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
 {
-    RT_NOREF(a);
-    RT_NOREF(iFirst);
-    RT_NOREF(pCommonOpts);
-    return RTEXITCODE_SUCCESS;
+    HRESULT hrc = S_OK;
+    hrc = checkAndSetCommonOptions(a, pCommonOpts);
+    if (FAILED(hrc))
+        return RTEXITCODE_FAILURE;
+
+    static const RTGETOPTDEF s_aOptions[] =
+    {
+        { "--image-id",       'i', RTGETOPT_REQ_STRING },
+        { "--display-name",   'n', RTGETOPT_REQ_STRING },
+        { "--launch-mode",    'm', RTGETOPT_REQ_STRING },
+        { "--shape",          's', RTGETOPT_REQ_STRING },
+        { "--domain-name",    'd', RTGETOPT_REQ_STRING },
+        { "--boot-disk-size", 'b', RTGETOPT_REQ_STRING },
+        { "--publicip",       'p', RTGETOPT_REQ_STRING },
+        { "--subnet",         't', RTGETOPT_REQ_STRING },
+        { "--privateip",      'P', RTGETOPT_REQ_STRING },
+    };
+    RTGETOPTSTATE GetState;
+    RTGETOPTUNION ValueUnion;
+    int vrc = RTGetOptInit(&GetState, a->argc, a->argv, s_aOptions, RT_ELEMENTS(s_aOptions), iFirst, 0);
+    AssertRCReturn(vrc, RTEXITCODE_FAILURE);
+
+    ComPtr<IAppliance> pAppliance;
+    CHECK_ERROR2_RET(hrc, a->virtualBox, CreateAppliance(pAppliance.asOutParam()), RTEXITCODE_FAILURE);
+    ULONG vsdNum = 1;
+    CHECK_ERROR2_RET(hrc, pAppliance, CreateVirtualSystemDescriptions(1, &vsdNum), RTEXITCODE_FAILURE);
+    com::SafeIfaceArray<IVirtualSystemDescription> virtualSystemDescriptions;
+    CHECK_ERROR2_RET(hrc, pAppliance,
+                     COMGETTER(VirtualSystemDescriptions)(ComSafeArrayAsOutParam(virtualSystemDescriptions)),
+                     RTEXITCODE_FAILURE);
+    ComPtr<IVirtualSystemDescription> pVSD = virtualSystemDescriptions[0];
+
+    Utf8Str strDisplayName, strImageId;
+
+    int c;
+    while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        switch (c)
+        {
+            case 'i':
+                strImageId = ValueUnion.psz;
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudImageId,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+            case 'n':
+                strDisplayName = ValueUnion.psz;
+                pVSD->AddDescription(VirtualSystemDescriptionType_Name,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+            case 'm':
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCILaunchMode,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+            case 's':
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudInstanceShape,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+            case 'd':
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudDomain,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+
+            case 'b':
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudBootDiskSize,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+            case 'p':
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicIP,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+            case 'P':
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudPrivateIP,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+            case 't':
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCISubnet,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+            case VINF_GETOPT_NOT_OPTION:
+                return errorUnknownSubcommand(ValueUnion.psz);
+            default:
+                return errorGetOpt(c, &ValueUnion);
+        }
+    }
+
+    if (strImageId.isEmpty())
+        return errorArgument("Missing parameter --image-id.");
+
+    ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
+
+    pVSD->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
+                         Bstr(pCommonOpts->profile.pszProfileName).raw(),
+                         Bstr(pCommonOpts->profile.pszProfileName).raw());
+
+    ComObjPtr<ICloudClient> oCloudClient;
+    CHECK_ERROR2_RET(hrc, pCloudProfile,
+                     CreateCloudClient(oCloudClient.asOutParam()),
+                     RTEXITCODE_FAILURE);
+
+    ComPtr<IStringArray> infoArray;
+    com::SafeArray<BSTR> pStrInfoArray;
+    ComPtr<IProgress> pProgress;
+
+#if 0
+        /*
+         * OCI API returns an error during an instance creation if the image isn't available
+         * or in the inappropriate state. So the check can be omitted.
+         */
+        RTPrintf("Checking the cloud image with id \'%s\'...\n", strImageId.c_str());
+        CHECK_ERROR2_RET(hrc, oCloudClient,
+                         GetImageInfo(Bstr(strImageId).raw(),
+                                      infoArray.asOutParam(),
+                                      pProgress.asOutParam()),
+                         RTEXITCODE_FAILURE);
+
+        hrc = showProgress(pProgress);
+        CHECK_PROGRESS_ERROR_RET(pProgress, ("Checking the cloud image failed"), RTEXITCODE_FAILURE);
+
+        pProgress.setNull();
+#endif
+
+    RTPrintf("Creating cloud instance with name \'%s\' from the image \'%s\'...\n",
+             strDisplayName.c_str(), strImageId.c_str());
+
+
+    CHECK_ERROR2_RET(hrc, oCloudClient, LaunchVM(pVSD, pProgress.asOutParam()), RTEXITCODE_FAILURE);
+
+    hrc = showProgress(pProgress);
+    CHECK_PROGRESS_ERROR_RET(pProgress, ("Creating cloud instance failed"), RTEXITCODE_FAILURE);
+
+    if (SUCCEEDED(hrc))
+        RTPrintf("Cloud instance was created successfully\n");
+
+    return SUCCEEDED(hrc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 static RTEXITCODE updateCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pCommonOpts)
