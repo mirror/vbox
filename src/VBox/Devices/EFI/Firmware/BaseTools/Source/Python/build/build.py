@@ -209,7 +209,10 @@ def LaunchCommand(Command, WorkingDir):
             Command = Command.split()
         Command = ' '.join(Command)
 
-    EdkLogger.info("Launching: '%s'; CWD=%s" % ("' '".join(Command), WorkingDir));
+    if platform.system() != 'Windows':
+        EdkLogger.info("Launching: '%s'; CWD=%s" % (Command, WorkingDir));
+    else:
+        EdkLogger.info("Launching: '%s'; CWD=%s" % ("' '".join(Command), WorkingDir));
     Proc = None
     EndOfProcedure = None
     try:
