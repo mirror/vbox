@@ -163,11 +163,17 @@ public:
     bool isPieChartAllowed() const;
     void setIsPieChartAllowed(bool fWithPieChart);
 
-    bool drawPieChart() const;
-    void setDrawPieChart(bool fDrawPieChart);
+    bool usePieChart() const;
+    void setShowPieChart(bool fShowPieChart);
 
     bool useGradientLineColor() const;
     void setUseGradientLineColor(bool fUseGradintLineColor);
+
+    bool useAreaChart() const;
+    void setUseAreaChart(bool fUseAreaChart);
+
+    bool isAreaChartAllowed() const;
+    void setIsAreaChartAllowed(bool fIsAreaChartAllowed);
 
     QColor dataSeriesColor(int iDataSeriesIndex);
     void setDataSeriesColor(int iDataSeriesIndex, const QColor &color);
@@ -186,7 +192,8 @@ private slots:
 
     void sltCreateContextMenu(const QPoint &point);
     void sltResetMetric();
-    void sltSetDrawPieChart(bool fDrawPieChart);
+    void sltSetShowPieChart(bool fShowPieChart);
+    void sltSetUseAreaChart(bool fUseAreaChart);
 
 private:
 
@@ -223,14 +230,20 @@ private:
     /** For some chart it is not possible to have a pie chart, Then We dont present the
       * option to show it to user. see m_fIsPieChartAllowed. */
     bool m_fIsPieChartAllowed;
-    /**  m_fDrawPieChart is considered only if m_fIsPieChartAllowed is true. */
-    bool m_fDrawPieChart;
+    /**  m_fShowPieChart is considered only if m_fIsPieChartAllowed is true. */
+    bool m_fShowPieChart;
     bool m_fUseGradientLineColor;
+    /** When it is true we draw an area graph where data series drawn on top of each other.
+     *  We draw first data0 then data 1 on top. Makes sense where the summation of data is guaranteed not to exceed some max. */
+    bool m_fUseAreaChart;
+    /** For some charts it does not make sense to have an area chart. */
+    bool m_fIsAreaChartAllowed;
     QColor m_dataSeriesColor[DATA_SERIES_SIZE];
     QString m_strXAxisLabel;
     QString m_strGAWarning;
     QString m_strResetActionLabel;
     QString m_strPieChartToggleActionLabel;
+    QString m_strAreaChartToggleActionLabel;
 };
 
 /*********************************************************************************************************************************
@@ -542,8 +555,10 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_size(QSize(50, 50))
     , m_iOverlayAlpha(80)
     , m_fIsPieChartAllowed(false)
-    , m_fDrawPieChart(true)
+    , m_fShowPieChart(true)
     , m_fUseGradientLineColor(false)
+    , m_fUseAreaChart(true)
+    , m_fIsAreaChartAllowed(false)
 {
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &UIChart::customContextMenuRequested,
@@ -588,16 +603,16 @@ void UIChart::setIsPieChartAllowed(bool fWithPieChart)
     update();
 }
 
-bool UIChart::drawPieChart() const
+bool UIChart::usePieChart() const
 {
-    return m_fDrawPieChart;
+    return m_fShowPieChart;
 }
 
-void UIChart::setDrawPieChart(bool fDrawChart)
+void UIChart::setShowPieChart(bool fDrawChart)
 {
-    if (m_fDrawPieChart == fDrawChart)
+    if (m_fShowPieChart == fDrawChart)
         return;
-    m_fDrawPieChart = fDrawChart;
+    m_fShowPieChart = fDrawChart;
     update();
 }
 
@@ -614,6 +629,28 @@ void UIChart::setUseGradientLineColor(bool fUseGradintLineColor)
     update();
 }
 
+bool UIChart::useAreaChart() const
+{
+    return m_fUseAreaChart;
+}
+
+void UIChart::setUseAreaChart(bool fUseAreaChart)
+{
+    if (m_fUseAreaChart == fUseAreaChart)
+        return;
+    m_fUseAreaChart = fUseAreaChart;
+    update();
+}
+
+bool UIChart::isAreaChartAllowed() const
+{
+    return m_fIsAreaChartAllowed;
+}
+
+void UIChart::setIsAreaChartAllowed(bool fIsAreaChartAllowed)
+{
+    m_fIsAreaChartAllowed = fIsAreaChartAllowed;
+}
 
 QColor UIChart::dataSeriesColor(int iDataSeriesIndex)
 {
@@ -657,6 +694,7 @@ void UIChart::retranslateUi()
     m_strGAWarning = QApplication::translate("UIVMInformationDialog", "No guest additions! This metric requires guest additions to work properly.");
     m_strResetActionLabel = QApplication::translate("UIVMInformationDialog", "Reset");
     m_strPieChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Show Pie Chart");
+    m_strAreaChartToggleActionLabel = QApplication::translate("UIVMInformationDialog", "Draw Area Chart");
     update();
 }
 
@@ -728,15 +766,40 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         const QQueue<quint64> *data = m_pMetric->data(k);
         if (!m_fUseGradientLineColor)
             painter.setPen(QPen(m_dataSeriesColor[k], 2.5));
-        for (int i = 0; i < data->size() - 1; ++i)
+        if (m_fUseAreaChart && m_fIsAreaChartAllowed)
         {
-            int j = i + 1;
-            float fHeight = fH * data->at(i);
-            float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
-            float fHeight2 = fH * data->at(j);
-            float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
-            QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
-            painter.drawLine(bar);
+            QVector<QPointF> points;
+            for (int i = 0; i < data->size(); ++i)
+            {
+                float fHeight = fH * data->at(i);
+                if (k == 0)
+                {
+                    if (m_pMetric->data(1) && m_pMetric->data(1)->size() > i)
+                        fHeight += fH * m_pMetric->data(1)->at(i);
+                }
+                float fX = (width() - m_iMarginRight) - ((data->size() - i - 1) * fBarWidth);
+                if (i == 0)
+                    points << QPointF(fX, height() - m_iMarginBottom);
+                points << QPointF(fX, height() - (fHeight + m_iMarginBottom));
+                if (i == data->size() - 1)
+                    points << QPointF(fX, height() - + m_iMarginBottom);
+            }
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(m_dataSeriesColor[k]);
+            painter.drawPolygon(points, Qt::WindingFill);
+        }
+        else
+        {
+            for (int i = 0; i < data->size() - 1; ++i)
+            {
+                int j = i + 1;
+                float fHeight = fH * data->at(i);
+                float fX = (width() - m_iMarginRight) - ((data->size() -i - 1) * fBarWidth);
+                float fHeight2 = fH * data->at(j);
+                float fX2 = (width() - m_iMarginRight) - ((data->size() -j - 1) * fBarWidth);
+                QLineF bar(fX, height() - (fHeight + m_iMarginBottom), fX2, height() - (fHeight2 + m_iMarginBottom));
+                painter.drawLine(bar);
+            }
         }
     }
 
@@ -763,7 +826,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         painter.drawText(width() - 0.9 * m_iMarginRight, iTextY, strValue);
     }
 
-    if (m_fIsPieChartAllowed && m_fDrawPieChart)
+    if (m_fIsPieChartAllowed && m_fShowPieChart)
         drawCombinedPieCharts(painter, iMaximum);
 }
 
@@ -968,9 +1031,17 @@ void UIChart::sltCreateContextMenu(const QPoint &point)
     {
         QAction *pPieChartToggle = menu.addAction(m_strPieChartToggleActionLabel);
         pPieChartToggle->setCheckable(true);
-        pPieChartToggle->setChecked(m_fDrawPieChart);
-        connect(pPieChartToggle, &QAction::toggled, this, &UIChart::sltSetDrawPieChart);
+        pPieChartToggle->setChecked(m_fShowPieChart);
+        connect(pPieChartToggle, &QAction::toggled, this, &UIChart::sltSetShowPieChart);
     }
+    if (m_fIsAreaChartAllowed)
+    {
+        QAction *pAreaChartToggle = menu.addAction(m_strAreaChartToggleActionLabel);
+        pAreaChartToggle->setCheckable(true);
+        pAreaChartToggle->setChecked(m_fUseAreaChart);
+        connect(pAreaChartToggle, &QAction::toggled, this, &UIChart::sltSetUseAreaChart);
+    }
+
     menu.exec(mapToGlobal(point));
 }
 
@@ -980,9 +1051,14 @@ void UIChart::sltResetMetric()
         m_pMetric->reset();
 }
 
-void UIChart::sltSetDrawPieChart(bool fDrawPieChart)
+void UIChart::sltSetShowPieChart(bool fShowPieChart)
 {
-    setDrawPieChart(fDrawPieChart);
+    setShowPieChart(fShowPieChart);
+}
+
+void UIChart::sltSetUseAreaChart(bool fUseAreaChart)
+{
+    setUseAreaChart(fUseAreaChart);
 }
 
 /*********************************************************************************************************************************
@@ -1296,7 +1372,10 @@ void UIInformationRuntime::prepareObjects()
 
     /* Configure charts: */
     if (m_charts.contains(m_strCPUMetricName) && m_charts[m_strCPUMetricName])
+    {
         m_charts[m_strCPUMetricName]->setIsPieChartAllowed(true);
+        m_charts[m_strCPUMetricName]->setIsAreaChartAllowed(true);
+    }
 
     m_pRuntimeInfoWidget = new UIRuntimeInfoWidget(0, m_machine, m_console);
     pContainerLayout->addWidget(m_pRuntimeInfoWidget, iRow, 0, 2, 2);
