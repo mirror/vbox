@@ -481,7 +481,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
        case WM_DRAWCLIPBOARD:
        {
-           LogFlowFunc(("WM_DRAWCLIPBOARD, hwnd %p\n", pWinCtx->hWnd));
+           LogFlowFunc(("WM_DRAWCLIPBOARD: hwnd %p\n", pWinCtx->hWnd));
 
            if (GetClipboardOwner() != hwnd)
            {
@@ -489,8 +489,11 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                /* WM_DRAWCLIPBOARD always expects a return code of 0, so don't change "rc" here. */
                SHCLFORMATDATA Formats;
                int rc = SharedClipboardWinGetFormats(pWinCtx, &Formats);
-               if (RT_SUCCESS(rc))
+               if (   RT_SUCCESS(rc)
+                   && Formats.uFormats != VBOX_SHCL_FMT_NONE)
+               {
                    rc = VbglR3ClipboardFormatsSend(&pCtx->CmdCtx, &Formats);
+               }
            }
 
            lresultRc = SharedClipboardWinChainPassToNext(pWinCtx, msg, wParam, lParam);
