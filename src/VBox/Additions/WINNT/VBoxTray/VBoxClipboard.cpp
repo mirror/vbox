@@ -432,28 +432,45 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
     switch (msg)
     {
-       case WM_CLIPBOARDUPDATE:
-       {
-           const HWND hWndClipboardOwner = GetClipboardOwner();
+        case WM_CLIPBOARDUPDATE:
+        {
+            LogFunc(("WM_CLIPBOARDUPDATE: Waiting ...\n"));
 
-           LogFunc(("WM_CLIPBOARDUPDATE: hWndOldClipboardOwner=%p, hWndNewClipboardOwner=%p\n",
-                    pWinCtx->hWndClipboardOwnerUs, hWndClipboardOwner));
+            int rc = RTCritSectEnter(&pWinCtx->CritSect);
+            if (RT_SUCCESS(rc))
+            {
+                const HWND hWndClipboardOwner = GetClipboardOwner();
 
-           if (pWinCtx->hWndClipboardOwnerUs != hWndClipboardOwner)
-           {
-               /* Clipboard was updated by another application.
-                * Report available formats to the host. */
-               SHCLFORMATDATA Formats;
-               int rc = SharedClipboardWinGetFormats(&pCtx->Win, &Formats);
-               if (RT_SUCCESS(rc))
-               {
-                   LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats 0x%x\n", Formats.uFormats));
-                   rc = VbglR3ClipboardFormatsSend(&pCtx->CmdCtx, &Formats);
-               }
-           }
+                LogFunc(("WM_CLIPBOARDUPDATE: hWndOldClipboardOwner=%p, hWndNewClipboardOwner=%p\n",
+                         pWinCtx->hWndClipboardOwnerUs, hWndClipboardOwner));
 
-           break;
-       }
+                if (pWinCtx->hWndClipboardOwnerUs != hWndClipboardOwner)
+                {
+                    int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
+                    AssertRC(rc2);
+
+                    /* Clipboard was updated by another application.
+                     * Report available formats to the host. */
+                    SHCLFORMATDATA Formats;
+                    int rc = SharedClipboardWinGetFormats(&pCtx->Win, &Formats);
+                    if (RT_SUCCESS(rc))
+                    {
+                        LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats 0x%x\n", Formats.uFormats));
+                        rc = VbglR3ClipboardFormatsSend(&pCtx->CmdCtx, &Formats);
+                    }
+                }
+                else
+                {
+                    int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
+                    AssertRC(rc2);
+                }
+            }
+
+            if (RT_FAILURE(rc))
+                LogRel(("Shared Clipboard: WM_CLIPBOARDUPDATE failed with %Rrc\n", rc));
+
+            break;
+        }
 
        case WM_CHANGECBCHAIN:
        {
