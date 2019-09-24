@@ -171,19 +171,19 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFO
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
                            VBOX_SHCL_GUEST_FN_MSG_GET, 3);
 
-        Msg.uContext.SetUInt32(VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
-        Msg.uFormats.SetUInt32(0);
-        Msg.fFlags.SetUInt32(0);
+        Msg.u.v1.uContext.SetUInt32(VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
+        Msg.u.v1.uFormats.SetUInt32(0);
+        Msg.u.v1.fFlags.SetUInt32(0);
     }
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.uContext.GetUInt32(&pCtx->uContextID);
+        rc = Msg.u.v1.uContext.GetUInt32(&pCtx->uContextID);
         if (RT_SUCCESS(rc))
-            rc = Msg.uFormats.GetUInt32(&pFormats->uFormats);
+            rc = Msg.u.v1.uFormats.GetUInt32(&pFormats->uFormats);
         if (RT_SUCCESS(rc))
-            rc = Msg.fFlags.GetUInt32(&pFormats->fFlags);
+            rc = Msg.u.v1.fFlags.GetUInt32(&pFormats->fFlags);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -1289,7 +1289,7 @@ static int vbglR3ClipboardTransferStart(PVBGLR3SHCLCMDCTX pCmdCtx, PSHCLTRANSFER
         LogRel2(("Shared Clipboard: Transfer ID=%RU16 (%s %s) successfully started\n",
                  uTransferID,
                  enmDir    == SHCLTRANSFERDIR_READ ? "reading from" : "writing to",
-                 enmSource == SHCLSOURCE_LOCAL     ? "local"   : "remote"));
+                 enmSource == SHCLSOURCE_LOCAL     ? "local"        : "remote"));
     }
     else
         LogRel(("Shared Clipboard: Unable to start transfer ID=%RU16, rc=%Rrc\n", uTransferID, rc));
@@ -1367,7 +1367,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             {
                 const SHCLTRANSFERID uTransferID = VBOX_SHCL_CONTEXTID_GET_TRANSFER(pCmdCtx->uContextID);
 
-                LogFlowFunc(("[Transfer %RU16] %s\n", uTransferID, VBoxShClTransferStatusToStr(transferReport.uStatus)));
+                LogFlowFunc(("[Transfer %RU16] enmDir=%RU32, status=%s\n",
+                             uTransferID, enmDir, VBoxShClTransferStatusToStr(transferReport.uStatus)));
 
                 switch (transferReport.uStatus)
                 {
@@ -1889,21 +1890,25 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATDA
 {
     VBoxShClFormatsMsg Msg;
 
+    int rc;
+
     if (pCtx->uProtocolVer == 0)
     {
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 1);
-        VbglHGCMParmUInt32Set(&Msg.uFormats, pFormats->uFormats);
+        Msg.u.v0.uFormats.SetUInt32(pFormats->uFormats);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
     }
     else
     {
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 3);
 
-        Msg.uContext.SetUInt32(pCtx->uContextID);
-        Msg.uFormats.SetUInt32(pFormats->uFormats);
-        Msg.fFlags.SetUInt32(pFormats->fFlags);
-    }
+        Msg.u.v1.uContext.SetUInt32(pCtx->uContextID);
+        Msg.u.v1.uFormats.SetUInt32(pFormats->uFormats);
+        Msg.u.v1.fFlags.SetUInt32(pFormats->fFlags);
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v1));
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1923,9 +1928,9 @@ VBGLR3DECL(int) VbglR3ClipboardReportFormats(HGCMCLIENTID idClient, uint32_t fFo
     VBoxShClFormatsMsg Msg;
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 1);
-    VbglHGCMParmUInt32Set(&Msg.uFormats, fFormats);
+    VbglHGCMParmUInt32Set(&Msg.u.v0.uFormats, fFormats);
 
-    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
 }
 
 /**
@@ -1951,7 +1956,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat
     VbglHGCMParmUInt32Set(&Msg.u.v0.format, fFormat);
     VbglHGCMParmPtrSet(&Msg.u.v0.ptr, pv, cb);
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
