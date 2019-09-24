@@ -633,7 +633,9 @@ endif
 VBOX_WITH_MAIN_USB_ID_DATABASE = 1
 # The recompiler.
 if !defined(VBOX_WITH_NEW_XCODE) || "$(KBUILD_TARGET)" != "darwin"
- VBOX_WITH_REM = 1
+ ifn1of ($(KBUILD_TARGET), win)
+  VBOX_WITH_REM = 1
+ endif
 endif
 # Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
 # caused by our XPCOM library polluting the symbol namespace for system libs.
