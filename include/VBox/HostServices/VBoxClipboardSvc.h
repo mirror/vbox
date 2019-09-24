@@ -273,12 +273,24 @@ typedef struct _VBoxShClFormatsMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in: Context ID. */
-    HGCMFunctionParameter uContext;
-    /** uint32_t, out:  VBOX_SHCL_FMT_*. */
-    HGCMFunctionParameter uFormats;
-    /** uint32_t, in: Format flags. */
-    HGCMFunctionParameter fFlags;
+    union
+    {
+        struct
+        {
+            /** uint32_t, out:  VBOX_SHCL_FMT_*. */
+            HGCMFunctionParameter uFormats;
+        } v0;
+
+        struct
+        {
+            /** uint32_t, in: Context ID. */
+            HGCMFunctionParameter uContext;
+            /** uint32_t, out:  VBOX_SHCL_FMT_*. */
+            HGCMFunctionParameter uFormats;
+            /** uint32_t, in: Format flags. */
+            HGCMFunctionParameter fFlags;
+        } v1;
+    } u;
 } VBoxShClFormatsMsg;
 
 typedef struct _VBoxShClReadDataReqMsg
