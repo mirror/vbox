@@ -113,17 +113,19 @@ typedef struct VBOXUSB_DEV
 static VBOXUSBGLOBALSTATE g_VBoxUsbGlobal;
 
 
-int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
+static int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
 {
-    HANDLE hOut = INVALID_HANDLE_VALUE;
+    HANDLE  hOut = INVALID_HANDLE_VALUE;
+    DWORD   dwErr;
 
     hOut = CreateFile(pVuDev->szName, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, NULL,
                       OPEN_EXISTING, FILE_ATTRIBUTE_SYSTEM, NULL);
 
     if (hOut == INVALID_HANDLE_VALUE)
     {
-        DWORD dwErr = GetLastError(); NOREF(dwErr);
+        dwErr = GetLastError();
         AssertMsgFailed(("CreateFile FAILED to open %s, dwErr (%d)\n", pVuDev->szName, dwErr));
+        LogRelFunc(("Failed to open `%s' (dwErr=%d)!\n", pVuDev->szName, dwErr));
         return VERR_GENERAL_FAILURE;
     }
 
@@ -135,7 +137,9 @@ int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
     {
         if (!DeviceIoControl(hOut, SUPUSB_IOCTL_GET_VERSION, NULL, 0,&version, sizeof(version),  &cbReturned, NULL))
         {
-            AssertMsgFailed(("DeviceIoControl SUPUSB_IOCTL_GET_VERSION failed with LastError=%Rwa\n", GetLastError()));
+            dwErr = GetLastError();
+            AssertMsgFailed(("DeviceIoControl SUPUSB_IOCTL_GET_VERSION failed with LastError=%Rwa\n", dwErr));
+            LogRelFunc(("SUPUSB_IOCTL_GET_VERSION failed on `%s' (dwErr=%d)!\n", pVuDev->szName, dwErr));
             break;
         }
 
@@ -146,12 +150,15 @@ int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
            )
         {
             AssertMsgFailed(("Invalid version %d:%d vs %d:%d\n", version.u32Major, version.u32Minor, USBDRV_MAJOR_VERSION, USBDRV_MINOR_VERSION));
+            LogRelFunc(("Invalid version %d:%d (%s) vs %d:%d (library)!\n", version.u32Major, version.u32Minor, pVuDev->szName, USBDRV_MAJOR_VERSION, USBDRV_MINOR_VERSION));
             break;
         }
 
         if (!DeviceIoControl(hOut, SUPUSB_IOCTL_IS_OPERATIONAL, NULL, 0, NULL, NULL, &cbReturned, NULL))
         {
-            AssertMsgFailed(("DeviceIoControl SUPUSB_IOCTL_IS_OPERATIONAL failed with LastError=%Rwa\n", GetLastError()));
+            dwErr = GetLastError();
+            AssertMsgFailed(("DeviceIoControl SUPUSB_IOCTL_IS_OPERATIONAL failed with LastError=%Rwa\n", dwErr));
+            LogRelFunc(("SUPUSB_IOCTL_IS_OPERATIONAL failed on `%s' (dwErr=%d)!\n", pVuDev->szName, dwErr));
             break;
         }
 
@@ -216,6 +223,7 @@ static int usbLibVuDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO hDevInfo, PSP_DE
         }
 
         rc = usbLibVuDeviceValidate(pVuDev);
+        LogRelFunc(("Found VBoxUSB on `%s' (rc=%d)\n", pVuDev->szName, rc));
         AssertRC(rc);
     } while (0);
 
@@ -1317,12 +1325,12 @@ static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs,
             DWORD cbReturned = 0;
             if (!DeviceIoControl(hDev, SUPUSB_IOCTL_GET_DEVICE, &Dev, sizeof (Dev), &Dev, sizeof (Dev), &cbReturned, NULL))
             {
+                DWORD dwErr = GetLastError();
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
-                 DWORD dwErr = GetLastError(); NOREF(dwErr);
                  /* ERROR_DEVICE_NOT_CONNECTED -> device was removed just now */
                  AssertMsg(dwErr == ERROR_DEVICE_NOT_CONNECTED, (__FUNCTION__": DeviceIoControl failed dwErr (%d)\n", dwErr));
 #endif
-                 Log(("SUPUSB_IOCTL_GET_DEVICE: DeviceIoControl no longer connected\n"));
+                LogRelFunc(("SUPUSB_IOCTL_GET_DEVICE failed on '%s' (dwErr=%u)!\n", pDevInfos->szName, dwErr));
                  CloseHandle(hDev);
                  break;
             }
@@ -1334,10 +1342,10 @@ static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs,
             HVBOXUSBDEVUSR hDevice = Dev.hDevice;
             if (!DeviceIoControl(pGlobal->hMonitor, SUPUSBFLT_IOCTL_GET_DEVICE, &hDevice, sizeof (hDevice), &MonInfo, sizeof (MonInfo), &cbReturned, NULL))
             {
-                 DWORD dwErr = GetLastError(); NOREF(dwErr);
+                 DWORD dwErr = GetLastError();
                  /* ERROR_DEVICE_NOT_CONNECTED -> device was removed just now */
                  AssertMsgFailed(("Monitor DeviceIoControl failed dwErr (%d)\n", dwErr));
-                 Log(("SUPUSBFLT_IOCTL_GET_DEVICE: DeviceIoControl no longer connected\n"));
+                LogRelFunc(("SUPUSBFLT_IOCTL_GET_DEVICE failed for '%s' (hDevice=%p, dwErr=%u)!\n", pDevInfos->szName, hDevice, dwErr));
                  CloseHandle(hDev);
                  break;
             }
