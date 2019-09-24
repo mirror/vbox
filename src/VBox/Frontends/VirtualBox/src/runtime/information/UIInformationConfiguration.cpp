@@ -48,6 +48,8 @@ UIInformationConfiguration::UIInformationConfiguration(QWidget *pParent, const C
     retranslateUi();
     connect(gVBoxEvents, &UIVirtualBoxEventHandler::sigMachineDataChange,
             this, &UIInformationConfiguration::sltMachineDataChanged);
+    connect(&uiCommon(), &UICommon::sigMediumEnumerationFinished,
+            this, &UIInformationConfiguration::sltMachineDataChanged);
 }
 
 void UIInformationConfiguration::sltMachineDataChanged()
