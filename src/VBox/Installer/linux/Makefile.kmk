@@ -137,11 +137,8 @@ linux-icons_SOURCES = $(VBOX_MIME_ICONS) $(VBOX_DESKTOP_ICONS)
 VBOX_LNX_STRIP_BIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
-	VBoxREM.so \
 	VBoxDDU.so \
 	VBoxVMM.so \
-	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,) \
-	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,) \
 	VBoxRT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL $(if $(VBOX_WITH_HARDENING),VBoxSDL.so),) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD), VBoxSharedClipboard.so,) \
@@ -175,6 +172,13 @@ VBOX_LNX_STRIP_BIN = \
 		ExtensionPacks/VNC/$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)/VBoxVNCMain.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)\
 	VBoxTunctl
+
+ifdef VBOX_WITH_REM
+ VBOX_LNX_STRIP_BIN += \
+	VBoxREM.so \
+	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,) \
+	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,)
+endif
 
 # Do not remove relocation information of these binaries
 VBOX_LNX_STRIP_OBJ = \
