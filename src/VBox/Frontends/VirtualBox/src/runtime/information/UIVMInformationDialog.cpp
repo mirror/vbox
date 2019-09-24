@@ -166,10 +166,6 @@ void UIVMInformationDialog::prepare()
     prepareThis();
     /* Load settings: */
     loadSettings();
-
-    /* Start local scope medium-enumeration (if necessary): */
-    if (!uiCommon().isFullMediumEnumerationRequested())
-        uiCommon().enumerateMedia(m_pMachineWindow->uisession()->machineMedia());
 }
 
 void UIVMInformationDialog::prepareThis()
