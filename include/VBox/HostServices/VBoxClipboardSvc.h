@@ -70,11 +70,15 @@
 #define VBOX_SHCL_SSM_VER_1          UINT32_C(0x80000003)
 
 /*
- * The mode of operations.
+ * The Shared Clipboard modes of operation.
  */
+/** Shared Clipboard is disabled completely. */
 #define VBOX_SHCL_MODE_OFF           0
+/** Only transfers from host to the guest are possible. */
 #define VBOX_SHCL_MODE_HOST_TO_GUEST 1
+/** Only transfers from guest to the host are possible. */
 #define VBOX_SHCL_MODE_GUEST_TO_HOST 2
+/** Bidirectional transfers between guest and host are possible. */
 #define VBOX_SHCL_MODE_BIDIRECTIONAL 3
 
 /*
