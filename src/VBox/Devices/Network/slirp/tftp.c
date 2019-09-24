@@ -855,6 +855,15 @@ int slirpTftpInput(PNATState pData, struct mbuf *pMbuf)
         case TFTP_ACK:
             tftpProcessACK(pData, pTftpIpHeader);
             break;
+
+        case TFTP_ERROR:
+        {
+            PTFTPSESSION pTftpSession;
+            int rc = tftpSessionFind(pData, pTftpIpHeader, &pTftpSession);
+            if (RT_SUCCESS(rc))
+                tftpSessionTerminate(pTftpSession);
+        }
+
         default:;
     }
     LogFlowFuncLeaveRC(VINF_SUCCESS);
