@@ -94,6 +94,8 @@ typedef struct VBOXUSBFLT_DEVICE
     uintptr_t uFltId;
     /* true iff device is filtered with a one-shot filter */
     bool fIsFilterOneShot;
+    /* true if descriptors could not be read and only inferred from PnP Manager data */
+    bool fInferredDesc;
     /* The device state. If the non-owner session is requesting the state while the device is grabbed,
      * the USBDEVICESTATE_USED_BY_HOST is returned. */
     VBOXUSBFLT_DEVSTATE  enmState;
@@ -340,12 +342,27 @@ static PVBOXUSBFLTCTX vboxUsbFltDevMatchLocked(PVBOXUSBFLT_DEVICE pDevice, uintp
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_VENDOR_ID, pDevice->idVendor, true);
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_PRODUCT_ID, pDevice->idProduct, true);
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_REV, pDevice->bcdDevice, true);
-    USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_CLASS, pDevice->bClass, true);
-    USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_SUB_CLASS, pDevice->bSubClass, true);
-    USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_PROTOCOL, pDevice->bProtocol, true);
     USBFilterSetStringExact(&DevFlt, USBFILTERIDX_MANUFACTURER_STR, pDevice->szMfgName, true /*fMustBePresent*/, true /*fPurge*/);
     USBFilterSetStringExact(&DevFlt, USBFILTERIDX_PRODUCT_STR, pDevice->szProduct, true /*fMustBePresent*/, true /*fPurge*/);
     USBFilterSetStringExact(&DevFlt, USBFILTERIDX_SERIAL_NUMBER_STR, pDevice->szSerial, true /*fMustBePresent*/, true /*fPurge*/);
+
+    /* If device descriptor had to be inferred from PnP Manager data, the class/subclass/protocol may be wrong.
+     * When Windows reports CompatibleIDs 'USB\Class_03&SubClass_00&Prot_00', the device descriptor might be
+     * reporting class 3 (HID), *or* the device descriptor might be reporting class 0 (specified by interface)
+     * and the device's interface reporting class 3. Ignore the class/subclass/protocol in such case, since
+     * we are more or less guaranteed to rely on VID/PID anyway.
+     * See @bugref{9479}.
+     */
+    if (pDevice->fInferredDesc)
+    {
+        LOG(("Device descriptor was not read, only inferred; ignoring class/subclass/protocol!"));
+    }
+    else
+    {
+        USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_CLASS, pDevice->bClass, true);
+        USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_SUB_CLASS, pDevice->bSubClass, true);
+        USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_PROTOCOL, pDevice->bProtocol, true);
+    }
 
     /* Run filters on the thing. */
     PVBOXUSBFLTCTX pOwner = VBoxUSBFilterMatchEx(&DevFlt, puId, fRemoveFltIfOneShot, pfFilter, pfIsOneShot);
@@ -514,6 +531,7 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
 
     do
     {
+        pDevice->fInferredDesc = false;
         Status = VBoxUsbToolGetDescriptor(pDo, pDevDr, sizeof(*pDevDr), USB_DEVICE_DESCRIPTOR_TYPE, 0, 0, VBOXUSBMON_POPULATE_REQUEST_TIMEOUT_MS);
         if (!NT_SUCCESS(Status))
         {
@@ -568,6 +586,11 @@ static NTSTATUS vboxUsbFltDevPopulate(PVBOXUSBFLT_DEVICE pDevice, PDEVICE_OBJECT
             pDevDr->bDeviceClass    = cls;
             pDevDr->bDeviceSubClass = sub;
             pDevDr->bDeviceProtocol = prt;
+
+            /* The USB device class/subclass/protocol may not be accurate. We have to be careful when comparing
+             * and not take mismatches too seriously.
+             */
+            pDevice->fInferredDesc = true;
         }
 
         if (vboxUsbFltBlDevMatchLocked(pDevDr->idVendor, pDevDr->idProduct, pDevDr->bcdDevice))
@@ -1103,6 +1126,13 @@ int VBoxUsbFltAdd(PVBOXUSBFLTCTX pContext, PUSBFILTER pFilter, uintptr_t *pId)
     /* We can't get the bus/port numbers. Ignore them while matching. */
     USBFilterSetMustBePresent(pFilter, USBFILTERIDX_BUS, false);
     USBFilterSetMustBePresent(pFilter, USBFILTERIDX_PORT, false);
+
+    /* We may not be able to reconstruct the class/subclass/protocol if we aren't able to
+     * read the device descriptor. Don't require these to be present. See also the fInferredDesc flag.
+     */
+    USBFilterSetMustBePresent(pFilter, USBFILTERIDX_DEVICE_CLASS, false);
+    USBFilterSetMustBePresent(pFilter, USBFILTERIDX_DEVICE_SUB_CLASS, false);
+    USBFilterSetMustBePresent(pFilter, USBFILTERIDX_DEVICE_PROTOCOL, false);
 
     uintptr_t uId = 0;
     VBOXUSBFLT_LOCK_ACQUIRE();
