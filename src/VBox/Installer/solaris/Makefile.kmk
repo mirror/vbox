@@ -317,8 +317,6 @@ SOLARIS_STRIP_BINS.DST     := $(VBOX_PATH_SI_SCRATCH_PKG)/opt/VirtualBox/$(VBOX_
 SOLARIS_STRIP_BINS = \
 	VBoxDD.so \
 	VBoxDD2.so \
-	VBoxREM.so \
-	$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",VBoxREM32.so VBoxREM64.so,) \
 	VBoxRT.so \
 	VBoxDDU.so \
 	VBoxVMM.so \
@@ -337,6 +335,12 @@ SOLARIS_STRIP_BINS = \
 	components/VBoxC.so \
 	components/VBoxSVCM.so \
 	components/VBoxXPCOMIPCC.so
+
+ifdef VBOX_WITH_REM
+ SOLARIS_STRIP_BINS += \
+	VBoxREM.so \
+	$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",VBoxREM32.so VBoxREM64.so,)
+endif
 
 ifdef VBOX_WITH_QTGUI
   ifdef VBOX_WITH_ORACLE_QT
