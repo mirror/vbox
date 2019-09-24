@@ -123,6 +123,16 @@ static TFTPOPTIONDESC g_TftpDesc[] =
     {"size", TFTPFMT_NOT_FMT, 4, true}, /* RFC2349 */
 };
 
+
+DECLINLINE(struct mbuf *) slirpTftpMbufAlloc(PNATState pData)
+{
+    struct mbuf *m = slirpServiceMbufAlloc(pData, CTL_TFTP);
+    if (RT_UNLIKELY(m == NULL))
+        LogFlowFunc(("LEAVE: Can't allocate mbuf\n"));
+    return m;
+}
+
+
 /**
  * This function evaluate file name.
  * @param pu8Payload
@@ -635,6 +645,7 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
     return RT_SUCCESS(rc) ? 0 : -1;
 }
 
+
 DECLINLINE(int) tftpSendError(PNATState pData,
                               PTFTPSESSION pTftpSession,
                               uint16_t errorcode,
@@ -642,34 +653,33 @@ DECLINLINE(int) tftpSendError(PNATState pData,
                               PCTFTPIPHDR pcTftpIpHeaderRecv)
 {
     struct mbuf *m = NULL;
-    PTFTPIPHDR pTftpIpHeader = NULL;
-    u_int cbMsg = (u_int)strlen(msg) + 1; /* ending zero */
 
     LogFlowFunc(("ENTER: errorcode: %RX16, msg: %s\n", errorcode, msg));
     m = slirpTftpMbufAlloc(pData);
-    if (!m)
+    if (m != NULL)
     {
-        LogFlowFunc(("LEAVE: Can't allocate mbuf\n"));
-        return -1;
+        u_int cbMsg = (u_int)strlen(msg) + 1; /* ending zero */
+        PTFTPIPHDR pTftpIpHeader;
+
+        m->m_data += if_maxlinkhdr;
+        m->m_len = sizeof(TFTPIPHDR) + cbMsg;
+        m->m_pkthdr.header = mtod(m, void *);
+        pTftpIpHeader = mtod(m, PTFTPIPHDR);
+
+        pTftpIpHeader->u16TftpOpType = RT_H2N_U16_C(TFTP_ERROR);
+        pTftpIpHeader->Core.u16TftpOpCode = RT_H2N_U16(errorcode);
+
+        m_copyback(pData, m, sizeof(TFTPIPHDR), cbMsg, (c_caddr_t)msg);
+
+        tftpSend(pData, pTftpSession, m, pcTftpIpHeaderRecv);
     }
-
-    m->m_data += if_maxlinkhdr;
-    m->m_len = sizeof(TFTPIPHDR) + cbMsg;
-    m->m_pkthdr.header = mtod(m, void *);
-    pTftpIpHeader = mtod(m, PTFTPIPHDR);
-
-    pTftpIpHeader->u16TftpOpType = RT_H2N_U16_C(TFTP_ERROR);
-    pTftpIpHeader->Core.u16TftpOpCode = RT_H2N_U16(errorcode);
-
-    m_copyback(pData, m, sizeof(TFTPIPHDR), cbMsg, (c_caddr_t)msg);
-
-    tftpSend(pData, pTftpSession, m, pcTftpIpHeaderRecv);
 
     tftpSessionTerminate(pTftpSession);
 
     LogFlowFuncLeave();
     return 0;
 }
+
 
 static int tftpSendData(PNATState pData,
                           PTFTPSESSION pTftpSession,
@@ -686,7 +696,6 @@ static int tftpSendData(PNATState pData,
     else
     {
         tftpSendError(pData, pTftpSession, 6, "ACK is wrong", pcTftpIpHeaderRecv);
-        tftpSessionTerminate(pTftpSession);
         return -1;
     }
 

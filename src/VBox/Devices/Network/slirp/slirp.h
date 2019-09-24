@@ -528,10 +528,6 @@ static inline struct mbuf *slirpServiceMbufAlloc(PNATState pData, uint8_t u8Serv
     return m;
 }
 
-static inline struct mbuf *slirpTftpMbufAlloc(PNATState pData)
-{
-    return slirpServiceMbufAlloc(pData, CTL_TFTP);
-}
 static inline struct mbuf *slirpDnsMbufAlloc(PNATState pData)
 {
     return slirpServiceMbufAlloc(pData, CTL_DNS);
