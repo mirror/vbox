@@ -3331,6 +3331,28 @@ QString UICommon::details(const CMedium &comMedium, bool fPredictDiff, bool fUse
         }
     }
 
+    /* For differencing hard-disk we have to request
+     * enumeration of whole tree based in it's root item: */
+    if (   comMedium.isNotNull()
+        && comMedium.GetDeviceType() == KDeviceType_HardDisk)
+    {
+        /* Traverse through parents to root to catch it: */
+        CMedium comRootMedium;
+        CMedium comParentMedium = comMedium.GetParent();
+        while (comParentMedium.isNotNull())
+        {
+            comRootMedium = comParentMedium;
+            comParentMedium = comParentMedium.GetParent();
+        }
+        /* Enumerate root if it's found and wasn't cached: */
+        if (comRootMedium.isNotNull())
+        {
+            const QUuid uRootId = comRootMedium.GetId();
+            if (medium(uRootId).isNull())
+                enumerateMedia(CMediumVector() << comRootMedium);
+        }
+    }
+
     /* Return UI medium details: */
     return fUseHtml ? guiMedium.detailsHTML(true /* no diffs? */, fPredictDiff) :
                       guiMedium.details(true /* no diffs? */, fPredictDiff);
