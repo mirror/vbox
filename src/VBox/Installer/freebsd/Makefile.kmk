@@ -80,11 +80,8 @@ endif
 VBOX_FBSD_STRIP_BIN = \
 	VBoxDD.so \
 	VBoxDD2.so \
-	VBoxREM.so \
 	VBoxDDU.so \
 	VBoxVMM.so \
-	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,) \
-	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,) \
 	VBoxRT.so \
 	$(if $(VBOX_WITH_VBOXSDL),VBoxSDL $(if $(VBOX_WITH_HARDENING),VBoxSDL.so),) \
 	$(if $(VBOX_WITH_SHARED_CLIPBOARD), VBoxSharedClipboard.so,) \
@@ -106,6 +103,13 @@ VBOX_FBSD_STRIP_BIN = \
 		VBoxTestOGL \
 	$(if $(VBOX_WITH_PYTHON),VBoxPython.so,) \
 	$(if $(VBOX_WITH_DTRACE),VBoxDTrace,)
+
+ifdef VBOX_WITH_REM
+ VBOX_FBSD_STRIP_BIN += \
+ 	VBoxREM.so \
+ 	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM32.so,) \
+ 	$(if $(eq $(KBUILD_TARGET_ARCH),x86),VBoxREM64.so,)
+endif
 
 # Do not remove relocation information of these binaries
 VBOX_FBSD_STRIP_OBJ = \
