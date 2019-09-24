@@ -507,8 +507,9 @@ DECLINLINE(int) tftpSend(PNATState pData,
                          struct mbuf *pMBuf,
                          PCTFTPIPHDR pcTftpIpHeaderRecv)
 {
-    int rc = VINF_SUCCESS;
     struct sockaddr_in saddr, daddr;
+    int error, rc;
+
     LogFlowFunc(("pMBuf:%p, pcTftpIpHeaderRecv:%p\n", pMBuf, pcTftpIpHeaderRecv));
     saddr.sin_addr = pcTftpIpHeaderRecv->IPv4Hdr.ip_dst;
     saddr.sin_port = pcTftpIpHeaderRecv->UdpHdr.uh_dport;
@@ -519,7 +520,10 @@ DECLINLINE(int) tftpSend(PNATState pData,
 
     pMBuf->m_data += sizeof(struct udpiphdr);
     pMBuf->m_len -= sizeof(struct udpiphdr);
-    udp_output2(pData, NULL, pMBuf, &saddr, &daddr, IPTOS_LOWDELAY);
+
+    error = udp_output2(pData, NULL, pMBuf, &saddr, &daddr, IPTOS_LOWDELAY);
+    rc = error ? VERR_GENERAL_FAILURE : VINF_SUCCESS;
+
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
