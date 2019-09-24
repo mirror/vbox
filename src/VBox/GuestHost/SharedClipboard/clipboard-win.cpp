@@ -159,13 +159,12 @@ int SharedClipboardWinCtxInit(PSHCLWINCTX pWinCtx)
     if (RT_SUCCESS(rc))
     {
         /* Check that new Clipboard API is available. */
-        rc = SharedClipboardWinCheckAndInitNewAPI(&pWinCtx->newAPI);
-        if (RT_SUCCESS(rc))
-        {
-            pWinCtx->hWnd                 = NULL;
-            pWinCtx->hWndClipboardOwnerUs = NULL;
-            pWinCtx->hWndNextInChain      = NULL;
-        }
+        SharedClipboardWinCheckAndInitNewAPI(&pWinCtx->newAPI);
+        /* Do *not* check the rc, as the call might return VERR_SYMBOL_NOT_FOUND is the new API isn't available. */
+
+        pWinCtx->hWnd                 = NULL;
+        pWinCtx->hWndClipboardOwnerUs = NULL;
+        pWinCtx->hWndNextInChain      = NULL;
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -193,7 +192,7 @@ void SharedClipboardWinCtxDestroy(PSHCLWINCTX pWinCtx)
  * Checks and initializes function pointer which are required for using
  * the new clipboard API.
  *
- * @returns VBox status code.
+ * @returns VBox status code, or VERR_SYMBOL_NOT_FOUND if the new API is not available.
  * @param   pAPI                Where to store the retrieved function pointers.
  *                              Will be set to NULL if the new API is not available.
  */
@@ -214,14 +213,15 @@ int SharedClipboardWinCheckAndInitNewAPI(PSHCLWINAPINEW pAPI)
 
     if (RT_SUCCESS(rc))
     {
-        LogFunc(("New Clipboard API enabled\n"));
+        LogRel(("Shared Clipboard: New Clipboard API enabled\n"));
     }
     else
     {
         RT_BZERO(pAPI, sizeof(SHCLWINAPINEW));
-        LogFunc(("New Clipboard API not available; rc=%Rrc\n", rc));
+        LogRel(("Shared Clipboard: New Clipboard API not available (%Rrc)\n", rc));
     }
 
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
