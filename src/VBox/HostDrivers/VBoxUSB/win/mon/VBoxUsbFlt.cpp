@@ -342,9 +342,14 @@ static PVBOXUSBFLTCTX vboxUsbFltDevMatchLocked(PVBOXUSBFLT_DEVICE pDevice, uintp
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_VENDOR_ID, pDevice->idVendor, true);
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_PRODUCT_ID, pDevice->idProduct, true);
     USBFilterSetNumExact(&DevFlt, USBFILTERIDX_DEVICE_REV, pDevice->bcdDevice, true);
-    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_MANUFACTURER_STR, pDevice->szMfgName, true /*fMustBePresent*/, true /*fPurge*/);
-    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_PRODUCT_STR, pDevice->szProduct, true /*fMustBePresent*/, true /*fPurge*/);
-    USBFilterSetStringExact(&DevFlt, USBFILTERIDX_SERIAL_NUMBER_STR, pDevice->szSerial, true /*fMustBePresent*/, true /*fPurge*/);
+
+    /* If we could not read a string descriptor, don't set the filter item at all. */
+    if (pDevice->szMfgName[0])
+        USBFilterSetStringExact(&DevFlt, USBFILTERIDX_MANUFACTURER_STR, pDevice->szMfgName, true /*fMustBePresent*/, true /*fPurge*/);
+    if (pDevice->szProduct[0])
+        USBFilterSetStringExact(&DevFlt, USBFILTERIDX_PRODUCT_STR, pDevice->szProduct, true /*fMustBePresent*/, true /*fPurge*/);
+    if (pDevice->szSerial[0])
+        USBFilterSetStringExact(&DevFlt, USBFILTERIDX_SERIAL_NUMBER_STR, pDevice->szSerial, true /*fMustBePresent*/, true /*fPurge*/);
 
     /* If device descriptor had to be inferred from PnP Manager data, the class/subclass/protocol may be wrong.
      * When Windows reports CompatibleIDs 'USB\Class_03&SubClass_00&Prot_00', the device descriptor might be
@@ -1133,6 +1138,15 @@ int VBoxUsbFltAdd(PVBOXUSBFLTCTX pContext, PUSBFILTER pFilter, uintptr_t *pId)
     USBFilterSetMustBePresent(pFilter, USBFILTERIDX_DEVICE_CLASS, false);
     USBFilterSetMustBePresent(pFilter, USBFILTERIDX_DEVICE_SUB_CLASS, false);
     USBFilterSetMustBePresent(pFilter, USBFILTERIDX_DEVICE_PROTOCOL, false);
+
+    /* We may also be unable to read string descriptors. Often the userland can't read the
+     * string descriptors either because the device is in a low-power state, but it can happen
+     * that the userland gets lucky and reads the strings, but by the time we get to read them
+     * they're inaccessible due to power management. So, don't require the strings to be present.
+     */
+    USBFilterSetMustBePresent(pFilter, USBFILTERIDX_MANUFACTURER_STR, false);
+    USBFilterSetMustBePresent(pFilter, USBFILTERIDX_PRODUCT_STR, false);
+    USBFilterSetMustBePresent(pFilter, USBFILTERIDX_SERIAL_NUMBER_STR, false);
 
     uintptr_t uId = 0;
     VBOXUSBFLT_LOCK_ACQUIRE();
