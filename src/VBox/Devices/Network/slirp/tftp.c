@@ -611,6 +611,7 @@ DECLINLINE(int) tftpAddOptionToOACK(PNATState pData, struct mbuf *pMBuf, const c
     return rc;
 }
 
+
 DECLINLINE(int) tftpSendOACK(PNATState pData,
                              PTFTPSESSION pTftpSession,
                              PCTFTPIPHDR pcTftpIpHeaderRecv)
@@ -624,12 +625,18 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
     {
         tftpSendError(pData, pTftpSession, 2, "Option negotiation failure (file not found or inaccessible?)", pcTftpIpHeaderRecv);
         LogFlowFuncLeave();
-        return -1;
+        return rc;
     }
 
+    if (rc == VWRN_NOT_FOUND)
+        return rc;
+
     m = slirpTftpMbufAlloc(pData);
-    if (!m)
-        return -1;
+    if (m == NULL)
+    {
+        tftpSessionTerminate(pTftpSession);
+        return VERR_NO_MEMORY;
+    }
 
     m->m_data += if_maxlinkhdr;
     m->m_pkthdr.header = mtod(m, void *);
@@ -646,7 +653,10 @@ DECLINLINE(int) tftpSendOACK(PNATState pData,
         rc = tftpAddOptionToOACK(pData, m, "tsize", pTftpSession->OptionTSize.u64Value);
 
     rc = tftpSend(pData, pTftpSession, m, pcTftpIpHeaderRecv);
-    return RT_SUCCESS(rc) ? 0 : -1;
+    if (RT_FAILURE(rc))
+        tftpSessionTerminate(pTftpSession);
+
+    return rc;
 }
 
 
@@ -794,7 +804,10 @@ DECLINLINE(void) tftpProcessRRQ(PNATState pData, PCTFTPIPHDR pTftpIpHeader, int 
     }
 
 
-    tftpSendOACK(pData, pTftpSession, pTftpIpHeader);
+    rc = tftpSendOACK(pData, pTftpSession, pTftpIpHeader);
+    if (rc == VWRN_NOT_FOUND)
+        rc = tftpSendData(pData, pTftpSession, 0, pTftpIpHeader);
+
     LogFlowFuncLeave();
     return;
 }
