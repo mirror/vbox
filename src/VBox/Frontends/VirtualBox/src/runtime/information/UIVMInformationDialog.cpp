@@ -34,6 +34,7 @@
 #include "UICommon.h"
 #include "VBoxUtils.h"
 #include "UIInformationConfiguration.h"
+#include "UIInformationPerformanceMonitor.h"
 #include "UIInformationRuntime.h"
 #include "UIGuestProcessControlWidget.h"
 #include "UIMachine.h"
@@ -110,8 +111,8 @@ void UIVMInformationDialog::retranslateUi()
     /* Translate tabs: */
     m_pTabWidget->setTabText(0, tr("Configuration &Details"));
     m_pTabWidget->setTabText(1, tr("&Runtime Information"));
-    m_pTabWidget->setTabText(2, tr("Guest Control &Session Information"));
-    m_pTabWidget->setTabText(3, tr("Performance Monitor"));
+    m_pTabWidget->setTabText(2, tr("Performance &Monitor"));
+    m_pTabWidget->setTabText(3, tr("Guest Control &Session Information"));
 }
 
 bool UIVMInformationDialog::event(QEvent *pEvent)
@@ -235,6 +236,18 @@ void UIVMInformationDialog::prepareTabWidget()
             m_tabs.insert(1, pInformationRuntimeWidget);
             m_pTabWidget->addTab(m_tabs.value(1), QString());
         }
+
+        /* Create Performance Monitor tab: */
+        UIInformationPerformanceMonitor *pPerformanceMonitorWidget =
+            new UIInformationPerformanceMonitor(this, m_pMachineWindow->machine(), m_pMachineWindow->console(), m_pMachineWindow->uisession());
+        if (pPerformanceMonitorWidget)
+        {
+            m_tabs.insert(2, pPerformanceMonitorWidget);
+            m_pTabWidget->addTab(m_tabs.value(2), QString());
+        }
+
+
+        /* Create Guest Process Control tab: */
         QString strMachineName;
         if (m_pMachineWindow && m_pMachineWindow->console().isOk())
         {
@@ -245,15 +258,14 @@ void UIVMInformationDialog::prepareTabWidget()
         UIGuestProcessControlWidget *pGuestProcessControlWidget =
             new UIGuestProcessControlWidget(EmbedTo_Dialog, m_pMachineWindow->console().GetGuest(),
                                             this, strMachineName, false /* fShowToolbar */);
-
         if (pGuestProcessControlWidget)
         {
-            m_tabs.insert(2, pGuestProcessControlWidget);
-            m_pTabWidget->addTab(m_tabs.value(2), QString());
+            m_tabs.insert(3, pGuestProcessControlWidget);
+            m_pTabWidget->addTab(m_tabs.value(3), QString());
         }
 
         /* Set Runtime Information tab as default: */
-        m_pTabWidget->setCurrentIndex(1);
+        m_pTabWidget->setCurrentIndex(2);
 
         /* Assign tab-widget page change handler: */
         connect(m_pTabWidget, &QITabWidget::currentChanged, this, &UIVMInformationDialog::sltHandlePageChanged);

@@ -718,6 +718,7 @@ VirtualBoxVM_QT_MOCHDRS = \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
 	src/runtime/information/UIInformationConfiguration.h \
 	src/runtime/information/UIInformationRuntime.h \
+	src/runtime/information/UIInformationPerformanceMonitor.h \
 	src/runtime/information/UIVMInformationDialog.h \
 	src/guestctrl/UIFileManager.h \
 	src/guestctrl/UIFileManagerDialog.h \
@@ -960,6 +961,7 @@ VirtualBoxVM_QT_MOCSRCS = \
 	src/runtime/UIFrameBuffer.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
+	src/runtime/information/UIInformationPerformanceMonitor.cpp \
 	src/guestctrl/UIFileManager.cpp \
 	src/guestctrl/UIFileManagerLogPanel.cpp \
 	src/guestctrl/UIFileManagerOperationsPanel.cpp \
@@ -1180,6 +1182,7 @@ VirtualBoxVM_SOURCES = \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
 	src/runtime/information/UIInformationConfiguration.cpp \
 	src/runtime/information/UIInformationRuntime.cpp \
+	src/runtime/information/UIInformationPerformanceMonitor.cpp \
 	src/runtime/information/UIVMInformationDialog.cpp \
 	src/guestctrl/UIFileManager.cpp \
 	src/guestctrl/UIFileManagerDialog.cpp \
