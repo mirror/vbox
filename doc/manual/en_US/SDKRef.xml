@@ -2710,7 +2710,7 @@ es.unregisterListener(listener); </screen></para>
           </listitem>
         </itemizedlist>
           As the result of operation user will have a file with the suffix ".oci" on the local host. This file is a TAR archive which
-          contains a bootable instance image converted into the VMDK format and a JSON file with some metadata related to
+          contains a bootable instance image in QCOW2 format and a JSON file with some metadata related to
           the imported instance. The function takes the parameter "description"
           (which is <link linkend="IVirtualSystemDescription">IVirtualSystemDescription</link>)
           Parameter "description" must contain all information and settings needed for successful operation result.
