@@ -3382,11 +3382,11 @@ static void hmR0SvmTrpmTrapToPendingEvent(PVMCPUCC pVCpu)
 
     uint8_t     uVector;
     TRPMEVENT   enmTrpmEvent;
-    RTGCUINT    uErrCode;
+    uint32_t    uErrCode;
     RTGCUINTPTR GCPtrFaultAddress;
     uint8_t     cbInstr;
 
-    int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrpmEvent, &uErrCode, &GCPtrFaultAddress, &cbInstr);
+    int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrpmEvent, &uErrCode, &GCPtrFaultAddress, &cbInstr, NULL /* pfIcebp */);
     AssertRC(rc);
 
     SVMEVENT Event;

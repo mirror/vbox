@@ -1121,14 +1121,15 @@ VMM_INT_DECL(TRPMEVENT) HMVmxEventTypeToTrpmEventType(uint32_t uIntInfo)
  * @returns VMX event type mask.
  * @param   uVector         The event vector.
  * @param   enmTrpmEvent    The TRPM event.
+ * @param   fIcebp          Whether the \#DB vector is caused by an INT1/ICEBP
+ *                          instruction.
  */
-VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT enmTrpmEvent)
+VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT enmTrpmEvent, bool fIcebp)
 {
     uint32_t uIntInfoType = 0;
     if (enmTrpmEvent == TRPM_TRAP)
     {
-        /** @todo r=ramshankar: TRPM currently offers no way to determine a \#DB that was
-         *        generated using INT1 (ICEBP). */
+        Assert(!fIcebp);
         switch (uVector)
         {
             case X86_XCPT_NMI:
@@ -1155,7 +1156,10 @@ VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT 
         }
     }
     else if (enmTrpmEvent == TRPM_HARDWARE_INT)
+    {
+        Assert(!fIcebp);
         uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_EXT_INT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
+    }
     else if (enmTrpmEvent == TRPM_SOFTWARE_INT)
     {
         switch (uVector)
@@ -1165,6 +1169,15 @@ VMM_INT_DECL(uint32_t) HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT 
                 uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_SW_XCPT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
                 break;
 
+            case X86_XCPT_DB:
+            {
+                if (fIcebp)
+                {
+                    uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
+                    break;
+                }
+                RT_FALL_THRU();
+            }
             default:
                 uIntInfoType |= (VMX_IDT_VECTORING_INFO_TYPE_SW_INT << VMX_IDT_VECTORING_INFO_TYPE_SHIFT);
                 break;

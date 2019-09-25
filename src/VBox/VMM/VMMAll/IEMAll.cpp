@@ -14279,9 +14279,10 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
     {
         uint8_t     u8TrapNo;
         TRPMEVENT   enmType;
-        RTGCUINT    uErrCode;
+        uint32_t    uErrCode;
         RTGCPTR     uCr2;
-        int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /* pu8InstLen */); AssertRC(rc2);
+        int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, NULL /* pu8InstLen */, NULL /* fIcebp */);
+        AssertRC(rc2);
         Assert(enmType == TRPM_HARDWARE_INT);
         VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, (uint16_t)uErrCode, uCr2, 0 /* cbInstr */);
         TRPMResetTrap(pVCpu);
@@ -14662,13 +14663,15 @@ VMMDECL(VBOXSTRICTRC) IEMInjectTrpmEvent(PVMCPUCC pVCpu)
 #else
     uint8_t     u8TrapNo;
     TRPMEVENT   enmType;
-    RTGCUINT    uErrCode;
+    uint32_t    uErrCode;
     RTGCUINTPTR uCr2;
     uint8_t     cbInstr;
-    int rc = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, &cbInstr);
+    int rc = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrCode, &uCr2, &cbInstr, NULL /* fIcebp */);
     if (RT_FAILURE(rc))
         return rc;
 
+    /** @todo r=ramshankar: Pass ICEBP info. to IEMInjectTrap() below and handle
+     *        ICEBP \#DB injection as a special case. */
     VBOXSTRICTRC rcStrict = IEMInjectTrap(pVCpu, u8TrapNo, enmType, uErrCode, uCr2, cbInstr);
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     if (rcStrict == VINF_SVM_VMEXIT)

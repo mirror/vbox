@@ -7827,16 +7827,17 @@ static void hmR0VmxTrpmTrapToPendingEvent(PVMCPUCC pVCpu)
 
     uint8_t     uVector;
     TRPMEVENT   enmTrpmEvent;
-    RTGCUINT    uErrCode;
+    uint32_t    uErrCode;
     RTGCUINTPTR GCPtrFaultAddress;
     uint8_t     cbInstr;
+    bool        fIcebp;
 
-    int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrpmEvent, &uErrCode, &GCPtrFaultAddress, &cbInstr);
+    int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrpmEvent, &uErrCode, &GCPtrFaultAddress, &cbInstr, &fIcebp);
     AssertRC(rc);
 
     uint32_t u32IntInfo;
     u32IntInfo  = uVector | VMX_IDT_VECTORING_INFO_VALID;
-    u32IntInfo |= HMTrpmEventTypeToVmxEventType(uVector, enmTrpmEvent);
+    u32IntInfo |= HMTrpmEventTypeToVmxEventType(uVector, enmTrpmEvent, fIcebp);
 
     rc = TRPMResetTrap(pVCpu);
     AssertRC(rc);
@@ -7875,6 +7876,9 @@ static void hmR0VmxPendingEventToTrpmTrap(PVMCPUCC pVCpu)
         TRPMSetFaultAddress(pVCpu, pVCpu->hm.s.Event.GCPtrFaultAddress);
     else if (VMX_IDT_VECTORING_INFO_TYPE(u32IntInfo) == VMX_IDT_VECTORING_INFO_TYPE_SW_INT)
         TRPMSetInstrLength(pVCpu, pVCpu->hm.s.Event.cbInstr);
+
+    if (VMX_IDT_VECTORING_INFO_TYPE(u32IntInfo) == VMX_IDT_VECTORING_INFO_TYPE_PRIV_SW_XCPT)
+        TRPMSetTrapDueToIcebp(pVCpu);
 
     /* We're now done converting the pending event. */
     pVCpu->hm.s.Event.fPending = false;
@@ -13618,7 +13622,7 @@ static VBOXSTRICTRC hmR0VmxExitXcptPF(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
         if (!pVmxTransient->fVectoringDoublePF)
         {
             /* It's a guest page fault and needs to be reflected to the guest. */
-            uint32_t uGstErrorCode = TRPMGetErrorCode(pVCpu);
+            uint32_t const uGstErrorCode = TRPMGetErrorCode(pVCpu);
             TRPMResetTrap(pVCpu);
             pVCpu->hm.s.Event.fPending = false;                 /* In case it's a contributory #PF. */
             hmR0VmxSetPendingEvent(pVCpu, VMX_ENTRY_INT_INFO_FROM_EXIT_INT_INFO(pVmxTransient->uExitIntInfo), 0 /* cbInstr */,

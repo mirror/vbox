@@ -3623,6 +3623,7 @@ VMMDECL(VBOXSTRICTRC) PGMPhysWriteGCPtr(PVMCPUCC pVCpu, RTGCPTR GCPtrDst, const 
  */
 VMMDECL(int) PGMPhysInterpretedRead(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb)
 {
+    NOREF(pCtxCore);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     Assert(cb <= PAGE_SIZE);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -3768,7 +3769,10 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, void 
             return rc;
     }
     Log(("PGMPhysInterpretedRead: GCPtrSrc=%RGv cb=%#x -> #PF(%#x)\n", GCPtrSrc, cb, uErr));
-    return TRPMRaiseXcptErrCR2(pVCpu, pCtxCore, X86_XCPT_PF, uErr, GCPtrSrc);
+    rc = TRPMAssertXcptPF(pVCpu, GCPtrSrc, uErr);
+    if (RT_SUCCESS(rc))
+        return VINF_EM_RAW_GUEST_TRAP;
+    return rc;
 }
 
 
@@ -3806,6 +3810,7 @@ VMMDECL(int) PGMPhysInterpretedRead(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, void 
 VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCUINTPTR GCPtrSrc, size_t cb,
                                               bool fRaiseTrap)
 {
+    NOREF(pCtxCore);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     Assert(cb <= PAGE_SIZE);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -3962,7 +3967,10 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxC
     if (fRaiseTrap)
     {
         Log(("PGMPhysInterpretedReadNoHandlers: GCPtrSrc=%RGv cb=%#x -> Raised #PF(%#x)\n", GCPtrSrc, cb, uErr));
-        return TRPMRaiseXcptErrCR2(pVCpu, pCtxCore, X86_XCPT_PF, uErr, GCPtrSrc);
+        rc = TRPMAssertXcptPF(pVCpu, GCPtrSrc, uErr);
+        if (RT_SUCCESS(rc))
+            return VINF_EM_RAW_GUEST_TRAP;
+        return rc;
     }
     Log(("PGMPhysInterpretedReadNoHandlers: GCPtrSrc=%RGv cb=%#x -> #PF(%#x) [!raised]\n", GCPtrSrc, cb, uErr));
     return rc;
@@ -3999,6 +4007,7 @@ VMMDECL(int) PGMPhysInterpretedReadNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxC
 VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDst, const void *pvSrc,
                                                size_t cb, bool fRaiseTrap)
 {
+    NOREF(pCtxCore);
     Assert(cb <= PAGE_SIZE);
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
     VMCPU_ASSERT_EMT(pVCpu);
@@ -4170,7 +4179,10 @@ VMMDECL(int) PGMPhysInterpretedWriteNoHandlers(PVMCPUCC pVCpu, PCPUMCTXCORE pCtx
     if (fRaiseTrap)
     {
         Log(("PGMPhysInterpretedWriteNoHandlers: GCPtrDst=%RGv cb=%#x -> Raised #PF(%#x)\n", GCPtrDst, cb, uErr));
-        return TRPMRaiseXcptErrCR2(pVCpu, pCtxCore, X86_XCPT_PF, uErr, GCPtrDst);
+        rc = TRPMAssertXcptPF(pVCpu, GCPtrDst, uErr);
+        if (RT_SUCCESS(rc))
+            return VINF_EM_RAW_GUEST_TRAP;
+        return rc;
     }
     Log(("PGMPhysInterpretedWriteNoHandlers: GCPtrDst=%RGv cb=%#x -> #PF(%#x) [!raised]\n", GCPtrDst, cb, uErr));
     return rc;

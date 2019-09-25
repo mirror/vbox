@@ -40,20 +40,8 @@ RT_C_DECLS_BEGIN
  */
 
 /**
- * Trap: error code present or not
+ * TRPM event type.
  */
-typedef enum
-{
-    TRPM_TRAP_HAS_ERRORCODE = 0,
-    TRPM_TRAP_NO_ERRORCODE,
-    /** The usual 32-bit paranoia. */
-    TRPM_TRAP_32BIT_HACK = 0x7fffffff
-} TRPMERRORCODE;
-
-/**
- * TRPM event type
- */
-/** Note: must match trpm.mac! */
 typedef enum
 {
     TRPM_TRAP         = 0,
@@ -67,31 +55,23 @@ typedef TRPMEVENT *PTRPMEVENT;
 /** Pointer to a const TRPM event type. */
 typedef TRPMEVENT const *PCTRPMEVENT;
 
-/**
- * Invalid trap handler for trampoline calls
- */
-#define TRPM_INVALID_HANDLER        0
-
 VMMDECL(int)        TRPMQueryTrap(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT penmType);
 VMMDECL(uint8_t)    TRPMGetTrapNo(PVMCPU pVCpu);
-VMMDECL(RTGCUINT)   TRPMGetErrorCode(PVMCPU pVCpu);
+VMMDECL(uint32_t)   TRPMGetErrorCode(PVMCPU pVCpu);
 VMMDECL(RTGCUINTPTR) TRPMGetFaultAddress(PVMCPU pVCpu);
 VMMDECL(uint8_t)    TRPMGetInstrLength(PVMCPU pVCpu);
+VMMDECL(bool)       TRPMIsTrapDueToIcebp(PVMCPU pVCpu);
 VMMDECL(int)        TRPMResetTrap(PVMCPU pVCpu);
 VMMDECL(int)        TRPMAssertTrap(PVMCPUCC pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType);
-VMMDECL(int)        TRPMAssertXcptPF(PVMCPUCC pVCpu, RTGCUINTPTR uCR2, RTGCUINT uErrorCode);
-VMMDECL(void)       TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode);
+VMMDECL(int)        TRPMAssertXcptPF(PVMCPUCC pVCpu, RTGCUINTPTR uCR2, uint32_t uErrorCode);
+VMMDECL(void)       TRPMSetErrorCode(PVMCPU pVCpu, uint32_t uErrorCode);
 VMMDECL(void)       TRPMSetFaultAddress(PVMCPU pVCpu, RTGCUINTPTR uCR2);
 VMMDECL(void)       TRPMSetInstrLength(PVMCPU pVCpu, uint8_t cbInstr);
+VMMDECL(void)       TRPMSetTrapDueToIcebp(PVMCPU pVCpu);
 VMMDECL(bool)       TRPMIsSoftwareInterrupt(PVMCPU pVCpu);
 VMMDECL(bool)       TRPMHasTrap(PVMCPU pVCpu);
-VMMDECL(int)        TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2, uint8_t *pcbInstr);
-VMMDECL(void)       TRPMSaveTrap(PVMCPU pVCpu);
-VMMDECL(void)       TRPMRestoreTrap(PVMCPU pVCpu);
-VMMDECL(int)        TRPMRaiseXcpt(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt);
-VMMDECL(int)        TRPMRaiseXcptErr(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr);
-VMMDECL(int)        TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr, RTGCUINTPTR uCR2);
-
+VMMDECL(int)        TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, PTRPMEVENT pEnmType, uint32_t *puErrorCode,
+                                     PRTGCUINTPTR puCR2, uint8_t *pcbInstr, bool *pfIcebp);
 
 #ifdef IN_RING3
 /** @defgroup grp_trpm_r3   TRPM Host Context Ring 3 API

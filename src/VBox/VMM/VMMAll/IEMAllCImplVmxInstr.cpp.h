@@ -7090,6 +7090,12 @@ IEM_STATIC void iemVmxVmentryInjectTrpmEvent(PVMCPUCC pVCpu, const char *pszInst
         }
     }
 
+    if (VMX_ENTRY_INT_INFO_TYPE(uEntryIntInfo) == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
+    {
+        TRPMSetTrapDueToIcebp(pVCpu);
+        Log(("%s: Injecting: icebp\n", pszInstr));
+    }
+
     NOREF(pszInstr);
 }
 

@@ -354,16 +354,17 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             uint32_t        uEIP       = 0; //CPUMGetHyperEIP(pVCpu);
             TRPMEVENT       enmType;
             uint8_t         u8TrapNo   =       0xce;
-            RTGCUINT        uErrorCode = 0xdeadface;
+            uint32_t        uErrorCode = 0xdeadface;
             RTGCUINTPTR     uCR2       = 0xdeadface;
             uint8_t         cbInstr    = UINT8_MAX;
-            int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2, &cbInstr);
+            bool            fIcebp     = false;
+            int rc2 = TRPMQueryTrapAll(pVCpu, &u8TrapNo, &enmType, &uErrorCode, &uCR2, &cbInstr, &fIcebp);
             if (VM_IS_RAW_MODE_ENABLED(pVM))
             {
                 if (RT_SUCCESS(rc2))
                     pHlp->pfnPrintf(pHlp,
-                                    "!! TRAP=%02x ERRCD=%RGv CR2=%RGv EIP=%RX32 Type=%d cbInstr=%02x\n",
-                                    u8TrapNo, uErrorCode, uCR2, uEIP, enmType, cbInstr);
+                                    "!! TRAP=%02x ERRCD=%RX32 CR2=%RGv EIP=%RX32 Type=%d cbInstr=%02x fIcebp=%RTbool\n",
+                                    u8TrapNo, uErrorCode, uCR2, uEIP, enmType, cbInstr, fIcebp);
                 else
                     pHlp->pfnPrintf(pHlp,
                                     "!! EIP=%RX32 NOTRAP\n",
@@ -371,8 +372,8 @@ VMMR3DECL(void) VMMR3FatalDump(PVM pVM, PVMCPU pVCpu, int rcErr)
             }
             else if (RT_SUCCESS(rc2))
                 pHlp->pfnPrintf(pHlp,
-                                "!! ACTIVE TRAP=%02x ERRCD=%RGv CR2=%RGv PC=%RGr Type=%d cbInstr=%02x (Guest!)\n",
-                                u8TrapNo, uErrorCode, uCR2, CPUMGetGuestRIP(pVCpu), enmType, cbInstr);
+                                "!! ACTIVE TRAP=%02x ERRCD=%RX32 CR2=%RGv PC=%RGr Type=%d cbInstr=%02x fIcebp=%RTbool (Guest!)\n",
+                                u8TrapNo, uErrorCode, uCR2, CPUMGetGuestRIP(pVCpu), enmType, cbInstr, fIcebp);
 
             /*
              * Dump the relevant hypervisor registers and stack.

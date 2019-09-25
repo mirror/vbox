@@ -92,7 +92,7 @@ VMMDECL(uint8_t) TRPMGetTrapNo(PVMCPU pVCpu)
  * @returns Error code.
  * @param   pVCpu                   The cross context virtual CPU structure.
  */
-VMMDECL(RTGCUINT) TRPMGetErrorCode(PVMCPU pVCpu)
+VMMDECL(uint32_t) TRPMGetErrorCode(PVMCPU pVCpu)
 {
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
 #ifdef VBOX_STRICT
@@ -150,6 +150,22 @@ VMMDECL(uint8_t) TRPMGetInstrLength(PVMCPU pVCpu)
 
 
 /**
+ * Checks if the current \#DB exception is due to an INT1/ICEBP instruction.
+ *
+ * The caller is responsible for making sure there is an active trap.
+ *
+ * @returns @c true if it's due to INT1/ICEBP, @c false if not.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure.
+ */
+VMMDECL(bool) TRPMIsTrapDueToIcebp(PVMCPU pVCpu)
+{
+    AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
+    return pVCpu->trpm.s.fIcebp;
+}
+
+
+/**
  * Clears the current active trap/exception/interrupt.
  *
  * The caller is responsible for making sure there is an active trap
@@ -203,9 +219,10 @@ VMMDECL(int) TRPMAssertTrap(PVMCPUCC pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
 
     pVCpu->trpm.s.uActiveVector               = u8TrapNo;
     pVCpu->trpm.s.enmActiveType               = enmType;
-    pVCpu->trpm.s.uActiveErrorCode            = ~(RTGCUINT)0;
+    pVCpu->trpm.s.uActiveErrorCode            = ~0U;
     pVCpu->trpm.s.uActiveCR2                  = 0xdeadface;
     pVCpu->trpm.s.cbInstr                     = UINT8_MAX;
+    pVCpu->trpm.s.fIcebp                      = false;
     return VINF_SUCCESS;
 }
 
@@ -221,9 +238,9 @@ VMMDECL(int) TRPMAssertTrap(PVMCPUCC pVCpu, uint8_t u8TrapNo, TRPMEVENT enmType)
  * @param   uCR2                The new fault address.
  * @param   uErrorCode          The error code for the page-fault.
  */
-VMMDECL(int) TRPMAssertXcptPF(PVMCPUCC pVCpu, RTGCUINTPTR uCR2, RTGCUINT uErrorCode)
+VMMDECL(int) TRPMAssertXcptPF(PVMCPUCC pVCpu, RTGCUINTPTR uCR2, uint32_t uErrorCode)
 {
-    Log2(("TRPMAssertXcptPF: uCR2=%RGv uErrorCode=%RGv\n", uCR2, uErrorCode)); /** @todo RTGCUINT to be fixed. */
+    Log2(("TRPMAssertXcptPF: uCR2=%RGv uErrorCode=%#RX32\n", uCR2, uErrorCode));
 
     /*
      * Cannot assert a trap when one is already active.
@@ -253,23 +270,29 @@ VMMDECL(int) TRPMAssertXcptPF(PVMCPUCC pVCpu, RTGCUINTPTR uCR2, RTGCUINT uErrorC
  * @param   pVCpu               The cross context virtual CPU structure.
  * @param   uErrorCode          The new error code.
  */
-VMMDECL(void) TRPMSetErrorCode(PVMCPU pVCpu, RTGCUINT uErrorCode)
+VMMDECL(void) TRPMSetErrorCode(PVMCPU pVCpu, uint32_t uErrorCode)
 {
-    Log2(("TRPMSetErrorCode: uErrorCode=%RGv\n", uErrorCode)); /** @todo RTGCUINT mess! */
+    Log2(("TRPMSetErrorCode: uErrorCode=%#RX32\n", uErrorCode));
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
+    AssertMsg(   pVCpu->trpm.s.enmActiveType == TRPM_TRAP
+              || (   pVCpu->trpm.s.enmActiveType == TRPM_SOFTWARE_INT && pVCpu->trpm.s.uActiveVector == X86_XCPT_DB),
+              ("Not hardware exception or privileged software exception (INT1/ICEBP)!\n"));
     pVCpu->trpm.s.uActiveErrorCode = uErrorCode;
 #ifdef VBOX_STRICT
-    switch (pVCpu->trpm.s.uActiveVector)
+    if (pVCpu->trpm.s.enmActiveType == TRPM_TRAP)
     {
-        case X86_XCPT_TS: case X86_XCPT_NP: case X86_XCPT_SS: case X86_XCPT_GP: case X86_XCPT_PF:
-            AssertMsg(uErrorCode != ~(RTGCUINT)0, ("Invalid uErrorCode=%#x u8TrapNo=%d\n", uErrorCode, pVCpu->trpm.s.uActiveVector));
-            break;
-        case X86_XCPT_AC: case X86_XCPT_DF:
-            AssertMsg(uErrorCode == 0,            ("Invalid uErrorCode=%#x u8TrapNo=%d\n", uErrorCode, pVCpu->trpm.s.uActiveVector));
-            break;
-        default:
-            AssertMsg(uErrorCode == ~(RTGCUINT)0, ("Invalid uErrorCode=%#x u8TrapNo=%d\n", uErrorCode, pVCpu->trpm.s.uActiveVector));
-            break;
+        switch (pVCpu->trpm.s.uActiveVector)
+        {
+            case X86_XCPT_TS: case X86_XCPT_NP: case X86_XCPT_SS: case X86_XCPT_GP: case X86_XCPT_PF:
+                AssertMsg(uErrorCode != ~0U, ("Invalid uErrorCode=%#x u8TrapNo=%u\n", uErrorCode, pVCpu->trpm.s.uActiveVector));
+                break;
+            case X86_XCPT_AC: case X86_XCPT_DF:
+                AssertMsg(uErrorCode == 0,   ("Invalid uErrorCode=%#x u8TrapNo=%u\n", uErrorCode, pVCpu->trpm.s.uActiveVector));
+                break;
+            default:
+                AssertMsg(uErrorCode == ~0U, ("Invalid uErrorCode=%#x u8TrapNo=%u\n", uErrorCode, pVCpu->trpm.s.uActiveVector));
+                break;
+        }
     }
 #endif
 }
@@ -309,15 +332,28 @@ VMMDECL(void) TRPMSetInstrLength(PVMCPU pVCpu, uint8_t cbInstr)
 {
     Log2(("TRPMSetInstrLength: cbInstr=%u\n", cbInstr));
     AssertMsg(pVCpu->trpm.s.uActiveVector != ~0U, ("No active trap!\n"));
-    /** @todo We should be able to set the instruction length for a \#DB raised by
-     *        INT1/ICEBP as well. However, TRPM currently has no way to distinguish
-     *        INT1/ICEBP from regular \#DB. */
     AssertMsg(   pVCpu->trpm.s.enmActiveType == TRPM_SOFTWARE_INT
               || (   pVCpu->trpm.s.enmActiveType == TRPM_TRAP
                   && (   pVCpu->trpm.s.uActiveVector == X86_XCPT_BP
                       || pVCpu->trpm.s.uActiveVector == X86_XCPT_OF)),
               ("Invalid trap type %#x\n", pVCpu->trpm.s.enmActiveType));
     pVCpu->trpm.s.cbInstr = cbInstr;
+}
+
+
+/**
+ * Sets if the current \#DB exception is due to an INT1/ICEBP instruction.
+ *
+ * The caller is responsible for making sure there is an active trap and it's a
+ * \#DB.
+ *
+ * @param   pVCpu               The cross context virtual CPU structure.
+ */
+VMMDECL(void) TRPMSetTrapDueToIcebp(PVMCPU pVCpu)
+{
+    AssertMsg(pVCpu->trpm.s.enmActiveType == TRPM_SOFTWARE_INT, ("Trap type for INT1/ICEBP invalid!"));
+    AssertMsg(pVCpu->trpm.s.uActiveVector == X86_XCPT_DB, ("INT1/ICEBP must be indicated by a #DB!\n"));
+    pVCpu->trpm.s.fIcebp = true;
 }
 
 
@@ -356,20 +392,22 @@ VMMDECL(bool) TRPMHasTrap(PVMCPU pVCpu)
  * If no trap is active active an error code is returned.
  *
  * @returns VBox status code.
- * @param   pVCpu                   The cross context virtual CPU structure.
- * @param   pu8TrapNo               Where to store the trap number.
- * @param   pEnmType                Where to store the trap type
- * @param   puErrorCode             Where to store the error code associated with some traps.
- *                                  ~0U is stored if the trap has no error code.
- * @param   puCR2                   Where to store the CR2 associated with a trap 0E.
- * @param   pcbInstr                Where to store the instruction-length
- *                                  associated with some traps.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pu8TrapNo       Where to store the trap number.
+ * @param   pEnmType        Where to store the trap type.
+ * @param   puErrorCode     Where to store the error code associated with some
+ *                          traps. ~0U is stored if the trap has no error code.
+ * @param   puCR2           Where to store the CR2 associated with a trap 0E.
+ * @param   pcbInstr        Where to store the instruction-length associated with
+ *                          some traps.
+ * @param   pfIcebp         Where to store whether the trap is a \#DB caused by an
+ *                          INT1/ICEBP instruction.
  */
-VMMDECL(int) TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType, PRTGCUINT puErrorCode, PRTGCUINTPTR puCR2,
-                               uint8_t *pcbInstr)
+VMMDECL(int) TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmType, uint32_t *puErrorCode, PRTGCUINTPTR puCR2,
+                              uint8_t *pcbInstr, bool *pfIcebp)
 {
     /*
-     * Check if we have a trap at present.
+     * Check if we have an active trap.
      */
     if (pVCpu->trpm.s.uActiveVector == ~0U)
         return VERR_TRPM_NO_ACTIVE_TRAP;
@@ -384,129 +422,8 @@ VMMDECL(int) TRPMQueryTrapAll(PVMCPU pVCpu, uint8_t *pu8TrapNo, TRPMEVENT *pEnmT
         *puCR2          = pVCpu->trpm.s.uActiveCR2;
     if (pcbInstr)
         *pcbInstr       = pVCpu->trpm.s.cbInstr;
+    if (pfIcebp)
+        *pfIcebp        = pVCpu->trpm.s.fIcebp;
     return VINF_SUCCESS;
-}
-
-
-/**
- * Save the active trap.
- *
- * This routine useful when doing try/catch in the hypervisor.
- * Any function which uses temporary trap handlers should
- * probably also use this facility to save the original trap.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMDECL(void) TRPMSaveTrap(PVMCPU pVCpu)
-{
-    pVCpu->trpm.s.uSavedVector        = pVCpu->trpm.s.uActiveVector;
-    pVCpu->trpm.s.enmSavedType        = pVCpu->trpm.s.enmActiveType;
-    pVCpu->trpm.s.uSavedErrorCode     = pVCpu->trpm.s.uActiveErrorCode;
-    pVCpu->trpm.s.uSavedCR2           = pVCpu->trpm.s.uActiveCR2;
-    pVCpu->trpm.s.cbSavedInstr        = pVCpu->trpm.s.cbInstr;
-}
-
-
-/**
- * Restore a saved trap.
- *
- * Multiple restores of a saved trap is possible.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-VMMDECL(void) TRPMRestoreTrap(PVMCPU pVCpu)
-{
-    pVCpu->trpm.s.uActiveVector       = pVCpu->trpm.s.uSavedVector;
-    pVCpu->trpm.s.enmActiveType       = pVCpu->trpm.s.enmSavedType;
-    pVCpu->trpm.s.uActiveErrorCode    = pVCpu->trpm.s.uSavedErrorCode;
-    pVCpu->trpm.s.uActiveCR2          = pVCpu->trpm.s.uSavedCR2;
-    pVCpu->trpm.s.cbInstr             = pVCpu->trpm.s.cbSavedInstr;
-}
-
-
-/**
- * Raises a cpu exception which doesn't take an error code.
- *
- * This function may or may not dispatch the exception before returning.
- *
- * @returns VBox status code fit for scheduling.
- * @retval  VINF_EM_RAW_GUEST_TRAP if the exception was left pending.
- * @retval  VINF_TRPM_XCPT_DISPATCHED if the exception was raised and dispatched for raw-mode execution.
- * @retval  VINF_EM_RESCHEDULE_REM if the exception was dispatched and cannot be executed in raw-mode.
- *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtxCore    The CPU context core.
- * @param   enmXcpt     The exception.
- */
-VMMDECL(int) TRPMRaiseXcpt(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt)
-{
-    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x\n", pCtxCore->cs.Sel, pCtxCore->eip, enmXcpt));
-    NOREF(pCtxCore);
-/** @todo dispatch the trap. */
-    pVCpu->trpm.s.uActiveVector            = enmXcpt;
-    pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
-    pVCpu->trpm.s.uActiveErrorCode         = 0xdeadbeef;
-    pVCpu->trpm.s.uActiveCR2               = 0xdeadface;
-    pVCpu->trpm.s.cbInstr                  = UINT8_MAX;
-    return VINF_EM_RAW_GUEST_TRAP;
-}
-
-
-/**
- * Raises a cpu exception with an errorcode.
- *
- * This function may or may not dispatch the exception before returning.
- *
- * @returns VBox status code fit for scheduling.
- * @retval  VINF_EM_RAW_GUEST_TRAP if the exception was left pending.
- * @retval  VINF_TRPM_XCPT_DISPATCHED if the exception was raised and dispatched for raw-mode execution.
- * @retval  VINF_EM_RESCHEDULE_REM if the exception was dispatched and cannot be executed in raw-mode.
- *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtxCore    The CPU context core.
- * @param   enmXcpt     The exception.
- * @param   uErr        The error code.
- */
-VMMDECL(int) TRPMRaiseXcptErr(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr)
-{
-    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x uErr=%RX32\n", pCtxCore->cs.Sel, pCtxCore->eip, enmXcpt, uErr));
-    NOREF(pCtxCore);
-/** @todo dispatch the trap. */
-    pVCpu->trpm.s.uActiveVector            = enmXcpt;
-    pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
-    pVCpu->trpm.s.uActiveErrorCode         = uErr;
-    pVCpu->trpm.s.uActiveCR2               = 0xdeadface;
-    pVCpu->trpm.s.cbInstr                  = UINT8_MAX;
-    return VINF_EM_RAW_GUEST_TRAP;
-}
-
-
-/**
- * Raises a cpu exception with an errorcode and CR2.
- *
- * This function may or may not dispatch the exception before returning.
- *
- * @returns VBox status code fit for scheduling.
- * @retval  VINF_EM_RAW_GUEST_TRAP if the exception was left pending.
- * @retval  VINF_TRPM_XCPT_DISPATCHED if the exception was raised and dispatched for raw-mode execution.
- * @retval  VINF_EM_RESCHEDULE_REM if the exception was dispatched and cannot be executed in raw-mode.
- *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtxCore    The CPU context core.
- * @param   enmXcpt     The exception.
- * @param   uErr        The error code.
- * @param   uCR2        The CR2 value.
- */
-VMMDECL(int) TRPMRaiseXcptErrCR2(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, X86XCPT enmXcpt, uint32_t uErr, RTGCUINTPTR uCR2)
-{
-    LogFlow(("TRPMRaiseXcptErr: cs:eip=%RTsel:%RX32 enmXcpt=%#x uErr=%RX32 uCR2=%RGv\n", pCtxCore->cs.Sel, pCtxCore->eip, enmXcpt, uErr, uCR2));
-    NOREF(pCtxCore);
-/** @todo dispatch the trap. */
-    pVCpu->trpm.s.uActiveVector            = enmXcpt;
-    pVCpu->trpm.s.enmActiveType            = TRPM_TRAP;
-    pVCpu->trpm.s.uActiveErrorCode         = uErr;
-    pVCpu->trpm.s.uActiveCR2               = uCR2;
-    pVCpu->trpm.s.cbInstr                  = UINT8_MAX;
-    return VINF_EM_RAW_GUEST_TRAP;
 }
 

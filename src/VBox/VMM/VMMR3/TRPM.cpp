@@ -106,8 +106,9 @@
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** TRPM saved state version. */
-#define TRPM_SAVED_STATE_VERSION        9
-#define TRPM_SAVED_STATE_VERSION_UNI    8   /* SMP support bumped the version */
+#define TRPM_SAVED_STATE_VERSION                10
+#define TRPM_SAVED_STATE_VERSION_PRE_ICEBP      9   /* INT1/ICEBP support bumped the version */
+#define TRPM_SAVED_STATE_VERSION_UNI            8   /* SMP support bumped the version */
 
 
 /*********************************************************************************************************************************
@@ -246,30 +247,17 @@ static DECLCALLBACK(int) trpmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
     LogFlow(("trpmR3Save:\n"));
 
-    /*
-     * Active and saved traps.
-     */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
     {
-        PTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
-        SSMR3PutUInt(pSSM,      pTrpmCpu->uActiveVector);
-        SSMR3PutUInt(pSSM,      pTrpmCpu->enmActiveType);
-        SSMR3PutGCUInt(pSSM,    pTrpmCpu->uActiveErrorCode);
-        SSMR3PutGCUIntPtr(pSSM, pTrpmCpu->uActiveCR2);
-        SSMR3PutGCUInt(pSSM,    pTrpmCpu->uSavedVector);
-        SSMR3PutUInt(pSSM,      pTrpmCpu->enmSavedType);
-        SSMR3PutGCUInt(pSSM,    pTrpmCpu->uSavedErrorCode);
-        SSMR3PutGCUIntPtr(pSSM, pTrpmCpu->uSavedCR2);
-        SSMR3PutGCUInt(pSSM,    pTrpmCpu->uPrevVector);
+        PCTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
+        SSMR3PutUInt(pSSM,       pTrpmCpu->uActiveVector);
+        SSMR3PutUInt(pSSM,       pTrpmCpu->enmActiveType);
+        SSMR3PutU32(pSSM,        pTrpmCpu->uActiveErrorCode);
+        SSMR3PutGCUIntPtr(pSSM,  pTrpmCpu->uActiveCR2);
+        SSMR3PutU8(pSSM,         pTrpmCpu->cbInstr);
+        SSMR3PutBool(pSSM,       pTrpmCpu->fIcebp);
     }
-    SSMR3PutBool(pSSM,      false /* raw-mode enabled */);
-    SSMR3PutUInt(pSSM,      0 /*was VMCPU_FF_TRPM_SYNC_IDT*/);
-    uint32_t au32IdtPatched[8];
-    RT_ZERO(au32IdtPatched);
-    SSMR3PutMem(pSSM,       &au32IdtPatched[0], sizeof(au32IdtPatched));
-    SSMR3PutU32(pSSM, UINT32_MAX);          /* separator. */
-    /* Next came trampoline gates, terminating with UINT32_MAX. */
-    return SSMR3PutU32(pSSM, UINT32_MAX);   /* terminator */
+    return VINF_SUCCESS;
 }
 
 
@@ -291,20 +279,13 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
      * Validate version.
      */
     if (    uVersion != TRPM_SAVED_STATE_VERSION
+        &&  uVersion != TRPM_SAVED_STATE_VERSION_PRE_ICEBP
         &&  uVersion != TRPM_SAVED_STATE_VERSION_UNI)
     {
         AssertMsgFailed(("trpmR3Load: Invalid version uVersion=%d!\n", uVersion));
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     }
 
-    /*
-     * Call the reset function to kick out any handled gates and other potential trouble.
-     */
-    TRPMR3Reset(pVM);
-
-    /*
-     * Active and saved traps.
-     */
     if (uVersion == TRPM_SAVED_STATE_VERSION)
     {
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -312,74 +293,59 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
             PTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
             SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
             SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
-            SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uActiveErrorCode);
+            SSMR3GetU32(pSSM,       &pTrpmCpu->uActiveErrorCode);
             SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
-            SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uSavedVector);
-            SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmSavedType);
-            SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uSavedErrorCode);
-            SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uSavedCR2);
-            SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uPrevVector);
+            SSMR3GetU8(pSSM,        &pTrpmCpu->cbInstr);
+            SSMR3GetBool(pSSM,      &pTrpmCpu->fIcebp);
         }
-
-        bool fIgnored;
-        SSMR3GetBool(pSSM, &fIgnored);
     }
     else
     {
-        PTRPMCPU pTrpmCpu = &pVM->apCpusR3[0]->trpm.s;
-        SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
-        SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
-        SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uActiveErrorCode);
-        SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
-        SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uSavedVector);
-        SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmSavedType);
-        SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uSavedErrorCode);
-        SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uSavedCR2);
-        SSMR3GetGCUInt(pSSM,    &pTrpmCpu->uPrevVector);
+        /*
+         * Active and saved traps.
+         */
+        if (uVersion == TRPM_SAVED_STATE_VERSION_PRE_ICEBP)
+        {
+            for (VMCPUID i = 0; i < pVM->cCpus; i++)
+            {
+                RTGCUINT GCUIntErrCode;
+                PTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
+                SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
+                SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
+                SSMR3GetGCUInt(pSSM,    &GCUIntErrCode);
+                SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
+                SSMR3Skip(pSSM,          sizeof(RTGCUINT));      /* uSavedVector    - No longer used. */
+                SSMR3Skip(pSSM,          sizeof(RTUINT));        /* enmSavedType    - No longer used. */
+                SSMR3Skip(pSSM,          sizeof(RTGCUINT));      /* uSavedErrorCode - No longer used. */
+                SSMR3Skip(pSSM,          sizeof(RTGCUINTPTR));   /* uSavedCR2       - No longer used. */
+                SSMR3Skip(pSSM,          sizeof(RTGCUINT));      /* uPrevVector     - No longer used. */
 
-        RTGCUINT fIgnored;
-        SSMR3GetGCUInt(pSSM,    &fIgnored);
-    }
+                /*
+                 * We lose the high 64-bits here (if RTGCUINT is 64-bit) after making the
+                 * active error code as 32-bits. However, for error codes even 16-bit should
+                 * be sufficient. Despite this, we decided to use and keep it at 32-bits
+                 * since VMX/SVM defines these as 32-bit in their event fields and converting
+                 * to/from these events are safer.
+                 */
+                pTrpmCpu->uActiveErrorCode = GCUIntErrCode;
+            }
+        }
+        else
+        {
+            RTGCUINT GCUIntErrCode;
+            PTRPMCPU pTrpmCpu = &pVM->apCpusR3[0]->trpm.s;
+            SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
+            SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
+            SSMR3GetGCUInt(pSSM,    &GCUIntErrCode);
+            SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
+            pTrpmCpu->uActiveErrorCode = GCUIntErrCode;
+        }
 
-    RTUINT fSyncIDT;
-    int rc = SSMR3GetUInt(pSSM, &fSyncIDT);
-    if (RT_FAILURE(rc))
-        return rc;
-    AssertMsgReturn(!(fSyncIDT & ~1), ("fSyncIDT=%#x\n", fSyncIDT), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-
-    uint32_t au32IdtPatched[8];
-    SSMR3GetMem(pSSM, &au32IdtPatched[0], sizeof(au32IdtPatched));
-
-    /* check the separator */
-    uint32_t u32Sep;
-    rc = SSMR3GetU32(pSSM, &u32Sep);
-    if (RT_FAILURE(rc))
-        return rc;
-    AssertMsgReturn(u32Sep == (uint32_t)~0, ("u32Sep=%#x (first)\n", u32Sep), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-
-    /*
-     * Restore any trampoline gates.
-     */
-    for (;;)
-    {
-        /* gate number / terminator */
-        uint32_t iTrap;
-        rc = SSMR3GetU32(pSSM, &iTrap);
-        if (RT_FAILURE(rc))
-            return rc;
-        if (iTrap == (uint32_t)~0)
-            break;
-        AssertMsgReturn(iTrap < 256, ("iTrap=%#x\n", iTrap), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
-
-        /* restore the IDT entry. */
-        RTGCPTR GCPtrHandler;
-        SSMR3GetGCPtr(pSSM, &GCPtrHandler);
-        VBOXIDTE Idte;
-        rc = SSMR3GetMem(pSSM, &Idte, sizeof(Idte));
-        if (RT_FAILURE(rc))
-            return rc;
-        Assert(GCPtrHandler);
-        //pTrpm->aIdt[iTrap] = Idte; - not any more.
+        /*
+         * Skip rest of TRPM saved-state unit involving IDT and trampoline gates.
+         * With the removal of raw-mode support, we no longer need these.
+         */
+        SSMR3SkipToEndOfUnit(pSSM);
     }
 
     return VINF_SUCCESS;
@@ -466,9 +432,10 @@ static DECLCALLBACK(void) trpmR3InfoEvent(PVM pVM, PCDBGFINFOHLP pHlp, const cha
     uint8_t     uVector;
     uint8_t     cbInstr;
     TRPMEVENT   enmTrapEvent;
-    RTGCUINT    uErrorCode;
+    uint32_t    uErrorCode;
     RTGCUINTPTR uCR2;
-    int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrapEvent, &uErrorCode, &uCR2, &cbInstr);
+    bool        fIcebp;
+    int rc = TRPMQueryTrapAll(pVCpu, &uVector, &enmTrapEvent, &uErrorCode, &uCR2, &cbInstr, &fIcebp);
     if (RT_SUCCESS(rc))
     {
         pHlp->pfnPrintf(pHlp, "CPU[%u]: TRPM event\n", pVCpu->idCpu);
@@ -482,9 +449,10 @@ static DECLCALLBACK(void) trpmR3InfoEvent(PVM pVM, PCDBGFINFOHLP pHlp, const cha
         {
             pHlp->pfnPrintf(pHlp, " Type       = %s\n", s_apszTrpmEventType[enmTrapEvent]);
             pHlp->pfnPrintf(pHlp, " uVector    = %#x\n", uVector);
-            pHlp->pfnPrintf(pHlp, " uErrorCode = %#RGu\n", uErrorCode);
+            pHlp->pfnPrintf(pHlp, " uErrorCode = %#x\n", uErrorCode);
             pHlp->pfnPrintf(pHlp, " uCR2       = %#RGp\n", uCR2);
             pHlp->pfnPrintf(pHlp, " cbInstr    = %u bytes\n", cbInstr);
+            pHlp->pfnPrintf(pHlp, " fIcebp     = %RTbool\n", fIcebp);
         }
         else
             pHlp->pfnPrintf(pHlp, " Type       = %#x (Invalid!)\n", enmTrapEvent);
