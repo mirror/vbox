@@ -173,9 +173,9 @@ private:
     void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal);
     void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
     void updateVMExitMetric(quint64 uTotalVMExits);
-
+    /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
     QString dataColorString(const QString &strChartName, int iDataIndex);
-    void runTimeAttributes();
+    /** Parses the xml string we get from the IMachineDebugger and returns an array of DebuggerMetricData. */
     QVector<DebuggerMetricData> getTotalCounterFromDegugger(const QString &strQuery);
 
     bool m_fGuestAdditionsAvailable;
