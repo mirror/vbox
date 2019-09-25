@@ -273,6 +273,9 @@ typedef struct _VBoxShClConnect
 
 #define VBOX_SHCL_CPARMS_CONNECT 5
 
+/**
+ * Reports available formats.
+ */
 typedef struct _VBoxShClFormatsMsg
 {
     VBGLIOCHGCMCALL hdr;
@@ -297,6 +300,9 @@ typedef struct _VBoxShClFormatsMsg
     } u;
 } VBoxShClFormatsMsg;
 
+/**
+ * Requests to read clipboard data.
+ */
 typedef struct _VBoxShClReadDataReqMsg
 {
     VBGLIOCHGCMCALL hdr;
@@ -311,6 +317,9 @@ typedef struct _VBoxShClReadDataReqMsg
 
 #define VBOX_SHCL_CPARMS_READ_DATA_REQ 2
 
+/**
+ * Reads clipboard data.
+ */
 typedef struct _VBoxShClReadDataMsg
 {
     VBGLIOCHGCMCALL hdr;
@@ -328,6 +337,9 @@ typedef struct _VBoxShClReadDataMsg
 
 #define VBOX_SHCL_CPARMS_READ_DATA 3
 
+/**
+ * Writes clipboard data.
+ */
 typedef struct _VBoxShClWriteDataMsg
 {
     VBGLIOCHGCMCALL hdr;
@@ -400,9 +412,11 @@ typedef struct _VBoxShClGetHostMsg
 
 #define VBOX_SHCL_CPARMS_GET_HOST_MSG 3
 
-/** @todo might be necessary for future. */
+/** No listing flags specified. */
 #define VBOX_SHCL_LIST_FLAG_NONE          0
+/** Only returns one entry per read. */
 #define VBOX_SHCL_LIST_FLAG_RETURN_ONE    RT_BIT(0)
+/** Restarts reading a list from the beginning. */
 #define VBOX_SHCL_LIST_FLAG_RESTART       RT_BIT(1)
 
 #define VBOX_SHCL_LISTHDR_FLAG_NONE       0
@@ -485,6 +499,9 @@ typedef struct _VBoxShClReplyMsg
 /** Minimum parameters (HGCM function parameters minus the union) a reply message must have. */
 #define VBOX_SHCL_CPARMS_REPLY_MIN 5
 
+/**
+ * Structure for keeping root list message parameters.
+ */
 typedef struct _VBoxShClRootListParms
 {
     /** uint32_t, in: Context ID. s*/
@@ -519,6 +536,9 @@ typedef struct _VBoxShClRootListHdrMsg
 
 #define VBOX_SHCL_CPARMS_ROOT_LIST_HDR 3
 
+/**
+ * Structure for keeping list entry message parameters.
+ */
 typedef struct _VBoxShClRootListEntryParms
 {
     /** uint32_t, in: Context ID. */
@@ -552,12 +572,12 @@ typedef struct _VBoxShClRootListEntryMsg
     /** in/out: Request parameters. */
     VBoxShClRootListEntryParms Parms;
     /** pointer, in/out: Entry name. */
-    HGCMFunctionParameter           szName;
+    HGCMFunctionParameter      szName;
     /** uint32_t, out: Bytes to be used for information/How many bytes were used.  */
-    HGCMFunctionParameter           cbInfo;
+    HGCMFunctionParameter      cbInfo;
     /** pointer, in/out: Information to be set/get (SHCLFSOBJINFO only currently).
      *  Do not forget to set the SHCLFSOBJINFO::Attr::enmAdditional for Get operation as well.  */
-    HGCMFunctionParameter           pvInfo;
+    HGCMFunctionParameter      pvInfo;
 } VBoxShClRootListEntryMsg;
 
 #define VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY 6
@@ -633,11 +653,11 @@ typedef struct _VBoxShClListHdrMsg
 
     VBoxShClListHdrReqParms ReqParms;
     /** uint32_t, in/out: Feature flags (see VBOX_SHCL_FEATURE_FLAG_XXX). */
-    HGCMFunctionParameter        fFeatures;
+    HGCMFunctionParameter   fFeatures;
     /** uint64_t, in/out:  Number of total objects to transfer. */
-    HGCMFunctionParameter        cTotalObjects;
+    HGCMFunctionParameter   cTotalObjects;
     /** uint64_t, in/out:  Number of total bytes to transfer. */
-    HGCMFunctionParameter        cbTotalSize;
+    HGCMFunctionParameter   cbTotalSize;
 } VBoxShClListHdrMsg;
 
 #define VBOX_SHCL_CPARMS_LIST_HDR 6
@@ -684,6 +704,9 @@ typedef struct _VBoxShClListEntryMsg
 
 #define VBOX_SHCL_CPARMS_LIST_ENTRY 6
 
+/**
+ * Opens a Shared Clipboard object.
+ */
 typedef struct _VBoxShClObjOpenMsg
 {
     VBGLIOCHGCMCALL hdr;
@@ -702,6 +725,9 @@ typedef struct _VBoxShClObjOpenMsg
 
 #define VBOX_SHCL_CPARMS_OBJ_OPEN 5
 
+/**
+ * Closes a Shared Clipboard object.
+ */
 typedef struct _VBoxShClObjCloseMsg
 {
     VBGLIOCHGCMCALL hdr;
@@ -714,6 +740,9 @@ typedef struct _VBoxShClObjCloseMsg
 
 #define VBOX_SHCL_CPARMS_OBJ_CLOSE 2
 
+/**
+ * Structure for keeping read parameters of a Shared Clipboard object.
+ */
 typedef struct _VBoxShClObjReadReqParms
 {
     /** uint32_t, in: Context ID. */
@@ -726,6 +755,9 @@ typedef struct _VBoxShClObjReadReqParms
     HGCMFunctionParameter fRead;
 } VBoxShClObjReadReqParms;
 
+/**
+ * Reads from a Shared Clipboard object.
+ */
 typedef struct _VBoxShClObjReadReqMsg
 {
     VBGLIOCHGCMCALL hdr;
@@ -784,6 +816,11 @@ typedef struct _VBoxShClErrorMsg
 
 #pragma pack()
 
+/**
+ * Structure for keeping a Shared Clipboard file data chunk.
+ *
+ * @returns VBox status code.
+ */
 typedef struct _SHCLFILEDATA
 {
     /** Current file data chunk. */
@@ -796,6 +833,9 @@ typedef struct _SHCLFILEDATA
     uint32_t cbChecksum;
 } SHCLFILEDATA, *PSHCLFILEDATA;
 
+/**
+ * Structure for keeping Shared Clipboard error data.
+ */
 typedef struct _SHCLERRORDATA
 {
     int32_t rc;

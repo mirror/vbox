@@ -66,8 +66,9 @@ using namespace com;
 /** Reads data from the clipboard and sends it to the destination. */
 #define SHCL_WIN_WM_READ_DATA               WM_USER + 1
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-/** Reports a transfer status to the guest. */
-# define SHCL_WIN_WM_URI_TRANSFER_STATUS    WM_USER + 2
+/** Starts a transfer on the guest.
+ *  This creates the necessary IDataObject in the matching window thread. */
+# define SHCL_WIN_WM_URI_TRANSFER_START    WM_USER + 2
 #endif
 
 /* Dynamically load clipboard functions from User32.dll. */

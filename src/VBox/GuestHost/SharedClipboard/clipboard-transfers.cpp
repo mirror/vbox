@@ -1064,8 +1064,6 @@ int SharedClipboardTransferCreate(PSHCLTRANSFER *ppTransfer)
     pTransfer->State.enmDir    = SHCLTRANSFERDIR_UNKNOWN;
     pTransfer->State.enmSource = SHCLSOURCE_INVALID;
 
-    LogFlowFunc(("enmDir=%RU32, enmSource=%RU32\n", pTransfer->State.enmDir, pTransfer->State.enmSource));
-
     pTransfer->pArea = NULL; /* Will be created later if needed. */
 
     pTransfer->Thread.hThread    = NIL_RTTHREAD;

@@ -58,13 +58,15 @@ struct _SHCLCONTEXT
 
 /**
  * Report formats available in the X11 clipboard to VBox.
- * @param  pCtx        Opaque context pointer for the glue code
- * @param  u32Formats  The formats available
- * @note  Host glue code
+ * @param  pCtx                 Opaque context pointer for the glue code.
+ * @param  u32Formats           The formats available.
  */
 void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     LogFlowFunc(("pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
+
+    if (u32Formats == VBOX_SHCL_FMT_NONE) /* No formats to report? Bail out early. */
+        return;
 
     SHCLFORMATDATA formatData;
     RT_ZERO(formatData);

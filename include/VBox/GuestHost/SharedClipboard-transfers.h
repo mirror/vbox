@@ -65,7 +65,9 @@ typedef enum
     /** The transfer has been killed. */
     SHCLTRANSFERSTATUS_KILLED,
     /** The transfer ran into an unrecoverable error. */
-    SHCLTRANSFERSTATUS_ERROR
+    SHCLTRANSFERSTATUS_ERROR,
+    /** The usual 32-bit hack. */
+    SHCLTRANSFERSTATUS_32BIT_SIZE_HACK = 0x7fffffff
 } SHCLTRANSFERSTATUSENUM;
 
 /** Defines a transfer status. */
@@ -212,7 +214,6 @@ typedef enum _SHCLFSOBJATTRADD
      * The valid range is SHCLFSOBJATTRADD_NOTHING thru
      * SHCLFSOBJATTRADD_LAST. */
     SHCLFSOBJATTRADD_LAST = SHCLFSOBJATTRADD_EASIZE,
-
     /** The usual 32-bit hack. */
     SHCLFSOBJATTRADD_32BIT_SIZE_HACK = 0x7fffffff
 } SHCLFSOBJATTRADD;

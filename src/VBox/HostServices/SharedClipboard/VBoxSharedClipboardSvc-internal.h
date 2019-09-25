@@ -222,25 +222,25 @@ int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdC
 int SharedClipboardSvcImplSync(PSHCLCLIENT pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int sharedClipboardSvcTransferOpen(PSHCLPROVIDERCTX pCtx);
-DECLCALLBACK(int) sharedClipboardSvcTransferClose(PSHCLPROVIDERCTX pCtx);
+int sharedClipboardSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx);
+int sharedClipboardSvcTransferIfaceClose(PSHCLPROVIDERCTX pCtx);
 
-int sharedClipboardSvcTransferGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
+int sharedClipboardSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList);
 
-int sharedClipboardSvcTransferListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
-int sharedClipboardSvcTransferListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
-int sharedClipboardSvcTransferListHdrRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-int sharedClipboardSvcTransferListHdrWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
-int sharedClipboardSvcTransferListEntryRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
-int sharedClipboardSvcTransferListEntryWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int sharedClipboardSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
+int sharedClipboardSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList);
+int sharedClipboardSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int sharedClipboardSvcTransferIfaceListHdrWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr);
+int sharedClipboardSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
+int sharedClipboardSvcTransferIfaceListEntryWrite(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry);
 
-int sharedClipboardSvcTransferObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
-                                 PSHCLOBJHANDLE phObj);
-int sharedClipboardSvcTransferObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
-int sharedClipboardSvcTransferObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
-                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
-int sharedClipboardSvcTransferObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
-                                  void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
+int sharedClipboardSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
+                                           PSHCLOBJHANDLE phObj);
+int sharedClipboardSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj);
+int sharedClipboardSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+                                           void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
+int sharedClipboardSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+                                            void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
 
 DECLCALLBACK(void) VBoxSvcClipboardTransferPrepareCallback(PSHCLTRANSFERCALLBACKDATA pData);
 DECLCALLBACK(void) VBoxSvcClipboardDataHeaderCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData);

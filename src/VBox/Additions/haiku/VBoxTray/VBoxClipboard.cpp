@@ -344,7 +344,7 @@ void VBoxShClService::MessageReceived(BMessage *message)
 
             be_clipboard->Unlock();
 
-            VbglR3ClipboardReportFormats(fClientId, formats);
+            VbglR3ClipboardFormatsReport(fClientId, formats);
             break;
         }
 

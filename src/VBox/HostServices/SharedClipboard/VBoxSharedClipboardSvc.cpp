@@ -936,7 +936,7 @@ int sharedClipboardSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormat
     PSHCLCLIENTMSG pMsg = sharedClipboardSvcMsgAlloc(VBOX_SHCL_HOST_MSG_FORMATS_REPORT, 3);
     if (pMsg)
     {
-        SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
 
         HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pClient->Events.uID, uEvent));
@@ -947,6 +947,8 @@ int sharedClipboardSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormat
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+            /* If this is an URI list, create a transfer locally and also tell the guest to create
+             * a transfer on the guest side. */
             if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST)
             {
                 rc = sharedClipboardSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
@@ -954,9 +956,14 @@ int sharedClipboardSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormat
                 if (RT_FAILURE(rc))
                     LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));
             }
+            else
+            {
 #endif
-            if (RT_SUCCESS(rc))
                 rc = sharedClipboardSvcClientWakeup(pClient);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+            }
+#endif
         }
     }
     else
@@ -1321,7 +1328,7 @@ static DECLCALLBACK(void) svcCall(void *,
                 {
                     rc = VERR_ACCESS_DENIED;
                 }
-                else
+                else if (uFormats != VBOX_SHCL_FMT_NONE) /* Only announce formats if we actually *have* formats to announce! */
                 {
                     rc = sharedClipboardSvcSetSource(pClient, SHCLSOURCE_REMOTE);
                     if (RT_SUCCESS(rc))
@@ -1333,7 +1340,8 @@ static DECLCALLBACK(void) svcCall(void *,
 
                             parms.uFormat = uFormats;
 
-                            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE, &parms, sizeof(parms));
+                            g_ExtState.pfnExtension(g_ExtState.pvExtension, VBOX_CLIPBOARD_EXT_FN_FORMAT_ANNOUNCE,
+                                                    &parms, sizeof(parms));
                         }
 
                         SHCLCLIENTCMDCTX cmdCtx;
@@ -1343,6 +1351,7 @@ static DECLCALLBACK(void) svcCall(void *,
                         RT_ZERO(formatData);
 
                         formatData.uFormats = uFormats;
+                        Assert(formatData.uFormats != VBOX_SHCL_FMT_NONE); /* Sanity. */
 
                         rc = SharedClipboardSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
                     }
@@ -1412,6 +1421,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                 RT_ZERO(formatData);
 
                                 formatData.uFormats = g_ExtState.uDelayedFormats;
+                                Assert(formatData.uFormats != VBOX_SHCL_FMT_NONE); /* There better is *any* format here now. */
 
                                 int rc2 = sharedClipboardSvcFormatsReport(pClient, &formatData);
                                 AssertRC(rc2);
@@ -1543,7 +1553,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("u32Function=%RU32 (%s), cParms=%RU32, paParms=%p\n",
-                 u32Function, VBoxShClHostMsgToStr(u32Function), cParms, paParms));
+                 u32Function, VBoxShClHostFunctionToStr(u32Function), cParms, paParms));
 
     switch (u32Function)
     {
@@ -1825,7 +1835,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
                     g_ExtState.fDelayedAnnouncement = true;
                     g_ExtState.uDelayedFormats = u32Format;
                 }
-                else
+                else if (u32Format != VBOX_SHCL_FMT_NONE)
                 {
                     SHCLFORMATDATA formatData;
                     RT_ZERO(formatData);

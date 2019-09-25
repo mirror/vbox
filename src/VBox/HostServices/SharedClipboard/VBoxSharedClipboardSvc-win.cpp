@@ -212,7 +212,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
     {
         case WM_CLIPBOARDUPDATE:
         {
-            LogFunc(("WM_CLIPBOARDUPDATE: Waiting ...\n"));
+            LogFunc(("WM_CLIPBOARDUPDATE\n"));
 
             int rc = RTCritSectEnter(&pWinCtx->CritSect);
             if (RT_SUCCESS(rc))
@@ -256,12 +256,29 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
         {
             LogFunc(("WM_DRAWCLIPBOARD\n"));
 
-            if (GetClipboardOwner() != hWnd)
+            int rc = RTCritSectEnter(&pWinCtx->CritSect);
+            if (RT_SUCCESS(rc))
             {
-                /* Clipboard was updated by another application, retrieve formats and report back. */
-                int rc = vboxClipboardSvcWinSyncInternal(pCtx);
-                if (RT_SUCCESS(rc))
-                    sharedClipboardSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
+                const HWND hWndClipboardOwner = GetClipboardOwner();
+
+                LogFunc(("WM_DRAWCLIPBOARD: hWndClipboardOwnerUs=%p, hWndNewClipboardOwner=%p\n",
+                         pWinCtx->hWndClipboardOwnerUs, hWndClipboardOwner));
+
+                if (pWinCtx->hWndClipboardOwnerUs != hWndClipboardOwner)
+                {
+                    int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
+                    AssertRC(rc2);
+
+                    /* Clipboard was updated by another application, retrieve formats and report back. */
+                    rc = vboxClipboardSvcWinSyncInternal(pCtx);
+                    if (RT_SUCCESS(rc))
+                        sharedClipboardSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
+                }
+                else
+                {
+                    int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
+                    AssertRC(rc2);
+                }
             }
 
             lresultRc = SharedClipboardWinChainPassToNext(pWinCtx, uMsg, wParam, lParam);
@@ -388,7 +405,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             break;
     }
 
-    LogFlowFunc(("hWnd=%p, WM_ %u\n", hWnd, uMsg));
+    LogFlowFunc(("LEAVE hWnd=%p, WM_ %u\n", hWnd, uMsg));
     return DefWindowProc(hWnd, uMsg, wParam, lParam);
 }
 
