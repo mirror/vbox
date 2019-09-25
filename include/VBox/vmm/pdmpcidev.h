@@ -687,15 +687,19 @@ DECLINLINE(uint8_t) PDMPciDevGetInterruptPin(PPDMPCIDEV pPciDev)
 /** @} */
 
 
-/* Special purpose "interface" for getting access to the PDMPCIDEV structure
- * of a ich9pcibridge instance. This is useful for unusual raw or pass-through
- * implementation which need to provide different PCI configuration space
- * content for bridges (as long as we don't allow pass-through of bridges or
- * custom bridge device implementations). */
-typedef PPDMPCIDEV PPDMIICH9BRIDGEPDMPCIDEV;
-typedef PDMPCIDEV PDMIICH9BRIDGEPDMPCIDEV;
-
+/** @name PDMIICH9BRIDGEPDMPCIDEV_IID - Ugly 3rd party bridge/raw PCI hack.
+ *
+ * When querying this IID via IBase::pfnQueryInterface on a ICH9 bridge, you
+ * will get a pointer to a PDMPCIDEV rather pointer to an interface function
+ * table as is the custom.  This was needed by some unusual 3rd-party raw and/or
+ * pass-through implementation which need to provide different PCI configuration
+ * space content for bridges (as long as we don't allow pass-through of bridges
+ * or custom bridge device implementations).  So, HACK ALERT to all of this!
+ * @{ */
 #define PDMIICH9BRIDGEPDMPCIDEV_IID "785c74b1-8510-4458-9422-56750bf221db"
+typedef PPDMPCIDEV PPDMIICH9BRIDGEPDMPCIDEV;
+typedef PDMPCIDEV  PDMIICH9BRIDGEPDMPCIDEV;
+/** @} */
 
 
 /** @} */
