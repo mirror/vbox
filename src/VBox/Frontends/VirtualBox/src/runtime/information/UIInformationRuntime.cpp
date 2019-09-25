@@ -18,13 +18,6 @@
 /* Qt includes: */
 #include <QApplication>
 #include <QHeaderView>
-#include <QLabel>
-#include <QMenu>
-#include <QPainter>
-#include <QGridLayout>
-#include <QScrollArea>
-#include <QStyle>
-#include <QXmlStreamReader>
 #include <QVBoxLayout>
 #include <QTableWidget>
 #include <QTimer>
@@ -39,20 +32,8 @@
 
 /* COM includes: */
 #include "CGuest.h"
-#include "CPerformanceCollector.h"
-#include "CPerformanceMetric.h"
 #include "CVRDEServerInfo.h"
 
-/* External includes: */
-# include <math.h>
-
-/** The time in seconds between metric inquries done to API. */
-const ULONG iPeriod = 1;
-/** The number of data points we store in UIChart. with iPeriod=1 it corresponds to 2 min. of data. */
-const int iMaximumQueueSize = 120;
-/** This is passed to IPerformanceCollector during its setup. When 1 that means IPerformanceCollector object does a data cache of size 1. */
-const int iMetricSetupCount = 1;
-const int iDecimalCount = 2;
 
 enum InfoRow
 {
@@ -457,13 +438,6 @@ UIInformationRuntime::UIInformationRuntime(QWidget *pParent, const CMachine &mac
     , m_console(console)
     , m_pMainLayout(0)
     , m_pRuntimeInfoWidget(0)
-    , m_strCPUMetricName("CPU Load")
-    , m_strRAMMetricName("RAM Usage")
-    , m_strDiskMetricName("Disk Usage")
-    , m_strNetworkMetricName("Network")
-    , m_strDiskIOMetricName("DiskIO")
-    , m_strVMExitMetricName("VMExits")
-    , m_iTimeStep(0)
 {
     if (!m_console.isNull())
         m_comGuest = m_console.GetGuest();
