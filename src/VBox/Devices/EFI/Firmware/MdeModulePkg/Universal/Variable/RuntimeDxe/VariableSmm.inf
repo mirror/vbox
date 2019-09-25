@@ -55,6 +55,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  VBoxPkg/VBoxPkg.dec
 
 [LibraryClasses]
   UefiDriverEntryPoint
