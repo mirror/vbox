@@ -109,8 +109,10 @@
   INTEL:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=64 -DHC_ARCH_BITS=64 -DVBOX_REV=$(VBOX_REV)
 
 !ifdef $(SOURCE_DEBUG_ENABLE)
-   # Get much better source-level debugging
-   MSFT:DEBUG_*_*_CC_FLAGS = /Od
+  # Get much better source-level debugging
+    GCC:DEBUG_*_*_CC_FLAGS =     -DVBOX_SOURCE_DEBUG_ENABLE
+   MSFT:DEBUG_*_*_CC_FLAGS = /Od -DVBOX_SOURCE_DEBUG_ENABLE
+  INTEL:DEBUG_*_*_CC_FLAGS =     -DVBOX_SOURCE_DEBUG_ENABLE
 !endif
 
 !endif
@@ -191,15 +193,11 @@
   FrameBufferBltLib|MdeModulePkg/Library/FrameBufferBltLib/FrameBufferBltLib.inf
 
 !ifdef $(SOURCE_DEBUG_ENABLE)
-!ifdef $(VBOX)
-  PeCoffExtraActionLib|VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.inf
-!else
   PeCoffExtraActionLib|SourceLevelDebugPkg/Library/PeCoffExtraActionLibDebug/PeCoffExtraActionLibDebug.inf
-!endif
   DebugCommunicationLib|SourceLevelDebugPkg/Library/DebugCommunicationLibSerialPort/DebugCommunicationLibSerialPort.inf
 !else
 !ifdef $(VBOX)
-  PeCoffExtraActionLib|VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.inf
+  PeCoffExtraActionLib|SourceLevelDebugPkg/Library/PeCoffExtraActionLibDebug/PeCoffExtraActionLibDebug.inf
   DebugAgentLib|VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.inf
 !else
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
@@ -267,11 +265,7 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformRomDebugLibIoPort.inf
 !endif
 !else
-!ifdef $(SOURCE_DEBUG_ENABLE)
-  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
-!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
-!endif
 !endif
   ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/BaseExtractGuidedSectionLib/BaseExtractGuidedSectionLib.inf
@@ -302,11 +296,7 @@
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
   PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
-!ifdef $(SOURCE_DEBUG_ENABLE)
-  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
-!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
-!endif
 !endif
 
 [LibraryClasses.common.PEIM]
@@ -357,11 +347,7 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
-!ifdef $(SOURCE_DEBUG_ENABLE)
-  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
-!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
-!endif
 !endif
   ExtractGuidedSectionLib|MdePkg/Library/DxeExtractGuidedSectionLib/DxeExtractGuidedSectionLib.inf
 !ifdef $(SOURCE_DEBUG_ENABLE)
@@ -384,11 +370,7 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
-!ifdef $(SOURCE_DEBUG_ENABLE)
-  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
-!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
-!endif
 !endif
   UefiRuntimeLib|MdePkg/Library/UefiRuntimeLib/UefiRuntimeLib.inf
   BaseCryptLib|CryptoPkg/Library/BaseCryptLib/RuntimeCryptLib.inf
@@ -409,11 +391,7 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
-!ifdef $(SOURCE_DEBUG_ENABLE)
-  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
-!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
-!endif
 !endif
   UefiScsiLib|MdePkg/Library/UefiScsiLib/UefiScsiLib.inf
   PciLib|OvmfPkg/Library/DxePciLibI440FxQ35/DxePciLibI440FxQ35.inf
@@ -466,11 +444,7 @@
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
 !endif
 !else
-!ifdef $(SOURCE_DEBUG_ENABLE)
-  DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
-!else
   DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
-!endif
 !endif
   PciLib|OvmfPkg/Library/DxePciLibI440FxQ35/DxePciLibI440FxQ35.inf
 
@@ -483,10 +457,14 @@
   SmmMemLib|MdePkg/Library/SmmMemLib/SmmMemLib.inf
   MmServicesTableLib|MdePkg/Library/MmServicesTableLib/MmServicesTableLib.inf
   SmmServicesTableLib|MdePkg/Library/SmmServicesTableLib/SmmServicesTableLib.inf
+!ifndef $(VBOX)
 !ifdef $(DEBUG_ON_SERIAL_PORT)
   DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
 !else
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
+!endif
+!else
+  DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
 !endif
   CpuExceptionHandlerLib|UefiCpuPkg/Library/CpuExceptionHandlerLib/SmmCpuExceptionHandlerLib.inf
 !ifdef $(SOURCE_DEBUG_ENABLE)
@@ -504,10 +482,14 @@
   HobLib|MdePkg/Library/DxeHobLib/DxeHobLib.inf
   SmmMemLib|MdePkg/Library/SmmMemLib/SmmMemLib.inf
   SmmServicesTableLib|MdeModulePkg/Library/PiSmmCoreSmmServicesTableLib/PiSmmCoreSmmServicesTableLib.inf
+!ifndef $(VBOX)
 !ifdef $(DEBUG_ON_SERIAL_PORT)
   DebugLib|MdePkg/Library/BaseDebugLibSerialPort/BaseDebugLibSerialPort.inf
 !else
   DebugLib|OvmfPkg/Library/PlatformDebugLibIoPort/PlatformDebugLibIoPort.inf
+!endif
+!else
+  DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
 !endif
   PciLib|OvmfPkg/Library/DxePciLibI440FxQ35/DxePciLibI440FxQ35.inf
 
