@@ -178,7 +178,7 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT cfFormat,
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
     SHCLEVENTID uEvent = 0;
-    int rc = sharedClipboardSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
+    int rc = shclSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
@@ -230,7 +230,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                     /* Clipboard was updated by another application, retrieve formats and report back. */
                     rc = vboxClipboardSvcWinSyncInternal(pCtx);
                     if (RT_SUCCESS(rc))
-                        rc = sharedClipboardSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
+                        rc = shclSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
                 }
                 else
                 {
@@ -272,7 +272,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                     /* Clipboard was updated by another application, retrieve formats and report back. */
                     rc = vboxClipboardSvcWinSyncInternal(pCtx);
                     if (RT_SUCCESS(rc))
-                        sharedClipboardSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
+                        shclSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
                 }
                 else
                 {
@@ -356,9 +356,9 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             if (fFormats & VBOX_SHCL_FMT_URI_LIST)
             {
                 PSHCLTRANSFER pTransfer;
-                int rc = sharedClipboardSvcTransferStart(pCtx->pClient,
-                                                         SHCLTRANSFERDIR_READ, SHCLSOURCE_REMOTE,
-                                                         &pTransfer);
+                int rc = shclSvcTransferStart(pCtx->pClient,
+                                              SHCLTRANSFERDIR_READ, SHCLSOURCE_REMOTE,
+                                              &pTransfer);
                 if (RT_SUCCESS(rc))
                 {
                     /* Create the IDataObject implementation the host OS needs and assign
@@ -590,7 +590,7 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
         if (   RT_SUCCESS(rc)
             && Formats.uFormats != VBOX_SHCL_FMT_NONE)
         {
-            rc = sharedClipboardSvcFormatsReport(pCtx->pClient, &Formats);
+            rc = shclSvcFormatsReport(pCtx->pClient, &Formats);
         }
     }
     else /* If we don't have any client data (yet), bail out. */
@@ -604,7 +604,7 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
  * Public platform dependent functions.
  */
 
-int SharedClipboardSvcImplInit(void)
+int ShClSvcImplInit(void)
 {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     HRESULT hr = OleInitialize(NULL);
@@ -620,7 +620,7 @@ int SharedClipboardSvcImplInit(void)
     return VINF_SUCCESS;
 }
 
-void SharedClipboardSvcImplDestroy(void)
+void ShClSvcImplDestroy(void)
 {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     OleSetClipboard(NULL); /* Make sure to flush the clipboard on destruction. */
@@ -628,7 +628,7 @@ void SharedClipboardSvcImplDestroy(void)
 #endif
 }
 
-int SharedClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
+int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
 {
     RT_NOREF(fHeadless);
 
@@ -655,7 +655,7 @@ int SharedClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
         pClient->State.pCtx->pClient = pClient;
 
         /* Sync the host clipboard content with the client. */
-        rc = SharedClipboardSvcImplSync(pClient);
+        rc = ShClSvcImplSync(pClient);
     }
     else
         rc = VERR_NO_MEMORY;
@@ -664,13 +664,13 @@ int SharedClipboardSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
     return rc;
 }
 
-int SharedClipboardSvcImplSync(PSHCLCLIENT pClient)
+int ShClSvcImplSync(PSHCLCLIENT pClient)
 {
     /* Sync the host clipboard content with the client. */
     return vboxClipboardSvcWinSyncInternal(pClient->State.pCtx);
 }
 
-int SharedClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
+int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
@@ -711,8 +711,8 @@ int SharedClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
     return rc;
 }
 
-int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                         PSHCLFORMATDATA pFormats)
+int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                              PSHCLFORMATDATA pFormats)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     RT_NOREF(pCmdCtx);
@@ -736,8 +736,8 @@ int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX 
     return rc;
 }
 
-int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                   PSHCLDATABLOCK pData, uint32_t *pcbActual)
+int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                        PSHCLDATABLOCK pData, uint32_t *pcbActual)
 {
     AssertPtrReturn(pClient,             VERR_INVALID_POINTER);
     RT_NOREF(pCmdCtx);
@@ -847,19 +847,19 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
     return rc;
 }
 
-int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                    PSHCLDATABLOCK pData)
+int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+                         PSHCLDATABLOCK pData)
 {
     LogFlowFuncEnter();
 
-    int rc = sharedClipboardSvcDataReadSignal(pClient, pCmdCtx, pData);
+    int rc = shclSvcDataReadSignal(pClient, pCmdCtx, pData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int SharedClipboardSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int ShClSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
 
@@ -868,7 +868,7 @@ int SharedClipboardSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTra
     return VINF_SUCCESS;
 }
 
-int SharedClipboardSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     LogFlowFuncEnter();
 

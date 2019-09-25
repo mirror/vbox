@@ -106,8 +106,8 @@ int vboxSvcClipboardURIReportMsg(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uP
 
             LogFlowFunc(("VBOX_SHCL_HOST_MSG_TRANSFER_TRANSFER_START\n"));
 
-            if (   sharedClipboardSvcGetMode() != VBOX_SHCL_MODE_HOST_TO_GUEST
-                && sharedClipboardSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
+            if (   shclSvcGetMode() != VBOX_SHCL_MODE_HOST_TO_GUEST
+                && shclSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
             {
                 LogFlowFunc(("Wrong clipboard mode, skipping\n"));
                 break;
@@ -129,7 +129,7 @@ int vboxSvcClipboardURIReportMsg(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uP
     return rc;
 }
 
-bool sharedClipboardSvcTransferReturnMsg(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+bool shclSvcTransferReturnMsg(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF(pClient, cParms, paParms);
 
