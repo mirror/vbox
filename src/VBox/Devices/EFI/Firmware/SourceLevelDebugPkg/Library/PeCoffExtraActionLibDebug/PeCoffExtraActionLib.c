@@ -8,6 +8,45 @@
 
 #include <PeCoffExtraActionLib.h>
 
+#ifdef VBOX
+#include "VBoxPkg.h"
+#include "../../../../DevEFI.h"
+
+
+
+static void vboxImageEvtU64(uint32_t uCmd, uint64_t uValue)
+{
+    RTUINT64U u; /* 64-bit shift builtins. */
+    u.u = uValue;
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_MAKE(uCmd, u.au16[3]));
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_MAKE(uCmd, u.au16[2]));
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_MAKE(uCmd, u.au16[1]));
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_MAKE(uCmd, u.au16[0]));
+}
+
+static void vboxImageEvtString(uint32_t uCmd, const char *pszName)
+{
+    unsigned char uch;
+    while ((uch = *pszName++) != '\0')
+        ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_MAKE(uCmd, uch));
+}
+
+static void vboxImageEvtEmitOne(PE_COFF_LOADER_IMAGE_CONTEXT const *pImageCtx, uint32_t uEvt)
+{
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, uEvt);
+    if (pImageCtx->DestinationAddress)
+        vboxImageEvtU64(EFI_IMAGE_EVT_CMD_ADDR0, pImageCtx->DestinationAddress);
+    else
+        vboxImageEvtU64(EFI_IMAGE_EVT_CMD_ADDR0, pImageCtx->ImageAddress);
+    vboxImageEvtU64(EFI_IMAGE_EVT_CMD_SIZE0, pImageCtx->ImageSize);
+    if (pImageCtx->PdbPointer)
+        vboxImageEvtString(EFI_IMAGE_EVT_CMD_NAME, pImageCtx->PdbPointer);
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_CMD_COMPLETE);
+}
+#endif
+
+
+#ifdef VBOX_SOURCE_DEBUG_ENABLE
 /**
   Check if the hardware breakpoint in Drx is enabled by checking the Lx and Gx bit in Dr7.
 
@@ -189,6 +228,7 @@ PeCoffLoaderExtraActionCommon (
   //
   SetInterruptState (InterruptState);
 }
+#endif
 
 /**
   Performs additional actions after a PE/COFF image has been loaded and relocated.
@@ -203,7 +243,17 @@ PeCoffLoaderRelocateImageExtraAction (
   IN OUT PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
   )
 {
+#ifdef VBOX_SOURCE_DEBUG_ENABLE
   PeCoffLoaderExtraActionCommon (ImageContext, IMAGE_LOAD_SIGNATURE);
+#endif
+
+#ifdef VBOX
+# if ARCH_BITS == 32
+  vboxImageEvtEmitOne(ImageContext, EFI_IMAGE_EVT_CMD_START_LOAD32);
+# else
+  vboxImageEvtEmitOne(ImageContext, EFI_IMAGE_EVT_CMD_START_LOAD64);
+# endif
+#endif
 }
 
 /**
@@ -220,5 +270,34 @@ PeCoffLoaderUnloadImageExtraAction (
   IN OUT PE_COFF_LOADER_IMAGE_CONTEXT  *ImageContext
   )
 {
+#ifdef VBOX_SOURCE_DEBUG_ENABLE
   PeCoffLoaderExtraActionCommon (ImageContext, IMAGE_UNLOAD_SIGNATURE);
+#endif
+
+#ifdef VBOX
+# if ARCH_BITS == 32
+  vboxImageEvtEmitOne(ImageContext, EFI_IMAGE_EVT_CMD_START_UNLOAD32);
+# else
+  vboxImageEvtEmitOne(ImageContext, EFI_IMAGE_EVT_CMD_START_UNLOAD64);
+# endif
+#endif
 }
+
+#ifdef VBOX
+VOID
+EFIAPI
+VBoxPeCoffLoaderMoveImageExtraAction(
+  IN PHYSICAL_ADDRESS OldBase,
+  IN PHYSICAL_ADDRESS NewBase
+  )
+{
+#if ARCH_BITS == 32
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_CMD_START_RELOC32);
+#else
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_CMD_START_RELOC64);
+#endif
+    vboxImageEvtU64(EFI_IMAGE_EVT_CMD_ADDR0, NewBase);
+    vboxImageEvtU64(EFI_IMAGE_EVT_CMD_ADDR1, OldBase);
+    ASMOutU32(EFI_PORT_IMAGE_EVENT, EFI_IMAGE_EVT_CMD_COMPLETE);
+}
+#endif

@@ -38,6 +38,7 @@
 [Packages]
   MdePkg/MdePkg.dec
   SourceLevelDebugPkg/SourceLevelDebugPkg.dec
+  VBoxPkg/VBoxPkg.dec
 
 [LibraryClasses]
   BaseLib
