@@ -480,7 +480,7 @@ Settings file: '/home/username/.config/VirtualBox/Machines/SUSE 10.2/SUSE 10.2.x
 
         <para>
           Cloud profiles are used when exporting VMs to a cloud service.
-          See <xref linkend="ovf-export-oci"/>.
+          See <xref linkend="cloud-export-oci"/>.
         </para>
       </listitem>
 
@@ -2633,119 +2633,241 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
     <title>VBoxManage import</title>
 
     <para>
-      This command imports a virtual appliance in OVF format by copying
-      the virtual disk images and creating virtual machines in
-      &product-name;. See <xref linkend="ovf" /> for an introduction to
-      appliances.
+      This command import one or more virtual machines to
+      &product-name;. You can import from either of the following:
     </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          A virtual appliance in OVF format.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          A cloud service, such as &oci;. Only a single cloud instance can be imported.
+        </para>
+      </listitem>
+
+    </itemizedlist>
 
     <para>
-      The <command>import</command> subcommand takes at least the path
-      name of an OVF file as input and expects the disk images, if
-      needed, in the same directory as the OVF file. A lot of additional
-      command-line options are supported to control in detail what is
-      being imported and modify the import parameters, but the details
-      depend on the content of the OVF file.
+      See <xref linkend="ovf" /> for more details on importing VMs from
+      &product-name;.
     </para>
 
-    <para>
-      It is therefore recommended to first run the
-      <command>import</command> subcommand with the
-      <computeroutput>--dry-run</computeroutput> or
-      <computeroutput>-n</computeroutput> option. This will then print a
-      description of the appliance's contents to the screen how it would
-      be imported into &product-name;, together with the optional
-      command-line options to influence the import behavior.
-    </para>
+    <sect2 id="vboxmanage-import-ovf">
 
-    <para>
-      Use of the <computeroutput>--options
-      keepallmacs|keepnatmacs|keepdisknames</computeroutput> option
-      enables additional fine tuning of the clone operation. The first
-      two options enable specification of how the MAC addresses of every
-      virtual network card should be handled. They can either be
-      reinitialized, which is the default setting, left unchanged
-      (<computeroutput>keepallmacs</computeroutput>) or left unchanged
-      when the network type is NAT
-      (<computeroutput>keepnatmacs</computeroutput>). If you add
-      <computeroutput>keepdisknames</computeroutput> all new disk images
-      are assigned the same names as the originals, otherwise they are
-      renamed.
-    </para>
+      <title>Import from OVF</title>
 
-    <para>
-      As an example, the following is a screen output for a sample
-      appliance containing a Windows XP guest:
-    </para>
+      <para>
+        The <command>import</command> subcommand takes at least the path
+        name of an OVF file as input and expects the disk images, if
+        needed, in the same directory as the OVF file. A lot of additional
+        command-line options are supported to control in detail what is
+        being imported and modify the import parameters, but the details
+        depend on the content of the OVF file.
+      </para>
 
-<screen>VBoxManage import WindowsXp.ovf --dry-run
-Interpreting WindowsXp.ovf...
-OK.
-Virtual system 0:
- 0: Suggested OS type: "WindowsXP"
-    (change with "--vsys 0 --ostype &lt;type&gt;"; use "list ostypes" to list all)
- 1: Suggested VM name "Windows XP Professional_1"
-    (change with "--vsys 0 --vmname &lt;name&gt;")
- 2: Suggested VM group "/"
-    (change with "--vsys 0 --group &lt;group&gt;")
- 3: Suggested VM settings file name "/home/klaus/VirtualBox VMs/dummy2 2/dummy2 2.vbox"
-    (change with "--vsys 0 --settingsfile &lt;filename&gt;")
- 4: Suggested VM base folder "/home/klaus/VirtualBox VMs"
-    (change with "--vsys 0 --basefolder &lt;path&gt;")
- 5: End-user license agreement
-    (display with "--vsys 0 --eula show";
-    accept with "--vsys 0 --eula accept")
- 6: Number of CPUs: 1
-    (change with "--vsys 0 --cpus &lt;n&gt;")
- 7: Guest memory: 956 MB (change with "--vsys 0 --memory &lt;MB&gt;")
- 8: Sound card (appliance expects "ensoniq1371", can change on import)
-    (disable with "--vsys 0 --unit 5 --ignore")
- 9: USB controller
-    (disable with "--vsys 0 --unit 6 --ignore")
-10: Network adapter: orig bridged, config 2, extra type=bridged
-11: Floppy
-    (disable with "--vsys 0 --unit 8 --ignore")
-12: SCSI controller, type BusLogic
-    (change with "--vsys 0 --unit 9 --scsitype {BusLogic|LsiLogic}";
-    disable with "--vsys 0 --unit 9 --ignore")
-13: IDE controller, type PIIX4
-    (disable with "--vsys 0 --unit 10 --ignore")
-14: Hard disk image: source image=WindowsXp.vmdk,
-      target path=/home/user/disks/WindowsXp.vmdk, controller=9;channel=0
-    (change controller with "--vsys 0 --unit 11 --controller &lt;id&gt;";
-    disable with "--vsys 0 --unit 11 --ignore")</screen>
+      <para>
+        It is therefore recommended to first run the
+        <command>import</command> subcommand with the
+        <computeroutput>--dry-run</computeroutput> or
+        <computeroutput>-n</computeroutput> option. This will then print a
+        description of the appliance's contents to the screen how it would
+        be imported into &product-name;, together with the optional
+        command-line options to influence the import behavior.
+      </para>
 
-    <para>
-      The individual configuration items are numbered, and depending on
-      their type support different command-line options. The import
-      subcommand can be directed to ignore many such items with a
-      <computeroutput>--vsys X --unit Y --ignore</computeroutput>
-      option, where X is the number of the virtual system and Y the item
-      number, as printed on the screen. X is zero, unless there are
-      several virtual system descriptions in the appliance.
-    </para>
+      <para>
+        Use of the <computeroutput>--options
+        keepallmacs|keepnatmacs|keepdisknames</computeroutput> option
+        enables additional fine tuning of the clone operation. The first
+        two options enable specification of how the MAC addresses of every
+        virtual network card should be handled. They can either be
+        reinitialized, which is the default setting, left unchanged
+        (<computeroutput>keepallmacs</computeroutput>) or left unchanged
+        when the network type is NAT
+        (<computeroutput>keepnatmacs</computeroutput>). If you add
+        <computeroutput>keepdisknames</computeroutput> all new disk images
+        are assigned the same names as the originals, otherwise they are
+        renamed.
+      </para>
 
-    <para>
-      In the above example, Item #1 specifies the name of the target
-      machine in &product-name;. Items #9 and #10 specify hard disk
-      controllers, respectively. Item #11 describes a hard disk image.
-      In this case, the additional
-      <computeroutput>--controller</computeroutput> option indicates
-      which item the disk image should be connected to, with the default
-      coming from the OVF file.
-    </para>
+      <para>
+        As an example, the following is a screen output for a sample
+        appliance containing a Windows XP guest:
+      </para>
 
-    <para>
-      You can combine several items for the same virtual system behind
-      the same <computeroutput>--vsys</computeroutput> option. For
-      example, to import a machine as described in the OVF, but without
-      the sound card and without the USB controller, and with the disk
-      image connected to the IDE controller instead of the SCSI
-      controller, use the following command:
-    </para>
+      <screen>VBoxManage import WindowsXp.ovf --dry-run
+      Interpreting WindowsXp.ovf...
+      OK.
+      Virtual system 0:
+       0: Suggested OS type: "WindowsXP"
+          (change with "--vsys 0 --ostype &lt;type&gt;"; use "list ostypes" to list all)
+       1: Suggested VM name "Windows XP Professional_1"
+          (change with "--vsys 0 --vmname &lt;name&gt;")
+       2: Suggested VM group "/"
+          (change with "--vsys 0 --group &lt;group&gt;")
+       3: Suggested VM settings file name "/home/klaus/VirtualBox VMs/dummy2 2/dummy2 2.vbox"
+          (change with "--vsys 0 --settingsfile &lt;filename&gt;")
+       4: Suggested VM base folder "/home/klaus/VirtualBox VMs"
+          (change with "--vsys 0 --basefolder &lt;path&gt;")
+       5: End-user license agreement
+          (display with "--vsys 0 --eula show";
+          accept with "--vsys 0 --eula accept")
+       6: Number of CPUs: 1
+          (change with "--vsys 0 --cpus &lt;n&gt;")
+       7: Guest memory: 956 MB (change with "--vsys 0 --memory &lt;MB&gt;")
+       8: Sound card (appliance expects "ensoniq1371", can change on import)
+          (disable with "--vsys 0 --unit 5 --ignore")
+       9: USB controller
+          (disable with "--vsys 0 --unit 6 --ignore")
+      10: Network adapter: orig bridged, config 2, extra type=bridged
+      11: Floppy
+          (disable with "--vsys 0 --unit 8 --ignore")
+      12: SCSI controller, type BusLogic
+          (change with "--vsys 0 --unit 9 --scsitype {BusLogic|LsiLogic}";
+          disable with "--vsys 0 --unit 9 --ignore")
+      13: IDE controller, type PIIX4
+          (disable with "--vsys 0 --unit 10 --ignore")
+      14: Hard disk image: source image=WindowsXp.vmdk,
+            target path=/home/user/disks/WindowsXp.vmdk, controller=9;channel=0
+          (change controller with "--vsys 0 --unit 11 --controller &lt;id&gt;";
+          disable with "--vsys 0 --unit 11 --ignore")</screen>
 
-<screen>VBoxManage import WindowsXp.ovf
-      --vsys 0 --unit 5 --ignore --unit 6 --ignore --unit 11 --controller 10</screen>
+      <para>
+        The individual configuration items are numbered, and depending on
+        their type support different command-line options. The import
+        subcommand can be directed to ignore many such items with a
+        <computeroutput>--vsys X --unit Y --ignore</computeroutput>
+        option, where X is the number of the virtual system and Y the item
+        number, as printed on the screen. X is zero, unless there are
+        several virtual system descriptions in the appliance.
+      </para>
+
+      <para>
+        In the above example, Item #1 specifies the name of the target
+        machine in &product-name;. Items #9 and #10 specify hard disk
+        controllers, respectively. Item #11 describes a hard disk image.
+        In this case, the additional
+        <computeroutput>--controller</computeroutput> option indicates
+        which item the disk image should be connected to, with the default
+        coming from the OVF file.
+      </para>
+
+      <para>
+        You can combine several items for the same virtual system behind
+        the same <computeroutput>--vsys</computeroutput> option. For
+        example, to import a machine as described in the OVF, but without
+        the sound card and without the USB controller, and with the disk
+        image connected to the IDE controller instead of the SCSI
+        controller, use the following command:
+      </para>
+
+      <screen>VBoxManage import WindowsXp.ovf
+            --vsys 0 --unit 5 --ignore --unit 6 --ignore --unit 11 --controller 10</screen>
+    </sect2>
+
+    <sect2 id="vboxmanage-import-cloud">
+      <title>Import from &oci;</title>
+      <para>
+        As the result of operation a file with the suffix “.oci” will be downloaded on the local host.
+        This file is a TAR archive which contains a bootable instance image in QCOW2 format and a JSON file with some metadata
+        related to the imported instance. The downloaded file is deleted after successful import. If import fails the VBoxSVC log file
+        may hint a name and place where the downloaded file was stored (in case of failure the file may not be deleted).
+        During import the bootable image is extracted from the archive and converted into VMDK format. The JSON file is also extracted
+        and stored in the VM folder.
+      </para>
+      <para>
+        The command syntax begins from the "VBoxManage import OCI:// --cloud".
+      </para>
+      <para>
+        List the machines and their ids from Oracle Cloud Infrastructure using the command "VBoxManage cloud --provider=OCI
+        --profile="your profile name" list instances".
+      </para>
+      <para>
+        To import a VM from a cloud service such as Oracle Cloud Infrastructure, use the <option>--cloud</option> option to specify the
+        import from the Cloud. Some of the following options are settings for the VM. Somewhere you must enter an Oracle Cloud Identifier (OCID)
+        for a resource. Use the Oracle Cloud Infrastructure Console to view OCIDs.
+      </para>
+      <para>
+        Next parameters must be followed:
+        <itemizedlist>
+          <listitem>
+            <para>
+              <option>--vmname</option>: Specifies new name for imported VM. This name is used as the VM name in VirtualBox.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <option>--cloudinstanceid</option>: Id of existing instance in the Cloud.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <option>--cloudprofile</option>: Specifies the cloud profile that is used to connect to the cloud service provider.
+              The cloud profile contains your Oracle Cloud Infrastructure account details, such as your user OCID and the fingerprint for your public key.
+              To use a cloud profile, you must have the required permissions on Oracle Cloud Infrastructure.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <option>--cloudbucket</option>: Specifies the bucket name in which to store the object created from an instance bootable volume.
+              In Oracle Cloud Infrastructure, a bucket is a logical container for storing objects.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        Some other import options have the same meaning as for OVF import:
+        <itemizedlist>
+          <listitem>
+            <para>
+              <option>--ostype</option>: OS type supported by VirtualBox. Use "VBoxManage list ostypes" to see the whole list of supported OSes.
+              If the type wasn't set the "Unknown" type will be used.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <option>--basefolder</option>: folder where new VM will be placed.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <option>--description</option>: VM description string.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <option>--memory</option>: RAM memory assigned for VM in MB.
+              If memory wasn't set the possible memory size will be deduced from the default memory size for this OS type or will be taken from the cloud instance.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              <option>--cpus</option>: Number of virtual CPUs assigned for VM.
+              If cpus wasn't set the possible number of CPUs will be deduced from the default settings for this OS type or will be taken from the cloud instance.
+            </para>
+          </listitem>
+        </itemizedlist>
+      </para>
+      <para>
+        The import options <option>--disk</option>, <option>--controller</option>, <option>--scsitype</option>, <option>--unit</option>,
+        <option>--settingsfile</option> are invalid for cloud import.
+      </para>
+      <para>
+        The following example shows a typical command line for import an instance from Oracle Cloud Infrastructure:
+      </para>
+        <screen>
+        # VBoxManage import OCI:// --cloud --vmname import_from_oci --memory 4000
+        --cpus 3 --ostype FreeBSD_64 --cloudprofile "standard user" --cloudinstanceid
+        ocid1.instance.oc1.iad.abuwc... --cloudbucket myBucket
+        </screen>
+
+    </sect2>
 
   </sect1>
 
@@ -2903,7 +3025,7 @@ Virtual system 0:
             cloud profile that is used to connect to the cloud service
             provider. The cloud profile contains your &oci; account
             details, such as your user OCID and the fingerprint for your
-            public key. See <xref linkend="ovf-export-oci"/>.
+            public key. See <xref linkend="cloud-export-oci"/>.
           </para>
 
           <para>
@@ -3006,10 +3128,10 @@ Virtual system 0:
         terms of the command line options.
       </remark>
 
-<screen># VBoxManage export myVM --output OCI:// --cloud 0 --vmname myVM_Cloud \
---cloudprofile "standard user" --cloudbucket myBucket \
---cloudshape VM.Standard2.1 --clouddomain aaaa:US-ASHBURN-AD-1 --clouddisksize 50  \
---cloudocivcn ocid1.vcn.oc1.iad.aaaa... --cloudocisubnet ocid1.subnet.oc1.iad.aaaa... \
+<screen># VBoxManage export myVM --output OCI:// --cloud 0 --vmname myVM_Cloud
+--cloudprofile "standard user" --cloudbucket myBucket
+--cloudshape VM.Standard2.1 --clouddomain aaaa:US-ASHBURN-AD-1 --clouddisksize 50
+--cloudocivcn ocid1.vcn.oc1.iad.aaaa... --cloudocisubnet ocid1.subnet.oc1.iad.aaaa...
 --cloudkeepobject true --cloudlaunchinstance true --cloudpublicip true</screen>
 
     </sect2>

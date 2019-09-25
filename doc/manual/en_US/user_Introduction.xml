@@ -2582,7 +2582,7 @@
         <para>
           <emphasis role="bold">Cloud service formats.</emphasis> Export
           to cloud services such as &oci; is supported. Import is not
-          supported. See <xref linkend="ovf-export-oci"/>.
+          supported. See <xref linkend="cloud-export-oci"/>.
         </para>
       </listitem>
 
@@ -2852,7 +2852,7 @@
 
               <para>
                 The <emphasis role="bold">&oci;</emphasis> value exports
-                export to &oci;. See <xref linkend="ovf-export-oci"/>.
+                export to &oci;. See <xref linkend="cloud-export-oci"/>.
               </para>
             </listitem>
 
@@ -2926,7 +2926,7 @@
 
     </sect2>
 
-    <sect2 id="ovf-export-oci">
+    <sect2 id="cloud-export-oci">
 
       <title>Exporting an Appliance to &oci;</title>
 
@@ -3158,6 +3158,237 @@
         You can also use the <command>VBoxManage export</command>
         command to export a VM to &oci;. See
         <xref linkend="vboxmanage-export-cloud"/>.
+      </para>
+
+    </sect2>
+
+    <sect2 id="cloud-import-oci">
+
+      <title>Importing an instance from &oci;</title>
+
+      <para>
+        &product-name; supports the import of cloud instance from an &oci; service.
+      </para>
+
+      <para>
+        Before you can import an instance from &oci;, ensure that you perform the
+        following configuration steps:
+      </para>
+
+      <itemizedlist>
+
+        <listitem>
+          <para>
+            Generate an API signing key pair that is used for API
+            requests to &oci;.
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                The key pair is usually installed in the
+                <computeroutput>.oci</computeroutput> folder in your
+                home directory. For example,
+                <computeroutput>~/.oci</computeroutput> on a Linux
+                system.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Upload the public key of the key pair to the cloud
+                service.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+
+          <para>
+            For step-by-step instructions for creating and uploading an
+            API signing key for &oci;, see:
+          </para>
+
+          <para>
+            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#How">https://docs.cloud.oracle.com/iaas/Content/API/Concepts/apisigningkey.htm#How</ulink>
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Create a profile for your cloud account.
+          </para>
+
+          <para>
+            The cloud profile contains resource identifiers for your
+            cloud account, such as your user OCID, and the fingerprint
+            for your public key. You can create a cloud profile in the
+            following ways:
+          </para>
+
+          <itemizedlist>
+
+            <listitem>
+              <para>
+                Automatically by using the <emphasis role="bold">Cloud
+                Profile Manager</emphasis>. See
+                <xref linkend="ovf-cloud-profile-manager"/>.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Manually by creating an
+                <computeroutput>oci_config</computeroutput> file in your
+                &product-name; global configuration directory. For
+                example, this is
+                <computeroutput>$HOME/.config/VirtualBox/oci_config</computeroutput>
+                on a Linux host.
+              </para>
+            </listitem>
+
+            <listitem>
+              <para>
+                Manually by creating a
+                <computeroutput>config</computeroutput> file in your
+                &oci; configuration directory. For example, this is
+                <computeroutput>$HOME/.oci/config</computeroutput> on a
+                Linux host.
+              </para>
+
+              <para>
+                This is the same file that is used by the &oci; command
+                line interface.
+              </para>
+
+              <para>
+                &product-name; automatically uses the
+                <computeroutput>config</computeroutput> file if no cloud
+                profile file is present in your global configuration
+                directory. Alternatively, you can import this file
+                manually into the Cloud Profile Manager.
+              </para>
+            </listitem>
+
+          </itemizedlist>
+
+          <para>
+            For more information about the cloud profile settings used
+            by &oci; see:
+          </para>
+
+          <para>
+            <ulink url="https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm">https://docs.cloud.oracle.com/iaas/Content/API/Concepts/sdkconfig.htm</ulink>
+          </para>
+        </listitem>
+
+      </itemizedlist>
+
+      <para>
+        Perform the following steps to import an instance from &oci;:
+      </para>
+
+      <orderedlist>
+
+        <listitem>
+          <para>
+            Select <emphasis role="bold">File</emphasis>,
+            <emphasis role="bold">Import Appliance</emphasis> to open
+            the <emphasis role="bold">Import Virtual Appliance</emphasis> wizard.
+          </para>
+
+          <para>
+            In the <emphasis role="bold">Account</emphasis> drop-down
+            list, select your &oci; account.
+          </para>
+
+          <para>
+            You can set up &oci; accounts by using the Cloud Profile
+            Manager.
+          </para>
+
+          <para>
+            The list after the <emphasis role="bold">Account</emphasis>
+            field shows the profile settings for your cloud account.
+          </para>
+
+          <para>
+            Choose the interesting cloud instance from the list <emphasis role="bold">Machines</emphasis>.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Next</emphasis>
+            to make an API request to the &oci; service and open the <emphasis role="bold">Appliance Settings</emphasis> screen.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Optionally edit settings used for new local virtual machine.
+          </para>
+
+          <para>
+            For example, you can edit the VM name, CPUs, RAM memory, OS type, OS version.
+          </para>
+
+          <para>
+            Click <emphasis role="bold">Import</emphasis> to import the instance from the cloud service.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            Monitor the import process by using the &oci; Console.
+          </para>
+        </listitem>
+
+      </orderedlist>
+
+      <para>
+        General OCI import logic:
+      </para>
+      <orderedlist>
+        <listitem>
+          <para>
+            A custom image created from the boot volume of the instance.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            The custom image exported into OCI object and stored in the OCI Object Storage in the bucket pointed by user.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            The OCI object is downloaded to the local host. OCI object is a TAR archive which contains a boot volume of instance
+            in QCOW2 format and JSON file with some meta-data related to the instance.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            The boot volume of instance is extracted from the archive and new VMDK image is created by conversion the boot volume
+            into the VMDK format. The VMDK image is registered in the VirtualBox.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            New VM is created with the VMDK image created on the previous step.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            The downloaded OCI object (TAR archive) is deleted after successful import.
+          </para>
+        </listitem>
+      </orderedlist>
+      <para>
+        By default, the VM isn't launched after import from &oci;.
+      </para>
+
+      <para>
+        You can also use the <command>VBoxManage import</command>
+        command to import an instance from &oci;. See
+        <xref linkend="vboxmanage-import-cloud"/>.
       </para>
 
     </sect2>
