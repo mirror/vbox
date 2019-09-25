@@ -215,7 +215,7 @@ static void testSetHeadless(void)
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
-    fHeadless = VBoxSvcClipboardGetHeadless();
+    fHeadless = ShClSvcGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == false, ("fHeadless=%RTbool\n", fHeadless));
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            0, parms);
@@ -231,13 +231,13 @@ static void testSetHeadless(void)
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
-    fHeadless = VBoxSvcClipboardGetHeadless();
+    fHeadless = ShClSvcGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == true, ("fHeadless=%RTbool\n", fHeadless));
     HGCMSvcSetU32(&parms[0], 99);
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_HEADLESS,
                            1, parms);
     RTTESTI_CHECK_RC_OK(rc);
-    fHeadless = VBoxSvcClipboardGetHeadless();
+    fHeadless = ShClSvcGetHeadless();
     RTTESTI_CHECK_MSG(fHeadless == true, ("fHeadless=%RTbool\n", fHeadless));
     table.pfnUnload(NULL);
 }
@@ -276,18 +276,18 @@ int main(int argc, char *argv[])
     return RTTestSummaryAndDestroy(hTest);
 }
 
-int SharedClipboardSvcImplInit() { return VINF_SUCCESS; }
-void SharedClipboardSvcImplDestroy() { }
-int SharedClipboardSvcImplDisconnect(PSHCLCLIENT)
+int ShClSvcImplInit() { return VINF_SUCCESS; }
+void ShClSvcImplDestroy() { }
+int ShClSvcImplDisconnect(PSHCLCLIENT)
 { return VINF_SUCCESS; }
-int SharedClipboardSvcImplConnect(PSHCLCLIENT, bool)
+int ShClSvcImplConnect(PSHCLCLIENT, bool)
 { return VINF_SUCCESS; }
-int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLFORMATDATA)
+int ShClSvcImplFormatAnnounce(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLFORMATDATA)
 { AssertFailed(); return VINF_SUCCESS; }
-int SharedClipboardSvcImplReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK, unsigned int *)
+int ShClSvcImplReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK, unsigned int *)
 { AssertFailed(); return VERR_WRONG_ORDER; }
-int SharedClipboardSvcImplWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK)
+int ShClSvcImplWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK)
 { AssertFailed(); return VINF_SUCCESS; }
-int SharedClipboardSvcImplSync(PSHCLCLIENT)
+int ShClSvcImplSync(PSHCLCLIENT)
 { AssertFailed(); return VERR_WRONG_ORDER; }
 

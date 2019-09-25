@@ -841,9 +841,9 @@ typedef struct _SHCLERRORDATA
     int32_t rc;
 } SHCLERRORDATA, *PSHCLERRORDATA;
 
-bool VBoxSvcClipboardGetHeadless(void);
-bool VBoxSvcClipboardLock(void);
-void VBoxSvcClipboardUnlock(void);
+bool ShClSvcGetHeadless(void);
+bool ShClSvcLock(void);
+void ShClSvcUnlock(void);
 
 #endif /* !VBOX_INCLUDED_HostServices_VBoxClipboardSvc_h */
 
