@@ -4603,6 +4603,8 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
      */
     RTThreadPreemptDisable(&PreemptState);
 
+    /** @todo Disabled caching for now until proper locking is implemented. */
+#if 0
     /*
      * Querying MSRs from hardware can be expensive (exponentially more so
      * in a nested-virtualization scenario if they happen to cause VM-exits).
@@ -4617,6 +4619,9 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
         RTThreadPreemptRestore(&PreemptState);
         return VINF_SUCCESS;
     }
+#else
+    RT_NOREF(fForce);
+#endif
 
     /*
      * Query the MSRs from hardware, since it's either the first call since
