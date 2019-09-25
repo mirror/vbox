@@ -495,10 +495,6 @@ PFNRT g_apfnVBoxDrvIPRTDeps[] =
 };
 #endif  /* RT_OS_DARWIN || RT_OS_SOLARIS || RT_OS_FREEBSD */
 
-/** Hardware-virtualization MSRs. */
-static SUPHWVIRTMSRS            g_HwvirtMsrs;
-/** Whether the hardware-virtualization MSRs are cached. */
-static bool                     g_fHwvirtMsrsCached;
 
 
 /**
@@ -4603,31 +4599,14 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
      */
     RTThreadPreemptDisable(&PreemptState);
 
-    /** @todo Disabled caching for now until proper locking is implemented. */
-#if 0
     /*
-     * Querying MSRs from hardware can be expensive (exponentially more so
-     * in a nested-virtualization scenario if they happen to cause VM-exits).
-     *
-     * So, if the caller does not force re-querying of MSRs and we have them
-     * already cached, simply copy the cached MSRs and we're done.
+     * Query the MSRs from the hardware.
      */
-    if (   !fForce
-        && ASMAtomicReadBool(&g_fHwvirtMsrsCached))
-    {
-        memcpy(pMsrs, &g_HwvirtMsrs, sizeof(*pMsrs));
-        RTThreadPreemptRestore(&PreemptState);
-        return VINF_SUCCESS;
-    }
-#else
-    RT_NOREF(fForce);
-#endif
-
-    /*
-     * Query the MSRs from hardware, since it's either the first call since
-     * driver load or the caller has forced re-querying of the MSRs.
-     */
-    RT_ZERO(*pMsrs);
+    /** @todo Cache MSR values so future accesses can avoid querying the hardware as
+     *        it may be expensive (esp. in nested virtualization scenarios). Do this
+     *        with proper locking and race safety. */
+    SUPHWVIRTMSRS Msrs;
+    RT_ZERO(Msrs);
 
     /* If the caller claims VT-x/AMD-V is supported, don't need to recheck it. */
     if (!(fCaps & (SUPVTCAPS_VT_X | SUPVTCAPS_AMD_V)))
@@ -4638,46 +4617,42 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
     {
         if (fCaps & SUPVTCAPS_VT_X)
         {
-            g_HwvirtMsrs.u.vmx.u64FeatCtrl  = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
-            g_HwvirtMsrs.u.vmx.u64Basic     = ASMRdMsr(MSR_IA32_VMX_BASIC);
-            g_HwvirtMsrs.u.vmx.u64PinCtls   = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
-            g_HwvirtMsrs.u.vmx.u64ProcCtls  = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
-            g_HwvirtMsrs.u.vmx.u64ExitCtls  = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
-            g_HwvirtMsrs.u.vmx.u64EntryCtls = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
-            g_HwvirtMsrs.u.vmx.u64Misc      = ASMRdMsr(MSR_IA32_VMX_MISC);
-            g_HwvirtMsrs.u.vmx.u64Cr0Fixed0 = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
-            g_HwvirtMsrs.u.vmx.u64Cr0Fixed1 = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
-            g_HwvirtMsrs.u.vmx.u64Cr4Fixed0 = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
-            g_HwvirtMsrs.u.vmx.u64Cr4Fixed1 = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
-            g_HwvirtMsrs.u.vmx.u64VmcsEnum  = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
+            Msrs.u.vmx.u64FeatCtrl  = ASMRdMsr(MSR_IA32_FEATURE_CONTROL);
+            Msrs.u.vmx.u64Basic     = ASMRdMsr(MSR_IA32_VMX_BASIC);
+            Msrs.u.vmx.u64PinCtls   = ASMRdMsr(MSR_IA32_VMX_PINBASED_CTLS);
+            Msrs.u.vmx.u64ProcCtls  = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS);
+            Msrs.u.vmx.u64ExitCtls  = ASMRdMsr(MSR_IA32_VMX_EXIT_CTLS);
+            Msrs.u.vmx.u64EntryCtls = ASMRdMsr(MSR_IA32_VMX_ENTRY_CTLS);
+            Msrs.u.vmx.u64Misc      = ASMRdMsr(MSR_IA32_VMX_MISC);
+            Msrs.u.vmx.u64Cr0Fixed0 = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED0);
+            Msrs.u.vmx.u64Cr0Fixed1 = ASMRdMsr(MSR_IA32_VMX_CR0_FIXED1);
+            Msrs.u.vmx.u64Cr4Fixed0 = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED0);
+            Msrs.u.vmx.u64Cr4Fixed1 = ASMRdMsr(MSR_IA32_VMX_CR4_FIXED1);
+            Msrs.u.vmx.u64VmcsEnum  = ASMRdMsr(MSR_IA32_VMX_VMCS_ENUM);
 
-            if (RT_BF_GET(g_HwvirtMsrs.u.vmx.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
+            if (RT_BF_GET(Msrs.u.vmx.u64Basic, VMX_BF_BASIC_TRUE_CTLS))
             {
-                g_HwvirtMsrs.u.vmx.u64TruePinCtls   = ASMRdMsr(MSR_IA32_VMX_TRUE_PINBASED_CTLS);
-                g_HwvirtMsrs.u.vmx.u64TrueProcCtls  = ASMRdMsr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
-                g_HwvirtMsrs.u.vmx.u64TrueEntryCtls = ASMRdMsr(MSR_IA32_VMX_TRUE_ENTRY_CTLS);
-                g_HwvirtMsrs.u.vmx.u64TrueExitCtls  = ASMRdMsr(MSR_IA32_VMX_TRUE_EXIT_CTLS);
+                Msrs.u.vmx.u64TruePinCtls   = ASMRdMsr(MSR_IA32_VMX_TRUE_PINBASED_CTLS);
+                Msrs.u.vmx.u64TrueProcCtls  = ASMRdMsr(MSR_IA32_VMX_TRUE_PROCBASED_CTLS);
+                Msrs.u.vmx.u64TrueEntryCtls = ASMRdMsr(MSR_IA32_VMX_TRUE_ENTRY_CTLS);
+                Msrs.u.vmx.u64TrueExitCtls  = ASMRdMsr(MSR_IA32_VMX_TRUE_EXIT_CTLS);
             }
 
-            uint32_t const fProcCtlsAllowed1 = RT_HI_U32(g_HwvirtMsrs.u.vmx.u64ProcCtls);
+            uint32_t const fProcCtlsAllowed1 = RT_HI_U32(Msrs.u.vmx.u64ProcCtls);
             if (fProcCtlsAllowed1 & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
             {
-                g_HwvirtMsrs.u.vmx.u64ProcCtls2 = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
+                Msrs.u.vmx.u64ProcCtls2 = ASMRdMsr(MSR_IA32_VMX_PROCBASED_CTLS2);
 
-                uint32_t const fProcCtls2Allowed1 = RT_HI_U32(g_HwvirtMsrs.u.vmx.u64ProcCtls2);
+                uint32_t const fProcCtls2Allowed1 = RT_HI_U32(Msrs.u.vmx.u64ProcCtls2);
                 if (fProcCtls2Allowed1 & (VMX_PROC_CTLS2_EPT | VMX_PROC_CTLS2_VPID))
-                    g_HwvirtMsrs.u.vmx.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
+                    Msrs.u.vmx.u64EptVpidCaps = ASMRdMsr(MSR_IA32_VMX_EPT_VPID_CAP);
 
                 if (fProcCtls2Allowed1 & VMX_PROC_CTLS2_VMFUNC)
-                    g_HwvirtMsrs.u.vmx.u64VmFunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
+                    Msrs.u.vmx.u64VmFunc = ASMRdMsr(MSR_IA32_VMX_VMFUNC);
             }
-            ASMAtomicWriteBool(&g_fHwvirtMsrsCached, true);
         }
         else if (fCaps & SUPVTCAPS_AMD_V)
-        {
-            g_HwvirtMsrs.u.svm.u64MsrHwcr = ASMRdMsr(MSR_K8_HWCR);
-            ASMAtomicWriteBool(&g_fHwvirtMsrsCached, true);
-        }
+            Msrs.u.svm.u64MsrHwcr = ASMRdMsr(MSR_K8_HWCR);
         else
         {
             RTThreadPreemptRestore(&PreemptState);
@@ -4686,9 +4661,9 @@ SUPR0DECL(int) SUPR0GetHwvirtMsrs(PSUPHWVIRTMSRS pMsrs, uint32_t fCaps, bool fFo
         }
 
         /*
-         * We have successfully populated the cache, copy the MSRs to the caller.
+         * Copy the MSRs out.
          */
-        memcpy(pMsrs, &g_HwvirtMsrs, sizeof(*pMsrs));
+        memcpy(pMsrs, &Msrs, sizeof(*pMsrs));
     }
 
     RTThreadPreemptRestore(&PreemptState);
