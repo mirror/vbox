@@ -992,12 +992,13 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
                    break;
                }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
                case VBGLR3CLIPBOARDEVENTTYPE_URI_TRANSFER_STATUS:
                {
                    /* Nothing to do here. */
                    break;
                }
-
+#endif
                case VBGLR3CLIPBOARDEVENTTYPE_INVALID:
                default:
                {
