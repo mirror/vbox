@@ -105,7 +105,7 @@ static int vboxClipboardThread(RTTHREAD ThreadSelf, void *pvUser)
            thread safe and in any case we're calling several methods. */
         ShClSvcLock();
         vboxClipboardChanged(pCtx);
-        VBoxSvcClipboardUnlock();
+        ShClSvcUnlock();
 
         /* Sleep for 200 msecs before next poll */
         RTThreadUserWait(ThreadSelf, 200);
@@ -173,7 +173,7 @@ int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
     /* Initially sync the host clipboard content with the client. */
     int rc = ShClSvcImplSync(pClient);
 
-    VBoxSvcClipboardUnlock();
+    ShClSvcUnlock();
     return rc;
 }
 
@@ -184,7 +184,7 @@ int ShClSvcImplSync(PSHCLCLIENT pClient)
 
     int rc = vboxClipboardChanged(pClient->State.pCtx);
 
-    VBoxSvcClipboardUnlock();
+    ShClSvcUnlock();
 
     return rc;
 }
@@ -195,7 +195,7 @@ int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
 
     pClient->State.pCtx->pClient = NULL;
 
-    VBoxSvcClipboardUnlock();
+    ShClSvcUnlock();
 
     return VINF_SUCCESS;
 }
@@ -248,7 +248,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     int rc = readFromPasteboard(pClient->State.pCtx->pasteboard,
                                 pData->uFormat, pData->pvData, pData->cbData, pcbActual);
 
-    VBoxSvcClipboardUnlock();
+    ShClSvcUnlock();
 
     return rc;
 }
@@ -270,7 +270,7 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient,
 
     writeToPasteboard(pClient->State.pCtx->pasteboard, pData->pvData, pData->cbData, pData->uFormat);
 
-    VBoxSvcClipboardUnlock();
+    ShClSvcUnlock();
 
     return VINF_SUCCESS;
 }
