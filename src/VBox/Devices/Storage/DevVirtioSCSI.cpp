@@ -881,12 +881,36 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         switch(rcReq)
         {
             case SCSI_STATUS_OK:
+            {
                 if (pReq->uStatus != SCSI_STATUS_CHECK_CONDITION)
                 {
                     respHdr.uResponse = VIRTIOSCSI_S_OK;
                     break;
                 }
-                [[fallthrough]]
+                uint8_t uSenseKey = pReq->pbSense[2];
+                switch (uSenseKey)
+                {
+                    case SCSI_SENSE_ABORTED_COMMAND:
+                        respHdr.uResponse = VIRTIOSCSI_S_ABORTED;
+                        break;
+                    case SCSI_SENSE_COPY_ABORTED:
+                        respHdr.uResponse = VIRTIOSCSI_S_ABORTED;
+                        break;
+                    case SCSI_SENSE_UNIT_ATTENTION:
+                        respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
+                        break;
+                    case SCSI_SENSE_HARDWARE_ERROR:
+                        respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
+                        break;
+                    case SCSI_SENSE_NOT_READY:
+                        respHdr.uResponse = VIRTIOSCSI_S_BUSY; /* e.g. re-tryable */
+                        break;
+                    default:
+                        respHdr.uResponse = VIRTIOSCSI_S_FAILURE;
+                        break;
+                }
+                break;
+            }
             case SCSI_STATUS_CHECK_CONDITION:
                 {
                     uint8_t uSenseKey = pReq->pbSense[2];
