@@ -141,7 +141,6 @@ typedef struct virtio_pci_cfg_cap
  */
 typedef struct VIRTIOSTATE
 {
-    PDMPCIDEV                 dev;                               /**< PCI device                                */
     char                      szInstance[16];                    /**< Instance name, e.g. "VIRTIOSCSI0"         */
     void *                    pClientContext;                    /**< Client callback returned on callbacks     */
 

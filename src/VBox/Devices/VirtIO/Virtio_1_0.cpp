@@ -851,9 +851,10 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
 static DECLCALLBACK(int) virtioR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                      RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF3(pPciDev, iRegion, enmType);
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
-    int rc = VINF_SUCCESS;
+    int          rc      = VINF_SUCCESS;
+    RT_NOREF3(pPciDev, iRegion, enmType);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     Assert(cb >= 32);
 
@@ -890,7 +891,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
                                                         uint32_t uAddress, unsigned cb, uint32_t *pu32Value)
 {
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
-    RT_NOREF(pPciDev);
+    RT_NOREF(pPciDev, cb);
 
     uint64_t uWindowOff = (uint64_t)uAddress - (uint64_t)pVirtio->pPciCfgCap->uPciCfgData;
     if (uWindowOff < sizeof(uint32_t))
@@ -929,7 +930,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPD
                                                          uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
-    RT_NOREF(pPciDev);
+    RT_NOREF(pPciDev, cb);
 
     uint64_t uWindowOff = (uint64_t)uAddress - (uint64_t)pVirtio->pPciCfgCap->uPciCfgData;
     if (uWindowOff < sizeof(uint32_t))
@@ -1026,9 +1027,6 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
                       uint16_t               cbDevSpecificCfg,
                       void                  *pDevSpecificCfg)
 {
-
-    int rc = VINF_SUCCESS;
-
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)RTMemAllocZ(sizeof(VIRTIOSTATE));
     if (!pVirtio)
     {
@@ -1074,19 +1072,22 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     pVirtio->virtioCallbacks.pfnSSMDevLoadDone      = ssmLoadDoneCallback;
 
     /* Set PCI config registers (assume 32-bit mode) */
-    PCIDevSetRevisionId        (&pVirtio->dev, DEVICE_PCI_REVISION_ID_VIRTIO);
-    PCIDevSetVendorId          (&pVirtio->dev, DEVICE_PCI_VENDOR_ID_VIRTIO);
-    PCIDevSetSubSystemVendorId (&pVirtio->dev, DEVICE_PCI_VENDOR_ID_VIRTIO);
-    PCIDevSetDeviceId          (&pVirtio->dev, pPciParams->uDeviceId);
-    PCIDevSetClassBase         (&pVirtio->dev, pPciParams->uClassBase);
-    PCIDevSetClassSub          (&pVirtio->dev, pPciParams->uClassSub);
-    PCIDevSetClassProg         (&pVirtio->dev, pPciParams->uClassProg);
-    PCIDevSetSubSystemId       (&pVirtio->dev, pPciParams->uSubsystemId);
-    PCIDevSetInterruptLine     (&pVirtio->dev, pPciParams->uInterruptLine);
-    PCIDevSetInterruptPin      (&pVirtio->dev, pPciParams->uInterruptPin);
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    PDMPciDevSetRevisionId(pPciDev,         DEVICE_PCI_REVISION_ID_VIRTIO);
+    PDMPciDevSetVendorId(pPciDev,           DEVICE_PCI_VENDOR_ID_VIRTIO);
+    PDMPciDevSetSubSystemVendorId(pPciDev,  DEVICE_PCI_VENDOR_ID_VIRTIO);
+    PDMPciDevSetDeviceId(pPciDev,           pPciParams->uDeviceId);
+    PDMPciDevSetClassBase(pPciDev,          pPciParams->uClassBase);
+    PDMPciDevSetClassSub(pPciDev,           pPciParams->uClassSub);
+    PDMPciDevSetClassProg(pPciDev,          pPciParams->uClassProg);
+    PDMPciDevSetSubSystemId(pPciDev,        pPciParams->uSubsystemId);
+    PDMPciDevSetInterruptLine(pPciDev,      pPciParams->uInterruptLine);
+    PDMPciDevSetInterruptPin(pPciDev,       pPciParams->uInterruptPin);
 
     /* Register PCI device */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pVirtio->dev);
+    int rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
     {
         RTMemFree(pVirtio);
@@ -1102,7 +1103,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: cannot register SSM callbacks"));
     }
 
-    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, &pVirtio->dev, virtioR3PciConfigRead, virtioR3PciConfigWrite);
+    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, pPciDev, virtioR3PciConfigRead, virtioR3PciConfigWrite);
     AssertRCReturnStmt(rc, RTMemFree(pVirtio), rc);
 
 
@@ -1120,13 +1121,13 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
      * Unlike Common, Notify, ISR and Device capabilities, it is accessed directly via PCI Config region.
      * therefore does not contribute to the capabilities region (BAR) the other capabilities use.
      */
-#define CFGADDR2IDX(addr) ((uint64_t)addr - (uint64_t)&pVirtio->dev.abConfig)
+#define CFGADDR2IDX(addr) ((uint8_t)(((uintptr_t)(addr) - (uintptr_t)&pPciDev->abConfig[0])))
 
     PVIRTIO_PCI_CAP_T pCfg;
     uint32_t cbRegion = 0;
 
     /* Common capability (VirtIO 1.0 spec, section 4.1.4.3) */
-    pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[0x40];
+    pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[0x40];
     pCfg->uCfgType = VIRTIO_PCI_CAP_COMMON_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
@@ -1141,7 +1142,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
      * Notify capability (VirtIO 1.0 spec, section 4.1.4.4). Note: uLength is based the choice
      * of this implementation that each queue's uQueueNotifyOff is set equal to (QueueSelect) ordinal
      * value of the queue */
-    pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
+    pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_NOTIFY_CAP_T);
@@ -1160,7 +1161,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
      * of spec shows it as a 32-bit field with upper bits 'reserved'
      * Will take spec words more literally than the diagram for now.
      */
-    pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
+    pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
@@ -1178,7 +1179,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
      *  even list it as present if uLength isn't non-zero and 4-byte-aligned as the linux driver is
      *  initializing. */
 
-    pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
+    pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CFG_CAP_T);
@@ -1193,7 +1194,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     {
         /* Following capability (via VirtIO 1.0, section 4.1.4.6). Client defines the
          * device-specific config fields struct and passes size to this constructor */
-        pCfg = (PVIRTIO_PCI_CAP_T)&pVirtio->dev.abConfig[pCfg->uCapNext];
+        pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
         pCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
         pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
         pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
@@ -1207,8 +1208,8 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     }
 
     /* Set offset to first capability and enable PCI dev capabilities */
-    PCIDevSetCapabilityList    (&pVirtio->dev, 0x40);
-    PCIDevSetStatus            (&pVirtio->dev, VBOX_PCI_STATUS_CAP_LIST);
+    PDMPciDevSetCapabilityList(pPciDev, 0x40);
+    PDMPciDevSetStatus(pPciDev,         VBOX_PCI_STATUS_CAP_LIST);
 
     if (fMsiSupport)
     {
@@ -1221,7 +1222,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg); /* see MsixR3init() */
         if (RT_FAILURE (rc))
             /* The following is moot, we need to flag no MSI-X support */
-            PCIDevSetCapabilityList(&pVirtio->dev, 0x40);
+            PDMPciDevSetCapabilityList(pPciDev, 0x40);
     }
 
     /* Linux drivers/virtio/virtio_pci_modern.c tries to map at least a page for the

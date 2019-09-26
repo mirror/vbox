@@ -402,6 +402,8 @@ typedef RCPTRTYPE(struct PDMDEVINSRC *) PPDMDEVINSRC;
 
 /** Pointer to a PDM PCI device structure. */
 typedef struct PDMPCIDEV *PPDMPCIDEV;
+/** Pointer to a const PDM PCI device structure. */
+typedef const struct PDMPCIDEV *PCPDMPCIDEV;
 
 /** Pointer to a PDM USB Device Instance. */
 typedef struct PDMUSBINS *PPDMUSBINS;

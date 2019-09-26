@@ -193,8 +193,6 @@ typedef struct VPCIState_st
     uint32_t               padding2;
 #endif
 
-    /** TODO */
-    PDMPCIDEV              pciDevice;
     /** Base port of I/O space region. */
     RTIOPORT               IOPortBase;
 

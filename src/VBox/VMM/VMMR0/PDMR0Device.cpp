@@ -224,8 +224,9 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV 
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR0;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
 
 #ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
     /*
@@ -252,8 +253,9 @@ static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR0;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
 
 #ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
     /*
@@ -278,10 +280,12 @@ static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR0;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturnVoid(pPciDev);
     LogFlow(("pdmR0DevHlp_PCISetIrq: caller=%p/%d: pPciDev=%p:{%#x} iIrq=%d iLevel=%d\n",
              pDevIns, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iIrq, iLevel));
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
+
     PGVM         pGVM      = pDevIns->Internal.s.pGVM;
     size_t const idxBus    = pPciDev->Int.s.idxPdmBus;
     AssertReturnVoid(idxBus < RT_ELEMENTS(pGVM->pdmr0.s.aPciBuses));
@@ -1345,35 +1349,35 @@ VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PPDMDEVICECALLREQHANDLE
  *
  * Allocates a memory object and divides it up as follows:
  * @verbatim
-   -----------------------------------
+   --------------------------------------
    ring-0 devins
-   -----------------------------------
+   --------------------------------------
    ring-0 instance data
-   -----------------------------------
-   ring-0 PCI device data (optional) ?
-   -----------------------------------
+   --------------------------------------
+   ring-0 PCI device data (optional) ??
+   --------------------------------------
    page alignment padding
-   -----------------------------------
+   --------------------------------------
    ring-3 devins
-   -----------------------------------
+   --------------------------------------
    ring-3 instance data
-   -----------------------------------
-   ring-3 PCI device data (optional) ?
-   -----------------------------------
-  [page alignment padding             ] -
-  [-----------------------------------]  \
-  [raw-mode devins                    ]   \
-  [-----------------------------------]   - Optional, only when raw-mode is enabled.
-  [raw-mode instance data             ]   /
-  [-----------------------------------]  /
-  [raw-mode PCI device data (optional)] -
-   -----------------------------------
+   --------------------------------------
+   ring-3 PCI device data (optional) ??
+   --------------------------------------
+  [page alignment padding                ] -
+  [--------------------------------------]  \
+  [raw-mode devins                       ]   \
+  [--------------------------------------]   - Optional, only when raw-mode is enabled.
+  [raw-mode instance data                ]   /
+  [--------------------------------------]  /
+  [raw-mode PCI device data (optional)?? ] -
+   --------------------------------------
    shared instance data
-   -----------------------------------
+   --------------------------------------
    default crit section
-   -----------------------------------
+   --------------------------------------
    shared PCI device data (optional)
-   -----------------------------------
+   --------------------------------------
    @endverbatim
  *
  * @returns VBox status code.
@@ -1403,13 +1407,18 @@ static int pdmR0DeviceCreateWorker(PGVM pGVM, PCPDMDEVREGR0 pDevReg, uint32_t iI
     /*
      * Figure out how much memory we need and allocate it.
      */
-    uint32_t const cbRing0  = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR0, achInstanceData) + pDevReg->cbInstanceCC, PAGE_SIZE);
-    uint32_t const cbRing3  = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR3, achInstanceData) + cbInstanceR3,
-                                          RCPtrMapping != NIL_RTRGPTR ? PAGE_SIZE : 64);
-    uint32_t const cbRC     = RCPtrMapping != NIL_RTRGPTR ? 0
-                            : RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSRC, achInstanceData) + cbInstanceRC, 64);
-    uint32_t const cbShared = RT_ALIGN_32(pDevReg->cbInstanceShared, 64);
-    uint32_t const cbTotal  = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared + sizeof(PDMCRITSECT), PAGE_SIZE);
+    uint32_t const cbRing0     = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR0, achInstanceData) + pDevReg->cbInstanceCC, PAGE_SIZE);
+    uint32_t const cbRing3     = RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSR3, achInstanceData) + cbInstanceR3,
+                                             RCPtrMapping != NIL_RTRGPTR ? PAGE_SIZE : 64);
+    uint32_t const cbRC        = RCPtrMapping != NIL_RTRGPTR ? 0
+                               : RT_ALIGN_32(RT_UOFFSETOF(PDMDEVINSRC, achInstanceData) + cbInstanceRC, 64);
+    uint32_t const cbShared    = RT_ALIGN_32(pDevReg->cbInstanceShared, 64);
+    uint32_t const cbCritSect  = RT_ALIGN_32(sizeof(PDMCRITSECT), 64);
+    uint32_t const cbMsixState = RT_ALIGN_32(pDevReg->cMaxMsixVectors * 16 + (pDevReg->cMaxMsixVectors + 7) / 8, _4K);
+    uint32_t const cbPciDev    = RT_ALIGN_32(RT_UOFFSETOF_DYN(PDMPCIDEV, abMsixState[cbMsixState]), 64);
+    uint32_t const cPciDevs    = RT_MIN(pDevReg->cMaxPciDevices, 8);
+    uint32_t const cbPciDevs   = cbPciDev * cPciDevs;
+    uint32_t const cbTotal     = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared + cbCritSect + cbPciDevs, PAGE_SIZE);
 
     RTR0MEMOBJ hMemObj;
     int rc = RTR0MemObjAllocPage(&hMemObj, cbTotal, false /*fExecutable*/);
@@ -1434,12 +1443,25 @@ static int pdmR0DeviceCreateWorker(PGVM pGVM, PCPDMDEVREGR0 pDevReg, uint32_t iI
         pDevIns->pHlpR0                 = &g_pdmR0DevHlp;
         pDevIns->pvInstanceDataR0       = (uint8_t *)pDevIns + cbRing0 + cbRing3 + cbRC;
         pDevIns->pvInstanceDataForR0    = &pDevIns->achInstanceData[0];
-        pDevIns->pCritSectRoR0          = (PPDMCRITSECT)(  (uint8_t *)pDevIns->pvInstanceDataR0
-                                                         + RT_ALIGN_32(pDevReg->cbInstanceShared, 64));
+        pDevIns->pCritSectRoR0          = (PPDMCRITSECT)((uint8_t *)pDevIns->pvInstanceDataR0 + cbShared);
         pDevIns->pReg                   = pDevReg;
         pDevIns->pDevInsForR3           = RTR0MemObjAddressR3(hMapObj);
         pDevIns->pDevInsForR3R0         = pDevInsR3;
         pDevIns->pvInstanceDataForR3R0  = &pDevInsR3->achInstanceData[0];
+        pDevIns->cbPciDev               = cbPciDev;
+        pDevIns->cPciDevs               = cPciDevs;
+        for (uint32_t iPciDev = 0; iPciDev < cPciDevs; iPciDev++)
+        {
+            /* Note! PDMDevice.cpp has a copy of this code.  Keep in sync. */
+            PPDMPCIDEV pPciDev = (PPDMPCIDEV)((uint8_t *)pDevIns->pCritSectRoR0 + cbCritSect + cbPciDev * iPciDev);
+            if (iPciDev < RT_ELEMENTS(pDevIns->apPciDevs))
+                pDevIns->apPciDevs[iPciDev] = pPciDev;
+            pPciDev->cbConfig           = _4K;
+            pPciDev->cbMsixState        = cbMsixState;
+            pPciDev->idxSubDev          = (uint16_t)iPciDev;
+            pPciDev->Int.s.idxSubDev    = (uint16_t)iPciDev;
+            pPciDev->u32Magic           = PDMPCIDEV_MAGIC;
+        }
         pDevIns->Internal.s.pGVM        = pGVM;
         pDevIns->Internal.s.pRegR0      = pDevReg;
         pDevIns->Internal.s.hMod        = hMod;
@@ -1450,6 +1472,7 @@ static int pdmR0DeviceCreateWorker(PGVM pGVM, PCPDMDEVREGR0 pDevReg, uint32_t iI
 
         /*
          * Initialize the ring-3 instance data as much as we can.
+         * Note! PDMDevice.cpp does this job for ring-3 only devices.  Keep in sync.
          */
         pDevInsR3->u32Version           = PDM_DEVINSR3_VERSION;
         pDevInsR3->iInstance            = iInstance;
@@ -1466,6 +1489,10 @@ static int pdmR0DeviceCreateWorker(PGVM pGVM, PCPDMDEVREGR0 pDevReg, uint32_t iI
         pDevInsR3->pDevInsForRC         = pDevIns->pDevInsForRC;
         pDevInsR3->pDevInsForRCR3       = pDevIns->pDevInsForR3 + cbRing3;
         pDevInsR3->pDevInsForRCR3       = pDevInsR3->pDevInsForRCR3 + RT_UOFFSETOF(PDMDEVINSRC, achInstanceData);
+        pDevInsR3->cbPciDev             = cbPciDev;
+        pDevInsR3->cPciDevs             = cPciDevs;
+        for (uint32_t i = 0; i < RT_MIN(cPciDevs, RT_ELEMENTS(pDevIns->apPciDevs)); i++)
+            pDevInsR3->apPciDevs[i] = pDevInsR3->pCritSectRoR3 + cbCritSect + cbPciDev * i;
 
         pDevInsR3->Internal.s.pVMR3     = pGVM->pVMR3;
         pDevInsR3->Internal.s.fIntFlags = RCPtrMapping == NIL_RTRGPTR ? PDMDEVINSINT_FLAGS_R0_ENABLED
@@ -1488,6 +1515,11 @@ static int pdmR0DeviceCreateWorker(PGVM pGVM, PCPDMDEVREGR0 pDevReg, uint32_t iI
             pDevInsRC->pvInstanceDataRC     = pDevIns->pDevInsForRC + cbRC;
             pDevInsRC->pvInstanceDataForRC  = pDevIns->pDevInsForRC + RT_UOFFSETOF(PDMDEVINSRC, achInstanceData);
             pDevInsRC->pCritSectRoRC        = pDevIns->pDevInsForRC + cbRC + cbShared;
+            pDevInsRC->cbPciDev             = cbPciDev;
+            pDevInsRC->cPciDevs             = cPciDevs;
+            for (uint32_t i = 0; i < RT_MIN(cPciDevs, RT_ELEMENTS(pDevIns->apPciDevs)); i++)
+                pDevInsRC->apPciDevs[i] = pDevInsRC->pCritSectRoRC + cbCritSect + cbPciDev * i;
+
             pDevInsRC->Internal.s.pVMRC     = pGVM->pVMRC;
         }
 
@@ -1796,61 +1828,6 @@ VMMR0_INT_DECL(int) PDMR0DeviceCompatSetCritSectReqHandler(PGVM pGVM, PPDMDEVICE
      * Make the update.
      */
     pDevIns->pCritSectRoR0 = pCritSect;
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Legacy device mode compatiblity.
- *
- * @returns VBox status code.
- * @param   pGVM    The global (ring-0) VM structure.
- * @param   pReq    Pointer to the request buffer.
- * @thread  EMT(0)
- */
-VMMR0_INT_DECL(int) PDMR0DeviceCompatRegPciDevReqHandler(PGVM pGVM, PPDMDEVICECOMPATREGPCIDEVREQ pReq)
-{
-    /*
-     * Validate the request.
-     */
-    AssertReturn(pReq->Hdr.cbReq == sizeof(*pReq), VERR_INVALID_PARAMETER);
-
-    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
-    AssertRCReturn(rc, rc);
-
-    AssertReturn(pReq->idxR0Device < pGVM->pdmr0.s.cDevInstances, VERR_INVALID_HANDLE);
-    PPDMDEVINSR0 pDevIns = pGVM->pdmr0.s.apDevInstances[pReq->idxR0Device];
-    AssertPtrReturn(pDevIns, VERR_INVALID_HANDLE);
-    AssertReturn(pDevIns->pDevInsForR3 == pReq->pDevInsR3, VERR_INVALID_HANDLE);
-
-    AssertReturn(pGVM->enmVMState == VMSTATE_CREATING, VERR_INVALID_STATE);
-
-    /*
-     * The address must be within the shared instance data.
-     */
-    size_t offPciDev = pReq->pPciDevR3 - pDevIns->pDevInsForR3R0->pvInstanceDataR3;
-    AssertLogRelMsgReturn(   offPciDev                     <  pDevIns->pReg->cbInstanceShared
-                          && offPciDev + sizeof(PDMPCIDEV) <= pDevIns->pReg->cbInstanceShared,
-                          ("offPciDev=%p pPciDevR3=%p cbInstanceShared=%#x (%s)\n",
-                           offPciDev, pReq->pPciDevR3, pDevIns->pReg->cbInstanceShared, pDevIns->pReg->szName),
-                          VERR_INVALID_POINTER);
-    PPDMPCIDEV pPciDev = (PPDMPCIDEV)((uint8_t *)pDevIns->pvInstanceDataR0 + offPciDev);
-    AssertReturn(pPciDev->Int.s.pDevInsR3 == pReq->pDevInsR3, VERR_MISMATCH);
-
-    /*
-     * Append the pci device to the list.
-     */
-    PPDMPCIDEV pPciDevPrev = pDevIns->Internal.s.pHeadPciDevR0;
-    if (!pPciDevPrev)
-        pDevIns->Internal.s.pHeadPciDevR0 = pPciDev;
-    else
-    {
-        while (pPciDevPrev->Int.s.pNextR0)
-            pPciDevPrev = pPciDevPrev->Int.s.pNextR0;
-        pPciDevPrev->Int.s.pNextR0 = pPciDev;
-    }
-    pPciDev->Int.s.pNextR0 = NULL;
 
     return VINF_SUCCESS;
 }

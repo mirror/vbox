@@ -1643,14 +1643,14 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pv
 /**
  * @interface_method_impl{PDMDEVHLPR3,pfnPCIRegister}
  */
-static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
+static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                                  uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
-    LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: pPciDev=%p:{.config={%#.256Rhxs} idxDevCfg=%d fFlags=%#x uPciDevNo=%#x uPciFunNo=%#x pszName=%p:{%s}\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->abConfig, idxDevCfg, fFlags, uPciDevNo, uPciFunNo, pszName, pszName ? pszName : ""));
+    LogFlow(("pdmR3DevHlp_PCIRegister: caller='%s'/%d: pPciDev=%p:{.config={%#.256Rhxs} fFlags=%#x uPciDevNo=%#x uPciFunNo=%#x pszName=%p:{%s}\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->abConfig, fFlags, uPciDevNo, uPciFunNo, pszName, pszName ? pszName : ""));
 
     /*
      * Validate input.
@@ -1664,9 +1664,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
     AssertLogRelMsgReturn(PDMPciDevGetVendorId(pPciDev),
                           ("'%s'/%d: Vendor ID is not set!\n", pDevIns->pReg->szName, pDevIns->iInstance),
                           VERR_INVALID_POINTER);
-    AssertLogRelMsgReturn(idxDevCfg < 256 || idxDevCfg == PDMPCIDEVREG_CFG_NEXT,
-                          ("'%s'/%d: Invalid config selector: %#x\n", pDevIns->pReg->szName, pDevIns->iInstance, idxDevCfg),
-                          VERR_OUT_OF_RANGE);
     AssertLogRelMsgReturn(   uPciDevNo < 32
                           || uPciDevNo == PDMPCIDEVREG_DEV_NO_FIRST_UNUSED
                           || uPciDevNo == PDMPCIDEVREG_DEV_NO_SAME_AS_PREV,
@@ -1682,46 +1679,29 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
     if (!pszName)
         pszName = pDevIns->pReg->szName;
     AssertLogRelReturn(RT_VALID_PTR(pszName), VERR_INVALID_POINTER);
+    AssertLogRelReturn(!pPciDev->Int.s.fRegistered, VERR_PDM_NOT_PCI_DEVICE);
+    AssertLogRelReturn(pPciDev == PDMDEV_GET_PPCIDEV(pDevIns, pPciDev->Int.s.idxSubDev), VERR_PDM_NOT_PCI_DEVICE);
+    AssertLogRelReturn(pPciDev == PDMDEV_CALC_PPCIDEV(pDevIns, pPciDev->Int.s.idxSubDev), VERR_PDM_NOT_PCI_DEVICE);
+    AssertMsgReturn(pPciDev->u32Magic == PDMPCIDEV_MAGIC, ("%#x\n", pPciDev->u32Magic), VERR_PDM_NOT_PCI_DEVICE);
 
     /*
-     * Find the last(/previous) registered PCI device (for linking and more),
-     * checking for duplicate registration attempts while doing so.
+     * Check the registration order - must be following PDMDEVINSR3::apPciDevs.
      */
-    uint32_t idxDevCfgNext = 0;
-    PPDMPCIDEV pPrevPciDev = pDevIns->Internal.s.pHeadPciDevR3;
-    while (pPrevPciDev)
+    PPDMPCIDEV const pPrevPciDev = pPciDev->Int.s.idxSubDev == 0 ? NULL
+                                 : PDMDEV_GET_PPCIDEV(pDevIns, pPciDev->Int.s.idxSubDev - 1);
+    if (pPrevPciDev)
     {
-        AssertLogRelMsgReturn(pPrevPciDev != pPciDev,
-                              ("'%s'/%d attempted to register the same PCI device (%p) twice\n",
-                               pDevIns->pReg->szName, pDevIns->iInstance, pPciDev),
-                              VERR_DUPLICATE);
-        AssertLogRelMsgReturn(pPrevPciDev->Int.s.idxDevCfg != idxDevCfg,
-                              ("'%s'/%d attempted to use the same device config index (%u) twice\n",
-                               pDevIns->pReg->szName, pDevIns->iInstance, idxDevCfg),
-                              VERR_ALREADY_LOADED);
-        if (pPrevPciDev->Int.s.idxDevCfg >= idxDevCfgNext)
-            idxDevCfgNext = pPrevPciDev->Int.s.idxDevCfg + 1;
-
-        if (!pPrevPciDev->Int.s.pNextR3)
-            break;
-        pPrevPciDev = pPrevPciDev->Int.s.pNextR3;
+        AssertLogRelReturn(pPrevPciDev->u32Magic == PDMPCIDEV_MAGIC, VERR_INVALID_MAGIC);
+        AssertLogRelReturn(pPrevPciDev->Int.s.fRegistered, VERR_WRONG_ORDER);
     }
 
     /*
      * Resolve the PCI configuration node for the device.  The default (zero'th)
      * is the same as the PDM device, the rest are "PciCfg1..255" CFGM sub-nodes.
      */
-    if (idxDevCfg == PDMPCIDEVREG_CFG_NEXT)
-    {
-        idxDevCfg = idxDevCfgNext;
-        AssertLogRelMsgReturn(idxDevCfg < 256, ("'%s'/%d: PDMPCIDEVREG_IDX_DEV_CFG_NEXT ran out of valid indexes (ends at 255)\n",
-                                                pDevIns->pReg->szName, pDevIns->iInstance),
-                              VERR_OUT_OF_RANGE);
-    }
-
     PCFGMNODE pCfg = pDevIns->Internal.s.pCfgHandle;
-    if (idxDevCfg != 0)
-        pCfg = CFGMR3GetChildF(pDevIns->Internal.s.pCfgHandle, "PciCfg%u", idxDevCfg);
+    if (pPciDev->Int.s.idxSubDev > 0)
+        pCfg = CFGMR3GetChildF(pDevIns->Internal.s.pCfgHandle, "PciCfg%u", pPciDev->Int.s.idxSubDev);
 
     /*
      * We resolve PDMPCIDEVREG_DEV_NO_SAME_AS_PREV, the PCI bus handles
@@ -1740,21 +1720,31 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
         {
             /* Look for PCI device registered with an earlier device instance so we can more
                easily have multiple functions spanning multiple PDM device instances. */
-            PPDMPCIDEV pOtherPciDev = NULL;
             PPDMDEVINS pPrevIns = pDevIns->Internal.s.pDevR3->pInstances;
-            while (pPrevIns != pDevIns && pPrevIns)
+            for (;;)
             {
-                pOtherPciDev = pPrevIns->Internal.s.pHeadPciDevR3;
+                AssertLogRelMsgReturn(pPrevIns && pPrevIns != pDevIns,
+                                      ("'%s'/%d: Can't use PDMPCIDEVREG_DEV_NO_SAME_AS_PREV without a previously registered PCI device by the same or earlier PDM device instance!\n",
+                                       pDevIns->pReg->szName, pDevIns->iInstance), VERR_WRONG_ORDER);
+                if (pPrevIns->Internal.s.pNextR3 == pDevIns)
+                    break;
                 pPrevIns = pPrevIns->Internal.s.pNextR3;
             }
-            Assert(pPrevIns == pDevIns);
-            AssertLogRelMsgReturn(pOtherPciDev,
+
+            PPDMPCIDEV pOtherPciDev = PDMDEV_GET_PPCIDEV(pPrevIns, 0);
+            AssertLogRelMsgReturn(pOtherPciDev && pOtherPciDev->Int.s.fRegistered,
                                   ("'%s'/%d: Can't use PDMPCIDEVREG_DEV_NO_SAME_AS_PREV without a previously registered PCI device by the same or earlier PDM device instance!\n",
                                    pDevIns->pReg->szName, pDevIns->iInstance),
                                   VERR_WRONG_ORDER);
+            for (uint32_t iPrevPciDev = 1; iPrevPciDev < pDevIns->cPciDevs; iPrevPciDev++)
+            {
+                PPDMPCIDEV pCur = PDMDEV_GET_PPCIDEV(pPrevIns, iPrevPciDev);
+                AssertBreak(pCur);
+                if (!pCur->Int.s.fRegistered)
+                    break;
+                pOtherPciDev = pCur;
+            }
 
-            while (pOtherPciDev->Int.s.pNextR3)
-                pOtherPciDev = pOtherPciDev->Int.s.pNextR3;
             uPciDevNo    = pOtherPciDev->uDevFn >> 3;
             uDefPciBusNo = pOtherPciDev->Int.s.idxPdmBus;
         }
@@ -1795,14 +1785,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
         {
             AssertMsgReturn(uCfgDevice <= 31,
                             ("Configuration error: PCIDeviceNo=%d, max is 31. (%s/%d/%d)\n",
-                             uCfgDevice, pDevIns->pReg->szName, pDevIns->iInstance, idxDevCfg),
+                             uCfgDevice, pDevIns->pReg->szName, pDevIns->iInstance, pPciDev->Int.s.idxSubDev),
                             VERR_PDM_BAD_PCI_CONFIG);
             uPciDevNo = uCfgDevice;
         }
         else
             AssertMsgReturn(rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT,
                             ("Configuration error: PCIDeviceNo query failed with rc=%Rrc (%s/%d/%d)\n",
-                             rc, pDevIns->pReg->szName, pDevIns->iInstance, idxDevCfg),
+                             rc, pDevIns->pReg->szName, pDevIns->iInstance, pPciDev->Int.s.idxSubDev),
                             rc);
 
         /** @cfgm{/Devices/NAME/XX/[PciCfgYY/]PCIFunctionNo, uint8_t, 0, 7}
@@ -1814,14 +1804,14 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
         {
             AssertMsgReturn(uCfgFunction <= 7,
                             ("Configuration error: PCIFunctionNo=%#x, max is 7. (%s/%d/%d)\n",
-                             uCfgFunction, pDevIns->pReg->szName, pDevIns->iInstance, idxDevCfg),
+                             uCfgFunction, pDevIns->pReg->szName, pDevIns->iInstance, pPciDev->Int.s.idxSubDev),
                             VERR_PDM_BAD_PCI_CONFIG);
             uPciFunNo = uCfgFunction;
         }
         else
             AssertMsgReturn(rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT,
                             ("Configuration error: PCIFunctionNo query failed with rc=%Rrc (%s/%d/%d)\n",
-                             rc, pDevIns->pReg->szName, pDevIns->iInstance, idxDevCfg),
+                             rc, pDevIns->pReg->szName, pDevIns->iInstance, pPciDev->Int.s.idxSubDev),
                             rc);
 
 
@@ -1831,11 +1821,12 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
          */
         RT_ZERO(pPciDev->Int);
 
-        pPciDev->Int.s.idxDevCfg = idxDevCfg;
+        pPciDev->Int.s.idxDevCfg = pPciDev->Int.s.idxSubDev;
         pPciDev->Int.s.fReassignableDevNo = uPciDevNoRaw >= VBOX_PCI_MAX_DEVICES;
         pPciDev->Int.s.fReassignableFunNo = uPciFunNo >= VBOX_PCI_MAX_FUNCTIONS;
         pPciDev->Int.s.pDevInsR3 = pDevIns;
         pPciDev->Int.s.idxPdmBus = u8Bus;
+        pPciDev->Int.s.fRegistered = true;
 
         /* Set some of the public members too. */
         pPciDev->pszNameR3 = pszName;
@@ -1847,40 +1838,10 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV 
         rc = pBus->pfnRegister(pBus->pDevInsR3, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName);
         pdmUnlock(pVM);
         if (RT_SUCCESS(rc))
-        {
-
-            /*
-             * Link it.
-             */
-            if (pPrevPciDev)
-            {
-                Assert(!pPrevPciDev->Int.s.pNextR3);
-                pPrevPciDev->Int.s.pNextR3 = pPciDev;
-                pPrevPciDev->Int.s.pNextR0 = NIL_RTRCPTR;
-            }
-            else
-            {
-                Assert(!pDevIns->Internal.s.pHeadPciDevR3);
-                pDevIns->Internal.s.pHeadPciDevR3 = pPciDev;
-            }
-
-            Assert(RT_BOOL(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED) == pDevIns->fR0Enabled);
-            if (   (pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_R0_ENABLED)
-                && !(pDevIns->Internal.s.pDevR3->pReg->fFlags & PDM_DEVREG_FLAGS_NEW_STYLE))
-            {
-                PDMDEVICECOMPATREGPCIDEVREQ Req;
-                Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-                Req.Hdr.cbReq    = sizeof(Req);
-                Req.idxR0Device  = pDevIns->Internal.s.idxR0Device;
-                Req.pDevInsR3    = pDevIns;
-                Req.pPciDevR3    = pPciDev;
-                rc = VMMR3CallR0(pVM, VMMR0_DO_PDM_DEVICE_COMPAT_REG_PCIDEV, 0, &Req.Hdr);
-                AssertLogRelRCReturn(rc, rc);
-            }
-
             Log(("PDM: Registered device '%s'/%d as PCI device %d on bus %d\n",
                  pDevIns->pReg->szName, pDevIns->iInstance, pPciDev->uDevFn, pBus->iBus));
-        }
+        else
+            pPciDev->Int.s.fRegistered = false;
     }
     else
     {
@@ -1898,10 +1859,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCID
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
     LogFlow(("pdmR3DevHlp_PCIRegisterMsi: caller='%s'/%d: pPciDev=%p:{%#x} pMsgReg=%p:{cMsiVectors=%d, cMsixVectors=%d}\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, pMsiReg, pMsiReg->cMsiVectors, pMsiReg->cMsixVectors));
+    PDMPCIDEV_ASSERT_VALID_RET(pDevIns, pPciDev);
 
     AssertLogRelMsgReturn(pDevIns->pReg->cMaxPciDevices > 0,
                           ("'%s'/%d: cMaxPciDevices is 0\n", pDevIns->pReg->szName, pDevIns->iInstance),
@@ -1937,10 +1899,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%d cbRegion=%RGp enmType=%d pfnCallback=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iRegion, cbRegion, enmType, pfnCallback));
+    PDMPCIDEV_ASSERT_VALID_RET(pDevIns, pPciDev);
 
     /*
      * Validate input.
@@ -2039,10 +2002,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIInterceptConfigAccesses(PPDMDEVINS pDevI
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
     LogFlow(("pdmR3DevHlp_PCIInterceptConfigAccesses: caller='%s'/%d: pPciDev=%p pfnRead=%p pfnWrite=%p\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pfnRead, pfnWrite));
+    PDMPCIDEV_ASSERT_VALID_RET(pDevIns, pPciDev);
 
     /*
      * Validate input.
@@ -2131,8 +2095,9 @@ pdmR3DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
 
 #ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
     /*
@@ -2159,8 +2124,9 @@ pdmR3DevHlp_PCIPhysWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
 
 #ifndef PDM_DO_NOT_RESPECT_PCI_BM_BIT
     /*
@@ -2185,10 +2151,11 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV p
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
-        pPciDev = pDevIns->Internal.s.pHeadPciDevR3;
+        pPciDev = pDevIns->apPciDevs[0];
     AssertReturnVoid(pPciDev);
     LogFlow(("pdmR3DevHlp_PCISetIrq: caller='%s'/%d: pPciDev=%p:{%#x} iIrq=%d iLevel=%d\n",
              pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iIrq, iLevel));
+    PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(pDevIns, pPciDev);
 
     /*
      * Validate input.

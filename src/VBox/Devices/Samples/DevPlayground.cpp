@@ -50,8 +50,6 @@
  */
 typedef struct VBOXPLAYGROUNDDEVICEFUNCTION
 {
-    /** The PCI devices. */
-    PDMPCIDEV   PciDev;
     /** The function number. */
     uint8_t     iFun;
     /** Device function name. */
@@ -202,6 +200,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Whatever1|NumFunctions|BigBAR0MB|BigBAR0GB|BigBAR2MB|BigBAR2GB", "");
 
     uint8_t uNumFunctions;
+    AssertCompile(RT_ELEMENTS(pThis->aPciFuns) <= RT_ELEMENTS(pDevIns->apPciDevs));
     rc = CFGMR3QueryU8Def(pCfg, "NumFunctions", &uNumFunctions, RT_ELEMENTS(pThis->aPciFuns));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"NumFunctions\""));
@@ -257,24 +256,26 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
     uint32_t iPciDevNo = PDMPCIDEVREG_DEV_NO_FIRST_UNUSED;
     for (uint32_t iPciFun = 0; iPciFun < uNumFunctions; iPciFun++)
     {
-        PVBOXPLAYGROUNDDEVICEFUNCTION pFun = &pThis->aPciFuns[iPciFun];
-        RTStrPrintf(pFun->szName, sizeof(pThis->aPciFuns[iPciFun].PciDev), "playground%u", iPciFun);
+        PPDMPCIDEV                    pPciDev = pDevIns->apPciDevs[iPciFun];
+        PVBOXPLAYGROUNDDEVICEFUNCTION pFun    = &pThis->aPciFuns[iPciFun];
+        RTStrPrintf(pFun->szName, sizeof(pFun->szName), "playground%u", iPciFun);
         pFun->iFun = iPciFun;
 
-        PCIDevSetVendorId( &pFun->PciDev, 0x80ee);
-        PCIDevSetDeviceId( &pFun->PciDev, 0xde4e);
-        PCIDevSetClassBase(&pFun->PciDev, 0x07);   /* communications device */
-        PCIDevSetClassSub( &pFun->PciDev, 0x80);   /* other communications device */
-        if (iPciFun == 0)       /* only for the primary function */
-            PCIDevSetHeaderType(&pFun->PciDev, 0x80); /* normal, multifunction device */
+        PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-        rc = PDMDevHlpPCIRegisterEx(pDevIns, &pFun->PciDev, iPciFun, 0 /*fFlags*/, iPciDevNo, iPciFun,
-                                    pThis->aPciFuns[iPciFun].szName);
+        PDMPciDevSetVendorId(pPciDev,       0x80ee);
+        PDMPciDevSetDeviceId(pPciDev,       0xde4e);
+        PDMPciDevSetClassBase(pPciDev,      0x07);  /* communications device */
+        PDMPciDevSetClassSub(pPciDev,       0x80);  /* other communications device */
+        if (iPciFun == 0) /* only for the primary function */
+            PDMPciDevSetHeaderType(pPciDev, 0x80);  /* normal, multifunction device */
+
+        rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, 0 /*fFlags*/, iPciDevNo, iPciFun, pThis->aPciFuns[iPciFun].szName);
         AssertLogRelRCReturn(rc, rc);
 
         /* First region. */
         RTGCPHYS const cbFirst = iPciFun == 0 ? cbFirstBAR : iPciFun * _4K;
-        rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, &pFun->PciDev, 0, cbFirst,
+        rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, pPciDev, 0, cbFirst,
                                             (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
                                                               | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
                                             devPlaygroundMap);
@@ -282,7 +283,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
         char *pszRegionName = NULL;
         RTStrAPrintf(&pszRegionName, "PG-F%d-BAR0", iPciFun);
         Assert(pszRegionName);
-        rc = PDMDevHlpMMIOExPreRegister(pDevIns, &pFun->PciDev, 0, cbFirst,
+        rc = PDMDevHlpMMIOExPreRegister(pDevIns, pPciDev, 0, cbFirst,
                                         IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, pszRegionName,
                                         NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
                                         NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
@@ -291,7 +292,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
 
         /* Second region. */
         RTGCPHYS const cbSecond = iPciFun == 0  ? cbSecondBAR : iPciFun * _32K;
-        rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, &pFun->PciDev, 2, cbSecond,
+        rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, pPciDev, 2, cbSecond,
                                             (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
                                                               | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
                                             devPlaygroundMap);
@@ -299,7 +300,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
         pszRegionName = NULL;
         RTStrAPrintf(&pszRegionName, "PG-F%d-BAR2", iPciFun);
         Assert(pszRegionName);
-        rc = PDMDevHlpMMIOExPreRegister(pDevIns, &pFun->PciDev, 2, cbSecond,
+        rc = PDMDevHlpMMIOExPreRegister(pDevIns, pPciDev, 2, cbSecond,
                                         IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, pszRegionName,
                                         NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
                                         NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
@@ -350,7 +351,7 @@ static const PDMDEVREG g_DevicePlayground =
     /* .cbInstanceShared = */       sizeof(VBOXPLAYGROUNDDEVICE),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
-    /* .cMaxPciDevices = */         1,
+    /* .cMaxPciDevices = */         8,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "VBox Playground Device.",
 #if defined(IN_RING3)

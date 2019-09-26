@@ -120,8 +120,6 @@ typedef VMMDEVFACILITYSTATUSENTRY *PVMMDEVFACILITYSTATUSENTRY;
  */
 typedef struct VMMDevState
 {
-    /** The PCI device structure. */
-    PDMPCIDEV           PciDev;
     /** The critical section for this device.
      * @remarks We use this rather than the default one, it's simpler with all
      *          the driver interfaces where we have to waste time digging out the

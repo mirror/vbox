@@ -254,9 +254,6 @@ typedef struct OHCIPAGECACHE
  */
 typedef struct OHCI
 {
-    /** The PCI device. */
-    PDMPCIDEV           PciDev;
-
     /** Pointer to the device instance - R3 ptr. */
     PPDMDEVINSR3        pDevInsR3;
     /** The End-Of-Frame timer - R3 Ptr. */
@@ -4255,7 +4252,7 @@ static void ohciR3BusStart(POHCI pThis)
     VUSBIDevPowerOn(pThis->RootHub.pIDev);
     pThis->dqic = 0x7;
 
-    Log(("ohci: %s: Bus started\n", pThis->PciDev.pszNameR3));
+    Log(("ohci: Bus started\n"));
 
     pThis->SofTime = PDMDevHlpTMTimeVirtGet(pThis->CTX_SUFF(pDevIns));
     int rc = pThis->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThis->RootHub.pIRhConn, OHCI_DEFAULT_TIMER_FREQ);
@@ -4993,8 +4990,7 @@ static int HcRhDescriptorA_w(POHCI pThis, uint32_t iReg, uint32_t val)
 
     if ((val & (OHCI_RHA_NDP | OHCI_RHA_DT)) != OHCI_NDP_CFG(pThis))
     {
-        Log(("ohci: %s: invalid write to NDP or DT in roothub descriptor A!!! val=0x%.8x\n",
-             pThis->PciDev.pszNameR3, val));
+        Log(("ohci: invalid write to NDP or DT in roothub descriptor A!!! val=0x%.8x\n", val));
         val &= ~(OHCI_RHA_NDP | OHCI_RHA_DT);
         val |= OHCI_NDP_CFG(pThis);
     }
@@ -5029,8 +5025,7 @@ static int HcRhDescriptorB_w(POHCI pThis, uint32_t iReg, uint32_t val)
           chg >> 16    ? "!!!" : "", val >> 16));
 
     if ( pThis->RootHub.desc_b != val )
-        Log(("ohci: %s: unsupported write to root descriptor B!!! 0x%.8x -> 0x%.8x\n",
-             pThis->PciDev.pszNameR3, pThis->RootHub.desc_b, val));
+        Log(("ohci: unsupported write to root descriptor B!!! 0x%.8x -> 0x%.8x\n", pThis->RootHub.desc_b, val));
     pThis->RootHub.desc_b = val;
     return VINF_SUCCESS;
 }
@@ -5074,7 +5069,7 @@ static int HcRhStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
     if ( val & OHCI_RHS_LPSC )
     {
         unsigned i;
-        Log2(("ohci: %s: global power up\n", pThis->PciDev.pszNameR3));
+        Log2(("ohci: global power up\n"));
         for (i = 0; i < OHCI_NDP_CFG(pThis); i++)
             ohciR3RhPortPower(&pThis->RootHub, i, true /* power up */);
     }
@@ -5083,7 +5078,7 @@ static int HcRhStatus_w(POHCI pThis, uint32_t iReg, uint32_t val)
     if ( val & OHCI_RHS_LPS )
     {
         unsigned i;
-        Log2(("ohci: %s: global power down\n", pThis->PciDev.pszNameR3));
+        Log2(("ohci: global power down\n"));
         for (i = 0; i < OHCI_NDP_CFG(pThis); i++)
             ohciR3RhPortPower(&pThis->RootHub, i, false /* power down */);
     }
@@ -5467,8 +5462,10 @@ PDMBOTHCBDECL(int) ohciMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 static DECLCALLBACK(int) ohciR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                    RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, enmType);
-    POHCI pThis = (POHCI)pPciDev;
+    POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
+    RT_NOREF(pPciDev, iRegion, enmType);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
+
     int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
                                    IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_DWORD_ZEROED
                                    | IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE,
@@ -5960,15 +5957,18 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
-    PCIDevSetVendorId     (&pThis->PciDev, 0x106b);
-    PCIDevSetDeviceId     (&pThis->PciDev, 0x003f);
-    PCIDevSetClassProg    (&pThis->PciDev, 0x10); /* OHCI */
-    PCIDevSetClassSub     (&pThis->PciDev, 0x03);
-    PCIDevSetClassBase    (&pThis->PciDev, 0x0c);
-    PCIDevSetInterruptPin (&pThis->PciDev, 0x01);
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    PDMPciDevSetVendorId(pPciDev,       0x106b);
+    PDMPciDevSetDeviceId(pPciDev,       0x003f);
+    PDMPciDevSetClassProg(pPciDev,      0x10); /* OHCI */
+    PDMPciDevSetClassSub(pPciDev,       0x03);
+    PDMPciDevSetClassBase(pPciDev,      0x0c);
+    PDMPciDevSetInterruptPin(pPciDev,   0x01);
 #ifdef VBOX_WITH_MSI_DEVICES
-    PCIDevSetStatus       (&pThis->PciDev, VBOX_PCI_STATUS_CAP_LIST);
-    PCIDevSetCapabilityList(&pThis->PciDev, 0x80);
+    PDMPciDevSetStatus(pPciDev,         VBOX_PCI_STATUS_CAP_LIST);
+    PDMPciDevSetCapabilityList(pPciDev, 0x80);
 #endif
 
     pThis->RootHub.pOhci                         = pThis;
@@ -6012,7 +6012,7 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register PCI device and I/O region.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -6025,7 +6025,7 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     if (RT_FAILURE(rc))
     {
-        PCIDevSetCapabilityList(&pThis->PciDev, 0x0);
+        PDMPciDevSetCapabilityList(pPciDev, 0x0);
         /* That's OK, we can work without MSI */
     }
 #endif

@@ -64,7 +64,7 @@ DECLINLINE(uint16_t)  msixTableSize(PPDMPCIDEV pDev)
 
 DECLINLINE(uint8_t *) msixGetPageOffset(PPDMPCIDEV pDev, uint32_t off)
 {
-    return (uint8_t *)pDev->Int.s.CTX_SUFF(pMsixPage) + off;
+    return &pDev->abMsixState[off];
 }
 
 DECLINLINE(MsixTableRecord *) msixGetVectorRecord(PPDMPCIDEV pDev, uint32_t iVector)
@@ -206,6 +206,9 @@ int MsixR3Init(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     if (cVectors % 8)
         cbPba++;
     uint16_t cbMsixRegion = RT_ALIGN_T(cVectors * sizeof(MsixTableRecord) + cbPba, _4K, uint16_t);
+    AssertLogRelMsgReturn(cbMsixRegion <= pDev->cbMsixState,
+                          ("%#x vs %#x (%s)\n", cbMsixRegion, pDev->cbMsixState, pDev->pszNameR3),
+                          VERR_MISMATCH);
 
     /* If device is passthrough, BAR is registered using common mechanism. */
     if (!pciDevIsPassthrough(pDev))
@@ -222,16 +225,6 @@ int MsixR3Init(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     pDev->Int.s.u8MsixCapSize   = VBOX_MSIX_CAP_SIZE;
     pDev->Int.s.cbMsixRegion    = cbMsixRegion;
     pDev->Int.s.offMsixPba      = offPBA;
-    PVM pVM = PDMDevHlpGetVM(pDev->Int.s.CTX_SUFF(pDevIns));
-
-    pDev->Int.s.pMsixPageR3     = NULL;
-
-    rc = MMHyperAlloc(pVM, cbMsixRegion, 1, MM_TAG_PDM_DEVICE_USER, (void **)&pDev->Int.s.pMsixPageR3);
-    if (RT_FAILURE(rc) || (pDev->Int.s.pMsixPageR3 == NULL))
-        return VERR_NO_VM_MEMORY;
-    RT_BZERO(pDev->Int.s.pMsixPageR3, cbMsixRegion);
-    pDev->Int.s.pMsixPageR0     = MMHyperR3ToR0(pVM, pDev->Int.s.pMsixPageR3);
-    pDev->Int.s.pMsixPageRC     = MMHyperR3ToRC(pVM, pDev->Int.s.pMsixPageR3);
 
     /* R3 PCI helper */
     pDev->Int.s.pPciBusPtrR3    = pPciHlp;

@@ -20,6 +20,7 @@
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_DEVICE
+#define PDMPCIDEV_INCLUDE_PRIVATE  /* Hack to get pdmpcidevint.h included at the right point. */
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #include <VBox/vmm/apic.h>
@@ -368,24 +369,48 @@ int pdmR3DevInit(PVM pVM)
         }
         else
         {
+            /* The code in this else branch works by the same rules as the PDMR0Device.cpp
+               code, except there is only the ring-3 components of the device instance.
+               Changes here may need to be reflected in PDMR0DEvice.cpp and vice versa! */
             uint32_t cb = RT_UOFFSETOF_DYN(PDMDEVINS, achInstanceData[pReg->cbInstanceCC]);
-            uint32_t const offShared = cb;
             cb  = RT_ALIGN_32(cb, 64);
+            uint32_t const offShared   = cb;
             cb += RT_ALIGN_32(pReg->cbInstanceShared, 64);
-            cb += RT_ALIGN_32(sizeof(*pCritSect), 64);
+            uint32_t const cbCritSect  = RT_ALIGN_32(sizeof(*pCritSect), 64);
+            cb += cbCritSect;
+            uint32_t const cbMsixState = RT_ALIGN_32(pReg->cMaxMsixVectors * 16 + (pReg->cMaxMsixVectors + 7) / 8, _4K);
+            uint32_t const cbPciDev    = RT_ALIGN_32(RT_UOFFSETOF_DYN(PDMPCIDEV, abMsixState[cbMsixState]), 64);
+            uint32_t const cPciDevs    = RT_MIN(pReg->cMaxPciDevices, 1024);
+            uint32_t const cbPciDevs   = cbPciDev * cPciDevs;
+            cb += cbPciDevs;
+
             rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DEVICE, cb, (void **)&pDevIns);
             AssertLogRelMsgRCReturn(rc, ("Failed to allocate %zu bytes of instance data for device '%s'. rc=%Rrc\n",
                                          cb, pReg->szName, rc), rc);
+
             /* Initialize it: */
-            pDevIns->u32Version                     = PDM_DEVINSR3_VERSION;
-            pDevIns->iInstance                      = paDevs[i].iInstance;
-            pDevIns->cbRing3                        = cb;
-            //pDevIns->fR0Enabled                     = false;
-            //pDevIns->fRCEnabled                     = false;
-            pDevIns->pvInstanceDataR3               = (uint8_t *)pDevIns + offShared;
-            pDevIns->pvInstanceDataForR3            = &pDevIns->achInstanceData[0];
-            pCritSect = (PPDMCRITSECT)((uint8_t *)pDevIns + cb - RT_ALIGN_32(sizeof(*pCritSect), 64));
-            pDevIns->pCritSectRoR3                  = pCritSect;
+            pDevIns->u32Version             = PDM_DEVINSR3_VERSION;
+            pDevIns->iInstance              = paDevs[i].iInstance;
+            pDevIns->cbRing3                = cb;
+            //pDevIns->fR0Enabled           = false;
+            //pDevIns->fRCEnabled           = false;
+            pDevIns->pvInstanceDataR3       = (uint8_t *)pDevIns + offShared;
+            pDevIns->pvInstanceDataForR3    = &pDevIns->achInstanceData[0];
+            pCritSect = (PPDMCRITSECT)((uint8_t *)pDevIns + offShared + RT_ALIGN_32(pReg->cbInstanceShared, 64));
+            pDevIns->pCritSectRoR3          = pCritSect;
+            pDevIns->cbPciDev               = cbPciDev;
+            pDevIns->cPciDevs               = cPciDevs;
+            for (uint32_t iPciDev = 0; iPciDev < cPciDevs; iPciDev++)
+            {
+                PPDMPCIDEV pPciDev = (PPDMPCIDEV)((uint8_t *)pDevIns->pCritSectRoR3 + cbCritSect + cbPciDev * iPciDev);
+                if (iPciDev < RT_ELEMENTS(pDevIns->apPciDevs))
+                    pDevIns->apPciDevs[iPciDev] = pPciDev;
+                pPciDev->cbConfig           = _4K;
+                pPciDev->cbMsixState        = cbMsixState;
+                pPciDev->idxSubDev          = (uint16_t)iPciDev;
+                pPciDev->Int.s.idxSubDev    = (uint16_t)iPciDev;
+                pPciDev->u32Magic           = PDMPCIDEV_MAGIC;
+            }
         }
 
         pDevIns->pHlpR3                         = fTrusted ? &g_pdmR3DevHlpTrusted : &g_pdmR3DevHlpUnTrusted;

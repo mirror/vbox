@@ -2026,16 +2026,6 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
             break;
         }
 
-        /** @todo Remove the once all devices has been converted to new style! @bugref{9218} */
-        case VMMR0_DO_PDM_DEVICE_COMPAT_REG_PCIDEV:
-        {
-            if (!pReqHdr || u64Arg || idCpu != 0)
-                return VERR_INVALID_PARAMETER;
-            rc = PDMR0DeviceCompatRegPciDevReqHandler(pGVM, (PPDMDEVICECOMPATREGPCIDEVREQ)pReqHdr);
-            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
-            break;
-        }
-
         /*
          * Requests to the internal networking service.
          */

@@ -143,8 +143,6 @@ typedef struct PDMDEVINSINTR3
 
     /** R3 pointer to the VM this instance was created for. */
     PVMR3                           pVMR3;
-    /** Associated PCI device list head (first is default). */
-    R3PTRTYPE(PPDMPCIDEV)           pHeadPciDevR3;
 
     /** Flags, see PDMDEVINSINT_FLAGS_XXX. */
     uint32_t                        fIntFlags;
@@ -162,8 +160,6 @@ typedef struct PDMDEVINSINTR0
 {
     /** Pointer to the VM this instance was created for. */
     R0PTRTYPE(PGVM)                 pGVM;
-    /** Associated PCI device list head (first is default). */
-    R0PTRTYPE(PPDMPCIDEV)           pHeadPciDevR0;
     /** Pointer to device structure. */
     R0PTRTYPE(struct PDMDEVREGR0 const *) pRegR0;
     /** The ring-0 module reference. */
@@ -214,18 +210,12 @@ typedef struct PDMDEVINSINT
 
     /** R3 pointer to the VM this instance was created for. */
     PVMR3                           pVMR3;
-    /** Associated PCI device list head (first is default). (R3 ptr) */
-    R3PTRTYPE(PPDMPCIDEV)           pHeadPciDevR3;
 
     /** R0 pointer to the VM this instance was created for. */
     R0PTRTYPE(PVMCC)                pVMR0;
-    /** Associated PCI device list head (first is default). (R0 ptr) */
-    R0PTRTYPE(PPDMPCIDEV)           pHeadPciDevR0;
 
     /** RC pointer to the VM this instance was created for. */
     PVMRC                           pVMRC;
-    /** Associated PCI device list head (first is default). (RC ptr) */
-    RCPTRTYPE(PPDMPCIDEV)           pHeadPciDevRC;
 
     /** Flags, see PDMDEVINSINT_FLAGS_XXX. */
     uint32_t                        fIntFlags;

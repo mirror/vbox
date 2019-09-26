@@ -574,12 +574,10 @@ typedef enum CHIPSET
 /**
  * The state of the ATA PCI device.
  *
- * @extends     PDMPCIDEV
  * @implements  PDMILEDPORTS
  */
 typedef struct PCIATAState
 {
-    PDMPCIDEV                       dev;
     /** The controllers. */
     ATACONTROLLER                   aCts[2];
     /** Pointer to device instance. */
@@ -6173,12 +6171,14 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                               RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, cb, enmType, pPciDev);
     PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
-    int         rc = VINF_SUCCESS;
+    int          rc = VINF_SUCCESS;
+    RT_NOREF(iRegion, cb, enmType, pPciDev);
+
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(iRegion == 4);
     AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     /* Register the port range. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
@@ -7569,7 +7569,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->ILeds.pfnQueryStatusLed = ataR3Status_QueryStatusLed;
 
     /* PCI configuration space. */
-    PCIDevSetVendorId(&pThis->dev, 0x8086); /* Intel */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+    PDMPciDevSetVendorId(pPciDev, 0x8086); /* Intel */
 
     /*
      * When adding more IDE chipsets, don't forget to update pci_bios_init_device()
@@ -7578,11 +7580,11 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     switch (pThis->u8Type)
     {
         case CHIPSET_ICH6:
-            PCIDevSetDeviceId(&pThis->dev, 0x269e); /* ICH6 IDE */
+            PDMPciDevSetDeviceId(pPciDev, 0x269e); /* ICH6 IDE */
             /** @todo do we need it? Do we need anything else? */
-            pThis->dev.abConfig[0x48] = 0x00; /* UDMACTL */
-            pThis->dev.abConfig[0x4A] = 0x00; /* UDMATIM */
-            pThis->dev.abConfig[0x4B] = 0x00;
+            PDMPciDevSetByte(pPciDev, 0x48, 0x00); /* UDMACTL */
+            PDMPciDevSetByte(pPciDev, 0x4A, 0x00); /* UDMATIM */
+            PDMPciDevSetByte(pPciDev, 0x4B, 0x00);
             {
                 /*
                  * See www.intel.com/Assets/PDF/manual/298600.pdf p. 30
@@ -7591,20 +7593,20 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                  *   PCR0, PCR1: 80-pin primary cable reporting for both disks
                  *   SCR0, SCR1: 80-pin secondary cable reporting for both disks
                  */
-                uint16_t u16Config = (1<<10) | (1<<7)  | (1<<6) | (1<<5) | (1<<4) ;
-                pThis->dev.abConfig[0x54] = u16Config & 0xff;
-                pThis->dev.abConfig[0x55] = u16Config >> 8;
+                uint16_t u16Config = (1<<10) | (1<<7)  | (1<<6) | (1<<5) | (1<<4);
+                PDMPciDevSetByte(pPciDev, 0x54, u16Config & 0xff);
+                PDMPciDevSetByte(pPciDev, 0x55, u16Config >> 8);
             }
             break;
         case CHIPSET_PIIX4:
-            PCIDevSetDeviceId(&pThis->dev, 0x7111); /* PIIX4 IDE */
-            PCIDevSetRevisionId(&pThis->dev, 0x01); /* PIIX4E */
-            pThis->dev.abConfig[0x48] = 0x00; /* UDMACTL */
-            pThis->dev.abConfig[0x4A] = 0x00; /* UDMATIM */
-            pThis->dev.abConfig[0x4B] = 0x00;
+            PDMPciDevSetDeviceId(pPciDev, 0x7111); /* PIIX4 IDE */
+            PDMPciDevSetRevisionId(pPciDev, 0x01); /* PIIX4E */
+            PDMPciDevSetByte(pPciDev, 0x48, 0x00); /* UDMACTL */
+            PDMPciDevSetByte(pPciDev, 0x4A, 0x00); /* UDMATIM */
+            PDMPciDevSetByte(pPciDev, 0x4B, 0x00);
             break;
         case CHIPSET_PIIX3:
-            PCIDevSetDeviceId(&pThis->dev, 0x7010); /* PIIX3 IDE */
+            PDMPciDevSetDeviceId(pPciDev, 0x7010); /* PIIX3 IDE */
             break;
         default:
             AssertMsgFailed(("Unsupported IDE chipset type: %d\n", pThis->u8Type));
@@ -7619,14 +7621,14 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * function assumes that the IDE controller is located at PCI 00:01.1 which
      * is not true if the ICH9 chipset is used.
      */
-    PCIDevSetWord(&pThis->dev, 0x40, 0x8000); /* enable IDE0 */
-    PCIDevSetWord(&pThis->dev, 0x42, 0x8000); /* enable IDE1 */
+    PDMPciDevSetWord(pPciDev, 0x40, 0x8000); /* enable IDE0 */
+    PDMPciDevSetWord(pPciDev, 0x42, 0x8000); /* enable IDE1 */
 
-    PCIDevSetCommand(   &pThis->dev, PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS | PCI_COMMAND_BUSMASTER);
-    PCIDevSetClassProg( &pThis->dev, 0x8a); /* programming interface = PCI_IDE bus master is supported */
-    PCIDevSetClassSub(  &pThis->dev, 0x01); /* class_sub = PCI_IDE */
-    PCIDevSetClassBase( &pThis->dev, 0x01); /* class_base = PCI_mass_storage */
-    PCIDevSetHeaderType(&pThis->dev, 0x00);
+    PDMPciDevSetCommand(   pPciDev, PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS | PCI_COMMAND_BUSMASTER);
+    PDMPciDevSetClassProg( pPciDev, 0x8a); /* programming interface = PCI_IDE bus master is supported */
+    PDMPciDevSetClassSub(  pPciDev, 0x01); /* class_sub = PCI_IDE */
+    PDMPciDevSetClassBase( pPciDev, 0x01); /* class_base = PCI_mass_storage */
+    PDMPciDevSetHeaderType(pPciDev, 0x00);
 
     pThis->pDevIns          = pDevIns;
     pThis->fRCEnabled       = fRCEnabled;
@@ -7673,8 +7675,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Register the PCI device.
      */
-    rc = PDMDevHlpPCIRegisterEx(pDevIns, &pThis->dev, PDMPCIDEVREG_CFG_PRIMARY, PDMPCIDEVREG_F_NOT_MANDATORY_NO,
-                                1 /*uPciDevNo*/, 1 /*uPciDevFn*/, "piix3ide");
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, PDMPCIDEVREG_F_NOT_MANDATORY_NO, 1 /*uPciDevNo*/, 1 /*uPciDevFn*/, "piix3ide");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register PCI device"));
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 4, 0x10, PCI_ADDRESS_SPACE_IO, ataR3BMDMAIORangeMap);

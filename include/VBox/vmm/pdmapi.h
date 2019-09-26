@@ -352,26 +352,6 @@ typedef PDMDEVICECOMPATSETCRITSECTREQ *PPDMDEVICECOMPATSETCRITSECTREQ;
 
 VMMR0_INT_DECL(int) PDMR0DeviceCompatSetCritSectReqHandler(PGVM pGVM, PPDMDEVICECOMPATSETCRITSECTREQ pReq);
 
-/**
- * Request buffer for PDMR0DeviceCompatRegPciDevReqHandler / VMMR0_DO_PDM_DEVICE_COMPAT_REG_PCIDEV
- * @see PDMR0DeviceCompatRegPciDevReqHandler.
- */
-typedef struct PDMDEVICECOMPATREGPCIDEVREQ
-{
-    /** The header. */
-    SUPVMMR0REQHDR          Hdr;
-    /** The ring-3 device instance. */
-    PPDMDEVINSR3            pDevInsR3;
-    /** The ring-0 device handle. */
-    uint32_t                idxR0Device;
-    /** The PCI device address (ring-3). */
-    R3PTRTYPE(PPDMPCIDEV)   pPciDevR3;
-} PDMDEVICECOMPATREGPCIDEVREQ;
-/** Pointer to a PDMR0DeviceGenCallReqHandler / VMMR0_DO_PDM_DEVICE_GEN_CALL request buffer. */
-typedef PDMDEVICECOMPATREGPCIDEVREQ *PPDMDEVICECOMPATREGPCIDEVREQ;
-
-VMMR0_INT_DECL(int) PDMR0DeviceCompatRegPciDevReqHandler(PGVM pGVM, PPDMDEVICECOMPATREGPCIDEVREQ pReq);
-
 /** @} */
 
 RT_C_DECLS_END

@@ -3202,9 +3202,11 @@ PDMBOTHCBDECL(int) vmmdevFastRequestIrqAck(PPDMDEVINS pDevIns, void *pvUser, RTI
 static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                               RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF1(cb);
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
     LogFlow(("vmmdevR3IORAMRegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
-    PVMMDEV pThis = RT_FROM_MEMBER(pPciDev, VMMDEV, PciDev);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
+    RT_NOREF(cb, pPciDev);
+
     int rc;
 
     if (iRegion == 1)
@@ -3270,10 +3272,11 @@ static DECLCALLBACK(int) vmmdevIORAMRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPc
 static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
     LogFlow(("vmmdevIOPortRegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
-    RT_NOREF3(iRegion, cb, enmType);
-    PVMMDEV pThis = RT_FROM_MEMBER(pPciDev, VMMDEV, PciDev);
+    RT_NOREF(pPciDev, iRegion, cb, enmType);
 
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(iRegion == 0);
     AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
@@ -4362,18 +4365,21 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 #endif
 
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
     /* PCI vendor, just a free bogus value */
-    PCIDevSetVendorId(&pThis->PciDev, 0x80ee);
+    PDMPciDevSetVendorId(pPciDev,     0x80ee);
     /* device ID */
-    PCIDevSetDeviceId(&pThis->PciDev, 0xcafe);
+    PDMPciDevSetDeviceId(pPciDev,     0xcafe);
     /* class sub code (other type of system peripheral) */
-    PCIDevSetClassSub(&pThis->PciDev, 0x80);
+    PDMPciDevSetClassSub(pPciDev,       0x80);
     /* class base code (base system peripheral) */
-    PCIDevSetClassBase(&pThis->PciDev, 0x08);
+    PDMPciDevSetClassBase(pPciDev,      0x08);
     /* header type */
-    PCIDevSetHeaderType(&pThis->PciDev, 0x00);
+    PDMPciDevSetHeaderType(pPciDev,     0x00);
     /* interrupt on pin 0 */
-    PCIDevSetInterruptPin(&pThis->PciDev, 0x01);
+    PDMPciDevSetInterruptPin(pPciDev,   0x01);
 
     RTTIMESPEC TimeStampNow;
     RTTimeNow(&TimeStampNow);
@@ -4558,11 +4564,11 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register the PCI device.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
-    if (pThis->PciDev.uDevFn != 32 || iInstance != 0)
-        Log(("!!WARNING!!: pThis->PciDev.uDevFn=%d (ignore if testcase or no started by Main)\n", pThis->PciDev.uDevFn));
+    if (pPciDev->uDevFn != 32 || iInstance != 0)
+        Log(("!!WARNING!!: pThis->PciDev.uDevFn=%d (ignore if testcase or no started by Main)\n", pPciDev->uDevFn));
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x20, PCI_ADDRESS_SPACE_IO, vmmdevIOPortRegionMap);
     if (RT_FAILURE(rc))
         return rc;
@@ -4582,7 +4588,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * We map the first page into raw-mode and kernel contexts so we can handle
      * interrupt acknowledge requests more timely.
      */
-    rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->PciDev, 1 /*iRegion*/, VMMDEV_RAM_SIZE, 0 /*fFlags*/,
+    rc = PDMDevHlpMMIO2Register(pDevIns, pPciDev, 1 /*iRegion*/, VMMDEV_RAM_SIZE, 0 /*fFlags*/,
                                 (void **)&pThis->pVMMDevRAMR3, "VMMDev");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
@@ -4590,13 +4596,13 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     vmmdevInitRam(pThis);
     if (pThis->fRZEnabled)
     {
-        rc = PDMDevHlpMMIO2MapKernel(pDevIns, &pThis->PciDev, 1 /*iRegion*/, 0 /*off*/, PAGE_SIZE, "VMMDev", &pThis->pVMMDevRAMR0);
+        rc = PDMDevHlpMMIO2MapKernel(pDevIns, pPciDev, 1 /*iRegion*/, 0 /*off*/, PAGE_SIZE, "VMMDev", &pThis->pVMMDevRAMR0);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to map first page of the VMMDev ram into kernel space: %Rrc"), rc);
 
 #ifdef VBOX_WITH_RAW_MODE_KEEP
-        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, &pThis->PciDev, 1 /*iRegion*/, 0 /*off*/, PAGE_SIZE, "VMMDev", &pThis->pVMMDevRAMRC);
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, pPciDev, 1 /*iRegion*/, 0 /*off*/, PAGE_SIZE, "VMMDev", &pThis->pVMMDevRAMRC);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to map first page of the VMMDev ram into raw-mode context: %Rrc"), rc);
@@ -4608,7 +4614,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     if (pThis->fHeapEnabled)
     {
-        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->PciDev, 2 /*iRegion*/, VMMDEV_HEAP_SIZE, 0 /*fFlags*/,
+        rc = PDMDevHlpMMIO2Register(pDevIns, pPciDev, 2 /*iRegion*/, VMMDEV_HEAP_SIZE, 0 /*fFlags*/,
                                     (void **)&pThis->pVMMDevHeapR3, "VMMDev Heap");
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,

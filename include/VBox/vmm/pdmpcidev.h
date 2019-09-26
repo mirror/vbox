@@ -162,25 +162,21 @@ typedef FNPCIIOREGIONSWAP *PFNPCIIOREGIONSWAP;
  */
 typedef struct PDMPCIDEV
 {
-    /** PCI config space. */
-    uint8_t                 abConfig[256];
-
-    /** Internal data. */
-    union
-    {
-#ifdef PDMPCIDEVINT_DECLARED
-        PDMPCIDEVINT        s;
-#endif
-        uint8_t             padding[HC_ARCH_BITS == 32 ? 288 : 384];
-    } Int;
-
     /** @name Read only data.
      * @{
      */
+    /** Magic number (PDMPCIDEV_MAGIC). */
+    uint32_t                u32Magic;
     /** PCI device number [11:3] and function [2:0] on the pci bus.
      * @sa VBOX_PCI_DEVFN_MAKE, VBOX_PCI_DEVFN_FUN_MASK, VBOX_PCI_DEVFN_DEV_SHIFT */
     uint32_t                uDevFn;
-    uint32_t                Alignment0; /**< Alignment. */
+    /** Size of the valid config space (we always allocate 4KB). */
+    uint16_t                cbConfig;
+    /** Size of the MSI-X state data optionally following the config space. */
+    uint16_t                cbMsixState;
+    /** Index into the PDMDEVINS::apPciDev array. */
+    uint16_t                idxSubDev;
+    uint16_t                u16Padding;
     /** Device name. */
     R3PTRTYPE(const char *) pszNameR3;
     /** @} */
@@ -215,10 +211,77 @@ typedef struct PDMPCIDEV
                                                          uint64_t cbRegion, PCIADDRESSSPACE enmType,
                                                          PFNPCIIOREGIONOLDSETTER pfnOldSetter,
                                                          PFNPCIIOREGIONSWAP pfnSwapRegion));
+
+    /** Internal data. */
+    union
+    {
+#ifdef PDMPCIDEVINT_DECLARED
+        PDMPCIDEVINT        s;
+#endif
+        uint8_t             padding[HC_ARCH_BITS == 32 ? 0x60 + 8 : 0x140];
+    } Int;
+
+    /** PCI config space.
+     * This is either 256 or 4096 in size.  In the latter case it may be
+     * followed by a MSI-X state area. */
+    uint8_t                 abConfig[4096];
+    /** The MSI-X state data.  Optional. */
+    uint8_t                 abMsixState[RT_FLEXIBLE_ARRAY];
 } PDMPCIDEV;
 #ifdef PDMPCIDEVINT_DECLARED
 AssertCompile(RT_SIZEOFMEMB(PDMPCIDEV, Int.s) <= RT_SIZEOFMEMB(PDMPCIDEV, Int.padding));
 #endif
+/** Magic number of PDMPCIDEV::u32Magic (Margaret Eleanor Atwood). */
+#define PDMPCIDEV_MAGIC     UINT32_C(0x19391118)
+
+/** Checks that the PCI device structure is valid and belongs to the device
+ *  instance, but does not return. */
+#ifdef VBOX_STRICT
+# define PDMPCIDEV_ASSERT_VALID(a_pDevIns, a_pPciDev) \
+    do { \
+        uintptr_t const offPciDevInTable = (uintptr_t)(a_pPciDev) - (uintptr_t)pDevIns->apPciDevs[0]; \
+        uint32_t  const cbPciDevTmp      = pDevIns->cbPciDev; \
+        ASMCompilerBarrier(); \
+        AssertMsg(   offPciDevInTable < pDevIns->cPciDevs * cbPciDevTmp \
+                  && cbPciDevTmp >= RT_UOFFSETOF(PDMPCIDEV, abConfig) + 256 \
+                  && offPciDevInTable % cbPciDevTmp == 0, \
+                  ("pPciDev=%p apPciDevs[0]=%p offPciDevInTable=%p cPciDevs=%#x cbPciDev=%#x\n", \
+                   (a_pPciDev), pDevIns->apPciDevs[0], offPciDevInTable, pDevIns->cPciDevs, cbPciDevTmp)); \
+        AssertPtr((a_pPciDev)); \
+        AssertMsg((a_pPciDev)->u32Magic == PDMPCIDEV_MAGIC, ("%#x\n", (a_pPciDev)->u32Magic)); \
+    } while (0)
+#else
+# define PDMPCIDEV_ASSERT_VALID(a_pDevIns, a_pPciDev) do { } while (0)
+#endif
+
+/** Checks that the PCI device structure is valid, belongs to the device
+ *  instance and that it is registered, but does not return. */
+#ifdef VBOX_STRICT
+# define PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(a_pDevIns, a_pPciDev) \
+    do { \
+        PDMPCIDEV_ASSERT_VALID(a_pDevIns, a_pPciDev); \
+        Assert((a_pPciDev)->Int.s.fRegistered); \
+    } while (0)
+#else
+# define PDMPCIDEV_ASSERT_VALID_AND_REGISTERED(a_pDevIns, a_pPciDev) do { } while (0)
+#endif
+
+/** Checks that the PCI device structure is valid and belongs to the device
+ *  instance, returns appropriate status code if not valid. */
+#define PDMPCIDEV_ASSERT_VALID_RET(a_pDevIns, a_pPciDev) \
+    do { \
+        uintptr_t const offPciDevInTable = (uintptr_t)(a_pPciDev) - (uintptr_t)pDevIns->apPciDevs[0]; \
+        uint32_t  const cbPciDevTmp      = pDevIns->cbPciDev; \
+        ASMCompilerBarrier(); \
+        AssertMsgReturn(   offPciDevInTable < pDevIns->cPciDevs * cbPciDevTmp \
+                        && cbPciDevTmp >= RT_UOFFSETOF(PDMPCIDEV, abConfig) + 256  \
+                        && offPciDevInTable % cbPciDevTmp == 0, \
+                        ("pPciDev=%p apPciDevs[0]=%p offPciDevInTable=%p cPciDevs=%#x cbPciDev=%#x\n", \
+                        (a_pPciDev), pDevIns->apPciDevs[0], offPciDevInTable, pDevIns->cPciDevs, cbPciDevTmp), \
+                        VERR_PDM_NOT_PCI_DEVICE); \
+        AssertMsgReturn((a_pPciDev)->u32Magic == PDMPCIDEV_MAGIC, ("%#x\n", (a_pPciDev)->u32Magic), VERR_PDM_NOT_PCI_DEVICE); \
+        AssertReturn((a_pPciDev)->Int.s.fRegistered, VERR_PDM_NOT_PCI_DEVICE); \
+    } while (0)
 
 
 
@@ -234,7 +297,7 @@ DECLINLINE(void)     PDMPciDevSetByte(PPDMPCIDEV pPciDev, uint32_t offReg, uint8
     pPciDev->abConfig[offReg] = u8Value;
 }
 
-DECLINLINE(uint8_t)  PDMPciDevGetByte(PPDMPCIDEV pPciDev, uint32_t offReg)
+DECLINLINE(uint8_t)  PDMPciDevGetByte(PCPDMPCIDEV pPciDev, uint32_t offReg)
 {
     Assert(offReg < sizeof(pPciDev->abConfig));
     return pPciDev->abConfig[offReg];
@@ -246,7 +309,7 @@ DECLINLINE(void)     PDMPciDevSetWord(PPDMPCIDEV pPciDev, uint32_t offReg, uint1
     *(uint16_t*)&pPciDev->abConfig[offReg] = RT_H2LE_U16(u16Value);
 }
 
-DECLINLINE(uint16_t) PDMPciDevGetWord(PPDMPCIDEV pPciDev, uint32_t offReg)
+DECLINLINE(uint16_t) PDMPciDevGetWord(PCPDMPCIDEV pPciDev, uint32_t offReg)
 {
     uint16_t u16Value;
     Assert(offReg <= sizeof(pPciDev->abConfig) - sizeof(uint16_t));
@@ -260,7 +323,7 @@ DECLINLINE(void)     PDMPciDevSetDWord(PPDMPCIDEV pPciDev, uint32_t offReg, uint
     *(uint32_t*)&pPciDev->abConfig[offReg] = RT_H2LE_U32(u32Value);
 }
 
-DECLINLINE(uint32_t) PDMPciDevGetDWord(PPDMPCIDEV pPciDev, uint32_t offReg)
+DECLINLINE(uint32_t) PDMPciDevGetDWord(PCPDMPCIDEV pPciDev, uint32_t offReg)
 {
     uint32_t u32Value;
     Assert(offReg <= sizeof(pPciDev->abConfig) - sizeof(uint32_t));
@@ -274,7 +337,7 @@ DECLINLINE(void)     PDMPciDevSetQWord(PPDMPCIDEV pPciDev, uint32_t offReg, uint
     *(uint64_t*)&pPciDev->abConfig[offReg] = RT_H2LE_U64(u64Value);
 }
 
-DECLINLINE(uint64_t) PDMPciDevGetQWord(PPDMPCIDEV pPciDev, uint32_t offReg)
+DECLINLINE(uint64_t) PDMPciDevGetQWord(PCPDMPCIDEV pPciDev, uint32_t offReg)
 {
     uint64_t u64Value;
     Assert(offReg <= sizeof(pPciDev->abConfig) - sizeof(uint64_t));
@@ -297,7 +360,7 @@ DECLINLINE(void) PDMPciDevSetVendorId(PPDMPCIDEV pPciDev, uint16_t u16VendorId)
  * @returns the vendor id.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint16_t) PDMPciDevGetVendorId(PPDMPCIDEV pPciDev)
+DECLINLINE(uint16_t) PDMPciDevGetVendorId(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetWord(pPciDev, VBOX_PCI_VENDOR_ID);
 }
@@ -318,7 +381,7 @@ DECLINLINE(void) PDMPciDevSetDeviceId(PPDMPCIDEV pPciDev, uint16_t u16DeviceId)
  * @returns the device id.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint16_t) PDMPciDevGetDeviceId(PPDMPCIDEV pPciDev)
+DECLINLINE(uint16_t) PDMPciDevGetDeviceId(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetWord(pPciDev, VBOX_PCI_DEVICE_ID);
 }
@@ -340,7 +403,7 @@ DECLINLINE(void) PDMPciDevSetCommand(PPDMPCIDEV pPciDev, uint16_t u16Command)
  * @returns The command register value.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint16_t) PDMPciDevGetCommand(PPDMPCIDEV pPciDev)
+DECLINLINE(uint16_t) PDMPciDevGetCommand(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetWord(pPciDev, VBOX_PCI_COMMAND);
 }
@@ -350,7 +413,7 @@ DECLINLINE(uint16_t) PDMPciDevGetCommand(PPDMPCIDEV pPciDev)
  * @returns true if the device is a bus master, false if not.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(bool) PDMPciDevIsBusmaster(PPDMPCIDEV pPciDev)
+DECLINLINE(bool) PDMPciDevIsBusmaster(PCPDMPCIDEV pPciDev)
 {
     return (PDMPciDevGetCommand(pPciDev) & VBOX_PCI_COMMAND_MASTER) != 0;
 }
@@ -360,7 +423,7 @@ DECLINLINE(bool) PDMPciDevIsBusmaster(PPDMPCIDEV pPciDev)
  * @returns true if disabled.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(bool) PDMPciDevIsIntxDisabled(PPDMPCIDEV pPciDev)
+DECLINLINE(bool) PDMPciDevIsIntxDisabled(PCPDMPCIDEV pPciDev)
 {
     return (PDMPciDevGetCommand(pPciDev) & VBOX_PCI_COMMAND_INTX_DISABLE) != 0;
 }
@@ -371,7 +434,7 @@ DECLINLINE(bool) PDMPciDevIsIntxDisabled(PPDMPCIDEV pPciDev)
  * @returns status config register.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint16_t) PDMPciDevGetStatus(PPDMPCIDEV pPciDev)
+DECLINLINE(uint16_t) PDMPciDevGetStatus(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetWord(pPciDev, VBOX_PCI_STATUS);
 }
@@ -452,7 +515,7 @@ DECLINLINE(void) PDMPciDevSetHeaderType(PPDMPCIDEV pPciDev, uint8_t u8HdrType)
  * @param   pPciDev         The PCI device.
  * @returns u8HdrType       The header type.
  */
-DECLINLINE(uint8_t) PDMPciDevGetHeaderType(PPDMPCIDEV pPciDev)
+DECLINLINE(uint8_t) PDMPciDevGetHeaderType(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetByte(pPciDev, VBOX_PCI_HEADER_TYPE);
 }
@@ -474,7 +537,7 @@ DECLINLINE(void) PDMPciDevSetBIST(PPDMPCIDEV pPciDev, uint8_t u8Bist)
  * @param   pPciDev         The PCI device.
  * @returns u8Bist          The BIST.
  */
-DECLINLINE(uint8_t) PDMPciDevGetBIST(PPDMPCIDEV pPciDev)
+DECLINLINE(uint8_t) PDMPciDevGetBIST(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetByte(pPciDev, VBOX_PCI_BIST);
 }
@@ -546,7 +609,7 @@ DECLINLINE(void) PDMPciDevSetSubSystemVendorId(PPDMPCIDEV pPciDev, uint16_t u16S
  * @returns the sub-system vendor id.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint16_t) PDMPciDevGetSubSystemVendorId(PPDMPCIDEV pPciDev)
+DECLINLINE(uint16_t) PDMPciDevGetSubSystemVendorId(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetWord(pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID);
 }
@@ -568,7 +631,7 @@ DECLINLINE(void) PDMPciDevSetSubSystemId(PPDMPCIDEV pPciDev, uint16_t u16SubSyst
  * @returns the sub-system id.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint16_t) PDMPciDevGetSubSystemId(PPDMPCIDEV pPciDev)
+DECLINLINE(uint16_t) PDMPciDevGetSubSystemId(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetWord(pPciDev, VBOX_PCI_SUBSYSTEM_ID);
 }
@@ -590,7 +653,7 @@ DECLINLINE(void) PDMPciDevSetCapabilityList(PPDMPCIDEV pPciDev, uint8_t u8Offset
  * @returns offset to capability list.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint8_t) PDMPciDevGetCapabilityList(PPDMPCIDEV pPciDev)
+DECLINLINE(uint8_t) PDMPciDevGetCapabilityList(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetByte(pPciDev, VBOX_PCI_CAPABILITY_LIST);
 }
@@ -612,7 +675,7 @@ DECLINLINE(void) PDMPciDevSetInterruptLine(PPDMPCIDEV pPciDev, uint8_t u8Line)
  * @returns The interrupt line.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint8_t) PDMPciDevGetInterruptLine(PPDMPCIDEV pPciDev)
+DECLINLINE(uint8_t) PDMPciDevGetInterruptLine(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_LINE);
 }
@@ -634,7 +697,7 @@ DECLINLINE(void) PDMPciDevSetInterruptPin(PPDMPCIDEV pPciDev, uint8_t u8Pin)
  * @returns The interrupt pin.
  * @param   pPciDev         The PCI device.
  */
-DECLINLINE(uint8_t) PDMPciDevGetInterruptPin(PPDMPCIDEV pPciDev)
+DECLINLINE(uint8_t) PDMPciDevGetInterruptPin(PCPDMPCIDEV pPciDev)
 {
     return PDMPciDevGetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN);
 }

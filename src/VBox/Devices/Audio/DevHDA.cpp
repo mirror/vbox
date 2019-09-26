@@ -3458,8 +3458,12 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 static DECLCALLBACK(int) hdaR3PciIoRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                              RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, enmType);
-    PHDASTATE pThis = RT_FROM_MEMBER(pPciDev, HDASTATE, PciDev);
+    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    RT_NOREF(pPciDev, iRegion, enmType);
+
+    Assert(enmType == PCI_ADDRESS_SPACE_MEM);
+    Assert(iRegion == 0);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     /*
      * 18.2 of the ICH6 datasheet defines the valid access widths as byte, word, and double word.
@@ -4882,86 +4886,89 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->IBase.pfnQueryInterface  = hdaR3QueryInterface;
 
     /* PCI Device */
-    PCIDevSetVendorId(      &pThis->PciDev, HDA_PCI_VENDOR_ID); /* nVidia */
-    PCIDevSetDeviceId(      &pThis->PciDev, HDA_PCI_DEVICE_ID); /* HDA */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    PCIDevSetCommand(       &pThis->PciDev, 0x0000); /* 04 rw,ro - pcicmd. */
-    PCIDevSetStatus(        &pThis->PciDev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
-    PCIDevSetRevisionId(    &pThis->PciDev, 0x01);   /* 08 ro - rid. */
-    PCIDevSetClassProg(     &pThis->PciDev, 0x00);   /* 09 ro - pi. */
-    PCIDevSetClassSub(      &pThis->PciDev, 0x03);   /* 0a ro - scc; 03 == HDA. */
-    PCIDevSetClassBase(     &pThis->PciDev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */
-    PCIDevSetHeaderType(    &pThis->PciDev, 0x00);   /* 0e ro - headtyp. */
-    PCIDevSetBaseAddress(   &pThis->PciDev, 0,       /* 10 rw - MMIO */
-                                 false /* fIoSpace */, false /* fPrefetchable */, true /* f64Bit */, 0x00000000);
-    PCIDevSetInterruptLine( &pThis->PciDev, 0x00);   /* 3c rw. */
-    PCIDevSetInterruptPin(  &pThis->PciDev, 0x01);   /* 3d ro - INTA#. */
+    PDMPciDevSetVendorId(      pPciDev, HDA_PCI_VENDOR_ID); /* nVidia */
+    PDMPciDevSetDeviceId(      pPciDev, HDA_PCI_DEVICE_ID); /* HDA */
+
+    PDMPciDevSetCommand(       pPciDev, 0x0000); /* 04 rw,ro - pcicmd. */
+    PDMPciDevSetStatus(        pPciDev, VBOX_PCI_STATUS_CAP_LIST); /* 06 rwc?,ro? - pcists. */
+    PDMPciDevSetRevisionId(    pPciDev, 0x01);   /* 08 ro - rid. */
+    PDMPciDevSetClassProg(     pPciDev, 0x00);   /* 09 ro - pi. */
+    PDMPciDevSetClassSub(      pPciDev, 0x03);   /* 0a ro - scc; 03 == HDA. */
+    PDMPciDevSetClassBase(     pPciDev, 0x04);   /* 0b ro - bcc; 04 == multimedia. */
+    PDMPciDevSetHeaderType(    pPciDev, 0x00);   /* 0e ro - headtyp. */
+    PDMPciDevSetBaseAddress(   pPciDev, 0,       /* 10 rw - MMIO */
+                               false /* fIoSpace */, false /* fPrefetchable */, true /* f64Bit */, 0x00000000);
+    PDMPciDevSetInterruptLine( pPciDev, 0x00);   /* 3c rw. */
+    PDMPciDevSetInterruptPin(  pPciDev, 0x01);   /* 3d ro - INTA#. */
 
 #if defined(HDA_AS_PCI_EXPRESS)
-    PCIDevSetCapabilityList(&pThis->PciDev, 0x80);
+    PDMPciDevSetCapabilityList(pPciDev, 0x80);
 #elif defined(VBOX_WITH_MSI_DEVICES)
-    PCIDevSetCapabilityList(&pThis->PciDev, 0x60);
+    PDMPciDevSetCapabilityList(pPciDev, 0x60);
 #else
-    PCIDevSetCapabilityList(&pThis->PciDev, 0x50);   /* ICH6 datasheet 18.1.16 */
+    PDMPciDevSetCapabilityList(pPciDev, 0x50);   /* ICH6 datasheet 18.1.16 */
 #endif
 
-    /// @todo r=michaln: If there are really no PCIDevSetXx for these, the meaning
-    /// of these values needs to be properly documented!
+    /// @todo r=michaln: If there are really no PDMPciDevSetXx for these, the
+    /// meaning of these values needs to be properly documented!
     /* HDCTL off 0x40 bit 0 selects signaling mode (1-HDA, 0 - Ac97) 18.1.19 */
-    PCIDevSetByte(          &pThis->PciDev, 0x40, 0x01);
+    PDMPciDevSetByte(          pPciDev, 0x40, 0x01);
 
     /* Power Management */
-    PCIDevSetByte(          &pThis->PciDev, 0x50 + 0, VBOX_PCI_CAP_ID_PM);
-    PCIDevSetByte(          &pThis->PciDev, 0x50 + 1, 0x0); /* next */
-    PCIDevSetWord(          &pThis->PciDev, 0x50 + 2, VBOX_PCI_PM_CAP_DSI | 0x02 /* version, PM1.1 */ );
+    PDMPciDevSetByte(          pPciDev, 0x50 + 0, VBOX_PCI_CAP_ID_PM);
+    PDMPciDevSetByte(          pPciDev, 0x50 + 1, 0x0); /* next */
+    PDMPciDevSetWord(          pPciDev, 0x50 + 2, VBOX_PCI_PM_CAP_DSI | 0x02 /* version, PM1.1 */ );
 
 #ifdef HDA_AS_PCI_EXPRESS
     /* PCI Express */
-    PCIDevSetByte(          &pThis->PciDev, 0x80 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
-    PCIDevSetByte(          &pThis->PciDev, 0x80 + 1, 0x60); /* next */
+    PDMPciDevSetByte(          pPciDev, 0x80 + 0, VBOX_PCI_CAP_ID_EXP); /* PCI_Express */
+    PDMPciDevSetByte(          pPciDev, 0x80 + 1, 0x60); /* next */
     /* Device flags */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 2,
-                              1 /* version */
-                            | (VBOX_PCI_EXP_TYPE_ROOT_INT_EP << 4) /* Root Complex Integrated Endpoint */
-                            | (100 << 9) /* MSI */ );
+    PDMPciDevSetWord(          pPciDev, 0x80 + 2,
+                                 1 /* version */
+                               | (VBOX_PCI_EXP_TYPE_ROOT_INT_EP << 4) /* Root Complex Integrated Endpoint */
+                               | (100 << 9) /* MSI */ );
     /* Device capabilities */
-    PCIDevSetDWord(         &pThis->PciDev, 0x80 + 4, VBOX_PCI_EXP_DEVCAP_FLRESET);
+    PDMPciDevSetDWord(         pPciDev, 0x80 + 4, VBOX_PCI_EXP_DEVCAP_FLRESET);
     /* Device control */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 8, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 8, 0);
     /* Device status */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 10, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 10, 0);
     /* Link caps */
-    PCIDevSetDWord(         &pThis->PciDev, 0x80 + 12, 0);
+    PDMPciDevSetDWord(         pPciDev, 0x80 + 12, 0);
     /* Link control */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 16, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 16, 0);
     /* Link status */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 18, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 18, 0);
     /* Slot capabilities */
-    PCIDevSetDWord(         &pThis->PciDev, 0x80 + 20, 0);
+    PDMPciDevSetDWord(         pPciDev, 0x80 + 20, 0);
     /* Slot control */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 24, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 24, 0);
     /* Slot status */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 26, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 26, 0);
     /* Root control */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 28, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 28, 0);
     /* Root capabilities */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 30, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 30, 0);
     /* Root status */
-    PCIDevSetDWord(         &pThis->PciDev, 0x80 + 32, 0);
+    PDMPciDevSetDWord(         pPciDev, 0x80 + 32, 0);
     /* Device capabilities 2 */
-    PCIDevSetDWord(         &pThis->PciDev, 0x80 + 36, 0);
+    PDMPciDevSetDWord(         pPciDev, 0x80 + 36, 0);
     /* Device control 2 */
-    PCIDevSetQWord(         &pThis->PciDev, 0x80 + 40, 0);
+    PDMPciDevSetQWord(         pPciDev, 0x80 + 40, 0);
     /* Link control 2 */
-    PCIDevSetQWord(         &pThis->PciDev, 0x80 + 48, 0);
+    PDMPciDevSetQWord(         pPciDev, 0x80 + 48, 0);
     /* Slot control 2 */
-    PCIDevSetWord(          &pThis->PciDev, 0x80 + 56, 0);
+    PDMPciDevSetWord(          pPciDev, 0x80 + 56, 0);
 #endif
 
     /*
      * Register the PCI device.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 0x4000, PCI_ADDRESS_SPACE_MEM, hdaR3PciIoRegionMap);
@@ -4977,7 +4984,7 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (RT_FAILURE(rc))
     {
         /* That's OK, we can work without MSI */
-        PCIDevSetCapabilityList(&pThis->PciDev, 0x50);
+        PDMPciDevSetCapabilityList(pPciDev, 0x50);
     }
 #endif
 
@@ -5077,8 +5084,8 @@ static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
        verb F20 should provide device/codec recognition. */
     Assert(pThis->pCodec->u16VendorId);
     Assert(pThis->pCodec->u16DeviceId);
-    PCIDevSetSubSystemVendorId(&pThis->PciDev, pThis->pCodec->u16VendorId); /* 2c ro - intel.) */
-    PCIDevSetSubSystemId(      &pThis->PciDev, pThis->pCodec->u16DeviceId); /* 2e ro. */
+    PDMPciDevSetSubSystemVendorId(pPciDev, pThis->pCodec->u16VendorId); /* 2c ro - intel.) */
+    PDMPciDevSetSubSystemId(      pPciDev, pThis->pCodec->u16DeviceId); /* 2e ro. */
 
     /*
      * Create all hardware streams.

@@ -5489,10 +5489,10 @@ int vgaR3UnregisterVRAMHandler(PVGASTATE pVGAState)
 static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF1(cb);
-    int         rc;
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    RT_NOREF(cb);
     Log(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
+
 #ifdef VBOX_WITH_VMSVGA
     AssertReturn(   iRegion == pThis->pciRegions.iVRAM
                  && enmType == (pThis->fVMSVGAEnabled ? PCI_ADDRESS_SPACE_MEM : PCI_ADDRESS_SPACE_MEM_PREFETCH),
@@ -5500,8 +5500,9 @@ static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 #else
     AssertReturn(iRegion == pThis->pciRegions.iVRAM && enmType == PCI_ADDRESS_SPACE_MEM_PREFETCH, VERR_INTERNAL_ERROR);
 #endif
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
-    rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertRC(rc);
 
     if (GCPhysAddress != NIL_RTGCPHYS)
@@ -6348,36 +6349,39 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     vgaR3Reset(pDevIns);
 
     /* The PCI devices configuration. */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
 #ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
     {
         /* Extend our VGA device with VMWare SVGA functionality. */
         if (pThis->fVMSVGAPciId)
         {
-            PCIDevSetVendorId(&pThis->Dev, PCI_VENDOR_ID_VMWARE);
-            PCIDevSetDeviceId(&pThis->Dev, PCI_DEVICE_ID_VMWARE_SVGA2);
+            PDMPciDevSetVendorId(pPciDev,       PCI_VENDOR_ID_VMWARE);
+            PDMPciDevSetDeviceId(pPciDev,       PCI_DEVICE_ID_VMWARE_SVGA2);
         }
         else
         {
-            PCIDevSetVendorId(&pThis->Dev, 0x80ee);   /* PCI vendor, just a free bogus value */
-            PCIDevSetDeviceId(&pThis->Dev, 0xbeef);
+            PDMPciDevSetVendorId(pPciDev,       0x80ee);   /* PCI vendor, just a free bogus value */
+            PDMPciDevSetDeviceId(pPciDev,       0xbeef);
         }
-        PCIDevSetSubSystemVendorId(&pThis->Dev, PCI_VENDOR_ID_VMWARE);
-        PCIDevSetSubSystemId(&pThis->Dev, PCI_DEVICE_ID_VMWARE_SVGA2);
+        PDMPciDevSetSubSystemVendorId(pPciDev,  PCI_VENDOR_ID_VMWARE);
+        PDMPciDevSetSubSystemId(pPciDev,        PCI_DEVICE_ID_VMWARE_SVGA2);
     }
     else
     {
 #endif /* VBOX_WITH_VMSVGA */
-        PCIDevSetVendorId(&pThis->Dev, 0x80ee);   /* PCI vendor, just a free bogus value */
-        PCIDevSetDeviceId(&pThis->Dev, 0xbeef);
+        PDMPciDevSetVendorId(pPciDev,           0x80ee);   /* PCI vendor, just a free bogus value */
+        PDMPciDevSetDeviceId(pPciDev,           0xbeef);
 #ifdef VBOX_WITH_VMSVGA
     }
 #endif
-    PCIDevSetClassSub(  &pThis->Dev,   0x00);   /* VGA controller */
-    PCIDevSetClassBase( &pThis->Dev,   0x03);
-    PCIDevSetHeaderType(&pThis->Dev,   0x00);
+    PDMPciDevSetClassSub(pPciDev,               0x00);   /* VGA controller */
+    PDMPciDevSetClassBase(pPciDev,              0x03);
+    PDMPciDevSetHeaderType(pPciDev,             0x00);
 #if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_WITH_VDMA) || defined(VBOX_WITH_WDDM))
-    PCIDevSetInterruptPin(&pThis->Dev, 1);
+    PDMPciDevSetInterruptPin(pPciDev,           1);
 #endif
 
     /* the interfaces. */
@@ -6430,12 +6434,12 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * PCI device registration.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->Dev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
     /*AssertMsg(pThis->Dev.uDevFn == 16 || iInstance != 0, ("pThis->Dev.uDevFn=%d\n", pThis->Dev.uDevFn));*/
-    if (pThis->Dev.uDevFn != 16 && iInstance == 0)
-        Log(("!!WARNING!!: pThis->dev.uDevFn=%d (ignore if testcase or not started by Main)\n", pThis->Dev.uDevFn));
+    if (pPciDev->uDevFn != 16 && iInstance == 0)
+        Log(("!!WARNING!!: pThis->dev.uDevFn=%d (ignore if testcase or not started by Main)\n", pPciDev->uDevFn));
 
 #ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
@@ -6453,7 +6457,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                                           PCI_ADDRESS_SPACE_MEM /* PCI_ADDRESS_SPACE_MEM_PREFETCH */, vmsvgaR3IORegionMap);
         if (RT_FAILURE(rc))
             return rc;
-        pThis->Dev.pfnRegionLoadChangeHookR3 = vgaR3PciRegionLoadChangeHook;
+        pPciDev->pfnRegionLoadChangeHookR3 = vgaR3PciRegionLoadChangeHook;
     }
     else
 #endif /* VBOX_WITH_VMSVGA */
@@ -6473,7 +6477,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         /*
          * Allocate and initialize the FIFO MMIO2 memory.
          */
-        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->Dev, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
+        rc = PDMDevHlpMMIO2Register(pDevIns, pPciDev, pThis->pciRegions.iFIFO, pThis->svga.cbFIFO,
                                     0 /*fFlags*/, (void **)&pThis->svga.pFIFOR3, "VMSVGA-FIFO");
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
@@ -6481,7 +6485,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         pThis->svga.pFIFOR0 = (RTR0PTR)pThis->svga.pFIFOR3;
     }
 #endif
-    rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->Dev, pThis->pciRegions.iVRAM, pThis->vram_size, 0, (void **)&pThis->vram_ptrR3, "VRam");
+    rc = PDMDevHlpMMIO2Register(pDevIns, pPciDev, pThis->pciRegions.iVRAM, pThis->vram_size, 0, (void **)&pThis->vram_ptrR3, "VRam");
     AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMIO2Register(%#x,) -> %Rrc\n", pThis->vram_size, rc), rc);
     pThis->vram_ptrR0 = (RTR0PTR)pThis->vram_ptrR3; /** @todo @bugref{1865} Map parts into R0 or just use PGM access (Mac only). */
 
@@ -6489,7 +6493,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (pThis->fGCEnabled)
     {
         RTRCPTR pRCMapping = 0;
-        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, &pThis->Dev, pThis->pciRegions.iVRAM, 0 /* off */,  VGA_MAPPING_SIZE,
+        rc = PDMDevHlpMMHyperMapMMIO2(pDevIns, pPciDev, pThis->pciRegions.iVRAM, 0 /* off */,  VGA_MAPPING_SIZE,
                                       "VGA VRam", &pRCMapping);
         AssertLogRelMsgRCReturn(rc, ("PDMDevHlpMMHyperMapMMIO2(%#x,) -> %Rrc\n", VGA_MAPPING_SIZE, rc), rc);
         pThis->vram_ptrRC = pRCMapping;

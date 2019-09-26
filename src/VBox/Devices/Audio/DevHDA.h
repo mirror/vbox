@@ -102,8 +102,6 @@ typedef struct HDASTATEDBGINFO
  */
 typedef struct HDASTATE
 {
-    /** The PCI device structure. */
-    PDMPCIDEV               PciDev;
     /** Critical section protecting the HDA state. */
     PDMCRITSECT             CritSect;
     /** R3 Pointer to the device instance. */

@@ -29,6 +29,8 @@
 
 /**
  * PCI bus shared instance data (common to both PCI buses).
+ *
+ * The PCI device for the bus is always the first one (PDMDEVINSR3::apPciDevs[0]).
  */
 typedef struct DEVPCIBUS
 {
@@ -50,12 +52,9 @@ typedef struct DEVPCIBUS
     /** Array of bridges attached to the bus. */
     R3PTRTYPE(PPDMPCIDEV *) papBridgesR3;
     /** Cache line align apDevices. */
-    uint32_t                au32Alignment1[HC_ARCH_BITS == 32 ? 3+8 : 2+8];
+    uint32_t                au32Alignment1[HC_ARCH_BITS == 32 ? 3 + 8 : 2 + 8];
     /** Array of PCI devices. We assume 32 slots, each with 8 functions. */
     R3PTRTYPE(PPDMPCIDEV)   apDevices[256];
-
-    /** The PCI device for the PCI bridge. */
-    PDMPCIDEV               PciDev;
 } DEVPCIBUS;
 /** Pointer to PCI bus shared instance data. */
 typedef DEVPCIBUS *PDEVPCIBUS;
@@ -115,15 +114,6 @@ typedef CTX_SUFF(PDEVPCIBUS) PDEVPCIBUSCC;
  */
 #define DEVPCI_LEGACY_IRQ_PINS  4
 
-/**
- * PIIX3 ISA bridge state.
- */
-typedef struct PIIX3ISABRIDGE
-{
-    /** The PCI device of the bridge. */
-    PDMPCIDEV dev;
-} PIIX3ISABRIDGE;
-
 
 /**
  * PCI Globals - This is the host-to-pci bridge and the root bus, shared data.
@@ -139,7 +129,7 @@ typedef struct DEVPCIROOT
     /** I/O APIC usage flag (always true of ICH9, see constructor). */
     bool                fUseIoApic;
     /** Reserved for future config flags. */
-    bool                afFutureFlags[3+4];
+    bool                afFutureFlags[3+4+8];
     /** Physical address of PCI config space MMIO region. */
     uint64_t            u64PciConfigMMioAddress;
     /** Length of PCI config space MMIO region. */
@@ -151,7 +141,8 @@ typedef struct DEVPCIROOT
     uint32_t            uConfigReg;
     /** Alignment padding.   */
     uint32_t            u32Alignment1;
-    /** Members only used by the PIIX3 code variant. */
+    /** Members only used by the PIIX3 code variant.
+     * (The PCI device for the PCI-to-ISA bridge is PDMDEVINSR3::apPciDevs[1].) */
     struct
     {
         /** ACPI IRQ level */
@@ -164,8 +155,6 @@ typedef struct DEVPCIROOT
          * @remarks Labling this "legacy" might be a bit off...
          */
         volatile uint32_t   auPciLegacyIrqLevels[DEVPCI_LEGACY_IRQ_PINS];
-        /** ISA bridge state. */
-        PIIX3ISABRIDGE      PIIX3State;
     } Piix3;
 
     /** The address I/O port handle. */
@@ -211,8 +200,6 @@ typedef DEVPCIROOT *PDEVPCIROOT;
 
 #ifdef IN_RING3
 
-DECLCALLBACK(void) devpciR3RootRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
-DECLCALLBACK(void) devpciR3BusRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 DECLCALLBACK(void) devpciR3InfoPci(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
 DECLCALLBACK(void) devpciR3InfoPciIrq(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
 DECLCALLBACK(int)  devpciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,

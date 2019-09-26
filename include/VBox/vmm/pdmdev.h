@@ -472,9 +472,6 @@ typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 /** Indicates that the device needs to be notified before the drivers when resetting. */
 #define PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION       UINT32_C(0x00040000)
 
-/** MSI-X support (affects PCI device allocation size). */
-#define PDM_DEVREG_FLAGS_MSI_X                          UINT32_C(0x00100000)
-
 /** This flag is used to indicate that the device has been converted to the
  *  new device style. */
 #define PDM_DEVREG_FLAGS_NEW_STYLE                      UINT32_C(0x80000000)
@@ -2229,14 +2226,11 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 
 /** @name Special values for PDMDEVHLPR3::pfnPCIRegister parameters.
  * @{  */
-/** Use the primary device configruation (0). */
-# define PDMPCIDEVREG_CFG_PRIMARY           0
-/** Use the next device configuration number in the sequence (max + 1). */
-# define PDMPCIDEVREG_CFG_NEXT              UINT32_MAX
 /** Same device number (and bus) as the previous PCI device registered with the PDM device.
- * This is handy when registering multiple PCI device functions and the device  number
- * is left up to the PCI bus.  In order to facilitate on PDM device instance for each
- * PCI function, this searches earlier PDM device  instances as well. */
+ * This is handy when registering multiple PCI device functions and the device
+ * number is left up to the PCI bus.  In order to facilitate one PDM device
+ * instance for each PCI function, this searches earlier PDM device
+ * instances as well. */
 # define PDMPCIDEVREG_DEV_NO_SAME_AS_PREV   UINT8_C(0xfd)
 /** Use the first unused device number (all functions must be unused). */
 # define PDMPCIDEVREG_DEV_NO_FIRST_UNUSED   UINT8_C(0xfe)
@@ -3401,18 +3395,14 @@ typedef struct PDMDEVHLPR3
     /**
      * Registers a PCI device with the default PCI bus.
      *
+     * If a PDM device has more than one PCI device, they must be registered in the
+     * order of PDMDEVINSR3::apPciDevs.
+     *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
      * @param   pPciDev             The PCI device structure.
      *                              This must be kept in the instance data.
      *                              The PCI configuration must be initialized before registration.
-     * @param   idxDevCfg           The CFGM configuration index to use for this
-     *                              device.
-     *                              Zero indicates the default configuration
-     *                              (PDMPCIDEVREG_CFG_PRIMARY), whereas 1 to 255
-     *                              references subkeys "PciDev1" thru "PciDev255".
-     *                              Pass PDMPCIDEVREG_CFG_NEXT to use the next
-     *                              number in the sequence (last + 1).
      * @param   fFlags              Reserved for future use, PDMPCIDEVREG_F_MBZ.
      * @param   uPciDevNo           PDMPCIDEVREG_DEV_NO_FIRST_UNUSED,
      *                              PDMPCIDEVREG_DEV_NO_SAME_AS_PREV, or a specific
@@ -3425,8 +3415,11 @@ typedef struct PDMDEVHLPR3
      *                              value.
      * @param   pszName             Device name, if NULL PDMDEVREG::szName is used.
      *                              The pointer is saved, so don't free or changed.
+     * @note    The PCI device configuration is now implicit from the apPciDevs
+     *          index, meaning that the zero'th entry is the primary one and
+     *          subsequent uses CFGM subkeys "PciDev1", "PciDev2" and so on.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPCIRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
+    DECLR3CALLBACKMEMBER(int, pfnPCIRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                               uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName));
 
     /**
@@ -5177,8 +5170,15 @@ typedef struct PDMDEVINSR3
     /** Ring-3 pointer to the raw-mode instance data. */
     RTR3PTR                         pvInstanceDataForRCR3;
 
+    /** PCI device structure size. */
+    uint32_t                        cbPciDev;
+    /** Number of PCI devices in apPciDevs. */
+    uint32_t                        cPciDevs;
     /** Pointer to the PCI devices for this device.
-     * (Allocated after the shared instance data.)  */
+     * (Allocated after the shared instance data.)
+     * @note If we want to extend this beyond 8 sub-functions/devices, those 1 or
+     *       two devices ever needing it can use cbPciDev and do the address
+     *       calculations that for entries 8+. */
     R3PTRTYPE(struct PDMPCIDEV *)   apPciDevs[8];
 
     /** Temporarily. */
@@ -5188,7 +5188,7 @@ typedef struct PDMDEVINSR3
     /** Temporarily. */
     RTRCPTR                         pvInstanceDataRC;
     /** Align the internal data more naturally. */
-    uint32_t                        au32Padding[HC_ARCH_BITS == 32 ? 4 : 1];
+    uint32_t                        au32Padding[HC_ARCH_BITS == 32 ? 13 : 11];
 
     /** Internal data. */
     union
@@ -5196,7 +5196,7 @@ typedef struct PDMDEVINSR3
 #ifdef PDMDEVINSINT_DECLARED
         PDMDEVINSINTR3              s;
 #endif
-        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x60 : 0x80];
+        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x30 : 0x50];
     } Internal;
 
     /** Device instance data for ring-3.  The size of this area is defined
@@ -5205,7 +5205,7 @@ typedef struct PDMDEVINSR3
 } PDMDEVINSR3;
 
 /** Current PDMDEVINSR3 version number. */
-#define PDM_DEVINSR3_VERSION        PDM_VERSION_MAKE(0xff82, 2, 0)
+#define PDM_DEVINSR3_VERSION        PDM_VERSION_MAKE(0xff82, 3, 0)
 
 /** Converts a pointer to the PDMDEVINSR3::IBase to a pointer to PDMDEVINS. */
 #define PDMIBASE_2_PDMDEV(pInterface) ( (PPDMDEVINS)((char *)(pInterface) - RT_UOFFSETOF(PDMDEVINS, IBase)) )
@@ -5254,14 +5254,19 @@ typedef struct PDMDEVINSR0
     /** Ring-0 pointer to the raw-mode instance data. */
     RTR0PTR                         pvInstanceDataForRCR0;
 
+    /** PCI device structure size. */
+    uint32_t                        cbPciDev;
+    /** Number of PCI devices in apPciDevs. */
+    uint32_t                        cPciDevs;
     /** Pointer to the PCI devices for this device.
-     * (Allocated after the shared instance data.)  */
+     * (Allocated after the shared instance data.)
+     * @note If we want to extend this beyond 8 sub-functions/devices, those 1 or
+     *       two devices ever needing it can use cbPciDev and do the address
+     *       calculations that for entries 8+. */
     R0PTRTYPE(struct PDMPCIDEV *)   apPciDevs[8];
 
-#if HC_ARCH_BITS == 32
     /** Align the internal data more naturally. */
-    uint32_t                        au32Padding[HC_ARCH_BITS == 32 ? 3 : 0];
-#endif
+    uint32_t                        au32Padding[HC_ARCH_BITS == 32 ? 3 : 2 + 4];
 
     /** Internal data. */
     union
@@ -5269,7 +5274,7 @@ typedef struct PDMDEVINSR0
 #ifdef PDMDEVINSINT_DECLARED
         PDMDEVINSINTR0              s;
 #endif
-        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x80 : 0x60];
+        uint8_t                     padding[HC_ARCH_BITS == 32 ? 0x20 : 0x40];
     } Internal;
 
     /** Device instance data for ring-0. The size of this area is defined
@@ -5278,7 +5283,7 @@ typedef struct PDMDEVINSR0
 } PDMDEVINSR0;
 
 /** Current PDMDEVINSR0 version number. */
-#define PDM_DEVINSR0_VERSION        PDM_VERSION_MAKE(0xff83, 2, 0)
+#define PDM_DEVINSR0_VERSION        PDM_VERSION_MAKE(0xff83, 3, 0)
 
 
 /**
@@ -5311,9 +5316,17 @@ typedef struct PDMDEVINSRC
     RGPTRTYPE(PPDMCRITSECT)         pCritSectRoRC;
     /** Pointer to the raw-mode device registration structure.  */
     RGPTRTYPE(PCPDMDEVREGRC)        pReg;
+
+    /** PCI device structure size. */
+    uint32_t                        cbPciDev;
+    /** Number of PCI devices in apPciDevs. */
+    uint32_t                        cPciDevs;
     /** Pointer to the PCI devices for this device.
      * (Allocated after the shared instance data.)  */
     RGPTRTYPE(struct PDMPCIDEV *)   apPciDevs[8];
+
+    /** Align the internal data more naturally. */
+    uint32_t                        au32Padding[14];
 
     /** Internal data. */
     union
@@ -5330,7 +5343,7 @@ typedef struct PDMDEVINSRC
 } PDMDEVINSRC;
 
 /** Current PDMDEVINSR0 version number. */
-#define PDM_DEVINSRC_VERSION        PDM_VERSION_MAKE(0xff84, 2, 0)
+#define PDM_DEVINSRC_VERSION        PDM_VERSION_MAKE(0xff84, 3, 0)
 
 
 /** @def PDM_DEVINS_VERSION
@@ -5349,6 +5362,23 @@ typedef PDMDEVINSRC                 PDMDEVINS;
 #else
 # error "Missing context defines: IN_RING0, IN_RING3, IN_RC"
 #endif
+
+/**
+ * Get the pointer to an PCI device.
+ * @note Returns NULL if @a a_idxPciDev is out of bounds.
+ */
+#define PDMDEV_GET_PPCIDEV(a_pDevIns, a_idxPciDev) \
+    (  (uintptr_t)(a_idxPciDev) < RT_ELEMENTS((a_pDevIns)->apPciDevs) ? (a_pDevIns)->apPciDevs[(uintptr_t)(a_idxPciDev)] \
+     : PDMDEV_CALC_PPCIDEV(a_pDevIns, a_idxPciDev) )
+
+/**
+ * Calc the pointer to of a given PCI device.
+ * @note Returns NULL if @a a_idxPciDev is out of bounds.
+ */
+#define PDMDEV_CALC_PPCIDEV(a_pDevIns, a_idxPciDev) \
+    (  (uintptr_t)(a_idxPciDev) < (a_pDevIns)->cPciDevs \
+     ? (PPDMPCIDEV)((uint8_t *)((a_pDevIns)->apPciDevs[0]) + (a_pDevIns->cbPciDev) * (uintptr_t)(a_idxPciDev)) \
+     : (PPDMPCIDEV)NULL )
 
 
 /**
@@ -6390,17 +6420,17 @@ DECLINLINE(void) RT_IPRT_FORMAT_ATTR(7, 8) PDMDevHlpSTAMRegisterF(PPDMDEVINS pDe
  */
 DECLINLINE(int) PDMDevHlpPCIRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev)
 {
-    return pDevIns->pHlpR3->pfnPCIRegister(pDevIns, pPciDev, PDMPCIDEVREG_CFG_NEXT, 0 /*fFlags*/,
+    return pDevIns->pHlpR3->pfnPCIRegister(pDevIns, pPciDev, 0 /*fFlags*/,
                                            PDMPCIDEVREG_DEV_NO_FIRST_UNUSED, PDMPCIDEVREG_FUN_NO_FIRST_UNUSED, NULL);
 }
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPCIRegister
  */
-DECLINLINE(int) PDMDevHlpPCIRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t idxDevCfg, uint32_t fFlags,
+DECLINLINE(int) PDMDevHlpPCIRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                        uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)
 {
-    return pDevIns->pHlpR3->pfnPCIRegister(pDevIns, pPciDev, idxDevCfg, fFlags, uPciDevNo, uPciFunNo, pszName);
+    return pDevIns->pHlpR3->pfnPCIRegister(pDevIns, pPciDev, fFlags, uPciDevNo, uPciFunNo, pszName);
 }
 
 /**

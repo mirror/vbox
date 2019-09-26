@@ -331,13 +331,10 @@ typedef struct BUSLOGICREQ *PBUSLOGICREQ;
 /**
  * Main BusLogic device state.
  *
- * @extends     PDMPCIDEV
  * @implements  PDMILEDPORTS
  */
 typedef struct BUSLOGIC
 {
-    /** The PCI device structure. */
-    PDMPCIDEV                       dev;
     /** Pointer to the device instance - HC ptr */
     PPDMDEVINSR3                    pDevInsR3;
     /** Pointer to the device instance - R0 ptr */
@@ -1787,9 +1784,10 @@ static int buslogicR3SenseBufferAlloc(PBUSLOGICREQ pReq)
  * Parses the command buffer and executes it.
  *
  * @returns VBox status code.
- * @param   pBusLogic  Pointer to the BusLogic device instance.
+ * @param   pDevIns     The PDM device instance.
+ * @param   pBusLogic   Pointer to the BusLogic device instance.
  */
-static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
+static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
 {
     int rc = VINF_SUCCESS;
     bool fSuppressIrq = false;
@@ -1811,7 +1809,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             /* It seems VMware does not provide valid information here too, lets do the same :) */
             pReply->InformationIsValid = 0;
             pReply->IsaIOPort = pBusLogic->uISABaseCode;
-            pReply->IRQ = PCIDevGetInterruptLine(&pBusLogic->dev);
+            pReply->IRQ = PCIDevGetInterruptLine(pDevIns->apPciDevs[0]);
             pBusLogic->cbReplyParametersLeft = sizeof(ReplyInquirePCIHostAdapterInformation);
             break;
         }
@@ -1963,7 +1961,7 @@ static int buslogicProcessCommand(PBUSLOGIC pBusLogic)
             if (pBusLogic->uIsaIrq)
                 uIrq = pBusLogic->uIsaIrq;
             else
-                uIrq = PCIDevGetInterruptLine(&pBusLogic->dev);
+                uIrq = PCIDevGetInterruptLine(pDevIns->apPciDevs[0]);
 
             pBusLogic->cbReplyParametersLeft = sizeof(ReplyInquireConfiguration);
             PReplyInquireConfiguration pReply = (PReplyInquireConfiguration)pBusLogic->aReplyBuffer;
@@ -2428,11 +2426,12 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
  * Write a value to a register.
  *
  * @returns VBox status code.
- * @param   pBusLogic    Pointer to the BusLogic instance data.
- * @param   iRegister    The index of the register to read.
- * @param   uVal         The value to write.
+ * @param   pDevIns     The PDM device instance.
+ * @param   pBusLogic   Pointer to the BusLogic instance data.
+ * @param   iRegister   The index of the register to read.
+ * @param   uVal        The value to write.
  */
-static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_t uVal)
+static int buslogicRegisterWrite(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, unsigned iRegister, uint8_t uVal)
 {
     int rc = VINF_SUCCESS;
 
@@ -2603,7 +2602,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
             /* Start execution of command if there are no parameters left. */
             if (!pBusLogic->cbCommandParametersLeft)
             {
-                rc = buslogicProcessCommand(pBusLogic);
+                rc = buslogicProcessCommand(pDevIns, pBusLogic);
                 AssertMsgRC(rc, ("Processing command failed rc=%Rrc\n", rc));
             }
             break;
@@ -2714,7 +2713,7 @@ PDMBOTHCBDECL(int) buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 
     Assert(cb == 1);
 
-    int rc = buslogicRegisterWrite(pBusLogic, iRegister, (uint8_t)uVal);
+    int rc = buslogicRegisterWrite(pDevIns, pBusLogic, iRegister, (uint8_t)uVal);
 
     Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x uPort=%#x rc=%Rrc\n",
           pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, uPort, rc));
@@ -2968,13 +2967,14 @@ static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode)
 static DECLCALLBACK(int) buslogicR3MmioMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                            RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(pPciDev, iRegion);
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
-    int   rc = VINF_SUCCESS;
+    int        rc    = VINF_SUCCESS;
+    RT_NOREF(pPciDev, iRegion);
 
     Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     Assert(cb >= 32);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     if (enmType == PCI_ADDRESS_SPACE_MEM)
     {
@@ -3860,7 +3860,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     else
         pHlp->pfnPrintf(pHlp, "PCI I/O=%RTiop ISA I/O=%RTiop MMIO=%RGp IRQ=%u ",
                         pThis->IOPortBase, pThis->IOISABase, pThis->MMIOBase,
-                        PCIDevGetInterruptLine(&pThis->dev));
+                        PCIDevGetInterruptLine(pDevIns->apPciDevs[0]));
     pHlp->pfnPrintf(pHlp, "GC=%RTbool R0=%RTbool\n",
                     !!pThis->fGCEnabled, !!pThis->fR0Enabled);
 
@@ -4227,19 +4227,22 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->IBase.pfnQueryInterface = buslogicR3StatusQueryInterface;
     pThis->ILeds.pfnQueryStatusLed = buslogicR3StatusQueryStatusLed;
 
-    PCIDevSetVendorId         (&pThis->dev, 0x104b); /* BusLogic */
-    PCIDevSetDeviceId         (&pThis->dev, 0x1040); /* BT-958 */
-    PCIDevSetCommand          (&pThis->dev, PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS);
-    PCIDevSetRevisionId       (&pThis->dev, 0x01);
-    PCIDevSetClassProg        (&pThis->dev, 0x00); /* SCSI */
-    PCIDevSetClassSub         (&pThis->dev, 0x00); /* SCSI */
-    PCIDevSetClassBase        (&pThis->dev, 0x01); /* Mass storage */
-    PCIDevSetBaseAddress      (&pThis->dev, 0, true  /*IO*/, false /*Pref*/, false /*64-bit*/, 0x00000000);
-    PCIDevSetBaseAddress      (&pThis->dev, 1, false /*IO*/, false /*Pref*/, false /*64-bit*/, 0x00000000);
-    PCIDevSetSubSystemVendorId(&pThis->dev, 0x104b);
-    PCIDevSetSubSystemId      (&pThis->dev, 0x1040);
-    PCIDevSetInterruptLine    (&pThis->dev, 0x00);
-    PCIDevSetInterruptPin     (&pThis->dev, 0x01);
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    PDMPciDevSetVendorId(pPciDev,           0x104b); /* BusLogic */
+    PDMPciDevSetDeviceId(pPciDev,           0x1040); /* BT-958 */
+    PDMPciDevSetCommand(pPciDev,            PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS);
+    PDMPciDevSetRevisionId(pPciDev,         0x01);
+    PDMPciDevSetClassProg(pPciDev,          0x00); /* SCSI */
+    PDMPciDevSetClassSub(pPciDev,           0x00); /* SCSI */
+    PDMPciDevSetClassBase(pPciDev,          0x01); /* Mass storage */
+    PDMPciDevSetBaseAddress(pPciDev,        0, true  /*IO*/, false /*Pref*/, false /*64-bit*/, 0x00000000);
+    PDMPciDevSetBaseAddress(pPciDev,        1, false /*IO*/, false /*Pref*/, false /*64-bit*/, 0x00000000);
+    PDMPciDevSetSubSystemVendorId(pPciDev,  0x104b);
+    PDMPciDevSetSubSystemId(pPciDev,        0x1040);
+    PDMPciDevSetInterruptLine(pPciDev,      0x00);
+    PDMPciDevSetInterruptPin(pPciDev,       0x01);
 
     /*
      * Validate and read configuration.
@@ -4323,7 +4326,7 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      */
     if (!pThis->uIsaIrq)
     {
-        rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
+        rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
         if (RT_FAILURE(rc))
             return rc;
 

@@ -187,8 +187,6 @@ typedef struct LSILOGICREQ *PLSILOGICREQ;
  */
 typedef struct LSILOGICSCSI
 {
-    /** PCI device structure. */
-    PDMPCIDEV            PciDev;
     /** Pointer to the device instance. - R3 ptr. */
     PPDMDEVINSR3         pDevInsR3;
     /** Pointer to the device instance. - R0 ptr. */
@@ -3710,7 +3708,7 @@ static void lsilogicR3InitializeConfigurationPages(PLSILOGICSCSI pThis)
     pPages->IOUnitPage2.u.fields.aAdapterOrder[0].fAdapterEnabled = true;
     pPages->IOUnitPage2.u.fields.aAdapterOrder[0].fAdapterEmbedded = true;
     pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIBusNumber = 0;
-    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIDevFn     = pThis->PciDev.uDevFn;
+    pPages->IOUnitPage2.u.fields.aAdapterOrder[0].u8PCIDevFn     = pThis->CTX_SUFF(pDevIns)->apPciDevs[0]->uDevFn;
 
     /* I/O Unit page 3. */
     MPT_CONFIG_PAGE_HEADER_INIT_IO_UNIT(&pPages->IOUnitPage3,
@@ -4025,21 +4023,22 @@ static DECLCALLBACK(int) lsilogicR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, u
                                        RTGCPHYS GCPhysAddress, RTGCPHYS cb,
                                        PCIADDRESSSPACE enmType)
 {
+    PLSILOGICSCSI pThis     = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    int           rc        = VINF_SUCCESS;
+    const char    *pcszCtrl = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                              ? "LsiLogic"
+                              : "LsiLogicSas";
+    const char    *pcszDiag = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
+                              ? "LsiLogicDiag"
+                              : "LsiLogicSasDiag";
     RT_NOREF(pPciDev);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    int         rc = VINF_SUCCESS;
-    const char *pcszCtrl = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                           ? "LsiLogic"
-                           : "LsiLogicSas";
-    const char *pcszDiag = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                           ? "LsiLogicDiag"
-                           : "LsiLogicSasDiag";
 
     Log2(("%s: registering area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     AssertMsg(   (enmType == PCI_ADDRESS_SPACE_MEM && cb >= LSILOGIC_PCI_SPACE_MEM_SIZE)
               || (enmType == PCI_ADDRESS_SPACE_IO  && cb >= LSILOGIC_PCI_SPACE_IO_SIZE),
               ("PCI region type and size do not match\n"));
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     if (enmType == PCI_ADDRESS_SPACE_MEM && iRegion == 1)
     {
@@ -5453,31 +5452,33 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     Log(("%s: Bootable=%RTbool\n", __FUNCTION__, fBootable));
 
     /* Init static parts. */
-    PCIDevSetVendorId(&pThis->PciDev, LSILOGICSCSI_PCI_VENDOR_ID); /* LsiLogic */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
+    PDMPciDevSetVendorId(pPciDev,               LSILOGICSCSI_PCI_VENDOR_ID); /* LsiLogic */
     if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
     {
-        PCIDevSetDeviceId         (&pThis->PciDev, LSILOGICSCSI_PCI_SPI_DEVICE_ID); /* LSI53C1030 */
-        PCIDevSetSubSystemVendorId(&pThis->PciDev, LSILOGICSCSI_PCI_SPI_SUBSYSTEM_VENDOR_ID);
-        PCIDevSetSubSystemId      (&pThis->PciDev, LSILOGICSCSI_PCI_SPI_SUBSYSTEM_ID);
+        PDMPciDevSetDeviceId(pPciDev,           LSILOGICSCSI_PCI_SPI_DEVICE_ID); /* LSI53C1030 */
+        PDMPciDevSetSubSystemVendorId(pPciDev,  LSILOGICSCSI_PCI_SPI_SUBSYSTEM_VENDOR_ID);
+        PDMPciDevSetSubSystemId(pPciDev,        LSILOGICSCSI_PCI_SPI_SUBSYSTEM_ID);
     }
     else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
     {
-        PCIDevSetDeviceId         (&pThis->PciDev, LSILOGICSCSI_PCI_SAS_DEVICE_ID); /* SAS1068 */
-        PCIDevSetSubSystemVendorId(&pThis->PciDev, LSILOGICSCSI_PCI_SAS_SUBSYSTEM_VENDOR_ID);
-        PCIDevSetSubSystemId      (&pThis->PciDev, LSILOGICSCSI_PCI_SAS_SUBSYSTEM_ID);
+        PDMPciDevSetDeviceId(pPciDev,           LSILOGICSCSI_PCI_SAS_DEVICE_ID); /* SAS1068 */
+        PDMPciDevSetSubSystemVendorId(pPciDev,  LSILOGICSCSI_PCI_SAS_SUBSYSTEM_VENDOR_ID);
+        PDMPciDevSetSubSystemId(pPciDev,        LSILOGICSCSI_PCI_SAS_SUBSYSTEM_ID);
     }
     else
         AssertMsgFailed(("Invalid controller type: %d\n", pThis->enmCtrlType));
 
-    PCIDevSetClassProg   (&pThis->PciDev,   0x00); /* SCSI */
-    PCIDevSetClassSub    (&pThis->PciDev,   0x00); /* SCSI */
-    PCIDevSetClassBase   (&pThis->PciDev,   0x01); /* Mass storage */
-    PCIDevSetInterruptPin(&pThis->PciDev,   0x01); /* Interrupt pin A */
+    PDMPciDevSetClassProg(pPciDev,              0x00); /* SCSI */
+    PDMPciDevSetClassSub(pPciDev,               0x00); /* SCSI */
+    PDMPciDevSetClassBase(pPciDev,              0x01); /* Mass storage */
+    PDMPciDevSetInterruptPin(pPciDev,           0x01); /* Interrupt pin A */
 
 # ifdef VBOX_WITH_MSI_DEVICES
-    PCIDevSetStatus(&pThis->PciDev,   VBOX_PCI_STATUS_CAP_LIST);
-    PCIDevSetCapabilityList(&pThis->PciDev, 0x80);
+    PDMPciDevSetStatus(pPciDev,                 VBOX_PCI_STATUS_CAP_LIST);
+    PDMPciDevSetCapabilityList(pPciDev,         0x80);
 # endif
 
     pThis->pDevInsR3 = pDevIns;
@@ -5513,7 +5514,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Register the PCI device, it's I/O regions.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -5536,7 +5537,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (RT_FAILURE (rc))
     {
         /* That's OK, we can work without MSI */
-        PCIDevSetCapabilityList(&pThis->PciDev, 0x0);
+        PDMPciDevSetCapabilityList(pPciDev, 0x0);
     }
 # endif
 

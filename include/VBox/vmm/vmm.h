@@ -358,8 +358,6 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_PDM_DEVICE_GEN_CALL,
     /** Old style device compat: Set ring-0 critical section. */
     VMMR0_DO_PDM_DEVICE_COMPAT_SET_CRITSECT,
-    /** Old style device compat: Register PCI device. */
-    VMMR0_DO_PDM_DEVICE_COMPAT_REG_PCIDEV,
 
     /** Set a GVMM or GMM configuration value. */
     VMMR0_DO_GCFGM_SET_VALUE = 400,

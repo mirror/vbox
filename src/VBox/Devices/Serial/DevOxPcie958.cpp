@@ -100,9 +100,6 @@ typedef OX958UART *POX958UART;
  */
 typedef struct DEVOX958
 {
-    /** The corresponding PCI device. */
-    PDMPCIDEV                       PciDev;
-
     /** Pointer to the device instance - R3 ptr. */
     PPDMDEVINSR3                    pDevInsR3;
     /** Pointer to the device instance - R0 ptr */
@@ -369,9 +366,10 @@ PDMBOTHCBDECL(int) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
 static DECLCALLBACK(int) ox958R3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                     RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(enmType);
-    PDEVOX958 pThis = (PDEVOX958)pPciDev;
-    int       rc = VINF_SUCCESS;
+    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    int       rc    = VINF_SUCCESS;
+    RT_NOREF(pPciDev, enmType);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     if (iRegion == 0)
     {
@@ -529,26 +527,29 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->pDevInsRC             = PDMDEVINS_2_RCPTR(pDevIns);
 
     /* Fill PCI config space. */
-    PDMPciDevSetVendorId         (&pThis->PciDev, OX958_PCI_VENDOR_ID);
-    PDMPciDevSetDeviceId         (&pThis->PciDev, OX958_PCI_DEVICE_ID);
-    PDMPciDevSetCommand          (&pThis->PciDev, 0x0000);
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    PDMPciDevSetVendorId(pPciDev,           OX958_PCI_VENDOR_ID);
+    PDMPciDevSetDeviceId(pPciDev,           OX958_PCI_DEVICE_ID);
+    PDMPciDevSetCommand(pPciDev,            0x0000);
 #ifdef VBOX_WITH_MSI_DEVICES
-    PDMPciDevSetStatus           (&pThis->PciDev, VBOX_PCI_STATUS_CAP_LIST);
-    PDMPciDevSetCapabilityList   (&pThis->PciDev, OX958_PCI_MSI_CAP_OFS);
+    PDMPciDevSetStatus(pPciDev,             VBOX_PCI_STATUS_CAP_LIST);
+    PDMPciDevSetCapabilityList(pPciDev,     OX958_PCI_MSI_CAP_OFS);
 #else
-    PDMPciDevSetCapabilityList   (&pThis->PciDev, 0x70);
+    PDMPciDevSetCapabilityList(pPciDev,     0x70);
 #endif
-    PDMPciDevSetRevisionId       (&pThis->PciDev, 0x00);
-    PDMPciDevSetClassBase        (&pThis->PciDev, 0x07); /* Communication controller. */
-    PDMPciDevSetClassSub         (&pThis->PciDev, 0x00); /* Serial controller. */
-    PDMPciDevSetClassProg        (&pThis->PciDev, 0x02); /* 16550. */
+    PDMPciDevSetRevisionId(pPciDev,         0x00);
+    PDMPciDevSetClassBase(pPciDev,          0x07); /* Communication controller. */
+    PDMPciDevSetClassSub(pPciDev,           0x00); /* Serial controller. */
+    PDMPciDevSetClassProg(pPciDev,          0x02); /* 16550. */
 
-    PDMPciDevSetRevisionId       (&pThis->PciDev, 0x00);
-    PDMPciDevSetSubSystemVendorId(&pThis->PciDev, OX958_PCI_VENDOR_ID);
-    PDMPciDevSetSubSystemId      (&pThis->PciDev, OX958_PCI_DEVICE_ID);
+    PDMPciDevSetRevisionId(pPciDev,         0x00);
+    PDMPciDevSetSubSystemVendorId(pPciDev,  OX958_PCI_VENDOR_ID);
+    PDMPciDevSetSubSystemId(pPciDev,        OX958_PCI_DEVICE_ID);
 
-    PDMPciDevSetInterruptLine       (&pThis->PciDev, 0x00);
-    PDMPciDevSetInterruptPin        (&pThis->PciDev, 0x01);
+    PDMPciDevSetInterruptLine(pPciDev,      0x00);
+    PDMPciDevSetInterruptPin(pPciDev,       0x01);
     /** @todo More Capabilities. */
 
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
@@ -558,7 +559,7 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Register PCI device and I/O region.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -579,7 +580,7 @@ static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     if (RT_FAILURE(rc))
     {
-        PCIDevSetCapabilityList(&pThis->PciDev, 0x0);
+        PDMPciDevSetCapabilityList(pPciDev, 0x0);
         /* That's OK, we can work without MSI */
     }
 #endif

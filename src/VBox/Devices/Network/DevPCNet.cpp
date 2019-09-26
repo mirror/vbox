@@ -304,7 +304,6 @@ enum PCNET_DEVICE_TYPE
 /**
  * PCNET state.
  *
- * @extends     PDMPCIDEV
  * @implements  PDMIBASE
  * @implements  PDMINETWORKDOWN
  * @implements  PDMINETWORKCONFIG
@@ -312,8 +311,6 @@ enum PCNET_DEVICE_TYPE
  */
 typedef struct PCNETSTATE
 {
-    PDMPCIDEV                           PciDev;
-
     /** Pointer to the device instance - R3. */
     PPDMDEVINSR3                        pDevInsR3;
     /** Transmit signaller - R3. */
@@ -3419,7 +3416,7 @@ static uint32_t pcnetBCRReadU16(PPCNETSTATE pThis, uint32_t u32RAP)
 }
 
 #ifdef IN_RING3 /* move down */
-static void pcnetR3HardReset(PPCNETSTATE pThis)
+static void pcnetR3HardReset(PPDMDEVINS pDevIns, PPCNETSTATE pThis)
 {
     int      i;
     uint16_t checksum;
@@ -3431,12 +3428,12 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
         if (!PCNET_IS_ISA(pThis))
         {
             Log(("#%d INTA=%d\n", PCNET_INST_NR, pThis->iISR));
-            PDMDevHlpPCISetIrq(PCNETSTATE_2_DEVINS(pThis), 0, pThis->iISR);
+            PDMDevHlpPCISetIrq(pDevIns, 0, pThis->iISR);
         }
         else
         {
             Log(("#%d IRQ=%d, state=%d\n", PCNET_INST_NR, pThis->uIsaIrq, pThis->iISR));
-            PDMDevHlpISASetIrq(PCNETSTATE_2_DEVINS(pThis), pThis->uIsaIrq, pThis->iISR);
+            PDMDevHlpISASetIrq(pDevIns, pThis->uIsaIrq, pThis->iISR);
         }
     }
     /* Initialize the PROM */
@@ -3481,9 +3478,10 @@ static void pcnetR3HardReset(PPCNETSTATE pThis)
     pThis->aBCR[BCR_PLAT ] = 0xff06;
     pThis->aBCR[BCR_MIICAS  ] = 0x20;   /* Auto-negotiation on. */
     pThis->aBCR[BCR_MIIADDR ] = 0;  /* Internal PHY on Am79C973 would be (0x1e << 5) */
-    pThis->aBCR[BCR_PCIVID] = PCIDevGetVendorId(&pThis->PciDev);
-    pThis->aBCR[BCR_PCISID] = PCIDevGetSubSystemId(&pThis->PciDev);
-    pThis->aBCR[BCR_PCISVID] = PCIDevGetSubSystemVendorId(&pThis->PciDev);
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    pThis->aBCR[BCR_PCIVID] = PCIDevGetVendorId(pPciDev);
+    pThis->aBCR[BCR_PCISID] = PCIDevGetSubSystemId(pPciDev);
+    pThis->aBCR[BCR_PCISVID] = PCIDevGetSubSystemVendorId(pPciDev);
 
     /* Reset the error counter. */
     pThis->uCntBadRMD      = 0;
@@ -4081,16 +4079,16 @@ static DECLCALLBACK(void) pcnetTimerRestore(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                         RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, cb, enmType);
-    int         rc;
-    RTIOPORT    Port    = (RTIOPORT)GCPhysAddress;
-    PPCNETSTATE pThis   = PCIDEV_2_PCNETSTATE(pPciDev);
+    PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
+    RTIOPORT    Port  = (RTIOPORT)GCPhysAddress;
+    RT_NOREF(iRegion, cb, enmType, pPciDev);
 
+    Assert(pDevIns->apPciDevs[0] == pPciDev);
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(cb >= 0x20);
 
-    rc = PDMDevHlpIOPortRegister(pDevIns, Port, 0x10, 0, pcnetIOPortAPromWrite,
-                                 pcnetIOPortAPromRead, NULL, NULL, "PCnet APROM");
+    int rc = PDMDevHlpIOPortRegister(pDevIns, Port, 0x10, 0, pcnetIOPortAPromWrite,
+                                     pcnetIOPortAPromRead, NULL, NULL, "PCnet APROM");
     if (RT_FAILURE(rc))
         return rc;
     rc = PDMDevHlpIOPortRegister(pDevIns, Port + 0x10, 0x10, 0, pcnetIOPortWrite,
@@ -4132,17 +4130,17 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, 
 static DECLCALLBACK(int) pcnetMMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, cb, enmType);
-    PPCNETSTATE pThis = PCIDEV_2_PCNETSTATE(pPciDev);
-    int         rc;
+    PPCNETSTATE pThis = PDMINS_2_DATA(pDevIns, PPCNETSTATE);
+    RT_NOREF(iRegion, cb, enmType, pPciDev);
 
+    Assert(pDevIns->apPciDevs[0] == pPciDev);
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     Assert(cb >= PCNET_PNPMMIO_SIZE);
 
     /* We use the assigned size here, because we only support page aligned MMIO ranges. */
-    rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pThis,
-                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                               pcnetMMIOWrite, pcnetMMIORead, "PCnet");
+    int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pThis,
+                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                   pcnetMMIOWrite, pcnetMMIORead, "PCnet");
     if (RT_FAILURE(rc))
         return rc;
     pThis->MMIOBase = GCPhysAddress;
@@ -4541,7 +4539,7 @@ static DECLCALLBACK(int) pcnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     {
         /* older saved states contain the shared memory region which was never used for ages. */
         void *pvSharedMMIOR3;
-        rc = PDMDevHlpMMIO2Register(pDevIns, &pThis->PciDev, 2, _512K, 0, (void **)&pvSharedMMIOR3, "PCnetSh");
+        rc = PDMDevHlpMMIO2Register(pDevIns, pDevIns->apPciDevs[0], 2, _512K, 0, (void **)&pvSharedMMIOR3, "PCnetSh");
         if (RT_FAILURE(rc))
             rc = PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                      N_("Failed to allocate the dummy shmem region for the PCnet device"));
@@ -5061,7 +5059,7 @@ static DECLCALLBACK(void) pcnetReset(PPDMDEVINS pDevIns)
     }
 
     /** @todo How to flush the queues? */
-    pcnetR3HardReset(pThis);
+    pcnetR3HardReset(pDevIns, pThis);
 }
 
 
@@ -5256,35 +5254,37 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->ILeds.pfnQueryStatusLed          = pcnetQueryStatusLed;
 
     /* PCI Device */
-    PCIDevSetVendorId(&pThis->PciDev, 0x1022);
-    PCIDevSetDeviceId(&pThis->PciDev, 0x2000);
-    pThis->PciDev.abConfig[0x04] = 0x07; /* command */
-    pThis->PciDev.abConfig[0x05] = 0x00;
-    pThis->PciDev.abConfig[0x06] = 0x80; /* status */
-    pThis->PciDev.abConfig[0x07] = 0x02;
-    pThis->PciDev.abConfig[0x08] = pThis->uDevType == DEV_AM79C973 ? 0x40 : 0x10; /* revision */
-    pThis->PciDev.abConfig[0x09] = 0x00;
-    pThis->PciDev.abConfig[0x0a] = 0x00; /* ethernet network controller */
-    pThis->PciDev.abConfig[0x0b] = 0x02;
-    pThis->PciDev.abConfig[0x0e] = 0x00; /* header_type */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
 
-    pThis->PciDev.abConfig[0x10] = 0x01; /* IO Base */
-    pThis->PciDev.abConfig[0x11] = 0x00;
-    pThis->PciDev.abConfig[0x12] = 0x00;
-    pThis->PciDev.abConfig[0x13] = 0x00;
-    pThis->PciDev.abConfig[0x14] = 0x00; /* MMIO Base */
-    pThis->PciDev.abConfig[0x15] = 0x00;
-    pThis->PciDev.abConfig[0x16] = 0x00;
-    pThis->PciDev.abConfig[0x17] = 0x00;
+    PDMPciDevSetVendorId(pPciDev,       0x1022);
+    PDMPciDevSetDeviceId(pPciDev,       0x2000);
+    PDMPciDevSetByte(pPciDev, 0x04,     0x07); /* command */
+    PDMPciDevSetByte(pPciDev, 0x05,     0x00);
+    PDMPciDevSetByte(pPciDev, 0x06,     0x80); /* status */
+    PDMPciDevSetByte(pPciDev, 0x07,     0x02);
+    PDMPciDevSetByte(pPciDev, 0x08,     pThis->uDevType == DEV_AM79C973 ? 0x40 : 0x10); /* revision */
+    PDMPciDevSetByte(pPciDev, 0x09,     0x00);
+    PDMPciDevSetByte(pPciDev, 0x0a,     0x00); /* ethernet network controller */
+    PDMPciDevSetByte(pPciDev, 0x0b,     0x02);
+    PDMPciDevSetByte(pPciDev, 0x0e,     0x00); /* header_type */
+    PDMPciDevSetByte(pPciDev, 0x10,     0x01); /* IO Base */
+    PDMPciDevSetByte(pPciDev, 0x11,     0x00);
+    PDMPciDevSetByte(pPciDev, 0x12,     0x00);
+    PDMPciDevSetByte(pPciDev, 0x13,     0x00);
+    PDMPciDevSetByte(pPciDev, 0x14,     0x00); /* MMIO Base */
+    PDMPciDevSetByte(pPciDev, 0x15,     0x00);
+    PDMPciDevSetByte(pPciDev, 0x16,     0x00);
+    PDMPciDevSetByte(pPciDev, 0x17,     0x00);
 
     /* subsystem and subvendor IDs */
-    pThis->PciDev.abConfig[0x2c] = 0x22; /* subsystem vendor id */
-    pThis->PciDev.abConfig[0x2d] = 0x10;
-    pThis->PciDev.abConfig[0x2e] = 0x00; /* subsystem id */
-    pThis->PciDev.abConfig[0x2f] = 0x20;
-    pThis->PciDev.abConfig[0x3d] = 1;    /* interrupt pin 0 */
-    pThis->PciDev.abConfig[0x3e] = 0x06;
-    pThis->PciDev.abConfig[0x3f] = 0xff;
+    PDMPciDevSetByte(pPciDev, 0x2c,     0x22); /* subsystem vendor id */
+    PDMPciDevSetByte(pPciDev, 0x2d,     0x10);
+    PDMPciDevSetByte(pPciDev, 0x2e,     0x00); /* subsystem id */
+    PDMPciDevSetByte(pPciDev, 0x2f,     0x20);
+    PDMPciDevSetByte(pPciDev, 0x3d,     1);    /* interrupt pin 0 */
+    PDMPciDevSetByte(pPciDev, 0x3e,     0x06);
+    PDMPciDevSetByte(pPciDev, 0x3f,     0xff);
 
     /*
      * We use our own critical section (historical reasons).
@@ -5302,7 +5302,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     if (PCNET_IS_PCI(pThis))
     {
-        rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
+        rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
         if (RT_FAILURE(rc))
             return rc;
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, PCNET_IOPORT_SIZE,  PCI_ADDRESS_SPACE_IO,  pcnetIOPortMap);
@@ -5475,7 +5475,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Reset the device state. (Do after attaching.)
      */
-    pcnetR3HardReset(pThis);
+    pcnetR3HardReset(pDevIns, pThis);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Public/Net/PCnet%u/BytesReceived", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Public/Net/PCnet%u/BytesTransmitted", iInstance);

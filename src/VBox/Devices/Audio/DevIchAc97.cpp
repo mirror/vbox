@@ -484,8 +484,6 @@ typedef struct AC97STATEDBGINFO
  */
 typedef struct AC97STATE
 {
-    /** The PCI device state. */
-    PDMPCIDEV               PciDev;
     /** Critical section protecting the AC'97 state. */
     PDMCRITSECT             CritSect;
     /** R3 pointer to the device instance. */
@@ -3609,16 +3607,15 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 static DECLCALLBACK(int) ichac97R3IOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                             RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(cb, enmType);
+    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    RTIOPORT   Port  = (RTIOPORT)GCPhysAddress;
+    RT_NOREF(pPciDev, cb, enmType);
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(cb >= 0x20);
+    AssertReturn(iRegion <= 1, VERR_INVALID_PARAMETER); /* We support 2 regions max. at the moment. */
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
-    if (iRegion > 1) /* We support 2 regions max. at the moment. */
-        return VERR_INVALID_PARAMETER;
-
-    PAC97STATE pThis   = RT_FROM_MEMBER(pPciDev, AC97STATE, PciDev);
-    RTIOPORT   Port    = (RTIOPORT)GCPhysAddress;
 
     int rc;
     if (iRegion == 0)
@@ -4286,43 +4283,44 @@ static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, P
      * Initialize data (most of it anyway).
      */
     /* PCI Device */
-    PCIDevSetVendorId     (&pThis->PciDev, 0x8086); /* 00 ro - intel. */               Assert(pThis->PciDev.abConfig[0x00] == 0x86); Assert(pThis->PciDev.abConfig[0x01] == 0x80);
-    PCIDevSetDeviceId     (&pThis->PciDev, 0x2415); /* 02 ro - 82801 / 82801aa(?). */  Assert(pThis->PciDev.abConfig[0x02] == 0x15); Assert(pThis->PciDev.abConfig[0x03] == 0x24);
-    PCIDevSetCommand      (&pThis->PciDev, 0x0000); /* 04 rw,ro - pcicmd. */           Assert(pThis->PciDev.abConfig[0x04] == 0x00); Assert(pThis->PciDev.abConfig[0x05] == 0x00);
-    PCIDevSetStatus       (&pThis->PciDev, VBOX_PCI_STATUS_DEVSEL_MEDIUM |  VBOX_PCI_STATUS_FAST_BACK); /* 06 rwc?,ro? - pcists. */  Assert(pThis->PciDev.abConfig[0x06] == 0x80); Assert(pThis->PciDev.abConfig[0x07] == 0x02);
-    PCIDevSetRevisionId   (&pThis->PciDev, 0x01);   /* 08 ro - rid. */                 Assert(pThis->PciDev.abConfig[0x08] == 0x01);
-    PCIDevSetClassProg    (&pThis->PciDev, 0x00);   /* 09 ro - pi. */                  Assert(pThis->PciDev.abConfig[0x09] == 0x00);
-    PCIDevSetClassSub     (&pThis->PciDev, 0x01);   /* 0a ro - scc; 01 == Audio. */    Assert(pThis->PciDev.abConfig[0x0a] == 0x01);
-    PCIDevSetClassBase    (&pThis->PciDev, 0x04);   /* 0b ro - bcc; 04 == multimedia.*/Assert(pThis->PciDev.abConfig[0x0b] == 0x04);
-    PCIDevSetHeaderType   (&pThis->PciDev, 0x00);   /* 0e ro - headtyp. */             Assert(pThis->PciDev.abConfig[0x0e] == 0x00);
-    PCIDevSetBaseAddress  (&pThis->PciDev, 0,       /* 10 rw - nambar - native audio mixer base. */
-                           true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->PciDev.abConfig[0x10] == 0x01); Assert(pThis->PciDev.abConfig[0x11] == 0x00); Assert(pThis->PciDev.abConfig[0x12] == 0x00); Assert(pThis->PciDev.abConfig[0x13] == 0x00);
-    PCIDevSetBaseAddress  (&pThis->PciDev, 1,       /* 14 rw - nabmbar - native audio bus mastering. */
-                           true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pThis->PciDev.abConfig[0x14] == 0x01); Assert(pThis->PciDev.abConfig[0x15] == 0x00); Assert(pThis->PciDev.abConfig[0x16] == 0x00); Assert(pThis->PciDev.abConfig[0x17] == 0x00);
-    PCIDevSetInterruptLine(&pThis->PciDev, 0x00);   /* 3c rw. */                       Assert(pThis->PciDev.abConfig[0x3c] == 0x00);
-    PCIDevSetInterruptPin (&pThis->PciDev, 0x01);   /* 3d ro - INTA#. */               Assert(pThis->PciDev.abConfig[0x3d] == 0x01);
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PCIDevSetVendorId(pPciDev,              0x8086); /* 00 ro - intel. */               Assert(pPciDev->abConfig[0x00] == 0x86); Assert(pPciDev->abConfig[0x01] == 0x80);
+    PCIDevSetDeviceId(pPciDev,              0x2415); /* 02 ro - 82801 / 82801aa(?). */  Assert(pPciDev->abConfig[0x02] == 0x15); Assert(pPciDev->abConfig[0x03] == 0x24);
+    PCIDevSetCommand(pPciDev,               0x0000); /* 04 rw,ro - pcicmd. */           Assert(pPciDev->abConfig[0x04] == 0x00); Assert(pPciDev->abConfig[0x05] == 0x00);
+    PCIDevSetStatus(pPciDev,                VBOX_PCI_STATUS_DEVSEL_MEDIUM |  VBOX_PCI_STATUS_FAST_BACK); /* 06 rwc?,ro? - pcists. */  Assert(pPciDev->abConfig[0x06] == 0x80); Assert(pPciDev->abConfig[0x07] == 0x02);
+    PCIDevSetRevisionId(pPciDev,            0x01);   /* 08 ro - rid. */                 Assert(pPciDev->abConfig[0x08] == 0x01);
+    PCIDevSetClassProg(pPciDev,             0x00);   /* 09 ro - pi. */                  Assert(pPciDev->abConfig[0x09] == 0x00);
+    PCIDevSetClassSub(pPciDev,              0x01);   /* 0a ro - scc; 01 == Audio. */    Assert(pPciDev->abConfig[0x0a] == 0x01);
+    PCIDevSetClassBase(pPciDev,             0x04);   /* 0b ro - bcc; 04 == multimedia.*/Assert(pPciDev->abConfig[0x0b] == 0x04);
+    PCIDevSetHeaderType(pPciDev,            0x00);   /* 0e ro - headtyp. */             Assert(pPciDev->abConfig[0x0e] == 0x00);
+    PCIDevSetBaseAddress(pPciDev,           0,       /* 10 rw - nambar - native audio mixer base. */
+                           true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pPciDev->abConfig[0x10] == 0x01); Assert(pPciDev->abConfig[0x11] == 0x00); Assert(pPciDev->abConfig[0x12] == 0x00); Assert(pPciDev->abConfig[0x13] == 0x00);
+    PCIDevSetBaseAddress(pPciDev,           1,       /* 14 rw - nabmbar - native audio bus mastering. */
+                         true /* fIoSpace */, false /* fPrefetchable */, false /* f64Bit */, 0x00000000); Assert(pPciDev->abConfig[0x14] == 0x01); Assert(pPciDev->abConfig[0x15] == 0x00); Assert(pPciDev->abConfig[0x16] == 0x00); Assert(pPciDev->abConfig[0x17] == 0x00);
+    PCIDevSetInterruptLine(pPciDev,         0x00);   /* 3c rw. */                       Assert(pPciDev->abConfig[0x3c] == 0x00);
+    PCIDevSetInterruptPin(pPciDev,          0x01);   /* 3d ro - INTA#. */               Assert(pPciDev->abConfig[0x3d] == 0x01);
 
     if (pThis->uCodecModel == AC97_CODEC_AD1980)
     {
-        PCIDevSetSubSystemVendorId(&pThis->PciDev, 0x1028); /* 2c ro - Dell.) */
-        PCIDevSetSubSystemId      (&pThis->PciDev, 0x0177); /* 2e ro. */
+        PCIDevSetSubSystemVendorId(pPciDev, 0x1028); /* 2c ro - Dell.) */
+        PCIDevSetSubSystemId(pPciDev,       0x0177); /* 2e ro. */
     }
     else if (pThis->uCodecModel == AC97_CODEC_AD1981B)
     {
-        PCIDevSetSubSystemVendorId(&pThis->PciDev, 0x1028); /* 2c ro - Dell.) */
-        PCIDevSetSubSystemId      (&pThis->PciDev, 0x01ad); /* 2e ro. */
+        PCIDevSetSubSystemVendorId(pPciDev, 0x1028); /* 2c ro - Dell.) */
+        PCIDevSetSubSystemId(pPciDev,       0x01ad); /* 2e ro. */
     }
     else
     {
-        PCIDevSetSubSystemVendorId(&pThis->PciDev, 0x8086); /* 2c ro - Intel.) */
-        PCIDevSetSubSystemId      (&pThis->PciDev, 0x0000); /* 2e ro. */
+        PCIDevSetSubSystemVendorId(pPciDev, 0x8086); /* 2c ro - Intel.) */
+        PCIDevSetSubSystemId(pPciDev,       0x0000); /* 2e ro. */
     }
 
     /*
      * Register the PCI device, it's I/O regions, the timer and the
      * saved state item.
      */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->PciDev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
 

@@ -459,8 +459,6 @@ AssertCompileSizeAlignment(AHCIPort, 8);
  */
 typedef struct AHCI
 {
-    /** The PCI device structure. */
-    PDMPCIDEV                       dev;
     /** Pointer to the device instance - R3 ptr */
     PPDMDEVINSR3                    pDevInsR3;
     /** Pointer to the device instance - R0 ptr */
@@ -848,7 +846,6 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort);
 #endif
 RT_C_DECLS_END
 
-#define PCIDEV_2_PAHCI(pPciDev)                  ( (PAHCI)(pPciDev) )
 #define PDMIBASE_2_PAHCIPORT(pInterface)         ( (PAHCIPort)((uintptr_t)(pInterface) - RT_UOFFSETOF(AHCIPort, IBase)) )
 #define PDMIMEDIAPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)(pInterface) - RT_UOFFSETOF(AHCIPort, IPort)) )
 #define PDMIBASE_2_PAHCI(pInterface)             ( (PAHCI)((uintptr_t)(pInterface) - RT_UOFFSETOF(AHCI, IBase)) )
@@ -2450,13 +2447,14 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                        RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, enmType);
-    PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    RT_NOREF(pPciDev, iRegion, enmType);
 
     Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     Assert(cb >= 4352);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
     /** @todo change this to IOMMMIO_FLAGS_WRITE_ONLY_DWORD once EM/IOM starts
@@ -2494,17 +2492,17 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, u
 static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                     RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, enmType);
-    PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
-    int   rc = VINF_SUCCESS;
+    RT_NOREF(pPciDev, iRegion, enmType);
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
 
     Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-    rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, cb, NULL,
-                                 ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL, NULL, "AHCI Fake");
+    int rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, cb, NULL,
+                                     ahciLegacyFakeWrite, ahciLegacyFakeRead, NULL, NULL, "AHCI Fake");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2534,17 +2532,17 @@ static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPDMPCID
 static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(iRegion, enmType);
-    PAHCI pThis = PCIDEV_2_PAHCI(pPciDev);
-    int   rc = VINF_SUCCESS;
+    RT_NOREF(pPciDev, iRegion, enmType);
+    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
 
     Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-    rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, cb, NULL,
-                                 ahciIdxDataWrite, ahciIdxDataRead, NULL, NULL, "AHCI IDX/DATA");
+    int rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, cb, NULL,
+                                     ahciIdxDataWrite, ahciIdxDataRead, NULL, NULL, "AHCI IDX/DATA");
     if (RT_FAILURE(rc))
         return rc;
 
@@ -5955,38 +5953,41 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
 
-    PCIDevSetVendorId    (&pThis->dev, 0x8086); /* Intel */
-    PCIDevSetDeviceId    (&pThis->dev, 0x2829); /* ICH-8M */
-    PCIDevSetCommand     (&pThis->dev, 0x0000);
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    PDMPciDevSetVendorId(pPciDev,          0x8086); /* Intel */
+    PDMPciDevSetDeviceId(pPciDev,          0x2829); /* ICH-8M */
+    PDMPciDevSetCommand(pPciDev,           0x0000);
 #ifdef VBOX_WITH_MSI_DEVICES
-    PCIDevSetStatus      (&pThis->dev, VBOX_PCI_STATUS_CAP_LIST);
-    PCIDevSetCapabilityList(&pThis->dev, 0x80);
+    PDMPciDevSetStatus(pPciDev,            VBOX_PCI_STATUS_CAP_LIST);
+    PDMPciDevSetCapabilityList(pPciDev,    0x80);
 #else
-    PCIDevSetCapabilityList(&pThis->dev, 0x70);
+    PDMPciDevSetCapabilityList(pPciDev,    0x70);
 #endif
-    PCIDevSetRevisionId  (&pThis->dev, 0x02);
-    PCIDevSetClassProg   (&pThis->dev, 0x01);
-    PCIDevSetClassSub    (&pThis->dev, 0x06);
-    PCIDevSetClassBase   (&pThis->dev, 0x01);
-    PCIDevSetBaseAddress (&pThis->dev, 5, false, false, false, 0x00000000);
+    PDMPciDevSetRevisionId(pPciDev,        0x02);
+    PDMPciDevSetClassProg(pPciDev,         0x01);
+    PDMPciDevSetClassSub(pPciDev,          0x06);
+    PDMPciDevSetClassBase(pPciDev,         0x01);
+    PDMPciDevSetBaseAddress(pPciDev, 5, false, false, false, 0x00000000);
 
-    PCIDevSetInterruptLine(&pThis->dev, 0x00);
-    PCIDevSetInterruptPin (&pThis->dev, 0x01);
+    PDMPciDevSetInterruptLine(pPciDev,     0x00);
+    PDMPciDevSetInterruptPin(pPciDev,      0x01);
 
-    pThis->dev.abConfig[0x70] = VBOX_PCI_CAP_ID_PM; /* Capability ID: PCI Power Management Interface */
-    pThis->dev.abConfig[0x71] = 0xa8; /* next */
-    pThis->dev.abConfig[0x72] = 0x03; /* version ? */
+    PDMPciDevSetByte(pPciDev,  0x70,       VBOX_PCI_CAP_ID_PM); /* Capability ID: PCI Power Management Interface */
+    PDMPciDevSetByte(pPciDev,  0x71,       0xa8); /* next */
+    PDMPciDevSetByte(pPciDev,  0x72,       0x03); /* version ? */
 
-    pThis->dev.abConfig[0x90] = 0x40; /* AHCI mode. */
-    pThis->dev.abConfig[0x92] = 0x3f;
-    pThis->dev.abConfig[0x94] = 0x80;
-    pThis->dev.abConfig[0x95] = 0x01;
-    pThis->dev.abConfig[0x97] = 0x78;
+    PDMPciDevSetByte(pPciDev,  0x90,       0x40); /* AHCI mode. */
+    PDMPciDevSetByte(pPciDev,  0x92,       0x3f);
+    PDMPciDevSetByte(pPciDev,  0x94,       0x80);
+    PDMPciDevSetByte(pPciDev,  0x95,       0x01);
+    PDMPciDevSetByte(pPciDev,  0x97,       0x78);
 
-    pThis->dev.abConfig[0xa8] = 0x12;              /* SATACR capability */
-    pThis->dev.abConfig[0xa9] = 0x00;              /* next */
-    PCIDevSetWord(&pThis->dev, 0xaa, 0x0010);      /* Revision */
-    PCIDevSetDWord(&pThis->dev, 0xac, 0x00000028); /* SATA Capability Register 1 */
+    PDMPciDevSetByte(pPciDev,  0xa8,       0x12);              /* SATACR capability */
+    PDMPciDevSetByte(pPciDev,  0xa9,       0x00);              /* next */
+    PDMPciDevSetWord(pPciDev,  0xaa,       0x0010);      /* Revision */
+    PDMPciDevSetDWord(pPciDev, 0xac,       0x00000028); /* SATA Capability Register 1 */
 
     pThis->cThreadsActive = 0;
 
@@ -6025,7 +6026,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Register the PCI device, it's I/O regions.
      */
-    rc = PDMDevHlpPCIRegister (pDevIns, &pThis->dev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -6038,7 +6039,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpPCIRegisterMsi(pDevIns, &MsiReg);
     if (RT_FAILURE(rc))
     {
-        PCIDevSetCapabilityList(&pThis->dev, 0x70);
+        PCIDevSetCapabilityList(pPciDev, 0x70);
         /* That's OK, we can work without MSI */
     }
 #endif
@@ -6161,7 +6162,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
             /* Mark that a device is present on that port */
             if (i < 6)
-                pThis->dev.abConfig[0x93] |= (1 << i);
+                pPciDev->abConfig[0x93] |= (1 << i);
 
             /*
              * Init vendor product data.

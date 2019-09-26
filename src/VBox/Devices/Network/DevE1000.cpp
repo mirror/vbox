@@ -1093,8 +1093,6 @@ struct E1kState_st
     RTMAC       macConfigured;
     /** Base port of I/O space region. */
     RTIOPORT    IOPortBase;
-    /** EMT: */
-    PDMPCIDEV   pciDevice;
     /** EMT: Last time the interrupt was acknowledged.  */
     uint64_t    u64AckedAt;
     /** All: Used for eliminating spurious interrupts. */
@@ -6283,10 +6281,11 @@ static void e1kDumpState(PE1KSTATE pThis)
 static DECLCALLBACK(int) e1kMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                 RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    RT_NOREF(pPciDev, iRegion);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE *);
-    int       rc;
+    RT_NOREF(pPciDev, iRegion);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
+    int rc;
     switch (enmType)
     {
         case PCI_ADDRESS_SPACE_IO:
@@ -7604,67 +7603,67 @@ static DECLCALLBACK(void) e1kConfigurePciDev(PPDMPCIDEV pPciDev, E1KCHIP eChip)
 {
     Assert(eChip < RT_ELEMENTS(g_aChips));
     /* Configure PCI Device, assume 32-bit mode ******************************/
-    PCIDevSetVendorId(pPciDev, g_aChips[eChip].uPCIVendorId);
-    PCIDevSetDeviceId(pPciDev, g_aChips[eChip].uPCIDeviceId);
-    PCIDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID, g_aChips[eChip].uPCISubsystemVendorId);
-    PCIDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_ID, g_aChips[eChip].uPCISubsystemId);
+    PDMPciDevSetVendorId(pPciDev, g_aChips[eChip].uPCIVendorId);
+    PDMPciDevSetDeviceId(pPciDev, g_aChips[eChip].uPCIDeviceId);
+    PDMPciDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID, g_aChips[eChip].uPCISubsystemVendorId);
+    PDMPciDevSetWord( pPciDev, VBOX_PCI_SUBSYSTEM_ID, g_aChips[eChip].uPCISubsystemId);
 
-    PCIDevSetWord( pPciDev, VBOX_PCI_COMMAND,            0x0000);
+    PDMPciDevSetWord( pPciDev, VBOX_PCI_COMMAND,            0x0000);
     /* DEVSEL Timing (medium device), 66 MHz Capable, New capabilities */
-    PCIDevSetWord( pPciDev, VBOX_PCI_STATUS,
-                   VBOX_PCI_STATUS_DEVSEL_MEDIUM | VBOX_PCI_STATUS_CAP_LIST |  VBOX_PCI_STATUS_66MHZ);
+    PDMPciDevSetWord( pPciDev, VBOX_PCI_STATUS,
+                      VBOX_PCI_STATUS_DEVSEL_MEDIUM | VBOX_PCI_STATUS_CAP_LIST |  VBOX_PCI_STATUS_66MHZ);
     /* Stepping A2 */
-    PCIDevSetByte( pPciDev, VBOX_PCI_REVISION_ID,          0x02);
+    PDMPciDevSetByte( pPciDev, VBOX_PCI_REVISION_ID,          0x02);
     /* Ethernet adapter */
-    PCIDevSetByte( pPciDev, VBOX_PCI_CLASS_PROG,           0x00);
-    PCIDevSetWord( pPciDev, VBOX_PCI_CLASS_DEVICE,       0x0200);
+    PDMPciDevSetByte( pPciDev, VBOX_PCI_CLASS_PROG,           0x00);
+    PDMPciDevSetWord( pPciDev, VBOX_PCI_CLASS_DEVICE,       0x0200);
     /* normal single function Ethernet controller */
-    PCIDevSetByte( pPciDev, VBOX_PCI_HEADER_TYPE,          0x00);
+    PDMPciDevSetByte( pPciDev, VBOX_PCI_HEADER_TYPE,          0x00);
     /* Memory Register Base Address */
-    PCIDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_0, 0x00000000);
+    PDMPciDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_0, 0x00000000);
     /* Memory Flash Base Address */
-    PCIDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_1, 0x00000000);
+    PDMPciDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_1, 0x00000000);
     /* IO Register Base Address */
-    PCIDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_2, 0x00000001);
+    PDMPciDevSetDWord(pPciDev, VBOX_PCI_BASE_ADDRESS_2, 0x00000001);
     /* Expansion ROM Base Address */
-    PCIDevSetDWord(pPciDev, VBOX_PCI_ROM_ADDRESS,    0x00000000);
+    PDMPciDevSetDWord(pPciDev, VBOX_PCI_ROM_ADDRESS,    0x00000000);
     /* Capabilities Pointer */
-    PCIDevSetByte( pPciDev, VBOX_PCI_CAPABILITY_LIST,      0xDC);
+    PDMPciDevSetByte( pPciDev, VBOX_PCI_CAPABILITY_LIST,      0xDC);
     /* Interrupt Pin: INTA# */
-    PCIDevSetByte( pPciDev, VBOX_PCI_INTERRUPT_PIN,        0x01);
+    PDMPciDevSetByte( pPciDev, VBOX_PCI_INTERRUPT_PIN,        0x01);
     /* Max_Lat/Min_Gnt: very high priority and time slice */
-    PCIDevSetByte( pPciDev, VBOX_PCI_MIN_GNT,              0xFF);
-    PCIDevSetByte( pPciDev, VBOX_PCI_MAX_LAT,              0x00);
+    PDMPciDevSetByte( pPciDev, VBOX_PCI_MIN_GNT,              0xFF);
+    PDMPciDevSetByte( pPciDev, VBOX_PCI_MAX_LAT,              0x00);
 
     /* PCI Power Management Registers ****************************************/
     /* Capability ID: PCI Power Management Registers */
-    PCIDevSetByte( pPciDev, 0xDC,            VBOX_PCI_CAP_ID_PM);
+    PDMPciDevSetByte( pPciDev, 0xDC,            VBOX_PCI_CAP_ID_PM);
     /* Next Item Pointer: PCI-X */
-    PCIDevSetByte( pPciDev, 0xDC + 1,                      0xE4);
+    PDMPciDevSetByte( pPciDev, 0xDC + 1,                      0xE4);
     /* Power Management Capabilities: PM disabled, DSI */
-    PCIDevSetWord( pPciDev, 0xDC + 2,
-                    0x0002 | VBOX_PCI_PM_CAP_DSI);
+    PDMPciDevSetWord( pPciDev, 0xDC + 2,
+                      0x0002 | VBOX_PCI_PM_CAP_DSI);
     /* Power Management Control / Status Register: PM disabled */
-    PCIDevSetWord( pPciDev, 0xDC + 4,                    0x0000);
+    PDMPciDevSetWord( pPciDev, 0xDC + 4,                    0x0000);
     /* PMCSR_BSE Bridge Support Extensions: Not supported */
-    PCIDevSetByte( pPciDev, 0xDC + 6,                      0x00);
+    PDMPciDevSetByte( pPciDev, 0xDC + 6,                      0x00);
     /* Data Register: PM disabled, always 0 */
-    PCIDevSetByte( pPciDev, 0xDC + 7,                      0x00);
+    PDMPciDevSetByte( pPciDev, 0xDC + 7,                      0x00);
 
     /* PCI-X Configuration Registers *****************************************/
     /* Capability ID: PCI-X Configuration Registers */
-    PCIDevSetByte( pPciDev, 0xE4,          VBOX_PCI_CAP_ID_PCIX);
+    PDMPciDevSetByte( pPciDev, 0xE4,          VBOX_PCI_CAP_ID_PCIX);
 #ifdef E1K_WITH_MSI
-    PCIDevSetByte( pPciDev, 0xE4 + 1,                      0x80);
+    PDMPciDevSetByte( pPciDev, 0xE4 + 1,                      0x80);
 #else
     /* Next Item Pointer: None (Message Signalled Interrupts are disabled) */
-    PCIDevSetByte( pPciDev, 0xE4 + 1,                      0x00);
+    PDMPciDevSetByte( pPciDev, 0xE4 + 1,                      0x00);
 #endif
     /* PCI-X Command: Enable Relaxed Ordering */
-    PCIDevSetWord( pPciDev, 0xE4 + 2,        VBOX_PCI_X_CMD_ERO);
+    PDMPciDevSetWord( pPciDev, 0xE4 + 2,        VBOX_PCI_X_CMD_ERO);
     /* PCI-X Status: 32-bit, 66MHz*/
     /** @todo is this value really correct? fff8 doesn't look like actual PCI address */
-    PCIDevSetDWord(pPciDev, 0xE4 + 4,                0x0040FFF8);
+    PDMPciDevSetDWord(pPciDev, 0xE4 + 4,                0x0040FFF8);
 }
 
 /**
@@ -7833,8 +7832,9 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return rc;
 
     /* Set PCI config registers and register ourselves with the PCI bus. */
-    e1kConfigurePciDev(&pThis->pciDevice, pThis->eChip);
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->pciDevice);
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pDevIns->apPciDevs[0]);
+    e1kConfigurePciDev(pDevIns->apPciDevs[0], pThis->eChip);
+    rc = PDMDevHlpPCIRegister(pDevIns, pDevIns->apPciDevs[0]);
     if (RT_FAILURE(rc))
         return rc;
 

@@ -594,7 +594,8 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
                  * We automagically enable bus mastering on driver initialization to make existing
                  * drivers work.
                  */
-                PDMPciDevSetCommand(&pState->pciDevice, PDMPciDevGetCommand(&pState->pciDevice) | PCI_COMMAND_BUSMASTER);
+                PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+                PDMPciDevSetCommand(pPciDev, PDMPciDevGetCommand(pPciDev) | PCI_COMMAND_BUSMASTER);
 
                 pCallbacks->pfnReady(pState);
             }
@@ -838,32 +839,32 @@ int vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
 /**
  * Set PCI configuration space registers.
  *
- * @param   pci          Reference to PCI device structure.
+ * @param   pPciDev      Pointer to the PCI device structure.
  * @param   uDeviceId    VirtiO Device Id
  * @param   uClass       Class of PCI device (network, etc)
  * @thread  EMT
  */
-static DECLCALLBACK(void) vpciConfigure(PDMPCIDEV& pci,
+static DECLCALLBACK(void) vpciConfigure(PPDMPCIDEV pPciDev,
                                         uint16_t uDeviceId,
                                         uint16_t uClass)
 {
     /* Configure PCI Device, assume 32-bit mode ******************************/
-    PCIDevSetVendorId(&pci, DEVICE_PCI_VENDOR_ID);
-    PCIDevSetDeviceId(&pci, DEVICE_PCI_BASE_ID + uDeviceId);
-    PDMPciDevSetWord(&pci,  VBOX_PCI_SUBSYSTEM_VENDOR_ID, DEVICE_PCI_SUBSYSTEM_VENDOR_ID);
-    PDMPciDevSetWord(&pci,  VBOX_PCI_SUBSYSTEM_ID, DEVICE_PCI_SUBSYSTEM_BASE_ID + uDeviceId);
+    PDMPciDevSetVendorId(pPciDev,                           DEVICE_PCI_VENDOR_ID);
+    PDMPciDevSetDeviceId(pPciDev,                           DEVICE_PCI_BASE_ID + uDeviceId);
+    PDMPciDevSetWord(pPciDev, VBOX_PCI_SUBSYSTEM_VENDOR_ID, DEVICE_PCI_SUBSYSTEM_VENDOR_ID);
+    PDMPciDevSetWord(pPciDev, VBOX_PCI_SUBSYSTEM_ID,        DEVICE_PCI_SUBSYSTEM_BASE_ID + uDeviceId);
 
     /* ABI version, must be equal 0 as of 2.6.30 kernel. */
-    PDMPciDevSetByte(&pci,  VBOX_PCI_REVISION_ID,          0x00);
+    PDMPciDevSetByte(pPciDev, VBOX_PCI_REVISION_ID,         0x00);
     /* Ethernet adapter */
-    PDMPciDevSetByte(&pci,  VBOX_PCI_CLASS_PROG,           0x00);
-    PDMPciDevSetWord(&pci,  VBOX_PCI_CLASS_DEVICE,         uClass);
+    PDMPciDevSetByte(pPciDev, VBOX_PCI_CLASS_PROG,          0x00);
+    PDMPciDevSetWord(pPciDev, VBOX_PCI_CLASS_DEVICE,        uClass);
     /* Interrupt Pin: INTA# */
-    PDMPciDevSetByte(&pci,  VBOX_PCI_INTERRUPT_PIN,        0x01);
+    PDMPciDevSetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN,       0x01);
 
 #ifdef VBOX_WITH_MSI_DEVICES
-    PCIDevSetCapabilityList(&pci, 0x80);
-    PCIDevSetStatus( &pci,  VBOX_PCI_STATUS_CAP_LIST);
+    PDMPciDevSetCapabilityList(pPciDev,                     0x80);
+    PDMPciDevSetStatus(pPciDev,                             VBOX_PCI_STATUS_CAP_LIST);
 #endif
 }
 
@@ -903,10 +904,12 @@ int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
     if (RT_FAILURE(rc))
         return rc;
 
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
     /* Set PCI config registers */
-    vpciConfigure(pState->pciDevice, uDeviceId, uClass);
+    vpciConfigure(pPciDev, uDeviceId, uClass);
     /* Register PCI device */
-    rc = PDMDevHlpPCIRegister(pDevIns, &pState->pciDevice);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
 

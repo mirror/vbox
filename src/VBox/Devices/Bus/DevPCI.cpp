@@ -301,7 +301,7 @@ static void pciSetIrqInternal(PPDMDEVINS pDevIns, PDEVPCIROOT pGlobals, PDEVPCIB
                               uint8_t uDevFn, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     PDEVPCIBUS  pBus = &pGlobals->PciBus;
-    uint8_t    *pbCfg = pGlobals->Piix3.PIIX3State.dev.abConfig;
+    uint8_t    *pbCfg = pDevIns->apPciDevs[1]->abConfig;
     const bool  fIsAcpiDevice = pPciDev->abConfig[2] == 0x13 && pPciDev->abConfig[3] == 0x71;
     /* If the two configuration space bytes at 0xde, 0xad are set to 0xbe, 0xef, a back door
      * is opened to route PCI interrupts directly to the I/O APIC and bypass the PIC.
@@ -430,9 +430,9 @@ DECLINLINE(PPDMPCIDEV) pciR3FindBridge(PDEVPCIBUS pBus, uint8_t iBus)
     return NULL;
 }
 
-static void pciR3Piix3Reset(PIIX3ISABRIDGE *d)
+static void pciR3Piix3Reset(PPDMPCIDEV pPiix3PciDev)
 {
-    uint8_t *pci_conf = d->dev.abConfig;
+    uint8_t *pci_conf = pPiix3PciDev->abConfig;
 
     pci_conf[0x04] = 0x07; /* master, memory and I/O */
     pci_conf[0x05] = 0x00;
@@ -757,7 +757,7 @@ static int pciR3FakePCIBIOS(PPDMDEVINS pDevIns)
     /*
      * Activate IRQ mappings.
      */
-    PPDMPCIDEV pPIIX3 = &pGlobals->Piix3.PIIX3State.dev;
+    PPDMPCIDEV pPIIX3 = pDevIns->apPciDevs[1];
     for (unsigned i = 0; i < 4; i++)
     {
         uint8_t irq = pci_irqs[i];
@@ -1067,10 +1067,14 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
         }
 
         /* get the data */
-        PDMPCIDEV DevTmp;
-        RT_ZERO(DevTmp);
-        DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
-        SSMR3GetMem(pSSM, DevTmp.abConfig, sizeof(DevTmp.abConfig));
+        union
+        {
+            PDMPCIDEV DevTmp;
+            uint8_t   abDevTmpPadding[RT_UOFFSETOF(PDMPCIDEV, abMsixState)];
+        } u;
+        RT_ZERO(u.DevTmp);
+        u.DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
+        SSMR3GetMem(pSSM, u.DevTmp.abConfig, 256);
         if (uVersion < VBOX_PCI_SAVED_STATE_VERSION_IRQ_STATES)
         {
             int32_t i32Temp;
@@ -1081,7 +1085,7 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
         }
         else
         {
-            rc = SSMR3GetS32(pSSM, &DevTmp.Int.s.uIrqPinState);
+            rc = SSMR3GetS32(pSSM, &u.DevTmp.Int.s.uIrqPinState);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -1091,8 +1095,8 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
         {
             for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
             {
-                SSMR3GetU8(pSSM, &DevTmp.Int.s.aIORegions[iRegion].type);
-                rc = SSMR3GetU64(pSSM, &DevTmp.Int.s.aIORegions[iRegion].size);
+                SSMR3GetU8(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].type);
+                rc = SSMR3GetU64(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].size);
                 AssertLogRelRCReturn(rc, rc);
             }
         }
@@ -1102,28 +1106,28 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
         if (!pDev)
         {
             LogRel(("PCI: Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", uDevFn,
-                    PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp)));
+                    PCIDevGetVendorId(&u.DevTmp), PCIDevGetDeviceId(&u.DevTmp)));
             if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x has been removed! vendor=%#06x device=%#06x"),
-                                        uDevFn, PCIDevGetVendorId(&DevTmp), PCIDevGetDeviceId(&DevTmp));
+                                        uDevFn, PCIDevGetVendorId(&u.DevTmp), PCIDevGetDeviceId(&u.DevTmp));
             continue;
         }
 
         /* match the vendor id assuming that this will never be changed. */
-        if (   DevTmp.abConfig[0] != pDev->abConfig[0]
-            || DevTmp.abConfig[1] != pDev->abConfig[1])
+        if (   u.DevTmp.abConfig[0] != pDev->abConfig[0]
+            || u.DevTmp.abConfig[1] != pDev->abConfig[1])
             return SSMR3SetCfgError(pSSM, RT_SRC_POS,
                                     N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
-                                    uDevFn, pDev->pszNameR3, DevTmp.abConfig, pDev->abConfig);
+                                    uDevFn, pDev->pszNameR3, u.DevTmp.abConfig, pDev->abConfig);
 
         /* commit the loaded device config. */
-        rc = devpciR3CommonRestoreRegions(pSSM, pDev, DevTmp.Int.s.aIORegions,
+        rc = devpciR3CommonRestoreRegions(pSSM, pDev, u.DevTmp.Int.s.aIORegions,
                                           uVersion >= VBOX_PCI_SAVED_STATE_VERSION_REGION_SIZES);
         if (RT_FAILURE(rc))
             break;
-        devpciR3CommonRestoreConfig(pDevIns, pDev, &DevTmp.abConfig[0]);
+        devpciR3CommonRestoreConfig(pDevIns, pDev, &u.DevTmp.abConfig[0]);
 
-        pDev->Int.s.uIrqPinState = DevTmp.Int.s.uIrqPinState;
+        pDev->Int.s.uIrqPinState = u.DevTmp.Int.s.uIrqPinState;
     }
 
     return VINF_SUCCESS;
@@ -1190,8 +1194,7 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  */
 static DECLCALLBACK(void) pciR3IrqRouteInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PDEVPCIROOT pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PPDMPCIDEV pPIIX3 = &pGlobals->Piix3.PIIX3State.dev;
+    PPDMPCIDEV pPIIX3 = pDevIns->apPciDevs[1];
     NOREF(pszArgs);
 
     uint16_t router = pPIIX3->uDevFn;
@@ -1239,7 +1242,7 @@ static DECLCALLBACK(void) pciR3Reset(PPDMDEVINS pDevIns)
             devpciR3ResetDevice(pDevIns, pBus->apDevices[uDevFn]);
     }
 
-    pciR3Piix3Reset(&pGlobals->Piix3.PIIX3State);
+    pciR3Piix3Reset(pDevIns->apPciDevs[1]);
 }
 
 
@@ -1328,27 +1331,29 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Fill in PCI configs and add them to the bus.
      */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    AssertPtr(pPciDev);
+
     /* i440FX */
-    PCIDevSetVendorId(  &pBus->PciDev, 0x8086); /* Intel */
-    PCIDevSetDeviceId(  &pBus->PciDev, 0x1237);
-    PCIDevSetRevisionId(&pBus->PciDev,   0x02);
-    PCIDevSetClassSub(  &pBus->PciDev,   0x00); /* host2pci */
-    PCIDevSetClassBase( &pBus->PciDev,   0x06); /* PCI_bridge */
-    PCIDevSetHeaderType(&pBus->PciDev,   0x00);
-    rc = PDMDevHlpPCIRegisterEx(pDevIns, &pBus->PciDev, PDMPCIDEVREG_CFG_PRIMARY, 0 /*fFlags*/,
-                                0 /*uPciDevNo*/, 0 /*uPciFunNo*/, "i440FX");
+    PCIDevSetVendorId(  pPciDev, 0x8086); /* Intel */
+    PCIDevSetDeviceId(  pPciDev, 0x1237);
+    PCIDevSetRevisionId(pPciDev,   0x02);
+    PCIDevSetClassSub(  pPciDev,   0x00); /* host2pci */
+    PCIDevSetClassBase( pPciDev,   0x06); /* PCI_bridge */
+    PCIDevSetHeaderType(pPciDev,   0x00);
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, 0 /*fFlags*/, 0 /*uPciDevNo*/, 0 /*uPciFunNo*/, "i440FX");
     AssertLogRelRCReturn(rc, rc);
 
     /* PIIX3 */
-    PCIDevSetVendorId(  &pGlobals->Piix3.PIIX3State.dev, 0x8086); /* Intel */
-    PCIDevSetDeviceId(  &pGlobals->Piix3.PIIX3State.dev, 0x7000); /* 82371SB PIIX3 PCI-to-ISA bridge (Step A1) */
-    PCIDevSetClassSub(  &pGlobals->Piix3.PIIX3State.dev,   0x01); /* PCI_ISA */
-    PCIDevSetClassBase( &pGlobals->Piix3.PIIX3State.dev,   0x06); /* PCI_bridge */
-    PCIDevSetHeaderType(&pGlobals->Piix3.PIIX3State.dev,   0x80); /* PCI_multifunction, generic */
-    rc = PDMDevHlpPCIRegisterEx(pDevIns, &pGlobals->Piix3.PIIX3State.dev, PDMPCIDEVREG_CFG_NEXT, 0 /*fFlags*/,
-                                1 /*uPciDevNo*/, 0 /*uPciFunNo*/, "PIIX3");
+    PPDMPCIDEV pPiix3PciDev = pDevIns->apPciDevs[1];
+    PCIDevSetVendorId(  pPiix3PciDev, 0x8086); /* Intel */
+    PCIDevSetDeviceId(  pPiix3PciDev, 0x7000); /* 82371SB PIIX3 PCI-to-ISA bridge (Step A1) */
+    PCIDevSetClassSub(  pPiix3PciDev,   0x01); /* PCI_ISA */
+    PCIDevSetClassBase( pPiix3PciDev,   0x06); /* PCI_bridge */
+    PCIDevSetHeaderType(pPiix3PciDev,   0x80); /* PCI_multifunction, generic */
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, pPiix3PciDev, 0 /*fFlags*/, 1 /*uPciDevNo*/, 0 /*uPciFunNo*/, "PIIX3");
     AssertLogRelRCReturn(rc, rc);
-    pciR3Piix3Reset(&pGlobals->Piix3.PIIX3State);
+    pciR3Piix3Reset(pDevIns->apPciDevs[1]);
 
     pBus->iDevSearch = 16;
 
@@ -1446,7 +1451,7 @@ const PDMDEVREG g_DevicePCI =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           pciR3Construct,
     /* .pfnDestruct = */            pciR3Destruct,
-    /* .pfnRelocate = */            devpciR3RootRelocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               pciR3Reset,
@@ -1521,7 +1526,7 @@ static DECLCALLBACK(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 
     PDEVPCIBUS          pBus          = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     PPDMDEVINS          pDevInsBus;
-    PPDMPCIDEV          pPciDevBus    = &pBus->PciDev;
+    PPDMPCIDEV          pPciDevBus    = pDevIns->apPciDevs[0];
     uint8_t             uDevFnBridge  = pPciDevBus->uDevFn;
     int                 iIrqPinBridge = ((pPciDev->uDevFn >> 3) + iIrq) & 3;
 
@@ -1534,7 +1539,7 @@ static DECLCALLBACK(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
         AssertLogRelReturnVoid(pDevInsBus);
 
         pBus       = PDMINS_2_DATA(pDevInsBus, PDEVPCIBUS);
-        pPciDevBus = &pBus->PciDev;
+        pPciDevBus = pDevInsBus->apPciDevs[0];
         if (pBus->iBus == 0)
             break;
 
@@ -1582,7 +1587,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcibridgeR3ConfigWrite(PPDMDEVINSR3 pDevIns, u
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
-    if (iBus != pBus->PciDev.abConfig[VBOX_PCI_SECONDARY_BUS])
+    if (iBus != pDevIns->apPciDevs[0]->abConfig[VBOX_PCI_SECONDARY_BUS])
     {
         PPDMPCIDEV pBridgeDevice = pciR3FindBridge(pBus, iBus);
         if (pBridgeDevice)
@@ -1622,7 +1627,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, ui
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
     /* If the current bus is not the target bus search for the bus which contains the device. */
-    if (iBus != pBus->PciDev.abConfig[VBOX_PCI_SECONDARY_BUS])
+    if (iBus != pDevIns->apPciDevs[0]->abConfig[VBOX_PCI_SECONDARY_BUS])
     {
         PPDMPCIDEV pBridgeDevice = pciR3FindBridge(pBus, iBus);
         if (pBridgeDevice)
@@ -1683,12 +1688,11 @@ static DECLCALLBACK(int) pcibridgeR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
  */
 static DECLCALLBACK(void) pcibridgeR3Reset(PPDMDEVINS pDevIns)
 {
-    PDEVPCIBUS pBus = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-
     /* Reset config space to default values. */
-    pBus->PciDev.abConfig[VBOX_PCI_PRIMARY_BUS] = 0;
-    pBus->PciDev.abConfig[VBOX_PCI_SECONDARY_BUS] = 0;
-    pBus->PciDev.abConfig[VBOX_PCI_SUBORDINATE_BUS] = 0;
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    pPciDev->abConfig[VBOX_PCI_PRIMARY_BUS] = 0;
+    pPciDev->abConfig[VBOX_PCI_SECONDARY_BUS] = 0;
+    pPciDev->abConfig[VBOX_PCI_SUBORDINATE_BUS] = 0;
 }
 
 
@@ -1771,32 +1775,33 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     /*
      * Fill in PCI configs and add them to the bus.
      */
-    PCIDevSetVendorId(  &pBus->PciDev, 0x8086); /* Intel */
-    PCIDevSetDeviceId(  &pBus->PciDev, 0x2448); /* 82801 Mobile PCI bridge. */
-    PCIDevSetRevisionId(&pBus->PciDev,   0xf2);
-    PCIDevSetClassSub(  &pBus->PciDev,   0x04); /* pci2pci */
-    PCIDevSetClassBase( &pBus->PciDev,   0x06); /* PCI_bridge */
-    PCIDevSetClassProg( &pBus->PciDev,   0x01); /* Supports subtractive decoding. */
-    PCIDevSetHeaderType(&pBus->PciDev,   0x01); /* Single function device which adheres to the PCI-to-PCI bridge spec. */
-    PCIDevSetCommand(   &pBus->PciDev, 0x0000);
-    PCIDevSetStatus(    &pBus->PciDev, 0x0020); /* 66MHz Capable. */
-    PCIDevSetInterruptLine(&pBus->PciDev, 0x00); /* This device does not assert interrupts. */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PCIDevSetVendorId(  pPciDev, 0x8086); /* Intel */
+    PCIDevSetDeviceId(  pPciDev, 0x2448); /* 82801 Mobile PCI bridge. */
+    PCIDevSetRevisionId(pPciDev,   0xf2);
+    PCIDevSetClassSub(  pPciDev,   0x04); /* pci2pci */
+    PCIDevSetClassBase( pPciDev,   0x06); /* PCI_bridge */
+    PCIDevSetClassProg( pPciDev,   0x01); /* Supports subtractive decoding. */
+    PCIDevSetHeaderType(pPciDev,   0x01); /* Single function device which adheres to the PCI-to-PCI bridge spec. */
+    PCIDevSetCommand(   pPciDev, 0x0000);
+    PCIDevSetStatus(    pPciDev, 0x0020); /* 66MHz Capable. */
+    PCIDevSetInterruptLine(pPciDev, 0x00); /* This device does not assert interrupts. */
 
     /*
      * This device does not generate interrupts. Interrupt delivery from
      * devices attached to the bus is unaffected.
      */
-    PCIDevSetInterruptPin(&pBus->PciDev, 0x00);
+    PCIDevSetInterruptPin(pPciDev, 0x00);
 
     /*
      * Register this PCI bridge. The called function will take care on which bus we will get registered.
      */
-    rc = PDMDevHlpPCIRegisterEx(pDevIns, &pBus->PciDev, PDMPCIDEVREG_CFG_PRIMARY, PDMPCIDEVREG_F_PCI_BRIDGE,
-                                PDMPCIDEVREG_DEV_NO_FIRST_UNUSED, PDMPCIDEVREG_FUN_NO_FIRST_UNUSED, "pcibridge");
+    rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, PDMPCIDEVREG_F_PCI_BRIDGE, PDMPCIDEVREG_DEV_NO_FIRST_UNUSED,
+                                PDMPCIDEVREG_FUN_NO_FIRST_UNUSED, "pcibridge");
     if (RT_FAILURE(rc))
         return rc;
-    pBus->PciDev.Int.s.pfnBridgeConfigRead  = pcibridgeR3ConfigRead;
-    pBus->PciDev.Int.s.pfnBridgeConfigWrite = pcibridgeR3ConfigWrite;
+    pPciDev->Int.s.pfnBridgeConfigRead  = pcibridgeR3ConfigRead;
+    pPciDev->Int.s.pfnBridgeConfigWrite = pcibridgeR3ConfigWrite;
 
     pBus->iDevSearch = 0;
 
@@ -1862,7 +1867,7 @@ const PDMDEVREG g_DevicePCIBridge =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           pcibridgeR3Construct,
     /* .pfnDestruct = */            pcibridgeR3Destruct,
-    /* .pfnRelocate = */            devpciR3BusRelocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               pcibridgeR3Reset,

@@ -5279,8 +5279,10 @@ static void vmsvgaSetTraces(PVGASTATE pThis, bool fTraces)
 DECLCALLBACK(int) vmsvgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    int         rc;
     PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    int         rc;
+    RT_NOREF(pPciDev);
+    Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     Log(("vgasvgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
     if (enmType == PCI_ADDRESS_SPACE_IO)

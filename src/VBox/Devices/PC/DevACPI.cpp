@@ -284,7 +284,6 @@ enum
  */
 typedef struct ACPIState
 {
-    PDMPCIDEV           dev;
     /** Critical section protecting the ACPI state. */
     PDMCRITSECT         CritSect;
 
@@ -797,17 +796,18 @@ DECLINLINE(bool) gpe0_level(ACPIState *pThis)
     return !!(pThis->gpe0_en & pThis->gpe0_sts);
 }
 
-DECLINLINE(bool) smbus_level(ACPIState *pThis)
+DECLINLINE(bool) smbus_level(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     return    (pThis->u8SMBusHstCnt & SMBHSTCNT_INTEREN)
-           && (pThis->dev.abConfig[SMBHSTCFG] & SMBHSTCFG_SMB_HST_EN)
-           && (pThis->dev.abConfig[SMBHSTCFG] & SMBHSTCFG_INTRSEL) == SMBHSTCFG_INTRSEL_IRQ9 << SMBHSTCFG_INTRSEL_SHIFT
+           && (pPciDev->abConfig[SMBHSTCFG] & SMBHSTCFG_SMB_HST_EN)
+           && (pPciDev->abConfig[SMBHSTCFG] & SMBHSTCFG_INTRSEL) == SMBHSTCFG_INTRSEL_IRQ9 << SMBHSTCFG_INTRSEL_SHIFT
            && (pThis->u8SMBusHstSts & SMBHSTSTS_INT_MASK);
 }
 
-DECLINLINE(bool) acpiSCILevel(ACPIState *pThis)
+DECLINLINE(bool) acpiSCILevel(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
-    return pm1a_level(pThis) || gpe0_level(pThis) || smbus_level(pThis);
+    return pm1a_level(pThis) || gpe0_level(pThis) || smbus_level(pDevIns, pThis);
 }
 
 /**
@@ -818,18 +818,19 @@ DECLINLINE(bool) acpiSCILevel(ACPIState *pThis)
  *
  * Caller must hold the state lock.
  *
+ * @param   pDevIns     The PDM device instance.
  * @param   pThis       The ACPI instance.
  * @param   sts         The new PM1a.STS value.
  * @param   en          The new PM1a.EN value.
  */
-static void apicUpdatePm1a(ACPIState *pThis, uint32_t sts, uint32_t en)
+static void acpiUpdatePm1a(PPDMDEVINS pDevIns, ACPIState *pThis, uint32_t sts, uint32_t en)
 {
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
-    const bool old_level = acpiSCILevel(pThis);
+    const bool old_level = acpiSCILevel(pDevIns, pThis);
     pThis->pm1a_en = en;
     pThis->pm1a_sts = sts;
-    const bool new_level = acpiSCILevel(pThis);
+    const bool new_level = acpiSCILevel(pDevIns, pThis);
 
     LogFunc(("old=%x new=%x\n", old_level, new_level));
 
@@ -845,18 +846,19 @@ static void apicUpdatePm1a(ACPIState *pThis, uint32_t sts, uint32_t en)
  *
  * Caller must hold the state lock.
  *
+ * @param   pDevIns     The PDM device instance.
  * @param   pThis       The ACPI instance.
  * @param   sts         The new GPE0.STS value.
  * @param   en          The new GPE0.EN value.
  */
-static void apicR3UpdateGpe0(ACPIState *pThis, uint32_t sts, uint32_t en)
+static void apicR3UpdateGpe0(PPDMDEVINS pDevIns, ACPIState *pThis, uint32_t sts, uint32_t en)
 {
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
-    const bool old_level = acpiSCILevel(pThis);
+    const bool old_level = acpiSCILevel(pDevIns, pThis);
     pThis->gpe0_en  = en;
     pThis->gpe0_sts = sts;
-    const bool new_level = acpiSCILevel(pThis);
+    const bool new_level = acpiSCILevel(pDevIns, pThis);
 
     LogFunc(("old=%x new=%x\n", old_level, new_level));
 
@@ -922,7 +924,7 @@ static DECLCALLBACK(int) acpiR3Port_PowerButtonPress(PPDMIACPIPORT pInterface)
 
     Log(("acpiR3Port_PowerButtonPress: handled=%d status=%x\n", pThis->fPowerButtonHandled, pThis->pm1a_sts));
     pThis->fPowerButtonHandled = false;
-    apicUpdatePm1a(pThis, pThis->pm1a_sts | PWRBTN_STS, pThis->pm1a_en);
+    acpiUpdatePm1a(pThis->pDevInsR3, pThis, pThis->pm1a_sts | PWRBTN_STS, pThis->pm1a_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -982,7 +984,7 @@ static DECLCALLBACK(int) acpiR3Port_SleepButtonPress(PPDMIACPIPORT pInterface)
     ACPIState *pThis = RT_FROM_MEMBER(pInterface, ACPIState, IACPIPort);
     DEVACPI_LOCK_R3(pThis);
 
-    apicUpdatePm1a(pThis, pThis->pm1a_sts | SLPBTN_STS, pThis->pm1a_en);
+    acpiUpdatePm1a(pThis->pDevInsR3, pThis, pThis->pm1a_sts | SLPBTN_STS, pThis->pm1a_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1000,7 +1002,7 @@ static DECLCALLBACK(int) acpiR3Port_MonitorHotPlugEvent(PPDMIACPIPORT pInterface
     ACPIState *pThis = RT_FROM_MEMBER(pInterface, ACPIState, IACPIPort);
     DEVACPI_LOCK_R3(pThis);
 
-    apicR3UpdateGpe0(pThis, pThis->gpe0_sts | 0x4, pThis->gpe0_en);
+    apicR3UpdateGpe0(pThis->pDevInsR3, pThis, pThis->gpe0_sts | 0x4, pThis->gpe0_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1018,7 +1020,7 @@ static DECLCALLBACK(int) acpiR3Port_BatteryStatusChangeEvent(PPDMIACPIPORT pInte
     ACPIState *pThis = RT_FROM_MEMBER(pInterface, ACPIState, IACPIPort);
     DEVACPI_LOCK_R3(pThis);
 
-    apicR3UpdateGpe0(pThis, pThis->gpe0_sts | 0x1, pThis->gpe0_en);
+    apicR3UpdateGpe0(pThis->pDevInsR3, pThis, pThis->gpe0_sts | 0x1, pThis->gpe0_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1045,16 +1047,16 @@ static void acpiR3PmTimerReset(ACPIState *pThis, uint64_t uNow)
 #endif /* IN_RING3 */
 
 /**
-  * Used by acpiR3PMTimer & acpiPmTmrRead to update TMR_VAL and update TMR_STS
-  *
-  * The caller is expected to either hold the clock lock or to have made sure
-  * the VM is resetting or loading state.
-  *
-  * @param   pThis              The ACPI instance
-  * @param   u64Now             The current time
-  */
-
-static void acpiPmTimerUpdate(ACPIState *pThis, uint64_t u64Now)
+ * Used by acpiR3PMTimer & acpiPmTmrRead to update TMR_VAL and update TMR_STS
+ *
+ * The caller is expected to either hold the clock lock or to have made sure
+ * the VM is resetting or loading state.
+ *
+ * @param   pDevIns     The PDM device instance.
+ * @param   pThis       The ACPI instance
+ * @param   u64Now      The current time
+ */
+static void acpiPmTimerUpdate(PPDMDEVINS pDevIns, ACPIState *pThis, uint64_t u64Now)
 {
     uint32_t msb = pThis->uPmTimerVal & TMR_VAL_MSB;
     uint64_t u64Elapsed = u64Now - pThis->u64PmTimerInitial;
@@ -1063,9 +1065,7 @@ static void acpiPmTimerUpdate(ACPIState *pThis, uint64_t u64Now)
     pThis->uPmTimerVal = ASMMultU64ByU32DivByU32(u64Elapsed, PM_TMR_FREQ, TMTimerGetFreq(pThis->CTX_SUFF(pPmTimer))) & TMR_VAL_MASK;
 
     if ( (pThis->uPmTimerVal & TMR_VAL_MSB) != msb)
-    {
-        apicUpdatePm1a(pThis, pThis->pm1a_sts | TMR_STS, pThis->pm1a_en);
-    }
+        acpiUpdatePm1a(pDevIns, pThis, pThis->pm1a_sts | TMR_STS, pThis->pm1a_en);
 }
 
 #ifdef IN_RING3
@@ -1075,16 +1075,16 @@ static void acpiPmTimerUpdate(ACPIState *pThis, uint64_t u64Now)
  */
 static DECLCALLBACK(void) acpiR3PmTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    ACPIState *pThis = (ACPIState *)pvUser;
+    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
     Assert(TMTimerIsLockOwner(pTimer));
-    NOREF(pDevIns);
+    RT_NOREF(pvUser);
 
     DEVACPI_LOCK_R3(pThis);
     Log(("acpi: pm timer sts %#x (%d), en %#x (%d)\n",
          pThis->pm1a_sts, (pThis->pm1a_sts & TMR_STS) != 0,
          pThis->pm1a_en, (pThis->pm1a_en & TMR_EN) != 0));
     uint64_t u64Now = TMTimerGet(pTimer);
-    acpiPmTimerUpdate(pThis, u64Now);
+    acpiPmTimerUpdate(pDevIns, pThis, u64Now);
     DEVACPI_UNLOCK(pThis);
 
     acpiR3PmTimerReset(pThis, u64Now);
@@ -1586,7 +1586,7 @@ PDMBOTHCBDECL(int) acpiR3PM1aEnWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     Log(("acpiR3PM1aEnWrite: %#x (%#x)\n", u32, u32 & ~(RSR_EN | IGN_EN) & 0xffff));
     u32 &= ~(RSR_EN | IGN_EN);
     u32 &= 0xffff;
-    apicUpdatePm1a(pThis, pThis->pm1a_sts, u32);
+    acpiUpdatePm1a(pDevIns, pThis, pThis->pm1a_sts, u32);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1629,7 +1629,7 @@ PDMBOTHCBDECL(int) acpiR3PM1aStsWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     if (u32 & PWRBTN_STS)
         pThis->fPowerButtonHandled = true; /* Remember that the guest handled the last power button event */
     u32 = pThis->pm1a_sts & ~(u32 & ~(RSR_STS | IGN_STS));
-    apicUpdatePm1a(pThis, u32, pThis->pm1a_en);
+    acpiUpdatePm1a(pDevIns, pThis, u32, pThis->pm1a_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1749,7 +1749,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     }
 
     uint64_t u64Now = TMTimerGet(pThis->CTX_SUFF(pPmTimer));
-    acpiPmTimerUpdate(pThis, u64Now);
+    acpiPmTimerUpdate(pDevIns, pThis, u64Now);
     *pu32 = pThis->uPmTimerVal;
 
     DEVACPI_UNLOCK(pThis);
@@ -1821,7 +1821,7 @@ PDMBOTHCBDECL(int) acpiR3Gpe0StsWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 
     Log(("acpiR3Gpe0StsWrite: %#x (%#x)\n", u32, pThis->gpe0_sts & ~u32));
     u32 = pThis->gpe0_sts & ~u32;
-    apicR3UpdateGpe0(pThis, u32, pThis->gpe0_en);
+    apicR3UpdateGpe0(pDevIns, pThis, u32, pThis->gpe0_en);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1860,7 +1860,7 @@ PDMBOTHCBDECL(int) acpiR3Gpe0EnWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
     DEVACPI_LOCK_R3(pThis);
 
     Log(("acpiR3Gpe0EnWrite: %#x\n", u32));
-    apicR3UpdateGpe0(pThis, pThis->gpe0_sts, u32);
+    apicR3UpdateGpe0(pDevIns, pThis, pThis->gpe0_sts, u32);
 
     DEVACPI_UNLOCK(pThis);
     return VINF_SUCCESS;
@@ -1959,14 +1959,16 @@ PDMBOTHCBDECL(int) acpiR3DchrWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 /**
  * Called by acpiR3Reset and acpiR3Construct to set up the PM PCI config space.
  *
- * @param   pThis               The ACPI instance.
+ * @param   pDevIns     The PDM device instance.
+ * @param   pThis       The ACPI instance.
  */
-static void acpiR3PmPCIBIOSFake(ACPIState *pThis)
+static void acpiR3PmPCIBIOSFake(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
-    pThis->dev.abConfig[PMBA  ] = pThis->uPmIoPortBase | 1; /* PMBA, PM base address, bit 0 marks it as IO range */
-    pThis->dev.abConfig[PMBA+1] = pThis->uPmIoPortBase >> 8;
-    pThis->dev.abConfig[PMBA+2] = 0x00;
-    pThis->dev.abConfig[PMBA+3] = 0x00;
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    pPciDev->abConfig[PMBA    ] = pThis->uPmIoPortBase | 1; /* PMBA, PM base address, bit 0 marks it as IO range */
+    pPciDev->abConfig[PMBA + 1] = pThis->uPmIoPortBase >> 8;
+    pPciDev->abConfig[PMBA + 2] = 0x00;
+    pPciDev->abConfig[PMBA + 3] = 0x00;
 }
 
 /**
@@ -2130,7 +2132,7 @@ PDMBOTHCBDECL(int) acpiR3SMBusWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
         {
             Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
-            const bool old_level = acpiSCILevel(pThis);
+            const bool old_level = acpiSCILevel(pDevIns, pThis);
             pThis->u8SMBusHstCnt = u32 & SMBHSTCNT_WRITE_MASK;
             if (u32 & SMBHSTCNT_START)
             {
@@ -2142,7 +2144,7 @@ PDMBOTHCBDECL(int) acpiR3SMBusWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
                 /* Kill */
                 pThis->u8SMBusHstSts |= SMBHSTSTS_FAILED | SMBHSTSTS_INTER;
             }
-            const bool new_level = acpiSCILevel(pThis);
+            const bool new_level = acpiSCILevel(pDevIns, pThis);
 
             LogFunc(("old=%x new=%x\n", old_level, new_level));
 
@@ -2260,19 +2262,21 @@ PDMBOTHCBDECL(int) acpiR3SMBusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 /**
  * Called by acpiR3Reset and acpiR3Construct to set up the SMBus PCI config space.
  *
- * @param   pThis           The ACPI instance.
+ * @param   pDevIns     The PDM device instance.
+ * @param   pThis       The ACPI instance.
  */
-static void acpiR3SMBusPCIBIOSFake(ACPIState *pThis)
+static void acpiR3SMBusPCIBIOSFake(PPDMDEVINS pDevIns, ACPIState *pThis)
 {
-    pThis->dev.abConfig[SMBBA  ] = pThis->uSMBusIoPortBase | 1; /* SMBBA, SMBus base address, bit 0 marks it as IO range */
-    pThis->dev.abConfig[SMBBA+1] = pThis->uSMBusIoPortBase >> 8;
-    pThis->dev.abConfig[SMBBA+2] = 0x00;
-    pThis->dev.abConfig[SMBBA+3] = 0x00;
-    pThis->dev.abConfig[SMBHSTCFG] = SMBHSTCFG_INTRSEL_IRQ9 << SMBHSTCFG_INTRSEL_SHIFT | SMBHSTCFG_SMB_HST_EN; /* SMBHSTCFG */
-    pThis->dev.abConfig[SMBSLVC] = 0x00; /* SMBSLVC */
-    pThis->dev.abConfig[SMBSHDW1] = 0x00; /* SMBSHDW1 */
-    pThis->dev.abConfig[SMBSHDW2] = 0x00; /* SMBSHDW2 */
-    pThis->dev.abConfig[SMBREV] = 0x00; /* SMBREV */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    pPciDev->abConfig[SMBBA  ] = pThis->uSMBusIoPortBase | 1; /* SMBBA, SMBus base address, bit 0 marks it as IO range */
+    pPciDev->abConfig[SMBBA+1] = pThis->uSMBusIoPortBase >> 8;
+    pPciDev->abConfig[SMBBA+2] = 0x00;
+    pPciDev->abConfig[SMBBA+3] = 0x00;
+    pPciDev->abConfig[SMBHSTCFG] = SMBHSTCFG_INTRSEL_IRQ9 << SMBHSTCFG_INTRSEL_SHIFT | SMBHSTCFG_SMB_HST_EN; /* SMBHSTCFG */
+    pPciDev->abConfig[SMBSLVC] = 0x00; /* SMBSLVC */
+    pPciDev->abConfig[SMBSHDW1] = 0x00; /* SMBSHDW1 */
+    pPciDev->abConfig[SMBSHDW2] = 0x00; /* SMBSHDW2 */
+    pPciDev->abConfig[SMBREV] = 0x00; /* SMBREV */
 }
 
 /**
@@ -2560,10 +2564,8 @@ static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, ui
         TMTimerLock(pThis->pPmTimerR3, VERR_IGNORED);
         DEVACPI_LOCK_R3(pThis);
         uint64_t u64Now = TMTimerGet(pThis->pPmTimerR3);
-        /* The interrupt may be incorrectly re-generated
-         * if the state is restored from versions < 7
-         */
-        acpiPmTimerUpdate(pThis, u64Now);
+        /* The interrupt may be incorrectly re-generated if the state is restored from versions < 7. */
+        acpiPmTimerUpdate(pDevIns, pThis, u64Now);
         acpiR3PmTimerReset(pThis, u64Now);
         DEVACPI_UNLOCK(pThis);
         TMTimerUnlock(pThis->pPmTimerR3);
@@ -3389,7 +3391,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
         /* Check Power Management IO Space Enable (PMIOSE) bit */
         if (pPciDev->abConfig[PMREGMISC] & 0x01)
         {
-            NewIoPortBase = (RTIOPORT)PCIDevGetDWord(pPciDev, PMBA);
+            NewIoPortBase = (RTIOPORT)PDMPciDevGetDWord(pPciDev, PMBA);
             NewIoPortBase &= 0xffc0;
         }
 
@@ -3403,7 +3405,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
         /* Check SMBus Controller Host Interface Enable (SMB_HST_EN) bit */
         if (pPciDev->abConfig[SMBHSTCFG] & SMBHSTCFG_SMB_HST_EN)
         {
-            NewIoPortBase = (RTIOPORT)PCIDevGetDWord(pPciDev, SMBBA);
+            NewIoPortBase = (RTIOPORT)PDMPciDevGetDWord(pPciDev, SMBBA);
             NewIoPortBase &= 0xfff0;
         }
 
@@ -3456,7 +3458,7 @@ static DECLCALLBACK(int) acpiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
             pThis->u32CpuEvent     = iLUN;
 
             /* Notify the guest */
-            apicR3UpdateGpe0(pThis, pThis->gpe0_sts | 0x2, pThis->gpe0_en);
+            apicR3UpdateGpe0(pDevIns, pThis, pThis->gpe0_sts | 0x2, pThis->gpe0_en);
         }
     }
     DEVACPI_UNLOCK(pThis);
@@ -3491,7 +3493,7 @@ static DECLCALLBACK(void) acpiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             pThis->u32CpuEvent     = iLUN;
 
             /* Notify the guest */
-            apicR3UpdateGpe0(pThis, pThis->gpe0_sts | 0x2, pThis->gpe0_en);
+            apicR3UpdateGpe0(pDevIns, pThis, pThis->gpe0_sts | 0x2, pThis->gpe0_en);
         }
         else
             AssertMsgFailed(("CPU is still locked by the guest\n"));
@@ -3551,13 +3553,13 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
     /* Real device behavior is resetting only the PM controller state,
      * but we're additionally doing the job of the BIOS. */
     acpiR3UpdatePmHandlers(pThis, PM_PORT_BASE);
-    acpiR3PmPCIBIOSFake(pThis);
+    acpiR3PmPCIBIOSFake(pDevIns, pThis);
 
     /* Reset SMBus base and PCI config space in addition to the SMBus controller
      * state. Real device behavior is only the SMBus controller state reset,
      * but we're additionally doing the job of the BIOS. */
     acpiR3UpdateSMBusHandlers(pThis, SMB_PORT_BASE);
-    acpiR3SMBusPCIBIOSFake(pThis);
+    acpiR3SMBusPCIBIOSFake(pDevIns, pThis);
     acpiR3SMBusResetDevice(pThis);
 }
 
@@ -4089,7 +4091,7 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Create the PM timer.
      */
     PTMTIMER pTimer;
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiR3PmTimer, &pThis->dev,
+    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL_SYNC, acpiR3PmTimer, NULL /*pvUser*/,
                                 TMTIMER_FLAGS_NO_CRIT_SECT, "ACPI PM Timer", &pTimer);
     AssertRCReturn(rc, rc);
     pThis->pPmTimerR3 = pTimer;
@@ -4105,38 +4107,41 @@ static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Set up the PCI device.
      */
-    PCIDevSetVendorId(&pThis->dev, 0x8086); /* Intel */
-    PCIDevSetDeviceId(&pThis->dev, 0x7113); /* 82371AB */
+    PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
+    PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
+    PDMPciDevSetVendorId(pPciDev,      0x8086); /* Intel */
+    PDMPciDevSetDeviceId(pPciDev,      0x7113); /* 82371AB */
 
     /* See p. 50 of PIIX4 manual */
-    PCIDevSetCommand(&pThis->dev, PCI_COMMAND_IOACCESS);
-    PCIDevSetStatus(&pThis->dev, 0x0280);
+    PDMPciDevSetCommand(pPciDev,       PCI_COMMAND_IOACCESS);
+    PDMPciDevSetStatus(pPciDev,        0x0280);
 
-    PCIDevSetRevisionId(&pThis->dev, 0x08);
+    PDMPciDevSetRevisionId(pPciDev,    0x08);
 
-    PCIDevSetClassProg(&pThis->dev, 0x00);
-    PCIDevSetClassSub(&pThis->dev, 0x80);
-    PCIDevSetClassBase(&pThis->dev, 0x06);
+    PDMPciDevSetClassProg(pPciDev,     0x00);
+    PDMPciDevSetClassSub(pPciDev,      0x80);
+    PDMPciDevSetClassBase(pPciDev,     0x06);
 
-    PCIDevSetHeaderType(&pThis->dev, 0x80);
+    PDMPciDevSetHeaderType(pPciDev,    0x80);
 
-    PCIDevSetBIST(&pThis->dev, 0x00);
+    PDMPciDevSetBIST(pPciDev,          0x00);
 
-    PCIDevSetInterruptLine(&pThis->dev, SCI_INT);
-    PCIDevSetInterruptPin (&pThis->dev, 0x01);
+    PDMPciDevSetInterruptLine(pPciDev, SCI_INT);
+    PDMPciDevSetInterruptPin(pPciDev,  0x01);
 
     Assert((pThis->uPmIoPortBase & 0x003f) == 0);
-    acpiR3PmPCIBIOSFake(pThis);
+    acpiR3PmPCIBIOSFake(pDevIns, pThis);
 
     Assert((pThis->uSMBusIoPortBase & 0x000f) == 0);
-    acpiR3SMBusPCIBIOSFake(pThis);
+    acpiR3SMBusPCIBIOSFake(pDevIns, pThis);
     acpiR3SMBusResetDevice(pThis);
 
-    rc = PDMDevHlpPCIRegister(pDevIns, &pThis->dev);
+    rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, &pThis->dev, acpiR3PciConfigRead, acpiR3PciConfigWrite);
+    rc = PDMDevHlpPCIInterceptConfigAccesses(pDevIns, pPciDev, acpiR3PciConfigRead, acpiR3PciConfigWrite);
     AssertRCReturn(rc, rc);
 
     /*
