@@ -807,6 +807,7 @@ static int virtioScsiReqErr(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN
     const char *pszCtrlRespText = virtioGetCtrlRespText(pRespHdr->uResponse);
     Log2Func(("   status: %s    response: %s\n",
               SCSIStatusText(pRespHdr->uStatus),  pszCtrlRespText));
+    RT_NOREF(pszCtrlRespText);
 
     RTSGSEG aReqSegs[2];
     aReqSegs[0].cbSeg = sizeof(pRespHdr);
@@ -933,6 +934,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         const char *pszTxDirText = virtioGetTxDirText(pReq->enmTxDir);
         LogFunc(("xfer direction: %s, sense written = %d, sense size = %d\n",
              pszTxDirText, respHdr.uSenseLen, pThis->virtioScsiConfig.uSenseSize));
+        RT_NOREF(pszTxDirText);
     }
 
     if (respHdr.uSenseLen && LogIs2Enabled())
@@ -1225,7 +1227,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
             LogFunc(("%s, VirtIO LUN: %.8Rhxs\n%*sTask Mgt Function: %s (not yet implemented)\n",
                 QUEUENAME(qIdx), pScsiCtrlTmf->uScsiLun,
                 CBQUEUENAME(qIdx) + 18, "", pszTmfTypeText));
-
+            RT_NOREF(pszTmfTypeText);
             switch(pScsiCtrlTmf->uSubtype)
             {
                 case VIRTIOSCSI_T_TMF_ABORT_TASK:
@@ -1327,6 +1329,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
     const char *pszCtrlRespText = virtioGetCtrlRespText(uResponse);
     LogFunc(("Response code: %s\n", pszCtrlRespText));
+    RT_NOREF(pszCtrlRespText);
     virtioQueuePut (pThis->hVirtio, qIdx, &reqSegBuf, pDescChain, true);
     virtioQueueSync(pThis->hVirtio, qIdx);
 
