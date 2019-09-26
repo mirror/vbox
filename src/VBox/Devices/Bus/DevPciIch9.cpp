@@ -150,7 +150,7 @@ DECLHIDDEN(PPDMDEVINS) devpcibridgeCommonSetIrqRootWalk(PPDMDEVINS pDevIns, PPDM
     uint8_t             uDevFnBridge   = pPciDevBus->uDevFn;
     int                 iIrqPinBridge  = ((pPciDev->uDevFn >> 3) + iIrq) & 3;
     uint64_t            bmSeen[256/64] = { 0, 0, 0, 0 };
-    ASMBitSet(bmSeen, RT_MIN(pPciDevBus->Int.s.idxPdmBus, 255));
+    ASMBitSet(bmSeen, pPciDevBus->Int.s.idxPdmBus); AssertCompile(sizeof(pPciDevBus->Int.s.idxPdmBus) == 1);
 
     /* Walk the chain until we reach the host bus. */
     Assert(pBus->iBus != 0);
@@ -2457,7 +2457,7 @@ static int ich9pciFakePCIBIOS(PPDMDEVINS pDevIns)
 DECLHIDDEN(VBOXSTRICTRC) devpciR3CommonConfigReadWorker(PPDMPCIDEV pPciDev, uint32_t uAddress, unsigned cb, uint32_t *pu32Value)
 {
     uint32_t uValue;
-    if (uAddress + cb <= 256)
+    if (uAddress + cb <= RT_MIN(pPciDev->cbConfig, sizeof(pPciDev->abConfig)))
     {
         switch (cb)
         {
@@ -2490,11 +2490,7 @@ DECLHIDDEN(VBOXSTRICTRC) devpciR3CommonConfigReadWorker(PPDMPCIDEV pPciDev, uint
     }
     else
     {
-        if (uAddress + cb < _4K)
-            LogRel(("PCI: %8s/%u: Read from extended register %d fallen back to generic code\n",
-                    pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
-        else
-            AssertFailed();
+        AssertMsgFailed(("Read after end of PCI config space: %#x LB %u\n", uAddress, cb));
         uValue = 0;
     }
 
@@ -2823,7 +2819,7 @@ DECLHIDDEN(VBOXSTRICTRC) devpciR3CommonConfigWriteWorker(PPDMDEVINS pDevIns, PDE
     Assert(cb <= 4 && cb != 3);
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
 
-    if (uAddress + cb <= 256)
+    if (uAddress + cb <= RT_MIN(pPciDev->cbConfig, sizeof(pPciDev->abConfig)))
     {
         /*
          * MSI and MSI-X capabilites needs to be handled separately.
@@ -2904,7 +2900,7 @@ DECLHIDDEN(VBOXSTRICTRC) devpciR3CommonConfigWriteWorker(PPDMDEVINS pDevIns, PDE
                             fUpdateMappings = true;
                             break;
                         }
-                        else if (uAddress < VBOX_PCI_BASE_ADDRESS_2 || uAddress > VBOX_PCI_BASE_ADDRESS_5+3)
+                        if (uAddress < VBOX_PCI_BASE_ADDRESS_2 || uAddress > VBOX_PCI_BASE_ADDRESS_5+3)
                         {
                             /* PCI bridges have only BAR0, BAR1 and ROM */
                             uint32_t iRegion = fRom ? VBOX_PCI_ROM_SLOT : (uAddress - VBOX_PCI_BASE_ADDRESS_0) >> 2;
@@ -2912,12 +2908,12 @@ DECLHIDDEN(VBOXSTRICTRC) devpciR3CommonConfigWriteWorker(PPDMDEVINS pDevIns, PDE
                             fUpdateMappings = true;
                             break;
                         }
-                        else if (   uAddress == VBOX_PCI_IO_BASE
-                                 || uAddress == VBOX_PCI_IO_LIMIT
-                                 || uAddress == VBOX_PCI_MEMORY_BASE
-                                 || uAddress == VBOX_PCI_MEMORY_LIMIT
-                                 || uAddress == VBOX_PCI_PREF_MEMORY_BASE
-                                 || uAddress == VBOX_PCI_PREF_MEMORY_LIMIT)
+                        if (   uAddress == VBOX_PCI_IO_BASE
+                            || uAddress == VBOX_PCI_IO_LIMIT
+                            || uAddress == VBOX_PCI_MEMORY_BASE
+                            || uAddress == VBOX_PCI_MEMORY_LIMIT
+                            || uAddress == VBOX_PCI_PREF_MEMORY_BASE
+                            || uAddress == VBOX_PCI_PREF_MEMORY_LIMIT)
                         {
                             /* All bridge address decoders have the low 4 bits
                              * as readonly, and all but the prefetchable ones
@@ -2947,11 +2943,8 @@ DECLHIDDEN(VBOXSTRICTRC) devpciR3CommonConfigWriteWorker(PPDMDEVINS pDevIns, PDE
                 rcStrict = devpciR3UpdateMappings(pDevIns, pPciDev, fP2PBridge);
         }
     }
-    else if (uAddress + cb <= _4K)
-        LogRel(("PCI: %8s/%u: Write to extended register %d fallen back to generic code\n",
-                pPciDev->pszNameR3, pPciDev->Int.s.CTX_SUFF(pDevIns)->iInstance, uAddress));
     else
-        AssertMsgFailed(("Write after end of PCI config space\n"));
+        AssertMsgFailed(("Write after end of PCI config space: %#x LB %u\n", uAddress, cb));
 
     return rcStrict;
 }
@@ -3623,9 +3616,6 @@ static DECLCALLBACK(int) ich9pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInsta
     pBus->fTypeIch9   = true;
     pBus->fPureBridge = true;
     pBusCC->pDevInsR3 = pDevIns;
-    /** @todo r=klaus figure out how to extend this to allow PCIe config space
-     * extension, which increases the config space from 256 bytes to 4K.
-     * bird: What does this allocation have to do with PCIe config space?!?  */
     pBus->papBridgesR3 = (PPDMPCIDEV *)PDMDevHlpMMHeapAllocZ(pDevIns, sizeof(PPDMPCIDEV) * RT_ELEMENTS(pBus->apDevices));
     AssertLogRelReturn(pBus->papBridgesR3, VERR_NO_MEMORY);
 

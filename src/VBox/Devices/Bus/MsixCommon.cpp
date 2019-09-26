@@ -119,41 +119,32 @@ static void msixR3CheckPendingVector(PPDMDEVINS pDevIns, PCPDMPCIHLP pPciHlp, PP
 
 PDMBOTHCBDECL(int) msixR3MMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    LogFlowFunc(("\n"));
-
-    uint32_t off = (uint32_t)(GCPhysAddr & 0xffff);
     PPDMPCIDEV pPciDev = (PPDMPCIDEV)pvUser;
+    uint32_t   off     = (uint32_t)(GCPhysAddr & 0xffff);
+    LogFlowFunc(("GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
 
     /// @todo qword accesses?
     RT_NOREF(pDevIns);
-    AssertMsgReturn(cb == 4,
-                    ("MSI-X must be accessed with 4-byte reads"),
-                    VERR_INTERNAL_ERROR);
-    AssertMsgReturn(off + cb <= pPciDev->Int.s.cbMsixRegion,
-                    ("Out of bounds access for the MSI-X region\n"),
-                    VINF_IOM_MMIO_UNUSED_FF);
+    AssertMsgReturn(cb == 4, ("MSI-X must be accessed with 4-byte reads\n"), VERR_INTERNAL_ERROR);
+    AssertMsgReturn(off + cb <= pPciDev->Int.s.cbMsixRegion, ("Out of bounds access for the MSI-X region\n"), VINF_IOM_MMIO_UNUSED_FF);
+    *(uint32_t *)pv = *(uint32_t *)&pPciDev->abMsixState[off];
 
-    *(uint32_t *)pv = *(uint32_t *)msixGetPageOffset(pPciDev, off);
     return VINF_SUCCESS;
 }
 
 PDMBOTHCBDECL(int) msixR3MMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    LogFlowFunc(("\n"));
-
     PPDMPCIDEV pPciDev = (PPDMPCIDEV)pvUser;
-    uint32_t off = (uint32_t)(GCPhysAddr & 0xffff);
+    uint32_t   off     = (uint32_t)(GCPhysAddr & 0xffff);
+    LogFlowFunc(("GCPhysAddr=%RGp cb=%d\n", GCPhysAddr, cb));
 
     /// @todo qword accesses?
-    AssertMsgReturn(cb == 4,
-                    ("MSI-X must be accessed with 4-byte reads"),
-                    VERR_INTERNAL_ERROR);
-    AssertMsgReturn(off + cb <= pPciDev->Int.s.offMsixPba,
-                    ("Trying to write to PBA\n"), VINF_SUCCESS);
+    AssertMsgReturn(cb == 4, ("MSI-X must be accessed with 4-byte reads\n"), VERR_INTERNAL_ERROR);
+    AssertMsgReturn(off + cb <= pPciDev->Int.s.offMsixPba, ("Trying to write to PBA\n"), VINF_SUCCESS);
+    *(uint32_t *)&pPciDev->abMsixState[off] = *(uint32_t *)pv;
 
-    *(uint32_t *)msixGetPageOffset(pPciDev, off) = *(uint32_t *)pv;
-
-    msixR3CheckPendingVector(pDevIns, (PCPDMPCIHLP)pPciDev->Int.s.pPciBusPtrR3, pPciDev, off / VBOX_MSIX_ENTRY_SIZE);
+    /* (See MsixR3Init the setting up of pvPciBusPtrR3.) */
+    msixR3CheckPendingVector(pDevIns, (PCPDMPCIHLP)pPciDev->Int.s.pvPciBusPtrR3, pPciDev, off / VBOX_MSIX_ENTRY_SIZE);
     return VINF_SUCCESS;
 }
 
@@ -166,14 +157,9 @@ static DECLCALLBACK(int) msixR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint3
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
     NOREF(iRegion); NOREF(enmType);
 
-    int rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pPciDev,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   msixR3MMIOWrite, msixR3MMIORead, "MSI-X tables");
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    return VINF_SUCCESS;
+    return PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pPciDev,
+                                 IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                 msixR3MMIOWrite, msixR3MMIORead, "MSI-X tables");
 }
 
 /**
@@ -227,7 +213,7 @@ int MsixR3Init(PCPDMPCIHLP pPciHlp, PPDMPCIDEV pDev, PPDMMSIREG pMsiReg)
     pDev->Int.s.offMsixPba      = offPBA;
 
     /* R3 PCI helper */
-    pDev->Int.s.pPciBusPtrR3    = pPciHlp;
+    pDev->Int.s.pvPciBusPtrR3   = pPciHlp;
 
     PCIDevSetByte(pDev,  iCapOffset + 0, VBOX_PCI_CAP_ID_MSIX);
     PCIDevSetByte(pDev,  iCapOffset + 1, iNextOffset); /* next */
