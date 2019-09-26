@@ -182,7 +182,7 @@
   DebugCommunicationLib|SourceLevelDebugPkg/Library/DebugCommunicationLibSerialPort/DebugCommunicationLibSerialPort.inf
 !else
 !ifdef $(VBOX)
-  PeCoffExtraActionLib|VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.inf
+  PeCoffExtraActionLib|SourceLevelDebugPkg/Library/PeCoffExtraActionLibDebug/PeCoffExtraActionLibDebug.inf
   DebugAgentLib|VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.inf
 !else
   PeCoffExtraActionLib|MdePkg/Library/BasePeCoffExtraActionLibNull/BasePeCoffExtraActionLibNull.inf
