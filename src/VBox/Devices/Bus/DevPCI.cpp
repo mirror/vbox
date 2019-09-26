@@ -1510,58 +1510,16 @@ static DECLCALLBACK(void) pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
      * We change iIrq here according to the spec and call the SetIrq function
      * of our parent passing the device which asserted the interrupt instead of the device of the bridge.
      */
-#if 1
-    PDEVPCIBUSCC const  pBridgeBusCC  = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC); /* For keep using our own pcihlp.  */
-    PPDMDEVINS const    pBridgeDevIns = pDevIns;                                 /* ditto */
-
-    PDEVPCIBUS          pBus          = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    PPDMDEVINS          pDevInsBus;
-    PPDMPCIDEV          pPciDevBus    = pDevIns->apPciDevs[0];
-    uint8_t             uDevFnBridge  = pPciDevBus->uDevFn;
-    int                 iIrqPinBridge = ((pPciDev->uDevFn >> 3) + iIrq) & 3;
-
-    /* Walk the chain until we reach the host bus. */
-    Assert(pBus->iBus != 0);
-    for (;;)
-    {
-        /* Get the parent. */
-        pDevInsBus = pBridgeBusCC->CTX_SUFF(pPciHlp)->pfnGetBusByNo(pBridgeDevIns, pPciDevBus->Int.s.idxPdmBus);
-        AssertLogRelReturnVoid(pDevInsBus);
-
-        pBus       = PDMINS_2_DATA(pDevInsBus, PDEVPCIBUS);
-        pPciDevBus = pDevInsBus->apPciDevs[0];
-        if (pBus->iBus == 0)
-            break;
-
-        uDevFnBridge  = pPciDevBus->uDevFn;
-        iIrqPinBridge = ((uDevFnBridge >> 3) + iIrqPinBridge) & 3;
-    }
-
+    PDEVPCIBUS pBus;
+    uint8_t    uDevFnBridge;
+    int        iIrqPinBridge;
+    PPDMDEVINS pDevInsBus = devpcibridgeCommonSetIrqRootWalk(pDevIns, pPciDev, iIrq, &pBus, &uDevFnBridge, &iIrqPinBridge);
+    AssertReturnVoid(pDevInsBus);
     AssertMsg(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
     Assert(pDevInsBus->pReg == &g_DevicePCI);
+
     pciSetIrqInternal(pDevInsBus, DEVPCIBUS_2_DEVPCIROOT(pBus), PDMINS_2_DATA_CC(pDevInsBus, PDEVPCIBUSCC),
                       uDevFnBridge, pPciDev, iIrqPinBridge, iLevel, uTagSrc);
-#else  /* (old code for reference) */
-    PDEVPCIBUS   pBus          = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    PDEVPCIBUSCC pBusCC        = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
-    PPDMPCIDEV   pPciDevBus    = pPciDev;
-    int          iIrqPinBridge = iIrq;
-    uint8_t      uDevFnBridge  = 0;
-
-    /* Walk the chain until we reach the host bus. */
-    do
-    {
-        uDevFnBridge  = pBus->PciDev.uDevFn;
-        iIrqPinBridge = ((pPciDevBus->uDevFn >> 3) + iIrqPinBridge) & 3;
-
-        /* Get the parent. */
-        pBus = pBus->PciDev.Int.s.CTX_SUFF(pBus);
-        pPciDevBus = &pBus->PciDev;
-    } while (pBus->iBus != 0);
-
-    AssertMsg(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
-    pciSetIrqInternal(pDevIns, DEVPCIBUS_2_DEVPCIROOT(pBus), pBusCC, uDevFnBridge, pPciDev, iIrqPinBridge, iLevel, uTagSrc);
-#endif
 }
 
 #ifdef IN_RING3

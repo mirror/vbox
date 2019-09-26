@@ -132,6 +132,55 @@ static void ich9pciSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int 
                           pPciDev->uDevFn, pPciDev, iIrq, iLevel, uTagSrc);
 }
 
+/**
+ * Worker for ich9pcibridgeSetIrq and pcibridgeSetIrq that walks up to the root
+ * bridges and permutates iIrq accordingly.
+ *
+ * See ich9pciBiosInitAllDevicesOnBus for corresponding configuration code.
+ */
+DECLHIDDEN(PPDMDEVINS) devpcibridgeCommonSetIrqRootWalk(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq,
+                                                        PDEVPCIBUS *ppBus, uint8_t *puDevFnBridge, int *piIrqPinBridge)
+{
+    PDEVPCIBUSCC const  pBridgeBusCC   = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC); /* For keep using our own pcihlp.  */
+    PPDMDEVINS const    pBridgeDevIns  = pDevIns;                                 /* ditto */
+
+    PDEVPCIBUS          pBus           = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
+    PPDMDEVINS          pDevInsBus;
+    PPDMPCIDEV          pPciDevBus     = pDevIns->apPciDevs[0];
+    uint8_t             uDevFnBridge   = pPciDevBus->uDevFn;
+    int                 iIrqPinBridge  = ((pPciDev->uDevFn >> 3) + iIrq) & 3;
+    uint64_t            bmSeen[256/64] = { 0, 0, 0, 0 };
+    ASMBitSet(bmSeen, RT_MIN(pPciDevBus->Int.s.idxPdmBus, 255));
+
+    /* Walk the chain until we reach the host bus. */
+    Assert(pBus->iBus != 0);
+    for (;;)
+    {
+        /* Get the parent. */
+        pDevInsBus = pBridgeBusCC->CTX_SUFF(pPciHlp)->pfnGetBusByNo(pBridgeDevIns, pPciDevBus->Int.s.idxPdmBus);
+        AssertLogRelReturn(pDevInsBus, NULL);
+
+        pBus       = PDMINS_2_DATA(pDevInsBus, PDEVPCIBUS);
+        pPciDevBus = pDevInsBus->apPciDevs[0];
+        if (pBus->iBus == 0)
+        {
+            *ppBus          = pBus;
+            *puDevFnBridge  = uDevFnBridge;
+            *piIrqPinBridge = iIrqPinBridge;
+            return pDevInsBus;
+        }
+
+        uDevFnBridge  = pPciDevBus->uDevFn;
+        iIrqPinBridge = ((uDevFnBridge >> 3) + iIrqPinBridge) & 3;
+
+        /* Make sure that we cannot end up in a loop here: */
+        AssertMsgReturn(ASMBitTestAndSet(bmSeen, RT_MIN(pPciDevBus->Int.s.idxPdmBus, 255)),
+                        ("idxPdmBus=%u\n", pPciDevBus->Int.s.idxPdmBus),
+                        NULL);
+    }
+
+}
+
 static void ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq, int iLevel, uint32_t uTagSrc)
 {
     /*
@@ -143,37 +192,13 @@ static void ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq
      *
      * See ich9pciBiosInitAllDevicesOnBus for corresponding configuration code.
      */
-#if 1
-/** @todo r=bird: move the lookup code into a separate function and check for
- *        loops in the parent bus references.  */
-    PDEVPCIBUSCC const  pBridgeBusCC  = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC); /* For keep using our own pcihlp.  */
-    PPDMDEVINS const    pBridgeDevIns = pDevIns;                                 /* ditto */
-
-    PDEVPCIBUS          pBus          = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    PPDMDEVINS          pDevInsBus;
-    PPDMPCIDEV          pPciDevBus    = pDevIns->apPciDevs[0];
-    uint8_t             uDevFnBridge  = pPciDevBus->uDevFn;
-    int                 iIrqPinBridge = ((pPciDev->uDevFn >> 3) + iIrq) & 3;
-
-    /* Walk the chain until we reach the host bus. */
-    Assert(pBus->iBus != 0);
-    for (;;)
-    {
-        /* Get the parent. */
-        pDevInsBus = pBridgeBusCC->CTX_SUFF(pPciHlp)->pfnGetBusByNo(pBridgeDevIns, pPciDevBus->Int.s.idxPdmBus);
-        AssertLogRelReturnVoid(pDevInsBus);
-
-        pBus       = PDMINS_2_DATA(pDevInsBus, PDEVPCIBUS);
-        pPciDevBus = pDevInsBus->apPciDevs[0];
-        if (pBus->iBus == 0)
-            break;
-
-        uDevFnBridge  = pPciDevBus->uDevFn;
-        iIrqPinBridge = ((uDevFnBridge >> 3) + iIrqPinBridge) & 3;
-    }
-
+    PDEVPCIBUS pBus;
+    uint8_t    uDevFnBridge;
+    int        iIrqPinBridge;
+    PPDMDEVINS pDevInsBus = devpcibridgeCommonSetIrqRootWalk(pDevIns, pPciDev, iIrq, &pBus, &uDevFnBridge, &iIrqPinBridge);
+    AssertReturnVoid(pDevInsBus);
     AssertMsg(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
-    Assert(pDevInsBus->pReg == &g_DevicePciIch9);
+    Assert(pDevInsBus->pReg == &g_DevicePciIch9); /* ASSUMPTION: Same style root bus.  Need callback interface to mix types. */
 
     /*
      * For MSI/MSI-X enabled devices the iIrq doesn't denote the pin but rather a vector which is completely
@@ -185,36 +210,6 @@ static void ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq
         iIrqPinVector = iIrq;
     ich9pciSetIrqInternal(pDevInsBus, DEVPCIBUS_2_DEVPCIROOT(pBus), PDMINS_2_DATA_CC(pDevInsBus, PDEVPCIBUSCC),
                           uDevFnBridge, pPciDev, iIrqPinVector, iLevel, uTagSrc);
-#else  /* (old code for reference) */
-    PDEVPCIBUS     pBus          = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    PPDMPCIDEV     pPciDevBus    = pPciDev;
-    int            iIrqPinBridge = iIrq;
-    uint8_t        uDevFnBridge  = 0;
-
-    /* Walk the chain until we reach the host bus. */
-    do
-    {
-        uDevFnBridge  = pBus->PciDev.uDevFn;
-        iIrqPinBridge = ((pPciDevBus->uDevFn >> 3) + iIrqPinBridge) & 3;
-
-        /* Get the parent. */
-        pBus = pBus->PciDev.Int.s.CTX_SUFF(pBus);
-        pPciDevBus = &pBus->PciDev;
-    } while (pBus->iBus != 0);
-
-    AssertMsgReturnVoid(pBus->iBus == 0, ("This is not the host pci bus iBus=%d\n", pBus->iBus));
-
-    /*
-     * For MSI/MSI-X enabled devices the iIrq doesn't denote the pin but rather a vector which is completely
-     * orthogonal to the pin based approach. The vector is not subject to the pin based routing with PCI bridges.
-     */
-    int iIrqPinVector = iIrqPinBridge;
-    if (   MsiIsEnabled(pPciDev)
-        || MsixIsEnabled(pPciDev))
-        iIrqPinVector = iIrq;
-    ich9pciSetIrqInternal(pDevIns, DEVPCIBUS_2_DEVPCIROOT(pBus), PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC),
-                          uDevFnBridge, pPciDev, iIrqPinVector, iLevel, uTagSrc);
-#endif
 }
 
 
@@ -1004,7 +999,7 @@ static int devpciR3CommonRegisterDeviceOnBus(PPDMDEVINS pDevIns, PDEVPCIBUS pBus
 
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnRegisterR3}
+ * @interface_method_impl{PDMPCIBUSREGR3,pfnRegisterR3}
  */
 DECLCALLBACK(int) devpciR3CommonRegisterDevice(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                                uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)
@@ -1016,7 +1011,7 @@ DECLCALLBACK(int) devpciR3CommonRegisterDevice(PPDMDEVINS pDevIns, PPDMPCIDEV pP
 
 
 /**
- * @interface_method_impl{PDMPCIBUSREG,pfnRegisterR3}
+ * @interface_method_impl{PDMPCIBUSREGR3,pfnRegisterR3}
  */
 DECLCALLBACK(int) devpcibridgeR3CommonRegisterDevice(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t fFlags,
                                                      uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName)

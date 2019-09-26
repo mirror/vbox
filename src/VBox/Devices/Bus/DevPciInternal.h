@@ -198,6 +198,9 @@ typedef DEVPCIROOT *PDEVPCIROOT;
     PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC)->CTX_SUFF(pPciHlp)->pfnUnlock(pDevIns)
 
 
+DECLHIDDEN(PPDMDEVINS)     devpcibridgeCommonSetIrqRootWalk(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq,
+                                                            PDEVPCIBUS *ppBus, uint8_t *puDevFnBridge, int *piIrqPinBridge);
+
 #ifdef IN_RING3
 
 DECLCALLBACK(void) devpciR3InfoPci(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
