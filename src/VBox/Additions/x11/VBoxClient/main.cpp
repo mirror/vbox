@@ -249,6 +249,10 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
+    rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExitFailure("VbglR3InitUser failed: %Rrc", rc);
+
     /* This should never be called twice in one process - in fact one Display
      * object should probably never be used from multiple threads anyway. */
     if (!XInitThreads())
@@ -272,10 +276,6 @@ int main(int argc, char *argv[])
         {
             /* If the user is running in "no daemon" mode anyway, send critical
              * logging to stdout as well. */
-            /** @todo r=bird: Since the release logger isn't created until the service
-             *        calls VbglR3InitUser or VbglR3Init or RTLogCreate, this whole
-             *        exercise is pointless.  Added --init-vbgl-user and --init-vbgl-full
-             *        for getting some work done. */
             PRTLOGGER pReleaseLog = RTLogRelGetDefaultInstance();
             if (pReleaseLog)
                 rc = RTLogDestinations(pReleaseLog, "stdout");
@@ -336,19 +336,6 @@ int main(int argc, char *argv[])
             if (g_pService)
                 break;
             g_pService = VBClDisplaySVGAX11Service();
-        }
-        /* bird: this is just a quick hack to get something out of the LogRel statements in the code. */
-        else if (!strcmp(argv[i], "--init-vbgl-user"))
-        {
-            rc = VbglR3InitUser();
-            if (RT_FAILURE(rc))
-                return RTMsgErrorExitFailure("VbglR3InitUser failed: %Rrc", rc);
-        }
-        else if (!strcmp(argv[i], "--init-vbgl-full"))
-        {
-            rc = VbglR3Init();
-            if (RT_FAILURE(rc))
-                return RTMsgErrorExitFailure("VbglR3Init failed: %Rrc", rc);
         }
         else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
         {

@@ -244,10 +244,6 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     x11Connect(&x11Context);
     if (x11Context.pDisplay == NULL)
         return VINF_SUCCESS;
-    /* Initialise the guest library. */
-    rc = VbglR3InitUser();
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
         VBClFatalError(("Failed to request display change events, rc=%Rrc\n", rc));

@@ -285,15 +285,11 @@ static struct SEAMLESSSERVICE *getClassFromInterface(struct VBCLSERVICE **
 static int init(struct VBCLSERVICE **ppInterface)
 {
     struct SEAMLESSSERVICE *pSelf = getClassFromInterface(ppInterface);
-    int rc;
 
     if (pSelf->mIsInitialised)
         return VERR_INTERNAL_ERROR;
-    /* Initialise the guest library. */
-    rc = VbglR3InitUser();
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
-    rc = pSelf->mSeamless.init();
+
+    int rc = pSelf->mSeamless.init();
     if (RT_FAILURE(rc))
         return rc;
     pSelf->mIsInitialised = true;

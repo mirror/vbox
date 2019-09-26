@@ -290,10 +290,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     RT_NOREF2(ppInterface, fDaemonised);
 
     /* Initialise the guest library. */
-    int rc = VbglR3InitUser();
-    if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to connect to the VirtualBox kernel service, rc=%Rrc\n", rc));
-    rc = SharedClipboardSvcImplConnect();
+    int rc = SharedClipboardSvcImplConnect();
     /* Not RT_SUCCESS: VINF_PERMISSION_DENIED is host service not present. */
     if (rc == VINF_SUCCESS)
         rc = vboxClipboardMain();
