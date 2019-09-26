@@ -778,7 +778,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     else {
        LogFunc(("Bad read access to mapped capabilities region:\n"
                 "                  pVirtio=%#p GCPhysAddr=%RGp cb=%u\n",
-                pVirtio, GCPhysAddr, pv, cb, pv, cb));
+                pVirtio, GCPhysAddr, cb));
     }
     return rc;
 }

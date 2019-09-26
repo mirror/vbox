@@ -502,7 +502,7 @@ DECLINLINE(void) virtioLogDeviceStatus( uint8_t status)
     {
         int primed = 0;
         if (status & VIRTIO_STATUS_ACKNOWLEDGE)
-            Log6(("ACKNOWLEDGE",   primed++));
+            Log6(("%sACKNOWLEDGE", primed++ ? "" : ""));
         if (status & VIRTIO_STATUS_DRIVER)
             Log6(("%sDRIVER",      primed++ ? " | " : ""));
         if (status & VIRTIO_STATUS_FEATURES_OK)

@@ -919,9 +919,11 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         }
     }
 
+    const char *getReqRespText = virtioGetReqRespText(respHdr.uResponse);
     Log2Func(("status: (%d) %s,   response: (%d) %s\n",
               pReq->uStatus, SCSIStatusText(pReq->uStatus),
-              respHdr.uResponse, virtioGetReqRespText(respHdr.uResponse)));
+              respHdr.uResponse, getReqRespText));
+    RT_NOREF(getReqRespText);
 
     if (RT_FAILURE(rcReq))
         Log2Func(("rcReq:  %s\n", RTErrGetDefine(rcReq)));
@@ -1488,7 +1490,6 @@ DECLINLINE(void) virtioScsiReportDeviceBusy(PVIRTIOSCSI pThis, uint16_t uTarget)
         virtioScsiSendEvent(pThis, uTarget, VIRTIOSCSI_T_ASYNC_NOTIFY,
                 VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY);
 }
-#endif
 
 DECLINLINE(void) virtioScsiReportParamChange(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uSenseCode, uint32_t uSenseQualifier)
 {
@@ -1496,6 +1497,8 @@ DECLINLINE(void) virtioScsiReportParamChange(PVIRTIOSCSI pThis, uint16_t uTarget
     virtioScsiSendEvent(pThis, uTarget, VIRTIOSCSI_T_PARAM_CHANGE, uReason);
 
 }
+
+#endif
 
 static DECLCALLBACK(void) virtioScsiNotified(VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx)
 {
