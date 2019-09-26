@@ -150,7 +150,8 @@ DECLHIDDEN(PPDMDEVINS) devpcibridgeCommonSetIrqRootWalk(PPDMDEVINS pDevIns, PPDM
     uint8_t             uDevFnBridge   = pPciDevBus->uDevFn;
     int                 iIrqPinBridge  = ((pPciDev->uDevFn >> 3) + iIrq) & 3;
     uint64_t            bmSeen[256/64] = { 0, 0, 0, 0 };
-    ASMBitSet(bmSeen, pPciDevBus->Int.s.idxPdmBus); AssertCompile(sizeof(pPciDevBus->Int.s.idxPdmBus) == 1);
+    AssertCompile(sizeof(pPciDevBus->Int.s.idxPdmBus) == 1);
+    ASMBitSet(bmSeen, pPciDevBus->Int.s.idxPdmBus);
 
     /* Walk the chain until we reach the host bus. */
     Assert(pBus->iBus != 0);
@@ -174,7 +175,8 @@ DECLHIDDEN(PPDMDEVINS) devpcibridgeCommonSetIrqRootWalk(PPDMDEVINS pDevIns, PPDM
         iIrqPinBridge = ((uDevFnBridge >> 3) + iIrqPinBridge) & 3;
 
         /* Make sure that we cannot end up in a loop here: */
-        AssertMsgReturn(ASMBitTestAndSet(bmSeen, RT_MIN(pPciDevBus->Int.s.idxPdmBus, 255)),
+        AssertCompile(sizeof(pPciDevBus->Int.s.idxPdmBus) == 1);
+        AssertMsgReturn(ASMBitTestAndSet(bmSeen, pPciDevBus->Int.s.idxPdmBus, 255),
                         ("idxPdmBus=%u\n", pPciDevBus->Int.s.idxPdmBus),
                         NULL);
     }
