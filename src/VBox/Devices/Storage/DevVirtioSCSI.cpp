@@ -886,6 +886,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
                     respHdr.uResponse = VIRTIOSCSI_S_OK;
                     break;
                 }
+                [[fallthrough]]
             case SCSI_STATUS_CHECK_CONDITION:
                 {
                     uint8_t uSenseKey = pReq->pbSense[2];
