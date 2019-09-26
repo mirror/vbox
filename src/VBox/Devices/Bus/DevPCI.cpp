@@ -919,16 +919,6 @@ pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32
 }
 
 
-/*
- * Include code we share with the other PCI bus implementation.
- *
- * Note! No #ifdefs, use instant data booleans/flags/whatever.  Goal is to
- *       completely merge these files!  File #1 contains code we write, where
- *       as a possible file #2 contains external code if there's any left.
- */
-# include "DevPciMerge1.cpp.h"
-
-
 /* -=-=-=-=-=- Saved state -=-=-=-=-=- */
 
 /**
@@ -1307,7 +1297,7 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     PDEVPCIBUS pBus = &pGlobals->PciBus;
     PDMPCIBUSREGCC PciBusReg;
     PciBusReg.u32Version                 = PDM_PCIBUSREGCC_VERSION;
-    PciBusReg.pfnRegisterR3              = pciR3MergedRegister;
+    PciBusReg.pfnRegisterR3              = devpciR3CommonRegisterDevice;
     PciBusReg.pfnRegisterMsiR3           = NULL;
     PciBusReg.pfnIORegionRegisterR3      = devpciR3CommonIORegionRegister;
     PciBusReg.pfnInterceptConfigAccesses = devpciR3CommonInterceptConfigAccesses;
@@ -1754,7 +1744,7 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
 
     PDMPCIBUSREGCC PciBusReg;
     PciBusReg.u32Version                 = PDM_PCIBUSREGCC_VERSION;
-    PciBusReg.pfnRegisterR3              = pcibridgeR3MergedRegisterDevice;
+    PciBusReg.pfnRegisterR3              = devpcibridgeR3CommonRegisterDevice;
     PciBusReg.pfnRegisterMsiR3           = NULL;
     PciBusReg.pfnIORegionRegisterR3      = devpciR3CommonIORegionRegister;
     PciBusReg.pfnInterceptConfigAccesses = devpciR3CommonInterceptConfigAccesses;
