@@ -802,8 +802,9 @@ static int virtioScsiReqErr(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN
     uint8_t *abSenseBuf = (uint8_t *)RTMemAllocZ(pThis->virtioScsiConfig.uSenseSize);
     AssertReturn(abSenseBuf, VERR_NO_MEMORY);
 
+    const char *pszCtrlRespText = virtioGetCtrlRespText(pRespHdr->uResponse);
     Log2Func(("   status: %s    response: %s\n",
-              SCSIStatusText(pRespHdr->uStatus),  virtioGetReqRespText(pRespHdr->uResponse)));
+              SCSIStatusText(pRespHdr->uStatus),  pszCtrlRespText));
 
     RTSGSEG aReqSegs[2];
     aReqSegs[0].cbSeg = sizeof(pRespHdr);
@@ -927,8 +928,9 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         LogFunc(("cbDataIn = %u, cbDataOut = %u (cbIn = %u, cbOut = %u)\n",
                   pReq->cbDataIn, pReq->cbDataOut, pReq->pDescChain->cbPhysDst, pReq->pDescChain->cbVirtSrc));
         LogFunc(("xfer = %lu, residual = %u\n", cbXfer, cbResidual));
+        const char *pszTxDirText = virtioGetTxDirText(pReq->enmTxDir);
         LogFunc(("xfer direction: %s, sense written = %d, sense size = %d\n",
-             virtioGetTxDirText(pReq->enmTxDir), respHdr.uSenseLen, pThis->virtioScsiConfig.uSenseSize));
+             pszTxDirText, respHdr.uSenseLen, pThis->virtioScsiConfig.uSenseSize));
     }
 
     if (respHdr.uSenseLen && LogIs2Enabled())
@@ -1217,9 +1219,10 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
         case VIRTIOSCSI_T_TMF: /* Task Management Functions */
         {
             PVIRTIOSCSI_CTRL_TMF_T pScsiCtrlTmf = (PVIRTIOSCSI_CTRL_TMF_T)pScsiCtrl;
+            const char *pszTmfTypeText = virtioGetTMFTypeText(pScsiCtrlTmf->uSubtype);
             LogFunc(("%s, VirtIO LUN: %.8Rhxs\n%*sTask Mgt Function: %s (not yet implemented)\n",
                 QUEUENAME(qIdx), pScsiCtrlTmf->uScsiLun,
-                CBQUEUENAME(qIdx) + 18, "", virtioGetTMFTypeText(pScsiCtrlTmf->uSubtype)));
+                CBQUEUENAME(qIdx) + 18, "", pszTmfTypeText));
 
             switch(pScsiCtrlTmf->uSubtype)
             {
@@ -1320,7 +1323,8 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
             RTSgBufInit(&reqSegBuf, aReqSegs, sizeof(aReqSegs) / sizeof(RTSGSEG));
     }
 
-    LogFunc(("Response code: %s\n", virtioGetCtrlRespText(uResponse)));
+    const char *pszCtrlRespText = virtioGetCtrlRespText(uResponse);
+    LogFunc(("Response code: %s\n", pszCtrlRespText));
     virtioQueuePut (pThis->hVirtio, qIdx, &reqSegBuf, pDescChain, true);
     virtioQueueSync(pThis->hVirtio, qIdx);
 
@@ -1411,6 +1415,7 @@ DECLINLINE(void) virtioScsiReportEventsMissed(PVIRTIOSCSI pThis, uint16_t uTarge
     virtioScsiSendEvent(pThis, uTarget, VIRTIOSCSI_T_NO_EVENT | VIRTIOSCSI_T_EVENTS_MISSED, 0);
 }
 
+#if 0
 /* Only invoke this if VIRTIOSCSI_F_HOTPLUG is negotiated during intiailization
  * This effectively removes the SCSI Target/LUN on the guest side
  */
@@ -1478,7 +1483,7 @@ DECLINLINE(void) virtioScsiReportDeviceBusy(PVIRTIOSCSI pThis, uint16_t uTarget)
         virtioScsiSendEvent(pThis, uTarget, VIRTIOSCSI_T_ASYNC_NOTIFY,
                 VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY);
 }
-
+#endif
 
 DECLINLINE(void) virtioScsiReportParamChange(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uSenseCode, uint32_t uSenseQualifier)
 {
