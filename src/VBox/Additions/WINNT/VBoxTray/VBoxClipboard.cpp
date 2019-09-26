@@ -757,10 +757,8 @@ static int vboxClipboardWindowThread(RTTHREAD hThread, void *pvUser)
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pvUser;
     AssertPtr(pCtx);
 
-    HRESULT hr;
-
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    hr = OleInitialize(NULL);
+    HRESULT hr = OleInitialize(NULL);
     if (FAILED(hr))
     {
         LogRel(("Shared Clipboard: Initializing OLE in window thread failed (%Rhrc) -- file transfers unavailable\n", hr));
