@@ -195,6 +195,8 @@ static int pciR3MergedRegisterDeviceOnBus(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, P
     Assert(pBus == PDMINS_2_DATA(pDevIns, PDEVPCIBUS));
     pPciDev->Int.s.pfnConfigRead    = NULL;
     pPciDev->Int.s.pfnConfigWrite   = NULL;
+    if (pBus->fTypePiix3 && pPciDev->cbConfig > 256)
+        pPciDev->cbConfig = 256;
 
     /* Remember and mark bridges. */
     if (fFlags & PDMPCIDEVREG_F_PCI_BRIDGE)
