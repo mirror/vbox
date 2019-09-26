@@ -278,6 +278,7 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
             pVirtq->fEventThresholdReached = true;
 
     Assert(!(cbCopy & 0xffffffff00000000));
+
     /**
      * Place used buffer's descriptor in used ring but don't update used ring's slot index.
      * That will be done with a subsequent client call to virtioQueueSync() */
@@ -548,7 +549,7 @@ static void virtioGuestResetted(PVIRTIOSTATE pVirtio)
  * @param   pv          Pointer to location to write to or read from
  * @param   cb          Number of bytes to read or write
  */
-static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, bool fWrite, off_t uOffset, unsigned cb, void const *pv)
+static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffset, unsigned cb, void const *pv)
 {
     int rc = VINF_SUCCESS;
     uint64_t val;
@@ -891,19 +892,26 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
     RT_NOREF(pPciDev);
 
-    /** @todo r=bird: this comparison just cannot be correct.   */
-    if (uAddress == (uint64_t)&pVirtio->pPciCfgCap->uPciCfgData)
+    uint64_t uWindowOff = (uint64_t)uAddress - (uint64_t)pVirtio->pPciCfgCap->uPciCfgData;
+    if (uWindowOff < sizeof(uint32_t))
     {
         /* VirtIO 1.0 spec section 4.1.4.7 describes a required alternative access capability
          * whereby the guest driver can specify a bar, offset, and length via the PCI configuration space
          * (the virtio_pci_cfg_cap capability), and access data items. */
+
         uint32_t uLength = pVirtio->pPciCfgCap->pciCap.uLength;
         uint32_t uOffset = pVirtio->pPciCfgCap->pciCap.uOffset;
         uint8_t  uBar    = pVirtio->pPciCfgCap->pciCap.uBar;
-        *pu32Value = 0;
+
+        AssertReturn(uLength == 1 || uLength == 2 || uLength == 4, VERR_INVALID_PARAMETER);
+        AssertReturn(cb + uWindowOff <= uLength, VERR_INVALID_PARAMETER);
+
+        *pu32Value = 0xffffffff;
         if (uBar == VIRTIO_REGION_PCI_CAP)
         {
-            virtioR3MmioRead(pDevIns, NULL, (RTGCPHYS)((uint32_t)pVirtio->pGcPhysPciCapBase + uOffset), pu32Value, uLength);
+            uint32_t pu32tmp = 0;
+            virtioR3MmioRead(pDevIns, NULL, (RTGCPHYS)((uint32_t)pVirtio->pGcPhysPciCapBase + uOffset), &pu32tmp, uLength);
+            memcpy(pu32Value + uWindowOff, &pu32tmp + uWindowOff, cb);
             Log2Func(("virtio: Guest read  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%d, length=%d, result=%d\n",
                       uBar, uOffset, uLength, *pu32Value));
         }
@@ -923,14 +931,20 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPD
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
     RT_NOREF(pPciDev);
 
-    if (uAddress == pVirtio->uPciCfgDataOff)
+    uint64_t uWindowOff = (uint64_t)uAddress - (uint64_t)pVirtio->pPciCfgCap->uPciCfgData;
+    if (uWindowOff < sizeof(uint32_t))
     {
         /* VirtIO 1.0 spec section 4.1.4.7 describes a required alternative access capability
          * whereby the guest driver can specify a bar, offset, and length via the PCI configuration space
          * (the virtio_pci_cfg_cap capability), and access data items. */
+
         uint32_t uLength = pVirtio->pPciCfgCap->pciCap.uLength;
         uint32_t uOffset = pVirtio->pPciCfgCap->pciCap.uOffset;
         uint8_t  uBar    = pVirtio->pPciCfgCap->pciCap.uBar;
+
+        AssertReturn(uLength == 1 || uLength == 2 || uLength == 4, VERR_INVALID_PARAMETER);
+        AssertReturn(cb == uLength && uWindowOff == 0, VERR_INVALID_PARAMETER);
+
         if (uBar == VIRTIO_REGION_PCI_CAP)
         {
             Assert(uLength <= sizeof(u32Value));
@@ -1227,59 +1241,6 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     return rc;
 }
 
-#ifdef VBOX_DEVICE_STRUCT_TESTCASE
-#  define virtioDumpState(x, s)  do {} while (0)
-#else
-#  ifdef DEBUG
-
-static void virtioDumpState(PVIRTIOSTATE pVirtio, const char *pcszCaller)
-{
-    Log2Func(("(called from %s)\n"
-              "  uDeviceFeatures          = 0x%08x\n  uDriverFeatures          = 0x%08x\n"
-              "  uDeviceFeaturesSelect    = 0x%04x\n  uGuestFeaturesSelect     = 0x%04x\n"
-              "  uDeviceStatus            = 0x%02x\n  uConfigGeneration        = 0x%02x\n"
-              "  uQueueSelect             = 0x%04x\n  uNumQueues               = 0x%04x\n"
-              "  uISR                     = 0x%02x\n  fGenUpdatePending        = 0x%02x\n"
-              "  uPciCfgDataOff           = 0x%02x\n  pGcPhysPciCapBase        = %RGp\n"
-              "  pGcPhysCommonCfg         = %RGp\n  pGcPhysNotifyCap         = %RGp\n"
-              "  pGcPhysIsrCap            = %RGp\n  pGcPhysDeviceCap         = %RGp\n"
-              "  pDevSpecificCap          = %p\n  cbDevSpecificCap         = 0x%04x\n"
-              "  pfnVirtioStatusChanged   = %p\n  pfnVirtioQueueNotified   = %p\n"
-              "  pfnVirtioDevCapRead      = %p\n  pfnVirtioDevCapWrite     = %p\n"
-              "  pfnSSMDevLiveExec        = %p\n  pfnSSMDevSaveExec        = %p\n"
-              "  pfnSSMDevLoadExec        = %p\n  pfnSSMDevLoadDone        = %p\n"
-                    pcszCaller ? pcszCaller : "<unspecified>",
-                    pVirtio->uDeviceFeatures, pVirtio->uDriverFeatures, pVirtio->uDeviceFeaturesSelect,
-                    pVirtio->uDriverFeaturesSelect, pVirtio->uDeviceStatus, pVirtio->uConfigGeneration,
-                    pVirtio->uQueueSelect, pVirtio->uNumQueues, pVirtio->uISR, pVirtio->fGenUpdatePending,
-                    pVirtio->uPciCfgDataOff, pVirtio->pGcPhysPciCapBase, pVirtio->pGcPhysCommonCfg,
-                    pVirtio->pGcPhysNotifyCap, pVirtio->pGcPhysIsrCap, pVirtio->pGcPhysDeviceCap,
-                    pVirtio->pDevSpecificCfg, pVirtio->cbDevSpecificCfg, pVirtio->virtioCallbacks.pfnVirtioStatusChanged,
-                    pVirtio->virtioCallbacks.pfnVirtioQueueNotified, pVirtio->virtioCallbacks.pfnVirtioDevCapRead,
-                    pVirtio->virtioCallbacks.pfnVirtioDevCapWrite, pVirtio->virtioCallbacks.pfnSSMDevLiveExec,
-                    pVirtio->virtioCallbacks.pfnSSMDevSaveExec, pVirtio->virtioCallbacks.pfnSSMDevLoadExec,
-                    pVirtio->virtioCallbacks.pfnSSMDevLoadDone
-    ));
-
-    for (uint16_t i = 0; i < pVirtio->uNumQueues; i++)
-    {
-        Log2Func(("%s queue:\n",
-                  "  virtqState[%u].uAvailIdx    = %u\n  virtqState[%u].uUsedIdx    = %u\n"
-                  "  uQueueSize[%u]              = %u\n  uQueueNotifyOff[%u]         = %04x\n"
-                  "  uQueueMsixVector[%u]        = %04x\n  uQueueEnable[%u]            = %04x\n"
-                  "  pGcPhysQueueDesc[%u]        = %RGp\n  pGcPhysQueueAvail[%u]       = %RGp\n"
-                  "  pGcPhysQueueUsed[%u]        = %RGp\n",
-                        i, pVirtio->virtqState[i].szVirtqName, i, pVirtio->virtqState[i].uAvailIdx,
-                        i, pVirtio->virtqState[i].uUsedIdx, i, pVirtio->uQueueSize[i],
-                        i, pVirtio->uQueueNotifyOff[i],i, pVirtio->uQueueMsixVector[i],
-                        i, pVirtio->uQueueEnable[i], i, pVirtio->pGcPhysQueueDesc[i],
-                        i, pVirtio->pGcPhysQueueAvail[i], i, pVirtio->pGcPhysQueueUsed[i]
-        ));
-    }
-}
-#  endif
-#endif
-
 #ifdef IN_RING3
 
  /** @callback_method_impl{FNSSMDEVSAVEEXEC}  */
@@ -1289,9 +1250,6 @@ static DECLCALLBACK(int) virtioR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     int rc = VINF_SUCCESS;
 
-#ifdef DEBUG
-    virtioDumpState(pVirtio, (const char *)"virtioSaveExec");
-#endif
     rc = SSMR3PutBool(pSSM,   pVirtio->fGenUpdatePending);
     rc = SSMR3PutU8(pSSM,     pVirtio->uDeviceStatus);
     rc = SSMR3PutU8(pSSM,     pVirtio->uConfigGeneration);
@@ -1345,10 +1303,6 @@ static DECLCALLBACK(int) virtioR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
 
     int rc = VINF_SUCCESS;
-
-#ifdef DEBUG
-    virtioDumpState(pVirtio, "virtioLoadExec");
-#endif
 
     if (uPass == SSM_PASS_FINAL)
     {
@@ -1405,9 +1359,6 @@ static DECLCALLBACK(int) virtioR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
 
     int rc = VINF_SUCCESS;
-#ifdef DEBUG
-    virtioDumpState(pVirtio, "virtioLoadDone");
-#endif
     rc = pVirtio->virtioCallbacks.pfnSSMDevLoadDone(pDevIns, pSSM);
 
     return rc;
@@ -1419,10 +1370,6 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
 
     int rc = VINF_SUCCESS;
-
-#ifdef DEBUG
-    virtioDumpState(pVirtio, "virtioLiveExec");
-#endif
     rc = pVirtio->virtioCallbacks.pfnSSMDevLiveExec(pDevIns, pSSM, uPass);
 
     return rc;
@@ -1518,4 +1465,3 @@ void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t
 }
 
 #endif /* IN_RING3 */
-

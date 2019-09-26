@@ -512,25 +512,25 @@ typedef struct VIRTIOSCSI
     VIRTIOSCSI_CONFIG_T             virtioScsiConfig;
 
     /** True if the guest/driver and VirtIO framework are in the ready state */
-    unsigned                         fVirtioReady;
+    unsigned                        fVirtioReady;
 
     /** True if VIRTIO_SCSI_F_T10_PI was negotiated */
-    unsigned                         fHasT10pi;
+    unsigned                        fHasT10pi;
 
     /** True if VIRTIO_SCSI_F_T10_PI was negotiated */
-    unsigned                         fHasHotplug;
+    unsigned                        fHasHotplug;
 
     /** True if VIRTIO_SCSI_F_T10_PI was negotiated */
-    unsigned                         fHasInOutBufs;
+    unsigned                        fHasInOutBufs;
 
     /** True if VIRTIO_SCSI_F_T10_PI was negotiated */
-    unsigned                         fHasLunChange;
+    unsigned                        fHasLunChange;
 
     /** True if in the process of resetting */
-    unsigned                         fResetting;
+    unsigned                        fResetting;
 
     /** True if in the process of quiescing I/O */
-    unsigned                         fQuiescing;
+    unsigned                        fQuiescing;
 
 } VIRTIOSCSI, *PVIRTIOSCSI;
 
@@ -849,12 +849,15 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     PPDMIMEDIAEX      pIMediaEx = pTarget->pDrvMediaEx;
 
     size_t cbResidual = 0;
-    size_t cbXfer = 0;
     int rc = pIMediaEx->pfnIoReqQueryResidual(pIMediaEx, hIoReq, &cbResidual);
     AssertRC(rc);
 
+    size_t cbXfer = 0;
     rc = pIMediaEx->pfnIoReqQueryXferSize(pIMediaEx, hIoReq, &cbXfer);
     AssertRC(rc);
+
+    Assert(!(cbXfer & 0xffffffff00000000));
+    uint32_t cbXfer32 = cbXfer & 0xffffffff;
 
     struct REQ_RESP_HDR respHdr = { 0 };
     respHdr.uSenseLen = pReq->pbSense[2] == SCSI_SENSE_NONE ? 0 : (uint32_t)pReq->uSenseLen;
@@ -936,32 +939,34 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
 
     if (LogIs12Enabled())
     {
-        Assert(!(cbXfer & 0xffffffff00000000));
-        uint32_t cbXfer32 = cbXfer & 0xffffffff;
         uint32_t cb = RT_MIN(cbXfer32, 256);
         if (VIRTIO_IN_DIRECTION(pReq->enmTxDir))
         {
-            Log(("datain[%d of %d total bytes xferred]:\n", cb, cbXfer));
             if (!isBufZero(pReq->pbDataIn, cb))
+            {
+                Log(("datain[showing the first %d of %d total bytes xferred]:\n", cb, cbXfer32));
                 VIRTIO_HEX_DUMP(RTLOGGRPFLAGS_LEVEL_12, pReq->pbDataIn,  cb,  0, 0);
+            }
             else
-                Log12(("-- %d zeroes --\n", cb));
+                Log12Func(("First %d bytes transfered in this req are 0 --\n", cb));
         }
         else
         if (VIRTIO_OUT_DIRECTION(pReq->enmTxDir))
         {
-            Log(("dataout[%d of %d total bytes xferred]:\n", cb, cbXfer));
             if (!isBufZero(pReq->pbDataOut, cb))
+            {
+                Log(("dataout[showing the first %d of %d total bytes xferred]:\n", cb, cbXfer32));
                 VIRTIO_HEX_DUMP(RTLOGGRPFLAGS_LEVEL_12, pReq->pbDataOut, cb, 0, 0);
+            }
             else
-                Log12(("-- %d zeroes --\n", cb));
+                Log12Func(("First %d bytes transfered in this req are 0 --\n", cb));
         }
     }
 
     int cSegs = 0;
 
-    if (   (VIRTIO_IN_DIRECTION(pReq->enmTxDir)  && cbXfer > pReq->cbDataIn)
-        || (VIRTIO_OUT_DIRECTION(pReq->enmTxDir) && cbXfer > pReq->cbDataOut))
+    if (   (VIRTIO_IN_DIRECTION(pReq->enmTxDir)  && cbXfer32 > pReq->cbDataIn)
+        || (VIRTIO_OUT_DIRECTION(pReq->enmTxDir) && cbXfer32 > pReq->cbDataOut))
     {
         /* TBD try to figure out optimal sense info to send back besides response of VIRTIOSCSI_S_OVERRUN */
         Log2Func((" * * * * Data overrun, returning sense\n"));
@@ -980,20 +985,20 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         Assert(pReq->pbSense != NULL);
 
         RTSGSEG aReqSegs[4];
-        aReqSegs[cSegs].pvSeg   = &respHdr;
+        aReqSegs[cSegs].pvSeg = &respHdr;
         aReqSegs[cSegs++].cbSeg = sizeof(respHdr);
 
-        aReqSegs[cSegs].pvSeg   = pReq->pbSense;
+        aReqSegs[cSegs].pvSeg = pReq->pbSense;
         aReqSegs[cSegs++].cbSeg = pReq->cbSense; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
 
         if (pReq->cbPiIn)
         {
-            aReqSegs[cSegs].pvSeg   = pReq->pbPiIn;
+            aReqSegs[cSegs].pvSeg = pReq->pbPiIn;
             aReqSegs[cSegs++].cbSeg = pReq->cbPiIn;
         }
         if (pReq->cbDataIn)
         {
-            aReqSegs[cSegs].pvSeg   = pReq->pbDataIn;
+            aReqSegs[cSegs].pvSeg = pReq->pbDataIn;
             aReqSegs[cSegs++].cbSeg = cbXfer;
         }
         RTSGBUF reqSegBuf;
