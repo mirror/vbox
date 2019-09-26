@@ -746,14 +746,16 @@ static int virtioScsiSendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEv
         case VIRTIOSCSI_T_ASYNC_NOTIFY:
             char szTypeText[128];
             virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), uReason);
-            Log6Func(("(target=%d, LUN=%d): Delivering subscribed async notification %s\n", uTarget, LUN0));
+            Log6Func(("(target=%d, LUN=%d): Delivering subscribed async notification %s\n",
+                         uTarget, LUN0, szTypeText));
             break;
         case VIRTIOSCSI_T_PARAM_CHANGE:
             LogFunc(("(target=%d, LUN=%d): PARAM_CHANGE sense code: 0x%x sense qualifier: 0x%x\n",
                         uTarget, LUN0, uReason & 0xff, (uReason >> 8) & 0xff));
             break;
         default:
-            Log6Func(("(target=%d, LUN=%d): Unknown event type: %d, ignoring\n", uTarget, LUN0));
+            Log6Func(("(target=%d, LUN=%d): Unknown event type: %d, ignoring\n",
+                        uTarget, LUN0, uEventType));
             return VINF_SUCCESS;
     }
 
@@ -1518,7 +1520,7 @@ static DECLCALLBACK(void) virtioScsiNotified(VIRTIOHANDLE hVirtio, void *pClient
     }
     else if (qIdx == EVENTQ_IDX)
     {
-        Log3Func(("Driver queued buffer(s) to %s\n"));
+        Log3Func(("Driver queued buffer(s) to %s\n", QUEUENAME(qIdx)));
         if (ASMAtomicXchgBool(&pThis->fEventsMissed, false))
             virtioScsiReportEventsMissed(pThis, 0);
     }
