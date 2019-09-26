@@ -30,4 +30,3 @@
 
 #include "VBoxSharedClipboardSvc-internal.h"
 
-
