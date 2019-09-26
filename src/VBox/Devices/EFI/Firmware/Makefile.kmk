@@ -173,8 +173,6 @@ VBOX_EFI_DEPENDENCIES = \
 	$(VBOX_PATH_EFI_FIRMWARE)/../DevEFI.h \
        $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.c \
        $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxDebugAgentLib/VBoxDebugAgentLib.inf \
-       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.c \
-       $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/Library/VBoxPeCoffExtraActionLib/VBoxPeCoffExtraActionLib.inf \
        $(VBOX_PATH_EFI_FIRMWARE)/VBoxPkg/VBoxPkg.dec \
        \
        $(VBOX_PATH_EFI_FIRMWARE)/OvmfPkg/OvmfPkg.dec \
