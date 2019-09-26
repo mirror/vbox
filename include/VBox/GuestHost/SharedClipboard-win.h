@@ -68,7 +68,7 @@ using namespace com;
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 /** Starts a transfer on the guest.
  *  This creates the necessary IDataObject in the matching window thread. */
-# define SHCL_WIN_WM_URI_TRANSFER_START    WM_USER + 2
+# define SHCL_WIN_WM_TRANSFER_START         WM_USER + 2
 #endif
 
 /* Dynamically load clipboard functions from User32.dll. */

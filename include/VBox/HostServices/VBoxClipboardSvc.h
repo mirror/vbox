@@ -177,9 +177,6 @@
 /** Gets the next message, returning immediately.
  *  New since protocol v1. */
 #define VBOX_SHCL_GUEST_FN_MSG_GET                8
-/** Sends a transfer status to the host.
- *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_STATUS                 9
 /** Replies to a function from the host.
  *  New since protocol v1. */
 #define VBOX_SHCL_GUEST_FN_REPLY                  10
@@ -511,7 +508,7 @@ typedef struct _VBoxShClRootListParms
 } VBoxShClRootListParms;
 
 /**
- * Requests to read the root list.
+ * Requests to read the root list header.
  */
 typedef struct _VBoxShClRootListReadReqMsg
 {
@@ -520,7 +517,7 @@ typedef struct _VBoxShClRootListReadReqMsg
     VBoxShClRootListParms ReqParms;
 } VBoxShClRootListReadReqMsg;
 
-#define VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ 2
+#define VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ_REQ 2
 
 /**
  * Reads / Writes a root list header.
@@ -534,7 +531,8 @@ typedef struct _VBoxShClRootListHdrMsg
     HGCMFunctionParameter cRoots;
 } VBoxShClRootListHdrMsg;
 
-#define VBOX_SHCL_CPARMS_ROOT_LIST_HDR 3
+#define VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ  3
+#define VBOX_SHCL_CPARMS_ROOT_LIST_HDR_WRITE 3
 
 /**
  * Structure for keeping list entry message parameters.
@@ -580,7 +578,8 @@ typedef struct _VBoxShClRootListEntryMsg
     HGCMFunctionParameter      pvInfo;
 } VBoxShClRootListEntryMsg;
 
-#define VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY 6
+#define VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ  6
+#define VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_WRITE 6
 
 /**
  * Opens a list.

@@ -1177,7 +1177,7 @@ int SharedClipboardTransferInit(PSHCLTRANSFER pTransfer,
 
         if (pTransfer->Callbacks.pfnTransferInitialize)
         {
-            SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser };
+            SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser, pTransfer->Callbacks.cbUser };
             rc = pTransfer->Callbacks.pfnTransferInitialize(&Data);
         }
     }
@@ -2284,7 +2284,7 @@ int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer)
 
     if (pTransfer->Callbacks.pfnTransferStart)
     {
-        SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser };
+        SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser, pTransfer->Callbacks.cbUser };
         rc = pTransfer->Callbacks.pfnTransferStart(&Data);
     }
     else
@@ -2325,6 +2325,7 @@ void SharedClipboardTransferSetCallbacks(PSHCLTRANSFER pTransfer,
 #undef SET_CALLBACK
 
     pTransfer->Callbacks.pvUser = pCallbacks->pvUser;
+    pTransfer->Callbacks.cbUser = pCallbacks->cbUser;
 }
 
 /**
@@ -2637,23 +2638,26 @@ void SharedClipboardTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturnVoid(pTransferCtx);
 
-    LogFlowFunc(("pTransferCtx=%p, cTransfers=%RU32, cRunning=%RU32\n",
+    LogFlowFunc(("pTransferCtx=%p, cTransfers=%RU16 cRunning=%RU16\n",
                  pTransferCtx, pTransferCtx->cTransfers, pTransferCtx->cRunning));
 
-    /* Remove all transfers which are not in a running state (e.g. only announced). */
-    PSHCLTRANSFER pTransfer, pTransferNext;
-    RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
+    if (!RTListIsEmpty(&pTransferCtx->List))
     {
-        if (SharedClipboardTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
+        /* Remove all transfers which are not in a running state (e.g. only announced). */
+        PSHCLTRANSFER pTransfer, pTransferNext;
+        RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
         {
-            SharedClipboardTransferDestroy(pTransfer);
-            RTListNodeRemove(&pTransfer->Node);
+            if (SharedClipboardTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
+            {
+                SharedClipboardTransferDestroy(pTransfer);
+                RTListNodeRemove(&pTransfer->Node);
 
-            RTMemFree(pTransfer);
-            pTransfer = NULL;
+                RTMemFree(pTransfer);
+                pTransfer = NULL;
 
-            Assert(pTransferCtx->cTransfers);
-            pTransferCtx->cTransfers--;
+                Assert(pTransferCtx->cTransfers);
+                pTransferCtx->cTransfers--;
+            }
         }
     }
 }

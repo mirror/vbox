@@ -181,6 +181,8 @@ void SharedClipboardWinCtxDestroy(PSHCLWINCTX pWinCtx)
     if (!pWinCtx)
         return;
 
+    LogFlowFuncEnter();
+
     if (RTCritSectIsInitialized(&pWinCtx->CritSect))
     {
         int rc2 = RTCritSectDelete(&pWinCtx->CritSect);
@@ -893,38 +895,36 @@ int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfe
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
-    LogFlowFuncEnter();
-
-    int rc;
+    LogFlowFunc(("pWinCtx=%p\n", pWinCtx));
 
     AssertReturn(pTransfer->pvUser == NULL, VERR_WRONG_ORDER);
 
-    SharedClipboardWinTransferCtx *pWinURITransferCtx = new SharedClipboardWinTransferCtx();
-    if (pWinURITransferCtx)
+    /* Make sure to enter the critical section before setting the clipboard data, as otherwise WM_CLIPBOARDUPDATE
+     * might get called *before* we had the opportunity to set pWinCtx->hWndClipboardOwnerUs below. */
+    int rc = RTCritSectEnter(&pWinCtx->CritSect);
+    if (RT_SUCCESS(rc))
     {
-        pTransfer->pvUser = pWinURITransferCtx;
-        pTransfer->cbUser = sizeof(SharedClipboardWinTransferCtx);
-
-        pWinURITransferCtx->pDataObj = new SharedClipboardWinDataObject(pTransfer);
-        if (pWinURITransferCtx->pDataObj)
+        SharedClipboardWinTransferCtx *pWinURITransferCtx = new SharedClipboardWinTransferCtx();
+        if (pWinURITransferCtx)
         {
-            rc = pWinURITransferCtx->pDataObj->Init();
-            if (RT_SUCCESS(rc))
+            pTransfer->pvUser = pWinURITransferCtx;
+            pTransfer->cbUser = sizeof(SharedClipboardWinTransferCtx);
+
+            pWinURITransferCtx->pDataObj = new SharedClipboardWinDataObject(pTransfer);
+            if (pWinURITransferCtx->pDataObj)
             {
-                SharedClipboardWinClose();
-                /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
-
-                /** @todo There is a potential race between SharedClipboardWinClose() and OleSetClipboard(),
-                 *        where another application could own the clipboard (open), and thus the call to
-                 *        OleSetClipboard() will fail. Needs (better) fixing. */
-                HRESULT hr = S_OK;
-
-                for (unsigned uTries = 0; uTries < 3; uTries++)
+                rc = pWinURITransferCtx->pDataObj->Init();
+                if (RT_SUCCESS(rc))
                 {
-                    /* Make sure to enter the critical section before setting the clipboard data, as otherwise WM_CLIPBOARDUPDATE
-                     * might get called *before* we had the opportunity to set pWinCtx->hWndClipboardOwnerUs below. */
-                    rc = RTCritSectEnter(&pWinCtx->CritSect);
-                    if (RT_SUCCESS(rc))
+                    SharedClipboardWinClose();
+                    /* Note: Clipboard must be closed first before calling OleSetClipboard(). */
+
+                    /** @todo There is a potential race between SharedClipboardWinClose() and OleSetClipboard(),
+                     *        where another application could own the clipboard (open), and thus the call to
+                     *        OleSetClipboard() will fail. Needs (better) fixing. */
+                    HRESULT hr = S_OK;
+
+                    for (unsigned uTries = 0; uTries < 3; uTries++)
                     {
                         hr = OleSetClipboard(pWinURITransferCtx->pDataObj);
                         if (SUCCEEDED(hr))
@@ -938,31 +938,30 @@ int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfe
                              */
                             pWinCtx->hWndClipboardOwnerUs = GetClipboardOwner();
 
-                            rc = RTCritSectLeave(&pWinCtx->CritSect);
-                            AssertRC(rc);
+                            LogFlowFunc(("hWndClipboardOwnerUs=%p\n", pWinCtx->hWndClipboardOwnerUs));
                             break;
                         }
+
+                        LogFlowFunc(("Failed with %Rhrc (try %u/3)\n", hr, uTries + 1));
+                        RTThreadSleep(500); /* Wait a bit. */
                     }
 
-                    rc = RTCritSectLeave(&pWinCtx->CritSect);
-                    AssertRCBreak(rc);
-
-                    LogFlowFunc(("Failed with %Rhrc (try %u/3)\n", hr, uTries + 1));
-                    RTThreadSleep(500); /* Wait a bit. */
-                }
-
-                if (FAILED(hr))
-                {
-                    rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
-                    LogRel(("Shared Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
+                    if (FAILED(hr))
+                    {
+                        rc = VERR_ACCESS_DENIED; /** @todo Fudge; fix this. */
+                        LogRel(("Shared Clipboard: Failed with %Rhrc when setting data object to clipboard\n", hr));
+                    }
                 }
             }
+            else
+                rc = VERR_NO_MEMORY;
         }
         else
             rc = VERR_NO_MEMORY;
+
+        int rc2 = RTCritSectLeave(&pWinCtx->CritSect);
+        AssertRC(rc2);
     }
-    else
-        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

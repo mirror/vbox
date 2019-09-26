@@ -622,13 +622,17 @@ typedef struct VBGLR3SHCLCMDCTX
  */
 typedef enum _VBGLR3CLIPBOARDEVENTTYPE
 {
-    VBGLR3CLIPBOARDEVENTTYPE_INVALID = 0,
+    /** No event needed / defined. */
+    VBGLR3CLIPBOARDEVENTTYPE_NONE = 0,
+    /** Host reports available clipboard formats to the guest. */
     VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS,
+    /** Host wants to read Shared Clipboard data from the guest. */
     VBGLR3CLIPBOARDEVENTTYPE_READ_DATA,
+    /** Terminates the Shared Clipboard service. */
     VBGLR3CLIPBOARDEVENTTYPE_QUIT,
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     /** Reports a transfer status to the guest. */
-    VBGLR3CLIPBOARDEVENTTYPE_URI_TRANSFER_STATUS,
+    VBGLR3CLIPBOARDEVENTTYPE_TRANSFER_STATUS,
 #  endif
     /** Blow the type up to 32-bit. */
     VBGLR3CLIPBOARDEVENTTYPE_32BIT_HACK = 0x7fffffff

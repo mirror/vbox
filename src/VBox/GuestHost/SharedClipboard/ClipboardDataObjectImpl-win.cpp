@@ -366,7 +366,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
                 if (ASMAtomicReadBool(&pTransfer->Thread.fStop))
                 {
-                    LogRel2(("Shared Clipboard: Stopping transfer calculating ...\n"));
+                    LogRel2(("Shared Clipboard: Stopping transfer calculation ...\n"));
                     break;
                 }
 
@@ -377,7 +377,8 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
             SharedClipboardTransferRootListFree(pRootList);
             pRootList = NULL;
 
-            if (RT_SUCCESS(rc))
+            if (   RT_SUCCESS(rc)
+                && !ASMAtomicReadBool(&pTransfer->Thread.fStop))
             {
                 LogRel2(("Shared Clipboard: Transfer calculation complete (%zu root entries)\n", pThis->m_lstEntries.size()));
 
@@ -401,7 +402,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                 else
                    LogRel(("Shared Clipboard: No transfer root entries found -- should not happen, please file a bug report\n"));
             }
-            else
+            else if (RT_FAILURE(rc))
                 LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
         }
 

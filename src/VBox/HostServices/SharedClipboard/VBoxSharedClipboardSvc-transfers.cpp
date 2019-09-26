@@ -83,7 +83,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
     int rc;
 
     PSHCLCLIENTMSG pMsgHdr = shclSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_HDR_READ,
-                                             VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ);
+                                             VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ_REQ);
     if (pMsgHdr)
     {
         SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
@@ -651,6 +651,81 @@ int shclSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
 *********************************************************************************************************************************/
 
 /**
+ * Returns whether a HGCM message is allowed in a certain service mode or not.
+ *
+ * @returns \c true if message is allowed, \c false if not.
+ * @param   uMode               Service mode to check allowance for.
+ * @param   uMsg                HGCM message to check allowance for.
+ */
+bool shclSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
+{
+    const bool fHostToGuest =    uMode == VBOX_SHCL_MODE_HOST_TO_GUEST
+                              || uMode == VBOX_SHCL_MODE_BIDIRECTIONAL;
+
+    const bool fGuestToHost =    uMode == VBOX_SHCL_MODE_GUEST_TO_HOST
+                              || uMode == VBOX_SHCL_MODE_BIDIRECTIONAL;
+
+    bool fAllowed = false; /* If in doubt, don't allow. */
+
+    switch (uMsg)
+    {
+        case VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_OBJ_WRITE:
+            fAllowed = fGuestToHost;
+            break;
+
+        case VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_LIST_HDR_READ:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_OBJ_READ:
+            fAllowed = fHostToGuest;
+            break;
+
+        case VBOX_SHCL_GUEST_FN_CONNECT:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_MSG_GET:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_REPLY:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_CANCEL:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_ERROR:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_LIST_OPEN:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_LIST_CLOSE:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_OBJ_OPEN:
+            RT_FALL_THROUGH();
+        case VBOX_SHCL_GUEST_FN_OBJ_CLOSE:
+            fAllowed = fHostToGuest || fGuestToHost;
+            break;
+
+        default:
+            break;
+    }
+
+    LogFlowFunc(("uMsg=%RU32 (%s), uMode=%RU32 -> fAllowed=%RTbool\n", uMsg, VBoxShClGuestMsgToStr(uMsg), uMode, fAllowed));
+    return fAllowed;
+}
+
+/**
  * Gets a transfer message reply from HGCM service parameters.
  *
  * @returns VBox status code.
@@ -739,7 +814,7 @@ static int shclSvcTransferGetRootListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParm
 {
     int rc;
 
-    if (cParms == VBOX_SHCL_CPARMS_ROOT_LIST_HDR)
+    if (cParms == VBOX_SHCL_CPARMS_ROOT_LIST_HDR_WRITE)
     {
         rc = HGCMSvcGetU32(&paParms[1], &pRootLstHdr->fRoots);
         if (RT_SUCCESS(rc))
@@ -765,7 +840,7 @@ static int shclSvcTransferGetRootListEntry(uint32_t cParms, VBOXHGCMSVCPARM paPa
 {
     int rc;
 
-    if (cParms == VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY)
+    if (cParms == VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_WRITE)
     {
         rc = HGCMSvcGetU32(&paParms[1], &pListEntry->fInfo);
         /* Note: paParms[2] contains the entry index, currently being ignored. */
@@ -1219,14 +1294,12 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
     LogFlowFunc(("uClient=%RU32, u32Function=%RU32 (%s), cParms=%RU32, g_ExtState.pfnExtension=%p\n",
                  pClient->State.uClientID, u32Function, VBoxShClGuestMsgToStr(u32Function), cParms, g_ExtState.pfnExtension));
 
-#if 0
     /* Check if we've the right mode set. */
     if (!shclSvcTransferMsgIsAllowed(shclSvcGetMode(), u32Function))
     {
         LogFunc(("Wrong clipboard mode, denying access\n"));
         return VERR_ACCESS_DENIED;
     }
-#endif
 
     /* A (valid) service extension is needed because VBoxSVC needs to keep track of the
      * clipboard areas cached on the host. */
@@ -1249,8 +1322,6 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
 
     switch (u32Function)
     {
-        case VBOX_SHCL_GUEST_FN_STATUS:
-            break;
         default:
         {
             if (!SharedClipboardTransferCtxGetTotalTransfers(&pClient->TransferCtx))
@@ -1286,107 +1357,6 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
 
     switch (u32Function)
     {
-#if 0
-        case VBOX_SHCL_GUEST_FN_STATUS:
-        {
-            if (cParms != VBOX_SHCL_CPARMS_STATUS)
-                break;
-
-            SHCLTRANSFERSTATUS uStatus = SHCLTRANSFERSTATUS_NONE;
-            rc = HGCMSvcGetU32(&paParms[1], &uStatus);
-            if (RT_FAILURE(rc))
-                break;
-
-            LogFlowFunc(("uStatus: %RU32\n", uStatus));
-
-            SharedClipboardTransferCtxTransfersCleanup(&pClient->URI);
-
-            if (SharedClipboardTransferCtxTransfersMaximumReached(&pClient->URI))
-            {
-                rc = VERR_SHCLPB_MAX_TRANSFERS_REACHED;
-                break;
-            }
-
-            if (uStatus == SHCLTRANSFERSTATUS_RUNNING)
-            {
-                const SHCLTRANSFERDIR enmDir = SHCLTRANSFERDIR_READ;
-
-                PSHCLTRANSFER pTransfer;
-                rc = SharedClipboardTransferCreate(enmDir,
-                                                      SHCLSOURCE_REMOTE, &pTransfer);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = shclSvcTransferAreaRegister(&pClient->State, pTransfer);
-                    if (RT_SUCCESS(rc))
-                    {
-                        SHCLPROVIDERCREATIONCTX creationCtx;
-                        RT_ZERO(creationCtx);
-
-                        creationCtx.enmSource = pClient->State.enmSource;
-
-                        creationCtx.Interface.pfnTransferOpen  = shclSvcTransferOpen;
-                        creationCtx.Interface.pfnTransferClose = shclSvcTransferClose;
-                        creationCtx.Interface.pfnListOpen      = shclSvcTransferListOpen;
-                        creationCtx.Interface.pfnListClose     = shclSvcTransferListClose;
-                        creationCtx.Interface.pfnObjOpen       = shclSvcTransferObjOpen;
-                        creationCtx.Interface.pfnObjClose      = shclSvcTransferObjClose;
-
-                        if (enmDir == SHCLTRANSFERDIR_READ)
-                        {
-                            creationCtx.Interface.pfnRootsGet        = shclSvcTransferGetRoots;
-                            creationCtx.Interface.pfnListHdrRead     = shclSvcTransferListHdrRead;
-                            creationCtx.Interface.pfnListEntryRead   = shclSvcTransferListEntryRead;
-                            creationCtx.Interface.pfnObjRead         = shclSvcTransferObjRead;
-                        }
-                        else
-                        {
-                            AssertFailed();
-                        }
-
-                        creationCtx.pvUser = pClient;
-
-                        /* Register needed callbacks so that we can wait for the meta data to arrive here. */
-                        SHCLTRANSFERCALLBACKS Callbacks;
-                        RT_ZERO(Callbacks);
-
-                        Callbacks.pvUser                = pClient;
-
-                        Callbacks.pfnTransferPrepare    = VBoxSvcClipboardTransferPrepareCallback;
-                        Callbacks.pfnTransferComplete   = VBoxSvcClipboardTransferCompleteCallback;
-                        Callbacks.pfnTransferCanceled   = VBoxSvcClipboardTransferCanceledCallback;
-                        Callbacks.pfnTransferError      = VBoxSvcClipboardTransferErrorCallback;
-
-                        SharedClipboardTransferSetCallbacks(pTransfer, &Callbacks);
-
-                        rc = SharedClipboardTransferSetInterface(pTransfer, &creationCtx);
-                        if (RT_SUCCESS(rc))
-                            rc = SharedClipboardTransferCtxTransferAdd(&pClient->URI, pTransfer);
-                    }
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = ShClSvcImplTransferCreate(pClient, pTransfer);
-                        if (RT_SUCCESS(rc))
-                            rc = ShClSvcImplFormatAnnounce(pClient, VBOX_SHCL_FMT_URI_LIST);
-                    }
-
-                    if (RT_FAILURE(rc))
-                    {
-                        ShClSvcImplTransferDestroy(pClient, pTransfer);
-                        SharedClipboardTransferDestroy(pTransfer);
-                    }
-                }
-            }
-
-            LogFlowFunc(("[Client %RU32] VBOX_SHCL_GUEST_FN_STATUS: %Rrc\n", pClient->uClientID, rc));
-
-            if (RT_FAILURE(rc))
-                LogRel(("Shared Clipboard: Initializing transfer failed with %Rrc\n", rc));
-
-            break;
-        }
-#endif
-
         case VBOX_SHCL_GUEST_FN_REPLY:
         {
             rc = shclSvcTransferHandleReply(pClient, pTransfer, cParms, paParms);
@@ -1395,6 +1365,19 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
 
         case VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ:
         {
+            if (cParms != VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ)
+                break;
+
+            SHCLROOTLISTHDR rootListHdr;
+            RT_ZERO(rootListHdr);
+
+            rootListHdr.cRoots = SharedClipboardTransferRootsCount(pTransfer);
+
+            HGCMSvcSetU32(&paParms[0], 0 /* Context ID */);
+            HGCMSvcSetU32(&paParms[1], rootListHdr.fRoots);
+            HGCMSvcSetU32(&paParms[2], rootListHdr.cRoots);
+
+            rc = VINF_SUCCESS;
             break;
         }
 
@@ -1423,23 +1406,24 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
 
         case VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ:
         {
-    #if 0
-            SHCLROOTLISTENTRY lstEntry;
-            rc = VBoxSvcClipboardGetRootListEntry(cParms, paParms, &lstEntry);
+            if (cParms != VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ)
+                break;
+
+            /* paParms[1] contains fInfo flags, currently unused. */
+            uint32_t uIndex;
+            rc = HGCMSvcGetU32(&paParms[2], &uIndex);
             if (RT_SUCCESS(rc))
             {
-                void    *pvData = SharedClipboardTransferRootListEntryDup(&lstEntry);
-                uint32_t cbData = sizeof(SHCLROOTLISTENTRY);
-
-                PSHCLTRANSFERPAYLOAD pPayload;
-                rc = SharedClipboardTransferPayloadAlloc(SHCLTRANSFEREVENTTYPE_ROOT_LIST_HDR_READ,
-                                                            pvData, cbData, &pPayload);
+                SHCLROOTLISTENTRY rootListEntry;
+                rc = SharedClipboardTransferRootsEntry(pTransfer, uIndex, &rootListEntry);
                 if (RT_SUCCESS(rc))
-                    rc = SharedClipboardTransferEventSignal(pTransfer, SHCLTRANSFEREVENTTYPE_ROOT_LIST_HDR_READ,
-                                                            pPayload);
+                {
+                    HGCMSvcSetPv (&paParms[3], rootListEntry.pszName, rootListEntry.cbName);
+                    HGCMSvcSetU32(&paParms[4], rootListEntry.cbName);
+                    HGCMSvcSetPv (&paParms[5], rootListEntry.pvInfo, rootListEntry.cbInfo);
+                }
             }
             break;
-    #endif
         }
 
         case VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE:
