@@ -22,12 +22,6 @@
 #endif
 
 /* Qt includes: */
-#ifdef VBOX_WS_MAC
-/* Somewhere Carbon.h includes AssertMacros.h which defines the macro "check".
- * In QItemDelegate a class method is called "check" also. As we not used the
- * macro undefine it here. */
-# undef check
-#endif /* VBOX_WS_MAC */
 #include <QItemDelegate>
 #include <QPointer>
 
