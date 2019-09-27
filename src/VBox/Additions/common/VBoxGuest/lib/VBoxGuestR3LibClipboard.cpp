@@ -71,9 +71,6 @@
 VBGLR3DECL(int) VbglR3ClipboardConnect(HGCMCLIENTID *pidClient)
 {
     int rc = VbglR3HGCMConnect("VBoxSharedClipboard", pidClient);
-    if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
-        rc = VINF_PERMISSION_DENIED;
-
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
