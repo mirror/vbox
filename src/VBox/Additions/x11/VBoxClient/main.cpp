@@ -39,6 +39,7 @@
 #include <iprt/critsect.h>
 #include <iprt/env.h>
 #include <iprt/file.h>
+#include <iprt/getopt.h>
 #include <iprt/initterm.h>
 #include <iprt/message.h>
 #include <iprt/path.h>
@@ -53,6 +54,21 @@
 #include <VBox/log.h>
 
 #include "VBoxClient.h"
+
+
+/*********************************************************************************************************************************
+*   Defines                                                                                                                      *
+*********************************************************************************************************************************/
+#define VBOXCLIENT_OPT_NORESPAWN            950
+
+#define VBOXCLIENT_OPT_SERVICES             980
+#define VBOXCLIENT_OPT_CHECKHOSTVERSION     VBOXCLIENT_OPT_SERVICES
+#define VBOXCLIENT_OPT_CLIPBOARD            VBOXCLIENT_OPT_SERVICES + 1
+#define VBOXCLIENT_OPT_DISPLAY              VBOXCLIENT_OPT_SERVICES + 2
+#define VBOXCLIENT_OPT_DRAGANDDROP          VBOXCLIENT_OPT_SERVICES + 3
+#define VBOXCLIENT_OPT_SEAMLESS             VBOXCLIENT_OPT_SERVICES + 4
+#define VBOXCLIENT_OPT_VMSVGA               VBOXCLIENT_OPT_SERVICES + 5
+#define VBOXCLIENT_OPT_VMSVGA_X11           VBOXCLIENT_OPT_SERVICES + 6
 
 
 /*********************************************************************************************************************************
@@ -271,11 +287,13 @@ static DECLCALLBACK(void) vbClLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHA
  * Pass NULL to disabled logging.
  *
  * @return  IPRT status code.
- * @param   pszLogFile      Filename for log output.  NULL disables logging
- *                          (r=bird: No, it doesn't!).
+ * @param   pszLogFile      Filename for log output.  NULL disables custom handling.
  */
 int VBClLogCreate(const char *pszLogFile)
 {
+    if (!pszLogFile)
+        return VINF_SUCCESS;
+
     /* Create release logger (stdout + file). */
     static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
     RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME;
@@ -468,93 +486,156 @@ int main(int argc, char *argv[])
     if (!pcszFileName)
         pcszFileName = "VBoxClient";
 
-    /* Parse our option(s) */
-    /** @todo Use RTGetOpt() if the arguments become more complex. */
-    bool fDaemonise = true;
-    bool fRespawn = true;
-    for (int i = 1; i < argc; ++i)
+    /* Parse our option(s). */
+    static const RTGETOPTDEF s_aOptions[] =
     {
-        if (   !strcmp(argv[i], "-f")
-            || !strcmp(argv[i], "--foreground")
-            || !strcmp(argv[i], "-d")
-            || !strcmp(argv[i], "--nodaemon"))
-        {
-            fDaemonise = false;
-            if (   !strcmp(argv[i], "-f")
-                || !strcmp(argv[i], "--foreground"))
-                fRespawn = false;
-        }
-        else if (!strcmp(argv[i], "--no-respawn"))
-        {
-            fRespawn = false;
-        }
+        { "--nodaemon",                     'd',                                      RTGETOPT_REQ_NOTHING },
+        { "--foreground",                   'f',                                      RTGETOPT_REQ_NOTHING },
+        { "--help",                         'h',                                      RTGETOPT_REQ_NOTHING },
+        { "--logfile",                      'l',                                      RTGETOPT_REQ_STRING  },
+        { "--no-respawn",                   VBOXCLIENT_OPT_NORESPAWN,                 RTGETOPT_REQ_NOTHING },
+        { "--version",                      'V',                                      RTGETOPT_REQ_NOTHING },
+        { "--verbose",                      'v',                                      RTGETOPT_REQ_NOTHING },
+
+        /* Services */
+        { "--checkhostversion",             VBOXCLIENT_OPT_CHECKHOSTVERSION,          RTGETOPT_REQ_NOTHING },
 #ifdef VBOX_WITH_SHARED_CLIPBOARD
-        else if (!strcmp(argv[i], "--clipboard"))
-        {
-            if (g_pService)
-                return vbclSyntaxOnlyOneService();
-            g_pService = VBClGetClipboardService();
-        }
+        { "--clipboard",                    VBOXCLIENT_OPT_CLIPBOARD,                 RTGETOPT_REQ_NOTHING },
 #endif
-        else if (!strcmp(argv[i], "--display"))
-        {
-            if (g_pService)
-                return vbclSyntaxOnlyOneService();
-            g_pService = VBClGetDisplayService();
-        }
-        else if (!strcmp(argv[i], "--seamless"))
-        {
-            if (g_pService)
-                return vbclSyntaxOnlyOneService();
-            g_pService = VBClGetSeamlessService();
-        }
-        else if (!strcmp(argv[i], "--checkhostversion"))
-        {
-            if (g_pService)
-                return vbclSyntaxOnlyOneService();
-            g_pService = VBClGetHostVersionService();
-        }
+        { "--display",                      VBOXCLIENT_OPT_DISPLAY,                   RTGETOPT_REQ_NOTHING },
 #ifdef VBOX_WITH_DRAG_AND_DROP
-        else if (!strcmp(argv[i], "--draganddrop"))
+        { "--draganddrop",                  VBOXCLIENT_OPT_DRAGANDDROP,               RTGETOPT_REQ_NOTHING },
+#endif
+        { "--seamless",                     VBOXCLIENT_OPT_SEAMLESS,                  RTGETOPT_REQ_NOTHING },
+        { "--vmsvga",                       VBOXCLIENT_OPT_VMSVGA,                    RTGETOPT_REQ_NOTHING },
+        { "--vmsvga-x11",                   VBOXCLIENT_OPT_VMSVGA_X11,                RTGETOPT_REQ_NOTHING }
+    };
+
+    int                     ch;
+    RTGETOPTUNION           ValueUnion;
+    RTGETOPTSTATE           GetState;
+    rc = RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags */);
+    AssertRC(rc);
+
+    bool fDaemonise = true;
+    bool fRespawn   = true;
+
+    while ((ch = RTGetOpt(&GetState, &ValueUnion)) != 0)
+    {
+        /* For options that require an argument, ValueUnion has received the value. */
+        switch (ch)
         {
-            if (g_pService)
-                return vbclSyntaxOnlyOneService();
-            g_pService = VBClGetDragAndDropService();
-        }
-#endif /* VBOX_WITH_DRAG_AND_DROP */
-        else if (!strcmp(argv[i], "--vmsvga"))
-        {
-            if (g_pService)
-                return vbclSyntaxOnlyOneService();
-            g_pService = VBClDisplaySVGAService();
-        }
-        else if (!strcmp(argv[i], "--vmsvga-x11"))
-        {
-            if (g_pService)
+            case 'd':
+            {
+                fDaemonise = false;
                 break;
-            g_pService = VBClDisplaySVGAX11Service();
-        }
-        else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help"))
-        {
-            vboxClientUsage(pcszFileName);
-            return RTEXITCODE_SUCCESS;
-        }
-        else if (!strcmp(argv[i], "-V") || !strcmp(argv[i], "--version"))
-        {
-            RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
-            return RTEXITCODE_SUCCESS;
-        }
-        else if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--verbose"))
-        {
-            g_cVerbosity++;
-        }
-        else
-        {
-            RTMsgError("unrecognized option `%s'", argv[i]);
-            RTMsgInfo("Try `%s --help' for more information", pcszFileName);
-            return RTEXITCODE_SYNTAX;
-        }
-    }
+            }
+
+            case 'h':
+            {
+                vboxClientUsage(pcszFileName);
+                return RTEXITCODE_SUCCESS;
+            }
+
+            case 'f':
+            {
+               fDaemonise = false;
+               fRespawn   = false;
+               break;
+            }
+
+            case 'l':
+            {
+                rc = RTStrCopy(g_szLogFile, sizeof(g_szLogFile), ValueUnion.psz);
+                if (RT_FAILURE(rc))
+                    VBClLogFatalError("Unable to create log file path, rc=%Rrc\n", rc);
+                break;
+            }
+
+            case 'n':
+            {
+                fRespawn   = false;
+                break;
+            }
+
+            case 'v':
+            {
+                g_cVerbosity++;
+                break;
+            }
+
+            case 'V':
+            {
+                RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                return RTEXITCODE_SUCCESS;
+            }
+
+            /* Services */
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+            case VBOXCLIENT_OPT_CLIPBOARD:
+            {
+                if (g_pService)
+                    return vbclSyntaxOnlyOneService();
+                g_pService = VBClGetClipboardService();
+                break;
+            }
+#endif
+            case VBOXCLIENT_OPT_DISPLAY:
+            {
+                if (g_pService)
+                    return vbclSyntaxOnlyOneService();
+                g_pService = VBClGetDisplayService();
+                break;
+            }
+
+#ifdef VBOX_WITH_DRAG_AND_DROP
+            case VBOXCLIENT_OPT_DRAGANDDROP:
+            {
+                if (g_pService)
+                    return vbclSyntaxOnlyOneService();
+                g_pService = VBClGetDragAndDropService();
+                break;
+            }
+#endif
+            case VBOXCLIENT_OPT_SEAMLESS:
+            {
+                if (g_pService)
+                    return vbclSyntaxOnlyOneService();
+                g_pService = VBClGetSeamlessService();
+                break;
+            }
+
+            case VBOXCLIENT_OPT_VMSVGA:
+            {
+                if (g_pService)
+                    return vbclSyntaxOnlyOneService();
+                g_pService = VBClDisplaySVGAService();
+                break;
+            }
+
+            case VBOXCLIENT_OPT_VMSVGA_X11:
+            {
+                if (g_pService)
+                    return vbclSyntaxOnlyOneService();
+                g_pService = VBClDisplaySVGAX11Service();
+                break;
+            }
+
+            case VERR_GETOPT_UNKNOWN_OPTION:
+            {
+                RTMsgError("unrecognized option '%s'", ValueUnion.psz);
+                RTMsgInfo("Try '%s --help' for more information", pcszFileName);
+                return RTEXITCODE_SYNTAX;
+            }
+
+            case VINF_GETOPT_NOT_OPTION:
+            default:
+                break;
+
+        } /* switch */
+    } /* while RTGetOpt */
+
     if (!g_pService)
     {
         RTMsgError("No service specified. Quitting because nothing to do!");
