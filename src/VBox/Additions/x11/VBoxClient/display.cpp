@@ -213,7 +213,7 @@ static int initDisplay(struct DISPLAYSTATE *pState)
         pState->pcszXrandr = "/usr/X11/bin/xrandr";
     status = system(pState->pcszXrandr);
     if (WEXITSTATUS(status) != 0)  /* Utility or extension not available. */
-        VBClFatalError(("Failed to execute the xrandr utility.\n"));
+        VBClLogFatalError("Failed to execute the xrandr utility\n");
     RTStrPrintf(szCommand, sizeof(szCommand), "%s --q12", pState->pcszXrandr);
     status = system(szCommand);
     if (WEXITSTATUS(status) == 0)
@@ -230,7 +230,7 @@ static struct DISPLAYSTATE *getStateFromInterface(struct VBCLSERVICE **ppInterfa
 {
     struct DISPLAYSTATE *pSelf = (struct DISPLAYSTATE *)ppInterface;
     if (pSelf->magic != DISPLAYSTATE_MAGIC)
-        VBClFatalError(("Bad display service object!\n"));
+        VBClLogFatalError("Bad display service object!\n");
     return pSelf;
 }
 
@@ -273,7 +273,7 @@ struct VBCLSERVICE **VBClGetDisplayService()
     struct DISPLAYSTATE *pService = (struct DISPLAYSTATE *)RTMemAlloc(sizeof(*pService));
 
     if (!pService)
-        VBClFatalError(("Out of memory\n"));
+        VBClLogFatalError("Out of memory\n");
     pService->pInterface = &vbclDisplayInterface;
     pService->magic = DISPLAYSTATE_MAGIC;
     pService->mfInit = false;

@@ -69,26 +69,31 @@ static RTFILE g_hPidFile;
  * during clean-up (e.g. pausing and resuming the service).
  */
 RTCRITSECT g_critSect;
-/** Counter of how often our deamon has been respawned. */
-unsigned cRespawn = 0;
-
-
+/** Counter of how often our daemon has been respawned. */
+unsigned g_cRespawn = 0;
+/** Logging verbosity level. */
+unsigned g_cVerbosity = 0;
 
 /**
- * Exit with a fatal error.
+ * Notifies the desktop environment with a message.
  *
- * This is used by the VBClFatalError macro and thus needs to be external.
+ * @param   pszMessage          Message to notify desktop environment with.
  */
-void vbclFatalError(char *pszMessage)
+int vbclLogNotify(const char *pszMessage)
 {
-    char *pszCommand;
-    int status;
-    if (pszMessage && cRespawn == 0)
+    AssertPtrReturn(pszMessage, VERR_INVALID_POINTER);
+
+    int rc = VINF_SUCCESS;
+
+    if (g_cRespawn == 0)
     {
-        pszCommand = RTStrAPrintf2("notify-send \"VBoxClient: %s\"", pszMessage);
+        char *pszCommand = RTStrAPrintf2("notify-send \"VBoxClient: %s\"", pszMessage);
         if (pszCommand)
         {
-            status = system(pszCommand);
+            int status = system(pszCommand);
+
+            RTStrFree(pszCommand);
+
             if (WEXITSTATUS(status) != 0)  /* Utility or extension not available. */
             {
                 pszCommand = RTStrAPrintf2("xmessage -buttons OK:0 -center \"VBoxClient: %s\"",
@@ -100,11 +105,82 @@ void vbclFatalError(char *pszMessage)
                     {
                         RTPrintf("VBoxClient: %s", pszMessage);
                     }
+
+                    RTStrFree(pszCommand);
                 }
+                else
+                    rc = VERR_NO_MEMORY;
             }
         }
+        else
+            rc = VERR_NO_MEMORY;
     }
-    _exit(RTEXITCODE_FAILURE);
+
+    return rc;
+}
+
+/**
+ * Logs a fatal error, notifies the desktop environment via a message and
+ * exits the application immediately.
+ *
+ * @param   pszFormat           Format string to log.
+ * @param   ...                 Variable arguments for format string. Optional.
+ */
+void VBClLogFatalError(const char *pszFormat, ...)
+{
+    va_list args;
+    va_start(args, pszFormat);
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pszFormat, args);
+    va_end(args);
+
+    AssertPtr(psz);
+    LogFlowFunc(("%s", psz));
+    LogRel(("%s", psz));
+
+    vbclLogNotify(psz);
+
+    RTStrFree(psz);
+}
+
+/**
+ * Logs an error message to the (release) logging instance.
+ *
+ * @param   pszFormat               Format string to log.
+ */
+void VBClLogError(const char *pszFormat, ...)
+{
+    va_list args;
+    va_start(args, pszFormat);
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pszFormat, args);
+    va_end(args);
+
+    AssertPtr(psz);
+    LogFlowFunc(("%s", psz));
+    LogRel(("%s", psz));
+
+    RTStrFree(psz);
+}
+
+/**
+ * Logs an info message to the (release) logging instance.
+ *
+ * @param   pszFormat               Format string to log.
+ */
+void  VBClLogInfo(const char *pszFormat, ...)
+{
+    va_list args;
+    va_start(args, pszFormat);
+    char *psz = NULL;
+    RTStrAPrintfV(&psz, pszFormat, args);
+    va_end(args);
+
+    AssertPtr(psz);
+    LogFlowFunc(("%s", psz));
+    LogRel2(("%s", psz));
+
+    RTStrFree(psz);
 }
 
 /**
@@ -119,7 +195,7 @@ void VBClCleanUp(bool fExit /*=true*/)
      * never to exit from anywhere except from this method. */
     int rc = RTCritSectEnter(&g_critSect);
     if (RT_FAILURE(rc))
-        VBClFatalError(("VBoxClient: Failure while acquiring the global critical section, rc=%Rrc\n", rc));
+        VBClLogFatalError("Failure while acquiring the global critical section, rc=%Rrc\n", rc);
     if (g_pService)
         (*g_pService)->cleanup(g_pService);
     if (g_szPidFile[0] && g_hPidFile)
@@ -133,9 +209,9 @@ void VBClCleanUp(bool fExit /*=true*/)
  */
 static void vboxClientSignalHandler(int cSignal)
 {
-    LogRel(("VBoxClient: terminated with signal %d\n", cSignal));
+    VBClLogInfo("Terminated with signal %d\n", cSignal);
     /** Disable seamless mode */
-    RTPrintf(("VBoxClient: terminating...\n"));
+    VBClLogInfo("Terminating ...\n");
     VBClCleanUp();
 }
 
@@ -147,7 +223,7 @@ static int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
     char errorText[1024];
 
     XGetErrorText(pDisplay, pError->error_code, errorText, sizeof(errorText));
-    LogRelFlow(("VBoxClient: an X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial));
+    VBClLogError("An X Window protocol error occurred: %s (error code %d).  Request code: %d, minor code: %d, serial number: %d\n", errorText, pError->error_code, pError->request_code, pError->minor_code, pError->serial);
     return 0;
 }
 
@@ -158,7 +234,7 @@ static int vboxClientXLibErrorHandler(Display *pDisplay, XErrorEvent *pError)
 static int vboxClientXLibIOErrorHandler(Display *pDisplay)
 {
     RT_NOREF1(pDisplay);
-    LogRel(("VBoxClient: a fatal guest X Window error occurred.  This may just mean that the Window system was shut down while the client was still running.\n"));
+    VBClLogError("A fatal guest X Window error occurred.  This may just mean that the Window system was shut down while the client was still running\n");
     VBClCleanUp();
     return 0;  /* We should never reach this. */
 }
@@ -171,7 +247,7 @@ static void vboxClientSetSignalHandlers(void)
 {
     struct sigaction sigAction;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     sigAction.sa_handler = vboxClientSignalHandler;
     sigemptyset(&sigAction.sa_mask);
     sigAction.sa_flags = 0;
@@ -183,7 +259,7 @@ static void vboxClientSetSignalHandlers(void)
     sigaction(SIGTERM, &sigAction, NULL);
     sigaction(SIGUSR1, &sigAction, NULL);
     sigaction(SIGUSR2, &sigAction, NULL);
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
 }
 
 /**
@@ -223,6 +299,7 @@ static void vboxClientUsage(const char *pcszFileName)
     RTPrintf("  -f, --foreground   run in the foreground (no daemonizing)\n");
     RTPrintf("  -d, --nodaemon     continues running as a system service\n");
     RTPrintf("  -h, --help         shows this help text\n");
+    RTPrintf("  -v, --verbose      increases logging verbosity level\n");
     RTPrintf("  -V, --version      shows version information\n");
     RTPrintf("\n");
 }
@@ -252,7 +329,7 @@ int main(int argc, char *argv[])
     /* This should never be called twice in one process - in fact one Display
      * object should probably never be used from multiple threads anyway. */
     if (!XInitThreads())
-        VBClFatalError(("Failed to initialize X11 threads\n"));
+        VBClLogFatalError("Failed to initialize X11 threads\n");
 
     /* Get our file name for usage info and hints. */
     const char *pcszFileName = RTPathFilename(argv[0]);
@@ -335,6 +412,10 @@ int main(int argc, char *argv[])
             RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
             return RTEXITCODE_SUCCESS;
         }
+        else if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--verbose"))
+        {
+            g_cVerbosity++;
+        }
         else
         {
             RTMsgError("unrecognized option `%s'", argv[i]);
@@ -351,7 +432,7 @@ int main(int argc, char *argv[])
     /* Initialize VbglR3 before we do anything else with the logger. */
     rc = VbglR3InitUser();
     if (RT_FAILURE(rc))
-        VBClFatalError(("VbglR3InitUser failed: %Rrc", rc));
+        VBClLogFatalError("VbglR3InitUser failed: %Rrc", rc);
 
     if (!fDaemonise)
     {
@@ -367,26 +448,26 @@ int main(int argc, char *argv[])
 
     rc = RTCritSectInit(&g_critSect);
     if (RT_FAILURE(rc))
-        VBClFatalError(("Initialising critical section failed: %Rrc\n", rc));
+        VBClLogFatalError("Initialising critical section failed: %Rrc\n", rc);
     if ((*g_pService)->getPidFilePath)
     {
         rc = RTPathUserHome(g_szPidFile, sizeof(g_szPidFile));
         if (RT_FAILURE(rc))
-            VBClFatalError(("Getting home directory for PID file failed: %Rrc\n", rc));
+            VBClLogFatalError("Getting home directory for PID file failed: %Rrc\n", rc);
         rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile),
                           (*g_pService)->getPidFilePath());
         if (RT_FAILURE(rc))
-            VBClFatalError(("Creating PID file path failed: %Rrc\n", rc));
+            VBClLogFatalError("Creating PID file path failed: %Rrc\n", rc);
         if (fDaemonise)
-            rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &cRespawn);
+            rc = VbglR3Daemonize(false /* fNoChDir */, false /* fNoClose */, fRespawn, &g_cRespawn);
         if (RT_FAILURE(rc))
-            VBClFatalError(("Daemonizing failed: %Rrc\n", rc));
+            VBClLogFatalError("Daemonizing failed: %Rrc\n", rc);
         if (g_szPidFile[0])
             rc = VbglR3PidFile(g_szPidFile, &g_hPidFile);
         if (rc == VERR_FILE_LOCK_VIOLATION)  /* Already running. */
             return RTEXITCODE_SUCCESS;
         if (RT_FAILURE(rc))
-            VBClFatalError(("Creating PID file failed: %Rrc\n", rc));
+            VBClLogFatalError("Creating PID file failed: %Rrc\n", rc);
     }
     /* Set signal handlers to clean up on exit. */
     vboxClientSetSignalHandlers();
@@ -403,13 +484,13 @@ int main(int argc, char *argv[])
     {
         rc = (*g_pService)->run(g_pService, fDaemonise);
         if (RT_FAILURE(rc))
-            LogRel2(("Running service failed: %Rrc\n", rc));
+            VBClLogError("Running service failed: %Rrc\n", rc);
     }
     else
     {
         /** @todo r=andy Should we return an appropriate exit code if the service failed to init?
          *               Must be tested carefully with our init scripts first. */
-        LogRel2(("Initializing service failed: %Rrc\n", rc));
+        VBClLogError("Initializing service failed: %Rrc\n", rc);
     }
     VBClCleanUp(false /*fExit*/);
     return RTEXITCODE_SUCCESS;

@@ -62,7 +62,7 @@ static bool checkRecentLinuxKernel(void)
     struct utsname name;
 
     if (uname(&name) == -1)
-        VBClFatalError(("Failed to get kernel name.\n"));
+        VBClLogFatalError("Failed to get kernel name\n");
     if (strcmp(name.sysname, "Linux"))
         return false;
     return (RTStrVersionCompare(name.release, "4.6") >= 0);
@@ -80,7 +80,7 @@ static void x11Connect(struct X11CONTEXT *pContext)
     int dummy;
 
     if (pContext->pDisplay != NULL)
-        VBClFatalError(("%s called with bad argument\n", __func__));
+        VBClLogFatalError("%s called with bad argument\n", __func__);
     pContext->pDisplay = XOpenDisplay(NULL);
     if (pContext->pDisplay == NULL)
         return;
@@ -155,9 +155,9 @@ static void x11GetRequest(struct X11CONTEXT *pContext, uint8_t hMajor,
     if (pContext->pDisplay->bufptr + cb > pContext->pDisplay->bufmax)
         _XFlush(pContext->pDisplay);
     if (pContext->pDisplay->bufptr + cb > pContext->pDisplay->bufmax)
-        VBClFatalError(("%s display buffer overflow.\n", __func__));
+        VBClLogFatalError("%s display buffer overflow\n", __func__);
     if (cb % 4 != 0)
-        VBClFatalError(("%s bad parameter.\n", __func__));
+        VBClLogFatalError("%s bad parameter\n", __func__);
     pContext->pDisplay->last_req = pContext->pDisplay->bufptr;
     *ppReq = (struct X11REQHEADER *)pContext->pDisplay->bufptr;
     (*ppReq)->hMajor = hMajor;
@@ -177,7 +177,7 @@ static void x11SendHints(struct X11CONTEXT *pContext, struct X11VMWRECT *pRects,
     uint8_t                       repResolution[X11_VMW_RESOLUTION_REPLY_SIZE];
 
     if (!VALID_PTR(pContext->pDisplay))
-        VBClFatalError(("%s bad display argument.\n", __func__));
+        VBClLogFatalError("%s bad display argument\n", __func__);
     if (cRects == 0)
         return;
     /* Try a topology (multiple screen) request. */
@@ -204,7 +204,7 @@ static void x11SendHints(struct X11CONTEXT *pContext, struct X11VMWRECT *pRects,
     if (_XReply(pContext->pDisplay, (xReply *)&repResolution, 0, xTrue))
         return;
     /* What now? */
-    VBClFatalError(("%s failed to set resolution\n", __func__));
+    VBClLogFatalError("%s failed to set resolution\n", __func__);
 }
 
 /** Call RRGetScreenInfo to wake up the server to the new modes. */
@@ -214,14 +214,14 @@ static void x11GetScreenInfo(struct X11CONTEXT *pContext)
     uint8_t                      repGetScreen[X11_RANDR_GET_SCREEN_REPLY_SIZE];
 
     if (!VALID_PTR(pContext->pDisplay))
-        VBClFatalError(("%s bad display argument.\n", __func__));
+        VBClLogFatalError("%s bad display argument\n", __func__);
     x11GetRequest(pContext, pContext->hRandRMajor, X11_RANDR_GET_SCREEN_REQUEST,
                     sizeof(struct X11RANDRGETSCREENREQ),
                   (struct X11REQHEADER **)&pReqGetScreen);
     pReqGetScreen->hWindow = DefaultRootWindow(pContext->pDisplay);
     _XSend(pContext->pDisplay, NULL, 0);
     if (!_XReply(pContext->pDisplay, (xReply *)&repGetScreen, 0, xTrue))
-        VBClFatalError(("%s failed to set resolution\n", __func__));
+        VBClLogFatalError("%s failed to set resolution\n", __func__);
 }
 
 static const char *getPidFilePath()
@@ -246,12 +246,12 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         return VINF_SUCCESS;
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to request display change events, rc=%Rrc\n", rc));
+        VBClLogFatalError("Failed to request display change events, rc=%Rrc\n", rc);
     rc = VbglR3AcquireGuestCaps(VMMDEV_GUEST_SUPPORTS_GRAPHICS, 0, false);
     if (rc == VERR_RESOURCE_BUSY)  /* Someone else has already acquired it. */
         return VINF_SUCCESS;
     if (RT_FAILURE(rc))
-        VBClFatalError(("Failed to register resizing support, rc=%Rrc\n", rc));
+        VBClLogFatalError("Failed to register resizing support, rc=%Rrc\n", rc);
     for (;;)
     {
         uint32_t events;
@@ -262,9 +262,9 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
          * the last event before a guest reboot when we start again after. */
         rc = VbglR3GetDisplayChangeRequestMulti(VMW_MAX_HEADS, &cDisplaysOut, aDisplays, true);
         if (RT_FAILURE(rc))
-            VBClFatalError(("Failed to get display change request, rc=%Rrc\n", rc));
+            VBClLogFatalError("Failed to get display change request, rc=%Rrc\n", rc);
         if (cDisplaysOut > VMW_MAX_HEADS)
-            VBClFatalError(("Display change request contained, rc=%Rrc\n", rc));
+            VBClLogFatalError("Display change request contained, rc=%Rrc\n", rc);
         for (i = 0, cHeads = 0; i < cDisplaysOut && i < VMW_MAX_HEADS; ++i)
         {
             if (!(aDisplays[i].fDisplayFlags & VMMDEV_DISPLAY_DISABLED))
@@ -288,7 +288,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
         x11GetScreenInfo(&x11Context);
         rc = VbglR3WaitEvent(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, RT_INDEFINITE_WAIT, &events);
         if (RT_FAILURE(rc))
-            VBClFatalError(("Failure waiting for event, rc=%Rrc\n", rc));
+            VBClLogFatalError("Failure waiting for event, rc=%Rrc\n", rc);
     }
 }
 

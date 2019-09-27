@@ -26,16 +26,9 @@
 #include <iprt/cpp/utils.h>
 #include <iprt/string.h>
 
-/** Exit with a fatal error. */
-#define VBClFatalError(format) \
-do { \
-    char *pszMessage = RTStrAPrintf2 format; \
-    LogRel(format); \
-    vbclFatalError(pszMessage); \
-} while(0)
-
-/** Exit with a fatal error. */
-extern DECLNORETURN(void) vbclFatalError(char *pszMessage);
+void VBClLogInfo(const char *pszFormat, ...);
+void VBClLogError(const char *pszFormat, ...);
+void VBClLogFatalError(const char *pszFormat, ...);
 
 /** Call clean-up for the current service and exit. */
 extern void VBClCleanUp(bool fExit = true);

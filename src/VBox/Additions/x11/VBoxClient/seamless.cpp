@@ -35,7 +35,7 @@
 
 SeamlessMain::SeamlessMain(void)
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     mX11MonitorThread = NIL_RTTHREAD;
     mX11MonitorThreadStopping = false;
     mMode = VMMDev_Seamless_Disabled;
@@ -44,7 +44,7 @@ SeamlessMain::SeamlessMain(void)
 
 SeamlessMain::~SeamlessMain()
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     stop();
 }
 
@@ -53,14 +53,14 @@ SeamlessMain::~SeamlessMain()
  */
 static void sendRegionUpdate(RTRECT *pRects, size_t cRects)
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     if (cRects && !pRects)  /* Assertion */
     {
-        LogRelFunc(("ERROR: called with null pointer!\n"));
+        VBClLogError(("Region update called with NULL pointer!\n"));
         return;
     }
     VbglR3SeamlessSendRects(cRects, pRects);
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
 }
 
 /**
@@ -71,7 +71,7 @@ int SeamlessMain::init(void)
     int rc;
     const char *pcszStage;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     do {
         pcszStage = "Connecting to the X server";
         rc = mX11Monitor.init(sendRegionUpdate);
@@ -90,8 +90,7 @@ int SeamlessMain::init(void)
             break;
     } while(0);
     if (RT_FAILURE(rc))
-        VBClFatalError(("VBoxClient (seamless): failed to start.  Stage: \"%s\"  Error: %Rrc\n",
-                pcszStage, rc));
+        VBClLogError("Failed to start in stage '%s' -- error: %Rrc\n", pcszStage, rc);
     return rc;
 }
 
@@ -105,7 +104,7 @@ int SeamlessMain::run(void)
 {
     int rc = VINF_SUCCESS;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     /* This will only exit if something goes wrong. */
     while (RT_SUCCESS(rc) || rc == VERR_INTERRUPTED)
     {
@@ -117,8 +116,7 @@ int SeamlessMain::run(void)
     }
     if (RT_FAILURE(rc))
     {
-        LogRel(("VBoxClient (seamless): event loop failed with error: %Rrc\n",
-                rc));
+        VBClLogError("Event loop failed with error: %Rrc\n", rc);
         stop();
     }
     return rc;
@@ -127,12 +125,12 @@ int SeamlessMain::run(void)
 /** Stops the service. */
 void SeamlessMain::stop()
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     VbglR3SeamlessSetCap(false);
     VbglR3CtlFilterMask(0, VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST);
     stopX11MonitorThread();
     mX11Monitor.uninit();
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
 }
 
 /**
@@ -144,7 +142,7 @@ int SeamlessMain::nextStateChangeEvent(void)
 {
     VMMDevSeamlessMode newMode = VMMDev_Seamless_Disabled;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     int rc = VbglR3SeamlessWaitEvent(&newMode);
     if (RT_SUCCESS(rc))
     {
@@ -154,17 +152,17 @@ int SeamlessMain::nextStateChangeEvent(void)
             case VMMDev_Seamless_Visible_Region:
             /* A simplified seamless mode, obtained by making the host VM window
              * borderless and making the guest desktop transparent. */
-                LogRelFlowFunc(("\"Visible region\" mode requested (VBoxClient).\n"));
+                LogRelFlowFunc(("\"Visible region\" mode requested (VBoxClient)\n"));
                 break;
             case VMMDev_Seamless_Disabled:
-                LogRelFlowFunc(("\"Disabled\" mode requested (VBoxClient).\n"));
+                LogRelFlowFunc(("\"Disabled\" mode requested (VBoxClient)\n"));
                 break;
             case VMMDev_Seamless_Host_Window:
             /* One host window represents one guest window.  Not yet implemented. */
-                LogRelFunc(("Unsupported \"host window\" mode requested (VBoxClient).\n"));
+                LogRelFunc(("Unsupported \"host window\" mode requested (VBoxClient)\n"));
                 return VERR_NOT_SUPPORTED;
             default:
-                LogRelFunc(("Unsupported mode %d requested (VBoxClient).\n",
+                LogRelFunc(("Unsupported mode %d requested (VBoxClient)\n",
                             newMode));
                 return VERR_NOT_SUPPORTED;
         }
@@ -181,7 +179,7 @@ int SeamlessMain::nextStateChangeEvent(void)
     {
         LogRelFunc(("VbglR3SeamlessWaitEvent returned %Rrc (VBoxClient)\n", rc));
     }
-    LogRelFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -194,21 +192,21 @@ int SeamlessMain::x11MonitorThread(RTTHREAD hThreadSelf, void *pvUser)
     SeamlessMain *pHost = (SeamlessMain *)pvUser;
     int rc = VINF_SUCCESS;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     while (!pHost->mX11MonitorThreadStopping)
     {
         if (!pHost->mfPaused)
         {
             rc = pHost->mX11Monitor.start();
             if (RT_FAILURE(rc))
-                VBClFatalError(("Failed to change the X11 seamless service state, mfPaused=%RTbool, rc=%Rrc\n",
-                                pHost->mfPaused, rc));
+                VBClLogFatalError("Failed to change the X11 seamless service state, mfPaused=%RTbool, rc=%Rrc\n",
+                                  pHost->mfPaused, rc);
         }
         pHost->mX11Monitor.nextConfigurationEvent();
         if (pHost->mfPaused || pHost->mX11MonitorThreadStopping)
             pHost->mX11Monitor.stop();
     }
-    LogRelFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -226,7 +224,7 @@ int SeamlessMain::startX11MonitorThread(void)
                         RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                         "X11 events");
     if (RT_FAILURE(rc))
-        LogRelFunc(("Warning: failed to start X11 monitor thread (VBoxClient).\n"));
+        LogRelFunc(("Warning: failed to start X11 monitor thread (VBoxClient)\n"));
     return rc;
 }
 
@@ -278,7 +276,7 @@ static struct SEAMLESSSERVICE *getClassFromInterface(struct VBCLSERVICE **
 {
     struct SEAMLESSSERVICE *pSelf = (struct SEAMLESSSERVICE *)ppInterface;
     if (pSelf->magic != SEAMLESSSERVICE_MAGIC)
-        VBClFatalError(("Bad seamless service object!\n"));
+        VBClLogFatalError("Bad seamless service object!\n");
     return pSelf;
 }
 
@@ -331,7 +329,7 @@ struct VBCLSERVICE **VBClGetSeamlessService()
         (struct SEAMLESSSERVICE *)RTMemAlloc(sizeof(*pService));
 
     if (!pService)
-        VBClFatalError(("Out of memory\n"));
+        VBClLogFatalError("Out of memory\n");
     pService->pInterface = &vbclSeamlessInterface;
     pService->magic = SEAMLESSSERVICE_MAGIC;
     new(&pService->mSeamless) SeamlessMain();

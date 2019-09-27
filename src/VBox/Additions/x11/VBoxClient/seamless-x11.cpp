@@ -45,7 +45,7 @@
 static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
                                     const char *aPropName, unsigned long *nItems)
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     Atom propNameAtom = XInternAtom (aDpy, aPropName,
                                      True /* only_if_exists */);
     if (propNameAtom == None)
@@ -64,7 +64,7 @@ static unsigned char *XXGetProperty (Display *aDpy, Window aWnd, Atom aPropType,
     if (rc != Success)
         return NULL;
 
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
     return propVal;
 }
 
@@ -78,21 +78,21 @@ int SeamlessX11::init(PFNSENDREGIONUPDATE pHostCallback)
 {
     int rc = VINF_SUCCESS;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     if (mHostCallback != NULL)  /* Assertion */
     {
-        LogRel(("VBoxClient: ERROR: attempt to initialise seamless guest object twice!\n"));
+        VBClLogError("Attempting to initialise seamless guest object twice!\n");
         return VERR_INTERNAL_ERROR;
     }
     if (!(mDisplay = XOpenDisplay(NULL)))
     {
-        LogRel(("VBoxClient: seamless guest object failed to acquire a connection to the display.\n"));
+        VBClLogError("Seamless guest object failed to acquire a connection to the display\n");
         return VERR_ACCESS_DENIED;
     }
     mHostCallback = pHostCallback;
     mEnabled = false;
     unmonitorClientList();
-    LogRelFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -110,14 +110,14 @@ int SeamlessX11::start(void)
     /** Dummy values for XShapeQueryExtension */
     int error, event;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     if (mEnabled)
         return VINF_SUCCESS;
     mSupportsShape = XShapeQueryExtension(mDisplay, &event, &error);
     mEnabled = true;
     monitorClientList();
     rebuildWindowTree();
-    LogRelFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -125,24 +125,24 @@ int SeamlessX11::start(void)
     and stop requesting updates. */
 void SeamlessX11::stop(void)
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     if (!mEnabled)
         return;
     mEnabled = false;
     unmonitorClientList();
     freeWindowTree();
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
 }
 
 void SeamlessX11::monitorClientList(void)
 {
-    LogRelFlowFunc(("called\n"));
+    LogRelFlowFuncEnter();
     XSelectInput(mDisplay, DefaultRootWindow(mDisplay), PropertyChangeMask | SubstructureNotifyMask);
 }
 
 void SeamlessX11::unmonitorClientList(void)
 {
-    LogRelFlowFunc(("called\n"));
+    LogRelFlowFuncEnter();
     XSelectInput(mDisplay, DefaultRootWindow(mDisplay), PropertyChangeMask);
 }
 
@@ -152,7 +152,7 @@ void SeamlessX11::unmonitorClientList(void)
  */
 void SeamlessX11::rebuildWindowTree(void)
 {
-    LogRelFlowFunc(("called\n"));
+    LogRelFlowFuncEnter();
     freeWindowTree();
     addClients(DefaultRootWindow(mDisplay));
     mChanged = true;
@@ -176,20 +176,20 @@ void SeamlessX11::addClients(const Window hRoot)
     /** The number of children of the root supplied */
     unsigned cChildren;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     if (!XQueryTree(mDisplay, hRoot, &hRealRoot, &hParent, &phChildrenRaw, &cChildren))
         return;
     phChildren = phChildrenRaw;
     for (unsigned i = 0; i < cChildren; ++i)
         addClientWindow(phChildren[i]);
     XFree(phChildrenRaw);
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
 }
 
 
 void SeamlessX11::addClientWindow(const Window hWin)
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     XWindowAttributes winAttrib;
     bool fAddWin = true;
     Window hClient = XmuClientWindow(mDisplay, hWin);
@@ -198,7 +198,7 @@ void SeamlessX11::addClientWindow(const Window hWin)
         fAddWin = false;
     if (fAddWin && !XGetWindowAttributes(mDisplay, hWin, &winAttrib))
     {
-        LogRelFunc(("VBoxClient: Failed to get the window attributes for window %d\n", hWin));
+        VBClLogError("Failed to get the window attributes for window %d\n", hWin);
         fAddWin = false;
     }
     if (fAddWin && (winAttrib.map_state == IsUnmapped))
@@ -210,8 +210,7 @@ void SeamlessX11::addClientWindow(const Window hWin)
     if (fAddWin && (!XGetWMNormalHints(mDisplay, hClient, &dummyHints,
                                        &dummyLong)))
     {
-        LogRelFlowFunc(("window %lu, client window %lu has no size hints\n",
-                     hWin, hClient));
+        LogRelFlowFunc(("window %lu, client window %lu has no size hints\n", hWin, hClient));
         fAddWin = false;
     }
     if (fAddWin)
@@ -243,7 +242,7 @@ void SeamlessX11::addClientWindow(const Window hWin)
                                 winAttrib.width, winAttrib.height, cRects,
                                 pRects);
     }
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
 }
 
 
@@ -259,7 +258,7 @@ bool SeamlessX11::isVirtualRoot(Window hWin)
     unsigned long ulCount;
     bool rc = false;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     windowTypeRaw = XXGetProperty(mDisplay, hWin, XA_ATOM, WM_TYPE_PROP, &ulCount);
     if (windowTypeRaw != NULL)
     {
@@ -289,9 +288,9 @@ DECLCALLBACK(int) VBoxGuestWinFree(VBoxGuestWinInfo *pInfo, void *pvParam)
 void SeamlessX11::freeWindowTree(void)
 {
     /* We use post-increment in the operation to prevent the iterator from being invalidated. */
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     mGuestWindows.detachAll(VBoxGuestWinFree, mDisplay);
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
 }
 
 
@@ -304,7 +303,7 @@ void SeamlessX11::nextConfigurationEvent(void)
 {
     XEvent event;
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     /* Start by sending information about the current window setup to the host.  We do this
        here because we want to send all such information from a single thread. */
     if (mChanged && mEnabled)
@@ -340,7 +339,7 @@ void SeamlessX11::nextConfigurationEvent(void)
         if (   event.xproperty.atom != XInternAtom(mDisplay, "_NET_CLIENT_LIST", True /* only_if_exists */)
             || event.xproperty.window != DefaultRootWindow(mDisplay))
             break;
-        LogRelFlowFunc(("_NET_CLIENT_LIST property event on root window.\n"));
+        LogRelFlowFunc(("_NET_CLIENT_LIST property event on root window\n"));
         rebuildWindowTree();
         break;
     case VBoxShapeNotify:  /* This is defined wrong in my X11 header files! */
@@ -391,7 +390,7 @@ void SeamlessX11::doConfigureEvent(Window hWin)
  */
 void SeamlessX11::doShapeEvent(Window hWin)
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     VBoxGuestWinInfo *pInfo = mGuestWindows.find(hWin);
     if (pInfo)
     {
@@ -409,7 +408,7 @@ void SeamlessX11::doShapeEvent(Window hWin)
         pInfo->mpRects = pRects;
         mChanged = true;
     }
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
 }
 
 /**
@@ -476,7 +475,7 @@ DECLCALLBACK(int) getRectsCallback(VBoxGuestWinInfo *pInfo,
  */
 int SeamlessX11::updateRects(void)
 {
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     struct RectList rects = RTVEC_INITIALIZER;
 
     if (mcRects != 0)
@@ -491,7 +490,7 @@ int SeamlessX11::updateRects(void)
         RTMemFree(mpRects);
     mcRects = RectListSize(&rects);
     mpRects = RectListDetach(&rects);
-    LogRelFlowFunc(("returning\n"));
+    LogRelFlowFuncLeave();
     return VINF_SUCCESS;
 }
 
@@ -505,9 +504,9 @@ bool SeamlessX11::interruptEventWait(void)
     bool rc = false;
     Display *pDisplay = XOpenDisplay(NULL);
 
-    LogRelFlowFunc(("\n"));
+    LogRelFlowFuncEnter();
     if (pDisplay == NULL)
-        VBClFatalError(("Failed to open X11 display.\n"));
+        VBClLogFatalError("Failed to open X11 display\n");
     /* Message contents set to zero. */
     XClientMessageEvent clientMessage = { ClientMessage, 0, 0, 0, 0, 0, 8 };
 

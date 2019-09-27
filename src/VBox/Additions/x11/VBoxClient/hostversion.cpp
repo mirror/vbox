@@ -58,7 +58,7 @@ static int showNotify(const char *pszHeader, const char *pszBody)
                                            "Notify");
         if (msg == NULL)
         {
-            LogRel(("Could not create D-BUS message!\n"));
+            VBClLogError("Could not create D-BUS message!\n");
             rc = VERR_INVALID_HANDLE;
         }
         else
@@ -102,7 +102,7 @@ static int showNotify(const char *pszHeader, const char *pszBody)
         DBusMessage *reply;
         reply = dbus_connection_send_with_reply_and_block(conn, msg, 30 * 1000 /* 30 seconds timeout */, &err);
         if (dbus_error_is_set(&err))
-            LogRel(("D-BUS returned an error while sending the notification: %s", err.message));
+            VBClLogError("D-BUS returned an error while sending the notification: %s", err.message);
         else if (reply)
         {
             dbus_connection_flush(conn);
@@ -138,7 +138,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 # ifdef VBOX_WITH_DBUS
     rc = RTDBusLoadLib();
     if (RT_FAILURE(rc))
-        LogRel(("VBoxClient: D-Bus seems not to be installed; no host version check/notification done.\n"));
+        VBClLogError("D-Bus seems not to be installed; no host version check/notification done\n");
 # else
     rc = VERR_NOT_IMPLEMENTED;
 # endif /* VBOX_WITH_DBUS */
@@ -149,7 +149,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     {
         rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
         if (RT_FAILURE(rc))
-            LogRel(("VBoxClient: Cannot connect to guest property service while chcking for host version! rc = %Rrc\n", rc));
+            VBClLogError("Cannot connect to guest property service while chcking for host version! rc = %Rrc\n", rc);
     }
 
     if (RT_SUCCESS(rc))
@@ -178,9 +178,9 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
                 RTStrPrintf(szMsg, sizeof(szMsg), "Your virtual machine is currently running the Guest Additions version %s. Since you are running a version of the Guest Additions provided by the operating system you installed in the virtual machine we recommend that you update it to at least version %s using that system's update features, or alternatively that you remove this version and then install the " VBOX_VENDOR_SHORT " Guest Additions package using the install option from the Devices menu. Please consult the documentation for the operating system you are running to find out how to update or remove the current Guest Additions package.", pszGuestVersion, pszHostVersion);
 #endif
                 rc = showNotify(szTitle, szMsg);
-                LogRel(("VBoxClient: VirtualBox Guest Additions update available!"));
+                VBClLogInfo("VirtualBox Guest Additions update available!\n");
                 if (RT_FAILURE(rc))
-                    LogRel(("VBoxClient: Could not show version notifier tooltip! rc = %d\n", rc));
+                    VBClLogError("Could not show version notifier tooltip! rc = %d\n", rc);
             }
 
             /* Store host version to not notify again */
@@ -217,7 +217,7 @@ struct VBCLSERVICE **VBClGetHostVersionService()
         (struct HOSTVERSIONSERVICE *)RTMemAlloc(sizeof(*pService));
 
     if (!pService)
-        VBClFatalError(("Out of memory\n"));
+        VBClLogFatalError("Out of memory\n");
     pService->pInterface = &vbclHostVersionInterface;
     return &pService->pInterface;
 }

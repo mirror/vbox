@@ -69,7 +69,7 @@ static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
     int rc;
     LogRelFlowFunc(("u32Format=%d, pv=%p, cb=%d\n", u32Format, pv, cb));
     rc = VbglR3ClipboardWriteData(g_ctx.client, u32Format, pv, cb);
-    LogRelFlowFunc(("rc=%Rrc\n", rc));
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -87,7 +87,7 @@ static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
  */
 int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     int rc = VINF_SUCCESS;
     uint32_t cb = 1024;
     void *pv = RTMemAlloc(cb);
@@ -126,7 +126,7 @@ int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uin
         if (pv != NULL)
             RTMemFree(pv);
     }
-    LogRelFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFuncLeaveRC(rc);
     if (RT_SUCCESS(rc))
         LogRelFlow(("    *pcb=%d\n", *pcb));
     return rc;
@@ -149,10 +149,10 @@ struct _CLIPREADCBREQ
  */
 void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     LogRelFlowFunc(("u32Formats=%d\n", u32Formats));
     int rc = VbglR3ClipboardFormatsReport(g_ctx.client, u32Formats);
-    LogRelFlowFunc(("rc=%Rrc\n", rc));
+    LogRelFlowFuncLeaveRC(rc);
 }
 
 /** This is called by the backend to tell us that a request for data from
@@ -167,7 +167,7 @@ void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
  */
 void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     if (RT_SUCCESS(rc))
         vboxClipboardSendData(pReq->u32Format, pv, cb);
     else
@@ -196,17 +196,18 @@ int SharedClipboardSvcImplConnect(void)
     {
         rc = VbglR3ClipboardConnect(&g_ctx.client);
         if (RT_FAILURE(rc))
-            LogRel(("Error connecting to host. rc=%Rrc\n", rc));
+            VBClLogError("Error connecting to host, rc=%Rrc\n", rc);
         else if (!g_ctx.client)
         {
-            LogRel(("Invalid client ID of 0\n"));
+            VBClLogError("Invalid client ID of 0\n");
             rc = VERR_NOT_SUPPORTED;
         }
     }
 
     if (rc != VINF_SUCCESS && g_ctx.pBackend)
         ClipDestructX11(g_ctx.pBackend);
-    LogRelFlowFunc(("g_ctx.client=%u rc=%Rrc\n", g_ctx.client, rc));
+
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -270,13 +271,16 @@ int vboxClipboardMain(void)
                 }
 
                 default:
-                    LogRel2(("Unsupported message from host!!!\n"));
+                {
+                    VBClLogInfo("Unsupported message from host (%RU32)\n", Msg);
+                    break;
+                }
             }
         }
 
         LogRelFlow(("processed host event rc = %d\n", rc));
     }
-    LogRelFlowFunc(("rc=%d\n", rc));
+    LogRelFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -287,7 +291,7 @@ static const char *getPidFilePath()
 
 static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 {
-    RT_NOREF2(ppInterface, fDaemonised);
+    RT_NOREF(ppInterface, fDaemonised);
 
     /* Initialise the guest library. */
     int rc = SharedClipboardSvcImplConnect();
@@ -326,7 +330,7 @@ struct VBCLSERVICE **VBClGetClipboardService()
         (struct CLIPBOARDSERVICE *)RTMemAlloc(sizeof(*pService));
 
     if (!pService)
-        VBClFatalError(("Out of memory\n"));
+        VBClLogFatalError("Out of memory\n");
     pService->pInterface = &vbclClipboardInterface;
     return &pService->pInterface;
 }

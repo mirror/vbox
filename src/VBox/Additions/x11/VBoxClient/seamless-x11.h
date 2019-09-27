@@ -154,13 +154,13 @@ public:
         VBoxGuestWinInfo *pInfo = new VBoxGuestWinInfo(isMapped, x, y, w, h, cRects,
                                                        pRects);
         pInfo->Core.Key = hWin;
-        LogRelFlowFunc(("returning\n"));
+        LogRelFlowFuncLeave();
         return RTAvlU32Insert(&mWindows, &pInfo->Core);
     }
 
     VBoxGuestWinInfo *removeWindow(Window hWin)
     {
-        LogRelFlowFunc(("called\n"));
+        LogRelFlowFuncEnter();
         return (VBoxGuestWinInfo *)RTAvlU32Remove(&mWindows, hWin);
     }
 };
