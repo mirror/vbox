@@ -1084,7 +1084,7 @@ static int clipCreateX11Targets(CLIPBACKEND *pCtx, Atom *atomTypeReturn,
     return VINF_SUCCESS;
 }
 
-/** This is a wrapper around ClipRequestDataForX11 that will cache the
+/** This is a wrapper around ClipRequestDataForX11Callback that will cache the
  * data returned.
  */
 static int clipReadVBoxShCl(CLIPBACKEND *pCtx, uint32_t u32Format,
@@ -1942,7 +1942,7 @@ static void getSelectionValue(CLIPBACKEND *pCtx, CLIPX11FORMAT format,
 #endif
 }
 
-/** Worker function for ClipRequestDataFromX11 which runs on the event
+/** Worker function for ClipRequestDataFromX11Callback which runs on the event
  * thread. */
 static void vboxClipboardReadX11Worker(void *pUserData,
                                        void * /* interval */)
@@ -2028,8 +2028,8 @@ static void vboxClipboardReadX11Worker(void *pUserData,
  * @param  pcbActual Where to write the actual size of the written data
  * @note   We allocate a request structure which must be freed by the worker
  */
-int ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format,
-                           CLIPREADCBREQ *pReq)
+DECLCALLBACK(int) ClipRequestDataFromX11Callback(CLIPBACKEND *pCtx, uint32_t u32Format,
+                                                 CLIPREADCBREQ *pReq)
 {
     /*
      * Immediately return if we are not connected to the X server.
@@ -2119,7 +2119,7 @@ static int clipSetVBoxUtf16(CLIPBACKEND *pCtx, int retval,
 }
 
 /* Return the data in the simulated VBox clipboard. */
-int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx, u32Format);
     *pcb = g_vboxDatacb;
@@ -2240,7 +2240,7 @@ void testRequestData(CLIPBACKEND *pCtx, CLIPX11FORMAT target, void *closure)
 /* The formats currently on offer from X11 via the shared clipboard */
 static uint32_t g_fX11Formats = 0;
 
-void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
+DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     RT_NOREF(pCtx);
     g_fX11Formats = u32Formats;
@@ -2441,8 +2441,7 @@ static void testStringFromX11(RTTEST hTest, CLIPBACKEND *pCtx,
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT,
-                               pReq);
+        ClipRequestDataFromX11Callback(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
         clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
@@ -2499,8 +2498,8 @@ static void testLatin1FromX11(RTTEST hTest, CLIPBACKEND *pCtx,
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT,
-                               pReq);
+        ClipRequestDataFromX11Callback(pCtx, VBOX_SHCL_FMT_UNICODETEXT,
+                                       pReq);
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
         clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
@@ -2576,9 +2575,9 @@ static void testStringFromVBox(RTTEST hTest, CLIPBACKEND *pCtx, const char *pcsz
 static void testNoX11(CLIPBACKEND *pCtx, const char *pcszTestCtx)
 {
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq;
-    int rc = ClipRequestDataFromX11(pCtx,
-                                    VBOX_SHCL_FMT_UNICODETEXT,
-                                    pReq);
+    int rc = ClipRequestDataFromX11Callback(pCtx,
+                                            VBOX_SHCL_FMT_UNICODETEXT,
+                                            pReq);
     RTTESTI_CHECK_MSG(rc == VERR_NO_DATA, ("context: %s\n", pcszTestCtx));
 }
 
@@ -2615,7 +2614,7 @@ static void testBadFormatRequestFromHost(RTTEST hTest, CLIPBACKEND *pCtx)
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ClipRequestDataFromX11(pCtx, 100, pReq);  /* Bad format. */
+        ClipRequestDataFromX11Callback(pCtx, 100, pReq);  /* Bad format. */
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
         clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
@@ -2724,8 +2723,7 @@ int main()
     RTTestSub(hTest, "a data request from an empty X11 clipboard");
     clipSetSelectionValues("UTF8_STRING", XA_STRING, NULL,
                            0, 8);
-    ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT,
-                           pReq);
+    ClipRequestDataFromX11Callback(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
     clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
     RTTEST_CHECK_MSG(hTest, rc == VERR_NO_DATA,
                      (hTest, "Returned %Rrc instead of VERR_NO_DATA\n",
@@ -2743,7 +2741,7 @@ int main()
 
     /*** request for an invalid VBox format from X11 ***/
     RTTestSub(hTest, "a request for an invalid VBox format from X11");
-    ClipRequestDataFromX11(pCtx, 0xffff, pReq);
+    ClipRequestDataFromX11Callback(pCtx, 0xffff, pReq);
     clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
     RTTEST_CHECK_MSG(hTest, rc == VERR_NOT_IMPLEMENTED,
                      (hTest, "Returned %Rrc instead of VERR_NOT_IMPLEMENTED\n",
@@ -2884,18 +2882,18 @@ int main()
 # include <iprt/env.h>
 # include <iprt/test.h>
 
-int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx, u32Format, ppv, pcb);
     return VERR_NO_DATA;
 }
 
-void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
+DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     RT_NOREF(pCtx, u32Formats);
 }
 
-void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx, rc, pReq, pv, cb);
 }
