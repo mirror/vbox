@@ -939,7 +939,7 @@ static int pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
         if (pDev)
         {
             SSMR3PutU32(pSSM, uDevFn);
-            SSMR3PutMem(pSSM, pDev->abConfig, sizeof(pDev->abConfig));
+            SSMR3PutMem(pSSM, pDev->abConfig, 256); /* Only save 256 bytes here! */
 
             SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
 
