@@ -85,7 +85,7 @@ static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
  * @retval  pcb       On success, this contains the number of bytes of data
  *                    returned
  */
-int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     RT_NOREF(pCtx);
     int rc = VINF_SUCCESS;
@@ -147,7 +147,7 @@ struct _CLIPREADCBREQ
  * @param pCtx                  Our context information.
  * @param u32Formats            The formats to report.
  */
-void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
+DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     RT_NOREF(pCtx);
     LogRelFlowFunc(("u32Formats=%d\n", u32Formats));
@@ -165,7 +165,7 @@ void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
  *                   succeeded (see @a rc)
  * @param  cb        the size of the data in @a pv
  */
-void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
     RT_NOREF(pCtx);
     if (RT_SUCCESS(rc))

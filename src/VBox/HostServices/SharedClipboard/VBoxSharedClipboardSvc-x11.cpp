@@ -61,7 +61,7 @@ struct _SHCLCONTEXT
  * @param  pCtx                 Opaque context pointer for the glue code.
  * @param  u32Formats           The formats available.
  */
-void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
+DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     LogFlowFunc(("pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
 
@@ -350,7 +350,7 @@ void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc,
  *                   returned
  * @note   Host glue code.
  */
-int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p\n", pCtx, u32Format, ppv));
 

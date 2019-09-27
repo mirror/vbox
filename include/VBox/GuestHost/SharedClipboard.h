@@ -224,7 +224,7 @@ typedef struct _CLIPBACKEND CLIPBACKEND;
 struct _CLIPREADCBREQ;
 typedef struct _CLIPREADCBREQ CLIPREADCBREQ;
 
-/* APIs exported by the X11 backend */
+/* APIs exported by the X11 backend. */
 extern CLIPBACKEND *ClipConstructX11(SHCLCONTEXT *pFrontend, bool fHeadless);
 extern void ClipDestructX11(CLIPBACKEND *pBackend);
 extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab);
@@ -232,9 +232,9 @@ extern int ClipStopX11(CLIPBACKEND *pBackend);
 extern int ClipAnnounceFormatToX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormats);
 extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormat, CLIPREADCBREQ *pReq);
 
-/* APIs exported by the X11/VBox frontend */
-extern int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb);
-extern void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats);
-extern void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
+/* APIs (as callbacks) exported by the X11/VBox frontend. */
+extern DECLCALLBACK(int)  ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb);
+extern DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats);
+extern DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_h */
 

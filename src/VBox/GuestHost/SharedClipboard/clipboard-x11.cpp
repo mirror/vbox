@@ -376,7 +376,7 @@ static void clipReportFormatsToVBox(CLIPBACKEND *pCtx)
     LogRelFlowFunc(("clipReportFormatsToVBox txt: %d, bitm: %d, html:%d, u32VBoxFormats: %d\n",
                     pCtx->X11TextFormat, pCtx->X11BitmapFormat, pCtx->X11HTMLFormat,
                     u32VBoxFormats ));
-    ClipReportX11Formats(pCtx->pFrontend, u32VBoxFormats);
+    ClipReportX11FormatsCallback(pCtx->pFrontend, u32VBoxFormats);
 }
 
 /**
@@ -1096,9 +1096,9 @@ static int clipReadVBoxShCl(CLIPBACKEND *pCtx, uint32_t u32Format,
     if (u32Format == VBOX_SHCL_FMT_UNICODETEXT)
     {
         if (pCtx->pvUnicodeCache == NULL)
-            rc = ClipRequestDataForX11(pCtx->pFrontend, u32Format,
-                                              &pCtx->pvUnicodeCache,
-                                              &pCtx->cbUnicodeCache);
+            rc = ClipRequestDataForX11Callback(pCtx->pFrontend, u32Format,
+                                               &pCtx->pvUnicodeCache,
+                                               &pCtx->cbUnicodeCache);
         if (RT_SUCCESS(rc))
         {
             *ppv = RTMemDup(pCtx->pvUnicodeCache, pCtx->cbUnicodeCache);
@@ -1108,8 +1108,8 @@ static int clipReadVBoxShCl(CLIPBACKEND *pCtx, uint32_t u32Format,
         }
     }
     else
-        rc = ClipRequestDataForX11(pCtx->pFrontend, u32Format,
-                                          ppv, pcb);
+        rc = ClipRequestDataForX11Callback(pCtx->pFrontend, u32Format,
+                                           ppv, pcb);
     LogRelFlowFunc(("returning %Rrc\n", rc));
     if (RT_SUCCESS(rc))
         LogRelFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb, *ppv, *pcb));
