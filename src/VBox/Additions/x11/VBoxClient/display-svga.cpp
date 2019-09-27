@@ -166,6 +166,11 @@ static void drmSendHints(struct DRMCONTEXT *pContext, struct DRMVMWRECT *paRects
         VBClLogFatalError("Failure updating layout, rc=%Rrc\n", rc);
 }
 
+static const char *getName()
+{
+    return "Display SVGA";
+}
+
 static const char *getPidFilePath()
 {
     return ".vboxclient-display-svga.pid";
@@ -238,6 +243,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
 static struct VBCLSERVICE interface =
 {
+    getName,
     getPidFilePath,
     VBClServiceDefaultHandler, /* Init */
     run,

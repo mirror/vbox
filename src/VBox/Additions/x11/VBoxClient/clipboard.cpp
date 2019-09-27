@@ -284,6 +284,11 @@ int vboxClipboardMain(void)
     return rc;
 }
 
+static const char *getName()
+{
+    return "Shared Clipboard";
+}
+
 static const char *getPidFilePath()
 {
     return ".vboxclient-clipboard.pid";
@@ -313,6 +318,7 @@ static void cleanup(struct VBCLSERVICE **ppInterface)
 
 struct VBCLSERVICE vbclClipboardInterface =
 {
+    getName,
     getPidFilePath,
     VBClServiceDefaultHandler, /* init */
     run,

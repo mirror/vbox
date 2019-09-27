@@ -221,6 +221,11 @@ static int initDisplay(struct DISPLAYSTATE *pState)
     return VINF_SUCCESS;
 }
 
+static const char *getName()
+{
+    return "Display";
+}
+
 static const char *getPidFilePath()
 {
     return ".vboxclient-display.pid";
@@ -262,6 +267,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
 struct VBCLSERVICE vbclDisplayInterface =
 {
+    getName,
     getPidFilePath,
     init,
     run,

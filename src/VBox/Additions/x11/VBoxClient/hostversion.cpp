@@ -33,6 +33,11 @@
 
 #include "VBoxClient.h"
 
+static const char *getName()
+{
+    return "Host Version Check";
+}
+
 static const char *getPidFilePath()
 {
     return ".vboxclient-hostversion.pid";
@@ -199,6 +204,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
 struct VBCLSERVICE vbclHostVersionInterface =
 {
+    getName,
     getPidFilePath,
     VBClServiceDefaultHandler, /* init */
     run,

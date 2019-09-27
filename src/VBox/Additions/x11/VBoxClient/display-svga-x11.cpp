@@ -224,6 +224,11 @@ static void x11GetScreenInfo(struct X11CONTEXT *pContext)
         VBClLogFatalError("%s failed to set resolution\n", __func__);
 }
 
+static const char *getName()
+{
+    return "Display SVGA X11";
+}
+
 static const char *getPidFilePath()
 {
     return ".vboxclient-display-svga-x11.pid";
@@ -294,6 +299,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
 static struct VBCLSERVICE interface =
 {
+    getName,
     getPidFilePath,
     VBClServiceDefaultHandler, /* Init */
     run,

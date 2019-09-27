@@ -3478,6 +3478,11 @@ struct DRAGANDDROPSERVICE
     DragAndDropService mDragAndDrop;
 };
 
+static const char *getName()
+{
+    return "Drag and Drop (DnD)";
+}
+
 static const char *getPidFilePath()
 {
     return ".vboxclient-draganddrop.pid";
@@ -3512,6 +3517,7 @@ static void cleanup(struct VBCLSERVICE **ppInterface)
 
 struct VBCLSERVICE vbclDragAndDropInterface =
 {
+    getName,
     getPidFilePath,
     init,
     run,

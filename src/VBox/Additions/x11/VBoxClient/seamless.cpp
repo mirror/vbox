@@ -266,6 +266,11 @@ struct SEAMLESSSERVICE
     bool mIsInitialised;
 };
 
+static const char *getName()
+{
+    return "Seamless";
+}
+
 static const char *getPidFilePath(void)
 {
     return ".vboxclient-seamless.pid";
@@ -317,6 +322,7 @@ static void cleanup(struct VBCLSERVICE **ppInterface)
 
 struct VBCLSERVICE vbclSeamlessInterface =
 {
+    getName,
     getPidFilePath,
     init,
     run,

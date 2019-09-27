@@ -32,6 +32,9 @@
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
 
+#include <package-generated.h>
+#include "product-generated.h"
+
 #include <iprt/buildconfig.h>
 #include <iprt/critsect.h>
 #include <iprt/env.h>
@@ -40,8 +43,10 @@
 #include <iprt/message.h>
 #include <iprt/path.h>
 #include <iprt/param.h>
+#include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
+#include <iprt/system.h>
 #include <iprt/types.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/err.h>
@@ -60,19 +65,26 @@
 struct VBCLSERVICE **g_pService;
 /** The name of our pidfile.  It is global for the benefit of the cleanup
  * routine. */
-static char g_szPidFile[RTPATH_MAX] = "";
+static char          g_szPidFile[RTPATH_MAX] = "";
 /** The file handle of our pidfile.  It is global for the benefit of the
  * cleanup routine. */
-static RTFILE g_hPidFile;
+static RTFILE        g_hPidFile;
 /** Global critical section held during the clean-up routine (to prevent it
  * being called on multiple threads at once) or things which may not happen
  * during clean-up (e.g. pausing and resuming the service).
  */
-RTCRITSECT g_critSect;
+static RTCRITSECT    g_critSect;
 /** Counter of how often our daemon has been respawned. */
-unsigned g_cRespawn = 0;
+static unsigned      g_cRespawn = 0;
 /** Logging verbosity level. */
-unsigned g_cVerbosity = 0;
+static unsigned      g_cVerbosity = 0;
+static char          g_szLogFile[RTPATH_MAX + 128] = "";
+/** Logging parameters. */
+/** @todo Make this configurable later. */
+static PRTLOGGER     g_pLoggerRelease = NULL;
+static uint32_t      g_cHistory = 10;                   /* Enable log rotation, 10 files. */
+static uint32_t      g_uHistoryFileTime = RT_SEC_1DAY;  /* Max 1 day per file. */
+static uint64_t      g_uHistoryFileSize = 100 * _1M;    /* Max 100MB per file. */
 
 /**
  * Notifies the desktop environment with a message.
@@ -178,9 +190,126 @@ void  VBClLogInfo(const char *pszFormat, ...)
 
     AssertPtr(psz);
     LogFlowFunc(("%s", psz));
-    LogRel2(("%s", psz));
+    LogRel(("%s", psz));
 
     RTStrFree(psz);
+}
+
+/**
+ * @callback_method_impl{FNRTLOGPHASE, Release logger callback}
+ */
+static DECLCALLBACK(void) vbClLogHeaderFooter(PRTLOGGER pLoggerRelease, RTLOGPHASE enmPhase, PFNRTLOGPHASEMSG pfnLog)
+{
+    /* Some introductory information. */
+    static RTTIMESPEC s_TimeSpec;
+    char szTmp[256];
+    if (enmPhase == RTLOGPHASE_BEGIN)
+        RTTimeNow(&s_TimeSpec);
+    RTTimeSpecToString(&s_TimeSpec, szTmp, sizeof(szTmp));
+
+    switch (enmPhase)
+    {
+        case RTLOGPHASE_BEGIN:
+        {
+            pfnLog(pLoggerRelease,
+                   "VBoxClient %s r%s (verbosity: %u) %s (%s %s) release log\n"
+                   "Log opened %s\n",
+                   RTBldCfgVersion(), RTBldCfgRevisionStr(), g_cVerbosity, VBOX_BUILD_TARGET,
+                   __DATE__, __TIME__, szTmp);
+
+            int vrc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Product: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Release: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Version: %s\n", szTmp);
+            vrc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szTmp, sizeof(szTmp));
+            if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
+                pfnLog(pLoggerRelease, "OS Service Pack: %s\n", szTmp);
+
+            /* the package type is interesting for Linux distributions */
+            char szExecName[RTPATH_MAX];
+            char *pszExecName = RTProcGetExecutablePath(szExecName, sizeof(szExecName));
+            pfnLog(pLoggerRelease,
+                   "Executable: %s\n"
+                   "Process ID: %u\n"
+                   "Package type: %s"
+#ifdef VBOX_OSE
+                   " (OSE)"
+#endif
+                   "\n",
+                   pszExecName ? pszExecName : "unknown",
+                   RTProcSelf(),
+                   VBOX_PACKAGE_STRING);
+            break;
+        }
+
+        case RTLOGPHASE_PREROTATE:
+            pfnLog(pLoggerRelease, "Log rotated - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_POSTROTATE:
+            pfnLog(pLoggerRelease, "Log continuation - Log started %s\n", szTmp);
+            break;
+
+        case RTLOGPHASE_END:
+            pfnLog(pLoggerRelease, "End of log file - Log started %s\n", szTmp);
+            break;
+
+        default:
+            /* nothing */
+            break;
+    }
+}
+
+/**
+ * Creates the default release logger outputting to the specified file.
+ *
+ * Pass NULL to disabled logging.
+ *
+ * @return  IPRT status code.
+ * @param   pszLogFile      Filename for log output.  NULL disables logging
+ *                          (r=bird: No, it doesn't!).
+ */
+int VBClLogCreate(const char *pszLogFile)
+{
+    /* Create release logger (stdout + file). */
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    RTUINT fFlags = RTLOGFLAGS_PREFIX_THREAD | RTLOGFLAGS_PREFIX_TIME;
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+    fFlags |= RTLOGFLAGS_USECRLF;
+#endif
+    int rc = RTLogCreateEx(&g_pLoggerRelease, fFlags, "all",
+#ifdef DEBUG
+                           "VBOXCLIENT_LOG",
+#else
+                           "VBOXCLIENT_RELEASE_LOG",
+#endif
+                           RT_ELEMENTS(s_apszGroups), s_apszGroups, UINT32_MAX /*cMaxEntriesPerGroup*/,
+                           RTLOGDEST_STDOUT | RTLOGDEST_USER,
+                           vbClLogHeaderFooter, g_cHistory, g_uHistoryFileSize, g_uHistoryFileTime,
+                           NULL /*pErrInfo*/, "%s", pszLogFile ? pszLogFile : "");
+    if (RT_SUCCESS(rc))
+    {
+        /* register this logger as the release logger */
+        RTLogRelSetDefaultInstance(g_pLoggerRelease);
+
+        /* Explicitly flush the log in case of VBOXSERVICE_RELEASE_LOG=buffered. */
+        RTLogFlush(g_pLoggerRelease);
+    }
+
+    return rc;
+}
+
+/**
+ * Destroys the currently active logging instance.
+ */
+void VBClLogDestroy(void)
+{
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
 }
 
 /**
@@ -200,6 +329,9 @@ void VBClCleanUp(bool fExit /*=true*/)
         (*g_pService)->cleanup(g_pService);
     if (g_szPidFile[0] && g_hPidFile)
         VbglR3ClosePidFile(g_szPidFile, g_hPidFile);
+
+    VBClLogDestroy();
+
     if (fExit)
         exit(RTEXITCODE_SUCCESS);
 }
@@ -433,6 +565,13 @@ int main(int argc, char *argv[])
     rc = VbglR3InitUser();
     if (RT_FAILURE(rc))
         VBClLogFatalError("VbglR3InitUser failed: %Rrc", rc);
+
+    rc = VBClLogCreate(g_szLogFile[0] ? g_szLogFile : NULL);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Failed to create release log '%s', rc=%Rrc\n",
+                              g_szLogFile[0] ? g_szLogFile : "<None>", rc);
+
+    LogRel(("Service: %s\n", (*g_pService)->getName()));
 
     if (!fDaemonise)
     {
