@@ -260,18 +260,22 @@ RTDECL(int) RTSystemShutdown(RTMSINTERVAL cMsDelay, uint32_t fFlags, const char 
 RTDECL(bool) RTSystemIsInsideVM(void);
 
 /**
- * Enumeration for defining a system's firmware type.
+ * System firmware types.
  */
 typedef enum RTSYSFWTYPE
 {
+    /** Invalid zero value. */
+    RTSYSFWTYPE_INVALID = 0,
     /** Unknown firmware. */
-    RTSYSFWTYPE_UNKNOWN = 0,
+    RTSYSFWTYPE_UNKNOWN,
     /** Firmware is BIOS. */
     RTSYSFWTYPE_BIOS,
     /** Firmware is UEFI. */
     RTSYSFWTYPE_UEFI,
+    /** End valid firmware values (exclusive).  */
+    RTSYSFWTYPE_END,
     /** The usual 32-bit hack.  */
-    RTSYSFWTYP_32_BIT_HACK = 0x7fffffff
+    RTSYSFWTYPE_32_BIT_HACK = 0x7fffffff
 } RTSYSFWTYPE;
 /** Pointer to a system firmware type. */
 typedef RTSYSFWTYPE *PRTSYSFWTYPE;
@@ -280,6 +284,7 @@ typedef RTSYSFWTYPE *PRTSYSFWTYPE;
  * Queries the system's firmware type.
  *
  * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if not supported or implemented.
  * @param   penmType    Where to return the firmware type on success.
  */
 RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmType);
@@ -332,13 +337,31 @@ typedef enum RTSYSFWPRPOP
     RTSYSFWPROP_TIMEOUT,
     /** @todo Not yet implemented. */
     RTSYSFWPROP_PLATFORM_LANG,
+    /** End of valid    */
+    RTSYSFWPROP_END,
     /** The usual 32-bit hack.  */
     RTSYSFWPROP_32_BIT_HACK = 0x7fffffff
 } RTSYSFWPROP;
 
-RTDECL(int) RTSystemFirmwareValueQuery(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue);
+/**
+ * Queries the value of a firmware property.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_NOT_SUPPORTED if we cannot query firmware properties on the host.
+ * @retval  VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY if @a enmProp isn't
+ *          supported.
+ * @param   enmProp     The property to query the value of.
+ * @param   pValue      Where to return the value.  This is always zero'ed.
+ */
+RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue);
 
-RTDECL(void) RTSystemFirmwareValueFree(PRTSYSFWVALUE pValue);
+/**
+ * Free any allocations associated with a value returned by
+ * RTSystemFirmwareQueryValue().
+ *
+ * @param   pValue  Result of a successful RTSystemFirmwareQueryValue() call.
+ */
+RTDECL(void) RTSystemFirmwareFreeValue(PRTSYSFWVALUE pValue);
 
 #ifdef RT_OS_WINDOWS
 

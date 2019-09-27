@@ -31,7 +31,7 @@
 #include <iprt/system.h>
 
 #include <iprt/assert.h>
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 
@@ -39,41 +39,45 @@
 int main()
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstRTSystemQueryFirmware", &hTest);
-    if (rc)
-        return rc;
+    RTEXITCODE rcExit = RTTestInitAndCreate("tstRTSystemQueryFirmware", &hTest);
+    if (rcExit != RTEXITCODE_SUCCESS)
+        return rcExit;
     RTTestBanner(hTest);
 
+    RTTestSub(hTest, "RTSystemFirmwareQueryType");
     RTSYSFWTYPE fwType;
-    rc = RTSystemFirmwareQueryType(&fwType);
-    if (RT_FAILURE(rc))
-        RTTestIFailed("Querying firmware type failed, rc=%Rrc\n", rc);
-
-    switch (fwType)
-    {
-        case RTSYSFWTYPE_BIOS:
-            RTTestPrintf(hTest, RTTESTLVL_INFO, "Firmware type: BIOS (Legacy)\n");
-            break;
-        case RTSYSFWTYPE_UEFI:
-            RTTestPrintf(hTest, RTTESTLVL_INFO, "Firmware type: UEFI\n");
-            break;
-        case RTSYSFWTYPE_UNKNOWN: /* Do not fail on not-implemented platforms. */
-            RT_FALL_THROUGH();
-        default:
-            RTTestPrintf(hTest, RTTESTLVL_INFO, "Unknown firmware type\n");
-            break;
-    }
-
-    PRTSYSFWVALUE pValue;
-    rc = RTSystemFirmwareValueQuery(RTSYSFWPROP_SECURE_BOOT, &pValue);
+    int rc = RTSystemFirmwareQueryType(&fwType);
     if (RT_SUCCESS(rc))
     {
-        RTTestPrintf(hTest, RTTESTLVL_INFO, "Secure Boot enabled: %RTbool\n", pValue->u.fVal);
-
-        RTSystemFirmwareValueFree(pValue);
+        switch (fwType)
+        {
+            case RTSYSFWTYPE_BIOS:
+                RTTestPrintf(hTest, RTTESTLVL_INFO, "Firmware type: BIOS (Legacy)\n");
+                break;
+            case RTSYSFWTYPE_UEFI:
+                RTTestPrintf(hTest, RTTESTLVL_INFO, "Firmware type: UEFI\n");
+                break;
+            case RTSYSFWTYPE_UNKNOWN: /* Do not fail on not-implemented platforms. */
+                RT_FALL_THROUGH();
+            default:
+                RTTestPrintf(hTest, RTTESTLVL_INFO, "Unknown firmware type\n");
+                break;
+        }
     }
     else if (rc != VERR_NOT_SUPPORTED)
-        RTTestIFailed("Querying secure boot failed, rc=%Rrc\n", rc);
+        RTTestIFailed("RTSystemFirmwareQueryType failed: %Rrc", rc);
+
+    RTTestSub(hTest, "RTSystemFirmwareQueryValue");
+    RTSYSFWVALUE Value;
+    rc = RTSystemFirmwareQueryValue(RTSYSFWPROP_SECURE_BOOT, &Value);
+    if (RT_SUCCESS(rc))
+    {
+        RTTEST_CHECK(hTest, Value.enmType == RTSYSFWVALUETYPE_BOOLEAN);
+        RTTestPrintf(hTest, RTTESTLVL_INFO, "Secure Boot enabled: %RTbool\n", Value.u.fVal);
+        RTSystemFirmwareFreeValue(&Value);
+    }
+    else if (rc != VERR_NOT_SUPPORTED && rc != VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY)
+        RTTestIFailed("RTSystemFirmwareQueryValue/RTSYSFWPROP_SECURE_BOOT failed: %Rrc", rc);
 
     return RTTestSummaryAndDestroy(hTest);
 }

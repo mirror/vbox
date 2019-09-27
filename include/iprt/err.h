@@ -1448,6 +1448,8 @@
 #define VINF_SYS_MAY_POWER_OFF                      (22501)
 /** Shutdown failed. */
 #define VERR_SYS_SHUTDOWN_FAILED                    (-22502)
+/** Unsupported firmware property. */
+#define VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY      (-22503)
 /** @} */
 
 /** @name Filesystem status codes

@@ -28,42 +28,66 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include "internal/iprt.h"
+#include <iprt/system.h>
 
 #include <iprt/nt/nt-and-windows.h>
+#include <WinSDKVer.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/errcore.h>
+#include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/ldr.h>
 #include <iprt/string.h>
-#include <iprt/system.h>
 #include <iprt/utf16.h>
+
+#include "internal-r3-win.h"
 
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-/**
- * These are the FirmwareType* defines found in the Vista Platform SDK and returned
- * by GetProductInfo().
- *
- * We define them ourselves because we don't necessarily have any Vista PSDK around.
- */
-typedef enum RTWINFWTYPE
+#if _WIN32_MAXVER < 0x0602 /* Windows 7 or older, supply missing GetFirmwareType bits. */
+typedef enum _FIRMWARE_TYPE
 {
-    kRTWinFirmwareTypeUnknown = 0,
-    kRTWinFirmwareTypeBios    = 1,
-    kRTWinFirmwareTypeUefi    = 2,
-    kRTWinFirmwareTypeMax     = 3
-} RTWINFWTYPE;
+    FirmwareTypeUnknown,
+    FirmwareTypeBios,
+    FirmwareTypeUefi,
+    FirmwareTypeMax
+} FIRMWARE_TYPE;
+typedef FIRMWARE_TYPE *PFIRMWARE_TYPE;
+WINBASEAPI BOOL WINAPI GetFirmwareType(PFIRMWARE_TYPE);
+#endif
 
-/** Function pointer for dynamic import of GetFirmwareType(). */
-typedef BOOL (WINAPI *PFNGETFIRMWARETYPE)(RTWINFWTYPE *);
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 /** Defines the UEFI Globals UUID. */
 #define VBOX_UEFI_UUID_GLOBALS L"{8BE4DF61-93CA-11D2-AA0D-00E098032B8C}"
 /** Defines an UEFI dummy UUID. */
 #define VBOX_UEFI_UUID_DUMMY   L"{00000000-0000-0000-0000-000000000000}"
+
+
+/*********************************************************************************************************************************
+*   Global Variables                                                                                                             *
+*********************************************************************************************************************************/
+static volatile bool                              g_fResolvedApis = false;
+static decltype(GetFirmwareType)                 *g_pfnGetFirmwareType;
+static decltype(GetFirmwareEnvironmentVariableW) *g_pfnGetFirmwareEnvironmentVariableW;
+
+
+static void rtSystemFirmwareResolveApis(void)
+{
+    FARPROC pfnTmp1 = GetProcAddress(g_hModKernel32, "GetFirmwareType");
+    FARPROC pfnTmp2 = GetProcAddress(g_hModKernel32, "GetFirmwareEnvironmentVariableW");
+    ASMCompilerBarrier(); /* paranoia^2 */
+
+    g_pfnGetFirmwareType                 = (decltype(GetFirmwareType) *)pfnTmp1;
+    g_pfnGetFirmwareEnvironmentVariableW = (decltype(GetFirmwareEnvironmentVariableW) *)pfnTmp2;
+    ASMAtomicWriteBool(&g_fResolvedApis, true);
+}
 
 
 static int rtSystemFirmwareGetPrivileges(LPCTSTR pcszPrivilege)
@@ -94,170 +118,116 @@ static int rtSystemFirmwareGetPrivileges(LPCTSTR pcszPrivilege)
 }
 
 
-RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE pFirmwareType)
+RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmFirmwareType)
 {
-    AssertPtrReturn(pFirmwareType, VERR_INVALID_POINTER);
+    AssertPtrReturn(penmFirmwareType, VERR_INVALID_POINTER);
 
-    RTSYSFWTYPE fwType = RTSYSFWTYPE_UNKNOWN;
+    if (!g_fResolvedApis)
+        rtSystemFirmwareResolveApis();
 
-    RTLDRMOD hKernel32 = NIL_RTLDRMOD;
-    int rc = RTLdrLoadSystem("Kernel32.dll", /* fNoUnload = */ true, &hKernel32);
-    if (RT_SUCCESS(rc))
+    *penmFirmwareType = RTSYSFWTYPE_INVALID;
+    int rc = VERR_NOT_SUPPORTED;
+
+    /* GetFirmwareType is Windows 8 and later. */
+    if (g_pfnGetFirmwareType)
     {
-        PFNGETFIRMWARETYPE pfnGetFirmwareType;
-        rc = RTLdrGetSymbol(hKernel32, "GetFirmwareType", (void **)&pfnGetFirmwareType); /* Only >= Windows 8. */
-        if (RT_SUCCESS(rc))
+        FIRMWARE_TYPE enmWinFwType;
+        if (g_pfnGetFirmwareType(&enmWinFwType))
         {
-            RTWINFWTYPE winFwType;
-            if (pfnGetFirmwareType(&winFwType))
+            switch (enmWinFwType)
             {
-                switch (winFwType)
-                {
-                    case kRTWinFirmwareTypeBios:
-                        fwType = RTSYSFWTYPE_BIOS;
-                        break;
+                case FirmwareTypeBios:
+                    *penmFirmwareType = RTSYSFWTYPE_BIOS;
+                    break;
+                case FirmwareTypeUefi:
+                    *penmFirmwareType = RTSYSFWTYPE_UEFI;
+                    break;
+                default:
+                    *penmFirmwareType = RTSYSFWTYPE_UNKNOWN;
+                    AssertMsgFailed(("%d\n", enmWinFwType));
+                    break;
+            }
+            rc = VINF_SUCCESS;
+        }
+        else
+            rc = RTErrConvertFromWin32(GetLastError());
+    }
+    /* GetFirmwareEnvironmentVariableW is XP and later. */
+    else if (g_pfnGetFirmwareEnvironmentVariableW)
+    {
+        rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
 
-                    case kRTWinFirmwareTypeUefi:
-                        fwType = RTSYSFWTYPE_UEFI;
-                        break;
-
-                    default: /* Huh? */
-                        fwType = RTSYSFWTYPE_UNKNOWN;
-                        break;
-                }
+        uint8_t fEnabled = 0; /** @todo This type doesn't make sense to bird. */
+        DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(L"", VBOX_UEFI_UUID_GLOBALS, &fEnabled, sizeof(fEnabled));
+        if (cbRet)
+        {
+            Assert(cbRet == sizeof(fEnabled));
+            *penmFirmwareType = fEnabled ? RTSYSFWTYPE_UEFI : RTSYSFWTYPE_BIOS;
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            DWORD dwErr = GetLastError();
+            if (dwErr == ERROR_INVALID_FUNCTION)
+            {
+                *penmFirmwareType = RTSYSFWTYPE_BIOS;
+                rc = VINF_SUCCESS;
             }
             else
-                rc = RTErrConvertFromWin32(GetLastError());
+                rc = RTErrConvertFromWin32(dwErr);
         }
-        else /* Fallback for OSes < Windows 8. */
-        {
-            rc = rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
-            if (RT_SUCCESS(rc))
-            {
-                PCWCHAR pcwszGUID = VBOX_UEFI_UUID_GLOBALS; /* UEFI Globals. */
-                PCWCHAR pcwszName = L"";
-
-                uint8_t uEnabled = 0;
-                DWORD dwRet = GetFirmwareEnvironmentVariableW(pcwszName, pcwszGUID, &uEnabled, sizeof(uEnabled));
-                if (dwRet) /* Returns the bytes written. */
-                {
-                    Assert(dwRet == sizeof(uEnabled));
-                    fwType = RT_BOOL(uEnabled) ? RTSYSFWTYPE_UEFI : RTSYSFWTYPE_BIOS;
-                }
-                else
-                    rc = RTErrConvertFromWin32(GetLastError());
-            }
-        }
-
-        RTLdrClose(hKernel32);
     }
-
-    if (RT_SUCCESS(rc))
-        *pFirmwareType = fwType;
-
     return rc;
 }
 
 
-RTDECL(void) RTSystemFirmwareValueFree(PRTSYSFWVALUE pValue)
+RTDECL(void) RTSystemFirmwareFreeValue(PRTSYSFWVALUE pValue)
 {
-    if (!pValue)
-        return;
-
-    /** @todo Implement cleanup here. */
+    RT_NOREF(pValue);
 }
 
 
-RTDECL(int) RTSystemFirmwareValueQuery(RTSYSFWPROP enmProp, PRTSYSFWVALUE *ppValue)
+RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue)
 {
-    int rc = rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
-    if (RT_FAILURE(rc))
-        return rc;
+    RT_ZERO(*pValue);
 
-    PRTSYSFWVALUE pValue = (PRTSYSFWVALUE)RTMemAlloc(sizeof(RTSYSFWVALUE));
-    if (!pValue)
-        return VERR_NO_MEMORY;
-
-    char *pszName = NULL;
-    DWORD dwSize  = 0;
-
+    /*
+     * Translate the enmProp to a name and type:
+     */
+    const wchar_t *pwszName = NULL;
     switch (enmProp)
     {
         case RTSYSFWPROP_SECURE_BOOT:
         {
-            rc = RTStrAAppend(&pszName, "SecureBoot");
-            if (RT_FAILURE(rc))
-                break;
-
+            pwszName = L"SecureBoot";
             pValue->enmType = RTSYSFWVALUETYPE_BOOLEAN;
-            dwSize = 1;
             break;
         }
-
-        case RTSYSFWPROP_BOOT_CURRENT:
-            RT_FALL_THROUGH();
-        case RTSYSFWPROP_BOOT_ORDER:
-            RT_FALL_THROUGH();
-        case RTSYSFWPROP_BOOT_NEXT:
-            RT_FALL_THROUGH();
-        case RTSYSFWPROP_TIMEOUT:
-            RT_FALL_THROUGH();
-        case RTSYSFWPROP_PLATFORM_LANG:
-            rc = VERR_NOT_IMPLEMENTED;
-            break;
 
         default:
-            rc = VERR_INVALID_PARAMETER;
-            break;
+            AssertReturn(enmProp > RTSYSFWPROP_INVALID && enmProp < RTSYSFWPROP_END, VERR_INVALID_PARAMETER);
+            return VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY;
     }
 
-    if (RT_SUCCESS(rc))
+    if (!g_pfnGetFirmwareEnvironmentVariableW)
+        return VERR_NOT_SUPPORTED;
+    rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
+
+    int rc;
+    switch (pValue->enmType)
     {
-        PRTUTF16 pwszName;
-        rc = RTStrToUtf16(pszName, &pwszName);
-        if (RT_SUCCESS(rc))
+        case RTSYSFWVALUETYPE_BOOLEAN:
         {
-            void *pvBuf = RTMemAlloc(dwSize);
-            DWORD dwBuf = dwSize;
-
-            if (pvBuf)
-            {
-                DWORD dwRet = GetFirmwareEnvironmentVariableW(pwszName, VBOX_UEFI_UUID_GLOBALS, pvBuf, dwBuf);
-                if (dwRet)
-                {
-                    switch (pValue->enmType)
-                    {
-                        case RTSYSFWVALUETYPE_BOOLEAN:
-                            pValue->u.fVal = RT_BOOL(*(uint8_t *)pvBuf);
-                            break;
-
-                        case RTSYSFWVALUETYPE_INVALID:
-                            RT_FALL_THROUGH();
-                        default:
-                            AssertFailed();
-                            break;
-                    }
-                }
-                else
-                    rc = RTErrConvertFromWin32(GetLastError());
-
-                RTMemFree(pvBuf);
-            }
-            else
-                rc = VERR_NO_MEMORY;
-
-            RTUtf16Free(pwszName);
+            uint8_t bValue = 0;
+            DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(pwszName, VBOX_UEFI_UUID_GLOBALS, &bValue, sizeof(bValue));
+            pValue->u.fVal = cbRet != 0 && bValue != 0;
+            rc = cbRet != 0 || GetLastError() == ERROR_INVALID_FUNCTION ? VINF_SUCCESS : RTErrConvertFromWin32(GetLastError());
+            break;
         }
-    }
 
-    RTStrFree(pszName);
-
-    if (RT_SUCCESS(rc))
-    {
-        *ppValue = pValue;
+        default:
+            AssertFailedReturn(VERR_INTERNAL_ERROR);
     }
-    else
-        RTSystemFirmwareValueFree(pValue);
 
     return rc;
 }
