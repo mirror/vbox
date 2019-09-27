@@ -149,39 +149,6 @@ enum PixmapType
     MaxIndex
 };
 
-/* Controller Type */
-class SHARED_LIBRARY_STUFF ControllerType
-{
-public:
-
-    ControllerType (KStorageBus aBusType, KStorageControllerType aCtrType);
-    virtual ~ControllerType() {}
-
-    KStorageBus busType() const;
-    ControllerBusList busTypes() const;
-    KStorageControllerType ctrType() const;
-    ControllerTypeList ctrTypes() const;
-    PixmapType pixmap(ItemState aState) const;
-
-    void setCtrBusType(KStorageBus enmCtrBusType);
-    void setCtrType (KStorageControllerType aCtrType);
-
-    DeviceTypeList deviceTypeList() const;
-
-private:
-
-    void updateBusInfo();
-    void updateTypeInfo();
-    void updatePixmaps();
-
-    KStorageBus mBusType;
-    KStorageControllerType mCtrType;
-
-    ControllerBusList   m_buses;
-    ControllerTypeList  m_types;
-    QList<PixmapType>   m_pixmaps;
-};
-
 /* Abstract Item */
 class SHARED_LIBRARY_STUFF AbstractItem : public QITreeViewItem
 {
@@ -302,9 +269,19 @@ private:
     void addChild (AbstractItem *aItem);
     void delChild (AbstractItem *aItem);
 
+    void updateBusInfo();
+    void updateTypeInfo();
+    void updatePixmaps();
+
+    KStorageBus mBusType;
+    KStorageControllerType mCtrType;
+
+    ControllerBusList m_buses;
+    ControllerTypeList m_types;
+    QList<PixmapType> m_pixmaps;
+
     QString mOldCtrName;
     QString mCtrName;
-    ControllerType *mCtrType;
     uint mPortCount;
     bool mUseIoCache;
     QList <AbstractItem*> mAttachments;

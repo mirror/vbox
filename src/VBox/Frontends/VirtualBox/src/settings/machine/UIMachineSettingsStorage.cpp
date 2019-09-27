@@ -380,152 +380,6 @@ UIIconPoolStorageSettings::~UIIconPoolStorageSettings()
 }
 
 
-/* Controller Type */
-ControllerType::ControllerType (KStorageBus aBusType, KStorageControllerType aCtrType)
-    : mBusType (aBusType)
-    , mCtrType (aCtrType)
-{
-    AssertMsg (mBusType != KStorageBus_Null, ("Wrong Bus Type {%d}!\n", mBusType));
-    AssertMsg (mCtrType != KStorageControllerType_Null, ("Wrong Controller Type {%d}!\n", mCtrType));
-
-    updateBusInfo();
-    updateTypeInfo();
-    updatePixmaps();
-}
-
-KStorageBus ControllerType::busType() const
-{
-    return mBusType;
-}
-
-ControllerBusList ControllerType::busTypes() const
-{
-    return m_buses;
-}
-
-KStorageControllerType ControllerType::ctrType() const
-{
-    return mCtrType;
-}
-
-ControllerTypeList ControllerType::ctrTypes() const
-{
-    return m_types;
-}
-
-PixmapType ControllerType::pixmap(ItemState aState) const
-{
-    return m_pixmaps.at(aState);
-}
-
-void ControllerType::setCtrBusType(KStorageBus enmCtrBusType)
-{
-    mBusType = enmCtrBusType;
-
-    updateBusInfo();
-    updateTypeInfo();
-    updatePixmaps();
-}
-
-void ControllerType::setCtrType (KStorageControllerType aCtrType)
-{
-    mCtrType = aCtrType;
-}
-
-DeviceTypeList ControllerType::deviceTypeList() const
-{
-    return uiCommon().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (mBusType).toList();
-}
-
-void ControllerType::updateBusInfo()
-{
-    m_buses.clear();
-
-    switch (mBusType)
-    {
-        case KStorageBus_IDE:
-        case KStorageBus_SATA:
-        case KStorageBus_SCSI:
-        case KStorageBus_SAS:
-        case KStorageBus_USB:
-        case KStorageBus_PCIe:
-        case KStorageBus_VirtioSCSI:
-        {
-            m_buses << KStorageBus_IDE << KStorageBus_SATA << KStorageBus_SCSI << KStorageBus_SAS
-                    << KStorageBus_USB << KStorageBus_PCIe << KStorageBus_VirtioSCSI;
-            m_buses.removeAll(mBusType);
-        }
-        RT_FALL_THRU();
-        default:
-        {
-            m_buses.prepend(mBusType);
-            break;
-        }
-    }
-}
-
-void ControllerType::updateTypeInfo()
-{
-    m_types.clear();
-
-    KStorageControllerType enmFirstType = KStorageControllerType_Null;
-    switch (mBusType)
-    {
-        case KStorageBus_IDE:        enmFirstType = KStorageControllerType_PIIX3; break;
-        case KStorageBus_SATA:       enmFirstType = KStorageControllerType_IntelAhci; break;
-        case KStorageBus_SCSI:       enmFirstType = KStorageControllerType_LsiLogic; break;
-        case KStorageBus_Floppy:     enmFirstType = KStorageControllerType_I82078; break;
-        case KStorageBus_SAS:        enmFirstType = KStorageControllerType_LsiLogicSas; break;
-        case KStorageBus_USB:        enmFirstType = KStorageControllerType_USB; break;
-        case KStorageBus_PCIe:       enmFirstType = KStorageControllerType_NVMe; break;
-        case KStorageBus_VirtioSCSI: enmFirstType = KStorageControllerType_VirtioSCSI; break;
-        default:                     break;
-    }
-    AssertMsg(enmFirstType != KStorageControllerType_Null, ("Invalid item type!\n"));
-
-    uint uTypeAmount = 0;
-    switch (mBusType)
-    {
-        case KStorageBus_IDE:        uTypeAmount = 3; break;
-        case KStorageBus_SATA:       uTypeAmount = 1; break;
-        case KStorageBus_SCSI:       uTypeAmount = 2; break;
-        case KStorageBus_Floppy:     uTypeAmount = 1; break;
-        case KStorageBus_SAS:        uTypeAmount = 1; break;
-        case KStorageBus_USB:        uTypeAmount = 1; break;
-        case KStorageBus_PCIe:       uTypeAmount = 1; break;
-        case KStorageBus_VirtioSCSI: uTypeAmount = 1; break;
-        default:                     break;
-    }
-    AssertMsg(uTypeAmount != 0, ("Invalid item type count!\n"));
-
-    for (uint i = enmFirstType; i < enmFirstType + uTypeAmount; ++i)
-        m_types << static_cast<KStorageControllerType>(i);
-}
-
-void ControllerType::updatePixmaps()
-{
-    m_pixmaps.clear();
-
-    for (int i = 0; i < State_MAX; ++i)
-    {
-        m_pixmaps << InvalidPixmap;
-        switch (mBusType)
-        {
-            case KStorageBus_IDE:        m_pixmaps[i] = static_cast<PixmapType>(IDEControllerNormal + i); break;
-            case KStorageBus_SATA:       m_pixmaps[i] = static_cast<PixmapType>(SATAControllerNormal + i); break;
-            case KStorageBus_SCSI:       m_pixmaps[i] = static_cast<PixmapType>(SCSIControllerNormal + i); break;
-            case KStorageBus_Floppy:     m_pixmaps[i] = static_cast<PixmapType>(FloppyControllerNormal + i); break;
-            case KStorageBus_SAS:        m_pixmaps[i] = static_cast<PixmapType>(SASControllerNormal + i); break;
-            case KStorageBus_USB:        m_pixmaps[i] = static_cast<PixmapType>(USBControllerNormal + i); break;
-            case KStorageBus_PCIe:       m_pixmaps[i] = static_cast<PixmapType>(NVMeControllerNormal + i); break;
-            case KStorageBus_VirtioSCSI: m_pixmaps[i] = static_cast<PixmapType>(VirtioSCSIControllerNormal + i); break;
-            default: break;
-        }
-        AssertMsg(m_pixmaps[i] != InvalidPixmap, ("Invalid item state pixmap!\n"));
-    }
-}
-
-
 /* Abstract Item */
 AbstractItem::AbstractItem(QITreeView *pParent)
     : QITreeViewItem(pParent)
@@ -654,66 +508,40 @@ void RootItem::delChild (AbstractItem *aItem)
 ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
                                 KStorageBus aBusType, KStorageControllerType aControllerType)
     : AbstractItem (aParent)
+    , mBusType (aBusType)
+    , mCtrType (aControllerType)
     , mOldCtrName (aName)
     , mCtrName (aName)
-    , mCtrType (0)
     , mPortCount (0)
     , mUseIoCache (false)
 {
     /* Check for proper parent type */
     AssertMsg(m_pParentItem->rtti() == AbstractItem::Type_RootItem, ("Incorrect parent type!\n"));
 
-    /* Select default type */
-    switch (aBusType)
-    {
-        case KStorageBus_IDE:
-            mCtrType = new ControllerType(KStorageBus_IDE, aControllerType);
-            break;
-        case KStorageBus_SATA:
-            mCtrType = new ControllerType(KStorageBus_SATA, aControllerType);
-            break;
-        case KStorageBus_SCSI:
-            mCtrType = new ControllerType(KStorageBus_SCSI, aControllerType);
-            break;
-        case KStorageBus_Floppy:
-            mCtrType = new ControllerType(KStorageBus_Floppy, aControllerType);
-            break;
-        case KStorageBus_SAS:
-            mCtrType = new ControllerType(KStorageBus_SAS, aControllerType);
-            break;
-        case KStorageBus_USB:
-            mCtrType = new ControllerType(KStorageBus_USB, aControllerType);
-            break;
-        case KStorageBus_PCIe:
-            mCtrType = new ControllerType(KStorageBus_PCIe, aControllerType);
-            break;
-        case KStorageBus_VirtioSCSI:
-            mCtrType = new ControllerType(KStorageBus_VirtioSCSI, aControllerType);
-            break;
+    AssertMsg (mBusType != KStorageBus_Null, ("Wrong Bus Type {%d}!\n", mBusType));
+    AssertMsg (mCtrType != KStorageControllerType_Null, ("Wrong Controller Type {%d}!\n", mCtrType));
 
-        default:
-            AssertMsgFailed (("Wrong Controller Type {%d}!\n", aBusType));
-            break;
-    }
+    updateBusInfo();
+    updateTypeInfo();
+    updatePixmaps();
 
     mUseIoCache = uiCommon().virtualBox().GetSystemProperties().GetDefaultIoCacheSettingForStorageController (aControllerType);
 }
 
 ControllerItem::~ControllerItem()
 {
-    delete mCtrType;
     while (!mAttachments.isEmpty())
         delete mAttachments.first();
 }
 
 KStorageBus ControllerItem::ctrBusType() const
 {
-    return mCtrType->busType();
+    return mBusType;
 }
 
 ControllerBusList ControllerItem::ctrBusTypes() const
 {
-    return mCtrType->busTypes();
+    return m_buses;
 }
 
 QString ControllerItem::oldCtrName() const
@@ -728,12 +556,12 @@ QString ControllerItem::ctrName() const
 
 KStorageControllerType ControllerItem::ctrType() const
 {
-    return mCtrType->ctrType();
+    return mCtrType;
 }
 
 ControllerTypeList ControllerItem::ctrTypes() const
 {
-    return mCtrType->ctrTypes();
+    return m_types;
 }
 
 uint ControllerItem::portCount()
@@ -760,7 +588,11 @@ bool ControllerItem::ctrUseIoCache() const
 
 void ControllerItem::setCtrBusType(KStorageBus enmCtrBusType)
 {
-    mCtrType->setCtrBusType(enmCtrBusType);
+    mBusType = enmCtrBusType;
+
+    updateBusInfo();
+    updateTypeInfo();
+    updatePixmaps();
 }
 
 void ControllerItem::setCtrName (const QString &aCtrName)
@@ -770,7 +602,7 @@ void ControllerItem::setCtrName (const QString &aCtrName)
 
 void ControllerItem::setCtrType (KStorageControllerType aCtrType)
 {
-    mCtrType->setCtrType (aCtrType);
+    mCtrType = aCtrType;
 }
 
 void ControllerItem::setPortCount (uint aPortCount)
@@ -788,9 +620,9 @@ SlotsList ControllerItem::ctrAllSlots() const
 {
     SlotsList allSlots;
     CSystemProperties sp = uiCommon().virtualBox().GetSystemProperties();
-    for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (mCtrType->busType()); ++ i)
-        for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (mCtrType->busType()); ++ j)
-            allSlots << StorageSlot (mCtrType->busType(), i, j);
+    for (ULONG i = 0; i < sp.GetMaxPortCountForStorageBus (ctrBusType()); ++ i)
+        for (ULONG j = 0; j < sp.GetMaxDevicesPerPortForStorageBus (ctrBusType()); ++ j)
+            allSlots << StorageSlot (ctrBusType(), i, j);
     return allSlots;
 }
 
@@ -804,7 +636,7 @@ SlotsList ControllerItem::ctrUsedSlots() const
 
 DeviceTypeList ControllerItem::ctrDeviceTypeList() const
 {
-     return mCtrType->deviceTypeList();
+     return uiCommon().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (mBusType).toList();
 }
 
 QList<QUuid> ControllerItem::attachmentIDs(KDeviceType enmType /* = KDeviceType_Null */) const
@@ -859,13 +691,13 @@ QString ControllerItem::tip() const
                                  "<nobr>Bus:&nbsp;&nbsp;%2</nobr><br>"
                                  "<nobr>Type:&nbsp;&nbsp;%3</nobr>")
                                  .arg (mCtrName)
-                                 .arg (gpConverter->toString (mCtrType->busType()))
-                                 .arg (gpConverter->toString (mCtrType->ctrType()));
+                                 .arg (gpConverter->toString (ctrBusType()))
+                                 .arg (gpConverter->toString (ctrType()));
 }
 
 QPixmap ControllerItem::pixmap (ItemState aState)
 {
-    return iconPool()->pixmap(mCtrType->pixmap(aState));
+    return iconPool()->pixmap(m_pixmaps.at(aState));
 }
 
 void ControllerItem::addChild (AbstractItem *aItem)
@@ -876,6 +708,94 @@ void ControllerItem::addChild (AbstractItem *aItem)
 void ControllerItem::delChild (AbstractItem *aItem)
 {
     mAttachments.removeAll (aItem);
+}
+
+void ControllerItem::updateBusInfo()
+{
+    m_buses.clear();
+
+    switch (mBusType)
+    {
+        case KStorageBus_IDE:
+        case KStorageBus_SATA:
+        case KStorageBus_SCSI:
+        case KStorageBus_SAS:
+        case KStorageBus_USB:
+        case KStorageBus_PCIe:
+        case KStorageBus_VirtioSCSI:
+        {
+            m_buses << KStorageBus_IDE << KStorageBus_SATA << KStorageBus_SCSI << KStorageBus_SAS
+                    << KStorageBus_USB << KStorageBus_PCIe << KStorageBus_VirtioSCSI;
+            m_buses.removeAll(mBusType);
+        }
+        RT_FALL_THRU();
+        default:
+        {
+            m_buses.prepend(mBusType);
+            break;
+        }
+    }
+}
+
+void ControllerItem::updateTypeInfo()
+{
+    m_types.clear();
+
+    KStorageControllerType enmFirstType = KStorageControllerType_Null;
+    switch (mBusType)
+    {
+        case KStorageBus_IDE:        enmFirstType = KStorageControllerType_PIIX3; break;
+        case KStorageBus_SATA:       enmFirstType = KStorageControllerType_IntelAhci; break;
+        case KStorageBus_SCSI:       enmFirstType = KStorageControllerType_LsiLogic; break;
+        case KStorageBus_Floppy:     enmFirstType = KStorageControllerType_I82078; break;
+        case KStorageBus_SAS:        enmFirstType = KStorageControllerType_LsiLogicSas; break;
+        case KStorageBus_USB:        enmFirstType = KStorageControllerType_USB; break;
+        case KStorageBus_PCIe:       enmFirstType = KStorageControllerType_NVMe; break;
+        case KStorageBus_VirtioSCSI: enmFirstType = KStorageControllerType_VirtioSCSI; break;
+        default:                     break;
+    }
+    AssertMsg(enmFirstType != KStorageControllerType_Null, ("Invalid item type!\n"));
+
+    uint uTypeAmount = 0;
+    switch (mBusType)
+    {
+        case KStorageBus_IDE:        uTypeAmount = 3; break;
+        case KStorageBus_SATA:       uTypeAmount = 1; break;
+        case KStorageBus_SCSI:       uTypeAmount = 2; break;
+        case KStorageBus_Floppy:     uTypeAmount = 1; break;
+        case KStorageBus_SAS:        uTypeAmount = 1; break;
+        case KStorageBus_USB:        uTypeAmount = 1; break;
+        case KStorageBus_PCIe:       uTypeAmount = 1; break;
+        case KStorageBus_VirtioSCSI: uTypeAmount = 1; break;
+        default:                     break;
+    }
+    AssertMsg(uTypeAmount != 0, ("Invalid item type count!\n"));
+
+    for (uint i = enmFirstType; i < enmFirstType + uTypeAmount; ++i)
+        m_types << static_cast<KStorageControllerType>(i);
+}
+
+void ControllerItem::updatePixmaps()
+{
+    m_pixmaps.clear();
+
+    for (int i = 0; i < State_MAX; ++i)
+    {
+        m_pixmaps << InvalidPixmap;
+        switch (mBusType)
+        {
+            case KStorageBus_IDE:        m_pixmaps[i] = static_cast<PixmapType>(IDEControllerNormal + i); break;
+            case KStorageBus_SATA:       m_pixmaps[i] = static_cast<PixmapType>(SATAControllerNormal + i); break;
+            case KStorageBus_SCSI:       m_pixmaps[i] = static_cast<PixmapType>(SCSIControllerNormal + i); break;
+            case KStorageBus_Floppy:     m_pixmaps[i] = static_cast<PixmapType>(FloppyControllerNormal + i); break;
+            case KStorageBus_SAS:        m_pixmaps[i] = static_cast<PixmapType>(SASControllerNormal + i); break;
+            case KStorageBus_USB:        m_pixmaps[i] = static_cast<PixmapType>(USBControllerNormal + i); break;
+            case KStorageBus_PCIe:       m_pixmaps[i] = static_cast<PixmapType>(NVMeControllerNormal + i); break;
+            case KStorageBus_VirtioSCSI: m_pixmaps[i] = static_cast<PixmapType>(VirtioSCSIControllerNormal + i); break;
+            default: break;
+        }
+        AssertMsg(m_pixmaps[i] != InvalidPixmap, ("Invalid item state pixmap!\n"));
+    }
 }
 
 
