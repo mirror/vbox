@@ -1942,7 +1942,7 @@ static void getSelectionValue(CLIPBACKEND *pCtx, CLIPX11FORMAT format,
 #endif
 }
 
-/** Worker function for ClipRequestDataFromX11Callback which runs on the event
+/** Worker function for ClipRequestDataFromX11 which runs on the event
  * thread. */
 static void vboxClipboardReadX11Worker(void *pUserData,
                                        void * /* interval */)
@@ -2028,8 +2028,8 @@ static void vboxClipboardReadX11Worker(void *pUserData,
  * @param  pcbActual Where to write the actual size of the written data
  * @note   We allocate a request structure which must be freed by the worker
  */
-DECLCALLBACK(int) ClipRequestDataFromX11Callback(CLIPBACKEND *pCtx, uint32_t u32Format,
-                                                 CLIPREADCBREQ *pReq)
+DECLCALLBACK(int) ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format,
+                                         CLIPREADCBREQ *pReq)
 {
     /*
      * Immediately return if we are not connected to the X server.
@@ -2441,7 +2441,7 @@ static void testStringFromX11(RTTEST hTest, CLIPBACKEND *pCtx,
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ClipRequestDataFromX11Callback(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
+        ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
         clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
@@ -2498,8 +2498,7 @@ static void testLatin1FromX11(RTTEST hTest, CLIPBACKEND *pCtx,
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ClipRequestDataFromX11Callback(pCtx, VBOX_SHCL_FMT_UNICODETEXT,
-                                       pReq);
+        ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
         clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
@@ -2575,9 +2574,7 @@ static void testStringFromVBox(RTTEST hTest, CLIPBACKEND *pCtx, const char *pcsz
 static void testNoX11(CLIPBACKEND *pCtx, const char *pcszTestCtx)
 {
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq;
-    int rc = ClipRequestDataFromX11Callback(pCtx,
-                                            VBOX_SHCL_FMT_UNICODETEXT,
-                                            pReq);
+    int rc = ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
     RTTESTI_CHECK_MSG(rc == VERR_NO_DATA, ("context: %s\n", pcszTestCtx));
 }
 
@@ -2614,7 +2611,7 @@ static void testBadFormatRequestFromHost(RTTEST hTest, CLIPBACKEND *pCtx)
     {
         char *pc;
         CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)&pReq, *pReqRet = NULL;
-        ClipRequestDataFromX11Callback(pCtx, 100, pReq);  /* Bad format. */
+        ClipRequestDataFromX11(pCtx, 100, pReq);  /* Bad format. */
         int rc = VINF_SUCCESS;
         uint32_t cbActual = 0;
         clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
@@ -2723,7 +2720,7 @@ int main()
     RTTestSub(hTest, "a data request from an empty X11 clipboard");
     clipSetSelectionValues("UTF8_STRING", XA_STRING, NULL,
                            0, 8);
-    ClipRequestDataFromX11Callback(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
+    ClipRequestDataFromX11(pCtx, VBOX_SHCL_FMT_UNICODETEXT, pReq);
     clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
     RTTEST_CHECK_MSG(hTest, rc == VERR_NO_DATA,
                      (hTest, "Returned %Rrc instead of VERR_NO_DATA\n",
@@ -2741,7 +2738,7 @@ int main()
 
     /*** request for an invalid VBox format from X11 ***/
     RTTestSub(hTest, "a request for an invalid VBox format from X11");
-    ClipRequestDataFromX11Callback(pCtx, 0xffff, pReq);
+    ClipRequestDataFromX11(pCtx, 0xffff, pReq);
     clipGetCompletedRequest(&rc, &pc, &cbActual, &pReqRet);
     RTTEST_CHECK_MSG(hTest, rc == VERR_NOT_IMPLEMENTED,
                      (hTest, "Returned %Rrc instead of VERR_NOT_IMPLEMENTED\n",
