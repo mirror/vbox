@@ -16,44 +16,131 @@
  */
 
 /* Qt includes: */
+#include <QCommonStyle>
 #include <QDrag>
 #include <QDragMoveEvent>
-#include <QHeaderView>
-#include <QItemEditorFactory>
+#include <QItemDelegate>
 #include <QMenu>
 #include <QMimeData>
 #include <QMouseEvent>
-#include <QScrollBar>
-#include <QStylePainter>
-#include <QTimer>
-#include <QCommonStyle>
-#include <QMetaProperty>
+#include <QPainter>
 
 /* GUI includes: */
-#include "QIFileDialog.h"
-#include "QIMessageBox.h"
-#include "QIWidgetValidator.h"
+#include "QITreeView.h"
 #include "UICommon.h"
-#include "UIIconPool.h"
-#include "UIWizardNewVD.h"
+#include "UIConverter.h"
 #include "UIErrorString.h"
+#include "UIExtraDataManager.h"
+#include "UIIconPool.h"
 #include "UIMessageCenter.h"
 #include "UIMachineSettingsStorage.h"
-#include "UIMediumSelector.h"
-#include "UIConverter.h"
 #include "UIMedium.h"
-#include "UIExtraDataManager.h"
-#include "UIModalWindowManager.h"
+#include "UIMediumSelector.h"
 
 /* COM includes: */
-#include "CStorageController.h"
 #include "CMediumAttachment.h"
+#include "CStorageController.h"
+
+/* Defines: */
+typedef QList <StorageSlot> SlotsList;
+typedef QList <KDeviceType> DeviceTypeList;
+typedef QList <KStorageBus> ControllerBusList;
+typedef QList <KStorageControllerType> ControllerTypeList;
+Q_DECLARE_METATYPE (SlotsList);
+Q_DECLARE_METATYPE (DeviceTypeList);
+Q_DECLARE_METATYPE (ControllerBusList);
+Q_DECLARE_METATYPE (ControllerTypeList);
 
 
-QString compressText (const QString &aText)
+/** Known item states. */
+enum ItemState
 {
-    return QString ("<nobr><compact elipsis=\"end\">%1</compact></nobr>").arg (aText);
-}
+    State_DefaultItem,
+    State_CollapsedItem,
+    State_ExpandedItem,
+    State_MAX
+};
+
+
+/** Known pixmap types. */
+enum PixmapType
+{
+    InvalidPixmap,
+
+    ControllerAddEn,
+    ControllerAddDis,
+    ControllerDelEn,
+    ControllerDelDis,
+
+    AttachmentAddEn,
+    AttachmentAddDis,
+    AttachmentDelEn,
+    AttachmentDelDis,
+
+    IDEControllerNormal,
+    IDEControllerExpand,
+    IDEControllerCollapse,
+    SATAControllerNormal,
+    SATAControllerExpand,
+    SATAControllerCollapse,
+    SCSIControllerNormal,
+    SCSIControllerExpand,
+    SCSIControllerCollapse,
+    SASControllerNormal,
+    SASControllerExpand,
+    SASControllerCollapse,
+    USBControllerNormal,
+    USBControllerExpand,
+    USBControllerCollapse,
+    NVMeControllerNormal,
+    NVMeControllerExpand,
+    NVMeControllerCollapse,
+    VirtioSCSIControllerNormal,
+    VirtioSCSIControllerExpand,
+    VirtioSCSIControllerCollapse,
+    FloppyControllerNormal,
+    FloppyControllerExpand,
+    FloppyControllerCollapse,
+
+    IDEControllerAddEn,
+    IDEControllerAddDis,
+    SATAControllerAddEn,
+    SATAControllerAddDis,
+    SCSIControllerAddEn,
+    SCSIControllerAddDis,
+    SASControllerAddEn,
+    SASControllerAddDis,
+    USBControllerAddEn,
+    USBControllerAddDis,
+    NVMeControllerAddEn,
+    NVMeControllerAddDis,
+    VirtioSCSIControllerAddEn,
+    VirtioSCSIControllerAddDis,
+    FloppyControllerAddEn,
+    FloppyControllerAddDis,
+
+    HDAttachmentNormal,
+    CDAttachmentNormal,
+    FDAttachmentNormal,
+
+    HDAttachmentAddEn,
+    HDAttachmentAddDis,
+    CDAttachmentAddEn,
+    CDAttachmentAddDis,
+    FDAttachmentAddEn,
+    FDAttachmentAddDis,
+
+    ChooseExistingEn,
+    ChooseExistingDis,
+    HDNewEn,
+    HDNewDis,
+    CDUnmountEnabled,
+    CDUnmountDisabled,
+    FDUnmountEnabled,
+    FDUnmountDisabled,
+
+    MaxIndex
+};
 
 
 /** Machine settings: Storage Attachment data structure. */
@@ -198,6 +285,425 @@ private:
 };
 UIIconPoolStorageSettings* iconPool() { return UIIconPoolStorageSettings::instance(); }
 
+
+/* Abstract Item */
+class AbstractItem : public QITreeViewItem
+{
+    Q_OBJECT;
+
+public:
+
+    enum ItemType
+    {
+        Type_InvalidItem    = 0,
+        Type_RootItem       = 1,
+        Type_ControllerItem = 2,
+        Type_AttachmentItem = 3
+    };
+
+    AbstractItem(QITreeView *pParent);
+    AbstractItem(AbstractItem *pParentItem);
+    virtual ~AbstractItem();
+
+    AbstractItem* parent() const;
+    QUuid id() const;
+    QUuid machineId() const;
+
+    void setMachineId (const QUuid &uMchineId);
+
+    virtual ItemType rtti() const = 0;
+    virtual AbstractItem* childItem (int aIndex) const = 0;
+    virtual AbstractItem* childItemById (const QUuid &uId) const = 0;
+    virtual int posOfChild (AbstractItem *aItem) const = 0;
+    virtual QString tip() const = 0;
+    virtual QPixmap pixmap (ItemState aState = State_DefaultItem) = 0;
+
+protected:
+
+    virtual void addChild (AbstractItem *aItem) = 0;
+    virtual void delChild (AbstractItem *aItem) = 0;
+
+    AbstractItem *m_pParentItem;
+    QUuid         mId;
+    QUuid         mMachineId;
+};
+Q_DECLARE_METATYPE (AbstractItem::ItemType);
+
+
+/* Root Item */
+class RootItem : public AbstractItem
+{
+    Q_OBJECT;
+
+public:
+
+    RootItem(QITreeView *pParent);
+   ~RootItem();
+
+    ULONG childCount (KStorageBus aBus) const;
+
+private:
+
+    ItemType rtti() const;
+    AbstractItem* childItem (int aIndex) const;
+    AbstractItem* childItemById (const QUuid &uId) const;
+    int posOfChild (AbstractItem *aItem) const;
+    int childCount() const;
+    QString text() const;
+    QString tip() const;
+    QPixmap pixmap (ItemState aState);
+    void addChild (AbstractItem *aItem);
+    void delChild (AbstractItem *aItem);
+
+    QList <AbstractItem*> mControllers;
+};
+
+
+/* Controller Item */
+class ControllerItem : public AbstractItem
+{
+    Q_OBJECT;
+
+public:
+
+    ControllerItem (AbstractItem *aParent, const QString &aName, KStorageBus aBusType,
+                    KStorageControllerType aControllerType);
+   ~ControllerItem();
+
+    KStorageBus ctrBusType() const;
+    ControllerBusList ctrBusTypes() const;
+    QString oldCtrName() const;
+    QString ctrName() const;
+    KStorageControllerType ctrType() const;
+    ControllerTypeList ctrTypes() const;
+    uint portCount();
+    uint maxPortCount();
+    bool ctrUseIoCache() const;
+
+    void setCtrBusType(KStorageBus enmCtrBusType);
+    void setCtrName (const QString &aCtrName);
+    void setCtrType (KStorageControllerType aCtrType);
+    void setPortCount (uint aPortCount);
+    void setCtrUseIoCache (bool aUseIoCache);
+
+    SlotsList ctrAllSlots() const;
+    SlotsList ctrUsedSlots() const;
+    DeviceTypeList ctrDeviceTypeList() const;
+
+    QList<QUuid> attachmentIDs(KDeviceType enmType = KDeviceType_Null) const;
+
+    QList<AbstractItem*> attachments() const { return mAttachments; }
+    void setAttachments(const QList<AbstractItem*> &attachments) { mAttachments = attachments; }
+
+private:
+
+    ItemType rtti() const;
+    AbstractItem* childItem (int aIndex) const;
+    AbstractItem* childItemById (const QUuid &uId) const;
+    int posOfChild (AbstractItem *aItem) const;
+    int childCount() const;
+    QString text() const;
+    QString tip() const;
+    QPixmap pixmap (ItemState aState);
+    void addChild (AbstractItem *aItem);
+    void delChild (AbstractItem *aItem);
+
+    void updateBusInfo();
+    void updateTypeInfo();
+    void updatePixmaps();
+
+    KStorageBus mBusType;
+    KStorageControllerType mCtrType;
+
+    ControllerBusList m_buses;
+    ControllerTypeList m_types;
+    QList<PixmapType> m_pixmaps;
+
+    QString mOldCtrName;
+    QString mCtrName;
+    uint mPortCount;
+    bool mUseIoCache;
+    QList <AbstractItem*> mAttachments;
+};
+
+
+/* Attachment Item */
+class AttachmentItem : public AbstractItem
+{
+    Q_OBJECT;
+
+public:
+
+    AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType);
+
+    StorageSlot attSlot() const;
+    SlotsList attSlots() const;
+    KDeviceType attDeviceType() const;
+    DeviceTypeList attDeviceTypes() const;
+    QUuid attMediumId() const;
+    bool attIsHostDrive() const;
+    bool attIsPassthrough() const;
+    bool attIsTempEject() const;
+    bool attIsNonRotational() const;
+    bool attIsHotPluggable() const;
+
+    void setAttSlot (const StorageSlot &aAttSlot);
+    void setAttDevice (KDeviceType aAttDeviceType);
+    void setAttMediumId (const QUuid &uAttMediumId);
+    void setAttIsPassthrough (bool aPassthrough);
+    void setAttIsTempEject (bool aTempEject);
+    void setAttIsNonRotational (bool aNonRotational);
+    void setAttIsHotPluggable(bool fIsHotPluggable);
+
+    QString attSize() const;
+    QString attLogicalSize() const;
+    QString attLocation() const;
+    QString attFormat() const;
+    QString attDetails() const;
+    QString attUsage() const;
+    QString attEncryptionPasswordID() const;
+
+private:
+
+    void cache();
+
+    ItemType rtti() const;
+    AbstractItem* childItem (int aIndex) const;
+    AbstractItem* childItemById (const QUuid &uId) const;
+    int posOfChild (AbstractItem *aItem) const;
+    int childCount() const;
+    QString text() const;
+    QString tip() const;
+    QPixmap pixmap (ItemState aState);
+    void addChild (AbstractItem *aItem);
+    void delChild (AbstractItem *aItem);
+
+    KDeviceType mAttDeviceType;
+
+    StorageSlot mAttSlot;
+    QUuid mAttMediumId;
+    bool mAttIsHostDrive;
+    bool mAttIsPassthrough;
+    bool mAttIsTempEject;
+    bool mAttIsNonRotational;
+    bool m_fIsHotPluggable;
+
+    QString mAttName;
+    QString mAttTip;
+    QPixmap mAttPixmap;
+
+    QString mAttSize;
+    QString mAttLogicalSize;
+    QString mAttLocation;
+    QString mAttFormat;
+    QString mAttDetails;
+    QString mAttUsage;
+    QString m_strAttEncryptionPasswordID;
+};
+
+
+/* Storage Model */
+class StorageModel : public QAbstractItemModel
+{
+    Q_OBJECT;
+
+public:
+
+    enum DataRole
+    {
+        R_ItemId = Qt::UserRole + 1,
+        R_ItemPixmap,
+        R_ItemPixmapRect,
+        R_ItemName,
+        R_ItemNamePoint,
+        R_ItemType,
+        R_IsController,
+        R_IsAttachment,
+
+        R_ToolTipType,
+        R_IsMoreIDEControllersPossible,
+        R_IsMoreSATAControllersPossible,
+        R_IsMoreSCSIControllersPossible,
+        R_IsMoreFloppyControllersPossible,
+        R_IsMoreSASControllersPossible,
+        R_IsMoreUSBControllersPossible,
+        R_IsMoreNVMeControllersPossible,
+        R_IsMoreVirtioSCSIControllersPossible,
+        R_IsMoreAttachmentsPossible,
+
+        R_CtrOldName,
+        R_CtrName,
+        R_CtrType,
+        R_CtrTypes,
+        R_CtrDevices,
+        R_CtrBusType,
+        R_CtrBusTypes,
+        R_CtrPortCount,
+        R_CtrMaxPortCount,
+        R_CtrIoCache,
+
+        R_AttSlot,
+        R_AttSlots,
+        R_AttDevice,
+        R_AttMediumId,
+        R_AttIsShowDiffs,
+        R_AttIsHostDrive,
+        R_AttIsPassthrough,
+        R_AttIsTempEject,
+        R_AttIsNonRotational,
+        R_AttIsHotPluggable,
+        R_AttSize,
+        R_AttLogicalSize,
+        R_AttLocation,
+        R_AttFormat,
+        R_AttDetails,
+        R_AttUsage,
+        R_AttEncryptionPasswordID,
+
+        R_Margin,
+        R_Spacing,
+        R_IconSize,
+
+        R_HDPixmapEn,
+        R_CDPixmapEn,
+        R_FDPixmapEn,
+
+        R_HDPixmapAddEn,
+        R_HDPixmapAddDis,
+        R_CDPixmapAddEn,
+        R_CDPixmapAddDis,
+        R_FDPixmapAddEn,
+        R_FDPixmapAddDis,
+        R_HDPixmapRect,
+        R_CDPixmapRect,
+        R_FDPixmapRect
+    };
+
+    enum ToolTipType
+    {
+        DefaultToolTip  = 0,
+        ExpanderToolTip = 1,
+        HDAdderToolTip  = 2,
+        CDAdderToolTip  = 3,
+        FDAdderToolTip  = 4
+    };
+
+    StorageModel(QITreeView *pParent);
+   ~StorageModel();
+
+    int rowCount (const QModelIndex &aParent = QModelIndex()) const;
+    int columnCount (const QModelIndex &aParent = QModelIndex()) const;
+
+    QModelIndex root() const;
+    QModelIndex index (int aRow, int aColumn, const QModelIndex &aParent = QModelIndex()) const;
+    QModelIndex parent (const QModelIndex &aIndex) const;
+
+    QVariant data (const QModelIndex &aIndex, int aRole) const;
+    bool setData (const QModelIndex &aIndex, const QVariant &aValue, int aRole);
+
+    QModelIndex addController (const QString &aCtrName, KStorageBus aBusType, KStorageControllerType aCtrType);
+    void delController (const QUuid &uCtrId);
+
+    QModelIndex addAttachment (const QUuid &uCtrId, KDeviceType aDeviceType, const QUuid &uMediumId);
+    void delAttachment (const QUuid &uCtrId, const QUuid &uAttId);
+    /** Moves attachment determined by @a uAttId
+      * from controller determined by @a uCtrOldId to one determined by @a uCtrNewId. */
+    void moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, const QUuid &uCtrNewId);
+
+    void setMachineId (const QUuid &uMachineId);
+
+    void sort(int iColumn = 0, Qt::SortOrder order = Qt::AscendingOrder);
+    QModelIndex attachmentBySlot(QModelIndex controllerIndex, StorageSlot attachmentStorageSlot);
+
+    KChipsetType chipsetType() const;
+    void setChipsetType(KChipsetType type);
+
+    /** Defines configuration access level. */
+    void setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel);
+
+    void clear();
+
+    QMap<KStorageBus, int> currentControllerTypes() const;
+    QMap<KStorageBus, int> maximumControllerTypes() const;
+
+private:
+
+    Qt::ItemFlags flags (const QModelIndex &aIndex) const;
+
+    AbstractItem *mRootItem;
+
+    QPixmap mPlusPixmapEn;
+    QPixmap mPlusPixmapDis;
+
+    QPixmap mMinusPixmapEn;
+    QPixmap mMinusPixmapDis;
+
+    ToolTipType mToolTipType;
+
+    KChipsetType m_chipsetType;
+
+    /** Holds configuration access level. */
+    ConfigurationAccessLevel m_configurationAccessLevel;
+};
+Q_DECLARE_METATYPE (StorageModel::ToolTipType);
+
+
+/* Storage Delegate */
+class StorageDelegate : public QItemDelegate
+{
+    Q_OBJECT;
+
+public:
+
+    StorageDelegate (QObject *aParent);
+
+private:
+
+    void paint (QPainter *aPainter, const QStyleOptionViewItem &aOption, const QModelIndex &aIndex) const;
+};
+
+
+/**
+ * UI Medium ID Holder.
+ * Used for compliance with other storage page widgets
+ * which caching and holding corresponding information.
+ */
+class UIMediumIDHolder : public QObject
+{
+    Q_OBJECT;
+
+public:
+
+    UIMediumIDHolder(QWidget *pParent) : QObject(pParent) {}
+
+    QUuid id() const { return m_uId; }
+    void setId(const QUuid &uId) { m_uId = uId; emit sigChanged(); }
+
+    UIMediumDeviceType type() const { return m_type; }
+    void setType(UIMediumDeviceType type) { m_type = type; }
+
+    bool isNull() const { return m_uId == UIMedium().id(); }
+
+signals:
+
+    void sigChanged();
+
+private:
+
+    QUuid m_uId;
+    UIMediumDeviceType m_type;
+};
+
+
+QString compressText (const QString &aText)
+{
+    return QString ("<nobr><compact elipsis=\"end\">%1</compact></nobr>").arg (aText);
+}
+
+
+/*********************************************************************************************************************************
+*   Class UIIconPoolStorageSettings implementation.                                                                              *
+*********************************************************************************************************************************/
 
 /* static */
 UIIconPoolStorageSettings* UIIconPoolStorageSettings::m_spInstance = 0;
@@ -380,7 +886,10 @@ UIIconPoolStorageSettings::~UIIconPoolStorageSettings()
 }
 
 
-/* Abstract Item */
+/*********************************************************************************************************************************
+*   Class AbstractItem implementation.                                                                                           *
+*********************************************************************************************************************************/
+
 AbstractItem::AbstractItem(QITreeView *pParent)
     : QITreeViewItem(pParent)
     , m_pParentItem(0)
@@ -426,7 +935,10 @@ void AbstractItem::setMachineId (const QUuid &uMachineId)
 }
 
 
-/* Root Item */
+/*********************************************************************************************************************************
+*   Class RootItem implementation.                                                                                               *
+*********************************************************************************************************************************/
+
 RootItem::RootItem(QITreeView *pParent)
     : AbstractItem(pParent)
 {
@@ -504,7 +1016,10 @@ void RootItem::delChild (AbstractItem *aItem)
 }
 
 
-/* Controller Item */
+/*********************************************************************************************************************************
+*   Class ControllerItem implementation.                                                                                         *
+*********************************************************************************************************************************/
+
 ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
                                 KStorageBus aBusType, KStorageControllerType aControllerType)
     : AbstractItem (aParent)
@@ -799,7 +1314,10 @@ void ControllerItem::updatePixmaps()
 }
 
 
-/* Attachment Item */
+/*********************************************************************************************************************************
+*   Class AttachmentItem implementation.                                                                                         *
+*********************************************************************************************************************************/
+
 AttachmentItem::AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType)
     : AbstractItem (aParent)
     , mAttDeviceType (aDeviceType)
@@ -1064,7 +1582,10 @@ void AttachmentItem::delChild (AbstractItem* /* aItem */)
 }
 
 
-/* Storage model */
+/*********************************************************************************************************************************
+*   Class StorageModel implementation.                                                                                           *
+*********************************************************************************************************************************/
+
 StorageModel::StorageModel(QITreeView *pParent)
     : QAbstractItemModel(pParent)
     , mRootItem(new RootItem(pParent))
@@ -2028,7 +2549,10 @@ Qt::ItemFlags StorageModel::flags (const QModelIndex &aIndex) const
 }
 
 
-/* Storage Delegate */
+/*********************************************************************************************************************************
+*   Class StorageDelegate implementation.                                                                                        *
+*********************************************************************************************************************************/
+
 StorageDelegate::StorageDelegate (QObject *aParent)
     : QItemDelegate (aParent)
 {
@@ -2136,37 +2660,9 @@ void StorageDelegate::paint (QPainter *aPainter, const QStyleOptionViewItem &aOp
 }
 
 
-/**
- * UI Medium ID Holder.
- * Used for compliance with other storage page widgets
- * which caching and holding corresponding information.
- */
-class UIMediumIDHolder : public QObject
-{
-    Q_OBJECT;
-
-public:
-
-    UIMediumIDHolder(QWidget *pParent) : QObject(pParent) {}
-
-    QUuid id() const { return m_uId; }
-    void setId(const QUuid &uId) { m_uId = uId; emit sigChanged(); }
-
-    UIMediumDeviceType type() const { return m_type; }
-    void setType(UIMediumDeviceType type) { m_type = type; }
-
-    bool isNull() const { return m_uId == UIMedium().id(); }
-
-signals:
-
-    void sigChanged();
-
-private:
-
-    QUuid m_uId;
-    UIMediumDeviceType m_type;
-};
-
+/*********************************************************************************************************************************
+*   Class UIMachineSettingsStorage implementation.                                                                               *
+*********************************************************************************************************************************/
 
 /* static */
 const QString UIMachineSettingsStorage::ControllerMimeType = QString("application/virtualbox;value=StorageControllerID");
@@ -4676,5 +5172,6 @@ bool UIMachineSettingsStorage::isAttachmentCouldBeUpdated(const UISettingsCacheM
            && (newAttachmentData.m_attachmentType == KDeviceType_Floppy || newAttachmentData.m_attachmentType == KDeviceType_DVD)
            ;
 }
+
 
 # include "UIMachineSettingsStorage.moc"
