@@ -180,29 +180,33 @@ DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc,
  *
  * @returns VBox status code
  */
-int SharedClipboardSvcImplConnect(void)
+static int vboxClipboardConnect(void)
 {
-    int rc = VINF_SUCCESS;
-    LogRelFlowFunc(("\n"));
+    LogFlowFuncEnter();
 
     /* Sanity */
-    AssertReturn(g_ctx.client == 0, VERR_WRONG_ORDER);
+    AssertReturn(g_ctx.client   == 0,    VERR_WRONG_ORDER);
+    AssertReturn(g_ctx.pBackend == NULL, VERR_WRONG_ORDER);
+
+    int rc;
+
     g_ctx.pBackend = ClipConstructX11(&g_ctx, false);
-    if (!g_ctx.pBackend)
-        rc = VERR_NO_MEMORY;
-    if (RT_SUCCESS(rc))
-        rc = ClipStartX11(g_ctx.pBackend, false /* grab */);
-    if (RT_SUCCESS(rc))
+    if (g_ctx.pBackend)
     {
-        rc = VbglR3ClipboardConnect(&g_ctx.client);
-        if (RT_FAILURE(rc))
-            VBClLogError("Error connecting to host, rc=%Rrc\n", rc);
-        else if (!g_ctx.client)
+        rc = ClipStartX11(g_ctx.pBackend, false /* grab */);
+        if (RT_SUCCESS(rc))
         {
-            VBClLogError("Invalid client ID of 0\n");
-            rc = VERR_NOT_SUPPORTED;
+            rc = VbglR3ClipboardConnect(&g_ctx.client);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(g_ctx.client);
+            }
+            else
+                VBClLogError("Error connecting to host, rc=%Rrc\n", rc);
         }
     }
+    else
+        rc = VERR_NO_MEMORY;
 
     if (rc != VINF_SUCCESS && g_ctx.pBackend)
         ClipDestructX11(g_ctx.pBackend);
@@ -299,14 +303,18 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     RT_NOREF(ppInterface, fDaemonised);
 
     /* Initialise the guest library. */
-    int rc = SharedClipboardSvcImplConnect();
-    /* Not RT_SUCCESS: VINF_PERMISSION_DENIED is host service not present. */
-    if (rc == VINF_SUCCESS)
+    int rc = vboxClipboardConnect();
+    if (RT_SUCCESS(rc))
+    {
         rc = vboxClipboardMain();
-    if (rc == VERR_NOT_SUPPORTED)
-        rc = VINF_SUCCESS;  /* Prevent automatic restart. */
+    }
+
     if (RT_FAILURE(rc))
-        LogRelFunc(("guest clipboard service terminated abnormally: return code %Rrc\n", rc));
+        VBClLogError("Service terminated abnormally with %Rrc\n", rc);
+
+    if (rc == VERR_HGCM_SERVICE_NOT_FOUND)
+        rc = VINF_SUCCESS; /* Prevent automatic restart by daemon script if host service not available. */
+
     return rc;
 }
 
