@@ -116,6 +116,8 @@ typedef struct RTTIMERLNXSUBTIMER
             /** The start of the current run (ns).
              * This is used to calculate when the timer ought to fire the next time. */
             uint64_t                u64NextTS;
+            /** When the timer was started. */
+            uint64_t                nsStartTS;
             /** The u64NextTS in jiffies. */
             unsigned long           ulNextJiffies;
             /** Set when starting or changing the timer so that u64StartTs
@@ -344,7 +346,10 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
      */
     uint64_t u64NextTS = u64Now + u64First;
     if (!fHighRes)
+    {
         pSubTimer->u.Std.u64NextTS = u64NextTS;
+        pSubTimer->u.Std.nsStartTS = u64NextTS;
+    }
     RTTIMERLNX_LOG(("startsubtimer %p\n", pSubTimer->pParent));
 
     pSubTimer->iTick = 0;
@@ -765,7 +770,9 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
          * The first time around, we'll re-adjust the u.Std.u64NextTS to
          * try prevent some jittering if we were started at a bad time.
          */
-        const uint64_t  iTick = ++pSubTimer->iTick;
+        const uint64_t  iTick       = ++pSubTimer->iTick;
+        unsigned long   uCurJiffies = jiffies;
+        unsigned long   ulNextJiffies;
         uint64_t        u64NanoInterval;
         unsigned long   cJiffies;
         unsigned long   flFlags;
@@ -777,28 +784,49 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
         {
             pSubTimer->u.Std.fFirstAfterChg = false;
             pSubTimer->u.Std.u64NextTS      = RTTimeSystemNanoTS();
-            pSubTimer->u.Std.ulNextJiffies  = jiffies;
+            pSubTimer->u.Std.nsStartTS      = pSubTimer->u.Std.u64NextTS - u64NanoInterval * (iTick - 1);
+            pSubTimer->u.Std.ulNextJiffies  = uCurJiffies = jiffies;
         }
         spin_unlock_irqrestore(&pTimer->ChgIntLock, flFlags);
 
         pSubTimer->u.Std.u64NextTS += u64NanoInterval;
         if (cJiffies)
         {
-            pSubTimer->u.Std.ulNextJiffies += cJiffies;
-            /* Prevent overflows when the jiffies counter wraps around.
-             * Special thanks to Ken Preslan for helping debugging! */
-            while (time_before(pSubTimer->u.Std.ulNextJiffies, jiffies))
+            ulNextJiffies = pSubTimer->u.Std.ulNextJiffies + cJiffies;
+            pSubTimer->u.Std.ulNextJiffies = ulNextJiffies;
+            if (time_after(ulNextJiffies, uCurJiffies))
+            { /* likely */ }
+            else
             {
-                pSubTimer->u.Std.ulNextJiffies += cJiffies;
-                pSubTimer->u.Std.u64NextTS     += u64NanoInterval;
+                unsigned long  cJiffiesBehind = uCurJiffies - ulNextJiffies;
+                if (cJiffies >= 2)
+                    ulNextJiffies = uCurJiffies + cJiffies / 2;
+                else
+                    ulNextJiffies = uCurJiffies + 1;
+                if (cJiffiesBehind >= HZ / 4) /* Conside if we're lagging too far behind.  Screw the u64NextTS member. */
+                    pSubTimer->u.Std.ulNextJiffies = ulNextJiffies;
+                /*else: Don't update u.Std.ulNextJiffies so we can continue catching up in the next tick. */
             }
         }
         else
         {
             const uint64_t u64NanoTS = RTTimeSystemNanoTS();
-            while (pSubTimer->u.Std.u64NextTS < u64NanoTS)
-                pSubTimer->u.Std.u64NextTS += u64NanoInterval;
-            pSubTimer->u.Std.ulNextJiffies = jiffies + rtTimerLnxNanoToJiffies(pSubTimer->u.Std.u64NextTS - u64NanoTS);
+            const int64_t  cNsBehind = u64NanoTS - pSubTimer->u.Std.u64NextTS;
+            if (cNsBehind < 0)
+                ulNextJiffies = uCurJiffies + rtTimerLnxNanoToJiffies(pSubTimer->u.Std.u64NextTS - u64NanoTS);
+            else if (u64NanoInterval >= RT_NS_1SEC_64 * 2 / HZ)
+            {
+                ulNextJiffies = uCurJiffies + rtTimerLnxNanoToJiffies(u64NanoInterval / 2);
+                if (cNsBehind >= RT_NS_1SEC_64 / HZ / 4) /* Conside if we're lagging too far behind. */
+                    pSubTimer->u.Std.u64NextTS = u64NanoTS + u64NanoInterval / 2;
+            }
+            else
+            {
+                ulNextJiffies = uCurJiffies + 1;
+                if (cNsBehind >= RT_NS_1SEC_64 / HZ / 4) /* Conside if we're lagging too far behind. */
+                    pSubTimer->u.Std.u64NextTS = u64NanoTS + RT_NS_1SEC_64 / HZ;
+            }
+            pSubTimer->u.Std.ulNextJiffies = ulNextJiffies;
         }
 
         /*
@@ -815,14 +843,14 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
             if (pTimer->fSpecificCpu || pTimer->fAllCpus)
             {
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
-                mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
+                mod_timer(&pSubTimer->u.Std.LnxTimer, ulNextJiffies);
 # else
-                mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
+                mod_timer_pinned(&pSubTimer->u.Std.LnxTimer, ulNextJiffies);
 # endif
             }
             else
 #endif
-                mod_timer(&pSubTimer->u.Std.LnxTimer, pSubTimer->u.Std.ulNextJiffies);
+                mod_timer(&pSubTimer->u.Std.LnxTimer, ulNextJiffies);
             return;
         }
     }
@@ -1418,8 +1446,8 @@ RTDECL(int) RTTimerChangeInterval(PRTTIMER pTimer, uint64_t u64NanoInterval)
     if (pTimer->cCpus > 1)
         return VERR_NOT_SUPPORTED;
 
-    cJiffies = u64NanoInterval / RTTimerGetSystemGranularity();
-    if (cJiffies * RTTimerGetSystemGranularity() != u64NanoInterval)
+    cJiffies = u64NanoInterval / (RT_NS_1SEC / HZ);
+    if (cJiffies * (RT_NS_1SEC / HZ) != u64NanoInterval)
         cJiffies = 0;
 
     spin_lock_irqsave(&pTimer->ChgIntLock, flFlags);
@@ -1579,8 +1607,8 @@ RTDECL(int) RTTimerCreateEx(PRTTIMER *ppTimer, uint64_t u64NanoInterval, uint32_
     pTimer->pfnTimer        = pfnTimer;
     pTimer->pvUser          = pvUser;
     pTimer->u64NanoInterval = u64NanoInterval;
-    pTimer->cJiffies        = u64NanoInterval / RTTimerGetSystemGranularity();
-    if (pTimer->cJiffies * RTTimerGetSystemGranularity() != u64NanoInterval)
+    pTimer->cJiffies        = u64NanoInterval / (RT_NS_1SEC / HZ);
+    if (pTimer->cJiffies * (RT_NS_1SEC / HZ) != u64NanoInterval)
         pTimer->cJiffies    = 0;
     spin_lock_init(&pTimer->ChgIntLock);
 
