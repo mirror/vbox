@@ -359,7 +359,7 @@ void clipQueueToEventThread(CLIPBACKEND *pCtx,
     ssize_t cbWritten = write(pCtx->wakeupPipeWrite, WAKE_UP_STRING, WAKE_UP_STRING_LEN);
     NOREF(cbWritten);
 #else
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     testQueueToEventThread(proc, client_data);
 #endif
 }
@@ -592,7 +592,7 @@ static void clipConvertX11Targets(Widget widget, XtPointer pClient,
                                   XtPointer pValue, long unsigned int *pcLen,
                                   int *piFormat)
 {
-    RT_NOREF1(piFormat);
+    RT_NOREF(piFormat);
     CLIPBACKEND *pCtx = reinterpret_cast<CLIPBACKEND *>(pClient);
     Atom *pAtoms = (Atom *)pValue;
     unsigned i, j;
@@ -614,7 +614,7 @@ static void clipConvertX11Targets(Widget widget, XtPointer pClient,
                 XFree(pszName);
             }
             else
-                LogRel2(("%s: found empty target.\n", __FUNCTION__));
+                LogRel2(("%s: found empty target\n", __FUNCTION__));
     }
 #endif
     if (pFormats)
@@ -717,7 +717,7 @@ void clipPeekEventAndDoXFixesHandling(CLIPBACKEND *pCtx)
  */
 static DECLCALLBACK(int) clipEventThread(RTTHREAD hThreadSelf, void *pvUser)
 {
-    RT_NOREF1(hThreadSelf);
+    RT_NOREF(hThreadSelf);
     LogRel(("Shared clipboard: Starting shared clipboard thread\n"));
 
     CLIPBACKEND *pCtx = (CLIPBACKEND *)pvUser;
@@ -1210,7 +1210,7 @@ static int clipWinTxtToUtf8ForX11CB(Display *pDisplay, PRTUTF16 pwszSrc,
                                     unsigned long *pcLenReturn,
                                     int *piFormatReturn)
 {
-    RT_NOREF2(pDisplay, pcLenReturn);
+    RT_NOREF(pDisplay, pcLenReturn);
 
     /* This may slightly overestimate the space needed. */
     size_t cbDest = 0;
@@ -1260,7 +1260,7 @@ static int clipWinHTMLToUtf8ForX11CB(Display *pDisplay, const char *pszSrc,
                                     unsigned long *pcLenReturn,
                                     int *piFormatReturn)
 {
-    RT_NOREF2(pDisplay, pValReturn);
+    RT_NOREF(pDisplay, pValReturn);
 
     /* This may slightly overestimate the space needed. */
     LogRelFlowFunc(("source: %s", pszSrc));
@@ -1913,7 +1913,7 @@ static void cbConvertX11CB(Widget widget, XtPointer pClient,
                            XtPointer pvSrc, long unsigned int *pcLen,
                            int *piFormat)
 {
-    RT_NOREF1(widget);
+    RT_NOREF(widget);
     if (*atomType == XT_CONVERT_FAIL) /* Xt timeout */
         clipConvertX11CB(pClient, NULL, 0);
     else
@@ -2121,7 +2121,7 @@ static int clipSetVBoxUtf16(CLIPBACKEND *pCtx, int retval,
 /* Return the data in the simulated VBox clipboard. */
 int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
-    RT_NOREF2(pCtx, u32Format);
+    RT_NOREF(pCtx, u32Format);
     *pcb = g_vboxDatacb;
     if (g_vboxDatapv != NULL)
     {
@@ -2162,17 +2162,17 @@ Display *XtOpenDisplay(XtAppContext app_context,
 Widget XtVaAppCreateShell(_Xconst _XtString application_name,  _Xconst _XtString application_class,
                           WidgetClass widget_class, Display *display, ...)
 {
-    RT_NOREF4(application_name, application_class, widget_class, display);
+    RT_NOREF(application_name, application_class, widget_class, display);
     return TEST_WIDGET;
 }
 
-void XtSetMappedWhenManaged(Widget widget, _XtBoolean mapped_when_managed) { RT_NOREF2(widget, mapped_when_managed); }
+void XtSetMappedWhenManaged(Widget widget, _XtBoolean mapped_when_managed) { RT_NOREF(widget, mapped_when_managed); }
 
 void XtRealizeWidget(Widget widget) { NOREF(widget); }
 
 XtInputId XtAppAddInput(XtAppContext app_context, int source, XtPointer condition, XtInputCallbackProc proc, XtPointer closure)
 {
-    RT_NOREF5(app_context, source, condition, proc, closure);
+    RT_NOREF(app_context, source, condition, proc, closure);
     return 0xffff;
 }
 
@@ -2215,7 +2215,7 @@ static int g_selFormat = 0;
 
 void testRequestData(CLIPBACKEND *pCtx, CLIPX11FORMAT target, void *closure)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     unsigned long count = 0;
     int format = 0;
     if (target != g_selTargets[0])
@@ -2242,7 +2242,7 @@ static uint32_t g_fX11Formats = 0;
 
 void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     g_fX11Formats = u32Formats;
 }
 
@@ -2271,7 +2271,7 @@ Boolean XtOwnSelection(Widget widget, Atom selection, Time time,
                        XtLoseSelectionProc lose,
                        XtSelectionDoneProc done)
 {
-    RT_NOREF2(widget, time);
+    RT_NOREF(widget, time);
     if (selection != XInternAtom(NULL, "CLIPBOARD", 0))
         return True;  /* We don't really care about this. */
     g_ownsSel = true;  /* Always succeed. */
@@ -2283,7 +2283,7 @@ Boolean XtOwnSelection(Widget widget, Atom selection, Time time,
 
 void XtDisownSelection(Widget widget, Atom selection, Time time)
 {
-    RT_NOREF3(widget, time, selection);
+    RT_NOREF(widget, time, selection);
     g_ownsSel = false;
     g_pfnSelConvert = NULL;
     g_pfnSelLose = NULL;
@@ -2348,7 +2348,7 @@ char *XtMalloc(Cardinal size) { return (char *) RTMemAlloc(size); }
 
 char *XGetAtomName(Display *display, Atom atom)
 {
-    RT_NOREF1(display);
+    RT_NOREF(display);
     AssertReturn((unsigned)atom < RT_ELEMENTS(g_aFormats) + 1, NULL);
     const char *pcszName = NULL;
     if (atom < 0x1000)
@@ -2390,7 +2390,7 @@ static char g_completedBuf[MAX_BUF_SIZE];
 
 void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     if (cb <= MAX_BUF_SIZE)
     {
         g_completedRC = rc;
@@ -2543,7 +2543,7 @@ static void testLatin1FromX11(RTTEST hTest, CLIPBACKEND *pCtx,
 
 static void testStringFromVBox(RTTEST hTest, CLIPBACKEND *pCtx, const char *pcszTarget, Atom typeExp,  const char *valueExp)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     bool retval = false;
     Atom type;
     XtPointer value = NULL;
@@ -2584,7 +2584,7 @@ static void testNoX11(CLIPBACKEND *pCtx, const char *pcszTestCtx)
 
 static void testStringFromVBoxFailed(RTTEST hTest, CLIPBACKEND *pCtx, const char *pcszTarget)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     Atom type;
     XtPointer value = NULL;
     unsigned long length;
@@ -2599,7 +2599,7 @@ static void testStringFromVBoxFailed(RTTEST hTest, CLIPBACKEND *pCtx, const char
 
 static void testNoSelectionOwnership(CLIPBACKEND *pCtx, const char *pcszTestCtx)
 {
-    RT_NOREF1(pCtx);
+    RT_NOREF(pCtx);
     RTTESTI_CHECK_MSG(!g_ownsSel, ("context: %s\n", pcszTestCtx));
 }
 
@@ -2886,18 +2886,18 @@ int main()
 
 int ClipRequestDataForX11(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
-    RT_NOREF4(pCtx, u32Format, ppv, pcb);
+    RT_NOREF(pCtx, u32Format, ppv, pcb);
     return VERR_NO_DATA;
 }
 
 void ClipReportX11Formats(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
-    RT_NOREF2(pCtx, u32Formats);
+    RT_NOREF(pCtx, u32Formats);
 }
 
 void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
-    RT_NOREF5(pCtx, rc, pReq, pv, cb);
+    RT_NOREF(pCtx, rc, pReq, pv, cb);
 }
 
 int main()

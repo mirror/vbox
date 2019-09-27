@@ -307,7 +307,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
 
 static void cleanup(struct VBCLSERVICE **ppInterface)
 {
-    NOREF(ppInterface);
+    RT_NOREF(ppInterface);
     VbglR3Term();
 }
 
