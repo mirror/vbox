@@ -1337,7 +1337,7 @@ int DragInstance::onX11SelectionRequest(const XEvent &e)
                                  xAtomToString(pReq->target).c_str(),
                                  pReq->requestor,
                                  gX11->xErrorToString(xRc).c_str()));
-                    NOREF(xRc);
+                    RT_NOREF(xRc);
                 }
             }
             /* Anything else. */
@@ -2341,7 +2341,7 @@ int DragInstance::ghDropped(const RTCString &strFormat, VBOXDNDACTION dndActionR
     if (RT_FAILURE(rc))
     {
         int rc2 = VbglR3DnDGHSendError(&m_dndCtx, rc);
-        LogFlowThisFunc(("Sending error %Rrc to host resulted in %Rrc\n", rc, rc2)); NOREF(rc2);
+        LogFlowThisFunc(("Sending error %Rrc to host resulted in %Rrc\n", rc, rc2)); RT_NOREF(rc2);
         /* This is not fatal for us, just ignore. */
     }
 
@@ -2552,7 +2552,7 @@ int DragInstance::proxyWinShow(int *piRootX /* = NULL */, int *piRootY /* = NULL
                                     &iRootX, &iRootY, &iChildX, &iChildY, &iMask);
 
     LogFlowThisFunc(("fInRootWnd=%RTbool, wndRoot=%RU32, wndChild=%RU32, iRootX=%d, iRootY=%d\n",
-                     RT_BOOL(fInRootWnd), wndRoot, wndChild, iRootX, iRootY)); NOREF(fInRootWnd);
+                     RT_BOOL(fInRootWnd), wndRoot, wndChild, iRootX, iRootY)); RT_NOREF(fInRootWnd);
 
     if (piRootX)
         *piRootX = iRootX;

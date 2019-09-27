@@ -64,7 +64,7 @@ DECLINLINE(int) VBClServiceDefaultHandler(struct VBCLSERVICE **pSelf)
  * process/X11 exits. */
 DECLINLINE(void) VBClServiceDefaultCleanup(struct VBCLSERVICE **ppInterface)
 {
-    NOREF(ppInterface);
+    RT_NOREF(ppInterface);
 }
 
 extern struct VBCLSERVICE **VBClGetClipboardService();

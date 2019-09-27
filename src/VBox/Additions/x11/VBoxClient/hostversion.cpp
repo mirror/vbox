@@ -128,7 +128,7 @@ static int run(struct VBCLSERVICE **ppInterface, bool fDaemonised)
     int rc;
     LogFlowFunc(("\n"));
 
-    NOREF(ppInterface);
+    RT_NOREF(ppInterface);
 
     /* Because we need desktop notifications to be displayed, wait
      * some time to make the desktop environment load (as a work around). */
