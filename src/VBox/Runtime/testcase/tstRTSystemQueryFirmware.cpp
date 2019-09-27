@@ -44,36 +44,44 @@ int main()
         return rcExit;
     RTTestBanner(hTest);
 
+    /*
+     * RTSystemFirmwareQueryType
+     */
     RTTestSub(hTest, "RTSystemFirmwareQueryType");
-    RTSYSFWTYPE fwType;
-    int rc = RTSystemFirmwareQueryType(&fwType);
+    RTSYSFWTYPE enmType = (RTSYSFWTYPE)-42;
+    int rc = RTSystemFirmwareQueryType(&enmType);
     if (RT_SUCCESS(rc))
     {
-        switch (fwType)
+        switch (enmType)
         {
             case RTSYSFWTYPE_BIOS:
-                RTTestPrintf(hTest, RTTESTLVL_INFO, "Firmware type: BIOS (Legacy)\n");
+                RTTestPrintf(hTest, RTTESTLVL_INFO, "  Firmware type: BIOS (Legacy)\n");
                 break;
             case RTSYSFWTYPE_UEFI:
-                RTTestPrintf(hTest, RTTESTLVL_INFO, "Firmware type: UEFI\n");
+                RTTestPrintf(hTest, RTTESTLVL_INFO, "  Firmware type: UEFI\n");
                 break;
             case RTSYSFWTYPE_UNKNOWN: /* Do not fail on not-implemented platforms. */
-                RT_FALL_THROUGH();
+                RTTestPrintf(hTest, RTTESTLVL_INFO, "  Firmware type: Unknown\n");
+                break;
             default:
-                RTTestPrintf(hTest, RTTESTLVL_INFO, "Unknown firmware type\n");
+                RTTestFailed(hTest, "RTSystemFirmwareQueryType return invalid type: %d (%#x)", enmType);
                 break;
         }
     }
     else if (rc != VERR_NOT_SUPPORTED)
-        RTTestIFailed("RTSystemFirmwareQueryType failed: %Rrc", rc);
+        RTTestFailed(hTest, "RTSystemFirmwareQueryType failed: %Rrc", rc);
 
+    /*
+     * RTSystemFirmwareQueryValue
+     */
     RTTestSub(hTest, "RTSystemFirmwareQueryValue");
     RTSYSFWVALUE Value;
     rc = RTSystemFirmwareQueryValue(RTSYSFWPROP_SECURE_BOOT, &Value);
     if (RT_SUCCESS(rc))
     {
         RTTEST_CHECK(hTest, Value.enmType == RTSYSFWVALUETYPE_BOOLEAN);
-        RTTestPrintf(hTest, RTTESTLVL_INFO, "Secure Boot enabled: %RTbool\n", Value.u.fVal);
+        RTTestPrintf(hTest, RTTESTLVL_INFO, "  Secure Boot:   %s\n", Value.u.fVal ? "enabled" : "disabled");
+        RTSystemFirmwareFreeValue(&Value);
         RTSystemFirmwareFreeValue(&Value);
     }
     else if (rc != VERR_NOT_SUPPORTED && rc != VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY)

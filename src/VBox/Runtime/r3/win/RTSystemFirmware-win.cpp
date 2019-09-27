@@ -66,7 +66,7 @@ WINBASEAPI BOOL WINAPI GetFirmwareType(PFIRMWARE_TYPE);
 *********************************************************************************************************************************/
 /** Defines the UEFI Globals UUID. */
 #define VBOX_UEFI_UUID_GLOBALS L"{8BE4DF61-93CA-11D2-AA0D-00E098032B8C}"
-/** Defines an UEFI dummy UUID. */
+/** Defines an UEFI dummy UUID, see MSDN docs of the API. */
 #define VBOX_UEFI_UUID_DUMMY   L"{00000000-0000-0000-0000-000000000000}"
 
 
@@ -157,25 +157,16 @@ RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmFirmwareType)
     {
         rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
 
-        uint8_t fEnabled = 0; /** @todo This type doesn't make sense to bird. */
-        DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(L"", VBOX_UEFI_UUID_GLOBALS, &fEnabled, sizeof(fEnabled));
-        if (cbRet)
-        {
-            Assert(cbRet == sizeof(fEnabled));
-            *penmFirmwareType = fEnabled ? RTSYSFWTYPE_UEFI : RTSYSFWTYPE_BIOS;
-            rc = VINF_SUCCESS;
-        }
-        else
-        {
-            DWORD dwErr = GetLastError();
-            if (dwErr == ERROR_INVALID_FUNCTION)
-            {
-                *penmFirmwareType = RTSYSFWTYPE_BIOS;
-                rc = VINF_SUCCESS;
-            }
-            else
-                rc = RTErrConvertFromWin32(dwErr);
-        }
+        /* On a non-UEFI system (or such a system in legacy boot mode), we will get
+           back ERROR_INVALID_FUNCTION when querying any firmware variable.  While on a
+           UEFI system we'll typically get ERROR_ACCESS_DENIED or similar as the dummy
+           is a non-exising dummy namespace.  See the API docs. */
+        SetLastError(0);
+        uint8_t abWhatever[64];
+        DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(L"", VBOX_UEFI_UUID_DUMMY, abWhatever, sizeof(abWhatever));
+        DWORD dwErr = GetLastError();
+        *penmFirmwareType = cbRet != 0 || dwErr != ERROR_INVALID_FUNCTION ? RTSYSFWTYPE_UEFI : RTSYSFWTYPE_BIOS;
+        rc = VINF_SUCCESS;
     }
     return rc;
 }
@@ -198,17 +189,18 @@ RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue
     switch (enmProp)
     {
         case RTSYSFWPROP_SECURE_BOOT:
-        {
             pwszName = L"SecureBoot";
             pValue->enmType = RTSYSFWVALUETYPE_BOOLEAN;
             break;
-        }
 
         default:
             AssertReturn(enmProp > RTSYSFWPROP_INVALID && enmProp < RTSYSFWPROP_END, VERR_INVALID_PARAMETER);
             return VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY;
     }
 
+    /*
+     * Do type specific query.
+     */
     if (!g_pfnGetFirmwareEnvironmentVariableW)
         return VERR_NOT_SUPPORTED;
     rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
