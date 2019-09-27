@@ -9647,6 +9647,17 @@ VMMR3DECL(const char *) SSMR3HandleHostOSAndArch(PSSMHANDLE pSSM)
 }
 
 
+#ifdef DEBUG
+/**
+ * Gets current data offset, relative to the start of the unit - only for debugging
+ */
+VMMR3DECL(uint64_t) SSMR3HandleTellInUnit(PSSMHANDLE pSSM)
+{
+    return ssmR3StrmTell(&pSSM->Strm) - pSSM->offUnitUser;
+}
+#endif
+
+
 #ifndef SSM_STANDALONE
 /**
  * Asynchronously cancels the current SSM operation ASAP.

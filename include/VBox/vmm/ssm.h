@@ -1216,6 +1216,9 @@ VMMR3DECL(uint32_t)     SSMR3HandleVersion(PSSMHANDLE pSSM);
 VMMR3DECL(const char *) SSMR3HandleHostOSAndArch(PSSMHANDLE pSSM);
 VMMR3_INT_DECL(int)     SSMR3HandleSetGCPtrSize(PSSMHANDLE pSSM, unsigned cbGCPtr);
 VMMR3DECL(void)         SSMR3HandleReportLivePercent(PSSMHANDLE pSSM, unsigned uPercent);
+#ifdef DEBUG
+VMMR3DECL(uint64_t)     SSMR3HandleTellInUnit(PSSMHANDLE pSSM);
+#endif
 VMMR3DECL(int)          SSMR3Cancel(PUVM pUVM);
 
 
