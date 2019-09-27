@@ -1815,6 +1815,32 @@ static DECLCALLBACK(int) iomR3IOPortInfoOneRC(PAVLROIOPORTNODECORE pNode, void *
  */
 static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
+    /* No locking needed here as registerations are only happening during VMSTATE_CREATING. */
+    pHlp->pfnPrintf(pHlp,
+                    "I/O port registrations: %u (%u allocated)\n"
+                    " ## Ctx    Ports Mapping   PCI    Description\n",
+                    pVM->iom.s.cIoPortRegs, pVM->iom.s.cIoPortAlloc);
+    PIOMIOPORTENTRYR3 paRegs = pVM->iom.s.paIoPortRegs;
+    for (uint32_t i = 0; i < pVM->iom.s.cIoPortRegs; i++)
+    {
+        const char * const pszRing = paRegs[i].fRing0 ? paRegs[i].fRawMode ? "+0+C" : "+0  "
+                                   : paRegs[i].fRawMode ? "+C  " : "    ";
+        if (paRegs[i].fMapped && paRegs[i].pPciDev)
+            pHlp->pfnPrintf(pHlp, "%3u R3%s %04x  %04x-%04x pci%u/%u %s\n", paRegs[i].idxSelf, pszRing, paRegs[i].cPorts,
+                            paRegs[i].uPort, paRegs[i].uPort + paRegs[i].cPorts - 1,
+                            paRegs[i].pPciDev->idxSubDev, paRegs[i].iPciRegion, paRegs[i].pszDesc);
+        else if (paRegs[i].fMapped && !paRegs[i].pPciDev)
+            pHlp->pfnPrintf(pHlp, "%3u R3%s %04x  %04x-%04x        %s\n", paRegs[i].idxSelf, pszRing, paRegs[i].cPorts,
+                            paRegs[i].uPort, paRegs[i].uPort + paRegs[i].cPorts - 1, paRegs[i].pszDesc);
+        else if (paRegs[i].pPciDev)
+            pHlp->pfnPrintf(pHlp, "%3u R3%s %04x  unmapped  pci%u/%u %s\n", paRegs[i].idxSelf, pszRing, paRegs[i].cPorts,
+                            paRegs[i].pPciDev->idxSubDev, paRegs[i].iPciRegion, paRegs[i].pszDesc);
+        else
+            pHlp->pfnPrintf(pHlp, "%3u R3%s %04x  unmapped         %s\n",
+                            paRegs[i].idxSelf, pszRing, paRegs[i].cPorts, paRegs[i].pszDesc);
+    }
+
+    /* Legacy registration: */
     NOREF(pszArgs);
     pHlp->pfnPrintf(pHlp,
                     "I/O Port R3 ranges (pVM=%p)\n"
@@ -1824,7 +1850,9 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     sizeof(RTHCPTR) * 2,      "In              ",
                     sizeof(RTHCPTR) * 2,      "Out             ",
                     sizeof(RTHCPTR) * 2,      "pvUser          ");
+    IOM_LOCK_SHARED(pVM);
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeR3, true, iomR3IOPortInfoOneR3, (void *)pHlp);
+    IOM_UNLOCK_SHARED(pVM);
 
     pHlp->pfnPrintf(pHlp,
                     "I/O Port R0 ranges (pVM=%p)\n"
@@ -1834,19 +1862,9 @@ static DECLCALLBACK(void) iomR3IOPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const cha
                     sizeof(RTHCPTR) * 2,      "In              ",
                     sizeof(RTHCPTR) * 2,      "Out             ",
                     sizeof(RTHCPTR) * 2,      "pvUser          ");
+    IOM_LOCK_SHARED(pVM);
     RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeR0, true, iomR3IOPortInfoOneR3, (void *)pHlp);
-
-#if 0
-    pHlp->pfnPrintf(pHlp,
-                    "I/O Port GC ranges (pVM=%p)\n"
-                    "Range     %.*s %.*s %.*s %.*s Description\n",
-                    pVM,
-                    sizeof(RTRCPTR) * 2,      "pDevIns         ",
-                    sizeof(RTRCPTR) * 2,      "In              ",
-                    sizeof(RTRCPTR) * 2,      "Out             ",
-                    sizeof(RTRCPTR) * 2,      "pvUser          ");
-    RTAvlroIOPortDoWithAll(&pVM->iom.s.pTreesR3->IOPortTreeRC, true, iomR3IOPortInfoOneRC, (void *)pHlp);
-#endif
+    IOM_UNLOCK_SHARED(pVM);
 }
 
 

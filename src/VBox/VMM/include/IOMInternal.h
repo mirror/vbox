@@ -220,9 +220,15 @@ typedef struct IOMIOPORTENTRYR3
     /** Set if mapped, clear if not.
      * Only updated when critsect is held exclusively.   */
     bool                                fMapped;
+    /** Set if there is an ring-0 entry too. */
+    bool                                fRing0;
+    /** Set if there is an raw-mode entry too. */
+    bool                                fRawMode;
+    bool                                fUnused;
     /** Same as the handle index. */
     uint16_t                            idxSelf;
 } IOMIOPORTENTRYR3;
+AssertCompileSize(IOMIOPORTENTRYR3, 9 * sizeof(RTR3PTR) + 16);
 /** Pointer to a ring-3 I/O port handle table entry. */
 typedef IOMIOPORTENTRYR3 *PIOMIOPORTENTRYR3;
 /** Pointer to a const ring-3 I/O port handle table entry. */

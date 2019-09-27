@@ -130,6 +130,9 @@ VMMR0_INT_DECL(int)  IOMR0IoPortSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMI
 #else
     pGVM->iomr0.s.paIoPortRegs[hIoPorts].idxStats           = UINT16_MAX;
 #endif
+
+    pGVM->iomr0.s.paIoPortRing3Regs[hIoPorts].fRing0 = true;
+
     return VINF_SUCCESS;
 }
 
