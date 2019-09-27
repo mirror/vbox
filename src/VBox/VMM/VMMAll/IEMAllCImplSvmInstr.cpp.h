@@ -352,7 +352,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmexit(PVMCPUCC pVCpu, uint64_t uExitCode, uint64_
  * execution in the guest.
  *
  * @returns Strict VBox status code (i.e. informational status codes too).
- * @retval  VINF_SUCCESS successully executed VMRUN and entered nested-guest
+ * @retval  VINF_SUCCESS successfully executed VMRUN and entered nested-guest
  *          code execution.
  * @retval  VINF_SVM_VMEXIT when executing VMRUN causes a \#VMEXIT
  *          (SVM_EXIT_INVALID most likely).
@@ -864,7 +864,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmVmrun(PVMCPUCC pVCpu, uint8_t cbInstr, RTGCPHYS GC
  * @retval  VINF_SVM_VMEXIT if the intercept is active and the \#VMEXIT occurred
  *          successfully.
  * @retval  VERR_SVM_VMEXIT_FAILED if the intercept is active and the \#VMEXIT
- *          failed and a shutdown needs to be initiated for the geust.
+ *          failed and a shutdown needs to be initiated for the guest.
  *
  * @returns VBox strict status code.
  * @param   pVCpu       The cross context virtual CPU structure of the calling thread.
@@ -965,7 +965,7 @@ IEM_STATIC VBOXSTRICTRC iemHandleSvmEventIntercept(PVMCPUCC pVCpu, uint8_t u8Vec
  * @retval  VINF_SVM_VMEXIT if the intercept is active and the \#VMEXIT occurred
  *          successfully.
  * @retval  VERR_SVM_VMEXIT_FAILED if the intercept is active and the \#VMEXIT
- *          failed and a shutdown needs to be initiated for the geust.
+ *          failed and a shutdown needs to be initiated for the guest.
  *
  * @returns VBox strict status code.
  * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
@@ -1015,7 +1015,7 @@ IEM_STATIC VBOXSTRICTRC iemSvmHandleIOIntercept(PVMCPUCC pVCpu, uint16_t u16Port
  * @retval  VINF_SVM_VMEXIT if the intercept is active and the \#VMEXIT occurred
  *          successfully.
  * @retval  VERR_SVM_VMEXIT_FAILED if the intercept is active and the \#VMEXIT
- *          failed and a shutdown needs to be initiated for the geust.
+ *          failed and a shutdown needs to be initiated for the guest.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   idMsr       The MSR being accessed in the nested-guest.
@@ -1419,7 +1419,7 @@ IEM_CIMPL_DEF_0(iemCImpl_vmmcall)
         int rc = HMHCMaybeMovTprSvmHypercall(pVM, pVCpu);
         if (RT_SUCCESS(rc))
         {
-            Log(("vmmcall: MovTrp\n"));
+            Log(("vmmcall: MovTpr\n"));
             return VINF_SUCCESS;
         }
     }
