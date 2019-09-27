@@ -249,10 +249,6 @@ int main(int argc, char *argv[])
     if (RT_FAILURE(rc))
         return RTMsgInitFailure(rc);
 
-    rc = VbglR3InitUser();
-    if (RT_FAILURE(rc))
-        return RTMsgErrorExitFailure("VbglR3InitUser failed: %Rrc", rc);
-
     /* This should never be called twice in one process - in fact one Display
      * object should probably never be used from multiple threads anyway. */
     if (!XInitThreads())
@@ -274,14 +270,6 @@ int main(int argc, char *argv[])
             || !strcmp(argv[i], "-d")
             || !strcmp(argv[i], "--nodaemon"))
         {
-            /* If the user is running in "no daemon" mode anyway, send critical
-             * logging to stdout as well. */
-            PRTLOGGER pReleaseLog = RTLogRelGetDefaultInstance();
-            if (pReleaseLog)
-                rc = RTLogDestinations(pReleaseLog, "stdout");
-            if (pReleaseLog && RT_FAILURE(rc))
-                return RTMsgErrorExitFailure("failed to redivert error output, rc=%Rrc", rc);
-
             fDaemonise = false;
             if (   !strcmp(argv[i], "-f")
                 || !strcmp(argv[i], "--foreground"))
@@ -358,6 +346,23 @@ int main(int argc, char *argv[])
     {
         RTMsgError("No service specified. Quitting because nothing to do!");
         return RTEXITCODE_SYNTAX;
+    }
+
+    /* Initialize VbglR3 before we do anything else with the logger. */
+    rc = VbglR3InitUser();
+    if (RT_FAILURE(rc))
+        VBClFatalError(("VbglR3InitUser failed: %Rrc", rc));
+
+    if (!fDaemonise)
+    {
+        /* If the user is running in "no daemon" mode, send critical logging to stdout as well. */
+        PRTLOGGER pReleaseLog = RTLogRelGetDefaultInstance();
+        if (pReleaseLog)
+        {
+            rc = RTLogDestinations(pReleaseLog, "stdout");
+            if (RT_FAILURE(rc))
+                return RTMsgErrorExitFailure("Failed to redivert error output, rc=%Rrc", rc);
+        }
     }
 
     rc = RTCritSectInit(&g_critSect);
