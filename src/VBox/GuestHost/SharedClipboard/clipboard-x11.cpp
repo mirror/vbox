@@ -2028,8 +2028,7 @@ static void vboxClipboardReadX11Worker(void *pUserData,
  * @param  pcbActual Where to write the actual size of the written data
  * @note   We allocate a request structure which must be freed by the worker
  */
-DECLCALLBACK(int) ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format,
-                                         CLIPREADCBREQ *pReq)
+int ClipRequestDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format, CLIPREADCBREQ *pReq)
 {
     /*
      * Immediately return if we are not connected to the X server.
