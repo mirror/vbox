@@ -1151,6 +1151,8 @@ static int ich9pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
                 SSMR3PutU32(pSSM, pDev->Int.s.cbMsixRegion);
                 SSMR3PutMem(pSSM, pDev->abMsixState, pDev->Int.s.cbMsixRegion);
             }
+            else
+                SSMR3PutU32(pSSM, 0);
 
             /* Save the type an size of all the regions. */
             for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
@@ -1649,20 +1651,20 @@ static int ich9pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHAND
         AssertRCReturn(rc, rc);
 
         /* Load MSI-X page state */
-        if (u.DevTmp.Int.s.u8MsixCapOffset != 0)
+        uint32_t cbMsixState = u.DevTmp.Int.s.u8MsixCapOffset != 0 ? _4K : 0;
+        if (uVersion >= VBOX_ICH9PCI_SAVED_STATE_VERSION_4KB_CFG_SPACE)
         {
-            uint32_t cbMsixState = _4K;
-            if (uVersion >= VBOX_ICH9PCI_SAVED_STATE_VERSION_4KB_CFG_SPACE)
-            {
-                rc = SSMR3GetU32(pSSM, &cbMsixState);
-                AssertRCReturn(rc, rc);
-                if (   cbMsixState > (uint32_t)(pDev ? pDev->cbMsixState : _32K + _16K)
-                    || cbMsixState > sizeof(u) - RT_UOFFSETOF(PDMPCIDEV, abMsixState))
-                    return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
-                                             "cbMsixState=%#RX32, expected at most RT_MIN(%#x, %#zx)",
-                                             cbMsixState, (pDev ? pDev->cbMsixState : _32K + _16K),
-                                             sizeof(u) - RT_UOFFSETOF(PDMPCIDEV, abMsixState));
-            }
+            rc = SSMR3GetU32(pSSM, &cbMsixState);
+            AssertRCReturn(rc, rc);
+        }
+        if (cbMsixState)
+        {
+            if (   cbMsixState > (uint32_t)(pDev ? pDev->cbMsixState : _32K + _16K)
+                || cbMsixState > sizeof(u) - RT_UOFFSETOF(PDMPCIDEV, abMsixState))
+                return SSMR3SetLoadError(pSSM, VERR_SSM_DATA_UNIT_FORMAT_CHANGED, RT_SRC_POS,
+                                         "cbMsixState=%#RX32, expected at most RT_MIN(%#x, %#zx)",
+                                         cbMsixState, (pDev ? pDev->cbMsixState : _32K + _16K),
+                                         sizeof(u) - RT_UOFFSETOF(PDMPCIDEV, abMsixState));
             rc = SSMR3GetMem(pSSM, u.DevTmp.abMsixState, cbMsixState);
             AssertRCReturn(rc, rc);
         }
