@@ -149,13 +149,13 @@ enum PixmapType
     MaxIndex
 };
 
-/* Abstract Controller Type */
-class SHARED_LIBRARY_STUFF AbstractControllerType
+/* Controller Type */
+class SHARED_LIBRARY_STUFF ControllerType
 {
 public:
 
-    AbstractControllerType (KStorageBus aBusType, KStorageControllerType aCtrType);
-    virtual ~AbstractControllerType() {}
+    ControllerType (KStorageBus aBusType, KStorageControllerType aCtrType);
+    virtual ~ControllerType() {}
 
     KStorageBus busType() const;
     ControllerBusList busTypes() const;
@@ -304,7 +304,7 @@ private:
 
     QString mOldCtrName;
     QString mCtrName;
-    AbstractControllerType *mCtrType;
+    ControllerType *mCtrType;
     uint mPortCount;
     bool mUseIoCache;
     QList <AbstractItem*> mAttachments;

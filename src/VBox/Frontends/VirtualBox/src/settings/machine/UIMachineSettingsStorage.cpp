@@ -380,8 +380,8 @@ UIIconPoolStorageSettings::~UIIconPoolStorageSettings()
 }
 
 
-/* Abstract Controller Type */
-AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageControllerType aCtrType)
+/* Controller Type */
+ControllerType::ControllerType (KStorageBus aBusType, KStorageControllerType aCtrType)
     : mBusType (aBusType)
     , mCtrType (aCtrType)
 {
@@ -393,32 +393,32 @@ AbstractControllerType::AbstractControllerType (KStorageBus aBusType, KStorageCo
     updatePixmaps();
 }
 
-KStorageBus AbstractControllerType::busType() const
+KStorageBus ControllerType::busType() const
 {
     return mBusType;
 }
 
-ControllerBusList AbstractControllerType::busTypes() const
+ControllerBusList ControllerType::busTypes() const
 {
     return m_buses;
 }
 
-KStorageControllerType AbstractControllerType::ctrType() const
+KStorageControllerType ControllerType::ctrType() const
 {
     return mCtrType;
 }
 
-ControllerTypeList AbstractControllerType::ctrTypes() const
+ControllerTypeList ControllerType::ctrTypes() const
 {
     return m_types;
 }
 
-PixmapType AbstractControllerType::pixmap(ItemState aState) const
+PixmapType ControllerType::pixmap(ItemState aState) const
 {
     return m_pixmaps.at(aState);
 }
 
-void AbstractControllerType::setCtrBusType(KStorageBus enmCtrBusType)
+void ControllerType::setCtrBusType(KStorageBus enmCtrBusType)
 {
     mBusType = enmCtrBusType;
 
@@ -427,17 +427,17 @@ void AbstractControllerType::setCtrBusType(KStorageBus enmCtrBusType)
     updatePixmaps();
 }
 
-void AbstractControllerType::setCtrType (KStorageControllerType aCtrType)
+void ControllerType::setCtrType (KStorageControllerType aCtrType)
 {
     mCtrType = aCtrType;
 }
 
-DeviceTypeList AbstractControllerType::deviceTypeList() const
+DeviceTypeList ControllerType::deviceTypeList() const
 {
     return uiCommon().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (mBusType).toList();
 }
 
-void AbstractControllerType::updateBusInfo()
+void ControllerType::updateBusInfo()
 {
     m_buses.clear();
 
@@ -464,7 +464,7 @@ void AbstractControllerType::updateBusInfo()
     }
 }
 
-void AbstractControllerType::updateTypeInfo()
+void ControllerType::updateTypeInfo()
 {
     m_types.clear();
 
@@ -502,7 +502,7 @@ void AbstractControllerType::updateTypeInfo()
         m_types << static_cast<KStorageControllerType>(i);
 }
 
-void AbstractControllerType::updatePixmaps()
+void ControllerType::updatePixmaps()
 {
     m_pixmaps.clear();
 
@@ -667,28 +667,28 @@ ControllerItem::ControllerItem (AbstractItem *aParent, const QString &aName,
     switch (aBusType)
     {
         case KStorageBus_IDE:
-            mCtrType = new AbstractControllerType(KStorageBus_IDE, aControllerType);
+            mCtrType = new ControllerType(KStorageBus_IDE, aControllerType);
             break;
         case KStorageBus_SATA:
-            mCtrType = new AbstractControllerType(KStorageBus_SATA, aControllerType);
+            mCtrType = new ControllerType(KStorageBus_SATA, aControllerType);
             break;
         case KStorageBus_SCSI:
-            mCtrType = new AbstractControllerType(KStorageBus_SCSI, aControllerType);
+            mCtrType = new ControllerType(KStorageBus_SCSI, aControllerType);
             break;
         case KStorageBus_Floppy:
-            mCtrType = new AbstractControllerType(KStorageBus_Floppy, aControllerType);
+            mCtrType = new ControllerType(KStorageBus_Floppy, aControllerType);
             break;
         case KStorageBus_SAS:
-            mCtrType = new AbstractControllerType(KStorageBus_SAS, aControllerType);
+            mCtrType = new ControllerType(KStorageBus_SAS, aControllerType);
             break;
         case KStorageBus_USB:
-            mCtrType = new AbstractControllerType(KStorageBus_USB, aControllerType);
+            mCtrType = new ControllerType(KStorageBus_USB, aControllerType);
             break;
         case KStorageBus_PCIe:
-            mCtrType = new AbstractControllerType(KStorageBus_PCIe, aControllerType);
+            mCtrType = new ControllerType(KStorageBus_PCIe, aControllerType);
             break;
         case KStorageBus_VirtioSCSI:
-            mCtrType = new AbstractControllerType(KStorageBus_VirtioSCSI, aControllerType);
+            mCtrType = new ControllerType(KStorageBus_VirtioSCSI, aControllerType);
             break;
 
         default:
