@@ -107,8 +107,10 @@ RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue
                 pValue->u.fVal = cbRead > 1 && abBuf[cbRead - 1] != 0;
                 RTFileClose(hFile);
             }
-            else if (rc == VERR_PERMISSION_DENIED)
+            else if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
                 rc = VINF_SUCCESS;
+            else if (rc == VERR_PERMISSION_DENIED)
+                rc = VERR_NOT_SUPPORTED;
             break;
         }
 
