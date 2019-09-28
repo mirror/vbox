@@ -794,15 +794,12 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
         {
             ulNextJiffies = pSubTimer->u.Std.ulNextJiffies + cJiffies;
             pSubTimer->u.Std.ulNextJiffies = ulNextJiffies;
-            if (time_after(ulNextJiffies, uCurJiffies))
+            if (time_after_eq(ulNextJiffies, uCurJiffies))
             { /* likely */ }
             else
             {
-                unsigned long  cJiffiesBehind = uCurJiffies - ulNextJiffies;
-                if (cJiffies >= 2)
-                    ulNextJiffies = uCurJiffies + cJiffies / 2;
-                else
-                    ulNextJiffies = uCurJiffies + 1;
+                unsigned long cJiffiesBehind = uCurJiffies - ulNextJiffies;
+                ulNextJiffies = uCurJiffies + cJiffies / 2;
                 if (cJiffiesBehind >= HZ / 4) /* Conside if we're lagging too far behind.  Screw the u64NextTS member. */
                     pSubTimer->u.Std.ulNextJiffies = ulNextJiffies;
                 /*else: Don't update u.Std.ulNextJiffies so we can continue catching up in the next tick. */
@@ -812,7 +809,7 @@ static void rtTimerLinuxStdCallback(unsigned long ulUser)
         {
             const uint64_t u64NanoTS = RTTimeSystemNanoTS();
             const int64_t  cNsBehind = u64NanoTS - pSubTimer->u.Std.u64NextTS;
-            if (cNsBehind < 0)
+            if (cNsBehind <= 0)
                 ulNextJiffies = uCurJiffies + rtTimerLnxNanoToJiffies(pSubTimer->u.Std.u64NextTS - u64NanoTS);
             else if (u64NanoInterval >= RT_NS_1SEC_64 * 2 / HZ)
             {
