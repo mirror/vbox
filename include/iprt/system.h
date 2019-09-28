@@ -325,18 +325,8 @@ typedef enum RTSYSFWPRPOP
 {
     /** Invalid property, do not use. */
     RTSYSFWPROP_INVALID = 0,
-    /** @todo Not yet implemented. */
-    RTSYSFWPROP_BOOT_CURRENT,
-    /** @todo Not yet implemented. */
-    RTSYSFWPROP_BOOT_ORDER,
-    /** @todo Not yet implemented. */
-    RTSYSFWPROP_BOOT_NEXT,
-    /** boolean: Whether Secure Boot is enabled or not. */
+    /** Whether Secure Boot is enabled or not (type: boolean). */
     RTSYSFWPROP_SECURE_BOOT,
-    /** @todo Not yet implemented. */
-    RTSYSFWPROP_TIMEOUT,
-    /** @todo Not yet implemented. */
-    RTSYSFWPROP_PLATFORM_LANG,
     /** End of valid    */
     RTSYSFWPROP_END,
     /** The usual 32-bit hack.  */
