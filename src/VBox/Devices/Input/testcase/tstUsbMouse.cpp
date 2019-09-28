@@ -21,11 +21,16 @@
 *********************************************************************************************************************************/
 #include "VBoxDD.h"
 #include <VBox/vmm/pdmdrv.h>
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
+#include <iprt/rand.h>
 #include <iprt/stream.h>
 #include <iprt/test.h>
 #include <iprt/uuid.h>
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /** Test mouse driver structure. */
 typedef struct DRVTSTMOUSE
 {
@@ -109,39 +114,43 @@ static DECLCALLBACK(void) tstMouseReportModes(PPDMIMOUSECONNECTOR pInterface,
 }
 
 
-static int tstMouseConstruct(int iInstance, const char *pcszMode,
+static int tstMouseConstruct(RTTEST hTest, int iInstance, const char *pcszMode,
                              uint8_t u8CoordShift, PPDMUSBINS *ppThis,
                              uint32_t uInstanceVersion = PDM_USBINS_VERSION)
 {
-    int rc = VERR_NO_MEMORY;
-    PPDMUSBINS pUsbIns = (PPDMUSBINS)RTMemAllocZ(  sizeof(*pUsbIns)
-                                               + g_UsbHidMou.cbInstance);
-    PCFGMNODE pCfg = NULL;
-    if (pUsbIns)
-    pCfg = CFGMR3CreateTree(NULL);
-    if (pCfg)
-        rc = CFGMR3InsertString(pCfg, "Mode", pcszMode);
-    if (RT_SUCCESS(rc))
-        rc = CFGMR3InsertInteger(pCfg, "CoordShift", u8CoordShift);
+    size_t cbUsbIns = RT_UOFFSETOF(PDMUSBINS, achInstanceData) + g_UsbHidMou.cbInstance;
+    PPDMUSBINS pUsbIns;
+    int rc = RTTestGuardedAlloc(hTest, cbUsbIns, 1, RTRandU32Ex(0, 1) != 0 /*fHead*/, (void **)&pUsbIns);
     if (RT_SUCCESS(rc))
     {
-        g_drvTstMouse.pDrv     = NULL;
-        g_drvTstMouse.pDrvBase = NULL;
-        pUsbIns->u32Version = uInstanceVersion;
-        pUsbIns->iInstance  = iInstance;
-        pUsbIns->pHlpR3     = &g_tstUsbHlp;
-        rc = g_UsbHidMou.pfnConstruct(pUsbIns, iInstance, pCfg, NULL);
-        if (RT_SUCCESS(rc))
+        RT_BZERO(pUsbIns, cbUsbIns);
+
+        PCFGMNODE pCfg = CFGMR3CreateTree(NULL);
+        if (pCfg)
         {
-           *ppThis = pUsbIns;
-           return rc;
+            rc = CFGMR3InsertString(pCfg, "Mode", pcszMode);
+            if (RT_SUCCESS(rc))
+                rc = CFGMR3InsertInteger(pCfg, "CoordShift", u8CoordShift);
+            if (RT_SUCCESS(rc))
+            {
+                g_drvTstMouse.pDrv     = NULL;
+                g_drvTstMouse.pDrvBase = NULL;
+                pUsbIns->u32Version         = uInstanceVersion;
+                pUsbIns->iInstance          = iInstance;
+                pUsbIns->pHlpR3             = &g_tstUsbHlp;
+                pUsbIns->pvInstanceDataR3   = pUsbIns->achInstanceData;
+                rc = g_UsbHidMou.pfnConstruct(pUsbIns, iInstance, pCfg, NULL);
+                if (RT_SUCCESS(rc))
+                {
+                   *ppThis = pUsbIns;
+                   return rc;
+                }
+            }
+            /* Failure */
+            CFGMR3DestroyTree(pCfg);
         }
     }
-    /* Failure */
-    if (pCfg)
-        CFGMR3DestroyTree(pCfg);
-    if (pUsbIns)
-        RTMemFree(pUsbIns);
+    RTTestGuardedFree(hTest, pUsbIns);
     return rc;
 }
 
@@ -154,9 +163,12 @@ static void testConstructAndDestruct(RTTEST hTest)
      * Normal check first.
      */
     PPDMUSBINS pUsbIns = NULL;
-    RTTEST_CHECK_RC(hTest, tstMouseConstruct(0, "relative", 1, &pUsbIns), VINF_SUCCESS);
+    RTTEST_CHECK_RC(hTest, tstMouseConstruct(hTest, 0, "relative", 1, &pUsbIns), VINF_SUCCESS);
     if (pUsbIns)
+    {
         g_UsbHidMou.pfnDestruct(pUsbIns);
+        RTTestGuardedFree(hTest, pUsbIns);
+    }
 
     /*
      * Modify the dev hlp version.
@@ -190,8 +202,10 @@ static void testConstructAndDestruct(RTTEST hTest)
     {
         g_tstUsbHlp.u32Version = g_tstUsbHlp.u32TheEnd = s_aVersionTests[i].uHlpVersion;
         pUsbIns = NULL;
-        RTTEST_CHECK_RC(hTest, tstMouseConstruct(0, "relative", 1, &pUsbIns, s_aVersionTests[i].uInsVersion),
+        RTTEST_CHECK_RC(hTest, tstMouseConstruct(hTest, 0, "relative", 1, &pUsbIns, s_aVersionTests[i].uInsVersion),
                         s_aVersionTests[i].rc);
+        if (pUsbIns)
+            RTTestGuardedFree(hTest, pUsbIns);
     }
     RTAssertSetMayPanic(fSavedMayPanic);
     RTAssertSetQuiet(fSavedQuiet);
@@ -205,7 +219,7 @@ static void testSendPositionRel(RTTEST hTest)
     PPDMUSBINS pUsbIns = NULL;
     VUSBURB Urb;
     RTTestSub(hTest, "sending a relative position event");
-    int rc = tstMouseConstruct(0, "relative", 1, &pUsbIns);
+    int rc = tstMouseConstruct(hTest, 0, "relative", 1, &pUsbIns);
     RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
         rc = g_UsbHidMou.pfnUsbReset(pUsbIns, false);
@@ -239,7 +253,10 @@ static void testSendPositionRel(RTTEST hTest)
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
     if (pUsbIns)
+    {
         g_UsbHidMou.pfnDestruct(pUsbIns);
+        RTTestGuardedFree(hTest, pUsbIns);
+    }
 }
 
 
@@ -248,7 +265,7 @@ static void testSendPositionAbs(RTTEST hTest)
     PPDMUSBINS pUsbIns = NULL;
     VUSBURB Urb;
     RTTestSub(hTest, "sending an absolute position event");
-    int rc = tstMouseConstruct(0, "absolute", 1, &pUsbIns);
+    int rc = tstMouseConstruct(hTest, 0, "absolute", 1, &pUsbIns);
     RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
     {
@@ -289,7 +306,10 @@ static void testSendPositionAbs(RTTEST hTest)
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
     if (pUsbIns)
+    {
         g_UsbHidMou.pfnDestruct(pUsbIns);
+        RTTestGuardedFree(hTest, pUsbIns);
+    }
 }
 
 #if 0
@@ -299,7 +319,7 @@ static void testSendPositionMT(RTTEST hTest)
     PPDMUSBINS pUsbIns = NULL;
     VUSBURB Urb;
     RTTestSub(hTest, "sending a multi-touch position event");
-    int rc = tstMouseConstruct(0, "multitouch", 1, &pUsbIns);
+    int rc = tstMouseConstruct(hTest, 0, "multitouch", 1, &pUsbIns);
     RT_ZERO(Urb);
     if (RT_SUCCESS(rc))
     {
@@ -340,7 +360,10 @@ static void testSendPositionMT(RTTEST hTest)
     }
     RTTEST_CHECK_RC_OK(hTest, rc);
     if (pUsbIns)
+    {
         g_UsbHidMou.pfnDestruct(pUsbIns);
+        RTTestGuardedFree(hTest, pUsbIns);
+    }
 }
 #endif
 
