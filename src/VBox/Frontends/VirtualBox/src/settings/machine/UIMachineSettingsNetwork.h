@@ -130,10 +130,14 @@ private:
     QStringList  m_bridgedAdapterList;
     /** Holds the internal network list. */
     QStringList  m_internalNetworkList;
+    /** Holds the saved internal network list. */
+    QStringList  m_internalNetworkListSaved;
     /** Holds the host-only interface list. */
     QStringList  m_hostInterfaceList;
     /** Holds the generic driver list. */
     QStringList  m_genericDriverList;
+    /** Holds the saved generic driver list. */
+    QStringList  m_genericDriverListSaved;
     /** Holds the NAT network list. */
     QStringList  m_natNetworkList;
 
