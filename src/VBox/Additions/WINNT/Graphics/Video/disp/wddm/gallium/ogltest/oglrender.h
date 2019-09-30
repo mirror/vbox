@@ -28,12 +28,18 @@
 #endif
 #include <GL/gl.h>
 #include <GL/glu.h>
+#include <glext.h>
 
 inline void TestShowError(HRESULT hr, const char *pszString)
 {
     (void)hr;
     MessageBoxA(0, pszString, 0, 0);
 }
+/* Expand __LINE__ number to a string. */
+#define OGLTEST_S(n) #n
+#define OGLTEST_N2S(n) OGLTEST_S(n)
+
+#define GL_CHECK_ERROR() do { if (glGetError() != GL_NO_ERROR) TestShowError((E_FAIL), __FILE__ "@" OGLTEST_N2S(__LINE__)); } while(0)
 
 class OGLRender
 {
@@ -47,5 +53,31 @@ public:
 
 OGLRender *CreateRender(int iRenderId);
 void DeleteRender(OGLRender *pRender);
+
+extern PFNGLBINDBUFFERPROC                             glBindBuffer;
+extern PFNGLDELETEBUFFERSPROC                          glDeleteBuffers;
+extern PFNGLGENBUFFERSPROC                             glGenBuffers;
+extern PFNGLBUFFERDATAPROC                             glBufferData;
+extern PFNGLMAPBUFFERPROC                              glMapBuffer;
+extern PFNGLUNMAPBUFFERPROC                            glUnmapBuffer;
+extern PFNGLENABLEVERTEXATTRIBARRAYPROC                glEnableVertexAttribArray;
+extern PFNGLDISABLEVERTEXATTRIBARRAYPROC               glDisableVertexAttribArray;
+extern PFNGLVERTEXATTRIBPOINTERPROC                    glVertexAttribPointer;
+extern PFNGLCREATESHADERPROC                           glCreateShader;
+extern PFNGLATTACHSHADERPROC                           glAttachShader;
+extern PFNGLCOMPILESHADERPROC                          glCompileShader;
+extern PFNGLCREATEPROGRAMPROC                          glCreateProgram;
+extern PFNGLDELETEPROGRAMPROC                          glDeleteProgram;
+extern PFNGLDELETESHADERPROC                           glDeleteShader;
+extern PFNGLDETACHSHADERPROC                           glDetachShader;
+extern PFNGLLINKPROGRAMPROC                            glLinkProgram;
+extern PFNGLSHADERSOURCEPROC                           glShaderSource;
+extern PFNGLUSEPROGRAMPROC                             glUseProgram;
+extern PFNGLGETPROGRAMIVPROC                           glGetProgramiv;
+extern PFNGLGETPROGRAMINFOLOGPROC                      glGetProgramInfoLog;
+extern PFNGLGETSHADERIVPROC                            glGetShaderiv;
+extern PFNGLGETSHADERINFOLOGPROC                       glGetShaderInfoLog;
+extern PFNGLVERTEXATTRIBDIVISORPROC                    glVertexAttribDivisor;
+extern PFNGLDRAWARRAYSINSTANCEDPROC                    glDrawArraysInstanced;
 
 #endif /* !GA_INCLUDED_SRC_WINNT_Graphics_Video_disp_wddm_gallium_ogltest_oglrender_h */
