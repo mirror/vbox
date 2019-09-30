@@ -125,6 +125,7 @@ private:
     /** Computed by computing the maximum length line. Used to avoid having horizontal scroll bars. */
     int m_iMinimumWidth;
     QVector<QString> m_screenResolutions;
+    QVector<QString*> m_labels;
     QTimer *m_pTimer;
 };
 
@@ -158,12 +159,25 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
         m_pTimer->start(5000);
     }
 
+    m_labels << &m_strScreenResolutionLabel
+             << &m_strUptimeLabel
+             << &m_strDragAndDropLabel
+             << &m_strExcutionEngineLabel
+             << &m_strNestedPagingLabel
+             << &m_strUnrestrictedExecutionLabel
+             << &m_strParavirtualizationLabel
+             << &m_strGuestAdditionsLabel
+             << &m_strGuestOSTypeLabel
+             << &m_strRemoteDesktopLabel;
+
+
     retranslateUi();
     computeMinimumWidth();
 }
 
 void UIRuntimeInfoWidget::retranslateUi()
 {
+
     m_strTableTitle = QApplication::translate("UIVMInformationDialog", "Runtime Attributes");
     m_strScreenResolutionLabel = QApplication::translate("UIVMInformationDialog", "Screen Resolution");
     m_strMonitorTurnedOff = QApplication::translate("UIVMInformationDialog", "turned off");
@@ -182,6 +196,17 @@ void UIRuntimeInfoWidget::retranslateUi()
     m_strRemoteDesktopLabel = QApplication::translate("UIVMInformationDialog", "Remote Desktop Server Port");
     m_strNotSet = QApplication::translate("UIVMInformationDialog", "not set");
     m_strNotDetected = QApplication::translate("UIVMInformationDialog", "Not Detected");
+
+    QString* strLongest = 0;
+    foreach (QString *strLabel, m_labels)
+    {
+        if (!strLongest)
+            strLongest = strLabel;
+        if (strLabel && strLongest->length() < strLabel->length())
+            strLongest = strLabel;
+    }
+    QFontMetrics fontMetrics(font());
+    setColumnWidth(0, 1.5 * fontMetrics.width(*strLongest));
 
     /* Make the API calls and populate the table: */
     createInfoRows();
@@ -266,6 +291,7 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
         insertInfoRow(InfoRow_Resolution, strLabel, m_screenResolutions[iScreen], iScreen + 1);
     }
     resizeColumnToContents(1);
+    horizontalHeader()->setStretchLastSection(true);
 }
 
 void UIRuntimeInfoWidget::updateUpTime()
@@ -414,8 +440,6 @@ void UIRuntimeInfoWidget::createInfoRows()
     updateGAsVersion();
     insertInfoRow(InfoRow_GuestOSType, QString("%1:").arg(m_strGuestOSTypeLabel), strOSType);
     updateVRDE();
-
-    resizeColumnToContents(0);
     resizeColumnToContents(1);
 }
 

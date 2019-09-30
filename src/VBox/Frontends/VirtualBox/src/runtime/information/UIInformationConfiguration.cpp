@@ -139,6 +139,7 @@ void UIInformationConfiguration::createTableItems()
     /* Resize the column 1 a bit larger than the max string if contains: */
     m_pTableWidget->setColumnWidth(1, 1.5 * iMaxColumn1Length);
     m_pTableWidget->resizeColumnToContents(2);
+    m_pTableWidget->horizontalHeader()->setStretchLastSection(true);
 }
 
 void UIInformationConfiguration::prepareObjects()
@@ -154,6 +155,7 @@ void UIInformationConfiguration::prepareObjects()
     {
         /* Configure the table by hiding the headers etc.: */
         m_pTableWidget->setColumnCount(m_iColumCount);
+        m_pTableWidget->setAlternatingRowColors(true);
         m_pTableWidget->verticalHeader()->hide();
         m_pTableWidget->horizontalHeader()->hide();
         m_pTableWidget->setShowGrid(false);

@@ -246,7 +246,6 @@ void UIVMInformationDialog::prepareTabWidget()
             m_pTabWidget->addTab(m_tabs.value(2), QString());
         }
 
-
         /* Create Guest Process Control tab: */
         QString strMachineName;
         if (m_pMachineWindow && m_pMachineWindow->console().isOk())
