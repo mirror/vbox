@@ -204,6 +204,10 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
                           ? RTTimeNanoTSLFenceAsyncUseRdtscp
                           : pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
                           ? RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl
+                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B
+                          ? RTTimeNanoTSLFenceAsyncUseApicIdExt0B
+                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E
+                          ? RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E
                           : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID
                           ? RTTimeNanoTSLFenceAsyncUseApicId
                           : rtTimeNanoTSInternalFallback;
@@ -216,6 +220,14 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
                          ?   pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
                            ? RTTimeNanoTSLFenceSyncInvarNoDelta
                            : RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp
+                         : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B
+                         ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                           ? RTTimeNanoTSLFenceSyncInvarNoDelta
+                           : RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B
+                         : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E
+                         ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                           ? RTTimeNanoTSLFenceSyncInvarNoDelta
+                           : RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E
                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID
                          ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
                            ? RTTimeNanoTSLFenceSyncInvarNoDelta
@@ -244,6 +256,10 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
                           ? RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl
                           : pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS
                           ? RTTimeNanoTSLegacyAsyncUseIdtrLim
+                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B
+                          ? RTTimeNanoTSLegacyAsyncUseApicIdExt0B
+                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E
+                          ? RTTimeNanoTSLegacyAsyncUseApicIdExt8000001E
                           : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID
                           ? RTTimeNanoTSLegacyAsyncUseApicId
                           : rtTimeNanoTSInternalFallback;
@@ -256,6 +272,14 @@ static DECLCALLBACK(uint64_t) rtTimeNanoTSInternalRediscover(PRTTIMENANOTSDATA p
                          ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
                            ? RTTimeNanoTSLegacySyncInvarNoDelta
                            : RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim
+                         : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B
+                         ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                           ? RTTimeNanoTSLegacySyncInvarNoDelta
+                           : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt0B
+                         : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E
+                         ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                           ? RTTimeNanoTSLegacySyncInvarNoDelta
+                           : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt8000001E
                          : pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID
                          ? pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
                            ? RTTimeNanoTSLegacySyncInvarNoDelta

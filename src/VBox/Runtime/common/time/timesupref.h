@@ -66,7 +66,7 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 #else
             && RT_LIKELY(pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO)
 #endif
-#if defined(IN_RING3) && TMPL_GET_CPU_METHOD != 0 && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID
+#if defined(IN_RING3) && TMPL_GET_CPU_METHOD != 0
             && RT_LIKELY(pGip->fGetGipCpu & TMPL_GET_CPU_METHOD)
 #endif
            )
@@ -89,6 +89,18 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
             uint32_t const  u32TransactionId = pGip->aCPUs[0].u32TransactionId;
 #  endif
             uint8_t  const  idApic   = ASMGetApicId();
+            uint16_t const  iGipCpu  = pGip->aiCpuFromApicId[idApic];
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_APIC_ID_EXT_0B
+#  if TMPL_MODE != TMPL_MODE_ASYNC
+            uint32_t const  u32TransactionId = pGip->aCPUs[0].u32TransactionId;
+#  endif
+            uint32_t const  idApic   = ASMGetApicIdExt0B();
+            uint16_t const  iGipCpu  = pGip->aiCpuFromApicId[idApic];
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_APIC_ID_EXT_8000001E
+#  if TMPL_MODE != TMPL_MODE_ASYNC
+            uint32_t const  u32TransactionId = pGip->aCPUs[0].u32TransactionId;
+#  endif
+            uint32_t const  idApic   = ASMGetApicIdExt8000001E();
             uint16_t const  iGipCpu  = pGip->aiCpuFromApicId[idApic];
 # elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS \
     || TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
@@ -136,6 +148,8 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
                 TMPL_READ_FENCE();
 #elif TMPL_MODE != TMPL_MODE_ASYNC \
    && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID \
+   && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID_EXT_0B \
+   && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID_EXT_8000001E \
    && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS \
    && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
                 uint32_t const u32TransactionId = pGip->aCPUs[0].u32TransactionId;
@@ -171,6 +185,8 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
                 uint64_t u64Delta               = ASMReadTSC();
                 ASMCompilerBarrier();
 # if TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID /* getting APIC will serialize  */ \
+  && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID_EXT_0B \
+  && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID_EXT_8000001E \
   && (defined(IN_RING3) || TMPL_MODE != TMPL_MODE_ASYNC)
                 TMPL_READ_FENCE(); /* Expensive (~30 ticks).  Would like convincing argumentation that let us remove it. */
 # endif
@@ -182,6 +198,10 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 #if defined(IN_RING3) && ( TMPL_MODE == TMPL_MODE_ASYNC || TMPL_MODE == TMPL_MODE_SYNC_INVAR_WITH_DELTA )
 # if   TMPL_GET_CPU_METHOD == SUPGIPGETCPU_APIC_ID
                 if (RT_LIKELY(ASMGetApicId() == idApic))
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_APIC_ID_EXT_0B
+                if (RT_LIKELY(ASMGetApicIdExt0B() == idApic))
+# elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_APIC_ID_EXT_8000001E
+                if (RT_LIKELY(ASMGetApicIdExt8000001E() == idApic))
 # elif TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS \
     || TMPL_GET_CPU_METHOD == SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL
                 if (RT_LIKELY(uAux2 == uAux))
@@ -348,7 +368,11 @@ RTDECL(uint64_t) rtTimeNanoTSInternalRef(PRTTIMENANOTSDATA pData)
 # ifndef IN_RING3
                 ASMSetFlags(uFlags);
 # endif
-# if defined(IN_RING0) || defined(IN_RC) || TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID
+# if defined(IN_RING0) \
+  || defined(IN_RC) \
+  || (   TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID \
+      && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID_EXT_0B /*?*/ \
+      && TMPL_GET_CPU_METHOD != SUPGIPGETCPU_APIC_ID_EXT_8000001E /*?*/)
                 return pData->pfnBadCpuIndex(pData, UINT16_MAX-1, iCpuSet, iGipCpu);
 # else
                 return pData->pfnBadCpuIndex(pData, idApic, UINT16_MAX-1, iGipCpu);

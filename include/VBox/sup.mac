@@ -56,10 +56,12 @@ endstruc
 %define SUPGIPUSETSCDELTA_ROUGHLY_ZERO          3
 %define SUPGIPUSETSCDELTA_NOT_ZERO              4
 
-%define SUPGIPGETCPU_APIC_ID                        1
-%define SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS       2
-%define SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS   4
-%define SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL 8
+%define SUPGIPGETCPU_APIC_ID                          1
+%define SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS         2
+%define SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS     4
+%define SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL  8
+%define SUPGIPGETCPU_APIC_ID_EXT_0B                  16
+%define SUPGIPGETCPU_APIC_ID_EXT_8000001E            32
 
 
 %define SUPGLOBALINFOPAGE_MAGIC 0x19590106
@@ -85,8 +87,8 @@ struc SUPGLOBALINFOPAGE
     .fGetGipCpu                 resd 1
     .fFlags                     resd 1
     .au32Padding1               resd 24
-    .aiCpuFromApicId            resw 256
-    .aiCpuFromCpuSetIdx         resw 256
+    .aiCpuFromApicId            resw 1024
+    .aiCpuFromCpuSetIdx         resw 1024
     .aoffCpuGroup               resw 256
     .aCPUs                      resb SUPGIPCPU_size
 endstruc

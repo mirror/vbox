@@ -612,17 +612,15 @@ static int supCallVMMR0ExFake(PVMR0 pVMR0, unsigned uOperation, uint64_t u64Arg,
 SUPR3DECL(int) SUPR3CallVMMR0Fast(PVMR0 pVMR0, unsigned uOperation, VMCPUID idCpu)
 {
     NOREF(pVMR0);
-    static const uintptr_t s_auFunctions[4] =
+    static const uintptr_t s_auFunctions[3] =
     {
-        SUP_IOCTL_FAST_DO_RAW_RUN,
         SUP_IOCTL_FAST_DO_HM_RUN,
+        SUP_IOCTL_FAST_DO_NEM_RUN,
         SUP_IOCTL_FAST_DO_NOP,
-        SUP_IOCTL_FAST_DO_NEM_RUN
     };
-    AssertCompile(SUP_VMMR0_DO_RAW_RUN == 0);
-    AssertCompile(SUP_VMMR0_DO_HM_RUN  == 1);
+    AssertCompile(SUP_VMMR0_DO_HM_RUN  == 0);
+    AssertCompile(SUP_VMMR0_DO_NEM_RUN == 1);
     AssertCompile(SUP_VMMR0_DO_NOP     == 2);
-    AssertCompile(SUP_VMMR0_DO_NEM_RUN == 3);
     AssertMsgReturn(uOperation < RT_ELEMENTS(s_auFunctions), ("%#x\n", uOperation), VERR_INTERNAL_ERROR);
     return suplibOsIOCtlFast(&g_supLibData, s_auFunctions[uOperation], idCpu);
 }
@@ -633,8 +631,8 @@ SUPR3DECL(int) SUPR3CallVMMR0Ex(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation,
     /*
      * The following operations don't belong here.
      */
-    AssertMsgReturn(    uOperation != SUP_VMMR0_DO_RAW_RUN
-                    &&  uOperation != SUP_VMMR0_DO_HM_RUN
+    AssertMsgReturn(    uOperation != SUP_VMMR0_DO_HM_RUN
+                    &&  uOperation != SUP_VMMR0_DO_NEM_RUN
                     &&  uOperation != SUP_VMMR0_DO_NOP,
                     ("%#x\n", uOperation),
                     VERR_INTERNAL_ERROR);
@@ -720,8 +718,8 @@ SUPR3DECL(int) SUPR3CallVMMR0(PVMR0 pVMR0, VMCPUID idCpu, unsigned uOperation, v
     /*
      * The following operations don't belong here.
      */
-    AssertMsgReturn(    uOperation != SUP_VMMR0_DO_RAW_RUN
-                    &&  uOperation != SUP_VMMR0_DO_HM_RUN
+    AssertMsgReturn(    uOperation != SUP_VMMR0_DO_HM_RUN
+                    &&  uOperation != SUP_VMMR0_DO_NEM_RUN
                     &&  uOperation != SUP_VMMR0_DO_NOP,
                     ("%#x\n", uOperation),
                     VERR_INTERNAL_ERROR);

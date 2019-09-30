@@ -423,6 +423,10 @@ typedef enum SUPGIPUSETSCDELTA
  *       it since we only support 256 CPUs/groups at the moment.
  */
 #define SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL RT_BIT_32(3)
+/** Can use CPUID[0xb].EDX and translate the result via aiCpuFromApicId. */
+#define SUPGIPGETCPU_APIC_ID_EXT_0B                  RT_BIT_32(4)
+/** Can use CPUID[0x8000001e].EAX and translate the result via aiCpuFromApicId. */
+#define SUPGIPGETCPU_APIC_ID_EXT_8000001E            RT_BIT_32(5)
 /** @} */
 
 /** @def SUPGIP_MAX_CPU_GROUPS
@@ -490,9 +494,9 @@ typedef struct SUPGLOBALINFOPAGE
     uint32_t            au32Padding1[24];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
-    uint16_t            aiCpuFromApicId[256];
+    uint16_t            aiCpuFromApicId[1024];
     /** CPU set index to CPU table index. */
-    uint16_t            aiCpuFromCpuSetIdx[RTCPUSET_MAX_CPUS];
+    uint16_t            aiCpuFromCpuSetIdx[1024];
     /** Table indexed by CPU group to containing offsets to SUPGIPCPUGROUP
      * structures, invalid entries are set to UINT16_MAX.  The offsets are relative
      * to the start of this structure.
@@ -514,7 +518,6 @@ AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs, 32);
 #else
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs, 256);
 #endif
-AssertCompile(sizeof(SUPGLOBALINFOPAGE) <= 0x1000); /* Keeping it less or equal to a page for raw-mode (saved state). */
 
 /** Pointer to the global info page.
  * @remark there is no const version of this typedef, see g_pSUPGlobalInfoPage for details. */
@@ -526,7 +529,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#define SUPGLOBALINFOPAGE_VERSION   0x00080000
+#define SUPGLOBALINFOPAGE_VERSION   0x00090000
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.
@@ -849,14 +852,12 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 /** For the fast ioctl path.
  * @{
  */
-/** @see VMMR0_DO_RAW_RUN. */
-#define SUP_VMMR0_DO_RAW_RUN    0
 /** @see VMMR0_DO_HM_RUN. */
-#define SUP_VMMR0_DO_HM_RUN     1
+#define SUP_VMMR0_DO_HM_RUN     0
+/** @see VMMR0_DO_NEM_RUN */
+#define SUP_VMMR0_DO_NEM_RUN    1
 /** @see VMMR0_DO_NOP */
 #define SUP_VMMR0_DO_NOP        2
-/** @see VMMR0_DO_NEM_RUN */
-#define SUP_VMMR0_DO_NEM_RUN    3
 /** @} */
 
 /** SUPR3QueryVTCaps capability flags.

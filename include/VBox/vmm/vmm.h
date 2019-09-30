@@ -263,9 +263,9 @@ typedef enum VMMR0OPERATION
     /** Run guest code using the available hardware acceleration technology. */
     VMMR0_DO_HM_RUN = SUP_VMMR0_DO_HM_RUN,
     /** Official NOP that we use for profiling. */
-    VMMR0_DO_NOP = SUP_VMMR0_DO_NOP,
-    /** Official NOP that we use for profiling. */
     VMMR0_DO_NEM_RUN = SUP_VMMR0_DO_NEM_RUN,
+    /** Official NOP that we use for profiling. */
+    VMMR0_DO_NOP = SUP_VMMR0_DO_NOP,
     /** Official slow iocl NOP that we use for profiling. */
     VMMR0_DO_SLOW_NOP,
 

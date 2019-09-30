@@ -205,6 +205,38 @@ void tstASMCpuId(void)
     CHECKVAL(uEDX2, s.uEDX, "%x");
 
     /*
+     * Check the extended APIC stuff.
+     */
+    uint32_t idExtApic;
+    if (ASMCpuId_EAX(0) >= 0xb)
+    {
+        uint8_t idApic = ASMGetApicId();
+        do
+        {
+            uEAX2 = uEBX2 = uECX2 = uEDX2 = UINT32_C(0x50486744);
+            ASMCpuIdExSlow(0xb, 0, 0, 0, &uEAX2, &uEBX2, &uECX2, &uEDX2);
+            idExtApic = ASMGetApicIdExt0B();
+        } while (ASMGetApicId() != idApic);
+
+        CHECKVAL(uEDX2, idExtApic, "%x");
+        if (idApic != (uint8_t)idExtApic)
+            RTTestIFailed("ASMGetApicIdExt0B() -> %#x vs ASMGetApicId() -> %#x", idExtApic, idApic);
+    }
+    if (ASMCpuId_EAX(UINT32_C(0x80000000)) >= UINT32_C(0x8000001E))
+    {
+        uint8_t idApic = ASMGetApicId();
+        do
+        {
+            uEAX2 = uEBX2 = uECX2 = uEDX2 = UINT32_C(0x50486744);
+            ASMCpuIdExSlow(0x8000001e, 0, 0, 0, &uEAX2, &uEBX2, &uECX2, &uEDX2);
+            idExtApic = ASMGetApicIdExt8000001E();
+        } while (ASMGetApicId() != idApic);
+        CHECKVAL(uEAX2, idExtApic, "%x");
+        if (idApic != (uint8_t)idExtApic)
+            RTTestIFailed("ASMGetApicIdExt8000001E() -> %#x vs ASMGetApicId() -> %#x", idExtApic, idApic);
+    }
+
+    /*
      * Done testing, dump the information.
      */
     RTTestIPrintf(RTTESTLVL_ALWAYS, "CPUID Dump\n");
@@ -1881,6 +1913,8 @@ void tstASMBench(void)
     /* The Darwin gcc does not like this ... */
 #if !defined(RT_OS_DARWIN) && !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     BENCH(s_u8 = ASMGetApicId(),                "ASMGetApicId");
+    BENCH(s_u32 = ASMGetApicIdExt0B(),          "ASMGetApicIdExt0B");
+    BENCH(s_u32 = ASMGetApicIdExt8000001E(),    "ASMGetApicIdExt8000001E");
 #endif
 #if !defined(GCC44_32BIT_PIC) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
     uint32_t uAux;

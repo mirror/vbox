@@ -172,6 +172,21 @@ static uint32_t supdrvGipFindCpuIndexForCpuId(PSUPGLOBALINFOPAGE pGip, RTCPUID i
 }
 
 
+/**
+ * Gets the APIC ID using the best available method.
+ *
+ * @returns APIC ID.
+ * @param   pGip                The GIP, for SUPGIPGETCPU_XXX.
+ */
+DECLINLINE(uint32_t) supdrvGipGetApicId(PSUPGLOBALINFOPAGE pGip)
+{
+    if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
+        return ASMGetApicIdExt0B();
+    if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
+        return ASMGetApicIdExt8000001E();
+    return ASMGetApicId();
+}
+
 
 /*
  *
@@ -211,14 +226,17 @@ static void supdrvGipReInitCpu(PSUPGIPCPU pGipCpu, uint64_t u64NanoTS)
  */
 static DECLCALLBACK(void) supdrvGipReInitCpuCallback(RTCPUID idCpu, void *pvUser1, void *pvUser2)
 {
-    PSUPGLOBALINFOPAGE  pGip = (PSUPGLOBALINFOPAGE)pvUser1;
-    unsigned            iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
+    PSUPGLOBALINFOPAGE  pGip   = (PSUPGLOBALINFOPAGE)pvUser1;
+    uint32_t const      idApic = supdrvGipGetApicId(pGip);
+    if (idApic < RT_ELEMENTS(pGip->aiCpuFromApicId))
+    {
+        unsigned const  iCpu   = pGip->aiCpuFromApicId[idApic];
 
-    if (RT_LIKELY(iCpu < pGip->cCpus && pGip->aCPUs[iCpu].idCpu == idCpu))
-        supdrvGipReInitCpu(&pGip->aCPUs[iCpu], *(uint64_t *)pvUser2);
+        if (RT_LIKELY(iCpu < pGip->cCpus && pGip->aCPUs[iCpu].idCpu == idCpu))
+            supdrvGipReInitCpu(&pGip->aCPUs[iCpu], *(uint64_t *)pvUser2);
+    }
 
     NOREF(pvUser2);
-    NOREF(idCpu);
 }
 
 
@@ -229,7 +247,7 @@ typedef struct SUPDRVGIPDETECTGETCPU
 {
     /** Bitmap of APIC IDs that has been seen (initialized to zero).
      *  Used to detect duplicate APIC IDs (paranoia). */
-    uint8_t volatile    bmApicId[256 / 8];
+    uint8_t volatile    bmApicId[1024 / 8];
     /** Mask of supported GIP CPU getter methods (SUPGIPGETCPU_XXX) (all bits set
      *  initially). The callback clears the methods not detected. */
     uint32_t volatile   fSupported;
@@ -256,7 +274,8 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
     PSUPDRVGIPDETECTGETCPU  pState = (PSUPDRVGIPDETECTGETCPU)pvUser1;
     PSUPGLOBALINFOPAGE      pGip   = (PSUPGLOBALINFOPAGE)pvUser2;
     uint32_t                fSupported = 0;
-    uint16_t                idApic;
+    uint32_t                idApic;
+    uint32_t                uEax, uEbx, uEcx, uEdx;
     int                     iCpuSet;
     NOREF(pGip);
 
@@ -306,7 +325,7 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
                 if (   ASMIsValidExtRange(ASMCpuId_EAX(UINT32_C(0x80000000)))
                     && (ASMCpuId_EDX(UINT32_C(0x80000001)) & X86_CPUID_EXT_FEATURE_EDX_RDTSCP) )
                 {
-                    uint32_t        uAux;
+                    uint32_t uAux;
                     ASMReadTscWithAux(&uAux);
                     if ((uAux & (RTCPUSET_MAX_CPUS - 1)) == idCpu)
                     {
@@ -334,18 +353,71 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
     }
 
     /*
+     * Check for extended APIC ID methods.
+     */
+    idApic = UINT32_MAX;
+    uEax = ASMCpuId_EAX(0);
+    if (uEax >= UINT32_C(0xb) && ASMIsValidStdRange(uEax))
+    {
+        ASMCpuIdExSlow(0xb, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
+        if (uEax || uEbx || uEcx || uEdx)
+        {
+            if (RT_LIKELY(   uEdx < RT_ELEMENTS(pGip->aiCpuFromApicId)
+                          && !ASMBitTest(pState->bmApicId, uEdx)))
+            {
+                if (uEdx == ASMGetApicIdExt0B())
+                {
+                    idApic = uEdx;
+                    fSupported |= SUPGIPGETCPU_APIC_ID_EXT_0B;
+                }
+                else
+                    AssertMsgFailed(("%#x vs %#x\n", uEdx, ASMGetApicIdExt0B()));
+            }
+        }
+    }
+
+    uEax = ASMCpuId_EAX(UINT32_C(0x80000000));
+    if (uEax >= UINT32_C(0x8000001e) && ASMIsValidExtRange(uEax))
+    {
+        ASMCpuIdExSlow(UINT32_C(0x8000001e), 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
+        if (uEax || uEbx || uEcx || uEdx)
+        {
+            if (RT_LIKELY(   uEax < RT_ELEMENTS(pGip->aiCpuFromApicId)
+                          && (   idApic == UINT32_MAX
+                              || idApic == uEax)
+                          && !ASMBitTest(pState->bmApicId, uEax)))
+            {
+                if (uEax == ASMGetApicIdExt8000001E())
+                {
+                    idApic = uEax;
+                    fSupported |= SUPGIPGETCPU_APIC_ID_EXT_8000001E;
+                }
+                else
+                    AssertMsgFailed(("%#x vs %#x\n", uEax, ASMGetApicIdExt8000001E()));
+            }
+        }
+    }
+
+    /*
      * Check that the APIC ID is unique.
      */
-    idApic = ASMGetApicId();
-    if (RT_LIKELY(   idApic < RT_ELEMENTS(pGip->aiCpuFromApicId)
-                  && !ASMAtomicBitTestAndSet(pState->bmApicId, idApic)))
+    uEax = ASMGetApicId();
+    if (RT_LIKELY(   uEax < RT_ELEMENTS(pGip->aiCpuFromApicId)
+                  && (   idApic == UINT32_MAX
+                      || idApic == uEax)
+                  && !ASMAtomicBitTestAndSet(pState->bmApicId, uEax)))
+    {
+        idApic = uEax;
         fSupported |= SUPGIPGETCPU_APIC_ID;
-    else
+    }
+    else if (   idApic == UINT32_MAX
+             || idApic >= RT_ELEMENTS(pGip->aiCpuFromApicId) /* parnaoia */
+             || ASMAtomicBitTestAndSet(pState->bmApicId, idApic))
     {
         AssertCompile(sizeof(pState->bmApicId) * 8 == RT_ELEMENTS(pGip->aiCpuFromApicId));
         ASMAtomicCmpXchgU32(&pState->idCpuProblem, idCpu, NIL_RTCPUID);
-        LogRel(("supdrvGipDetectGetGipCpuCallback: idCpu=%#x iCpuSet=%d idApic=%#x - duplicate APIC ID.\n",
-                idCpu, iCpuSet, idApic));
+        LogRel(("supdrvGipDetectGetGipCpuCallback: idCpu=%#x iCpuSet=%d idApic=%#x/%#x - duplicate APIC ID.\n",
+                idCpu, iCpuSet, uEax, idApic));
     }
 
     /*
@@ -1275,7 +1347,7 @@ static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idC
 {
     PSUPGLOBALINFOPAGE  pGip      = pDevExt->pGip;
     int                 iCpuSet   = 0;
-    uint16_t            idApic    = UINT16_MAX;
+    uint32_t            idApic;
     uint32_t            i         = 0;
     uint64_t            u64NanoTS = 0;
 
@@ -1311,7 +1383,7 @@ static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idC
 
     supdrvGipInitCpu(pGip, &pGip->aCPUs[i], u64NanoTS, pGip->u64CpuHz);
 
-    idApic = ASMGetApicId();
+    idApic = supdrvGipGetApicId(pGip);
     ASMAtomicWriteU16(&pGip->aCPUs[i].idApic,  idApic);
     ASMAtomicWriteS16(&pGip->aCPUs[i].iCpuSet, (int16_t)iCpuSet);
     ASMAtomicWriteSize(&pGip->aCPUs[i].idCpu,  idCpu);
@@ -1325,8 +1397,10 @@ static void supdrvGipMpEventOnlineOrInitOnCpu(PSUPDRVDEVEXT pDevExt, RTCPUID idC
     /*
      * Update the APIC ID and CPU set index mappings.
      */
-    ASMAtomicWriteU16(&pGip->aiCpuFromApicId[idApic],     i);
-    ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
+    if (idApic < RT_ELEMENTS(pGip->aiCpuFromApicId))
+        ASMAtomicWriteU16(&pGip->aiCpuFromApicId[idApic],     i);
+    if ((unsigned)iCpuSet < RT_ELEMENTS(pGip->aiCpuFromCpuSetIdx))
+        ASMAtomicWriteU16(&pGip->aiCpuFromCpuSetIdx[iCpuSet], i);
 
     /* Add this CPU to this set of CPUs we need to calculate the TSC-delta for. */
     RTCpuSetAddByIndex(&pDevExt->TscDeltaCpuSet, RTMpCpuIdToSetIndex(idCpu));
@@ -2363,11 +2437,21 @@ static void supdrvGipUpdate(PSUPDRVDEVEXT pDevExt, uint64_t u64NanoTS, uint64_t 
         pGipCpu = &pGip->aCPUs[0];
     else
     {
-        unsigned iCpu = pGip->aiCpuFromApicId[ASMGetApicId()];
-        if (RT_UNLIKELY(iCpu >= pGip->cCpus))
+        unsigned iCpu;
+        uint32_t idApic = supdrvGipGetApicId(pGip);
+        if (RT_LIKELY(idApic < RT_ELEMENTS(pGip->aiCpuFromApicId)))
+        { /* likely */ }
+        else
+            return;
+        iCpu = pGip->aiCpuFromApicId[idApic];
+        if (RT_LIKELY(iCpu < pGip->cCpus))
+        { /* likely */ }
+        else
             return;
         pGipCpu = &pGip->aCPUs[iCpu];
-        if (RT_UNLIKELY(pGipCpu->idCpu != idCpu))
+        if (RT_LIKELY(pGipCpu->idCpu == idCpu))
+        { /* likely */ }
+        else
             return;
     }
 
@@ -2552,7 +2636,7 @@ static DECLCALLBACK(void) supdrvGipAsyncTimer(PRTTIMER pTimer, void *pvUser, uin
     if (pDevExt->idGipMaster == idCpu)
         supdrvGipUpdate(pDevExt, NanoTS, u64TSC, idCpu, iTick);
     else
-        supdrvGipUpdatePerCpu(pDevExt, NanoTS, u64TSC, idCpu, ASMGetApicId(), iTick);
+        supdrvGipUpdatePerCpu(pDevExt, NanoTS, u64TSC, idCpu, supdrvGipGetApicId(pDevExt->pGip), iTick);
 
     ASMSetFlags(fEFlags);
 }
@@ -4805,7 +4889,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
             {
                 /* This really shouldn't happen. */
                 AssertMsgFailed(("idCpu=%#x iCpuSet=%#x (%d)\n", RTMpCpuId(), iCpuSet, iCpuSet));
-                pReq->u.Out.idApic = ASMGetApicId();
+                pReq->u.Out.idApic = supdrvGipGetApicId(pGip);
                 pReq->u.Out.u64AdjustedTsc = ASMReadTSC();
                 ASMSetFlags(fEFlags);
                 rc = VERR_INTERNAL_ERROR_5; /** @todo change to warning. */
@@ -4825,7 +4909,7 @@ int VBOXCALL supdrvIOCtl_TscRead(PSUPDRVDEVEXT pDevExt, PSUPDRVSESSION pSession,
                       && (iGipCpu = pGip->aiCpuFromCpuSetIdx[iCpuSet]) < pGip->cCpus ))
             pReq->u.Out.idApic = pGip->aCPUs[iGipCpu].idApic;
         else
-            pReq->u.Out.idApic = ASMGetApicId();
+            pReq->u.Out.idApic = supdrvGipGetApicId(pGip);
         pReq->u.Out.u64AdjustedTsc = ASMReadTSC();
         ASMSetFlags(fEFlags);
         rc = VINF_SUCCESS;

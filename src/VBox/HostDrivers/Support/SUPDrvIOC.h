@@ -119,16 +119,14 @@
  * @note These must run parallel to SUP_VMMR0_DO_XXX
  * @note Implementations ASSUMES up to 32 I/O controls codes in the fast range.
  * @{ */
-/** Fast path IOCtl: VMMR0_DO_RAW_RUN */
-#define SUP_IOCTL_FAST_DO_RAW_RUN               SUP_CTL_CODE_FAST(64)
 /** Fast path IOCtl: VMMR0_DO_HM_RUN */
-#define SUP_IOCTL_FAST_DO_HM_RUN                SUP_CTL_CODE_FAST(65)
+#define SUP_IOCTL_FAST_DO_HM_RUN                SUP_CTL_CODE_FAST(64)
+/** Fast path IOCtl: VMMR0_DO_NEM_RUN */
+#define SUP_IOCTL_FAST_DO_NEM_RUN               SUP_CTL_CODE_FAST(65)
 /** Just a NOP call for profiling the latency of a fast ioctl call to VMMR0. */
 #define SUP_IOCTL_FAST_DO_NOP                   SUP_CTL_CODE_FAST(66)
-/** Fast path IOCtl: VMMR0_DO_NEM_RUN */
-#define SUP_IOCTL_FAST_DO_NEM_RUN               SUP_CTL_CODE_FAST(67)
 /** First fast path IOCtl number. */
-#define SUP_IOCTL_FAST_DO_FIRST                 SUP_IOCTL_FAST_DO_RAW_RUN
+#define SUP_IOCTL_FAST_DO_FIRST                 SUP_IOCTL_FAST_DO_HM_RUN
 /** @} */
 
 
@@ -223,10 +221,8 @@ typedef SUPREQHDR *PSUPREQHDR;
  *
  * @todo Pending work on next major version change:
  *          - Move SUP_IOCTL_FAST_DO_NOP and SUP_VMMR0_DO_NEM_RUN after NEM.
- *
- * @remarks 0x002a0000 is used by 5.1. The next version number must be 0x002b0000.
  */
-#define SUPDRV_IOC_VERSION                              0x00290009
+#define SUPDRV_IOC_VERSION                              0x002b0000
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE

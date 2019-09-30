@@ -44,6 +44,9 @@
    /* Emit the intrinsics at all optimization levels. */
 # pragma intrinsic(_ReadWriteBarrier)
 # pragma intrinsic(__cpuid)
+# if RT_INLINE_ASM_USES_INTRIN >= 16 /*?*/
+#  pragma intrinsic(__cpuidex)
+# endif
 # pragma intrinsic(_enable)
 # pragma intrinsic(_disable)
 # pragma intrinsic(__rdtsc)
@@ -1382,6 +1385,82 @@ DECLINLINE(uint8_t) ASMGetApicId(void)
     return (uint8_t)(xBX >> 24);
 }
 #endif
+
+
+/**
+ * Gets the APIC ID of the current CPU using leaf 0xb.
+ *
+ * @returns the APIC ID.
+ */
+#if RT_INLINE_ASM_EXTERNAL && RT_INLINE_ASM_USES_INTRIN < 16 /*?*/
+RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMGetApicIdExt0B(void);
+#else
+DECLINLINE(uint32_t) ASMGetApicIdExt0B(void)
+{
+    RTCCUINTREG xDX;
+# if RT_INLINE_ASM_GNU_STYLE
+#  ifdef RT_ARCH_AMD64
+    RTCCUINTREG uSpillEax, uSpillEcx;
+    __asm__ __volatile__ ("cpuid"
+                          : "=a" (uSpillEax),
+                            "=c" (uSpillEcx),
+                            "=d" (xDX)
+                          : "0" (0xb),
+                            "1" (0)
+                          : "rbx");
+#  elif (defined(PIC) || defined(__PIC__)) && defined(__i386__)
+    RTCCUINTREG uSpillEax, uSpillEcx, uSpillEbx;
+    __asm__ __volatile__ ("mov   %%ebx,%2\n\t"
+                          "cpuid\n\t"
+                          "xchgl %%ebx,%2\n\t"
+                          : "=a" (uSpillEax),
+                            "=c" (uSpillEcx),
+                            "=rm" (uSpillEbx),
+                            "=d" (xDX)
+                          : "0" (0xb),
+                            "1" (0));
+#  else
+    RTCCUINTREG uSpillEax, uSpillEcx;
+    __asm__ __volatile__ ("cpuid"
+                          : "=a" (uSpillEax),
+                            "=c" (uSpillEcx),
+                            "=d" (xDX)
+                          : "0" (0xb),
+                            "1" (0)
+                          : "ecx", "ebx");
+#  endif
+
+# elif RT_INLINE_ASM_USES_INTRIN >= 16 /*?*/
+
+    int aInfo[4];
+    __cpuidex(aInfo, 0xb, 0);
+    xDX = aInfo[3];
+
+# else
+    __asm
+    {
+        push    ebx
+        mov     eax, 0xb
+        xor     ecx, ecx
+        cpuid
+        mov     [xDX], edx
+        pop     ebx
+    }
+# endif
+    return xDX;
+}
+#endif
+
+
+/**
+ * Gets the APIC ID of the current CPU using leaf 8000001E.
+ *
+ * @returns the APIC ID.
+ */
+DECLINLINE(uint32_t) ASMGetApicIdExt8000001E(void)
+{
+    return ASMCpuId_EAX(0x8000001e);
+}
 
 
 /**

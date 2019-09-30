@@ -97,15 +97,23 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
 #else
             if (pGip->fGetGipCpu & SUPGIPGETCPU_IDTR_LIMIT_MASK_MAX_SET_CPUS)
                 pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
-                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta
+                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta             : RTTimeNanoTSLegacySyncInvarNoDelta
                           : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseIdtrLim : RTTimeNanoTSLegacySyncInvarWithDeltaUseIdtrLim;
             else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_MASK_MAX_SET_CPUS)
                 pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_PRACTICALLY_ZERO
-                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta
+                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta            : RTTimeNanoTSLegacySyncInvarNoDelta
                           : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseRdtscp : RTTimeNanoTSLegacySyncInvarWithDeltaUseRdtscp;
+            else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
+                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta                 : RTTimeNanoTSLegacySyncInvarNoDelta
+                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt0B : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt0B;
+            else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
+                pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
+                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta                       : RTTimeNanoTSLegacySyncInvarNoDelta
+                          : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicIdExt8000001E : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicIdExt8000001E;
             else
                 pfnWorker = pGip->enmUseTscDelta <= SUPGIPUSETSCDELTA_ROUGHLY_ZERO
-                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta    : RTTimeNanoTSLegacySyncInvarNoDelta
+                          ? fLFence ? RTTimeNanoTSLFenceSyncInvarNoDelta            : RTTimeNanoTSLegacySyncInvarNoDelta
                           : fLFence ? RTTimeNanoTSLFenceSyncInvarWithDeltaUseApicId : RTTimeNanoTSLegacySyncInvarWithDeltaUseApicId;
 #endif
             break;
@@ -120,6 +128,10 @@ DECLCALLBACK(DECLEXPORT(uint64_t)) tmVirtualNanoTSRediscover(PRTTIMENANOTSDATA p
                 pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseRdtscp      : RTTimeNanoTSLegacyAsyncUseRdtscp;
             else if (pGip->fGetGipCpu & SUPGIPGETCPU_RDTSCP_GROUP_IN_CH_NUMBER_IN_CL)
                 pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseRdtscpGroupChNumCl : RTTimeNanoTSLegacyAsyncUseRdtscpGroupChNumCl;
+            else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_0B)
+                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicIdExt0B : RTTimeNanoTSLegacyAsyncUseApicIdExt0B;
+            else if (pGip->fGetGipCpu & SUPGIPGETCPU_APIC_ID_EXT_8000001E)
+                pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicIdExt8000001E  : RTTimeNanoTSLegacyAsyncUseApicIdExt8000001E;
             else
                 pfnWorker = fLFence ? RTTimeNanoTSLFenceAsyncUseApicId      : RTTimeNanoTSLegacyAsyncUseApicId;
 #endif
