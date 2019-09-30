@@ -1397,8 +1397,8 @@ RT_ASM_DECL_PRAGMA_WATCOM(uint8_t) ASMGetApicIdExt0B(void);
 #else
 DECLINLINE(uint32_t) ASMGetApicIdExt0B(void)
 {
-    RTCCUINTREG xDX;
 # if RT_INLINE_ASM_GNU_STYLE
+    RTCCUINTREG xDX;
 #  ifdef RT_ARCH_AMD64
     RTCCUINTREG uSpillEax, uSpillEcx;
     __asm__ __volatile__ ("cpuid"
@@ -1429,14 +1429,16 @@ DECLINLINE(uint32_t) ASMGetApicIdExt0B(void)
                             "1" (0)
                           : "ecx", "ebx");
 #  endif
+    return (uint32_t)xDX;
 
 # elif RT_INLINE_ASM_USES_INTRIN >= 16 /*?*/
 
     int aInfo[4];
     __cpuidex(aInfo, 0xb, 0);
-    xDX = aInfo[3];
+    return aInfo[3];
 
 # else
+    RTCCUINTREG xDX;
     __asm
     {
         push    ebx
@@ -1446,8 +1448,8 @@ DECLINLINE(uint32_t) ASMGetApicIdExt0B(void)
         mov     [xDX], edx
         pop     ebx
     }
+    return (uint32_t)xDX;
 # endif
-    return xDX;
 }
 #endif
 
