@@ -598,13 +598,15 @@
     <const name="v1_17" value="19">
       <desc>Settings version "1.17", written by VirtualBox 6.0.x.</desc>
       <!--
-          Machine changes: nested hardware virtualization, UART type selection.
+          Machine changes: nested hardware virtualization, hardware
+          virtualization using native APU, shared folder automount point,
+          UART type selection and VM process priority.
       -->
     </const>
     <const name="v1_18" value="20">
       <desc>Settings version "1.18", written by VirtualBox 6.1.x.</desc>
       <!--
-          Machine changes: nested hardware virtualization, UART type selection.
+          Machine changes: virtio-scsi storage controller, NVRAM device.
       -->
     </const>
 
@@ -5253,6 +5255,14 @@
       <desc>
         PXE debug logging flag. If set, VirtualBox will write extensive
         PXE trace information to the release log.
+      </desc>
+    </attribute>
+
+    <attribute name="nonVolatileStorageEnabled" type="boolean">
+      <desc>
+        Controls the non-volatile memory device presence. If set, VirtualBox
+        will store the content in a file whose path can be queried with the
+        <link to="#nonVolatileStorageFile"/> attribute.
       </desc>
     </attribute>
 

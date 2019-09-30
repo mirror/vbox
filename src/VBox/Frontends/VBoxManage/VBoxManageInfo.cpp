@@ -869,6 +869,11 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_UTF8_STRING("biosapic", "BIOS APIC mode:", pszAPIC);
 
     SHOW_LONG64_PROP(biosSettings,  TimeOffset,                 "biossystemtimeoffset", "Time offset:",  "ms");
+    SHOW_BOOLEAN_PROP(biosSettings, NonVolatileStorageEnabled,  "biosnvram",            "BIOS NVRAM:");
+    Bstr bstrNVRAMFile;
+    CHECK_ERROR2I_RET(biosSettings, COMGETTER(NonVolatileStorageFile)(bstrNVRAMFile.asOutParam()), hrcCheck);
+    if (bstrNVRAMFile.isNotEmpty())
+        SHOW_BSTR_STRING("BIOS NVRAM File", "BIOS NVRAM File:", bstrNVRAMFile);
     SHOW_BOOLEAN_PROP_EX(machine,   RTCUseUTC,                  "rtcuseutc",            "RTC:",         "UTC", "local time");
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_Enabled,   &f),   "hwvirtex",     "Hardw. virt.ext:");
     SHOW_BOOLEAN_METHOD(machine, GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &f),"nestedpaging", "Nested Paging:");

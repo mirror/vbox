@@ -2463,6 +2463,7 @@ BIOSSettings::BIOSSettings() :
     fLogoFadeIn(true),
     fLogoFadeOut(true),
     fPXEDebugEnabled(false),
+    fNVRAMEnabled(false),
     ulLogoDisplayTime(0),
     biosBootMenuMode(BIOSBootMenuMode_MessageAndMenu),
     apicMode(APICMode_APIC),
@@ -2480,11 +2481,13 @@ bool BIOSSettings::areDefaultSettings() const
         && fLogoFadeIn
         && fLogoFadeOut
         && !fPXEDebugEnabled
+        && !fNVRAMEnabled
         && ulLogoDisplayTime == 0
         && biosBootMenuMode == BIOSBootMenuMode_MessageAndMenu
         && apicMode == APICMode_APIC
         && llTimeOffset == 0
-        && strLogoImagePath.isEmpty();
+        && strLogoImagePath.isEmpty()
+        && strNVRAMPath.isEmpty();
 }
 
 /**
@@ -2500,11 +2503,13 @@ bool BIOSSettings::operator==(const BIOSSettings &d) const
             && fLogoFadeIn         == d.fLogoFadeIn
             && fLogoFadeOut        == d.fLogoFadeOut
             && fPXEDebugEnabled    == d.fPXEDebugEnabled
+            && fNVRAMEnabled       == d.fNVRAMEnabled
             && ulLogoDisplayTime   == d.ulLogoDisplayTime
             && biosBootMenuMode    == d.biosBootMenuMode
             && apicMode            == d.apicMode
             && llTimeOffset        == d.llTimeOffset
-            && strLogoImagePath    == d.strLogoImagePath);
+            && strLogoImagePath    == d.strLogoImagePath
+            && strNVRAMPath        == d.strNVRAMPath);
 }
 
 RecordingScreenSettings::RecordingScreenSettings(void)
@@ -4720,6 +4725,11 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fPXEDebugEnabled);
             if ((pelmBIOSChild = pelmHwChild->findChildElement("TimeOffset")))
                 pelmBIOSChild->getAttributeValue("value", hw.biosSettings.llTimeOffset);
+            if ((pelmBIOSChild = pelmHwChild->findChildElement("NVRAM")))
+            {
+                pelmBIOSChild->getAttributeValue("enabled", hw.biosSettings.fNVRAMEnabled);
+                pelmBIOSChild->getAttributeValue("path", hw.biosSettings.strNVRAMPath);
+            }
 
             // legacy BIOS/IDEController (pre 1.7)
             if (    (m->sv < SettingsVersion_v1_7)
@@ -6188,6 +6198,15 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             pelmBIOS->createChild("TimeOffset")->setAttribute("value", hw.biosSettings.llTimeOffset);
         if (hw.biosSettings.fPXEDebugEnabled)
             pelmBIOS->createChild("PXEDebug")->setAttribute("enabled", hw.biosSettings.fPXEDebugEnabled);
+        if (   hw.biosSettings.fNVRAMEnabled
+            || !hw.biosSettings.strNVRAMPath.isEmpty())
+        {
+            xml::ElementNode *pelmNVRAM = pelmBIOS->createChild("NVRAM");
+	    if (hw.biosSettings.fNVRAMEnabled)
+                pelmNVRAM->setAttribute("enabled", hw.biosSettings.fNVRAMEnabled);
+	    if (!hw.biosSettings.strNVRAMPath.isEmpty())
+                pelmNVRAM->setAttribute("path", hw.biosSettings.strNVRAMPath);
+        }
     }
 
     if (m->sv < SettingsVersion_v1_9)
@@ -7449,6 +7468,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
 {
     if (m->sv < SettingsVersion_v1_18)
     {
+        if (   hardwareMachine.biosSettings.fNVRAMEnabled
+            || !hardwareMachine.biosSettings.strNVRAMPath.isEmpty())
+        {
+            m->sv = SettingsVersion_v1_18;
+            return;
+        }
+
         // VirtualBox 6.1 adds a virtio-scsi storage controller.
         for (StorageControllersList::const_iterator it = hardwareMachine.storage.llStorageControllers.begin();
              it != hardwareMachine.storage.llStorageControllers.end();

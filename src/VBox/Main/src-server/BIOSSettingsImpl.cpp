@@ -223,7 +223,6 @@ HRESULT BIOSSettings::getLogoFadeOut(BOOL *enabled)
     return S_OK;
 }
 
-
 HRESULT BIOSSettings::setLogoFadeOut(BOOL enable)
 {
     /* the machine needs to be mutable */
@@ -255,7 +254,6 @@ HRESULT BIOSSettings::getLogoDisplayTime(ULONG *displayTime)
     return S_OK;
 }
 
-
 HRESULT BIOSSettings::setLogoDisplayTime(ULONG displayTime)
 {
     /* the machine needs to be mutable */
@@ -283,7 +281,6 @@ HRESULT BIOSSettings::getLogoImagePath(com::Utf8Str &imagePath)
     return S_OK;
 }
 
-
 HRESULT BIOSSettings::setLogoImagePath(const com::Utf8Str &imagePath)
 {
     /* the machine needs to be mutable */
@@ -309,7 +306,6 @@ HRESULT BIOSSettings::getBootMenuMode(BIOSBootMenuMode_T *bootMenuMode)
     *bootMenuMode = m->bd->biosBootMenuMode;
     return S_OK;
 }
-
 
 HRESULT BIOSSettings::setBootMenuMode(BIOSBootMenuMode_T bootMenuMode)
 {
@@ -339,7 +335,6 @@ HRESULT BIOSSettings::getACPIEnabled(BOOL *enabled)
     return S_OK;
 }
 
-
 HRESULT BIOSSettings::setACPIEnabled(BOOL enable)
 {
     /* the machine needs to be mutable */
@@ -367,7 +362,6 @@ HRESULT BIOSSettings::getIOAPICEnabled(BOOL *aIOAPICEnabled)
 
     return S_OK;
 }
-
 
 HRESULT BIOSSettings::setIOAPICEnabled(BOOL aIOAPICEnabled)
 {
@@ -397,7 +391,6 @@ HRESULT BIOSSettings::getAPICMode(APICMode_T *aAPICMode)
     return S_OK;
 }
 
-
 HRESULT BIOSSettings::setAPICMode(APICMode_T aAPICMode)
 {
     /* the machine needs to be mutable */
@@ -426,7 +419,6 @@ HRESULT BIOSSettings::getPXEDebugEnabled(BOOL *enabled)
     return S_OK;
 }
 
-
 HRESULT BIOSSettings::setPXEDebugEnabled(BOOL enable)
 {
     /* the machine needs to be mutable */
@@ -445,6 +437,7 @@ HRESULT BIOSSettings::setPXEDebugEnabled(BOOL enable)
     return S_OK;
 }
 
+
 HRESULT BIOSSettings::getTimeOffset(LONG64 *offset)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -453,7 +446,6 @@ HRESULT BIOSSettings::getTimeOffset(LONG64 *offset)
 
     return S_OK;
 }
-
 
 HRESULT BIOSSettings::setTimeOffset(LONG64 offset)
 {
@@ -473,11 +465,51 @@ HRESULT BIOSSettings::setTimeOffset(LONG64 offset)
     return S_OK;
 }
 
-HRESULT BIOSSettings::getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile)
+
+HRESULT BIOSSettings::getNonVolatileStorageEnabled(BOOL *enabled)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    aNonVolatileStorageFile = "";
+    *enabled = m->bd->fNVRAMEnabled;
+
+    return S_OK;
+}
+
+HRESULT BIOSSettings::setNonVolatileStorageEnabled(BOOL enable)
+{
+    /* the machine needs to be mutable */
+    AutoMutableStateDependency adep(m->pMachine);
+    if (FAILED(adep.rc())) return adep.rc();
+
+    AutoCaller autoMachineCaller(m->pMachine);
+    AssertComRCReturnRC(autoMachineCaller.rc());
+
+    {
+        AutoReadLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+        m->bd.backup();
+        m->bd->fNVRAMEnabled = RT_BOOL(enable);
+        if (enable && m->bd->strNVRAMPath.isEmpty())
+            m->bd->strNVRAMPath = m->pMachine->i_getDefaultNVRAMFilename();
+    }
+
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->i_setModified(Machine::IsModified_BIOS);
+
+    return S_OK;
+}
+
+
+HRESULT BIOSSettings::getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile)
+{
+    Utf8Str strTmp;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        strTmp = m->bd->strNVRAMPath;
+    }
+
+    m->pMachine->i_calculateFullPath(strTmp, aNonVolatileStorageFile);
 
     return S_OK;
 }
@@ -503,10 +535,14 @@ HRESULT BIOSSettings::i_loadSettings(const settings::BIOSSettings &data)
     AutoCaller autoCaller(this);
     AssertComRCReturnRC(autoCaller.rc());
 
+    AutoReadLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // simply copy
     m->bd.assignCopy(&data);
+
+    Utf8Str strTmp(m->bd->strNVRAMPath);
+    m->pMachine->i_copyPathRelativeToMachine(strTmp, m->bd->strNVRAMPath);
 
     return S_OK;
 }

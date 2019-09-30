@@ -541,6 +541,7 @@ public:
     void i_getLogFolder(Utf8Str &aLogFolder);
     Utf8Str i_getLogFilename(ULONG idx);
     Utf8Str i_getHardeningLogFilename(void);
+    Utf8Str i_getDefaultNVRAMFilename();
 
     void i_composeSavedStateFilename(Utf8Str &strStateFilePath);
 

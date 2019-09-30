@@ -1830,6 +1830,21 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #ifdef DEBUG_vvl
             InsertConfigInteger(pCfg,  "PermanentSave", 1);
 #endif
+
+            BOOL fNVRAM = FALSE;
+            hrc = biosSettings->COMGETTER(NonVolatileStorageEnabled)(&fNVRAM);              H();
+            if (fNVRAM)
+            {
+                hrc = biosSettings->COMGETTER(NonVolatileStorageFile)(bstr.asOutParam());   H();
+
+                /*
+                 * NVRAM device subtree.
+                 */
+                InsertConfigNode(pDevices, "flash", &pDev);
+                InsertConfigNode(pDev,     "0", &pInst);
+                InsertConfigNode(pInst,    "Config", &pCfg);
+                InsertConfigString(pCfg,   "FlashFile", bstr);
+            }
         }
 
         /*

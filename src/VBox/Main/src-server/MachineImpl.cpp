@@ -7310,6 +7310,29 @@ Utf8Str Machine::i_getHardeningLogFilename(void)
     return strFilename;
 }
 
+/**
+ * Returns the default NVRAM filename based on the location of the VM config.
+ * This intentionally works differently than the saved state file naming since
+ * it is part of the current state. Taking a snapshot will use a similar naming
+ * as for saved state, because these are actually read-only, retaining a
+ * a specific state just like saved state.
+ */
+
+Utf8Str Machine::i_getDefaultNVRAMFilename()
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Utf8Str strNVRAMFilePathAbs = mData->m_strConfigFileFull;
+    strNVRAMFilePathAbs.stripSuffix();
+    strNVRAMFilePathAbs += ".nvram";
+    Utf8Str strNVRAMFilePath;
+    i_copyPathRelativeToMachine(strNVRAMFilePathAbs, strNVRAMFilePath);
+
+    return strNVRAMFilePath;
+}
+
 
 /**
  * Composes a unique saved state filename based on the current system time. The filename is

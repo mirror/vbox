@@ -505,12 +505,14 @@ struct BIOSSettings
                     fIOAPICEnabled,
                     fLogoFadeIn,
                     fLogoFadeOut,
-                    fPXEDebugEnabled;
+                    fPXEDebugEnabled,
+                    fNVRAMEnabled;
     uint32_t        ulLogoDisplayTime;
     BIOSBootMenuMode_T biosBootMenuMode;
     APICMode_T      apicMode;           // requires settings version 1.16 (VirtualBox 5.1)
     int64_t         llTimeOffset;
     com::Utf8Str    strLogoImagePath;
+    com::Utf8Str    strNVRAMPath;
 };
 
 /** List for keeping a recording feature list. */

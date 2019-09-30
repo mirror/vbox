@@ -80,6 +80,8 @@ private:
     HRESULT setTimeOffset(LONG64 offset);
     HRESULT getPXEDebugEnabled(BOOL *enabled);
     HRESULT setPXEDebugEnabled(BOOL enable);
+    HRESULT getNonVolatileStorageEnabled(BOOL *enabled);
+    HRESULT setNonVolatileStorageEnabled(BOOL enable);
     HRESULT getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile);
 
     struct Data;
