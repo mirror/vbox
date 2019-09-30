@@ -732,6 +732,9 @@ typedef struct VBOXUSBMONHOOKDRIVERWALKER
  * @param   uErrId         Unique error id representing the location in the driver.
  * @param   cbDumpData     Number of bytes at pDumpData.
  * @param   pDumpData      Pointer to data that will be added to the message (see 'details' tab).
+ *
+ * NB: We only use IoLogMsg.dll as the message file, limiting
+ * ErrCode to status codes and messages defined in ntiologc.h
  */
 static void vboxUsbMonLogError(NTSTATUS ErrCode, NTSTATUS ReturnedStatus, ULONG uErrId, USHORT cbDumpData, PVOID pDumpData)
 {
@@ -1330,7 +1333,15 @@ static NTSTATUS vboxUsbMonInternalIoctlDispatch(ULONG Ctl, PVOID pvBuffer,  ULON
                 break;
             }
 
-            pOut->u.hDev = VBoxUsbFltProxyStarted(pOut->u.pPDO);
+            PDEVICE_OBJECT pDevObj = pOut->u.pPDO;
+            pOut->u.hDev = VBoxUsbFltProxyStarted(pDevObj);
+
+            /* If we couldn't find the PDO in our list, that's a real problem and
+             * the capturing will not really work. Log an error.
+             */
+            if (!pOut->u.hDev)
+                vboxUsbMonLogError(IO_ERR_DRIVER_ERROR, STATUS_SUCCESS, 2, sizeof("INTERNAL_IOCTL_PROXY_STARTUP"), "INTERNAL_IOCTL_PROXY_STARTUP");
+
             ASSERT_WARN(pOut->u.hDev, ("zero hDev"));
             ASSERT_WARN(Status == STATUS_SUCCESS, ("unexpected status, 0x%x", Status));
             break;
