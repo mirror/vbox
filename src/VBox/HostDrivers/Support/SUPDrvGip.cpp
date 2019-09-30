@@ -359,7 +359,11 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
     uEax = ASMCpuId_EAX(0);
     if (uEax >= UINT32_C(0xb) && ASMIsValidStdRange(uEax))
     {
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+        ASMCpuId_Idx_ECX(0xb, 0, &uEax, &uEbx, &uEcx, &uEdx);
+#else
         ASMCpuIdExSlow(0xb, 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
+#endif
         if (uEax || uEbx || uEcx || uEdx)
         {
             if (RT_LIKELY(   uEdx < RT_ELEMENTS(pGip->aiCpuFromApicId)
@@ -379,7 +383,11 @@ static DECLCALLBACK(void) supdrvGipDetectGetGipCpuCallback(RTCPUID idCpu, void *
     uEax = ASMCpuId_EAX(UINT32_C(0x80000000));
     if (uEax >= UINT32_C(0x8000001e) && ASMIsValidExtRange(uEax))
     {
+#if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+        ASMCpuId_Idx_ECX(UINT32_C(0x8000001e), 0, &uEax, &uEbx, &uEcx, &uEdx);
+#else
         ASMCpuIdExSlow(UINT32_C(0x8000001e), 0, 0, 0, &uEax, &uEbx, &uEcx, &uEdx);
+#endif
         if (uEax || uEbx || uEcx || uEdx)
         {
             if (RT_LIKELY(   uEax < RT_ELEMENTS(pGip->aiCpuFromApicId)
