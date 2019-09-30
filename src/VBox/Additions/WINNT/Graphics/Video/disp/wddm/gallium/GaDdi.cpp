@@ -152,6 +152,7 @@ HRESULT APIENTRY GaDdiBlt(HANDLE hDevice, const D3DDDIARG_BLT *pData)
                     pointDst.x = pData->DstRect.left;
                     pointDst.y = pData->DstRect.top;
                     hr = pDevice9If->UpdateSurface(pSrcSurfIf, &pData->SrcRect, pDstSurfIf, &pointDst);
+                    Assert(hr == S_OK);
                 }
             }
             else
@@ -173,6 +174,7 @@ HRESULT APIENTRY GaDdiBlt(HANDLE hDevice, const D3DDDIARG_BLT *pData)
                     hr = gaSurfaceCopyD2S(pDevice9If,
                                           pSrcRc->RcDesc.enmFormat, pSrcSurfIf, &pData->SrcRect,
                                           pDstRc->RcDesc.enmFormat, pDstSurfIf, &pointDst);
+                    Assert(hr == S_OK);
                 }
                 else
                 {
@@ -200,6 +202,7 @@ HRESULT APIENTRY GaDdiBlt(HANDLE hDevice, const D3DDDIARG_BLT *pData)
                          * At the moment NineDevice9_StretchRect includes VBox hack, see "Hack. Flip src Y."
                          */
                         hr = pDevice9If->StretchRect(pSrcSurfIf, &pData->SrcRect, pDstSurfIf, &pData->DstRect, Filter);
+                        Assert(hr == S_OK);
                     }
                     else
                     {

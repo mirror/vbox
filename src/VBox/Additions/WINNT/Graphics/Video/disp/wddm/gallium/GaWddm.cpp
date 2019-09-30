@@ -244,6 +244,7 @@ HRESULT GaD3DResourceSynchMem(PVBOXWDDMDISP_RESOURCE pRc, bool fToBackend)
 
             PVBOXWDDMDISP_ALLOCATION pAlloc = &pRc->aAllocations[i];
             Assert(pAlloc->pvMem);
+            Assert(pAlloc->pvMem != Rect.pBits);
 
             VBoxD3DIfLockUnlockMemSynch(pAlloc, &Rect, NULL, fToBackend);
 
