@@ -143,6 +143,9 @@ extrn           rom_scan_:near
 ifdef VBOX_WITH_AHCI
 extrn           _ahci_init:near
 endif
+ifdef VBOX_WITH_VIRTIO_SCSI
+extrn           _virtio_scsi_init:near
+endif
 if VBOX_BIOS_CPU ge 80286
 extrn           _int15_blkmove:near
 endif
@@ -642,6 +645,11 @@ endif
 ifdef VBOX_WITH_SCSI
                 ; SCSI driver setup
                 call    _scsi_init
+endif
+
+ifdef VBOX_WITH_VIRTIO_SCSI
+                ; VirtIO-SCSI driver setup
+                call    _virtio_scsi_init
 endif
 
                 ;; floppy setup
