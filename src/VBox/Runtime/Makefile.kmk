@@ -2808,12 +2808,14 @@ RuntimeR0Drv_SOURCES    = \
 	VBox/log-vbox.cpp \
 
 RuntimeR0Drv_SOURCES.amd64 = \
+	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
 	common/math/bignum-amd64-x86.asm \
 	common/math/RTUInt128MulByU64.asm
 RuntimeR0Drv_SOURCES.x86   = \
+	common/asm/ASMCpuIdExSlow.asm \
 	common/asm/ASMMemFirstMismatchingU8.asm \
 	common/asm/ASMRdMsrEx.asm \
 	common/asm/ASMWrMsrEx.asm \
@@ -2852,7 +2854,6 @@ RuntimeR0Drv_SOURCES.linux = \
 	r0drv/powernotification-r0drv.c
 
 RuntimeR0Drv_SOURCES.win = \
-	common/asm/ASMCpuIdExSlow.asm \
 	common/ldr/ldr.cpp \
 	common/ldr/ldrEx.cpp \
 	common/ldr/ldrPE.cpp \
