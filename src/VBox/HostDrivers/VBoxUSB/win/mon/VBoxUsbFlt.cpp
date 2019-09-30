@@ -47,6 +47,11 @@
 #include <devguid.h>
 
 
+/* We should be including ntifs.h but that's not as easy as it sounds. */
+extern "C" {
+NTKERNELAPI PDEVICE_OBJECT IoGetDeviceAttachmentBaseRef(__in PDEVICE_OBJECT DeviceObject);
+}
+
 /*
  * state transitions:
  *
@@ -904,7 +909,15 @@ static DECLCALLBACK(BOOLEAN) vboxUsbFltFilterCheckWalker(PFILE_OBJECT pHubFile,
         InitializeListHead(&ReplugDevList);
         for (ULONG k = 0; k < pDevRelations->Count; ++k)
         {
-            PDEVICE_OBJECT pDevObj = pDevRelations->Objects[k];
+            PDEVICE_OBJECT pDevObj;
+
+            /* Grab the PDO+reference. We won't need the upper layer device object
+             * anymore, so dereference that right here, and drop the PDO ref later.
+             */
+            pDevObj = IoGetDeviceAttachmentBaseRef(pDevRelations->Objects[k]);
+            LOG(("DevObj=%p, PDO=%p\n", pDevRelations->Objects[k], pDevObj));
+            ObDereferenceObject(pDevRelations->Objects[k]);
+            pDevRelations->Objects[k] = pDevObj;
 
             LOG(("Found existing USB PDO 0x%p", pDevObj));
             VBOXUSBFLT_LOCK_ACQUIRE();
@@ -1298,6 +1311,13 @@ NTSTATUS VBoxUsbFltPdoAdd(PDEVICE_OBJECT pPdo, BOOLEAN *pbFiltered)
     *pbFiltered = FALSE;
     PVBOXUSBFLT_DEVICE pDevice;
 
+    /* Find the real PDO+reference. Dereference when we're done with it. Note that
+     * the input pPdo was not explicitly referenced so we're not dropping its ref.
+     */
+    PDEVICE_OBJECT pDevObj = IoGetDeviceAttachmentBaseRef(pPdo);
+    LOG(("DevObj=%p, real PDO=%p\n", pPdo, pDevObj));
+    pPdo = pDevObj;
+
     /* first check if device is in the a already */
     VBOXUSBFLT_LOCK_ACQUIRE();
     pDevice = vboxUsbFltDevGetLocked(pPdo);
@@ -1308,6 +1328,7 @@ NTSTATUS VBoxUsbFltPdoAdd(PDEVICE_OBJECT pPdo, BOOLEAN *pbFiltered)
         ASSERT_WARN(pDevice->enmState != VBOXUSBFLT_DEVSTATE_REMOVED, ("VBOXUSBFLT_DEVSTATE_REMOVED state for device(0x%p)", pDevice));
         *pbFiltered = pDevice->enmState >= VBOXUSBFLT_DEVSTATE_CAPTURING;
         VBOXUSBFLT_LOCK_RELEASE();
+        ObDereferenceObject(pPdo);
         return STATUS_SUCCESS;
     }
     VBOXUSBFLT_LOCK_RELEASE();
@@ -1315,6 +1336,7 @@ NTSTATUS VBoxUsbFltPdoAdd(PDEVICE_OBJECT pPdo, BOOLEAN *pbFiltered)
     if (!pDevice)
     {
         WARN(("VBoxUsbMonMemAllocZ failed"));
+        ObDereferenceObject(pPdo);
         return STATUS_NO_MEMORY;
     }
 
@@ -1324,6 +1346,7 @@ NTSTATUS VBoxUsbFltPdoAdd(PDEVICE_OBJECT pPdo, BOOLEAN *pbFiltered)
     if (!NT_SUCCESS(Status))
     {
         WARN(("vboxUsbFltDevPopulate failed, Status 0x%x", Status));
+        ObDereferenceObject(pPdo);
         VBoxUsbMonMemFree(pDevice);
         return Status;
     }
@@ -1336,6 +1359,10 @@ NTSTATUS VBoxUsbFltPdoAdd(PDEVICE_OBJECT pPdo, BOOLEAN *pbFiltered)
     VBOXUSBFLT_LOCK_ACQUIRE();
     /* (paranoia) re-check the device is still not here */
     pTmpDev = vboxUsbFltDevGetLocked(pPdo);
+
+    /* Drop the PDO ref, now we won't need it anymore. */
+    ObDereferenceObject(pPdo);
+
     if (pTmpDev)
     {
         LOG(("second try: found device (0x%p), state(%d) for PDO(0x%p)", pDevice, pDevice->enmState, pPdo));
@@ -1384,6 +1411,14 @@ NTSTATUS VBoxUsbFltPdoAdd(PDEVICE_OBJECT pPdo, BOOLEAN *pbFiltered)
 BOOLEAN VBoxUsbFltPdoIsFiltered(PDEVICE_OBJECT pPdo)
 {
     VBOXUSBFLT_DEVSTATE enmState = VBOXUSBFLT_DEVSTATE_REMOVED;
+
+    /* Find the real PDO+reference. Dereference when we're done with it. Note that
+     * the input pPdo was not explicitly referenced so we're not dropping its ref.
+     */
+    PDEVICE_OBJECT pDevObj = IoGetDeviceAttachmentBaseRef(pPdo);
+    LOG(("DevObj=%p, real PDO=%p\n", pPdo, pDevObj));
+    pPdo = pDevObj;
+
     VBOXUSBFLT_LOCK_ACQUIRE();
 
     PVBOXUSBFLT_DEVICE pDevice = vboxUsbFltDevGetLocked(pPdo);
@@ -1391,6 +1426,7 @@ BOOLEAN VBoxUsbFltPdoIsFiltered(PDEVICE_OBJECT pPdo)
         enmState = pDevice->enmState;
 
     VBOXUSBFLT_LOCK_RELEASE();
+    ObDereferenceObject(pPdo);
 
     return enmState >= VBOXUSBFLT_DEVSTATE_CAPTURING;
 }
@@ -1399,6 +1435,13 @@ NTSTATUS VBoxUsbFltPdoRemove(PDEVICE_OBJECT pPdo)
 {
     PVBOXUSBFLT_DEVICE pDevice;
     VBOXUSBFLT_DEVSTATE enmOldState;
+
+    /* Find the real PDO+reference. Dereference when we're done with it. Note that
+     * the input pPdo was not explicitly referenced so we're not dropping its ref.
+     */
+    PDEVICE_OBJECT pDevObj = IoGetDeviceAttachmentBaseRef(pPdo);
+    LOG(("DevObj=%p, real PDO=%p\n", pPdo, pDevObj));
+    pPdo = pDevObj;
 
     VBOXUSBFLT_LOCK_ACQUIRE();
     pDevice = vboxUsbFltDevGetLocked(pPdo);
@@ -1409,6 +1452,7 @@ NTSTATUS VBoxUsbFltPdoRemove(PDEVICE_OBJECT pPdo)
         pDevice->enmState = VBOXUSBFLT_DEVSTATE_REMOVED;
     }
     VBOXUSBFLT_LOCK_RELEASE();
+    ObDereferenceObject(pPdo);
     if (pDevice)
         vboxUsbFltDevRelease(pDevice);
     return STATUS_SUCCESS;
@@ -1418,6 +1462,8 @@ HVBOXUSBFLTDEV VBoxUsbFltProxyStarted(PDEVICE_OBJECT pPdo)
 {
     PVBOXUSBFLT_DEVICE pDevice;
     VBOXUSBFLT_LOCK_ACQUIRE();
+
+    /* NB: The USB proxy (VBoxUSB.sys) passes us the real PDO, not anything above that. */
     pDevice = vboxUsbFltDevGetLocked(pPdo);
     /*
      * Prevent a host crash when vboxUsbFltDevGetLocked fails to locate the matching PDO

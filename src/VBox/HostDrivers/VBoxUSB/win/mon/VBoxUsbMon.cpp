@@ -25,6 +25,76 @@
  */
 
 
+/*
+ *
+ *                        Theory of Operation
+ *                              - or -
+ *        The Document I Wish The Original Author Had Written
+ *
+ *
+ * The USB Monitor (VBoxUSBMon.sys) serves to capture and uncapture USB
+ * devices. Its job is to ensure that the USB proxy (VBoxUSB.sys) gets installed
+ * for captured devices and removed again when not needed, restoring the regular
+ * driver (if any).
+ *
+ * The USB Monitor does not handle any actual USB traffic; that is the role of
+ * VBoxUSB.sys, the USB proxy. A typical solution for installing such USB proxy
+ * is using a filter driver, but that approach was rejected because filter drivers
+ * cannot be dynamically added and removed. What VBoxUSBMon does instead is hook
+ * into the dispatch routine of the bus driver, i.e. USB hub driver, and alter
+ * the PnP information returned by the bus driver.
+ *
+ * The key functionality for capturing is cycling a USB port (which causes a USB
+ * device reset and triggers re-enumeration in the Windows USB driver stack), and
+ * then modifying IRP_MN_QUERY_ID / BusQueryHardwareIDs and related requests so
+ * that they return the synthetic USB VID/PID that VBoxUSB.sys handles rather than
+ * the true hardware VID/PID. That causes Windows to install VBoxUSB.sys for the
+ * device.
+ *
+ * Uncapturing again cycles the USB port but returns unmodified hardware IDs,
+ * causing Windows to load the normal driver for the device.
+ *
+ * Identifying devices to capture or release (uncapture) is done through USB filters,
+ * a cross-platform concept which matches USB device based on their VID/PID, class,
+ * and other criteria.
+ *
+ * There is an IOCTL interface for adding/removing USB filters and applying them.
+ * The IOCTLs are normally issued by VBoxSVC.
+ *
+ * USB devices are enumerated by finding all USB hubs (GUID_DEVINTERFACE_USB_HUB)
+ * and querying their child devices (i.e. USB devices or other hubs) by sending
+ * IRP_MJ_PNP / IRP_MN_QUERY_DEVICE_RELATIONS / BusRelations. This is done when
+ * applying existing filters.
+ *
+ * Newly arrived USB devices are intercepted early in their PnP enumeration
+ * through the hooked bus driver dispatch routine. Devices which satisty the
+ * filter matching criteria are morphed (see above) such that VBoxUSB.sys loads
+ * for them before any default driver does.
+ *
+ * There is an IDC interface to VBoxUSB.sys which allows the USB proxy to report
+ * that it's installed for a given USB device, and also report when the USB proxy
+ * is unloaded (typically caused by either unplugging the device or uncapturing
+ * and cycling the port). VBoxUSBMon.sys relies on these IDC calls to track
+ * captured devices and be informed when VBoxUSB.sys unloads.
+ *
+ * Windows 8+ complicates the USB Monitor's life by automatically putting some
+ * USB devices to a low-power state where they are unable to respond to any USB
+ * requests and VBoxUSBMon can't read any of their descriptors (note that in
+ * userland, the device descriptor can always be read, but string descriptors
+ * can't). Such devices'  USB VID/PID/revision is recovered using the Windows
+ * PnP Manager from their DevicePropertyHardwareID, but their USB class/subclass
+ * and protocol unfortunately cannot be unambiguously recovered from their
+ * DevicePropertyCompatibleIDs.
+ *
+ * Filter drivers add another complication. With filter drivers in place, the
+ * device objects returned by the BusRelations query (or passing through the PnP
+ * hooks) may not be PDOs but rather filter DOs higher in the stack. To avoid
+ * confusion, we flatten the references to their base, i.e. the real PDO, which
+ * should remain the same for the lifetime of a device. Note that VBoxUSB.sys
+ * always passes its own PDO in the proxy startup IOCTL.
+ */
+
+
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
