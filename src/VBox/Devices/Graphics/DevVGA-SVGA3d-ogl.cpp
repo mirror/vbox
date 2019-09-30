@@ -2807,6 +2807,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                      pBox->x, pBox->y, pBox->x + pBox->w, pBox->y + pBox->h));
 
                 uint32_t const offHst = pBox->x * pSurface->cbBlock;
+                uint32_t const cbWidth = pBox->w * pSurface->cbBlock;
 
                 rc = vmsvgaGMRTransfer(pThis,
                                        transfer,
@@ -2817,11 +2818,11 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                        GuestPtr,
                                        pBox->srcx * pSurface->cbBlock,
                                        cbGuestPitch,
-                                       pBox->w * pSurface->cbBlock,
+                                       cbWidth,
                                        pBox->h);
                 AssertRC(rc);
 
-                Log4(("first line:\n%.*Rhxd\n", cbGuestPitch, pbData + offHst));
+                Log4(("Buffer content (updated at [0x%x;0x%x):\n%.*Rhxd\n", offHst, offHst + cbWidth, pMipLevel->cbSurface, pbData));
 
                 pState->ext.glUnmapBuffer(GL_ARRAY_BUFFER);
                 VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
@@ -5798,7 +5799,16 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT p
                                               (const GLvoid *)(uintptr_t)pVertexDecl[iVertex].array.offset);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
-            GLuint const divisor = paVertexDivisors && paVertexDivisors[index].s.instanceData ? 1 : 0;
+            GLuint divisor = paVertexDivisors && paVertexDivisors[index].s.instanceData ? 1 : 0;
+            if (pVertexDecl[iVertex].array.stride == 0 && divisor == 0)
+            {
+                /* Zero stride means that the attribute pointer must not be increased.
+                 * See comment about stride in vmsvga3dDrawPrimitives.
+                 */
+                LogRelMax(8, ("VMSVGA: Warning: zero stride array (instancing %s)\n", paVertexDivisors ? "on" : "off"));
+                AssertFailed();
+                divisor = 1;
+            }
             pState->ext.glVertexAttribDivisor(index, divisor);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
 
@@ -5806,6 +5816,15 @@ int vmsvga3dDrawPrimitivesProcessVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT p
         }
         else
         {
+            if (pVertexDecl[iVertex].array.stride == 0)
+            {
+                /* Zero stride means that the attribute pointer must not be increased.
+                 * See comment about stride in vmsvga3dDrawPrimitives.
+                 */
+                LogRelMax(8, ("VMSVGA: Warning: zero stride array in fixed function pipeline\n"));
+                AssertFailed();
+            }
+
             /* Use the predefined selection of vertex streams for the fixed pipeline. */
             switch (pVertexDecl[iVertex].identity.usage)
             {
@@ -5907,6 +5926,8 @@ int vmsvga3dDrawPrimitivesCleanupVertexDecls(PVGASTATE pThis, PVMSVGA3DCONTEXT p
         if (pContext->state.shidVertex != SVGA_ID_INVALID)
         {
             /* Use numbered vertex arrays when shaders are active. */
+            pState->ext.glVertexAttribDivisor(iVertexDeclBase + iVertex, 0);
+            VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
             pState->ext.glDisableVertexAttribArray(iVertexDeclBase + iVertex);
             VMSVGA3D_CHECK_LAST_ERROR(pState, pContext);
         }
@@ -6012,6 +6033,57 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
                                              pVertexDecl[iVertex].identity.usage == SVGA3D_DECLUSAGE_POSITIONT);
                 break;
             default:  /* Shut up MSC. */ break;
+        }
+    }
+
+    /*
+     * D3D and OpenGL have a different meaning of value zero for the vertex array stride:
+     * - D3D and VMSVGA: "use a zero stride to tell the runtime not to increment the vertex buffer offset."
+     * - OpenGL: "If stride is 0, the generic vertex attributes are understood to be tightly packed in the array."
+     * VMSVGA uses the D3D semantics.
+     *
+     * In order to tell OpenGL to reuse the zero stride attributes for each vertex
+     * such attributes could be declared as instance data, then OpenGL applies them once
+     * for all vertices of the one drawn instance.
+     *
+     * If instancing is already used (cVertexDivisor > 0), then the code does nothing and assumes that
+     * all instance data is already correctly marked as such.
+     *
+     * If instancing is not requisted (cVertexDivisor == 0), then the code creates a description for
+     * one instance where all arrays with zero stride are marked as instance data, and all arrays
+     * with non-zero stride as indexed data.
+     */
+    bool fZeroStrideArray = false;
+    if (cVertexDivisor == 0)
+    {
+        unsigned i;
+        for (i = 0; i < numVertexDecls; ++i)
+        {
+            if (pVertexDecl[i].array.stride == 0)
+            {
+                fZeroStrideArray = true;
+                break;
+            }
+        }
+
+        if (fZeroStrideArray)
+        {
+            cVertexDivisor = numVertexDecls;
+            pVertexDivisor = (SVGA3dVertexDivisor *)RTMemTmpAlloc(sizeof(SVGA3dVertexDivisor) * cVertexDivisor);
+            AssertPtrReturn(pVertexDivisor, VERR_NO_MEMORY);
+
+            for (i = 0; i < numVertexDecls; ++i)
+            {
+                pVertexDivisor[i].s.count = 1;
+                if (pVertexDecl[i].array.stride == 0)
+                {
+                    pVertexDivisor[i].s.instanceData = 1;
+                }
+                else
+                {
+                    pVertexDivisor[i].s.indexedData = 1;
+                }
+            }
         }
     }
 
@@ -6231,6 +6303,13 @@ internal_error:
 
         iCurrentVertex = iVertex;
     }
+
+    if (fZeroStrideArray)
+    {
+        RTMemTmpFree(pVertexDivisor);
+        pVertexDivisor = NULL;
+    }
+
 #ifdef DEBUG
     /* Check whether 'activeTexture' on texture unit 'i' matches what we expect. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pContext->aSidActiveTextures); ++i)
