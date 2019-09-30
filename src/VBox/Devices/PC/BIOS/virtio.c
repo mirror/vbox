@@ -295,7 +295,7 @@ void BIOSCALL virtio_scsi_init(void)
             DBG_VIRTIO("Capability ID 0x%x at 0x%x\n", u8PciCapId, u8PciCapOff);
 
             if (   u8PciCapId == PCI_CAP_ID_VNDR
-                && cbPciCap == sizeof(virtio_pci_cap_t))
+                && cbPciCap >= sizeof(virtio_pci_cap_t))
             {
                 /* Read in the config type and see what we got. */
                 uint8_t u8PciVirtioCfg = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff + 3);
