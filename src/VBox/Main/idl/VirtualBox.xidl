@@ -4034,7 +4034,7 @@
 
   <enum
     name="VirtualSystemDescriptionType"
-    uuid="6d85a5f8-d305-11e9-986e-f3fb16e309d4"
+    uuid="eca6989c-1de0-456b-8c4f-49c609791156"
     >
     <desc>Used with <link to="IVirtualSystemDescription" /> to describe the type of
     a configuration value.</desc>
@@ -4097,6 +4097,7 @@
     <const name="CloudImageDisplayName" value="42" />
     <const name="CloudOCILaunchMode" value="43" />
     <const name="CloudPrivateIP" value="44" />
+    <const name="CloudBootVolumeId" value="45" />
   </enum>
 
   <enum

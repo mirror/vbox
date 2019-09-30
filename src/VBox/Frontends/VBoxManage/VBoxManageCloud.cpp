@@ -469,6 +469,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
     static const RTGETOPTDEF s_aOptions[] =
     {
         { "--image-id",       'i', RTGETOPT_REQ_STRING },
+        { "--boot-volume-id", 'v', RTGETOPT_REQ_STRING },
         { "--display-name",   'n', RTGETOPT_REQ_STRING },
         { "--launch-mode",    'm', RTGETOPT_REQ_STRING },
         { "--shape",          's', RTGETOPT_REQ_STRING },
@@ -494,7 +495,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                      RTEXITCODE_FAILURE);
     ComPtr<IVirtualSystemDescription> pVSD = virtualSystemDescriptions[0];
 
-    Utf8Str strDisplayName, strImageId;
+    Utf8Str strDisplayName, strImageId, strBootVolumeId;
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
@@ -503,6 +504,13 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
             case 'i':
                 strImageId = ValueUnion.psz;
                 pVSD->AddDescription(VirtualSystemDescriptionType_CloudImageId,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
+
+            case 'v':
+                strBootVolumeId = ValueUnion.psz;
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudBootVolumeId,
                                      Bstr(ValueUnion.psz).raw(),
                                      Bstr(ValueUnion.psz).raw());
                 break;
@@ -563,8 +571,12 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         }
     }
 
-    if (strImageId.isEmpty())
-        return errorArgument("Missing parameter --image-id.");
+    if (strImageId.isNotEmpty() && strBootVolumeId.isNotEmpty())
+        return errorArgument("Parameters --image-id and --boot-volume-id are mutually exclusive. "
+                             "Only one of them must be presented.");
+
+    if (strImageId.isEmpty() && strBootVolumeId.isEmpty())
+        return errorArgument("Missing parameter --image-id or --boot-volume-id. One of them must be presented.");
 
     ComPtr<ICloudProfile> pCloudProfile = pCommonOpts->profile.pCloudProfile;
 
@@ -599,9 +611,12 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         pProgress.setNull();
 #endif
 
-    RTPrintf("Creating cloud instance with name \'%s\' from the image \'%s\'...\n",
-             strDisplayName.c_str(), strImageId.c_str());
-
+    if (strImageId.isNotEmpty())
+        RTPrintf("Creating cloud instance with name \'%s\' from the image \'%s\'...\n",
+                 strDisplayName.c_str(), strImageId.c_str());
+    else
+        RTPrintf("Creating cloud instance with name \'%s\' from the boot volume \'%s\'...\n",
+                 strDisplayName.c_str(), strBootVolumeId.c_str());
 
     CHECK_ERROR2_RET(hrc, oCloudClient, LaunchVM(pVSD, pProgress.asOutParam()), RTEXITCODE_FAILURE);
 
