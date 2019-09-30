@@ -43,22 +43,9 @@
 #include <VBox/log.h>
 #include <VBox/param.h>
 
-
-#ifndef VBOX_WITH_PROTOBUF
-#define VBOX_WITH_PROTOBUF
-#endif
-
-#ifdef VBOX_WITH_PROTOBUF
-#include <google/protobuf/util/json_util.h>
-#include <google/protobuf/text_format.h>
-#include <VBox/vsd.pb.h>
-#include <fstream>
-using namespace std;
-using namespace google::protobuf;
-#endif
-
 #include "VBoxManage.h"
 using namespace com;
+
 
 // funcs
 ///////////////////////////////////////////////////////////////////////////////
@@ -312,7 +299,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                     return errorArgument("Invalid import options '%s'\n", ValueUnion.psz);
                 break;
 
-                /*--cloud and --vsys are mutually exclusive, only one must be presented*/
+                /*--cloud and --vsys are orthogonal, only one must be presented*/
             case 'j':   // --cloud
                 if (fCloud == false && actionType == NOT_SET)
                 {
@@ -1507,13 +1494,8 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
          * OVA/OVF format on the local host.
          */
 
-#ifdef VBOX_WITH_PROTOBUF
-        std::map< ComPtr<IVirtualSystemDescription>, vsd::InstanceDescription > VSDToInstanceDescriptionMap;
-#else
         /* VSDList is needed for the second stage where we launch the cloud instances if it was requested by user */
         std::list< ComPtr<IVirtualSystemDescription> > VSDList;
-#endif
-
         std::list< ComPtr<IMachine> >::iterator itM;
         uint32_t i=0;
         for (itM = llMachines.begin();
@@ -1524,26 +1506,6 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
             ComPtr<IVirtualSystemDescription> pVSD;
             CHECK_ERROR_BREAK(pMachine, ExportTo(pAppliance, Bstr(pszAbsFilePath).raw(), pVSD.asOutParam()));
 
-#ifdef VBOX_WITH_PROTOBUF
-            vsd::InstanceDescription protobufInstDesc;
-            RTEXITCODE rcExit = RTEXITCODE_SUCCESS;
-            Bstr bstrDesc;
-            CHECK_ERROR_BREAK(pVSD, GetVSDDescription(bstrDesc.asOutParam()));
-            Utf8Str strHumanReadableFormVSD(bstrDesc);
-            {
-                bool st = google::protobuf::TextFormat::ParseFromString(strHumanReadableFormVSD.c_str(), &protobufInstDesc);
-                if (st)
-                {
-                    RTPrintf("message protobufInstDesc was parsed.\n");
-                    string strJson;
-                    google::protobuf::util::Status  status = google::protobuf::util::MessageToJsonString(protobufInstDesc, &strJson);
-                    RTPrintf("\nvsd::InstanceDescription:\n%s\n##################\n", strJson.c_str());
-                }
-            }
-
-            vsd::InstanceDescription protobufUserInstDesc;
-#endif
-
             // Add additional info to the virtual system description if the user wants so
             ArgsMap *pmapArgs = NULL;
             ArgsMapsMap::iterator itm = mapArgsMapsPerVsys.find(i);
@@ -1551,16 +1513,6 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                 pmapArgs = &itm->second;
             if (pmapArgs)
             {
-
-#ifdef VBOX_WITH_PROTOBUF
-                vsd::InstanceDescription_CloudSettings* pInstCloudSettings = NULL;
-                if (actionType == CLOUD)
-                {
-                    pInstCloudSettings = protobufUserInstDesc.mutable_cloud();
-                    pInstCloudSettings->set_providershortname(strOutputFile.substr(0, strOutputFile.find("://")).c_str());
-                }
-#endif
-
                 ArgsMap::iterator itD;
                 for (itD = pmapArgs->begin();
                      itD != pmapArgs->end();
@@ -1570,80 +1522,38 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     {
                         //remove default value if user has specified new name (default value is set in the ExportTo())
 //                      pVSD->RemoveDescriptionByType(VirtualSystemDescriptionType_Name);
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_Name,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        protobufUserInstDesc.set_name(itD->second.c_str());
-#endif
                     }
                     else if (itD->first == "product")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_Product,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        protobufUserInstDesc.set_product(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "producturl")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_ProductUrl,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        protobufUserInstDesc.set_producturl(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "vendor")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_Vendor,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        protobufUserInstDesc.set_vendor(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "vendorurl")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_VendorUrl,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        protobufUserInstDesc.set_vendorurl(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "version")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_Version,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        protobufUserInstDesc.set_version(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "description")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_Description,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        protobufUserInstDesc.set_description(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "eula")
-                    {
                         pVSD->AddDescription(VirtualSystemDescriptionType_License,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-                    }
                     else if (itD->first == "eulafile")
                     {
                         Utf8Str strContent;
@@ -1667,155 +1577,55 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     }
                     /* add cloud export settings */
                     else if (itD->first == "cloudshape")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudInstanceShape,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_instanceshape(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "clouddomain")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudDomain,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_domain(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "clouddisksize")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudBootDiskSize,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_bootdisksize(itD->second.toUInt64());
-#endif
-                    }
                     else if (itD->first == "cloudbucket")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudBucket,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_bucket(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "cloudocivcn")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCIVCN,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_vcn(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "cloudpublicip")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicIP,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_fpublicip(itD->second.equals("true") ? true:false);
-#endif
-                    }
                     else if (itD->first == "cloudprivateip")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudPrivateIP,
                                              Bstr(itD->second).raw(), NULL);
-#else
-//                      pInstCloudSettings.set_fpublicip(itD->second.equals("true") ? true:false);
-#endif
-                    }
                     else if (itD->first == "cloudprofile")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudProfileName,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_profilename(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "cloudocisubnet")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCISubnet,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_subnet(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "cloudkeepobject")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudKeepObject,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_fkeepobject(itD->second.equals("true") ? true:false);
-#endif
-                    }
                     else if (itD->first == "cloudlaunchmode")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudOCILaunchMode,
                                              Bstr(itD->second).raw(), NULL);
-#else
-//                      pInstCloudSettings.set_launch_mode(itD->second.c_str());
-#endif
-                    }
                     else if (itD->first == "cloudlaunchinstance")
-                    {
-#ifndef VBOX_WITH_PROTOBUF
                         pVSD->AddDescription(VirtualSystemDescriptionType_CloudLaunchInstance,
                                              Bstr(itD->second).raw(),
                                              Bstr(itD->second).raw());
-#else
-                        pInstCloudSettings->set_flaunchinstance(itD->second.equals("true") ? true:false);
-#endif
-                    }
                 }
             }
 
-#ifndef VBOX_WITH_PROTOBUF
             VSDList.push_back(pVSD);//store vsd for the possible second stage
-#else
-            protobufInstDesc.MergeFrom(protobufUserInstDesc);
-            VSDToInstanceDescriptionMap.insert(make_pair(pVSD,protobufInstDesc));
-
-            {
-                int messageSize = protobufUserInstDesc.ByteSizeLong();
-                RTPrintf("messageSize of protobufUserInstDesc is %d\n", messageSize);
-                string output;
-                bool st = google::protobuf::TextFormat::PrintToString(protobufUserInstDesc, &output);
-                if (st)
-                {
-                    RTPrintf("message protobufUserInstDesc is %s\n", output.c_str());
-                    Bstr updatedVersion(output.c_str());
-                    CHECK_ERROR_BREAK(pVSD, UpdateVSDDescription(updatedVersion.raw()));
-                }
-            }
-
-            {
-                int messageSize = protobufInstDesc.ByteSizeLong();
-                string output;
-                RTPrintf("messageSize of protobufInstDesc is %d\n", messageSize);
-                bool st = google::protobuf::TextFormat::PrintToString(protobufInstDesc, &output);
-                if (st)
-                    RTPrintf("message protobufInstDesc is %s\n", output.c_str());
-            }
-#endif
-
         }
 
         if (FAILED(rc))
@@ -1876,13 +1686,12 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
         if (actionType == CLOUD)
         {
             /* Launch the exported VM if the appropriate flag had been set on the first stage */
-
-#ifndef VBOX_WITH_PROTOBUF
             for (std::list< ComPtr<IVirtualSystemDescription> >::iterator itVSD = VSDList.begin();
                  itVSD != VSDList.end();
                  ++itVSD)
             {
                 ComPtr<IVirtualSystemDescription> pVSD = *itVSD;
+
                 com::SafeArray<VirtualSystemDescriptionType_T> retTypes;
                 com::SafeArray<BSTR> aRefs;
                 com::SafeArray<BSTR> aOvfValues;
@@ -1900,18 +1709,6 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                 retTypes.setNull(); aRefs.setNull(); aOvfValues.setNull(); aVBoxValues.setNull(); aExtraConfigValues.setNull();
 
                 if (flagCloudLaunchInstance.equals("true"))
-#else
-            for (std::map< ComPtr<IVirtualSystemDescription>, vsd::InstanceDescription >::iterator itIDL = VSDToInstanceDescriptionMap.begin();
-                 itIDL != VSDToInstanceDescriptionMap.end();
-                 ++itIDL)
-            {
-                ComPtr<IVirtualSystemDescription> pVSD = itIDL->first;
-                vsd::InstanceDescription protobufInstDesc = itIDL->second;
-                vsd::InstanceDescription_CloudSettings* pInstCloudSettings = protobufInstDesc.mutable_cloud();
-                bool boolflagCloudLaunchInstance = pInstCloudSettings->flaunchinstance();
-
-                if (boolflagCloudLaunchInstance)
-#endif
                 {
                     /* Getting the short provider name */
                     Bstr bstrCloudProviderShortName(strOutputFile.c_str(), strOutputFile.find("://"));
@@ -1924,21 +1721,16 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                     CHECK_ERROR_BREAK(pCloudProviderManager,
                                      GetProviderByShortName(bstrCloudProviderShortName.raw(), pCloudProvider.asOutParam()));
 
-#ifndef VBOX_WITH_PROTOBUF
                     CHECK_ERROR_BREAK(pVSD, GetDescriptionByType(VirtualSystemDescriptionType_CloudProfileName,
                                              ComSafeArrayAsOutParam(retTypes),
                                              ComSafeArrayAsOutParam(aRefs),
                                              ComSafeArrayAsOutParam(aOvfValues),
                                              ComSafeArrayAsOutParam(aVBoxValues),
                                              ComSafeArrayAsOutParam(aExtraConfigValues)));
+
                     ComPtr<ICloudProfile> pCloudProfile;
                     CHECK_ERROR_BREAK(pCloudProvider, GetProfileByName(Bstr(aVBoxValues[0]).raw(), pCloudProfile.asOutParam()));
                     retTypes.setNull(); aRefs.setNull(); aOvfValues.setNull(); aVBoxValues.setNull(); aExtraConfigValues.setNull();
-#else
-                    Utf8Str profilename(pInstCloudSettings->profilename().c_str());
-                    ComPtr<ICloudProfile> pCloudProfile;
-                    CHECK_ERROR_BREAK(pCloudProvider, GetProfileByName(Bstr(profilename).raw(), pCloudProfile.asOutParam()));
-#endif
 
                     ComObjPtr<ICloudClient> oCloudClient;
                     CHECK_ERROR_BREAK(pCloudProfile, CreateCloudClient(oCloudClient.asOutParam()));
@@ -1951,7 +1743,6 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
 
                     if (SUCCEEDED(rc))
                     {
-#ifndef VBOX_WITH_PROTOBUF
                         CHECK_ERROR_BREAK(pVSD, GetDescriptionByType(VirtualSystemDescriptionType_CloudInstanceId,
                                                  ComSafeArrayAsOutParam(retTypes),
                                                  ComSafeArrayAsOutParam(aRefs),
@@ -1963,99 +1754,14 @@ RTEXITCODE handleExportAppliance(HandlerArg *a)
                                  Utf8Str(Bstr(aVBoxValues[0]).raw()).c_str(),
                                  Utf8Str(bstrCloudProviderShortName.raw()).c_str());
                         retTypes.setNull(); aRefs.setNull(); aOvfValues.setNull(); aVBoxValues.setNull(); aExtraConfigValues.setNull();
-#else
-                        Bstr bstrDesc;
-                        CHECK_ERROR_BREAK(pVSD, GetVSDDescription(bstrDesc.asOutParam()));
-                        Utf8Str strHumanReadableFormVSD(bstrDesc);
-                        vsd::InstanceDescription protobufInstDescWithInstanceId;
-                        bool st = google::protobuf::TextFormat::ParseFromString(strHumanReadableFormVSD.c_str(), &protobufInstDescWithInstanceId);
-                        if (st)
-                        {
-                            RTPrintf("message protobufInstDescWithInstanceId was parsed.\n");
-                            string strJson;
-                            google::protobuf::util::Status  status = google::protobuf::util::MessageToJsonString(protobufInstDescWithInstanceId, &strJson);
-                            RTPrintf("\nvsd::InstanceDescription:\n%s\n##################\n", strJson.c_str());
-                        }
-
-                        vsd::InstanceDescription_CloudSettings* pInstCloudSettingsWithInstanceId = protobufInstDescWithInstanceId.mutable_cloud();
-                        Utf8Str instanceId(pInstCloudSettingsWithInstanceId->instanceid().c_str());
-                        RTPrintf("A cloud instance with id '%' (provider '%s') was started\n",
-                                 instanceId.c_str(),
-                                 /* Utf8Str(Bstr(aVBoxValues[0]).raw()).c_str(),*/
-                                 Utf8Str(bstrCloudProviderShortName.raw()).c_str());
-#endif
                     }
                 }
             }
         }
-
-#ifdef VBOX_WITH_PROTOBUF
-        std::list< ComPtr<IMachine> >::iterator itM1;
-        i=0;
-        for (itM1 = llMachines.begin();
-             itM1 != llMachines.end();
-             ++itM1, ++i)
-        {
-            ComPtr<IMachine> pMachine = *itM1;
-            ComPtr<IVirtualSystemDescription> pVSD;
-            vsd::InstanceDescription protobufInstDesc;
-
-            Bstr bstrMachineName;
-            CHECK_ERROR_BREAK(pMachine, COMGETTER(Name)(bstrMachineName.asOutParam()));
-            Bstr bstrSettingsFilePath;
-            CHECK_ERROR_BREAK(pMachine, COMGETTER(SettingsFilePath)(bstrSettingsFilePath.asOutParam()));
-            com::Utf8Str strBinaryVSDFile(bstrSettingsFilePath);
-            strBinaryVSDFile.stripFilename();
-            strBinaryVSDFile.append("/").append(Utf8Str(bstrMachineName)).append("-proto.export");
-
-            fstream input(strBinaryVSDFile.c_str(), ios::in | ios::binary);
-            if (!input.good() || !protobufInstDesc.ParseFromIstream(&input))
-            {
-                RTMsgError("Cannot read the file \"%s\"\n", strBinaryVSDFile.c_str());
-                return RTEXITCODE_FAILURE;
-            }
-            input.close();
-
-            RTPrintf("Successfully read the test file \"%s\"\n", strBinaryVSDFile.c_str());
-            const google::protobuf::Map< ::std::string, ::vsd::ImageDescription >& imList = protobufInstDesc.images();
-            google::protobuf::Map< ::std::string, ::vsd::ImageDescription >::const_iterator imListIt = imList.begin();
-            RTPrintf("\n########Instance decription########\n");
-            RTPrintf("Name: %s\n", protobufInstDesc.name().c_str());
-            RTPrintf("Id: %s\n", protobufInstDesc.id().c_str());
-            RTPrintf("Path: %s\n", protobufInstDesc.path().c_str());
-            RTPrintf("Description: %s\n", protobufInstDesc.description().c_str());
-            RTPrintf("Os: %s\n", protobufInstDesc.os().c_str());
-            RTPrintf("Product: %s\n", protobufInstDesc.product().c_str());
-            RTPrintf("Vendor: %s\n", protobufInstDesc.vendor().c_str());
-            RTPrintf("Version: %s\n", protobufInstDesc.version().c_str());
-            RTPrintf("Product url: %s\n", protobufInstDesc.producturl().c_str());
-            RTPrintf("Vendor url: %s\n", protobufInstDesc.vendorurl().c_str());
-            RTPrintf("Cpu: %u\n", protobufInstDesc.cpu());
-            RTPrintf("Memory: %u\n", protobufInstDesc.memory());
-            while (imListIt != imList.end())
-            {
-                com::Utf8Str key(imListIt->first.c_str());
-                vsd::ImageDescription imDesc(imListIt->second);
-                RTPrintf("\n###Image decription###\n");
-                RTPrintf("Name: %s\n", imDesc.name().c_str());
-                RTPrintf("Id: %s\n", imDesc.id().c_str());
-                RTPrintf("Path: %s\n", imDesc.path().c_str());
-                RTPrintf("Description: %s\n", imDesc.description().c_str());
-                RTPrintf("Size (MB): %u\n", imDesc.size());
-                const vsd::ImageDescription_StorageBus& stBus = imDesc.storagebus();
-                RTPrintf("Bus type: %u\n", stBus.bustype());
-                RTPrintf("Controller: %u\n", stBus.controller());
-                RTPrintf("Channel: %u\n", stBus.channel());
-                RTPrintf("###End Image decription###\n");
-                ++imListIt;
-            }
-            RTPrintf("########End Instance decription########\n");
-        }
-#endif
-
     } while (0);
 
     return SUCCEEDED(rc) ? RTEXITCODE_SUCCESS : RTEXITCODE_FAILURE;
 }
 
 #endif /* !VBOX_ONLY_DOCS */
+
