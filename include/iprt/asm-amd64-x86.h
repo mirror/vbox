@@ -1427,7 +1427,7 @@ DECLINLINE(uint32_t) ASMGetApicIdExt0B(void)
                             "=d" (xDX)
                           : "0" (0xb),
                             "1" (0)
-                          : "ecx", "ebx");
+                          : "ebx");
 #  endif
     return (uint32_t)xDX;
 
