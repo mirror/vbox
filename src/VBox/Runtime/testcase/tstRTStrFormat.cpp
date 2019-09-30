@@ -733,7 +733,7 @@ int main()
     CHECKSTR("00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14");
     cch = RTStrPrintf(pszBuf, BUF_SIZE, "%256.*RhXs", sizeof(s_abHex1), s_abHex1, (uint64_t)0x1234);
     CHECKSTR("00001234: 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14");
-    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%256.*RhXs", sizeof(s_abHex1), s_abHex1, (uint64_t)0x987654321abcdef);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%256.*RhXs", sizeof(s_abHex1), s_abHex1, (uint64_t)UINT64_C(0x987654321abcdef));
     CHECKSTR("0987654321abcdef: 00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f 10 11 12 13 14");
 
     cch = RTStrPrintf(pszBuf, BUF_SIZE, "%4.8Rhxd", s_abHex1);
@@ -764,7 +764,7 @@ int main()
                 "0000f314/0010: 10 11 12 13 14                                  .....");
     CHECKSTR(pszBuf2);
 
-    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%.*RhXd", sizeof(s_abHex1), s_abHex1, (uint64_t)0x123456789abcdef);
+    cch = RTStrPrintf(pszBuf, BUF_SIZE, "%.*RhXd", sizeof(s_abHex1), s_abHex1, (uint64_t)UINT64_C(0x123456789abcdef));
     RTStrPrintf(pszBuf2, BUF_SIZE,
                 "0123456789abcdef/0000: 00 01 02 03 04 05 06 07-08 09 0a 0b 0c 0d 0e 0f ................\n"
                 "0123456789abcdff/0010: 10 11 12 13 14                                  .....");

@@ -1283,22 +1283,22 @@ void testDate()
         CHECK_DATE(obj3, false, true, 0, "1970-01-01T00:00:00.00Z", true);
 
         /* Format changes: */
-        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, 59123456789), RTCRestDate::kFormat_Rfc3339_Fraction_9), VINF_SUCCESS);
-        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.123456789Z", true);
+        RTTESTI_CHECK_RC(obj3.assignValue(RTTimeSpecSetNano(&TimeSpec, INT64_C(59123456789)), RTCRestDate::kFormat_Rfc3339_Fraction_9), VINF_SUCCESS);
+        CHECK_DATE(obj3, false, true, INT64_C(59123456789), "1970-01-01T00:00:59.123456789Z", true);
         RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc2822), VINF_SUCCESS);
-        CHECK_DATE(obj3, false, true, 59123456789, "Thu, 1 Jan 1970 00:00:59 -0000", true);
+        CHECK_DATE(obj3, false, true, INT64_C(59123456789), "Thu, 1 Jan 1970 00:00:59 -0000", true);
         RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc7131), VINF_SUCCESS);
-        CHECK_DATE(obj3, false, true, 59123456789, "Thu, 1 Jan 1970 00:00:59 GMT", true);
+        CHECK_DATE(obj3, false, true, INT64_C(59123456789), "Thu, 1 Jan 1970 00:00:59 GMT", true);
         RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339), VINF_SUCCESS);
-        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59Z", true);
+        CHECK_DATE(obj3, false, true, INT64_C(59123456789), "1970-01-01T00:00:59Z", true);
         RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339_Fraction_2), VINF_SUCCESS);
-        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.12Z", true);
+        CHECK_DATE(obj3, false, true, INT64_C(59123456789), "1970-01-01T00:00:59.12Z", true);
         RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339_Fraction_3), VINF_SUCCESS);
-        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.123Z", true);
+        CHECK_DATE(obj3, false, true, INT64_C(59123456789), "1970-01-01T00:00:59.123Z", true);
         RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339_Fraction_6), VINF_SUCCESS);
-        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.123456Z", true);
+        CHECK_DATE(obj3, false, true, INT64_C(59123456789), "1970-01-01T00:00:59.123456Z", true);
         RTTESTI_CHECK_RC(obj3.setFormat(RTCRestDate::kFormat_Rfc3339_Fraction_9), VINF_SUCCESS);
-        CHECK_DATE(obj3, false, true, 59123456789, "1970-01-01T00:00:59.123456789Z", true);
+        CHECK_DATE(obj3, false, true, INT64_C(59123456789), "1970-01-01T00:00:59.123456789Z", true);
 
         /* Reset to default and setNull works identically: */
         RTTESTI_CHECK_RC(obj3.resetToDefault(), VINF_SUCCESS);

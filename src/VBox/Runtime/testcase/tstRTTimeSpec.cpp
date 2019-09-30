@@ -532,7 +532,7 @@ int main()
      * Relies heavily on correct behavior of RTTimeNormalize and does limited sanity checking.
      */
     RTTestSub(hTest, "Wraparound 3 year (UTC+local), silent");
-    RTTimeSpecSetNano(&Ts1, 1420070400000000000);
+    RTTimeSpecSetNano(&Ts1, INT64_C(1420070400000000000));
     RTTIME Tcheck;
     memset(&Tcheck, 0, sizeof(Tcheck));
     Tcheck.i32Year = 2015;
