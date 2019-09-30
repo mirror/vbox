@@ -39,11 +39,10 @@
 #ifndef IN_RC
 # include <iprt/mem.h>
 #endif
-/*#if defined(IN_RING0) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))*/
-# include <iprt/mp.h>
-/*#else
+#include <iprt/mp.h>
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 # include <iprt/asm-amd64-x86.h>
-#endif*/
+#endif
 #include <iprt/path.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -140,11 +139,13 @@ typedef RTTRACEBUFINT const *PCRTTRACEBUFINT;
 /**
  * Get the current CPU Id.
  */
-/*#if defined(IN_RING0) || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))*/
+#if defined(IN_RING0) \
+ || defined(RT_OS_WINDOWS) \
+ || (!defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86))
 # define RTTRACEBUF_CUR_CPU()   RTMpCpuId()
-/*#else
-# define RTTRACEBUF_CUR_CPU()   ASMGetApicId()
-#endif*/
+#else
+# define RTTRACEBUF_CUR_CPU()   ASMGetApicId() /** @todo this isn't good enough for big boxes with lots of CPUs/cores. */
+#endif
 
 /** Calculates the address of the volatile trace buffer members. */
 #define RTTRACEBUF_TO_VOLATILE(a_pThis)     ((PRTTRACEBUFVOLATILE)((uint8_t *)(a_pThis) + (a_pThis)->offVolatile))
