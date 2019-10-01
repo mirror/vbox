@@ -86,6 +86,8 @@ private:
     void createInfoRows();
     void updateUpTime();
     void updateTitleRow();
+    void updateOSTypeRow();
+    void updateVirtualizationInfo();
 
     /** Searches the table for the @p item of enmLine and replaces its text. if not found inserts a new
       * row to the end of the table. Assumes only one line of the @p enmLine exists. */
@@ -323,6 +325,57 @@ void UIRuntimeInfoWidget::updateTitleRow()
     setItem(0, 0, pTitleItem);
 }
 
+void UIRuntimeInfoWidget::updateOSTypeRow()
+{
+   QString strOSType = m_console.GetGuest().GetOSTypeId();
+    if (strOSType.isEmpty())
+        strOSType = m_strNotDetected;
+    else
+        strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
+   updateInfoRow(InfoRow_GuestOSType, QString("%1:").arg(m_strGuestOSTypeLabel), strOSType);
+}
+
+void UIRuntimeInfoWidget::updateVirtualizationInfo()
+{
+
+    /* Determine virtualization attributes: */
+    CMachineDebugger debugger = m_console.GetDebugger();
+
+    QString strVirtualization = debugger.GetHWVirtExEnabled() ?
+        m_strActive : m_strInactive;
+
+    QString strExecutionEngine;
+    switch (debugger.GetExecutionEngine())
+    {
+        case KVMExecutionEngine_HwVirt:
+            strExecutionEngine = "VT-x/AMD-V";  /* no translation */
+            break;
+        case KVMExecutionEngine_RawMode:
+            strExecutionEngine = "raw-mode";    /* no translation */
+            break;
+        case KVMExecutionEngine_NativeApi:
+            strExecutionEngine = "native API";  /* no translation */
+            break;
+        default:
+            AssertFailed();
+            RT_FALL_THRU();
+        case KVMExecutionEngine_NotSet:
+            strExecutionEngine = m_strNotSet;
+            break;
+    }
+    QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
+        m_strActive : m_strInactive;
+    QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
+        m_strActive : m_strInactive;
+    QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
+
+    updateInfoRow(InfoRow_ExecutionEngine, QString("%1:").arg(m_strExcutionEngineLabel), strExecutionEngine);
+    updateInfoRow(InfoRow_NestedPaging, QString("%1:").arg(m_strNestedPagingLabel), strNestedPaging);
+    updateInfoRow(InfoRow_UnrestrictedExecution, QString("%1:").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
+    updateInfoRow(InfoRow_Paravirtualization, QString("%1:").arg(m_strParavirtualizationLabel), strParavirtProvider);
+
+}
+
 void UIRuntimeInfoWidget::updateGAsVersion()
 {
     CGuest guest = m_console.GetGuest();
@@ -391,54 +444,11 @@ void UIRuntimeInfoWidget::createInfoRows()
     updateTitleRow();
     updateScreenInfo();
     updateUpTime();
-
-    /* Determine virtualization attributes: */
-    CMachineDebugger debugger = m_console.GetDebugger();
-
-    QString strVirtualization = debugger.GetHWVirtExEnabled() ?
-        m_strActive : m_strInactive;
-
-    QString strExecutionEngine;
-    switch (debugger.GetExecutionEngine())
-    {
-        case KVMExecutionEngine_HwVirt:
-            strExecutionEngine = "VT-x/AMD-V";  /* no translation */
-            break;
-        case KVMExecutionEngine_RawMode:
-            strExecutionEngine = "raw-mode";    /* no translation */
-            break;
-        case KVMExecutionEngine_NativeApi:
-            strExecutionEngine = "native API";  /* no translation */
-            break;
-        default:
-            AssertFailed();
-            RT_FALL_THRU();
-        case KVMExecutionEngine_NotSet:
-            strExecutionEngine = m_strNotSet;
-            break;
-    }
-    QString strNestedPaging = debugger.GetHWVirtExNestedPagingEnabled() ?
-        m_strActive : m_strInactive;
-
-    QString strUnrestrictedExecution = debugger.GetHWVirtExUXEnabled() ?
-        m_strActive : m_strInactive;
-
-    QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
-
-    QString strOSType = m_console.GetGuest().GetOSTypeId();
-    if (strOSType.isEmpty())
-        strOSType = m_strNotDetected;
-    else
-        strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
-
     updateClipboardMode();
     updateDnDMode();
-    insertInfoRow(InfoRow_ExecutionEngine, QString("%1:").arg(m_strExcutionEngineLabel), strExecutionEngine);
-    insertInfoRow(InfoRow_NestedPaging, QString("%1:").arg(m_strNestedPagingLabel), strNestedPaging);
-    insertInfoRow(InfoRow_UnrestrictedExecution, QString("%1:").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
-    insertInfoRow(InfoRow_Paravirtualization, QString("%1:").arg(m_strParavirtualizationLabel), strParavirtProvider);
+    updateVirtualizationInfo();
     updateGAsVersion();
-    insertInfoRow(InfoRow_GuestOSType, QString("%1:").arg(m_strGuestOSTypeLabel), strOSType);
+    updateOSTypeRow();
     updateVRDE();
     resizeColumnToContents(1);
 }
