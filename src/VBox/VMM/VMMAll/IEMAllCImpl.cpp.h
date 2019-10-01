@@ -5776,7 +5776,7 @@ IEM_CIMPL_DEF_4(iemCImpl_load_CrX, uint8_t, iCrReg, uint64_t, uNewCrX, IEMACCESS
                 return iemRaiseGeneralProtectionFault0(pVCpu);
             }
 
-            bool const fPcide    = ((uNewCrX ^ uOldCrX) & X86_CR4_PCIDE) && (uNewCrX & X86_CR4_PCIDE);
+            bool const fPcide    = !(uOldCrX & X86_CR4_PCIDE) && (uNewCrX & X86_CR4_PCIDE);
             bool const fLongMode = CPUMIsGuestInLongModeEx(IEM_GET_CTX(pVCpu));
 
             /* PCIDE check. */
