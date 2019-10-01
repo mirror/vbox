@@ -60,7 +60,7 @@ public:
     /** Destructs Storage settings page. */
     ~UIMachineSettingsStorage();
 
-    /** Defines chipset @a type. */
+    /** Defines chipset @a enmType. */
     void setChipsetType(KChipsetType enmType);
 
 protected:

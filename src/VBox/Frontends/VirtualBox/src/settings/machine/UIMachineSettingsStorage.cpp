@@ -52,7 +52,7 @@ Q_DECLARE_METATYPE (ControllerBusList);
 Q_DECLARE_METATYPE (ControllerTypeList);
 
 
-/** Known item states. */
+/** Item states. */
 enum ItemState
 {
     State_DefaultItem,
@@ -62,7 +62,7 @@ enum ItemState
 };
 
 
-/** Known pixmap types. */
+/** Pixmap types. */
 enum PixmapType
 {
     InvalidPixmap,
@@ -158,7 +158,7 @@ struct UIDataSettingsMachineStorageAttachment
         , m_fAttachmentHotPluggable(false)
     {}
 
-    /** Returns whether the @a other passed data is equal to this one. */
+    /** Returns whether @a another passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineStorageAttachment &other) const
     {
         return true
@@ -173,9 +173,9 @@ struct UIDataSettingsMachineStorageAttachment
                ;
     }
 
-    /** Returns whether the @a other passed data is equal to this one. */
+    /** Returns whether @a another passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineStorageAttachment &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
+    /** Returns whether @a another passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineStorageAttachment &other) const { return !equal(other); }
 
     /** Holds the attachment type. */
@@ -209,7 +209,7 @@ struct UIDataSettingsMachineStorageController
         , m_fUseHostIOCache(false)
     {}
 
-    /** Returns whether the @a other passed data is equal to this one. */
+    /** Returns whether @a another passed data is equal to this one. */
     bool equal(const UIDataSettingsMachineStorageController &other) const
     {
         return true
@@ -221,9 +221,9 @@ struct UIDataSettingsMachineStorageController
                ;
     }
 
-    /** Returns whether the @a other passed data is equal to this one. */
+    /** Returns whether @a another passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineStorageController &other) const { return equal(other); }
-    /** Returns whether the @a other passed data is different from this one. */
+    /** Returns whether @a another passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineStorageController &other) const { return !equal(other); }
 
     /** Holds the controller name. */
@@ -245,9 +245,9 @@ struct UIDataSettingsMachineStorage
     /** Constructs data. */
     UIDataSettingsMachineStorage() {}
 
-    /** Returns whether the @a other passed data is equal to this one. */
+    /** Returns whether @a another passed data is equal to this one. */
     bool operator==(const UIDataSettingsMachineStorage & /* other */) const { return true; }
-    /** Returns whether the @a other passed data is different from this one. */
+    /** Returns whether @a another passed data is different from this one. */
     bool operator!=(const UIDataSettingsMachineStorage & /* other */) const { return false; }
 };
 
@@ -264,9 +264,9 @@ public:
     /** Destroy icon-pool instance. */
     static void destroy();
 
-    /** Returns pixmap corresponding to passed @a pixmapType. */
+    /** Returns pixmap corresponding to passed @a enmPixmapType. */
     QPixmap pixmap(PixmapType pixmapType) const;
-    /** Returns icon (probably merged) corresponding to passed @a pixmapType and @a pixmapDisabledType. */
+    /** Returns icon (probably merged) corresponding to passed @a enmPixmapType and @a pixmapDisabledType. */
     QIcon icon(PixmapType pixmapType, PixmapType pixmapDisabledType = InvalidPixmap) const;
 
 private:
@@ -286,13 +286,14 @@ private:
 UIIconPoolStorageSettings* iconPool() { return UIIconPoolStorageSettings::instance(); }
 
 
-/* Abstract Item */
+/** QITreeViewItem subclass used as abstract storage tree-view item. */
 class AbstractItem : public QITreeViewItem
 {
     Q_OBJECT;
 
 public:
 
+    /** Item types. */
     enum ItemType
     {
         Type_InvalidItem    = 0,
@@ -301,214 +302,350 @@ public:
         Type_AttachmentItem = 3
     };
 
+    /** Constructs top-level item passing @a pParent to the base-class. */
     AbstractItem(QITreeView *pParent);
+    /** Constructs sub-level item passing @a pParentItem to the base-class. */
     AbstractItem(AbstractItem *pParentItem);
+    /** Destructs item. */
     virtual ~AbstractItem();
 
+    /** Returns parent-item. */
     AbstractItem* parent() const;
+    /** Returns ID. */
     QUuid id() const;
-    QUuid machineId() const;
 
+    /** Returns machine ID. */
+    QUuid machineId() const;
+    /** Defines @a uMchineId. */
     void setMachineId (const QUuid &uMchineId);
 
+    /** Returns runtime type information. */
     virtual ItemType rtti() const = 0;
+    /** Returns child item with specified @a iIndex. */
     virtual AbstractItem* childItem (int aIndex) const = 0;
+    /** Returns child item with specified @a uId. */
     virtual AbstractItem* childItemById (const QUuid &uId) const = 0;
+    /** Returns position of specified child @a pItem. */
     virtual int posOfChild (AbstractItem *aItem) const = 0;
+    /** Returns tool-tip information. */
     virtual QString tip() const = 0;
+    /** Returns pixmap information for specified @a enmState. */
     virtual QPixmap pixmap (ItemState aState = State_DefaultItem) = 0;
 
 protected:
 
+    /** Adds a child @a pItem. */
     virtual void addChild (AbstractItem *aItem) = 0;
+    /** Removes the child @a pItem. */
     virtual void delChild (AbstractItem *aItem) = 0;
 
+    /** Holds the parent item reference. */
     AbstractItem *m_pParentItem;
+    /** Holds the item ID. */
     QUuid         mId;
+    /** Holds the item machine ID. */
     QUuid         mMachineId;
 };
 Q_DECLARE_METATYPE (AbstractItem::ItemType);
 
 
-/* Root Item */
+/** AbstractItem subclass used as root storage tree-view item. */
 class RootItem : public AbstractItem
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs top-level item passing @a pParent to the base-class. */
     RootItem(QITreeView *pParent);
+    /** Destructs item. */
    ~RootItem();
 
+    /** Returns a number of shildren of certain @a enmBus type. */
     ULONG childCount (KStorageBus aBus) const;
 
 private:
 
+    /** Returns runtime type information. */
     ItemType rtti() const;
+    /** Returns child item with specified @a iIndex. */
     AbstractItem* childItem (int aIndex) const;
+    /** Returns child item with specified @a uId. */
     AbstractItem* childItemById (const QUuid &uId) const;
+    /** Returns position of specified child @a pItem. */
     int posOfChild (AbstractItem *aItem) const;
+    /** Returns the number of children. */
     int childCount() const;
+    /** Returns the item text. */
     QString text() const;
+    /** Returns tool-tip information. */
     QString tip() const;
+    /** Returns pixmap information for specified @a enmState. */
     QPixmap pixmap (ItemState aState);
+    /** Adds a child @a pItem. */
     void addChild (AbstractItem *aItem);
+    /** Removes the child @a pItem. */
     void delChild (AbstractItem *aItem);
 
+    /** Holds the list of controller items. */
     QList <AbstractItem*> mControllers;
 };
 
 
-/* Controller Item */
+/** AbstractItem subclass used as controller storage tree-view item. */
 class ControllerItem : public AbstractItem
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs sub-level item passing @a pParent to the base-class.
+      * @param  strName  Brings the controller name.
+      * @param  enmBus   Brings the controller bus.
+      * @param  enmType  Brings the controller type. */
     ControllerItem (AbstractItem *aParent, const QString &aName, KStorageBus aBusType,
                     KStorageControllerType aControllerType);
+    /** Destructs item. */
    ~ControllerItem();
 
+    /** Returns bus. */
     KStorageBus ctrBusType() const;
+    /** Returns possible buses to switch from current one. */
     ControllerBusList ctrBusTypes() const;
+    /** Returns old controller name. */
     QString oldCtrName() const;
+    /** Returns current controller name. */
     QString ctrName() const;
+    /** Returns type. */
     KStorageControllerType ctrType() const;
+    /** Returns possible types to switch from current one. */
     ControllerTypeList ctrTypes() const;
+    /** Returns current port count. */
     uint portCount();
+    /** Returns maximum port count. */
     uint maxPortCount();
+    /** Returns whether controller uses IO cache. */
     bool ctrUseIoCache() const;
 
+    /** Defines @a enmBus. */
     void setCtrBusType(KStorageBus enmCtrBusType);
+    /** Defines @a strName. */
     void setCtrName (const QString &aCtrName);
+    /** Defines @a enmType. */
     void setCtrType (KStorageControllerType aCtrType);
+    /** Defines @a uPortCount. */
     void setPortCount (uint aPortCount);
+    /** Defines whether controller @a fUseIoCache. */
     void setCtrUseIoCache (bool aUseIoCache);
 
+    /** Returns possible controller slots. */
     SlotsList ctrAllSlots() const;
+    /** Returns used controller slots. */
     SlotsList ctrUsedSlots() const;
+    /** Returns supported device type list. */
     DeviceTypeList ctrDeviceTypeList() const;
 
+    /** Returns an ID list of attached media of specified @a enmType. */
     QList<QUuid> attachmentIDs(KDeviceType enmType = KDeviceType_Null) const;
 
+    /** Returns a list of attachments. */
     QList<AbstractItem*> attachments() const { return mAttachments; }
+    /** Defines a list of @a attachments. */
     void setAttachments(const QList<AbstractItem*> &attachments) { mAttachments = attachments; }
 
 private:
 
+    /** Returns runtime type information. */
     ItemType rtti() const;
+    /** Returns child item with specified @a iIndex. */
     AbstractItem* childItem (int aIndex) const;
+    /** Returns child item with specified @a uId. */
     AbstractItem* childItemById (const QUuid &uId) const;
+    /** Returns position of specified child @a pItem. */
     int posOfChild (AbstractItem *aItem) const;
+    /** Returns the number of children. */
     int childCount() const;
+    /** Returns the item text. */
     QString text() const;
+    /** Returns tool-tip information. */
     QString tip() const;
+    /** Returns pixmap information for specified @a enmState. */
     QPixmap pixmap (ItemState aState);
+    /** Adds a child @a pItem. */
     void addChild (AbstractItem *aItem);
+    /** Removes the child @a pItem. */
     void delChild (AbstractItem *aItem);
 
+    /** Updates possible buses. */
     void updateBusInfo();
+    /** Updates possible types. */
     void updateTypeInfo();
+    /** Updates pixmaps of possible buses. */
     void updatePixmaps();
 
+    /** Holds the bus. */
     KStorageBus mBusType;
+    /** Holds the type. */
     KStorageControllerType mCtrType;
 
+    /** Holds the possible buses. */
     ControllerBusList m_buses;
+    /** Holds the possible types. */
     ControllerTypeList m_types;
+    /** Holds the pixmaps of possible buses. */
     QList<PixmapType> m_pixmaps;
 
+    /** Holds the old name. */
     QString mOldCtrName;
+    /** Holds the current name. */
     QString mCtrName;
+    /** Holds the current port count. */
     uint mPortCount;
+    /** Holds whether controller uses IO cache. */
     bool mUseIoCache;
+    /** Holds the list of attachments. */
     QList <AbstractItem*> mAttachments;
 };
 
 
-/* Attachment Item */
+/** AbstractItem subclass used as attachment storage tree-view item. */
 class AttachmentItem : public AbstractItem
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs sub-level item passing @a pParent to the base-class.
+      * @param  enmDeviceType  Brings the attachment device type. */
     AttachmentItem (AbstractItem *aParent, KDeviceType aDeviceType);
 
+    /** Returns storage slot. */
     StorageSlot attSlot() const;
+    /** Returns possible storage slots. */
     SlotsList attSlots() const;
+    /** Returns device type. */
     KDeviceType attDeviceType() const;
+    /** Returns possible device types. */
     DeviceTypeList attDeviceTypes() const;
+    /** Returns the medium id. */
     QUuid attMediumId() const;
+    /** Returns whether attachment is a host drive. */
     bool attIsHostDrive() const;
+    /** Returns whether attachment is passthrough. */
     bool attIsPassthrough() const;
+    /** Returns whether attachment is temporary ejectable. */
     bool attIsTempEject() const;
+    /** Returns whether attachment is non-rotational. */
     bool attIsNonRotational() const;
+    /** Returns whether attachment is hot-pluggable. */
     bool attIsHotPluggable() const;
 
+    /** Defines storage @a slot. */
     void setAttSlot (const StorageSlot &aAttSlot);
+    /** Defines @a enmDeviceType. */
     void setAttDevice (KDeviceType aAttDeviceType);
+    /** Defines @a uMediumId. */
     void setAttMediumId (const QUuid &uAttMediumId);
+    /** Defines whether attachment is @a fPassthrough. */
     void setAttIsPassthrough (bool aPassthrough);
+    /** Defines whether attachment is @a fTemporaryEjectable. */
     void setAttIsTempEject (bool aTempEject);
+    /** Defines whether attachment is @a fNonRotational. */
     void setAttIsNonRotational (bool aNonRotational);
+    /** Returns whether attachment is @a fIsHotPluggable. */
     void setAttIsHotPluggable(bool fIsHotPluggable);
 
+    /** Returns medium size. */
     QString attSize() const;
+    /** Returns logical medium size. */
     QString attLogicalSize() const;
+    /** Returns medium location. */
     QString attLocation() const;
+    /** Returns medium format. */
     QString attFormat() const;
+    /** Returns medium details. */
     QString attDetails() const;
+    /** Returns medium usage. */
     QString attUsage() const;
+    /** Returns medium encryption password ID. */
     QString attEncryptionPasswordID() const;
 
 private:
 
+    /** Caches medium information. */
     void cache();
 
+    /** Returns runtime type information. */
     ItemType rtti() const;
+    /** Returns child item with specified @a iIndex. */
     AbstractItem* childItem (int aIndex) const;
+    /** Returns child item with specified @a uId. */
     AbstractItem* childItemById (const QUuid &uId) const;
+    /** Returns position of specified child @a pItem. */
     int posOfChild (AbstractItem *aItem) const;
+    /** Returns the number of children. */
     int childCount() const;
+    /** Returns the item text. */
     QString text() const;
+    /** Returns tool-tip information. */
     QString tip() const;
+    /** Returns pixmap information for specified @a enmState. */
     QPixmap pixmap (ItemState aState);
+    /** Adds a child @a pItem. */
     void addChild (AbstractItem *aItem);
+    /** Removes the child @a pItem. */
     void delChild (AbstractItem *aItem);
 
+    /** Holds the device type. */
     KDeviceType mAttDeviceType;
 
+    /** Holds the storage slot. */
     StorageSlot mAttSlot;
+    /** Holds the medium ID. */
     QUuid mAttMediumId;
+    /** Holds whether attachment is a host drive. */
     bool mAttIsHostDrive;
+    /** Holds whether attachment is passthrough. */
     bool mAttIsPassthrough;
+    /** Holds whether attachment is temporary ejectable. */
     bool mAttIsTempEject;
+    /** Holds whether attachment is non-rotational. */
     bool mAttIsNonRotational;
+    /** Holds whether attachment is hot-pluggable. */
     bool m_fIsHotPluggable;
 
+    /** Holds the name. */
     QString mAttName;
+    /** Holds the tool-tip. */
     QString mAttTip;
+    /** Holds the pixmap. */
     QPixmap mAttPixmap;
 
+    /** Holds the medium size. */
     QString mAttSize;
+    /** Holds the logical medium size. */
     QString mAttLogicalSize;
+    /** Holds the medium location. */
     QString mAttLocation;
+    /** Holds the medium format. */
     QString mAttFormat;
+    /** Holds the medium details. */
     QString mAttDetails;
+    /** Holds the medium usage. */
     QString mAttUsage;
+    /** Holds the medium encryption password ID. */
     QString m_strAttEncryptionPasswordID;
 };
 
 
-/* Storage Model */
+/** QAbstractItemModel subclass used as complex storage model. */
 class StorageModel : public QAbstractItemModel
 {
     Q_OBJECT;
 
 public:
 
+    /** Data roles. */
     enum DataRole
     {
         R_ItemId = Qt::UserRole + 1,
@@ -579,6 +716,7 @@ public:
         R_FDPixmapRect
     };
 
+    /** Tool-tip types. */
     enum ToolTipType
     {
         DefaultToolTip  = 0,
@@ -588,58 +726,86 @@ public:
         FDAdderToolTip  = 4
     };
 
+    /** Constructs storage model passing @a pParent to the base-class. */
     StorageModel(QITreeView *pParent);
+    /** Destructs storage model. */
    ~StorageModel();
 
+    /** Returns row count for the passed @a parentIndex. */
     int rowCount (const QModelIndex &aParent = QModelIndex()) const;
+    /** Returns column count for the passed @a parentIndex. */
     int columnCount (const QModelIndex &aParent = QModelIndex()) const;
 
+    /** Returns root item. */
     QModelIndex root() const;
+    /** Returns item specified by @a iRow, @a iColum and @a parentIndex. */
     QModelIndex index (int aRow, int aColumn, const QModelIndex &aParent = QModelIndex()) const;
+    /** Returns parent item of specified @a index item. */
     QModelIndex parent (const QModelIndex &aIndex) const;
 
+    /** Returns model data for specified @a index and @a iRole. */
     QVariant data (const QModelIndex &aIndex, int aRole) const;
+    /** Defines model data for specified @a index and @a iRole as @a value. */
     bool setData (const QModelIndex &aIndex, const QVariant &aValue, int aRole);
 
+    /** Adds controller with certain @a strCtrName, @a enmBus and @a enmType. */
     QModelIndex addController (const QString &aCtrName, KStorageBus aBusType, KStorageControllerType aCtrType);
+    /** Deletes controller with certain @a uCtrId. */
     void delController (const QUuid &uCtrId);
 
+    /** Adds attachment with certain @a enmDeviceType and @a uMediumId to controller with certain @a uCtrId. */
     QModelIndex addAttachment (const QUuid &uCtrId, KDeviceType aDeviceType, const QUuid &uMediumId);
+    /** Deletes attachment with certain @a uAttId from controller with certain @a uCtrId. */
     void delAttachment (const QUuid &uCtrId, const QUuid &uAttId);
-    /** Moves attachment determined by @a uAttId
-      * from controller determined by @a uCtrOldId to one determined by @a uCtrNewId. */
+    /** Moves attachment with certain @a uAttId from controller with certain @a uCtrOldId to one with another @a uCtrNewId. */
     void moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, const QUuid &uCtrNewId);
 
+    /** Defines @a uMachineId for reference. */
     void setMachineId (const QUuid &uMachineId);
 
+    /** Sorts the contents of model by @a iColumn and @a enmOrder. */
     void sort(int iColumn = 0, Qt::SortOrder order = Qt::AscendingOrder);
+    /** Returns attachment index by specified @a controllerIndex and @a attachmentStorageSlot. */
     QModelIndex attachmentBySlot(QModelIndex controllerIndex, StorageSlot attachmentStorageSlot);
 
+    /** Returns chipset type. */
     KChipsetType chipsetType() const;
+    /** Defines chipset @a enmType. */
     void setChipsetType(KChipsetType type);
 
-    /** Defines configuration access level. */
+    /** Defines @a newConfigurationAccessLevel. */
     void setConfigurationAccessLevel(ConfigurationAccessLevel newConfigurationAccessLevel);
 
+    /** Clears model of all contents. */
     void clear();
 
+    /** Returns current controller types. */
     QMap<KStorageBus, int> currentControllerTypes() const;
+    /** Returns maximum controller types. */
     QMap<KStorageBus, int> maximumControllerTypes() const;
 
 private:
 
+    /** Returns model flags for specified @a index. */
     Qt::ItemFlags flags (const QModelIndex &aIndex) const;
 
+    /** Holds the root item instance. */
     AbstractItem *mRootItem;
 
+    /** Holds the enabled plus pixmap instance. */
     QPixmap mPlusPixmapEn;
+    /** Holds the disabled plus pixmap instance. */
     QPixmap mPlusPixmapDis;
 
+    /** Holds the enabled minus pixmap instance. */
     QPixmap mMinusPixmapEn;
+    /** Holds the disabled minus pixmap instance. */
     QPixmap mMinusPixmapDis;
 
+    /** Holds the tool-tip type. */
     ToolTipType mToolTipType;
 
+    /** Holds the chipset type. */
     KChipsetType m_chipsetType;
 
     /** Holds configuration access level. */
@@ -648,49 +814,58 @@ private:
 Q_DECLARE_METATYPE (StorageModel::ToolTipType);
 
 
-/* Storage Delegate */
+/** QItemDelegate subclass used as storage table item delegate. */
 class StorageDelegate : public QItemDelegate
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs storage delegate passing @a pParent to the base-class. */
     StorageDelegate (QObject *aParent);
 
 private:
 
+    /** Paints @a index item with specified @a option using specified @a pPainter. */
     void paint (QPainter *aPainter, const QStyleOptionViewItem &aOption, const QModelIndex &aIndex) const;
 };
 
 
-/**
- * UI Medium ID Holder.
- * Used for compliance with other storage page widgets
- * which caching and holding corresponding information.
- */
+/** QObject subclass used as UI medium ID holder.
+  * Used for compliance with other storage page widgets
+  * which caching and holding corresponding information. */
 class UIMediumIDHolder : public QObject
 {
     Q_OBJECT;
 
 public:
 
+    /** Constructs medium ID holder passing @a pParent to the base-class. */
     UIMediumIDHolder(QWidget *pParent) : QObject(pParent) {}
 
+    /** Returns medium ID. */
     QUuid id() const { return m_uId; }
+    /** Defines medium @a uId. */
     void setId(const QUuid &uId) { m_uId = uId; emit sigChanged(); }
 
+    /** Returns medium device type. */
     UIMediumDeviceType type() const { return m_type; }
+    /** Defines medium device @a enmType. */
     void setType(UIMediumDeviceType type) { m_type = type; }
 
+    /** Returns whether medium ID is null. */
     bool isNull() const { return m_uId == UIMedium().id(); }
 
 signals:
 
+    /** Notify about medium ID changed. */
     void sigChanged();
 
 private:
 
+    /** Holds the medium ID. */
     QUuid m_uId;
+    /** Holds the medium device type. */
     UIMediumDeviceType m_type;
 };
 
