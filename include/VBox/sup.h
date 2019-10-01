@@ -466,12 +466,6 @@ typedef struct SUPGLOBALINFOPAGE
     volatile uint64_t   u64NanoTSLastUpdateHz;
     /** The TSC frequency of the system. */
     uint64_t            u64CpuHz;
-    /** The set of online CPUs. */
-    RTCPUSET            OnlineCpuSet;
-    /** The set of present CPUs. */
-    RTCPUSET            PresentCpuSet;
-    /** The set of possible CPUs. */
-    RTCPUSET            PossibleCpuSet;
     /** The number of CPUs that are online. */
     volatile uint16_t   cOnlineCpus;
     /** The number of CPUs present in the system. */
@@ -489,9 +483,24 @@ typedef struct SUPGLOBALINFOPAGE
     uint32_t            fGetGipCpu;
     /** GIP flags, see SUPGIP_FLAGS_XXX. */
     volatile uint32_t   fFlags;
+    /** The set of online CPUs. */
+    RTCPUSET            OnlineCpuSet;
+#if RTCPUSET_MAX_CPUS < 1024
+    uint64_t            abOnlineCpuSetPadding[(1024 - RTCPUSET_MAX_CPUS) / 64];
+#endif
+    /** The set of present CPUs. */
+    RTCPUSET            PresentCpuSet;
+#if RTCPUSET_MAX_CPUS < 1024
+    uint64_t            abPresentCpuSetPadding[(1024 - RTCPUSET_MAX_CPUS) / 64];
+#endif
+    /** The set of possible CPUs. */
+    RTCPUSET            PossibleCpuSet;
+#if RTCPUSET_MAX_CPUS < 1024
+    uint64_t            abPossibleCpuSetPadding[(1024 - RTCPUSET_MAX_CPUS) / 64];
+#endif
 
     /** Padding / reserved space for future data. */
-    uint32_t            au32Padding1[24];
+    uint32_t            au32Padding1[48];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
     uint16_t            aiCpuFromApicId[1024];
@@ -513,10 +522,13 @@ typedef struct SUPGLOBALINFOPAGE
     SUPGIPCPU           aCPUs[1];
 } SUPGLOBALINFOPAGE;
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, u64NanoTSLastUpdateHz, 8);
-#if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, OnlineCpuSet, 64);
+AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, PresentCpuSet, 64);
+AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, PossibleCpuSet, 64);
+#if defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64) /* ?? needed ?? */
 AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs, 32);
 #else
-AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs, 256);
+AssertCompileMemberAlignment(SUPGLOBALINFOPAGE, aCPUs, 128);
 #endif
 
 /** Pointer to the global info page.

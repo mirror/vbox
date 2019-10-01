@@ -1938,13 +1938,9 @@ int VBOXCALL supdrvGipCreate(PSUPDRVDEVEXT pDevExt)
      * Check the CPU count.
      */
     cCpus = RTMpGetArraySize();
-    if (   cCpus > RTCPUSET_MAX_CPUS
-#if RTCPUSET_MAX_CPUS != 256
-        || cCpus > 256 /* ApicId is used for the mappings */
-#endif
-        )
+    if (cCpus > RT_MIN(RTCPUSET_MAX_CPUS, RT_ELEMENTS(pGip->aiCpuFromApicId)))
     {
-        SUPR0Printf("VBoxDrv: Too many CPUs (%u) for the GIP (max %u)\n", cCpus, RT_MIN(RTCPUSET_MAX_CPUS, 256));
+        SUPR0Printf("VBoxDrv: Too many CPUs (%u) for the GIP (max %u)\n", cCpus, RT_MIN(RTCPUSET_MAX_CPUS, RT_ELEMENTS(pGip->aiCpuFromApicId)));
         return VERR_TOO_MANY_CPUS;
     }
 

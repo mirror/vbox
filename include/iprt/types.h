@@ -2392,9 +2392,15 @@ typedef RTCPUID const                       RT_FAR *PCRTCPUID;
 
 /** The maximum number of CPUs a set can contain and IPRT is able
  * to reference. (Should be max of support arch/platforms.)
- * @remarks Must be a multiple of 64 (see RTCPUSET).  */
+ * @remarks Must be a power of two and multiple of 64 (see RTCPUSET).  */
 #if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
-# define RTCPUSET_MAX_CPUS      256
+# if defined(RT_OS_OS2)
+#  define RTCPUSET_MAX_CPUS     64
+# elif defined(RT_OS_DARWIN) || defined(RT_ARCH_X86)
+#  define RTCPUSET_MAX_CPUS     256
+# else
+#  define RTCPUSET_MAX_CPUS     1024
+# endif
 #elif defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
 # define RTCPUSET_MAX_CPUS      1024
 #else

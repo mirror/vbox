@@ -118,7 +118,7 @@ static uint32_t     g_cRtMpWinMaxCpuGroups;
 /** The number of active CPUs the last time we checked. */
 static uint32_t volatile g_cRtMpWinActiveCpus;
 /** Static per group info.
- * @remarks  With RTCPUSET_MAX_CPUS as 256, this takes up 33KB.
+ * @remarks  With 256 entries this takes up 33KB.
  * @sa g_aRtMpNtCpuGroups */
 static struct
 {
@@ -128,7 +128,7 @@ static struct
     uint16_t    cActiveCpus;
     /** CPU set indexes for each CPU in the group. */
     int16_t     aidxCpuSetMembers[64];
-}                   g_aRtMpWinCpuGroups[RTCPUSET_MAX_CPUS];
+}                   g_aRtMpWinCpuGroups[256];
 /** Maps CPU set indexes to RTCPUID.
  * @sa g_aidRtMpNtByCpuSetIdx  */
 RTCPUID             g_aidRtMpWinByCpuSetIdx[RTCPUSET_MAX_CPUS];
@@ -192,7 +192,7 @@ static DECLCALLBACK(int32_t) rtMpWinInitOnce(void *pvUser)
         SYSTEM_INFO                                 SysInfo;
         SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX     Info;
         uint8_t                                     abPaddingG[  sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)
-                                                               + sizeof(PROCESSOR_GROUP_INFO) * RTCPUSET_MAX_CPUS];
+                                                               + sizeof(PROCESSOR_GROUP_INFO) * 256];
         uint8_t                                     abPaddingC[  sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX)
                                                                +   (sizeof(PROCESSOR_RELATIONSHIP) + sizeof(GROUP_AFFINITY))
                                                                  * RTCPUSET_MAX_CPUS];

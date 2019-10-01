@@ -75,9 +75,6 @@ struc SUPGLOBALINFOPAGE
     .u32UpdateIntervalNS        resd 1
     .u64NanoTSLastUpdateHz      resq 1
     .u64CpuHz                   resq 1
-    .OnlineCpuSet               resq 4
-    .PresentCpuSet              resq 4
-    .PossibleCpuSet             resq 4
     .cOnlineCpus                resw 1
     .cPresentCpus               resw 1
     .cPossibleCpus              resw 1
@@ -86,7 +83,10 @@ struc SUPGLOBALINFOPAGE
     .enmUseTscDelta             resd 1
     .fGetGipCpu                 resd 1
     .fFlags                     resd 1
-    .au32Padding1               resd 24
+    .OnlineCpuSet               resq 16
+    .PresentCpuSet              resq 16
+    .PossibleCpuSet             resq 16
+    .au32Padding1               resd 48
     .aiCpuFromApicId            resw 1024
     .aiCpuFromCpuSetIdx         resw 1024
     .aoffCpuGroup               resw 256

@@ -103,7 +103,7 @@ uint32_t volatile                       g_cRtMpNtActiveCpus;
 RTCPUSET                                g_rtMpNtCpuSet;
 
 /** Static per group info.
- * @remarks  With RTCPUSET_MAX_CPUS as 256, this takes up 33KB. */
+ * @remarks  With 256 groups this takes up 33KB.  */
 static struct
 {
     /** The max CPUs in the group. */
@@ -112,7 +112,7 @@ static struct
     uint16_t    cActiveCpus;
     /** CPU set indexes for each CPU in the group. */
     int16_t     aidxCpuSetMembers[64];
-}                                       g_aRtMpNtCpuGroups[RTCPUSET_MAX_CPUS];
+}                                       g_aRtMpNtCpuGroups[256];
 /** Maps CPU set indexes to RTCPUID.
  * Inactive CPUs has bit 31 set (RTMPNT_ID_F_INACTIVE) so we can identify them
  * and shuffle duplicates during CPU hotplugging.  We assign temporary IDs to

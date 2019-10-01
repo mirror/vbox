@@ -138,7 +138,7 @@ typedef struct UVM
 #ifdef VMM_INCLUDED_SRC_include_STAMInternal_h
         struct STAMUSERPERVM    s;
 #endif
-        uint8_t                 padding[6880];
+        uint8_t                 padding[25056];
     } stam;
 
     /** The DBGF data. */
