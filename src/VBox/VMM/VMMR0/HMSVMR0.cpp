@@ -2661,8 +2661,6 @@ static void hmR0SvmImportGuestState(PVMCPUCC pVCpu, uint64_t fWhat)
     PCSVMVMCBSTATESAVE pVmcbGuest = &pVmcb->guest;
     PCSVMVMCBCTRL      pVmcbCtrl  = &pVmcb->ctrl;
 
-    Log4Func(("fExtrn=%#RX64 fWhat=%#RX64\n", pCtx->fExtrn, fWhat));
-
     /*
      * We disable interrupts to make the updating of the state and in particular
      * the fExtrn modification atomic wrt to preemption hooks.
@@ -4099,7 +4097,7 @@ static int hmR0SvmCheckForceFlags(PVMCPUCC pVCpu)
                                ? VMCPU_FF_HP_R0_PRE_HM_MASK : VMCPU_FF_HP_R0_PRE_HM_STEP_MASK) )
     {
         /* Pending PGM C3 sync. */
-        if (VMCPU_FF_IS_ANY_SET(pVCpu,VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+        if (VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
             int rc = PGMSyncCR3(pVCpu, pVCpu->cpum.GstCtx.cr0, pVCpu->cpum.GstCtx.cr3, pVCpu->cpum.GstCtx.cr4,
                                 VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
@@ -4182,7 +4180,11 @@ static int hmR0SvmPreRunGuestNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     /* Check force flag actions that might require us to go back to ring-3. */
     int rc = hmR0SvmCheckForceFlags(pVCpu);
     if (rc != VINF_SUCCESS)
+    {
+        if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
         return rc;
+    }
 
     if (TRPMHasTrap(pVCpu))
         hmR0SvmTrpmTrapToPendingEvent(pVCpu);
@@ -4191,7 +4193,11 @@ static int hmR0SvmPreRunGuestNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
         VBOXSTRICTRC rcStrict = hmR0SvmEvaluatePendingEventNested(pVCpu);
         if (    rcStrict != VINF_SUCCESS
             || !CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+        {
+            if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
             return VBOXSTRICTRC_VAL(rcStrict);
+        }
     }
 
     HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
@@ -4313,7 +4319,7 @@ static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
             return VINF_EM_RAW_INJECT_TRPM_EVENT;
 
 #ifdef HMSVM_SYNC_FULL_GUEST_STATE
-    Assert(!(pVCpu->cpum.GstCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
+    Assert(!(pVCpu->cpum.GstCtx.fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 #endif
 
@@ -4921,19 +4927,25 @@ static int hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         VBOXVMM_R0_HMSVM_VMEXIT(pVCpu, pCtx, SvmTransient.u64ExitCode, pCtx->hwvirt.svm.CTX_SUFF(pVmcb));
         rc = hmR0SvmHandleExitNested(pVCpu, &SvmTransient);
         STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExitHandling, x);
-        if (    rc != VINF_SUCCESS
-            || !CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            break;
-        if (++(*pcLoops) >= pVCpu->CTX_SUFF(pVM)->hm.s.cMaxResumeLoops)
+        if (rc == VINF_SUCCESS)
         {
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
-            rc = VINF_EM_RAW_INTERRUPT;
-            break;
+            if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
+            {
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
+                rc = VINF_SVM_VMEXIT;
+            }
+            else
+            {
+                if (++(*pcLoops) <= pVCpu->CTX_SUFF(pVM)->hm.s.cMaxResumeLoops)
+                    continue;
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchMaxResumeLoops);
+                rc = VINF_EM_RAW_INTERRUPT;
+            }
         }
-        /** @todo NSTSVM: Add stat for StatSwitchNstGstVmexit. Re-arrange the above code to
-         *        be accurate when doing so, see the corresponding VT-x code. */
-
-        /** @todo handle single-stepping   */
+        else
+            Assert(rc != VINF_SVM_VMEXIT);
+        break;
+        /** @todo NSTSVM: handle single-stepping. */
     }
 
     STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatEntry, x);
@@ -4958,33 +4970,38 @@ VMMR0DECL(VBOXSTRICTRC) SVMR0RunGuestCode(PVMCPUCC pVCpu)
 
     uint32_t cLoops = 0;
     int      rc;
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-#endif
+    for (;;)
     {
-        if (!pVCpu->hm.s.fSingleInstruction)
-            rc = hmR0SvmRunGuestCodeNormal(pVCpu, &cLoops);
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+        bool const fInNestedGuestMode = CPUMIsGuestInSvmNestedHwVirtMode(pCtx);
+#else
+        NOREF(pCtx);
+        bool const fInNestedGuestMode = false;
+#endif
+        if (!fInNestedGuestMode)
+        {
+            if (!pVCpu->hm.s.fSingleInstruction)
+                rc = hmR0SvmRunGuestCodeNormal(pVCpu, &cLoops);
+            else
+                rc = hmR0SvmRunGuestCodeStep(pVCpu, &cLoops);
+        }
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
         else
-            rc = hmR0SvmRunGuestCodeStep(pVCpu, &cLoops);
-    }
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    else
-    {
-        rc = VINF_SVM_VMRUN;
-    }
+            rc = hmR0SvmRunGuestCodeNested(pVCpu, &cLoops);
 
-    /* Re-check the nested-guest condition here as we may be transitioning from the normal
-       execution loop into the nested-guest, hence this is not placed in the 'else' part above. */
-    if (rc == VINF_SVM_VMRUN)
-    {
-        rc = hmR0SvmRunGuestCodeNested(pVCpu, &cLoops);
+        if (rc == VINF_SVM_VMRUN)
+        {
+            Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+            continue;
+        }
         if (rc == VINF_SVM_VMEXIT)
-            rc = VINF_SUCCESS;
-    }
+        {
+            Assert(!CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+            continue;
+        }
 #endif
-
-    /** @todo NSTSVM: Continue in ring-0 after nested-guest \#VMEXIT. See VT-x code for
-     *        reference. */
+        break;
+    }
 
     /* Fixup error codes. */
     if (rc == VERR_EM_INTERPRETER)
