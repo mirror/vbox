@@ -2615,7 +2615,11 @@ es.unregisterListener(listener); </screen></para>
       <title>Function ICloudClient::launchVM</title>
       <para>
         See the <link linkend="ICloudClient__launchVM">ICloudClient::launchVM</link>.
-        The function launches a new instance in OCI with a previously created custom image as a bootable image in OCI.
+        The function launches a new instance in OCI with a bootable volume previously created from a custom image in OCI or
+        as the source may be used an existing bootable volume which shouldn't be attached to any instance.
+        For launching instance from a custom image use the parameter VirtualSystemDescriptionType::CloudImageId.
+        For launching instance from a bootable volume use the parameter VirtualSystemDescriptionType::CloudBootVolumeId.
+        Only one of them must be presented otherwise the error will occur.
         The final result of this operation is a running instance. The id of created instance is returned
         in the parameter "description" (which is <link linkend="IVirtualSystemDescription">IVirtualSystemDescription</link>)
         as an entry with the type VirtualSystemDescriptionType::CloudInstanceId.  Parameter "description" must contain all information
@@ -2628,10 +2632,15 @@ es.unregisterListener(listener); </screen></para>
             <para>VirtualSystemDescriptionType::CloudOCISubnet - OCID of existing subnet in OCI which will be used by the instance.</para>
           </listitem>
           <listitem>
-            <para>VirtualSystemDescriptionType::CloudImageId - OCID of custom image used as a bootable image for the instance.</para>
+            <para>
+              Use VirtualSystemDescriptionType::CloudImageId - OCID of custom image used as a bootable image for the instance
+              or
+              VirtualSystemDescriptionType::CloudBootVolumeId - OCID of existing and non-attached bootable volume used as a bootable volume for the instance.
+            </para>
           </listitem>
           <listitem>
-            <para> VirtualSystemDescriptionType::CloudBootDiskSize - The size of instance bootable image in GB.</para>
+            <para>Add VirtualSystemDescriptionType::CloudBootDiskSize - The size of instance bootable volume in GB,
+              If you use VirtualSystemDescriptionType::CloudImageId.</para>
           </listitem>
           <listitem>
             <para>VirtualSystemDescriptionType::CloudInstanceShape - The shape of instance according to OCI documentation,

@@ -38,11 +38,14 @@
       <arg choice="plain" rep="norepeat">instance</arg>
       <arg choice="plain" rep="norepeat">create</arg>
       <arg choice="req" rep="norepeat">--domain-name=<replaceable>name</replaceable></arg>
-      <arg choice="req" rep="norepeat">--image-id=<replaceable>unique id</replaceable></arg>
+      <group choice="req">
+          <arg choice="req" rep="norepeat">--image-id=<replaceable>id</replaceable></arg>
+          <arg choice="req" rep="norepeat">--boot-volume-id=<replaceable>id</replaceable></arg>
+      </group>
       <arg choice="req" rep="norepeat">--display-name=<replaceable>name</replaceable></arg>
       <arg choice="req" rep="norepeat">--shape=<replaceable>type</replaceable></arg>
-      <arg choice="req" rep="norepeat">--subnet=<replaceable>unique id</replaceable></arg>
-      <arg choice="req" rep="norepeat">--boot-disk-size=<replaceable>size in GB</replaceable></arg>
+      <arg choice="req" rep="norepeat">--subnet=<replaceable>id</replaceable></arg>
+      <arg rep="norepeat">--boot-disk-size=<replaceable>size in GB</replaceable></arg>
       <arg rep="norepeat">--publicip=<replaceable>true/false</replaceable></arg>
       <arg rep="norepeat">--privateip=<replaceable>IP address</replaceable></arg>
       <arg rep="norepeat">--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
@@ -108,7 +111,7 @@
         Creates new instance in the Cloud.
         There are two standard ways to create an instance in the Cloud:
          1. Create an instance from an existing custom image.
-         2. Create an instance from an existing bootable volume.
+         2. Create an instance from an existing bootable volume. This bootable volume shouldn't  be attached to any instance.
         For the 1st approach next parameters are required: image-id and  boot-disk-size.
         For the 2nd approach next parameters are required: boot-volume-id;
         The rest parameters are common for both cases:
@@ -120,6 +123,9 @@
         </varlistentry>
         <varlistentry>
           <term><option>--image-id</option></term><listitem><para>Unique identifier which fully identifies a custom image in the Cloud.</para></listitem>
+        </varlistentry>
+        <varlistentry>
+          <term><option>--boot-volume-id</option></term><listitem><para>Unique identifier which fully identifies a boot volume in the Cloud.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--display-name</option></term><listitem><para>Name for new instance in the Cloud.</para></listitem>
