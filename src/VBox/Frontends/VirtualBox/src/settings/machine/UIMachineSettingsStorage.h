@@ -51,9 +51,9 @@ signals:
 public:
 
     /** Holds the controller mime-type for the D&D system. */
-    static const QString ControllerMimeType;
+    static const QString s_strControllerMimeType;
     /** Holds the attachment mime-type for the D&D system. */
-    static const QString AttachmentMimeType;
+    static const QString s_strAttachmentMimeType;
 
     /** Constructs Storage settings page. */
     UIMachineSettingsStorage();
@@ -157,8 +157,8 @@ private slots:
     /** Updates action states. */
     void sltUpdateActionStates();
 
-    /** Handles row insertion into @a parent on @a iPosition. */
-    void sltHandleRowInsertion(const QModelIndex &parent, int iPosition);
+    /** Handles row insertion into @a parentIndex on @a iPosition. */
+    void sltHandleRowInsertion(const QModelIndex &parentIndex, int iPosition);
     /** Handles row removal. */
     void sltHandleRowRemoval();
 
