@@ -1226,10 +1226,10 @@ void RootItem::delChild (AbstractItem *pItem)
 ControllerItem::ControllerItem (AbstractItem *pParentItem, const QString &strName,
                                 KStorageBus enmBus, KStorageControllerType enmType)
     : AbstractItem (pParentItem)
+    , m_strName (strName)
+    , m_strOldName (strName)
     , m_enmBus (enmBus)
     , m_enmType (enmType)
-    , m_strOldName (strName)
-    , m_strName (strName)
     , m_uPortCount (0)
     , m_fUseIoCache (false)
 {
