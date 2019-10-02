@@ -22,9 +22,9 @@
 #endif
 
 /* GUI includes: */
+#include "UIMachineSettingsStorage.gen.h"
 #include "UIMediumDefs.h"
 #include "UISettingsPage.h"
-#include "UIMachineSettingsStorage.gen.h"
 
 /* Forward declarations: */
 class QITreeView;

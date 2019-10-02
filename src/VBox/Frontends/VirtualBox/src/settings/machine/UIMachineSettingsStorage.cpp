@@ -32,10 +32,10 @@
 #include "UIErrorString.h"
 #include "UIExtraDataManager.h"
 #include "UIIconPool.h"
-#include "UIMessageCenter.h"
 #include "UIMachineSettingsStorage.h"
 #include "UIMedium.h"
 #include "UIMediumSelector.h"
+#include "UIMessageCenter.h"
 
 /* COM includes: */
 #include "CMediumAttachment.h"
@@ -257,8 +257,6 @@ class UIIconPoolStorageSettings : public UIIconPool
 {
 public:
 
-    /** Icon-pool instance access method. */
-    static UIIconPoolStorageSettings* instance();
     /** Create icon-pool instance. */
     static void create();
     /** Destroy icon-pool instance. */
@@ -276,12 +274,18 @@ private:
     /** Icon-pool destructor. */
     ~UIIconPoolStorageSettings();
 
+    /** Icon-pool instance access method. */
+    static UIIconPoolStorageSettings *instance();
+
     /** Icon-pool instance. */
     static UIIconPoolStorageSettings *s_pInstance;
     /** Icon-pool names cache. */
     QMap<PixmapType, QString> m_names;
     /** Icon-pool icons cache. */
     mutable QMap<PixmapType, QIcon> m_icons;
+
+    /** Allows for shortcut access. */
+    friend UIIconPoolStorageSettings *iconPool();
 };
 UIIconPoolStorageSettings* iconPool() { return UIIconPoolStorageSettings::instance(); }
 
@@ -321,12 +325,14 @@ public:
 
     /** Returns runtime type information. */
     virtual ItemType rtti() const = 0;
+
     /** Returns child item with specified @a iIndex. */
     virtual AbstractItem* childItem (int iIndex) const = 0;
     /** Returns child item with specified @a uId. */
     virtual AbstractItem* childItemById (const QUuid &uId) const = 0;
     /** Returns position of specified child @a pItem. */
     virtual int posOfChild (AbstractItem *pItem) const = 0;
+
     /** Returns tool-tip information. */
     virtual QString toolTip() const = 0;
     /** Returns pixmap information for specified @a enmState. */
@@ -338,6 +344,8 @@ protected:
     virtual void addChild (AbstractItem *pItem) = 0;
     /** Removes the child @a pItem. */
     virtual void delChild (AbstractItem *pItem) = 0;
+
+private:
 
     /** Holds the parent item reference. */
     AbstractItem *m_pParentItem;
@@ -364,10 +372,11 @@ public:
     /** Returns a number of children of certain @a enmBus type. */
     ULONG childCount (KStorageBus enmBus) const;
 
-private:
+protected:
 
     /** Returns runtime type information. */
     ItemType rtti() const;
+
     /** Returns child item with specified @a iIndex. */
     AbstractItem* childItem (int iIndex) const;
     /** Returns child item with specified @a uId. */
@@ -376,16 +385,20 @@ private:
     int posOfChild (AbstractItem *pItem) const;
     /** Returns the number of children. */
     int childCount() const;
+
     /** Returns the item text. */
     QString text() const;
     /** Returns tool-tip information. */
     QString toolTip() const;
     /** Returns pixmap information for specified @a enmState. */
     QPixmap pixmap (ItemState enmState);
+
     /** Adds a child @a pItem. */
     void addChild (AbstractItem *pItem);
     /** Removes the child @a pItem. */
     void delChild (AbstractItem *pItem);
+
+private:
 
     /** Holds the list of controller items. */
     QList <AbstractItem*> m_controllers;
@@ -408,35 +421,38 @@ public:
     /** Destructs item. */
    ~ControllerItem();
 
+    /** Defines current @a strName. */
+    void setName(const QString &strName);
+    /** Returns current name. */
+    QString name() const;
+    /** Returns old name. */
+    QString oldName() const;
+
+    /** Defines @a enmBus. */
+    void setBus(KStorageBus enmBus);
     /** Returns bus. */
     KStorageBus bus() const;
     /** Returns possible buses to switch from current one. */
     ControllerBusList buses() const;
-    /** Returns old name. */
-    QString oldName() const;
-    /** Returns current name. */
-    QString name() const;
+
+    /** Defines @a enmType. */
+    void setType(KStorageControllerType enmType);
     /** Returns type. */
     KStorageControllerType type() const;
     /** Returns possible types to switch from current one. */
     ControllerTypeList types() const;
+
+    /** Defines current @a uPortCount. */
+    void setPortCount(uint uPortCount);
     /** Returns current port count. */
     uint portCount();
     /** Returns maximum port count. */
     uint maxPortCount();
-    /** Returns whether controller uses IO cache. */
-    bool useIoCache() const;
 
-    /** Defines @a enmBus. */
-    void setBus(KStorageBus enmBus);
-    /** Defines current @a strName. */
-    void setName(const QString &strName);
-    /** Defines @a enmType. */
-    void setType(KStorageControllerType enmType);
-    /** Defines current @a uPortCount. */
-    void setPortCount(uint uPortCount);
     /** Defines whether controller @a fUseIoCache. */
     void setUseIoCache(bool fUseIoCache);
+    /** Returns whether controller uses IO cache. */
+    bool useIoCache() const;
 
     /** Returns possible controller slots. */
     SlotsList allSlots() const;
@@ -445,18 +461,18 @@ public:
     /** Returns supported device type list. */
     DeviceTypeList deviceTypeList() const;
 
-    /** Returns an ID list of attached media of specified @a enmType. */
-    QList<QUuid> attachmentIDs(KDeviceType enmType = KDeviceType_Null) const;
-
-    /** Returns a list of attachments. */
-    QList<AbstractItem*> attachments() const { return m_attachments; }
     /** Defines a list of @a attachments. */
     void setAttachments(const QList<AbstractItem*> &attachments) { m_attachments = attachments; }
+    /** Returns a list of attachments. */
+    QList<AbstractItem*> attachments() const { return m_attachments; }
+    /** Returns an ID list of attached media of specified @a enmType. */
+    QList<QUuid> attachmentIDs(KDeviceType enmType = KDeviceType_Null) const;
 
 private:
 
     /** Returns runtime type information. */
     ItemType rtti() const;
+
     /** Returns child item with specified @a iIndex. */
     AbstractItem* childItem (int iIndex) const;
     /** Returns child item with specified @a uId. */
@@ -465,12 +481,14 @@ private:
     int posOfChild (AbstractItem *pItem) const;
     /** Returns the number of children. */
     int childCount() const;
+
     /** Returns the item text. */
     QString text() const;
     /** Returns tool-tip information. */
     QString toolTip() const;
     /** Returns pixmap information for specified @a enmState. */
     QPixmap pixmap (ItemState enmState);
+
     /** Adds a child @a pItem. */
     void addChild (AbstractItem *pItem);
     /** Removes the child @a pItem. */
@@ -482,6 +500,11 @@ private:
     void updateTypeInfo();
     /** Updates pixmaps of possible buses. */
     void updatePixmaps();
+
+    /** Holds the current name. */
+    QString m_strName;
+    /** Holds the old name. */
+    QString m_strOldName;
 
     /** Holds the bus. */
     KStorageBus m_enmBus;
@@ -495,14 +518,11 @@ private:
     /** Holds the pixmaps of possible buses. */
     QList<PixmapType> m_pixmaps;
 
-    /** Holds the old name. */
-    QString m_strOldName;
-    /** Holds the current name. */
-    QString m_strName;
     /** Holds the current port count. */
     uint m_uPortCount;
     /** Holds whether controller uses IO cache. */
     bool m_fUseIoCache;
+
     /** Holds the list of attachments. */
     QList<AbstractItem*> m_attachments;
 };
@@ -519,41 +539,47 @@ public:
       * @param  enmDeviceType  Brings the attachment device type. */
     AttachmentItem(AbstractItem *pParentItem, KDeviceType enmDeviceType);
 
-    /** Returns storage slot. */
-    StorageSlot storageSlot() const;
-    /** Returns possible storage slots. */
-    SlotsList storageSlots() const;
+    /** Defines @a enmDeviceType. */
+    void setDeviceType(KDeviceType enmDeviceType);
     /** Returns device type. */
     KDeviceType deviceType() const;
     /** Returns possible device types. */
     DeviceTypeList deviceTypes() const;
-    /** Returns the medium id. */
-    QUuid mediumId() const;
-    /** Returns whether attachment is a host drive. */
-    bool isHostDrive() const;
-    /** Returns whether attachment is passthrough. */
-    bool isPassthrough() const;
-    /** Returns whether attachment is temporary ejectable. */
-    bool isTempEject() const;
-    /** Returns whether attachment is non-rotational. */
-    bool isNonRotational() const;
-    /** Returns whether attachment is hot-pluggable. */
-    bool isHotPluggable() const;
 
     /** Defines storage @a slot. */
     void setStorageSlot(const StorageSlot &slot);
-    /** Defines @a enmDeviceType. */
-    void setDeviceType(KDeviceType enmDeviceType);
+    /** Returns storage slot. */
+    StorageSlot storageSlot() const;
+    /** Returns possible storage slots. */
+    SlotsList storageSlots() const;
+
     /** Defines @a uMediumId. */
     void setMediumId(const QUuid &uMediumId);
+    /** Returns the medium id. */
+    QUuid mediumId() const;
+
+    /** Returns whether attachment is a host drive. */
+    bool isHostDrive() const;
+
     /** Defines whether attachment is @a fPassthrough. */
     void setPassthrough(bool fPassthrough);
+    /** Returns whether attachment is passthrough. */
+    bool isPassthrough() const;
+
     /** Defines whether attachment is @a fTemporaryEjectable. */
     void setTempEject(bool fTemporaryEjectable);
+    /** Returns whether attachment is temporary ejectable. */
+    bool isTempEject() const;
+
     /** Defines whether attachment is @a fNonRotational. */
     void setNonRotational(bool fNonRotational);
+    /** Returns whether attachment is non-rotational. */
+    bool isNonRotational() const;
+
     /** Returns whether attachment is @a fIsHotPluggable. */
     void setHotPluggable(bool fIsHotPluggable);
+    /** Returns whether attachment is hot-pluggable. */
+    bool isHotPluggable() const;
 
     /** Returns medium size. */
     QString size() const;
@@ -577,6 +603,7 @@ private:
 
     /** Returns runtime type information. */
     ItemType rtti() const;
+
     /** Returns child item with specified @a iIndex. */
     AbstractItem* childItem (int iIndex) const;
     /** Returns child item with specified @a uId. */
@@ -585,12 +612,14 @@ private:
     int posOfChild (AbstractItem *pItem) const;
     /** Returns the number of children. */
     int childCount() const;
+
     /** Returns the item text. */
     QString text() const;
     /** Returns tool-tip information. */
     QString toolTip() const;
     /** Returns pixmap information for specified @a enmState. */
     QPixmap pixmap (ItemState enmState);
+
     /** Adds a child @a pItem. */
     void addChild (AbstractItem *pItem);
     /** Removes the child @a pItem. */
@@ -598,7 +627,6 @@ private:
 
     /** Holds the device type. */
     KDeviceType m_enmDeviceType;
-
     /** Holds the storage slot. */
     StorageSlot m_storageSlot;
     /** Holds the medium ID. */
@@ -843,15 +871,15 @@ public:
     /** Constructs medium ID holder passing @a pParent to the base-class. */
     UIMediumIDHolder(QWidget *pParent) : QObject(pParent) {}
 
-    /** Returns medium ID. */
-    QUuid id() const { return m_uId; }
     /** Defines medium @a uId. */
     void setId(const QUuid &uId) { m_uId = uId; emit sigChanged(); }
+    /** Returns medium ID. */
+    QUuid id() const { return m_uId; }
 
-    /** Returns medium device type. */
-    UIMediumDeviceType type() const { return m_enmType; }
     /** Defines medium device @a enmType. */
     void setType(UIMediumDeviceType enmType) { m_enmType = enmType; }
+    /** Returns medium device type. */
+    UIMediumDeviceType type() const { return m_enmType; }
 
     /** Returns whether medium ID is null. */
     bool isNull() const { return m_uId == UIMedium().id(); }
@@ -1224,14 +1252,9 @@ ControllerItem::~ControllerItem()
         delete m_attachments.first();
 }
 
-KStorageBus ControllerItem::bus() const
+void ControllerItem::setName (const QString &strName)
 {
-    return m_enmBus;
-}
-
-ControllerBusList ControllerItem::buses() const
-{
-    return m_buses;
+    m_strName = strName;
 }
 
 QString ControllerItem::name() const
@@ -1244,6 +1267,30 @@ QString ControllerItem::oldName() const
     return m_strOldName;
 }
 
+void ControllerItem::setBus(KStorageBus enmBus)
+{
+    m_enmBus = enmBus;
+
+    updateBusInfo();
+    updateTypeInfo();
+    updatePixmaps();
+}
+
+KStorageBus ControllerItem::bus() const
+{
+    return m_enmBus;
+}
+
+ControllerBusList ControllerItem::buses() const
+{
+    return m_buses;
+}
+
+void ControllerItem::setType (KStorageControllerType enmType)
+{
+    m_enmType = enmType;
+}
+
 KStorageControllerType ControllerItem::type() const
 {
     return m_enmType;
@@ -1252,6 +1299,12 @@ KStorageControllerType ControllerItem::type() const
 ControllerTypeList ControllerItem::types() const
 {
     return m_types;
+}
+
+void ControllerItem::setPortCount (uint uPortCount)
+{
+    /* Limit maximum port count: */
+    m_uPortCount = qMin(uPortCount, (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus()));
 }
 
 uint ControllerItem::portCount()
@@ -1271,39 +1324,14 @@ uint ControllerItem::maxPortCount()
     return (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus());
 }
 
-bool ControllerItem::useIoCache() const
-{
-    return m_fUseIoCache;
-}
-
-void ControllerItem::setBus(KStorageBus enmBus)
-{
-    m_enmBus = enmBus;
-
-    updateBusInfo();
-    updateTypeInfo();
-    updatePixmaps();
-}
-
-void ControllerItem::setName (const QString &strName)
-{
-    m_strName = strName;
-}
-
-void ControllerItem::setType (KStorageControllerType enmType)
-{
-    m_enmType = enmType;
-}
-
-void ControllerItem::setPortCount (uint uPortCount)
-{
-    /* Limit maximum port count: */
-    m_uPortCount = qMin(uPortCount, (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus()));
-}
-
 void ControllerItem::setUseIoCache (bool fUseIoCache)
 {
     m_fUseIoCache = fUseIoCache;
+}
+
+bool ControllerItem::useIoCache() const
+{
+    return m_fUseIoCache;
 }
 
 SlotsList ControllerItem::allSlots() const
@@ -1510,6 +1538,26 @@ AttachmentItem::AttachmentItem (AbstractItem *pParentItem, KDeviceType enmDevice
     m_storageSlot = storageSlots() [0];
 }
 
+void AttachmentItem::setDeviceType (KDeviceType enmDeviceType)
+{
+    m_enmDeviceType = enmDeviceType;
+}
+
+KDeviceType AttachmentItem::deviceType() const
+{
+    return m_enmDeviceType;
+}
+
+DeviceTypeList AttachmentItem::deviceTypes() const
+{
+    return qobject_cast<ControllerItem*>(parent())->deviceTypeList();
+}
+
+void AttachmentItem::setStorageSlot (const StorageSlot &storageSlot)
+{
+    m_storageSlot = storageSlot;
+}
+
 StorageSlot AttachmentItem::storageSlot() const
 {
     return m_storageSlot;
@@ -1529,14 +1577,12 @@ SlotsList AttachmentItem::storageSlots() const
     return allSlots;
 }
 
-KDeviceType AttachmentItem::deviceType() const
+void AttachmentItem::setMediumId (const QUuid &uMediumId)
 {
-    return m_enmDeviceType;
-}
-
-DeviceTypeList AttachmentItem::deviceTypes() const
-{
-    return qobject_cast<ControllerItem*>(parent())->deviceTypeList();
+    /// @todo is this required?
+    //AssertMsg(!aAttMediumId.isNull(), ("Medium ID value can't be null!\n"));
+    m_uMediumId = uiCommon().medium(uMediumId).id();
+    cache();
 }
 
 QUuid AttachmentItem::mediumId() const
@@ -1549,47 +1595,14 @@ bool AttachmentItem::isHostDrive() const
     return m_fHostDrive;
 }
 
-bool AttachmentItem::isPassthrough() const
-{
-    return m_fPassthrough;
-}
-
-bool AttachmentItem::isTempEject() const
-{
-    return m_fTempEject;
-}
-
-bool AttachmentItem::isNonRotational() const
-{
-    return m_fNonRotational;
-}
-
-bool AttachmentItem::isHotPluggable() const
-{
-    return m_fHotPluggable;
-}
-
-void AttachmentItem::setStorageSlot (const StorageSlot &storageSlot)
-{
-    m_storageSlot = storageSlot;
-}
-
-void AttachmentItem::setDeviceType (KDeviceType enmDeviceType)
-{
-    m_enmDeviceType = enmDeviceType;
-}
-
-void AttachmentItem::setMediumId (const QUuid &uMediumId)
-{
-    /// @todo is this required?
-    //AssertMsg(!aAttMediumId.isNull(), ("Medium ID value can't be null!\n"));
-    m_uMediumId = uiCommon().medium(uMediumId).id();
-    cache();
-}
-
 void AttachmentItem::setPassthrough (bool fPassthrough)
 {
     m_fPassthrough = fPassthrough;
+}
+
+bool AttachmentItem::isPassthrough() const
+{
+    return m_fPassthrough;
 }
 
 void AttachmentItem::setTempEject (bool fTempEject)
@@ -1597,14 +1610,29 @@ void AttachmentItem::setTempEject (bool fTempEject)
     m_fTempEject = fTempEject;
 }
 
+bool AttachmentItem::isTempEject() const
+{
+    return m_fTempEject;
+}
+
 void AttachmentItem::setNonRotational (bool fNonRotational)
 {
     m_fNonRotational = fNonRotational;
 }
 
+bool AttachmentItem::isNonRotational() const
+{
+    return m_fNonRotational;
+}
+
 void AttachmentItem::setHotPluggable(bool fHotPluggable)
 {
     m_fHotPluggable = fHotPluggable;
+}
+
+bool AttachmentItem::isHotPluggable() const
+{
+    return m_fHotPluggable;
 }
 
 QString AttachmentItem::size() const
