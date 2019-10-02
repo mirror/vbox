@@ -32,13 +32,9 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UIMainEventListener.h"
-
 
 /* Forward declarations: */
 class QVBoxLayout;
-class QLabel;
-class UIChart;
 class UISession;
 class UIRuntimeInfoWidget;
 
@@ -54,14 +50,14 @@ public:
       * @param machine is machine reference.
       * @param console is machine console reference. */
     UIInformationRuntime(QWidget *pParent, const CMachine &machine, const CConsole &console, const UISession *pSession);
-    ~UIInformationRuntime();
 
 protected:
+
     void retranslateUi();
 
 private slots:
 
-    /** @name These functions are connected to API events and implement necessary updates.
+    /** @name These functions are connected to API events and implement necessary updates on the table.
       * @{ */
         void sltGuestAdditionsStateChange();
         void sltGuestMonitorChange(KGuestMonitorChangedEventType changeType, ulong uScreenId, QRect screenGeo);
@@ -81,9 +77,6 @@ private:
     /** Holds the instance of layout we create. */
     QVBoxLayout *m_pMainLayout;
     UIRuntimeInfoWidget *m_pRuntimeInfoWidget;
-
-    QMap<QString,QLabel*>  m_infoLabels;
-    ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_runtime_information_UIInformationRuntime_h */

@@ -26,7 +26,6 @@
 #include <QMap>
 #include <QQueue>
 
-
 /* COM includes: */
 #include "COMEnums.h"
 #include "CConsole.h"
@@ -37,8 +36,6 @@
 
 /* GUI includes: */
 #include "QIWithRetranslateUI.h"
-#include "UIMainEventListener.h"
-
 
 /* Forward declarations: */
 class QTimer;
@@ -50,19 +47,22 @@ class UIRuntimeInfoWidget;
 
 #define DATA_SERIES_SIZE 2
 
-struct DebuggerMetricData
+/** UIDebuggerMetricData is used as data storage while parsing the xml stream received from IMachineDebugger. */
+struct UIDebuggerMetricData
 {
-    DebuggerMetricData()
+    UIDebuggerMetricData()
         : m_counter(0){}
-    DebuggerMetricData(const QString & strName, quint64 counter)
+    UIDebuggerMetricData(const QString & strName, quint64 counter)
         :m_strName(strName)
         , m_counter(counter){}
     QString m_strName;
     quint64 m_counter;
 };
 
+/** UIMetric represents a performance metric and is used to store data related to the corresponding metric. */
 class UIMetric
 {
+
 public:
 
     UIMetric(const QString &strName, const QString &strUnit, int iMaximumQueueSize);
@@ -133,8 +133,9 @@ private:
 
 /** UIInformationPerformanceMonitor class displays some high level performance metric of the guest system.
   * The values are read in certain periods and cached in the GUI side. Currently we draw some line charts
-  * and pie charts (where applicable) alongside with some text. Additionally it displays a table including some
-  * run time attributes. */
+  * and pie charts (where applicable) alongside with some text. IPerformanceCollector and IMachineDebugger are
+  * two sources of the performance metrics. Unfortunately these two have very distinct APIs resulting a bit too much
+  * special casing etc.*/
 class UIInformationPerformanceMonitor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -148,9 +149,11 @@ public:
     ~UIInformationPerformanceMonitor();
 
 protected:
+
     void retranslateUi();
 
 private slots:
+
     /** Reads the metric values for several sources and calls corresponding update functions. */
     void sltTimeout();
     /** @name These functions are connected to API events and implement necessary updates.
@@ -171,8 +174,8 @@ private:
     void updateVMExitMetric(quint64 uTotalVMExits);
     /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
     QString dataColorString(const QString &strChartName, int iDataIndex);
-    /** Parses the xml string we get from the IMachineDebugger and returns an array of DebuggerMetricData. */
-    QVector<DebuggerMetricData> getTotalCounterFromDegugger(const QString &strQuery);
+    /** Parses the xml string we get from the IMachineDebugger and returns an array of UIDebuggerMetricData. */
+    QVector<UIDebuggerMetricData> getTotalCounterFromDegugger(const QString &strQuery);
 
     bool m_fGuestAdditionsAvailable;
     CMachine m_machine;
@@ -190,8 +193,9 @@ private:
 
     QMap<QString, UIMetric> m_subMetrics;
     QMap<QString,UIChart*>  m_charts;
-    QMap<QString,QLabel*>  m_infoLabels;
-    ComObjPtr<UIMainEventListenerImpl> m_pQtGuestListener;
+    /** Stores the QLabel instances which we show next to each UIChart. The value is the name of the metric. */
+    QMap<QString,QLabel*>   m_infoLabels;
+
 
     /** @name These metric names are used for map keys to identify metrics.
       * @{ */

@@ -17,7 +17,6 @@
 
 /* Qt includes: */
 #include <QApplication>
-#include <QHeaderView>
 #include <QLabel>
 #include <QMenu>
 #include <QPainter>
@@ -25,15 +24,10 @@
 #include <QScrollArea>
 #include <QStyle>
 #include <QXmlStreamReader>
-#include <QVBoxLayout>
-#include <QTableWidget>
 #include <QTimer>
 
 /* GUI includes: */
 #include "UICommon.h"
-#include "UIConverter.h"
-#include "UIExtraDataManager.h"
-#include "UIIconPool.h"
 #include "UIInformationPerformanceMonitor.h"
 #include "UISession.h"
 
@@ -41,7 +35,6 @@
 #include "CGuest.h"
 #include "CPerformanceCollector.h"
 #include "CPerformanceMetric.h"
-#include "CVRDEServerInfo.h"
 
 /* External includes: */
 # include <math.h>
@@ -1071,7 +1064,7 @@ void UIInformationPerformanceMonitor::sltTimeout()
     quint64 uDiskIOTotalRead = 0;
     quint64 uTotalVMExits = 0;
 
-    QVector<DebuggerMetricData> xmlData = getTotalCounterFromDegugger(m_strQueryString);
+    QVector<UIDebuggerMetricData> xmlData = getTotalCounterFromDegugger(m_strQueryString);
     for (QMap<QString, UIMetric>::iterator iterator =  m_subMetrics.begin();
          iterator != m_subMetrics.end(); ++iterator)
     {
@@ -1079,7 +1072,7 @@ void UIInformationPerformanceMonitor::sltTimeout()
         const QStringList &deviceTypeList = metric.deviceTypeList();
         foreach (const QString &strDeviceType, deviceTypeList)
         {
-            foreach (const DebuggerMetricData &data, xmlData)
+            foreach (const UIDebuggerMetricData &data, xmlData)
             {
                 if (data.m_strName.contains(strDeviceType, Qt::CaseInsensitive))
                 {
@@ -1411,9 +1404,9 @@ QString UIInformationPerformanceMonitor::dataColorString(const QString &strChart
     return pChart->dataSeriesColor(iDataIndex).name(QColor::HexRgb);
 }
 
-QVector<DebuggerMetricData> UIInformationPerformanceMonitor::getTotalCounterFromDegugger(const QString &strQuery)
+QVector<UIDebuggerMetricData> UIInformationPerformanceMonitor::getTotalCounterFromDegugger(const QString &strQuery)
 {
-    QVector<DebuggerMetricData> xmlData;
+    QVector<UIDebuggerMetricData> xmlData;
     if (strQuery.isEmpty())
         return xmlData;
     CMachineDebugger debugger = m_console.GetDebugger();
@@ -1431,7 +1424,7 @@ QVector<DebuggerMetricData> UIInformationPerformanceMonitor::getTotalCounterFrom
                 quint64 iCounter = attributes.value("c").toULongLong();
                 iTotal += iCounter;
                 xmlReader.skipCurrentElement();
-                xmlData.push_back(DebuggerMetricData(*(attributes.value("name").string()), iCounter));
+                xmlData.push_back(UIDebuggerMetricData(*(attributes.value("name").string()), iCounter));
             }
             else if (xmlReader.name() == "U64")
             {
@@ -1439,7 +1432,7 @@ QVector<DebuggerMetricData> UIInformationPerformanceMonitor::getTotalCounterFrom
                 quint64 iCounter = attributes.value("val").toULongLong();
                 iTotal += iCounter;
                 xmlReader.skipCurrentElement();
-                xmlData.push_back(DebuggerMetricData(*(attributes.value("name").string()), iCounter));
+                xmlData.push_back(UIDebuggerMetricData(*(attributes.value("name").string()), iCounter));
             }
             else
                 xmlReader.skipCurrentElement();
