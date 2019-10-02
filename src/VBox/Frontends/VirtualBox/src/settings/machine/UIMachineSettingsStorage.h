@@ -51,14 +51,14 @@ signals:
 public:
 
     /** Holds the controller mime-type for the D&D system. */
-    static const QString s_strControllerMimeType;
+    static const QString  s_strControllerMimeType;
     /** Holds the attachment mime-type for the D&D system. */
-    static const QString s_strAttachmentMimeType;
+    static const QString  s_strAttachmentMimeType;
 
     /** Constructs Storage settings page. */
     UIMachineSettingsStorage();
     /** Destructs Storage settings page. */
-    ~UIMachineSettingsStorage();
+    virtual ~UIMachineSettingsStorage() /* override */;
 
     /** Defines chipset @a enmType. */
     void setChipsetType(KChipsetType enmType);
@@ -246,7 +246,7 @@ private:
     bool isAttachmentCouldBeUpdated(const UISettingsCacheMachineStorageAttachment &attachmentCache) const;
 
     /** Holds the machine ID. */
-    QUuid  m_uMachineId;
+    QUuid    m_uMachineId;
     /** Holds the machine settings file-path. */
     QString  m_strMachineSettingsFilePath;
     /** Holds the machine settings file-path. */

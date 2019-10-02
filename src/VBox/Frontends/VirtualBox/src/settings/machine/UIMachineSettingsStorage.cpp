@@ -42,14 +42,14 @@
 #include "CStorageController.h"
 
 /* Defines: */
-typedef QList <StorageSlot> SlotsList;
-typedef QList <KDeviceType> DeviceTypeList;
-typedef QList <KStorageBus> ControllerBusList;
-typedef QList <KStorageControllerType> ControllerTypeList;
-Q_DECLARE_METATYPE (SlotsList);
-Q_DECLARE_METATYPE (DeviceTypeList);
-Q_DECLARE_METATYPE (ControllerBusList);
-Q_DECLARE_METATYPE (ControllerTypeList);
+typedef QList<StorageSlot> SlotsList;
+typedef QList<KDeviceType> DeviceTypeList;
+typedef QList<KStorageBus> ControllerBusList;
+typedef QList<KStorageControllerType> ControllerTypeList;
+Q_DECLARE_METATYPE(SlotsList);
+Q_DECLARE_METATYPE(DeviceTypeList);
+Q_DECLARE_METATYPE(ControllerBusList);
+Q_DECLARE_METATYPE(ControllerTypeList);
 
 
 /** Item states. */
@@ -272,7 +272,7 @@ private:
     /** Icon-pool constructor. */
     UIIconPoolStorageSettings();
     /** Icon-pool destructor. */
-    ~UIIconPoolStorageSettings();
+    virtual ~UIIconPoolStorageSettings() /* override */;
 
     /** Icon-pool instance access method. */
     static UIIconPoolStorageSettings *instance();
@@ -280,14 +280,14 @@ private:
     /** Icon-pool instance. */
     static UIIconPoolStorageSettings *s_pInstance;
     /** Icon-pool names cache. */
-    QMap<PixmapType, QString> m_names;
+    QMap<PixmapType, QString>         m_names;
     /** Icon-pool icons cache. */
-    mutable QMap<PixmapType, QIcon> m_icons;
+    mutable QMap<PixmapType, QIcon>   m_icons;
 
     /** Allows for shortcut access. */
     friend UIIconPoolStorageSettings *iconPool();
 };
-UIIconPoolStorageSettings* iconPool() { return UIIconPoolStorageSettings::instance(); }
+UIIconPoolStorageSettings *iconPool() { return UIIconPoolStorageSettings::instance(); }
 
 
 /** QITreeViewItem subclass used as abstract storage tree-view item. */
@@ -311,10 +311,10 @@ public:
     /** Constructs sub-level item passing @a pParentItem to the base-class. */
     AbstractItem(AbstractItem *pParentItem);
     /** Destructs item. */
-    virtual ~AbstractItem();
+    virtual ~AbstractItem() /* override */;
 
     /** Returns parent-item. */
-    AbstractItem* parent() const;
+    AbstractItem *parent() const;
     /** Returns ID. */
     QUuid id() const;
 
@@ -327,23 +327,23 @@ public:
     virtual ItemType rtti() const = 0;
 
     /** Returns child item with specified @a iIndex. */
-    virtual AbstractItem* childItem (int iIndex) const = 0;
+    virtual AbstractItem *childItem(int iIndex) const = 0;
     /** Returns child item with specified @a uId. */
-    virtual AbstractItem* childItemById (const QUuid &uId) const = 0;
+    virtual AbstractItem *childItemById(const QUuid &uId) const = 0;
     /** Returns position of specified child @a pItem. */
-    virtual int posOfChild (AbstractItem *pItem) const = 0;
+    virtual int posOfChild(AbstractItem *pItem) const = 0;
 
     /** Returns tool-tip information. */
     virtual QString toolTip() const = 0;
     /** Returns pixmap information for specified @a enmState. */
-    virtual QPixmap pixmap (ItemState enmState = State_DefaultItem) = 0;
+    virtual QPixmap pixmap(ItemState enmState = State_DefaultItem) = 0;
 
 protected:
 
     /** Adds a child @a pItem. */
-    virtual void addChild (AbstractItem *pItem) = 0;
+    virtual void addChild(AbstractItem *pItem) = 0;
     /** Removes the child @a pItem. */
-    virtual void delChild (AbstractItem *pItem) = 0;
+    virtual void delChild(AbstractItem *pItem) = 0;
 
 private:
 
@@ -354,7 +354,7 @@ private:
     /** Holds the item machine ID. */
     QUuid         m_uMachineId;
 };
-Q_DECLARE_METATYPE (AbstractItem::ItemType);
+Q_DECLARE_METATYPE(AbstractItem::ItemType);
 
 
 /** AbstractItem subclass used as root storage tree-view item. */
@@ -367,41 +367,41 @@ public:
     /** Constructs top-level item passing @a pParentTree to the base-class. */
     RootItem(QITreeView *pParentTree);
     /** Destructs item. */
-   ~RootItem();
+    virtual ~RootItem() /* override */;
 
     /** Returns a number of children of certain @a enmBus type. */
-    ULONG childCount (KStorageBus enmBus) const;
+    ULONG childCount(KStorageBus enmBus) const;
 
 protected:
 
     /** Returns runtime type information. */
-    ItemType rtti() const;
+    virtual ItemType rtti() const /* override */;
 
     /** Returns child item with specified @a iIndex. */
-    AbstractItem* childItem (int iIndex) const;
+    virtual AbstractItem *childItem(int iIndex) const /* override */;
     /** Returns child item with specified @a uId. */
-    AbstractItem* childItemById (const QUuid &uId) const;
+    virtual AbstractItem *childItemById(const QUuid &uId) const /* override */;
     /** Returns position of specified child @a pItem. */
-    int posOfChild (AbstractItem *pItem) const;
+    virtual int posOfChild(AbstractItem *pItem) const /* override */;
     /** Returns the number of children. */
-    int childCount() const;
+    virtual int childCount() const /* override */;
 
     /** Returns the item text. */
-    QString text() const;
+    virtual QString text() const /* override */;
     /** Returns tool-tip information. */
-    QString toolTip() const;
+    virtual QString toolTip() const /* override */;
     /** Returns pixmap information for specified @a enmState. */
-    QPixmap pixmap (ItemState enmState);
+    virtual QPixmap pixmap(ItemState enmState) /* override */;
 
     /** Adds a child @a pItem. */
-    void addChild (AbstractItem *pItem);
+    virtual void addChild(AbstractItem *pItem) /* override */;
     /** Removes the child @a pItem. */
-    void delChild (AbstractItem *pItem);
+    virtual void delChild(AbstractItem *pItem) /* override */;
 
 private:
 
     /** Holds the list of controller items. */
-    QList <AbstractItem*> m_controllers;
+    QList<AbstractItem*> m_controllers;
 };
 
 
@@ -419,7 +419,7 @@ public:
     ControllerItem(AbstractItem *pParentItem, const QString &strName,
                    KStorageBus enmBus, KStorageControllerType enmType);
     /** Destructs item. */
-   ~ControllerItem();
+    virtual ~ControllerItem() /* override */;
 
     /** Defines current @a strName. */
     void setName(const QString &strName);
@@ -471,28 +471,28 @@ public:
 private:
 
     /** Returns runtime type information. */
-    ItemType rtti() const;
+    virtual ItemType rtti() const /* override */;
 
     /** Returns child item with specified @a iIndex. */
-    AbstractItem* childItem (int iIndex) const;
+    virtual AbstractItem *childItem(int iIndex) const /* override */;
     /** Returns child item with specified @a uId. */
-    AbstractItem* childItemById (const QUuid &uId) const;
+    virtual AbstractItem *childItemById(const QUuid &uId) const /* override */;
     /** Returns position of specified child @a pItem. */
-    int posOfChild (AbstractItem *pItem) const;
+    virtual int posOfChild(AbstractItem *pItem) const /* override */;
     /** Returns the number of children. */
-    int childCount() const;
+    virtual int childCount() const /* override */;
 
     /** Returns the item text. */
-    QString text() const;
+    virtual QString text() const /* override */;
     /** Returns tool-tip information. */
-    QString toolTip() const;
+    virtual QString toolTip() const /* override */;
     /** Returns pixmap information for specified @a enmState. */
-    QPixmap pixmap (ItemState enmState);
+    virtual QPixmap pixmap(ItemState enmState) /* override */;
 
     /** Adds a child @a pItem. */
-    void addChild (AbstractItem *pItem);
+    virtual void addChild(AbstractItem *pItem) /* override */;
     /** Removes the child @a pItem. */
-    void delChild (AbstractItem *pItem);
+    virtual void delChild(AbstractItem *pItem) /* override */;
 
     /** Updates possible buses. */
     void updateBusInfo();
@@ -502,29 +502,29 @@ private:
     void updatePixmaps();
 
     /** Holds the current name. */
-    QString m_strName;
+    QString  m_strName;
     /** Holds the old name. */
-    QString m_strOldName;
+    QString  m_strOldName;
 
     /** Holds the bus. */
-    KStorageBus m_enmBus;
+    KStorageBus             m_enmBus;
     /** Holds the type. */
-    KStorageControllerType m_enmType;
+    KStorageControllerType  m_enmType;
 
     /** Holds the possible buses. */
-    ControllerBusList m_buses;
+    ControllerBusList   m_buses;
     /** Holds the possible types. */
-    ControllerTypeList m_types;
+    ControllerTypeList  m_types;
     /** Holds the pixmaps of possible buses. */
-    QList<PixmapType> m_pixmaps;
+    QList<PixmapType>   m_pixmaps;
 
     /** Holds the current port count. */
-    uint m_uPortCount;
+    uint  m_uPortCount;
     /** Holds whether controller uses IO cache. */
-    bool m_fUseIoCache;
+    bool  m_fUseIoCache;
 
     /** Holds the list of attachments. */
-    QList<AbstractItem*> m_attachments;
+    QList<AbstractItem*>  m_attachments;
 };
 
 
@@ -602,67 +602,67 @@ private:
     void cache();
 
     /** Returns runtime type information. */
-    ItemType rtti() const;
+    virtual ItemType rtti() const /* override */;
 
     /** Returns child item with specified @a iIndex. */
-    AbstractItem* childItem (int iIndex) const;
+    virtual AbstractItem *childItem(int iIndex) const /* override */;
     /** Returns child item with specified @a uId. */
-    AbstractItem* childItemById (const QUuid &uId) const;
+    virtual AbstractItem *childItemById(const QUuid &uId) const /* override */;
     /** Returns position of specified child @a pItem. */
-    int posOfChild (AbstractItem *pItem) const;
+    virtual int posOfChild(AbstractItem *pItem) const /* override */;
     /** Returns the number of children. */
-    int childCount() const;
+    virtual int childCount() const /* override */;
 
     /** Returns the item text. */
-    QString text() const;
+    virtual QString text() const /* override */;
     /** Returns tool-tip information. */
-    QString toolTip() const;
+    virtual QString toolTip() const /* override */;
     /** Returns pixmap information for specified @a enmState. */
-    QPixmap pixmap (ItemState enmState);
+    virtual QPixmap pixmap(ItemState enmState) /* override */;
 
     /** Adds a child @a pItem. */
-    void addChild (AbstractItem *pItem);
+    virtual void addChild(AbstractItem *pItem) /* override */;
     /** Removes the child @a pItem. */
-    void delChild (AbstractItem *pItem);
+    virtual void delChild(AbstractItem *pItem) /* override */;
 
     /** Holds the device type. */
-    KDeviceType m_enmDeviceType;
+    KDeviceType  m_enmDeviceType;
     /** Holds the storage slot. */
-    StorageSlot m_storageSlot;
+    StorageSlot  m_storageSlot;
     /** Holds the medium ID. */
-    QUuid m_uMediumId;
+    QUuid        m_uMediumId;
     /** Holds whether attachment is a host drive. */
-    bool m_fHostDrive;
+    bool         m_fHostDrive;
     /** Holds whether attachment is passthrough. */
-    bool m_fPassthrough;
+    bool         m_fPassthrough;
     /** Holds whether attachment is temporary ejectable. */
-    bool m_fTempEject;
+    bool         m_fTempEject;
     /** Holds whether attachment is non-rotational. */
-    bool m_fNonRotational;
+    bool         m_fNonRotational;
     /** Holds whether attachment is hot-pluggable. */
-    bool m_fHotPluggable;
+    bool         m_fHotPluggable;
 
     /** Holds the name. */
-    QString m_strName;
+    QString  m_strName;
     /** Holds the tool-tip. */
-    QString m_strTip;
+    QString  m_strTip;
     /** Holds the pixmap. */
-    QPixmap m_strPixmap;
+    QPixmap  m_strPixmap;
 
     /** Holds the medium size. */
-    QString m_strSize;
+    QString  m_strSize;
     /** Holds the logical medium size. */
-    QString m_strLogicalSize;
+    QString  m_strLogicalSize;
     /** Holds the medium location. */
-    QString m_strLocation;
+    QString  m_strLocation;
     /** Holds the medium format. */
-    QString m_strFormat;
+    QString  m_strFormat;
     /** Holds the medium details. */
-    QString m_strDetails;
+    QString  m_strDetails;
     /** Holds the medium usage. */
-    QString m_strUsage;
+    QString  m_strUsage;
     /** Holds the medium encryption password ID. */
-    QString m_strAttEncryptionPasswordID;
+    QString  m_strAttEncryptionPasswordID;
 };
 
 
@@ -757,39 +757,39 @@ public:
     /** Constructs storage model passing @a pParentTree to the base-class. */
     StorageModel(QITreeView *pParentTree);
     /** Destructs storage model. */
-   ~StorageModel();
+    virtual ~StorageModel() /* override */;
 
     /** Returns row count for the passed @a parentIndex. */
-    int rowCount (const QModelIndex &parentIndex = QModelIndex()) const;
+    int rowCount(const QModelIndex &parentIndex = QModelIndex()) const;
     /** Returns column count for the passed @a parentIndex. */
-    int columnCount (const QModelIndex &parentIndex = QModelIndex()) const;
+    int columnCount(const QModelIndex &parentIndex = QModelIndex()) const;
 
     /** Returns root item. */
     QModelIndex root() const;
     /** Returns item specified by @a iRow, @a iColum and @a parentIndex. */
-    QModelIndex index (int iRow, int iColumn, const QModelIndex &parentIndex = QModelIndex()) const;
+    QModelIndex index(int iRow, int iColumn, const QModelIndex &parentIndex = QModelIndex()) const;
     /** Returns parent item of specified @a index item. */
-    QModelIndex parent (const QModelIndex &index) const;
+    QModelIndex parent(const QModelIndex &index) const;
 
     /** Returns model data for specified @a index and @a iRole. */
-    QVariant data (const QModelIndex &index, int iRole) const;
+    QVariant data(const QModelIndex &index, int iRole) const;
     /** Defines model data for specified @a index and @a iRole as @a value. */
-    bool setData (const QModelIndex &index, const QVariant &value, int iRole);
+    bool setData(const QModelIndex &index, const QVariant &value, int iRole);
 
     /** Adds controller with certain @a strCtrName, @a enmBus and @a enmType. */
-    QModelIndex addController (const QString &strCtrName, KStorageBus enmBus, KStorageControllerType enmType);
+    QModelIndex addController(const QString &strCtrName, KStorageBus enmBus, KStorageControllerType enmType);
     /** Deletes controller with certain @a uCtrId. */
-    void delController (const QUuid &uCtrId);
+    void delController(const QUuid &uCtrId);
 
     /** Adds attachment with certain @a enmDeviceType and @a uMediumId to controller with certain @a uCtrId. */
-    QModelIndex addAttachment (const QUuid &uCtrId, KDeviceType enmDeviceType, const QUuid &uMediumId);
+    QModelIndex addAttachment(const QUuid &uCtrId, KDeviceType enmDeviceType, const QUuid &uMediumId);
     /** Deletes attachment with certain @a uAttId from controller with certain @a uCtrId. */
-    void delAttachment (const QUuid &uCtrId, const QUuid &uAttId);
+    void delAttachment(const QUuid &uCtrId, const QUuid &uAttId);
     /** Moves attachment with certain @a uAttId from controller with certain @a uCtrOldId to one with another @a uCtrNewId. */
     void moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, const QUuid &uCtrNewId);
 
     /** Defines @a uMachineId for reference. */
-    void setMachineId (const QUuid &uMachineId);
+    void setMachineId(const QUuid &uMachineId);
 
     /** Sorts the contents of model by @a iColumn and @a enmOrder. */
     void sort(int iColumn = 0, Qt::SortOrder enmOrder = Qt::AscendingOrder);
@@ -815,31 +815,30 @@ public:
 private:
 
     /** Returns model flags for specified @a index. */
-    Qt::ItemFlags flags (const QModelIndex &index) const;
+    Qt::ItemFlags flags(const QModelIndex &index) const;
 
     /** Holds the root item instance. */
     AbstractItem *m_pRootItem;
 
     /** Holds the enabled plus pixmap instance. */
-    QPixmap m_pixmapPlusEn;
+    QPixmap  m_pixmapPlusEn;
     /** Holds the disabled plus pixmap instance. */
-    QPixmap m_pixmapPlusDis;
-
+    QPixmap  m_pixmapPlusDis;
     /** Holds the enabled minus pixmap instance. */
-    QPixmap m_pixmapMinusEn;
+    QPixmap  m_pixmapMinusEn;
     /** Holds the disabled minus pixmap instance. */
-    QPixmap m_pixmapMinusDis;
+    QPixmap  m_pixmapMinusDis;
 
     /** Holds the tool-tip type. */
-    ToolTipType m_enmToolTipType;
+    ToolTipType  m_enmToolTipType;
 
     /** Holds the chipset type. */
-    KChipsetType m_enmChipsetType;
+    KChipsetType  m_enmChipsetType;
 
     /** Holds configuration access level. */
-    ConfigurationAccessLevel m_enmConfigurationAccessLevel;
+    ConfigurationAccessLevel  m_enmConfigurationAccessLevel;
 };
-Q_DECLARE_METATYPE (StorageModel::ToolTipType);
+Q_DECLARE_METATYPE(StorageModel::ToolTipType);
 
 
 /** QItemDelegate subclass used as storage table item delegate. */
@@ -850,12 +849,12 @@ class StorageDelegate : public QItemDelegate
 public:
 
     /** Constructs storage delegate passing @a pParent to the base-class. */
-    StorageDelegate (QObject *pParent);
+    StorageDelegate(QObject *pParent);
 
 private:
 
     /** Paints @a index item with specified @a option using specified @a pPainter. */
-    void paint (QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
+    void paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
 };
 
 
@@ -892,9 +891,9 @@ signals:
 private:
 
     /** Holds the medium ID. */
-    QUuid m_uId;
+    QUuid               m_uId;
     /** Holds the medium device type. */
-    UIMediumDeviceType m_enmType;
+    UIMediumDeviceType  m_enmType;
 };
 
 
@@ -909,8 +908,8 @@ QString compressText(const QString &strText)
 *********************************************************************************************************************************/
 
 /* static */
-UIIconPoolStorageSettings* UIIconPoolStorageSettings::s_pInstance = 0;
-UIIconPoolStorageSettings* UIIconPoolStorageSettings::instance() { return s_pInstance; }
+UIIconPoolStorageSettings *UIIconPoolStorageSettings::s_pInstance = 0;
+UIIconPoolStorageSettings *UIIconPoolStorageSettings::instance() { return s_pInstance; }
 void UIIconPoolStorageSettings::create() { new UIIconPoolStorageSettings; }
 void UIIconPoolStorageSettings::destroy() { delete s_pInstance; }
 
@@ -1117,7 +1116,7 @@ AbstractItem::~AbstractItem()
         m_pParentItem->delChild(this);
 }
 
-AbstractItem* AbstractItem::parent() const
+AbstractItem *AbstractItem::parent() const
 {
     return m_pParentItem;
 }
@@ -1132,7 +1131,7 @@ QUuid AbstractItem::machineId() const
     return m_uMachineId;
 }
 
-void AbstractItem::setMachineId (const QUuid &uMachineId)
+void AbstractItem::setMachineId(const QUuid &uMachineId)
 {
     m_uMachineId = uMachineId;
 }
@@ -1153,7 +1152,7 @@ RootItem::~RootItem()
         delete m_controllers.first();
 }
 
-ULONG RootItem::childCount (KStorageBus enmBus) const
+ULONG RootItem::childCount(KStorageBus enmBus) const
 {
     ULONG uResult = 0;
     foreach (AbstractItem *pItem, m_controllers)
@@ -1170,22 +1169,22 @@ AbstractItem::ItemType RootItem::rtti() const
     return Type_RootItem;
 }
 
-AbstractItem* RootItem::childItem (int iIndex) const
+AbstractItem *RootItem::childItem(int iIndex) const
 {
-    return m_controllers [iIndex];
+    return m_controllers[iIndex];
 }
 
-AbstractItem* RootItem::childItemById (const QUuid &uId) const
+AbstractItem *RootItem::childItemById(const QUuid &uId) const
 {
     for (int i = 0; i < childCount(); ++ i)
-        if (m_controllers [i]->id() == uId)
-            return m_controllers [i];
+        if (m_controllers[i]->id() == uId)
+            return m_controllers[i];
     return 0;
 }
 
-int RootItem::posOfChild (AbstractItem *pItem) const
+int RootItem::posOfChild(AbstractItem *pItem) const
 {
-    return m_controllers.indexOf (pItem);
+    return m_controllers.indexOf(pItem);
 }
 
 int RootItem::childCount() const
@@ -1203,19 +1202,19 @@ QString RootItem::toolTip() const
     return QString();
 }
 
-QPixmap RootItem::pixmap (ItemState /* enmState */)
+QPixmap RootItem::pixmap(ItemState /* enmState */)
 {
     return QPixmap();
 }
 
-void RootItem::addChild (AbstractItem *pItem)
+void RootItem::addChild(AbstractItem *pItem)
 {
     m_controllers << pItem;
 }
 
-void RootItem::delChild (AbstractItem *pItem)
+void RootItem::delChild(AbstractItem *pItem)
 {
-    m_controllers.removeAll (pItem);
+    m_controllers.removeAll(pItem);
 }
 
 
@@ -1223,27 +1222,27 @@ void RootItem::delChild (AbstractItem *pItem)
 *   Class ControllerItem implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-ControllerItem::ControllerItem (AbstractItem *pParentItem, const QString &strName,
-                                KStorageBus enmBus, KStorageControllerType enmType)
-    : AbstractItem (pParentItem)
-    , m_strName (strName)
-    , m_strOldName (strName)
-    , m_enmBus (enmBus)
-    , m_enmType (enmType)
-    , m_uPortCount (0)
-    , m_fUseIoCache (false)
+ControllerItem::ControllerItem(AbstractItem *pParentItem, const QString &strName,
+                               KStorageBus enmBus, KStorageControllerType enmType)
+    : AbstractItem(pParentItem)
+    , m_strName(strName)
+    , m_strOldName(strName)
+    , m_enmBus(enmBus)
+    , m_enmType(enmType)
+    , m_uPortCount(0)
+    , m_fUseIoCache(false)
 {
-    /* Check for proper parent type */
+    /* Check for proper parent type: */
     AssertMsg(parent()->rtti() == AbstractItem::Type_RootItem, ("Incorrect parent type!\n"));
 
-    AssertMsg (m_enmBus != KStorageBus_Null, ("Wrong Bus Type {%d}!\n", m_enmBus));
-    AssertMsg (m_enmType != KStorageControllerType_Null, ("Wrong Controller Type {%d}!\n", m_enmType));
+    AssertMsg(m_enmBus != KStorageBus_Null, ("Wrong Bus Type {%d}!\n", m_enmBus));
+    AssertMsg(m_enmType != KStorageControllerType_Null, ("Wrong Controller Type {%d}!\n", m_enmType));
 
     updateBusInfo();
     updateTypeInfo();
     updatePixmaps();
 
-    m_fUseIoCache = uiCommon().virtualBox().GetSystemProperties().GetDefaultIoCacheSettingForStorageController (enmType);
+    m_fUseIoCache = uiCommon().virtualBox().GetSystemProperties().GetDefaultIoCacheSettingForStorageController(enmType);
 }
 
 ControllerItem::~ControllerItem()
@@ -1252,7 +1251,7 @@ ControllerItem::~ControllerItem()
         delete m_attachments.first();
 }
 
-void ControllerItem::setName (const QString &strName)
+void ControllerItem::setName(const QString &strName)
 {
     m_strName = strName;
 }
@@ -1286,7 +1285,7 @@ ControllerBusList ControllerItem::buses() const
     return m_buses;
 }
 
-void ControllerItem::setType (KStorageControllerType enmType)
+void ControllerItem::setType(KStorageControllerType enmType)
 {
     m_enmType = enmType;
 }
@@ -1301,7 +1300,7 @@ ControllerTypeList ControllerItem::types() const
     return m_types;
 }
 
-void ControllerItem::setPortCount (uint uPortCount)
+void ControllerItem::setPortCount(uint uPortCount)
 {
     /* Limit maximum port count: */
     m_uPortCount = qMin(uPortCount, (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus()));
@@ -1324,7 +1323,7 @@ uint ControllerItem::maxPortCount()
     return (uint)uiCommon().virtualBox().GetSystemProperties().GetMaxPortCountForStorageBus(bus());
 }
 
-void ControllerItem::setUseIoCache (bool fUseIoCache)
+void ControllerItem::setUseIoCache(bool fUseIoCache)
 {
     m_fUseIoCache = fUseIoCache;
 }
@@ -1338,9 +1337,9 @@ SlotsList ControllerItem::allSlots() const
 {
     SlotsList allSlots;
     CSystemProperties comProps = uiCommon().virtualBox().GetSystemProperties();
-    for (ULONG i = 0; i < comProps.GetMaxPortCountForStorageBus (bus()); ++ i)
-        for (ULONG j = 0; j < comProps.GetMaxDevicesPerPortForStorageBus (bus()); ++ j)
-            allSlots << StorageSlot (bus(), i, j);
+    for (ULONG i = 0; i < comProps.GetMaxPortCountForStorageBus(bus()); ++ i)
+        for (ULONG j = 0; j < comProps.GetMaxDevicesPerPortForStorageBus(bus()); ++ j)
+            allSlots << StorageSlot(bus(), i, j);
     return allSlots;
 }
 
@@ -1354,7 +1353,7 @@ SlotsList ControllerItem::usedSlots() const
 
 DeviceTypeList ControllerItem::deviceTypeList() const
 {
-     return uiCommon().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus (m_enmBus).toList();
+     return uiCommon().virtualBox().GetSystemProperties().GetDeviceTypesForStorageBus(m_enmBus).toList();
 }
 
 QList<QUuid> ControllerItem::attachmentIDs(KDeviceType enmType /* = KDeviceType_Null */) const
@@ -1375,22 +1374,22 @@ AbstractItem::ItemType ControllerItem::rtti() const
     return Type_ControllerItem;
 }
 
-AbstractItem* ControllerItem::childItem (int iIndex) const
+AbstractItem *ControllerItem::childItem(int iIndex) const
 {
-    return m_attachments [iIndex];
+    return m_attachments[iIndex];
 }
 
-AbstractItem* ControllerItem::childItemById (const QUuid &uId) const
+AbstractItem *ControllerItem::childItemById(const QUuid &uId) const
 {
     for (int i = 0; i < childCount(); ++ i)
-        if (m_attachments [i]->id() == uId)
-            return m_attachments [i];
+        if (m_attachments[i]->id() == uId)
+            return m_attachments[i];
     return 0;
 }
 
-int ControllerItem::posOfChild (AbstractItem *pItem) const
+int ControllerItem::posOfChild(AbstractItem *pItem) const
 {
-    return m_attachments.indexOf (pItem);
+    return m_attachments.indexOf(pItem);
 }
 
 int ControllerItem::childCount() const
@@ -1405,27 +1404,27 @@ QString ControllerItem::text() const
 
 QString ControllerItem::toolTip() const
 {
-    return UIMachineSettingsStorage::tr ("<nobr><b>%1</b></nobr><br>"
-                                 "<nobr>Bus:&nbsp;&nbsp;%2</nobr><br>"
-                                 "<nobr>Type:&nbsp;&nbsp;%3</nobr>")
-                                 .arg (m_strName)
-                                 .arg (gpConverter->toString (bus()))
-                                 .arg (gpConverter->toString (type()));
+    return UIMachineSettingsStorage::tr("<nobr><b>%1</b></nobr><br>"
+                                        "<nobr>Bus:&nbsp;&nbsp;%2</nobr><br>"
+                                        "<nobr>Type:&nbsp;&nbsp;%3</nobr>")
+                                        .arg(m_strName)
+                                        .arg(gpConverter->toString(bus()))
+                                        .arg(gpConverter->toString(type()));
 }
 
-QPixmap ControllerItem::pixmap (ItemState enmState)
+QPixmap ControllerItem::pixmap(ItemState enmState)
 {
     return iconPool()->pixmap(m_pixmaps.at(enmState));
 }
 
-void ControllerItem::addChild (AbstractItem *pItem)
+void ControllerItem::addChild(AbstractItem *pItem)
 {
     m_attachments << pItem;
 }
 
-void ControllerItem::delChild (AbstractItem *pItem)
+void ControllerItem::delChild(AbstractItem *pItem)
 {
-    m_attachments.removeAll (pItem);
+    m_attachments.removeAll(pItem);
 }
 
 void ControllerItem::updateBusInfo()
@@ -1521,24 +1520,24 @@ void ControllerItem::updatePixmaps()
 *   Class AttachmentItem implementation.                                                                                         *
 *********************************************************************************************************************************/
 
-AttachmentItem::AttachmentItem (AbstractItem *pParentItem, KDeviceType enmDeviceType)
-    : AbstractItem (pParentItem)
-    , m_enmDeviceType (enmDeviceType)
-    , m_fHostDrive (false)
-    , m_fPassthrough (false)
-    , m_fTempEject (false)
-    , m_fNonRotational (false)
+AttachmentItem::AttachmentItem(AbstractItem *pParentItem, KDeviceType enmDeviceType)
+    : AbstractItem(pParentItem)
+    , m_enmDeviceType(enmDeviceType)
+    , m_fHostDrive(false)
+    , m_fPassthrough(false)
+    , m_fTempEject(false)
+    , m_fNonRotational(false)
     , m_fHotPluggable(false)
 {
-    /* Check for proper parent type */
+    /* Check for proper parent type: */
     AssertMsg(parent()->rtti() == AbstractItem::Type_ControllerItem, ("Incorrect parent type!\n"));
 
-    /* Select default slot */
-    AssertMsg (!storageSlots().isEmpty(), ("There should be at least one available slot!\n"));
-    m_storageSlot = storageSlots() [0];
+    /* Select default slot: */
+    AssertMsg(!storageSlots().isEmpty(), ("There should be at least one available slot!\n"));
+    m_storageSlot = storageSlots()[0];
 }
 
-void AttachmentItem::setDeviceType (KDeviceType enmDeviceType)
+void AttachmentItem::setDeviceType(KDeviceType enmDeviceType)
 {
     m_enmDeviceType = enmDeviceType;
 }
@@ -1553,7 +1552,7 @@ DeviceTypeList AttachmentItem::deviceTypes() const
     return qobject_cast<ControllerItem*>(parent())->deviceTypeList();
 }
 
-void AttachmentItem::setStorageSlot (const StorageSlot &storageSlot)
+void AttachmentItem::setStorageSlot(const StorageSlot &storageSlot)
 {
     m_storageSlot = storageSlot;
 }
@@ -1567,17 +1566,17 @@ SlotsList AttachmentItem::storageSlots() const
 {
     ControllerItem *pItemController = qobject_cast<ControllerItem*>(parent());
 
-    /* Filter list from used slots */
-    SlotsList allSlots (pItemController->allSlots());
-    SlotsList usedSlots (pItemController->usedSlots());
-    foreach (StorageSlot usedSlot, usedSlots)
+    /* Filter list from used slots: */
+    SlotsList allSlots(pItemController->allSlots());
+    SlotsList usedSlots(pItemController->usedSlots());
+    foreach(StorageSlot usedSlot, usedSlots)
         if (usedSlot != m_storageSlot)
-            allSlots.removeAll (usedSlot);
+            allSlots.removeAll(usedSlot);
 
     return allSlots;
 }
 
-void AttachmentItem::setMediumId (const QUuid &uMediumId)
+void AttachmentItem::setMediumId(const QUuid &uMediumId)
 {
     /// @todo is this required?
     //AssertMsg(!aAttMediumId.isNull(), ("Medium ID value can't be null!\n"));
@@ -1595,7 +1594,7 @@ bool AttachmentItem::isHostDrive() const
     return m_fHostDrive;
 }
 
-void AttachmentItem::setPassthrough (bool fPassthrough)
+void AttachmentItem::setPassthrough(bool fPassthrough)
 {
     m_fPassthrough = fPassthrough;
 }
@@ -1605,7 +1604,7 @@ bool AttachmentItem::isPassthrough() const
     return m_fPassthrough;
 }
 
-void AttachmentItem::setTempEject (bool fTempEject)
+void AttachmentItem::setTempEject(bool fTempEject)
 {
     m_fTempEject = fTempEject;
 }
@@ -1615,7 +1614,7 @@ bool AttachmentItem::isTempEject() const
     return m_fTempEject;
 }
 
-void AttachmentItem::setNonRotational (bool fNonRotational)
+void AttachmentItem::setNonRotational(bool fNonRotational)
 {
     m_fNonRotational = fNonRotational;
 }
@@ -1674,16 +1673,16 @@ void AttachmentItem::cache()
 {
     UIMedium guiMedium = uiCommon().medium(m_uMediumId);
 
-    /* Cache medium information */
-    m_strName = guiMedium.name (true);
-    m_strTip = guiMedium.toolTipCheckRO (true, m_enmDeviceType != KDeviceType_HardDisk);
-    m_strPixmap = guiMedium.iconCheckRO (true);
+    /* Cache medium information: */
+    m_strName = guiMedium.name(true);
+    m_strTip = guiMedium.toolTipCheckRO(true, m_enmDeviceType != KDeviceType_HardDisk);
+    m_strPixmap = guiMedium.iconCheckRO(true);
     m_fHostDrive = guiMedium.isHostDrive();
 
-    /* Cache additional information */
-    m_strSize = guiMedium.size (true);
-    m_strLogicalSize = guiMedium.logicalSize (true);
-    m_strLocation = guiMedium.location (true);
+    /* Cache additional information: */
+    m_strSize = guiMedium.size(true);
+    m_strLogicalSize = guiMedium.logicalSize(true);
+    m_strLocation = guiMedium.location(true);
     m_strAttEncryptionPasswordID = QString("--");
     if (guiMedium.isNull())
     {
@@ -1712,11 +1711,11 @@ void AttachmentItem::cache()
                 break;
         }
     }
-    m_strUsage = guiMedium.usage (true);
+    m_strUsage = guiMedium.usage(true);
 
-    /* Fill empty attributes */
+    /* Fill empty attributes: */
     if (m_strUsage.isEmpty())
-        m_strUsage = QString ("--");
+        m_strUsage = QString("--");
 }
 
 AbstractItem::ItemType AttachmentItem::rtti() const
@@ -1724,17 +1723,17 @@ AbstractItem::ItemType AttachmentItem::rtti() const
     return Type_AttachmentItem;
 }
 
-AbstractItem* AttachmentItem::childItem (int /* iIndex */) const
+AbstractItem *AttachmentItem::childItem(int /* iIndex */) const
 {
     return 0;
 }
 
-AbstractItem* AttachmentItem::childItemById (const QUuid& /* uId */) const
+AbstractItem *AttachmentItem::childItemById(const QUuid& /* uId */) const
 {
     return 0;
 }
 
-int AttachmentItem::posOfChild (AbstractItem* /* pItem */) const
+int AttachmentItem::posOfChild(AbstractItem * /* pItem */) const
 {
     return 0;
 }
@@ -1754,7 +1753,7 @@ QString AttachmentItem::toolTip() const
     return m_strTip;
 }
 
-QPixmap AttachmentItem::pixmap (ItemState /* enmState */)
+QPixmap AttachmentItem::pixmap(ItemState /* enmState */)
 {
     if (m_strPixmap.isNull())
     {
@@ -1776,11 +1775,11 @@ QPixmap AttachmentItem::pixmap (ItemState /* enmState */)
     return m_strPixmap;
 }
 
-void AttachmentItem::addChild (AbstractItem* /* pItem */)
+void AttachmentItem::addChild(AbstractItem * /* pItem */)
 {
 }
 
-void AttachmentItem::delChild (AbstractItem* /* pItem */)
+void AttachmentItem::delChild(AbstractItem * /* pItem */)
 {
 }
 
@@ -1803,50 +1802,50 @@ StorageModel::~StorageModel()
     delete m_pRootItem;
 }
 
-int StorageModel::rowCount (const QModelIndex &parentIndex) const
+int StorageModel::rowCount(const QModelIndex &parentIndex) const
 {
     return !parentIndex.isValid() ? 1 /* only root item has invalid parent */ :
-           static_cast <AbstractItem*> (parentIndex.internalPointer())->childCount();
+           static_cast<AbstractItem*>(parentIndex.internalPointer())->childCount();
 }
 
-int StorageModel::columnCount (const QModelIndex & /* parentIndex */) const
+int StorageModel::columnCount(const QModelIndex & /* parentIndex */) const
 {
     return 1;
 }
 
 QModelIndex StorageModel::root() const
 {
-    return index (0, 0);
+    return index(0, 0);
 }
 
-QModelIndex StorageModel::index (int iRow, int iColumn, const QModelIndex &parentIndex) const
+QModelIndex StorageModel::index(int iRow, int iColumn, const QModelIndex &parentIndex) const
 {
-    if (!hasIndex (iRow, iColumn, parentIndex))
+    if (!hasIndex(iRow, iColumn, parentIndex))
         return QModelIndex();
 
     AbstractItem *pItem = !parentIndex.isValid() ? m_pRootItem :
-                         static_cast <AbstractItem*> (parentIndex.internalPointer())->childItem (iRow);
+                          static_cast<AbstractItem*>(parentIndex.internalPointer())->childItem(iRow);
 
-    return pItem ? createIndex (iRow, iColumn, pItem) : QModelIndex();
+    return pItem ? createIndex(iRow, iColumn, pItem) : QModelIndex();
 }
 
-QModelIndex StorageModel::parent (const QModelIndex &index) const
+QModelIndex StorageModel::parent(const QModelIndex &index) const
 {
     if (!index.isValid())
         return QModelIndex();
 
-    AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer());
+    AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer());
     AbstractItem *pParentOfItem = pItem->parent();
     AbstractItem *pParentOfParent = pParentOfItem ? pParentOfItem->parent() : 0;
-    int iPosition = pParentOfParent ? pParentOfParent->posOfChild (pParentOfItem) : 0;
+    int iPosition = pParentOfParent ? pParentOfParent->posOfChild(pParentOfItem) : 0;
 
     if (pParentOfItem)
-        return createIndex (iPosition, 0, pParentOfItem);
+        return createIndex(iPosition, 0, pParentOfItem);
     else
         return QModelIndex();
 }
 
-QVariant StorageModel::data (const QModelIndex &index, int iRole) const
+QVariant StorageModel::data(const QModelIndex &index, int iRole) const
 {
     if (!index.isValid())
         return QVariant();
@@ -1856,26 +1855,26 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
         /* Basic Attributes: */
         case Qt::FontRole:
         {
-            return QVariant (qApp->font());
+            return QVariant(qApp->font());
         }
         case Qt::SizeHintRole:
         {
-            QFontMetrics fm (data (index, Qt::FontRole).value <QFont>());
-            int iMinimumHeight = qMax (fm.height(), data (index, R_IconSize).toInt());
-            int iMargin = data (index, R_Margin).toInt();
-            return QSize (1 /* ignoring width */, 2 * iMargin + iMinimumHeight);
+            QFontMetrics fm(data(index, Qt::FontRole).value<QFont>());
+            int iMinimumHeight = qMax(fm.height(), data(index, R_IconSize).toInt());
+            int iMargin = data(index, R_Margin).toInt();
+            return QSize(1 /* ignoring width */, 2 * iMargin + iMinimumHeight);
         }
         case Qt::ToolTipRole:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
             {
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
-                    QString strTip (pItem->toolTip());
+                    QString strTip(pItem->toolTip());
                     switch (m_enmToolTipType)
                     {
                         case ExpanderToolTip:
-                            if (index.child (0, 0).isValid())
+                            if (index.child(0, 0).isValid())
                                 strTip = UIMachineSettingsStorage::tr("<nobr>Expands/Collapses&nbsp;item.</nobr>");
                             break;
                         case HDAdderToolTip:
@@ -1900,67 +1899,67 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
         /* Advanced Attributes: */
         case R_ItemId:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 return pItem->id();
             return QUuid();
         }
         case R_ItemPixmap:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
             {
                 ItemState enmState = State_DefaultItem;
-                if (hasChildren (index))
+                if (hasChildren(index))
                     if (QTreeView *view = qobject_cast<QTreeView*>(QObject::parent()))
-                        enmState = view->isExpanded (index) ? State_ExpandedItem : State_CollapsedItem;
-                return pItem->pixmap (enmState);
+                        enmState = view->isExpanded(index) ? State_ExpandedItem : State_CollapsedItem;
+                return pItem->pixmap(enmState);
             }
             return QPixmap();
         }
         case R_ItemPixmapRect:
         {
-            int iMargin = data (index, R_Margin).toInt();
-            int iWidth = data (index, R_IconSize).toInt();
-            return QRect (iMargin, iMargin, iWidth, iWidth);
+            int iMargin = data(index, R_Margin).toInt();
+            int iWidth = data(index, R_IconSize).toInt();
+            return QRect(iMargin, iMargin, iWidth, iWidth);
         }
         case R_ItemName:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 return pItem->text();
             return QString();
         }
         case R_ItemNamePoint:
         {
-            int iMargin = data (index, R_Margin).toInt();
-            int iSpacing = data (index, R_Spacing).toInt();
-            int iWidth = data (index, R_IconSize).toInt();
-            QFontMetrics fm (data (index, Qt::FontRole).value <QFont>());
-            QSize sizeHint = data (index, Qt::SizeHintRole).toSize();
-            return QPoint (iMargin + iWidth + 2 * iSpacing,
-                           sizeHint.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
+            int iMargin = data(index, R_Margin).toInt();
+            int iSpacing = data(index, R_Spacing).toInt();
+            int iWidth = data(index, R_IconSize).toInt();
+            QFontMetrics fm(data(index, Qt::FontRole).value<QFont>());
+            QSize sizeHint = data(index, Qt::SizeHintRole).toSize();
+            return QPoint(iMargin + iWidth + 2 * iSpacing,
+                          sizeHint.height() / 2 + fm.ascent() / 2 - 1 /* base line */);
         }
         case R_ItemType:
         {
-            QVariant result (QVariant::fromValue (AbstractItem::Type_InvalidItem));
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
-                result.setValue (pItem->rtti());
+            QVariant result(QVariant::fromValue(AbstractItem::Type_InvalidItem));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
+                result.setValue(pItem->rtti());
             return result;
         }
         case R_IsController:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 return pItem->rtti() == AbstractItem::Type_ControllerItem;
             return false;
         }
         case R_IsAttachment:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 return pItem->rtti() == AbstractItem::Type_AttachmentItem;
             return false;
         }
 
         case R_ToolTipType:
         {
-            return QVariant::fromValue (m_enmToolTipType);
+            return QVariant::fromValue(m_enmToolTipType);
         }
         case R_IsMoreIDEControllersPossible:
         {
@@ -2012,7 +2011,7 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
         }
         case R_IsMoreAttachmentsPossible:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
             {
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
@@ -2050,48 +2049,48 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
 
         case R_CtrOldName:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                     return qobject_cast<ControllerItem*>(pItem)->oldName();
             return QString();
         }
         case R_CtrName:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                     return qobject_cast<ControllerItem*>(pItem)->name();
             return QString();
         }
         case R_CtrType:
         {
-            QVariant result (QVariant::fromValue (KStorageControllerType_Null));
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            QVariant result(QVariant::fromValue(KStorageControllerType_Null));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue (qobject_cast<ControllerItem*>(pItem)->type());
+                    result.setValue(qobject_cast<ControllerItem*>(pItem)->type());
             return result;
         }
         case R_CtrTypes:
         {
-            QVariant result (QVariant::fromValue (ControllerTypeList()));
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            QVariant result(QVariant::fromValue(ControllerTypeList()));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue (qobject_cast<ControllerItem*>(pItem)->types());
+                    result.setValue(qobject_cast<ControllerItem*>(pItem)->types());
             return result;
         }
         case R_CtrDevices:
         {
-            QVariant result (QVariant::fromValue (DeviceTypeList()));
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            QVariant result(QVariant::fromValue(DeviceTypeList()));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue (qobject_cast<ControllerItem*>(pItem)->deviceTypeList());
+                    result.setValue(qobject_cast<ControllerItem*>(pItem)->deviceTypeList());
             return result;
         }
         case R_CtrBusType:
         {
-            QVariant result (QVariant::fromValue (KStorageBus_Null));
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            QVariant result(QVariant::fromValue(KStorageBus_Null));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue (qobject_cast<ControllerItem*>(pItem)->bus());
+                    result.setValue(qobject_cast<ControllerItem*>(pItem)->bus());
             return result;
         }
         case R_CtrBusTypes:
@@ -2104,21 +2103,21 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
         }
         case R_CtrPortCount:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                     return qobject_cast<ControllerItem*>(pItem)->portCount();
             return 0;
         }
         case R_CtrMaxPortCount:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                     return qobject_cast<ControllerItem*>(pItem)->maxPortCount();
             return 0;
         }
         case R_CtrIoCache:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                     return qobject_cast<ControllerItem*>(pItem)->useIoCache();
             return false;
@@ -2126,59 +2125,59 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
 
         case R_AttSlot:
         {
-            QVariant result (QVariant::fromValue (StorageSlot()));
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            QVariant result(QVariant::fromValue(StorageSlot()));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     result.setValue(qobject_cast<AttachmentItem*>(pItem)->storageSlot());
             return result;
         }
         case R_AttSlots:
         {
-            QVariant result (QVariant::fromValue (SlotsList()));
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            QVariant result(QVariant::fromValue(SlotsList()));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     result.setValue(qobject_cast<AttachmentItem*>(pItem)->storageSlots());
             return result;
         }
         case R_AttDevice:
         {
-            QVariant result (QVariant::fromValue (KDeviceType_Null));
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            QVariant result(QVariant::fromValue(KDeviceType_Null));
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     result.setValue(qobject_cast<AttachmentItem*>(pItem)->deviceType());
             return result;
         }
         case R_AttMediumId:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->mediumId();
             return QUuid();
         }
         case R_AttIsHostDrive:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->isHostDrive();
             return false;
         }
         case R_AttIsPassthrough:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->isPassthrough();
             return false;
         }
         case R_AttIsTempEject:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->isTempEject();
             return false;
         }
         case R_AttIsNonRotational:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->isNonRotational();
             return false;
@@ -2192,42 +2191,42 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
         }
         case R_AttSize:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->size();
             return QString();
         }
         case R_AttLogicalSize:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->logicalSize();
             return QString();
         }
         case R_AttLocation:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->location();
             return QString();
         }
         case R_AttFormat:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->format();
             return QString();
         }
         case R_AttDetails:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->details();
             return QString();
         }
         case R_AttUsage:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                     return qobject_cast<AttachmentItem*>(pItem)->usage();
             return QString();
@@ -2291,22 +2290,22 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
         }
         case R_HDPixmapRect:
         {
-            int iMargin = data (index, R_Margin).toInt();
-            int iWidth = data (index, R_IconSize).toInt();
-            return QRect (0 - iWidth - iMargin, iMargin, iWidth, iWidth);
+            int iMargin = data(index, R_Margin).toInt();
+            int iWidth = data(index, R_IconSize).toInt();
+            return QRect(0 - iWidth - iMargin, iMargin, iWidth, iWidth);
         }
         case R_CDPixmapRect:
         {
-            int iMargin = data (index, R_Margin).toInt();
-            int iSpacing = data (index, R_Spacing).toInt();
-            int iWidth = data (index, R_IconSize).toInt();
-            return QRect (0 - iWidth - iSpacing - iWidth - iMargin, iMargin, iWidth, iWidth);
+            int iMargin = data(index, R_Margin).toInt();
+            int iSpacing = data(index, R_Spacing).toInt();
+            int iWidth = data(index, R_IconSize).toInt();
+            return QRect(0 - iWidth - iSpacing - iWidth - iMargin, iMargin, iWidth, iWidth);
         }
         case R_FDPixmapRect:
         {
-            int iMargin = data (index, R_Margin).toInt();
-            int iWidth = data (index, R_IconSize).toInt();
-            return QRect (0 - iWidth - iMargin, iMargin, iWidth, iWidth);
+            int iMargin = data(index, R_Margin).toInt();
+            int iWidth = data(index, R_IconSize).toInt();
+            return QRect(0 - iWidth - iMargin, iMargin, iWidth, iWidth);
         }
 
         default:
@@ -2315,26 +2314,26 @@ QVariant StorageModel::data (const QModelIndex &index, int iRole) const
     return QVariant();
 }
 
-bool StorageModel::setData (const QModelIndex &index, const QVariant &aValue, int iRole)
+bool StorageModel::setData(const QModelIndex &index, const QVariant &aValue, int iRole)
 {
     if (!index.isValid())
-        return QAbstractItemModel::setData (index, aValue, iRole);
+        return QAbstractItemModel::setData(index, aValue, iRole);
 
     switch (iRole)
     {
         case R_ToolTipType:
         {
-            m_enmToolTipType = aValue.value <ToolTipType>();
-            emit dataChanged (index, index);
+            m_enmToolTipType = aValue.value<ToolTipType>();
+            emit dataChanged(index, index);
             return true;
         }
         case R_CtrName:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     qobject_cast<ControllerItem*>(pItem)->setName(aValue.toString());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
@@ -2398,44 +2397,44 @@ bool StorageModel::setData (const QModelIndex &index, const QVariant &aValue, in
         }
         case R_CtrType:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     qobject_cast<ControllerItem*>(pItem)->setType(aValue.value<KStorageControllerType>());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
         }
         case R_CtrPortCount:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     qobject_cast<ControllerItem*>(pItem)->setPortCount(aValue.toUInt());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
         }
         case R_CtrIoCache:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
                 {
                     qobject_cast<ControllerItem*>(pItem)->setUseIoCache(aValue.toBool());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
         }
         case R_AttSlot:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                 {
                     qobject_cast<AttachmentItem*>(pItem)->setStorageSlot(aValue.value<StorageSlot>());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     sort();
                     return true;
                 }
@@ -2443,55 +2442,55 @@ bool StorageModel::setData (const QModelIndex &index, const QVariant &aValue, in
         }
         case R_AttDevice:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                 {
                     qobject_cast<AttachmentItem*>(pItem)->setDeviceType(aValue.value<KDeviceType>());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
         }
         case R_AttMediumId:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                 {
                     qobject_cast<AttachmentItem*>(pItem)->setMediumId(aValue.toUuid());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
         }
         case R_AttIsPassthrough:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                 {
                     qobject_cast<AttachmentItem*>(pItem)->setPassthrough(aValue.toBool());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
         }
         case R_AttIsTempEject:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                 {
                     qobject_cast<AttachmentItem*>(pItem)->setTempEject(aValue.toBool());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
         }
         case R_AttIsNonRotational:
         {
-            if (AbstractItem *pItem = static_cast <AbstractItem*> (index.internalPointer()))
+            if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_AttachmentItem)
                 {
                     qobject_cast<AttachmentItem*>(pItem)->setNonRotational(aValue.toBool());
-                    emit dataChanged (index, index);
+                    emit dataChanged(index, index);
                     return true;
                 }
             return false;
@@ -2514,50 +2513,50 @@ bool StorageModel::setData (const QModelIndex &index, const QVariant &aValue, in
     return false;
 }
 
-QModelIndex StorageModel::addController (const QString &aCtrName, KStorageBus enmBus, KStorageControllerType enmType)
+QModelIndex StorageModel::addController(const QString &aCtrName, KStorageBus enmBus, KStorageControllerType enmType)
 {
-    beginInsertRows (root(), m_pRootItem->childCount(), m_pRootItem->childCount());
-    new ControllerItem (m_pRootItem, aCtrName, enmBus, enmType);
+    beginInsertRows(root(), m_pRootItem->childCount(), m_pRootItem->childCount());
+    new ControllerItem(m_pRootItem, aCtrName, enmBus, enmType);
     endInsertRows();
-    return index (m_pRootItem->childCount() - 1, 0, root());
+    return index(m_pRootItem->childCount() - 1, 0, root());
 }
 
-void StorageModel::delController (const QUuid &uCtrId)
+void StorageModel::delController(const QUuid &uCtrId)
 {
-    if (AbstractItem *pItem = m_pRootItem->childItemById (uCtrId))
+    if (AbstractItem *pItem = m_pRootItem->childItemById(uCtrId))
     {
-        int itemPosition = m_pRootItem->posOfChild (pItem);
-        beginRemoveRows (root(), itemPosition, itemPosition);
+        int iItemPosition = m_pRootItem->posOfChild(pItem);
+        beginRemoveRows(root(), iItemPosition, iItemPosition);
         delete pItem;
         endRemoveRows();
     }
 }
 
-QModelIndex StorageModel::addAttachment (const QUuid &uCtrId, KDeviceType enmDeviceType, const QUuid &uMediumId)
+QModelIndex StorageModel::addAttachment(const QUuid &uCtrId, KDeviceType enmDeviceType, const QUuid &uMediumId)
 {
-    if (AbstractItem *pParentItem = m_pRootItem->childItemById (uCtrId))
+    if (AbstractItem *pParentItem = m_pRootItem->childItemById(uCtrId))
     {
-        int iParentPosition = m_pRootItem->posOfChild (pParentItem);
-        QModelIndex parentIndex = index (iParentPosition, 0, root());
-        beginInsertRows (parentIndex, pParentItem->childCount(), pParentItem->childCount());
-        AttachmentItem *pItem = new AttachmentItem (pParentItem, enmDeviceType);
+        int iParentPosition = m_pRootItem->posOfChild(pParentItem);
+        QModelIndex parentIndex = index(iParentPosition, 0, root());
+        beginInsertRows(parentIndex, pParentItem->childCount(), pParentItem->childCount());
+        AttachmentItem *pItem = new AttachmentItem(pParentItem, enmDeviceType);
         pItem->setHotPluggable(m_enmConfigurationAccessLevel != ConfigurationAccessLevel_Full);
         pItem->setMediumId(uMediumId);
         endInsertRows();
-        return index (pParentItem->childCount() - 1, 0, parentIndex);
+        return index(pParentItem->childCount() - 1, 0, parentIndex);
     }
     return QModelIndex();
 }
 
-void StorageModel::delAttachment (const QUuid &uCtrId, const QUuid &uAttId)
+void StorageModel::delAttachment(const QUuid &uCtrId, const QUuid &uAttId)
 {
-    if (AbstractItem *pParentItem = m_pRootItem->childItemById (uCtrId))
+    if (AbstractItem *pParentItem = m_pRootItem->childItemById(uCtrId))
     {
-        int iParentPosition = m_pRootItem->posOfChild (pParentItem);
-        if (AbstractItem *pItem = pParentItem->childItemById (uAttId))
+        int iParentPosition = m_pRootItem->posOfChild(pParentItem);
+        if (AbstractItem *pItem = pParentItem->childItemById(uAttId))
         {
-            int itemPosition = pParentItem->posOfChild (pItem);
-            beginRemoveRows (index (iParentPosition, 0, root()), itemPosition, itemPosition);
+            int iItemPosition = pParentItem->posOfChild(pItem);
+            beginRemoveRows(index(iParentPosition, 0, root()), iItemPosition, iItemPosition);
             delete pItem;
             endRemoveRows();
         }
@@ -2618,9 +2617,9 @@ void StorageModel::moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, c
     }
 }
 
-void StorageModel::setMachineId (const QUuid &uMachineId)
+void StorageModel::setMachineId(const QUuid &uMachineId)
 {
-    m_pRootItem->setMachineId (uMachineId);
+    m_pRootItem->setMachineId(uMachineId);
 }
 
 void StorageModel::sort(int /* iColumn */, Qt::SortOrder enmOrder)
@@ -2745,9 +2744,9 @@ QMap<KStorageBus, int> StorageModel::maximumControllerTypes() const
     return maximumMap;
 }
 
-Qt::ItemFlags StorageModel::flags (const QModelIndex &index) const
+Qt::ItemFlags StorageModel::flags(const QModelIndex &index) const
 {
-    return !index.isValid() ? QAbstractItemModel::flags (index) :
+    return !index.isValid() ? QAbstractItemModel::flags(index) :
            Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
 
@@ -2756,70 +2755,70 @@ Qt::ItemFlags StorageModel::flags (const QModelIndex &index) const
 *   Class StorageDelegate implementation.                                                                                        *
 *********************************************************************************************************************************/
 
-StorageDelegate::StorageDelegate (QObject *pParent)
-    : QItemDelegate (pParent)
+StorageDelegate::StorageDelegate(QObject *pParent)
+    : QItemDelegate(pParent)
 {
 }
 
-void StorageDelegate::paint (QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const
+void StorageDelegate::paint(QPainter *pPainter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     if (!index.isValid()) return;
 
-    /* Initialize variables */
+    /* Initialize variables: */
     QStyle::State enmState = option.state;
     QRect rect = option.rect;
     const StorageModel *pModel = qobject_cast<const StorageModel*>(index.model());
-    Assert (pModel);
+    Assert(pModel);
 
     pPainter->save();
 
-    /* Draw item background */
-    QItemDelegate::drawBackground (pPainter, option, index);
+    /* Draw item background: */
+    QItemDelegate::drawBackground(pPainter, option, index);
 
-    /* Setup foreground settings */
+    /* Setup foreground settings: */
     QPalette::ColorGroup cg = enmState & QStyle::State_Active ? QPalette::Active : QPalette::Inactive;
     bool fSelected = enmState & QStyle::State_Selected;
     bool fFocused = enmState & QStyle::State_HasFocus;
-    bool fGrayOnLoosingFocus = QApplication::style()->styleHint (QStyle::SH_ItemView_ChangeHighlightOnFocus, &option) != 0;
-    pPainter->setPen (option.palette.color (cg, fSelected && (fFocused || !fGrayOnLoosingFocus) ?
-                                             QPalette::HighlightedText : QPalette::Text));
+    bool fGrayOnLoosingFocus = QApplication::style()->styleHint(QStyle::SH_ItemView_ChangeHighlightOnFocus, &option) != 0;
+    pPainter->setPen(option.palette.color(cg, fSelected &&(fFocused || !fGrayOnLoosingFocus) ?
+                                          QPalette::HighlightedText : QPalette::Text));
 
-    pPainter->translate (rect.x(), rect.y());
+    pPainter->translate(rect.x(), rect.y());
 
-    /* Draw Item Pixmap */
-    pPainter->drawPixmap (pModel->data (index, StorageModel::R_ItemPixmapRect).toRect().topLeft(),
-                          pModel->data (index, StorageModel::R_ItemPixmap).value <QPixmap>());
+    /* Draw Item Pixmap: */
+    pPainter->drawPixmap(pModel->data(index, StorageModel::R_ItemPixmapRect).toRect().topLeft(),
+                         pModel->data(index, StorageModel::R_ItemPixmap).value<QPixmap>());
 
-    /* Draw compressed item name */
-    int iMargin = pModel->data (index, StorageModel::R_Margin).toInt();
-    int iIconWidth = pModel->data (index, StorageModel::R_IconSize).toInt();
-    int iSpacing = pModel->data (index, StorageModel::R_Spacing).toInt();
-    QPoint textPosition = pModel->data (index, StorageModel::R_ItemNamePoint).toPoint();
+    /* Draw compressed item name: */
+    int iMargin = pModel->data(index, StorageModel::R_Margin).toInt();
+    int iIconWidth = pModel->data(index, StorageModel::R_IconSize).toInt();
+    int iSpacing = pModel->data(index, StorageModel::R_Spacing).toInt();
+    QPoint textPosition = pModel->data(index, StorageModel::R_ItemNamePoint).toPoint();
     int iTextWidth = rect.width() - textPosition.x();
-    if (pModel->data (index, StorageModel::R_IsController).toBool() && enmState & QStyle::State_Selected)
+    if (pModel->data(index, StorageModel::R_IsController).toBool() && enmState & QStyle::State_Selected)
     {
         iTextWidth -= (2 * iSpacing + iIconWidth + iMargin);
-        if (pModel->data (index, StorageModel::R_CtrBusType).value <KStorageBus>() != KStorageBus_Floppy)
+        if (pModel->data(index, StorageModel::R_CtrBusType).value<KStorageBus>() != KStorageBus_Floppy)
             iTextWidth -= (iSpacing + iIconWidth);
     }
-    QString strText (pModel->data (index, StorageModel::R_ItemName).toString());
-    QString strShortText (strText);
-    QFont font = pModel->data (index, Qt::FontRole).value <QFont>();
-    QFontMetrics fm (font);
-    while ((strShortText.size() > 1) && (fm.width (strShortText) + fm.width ("...") > iTextWidth))
-        strShortText.truncate (strShortText.size() - 1);
+    QString strText(pModel->data(index, StorageModel::R_ItemName).toString());
+    QString strShortText(strText);
+    QFont font = pModel->data(index, Qt::FontRole).value<QFont>();
+    QFontMetrics fm(font);
+    while ((strShortText.size() > 1) && (fm.width(strShortText) + fm.width("...") > iTextWidth))
+        strShortText.truncate(strShortText.size() - 1);
     if (strShortText != strText)
         strShortText += "...";
-    pPainter->setFont (font);
-    pPainter->drawText (textPosition, strShortText);
+    pPainter->setFont(font);
+    pPainter->drawText(textPosition, strShortText);
 
-    /* Draw Controller Additions */
-    if (pModel->data (index, StorageModel::R_IsController).toBool() && enmState & QStyle::State_Selected)
+    /* Draw Controller Additions: */
+    if (pModel->data(index, StorageModel::R_IsController).toBool() && enmState & QStyle::State_Selected)
     {
-        DeviceTypeList devicesList (pModel->data (index, StorageModel::R_CtrDevices).value <DeviceTypeList>());
+        DeviceTypeList devicesList(pModel->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
         for (int i = 0; i < devicesList.size(); ++ i)
         {
-            KDeviceType enmDeviceType = devicesList [i];
+            KDeviceType enmDeviceType = devicesList[i];
 
             QRect deviceRect;
             QPixmap devicePixmap;
@@ -2827,39 +2826,39 @@ void StorageDelegate::paint (QPainter *pPainter, const QStyleOptionViewItem &opt
             {
                 case KDeviceType_HardDisk:
                 {
-                    deviceRect = pModel->data (index, StorageModel::R_HDPixmapRect).value <QRect>();
-                    devicePixmap = pModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
-                                   pModel->data (index, StorageModel::R_HDPixmapAddEn).value <QPixmap>() :
-                                   pModel->data (index, StorageModel::R_HDPixmapAddDis).value <QPixmap>();
+                    deviceRect = pModel->data(index, StorageModel::R_HDPixmapRect).value<QRect>();
+                    devicePixmap = pModel->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
+                                   pModel->data(index, StorageModel::R_HDPixmapAddEn).value<QPixmap>() :
+                                   pModel->data(index, StorageModel::R_HDPixmapAddDis).value<QPixmap>();
                     break;
                 }
                 case KDeviceType_DVD:
                 {
-                    deviceRect = pModel->data (index, StorageModel::R_CDPixmapRect).value <QRect>();
-                    devicePixmap = pModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
-                                   pModel->data (index, StorageModel::R_CDPixmapAddEn).value <QPixmap>() :
-                                   pModel->data (index, StorageModel::R_CDPixmapAddDis).value <QPixmap>();
+                    deviceRect = pModel->data(index, StorageModel::R_CDPixmapRect).value<QRect>();
+                    devicePixmap = pModel->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
+                                   pModel->data(index, StorageModel::R_CDPixmapAddEn).value<QPixmap>() :
+                                   pModel->data(index, StorageModel::R_CDPixmapAddDis).value<QPixmap>();
                     break;
                 }
                 case KDeviceType_Floppy:
                 {
-                    deviceRect = pModel->data (index, StorageModel::R_FDPixmapRect).value <QRect>();
-                    devicePixmap = pModel->data (index, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
-                                   pModel->data (index, StorageModel::R_FDPixmapAddEn).value <QPixmap>() :
-                                   pModel->data (index, StorageModel::R_FDPixmapAddDis).value <QPixmap>();
+                    deviceRect = pModel->data(index, StorageModel::R_FDPixmapRect).value<QRect>();
+                    devicePixmap = pModel->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool() ?
+                                   pModel->data(index, StorageModel::R_FDPixmapAddEn).value<QPixmap>() :
+                                   pModel->data(index, StorageModel::R_FDPixmapAddDis).value<QPixmap>();
                     break;
                 }
                 default:
                     break;
             }
 
-            pPainter->drawPixmap (QPoint (rect.width() + deviceRect.x(), deviceRect.y()), devicePixmap);
+            pPainter->drawPixmap(QPoint(rect.width() + deviceRect.x(), deviceRect.y()), devicePixmap);
         }
     }
 
     pPainter->restore();
 
-    drawFocus (pPainter, option, rect);
+    drawFocus(pPainter, option, rect);
 }
 
 
@@ -3138,7 +3137,7 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
     /* Check controllers for name emptiness & coincidence.
      * Check attachments for the hd presence / uniqueness. */
     const QModelIndex rootIndex = m_pModelStorage->root();
-    QMap <QString, QString> config;
+    QMap<QString, QString> config;
     QMap<int, QString> names;
     /* For each controller: */
     for (int i = 0; i < m_pModelStorage->rowCount(rootIndex); ++i)
@@ -3166,8 +3165,8 @@ bool UIMachineSettingsStorage::validate(QList<UIValidationMessage> &messages)
         for (int j = 0; j < m_pModelStorage->rowCount(controllerIndex); ++j)
         {
             const QModelIndex attachmentIndex = controllerIndex.child(j, 0);
-            const StorageSlot attSlot = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttSlot).value <StorageSlot>();
-            const KDeviceType enmDeviceType = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttDevice).value <KDeviceType>();
+            const StorageSlot attSlot = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttSlot).value<StorageSlot>();
+            const KDeviceType enmDeviceType = m_pModelStorage->data(attachmentIndex, StorageModel::R_AttDevice).value<KDeviceType>();
             const QString key(m_pModelStorage->data(attachmentIndex, StorageModel::R_AttMediumId).toString());
             const QString value(QString("%1 (%2)").arg(ctrName, gpConverter->toString(attSlot)));
             /* Check for emptiness: */
@@ -3479,7 +3478,7 @@ void UIMachineSettingsStorage::sltAddAttachment()
     const QModelIndex index = m_pTreeStorage->currentIndex();
     Assert(m_pModelStorage->data(index, StorageModel::R_IsController).toBool());
 
-    const DeviceTypeList deviceTypeList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value <DeviceTypeList>());
+    const DeviceTypeList deviceTypeList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
     const bool fJustTrigger = deviceTypeList.size() == 1;
     const bool fShowMenu = deviceTypeList.size() > 1;
     QMenu menu;
@@ -3532,7 +3531,7 @@ void UIMachineSettingsStorage::sltRemoveAttachment()
 {
     const QModelIndex index = m_pTreeStorage->currentIndex();
 
-    const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value <KDeviceType>();
+    const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
     /* Check if this would be the last DVD. If so let the user confirm this again. */
     if (   enmDeviceType == KDeviceType_DVD
         && deviceCount(KDeviceType_DVD) == 1)
@@ -3567,7 +3566,7 @@ void UIMachineSettingsStorage::sltGetInformation()
     }
     else
     {
-        switch (m_pModelStorage->data(index, StorageModel::R_ItemType).value <AbstractItem::ItemType>())
+        switch (m_pModelStorage->data(index, StorageModel::R_ItemType).value<AbstractItem::ItemType>())
         {
             case AbstractItem::Type_ControllerItem:
             {
@@ -3587,10 +3586,10 @@ void UIMachineSettingsStorage::sltGetInformation()
 
                 /* Getting Controller Sub type: */
                 mCbType->clear();
-                const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, StorageModel::R_CtrTypes).value <ControllerTypeList>());
+                const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, StorageModel::R_CtrTypes).value<ControllerTypeList>());
                 for (int i = 0; i < controllerTypeList.size(); ++i)
                     mCbType->insertItem(mCbType->count(), gpConverter->toString(controllerTypeList[i]));
-                const KStorageControllerType enmType = m_pModelStorage->data(index, StorageModel::R_CtrType).value <KStorageControllerType>();
+                const KStorageControllerType enmType = m_pModelStorage->data(index, StorageModel::R_CtrType).value<KStorageControllerType>();
                 const int iCtrPos = mCbType->findText(gpConverter->toString(enmType));
                 mCbType->setCurrentIndex(iCtrPos == -1 ? 0 : iCtrPos);
 
@@ -3612,16 +3611,16 @@ void UIMachineSettingsStorage::sltGetInformation()
             {
                 /* Getting Attachment Slot: */
                 mCbSlot->clear();
-                const SlotsList slotsList(m_pModelStorage->data(index, StorageModel::R_AttSlots).value <SlotsList>());
+                const SlotsList slotsList(m_pModelStorage->data(index, StorageModel::R_AttSlots).value<SlotsList>());
                 for (int i = 0; i < slotsList.size(); ++i)
                     mCbSlot->insertItem(mCbSlot->count(), gpConverter->toString(slotsList[i]));
-                const StorageSlot slt = m_pModelStorage->data(index, StorageModel::R_AttSlot).value <StorageSlot>();
+                const StorageSlot slt = m_pModelStorage->data(index, StorageModel::R_AttSlot).value<StorageSlot>();
                 const int iAttSlotPos = mCbSlot->findText(gpConverter->toString(slt));
                 mCbSlot->setCurrentIndex(iAttSlotPos == -1 ? 0 : iAttSlotPos);
                 mCbSlot->setToolTip(mCbSlot->itemText(mCbSlot->currentIndex()));
 
                 /* Getting Attachment Medium: */
-                const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value <KDeviceType>();
+                const KDeviceType enmDeviceType = m_pModelStorage->data(index, StorageModel::R_AttDevice).value<KDeviceType>();
                 switch (enmDeviceType)
                 {
                     case KDeviceType_HardDisk:
@@ -3662,16 +3661,16 @@ void UIMachineSettingsStorage::sltGetInformation()
                 mLbMedium->setEnabled(fIsEditable);
                 mTbOpen->setEnabled(fIsEditable);
 
-                /* Getting Passthrough state */
+                /* Getting Passthrough state: */
                 const bool fHostDrive = m_pModelStorage->data(index, StorageModel::R_AttIsHostDrive).toBool();
                 mCbPassthrough->setVisible(enmDeviceType == KDeviceType_DVD && fHostDrive);
                 mCbPassthrough->setChecked(fHostDrive && m_pModelStorage->data(index, StorageModel::R_AttIsPassthrough).toBool());
 
-                /* Getting TempEject state */
+                /* Getting TempEject state: */
                 mCbTempEject->setVisible(enmDeviceType == KDeviceType_DVD && !fHostDrive);
                 mCbTempEject->setChecked(!fHostDrive && m_pModelStorage->data(index, StorageModel::R_AttIsTempEject).toBool());
 
-                /* Getting NonRotational state */
+                /* Getting NonRotational state: */
                 mCbNonRotational->setVisible(enmDeviceType == KDeviceType_HardDisk);
                 mCbNonRotational->setChecked(m_pModelStorage->data(index, StorageModel::R_AttIsNonRotational).toBool());
 
@@ -3679,10 +3678,10 @@ void UIMachineSettingsStorage::sltGetInformation()
                 m_pCheckBoxHotPluggable->setVisible((slt.bus == KStorageBus_SATA) || (slt.bus == KStorageBus_USB));
                 m_pCheckBoxHotPluggable->setChecked(fIsHotPluggable);
 
-                /* Update optional widgets visibility */
+                /* Update optional widgets visibility: */
                 updateAdditionalDetails(enmDeviceType);
 
-                /* Getting Other Information */
+                /* Getting Other Information: */
                 mLbHDFormatValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttFormat).toString()));
                 mLbCDFDTypeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttFormat).toString()));
                 mLbHDVirtualSizeValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttLogicalSize).toString()));
@@ -3693,7 +3692,7 @@ void UIMachineSettingsStorage::sltGetInformation()
                 mLbUsageValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttUsage).toString()));
                 m_pLabelEncryptionValue->setText(compressText(m_pModelStorage->data(index, StorageModel::R_AttEncryptionPasswordID).toString()));
 
-                /* Showing Attachment Page */
+                /* Showing Attachment Page: */
                 mSwRightPane->setCurrentIndex(2);
                 break;
             }
@@ -3715,7 +3714,7 @@ void UIMachineSettingsStorage::sltSetInformation()
         return;
 
     QObject *pSender = sender();
-    switch (m_pModelStorage->data(index, StorageModel::R_ItemType).value <AbstractItem::ItemType>())
+    switch (m_pModelStorage->data(index, StorageModel::R_ItemType).value<AbstractItem::ItemType>())
     {
         case AbstractItem::Type_ControllerItem:
         {
@@ -3844,7 +3843,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
 void UIMachineSettingsStorage::sltCreateNewHardDisk()
 {
     const QUuid uMediumId = uiCommon().openMediumCreatorDialog(this, UIMediumDeviceType_HardDisk, m_strMachineSettingsFilePath,
-                                                                 m_strMachineName, m_strMachineGuestOSTypeId);
+                                                               m_strMachineName, m_strMachineGuestOSTypeId);
 
     if (!uMediumId.isNull())
         m_pMediumIdHolder->setId(uMediumId);
@@ -3861,9 +3860,9 @@ void UIMachineSettingsStorage::sltChooseExistingMedium()
 
     QUuid uMediumId;
     int iResult = uiCommon().openMediumSelectorDialog(this, m_pMediumIdHolder->type(), uMediumId,
-                                                        strMachineFolder, m_strMachineName,
-                                                        m_strMachineGuestOSTypeId,
-                                                        true /* enable create action: */);
+                                                      strMachineFolder, m_strMachineName,
+                                                      m_strMachineGuestOSTypeId,
+                                                      true /* enable create action: */);
 
     if (iResult == UIMediumSelector::ReturnCode_Rejected ||
         (iResult == UIMediumSelector::ReturnCode_Accepted && uMediumId.isNull()))
@@ -4095,12 +4094,12 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
                 }
                 case KDeviceType_DVD:
                 {
-                    deviceRect = m_pModelStorage->data (index, StorageModel::R_CDPixmapRect).toRect();
+                    deviceRect = m_pModelStorage->data(index, StorageModel::R_CDPixmapRect).toRect();
                     break;
                 }
                 case KDeviceType_Floppy:
                 {
-                    deviceRect = m_pModelStorage->data (index, StorageModel::R_FDPixmapRect).toRect();
+                    deviceRect = m_pModelStorage->data(index, StorageModel::R_FDPixmapRect).toRect();
                     break;
                 }
                 default:
@@ -4206,7 +4205,7 @@ void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
     if (m_pModelStorage->data(index, StorageModel::R_IsController).toBool() &&
         m_pTreeStorage->currentIndex() == index)
     {
-        const DeviceTypeList devicesList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value <DeviceTypeList>());
+        const DeviceTypeList devicesList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
         for (int i = 0; i < devicesList.size(); ++ i)
         {
             const KDeviceType enmDeviceType = devicesList[i];
@@ -4221,12 +4220,12 @@ void UIMachineSettingsStorage::sltHandleMouseClick(QMouseEvent *pEvent)
                 }
                 case KDeviceType_DVD:
                 {
-                    deviceRect = m_pModelStorage->data (index, StorageModel::R_CDPixmapRect).toRect();
+                    deviceRect = m_pModelStorage->data(index, StorageModel::R_CDPixmapRect).toRect();
                     break;
                 }
                 case KDeviceType_Floppy:
                 {
-                    deviceRect = m_pModelStorage->data (index, StorageModel::R_FDPixmapRect).toRect();
+                    deviceRect = m_pModelStorage->data(index, StorageModel::R_FDPixmapRect).toRect();
                     break;
                 }
                 default:
@@ -4356,7 +4355,7 @@ void UIMachineSettingsStorage::prepare()
 
     /* Initial setup (after first retranslateUi() call): */
     setMinimumWidth(500);
-    mSplitter->setSizes(QList<int>() << (int) (0.45 * minimumWidth()) << (int) (0.55 * minimumWidth()));
+    mSplitter->setSizes(QList<int>() << (int)(0.45 * minimumWidth()) << (int)(0.55 * minimumWidth()));
 }
 
 void UIMachineSettingsStorage::prepareStorageTree()
@@ -4720,9 +4719,9 @@ void UIMachineSettingsStorage::addAttachmentWrapper(KDeviceType enmDeviceType)
 
     QUuid uMediumId;
     int iResult = uiCommon().openMediumSelectorDialog(this, UIMediumDefs::mediumTypeToLocal(enmDeviceType), uMediumId,
-                                                        strMachineFolder, m_strMachineName,
-                                                        m_strMachineGuestOSTypeId,
-                                                        true /* enable cr1eate action: */);
+                                                      strMachineFolder, m_strMachineName,
+                                                      m_strMachineGuestOSTypeId,
+                                                      true /* enable cr1eate action: */);
 
     /* Continue only if iResult is either UIMediumSelector::ReturnCode_Accepted or UIMediumSelector::ReturnCode_LeftEmpty: */
     /* If iResult is UIMediumSelector::ReturnCode_Accepted then we have to have a valid uMediumId: */
