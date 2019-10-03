@@ -3803,6 +3803,7 @@ void UIMachineSettingsStorage::sltSetInformation()
     }
 
     emit sigStorageChanged();
+    sltUpdateActionStates();
     sltGetInformation();
 }
 
