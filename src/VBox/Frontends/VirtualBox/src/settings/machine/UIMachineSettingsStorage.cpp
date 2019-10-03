@@ -439,8 +439,8 @@ public:
     void setType(KStorageControllerType enmType);
     /** Returns type. */
     KStorageControllerType type() const;
-    /** Returns possible types to switch from current one. */
-    ControllerTypeList types() const;
+    /** Returns possible types for specified @a enmBus to switch from current one. */
+    ControllerTypeList types(KStorageBus enmBus) const;
 
     /** Defines current @a uPortCount. */
     void setPortCount(uint uPortCount);
@@ -496,8 +496,6 @@ private:
 
     /** Updates possible buses. */
     void updateBusInfo();
-    /** Updates possible types. */
-    void updateTypeInfo();
     /** Updates pixmaps of possible buses. */
     void updatePixmaps();
 
@@ -513,8 +511,6 @@ private:
 
     /** Holds the possible buses. */
     ControllerBusList   m_buses;
-    /** Holds the possible types. */
-    ControllerTypeList  m_types;
     /** Holds the pixmaps of possible buses. */
     QList<PixmapType>   m_pixmaps;
 
@@ -699,7 +695,14 @@ public:
         R_CtrOldName,
         R_CtrName,
         R_CtrType,
-        R_CtrTypes,
+        R_CtrTypesForIDE,
+        R_CtrTypesForSATA,
+        R_CtrTypesForSCSI,
+        R_CtrTypesForFloppy,
+        R_CtrTypesForSAS,
+        R_CtrTypesForUSB,
+        R_CtrTypesForPCIe,
+        R_CtrTypesForVirtioSCSI,
         R_CtrDevices,
         R_CtrBusType,
         R_CtrBusTypes,
@@ -811,6 +814,11 @@ public:
     QMap<KStorageBus, int> currentControllerTypes() const;
     /** Returns maximum controller types. */
     QMap<KStorageBus, int> maximumControllerTypes() const;
+
+    /** Returns bus corresponding to passed enmRole. */
+    static KStorageBus roleToBus(StorageModel::DataRole enmRole);
+    /** Returns role corresponding to passed enmBus. */
+    static StorageModel::DataRole busToRole(KStorageBus enmBus);
 
 private:
 
@@ -1239,7 +1247,6 @@ ControllerItem::ControllerItem(AbstractItem *pParentItem, const QString &strName
     AssertMsg(m_enmType != KStorageControllerType_Null, ("Wrong Controller Type {%d}!\n", m_enmType));
 
     updateBusInfo();
-    updateTypeInfo();
     updatePixmaps();
 
     m_fUseIoCache = uiCommon().virtualBox().GetSystemProperties().GetDefaultIoCacheSettingForStorageController(enmType);
@@ -1271,7 +1278,6 @@ void ControllerItem::setBus(KStorageBus enmBus)
     m_enmBus = enmBus;
 
     updateBusInfo();
-    updateTypeInfo();
     updatePixmaps();
 }
 
@@ -1295,9 +1301,30 @@ KStorageControllerType ControllerItem::type() const
     return m_enmType;
 }
 
-ControllerTypeList ControllerItem::types() const
+ControllerTypeList ControllerItem::types(KStorageBus enmBus) const
 {
-    return m_types;
+    ControllerTypeList types;
+
+    KStorageControllerType enmFirstType = KStorageControllerType_Null;
+    uint cAmount = 0;
+    switch (enmBus)
+    {
+        case KStorageBus_IDE:        enmFirstType = KStorageControllerType_PIIX3; cAmount = 3; break;
+        case KStorageBus_SATA:       enmFirstType = KStorageControllerType_IntelAhci; cAmount = 1; break;
+        case KStorageBus_SCSI:       enmFirstType = KStorageControllerType_LsiLogic; cAmount = 2; break;
+        case KStorageBus_Floppy:     enmFirstType = KStorageControllerType_I82078; cAmount = 1; break;
+        case KStorageBus_SAS:        enmFirstType = KStorageControllerType_LsiLogicSas; cAmount = 1; break;
+        case KStorageBus_USB:        enmFirstType = KStorageControllerType_USB; cAmount = 1; break;
+        case KStorageBus_PCIe:       enmFirstType = KStorageControllerType_NVMe; cAmount = 1; break;
+        case KStorageBus_VirtioSCSI: enmFirstType = KStorageControllerType_VirtioSCSI; cAmount = 1; break;
+        default:                     break;
+    }
+    AssertMsgReturn(enmFirstType != KStorageControllerType_Null, ("Invalid bus: %d!\n", (int)enmBus), types);
+
+    for (uint i = enmFirstType; i < enmFirstType + cAmount; ++i)
+        types << static_cast<KStorageControllerType>(i);
+
+    return types;
 }
 
 void ControllerItem::setPortCount(uint uPortCount)
@@ -1452,44 +1479,6 @@ void ControllerItem::updateBusInfo()
             break;
         }
     }
-}
-
-void ControllerItem::updateTypeInfo()
-{
-    m_types.clear();
-
-    KStorageControllerType enmFirstType = KStorageControllerType_Null;
-    switch (m_enmBus)
-    {
-        case KStorageBus_IDE:        enmFirstType = KStorageControllerType_PIIX3; break;
-        case KStorageBus_SATA:       enmFirstType = KStorageControllerType_IntelAhci; break;
-        case KStorageBus_SCSI:       enmFirstType = KStorageControllerType_LsiLogic; break;
-        case KStorageBus_Floppy:     enmFirstType = KStorageControllerType_I82078; break;
-        case KStorageBus_SAS:        enmFirstType = KStorageControllerType_LsiLogicSas; break;
-        case KStorageBus_USB:        enmFirstType = KStorageControllerType_USB; break;
-        case KStorageBus_PCIe:       enmFirstType = KStorageControllerType_NVMe; break;
-        case KStorageBus_VirtioSCSI: enmFirstType = KStorageControllerType_VirtioSCSI; break;
-        default:                     break;
-    }
-    AssertMsg(enmFirstType != KStorageControllerType_Null, ("Invalid item type!\n"));
-
-    uint uTypeAmount = 0;
-    switch (m_enmBus)
-    {
-        case KStorageBus_IDE:        uTypeAmount = 3; break;
-        case KStorageBus_SATA:       uTypeAmount = 1; break;
-        case KStorageBus_SCSI:       uTypeAmount = 2; break;
-        case KStorageBus_Floppy:     uTypeAmount = 1; break;
-        case KStorageBus_SAS:        uTypeAmount = 1; break;
-        case KStorageBus_USB:        uTypeAmount = 1; break;
-        case KStorageBus_PCIe:       uTypeAmount = 1; break;
-        case KStorageBus_VirtioSCSI: uTypeAmount = 1; break;
-        default:                     break;
-    }
-    AssertMsg(uTypeAmount != 0, ("Invalid item type count!\n"));
-
-    for (uint i = enmFirstType; i < enmFirstType + uTypeAmount; ++i)
-        m_types << static_cast<KStorageControllerType>(i);
 }
 
 void ControllerItem::updatePixmaps()
@@ -2069,12 +2058,19 @@ QVariant StorageModel::data(const QModelIndex &index, int iRole) const
                     result.setValue(qobject_cast<ControllerItem*>(pItem)->type());
             return result;
         }
-        case R_CtrTypes:
+        case R_CtrTypesForIDE:
+        case R_CtrTypesForSATA:
+        case R_CtrTypesForSCSI:
+        case R_CtrTypesForFloppy:
+        case R_CtrTypesForSAS:
+        case R_CtrTypesForUSB:
+        case R_CtrTypesForPCIe:
+        case R_CtrTypesForVirtioSCSI:
         {
             QVariant result(QVariant::fromValue(ControllerTypeList()));
             if (AbstractItem *pItem = static_cast<AbstractItem*>(index.internalPointer()))
                 if (pItem->rtti() == AbstractItem::Type_ControllerItem)
-                    result.setValue(qobject_cast<ControllerItem*>(pItem)->types());
+                    result.setValue(qobject_cast<ControllerItem*>(pItem)->types(roleToBus((StorageModel::DataRole)iRole)));
             return result;
         }
         case R_CtrDevices:
@@ -2377,7 +2373,7 @@ bool StorageModel::setData(const QModelIndex &index, const QVariant &aValue, int
 
                     /* Push new bus/controller type: */
                     pItemController->setBus(enmNewCtrBusType);
-                    pItemController->setType(pItemController->types().first());
+                    pItemController->setType(pItemController->types(enmNewCtrBusType).first());
                     emit dataChanged(index, index);
 
                     /* Make sure each of remaining attachments has valid slot: */
@@ -2742,6 +2738,36 @@ QMap<KStorageBus, int> StorageModel::maximumControllerTypes() const
                           uiCommon().virtualBox().GetSystemProperties().GetMaxInstancesOfStorageBus(chipsetType(), (KStorageBus)iStorageBusType));
     }
     return maximumMap;
+}
+
+/* static */
+KStorageBus StorageModel::roleToBus(StorageModel::DataRole enmRole)
+{
+    QMap<StorageModel::DataRole, KStorageBus> typeRoles;
+    typeRoles[StorageModel::R_CtrTypesForIDE]        = KStorageBus_IDE;
+    typeRoles[StorageModel::R_CtrTypesForSATA]       = KStorageBus_SATA;
+    typeRoles[StorageModel::R_CtrTypesForSCSI]       = KStorageBus_SCSI;
+    typeRoles[StorageModel::R_CtrTypesForFloppy]     = KStorageBus_Floppy;
+    typeRoles[StorageModel::R_CtrTypesForSAS]        = KStorageBus_SAS;
+    typeRoles[StorageModel::R_CtrTypesForUSB]        = KStorageBus_USB;
+    typeRoles[StorageModel::R_CtrTypesForPCIe]       = KStorageBus_PCIe;
+    typeRoles[StorageModel::R_CtrTypesForVirtioSCSI] = KStorageBus_VirtioSCSI;
+    return typeRoles.value(enmRole);
+}
+
+/* static */
+StorageModel::DataRole StorageModel::busToRole(KStorageBus enmBus)
+{
+    QMap<KStorageBus, StorageModel::DataRole> typeRoles;
+    typeRoles[KStorageBus_IDE]        = StorageModel::R_CtrTypesForIDE;
+    typeRoles[KStorageBus_SATA]       = StorageModel::R_CtrTypesForSATA;
+    typeRoles[KStorageBus_SCSI]       = StorageModel::R_CtrTypesForSCSI;
+    typeRoles[KStorageBus_Floppy]     = StorageModel::R_CtrTypesForFloppy;
+    typeRoles[KStorageBus_SAS]        = StorageModel::R_CtrTypesForSAS;
+    typeRoles[KStorageBus_USB]        = StorageModel::R_CtrTypesForUSB;
+    typeRoles[KStorageBus_PCIe]       = StorageModel::R_CtrTypesForPCIe;
+    typeRoles[KStorageBus_VirtioSCSI] = StorageModel::R_CtrTypesForVirtioSCSI;
+    return typeRoles.value(enmBus);
 }
 
 Qt::ItemFlags StorageModel::flags(const QModelIndex &index) const
@@ -3289,8 +3315,6 @@ void UIMachineSettingsStorage::polishPage()
     mLsParameters->setEnabled(isMachineInValidMode());
     mLbName->setEnabled(isMachineOffline());
     mLeName->setEnabled(isMachineOffline());
-    mLbBus->setEnabled(isMachineOffline());
-    mCbBus->setEnabled(isMachineOffline());
     mLbType->setEnabled(isMachineOffline());
     mCbType->setEnabled(isMachineOffline());
     mLbPortCount->setEnabled(isMachineOffline());
@@ -3575,24 +3599,26 @@ void UIMachineSettingsStorage::sltGetInformation()
                 if (mLeName->text() != strCtrName)
                     mLeName->setText(strCtrName);
 
-                /* Getting Controller Bus type: */
-                mCbBus->clear();
-                const ControllerBusList controllerBusList(m_pModelStorage->data(index, StorageModel::R_CtrBusTypes).value<ControllerBusList>());
-                for (int i = 0; i < controllerBusList.size(); ++i)
-                    mCbBus->insertItem(mCbBus->count(), gpConverter->toString(controllerBusList[i]));
-                const KStorageBus enmBus = m_pModelStorage->data(index, StorageModel::R_CtrBusType).value<KStorageBus>();
-                const int iBusPos = mCbBus->findText(gpConverter->toString(enmBus));
-                mCbBus->setCurrentIndex(iBusPos == -1 ? 0 : iBusPos);
-
-                /* Getting Controller Sub type: */
+                /* Rebuild type combo: */
                 mCbType->clear();
-                const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, StorageModel::R_CtrTypes).value<ControllerTypeList>());
-                for (int i = 0; i < controllerTypeList.size(); ++i)
-                    mCbType->insertItem(mCbType->count(), gpConverter->toString(controllerTypeList[i]));
+                /* Getting controller buses: */
+                const ControllerBusList controllerBusList(m_pModelStorage->data(index, StorageModel::R_CtrBusTypes).value<ControllerBusList>());
+                foreach (const KStorageBus &enmCurrentBus, controllerBusList)
+                {
+                    /* Getting controller types: */
+                    const ControllerTypeList controllerTypeList(m_pModelStorage->data(index, m_pModelStorage->busToRole(enmCurrentBus)).value<ControllerTypeList>());
+                    foreach (const KStorageControllerType &enmCurrentType, controllerTypeList)
+                    {
+                        mCbType->addItem(gpConverter->toString(enmCurrentType));
+                        mCbType->setItemData(mCbType->count() - 1, QVariant::fromValue(enmCurrentBus), StorageModel::R_CtrBusType);
+                        mCbType->setItemData(mCbType->count() - 1, QVariant::fromValue(enmCurrentType), StorageModel::R_CtrType);
+                    }
+                }
                 const KStorageControllerType enmType = m_pModelStorage->data(index, StorageModel::R_CtrType).value<KStorageControllerType>();
-                const int iCtrPos = mCbType->findText(gpConverter->toString(enmType));
+                const int iCtrPos = mCbType->findData(enmType, StorageModel::R_CtrType);
                 mCbType->setCurrentIndex(iCtrPos == -1 ? 0 : iCtrPos);
 
+                const KStorageBus enmBus = m_pModelStorage->data(index, StorageModel::R_CtrBusType).value<KStorageBus>();
                 mLbPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
                 mSbPortCount->setVisible(enmBus == KStorageBus_SATA || enmBus == KStorageBus_SAS);
                 const uint uPortCount = m_pModelStorage->data(index, StorageModel::R_CtrPortCount).toUInt();
@@ -3721,14 +3747,16 @@ void UIMachineSettingsStorage::sltSetInformation()
             /* Setting Controller Name: */
             if (pSender == mLeName)
                 m_pModelStorage->setData(index, mLeName->text(), StorageModel::R_CtrName);
-            /* Setting Controller Bus-Type: */
-            else if (pSender == mCbBus)
-                m_pModelStorage->setData(index, QVariant::fromValue(gpConverter->fromString<KStorageBus>(mCbBus->currentText())),
-                                         StorageModel::R_CtrBusType);
             /* Setting Controller Sub-Type: */
             else if (pSender == mCbType)
-                m_pModelStorage->setData(index, QVariant::fromValue(gpConverter->fromString<KStorageControllerType>(mCbType->currentText())),
-                                        StorageModel::R_CtrType);
+            {
+                m_pModelStorage->setData(index,
+                                         QVariant::fromValue(mCbType->currentData(StorageModel::R_CtrBusType).value<KStorageBus>()),
+                                         StorageModel::R_CtrBusType);
+                m_pModelStorage->setData(index,
+                                         QVariant::fromValue(mCbType->currentData(StorageModel::R_CtrType).value<KStorageControllerType>()),
+                                         StorageModel::R_CtrType);
+            }
             else if (pSender == mSbPortCount)
                 m_pModelStorage->setData(index, mSbPortCount->value(), StorageModel::R_CtrPortCount);
             else if (pSender == mCbIoCache)
@@ -4641,8 +4669,6 @@ void UIMachineSettingsStorage::prepareConnections()
     connect(mSbPortCount, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),
             this, &UIMachineSettingsStorage::sltSetInformation);
     connect(mLeName, &QLineEdit::textEdited,
-            this, &UIMachineSettingsStorage::sltSetInformation);
-    connect(mCbBus, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
             this, &UIMachineSettingsStorage::sltSetInformation);
     connect(mCbType, static_cast<void(QComboBox::*)(int)>(&QComboBox::activated),
             this, &UIMachineSettingsStorage::sltSetInformation);
