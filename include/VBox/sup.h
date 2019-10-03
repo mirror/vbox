@@ -503,14 +503,14 @@ typedef struct SUPGLOBALINFOPAGE
     uint32_t            au32Padding1[48];
 
     /** Table indexed by the CPU APIC ID to get the CPU table index. */
-    uint16_t            aiCpuFromApicId[1024];
+    uint16_t            aiCpuFromApicId[4096];
     /** CPU set index to CPU table index. */
     uint16_t            aiCpuFromCpuSetIdx[1024];
     /** Table indexed by CPU group to containing offsets to SUPGIPCPUGROUP
-     * structures, invalid entries are set to UINT16_MAX.  The offsets are relative
+     * structures, invalid entries are set to UINT32_MAX.  The offsets are relative
      * to the start of this structure.
-     * @note Windows only. The other hosts sets all entries to UINT16_MAX! */
-    uint16_t            aoffCpuGroup[SUPGIP_MAX_CPU_GROUPS];
+     * @note Windows only. The other hosts sets all entries to UINT32_MAX! */
+    uint32_t            aoffCpuGroup[SUPGIP_MAX_CPU_GROUPS];
 
     /** Array of per-cpu data.
      * This is index by ApicId via the aiCpuFromApicId table.
@@ -541,7 +541,7 @@ typedef SUPGLOBALINFOPAGE *PSUPGLOBALINFOPAGE;
 /** The GIP version.
  * Upper 16 bits is the major version. Major version is only changed with
  * incompatible changes in the GIP. */
-#define SUPGLOBALINFOPAGE_VERSION   0x00090000
+#define SUPGLOBALINFOPAGE_VERSION   0x000a0000
 
 /**
  * SUPGLOBALINFOPAGE::u32Mode values.

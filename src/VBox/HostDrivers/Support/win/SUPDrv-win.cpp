@@ -1761,13 +1761,15 @@ int VBOXCALL supdrvOSInitGipGroupTable(PSUPDRVDEVEXT pDevExt, PSUPGLOBALINFOPAGE
     PSUPGIPCPUGROUP pGroup = (PSUPGIPCPUGROUP)&pGip->aCPUs[pGip->cCpus];
     for (uint32_t idxGroup = 0; idxGroup < cGroups; idxGroup++)
     {
-        uint32_t cActive  = 0;
-        uint32_t cMax     = RTMpGetCpuGroupCounts(idxGroup, &cActive);
-        uint32_t cbNeeded = RT_UOFFSETOF_DYN(SUPGIPCPUGROUP, aiCpuSetIdxs[cMax]);
+        uint32_t        cActive  = 0;
+        uint32_t  const cMax     = RTMpGetCpuGroupCounts(idxGroup, &cActive);
+        uint32_t  const cbNeeded = RT_UOFFSETOF_DYN(SUPGIPCPUGROUP, aiCpuSetIdxs[cMax]);
+        uintptr_t const offGroup = (uintptr_t)pGroup - (uintptr_t)pGip;
         AssertReturn(cbNeeded <= cbGipCpuGroups, VERR_INTERNAL_ERROR_3);
         AssertReturn(cActive <= cMax, VERR_INTERNAL_ERROR_4);
+        AssertReturn(offGroup == (uint32_t)offGroup, VERR_INTERNAL_ERROR_5);
 
-        pGip->aoffCpuGroup[idxGroup] = (uint16_t)((uintptr_t)pGroup - (uintptr_t)pGip);
+        pGip->aoffCpuGroup[idxGroup] = offGroup;
         pGroup->cMembers    = cActive;
         pGroup->cMaxMembers = cMax;
         for (uint32_t idxMember = 0; idxMember < cMax; idxMember++)
@@ -1812,16 +1814,18 @@ void VBOXCALL supdrvOSGipInitGroupBitsForCpu(PSUPDRVDEVEXT pDevExt, PSUPGLOBALIN
      * Update the group info.  Just do this wholesale for now (doesn't scale well).
      */
     for (uint32_t idxGroup = 0; idxGroup < pGip->cPossibleCpuGroups; idxGroup++)
-        if (pGip->aoffCpuGroup[idxGroup] != UINT16_MAX)
+    {
+        uint32_t offGroup = pGip->aoffCpuGroup[idxGroup];
+        if (offGroup != UINT32_MAX)
         {
-            PSUPGIPCPUGROUP pGroup = (PSUPGIPCPUGROUP)((uintptr_t)pGip + pGip->aoffCpuGroup[idxGroup]);
+            PSUPGIPCPUGROUP pGroup   = (PSUPGIPCPUGROUP)((uintptr_t)pGip + offGroup);
+            uint32_t        cActive  = 0;
+            uint32_t        cMax     = RTMpGetCpuGroupCounts(idxGroup, &cActive);
 
-            uint32_t cActive  = 0;
-            uint32_t cMax     = RTMpGetCpuGroupCounts(idxGroup, &cActive);
             AssertStmt(cMax == pGroup->cMaxMembers, cMax = pGroup->cMaxMembers);
             AssertStmt(cActive <= cMax, cActive = cMax);
             if (pGroup->cMembers != cActive)
-                pGroup->cMembers = cActive;
+                ASMAtomicWriteU16(&pGroup->cMembers, cActive);
 
             for (uint32_t idxMember = 0; idxMember < cMax; idxMember++)
             {
@@ -1830,9 +1834,10 @@ void VBOXCALL supdrvOSGipInitGroupBitsForCpu(PSUPDRVDEVEXT pDevExt, PSUPGLOBALIN
                           ("%d vs %d for %u.%u\n", idxCpuSet, pGip->cPossibleCpus, idxGroup, idxMember));
 
                 if (pGroup->aiCpuSetIdxs[idxMember] != idxCpuSet)
-                    pGroup->aiCpuSetIdxs[idxMember] = idxCpuSet;
+                    ASMAtomicWriteS16(&pGroup->aiCpuSetIdxs[idxMember], idxCpuSet);
             }
         }
+    }
 }
 
 

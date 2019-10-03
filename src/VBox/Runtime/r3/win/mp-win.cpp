@@ -421,7 +421,7 @@ static DECLCALLBACK(int32_t) rtMpWinInitOnceGip(void *pvUser)
         for (uint32_t idxGroup = 0; idxGroup < g_cRtMpWinMaxCpus; idxGroup++)
         {
             uint32_t idxMember;
-            unsigned offCpuGroup = pGip->aoffCpuGroup[idxGroup];
+            uint32_t offCpuGroup = pGip->aoffCpuGroup[idxGroup];
             if (offCpuGroup < cbGip)
             {
                 PSUPGIPCPUGROUP pGipCpuGrp  = (PSUPGIPCPUGROUP)((uintptr_t)pGip + offCpuGroup);
@@ -479,7 +479,7 @@ static void rtMpWinRefreshGip(void)
 
             for (uint32_t idxGroup = 0; idxGroup < g_cRtMpWinMaxCpus; idxGroup++)
             {
-                unsigned offCpuGroup = pGip->aoffCpuGroup[idxGroup];
+                uint32_t offCpuGroup = pGip->aoffCpuGroup[idxGroup];
                 if (offCpuGroup < cbGip)
                 {
                     PSUPGIPCPUGROUP pGipCpuGrp  = (PSUPGIPCPUGROUP)((uintptr_t)pGip + offCpuGroup);

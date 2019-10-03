@@ -154,7 +154,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
                 if (g_pSUPGlobalInfoPage->aCPUs[iCpu].enmState != SUPGIPCPUSTATE_INVALID)
                 {
                     SUPGIPCPU const *pGipCpu = &g_pSUPGlobalInfoPage->aCPUs[iCpu];
-                    RTPrintf("tstGIP-2: aCPU[%u]: enmState=%d iCpuSet=%u idCpu=%#010x iCpuGroup=%u iCpuGroupMember=%u idApic=%#x\n",
+                    RTPrintf("tstGIP-2: aCPU[%3u]: enmState=%d iCpuSet=%-3u idCpu=%#010x iCpuGroup=%-2u iCpuGroupMember=%-3u idApic=%#06x\n",
                              iCpu, pGipCpu->enmState, pGipCpu->iCpuSet, pGipCpu->idCpu, pGipCpu->iCpuGroup,
                              pGipCpu->iCpuGroupMember, pGipCpu->idApic);
                 }
@@ -163,7 +163,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
                      ? "tstGIP-2:     it: u64NanoTS        delta     u64TSC           UpIntTSC H  TransId      CpuHz      %sTSC Interval History...\n"
                      : "tstGIP-2:     it: u64NanoTS        delta     u64TSC             UpIntTSC H    TransId      CpuHz      %sTSC Interval History...\n",
                      uCpuHzRef ? "  CpuHz deviation  Compat  " : "");
-            static SUPGIPCPU s_aaCPUs[2][256];
+            static SUPGIPCPU s_aaCPUs[2][RTCPUSET_MAX_CPUS];
             for (uint32_t i = 0; i < cIterations; i++)
             {
                 /* Copy the data. */
@@ -273,19 +273,21 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv)
              */
             RTPrintf("tstGIP-2: TSC deltas:\n");
             RTPrintf("tstGIP-2:  idApic: i64TSCDelta\n");
-            for (unsigned i = 0; i < RT_ELEMENTS(g_pSUPGlobalInfoPage->aiCpuFromApicId); i++)
+            for (uint32_t i = 0; i < RT_ELEMENTS(g_pSUPGlobalInfoPage->aiCpuFromApicId); i++)
             {
                 uint16_t iCpu = g_pSUPGlobalInfoPage->aiCpuFromApicId[i];
                 if (iCpu != UINT16_MAX)
-                {
-                    RTPrintf("tstGIP-2: %7d: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic,
-                             g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
-                }
+                    RTPrintf("tstGIP-2: %#7x: %6lld (grp=%#04x mbr=%#05x set=%d cpu=%#05x)\n",
+                             g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic, g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta,
+                             g_pSUPGlobalInfoPage->aCPUs[iCpu].iCpuGroup, g_pSUPGlobalInfoPage->aCPUs[iCpu].iCpuGroupMember,
+                             g_pSUPGlobalInfoPage->aCPUs[iCpu].iCpuSet, iCpu);
             }
 
-            for (unsigned iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
+            for (uint32_t iCpu = 0; iCpu < g_pSUPGlobalInfoPage->cCpus; iCpu++)
                 if (g_pSUPGlobalInfoPage->aCPUs[iCpu].idApic == UINT16_MAX)
-                    RTPrintf("tstGIP-2: offline: %lld\n", g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta);
+                    RTPrintf("tstGIP-2: offline: %6lld (grp=%#04x mbr=%#05x set=%d cpu=%#05x)\n",
+                             g_pSUPGlobalInfoPage->aCPUs[iCpu].i64TSCDelta, g_pSUPGlobalInfoPage->aCPUs[iCpu].iCpuGroup,
+                             g_pSUPGlobalInfoPage->aCPUs[iCpu].iCpuGroupMember, g_pSUPGlobalInfoPage->aCPUs[iCpu].iCpuSet, iCpu);
 
             RTPrintf("tstGIP-2: enmUseTscDelta=%d  fGetGipCpu=%#x\n",
                      g_pSUPGlobalInfoPage->enmUseTscDelta, g_pSUPGlobalInfoPage->fGetGipCpu);
