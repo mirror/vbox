@@ -6202,9 +6202,9 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
             || !hw.biosSettings.strNVRAMPath.isEmpty())
         {
             xml::ElementNode *pelmNVRAM = pelmBIOS->createChild("NVRAM");
-	    if (hw.biosSettings.fNVRAMEnabled)
+        if (hw.biosSettings.fNVRAMEnabled)
                 pelmNVRAM->setAttribute("enabled", hw.biosSettings.fNVRAMEnabled);
-	    if (!hw.biosSettings.strNVRAMPath.isEmpty())
+        if (!hw.biosSettings.strNVRAMPath.isEmpty())
                 pelmNVRAM->setAttribute("path", hw.biosSettings.strNVRAMPath);
         }
     }
