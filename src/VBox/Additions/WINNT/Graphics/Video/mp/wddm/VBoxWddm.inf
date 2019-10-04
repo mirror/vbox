@@ -29,8 +29,6 @@ DefaultDestDir=11
 VBoxVideo.Miniport = 12 ; drivers
 VBoxVideo.Display  = 11 ; system32
 ;amd64 VBoxVideo.Display_wow64  = 10,SysWow64 ; SysWow64
-VBoxVideo.GL  = 11 ; system32
-;amd64 VBoxVideo.GL_wow64  = 10,SysWow64 ; SysWow64
 
 [Manufacturer]
 ;x86   %ORACLE%=Model, NTx86.6.0
@@ -43,8 +41,8 @@ VBoxVideo.GL  = 11 ; system32
 [VBoxVideo]
 FeatureScore = F8
 Include = msdv.inf
-;x86   CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display, VBoxVideo.GL
-;amd64 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display, VBoxVideo.Display_wow64, VBoxVideo.GL, VBoxVideo.GL_wow64
+;x86   CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
+;amd64 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display, VBoxVideo.Display_wow64
 AddReg = VBoxVideo_SoftwareDeviceSettings
 ;todo: clear XPDM driver settings: DelReg = VBoxVideo_RemoveDeviceSettings
 RegisterDlls = VBoxVideo_RegisterDlls
@@ -66,26 +64,16 @@ VBoxWddm.sys
 ;amd64 ;mesa3d VBoxICD-x86.dll,,,0x00004000      ; COPYFLG_IN_USE_TRY_RENAME
 ;amd64 ;mesa3d VBoxGL-x86.dll,,,0x00004000       ; COPYFLG_IN_USE_TRY_RENAME
 
-[VBoxVideo.GL]
-;gl VBoxOGL.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;gl VBoxD3D9wddm.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;gl wined3dwddm.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-
-;amd64 [VBoxVideo.GL_wow64]
-;amd64 ;gl VBoxOGL-x86.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl VBoxD3D9wddm-x86.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-;amd64 ;gl wined3dwddm-x86.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-
 [VBoxVideo_SoftwareDeviceSettings]
-;dispd3d HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
-;dispd3d HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
-;amd64 ;dispd3d HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D-x86.dll
-;icd        HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxICD
-;amd64 ;icd HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxICD-x86
-;icd        HKR,, OpenGLFlags,         %REG_DWORD%,    0x00000001
-;amd64 ;icd HKR,, OpenGLFlagsWoW,      %REG_DWORD%,    0x00000001
-;icd        HKR,, OpenGLVersion,       %REG_DWORD%,    0x00000001
-;amd64 ;icd HKR,, OpenGLVersionWoW,    %REG_DWORD%,    0x00000001
+;dispd3d        HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
+;dispd3d        HKR,, UserModeDriverName,      %REG_MULTI_SZ%, VBoxDispD3D.dll
+;amd64 ;dispd3d HKR,, UserModeDriverNameWow,   %REG_MULTI_SZ%, VBoxDispD3D-x86.dll
+;mesa3d         HKR,, OpenGLDriverName,    %REG_MULTI_SZ%, VBoxICD
+;amd64 ;mesa3d  HKR,, OpenGLDriverNameWoW, %REG_MULTI_SZ%, VBoxICD-x86
+;mesa3d         HKR,, OpenGLFlags,         %REG_DWORD%,    0x00000001
+;amd64 ;mesa3d  HKR,, OpenGLFlagsWoW,      %REG_DWORD%,    0x00000001
+;mesa3d         HKR,, OpenGLVersion,       %REG_DWORD%,    0x00000001
+;amd64 ;mesa3d  HKR,, OpenGLVersionWoW,    %REG_DWORD%,    0x00000001
 HKR,, VgaCompatible, %REG_DWORD%, 0
 
 [VBoxVideo_RegisterDlls]
@@ -123,12 +111,6 @@ VBoxWddm.sys = 1
 ;mesa3d VBoxSVGA.dll = 1
 ;mesa3d VBoxICD.dll = 1
 ;mesa3d VBoxGL.dll = 1
-;amd64 ;gl VBoxOGL-x86.dll = 1
-;gl VBoxOGL.dll = 1
-;amd64 ;gl VBoxD3D9wddm-x86.dll = 1
-;gl VBoxD3D9wddm.dll = 1
-;amd64 ;gl wined3dwddm-x86.dll = 1
-;gl wined3dwddm.dll = 1
 
 [Strings]
 REG_SZ = 0x00000000
