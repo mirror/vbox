@@ -178,7 +178,7 @@ class TestBoxScript(object):
             constants.tbreq.SIGNON_PARAM_SCRIPT_REV:       { self.VALUE: self._getScriptRev(),         self.FN: None },
             constants.tbreq.SIGNON_PARAM_REPORT:           { self.VALUE: self._getHostReport(),        self.FN: None },
             constants.tbreq.SIGNON_PARAM_PYTHON_VERSION:   { self.VALUE: self._getPythonHexVersion(),  self.FN: None },
-            constants.tbreq.SIGNON_PARAM_CPU_COUNT:        { self.VALUE: None,     self.FN: multiprocessing.cpu_count },
+            constants.tbreq.SIGNON_PARAM_CPU_COUNT:        { self.VALUE: None,     self.FN: utils.getPresentCpuCount },
             constants.tbreq.SIGNON_PARAM_MEM_SIZE:         { self.VALUE: None,     self.FN: self._getHostMemSize },
             constants.tbreq.SIGNON_PARAM_SCRATCH_SIZE:     { self.VALUE: None,     self.FN: self._getFreeScratchSpace },
         }
