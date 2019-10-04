@@ -22,26 +22,22 @@
 #endif
 
 /* Qt includes: */
-#include <QWidget>
+#include <QMainWindow>
 
 /* COM includes: */
-#include "COMEnums.h"
-#include "CGuest.h"
-#include "CEventListener.h"
+#include "COMDefs.h"
 
 /* GUI includes: */
-#include "QIManagerDialog.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
+class CKeyboard;
 class QHBoxLayout;
-class QVBoxLayout;
 class QToolButton;
-class UILayoutEditor;
+class UIKeyboardLayoutEditor;
 class UILayoutSelector;
 class UISession;
 class UISoftKeyboardKey;
-class UISoftKeyboardLayout;
 class UISoftKeyboardSettingsWidget;
 class UISoftKeyboardStatusBarWidget;
 class UISoftKeyboardWidget;
@@ -106,16 +102,15 @@ private:
     UISession     *m_pSession;
     QWidget       *m_pCenterWidget;
     QHBoxLayout   *m_pMainLayout;
-    UISoftKeyboardWidget       *m_pKeyboardWidget;
-    QString           m_strMachineName;
-    QSplitter        *m_pSplitter;
-    QStackedWidget   *m_pSidePanelWidget;
-    UILayoutEditor   *m_pLayoutEditor;
-    UILayoutSelector *m_pLayoutSelector;
+    QString        m_strMachineName;
+    QSplitter      *m_pSplitter;
+    QStackedWidget *m_pSidePanelWidget;
+    UISoftKeyboardWidget   *m_pKeyboardWidget;
+    UIKeyboardLayoutEditor *m_pLayoutEditor;
+    UILayoutSelector       *m_pLayoutSelector;
 
     UISoftKeyboardSettingsWidget  *m_pSettingsWidget;
     UISoftKeyboardStatusBarWidget *m_pStatusBarWidget;
-
 };
 
 #endif /* !FEQT_INCLUDED_SRC_softkeyboard_UISoftKeyboard_h */
