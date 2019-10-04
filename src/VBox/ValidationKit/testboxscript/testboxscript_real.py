@@ -32,7 +32,6 @@ __version__ = "$Revision$"
 
 # Standard python imports.
 import math
-import multiprocessing
 import os
 from optparse import OptionParser       # pylint: disable=deprecated-module
 import platform
