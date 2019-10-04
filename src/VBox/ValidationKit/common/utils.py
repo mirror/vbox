@@ -299,6 +299,29 @@ def getHostOsVersion():
 
     return sVersion;
 
+def getPresentCpuCount():
+    """
+    Gets the number of CPUs present in the system.
+
+    This differs from multiprocessor.cpu_count() and os.cpu_count() on windows in
+    that we return the active count rather than the maximum count.  If we don't,
+    we will end up thinking testboxmem1 has 512 CPU threads, which it doesn't and
+    never will have.
+
+    @todo This is probably not exactly what we get on non-windows...
+    """
+
+    if getHostOs() == 'win':
+        fnGetActiveProcessorCount = getattr(ctypes.windll.kernel32, 'GetActiveProcessorCount', None);
+        if fnGetActiveProcessorCount:
+            cCpus = fnGetActiveProcessorCount(ctypes.c_ushort(0xffff));
+            if cCpus > 0:
+                return cCpus;
+
+    import multiprocessor;
+    return multiprocessor.cpu_count();
+
+
 #
 # File system.
 #
