@@ -971,14 +971,14 @@ void UIInformationPerformanceMonitor::prepareObjects()
         QHBoxLayout *pChartLayout = new QHBoxLayout;
         pChartLayout->setSpacing(0);
 
-        if (!m_subMetrics.contains(strMetricName))
+        if (!m_metrics.contains(strMetricName))
             continue;
         QLabel *pLabel = new QLabel;
         pLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
         pChartLayout->addWidget(pLabel);
         m_infoLabels.insert(strMetricName, pLabel);
 
-        UIChart *pChart = new UIChart(this, &(m_subMetrics[strMetricName]));
+        UIChart *pChart = new UIChart(this, &(m_metrics[strMetricName]));
         m_charts.insert(strMetricName, pChart);
         pChart->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
         pChartLayout->addWidget(pChart);
@@ -1044,11 +1044,11 @@ void UIInformationPerformanceMonitor::sltTimeout()
                 iFreeRAM = (quint64)fData;
         }
     }
-    if (m_subMetrics.contains(m_strRAMMetricName))
+    if (m_metrics.contains(m_strRAMMetricName))
         updateRAMGraphsAndMetric(iTotalRAM, iFreeRAM);
 
     /* Update the CPU load chart with values we get from IMachineDebugger::getCPULoad(..): */
-    if (m_subMetrics.contains(m_strCPUMetricName))
+    if (m_metrics.contains(m_strCPUMetricName))
     {
         ULONG aPctExecuting;
         ULONG aPctHalted;
@@ -1065,8 +1065,8 @@ void UIInformationPerformanceMonitor::sltTimeout()
     quint64 uTotalVMExits = 0;
 
     QVector<UIDebuggerMetricData> xmlData = getTotalCounterFromDegugger(m_strQueryString);
-    for (QMap<QString, UIMetric>::iterator iterator =  m_subMetrics.begin();
-         iterator != m_subMetrics.end(); ++iterator)
+    for (QMap<QString, UIMetric>::iterator iterator =  m_metrics.begin();
+         iterator != m_metrics.end(); ++iterator)
     {
         UIMetric &metric = iterator.value();
         const QStringList &deviceTypeList = metric.deviceTypeList();
@@ -1134,13 +1134,13 @@ void UIInformationPerformanceMonitor::prepareMetrics()
                 {
                     UIMetric newMetric(m_strRAMMetricName, metrics[i].GetUnit(), iMaximumQueueSize);
                     newMetric.setRequiresGuestAdditions(true);
-                    m_subMetrics.insert(m_strRAMMetricName, newMetric);
+                    m_metrics.insert(m_strRAMMetricName, newMetric);
                 }
             }
         }
     }
 
-    m_subMetrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
+    m_metrics.insert(m_strCPUMetricName, UIMetric(m_strCPUMetricName, "%", iMaximumQueueSize));
     {
         /* Network metric: */
         UIMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
@@ -1151,7 +1151,7 @@ void UIInformationPerformanceMonitor::prepareMetrics()
         QStringList networkMetricDataSubStringList;
         networkMetricDataSubStringList << "ReceiveBytes" << "TransmitBytes";
         networkMetric.setMetricDataSubString(networkMetricDataSubStringList);
-        m_subMetrics.insert(m_strNetworkMetricName, networkMetric);
+        m_metrics.insert(m_strNetworkMetricName, networkMetric);
     }
 
     /* Disk IO metric */
@@ -1165,7 +1165,7 @@ void UIInformationPerformanceMonitor::prepareMetrics()
         QStringList diskIODataSubStringList;
         diskIODataSubStringList << "WrittenBytes" << "ReadBytes";
         diskIOMetric.setMetricDataSubString(diskIODataSubStringList);
-        m_subMetrics.insert(m_strDiskIOMetricName, diskIOMetric);
+        m_metrics.insert(m_strDiskIOMetricName, diskIOMetric);
     }
 
     /* VM exits metric */
@@ -1178,11 +1178,11 @@ void UIInformationPerformanceMonitor::prepareMetrics()
         QStringList subStringList;
         subStringList << "RecordedExits";
         VMExitsMetric.setMetricDataSubString(subStringList);
-        m_subMetrics.insert(m_strVMExitMetricName, VMExitsMetric);
+        m_metrics.insert(m_strVMExitMetricName, VMExitsMetric);
     }
 
-    for (QMap<QString, UIMetric>::const_iterator iterator =  m_subMetrics.begin();
-         iterator != m_subMetrics.end(); ++iterator)
+    for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
+         iterator != m_metrics.end(); ++iterator)
     {
         if (iterator.value().queryString().isEmpty())
             continue;
@@ -1212,8 +1212,8 @@ bool UIInformationPerformanceMonitor::guestAdditionsAvailable(int iMinimumMajorV
 
 void UIInformationPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(bool fEnable)
 {
-    for (QMap<QString, UIMetric>::const_iterator iterator =  m_subMetrics.begin();
-         iterator != m_subMetrics.end(); ++iterator)
+    for (QMap<QString, UIMetric>::const_iterator iterator =  m_metrics.begin();
+         iterator != m_metrics.end(); ++iterator)
     {
         if (!iterator.value().requiresGuestAdditions())
             continue;
@@ -1232,7 +1232,7 @@ void UIInformationPerformanceMonitor::enableDisableGuestAdditionDependedWidgets(
 
 void UIInformationPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingPercentage, ULONG iOtherPercentage)
 {
-    UIMetric &CPUMetric = m_subMetrics[m_strCPUMetricName];
+    UIMetric &CPUMetric = m_metrics[m_strCPUMetricName];
     CPUMetric.addData(0, iExecutingPercentage);
     CPUMetric.addData(1, iOtherPercentage);
     CPUMetric.setMaximum(100);
@@ -1257,7 +1257,7 @@ void UIInformationPerformanceMonitor::updateCPUGraphsAndMetric(ULONG iExecutingP
 
 void UIInformationPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM)
 {
-    UIMetric &RAMMetric = m_subMetrics[m_strRAMMetricName];
+    UIMetric &RAMMetric = m_metrics[m_strRAMMetricName];
     RAMMetric.setMaximum(iTotalRAM);
     RAMMetric.addData(0, iTotalRAM - iFreeRAM);
     if (m_infoLabels.contains(m_strRAMMetricName)  && m_infoLabels[m_strRAMMetricName])
@@ -1277,7 +1277,7 @@ void UIInformationPerformanceMonitor::updateRAMGraphsAndMetric(quint64 iTotalRAM
 
 void UIInformationPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal)
 {
-    UIMetric &NetMetric = m_subMetrics[m_strNetworkMetricName];
+    UIMetric &NetMetric = m_metrics[m_strNetworkMetricName];
 
     quint64 iReceiveRate = iReceiveTotal - NetMetric.total(0);
     quint64 iTransmitRate = iTransmitTotal - NetMetric.total(1);
@@ -1320,7 +1320,7 @@ void UIInformationPerformanceMonitor::updateNetworkGraphsAndMetric(quint64 iRece
 
 void UIInformationPerformanceMonitor::updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead)
 {
-    UIMetric &diskMetric = m_subMetrics[m_strDiskIOMetricName];
+    UIMetric &diskMetric = m_metrics[m_strDiskIOMetricName];
 
     quint64 iWriteRate = uDiskIOTotalWritten - diskMetric.total(0);
     quint64 iReadRate = uDiskIOTotalRead - diskMetric.total(1);
@@ -1366,7 +1366,7 @@ void UIInformationPerformanceMonitor::updateVMExitMetric(quint64 uTotalVMExits)
     if (uTotalVMExits <= 0)
         return;
 
-    UIMetric &VMExitMetric = m_subMetrics[m_strVMExitMetricName];
+    UIMetric &VMExitMetric = m_metrics[m_strVMExitMetricName];
     quint64 iRate = uTotalVMExits - VMExitMetric.total(0);
     VMExitMetric.setTotal(0, uTotalVMExits);
     /* Do not set data and maximum if the metric has not been initialized  since we need to initialize totals "(t-1)" first: */

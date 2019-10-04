@@ -167,11 +167,16 @@ private:
     void prepareMetrics();
     bool guestAdditionsAvailable(int iMinimumMajorVersion);
     void enableDisableGuestAdditionDependedWidgets(bool fEnable);
-    void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
-    void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
-    void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal);
-    void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
-    void updateVMExitMetric(quint64 uTotalVMExits);
+
+    /** @name The following functions update corresponding metric charts and labels with new values
+      * @{ */
+        void updateCPUGraphsAndMetric(ULONG iLoadPercentage, ULONG iOtherPercentage);
+        void updateRAMGraphsAndMetric(quint64 iTotalRAM, quint64 iFreeRAM);
+        void updateNetworkGraphsAndMetric(quint64 iReceiveTotal, quint64 iTransmitTotal);
+        void updateDiskIOGraphsAndMetric(quint64 uDiskIOTotalWritten, quint64 uDiskIOTotalRead);
+        void updateVMExitMetric(quint64 uTotalVMExits);
+    /** @} */
+
     /** Returns a QColor for the chart with @p strChartName and data series with @p iDataIndex. */
     QString dataColorString(const QString &strChartName, int iDataIndex);
     /** Parses the xml string we get from the IMachineDebugger and returns an array of UIDebuggerMetricData. */
@@ -188,14 +193,16 @@ private:
     QVBoxLayout *m_pMainLayout;
     QTimer *m_pTimer;
 
-    QVector<QString> m_nameList;
-    QVector<CUnknown> m_objectList;
+    /** @name The following are used during UIPerformanceCollector::QueryMetricsData(..)
+      * @{ */
+        QVector<QString> m_nameList;
+        QVector<CUnknown> m_objectList;
+    /** @} */
 
-    QMap<QString, UIMetric> m_subMetrics;
+    QMap<QString, UIMetric> m_metrics;
     QMap<QString,UIChart*>  m_charts;
     /** Stores the QLabel instances which we show next to each UIChart. The value is the name of the metric. */
     QMap<QString,QLabel*>   m_infoLabels;
-
 
     /** @name These metric names are used for map keys to identify metrics.
       * @{ */
