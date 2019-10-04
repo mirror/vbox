@@ -318,8 +318,8 @@ def getPresentCpuCount():
             if cCpus > 0:
                 return cCpus;
 
-    import multiprocessor;
-    return multiprocessor.cpu_count();
+    import multiprocessing
+    return multiprocessing.cpu_count();
 
 
 #
