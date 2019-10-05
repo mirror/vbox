@@ -43,7 +43,7 @@ import hashlib;
 import os;
 import re;
 import smtplib;
-import subprocess;
+#import subprocess;
 import sys;
 from email.mime.multipart   import MIMEMultipart;
 from email.mime.text        import MIMEText;
@@ -73,7 +73,7 @@ from testmanager.core.testresults           import TestResultLogic, TestResultFi
 from testmanager.core.testresultfailures    import TestResultFailureLogic, TestResultFailureData;
 from testmanager.core.useraccount           import UserAccountLogic;
 from testmanager.config                     import g_ksSmtpHost, g_kcSmtpPort, g_ksAlertFrom, \
-                                                   g_ksAlertSubject, g_asAlertList, g_ksLomPassword;
+                                                   g_ksAlertSubject, g_asAlertList #, g_ksLomPassword;
 
 # Python 3 hacks:
 if sys.version_info[0] >= 3:
