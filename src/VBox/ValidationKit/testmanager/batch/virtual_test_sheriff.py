@@ -542,46 +542,55 @@ class VirtualTestSheriff(object): # pylint: disable=too-few-public-methods
                 self.dprint(u'badTestBoxManagement: #%u (%s) looks ok:  iFirstOkay=%u cBad=%u cOkay=%u'
                             % ( idTestBox, oTestBox.sName, iFirstOkay, cBad, cOkay));
 
+        ## @todo r=bird: review + rewrite;
+        ##  - no selecting here, that belongs in the core/*.py files.
+        ##  - preserve existing comments.
+        ##  - doing way too much in the try/except block.
+        ##  - No password quoting in the sshpass command that always fails (127).
+        ##  - Timeout is way to low. testboxmem1 need more than 10 min to take a dump, ages to
+        ##    get thru POST and another 5 just to time out in grub.  Should be an hour or so.
+        ##    Besides, it need to be constant elsewhere in the file, not a variable here.
+        ##
+        ##
+        ## Reset hanged testboxes
+        ##
+        #cStatusTimeoutMins = 10;
         #
-        # Reset hanged testboxes
+        #self.oDb.execute('SELECT TestBoxStatuses.idTestBox\n'
+        #                 '  FROM TestBoxStatuses, TestBoxes\n'
+        #                 ' WHERE TestBoxStatuses.tsUpdated >= (CURRENT_TIMESTAMP - interval \'%s hours\')\n'
+        #                 '   AND TestBoxStatuses.tsUpdated < (CURRENT_TIMESTAMP - interval \'%s minutes\')\n'
+        #                 '   AND TestBoxStatuses.idTestBox = TestBoxes.idTestBox\n'
+        #                 '   AND Testboxes.tsExpire = \'infinity\'::timestamp', (cHoursBack,cStatusTimeoutMins));
+        #for idTestBox in self.oDb.fetchAll():
+        #    idTestBox = idTestBox[0];
+        #    try:
+        #        oTestBox = TestBoxData().initFromDbWithId(self.oDb, idTestBox);
+        #    except Exception as oXcpt:
+        #        rcExit = self.eprint('Failed to get data for test box #%u in badTestBoxManagement: %s' % (idTestBox, oXcpt,));
+        #        continue;
+        #    # Skip if the testbox is already disabled, already reset or there's no iLOM
+        #    if not oTestBox.fEnabled or oTestBox.ipLom is None or oTestBox.sComment is not None and oTestBox.sComment.find('Automatically reset') >= 0:
+        #        self.dprint(u'badTestBoxManagement: Skipping test box #%u (%s) as it has been disabled already.'
+        #                    % ( idTestBox, oTestBox.sName, ));
+        #        continue;
+        #    ## @todo get iLOM credentials from a table?
+        #    sCmd = 'sshpass -p%s ssh -oStrictHostKeyChecking=no root@%s show /SP && reset /SYS' % (g_ksLomPassword, oTestBox.ipLom,);
+        #    try:
+        #        oPs = subprocess.Popen(sCmd, stdout=subprocess.PIPE, shell=True);
+        #        sStdout = oPs.communicate()[0];
+        #        iRC = oPs.wait();
         #
-        cStatusTimeoutMins = 10;
-
-        self.oDb.execute('SELECT TestBoxStatuses.idTestBox\n'
-                         '  FROM TestBoxStatuses, TestBoxes\n'
-                         ' WHERE TestBoxStatuses.tsUpdated >= (CURRENT_TIMESTAMP - interval \'%s hours\')\n'
-                         '   AND TestBoxStatuses.tsUpdated < (CURRENT_TIMESTAMP - interval \'%s minutes\')\n'
-                         '   AND TestBoxStatuses.idTestBox = TestBoxes.idTestBox\n'
-                         '   AND Testboxes.tsExpire = \'infinity\'::timestamp', (cHoursBack,cStatusTimeoutMins));
-        for idTestBox in self.oDb.fetchAll():
-            idTestBox = idTestBox[0];
-            try:
-                oTestBox = TestBoxData().initFromDbWithId(self.oDb, idTestBox);
-            except Exception as oXcpt:
-                rcExit = self.eprint('Failed to get data for test box #%u in badTestBoxManagement: %s' % (idTestBox, oXcpt,));
-                continue;
-            # Skip if the testbox is already disabled, already reset or there's no iLOM
-            if not oTestBox.fEnabled or oTestBox.ipLom is None or oTestBox.sComment is not None and oTestBox.sComment.find('Automatically reset') >= 0:
-                self.dprint(u'badTestBoxManagement: Skipping test box #%u (%s) as it has been disabled already.'
-                            % ( idTestBox, oTestBox.sName, ));
-                continue;
-            ## @todo get iLOM credentials from a table?
-            sCmd = 'sshpass -p%s ssh -oStrictHostKeyChecking=no root@%s show /SP && reset /SYS' % (g_ksLomPassword, oTestBox.ipLom,);
-            try:
-                oPs = subprocess.Popen(sCmd, stdout=subprocess.PIPE, shell=True);
-                sStdout = oPs.communicate()[0];
-                iRC = oPs.wait();
-
-                oTestBox.sComment = 'Automatically reset (iRC=%u sStdout=%s)' % (iRC, sStdout,);
-                oTestBoxLogic.editEntry(oTestBox, self.uidSelf, fCommit = True);
-
-                sComment = u'Reset testbox #%u (%s) - iRC=%u sStduot=%s' % ( idTestBox, oTestBox.sName, iRC, sStdout);
-                self.vprint(sComment);
-                self.sendEmailAlert(self.uidSelf, sComment);
-
-            except Exception as oXcpt:
-                rcExit = self.eprint(u'Error resetting testbox #%u (%s): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
-
+        #        oTestBox.sComment = 'Automatically reset (iRC=%u sStdout=%s)' % (iRC, sStdout,);
+        #        oTestBoxLogic.editEntry(oTestBox, self.uidSelf, fCommit = True);
+        #
+        #        sComment = u'Reset testbox #%u (%s) - iRC=%u sStduot=%s' % ( idTestBox, oTestBox.sName, iRC, sStdout);
+        #        self.vprint(sComment);
+        #        self.sendEmailAlert(self.uidSelf, sComment);
+        #
+        #    except Exception as oXcpt:
+        #        rcExit = self.eprint(u'Error resetting testbox #%u (%s): %s\n' % (idTestBox, oTestBox.sName, oXcpt,));
+        #
         return rcExit;
 
 
