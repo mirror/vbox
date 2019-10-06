@@ -1305,7 +1305,7 @@ static RTEXITCODE exportCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ExportImage(pImage, pVirtualBox, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     ExportImage(pImage, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Export the image to the Cloud failed"), RTEXITCODE_FAILURE);
@@ -1375,7 +1375,7 @@ static RTEXITCODE importCloudImage(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT pC
 
     ComPtr<IProgress> progress;
     CHECK_ERROR2_RET(hrc, oCloudClient,
-                     ImportImage(Bstr(strImageId).raw(), pVirtualBox, ComSafeArrayAsInParam(parameters), progress.asOutParam()),
+                     ImportImage(Bstr(strImageId).raw(), ComSafeArrayAsInParam(parameters), progress.asOutParam()),
                      RTEXITCODE_FAILURE);
     hrc = showProgress(progress);
     CHECK_PROGRESS_ERROR_RET(progress, ("Cloud image import failed"), RTEXITCODE_FAILURE);

@@ -4118,7 +4118,7 @@
 
   <interface
     name="IVirtualSystemDescription" extends="$unknown"
-    uuid="ec49259c-1c50-4353-97a5-0fd92e2caac2"
+    uuid="01510f40-c196-4d26-b8db-4c8c389f1f82"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="4"
     >
@@ -4381,6 +4381,7 @@
         <desc></desc>
       </param>
     </method>
+
   </interface>
 
   <!--
@@ -26451,9 +26452,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           Progress object to track the operation completion.
         </desc>
       </param>
-      <param name="virtualBox" type="IVirtualBox" dir="in">
-        <desc>Reference to the server-side API root object.</desc>
-      </param>
     </method>
 
     <method name="getLaunchDescriptionForm">
@@ -26493,11 +26491,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Returns a form for editing the virtual system description for
         import from OCI.
       </desc>
-      <param name="virtualBox" type="IVirtualBox" dir="in">
-        <desc>
-          Reference to the server-side API root object.
-        </desc>
-      </param>
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>
           Virtual system description to be edited.
@@ -26522,9 +26515,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>VirtualSystemDescription object which is describing a machine and all required parameters.</desc>
-      </param>
-      <param name="virtualBox" type="IVirtualBox" dir="in">
-        <desc>Reference to the server-side API root object.</desc>
       </param>
       <param name="progress" type="IProgress" dir="in">
         <desc>Progress object to track the operation completion.</desc>
@@ -26639,9 +26629,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="image" type="IMedium" dir="in">
         <desc>Reference to the existing VBox image.</desc>
       </param>
-      <param name="virtualBox" type="IVirtualBox" dir="in">
-        <desc>Reference to the server-side API root object.</desc>
-      </param>
       <param name="parameters" type="wstring" dir="in" safearray="yes">
         <desc>Each parameter in the array must be in the form "name=value".</desc>
       </param>
@@ -26656,9 +26643,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
       <param name="uid" type="wstring" dir="in">
         <desc>the id of image in the Cloud.</desc>
-      </param>
-      <param name="virtualBox" type="IVirtualBox" dir="in">
-        <desc>Reference to the server-side API root object.</desc>
       </param>
       <param name="parameters" type="wstring" dir="in" safearray="yes">
         <desc>Each parameter in the array must be in the form "name=value".</desc>

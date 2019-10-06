@@ -1455,7 +1455,6 @@ HRESULT Appliance::i_importCloudImpl(TaskCloud *pTask)
              * must be combined together into one object by cloud client.
              * The most simple way is to create a TAR archive. */
             hrc = cloudClient->ImportInstance(m->virtualSystemDescriptions.front(),
-                                              VBox,
                                               pProgress);
             if (FAILED(hrc))
             {
