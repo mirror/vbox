@@ -874,7 +874,7 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
      * Figure out areas we should skip during comparison.
      */
     uint32_t         cSkipAreas = 0;
-    SUPHNTVPSKIPAREA aSkipAreas[6];
+    SUPHNTVPSKIPAREA aSkipAreas[7];
     if (pImage->fNtCreateSectionPatch)
     {
         RTLDRADDR uValue;
@@ -908,6 +908,15 @@ static int supHardNtVpVerifyImageMemoryCompare(PSUPHNTVPSTATE pThis, PSUPHNTVPIM
             return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'KiUserApcDispatcher': %Rrc", pImage->pszName, rc);
         aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue;
         aSkipAreas[cSkipAreas++].cb = 14;
+
+#ifndef VBOX_WITHOUT_HARDENDED_XCPT_LOGGING
+        /* Ignore our patched KiUserExceptionDispatcher hack. */
+        rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "KiUserExceptionDispatcher", &uValue);
+        if (RT_FAILURE(rc))
+            return supHardNtVpSetInfo2(pThis, rc, "%s: Failed to find 'KiUserExceptionDispatcher': %Rrc", pImage->pszName, rc);
+        aSkipAreas[cSkipAreas].uRva = (uint32_t)uValue + (HC_ARCH_BITS == 64);
+        aSkipAreas[cSkipAreas++].cb = HC_ARCH_BITS == 64 ? 13 : 12;
+#endif
 
         /* LdrSystemDllInitBlock is filled in by the kernel. It mainly contains addresses of 32-bit ntdll method for wow64. */
         rc = RTLdrGetSymbolEx(pImage->pCacheEntry->hLdrMod, pbBits, 0, UINT32_MAX, "LdrSystemDllInitBlock", &uValue);

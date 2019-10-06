@@ -34,6 +34,9 @@
 ; External code.
 extern NAME(supR3HardenedEarlyProcessInit)
 extern NAME(supR3HardenedMonitor_KiUserApcDispatcher_C)
+%ifndef VBOX_WITHOUT_HARDENDED_XCPT_LOGGING
+extern NAME(supR3HardenedMonitor_KiUserExceptionDispatcher_C)
+%endif
 
 
 BEGINCODE
@@ -183,6 +186,95 @@ BEGINPROC supR3HardenedMonitor_KiUserApcDispatcher
         ret
 ENDPROC   supR3HardenedMonitor_KiUserApcDispatcher
 
+
+%ifndef VBOX_WITHOUT_HARDENDED_XCPT_LOGGING
+;;
+; Hook for KiUserExceptionDispatcher that logs exceptions.
+;
+; For the AMD64 variant, we're not directly intercepting the function itself, but
+; patching into a Wow64 callout that's done at the very start of the routine.  RCX
+; and RDX are set to PEXCEPTION_RECORD and PCONTEXT respectively and there is a
+; return address.  Also, we don't need to do any return-via-copied-out-code stuff.
+;
+; For X86 we hook the function and have PEXCEPTION_RECORD and PCONTEXT pointers on
+; the stack, but no return address.
+
+; We just call C code here, just like supR3HardenedEarlyProcessInitThunk and
+; supR3HardenedMonitor_KiUserApcDispatcher does.
+;
+; @sa supR3HardenedMonitor_KiUserExceptionDispatcher_C
+;
+BEGINPROC supR3HardenedMonitor_KiUserExceptionDispatcher
+        ;
+        ; Prologue.
+        ;
+
+ %ifndef RT_ARCH_AMD64
+        ; Reserve space for the "return" address.
+        push    0
+ %endif
+
+        ; Create a stack frame, saving xBP.
+        push    xBP
+        SEH64_PUSH_xBP
+        mov     xBP, xSP
+        SEH64_SET_FRAME_xBP 0 ; probably wrong...
+
+        ; Save all volatile registers.
+        push    xAX
+        push    xCX
+        push    xDX
+ %ifdef RT_ARCH_AMD64
+        push    r8
+        push    r9
+        push    r10
+        push    r11
+ %endif
+
+        ; Reserve spill space and align the stack.
+        sub     xSP, 20h
+        and     xSP, ~0fh
+        SEH64_END_PROLOGUE
+
+        ;
+        ; Call the C/C++ code that does the actual work.  For x86 this returns
+        ; the resume address in xAX, which we put in the "return" stack position.
+        ;
+        ; On both AMD64 and X86 we have two parameters on the stack that we
+        ; passes along to the C code (see function description for details).
+        ;
+ %ifdef RT_ARCH_X86
+        mov     xCX, [xBP + xCB*2]
+        mov     xDX, [xBP + xCB*3]
+        mov     [xSP], xCX
+        mov     [xSP+4], xDX
+ %endif
+        call    NAME(supR3HardenedMonitor_KiUserExceptionDispatcher_C)
+ %ifdef RT_ARCH_X86
+        mov     [xBP + xCB], xAX
+ %endif
+
+        ;
+        ; Restore volatile registers.
+        ;
+        mov     xAX, [xBP - xCB*1]
+        mov     xCX, [xBP - xCB*2]
+        mov     xDX, [xBP - xCB*3]
+ %ifdef RT_ARCH_AMD64
+        mov     r8,  [xBP - xCB*4]
+        mov     r9,  [xBP - xCB*5]
+        mov     r10, [xBP - xCB*6]
+        mov     r11, [xBP - xCB*7]
+ %endif
+        ;
+        ; Use the leave instruction to restore xBP and set up xSP to point at
+        ; the resume address. Then use the 'ret' instruction to execute the
+        ; original KiUserExceptionDispatcher code as if we've never been here...
+        ;
+        leave
+        ret
+ENDPROC   supR3HardenedMonitor_KiUserExceptionDispatcher
+%endif ; !VBOX_WITHOUT_HARDENDED_XCPT_LOGGING
 
 ;;
 ; Composes a standard call name.
