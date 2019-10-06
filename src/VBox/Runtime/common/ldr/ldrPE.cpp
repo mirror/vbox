@@ -632,8 +632,10 @@ static DECLCALLBACK(int) rtldrPEGetBits(PRTLDRMODINTERNAL pMod, void *pvBits, RT
                 return rc;
             AssertMsgFailed(("Failed to apply fixups. rc=%Rrc\n", rc));
         }
+#ifndef IN_SUP_HARDENED_R3
         else
             AssertMsgFailed(("Failed to resolve imports. rc=%Rrc\n", rc));
+#endif
     }
     return rc;
 }
