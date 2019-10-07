@@ -91,7 +91,7 @@
  * communication. Copying from / to the host also is taken into account.
  *
  * At the moment a transfer is a all-or-nothing operation, e.g. it either
- * completes orfails completely. There might be callbacks in the future
+ * completes or fails completely. There might be callbacks in the future
  * to e.g. skip failing entries.
  *
  * Known limitations:
@@ -1126,6 +1126,18 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
 #endif
 
     ShClSvcImplDisconnect(pClient);
+
+    /* Make sure to send a quit message to the guest so that it can terminate gracefully. */
+    if (pClient->Pending.uType)
+    {
+        if (pClient->Pending.cParms >= 2)
+        {
+            HGCMSvcSetU32(&pClient->Pending.paParms[0], VBOX_SHCL_HOST_MSG_QUIT);
+            HGCMSvcSetU32(&pClient->Pending.paParms[1], 0);
+        }
+        g_pHelpers->pfnCallComplete(pClient->Pending.hHandle, VINF_SUCCESS);
+        pClient->Pending.uType = 0;
+    }
 
     shclSvcClientStateReset(&pClient->State);
     shclSvcClientStateDestroy(&pClient->State);
