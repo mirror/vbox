@@ -1223,7 +1223,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         if (RT_FAILURE(rc))
         {
             /* See PDMDevHlp.cpp:pdmR3DevHlp_PCIRegisterMsi */
-            Log(("Failed to configure MSI-X (%Rrc). Reverting to INTx\n"));
+            Log(("Failed to configure MSI-X (%Rrc). Reverting to INTx\n", rc));
             pVirtio->fMsiSupport = false;
         }
         else
