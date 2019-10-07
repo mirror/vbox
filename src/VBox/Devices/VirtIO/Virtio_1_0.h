@@ -38,6 +38,7 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
 #define VIRTQ_MAX_CNT                       24                   /**< Max queues we allow guest to create      */
 #define VIRTIO_NOTIFY_OFFSET_MULTIPLIER     2                    /**< VirtIO Notify Cap. MMIO config param     */
 #define VIRTIO_REGION_PCI_CAP               2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
+#define VIRTIO_REGION_MSIX_CAP              0                    /**< Bar for MSI-X handling                   */
 
 #define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) \
     do { \
@@ -162,8 +163,6 @@ typedef struct VIRTIOCALLBACKS
 
 /**
  * Allocate client context for client to work with VirtIO-provided with queue
- * As a side effect creates a buffer vector a client can get a pointer to
- * with a call to virtioQueueDescChain()
  *
  * @param  hVirtio   - Handle to VirtIO framework
  * @param  qIdx      - Queue number
@@ -210,7 +209,7 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T pp
  * Returns data to the guest to complete a transaction initiated by virtQueueGet().
  * The caller passes in a pointer to a scatter-gather buffer of virtual memory segments
  * and a pointer to the descriptor chain context originally derived from the pulled
- * queue entry, and this function will put write the virtual memory s/g buffer into the
+ * queue entry, and this function will write the virtual memory s/g buffer into the
  * guest's physical memory free the descriptor chain. The caller handles the freeing
  * (as needed) of the virtual memory buffer.
  *

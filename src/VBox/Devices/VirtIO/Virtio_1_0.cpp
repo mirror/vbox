@@ -365,33 +365,25 @@ static void virtioNotifyGuestDriver(PVIRTIOSTATE pVirtio, uint16_t qIdx, bool fF
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[qIdx];
 
     AssertMsgReturnVoid(DRIVER_OK(pVirtio), ("Guest driver not in ready state.\n"));
-
-    if (pVirtio->uMsixConfig == VIRTIO_MSI_NO_VECTOR)
+    if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
     {
-        if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
+        if (pVirtq->fEventThresholdReached)
         {
-            if (pVirtq->fEventThresholdReached)
-            {
-                virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, fForce);
-                pVirtq->fEventThresholdReached = false;
-                return;
-            }
-            Log6Func(("...skipping interrupt: VIRTIO_F_EVENT_IDX set but threshold not reached\n"));
+            virtioKick(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[qIdx], fForce);
+            pVirtq->fEventThresholdReached = false;
+            return;
         }
-        else
-        {
-            /** If guest driver hasn't suppressed interrupts, interrupt  */
-            if (fForce || !(virtioReadUsedFlags(pVirtio, qIdx) & VIRTQ_AVAIL_F_NO_INTERRUPT))
-            {
-                virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, fForce);
-                return;
-            }
-            Log6Func(("...skipping interrupt. Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
-        }
+        Log6Func(("...skipping interrupt: VIRTIO_F_EVENT_IDX set but threshold not reached\n"));
     }
     else
     {
-        /* TBD, do MSI notification if criteria met */
+        /** If guest driver hasn't suppressed interrupts, interrupt  */
+        if (fForce || !(virtioReadUsedFlags(pVirtio, qIdx) & VIRTQ_AVAIL_F_NO_INTERRUPT))
+        {
+            virtioKick(pVirtio, VIRTIO_ISR_VIRTQ_INTERRUPT, pVirtio->uQueueMsixVector[qIdx], fForce);
+            return;
+        }
+        Log6Func(("...skipping interrupt. Guest flagged VIRTQ_AVAIL_F_NO_INTERRUPT for queue\n"));
     }
 }
 
@@ -424,13 +416,16 @@ void virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pVirtio->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
 }
 
+
 /**
- * Raise interrupt.
+ * Raise interrupt or MSI-X
  *
  * @param   pVirtio         The device state structure.
  * @param   uCause          Interrupt cause bit mask to set in PCI ISR port.
+ * @param   uVec            MSI-X vector, if enabled
+ * @param   uForce          True of out-of-band
  */
-static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause, bool fForce)
+static int virtioKick(PVIRTIOSTATE pVirtio, uint8_t uCause, uint16_t uMsixVector, bool fForce)
 {
 
    if (fForce)
@@ -442,8 +437,16 @@ static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause, bool fForc
    if (uCause == VIRTIO_ISR_DEVICE_CONFIG)
        Log6Func(("reason: device config change\n"));
 
-    pVirtio->uISR |= uCause;
-    PDMDevHlpPCISetIrq(pVirtio->CTX_SUFF(pDevIns), 0, 1);
+    if (!pVirtio->fMsiSupport)
+    {
+        pVirtio->uISR |= uCause;
+        PDMDevHlpPCISetIrq(pVirtio->CTX_SUFF(pDevIns), 0, PDM_IRQ_LEVEL_HIGH);
+    }
+    else if (uMsixVector != VIRTIO_MSI_NO_VECTOR)
+    {
+        Log6Func(("MSI-X enabled, calling PDMDevHlpPCISetIrq with vector: 0x%x\n", uMsixVector));
+        PDMDevHlpPCISetIrq(pVirtio->CTX_SUFF(pDevIns), uMsixVector, 1);
+    }
     return VINF_SUCCESS;
 }
 
@@ -454,7 +457,7 @@ static int virtioRaiseInterrupt(PVIRTIOSTATE pVirtio, uint8_t uCause, bool fForc
  */
 static void virtioLowerInterrupt(PVIRTIOSTATE pVirtio)
 {
-    PDMDevHlpPCISetIrq(pVirtio->CTX_SUFF(pDevIns), 0, 0);
+    PDMDevHlpPCISetIrq(pVirtio->CTX_SUFF(pDevIns), 0, PDM_IRQ_LEVEL_LOW);
 }
 
 static void virtioResetQueue(PVIRTIOSTATE pVirtio, uint16_t qIdx)
@@ -465,8 +468,11 @@ static void virtioResetQueue(PVIRTIOSTATE pVirtio, uint16_t qIdx)
     pVirtio->uQueueEnable[qIdx] = false;
     pVirtio->uQueueSize[qIdx] = VIRTQ_MAX_SIZE;
     pVirtio->uQueueNotifyOff[qIdx] = qIdx;
-}
 
+    pVirtio->uQueueMsixVector[qIdx] = qIdx + 2;
+    if (!pVirtio->fMsiSupport) /* VirtIO 1.0, 4.1.4.3 and 4.1.5.1.2 */
+        pVirtio->uQueueMsixVector[qIdx] = VIRTIO_MSI_NO_VECTOR;
+}
 
 static void virtioResetDevice(PVIRTIOSTATE pVirtio)
 {
@@ -477,12 +483,9 @@ static void virtioResetDevice(PVIRTIOSTATE pVirtio)
     pVirtio->uDeviceStatus          = 0;
     pVirtio->uISR                   = 0;
 
-#ifndef MSIX_SUPPORT
-    /** This is required by VirtIO 1.0 specification, section 4.1.5.1.2 */
-    pVirtio->uMsixConfig = VIRTIO_MSI_NO_VECTOR;
-    for (int i = 0; i < VIRTQ_MAX_CNT; i++)
-        pVirtio->uQueueMsixVector[i] = VIRTIO_MSI_NO_VECTOR;
-#endif
+
+    if (!pVirtio->fMsiSupport)  /* VirtIO 1.0, 4.1.4.3 and 4.1.5.1.2 */
+        pVirtio->uMsixConfig = VIRTIO_MSI_NO_VECTOR;
 
     pVirtio->uNumQueues = VIRTQ_MAX_CNT;
     for (uint16_t qIdx = 0; qIdx < pVirtio->uNumQueues; qIdx++)
@@ -522,13 +525,13 @@ void virtioResetAll(VIRTIOHANDLE hVirtio)
     if (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
     {
         pVirtio->fGenUpdatePending = true;
-        virtioRaiseInterrupt(pVirtio, VIRTIO_ISR_DEVICE_CONFIG, false /* fForce */);
+        virtioKick(pVirtio, VIRTIO_ISR_DEVICE_CONFIG, pVirtio->uMsixConfig, false /* fForce */);
     }
 }
 
 /**
  * Invoked by this implementation when guest driver resets the device.
- * The driver itself will not reset until the device has read the status change.
+ * The driver itself will not  until the device has read the status change.
  */
 static void virtioGuestResetted(PVIRTIOSTATE pVirtio)
 {
@@ -1014,7 +1017,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
                       void                  *pClientContext,
                       VIRTIOHANDLE          *phVirtio,
                       PVIRTIOPCIPARAMS       pPciParams,
-                      const char             *pcszInstance,
+                      const char            *pcszInstance,
                       uint64_t               uDevSpecificFeatures,
                       PFNVIRTIODEVCAPREAD    devCapReadCallback,
                       PFNVIRTIODEVCAPWRITE   devCapWriteCallback,
@@ -1027,12 +1030,19 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
                       uint16_t               cbDevSpecificCfg,
                       void                  *pDevSpecificCfg)
 {
+
+    extern PDMDEVREG g_DeviceVirtioSCSI;
+
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)RTMemAllocZ(sizeof(VIRTIOSTATE));
     if (!pVirtio)
     {
         PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY, N_("virtio: out of memory"));
         return VERR_NO_MEMORY;
     }
+
+#ifdef VBOX_WITH_MSI_DEVICES
+    pVirtio->fMsiSupport = true;
+#endif
 
     pVirtio->pClientContext = pClientContext;
 
@@ -1109,12 +1119,6 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
 
     /* Construct & map PCI vendor-specific capabilities for virtio host negotiation with guest driver */
 
-#if 0 && defined(VBOX_WITH_MSI_DEVICES)  /* T.B.D. */
-    uint8_t fMsiSupport = true;
-#else
-    uint8_t fMsiSupport = false;
-#endif
-
     /* The following capability mapped via VirtIO 1.0: struct virtio_pci_cfg_cap (VIRTIO_PCI_CFG_CAP_T)
      * as a mandatory but suboptimal alternative interface to host device capabilities, facilitating
      * access the memory of any BAR. If the guest uses it (the VirtIO driver on Linux doesn't),
@@ -1183,7 +1187,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CFG_CAP_T);
-    pCfg->uCapNext = (fMsiSupport || pVirtio->pDevSpecificCfg) ? CFGADDR2IDX(pCfg) + pCfg->uCapLen : 0;
+    pCfg->uCapNext = (pVirtio->fMsiSupport || pVirtio->pDevSpecificCfg) ? CFGADDR2IDX(pCfg) + pCfg->uCapLen : 0;
     pCfg->uBar     = 0;
     pCfg->uOffset  = 0;
     pCfg->uLength  = 0;
@@ -1198,7 +1202,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         pCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
         pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
         pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
-        pCfg->uCapNext = fMsiSupport ? CFGADDR2IDX(pCfg) + pCfg->uCapLen : 0;
+        pCfg->uCapNext = pVirtio->fMsiSupport ? CFGADDR2IDX(pCfg) + pCfg->uCapLen : 0;
         pCfg->uBar     = VIRTIO_REGION_PCI_CAP;
         pCfg->uOffset  = pVirtio->pIsrCap->uOffset + pVirtio->pIsrCap->uLength;
         pCfg->uOffset  = RT_ALIGN_32(pCfg->uOffset, 4);
@@ -1207,23 +1211,31 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         pVirtio->pDeviceCap = pCfg;
     }
 
-    /* Set offset to first capability and enable PCI dev capabilities */
-    PDMPciDevSetCapabilityList(pPciDev, 0x40);
-    PDMPciDevSetStatus(pPciDev,         VBOX_PCI_STATUS_CAP_LIST);
-
-    if (fMsiSupport)
+    if (pVirtio->fMsiSupport)
     {
         PDMMSIREG aMsiReg;
         RT_ZERO(aMsiReg);
         aMsiReg.iMsixCapOffset  = pCfg->uCapNext;
         aMsiReg.iMsixNextOffset = 0;
-        aMsiReg.iMsixBar        = 0;
-        aMsiReg.cMsixVectors    = 1;
+        aMsiReg.iMsixBar        = VIRTIO_REGION_MSIX_CAP;
+        aMsiReg.cMsixVectors    = g_DeviceVirtioSCSI.cMaxMsixVectors;
         rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg); /* see MsixR3init() */
-        if (RT_FAILURE (rc))
-            /* The following is moot, we need to flag no MSI-X support */
-            PDMPciDevSetCapabilityList(pPciDev, 0x40);
+        if (RT_FAILURE(rc))
+        {
+            /* See PDMDevHlp.cpp:pdmR3DevHlp_PCIRegisterMsi */
+            Log(("Failed to configure MSI-X (%Rrc). Reverting to INTx\n"));
+            pVirtio->fMsiSupport = false;
+        }
+        else
+            Log(("Using MSI-X for guest driver notification\n"));
     }
+    else
+        Log(("MSI-X not available for VBox, using INTx notification\n"));
+
+
+    /* Set offset to first capability and enable PCI dev capabilities */
+    PDMPciDevSetCapabilityList(pPciDev, 0x40);
+    PDMPciDevSetStatus(pPciDev,         VBOX_PCI_STATUS_CAP_LIST);
 
     /* Linux drivers/virtio/virtio_pci_modern.c tries to map at least a page for the
      * 'unknown' device-specific capability without querying the capability to figure

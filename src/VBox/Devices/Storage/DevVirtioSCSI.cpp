@@ -26,6 +26,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/msi.h>
 #include <VBox/version.h>
 #include <VBox/log.h>
 #include <iprt/errcore.h>
@@ -78,14 +79,25 @@
 /*
  * TEMPORARY NOTE: following parameter is set to 1 for early development. Will be increased later
  */
-#define VIRTIOSCSI_REQ_QUEUE_CNT                    2            /**< Number of req queues exposed by dev.            */
+//#define VIRTIOSCSI_REQ_QUEUE_CNT                    2            /**< Number of req queues exposed by dev.            */
+//#define VIRTIOSCSI_QUEUE_CNT                        VIRTIOSCSI_REQ_QUEUE_CNT + 2
+//#define VIRTIOSCSI_MAX_LUN                          256          /* < VirtIO specification, section 5.6.4             */
+//#define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             1            /* < T.B.D. What is a good value for this?           */
+//#define VIRTIOSCSI_MAX_SEG_COUNT                    1024         /* < T.B.D. What is a good value for this?           */
+//#define VIRTIOSCSI_MAX_SECTORS_HINT                 0x10000      /* < VirtIO specification, section 5.6.4             */
+//#define VIRTIOSCSI_MAX_CHANNEL_HINT                 0            /* < VirtIO specification, section 5.6.4 should be 0 */
+//#define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01         /**< SSM version #                                   */
+
+
+#define VIRTIOSCSI_REQ_QUEUE_CNT                    1            /**< Number of req queues exposed by dev.            */
 #define VIRTIOSCSI_QUEUE_CNT                        VIRTIOSCSI_REQ_QUEUE_CNT + 2
 #define VIRTIOSCSI_MAX_LUN                          256          /* < VirtIO specification, section 5.6.4             */
-#define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             1            /* < T.B.D. What is a good value for this?           */
-#define VIRTIOSCSI_MAX_SEG_COUNT                    1024         /* < T.B.D. What is a good value for this?           */
+#define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             128            /* < T.B.D. What is a good value for this?           */
+#define VIRTIOSCSI_MAX_SEG_COUNT                    126         /* < T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SECTORS_HINT                 0x10000      /* < VirtIO specification, section 5.6.4             */
 #define VIRTIOSCSI_MAX_CHANNEL_HINT                 0            /* < VirtIO specification, section 5.6.4 should be 0 */
 #define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01         /**< SSM version #                                   */
+
 
 #define PCI_DEVICE_ID_VIRTIOSCSI_HOST               0x1048       /**< Informs guest driver of type of VirtIO device   */
 #define PCI_CLASS_BASE_MASS_STORAGE                 0x01         /**< PCI Mass Storage device class                   */
@@ -168,10 +180,11 @@
 #define VIRTIO_OUT_DIRECTION(pMediaExTxDirEnumValue) \
             pMediaExTxDirEnumValue == PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE
 /**
- * Following struct is the VirtIO SCSI Host Device device-specific configuration described in section 5.6.4
- * of the VirtIO 1.0 spec. Layout maps an MMIO area shared VirtIO guest driver. The VBox VirtIO
- * this virtual controller device implementation is a client of. Framework does a callback whenever
- * guest driver accesses any part of field in this struct
+ * The following struct is the VirtIO SCSI Host Device device-specific configuration described
+ * in section 5.6.4 of the VirtIO 1.0 spec. The VBox VirtIO framework calls back to this driver
+ * to handle MMIO accesses to the device-specific configuration parameters whenever any bytes in the
+ * device-specific region areaccessed, since which the generic portion shouldn't know anything about
+ * the device-specific VirtIO cfg data.
  */
 typedef struct virtio_scsi_config
 {
@@ -186,7 +199,6 @@ typedef struct virtio_scsi_config
     uint16_t uMaxTarget;                                         /**< max_target       Hint to guest driver           */
     uint32_t uMaxLun;                                            /**< max_lun          Hint to guest driver           */
 } VIRTIOSCSI_CONFIG_T, PVIRTIOSCSI_CONFIG_T;
-
 
 /**
  * @name VirtIO 1.0 SCSI Host Device device specific control types
@@ -478,9 +490,6 @@ typedef struct VIRTIOSCSI
     /** Status Target: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
 
-    /** Base address of the memory mapping. */
-    RTGCPHYS                        GCPhysMMIOBase;
-
     /** IMediaExPort: Media ejection notification */
     R3PTRTYPE(PPDMIMEDIANOTIFY)     pMediaNotify;
 
@@ -492,9 +501,6 @@ typedef struct VIRTIOSCSI
 
     /** Mask of VirtIO Async Event types this device will deliver */
     uint32_t                        uAsyncEvtsEnabled;
-
-    /** The event semaphore the processing thread waits on. */
-
 
     /** Total number of requests active across all targets */
     volatile uint32_t               cActiveReqs;
@@ -1001,7 +1007,6 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     if (   (VIRTIO_IN_DIRECTION(pReq->enmTxDir)  && cbXfer32 > pReq->cbDataIn)
         || (VIRTIO_OUT_DIRECTION(pReq->enmTxDir) && cbXfer32 > pReq->cbDataOut))
     {
-        /* TBD try to figure out optimal sense info to send back besides response of VIRTIOSCSI_S_OVERRUN */
         Log2Func((" * * * * Data overrun, returning sense\n"));
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
                               0, SCSI_SENSE_ILLEGAL_REQUEST, 0, 0, 0, 0, 10, 0, 0, 0 };
@@ -1037,10 +1042,6 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         RTSGBUF reqSegBuf;
         RTSgBufInit(&reqSegBuf, aReqSegs, cSegs);
 
-        /*
-         * Fill in the request queue current descriptor chain's IN queue entry/entries
-         * (phys. memory) with the Req response data in virtual memory.
-         */
         size_t cbReqSgBuf = RTSgBufCalcTotalLength(&reqSegBuf);
         AssertMsgReturn(cbReqSgBuf <= pReq->pDescChain->cbPhysDst,
                        ("Guest expected less req data (space needed: %d, avail: %d)\n",
@@ -1103,7 +1104,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
     /**
      * Handle submission errors
      */
-    if (pThis->fResetting)
+    if (RT_UNLIKELY(pThis->fResetting))
     {
         Log2Func(("Aborting req submission because reset is in progress\n"));
         struct REQ_RESP_HDR respHdr = { 0 };
@@ -1115,7 +1116,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
         return VINF_SUCCESS;
     }
     else
-    if (uTarget >= pThis->cTargets || uScsiLun != 0)
+    if (RT_UNLIKELY(uTarget >= pThis->cTargets || uScsiLun != 0))
     {
         Log2Func(("Error submitting request to bad target (%d) or bad LUN (%d)\n", uTarget, uScsiLun));
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
@@ -1139,6 +1140,20 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
         respHdr.uSenseLen = sizeof(abSense);
         respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
         respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
+        respHdr.uResidual = cbDataIn + cbDataOut;
+        virtioScsiReqErr(pThis, qIdx, pDescChain, &respHdr , abSense);
+        return VINF_SUCCESS;
+    }
+    else
+    if (RT_UNLIKELY(cbDataIn && cbDataOut && !pThis->fHasInOutBufs)) /* VirtIO 1.0, 5.6.6.1.1 */
+    {
+        Log2Func(("Error submitting request, got datain & dataout bufs w/o INOUT feature negotated\n"));
+        uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
+                              0, SCSI_SENSE_ILLEGAL_REQUEST, 0, 0, 0, 0, 10, 0, 0, 0 };
+        struct REQ_RESP_HDR respHdr = { 0 };
+        respHdr.uSenseLen = sizeof(abSense);
+        respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
+        respHdr.uResponse = VIRTIOSCSI_S_FAILURE;
         respHdr.uResidual = cbDataIn + cbDataOut;
         virtioScsiReqErr(pThis, qIdx, pDescChain, &respHdr , abSense);
         return VINF_SUCCESS;
@@ -1757,8 +1772,8 @@ static DECLCALLBACK(void) virtioScsiResume(PPDMDEVINS pDevIns)
     pThis->fQuiescing = false;
 
     /* Wake worker threads flagged to skip pulling queue entries during quiesce
-     *  to ensure they re-check their queues. Active request queues may already
-     *  be awake due to new reqs coming in.
+     * to ensure they re-check their queues. Active request queues may already
+     * be awake due to new reqs coming in.
      */
      for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
     {
@@ -2385,7 +2400,7 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
-    /* .cMaxMsixVectors = */        0,
+    /* .cMaxMsixVectors = */        VBOX_MSIX_MAX_ENTRIES,
     /* .pszDescription = */         "Virtio Host SCSI.\n",
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
