@@ -30,6 +30,137 @@
 # define DBG_VIRTIO(...)
 #endif
 
+/* The maximum CDB size. */
+#define VIRTIO_SCSI_CDB_SZ      16
+/** Maximum sense data to return. */
+#define VIRTIO_SCSI_SENSE_SZ    32
+
+/**
+ * VirtIO queue descriptor.
+ */
+typedef struct
+{
+    /** 64bit guest physical address of the buffer, split into high and low part because we work in real mode. */
+    uint32_t        GCPhysBufLow;
+    uint32_t        GCPhysBufHigh;
+    /** Length of the buffer in bytes. */
+    uint32_t        cbBuf;
+    /** Flags for the buffer. */
+    uint16_t        fFlags;
+    /** Next field where the buffer is continued if _NEXT flag is set. */
+    uint16_t        idxNext;
+} virtio_q_desc_t;
+
+#define VIRTIO_Q_DESC_F_NEXT     0x1
+#define VIRTIO_Q_DESC_F_WRITE    0x2
+#define VIRTIO_Q_DESC_F_INDIRECT 0x4
+
+/**
+ * VirtIO available ring.
+ */
+typedef struct
+{
+    /** Flags. */
+    uint16_t        fFlags;
+    /** Next index to write an available buffer by the driver. */
+    uint16_t        idxNextFree;
+    /** The ring - we only provide one entry. */
+    uint16_t        au16Ring[1];
+    /** Used event index. */
+    uint16_t        u16EvtUsed;
+} virtio_q_avail_t;
+
+/**
+ * VirtIO queue used element.
+ */
+typedef struct
+{
+    /** Index of the start of the descriptor chain. */
+    uint32_t        u32Id;
+    /** Number of bytes used in the descriptor chain. */
+    uint32_t        cbUsed;
+} virtio_q_used_elem_t;
+
+/**
+ * VirtIo used ring.
+ */
+typedef struct
+{
+    /** Flags. */
+    uint16_t             fFlags;
+    /** Index where the next entry would be written by the device. */
+    uint16_t             idxNextUsed;
+    /** The used ring. */
+    virtio_q_used_elem_t aRing[1];
+} virtio_q_used_t;
+
+/**
+ * VirtIO queue structure we are using, needs to be aligned on a 16byte boundary.
+ */
+typedef struct
+{
+    /** The descriptor table, using 4 max. */
+    virtio_q_desc_t      aDescTbl[4];
+    /** Available ring. */
+    virtio_q_avail_t     AvailRing;
+    /** Used ring. */
+    virtio_q_used_t      UsedRing;
+} virtio_q_t;
+
+/**
+ * VirtIO SCSI request structure passed in the queue.
+ */
+typedef struct
+{
+    /** The LUN to address. */
+    uint8_t                 au8Lun[8];
+    /** Request ID - split into low and high part. */
+    uint32_t                u32IdLow;
+    uint32_t                u32IdHigh;
+    /** Task attributes. */
+    uint8_t                 u8TaskAttr;
+    /** Priority. */
+    uint8_t                 u8Prio;
+    /** CRN value, usually 0. */
+    uint8_t                 u8Crn;
+    /** The CDB. */
+    uint8_t                 abCdb[VIRTIO_SCSI_CDB_SZ];
+} virtio_scsi_req_hdr_t;
+
+/**
+ * VirtIO SCSI status structure filled by the device.
+ */
+typedef struct
+{
+    /** Returned sense length. */
+    uint32_t                cbSense;
+    /** Residual amount of bytes left. */
+    uint32_t                cbResidual;
+    /** Status qualifier. */
+    uint16_t                u16StatusQual;
+    /** Status code. */
+    uint8_t                 u8Status;
+    /** Response code. */
+    uint8_t                 u8Response;
+    /** Sense data. */
+    uint8_t                 abSense[VIRTIO_SCSI_SENSE_SZ];
+} virtio_scsi_req_sts_t;
+
+/**
+ * VirtIO config for the different data structures.
+ */
+typedef struct
+{
+    /** BAR where to find it. */
+    uint8_t         u8Bar;
+    /** Padding. */
+    uint8_t         abPad[3];
+    /** Offset within the bar. */
+    uint32_t        u32Offset;
+    /** Length of the structure in bytes. */
+    uint32_t        u32Length;
+} virtio_bar_cfg_t;
+
 /**
  * VirtIO PCI capability structure.
  */
@@ -54,25 +185,12 @@ typedef struct
 } virtio_pci_cap_t;
 
 /**
- * VirtIO config for the different data structures.
- */
-typedef struct
-{
-    /** BAR where to find it. */
-    uint8_t         u8Bar;
-    /** Padding. */
-    uint8_t         abPad[3];
-    /** Offset within the bar. */
-    uint32_t        u32Offset;
-    /** Length of the structure in bytes. */
-    uint32_t        u32Length;
-} virtio_bar_cfg_t;
-
-/**
  * VirtIO-SCSI controller data.
  */
 typedef struct
 {
+    /** The queue used - must be first for alignment reasons. */
+    virtio_q_t       Queue;
     /** The BAR configs read from the PCI configuration space, see VIRTIO_PCI_CAP_*_CFG,
      * only use 4 because VIRTIO_PCI_CAP_PCI_CFG is not part of this. */
     virtio_bar_cfg_t aBarCfgs[4];
@@ -87,7 +205,7 @@ typedef struct
     uint16_t         saved_eax_hi;
 } virtio_t;
 
-/* The AHCI specific data must fit into 1KB (statically allocated). */
+/* The VirtIO specific data must fit into 1KB (statically allocated). */
 ct_assert(sizeof(virtio_t) <= 1024);
 
 /** PCI configuration fields. */
@@ -106,26 +224,46 @@ ct_assert(sizeof(virtio_t) <= 1024);
 
 #define RT_BIT_32(bit) ((uint32_t)(1L << (bit)))
 
-/* Warning: Destroys high bits of EAX. */
-uint32_t inpd(uint16_t port);
-#pragma aux inpd =      \
-    ".386"              \
-    "in     eax, dx"    \
-    "mov    dx, ax"     \
-    "shr    eax, 16"    \
-    "xchg   ax, dx"     \
-    parm [dx] value [dx ax] modify nomemory;
+#define VIRTIO_COMMON_REG_DEV_FEAT_SLCT 0x00
+#define VIRTIO_COMMON_REG_DEV_FEAT      0x04
+# define VIRTIO_CMN_REG_DEV_FEAT_SCSI_INOUT 0x01
+#define VIRTIO_COMMON_REG_DRV_FEAT_SLCT 0x08
+#define VIRTIO_COMMON_REG_DRV_FEAT      0x0c
+#define VIRTIO_COMMON_REG_MSIX_CFG      0x10
+#define VIRTIO_COMMON_REG_NUM_QUEUES    0x12
+#define VIRTIO_COMMON_REG_DEV_STS       0x14
+# define VIRTIO_CMN_REG_DEV_STS_F_RST     0x00
+# define VIRTIO_CMN_REG_DEV_STS_F_ACK     0x01
+# define VIRTIO_CMN_REG_DEV_STS_F_DRV     0x02
+# define VIRTIO_CMN_REG_DEV_STS_F_DRV_OK  0x04
+# define VIRTIO_CMN_REG_DEV_STS_F_FEAT_OK 0x08
+# define VIRTIO_CMN_REG_DEV_STS_F_DEV_RST 0x40
+# define VIRTIO_CMN_REG_DEV_STS_F_FAILED  0x80
+#define VIRTIO_COMMON_REG_CFG_GEN       0x15
 
-/* Warning: Destroys high bits of EAX. */
-void outpd(uint16_t port, uint32_t val);
-#pragma aux outpd =     \
-    ".386"              \
-    "xchg   ax, cx"     \
-    "shl    eax, 16"    \
-    "mov    ax, cx"     \
-    "out    dx, eax"    \
-    parm [dx] [cx ax] modify nomemory;
+#define VIRTIO_COMMON_REG_Q_SELECT      0x16
+#define VIRTIO_COMMON_REG_Q_SIZE        0x18
+#define VIRTIO_COMMON_REG_Q_MSIX_VEC    0x1a
+#define VIRTIO_COMMON_REG_Q_ENABLE      0x1c
+#define VIRTIO_COMMON_REG_Q_NOTIFY_OFF  0x1e
+#define VIRTIO_COMMON_REG_Q_DESC        0x20
+#define VIRTIO_COMMON_REG_Q_DRIVER      0x28
+#define VIRTIO_COMMON_REG_Q_DEVICE      0x30
 
+#define VIRTIO_DEV_CFG_REG_Q_NUM        0x00
+#define VIRTIO_DEV_CFG_REG_SEG_MAX      0x04
+#define VIRTIO_DEV_CFG_REG_SECT_MAX     0x08
+#define VIRTIO_DEV_CFG_REG_CMD_PER_LUN  0x0c
+#define VIRTIO_DEV_CFG_REG_EVT_INFO_SZ  0x10
+#define VIRTIO_DEV_CFG_REG_SENSE_SZ     0x14
+#define VIRTIO_DEV_CFG_REG_CDB_SZ       0x18
+#define VIRTIO_DEV_CFG_REG_MAX_CHANNEL  0x1c
+#define VIRTIO_DEV_CFG_REG_MAX_TGT      0x1e
+#define VIRTIO_DEV_CFG_REG_MAX_LUN      0x20
+
+#define VIRTIO_SCSI_Q_CONTROL           0x00
+#define VIRTIO_SCSI_Q_EVENT             0x01
+#define VIRTIO_SCSI_Q_REQUEST           0x02
 
 /* Machinery to save/restore high bits of EAX. 32-bit port I/O needs to use
  * EAX, but saving/restoring EAX around each port access would be inefficient.
@@ -156,6 +294,83 @@ void inline high_bits_restore(virtio_t __far *virtio)
     eax_hi_wr(virtio->saved_eax_hi);
 }
 
+static void virtio_reg_set_bar_offset_length(virtio_t __far *virtio, uint8_t u8Bar, uint32_t offReg, uint8_t cb)
+{
+    pci_write_config_byte(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff  +  4, u8Bar);
+    pci_write_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff +  8, offReg);
+    pci_write_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + 12, (uint32_t)cb);
+}
+
+static void virtio_reg_common_access_prepare(virtio_t __far *virtio, uint16_t offReg, uint16_t cbAcc)
+{
+    virtio_reg_set_bar_offset_length(virtio,
+                                     virtio->aBarCfgs[VIRTIO_PCI_CAP_COMMON_CFG - 1].u8Bar,
+                                     virtio->aBarCfgs[VIRTIO_PCI_CAP_COMMON_CFG - 1].u32Offset + offReg,
+                                     cbAcc);
+}
+
+static void virtio_reg_dev_access_prepare(virtio_t __far *virtio, uint16_t offReg, uint16_t cbAcc)
+{
+    virtio_reg_set_bar_offset_length(virtio,
+                                     virtio->aBarCfgs[VIRTIO_PCI_CAP_DEVICE_CFG - 1].u8Bar,
+                                     virtio->aBarCfgs[VIRTIO_PCI_CAP_DEVICE_CFG - 1].u32Offset + offReg,
+                                     cbAcc);
+}
+
+static uint8_t virtio_reg_common_read_u8(virtio_t __far *virtio, uint16_t offReg)
+{
+    virtio_reg_common_access_prepare(virtio, offReg, sizeof(uint8_t));
+    return pci_read_config_byte(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t));
+}
+
+static void virtio_reg_common_write_u8(virtio_t __far *virtio, uint16_t offReg, uint8_t u8Val)
+{
+    virtio_reg_common_access_prepare(virtio, offReg, sizeof(uint8_t));
+    pci_write_config_byte(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t), u8Val);
+}
+
+static uint16_t virtio_reg_common_read_u16(virtio_t __far *virtio, uint16_t offReg)
+{
+    virtio_reg_common_access_prepare(virtio, offReg, sizeof(uint16_t));
+    return pci_read_config_word(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t));
+}
+
+static void virtio_reg_common_write_u16(virtio_t __far *virtio, uint16_t offReg, uint16_t u16Val)
+{
+    virtio_reg_common_access_prepare(virtio, offReg, sizeof(uint16_t));
+    pci_write_config_word(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t), u16Val);
+}
+
+static uint32_t virtio_reg_common_read_u32(virtio_t __far *virtio, uint16_t offReg)
+{
+    virtio_reg_common_access_prepare(virtio, offReg, sizeof(uint32_t));
+    return pci_read_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t));
+}
+
+static void virtio_reg_common_write_u32(virtio_t __far *virtio, uint16_t offReg, uint32_t u32Val)
+{
+    virtio_reg_common_access_prepare(virtio, offReg, sizeof(uint32_t));
+    pci_write_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t), u32Val);
+}
+
+static uint16_t virtio_reg_dev_cfg_read_u16(virtio_t __far *virtio, uint16_t offReg)
+{
+    virtio_reg_dev_access_prepare(virtio, offReg, sizeof(uint16_t));
+    return pci_read_config_word(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t));
+}
+
+static uint32_t virtio_reg_dev_cfg_read_u32(virtio_t __far *virtio, uint16_t offReg)
+{
+    virtio_reg_dev_access_prepare(virtio, offReg, sizeof(uint32_t));
+    return pci_read_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t));
+}
+
+static void virtio_reg_dev_cfg_write_u32(virtio_t __far *virtio, uint16_t offReg, uint32_t u32Val)
+{
+    virtio_reg_dev_access_prepare(virtio, offReg, sizeof(uint32_t));
+    pci_write_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t), u32Val);
+}
+
 /**
  * Allocates 1K of conventional memory.
  */
@@ -166,7 +381,7 @@ static uint16_t virtio_mem_alloc(void)
 
     base_mem_kb = read_word(0x00, 0x0413);
 
-    DBG_VIRTIO("AHCI: %dK of base mem\n", base_mem_kb);
+    DBG_VIRTIO("VirtIO: %dK of base mem\n", base_mem_kb);
 
     if (base_mem_kb == 0)
         return 0;
@@ -180,6 +395,14 @@ static uint16_t virtio_mem_alloc(void)
 }
 
 /**
+ * Converts a segment:offset pair into a 32bit physical address.
+ */
+static uint32_t virtio_addr_to_phys(void __far *ptr)
+{
+    return ((uint32_t)FP_SEG(ptr) << 4) + FP_OFF(ptr);
+}
+
+/**
  * Initializes the VirtIO SCSI HBA and detects attached devices.
  */
 static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCapOffVirtIo)
@@ -187,6 +410,8 @@ static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCap
     uint8_t             u8PciCapOff;
     uint16_t            ebda_seg;
     uint16_t            virtio_seg;
+    uint32_t            fFeatures;
+    uint8_t             u8DevStat;
     bio_dsk_t __far     *bios_dsk;
     virtio_t __far      *virtio;
 
@@ -214,52 +439,116 @@ static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCap
      * Go through the config space again, read the complete config capabilities
      * this time and fill in the data.
      */
-    u8PciCapOff = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOffVirtIo);
-
+    u8PciCapOff = u8PciCapOffVirtIo;
     while (u8PciCapOff != 0)
     {
         uint8_t u8PciCapId = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff);
         uint8_t cbPciCap   = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff + 2); /* Capability length. */
 
+        DBG_VIRTIO("Capability ID 0x%x at 0x%x\n", u8PciCapId, u8PciCapOff);
+
         if (   u8PciCapId == PCI_CAP_ID_VNDR
-            && cbPciCap == sizeof(virtio_pci_cap_t))
+            && cbPciCap >= sizeof(virtio_pci_cap_t))
         {
             /* Read in the config type and see what we got. */
-            uint8_t i;
-            virtio_pci_cap_t VirtIoPciCap;
-            uint8_t *pbTmp = (uint8_t *)&VirtIoPciCap;
+            uint8_t u8PciVirtioCfg = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff + 3);
 
-            for (i = 0; i < sizeof(VirtIoPciCap); i++)
-                *pbTmp++ = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff + 1);
-
-            switch (VirtIoPciCap.u8VirtIoCfgType)
+            DBG_VIRTIO("VirtIO: CFG ID 0x%x\n", u8PciVirtioCfg);
+            switch (u8PciVirtioCfg)
             {
                 case VIRTIO_PCI_CAP_COMMON_CFG:
                 case VIRTIO_PCI_CAP_NOTIFY_CFG:
                 case VIRTIO_PCI_CAP_ISR_CFG:
                 case VIRTIO_PCI_CAP_DEVICE_CFG:
                 {
-                    virtio_bar_cfg_t *pBarCfg = &virtio->aBarCfgs[VirtIoPciCap.u8VirtIoCfgType - 1];
+                    virtio_bar_cfg_t __far *pBarCfg = &virtio->aBarCfgs[u8PciVirtioCfg - 1];
 
-                    pBarCfg->u8Bar     = VirtIoPciCap.u8Bar;
-                    pBarCfg->u32Offset = VirtIoPciCap.u32Offset;
-                    pBarCfg->u32Length = VirtIoPciCap.u32Length;
+                    pBarCfg->u8Bar     = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff + 4);
+                    pBarCfg->u32Offset = pci_read_config_dword(u8Bus, u8DevFn, u8PciCapOff + 8);
+                    pBarCfg->u32Length = pci_read_config_dword(u8Bus, u8DevFn, u8PciCapOff + 12);
                     break;
                 }
                 case VIRTIO_PCI_CAP_PCI_CFG:
                     virtio->u8PciCfgOff = u8PciCapOff;
+                    DBG_VIRTIO("VirtIO PCI CAP window offset: %x\n", u8PciCapOff);
                     break;
                 default:
-                    DBG_VIRTIO("VirtIO SCSI HBA with unknown PCI capability type 0x%x\n", VirtIoPciCap.u8VirtIoCfgType);
+                    DBG_VIRTIO("VirtIO SCSI HBA with unknown PCI capability type 0x%x\n", u8PciVirtioCfg);
             }
-
-            u8PciCapOff = VirtIoPciCap.u8PciCapNext; /* Saves one VM exit. */
         }
-        else
-            u8PciCapOff = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff + 1);
+
+        u8PciCapOff = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff + 1);
     }
 
-    /** @todo Start reading actual registers, initializing the controller, detecting disks, etc. */
+    /* Reset the device. */
+    u8DevStat = VIRTIO_CMN_REG_DEV_STS_F_RST;
+    virtio_reg_common_write_u8(virtio, VIRTIO_COMMON_REG_DEV_STS, u8DevStat);
+    /* Acknowledge presence. */
+    u8DevStat |= VIRTIO_CMN_REG_DEV_STS_F_ACK;
+    virtio_reg_common_write_u8(virtio, VIRTIO_COMMON_REG_DEV_STS, u8DevStat);
+    /* Our driver knows how to operatet the device. */
+    u8DevStat |= VIRTIO_CMN_REG_DEV_STS_F_DRV;
+    virtio_reg_common_write_u8(virtio, VIRTIO_COMMON_REG_DEV_STS, u8DevStat);
+
+    /* Read the feature bits and only program the VIRTIO_CMN_REG_DEV_FEAT_SCSI_INOUT bit if available. */
+    fFeatures = virtio_reg_common_read_u32(virtio, VIRTIO_COMMON_REG_DEV_FEAT);
+    fFeatures &= VIRTIO_CMN_REG_DEV_FEAT_SCSI_INOUT;
+
+    /* Check that the device is sane. */
+    if (   virtio_reg_dev_cfg_read_u32(virtio, VIRTIO_DEV_CFG_REG_Q_NUM) < 1
+        || virtio_reg_dev_cfg_read_u32(virtio, VIRTIO_DEV_CFG_REG_CDB_SZ) < 16
+        || virtio_reg_dev_cfg_read_u32(virtio, VIRTIO_DEV_CFG_REG_SENSE_SZ) < 32
+        || virtio_reg_dev_cfg_read_u32(virtio, VIRTIO_DEV_CFG_REG_SECT_MAX) < 1)
+    {
+        DBG_VIRTIO("VirtIO-SCSI: Invalid SCSI device configuration, ignoring device\n");
+        return 0;
+    }
+
+    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_DEV_FEAT, fFeatures);
+
+    /* Set the features OK bit. */
+    u8DevStat |= VIRTIO_CMN_REG_DEV_STS_F_FEAT_OK;
+    virtio_reg_common_write_u8(virtio, VIRTIO_COMMON_REG_DEV_STS, u8DevStat);
+
+    /* Read again and check the the okay bit is still set. */
+    if (!(virtio_reg_common_read_u8(virtio, VIRTIO_COMMON_REG_DEV_STS) & VIRTIO_CMN_REG_DEV_STS_F_FEAT_OK))
+    {
+        DBG_VIRTIO("VirtIO-SCSI: Device doesn't accept our feature set, ignoring device\n");
+        return 0;
+    }
+
+    /* Disable event and control queue. */
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SELECT, VIRTIO_SCSI_Q_CONTROL);
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SIZE, 0);
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_ENABLE, 0);
+
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SELECT, VIRTIO_SCSI_Q_EVENT);
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SIZE, 0);
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_ENABLE, 0);
+
+    /* Setup the request queue. */
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SELECT, VIRTIO_SCSI_Q_REQUEST);
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SIZE, 1);
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_ENABLE, 1);
+
+    /* Set queue area addresses (only low part, leave high part 0). */
+    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_Q_DESC,     virtio_addr_to_phys(&virtio->Queue.aDescTbl[0]));
+    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_Q_DESC + 4, 0);
+
+    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_Q_DRIVER,     virtio_addr_to_phys(&virtio->Queue.AvailRing));
+    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_Q_DRIVER + 4, 0);
+
+    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_Q_DEVICE,     virtio_addr_to_phys(&virtio->Queue.UsedRing));
+    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_Q_DEVICE + 4, 0);
+
+    virtio_reg_dev_cfg_write_u32(virtio, VIRTIO_DEV_CFG_REG_CDB_SZ, VIRTIO_SCSI_CDB_SZ);
+    virtio_reg_dev_cfg_write_u32(virtio, VIRTIO_DEV_CFG_REG_SENSE_SZ, VIRTIO_SCSI_SENSE_SZ);
+
+    /* Bring the device into operational mode. */
+    u8DevStat |= VIRTIO_CMN_REG_DEV_STS_F_DRV_OK;
+    virtio_reg_common_write_u8(virtio, VIRTIO_COMMON_REG_DEV_STS, u8DevStat);
+
+    /** @todo Detect attached devices. */
 
     return 0;
 }
