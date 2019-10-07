@@ -1137,13 +1137,47 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 
         case WM_VBOXTRAY_TRAY_ICON:
         {
-            switch (lParam)
+            switch (LOWORD(lParam))
             {
                 case WM_LBUTTONDBLCLK:
                     break;
-
+#ifdef DEBUG
                 case WM_RBUTTONDOWN:
+                {
+                    POINT lpCursor;
+                    if (GetCursorPos(&lpCursor))
+                    {
+                        HMENU hContextMenu = CreatePopupMenu();
+                        if (hContextMenu)
+                        {
+                            UINT_PTR uMenuItem = 9999;
+                            UINT     fMenuItem = MF_BYPOSITION | MF_STRING;
+                            if (InsertMenuW(hContextMenu, UINT_MAX, fMenuItem, uMenuItem, L"Exit"))
+                            {
+                                SetForegroundWindow(hWnd);
+
+                                const bool fBlockWhileTracking = true;
+
+                                UINT fTrack = TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_BOTTOMALIGN;
+
+                                if (fBlockWhileTracking)
+                                    fTrack |= TPM_RETURNCMD | TPM_NONOTIFY;
+
+                                UINT uMsg = TrackPopupMenu(hContextMenu, fTrack, lpCursor.x, lpCursor.y, 0, hWnd, NULL);
+                                if (   uMsg
+                                    && fBlockWhileTracking)
+                                {
+                                    if (uMsg == uMenuItem)
+                                        PostMessage(g_hwndToolWindow, WM_QUIT, 0, 0);
+                                }
+                                else if (!uMsg)
+                                    LogFlowFunc(("Tracking popup menu failed with %ld\n", GetLastError()));
+                            }
+                        }
+                    }
                     break;
+                }
+#endif
             }
             return 0;
         }
