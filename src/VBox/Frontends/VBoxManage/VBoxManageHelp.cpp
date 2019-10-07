@@ -766,9 +766,14 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                            "%s import %s          <ovfname/ovaname>\n"
                      "                            [--dry-run|-n]\n"
                      "                            [--options keepallmacs|keepnatmacs|importtovdi]\n"
+                     "                            [--vmname <name>]\n"
+                     "                            [--cloud]\n"
+                     "                            [--cloudprofile <cloud profile name>]\n"
+                     "                            [--cloudinstanceid <instance id>]\n"
+                     "                            [--cloudbucket <bucket name>]\n"
                      "                            [more options]\n"
                      "                            (run with -n to have options displayed\n"
-                     "                             for a particular OVF)\n\n", SEP);
+                     "                             for a particular OVF. It doesn't work for the Cloud import.)\n\n", SEP);
 
     if (enmCommand == USAGE_EXPORTAPPLIANCE || enmCommand == USAGE_S_ALL)
         RTStrmPrintf(pStrm,
