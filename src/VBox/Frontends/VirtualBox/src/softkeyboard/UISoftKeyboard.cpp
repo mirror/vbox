@@ -97,6 +97,15 @@ enum KeyboardColorType
     KeyboardColorType_Max
 };
 
+enum KeyboardRegion
+{
+    KeyboardRegion_Main = 0,
+    KeyboardRegion_NumPad,
+    KeyboardRegion_Multimedia,
+    KeyboardRegion_OSMenu,
+    KeyboardRegion_Max
+};
+
 struct KeyCaptions
 {
     QString m_strBase;
@@ -348,11 +357,8 @@ public:
     void setType(KeyType enmType);
     KeyType type() const;
 
-    void setIsNumPadKey(bool fIsNumPadKey);
-    bool isNumPadKey() const;
-
-    void setIsOSMenuKey(bool fIsOSMenuKey);
-    bool isOSMenuKey() const;
+    KeyboardRegion keyboardRegion() const;
+    void setKeyboardRegion(KeyboardRegion enmRegion);
 
     void setCutout(int iCorner, int iWidth, int iHeight);
 
@@ -407,8 +413,7 @@ private:
     UISoftKeyboardWidget  *m_pParentWidget;
     LONG m_iUsageId;
     LONG m_iUsagePage;
-    bool m_fIsNumPadKey;
-    bool m_fIsOSMenuKey;
+    KeyboardRegion m_enmKeyboardRegion;
 };
 
 
@@ -1432,9 +1437,7 @@ UISoftKeyboardKey::UISoftKeyboardKey()
     , m_iCutoutCorner(-1)
     , m_iPosition(0)
     , m_pParentWidget(0)
-    , m_fIsNumPadKey(false)
-    , m_fIsOSMenuKey(false)
-
+    , m_enmKeyboardRegion(KeyboardRegion_Main)
 {
 }
 
@@ -1534,24 +1537,14 @@ KeyType UISoftKeyboardKey::type() const
     return m_enmType;
 }
 
-void UISoftKeyboardKey::setIsNumPadKey(bool fIsNumPadKey)
+KeyboardRegion UISoftKeyboardKey::keyboardRegion() const
 {
-    m_fIsNumPadKey = fIsNumPadKey;
+    return m_enmKeyboardRegion;
 }
 
-bool UISoftKeyboardKey::isNumPadKey() const
+void UISoftKeyboardKey::setKeyboardRegion(KeyboardRegion enmRegion)
 {
-    return m_fIsNumPadKey;
-}
-
-void UISoftKeyboardKey::setIsOSMenuKey(bool fIsOSMenuKey)
-{
-    m_fIsOSMenuKey = fIsOSMenuKey;
-}
-
-bool UISoftKeyboardKey::isOSMenuKey() const
-{
-    return m_fIsOSMenuKey;
+    m_enmKeyboardRegion = enmRegion;
 }
 
 void UISoftKeyboardKey::setCutout(int iCorner, int iWidth, int iHeight)
@@ -2095,10 +2088,10 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
         for (int j = 0; j < keys.size(); ++j)
         {
             UISoftKeyboardKey &key = keys[j];
-            if (m_fHideOSMenuKeys && key.isOSMenuKey())
+            if (m_fHideOSMenuKeys && key.keyboardRegion() == KeyboardRegion_OSMenu)
                 continue;
 
-            if (m_fHideNumPad &&key.isNumPadKey())
+            if (m_fHideNumPad && key.keyboardRegion() == KeyboardRegion_NumPad)
                 continue;
 
             painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
@@ -2646,12 +2639,12 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
             UISoftKeyboardRow &row = m_numPadLayout.rows()[i];
             for (int j = 0; j < row.keys().size(); ++j)
             {
-                row.keys()[j].setIsNumPadKey(true);
+                row.keys()[j].setKeyboardRegion(KeyboardRegion_NumPad);
             }
         }
         return true;
     }
-
+    /* Go thru all the keys row by row and construct their geometries: */
     int iY = m_iTopMargin;
     int iMaxWidth = 0;
     int iMaxWidthNoNumPad = 0;
@@ -2693,7 +2686,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
             if (key.spaceWidthAfter() != 0)
                 iX += (m_iXSpacing + key.spaceWidthAfter());
 
-            if (!key.isNumPadKey())
+            if (key.keyboardRegion() != KeyboardRegion_NumPad)
             {
                 iXNoNumPad += key.width();
                 if (j < row.keys().size() - 1)
@@ -3061,7 +3054,7 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
         else if (m_xmlReader.name() == "osmenukey")
         {
             if (m_xmlReader.readElementText() == "true")
-                key.setIsOSMenuKey(true);
+                key.setKeyboardRegion(KeyboardRegion_OSMenu);
         }
         else
             m_xmlReader.skipCurrentElement();
