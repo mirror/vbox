@@ -194,7 +194,6 @@ void pci_write_config_word(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint16_t va
     pci_write_cfgw((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_WORD, (bus << 8) | dev_fn, reg, val);
 }
 
-#if 0 /* Disabled to save space because they are not needed. Might become useful in the future. */
 void pci_write_config_byte(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint8_t val)
 {
     pci_write_cfgb((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_BYTE, (bus << 8) | dev_fn, reg, val);
@@ -202,6 +201,11 @@ void pci_write_config_byte(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint8_t val
 
 void pci_write_config_dword(uint8_t bus, uint8_t dev_fn, uint8_t reg, uint32_t val)
 {
+#if VBOX_BIOS_CPU >= 80386
     pci_write_cfgd((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_DWORD, (bus << 8) | dev_fn, reg, val);
+#else
+    pci_write_cfgw((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_WORD, (bus << 8) | dev_fn, reg, val & 0xffff);
+    pci_write_cfgw((PCIBIOS_ID << 8) | PCIBIOS_WRITE_CONFIG_WORD, (bus << 8) | dev_fn, reg + 2, val >> 16);
+#endif
 }
-#endif /* 0 */
+
