@@ -105,11 +105,10 @@ uint8_t pci_write_cfgw(uint16_t op, uint16_t bus_dev_fn, uint16_t reg, uint16_t 
 uint8_t pci_write_cfgd(uint16_t op, uint16_t bus_dev_fn, uint16_t reg, uint32_t val);
 # pragma aux pci_write_cfgd = \
     ".386"                  \
-    "xchg   cx, dx"         \
     "shl    ecx, 16"        \
     "mov    cx, dx"         \
     "int    0x1a"           \
-    parm [ax] [bx] [di] [dx cx];
+    parm [ax] [bx] [di] [cx dx];
 #endif
 
 
