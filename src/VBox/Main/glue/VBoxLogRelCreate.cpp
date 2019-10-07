@@ -84,6 +84,41 @@ static DECLCALLBACK(void) vboxHeaderFooter(PRTLOGGER pReleaseLogger, RTLOGPHASE 
             if (RT_SUCCESS(vrc) || vrc == VERR_BUFFER_OVERFLOW)
                 pfnLog(pReleaseLogger, "DMI Product Version: %s\n", szTmp);
 
+            RTSYSFWTYPE enmType;
+            vrc = RTSystemFirmwareQueryType(&enmType);
+            if (RT_SUCCESS(vrc))
+            {
+                pfnLog(pReleaseLogger, "Firmware type: ");
+
+                switch (enmType)
+                {
+                    case RTSYSFWTYPE_BIOS:
+                        pfnLog(pReleaseLogger, "BIOS\n");
+                        break;
+                    case RTSYSFWTYPE_UEFI:
+                        pfnLog(pReleaseLogger, "UEFI\n");
+                        break;
+                    case RTSYSFWTYPE_UNKNOWN: /* Not implemented on this platforms? */
+                        pfnLog(pReleaseLogger, "Unknown\n");
+                        break;
+                    default:
+                        AssertFailed();
+                        break;
+                }
+
+                if (enmType == RTSYSFWTYPE_UEFI)
+                {
+                     RTSYSFWVALUE Value;
+                     vrc = RTSystemFirmwareQueryValue(RTSYSFWPROP_SECURE_BOOT, &Value);
+                     if (RT_SUCCESS(vrc))
+                     {
+                         Assert(Value.enmType == RTSYSFWVALUETYPE_BOOLEAN);
+                         pfnLog(pReleaseLogger, "Secure Boot: %s\n", Value.u.fVal ? "Enabled" : "Disabled");
+                         RTSystemFirmwareFreeValue(&Value);
+                     }
+                }
+            }
+
             uint64_t cbHostRam = 0, cbHostRamAvail = 0;
             vrc = RTSystemQueryTotalRam(&cbHostRam);
             if (RT_SUCCESS(vrc))
