@@ -117,6 +117,9 @@ struct UsageCode
 *   UISoftKeyboardPhysicalLayout definition.                                                                                     *
 *********************************************************************************************************************************/
 
+/** This class is used to represent the physical layout of a keyboard (in contrast to UISoftKeyboardLayout).
+  * Physical layouts are read from an xml file where keys are placed in rows. Each UISoftKeyboardLayout must refer to a
+  * refer to a UISoftKeyboardPhysicalLayout instance. An example of an UISoftKeyboardPhysicalLayout instance is 103 key ISO layout.*/
 class UISoftKeyboardPhysicalLayout
 {
 
@@ -146,6 +149,7 @@ private:
     QUuid    m_uId;
     QString  m_strName;
     QVector<UISoftKeyboardRow>    m_rows;
+    /** Scroll, Num, and Caps Lock keys' states are updated thru some API events. Thus we keep their pointers in a containter. */
     QMap<int, UISoftKeyboardKey*> m_lockKeys;
 };
 
@@ -153,6 +157,7 @@ private:
 *   UIKeyboardLayoutEditor definition.                                                                                  *
 *********************************************************************************************************************************/
 
+/** A QWidget extension thru which we can edit key captions, the physical layout of the keyboard, name of the layout etc. */
 class UIKeyboardLayoutEditor : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -272,7 +277,8 @@ private:
 *   UISoftKeyboardRow definition.                                                                                  *
 *********************************************************************************************************************************/
 
-/** UISoftKeyboardRow represents a row in the physical keyboard. */
+/** UISoftKeyboardRow represents a row in the physical keyboard. The rows are read from a physical layout file and contained
+  * keys are added to rows in the order they appear in that file.*/
 class UISoftKeyboardRow
 {
 
@@ -305,7 +311,9 @@ private:
 *   UISoftKeyboardKey definition.                                                                                  *
 *********************************************************************************************************************************/
 
-/** UISoftKeyboardKey is a place holder for a keyboard key. Graphical key represantations are drawn according to this class. */
+/** UISoftKeyboardKey is a place holder for a keyboard key. Graphical key represantations are drawn according to this class.
+  * The position of a key within the physical layout is read from the layout file. Note that UISoftKeyboardKey does not have
+  * caption field(s). */
 class UISoftKeyboardKey
 {
 public:
@@ -407,7 +415,9 @@ private:
 /*********************************************************************************************************************************
 *   UISoftKeyboardLayout definition.                                                                                  *
 *********************************************************************************************************************************/
-
+/** UISoftKeyboardLayout represents mainly a set of captions for the keys. It refers to a phsical layout which defines the
+  * positioning and number of keys (alongside with scan codes etc.). UISoftKeyboardLayout instances are read from xml files. An
+  * example for UISoftKeyboardLayout instance is 'US International' keyboard layout. */
 class UISoftKeyboardLayout
 {
 
@@ -503,7 +513,8 @@ private:
 *   UISoftKeyboardWidget definition.                                                                                  *
 *********************************************************************************************************************************/
 
-/** The container widget for keyboard keys. It also handles all the keyboard related events. */
+/** The container widget for keyboard keys. It also handles all the keyboard related events. paintEvent of this class
+  * handles drawing of the soft keyboard. */
 class UISoftKeyboardWidget : public QIWithRetranslateUI<QWidget>
 {
     Q_OBJECT;
@@ -643,6 +654,7 @@ public:
 
     bool parseXMLFile(const QString &strFileName, UISoftKeyboardPhysicalLayout &physicalLayout);
     static QVector<QPoint> computeKeyVertices(const UISoftKeyboardKey &key);
+
 private:
 
     void  parseKey(UISoftKeyboardRow &row);
