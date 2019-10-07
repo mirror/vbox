@@ -246,6 +246,9 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
         {
             LogFunc(("WM_CLIPBOARDUPDATE: pWinCtx=%p\n", pWinCtx));
 
+            if (pCtx->fShutdown) /* If we're about to shut down, skip handling stuff here. */
+                break;
+
             int rc = RTCritSectEnter(&pWinCtx->CritSect);
             if (RT_SUCCESS(rc))
             {
@@ -827,15 +830,7 @@ static void vboxClipboardDestroy(PSHCLCONTEXT pCtx)
 
     LogRel2(("Shared Clipboard: Destroying ...\n"));
 
-    pCtx->fShutdown = true;
-
     const PSHCLWINCTX pWinCtx = &pCtx->Win;
-
-    if (pWinCtx->hWnd)
-    {
-        DestroyWindow(pWinCtx->hWnd);
-        pWinCtx->hWnd = NULL;
-    }
 
     if (pCtx->hThread != NIL_RTTHREAD)
     {
@@ -844,6 +839,12 @@ static void vboxClipboardDestroy(PSHCLCONTEXT pCtx)
         LogFlowFunc(("Waiting for thread resulted in %Rrc (thread exited with %Rrc)\n",
                      rc, rcThread));
         RT_NOREF(rc);
+    }
+
+    if (pWinCtx->hWnd)
+    {
+        DestroyWindow(pWinCtx->hWnd);
+        pWinCtx->hWnd = NULL;
     }
 
     UnregisterClass(s_szClipWndClassName, pCtx->pEnv->hInstance);
@@ -1018,6 +1019,12 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
                         break;
                     }
 
+                    case VBOX_SHCL_HOST_MSG_QUIT:
+                    {
+                        pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_QUIT;
+                        break;
+                    }
+
                     default:
                         rc = VERR_NOT_SUPPORTED;
                         break;
@@ -1144,6 +1151,14 @@ DECLCALLBACK(int) VBoxShClStop(void *pInstance)
     PSHCLCONTEXT pCtx = (PSHCLCONTEXT)pInstance;
     AssertPtr(pCtx);
 
+    /* Set shutdown indicator. */
+    ASMAtomicWriteBool(&pCtx->fShutdown, true);
+
+    /* Let our clipboard know that we're going to shut down. */
+    PostMessage(pCtx->Win.hWnd, WM_QUIT, 0, 0);
+
+    /* Disconnect from the host service.
+    /* This will also send a VBOX_SHCL_HOST_MSG_QUIT from the host so that we can break out from our message worker. */
     VbglR3ClipboardDisconnect(pCtx->CmdCtx.uClientID);
     pCtx->CmdCtx.uClientID = 0;
 
