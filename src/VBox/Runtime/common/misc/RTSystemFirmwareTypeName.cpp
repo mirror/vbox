@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - System firmware information, Generic stub.
+ * IPRT - RTSystemFirmwareTypeName.
  */
 
 /*
@@ -31,23 +31,20 @@
 #include "internal/iprt.h"
 #include <iprt/system.h>
 
-#include <iprt/errcore.h>
-#include <iprt/string.h>
 
-
-RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
+RTDECL(const char *) RTSystemFirmwareTypeName(RTSYSFWTYPE enmType)
 {
-    RT_NOREF(penmFirmwareType);
-    *penmFirmwareType = RTSYSFWTYPE_INVALID;
-    return VERR_NOT_SUPPORTED;
+    switch (enmType)
+    {
+        case RTSYSFWTYPE_INVALID:       return "Invalid";
+        case RTSYSFWTYPE_UNKNOWN:       return "Unknown";
+        case RTSYSFWTYPE_BIOS:          return "BIOS";
+        case RTSYSFWTYPE_UEFI:          return "UEFI";
+        case RTSYSFWTYPE_END:
+        case RTSYSFWTYPE_32_BIT_HACK:
+            break;
+    }
+    return "bad-firmware-type";
 }
-RT_EXPORT_SYMBOL(RTSystemQueryFirmwareType);
-
-
-RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue)
-{
-    RT_NOREF(enmProp, pfValue);
-    return VERR_NOT_SUPPORTED;
-}
-RT_EXPORT_SYMBOL(RTSystemQueryFirmwareBoolean);
+RT_EXPORT_SYMBOL(RTSystemFirmwareTypeName);
 

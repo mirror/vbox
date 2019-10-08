@@ -287,36 +287,15 @@ typedef RTSYSFWTYPE *PRTSYSFWTYPE;
  * @retval  VERR_NOT_SUPPORTED if not supported or implemented.
  * @param   penmType    Where to return the firmware type on success.
  */
-RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmType);
+RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmType);
 
 /**
- * Enumeration for defining a system firmware value type.
+ * Translates the @a enmType value to a string.
+ *
+ * @returns Read-only name.
+ * @param   enmType     The firmware type to convert to string.
  */
-typedef enum RTSYSFWVALUETYPE
-{
-    /** Invalid value type. */
-    RTSYSFWVALUETYPE_INVALID = 0,
-    /** Value is of type boolean. */
-    RTSYSFWVALUETYPE_BOOLEAN,
-    /** The usual 32-bit hack.  */
-    RTSYSFWVALUETYPE_32_BIT_HACK = 0x7fffffff
-} RTSYSFWVALUETYPE;
-
-/**
- * Structure for keeping a system firmware value.
- */
-typedef struct RTSYSFWVALUE
-{
-    /** Value type. */
-    RTSYSFWVALUETYPE enmType;
-    union
-    {
-        /** Boolean value. */
-        bool fVal;
-    } u;
-} RTSYSFWVALUE;
-/** Pointer to a system firmware value. */
-typedef RTSYSFWVALUE *PRTSYSFWVALUE;
+RTDECL(const char *) RTSystemFirmwareTypeName(RTSYSFWTYPE enmType);
 
 /**
  * Enumeration for a system firmware property.
@@ -341,17 +320,9 @@ typedef enum RTSYSFWPRPOP
  * @retval  VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY if @a enmProp isn't
  *          supported.
  * @param   enmProp     The property to query the value of.
- * @param   pValue      Where to return the value.  This is always zero'ed.
+ * @param   pfValue     Where to return the value.
  */
-RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue);
-
-/**
- * Free any allocations associated with a value returned by
- * RTSystemFirmwareQueryValue().
- *
- * @param   pValue  Result of a successful RTSystemFirmwareQueryValue() call.
- */
-RTDECL(void) RTSystemFirmwareFreeValue(PRTSYSFWVALUE pValue);
+RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue);
 
 #ifdef RT_OS_WINDOWS
 

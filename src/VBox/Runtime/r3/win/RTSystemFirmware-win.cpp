@@ -118,7 +118,7 @@ static int rtSystemFirmwareGetPrivileges(LPCTSTR pcszPrivilege)
 }
 
 
-RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmFirmwareType)
+RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
 {
     AssertPtrReturn(penmFirmwareType, VERR_INVALID_POINTER);
 
@@ -172,25 +172,18 @@ RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmFirmwareType)
 }
 
 
-RTDECL(void) RTSystemFirmwareFreeValue(PRTSYSFWVALUE pValue)
+RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue)
 {
-    RT_NOREF(pValue);
-}
-
-
-RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue)
-{
-    RT_ZERO(*pValue);
+    *pfValue = false;
 
     /*
-     * Translate the enmProp to a name and type:
+     * Translate the enmProp to a name:
      */
     const wchar_t *pwszName = NULL;
     switch (enmProp)
     {
         case RTSYSFWPROP_SECURE_BOOT:
             pwszName = L"SecureBoot";
-            pValue->enmType = RTSYSFWVALUETYPE_BOOLEAN;
             break;
 
         default:
@@ -199,28 +192,15 @@ RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue
     }
 
     /*
-     * Do type specific query.
+     * Do the query.
      */
     if (!g_pfnGetFirmwareEnvironmentVariableW)
         return VERR_NOT_SUPPORTED;
     rtSystemFirmwareGetPrivileges(SE_SYSTEM_ENVIRONMENT_NAME);
 
-    int rc;
-    switch (pValue->enmType)
-    {
-        case RTSYSFWVALUETYPE_BOOLEAN:
-        {
-            uint8_t bValue = 0;
-            DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(pwszName, VBOX_UEFI_UUID_GLOBALS, &bValue, sizeof(bValue));
-            pValue->u.fVal = cbRet != 0 && bValue != 0;
-            rc = cbRet != 0 || GetLastError() == ERROR_INVALID_FUNCTION ? VINF_SUCCESS : RTErrConvertFromWin32(GetLastError());
-            break;
-        }
-
-        default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR);
-    }
-
-    return rc;
+    uint8_t bValue = 0;
+    DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(pwszName, VBOX_UEFI_UUID_GLOBALS, &bValue, sizeof(bValue));
+    *pfValue = cbRet != 0 && bValue != 0;
+    return cbRet != 0 || GetLastError() == ERROR_INVALID_FUNCTION ? VINF_SUCCESS : RTErrConvertFromWin32(GetLastError());
 }
 

@@ -44,7 +44,7 @@
 #define VBOX_UEFI_UUID_GLOBALS "8be4df61-93ca-11d2-aa0d-00e098032b8c"
 
 
-RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmFirmwareType)
+RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
 {
     if (RTLinuxSysFsExists("firmware/efi/"))
         *penmFirmwareType = RTSYSFWTYPE_UEFI;
@@ -57,28 +57,20 @@ RTDECL(int) RTSystemFirmwareQueryType(PRTSYSFWTYPE penmFirmwareType)
     }
     return VINF_SUCCESS;
 }
-RT_EXPORT_SYMBOL(RTSystemFirmwareQueryType);
+RT_EXPORT_SYMBOL(RTSystemQueryFirmwareType);
 
 
-RTDECL(void) RTSystemFirmwareFreeValue(PRTSYSFWVALUE pValue)
+RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue)
 {
-    RT_NOREF(pValue);
-}
-RT_EXPORT_SYMBOL(RTSystemFirmwareFreeValue);
-
-
-RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue)
-{
-    RT_ZERO(*pValue);
+    *pfValue = false;
 
     /*
-     * Translate the property into type and variable base filename.
+     * Translate the property to variable base filename.
      */
     const char *pszName;
     switch (enmProp)
     {
         case RTSYSFWPROP_SECURE_BOOT:
-            pValue->enmType = RTSYSFWVALUETYPE_BOOLEAN;
             pszName = "firmware/efi/efivars/SecureBoot";
             break;
 
@@ -94,31 +86,20 @@ RTDECL(int) RTSystemFirmwareQueryValue(RTSYSFWPROP enmProp, PRTSYSFWVALUE pValue
     RTFILE hFile;
     int rc = RTLinuxSysFsOpen(&hFile, "%s-" VBOX_UEFI_UUID_GLOBALS, pszName);
     /** @todo try other suffixes if file-not-found. */
-
-    switch (pValue->enmType)
+    if (RT_SUCCESS(rc))
     {
-        case RTSYSFWVALUETYPE_BOOLEAN:
-        {
-            if (RT_SUCCESS(rc))
-            {
-                uint8_t abBuf[16];
-                size_t  cbRead = 0;
-                rc = RTLinuxSysFsReadFile(hFile, abBuf, sizeof(abBuf), &cbRead);
-                pValue->u.fVal = cbRead > 1 && abBuf[cbRead - 1] != 0;
-                RTFileClose(hFile);
-            }
-            else if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
-                rc = VINF_SUCCESS;
-            else if (rc == VERR_PERMISSION_DENIED)
-                rc = VERR_NOT_SUPPORTED;
-            break;
-        }
-
-        default:
-            AssertFailedReturn(VERR_INTERNAL_ERROR);
+        uint8_t abBuf[16];
+        size_t  cbRead = 0;
+        rc = RTLinuxSysFsReadFile(hFile, abBuf, sizeof(abBuf), &cbRead);
+        *pfValue = cbRead > 1 && abBuf[cbRead - 1] != 0;
+        RTFileClose(hFile);
     }
+    else if (rc == VERR_FILE_NOT_FOUND || rc == VERR_PATH_NOT_FOUND)
+        rc = VINF_SUCCESS;
+    else if (rc == VERR_PERMISSION_DENIED)
+        rc = VERR_NOT_SUPPORTED;
 
     return rc;
 }
-RT_EXPORT_SYMBOL(RTSystemFirmwareQueryValue);
+RT_EXPORT_SYMBOL(RTSystemQueryFirmwareBoolean);
 

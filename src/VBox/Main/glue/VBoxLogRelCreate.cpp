@@ -85,39 +85,22 @@ static DECLCALLBACK(void) vboxHeaderFooter(PRTLOGGER pReleaseLogger, RTLOGPHASE 
                 pfnLog(pReleaseLogger, "DMI Product Version: %s\n", szTmp);
 
             RTSYSFWTYPE enmType;
-            vrc = RTSystemFirmwareQueryType(&enmType);
+            vrc = RTSystemQueryFirmwareType(&enmType);
             if (RT_SUCCESS(vrc))
             {
-                pfnLog(pReleaseLogger, "Firmware type: ");
-
-                switch (enmType)
-                {
-                    case RTSYSFWTYPE_BIOS:
-                        pfnLog(pReleaseLogger, "BIOS\n");
-                        break;
-                    case RTSYSFWTYPE_UEFI:
-                        pfnLog(pReleaseLogger, "UEFI\n");
-                        break;
-                    case RTSYSFWTYPE_UNKNOWN: /* Not implemented on this platforms? */
-                        pfnLog(pReleaseLogger, "Unknown\n");
-                        break;
-                    default:
-                        AssertFailed();
-                        break;
-                }
-
+                pfnLog(pReleaseLogger, "Firmware type: %s\n", RTSystemFirmwareTypeName(enmType));
                 if (enmType == RTSYSFWTYPE_UEFI)
                 {
-                     RTSYSFWVALUE Value;
-                     vrc = RTSystemFirmwareQueryValue(RTSYSFWPROP_SECURE_BOOT, &Value);
+                     bool fValue;
+                     vrc = RTSystemQueryFirmwareBoolean(RTSYSFWPROP_SECURE_BOOT, &fValue);
                      if (RT_SUCCESS(vrc))
-                     {
-                         Assert(Value.enmType == RTSYSFWVALUETYPE_BOOLEAN);
-                         pfnLog(pReleaseLogger, "Secure Boot: %s\n", Value.u.fVal ? "Enabled" : "Disabled");
-                         RTSystemFirmwareFreeValue(&Value);
-                     }
+                         pfnLog(pReleaseLogger, "Secure Boot: %s\n", fValue ? "Enabled" : "Disabled");
+                     else
+                         pfnLog(pReleaseLogger, "Secure Boot: %Rrc\n", vrc);
                 }
             }
+            else
+                pfnLog(pReleaseLogger, "Firmware type: failed - %Rrc\n", vrc);
 
             uint64_t cbHostRam = 0, cbHostRamAvail = 0;
             vrc = RTSystemQueryTotalRam(&cbHostRam);
@@ -153,6 +136,7 @@ static DECLCALLBACK(void) vboxHeaderFooter(PRTLOGGER pReleaseLogger, RTLOGPHASE 
             RTLogSetBuffering(pReleaseLogger, fOldBuffered);
             break;
         }
+
         case RTLOGPHASE_PREROTATE:
             pfnLog(pReleaseLogger, "Log rotated - Log started %s\n", szTmp);
             break;
