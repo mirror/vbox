@@ -1173,6 +1173,8 @@ static LRESULT CALLBACK vboxToolWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
                                 else if (!uMsg)
                                     LogFlowFunc(("Tracking popup menu failed with %ld\n", GetLastError()));
                             }
+
+                            DestroyMenu(hContextMenu);
                         }
                     }
                     break;
