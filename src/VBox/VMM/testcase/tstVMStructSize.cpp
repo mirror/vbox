@@ -223,9 +223,6 @@ int main()
     CHECK_PADDING_VM(64, dbgf);
     CHECK_PADDING_VM(64, gim);
     CHECK_PADDING_VM(64, ssm);
-#ifdef VBOX_WITH_REM
-    CHECK_PADDING_VM(64, rem);
-#endif
     CHECK_PADDING_VM(8, vm);
     CHECK_PADDING_VM(8, cfgm);
     CHECK_PADDING_VM(8, apic);
@@ -258,11 +255,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VMCPU, vmm.s.CallRing3JmpBufR0.xmm6, 16);
 #endif
     CHECK_MEMBER_ALIGNMENT(VM, vmm.s.u64LastYield, 8);
-#ifdef VBOX_WITH_REM
-    CHECK_MEMBER_ALIGNMENT(VM, rem.s.uPendingExcptCR2, 8);
-    CHECK_MEMBER_ALIGNMENT(VM, rem.s.StatsInQEMU, 8);
-    CHECK_MEMBER_ALIGNMENT(VM, rem.s.Env, 64);
-#endif
 
     /* the VMCPUs are page aligned TLB hit reasons. */
     CHECK_SIZE_ALIGNMENT(VMCPU, 4096);
@@ -354,14 +346,6 @@ int main()
     CHECK_MEMBER_ALIGNMENT(PGMRAMRANGE, aPages, 16);
     CHECK_MEMBER_ALIGNMENT(PGMREGMMIORANGE, RamRange, 16);
 
-    /* rem */
-    CHECK_MEMBER_ALIGNMENT(REM, aGCPtrInvalidatedPages, 8);
-    CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalRegister, u.padding);
-    CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalDeregister, u.padding);
-    CHECK_PADDING3(REMHANDLERNOTIFICATION, u.PhysicalModify, u.padding);
-    CHECK_SIZE_ALIGNMENT(REMHANDLERNOTIFICATION, 8);
-    CHECK_MEMBER_ALIGNMENT(REMHANDLERNOTIFICATION, u.PhysicalDeregister.GCPhys, 8);
-
     /* TM */
     CHECK_MEMBER_ALIGNMENT(TM, TimerCritSect, sizeof(uintptr_t));
     CHECK_MEMBER_ALIGNMENT(TM, VirtualSyncLock, sizeof(uintptr_t));
@@ -376,9 +360,6 @@ int main()
 #endif
 
     CHECK_MEMBER_ALIGNMENT(IOM, CritSect, sizeof(uintptr_t));
-#ifdef VBOX_WITH_REM
-    CHECK_MEMBER_ALIGNMENT(EM, CritSectREM, sizeof(uintptr_t));
-#endif
     CHECK_MEMBER_ALIGNMENT(EMCPU, u.achPaddingFatalLongJump, 32);
     CHECK_MEMBER_ALIGNMENT(EMCPU, aExitRecords, sizeof(EMEXITREC));
     CHECK_MEMBER_ALIGNMENT(PGM, CritSectX, sizeof(uintptr_t));
