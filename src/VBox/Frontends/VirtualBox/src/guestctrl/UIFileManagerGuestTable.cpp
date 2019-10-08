@@ -209,7 +209,7 @@ void UIFileManagerGuestTable::readDirectory(const QString& strPath,
                 item->setData(changeTime, UICustomFileSystemModelColumn_ChangeTime);
                 item->setData(fsInfo.GetUserName(), UICustomFileSystemModelColumn_Owner);
                 item->setData(permissionString(fsInfo), UICustomFileSystemModelColumn_Permissions);
-                item->setPath(UIPathOperations::mergePaths(strPath, fsInfo.GetName()));
+                item->setPath(UIPathOperations::removeTrailingDelimiters(UIPathOperations::mergePaths(strPath, fsInfo.GetName())));
                 item->setIsOpened(false);
                 item->setIsHidden(isFileObjectHidden(fsInfo));
                 fileObjects.insert(fsInfo.GetName(), item);
@@ -292,7 +292,7 @@ bool UIFileManagerGuestTable::renameItem(UICustomFileSystemItem *item, QString n
 
     if (!item || item->isUpDirectory() || newBaseName.isEmpty())
         return false;
-    QString newPath = UIPathOperations::constructNewItemPath(item->path(), newBaseName);
+    QString newPath = UIPathOperations::removeTrailingDelimiters(UIPathOperations::constructNewItemPath(item->path(), newBaseName));
     QVector<KFsObjRenameFlag> aFlags(1, KFsObjRenameFlag_Replace);
 
     m_comGuestSession.FsObjRename(item->path(), newPath, aFlags);
