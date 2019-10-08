@@ -656,6 +656,8 @@ RT_C_DECLS_BEGIN
 void                iomMmioFreeRange(PVMCC pVM, PIOMMMIORANGE pRange);
 #ifdef IN_RING3
 PIOMMMIOSTATS       iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc);
+DECLCALLBACK(void)  iomR3IoPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+void                iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry);
 #endif /* IN_RING3 */
 
 #ifndef IN_RING3

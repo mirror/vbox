@@ -332,35 +332,68 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPO
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioCreateEx} */
 static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
                                                   uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                                  PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                                  PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
                                                   void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
 {
-    RT_NOREF(pDevIns, cbRegion, fFlags, pPciDev, iPciRegion, pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion);
-    return VERR_NOT_IMPLEMENTED;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_MmioCreateEx: caller='%s'/%d: cbRegion=%#RGp fFlags=%#x pPciDev=%p iPciRegion=%#x pfnWrite=%p pfnRead=%p pfnFill=%p pvUser=%p pszDesc=%p:{%s} phRegion=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, cbRegion, fFlags, pPciDev, iPciRegion, pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
+
+    int rc = IOMR3MmioCreate(pVM, pDevIns, cbRegion, fFlags, pPciDev, iPciRegion,
+                             pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion);
+
+    LogFlow(("pdmR3DevHlp_MmioCreateEx: caller='%s'/%d: returns %Rrc (*phRegion=%#x)\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, rc, *phRegion));
+    return rc;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioMap} */
 static DECLCALLBACK(int) pdmR3DevHlp_MmioMap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys)
 {
-    RT_NOREF(pDevIns, hRegion, GCPhys);
-    return VERR_NOT_IMPLEMENTED;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: hRegion=%#x GCPhys=%#RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, GCPhys));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+
+    int rc = IOMR3MmioMap(pVM, pDevIns, hRegion, GCPhys);
+
+    LogFlow(("pdmR3DevHlp_MmioMap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioUnmap} */
 static DECLCALLBACK(int) pdmR3DevHlp_MmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
 {
-    RT_NOREF(pDevIns, hRegion);
-    return VERR_NOT_IMPLEMENTED;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: hRegion=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+
+    int rc = IOMR3MmioUnmap(pVM, pDevIns, hRegion);
+
+    LogFlow(("pdmR3DevHlp_MmioUnmap: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnMmioReduce} */
 static DECLCALLBACK(int) pdmR3DevHlp_MmioReduce(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS cbRegion)
 {
-    RT_NOREF(pDevIns, hRegion, cbRegion);
-    return VERR_NOT_IMPLEMENTED;
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_MmioReduce: caller='%s'/%d: hRegion=%#x cbRegion=%#RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, cbRegion));
+    PVM pVM = pDevIns->Internal.s.pVMR3;
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_STATE_RETURN(pVM, VMSTATE_LOADING, VERR_VM_INVALID_VM_STATE);
+
+    int rc = IOMR3MmioReduce(pVM, pDevIns, hRegion, cbRegion);
+
+    LogFlow(("pdmR3DevHlp_MmioReduce: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
+    return rc;
 }
 
 
