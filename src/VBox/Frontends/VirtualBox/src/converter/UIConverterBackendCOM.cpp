@@ -605,7 +605,7 @@ template<> QString toString(const KStorageControllerType &type)
 {
     switch (type)
     {
-        case KStorageControllerType_LsiLogic:    return QApplication::translate("UICommon", "Lsilogic", "StorageControllerType");
+        case KStorageControllerType_LsiLogic:    return QApplication::translate("UICommon", "LsiLogic", "StorageControllerType");
         case KStorageControllerType_BusLogic:    return QApplication::translate("UICommon", "BusLogic", "StorageControllerType");
         case KStorageControllerType_IntelAhci:   return QApplication::translate("UICommon", "AHCI", "StorageControllerType");
         case KStorageControllerType_PIIX3:       return QApplication::translate("UICommon", "PIIX3", "StorageControllerType");
@@ -625,7 +625,7 @@ template<> QString toString(const KStorageControllerType &type)
 template<> KStorageControllerType fromString<KStorageControllerType>(const QString &strType)
 {
     QHash<QString, KStorageControllerType> list;
-    list.insert(QApplication::translate("UICommon", "Lsilogic", "StorageControllerType"),     KStorageControllerType_LsiLogic);
+    list.insert(QApplication::translate("UICommon", "LsiLogic", "StorageControllerType"),     KStorageControllerType_LsiLogic);
     list.insert(QApplication::translate("UICommon", "BusLogic", "StorageControllerType"),     KStorageControllerType_BusLogic);
     list.insert(QApplication::translate("UICommon", "AHCI", "StorageControllerType"),         KStorageControllerType_IntelAhci);
     list.insert(QApplication::translate("UICommon", "PIIX3", "StorageControllerType"),        KStorageControllerType_PIIX3);
