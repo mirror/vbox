@@ -167,15 +167,12 @@ int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
     LogFlowFuncEnter();
 
     PSHCLCONTEXT pCtx = pClient->State.pCtx;
+    AssertPtr(pCtx);
 
     /* Drop the reference to the client, in case it is still there.  This
      * will cause any outstanding clipboard data requests from X11 to fail
      * immediately. */
     pCtx->fShuttingDown = true;
-
-    /* If there is a currently pending request, release it immediately. */
-    SHCLDATABLOCK dataBlock = { 0, NULL, 0 };
-    ShClSvcImplWriteData(pClient, NULL, &dataBlock);
 
     int rc = ClipStopX11(pCtx->pBackend);
     /** @todo handle this slightly more reasonably, or be really sure
@@ -303,6 +300,10 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
 int ShClSvcImplWriteData(PSHCLCLIENT pClient,
                          PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData)
 {
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pData,   VERR_INVALID_POINTER);
+
     LogFlowFunc(("pClient=%p, pv=%p, cb=%RU32, uFormat=%02X\n",
                  pClient, pData->pvData, pData->cbData, pData->uFormat));
 

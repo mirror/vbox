@@ -899,6 +899,10 @@ int shclSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
 int shclSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                           PSHCLDATABLOCK pData)
 {
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
+    AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
+    AssertPtrReturn(pData,   VERR_INVALID_POINTER);
+
     SHCLEVENTID uEvent;
     if (pClient->State.uProtocolVer == 0)
     {
@@ -1110,8 +1114,6 @@ static DECLCALLBACK(int) svcUnload(void *)
 
 static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvClient)
 {
-    RT_NOREF(u32ClientID, pvClient);
-
     LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
