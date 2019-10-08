@@ -2297,67 +2297,78 @@ static DECLCALLBACK(RTEXITCODE) gctlHandleMv(PGCTLCMDCTX pCtx, int argc, char **
 
     HRESULT rc = S_OK;
 
+    /* Destination must be a directory when specifying multiple sources. */
     if (cSources > 1)
     {
-        BOOL fExists = FALSE;
-        rc = pCtx->pGuestSession->DirectoryExists(Bstr(pszDst).raw(), FALSE /*followSymlinks*/, &fExists);
-        if (FAILED(rc) || !fExists)
-            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Destination must be a directory when specifying multiple sources\n");
+        ComPtr<IGuestFsObjInfo> pFsObjInfo;
+        rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(pszDst).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
+        if (FAILED(rc))
+        {
+            return RTMsgErrorExit(RTEXITCODE_FAILURE, "Destination does not exist\n");
+        }
+        else
+        {
+            FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC */
+            rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
+            if (SUCCEEDED(rc))
+            {
+                if (enmObjType != FsObjType_Directory)
+                    return RTMsgErrorExit(RTEXITCODE_FAILURE, "Destination must be a directory when specifying multiple sources\n");
+            }
+            else
+                return RTMsgErrorExit(RTEXITCODE_FAILURE, "Unable to determine destination type: %Rhrc\n", rc);
+        }
     }
 
     /*
      * Rename (move) the entries.
      */
     if (pCtx->cVerbose)
-        RTPrintf("Renaming %RU32 %s ...\n", cSources, cSources > 1 ? "entries" : "entry");
+        RTPrintf("Renaming %RU32 %s ...\n", cSources, cSources > 1 ? "sources" : "source");
 
     std::vector< Utf8Str >::iterator it = vecSources.begin();
     while (   it != vecSources.end()
            && !g_fGuestCtrlCanceled)
     {
-        Utf8Str strCurSource = (*it);
+        Utf8Str strSrcCur = (*it);
 
         ComPtr<IGuestFsObjInfo> pFsObjInfo;
         FsObjType_T enmObjType = FsObjType_Unknown; /* Shut up MSC */
-        rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strCurSource).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
+        rc = pCtx->pGuestSession->FsObjQueryInfo(Bstr(strSrcCur).raw(), FALSE /*followSymlinks*/, pFsObjInfo.asOutParam());
         if (SUCCEEDED(rc))
             rc = pFsObjInfo->COMGETTER(Type)(&enmObjType);
         if (FAILED(rc))
         {
-            if (pCtx->cVerbose)
-                RTPrintf("Warning: Cannot stat for element \"%s\": No such file or directory\n", strCurSource.c_str());
+            RTPrintf("Cannot stat \"%s\": No such file or directory\n", strSrcCur.c_str());
             ++it;
             continue; /* Skip. */
         }
 
+        char *pszDstCur = NULL;
+
+        if (cSources > 1)
+        {
+            pszDstCur = RTPathJoinA(pszDst, RTPathFilename(strSrcCur.c_str()));
+        }
+        else
+            pszDstCur = RTStrDup(pszDst);
+
+        AssertPtrBreakStmt(pszDstCur, VERR_NO_MEMORY);
+
         if (pCtx->cVerbose)
             RTPrintf("Renaming %s \"%s\" to \"%s\" ...\n",
                      enmObjType == FsObjType_Directory ? "directory" : "file",
-                     strCurSource.c_str(), pszDst);
+                     strSrcCur.c_str(), pszDstCur);
 
         if (!fDryrun)
         {
-            if (enmObjType == FsObjType_Directory)
-            {
-                CHECK_ERROR_BREAK(pCtx->pGuestSession, FsObjRename(Bstr(strCurSource).raw(),
-                                                                   Bstr(pszDst).raw(),
-                                                                   ComSafeArrayAsInParam(aRenameFlags)));
-
-                /* Break here, since it makes no sense to rename mroe than one source to
-                 * the same directory. */
-/** @todo r=bird: You are being kind of windowsy (or just DOSish) about the 'sense' part here,
- * while being totaly buggy about the behavior. 'VBoxManage guestcontrol ren dir1 dir2 dstdir' will
- * stop after 'dir1' and SILENTLY ignore dir2.  If you tried this on Windows, you'd see an error
- * being displayed.  If you 'man mv' on a nearby unixy system, you'd see that they've made perfect
- * sense out of any situation with more than one source. */
-                it = vecSources.end();
-                break;
-            }
-            else
-                CHECK_ERROR_BREAK(pCtx->pGuestSession, FsObjRename(Bstr(strCurSource).raw(),
-                                                                   Bstr(pszDst).raw(),
-                                                                   ComSafeArrayAsInParam(aRenameFlags)));
+            CHECK_ERROR(pCtx->pGuestSession, FsObjRename(Bstr(strSrcCur).raw(),
+                                                         Bstr(pszDstCur).raw(),
+                                                         ComSafeArrayAsInParam(aRenameFlags)));
+            /* Keep going with next item in case of errors. */
         }
+
+        RTStrFree(pszDstCur);
 
         ++it;
     }
