@@ -162,7 +162,7 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC, const
 static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
 #endif
 {
-    NOREF(rcRC);
+    RT_NOREF(rcRC, pVM);
 
 #ifdef LOG_ENABLED
     /*
