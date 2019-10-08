@@ -163,9 +163,6 @@ PFNRT g_VMMR0Deps[] =
 extern "C" { char _depends_on[] = "vboxdrv"; }
 #endif
 
-/** The result of SUPR0GetRawModeUsability(), set by ModuleInit(). */
-int g_rcRawModeUsability = VINF_SUCCESS;
-
 
 /**
  * Initialize the module.
@@ -256,10 +253,6 @@ DECLEXPORT(int) ModuleInit(void *hMod)
                                             VMM_CHECK_SMAP_CHECK(rc = VERR_VMM_SMAP_BUT_AC_CLEAR);
                                             if (RT_SUCCESS(rc))
                                             {
-                                                g_rcRawModeUsability = SUPR0GetRawModeUsability();
-                                                if (g_rcRawModeUsability != VINF_SUCCESS)
-                                                    SUPR0Printf("VMMR0!ModuleInit: SUPR0GetRawModeUsability -> %Rrc\n",
-                                                                g_rcRawModeUsability);
                                                 LogFlow(("ModuleInit: returns success\n"));
                                                 return VINF_SUCCESS;
                                             }
