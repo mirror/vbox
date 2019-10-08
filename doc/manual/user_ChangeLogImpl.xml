@@ -64,7 +64,7 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          Virtualization core: support for nested hardware-virtualization
+          Virtualization core: Support for nested hardware-virtualization
           on Intel CPUs (starting with 5th generation Core i, codename
           Broadwell)
         </para>
@@ -72,7 +72,7 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          Graphics: new style 3D support (with VBoxSVGA and VMSVGA) remains,
+          Graphics: New style 3D support (with VBoxSVGA and VMSVGA) remains,
           old style 3D support (with VBoxVGA) has been completely removed
         </para>
       </listitem>
@@ -122,7 +122,7 @@ technical terms if no non-technical ones are clear enough.
         <para>
           GUI: VM storage settings page was adjusted a bit in usability regard. User is now
           allowed to change controller bus type and can move attachments between the controllers
-           by using drag and drop
+          by using drag and drop
         </para>
       </listitem>
 
@@ -149,6 +149,12 @@ technical terms if no non-technical ones are clear enough.
         <para>vboximg-mount: Experimental support for direct read-only access
           to NTFS, FAT and ext2/3/4 filesystems inside a disk image without
           the need for support on the host
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>Guest Control/VBoxManage: Added support for specifying multiple sources
+          when renaming guest files
         </para>
       </listitem>
 
