@@ -250,9 +250,6 @@ DECLINLINE(uint64_t) tmVirtualGet(PVMCC pVM, bool fCheckTimers)
                 Log5(("TMAllVirtual(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
                 VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-# ifdef VBOX_WITH_REM
-                REMR3NotifyTimerPending(pVM, pVCpuDst);
-# endif
                 VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
             }
@@ -411,9 +408,6 @@ DECLINLINE(uint64_t) tmVirtualSyncGetHandleCatchUpLocked(PVMCC pVM, uint64_t u64
         if (pcNsToDeadline)
             *pcNsToDeadline = 0;
 #ifdef IN_RING3
-# ifdef VBOX_WITH_REM
-        REMR3NotifyTimerPending(pVM, pVCpuDst);
-# endif
         VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
         STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);
@@ -497,9 +491,6 @@ DECLINLINE(uint64_t) tmVirtualSyncGetLocked(PVMCC pVM, uint64_t u64, uint64_t *p
         PDMCritSectLeave(&pVM->tm.s.VirtualSyncLock);
 
 #ifdef IN_RING3
-# ifdef VBOX_WITH_REM
-        REMR3NotifyTimerPending(pVM, pVCpuDst);
-# endif
         VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
         if (pcNsToDeadline)
@@ -553,9 +544,6 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers, uint64_t *
             Log5(("TMAllVirtual(%u): FF: 0 -> 1\n", __LINE__));
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-# ifdef VBOX_WITH_REM
-            REMR3NotifyTimerPending(pVM, pVCpuDst);
-# endif
             VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM /** @todo |VMNOTIFYFF_FLAGS_POKE*/);
 #endif
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);
@@ -723,9 +711,6 @@ DECLINLINE(uint64_t) tmVirtualSyncGetEx(PVMCC pVM, bool fCheckTimers, uint64_t *
             VM_FF_SET(pVM, VM_FF_TM_VIRTUAL_SYNC); /* Hmm? */
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-# ifdef VBOX_WITH_REM
-            REMR3NotifyTimerPending(pVM, pVCpuDst);
-# endif
             VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
             STAM_COUNTER_INC(&pVM->tm.s.StatVirtualSyncGetSetFF);

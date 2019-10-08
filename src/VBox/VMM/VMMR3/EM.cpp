@@ -189,15 +189,6 @@ VMMR3_INT_DECL(int) EMR3Init(PVM pVM)
         pVCpu->em.s.cHistoryProbeMaxInstructionsWithoutExit   = cHistoryProbeMaxInstructionsWithoutExit;
     }
 
-#ifdef VBOX_WITH_REM
-    /*
-     * Initialize the REM critical section.
-     */
-    AssertCompileMemberAlignment(EM, CritSectREM, sizeof(uintptr_t));
-    rc = PDMR3CritSectInit(pVM, &pVM->em.s.CritSectREM, RT_SRC_POS, "EM-REM");
-    AssertRCReturn(rc, rc);
-#endif
-
     /*
      * Saved state.
      */
@@ -423,11 +414,7 @@ VMMR3_INT_DECL(void) EMR3Reset(PVM pVM)
  */
 VMMR3_INT_DECL(int) EMR3Term(PVM pVM)
 {
-#ifdef VBOX_WITH_REM
-    PDMR3CritSectDelete(&pVM->em.s.CritSectREM);
-#else
     RT_NOREF(pVM);
-#endif
     return VINF_SUCCESS;
 }
 
@@ -833,7 +820,7 @@ static VBOXSTRICTRC emR3Debug(PVM pVM, PVMCPU pVCpu, VBOXSTRICTRC rc)
                     rc = EMR3HmSingleInstruction(pVM, pVCpu, 0 /*fFlags*/);
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_NEM)
                     rc = VBOXSTRICTRC_TODO(emR3NemSingleInstruction(pVM, pVCpu, 0 /*fFlags*/));
-#ifdef VBOX_WITH_REM
+#ifdef VBOX_WITH_REM /** @todo fix me? */
                 else if (pVCpu->em.s.enmState == EMSTATE_DEBUG_GUEST_REM)
                     rc = emR3RemStep(pVM, pVCpu);
 #endif
@@ -1004,49 +991,12 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
 {
     Log3(("emR3RemStep: cs:eip=%04x:%08x\n", CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
 
-# ifdef VBOX_WITH_REM
-    EMRemLock(pVM);
-
-    /*
-     * Switch to REM, step instruction, switch back.
-     */
-    int rc = REMR3State(pVM, pVCpu);
-    if (RT_SUCCESS(rc))
-    {
-        rc = REMR3Step(pVM, pVCpu);
-        REMR3StateBack(pVM, pVCpu);
-    }
-    EMRemUnlock(pVM);
-
-# else
     int rc = VBOXSTRICTRC_TODO(IEMExecOne(pVCpu)); NOREF(pVM);
-# endif
 
     Log3(("emR3RemStep: returns %Rrc cs:eip=%04x:%08x\n", rc, CPUMGetGuestCS(pVCpu),  CPUMGetGuestEIP(pVCpu)));
     return rc;
 }
 #endif /* VBOX_WITH_REM || DEBUG */
-
-
-#ifdef VBOX_WITH_REM
-/**
- * emR3RemExecute helper that syncs the state back from REM and leave the REM
- * critical section.
- *
- * @returns false - new fInREMState value.
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
-{
-    STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, a);
-    REMR3StateBack(pVM, pVCpu);
-    STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, a);
-
-    EMRemUnlock(pVM);
-    return false;
-}
-#endif
 
 
 /**
@@ -1087,66 +1037,17 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
      * or the REM suggests raw-mode execution.
      */
     *pfFFDone = false;
-#ifdef VBOX_WITH_REM
-    bool    fInREMState = false;
-#else
     uint32_t cLoops     = 0;
-#endif
     int     rc          = VINF_SUCCESS;
     for (;;)
     {
-#ifdef VBOX_WITH_REM
-        /*
-         * Lock REM and update the state if not already in sync.
-         *
-         * Note! Big lock, but you are not supposed to own any lock when
-         *       coming in here.
-         */
-        if (!fInREMState)
-        {
-            EMRemLock(pVM);
-            STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, b);
-
-            /* Flush the recompiler translation blocks if the VCPU has changed,
-               also force a full CPU state resync. */
-            if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
-            {
-                REMFlushTBs(pVM);
-                CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
-            }
-            pVM->em.s.idLastRemCpu = pVCpu->idCpu;
-
-            rc = REMR3State(pVM, pVCpu);
-
-            STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, b);
-            if (RT_FAILURE(rc))
-                break;
-            fInREMState = true;
-
-            /*
-             * We might have missed the raising of VMREQ, TIMER and some other
-             * important FFs while we were busy switching the state. So, check again.
-             */
-            if (    VM_FF_IS_ANY_SET(pVM, VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_DBGF | VM_FF_CHECK_VM_STATE | VM_FF_RESET)
-                ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_TIMER | VMCPU_FF_REQUEST))
-            {
-                LogFlow(("emR3RemExecute: Skipping run, because FF is set. %#x\n", pVM->fGlobalForcedActions));
-                goto l_REMDoForcedActions;
-            }
-        }
-#endif
-
         /*
          * Execute REM.
          */
         if (RT_LIKELY(emR3IsExecutionAllowed(pVM, pVCpu)))
         {
             STAM_PROFILE_START(&pVCpu->em.s.StatREMExec, c);
-#ifdef VBOX_WITH_REM
-            rc = REMR3Run(pVM, pVCpu);
-#else
             rc = VBOXSTRICTRC_TODO(IEMExecLots(pVCpu, 8192 /*cMaxInstructions*/, 4095 /*cPollRate*/, NULL /*pcInstructions*/));
-#endif
             STAM_PROFILE_STOP(&pVCpu->em.s.StatREMExec, c);
         }
         else
@@ -1164,12 +1065,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
          */
         if (    VM_FF_IS_ANY_SET(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
-        {
-#ifdef VBOX_WITH_REM
-            fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
-#endif
             rc = VBOXSTRICTRC_TODO(emR3HighPriorityPostForcedActions(pVM, pVCpu, rc));
-        }
 
         /*
          * Process the returned status code.
@@ -1180,7 +1076,6 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
                 break;
             if (rc != VINF_REM_INTERRUPED_FF)
             {
-#ifndef VBOX_WITH_REM
                 /* Try dodge unimplemented IEM trouble by reschduling. */
                 if (   rc == VERR_IEM_ASPECT_NOT_IMPLEMENTED
                     || rc == VERR_IEM_INSTR_NOT_IMPLEMENTED)
@@ -1192,7 +1087,6 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
                         break;
                     }
                 }
-#endif
 
                 /*
                  * Anything which is not known to us means an internal error
@@ -1217,11 +1111,6 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         if (    VM_FF_IS_ANY_SET(pVM, VM_FF_ALL_REM_MASK)
             ||  VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_ALL_REM_MASK) )
         {
-#ifdef VBOX_WITH_REM
-l_REMDoForcedActions:
-            if (fInREMState)
-                fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
-#endif
             STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatREMTotal, a);
             rc = emR3ForcedActions(pVM, pVCpu, rc);
             VBOXVMM_EM_FF_ALL_RET(pVCpu, rc);
@@ -1234,7 +1123,6 @@ l_REMDoForcedActions:
             }
         }
 
-#ifndef VBOX_WITH_REM
         /*
          * Have to check if we can get back to fast execution mode every so often.
          */
@@ -1245,18 +1133,8 @@ l_REMDoForcedActions:
                 && enmCheck != EMSTATE_IEM_THEN_REM)
                 return VINF_EM_RESCHEDULE;
         }
-#endif
 
     } /* The Inner Loop, recompiled execution mode version. */
-
-
-#ifdef VBOX_WITH_REM
-    /*
-     * Returning. Sync back the VM state if required.
-     */
-    if (fInREMState)
-        fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
-#endif
 
     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatREMTotal, a);
     return rc;
@@ -1893,25 +1771,8 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
             }
         }
 
-#ifdef VBOX_WITH_REM
-        /* Replay the handler notification changes. */
-        if (VM_FF_IS_PENDING_EXCEPT(pVM, VM_FF_REM_HANDLER_NOTIFY, VM_FF_PGM_NO_MEMORY))
-        {
-            /* Try not to cause deadlocks. */
-            if (    pVM->cCpus == 1
-                ||  (   !PGMIsLockOwner(pVM)
-                     && !IOMIsLockWriteOwner(pVM))
-               )
-            {
-                EMRemLock(pVM);
-                REMR3ReplayHandlerNotifications(pVM);
-                EMRemUnlock(pVM);
-            }
-        }
-#endif
-
         /* check that we got them all  */
-        AssertCompile(VM_FF_NORMAL_PRIORITY_MASK == (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_REM_HANDLER_NOTIFY | VM_FF_EMT_RENDEZVOUS));
+        AssertCompile(VM_FF_NORMAL_PRIORITY_MASK == (VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS));
     }
 
     /*

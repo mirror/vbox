@@ -273,15 +273,6 @@ VMM_INT_DECL(int)               EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMC
 /** @} */
 
 
-/** @name REM locking routines
- * @{ */
-VMMDECL(void)                   EMRemUnlock(PVM pVM);
-VMMDECL(void)                   EMRemLock(PVM pVM);
-VMMDECL(bool)                   EMRemIsLockOwner(PVM pVM);
-VMM_INT_DECL(int)               EMRemTryLock(PVM pVM);
-/** @} */
-
-
 /** @name EM_ONE_INS_FLAGS_XXX - flags for EMR3HmSingleInstruction (et al).
  * @{ */
 /** Return when CS:RIP changes or some other important event happens.

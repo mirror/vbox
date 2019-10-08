@@ -1908,9 +1908,6 @@ VMMR3DECL(int) PGMR3PhysRegisterRam(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, const
      */
     rc = NEMR3NotifyPhysRamRegister(pVM, GCPhys, cb);
     pgmUnlock(pVM);
-#ifdef VBOX_WITH_REM
-    REMR3NotifyPhysRamRegister(pVM, GCPhys, cb, REM_NOTIFY_PHYS_RAM_FLAGS_RAM);
-#endif
     return rc;
 }
 
@@ -3627,10 +3624,6 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
 
     pgmUnlock(pVM);
 
-#ifdef VBOX_WITH_REM
-    if (!fRamExists && (pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)) /** @todo this doesn't look right. */
-        REMR3NotifyPhysRamRegister(pVM, GCPhys, cbRange, REM_NOTIFY_PHYS_RAM_FLAGS_MMIO2);
-#endif
     return rc;
 }
 
@@ -3774,10 +3767,6 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
                              | (fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING ? NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE : 0);
     rc = NEMR3NotifyPhysMmioExUnmap(pVM, GCPhysRangeNotify, cbRange, fNemFlags);
     pgmUnlock(pVM);
-#ifdef VBOX_WITH_REM
-    if ((fOldFlags & (PGMREGMMIORANGE_F_OVERLAPPING | PGMREGMMIORANGE_F_MMIO2)) == PGMREGMMIORANGE_F_MMIO2)
-        REMR3NotifyPhysRamDeregister(pVM, GCPhysRangeNotify, cbRange);
-#endif
     return rc;
 }
 
@@ -4257,9 +4246,6 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
              */
             if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
             {
-#ifdef VBOX_WITH_REM
-                REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, true /* fShadowed */);
-#endif
                 if (RT_SUCCESS(rc))
                     rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
                                                     pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
@@ -4271,9 +4257,6 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                     rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
                                                     pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
                                                     pszDesc);
-#ifdef VBOX_WITH_REM
-                REMR3NotifyPhysRomRegister(pVM, GCPhys, cb, NULL, false /* fShadowed */);
-#endif
             }
             if (RT_SUCCESS(rc))
             {
@@ -4708,9 +4691,6 @@ VMMDECL(void) PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable)
 #endif
         pVCpu->pgm.s.fA20Enabled = fEnable;
         pVCpu->pgm.s.GCPhysA20Mask = ~((RTGCPHYS)!fEnable << 20);
-#ifdef VBOX_WITH_REM
-        REMR3A20Set(pVCpu->pVMR3, pVCpu, fEnable);
-#endif
         NEMR3NotifySetA20(pVCpu, fEnable);
 #ifdef PGM_WITH_A20
         VMCPU_FF_SET(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
@@ -4925,10 +4905,6 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysUnmapChunkRendezvous(PVM pVM, PVMCPU 
                     /* Flush REM TLBs. */
                     CPUMSetChangedFlags(pVM->apCpusR3[idCpu], CPUM_CHANGED_GLOBAL_TLB_FLUSH);
                 }
-#ifdef VBOX_WITH_REM
-                /* Flush REM translation blocks. */
-                REMFlushTBs(pVM);
-#endif
             }
         }
     }

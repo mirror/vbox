@@ -224,10 +224,6 @@ VBoxVMM_SOURCES += \
 	VMMR3/PDMNetShaper.cpp \
 	VMMAll/PDMAllNetShaper.cpp
 endif
-ifdef VBOX_WITH_REM
-VBoxVMM_SOURCES += \
-	VMMAll/REMAll.cpp
-endif
 
 ifdef VBOX_WITH_NATIVE_NEM
 VBoxVMM_SOURCES.win.amd64 += VMMR3/NEMR3Native-win.cpp
@@ -543,10 +539,6 @@ VMMR0_SOURCES += \
  ifdef VBOX_WITH_NETSHAPER
 VMMR0_SOURCES += \
 	VMMAll/PDMAllNetShaper.cpp
- endif
- ifdef VBOX_WITH_REM
-VMMR0_SOURCES += \
-	VMMAll/REMAll.cpp
  endif
 VMMR0_SOURCES.amd64 = \
 	VMMR0/VMMR0JmpA-amd64.asm

@@ -132,19 +132,12 @@ struc VM
     .tm                     resb 7872
     .dbgf                   resb 2432
     .ssm                    resb 128
-%ifdef VBOX_WITH_REM
-    .rem                    resb 0x11100
-%endif
     .gim                    resb 448
     .apic                   resb 128
     .vm                     resb 32
     .cfgm                   resb 8
 
-%ifdef VBOX_WITH_REM
-    .abAlignment2           resb 2968       - RTR0PTR_CB * VMM_MAX_CPU_COUNT
-%else
     .abAlignment2           resb 2968 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
-%endif
 
     alignb RTR0PTR_CB * VMM_MAX_CPU_COUNT ; ASSUMES VMM_MAX_CPU_COUNT is a power of two.
     .apCpusR3               RTR3PTR_RES VMM_MAX_CPU_COUNT

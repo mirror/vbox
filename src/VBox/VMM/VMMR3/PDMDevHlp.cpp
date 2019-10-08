@@ -2866,9 +2866,6 @@ static DECLCALLBACK(void) pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns)
 
     AssertMsg(pVM->pdm.s.pDmac, ("Configuration error: No DMAC controller available. This could be related to init order too!\n"));
     VM_FF_SET(pVM, VM_FF_PDM_DMA);
-#ifdef VBOX_WITH_REM
-    REMR3NotifyDmaPending(pVM);
-#endif
     VMR3NotifyGlobalFFU(pVM->pUVM, VMNOTIFYFF_FLAGS_DONE_REM);
 }
 

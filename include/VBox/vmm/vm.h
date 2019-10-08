@@ -81,8 +81,6 @@ typedef enum VMCPUSTATE
     VMCPUSTATE_STARTED_HM,
     /** Executing guest code and can be poked (RC or STI bits of HM). */
     VMCPUSTATE_STARTED_EXEC,
-    /** Executing guest code in the recompiler. */
-    VMCPUSTATE_STARTED_EXEC_REM,
     /** Executing guest code using NEM. */
     VMCPUSTATE_STARTED_EXEC_NEM,
     VMCPUSTATE_STARTED_EXEC_NEM_WAIT,
@@ -367,7 +365,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
  * action mask of a VM.
  *
  * Available VM bits:
- *      0, 1, 5, 6, 7, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 30
+ *      0, 1, 5, 6, 7, 13, 14, 15, 16, 17, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30
  *
  *
  * Available VMCPU bits:
@@ -425,10 +423,6 @@ AssertCompileSizeAlignment(VMCPU, 4096);
   */
 #define VM_FF_PGM_POOL_FLUSH_PENDING        RT_BIT_32(VM_FF_PGM_POOL_FLUSH_PENDING_BIT)
 #define VM_FF_PGM_POOL_FLUSH_PENDING_BIT    20
-/** REM needs to be informed about handler changes. */
-#define VM_FF_REM_HANDLER_NOTIFY            RT_BIT_32(VM_FF_REM_HANDLER_NOTIFY_BIT)
-/** The bit number for VM_FF_REM_HANDLER_NOTIFY. */
-#define VM_FF_REM_HANDLER_NOTIFY_BIT        29
 /** Suspend the VM - debug only. */
 #define VM_FF_DEBUG_SUSPEND                 RT_BIT_32(VM_FF_DEBUG_SUSPEND_BIT)
 #define VM_FF_DEBUG_SUSPEND_BIT             31
@@ -588,8 +582,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 #define VMCPU_FF_NORMAL_PRIORITY_POST_MASK      ( VMCPU_FF_DBGF )
 
 /** Normal priority VM actions. */
-#define VM_FF_NORMAL_PRIORITY_MASK              (  VM_FF_REQUEST            | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA \
-                                                 | VM_FF_REM_HANDLER_NOTIFY | VM_FF_EMT_RENDEZVOUS)
+#define VM_FF_NORMAL_PRIORITY_MASK              (  VM_FF_REQUEST | VM_FF_PDM_QUEUES | VM_FF_PDM_DMA | VM_FF_EMT_RENDEZVOUS)
 /** Normal priority VMCPU actions. */
 #define VMCPU_FF_NORMAL_PRIORITY_MASK           (  VMCPU_FF_REQUEST )
 
@@ -1401,17 +1394,6 @@ typedef struct VM
         uint8_t     padding[128];       /* multiple of 64 */
     } ssm;
 
-#ifdef VBOX_WITH_REM
-    /** REM part. */
-    union
-    {
-# ifdef VMM_INCLUDED_SRC_include_REMInternal_h
-        struct REM  s;
-# endif
-        uint8_t     padding[0x11100];   /* multiple of 64 */
-    } rem;
-#endif
-
     union
     {
 #ifdef VMM_INCLUDED_SRC_include_GIMInternal_h
@@ -1449,11 +1431,7 @@ typedef struct VM
     } cfgm;
 
     /** Padding for aligning the structure size on a page boundrary. */
-#ifdef VBOX_WITH_REM
-    uint8_t         abAlignment2[2968       - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
-#else
     uint8_t         abAlignment2[2968 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
-#endif
 
     /* ---- end small stuff ---- */
 

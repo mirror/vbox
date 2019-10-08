@@ -197,25 +197,6 @@ static int emR3HmExecuteInstructionWorker(PVM pVM, PVMCPU pVCpu, int rcRC)
     }
     STAM_PROFILE_STOP(&pVCpu->em.s.StatIEMEmu, a);
 
-    if (   rcStrict == VERR_IEM_ASPECT_NOT_IMPLEMENTED
-        || rcStrict == VERR_IEM_INSTR_NOT_IMPLEMENTED)
-    {
-#ifdef VBOX_WITH_REM
-        STAM_PROFILE_START(&pVCpu->em.s.StatREMEmu, b);
-        EMRemLock(pVM);
-        /* Flush the recompiler TLB if the VCPU has changed. */
-        if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
-            CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
-        pVM->em.s.idLastRemCpu = pVCpu->idCpu;
-
-        rcStrict = REMR3EmulateInstruction(pVM, pVCpu);
-        EMRemUnlock(pVM);
-        STAM_PROFILE_STOP(&pVCpu->em.s.StatREMEmu, b);
-#else  /* !VBOX_WITH_REM */
-        NOREF(pVM);
-#endif /* !VBOX_WITH_REM */
-    }
-
     return VBOXSTRICTRC_TODO(rcStrict);
 }
 

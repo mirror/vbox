@@ -74,8 +74,6 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE,
     /** Acquire the MM hypervisor heap lock. */
     VMMCALLRING3_MMHYPER_LOCK,
-    /** Replay the REM handler notifications. */
-    VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS,
     /** Flush the GC/R0 logger. */
     VMMCALLRING3_VMM_LOGGER_FLUSH,
     /** Set the VM error message. */

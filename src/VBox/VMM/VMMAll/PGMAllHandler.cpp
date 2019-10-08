@@ -286,13 +286,6 @@ int pgmHandlerPhysicalExRegister(PVMCC pVM, PPGMPHYSHANDLER pPhysHandler, RTGCPH
 #endif
         pgmUnlock(pVM);
 
-#ifdef VBOX_WITH_REM
-# ifndef IN_RING3
-        REMNotifyHandlerPhysicalRegister(pVM, pType->enmKind, GCPhys, GCPhysLast - GCPhys + 1, !!pType->pfnHandlerR3);
-# else
-        REMR3NotifyHandlerPhysicalRegister(pVM, pType->enmKind, GCPhys, GCPhysLast - GCPhys + 1, !!pType->pfnHandlerR3);
-# endif
-#endif
         if (rc != VINF_SUCCESS)
             Log(("PGMHandlerPhysicalRegisterEx: returns %Rrc (%RGp-%RGp)\n", rc, GCPhys, GCPhysLast));
         return rc;
@@ -610,15 +603,6 @@ static void pgmHandlerPhysicalDeregisterNotifyREMAndNEM(PVMCC pVM, PPGMPHYSHANDL
      */
     const bool fRestoreAsRAM2 = pCurType->pfnHandlerR3
                              && pCurType->enmKind != PGMPHYSHANDLERKIND_MMIO; /** @todo this isn't entirely correct. */
-#ifdef VBOX_WITH_REM
-# ifndef IN_RING3
-    REMNotifyHandlerPhysicalDeregister(pVM, pCurType->enmKind, GCPhysStart, GCPhysLast - GCPhysStart + 1,
-                                       !!pCurType->pfnHandlerR3, fRestoreAsRAM2);
-# else
-    REMR3NotifyHandlerPhysicalDeregister(pVM, pCurType->enmKind, GCPhysStart, GCPhysLast - GCPhysStart + 1,
-                                         !!pCurType->pfnHandlerR3, fRestoreAsRAM2);
-# endif
-#endif
     /** @todo do we need this notification? */
     NEMHCNotifyHandlerPhysicalDeregister(pVM, pCurType->enmKind, GCPhysStart, GCPhysLast - GCPhysStart + 1,
                                          fRestoreAsRAM, fRestoreAsRAM2);
@@ -882,9 +866,6 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHY
                 {
                     RTGCPHYS            const cb            = GCPhysLast - GCPhys + 1;
                     PGMPHYSHANDLERKIND  const enmKind       = pCurType->enmKind;
-#ifdef VBOX_WITH_REM
-                    bool                const fHasHCHandler = !!pCurType->pfnHandlerR3;
-#endif
 
                     /*
                      * Set ram flags, flush shadow PT entries and finally tell REM about this.
@@ -896,15 +877,6 @@ VMMDECL(int) PGMHandlerPhysicalModify(PVMCC pVM, RTGCPHYS GCPhysCurrent, RTGCPHY
 
                     pgmUnlock(pVM);
 
-#ifdef VBOX_WITH_REM
-# ifndef IN_RING3
-                    REMNotifyHandlerPhysicalModify(pVM, enmKind, GCPhysCurrent, GCPhys, cb,
-                                                   fHasHCHandler, fRestoreAsRAM);
-# else
-                    REMR3NotifyHandlerPhysicalModify(pVM, enmKind, GCPhysCurrent, GCPhys, cb,
-                                                     fHasHCHandler, fRestoreAsRAM);
-# endif
-#endif
                     PGM_INVL_ALL_VCPU_TLBS(pVM);
                     Log(("PGMHandlerPhysicalModify: GCPhysCurrent=%RGp -> GCPhys=%RGp GCPhysLast=%RGp\n",
                          GCPhysCurrent, GCPhys, GCPhysLast));
@@ -1711,20 +1683,6 @@ VMMDECL(unsigned) PGMAssertHandlerAndFlagsInSync(PVM pVM)
                                              State.GCPhys, PGM_PAGE_GET_HNDL_PHYS_STATE(pPage), uState, pPhysType->pszDesc));
                             State.cErrors++;
                         }
-
-# ifdef VBOX_WITH_REM
-#  ifdef IN_RING3
-                        /* validate that REM is handling it. */
-                        if (    !REMR3IsPageAccessHandled(pVM, State.GCPhys)
-                                /* ignore shadowed ROM for the time being. */
-                            &&  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_ROM_SHADOW)
-                        {
-                            AssertMsgFailed(("ram range vs phys handler REM mismatch. GCPhys=%RGp state=%d %s\n",
-                                             State.GCPhys, PGM_PAGE_GET_HNDL_PHYS_STATE(pPage), pPhysType->pszDesc));
-                            State.cErrors++;
-                        }
-#  endif
-# endif
                     }
                     else
                     {

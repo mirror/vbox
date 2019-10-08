@@ -740,7 +740,7 @@ static int vmmR0DoHalt(PGVM pGVM, PGVMCPU pGVCpu)
     uint32_t const fVmFFs  = VM_FF_TM_VIRTUAL_SYNC            | VM_FF_PDM_QUEUES              | VM_FF_PDM_DMA
                            | VM_FF_DBGF                       | VM_FF_REQUEST                 | VM_FF_CHECK_VM_STATE
                            | VM_FF_RESET                      | VM_FF_EMT_RENDEZVOUS          | VM_FF_PGM_NEED_HANDY_PAGES
-                           | VM_FF_PGM_NO_MEMORY              | VM_FF_REM_HANDLER_NOTIFY      | VM_FF_DEBUG_SUSPEND;
+                           | VM_FF_PGM_NO_MEMORY              | VM_FF_DEBUG_SUSPEND;
     uint64_t const fCpuFFs = VMCPU_FF_TIMER                   | VMCPU_FF_PDM_CRITSECT         | VMCPU_FF_IEM
                            | VMCPU_FF_REQUEST                 | VMCPU_FF_DBGF                 | VMCPU_FF_HM_UPDATE_CR3
                            | VMCPU_FF_HM_UPDATE_PAE_PDPES     | VMCPU_FF_PGM_SYNC_CR3         | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL
@@ -1226,9 +1226,6 @@ static void vmmR0RecordRC(PVMCC pVM, PVMCPUCC pVCpu, int rc)
                     break;
                 case VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallPGMAllocHandy);
-                    break;
-                case VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS:
-                    STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallRemReplay);
                     break;
                 case VMMCALLRING3_VMM_LOGGER_FLUSH:
                     STAM_COUNTER_INC(&pVM->vmm.s.StatRZCallLogFlush);

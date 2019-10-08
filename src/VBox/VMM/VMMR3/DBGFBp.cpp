@@ -820,11 +820,7 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint6
     {
         int rc = VINF_SUCCESS;
         if (!pBp->fEnabled)
-#ifdef VBOX_WITH_REM
-            rc = REMR3BreakpointSet(pVM, pBp->u.Rem.GCPtr);
-#else
             rc = IEMBreakpointSet(pVM, pBp->u.Rem.GCPtr);
-#endif
         if (RT_SUCCESS(rc))
         {
             rc = VINF_DBGF_BP_ALREADY_EXIST;
@@ -849,11 +845,7 @@ static DECLCALLBACK(int) dbgfR3BpSetREM(PUVM pUVM, PCDBGFADDRESS pAddress, uint6
     /*
      * Now ask REM to set the breakpoint.
      */
-#ifdef VBOX_WITH_REM
-    int rc = REMR3BreakpointSet(pVM, pAddress->FlatPtr);
-#else
     int rc = IEMBreakpointSet(pVM, pAddress->FlatPtr);
-#endif
     if (RT_SUCCESS(rc))
     {
         if (piBp)
@@ -1170,11 +1162,7 @@ static DECLCALLBACK(int) dbgfR3BpClear(PUVM pUVM, uint32_t iBp)
                 break;
 
             case DBGFBPTYPE_REM:
-#ifdef VBOX_WITH_REM
-                rc = REMR3BreakpointClear(pVM, pBp->u.Rem.GCPtr);
-#else
                 rc = IEMBreakpointClear(pVM, pBp->u.Rem.GCPtr);
-#endif
                 break;
 
             case DBGFBPTYPE_PORT_IO:
@@ -1257,11 +1245,7 @@ static DECLCALLBACK(int) dbgfR3BpEnable(PUVM pUVM, uint32_t iBp)
             break;
 
         case DBGFBPTYPE_REM:
-#ifdef VBOX_WITH_REM
-            rc = REMR3BreakpointSet(pVM, pBp->u.Rem.GCPtr);
-#else
             rc = IEMBreakpointSet(pVM, pBp->u.Rem.GCPtr);
-#endif
             break;
 
         case DBGFBPTYPE_PORT_IO:
@@ -1340,11 +1324,7 @@ static DECLCALLBACK(int) dbgfR3BpDisable(PUVM pUVM, uint32_t iBp)
             break;
 
         case DBGFBPTYPE_REM:
-#ifdef VBOX_WITH_REM
-            rc = REMR3BreakpointClear(pVM, pBp->u.Rem.GCPtr);
-#else
             rc = IEMBreakpointClear(pVM, pBp->u.Rem.GCPtr);
-#endif
             break;
 
         case DBGFBPTYPE_PORT_IO:

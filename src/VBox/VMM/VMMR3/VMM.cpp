@@ -513,7 +513,6 @@ static void vmmR3InitRegisterStats(PVM pVM)
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMPoolGrow,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMPoolGrow",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_POOL_GROW calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMMapChunk,        STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMMapChunk",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_MAP_CHUNK calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallPGMAllocHandy,      STAMTYPE_COUNTER, "/VMM/RZCallR3/PGMAllocHandy",    STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES calls.");
-    STAM_REG(pVM, &pVM->vmm.s.StatRZCallRemReplay,          STAMTYPE_COUNTER, "/VMM/RZCallR3/REMReplay",        STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallLogFlush,           STAMTYPE_COUNTER, "/VMM/RZCallR3/VMMLogFlush",      STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VMM_LOGGER_FLUSH calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetError,         STAMTYPE_COUNTER, "/VMM/RZCallR3/VMSetError",       STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_ERROR calls.");
     STAM_REG(pVM, &pVM->vmm.s.StatRZCallVMSetRuntimeError,  STAMTYPE_COUNTER, "/VMM/RZCallR3/VMRuntimeError",   STAMUNIT_OCCURENCES, "Number of VMMCALLRING3_VM_SET_RUNTIME_ERROR calls.");
@@ -2442,18 +2441,6 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
             break;
         }
 
-#ifdef VBOX_WITH_REM
-        /*
-         * Flush REM handler notifications.
-         */
-        case VMMCALLRING3_REM_REPLAY_HANDLER_NOTIFICATIONS:
-        {
-            REMR3ReplayHandlerNotifications(pVM);
-            pVCpu->vmm.s.rcCallRing3 = VINF_SUCCESS;
-            break;
-        }
-#endif
-
         /*
          * This is a noop. We just take this route to avoid unnecessary
          * tests in the loops.
@@ -2572,7 +2559,6 @@ static DECLCALLBACK(void) vmmR3InfoFF(PVM pVM, PCDBGFINFOHLP pHlp, const char *p
     PRINT_FLAG(VM_FF_,PGM_NEED_HANDY_PAGES);
     PRINT_FLAG(VM_FF_,PGM_NO_MEMORY);
     PRINT_FLAG(VM_FF_,PGM_POOL_FLUSH_PENDING);
-    PRINT_FLAG(VM_FF_,REM_HANDLER_NOTIFY);
     PRINT_FLAG(VM_FF_,DEBUG_SUSPEND);
     if (f)
         pHlp->pfnPrintf(pHlp, "%s\n    Unknown bits: %#RX32\n", c ? "," : "", f);

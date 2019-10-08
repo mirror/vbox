@@ -290,9 +290,6 @@ DECLINLINE(void) tmScheduleNotify(PVMCC pVM)
         Log5(("TMAll(%u): FF: 0 -> 1\n", __LINE__));
         VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
 #ifdef IN_RING3
-# ifdef VBOX_WITH_REM
-        REMR3NotifyTimerPending(pVM, pVCpuDst);
-# endif
         VMR3NotifyCpuFFU(pVCpuDst->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM);
 #endif
         STAM_COUNTER_INC(&pVM->tm.s.StatScheduleSetFF);
@@ -832,9 +829,6 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint6
         {
             Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-#if defined(IN_RING3) && defined(VBOX_WITH_REM)
-            REMR3NotifyTimerPending(pVM, pVCpuDst);
-#endif
         }
         LogFlow(("TMTimerPoll: expire1=%'RU64 <= now=%'RU64\n", u64Expire1, u64Now));
         return tmTimerPollReturnHit(pVM, pVCpu, pVCpuDst, u64Now, pu64Delta, &pVM->tm.s.StatPollVirtual);
@@ -878,9 +872,6 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint6
                 {
                     Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
                     VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-#if defined(IN_RING3) && defined(VBOX_WITH_REM)
-                    REMR3NotifyTimerPending(pVM, pVCpuDst);
-#endif
                 }
 
                 STAM_COUNTER_INC(&pVM->tm.s.StatPollSimple);
@@ -977,9 +968,6 @@ DECL_FORCE_INLINE(uint64_t) tmTimerPollInternal(PVMCC pVM, PVMCPUCC pVCpu, uint6
         {
             Log5(("TMAll(%u): FF: %d -> 1\n", __LINE__, VMCPU_FF_IS_SET(pVCpuDst, VMCPU_FF_TIMER)));
             VMCPU_FF_SET(pVCpuDst, VMCPU_FF_TIMER);
-#if defined(IN_RING3) && defined(VBOX_WITH_REM)
-            REMR3NotifyTimerPending(pVM, pVCpuDst);
-#endif
         }
         STAM_COUNTER_INC(&pVM->tm.s.StatPollVirtualSync);
         LogFlow(("TMTimerPoll: expire2=%'RU64 <= now=%'RU64\n", u64Expire2, u64Now));

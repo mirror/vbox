@@ -6166,25 +6166,6 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
      */
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_SREG_MASK)
     {
-#ifdef VBOX_WITH_REM
-        if (!pVM->hm.s.vmx.fUnrestrictedGuest)
-        {
-            Assert(!pVmxTransient->fIsNestedGuest);
-            Assert(pVM->hm.s.vmx.pRealModeTSS);
-            AssertCompile(PGMMODE_REAL < PGMMODE_PROTECTED);
-            if (   pVmcsInfo->fWasInRealMode
-                && PGMGetGuestMode(pVCpu) >= PGMMODE_PROTECTED)
-            {
-                /*
-                 * Notify the recompiler must flush its code-cache as the guest -may-
-                 * rewrite code it in real-mode (e.g. OpenBSD 4.0).
-                 */
-                REMFlushTBs(pVM);
-                Log4Func(("Switch to protected mode detected!\n"));
-                pVmcsInfo->fWasInRealMode = false;
-            }
-        }
-#endif
         if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CS)
         {
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CS);

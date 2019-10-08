@@ -1451,9 +1451,6 @@
     GEN_CHECK_OFF(VM, tm);
     GEN_CHECK_OFF(VM, dbgf);
     GEN_CHECK_OFF(VM, ssm);
-#ifdef VBOX_WITH_REM
-    GEN_CHECK_OFF(VM, rem);
-#endif
     GEN_CHECK_OFF(VM, gim);
     GEN_CHECK_OFF(VM, vm);
     GEN_CHECK_OFF(VM, cfgm);

@@ -3025,9 +3025,6 @@ static void apicSetInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType)
         }
     }
 #elif defined(IN_RING3)
-# ifdef VBOX_WITH_REM
-    REMR3NotifyInterruptSet(pVCpu->CTX_SUFF(pVM), pVCpu);
-# endif
     if (enmType != PDMAPICIRQ_HARDWARE)
         VMR3NotifyCpuFFU(pVCpu->pUVCpu, VMNOTIFYFF_FLAGS_DONE_REM | VMNOTIFYFF_FLAGS_POKE);
 #endif
@@ -3056,10 +3053,6 @@ VMM_INT_DECL(void) apicClearInterruptFF(PVMCPUCC pVCpu, PDMAPICIRQ enmType)
             AssertMsgFailed(("enmType=%d\n", enmType));
             break;
     }
-
-#if defined(IN_RING3) && defined(VBOX_WITH_REM)
-    REMR3NotifyInterruptClear(pVCpu->CTX_SUFF(pVM), pVCpu);
-#endif
 }
 
 

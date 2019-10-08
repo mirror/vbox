@@ -887,85 +887,6 @@ VMM_INT_DECL(PCEMEXITREC) EMHistoryUpdateFlagsAndTypeAndPC(PVMCPUCC pVCpu, uint3
 
 
 /**
- * Locks REM execution to a single VCPU.
- *
- * @param   pVM         The cross context VM structure.
- */
-VMMDECL(void) EMRemLock(PVM pVM)
-{
-#ifdef VBOX_WITH_REM
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return;     /* early init */
-
-    Assert(!PGMIsLockOwner(pVM));
-    Assert(!IOMIsLockWriteOwner(pVM));
-    int rc = PDMCritSectEnter(&pVM->em.s.CritSectREM, VERR_SEM_BUSY);
-    AssertRCSuccess(rc);
-#else
-    RT_NOREF(pVM);
-#endif
-}
-
-
-/**
- * Unlocks REM execution
- *
- * @param   pVM         The cross context VM structure.
- */
-VMMDECL(void) EMRemUnlock(PVM pVM)
-{
-#ifdef VBOX_WITH_REM
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return;     /* early init */
-
-    PDMCritSectLeave(&pVM->em.s.CritSectREM);
-#else
-    RT_NOREF(pVM);
-#endif
-}
-
-
-/**
- * Check if this VCPU currently owns the REM lock.
- *
- * @returns bool owner/not owner
- * @param   pVM         The cross context VM structure.
- */
-VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
-{
-#ifdef VBOX_WITH_REM
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return true;   /* early init */
-
-    return PDMCritSectIsOwner(&pVM->em.s.CritSectREM);
-#else
-    RT_NOREF(pVM);
-    return true;
-#endif
-}
-
-
-/**
- * Try to acquire the REM lock.
- *
- * @returns VBox status code
- * @param   pVM         The cross context VM structure.
- */
-VMM_INT_DECL(int) EMRemTryLock(PVM pVM)
-{
-#ifdef VBOX_WITH_REM
-    if (!PDMCritSectIsInitialized(&pVM->em.s.CritSectREM))
-        return VINF_SUCCESS; /* early init */
-
-    return PDMCritSectTryEnter(&pVM->em.s.CritSectREM);
-#else
-    RT_NOREF(pVM);
-    return VINF_SUCCESS;
-#endif
-}
-
-
-/**
  * @callback_method_impl{FNDISREADBYTES}
  */
 static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_t cbMinRead, uint8_t cbMaxRead)
@@ -1009,7 +930,6 @@ static DECLCALLBACK(int) emReadBytes(PDISCPUSTATE pDis, uint8_t offInstr, uint8_
     pDis->cbCachedInstr = offInstr + (uint8_t)cbToRead;
     return rc;
 }
-
 
 
 /**
