@@ -23,9 +23,6 @@
 #include "PDMInternal.h"
 #include <VBox/vmm/pdm.h>
 #ifndef IN_RC
-# ifdef VBOX_WITH_REM
-#  include <VBox/vmm/rem.h>
-# endif
 # include <VBox/vmm/mm.h>
 #endif
 #include <VBox/vmm/vmcc.h>

@@ -23,9 +23,6 @@
 #include <VBox/vmm/tm.h>
 #include <VBox/vmm/dbgftrace.h>
 #ifdef IN_RING3
-# ifdef VBOX_WITH_REM
-#  include <VBox/vmm/rem.h>
-# endif
 # include <iprt/thread.h>
 #endif
 #include "TMInternal.h"

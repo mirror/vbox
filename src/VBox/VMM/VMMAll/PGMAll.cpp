@@ -29,9 +29,6 @@
 #include <VBox/vmm/mm.h>
 #include <VBox/vmm/stam.h>
 #include <VBox/vmm/trpm.h>
-#ifdef VBOX_WITH_REM
-# include <VBox/vmm/rem.h>
-#endif
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/hm_vmx.h>

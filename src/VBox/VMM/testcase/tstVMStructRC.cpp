@@ -67,7 +67,6 @@ AssertCompileSize(RTHCPHYS, 8);
 #include "SELMInternal.h"
 #include "TMInternal.h"
 #include "IOMInternal.h"
-#include "REMInternal.h"
 #include "HMInternal.h"
 #include "APICInternal.h"
 #include "PATMInternal.h"
@@ -78,7 +77,6 @@ AssertCompileSize(RTHCPHYS, 8);
 #include "CSAMInternal.h"
 #include "EMInternal.h"
 #include "IEMInternal.h"
-#include "REMInternal.h"
 #include "NEMInternal.h"
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/hm_vmx.h>

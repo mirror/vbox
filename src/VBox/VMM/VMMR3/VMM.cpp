@@ -120,9 +120,6 @@
 #include <VBox/sup.h>
 #include <VBox/vmm/dbgf.h>
 #include <VBox/vmm/apic.h>
-#ifdef VBOX_WITH_REM
-# include <VBox/vmm/rem.h>
-#endif
 #include <VBox/vmm/ssm.h>
 #include <VBox/vmm/tm.h>
 #include "VMMInternal.h"

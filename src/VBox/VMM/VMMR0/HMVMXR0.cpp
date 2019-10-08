@@ -35,9 +35,6 @@
 #include <VBox/vmm/em.h>
 #include <VBox/vmm/gim.h>
 #include <VBox/vmm/apic.h>
-#ifdef VBOX_WITH_REM
-# include <VBox/vmm/rem.h>
-#endif
 #include "HMInternal.h"
 #include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/hmvmxinline.h>

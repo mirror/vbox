@@ -25,9 +25,6 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/hm.h>
 #include <VBox/vmm/apic.h>
-#ifdef VBOX_WITH_REM
-# include <VBox/vmm/rem.h>
-#endif
 #include <VBox/vmm/vm.h>
 #include <VBox/vmm/vmm.h>
 

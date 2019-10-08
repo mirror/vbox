@@ -23,10 +23,12 @@
 #include "APICInternal.h"
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmapi.h>
-#include <VBox/vmm/rem.h>
 #include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/vmm.h>
 #include <VBox/vmm/vmcpuset.h>
+#ifdef IN_RING0
+# include <VBox/vmm/gvmm.h>
+#endif
 
 
 /*********************************************************************************************************************************

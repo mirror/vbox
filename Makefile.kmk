@@ -484,7 +484,7 @@ docs:
 endif # !VBOX_ONLY_DOCS
 
 #
-# The core (VMM+REM+Devices+Main) documentation.
+# The core (VMM+Devices+Main) documentation.
 #
 # This includes so much because we wish to have the complete CFGM
 # and GCFGM lists.
@@ -776,7 +776,6 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/include/VBox/vmm/pdmnetifs.h \
 	$(PATH_ROOT)/include/VBox/vmm/pdmserialifs.h \
 	$(PATH_ROOT)/include/VBox/vmm/pdmstorageifs.h \
-	$(PATH_ROOT)/include/VBox/vmm/rem.h \
 	$(PATH_ROOT)/include/VBox/vmm/iom.h \
 	$(PATH_ROOT)/include/VBox/vmm/cfgm.h \
 	$(PATH_ROOT)/include/VBox/vmm/gim.h \
@@ -795,7 +794,6 @@ VBOX_CORE_DOXYFILE_INPUT_FIRST =\
 	$(PATH_ROOT)/src/VBox/VMM/include/PDMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/PGMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/GIMInternal.h \
-	$(PATH_ROOT)/src/VBox/VMM/include/REMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/SELMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/SSMInternal.h \
 	$(PATH_ROOT)/src/VBox/VMM/include/STAMInternal.h \
@@ -837,11 +835,6 @@ VBOX_CORE_DOXYFILE_INPUT := \
 VBOX_CORE_DOXYFILE_INPUT := \
 	$(VBOX_CORE_DOXYFILE_INPUT_FIRST) \
 	$(sort $(filter-out $(VBOX_CORE_DOXYFILE_INPUT_FIRST), $(VBOX_CORE_DOXYFILE_INPUT)))
-
-# And some some additional stuff.
-VBOX_CORE_DOXYFILE_INPUT += \
-	$(PATH_ROOT)/src/recompiler/VBoxRecompiler.c \
-	$(PATH_ROOT)/src/recompiler/VBoxREMWrapper.cpp
 
 includedep $(VBOX_CORE_DOXYFILE_OUTPUT)/Doxyfile.Core.dep
 
@@ -2002,7 +1995,6 @@ quick: \
 	VBoxC \
 	VBoxSVC \
 	$(if-expr defined(VBOX_WITH_RAW_MODE),VMMRC VBoxDDRC VBoxDD2RC,) \
-	$(if-expr defined(VBOX_WITH_REM),VBoxREM,) \
 	$(if-expr defined(VBOX_WITH_MIDL_PROXY_STUB) && "$(KBUILD_TARGET)" == "win",VBoxProxyStub,) \
 	$(if-expr defined(VBOX_WITH_SDS),VBoxSDS,) \
 	$(if-expr defined(VBOX_WITH_QTGUI),VirtualBox,)
