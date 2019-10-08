@@ -3750,12 +3750,14 @@ void UIMachineSettingsStorage::sltSetInformation()
             /* Setting Controller Sub-Type: */
             else if (pSender == mCbType)
             {
-                m_pModelStorage->setData(index,
-                                         QVariant::fromValue(mCbType->currentData(StorageModel::R_CtrBusType).value<KStorageBus>()),
-                                         StorageModel::R_CtrBusType);
-                m_pModelStorage->setData(index,
-                                         QVariant::fromValue(mCbType->currentData(StorageModel::R_CtrType).value<KStorageControllerType>()),
-                                         StorageModel::R_CtrType);
+                const bool fResult =
+                    m_pModelStorage->setData(index,
+                                             QVariant::fromValue(mCbType->currentData(StorageModel::R_CtrBusType).value<KStorageBus>()),
+                                             StorageModel::R_CtrBusType);
+                if (fResult)
+                    m_pModelStorage->setData(index,
+                                             QVariant::fromValue(mCbType->currentData(StorageModel::R_CtrType).value<KStorageControllerType>()),
+                                             StorageModel::R_CtrType);
             }
             else if (pSender == mSbPortCount)
                 m_pModelStorage->setData(index, mSbPortCount->value(), StorageModel::R_CtrPortCount);
