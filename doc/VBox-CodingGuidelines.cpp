@@ -268,6 +268,86 @@
  *
  * </ul>
  *
+ * @subsubsection sec_vbox_guideline_compulsory_sub64_comp  Comparing the GCC and MSC calling conventions
+ *
+ * GCC expects the following (cut & past from page 20 in the ABI draft 0.96):
+ *
+ * @verbatim
+    %rax     temporary register; with variable arguments passes information about the
+             number of SSE registers used; 1st return register.
+             [Not preserved]
+    %rbx     callee-saved register; optionally used as base pointer.
+             [Preserved]
+    %rcx     used to pass 4th integer argument to functions.
+             [Not preserved]
+    %rdx     used to pass 3rd argument to functions; 2nd return register
+             [Not preserved]
+    %rsp     stack pointer
+             [Preserved]
+    %rbp     callee-saved register; optionally used as frame pointer
+             [Preserved]
+    %rsi     used to pass 2nd argument to functions
+             [Not preserved]
+    %rdi     used to pass 1st argument to functions
+             [Not preserved]
+    %r8      used to pass 5th argument to functions
+             [Not preserved]
+    %r9      used to pass 6th argument to functions
+             [Not preserved]
+    %r10     temporary register, used for passing a function's static chain
+             pointer [Not preserved]
+    %r11     temporary register
+             [Not preserved]
+    %r12-r15 callee-saved registers
+             [Preserved]
+    %xmm0-%xmm1  used to pass and return floating point arguments
+             [Not preserved]
+    %xmm2-%xmm7  used to pass floating point arguments
+             [Not preserved]
+    %xmm8-%xmm15 temporary registers
+             [Not preserved]
+    %mmx0-%mmx7  temporary registers
+             [Not preserved]
+    %st0     temporary register; used to return long double arguments
+             [Not preserved]
+    %st1     temporary registers; used to return long double arguments
+             [Not preserved]
+    %st2-%st7 temporary registers
+             [Not preserved]
+    %fs      Reserved for system use (as thread specific data register)
+             [Not preserved]
+   @endverbatim
+ *
+ * Direction flag is preserved as cleared.
+ * The stack must be aligned on a 16-byte boundary before the 'call/jmp' instruction.
+ *
+ * MSC expects the following:
+ * @verbatim
+    rax      return value, not preserved.
+    rbx      preserved.
+    rcx      1st argument, integer, not preserved.
+    rdx      2nd argument, integer, not preserved.
+    rbp      preserved.
+    rsp      preserved.
+    rsi      preserved.
+    rdi      preserved.
+    r8       3rd argument, integer, not preserved.
+    r9       4th argument, integer, not preserved.
+    r10      scratch register, not preserved.
+    r11      scratch register, not preserved.
+    r12-r15  preserved.
+    xmm0     1st argument, fp, return value, not preserved.
+    xmm1     2st argument, fp, not preserved.
+    xmm2     3st argument, fp, not preserved.
+    xmm3     4st argument, fp, not preserved.
+    xmm4-xmm5    scratch, not preserved.
+    xmm6-xmm15   preserved.
+   @endverbatim
+ *
+ * Dunno what the direction flag is...
+ * The stack must be aligned on a 16-byte boundary before the 'call/jmp' instruction.
+ *
+ *
  * @subsection sec_vbox_guideline_compulsory_cppmain   C++ guidelines for Main
  *
  * Since the Main API code is a large amount of C++ code, it is allowed but
