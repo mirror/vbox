@@ -214,7 +214,6 @@ static void ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq
                           uDevFnBridge, pPciDev, iIrqPinVector, iLevel, uTagSrc);
 }
 
-
 #ifdef IN_RING3
 
 /**
@@ -222,10 +221,10 @@ static void ich9pcibridgeSetIrq(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iIrq
  *      Port I/O Handler for Fake PCI BIOS trigger OUT operations at 0410h.}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-ich9pciR3IOPortMagicPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+ich9pciR3IOPortMagicPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF2(pvUser, uPort);
-    LogFlowFunc(("Port=%#x u32=%#x cb=%d\n", uPort, u32, cb));
+    Assert(offPort == 0); RT_NOREF2(pvUser, offPort);
+    LogFlowFunc(("offPort=%#x u32=%#x cb=%d\n", offPort, u32, cb));
     if (cb == 4)
     {
         if (u32 == UINT32_C(19200509)) // Richard Adams
@@ -244,15 +243,14 @@ ich9pciR3IOPortMagicPCIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, u
  *      Port I/O Handler for Fake PCI BIOS trigger IN operations at 0410h.}
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-ich9pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+ich9pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF5(pDevIns, pvUser, uPort, pu32, cb);
-    LogFunc(("Port=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", uPort, cb));
+    Assert(offPort == 0); RT_NOREF5(pDevIns, pvUser, offPort, pu32, cb);
+    LogFunc(("offPort=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
 #endif /* IN_RING3 */
-
 
 /**
  * @callback_method_impl{FNIOMIOPORTNEWOUT,
@@ -262,10 +260,10 @@ ich9pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, ui
  * Mechanism \#1.
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    LogFlowFunc(("Port=%#x u32=%#x cb=%d\n", uPort, u32, cb));
-    RT_NOREF2(uPort, pvUser);
+    LogFlowFunc(("offPort=%#x u32=%#x cb=%d\n", offPort, u32, cb));
+    Assert(offPort == 0); RT_NOREF2(offPort, pvUser);
     if (cb == 4)
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
@@ -293,9 +291,9 @@ ich9pciIOPortAddressWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint
  * Mechanism \#1.
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF2(uPort, pvUser);
+    Assert(offPort == 0); RT_NOREF2(offPort, pvUser);
     if (cb == 4)
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
@@ -304,11 +302,11 @@ ich9pciIOPortAddressRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint3
         *pu32 = pThis->uConfigReg;
         PCI_UNLOCK(pDevIns);
 
-        LogFlowFunc(("Port=%#x cb=%d -> %#x\n", uPort, cb, *pu32));
+        LogFlowFunc(("offPort=%#x cb=%d -> %#x\n", offPort, cb, *pu32));
         return VINF_SUCCESS;
     }
 
-    LogFunc(("Port=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", uPort, cb));
+    LogFunc(("offPort=%#x cb=%d VERR_IOM_IOPORT_UNUSED\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 
@@ -373,14 +371,14 @@ static VBOXSTRICTRC ich9pciConfigWrite(PPDMDEVINS pDevIns, PDEVPCIROOT pPciRoot,
  * Mechanism \#1.
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    LogFlowFunc(("Port=%#x u32=%#x cb=%d (config=%#10x)\n", uPort, u32, cb, pThis->uConfigReg));
-    NOREF(pvUser);
+    LogFlowFunc(("offPort=%u u32=%#x cb=%d (config=%#10x)\n", offPort, u32, cb, pThis->uConfigReg));
+    Assert(offPort < 4); NOREF(pvUser);
 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
-    if (!(uPort % cb))
+    if (!(offPort % cb))
     {
         PCI_LOCK(pDevIns, VINF_IOM_R3_IOPORT_WRITE);
 
@@ -389,7 +387,7 @@ ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_
 
             /* Decode target device from Configuration Address Port */
             PciAddress aPciAddr;
-            ich9pciStateToPciAddr(pThis, uPort, &aPciAddr);
+            ich9pciStateToPciAddr(pThis, offPort, &aPciAddr);
 
             /* Perform configuration space write */
             rcStrict = ich9pciConfigWrite(pDevIns, pThis, &aPciAddr, u32, cb, VINF_IOM_R3_IOPORT_WRITE);
@@ -398,7 +396,7 @@ ich9pciIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_
         PCI_UNLOCK(pDevIns);
     }
     else
-        AssertMsgFailed(("Unaligned write to port %#x u32=%#x cb=%d\n", uPort, u32, cb));
+        AssertMsgFailed(("Unaligned write to offPort=%u u32=%#x cb=%d\n", offPort, u32, cb));
 
     return rcStrict;
 }
@@ -471,10 +469,11 @@ static VBOXSTRICTRC ich9pciConfigRead(PDEVPCIROOT pPciRoot, PciAddress* pPciAddr
  * Mechanism \#1.
  */
 static DECLCALLBACK(VBOXSTRICTRC)
-ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
-    if (!(uPort % cb))
+    Assert(offPort < 4);
+    if (!(offPort % cb))
     {
         PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
         *pu32 = 0xffffffff;
@@ -489,7 +488,7 @@ ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t
         {
             /* Decode target device and configuration space register */
             PciAddress aPciAddr;
-            ich9pciStateToPciAddr(pThis, uPort, &aPciAddr);
+            ich9pciStateToPciAddr(pThis, offPort, &aPciAddr);
 
             /* Perform configuration space read */
             rcStrict = ich9pciConfigRead(pThis, &aPciAddr, cb, pu32, VINF_IOM_R3_IOPORT_READ);
@@ -497,10 +496,10 @@ ich9pciIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t
 
         PCI_UNLOCK(pDevIns);
 
-        LogFlowFunc(("Port=%#x cb=%#x (config=%#10x) -> %#x (%Rrc)\n", uPort, cb, *pu32, pThis->uConfigReg, VBOXSTRICTRC_VAL(rcStrict)));
+        LogFlowFunc(("offPort=%u cb=%#x (config=%#10x) -> %#x (%Rrc)\n", offPort, cb, *pu32, pThis->uConfigReg, VBOXSTRICTRC_VAL(rcStrict)));
         return rcStrict;
     }
-    AssertMsgFailed(("Unaligned read from port %#x cb=%d\n", uPort, cb));
+    AssertMsgFailed(("Unaligned read from offPort=%u cb=%d\n", offPort, cb));
     return VERR_IOM_IOPORT_UNUSED;
 }
 

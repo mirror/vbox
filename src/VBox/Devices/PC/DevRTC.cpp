@@ -347,18 +347,20 @@ static void rtc_set_time(PRTCSTATE pThis)
 /**
  * @callback_method_impl{FNIOMIOPORTIN}
  */
-PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
+    Assert(offPort < 4);
+
     if (cb != 1)
         return VERR_IOM_IOPORT_UNUSED;
 
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
-    if ((uPort & 1) == 0)
+    if ((offPort & 1) == 0)
         *pu32 = 0xff;
     else
     {
-        unsigned bank = (uPort >> 1) & 1;
+        unsigned bank = (offPort >> 1) & 1;
         switch (pThis->cmos_index[bank])
         {
             case RTC_SECONDS:
@@ -405,15 +407,17 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIO
 /**
  * @callback_method_impl{FNIOMIOPORTOUT}
  */
-PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     NOREF(pvUser);
+    Assert(offPort < 4);
+
     if (cb != 1)
         return VINF_SUCCESS;
 
     PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
-    uint32_t bank = (uPort >> 1) & 1;
-    if ((uPort & 1) == 0)
+    uint32_t bank = (offPort >> 1) & 1;
+    if ((offPort & 1) == 0)
     {
         pThis->cmos_index[bank] = (u32 & 0x7f) + (bank * CMOS_BANK_SIZE);
 

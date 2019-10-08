@@ -103,6 +103,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint
         /*
          * Found an entry, get the data so we can leave the IOM lock.
          */
+        uint16_t const    fFlags        = pRegEntry->fFlags;
         PFNIOMIOPORTNEWIN pfnInCallback = pRegEntry->pfnInCallback;
         PPDMDEVINS        pDevIns       = pRegEntry->pDevIns;
 #ifndef IN_RING3
@@ -129,7 +130,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uint
         if (rcStrict == VINF_SUCCESS)
         {
             STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
-            rcStrict = pfnInCallback(pDevIns, pvUser, Port, pu32Value, (unsigned)cbValue);
+            rcStrict = pfnInCallback(pDevIns, pvUser, fFlags & IOM_IOPORT_F_ABS ? Port : offPort, pu32Value, (unsigned)cbValue);
             STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
             PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 
@@ -348,6 +349,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
         /*
          * Found an entry, get the data so we can leave the IOM lock.
          */
+        uint16_t const          fFlags           = pRegEntry->fFlags;
         PFNIOMIOPORTNEWINSTRING pfnInStrCallback = pRegEntry->pfnInStrCallback;
         PFNIOMIOPORTNEWIN       pfnInCallback    = pRegEntry->pfnInCallback;
         PPDMDEVINS              pDevIns          = pRegEntry->pDevIns;
@@ -380,7 +382,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
             if (pfnInStrCallback)
             {
                 STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
-                rcStrict = pfnInStrCallback(pDevIns, pvUser, uPort, (uint8_t *)pvDst, pcTransfers, cb);
+                rcStrict = pfnInStrCallback(pDevIns, pvUser, fFlags & IOM_IOPORT_F_ABS ? uPort : offPort,
+                                            (uint8_t *)pvDst, pcTransfers, cb);
                 STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
             }
 
@@ -395,7 +398,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortReadString(PVMCC pVM, PVMCPU pVCpu, RTIOPORT
                 {
                     uint32_t u32Value = 0;
                     STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
-                    rcStrict = pfnInCallback(pDevIns, pvUser, uPort, &u32Value, cb);
+                    rcStrict = pfnInCallback(pDevIns, pvUser, fFlags & IOM_IOPORT_F_ABS ? uPort : offPort, &u32Value, cb);
                     STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
                     if (rcStrict == VERR_IOM_IOPORT_UNUSED)
                     {
@@ -670,6 +673,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uin
         /*
          * Found an entry, get the data so we can leave the IOM lock.
          */
+        uint16_t const     fFlags           = pRegEntry->fFlags;
         PFNIOMIOPORTNEWOUT pfnOutCallback   = pRegEntry->pfnOutCallback;
         PPDMDEVINS         pDevIns          = pRegEntry->pDevIns;
 #ifndef IN_RING3
@@ -696,7 +700,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVMCC pVM, PVMCPU pVCpu, RTIOPORT Port, uin
         if (rcStrict == VINF_SUCCESS)
         {
             STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
-            rcStrict = pfnOutCallback(pDevIns, pvUser, Port, u32Value, (unsigned)cbValue);
+            rcStrict = pfnOutCallback(pDevIns, pvUser, fFlags & IOM_IOPORT_F_ABS ? Port : offPort, u32Value, (unsigned)cbValue);
             STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
 
             PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
@@ -891,6 +895,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
         /*
          * Found an entry, get the data so we can leave the IOM lock.
          */
+        uint16_t const             fFlags            = pRegEntry->fFlags;
         PFNIOMIOPORTNEWOUTSTRING   pfnOutStrCallback = pRegEntry->pfnOutStrCallback;
         PFNIOMIOPORTNEWOUT         pfnOutCallback    = pRegEntry->pfnOutCallback;
         PPDMDEVINS                 pDevIns           = pRegEntry->pDevIns;
@@ -923,7 +928,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
             if (pfnOutStrCallback)
             {
                 STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
-                rcStrict = pfnOutStrCallback(pDevIns, pvUser, uPort, (uint8_t const *)pvSrc, pcTransfers, cb);
+                rcStrict = pfnOutStrCallback(pDevIns, pvUser, fFlags & IOM_IOPORT_F_ABS ? uPort : offPort,
+                                             (uint8_t const *)pvSrc, pcTransfers, cb);
                 STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
             }
 
@@ -945,7 +951,7 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMIOPortWriteString(PVMCC pVM, PVMCPU pVCpu, RTIOPOR
                         default: AssertFailed(); u32Value = UINT32_MAX;
                     }
                     STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
-                    rcStrict = pfnOutCallback(pDevIns, pvUser, uPort, u32Value, cb);
+                    rcStrict = pfnOutCallback(pDevIns, pvUser, fFlags & IOM_IOPORT_F_ABS ? uPort : offPort, u32Value, cb);
                     STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
                     if (IOM_SUCCESS(rcStrict))
                         *pcTransfers -= 1;

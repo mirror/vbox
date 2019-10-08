@@ -470,7 +470,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
 
     AssertMsgReturn(cPorts > 0 && cPorts <= _8K, ("cPorts=%s\n", cPorts), VERR_OUT_OF_RANGE);
-    AssertReturn(!fFlags, VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~IOM_IOPORT_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     AssertReturn(pfnOut || pfnIn || pfnOutStr || pfnInStr, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfnOut, VERR_INVALID_POINTER);
@@ -539,6 +539,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
     pVM->iom.s.paIoPortRegs[idx].uPort              = UINT16_MAX;
     pVM->iom.s.paIoPortRegs[idx].idxStats           = (uint16_t)idxStats;
     pVM->iom.s.paIoPortRegs[idx].fMapped            = false;
+    pVM->iom.s.paIoPortRegs[idx].fFlags             = (uint8_t)fFlags;
     pVM->iom.s.paIoPortRegs[idx].idxSelf            = idx;
 
     pVM->iom.s.cIoPortRegs = idx + 1;

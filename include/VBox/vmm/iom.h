@@ -251,13 +251,14 @@ typedef FNIOMIOPORTOUTSTRING *PFNIOMIOPORTOUTSTRING;
  *
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
- * @param   uPort       Port number used for the IN operation.
+ * @param   offPort     The port number if IOM_IOPORT_F_ABS is used, otherwise
+ *                      relative to the mapping base.
  * @param   pu32        Where to store the result.  This is always a 32-bit
  *                      variable regardless of what @a cb might say.
  * @param   cb          Number of bytes read.
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWIN(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWIN(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb);
 /** Pointer to a FNIOMIOPORTNEWIN(). */
 typedef FNIOMIOPORTNEWIN *PFNIOMIOPORTNEWIN;
 
@@ -269,14 +270,15 @@ typedef FNIOMIOPORTNEWIN *PFNIOMIOPORTNEWIN;
  *
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
- * @param   uPort       Port number used for the IN operation.
+ * @param   offPort     The port number if IOM_IOPORT_F_ABS is used, otherwise
+ *                      relative to the mapping base.
  * @param   pbDst       Pointer to the destination buffer.
  * @param   pcTransfers Pointer to the number of transfer units to read, on
  *                      return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWINSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint8_t *pbDst,
+typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWINSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_t *pbDst,
                                                           uint32_t *pcTransfers, unsigned cb);
 /** Pointer to a FNIOMIOPORTNEWINSTRING(). */
 typedef FNIOMIOPORTNEWINSTRING *PFNIOMIOPORTNEWINSTRING;
@@ -288,12 +290,13 @@ typedef FNIOMIOPORTNEWINSTRING *PFNIOMIOPORTNEWINSTRING;
  *
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
- * @param   uPort       Port number used for the OUT operation.
+ * @param   offPort     The port number if IOM_IOPORT_F_ABS is used, otherwise
+ *                      relative to the mapping base.
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWOUT(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb);
+typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWOUT(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb);
 /** Pointer to a FNIOMIOPORTNEWOUT(). */
 typedef FNIOMIOPORTNEWOUT *PFNIOMIOPORTNEWOUT;
 
@@ -304,14 +307,15 @@ typedef FNIOMIOPORTNEWOUT *PFNIOMIOPORTNEWOUT;
  *
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
- * @param   uPort       Port number used for the OUT operation.
+ * @param   offPort     The port number if IOM_IOPORT_F_ABS is used, otherwise
+ *                      relative to the mapping base.
  * @param   pbSrc       Pointer to the source buffer.
  * @param   pcTransfers Pointer to the number of transfer units to write, on
  *                      return remaining transfer units.
  * @param   cb          Size of the transfer unit (1, 2 or 4 bytes).
  * @remarks Caller enters the device critical section.
  */
-typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWOUTSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, const uint8_t *pbSrc,
+typedef DECLCALLBACK(VBOXSTRICTRC) FNIOMIOPORTNEWOUTSTRING(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, const uint8_t *pbSrc,
                                                            uint32_t *pcTransfers, unsigned cb);
 /** Pointer to a FNIOMIOPORTNEWOUTSTRING(). */
 typedef FNIOMIOPORTNEWOUTSTRING *PFNIOMIOPORTNEWOUTSTRING;
@@ -399,6 +403,13 @@ VMMDECL(int)            IOMMMIOMapMMIOHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS
 VMMDECL(int)            IOMMMIOResetRegion(PVMCC pVM, RTGCPHYS GCPhys);
 VMMDECL(bool)           IOMIsLockWriteOwner(PVM pVM);
 
+/** @name IOM_IOPORT_F_XXX - Flags for IOMR3IoPortCreate() and PDMDevHlpIoPortCreateEx().
+ * @{ */
+/** Pass the absolute I/O port to the callback rather than the relative one.  */
+#define IOM_IOPORT_F_ABS            RT_BIT_32(0)
+/** Valid flags for IOMR3IoPortCreate(). */
+#define IOM_IOPORT_F_VALID_MASK     UINT32_C(0x00000001)
+/** @} */
 
 #ifdef IN_RING3
 /** @defgroup grp_iom_r3    The IOM Host Context Ring-3 API
