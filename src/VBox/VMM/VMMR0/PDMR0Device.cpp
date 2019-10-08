@@ -210,8 +210,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_IoPortSetUpContextEx(PPDMDEVINS pDevIns, IO
 
 
 /** @interface_method_impl{PDMDEVHLPR0,pfnMmioSetUpContextEx} */
-static DECLCALLBACK(int) pdmR0DevHlp_MmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIOWRITE pfnWrite,
-                                                        PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill, void *pvUser)
+static DECLCALLBACK(int) pdmR0DevHlp_MmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                                        PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser)
 {
     RT_NOREF(pDevIns, hRegion, pfnWrite, pfnRead, pfnFill, pvUser);
     return VERR_NOT_IMPLEMENTED;

@@ -2439,7 +2439,7 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnMmioCreateEx,(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
                                                uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                               PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                               PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
                                                void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion));
 
     /**
@@ -4431,8 +4431,8 @@ typedef struct PDMDEVHLPRC
      * @sa      PDMDevHlpMmioCreate, PDMDevHlpMmioCreateEx, PDMDevHlpMmioMap,
      *          PDMDevHlpMmioUnmap.
      */
-    DECLRCCALLBACKMEMBER(int, pfnMmioSetUpContextEx,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIOWRITE pfnWrite,
-                                                     PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill, void *pvUser));
+    DECLRCCALLBACKMEMBER(int, pfnMmioSetUpContextEx,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                                     PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser));
 
     /**
      * Bus master physical memory read from the given PCI device.
@@ -4787,8 +4787,8 @@ typedef struct PDMDEVHLPR0
      * @sa      PDMDevHlpMmioCreate, PDMDevHlpMmioCreateEx, PDMDevHlpMmioMap,
      *          PDMDevHlpMmioUnmap.
      */
-    DECLR0CALLBACKMEMBER(int, pfnMmioSetUpContextEx,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIOWRITE pfnWrite,
-                                                     PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill, void *pvUser));
+    DECLR0CALLBACKMEMBER(int, pfnMmioSetUpContextEx,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                                     PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser));
 
     /**
      * Bus master physical memory read from the given PCI device.
@@ -5643,7 +5643,7 @@ DECLINLINE(int) PDMDevHlpIoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDL
  * @sa PDMDevHlpMmioCreateEx
  */
 DECLINLINE(int) PDMDevHlpMmioCreate(PPDMDEVINS pDevIns, RTGCPHYS cbRegion, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                    PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, void *pvUser,
+                                    PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, void *pvUser,
                                     const char *pszDesc, PIOMMMIOHANDLE phRegion)
 {
     return pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, 0, pPciDev, iPciRegion,
@@ -5655,7 +5655,7 @@ DECLINLINE(int) PDMDevHlpMmioCreate(PPDMDEVINS pDevIns, RTGCPHYS cbRegion, PPDMP
  */
 DECLINLINE(int) PDMDevHlpMmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
                                       uint32_t fFlags, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
-                                      PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
+                                      PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill,
                                       void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
 {
     return pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, fFlags, pPciDev, iPciRegion,
@@ -5693,16 +5693,16 @@ DECLINLINE(int) PDMDevHlpMmioReduce(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, R
  * @sa PDMDevHlpMmioSetUpContextEx
  */
 DECLINLINE(int) PDMDevHlpMmioSetUpContext(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion,
-                                          PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, void *pvUser)
+                                          PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, void *pvUser)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnMmioSetUpContextEx(pDevIns, hRegion, pfnWrite, pfnRead, NULL, pvUser);
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMmioCreateEx
+ * @copydoc PDMDEVHLPR0::pfnMmioSetUpContextEx
  */
-DECLINLINE(int) PDMDevHlpMmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIOWRITE pfnWrite,
-                                            PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill, void *pvUser)
+DECLINLINE(int) PDMDevHlpMmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                            PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser)
 {
     return pDevIns->CTX_SUFF(pHlp)->pfnMmioSetUpContextEx(pDevIns, hRegion, pfnWrite, pfnRead, pfnFill, pvUser);
 }
