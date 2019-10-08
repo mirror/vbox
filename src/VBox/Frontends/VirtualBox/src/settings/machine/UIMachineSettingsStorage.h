@@ -106,16 +106,22 @@ private slots:
 
     /** Handles command to add controller. */
     void sltAddController();
-    /** Handles command to add IDE controller. */
-    void sltAddControllerIDE();
-    /** Handles command to add SATA controller. */
-    void sltAddControllerSATA();
-    /** Handles command to add SCSI controller. */
-    void sltAddControllerSCSI();
+    /** Handles command to add PIIX3 controller. */
+    void sltAddControllerPIIX3();
+    /** Handles command to add PIIX4 controller. */
+    void sltAddControllerPIIX4();
+    /** Handles command to add ICH6 controller. */
+    void sltAddControllerICH6();
+    /** Handles command to add AHCI controller. */
+    void sltAddControllerAHCI();
+    /** Handles command to add LsiLogic controller. */
+    void sltAddControllerLsiLogic();
+    /** Handles command to add BusLogic controller. */
+    void sltAddControllerBusLogic();
     /** Handles command to add Floppy controller. */
     void sltAddControllerFloppy();
     /** Handles command to add SAS controller. */
-    void sltAddControllerSAS();
+    void sltAddControllerLsiLogicSAS();
     /** Handles command to add USB controller. */
     void sltAddControllerUSB();
     /** Handles command to add NVMe controller. */
@@ -263,14 +269,20 @@ private:
     QAction *m_pActionAddController;
     /** Holds the 'Remove Controller' action instance. */
     QAction *m_pActionRemoveController;
-    /** Holds the 'Add IDE Controller' action instance. */
-    QAction *m_pActionAddControllerIDE;
-    /** Holds the 'Add SATA Controller' action instance. */
-    QAction *m_pActionAddControllerSATA;
-    /** Holds the 'Add SCSI Controller' action instance. */
-    QAction *m_pActionAddControllerSCSI;
-    /** Holds the 'Add SAS Controller' action instance. */
-    QAction *m_pActionAddControllerSAS;
+    /** Holds the 'Add PIIX3 Controller' action instance. */
+    QAction *m_pActionAddControllerPIIX3;
+    /** Holds the 'Add PIIX4 Controller' action instance. */
+    QAction *m_pActionAddControllerPIIX4;
+    /** Holds the 'Add ICH6 Controller' action instance. */
+    QAction *m_pActionAddControllerICH6;
+    /** Holds the 'Add AHCI Controller' action instance. */
+    QAction *m_pActionAddControllerAHCI;
+    /** Holds the 'Add LsiLogic Controller' action instance. */
+    QAction *m_pActionAddControllerLsiLogic;
+    /** Holds the 'Add BusLogic Controller' action instance. */
+    QAction *m_pActionAddControllerBusLogic;
+    /** Holds the 'Add LsiLogic SAS Controller' action instance. */
+    QAction *m_pActionAddControllerLsiLogicSAS;
     /** Holds the 'Add Floppy Controller' action instance. */
     QAction *m_pActionAddControllerFloppy;
     /** Holds the 'Add USB Controller' action instance. */
