@@ -92,7 +92,7 @@ static DECLCALLBACK(void) vboxHeaderFooter(PRTLOGGER pReleaseLogger, RTLOGPHASE 
                 if (enmType == RTSYSFWTYPE_UEFI)
                 {
                      bool fValue;
-                     vrc = RTSystemQueryFirmwareBoolean(RTSYSFWPROP_SECURE_BOOT, &fValue);
+                     vrc = RTSystemQueryFirmwareBoolean(RTSYSFWBOOL_SECURE_BOOT, &fValue);
                      if (RT_SUCCESS(vrc))
                          pfnLog(pReleaseLogger, "Secure Boot: %s\n", fValue ? "Enabled" : "Disabled");
                      else
