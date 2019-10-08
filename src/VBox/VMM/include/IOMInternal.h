@@ -269,6 +269,130 @@ typedef struct IOMIOPORTSTATSENTRY
 typedef IOMIOPORTSTATSENTRY *PIOMIOPORTSTATSENTRY;
 
 
+
+/**
+ * MMIO lookup table entry.
+ */
+typedef struct IOMMMIOLOOKUPENTRY
+{
+    /** The first port in the range. */
+    RTGCPHYS                    GCPhysFirst;
+    /** The last port in the range (inclusive). */
+    RTGCPHYS                    GCPhysLast;
+    /** The registration handle/index.
+     * @todo bake this into the lower/upper bits of GCPhysFirst & GCPhysLast. */
+    uint16_t                    idx;
+    uint16_t                    abPadding[3];
+} IOMMMIOLOOKUPENTRY;
+/** Pointer to an MMIO lookup table entry. */
+typedef IOMMMIOLOOKUPENTRY *PIOMMMIOLOOKUPENTRY;
+/** Pointer to a const MMIO lookup table entry. */
+typedef IOMMMIOLOOKUPENTRY const *PCIOMMMIOLOOKUPENTRY;
+
+/**
+ * Ring-0 MMIO handle table entry.
+ */
+typedef struct IOMMMIOENTRYR0
+{
+    /** The number of bytes covered by this entry, 0 if entry not used. */
+    RTGCPHYS                            cbRegion;
+    /** Pointer to user argument. */
+    RTR0PTR                             pvUser;
+    /** Pointer to the associated device instance, NULL if entry not used. */
+    R0PTRTYPE(PPDMDEVINS)               pDevIns;
+    /** Pointer to the write callback function. */
+    R0PTRTYPE(PFNIOMMMIONEWWRITE)       pfnWriteCallback;
+    /** Pointer to the read callback function. */
+    R0PTRTYPE(PFNIOMMMIONEWREAD)        pfnReadCallback;
+    /** Pointer to the fill callback function. */
+    R0PTRTYPE(PFNIOMMMIONEWFILL)        pfnFillCallback;
+    /** The entry of the first statistics entry, UINT16_MAX if no stats. */
+    uint16_t                            idxStats;
+    /** Same as the handle index. */
+    uint16_t                            idxSelf;
+    /** IOM_MMIO_F_XXX (copied from ring-3). */
+    uint32_t                            fFlags;
+} IOMMMIOENTRYR0;
+/** Pointer to a ring-0 MMIO handle table entry. */
+typedef IOMMMIOENTRYR0 *PIOMMMIOENTRYR0;
+/** Pointer to a const ring-0 MMIO handle table entry. */
+typedef IOMMMIOENTRYR0 const *PCIOMMMIOENTRYR0;
+
+/**
+ * Ring-3 MMIO handle table entry.
+ */
+typedef struct IOMMMIOENTRYR3
+{
+    /** The number of bytes covered by this entry. */
+    RTGCPHYS                            cbRegion;
+    /** The current mapping address (duplicates lookup table). */
+    RTGCPHYS                            GCPhysMapping;
+    /** Pointer to user argument. */
+    RTR3PTR                             pvUser;
+    /** Pointer to the associated device instance. */
+    R3PTRTYPE(PPDMDEVINS)               pDevIns;
+    /** Pointer to the write callback function. */
+    R3PTRTYPE(PFNIOMMMIONEWWRITE)       pfnWriteCallback;
+    /** Pointer to the read callback function. */
+    R3PTRTYPE(PFNIOMMMIONEWREAD)        pfnReadCallback;
+    /** Pointer to the fill callback function. */
+    R3PTRTYPE(PFNIOMMMIONEWFILL)        pfnFillCallback;
+    /** Description / Name. For easing debugging. */
+    R3PTRTYPE(const char *)             pszDesc;
+    /** PCI device the registration is associated with. */
+    R3PTRTYPE(PPDMPCIDEV)               pPciDev;
+    /** The PCI device region (high 16-bit word) and subregion (low word),
+     *  UINT32_MAX if not applicable. */
+    uint32_t                            iPciRegion;
+    /** IOM_MMIO_F_XXX */
+    uint32_t                            fFlags;
+    /** The entry of the first statistics entry, UINT16_MAX if no stats. */
+    uint16_t                            idxStats;
+    /** Set if mapped, clear if not.
+     * Only updated when critsect is held exclusively.   */
+    bool                                fMapped;
+    /** Set if there is an ring-0 entry too. */
+    bool                                fRing0;
+    /** Set if there is an raw-mode entry too. */
+    bool                                fRawMode;
+    uint8_t                             bPadding;
+    /** Same as the handle index. */
+    uint16_t                            idxSelf;
+} IOMMMIOENTRYR3;
+AssertCompileSize(IOMMMIOENTRYR3, sizeof(RTGCPHYS) * 2 + 7 * sizeof(RTR3PTR) + 16);
+/** Pointer to a ring-3 MMIO handle table entry. */
+typedef IOMMMIOENTRYR3 *PIOMMMIOENTRYR3;
+/** Pointer to a const ring-3 MMIO handle table entry. */
+typedef IOMMMIOENTRYR3 const *PCIOMMMIOENTRYR3;
+
+/**
+ * MMIO statistics entry (one MMIO).
+ */
+typedef struct IOMMMIOSTATSENTRY
+{
+    /** Number of accesses (subtract ReadRZToR3 and WriteRZToR3 to get the right
+     *  number). */
+    STAMCOUNTER                 Accesses;
+
+    /** Profiling read handler overhead in R3. */
+    STAMPROFILE                 ProfReadR3;
+    /** Profiling write handler overhead in R3. */
+    STAMPROFILE                 ProfWriteR3;
+    /** Counting and profiling reads in R0/RC. */
+    STAMPROFILE                 ProfReadRZ;
+    /** Counting and profiling writes in R0/RC. */
+    STAMPROFILE                 ProfWriteRZ;
+
+    /** Number of reads to this address from R0/RC which was serviced in R3. */
+    STAMCOUNTER                 ReadRZToR3;
+    /** Number of writes to this address from R0/RC which was serviced in R3. */
+    STAMCOUNTER                 WriteRZToR3;
+} IOMMMIOSTATSENTRY;
+/** Pointer to MMIO statistics entry. */
+typedef IOMMMIOSTATSENTRY *PIOMMMIOSTATSENTRY;
+
+
+
 /**
  * I/O port range descriptor, R3 version.
  */
@@ -536,7 +660,7 @@ typedef struct IOM
      * @{ */
     /** Number of I/O port registrations. */
     uint32_t                        cIoPortRegs;
-    /** The size of the paIoPortsRegs allocation (in entries). */
+    /** The size of the paIoPortRegs allocation (in entries). */
     uint32_t                        cIoPortAlloc;
     /** I/O port registration table for ring-3.
      * There is a parallel table in ring-0, IOMR0PERVM::paIoPortRegs. */
@@ -555,6 +679,32 @@ typedef struct IOM
     R3PTRTYPE(PIOMIOPORTSTATSENTRY) paIoPortStats;
     /** Dummy stats entry so we don't need to check for NULL pointers so much. */
     IOMIOPORTSTATSENTRY             IoPortDummyStats;
+    /** @} */
+
+    /** @name MMIO ports
+     * @note The updating of these variables is done exclusively from EMT(0).
+     * @{ */
+    /** Number of MMIO registrations. */
+    uint32_t                        cMmioRegs;
+    /** The size of the paMmioRegs allocation (in entries). */
+    uint32_t                        cMmioAlloc;
+    /** MMIO registration table for ring-3.
+     * There is a parallel table in ring-0, IOMR0PERVM::paMmioRegs. */
+    R3PTRTYPE(PIOMMMIOENTRYR3)      paMmioRegs;
+    /** Number of entries in the lookup table. */
+    uint32_t                        cMmioLookupEntries;
+    uint32_t                        u32Padding2;
+    /** MMIO lookup table. */
+    R3PTRTYPE(PIOMMMIOLOOKUPENTRY)  paMmioLookup;
+
+    /** The number of valid entries in paioPortStats. */
+    uint32_t                        cMmioStats;
+    /** The size of the paMmioStats allocation (in entries). */
+    uint32_t                        cMmioStatsAllocation;
+    /** MMIO lookup table.   */
+    R3PTRTYPE(PIOMMMIOSTATSENTRY)   paMmioStats;
+    /** Dummy stats entry so we don't need to check for NULL pointers so much. */
+    IOMMMIOSTATSENTRY               MmioDummyStats;
     /** @} */
 
 
@@ -622,7 +772,7 @@ typedef struct IOMR0PERVM
      * @{ */
     /** The higest ring-0 I/O port registration plus one. */
     uint32_t                        cIoPortMax;
-    /** The size of the paIoPortsRegs allocation (in entries). */
+    /** The size of the paIoPortRegs allocation (in entries). */
     uint32_t                        cIoPortAlloc;
     /** I/O port registration table for ring-0.
      * There is a parallel table for ring-3, paIoPortRing3Regs. */
@@ -648,6 +798,38 @@ typedef struct IOMR0PERVM
     RTR0MEMOBJ                      hIoPortStatsMapObj;
 #endif
     /** @} */
+
+    /** @name MMIO
+     * @{ */
+    /** The higest ring-0 MMIO registration plus one. */
+    uint32_t                        cMmioMax;
+    /** The size of the paMmioRegs allocation (in entries). */
+    uint32_t                        cMmioAlloc;
+    /** MMIO registration table for ring-0.
+     * There is a parallel table for ring-3, paMmioRing3Regs. */
+    R0PTRTYPE(PIOMIOPORTENTRYR0)    paMmioRegs;
+    /** MMIO lookup table. */
+    R0PTRTYPE(PIOMIOPORTLOOKUPENTRY) paMmioLookup;
+    /** MMIO registration table for ring-3.
+     * Also mapped to ring-3 as IOM::paMmioRegs. */
+    R0PTRTYPE(PIOMIOPORTENTRYR3)    paMmioRing3Regs;
+    /** Handle to the allocation backing both the ring-0 and ring-3 registration
+     * tables as well as the lookup table. */
+    RTR0MEMOBJ                      hMmioMemObj;
+    /** Handle to the ring-3 mapping of the lookup and ring-3 registration table. */
+    RTR0MEMOBJ                      hMmioMapObj;
+#ifdef VBOX_WITH_STATISTICS
+    /** The size of the paMmioStats allocation (in entries). */
+    uint32_t                        cMmioStatsAllocation;
+    /** MMIO lookup table.   */
+    R0PTRTYPE(PIOMIOPORTSTATSENTRY) paMmioStats;
+    /** Handle to the allocation backing the MMIO statistics. */
+    RTR0MEMOBJ                      hMmioStatsMemObj;
+    /** Handle to the ring-3 mapping of the MMIO statistics. */
+    RTR0MEMOBJ                      hMmioStatsMapObj;
+#endif
+    /** @} */
+
 } IOMR0PERVM;
 
 

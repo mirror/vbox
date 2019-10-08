@@ -209,7 +209,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
 
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
 
-    AssertMsgReturn(cPorts > 0 && cPorts <= _8K, ("cPorts=%s\n", cPorts), VERR_OUT_OF_RANGE);
+    AssertMsgReturn(cPorts > 0 && cPorts <= _8K, ("cPorts=%#x\n", cPorts), VERR_OUT_OF_RANGE);
     AssertReturn(!(fFlags & ~IOM_IOPORT_F_VALID_MASK), VERR_INVALID_FLAGS);
 
     AssertReturn(pfnOut || pfnIn || pfnOutStr || pfnInStr, VERR_INVALID_PARAMETER);
@@ -356,7 +356,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortMap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE
                 else
                 {
                     /* Oops! We've got a conflict. */
-                    AssertLogRelMsgFailed(("%u..%u (%s) conflicts with existing mapping %u..%u (%s)\n",
+                    AssertLogRelMsgFailed(("%x..%x (%s) conflicts with existing mapping %x..%x (%s)\n",
                                            uPort, uLastPort, pRegEntry->pszDesc,
                                            pEntry->uFirstPort, pEntry->uLastPort, pVM->iom.s.paIoPortRegs[pEntry->idx].pszDesc));
                     IOM_UNLOCK_EXCL(pVM);
@@ -457,7 +457,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
                 else
                 {
                     rc = VERR_IOM_IOPORT_IPE_1;
-                    AssertLogRelMsgFailedBreak(("%u..%u (%s) not found!\n", uPort, uLastPort, pRegEntry->pszDesc));
+                    AssertLogRelMsgFailedBreak(("%x..%x (%s) not found!\n", uPort, uLastPort, pRegEntry->pszDesc));
                 }
             }
             else if (pEntry->uFirstPort > uLastPort)
@@ -467,7 +467,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
                 else
                 {
                     rc = VERR_IOM_IOPORT_IPE_1;
-                    AssertLogRelMsgFailedBreak(("%u..%u (%s) not found!\n", uPort, uLastPort, pRegEntry->pszDesc));
+                    AssertLogRelMsgFailedBreak(("%x..%x (%s) not found!\n", uPort, uLastPort, pRegEntry->pszDesc));
                 }
             }
             else if (pEntry->idx == hIoPorts)
@@ -487,7 +487,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
             }
             else
             {
-                AssertLogRelMsgFailed(("Lookig for %u..%u (%s), found %u..%u (%s) instead!\n",
+                AssertLogRelMsgFailed(("Lookig for %x..%x (%s), found %x..%x (%s) instead!\n",
                                        uPort, uLastPort, pRegEntry->pszDesc,
                                        pEntry->uFirstPort, pEntry->uLastPort, pVM->iom.s.paIoPortRegs[pEntry->idx].pszDesc));
                 rc = VERR_IOM_IOPORT_IPE_1;

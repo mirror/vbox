@@ -209,14 +209,14 @@ typedef struct GVM
 #if defined(VMM_INCLUDED_SRC_include_IOMInternal_h) && defined(IN_RING0)
         struct IOMR0PERVM   s;
 #endif
-        uint8_t             padding[256];
+        uint8_t             padding[512];
     } iomr0;
 
     /** Padding so aCpus starts on a page boundrary.  */
 #ifdef VBOX_WITH_NEM_R0
-    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 256 - 64 - 1792 - 256 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
+    uint8_t         abPadding2[4096 - 64 - 256 - 512 - 256 - 64 - 1792 - 512 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 #else
-    uint8_t         abPadding2[4096 - 64 - 256 - 512       - 64 - 1792 - 256 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
+    uint8_t         abPadding2[4096 - 64 - 256 - 512       - 64 - 1792 - 512 - sizeof(PGVMCPU) * VMM_MAX_CPU_COUNT];
 #endif
 
     /** For simplifying CPU enumeration in VMMAll code. */
@@ -225,6 +225,7 @@ typedef struct GVM
     /** GVMCPU array for the configured number of virtual CPUs. */
     GVMCPU          aCpus[1];
 } GVM;
+#if 0
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
 # pragma GCC diagnostic push
 #endif
@@ -243,6 +244,7 @@ AssertCompileMemberAlignment(GVM, aCpus,    4096);
 AssertCompileSizeAlignment(GVM,             4096);
 #if RT_GNUC_PREREQ(4, 6) && defined(__cplusplus)
 # pragma GCC diagnostic pop
+#endif
 #endif
 
 /** The GVM::u32Magic value (Wayne Shorter). */

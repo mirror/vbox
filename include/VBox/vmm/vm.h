@@ -1319,7 +1319,7 @@ typedef struct VM
 #ifdef VMM_INCLUDED_SRC_include_IOMInternal_h
         struct IOM s;
 #endif
-        uint8_t     padding[960];       /* multiple of 64 */
+        uint8_t     padding[1152];      /* multiple of 64 */
     } iom;
 
     /** EM part. */
@@ -1431,7 +1431,7 @@ typedef struct VM
     } cfgm;
 
     /** Padding for aligning the structure size on a page boundrary. */
-    uint8_t         abAlignment2[2968 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
+    uint8_t         abAlignment2[2776 + 256 - sizeof(PVMCPUR3) * VMM_MAX_CPU_COUNT];
 
     /* ---- end small stuff ---- */
 
