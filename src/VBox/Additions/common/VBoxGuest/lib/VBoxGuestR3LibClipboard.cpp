@@ -164,6 +164,13 @@ VBGLR3DECL(int) VbglR3ClipboardDisconnectEx(PVBGLR3SHCLCMDCTX pCtx)
 }
 
 
+/**
+ * Receives reported formats from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pFormats            Where to store the received formats from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORMATDATA pFormats)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
@@ -197,6 +204,13 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFO
 }
 
 
+/**
+ * Receives a host request to read clipboard data request from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pDataReq            Where to store the read data request from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATAREQ pDataReq)
 {
     AssertPtrReturn(pCtx,     VERR_INVALID_POINTER);
@@ -374,6 +388,13 @@ int VbglR3ClipboardMsgPeekWait(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pidMsg, uint32_
 }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+/**
+ * Reads a root list header from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pRootListHdr        Where to store the received root list header.
+ */
 static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTHDR pRootListHdr)
 {
     AssertPtrReturn(pCtx,         VERR_INVALID_POINTER);
@@ -402,6 +423,14 @@ static int vbglR3ClipboardRootListHdrRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTH
     return rc;
 }
 
+/**
+ * Reads a root list entry from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   uIndex              Index of root list entry to read.
+ * @param   pRootListEntry      Where to store the root list entry read from the host.
+ */
 static int vbglR3ClipboardRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIndex, PSHCLROOTLISTENTRY pRootListEntry)
 {
     AssertPtrReturn(pCtx,           VERR_INVALID_POINTER);
@@ -438,6 +467,14 @@ static int vbglR3ClipboardRootListEntryRead(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIn
     return rc;
 }
 
+/**
+ * Reads the root list from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   ppRootList          Where to store the (allocated) root list. Must be free'd by the caller with
+ *                              SharedClipboardTransferRootListFree().
+ */
 VBGLR3DECL(int) VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
@@ -487,6 +524,14 @@ VBGLR3DECL(int) VbglR3ClipboardRootListRead(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLIS
     return rc;
 }
 
+/**
+ * Receives a transfer status from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pEnmDir             Where to store the transfer direction for the reported transfer.
+ * @param   pReport             Where to store the transfer (status) report.
+ */
 VBGLR3DECL(int) VbglR3ClipboarTransferStatusRecv(PVBGLR3SHCLCMDCTX pCtx,
                                                  PSHCLTRANSFERDIR pEnmDir, PSHCLTRANSFERREPORT pReport)
 {
@@ -524,6 +569,15 @@ VBGLR3DECL(int) VbglR3ClipboarTransferStatusRecv(PVBGLR3SHCLCMDCTX pCtx,
     return rc;
 }
 
+/**
+ * Replies to a transfer report from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pTransfer           Transfer of report to reply to.
+ * @param   uStatus             Tranfer status to reply.
+ * @param   rcTransfer          Result code (rc) to reply.
+ */
 VBGLR3DECL(int) VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLTRANSFER pTransfer,
                                                    SHCLTRANSFERSTATUS uStatus, int rcTransfer)
 {
@@ -554,6 +608,13 @@ VBGLR3DECL(int) VbglR3ClipboardTransferStatusReply(PVBGLR3SHCLCMDCTX pCtx, PSHCL
     return rc;
 }
 
+/**
+ * Receives a host request to read a root list header from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pfRoots             Where to store the root list header flags to use, requested by the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32_t *pfRoots)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
@@ -580,6 +641,13 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32
     return rc;
 }
 
+/**
+ * Replies to a root list header request.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pRootListHdr        Root lsit header to reply to the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PSHCLROOTLISTHDR pRootListHdr)
 {
     AssertPtrReturn(pCtx,         VERR_INVALID_POINTER);
@@ -602,6 +670,14 @@ VBGLR3DECL(int) VbglR3ClipboardRootListHdrReadReply(PVBGLR3SHCLCMDCTX pCtx, PSHC
     return rc;
 }
 
+/**
+ * Receives a host request to read a root list entry from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   puIndex             Where to return the index of the root list entry the host wants to read.
+ * @param   pfInfo              Where to return the read flags the host wants to use.
+ */
 VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReq(PVBGLR3SHCLCMDCTX pCtx, uint32_t *puIndex, uint32_t *pfInfo)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
@@ -632,6 +708,14 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReq(PVBGLR3SHCLCMDCTX pCtx, uint
     return rc;
 }
 
+/**
+ * Replies to a root list entry read request from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   uIndex              Index of root list entry to reply.
+ * @param   pEntry              Actual root list entry to reply.
+ */
 VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReply(PVBGLR3SHCLCMDCTX pCtx, uint32_t uIndex, PSHCLROOTLISTENTRY pEntry)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -657,6 +741,14 @@ VBGLR3DECL(int) VbglR3ClipboardRootListEntryReadReply(PVBGLR3SHCLCMDCTX pCtx, ui
     return rc;
 }
 
+/**
+ * Sends a request to open a list handle to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pOpenParms          List open parameters to use for the open request.
+ * @param   phList              Where to return the list handle received from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
                                             PSHCLLISTHANDLE phList)
 {
@@ -687,6 +779,13 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
     return rc;
 }
 
+/**
+ * Receives a host request to open a list handle on the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pOpenParms          Where to store the open parameters the host wants to use for opening the list handle.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPENPARMS pOpenParms)
 {
     AssertPtrReturn(pCtx,       VERR_INVALID_POINTER);
@@ -722,6 +821,14 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
     return rc;
 }
 
+/**
+ * Replies to a list open request from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   rcReply             Return code to reply to the host.
+ * @param   hList               List handle of (guest) list to reply to the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHCLLISTHANDLE hList)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -746,6 +853,13 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     return rc;
 }
 
+/**
+ * Receives a host request to close a list handle on the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   phList              Where to store the list handle to close, received from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHANDLE phList)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -772,6 +886,14 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHA
     return rc;
 }
 
+/**
+ * Replies to a list handle close request from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   rcReply             Return code to reply to the host.
+ * @param   hList               List handle the send the close reply for.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHCLLISTHANDLE hList)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -796,6 +918,13 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcRepl
     return rc;
 }
 
+/**
+ * Sends a request to close a list handle to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   hList               List handle to request for closing on the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -815,7 +944,15 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAN
     return rc;
 }
 
-
+/**
+ * Sends a request to read a list header to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   hList               List handle to read list header for.
+ * @param   fFlags              List header read flags to use.
+ * @param   pListHdr            Where to return the list header received from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListHdrRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList, uint32_t fFlags,
                                            PSHCLLISTHDR pListHdr)
 {
@@ -851,6 +988,14 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDL
     return rc;
 }
 
+/**
+ * Receives a host request to read a list header on the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   phList              Where to return the list handle to read list header for.
+ * @param   pfFlags             Where to return the List header read flags to use.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHANDLE phList, uint32_t *pfFlags)
 {
     AssertPtrReturn(pCtx,    VERR_INVALID_POINTER);
@@ -881,6 +1026,14 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHCLL
     return rc;
 }
 
+/**
+ * Sends (writes) a list header to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   hList               List handle to write list header for.
+ * @param   pListHdr            List header to write.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListHdrWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList,
                                             PSHCLLISTHDR pListHdr)
 {
@@ -908,6 +1061,14 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAND
     return rc;
 }
 
+/**
+ * Sends a reuqest to read a list entry from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   hList               List handle to request to read a list entry for.
+ * @param   pListEntry          Where to return the list entry read from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListEntryRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList,
                                              PSHCLLISTENTRY pListEntry)
 {
@@ -938,6 +1099,14 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryRead(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAN
     return rc;
 }
 
+/**
+ * Receives a host request to read a list entry from the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   phList              Where to return the list handle to read a list entry for.
+ * @param   pfInfo              Where to return the list read flags.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTHANDLE phList, uint32_t *pfInfo)
 {
     AssertPtrReturn(pCtx,   VERR_INVALID_POINTER);
@@ -968,6 +1137,14 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryReadRecvReq(PVBGLR3SHCLCMDCTX pCtx, PSHC
     return rc;
 }
 
+/**
+ * Sends (writes) a list entry to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   hList               List handle to write a list etnry for.
+ * @param   pListEntry          List entry to write.
+ */
 VBGLR3DECL(int) VbglR3ClipboardListEntryWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHANDLE hList,
                                               PSHCLLISTENTRY pListEntry)
 {
@@ -994,6 +1171,13 @@ VBGLR3DECL(int) VbglR3ClipboardListEntryWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHA
     return rc;
 }
 
+/**
+ * Receives a host request to open an object on the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pCreateParms        Where to store the object open/create parameters received from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms)
 {
     AssertPtrReturn(pCtx,         VERR_INVALID_POINTER);
@@ -1025,6 +1209,14 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
     return rc;
 }
 
+/**
+ * Replies a host request to open an object.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   rcReply             Return code to reply to the host.
+ * @param   hObj                Object handle of opened object to reply to the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHCLOBJHANDLE hObj)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1049,6 +1241,14 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply,
     return rc;
 }
 
+/**
+ * Sends an object open request to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   pCreateParms        Object open/create parameters to use for opening the object on the host.
+ * @param   phObj               Where to return the object handle from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
                                            PSHCLOBJHANDLE phObj)
 {
@@ -1078,6 +1278,13 @@ VBGLR3DECL(int) VbglR3ClipboardObjOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJOPENC
     return rc;
 }
 
+/**
+ * Receives a host request to close an object on the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   phObj               Where to return the object handle to close from the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHANDLE phObj)
 {
     AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
@@ -1104,6 +1311,14 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHAND
     return rc;
 }
 
+/**
+ * Replies to an object open request from the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   rcReply             Return code to reply to the host.
+ * @param   hObj                Object handle to reply to the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply, SHCLOBJHANDLE hObj)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1128,6 +1343,13 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseReply(PVBGLR3SHCLCMDCTX pCtx, int rcReply
     return rc;
 }
 
+/**
+ * Sends a request to close an object to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   hObj                Object handle to close on the host.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE hObj)
 {
     AssertPtrReturn(pCtx, VERR_INVALID_POINTER);
@@ -1147,6 +1369,15 @@ VBGLR3DECL(int) VbglR3ClipboardObjCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
     return rc;
 }
 
+/**
+ * Receives a host request to read from an object on the guest.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   phObj               Where to return the object handle to read from.
+ * @param   pcbToRead           Where to return the amount (in bytes) to read.
+ * @param   pfFlags             Where to return the read flags.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHANDLE phObj, uint32_t *pcbToRead,
                                            uint32_t *pfFlags)
 {
@@ -1182,6 +1413,16 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLOBJHANDL
     return rc;
 }
 
+/**
+ * Sends a request to read from an object to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   hObj                Object handle of object to read from.
+ * @param   pvData              Buffer where to store the read object data.
+ * @param   cbData              Size (in bytes) of buffer.
+ * @param   pcbRead             Where to store the amount (in bytes) read from the object.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjReadSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE hObj,
                                            void *pvData, uint32_t cbData, uint32_t *pcbRead)
 {
@@ -1219,6 +1460,16 @@ VBGLR3DECL(int) VbglR3ClipboardObjReadSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE
     return rc;
 }
 
+/**
+ * Sends a request to write to an object to the host.
+ *
+ * @returns VBox status code.
+ * @param   pCtx                Shared Clipboard command context to use for the connection.
+ * @param   hObj                Object handle of object to write to.
+ * @param   pvData              Buffer of data to write to object.
+ * @param   cbData              Size (in bytes) of buffer.
+ * @param   pcbWritten          Where to store the amount (in bytes) written to the object.
+ */
 VBGLR3DECL(int) VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDLE hObj,
                                             void *pvData, uint32_t cbData, uint32_t *pcbWritten)
 {
