@@ -30,10 +30,14 @@
 # define DBG_VIRTIO(...)
 #endif
 
+#define SCSI_INQUIRY       0x12
+
 /* The maximum CDB size. */
 #define VIRTIO_SCSI_CDB_SZ      16
 /** Maximum sense data to return. */
 #define VIRTIO_SCSI_SENSE_SZ    32
+
+#define VIRTIO_SCSI_RING_ELEM    3
 
 /**
  * VirtIO queue descriptor.
@@ -65,7 +69,7 @@ typedef struct
     /** Next index to write an available buffer by the driver. */
     uint16_t        idxNextFree;
     /** The ring - we only provide one entry. */
-    uint16_t        au16Ring[1];
+    uint16_t        au16Ring[VIRTIO_SCSI_RING_ELEM];
     /** Used event index. */
     uint16_t        u16EvtUsed;
 } virtio_q_avail_t;
@@ -87,11 +91,11 @@ typedef struct
 typedef struct
 {
     /** Flags. */
-    uint16_t             fFlags;
+    volatile uint16_t    fFlags;
     /** Index where the next entry would be written by the device. */
-    uint16_t             idxNextUsed;
+    volatile uint16_t    idxNextUsed;
     /** The used ring. */
-    virtio_q_used_elem_t aRing[1];
+    virtio_q_used_elem_t aRing[VIRTIO_SCSI_RING_ELEM];
 } virtio_q_used_t;
 
 /**
@@ -105,6 +109,8 @@ typedef struct
     virtio_q_avail_t     AvailRing;
     /** Used ring. */
     virtio_q_used_t      UsedRing;
+    /** The notification offset for the queue. */
+    uint32_t             offNotify;
 } virtio_q_t;
 
 /**
@@ -197,12 +203,17 @@ typedef struct
     /** The start offset in the PCI configuration space where to find the VIRTIO_PCI_CAP_PCI_CFG
      * capability for the alternate access method to the registers. */
     uint8_t          u8PciCfgOff;
+    /** The notification offset multiplier. */
+    uint32_t         u32NotifyOffMult;
     /** PCI bus where the device is located. */
     uint8_t          u8Bus;
     /** Device/Function number. */
     uint8_t          u8DevFn;
     /** Saved high bits of EAX. */
     uint16_t         saved_eax_hi;
+    /** The current executed command structure. */
+    virtio_scsi_req_hdr_t ScsiReqHdr;
+    virtio_scsi_req_sts_t ScsiReqSts;
 } virtio_t;
 
 /* The VirtIO specific data must fit into 1KB (statically allocated). */
@@ -294,14 +305,14 @@ void inline high_bits_restore(virtio_t __far *virtio)
     eax_hi_wr(virtio->saved_eax_hi);
 }
 
-static void virtio_reg_set_bar_offset_length(virtio_t __far *virtio, uint8_t u8Bar, uint32_t offReg, uint8_t cb)
+static void virtio_reg_set_bar_offset_length(virtio_t __far *virtio, uint8_t u8Bar, uint32_t offReg, uint32_t cb)
 {
     pci_write_config_byte(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff  +  4, u8Bar);
     pci_write_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff +  8, offReg);
-    pci_write_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + 12, (uint32_t)cb);
+    pci_write_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + 12, cb);
 }
 
-static void virtio_reg_common_access_prepare(virtio_t __far *virtio, uint16_t offReg, uint16_t cbAcc)
+static void virtio_reg_common_access_prepare(virtio_t __far *virtio, uint16_t offReg, uint32_t cbAcc)
 {
     virtio_reg_set_bar_offset_length(virtio,
                                      virtio->aBarCfgs[VIRTIO_PCI_CAP_COMMON_CFG - 1].u8Bar,
@@ -309,11 +320,19 @@ static void virtio_reg_common_access_prepare(virtio_t __far *virtio, uint16_t of
                                      cbAcc);
 }
 
-static void virtio_reg_dev_access_prepare(virtio_t __far *virtio, uint16_t offReg, uint16_t cbAcc)
+static void virtio_reg_dev_access_prepare(virtio_t __far *virtio, uint16_t offReg, uint32_t cbAcc)
 {
     virtio_reg_set_bar_offset_length(virtio,
                                      virtio->aBarCfgs[VIRTIO_PCI_CAP_DEVICE_CFG - 1].u8Bar,
                                      virtio->aBarCfgs[VIRTIO_PCI_CAP_DEVICE_CFG - 1].u32Offset + offReg,
+                                     cbAcc);
+}
+
+static void virtio_reg_notify_access_prepare(virtio_t __far *virtio, uint16_t offReg, uint32_t cbAcc)
+{
+    virtio_reg_set_bar_offset_length(virtio,
+                                     virtio->aBarCfgs[VIRTIO_PCI_CAP_NOTIFY_CFG - 1].u8Bar,
+                                     virtio->aBarCfgs[VIRTIO_PCI_CAP_NOTIFY_CFG - 1].u32Offset + offReg,
                                      cbAcc);
 }
 
@@ -371,6 +390,12 @@ static void virtio_reg_dev_cfg_write_u32(virtio_t __far *virtio, uint16_t offReg
     pci_write_config_dword(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t), u32Val);
 }
 
+static void virtio_reg_notify_write_u16(virtio_t __far *virtio, uint16_t offReg, uint16_t u16Val)
+{
+    virtio_reg_notify_access_prepare(virtio, offReg, sizeof(uint16_t));
+    pci_write_config_word(virtio->u8Bus, virtio->u8DevFn, virtio->u8PciCfgOff + sizeof(virtio_pci_cap_t), u16Val);
+}
+
 /**
  * Allocates 1K of conventional memory.
  */
@@ -400,6 +425,77 @@ static uint16_t virtio_mem_alloc(void)
 static uint32_t virtio_addr_to_phys(void __far *ptr)
 {
     return ((uint32_t)FP_SEG(ptr) << 4) + FP_OFF(ptr);
+}
+
+int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far *aCDB,
+                            uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
+{
+    uint16_t idxUsedOld = virtio->Queue.UsedRing.idxNextUsed;
+
+    _fmemset(&virtio->ScsiReqHdr, 0, sizeof(virtio->ScsiReqHdr));
+    _fmemset(&virtio->ScsiReqSts, 0, sizeof(virtio->ScsiReqSts));
+
+    virtio->ScsiReqHdr.au8Lun[0] = 0x1;
+    virtio->ScsiReqHdr.au8Lun[1] = idTgt;
+    virtio->ScsiReqHdr.au8Lun[2] = 0;
+    virtio->ScsiReqHdr.au8Lun[3] = 0;
+    _fmemcpy(&virtio->ScsiReqHdr.abCdb[0], aCDB, cbCDB);
+
+    /* Fill in the descriptors. */
+    virtio->Queue.aDescTbl[0].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqHdr);
+    virtio->Queue.aDescTbl[0].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[0].cbBuf         = sizeof(virtio->ScsiReqHdr);
+    virtio->Queue.aDescTbl[0].fFlags        = VIRTIO_Q_DESC_F_NEXT;
+    virtio->Queue.aDescTbl[0].idxNext       = 1;
+
+    /* No data out buffer, the status comes right after this in the next descriptor. */
+    virtio->Queue.aDescTbl[1].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqSts);
+    virtio->Queue.aDescTbl[1].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[1].cbBuf         = sizeof(virtio->ScsiReqHdr);
+    virtio->Queue.aDescTbl[1].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
+    virtio->Queue.aDescTbl[1].idxNext       = 2;
+
+    virtio->Queue.aDescTbl[2].GCPhysBufLow  = virtio_addr_to_phys(buffer);
+    virtio->Queue.aDescTbl[2].GCPhysBufHigh = 0;
+    virtio->Queue.aDescTbl[2].cbBuf         = length;
+    virtio->Queue.aDescTbl[2].fFlags        = VIRTIO_Q_DESC_F_WRITE; /* End of chain. */
+    virtio->Queue.aDescTbl[2].idxNext       = 0;
+
+    /* Put it into the queue. */
+    virtio->Queue.AvailRing.au16Ring[virtio->Queue.AvailRing.idxNextFree] = 0;
+    virtio->Queue.AvailRing.idxNextFree++;
+    virtio->Queue.AvailRing.idxNextFree %= VIRTIO_SCSI_RING_ELEM;
+
+    /* Notify the device about the new command. */
+    DBG_VIRTIO("VirtIO: Submitting new request, Queue.offNotify=0x%x\n", virtio->Queue.offNotify);
+    virtio_reg_notify_write_u16(virtio, virtio->Queue.offNotify, 0);
+
+    /* Wait for it to complete. */
+    while (idxUsedOld == virtio->Queue.UsedRing.idxNextUsed);
+
+    DBG_VIRTIO("VirtIO: Request complete\n");
+
+    return 0;
+}
+
+static int virtio_scsi_detect_devices(virtio_t __far *virtio)
+{
+    uint8_t     buffer[0x0200];
+    uint8_t     rc;
+    uint8_t     aCDB[16];
+
+    aCDB[0] = SCSI_INQUIRY;
+    aCDB[1] = 0;
+    aCDB[2] = 0;
+    aCDB[3] = 0;
+    aCDB[4] = 5; /* Allocation length. */
+    aCDB[5] = 0;
+
+    rc = virtio_scsi_cmd_data_in(virtio, 0, aCDB, 6, buffer, 5);
+    if (rc != 0)
+        BX_PANIC("%s: SCSI_INQUIRY failed\n", __func__);
+
+    return rc;
 }
 
 /**
@@ -466,6 +562,11 @@ static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCap
                     pBarCfg->u8Bar     = pci_read_config_byte(u8Bus, u8DevFn, u8PciCapOff + 4);
                     pBarCfg->u32Offset = pci_read_config_dword(u8Bus, u8DevFn, u8PciCapOff + 8);
                     pBarCfg->u32Length = pci_read_config_dword(u8Bus, u8DevFn, u8PciCapOff + 12);
+                    if (u8PciVirtioCfg == VIRTIO_PCI_CAP_NOTIFY_CFG)
+                    {
+                        virtio->u32NotifyOffMult = pci_read_config_dword(u8Bus, u8DevFn, u8PciCapOff + 16);
+                        DBG_VIRTIO("VirtIO: u32NotifyOffMult 0x%x\n", virtio->u32NotifyOffMult);
+                    }
                     break;
                 }
                 case VIRTIO_PCI_CAP_PCI_CFG:
@@ -528,7 +629,7 @@ static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCap
 
     /* Setup the request queue. */
     virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SELECT, VIRTIO_SCSI_Q_REQUEST);
-    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SIZE, 1);
+    virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_SIZE, VIRTIO_SCSI_RING_ELEM);
     virtio_reg_common_write_u16(virtio, VIRTIO_COMMON_REG_Q_ENABLE, 1);
 
     /* Set queue area addresses (only low part, leave high part 0). */
@@ -544,13 +645,14 @@ static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCap
     virtio_reg_dev_cfg_write_u32(virtio, VIRTIO_DEV_CFG_REG_CDB_SZ, VIRTIO_SCSI_CDB_SZ);
     virtio_reg_dev_cfg_write_u32(virtio, VIRTIO_DEV_CFG_REG_SENSE_SZ, VIRTIO_SCSI_SENSE_SZ);
 
+    DBG_VIRTIO("VirtIO: Q notify offset 0x%x\n", virtio_reg_common_read_u16(virtio, VIRTIO_COMMON_REG_Q_NOTIFY_OFF));
+    virtio->Queue.offNotify = virtio_reg_common_read_u16(virtio, VIRTIO_COMMON_REG_Q_NOTIFY_OFF) * virtio->u32NotifyOffMult;
+
     /* Bring the device into operational mode. */
     u8DevStat |= VIRTIO_CMN_REG_DEV_STS_F_DRV_OK;
     virtio_reg_common_write_u8(virtio, VIRTIO_COMMON_REG_DEV_STS, u8DevStat);
 
-    /** @todo Detect attached devices. */
-
-    return 0;
+    return virtio_scsi_detect_devices(virtio);
 }
 
 /**
