@@ -172,22 +172,22 @@ RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
 }
 
 
-RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue)
+RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWBOOL enmBoolean, bool *pfValue)
 {
     *pfValue = false;
 
     /*
-     * Translate the enmProp to a name:
+     * Translate the enmBoolean to a name:
      */
     const wchar_t *pwszName = NULL;
-    switch (enmProp)
+    switch (enmBoolean)
     {
-        case RTSYSFWPROP_SECURE_BOOT:
+        case RTSYSFWBOOL_SECURE_BOOT:
             pwszName = L"SecureBoot";
             break;
 
         default:
-            AssertReturn(enmProp > RTSYSFWPROP_INVALID && enmProp < RTSYSFWPROP_END, VERR_INVALID_PARAMETER);
+            AssertReturn(enmBoolean > RTSYSFWBOOL_INVALID && enmBoolean < RTSYSFWBOOL_END, VERR_INVALID_PARAMETER);
             return VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY;
     }
 

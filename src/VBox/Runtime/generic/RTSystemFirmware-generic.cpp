@@ -44,9 +44,9 @@ RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
 RT_EXPORT_SYMBOL(RTSystemQueryFirmwareType);
 
 
-RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue)
+RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWBOOL enmBoolean, bool *pfValue)
 {
-    RT_NOREF(enmProp, pfValue);
+    RT_NOREF(enmBoolean, pfValue);
     return VERR_NOT_SUPPORTED;
 }
 RT_EXPORT_SYMBOL(RTSystemQueryFirmwareBoolean);

@@ -60,7 +60,7 @@ RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmFirmwareType)
 RT_EXPORT_SYMBOL(RTSystemQueryFirmwareType);
 
 
-RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue)
+RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWBOOL enmBoolean, bool *pfValue)
 {
     *pfValue = false;
 
@@ -68,14 +68,14 @@ RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue)
      * Translate the property to variable base filename.
      */
     const char *pszName;
-    switch (enmProp)
+    switch (enmBoolean)
     {
-        case RTSYSFWPROP_SECURE_BOOT:
+        case RTSYSFWBOOL_SECURE_BOOT:
             pszName = "firmware/efi/efivars/SecureBoot";
             break;
 
         default:
-            AssertReturn(enmProp > RTSYSFWPROP_INVALID && enmProp < RTSYSFWPROP_END, VERR_INVALID_PARAMETER);
+            AssertReturn(enmBoolean > RTSYSFWBOOL_INVALID && enmBoolean < RTSYSFWBOOL_END, VERR_INVALID_PARAMETER);
             return VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY;
 
     }

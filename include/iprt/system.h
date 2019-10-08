@@ -298,31 +298,31 @@ RTDECL(int) RTSystemQueryFirmwareType(PRTSYSFWTYPE penmType);
 RTDECL(const char *) RTSystemFirmwareTypeName(RTSYSFWTYPE enmType);
 
 /**
- * Enumeration for a system firmware property.
+ * Boolean firmware values queriable via RTSystemQueryFirmwareBoolean().
  */
-typedef enum RTSYSFWPRPOP
+typedef enum RTSYSFWBOOL
 {
     /** Invalid property, do not use. */
-    RTSYSFWPROP_INVALID = 0,
+    RTSYSFWBOOL_INVALID = 0,
     /** Whether Secure Boot is enabled or not (type: boolean). */
-    RTSYSFWPROP_SECURE_BOOT,
+    RTSYSFWBOOL_SECURE_BOOT,
     /** End of valid    */
-    RTSYSFWPROP_END,
+    RTSYSFWBOOL_END,
     /** The usual 32-bit hack.  */
-    RTSYSFWPROP_32_BIT_HACK = 0x7fffffff
-} RTSYSFWPROP;
+    RTSYSFWBOOL_32_BIT_HACK = 0x7fffffff
+} RTSYSFWBOOL;
 
 /**
  * Queries the value of a firmware property.
  *
  * @returns IPRT status code.
  * @retval  VERR_NOT_SUPPORTED if we cannot query firmware properties on the host.
- * @retval  VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY if @a enmProp isn't
+ * @retval  VERR_SYS_UNSUPPORTED_FIRMWARE_PROPERTY if @a enmBoolean isn't
  *          supported.
- * @param   enmProp     The property to query the value of.
+ * @param   enmBoolean  The value to query.
  * @param   pfValue     Where to return the value.
  */
-RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWPROP enmProp, bool *pfValue);
+RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWBOOL enmBoolean, bool *pfValue);
 
 #ifdef RT_OS_WINDOWS
 
