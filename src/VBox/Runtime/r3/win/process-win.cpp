@@ -441,7 +441,7 @@ static int rtProcWinDuplicateToken(HANDLE hSrcToken, PHANDLE phToken)
 
 
 /**
- * Get the token assigned to specified thread indicated by @a hThread.
+ * Get the token assigned to the thread indicated by @a hThread.
  *
  * Only used when RTPROC_FLAGS_AS_IMPERSONATED_TOKEN is in effect and the
  * purpose is to get a duplicate the impersonated token of the current thread.
@@ -465,6 +465,37 @@ static int rtProcWinGetThreadTokenHandle(HANDLE hThread, PHANDLE phToken)
     {
         rc = rtProcWinDuplicateToken(hTokenThread, phToken);
         CloseHandle(hTokenThread);
+    }
+    else
+        rc = RTErrConvertFromWin32(GetLastError());
+    return rc;
+}
+
+
+/**
+ * Get the token assigned the process indicated by @a hProcess.
+ *
+ * Only used when pwszUser is NULL and RTPROC_FLAGS_AS_IMPERSONATED_TOKEN isn't
+ * set.
+ *
+ * @returns IPRT status code.
+ * @param   hProcess        The process handle (current process).
+ * @param   phToken         Where to return the a duplicate of the thread token
+ *                          handle on success. (The caller closes it.)
+ */
+static int rtProcWinGetProcessTokenHandle(HANDLE hProcess, PHANDLE phToken)
+{
+    AssertPtr(phToken);
+
+    int     rc;
+    HANDLE hTokenProcess;
+    if (OpenProcessToken(hProcess,
+                         TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY | TOKEN_DUPLICATE
+                         | TOKEN_ASSIGN_PRIMARY | TOKEN_ADJUST_SESSIONID | TOKEN_READ | TOKEN_WRITE,
+                         &hTokenProcess))
+    {
+        rc = rtProcWinDuplicateToken(hTokenProcess, phToken); /* not sure if this is strictly necessary */
+        CloseHandle(hTokenProcess);
     }
     else
         rc = RTErrConvertFromWin32(GetLastError());
@@ -1611,8 +1642,10 @@ static int rtProcWinCreateAsUser2(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTU
     DWORD   dwErr       = NO_ERROR;
     HANDLE  hTokenLogon = INVALID_HANDLE_VALUE;
     int rc;
-    if ((fFlags & RTPROC_FLAGS_AS_IMPERSONATED_TOKEN) || pwszUser == NULL)
+    if (fFlags & RTPROC_FLAGS_AS_IMPERSONATED_TOKEN)
         rc = rtProcWinGetThreadTokenHandle(GetCurrentThread(), &hTokenLogon);
+    else if (pwszUser == NULL)
+        rc = rtProcWinGetProcessTokenHandle(GetCurrentProcess(), &hTokenLogon);
     else
         rc = rtProcWinUserLogon(pwszUser, pwszPassword, &hTokenLogon);
     if (RT_SUCCESS(rc))
