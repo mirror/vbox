@@ -261,16 +261,6 @@
               Source="$(env.PATH_OUT)\bin\VBoxDDU.dll" />
         <File Id="file_VBoxRT.dll" Name="VBoxRT.dll"
               Source="$(env.PATH_OUT)\bin\VBoxRT.dll" />
-<?if $(env.VBOX_WITH_REM) = "yes" ?>
-        <File Id="file_VBoxREM.dll" Name="VBoxREM.dll"
-              Source="$(env.PATH_OUT)\bin\VBoxREM.dll" />
- <?if $(env.BUILD_TARGET_ARCH) = "x86" ?>
-        <File Id="file_VBoxREM32.dll" Name="VBoxREM32.dll"
-              Source="$(env.PATH_OUT)\bin\VBoxREM32.dll" />
-        <File Id="file_VBoxREM64.dll" Name="VBoxREM64.dll"
-              Source="$(env.PATH_OUT)\bin\VBoxREM64.dll" />
- <?endif ?>
-<?endif ?>
         <File Id="file_VBoxSupLib.dll" Name="VBoxSupLib.dll"
               Source="$(env.PATH_OUT)\bin\VBoxSupLib.dll" />
         <File Id="file_VBoxVMM.dll" Name="VBoxVMM.dll"

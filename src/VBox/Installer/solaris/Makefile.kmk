@@ -336,26 +336,20 @@ SOLARIS_STRIP_BINS = \
 	components/VBoxSVCM.so \
 	components/VBoxXPCOMIPCC.so
 
-ifdef VBOX_WITH_REM
- SOLARIS_STRIP_BINS += \
-	VBoxREM.so \
-	$(if-expr "$(KBUILD_TARGET_ARCH)" == "x86",VBoxREM32.so VBoxREM64.so,)
-endif
-
 ifdef VBOX_WITH_QTGUI
-  ifdef VBOX_WITH_ORACLE_QT
-   SOLARIS_STRIP_BINS += \
-          libQt5CoreVBox.so.5 \
-	  libQt5GuiVBox.so.5 \
-          libQt5XcbQpaVBox.so.5 \
-          libQt5PrintSupportVBox.so.5 \
-          libQt5DBusVBox.so.5 \
-	  libQt5X11ExtrasVBox.so.5 \
-          libQt5WidgetsVBox.so.5 \
-          plugins/platforms/libqxcb.so \
-          plugins/xcbglintegrations/libqxcb-glx-integration.so \
-	  $(if $(VBOX_GUI_USE_QGL),libQt5OpenGLVBox.so.5,)
-  endif
+ ifdef VBOX_WITH_ORACLE_QT
+  SOLARIS_STRIP_BINS += \
+  	libQt5CoreVBox.so.5 \
+  	libQt5GuiVBox.so.5 \
+  	libQt5XcbQpaVBox.so.5 \
+  	libQt5PrintSupportVBox.so.5 \
+  	libQt5DBusVBox.so.5 \
+  	libQt5X11ExtrasVBox.so.5 \
+  	libQt5WidgetsVBox.so.5 \
+  	plugins/platforms/libqxcb.so \
+  	plugins/xcbglintegrations/libqxcb-glx-integration.so \
+  	$(if $(VBOX_GUI_USE_QGL),libQt5OpenGLVBox.so.5,)
+ endif
 endif #VBOX_WITH_QTGUI
 
 ifdef VBOX_WITH_32_ON_64_MAIN_API
