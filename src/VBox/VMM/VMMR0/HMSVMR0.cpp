@@ -319,7 +319,12 @@ typedef struct SVMTRANSIENT
     /** Whether the \#VMEXIT was caused by a page-fault during delivery of an
      *  external interrupt or NMI. */
     bool            fVectoringPF;
-} SVMTRANSIENT, *PSVMTRANSIENT;
+} SVMTRANSIENT;
+/** Pointer to SVM transient state. */
+typedef SVMTRANSIENT *PSVMTRANSIENT;
+/** Pointer to a const SVM transient state. */
+typedef const SVMTRANSIENT *PCSVMTRANSIENT;
+
 AssertCompileMemberAlignment(SVMTRANSIENT, u64ExitCode, sizeof(uint64_t));
 AssertCompileMemberAlignment(SVMTRANSIENT, pVmcb,       sizeof(uint64_t));
 /** @}  */
@@ -3520,6 +3525,8 @@ static bool hmR0SvmIsIntrShadowActive(PVMCPUCC pVCpu)
  */
 static void hmR0SvmSetIntWindowExiting(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
+    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+
     /*
      * When AVIC isn't supported, set up an interrupt window to cause a #VMEXIT when the guest
      * is ready to accept interrupts. At #VMEXIT, we then get the interrupt from the APIC
@@ -3531,33 +3538,11 @@ static void hmR0SvmSetIntWindowExiting(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
      * In AMD-V, an interrupt window is achieved using a combination of V_IRQ (an interrupt
      * is pending), V_IGN_TPR (ignore TPR priorities) and the VINTR intercept all being set.
      */
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    /*
-     * Currently we don't overlay interupt windows and if there's any V_IRQ pending in the
-     * nested-guest VMCB, we avoid setting up any interrupt window on behalf of the outer
-     * guest.
-     */
-    /** @todo Does this mean we end up prioritizing virtual interrupt
-     *        delivery/window over a physical interrupt (from the outer guest)
-     *        might be pending? */
-    bool const fEnableIntWindow = !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST);
-    if (!fEnableIntWindow)
-    {
-        Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx));
-        Log4(("Nested-guest V_IRQ already pending\n"));
-    }
-#else
-    bool const fEnableIntWindow = true;
-    RT_NOREF(pVCpu);
-#endif
-    if (fEnableIntWindow)
-    {
-        Assert(pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR);
-        pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 1;
-        pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INT_CTRL;
-        hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_VINTR);
-        Log4(("Set VINTR intercept\n"));
-    }
+    Assert(pVmcb->ctrl.IntCtrl.n.u1IgnoreTPR);
+    pVmcb->ctrl.IntCtrl.n.u1VIrqPending = 1;
+    pVmcb->ctrl.u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INT_CTRL;
+    hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_VINTR);
+    Log4(("Set VINTR intercept\n"));
 }
 
 
@@ -3571,6 +3556,8 @@ static void hmR0SvmSetIntWindowExiting(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
  */
 static void hmR0SvmClearIntWindowExiting(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
+    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+
     PSVMVMCBCTRL pVmcbCtrl = &pVmcb->ctrl;
     if (    pVmcbCtrl->IntCtrl.n.u1VIrqPending
         || (pVmcbCtrl->u64InterceptCtrl & SVM_CTRL_INTERCEPT_VINTR))
@@ -3582,18 +3569,18 @@ static void hmR0SvmClearIntWindowExiting(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     }
 }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+
 /**
- * Evaluates the event to be delivered to the nested-guest and sets it as the
- * pending event.
+ * Evaluates the event to be delivered to the guest and sets it as the pending
+ * event.
  *
- * @returns VBox strict status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @returns Strict VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pSvmTransient   Pointer to the SVM transient structure.
  */
-static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPUCC pVCpu)
+static VBOXSTRICTRC hmR0SvmEvaluatePendingEvent(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient)
 {
     PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
     HMSVM_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT
                               | CPUMCTX_EXTRN_RFLAGS
                               | CPUMCTX_EXTRN_HM_SVM_INT_SHADOW
@@ -3614,7 +3601,7 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPUCC pVCpu)
     /** @todo SMI. SMIs take priority over NMIs. */
 
     /*
-     * Check if the guest can receive NMIs.
+     * Check if the guest or nested-guest can receive NMIs.
      * Nested NMIs are not allowed, see AMD spec. 8.1.4 "Masking External Interrupts".
      * NMIs take priority over maskable interrupts, see AMD spec. 8.5 "Priorities".
      */
@@ -3624,13 +3611,14 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPUCC pVCpu)
         if (    fGif
             && !fIntShadow)
         {
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_NMI))
             {
                 Log4(("Intercepting NMI -> #VMEXIT\n"));
                 HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
                 return IEMExecSvmVmexit(pVCpu, SVM_EXIT_NMI, 0, 0);
             }
-
+#endif
             Log4(("Setting NMI pending for injection\n"));
             SVMEVENT Event;
             Event.u = 0;
@@ -3642,41 +3630,40 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPUCC pVCpu)
         }
         else if (!fGif)
             hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_STGI);
-        else
+        else if (!pSvmTransient->fIsNestedGuest)
             hmR0SvmSetIntWindowExiting(pVCpu, pVmcb);
+        /* else: for nested-guests, interrupt-window exiting will be picked up when merging VMCB controls. */
     }
     /*
-     * Check if the nested-guest can receive external interrupts (generated by the guest's
-     * PIC/APIC).
+     * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt()
+     * returns a valid interrupt we -must- deliver the interrupt. We can no longer re-request
+     * it from the APIC device.
      *
-     * External intercepts, NMI, SMI etc. from the physical CPU are -always- intercepted
-     * when executing using hardware-assisted SVM, see HMSVM_MANDATORY_GUEST_CTRL_INTERCEPTS.
-     *
-     * External interrupts that are generated for the outer guest may be intercepted
-     * depending on how the nested-guest VMCB was programmed by guest software.
-     *
-     * Physical interrupts always take priority over virtual interrupts,
-     * see AMD spec. 15.21.4 "Injecting Virtual (INTR) Interrupts".
-     *
+     * For nested-guests, physical interrupts always take priority over virtual interrupts.
      * We don't need to inject nested-guest virtual interrupts here, we can let the hardware
-     * do that work when we execute nested guest code esp. since all the required information
+     * do that work when we execute nested-guest code esp. since all the required information
      * is in the VMCB, unlike physical interrupts where we need to fetch the interrupt from
      * the virtual interrupt controller.
+     *
+     * See AMD spec. 15.21.4 "Injecting Virtual (INTR) Interrupts".
      */
     else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
              && !pVCpu->hm.s.fSingleInstruction)
     {
+        bool const fBlockInt = !pSvmTransient->fIsNestedGuest ? !(pCtx->eflags.u32 & X86_EFL_IF)
+                                                              : CPUMIsGuestSvmPhysIntrEnabled(pVCpu, pCtx);
         if (    fGif
-            && !fIntShadow
-            &&  CPUMIsGuestSvmPhysIntrEnabled(pVCpu, pCtx))
+            && !fBlockInt
+            && !fIntShadow)
         {
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
             if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, pCtx, SVM_CTRL_INTERCEPT_INTR))
             {
                 Log4(("Intercepting INTR -> #VMEXIT\n"));
                 HMSVM_CPUMCTX_IMPORT_STATE(pVCpu, HMSVM_CPUMCTX_EXTRN_ALL);
                 return IEMExecSvmVmexit(pVCpu, SVM_EXIT_INTR, 0, 0);
             }
-
+#endif
             uint8_t u8Interrupt;
             int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
             if (RT_SUCCESS(rc))
@@ -3702,109 +3689,12 @@ static VBOXSTRICTRC hmR0SvmEvaluatePendingEventNested(PVMCPUCC pVCpu)
         }
         else if (!fGif)
             hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_STGI);
-        else
+        else if (!pSvmTransient->fIsNestedGuest)
             hmR0SvmSetIntWindowExiting(pVCpu, pVmcb);
+        /* else: for nested-guests, interrupt-window exiting will be picked up when merging VMCB controls. */
     }
 
     return VINF_SUCCESS;
-}
-#endif
-
-/**
- * Evaluates the event to be delivered to the guest and sets it as the pending
- * event.
- *
- * @param   pVCpu       The cross context virtual CPU structure.
- */
-static void hmR0SvmEvaluatePendingEvent(PVMCPUCC pVCpu)
-{
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
-    HMSVM_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT
-                              | CPUMCTX_EXTRN_RFLAGS
-                              | CPUMCTX_EXTRN_HM_SVM_INT_SHADOW);
-
-    Assert(!pVCpu->hm.s.Event.fPending);
-    PSVMVMCB pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
-    Assert(pVmcb);
-
-    bool const fGif       = CPUMGetGuestGif(pCtx);
-    bool const fIntShadow = hmR0SvmIsIntrShadowActive(pVCpu);
-    bool const fBlockInt  = !(pCtx->eflags.u32 & X86_EFL_IF);
-    bool const fBlockNmi  = VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
-
-    Log4Func(("fGif=%RTbool fBlockNmi=%RTbool fBlockInt=%RTbool fIntShadow=%RTbool fIntPending=%RTbool NMI pending=%RTbool\n",
-              fGif, fBlockNmi, fBlockInt, fIntShadow,
-              VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC),
-              VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)));
-
-    /** @todo SMI. SMIs take priority over NMIs. */
-
-    /*
-     * Check if the guest can receive NMIs.
-     * Nested NMIs are not allowed, see AMD spec. 8.1.4 "Masking External Interrupts".
-     * NMIs take priority over maskable interrupts, see AMD spec. 8.5 "Priorities".
-     */
-    if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NMI)
-        && !fBlockNmi)
-    {
-        if (    fGif
-            && !fIntShadow)
-        {
-            Log4(("Setting NMI pending for injection\n"));
-            SVMEVENT Event;
-            Event.u = 0;
-            Event.n.u1Valid  = 1;
-            Event.n.u8Vector = X86_XCPT_NMI;
-            Event.n.u3Type   = SVM_EVENT_NMI;
-            hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_INTERRUPT_NMI);
-        }
-        else if (!fGif)
-            hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_STGI);
-        else
-            hmR0SvmSetIntWindowExiting(pVCpu, pVmcb);
-    }
-    /*
-     * Check if the guest can receive external interrupts (PIC/APIC). Once PDMGetInterrupt()
-     * returns a valid interrupt we -must- deliver the interrupt. We can no longer re-request
-     * it from the APIC device.
-     */
-    else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_INTERRUPT_APIC | VMCPU_FF_INTERRUPT_PIC)
-             && !pVCpu->hm.s.fSingleInstruction)
-    {
-        if (    fGif
-            && !fBlockInt
-            && !fIntShadow)
-        {
-            uint8_t u8Interrupt;
-            int rc = PDMGetInterrupt(pVCpu, &u8Interrupt);
-            if (RT_SUCCESS(rc))
-            {
-                Log4(("Setting external interrupt %#x pending for injection\n", u8Interrupt));
-                SVMEVENT Event;
-                Event.u = 0;
-                Event.n.u1Valid  = 1;
-                Event.n.u8Vector = u8Interrupt;
-                Event.n.u3Type   = SVM_EVENT_EXTERNAL_IRQ;
-                hmR0SvmSetPendingEvent(pVCpu, &Event, 0 /* GCPtrFaultAddress */);
-            }
-            else if (rc == VERR_APIC_INTR_MASKED_BY_TPR)
-            {
-                /*
-                 * AMD-V has no TPR thresholding feature. TPR and the force-flag will be
-                 * updated eventually when the TPR is written by the guest.
-                 */
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchTprMaskedIrq);
-            }
-            else
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchGuestIrq);
-        }
-        else if (!fGif)
-            hmR0SvmSetCtrlIntercept(pVmcb, SVM_CTRL_INTERCEPT_STGI);
-        else
-            hmR0SvmSetIntWindowExiting(pVCpu, pVmcb);
-    }
 }
 
 
@@ -4189,21 +4079,15 @@ static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
         hmR0SvmTrpmTrapToPendingEvent(pVCpu);
     else if (!pVCpu->hm.s.Event.fPending)
     {
-        if (!pSvmTransient->fIsNestedGuest)
-            hmR0SvmEvaluatePendingEvent(pVCpu);
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-        else
+        VBOXSTRICTRC rcStrict = hmR0SvmEvaluatePendingEvent(pVCpu, pSvmTransient);
+        if (   rcStrict != VINF_SUCCESS
+            || pSvmTransient->fIsNestedGuest != CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
         {
-            VBOXSTRICTRC rcStrict = hmR0SvmEvaluatePendingEventNested(pVCpu);
-            if (    rcStrict != VINF_SUCCESS
-                || !CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
-            {
-                if (!CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
-                    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
-                return VBOXSTRICTRC_VAL(rcStrict);
-            }
+            /* If a nested-guest VM-exit occurred, bail. */
+            if (pSvmTransient->fIsNestedGuest)
+                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
+            return VBOXSTRICTRC_VAL(rcStrict);
         }
-#endif
     }
 
     /*
