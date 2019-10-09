@@ -12,6 +12,10 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/MemoryAllocationLib.h>
 #include <Library/CpuLib.h>
 #include <Library/BaseLib.h>
+#ifdef VBOX
+# define IN_RING0
+# include <iprt/asm.h>
+#endif
 
 #include "CpuMpPei.h"
 
@@ -66,6 +70,30 @@ EFI_PEI_NOTIFY_DESCRIPTOR  mPostMemNotifyList[] = {
     MemoryDiscoveredPpiNotifyCallback
   }
 };
+
+#ifdef VBOX
+/**
+ Safe page table entry write function, make 104% sure the compiler won't
+ split up the access (fatal if modifying entries for current code or data).
+
+ @param[in] PageEntry        The page table entry to modify.*
+ @param[in] CurrentPageEntry The old page table value (for cmpxchg8b).
+ @param[in] NewPageEntry     What to write.
+**/
+static VOID SafePageTableEntryWrite64 (UINT64 volatile *PageEntry, UINT64 CurrentPageEntry, UINT64 NewPageEntry)
+{
+# ifdef VBOX
+  ASMAtomicWriteU64(PageEntry, NewPageEntry); RT_NOREF(CurrentPageEntry);
+# else
+  for (;;) {
+    UINT64 CurValue = InterlockedCompareExchange64(PageEntry, CurrentPageEntry, NewPageEntry);
+    if (CurValue == CurrentPageEntry)
+      return;
+    CurrentPageEntry = CurValue;
+  }
+# endif
+}
+#endif
 
 /**
   The function will check if IA32 PAE is supported.
@@ -234,12 +262,19 @@ GetPageTableEntry (
 **/
 RETURN_STATUS
 SplitPage (
+#ifdef VBOX
+  IN  UINT64 volatile                   *PageEntry,
+#else
   IN  UINT64                            *PageEntry,
+#endif
   IN  PAGE_ATTRIBUTE                    PageAttribute,
   IN  PAGE_ATTRIBUTE                    SplitAttribute,
   IN  BOOLEAN                           Recursively
   )
 {
+#ifdef VBOX
+  UINT64            CurrentPageEntry;
+#endif
   UINT64            BaseAddress;
   UINT64            *NewPageEntry;
   UINTN             Index;
@@ -264,12 +299,21 @@ SplitPage (
   SplitTo = PageAttribute - 1;
   AddressEncMask = PcdGet64 (PcdPteMemoryEncryptionAddressOrMask) &
                    mPageAttributeTable[SplitTo].AddressMask;
+#ifdef VBOX
+  CurrentPageEntry = *PageEntry;
+  BaseAddress    = CurrentPageEntry &
+#else
   BaseAddress    = *PageEntry &
+#endif
                    ~PcdGet64 (PcdPteMemoryEncryptionAddressOrMask) &
                    mPageAttributeTable[PageAttribute].AddressMask;
   for (Index = 0; Index < SIZE_4KB / sizeof(UINT64); Index++) {
     NewPageEntry[Index] = BaseAddress | AddressEncMask |
+#ifdef VBOX
+                          (CurrentPageEntry & PAGE_PROGATE_BITS);
+#else
                           ((*PageEntry) & PAGE_PROGATE_BITS);
+#endif
 
     if (SplitTo != PageMin) {
       NewPageEntry[Index] |= IA32_PG_PS;
@@ -282,7 +326,12 @@ SplitPage (
     BaseAddress += mPageAttributeTable[SplitTo].Length;
   }
 
+#ifdef VBOX
+  SafePageTableEntryWrite64 (PageEntry, CurrentPageEntry,
+                             (UINT64)(UINTN)NewPageEntry | AddressEncMask | PAGE_ATTRIBUTE_BITS);
+#else
   (*PageEntry) = (UINT64)(UINTN)NewPageEntry | AddressEncMask | PAGE_ATTRIBUTE_BITS;
+#endif
 
   return RETURN_SUCCESS;
 }
@@ -317,7 +366,12 @@ ConvertMemoryPageAttributes (
   IN  UINT64                            Attributes
   )
 {
+#ifdef VBOX
+  UINT64 volatile                   *PageEntry;
+  UINT64                            CurrentPageEntry;
+#else
   UINT64                            *PageEntry;
+#endif
   PAGE_ATTRIBUTE                    PageAttribute;
   RETURN_STATUS                     Status;
   EFI_PHYSICAL_ADDRESS              MaximumAddress;
@@ -363,11 +417,18 @@ ConvertMemoryPageAttributes (
     //
     // Just take care of 'present' bit for Stack Guard.
     //
+#ifdef VBOX
+    CurrentPageEntry = *PageEntry;
+    if ((CurrentPageEntry & IA32_PG_P) != (Attributes & IA32_PG_P))
+      SafePageTableEntryWrite64 (PageEntry, CurrentPageEntry,
+                                 (CurrentPageEntry & ~(UINT64)IA32_PG_P) | (Attributes & IA32_PG_P));
+#else
     if ((Attributes & IA32_PG_P) != 0) {
       *PageEntry |= (UINT64)IA32_PG_P;
     } else {
       *PageEntry &= ~((UINT64)IA32_PG_P);
     }
+#endif
 
     //
     // Convert success, move to next
