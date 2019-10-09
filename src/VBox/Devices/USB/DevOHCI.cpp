@@ -1192,6 +1192,7 @@ static void ohciR3DoReset(POHCI pThis, uint32_t fNewMode, bool fResetOnLinux)
      * any more when a reset has been signaled.
      */
     pThis->RootHub.pIRhConn->pfnCancelAllUrbs(pThis->RootHub.pIRhConn);
+    Assert(pThis->cInFlight == 0);
 
     /*
      * Reset the hardware registers.
@@ -2811,7 +2812,9 @@ static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, P
 
     ohciR3Lock(pThis);
 
-    /* Do nothing if the HC encountered an unrecoverable error. */
+    int cFmAge = ohciR3InFlightRemoveUrb(pThis, pUrb);
+
+    /* Do nothing requiring memory access if the HC encountered an unrecoverable error. */
     if (!(pThis->intr_status & OHCI_INTR_UNRECOVERABLE_ERROR))
     {
         pThis->fIdle = false;   /* Mark as active */
@@ -2830,7 +2833,6 @@ static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, P
          * be updated but not yet written. We will delay the writing till we're done
          * with the data copying, buffer pointer advancing and error handling.
          */
-        int cFmAge = ohciR3InFlightRemoveUrb(pThis, pUrb);
         if (pUrb->enmStatus == VUSBSTATUS_UNDO)
         {
             /* Leave the TD alone - the HCD doesn't want us talking to the device. */
@@ -3045,8 +3047,8 @@ static bool ohciR3ServiceTd(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uin
     /* Failure cleanup. Can happen if we're still resetting the device or out of resources. */
     Log(("ohciR3ServiceTd: failed submitting TdAddr=%#010x EdAddr=%#010x pUrb=%p!!\n",
          TdAddr, EdAddr, pUrb));
-    VUSBIRhFreeUrb(pThis->RootHub.pIRhConn, pUrb);
     ohciR3InFlightRemove(pThis, TdAddr);
+    VUSBIRhFreeUrb(pThis->RootHub.pIRhConn, pUrb);
     return false;
 }
 
@@ -3215,8 +3217,7 @@ static bool ohciR3ServiceTdMultiple(POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED 
     /* Failure cleanup. Can happen if we're still resetting the device or out of resources. */
     Log(("ohciR3ServiceTdMultiple: failed submitting pUrb=%p cbData=%#x EdAddr=%#010x cTds=%d TdAddr0=%#010x - rc=%Rrc\n",
          pUrb, cbTotal, EdAddr, cTds, TdAddr, rc));
-    for (struct OHCITDENTRY *pCur = &Head; pCur; pCur = pCur->pNext, iTd++)
-        ohciR3InFlightRemove(pThis, pCur->TdAddr);
+    ohciR3InFlightRemoveUrb(pThis, pUrb);
     VUSBIRhFreeUrb(pThis->RootHub.pIRhConn, pUrb);
     return false;
 }
@@ -3447,7 +3448,7 @@ static bool ohciR3ServiceIsochronousTd(POHCI pThis, POHCIITD pITd, uint32_t ITdA
     /*
      * Submit the URB.
      */
-    ohciR3InFlightAddUrb(pThis, pUrb);
+    ohciR3InFlightAdd(pThis, ITdAddr, pUrb);
     Log(("%s: ohciR3ServiceIsochronousTd: submitting cbData=%#x cIsocPkts=%d EdAddr=%#010x TdAddr=%#010x SF=%#x (%#x)\n",
          pUrb->pszDesc, pUrb->cbData, pUrb->cIsocPkts, EdAddr, ITdAddr, pITd->HwInfo & ITD_HWINFO_SF, pThis->HcFmNumber));
     ohciR3Unlock(pThis);
@@ -3639,6 +3640,11 @@ static void ohciR3ServiceBulkList(POHCI pThis)
     while (EdAddr)
     {
         OHCIED Ed;
+
+        /* Bail if previous processing ended up in the unrecoverable error state. */
+        if (pThis->intr_status & OHCI_INTR_UNRECOVERABLE_ERROR)
+            break;
+
         ohciR3ReadEd(pThis, EdAddr, &Ed);
         Assert(!(Ed.hwinfo & ED_HWINFO_ISO)); /* the guest is screwing us */
         if (ohciR3IsEdReady(&Ed))
@@ -3780,6 +3786,11 @@ static void ohciR3ServiceCtrlList(POHCI pThis)
     while (EdAddr)
     {
         OHCIED Ed;
+
+        /* Bail if previous processing ended up in the unrecoverable error state. */
+        if (pThis->intr_status & OHCI_INTR_UNRECOVERABLE_ERROR)
+            break;
+
         ohciR3ReadEd(pThis, EdAddr, &Ed);
         Assert(!(Ed.hwinfo & ED_HWINFO_ISO)); /* the guest is screwing us */
         if (ohciR3IsEdReady(&Ed))
@@ -3851,6 +3862,10 @@ static void ohciR3ServicePeriodicList(POHCI pThis)
     while (EdAddr)
     {
         OHCIED Ed;
+
+        /* Bail if previous processing ended up in the unrecoverable error state. */
+        if (pThis->intr_status & OHCI_INTR_UNRECOVERABLE_ERROR)
+            break;
 
         ohciR3ReadEd(pThis, EdAddr, &Ed);
         if (ohciR3IsEdReady(&Ed))
