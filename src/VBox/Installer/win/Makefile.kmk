@@ -432,6 +432,7 @@ $(if-expr defined(VBOX_WITH_COMBINED_PACKAGE) && !defined(VBOX_WITH_MSM_INSTALL)
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
 		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+		-ext $(VBOX_PATH_WIX)/WixUtilExtension.dll \
                $(if-expr defined(VBOX_WITH_MSI_HACK),-ext $(MsiHack_0_OUTDIR)/MsiHackExtension.dll,) \
 		$(VBOX_MSI_ICE_IGNORE) \
 		-out $$@ \
@@ -452,6 +453,7 @@ ifeq ($(lang),en_US)
 		'  -loc files-VirtualBox_$(lang)/License_$(lang).wxl ^' \
 		'  -ext $(VBOX_PATH_WIX)/WixUIExtension.dll ^' \
 		'  -ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll ^' \
+		'  -ext $(VBOX_PATH_WIX)/WixUtilExtension.dll ^' \
                $(if-expr defined(VBOX_WITH_MSI_HACK),'-ext $(MsiHack_0_OUTDIR)/MsiHackExtension.dll ^',) \
 		'  $(VBOX_MSI_ICE_IGNORE) ^' \
 		'  -out $$(@F) ^' \
@@ -489,6 +491,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang)_$(KBUILD_TARGET_ARCH).msm: \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/Language_$(lang).wxl \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+		-ext $(VBOX_PATH_WIX)/WixUtilExtension.dll \
 		$(VBOX_MSI_ICE_IGNORE) \
 		-out $$@ \
 		$$< \
@@ -503,6 +506,7 @@ $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang)_$(KBUILD_TARGET_ARCH).msm: \
 		'  -loc files-VirtualBox_$(lang)/Language_$(lang).wxl ^' \
 		'  -loc files-VirtualBox_$(lang)/License_$(lang).wxl ^' \
 		'  -ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll ^' \
+		'  -ext $(VBOX_PATH_WIX)/WixUtilExtension.dll ^' \
 		'  $(VBOX_MSI_ICE_IGNORE) ^' \
 		'  -out $$(@F) ^' \
 		'  $$(<F) ^' \
@@ -639,10 +643,12 @@ $(if-expr "$(lang)" != "en_US",, \
 		$(VBOX_PATH_WIX)/candle.exe $(filter-out $(VBOX_VERSION_STAMP),$$<) \
 			-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
 			-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+			-ext $(VBOX_PATH_WIX)/WixUtilExtension.dll \
 			-p$(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wix
 	$(VBOX_PATH_WIX)/candle.exe $(VBOX_WIN_INST_OUT_DIR)/$(lang)/VirtualBox_$(lang).wix \
 		-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
 		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+		-ext $(VBOX_PATH_WIX)/WixUtilExtension.dll \
 		-out $$@
  ifeq ($(lang),en_US)
 # Copy preprocessed wix and change source paths to be relative.  Stuff not in ../bin needs copying.
@@ -678,6 +684,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		'$(VBOX_PATH_WIX)/candle.exe VirtualBox_$(lang).wix ^' \
 		'  -ext $(VBOX_PATH_WIX)/WixUIExtension.dll ^' \
 		'  -ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll ^' \
+		'  -ext $(VBOX_PATH_WIX)/WixUtilExtension.dll ^' \
 		'  -out $$(@F) || exit /b1' \
                ) \
                '@echo Created: $$(@F)'
@@ -783,10 +790,12 @@ $(if-expr "$(lang)" != "en_US",, \
 		$(VBOX_PATH_WIX)/candle.exe $(filter-out $(VBOX_VERSION_STAMP),$$<) \
 			-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
 			-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+			-ext $(VBOX_PATH_WIX)/WixUtilExtension.dll \
 			-p$(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wix
 	$(VBOX_PATH_WIX)/candle.exe $(VBOX_WIN_INST_OUT_DIR)/VBoxMerge$(module)_$(lang).wix \
 		-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
 		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+		-ext $(VBOX_PATH_WIX)/WixUtilExtension.dll \
 		-out $$@
  ifeq ($(lang),en_US)
 # Copy preprocessed wix and change source paths to be relative.  Stuff not in ../bin needs copying.
@@ -822,6 +831,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		'$(VBOX_PATH_WIX)/candle.exe VBoxMerge$(module)_$(lang).wix ^' \
 		'  -ext $(VBOX_PATH_WIX)/WixUIExtension.dll ^'\
 		'  -ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll ^' \
+		'  -ext $(VBOX_PATH_WIX)/WixUtilExtension.dll ^' \
 		'  -out $$(@F) || exit /b1' \
                ) \
                '@echo Created: $$(@F)'
@@ -935,6 +945,7 @@ $(VBOX_WIN_INST_OUT_DIR)/$(lang)/$(lang).mst \
 		-loc $(VBOX_WIN_INST_OUT_DIR)/NLS/License_$(lang).wxl \
 		-ext $(VBOX_PATH_WIX)/WixUIExtension.dll \
 		-ext $(VBOX_PATH_WIX)/WixDifxAppExtension.dll \
+		-ext $(VBOX_PATH_WIX)/WixUtilExtension.dll \
                $(if-expr defined(VBOX_WITH_MSI_HACK),-ext $(MsiHack_0_OUTDIR)/MsiHackExtension.dll,) \
 		$(VBOX_MSI_ICE_IGNORE) \
 		-out $$(@D)/$(PACKAGE_NAME_LANG)_$(lang).msi \
