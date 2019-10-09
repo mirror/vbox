@@ -196,28 +196,72 @@ int shclSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms
 int shclSvcClientWakeup(PSHCLCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-int shclSvcTransferStart(PSHCLCLIENT pClient,
-                         SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
-                         PSHCLTRANSFER *ppTransfer);
+int shclSvcTransferStart(PSHCLCLIENT pClient, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer);
 int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 bool shclSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
-# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /*
  * Platform-dependent implementations.
  */
+/**
+ * Called on initialization.
+ */
 int ShClSvcImplInit(void);
+/**
+ * Called on destruction.
+ */
 void ShClSvcImplDestroy(void);
-
+/**
+ * Called when a new HGCM client connects.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
+ * @param   fHeadless           Whether this is a headless connection or not.
+ */
 int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless);
+/**
+ * Called when a HGCM client disconnects.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
+ */
 int ShClSvcImplDisconnect(PSHCLCLIENT pClient);
+/**
+ * Called when the guest reported available clipboard formats to the host OS.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
+ * @param   pCmdCtx             Shared Clipboard command context.
+ * @param   pFormats            Announced formats from the guest.
+ */
 int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLFORMATDATA pFormats);
 /** @todo Document: Can return VINF_HGCM_ASYNC_EXECUTE to defer returning read data.*/
+/**
+ * Called when the guest wants to read host clipboard data.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
+ * @param   pCmdCtx             Shared Clipboard command context.
+ * @param   pData               Where to return the read clipboard data.
+ * @param   pcbActual           Where to return the amount of bytes read.
+ */
 int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData, uint32_t *pcbActual);
+/**
+ * Called when the guest writes clipboard data to the host.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
+ * @param   pCmdCtx             Shared Clipboard command context.
+ * @param   pData               Clipboard data from the guest.
+ */
 int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData);
 /**
  * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
  * after a save and restore of the guest.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
  */
 int ShClSvcImplSync(PSHCLCLIENT pClient);
 

@@ -77,28 +77,19 @@ DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32F
     AssertRC(rc2);
 }
 
-/**
- * Initialise the host side of the shared clipboard.
- * @note  Host glue code
- */
 int ShClSvcImplInit(void)
 {
     LogFlowFuncEnter();
     return VINF_SUCCESS;
 }
 
-/**
- * Terminate the host side of the shared clipboard.
- * @note  host glue code
- */
 void ShClSvcImplDestroy(void)
 {
     LogFlowFuncEnter();
 }
 
 /**
- * Connect a guest to the shared clipboard.
- * @note  on the host, we assume that some other application already owns
+ * @note  On the host, we assume that some other application already owns
  *        the clipboard and leave ownership to X11.
  */
 int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
@@ -138,11 +129,6 @@ int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
     return rc;
 }
 
-/**
- * Synchronise the contents of the host clipboard with the guest, called
- * after a save and restore of the guest.
- * @note  Host glue code
- */
 int ShClSvcImplSync(PSHCLCLIENT pClient)
 {
     LogFlowFuncEnter();
@@ -190,13 +176,6 @@ int ShClSvcImplDisconnect(PSHCLCLIENT pClient)
     return rc;
 }
 
-/**
- * VBox is taking possession of the shared clipboard.
- *
- * @param pClient               Context data for the guest system.
- * @param pCmdCtx               Command context to use.
- * @param pFormats              Clipboard formats the guest is offering.
- */
 int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                               PSHCLFORMATDATA pFormats)
 {
@@ -226,22 +205,10 @@ struct _CLIPREADCBREQ
 };
 
 /**
- * Called when the host service wants to read the X11 clipboard.
- *
- * @returns VINF_SUCCESS on successful completion.
- * @returns VINF_HGCM_ASYNC_EXECUTE if the operation will complete asynchronously.
- * @returns IPRT status code on failure.
- *
- * @param pClient               Context information about the guest VM.
- * @param pCmdCtx               Command context to use.
- * @param pData                 Data block to put read data into.
- * @param pcbActual             Where to write the actual size of the written data.
- *
  * @note   We always fail or complete asynchronously.
  * @note   On success allocates a CLIPREADCBREQ structure which must be
  *         freed in ClipCompleteDataRequestFromX11 when it is called back from
  *         the backend code.
- *
  */
 int ShClSvcImplReadData(PSHCLCLIENT pClient,
                         PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData, uint32_t *pcbActual)
@@ -290,13 +257,6 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
     return rc;
 }
 
-/**
- * Called when writing guest clipboard data to the host service.
- *
- * @param  pClient              Context information about the guest VM.
- * @param  pCmdCtx              Pointer to the clipboard command context.
- * @param  pData                Data block to write to clipboard.
- */
 int ShClSvcImplWriteData(PSHCLCLIENT pClient,
                          PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData)
 {
