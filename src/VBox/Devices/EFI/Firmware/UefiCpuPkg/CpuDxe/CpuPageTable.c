@@ -17,6 +17,10 @@
 #include <Protocol/SmmBase2.h>
 #include <Register/Intel/Cpuid.h>
 #include <Register/Intel/Msr.h>
+#ifdef VBOX
+# define IN_RING0
+# include <iprt/asm.h>
+#endif
 
 #include "CpuDxe.h"
 #include "CpuPageTable.h"
@@ -95,6 +99,30 @@ EFI_SMM_BASE2_PROTOCOL            *mSmmBase2 = NULL;
 //
 UINTN                     *mPFEntryCount;
 UINT64                    *(*mLastPFEntryPointer)[MAX_PF_ENTRY_COUNT];
+
+#ifdef VBOX
+/**
+ Safe page table entry write function, make 104% sure the compiler won't
+ split up the access (fatal if modifying entries for current code or data).
+
+ @param[in] PageEntry        The page table entry to modify.*
+ @param[in] CurrentPageEntry The old page table value (for cmpxchg8b).
+ @param[in] NewPageEntry     What to write.
+**/
+static VOID SafePageTableEntryWrite64 (UINT64 volatile *PageEntry, UINT64 CurrentPageEntry, UINT64 NewPageEntry)
+{
+# ifdef VBOX
+  ASMAtomicWriteU64(PageEntry, NewPageEntry); RT_NOREF(CurrentPageEntry);
+# else
+  for (;;) {
+    UINT64 CurValue = InterlockedCompareExchange64(PageEntry, CurrentPageEntry, NewPageEntry);
+    if (CurValue == CurrentPageEntry)
+      return;
+    CurrentPageEntry = CurValue;
+  }
+# endif
+}
+#endif
 
 /**
  Check if current execution environment is in SMM mode or not, via
@@ -387,7 +415,11 @@ GetAttributesFromPageEntry (
 VOID
 ConvertPageEntryAttribute (
   IN  PAGE_TABLE_LIB_PAGING_CONTEXT     *PagingContext,
+#ifdef VBOX
+  IN  UINT64 volatile                   *PageEntry,
+#else
   IN  UINT64                            *PageEntry,
+#endif
   IN  UINT64                            Attributes,
   IN  PAGE_ACTION                       PageAction,
   OUT BOOLEAN                           *IsModified
@@ -460,8 +492,13 @@ ConvertPageEntryAttribute (
       }
     }
   }
+#ifndef VBOX
   *PageEntry = NewPageEntry;
+#endif
   if (CurrentPageEntry != NewPageEntry) {
+#ifdef VBOX
+    SafePageTableEntryWrite64 (PageEntry, CurrentPageEntry, NewPageEntry);
+#endif
     *IsModified = TRUE;
     DEBUG ((DEBUG_VERBOSE, "ConvertPageEntryAttribute 0x%lx", CurrentPageEntry));
     DEBUG ((DEBUG_VERBOSE, "->0x%lx\n", NewPageEntry));
@@ -518,7 +555,7 @@ NeedSplitPage (
 RETURN_STATUS
 SplitPage (
 #ifdef VBOX
-  IN  volatile UINT64                   *PageEntry,
+  IN  UINT64 volatile                   *PageEntry,
 #else
   IN  UINT64                            *PageEntry,
 #endif
@@ -528,6 +565,9 @@ SplitPage (
   )
 {
   UINT64   BaseAddress;
+#ifdef VBOX
+  UINT64   CurrentPageEntry;
+#endif
   UINT64   *NewPageEntry;
   UINTN    Index;
   UINT64   AddressEncMask;
@@ -551,11 +591,25 @@ SplitPage (
       if (NewPageEntry == NULL) {
         return RETURN_OUT_OF_RESOURCES;
       }
+#ifdef VBOX
+      CurrentPageEntry = *PageEntry;
+      BaseAddress = CurrentPageEntry & ~AddressEncMask & PAGING_2M_ADDRESS_MASK_64;
+#else
       BaseAddress = *PageEntry & ~AddressEncMask & PAGING_2M_ADDRESS_MASK_64;
+#endif
       for (Index = 0; Index < SIZE_4KB / sizeof(UINT64); Index++) {
+#ifdef VBOX
+        NewPageEntry[Index] = (BaseAddress + SIZE_4KB * Index) | AddressEncMask | (CurrentPageEntry & PAGE_PROGATE_BITS);
+#else
         NewPageEntry[Index] = (BaseAddress + SIZE_4KB * Index) | AddressEncMask | ((*PageEntry) & PAGE_PROGATE_BITS);
+#endif
       }
+#ifdef VBOX
+      SafePageTableEntryWrite64 (PageEntry, CurrentPageEntry,
+                                 (UINT64)(UINTN)NewPageEntry | AddressEncMask | (CurrentPageEntry & PAGE_ATTRIBUTE_BITS));
+#else
       (*PageEntry) = (UINT64)(UINTN)NewPageEntry | AddressEncMask | ((*PageEntry) & PAGE_ATTRIBUTE_BITS);
+#endif
       return RETURN_SUCCESS;
     } else {
       return RETURN_UNSUPPORTED;
@@ -572,11 +626,25 @@ SplitPage (
       if (NewPageEntry == NULL) {
         return RETURN_OUT_OF_RESOURCES;
       }
+#ifdef VBOX
+      CurrentPageEntry = *PageEntry;
+      BaseAddress = CurrentPageEntry & ~AddressEncMask  & PAGING_1G_ADDRESS_MASK_64;
+#else
       BaseAddress = *PageEntry & ~AddressEncMask  & PAGING_1G_ADDRESS_MASK_64;
+#endif
       for (Index = 0; Index < SIZE_4KB / sizeof(UINT64); Index++) {
+#ifdef VBOX
+        NewPageEntry[Index] = (BaseAddress + SIZE_2MB * Index) | AddressEncMask | IA32_PG_PS | (CurrentPageEntry & PAGE_PROGATE_BITS);
+#else
         NewPageEntry[Index] = (BaseAddress + SIZE_2MB * Index) | AddressEncMask | IA32_PG_PS | ((*PageEntry) & PAGE_PROGATE_BITS);
+#endif
       }
+#ifdef VBOX
+      SafePageTableEntryWrite64 (PageEntry, CurrentPageEntry,
+                                 (UINT64)(UINTN)NewPageEntry | AddressEncMask | (CurrentPageEntry & PAGE_ATTRIBUTE_BITS));
+#else
       (*PageEntry) = (UINT64)(UINTN)NewPageEntry | AddressEncMask | ((*PageEntry) & PAGE_ATTRIBUTE_BITS);
+#endif
       return RETURN_SUCCESS;
     } else {
       return RETURN_UNSUPPORTED;
