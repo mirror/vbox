@@ -6258,6 +6258,15 @@ VBoxManage setextradata "VM name" VBoxInternal/CPUM/IsaExts/SSE4.2 0</screen>
           </para>
         </listitem>
 
+        <listitem>
+          <para>
+            The disk encryption feature can protect the content of the
+            disks configured for a VM only. It does not cover any other
+            data related to a VM, including saved state or the
+            configuration file itself.
+          </para>
+        </listitem>
+
       </itemizedlist>
 
     </sect2>

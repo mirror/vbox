@@ -502,6 +502,19 @@
           </para>
         </listitem>
 
+        <listitem>
+          <para>
+            When using the &product-name; Extension Pack provided by
+            Oracle for disk encryption, the data stored in disk images can
+            optionally be encrypted. See <xref linkend="diskencryption" />.
+            This feature covers disk image content only. All other data
+            for a virtual machine is stored unencrypted, including the VM's
+            memory and device state which is stored as part of a saved
+            state, both when created explicitly or part of a snapshot of a
+            running VM.
+          </para>
+        </listitem>
+
       </itemizedlist>
 
     </sect2>

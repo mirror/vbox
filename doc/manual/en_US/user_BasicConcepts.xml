@@ -1145,6 +1145,13 @@
         encryption and the encryption password.
       </para>
 
+      <note>
+        <para>
+          All files related to the virtual machine except disk images are
+          stored unencrypted.
+        </para>
+      </note>
+
     </sect2>
 
   </sect1>
