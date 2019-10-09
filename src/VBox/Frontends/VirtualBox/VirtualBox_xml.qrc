@@ -7,6 +7,7 @@
         <file alias="103_ansi.xml">xml/103_ansi.xml</file>
         <file alias="us_international.xml">xml/us_international.xml</file>
         <file alias="numpad.xml">xml/numpad.xml</file>                
+        <file alias="multimedia_keys.xml">xml/multimedia_keys.xml</file>
         <file alias="german.xml">xml/german.xml</file>
         <file alias="us.xml">xml/us.xml</file>
         <file alias="greek.xml">xml/greek.xml</file>

@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<physicallayout defaultHeight="30" defaultWidth="50">
+    <name>multimedia keys</name>
+    <id>80b4c26e-43fc-44f8-b515-351cff9269ce</id>
+    <row>
+        <key><!-- WWW back -->
+            <position>300</position>
+            <usageid>0x2224</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancode>0x20</scancode>
+        </key>
+        <key>
+            <position>301</position>
+            <usageid>0x54</usageid>
+            <usagepage>0x7</usagepage>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x35</scancode>
+        </key>
+        <key>
+            <position>302</position>
+            <usageid>0x55</usageid>
+            <usagepage>0x7</usagepage>
+            <scancode>0x37</scancode>
+        </key>
+        <key><!-- Mute -->
+            <position>303</position>
+            <usageid>0xE2</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancode>0x4a</scancode>
+        </key>
+    </row>
+</physicallayout>

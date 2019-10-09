@@ -101,8 +101,8 @@ enum KeyboardRegion
 {
     KeyboardRegion_Main = 0,
     KeyboardRegion_NumPad,
-    KeyboardRegion_Multimedia,
-    KeyboardRegion_OSMenu,
+    KeyboardRegion_MultimediaKeys,
+    KeyboardRegion_OSMenuKeys,
     KeyboardRegion_Max
 };
 
@@ -301,6 +301,8 @@ public:
     void setDefaultHeight(int iHeight);
     int defaultHeight() const;
 
+    int MaximumHeight() const;
+
     QVector<UISoftKeyboardKey> &keys();
     const QVector<UISoftKeyboardKey> &keys() const;
 
@@ -312,6 +314,8 @@ private:
     /** Default width and height might be inherited from the layout and overwritten in row settings. */
     int m_iDefaultWidth;
     int m_iDefaultHeight;
+    int m_iMaximumHeight;
+
     QVector<UISoftKeyboardKey> m_keys;
     int m_iSpaceHeightAfter;
 };
@@ -476,7 +480,7 @@ public:
     QUuid uid() const;
 
     void drawText(int iKeyPosition, const QRect &keyGeometry, QPainter &painter);
-    void drawTextInRect(int iKeyPosition, const QRect &keyGeometry, QPainter &painter);
+    void drawTextInRect(const UISoftKeyboardKey &key, QPainter &painter);
 
 private:
 
@@ -608,7 +612,7 @@ private:
     /** Sends usage id/page to API when a modifier key is right clicked. useful for testing and things like
       * Window key press for start menu opening. This works orthogonal to left clicks.*/
     void               modifierKeyPressRelease(UISoftKeyboardKey *pKey, bool fRelease);
-    bool               loadPhysicalLayout(const QString &strLayoutFileName, bool isNumPad = false);
+    bool               loadPhysicalLayout(const QString &strLayoutFileName, KeyboardRegion keyboardRegion = KeyboardRegion_Main);
     bool               loadKeyboardLayout(const QString &strLayoutName);
     void               prepareObjects();
     UISoftKeyboardPhysicalLayout *findPhysicalLayout(const QUuid &uuid);
@@ -628,6 +632,7 @@ private:
     QVector<UISoftKeyboardKey*> m_pressedModifiers;
     QVector<UISoftKeyboardPhysicalLayout> m_physicalLayouts;
     UISoftKeyboardPhysicalLayout          m_numPadLayout;
+    UISoftKeyboardPhysicalLayout          m_multiMediaKeysLayout;
     QVector<UISoftKeyboardLayout>         m_layouts;
     UISoftKeyboardLayout *m_pCurrentKeyboardLayout;
 
@@ -646,6 +651,7 @@ private:
     Mode  m_enmMode;
     bool  m_fHideOSMenuKeys;
     bool  m_fHideNumPad;
+    bool  m_fHideMultimediaKeys;
 };
 
 /*********************************************************************************************************************************
@@ -1856,10 +1862,12 @@ QUuid UISoftKeyboardLayout::uid() const
     return m_uid;
 }
 
-void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeometry, QPainter &painter)
+void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter &painter)
 {
+    int iKeyPosition = key.position();
+    const QRect &keyGeometry = key.keyGeometry();
     QFont painterFont(painter.font());
-    int iFontSize = 25;
+    int iFontSize = 30;
 
     const QString &strBaseCaption = baseCaption(iKeyPosition);
     const QString &strShiftCaption = shiftCaption(iKeyPosition);
@@ -1893,7 +1901,12 @@ void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeom
         foreach (const QString &strPart, strList)
             iBottomWidth = qMax(iBottomWidth, fontMetrics.width(strPart));
         int iTextWidth =  2 * iMargin + qMax(iTopWidth, iBottomWidth);
-        int iTextHeight = 2 * iMargin + 2 * fontMetrics.height();
+        int iTextHeight = 0;
+
+        if (key.keyboardRegion() == KeyboardRegion_MultimediaKeys)
+            iTextHeight = 2 * iMargin + fontMetrics.height();
+        else
+            iTextHeight = 2 * iMargin + 2 * fontMetrics.height();
 
         if (iTextWidth >= keyGeometry.width() || iTextHeight >= keyGeometry.height())
             --iFontSize;
@@ -1908,9 +1921,15 @@ void UISoftKeyboardLayout::drawTextInRect(int iKeyPosition, const QRect &keyGeom
 #if 0
     painter.drawText(iMargin, iMargin + fontMetrics.height(), QString::number(iKeyPosition));
 #else
-    QRect textRect(iMargin, iMargin,
-                   keyGeometry.width() - 2 * iMargin,
-                   keyGeometry.height() - 2 * iMargin);
+    QRect textRect;
+    if (key.keyboardRegion() == KeyboardRegion_MultimediaKeys)
+        textRect = QRect(2 * iMargin, iMargin,
+                         keyGeometry.width() - 2 * iMargin,
+                         keyGeometry.height() - 2 * iMargin);
+    else
+        textRect = QRect(iMargin, iMargin,
+                         keyGeometry.width() - 2 * iMargin,
+                         keyGeometry.height() - 2 * iMargin);
 
     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strTopleftString);
     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignBottom, strBottomleftString);
@@ -2037,6 +2056,7 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_enmMode(Mode_Keyboard)
     , m_fHideOSMenuKeys(false)
     , m_fHideNumPad(false)
+    , m_fHideMultimediaKeys(false)
 {
     prepareObjects();
 }
@@ -2088,10 +2108,14 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
         for (int j = 0; j < keys.size(); ++j)
         {
             UISoftKeyboardKey &key = keys[j];
-            if (m_fHideOSMenuKeys && key.keyboardRegion() == KeyboardRegion_OSMenu)
+
+            if (m_fHideOSMenuKeys && key.keyboardRegion() == KeyboardRegion_OSMenuKeys)
                 continue;
 
             if (m_fHideNumPad && key.keyboardRegion() == KeyboardRegion_NumPad)
+                continue;
+
+            if (m_fHideMultimediaKeys && key.keyboardRegion() == KeyboardRegion_MultimediaKeys)
                 continue;
 
             painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
@@ -2110,7 +2134,7 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
 
             painter.drawPolygon(key.polygon());
 
-            m_pCurrentKeyboardLayout->drawTextInRect(key.position(), key.keyGeometry(), painter);
+            m_pCurrentKeyboardLayout->drawTextInRect(key, painter);
 
             if (key.type() != KeyType_Ordinary)
             {
@@ -2611,19 +2635,23 @@ UISoftKeyboardLayout *UISoftKeyboardWidget::currentLayout()
     return m_pCurrentKeyboardLayout;
 }
 
-bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, bool isNumPad /* = false */)
+bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, KeyboardRegion keyboardRegion /* = KeyboardRegion_Main */)
 {
     if (strLayoutFileName.isEmpty())
         return false;
     UIPhysicalLayoutReader reader;
     UISoftKeyboardPhysicalLayout *newPhysicalLayout = 0;
-    if (!isNumPad)
+    if (keyboardRegion == KeyboardRegion_Main)
     {
         m_physicalLayouts.append(UISoftKeyboardPhysicalLayout());
         newPhysicalLayout = &(m_physicalLayouts.back());
     }
-    else
+    else if (keyboardRegion == KeyboardRegion_NumPad)
         newPhysicalLayout = &(m_numPadLayout);
+    else if (keyboardRegion == KeyboardRegion_MultimediaKeys)
+        newPhysicalLayout = &(m_multiMediaKeysLayout);
+    else
+        return false;
 
     if (!reader.parseXMLFile(strLayoutFileName, *newPhysicalLayout))
     {
@@ -2631,34 +2659,37 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
         return false;
     }
 
-    if (isNumPad)
+    for (int i = 0; i < newPhysicalLayout->rows().size(); ++i)
     {
-        /* Mark all the key as numpad keys: */
-        for (int i = 0; i < m_numPadLayout.rows().size(); ++i)
-        {
-            UISoftKeyboardRow &row = m_numPadLayout.rows()[i];
-            for (int j = 0; j < row.keys().size(); ++j)
-            {
-                row.keys()[j].setKeyboardRegion(KeyboardRegion_NumPad);
-            }
-        }
-        return true;
+        UISoftKeyboardRow &row = newPhysicalLayout->rows()[i];
+        for (int j = 0; j < row.keys().size(); ++j)
+            row.keys()[j].setKeyboardRegion(keyboardRegion);
     }
+
+    if (keyboardRegion == KeyboardRegion_NumPad || keyboardRegion == KeyboardRegion_MultimediaKeys)
+        return true;
+
     /* Go thru all the keys row by row and construct their geometries: */
     int iY = m_iTopMargin;
     int iMaxWidth = 0;
     int iMaxWidthNoNumPad = 0;
     const QVector<UISoftKeyboardRow> &numPadRows = m_numPadLayout.rows();
     QVector<UISoftKeyboardRow> &rows = newPhysicalLayout->rows();
-    int iKeyCount = 0;
+
+    /* Prepend the multimedia rows to the layout */
+    const QVector<UISoftKeyboardRow> &multimediaRows = m_multiMediaKeysLayout.rows();
+    for (int i = multimediaRows.size() - 1; i >= 0; --i)
+        rows.prepend(multimediaRows[i]);
+
     for (int i = 0; i < rows.size(); ++i)
     {
         UISoftKeyboardRow &row = rows[i];
-        /* Start adding the numpad keys after the 0th row: */
-        if (i > 0)
+        /* Insert the numpad rows at the end of keyboard rows starting with appending 0th numpad row to the
+           end of (1 + multimediaRows.size())th layout row: */
+        if (i > multimediaRows.size())
         {
-            int iNumPadRowIndex = i - 1;
-            if (iNumPadRowIndex < numPadRows.size())
+            int iNumPadRowIndex = i - (1 + multimediaRows.size());
+            if (iNumPadRowIndex >= 0 && iNumPadRowIndex < numPadRows.size())
             {
                 for (int m = 0; m < numPadRows[iNumPadRowIndex].keys().size(); ++m)
                     row.keys().append(numPadRows[iNumPadRowIndex].keys()[m]);
@@ -2670,7 +2701,6 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
         int iRowHeight = row.defaultHeight();
         for (int j = 0; j < row.keys().size(); ++j)
         {
-            ++iKeyCount;
             UISoftKeyboardKey &key = (row.keys())[j];
             if (key.position() == iScrollLockPosition ||
                 key.position() == iNumLockPosition ||
@@ -2776,8 +2806,10 @@ void UISoftKeyboardWidget::reset()
 
 void UISoftKeyboardWidget::loadLayouts()
 {
-    /* Load physical layouts from resources: */
-    loadPhysicalLayout(":/numpad.xml", true);
+    /* Load physical layouts from resources: Numpad and multimedia layout files should be read first
+       since we insert these to other layouts: */
+    loadPhysicalLayout(":/numpad.xml", KeyboardRegion_NumPad);
+    loadPhysicalLayout(":/multimedia_keys.xml", KeyboardRegion_MultimediaKeys);
     QStringList physicalLayoutNames;
     physicalLayoutNames << ":/101_ansi.xml"
                         << ":/102_iso.xml"
@@ -3054,7 +3086,7 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
         else if (m_xmlReader.name() == "osmenukey")
         {
             if (m_xmlReader.readElementText() == "true")
-                key.setKeyboardRegion(KeyboardRegion_OSMenu);
+                key.setKeyboardRegion(KeyboardRegion_OSMenuKeys);
         }
         else
             m_xmlReader.skipCurrentElement();
