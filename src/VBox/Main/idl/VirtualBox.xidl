@@ -4100,6 +4100,8 @@
     <const name="CloudOCILaunchMode" value="43" />
     <const name="CloudPrivateIP" value="44" />
     <const name="CloudBootVolumeId" value="45" />
+    <const name="CloudOCIVCNCompartment" value="46" />
+    <const name="CloudOCISubnetCompartment" value="47" />
   </enum>
 
   <enum
