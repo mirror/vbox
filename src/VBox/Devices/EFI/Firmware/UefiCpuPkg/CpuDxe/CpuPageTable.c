@@ -517,7 +517,11 @@ NeedSplitPage (
 **/
 RETURN_STATUS
 SplitPage (
+#ifdef VBOX
+  IN  volatile UINT64                   *PageEntry,
+#else
   IN  UINT64                            *PageEntry,
+#endif
   IN  PAGE_ATTRIBUTE                    PageAttribute,
   IN  PAGE_ATTRIBUTE                    SplitAttribute,
   IN  PAGE_TABLE_LIB_ALLOCATE_PAGES     AllocatePagesFunc
