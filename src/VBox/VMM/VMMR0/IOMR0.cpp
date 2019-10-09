@@ -23,7 +23,6 @@
 #include <VBox/vmm/iom.h>
 #include "IOMInternal.h"
 #include <VBox/vmm/vmcc.h>
-#include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assertcompile.h>
 
