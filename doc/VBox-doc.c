@@ -36,9 +36,8 @@
  *      - @ref pg_em
  *      - @ref pg_gim
  *      - @ref pg_hm
- *      - @ref pg_rem
- *          - @ref pg_vboxrem_amd64
  *      - @ref pg_iem
+ *      - @ref pg_nem
  *      - @ref pg_gmm
  *          - @ref pg_mm
  *          - @ref pg_pgm

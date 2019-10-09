@@ -37,9 +37,9 @@
  *  - @subpage pg_iem
  *  - @subpage pg_iom
  *  - @subpage pg_mm
+ *  - @subpage pg_nem
  *  - @subpage pg_pdm
  *  - @subpage pg_pgm
- *  - @subpage pg_rem
  *  - @subpage pg_selm
  *  - @subpage pg_ssm
  *  - @subpage pg_stam
