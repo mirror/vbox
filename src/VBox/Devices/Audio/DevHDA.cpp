@@ -401,8 +401,8 @@ static int hdaR3MixerAddDrvStream(PHDASTATE pThis, PAUDMIXSINK pMixSink, PPDMAUD
     { offset + 0x4,  0x00004, 0xFFFFFFFF, 0x00000000, HDA_RD_FLAG_NONE,         hdaRegReadLPIB, hdaRegWriteU32    , HDA_REG_IDX_STRM(name, LPIB) , #name " Link Position In Buffer" }, \
     /* Offset 0x88 (SD0) */ \
     { offset + 0x8,  0x00004, 0xFFFFFFFF, 0xFFFFFFFF, HDA_RD_FLAG_NONE,         hdaRegReadU32 , hdaRegWriteSDCBL  , HDA_REG_IDX_STRM(name, CBL)  , #name " Cyclic Buffer Length" }, \
-    /* Offset 0x8C (SD0) */ \
-    { offset + 0xC,  0x00002, 0x0000FFFF, 0x0000FFFF, HDA_RD_FLAG_NONE,         hdaRegReadU16 , hdaRegWriteSDLVI  , HDA_REG_IDX_STRM(name, LVI)  , #name " Last Valid Index" }, \
+    /* Offset 0x8C (SD0) -- upper 8 bits are reserved */ \
+    { offset + 0xC,  0x00002, 0x0000FFFF, 0x000000FF, HDA_RD_FLAG_NONE,         hdaRegReadU16 , hdaRegWriteSDLVI  , HDA_REG_IDX_STRM(name, LVI)  , #name " Last Valid Index" }, \
     /* Reserved: FIFO Watermark. ** @todo Document this! */ \
     { offset + 0xE,  0x00002, 0x00000007, 0x00000007, HDA_RD_FLAG_NONE,         hdaRegReadU16 , hdaRegWriteSDFIFOW, HDA_REG_IDX_STRM(name, FIFOW), #name " FIFO Watermark" }, \
     /* Offset 0x90 (SD0) */ \
@@ -1367,7 +1367,7 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 
             hdaR3StreamLock(pStream);
 
-            int rc2;
+            int rc2 = VINF_SUCCESS;
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
             if (fRun)
@@ -1419,38 +1419,42 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
                 }
             }
 
-            /* Enable/disable the stream. */
-            rc2 = hdaR3StreamEnable(pStream, fRun /* fEnable */);
-            AssertRC(rc2);
-
-            if (fRun)
+            if (RT_SUCCESS(rc2))
             {
-                /* Keep track of running streams. */
-                pThis->cStreamsActive++;
-
-                /* (Re-)init the stream's period. */
-                hdaR3StreamPeriodInit(&pStream->State.Period,
-                                      pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.Cfg);
-
-                /* Begin a new period for this stream. */
-                rc2 = hdaR3StreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
+                /* Enable/disable the stream. */
+                rc2 = hdaR3StreamEnable(pStream, fRun /* fEnable */);
                 AssertRC(rc2);
 
-                rc2 = hdaR3TimerSet(pThis, pStream, TMTimerGet(pThis->pTimer[pStream->u8SD]) + pStream->State.cTransferTicks, false /* fForce */);
-                AssertRC(rc2);
-            }
-            else
-            {
-                /* Keep track of running streams. */
-                Assert(pThis->cStreamsActive);
-                if (pThis->cStreamsActive)
-                    pThis->cStreamsActive--;
+                if (fRun)
+                {
+                    /* Keep track of running streams. */
+                    pThis->cStreamsActive++;
 
-                /* Make sure to (re-)schedule outstanding (delayed) interrupts. */
-                hdaR3ReschedulePendingInterrupts(pThis);
+                    /* (Re-)init the stream's period. */
+                    hdaR3StreamPeriodInit(&pStream->State.Period,
+                                          pStream->u8SD, pStream->u16LVI, pStream->u32CBL, &pStream->State.Cfg);
 
-                /* Reset the period. */
-                hdaR3StreamPeriodReset(&pStream->State.Period);
+                    /* Begin a new period for this stream. */
+                    rc2 = hdaR3StreamPeriodBegin(&pStream->State.Period, hdaWalClkGetCurrent(pThis)/* Use current wall clock time */);
+                    AssertRC(rc2);
+
+                    rc2 = hdaR3TimerSet(pThis, pStream, TMTimerGet(pThis->pTimer[pStream->u8SD]) + pStream->State.cTransferTicks,
+                                        false /* fForce */);
+                    AssertRC(rc2);
+                }
+                else
+                {
+                    /* Keep track of running streams. */
+                    Assert(pThis->cStreamsActive);
+                    if (pThis->cStreamsActive)
+                        pThis->cStreamsActive--;
+
+                    /* Make sure to (re-)schedule outstanding (delayed) interrupts. */
+                    hdaR3ReschedulePendingInterrupts(pThis);
+
+                    /* Reset the period. */
+                    hdaR3StreamPeriodReset(&pStream->State.Period);
+                }
             }
 
 # ifdef VBOX_WITH_AUDIO_HDA_ASYNC_IO
@@ -1596,9 +1600,9 @@ static int hdaRegWriteSDLVI(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
 {
     DEVHDA_LOCK_RETURN(pDevIns, pThis, VINF_IOM_R3_MMIO_WRITE);
 
-#ifdef HDA_USE_DMA_ACCESS_HANDLER
-    uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
+    const uint8_t uSD = HDA_SD_NUM_FROM_REG(pThis, LVI, iReg);
 
+#ifdef HDA_USE_DMA_ACCESS_HANDLER
     if (hdaGetDirFromSD(uSD) == PDMAUDIODIR_OUT)
     {
         PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
@@ -1612,6 +1616,9 @@ static int hdaRegWriteSDLVI(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
         }
     }
 #endif
+
+    ASSERT_GUEST_LOGREL_MSG(u32Value <= UINT8_MAX, /* Should be covered by the register write mask, but just to make sure. */
+                            ("LVI for stream #%RU8 must not be bigger than %RU8\n", uSD, UINT8_MAX - 1));
 
     int rc2 = hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
     AssertRC(rc2);

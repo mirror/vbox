@@ -25,6 +25,7 @@
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
 
+#include <VBox/AssertGuest.h>
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmaudioifs.h>
 
@@ -238,6 +239,10 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     rc = hdaR3StreamMapInit(&pStream->State.Mapping, &Props);
     AssertRCReturn(rc, rc);
 
+    ASSERT_GUEST_LOGREL_MSG_RETURN(u32CBL % pStream->State.Mapping.cbFrameSize == 0,
+                                   ("CBL for stream #%RU8 does not align to frame size\n", pStream->u8SD),
+                                   VERR_INVALID_PARAMETER);
+
     /*
      * Set the stream's timer Hz rate, based on the stream channel count.
      * Currently this is just a rough guess and we might want to optimize this further.
@@ -343,10 +348,6 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
     LogFunc(("[SD%RU8] DMA @ 0x%x (%RU32 bytes), LVI=%RU16, FIFOS=%RU16\n",
              pStream->u8SD, pStream->u64BDLBase, pStream->u32CBL, pStream->u16LVI, pStream->u16FIFOS));
 
-    /* Make sure that mandatory parameters are set up correctly. */
-    AssertStmt(pStream->u32CBL %  pStream->State.Mapping.cbFrameSize == 0, rc = VERR_INVALID_PARAMETER);
-    AssertStmt(pStream->u16LVI >= 1,                                       rc = VERR_INVALID_PARAMETER);
-
     if (RT_SUCCESS(rc))
     {
         /* Make sure that the chosen Hz rate dividable by the stream's rate. */
@@ -356,7 +357,6 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
 
         /* Figure out how many transfer fragments we're going to use for this stream. */
         /** @todo Use a more dynamic fragment size? */
-        Assert(pStream->u16LVI <= UINT8_MAX - 1);
         uint8_t cFragments = pStream->u16LVI + 1;
         if (cFragments <= 1)
             cFragments = 2; /* At least two fragments (BDLEs) must be present. */
@@ -445,38 +445,47 @@ int hdaR3StreamInit(PHDASTREAM pStream, uint8_t uSD)
         pStream->State.cbTransferSize = pStream->u32CBL / cFragments;
         Assert(pStream->State.cbTransferSize);
         Assert(pStream->State.cbTransferSize % pStream->State.Mapping.cbFrameSize == 0);
+        ASSERT_GUEST_LOGREL_MSG_STMT(pStream->State.cbTransferSize,
+                                     ("Transfer size for stream #%RU8 is invalid\n", pStream->u8SD), rc = VERR_INVALID_PARAMETER);
+        if (RT_SUCCESS(rc))
+        {
+            /* Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
+             * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects. */
+            pStream->State.cbTransferChunk = (pStream->State.Cfg.Props.uHz / pStream->State.uTimerHz) * pStream->State.Mapping.cbFrameSize;
+            Assert(pStream->State.cbTransferChunk);
+            Assert(pStream->State.cbTransferChunk % pStream->State.Mapping.cbFrameSize == 0);
+            ASSERT_GUEST_LOGREL_MSG_STMT(pStream->State.cbTransferChunk,
+                                         ("Transfer chunk for stream #%RU8 is invalid\n", pStream->u8SD),
+                                         rc = VERR_INVALID_PARAMETER);
+            if (RT_SUCCESS(rc))
+            {
+                /* Make sure that the transfer chunk does not exceed the overall transfer size. */
+                if (pStream->State.cbTransferChunk > pStream->State.cbTransferSize)
+                    pStream->State.cbTransferChunk = pStream->State.cbTransferSize;
 
-        /* Calculate the bytes we need to transfer to / from the stream's DMA per iteration.
-         * This is bound to the device's Hz rate and thus to the (virtual) timing the device expects. */
-        pStream->State.cbTransferChunk = (pStream->State.Cfg.Props.uHz / pStream->State.uTimerHz) * pStream->State.Mapping.cbFrameSize;
-        Assert(pStream->State.cbTransferChunk);
-        Assert(pStream->State.cbTransferChunk % pStream->State.Mapping.cbFrameSize == 0);
+                const uint64_t cTicksPerHz = TMTimerGetFreq(pStream->pTimer) / pStream->State.uTimerHz;
 
-        /* Make sure that the transfer chunk does not exceed the overall transfer size. */
-        if (pStream->State.cbTransferChunk > pStream->State.cbTransferSize)
-            pStream->State.cbTransferChunk = pStream->State.cbTransferSize;
+                /* Calculate the timer ticks per byte for this stream. */
+                pStream->State.cTicksPerByte = cTicksPerHz / pStream->State.cbTransferChunk;
+                Assert(pStream->State.cTicksPerByte);
 
-        const uint64_t cTicksPerHz = TMTimerGetFreq(pStream->pTimer) / pStream->State.uTimerHz;
+                /* Calculate timer ticks per transfer. */
+                pStream->State.cTransferTicks = pStream->State.cbTransferChunk * pStream->State.cTicksPerByte;
+                Assert(pStream->State.cTransferTicks);
 
-        /* Calculate the timer ticks per byte for this stream. */
-        pStream->State.cTicksPerByte = cTicksPerHz / pStream->State.cbTransferChunk;
-        Assert(pStream->State.cTicksPerByte);
+                LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbTransferChunk=%RU32, " \
+                         "cTransferTicks=%RU64, cbTransferSize=%RU32\n",
+                         pStream->u8SD, pStream->State.uTimerHz, cTicksPerHz, pStream->State.cTicksPerByte,
+                         pStream->State.cbTransferChunk, pStream->State.cTransferTicks, pStream->State.cbTransferSize));
 
-        /* Calculate timer ticks per transfer. */
-        pStream->State.cTransferTicks     = pStream->State.cbTransferChunk * pStream->State.cTicksPerByte;
-        Assert(pStream->State.cTransferTicks);
-
-        LogFunc(("[SD%RU8] Timer %uHz (%RU64 ticks per Hz), cTicksPerByte=%RU64, cbTransferChunk=%RU32, cTransferTicks=%RU64, " \
-                 "cbTransferSize=%RU32\n",
-                 pStream->u8SD, pStream->State.uTimerHz, cTicksPerHz, pStream->State.cTicksPerByte,
-                 pStream->State.cbTransferChunk, pStream->State.cTransferTicks, pStream->State.cbTransferSize));
-
-        /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
-        hdaR3StreamSetPosition(pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
+                /* Make sure to also update the stream's DMA counter (based on its current LPIB value). */
+                hdaR3StreamSetPosition(pStream, HDA_STREAM_REG(pThis, LPIB, pStream->u8SD));
 
 #ifdef LOG_ENABLED
-        hdaR3BDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
+                hdaR3BDLEDumpAll(pThis, pStream->u64BDLBase, pStream->u16LVI + 1);
 #endif
+            }
+        }
     }
 
     if (RT_FAILURE(rc))
