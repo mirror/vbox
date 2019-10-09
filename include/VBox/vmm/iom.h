@@ -567,15 +567,17 @@ VMMR3_INT_DECL(void) IOMR3NotifyDebugEventChange(PVM pVM, DBGFEVENT enmEvent, bo
  * @{ */
 VMMR0_INT_DECL(void) IOMR0InitPerVMData(PGVM pGVM);
 VMMR0_INT_DECL(void) IOMR0CleanupVM(PGVM pGVM);
+
 VMMR0_INT_DECL(int)  IOMR0IoPortSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
                                              PFNIOMIOPORTNEWOUT pfnOut,  PFNIOMIOPORTNEWIN pfnIn,
                                              PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, void *pvUser);
 VMMR0_INT_DECL(int)  IOMR0IoPortGrowRegistrationTables(PGVM pGVM, uint64_t cMinEntries);
 VMMR0_INT_DECL(int)  IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cMinEntries);
+
+VMMR0_INT_DECL(int)  IOMR0MmioSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                           PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser);
 VMMR0_INT_DECL(int)  IOMR0MmioGrowRegistrationTables(PGVM pGVM, uint64_t cMinEntries);
 VMMR0_INT_DECL(int)  IOMR0MmioGrowStatisticsTable(PGVM pGVM, uint64_t cMinEntries);
-
-
 /** @} */
 #endif /* IN_RING0 || DOXYGEN_RUNNING */
 

@@ -807,12 +807,12 @@ typedef struct IOMR0PERVM
     uint32_t                        cMmioAlloc;
     /** MMIO registration table for ring-0.
      * There is a parallel table for ring-3, paMmioRing3Regs. */
-    R0PTRTYPE(PIOMIOPORTENTRYR0)    paMmioRegs;
+    R0PTRTYPE(PIOMMMIOENTRYR0)      paMmioRegs;
     /** MMIO lookup table. */
-    R0PTRTYPE(PIOMIOPORTLOOKUPENTRY) paMmioLookup;
+    R0PTRTYPE(PIOMMMIOLOOKUPENTRY)  paMmioLookup;
     /** MMIO registration table for ring-3.
      * Also mapped to ring-3 as IOM::paMmioRegs. */
-    R0PTRTYPE(PIOMIOPORTENTRYR3)    paMmioRing3Regs;
+    R0PTRTYPE(PIOMMMIOENTRYR3)      paMmioRing3Regs;
     /** Handle to the allocation backing both the ring-0 and ring-3 registration
      * tables as well as the lookup table. */
     RTR0MEMOBJ                      hMmioMemObj;
@@ -822,7 +822,7 @@ typedef struct IOMR0PERVM
     /** The size of the paMmioStats allocation (in entries). */
     uint32_t                        cMmioStatsAllocation;
     /** MMIO lookup table.   */
-    R0PTRTYPE(PIOMIOPORTSTATSENTRY) paMmioStats;
+    R0PTRTYPE(PIOMMMIOSTATSENTRY)   paMmioStats;
     /** Handle to the allocation backing the MMIO statistics. */
     RTR0MEMOBJ                      hMmioStatsMemObj;
     /** Handle to the ring-3 mapping of the MMIO statistics. */
@@ -844,6 +844,8 @@ void                iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry);
 #ifdef IN_RING0
 void                iomR0IoPortCleanupVM(PGVM pGVM);
 void                iomR0IoPortInitPerVMData(PGVM pGVM);
+void                iomR0MmioCleanupVM(PGVM pGVM);
+void                iomR0MmioInitPerVMData(PGVM pGVM);
 #endif
 
 #ifndef IN_RING3

@@ -185,7 +185,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
     AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_IOM_INVALID_MMIO_HANDLE);
 
     RTGCPHYS const cbRegion = pRegEntry->cbRegion;
-    AssertMsgReturn(cbRegion > 0 && cbRegion <= _1P, ("cbRegion=%RGp\n", cbRegion), VERR_IOM_MMIO_IPE_1);
+    AssertMsgReturn(cbRegion > 0 && cbRegion <= _1T, ("cbRegion=%RGp\n", cbRegion), VERR_IOM_MMIO_IPE_1);
     AssertReturn(GCPhys + cbRegion <= GCPhys, VERR_OUT_OF_RANGE);
     RTGCPHYS const GCPhysLast = GCPhys + cbRegion - 1;
 
