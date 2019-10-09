@@ -4222,6 +4222,7 @@ void UIMachineSettingsStorage::sltHandleMouseMove(QMouseEvent *pEvent)
         if (pItemAttachment)
         {
             /* Initialize dragging: */
+            pEvent->setAccepted(true);
             QDrag *pDrag = new QDrag(this);
             if (pDrag)
             {
