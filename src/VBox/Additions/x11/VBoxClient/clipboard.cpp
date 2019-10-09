@@ -150,8 +150,12 @@ struct _CLIPREADCBREQ
 DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     RT_NOREF(pCtx);
-    LogFlowFunc(("u32Formats=%d\n", u32Formats));
+
+    LogFlowFunc(("u32Formats=%RU32\n", u32Formats));
+
     int rc = VbglR3ClipboardFormatsReport(g_ctx.client, u32Formats);
+    RT_NOREF(rc);
+
     LogFlowFuncLeaveRC(rc);
 }
 
