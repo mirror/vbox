@@ -29,7 +29,7 @@
 
 #include <VBox/GuestHost/SharedClipboard.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
-#include <VBox/err.h>
+#include <iprt/errcore.h>
 
 #include "VBoxSharedClipboardSvc-internal.h"
 
