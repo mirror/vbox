@@ -4040,11 +4040,13 @@ static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
 #endif
 
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
     /*
      * Set up the nested-guest VMCB for execution using hardware-assisted SVM.
      */
     if (pSvmTransient->fIsNestedGuest)
         hmR0SvmSetupVmcbNested(pVCpu);
+#endif
 
     /*
      * Export the guest state bits that are not shared with the host in any way as we can
