@@ -67,9 +67,9 @@ static SHCLCONTEXT g_ctx;
 static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
 {
     int rc;
-    LogRelFlowFunc(("u32Format=%d, pv=%p, cb=%d\n", u32Format, pv, cb));
+    LogFlowFunc(("u32Format=%d, pv=%p, cb=%d\n", u32Format, pv, cb));
     rc = VbglR3ClipboardWriteData(g_ctx.client, u32Format, pv, cb);
-    LogRelFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -93,7 +93,7 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32F
     void *pv = RTMemAlloc(cb);
 
     *ppv = 0;
-    LogRelFlowFunc(("u32Format=%u\n", u32Format));
+    LogFlowFunc(("u32Format=%u\n", u32Format));
     if (RT_UNLIKELY(!pv))
         rc = VERR_NO_MEMORY;
     if (RT_SUCCESS(rc))
@@ -126,9 +126,9 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32F
         if (pv != NULL)
             RTMemFree(pv);
     }
-    LogRelFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(rc);
     if (RT_SUCCESS(rc))
-        LogRelFlow(("    *pcb=%d\n", *pcb));
+        LogFlow(("    *pcb=%d\n", *pcb));
     return rc;
 }
 
@@ -150,9 +150,9 @@ struct _CLIPREADCBREQ
 DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
 {
     RT_NOREF(pCtx);
-    LogRelFlowFunc(("u32Formats=%d\n", u32Formats));
+    LogFlowFunc(("u32Formats=%d\n", u32Formats));
     int rc = VbglR3ClipboardFormatsReport(g_ctx.client, u32Formats);
-    LogRelFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(rc);
 }
 
 /** This is called by the backend to tell us that a request for data from
@@ -211,7 +211,7 @@ static int vboxClipboardConnect(void)
     if (rc != VINF_SUCCESS && g_ctx.pBackend)
         ClipDestructX11(g_ctx.pBackend);
 
-    LogRelFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -221,7 +221,7 @@ static int vboxClipboardConnect(void)
 int vboxClipboardMain(void)
 {
     int rc;
-    LogRelFlowFunc(("Starting guest clipboard service\n"));
+    LogFlowFunc(("Starting guest clipboard service\n"));
     bool fExiting = false;
 
     while (!fExiting)
@@ -239,7 +239,7 @@ int vboxClipboardMain(void)
                      * Save the information so that it is available for
                      * future requests from guest applications.
                      */
-                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_FORMATS_WRITE fFormats=%x\n", fFormats));
+                    LogFlowFunc(("VBOX_SHCL_HOST_MSG_FORMATS_WRITE fFormats=%x\n", fFormats));
                     ClipAnnounceFormatToX11(g_ctx.pBackend, fFormats);
                     break;
                 }
@@ -247,7 +247,7 @@ int vboxClipboardMain(void)
                 case VBOX_SHCL_HOST_MSG_READ_DATA:
                 {
                     /* The host needs data in the specified format. */
-                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_READ_DATA fFormats=%x\n", fFormats));
+                    LogFlowFunc(("VBOX_SHCL_HOST_MSG_READ_DATA fFormats=%x\n", fFormats));
                     CLIPREADCBREQ *pReq;
                     pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(*pReq));
                     if (!pReq)
@@ -267,7 +267,7 @@ int vboxClipboardMain(void)
                 case VBOX_SHCL_HOST_MSG_QUIT:
                 {
                     /* The host is terminating. */
-                    LogRelFlowFunc(("VBOX_SHCL_HOST_MSG_QUIT\n"));
+                    LogFlowFunc(("VBOX_SHCL_HOST_MSG_QUIT\n"));
                     if (RT_SUCCESS(ClipStopX11(g_ctx.pBackend)))
                         ClipDestructX11(g_ctx.pBackend);
                     fExiting = true;
@@ -282,9 +282,9 @@ int vboxClipboardMain(void)
             }
         }
 
-        LogRelFlow(("processed host event rc = %d\n", rc));
+        LogFlow(("processed host event rc = %d\n", rc));
     }
-    LogRelFlowFuncLeaveRC(rc);
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
