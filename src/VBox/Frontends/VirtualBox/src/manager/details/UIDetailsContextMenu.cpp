@@ -702,7 +702,7 @@ void UIDetailsContextMenu::populateOptions()
                 QListWidgetItem *pOptionItem = createOptionItem();
                 if (pOptionItem)
                 {
-                    pOptionItem->setData(DataField_Type, enmOptionType);
+                    pOptionItem->setData(DataField_Type, QVariant::fromValue(enmOptionType));
                     pOptionItem->setData(DataField_Name, gpConverter->toInternalString(enmOptionType));
                     pOptionItem->setCheckState(Qt::Unchecked);
                 }
