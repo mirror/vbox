@@ -4149,131 +4149,6 @@ static int hmR0SvmCheckForceFlags(PVMCPUCC pVCpu)
 }
 
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-/**
- * Does the preparations before executing nested-guest code in AMD-V.
- *
- * @returns VBox status code (informational status codes included).
- * @retval VINF_SUCCESS if we can proceed with running the guest.
- * @retval VINF_* scheduling changes, we have to go back to ring-3.
- *
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pSvmTransient   Pointer to the SVM transient structure.
- *
- * @remarks Same caveats regarding longjumps as hmR0SvmPreRunGuest applies.
- * @sa      hmR0SvmPreRunGuest.
- */
-static int hmR0SvmPreRunGuestNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
-{
-    PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-    HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
-    HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
-    if (CPUMIsGuestInSvmNestedHwVirtMode(pCtx)) /* Redundant check to avoid unreachable code warning. */
-    {
-        Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
-        return VINF_EM_RESCHEDULE_REM;
-    }
-#endif
-
-    /* Check force flag actions that might require us to go back to ring-3. */
-    int rc = hmR0SvmCheckForceFlags(pVCpu);
-    if (rc != VINF_SUCCESS)
-    {
-        if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-            STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
-        return rc;
-    }
-
-    if (TRPMHasTrap(pVCpu))
-        hmR0SvmTrpmTrapToPendingEvent(pVCpu);
-    else if (!pVCpu->hm.s.Event.fPending)
-    {
-        VBOXSTRICTRC rcStrict = hmR0SvmEvaluatePendingEventNested(pVCpu);
-        if (    rcStrict != VINF_SUCCESS
-            || !CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-        {
-            if (!CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-                STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
-            return VBOXSTRICTRC_VAL(rcStrict);
-        }
-    }
-
-    HMSVM_ASSERT_IN_NESTED_GUEST(pCtx);
-
-    /*
-     * On the oldest AMD-V systems, we may not get enough information to reinject an NMI.
-     * Just do it in software, see @bugref{8411}.
-     * NB: If we could continue a task switch exit we wouldn't need to do this.
-     */
-    PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    if (RT_UNLIKELY(   !pVM->hm.s.svm.u32Features
-                    &&  pVCpu->hm.s.Event.fPending
-                    &&  SVM_EVENT_GET_TYPE(pVCpu->hm.s.Event.u64IntInfo) == SVM_EVENT_NMI))
-    {
-        return VINF_EM_RAW_INJECT_TRPM_EVENT;
-    }
-
-#ifdef HMSVM_SYNC_FULL_GUEST_STATE
-    Assert(!(pCtx->fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
-    ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_ALL_GUEST);
-#endif
-
-    /*
-     * Export the nested-guest state bits that are not shared with the host in any way as we
-     * can longjmp or get preempted in the midst of exporting some of the state.
-     */
-    rc = hmR0SvmExportGuestStateNested(pVCpu);
-    AssertRCReturn(rc, rc);
-    STAM_COUNTER_INC(&pVCpu->hm.s.StatExportFull);
-
-    /* Ensure we've cached (and hopefully modified) the VMCB for execution using hardware-assisted SVM. */
-    Assert(pVCpu->hm.s.svm.NstGstVmcbCache.fCacheValid);
-
-    /*
-     * No longjmps to ring-3 from this point on!!!
-     *
-     * Asserts() will still longjmp to ring-3 (but won't return), which is intentional,
-     * better than a kernel panic. This also disables flushing of the R0-logger instance.
-     */
-    VMMRZCallRing3Disable(pVCpu);
-
-    /*
-     * We disable interrupts so that we don't miss any interrupts that would flag preemption
-     * (IPI/timers etc.) when thread-context hooks aren't used and we've been running with
-     * preemption disabled for a while.  Since this is purly to aid the
-     * RTThreadPreemptIsPending() code, it doesn't matter that it may temporarily reenable and
-     * disable interrupt on NT.
-     *
-     * We need to check for force-flags that could've possible been altered since we last
-     * checked them (e.g. by PDMGetInterrupt() leaving the PDM critical section,
-     * see @bugref{6398}).
-     *
-     * We also check a couple of other force-flags as a last opportunity to get the EMT back
-     * to ring-3 before executing guest code.
-     */
-    pSvmTransient->fEFlags = ASMIntDisableFlags();
-    if (   VM_FF_IS_ANY_SET(pVM, VM_FF_EMT_RENDEZVOUS | VM_FF_TM_VIRTUAL_SYNC)
-        || VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_HM_TO_R3_MASK))
-    {
-        ASMSetFlags(pSvmTransient->fEFlags);
-        VMMRZCallRing3Enable(pVCpu);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchHmToR3FF);
-        return VINF_EM_RAW_TO_R3;
-    }
-    if (RTThreadPreemptIsPending(NIL_RTTHREAD))
-    {
-        ASMSetFlags(pSvmTransient->fEFlags);
-        VMMRZCallRing3Enable(pVCpu);
-        STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchPendingHostIrq);
-        return VINF_EM_RAW_INTERRUPT;
-    }
-    return VINF_SUCCESS;
-}
-#endif
-
-
 /**
  * Does the preparations before executing guest code in AMD-V.
  *
@@ -4296,7 +4171,14 @@ static int hmR0SvmPreRunGuestNested(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 {
     HMSVM_ASSERT_PREEMPT_SAFE(pVCpu);
-    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+
+#ifdef VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM
+    if (pSvmTransient->fIsNestedGuest)
+    {
+        Log2(("hmR0SvmPreRunGuest: Rescheduling to IEM due to nested-hwvirt or forced IEM exec -> VINF_EM_RESCHEDULE_REM\n"));
+        return VINF_EM_RESCHEDULE_REM;
+    }
+#endif
 
     /* Check force flag actions that might require us to go back to ring-3. */
     int rc = hmR0SvmCheckForceFlags(pVCpu);
@@ -4306,7 +4188,23 @@ static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
     if (TRPMHasTrap(pVCpu))
         hmR0SvmTrpmTrapToPendingEvent(pVCpu);
     else if (!pVCpu->hm.s.Event.fPending)
-        hmR0SvmEvaluatePendingEvent(pVCpu);
+    {
+        if (!pSvmTransient->fIsNestedGuest)
+            hmR0SvmEvaluatePendingEvent(pVCpu);
+#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
+        else
+        {
+            VBOXSTRICTRC rcStrict = hmR0SvmEvaluatePendingEventNested(pVCpu);
+            if (    rcStrict != VINF_SUCCESS
+                || !CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
+            {
+                if (!CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.GstCtx))
+                    STAM_COUNTER_INC(&pVCpu->hm.s.StatSwitchNstGstVmexit);
+                return VBOXSTRICTRC_VAL(rcStrict);
+            }
+        }
+#endif
+    }
 
     /*
      * On the oldest AMD-V systems, we may not get enough information to reinject an NMI.
@@ -4314,9 +4212,10 @@ static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
      * NB: If we could continue a task switch exit we wouldn't need to do this.
      */
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
-    if (RT_UNLIKELY(pVCpu->hm.s.Event.fPending && (((pVCpu->hm.s.Event.u64IntInfo >> 8) & 7) == SVM_EVENT_NMI)))
-        if (RT_UNLIKELY(!pVM->hm.s.svm.u32Features))
-            return VINF_EM_RAW_INJECT_TRPM_EVENT;
+    if (RT_UNLIKELY(   !pVM->hm.s.svm.u32Features
+                    &&  pVCpu->hm.s.Event.fPending
+                    &&  SVM_EVENT_GET_TYPE(pVCpu->hm.s.Event.u64IntInfo) == SVM_EVENT_NMI))
+        return VINF_EM_RAW_INJECT_TRPM_EVENT;
 
 #ifdef HMSVM_SYNC_FULL_GUEST_STATE
     Assert(!(pVCpu->cpum.GstCtx.fExtrn & HMSVM_CPUMCTX_EXTRN_ALL));
@@ -4327,9 +4226,15 @@ static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
      * Export the guest state bits that are not shared with the host in any way as we can
      * longjmp or get preempted in the midst of exporting some of the state.
      */
-    rc = hmR0SvmExportGuestState(pVCpu);
+    if (!pSvmTransient->fIsNestedGuest)
+        rc = hmR0SvmExportGuestState(pVCpu);
+    else
+        rc = hmR0SvmExportGuestStateNested(pVCpu);
     AssertRCReturn(rc, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExportFull);
+
+    /* Ensure we've cached (and hopefully modified) the nested-guest VMCB for execution using hardware-assisted SVM. */
+    Assert(!pSvmTransient->fIsNestedGuest || pVCpu->hm.s.svm.NstGstVmcbCache.fCacheValid);
 
     /*
      * If we're not intercepting TPR changes in the guest, save the guest TPR before the
@@ -4337,6 +4242,7 @@ static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
      */
     if (pVCpu->hm.s.svm.fSyncVTpr)
     {
+        Assert(!pSvmTransient->fIsNestedGuest);
         PCSVMVMCB pVmcb = pVCpu->hm.s.svm.pVmcb;
         if (pVM->hm.s.fTPRPatchingActive)
             pSvmTransient->u8GuestTpr = pVmcb->guest.u64LSTAR;
@@ -4884,7 +4790,7 @@ static int hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         /* Preparatory work for running nested-guest code, this may force us to return to
            ring-3.  This bugger disables interrupts on VINF_SUCCESS! */
         STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatEntry, x);
-        rc = hmR0SvmPreRunGuestNested(pVCpu, &SvmTransient);
+        rc = hmR0SvmPreRunGuest(pVCpu, &SvmTransient);
         if (    rc != VINF_SUCCESS
             || !CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
         {
