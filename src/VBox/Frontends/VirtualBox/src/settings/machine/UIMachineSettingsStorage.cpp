@@ -4051,6 +4051,9 @@ void UIMachineSettingsStorage::sltHandleCurrentItemChange()
 
 void UIMachineSettingsStorage::sltHandleContextMenuRequest(const QPoint &position)
 {
+    /* Forget last mouse press position: */
+    m_mousePressPosition = QPoint();
+
     const QModelIndex index = m_pTreeStorage->indexAt(position);
     if (!index.isValid())
         return sltAddController();
