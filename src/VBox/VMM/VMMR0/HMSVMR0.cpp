@@ -1929,22 +1929,34 @@ static void hmR0SvmExportSharedDebugState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
     Log4Func(("DR6=%#RX64 DR7=%#RX64\n", pCtx->dr[6], pCtx->dr[7]));
 }
 
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 /**
- * Exports the nested-guest hardware virtualization state into the nested-guest
+ * Exports the hardware virtualization state into the nested-guest
  * VMCB.
  *
- * @param   pVCpu         The cross context virtual CPU structure.
- * @param   pVmcbNstGst   Pointer to the nested-guest VM control block.
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pVmcb   Pointer to the VM control block.
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0SvmExportGuestHwvirtStateNested(PVMCPUCC pVCpu, PSVMVMCB pVmcbNstGst)
+static void hmR0SvmExportGuestHwvirtState(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
     Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
 
     if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_GUEST_HWVIRT)
     {
+        if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable)
+        {
+            PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
+            PCVM      pVM  = pVCpu->CTX_SUFF(pVM);
+
+            HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);                                /* Nested VGIF is not supported yet. */
+            Assert(pVM->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);    /* Physical hardware supports VGIF. */
+            Assert(HMIsSvmVGifActive(pVM));                                        /* Outer VM has enabled VGIF. */
+            NOREF(pVM);
+
+            pVmcb->ctrl.IntCtrl.n.u1VGif = CPUMGetGuestGif(pCtx);
+        }
+
         /*
          * Ensure the nested-guest pause-filter counters don't exceed the outer guest values esp.
          * since SVM doesn't have a preemption timer.
@@ -1953,27 +1965,28 @@ static void hmR0SvmExportGuestHwvirtStateNested(PVMCPUCC pVCpu, PSVMVMCB pVmcbNs
          * nested-guest in IEM incl. PAUSE instructions which would update the pause-filter counters
          * and may continue execution in SVM R0 without a nested-guest #VMEXIT in between.
          */
-        PVMCC            pVM = pVCpu->CTX_SUFF(pVM);
-        PSVMVMCBCTRL   pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
+        PVMCC          pVM = pVCpu->CTX_SUFF(pVM);
+        PSVMVMCBCTRL   pVmcbCtrl = &pVmcb->ctrl;
         uint16_t const uGuestPauseFilterCount     = pVM->hm.s.svm.cPauseFilter;
         uint16_t const uGuestPauseFilterThreshold = pVM->hm.s.svm.cPauseFilterThresholdTicks;
         if (CPUMIsGuestSvmCtrlInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, SVM_CTRL_INTERCEPT_PAUSE))
         {
             PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-            pVmcbNstGstCtrl->u16PauseFilterCount     = RT_MIN(pCtx->hwvirt.svm.cPauseFilter, uGuestPauseFilterCount);
-            pVmcbNstGstCtrl->u16PauseFilterThreshold = RT_MIN(pCtx->hwvirt.svm.cPauseFilterThreshold, uGuestPauseFilterThreshold);
-            pVmcbNstGstCtrl->u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
+            pVmcbCtrl->u16PauseFilterCount     = RT_MIN(pCtx->hwvirt.svm.cPauseFilter, uGuestPauseFilterCount);
+            pVmcbCtrl->u16PauseFilterThreshold = RT_MIN(pCtx->hwvirt.svm.cPauseFilterThreshold, uGuestPauseFilterThreshold);
         }
         else
         {
-            pVmcbNstGstCtrl->u16PauseFilterCount     = uGuestPauseFilterCount;
-            pVmcbNstGstCtrl->u16PauseFilterThreshold = uGuestPauseFilterThreshold;
+            /** @todo r=ramshankar: We can turn these assignments into assertions. */
+            pVmcbCtrl->u16PauseFilterCount     = uGuestPauseFilterCount;
+            pVmcbCtrl->u16PauseFilterThreshold = uGuestPauseFilterThreshold;
         }
+        pVmcbCtrl->u32VmcbCleanBits &= ~HMSVM_VMCB_CLEAN_INTERCEPTS;
 
         pVCpu->hm.s.fCtxChanged &= ~HM_CHANGED_GUEST_HWVIRT;
     }
 }
-#endif
+
 
 /**
  * Exports the guest APIC TPR state into the VMCB.
@@ -1984,6 +1997,8 @@ static void hmR0SvmExportGuestHwvirtStateNested(PVMCPUCC pVCpu, PSVMVMCB pVmcbNs
  */
 static int hmR0SvmExportGuestApicTpr(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
+    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_APIC_TPR)
     {
         PVMCC pVM = pVCpu->CTX_SUFF(pVM);
@@ -2041,8 +2056,7 @@ static int hmR0SvmExportGuestApicTpr(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 
 
 /**
- * Sets up the exception interrupts required for guest (or nested-guest)
- * execution in the VMCB.
+ * Sets up the exception interrupts required for guest execution in the VMCB.
  *
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pVmcb       Pointer to the VM control block.
@@ -2051,10 +2065,10 @@ static int hmR0SvmExportGuestApicTpr(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
  */
 static void hmR0SvmExportGuestXcptIntercepts(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
-    Assert(!RTThreadPreemptIsEnabled(NIL_RTTHREAD));
+    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
 
     /* If we modify intercepts from here, please check & adjust hmR0SvmMergeVmcbCtrlsNested() if required. */
-    if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_SVM_XCPT_INTERCEPTS)
+    if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_SVM_XCPT_INTERCEPTS)
     {
         /* Trap #UD for GIM provider (e.g. for hypercalls). */
         if (pVCpu->hm.s.fGIMTrapXcptUD)
@@ -2069,7 +2083,7 @@ static void hmR0SvmExportGuestXcptIntercepts(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
             hmR0SvmClearXcptIntercept(pVCpu, pVmcb, X86_XCPT_BP);
 
         /* The remaining intercepts are handled elsewhere, e.g. in hmR0SvmExportGuestCR0(). */
-        pVCpu->hm.s.fCtxChanged &= ~HM_CHANGED_SVM_XCPT_INTERCEPTS;
+        ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_SVM_XCPT_INTERCEPTS);
     }
 }
 
@@ -2301,70 +2315,69 @@ VMMR0DECL(int) SVMR0ExportHostState(PVMCPUCC pVCpu)
 
 
 /**
- * Exports the guest state from the guest-CPU context into the VMCB.
+ * Exports the guest or nested-guest state from the virtual-CPU context into the
+ * VMCB.
  *
- * The CPU state will be loaded from these fields on every successful VM-entry.
- * Also sets up the appropriate VMRUN function to execute guest code based on
- * the guest CPU mode.
+ * Also sets up the appropriate VMRUN function to execute guest or nested-guest
+ * code based on the virtual-CPU mode.
  *
  * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pSvmTransient   Pointer to the SVM-transient structure.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0SvmExportGuestState(PVMCPUCC pVCpu)
+static int hmR0SvmExportGuestState(PVMCPUCC pVCpu, PCSVMTRANSIENT pSvmTransient)
 {
     STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExportGuestState, x);
 
-    PSVMVMCB  pVmcb = pVCpu->hm.s.svm.pVmcb;
+    PSVMVMCB  pVmcb = hmR0SvmGetCurrentVmcb(pVCpu);
     PCCPUMCTX pCtx  = &pVCpu->cpum.GstCtx;
-
     Assert(pVmcb);
-    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(pCtx);
 
     pVmcb->guest.u64RIP    = pCtx->rip;
     pVmcb->guest.u64RSP    = pCtx->rsp;
     pVmcb->guest.u64RFlags = pCtx->eflags.u32;
     pVmcb->guest.u64RAX    = pCtx->rax;
-#ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    if (pVmcb->ctrl.IntCtrl.n.u1VGifEnable)
-    {
-        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.svm.u32Features & X86_CPUID_SVM_FEATURE_EDX_VGIF);    /* Hardware supports it. */
-        Assert(HMIsSvmVGifActive(pVCpu->CTX_SUFF(pVM)));                                        /* VM has configured it. */
-        pVmcb->ctrl.IntCtrl.n.u1VGif = CPUMGetGuestGif(pCtx);
-    }
-#endif
 
+    bool const fIsNestedGuest = pSvmTransient->fIsNestedGuest;
     RTCCUINTREG const fEFlags = ASMIntDisableFlags();
 
     int rc = hmR0SvmExportGuestControlRegs(pVCpu, pVmcb);
     AssertRCReturnStmt(rc, ASMSetFlags(fEFlags), rc);
-
     hmR0SvmExportGuestSegmentRegs(pVCpu, pVmcb);
     hmR0SvmExportGuestMsrs(pVCpu, pVmcb);
-    hmR0SvmExportGuestXcptIntercepts(pVCpu, pVmcb);
+    hmR0SvmExportGuestHwvirtState(pVCpu, pVmcb);
 
     ASMSetFlags(fEFlags);
 
-    /* hmR0SvmExportGuestApicTpr() must be called -after- hmR0SvmExportGuestMsrs() as we
-       otherwise we would overwrite the LSTAR MSR that we use for TPR patching. */
-    hmR0SvmExportGuestApicTpr(pVCpu, pVmcb);
+    if (!fIsNestedGuest)
+    {
+        /* hmR0SvmExportGuestApicTpr() must be called -after- hmR0SvmExportGuestMsrs() as we
+           otherwise we would overwrite the LSTAR MSR that we use for TPR patching. */
+        hmR0SvmExportGuestApicTpr(pVCpu, pVmcb);
+        hmR0SvmExportGuestXcptIntercepts(pVCpu, pVmcb);
+    }
 
     rc = hmR0SvmSelectVMRunHandler(pVCpu);
     AssertRCReturn(rc, rc);
 
     /* Clear any bits that may be set but exported unconditionally or unused/reserved bits. */
-    ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~(   HM_CHANGED_GUEST_RIP
-                                                  |  HM_CHANGED_GUEST_RFLAGS
-                                                  |  HM_CHANGED_GUEST_GPRS_MASK
-                                                  |  HM_CHANGED_GUEST_X87
-                                                  |  HM_CHANGED_GUEST_SSE_AVX
-                                                  |  HM_CHANGED_GUEST_OTHER_XSAVE
-                                                  |  HM_CHANGED_GUEST_XCRx
-                                                  |  HM_CHANGED_GUEST_TSC_AUX
-                                                  |  HM_CHANGED_GUEST_OTHER_MSRS
-                                                  |  HM_CHANGED_GUEST_HWVIRT
-                                                  | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_SVM_XCPT_INTERCEPTS)));
+    uint64_t fUnusedMask = HM_CHANGED_GUEST_RIP
+                         | HM_CHANGED_GUEST_RFLAGS
+                         | HM_CHANGED_GUEST_GPRS_MASK
+                         | HM_CHANGED_GUEST_X87
+                         | HM_CHANGED_GUEST_SSE_AVX
+                         | HM_CHANGED_GUEST_OTHER_XSAVE
+                         | HM_CHANGED_GUEST_XCRx
+                         | HM_CHANGED_GUEST_TSC_AUX
+                         | HM_CHANGED_GUEST_OTHER_MSRS;
+    if (fIsNestedGuest)
+        fUnusedMask |= HM_CHANGED_SVM_XCPT_INTERCEPTS
+                    |  HM_CHANGED_GUEST_APIC_TPR;
+
+    ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~(  fUnusedMask
+                                                  | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_SVM_MASK)));
 
 #ifdef VBOX_STRICT
     /*
@@ -2471,6 +2484,8 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
     PSVMVMCB     pVmcbNstGst     = pVCpu->cpum.GstCtx.hwvirt.svm.CTX_SUFF(pVmcb);
     PSVMVMCBCTRL pVmcbNstGstCtrl = &pVmcbNstGst->ctrl;
 
+    HMSVM_ASSERT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+
     /*
      * First cache the nested-guest VMCB fields we may potentially modify.
      */
@@ -2533,87 +2548,6 @@ static void hmR0SvmSetupVmcbNested(PVMCPUCC pVCpu)
         Assert(pVmcbNstGstCtrl->u64IOPMPhysAddr == g_HCPhysIOBitmap);
         Assert(RT_BOOL(pVmcbNstGstCtrl->NestedPagingCtrl.n.u1NestedPaging) == pVCpu->CTX_SUFF(pVM)->hm.s.fNestedPaging);
     }
-}
-
-
-/**
- * Exports the nested-guest state into the VMCB.
- *
- * We need to export the entire state as we could be continuing nested-guest
- * execution at any point (not just immediately after VMRUN) and thus the VMCB
- * can be out-of-sync with the nested-guest state if it was executed in IEM.
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pCtx        Pointer to the guest-CPU context.
- *
- * @remarks No-long-jump zone!!!
- */
-static int hmR0SvmExportGuestStateNested(PVMCPUCC pVCpu)
-{
-    STAM_PROFILE_ADV_START(&pVCpu->hm.s.StatExportGuestState, x);
-
-    PCCPUMCTX   pCtx        = &pVCpu->cpum.GstCtx;
-    PSVMVMCB    pVmcbNstGst = pCtx->hwvirt.svm.CTX_SUFF(pVmcb);
-    Assert(pVmcbNstGst);
-
-    hmR0SvmSetupVmcbNested(pVCpu);
-
-    pVmcbNstGst->guest.u64RIP    = pCtx->rip;
-    pVmcbNstGst->guest.u64RSP    = pCtx->rsp;
-    pVmcbNstGst->guest.u64RFlags = pCtx->eflags.u32;
-    pVmcbNstGst->guest.u64RAX    = pCtx->rax;
-
-    RTCCUINTREG const fEFlags = ASMIntDisableFlags();
-
-    int rc = hmR0SvmExportGuestControlRegs(pVCpu, pVmcbNstGst);
-    AssertRCReturnStmt(rc, ASMSetFlags(fEFlags), rc);
-
-    hmR0SvmExportGuestSegmentRegs(pVCpu, pVmcbNstGst);
-    hmR0SvmExportGuestMsrs(pVCpu, pVmcbNstGst);
-    hmR0SvmExportGuestHwvirtStateNested(pVCpu, pVmcbNstGst);
-
-    ASMSetFlags(fEFlags);
-
-    /* Nested VGIF not supported yet. */
-    Assert(!pVmcbNstGst->ctrl.IntCtrl.n.u1VGifEnable);
-
-    rc = hmR0SvmSelectVMRunHandler(pVCpu);
-    AssertRCReturn(rc, rc);
-
-    /* Clear any bits that may be set but exported unconditionally or unused/reserved bits. */
-    ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~(   HM_CHANGED_GUEST_RIP
-                                                  |  HM_CHANGED_GUEST_RFLAGS
-                                                  |  HM_CHANGED_GUEST_GPRS_MASK
-                                                  |  HM_CHANGED_GUEST_APIC_TPR
-                                                  |  HM_CHANGED_GUEST_X87
-                                                  |  HM_CHANGED_GUEST_SSE_AVX
-                                                  |  HM_CHANGED_GUEST_OTHER_XSAVE
-                                                  |  HM_CHANGED_GUEST_XCRx
-                                                  |  HM_CHANGED_GUEST_TSC_AUX
-                                                  |  HM_CHANGED_GUEST_OTHER_MSRS
-                                                  |  HM_CHANGED_SVM_XCPT_INTERCEPTS
-                                                  | (HM_CHANGED_KEEPER_STATE_MASK & ~HM_CHANGED_SVM_MASK)));
-
-#ifdef VBOX_STRICT
-    /*
-     * All of the guest-CPU state and SVM keeper bits should be exported here by now, except
-     * for the host-context and/or shared host-guest context bits.
-     */
-    uint64_t const fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
-    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-    AssertMsg(!(fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_SVM_HOST_GUEST_SHARED_STATE)),
-              ("fCtxChanged=%#RX64\n", fCtxChanged));
-
-    /*
-     * If we need to log state that isn't always imported, we'll need to import them here.
-     * See hmR0SvmPostRunGuest() for which part of the state is imported uncondtionally.
-     */
-    hmR0SvmLogState(pVCpu, pVmcbNstGst, "hmR0SvmExportGuestStateNested", 0 /* fFlags */, 0 /* uVerbose */);
-#endif
-
-    STAM_PROFILE_ADV_STOP(&pVCpu->hm.s.StatExportGuestState, x);
-    return rc;
 }
 #endif /* VBOX_WITH_NESTED_HWVIRT_SVM */
 
@@ -4107,13 +4041,16 @@ static int hmR0SvmPreRunGuest(PVMCPUCC pVCpu, PSVMTRANSIENT pSvmTransient)
 #endif
 
     /*
+     * Set up the nested-guest VMCB for execution using hardware-assisted SVM.
+     */
+    if (pSvmTransient->fIsNestedGuest)
+        hmR0SvmSetupVmcbNested(pVCpu);
+
+    /*
      * Export the guest state bits that are not shared with the host in any way as we can
      * longjmp or get preempted in the midst of exporting some of the state.
      */
-    if (!pSvmTransient->fIsNestedGuest)
-        rc = hmR0SvmExportGuestState(pVCpu);
-    else
-        rc = hmR0SvmExportGuestStateNested(pVCpu);
+    rc = hmR0SvmExportGuestState(pVCpu, pSvmTransient);
     AssertRCReturn(rc, rc);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExportFull);
 
