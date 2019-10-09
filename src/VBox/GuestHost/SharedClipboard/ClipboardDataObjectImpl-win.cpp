@@ -39,7 +39,7 @@
 
 /** @todo Also handle Unicode entries.
  *        !!! WARNING: Buggy, doesn't work yet (some memory corruption / garbage in the file name descriptions) !!! */
-//#define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 0
+//#define VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT 1
 
 SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLTRANSFER pTransfer,
                                                            LPFORMATETC pFormatEtc, LPSTGMEDIUM pStgMed, ULONG cFormats)
@@ -49,6 +49,7 @@ SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLTRANSFER pTransf
     , m_pTransfer(pTransfer)
     , m_pStream(NULL)
     , m_uObjIdx(0)
+    , m_fRunning(false)
     , m_EventListComplete(NIL_RTSEMEVENT)
     , m_EventTransferComplete(NIL_RTSEMEVENT)
 {
@@ -131,6 +132,8 @@ SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLTRANSFER pTransf
 
 SharedClipboardWinDataObject::~SharedClipboardWinDataObject(void)
 {
+    LogFlowFuncEnter();
+
     RTSemEventDestroy(m_EventListComplete);
     m_EventListComplete = NIL_RTSEMEVENT;
 
@@ -571,19 +574,22 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
         const bool fUnicode = pFormatEtc->cfFormat == m_cfFileDescriptorW;
 
         const uint32_t enmTransferStatus = SharedClipboardTransferGetStatus(m_pTransfer);
+        RT_NOREF(enmTransferStatus);
 
-        LogFlowFunc(("FormatIndex_FileDescriptor%s, transfer status is %s\n",
-                     fUnicode ? "W" : "A", VBoxShClTransferStatusToStr(enmTransferStatus)));
+        LogFlowFunc(("FormatIndex_FileDescriptor%s, enmTransferStatus=%s, m_fRunning=%RTbool\n",
+                     fUnicode ? "W" : "A", VBoxShClTransferStatusToStr(enmTransferStatus), m_fRunning));
 
         int rc;
 
         /* The caller can call GetData() several times, so make sure we don't do the same transfer multiple times. */
-        if (enmTransferStatus == SHCLTRANSFERSTATUS_INITIALIZED)
+        if (!m_fRunning)
         {
             /* Start the transfer asynchronously in a separate thread. */
             rc = SharedClipboardTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this);
             if (RT_SUCCESS(rc))
             {
+                m_fRunning = true;
+
                 /* Don't block for too long here, as this also will screw other apps running on the OS. */
                 LogFunc(("Waiting for listing to arrive ...\n"));
                 rc = RTSemEventWait(m_EventListComplete, 30 * 1000 /* 30s timeout */);

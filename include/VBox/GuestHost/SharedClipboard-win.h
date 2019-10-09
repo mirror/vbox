@@ -257,6 +257,8 @@ protected:
     ULONG                       m_uObjIdx;
     /** List of (cached) file system objects. */
     FsObjEntryList              m_lstEntries;
+    /** Whether the transfer thread is running. */
+    bool                        m_fRunning;
     /** Event being triggered when reading the transfer list been completed. */
     RTSEMEVENT                  m_EventListComplete;
     /** Event being triggered when the transfer has been completed. */
