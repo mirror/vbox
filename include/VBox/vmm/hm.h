@@ -165,7 +165,7 @@ VMM_INT_DECL(void)              HMNotifyVmxNstGstCurrentVmcsChanged(PVMCPU pVCpu
 
 /** @name R0, R3 SVM handlers.
  * @{ */
-VMM_INT_DECL(bool)              HMIsSvmVGifActive(PVM pVM);
+VMM_INT_DECL(bool)              HMIsSvmVGifActive(PCVM pVM);
 # ifdef VBOX_WITH_NESTED_HWVIRT_SVM
 VMM_INT_DECL(void)              HMNotifySvmNstGstVmexit(PVMCPUCC pVCpu, PCPUMCTX pCtx);
 # endif
