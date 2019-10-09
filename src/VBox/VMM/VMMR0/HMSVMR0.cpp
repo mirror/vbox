@@ -4614,9 +4614,7 @@ static int hmR0SvmRunGuestCodeNested(PVMCPUCC pVCpu, uint32_t *pcLoops)
         rc = hmR0SvmPreRunGuest(pVCpu, &SvmTransient);
         if (    rc != VINF_SUCCESS
             || !CPUMIsGuestInSvmNestedHwVirtMode(pCtx))
-        {
             break;
-        }
 
         /*
          * No longjmps to ring-3 from this point on!!!
