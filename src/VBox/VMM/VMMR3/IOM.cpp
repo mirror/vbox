@@ -2326,30 +2326,3 @@ static const char *iomR3IOPortGetStandardName(RTIOPORT Port)
 }
 #endif /* VBOX_WITH_STATISTICS */
 
-
-VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbRegion, uint32_t fFlags, PPDMPCIDEV pPciDev,
-                                     uint32_t iPciRegion, PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead,
-                                     PFNIOMMMIONEWFILL pfnFill, void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
-{
-    RT_NOREF(pVM, pDevIns, cbRegion, fFlags, pPciDev, iPciRegion, pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys)
-{
-    RT_NOREF(pVM, pDevIns, hRegion, GCPhys);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-VMMR3_INT_DECL(int)  IOMR3MmioUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
-{
-    RT_NOREF(pVM, pDevIns, hRegion);
-    return VERR_NOT_IMPLEMENTED;
-}
-
-VMMR3_INT_DECL(int)  IOMR3MmioReduce(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS cbRegion)
-{
-    RT_NOREF(pVM, pDevIns, hRegion, cbRegion);
-    return VERR_NOT_IMPLEMENTED;
-}
-

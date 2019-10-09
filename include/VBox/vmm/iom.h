@@ -572,6 +572,8 @@ VMMR0_INT_DECL(int)  IOMR0IoPortSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMI
                                              PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, void *pvUser);
 VMMR0_INT_DECL(int)  IOMR0IoPortGrowRegistrationTables(PGVM pGVM, uint64_t cMinEntries);
 VMMR0_INT_DECL(int)  IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cMinEntries);
+VMMR0_INT_DECL(int)  IOMR0MmioGrowRegistrationTables(PGVM pGVM, uint64_t cMinEntries);
+VMMR0_INT_DECL(int)  IOMR0MmioGrowStatisticsTable(PGVM pGVM, uint64_t cMinEntries);
 
 
 /** @} */

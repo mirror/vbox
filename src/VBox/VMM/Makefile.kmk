@@ -120,6 +120,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/IEMR3.cpp \
 	VMMR3/IOM.cpp \
 	VMMR3/IOMR3IoPort.cpp \
+	VMMR3/IOMR3Mmio.cpp \
 	VMMR3/GMM.cpp \
 	VMMR3/MM.cpp \
 	VMMR3/MMHeap.cpp \
@@ -481,6 +482,7 @@ VMMR0_SOURCES   = \
 	VMMR0/HMVMXR0.cpp \
 	VMMR0/HMSVMR0.cpp \
 	VMMR0/IOMR0.cpp \
+	VMMR0/IOMR0IoPort.cpp \
 	VMMR0/PDMR0Device.cpp \
 	VMMR0/PDMR0Driver.cpp \
 	VMMR0/PGMR0.cpp \

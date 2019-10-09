@@ -290,7 +290,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
     else
     {
         AssertFailed();
-        rc = VERR_IOM_MMIO_ALREADY_MAPPED;
+        rc = VERR_IOM_MMIO_REGION_ALREADY_MAPPED;
     }
 
     IOM_UNLOCK_EXCL(pVM);
@@ -400,11 +400,18 @@ VMMR3_INT_DECL(int)  IOMR3MmioUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE h
     else
     {
         AssertFailed();
-        rc = VERR_IOM_MMIO_NOT_MAPPED;
+        rc = VERR_IOM_MMIO_REGION_NOT_MAPPED;
     }
 
     IOM_UNLOCK_EXCL(pVM);
     return rc;
+}
+
+
+VMMR3_INT_DECL(int)  IOMR3MmioReduce(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS cbRegion)
+{
+    RT_NOREF(pVM, pDevIns, hRegion, cbRegion);
+    return VERR_NOT_IMPLEMENTED;
 }
 
 

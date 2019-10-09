@@ -2198,6 +2198,24 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
             break;
         }
 
+        case VMMR0_DO_IOM_GROW_MMIO_REGS:
+        {
+            if (pReqHdr || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = VERR_NOT_SUPPORTED; //rc = IOMR0MmioGrowRegistrationTables(pGVM, u64Arg);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
+        case VMMR0_DO_IOM_GROW_MMIO_STATS:
+        {
+            if (pReqHdr || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = VERR_NOT_SUPPORTED; //rc = IOMR0MmioGrowStatisticsTable(pGVM, u64Arg);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
         /*
          * For profiling.
          */
