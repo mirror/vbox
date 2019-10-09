@@ -420,7 +420,8 @@ static int vboxTrayServicesStop(VBOXSERVICEENV *pEnv)
             }
         }
 
-        if (pSvc->pDesc->pfnDestroy)
+        if (   pSvc->pDesc->pfnDestroy
+            && pSvc->pInstance) /* pInstance might be NULL if initialization of a service failed. */
         {
             LogRel2(("Terminating service '%s' ...\n", pSvc->pDesc->pszName));
             pSvc->pDesc->pfnDestroy(pSvc->pInstance);
