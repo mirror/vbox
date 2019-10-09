@@ -3525,7 +3525,7 @@ static bool hmR0SvmIsIntrShadowActive(PVMCPUCC pVCpu)
  */
 static void hmR0SvmSetIntWindowExiting(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
-    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx); NOREF(pVCpu);
 
     /*
      * When AVIC isn't supported, set up an interrupt window to cause a #VMEXIT when the guest
@@ -3556,7 +3556,7 @@ static void hmR0SvmSetIntWindowExiting(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
  */
 static void hmR0SvmClearIntWindowExiting(PVMCPUCC pVCpu, PSVMVMCB pVmcb)
 {
-    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx);
+    HMSVM_ASSERT_NOT_IN_NESTED_GUEST(&pVCpu->cpum.GstCtx); NOREF(pVCpu);
 
     PSVMVMCBCTRL pVmcbCtrl = &pVmcb->ctrl;
     if (    pVmcbCtrl->IntCtrl.n.u1VIrqPending
