@@ -1312,13 +1312,18 @@ static int hdaRegWriteSDCTL(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
     {
         LogFunc(("[SD%RU8] Warning: Invalid stream tag %RU8 specified!\n", uSD, uTag));
 
-        int rc = hdaRegWriteU24(pDevIns, pThis, iReg, u32Value);
         DEVHDA_UNLOCK_BOTH(pDevIns, pThis, uSD);
-        return rc;
+        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
     }
 
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
-    AssertPtr(pStream);
+    if (!pStream)
+    {
+        ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing SDCTL (0x%x) to unhandled stream #%RU8\n", u32Value, uSD));
+
+        DEVHDA_UNLOCK_BOTH(pDevIns, pThis, uSD);
+        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
+    }
 
     if (fInReset)
     {
@@ -1486,12 +1491,9 @@ static int hdaRegWriteSDSTS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg, 
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, uSD);
     if (!pStream)
     {
-        AssertMsgFailed(("[SD%RU8] Warning: Writing SDSTS on non-attached stream (0x%x)\n",
-                         HDA_SD_NUM_FROM_REG(pThis, STS, iReg), u32Value));
-
-        int rc = hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
+        ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing SDSTS (0x%x) to unhandled stream #%RU8\n", u32Value, uSD));
         DEVHDA_UNLOCK_BOTH(pDevIns, pThis, uSD);
-        return rc;
+        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
     }
 
     hdaR3StreamLock(pStream);
@@ -1648,11 +1650,8 @@ static int hdaRegWriteSDFIFOW(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg
     PHDASTREAM pStream = hdaGetStreamFromSD(pThis, HDA_SD_NUM_FROM_REG(pThis, FIFOW, iReg));
     if (!pStream)
     {
-        AssertMsgFailed(("[SD%RU8] Warning: Changing FIFOW on non-attached stream (0x%x)\n", uSD, u32Value));
-
-        int rc = hdaRegWriteU16(pDevIns, pThis, iReg, u32Value);
         DEVHDA_UNLOCK(pDevIns, pThis);
-        return rc;
+        return VINF_SUCCESS; /* Always return success to the MMIO handler. */
     }
 
     uint32_t u32FIFOW = 0;
@@ -1665,7 +1664,7 @@ static int hdaRegWriteSDFIFOW(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg
             u32FIFOW = u32Value;
             break;
         default:
-            ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried write unsupported FIFOW (0x%x) to stream #%RU8, defaulting to 32 bytes\n",
+            ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing unsupported FIFOW (0x%x) to stream #%RU8, defaulting to 32 bytes\n",
                                             u32Value, uSD));
             u32FIFOW = HDA_SDFIFOW_32B;
             break;
@@ -1695,8 +1694,7 @@ static int hdaRegWriteSDFIFOS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg
 
     if (hdaGetDirFromSD(uSD) != PDMAUDIODIR_OUT) /* FIFOS for output streams only. */
     {
-        LogRel(("HDA: Warning: Guest tried to write read-only FIFOS to input stream #%RU8, ignoring\n", uSD));
-
+        ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing read-only FIFOS to input stream #%RU8, ignoring\n", uSD));
         DEVHDA_UNLOCK(pDevIns, pThis);
         return VINF_SUCCESS;
     }
@@ -1715,7 +1713,7 @@ static int hdaRegWriteSDFIFOS(PPDMDEVINS pDevIns, PHDASTATE pThis, uint32_t iReg
             break;
 
         default:
-            ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried write unsupported FIFOS (0x%x) to stream #%RU8, defaulting to 192 bytes\n",
+            ASSERT_GUEST_LOGREL_MSG_FAILED(("Guest tried writing unsupported FIFOS (0x%x) to stream #%RU8, defaulting to 192 bytes\n",
                                             u32Value, uSD));
             u32FIFOS = HDA_SDOFIFO_192B;
             break;
