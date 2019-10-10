@@ -930,7 +930,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint32_t u32HidCode, bool fKeyDown)
     else if (u8HidPage == USB_HID_CC_PAGE)
     {
         /* For the consumer control usage page, we need to search. */
-        int     i;
+        unsigned    i;
 
         pKeyDef = &aPS2Keys[0]; /* Dummy no-event key. */
         for (i = 0; i < RT_ELEMENTS(aPS2CCKeys); ++i)
