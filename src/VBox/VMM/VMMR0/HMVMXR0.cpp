@@ -9169,8 +9169,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
     VBOXSTRICTRC   rcStrict;
     uint64_t const fCtxMask     = HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE;
     uint64_t const fMinimalMask = HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_HWVIRT;
-    uint64_t const fCtxChanged  = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
 
+    uint64_t const fCtxChanged  = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
     /* If only RIP/RSP/RFLAGS/HWVIRT changed, export only those (quicker, happens more often).*/
     if (    (fCtxChanged & fMinimalMask)
         && !(fCtxChanged & (fCtxMask & ~fMinimalMask)))
@@ -9196,13 +9196,14 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExportFull);
     }
-    /* else: Nothing changed, nothing to load here. */
+    /* Nothing changed, nothing to load here. */
+    else
+        rcStrict = VINF_SUCCESS;
 
 #ifdef VBOX_STRICT
     /* All the guest state bits should be loaded except maybe the host context and/or the shared host/guest bits. */
-    fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
-    AssertMsg(!(fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE)),
-              ("fCtxChanged=%#RX64\n", fCtxChanged));
+    uint64_t const fCtxChangedCur = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
+    AssertMsg(!(fCtxChangedCur & fCtxMask), ("fCtxChangedCur=%#RX64\n", fCtxChangedCur));
 #endif
     return rcStrict;
 }
