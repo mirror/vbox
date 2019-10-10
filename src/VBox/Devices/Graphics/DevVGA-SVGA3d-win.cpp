@@ -4757,15 +4757,13 @@ int vmsvga3dSetLightEnabled(PVGASTATE pThis, uint32_t cid, uint32_t index, uint3
     AssertReturn(pState, VERR_NO_MEMORY);
 
     Log(("vmsvga3dSetLightEnabled %x %d -> %d\n", cid, index, enabled));
+    AssertReturn(index < SVGA3D_MAX_LIGHTS, VERR_INVALID_PARAMETER);
 
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);
     AssertRCReturn(rc, rc);
 
     /* Store for vm state save/restore */
-    if (index < SVGA3D_MAX_LIGHTS)
-        pContext->state.aLightData[index].fEnabled = !!enabled;
-    else
-        AssertFailed();
+    pContext->state.aLightData[index].fEnabled = !!enabled;
 
     hr = pContext->pDevice->LightEnable(index, (BOOL)enabled);
     AssertMsgReturn(hr == D3D_OK, ("LightEnable failed with %x\n", hr), VERR_INTERNAL_ERROR);
