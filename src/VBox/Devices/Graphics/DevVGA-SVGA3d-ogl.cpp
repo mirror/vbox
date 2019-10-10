@@ -3499,9 +3499,9 @@ static GLenum vmsvga3dBlendOp2GL(uint32_t blendOp)
     case SVGA3D_BLENDOP_SRCALPHASAT:
         return GL_SRC_ALPHA_SATURATE;
     case SVGA3D_BLENDOP_BLENDFACTOR:
-        return GL_CONSTANT_ALPHA;       /** @todo correct?? */
+        return GL_CONSTANT_COLOR;
     case SVGA3D_BLENDOP_INVBLENDFACTOR:
-        return GL_ONE_MINUS_CONSTANT_ALPHA;       /** @todo correct?? */
+        return GL_ONE_MINUS_CONSTANT_COLOR;
     default:
         AssertFailed();
         return GL_ONE;
