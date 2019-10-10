@@ -484,30 +484,30 @@ typedef struct {
 /* USB to PS/2 conversion table for consumer control keys (HID Usage Page 12). */
 /* This usage page is very sparse so we'll just search through it. */
 static const   ext_key_def  aPS2CCKeys[] = {
-    0x00B5, {0x19, 0x4D, UNKN, KF_E0, T_U }, /* Scan Next Track */
-    0x00B6, {0x10, 0x15, UNKN, KF_E0, T_U }, /* Scan Previous Track */
-    0x00B7, {0x24, 0x3B, UNKN, KF_E0, T_U }, /* Stop */
-    0x00CD, {0x22, 0x34, UNKN, KF_E0, T_U }, /* Play/Pause */
-    0x00E2, {0x20, 0x23, UNKN, KF_E0, T_U }, /* Mute */
-    0x00E5, {UNAS, UNAS, UNAS,     0, T_U }, /* Bass Boost */
-    0x00E7, {UNAS, UNAS, UNAS,     0, T_U }, /* Loudness */
-    0x00E9, {0x30, 0x32, UNKN, KF_E0, T_U }, /* Volume Up */
-    0x00EA, {0x2E, 0x21, UNKN, KF_E0, T_U }, /* Volume Down */
-    0x0152, {UNAS, UNAS, UNAS,     0, T_U }, /* Bass Up */
-    0x0153, {UNAS, UNAS, UNAS,     0, T_U }, /* Bass Down */
-    0x0154, {UNAS, UNAS, UNAS,     0, T_U }, /* Treble Up */
-    0x0155, {UNAS, UNAS, UNAS,     0, T_U }, /* Treble Down */
-    0x0183, {0x6D, 0x50, UNKN, KF_E0, T_U }, /* Media Select  */
-    0x018A, {0x6C, 0x48, UNKN, KF_E0, T_U }, /* Mail */
-    0x0192, {0x21, 0x2B, UNKN, KF_E0, T_U }, /* Calculator */
-    0x0194, {0x6B, 0x40, UNKN, KF_E0, T_U }, /* My Computer */
-    0x0221, {0x65, 0x10, UNKN, KF_E0, T_U }, /* WWW Search */
-    0x0223, {0x32, 0x3A, UNKN, KF_E0, T_U }, /* WWW Home */
-    0x0224, {0x6A, 0x38, UNKN, KF_E0, T_U }, /* WWW Back */
-    0x0225, {0x69, 0x30, UNKN, KF_E0, T_U }, /* WWW Forward */
-    0x0226, {0x68, 0x28, UNKN, KF_E0, T_U }, /* WWW Stop */
-    0x0227, {0x67, 0x20, UNKN, KF_E0, T_U }, /* WWW Refresh */
-    0x022A, {0x66, 0x18, UNKN, KF_E0, T_U }, /* WWW Favorites */
+    {0x00B5, {0x19, 0x4D, UNKN, KF_E0, T_U}},   /* Scan Next Track */
+    {0x00B6, {0x10, 0x15, UNKN, KF_E0, T_U}},   /* Scan Previous Track */
+    {0x00B7, {0x24, 0x3B, UNKN, KF_E0, T_U}},   /* Stop */
+    {0x00CD, {0x22, 0x34, UNKN, KF_E0, T_U}},   /* Play/Pause */
+    {0x00E2, {0x20, 0x23, UNKN, KF_E0, T_U}},   /* Mute */
+    {0x00E5, {UNAS, UNAS, UNAS,     0, T_U}},   /* Bass Boost */
+    {0x00E7, {UNAS, UNAS, UNAS,     0, T_U}},   /* Loudness */
+    {0x00E9, {0x30, 0x32, UNKN, KF_E0, T_U}},   /* Volume Up */
+    {0x00EA, {0x2E, 0x21, UNKN, KF_E0, T_U}},   /* Volume Down */
+    {0x0152, {UNAS, UNAS, UNAS,     0, T_U}},   /* Bass Up */
+    {0x0153, {UNAS, UNAS, UNAS,     0, T_U}},   /* Bass Down */
+    {0x0154, {UNAS, UNAS, UNAS,     0, T_U}},   /* Treble Up */
+    {0x0155, {UNAS, UNAS, UNAS,     0, T_U}},   /* Treble Down */
+    {0x0183, {0x6D, 0x50, UNKN, KF_E0, T_U}},   /* Media Select  */
+    {0x018A, {0x6C, 0x48, UNKN, KF_E0, T_U}},   /* Mail */
+    {0x0192, {0x21, 0x2B, UNKN, KF_E0, T_U}},   /* Calculator */
+    {0x0194, {0x6B, 0x40, UNKN, KF_E0, T_U}},   /* My Computer */
+    {0x0221, {0x65, 0x10, UNKN, KF_E0, T_U}},   /* WWW Search */
+    {0x0223, {0x32, 0x3A, UNKN, KF_E0, T_U}},   /* WWW Home */
+    {0x0224, {0x6A, 0x38, UNKN, KF_E0, T_U}},   /* WWW Back */
+    {0x0225, {0x69, 0x30, UNKN, KF_E0, T_U}},   /* WWW Forward */
+    {0x0226, {0x68, 0x28, UNKN, KF_E0, T_U}},   /* WWW Stop */
+    {0x0227, {0x67, 0x20, UNKN, KF_E0, T_U}},   /* WWW Refresh */
+    {0x022A, {0x66, 0x18, UNKN, KF_E0, T_U}},   /* WWW Favorites */
 };
 
 #endif /* IN_RING3 */
