@@ -2561,6 +2561,7 @@ int VBoxVHWAImage::vhwaSurfaceGetInfo(struct VBOXVHWACMD_SURF_GETINFO RT_UNTRUST
 int VBoxVHWAImage::vhwaSurfaceDestroy(struct VBOXVHWACMD_SURF_DESTROY RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
+    AssertReturn(pSurf, VERR_INVALID_PARAMETER);
     VBoxVHWASurfList *pList = pSurf->getComplexList();
     Assert(pSurf->handle() != VBOXVHWA_SURFHANDLE_INVALID);
 
@@ -2639,7 +2640,9 @@ int VBoxVHWAImage::vhwaSurfaceDestroy(struct VBOXVHWACMD_SURF_DESTROY RT_UNTRUST
 int VBoxVHWAImage::vhwaSurfaceLock(struct VBOXVHWACMD_SURF_LOCK RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
+    AssertReturn(pSurf, VERR_INVALID_PARAMETER);
     VBOXQGLLOG_ENTER(("pSurf (0x%x)\n",pSurf));
+
     vboxCheckUpdateAddress (pSurf, pCmd->u.in.offSurface);
     if (pCmd->u.in.rectValid)
     {
@@ -2652,6 +2655,7 @@ int VBoxVHWAImage::vhwaSurfaceLock(struct VBOXVHWACMD_SURF_LOCK RT_UNTRUSTED_VOL
 int VBoxVHWAImage::vhwaSurfaceUnlock(struct VBOXVHWACMD_SURF_UNLOCK RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
+    AssertReturn(pSurf, VERR_INVALID_PARAMETER);
 #ifdef DEBUG_misha
     /* for performance reasons we should receive unlock for visible surfaces only
      * other surfaces receive unlock only once becoming visible, e.g. on DdFlip
@@ -2699,8 +2703,10 @@ int VBoxVHWAImage::vhwaSurfaceBlt(struct VBOXVHWACMD_SURF_BLT RT_UNTRUSTED_VOLAT
 int VBoxVHWAImage::vhwaSurfaceFlip(struct VBOXVHWACMD_SURF_FLIP RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     VBoxVHWASurfaceBase *pTargSurf = handle2Surface(pCmd->u.in.hTargSurf);
+    AssertReturn(pTargSurf, VERR_INVALID_PARAMETER);
     VBoxVHWASurfaceBase *pCurrSurf = handle2Surface(pCmd->u.in.hCurrSurf);
-    VBOXQGLLOG_ENTER(("pTargSurf (0x%x), pCurrSurf (0x%x)\n",pTargSurf,pCurrSurf));
+    AssertReturn(pCurrSurf, VERR_INVALID_PARAMETER);
+    VBOXQGLLOG_ENTER(("pTargSurf (0x%x), pCurrSurf (0x%x)\n", pTargSurf, pCurrSurf));
     vboxCheckUpdateAddress (pCurrSurf, pCmd->u.in.offCurrSurface);
     vboxCheckUpdateAddress (pTargSurf, pCmd->u.in.offTargSurface);
 
@@ -2810,6 +2816,7 @@ void VBoxVHWAImage::vhwaDoSurfaceOverlayUpdate(VBoxVHWASurfaceBase *pDstSurf, VB
 int VBoxVHWAImage::vhwaSurfaceOverlayUpdate(struct VBOXVHWACMD_SURF_OVERLAY_UPDATE RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     VBoxVHWASurfaceBase *pSrcSurf = handle2Surface(pCmd->u.in.hSrcSurf);
+    AssertReturn(pSrcSurf, VERR_INVALID_PARAMETER);
     VBoxVHWASurfList *pList = pSrcSurf->getComplexList();
     vboxCheckUpdateAddress (pSrcSurf, pCmd->u.in.offSrcSurface);
     VBOXQGLLOG(("OverlayUpdate: pSrcSurf (0x%x)\n",pSrcSurf));
@@ -2818,6 +2825,7 @@ int VBoxVHWAImage::vhwaSurfaceOverlayUpdate(struct VBOXVHWACMD_SURF_OVERLAY_UPDA
     if (pCmd->u.in.hDstSurf)
     {
         pDstSurf = handle2Surface(pCmd->u.in.hDstSurf);
+        AssertReturn(pDstSurf, VERR_INVALID_PARAMETER);
         vboxCheckUpdateAddress (pDstSurf, pCmd->u.in.offDstSurface);
         VBOXQGLLOG(("pDstSurf (0x%x)\n",pDstSurf));
 #ifdef DEBUGVHWASTRICT
@@ -2844,6 +2852,7 @@ int VBoxVHWAImage::vhwaSurfaceOverlayUpdate(struct VBOXVHWACMD_SURF_OVERLAY_UPDA
     }
     if (pCmd->u.in.xFlags & VBOXVHWACMD_SURF_OVERLAY_UPDATE_F_DSTMEMRECT)
     {
+        AssertReturn(pDstSurf, VERR_INVALID_PARAMETER);
         QRect r = VBOXVHWA_CONSTRUCT_QRECT_FROM_RECTL_WH(&pCmd->u.in.xUpdatedDstMemRect);
         pDstSurf->updatedMem(&r);
     }
@@ -2877,7 +2886,9 @@ int VBoxVHWAImage::vhwaSurfaceOverlayUpdate(struct VBOXVHWACMD_SURF_OVERLAY_UPDA
 int VBoxVHWAImage::vhwaSurfaceOverlaySetPosition(struct VBOXVHWACMD_SURF_OVERLAY_SETPOSITION RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     VBoxVHWASurfaceBase *pDstSurf = handle2Surface(pCmd->u.in.hDstSurf);
+    AssertReturn(pDstSurf, VERR_INVALID_PARAMETER);
     VBoxVHWASurfaceBase *pSrcSurf = handle2Surface(pCmd->u.in.hSrcSurf);
+    AssertReturn(pSrcSurf, VERR_INVALID_PARAMETER);
 
     VBOXQGLLOG_ENTER(("pDstSurf (0x%x), pSrcSurf (0x%x)\n",pDstSurf,pSrcSurf));
 
@@ -2918,6 +2929,7 @@ int VBoxVHWAImage::vhwaSurfaceOverlaySetPosition(struct VBOXVHWACMD_SURF_OVERLAY
 int VBoxVHWAImage::vhwaSurfaceColorkeySet(struct VBOXVHWACMD_SURF_COLORKEY_SET RT_UNTRUSTED_VOLATILE_GUEST *pCmd)
 {
     VBoxVHWASurfaceBase *pSurf = handle2Surface(pCmd->u.in.hSurf);
+    AssertReturn(pSurf, VERR_INVALID_PARAMETER);
     VBOXQGLLOG_ENTER(("pSurf (0x%x)\n", pSurf));
 
     vboxCheckUpdateAddress (pSurf, pCmd->u.in.offSurface);
