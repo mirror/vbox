@@ -5662,40 +5662,6 @@ IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *p
             iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR);
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmcsLinkPtr);
         }
-
-        /* Read the VMCS-link pointer from guest memory. */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs),
-                                         GCPhysShadowVmcs, VMX_V_SHADOW_VMCS_SIZE);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-        {
-            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR);
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrReadPhys);
-        }
-
-        /* Verify the VMCS revision specified by the guest matches what we reported to the guest. */
-        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs)->u32VmcsRevId.n.u31RevisionId == VMX_V_VMCS_REVISION_ID)
-        { /* likely */ }
-        else
-        {
-            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR);
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrRevId);
-        }
-
-        /* Verify the shadow bit is set if VMCS shadowing is enabled . */
-        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
-            || pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs)->u32VmcsRevId.n.fIsShadowVmcs)
-        { /* likely */ }
-        else
-        {
-            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR);
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrShadow);
-        }
-
-        /* Finally update our cache of the guest physical address of the shadow VMCS. */
-        pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs = GCPhysShadowVmcs;
     }
 
     NOREF(pszInstr);
@@ -6276,24 +6242,6 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPUCC pVCpu, const char *pszInstr)
         { /* likely */ }
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrIoBitmapB);
-
-        /* Read the IO bitmaps. */
-        /** @todo NSTVMX: Move this to be done later (while loading guest state) when
-         *        implementing fast path. */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap),
-                                         GCPhysIoBitmapA, VMX_V_IO_BITMAP_A_SIZE);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapAPtrReadPhys);
-
-        uint8_t *pbIoBitmapB = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
-        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pbIoBitmapB, GCPhysIoBitmapB, VMX_V_IO_BITMAP_B_SIZE);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapBPtrReadPhys);
     }
 
     /* MSR bitmap physical address. */
@@ -6306,17 +6254,6 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPUCC pVCpu, const char *pszInstr)
         { /* likely */ }
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrMsrBitmap);
-
-        /* Read the MSR bitmap. */
-        /** @todo NSTVMX: Move this to be done later (while loading guest state) when
-         *        implementing fast path. */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap),
-                                         GCPhysMsrBitmap, VMX_V_MSR_BITMAP_SIZE);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrBitmapPtrReadPhys);
     }
 
     /* TPR shadow related controls. */
@@ -6338,24 +6275,7 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPUCC pVCpu, const char *pszInstr)
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdRsvd);
 
-        /* Verify TPR threshold and VTPR when both virtualize-APIC accesses and virtual-interrupt delivery aren't used. */
-        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
-            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
-        {
-            /* Read the VTPR from the virtual-APIC page. */
-            uint8_t u8VTpr;
-            int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &u8VTpr, GCPhysVirtApic + XAPIC_OFF_TPR, sizeof(u8VTpr));
-            if (RT_SUCCESS(rc))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys);
-
-            /* Bits 3:0 of the TPR-threshold must not be greater than bits 7:4 of VTPR. */
-            if ((uint8_t)RT_BF_GET(pVmcs->u32TprThreshold, VMX_BF_TPR_THRESHOLD_TPR) <= (u8VTpr & 0xf0))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdVTpr);
-        }
+        /* The rest done XXX document */
     }
     else
     {
@@ -6415,30 +6335,6 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPUCC pVCpu, const char *pszInstr)
             else
                 IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic);
         }
-
-        /*
-         * Register the handler for the APIC-access page.
-         *
-         * We don't deregister the APIC-access page handler during the VM-exit as a different
-         * nested-VCPU might be using the same guest-physical address for its APIC-access page.
-         *
-         * We leave the page registered until the first access that happens outside VMX non-root
-         * mode. Guest software is allowed to access structures such as the APIC-access page
-         * only when no logical processor with a current VMCS references it in VMX non-root mode,
-         * otherwise it can lead to unpredictable behavior including guest triple-faults.
-         *
-         * See Intel spec. 24.11.4 "Software Access to Related Structures".
-         */
-        if (!PGMHandlerPhysicalIsRegistered(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
-        {
-            int rc = PGMHandlerPhysicalRegister(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess, GCPhysApicAccess + X86_PAGE_4K_SIZE - 1,
-                                                pVCpu->iem.s.hVmxApicAccessPage, NIL_RTR3PTR /* pvUserR3 */,
-                                                NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */, NULL /* pszDesc */);
-            if (RT_SUCCESS(rc))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
-        }
     }
 
     /* Virtualize-x2APIC mode is mutually exclusive with virtualize-APIC accesses. */
@@ -6490,24 +6386,6 @@ IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPUCC pVCpu, const char *pszInstr)
         { /* likely */ }
         else
             IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmwriteBitmap);
-
-        /* Read the VMREAD-bitmap. */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
-        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap),
-                                         GCPhysVmreadBitmap, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmreadBitmapPtrReadPhys);
-
-        /* Read the VMWRITE-bitmap. */
-        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap));
-        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap),
-                                     GCPhysVmwriteBitmap, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
-        if (RT_SUCCESS(rc))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmwriteBitmapPtrReadPhys);
     }
 
     NOREF(pszInstr);
@@ -6843,6 +6721,193 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu)
 
 
 /**
+ * Loads the guest VMCS referenced state (such as MSR bitmaps, I/O bitmaps etc).
+ *
+ * @param   pVCpu   The cross context virtual CPU structure.
+ * @param   pszInstr    The VMX instruction name (for logging purposes).
+ *
+ * @remarks This assumes various VMCS related data structure pointers have already
+ *          been verified prior to calling this function.
+ */
+IEM_STATIC int iemVmxVmentryLoadGuestVmcsRefState(PVMCPUCC pVCpu, const char *pszInstr)
+{
+    const char *const pszFailure  = "VM-exit";
+    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
+
+    /*
+     * Virtualize APIC accesses.
+     */
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+    {
+        /* APIC-access physical address. */
+        RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
+
+        /*
+         * Register the handler for the APIC-access page.
+         *
+         * We don't deregister the APIC-access page handler during the VM-exit as a different
+         * nested-VCPU might be using the same guest-physical address for its APIC-access page.
+         *
+         * We leave the page registered until the first access that happens outside VMX non-root
+         * mode. Guest software is allowed to access structures such as the APIC-access page
+         * only when no logical processor with a current VMCS references it in VMX non-root mode,
+         * otherwise it can lead to unpredictable behavior including guest triple-faults.
+         *
+         * See Intel spec. 24.11.4 "Software Access to Related Structures".
+         */
+        if (!PGMHandlerPhysicalIsRegistered(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
+        {
+            int rc = PGMHandlerPhysicalRegister(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess, GCPhysApicAccess + X86_PAGE_4K_SIZE - 1,
+                                                pVCpu->iem.s.hVmxApicAccessPage, NIL_RTR3PTR /* pvUserR3 */,
+                                                NIL_RTR0PTR /* pvUserR0 */,  NIL_RTRCPTR /* pvUserRC */, NULL /* pszDesc */);
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessHandlerReg);
+        }
+    }
+
+    /*
+     * VMCS shadowing.
+     */
+    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+    {
+        /* Read the VMREAD-bitmap. */
+        RTGCPHYS const GCPhysVmreadBitmap = pVmcs->u64AddrVmreadBitmap.u;
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap));
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmreadBitmap),
+                                         GCPhysVmreadBitmap, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmreadBitmapPtrReadPhys);
+
+        /* Read the VMWRITE-bitmap. */
+        RTGCPHYS const GCPhysVmwriteBitmap = pVmcs->u64AddrVmwriteBitmap.u;
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap));
+        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvVmwriteBitmap),
+                                     GCPhysVmwriteBitmap, VMX_V_VMREAD_VMWRITE_BITMAP_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmwriteBitmapPtrReadPhys);
+    }
+
+    /*
+     * I/O bitmaps.
+     */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS)
+    {
+        /* Read the IO bitmap A. */
+        RTGCPHYS const GCPhysIoBitmapA = pVmcs->u64AddrIoBitmapA.u;
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap));
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap),
+                                         GCPhysIoBitmapA, VMX_V_IO_BITMAP_A_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapAPtrReadPhys);
+
+        /* Read the IO bitmap B. */
+        RTGCPHYS const GCPhysIoBitmapB = pVmcs->u64AddrIoBitmapB.u;
+        uint8_t *pbIoBitmapB = (uint8_t *)pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvIoBitmap) + VMX_V_IO_BITMAP_A_SIZE;
+        rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pbIoBitmapB, GCPhysIoBitmapB, VMX_V_IO_BITMAP_B_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_IoBitmapBPtrReadPhys);
+    }
+
+    /*
+     * TPR shadow and Virtual-APIC page.
+     */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+    {
+        /* Verify TPR threshold and VTPR when both virtualize-APIC accesses and virtual-interrupt delivery aren't used. */
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
+        {
+            /* Read the VTPR from the virtual-APIC page. */
+            RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+            uint8_t u8VTpr;
+            int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), &u8VTpr, GCPhysVirtApic + XAPIC_OFF_TPR, sizeof(u8VTpr));
+            if (RT_SUCCESS(rc))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtApicPagePtrReadPhys);
+
+            /* Bits 3:0 of the TPR-threshold must not be greater than bits 7:4 of VTPR. */
+            if ((uint8_t)RT_BF_GET(pVmcs->u32TprThreshold, VMX_BF_TPR_THRESHOLD_TPR) <= (u8VTpr & 0xf0))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdVTpr);
+        }
+    }
+
+    /*
+     * VMCS link pointer.
+     */
+    if (pVmcs->u64VmcsLinkPtr.u != UINT64_C(0xffffffffffffffff))
+    {
+        /* Read the VMCS-link pointer from guest memory. */
+        RTGCPHYS const GCPhysShadowVmcs = pVmcs->u64VmcsLinkPtr.u;
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs));
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs),
+                                         GCPhysShadowVmcs, VMX_V_SHADOW_VMCS_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+        {
+            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR);
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrReadPhys);
+        }
+
+        /* Verify the VMCS revision specified by the guest matches what we reported to the guest. */
+        if (pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs)->u32VmcsRevId.n.u31RevisionId == VMX_V_VMCS_REVISION_ID)
+        { /* likely */ }
+        else
+        {
+            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR);
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrRevId);
+        }
+
+        /* Verify the shadow bit is set if VMCS shadowing is enabled . */
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+            || pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pShadowVmcs)->u32VmcsRevId.n.fIsShadowVmcs)
+        { /* likely */ }
+        else
+        {
+            iemVmxVmcsSetExitQual(pVCpu, VMX_ENTRY_FAIL_QUAL_VMCS_LINK_PTR);
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VmcsLinkPtrShadow);
+        }
+
+        /* Update our cache of the guest physical address of the shadow VMCS. */
+        pVCpu->cpum.GstCtx.hwvirt.vmx.GCPhysShadowVmcs = GCPhysShadowVmcs;
+    }
+
+    /*
+     * MSR bitmap.
+     */
+    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+    {
+        /* Read the MSR bitmap. */
+        RTGCPHYS const GCPhysMsrBitmap = pVmcs->u64AddrMsrBitmap.u;
+        Assert(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap));
+        int rc = PGMPhysSimpleReadGCPhys(pVCpu->CTX_SUFF(pVM), pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap),
+                                         GCPhysMsrBitmap, VMX_V_MSR_BITMAP_SIZE);
+        if (RT_SUCCESS(rc))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_MsrBitmapPtrReadPhys);
+    }
+
+    NOREF(pszFailure);
+    NOREF(pszInstr);
+    return VINF_SUCCESS;
+}
+
+
+/**
  * Loads the guest-state as part of VM-entry.
  *
  * @returns VBox status code.
@@ -6854,7 +6919,10 @@ IEM_STATIC void iemVmxVmentryLoadGuestNonRegState(PVMCPUCC pVCpu)
  */
 IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPUCC pVCpu, const char *pszInstr)
 {
+    /* Load guest control registers, MSRs (that are directly part of the VMCS). */
     iemVmxVmentryLoadGuestControlRegsMsrs(pVCpu);
+
+    /* Load guest segment registers. */
     iemVmxVmentryLoadGuestSegRegs(pVCpu);
 
     /*
@@ -6870,7 +6938,15 @@ IEM_STATIC int iemVmxVmentryLoadGuestState(PVMCPUCC pVCpu, const char *pszInstr)
     pVCpu->cpum.GstCtx.hwvirt.vmx.uFirstPauseLoopTick = 0;
     pVCpu->cpum.GstCtx.hwvirt.vmx.uPrevPauseTick      = 0;
 
+    /* Load guest non-register state (such as interrupt shadows, NMI blocking etc). */
     iemVmxVmentryLoadGuestNonRegState(pVCpu);
+
+    /* Load VMX related structures and state referenced by the VMCS. */
+    int rc = iemVmxVmentryLoadGuestVmcsRefState(pVCpu, pszInstr);
+    if (rc == VINF_SUCCESS)
+    { /* likely */ }
+    else
+        return rc;
 
     NOREF(pszInstr);
     return VINF_SUCCESS;
