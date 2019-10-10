@@ -130,7 +130,8 @@ PSHCLROOTLISTHDR SharedClipboardTransferRootListHdrDup(PSHCLROOTLISTHDR pRootLst
  * (Deep) Copies a clipboard root list entry structure.
  *
  * @returns VBox status code.
- * @param   pListEntry          Clipboard root list entry to copy.
+ * @param   pDst                Where to copy the source root list entry to.
+ * @param   pSrc                Source root list entry to copy.
  */
 int SharedClipboardTransferRootListEntryCopy(PSHCLROOTLISTENTRY pDst, PSHCLROOTLISTENTRY pSrc)
 {
@@ -138,24 +139,34 @@ int SharedClipboardTransferRootListEntryCopy(PSHCLROOTLISTENTRY pDst, PSHCLROOTL
 }
 
 /**
- * Duplicates (allocates) a clipboard root list entry structure.
+ * Initializes a clipboard root list entry structure.
  *
- * @returns Duplicated clipboard root list entry structure on success.
- * @param   pListEntry          Clipboard root list entry to duplicate.
+ * @param   pRootListEntry      Clipboard root list entry structure to destroy.
  */
-PSHCLROOTLISTENTRY SharedClipboardTransferRootListEntryDup(PSHCLROOTLISTENTRY pRootListEntry)
+int SharedClipboardTransferRootListEntryInit(PSHCLROOTLISTENTRY pRootListEntry)
 {
-    return SharedClipboardTransferListEntryDup(pRootListEntry);
+    return SharedClipboardTransferListEntryInit(pRootListEntry);
 }
 
 /**
  * Destroys a clipboard root list entry structure.
  *
- * @param   pListEntry          Clipboard root list entry structure to destroy.
+ * @param   pRootListEntry      Clipboard root list entry structure to destroy.
  */
 void SharedClipboardTransferRootListEntryDestroy(PSHCLROOTLISTENTRY pRootListEntry)
 {
     return SharedClipboardTransferListEntryDestroy(pRootListEntry);
+}
+
+/**
+ * Duplicates (allocates) a clipboard root list entry structure.
+ *
+ * @returns Duplicated clipboard root list entry structure on success.
+ * @param   pRootListEntry      Clipboard root list entry to duplicate.
+ */
+PSHCLROOTLISTENTRY SharedClipboardTransferRootListEntryDup(PSHCLROOTLISTENTRY pRootListEntry)
+{
+    return SharedClipboardTransferListEntryDup(pRootListEntry);
 }
 
 /**
@@ -516,11 +527,17 @@ int SharedClipboardTransferListEntryInit(PSHCLLISTENTRY pListEntry)
         return VERR_NO_MEMORY;
 
     pListEntry->cbName = SHCLLISTENTRY_MAX_NAME;
-    pListEntry->pvInfo = NULL;
-    pListEntry->cbInfo = 0;
-    pListEntry->fInfo  = 0;
 
-    return VINF_SUCCESS;
+    pListEntry->pvInfo = (PSHCLFSOBJINFO)RTMemAlloc(sizeof(SHCLFSOBJINFO));
+    if (pListEntry->pvInfo)
+    {
+        pListEntry->cbInfo = sizeof(SHCLFSOBJINFO);
+        pListEntry->fInfo  = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
+
+        return VINF_SUCCESS;
+    }
+
+    return VERR_NO_MEMORY;
 }
 
 /**
@@ -603,6 +620,26 @@ bool SharedClipboardTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 {
     return (   pObjCtx
             && pObjCtx->uHandle != SHCLOBJHANDLE_INVALID);
+}
+
+/**
+ * Initializes an object handle info structure.
+ *
+ * @returns VBox status code.
+ * @param   pInfo               Object handle info structure to initialize.
+ */
+int SharedClipboardTransferObjectHandleInfoInit(PSHCLOBJHANDLEINFO pInfo)
+{
+    AssertPtrReturn(pInfo, VERR_INVALID_POINTER);
+
+    pInfo->hObj    = SHCLOBJHANDLE_INVALID;
+    pInfo->enmType = SHCLOBJTYPE_INVALID;
+
+    pInfo->pszPathLocalAbs = NULL;
+
+    RT_ZERO(pInfo->u);
+
+    return VINF_SUCCESS;
 }
 
 /**
@@ -742,24 +779,28 @@ int SharedClipboardTransferObjectOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREAT
             = (PSHCLOBJHANDLEINFO)RTMemAlloc(sizeof(SHCLOBJHANDLEINFO));
         if (pInfo)
         {
-            const bool fWritable = true; /** @todo Fix this. */
-
-            uint64_t fOpen;
-            rc = sharedClipboardConvertFileCreateFlags(fWritable,
-                                                       pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
-                                                       SHCLOBJHANDLE_INVALID, &fOpen);
+            rc = SharedClipboardTransferObjectHandleInfoInit(pInfo);
             if (RT_SUCCESS(rc))
             {
-                char *pszPathAbs = RTStrAPrintf2("%s/%s", pTransfer->pszPathRootAbs, pOpenCreateParms->pszPath);
-                if (pszPathAbs)
-                {
-                    LogFlowFunc(("%s\n", pszPathAbs));
+                const bool fWritable = true; /** @todo Fix this. */
 
-                    rc = RTFileOpen(&pInfo->u.Local.hFile, pszPathAbs, fOpen);
-                    RTStrFree(pszPathAbs);
+                uint64_t fOpen;
+                rc = sharedClipboardConvertFileCreateFlags(fWritable,
+                                                           pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
+                                                           SHCLOBJHANDLE_INVALID, &fOpen);
+                if (RT_SUCCESS(rc))
+                {
+                    char *pszPathAbs = RTStrAPrintf2("%s/%s", pTransfer->pszPathRootAbs, pOpenCreateParms->pszPath);
+                    if (pszPathAbs)
+                    {
+                        LogFlowFunc(("%s\n", pszPathAbs));
+
+                        rc = RTFileOpen(&pInfo->u.Local.hFile, pszPathAbs, fOpen);
+                        RTStrFree(pszPathAbs);
+                    }
+                    else
+                        rc = VERR_NO_MEMORY;
                 }
-                else
-                    rc = VERR_NO_MEMORY;
             }
 
             if (RT_SUCCESS(rc))
@@ -771,9 +812,11 @@ int SharedClipboardTransferObjectOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREAT
 
                 *phObj = pInfo->hObj;
             }
-
-            if (RT_FAILURE(rc))
+            else
+            {
+                SharedClipboardTransferObjectHandleInfoDestroy(pInfo);
                 RTMemFree(pInfo);
+            }
         }
         else
             rc = VERR_NO_MEMORY;
@@ -1745,20 +1788,14 @@ int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hLis
                             if (   RT_SUCCESS(rc)
                                 && !fSkipEntry)
                             {
-                                pEntry->pvInfo = (PSHCLFSOBJINFO)RTMemAlloc(sizeof(SHCLFSOBJINFO));
-                                if (pEntry->pvInfo)
+                                rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
+                                if (RT_SUCCESS(rc))
                                 {
-                                    rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
-                                    if (RT_SUCCESS(rc))
-                                    {
-                                        SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+                                    AssertPtr(pEntry->pvInfo);
+                                    Assert   (pEntry->cbInfo == sizeof(SHCLFSOBJINFO));
 
-                                        pEntry->cbInfo = sizeof(SHCLFSOBJINFO);
-                                        pEntry->fInfo  = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
-                                    }
+                                    SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
                                 }
-                                else
-                                    rc = VERR_NO_MEMORY;
                             }
 
                             RTDirReadExAFree(&pDirEntry, &cbDirEntry);
@@ -2032,12 +2069,12 @@ int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer,
                 if (pEntry->pvInfo)
                 {
                     RTFSOBJINFO fsObjInfo;
-                    rc = RTPathQueryInfo(pcszSrcPath, & fsObjInfo, RTFSOBJATTRADD_NOTHING);
+                    rc = RTPathQueryInfo(pcszSrcPath, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
                     if (RT_SUCCESS(rc))
                     {
                         SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &fsObjInfo);
 
-                        pEntry->fInfo  = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
+                        pEntry->fInfo = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
                     }
                 }
                 else
@@ -2246,20 +2283,24 @@ SHCLTRANSFERSTATUS SharedClipboardTransferGetStatus(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Starts (runs) a Shared Clipboard transfer in a dedicated thread.
+ * Runs a started Shared Clipboard transfer in a dedicated thread.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to run.
  * @param   pfnThreadFunc       Pointer to thread function to use.
- * @param   pvUser              Pointer to user-provided data.
+ * @param   pvUser              Pointer to user-provided data. Optional.
  */
 int SharedClipboardTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser)
 {
-    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+    AssertPtrReturn(pTransfer,     VERR_INVALID_POINTER);
+    AssertPtrReturn(pfnThreadFunc, VERR_INVALID_POINTER);
+    /* pvUser is optional. */
 
-    int rc = SharedClipboardTransferStart(pTransfer);
-    if (RT_SUCCESS(rc))
-        rc = sharedClipboardTransferThreadCreate(pTransfer, pfnThreadFunc, pvUser);
+    AssertMsgReturn(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED,
+                    ("Wrong status (currently is %s)\n", VBoxShClTransferStatusToStr(pTransfer->State.enmStatus)),
+                    VERR_WRONG_ORDER);
+
+    int rc = sharedClipboardTransferThreadCreate(pTransfer, pfnThreadFunc, pvUser);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2274,6 +2315,8 @@ int SharedClipboardTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFun
 int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
 
     /* Ready to start? */
     AssertMsgReturn(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_INITIALIZED,
@@ -2290,7 +2333,10 @@ int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer)
     else
         rc = VINF_SUCCESS;
 
-    /* Nothing else to do here right now. */
+    if (RT_SUCCESS(rc))
+    {
+        pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_STARTED;
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2341,6 +2387,13 @@ static int sharedClipboardTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHR
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
+    /* Already marked for stopping? */
+    AssertMsgReturn(pTransfer->Thread.fStop == false,
+                    ("Thransfer thread already marked for stopping"), VERR_WRONG_ORDER);
+    /* Already started? */
+    AssertMsgReturn(pTransfer->Thread.fStarted == false,
+                    ("Thransfer thread already started"), VERR_WRONG_ORDER);
+
     /* Spawn a worker thread, so that we don't block the window thread for too long. */
     int rc = RTThreadCreate(&pTransfer->Thread.hThread, pfnThreadFunc,
                             pvUser, 0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE,
@@ -2352,7 +2405,7 @@ static int sharedClipboardTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHR
 
         if (pTransfer->Thread.fStarted) /* Did the thread indicate that it started correctly? */
         {
-            pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_STARTED;
+            /* Nothing to do in here. */
         }
         else
             rc = VERR_GENERAL_FAILURE; /** @todo Find a better rc. */
@@ -2390,7 +2443,7 @@ static int sharedClipboardTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINT
 }
 
 /**
- * Initializes a Shared Clipboard transfer.
+ * Initializes a Shared Clipboard transfer context.
  *
  * @returns VBox status code.
  * @param   pTransferCtx                Transfer context to initialize.
@@ -2406,8 +2459,9 @@ int SharedClipboardTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
     {
         RTListInit(&pTransferCtx->List);
 
+        pTransferCtx->cTransfers  = 0;
         pTransferCtx->cRunning    = 0;
-        pTransferCtx->cMaxRunning = UINT16_MAX;
+        pTransferCtx->cMaxRunning = UINT16_MAX; /** @todo Make this configurable? */
 
         RT_ZERO(pTransferCtx->bmTransferIds);
 
@@ -2418,7 +2472,7 @@ int SharedClipboardTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Destroys a shared Clipboard transfer context context struct.
+ * Destroys a shared Clipboard transfer context struct.
  *
  * @param   pTransferCtx                Transfer context to destroy.
  */
@@ -2641,23 +2695,23 @@ void SharedClipboardTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
     LogFlowFunc(("pTransferCtx=%p, cTransfers=%RU16 cRunning=%RU16\n",
                  pTransferCtx, pTransferCtx->cTransfers, pTransferCtx->cRunning));
 
-    if (!RTListIsEmpty(&pTransferCtx->List))
+    if (pTransferCtx->cTransfers == 0)
+        return;
+
+    /* Remove all transfers which are not in a running state (e.g. only announced). */
+    PSHCLTRANSFER pTransfer, pTransferNext;
+    RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
     {
-        /* Remove all transfers which are not in a running state (e.g. only announced). */
-        PSHCLTRANSFER pTransfer, pTransferNext;
-        RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
+        if (SharedClipboardTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
         {
-            if (SharedClipboardTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
-            {
-                SharedClipboardTransferDestroy(pTransfer);
-                RTListNodeRemove(&pTransfer->Node);
+            SharedClipboardTransferDestroy(pTransfer);
+            RTListNodeRemove(&pTransfer->Node);
 
-                RTMemFree(pTransfer);
-                pTransfer = NULL;
+            RTMemFree(pTransfer);
+            pTransfer = NULL;
 
-                Assert(pTransferCtx->cTransfers);
-                pTransferCtx->cTransfers--;
-            }
+            Assert(pTransferCtx->cTransfers);
+            pTransferCtx->cTransfers--;
         }
     }
 }

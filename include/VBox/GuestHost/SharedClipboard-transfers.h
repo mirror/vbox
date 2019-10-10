@@ -654,8 +654,9 @@ int SharedClipboardTransferRootListHdrInit(PSHCLROOTLISTHDR pRoots);
 void SharedClipboardTransferRootListHdrDestroy(PSHCLROOTLISTHDR pRoots);
 
 int SharedClipboardTransferRootListEntryCopy(PSHCLROOTLISTENTRY pDst, PSHCLROOTLISTENTRY pSrc);
-PSHCLROOTLISTENTRY SharedClipboardTransferRootListEntryDup(PSHCLROOTLISTENTRY pRootListEntry);
+int SharedClipboardTransferRootListEntryInit(PSHCLROOTLISTENTRY pRootListEntry);
 void SharedClipboardTransferRootListEntryDestroy(PSHCLROOTLISTENTRY pRootListEntry);
+PSHCLROOTLISTENTRY SharedClipboardTransferRootListEntryDup(PSHCLROOTLISTENTRY pRootListEntry);
 
 int SharedClipboardTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr);
 void SharedClipboardTransferListHdrFree(PSHCLLISTHDR pListHdr);
@@ -1042,7 +1043,7 @@ typedef struct _SHCLTRANSFER
 typedef struct _SHCLTRANSFERREPORT
 {
     /** Actual status to report. */
-    SHCLTRANSFERSTATUS uStatus;
+    SHCLTRANSFERSTATUS    uStatus;
     /** Result code (rc) to report; might be unused / invalid, based on enmStatus. */
     int                   rc;
     /** Reporting flags. Currently unused and must be 0. */
@@ -1071,6 +1072,9 @@ typedef struct _SHCLTRANSFERCTX
 int SharedClipboardTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
 void SharedClipboardTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
 bool SharedClipboardTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
+
+int SharedClipboardTransferObjectHandleInfoInit(PSHCLOBJHANDLEINFO pInfo);
+void SharedClipboardTransferObjectHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo);
 
 int SharedClipboardTransferObjectOpenParmsInit(PSHCLOBJOPENCREATEPARMS pParms);
 int SharedClipboardTransferObjectOpenParmsCopy(PSHCLOBJOPENCREATEPARMS pParmsDst, PSHCLOBJOPENCREATEPARMS pParmsSrc);

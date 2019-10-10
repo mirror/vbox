@@ -201,8 +201,8 @@ int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 bool shclSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-/*
- * Platform-dependent implementations.
+/** @name Platform-dependent implementations for the Shared Clipboard host service.
+ * @{
  */
 /**
  * Called on initialization.
@@ -257,20 +257,58 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDAT
  */
 int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData);
 /**
- * Synchronise the contents of the host clipboard with the guest, called by the HGCM layer
- * after a save and restore of the guest.
+ * Called when synchronization of the clipboard contents of the host clipboard with the guest is needed.
  *
  * @returns VBox status code.
  * @param   pClient             Shared Clipboard client context.
  */
 int ShClSvcImplSync(PSHCLCLIENT pClient);
+/** @} */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+/** @name Host implementations for Shared Clipboard transfers.
+ * @{
+ */
+/**
+ * Called when a transfer gets created.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
+ * @param   pTransfer           Shared Clipboard transfer created.
+ */
+int ShClSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+/**
+ * Called when a transfer gets destroyed.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
+ * @param   pTransfer           Shared Clipboard transfer to destroy.
+ */
+int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+/**
+ * Called when getting (determining) the transfer roots on the host side.
+ *
+ * @returns VBox status code.
+ * @param   pClient             Shared Clipboard client context.
+ * @param   pTransfer           Shared Clipboard transfer to get roots for.
+ */
+int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+/** @} */
+#endif
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+/** @name Internal Shared Clipboard transfer host service functions.
+ * @{
+ */
 int shclSvcTransferAreaDetach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer);
 int shclSvcTransferHandler(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE callHandle, uint32_t u32Function,
                            uint32_t cParms, VBOXHGCMSVCPARM paParms[], uint64_t tsArrival);
 int shclSvcTransferHostHandler(uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+/** @} */
 
+/** @name Shared Clipboard transfer interface implementations for the host service.
+ * @{
+ */
 int shclSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx);
 int shclSvcTransferIfaceClose(PSHCLPROVIDERCTX pCtx);
 
@@ -290,16 +328,18 @@ int shclSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead);
 int shclSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                  void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten);
+/** @} */
 
+/** @name Shared Clipboard transfer callbacks for the host service.
+ * @{
+ */
 DECLCALLBACK(void) VBoxSvcClipboardTransferPrepareCallback(PSHCLTRANSFERCALLBACKDATA pData);
 DECLCALLBACK(void) VBoxSvcClipboardDataHeaderCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData);
 DECLCALLBACK(void) VBoxSvcClipboardDataCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData);
 DECLCALLBACK(void) VBoxSvcClipboardTransferCompleteCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
 DECLCALLBACK(void) VBoxSvcClipboardTransferCanceledCallback(PSHCLTRANSFERCALLBACKDATA pData);
 DECLCALLBACK(void) VBoxSvcClipboardTransferErrorCallback(PSHCLTRANSFERCALLBACKDATA pData, int rc);
-
-int ShClSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
-int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
+/** @} */
 #endif /*VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /* Host unit testing interface */

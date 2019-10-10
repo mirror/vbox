@@ -363,4 +363,10 @@ int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
     RT_NOREF(pClient, pTransfer);
     return VINF_SUCCESS;
 }
+
+int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+{
+    RT_NOREF(pClient, pTransfer);
+    return VINF_SUCCESS;
+}
 #endif

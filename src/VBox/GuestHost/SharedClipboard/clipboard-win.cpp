@@ -458,8 +458,8 @@ int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats)
     {
         LogFlowFunc(("fFormats=0x%08X\n", fFormats));
 
-        pFormats->uFormats   = fFormats;
-        pFormats->fFlags = 0; /** @todo Handle flags. */
+        pFormats->uFormats = fFormats;
+        pFormats->fFlags   = 0; /** @todo Handle flags. */
     }
 
     return rc;
@@ -888,7 +888,7 @@ int SharedClipboardWinAnnounceFormats(PSHCLWINCTX pWinCtx, SHCLFORMATS fFormats)
  *
  * @returns VBox status code.
  * @param   pWinCtx             Windows context to use.
- * @param   pTransferCtxCtx             transfer contextto use.
+ * @param   pTransferCtxCtx     Transfer contextto use.
  * @param   pTransfer           Shared Clipboard transfer to use.
  */
 int SharedClipboardWinTransferCreate(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
@@ -999,6 +999,59 @@ void SharedClipboardWinTransferDestroy(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTrans
         pTransfer->pvUser = NULL;
         pTransfer->cbUser = 0;
     }
+}
+
+/**
+ * Retrieves the roots for a transfer by opening the clipboard and getting the clipboard data
+ * as string list (CF_HDROP), assigning it to the transfer as roots then.
+ *
+ * @returns VBox status code.
+ * @param   pWinCtx             Windows context to use.
+ * @param   pTransfer           Transfer to get roots for.
+ */
+int SharedClipboardWinGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
+{
+    AssertPtrReturn(pWinCtx,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
+
+    Assert(SharedClipboardTransferGetSource(pTransfer) == SHCLSOURCE_LOCAL); /* Sanity. */
+
+    int rc = SharedClipboardWinOpen(pWinCtx->hWnd);
+    if (RT_SUCCESS(rc))
+    {
+        /* The data data in CF_HDROP format, as the files are locally present and don't need to be
+         * presented as a IDataObject or IStream. */
+        HANDLE hClip = hClip = GetClipboardData(CF_HDROP);
+        if (hClip)
+        {
+            HDROP hDrop = (HDROP)GlobalLock(hClip);
+            if (hDrop)
+            {
+                char    *papszList = NULL;
+                uint32_t cbList;
+                rc = SharedClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &papszList, &cbList);
+
+                GlobalUnlock(hClip);
+
+                if (RT_SUCCESS(rc))
+                {
+                    rc = SharedClipboardTransferRootsSet(pTransfer,
+                                                         papszList, cbList + 1 /* Include termination */);
+                    RTStrFree(papszList);
+                }
+            }
+            else
+                LogRel(("Shared Clipboard: Unable to lock clipboard data, last error: %ld\n", GetLastError()));
+        }
+        else
+            LogRel(("Shared Clipboard: Unable to retrieve clipboard data from clipboard (CF_HDROP), last error: %ld\n",
+                    GetLastError()));
+
+        SharedClipboardWinClose();
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**

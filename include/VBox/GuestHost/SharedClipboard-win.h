@@ -137,6 +137,7 @@ SHCLFORMAT SharedClipboardWinClipboardFormatToVBox(UINT uFormat);
 int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+int SharedClipboardWinGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer);
 int SharedClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszList, uint32_t *pcbList);
 #endif
 

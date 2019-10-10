@@ -887,5 +887,17 @@ int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 
     return VINF_SUCCESS;
 }
+
+int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+{
+    LogFlowFuncEnter();
+
+    const PSHCLWINCTX pWinCtx = &pClient->State.pCtx->Win;
+
+    int rc = SharedClipboardWinGetRoots(pWinCtx, pTransfer);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

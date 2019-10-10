@@ -1272,7 +1272,7 @@ static int shclSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
 }
 
 /**
- * transfer client (guest) handler for the Shared Clipboard host service.
+ * Transfer client (guest) handler for the Shared Clipboard host service.
  *
  * @returns VBox status code, or VINF_HGCM_ASYNC_EXECUTE if returning to the client will be deferred.
  * @param   pClient             Pointer to associated client.
@@ -1419,7 +1419,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
                 if (RT_SUCCESS(rc))
                 {
                     HGCMSvcSetPv (&paParms[3], rootListEntry.pszName, rootListEntry.cbName);
-                    HGCMSvcSetU32(&paParms[4], rootListEntry.cbName);
+                    HGCMSvcSetU32(&paParms[4], rootListEntry.cbInfo);
                     HGCMSvcSetPv (&paParms[5], rootListEntry.pvInfo, rootListEntry.cbInfo);
                 }
             }
@@ -1568,22 +1568,93 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             break;
         }
 
-    #if 0
         case VBOX_SHCL_GUEST_FN_OBJ_OPEN:
         {
+            if (cParms != VBOX_SHCL_CPARMS_OBJ_OPEN)
+                break;
+
+            SHCLOBJOPENCREATEPARMS openCreateParms;
+            RT_ZERO(openCreateParms);
+
+            uint32_t cbPath;
+            rc = HGCMSvcGetU32(&paParms[2], &cbPath);
+            if (RT_SUCCESS(rc))
+            {
+                rc = HGCMSvcGetPv(&paParms[3], (void **)&openCreateParms.pszPath, &openCreateParms.cbPath);
+                if (cbPath != openCreateParms.cbPath)
+                    rc = VERR_INVALID_PARAMETER;
+            }
+            if (RT_SUCCESS(rc))
+                rc = HGCMSvcGetU32(&paParms[4], &openCreateParms.fCreate);
+
+            if (RT_SUCCESS(rc))
+            {
+                SHCLOBJHANDLE hObj;
+                rc = SharedClipboardTransferObjectOpen(pTransfer, &openCreateParms, &hObj);
+                if (RT_SUCCESS(rc))
+                {
+                    LogFlowFunc(("hObj=%RU64\n", hObj));
+
+                    HGCMSvcSetU64(&paParms[1], hObj);
+                }
+            }
             break;
         }
 
         case VBOX_SHCL_GUEST_FN_OBJ_CLOSE:
         {
+            if (cParms != VBOX_SHCL_CPARMS_OBJ_CLOSE)
+                break;
+
+            SHCLOBJHANDLE hObj;
+            rc = HGCMSvcGetU64(&paParms[1], &hObj); /* Get object handle. */
+            if (RT_SUCCESS(rc))
+                rc = SharedClipboardTransferObjectClose(pTransfer, hObj);
             break;
         }
 
         case VBOX_SHCL_GUEST_FN_OBJ_READ:
         {
+            if (cParms != VBOX_SHCL_CPARMS_OBJ_READ)
+                break;
+
+            SHCLOBJHANDLE hObj;
+            rc = HGCMSvcGetU64(&paParms[1], &hObj); /* Get object handle. */
+
+            uint32_t cbToRead = 0;
+            if (RT_SUCCESS(rc))
+                rc = HGCMSvcGetU32(&paParms[2], &cbToRead);
+
+            void    *pvBuf = NULL;
+            uint32_t cbBuf = 0;
+            if (RT_SUCCESS(rc))
+                rc = HGCMSvcGetPv(&paParms[3], &pvBuf, &cbBuf);
+
+            LogFlowFunc(("hObj=%RU64, cbBuf=%RU32, cbToRead=%RU32, rc=%Rrc\n", hObj, cbBuf, cbToRead, rc));
+
+            if (   RT_SUCCESS(rc)
+                && (   !cbBuf
+                    || !cbToRead
+                    ||  cbBuf < cbToRead
+                   )
+               )
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                uint32_t cbRead;
+                rc = SharedClipboardTransferObjectRead(pTransfer, hObj, pvBuf, cbToRead, &cbRead, 0 /* fFlags */);
+                if (RT_SUCCESS(rc))
+                {
+                    HGCMSvcSetU32(&paParms[3], cbRead);
+
+                    /** @todo Implement checksum support. */
+                }
+            }
             break;
         }
-    #endif
 
         case VBOX_SHCL_GUEST_FN_OBJ_WRITE:
         {
@@ -2105,47 +2176,47 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
         rc = SharedClipboardTransferCreate(&pTransfer);
         if (RT_SUCCESS(rc))
         {
-            SHCLPROVIDERCREATIONCTX creationCtx;
-            RT_ZERO(creationCtx);
-
-            if (enmDir == SHCLTRANSFERDIR_READ)
-            {
-                rc = shclSvcTransferAreaRegister(&pClient->State, pTransfer);
-                if (RT_SUCCESS(rc))
-                {
-                    creationCtx.Interface.pfnTransferOpen  = shclSvcTransferIfaceOpen;
-                    creationCtx.Interface.pfnTransferClose = shclSvcTransferIfaceClose;
-
-                    creationCtx.Interface.pfnRootsGet      = shclSvcTransferIfaceGetRoots;
-
-                    creationCtx.Interface.pfnListOpen      = shclSvcTransferIfaceListOpen;
-                    creationCtx.Interface.pfnListClose     = shclSvcTransferIfaceListClose;
-                    creationCtx.Interface.pfnListHdrRead   = shclSvcTransferIfaceListHdrRead;
-                    creationCtx.Interface.pfnListEntryRead = shclSvcTransferIfaceListEntryRead;
-
-                    creationCtx.Interface.pfnObjOpen       = shclSvcTransferIfaceObjOpen;
-                    creationCtx.Interface.pfnObjClose      = shclSvcTransferIfaceObjClose;
-                    creationCtx.Interface.pfnObjRead       = shclSvcTransferIfaceObjRead;
-                }
-            }
-            else if (enmDir == SHCLTRANSFERDIR_WRITE)
-            {
-                creationCtx.Interface.pfnListHdrWrite   = shclSvcTransferIfaceListHdrWrite;
-                creationCtx.Interface.pfnListEntryWrite = shclSvcTransferIfaceListEntryWrite;
-                creationCtx.Interface.pfnObjWrite       = shclSvcTransferIfaceObjWrite;
-            }
-            else
-                AssertFailed();
-
-            creationCtx.enmSource = pClient->State.enmSource;
-            creationCtx.pvUser    = pClient;
-
-            uint32_t uTransferID = 0;
-
-            rc = SharedClipboardTransferSetInterface(pTransfer, &creationCtx);
+            rc = ShClSvcImplTransferCreate(pClient, pTransfer);
             if (RT_SUCCESS(rc))
             {
-                rc = ShClSvcImplTransferCreate(pClient, pTransfer);
+                SHCLPROVIDERCREATIONCTX creationCtx;
+                RT_ZERO(creationCtx);
+
+                if (enmDir == SHCLTRANSFERDIR_READ)
+                {
+                    rc = shclSvcTransferAreaRegister(&pClient->State, pTransfer);
+                    if (RT_SUCCESS(rc))
+                    {
+                        creationCtx.Interface.pfnTransferOpen  = shclSvcTransferIfaceOpen;
+                        creationCtx.Interface.pfnTransferClose = shclSvcTransferIfaceClose;
+
+                        creationCtx.Interface.pfnRootsGet      = shclSvcTransferIfaceGetRoots;
+
+                        creationCtx.Interface.pfnListOpen      = shclSvcTransferIfaceListOpen;
+                        creationCtx.Interface.pfnListClose     = shclSvcTransferIfaceListClose;
+                        creationCtx.Interface.pfnListHdrRead   = shclSvcTransferIfaceListHdrRead;
+                        creationCtx.Interface.pfnListEntryRead = shclSvcTransferIfaceListEntryRead;
+
+                        creationCtx.Interface.pfnObjOpen       = shclSvcTransferIfaceObjOpen;
+                        creationCtx.Interface.pfnObjClose      = shclSvcTransferIfaceObjClose;
+                        creationCtx.Interface.pfnObjRead       = shclSvcTransferIfaceObjRead;
+                    }
+                }
+                else if (enmDir == SHCLTRANSFERDIR_WRITE)
+                {
+                    creationCtx.Interface.pfnListHdrWrite   = shclSvcTransferIfaceListHdrWrite;
+                    creationCtx.Interface.pfnListEntryWrite = shclSvcTransferIfaceListEntryWrite;
+                    creationCtx.Interface.pfnObjWrite       = shclSvcTransferIfaceObjWrite;
+                }
+                else
+                    AssertFailed();
+
+                creationCtx.enmSource = pClient->State.enmSource;
+                creationCtx.pvUser    = pClient;
+
+                uint32_t uTransferID = 0;
+
+                rc = SharedClipboardTransferSetInterface(pTransfer, &creationCtx);
                 if (RT_SUCCESS(rc))
                 {
                     rc = SharedClipboardTransferCtxTransferRegister(&pClient->TransferCtx, pTransfer, &uTransferID);
@@ -2154,47 +2225,61 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
                         rc = SharedClipboardTransferInit(pTransfer, uTransferID, enmDir, enmSource);
                         if (RT_SUCCESS(rc))
                         {
-                            SHCLEVENTID uEvent;
-                            rc = shclSvcTransferSendStatus(pClient, pTransfer,
-                                                           SHCLTRANSFERSTATUS_INITIALIZED, VINF_SUCCESS,
-                                                           &uEvent);
+                            if (   enmSource == SHCLSOURCE_LOCAL
+                                && enmDir    == SHCLTRANSFERDIR_WRITE) /* Get roots if this is a local write transfer. */
+                            {
+                                rc = ShClSvcImplTransferGetRoots(pClient, pTransfer);
+                            }
+
+                            if (RT_SUCCESS(rc))
+                                rc = SharedClipboardTransferStart(pTransfer);
+
                             if (RT_SUCCESS(rc))
                             {
-                                LogRel2(("Shared Clipboard: Waiting for start of transfer %RU32 on guest ...\n",
-                                         pTransfer->State.uID));
-
-                                PSHCLEVENTPAYLOAD pPayload;
-                                rc = SharedClipboardEventWait(&pTransfer->Events, uEvent, pTransfer->uTimeoutMs, &pPayload);
+                                SHCLEVENTID uEvent;
+                                rc = shclSvcTransferSendStatus(pClient, pTransfer,
+                                                               SHCLTRANSFERSTATUS_INITIALIZED, VINF_SUCCESS,
+                                                               &uEvent);
                                 if (RT_SUCCESS(rc))
                                 {
-                                    Assert(pPayload->cbData == sizeof(SHCLREPLY));
-                                    PSHCLREPLY pReply = (PSHCLREPLY)pPayload->pvData;
-                                    AssertPtr(pReply);
+                                    LogRel2(("Shared Clipboard: Waiting for start of transfer %RU32 on guest ...\n",
+                                             pTransfer->State.uID));
 
-                                    Assert(pReply->uType == VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS);
-
-                                    if (pReply->u.TransferStatus.uStatus == SHCLTRANSFERSTATUS_STARTED)
+                                    PSHCLEVENTPAYLOAD pPayload;
+                                    rc = SharedClipboardEventWait(&pTransfer->Events, uEvent, pTransfer->uTimeoutMs, &pPayload);
+                                    if (RT_SUCCESS(rc))
                                     {
-                                        LogRel2(("Shared Clipboard: Started transfer %RU32 on guest\n", pTransfer->State.uID));
+                                        Assert(pPayload->cbData == sizeof(SHCLREPLY));
+                                        PSHCLREPLY pReply = (PSHCLREPLY)pPayload->pvData;
+                                        AssertPtr(pReply);
+
+                                        Assert(pReply->uType == VBOX_SHCL_REPLYMSGTYPE_TRANSFER_STATUS);
+
+                                        if (pReply->u.TransferStatus.uStatus == SHCLTRANSFERSTATUS_STARTED)
+                                        {
+                                            LogRel2(("Shared Clipboard: Started transfer %RU32 on guest\n", pTransfer->State.uID));
+                                        }
+                                        else
+                                            LogRel(("Shared Clipboard: Guest reported status %s (error %Rrc) while starting transfer %RU32\n",
+                                                    VBoxShClTransferStatusToStr(pReply->u.TransferStatus.uStatus),
+                                                    pReply->rc, pTransfer->State.uID));
                                     }
                                     else
-                                        LogRel(("Shared Clipboard: Guest reported status %s (error %Rrc) while starting transfer %RU32\n",
-                                                VBoxShClTransferStatusToStr(pReply->u.TransferStatus.uStatus),
-                                                pReply->rc, pTransfer->State.uID));
+                                       LogRel(("Shared Clipboard: Unable to start transfer %RU32 on guest, rc=%Rrc\n",
+                                               pTransfer->State.uID, rc));
                                 }
-                                else
-                                   LogRel(("Shared Clipboard: Unable to start transfer %RU32 on guest, rc=%Rrc\n",
-                                           pTransfer->State.uID, rc));
                             }
                         }
+
+                        if (RT_FAILURE(rc))
+                            SharedClipboardTransferCtxTransferUnregister(&pClient->TransferCtx, uTransferID);
                     }
                 }
             }
 
             if (RT_FAILURE(rc))
             {
-                SharedClipboardTransferCtxTransferUnregister(&pClient->TransferCtx, uTransferID);
-
+                ShClSvcImplTransferDestroy(pClient, pTransfer);
                 SharedClipboardTransferDestroy(pTransfer);
 
                 RTMemFree(pTransfer);

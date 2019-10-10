@@ -153,51 +153,39 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     /* The guest wants to write local data to the host? */
     if (enmDir == SHCLTRANSFERDIR_WRITE)
     {
-        Assert(SharedClipboardTransferGetSource(pTransfer) == SHCLSOURCE_LOCAL); /* Sanity. */
-
-        rc = SharedClipboardWinOpen(pCtx->Win.hWnd);
-        if (RT_SUCCESS(rc))
-        {
-            /* The data data in CF_HDROP format, as the files are locally present and don't need to be
-             * presented as a IDataObject or IStream. */
-            HANDLE hClip = hClip = GetClipboardData(CF_HDROP);
-            if (hClip)
-            {
-                HDROP hDrop = (HDROP)GlobalLock(hClip);
-                if (hDrop)
-                {
-                    char    *papszList = NULL;
-                    uint32_t cbList;
-                    rc = SharedClipboardWinDropFilesToStringList((DROPFILES *)hDrop, &papszList, &cbList);
-
-                    GlobalUnlock(hClip);
-
-                    if (RT_SUCCESS(rc))
-                    {
-                        rc = SharedClipboardTransferRootsSet(pTransfer,
-                                                             papszList, cbList + 1 /* Include termination */);
-                        RTStrFree(papszList);
-                    }
-                }
-                else
-                    LogRel(("Shared Clipboard: Unable to lock clipboard data, last error: %ld\n", GetLastError()));
-            }
-            else
-                LogRel(("Shared Clipboard: Unable to retrieve clipboard data from clipboard (CF_HDROP), last error: %ld\n",
-                        GetLastError()));
-
-            SharedClipboardWinClose();
-        }
+        rc = SharedClipboardWinGetRoots(&pCtx->Win, pTransfer);
     }
     /* The guest wants to read data from a remote source. */
     else if (enmDir == SHCLTRANSFERDIR_READ)
     {
-        Assert(SharedClipboardTransferGetSource(pTransfer) == SHCLSOURCE_REMOTE); /* Sanity. */
+        /* The IDataObject *must* be created on the same thread as our (proxy) window, so post a message to it
+         * to do the stuff for us. */
+        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pTransfer->Events);
 
-        rc = SharedClipboardWinTransferCreate(&pCtx->Win, pTransfer);
+        rc = SharedClipboardEventRegister(&pTransfer->Events, uEvent);
+        if (RT_SUCCESS(rc))
+        {
+            /* Don't want to rely on SendMessage (synchronous) here, so just post and wait the event getting signalled. */
+            ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)uEvent);
+
+            PSHCLEVENTPAYLOAD pPayload;
+            rc = SharedClipboardEventWait(&pTransfer->Events, uEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(pPayload->cbData == sizeof(int));
+                rc = *(int *)pPayload->pvData;
+
+                SharedClipboardPayloadFree(pPayload);
+            }
+
+            SharedClipboardEventUnregister(&pTransfer->Events, uEvent);
+        }
     }
     else
         AssertFailedStmt(rc = VERR_NOT_SUPPORTED);
+
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Starting transfer failed, rc=%Rrc\n", rc));
 
     LogFlowFunc(("LEAVE: idTransfer=%RU16, rc=%Rrc\n", SharedClipboardTransferGetID(pTransfer), rc));
     return rc;
@@ -650,21 +638,30 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
-#if 0
         case SHCL_WIN_WM_TRANSFER_START:
         {
             LogFunc(("SHCL_WIN_WM_TRANSFER_START\n"));
 
-            PSHCLTRANSFER pTransfer = (PSHCLTRANSFER)lParam;
+            PSHCLTRANSFER pTransfer  = (PSHCLTRANSFER)wParam;
             AssertPtr(pTransfer);
+
+            const SHCLEVENTID uEvent = (SHCLEVENTID)lParam;
 
             Assert(SharedClipboardTransferGetSource(pTransfer) == SHCLSOURCE_REMOTE); /* Sanity. */
 
-            int rc2 = SharedClipboardWinTransferCreate(pWinCtx, pTransfer);
-            AssertRC(rc2);
+            int rcTransfer = SharedClipboardWinTransferCreate(pWinCtx, pTransfer);
+
+            PSHCLEVENTPAYLOAD pPayload = NULL;
+            int rc = SharedClipboardPayloadAlloc(uEvent, &rcTransfer, sizeof(rcTransfer), &pPayload);
+            if (RT_SUCCESS(rc))
+            {
+                rc = SharedClipboardEventSignal(&pTransfer->Events, uEvent, pPayload);
+                if (RT_FAILURE(rc))
+                    SharedClipboardPayloadFree(pPayload);
+            }
+
             break;
         }
-#endif
 
         case WM_DESTROY:
         {
