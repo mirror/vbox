@@ -4848,13 +4848,12 @@ DECLINLINE(void) hmR0VmxApicSetTprThreshold(PVMXVMCSINFO pVmcsInfo, uint32_t u32
 /**
  * Exports the guest APIC TPR state into the VMCS.
  *
- * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestApicTpr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static void hmR0VmxExportGuestApicTpr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_APIC_TPR)
     {
@@ -4875,7 +4874,7 @@ static int hmR0VmxExportGuestApicTpr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient
                     uint8_t u8Tpr         = 0;
                     uint8_t u8PendingIntr = 0;
                     int rc = APICGetTpr(pVCpu, &u8Tpr, &fPendingIntr, &u8PendingIntr);
-                    AssertRCReturn(rc, rc);
+                    AssertRC(rc);
 
                     /*
                      * If there are interrupts pending but masked by the TPR, instruct VT-x to
@@ -4902,7 +4901,6 @@ static int hmR0VmxExportGuestApicTpr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient
         /* else: the TPR threshold has already been updated while merging the nested-guest VMCS. */
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_APIC_TPR);
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -4966,13 +4964,12 @@ static uint32_t hmR0VmxGetGuestIntrState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
 /**
  * Exports the exception intercepts required for guest execution in the VMCS.
  *
- * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestXcptIntercepts(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static void hmR0VmxExportGuestXcptIntercepts(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_XCPT_INTERCEPTS)
     {
@@ -4986,19 +4983,17 @@ static int hmR0VmxExportGuestXcptIntercepts(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
         /* Other exception intercepts are handled elsewhere, e.g. while exporting guest CR0. */
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_VMX_XCPT_INTERCEPTS);
     }
-    return VINF_SUCCESS;
 }
 
 
 /**
  * Exports the guest's RIP into the guest-state area in the VMCS.
  *
- * @returns VBox status code.
  * @param   pVCpu   The cross context virtual CPU structure.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestRip(PVMCPUCC pVCpu)
+static void hmR0VmxExportGuestRip(PVMCPUCC pVCpu)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RIP)
     {
@@ -5010,19 +5005,17 @@ static int hmR0VmxExportGuestRip(PVMCPUCC pVCpu)
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_RIP);
         Log4Func(("rip=%#RX64\n", pVCpu->cpum.GstCtx.rip));
     }
-    return VINF_SUCCESS;
 }
 
 
 /**
  * Exports the guest's RSP into the guest-state area in the VMCS.
  *
- * @returns VBox status code.
  * @param   pVCpu   The cross context virtual CPU structure.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestRsp(PVMCPUCC pVCpu)
+static void hmR0VmxExportGuestRsp(PVMCPUCC pVCpu)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RSP)
     {
@@ -5034,20 +5027,18 @@ static int hmR0VmxExportGuestRsp(PVMCPUCC pVCpu)
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_RSP);
         Log4Func(("rsp=%#RX64\n", pVCpu->cpum.GstCtx.rsp));
     }
-    return VINF_SUCCESS;
 }
 
 
 /**
  * Exports the guest's RFLAGS into the guest-state area in the VMCS.
  *
- * @returns VBox status code.
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmxTransient   The VMX-transient structure.
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestRflags(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static void hmR0VmxExportGuestRflags(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RFLAGS)
     {
@@ -5099,7 +5090,6 @@ static int hmR0VmxExportGuestRflags(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_RFLAGS);
         Log4Func(("eflags=%#RX32\n", fEFlags.u32));
     }
-    return VINF_SUCCESS;
 }
 
 
@@ -9086,16 +9076,11 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
     rc = hmR0VmxExportGuestMsrs(pVCpu, pVmxTransient);
     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
 
-    rc = hmR0VmxExportGuestApicTpr(pVCpu, pVmxTransient);
-    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
-
-    rc = hmR0VmxExportGuestXcptIntercepts(pVCpu, pVmxTransient);
-    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
-
-    rc  = hmR0VmxExportGuestRip(pVCpu);
-    rc |= hmR0VmxExportGuestRsp(pVCpu);
-    rc |= hmR0VmxExportGuestRflags(pVCpu, pVmxTransient);
-    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
+    hmR0VmxExportGuestApicTpr(pVCpu, pVmxTransient);
+    hmR0VmxExportGuestXcptIntercepts(pVCpu, pVmxTransient);
+    hmR0VmxExportGuestRip(pVCpu);
+    hmR0VmxExportGuestRsp(pVCpu);
+    hmR0VmxExportGuestRflags(pVCpu, pVmxTransient);
 
     rc = hmR0VmxExportGuestHwvirtState(pVCpu, pVmxTransient);
     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
@@ -9140,10 +9125,7 @@ static void hmR0VmxExportSharedState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient
 
         /* Loading shared debug bits might have changed eflags.TF bit for debugging purposes. */
         if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_GUEST_RFLAGS)
-        {
-            rc = hmR0VmxExportGuestRflags(pVCpu, pVmxTransient);
-            AssertRC(rc);
-        }
+            hmR0VmxExportGuestRflags(pVCpu, pVmxTransient);
     }
 
     if (pVCpu->hm.s.fCtxChanged & HM_CHANGED_VMX_GUEST_LAZY_MSRS)
@@ -9181,22 +9163,26 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
 #endif
 
     /*
-     * For many exits it's only RIP that changes and hence try to export it first
+     * For many exits it's only RIP/RSP/RFLAGS that changes and hence try to export it first
      * without going through a lot of change flag checks.
      */
-    VBOXSTRICTRC rcStrict;
-    uint64_t     fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
-    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
-    if ((fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE)) == HM_CHANGED_GUEST_RIP)
+    VBOXSTRICTRC   rcStrict;
+    uint64_t const fCtxMask     = HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE;
+    uint64_t const fMinimalMask = HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RSP | HM_CHANGED_GUEST_RFLAGS | HM_CHANGED_GUEST_HWVIRT;
+    uint64_t const fCtxChanged  = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
+
+    /* If only RIP/RSP/RFLAGS/HWVIRT changed, export only those (quicker, happens more often).*/
+    if (    (fCtxChanged & fMinimalMask)
+        && !(fCtxChanged & (fCtxMask & ~fMinimalMask)))
     {
-        rcStrict = hmR0VmxExportGuestRip(pVCpu);
-        if (RT_LIKELY(rcStrict == VINF_SUCCESS))
-        { /* likely */}
-        else
-            AssertMsgFailedReturn(("Failed to export guest RIP! rc=%Rrc\n", VBOXSTRICTRC_VAL(rcStrict)), rcStrict);
+        hmR0VmxExportGuestRip(pVCpu);
+        hmR0VmxExportGuestRsp(pVCpu);
+        hmR0VmxExportGuestRflags(pVCpu, pVmxTransient);
+        rcStrict = hmR0VmxExportGuestHwvirtState(pVCpu, pVmxTransient);
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExportMinimal);
     }
-    else if (fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE))
+    /* If anything else also changed, go through the full export routine and export as required. */
+    else if (fCtxChanged & fCtxMask)
     {
         rcStrict = hmR0VmxExportGuestState(pVCpu, pVmxTransient);
         if (RT_LIKELY(rcStrict == VINF_SUCCESS))
@@ -9210,13 +9196,11 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
         }
         STAM_COUNTER_INC(&pVCpu->hm.s.StatExportFull);
     }
-    else
-        rcStrict = VINF_SUCCESS;
+    /* else: Nothing changed, nothing to load here. */
 
 #ifdef VBOX_STRICT
     /* All the guest state bits should be loaded except maybe the host context and/or the shared host/guest bits. */
     fCtxChanged = ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged);
-    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
     AssertMsg(!(fCtxChanged & (HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE)),
               ("fCtxChanged=%#RX64\n", fCtxChanged));
 #endif
@@ -14841,8 +14825,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
     VBOXSTRICTRC rcStrict = IEMExecDecodedRdmsr(pVCpu, pVmxTransient->cbExitInstr);
     STAM_COUNTER_INC(&pVCpu->hm.s.StatExitRdmsr);
     if (rcStrict == VINF_SUCCESS)
-        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS
-                                                 | HM_CHANGED_GUEST_RAX | HM_CHANGED_GUEST_RDX);
+        ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_GUEST_RIP | HM_CHANGED_GUEST_RFLAGS);
     else if (rcStrict == VINF_IEM_RAISED_XCPT)
     {
         ASMAtomicUoOrU64(&pVCpu->hm.s.fCtxChanged, HM_CHANGED_RAISED_XCPT_MASK);
