@@ -334,7 +334,7 @@ static inline void set_bitmap_bit(DWORD *bitmap, DWORD bit)
     bitmap[idx] |= (1 << shift);
 }
 
-static void shader_record_register_usage(IWineD3DBaseShaderImpl *shader, struct shader_reg_maps *reg_maps,
+static HRESULT shader_record_register_usage(IWineD3DBaseShaderImpl *shader, struct shader_reg_maps *reg_maps,
         const struct wined3d_shader_register *reg, enum wined3d_shader_type shader_type)
 {
     switch (reg->type)
@@ -364,7 +364,15 @@ static void shader_record_register_usage(IWineD3DBaseShaderImpl *shader, struct 
                 }
                 else
                 {
-                    ((IWineD3DPixelShaderImpl *)shader)->input_reg_used[reg->idx] = TRUE;
+                    unsigned int reg_idx = reg->idx;
+                    
+                    if (reg_idx >= MAX_REG_INPUT)
+                    {
+                        ERR("Invalid input register index %d.\n", reg_idx);
+                        return E_INVALIDARG;
+                    }
+                    
+                    ((IWineD3DPixelShaderImpl *)shader)->input_reg_used[reg_idx] = TRUE;
                 }
             }
             else reg_maps->input_registers |= 1 << reg->idx;
@@ -420,6 +428,8 @@ static void shader_record_register_usage(IWineD3DBaseShaderImpl *shader, struct 
             TRACE("Not recording register of type %#x and idx %u\n", reg->type, reg->idx);
             break;
     }
+
+    return S_OK;
 }
 
 static unsigned int get_instr_extra_regcount(enum WINED3D_SHADER_INSTRUCTION_HANDLER instr, unsigned int param)
@@ -659,10 +669,16 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
             {
                 struct wined3d_shader_src_param dst_rel_addr;
                 struct wined3d_shader_dst_param dst_param;
+                HRESULT hr;
 
                 fe->shader_read_dst_param(fe_data, &ptr, &dst_param, &dst_rel_addr);
 
-                shader_record_register_usage(shader, reg_maps, &dst_param.reg, shader_version.type);
+                hr = shader_record_register_usage(shader, reg_maps, &dst_param.reg, shader_version.type);
+                if (FAILED(hr))
+                {
+                    ERR("shader_record_register_usage failed.\n");
+                    return hr;
+                }
 
                 /* WINED3DSPR_TEXCRDOUT is the same as WINED3DSPR_OUTPUT. _OUTPUT can be > MAX_REG_TEXCRD and
                  * is used in >= 3.0 shaders. Filter 3.0 shaders to prevent overflows, and also filter pixel
