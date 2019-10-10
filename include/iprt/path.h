@@ -734,7 +734,7 @@ typedef struct RTPATHPARSED
     uint16_t    u16Reserved;
     /** The offset of the filename suffix, offset of the NUL char if none. */
     uint16_t    offSuffix;
-    /** The lenght of the suffix. */
+    /** The length of the suffix. */
     uint16_t    cchSuffix;
     /** Array of component descriptors (variable size).
      * @note Don't try figure the end of the input path by adding up off and cch
