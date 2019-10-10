@@ -3,21 +3,6 @@
     <name>US International</name>
     <id>3c7b7be7-4d2a-4f65-a21e-208ba2e4ecaf</id>
     <physicallayoutid>{368efa94-3744-48c5-9d5a-59c2f15fe5ec}</physicallayoutid>
-    <!-- multimedia keys -->
-    <key>
-        <position>300</position>
-        <basecaption>⬅</basecaption>
-        <shiftcaption></shiftcaption>
-        <altgrcaption></altgrcaption>
-        <shiftaltgrcaption></shiftaltgrcaption>
-    </key>
-    <key>
-        <position>303</position>
-        <basecaption>🔇</basecaption>
-        <shiftcaption></shiftcaption>
-        <altgrcaption></altgrcaption>
-        <shiftaltgrcaption></shiftaltgrcaption>
-    </key>
     <key>
         <position>110</position>
         <basecaption>Esc</basecaption>

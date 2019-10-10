@@ -3,11 +3,16 @@
     <name>multimedia keys</name>
     <id>80b4c26e-43fc-44f8-b515-351cff9269ce</id>
     <row>
+        <space>
+            <width>50</width>
+        </space>
+
         <key><!-- WWW back -->
             <position>300</position>
             <usageid>0x2224</usageid>
             <usagepage>0x0C</usagepage>
             <scancode>0x20</scancode>
+            <staticcaption>⬅</staticcaption>
         </key>
         <key>
             <position>301</position>
@@ -27,6 +32,21 @@
             <usageid>0xE2</usageid>
             <usagepage>0x0C</usagepage>
             <scancode>0x4a</scancode>
+            <staticcaption>🔇</staticcaption>
+        </key>
+        <key><!-- Volume Down -->
+            <position>304</position>
+            <usageid>0xEA</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancode>0x4a</scancode>
+            <staticcaption>🔉</staticcaption>
+        </key>
+        <key><!-- Volume Up -->
+            <position>305</position>
+            <usageid>0xE9</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancode>0x4a</scancode>
+            <staticcaption>🔊</staticcaption>
         </key>
     </row>
 </physicallayout>

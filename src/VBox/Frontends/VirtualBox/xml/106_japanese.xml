@@ -562,6 +562,7 @@
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x5b</scancode>
             <osmenukey>true</osmenukey>
+            <staticcaption>◆</staticcaption>
         </key>
         <key><!-- Alt -->
             <usageid>0xe2</usageid>

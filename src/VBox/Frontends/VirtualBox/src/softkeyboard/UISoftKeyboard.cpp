@@ -342,9 +342,10 @@ private:
 *********************************************************************************************************************************/
 
 /** UISoftKeyboardKey is a place holder for a keyboard key. Graphical key represantations are drawn according to this class.
-  * The position of a key within the physical layout is read from the layout file. Note that UISoftKeyboardKey does not have
+  * The position of a key within the physical layout is read from the layout file. Note that UISoftKeyboardKey usually does not have
   * caption field(s). Captions are kept by UISoftKeyboardLayout since same keys may (and usually do) have different captions in
-  * different layouts. */
+  * different layouts. So called static captions are exections. They are defined in physical layout files and kept as member of
+  * UISoftKeyboardKey. When a static caption exits captions (if any) from the keyboard layout files are ignored. */
 class UISoftKeyboardKey
 {
 public:
@@ -386,6 +387,9 @@ public:
 
     KeyState state() const;
     void setState(KeyState state);
+
+    void setStaticCaption(const QString &strCaption);
+    const QString &staticCaption() const;
 
     void setParentWidget(UISoftKeyboardWidget* pParent);
     QVector<LONG> scanCodeWithPrefix() const;
@@ -436,6 +440,10 @@ private:
     LONG m_iUsageId;
     LONG m_iUsagePage;
     KeyboardRegion m_enmKeyboardRegion;
+    /** This is used for multimedia keys, OS key etc where we want to have a non-modifiable
+      * caption (usually a single char). This caption is defined in the physical layout file
+      * and has precedence over the captions defined in keyboard layout files. */
+    QString m_strStaticCaption;
 };
 
 
@@ -489,7 +497,6 @@ public:
     void setUid(const QUuid &uid);
     QUuid uid() const;
 
-    void drawText(int iKeyPosition, const QRect &keyGeometry, QPainter &painter);
     void drawTextInRect(const UISoftKeyboardKey &key, QPainter &painter);
 
 private:
@@ -1553,6 +1560,16 @@ void UISoftKeyboardKey::setState(KeyState state)
     m_enmState = state;
 }
 
+void UISoftKeyboardKey::setStaticCaption(const QString &strCaption)
+{
+    m_strStaticCaption = strCaption;
+}
+
+const QString &UISoftKeyboardKey::staticCaption() const
+{
+    return m_strStaticCaption;
+}
+
 void UISoftKeyboardKey::setParentWidget(UISoftKeyboardWidget* pParent)
 {
     m_pParentWidget = pParent;
@@ -1824,11 +1841,24 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
      const QRect &keyGeometry = key.keyGeometry();
      QFont painterFont(painter.font());
 
-     const QString &strBaseCaption = baseCaption(iKeyPosition);
-     const QString &strShiftCaption = shiftCaption(iKeyPosition);
+     QString strBaseCaption;
+     QString strShiftCaption;
+     QString strShiftAltGrCaption;
+     QString strAltGrCaption;
 
-     const QString &strShiftAltGrCaption = shiftAltGrCaption(iKeyPosition);
-     const QString &strAltGrCaption = altGrCaption(iKeyPosition);
+     /* Static captions which are define in the physical layout files have precedence over
+        the one define in the keyboard layouts. In effect they stay the same for all the
+        keyboard layouts sharing the same physical layout: */
+
+     if (key.staticCaption().isEmpty())
+     {
+         strBaseCaption = baseCaption(iKeyPosition);
+         strShiftCaption = shiftCaption(iKeyPosition);
+         strShiftAltGrCaption = shiftAltGrCaption(iKeyPosition);
+         strAltGrCaption = altGrCaption(iKeyPosition);
+     }
+     else
+         strBaseCaption = key.staticCaption();
 
      const QString &strTopleftString = !strShiftCaption.isEmpty() ? strShiftCaption : strBaseCaption;
      const QString &strBottomleftString = !strShiftCaption.isEmpty() ? strBaseCaption : QString();
@@ -1894,58 +1924,19 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
                           keyGeometry.width() - 2 * iMargin,
                           keyGeometry.height() - 2 * iMargin);
 
-     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strTopleftString);
-     painter.drawText(textRect, Qt::AlignLeft | Qt::AlignBottom, strBottomleftString);
-     painter.drawText(textRect, Qt::AlignRight | Qt::AlignTop, strShiftAltGrCaption);
-     painter.drawText(textRect, Qt::AlignRight | Qt::AlignBottom, strAltGrCaption);
-}
+     if (key.keyboardRegion() == KeyboardRegion_MultimediaKeys)
+     {
+         painter.drawText(QRect(0, 0, keyGeometry.width(), keyGeometry.height()),
+                          Qt::AlignHCenter | Qt::AlignVCenter, strTopleftString);
 
-void UISoftKeyboardLayout::drawText(int iKeyPosition, const QRect &keyGeometry, QPainter &painter)
-{
-    QFont painterFont(painter.font());
-
-    painterFont.setPixelSize(15);
-    painterFont.setBold(true);
-    painter.setFont(painterFont);
-    QFontMetrics fontMetric = painter.fontMetrics();
-    int iSideMargin = 0.5 * fontMetric.width('X');
-
-    int iX = 0;
-    int iY = fontMetric.height();
-#if 0
-    Q_UNUSED(keyGeometry);
-    painter.drawText(iX + iSideMargin, iY, QString::number(iKeyPosition));
-#else
-    const QString &strBaseCaption = baseCaption(iKeyPosition);
-    const QString &strShiftCaption = shiftCaption(iKeyPosition);
-    const QString &strShiftAltGrCaption = shiftAltGrCaption(iKeyPosition);
-    const QString &strAltGrCaption = altGrCaption(iKeyPosition);
-
-    if (!strShiftCaption.isEmpty())
-    {
-        painter.drawText(iX + iSideMargin, iY, strShiftCaption);
-        painter.drawText(iX + iSideMargin, 2 * iY, strBaseCaption);
-    }
-    else
-    {
-        int iSpaceIndex = strBaseCaption.indexOf(" " );
-        if (iSpaceIndex == -1)
-            painter.drawText(iX + iSideMargin, iY, strBaseCaption);
-        else
-        {
-            painter.drawText(iX + iSideMargin, iY, strBaseCaption.left(iSpaceIndex));
-            painter.drawText(iX + iSideMargin, 2 * iY, strBaseCaption.right(strBaseCaption.length() - iSpaceIndex - 1));
-        }
-    }
-
-    if (!strShiftAltGrCaption.isEmpty())
-    {
-        painter.drawText(keyGeometry.width() - fontMetric.width('X') - iSideMargin, iY, strShiftAltGrCaption);
-        painter.drawText(keyGeometry.width() - fontMetric.width('X') - iSideMargin, 2 * iY, strAltGrCaption);
-    }
-    else
-        painter.drawText(keyGeometry.width() - fontMetric.width('X') - iSideMargin, 2 * iY, strAltGrCaption);
-#endif
+     }
+     else
+     {
+         painter.drawText(textRect, Qt::AlignLeft | Qt::AlignTop, strTopleftString);
+         painter.drawText(textRect, Qt::AlignLeft | Qt::AlignBottom, strBottomleftString);
+         painter.drawText(textRect, Qt::AlignRight | Qt::AlignTop, strShiftAltGrCaption);
+         painter.drawText(textRect, Qt::AlignRight | Qt::AlignBottom, strAltGrCaption);
+     }
 }
 
 
@@ -3049,6 +3040,8 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
             if (m_xmlReader.readElementText() == "true")
                 key.setKeyboardRegion(KeyboardRegion_OSMenuKeys);
         }
+        else if (m_xmlReader.name() == "staticcaption")
+            key.setStaticCaption(m_xmlReader.readElementText());
         else
             m_xmlReader.skipCurrentElement();
     }
