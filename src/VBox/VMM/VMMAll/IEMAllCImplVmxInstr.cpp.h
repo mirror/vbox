@@ -4810,7 +4810,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxApicWriteEmulation(PVMCPUCC pVCpu)
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPUCC pVCpu, const char *pszInstr)
+DECLINLINE(int) iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPUCC pVCpu, const char *pszInstr)
 {
     /*
      * Guest Control Registers, Debug Registers, and MSRs.
@@ -4957,7 +4957,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestControlRegsMsrs(PVMCPUCC pVCpu, const char
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPUCC pVCpu, const char *pszInstr)
+DECLINLINE(int) iemVmxVmentryCheckGuestSegRegs(PVMCPUCC pVCpu, const char *pszInstr)
 {
     /*
      * Segment registers.
@@ -5345,7 +5345,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestSegRegs(PVMCPUCC pVCpu, const char *pszIns
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestGdtrIdtr(PVMCPUCC pVCpu,  const char *pszInstr)
+DECLINLINE(int) iemVmxVmentryCheckGuestGdtrIdtr(PVMCPUCC pVCpu,  const char *pszInstr)
 {
     /*
      * GDTR and IDTR.
@@ -5391,7 +5391,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestGdtrIdtr(PVMCPUCC pVCpu,  const char *pszI
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPUCC pVCpu, const char *pszInstr)
+DECLINLINE(int) iemVmxVmentryCheckGuestRipRFlags(PVMCPUCC pVCpu, const char *pszInstr)
 {
     /*
      * RIP and RFLAGS.
@@ -5465,7 +5465,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestRipRFlags(PVMCPUCC pVCpu, const char *pszI
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *pszInstr)
+DECLINLINE(int) iemVmxVmentryCheckGuestNonRegState(PVMCPUCC pVCpu,  const char *pszInstr)
 {
     /*
      * Guest non-register state.
@@ -5723,7 +5723,7 @@ IEM_STATIC int iemVmxVmentryCheckGuestPdptesForCr3(PVMCPUCC pVCpu, const char *p
  * @param   pVCpu       The cross context virtual CPU structure.
  * @param   pszInstr    The VMX instruction name (for logging purposes).
  */
-IEM_STATIC int iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInstr)
+DECLINLINE(int) iemVmxVmentryCheckGuestPdptes(PVMCPUCC pVCpu, const char *pszInstr)
 {
     /*
      * Guest PDPTEs.
@@ -7397,7 +7397,11 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
         rc = iemVmxVmentryCheckHostState(pVCpu, pszInstr);
         if (RT_SUCCESS(rc))
         {
-            /* Initialize read-only VMCS fields before VM-entry since we don't update all of them for every VM-exit. */
+            /*
+             * Initialize read-only VMCS fields before VM-entry since we don't update all of them
+             * for every VM-exit. This needs to be done before invoking a VM-exit (even those
+             * ones that may occur during VM-entry below).
+             */
             iemVmxVmentryInitReadOnlyFields(pVCpu);
 
             /*
