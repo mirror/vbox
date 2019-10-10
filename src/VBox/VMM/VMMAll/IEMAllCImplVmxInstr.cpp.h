@@ -5988,178 +5988,7 @@ IEM_STATIC int iemVmxVmentryCheckHostState(PVMCPUCC pVCpu, const char *pszInstr)
 
 
 /**
- * Checks VM-entry controls fields as part of VM-entry.
- * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pszInstr    The VMX instruction name (for logging purposes).
- */
-IEM_STATIC int iemVmxVmentryCheckEntryCtls(PVMCPUCC pVCpu, const char *pszInstr)
-{
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    const char * const pszFailure = "VMFail";
-
-    /* VM-entry controls. */
-    VMXCTLSMSR const EntryCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.EntryCtls;
-    if (!(~pVmcs->u32EntryCtls & EntryCtls.n.allowed0))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryCtlsDisallowed0);
-
-    if (!(pVmcs->u32EntryCtls & ~EntryCtls.n.allowed1))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryCtlsAllowed1);
-
-    /* Event injection. */
-    uint32_t const uIntInfo = pVmcs->u32EntryIntInfo;
-    if (RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VALID))
-    {
-        /* Type and vector. */
-        uint8_t const uType   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_TYPE);
-        uint8_t const uVector = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VECTOR);
-        uint8_t const uRsvd   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_RSVD_12_30);
-        if (   !uRsvd
-            && VMXIsEntryIntInfoTypeValid(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxMonitorTrapFlag, uType)
-            && VMXIsEntryIntInfoVectorValid(uVector, uType))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoTypeVecRsvd);
-
-        /* Exception error code. */
-        if (RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID))
-        {
-            /* Delivery possible only in Unrestricted-guest mode when CR0.PE is set. */
-            if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
-                ||  (pVmcs->u64GuestCr0.s.Lo & X86_CR0_PE))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoErrCodePe);
-
-            /* Exceptions that provide an error code. */
-            if (   uType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
-                && (   uVector == X86_XCPT_DF
-                    || uVector == X86_XCPT_TS
-                    || uVector == X86_XCPT_NP
-                    || uVector == X86_XCPT_SS
-                    || uVector == X86_XCPT_GP
-                    || uVector == X86_XCPT_PF
-                    || uVector == X86_XCPT_AC))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoErrCodeVec);
-
-            /* Exception error-code reserved bits. */
-            if (!(pVmcs->u32EntryXcptErrCode & ~VMX_ENTRY_INT_XCPT_ERR_CODE_VALID_MASK))
-            { /* likely */ }
-            else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryXcptErrCodeRsvd);
-
-            /* Injecting a software interrupt, software exception or privileged software exception. */
-            if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
-                || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
-                || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
-            {
-                /* Instruction length must be in the range 0-15. */
-                if (pVmcs->u32EntryInstrLen <= VMX_ENTRY_INSTR_LEN_MAX)
-                { /* likely */ }
-                else
-                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryInstrLen);
-
-                /* However, instruction length of 0 is allowed only when its CPU feature is present. */
-                if (   pVmcs->u32EntryInstrLen != 0
-                    || IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxEntryInjectSoftInt)
-                { /* likely */ }
-                else
-                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryInstrLenZero);
-            }
-        }
-    }
-
-    /* VM-entry MSR-load count and VM-entry MSR-load area address. */
-    if (pVmcs->u32EntryMsrLoadCount)
-    {
-        if (   !(pVmcs->u64AddrEntryMsrLoad.u & VMX_AUTOMSR_OFFSET_MASK)
-            && !(pVmcs->u64AddrEntryMsrLoad.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrEntryMsrLoad.u))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrEntryMsrLoad);
-    }
-
-    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_ENTRY_TO_SMM));           /* We don't support SMM yet. */
-    Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_DEACTIVATE_DUAL_MON));    /* We don't support dual-monitor treatment yet. */
-
-    NOREF(pszInstr);
-    NOREF(pszFailure);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Checks VM-exit controls fields as part of VM-entry.
- * See Intel spec. 26.2.1.2 "VM-Exit Control Fields".
- *
- * @returns VBox status code.
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   pszInstr    The VMX instruction name (for logging purposes).
- */
-IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPUCC pVCpu, const char *pszInstr)
-{
-    PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
-    const char * const pszFailure = "VMFail";
-
-    /* VM-exit controls. */
-    VMXCTLSMSR const ExitCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ExitCtls;
-    if (!(~pVmcs->u32ExitCtls & ExitCtls.n.allowed0))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ExitCtlsDisallowed0);
-
-    if (!(pVmcs->u32ExitCtls & ~ExitCtls.n.allowed1))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ExitCtlsAllowed1);
-
-    /* Save preemption timer without activating it. */
-    if (    (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
-        || !(pVmcs->u32ProcCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_SavePreemptTimer);
-
-    /* VM-exit MSR-store count and VM-exit MSR-store area address. */
-    if (pVmcs->u32ExitMsrStoreCount)
-    {
-        if (   !(pVmcs->u64AddrExitMsrStore.u & VMX_AUTOMSR_OFFSET_MASK)
-            && !(pVmcs->u64AddrExitMsrStore.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrExitMsrStore.u))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrExitMsrStore);
-    }
-
-    /* VM-exit MSR-load count and VM-exit MSR-load area address. */
-    if (pVmcs->u32ExitMsrLoadCount)
-    {
-        if (   !(pVmcs->u64AddrExitMsrLoad.u & VMX_AUTOMSR_OFFSET_MASK)
-            && !(pVmcs->u64AddrExitMsrLoad.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrExitMsrLoad.u))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrExitMsrLoad);
-    }
-
-    NOREF(pszInstr);
-    NOREF(pszFailure);
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Checks VM-execution controls fields as part of VM-entry.
- * See Intel spec. 26.2.1.1 "VM-Execution Control Fields".
+ * Checks VMCS controls fields as part of VM-entry.
  *
  * @returns VBox status code.
  * @param   pVCpu       The cross context virtual CPU structure.
@@ -6168,224 +5997,372 @@ IEM_STATIC int iemVmxVmentryCheckExitCtls(PVMCPUCC pVCpu, const char *pszInstr)
  * @remarks This may update secondary-processor based VM-execution control fields
  *          in the current VMCS if necessary.
  */
-IEM_STATIC int iemVmxVmentryCheckExecCtls(PVMCPUCC pVCpu, const char *pszInstr)
+IEM_STATIC int iemVmxVmentryCheckCtls(PVMCPUCC pVCpu, const char *pszInstr)
 {
     PCVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     const char * const pszFailure = "VMFail";
 
-    /* Pin-based VM-execution controls. */
+    /*
+     * VM-execution controls.
+     * See Intel spec. 26.2.1.1 "VM-Execution Control Fields".
+     */
     {
-        VMXCTLSMSR const PinCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.PinCtls;
-        if (!(~pVmcs->u32PinCtls & PinCtls.n.allowed0))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_PinCtlsDisallowed0);
-
-        if (!(pVmcs->u32PinCtls & ~PinCtls.n.allowed1))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_PinCtlsAllowed1);
-    }
-
-    /* Processor-based VM-execution controls. */
-    {
-        VMXCTLSMSR const ProcCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ProcCtls;
-        if (!(~pVmcs->u32ProcCtls & ProcCtls.n.allowed0))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtlsDisallowed0);
-
-        if (!(pVmcs->u32ProcCtls & ~ProcCtls.n.allowed1))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtlsAllowed1);
-    }
-
-    /* Secondary processor-based VM-execution controls. */
-    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
-    {
-        VMXCTLSMSR const ProcCtls2 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ProcCtls2;
-        if (!(~pVmcs->u32ProcCtls2 & ProcCtls2.n.allowed0))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtls2Disallowed0);
-
-        if (!(pVmcs->u32ProcCtls2 & ~ProcCtls2.n.allowed1))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtls2Allowed1);
-    }
-    else
-        Assert(!pVmcs->u32ProcCtls2);
-
-    /* CR3-target count. */
-    if (pVmcs->u32Cr3TargetCount <= VMX_V_CR3_TARGET_COUNT)
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_Cr3TargetCount);
-
-    /* I/O bitmaps physical addresses. */
-    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS)
-    {
-        RTGCPHYS const GCPhysIoBitmapA = pVmcs->u64AddrIoBitmapA.u;
-        if (   !(GCPhysIoBitmapA & X86_PAGE_4K_OFFSET_MASK)
-            && !(GCPhysIoBitmapA >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysIoBitmapA))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrIoBitmapA);
-
-        RTGCPHYS const GCPhysIoBitmapB = pVmcs->u64AddrIoBitmapB.u;
-        if (   !(GCPhysIoBitmapB & X86_PAGE_4K_OFFSET_MASK)
-            && !(GCPhysIoBitmapB >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysIoBitmapB))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrIoBitmapB);
-    }
-
-    /* MSR bitmap physical address. */
-    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
-    {
-        RTGCPHYS const GCPhysMsrBitmap = pVmcs->u64AddrMsrBitmap.u;
-        if (   !(GCPhysMsrBitmap & X86_PAGE_4K_OFFSET_MASK)
-            && !(GCPhysMsrBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysMsrBitmap))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrMsrBitmap);
-    }
-
-    /* TPR shadow related controls. */
-    if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
-    {
-        /* Virtual-APIC page physical address. */
-        RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
-        if (   !(GCPhysVirtApic & X86_PAGE_4K_OFFSET_MASK)
-            && !(GCPhysVirtApic >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVirtApicPage);
-
-        /* TPR threshold bits 31:4 MBZ without virtual-interrupt delivery. */
-        if (   !(pVmcs->u32TprThreshold & ~VMX_TPR_THRESHOLD_MASK)
-            ||  (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdRsvd);
-
-        /* The rest done XXX document */
-    }
-    else
-    {
-        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
-            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
-            && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
-        { /* likely */ }
-        else
+        /* Pin-based VM-execution controls. */
         {
-            if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtX2ApicTprShadow);
-            if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ApicRegVirt);
-            Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtIntDelivery);
-        }
-    }
-
-    /* NMI exiting and virtual-NMIs. */
-    if (    (pVmcs->u32PinCtls & VMX_PIN_CTLS_NMI_EXIT)
-        || !(pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtNmi);
-
-    /* Virtual-NMIs and NMI-window exiting. */
-    if (    (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
-        || !(pVmcs->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_NmiWindowExit);
-
-    /* Virtualize APIC accesses. */
-    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
-    {
-        /* APIC-access physical address. */
-        RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
-        if (   !(GCPhysApicAccess & X86_PAGE_4K_OFFSET_MASK)
-            && !(GCPhysApicAccess >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
-        { /* likely */ }
-        else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccess);
-
-        /*
-         * Disallow APIC-access page and virtual-APIC page from being the same address.
-         * Note! This is not an Intel requirement, but one imposed by our implementation.
-         */
-        /** @todo r=ramshankar: This is done primarily to simplify recursion scenarios while
-         *        redirecting accesses between the APIC-access page and the virtual-APIC
-         *        page. If any nested hypervisor requires this, we can implement it later. */
-        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
-        {
-            RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
-            if (GCPhysVirtApic != GCPhysApicAccess)
+            VMXCTLSMSR const PinCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.PinCtls;
+            if (!(~pVmcs->u32PinCtls & PinCtls.n.allowed0))
             { /* likely */ }
             else
-                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_PinCtlsDisallowed0);
+
+            if (!(pVmcs->u32PinCtls & ~PinCtls.n.allowed1))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_PinCtlsAllowed1);
+        }
+
+        /* Processor-based VM-execution controls. */
+        {
+            VMXCTLSMSR const ProcCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ProcCtls;
+            if (!(~pVmcs->u32ProcCtls & ProcCtls.n.allowed0))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtlsDisallowed0);
+
+            if (!(pVmcs->u32ProcCtls & ~ProcCtls.n.allowed1))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtlsAllowed1);
+        }
+
+        /* Secondary processor-based VM-execution controls. */
+        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_SECONDARY_CTLS)
+        {
+            VMXCTLSMSR const ProcCtls2 = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ProcCtls2;
+            if (!(~pVmcs->u32ProcCtls2 & ProcCtls2.n.allowed0))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtls2Disallowed0);
+
+            if (!(pVmcs->u32ProcCtls2 & ~ProcCtls2.n.allowed1))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ProcCtls2Allowed1);
+        }
+        else
+            Assert(!pVmcs->u32ProcCtls2);
+
+        /* CR3-target count. */
+        if (pVmcs->u32Cr3TargetCount <= VMX_V_CR3_TARGET_COUNT)
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_Cr3TargetCount);
+
+        /* I/O bitmaps physical addresses. */
+        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_IO_BITMAPS)
+        {
+            RTGCPHYS const GCPhysIoBitmapA = pVmcs->u64AddrIoBitmapA.u;
+            if (   !(GCPhysIoBitmapA & X86_PAGE_4K_OFFSET_MASK)
+                && !(GCPhysIoBitmapA >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysIoBitmapA))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrIoBitmapA);
+
+            RTGCPHYS const GCPhysIoBitmapB = pVmcs->u64AddrIoBitmapB.u;
+            if (   !(GCPhysIoBitmapB & X86_PAGE_4K_OFFSET_MASK)
+                && !(GCPhysIoBitmapB >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysIoBitmapB))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrIoBitmapB);
+        }
+
+        /* MSR bitmap physical address. */
+        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS)
+        {
+            RTGCPHYS const GCPhysMsrBitmap = pVmcs->u64AddrMsrBitmap.u;
+            if (   !(GCPhysMsrBitmap & X86_PAGE_4K_OFFSET_MASK)
+                && !(GCPhysMsrBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysMsrBitmap))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrMsrBitmap);
+        }
+
+        /* TPR shadow related controls. */
+        if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+        {
+            /* Virtual-APIC page physical address. */
+            RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+            if (   !(GCPhysVirtApic & X86_PAGE_4K_OFFSET_MASK)
+                && !(GCPhysVirtApic >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVirtApic))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVirtApicPage);
+
+            /* TPR threshold bits 31:4 MBZ without virtual-interrupt delivery. */
+            if (   !(pVmcs->u32TprThreshold & ~VMX_TPR_THRESHOLD_MASK)
+                ||  (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_TprThresholdRsvd);
+
+            /* The rest done XXX document */
+        }
+        else
+        {
+            if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
+                && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
+                && !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY))
+            { /* likely */ }
+            else
+            {
+                if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
+                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtX2ApicTprShadow);
+                if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_APIC_REG_VIRT)
+                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ApicRegVirt);
+                Assert(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY);
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtIntDelivery);
+            }
+        }
+
+        /* NMI exiting and virtual-NMIs. */
+        if (    (pVmcs->u32PinCtls & VMX_PIN_CTLS_NMI_EXIT)
+            || !(pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtNmi);
+
+        /* Virtual-NMIs and NMI-window exiting. */
+        if (    (pVmcs->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
+            || !(pVmcs->u32ProcCtls & VMX_PROC_CTLS_NMI_WINDOW_EXIT))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_NmiWindowExit);
+
+        /* Virtualize APIC accesses. */
+        if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
+        {
+            /* APIC-access physical address. */
+            RTGCPHYS const GCPhysApicAccess = pVmcs->u64AddrApicAccess.u;
+            if (   !(GCPhysApicAccess & X86_PAGE_4K_OFFSET_MASK)
+                && !(GCPhysApicAccess >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysApicAccess))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccess);
+
+            /*
+             * Disallow APIC-access page and virtual-APIC page from being the same address.
+             * Note! This is not an Intel requirement, but one imposed by our implementation.
+             */
+            /** @todo r=ramshankar: This is done primarily to simplify recursion scenarios while
+             *        redirecting accesses between the APIC-access page and the virtual-APIC
+             *        page. If any nested hypervisor requires this, we can implement it later. */
+            if (pVmcs->u32ProcCtls & VMX_PROC_CTLS_USE_TPR_SHADOW)
+            {
+                RTGCPHYS const GCPhysVirtApic = pVmcs->u64AddrVirtApic.u;
+                if (GCPhysVirtApic != GCPhysApicAccess)
+                { /* likely */ }
+                else
+                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrApicAccessEqVirtApic);
+            }
+        }
+
+        /* Virtualize-x2APIC mode is mutually exclusive with virtualize-APIC accesses. */
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
+            || !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtX2ApicVirtApic);
+
+        /* Virtual-interrupt delivery requires external interrupt exiting. */
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
+            ||  (pVmcs->u32PinCtls & VMX_PIN_CTLS_EXT_INT_EXIT))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtX2ApicVirtApic);
+
+        /* VPID. */
+        if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VPID)
+            || pVmcs->u16Vpid != 0)
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_Vpid);
+
+        Assert(!(pVmcs->u32PinCtls & VMX_PIN_CTLS_POSTED_INT));             /* We don't support posted interrupts yet. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));                /* We don't support EPT yet. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PML));                /* We don't support PML yet. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)); /* We don't support Unrestricted-guests yet. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMFUNC));             /* We don't support VM functions yet. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT_VE));             /* We don't support EPT-violation #VE yet. */
+        Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT));    /* We don't support Pause-loop exiting yet. */
+
+        /* VMCS shadowing. */
+        if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+        {
+            /* VMREAD-bitmap physical address. */
+            RTGCPHYS const GCPhysVmreadBitmap = pVmcs->u64AddrVmreadBitmap.u;
+            if (   !(GCPhysVmreadBitmap & X86_PAGE_4K_OFFSET_MASK)
+                && !(GCPhysVmreadBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmreadBitmap))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmreadBitmap);
+
+            /* VMWRITE-bitmap physical address. */
+            RTGCPHYS const GCPhysVmwriteBitmap = pVmcs->u64AddrVmreadBitmap.u;
+            if (   !(GCPhysVmwriteBitmap & X86_PAGE_4K_OFFSET_MASK)
+                && !(GCPhysVmwriteBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmwriteBitmap))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmwriteBitmap);
         }
     }
 
-    /* Virtualize-x2APIC mode is mutually exclusive with virtualize-APIC accesses. */
-    if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_X2APIC_MODE)
-        || !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtX2ApicVirtApic);
-
-    /* Virtual-interrupt delivery requires external interrupt exiting. */
-    if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VIRT_INT_DELIVERY)
-        ||  (pVmcs->u32PinCtls & VMX_PIN_CTLS_EXT_INT_EXIT))
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_VirtX2ApicVirtApic);
-
-    /* VPID. */
-    if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VPID)
-        || pVmcs->u16Vpid != 0)
-    { /* likely */ }
-    else
-        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_Vpid);
-
-    Assert(!(pVmcs->u32PinCtls & VMX_PIN_CTLS_POSTED_INT));             /* We don't support posted interrupts yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT));                /* We don't support EPT yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PML));                /* We don't support PML yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)); /* We don't support Unrestricted-guests yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMFUNC));             /* We don't support VM functions yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_EPT_VE));             /* We don't support EPT-violation #VE yet. */
-    Assert(!(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_PAUSE_LOOP_EXIT));    /* We don't support Pause-loop exiting yet. */
-
-    /* VMCS shadowing. */
-    if (pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+    /*
+     * VM-exit controls.
+     * See Intel spec. 26.2.1.2 "VM-Exit Control Fields".
+     */
     {
-        /* VMREAD-bitmap physical address. */
-        RTGCPHYS const GCPhysVmreadBitmap = pVmcs->u64AddrVmreadBitmap.u;
-        if (   !(GCPhysVmreadBitmap & X86_PAGE_4K_OFFSET_MASK)
-            && !(GCPhysVmreadBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmreadBitmap))
+        VMXCTLSMSR const ExitCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.ExitCtls;
+        if (!(~pVmcs->u32ExitCtls & ExitCtls.n.allowed0))
         { /* likely */ }
         else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmreadBitmap);
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ExitCtlsDisallowed0);
 
-        /* VMWRITE-bitmap physical address. */
-        RTGCPHYS const GCPhysVmwriteBitmap = pVmcs->u64AddrVmreadBitmap.u;
-        if (   !(GCPhysVmwriteBitmap & X86_PAGE_4K_OFFSET_MASK)
-            && !(GCPhysVmwriteBitmap >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
-            &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), GCPhysVmwriteBitmap))
+        if (!(pVmcs->u32ExitCtls & ~ExitCtls.n.allowed1))
         { /* likely */ }
         else
-            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrVmwriteBitmap);
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_ExitCtlsAllowed1);
+
+        /* Save preemption timer without activating it. */
+        if (    (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
+            || !(pVmcs->u32ProcCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_SavePreemptTimer);
+
+        /* VM-exit MSR-store count and VM-exit MSR-store area address. */
+        if (pVmcs->u32ExitMsrStoreCount)
+        {
+            if (   !(pVmcs->u64AddrExitMsrStore.u & VMX_AUTOMSR_OFFSET_MASK)
+                && !(pVmcs->u64AddrExitMsrStore.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrExitMsrStore.u))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrExitMsrStore);
+        }
+
+        /* VM-exit MSR-load count and VM-exit MSR-load area address. */
+        if (pVmcs->u32ExitMsrLoadCount)
+        {
+            if (   !(pVmcs->u64AddrExitMsrLoad.u & VMX_AUTOMSR_OFFSET_MASK)
+                && !(pVmcs->u64AddrExitMsrLoad.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrExitMsrLoad.u))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrExitMsrLoad);
+        }
+    }
+
+    /*
+     * VM-entry controls.
+     * See Intel spec. 26.2.1.3 "VM-Entry Control Fields".
+     */
+    {
+        VMXCTLSMSR const EntryCtls = pVCpu->cpum.GstCtx.hwvirt.vmx.Msrs.EntryCtls;
+        if (!(~pVmcs->u32EntryCtls & EntryCtls.n.allowed0))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryCtlsDisallowed0);
+
+        if (!(pVmcs->u32EntryCtls & ~EntryCtls.n.allowed1))
+        { /* likely */ }
+        else
+            IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryCtlsAllowed1);
+
+        /* Event injection. */
+        uint32_t const uIntInfo = pVmcs->u32EntryIntInfo;
+        if (RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VALID))
+        {
+            /* Type and vector. */
+            uint8_t const uType   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_TYPE);
+            uint8_t const uVector = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_VECTOR);
+            uint8_t const uRsvd   = RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_RSVD_12_30);
+            if (   !uRsvd
+                && VMXIsEntryIntInfoTypeValid(IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxMonitorTrapFlag, uType)
+                && VMXIsEntryIntInfoVectorValid(uVector, uType))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoTypeVecRsvd);
+
+            /* Exception error code. */
+            if (RT_BF_GET(uIntInfo, VMX_BF_ENTRY_INT_INFO_ERR_CODE_VALID))
+            {
+                /* Delivery possible only in Unrestricted-guest mode when CR0.PE is set. */
+                if (   !(pVmcs->u32ProcCtls2 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
+                    ||  (pVmcs->u64GuestCr0.s.Lo & X86_CR0_PE))
+                { /* likely */ }
+                else
+                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoErrCodePe);
+
+                /* Exceptions that provide an error code. */
+                if (   uType == VMX_ENTRY_INT_INFO_TYPE_HW_XCPT
+                    && (   uVector == X86_XCPT_DF
+                        || uVector == X86_XCPT_TS
+                        || uVector == X86_XCPT_NP
+                        || uVector == X86_XCPT_SS
+                        || uVector == X86_XCPT_GP
+                        || uVector == X86_XCPT_PF
+                        || uVector == X86_XCPT_AC))
+                { /* likely */ }
+                else
+                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryIntInfoErrCodeVec);
+
+                /* Exception error-code reserved bits. */
+                if (!(pVmcs->u32EntryXcptErrCode & ~VMX_ENTRY_INT_XCPT_ERR_CODE_VALID_MASK))
+                { /* likely */ }
+                else
+                    IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryXcptErrCodeRsvd);
+
+                /* Injecting a software interrupt, software exception or privileged software exception. */
+                if (   uType == VMX_ENTRY_INT_INFO_TYPE_SW_INT
+                    || uType == VMX_ENTRY_INT_INFO_TYPE_SW_XCPT
+                    || uType == VMX_ENTRY_INT_INFO_TYPE_PRIV_SW_XCPT)
+                {
+                    /* Instruction length must be in the range 0-15. */
+                    if (pVmcs->u32EntryInstrLen <= VMX_ENTRY_INSTR_LEN_MAX)
+                    { /* likely */ }
+                    else
+                        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryInstrLen);
+
+                    /* However, instruction length of 0 is allowed only when its CPU feature is present. */
+                    if (   pVmcs->u32EntryInstrLen != 0
+                        || IEM_GET_GUEST_CPU_FEATURES(pVCpu)->fVmxEntryInjectSoftInt)
+                    { /* likely */ }
+                    else
+                        IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_EntryInstrLenZero);
+                }
+            }
+        }
+
+        /* VM-entry MSR-load count and VM-entry MSR-load area address. */
+        if (pVmcs->u32EntryMsrLoadCount)
+        {
+            if (   !(pVmcs->u64AddrEntryMsrLoad.u & VMX_AUTOMSR_OFFSET_MASK)
+                && !(pVmcs->u64AddrEntryMsrLoad.u >> IEM_GET_GUEST_CPU_FEATURES(pVCpu)->cVmxMaxPhysAddrWidth)
+                &&  PGMPhysIsGCPhysNormal(pVCpu->CTX_SUFF(pVM), pVmcs->u64AddrEntryMsrLoad.u))
+            { /* likely */ }
+            else
+                IEM_VMX_VMENTRY_FAILED_RET(pVCpu, pszInstr, pszFailure, kVmxVDiag_Vmentry_AddrEntryMsrLoad);
+        }
+
+        Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_ENTRY_TO_SMM));           /* We don't support SMM yet. */
+        Assert(!(pVmcs->u32EntryCtls & VMX_ENTRY_CTLS_DEACTIVATE_DUAL_MON));    /* We don't support dual-monitor treatment yet. */
     }
 
     NOREF(pszInstr);
@@ -7414,134 +7391,126 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmlaunchVmresume(PVMCPUCC pVCpu, uint8_t cbInstr, 
     Assert(pVmcs);
     Assert(IEM_VMX_HAS_CURRENT_VMCS(pVCpu));
 
-    int rc = iemVmxVmentryCheckExecCtls(pVCpu, pszInstr);
+    int rc = iemVmxVmentryCheckCtls(pVCpu, pszInstr);
     if (RT_SUCCESS(rc))
     {
-        rc = iemVmxVmentryCheckExitCtls(pVCpu, pszInstr);
+        rc = iemVmxVmentryCheckHostState(pVCpu, pszInstr);
         if (RT_SUCCESS(rc))
         {
-            rc = iemVmxVmentryCheckEntryCtls(pVCpu, pszInstr);
+            /* Initialize read-only VMCS fields before VM-entry since we don't update all of them for every VM-exit. */
+            iemVmxVmentryInitReadOnlyFields(pVCpu);
+
+            /*
+             * Blocking of NMIs need to be restored if VM-entry fails due to invalid-guest state.
+             * So we save the VMCPU_FF_BLOCK_NMI force-flag here so we can restore it on
+             * VM-exit when required.
+             * See Intel spec. 26.7 "VM-entry Failures During or After Loading Guest State"
+             */
+            iemVmxVmentrySaveNmiBlockingFF(pVCpu);
+
+            rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
             if (RT_SUCCESS(rc))
             {
-                rc = iemVmxVmentryCheckHostState(pVCpu, pszInstr);
+                rc = iemVmxVmentryLoadGuestState(pVCpu, pszInstr);
                 if (RT_SUCCESS(rc))
                 {
-                    /* Initialize read-only VMCS fields before VM-entry since we don't update all of them for every VM-exit. */
-                    iemVmxVmentryInitReadOnlyFields(pVCpu);
-
-                    /*
-                     * Blocking of NMIs need to be restored if VM-entry fails due to invalid-guest state.
-                     * So we save the VMCPU_FF_BLOCK_NMI force-flag here so we can restore it on
-                     * VM-exit when required.
-                     * See Intel spec. 26.7 "VM-entry Failures During or After Loading Guest State"
-                     */
-                    iemVmxVmentrySaveNmiBlockingFF(pVCpu);
-
-                    rc = iemVmxVmentryCheckGuestState(pVCpu, pszInstr);
+                    rc = iemVmxVmentryLoadGuestAutoMsrs(pVCpu, pszInstr);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = iemVmxVmentryLoadGuestState(pVCpu, pszInstr);
-                        if (RT_SUCCESS(rc))
+                        Assert(rc != VINF_CPUM_R3_MSR_WRITE);
+
+                        /* VMLAUNCH instruction must update the VMCS launch state. */
+                        if (uInstrId == VMXINSTRID_VMLAUNCH)
+                            pVmcs->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;
+
+                        /* Perform the VMX transition (PGM updates). */
+                        VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
+                        if (rcStrict == VINF_SUCCESS)
+                        { /* likely */ }
+                        else if (RT_SUCCESS(rcStrict))
                         {
-                            rc = iemVmxVmentryLoadGuestAutoMsrs(pVCpu, pszInstr);
-                            if (RT_SUCCESS(rc))
-                            {
-                                Assert(rc != VINF_CPUM_R3_MSR_WRITE);
+                            Log3(("%s: iemVmxWorldSwitch returns %Rrc -> Setting passup status\n", pszInstr,
+                                  VBOXSTRICTRC_VAL(rcStrict)));
+                            rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
+                        }
+                        else
+                        {
+                            Log3(("%s: iemVmxWorldSwitch failed! rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
+                            return rcStrict;
+                        }
 
-                                /* VMLAUNCH instruction must update the VMCS launch state. */
-                                if (uInstrId == VMXINSTRID_VMLAUNCH)
-                                    pVmcs->fVmcsState = VMX_V_VMCS_LAUNCH_STATE_LAUNCHED;
+                        /* Paranoia. */
+                        Assert(rcStrict == VINF_SUCCESS);
 
-                                /* Perform the VMX transition (PGM updates). */
-                                VBOXSTRICTRC rcStrict = iemVmxWorldSwitch(pVCpu);
-                                if (rcStrict == VINF_SUCCESS)
-                                { /* likely */ }
-                                else if (RT_SUCCESS(rcStrict))
-                                {
-                                    Log3(("%s: iemVmxWorldSwitch returns %Rrc -> Setting passup status\n", pszInstr,
-                                          VBOXSTRICTRC_VAL(rcStrict)));
-                                    rcStrict = iemSetPassUpStatus(pVCpu, rcStrict);
-                                }
-                                else
-                                {
-                                    Log3(("%s: iemVmxWorldSwitch failed! rc=%Rrc\n", pszInstr, VBOXSTRICTRC_VAL(rcStrict)));
-                                    return rcStrict;
-                                }
+                        /* We've now entered nested-guest execution. */
+                        pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
 
-                                /* Paranoia. */
-                                Assert(rcStrict == VINF_SUCCESS);
+                        /*
+                         * The priority of potential VM-exits during VM-entry is important.
+                         * The priorities of VM-exits and events are listed from highest
+                         * to lowest as follows:
+                         *
+                         * 1.  Event injection.
+                         * 2.  Trap on task-switch (T flag set in TSS).
+                         * 3.  TPR below threshold / APIC-write.
+                         * 4.  SMI, INIT.
+                         * 5.  MTF exit.
+                         * 6.  Debug-trap exceptions (EFLAGS.TF), pending debug exceptions.
+                         * 7.  VMX-preemption timer.
+                         * 9.  NMI-window exit.
+                         * 10. NMI injection.
+                         * 11. Interrupt-window exit.
+                         * 12. Virtual-interrupt injection.
+                         * 13. Interrupt injection.
+                         * 14. Process next instruction (fetch, decode, execute).
+                         */
 
-                                /* We've now entered nested-guest execution. */
-                                pVCpu->cpum.GstCtx.hwvirt.vmx.fInVmxNonRootMode = true;
+                        /* Setup VMX-preemption timer. */
+                        iemVmxVmentrySetupPreemptTimer(pVCpu, pszInstr);
 
-                                /*
-                                 * The priority of potential VM-exits during VM-entry is important.
-                                 * The priorities of VM-exits and events are listed from highest
-                                 * to lowest as follows:
-                                 *
-                                 * 1.  Event injection.
-                                 * 2.  Trap on task-switch (T flag set in TSS).
-                                 * 3.  TPR below threshold / APIC-write.
-                                 * 4.  SMI, INIT.
-                                 * 5.  MTF exit.
-                                 * 6.  Debug-trap exceptions (EFLAGS.TF), pending debug exceptions.
-                                 * 7.  VMX-preemption timer.
-                                 * 9.  NMI-window exit.
-                                 * 10. NMI injection.
-                                 * 11. Interrupt-window exit.
-                                 * 12. Virtual-interrupt injection.
-                                 * 13. Interrupt injection.
-                                 * 14. Process next instruction (fetch, decode, execute).
-                                 */
+                        /* Setup monitor-trap flag. */
+                        iemVmxVmentrySetupMtf(pVCpu, pszInstr);
 
-                                /* Setup VMX-preemption timer. */
-                                iemVmxVmentrySetupPreemptTimer(pVCpu, pszInstr);
+                        /* Setup NMI-window exiting. */
+                        iemVmxVmentrySetupNmiWindow(pVCpu, pszInstr);
 
-                                /* Setup monitor-trap flag. */
-                                iemVmxVmentrySetupMtf(pVCpu, pszInstr);
+                        /* Setup interrupt-window exiting. */
+                        iemVmxVmentrySetupIntWindow(pVCpu, pszInstr);
 
-                                /* Setup NMI-window exiting. */
-                                iemVmxVmentrySetupNmiWindow(pVCpu, pszInstr);
-
-                                /* Setup interrupt-window exiting. */
-                                iemVmxVmentrySetupIntWindow(pVCpu, pszInstr);
-
-                                /*
-                                 * Inject any event that the nested hypervisor wants to inject.
-                                 * Note! We cannot immediately perform the event injection here as we may have
-                                 *       pending PGM operations to perform due to switching page tables and/or
-                                 *       mode.
-                                 */
-                                iemVmxVmentryInjectEvent(pVCpu, pszInstr);
+                        /*
+                         * Inject any event that the nested hypervisor wants to inject.
+                         * Note! We cannot immediately perform the event injection here as we may have
+                         *       pending PGM operations to perform due to switching page tables and/or
+                         *       mode.
+                         */
+                        iemVmxVmentryInjectEvent(pVCpu, pszInstr);
 
 # if defined(VBOX_WITH_NESTED_HWVIRT_ONLY_IN_IEM) && defined(IN_RING3)
-                                /* Reschedule to IEM-only execution of the nested-guest. */
-                                Log(("%s: Enabling IEM-only EM execution policy!\n", pszInstr));
-                                int rcSched = EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
-                                if (rcSched != VINF_SUCCESS)
-                                    iemSetPassUpStatus(pVCpu, rcSched);
+                        /* Reschedule to IEM-only execution of the nested-guest. */
+                        Log(("%s: Enabling IEM-only EM execution policy!\n", pszInstr));
+                        int rcSched = EMR3SetExecutionPolicy(pVCpu->CTX_SUFF(pVM)->pUVM, EMEXECPOLICY_IEM_ALL, true);
+                        if (rcSched != VINF_SUCCESS)
+                            iemSetPassUpStatus(pVCpu, rcSched);
 # endif
 
-                                /* Finally, done. */
-                                Log3(("%s: cs:rip=%#04x:%#RX64 cr0=%#RX64 (%#RX64) cr4=%#RX64 (%#RX64) efer=%#RX64\n",
-                                      pszInstr, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
-                                      pVmcs->u64Cr0ReadShadow.u, pVCpu->cpum.GstCtx.cr4, pVmcs->u64Cr4ReadShadow.u,
-                                      pVCpu->cpum.GstCtx.msrEFER));
-                                return VINF_SUCCESS;
-                            }
-                            return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED,
-                                                pVmcs->u64RoExitQual.u);
-                        }
+                        /* Finally, done. */
+                        Log3(("%s: cs:rip=%#04x:%#RX64 cr0=%#RX64 (%#RX64) cr4=%#RX64 (%#RX64) efer=%#RX64\n",
+                              pszInstr, pVCpu->cpum.GstCtx.cs.Sel, pVCpu->cpum.GstCtx.rip, pVCpu->cpum.GstCtx.cr0,
+                              pVmcs->u64Cr0ReadShadow.u, pVCpu->cpum.GstCtx.cr4, pVmcs->u64Cr4ReadShadow.u,
+                              pVCpu->cpum.GstCtx.msrEFER));
+                        return VINF_SUCCESS;
                     }
-                    return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_INVALID_GUEST_STATE | VMX_EXIT_REASON_ENTRY_FAILED,
+                    return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_MSR_LOAD | VMX_EXIT_REASON_ENTRY_FAILED,
                                         pVmcs->u64RoExitQual.u);
                 }
-
-                iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_HOST_STATE);
-                iemRegAddToRipAndClearRF(pVCpu, cbInstr);
-                return VINF_SUCCESS;
             }
+            return iemVmxVmexit(pVCpu, VMX_EXIT_ERR_INVALID_GUEST_STATE | VMX_EXIT_REASON_ENTRY_FAILED,
+                                pVmcs->u64RoExitQual.u);
         }
+
+        iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_HOST_STATE);
+        iemRegAddToRipAndClearRF(pVCpu, cbInstr);
+        return VINF_SUCCESS;
     }
 
     iemVmxVmFail(pVCpu, VMXINSTRERR_VMENTRY_INVALID_CTLS);
