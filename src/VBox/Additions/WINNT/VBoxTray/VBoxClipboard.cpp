@@ -638,6 +638,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             break;
         }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
         case SHCL_WIN_WM_TRANSFER_START:
         {
             LogFunc(("SHCL_WIN_WM_TRANSFER_START\n"));
@@ -662,7 +663,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
             break;
         }
-
+#endif
         case WM_DESTROY:
         {
             LogFunc(("WM_DESTROY\n"));
