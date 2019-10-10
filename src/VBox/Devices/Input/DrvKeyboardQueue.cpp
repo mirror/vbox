@@ -27,6 +27,12 @@
 #include "VBoxDD.h"
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** Keyboard usage page bits to be OR-ed into the code. */
+#define HID_PG_KB_BITS  0x070000
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -155,13 +161,13 @@ static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uin
             state = SS_EXT1;
         } else {
             usage = aScancode2Hid[scanCode & 0x7F];
-            *pUsage = usage | keyUp;
+            *pUsage = usage | keyUp | HID_PG_KB_BITS;
             /* Remain in SS_IDLE state. */
         }
         break;
     case SS_EXT:
         usage = aExtScan2Hid[scanCode & 0x7F];
-        *pUsage = usage | keyUp;
+        *pUsage = usage | keyUp | HID_PG_KB_BITS;
         state = SS_IDLE;
         break;
     case SS_EXT1:
@@ -169,7 +175,7 @@ static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uin
          * in the SS_EXT1 state until 45 or C5 is received.
          */
         if ((scanCode & 0x7F) == 0x45) {
-            *pUsage = 0x48;
+            *pUsage = 0x48 | HID_PG_KB_BITS;
             if (scanCode == 0xC5)
                 *pUsage |= keyUp;
             state = SS_IDLE;

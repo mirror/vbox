@@ -97,6 +97,10 @@
 #define VBOX_USB_MAX_USAGE_CODE     0xE7
 /** The size of an array needed to store all USB usage codes */
 #define VBOX_USB_USAGE_ARRAY_SIZE   (VBOX_USB_MAX_USAGE_CODE + 1)
+/** USB HID Keyboard Usage Page. */
+#define USB_HID_KB_PAGE             7
+/** USB HID Consumer Control Usage Page. */
+#define USB_HID_CC_PAGE             12
 /** @} */
 
 /** @name Modifier key states. Sorted in USB HID code order.
@@ -157,7 +161,7 @@ DEF_PS2Q_TYPE(GeneriQ, 1);
 typedef struct PS2K
 {
     /** Pointer to parent device (keyboard controller). */
-    R3PTRTYPE(void *)     pParent;
+    R3PTRTYPE(void *)   pParent;
     /** Set if keyboard is enabled ('scans' for input). */
     bool                fScanning;
     /** Set NumLock is on. */
@@ -173,7 +177,7 @@ typedef struct PS2K
     /** Selected typematic delay/rate. */
     uint8_t             u8TypematicCfg;
     /** Usage code of current typematic key, if any. */
-    uint8_t             u8TypematicKey;
+    uint32_t            u32TypematicKey;
     /** Current typematic repeat state. */
     tmatic_state_t      enmTypematicState;
     /** Buffer holding scan codes to be sent to the host. */
@@ -276,7 +280,7 @@ typedef struct {
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 #ifdef IN_RING3
-/* USB to PS/2 conversion table for regular keys. */
+/* USB to PS/2 conversion table for regular keys (HID Usage Page 7). */
 static const   key_def   aPS2Keys[] = {
     /* 00 */ {NONE, NONE, NONE, KF_NB, T_U }, /* Key N/A: No Event */
     /* 01 */ {0xFF, 0x00, 0x00, KF_NB, T_U }, /* Key N/A: Overrun Error */
@@ -458,7 +462,7 @@ static const   key_def   aPS2Keys[] = {
  * keyboard state.
  */
 
-/* USB to PS/2 conversion table for modifier keys. */
+/* USB to PS/2 conversion table for modifier keys (HID Usage Page 7). */
 static const   key_def   aPS2ModKeys[] = {
     /* E0 */ {0x1D, 0x14, 0x11,     0, T_B }, /* Key  58: Left Control */
     /* E1 */ {0x2A, 0x12, 0x12,     0, T_B }, /* Key  44: Left Shift */
@@ -468,6 +472,42 @@ static const   key_def   aPS2ModKeys[] = {
     /* E5 */ {0x36, 0x59, 0x59,     0, T_B }, /* Key  57: Right Shift */
     /* E6 */ {0x38, 0x11, 0x39, KF_E0, T_M }, /* Key  62: Right Alt */
     /* E7 */ {0x5C, 0x27, UNKN, KF_E0, T_U }, /* Key 128: Right GUI */
+};
+
+/* Extended key definition for sparse mapping. */
+typedef struct {
+    uint16_t    usageId;
+    key_def     kdef;
+} ext_key_def;
+
+
+/* USB to PS/2 conversion table for consumer control keys (HID Usage Page 12). */
+/* This usage page is very sparse so we'll just search through it. */
+static const   ext_key_def  aPS2CCKeys[] = {
+    0x00B5, {0x19, 0x4D, UNKN, KF_E0, T_U }, /* Scan Next Track */
+    0x00B6, {0x10, 0x15, UNKN, KF_E0, T_U }, /* Scan Previous Track */
+    0x00B7, {0x24, 0x3B, UNKN, KF_E0, T_U }, /* Stop */
+    0x00CD, {0x22, 0x34, UNKN, KF_E0, T_U }, /* Play/Pause */
+    0x00E2, {0x20, 0x23, UNKN, KF_E0, T_U }, /* Mute */
+    0x00E5, {UNAS, UNAS, UNAS,     0, T_U }, /* Bass Boost */
+    0x00E7, {UNAS, UNAS, UNAS,     0, T_U }, /* Loudness */
+    0x00E9, {0x30, 0x32, UNKN, KF_E0, T_U }, /* Volume Up */
+    0x00EA, {0x2E, 0x21, UNKN, KF_E0, T_U }, /* Volume Down */
+    0x0152, {UNAS, UNAS, UNAS,     0, T_U }, /* Bass Up */
+    0x0153, {UNAS, UNAS, UNAS,     0, T_U }, /* Bass Down */
+    0x0154, {UNAS, UNAS, UNAS,     0, T_U }, /* Treble Up */
+    0x0155, {UNAS, UNAS, UNAS,     0, T_U }, /* Treble Down */
+    0x0183, {0x6D, 0x50, UNKN, KF_E0, T_U }, /* Media Select  */
+    0x018A, {0x6C, 0x48, UNKN, KF_E0, T_U }, /* Mail */
+    0x0192, {0x21, 0x2B, UNKN, KF_E0, T_U }, /* Calculator */
+    0x0194, {0x6B, 0x40, UNKN, KF_E0, T_U }, /* My Computer */
+    0x0221, {0x65, 0x10, UNKN, KF_E0, T_U }, /* WWW Search */
+    0x0223, {0x32, 0x3A, UNKN, KF_E0, T_U }, /* WWW Home */
+    0x0224, {0x6A, 0x38, UNKN, KF_E0, T_U }, /* WWW Back */
+    0x0225, {0x69, 0x30, UNKN, KF_E0, T_U }, /* WWW Forward */
+    0x0226, {0x68, 0x28, UNKN, KF_E0, T_U }, /* WWW Stop */
+    0x0227, {0x67, 0x20, UNKN, KF_E0, T_U }, /* WWW Refresh */
+    0x022A, {0x66, 0x18, UNKN, KF_E0, T_U }, /* WWW Favorites */
 };
 
 #endif /* IN_RING3 */
@@ -660,11 +700,11 @@ static int ps2kRemoveQueue(GeneriQ *pQ, uint8_t *pVal)
 /* Clears the currently active typematic key, if any. */
 static void ps2kStopTypematicRepeat(PPS2K pThis)
 {
-    if (pThis->u8TypematicKey)
+    if (pThis->u32TypematicKey)
     {
-        LogFunc(("Typematic key %02X\n", pThis->u8TypematicKey));
+        LogFunc(("Typematic key %08X\n", pThis->u32TypematicKey));
         pThis->enmTypematicState = KBD_TMS_IDLE;
-        pThis->u8TypematicKey = 0;
+        pThis->u32TypematicKey = 0;
         TMTimerStop(pThis->CTX_SUFF(pKbdTypematicTimer));
     }
 }
@@ -865,18 +905,48 @@ int PS2KByteFromKbd(PPS2K pThis, uint8_t *pb)
 
 #ifdef IN_RING3
 
-static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
+static int ps2kProcessKeyEvent(PPS2K pThis, uint32_t u32HidCode, bool fKeyDown)
 {
     key_def const   *pKeyDef;
     uint8_t         abCodes[16];
     char            *pCodes;
     size_t          cbLeft;
     uint8_t         abScan[2];
+    uint8_t         u8HidPage;
+    uint8_t         u8HidCode;
+    uint16_t        u16HidUsage;
 
-    LogFlowFunc(("key %s: 0x%02x (set %d)\n", fKeyDown ? "down" : "up", u8HidCode, pThis->u8ScanSet));
+    u8HidPage   = RT_LOBYTE(RT_HIWORD(u32HidCode));
+    u16HidUsage = RT_LOWORD(u32HidCode);
+    /* For the keyboard usage page (7) we use a 8-bit code. For other pages we use the full 16-bit ID. */
+    u8HidCode   = (u8HidPage == USB_HID_KB_PAGE) ? RT_LOBYTE(u32HidCode) : 0;
+
+    LogFlowFunc(("key %s: page 0x%02x ID 0x%04x (set %d)\n", fKeyDown ? "down" : "up", u8HidPage, u16HidUsage, pThis->u8ScanSet));
 
     /* Find the key definition in somewhat sparse storage. */
-    pKeyDef = u8HidCode >= HID_MODIFIER_FIRST ? &aPS2ModKeys[u8HidCode - HID_MODIFIER_FIRST] : &aPS2Keys[u8HidCode];
+    if (u8HidPage == USB_HID_KB_PAGE)
+        /* For the standard keyboard usage page, thre are just two arrays. */
+        pKeyDef = u8HidCode >= HID_MODIFIER_FIRST ? &aPS2ModKeys[u8HidCode - HID_MODIFIER_FIRST] : &aPS2Keys[u8HidCode];
+    else if (u8HidPage == USB_HID_CC_PAGE)
+    {
+        /* For the consumer control usage page, we need to search. */
+        int     i;
+
+        pKeyDef = &aPS2Keys[0]; /* Dummy no-event key. */
+        for (i = 0; i < RT_ELEMENTS(aPS2CCKeys); ++i)
+        {
+            if (aPS2CCKeys[i].usageId == u16HidUsage)
+            {
+                pKeyDef = &aPS2CCKeys[i].kdef;
+                break;
+            }
+        }
+    }
+    else
+    {
+        LogFlow(("Unsupported HID usage page, ignoring key.\n"));
+        return VINF_SUCCESS;
+    }
 
     /* Some keys are not processed at all; early return. */
     if (pKeyDef->makeS1 == NONE)
@@ -892,6 +962,7 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
     {
         unsigned    mod_bit = 1 << (u8HidCode - HID_MODIFIER_FIRST);
 
+        Assert((u8HidPage == USB_HID_KB_PAGE));
         Assert((u8HidCode <= HID_MODIFIER_LAST));
         if (fKeyDown)
             pThis->u8Modifiers |= mod_bit;
@@ -1059,31 +1130,34 @@ static int ps2kProcessKeyEvent(PPS2K pThis, uint8_t u8HidCode, bool fKeyDown)
         ps2kInsertStrQueue((GeneriQ *)&pThis->keyQ, abCodes, 0);
     }
 
-    /* Set up or cancel typematic key repeat. */
-    if (fKeyDown)
+    /* Set up or cancel typematic key repeat. For keyboard usage page only. */
+    if (u8HidPage == USB_HID_KB_PAGE)
     {
-        if (pThis->u8TypematicKey != u8HidCode)
+        if (fKeyDown)
         {
-            pThis->enmTypematicState = KBD_TMS_DELAY;
-            pThis->u8TypematicKey    = u8HidCode;
-            TMTimerSetMillies(pThis->CTX_SUFF(pKbdTypematicTimer), pThis->uTypematicDelay);
-            Log(("Typematic delay %u ms, key %02X\n", pThis->uTypematicDelay, u8HidCode));
+            if (pThis->u32TypematicKey != u32HidCode)
+            {
+                pThis->enmTypematicState = KBD_TMS_DELAY;
+                pThis->u32TypematicKey   = u32HidCode;
+                TMTimerSetMillies(pThis->CTX_SUFF(pKbdTypematicTimer), pThis->uTypematicDelay);
+                Log(("Typematic delay %u ms, key %08X\n", pThis->uTypematicDelay, u32HidCode));
+            }
         }
-    }
-    else
-    {
-        /* "Typematic operation stops when the last key pressed is released, even
-         * if other keys are still held down." (IBM PS/2 Tech Ref). The last key pressed
-         * is the one that's being repeated.
-         */
-        if (pThis->u8TypematicKey == u8HidCode)
+        else
         {
-            /* This disables the typematic repeat. */
-            pThis->u8TypematicKey    = 0;
-            pThis->enmTypematicState = KBD_TMS_IDLE;
-            /* For good measure, we cancel the timer, too. */
-            TMTimerStop(pThis->CTX_SUFF(pKbdTypematicTimer));
-            Log(("Typematic action cleared for key %02X\n", u8HidCode));
+            /* "Typematic operation stops when the last key pressed is released, even
+             * if other keys are still held down." (IBM PS/2 Tech Ref). The last key pressed
+             * is the one that's being repeated.
+             */
+            if (pThis->u32TypematicKey == u32HidCode)
+            {
+                /* This disables the typematic repeat. */
+                pThis->u32TypematicKey   = 0;
+                pThis->enmTypematicState = KBD_TMS_IDLE;
+                /* For good measure, we cancel the timer, too. */
+                TMTimerStop(pThis->CTX_SUFF(pKbdTypematicTimer));
+                Log(("Typematic action cleared for key %08X\n", u32HidCode));
+            }
         }
     }
 
@@ -1133,19 +1207,19 @@ static DECLCALLBACK(void) ps2kTypematicTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
 {
     RT_NOREF2(pDevIns, pTimer);
     PPS2K pThis = (PS2K *)pvUser;
-    LogFlowFunc(("Typematic state=%d, key %02X\n", pThis->enmTypematicState, pThis->u8TypematicKey));
+    LogFlowFunc(("Typematic state=%d, key %08X\n", pThis->enmTypematicState, pThis->u32TypematicKey));
 
     /* If the current typematic key is zero, the repeat was canceled just when
      * the timer was about to run. In that case, do nothing.
      */
-    if (pThis->u8TypematicKey)
+    if (pThis->u32TypematicKey)
     {
         if (pThis->enmTypematicState == KBD_TMS_DELAY)
             pThis->enmTypematicState = KBD_TMS_REPEAT;
 
         if (pThis->enmTypematicState == KBD_TMS_REPEAT)
         {
-            ps2kProcessKeyEvent(pThis, pThis->u8TypematicKey, true /* Key down */ );
+            ps2kProcessKeyEvent(pThis, pThis->u32TypematicKey, true /* Key down */ );
             TMTimerSetMillies(pThis->CTX_SUFF(pKbdTypematicTimer), pThis->uTypematicRepeat);
         }
     }
@@ -1182,7 +1256,7 @@ static void ps2kReleaseKeys(PPS2K pThis)
     for (unsigned uKey = 0; uKey < sizeof(pThis->abDepressedKeys); ++uKey)
         if (pThis->abDepressedKeys[uKey])
         {
-            ps2kProcessKeyEvent(pThis, uKey, false /* key up */);
+            ps2kProcessKeyEvent(pThis, RT_MAKE_U32(USB_HID_KB_PAGE, uKey), false /* key up */);
             pThis->abDepressedKeys[uKey] = 0;
         }
     LogFlowFunc(("Done releasing keys\n"));
@@ -1213,7 +1287,7 @@ static DECLCALLBACK(void) ps2kInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, 
     pHlp->pfnPrintf(pHlp, "Input queue  : %d items (%d max)\n",
                     pThis->keyQ.cUsed, pThis->keyQ.cSize);
     if (pThis->enmTypematicState != KBD_TMS_IDLE)
-        pHlp->pfnPrintf(pHlp, "Active typematic key %02X (%s)\n", pThis->u8TypematicKey,
+        pHlp->pfnPrintf(pHlp, "Active typematic key %08X (%s)\n", pThis->u32TypematicKey,
                         pThis->enmTypematicState == KBD_TMS_DELAY ? "delay" : "repeat");
 }
 
@@ -1243,30 +1317,37 @@ static DECLCALLBACK(void *) ps2kQueryInterface(PPDMIBASE pInterface, const char 
  */
 static int ps2kPutEventWorker(PPS2K pThis, uint32_t u32Usage)
 {
-    uint8_t         u8HidCode;
+    uint32_t        u32HidCode;
+    uint8_t         u8KeyCode;
+    uint8_t         u8HidPage;
     bool            fKeyDown;
     bool            fHaveEvent = true;
     int             rc = VINF_SUCCESS;
 
-    /* Extract the usage code and ensure it's valid. */
-    fKeyDown = !(u32Usage & 0x80000000);
-    u8HidCode = u32Usage & 0xFF;
-    AssertReturn(u8HidCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+    /* Extract the usage page and ID and ensure it's valid. */
+    fKeyDown   = !(u32Usage & 0x80000000);
+    u32HidCode = u32Usage & 0xFFFFFF;
+    u8HidPage  = RT_LOBYTE(RT_HIWORD(u32Usage));
+    u8KeyCode  = RT_LOBYTE(u32Usage);
+    if (u8HidPage == USB_HID_KB_PAGE)
+        AssertReturn(u8KeyCode <= VBOX_USB_MAX_USAGE_CODE, VERR_INTERNAL_ERROR);
+    else
+        AssertReturn(u8HidPage == USB_HID_CC_PAGE, VERR_INTERNAL_ERROR);
 
     if (fKeyDown)
     {
         /* Due to host key repeat, we can get key events for keys which are
          * already depressed. We need to ignore those. */
-        if (pThis->abDepressedKeys[u8HidCode])
+        if (pThis->abDepressedKeys[u8KeyCode])
             fHaveEvent = false;
-        pThis->abDepressedKeys[u8HidCode] = 1;
+        pThis->abDepressedKeys[u8KeyCode] = 1;
     }
     else
     {
         /* NB: We allow key release events for keys which aren't depressed.
          * That is unlikely to happen and should not cause trouble.
          */
-        pThis->abDepressedKeys[u8HidCode] = 0;
+        pThis->abDepressedKeys[u8KeyCode] = 0;
     }
 
     /* Unless this is a new key press/release, don't even bother. */
@@ -1275,7 +1356,7 @@ static int ps2kPutEventWorker(PPS2K pThis, uint32_t u32Usage)
         rc = PDMCritSectEnter(pThis->pCritSectR3, VERR_SEM_BUSY);
         AssertReleaseRC(rc);
 
-        rc = ps2kProcessKeyEvent(pThis, u8HidCode, fKeyDown);
+        rc = ps2kProcessKeyEvent(pThis, u32HidCode, fKeyDown);
 
         PDMCritSectLeave(pThis->pCritSectR3);
     }
@@ -1370,7 +1451,7 @@ void PS2KSaveState(PPS2K pThis, PSSMHANDLE pSSM)
     SSMR3PutU8(pSSM, pThis->u8CurrCmd);
     SSMR3PutU8(pSSM, pThis->u8LEDs);
     SSMR3PutU8(pSSM, pThis->u8TypematicCfg);
-    SSMR3PutU8(pSSM, pThis->u8TypematicKey);
+    SSMR3PutU8(pSSM, (uint8_t)pThis->u32TypematicKey);
     SSMR3PutU8(pSSM, pThis->u8Modifiers);
     SSMR3PutU8(pSSM, pThis->u8ScanSet);
     SSMR3PutU8(pSSM, pThis->enmTypematicState);
@@ -1418,7 +1499,9 @@ int PS2KLoadState(PPS2K pThis, PSSMHANDLE pSSM, uint32_t uVersion)
     SSMR3GetU8(pSSM, &pThis->u8CurrCmd);
     SSMR3GetU8(pSSM, &pThis->u8LEDs);
     SSMR3GetU8(pSSM, &pThis->u8TypematicCfg);
-    SSMR3GetU8(pSSM, &pThis->u8TypematicKey);
+    SSMR3GetU8(pSSM, &u8);
+    /* Reconstruct the 32-bit code from the 8-bit value in saved state. */
+    pThis->u32TypematicKey = u8 ? RT_MAKE_U32(USB_HID_KB_PAGE, u8) : 0;
     SSMR3GetU8(pSSM, &pThis->u8Modifiers);
     SSMR3GetU8(pSSM, &pThis->u8ScanSet);
     SSMR3GetU8(pSSM, &u8);
@@ -1488,7 +1571,7 @@ void PS2KReset(PPS2K pThis)
     pThis->u8ScanSet         = 2;
     pThis->u8CurrCmd         = 0;
     pThis->u8Modifiers       = 0;
-    pThis->u8TypematicKey    = 0;
+    pThis->u32TypematicKey   = 0;
     pThis->enmTypematicState = KBD_TMS_IDLE;
 
     /* Clear queues and any pressed keys. */
