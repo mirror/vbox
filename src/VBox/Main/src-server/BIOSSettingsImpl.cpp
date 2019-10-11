@@ -509,7 +509,8 @@ HRESULT BIOSSettings::getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorag
         strTmp = m->bd->strNVRAMPath;
     }
 
-    m->pMachine->i_calculateFullPath(strTmp, aNonVolatileStorageFile);
+    if (strTmp.isNotEmpty())
+        m->pMachine->i_calculateFullPath(strTmp, aNonVolatileStorageFile);
 
     return S_OK;
 }
