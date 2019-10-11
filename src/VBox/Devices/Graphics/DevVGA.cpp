@@ -2669,7 +2669,7 @@ static int vga_draw_blank(PVGASTATE pThis, bool full_update, bool fFailOnResize,
 #endif
 
 static int vga_update_display(PVGASTATE pThis, bool fUpdateAll, bool fFailOnResize, bool reset_dirty,
-        PDMIDISPLAYCONNECTOR *pDrv, int32_t *pcur_graphic_mode)
+                              PDMIDISPLAYCONNECTOR *pDrv, int32_t *pcur_graphic_mode)
 {
     int rc = VINF_SUCCESS;
     int graphic_mode;
@@ -4424,12 +4424,11 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
             uint32_t cRows       = iScrBegin + cScrRows;
             uint32_t cCols       = cbLine / 8;
 
-            if (fAll) {
+            if (fAll)
                 vgaInfoTextWorker(pThis, pHlp, offStart - iScrBegin * cbLine, cbLine,
                                   cCols, cRows, iScrBegin, iScrBegin + cScrRows);
-            } else {
+            else
                 vgaInfoTextWorker(pThis, pHlp, offStart, cbLine, cCols, cScrRows, 0, cScrRows);
-            }
         }
         else
             pHlp->pfnPrintf(pHlp, "VGA memory not available!\n");
@@ -4758,8 +4757,8 @@ static DECLCALLBACK(int) vgaPortUpdateDisplay(PPDMIDISPLAYPORT pInterface)
         pThis->fRemappedVGA = false;
     }
 
-    rc = vga_update_display(pThis, false, false, true,
-            pThis->pDrv, &pThis->graphic_mode);
+    rc = vga_update_display(pThis, false /*fUpdateAll*/, false /*fFailOnResize*/, true /*reset_dirty*/,
+                            pThis->pDrv, &pThis->graphic_mode);
     PDMCritSectLeave(&pThis->CritSect);
     return rc;
 }
@@ -4791,8 +4790,7 @@ static int updateDisplayAll(PVGASTATE pThis, bool fFailOnResize)
 
     pThis->graphic_mode = -1; /* force full update */
 
-    return vga_update_display(pThis, true, fFailOnResize, true,
-            pThis->pDrv, &pThis->graphic_mode);
+    return vga_update_display(pThis, true /*fUpdateAll*/, fFailOnResize, true /*reset_dirty*/, pThis->pDrv, &pThis->graphic_mode);
 }
 
 
@@ -4948,7 +4946,8 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
              * screen in the external buffer.
              * If there is a pending resize, the function will fail.
              */
-            rc = vga_update_display(pThis, false, true, false, &Connector, &cur_graphic_mode);
+            rc = vga_update_display(pThis, false /*fUpdateAll*/, true /*fFailOnResize*/, false /*reset_dirty*/,
+                                    &Connector, &cur_graphic_mode);
 
             pThis->fRenderVRAM = fSavedRenderVRAM;
 
