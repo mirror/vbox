@@ -1596,7 +1596,10 @@ void UIMachineLogic::sltShowSoftKeyboard()
     /* Create the soft keyboard only once: */
     if (m_pSoftKeyboardDialog)
     {
+        m_pSoftKeyboardDialog->show();
         m_pSoftKeyboardDialog->raise();
+        m_pSoftKeyboardDialog->setWindowState(m_pSoftKeyboardDialog->windowState() & ~Qt::WindowMinimized);
+        m_pSoftKeyboardDialog->activateWindow();
         return;
     }
     QWidget *pCenterWidget = windowManager().realParentWindow(activeMachineWindow());

@@ -138,7 +138,7 @@ private:
 
     UIMetric *m_pMetric;
     QSize m_size;
-    QFont m_font;
+    QFont m_axisFont;
     int m_iMarginLeft;
     int m_iMarginRight;
     int m_iMarginTop;
@@ -181,6 +181,8 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     , m_fUseAreaChart(true)
     , m_fIsAreaChartAllowed(false)
 {
+    m_axisFont = font();
+    m_axisFont.setPixelSize(14);
     setContextMenuPolicy(Qt::CustomContextMenu);
     connect(this, &UIChart::customContextMenuRequested,
             this, &UIChart::sltCreateContextMenu);
@@ -189,9 +191,9 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     m_dataSeriesColor[1] = QColor(0, 0, 200, 255);
 
     m_iMarginLeft = 1 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    m_iMarginRight = 9 * QFontMetrics(font()).width('X');
+    m_iMarginRight = 9 * QFontMetrics(m_axisFont).width('X');
     m_iMarginTop = 0.3 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
-    m_iMarginBottom = 2 * qApp->QApplication::style()->pixelMetric(QStyle::PM_LayoutTopMargin);
+    m_iMarginBottom = QFontMetrics(m_axisFont).height();
 
     float fAppIconSize = qApp->style()->pixelMetric(QStyle::PM_LargeIconSize);
     m_size = QSize(14 * fAppIconSize,  3.5 * fAppIconSize);
@@ -201,15 +203,6 @@ UIChart::UIChart(QWidget *pParent, UIMetric *pMetric)
     retranslateUi();
 }
 
-void UIChart::setFontSize(int iFontSize)
-{
-    m_font.setPixelSize(iFontSize);
-}
-
-int UIChart::fontSize() const
-{
-    return m_font.pixelSize();
-}
 
 bool UIChart::isPieChartAllowed() const
 {
@@ -326,6 +319,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
         return;
 
     QPainter painter(this);
+    painter.setFont(m_axisFont);
     painter.setRenderHint(QPainter::Antialiasing);
 
     /* Draw a rectanglar grid over which we will draw the line graphs: */
@@ -453,6 +447,7 @@ void UIChart::paintEvent(QPaintEvent *pEvent)
 
 void UIChart::drawXAxisLabels(QPainter &painter, int iXSubAxisCount)
 {
+    QFont painterFont = painter.font();
     QFontMetrics fontMetrics(painter.font());
     int iFontHeight = fontMetrics.height();
 
@@ -952,10 +947,11 @@ void UIInformationPerformanceMonitor::prepareObjects()
         m_pTimer->start(1000 * iPeriod);
     }
 
-    QScrollArea *pScrollArea = new QScrollArea;
+    QScrollArea *pScrollArea = new QScrollArea(this);
     m_pMainLayout->addWidget(pScrollArea);
-    QWidget *pContainerWidget = new QWidget;
-    QGridLayout *pContainerLayout = new QGridLayout;
+
+    QWidget *pContainerWidget = new QWidget(pScrollArea);
+    QGridLayout *pContainerLayout = new QGridLayout(pContainerWidget);
     pContainerWidget->setLayout(pContainerLayout);
     pContainerLayout->setSpacing(10);
     pContainerWidget->show();
@@ -973,7 +969,7 @@ void UIInformationPerformanceMonitor::prepareObjects()
 
         if (!m_metrics.contains(strMetricName))
             continue;
-        QLabel *pLabel = new QLabel;
+        QLabel *pLabel = new QLabel(this);
         pLabel->setAlignment(Qt::AlignLeft | Qt::AlignTop);
         pChartLayout->addWidget(pLabel);
         m_infoLabels.insert(strMetricName, pLabel);

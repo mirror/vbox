@@ -315,6 +315,7 @@ UIGuestProcessControlWidget::UIGuestProcessControlWidget(EmbedTo enmEmbedding, c
 UIGuestProcessControlWidget::~UIGuestProcessControlWidget()
 {
     saveSettings();
+    cleanupListener();
 }
 
 void UIGuestProcessControlWidget::retranslateUi()
