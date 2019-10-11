@@ -199,6 +199,7 @@ int shclSvcClientWakeup(PSHCLCLIENT pClient);
 int shclSvcTransferStart(PSHCLCLIENT pClient, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer);
 int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 bool shclSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
+void shclSvcClientTransfersReset(PSHCLCLIENT pClient);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /** @name Platform-dependent implementations for the Shared Clipboard host service.

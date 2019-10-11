@@ -1952,7 +1952,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             /** @todo Handle filter + list features. */
 
             SHCLLISTHANDLE hList  = SHCLLISTHANDLE_INVALID;
-            uint32_t                  fFlags = 0;
+            uint32_t       fFlags = 0;
             rc = VbglR3ClipboardListHdrReadRecvReq(pCmdCtx, &hList, &fFlags);
             if (RT_SUCCESS(rc))
             {
@@ -1982,7 +1982,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
-                uint32_t                  fInfo;
+                uint32_t       fInfo;
                 rc = VbglR3ClipboardListEntryReadRecvReq(pCmdCtx, &hList, &fInfo);
                 if (RT_SUCCESS(rc))
                 {
@@ -2060,8 +2060,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
         case VBOX_SHCL_HOST_MSG_TRANSFER_OBJ_READ:
         {
             SHCLOBJHANDLE hObj;
-            uint32_t cbBuf;
-            uint32_t fFlags;
+            uint32_t      cbBuf;
+            uint32_t      fFlags;
             rc = VbglR3ClipboardObjReadRecv(pCmdCtx, &hObj, &cbBuf, &fFlags);
             if (RT_SUCCESS(rc))
             {

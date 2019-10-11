@@ -267,10 +267,10 @@ PSHCLLISTHDR SharedClipboardTransferListHdrDup(PSHCLLISTHDR pListHdr)
 }
 
 /**
- * Initializes a transfer data  header struct.
+ * Initializes a transfer list header structure.
  *
  * @returns VBox status code.
- * @param   pListHdr            Data header struct to initialize.
+ * @param   pListHdr            Transfer list header struct to initialize.
  */
 int ShClTransferListHdrInit(PSHCLLISTHDR pListHdr)
 {
@@ -284,9 +284,9 @@ int ShClTransferListHdrInit(PSHCLLISTHDR pListHdr)
 }
 
 /**
- * Destroys a transfer data  header struct.
+ * Destroys a transfer list header structure.
  *
- * @param   pListHdr            Data header struct to destroy.
+ * @param   pListHdr            Transfer list header struct to destroy.
  */
 void ShClTransferListHdrDestroy(PSHCLLISTHDR pListHdr)
 {
@@ -297,10 +297,10 @@ void ShClTransferListHdrDestroy(PSHCLLISTHDR pListHdr)
 }
 
 /**
- * Resets a SHCLListHdr structture.
+ * Resets a transfer list header structure.
  *
  * @returns VBox status code.
- * @param   pListHdr            SHCLListHdr structture to reset.
+ * @param   pListHdr            Transfer list header struct to reset.
  */
 void ShClTransferListHdrReset(PSHCLLISTHDR pListHdr)
 {
@@ -312,10 +312,10 @@ void ShClTransferListHdrReset(PSHCLLISTHDR pListHdr)
 }
 
 /**
- * Returns whether a given clipboard data header is valid or not.
+ * Returns whether a given transfer list header is valid or not.
  *
  * @returns \c true if valid, \c false if not.
- * @param   pListHdr            Clipboard data header to validate.
+ * @param   pListHdr            Transfer list header to validate.
  */
 bool ShClTransferListHdrIsValid(PSHCLLISTHDR pListHdr)
 {
@@ -879,7 +879,13 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
                 {
                     rc = RTDirClose(pInfo->u.Local.hDir);
                     if (RT_SUCCESS(rc))
+                    {
                         pInfo->u.Local.hDir = NIL_RTDIR;
+
+                        LogRel2(("Shared Clipboard: Closed directory '%s'\n", pInfo->pszPathLocalAbs));
+                    }
+                    else
+                        LogRel(("Shared Clipboard: Closing directory '%s' failed with %Rrc\n", pInfo->pszPathLocalAbs, rc));
                     break;
                 }
 
@@ -887,7 +893,13 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
                 {
                     rc = RTFileClose(pInfo->u.Local.hFile);
                     if (RT_SUCCESS(rc))
+                    {
                         pInfo->u.Local.hFile = NIL_RTFILE;
+
+                        LogRel2(("Shared Clipboard: Closed file '%s'\n", pInfo->pszPathLocalAbs));
+                    }
+                    else
+                        LogRel(("Shared Clipboard: Closing file '%s' failed with %Rrc\n", pInfo->pszPathLocalAbs, rc));
                     break;
                 }
 
@@ -1284,7 +1296,7 @@ int ShClTransferClose(PSHCLTRANSFER pTransfer)
 inline PSHCLLISTHANDLEINFO sharedClipboardTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 {
     PSHCLLISTHANDLEINFO pIt;
-    RTListForEach(&pTransfer->lstList, pIt, SHCLLISTHANDLEINFO, Node)
+    RTListForEach(&pTransfer->lstList, pIt, SHCLLISTHANDLEINFO, Node) /** @todo Sloooow ... improve this. */
     {
         if (pIt->hList == hList)
             return pIt;
@@ -1305,6 +1317,50 @@ inline SHCLLISTHANDLE sharedClipboardTransferListHandleNew(PSHCLTRANSFER pTransf
 }
 
 /**
+ * Resolves a relative path of a specific transfer to its absolute path.
+ *
+ * @returns VBox status code.
+ * @param   pTransfer           Clipboard transfer to resolve path for.
+ * @param   pszPath             Path to resolve.
+ * @param   fFlags              Resolve flags. Currently not used and must be 0.
+ * @param   ppszResolved        Where to store the allocated resolved path. Must be free'd by the called using RTStrFree().
+ */
+static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPath, uint32_t fFlags,
+                                      char **ppszResolved)
+{
+    AssertPtrReturn(pTransfer,   VERR_INVALID_POINTER);
+    AssertPtrReturn(pszPath,     VERR_INVALID_POINTER);
+    AssertReturn   (fFlags == 0, VERR_INVALID_PARAMETER);
+
+    /* Paranoia. */
+    if (   !strlen(pTransfer->pszPathRootAbs)
+        || !RTStrIsValidEncoding(pTransfer->pszPathRootAbs)
+        || !RTStrCmp(pTransfer->pszPathRootAbs, ".")
+        || !RTStrCmp(pTransfer->pszPathRootAbs, "..")
+        || !RTPathStartsWithRoot(pTransfer->pszPathRootAbs))
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
+    int rc;
+
+    char *pszResolved = RTPathJoinA(pTransfer->pszPathRootAbs, pszPath);
+    if (pszResolved)
+    {
+        LogFlowFunc(("pszPathRootAbs=%s, pszPath=%s -> %s\n", pTransfer->pszPathRootAbs, pszPath, pszResolved));
+
+        *ppszResolved = pszResolved;
+
+        rc = VINF_SUCCESS;
+    }
+    else
+        rc = VERR_NO_MEMORY;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Opens a list.
  *
  * @returns VBox status code.
@@ -1321,88 +1377,111 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
 
     int rc;
 
-    SHCLLISTHANDLE hList = SHCLLISTHANDLE_INVALID;
-
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
         LogFlowFunc(("pszPath=%s\n", pOpenParms->pszPath));
 
-        PSHCLLISTHANDLEINFO pInfo
-            = (PSHCLLISTHANDLEINFO)RTMemAlloc(sizeof(SHCLLISTHANDLEINFO));
-        if (pInfo)
+        char *pszPathAbs;
+        rc = shClTransferResolvePathAbs(pTransfer, pOpenParms->pszPath, 0 /* fFlags */, &pszPathAbs);
+        if (RT_SUCCESS(rc))
         {
-            rc = ShClTransferListHandleInfoInit(pInfo);
-            if (RT_SUCCESS(rc))
+            PSHCLLISTHANDLEINFO pInfo
+                = (PSHCLLISTHANDLEINFO)RTMemAlloc(sizeof(SHCLLISTHANDLEINFO));
+            if (pInfo)
             {
-                RTFSOBJINFO objInfo;
-                rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+                rc = ShClTransferListHandleInfoInit(pInfo);
                 if (RT_SUCCESS(rc))
                 {
-                    if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
-                    {
-                        rc = RTDirOpen(&pInfo->u.Local.hDir, pOpenParms->pszPath);
-                        if (RT_SUCCESS(rc))
-                            pInfo->enmType = SHCLOBJTYPE_DIRECTORY;
-
-                    }
-                    else if (RTFS_IS_FILE(objInfo.Attr.fMode))
-                    {
-                        rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath,
-                                        RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-                        if (RT_SUCCESS(rc))
-                            pInfo->enmType = SHCLOBJTYPE_FILE;
-                    }
-                    else
-                        rc = VERR_NOT_SUPPORTED;
-
+                    RTFSOBJINFO objInfo;
+                    rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
                     if (RT_SUCCESS(rc))
-                    {
-                        pInfo->hList = sharedClipboardTransferListHandleNew(pTransfer);
-
-                        RTListAppend(&pTransfer->lstList, &pInfo->Node);
-                    }
-                    else
                     {
                         if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
                         {
-                            if (RTDirIsValid(pInfo->u.Local.hDir))
-                                RTDirClose(pInfo->u.Local.hDir);
+                            rc = RTDirOpen(&pInfo->u.Local.hDir, pszPathAbs);
+                            if (RT_SUCCESS(rc))
+                            {
+                                pInfo->enmType = SHCLOBJTYPE_DIRECTORY;
+
+                                LogRel2(("Shared Clipboard: Opening directory '%s'\n", pszPathAbs));
+                            }
+                            else
+                                LogRel(("Shared Clipboard: Opening directory '%s' failed with %Rrc\n", pInfo->pszPathLocalAbs, rc));
+
                         }
                         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                         {
-                            if (RTFileIsValid(pInfo->u.Local.hFile))
-                                RTFileClose(pInfo->u.Local.hFile);
+                            rc = RTFileOpen(&pInfo->u.Local.hFile, pszPathAbs,
+                                            RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                            if (RT_SUCCESS(rc))
+                            {
+                                pInfo->enmType = SHCLOBJTYPE_FILE;
+
+                                LogRel2(("Shared Clipboard: Opening file '%s'\n", pszPathAbs));
+                            }
+                            else
+                                LogRel(("Shared Clipboard: Opening file '%s' failed with %Rrc\n", pInfo->pszPathLocalAbs, rc));
+                        }
+                        else
+                            rc = VERR_NOT_SUPPORTED;
+
+                        if (RT_SUCCESS(rc))
+                        {
+                            pInfo->hList           = sharedClipboardTransferListHandleNew(pTransfer);
+                            pInfo->pszPathLocalAbs = RTStrDup(pszPathAbs);
+                            if (pInfo->pszPathLocalAbs)
+                            {
+                                RTListAppend(&pTransfer->lstList, &pInfo->Node);
+
+                                LogFlowFunc(("pszPathLocalAbs=%s, hList=%RU64\n", pInfo->pszPathLocalAbs, pInfo->hList));
+
+                                *phList = pInfo->hList;
+                            }
+                            else
+                                rc = VERR_NO_MEMORY;
+                        }
+                        else
+                        {
+                            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+                            {
+                                if (RTDirIsValid(pInfo->u.Local.hDir))
+                                    RTDirClose(pInfo->u.Local.hDir);
+                            }
+                            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+                            {
+                                if (RTFileIsValid(pInfo->u.Local.hFile))
+                                    RTFileClose(pInfo->u.Local.hFile);
+                            }
                         }
                     }
+
+                    if (RT_FAILURE(rc))
+                        ShClTransferListHandleInfoDestroy(pInfo);
                 }
 
                 if (RT_FAILURE(rc))
-                    ShClTransferListHandleInfoDestroy(pInfo);
+                {
+                    RTMemFree(pInfo);
+                    pInfo = NULL;
+                }
             }
+            else
+                rc = VERR_NO_MEMORY;
 
-            if (RT_FAILURE(rc))
-            {
-                RTMemFree(pInfo);
-                pInfo = NULL;
-            }
+            RTStrFree(pszPathAbs);
         }
-        else
-            rc = VERR_NO_MEMORY;
     }
     else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
     {
         if (pTransfer->ProviderIface.pfnListOpen)
         {
-            rc = pTransfer->ProviderIface.pfnListOpen(&pTransfer->ProviderCtx, pOpenParms, &hList);
+            rc = pTransfer->ProviderIface.pfnListOpen(&pTransfer->ProviderCtx, pOpenParms, phList);
         }
         else
             rc = VERR_NOT_SUPPORTED;
     }
     else
         AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
-
-    if (RT_SUCCESS(rc))
-        *phList = hList;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1498,27 +1577,20 @@ static int sharedClipboardTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *
  * @param   pcszDstBase         Destination base path.
  * @param   cchDstBase          Number of charaters of destination base path.
  */
-static int sharedClipboardTransferListHdrFromDir(PSHCLLISTHDR pHdr,
-                                                 const char *pcszSrcPath, const char *pcszDstPath,
-                                                 const char *pcszDstBase)
+static int sharedClipboardTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs)
 {
-    AssertPtrReturn(pcszSrcPath, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszDstBase, VERR_INVALID_POINTER);
-    AssertPtrReturn(pcszDstPath, VERR_INVALID_POINTER);
+    AssertPtrReturn(pcszPathAbs, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("pcszSrcPath=%s, pcszDstPath=%s, pcszDstBase=%s\n",
-                 pcszSrcPath, pcszDstPath, pcszDstBase));
+    LogFlowFunc(("pcszPathAbs=%s\n", pcszPathAbs));
 
     RTFSOBJINFO objInfo;
-    int rc = RTPathQueryInfo(pcszSrcPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+    int rc = RTPathQueryInfo(pcszPathAbs, &objInfo, RTFSOBJATTRADD_NOTHING);
     if (RT_SUCCESS(rc))
     {
         if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
         {
-            pHdr->cTotalObjects++;
-
             RTDIR hDir;
-            rc = RTDirOpen(&hDir, pcszSrcPath);
+            rc = RTDirOpen(&hDir, pcszPathAbs);
             if (RT_SUCCESS(rc))
             {
                 size_t        cbDirEntry = 0;
@@ -1536,36 +1608,18 @@ static int sharedClipboardTransferListHdrFromDir(PSHCLLISTHDR pHdr,
 
                     switch (pDirEntry->Info.Attr.fMode & RTFS_TYPE_MASK)
                     {
-                #if 0 /* No recursion here (yet). */
                         case RTFS_TYPE_DIRECTORY:
                         {
                             /* Skip "." and ".." entries. */
                             if (RTDirEntryExIsStdDotLink(pDirEntry))
                                 break;
 
-                            char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
-                            if (pszSrc)
-                            {
-                                char *pszDst = RTPathJoinA(pcszDstPath, pDirEntry->szName);
-                                if (pszDst)
-                                {
-                                    rc = sharedClipboardTransferListHdrFromDir(pHdr, pszSrc, pszDst,
-                                                                                  pcszDstBase, cchDstBase);
-                                    RTStrFree(pszDst);
-                                }
-                                else
-                                    rc = VERR_NO_MEMORY;
-
-                                RTStrFree(pszSrc);
-                            }
-                            else
-                                rc = VERR_NO_MEMORY;
+                            pHdr->cTotalObjects++;
                             break;
                         }
-                #endif
                         case RTFS_TYPE_FILE:
                         {
-                            char *pszSrc = RTPathJoinA(pcszSrcPath, pDirEntry->szName);
+                            char *pszSrc = RTPathJoinA(pcszPathAbs, pDirEntry->szName);
                             if (pszSrc)
                             {
                                 rc = sharedClipboardTransferListHdrAddFile(pHdr, pszSrc);
@@ -1592,7 +1646,7 @@ static int sharedClipboardTransferListHdrFromDir(PSHCLLISTHDR pHdr,
         }
         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
         {
-            rc = sharedClipboardTransferListHdrAddFile(pHdr, pcszSrcPath);
+            rc = sharedClipboardTransferListHdrAddFile(pHdr, pcszPathAbs);
         }
         else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
         {
@@ -1615,6 +1669,10 @@ static int sharedClipboardTransferListHdrFromDir(PSHCLLISTHDR pHdr,
  */
 static char *sharedClipboardPathTranslate(const char *pszPath)
 {
+    AssertPtrReturn(pszPath, NULL);
+
+    LogFlowFunc(("pszPath=%s\n", pszPath));
+
     char *pszPathTranslated = NULL;
 
     char *pszSrcPath = RTStrDup(pszPath);
@@ -1672,20 +1730,16 @@ int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
                 {
                     case SHCLOBJTYPE_DIRECTORY:
                     {
-                        char *pszPathRel = sharedClipboardPathTranslate(pInfo->pszPathLocalAbs);
-                        if (pszPathRel)
-                        {
-                            rc = sharedClipboardTransferListHdrFromDir(pHdr,
-                                                                       pszPathRel, pszPathRel, pszPathRel);
-                            RTStrFree(pszPathRel);
-                        }
-                        else
-                            rc = VERR_NO_MEMORY;
+                        LogFlowFunc(("DirAbs: %s\n", pInfo->pszPathLocalAbs));
+
+                        rc = sharedClipboardTransferListHdrFromDir(pHdr, pInfo->pszPathLocalAbs);
                         break;
                     }
 
                     case SHCLOBJTYPE_FILE:
                     {
+                        LogFlowFunc(("FileAbs: %s\n", pInfo->pszPathLocalAbs));
+
                         pHdr->cTotalObjects = 1;
 
                         RTFSOBJINFO objInfo;
@@ -2512,7 +2566,8 @@ void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 
     LogFlowFunc(("pTransferCtx=%p\n", pTransferCtx));
 
-    RTCritSectDelete(&pTransferCtx->CritSect);
+    if (RTCritSectIsInitialized(&pTransferCtx->CritSect))
+        RTCritSectDelete(&pTransferCtx->CritSect);
 
     PSHCLTRANSFER pTransfer, pTransferNext;
     RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)

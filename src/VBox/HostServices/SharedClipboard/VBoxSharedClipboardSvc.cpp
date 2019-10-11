@@ -1059,6 +1059,32 @@ int shclSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
     return rc;
 }
 
+/**
+ * Gets an error from HGCM service parameters.
+ *
+ * @returns VBox status code.
+ * @param   cParms              Number of HGCM parameters supplied in \a paParms.
+ * @param   paParms             Array of HGCM parameters.
+ * @param   pRc                 Where to store the received error code.
+ */
+static int shclSvcGetError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
+{
+    AssertPtrReturn(paParms, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pRc,     VERR_INVALID_PARAMETER);
+
+    int rc;
+
+    if (cParms == VBOX_SHCL_CPARMS_ERROR)
+    {
+        rc = HGCMSvcGetU32(&paParms[1], (uint32_t *)pRc); /** @todo int vs. uint32_t !!! */
+    }
+    else
+        rc = VERR_INVALID_PARAMETER;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 int shclSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource)
 {
     if (!pClient) /* If no client connected (anymore), bail out. */
@@ -1120,11 +1146,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
     AssertPtr(pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(&pClient->TransferCtx, 0 /* Index*/);
-    if (pTransfer)
-        shclSvcTransferAreaDetach(&pClient->State, pTransfer);
-
-    ShClTransferCtxDestroy(&pClient->TransferCtx);
+    shclSvcClientTransfersReset(pClient);
 #endif
 
     ShClSvcImplDisconnect(pClient);
@@ -1483,6 +1505,31 @@ static DECLCALLBACK(void) svcCall(void *,
         case VBOX_SHCL_GUEST_FN_DATA_WRITE:
         {
             rc = shclSvcGetDataWrite(pClient, cParms, paParms);
+            break;
+        }
+
+        case VBOX_SHCL_GUEST_FN_CANCEL:
+        {
+            LogRel2(("Shared Clipboard: Operation canceled by guest side\n"));
+
+            /** @todo Do we need to do anything here? */
+            break;
+        }
+
+        case VBOX_SHCL_GUEST_FN_ERROR:
+        {
+            int rcGuest;
+            rc = shclSvcGetError(cParms,paParms, &rcGuest);
+            if (RT_SUCCESS(rc))
+            {
+                LogRel(("Shared Clipboard: Error from guest side: %Rrc\n", rcGuest));
+
+                /* Reset client state and start over. */
+                shclSvcClientStateReset(&pClient->State);
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                shclSvcClientTransfersReset(pClient);
+#endif
+            }
             break;
         }
 

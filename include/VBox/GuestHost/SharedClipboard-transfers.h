@@ -398,6 +398,10 @@ typedef struct _SHCLREPLY
         } ListOpen;
         struct
         {
+            SHCLLISTHANDLE uHandle;
+        } ListClose;
+        struct
+        {
             SHCLOBJHANDLE uHandle;
         } ObjOpen;
         struct

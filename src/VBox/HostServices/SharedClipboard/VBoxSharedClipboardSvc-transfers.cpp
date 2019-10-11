@@ -57,6 +57,34 @@ static int shclSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[
 *   Provider implementation                                                                                                      *
 *********************************************************************************************************************************/
 
+/**
+ * Resets all transfers of a Shared Clipboard client.
+ *
+ * @param   pClient             Client to reset transfers for.
+ */
+void shclSvcClientTransfersReset(PSHCLCLIENT pClient)
+{
+    if (!pClient)
+        return;
+
+    LogFlowFuncEnter();
+
+    const uint32_t cTransfers = ShClTransferCtxGetTotalTransfers(&pClient->TransferCtx);
+    for (uint32_t i = 0; i < cTransfers; i++)
+    {
+        PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(&pClient->TransferCtx, i);
+        if (pTransfer)
+            shclSvcTransferAreaDetach(&pClient->State, pTransfer);
+    }
+
+    ShClTransferCtxDestroy(&pClient->TransferCtx);
+}
+
+
+/*********************************************************************************************************************************
+*   Provider implementation                                                                                                      *
+*********************************************************************************************************************************/
+
 DECLCALLBACK(int) shclSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx)
 {
     RT_NOREF(pCtx);
@@ -207,7 +235,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
     {
         const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
-        pMsg->Ctx.uContextID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,  pCtx->pTransfer->State.uID,
+        pMsg->Ctx.uContextID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                         uEvent);
 
         rc = shclSvcTransferSetListOpen(pMsg->cParms, pMsg->paParms, &pMsg->Ctx, pOpenParms);
@@ -232,6 +260,8 @@ DECLCALLBACK(int) shclSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
                         AssertPtr(pReply);
 
                         Assert(pReply->uType == VBOX_SHCL_REPLYMSGTYPE_LIST_OPEN);
+
+                        LogFlowFunc(("hList=%RU64\n", pReply->u.ListOpen.uHandle));
 
                         *phList = pReply->u.ListOpen.uHandle;
 
@@ -465,6 +495,8 @@ int shclSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS p
 
                     Assert(pReply->uType == VBOX_SHCL_REPLYMSGTYPE_OBJ_OPEN);
 
+                    LogFlowFunc(("hObj=%RU64\n", pReply->u.ObjOpen.uHandle));
+
                     *phObj = pReply->u.ObjOpen.uHandle;
 
                     ShClPayloadFree(pPayload);
@@ -518,6 +550,8 @@ int shclSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
                     AssertPtr(pReply);
 
                     Assert(pReply->uType == VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE);
+
+                    LogFlowFunc(("hObj=%RU64\n", pReply->u.ObjClose.uHandle));
 #endif
 
                     ShClPayloadFree(pPayload);
@@ -764,6 +798,8 @@ static int shclSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 {
                     if (cParms >= 6)
                         rc = HGCMSvcGetU32(&paParms[5], &pReply->u.TransferStatus.uStatus);
+
+                    LogFlowFunc(("uTransferStatus=%RU32\n", pReply->u.TransferStatus.uStatus));
                     break;
                 }
 
@@ -771,6 +807,17 @@ static int shclSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 {
                     if (cParms >= 6)
                         rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ListOpen.uHandle);
+
+                    LogFlowFunc(("hListOpen=%RU64\n", pReply->u.ListOpen.uHandle));
+                    break;
+                }
+
+                case VBOX_SHCL_REPLYMSGTYPE_LIST_CLOSE:
+                {
+                    if (cParms >= 6)
+                        rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ListClose.uHandle);
+
+                    LogFlowFunc(("hListClose=%RU64\n", pReply->u.ListClose.uHandle));
                     break;
                 }
 
@@ -778,6 +825,8 @@ static int shclSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 {
                     if (cParms >= 6)
                         rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ObjOpen.uHandle);
+
+                    LogFlowFunc(("hObjOpen=%RU64\n", pReply->u.ObjOpen.uHandle));
                     break;
                 }
 
@@ -785,6 +834,8 @@ static int shclSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                 {
                     if (cParms >= 6)
                         rc = HGCMSvcGetU64(&paParms[5], &pReply->u.ObjClose.uHandle);
+
+                    LogFlowFunc(("hObjClose=%RU64\n", pReply->u.ObjClose.uHandle));
                     break;
                 }
 
@@ -1151,32 +1202,6 @@ static int shclSvcTransferGetObjDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paPar
                 /** @todo Implement checksum handling. */
             }
         }
-    }
-    else
-        rc = VERR_INVALID_PARAMETER;
-
-    LogFlowFuncLeaveRC(rc);
-    return rc;
-}
-
-/**
- * Gets a transfer error from HGCM service parameters.
- *
- * @returns VBox status code.
- * @param   cParms              Number of HGCM parameters supplied in \a paParms.
- * @param   paParms             Array of HGCM parameters.
- * @param   pRc                 Where to store the received error code.
- */
-static int shclSvcTransferGetError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
-{
-    AssertPtrReturn(paParms, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pRc,     VERR_INVALID_PARAMETER);
-
-    int rc;
-
-    if (cParms == VBOX_SHCL_CPARMS_ERROR)
-    {
-        rc = HGCMSvcGetU32(&paParms[1], (uint32_t *)pRc); /** @todo int vs. uint32_t !!! */
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -1847,21 +1872,6 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             break;
         }
 #endif
-        case VBOX_SHCL_GUEST_FN_CANCEL:
-        {
-            LogRel2(("Shared Clipboard: Transfer canceled\n"));
-            break;
-        }
-
-        case VBOX_SHCL_GUEST_FN_ERROR:
-        {
-            int rcGuest;
-            rc = shclSvcTransferGetError(cParms,paParms, &rcGuest);
-            if (RT_SUCCESS(rc))
-                LogRel(("Shared Clipboard: Transfer error from guest: %Rrc\n", rcGuest));
-            break;
-        }
-
         default:
             LogFunc(("Not implemented\n"));
             break;
