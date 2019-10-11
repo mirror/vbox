@@ -806,8 +806,17 @@ private:
     /** Translates bool flag into 'restricted' value. */
     QString toFeatureRestricted(bool fRestricted);
 
-    QRect dialogGeometry(const QString &strKey, QWidget *pWidget, const QRect &defaultGeometry);
+    /** Defines saved dialog geometry according to specified attributes.
+      * @param  strKey      Brings geometry extra-data key of particular dialog.
+      * @param  geometry    Brings the dialog geometry to save.
+      * @param  fMaximized  Brings whether saved dialog geometry should be marked as maximized. */
     void setDialogGeometry(const QString &strKey, const QRect &geometry, bool fMaximized);
+    /** Returns saved dialog geometry according to specified attributes.
+      * @param  strKey           Brings geometry extra-data key of particular dialog.
+      * @param  pWidget          Brings the widget to limit geometry bounds according to.
+      * @param  defaultGeometry  Brings the default geometry which should be used to
+      *                          calculate resulting geometry if saved was not found. */
+    QRect dialogGeometry(const QString &strKey, QWidget *pWidget, const QRect &defaultGeometry);
 
     /** Returns string consisting of @a strBase appended with @a uScreenIndex for the *non-primary* screen-index.
       * If @a fSameRuleForPrimary is 'true' same rule will be used for *primary* screen-index. Used for storing per-screen extra-data. */

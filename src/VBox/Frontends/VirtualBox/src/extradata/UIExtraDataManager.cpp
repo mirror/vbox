@@ -4971,15 +4971,24 @@ QString UIExtraDataManager::toFeatureRestricted(bool fRestricted)
     return fRestricted ? QString("false") : QString();
 }
 
-/* static */
-QString UIExtraDataManager::extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex, bool fSameRuleForPrimary /* = false */)
+void UIExtraDataManager::setDialogGeometry(const QString &strKey, const QRect &geometry, bool fMaximized)
 {
-    return fSameRuleForPrimary || uScreenIndex ? strBase + QString::number(uScreenIndex) : strBase;
+    /* Serialize passed values: */
+    QStringList data;
+    data << QString::number(geometry.x());
+    data << QString::number(geometry.y());
+    data << QString::number(geometry.width());
+    data << QString::number(geometry.height());
+    if (fMaximized)
+        data << GUI_Geometry_State_Max;
+
+    /* Save corresponding extra-data: */
+    setExtraDataStringList(strKey, data);
 }
 
 QRect UIExtraDataManager::dialogGeometry(const QString &strKey, QWidget *pWidget, const QRect &defaultGeometry)
 {
-    /* Get corresponding extra-data: */
+    /* Load corresponding extra-data: */
     const QStringList data = extraDataStringList(strKey);
 
     /* Parse loaded data: */
@@ -5020,19 +5029,10 @@ QRect UIExtraDataManager::dialogGeometry(const QString &strKey, QWidget *pWidget
     return geometry;
 }
 
-void UIExtraDataManager::setDialogGeometry(const QString &strKey, const QRect &geometry, bool fMaximized)
+/* static */
+QString UIExtraDataManager::extraDataKeyPerScreen(const QString &strBase, ulong uScreenIndex, bool fSameRuleForPrimary /* = false */)
 {
-        /* Serialize passed values: */
-    QStringList data;
-    data << QString::number(geometry.x());
-    data << QString::number(geometry.y());
-    data << QString::number(geometry.width());
-    data << QString::number(geometry.height());
-    if (fMaximized)
-        data << GUI_Geometry_State_Max;
-
-    /* Re-cache corresponding extra-data: */
-    setExtraDataStringList(strKey, data);
+    return fSameRuleForPrimary || uScreenIndex ? strBase + QString::number(uScreenIndex) : strBase;
 }
 
 #include "UIExtraDataManager.moc"
