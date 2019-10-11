@@ -1529,7 +1529,7 @@ void UIVirtualBoxManager::prepareConnections()
 
 void UIVirtualBoxManager::loadSettings()
 {
-    /* Restore window geometry: */
+    /* Load window geometry: */
     {
         /* Load geometry: */
         m_geometry = gEDataManager->selectorWindowGeometry(this);

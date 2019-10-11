@@ -291,7 +291,7 @@ void UIVMInformationDialog::prepareButtonBox()
 
 void UIVMInformationDialog::loadSettings()
 {
-    /* Restore window geometry: */
+    /* Load window geometry: */
     {
         /* Load geometry: */
         m_geometry = gEDataManager->sessionInformationDialogGeometry(this, m_pMachineWindow);
