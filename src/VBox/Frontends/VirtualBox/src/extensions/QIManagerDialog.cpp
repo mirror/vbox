@@ -233,14 +233,14 @@ void QIManagerDialog::closeEvent(QCloseEvent *pEvent)
 
 void QIManagerDialog::setDialogGeometry(const QRect &geometry)
 {
-#ifdef VBOX_WS_MAC
-    /* Use the old approach for OSX: */
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+    /* Use the old approach for OSX/Win: */
     move(geometry.topLeft());
     resize(geometry.size());
-#else /* VBOX_WS_MAC */
-    /* Use the new approach for Windows/X11: */
+#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+    /* Use the new approach otherwise: */
     UICommon::setTopLevelGeometry(this, geometry);
-#endif /* !VBOX_WS_MAC */
+#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
 
     /* Maximize (if necessary): */
     if (shouldBeMaximized())
