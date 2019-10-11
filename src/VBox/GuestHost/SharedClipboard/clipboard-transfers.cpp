@@ -43,7 +43,7 @@ static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClF
  *
  * @returns Allocated transfer root list on success, or NULL on failure.
  */
-PSHCLROOTLIST SharedClipboardTransferRootListAlloc(void)
+PSHCLROOTLIST ShClTransferRootListAlloc(void)
 {
     PSHCLROOTLIST pRootList = (PSHCLROOTLIST)RTMemAllocZ(sizeof(SHCLROOTLIST));
 
@@ -56,13 +56,13 @@ PSHCLROOTLIST SharedClipboardTransferRootListAlloc(void)
  * @param   pRootList           transfer root list to free. The pointer will be
  *                              invalid after returning from this function.
  */
-void SharedClipboardTransferRootListFree(PSHCLROOTLIST pRootList)
+void ShClTransferRootListFree(PSHCLROOTLIST pRootList)
 {
     if (!pRootList)
         return;
 
     for (uint32_t i = 0; i < pRootList->Hdr.cRoots; i++)
-        SharedClipboardTransferListEntryDestroy(&pRootList->paEntries[i]);
+        ShClTransferListEntryInit(&pRootList->paEntries[i]);
 
     RTMemFree(pRootList);
     pRootList = NULL;
@@ -74,7 +74,7 @@ void SharedClipboardTransferRootListFree(PSHCLROOTLIST pRootList)
  * @returns VBox status code.
  * @param   pRootLstHdr         Root list header to initialize.
  */
-int SharedClipboardTransferRootListHdrInit(PSHCLROOTLISTHDR pRootLstHdr)
+int ShClTransferRootListHdrInit(PSHCLROOTLISTHDR pRootLstHdr)
 {
     AssertPtrReturn(pRootLstHdr, VERR_INVALID_POINTER);
 
@@ -88,7 +88,7 @@ int SharedClipboardTransferRootListHdrInit(PSHCLROOTLISTHDR pRootLstHdr)
  *
  * @param   pRootLstHdr         Root list header to destroy.
  */
-void SharedClipboardTransferRootListHdrDestroy(PSHCLROOTLISTHDR pRootLstHdr)
+void ShClTransferRootListHdrDestroy(PSHCLROOTLISTHDR pRootLstHdr)
 {
     if (!pRootLstHdr)
         return;
@@ -103,7 +103,7 @@ void SharedClipboardTransferRootListHdrDestroy(PSHCLROOTLISTHDR pRootLstHdr)
  * @returns Duplicated transfer list header on success, or NULL on failure.
  * @param   pRootLstHdr         Root list header to duplicate.
  */
-PSHCLROOTLISTHDR SharedClipboardTransferRootListHdrDup(PSHCLROOTLISTHDR pRootLstHdr)
+PSHCLROOTLISTHDR ShClTransferRootListHdrDup(PSHCLROOTLISTHDR pRootLstHdr)
 {
     AssertPtrReturn(pRootLstHdr, NULL);
 
@@ -119,7 +119,7 @@ PSHCLROOTLISTHDR SharedClipboardTransferRootListHdrDup(PSHCLROOTLISTHDR pRootLst
 
     if (RT_FAILURE(rc))
     {
-        SharedClipboardTransferRootListHdrDestroy(pRootsDup);
+        ShClTransferRootListHdrDestroy(pRootsDup);
         pRootsDup = NULL;
     }
 
@@ -133,9 +133,9 @@ PSHCLROOTLISTHDR SharedClipboardTransferRootListHdrDup(PSHCLROOTLISTHDR pRootLst
  * @param   pDst                Where to copy the source root list entry to.
  * @param   pSrc                Source root list entry to copy.
  */
-int SharedClipboardTransferRootListEntryCopy(PSHCLROOTLISTENTRY pDst, PSHCLROOTLISTENTRY pSrc)
+int ShClTransferRootListEntryCopy(PSHCLROOTLISTENTRY pDst, PSHCLROOTLISTENTRY pSrc)
 {
-    return SharedClipboardTransferListEntryCopy(pDst, pSrc);
+    return ShClTransferListEntryCopy(pDst, pSrc);
 }
 
 /**
@@ -143,9 +143,9 @@ int SharedClipboardTransferRootListEntryCopy(PSHCLROOTLISTENTRY pDst, PSHCLROOTL
  *
  * @param   pRootListEntry      Clipboard root list entry structure to destroy.
  */
-int SharedClipboardTransferRootListEntryInit(PSHCLROOTLISTENTRY pRootListEntry)
+int ShClTransferRootListEntryInit(PSHCLROOTLISTENTRY pRootListEntry)
 {
-    return SharedClipboardTransferListEntryInit(pRootListEntry);
+    return ShClTransferListEntryInit(pRootListEntry);
 }
 
 /**
@@ -153,9 +153,9 @@ int SharedClipboardTransferRootListEntryInit(PSHCLROOTLISTENTRY pRootListEntry)
  *
  * @param   pRootListEntry      Clipboard root list entry structure to destroy.
  */
-void SharedClipboardTransferRootListEntryDestroy(PSHCLROOTLISTENTRY pRootListEntry)
+void ShClTransferRootListEntryDestroy(PSHCLROOTLISTENTRY pRootListEntry)
 {
-    return SharedClipboardTransferListEntryDestroy(pRootListEntry);
+    return ShClTransferListEntryDestroy(pRootListEntry);
 }
 
 /**
@@ -164,9 +164,9 @@ void SharedClipboardTransferRootListEntryDestroy(PSHCLROOTLISTENTRY pRootListEnt
  * @returns Duplicated clipboard root list entry structure on success.
  * @param   pRootListEntry      Clipboard root list entry to duplicate.
  */
-PSHCLROOTLISTENTRY SharedClipboardTransferRootListEntryDup(PSHCLROOTLISTENTRY pRootListEntry)
+PSHCLROOTLISTENTRY ShClTransferRootListEntryDup(PSHCLROOTLISTENTRY pRootListEntry)
 {
-    return SharedClipboardTransferListEntryDup(pRootListEntry);
+    return ShClTransferListEntryDup(pRootListEntry);
 }
 
 /**
@@ -175,7 +175,7 @@ PSHCLROOTLISTENTRY SharedClipboardTransferRootListEntryDup(PSHCLROOTLISTENTRY pR
  * @returns VBox status code.
  * @param   pInfo               List handle info structure to initialize.
  */
-int SharedClipboardTransferListHandleInfoInit(PSHCLLISTHANDLEINFO pInfo)
+int ShClTransferListHandleInfoInit(PSHCLLISTHANDLEINFO pInfo)
 {
     AssertPtrReturn(pInfo, VERR_INVALID_POINTER);
 
@@ -194,7 +194,7 @@ int SharedClipboardTransferListHandleInfoInit(PSHCLLISTHANDLEINFO pInfo)
  *
  * @param   pInfo               List handle info structure to destroy.
  */
-void SharedClipboardTransferListHandleInfoDestroy(PSHCLLISTHANDLEINFO pInfo)
+void ShClTransferListHandleInfoDestroy(PSHCLLISTHANDLEINFO pInfo)
 {
     if (!pInfo)
         return;
@@ -212,7 +212,7 @@ void SharedClipboardTransferListHandleInfoDestroy(PSHCLLISTHANDLEINFO pInfo)
  * @returns VBox status code.
  * @param   ppListHdr           Where to store the allocated transfer list header structure on success.
  */
-int SharedClipboardTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr)
+int ShClTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr)
 {
     int rc;
 
@@ -234,14 +234,14 @@ int SharedClipboardTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr)
  *
  * @param   pListEntry          transfer list header structure to free.
  */
-void SharedClipboardTransferListHdrFree(PSHCLLISTHDR pListHdr)
+void ShClTransferListHdrFree(PSHCLLISTHDR pListHdr)
 {
     if (!pListHdr)
         return;
 
     LogFlowFuncEnter();
 
-    SharedClipboardTransferListHdrDestroy(pListHdr);
+    ShClTransferListHdrDestroy(pListHdr);
 
     RTMemFree(pListHdr);
     pListHdr = NULL;
@@ -272,13 +272,13 @@ PSHCLLISTHDR SharedClipboardTransferListHdrDup(PSHCLLISTHDR pListHdr)
  * @returns VBox status code.
  * @param   pListHdr            Data header struct to initialize.
  */
-int SharedClipboardTransferListHdrInit(PSHCLLISTHDR pListHdr)
+int ShClTransferListHdrInit(PSHCLLISTHDR pListHdr)
 {
     AssertPtrReturn(pListHdr, VERR_INVALID_POINTER);
 
     LogFlowFuncEnter();
 
-    SharedClipboardTransferListHdrReset(pListHdr);
+    ShClTransferListHdrReset(pListHdr);
 
     return VINF_SUCCESS;
 }
@@ -288,7 +288,7 @@ int SharedClipboardTransferListHdrInit(PSHCLLISTHDR pListHdr)
  *
  * @param   pListHdr            Data header struct to destroy.
  */
-void SharedClipboardTransferListHdrDestroy(PSHCLLISTHDR pListHdr)
+void ShClTransferListHdrDestroy(PSHCLLISTHDR pListHdr)
 {
     if (!pListHdr)
         return;
@@ -302,7 +302,7 @@ void SharedClipboardTransferListHdrDestroy(PSHCLLISTHDR pListHdr)
  * @returns VBox status code.
  * @param   pListHdr            SHCLListHdr structture to reset.
  */
-void SharedClipboardTransferListHdrReset(PSHCLLISTHDR pListHdr)
+void ShClTransferListHdrReset(PSHCLLISTHDR pListHdr)
 {
     AssertPtrReturnVoid(pListHdr);
 
@@ -317,13 +317,13 @@ void SharedClipboardTransferListHdrReset(PSHCLLISTHDR pListHdr)
  * @returns \c true if valid, \c false if not.
  * @param   pListHdr            Clipboard data header to validate.
  */
-bool SharedClipboardTransferListHdrIsValid(PSHCLLISTHDR pListHdr)
+bool ShClTransferListHdrIsValid(PSHCLLISTHDR pListHdr)
 {
     RT_NOREF(pListHdr);
     return true; /** @todo Implement this. */
 }
 
-int SharedClipboardTransferListOpenParmsCopy(PSHCLLISTOPENPARMS pDst, PSHCLLISTOPENPARMS pSrc)
+int ShClTransferListOpenParmsCopy(PSHCLLISTOPENPARMS pDst, PSHCLLISTOPENPARMS pSrc)
 {
     AssertPtrReturn(pDst, VERR_INVALID_POINTER);
     AssertPtrReturn(pSrc, VERR_INVALID_POINTER);
@@ -361,7 +361,7 @@ int SharedClipboardTransferListOpenParmsCopy(PSHCLLISTOPENPARMS pDst, PSHCLLISTO
  * @returns Duplicated transfer list open parameters structure on success, or NULL on failure.
  * @param   pParms              transfer list open parameters structure to duplicate.
  */
-PSHCLLISTOPENPARMS SharedClipboardTransferListOpenParmsDup(PSHCLLISTOPENPARMS pParms)
+PSHCLLISTOPENPARMS ShClTransferListOpenParmsDup(PSHCLLISTOPENPARMS pParms)
 {
     AssertPtrReturn(pParms, NULL);
 
@@ -369,10 +369,10 @@ PSHCLLISTOPENPARMS SharedClipboardTransferListOpenParmsDup(PSHCLLISTOPENPARMS pP
     if (!pParmsDup)
         return NULL;
 
-    int rc = SharedClipboardTransferListOpenParmsCopy(pParmsDup, pParms);
+    int rc = ShClTransferListOpenParmsCopy(pParmsDup, pParms);
     if (RT_FAILURE(rc))
     {
-        SharedClipboardTransferListOpenParmsDestroy(pParmsDup);
+        ShClTransferListOpenParmsDestroy(pParmsDup);
 
         RTMemFree(pParmsDup);
         pParmsDup = NULL;
@@ -387,7 +387,7 @@ PSHCLLISTOPENPARMS SharedClipboardTransferListOpenParmsDup(PSHCLLISTOPENPARMS pP
  * @returns VBox status code.
  * @param   pParms              transfer list open parameters structure to initialize.
  */
-int SharedClipboardTransferListOpenParmsInit(PSHCLLISTOPENPARMS pParms)
+int ShClTransferListOpenParmsInit(PSHCLLISTOPENPARMS pParms)
 {
     AssertPtrReturn(pParms, VERR_INVALID_POINTER);
 
@@ -408,7 +408,7 @@ int SharedClipboardTransferListOpenParmsInit(PSHCLLISTOPENPARMS pParms)
  *
  * @param   pParms              transfer list open parameters structure to destroy.
  */
-void SharedClipboardTransferListOpenParmsDestroy(PSHCLLISTOPENPARMS pParms)
+void ShClTransferListOpenParmsDestroy(PSHCLLISTOPENPARMS pParms)
 {
     if (!pParms)
         return;
@@ -431,13 +431,13 @@ void SharedClipboardTransferListOpenParmsDestroy(PSHCLLISTOPENPARMS pParms)
  *
  * @param   ppDirData           Where to return the created clipboard list entry structure on success.
  */
-int SharedClipboardTransferListEntryAlloc(PSHCLLISTENTRY *ppListEntry)
+int ShClTransferListEntryAlloc(PSHCLLISTENTRY *ppListEntry)
 {
     PSHCLLISTENTRY pListEntry = (PSHCLLISTENTRY)RTMemAlloc(sizeof(SHCLLISTENTRY));
     if (!pListEntry)
         return VERR_NO_MEMORY;
 
-    int rc = SharedClipboardTransferListEntryInit(pListEntry);
+    int rc = ShClTransferListEntryInit(pListEntry);
     if (RT_SUCCESS(rc))
         *ppListEntry = pListEntry;
 
@@ -449,12 +449,12 @@ int SharedClipboardTransferListEntryAlloc(PSHCLLISTENTRY *ppListEntry)
  *
  * @param   pListEntry         Clipboard list entry structure to free.
  */
-void SharedClipboardTransferListEntryFree(PSHCLLISTENTRY pListEntry)
+void ShClTransferListEntryFree(PSHCLLISTENTRY pListEntry)
 {
     if (!pListEntry)
         return;
 
-    SharedClipboardTransferListEntryDestroy(pListEntry);
+    ShClTransferListEntryDestroy(pListEntry);
     RTMemFree(pListEntry);
 }
 
@@ -464,7 +464,7 @@ void SharedClipboardTransferListEntryFree(PSHCLLISTENTRY pListEntry)
  * @returns VBox status code.
  * @param   pListEntry          Clipboard list entry to copy.
  */
-int SharedClipboardTransferListEntryCopy(PSHCLLISTENTRY pDst, PSHCLLISTENTRY pSrc)
+int ShClTransferListEntryCopy(PSHCLLISTENTRY pDst, PSHCLLISTENTRY pSrc)
 {
     AssertPtrReturn(pDst, VERR_INVALID_POINTER);
     AssertPtrReturn(pSrc, VERR_INVALID_POINTER);
@@ -511,7 +511,7 @@ int SharedClipboardTransferListEntryCopy(PSHCLLISTENTRY pDst, PSHCLLISTENTRY pSr
  * @returns Duplicated clipboard list entry structure on success.
  * @param   pListEntry          Clipboard list entry to duplicate.
  */
-PSHCLLISTENTRY SharedClipboardTransferListEntryDup(PSHCLLISTENTRY pListEntry)
+PSHCLLISTENTRY ShClTransferListEntryDup(PSHCLLISTENTRY pListEntry)
 {
     AssertPtrReturn(pListEntry, NULL);
 
@@ -519,11 +519,11 @@ PSHCLLISTENTRY SharedClipboardTransferListEntryDup(PSHCLLISTENTRY pListEntry)
 
     PSHCLLISTENTRY pListEntryDup = (PSHCLLISTENTRY)RTMemAllocZ(sizeof(SHCLLISTENTRY));
     if (pListEntryDup)
-        rc = SharedClipboardTransferListEntryCopy(pListEntryDup, pListEntry);
+        rc = ShClTransferListEntryCopy(pListEntryDup, pListEntry);
 
     if (RT_FAILURE(rc))
     {
-        SharedClipboardTransferListEntryDestroy(pListEntryDup);
+        ShClTransferListEntryDestroy(pListEntryDup);
 
         RTMemFree(pListEntryDup);
         pListEntryDup = NULL;
@@ -538,7 +538,7 @@ PSHCLLISTENTRY SharedClipboardTransferListEntryDup(PSHCLLISTENTRY pListEntry)
  * @returns VBox status code.
  * @param   pListEntry          Clipboard list entry structure to initialize.
  */
-int SharedClipboardTransferListEntryInit(PSHCLLISTENTRY pListEntry)
+int ShClTransferListEntryInit(PSHCLLISTENTRY pListEntry)
 {
     RT_BZERO(pListEntry, sizeof(SHCLLISTENTRY));
 
@@ -565,7 +565,7 @@ int SharedClipboardTransferListEntryInit(PSHCLLISTENTRY pListEntry)
  *
  * @param   pListEntry          Clipboard list entry structure to destroy.
  */
-void SharedClipboardTransferListEntryDestroy(PSHCLLISTENTRY pListEntry)
+void ShClTransferListEntryDestroy(PSHCLLISTENTRY pListEntry)
 {
     if (!pListEntry)
         return;
@@ -592,7 +592,7 @@ void SharedClipboardTransferListEntryDestroy(PSHCLLISTENTRY pListEntry)
  * @returns \c true if valid, \c false if not.
  * @param   pListEntry          Clipboard data chunk to validate.
  */
-bool SharedClipboardTransferListEntryIsValid(PSHCLLISTENTRY pListEntry)
+bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry)
 {
     RT_NOREF(pListEntry);
 
@@ -607,7 +607,7 @@ bool SharedClipboardTransferListEntryIsValid(PSHCLLISTENTRY pListEntry)
  * @returns VBox status code.
  * @param   pObjCtx             transfer object context to initialize.
  */
-int SharedClipboardTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
+int ShClTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 {
     AssertPtrReturn(pObjCtx, VERR_INVALID_POINTER);
 
@@ -623,7 +623,7 @@ int SharedClipboardTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
  *
  * @param   pObjCtx             transfer object context to destroy.
  */
-void SharedClipboardTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
+void ShClTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 {
     AssertPtrReturnVoid(pObjCtx);
 
@@ -648,7 +648,7 @@ bool SharedClipboardTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
  * @returns VBox status code.
  * @param   pInfo               Object handle info structure to initialize.
  */
-int SharedClipboardTransferObjectHandleInfoInit(PSHCLOBJHANDLEINFO pInfo)
+int ShClTransferObjHandleInfoInit(PSHCLOBJHANDLEINFO pInfo)
 {
     AssertPtrReturn(pInfo, VERR_INVALID_POINTER);
 
@@ -667,7 +667,7 @@ int SharedClipboardTransferObjectHandleInfoInit(PSHCLOBJHANDLEINFO pInfo)
  *
  * @param   pInfo               Object handle info structure to destroy.
  */
-void SharedClipboardTransferObjectHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo)
+void ShClTransferObjHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo)
 {
     if (!pInfo)
         return;
@@ -685,7 +685,7 @@ void SharedClipboardTransferObjectHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo)
  * @returns VBox status code.
  * @param   pParms              transfer object open parameters structure to initialize.
  */
-int SharedClipboardTransferObjectOpenParmsInit(PSHCLOBJOPENCREATEPARMS pParms)
+int ShClTransferObjOpenParmsInit(PSHCLOBJOPENCREATEPARMS pParms)
 {
     AssertPtrReturn(pParms, VERR_INVALID_POINTER);
 
@@ -713,7 +713,7 @@ int SharedClipboardTransferObjectOpenParmsInit(PSHCLOBJOPENCREATEPARMS pParms)
  * @param   pParmsDst           Where to copy the source transfer object open parameters to.
  * @param   pParmsSrc           Which source transfer object open parameters to copy.
  */
-int SharedClipboardTransferObjectOpenParmsCopy(PSHCLOBJOPENCREATEPARMS pParmsDst, PSHCLOBJOPENCREATEPARMS pParmsSrc)
+int ShClTransferObjOpenParmsCopy(PSHCLOBJOPENCREATEPARMS pParmsDst, PSHCLOBJOPENCREATEPARMS pParmsSrc)
 {
     int rc;
 
@@ -742,7 +742,7 @@ int SharedClipboardTransferObjectOpenParmsCopy(PSHCLOBJOPENCREATEPARMS pParmsDst
  *
  * @param   pParms              transfer object open parameters structure to destroy.
  */
-void SharedClipboardTransferObjectOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms)
+void ShClTransferObjOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms)
 {
     if (!pParms)
         return;
@@ -782,8 +782,8 @@ inline PSHCLOBJHANDLEINFO sharedClipboardTransferObjectGet(PSHCLTRANSFER pTransf
  * @param   pOpenCreateParms    Open / create parameters of transfer object to open / create.
  * @param   phObj               Where to store the handle of transfer object opened on success.
  */
-int SharedClipboardTransferObjectOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCreateParms,
-                                      PSHCLOBJHANDLE phObj)
+int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCreateParms,
+                        PSHCLOBJHANDLE phObj)
 {
     AssertPtrReturn(pTransfer,        VERR_INVALID_POINTER);
     AssertPtrReturn(pOpenCreateParms, VERR_INVALID_POINTER);
@@ -799,7 +799,7 @@ int SharedClipboardTransferObjectOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREAT
             = (PSHCLOBJHANDLEINFO)RTMemAlloc(sizeof(SHCLOBJHANDLEINFO));
         if (pInfo)
         {
-            rc = SharedClipboardTransferObjectHandleInfoInit(pInfo);
+            rc = ShClTransferObjHandleInfoInit(pInfo);
             if (RT_SUCCESS(rc))
             {
                 const bool fWritable = true; /** @todo Fix this. */
@@ -834,7 +834,7 @@ int SharedClipboardTransferObjectOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREAT
             }
             else
             {
-                SharedClipboardTransferObjectHandleInfoDestroy(pInfo);
+                ShClTransferObjHandleInfoDestroy(pInfo);
                 RTMemFree(pInfo);
             }
         }
@@ -862,7 +862,7 @@ int SharedClipboardTransferObjectOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREAT
  * @param   pTransfer           Clipboard transfer that contains the object to close.
  * @param   hObj                Handle of transfer object to close.
  */
-int SharedClipboardTransferObjectClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
+int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
@@ -928,8 +928,8 @@ int SharedClipboardTransferObjectClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hO
  * @param   cbBuf               Size (in bytes) of buffer.
  * @param   pcbRead             How much bytes were read on success. Optional.
  */
-int SharedClipboardTransferObjectRead(PSHCLTRANSFER pTransfer,
-                                      SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags)
+int ShClTransferObjRead(PSHCLTRANSFER pTransfer,
+                        SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,     VERR_INVALID_POINTER);
@@ -990,9 +990,9 @@ int SharedClipboardTransferObjectRead(PSHCLTRANSFER pTransfer,
  * @param   cbBuf               Size (in bytes) of buffer to write.
  * @param   pcbWritten          How much bytes were writtenon success. Optional.
  */
-int SharedClipboardTransferObjectWrite(PSHCLTRANSFER pTransfer,
-                                       SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten,
-                                       uint32_t fFlags)
+int ShClTransferObjWrite(PSHCLTRANSFER pTransfer,
+                         SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten,
+                         uint32_t fFlags)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pvBuf,     VERR_INVALID_POINTER);
@@ -1042,7 +1042,7 @@ int SharedClipboardTransferObjectWrite(PSHCLTRANSFER pTransfer,
  * @returns Duplicated object data chunk on success, or NULL on failure.
  * @param   pDataChunk          transfer object data chunk to duplicate.
  */
-PSHCLOBJDATACHUNK SharedClipboardTransferObjectDataChunkDup(PSHCLOBJDATACHUNK pDataChunk)
+PSHCLOBJDATACHUNK ShClTransferObjDataChunkDup(PSHCLOBJDATACHUNK pDataChunk)
 {
     if (!pDataChunk)
         return NULL;
@@ -1068,7 +1068,7 @@ PSHCLOBJDATACHUNK SharedClipboardTransferObjectDataChunkDup(PSHCLOBJDATACHUNK pD
  *
  * @param   pDataChunk          transfer object data chunk to destroy.
  */
-void SharedClipboardTransferObjectDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk)
+void ShClTransferObjDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk)
 {
     if (!pDataChunk)
         return;
@@ -1092,12 +1092,12 @@ void SharedClipboardTransferObjectDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk)
  * @param   pDataChunk          transfer object data chunk to free. The handed-in pointer will
  *                              be invalid after calling this function.
  */
-void SharedClipboardTransferObjectDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
+void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
 {
     if (!pDataChunk)
         return;
 
-    SharedClipboardTransferObjectDataChunkDestroy(pDataChunk);
+    ShClTransferObjDataChunkDestroy(pDataChunk);
 
     RTMemFree(pDataChunk);
     pDataChunk = NULL;
@@ -1110,7 +1110,7 @@ void SharedClipboardTransferObjectDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
  * @param   ppTransfer          Where to return the created Shared Clipboard transfer struct.
  *                              Must be destroyed by SharedClipboardTransferDestroy().
  */
-int SharedClipboardTransferCreate(PSHCLTRANSFER *ppTransfer)
+int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 {
     AssertPtrReturn(ppTransfer, VERR_INVALID_POINTER);
 
@@ -1163,7 +1163,7 @@ int SharedClipboardTransferCreate(PSHCLTRANSFER *ppTransfer)
     {
         if (pTransfer)
         {
-            SharedClipboardTransferDestroy(pTransfer);
+            ShClTransferDestroy(pTransfer);
             RTMemFree(pTransfer);
         }
     }
@@ -1178,7 +1178,7 @@ int SharedClipboardTransferCreate(PSHCLTRANSFER *ppTransfer)
  * @returns VBox status code.
  * @param   pTransferCtx                Clipboard transfer to destroy.
  */
-int SharedClipboardTransferDestroy(PSHCLTRANSFER pTransfer)
+int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
 {
     if (!pTransfer)
         return VINF_SUCCESS;
@@ -1191,12 +1191,12 @@ int SharedClipboardTransferDestroy(PSHCLTRANSFER pTransfer)
 
     RTStrFree(pTransfer->pszPathRootAbs);
 
-    SharedClipboardEventSourceDestroy(&pTransfer->Events);
+    ShClEventSourceDestroy(&pTransfer->Events);
 
     PSHCLLISTHANDLEINFO pItList, pItListNext;
     RTListForEachSafe(&pTransfer->lstList, pItList, pItListNext, SHCLLISTHANDLEINFO, Node)
     {
-        SharedClipboardTransferListHandleInfoDestroy(pItList);
+        ShClTransferListHandleInfoDestroy(pItList);
 
         RTListNodeRemove(&pItList->Node);
 
@@ -1206,7 +1206,7 @@ int SharedClipboardTransferDestroy(PSHCLTRANSFER pTransfer)
     PSHCLOBJHANDLEINFO pItObj, pItObjNext;
     RTListForEachSafe(&pTransfer->lstObj, pItObj, pItObjNext, SHCLOBJHANDLEINFO, Node)
     {
-        SharedClipboardTransferObjectHandleInfoDestroy(pItObj);
+        ShClTransferObjHandleInfoDestroy(pItObj);
 
         RTListNodeRemove(&pItObj->Node);
 
@@ -1226,8 +1226,8 @@ int SharedClipboardTransferDestroy(PSHCLTRANSFER pTransfer)
  * @param   enmDir              Specifies the transfer direction of this transfer.
  * @param   enmSource           Specifies the data source of the transfer.
  */
-int SharedClipboardTransferInit(PSHCLTRANSFER pTransfer,
-                                uint32_t uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource)
+int ShClTransferInit(PSHCLTRANSFER pTransfer,
+                     uint32_t uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource)
 {
     pTransfer->State.uID       = uID;
     pTransfer->State.enmDir    = enmDir;
@@ -1236,7 +1236,7 @@ int SharedClipboardTransferInit(PSHCLTRANSFER pTransfer,
     LogFlowFunc(("uID=%RU32, enmDir=%RU32, enmSource=%RU32\n",
                  pTransfer->State.uID, pTransfer->State.enmDir, pTransfer->State.enmSource));
 
-    int rc = SharedClipboardEventSourceCreate(&pTransfer->Events, pTransfer->State.uID);
+    int rc = ShClEventSourceCreate(&pTransfer->Events, pTransfer->State.uID);
     if (RT_SUCCESS(rc))
     {
         pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_INITIALIZED; /* Now we're ready to run. */
@@ -1252,7 +1252,7 @@ int SharedClipboardTransferInit(PSHCLTRANSFER pTransfer,
     return rc;
 }
 
-int SharedClipboardTransferOpen(PSHCLTRANSFER pTransfer)
+int ShClTransferOpen(PSHCLTRANSFER pTransfer)
 {
     int rc = VINF_SUCCESS;
 
@@ -1263,7 +1263,7 @@ int SharedClipboardTransferOpen(PSHCLTRANSFER pTransfer)
     return rc;
 }
 
-int SharedClipboardTransferClose(PSHCLTRANSFER pTransfer)
+int ShClTransferClose(PSHCLTRANSFER pTransfer)
 {
     int rc = VINF_SUCCESS;
 
@@ -1312,8 +1312,8 @@ inline SHCLLISTHANDLE sharedClipboardTransferListHandleNew(PSHCLTRANSFER pTransf
  * @param   pOpenParms          List open parameters to use for opening.
  * @param   phList              Where to store the List handle of opened list on success.
  */
-int SharedClipboardTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
-                                    PSHCLLISTHANDLE phList)
+int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
+                         PSHCLLISTHANDLE phList)
 {
     AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
     AssertPtrReturn(pOpenParms, VERR_INVALID_POINTER);
@@ -1331,7 +1331,7 @@ int SharedClipboardTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS 
             = (PSHCLLISTHANDLEINFO)RTMemAlloc(sizeof(SHCLLISTHANDLEINFO));
         if (pInfo)
         {
-            rc = SharedClipboardTransferListHandleInfoInit(pInfo);
+            rc = ShClTransferListHandleInfoInit(pInfo);
             if (RT_SUCCESS(rc))
             {
                 RTFSOBJINFO objInfo;
@@ -1377,7 +1377,7 @@ int SharedClipboardTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS 
                 }
 
                 if (RT_FAILURE(rc))
-                    SharedClipboardTransferListHandleInfoDestroy(pInfo);
+                    ShClTransferListHandleInfoDestroy(pInfo);
             }
 
             if (RT_FAILURE(rc))
@@ -1415,7 +1415,7 @@ int SharedClipboardTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS 
  * @param   pTransfer           Clipboard transfer to handle.
  * @param   hList               Handle of list to close.
  */
-int SharedClipboardTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
+int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
@@ -1650,8 +1650,8 @@ static char *sharedClipboardPathTranslate(const char *pszPath)
  * @param   hList               Handle of list to get header for.
  * @param   pHdr                Where to store the returned list header information.
  */
-int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
-                                         PSHCLLISTHDR pHdr)
+int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
+                              PSHCLLISTHDR pHdr)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pHdr,      VERR_INVALID_POINTER);
@@ -1665,7 +1665,7 @@ int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE
         PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGetByHandle(pTransfer, hList);
         if (pInfo)
         {
-            rc = SharedClipboardTransferListHdrInit(pHdr);
+            rc = ShClTransferListHdrInit(pHdr);
             if (RT_SUCCESS(rc))
             {
                 switch (pInfo->enmType)
@@ -1734,8 +1734,8 @@ int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE
  * @param   hList               Handle of Shared Clipboard transfer list to get object for.
  * @param   uIdx                Index of object to get.
  */
-PSHCLTRANSFEROBJ SharedClipboardTransferListGetObj(PSHCLTRANSFER pTransfer,
-                                                   SHCLLISTHANDLE hList, uint64_t uIdx)
+PSHCLTRANSFEROBJ ShClTransferListGetObj(PSHCLTRANSFER pTransfer,
+                                        SHCLLISTHANDLE hList, uint64_t uIdx)
 {
     AssertPtrReturn(pTransfer, NULL);
 
@@ -1754,8 +1754,8 @@ PSHCLTRANSFEROBJ SharedClipboardTransferListGetObj(PSHCLTRANSFER pTransfer,
  * @param   hList               List handle of list to read from.
  * @param   pEntry              Where to store the read information.
  */
-int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
-                                    PSHCLLISTENTRY pEntry)
+int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
+                         PSHCLLISTENTRY pEntry)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pEntry,    VERR_INVALID_POINTER);
@@ -1824,7 +1824,7 @@ int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hLis
                                     AssertPtr(pEntry->pvInfo);
                                     Assert   (pEntry->cbInfo == sizeof(SHCLFSOBJINFO));
 
-                                    SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+                                    ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
                                 }
                             }
 
@@ -1855,7 +1855,7 @@ int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hLis
                             rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pInfo->pszPathLocalAbs);
                             if (RT_SUCCESS(rc))
                             {
-                                SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &objInfo);
+                                ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &objInfo);
 
                                 pEntry->cbInfo = sizeof(SHCLFSOBJINFO);
                                 pEntry->fInfo  = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
@@ -1888,8 +1888,8 @@ int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hLis
     return rc;
 }
 
-int SharedClipboardTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
-                                     PSHCLLISTENTRY pEntry)
+int ShClTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
+                          PSHCLLISTENTRY pEntry)
 {
     RT_NOREF(pTransfer, hList, pEntry);
 
@@ -1911,7 +1911,7 @@ int SharedClipboardTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hLi
  * @param   pTransfer           Clipboard transfer to handle.
  * @param   hList               List handle to check.
  */
-bool SharedClipboardTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
+bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 {
     bool fIsValid = false;
 
@@ -1934,8 +1934,8 @@ bool SharedClipboardTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTH
  * @param   pTransfer           Transfer to create transfer provider for.
  * @param   pCreationCtx        Provider creation context to use for provider creation.
  */
-int SharedClipboardTransferSetInterface(PSHCLTRANSFER pTransfer,
-                                        PSHCLPROVIDERCREATIONCTX pCreationCtx)
+int ShClTransferSetInterface(PSHCLTRANSFER pTransfer,
+                             PSHCLPROVIDERCREATIONCTX pCreationCtx)
 {
     AssertPtrReturn(pTransfer,    VERR_INVALID_POINTER);
     AssertPtrReturn(pCreationCtx, VERR_INVALID_POINTER);
@@ -2000,7 +2000,7 @@ static void sharedClipboardTransferListRootsClear(PSHCLTRANSFER pTransfer)
  *
  * @param   pTransfer           Clipboard transfer to reset.
  */
-void SharedClipboardTransferReset(PSHCLTRANSFER pTransfer)
+void ShClTransferReset(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturnVoid(pTransfer);
 
@@ -2015,7 +2015,7 @@ void SharedClipboardTransferReset(PSHCLTRANSFER pTransfer)
  * @returns Current clipboard area, or NULL if none.
  * @param   pTransfer           Clipboard transfer to return clipboard area for.
  */
-SharedClipboardArea *SharedClipboardTransferGetArea(PSHCLTRANSFER pTransfer)
+SharedClipboardArea *ShClTransferGetArea(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, NULL);
 
@@ -2028,7 +2028,7 @@ SharedClipboardArea *SharedClipboardTransferGetArea(PSHCLTRANSFER pTransfer)
  * @returns Root list entry count.
  * @param   pTransfer           Clipboard transfer to return root entry count for.
  */
-uint32_t SharedClipboardTransferRootsCount(PSHCLTRANSFER pTransfer)
+uint32_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, 0);
 
@@ -2062,8 +2062,8 @@ inline PSHCLLISTROOT sharedClipboardTransferRootsGetInternal(PSHCLTRANSFER pTran
  * @param   uIndex              Index (zero-based) of entry to get.
  * @param   pEntry              Where to store the returned entry on success.
  */
-int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer,
-                                      uint64_t uIndex, PSHCLROOTLISTENTRY pEntry)
+int ShClTransferRootsEntry(PSHCLTRANSFER pTransfer,
+                           uint64_t uIndex, PSHCLROOTLISTENTRY pEntry)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
     AssertPtrReturn(pEntry,    VERR_INVALID_POINTER);
@@ -2088,7 +2088,7 @@ int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer,
 
         LogFlowFunc(("pcszSrcPath=%s, pszDstPath=%s\n", pcszSrcPath, pszDstPath));
 
-        rc = SharedClipboardTransferListEntryInit(pEntry);
+        rc = ShClTransferListEntryInit(pEntry);
         if (RT_SUCCESS(rc))
         {
             rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pszDstPath);
@@ -2102,7 +2102,7 @@ int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer,
                     rc = RTPathQueryInfo(pcszSrcPath, &fsObjInfo, RTFSOBJATTRADD_NOTHING);
                     if (RT_SUCCESS(rc))
                     {
-                        SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &fsObjInfo);
+                        ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &fsObjInfo);
 
                         pEntry->fInfo = VBOX_SHCL_INFO_FLAG_FSOBJINFO;
                     }
@@ -2126,7 +2126,7 @@ int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer,
  * @param   pTransfer           Clipboard transfer to return root entries for.
  * @param   ppRootList          Where to store the root list on success.
  */
-int SharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
+int ShClTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
 {
     AssertPtrReturn(pTransfer,  VERR_INVALID_POINTER);
     AssertPtrReturn(ppRootList, VERR_INVALID_POINTER);
@@ -2137,7 +2137,7 @@ int SharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRo
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLROOTLIST pRootList = SharedClipboardTransferRootListAlloc();
+        PSHCLROOTLIST pRootList = ShClTransferRootListAlloc();
         if (!pRootList)
             return VERR_NO_MEMORY;
 
@@ -2153,7 +2153,7 @@ int SharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRo
             {
                 for (uint64_t i = 0; i < cRoots; ++i)
                 {
-                    rc = SharedClipboardTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
+                    rc = ShClTransferRootsEntry(pTransfer, i, &paRootListEntries[i]);
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -2197,7 +2197,7 @@ int SharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRo
  *                              All entries must have the same root path.
  * @param   cbRoots             Size (in bytes) of string list.
  */
-int SharedClipboardTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
+int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots)
 {
     AssertPtrReturn(pTransfer,      VERR_INVALID_POINTER);
     AssertPtrReturn(pszRoots,       VERR_INVALID_POINTER);
@@ -2266,7 +2266,7 @@ int SharedClipboardTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoot
  * @returns The transfer's ID.
  * @param   pTransfer           Clipboard transfer to return ID for.
  */
-SHCLTRANSFERID SharedClipboardTransferGetID(PSHCLTRANSFER pTransfer)
+SHCLTRANSFERID ShClTransferGetID(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, 0);
 
@@ -2279,7 +2279,7 @@ SHCLTRANSFERID SharedClipboardTransferGetID(PSHCLTRANSFER pTransfer)
  * @returns The transfer's direction.
  * @param   pTransfer           Clipboard transfer to return direction for.
  */
-SHCLTRANSFERDIR SharedClipboardTransferGetDir(PSHCLTRANSFER pTransfer)
+SHCLTRANSFERDIR ShClTransferGetDir(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLTRANSFERDIR_UNKNOWN);
 
@@ -2292,7 +2292,7 @@ SHCLTRANSFERDIR SharedClipboardTransferGetDir(PSHCLTRANSFER pTransfer)
  * @returns The transfer's source.
  * @param   pTransfer           Clipboard transfer to return source for.
  */
-SHCLSOURCE SharedClipboardTransferGetSource(PSHCLTRANSFER pTransfer)
+SHCLSOURCE ShClTransferGetSource(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLSOURCE_INVALID);
 
@@ -2305,7 +2305,7 @@ SHCLSOURCE SharedClipboardTransferGetSource(PSHCLTRANSFER pTransfer)
  * @returns Current transfer status.
  * @param   pTransfer           Clipboard transfer to return status for.
  */
-SHCLTRANSFERSTATUS SharedClipboardTransferGetStatus(PSHCLTRANSFER pTransfer)
+SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLTRANSFERSTATUS_NONE);
 
@@ -2320,14 +2320,14 @@ SHCLTRANSFERSTATUS SharedClipboardTransferGetStatus(PSHCLTRANSFER pTransfer)
  * @param   pfnThreadFunc       Pointer to thread function to use.
  * @param   pvUser              Pointer to user-provided data. Optional.
  */
-int SharedClipboardTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser)
+int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser)
 {
     AssertPtrReturn(pTransfer,     VERR_INVALID_POINTER);
     AssertPtrReturn(pfnThreadFunc, VERR_INVALID_POINTER);
     /* pvUser is optional. */
 
     AssertMsgReturn(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_STARTED,
-                    ("Wrong status (currently is %s)\n", VBoxShClTransferStatusToStr(pTransfer->State.enmStatus)),
+                    ("Wrong status (currently is %s)\n", ShClTransferStatusToStr(pTransfer->State.enmStatus)),
                     VERR_WRONG_ORDER);
 
     int rc = sharedClipboardTransferThreadCreate(pTransfer, pfnThreadFunc, pvUser);
@@ -2342,7 +2342,7 @@ int SharedClipboardTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFun
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to start.
  */
-int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer)
+int ShClTransferStart(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
@@ -2350,7 +2350,7 @@ int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer)
 
     /* Ready to start? */
     AssertMsgReturn(pTransfer->State.enmStatus == SHCLTRANSFERSTATUS_INITIALIZED,
-                    ("Wrong status (currently is %s)\n", VBoxShClTransferStatusToStr(pTransfer->State.enmStatus)),
+                    ("Wrong status (currently is %s)\n", ShClTransferStatusToStr(pTransfer->State.enmStatus)),
                     VERR_WRONG_ORDER);
 
     int rc;
@@ -2379,8 +2379,8 @@ int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer)
  * @param   pTransfer           Clipboard transfer to set callbacks for.
  * @param   pCallbacks          Pointer to callback table to set.
  */
-void SharedClipboardTransferSetCallbacks(PSHCLTRANSFER pTransfer,
-                                         PSHCLTRANSFERCALLBACKS pCallbacks)
+void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer,
+                              PSHCLTRANSFERCALLBACKS pCallbacks)
 {
     AssertPtrReturnVoid(pTransfer);
     AssertPtrReturnVoid(pCallbacks);
@@ -2478,7 +2478,7 @@ static int sharedClipboardTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINT
  * @returns VBox status code.
  * @param   pTransferCtx                Transfer context to initialize.
  */
-int SharedClipboardTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
+int ShClTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturn(pTransferCtx, VERR_INVALID_POINTER);
 
@@ -2495,7 +2495,7 @@ int SharedClipboardTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 
         RT_ZERO(pTransferCtx->bmTransferIds);
 
-        SharedClipboardTransferCtxReset(pTransferCtx);
+        ShClTransferCtxReset(pTransferCtx);
     }
 
     return VINF_SUCCESS;
@@ -2506,7 +2506,7 @@ int SharedClipboardTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
  *
  * @param   pTransferCtx                Transfer context to destroy.
  */
-void SharedClipboardTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
+void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturnVoid(pTransferCtx);
 
@@ -2517,7 +2517,7 @@ void SharedClipboardTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
     PSHCLTRANSFER pTransfer, pTransferNext;
     RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
     {
-        SharedClipboardTransferDestroy(pTransfer);
+        ShClTransferDestroy(pTransfer);
 
         RTListNodeRemove(&pTransfer->Node);
 
@@ -2534,7 +2534,7 @@ void SharedClipboardTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
  *
  * @param   pTransferCtx                Transfer context to reset.
  */
-void SharedClipboardTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
+void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturnVoid(pTransferCtx);
 
@@ -2542,7 +2542,7 @@ void SharedClipboardTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
 
     PSHCLTRANSFER pTransfer;
     RTListForEach(&pTransferCtx->List, pTransfer, SHCLTRANSFER, Node)
-        SharedClipboardTransferReset(pTransfer);
+        ShClTransferReset(pTransfer);
 }
 
 /**
@@ -2571,7 +2571,7 @@ static PSHCLTRANSFER sharedClipboardTransferCtxGetTransferInternal(PSHCLTRANSFER
  * @param   pTransferCtx                Transfer context to return transfer for.
  * @param   uID                 ID of the transfer to return.
  */
-PSHCLTRANSFER SharedClipboardTransferCtxGetTransfer(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
+PSHCLTRANSFER ShClTransferCtxGetTransfer(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
 {
     return sharedClipboardTransferCtxGetTransferInternal(pTransferCtx, uID);
 }
@@ -2582,7 +2582,7 @@ PSHCLTRANSFER SharedClipboardTransferCtxGetTransfer(PSHCLTRANSFERCTX pTransferCt
  * @returns Number of running transfers.
  * @param   pTransferCtx                Transfer context to return number for.
  */
-uint32_t SharedClipboardTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx)
+uint32_t ShClTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturn(pTransferCtx, 0);
     return pTransferCtx->cRunning;
@@ -2594,7 +2594,7 @@ uint32_t SharedClipboardTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransfe
  * @returns Number of total transfers.
  * @param   pTransferCtx                Transfer context to return number for.
  */
-uint32_t SharedClipboardTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx)
+uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturn(pTransferCtx, 0);
     return pTransferCtx->cTransfers;
@@ -2610,7 +2610,7 @@ uint32_t SharedClipboardTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferC
  * @param   pTransfer           Transfer to register.
  * @param   pidTransfer         Where to return the transfer ID on success. Optional.
  */
-int SharedClipboardTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t *pidTransfer)
+int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t *pidTransfer)
 {
     AssertPtrReturn(pTransferCtx,      VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2663,7 +2663,7 @@ int SharedClipboardTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PS
  * @param   pTransfer           Transfer to register.
  * @param   idTransfer          Transfer ID to use for registration.
  */
-int SharedClipboardTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t idTransfer)
+int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t idTransfer)
 {
     LogFlowFunc(("cTransfers=%RU16, idTransfer=%RU32\n", pTransferCtx->cTransfers, idTransfer));
 
@@ -2692,7 +2692,7 @@ int SharedClipboardTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransfer
  * @param   pTransferCtx                Transfer context to unregister transfer from.
  * @param   idTransfer          Transfer ID to unregister.
  */
-int SharedClipboardTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t idTransfer)
+int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t idTransfer)
 {
     int rc = VINF_SUCCESS;
     AssertMsgStmt(ASMBitTestAndClear(&pTransferCtx->bmTransferIds, idTransfer), ("idTransfer=%#x\n", idTransfer), rc = VERR_NOT_FOUND);
@@ -2718,7 +2718,7 @@ int SharedClipboardTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, 
  *
  * @param   pTransferCtx                Transfer context to cleanup transfers for.
  */
-void SharedClipboardTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
+void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturnVoid(pTransferCtx);
 
@@ -2732,9 +2732,9 @@ void SharedClipboardTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
     PSHCLTRANSFER pTransfer, pTransferNext;
     RTListForEachSafe(&pTransferCtx->List, pTransfer, pTransferNext, SHCLTRANSFER, Node)
     {
-        if (SharedClipboardTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
+        if (ShClTransferGetStatus(pTransfer) != SHCLTRANSFERSTATUS_STARTED)
         {
-            SharedClipboardTransferDestroy(pTransfer);
+            ShClTransferDestroy(pTransfer);
             RTListNodeRemove(&pTransfer->Node);
 
             RTMemFree(pTransfer);
@@ -2752,7 +2752,7 @@ void SharedClipboardTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx)
  * @returns \c if maximum has been reached, \c false if not.
  * @param   pTransferCtx                Transfer context to determine value for.
  */
-bool SharedClipboardTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx)
+bool ShClTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx)
 {
     AssertPtrReturn(pTransferCtx, true);
 
@@ -2768,7 +2768,7 @@ bool SharedClipboardTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransfe
  * @param   pDst                The Shared Clipboard structure to convert data to.
  * @param   pSrc                The IPRT structure to convert data from.
  */
-void SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc)
+void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc)
 {
     pDst->cbObject          = pSrc->cbObject;
     pDst->cbAllocated       = pSrc->cbAllocated;
@@ -3054,7 +3054,7 @@ static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClF
  * @returns Transfer status string name.
  * @param   enmStatus           The transfer status to translate.
  */
-const char *VBoxShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus)
+const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus)
 {
     switch (enmStatus)
     {

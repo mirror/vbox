@@ -179,21 +179,31 @@ typedef struct _SHCLEVENTSOURCE
     RTLISTANCHOR      lstEvents;
 } SHCLEVENTSOURCE, *PSHCLEVENTSOURCE;
 
-int SharedClipboardPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
-                                PSHCLEVENTPAYLOAD *ppPayload);
-void SharedClipboardPayloadFree(PSHCLEVENTPAYLOAD pPayload);
+/** @name Shared Clipboard data payload functions.
+ *  @{
+ */
+int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData, PSHCLEVENTPAYLOAD *ppPayload);
+void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload);
+/** @} */
 
-int SharedClipboardEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID);
-void SharedClipboardEventSourceDestroy(PSHCLEVENTSOURCE pSource);
+/** @name Shared Clipboard event source functions.
+ *  @{
+ */
+int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID);
+void ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource);
+/** @} */
 
-SHCLEVENTID SharedClipboardEventIDGenerate(PSHCLEVENTSOURCE pSource);
-SHCLEVENTID SharedClipboardEventGetLast(PSHCLEVENTSOURCE pSource);
-int SharedClipboardEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
-int SharedClipboardEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
-int SharedClipboardEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs,
-                             PSHCLEVENTPAYLOAD* ppPayload);
-int SharedClipboardEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, PSHCLEVENTPAYLOAD pPayload);
-void SharedClipboardEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
+/** @name Shared Clipboard event functions.
+ *  @{
+ */
+SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource);
+SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource);
+int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
+int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
+int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs, PSHCLEVENTPAYLOAD* ppPayload);
+int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, PSHCLEVENTPAYLOAD pPayload);
+void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID);
+/** @} */
 
 /**
  * Enumeration to specify the Shared Clipboard transfer source type.
@@ -224,17 +234,23 @@ typedef struct _CLIPBACKEND CLIPBACKEND;
 struct _CLIPREADCBREQ;
 typedef struct _CLIPREADCBREQ CLIPREADCBREQ;
 
-/* APIs exported by the X11 backend. */
+/** @name Shared Clipboard APIs exported by the X11 backend.
+ *  @{
+ */
 extern CLIPBACKEND *ClipConstructX11(SHCLCONTEXT *pFrontend, bool fHeadless);
 extern void ClipDestructX11(CLIPBACKEND *pBackend);
 extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab);
 extern int ClipStopX11(CLIPBACKEND *pBackend);
 extern int ClipAnnounceFormatToX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormats);
 extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormat, CLIPREADCBREQ *pReq);
+/** @} */
 
-/* APIs (as callbacks) exported by the X11/VBox frontend. */
+/** @name Shared Clipboard APIs (as callbacks) exported by the X11/VBox frontend.
+ *  @{
+ */
 extern DECLCALLBACK(int)  ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb);
 extern DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats);
 extern DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
+/** @} */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_h */
 

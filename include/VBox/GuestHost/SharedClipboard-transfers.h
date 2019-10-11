@@ -1032,123 +1032,115 @@ typedef struct _SHCLTRANSFERCTX
     uint16_t                    cTransfers;
 } SHCLTRANSFERCTX, *PSHCLTRANSFERCTX;
 
-int SharedClipboardTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
-void SharedClipboardTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
-bool SharedClipboardTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
+int ShClTransferObjCtxInit(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
+void ShClTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
+bool ShClTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx);
 
-int SharedClipboardTransferObjectHandleInfoInit(PSHCLOBJHANDLEINFO pInfo);
-void SharedClipboardTransferObjectHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo);
+int ShClTransferObjHandleInfoInit(PSHCLOBJHANDLEINFO pInfo);
+void ShClTransferObjHandleInfoDestroy(PSHCLOBJHANDLEINFO pInfo);
 
-int SharedClipboardTransferObjectOpenParmsInit(PSHCLOBJOPENCREATEPARMS pParms);
-int SharedClipboardTransferObjectOpenParmsCopy(PSHCLOBJOPENCREATEPARMS pParmsDst, PSHCLOBJOPENCREATEPARMS pParmsSrc);
-void SharedClipboardTransferObjectOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms);
+int ShClTransferObjOpenParmsInit(PSHCLOBJOPENCREATEPARMS pParms);
+int ShClTransferObjOpenParmsCopy(PSHCLOBJOPENCREATEPARMS pParmsDst, PSHCLOBJOPENCREATEPARMS pParmsSrc);
+void ShClTransferObjOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms);
 
-int SharedClipboardTransferObjectOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCreateParms, PSHCLOBJHANDLE phObj);
-int SharedClipboardTransferObjectClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
-int SharedClipboardTransferObjectRead(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags);
-int SharedClipboardTransferObjectWrite(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten, uint32_t fFlags);
+int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCreateParms, PSHCLOBJHANDLE phObj);
+int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj);
+int ShClTransferObjRead(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbRead, uint32_t fFlags);
+int ShClTransferObjWrite(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj, void *pvBuf, uint32_t cbBuf, uint32_t *pcbWritten, uint32_t fFlags);
 
-PSHCLOBJDATACHUNK SharedClipboardTransferObjectDataChunkDup(PSHCLOBJDATACHUNK pDataChunk);
-void SharedClipboardTransferObjectDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk);
-void SharedClipboardTransferObjectDataChunkFree(PSHCLOBJDATACHUNK pDataChunk);
+PSHCLOBJDATACHUNK ShClTransferObjDataChunkDup(PSHCLOBJDATACHUNK pDataChunk);
+void ShClTransferObjDataChunkDestroy(PSHCLOBJDATACHUNK pDataChunk);
+void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk);
 
-int SharedClipboardTransferCreate(PSHCLTRANSFER *ppTransfer);
-int SharedClipboardTransferDestroy(PSHCLTRANSFER pTransfer);
+int ShClTransferCreate(PSHCLTRANSFER *ppTransfer);
+int ShClTransferDestroy(PSHCLTRANSFER pTransfer);
 
-int SharedClipboardTransferInit(PSHCLTRANSFER pTransfer, uint32_t uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource);
-int SharedClipboardTransferOpen(PSHCLTRANSFER pTransfer);
-int SharedClipboardTransferClose(PSHCLTRANSFER pTransfer);
+int ShClTransferInit(PSHCLTRANSFER pTransfer, uint32_t uID, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource);
+int ShClTransferOpen(PSHCLTRANSFER pTransfer);
+int ShClTransferClose(PSHCLTRANSFER pTransfer);
 
-int SharedClipboardTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
-int SharedClipboardTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
-int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTHDR pHdr);
-PSHCLTRANSFEROBJ SharedClipboardTransferListGetObj(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, uint64_t uIdx);
-int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
-int SharedClipboardTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
-bool SharedClipboardTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
+int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList);
+int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
+int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTHDR pHdr);
+PSHCLTRANSFEROBJ ShClTransferListGetObj(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, uint64_t uIdx);
+int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
+int ShClTransferListWrite(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry);
+bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList);
 
-int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath);
-int SharedClipboardPathSanitize(char *pszPath, size_t cbPath);
+int ShClPathSanitizeFilename(char *pszPath, size_t cbPath);
+int ShClPathSanitize(char *pszPath, size_t cbPath);
 
-PSHCLROOTLIST SharedClipboardTransferRootListAlloc(void);
-void SharedClipboardTransferRootListFree(PSHCLROOTLIST pRootList);
+PSHCLROOTLIST ShClTransferRootListAlloc(void);
+void ShClTransferRootListFree(PSHCLROOTLIST pRootList);
 
-PSHCLROOTLISTHDR SharedClipboardTransferRootListHdrDup(PSHCLROOTLISTHDR pRoots);
-int SharedClipboardTransferRootListHdrInit(PSHCLROOTLISTHDR pRoots);
-void SharedClipboardTransferRootListHdrDestroy(PSHCLROOTLISTHDR pRoots);
+PSHCLROOTLISTHDR ShClTransferRootListHdrDup(PSHCLROOTLISTHDR pRoots);
+int ShClTransferRootListHdrInit(PSHCLROOTLISTHDR pRoots);
+void ShClTransferRootListHdrDestroy(PSHCLROOTLISTHDR pRoots);
 
-int SharedClipboardTransferRootListEntryCopy(PSHCLROOTLISTENTRY pDst, PSHCLROOTLISTENTRY pSrc);
-int SharedClipboardTransferRootListEntryInit(PSHCLROOTLISTENTRY pRootListEntry);
-void SharedClipboardTransferRootListEntryDestroy(PSHCLROOTLISTENTRY pRootListEntry);
-PSHCLROOTLISTENTRY SharedClipboardTransferRootListEntryDup(PSHCLROOTLISTENTRY pRootListEntry);
+int ShClTransferRootListEntryCopy(PSHCLROOTLISTENTRY pDst, PSHCLROOTLISTENTRY pSrc);
+int ShClTransferRootListEntryInit(PSHCLROOTLISTENTRY pRootListEntry);
+void ShClTransferRootListEntryDestroy(PSHCLROOTLISTENTRY pRootListEntry);
+PSHCLROOTLISTENTRY ShClTransferRootListEntryDup(PSHCLROOTLISTENTRY pRootListEntry);
 
-int SharedClipboardTransferListHandleInfoInit(PSHCLLISTHANDLEINFO pInfo);
-void SharedClipboardTransferListHandleInfoDestroy(PSHCLLISTHANDLEINFO pInfo);
+int ShClTransferListHandleInfoInit(PSHCLLISTHANDLEINFO pInfo);
+void ShClTransferListHandleInfoDestroy(PSHCLLISTHANDLEINFO pInfo);
 
-int SharedClipboardTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr);
-void SharedClipboardTransferListHdrFree(PSHCLLISTHDR pListHdr);
+int ShClTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr);
+void ShClTransferListHdrFree(PSHCLLISTHDR pListHdr);
 PSHCLLISTHDR SharedClipboardTransferListHdrDup(PSHCLLISTHDR pListHdr);
-int SharedClipboardTransferListHdrInit(PSHCLLISTHDR pListHdr);
-void SharedClipboardTransferListHdrDestroy(PSHCLLISTHDR pListHdr);
-void SharedClipboardTransferListHdrFree(PSHCLLISTHDR pListHdr);
-void SharedClipboardTransferListHdrReset(PSHCLLISTHDR pListHdr);
-bool SharedClipboardTransferListHdrIsValid(PSHCLLISTHDR pListHdr);
+int ShClTransferListHdrInit(PSHCLLISTHDR pListHdr);
+void ShClTransferListHdrDestroy(PSHCLLISTHDR pListHdr);
+void ShClTransferListHdrReset(PSHCLLISTHDR pListHdr);
+bool ShClTransferListHdrIsValid(PSHCLLISTHDR pListHdr);
 
-int SharedClipboardTransferListOpenParmsCopy(PSHCLLISTOPENPARMS pDst, PSHCLLISTOPENPARMS pSrc);
-PSHCLLISTOPENPARMS SharedClipboardTransferListOpenParmsDup(PSHCLLISTOPENPARMS pParms);
-int SharedClipboardTransferListOpenParmsInit(PSHCLLISTOPENPARMS pParms);
-void SharedClipboardTransferListOpenParmsDestroy(PSHCLLISTOPENPARMS pParms);
+int ShClTransferListOpenParmsCopy(PSHCLLISTOPENPARMS pDst, PSHCLLISTOPENPARMS pSrc);
+PSHCLLISTOPENPARMS ShClTransferListOpenParmsDup(PSHCLLISTOPENPARMS pParms);
+int ShClTransferListOpenParmsInit(PSHCLLISTOPENPARMS pParms);
+void ShClTransferListOpenParmsDestroy(PSHCLLISTOPENPARMS pParms);
 
-int SharedClipboardTransferListEntryAlloc(PSHCLLISTENTRY *ppListEntry);
-void SharedClipboardTransferListEntryFree(PSHCLLISTENTRY pListEntry);
-int SharedClipboardTransferListEntryCopy(PSHCLLISTENTRY pDst, PSHCLLISTENTRY pSrc);
-PSHCLLISTENTRY SharedClipboardTransferListEntryDup(PSHCLLISTENTRY pListEntry);
-int SharedClipboardTransferListEntryInit(PSHCLLISTENTRY pListEntry);
-void SharedClipboardTransferListEntryDestroy(PSHCLLISTENTRY pListEntry);
-bool SharedClipboardTransferListEntryIsValid(PSHCLLISTENTRY pListEntry);
+int ShClTransferListEntryAlloc(PSHCLLISTENTRY *ppListEntry);
+void ShClTransferListEntryFree(PSHCLLISTENTRY pListEntry);
+int ShClTransferListEntryCopy(PSHCLLISTENTRY pDst, PSHCLLISTENTRY pSrc);
+PSHCLLISTENTRY ShClTransferListEntryDup(PSHCLLISTENTRY pListEntry);
+int ShClTransferListEntryInit(PSHCLLISTENTRY pListEntry);
+void ShClTransferListEntryDestroy(PSHCLLISTENTRY pListEntry);
+bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry);
 
-int SharedClipboardTransferSetInterface(PSHCLTRANSFER pTransfer, PSHCLPROVIDERCREATIONCTX pCreationCtx);
-int SharedClipboardTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
-void SharedClipboardTransferReset(PSHCLTRANSFER pTransfer);
-SharedClipboardArea *SharedClipboardTransferGetArea(PSHCLTRANSFER pTransfer);
+int ShClTransferSetInterface(PSHCLTRANSFER pTransfer, PSHCLPROVIDERCREATIONCTX pCreationCtx);
+int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t cbRoots);
+void ShClTransferReset(PSHCLTRANSFER pTransfer);
+SharedClipboardArea *ShClTransferGetArea(PSHCLTRANSFER pTransfer);
 
-uint32_t SharedClipboardTransferRootsCount(PSHCLTRANSFER pTransfer);
-int SharedClipboardTransferRootsEntry(PSHCLTRANSFER pTransfer, uint64_t uIndex, PSHCLROOTLISTENTRY pEntry);
-int SharedClipboardTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList);
+uint32_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer);
+int ShClTransferRootsEntry(PSHCLTRANSFER pTransfer, uint64_t uIndex, PSHCLROOTLISTENTRY pEntry);
+int ShClTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList);
 
-SHCLTRANSFERID SharedClipboardTransferGetID(PSHCLTRANSFER pTransfer);
-SHCLTRANSFERDIR SharedClipboardTransferGetDir(PSHCLTRANSFER pTransfer);
-SHCLSOURCE SharedClipboardTransferGetSource(PSHCLTRANSFER pTransfer);
-SHCLTRANSFERSTATUS SharedClipboardTransferGetStatus(PSHCLTRANSFER pTransfer);
-int SharedClipboardTransferHandleReply(PSHCLTRANSFER pTransfer, PSHCLREPLY pReply);
-int SharedClipboardTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
-int SharedClipboardTransferStart(PSHCLTRANSFER pTransfer);
-void SharedClipboardTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKS pCallbacks);
+SHCLTRANSFERID ShClTransferGetID(PSHCLTRANSFER pTransfer);
+SHCLTRANSFERDIR ShClTransferGetDir(PSHCLTRANSFER pTransfer);
+SHCLSOURCE ShClTransferGetSource(PSHCLTRANSFER pTransfer);
+SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer);
+int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
+int ShClTransferStart(PSHCLTRANSFER pTransfer);
+void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer, PSHCLTRANSFERCALLBACKS pCallbacks);
 
-int SharedClipboardTransferRead(PSHCLTRANSFER pTransfer);
-int SharedClipboardTransferReadObjects(PSHCLTRANSFER pTransfer);
+int ShClTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx);
+void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx);
+void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx);
+PSHCLTRANSFER ShClTransferCtxGetTransfer(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
+uint32_t ShClTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx);
+uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx);
+void ShClTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx);
+bool ShClTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx);
+int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t *pidTransfer);
+int ShClTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t idTransfer);
+int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t idTransfer);
 
-int SharedClipboardTransferWrite(PSHCLTRANSFER pTransfer);
-int SharedClipboardTransferWriteObjects(PSHCLTRANSFER pTransfer);
+void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
 
-int SharedClipboardTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx);
-void SharedClipboardTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx);
-void SharedClipboardTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx);
-PSHCLTRANSFER SharedClipboardTransferCtxGetTransfer(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
-uint32_t SharedClipboardTransferCtxGetRunningTransfers(PSHCLTRANSFERCTX pTransferCtx);
-uint32_t SharedClipboardTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx);
-void SharedClipboardTransferCtxCleanup(PSHCLTRANSFERCTX pTransferCtx);
-bool SharedClipboardTransferCtxTransfersMaximumReached(PSHCLTRANSFERCTX pTransferCtx);
-int SharedClipboardTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t *pidTransfer);
-int SharedClipboardTransferCtxTransferRegisterByIndex(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER pTransfer, uint32_t idTransfer);
-int SharedClipboardTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t idTransfer);
+bool ShClMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
+bool ShClMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);
 
-void SharedClipboardFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc);
-
-bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax);
-bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax);
-
-const char *VBoxShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus);
+const char *ShClTransferStatusToStr(SHCLTRANSFERSTATUS enmStatus);
 
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_transfers_h */
 

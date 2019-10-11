@@ -107,7 +107,7 @@ static void vboxClipboardSvcWinGetData(uint32_t u32Format, const void *pvSrc, ui
     }
 
 #ifdef LOG_ENABLED
-    VBoxShClDbgDumpData(pvDst, cbSrc, u32Format);
+    ShClDbgDumpData(pvDst, cbSrc, u32Format);
 #endif
 
     return;
@@ -182,17 +182,17 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT cfFormat,
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
-        rc = SharedClipboardEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
+        rc = ShClEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
         if (RT_SUCCESS(rc))
         {
             *ppvData = pPayload->pvData;
             *pcbData = pPayload->cbData;
 
             /* Detach the payload, as the caller then will own the data. */
-            SharedClipboardEventPayloadDetach(&pCtx->pClient->Events, uEvent);
+            ShClEventPayloadDetach(&pCtx->pClient->Events, uEvent);
         }
 
-        SharedClipboardEventUnregister(&pCtx->pClient->Events, uEvent);
+        ShClEventUnregister(&pCtx->pClient->Events, uEvent);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -828,7 +828,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                                                    pData->pvData, pData->cbData, pcbActual);
 #ifdef VBOX_STRICT
                         LogFlowFunc(("Raw HTML clipboard data from host:"));
-                        VBoxShClDbgDumpHtml((char *)pData->pvData, pData->cbData);
+                        ShClDbgDumpHtml((char *)pData->pvData, pData->cbData);
 #endif
                         GlobalUnlock(hClip);
                     }

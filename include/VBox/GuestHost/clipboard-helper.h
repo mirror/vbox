@@ -56,7 +56,7 @@ enum {
  * @param   cwcSrc   The length of the source string in RTUTF16 units.
  * @param   pcwcDst  The length of the destination string in RTUTF16 units.
  */
-int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
+int ShClUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
 
 /**
  * Convert a UTF-16 text with Linux EOLs to null-terminated UTF-16-LE with
@@ -71,7 +71,7 @@ int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDs
  * @param   pwszDst  Buffer to store the converted text to.
  * @param   cwcDst   Size of the buffer for the converted text in RTUTF16 units.
  */
-int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
+int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
 
 /**
  * Get the size of the buffer needed to hold a zero-terminated UTF-16 string
@@ -83,7 +83,7 @@ int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst
  * @param   cwcSrc   The length of the source string in RTUTF16 units.
  * @retval  pcwcDst  The length of the destination string in RTUTF16 units.
  */
-int vboxClipboardUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
+int ShClUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
 
 /**
  * Convert UTF-16-LE text with Windows EOLs to zero-terminated UTF-16 with Linux
@@ -97,7 +97,7 @@ int vboxClipboardUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDs
  * @param   cwcDst   The size of the buffer for the destination text in RTUTF16
  *                   chars.
  */
-int vboxClipboardUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
+int ShClUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t cwcDst);
 
 #pragma pack(1)
 /** @todo r=bird: Why duplicate these structures here, we've got them in
@@ -156,7 +156,7 @@ typedef BMINFOHEADER *PBMINFOHEADER;
  * @param   pcbDst        Pointer to the size of the buffer for the destination
  *                        data in bytes.
  */
-int vboxClipboardDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDst, size_t *pcbDst);
+int ShClDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDst, size_t *pcbDst);
 
 /**
  * Get the address and size of CF_DIB data in a full BMP data in the input buffer.
@@ -169,7 +169,7 @@ int vboxClipboardDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDst, size_t
  * @param   ppvDst        Where to store the pointer to the destination data
  * @param   pcbDst        Pointer to the size of the destination data in bytes
  */
-int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst, size_t *pcbDst);
+int ShClBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst, size_t *pcbDst);
 
 #ifdef LOG_ENABLED
 /**
@@ -179,7 +179,7 @@ int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDst,
  * @param   pszSrc              HTML data to dump.
  * @param   cbSrc               Size (in bytes) of HTML data to dump.
  */
-int VBoxShClDbgDumpHtml(const char *pszSrc, size_t cbSrc);
+int ShClDbgDumpHtml(const char *pszSrc, size_t cbSrc);
 
 /**
  * Dumps data using a specified clipboard format.
@@ -188,7 +188,7 @@ int VBoxShClDbgDumpHtml(const char *pszSrc, size_t cbSrc);
  * @param   cb                  Size (in bytes) of data to dump.
  * @param   u32Format           Clipboard format to use for dumping.
  */
-void VBoxShClDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format);
+void ShClDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format);
 #endif /* LOG_ENABLED */
 
 /**
@@ -197,7 +197,7 @@ void VBoxShClDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format);
  * @returns Function ID string name.
  * @param   uFn                 The function to translate.
  */
-const char *VBoxShClHostFunctionToStr(uint32_t uFn);
+const char *ShClHostFunctionToStr(uint32_t uFn);
 
 /**
  * Translates a Shared Clipboard host message enum to a string.
@@ -205,7 +205,7 @@ const char *VBoxShClHostFunctionToStr(uint32_t uFn);
  * @returns Message ID string name.
  * @param   uMsg                The message to translate.
  */
-const char *VBoxShClHostMsgToStr(uint32_t uMsg);
+const char *ShClHostMsgToStr(uint32_t uMsg);
 
 /**
  * Translates a Shared Clipboard guest message enum to a string.
@@ -213,7 +213,7 @@ const char *VBoxShClHostMsgToStr(uint32_t uMsg);
  * @returns Message ID string name.
  * @param   uMsg                The message to translate.
  */
-const char *VBoxShClGuestMsgToStr(uint32_t uMsg);
+const char *ShClGuestMsgToStr(uint32_t uMsg);
 
 #endif /* !VBOX_INCLUDED_GuestHost_clipboard_helper_h */
 

@@ -196,7 +196,7 @@ void VBoxShClService::MessageReceived(BMessage *message)
                 {
                     void  *pBmp  = NULL;
                     size_t cbBmp = 0;
-                    rc = vboxClipboardDibToBmp(pv, cb, &pBmp, &cbBmp);
+                    rc = ShClDibToBmp(pv, cb, &pBmp, &cbBmp);
                     if (RT_SUCCESS(rc))
                     {
                         BMemoryIO mio(pBmp, cbBmp);
@@ -294,7 +294,7 @@ void VBoxShClService::MessageReceived(BMessage *message)
                                 const void *pDib;
                                 size_t cbDibSize;
                                 /* Strip out the BM header */
-                                rc = vboxClipboardBmpGetDib(bmpStream.Buffer(), bmpStream.BufferLength(), &pDib, &cbDibSize);
+                                rc = ShClBmpGetDib(bmpStream.Buffer(), bmpStream.BufferLength(), &pDib, &cbDibSize);
                                 if (RT_SUCCESS(rc))
                                 {
                                     rc = VbglR3ClipboardWriteData(fClientId, VBOX_SHCL_FMT_BITMAP, (void *)pDib,

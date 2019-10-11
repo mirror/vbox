@@ -1159,7 +1159,7 @@ static int clipWinTxtToUtf8(PRTUTF16 pwszSrc, size_t cbSrc, char *pszBuf,
     /* How long will the converted text be? */
     AssertPtr(pwszSrc);
     AssertPtr(pszBuf);
-    rc = vboxClipboardUtf16GetLinSize(pwszSrc, cwSrc, &cwTmp);
+    rc = ShClUtf16GetLinSize(pwszSrc, cwSrc, &cwTmp);
     if (RT_SUCCESS(rc) && cwTmp == 0)
         rc = VERR_NO_DATA;
     if (RT_SUCCESS(rc))
@@ -1168,7 +1168,7 @@ static int clipWinTxtToUtf8(PRTUTF16 pwszSrc, size_t cbSrc, char *pszBuf,
         rc = VERR_NO_MEMORY;
     /* Convert the text. */
     if (RT_SUCCESS(rc))
-        rc = vboxClipboardUtf16WinToLin(pwszSrc, cwSrc, pwszTmp, cwTmp);
+        rc = ShClUtf16WinToLin(pwszSrc, cwSrc, pwszTmp, cwTmp);
     if (RT_SUCCESS(rc))
         /* Convert the Utf16 string to Utf8. */
         rc = RTUtf16ToUtf8Ex(pwszTmp + 1, cwTmp - 1, &pszBuf, cbBuf,
@@ -1349,8 +1349,8 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
         if (RT_SUCCESS(rc) && (format == BMP))
         {
             /* Create a full BMP from it */
-            rc = vboxClipboardDibToBmp(pv, cb, (void **)pValReturn,
-                                       (size_t *)pcLenReturn);
+            rc = ShClDibToBmp(pv, cb, (void **)pValReturn,
+                              (size_t *)pcLenReturn);
         }
         else
             rc = VERR_NOT_SUPPORTED;
@@ -1542,7 +1542,7 @@ static int clipUtf16ToWinTxt(RTUTF16 *pwcSrc, size_t cwcSrc,
         *pcbDest = 0;
     PRTUTF16 pwszDest = NULL;
     size_t cwcDest;
-    int rc = vboxClipboardUtf16GetWinSize(pwcSrc, cwcSrc + 1, &cwcDest);
+    int rc = ShClUtf16GetWinSize(pwcSrc, cwcSrc + 1, &cwcDest);
     if (RT_SUCCESS(rc))
     {
         pwszDest = (PRTUTF16) RTMemAlloc(cwcDest * 2);
@@ -1550,8 +1550,8 @@ static int clipUtf16ToWinTxt(RTUTF16 *pwcSrc, size_t cwcSrc,
             rc = VERR_NO_MEMORY;
     }
     if (RT_SUCCESS(rc))
-        rc = vboxClipboardUtf16LinToWin(pwcSrc, cwcSrc + 1, pwszDest,
-                                        cwcDest);
+        rc = ShClUtf16LinToWin(pwcSrc, cwcSrc + 1, pwszDest,
+                               cwcDest);
     if (RT_SUCCESS(rc))
     {
         LogRelFlowFunc (("converted string is %.*ls\n", cwcDest, pwszDest));
@@ -1819,8 +1819,8 @@ static void clipConvertX11CB(void *pClient, void *pvSrc, unsigned cbSrc)
             {
                 const void *pDib;
                 size_t cbDibSize;
-                rc = vboxClipboardBmpGetDib((const void *)pvSrc, cbSrc,
-                                            &pDib, &cbDibSize);
+                rc = ShClBmpGetDib((const void *)pvSrc, cbSrc,
+                                   &pDib, &cbDibSize);
                 if (RT_SUCCESS(rc))
                 {
                     pvDest = RTMemAlloc(cbDibSize);

@@ -1014,7 +1014,7 @@ int SharedClipboardWinGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
     AssertPtrReturn(pWinCtx,   VERR_INVALID_POINTER);
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
-    Assert(SharedClipboardTransferGetSource(pTransfer) == SHCLSOURCE_LOCAL); /* Sanity. */
+    Assert(ShClTransferGetSource(pTransfer) == SHCLSOURCE_LOCAL); /* Sanity. */
 
     int rc = SharedClipboardWinOpen(pWinCtx->hWnd);
     if (RT_SUCCESS(rc))
@@ -1035,8 +1035,8 @@ int SharedClipboardWinGetRoots(PSHCLWINCTX pWinCtx, PSHCLTRANSFER pTransfer)
 
                 if (RT_SUCCESS(rc))
                 {
-                    rc = SharedClipboardTransferRootsSet(pTransfer,
-                                                         papszList, cbList + 1 /* Include termination */);
+                    rc = ShClTransferRootsSet(pTransfer,
+                                              papszList, cbList + 1 /* Include termination */);
                     RTStrFree(papszList);
                 }
             }

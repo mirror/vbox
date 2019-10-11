@@ -114,10 +114,10 @@ static void vboxClipboardTransferCallbackCleanup(PSHCLTRANSFERCALLBACKDATA pData
         pTransfer->pvUser = NULL;
     }
 
-    int rc2 = SharedClipboardTransferCtxTransferUnregister(pCtx, pTransfer->State.uID);
+    int rc2 = ShClTransferCtxTransferUnregister(pCtx, pTransfer->State.uID);
     AssertRC(rc2);
 
-    SharedClipboardTransferDestroy(pTransfer);
+    ShClTransferDestroy(pTransfer);
 
     RTMemFree(pTransfer);
     pTransfer = NULL;
@@ -144,9 +144,9 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     PSHCLTRANSFER pTransfer = pData->pTransfer;
     AssertPtr(pTransfer);
 
-    const SHCLTRANSFERDIR enmDir = SharedClipboardTransferGetDir(pTransfer);
+    const SHCLTRANSFERDIR enmDir = ShClTransferGetDir(pTransfer);
 
-    LogFlowFunc(("pCtx=%p, idTransfer=%RU16, enmDir=%RU32\n", pCtx, SharedClipboardTransferGetID(pTransfer), enmDir));
+    LogFlowFunc(("pCtx=%p, idTransfer=%RU16, enmDir=%RU32\n", pCtx, ShClTransferGetID(pTransfer), enmDir));
 
     int rc;
 
@@ -160,25 +160,25 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     {
         /* The IDataObject *must* be created on the same thread as our (proxy) window, so post a message to it
          * to do the stuff for us. */
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pTransfer->Events);
 
-        rc = SharedClipboardEventRegister(&pTransfer->Events, uEvent);
+        rc = ShClEventRegister(&pTransfer->Events, uEvent);
         if (RT_SUCCESS(rc))
         {
             /* Don't want to rely on SendMessage (synchronous) here, so just post and wait the event getting signalled. */
             ::PostMessage(pCtx->Win.hWnd, SHCL_WIN_WM_TRANSFER_START, (WPARAM)pTransfer, (LPARAM)uEvent);
 
             PSHCLEVENTPAYLOAD pPayload;
-            rc = SharedClipboardEventWait(&pTransfer->Events, uEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
+            rc = ShClEventWait(&pTransfer->Events, uEvent, 30 * 1000 /* Timeout in ms */, &pPayload);
             if (RT_SUCCESS(rc))
             {
                 Assert(pPayload->cbData == sizeof(int));
                 rc = *(int *)pPayload->pvData;
 
-                SharedClipboardPayloadFree(pPayload);
+                ShClPayloadFree(pPayload);
             }
 
-            SharedClipboardEventUnregister(&pTransfer->Events, uEvent);
+            ShClEventUnregister(&pTransfer->Events, uEvent);
         }
     }
     else
@@ -187,7 +187,7 @@ static DECLCALLBACK(int) vboxClipboardOnTransferStartCallback(PSHCLTRANSFERCALLB
     if (RT_FAILURE(rc))
         LogRel(("Shared Clipboard: Starting transfer failed, rc=%Rrc\n", rc));
 
-    LogFlowFunc(("LEAVE: idTransfer=%RU16, rc=%Rrc\n", SharedClipboardTransferGetID(pTransfer), rc));
+    LogFlowFunc(("LEAVE: idTransfer=%RU16, rc=%Rrc\n", ShClTransferGetID(pTransfer), rc));
     return rc;
 }
 
@@ -648,17 +648,17 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
             const SHCLEVENTID uEvent = (SHCLEVENTID)lParam;
 
-            Assert(SharedClipboardTransferGetSource(pTransfer) == SHCLSOURCE_REMOTE); /* Sanity. */
+            Assert(ShClTransferGetSource(pTransfer) == SHCLSOURCE_REMOTE); /* Sanity. */
 
             int rcTransfer = SharedClipboardWinTransferCreate(pWinCtx, pTransfer);
 
             PSHCLEVENTPAYLOAD pPayload = NULL;
-            int rc = SharedClipboardPayloadAlloc(uEvent, &rcTransfer, sizeof(rcTransfer), &pPayload);
+            int rc = ShClPayloadAlloc(uEvent, &rcTransfer, sizeof(rcTransfer), &pPayload);
             if (RT_SUCCESS(rc))
             {
-                rc = SharedClipboardEventSignal(&pTransfer->Events, uEvent, pPayload);
+                rc = ShClEventSignal(&pTransfer->Events, uEvent, pPayload);
                 if (RT_FAILURE(rc))
-                    SharedClipboardPayloadFree(pPayload);
+                    ShClPayloadFree(pPayload);
             }
 
             break;
@@ -909,7 +909,7 @@ DECLCALLBACK(int) VBoxShClInit(const PVBOXSERVICEENV pEnv, void **ppInstance)
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = SharedClipboardTransferCtxInit(&pCtx->TransferCtx);
+            rc = ShClTransferCtxInit(&pCtx->TransferCtx);
 #endif
             if (RT_SUCCESS(rc))
             {
@@ -1177,7 +1177,7 @@ DECLCALLBACK(void) VBoxShClDestroy(void *pInstance)
     vboxClipboardDestroy(pCtx);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    SharedClipboardTransferCtxDestroy(&pCtx->TransferCtx);
+    ShClTransferCtxDestroy(&pCtx->TransferCtx);
 #endif
 
     return;

@@ -86,7 +86,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
                                              VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ_REQ);
     if (pMsgHdr)
     {
-        SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsgHdr->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                      pCtx->pTransfer->State.uID, uEvent));
@@ -95,14 +95,14 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
         rc = shclSvcMsgAdd(pClient, pMsgHdr, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+            int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
             AssertRC(rc2);
 
             rc = shclSvcClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayloadHdr;
-                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent,
+                rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent,
                                               pCtx->pTransfer->uTimeoutMs, &pPayloadHdr);
                 if (RT_SUCCESS(rc))
                 {
@@ -111,7 +111,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
 
                     LogFlowFunc(("cRoots=%RU32, fRoots=0x%x\n", pSrcRootListHdr->cRoots, pSrcRootListHdr->fRoots));
 
-                    PSHCLROOTLIST pRootList = SharedClipboardTransferRootListAlloc();
+                    PSHCLROOTLIST pRootList = ShClTransferRootListAlloc();
                     if (pRootList)
                     {
                         if (pSrcRootListHdr->cRoots)
@@ -126,7 +126,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
                                     PSHCLCLIENTMSG pMsgEntry = shclSvcMsgAlloc(VBOX_SHCL_HOST_MSG_TRANSFER_ROOT_LIST_ENTRY_READ,
                                                                                VBOX_SHCL_CPARMS_ROOT_LIST_ENTRY_READ_REQ);
 
-                                    uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+                                    uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
                                     HGCMSvcSetU32(&pMsgEntry->paParms[0],
                                                   VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uClientID,
@@ -134,7 +134,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
                                     HGCMSvcSetU32(&pMsgEntry->paParms[1], 0 /* fRoots */);
                                     HGCMSvcSetU32(&pMsgEntry->paParms[2], i /* uIndex */);
 
-                                    rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+                                    rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
                                     AssertRC(rc2);
 
                                     rc = shclSvcMsgAdd(pClient, pMsgEntry, true /* fAppend */);
@@ -142,19 +142,19 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
                                         break;
 
                                     PSHCLEVENTPAYLOAD pPayloadEntry;
-                                    rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent,
-                                                                  pCtx->pTransfer->uTimeoutMs, &pPayloadEntry);
+                                    rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent,
+                                                       pCtx->pTransfer->uTimeoutMs, &pPayloadEntry);
                                     if (RT_FAILURE(rc))
                                         break;
 
                                     PSHCLROOTLISTENTRY pSrcRootListEntry = (PSHCLROOTLISTENTRY)pPayloadEntry->pvData;
                                     Assert(pPayloadEntry->cbData == sizeof(SHCLROOTLISTENTRY));
 
-                                    rc = SharedClipboardTransferListEntryCopy(&pRootList->paEntries[i], pSrcRootListEntry);
+                                    rc = ShClTransferListEntryCopy(&pRootList->paEntries[i], pSrcRootListEntry);
 
-                                    SharedClipboardPayloadFree(pPayloadEntry);
+                                    ShClPayloadFree(pPayloadEntry);
 
-                                    SharedClipboardEventUnregister(&pCtx->pTransfer->Events, uEvent);
+                                    ShClEventUnregister(&pCtx->pTransfer->Events, uEvent);
 
                                     if (RT_FAILURE(rc))
                                         break;
@@ -172,16 +172,16 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
                             *ppRootList = pRootList;
                         }
                         else
-                            SharedClipboardTransferRootListFree(pRootList);
+                            ShClTransferRootListFree(pRootList);
 
-                        SharedClipboardPayloadFree(pPayloadHdr);
+                        ShClPayloadFree(pPayloadHdr);
                     }
                     else
                         rc = VERR_NO_MEMORY;
                 }
             }
 
-            SharedClipboardEventUnregister(&pCtx->pTransfer->Events, uEvent);
+            ShClEventUnregister(&pCtx->pTransfer->Events, uEvent);
         }
     }
     else
@@ -205,7 +205,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
                                           VBOX_SHCL_CPARMS_LIST_OPEN);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         pMsg->Ctx.uContextID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,  pCtx->pTransfer->State.uID,
                                                         uEvent);
@@ -216,14 +216,14 @@ DECLCALLBACK(int) shclSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
             rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
             if (RT_SUCCESS(rc))
             {
-                int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+                int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
                 AssertRC(rc2);
 
                 rc = shclSvcClientWakeup(pClient);
                 if (RT_SUCCESS(rc))
                 {
                     PSHCLEVENTPAYLOAD pPayload;
-                    rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                    rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
                     if (RT_SUCCESS(rc))
                     {
                         Assert(pPayload->cbData == sizeof(SHCLREPLY));
@@ -235,11 +235,11 @@ DECLCALLBACK(int) shclSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
 
                         *phList = pReply->u.ListOpen.uHandle;
 
-                        SharedClipboardPayloadFree(pPayload);
+                        ShClPayloadFree(pPayload);
                     }
                 }
 
-                SharedClipboardEventUnregister(&pCtx->pTransfer->Events, uEvent);
+                ShClEventUnregister(&pCtx->pTransfer->Events, uEvent);
             }
         }
     }
@@ -263,7 +263,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTH
                                           VBOX_SHCL_CPARMS_LIST_CLOSE);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         pMsg->Ctx.uContextID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                         uEvent);
@@ -274,19 +274,19 @@ DECLCALLBACK(int) shclSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTH
             rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
             if (RT_SUCCESS(rc))
             {
-                int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+                int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
                 AssertRC(rc2);
 
                 rc = shclSvcClientWakeup(pClient);
                 if (RT_SUCCESS(rc))
                 {
                     PSHCLEVENTPAYLOAD pPayload;
-                    rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                    rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
                     if (RT_SUCCESS(rc))
-                        SharedClipboardPayloadFree(pPayload);
+                        ShClPayloadFree(pPayload);
                 }
 
-                SharedClipboardEventUnregister(&pCtx->pTransfer->Events, uEvent);
+                ShClEventUnregister(&pCtx->pTransfer->Events, uEvent);
             }
         }
     }
@@ -311,7 +311,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
                                           VBOX_SHCL_CPARMS_LIST_HDR_READ_REQ);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pCtx->pTransfer->State.uID, uEvent));
@@ -321,22 +321,22 @@ DECLCALLBACK(int) shclSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
         rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+            int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
             AssertRC(rc2);
 
             rc = shclSvcClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent,
-                                             pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent,
+                                   pCtx->pTransfer->uTimeoutMs, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLLISTHDR));
 
                     *pListHdr = *(PSHCLLISTHDR)pPayload->pvData;
 
-                    SharedClipboardPayloadFree(pPayload);
+                    ShClPayloadFree(pPayload);
                 }
             }
         }
@@ -372,7 +372,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
                                           VBOX_SHCL_CPARMS_LIST_ENTRY_READ);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pCtx->pTransfer->State.uID, uEvent));
@@ -382,21 +382,21 @@ DECLCALLBACK(int) shclSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
         rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+            int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
             AssertRC(rc2);
 
             rc = shclSvcClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLLISTENTRY));
 
-                    rc = SharedClipboardTransferListEntryCopy(pListEntry, (PSHCLLISTENTRY)pPayload->pvData);
+                    rc = ShClTransferListEntryCopy(pListEntry, (PSHCLLISTENTRY)pPayload->pvData);
 
-                    SharedClipboardPayloadFree(pPayload);
+                    ShClPayloadFree(pPayload);
                 }
             }
         }
@@ -432,7 +432,7 @@ int shclSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS p
                                           VBOX_SHCL_CPARMS_OBJ_OPEN);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pCreateParms->pszPath, pCreateParms->fCreate));
 
@@ -448,14 +448,14 @@ int shclSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS p
         rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+            int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
             AssertRC(rc2);
 
             rc = shclSvcClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLREPLY));
@@ -467,7 +467,7 @@ int shclSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS p
 
                     *phObj = pReply->u.ObjOpen.uHandle;
 
-                    SharedClipboardPayloadFree(pPayload);
+                    ShClPayloadFree(pPayload);
                 }
             }
         }
@@ -492,7 +492,7 @@ int shclSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
                                           VBOX_SHCL_CPARMS_OBJ_CLOSE);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pCtx->pTransfer->State.uID, uEvent));
@@ -501,14 +501,14 @@ int shclSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
         rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+            int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
             AssertRC(rc2);
 
             rc = shclSvcClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLREPLY));
@@ -520,7 +520,7 @@ int shclSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
                     Assert(pReply->uType == VBOX_SHCL_REPLYMSGTYPE_OBJ_CLOSE);
 #endif
 
-                    SharedClipboardPayloadFree(pPayload);
+                    ShClPayloadFree(pPayload);
                 }
             }
         }
@@ -546,7 +546,7 @@ int shclSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                           VBOX_SHCL_CPARMS_OBJ_READ_REQ);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pCtx->pTransfer->State.uID, uEvent));
@@ -557,14 +557,14 @@ int shclSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
         rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+            int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
             AssertRC(rc2);
 
             rc = shclSvcClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pPayload->cbData == sizeof(SHCLOBJDATACHUNK));
@@ -579,7 +579,7 @@ int shclSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                     if (pcbRead)
                         *pcbRead = cbRead;
 
-                    SharedClipboardPayloadFree(pPayload);
+                    ShClPayloadFree(pPayload);
                 }
             }
         }
@@ -605,7 +605,7 @@ int shclSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                           VBOX_SHCL_CPARMS_OBJ_WRITE);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pCtx->pTransfer->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pCtx->pTransfer->Events);
 
         HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pCtx->pTransfer->State.uID, uEvent));
@@ -616,14 +616,14 @@ int shclSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
         rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            int rc2 = SharedClipboardEventRegister(&pCtx->pTransfer->Events, uEvent);
+            int rc2 = ShClEventRegister(&pCtx->pTransfer->Events, uEvent);
             AssertRC(rc2);
 
             rc = shclSvcClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
+                rc = ShClEventWait(&pCtx->pTransfer->Events, uEvent, pCtx->pTransfer->uTimeoutMs, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     const uint32_t cbRead = RT_MIN(cbData, pPayload->cbData);
@@ -633,7 +633,7 @@ int shclSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                     if (pcbWritten)
                         *pcbWritten = cbRead;
 
-                    SharedClipboardPayloadFree(pPayload);
+                    ShClPayloadFree(pPayload);
                 }
             }
         }
@@ -721,7 +721,7 @@ bool shclSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
             break;
     }
 
-    LogFlowFunc(("uMsg=%RU32 (%s), uMode=%RU32 -> fAllowed=%RTbool\n", uMsg, VBoxShClGuestMsgToStr(uMsg), uMode, fAllowed));
+    LogFlowFunc(("uMsg=%RU32 (%s), uMode=%RU32 -> fAllowed=%RTbool\n", uMsg, ShClGuestMsgToStr(uMsg), uMode, fAllowed));
     return fAllowed;
 }
 
@@ -1076,7 +1076,7 @@ static int shclSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[
 
         if (RT_SUCCESS(rc))
         {
-            if (!SharedClipboardTransferListEntryIsValid(pListEntry))
+            if (!ShClTransferListEntryIsValid(pListEntry))
                 rc = VERR_INVALID_PARAMETER;
         }
     }
@@ -1235,7 +1235,7 @@ static int shclSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
 
                             LogFlowFunc(("uCID=%RU32 -> uEvent=%RU32\n", uCID, uEvent));
 
-                            rc = SharedClipboardEventSignal(&pTransfer->Events, uEvent, pPayload);
+                            rc = ShClEventSignal(&pTransfer->Events, uEvent, pPayload);
                         }
                         break;
                     }
@@ -1289,7 +1289,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
     RT_NOREF(callHandle, paParms, tsArrival);
 
     LogFlowFunc(("uClient=%RU32, u32Function=%RU32 (%s), cParms=%RU32, g_ExtState.pfnExtension=%p\n",
-                 pClient->State.uClientID, u32Function, VBoxShClGuestMsgToStr(u32Function), cParms, g_ExtState.pfnExtension));
+                 pClient->State.uClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, g_ExtState.pfnExtension));
 
     /* Check if we've the right mode set. */
     if (!shclSvcTransferMsgIsAllowed(shclSvcGetMode(), u32Function))
@@ -1321,7 +1321,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
     {
         default:
         {
-            if (!SharedClipboardTransferCtxGetTotalTransfers(&pClient->TransferCtx))
+            if (!ShClTransferCtxGetTotalTransfers(&pClient->TransferCtx))
             {
                 LogFunc(("No transfers found\n"));
                 rc = VERR_SHCLPB_TRANSFER_ID_NOT_FOUND;
@@ -1337,7 +1337,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
 
             const SHCLTRANSFERID uTransferID = VBOX_SHCL_CONTEXTID_GET_TRANSFER(uCID);
 
-            pTransfer = SharedClipboardTransferCtxGetTransfer(&pClient->TransferCtx, uTransferID);
+            pTransfer = ShClTransferCtxGetTransfer(&pClient->TransferCtx, uTransferID);
             if (!pTransfer)
             {
                 LogFunc(("Transfer with ID %RU32 not found\n", uTransferID));
@@ -1368,7 +1368,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             SHCLROOTLISTHDR rootListHdr;
             RT_ZERO(rootListHdr);
 
-            rootListHdr.cRoots = SharedClipboardTransferRootsCount(pTransfer);
+            rootListHdr.cRoots = ShClTransferRootsCount(pTransfer);
 
             HGCMSvcSetU32(&paParms[0], 0 /* Context ID */);
             HGCMSvcSetU32(&paParms[1], rootListHdr.fRoots);
@@ -1384,18 +1384,18 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             rc = shclSvcTransferGetRootListHdr(cParms, paParms, &lstHdr);
             if (RT_SUCCESS(rc))
             {
-                void    *pvData = SharedClipboardTransferRootListHdrDup(&lstHdr);
+                void    *pvData = ShClTransferRootListHdrDup(&lstHdr);
                 uint32_t cbData = sizeof(SHCLROOTLISTHDR);
 
                 const SHCLEVENTID uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(uCID);
 
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
+                rc = ShClPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = SharedClipboardEventSignal(&pTransfer->Events, uEvent, pPayload);
+                    rc = ShClEventSignal(&pTransfer->Events, uEvent, pPayload);
                     if (RT_FAILURE(rc))
-                        SharedClipboardPayloadFree(pPayload);
+                        ShClPayloadFree(pPayload);
                 }
             }
             break;
@@ -1412,7 +1412,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLROOTLISTENTRY rootListEntry;
-                rc = SharedClipboardTransferRootsEntry(pTransfer, uIndex, &rootListEntry);
+                rc = ShClTransferRootsEntry(pTransfer, uIndex, &rootListEntry);
                 if (RT_SUCCESS(rc))
                 {
                     HGCMSvcSetPv (&paParms[3], rootListEntry.pszName, rootListEntry.cbName);
@@ -1429,18 +1429,18 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             rc = shclSvcTransferGetRootListEntry(cParms, paParms, &lstEntry);
             if (RT_SUCCESS(rc))
             {
-                void    *pvData = SharedClipboardTransferRootListEntryDup(&lstEntry);
+                void    *pvData = ShClTransferRootListEntryDup(&lstEntry);
                 uint32_t cbData = sizeof(SHCLROOTLISTENTRY);
 
                 const SHCLEVENTID uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(uCID);
 
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
+                rc = ShClPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = SharedClipboardEventSignal(&pTransfer->Events, uEvent, pPayload);
+                    rc = ShClEventSignal(&pTransfer->Events, uEvent, pPayload);
                     if (RT_FAILURE(rc))
-                        SharedClipboardPayloadFree(pPayload);
+                        ShClPayloadFree(pPayload);
                 }
             }
             break;
@@ -1453,7 +1453,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
-                rc = SharedClipboardTransferListOpen(pTransfer, &listOpenParms, &hList);
+                rc = ShClTransferListOpen(pTransfer, &listOpenParms, &hList);
                 if (RT_SUCCESS(rc))
                 {
                     /* Return list handle. */
@@ -1472,7 +1472,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             rc = HGCMSvcGetU64(&paParms[1], &hList);
             if (RT_SUCCESS(rc))
             {
-                rc = SharedClipboardTransferListClose(pTransfer, hList);
+                rc = ShClTransferListClose(pTransfer, hList);
             }
             break;
         }
@@ -1487,7 +1487,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHDR hdrList;
-                rc = SharedClipboardTransferListGetHeader(pTransfer, hList, &hdrList);
+                rc = ShClTransferListGetHeader(pTransfer, hList, &hdrList);
                 /*if (RT_SUCCESS(rc))
                     rc = shclSvcTransferSetListHdr(cParms, paParms, &hdrList);*/
             }
@@ -1497,7 +1497,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE:
         {
             SHCLLISTHDR hdrList;
-            rc = SharedClipboardTransferListHdrInit(&hdrList);
+            rc = ShClTransferListHdrInit(&hdrList);
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
@@ -1510,12 +1510,12 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
                     const SHCLEVENTID uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(uCID);
 
                     PSHCLEVENTPAYLOAD pPayload;
-                    rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
+                    rc = ShClPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = SharedClipboardEventSignal(&pTransfer->Events, uEvent, pPayload);
+                        rc = ShClEventSignal(&pTransfer->Events, uEvent, pPayload);
                         if (RT_FAILURE(rc))
-                            SharedClipboardPayloadFree(pPayload);
+                            ShClPayloadFree(pPayload);
                     }
                 }
             }
@@ -1532,7 +1532,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTENTRY entryList;
-                rc = SharedClipboardTransferListRead(pTransfer, hList, &entryList);
+                rc = ShClTransferListRead(pTransfer, hList, &entryList);
             }
             break;
         }
@@ -1540,25 +1540,25 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE:
         {
             SHCLLISTENTRY entryList;
-            rc = SharedClipboardTransferListEntryInit(&entryList);
+            rc = ShClTransferListEntryInit(&entryList);
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
                 rc = shclSvcTransferGetListEntry(cParms, paParms, &hList, &entryList);
                 if (RT_SUCCESS(rc))
                 {
-                    void    *pvData = SharedClipboardTransferListEntryDup(&entryList);
+                    void    *pvData = ShClTransferListEntryDup(&entryList);
                     uint32_t cbData = sizeof(SHCLLISTENTRY);
 
                     const SHCLEVENTID uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(uCID);
 
                     PSHCLEVENTPAYLOAD pPayload;
-                    rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
+                    rc = ShClPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = SharedClipboardEventSignal(&pTransfer->Events, uEvent, pPayload);
+                        rc = ShClEventSignal(&pTransfer->Events, uEvent, pPayload);
                         if (RT_FAILURE(rc))
-                            SharedClipboardPayloadFree(pPayload);
+                            ShClPayloadFree(pPayload);
                     }
                 }
             }
@@ -1587,7 +1587,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLOBJHANDLE hObj;
-                rc = SharedClipboardTransferObjectOpen(pTransfer, &openCreateParms, &hObj);
+                rc = ShClTransferObjOpen(pTransfer, &openCreateParms, &hObj);
                 if (RT_SUCCESS(rc))
                 {
                     LogFlowFunc(("hObj=%RU64\n", hObj));
@@ -1606,7 +1606,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             SHCLOBJHANDLE hObj;
             rc = HGCMSvcGetU64(&paParms[1], &hObj); /* Get object handle. */
             if (RT_SUCCESS(rc))
-                rc = SharedClipboardTransferObjectClose(pTransfer, hObj);
+                rc = ShClTransferObjClose(pTransfer, hObj);
             break;
         }
 
@@ -1642,7 +1642,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 uint32_t cbRead;
-                rc = SharedClipboardTransferObjectRead(pTransfer, hObj, pvBuf, cbToRead, &cbRead, 0 /* fFlags */);
+                rc = ShClTransferObjRead(pTransfer, hObj, pvBuf, cbToRead, &cbRead, 0 /* fFlags */);
                 if (RT_SUCCESS(rc))
                 {
                     HGCMSvcSetU32(&paParms[3], cbRead);
@@ -1659,18 +1659,18 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             rc = shclSvcTransferGetObjDataChunk(cParms, paParms, &dataChunk);
             if (RT_SUCCESS(rc))
             {
-                void    *pvData = SharedClipboardTransferObjectDataChunkDup(&dataChunk);
+                void    *pvData = ShClTransferObjDataChunkDup(&dataChunk);
                 uint32_t cbData = sizeof(SHCLOBJDATACHUNK);
 
                 const SHCLEVENTID uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(uCID);
 
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardPayloadAlloc(uEvent, pvData, cbData, &pPayload);
+                rc = ShClPayloadAlloc(uEvent, pvData, cbData, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = SharedClipboardEventSignal(&pTransfer->Events, uEvent, pPayload);
+                    rc = ShClEventSignal(&pTransfer->Events, uEvent, pPayload);
                     if (RT_FAILURE(rc))
-                        SharedClipboardPayloadFree(pPayload);
+                        ShClPayloadFree(pPayload);
                 }
             }
 
@@ -2110,10 +2110,10 @@ int shclSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCL
     if (!pMsgReadData)
         return VERR_NO_MEMORY;
 
-    const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pTransfer->Events);
+    const SHCLEVENTID uEvent = ShClEventIDGenerate(&pTransfer->Events);
 
     HGCMSvcSetU32(&pMsgReadData->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
-                                                                                  pTransfer->State.uID, uEvent));
+                                                                      pTransfer->State.uID, uEvent));
     HGCMSvcSetU32(&pMsgReadData->paParms[1], pTransfer->State.enmDir);
     HGCMSvcSetU32(&pMsgReadData->paParms[2], uStatus);
     HGCMSvcSetU32(&pMsgReadData->paParms[3], (uint32_t)rcTransfer); /** @todo uint32_t vs. int. */
@@ -2122,20 +2122,20 @@ int shclSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCL
     int rc = shclSvcMsgAdd(pClient, pMsgReadData, true /* fAppend */);
     if (RT_SUCCESS(rc))
     {
-        rc = SharedClipboardEventRegister(&pTransfer->Events, uEvent);
+        rc = ShClEventRegister(&pTransfer->Events, uEvent);
         if (RT_SUCCESS(rc))
         {
             rc = shclSvcClientWakeup(pClient);
             if (RT_SUCCESS(rc))
             {
                 LogRel2(("Shared Clipboard: Reported status %s (rc=%Rrc) of transfer %RU32 to guest\n",
-                         VBoxShClTransferStatusToStr(uStatus), rcTransfer, pTransfer->State.uID));
+                         ShClGuestMsgToStr(uStatus), rcTransfer, pTransfer->State.uID));
 
                 if (puEvent)
                     *puEvent = uEvent;
             }
             else
-                SharedClipboardEventUnregister(&pTransfer->Events, uEvent);
+                ShClEventUnregister(&pTransfer->Events, uEvent);
         }
     }
 
@@ -2161,16 +2161,16 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
 
     LogFlowFuncEnter();
 
-    SharedClipboardTransferCtxCleanup(&pClient->TransferCtx);
+    ShClTransferCtxCleanup(&pClient->TransferCtx);
 
     int rc;
 
-    if (!SharedClipboardTransferCtxTransfersMaximumReached(&pClient->TransferCtx))
+    if (!ShClTransferCtxTransfersMaximumReached(&pClient->TransferCtx))
     {
         LogRel2(("Shared Clipboard: Starting %s transfer ...\n", enmDir == SHCLTRANSFERDIR_READ ? "read" : "write"));
 
         PSHCLTRANSFER pTransfer;
-        rc = SharedClipboardTransferCreate(&pTransfer);
+        rc = ShClTransferCreate(&pTransfer);
         if (RT_SUCCESS(rc))
         {
             rc = ShClSvcImplTransferCreate(pClient, pTransfer);
@@ -2213,13 +2213,13 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
 
                 uint32_t uTransferID = 0;
 
-                rc = SharedClipboardTransferSetInterface(pTransfer, &creationCtx);
+                rc = ShClTransferSetInterface(pTransfer, &creationCtx);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = SharedClipboardTransferCtxTransferRegister(&pClient->TransferCtx, pTransfer, &uTransferID);
+                    rc = ShClTransferCtxTransferRegister(&pClient->TransferCtx, pTransfer, &uTransferID);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = SharedClipboardTransferInit(pTransfer, uTransferID, enmDir, enmSource);
+                        rc = ShClTransferInit(pTransfer, uTransferID, enmDir, enmSource);
                         if (RT_SUCCESS(rc))
                         {
                             if (   enmSource == SHCLSOURCE_LOCAL
@@ -2229,7 +2229,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
                             }
 
                             if (RT_SUCCESS(rc))
-                                rc = SharedClipboardTransferStart(pTransfer);
+                                rc = ShClTransferStart(pTransfer);
 
                             if (RT_SUCCESS(rc))
                             {
@@ -2243,7 +2243,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
                                              pTransfer->State.uID));
 
                                     PSHCLEVENTPAYLOAD pPayload;
-                                    rc = SharedClipboardEventWait(&pTransfer->Events, uEvent, pTransfer->uTimeoutMs, &pPayload);
+                                    rc = ShClEventWait(&pTransfer->Events, uEvent, pTransfer->uTimeoutMs, &pPayload);
                                     if (RT_SUCCESS(rc))
                                     {
                                         Assert(pPayload->cbData == sizeof(SHCLREPLY));
@@ -2258,7 +2258,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
                                         }
                                         else
                                             LogRel(("Shared Clipboard: Guest reported status %s (error %Rrc) while starting transfer %RU32\n",
-                                                    VBoxShClTransferStatusToStr(pReply->u.TransferStatus.uStatus),
+                                                    ShClGuestMsgToStr(pReply->u.TransferStatus.uStatus),
                                                     pReply->rc, pTransfer->State.uID));
                                     }
                                     else
@@ -2269,7 +2269,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
                         }
 
                         if (RT_FAILURE(rc))
-                            SharedClipboardTransferCtxTransferUnregister(&pClient->TransferCtx, uTransferID);
+                            ShClTransferCtxTransferUnregister(&pClient->TransferCtx, uTransferID);
                     }
                 }
             }
@@ -2277,7 +2277,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
             if (RT_FAILURE(rc))
             {
                 ShClSvcImplTransferDestroy(pClient, pTransfer);
-                SharedClipboardTransferDestroy(pTransfer);
+                ShClTransferDestroy(pTransfer);
 
                 RTMemFree(pTransfer);
                 pTransfer = NULL;
@@ -2308,7 +2308,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
  */
 int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
-    int rc = SharedClipboardTransferClose(pTransfer);
+    int rc = ShClTransferClose(pTransfer);
     if (RT_SUCCESS(rc))
     {
         SHCLEVENTID uEvent;
@@ -2319,10 +2319,10 @@ int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
         {
             LogRel2(("Shared Clipboard: Waiting for stop of transfer %RU32 on guest ...\n", pTransfer->State.uID));
 
-            rc = SharedClipboardEventWait(&pTransfer->Events, uEvent, pTransfer->uTimeoutMs, NULL);
+            rc = ShClEventWait(&pTransfer->Events, uEvent, pTransfer->uTimeoutMs, NULL);
             if (RT_SUCCESS(rc))
             {
-                rc = SharedClipboardTransferCtxTransferUnregister(&pClient->TransferCtx, SharedClipboardTransferGetID(pTransfer));
+                rc = ShClTransferCtxTransferUnregister(&pClient->TransferCtx, ShClTransferGetID(pTransfer));
 
                 LogRel2(("Shared Clipboard: Stopped transfer %RU32 on guest\n", pTransfer->State.uID));
             }

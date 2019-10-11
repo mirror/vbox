@@ -223,7 +223,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
     CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
     if (pReq)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
 
         pReq->pv        = pData->pvData;
         pReq->cb        = pData->cbData;
@@ -233,11 +233,11 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
         rc = ClipRequestDataFromX11(pClient->State.pCtx->pBackend, pData->uFormat, pReq);
         if (RT_SUCCESS(rc))
         {
-            rc = SharedClipboardEventRegister(&pClient->Events, uEvent);
+            rc = ShClEventRegister(&pClient->Events, uEvent);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
-                rc = SharedClipboardEventWait(&pClient->Events, uEvent, 30 * 1000, &pPayload);
+                rc = ShClEventWait(&pClient->Events, uEvent, 30 * 1000, &pPayload);
                 if (RT_SUCCESS(rc))
                 {
                     memcpy(pData->pvData,  pPayload->pvData, RT_MIN(pData->cbData, pPayload->cbData));
@@ -246,7 +246,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
                     Assert(pData->cbData == pPayload->cbData); /* Sanity. */
                 }
 
-                SharedClipboardEventUnregister(&pClient->Events, uEvent);
+                ShClEventUnregister(&pClient->Events, uEvent);
             }
         }
     }
@@ -291,9 +291,9 @@ void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc,
     AssertMsgRC(rc, ("Clipboard data completion from X11 failed with %Rrc\n", rc));
 
     PSHCLEVENTPAYLOAD pPayload;
-    int rc2 = SharedClipboardPayloadAlloc(pReq->uEvent, pv, cb, &pPayload);
+    int rc2 = ShClPayloadAlloc(pReq->uEvent, pv, cb, &pPayload);
     if (RT_SUCCESS(rc2))
-        rc2 = SharedClipboardEventSignal(&pCtx->pClient->Events, pReq->uEvent, pPayload);
+        rc2 = ShClEventSignal(&pCtx->pClient->Events, pReq->uEvent, pPayload);
 
     AssertRC(rc);
 
@@ -334,17 +334,17 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32F
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
-        rc = SharedClipboardEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
+        rc = ShClEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
         if (RT_SUCCESS(rc))
         {
             *ppv = pPayload->pvData;
             *pcb = pPayload->cbData;
 
             /* Detach the payload, as the caller then will own the data. */
-            SharedClipboardEventPayloadDetach(&pCtx->pClient->Events, uEvent);
+            ShClEventPayloadDetach(&pCtx->pClient->Events, uEvent);
         }
 
-        SharedClipboardEventUnregister(&pCtx->pClient->Events, uEvent);
+        ShClEventUnregister(&pCtx->pClient->Events, uEvent);
     }
 
     LogFlowFuncLeaveRC(rc);

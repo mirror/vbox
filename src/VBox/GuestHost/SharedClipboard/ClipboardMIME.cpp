@@ -25,14 +25,14 @@
 #include <iprt/string.h>
 
 
-bool SharedClipboardMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax)
+bool ShClMIMEHasFileURLs(const char *pcszFormat, size_t cchFormatMax)
 {
     /** @todo "text/uri" also an official variant? */
     return (   RTStrNICmp(pcszFormat, "text/uri-list", cchFormatMax)             == 0
             || RTStrNICmp(pcszFormat, "x-special/gnome-icon-list", cchFormatMax) == 0);
 }
 
-bool SharedClipboardMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax)
+bool ShClMIMENeedsCache(const char *pcszFormat, size_t cchFormatMax)
 {
     bool fNeedsDropDir = false;
     if (!RTStrNICmp(pcszFormat, "text/uri-list", cchFormatMax)) /** @todo Add "x-special/gnome-icon-list"? */

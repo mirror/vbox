@@ -40,8 +40,8 @@
  * @param   cbData              Size (in bytes) of data block to associate.
  * @param   ppPayload           Where to store the allocated event payload on success.
  */
-int SharedClipboardPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
-                                PSHCLEVENTPAYLOAD *ppPayload)
+int ShClPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbData,
+                     PSHCLEVENTPAYLOAD *ppPayload)
 {
     AssertPtrReturn(pvData, VERR_INVALID_POINTER);
     AssertReturn   (cbData, VERR_INVALID_PARAMETER);
@@ -74,7 +74,7 @@ int SharedClipboardPayloadAlloc(uint32_t uID, const void *pvData, uint32_t cbDat
  * @returns VBox status code.
  * @param   pPayload            Event payload to free.
  */
-void SharedClipboardPayloadFree(PSHCLEVENTPAYLOAD pPayload)
+void ShClPayloadFree(PSHCLEVENTPAYLOAD pPayload)
 {
     if (!pPayload)
         return;
@@ -99,7 +99,7 @@ void SharedClipboardPayloadFree(PSHCLEVENTPAYLOAD pPayload)
  * @param   pEvent              Event to initialize.
  * @param   uID                 Event ID to use.
  */
-int SharedClipboardEventCreate(PSHCLEVENT pEvent, SHCLEVENTID uID)
+int ShClEventCreate(PSHCLEVENT pEvent, SHCLEVENTID uID)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
@@ -120,7 +120,7 @@ int SharedClipboardEventCreate(PSHCLEVENT pEvent, SHCLEVENTID uID)
  *
  * @param   pEvent              Event to destroy.
  */
-void SharedClipboardEventDestroy(PSHCLEVENT pEvent)
+void ShClEventDestroy(PSHCLEVENT pEvent)
 {
     if (!pEvent)
         return;
@@ -133,7 +133,7 @@ void SharedClipboardEventDestroy(PSHCLEVENT pEvent)
         pEvent->hEventSem = NIL_RTSEMEVENT;
     }
 
-    SharedClipboardPayloadFree(pEvent->pPayload);
+    ShClPayloadFree(pEvent->pPayload);
 
     pEvent->uID = 0;
 }
@@ -145,7 +145,7 @@ void SharedClipboardEventDestroy(PSHCLEVENT pEvent)
  * @param   pSource             Event source to create.
  * @param   uID                 ID to use for event source.
  */
-int SharedClipboardEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
+int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
 
@@ -168,7 +168,7 @@ int SharedClipboardEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID
  *
  * @param   pSource             Event source to destroy.
  */
-void SharedClipboardEventSourceDestroy(PSHCLEVENTSOURCE pSource)
+void ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource)
 {
     if (!pSource)
         return;
@@ -181,7 +181,7 @@ void SharedClipboardEventSourceDestroy(PSHCLEVENTSOURCE pSource)
     {
         RTListNodeRemove(&pEvIt->Node);
 
-        SharedClipboardEventDestroy(pEvIt);
+        ShClEventDestroy(pEvIt);
 
         RTMemFree(pEvIt);
         pEvIt = NULL;
@@ -197,7 +197,7 @@ void SharedClipboardEventSourceDestroy(PSHCLEVENTSOURCE pSource)
  * @returns New event ID generated, or 0 on error.
  * @param   pSource             Event source to generate event for.
  */
-SHCLEVENTID SharedClipboardEventIDGenerate(PSHCLEVENTSOURCE pSource)
+SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource)
 {
     AssertPtrReturn(pSource, 0);
 
@@ -217,7 +217,7 @@ SHCLEVENTID SharedClipboardEventIDGenerate(PSHCLEVENTSOURCE pSource)
  * @param   pSource             Event source to get event from.
  * @param   uID                 Event ID to get.
  */
-inline PSHCLEVENT sharedClipboardEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
+inline PSHCLEVENT shclEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 {
     PSHCLEVENT pEvIt;
     RTListForEach(&pSource->lstEvents, pEvIt, SHCLEVENT, Node)
@@ -235,7 +235,7 @@ inline PSHCLEVENT sharedClipboardEventGet(PSHCLEVENTSOURCE pSource, SHCLEVENTID 
  * @returns Last registered event ID, or 0 if not found.
  * @param   pSource             Event source to get last registered event from.
  */
-SHCLEVENTID SharedClipboardEventGetLast(PSHCLEVENTSOURCE pSource)
+SHCLEVENTID ShClEventGetLast(PSHCLEVENTSOURCE pSource)
 {
     AssertPtrReturn(pSource, 0);
     PSHCLEVENT pEvent = RTListGetLast(&pSource->lstEvents, SHCLEVENT, Node);
@@ -250,7 +250,7 @@ SHCLEVENTID SharedClipboardEventGetLast(PSHCLEVENTSOURCE pSource)
  *
  * @param   pEvent              Event to detach payload for.
  */
-static void sharedClipboardEventPayloadDetachInternal(PSHCLEVENT pEvent)
+static void shclEventPayloadDetachInternal(PSHCLEVENT pEvent)
 {
     AssertPtrReturnVoid(pEvent);
 
@@ -264,7 +264,7 @@ static void sharedClipboardEventPayloadDetachInternal(PSHCLEVENT pEvent)
  * @param   pSource             Event source to register event for.
  * @param   uID                 Event ID to register.
  */
-int SharedClipboardEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
+int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
 
@@ -272,13 +272,13 @@ int SharedClipboardEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 
     LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
 
-    if (sharedClipboardEventGet(pSource, uID) == NULL)
+    if (shclEventGet(pSource, uID) == NULL)
     {
         PSHCLEVENT pEvent
             = (PSHCLEVENT)RTMemAllocZ(sizeof(SHCLEVENT));
         if (pEvent)
         {
-            rc = SharedClipboardEventCreate(pEvent, uID);
+            rc = ShClEventCreate(pEvent, uID);
             if (RT_SUCCESS(rc))
             {
                 RTListAppend(&pSource->lstEvents, &pEvent->Node);
@@ -307,7 +307,7 @@ int SharedClipboardEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
  * @param   pSource             Event source to unregister event for.
  * @param   uID                 Event ID to unregister.
  */
-int SharedClipboardEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
+int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
 
@@ -315,14 +315,14 @@ int SharedClipboardEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 
     LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
 
-    PSHCLEVENT pEvent = sharedClipboardEventGet(pSource, uID);
+    PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
     {
         LogFlowFunc(("Event %RU16\n", pEvent->uID));
 
         RTListNodeRemove(&pEvent->Node);
 
-        SharedClipboardEventDestroy(pEvent);
+        ShClEventDestroy(pEvent);
 
         RTMemFree(pEvent);
         pEvent = NULL;
@@ -346,8 +346,8 @@ int SharedClipboardEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
  * @param   ppPayload           Where to store the (allocated) event payload on success. Needs to be free'd with
  *                              SharedClipboardPayloadFree(). Optional.
  */
-int SharedClipboardEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs,
-                             PSHCLEVENTPAYLOAD* ppPayload)
+int ShClEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTERVAL uTimeoutMs,
+                  PSHCLEVENTPAYLOAD* ppPayload)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
     /** ppPayload is optional. */
@@ -356,7 +356,7 @@ int SharedClipboardEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTE
 
     int rc;
 
-    PSHCLEVENT pEvent = sharedClipboardEventGet(pSource, uID);
+    PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
     {
         rc = RTSemEventWait(pEvent->hEventSem, uTimeoutMs);
@@ -367,7 +367,7 @@ int SharedClipboardEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTE
                 *ppPayload = pEvent->pPayload;
 
                 /* Make sure to detach payload here, as the caller now owns the data. */
-                sharedClipboardEventPayloadDetachInternal(pEvent);
+                shclEventPayloadDetachInternal(pEvent);
             }
         }
     }
@@ -386,8 +386,8 @@ int SharedClipboardEventWait(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID, RTMSINTE
  * @param   uID                 Event ID to signal.
  * @param   pPayload            Event payload to associate. Takes ownership. Optional.
  */
-int SharedClipboardEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
-                               PSHCLEVENTPAYLOAD pPayload)
+int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
+                    PSHCLEVENTPAYLOAD pPayload)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
 
@@ -395,7 +395,7 @@ int SharedClipboardEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
 
     LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
 
-    PSHCLEVENT pEvent = sharedClipboardEventGet(pSource, uID);
+    PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
     {
         Assert(pEvent->pPayload == NULL);
@@ -418,16 +418,16 @@ int SharedClipboardEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
  * @param   pSource             Event source of event to detach payload for.
  * @param   uID                 Event ID to detach payload for.
  */
-void SharedClipboardEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
+void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 {
     AssertPtrReturnVoid(pSource);
 
     LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
 
-    PSHCLEVENT pEvent = sharedClipboardEventGet(pSource, uID);
+    PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
     {
-        sharedClipboardEventPayloadDetachInternal(pEvent);
+        shclEventPayloadDetachInternal(pEvent);
     }
 #ifdef DEBUG_andy
     else
@@ -437,7 +437,7 @@ void SharedClipboardEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID
 
 /** @todo use const where appropriate; delinuxify the code (*Lin* -> *Host*); use AssertLogRel*. */
 
-int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
+int ShClUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
 {
     size_t cwDest, i;
 
@@ -482,8 +482,7 @@ int vboxClipboardUtf16GetWinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest
     return VINF_SUCCESS;
 }
 
-int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest,
-                               size_t cwDest)
+int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest)
 {
     size_t i, j;
     LogFlowFunc(("pwszSrc=%.*ls, cwSrc=%u\n", cwSrc, pwszSrc, cwSrc));
@@ -560,7 +559,7 @@ int vboxClipboardUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest
     return VINF_SUCCESS;
 }
 
-int vboxClipboardUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
+int ShClUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest)
 {
     size_t cwDest;
 
@@ -608,8 +607,7 @@ int vboxClipboardUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwSrc, size_t *pcwDest
     return VINF_SUCCESS;
 }
 
-int vboxClipboardUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest,
-                               size_t cwDest)
+int ShClUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest, size_t cwDest)
 {
     size_t cwDestPos;
 
@@ -679,7 +677,7 @@ int vboxClipboardUtf16WinToLin(PRTUTF16 pwszSrc, size_t cwSrc, PRTUTF16 pu16Dest
     return VINF_SUCCESS;
 }
 
-int vboxClipboardDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDest, size_t *pcbDest)
+int ShClDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDest, size_t *pcbDest)
 {
     size_t        cb            = sizeof(BMFILEHEADER) + cbSrc;
     PBMFILEHEADER pFileHeader   = NULL;
@@ -727,7 +725,7 @@ int vboxClipboardDibToBmp(const void *pvSrc, size_t cbSrc, void **ppvDest, size_
     return VINF_SUCCESS;
 }
 
-int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest, size_t *pcbDest)
+int ShClBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest, size_t *pcbDest)
 {
     AssertPtrReturn(pvSrc,   VERR_INVALID_PARAMETER);
     AssertPtrReturn(ppvDest, VERR_INVALID_PARAMETER);
@@ -748,7 +746,7 @@ int vboxClipboardBmpGetDib(const void *pvSrc, size_t cbSrc, const void **ppvDest
 }
 
 #ifdef LOG_ENABLED
-int VBoxShClDbgDumpHtml(const char *pszSrc, size_t cbSrc)
+int ShClDbgDumpHtml(const char *pszSrc, size_t cbSrc)
 {
     size_t cchIgnored = 0;
     int rc = RTStrNLenEx(pszSrc, cbSrc, &cchIgnored);
@@ -776,7 +774,7 @@ int VBoxShClDbgDumpHtml(const char *pszSrc, size_t cbSrc)
     return rc;
 }
 
-void VBoxShClDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format)
+void ShClDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format)
 {
     if (u32Format & VBOX_SHCL_FMT_UNICODETEXT)
     {
@@ -821,7 +819,7 @@ void VBoxShClDbgDumpData(const void *pv, size_t cb, SHCLFORMAT u32Format)
  * @returns Function ID string name.
  * @param   uFn                 The function to translate.
  */
-const char *VBoxShClHostFunctionToStr(uint32_t uFn)
+const char *ShClHostFunctionToStr(uint32_t uFn)
 {
     switch (uFn)
     {
@@ -843,7 +841,7 @@ const char *VBoxShClHostFunctionToStr(uint32_t uFn)
  * @returns Message ID string name.
  * @param   uMsg                The message to translate.
  */
-const char *VBoxShClHostMsgToStr(uint32_t uMsg)
+const char *ShClHostMsgToStr(uint32_t uMsg)
 {
     switch (uMsg)
     {
@@ -877,7 +875,7 @@ const char *VBoxShClHostMsgToStr(uint32_t uMsg)
  * @returns Message ID string name.
  * @param   uMsg                The message to translate.
  */
-const char *VBoxShClGuestMsgToStr(uint32_t uMsg)
+const char *ShClGuestMsgToStr(uint32_t uMsg)
 {
     switch (uMsg)
     {

@@ -168,11 +168,11 @@ static int vbclClipboardGuestPasteText(PasteboardRef pPasteboard, void *pData, u
        it in both formats UTF16 (original) and UTF8. */
 
     /* Convert END-OF-LINE */
-    rc = vboxClipboardUtf16GetLinSize((RTUTF16 *)pData, cbDataSize / 2, &cbActualLen);
+    rc = ShClUtf16GetLinSize((RTUTF16 *)pData, cbDataSize / 2, &cbActualLen);
     AssertReturn(RT_SUCCESS(rc), rc);
     pDataInternal = (RTUTF16 *)RTMemAlloc(cbActualLen * 2);
     AssertReturn(pDataInternal, VERR_NO_MEMORY);
-    rc = vboxClipboardUtf16WinToLin((RTUTF16 *)pData, cbDataSize / 2, pDataInternal, cbActualLen);
+    rc = ShClUtf16WinToLin((RTUTF16 *)pData, cbDataSize / 2, pDataInternal, cbActualLen);
 
     /* Do actual paste */
     if (RT_SUCCESS(rc))
@@ -216,7 +216,7 @@ static int vbclClipboardGuestPastePicture(PasteboardRef pPasteboard, void *pData
     /* Skip zero-sized buffer */
     AssertReturn(cbDataSize > 0, VINF_SUCCESS);
 
-    rc = vboxClipboardDibToBmp(pData, cbDataSize, &pBmp, &cbBmpSize);
+    rc = ShClDibToBmp(pData, cbDataSize, &pBmp, &cbBmpSize);
     AssertReturn(RT_SUCCESS(rc), rc);
 
     rc = vbclClipboardGuestPasteData(pPasteboard, (UInt8 *)pBmp, cbBmpSize, kUTTypeBMP, true);

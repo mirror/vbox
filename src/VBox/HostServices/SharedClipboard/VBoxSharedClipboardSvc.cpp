@@ -472,7 +472,7 @@ int shclSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
 
     LogFlowFunc(("uMsg=%RU32 (%s), cParms=%RU32, fAppend=%RTbool\n",
-                 pMsg->uMsg, VBoxShClHostMsgToStr(pMsg->uMsg), pMsg->cParms, fAppend));
+                 pMsg->uMsg, ShClHostMsgToStr(pMsg->uMsg), pMsg->cParms, fAppend));
 
     if (fAppend)
         pClient->queueMsg.append(pMsg);
@@ -549,7 +549,7 @@ int shclSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParm
         {
             shclSvcMsgSetPeekReturn(pFirstMsg, paParms, cParms);
             LogFlowFunc(("[Client %RU32] VBOX_SHCL_GUEST_FN_MSG_PEEK_XXX -> VINF_SUCCESS (idMsg=%u (%s), cParms=%u)\n",
-                         pClient->State.uClientID, pFirstMsg->uMsg, VBoxShClHostMsgToStr(pFirstMsg->uMsg),
+                         pClient->State.uClientID, pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg),
                          pFirstMsg->cParms));
             return VINF_SUCCESS;
         }
@@ -610,7 +610,7 @@ int shclSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cPa
             AssertPtr(pFirstMsg);
 
             LogFlowFunc(("[Client %RU32] uMsg=%RU32 (%s), cParms=%RU32\n",
-                         pClient->State.uClientID, pFirstMsg->uMsg, VBoxShClHostMsgToStr(pFirstMsg->uMsg),
+                         pClient->State.uClientID, pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg),
                          pFirstMsg->cParms));
 
             rc = shclSvcMsgSetGetHostMsgOldReturn(pFirstMsg, paParms, cParms);
@@ -683,24 +683,24 @@ int shclSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms
         if (pFirstMsg)
         {
             LogFlowFunc(("First message is: %RU32 (%s), cParms=%RU32\n",
-                         pFirstMsg->uMsg, VBoxShClHostMsgToStr(pFirstMsg->uMsg), pFirstMsg->cParms));
+                         pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg), pFirstMsg->cParms));
 
             ASSERT_GUEST_MSG_RETURN(pFirstMsg->uMsg == idMsgExpected || idMsgExpected == UINT32_MAX,
                                     ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
-                                     pFirstMsg->uMsg, VBoxShClHostMsgToStr(pFirstMsg->uMsg), pFirstMsg->cParms,
-                                     idMsgExpected, VBoxShClHostMsgToStr(idMsgExpected), cParms),
+                                     pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg), pFirstMsg->cParms,
+                                     idMsgExpected, ShClHostMsgToStr(idMsgExpected), cParms),
                                     VERR_MISMATCH);
             ASSERT_GUEST_MSG_RETURN(pFirstMsg->cParms == cParms,
                                     ("idMsg=%u (%s) cParms=%u, caller expected %u (%s) and %u\n",
-                                     pFirstMsg->uMsg, VBoxShClHostMsgToStr(pFirstMsg->uMsg), pFirstMsg->cParms,
-                                     idMsgExpected, VBoxShClHostMsgToStr(idMsgExpected), cParms),
+                                     pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg), pFirstMsg->cParms,
+                                     idMsgExpected, ShClHostMsgToStr(idMsgExpected), cParms),
                                     VERR_WRONG_PARAMETER_COUNT);
 
             /* Check the parameter types. */
             for (uint32_t i = 0; i < cParms; i++)
                 ASSERT_GUEST_MSG_RETURN(pFirstMsg->paParms[i].type == paParms[i].type,
                                         ("param #%u: type %u, caller expected %u (idMsg=%u %s)\n", i, pFirstMsg->paParms[i].type,
-                                         paParms[i].type, pFirstMsg->uMsg, VBoxShClHostMsgToStr(pFirstMsg->uMsg)),
+                                         paParms[i].type, pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg)),
                                         VERR_WRONG_PARAMETER_TYPE);
             /*
              * Copy out the parameters.
@@ -796,7 +796,7 @@ int shclSvcClientWakeup(PSHCLCLIENT pClient)
             if (pFirstMsg)
             {
                 LogFunc(("[Client %RU32] Current host message is %RU32 (%s), cParms=%RU32\n",
-                         pClient->State.uClientID, pFirstMsg->uMsg, VBoxShClHostMsgToStr(pFirstMsg->uMsg),
+                         pClient->State.uClientID, pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg),
                          pFirstMsg->cParms));
 
                 bool fDonePending = false;
@@ -865,7 +865,7 @@ int shclSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
                                                   VBOX_SHCL_CPARMS_READ_DATA);
     if (pMsgReadData)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
 
         HGCMSvcSetU32(&pMsgReadData->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                           pClient->Events.uID, uEvent));
@@ -875,7 +875,7 @@ int shclSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
         rc = shclSvcMsgAdd(pClient, pMsgReadData, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
-            rc = SharedClipboardEventRegister(&pClient->Events, uEvent);
+            rc = ShClEventRegister(&pClient->Events, uEvent);
             if (RT_SUCCESS(rc))
             {
                 rc = shclSvcClientWakeup(pClient);
@@ -885,7 +885,7 @@ int shclSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
                         *puEvent = uEvent;
                 }
                 else
-                    SharedClipboardEventUnregister(&pClient->Events, uEvent);
+                    ShClEventUnregister(&pClient->Events, uEvent);
             }
         }
     }
@@ -908,7 +908,7 @@ int shclSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     {
         /* Protocol v0 did not have any context ID handling, so we ASSUME that the last event registered
          * is the one we want to handle (as this all was a synchronous protocol anyway). */
-        uEvent = SharedClipboardEventGetLast(&pClient->Events);
+        uEvent = ShClEventGetLast(&pClient->Events);
     }
     else
         uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(pCmdCtx->uContextID);
@@ -917,13 +917,13 @@ int shclSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 
     PSHCLEVENTPAYLOAD pPayload = NULL;
     if (pData->cbData)
-        rc = SharedClipboardPayloadAlloc(uEvent, pData->pvData, pData->cbData, &pPayload);
+        rc = ShClPayloadAlloc(uEvent, pData->pvData, pData->cbData, &pPayload);
 
     if (RT_SUCCESS(rc))
     {
-        rc = SharedClipboardEventSignal(&pClient->Events, uEvent, pPayload);
+        rc = ShClEventSignal(&pClient->Events, uEvent, pPayload);
         if (RT_FAILURE(rc))
-            SharedClipboardPayloadFree(pPayload);
+            ShClPayloadFree(pPayload);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -940,7 +940,7 @@ int shclSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
     PSHCLCLIENTMSG pMsg = shclSvcMsgAlloc(VBOX_SHCL_HOST_MSG_FORMATS_REPORT, 3);
     if (pMsg)
     {
-        const SHCLEVENTID uEvent = SharedClipboardEventIDGenerate(&pClient->Events);
+        const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
 
         HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pClient->Events.uID, uEvent));
@@ -1120,11 +1120,11 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
     AssertPtr(pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    PSHCLTRANSFER pTransfer = SharedClipboardTransferCtxGetTransfer(&pClient->TransferCtx, 0 /* Index*/);
+    PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(&pClient->TransferCtx, 0 /* Index*/);
     if (pTransfer)
         shclSvcTransferAreaDetach(&pClient->State, pTransfer);
 
-    SharedClipboardTransferCtxDestroy(&pClient->TransferCtx);
+    ShClTransferCtxDestroy(&pClient->TransferCtx);
 #endif
 
     ShClSvcImplDisconnect(pClient);
@@ -1144,7 +1144,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
     shclSvcClientStateReset(&pClient->State);
     shclSvcClientStateDestroy(&pClient->State);
 
-    SharedClipboardEventSourceDestroy(&pClient->Events);
+    ShClEventSourceDestroy(&pClient->Events);
 
     ClipboardClientMap::iterator itClient = g_mapClients.find(u32ClientID);
     if (itClient != g_mapClients.end())
@@ -1168,7 +1168,7 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     pClient->State.uClientID = u32ClientID;
 
     /* Create the client's own event source. */
-    int rc = SharedClipboardEventSourceCreate(&pClient->Events, 0 /* ID, ignored */);
+    int rc = ShClEventSourceCreate(&pClient->Events, 0 /* ID, ignored */);
     if (RT_SUCCESS(rc))
     {
         LogFlowFunc(("[Client %RU32] Using event source %RU32\n", u32ClientID, pClient->Events.uID));
@@ -1181,7 +1181,7 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = SharedClipboardTransferCtxInit(&pClient->TransferCtx);
+            rc = ShClTransferCtxInit(&pClient->TransferCtx);
 #endif
             if (RT_SUCCESS(rc))
                 rc = ShClSvcImplConnect(pClient, ShClSvcGetHeadless());
@@ -1221,7 +1221,7 @@ static DECLCALLBACK(void) svcCall(void *,
     AssertPtr(pClient);
 
     LogFunc(("u32ClientID=%RU32 (proto %RU32), fn=%RU32 (%s), cParms=%RU32, paParms=%p\n",
-             u32ClientID, pClient->State.uProtocolVer, u32Function, VBoxShClGuestMsgToStr(u32Function), cParms, paParms));
+             u32ClientID, pClient->State.uProtocolVer, u32Function, ShClGuestMsgToStr(u32Function), cParms, paParms));
 
 #ifdef DEBUG
     uint32_t i;
@@ -1567,7 +1567,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("u32Function=%RU32 (%s), cParms=%RU32, paParms=%p\n",
-                 u32Function, VBoxShClHostFunctionToStr(u32Function), cParms, paParms));
+                 u32Function, ShClHostFunctionToStr(u32Function), cParms, paParms));
 
     switch (u32Function)
     {

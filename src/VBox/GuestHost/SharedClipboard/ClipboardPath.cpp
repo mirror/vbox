@@ -35,7 +35,7 @@
  * @param   pszPath             Path to sanitize.
  * @param   cbPath              Size (in bytes) of path to sanitize.
  */
-int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath)
+int ShClPathSanitizeFilename(char *pszPath, size_t cbPath)
 {
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
@@ -71,7 +71,7 @@ int SharedClipboardPathSanitizeFilename(char *pszPath, size_t cbPath)
  * @param   pszPath             Path to sanitize. UTF-8.
  * @param   cbPath              Size (in bytes) of the path to sanitize.
  */
-int SharedClipboardPathSanitize(char *pszPath, size_t cbPath)
+int ShClPathSanitize(char *pszPath, size_t cbPath)
 {
     RT_NOREF(pszPath, cbPath);
 

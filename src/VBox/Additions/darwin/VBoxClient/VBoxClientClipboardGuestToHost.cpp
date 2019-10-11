@@ -221,13 +221,13 @@ static int vbclClipboardHostPasteText(uint32_t u32ClientId, PRTUTF16 pwszData, u
     AssertPtrReturn(pwszData, VERR_INVALID_POINTER);
 
     size_t cwcActual; /* (includes a schwarzenegger character) */
-    int rc = vboxClipboardUtf16GetWinSize(pwszData, cbData / sizeof(RTUTF16), &cwcActual);
+    int rc = ShClUtf16GetWinSize(pwszData, cbData / sizeof(RTUTF16), &cwcActual);
     AssertReturn(RT_SUCCESS(rc), rc);
 
     PRTUTF16 pwszWinTmp = (PRTUTF16)RTMemAlloc(cwcActual * sizeof(RTUTF16));
     AssertReturn(pwszWinTmp, VERR_NO_MEMORY);
 
-    rc = vboxClipboardUtf16LinToWin(pwszData, cbData / sizeof(RTUTF16), pwszWinTmp, cwcActual);
+    rc = ShClUtf16LinToWin(pwszData, cbData / sizeof(RTUTF16), pwszWinTmp, cwcActual);
     if (RT_SUCCESS(rc))
         rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_UNICODETEXT,
                                         pwszWinTmp, cwcActual * sizeof(RTUTF16));
@@ -249,7 +249,7 @@ static int vbclClipboardHostPasteBitmap(uint32_t u32ClientId, void *pvData, uint
 {
     const void   *pvDib;
     size_t        cbDib;
-    int rc = vboxClipboardBmpGetDib(pvData, cbData, &pvDib, &cbDib);
+    int rc = ShClBmpGetDib(pvData, cbData, &pvDib, &cbDib);
     AssertRCReturn(rc, rc);
 
     rc = vbclClipboardHostPasteData(u32ClientId, VBOX_SHCL_FMT_BITMAP, pvDib, cbDib);

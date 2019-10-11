@@ -187,7 +187,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
             && m_pTransfer->ProviderIface.pfnObjOpen)
         {
             SHCLOBJOPENCREATEPARMS openParms;
-            rc = SharedClipboardTransferObjectOpenParmsInit(&openParms);
+            rc = ShClTransferObjOpenParmsInit(&openParms);
             if (RT_SUCCESS(rc))
             {
                 openParms.fCreate = SHCL_OBJ_CF_ACT_OPEN_IF_EXISTS
@@ -201,7 +201,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
                     rc = m_pTransfer->ProviderIface.pfnObjOpen(&m_pTransfer->ProviderCtx, &openParms, &m_hObj);
                 }
 
-                SharedClipboardTransferObjectOpenParmsDestroy(&openParms);
+                ShClTransferObjOpenParmsDestroy(&openParms);
             }
         }
         else

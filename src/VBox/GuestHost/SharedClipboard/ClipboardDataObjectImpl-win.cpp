@@ -237,20 +237,20 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
     LogFlowFunc(("strDir=%s\n", strDir.c_str()));
 
     SHCLLISTOPENPARMS openParmsList;
-    int rc = SharedClipboardTransferListOpenParmsInit(&openParmsList);
+    int rc = ShClTransferListOpenParmsInit(&openParmsList);
     if (RT_SUCCESS(rc))
     {
         rc = RTStrCopy(openParmsList.pszPath, openParmsList.cbPath, strDir.c_str());
         if (RT_SUCCESS(rc))
         {
             SHCLLISTHANDLE hList;
-            rc = SharedClipboardTransferListOpen(pTransfer, &openParmsList, &hList);
+            rc = ShClTransferListOpen(pTransfer, &openParmsList, &hList);
             if (RT_SUCCESS(rc))
             {
                 LogFlowFunc(("strDir=%s -> hList=%RU64\n", strDir.c_str(), hList));
 
                 SHCLLISTHDR hdrList;
-                rc = SharedClipboardTransferListGetHeader(pTransfer, hList, &hdrList);
+                rc = ShClTransferListGetHeader(pTransfer, hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
                     LogFlowFunc(("cTotalObjects=%RU64, cbTotalSize=%RU64\n\n",
@@ -259,7 +259,7 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
                     for (uint64_t o = 0; o < hdrList.cTotalObjects; o++)
                     {
                         SHCLLISTENTRY entryList;
-                        rc = SharedClipboardTransferListRead(pTransfer, hList, &entryList);
+                        rc = ShClTransferListRead(pTransfer, hList, &entryList);
                         if (RT_SUCCESS(rc))
                         {
                             PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
@@ -294,11 +294,11 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
                     }
                 }
 
-                SharedClipboardTransferListClose(pTransfer, hList);
+                ShClTransferListClose(pTransfer, hList);
             }
         }
 
-        SharedClipboardTransferListOpenParmsDestroy(&openParmsList);
+        ShClTransferListOpenParmsDestroy(&openParmsList);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -333,11 +333,11 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
     LogRel2(("Shared Clipboard: Calculating transfer ...\n"));
 
-    int rc = SharedClipboardTransferOpen(pTransfer);
+    int rc = ShClTransferOpen(pTransfer);
     if (RT_SUCCESS(rc))
     {
         PSHCLROOTLIST pRootList;
-        rc = SharedClipboardTransferRootsGet(pTransfer, &pRootList);
+        rc = ShClTransferRootsGet(pTransfer, &pRootList);
         if (RT_SUCCESS(rc))
         {
             LogFlowFunc(("cRoots=%RU32\n\n", pRootList->Hdr.cRoots));
@@ -377,7 +377,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                     break;
             }
 
-            SharedClipboardTransferRootListFree(pRootList);
+            ShClTransferRootListFree(pRootList);
             pRootList = NULL;
 
             if (   RT_SUCCESS(rc)
@@ -409,7 +409,7 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                 LogRel(("Shared Clipboard: Transfer failed with %Rrc\n", rc));
         }
 
-        SharedClipboardTransferClose(pTransfer);
+        ShClTransferClose(pTransfer);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -573,11 +573,11 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
     {
         const bool fUnicode = pFormatEtc->cfFormat == m_cfFileDescriptorW;
 
-        const uint32_t enmTransferStatus = SharedClipboardTransferGetStatus(m_pTransfer);
+        const uint32_t enmTransferStatus = ShClTransferGetStatus(m_pTransfer);
         RT_NOREF(enmTransferStatus);
 
         LogFlowFunc(("FormatIndex_FileDescriptor%s, enmTransferStatus=%s, m_fRunning=%RTbool\n",
-                     fUnicode ? "W" : "A", VBoxShClTransferStatusToStr(enmTransferStatus), m_fRunning));
+                     fUnicode ? "W" : "A", ShClTransferStatusToStr(enmTransferStatus), m_fRunning));
 
         int rc;
 
@@ -585,7 +585,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
         if (!m_fRunning)
         {
             /* Start the transfer asynchronously in a separate thread. */
-            rc = SharedClipboardTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this);
+            rc = ShClTransferRun(m_pTransfer, &SharedClipboardWinDataObject::readThread, this);
             if (RT_SUCCESS(rc))
             {
                 m_fRunning = true;
