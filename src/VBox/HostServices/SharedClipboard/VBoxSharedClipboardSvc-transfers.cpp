@@ -884,24 +884,21 @@ static int shclSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[]
 
         rc = HGCMSvcGetU32(&paParms[1], &pOpenParms->fList);
         if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[2], &cbPath);
+            rc = HGCMSvcGetU32(&paParms[2], &cbFilter);
         if (RT_SUCCESS(rc))
         {
-            rc = HGCMSvcGetStr(&paParms[3], &pOpenParms->pszPath, &pOpenParms->cbPath);
-            AssertReturn(cbPath == pOpenParms->cbPath, VERR_INVALID_PARAMETER);
-        }
-        if (RT_SUCCESS(rc))
-            rc = HGCMSvcGetU32(&paParms[4], &cbFilter);
-        if (RT_SUCCESS(rc))
-        {
-            rc = HGCMSvcGetStr(&paParms[5], &pOpenParms->pszFilter, &pOpenParms->cbFilter);
+            rc = HGCMSvcGetStr(&paParms[3], &pOpenParms->pszFilter, &pOpenParms->cbFilter);
             AssertReturn(cbFilter == pOpenParms->cbFilter, VERR_INVALID_PARAMETER);
         }
-
+        if (RT_SUCCESS(rc))
+            rc = HGCMSvcGetU32(&paParms[4], &cbPath);
         if (RT_SUCCESS(rc))
         {
-            /** @todo Some more validation. */
+            rc = HGCMSvcGetStr(&paParms[5], &pOpenParms->pszPath, &pOpenParms->cbPath);
+            AssertReturn(cbPath == pOpenParms->cbPath, VERR_INVALID_PARAMETER);
         }
+
+        /** @todo Some more validation. */
     }
     else
         rc = VERR_INVALID_PARAMETER;
@@ -1861,7 +1858,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             int rcGuest;
             rc = shclSvcTransferGetError(cParms,paParms, &rcGuest);
             if (RT_SUCCESS(rc))
-                LogRel(("Shared Clipboard: Transfer error: %Rrc\n", rcGuest));
+                LogRel(("Shared Clipboard: Transfer error from guest: %Rrc\n", rcGuest));
             break;
         }
 

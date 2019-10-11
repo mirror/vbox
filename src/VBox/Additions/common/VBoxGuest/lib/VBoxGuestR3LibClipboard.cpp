@@ -773,7 +773,8 @@ VBGLR3DECL(int) VbglR3ClipboardListOpenSend(PVBGLR3SHCLCMDCTX pCtx, PSHCLLISTOPE
     Msg.cbFilter.SetUInt32(pOpenParms->cbFilter);
     Msg.pvFilter.SetPtr(pOpenParms->pszFilter, pOpenParms->cbFilter);
     Msg.cbPath.SetUInt32(pOpenParms->cbPath);
-    Msg.pvFilter.SetPtr(pOpenParms->pszPath, pOpenParms->cbPath);
+    Msg.pvPath.SetPtr(pOpenParms->pszPath, pOpenParms->cbPath);
+    Msg.uHandle.SetUInt64(0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -1776,6 +1777,8 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
 
     int rc;
 
+    bool fErrorSent = false; /* Whether an error has been reported back to the host already. */
+
     switch (idMsg)
     {
         case VBOX_SHCL_HOST_MSG_TRANSFER_STATUS:
@@ -2093,8 +2096,18 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNextEx(uint32_t idMsg, uint32_t cParms,
         default:
         {
             rc = VbglR3ClipboardEventGetNext(idMsg, cParms, pCmdCtx, pEvent);
+            if (RT_FAILURE(rc))
+                fErrorSent = true;
             break;
         }
+    }
+
+    if (   !fErrorSent
+        && RT_FAILURE(rc))
+    {
+        /* Report error back to the host. */
+        int rc2 = VbglR3ClipboardWriteError(pCmdCtx->uClientID, rc);
+        AssertRC(rc2);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -2157,8 +2170,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms,
         /* Report error back to the host. */
         int rc2 = VbglR3ClipboardWriteError(pCtx->uClientID, rc);
         AssertRC(rc2);
-
-   }
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;

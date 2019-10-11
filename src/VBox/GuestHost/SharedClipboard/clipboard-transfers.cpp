@@ -170,6 +170,26 @@ PSHCLROOTLISTENTRY SharedClipboardTransferRootListEntryDup(PSHCLROOTLISTENTRY pR
 }
 
 /**
+ * Initializes an list handle info structure.
+ *
+ * @returns VBox status code.
+ * @param   pInfo               List handle info structure to initialize.
+ */
+int SharedClipboardTransferListHandleInfoInit(PSHCLLISTHANDLEINFO pInfo)
+{
+    AssertPtrReturn(pInfo, VERR_INVALID_POINTER);
+
+    pInfo->hList   = SHCLLISTHANDLE_INVALID;
+    pInfo->enmType = SHCLOBJTYPE_INVALID;
+
+    pInfo->pszPathLocalAbs = NULL;
+
+    RT_ZERO(pInfo->u);
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Destroys a list handle info structure.
  *
  * @param   pInfo               List handle info structure to destroy.
@@ -1213,6 +1233,9 @@ int SharedClipboardTransferInit(PSHCLTRANSFER pTransfer,
     pTransfer->State.enmDir    = enmDir;
     pTransfer->State.enmSource = enmSource;
 
+    LogFlowFunc(("uID=%RU32, enmDir=%RU32, enmSource=%RU32\n",
+                 pTransfer->State.uID, pTransfer->State.enmDir, pTransfer->State.enmSource));
+
     int rc = SharedClipboardEventSourceCreate(&pTransfer->Events, pTransfer->State.uID);
     if (RT_SUCCESS(rc))
     {
@@ -1258,7 +1281,7 @@ int SharedClipboardTransferClose(PSHCLTRANSFER pTransfer)
  * @param   pTransfer           Clipboard transfer to get list handle info from.
  * @param   hList               List handle of the list to get handle info for.
  */
-inline PSHCLLISTHANDLEINFO sharedClipboardTransferListGet(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
+inline PSHCLLISTHANDLEINFO sharedClipboardTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 {
     PSHCLLISTHANDLEINFO pIt;
     RTListForEach(&pTransfer->lstList, pIt, SHCLLISTHANDLEINFO, Node)
@@ -1302,58 +1325,65 @@ int SharedClipboardTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS 
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
+        LogFlowFunc(("pszPath=%s\n", pOpenParms->pszPath));
+
         PSHCLLISTHANDLEINFO pInfo
             = (PSHCLLISTHANDLEINFO)RTMemAlloc(sizeof(SHCLLISTHANDLEINFO));
         if (pInfo)
         {
-            LogFlowFunc(("pszPath=%s\n", pOpenParms->pszPath));
-
-            RTFSOBJINFO objInfo;
-            rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+            rc = SharedClipboardTransferListHandleInfoInit(pInfo);
             if (RT_SUCCESS(rc))
             {
-                switch (pInfo->enmType)
-                {
-                    case SHCLOBJTYPE_DIRECTORY:
-                    {
-                        rc = RTDirOpen(&pInfo->u.Local.hDir, pOpenParms->pszPath);
-                        break;
-                    }
-
-                    case SHCLOBJTYPE_FILE:
-                    {
-                        rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath,
-                                        RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
-                        break;
-                    }
-
-                    default:
-                        rc = VERR_NOT_SUPPORTED;
-                        break;
-                }
-
+                RTFSOBJINFO objInfo;
+                rc = RTPathQueryInfo(pOpenParms->pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
                 if (RT_SUCCESS(rc))
-                {
-                    pInfo->hList = sharedClipboardTransferListHandleNew(pTransfer);
-
-                    RTListAppend(&pTransfer->lstList, &pInfo->Node);
-                }
-                else
                 {
                     if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
                     {
-                        if (RTDirIsValid(pInfo->u.Local.hDir))
-                            RTDirClose(pInfo->u.Local.hDir);
+                        rc = RTDirOpen(&pInfo->u.Local.hDir, pOpenParms->pszPath);
+                        if (RT_SUCCESS(rc))
+                            pInfo->enmType = SHCLOBJTYPE_DIRECTORY;
+
                     }
                     else if (RTFS_IS_FILE(objInfo.Attr.fMode))
                     {
-                        if (RTFileIsValid(pInfo->u.Local.hFile))
-                            RTFileClose(pInfo->u.Local.hFile);
+                        rc = RTFileOpen(&pInfo->u.Local.hFile, pOpenParms->pszPath,
+                                        RTFILE_O_OPEN | RTFILE_O_READ | RTFILE_O_DENY_WRITE);
+                        if (RT_SUCCESS(rc))
+                            pInfo->enmType = SHCLOBJTYPE_FILE;
                     }
+                    else
+                        rc = VERR_NOT_SUPPORTED;
 
-                    RTMemFree(pInfo);
-                    pInfo = NULL;
+                    if (RT_SUCCESS(rc))
+                    {
+                        pInfo->hList = sharedClipboardTransferListHandleNew(pTransfer);
+
+                        RTListAppend(&pTransfer->lstList, &pInfo->Node);
+                    }
+                    else
+                    {
+                        if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+                        {
+                            if (RTDirIsValid(pInfo->u.Local.hDir))
+                                RTDirClose(pInfo->u.Local.hDir);
+                        }
+                        else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+                        {
+                            if (RTFileIsValid(pInfo->u.Local.hFile))
+                                RTFileClose(pInfo->u.Local.hFile);
+                        }
+                    }
                 }
+
+                if (RT_FAILURE(rc))
+                    SharedClipboardTransferListHandleInfoDestroy(pInfo);
+            }
+
+            if (RT_FAILURE(rc))
+            {
+                RTMemFree(pInfo);
+                pInfo = NULL;
             }
         }
         else
@@ -1396,7 +1426,7 @@ int SharedClipboardTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hLi
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGet(pTransfer, hList);
+        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGetByHandle(pTransfer, hList);
         if (pInfo)
         {
             switch (pInfo->enmType)
@@ -1632,7 +1662,7 @@ int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGet(pTransfer, hList);
+        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGetByHandle(pTransfer, hList);
         if (pInfo)
         {
             rc = SharedClipboardTransferListHdrInit(pHdr);
@@ -1646,7 +1676,7 @@ int SharedClipboardTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE
                         if (pszPathRel)
                         {
                             rc = sharedClipboardTransferListHdrFromDir(pHdr,
-                                                                          pszPathRel, pszPathRel, pszPathRel);
+                                                                       pszPathRel, pszPathRel, pszPathRel);
                             RTStrFree(pszPathRel);
                         }
                         else
@@ -1736,7 +1766,7 @@ int SharedClipboardTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hLis
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGet(pTransfer, hList);
+        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGetByHandle(pTransfer, hList);
         if (pInfo)
         {
             switch (pInfo->enmType)
@@ -1887,7 +1917,7 @@ bool SharedClipboardTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTH
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        fIsValid = sharedClipboardTransferListGet(pTransfer, hList) != NULL;
+        fIsValid = sharedClipboardTransferListGetByHandle(pTransfer, hList) != NULL;
     }
     else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
     {
