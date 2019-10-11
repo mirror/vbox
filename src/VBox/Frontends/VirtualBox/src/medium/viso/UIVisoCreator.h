@@ -49,7 +49,6 @@ class UIVisoCreator : public QIWithRetranslateUI<QIMainDialog>
 public:
 
     UIVisoCreator(QWidget *pParent = 0, const QString& strMachineName = QString());
-    ~UIVisoCreator();
     /** Returns the content of the .viso file. Each element of the list corresponds to a line in the .viso file. */
     QStringList       entryList() const;
     const QString     &visoName() const;
@@ -119,13 +118,6 @@ private:
       *  - grab it from the dialog as soon as a panel becomes visible again
       *  - assign it to the most recently "unhidden" panel */
     void manageEscapeShortCut();
-
-    /** @name Save/Load dialog related extra data.
-     * @{ */
-       void loadSettings();
-       void saveSettings() const;
-    /** @} */
-    void setDialogGeometry(const QRect &geometry);
 
     /** @name Main toolbar (and main menu) actions
       * @{ */

@@ -59,18 +59,12 @@ UIVisoCreator::UIVisoCreator(QWidget *pParent /* =0 */, const QString& strMachin
     , m_pConfigurationPanel(0)
 {
     m_visoOptions.m_strVisoName = !strMachineName.isEmpty() ? strMachineName : "ad-hoc";
-    loadSettings();
     prepareActions();
     prepareWidgets();
     populateMenuMainToolbar();
     prepareConnections();
     manageEscapeShortCut();
     retranslateUi();
-}
-
-UIVisoCreator::~UIVisoCreator()
-{
-    saveSettings();
 }
 
 QStringList UIVisoCreator::entryList() const
@@ -571,49 +565,4 @@ void UIVisoCreator::prepareVerticalToolBar()
     m_pVerticalToolBar->addAction(m_pResetAction);
 
     m_pVerticalToolBar->addWidget(bottomSpacerWidget);
-}
-
-void UIVisoCreator::loadSettings()
-{
-    const QRect desktopRect = gpDesktop->availableGeometry(this);
-    int iDefaultWidth = desktopRect.width() / 2;
-    int iDefaultHeight = desktopRect.height() * 3 / 4;
-
-    QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
-    QWidget *pParent = qobject_cast<QWidget*>(parent());
-    if (pParent)
-        defaultGeometry.moveCenter(pParent->geometry().center());
-
-    /* Load geometry from extradata: */
-    QRect geometry = gEDataManager->visoCreatorDialogGeometry(this, defaultGeometry);
-    setDialogGeometry(geometry);
-}
-
-void UIVisoCreator::saveSettings() const
-{
-    /* Save window geometry to extradata: */
-    const QRect saveGeometry = geometry();
-#ifdef VBOX_WS_MAC
-    /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
-    QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setVISOCreatorDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
-#else /* !VBOX_WS_MAC */
-    gEDataManager->setVISOCreatorDialogGeometry(saveGeometry, isMaximized());
-#endif /* !VBOX_WS_MAC */
-}
-
-void UIVisoCreator::setDialogGeometry(const QRect &geometry)
-{
-#ifdef VBOX_WS_MAC
-    /* Use the old approach for OSX: */
-    move(geometry.topLeft());
-    resize(geometry.size());
-#else /* VBOX_WS_MAC */
-    /* Use the new approach for Windows/X11: */
-    UICommon::setTopLevelGeometry(this, geometry);
-#endif /* !VBOX_WS_MAC */
-
-    /* Maximize (if necessary): */
-    if (gEDataManager->visoCreatorDialogShouldBeMaximized())
-        showMaximized();
 }

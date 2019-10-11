@@ -1957,7 +1957,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_ActivateHoveredMachineWindow
            << GUI_Input_SelectorShortcuts << GUI_Input_MachineShortcuts
            << GUI_RecentFolderHD << GUI_RecentFolderCD << GUI_RecentFolderFD
-           << GUI_VISOCreator_RecentFolder << GUI_VISOCreator_DialogGeometry
+           << GUI_VISOCreator_RecentFolder
            << GUI_RecentListHD << GUI_RecentListCD << GUI_RecentListFD
            << GUI_RestrictedNetworkAttachmentTypes
            << GUI_LastSelectorWindowPosition << GUI_SplitterSizes
@@ -2688,25 +2688,6 @@ QString UIExtraDataManager::visoCreatorRecentFolder()
 void UIExtraDataManager::setVISOCreatorRecentFolder(const QString &strValue)
 {
     setExtraDataString(GUI_VISOCreator_RecentFolder, strValue);
-}
-
-QRect UIExtraDataManager::visoCreatorDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
-{
-    return dialogGeometry(GUI_VISOCreator_DialogGeometry, pWidget, defaultGeometry);
-}
-
-void UIExtraDataManager::setVISOCreatorDialogGeometry(const QRect &geometry, bool fMaximized)
-{
-    setDialogGeometry(GUI_VISOCreator_DialogGeometry, geometry, fMaximized);
-}
-
-bool UIExtraDataManager::visoCreatorDialogShouldBeMaximized()
-{
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_VISOCreator_DialogGeometry);
-
-    /* Make sure 5th item has required value: */
-    return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
 QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
