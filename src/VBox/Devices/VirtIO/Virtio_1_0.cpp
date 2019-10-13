@@ -107,7 +107,7 @@ bool virtioQueueIsEmpty(VIRTIOHANDLE hVirtio, uint16_t qIdx)
  */
 int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain,  bool fRemove)
 {
-    Assert(ppDescChain);
+    AssertReturn(ppDescChain, VERR_INVALID_PARAMETER);
 
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
     PVIRTQSTATE  pVirtq  = &pVirtio->virtqState[qIdx];
@@ -1039,8 +1039,10 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         return VERR_NO_MEMORY;
     }
 
-#ifdef VBOX_WITH_MSI_DEVICES
+#if 0 /* Until pdmR3DvHlp_PCISetIrq() impl is fixed and Assert that limits vec to 0 is removed */
+# ifdef VBOX_WITH_MSI_DEVICES
     pVirtio->fMsiSupport = true;
+# endif
 #endif
 
     pVirtio->pClientContext = pClientContext;

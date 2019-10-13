@@ -695,8 +695,13 @@ static DECLCALLBACK(int) virtioScsiIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
 {
     RT_NOREF2(hIoReq, pInterface);
     PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
-    if (pReq->pbDataIn)
-        RTSgBufCopyToBuf(pSgBuf, pReq->pbDataIn + offDst, cbCopy);
+
+    AssertReturn(pReq->pbDataIn
+                 && offDst + cbCopy <= pReq->cbDataIn
+                 && cbCopy <= pSgBuf->cbSegLeft,  VERR_INVALID_PARAMETER);
+
+    RTSgBufCopyToBuf(pSgBuf, pReq->pbDataIn + offDst, cbCopy);
+
     return VINF_SUCCESS;
 }
 
@@ -708,8 +713,12 @@ static DECLCALLBACK(int) virtioScsiIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, P
 {
     RT_NOREF2(hIoReq, pInterface);
     PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
-    if (pReq->pbDataOut)
-        RTSgBufCopyFromBuf(pSgBuf, pReq->pbDataOut + offSrc, cbCopy);
+
+    AssertReturn(pReq->pbDataOut
+                 && offSrc + cbCopy <= pReq->cbDataOut
+                 && cbCopy <= pSgBuf->cbSegLeft,  VERR_INVALID_PARAMETER);
+
+    RTSgBufCopyFromBuf(pSgBuf, pReq->pbDataOut + offSrc, cbCopy);
 
     return VINF_SUCCESS;
 }
