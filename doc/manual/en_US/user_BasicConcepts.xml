@@ -1429,11 +1429,6 @@
             Enables nested virtualization, with passthrough of hardware
             virtualization functions to the guest VM.
           </para>
-
-          <para>
-            This feature is available on host systems that use an AMD
-            CPU. For Intel CPUs, the option is grayed out.
-          </para>
         </listitem>
 
       </itemizedlist>
