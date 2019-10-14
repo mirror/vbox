@@ -253,13 +253,10 @@ void UIVMInformationDialog::loadSettings()
 {
     /* Load window geometry: */
     {
-        /* Load geometry: */
-        m_geometry = gEDataManager->sessionInformationDialogGeometry(this, m_pMachineWindow);
-
-        /* Restore geometry: */
+        const QRect geo = gEDataManager->sessionInformationDialogGeometry(this, m_pMachineWindow);
         LogRel2(("GUI: UIVMInformationDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
-                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
-        restoreGeometry();
+                 geo.x(), geo.y(), geo.width(), geo.height()));
+        restoreGeometry(geo);
     }
 }
 
@@ -267,14 +264,10 @@ void UIVMInformationDialog::saveSettings()
 {
     /* Save window geometry: */
     {
-        /* Save geometry: */
-#ifdef VBOX_WS_MAC
-        gEDataManager->setSessionInformationDialogGeometry(m_geometry, ::darwinIsWindowMaximized(this));
-#else /* VBOX_WS_MAC */
-        gEDataManager->setSessionInformationDialogGeometry(m_geometry, isMaximized());
-#endif /* !VBOX_WS_MAC */
-        LogRel2(("GUI: UIVMInformationDialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
-                 m_geometry.x(), m_geometry.y(), m_geometry.width(), m_geometry.height()));
+        const QRect geo = currentGeometry();
+        LogRel2(("GUI: UIVMInformationDialog: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+                 geo.x(), geo.y(), geo.width(), geo.height()));
+        gEDataManager->setSessionInformationDialogGeometry(geo, isCurrentlyMaximized());
     }
 }
 

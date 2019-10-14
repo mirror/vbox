@@ -20,6 +20,9 @@
 
 /* GUI includes: */
 #include "QIMainWindow.h"
+#ifdef VBOX_WS_MAC
+# include "VBoxUtils-darwin.h"
+#endif
 #ifdef VBOX_WS_X11
 # include "UICommon.h"
 # include "UIDesktopWidgetWatchdog.h"
@@ -74,8 +77,9 @@ void QIMainWindow::resizeEvent(QResizeEvent *pEvent)
     }
 }
 
-void QIMainWindow::restoreGeometry()
+void QIMainWindow::restoreGeometry(const QRect &rect)
 {
+    m_geometry = rect;
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     /* Use the old approach for OSX/Win: */
     move(m_geometry.topLeft());
@@ -88,4 +92,18 @@ void QIMainWindow::restoreGeometry()
     /* Maximize (if necessary): */
     if (shouldBeMaximized())
         showMaximized();
+}
+
+QRect QIMainWindow::currentGeometry() const
+{
+    return m_geometry;
+}
+
+bool QIMainWindow::isCurrentlyMaximized() const
+{
+#ifdef VBOX_WS_MAC
+    return ::darwinIsWindowMaximized(this);
+#else
+    return isMaximized();
+#endif
 }
