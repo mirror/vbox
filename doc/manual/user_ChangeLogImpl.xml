@@ -77,6 +77,13 @@ technical terms if no non-technical ones are clear enough.
         </para>
       </listitem>
 
+      <listitem>
+        <para>
+          Shared Clipboard: Implemented experimental support for file transfers
+          (Windows hosts/guests only at the moment)
+        </para>
+      </listitem>
+
     </itemizedlist>
 
     <para>
