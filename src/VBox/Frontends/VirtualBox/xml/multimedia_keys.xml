@@ -9,40 +9,51 @@
 
         <key><!-- WWW back -->
             <position>300</position>
-            <usageid>0x2224</usageid>
+            <usageid>0x0224</usageid>
             <usagepage>0x0C</usagepage>
             <scancode>0x20</scancode>
-            <staticcaption>⬅</staticcaption>
+            <staticcaption>🡄</staticcaption>
         </key>
-        <key>
+        <key><!-- WWW home -->
             <position>301</position>
-            <usageid>0x54</usageid>
-            <usagepage>0x7</usagepage>
+            <usageid>0x0223</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancode>0x20</scancode>
+            <staticcaption></staticcaption>
+        </key>
+
+        <key><!-- WWW forward -->
+            <position>302</position>
+            <usageid>0x0225</usageid>
+            <usagepage>0x0C</usagepage>
             <scancodeprefix>0xe0</scancodeprefix>
             <scancode>0x35</scancode>
+            <staticcaption>🡆</staticcaption>
         </key>
-        <key>
-            <position>302</position>
-            <usageid>0x55</usageid>
-            <usagepage>0x7</usagepage>
-            <scancode>0x37</scancode>
+        <key><!-- Mail -->
+            <position>303</position>
+            <usageid>0x018A</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xe0</scancodeprefix>
+            <scancode>0x35</scancode>
+            <staticcaption>✉</staticcaption>
         </key>
         <key><!-- Mute -->
-            <position>303</position>
+            <position>304</position>
             <usageid>0xE2</usageid>
             <usagepage>0x0C</usagepage>
             <scancode>0x4a</scancode>
             <staticcaption>🔇</staticcaption>
         </key>
         <key><!-- Volume Down -->
-            <position>304</position>
+            <position>305</position>
             <usageid>0xEA</usageid>
             <usagepage>0x0C</usagepage>
             <scancode>0x4a</scancode>
             <staticcaption>🔉</staticcaption>
         </key>
         <key><!-- Volume Up -->
-            <position>305</position>
+            <position>306</position>
             <usageid>0xE9</usageid>
             <usagepage>0x0C</usagepage>
             <scancode>0x4a</scancode>
