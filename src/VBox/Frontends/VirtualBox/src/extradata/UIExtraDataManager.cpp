@@ -574,12 +574,6 @@ private:
         void cleanup();
     /** @} */
 
-    /** @name Event Processing
-      * @{ */
-        /** Common event-handler. */
-        bool event(QEvent *pEvent);
-    /** @} */
-
     /** @name Actions
       * @{ */
         /** */
@@ -1726,45 +1720,6 @@ void UIExtraDataManagerWindow::cleanup()
 {
     /* Save settings: */
     saveSettings();
-}
-
-bool UIExtraDataManagerWindow::event(QEvent *pEvent)
-{
-    /* Pre-process through base-class: */
-    bool fResult = QIMainWindow::event(pEvent);
-
-    /* Process required events: */
-    switch (pEvent->type())
-    {
-        /* Handle every Resize and Move we keep track of the geometry. */
-        case QEvent::Resize:
-        {
-            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
-            {
-                QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-                m_geometry.setSize(pResizeEvent->size());
-            }
-            break;
-        }
-        case QEvent::Move:
-        {
-            if (isVisible() && (windowState() & (Qt::WindowMaximized | Qt::WindowMinimized | Qt::WindowFullScreen)) == 0)
-            {
-#ifdef VBOX_WS_MAC
-                QMoveEvent *pMoveEvent = static_cast<QMoveEvent*>(pEvent);
-                m_geometry.moveTo(pMoveEvent->pos());
-#else /* !VBOX_WS_MAC */
-                m_geometry.moveTo(geometry().x(), geometry().y());
-#endif /* !VBOX_WS_MAC */
-            }
-            break;
-        }
-        default:
-            break;
-    }
-
-    /* Return result: */
-    return fResult;
 }
 
 void UIExtraDataManagerWindow::updateActionsAvailability()

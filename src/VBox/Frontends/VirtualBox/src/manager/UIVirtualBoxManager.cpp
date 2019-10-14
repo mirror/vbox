@@ -17,7 +17,6 @@
 
 /* Qt includes: */
 #include <QMenuBar>
-#include <QResizeEvent>
 #include <QStandardPaths>
 #include <QStatusBar>
 //# include <QToolButton>
@@ -185,47 +184,6 @@ bool UIVirtualBoxManager::event(QEvent *pEvent)
     }
     /* Call to base-class: */
     return QIWithRetranslateUI<QIMainWindow>::event(pEvent);
-}
-
-void UIVirtualBoxManager::moveEvent(QMoveEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QIMainWindow>::moveEvent(pEvent);
-
-#ifdef VBOX_WS_X11
-    /* Prevent further handling if fake screen detected: */
-    if (gpDesktop->isFakeScreenDetected())
-        return;
-#endif
-
-    /* Prevent handling for yet/already invisible window or if window is in minimized state: */
-    if (isVisible() && (windowState() & Qt::WindowMinimized) == 0)
-    {
-#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
-        m_geometry.moveTo(frameGeometry().x(), frameGeometry().y());
-#else
-        m_geometry.moveTo(geometry().x(), geometry().y());
-#endif
-    }
-}
-
-void UIVirtualBoxManager::resizeEvent(QResizeEvent *pEvent)
-{
-    /* Call to base-class: */
-    QIWithRetranslateUI<QIMainWindow>::resizeEvent(pEvent);
-
-#ifdef VBOX_WS_X11
-    /* Prevent handling if fake screen detected: */
-    if (gpDesktop->isFakeScreenDetected())
-        return;
-#endif
-
-    /* Prevent handling for yet/already invisible window or if window is in minimized state: */
-    if (isVisible() && (windowState() & Qt::WindowMinimized) == 0)
-    {
-        QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-        m_geometry.setSize(pResizeEvent->size());
-    }
 }
 
 void UIVirtualBoxManager::showEvent(QShowEvent *pEvent)

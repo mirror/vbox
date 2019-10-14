@@ -60,9 +60,6 @@ protected:
     /** Handles translation event. */
     void retranslateUi();
 
-    /** Handles any Qt @a pEvent. */
-    bool event(QEvent *pEvent);
-
 private slots:
 
     /** Destroys dialog immediately. */

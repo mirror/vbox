@@ -44,6 +44,11 @@ public:
 
 protected:
 
+    /** Handles move @a pEvent. */
+    virtual void moveEvent(QMoveEvent *pEvent) /* override */;
+    /** Handles resize @a pEvent. */
+    virtual void resizeEvent(QResizeEvent *pEvent) /* override */;
+
     /** Returns whether the window should be maximized when geometry being restored. */
     virtual bool shouldBeMaximized() const { return false; }
 

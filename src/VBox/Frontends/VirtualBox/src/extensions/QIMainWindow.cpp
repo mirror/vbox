@@ -15,10 +15,14 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
+/* Qt includes: */
+#include <QResizeEvent>
+
 /* GUI includes: */
 #include "QIMainWindow.h"
 #ifdef VBOX_WS_X11
 # include "UICommon.h"
+# include "UIDesktopWidgetWatchdog.h"
 #endif
 
 
@@ -27,16 +31,59 @@ QIMainWindow::QIMainWindow(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags 
 {
 }
 
+void QIMainWindow::moveEvent(QMoveEvent *pEvent)
+{
+    /* Call to base-class: */
+    QMainWindow::moveEvent(pEvent);
+
+#ifdef VBOX_WS_X11
+    /* Prevent further handling if fake screen detected: */
+    if (gpDesktop->isFakeScreenDetected())
+        return;
+#endif
+
+    /* Prevent handling for yet/already invisible window or if window is in minimized state: */
+    if (isVisible() && (windowState() & Qt::WindowMinimized) == 0)
+    {
+#if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
+        /* Use the old approach for OSX/Win: */
+        m_geometry.moveTo(frameGeometry().x(), frameGeometry().y());
+#else
+        /* Use the new approach otherwise: */
+        m_geometry.moveTo(geometry().x(), geometry().y());
+#endif
+    }
+}
+
+void QIMainWindow::resizeEvent(QResizeEvent *pEvent)
+{
+    /* Call to base-class: */
+    QMainWindow::resizeEvent(pEvent);
+
+#ifdef VBOX_WS_X11
+    /* Prevent handling if fake screen detected: */
+    if (gpDesktop->isFakeScreenDetected())
+        return;
+#endif
+
+    /* Prevent handling for yet/already invisible window or if window is in minimized state: */
+    if (isVisible() && (windowState() & Qt::WindowMinimized) == 0)
+    {
+        QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+        m_geometry.setSize(pResizeEvent->size());
+    }
+}
+
 void QIMainWindow::restoreGeometry()
 {
 #if defined(VBOX_WS_MAC) || defined(VBOX_WS_WIN)
     /* Use the old approach for OSX/Win: */
     move(m_geometry.topLeft());
     resize(m_geometry.size());
-#else /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+#else
     /* Use the new approach otherwise: */
     UICommon::setTopLevelGeometry(this, m_geometry);
-#endif /* !VBOX_WS_MAC && !VBOX_WS_WIN */
+#endif
 
     /* Maximize (if necessary): */
     if (shouldBeMaximized())
