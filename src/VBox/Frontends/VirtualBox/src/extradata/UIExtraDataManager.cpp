@@ -26,6 +26,7 @@
 # include <QLabel>
 # include <QLineEdit>
 # include <QListView>
+# include <QMainWindow>
 # include <QMenuBar>
 # include <QPainter>
 # include <QPushButton>
