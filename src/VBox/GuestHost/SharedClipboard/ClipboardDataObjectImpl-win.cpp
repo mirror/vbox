@@ -57,7 +57,7 @@ SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLTRANSFER pTransf
 
     HRESULT hr;
 
-    ULONG cFixedFormats = 2; /* CFSTR_FILEDESCRIPTORA + CFSTR_FILECONTENTS */
+    ULONG cFixedFormats = 3; /* CFSTR_FILEDESCRIPTORA + CFSTR_FILECONTENTS + CFSTR_PERFORMEDDROPEFFECT */
 #ifdef VBOX_CLIPBOARD_WITH_UNICODE_SUPPORT
     cFixedFormats++; /* CFSTR_FILEDESCRIPTORW */
 #endif
@@ -90,6 +90,11 @@ SharedClipboardWinDataObject::SharedClipboardWinDataObject(PSHCLTRANSFER pTransf
         LogFlowFunc(("Registering CFSTR_FILECONTENTS ...\n"));
         m_cfFileContents = RegisterClipboardFormat(CFSTR_FILECONTENTS);
         registerFormat(&m_pFormatEtc[uIdx++], m_cfFileContents, TYMED_ISTREAM, 0 /* lIndex */);
+
+        /* We want to know from the target what the outcome of the operation was to react accordingly (e.g. abort a transfer). */
+        LogFlowFunc(("Registering CFSTR_PERFORMEDDROPEFFECT ...\n"));
+        m_cfPerformedDropEffect = RegisterClipboardFormat(CFSTR_PERFORMEDDROPEFFECT);
+        registerFormat(&m_pFormatEtc[uIdx++], m_cfPerformedDropEffect, TYMED_HGLOBAL, -1 /* lIndex */, DVASPECT_CONTENT);
 
         /*
          * Registration of dynamic formats needed?
@@ -402,7 +407,23 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
                     rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
                     AssertRC(rc2);
 
-                    LogRel2(("Shared Clipboard: Transfer complete\n"));
+                    switch (pThis->m_enmStatus)
+                    {
+                        case Completed:
+                            LogRel2(("Shared Clipboard: Transfer complete\n"));
+                            break;
+
+                        case Canceled:
+                            LogRel2(("Shared Clipboard: Transfer canceled\n"));
+                            break;
+
+                        case Error:
+                            LogRel2(("Shared Clipboard: Transfer error occurred\n"));
+                            break;
+
+                        default:
+                            break;
+                    }
                 }
                 else
                    LogRel(("Shared Clipboard: No transfer root entries found -- should not happen, please file a bug report\n"));
@@ -649,6 +670,19 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
             }
         }
     }
+    else if (pFormatEtc->cfFormat == m_cfPerformedDropEffect)
+    {
+        HGLOBAL hGlobal = GlobalAlloc(GHND, sizeof(DWORD));
+
+        DWORD* pdwDropEffect = (DWORD*)GlobalLock(hGlobal);
+        *pdwDropEffect = DROPEFFECT_COPY;
+
+        GlobalUnlock(hGlobal);
+
+        pMedium->tymed          = TYMED_HGLOBAL;
+        pMedium->hGlobal        = hGlobal;
+        pMedium->pUnkForRelease = NULL;
+    }
 
     if (   FAILED(hr)
         && hr != DV_E_FORMATETC) /* Can happen if the caller queries unknown / unhandled formats. */
@@ -685,7 +719,7 @@ STDMETHODIMP SharedClipboardWinDataObject::GetDataHere(LPFORMATETC pFormatEtc, L
 STDMETHODIMP SharedClipboardWinDataObject::QueryGetData(LPFORMATETC pFormatEtc)
 {
     LogFlowFunc(("\n"));
-    return (lookupFormatEtc(pFormatEtc, NULL /* puIndex */)) ? S_OK : DV_E_FORMATETC;
+    return lookupFormatEtc(pFormatEtc, NULL /* puIndex */) ? S_OK : DV_E_FORMATETC;
 }
 
 STDMETHODIMP SharedClipboardWinDataObject::GetCanonicalFormatEtc(LPFORMATETC pFormatEtc, LPFORMATETC pFormatEtcOut)
@@ -700,8 +734,47 @@ STDMETHODIMP SharedClipboardWinDataObject::GetCanonicalFormatEtc(LPFORMATETC pFo
 
 STDMETHODIMP SharedClipboardWinDataObject::SetData(LPFORMATETC pFormatEtc, LPSTGMEDIUM pMedium, BOOL fRelease)
 {
-    RT_NOREF(pFormatEtc, pMedium, fRelease);
-    LogFlowFunc(("\n"));
+    if (   pFormatEtc == NULL
+        || pMedium    == NULL)
+        return E_INVALIDARG;
+
+    if (pFormatEtc->lindex != -1)
+        return DV_E_LINDEX;
+
+    if (pFormatEtc->tymed != TYMED_HGLOBAL)
+        return DV_E_TYMED;
+
+    if (pFormatEtc->dwAspect != DVASPECT_CONTENT)
+        return DV_E_DVASPECT;
+
+    LogFlowFunc(("cfFormat=%RU16, lookupFormatEtc=%RTbool\n",
+                 pFormatEtc->cfFormat, lookupFormatEtc(pFormatEtc, NULL /* puIndex */)));
+
+    /* CFSTR_PERFORMEDDROPEFFECT is used by the drop target (caller of this IDataObject) to communicate
+     * the outcome of the overall operation. */
+    if (   pFormatEtc->cfFormat == m_cfPerformedDropEffect
+        && pMedium->tymed       == TYMED_HGLOBAL)
+    {
+        DWORD dwEffect = *(DWORD *)GlobalLock(pMedium->hGlobal);
+        GlobalUnlock(pMedium->hGlobal);
+
+        LogFlowFunc(("dwEffect=%RI32\n", dwEffect));
+
+        /* Did the user cancel the operation via UI (shell)? This also might happen when overwriting an existing file
+         * and the user doesn't want to allow this. */
+        if (dwEffect == DROPEFFECT_NONE)
+        {
+            LogRel2(("Shared Clipboard: Transfer canceled by user interaction\n"));
+
+            OnTransferCanceled();
+        }
+        /** @todo Detect move / overwrite actions here. */
+
+        if (fRelease)
+            ReleaseStgMedium(pMedium);
+
+        return S_OK;
+    }
 
     return E_NOTIMPL;
 }
@@ -790,14 +863,23 @@ void SharedClipboardWinDataObject::OnTransferComplete(int rc /* = VINF_SUCESS */
 
     LogFlowFunc(("m_uObjIdx=%RU32 (total: %zu)\n", m_uObjIdx, m_lstEntries.size()));
 
-    const bool fComplete = m_uObjIdx == m_lstEntries.size() - 1 /* Object index is zero-based */;
-    if (fComplete)
+    if (RT_SUCCESS(rc))
     {
-        if (m_EventTransferComplete != NIL_RTSEMEVENT)
+        const bool fComplete = m_uObjIdx == m_lstEntries.size() - 1 /* Object index is zero-based */;
+        if (fComplete)
         {
-            int rc2 = RTSemEventSignal(m_EventTransferComplete);
-            AssertRC(rc2);
+            m_enmStatus = Completed;
         }
+        else
+            AssertFailed();
+    }
+    else
+        m_enmStatus = Error;
+
+    if (m_EventTransferComplete != NIL_RTSEMEVENT)
+    {
+        int rc2 = RTSemEventSignal(m_EventTransferComplete);
+        AssertRC(rc2);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -806,6 +888,8 @@ void SharedClipboardWinDataObject::OnTransferComplete(int rc /* = VINF_SUCESS */
 void SharedClipboardWinDataObject::OnTransferCanceled(void)
 {
     LogFlowFuncEnter();
+
+    m_enmStatus = Canceled;
 
     if (m_EventTransferComplete != NIL_RTSEMEVENT)
     {
@@ -817,86 +901,15 @@ void SharedClipboardWinDataObject::OnTransferCanceled(void)
 }
 
 /* static */
-const char* SharedClipboardWinDataObject::ClipboardFormatToString(CLIPFORMAT fmt)
+void SharedClipboardWinDataObject::logFormat(CLIPFORMAT fmt)
 {
-#if 0
     char szFormat[128];
     if (GetClipboardFormatName(fmt, szFormat, sizeof(szFormat)))
-        LogFlowFunc(("wFormat=%RI16, szName=%s\n", fmt, szFormat));
-#endif
-
-    switch (fmt)
     {
-
-    case 1:
-        return "CF_TEXT";
-    case 2:
-        return "CF_BITMAP";
-    case 3:
-        return "CF_METAFILEPICT";
-    case 4:
-        return "CF_SYLK";
-    case 5:
-        return "CF_DIF";
-    case 6:
-        return "CF_TIFF";
-    case 7:
-        return "CF_OEMTEXT";
-    case 8:
-        return "CF_DIB";
-    case 9:
-        return "CF_PALETTE";
-    case 10:
-        return "CF_PENDATA";
-    case 11:
-        return "CF_RIFF";
-    case 12:
-        return "CF_WAVE";
-    case 13:
-        return "CF_UNICODETEXT";
-    case 14:
-        return "CF_ENHMETAFILE";
-    case 15:
-        return "CF_HDROP";
-    case 16:
-        return "CF_LOCALE";
-    case 17:
-        return "CF_DIBV5";
-    case 18:
-        return "CF_MAX";
-    case 49158:
-        return "FileName";
-    case 49159:
-        return "FileNameW";
-    case 49161:
-        return "DATAOBJECT";
-    case 49171:
-        return "Ole Private Data";
-    case 49314:
-        return "Shell Object Offsets";
-    case 49316:
-        return "File Contents";
-    case 49317:
-        return "File Group Descriptor";
-    case 49323:
-        return "Preferred Drop Effect";
-    case 49380:
-        return "Shell Object Offsets";
-    case 49382:
-        return "FileContents";
-    case 49383:
-        return "FileGroupDescriptor";
-    case 49389:
-        return "Preferred DropEffect";
-    case 49268:
-        return "Shell IDList Array";
-    case 49619:
-        return "RenPrivateFileAttachments";
-    default:
-        break;
+        LogFlowFunc(("clipFormat=%RI16 -> %s\n", fmt, szFormat));
     }
-
-    return "unknown";
+    else
+        LogFlowFunc(("clipFormat=%RI16 is unknown\n", fmt));
 }
 
 bool SharedClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG *puIndex)
@@ -911,18 +924,18 @@ bool SharedClipboardWinDataObject::lookupFormatEtc(LPFORMATETC pFormatEtc, ULONG
             /* Note: Do *not* compare dwAspect here, as this can be dynamic, depending on how the object should be represented. */
             //&& pFormatEtc->dwAspect == m_pFormatEtc[i].dwAspect)
         {
-            LogRel3(("Shared Clipboard: Format found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32, ulIndex=%RU32\n",
-                      pFormatEtc->tymed, pFormatEtc->cfFormat, SharedClipboardWinDataObject::ClipboardFormatToString(m_pFormatEtc[i].cfFormat),
-                      pFormatEtc->dwAspect, i));
+            LogRel2(("Shared Clipboard: Format found: tyMed=%RI32, cfFormat=%RI16, dwAspect=%RI32, ulIndex=%RU32\n",
+                     pFormatEtc->tymed, pFormatEtc->cfFormat, pFormatEtc->dwAspect, i));
             if (puIndex)
                 *puIndex = i;
             return true;
         }
     }
 
-    LogRel3(("Shared Clipboard: Format NOT found: tyMed=%RI32, cfFormat=%RI16, sFormats=%s, dwAspect=%RI32\n",
-             pFormatEtc->tymed, pFormatEtc->cfFormat, SharedClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat),
-             pFormatEtc->dwAspect));
+    LogRel2(("Shared Clipboard: Format NOT found: tyMed=%RI32, cfFormat=%RI16, dwAspect=%RI32\n",
+             pFormatEtc->tymed, pFormatEtc->cfFormat, pFormatEtc->dwAspect));
+
+    logFormat(pFormatEtc->cfFormat);
 
     return false;
 }
@@ -939,7 +952,8 @@ void SharedClipboardWinDataObject::registerFormat(LPFORMATETC pFormatEtc, CLIPFO
     pFormatEtc->dwAspect = dwAspect;
     pFormatEtc->ptd      = pTargetDevice;
 
-    LogFlowFunc(("Registered format=%ld, sFormat=%s\n",
-                 pFormatEtc->cfFormat, SharedClipboardWinDataObject::ClipboardFormatToString(pFormatEtc->cfFormat)));
+    LogFlowFunc(("Registered format=%ld\n", pFormatEtc->cfFormat));
+
+    logFormat(pFormatEtc->cfFormat);
 }
 

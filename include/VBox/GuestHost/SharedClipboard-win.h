@@ -169,8 +169,16 @@ public:
 
     enum Status
     {
+        /** The object is uninitialized (not ready). */
         Uninitialized = 0,
-        Initialized
+        /** The object is initialized and ready to use. */
+        Initialized,
+        /** The operation has been successfully completed. */
+        Completed,
+        /** The operation has been canceled. */
+        Canceled,
+        /** An (unrecoverable) error occurred. */
+        Error
     };
 
 public:
@@ -217,7 +225,7 @@ public:
 
     static DECLCALLBACK(int) readThread(RTTHREAD ThreadSelf, void *pvUser);
 
-    static const char* ClipboardFormatToString(CLIPFORMAT fmt);
+    static void logFormat(CLIPFORMAT fmt);
 
 protected:
 
@@ -248,13 +256,20 @@ protected:
     /** Vector containing file system objects with its (cached) objection information. */
     typedef std::vector<FSOBJENTRY> FsObjEntryList;
 
+    /** The object's current status. */
     Status                      m_enmStatus;
+    /** The object's current reference count. */
     LONG                        m_lRefCount;
+    /** How many formats have been registered. */
     ULONG                       m_cFormats;
     LPFORMATETC                 m_pFormatEtc;
     LPSTGMEDIUM                 m_pStgMedium;
+    /** Pointer to the associated transfer object being handled. */
     PSHCLTRANSFER               m_pTransfer;
+    /** Current stream object being used. */
     IStream                    *m_pStream;
+    /** Current object index being handled by the data object.
+     *  This is needed to create the next IStream object for e.g. the next upcoming file/dir/++ in the transfer. */
     ULONG                       m_uObjIdx;
     /** List of (cached) file system objects. */
     FsObjEntryList              m_lstEntries;
@@ -264,9 +279,14 @@ protected:
     RTSEMEVENT                  m_EventListComplete;
     /** Event being triggered when the transfer has been completed. */
     RTSEMEVENT                  m_EventTransferComplete;
+    /** Registered format for CFSTR_FILEDESCRIPTORA. */
     UINT                        m_cfFileDescriptorA;
+    /** Registered format for CFSTR_FILEDESCRIPTORW. */
     UINT                        m_cfFileDescriptorW;
+    /** Registered format for CFSTR_FILECONTENTS. */
     UINT                        m_cfFileContents;
+    /** Registered format for CFSTR_PERFORMEDDROPEFFECT. */
+    UINT                        m_cfPerformedDropEffect;
 };
 
 class SharedClipboardWinEnumFormatEtc : public IEnumFORMATETC
