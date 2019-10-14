@@ -4671,8 +4671,29 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_ENTRY_EXIT_CTLS)
     {
-        PVMCC          pVM = pVCpu->CTX_SUFF(pVM);
-        PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
+        PVMCC        pVM            = pVCpu->CTX_SUFF(pVM);
+        PVMXVMCSINFO pVmcsInfo      = pVmxTransient->pVmcsInfo;
+        bool const   fGstInLongMode = CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx);
+
+        /*
+         * VMRUN function.
+         */
+        {
+            /* If the guest is in long mode, use the 64-bit guest handler, else the 32-bit guest handler.
+             * The host is always 64-bit since we no longer support 32-bit hosts.
+             */
+            if (fGstInLongMode)
+            {
+#ifndef VBOX_WITH_64_BITS_GUESTS
+                return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
+#else
+                Assert(pVM->hm.s.fAllow64BitGuests);                          /* Guaranteed by hmR3InitFinalizeR0(). */
+                pVmcsInfo->pfnStartVM = VMXR0StartVM64;
+#endif
+            }
+            else
+                pVmcsInfo->pfnStartVM = VMXR0StartVM32;
+        }
 
         /*
          * VM-entry controls.
@@ -4699,7 +4720,7 @@ static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTr
              * can skip intercepting changes to the EFER MSR. This is why it it needs to be done
              * here rather than while merging the guest VMCS controls.
              */
-            if (CPUMIsGuestInLongModeEx(&pVCpu->cpum.GstCtx))
+            if (fGstInLongMode)
             {
                 Assert(pVCpu->cpum.GstCtx.msrEFER & MSR_K6_EFER_LME);
                 fVal |= VMX_ENTRY_CTLS_IA32E_MODE_GUEST;
@@ -6516,40 +6537,6 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_OTHER_MSRS);
     }
 
-    return VINF_SUCCESS;
-}
-
-
-/**
- * Selects up the appropriate function to run guest code.
- *
- * @returns VBox status code.
- * @param   pVCpu           The cross context virtual CPU structure.
- * @param   pVmxTransient   The VMX-transient structure.
- *
- * @remarks No-long-jump zone!!!
- */
-static int hmR0VmxSelectVMRunHandler(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
-{
-    PCCPUMCTX    pCtx      = &pVCpu->cpum.GstCtx;
-    PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
-
-    if (CPUMIsGuestInLongModeEx(pCtx))
-    {
-#ifndef VBOX_WITH_64_BITS_GUESTS
-        return VERR_PGM_UNSUPPORTED_SHADOW_PAGING_MODE;
-#else
-        Assert(pVCpu->CTX_SUFF(pVM)->hm.s.fAllow64BitGuests);    /* Guaranteed by hmR3InitFinalizeR0(). */
-        /* Guest is in long mode, use the 64-bit handler (host is 64-bit). */
-        pVmcsInfo->pfnStartVM = VMXR0StartVM64;
-#endif
-    }
-    else
-    {
-        /* Guest is not in long mode, use the 32-bit handler. */
-        pVmcsInfo->pfnStartVM = VMXR0StartVM32;
-    }
-    Assert(pVmcsInfo->pfnStartVM);
     return VINF_SUCCESS;
 }
 
@@ -9048,14 +9035,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
      * Any ordering dependency among the sub-functions below must be explicitly stated using comments.
      * Ideally, assert that the cross-dependent bits are up-to-date at the point of using it.
      */
-    /** @todo r=ramshankar: Move hmR0VmxSelectVMRunHandler inside
-     *        hmR0VmxExportGuestEntryExitCtls and do it conditionally. There shouldn't
-     *        be a need to evaluate this everytime since I'm pretty sure we intercept
-     *        all guest paging mode changes. */
-    int rc = hmR0VmxSelectVMRunHandler(pVCpu, pVmxTransient);
-    AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
-
-    rc = hmR0VmxExportGuestEntryExitCtls(pVCpu, pVmxTransient);
+    int rc = hmR0VmxExportGuestEntryExitCtls(pVCpu, pVmxTransient);
     AssertLogRelMsgRCReturn(rc, ("rc=%Rrc\n", rc), rc);
 
     rc = hmR0VmxExportGuestCR0(pVCpu, pVmxTransient);
