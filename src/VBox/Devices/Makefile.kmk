@@ -155,6 +155,7 @@ if !defined(VBOX_ONLY_EXTPACKS) && "$(intersects $(KBUILD_TARGET_ARCH),$(VBOX_SU
  	Bus/MsixCommon.cpp \
 	EFI/DevSmc.cpp \
 	EFI/DevFlash.cpp \
+	EFI/FlashCore.cpp \
  	Graphics/DevVGA.cpp \
  	Storage/DevATA.cpp \
  	PC/DevPit-i8254.cpp \
