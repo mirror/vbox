@@ -7138,7 +7138,7 @@ $ usbip list -l
 
     <para>
       Hardware virtualization features not present on the host CPU will
-      not be exposed to the guest. In addition, some features such as 
+      not be exposed to the guest. In addition, some features such as
       nested paging are not yet supported for passthrough to the guest.
     </para>
 
