@@ -79,8 +79,18 @@
 # include <spawn.h>
 #endif
 
-#ifdef RT_OS_DARWIN
-# include <mach-o/dyld.h>
+#if !defined(IPRT_USE_PAM) && ( defined(RT_OS_DARWIN) || defined(RT_OS_FREEBSD) || defined(RT_OS_NETBSD) || defined(RT_OS_OPENBSD) )
+# define IPRT_USE_PAM
+#endif
+#ifdef IPRT_USE_PAM
+# ifdef RT_OS_DARWIN
+#  include <mach-o/dyld.h>
+#  define IPRT_LIBPAM_FILE      "libpam.dylib"
+#  define IPRT_PAM_SERVICE_NAME "login"     /** @todo we've been abusing 'login' here, probably not needed? */
+# else
+#  define IPRT_LIBPAM_FILE      "libpam.so"
+#  define IPRT_PAM_SERVICE_NAME "iprt-as-user"
+# endif
 # include <security/pam_appl.h>
 # include <stdlib.h>
 # include <dlfcn.h>
@@ -125,7 +135,7 @@
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
-#ifdef RT_OS_DARWIN
+#ifdef IPRT_USE_PAM
 /** For passing info between rtCheckCredentials and rtPamConv. */
 typedef struct RTPROCPAMARGS
 {
@@ -137,7 +147,7 @@ typedef RTPROCPAMARGS *PRTPROCPAMARGS;
 #endif
 
 
-#ifdef RT_OS_DARWIN
+#ifdef IPRT_USE_PAM
 /**
  * Worker for rtCheckCredentials that feeds password and maybe username to PAM.
  *
@@ -182,10 +192,10 @@ static int rtPamConv(int cMessages, const struct pam_message **papMessages, stru
     *ppaResponses = paResponses;
     return PAM_SUCCESS;
 }
-#endif /* RT_OS_DARWIN */
+#endif /* IPRT_USE_PAM */
 
 
-#ifdef IPRT_WITH_DYNAMIC_CRYPT_R
+#if defined(IPRT_WITH_DYNAMIC_CRYPT_R) && !defined(IPRT_USE_PAM)
 /** Pointer to crypt_r(). */
 typedef char *(*PFNCRYPTR)(const char *, const char *, struct crypt_data *);
 
@@ -229,7 +239,7 @@ static char *rtProcDynamicCryptR(const char *pszKey, const char *pszSalt, struct
  */
 static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t *pGid, uid_t *pUid)
 {
-#if defined(RT_OS_DARWIN)
+#ifdef IPRT_USE_PAM
     RTLogPrintf("rtCheckCredentials\n");
 
     /*
@@ -250,7 +260,7 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
      * Use PAM for the authentication.
      * Note! libpam.2.dylib was introduced with 10.6.x (OpenPAM).
      */
-    void *hModPam = dlopen("libpam.dylib", RTLD_LAZY | RTLD_GLOBAL);
+    void *hModPam = dlopen(IPRT_LIBPAM_FILE, RTLD_LAZY | RTLD_GLOBAL);
     if (hModPam)
     {
         int (*pfnPamStart)(const char *, const char *, struct pam_conv *, pam_handle_t **);
@@ -270,21 +280,20 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
             && pfnPamSetItem
             && pfnPamEnd)
         {
-#define pam_start           pfnPamStart
-#define pam_authenticate    pfnPamAuthenticate
-#define pam_acct_mgmt       pfnPamAcctMgmt
-#define pam_set_item        pfnPamSetItem
-#define pam_end             pfnPamEnd
+# define pam_start           pfnPamStart
+# define pam_authenticate    pfnPamAuthenticate
+# define pam_acct_mgmt       pfnPamAcctMgmt
+# define pam_set_item        pfnPamSetItem
+# define pam_end             pfnPamEnd
 
-            /* Do the PAM stuff.
-               Note! Abusing 'login' here for now... */
+            /* Do the PAM stuff. */
             pam_handle_t   *hPam        = NULL;
             RTPROCPAMARGS   PamConvArgs = { pszUser, pszPasswd };
             struct pam_conv PamConversation;
             RT_ZERO(PamConversation);
             PamConversation.appdata_ptr = &PamConvArgs;
             PamConversation.conv        = rtPamConv;
-            int rc = pam_start("login", pszUser, &PamConversation, &hPam);
+            int rc = pam_start(IPRT_PAM_SERVICE_NAME, pszUser, &PamConversation, &hPam);
             if (rc == PAM_SUCCESS)
             {
                 rc = pam_set_item(hPam, PAM_RUSER, pszUser);
@@ -315,7 +324,7 @@ static int rtCheckCredentials(const char *pszUser, const char *pszPasswd, gid_t 
         dlclose(hModPam);
     }
     else
-        Log(("rtCheckCredentials: Loading libpam.dylib failed\n"));
+        Log(("rtCheckCredentials: Loading " IPRT_LIBPAM_FILE " failed\n"));
     return VERR_AUTHENTICATION_FAILURE;
 
 #else
