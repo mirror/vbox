@@ -2760,6 +2760,8 @@ int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t id
     int rc = VINF_SUCCESS;
     AssertMsgStmt(ASMBitTestAndClear(&pTransferCtx->bmTransferIds, idTransfer), ("idTransfer=%#x\n", idTransfer), rc = VERR_NOT_FOUND);
 
+    LogFlowFunc(("idTransfer=%RU32\n", idTransfer));
+
     PSHCLTRANSFER pTransfer = sharedClipboardTransferCtxGetTransferInternal(pTransferCtx, idTransfer);
     if (pTransfer)
     {
@@ -2767,11 +2769,15 @@ int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t id
 
         Assert(pTransferCtx->cTransfers);
         pTransferCtx->cTransfers--;
+
+        Assert(pTransferCtx->cTransfers >= pTransferCtx->cRunning);
+
+        LogFlowFunc(("Now %RU32 transfers left\n", pTransferCtx->cTransfers));
     }
     else
         rc = VERR_NOT_FOUND;
 
-    LogFlowFunc(("idTransfer=%RU32, rc=%Rrc\n", idTransfer, rc));
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 

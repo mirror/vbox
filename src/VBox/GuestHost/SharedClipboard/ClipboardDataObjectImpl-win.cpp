@@ -394,13 +394,15 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
                 if (pThis->m_lstEntries.size())
                 {
-                    LogRel2(("Shared Clipboard: Starting transfer ...\n"));
+                    LogRel2(("Shared Clipboard: Waiting for transfer to complete ...\n"));
 
                     LogFlowFunc(("Waiting for transfer to complete ...\n"));
 
                     /* Transferring stuff can take a while, so don't use any timeout here. */
                     rc2 = RTSemEventWait(pThis->m_EventTransferComplete, RT_INDEFINITE_WAIT);
                     AssertRC(rc2);
+
+                    LogRel2(("Shared Clipboard: Transfer complete\n"));
                 }
                 else
                    LogRel(("Shared Clipboard: No transfer root entries found -- should not happen, please file a bug report\n"));

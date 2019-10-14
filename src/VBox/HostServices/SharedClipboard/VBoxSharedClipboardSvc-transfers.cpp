@@ -87,6 +87,8 @@ void shclSvcClientTransfersReset(PSHCLCLIENT pClient)
 
 DECLCALLBACK(int) shclSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx)
 {
+    LogFlowFuncEnter();
+
     RT_NOREF(pCtx);
 
     LogFlowFuncLeave();
@@ -95,10 +97,15 @@ DECLCALLBACK(int) shclSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx)
 
 DECLCALLBACK(int) shclSvcTransferIfaceClose(PSHCLPROVIDERCTX pCtx)
 {
-    RT_NOREF(pCtx);
+    LogFlowFuncEnter();
 
-    LogFlowFuncLeave();
-    return VINF_SUCCESS;
+    PSHCLCLIENT pClient = (PSHCLCLIENT)pCtx->pvUser;
+    AssertPtr(pClient);
+
+    int rc = shclSvcTransferStop(pClient, pCtx->pTransfer);
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
@@ -1702,176 +1709,6 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             break;
         }
 
-    #if 0
-        case VBOX_SHCL_GUEST_FN_WRITE_DIR:
-        {
-            LogFlowFunc(("VBOX_SHCL_GUEST_FN_WRITE_DIR\n"));
-
-            SHCLDIRDATA dirData;
-            rc = VBoxSvcClipboardGetDir(cParms, paParms, &dirData);
-            if (RT_SUCCESS(rc))
-            {
-                SharedClipboardArea *pArea = SharedClipboardTransferGetArea(pTransfer);
-                AssertPtrBreakStmt(pArea, rc = VERR_INVALID_POINTER);
-
-                const char *pszCacheDir = pArea->GetDirAbs();
-                char *pszDir = RTPathJoinA(pszCacheDir, dirData.pszPath);
-                if (pszDir)
-                {
-                    LogFlowFunc(("pszDir=%s\n", pszDir));
-
-                    rc = RTDirCreateFullPath(pszDir, dirData.fMode);
-                    if (RT_SUCCESS(rc))
-                    {
-                        SHCLAREAOBJ Obj = { SHCLAREAOBJTYPE_DIR, SHCLAREAOBJSTATE_COMPLETE };
-                        int rc2 = pArea->AddObject(pszDir, Obj);
-                        AssertRC(rc2);
-                    }
-
-                    RTStrFree(pszDir);
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-            break;
-        }
-
-        case VBOX_SHCL_GUEST_FN_READ_FILE_HDR:
-        {
-            LogFlowFunc(("VBOX_SHCL_GUEST_FN_READ_FILE_HDR\n"));
-
-            SHCLFILEHDR fileHdr;
-            rc = VBoxSvcClipboardSetFileHdr(cParms, paParms, &fileHdr);
-            break;
-        }
-
-        case VBOX_SHCL_GUEST_FN_WRITE_FILE_HDR:
-        {
-            LogFlowFunc(("VBOX_SHCL_GUEST_FN_WRITE_FILE_HDR\n"));
-
-            if (!SharedClipboardTransferObjCtxIsValid(SharedClipboardTransferGetCurrentObjCtx(pTransfer)))
-            {
-                pTransfer->State.ObjCtx.pObj = new SharedClipboardTransferObject(SharedClipboardTransferObject::Type_File);
-                if (pTransfer->State.ObjCtx.pObj) /** @todo Can this throw? */
-                {
-                    rc = VINF_SUCCESS;
-                }
-                else
-                    rc = VERR_NO_MEMORY;
-            }
-            else /* There still is another object being processed? */
-                rc = VERR_WRONG_ORDER;
-
-            if (RT_FAILURE(rc))
-                break;
-
-            SHCLFILEHDR fileHdr;
-            rc = VBoxSvcClipboardGetFileHdr(cParms, paParms, &fileHdr);
-            if (RT_SUCCESS(rc))
-            {
-                SharedClipboardArea *pArea = SharedClipboardTransferGetArea(pTransfer);
-                AssertPtrBreakStmt(pArea, rc = VERR_WRONG_ORDER);
-
-                const char *pszCacheDir = pArea->GetDirAbs();
-
-                char pszPathAbs[RTPATH_MAX];
-                rc = RTPathJoin(pszPathAbs, sizeof(pszPathAbs), pszCacheDir, fileHdr.pszFilePath);
-                if (RT_SUCCESS(rc))
-                {
-                    rc = SharedClipboardPathSanitize(pszPathAbs, sizeof(pszPathAbs));
-                    if (RT_SUCCESS(rc))
-                    {
-                        PSHCLCLIENTTRANSFEROBJCTX pObjCtx = SharedClipboardTransferGetCurrentObjCtx(pTransfer);
-                        AssertPtrBreakStmt(pObjCtx, VERR_INVALID_POINTER);
-
-                        SharedClipboardTransferObject *pObj = pObjCtx->pObj;
-                        AssertPtrBreakStmt(pObj, VERR_INVALID_POINTER);
-
-                        LogFlowFunc(("pszFile=%s\n", pszPathAbs));
-
-                        /** @todo Add sparse file support based on fFlags? (Use Open(..., fFlags | SPARSE). */
-                        rc = pObj->OpenFileEx(pszPathAbs, SharedClipboardTransferObject::View_Target,
-                                              RTFILE_O_CREATE_REPLACE | RTFILE_O_WRITE | RTFILE_O_DENY_WRITE,
-                                              (fileHdr.fMode & RTFS_UNIX_MASK) | RTFS_UNIX_IRUSR | RTFS_UNIX_IWUSR);
-                        if (RT_SUCCESS(rc))
-                        {
-                            rc = pObj->SetSize(fileHdr.cbSize);
-
-                            /** @todo Unescape path before printing. */
-                            LogRel2(("Clipboard: Transferring guest file '%s' to host (%RU64 bytes, mode 0x%x)\n",
-                                     pObj->GetDestPathAbs().c_str(), pObj->GetSize(), pObj->GetMode()));
-
-                            if (pObj->IsComplete()) /* 0-byte file? We're done already. */
-                            {
-                                /** @todo Sanitize path. */
-                                LogRel2(("Clipboard: Transferring guest file '%s' (0 bytes) to host complete\n",
-                                         pObj->GetDestPathAbs().c_str()));
-
-                                SharedClipboardTransferObjCtxDestroy(&pTransfer->State.ObjCtx);
-                            }
-
-                            SHCLAREAOBJ Obj = { SHCLAREAOBJTYPE_FILE, SHCLAREAOBJSTATE_NONE };
-                            int rc2 = pArea->AddObject(pszPathAbs, Obj);
-                            AssertRC(rc2);
-                        }
-                        else
-                            LogRel(("Clipboard: Error opening/creating guest file '%s' on host, rc=%Rrc\n", pszPathAbs, rc));
-                    }
-                }
-            }
-            break;
-        }
-
-        case VBOX_SHCL_GUEST_FN_READ_FILE_DATA:
-        {
-            LogFlowFunc(("VBOX_SHCL_FN_READ_FILE_DATA\n"));
-
-            SHCLFILEDATA fileData;
-            rc = VBoxSvcClipboardSetFileData(cParms, paParms, &fileData);
-            break;
-        }
-
-        case VBOX_SHCL_GUEST_FN_WRITE_FILE_DATA:
-        {
-            LogFlowFunc(("VBOX_SHCL_FN_WRITE_FILE_DATA\n"));
-
-            if (!SharedClipboardTransferObjCtxIsValid(&pTransfer->State.ObjCtx))
-            {
-                rc = VERR_WRONG_ORDER;
-                break;
-            }
-
-            SHCLFILEDATA fileData;
-            rc = VBoxSvcClipboardGetFileData(cParms, paParms, &fileData);
-            if (RT_SUCCESS(rc))
-            {
-                PSHCLCLIENTTRANSFEROBJCTX pObjCtx = SharedClipboardTransferGetCurrentObjCtx(pTransfer);
-                AssertPtrBreakStmt(pObjCtx, VERR_INVALID_POINTER);
-
-                SharedClipboardTransferObject *pObj = pObjCtx->pObj;
-                AssertPtrBreakStmt(pObj, VERR_INVALID_POINTER);
-
-                uint32_t cbWritten;
-                rc = pObj->Write(fileData.pvData, fileData.cbData, &cbWritten);
-                if (RT_SUCCESS(rc))
-                {
-                    Assert(cbWritten <= fileData.cbData);
-                    if (cbWritten < fileData.cbData)
-                    {
-                        /** @todo What to do when the host's disk is full? */
-                        rc = VERR_DISK_FULL;
-                    }
-
-                    if (   pObj->IsComplete()
-                        || RT_FAILURE(rc))
-                        SharedClipboardTransferObjCtxDestroy(&pTransfer->State.ObjCtx);
-                }
-                else
-                    LogRel(("Clipboard: Error writing guest file data for '%s', rc=%Rrc\n", pObj->GetDestPathAbs().c_str(), rc));
-            }
-            break;
-        }
-#endif
         default:
             LogFunc(("Not implemented\n"));
             break;
@@ -2310,7 +2147,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
 }
 
 /**
- * Stops a transfer, communicating the status to the guest side.
+ * Stops (and destroys) a transfer, communicating the status to the guest side.
  *
  * @returns VBox status code.
  * @param   pClient             Client that owns the transfer.
@@ -2318,28 +2155,30 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
  */
 int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
-    int rc = ShClTransferClose(pTransfer);
-    if (RT_SUCCESS(rc))
-    {
-        SHCLEVENTID uEvent;
-        rc = shclSvcTransferSendStatus(pClient, pTransfer,
+    SHCLEVENTID uEvent;
+    int rc = shclSvcTransferSendStatus(pClient, pTransfer,
                                        SHCLTRANSFERSTATUS_STOPPED, VINF_SUCCESS,
                                        &uEvent);
+    if (RT_SUCCESS(rc))
+    {
+        LogRel2(("Shared Clipboard: Waiting for stop of transfer %RU32 on guest ...\n", pTransfer->State.uID));
+
+        rc = ShClEventWait(&pTransfer->Events, uEvent, pTransfer->uTimeoutMs, NULL);
         if (RT_SUCCESS(rc))
-        {
-            LogRel2(("Shared Clipboard: Waiting for stop of transfer %RU32 on guest ...\n", pTransfer->State.uID));
+            LogRel2(("Shared Clipboard: Stopped transfer %RU32 on guest\n", pTransfer->State.uID));
+    }
 
-            rc = ShClEventWait(&pTransfer->Events, uEvent, pTransfer->uTimeoutMs, NULL);
-            if (RT_SUCCESS(rc))
-            {
-                rc = ShClTransferCtxTransferUnregister(&pClient->TransferCtx, ShClTransferGetID(pTransfer));
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Unable to stop transfer %RU32 on guest, rc=%Rrc\n",
+                pTransfer->State.uID, rc));
 
-                LogRel2(("Shared Clipboard: Stopped transfer %RU32 on guest\n", pTransfer->State.uID));
-            }
-            else
-               LogRel(("Shared Clipboard: Unable to stop transfer %RU32 on guest, rc=%Rrc\n",
-                       pTransfer->State.uID, rc));
-        }
+    /* Regardless of whether the guest was able to report back and/or stop the transfer, remove the transfer on the host
+     * so that we don't risk of having stale transfers here. */
+    int rc2 = ShClTransferCtxTransferUnregister(&pClient->TransferCtx, ShClTransferGetID(pTransfer));
+    if (RT_SUCCESS(rc2))
+    {
+        ShClTransferDestroy(pTransfer);
+        pTransfer = NULL;
     }
 
     LogFlowFuncLeaveRC(rc);
