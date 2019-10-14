@@ -49,6 +49,7 @@
 #include <iprt/utf16.h>
 
 #include "DevEFI.h"
+#include "FlashCore.h"
 #include "VBoxDD.h"
 #include "VBoxDD2.h"
 #include "../PC/DevFwCommon.h"
@@ -201,9 +202,6 @@ typedef struct DEVEFI
     /** The DMI tables. */
     uint8_t                 au8DMIPage[0x1000];
 
-    /** Should NVRAM range be reserved for flash? */
-    bool                    fSkipNvramRange;
-
     /** I/O-APIC enabled? */
     uint8_t                 u8IOAPIC;
 
@@ -237,10 +235,19 @@ typedef struct DEVEFI
     uint64_t                u64McfgBase;
     /** Length of PCI config space MMIO region */
     uint64_t                cbMcfgLength;
-
+    /** Size of the configured NVRAM device. */
+    uint32_t                cbNvram;
+    /** Start address of the NVRAM flash. */
+    RTGCPHYS                GCPhysNvram;
 
     /** NVRAM state variables. */
     NVRAMDESC               NVRAM;
+    /** The flash device containing the NVRAM. */
+    FLASHCORE               Flash;
+    /** Filename of the file containing the NVRAM store. */
+    char                    *pszNvramFile;
+    /** Flag whether the NVRAM state was saved using SSM. */
+    bool                    fNvramStateSaved;
 
     /**
      * NVRAM port - LUN\#0.
@@ -304,6 +311,8 @@ static SSMFIELD const g_aEfiVariableDescFields[] =
         SSMFIELD_ENTRY_TERM()
 };
 
+/** The EfiSystemNvDataFv GUID for NVRAM storage. */
+static const RTUUID g_UuidNvDataFv = { { 0x8d, 0x2b, 0xf1, 0xff, 0x96, 0x76, 0x8b, 0x4c, 0xa9, 0x85, 0x27, 0x47, 0x07, 0x5b, 0x4f, 0x50} };
 
 
 
@@ -1605,6 +1614,29 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     return rc;
 }
 
+
+#ifdef IN_RING3 /* for now */
+/** @callback_method_impl{FNIOMMIWRITE, Flash memory write} */
+PDMBOTHCBDECL(int) efiR3NvMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+{
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    RT_NOREF1(pvUser);
+
+    return flashWrite(&pThis->Flash, GCPhysAddr - pThis->GCPhysNvram, pv, cb);
+}
+
+
+/** @callback_method_impl{FNIOMMIOREAD, Flash memory read} */
+PDMBOTHCBDECL(int) efiR3NvMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+{
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    RT_NOREF1(pvUser);
+
+    return flashRead(&pThis->Flash, GCPhysAddr - pThis->GCPhysNvram, pv, cb);
+}
+#endif /* IN_RING3 for now */
+
+
 static DECLCALLBACK(int) efiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
@@ -1854,6 +1886,8 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
     pThis->iPanicMsg = 0;
     pThis->szPanicMsg[0] = '\0';
 
+    flashR3Reset(&pThis->Flash);
+
 #ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
     /*
      * Zap the debugger script
@@ -1890,6 +1924,22 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     nvramFlushDeviceVariableList(pThis);
+
+    if (   !pThis->fNvramStateSaved
+        && pThis->pszNvramFile)
+    {
+        int rc = flashR3SaveToFile(&pThis->Flash, pThis->pszNvramFile);
+        if (RT_FAILURE(rc))
+            LogRel(("EFI: Failed to save flash file to '%s' -> %Rrc\n", pThis->pszNvramFile, rc));
+    }
+
+    flashR3Destruct(&pThis->Flash);
+
+    if (pThis->pszNvramFile)
+    {
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pszNvramFile);
+        pThis->pszNvramFile = NULL;
+    }
 
     if (pThis->pu8EfiRom)
     {
@@ -1986,14 +2036,30 @@ static int efiParseFirmware(PDEVEFI pThis)
 
     LogRel(("Found EFI FW Volume, %u bytes (%u %u-byte blocks)\n", pFwVolHdr->FvLength, pFwVolHdr->BlockMap[0].NumBlocks, pFwVolHdr->BlockMap[0].Length));
 
-    /* Adjust the FW variables to skip the NVRAM volume. */
-    if (pThis->fSkipNvramRange)
-    {
-        pThis->cbEfiRom  -= pFwVolHdr->FvLength;
-        pThis->uEfiRomOfs = pFwVolHdr->FvLength;
-    }
+    /** @todo Make this more dynamic, this assumes that the NV storage area comes first (always the case for our builds). */
+    AssertLogRelMsgReturn(!memcmp(&pFwVolHdr->FileSystemGuid, &g_UuidNvDataFv, sizeof(g_UuidNvDataFv)),
+                          ("Expected EFI_SYSTEM_NV_DATA_FV_GUID as an identifier"),
+                          VERR_INVALID_MAGIC);
 
-    pThis->GCLoadAddress = UINT32_C(0xfffff000) - pThis->cbEfiRom + PAGE_SIZE;
+    /* Found NVRAM storage, configure flash device. */
+    pThis->uEfiRomOfs  = pFwVolHdr->FvLength;
+    pThis->cbNvram     = pFwVolHdr->FvLength;
+    pThis->GCPhysNvram = UINT32_C(0xfffff000) - pThis->cbEfiRom + PAGE_SIZE;
+    pThis->cbEfiRom   -= pThis->cbNvram;
+
+    int rc = flashR3Init(&pThis->Flash, pThis->pDevIns, 0xA289 /*Intel*/, pThis->cbNvram, pFwVolHdr->BlockMap[0].Length);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* If the file does not exist we initialize the NVRAM from the loaded ROM file. */
+    if (!pThis->pszNvramFile || !RTPathExists(pThis->pszNvramFile))
+        rc = flashR3LoadFromBuf(&pThis->Flash, pThis->pu8EfiRom, pThis->cbNvram);
+    else
+        rc = flashR3LoadFromFile(&pThis->Flash, pThis->pszNvramFile);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    pThis->GCLoadAddress = pThis->GCPhysNvram + pThis->cbNvram;
 
     return VINF_SUCCESS;
 }
@@ -2078,6 +2144,17 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
                               "EFI Firmware Volume (Part 4)");
     if (RT_FAILURE(rc))
         return rc;
+
+    /*
+     * Register MMIO region for flash device.
+     */
+    rc = PDMDevHlpMMIORegister(pThis->pDevIns, pThis->GCPhysNvram, pThis->cbNvram, NULL /*pvUser*/,
+                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                               efiR3NvMmioWrite, efiR3NvMmioRead,
+                               "Flash Memory");
+    AssertRCReturn(rc, rc);
+    LogRel(("EFI: Registered %uKB flash at %RGp\n", pThis->cbNvram / _1K, pThis->GCPhysNvram));
+
     return VINF_SUCCESS;
 }
 
@@ -2206,12 +2283,12 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "64BitEntry\0"
                               "BootArgs\0"
                               "DeviceProps\0"
-                              "SkipNvramRange\0"            // legacy
                               "GopMode\0"                   // legacy
                               "GraphicsMode\0"
                               "UgaHorizontalResolution\0"   // legacy
                               "UgaVerticalResolution\0"     // legacy
-                              "GraphicsResolution\0"))
+                              "GraphicsResolution\0"
+                              "NvramFile\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
 
@@ -2279,11 +2356,6 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         MMR3HeapFree(pThis->pszEfiRomFile);
         pThis->pszEfiRomFile = NULL;
     }
-
-    rc = CFGMR3QueryBoolDef(pCfg, "SkipNvramRange", &pThis->fSkipNvramRange, false);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Querying \"SkipNvramRange\" as integer failed"));
 
 
     /*
@@ -2401,6 +2473,12 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         pThis->u32HorizontalResolution = 1024;
         pThis->u32VerticalResolution = 768;
     }
+
+    pThis->pszNvramFile = NULL;
+    rc = CFGMR3QueryStringAlloc(pCfg, "NvramFile", &pThis->pszNvramFile);
+    if (RT_FAILURE(rc) && rc != VERR_CFGM_VALUE_NOT_FOUND)
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"NvramFile\" as a string failed"));
 
     /*
      * Load firmware volume and thunk ROM.
