@@ -435,7 +435,6 @@
 #define SVM_CTRL_INTERCEPT_XSETBV             RT_BIT_64(32 + 13)
 /** Intercept RDPRU instruction. */
 #define SVM_CTRL_INTERCEPT_RDPRU              RT_BIT_64(32 + 14)
-/* Bit 14 - Reserved, SBZ. */
 /** Intercept EFER writes after guest instruction finishes. */
 #define SVM_CTRL_INTERCEPT_EFER_WRITES_TRAP   RT_BIT_64(32 + 15)
 /** Intercept CR0 writes after guest instruction finishes. */
