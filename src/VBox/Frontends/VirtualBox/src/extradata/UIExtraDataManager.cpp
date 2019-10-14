@@ -52,9 +52,9 @@
 # include "QIDialog.h"
 # include "QIDialogButtonBox.h"
 # include "QIFileDialog.h"
-# include "QIMainWindow.h"
 # include "QISplitter.h"
 # include "QIWidgetValidator.h"
+# include "QIWithRestorableGeometry.h"
 # include "VBoxUtils.h"
 # include "UIIconPool.h"
 # include "UIToolBar.h"
@@ -457,9 +457,9 @@ protected:
 };
 
 
-/** QIMainWindow extension
+/** QMainWindow extension
   * providing Extra Data Manager with UI features. */
-class UIExtraDataManagerWindow : public QIMainWindow
+class UIExtraDataManagerWindow : public QIWithRestorableGeometry<QMainWindow>
 {
     Q_OBJECT;
 
