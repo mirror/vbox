@@ -2982,8 +2982,6 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
  */
 static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
 {
-    int rc;
-
     Log(("hmR3Save:\n"));
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
@@ -2993,47 +2991,48 @@ static DECLCALLBACK(int) hmR3Save(PVM pVM, PSSMHANDLE pSSM)
         if (pVM->cpum.ro.GuestFeatures.fSvm)
         {
             PCSVMNESTEDVMCBCACHE pVmcbNstGstCache = &pVCpu->hm.s.svm.NstGstVmcbCache;
-            rc  = SSMR3PutBool(pSSM, pVmcbNstGstCache->fCacheValid);
-            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdCRx);
-            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptWrCRx);
-            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdDRx);
-            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptWrDRx);
-            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16PauseFilterThreshold);
-            rc |= SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16PauseFilterCount);
-            rc |= SSMR3PutU32(pSSM,  pVmcbNstGstCache->u32InterceptXcpt);
-            rc |= SSMR3PutU64(pSSM,  pVmcbNstGstCache->u64InterceptCtrl);
-            rc |= SSMR3PutU64(pSSM,  pVmcbNstGstCache->u64TSCOffset);
-            rc |= SSMR3PutBool(pSSM, pVmcbNstGstCache->fVIntrMasking);
-            rc |= SSMR3PutBool(pSSM, pVmcbNstGstCache->fNestedPaging);
-            rc |= SSMR3PutBool(pSSM, pVmcbNstGstCache->fLbrVirt);
-            AssertRCReturn(rc, rc);
+            SSMR3PutBool(pSSM, pVmcbNstGstCache->fCacheValid);
+            SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdCRx);
+            SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptWrCRx);
+            SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptRdDRx);
+            SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16InterceptWrDRx);
+            SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16PauseFilterThreshold);
+            SSMR3PutU16(pSSM,  pVmcbNstGstCache->u16PauseFilterCount);
+            SSMR3PutU32(pSSM,  pVmcbNstGstCache->u32InterceptXcpt);
+            SSMR3PutU64(pSSM,  pVmcbNstGstCache->u64InterceptCtrl);
+            SSMR3PutU64(pSSM,  pVmcbNstGstCache->u64TSCOffset);
+            SSMR3PutBool(pSSM, pVmcbNstGstCache->fVIntrMasking);
+            SSMR3PutBool(pSSM, pVmcbNstGstCache->fNestedPaging);
+            SSMR3PutBool(pSSM, pVmcbNstGstCache->fLbrVirt);
         }
     }
 
     /* Save the guest patch data. */
-    rc  = SSMR3PutGCPtr(pSSM, pVM->hm.s.pGuestPatchMem);
-    rc |= SSMR3PutGCPtr(pSSM, pVM->hm.s.pFreeGuestPatchMem);
-    rc |= SSMR3PutU32(pSSM, pVM->hm.s.cbGuestPatchMem);
+    SSMR3PutGCPtr(pSSM, pVM->hm.s.pGuestPatchMem);
+    SSMR3PutGCPtr(pSSM, pVM->hm.s.pFreeGuestPatchMem);
+    SSMR3PutU32(pSSM, pVM->hm.s.cbGuestPatchMem);
 
     /* Store all the guest patch records too. */
-    rc |= SSMR3PutU32(pSSM, pVM->hm.s.cPatches);
-    AssertRCReturn(rc, rc);
+    int rc = SSMR3PutU32(pSSM, pVM->hm.s.cPatches);
+    if (RT_FAILURE(rc))
+        return rc;
 
     for (uint32_t i = 0; i < pVM->hm.s.cPatches; i++)
     {
         AssertCompileSize(HMTPRINSTR, 4);
         PCHMTPRPATCH pPatch = &pVM->hm.s.aPatches[i];
-        rc  = SSMR3PutU32(pSSM, pPatch->Core.Key);
-        rc |= SSMR3PutMem(pSSM, pPatch->aOpcode, sizeof(pPatch->aOpcode));
-        rc |= SSMR3PutU32(pSSM, pPatch->cbOp);
-        rc |= SSMR3PutMem(pSSM, pPatch->aNewOpcode, sizeof(pPatch->aNewOpcode));
-        rc |= SSMR3PutU32(pSSM, pPatch->cbNewOp);
-        rc |= SSMR3PutU32(pSSM, (uint32_t)pPatch->enmType);
-        rc |= SSMR3PutU32(pSSM, pPatch->uSrcOperand);
-        rc |= SSMR3PutU32(pSSM, pPatch->uDstOperand);
-        rc |= SSMR3PutU32(pSSM, pPatch->pJumpTarget);
-        rc |= SSMR3PutU32(pSSM, pPatch->cFaults);
-        AssertRCReturn(rc, rc);
+        SSMR3PutU32(pSSM, pPatch->Core.Key);
+        SSMR3PutMem(pSSM, pPatch->aOpcode, sizeof(pPatch->aOpcode));
+        SSMR3PutU32(pSSM, pPatch->cbOp);
+        SSMR3PutMem(pSSM, pPatch->aNewOpcode, sizeof(pPatch->aNewOpcode));
+        SSMR3PutU32(pSSM, pPatch->cbNewOp);
+        SSMR3PutU32(pSSM, (uint32_t)pPatch->enmType);
+        SSMR3PutU32(pSSM, pPatch->uSrcOperand);
+        SSMR3PutU32(pSSM, pPatch->uDstOperand);
+        SSMR3PutU32(pSSM, pPatch->pJumpTarget);
+        rc = SSMR3PutU32(pSSM, pPatch->cFaults);
+        if (RT_FAILURE(rc))
+            return rc;
     }
 
     return VINF_SUCCESS;
