@@ -2301,7 +2301,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         rc = nvramLoad(pThis);
         AssertRCReturn(rc, rc);
     }
-    if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
         pThis->Lun0.pNvramDrv = NULL;
         rc = VINF_SUCCESS; /* Missing driver is no error condition. */
