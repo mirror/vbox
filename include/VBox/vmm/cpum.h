@@ -1181,8 +1181,10 @@ typedef struct CPUMFEATURES
     uint32_t        fSvmVirtVmsaveVmload : 1;
     /** SVM: Supports VGIF (Virtual Global Interrupt Flag). */
     uint32_t        fSvmVGif : 1;
+    /** SVM: Supports GMET (Guest Mode Execute Trap Extension). */
+    uint32_t        fSvmGmet : 1;
     /** SVM: Padding / reserved for future features. */
-    uint32_t        fSvmPadding0 : 19;
+    uint32_t        fSvmPadding0 : 18;
     /** SVM: Maximum supported ASID. */
     uint32_t        uSvmMaxAsid;
 
