@@ -235,7 +235,7 @@
 # define SVM_EXIT_RSM                    0x73
 /** IRET instruction. */
 # define SVM_EXIT_IRET                   0x74
-/** software interrupt (INTn instructions). */
+/** Software interrupt (INTn instructions). */
 # define SVM_EXIT_SWINT                  0x75
 /** INVD instruction. */
 # define SVM_EXIT_INVD                   0x76
@@ -287,6 +287,28 @@
 # define SVM_EXIT_XSETBV                 0x8d
 /** RDPRU instruction. */
 # define SVM_EXIT_RDPRU                  0x8e
+/** Write to EFER (after guest instruction completes). */
+# define SVM_EXIT_WRITE_EFER_TRAP        0x8f
+/** Write to CR0-CR15 (after guest instruction completes). */
+# define SVM_EXIT_WRITE_CR0_TRAP         0x90
+# define SVM_EXIT_WRITE_CR1_TRAP         0x91
+# define SVM_EXIT_WRITE_CR2_TRAP         0x92
+# define SVM_EXIT_WRITE_CR3_TRAP         0x93
+# define SVM_EXIT_WRITE_CR4_TRAP         0x94
+# define SVM_EXIT_WRITE_CR5_TRAP         0x95
+# define SVM_EXIT_WRITE_CR6_TRAP         0x96
+# define SVM_EXIT_WRITE_CR7_TRAP         0x97
+# define SVM_EXIT_WRITE_CR8_TRAP         0x98
+# define SVM_EXIT_WRITE_CR9_TRAP         0x99
+# define SVM_EXIT_WRITE_CR10_TRAP        0x9a
+# define SVM_EXIT_WRITE_CR11_TRAP        0x9b
+# define SVM_EXIT_WRITE_CR12_TRAP        0x9c
+# define SVM_EXIT_WRITE_CR13_TRAP        0x9d
+# define SVM_EXIT_WRITE_CR14_TRAP        0x9e
+# define SVM_EXIT_WRITE_CR15_TRAP        0x9f
+/** MCOMMIT instruction. */
+# define SVM_EXIT_MCOMMIT                0xa3
+
 /** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault). */
 # define SVM_EXIT_NPF                    0x400
 /** AVIC: Virtual IPI delivery not completed. */
