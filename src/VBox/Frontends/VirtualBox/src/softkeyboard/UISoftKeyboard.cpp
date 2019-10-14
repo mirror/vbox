@@ -171,6 +171,9 @@ public:
     void updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState);
     void reset();
 
+    /** Returns the sum totalHeight() of all rows(). */
+    int totalHeight() const;
+
 private:
 
     void updateLockKeyState(bool fLockState, UISoftKeyboardKey *pKey);
@@ -318,7 +321,8 @@ public:
     void setDefaultHeight(int iHeight);
     int defaultHeight() const;
 
-    int MaximumHeight() const;
+    /* Return the sum of the maximum key height and m_iSpaceHeightAfter */
+    int totalHeight() const;
 
     QVector<UISoftKeyboardKey> &keys();
     const QVector<UISoftKeyboardKey> &keys() const;
@@ -334,7 +338,6 @@ private:
     /** Default width and height might be inherited from the layout and overwritten in row settings. */
     int m_iDefaultWidth;
     int m_iDefaultHeight;
-    int m_iMaximumHeight;
 
     QVector<UISoftKeyboardKey> m_keys;
     int m_iSpaceHeightAfter;
@@ -872,6 +875,14 @@ void UISoftKeyboardPhysicalLayout::reset()
     }
 }
 
+int UISoftKeyboardPhysicalLayout::totalHeight() const
+{
+    int iHeight = 0;
+    for (int i = 0; i < m_rows.size(); ++i)
+        iHeight += m_rows[i].totalHeight();
+    return iHeight;
+}
+
 void UISoftKeyboardPhysicalLayout::updateLockKeyState(bool fLockState, UISoftKeyboardKey *pKey)
 {
     if (!pKey)
@@ -1395,6 +1406,14 @@ void UISoftKeyboardRow::setDefaultWidth(int iWidth)
 int UISoftKeyboardRow::defaultWidth() const
 {
     return m_iDefaultWidth;
+}
+
+int UISoftKeyboardRow::totalHeight() const
+{
+    int iMaxHeight = 0;
+    for (int i = 0; i < m_keys.size(); ++i)
+        iMaxHeight = qMax(iMaxHeight, m_keys[i].height());
+    return iMaxHeight + m_iSpaceHeightAfter;
 }
 
 void UISoftKeyboardRow::setDefaultHeight(int iHeight)
@@ -2090,7 +2109,10 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
             if (m_fHideMultimediaKeys && key.keyboardRegion() == KeyboardRegion_MultimediaKeys)
                 continue;
 
-            painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
+            if (m_fHideMultimediaKeys)
+                painter.translate(key.keyGeometry().x(), key.keyGeometry().y() - m_multiMediaKeysLayout.totalHeight());
+            else
+                painter.translate(key.keyGeometry().x(), key.keyGeometry().y());
 
             if(&key  == m_pKeyBeingEdited)
                 painter.setBrush(QBrush(color(KeyboardColorType_Edit)));
@@ -2125,7 +2147,11 @@ void UISoftKeyboardWidget::paintEvent(QPaintEvent *pEvent) /* override */
                                  fLedRadius, fLedRadius);
                 painter.drawEllipse(rectangle);
             }
-            painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
+            if (m_fHideMultimediaKeys)
+                painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y() + m_multiMediaKeysLayout.totalHeight());
+            else
+                painter.translate(-key.keyGeometry().x(), -key.keyGeometry().y());
+
         }
     }
 }
@@ -3852,6 +3878,7 @@ void UISoftKeyboard::loadSettings()
         gEDataManager->softKeyboardOptions(fHideNumPad, fHideOSMenuKeys, fHideMultimediaKeys);
         m_pKeyboardWidget->setHideNumPad(fHideNumPad);
         m_pKeyboardWidget->setHideOSMenuKeys(fHideOSMenuKeys);
+       m_pKeyboardWidget->setHideMultimediaKeys(fHideMultimediaKeys);
     }
 }
 

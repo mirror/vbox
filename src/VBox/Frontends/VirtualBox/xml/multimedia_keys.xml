@@ -150,7 +150,7 @@
             <staticcaption>🔊</staticcaption>
         </key>
         <space>
-            <height>20</height>
+            <height>5</height>
         </space>
     </row>
 </physicallayout>
