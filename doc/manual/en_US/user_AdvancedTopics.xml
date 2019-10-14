@@ -7128,12 +7128,18 @@ $ usbip list -l
     <title>Nested Virtualization</title>
 
     <para>
-      &product-name; supports <emphasis>nested virtualization</emphasis>
-      on host systems that run AMD CPUs. This feature enables the
-      passthrough of hardware virtualization functions to the guest VM.
-      That means that you can install a hypervisor, such as
-      &product-name;, Oracle VM Server or KVM, on an &product-name;
-      guest. You can then create and run VMs within the guest VM.
+      &product-name; supports <emphasis>nested virtualization</emphasis>.
+      This feature enables the passthrough of hardware virtualization
+      functions to the guest VM. That means that you can install a
+      hypervisor, such as &product-name;, Oracle VM Server or KVM, on
+      a &product-name; guest. You can then create and run VMs within the
+      guest VM.
+    </para>
+
+    <para>
+      Hardware virtualization features not present on the host CPU will
+      not be exposed to the guest. In addition, some features such as 
+      nested paging are not yet supported for passthrough to the guest.
     </para>
 
     <para>
