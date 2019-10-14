@@ -326,6 +326,9 @@ public:
     void setSpaceHeightAfter(int iSpace);
     int spaceHeightAfter() const;
 
+    int leftMargin() const;
+    void setLeftMargin(int iMargin);
+
 private:
 
     /** Default width and height might be inherited from the layout and overwritten in row settings. */
@@ -335,6 +338,8 @@ private:
 
     QVector<UISoftKeyboardKey> m_keys;
     int m_iSpaceHeightAfter;
+    /* The width of the empty space before the 1st key. */
+    int m_iLeftMargin;
 };
 
 /*********************************************************************************************************************************
@@ -1374,6 +1379,7 @@ UISoftKeyboardRow::UISoftKeyboardRow()
     : m_iDefaultWidth(0)
     , m_iDefaultHeight(0)
     , m_iSpaceHeightAfter(0)
+    , m_iLeftMargin(0)
 {
 }
 
@@ -1415,6 +1421,16 @@ void UISoftKeyboardRow::setSpaceHeightAfter(int iSpace)
 int UISoftKeyboardRow::spaceHeightAfter() const
 {
     return m_iSpaceHeightAfter;
+}
+
+int UISoftKeyboardRow::leftMargin() const
+{
+    return m_iLeftMargin;
+}
+
+void UISoftKeyboardRow::setLeftMargin(int iMargin)
+{
+    m_iLeftMargin = iMargin;
 }
 
 /*********************************************************************************************************************************
@@ -1493,6 +1509,11 @@ void UISoftKeyboardKey::setSpaceWidthAfter(int iSpace)
     m_iSpaceWidthAfter = iSpace;
 }
 
+int UISoftKeyboardKey::spaceWidthAfter() const
+{
+    return m_iSpaceWidthAfter;
+}
+
 void UISoftKeyboardKey::setUsageId(LONG usageId)
 {
     m_iUsageId = usageId;
@@ -1506,11 +1527,6 @@ void UISoftKeyboardKey::setUsagePage(LONG usagePage)
 QPair<LONG, LONG> UISoftKeyboardKey::usagePageIdPair() const
 {
     return QPair<LONG, LONG>(m_iUsageId, m_iUsagePage);
-}
-
-int UISoftKeyboardKey::spaceWidthAfter() const
-{
-    return m_iSpaceWidthAfter;
 }
 
 void UISoftKeyboardKey::setPosition(int iPosition)
@@ -2648,7 +2664,7 @@ bool UISoftKeyboardWidget::loadPhysicalLayout(const QString &strLayoutFileName, 
             }
         }
 
-        int iX = m_iLeftMargin;
+        int iX = m_iLeftMargin + row.leftMargin();
         int iXNoNumPad = m_iLeftMargin;
         int iRowHeight = row.defaultHeight();
         for (int j = 0; j < row.keys().size(); ++j)
@@ -3057,9 +3073,12 @@ void UIPhysicalLayoutReader::parseKeySpace(UISoftKeyboardRow &row)
         else
             m_xmlReader.skipCurrentElement();
     }
-    if (row.keys().size() <= 0)
-        return;
-    row.keys().back().setSpaceWidthAfter(iWidth);
+    /* If we have keys add the parsed space to the last key as the 'space after': */
+    if (!row.keys().empty())
+        row.keys().back().setSpaceWidthAfter(iWidth);
+    /* If we have no keys than this is the initial space left to first key: */
+    else
+        row.setLeftMargin(iWidth);
 }
 
 void UIPhysicalLayoutReader::parseCutout(UISoftKeyboardKey &key)

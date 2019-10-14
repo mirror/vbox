@@ -3,61 +3,137 @@
     <name>multimedia keys</name>
     <id>80b4c26e-43fc-44f8-b515-351cff9269ce</id>
     <row>
-        <space>
-            <width>50</width>
-        </space>
-
         <key><!-- WWW back -->
             <position>300</position>
             <usageid>0x0224</usageid>
             <usagepage>0x0C</usagepage>
-            <scancode>0x20</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x6A</scancode>
             <staticcaption>🡄</staticcaption>
         </key>
         <key><!-- WWW home -->
             <position>301</position>
             <usageid>0x0223</usageid>
             <usagepage>0x0C</usagepage>
-            <scancode>0x20</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x32</scancode>
             <staticcaption></staticcaption>
         </key>
-
         <key><!-- WWW forward -->
             <position>302</position>
             <usageid>0x0225</usageid>
             <usagepage>0x0C</usagepage>
-            <scancodeprefix>0xe0</scancodeprefix>
-            <scancode>0x35</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x69</scancode>
             <staticcaption>🡆</staticcaption>
+        </key>
+        <key><!-- Bookmarks -->
+            <position>313</position>
+            <usageid>0x022A</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x66</scancode>
+            <staticcaption>🔖</staticcaption>
         </key>
         <key><!-- Mail -->
             <position>303</position>
             <usageid>0x018A</usageid>
             <usagepage>0x0C</usagepage>
-            <scancodeprefix>0xe0</scancodeprefix>
-            <scancode>0x35</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x6C</scancode>
             <staticcaption>✉</staticcaption>
         </key>
+        <space>
+            <width>25</width>
+        </space>
         <key><!-- Mute -->
             <position>304</position>
             <usageid>0xE2</usageid>
             <usagepage>0x0C</usagepage>
-            <scancode>0x4a</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x20</scancode>
             <staticcaption>🔇</staticcaption>
         </key>
         <key><!-- Volume Down -->
             <position>305</position>
             <usageid>0xEA</usageid>
             <usagepage>0x0C</usagepage>
-            <scancode>0x4a</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x2E</scancode>
             <staticcaption>🔉</staticcaption>
         </key>
         <key><!-- Volume Up -->
             <position>306</position>
             <usageid>0xE9</usageid>
             <usagepage>0x0C</usagepage>
-            <scancode>0x4a</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x30</scancode>
             <staticcaption>🔊</staticcaption>
         </key>
+
+        <space>
+            <width>25</width>
+        </space>
+        <key><!-- Previous -->
+            <position>307</position>
+            <usageid>0xB6</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x10</scancode>
+            <staticcaption>⏮️</staticcaption>
+        </key>
+        <key><!-- Next -->
+            <position>308</position>
+            <usageid>0xB5</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancode>0x19</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <staticcaption>⏭️</staticcaption>
+        </key>
+
+        <key><!-- Stop -->
+            <position>309</position>
+            <usageid>0xB7</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancode>0x24</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <staticcaption>⏹️</staticcaption>
+        </key>
+        <key><!-- Play/Pause -->
+            <position>310</position>
+            <usageid>0xCD</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancode>0x22</scancode>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <staticcaption>⏯️</staticcaption>
+        </key>
+        <space>
+            <width>25</width>
+        </space>
+        <key><!-- Calculator -->
+            <position>311</position>
+            <usageid>0x192</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x21</scancode>
+            <staticcaption>🖩️</staticcaption>
+        </key>
+        <key><!-- My Computer -->
+            <position>312</position>
+            <usageid>0x194</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x6B</scancode>
+            <staticcaption>💻️️</staticcaption>
+        </key>
+        <key><!-- Media -->
+            <position>312</position>
+            <usageid>0x183</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x6D</scancode>
+            <staticcaption>♬</staticcaption>
+        </key>
+
     </row>
 </physicallayout>
