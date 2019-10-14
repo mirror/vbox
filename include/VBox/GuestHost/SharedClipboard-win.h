@@ -354,8 +354,8 @@ private:
     SHCLFSOBJINFO                  m_objInfo;
     /** Number of bytes already processed. */
     uint64_t                       m_cbProcessed;
-    /** Whether we already notified the parent of completion or not. */
-    bool                           m_fNotifiedComplete;
+    /** Whether this object already is in completed state or not. */
+    bool                           m_fIsComplete;
 };
 
 /**

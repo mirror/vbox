@@ -54,7 +54,7 @@ SharedClipboardWinStreamImpl::SharedClipboardWinStreamImpl(SharedClipboardWinDat
     , m_hObj(SHCLOBJHANDLE_INVALID)
     , m_objInfo(*pObjInfo)
     , m_cbProcessed(0)
-    , m_fNotifiedComplete(false)
+    , m_fIsComplete(false)
 {
     AssertPtr(m_pTransfer);
 
@@ -112,12 +112,6 @@ STDMETHODIMP_(ULONG) SharedClipboardWinStreamImpl::Release(void)
     LogFlowFunc(("lCount=%RI32\n", m_lRefCount));
     if (lCount == 0)
     {
-        if (  !m_fNotifiedComplete
-            && m_pParent)
-        {
-            m_pParent->OnTransferComplete();
-        }
-
         delete this;
         return 0;
     }
@@ -172,7 +166,8 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
     if (!pvBuffer)
         return STG_E_INVALIDPOINTER;
 
-    if (nBytesToRead == 0)
+    if (   nBytesToRead == 0
+        || m_fIsComplete)
     {
         if (nBytesRead)
             *nBytesRead = 0;
@@ -212,8 +207,6 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
         const uint64_t cbSize   = (uint64_t)m_objInfo.cbObject;
         const uint32_t cbToRead = RT_MIN(cbSize - m_cbProcessed, nBytesToRead);
 
-        bool fComplete = false;
-
         if (RT_SUCCESS(rc))
         {
             if (cbToRead)
@@ -228,9 +221,9 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
             }
 
             /* Transfer complete? Make sure to close the object again. */
-            fComplete = m_cbProcessed == cbSize;
+            m_fIsComplete = m_cbProcessed == cbSize;
 
-            if (fComplete)
+            if (m_fIsComplete)
             {
                 if (m_pTransfer->ProviderIface.pfnObjClose)
                 {
@@ -239,10 +232,7 @@ STDMETHODIMP SharedClipboardWinStreamImpl::Read(void *pvBuffer, ULONG nBytesToRe
                 }
 
                 if (m_pParent)
-                {
                     m_pParent->OnTransferComplete();
-                    m_fNotifiedComplete = true;
-                }
             }
         }
 

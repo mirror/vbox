@@ -765,7 +765,7 @@ inline PSHCLOBJHANDLEINFO sharedClipboardTransferObjectGet(PSHCLTRANSFER pTransf
                                                            SHCLOBJHANDLE hObj)
 {
     PSHCLOBJHANDLEINFO pIt;
-    RTListForEach(&pTransfer->lstObj, pIt, SHCLOBJHANDLEINFO, Node)
+    RTListForEach(&pTransfer->lstObj, pIt, SHCLOBJHANDLEINFO, Node) /** @todo Slooow ...but works for now. */
     {
         if (pIt->hObj == hObj)
             return pIt;
@@ -791,12 +791,15 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
 
     int rc = VINF_SUCCESS;
 
+    AssertMsgReturn(pTransfer->pszPathRootAbs, ("Transfer has no root path set\n"), VERR_INVALID_PARAMETER);
+    AssertMsgReturn(pOpenCreateParms->pszPath, ("No path in open/create params set\n"), VERR_INVALID_PARAMETER);
+
     LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pOpenCreateParms->pszPath, pOpenCreateParms->fCreate));
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
         PSHCLOBJHANDLEINFO pInfo
-            = (PSHCLOBJHANDLEINFO)RTMemAlloc(sizeof(SHCLOBJHANDLEINFO));
+            = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
         if (pInfo)
         {
             rc = ShClTransferObjHandleInfoInit(pInfo);
@@ -810,13 +813,16 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
                                                            SHCLOBJHANDLE_INVALID, &fOpen);
                 if (RT_SUCCESS(rc))
                 {
-                    char *pszPathAbs = RTStrAPrintf2("%s/%s", pTransfer->pszPathRootAbs, pOpenCreateParms->pszPath);
-                    if (pszPathAbs)
+                    pInfo->pszPathLocalAbs = RTStrAPrintf2("%s/%s", pTransfer->pszPathRootAbs, pOpenCreateParms->pszPath);
+                    if (pInfo->pszPathLocalAbs)
                     {
-                        LogFlowFunc(("%s\n", pszPathAbs));
-
-                        rc = RTFileOpen(&pInfo->u.Local.hFile, pszPathAbs, fOpen);
-                        RTStrFree(pszPathAbs);
+                        rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
+                        if (RT_SUCCESS(rc))
+                        {
+                            LogRel2(("Shared Clipboard: Opened file '%s'\n", pInfo->pszPathLocalAbs));
+                        }
+                        else
+                            LogRel(("Shared Clipboard: Error opening file '%s', rc=%Rrc\n", pInfo->pszPathLocalAbs, rc));
                     }
                     else
                         rc = VERR_NO_MEMORY;
@@ -909,6 +915,8 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
             }
 
             RTListNodeRemove(&pInfo->Node);
+
+            ShClTransferObjHandleInfoDestroy(pInfo);
 
             RTMemFree(pInfo);
             pInfo = NULL;
@@ -2862,10 +2870,10 @@ void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc)
 }
 
 /**
- * Converts Shared Clipboard create flags (see SharedClipboard-uri.) into IPRT create flags.
+ * Converts Shared Clipboard create flags (see SharedClipboard-transfers.h) into IPRT create flags.
  *
  * @returns IPRT status code.
- * @param  fWritable            Whether the shared folder is writable
+ * @param  fWritable            Whether the object is writable.
  * @param  fShClFlags           Shared clipboard create flags.
  * @param  fMode                File attributes.
  * @param  handleInitial        Initial handle.

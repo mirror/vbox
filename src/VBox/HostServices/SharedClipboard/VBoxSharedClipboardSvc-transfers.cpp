@@ -2139,7 +2139,7 @@ int shclSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCL
             if (RT_SUCCESS(rc))
             {
                 LogRel2(("Shared Clipboard: Reported status %s (rc=%Rrc) of transfer %RU32 to guest\n",
-                         ShClGuestMsgToStr(uStatus), rcTransfer, pTransfer->State.uID));
+                         ShClTransferStatusToStr(uStatus), rcTransfer, pTransfer->State.uID));
 
                 if (puEvent)
                     *puEvent = uEvent;
@@ -2268,7 +2268,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
                                         }
                                         else
                                             LogRel(("Shared Clipboard: Guest reported status %s (error %Rrc) while starting transfer %RU32\n",
-                                                    ShClGuestMsgToStr(pReply->u.TransferStatus.uStatus),
+                                                    ShClTransferStatusToStr(pReply->u.TransferStatus.uStatus),
                                                     pReply->rc, pTransfer->State.uID));
                                     }
                                     else

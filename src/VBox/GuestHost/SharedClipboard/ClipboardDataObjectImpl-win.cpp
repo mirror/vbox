@@ -648,8 +648,11 @@ STDMETHODIMP SharedClipboardWinDataObject::GetData(LPFORMATETC pFormatEtc, LPSTG
         }
     }
 
-    if (FAILED(hr))
+    if (   FAILED(hr)
+        && hr != DV_E_FORMATETC) /* Can happen if the caller queries unknown / unhandled formats. */
+    {
         LogRel(("Shared Clipboard: Error returning data from data object (%Rhrc)\n", hr));
+    }
 
     LogFlowFunc(("hr=%Rhrc\n", hr));
     return hr;
