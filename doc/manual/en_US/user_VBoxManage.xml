@@ -1039,6 +1039,15 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
+            <computeroutput>--nested-hw-virt on|off</computeroutput>: If
+            hardware virtualization is enabled, this setting enables or
+            disables passthrough of hardware virtualization features to
+            the guest. See <xref linkend="nested-virt" />.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
             <computeroutput>--accelerate3d on|off</computeroutput>: If
             the Guest Additions are installed, this setting enables or
             disables hardware 3D acceleration. See
