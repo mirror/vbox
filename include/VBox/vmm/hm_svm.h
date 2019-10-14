@@ -285,6 +285,8 @@
 # define SVM_EXIT_MWAIT_ARMED            0x8c
 /** XSETBV instruction. */
 # define SVM_EXIT_XSETBV                 0x8d
+/** RDPRU instruction. */
+# define SVM_EXIT_RDPRU                  0x8e
 /** Nested paging: host-level page fault occurred (EXITINFO1 contains fault errorcode; EXITINFO2 contains the guest physical address causing the fault). */
 # define SVM_EXIT_NPF                    0x400
 /** AVIC: Virtual IPI delivery not completed. */
@@ -431,6 +433,8 @@
 #define SVM_CTRL_INTERCEPT_MWAIT_ARMED        RT_BIT_64(32 + 12)
 /** Intercept XSETBV instruction. */
 #define SVM_CTRL_INTERCEPT_XSETBV             RT_BIT_64(32 + 13)
+/** Intercept RDPRU instruction. */
+#define SVM_CTRL_INTERCEPT_RDPRU              RT_BIT_64(32 + 14)
 /* Bit 14 - Reserved, SBZ. */
 /** Intercept EFER writes after guest instruction finishes. */
 #define SVM_CTRL_INTERCEPT_EFER_WRITES_TRAP   RT_BIT_64(32 + 15)

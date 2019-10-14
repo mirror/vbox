@@ -783,6 +783,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_EFEID_EBX_IRPERF       RT_BIT_32(1)
 /** Bit 2 - XSaveErPtr - Always XSAVE* and XRSTR* error pointers. */
 #define X86_CPUID_AMD_EFEID_EBX_XSAVE_ER_PTR RT_BIT_32(2)
+/** Bit 4 - RDPRU - Supports the RDPRU instruction. */
+#define X86_CPUID_AMD_EFEID_EBX_RDPRU        RT_BIT_32(4)
 /* AMD pipeline length: 9 feature bits ;-) */
 /** Bit 12 - IBPB - Supports the IBPB command in IA32_PRED_CMD. */
 #define X86_CPUID_AMD_EFEID_EBX_IBPB         RT_BIT_32(12)
