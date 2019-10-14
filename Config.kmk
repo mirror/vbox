@@ -931,7 +931,7 @@ endif
 # things gets a bit complicated since the $ORIGIN+setuid policy differs.
 #VBOX_WITH_ORIGIN = 1
 ifndef VBOX_WITH_HARDENING
- if1of ($(KBUILD_TARGET), linux solaris)
+ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # duplicated further down
   VBOX_WITH_ORIGIN = 1
  endif
 endif
@@ -1288,8 +1288,8 @@ ifdef VBOX_WITHOUT_HARDENING
   VBOX_PATH_SHARED_LIBS=
   VBOX_PATH_APP_DOCS=
   VBOX_WITH_RUNPATH=
-  if1of ($(KBUILD_TARGET), linux solaris)
-   VBOX_WITH_ORIGIN=1
+  if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd solaris) # duplicated up above
+   VBOX_WITH_ORIGIN = 1
   endif
  endif
 endif
