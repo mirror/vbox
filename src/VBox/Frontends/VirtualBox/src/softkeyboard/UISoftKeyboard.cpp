@@ -695,8 +695,6 @@ private:
 
     void  parseKey(UISoftKeyboardRow &row);
     void  parseRow(int iDefaultWidth, int iDefaultHeight, QVector<UISoftKeyboardRow> &rows);
-    /**  Parses the verticel space between the rows. */
-    void  parseRowSpace(QVector<UISoftKeyboardRow> &rows);
     /** Parses the horizontal space between keys. */
     void  parseKeySpace(UISoftKeyboardRow &row);
     void  parseCutout(UISoftKeyboardKey &key);
@@ -2961,8 +2959,6 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
             parseRow(iDefaultWidth, iDefaultHeight, rows);
             ++iRowCount;
         }
-        else if (m_xmlReader.name() == "space")
-            parseRowSpace(rows);
         else if (m_xmlReader.name() == "name")
             physicalLayout.setName(m_xmlReader.readElementText());
         else if (m_xmlReader.name() == "id")
@@ -2998,20 +2994,6 @@ void UIPhysicalLayoutReader::parseRow(int iDefaultWidth, int iDefaultHeight, QVe
         else
             m_xmlReader.skipCurrentElement();
     }
-}
-
-void UIPhysicalLayoutReader::parseRowSpace(QVector<UISoftKeyboardRow> &rows)
-{
-    int iSpace = 0;
-    while (m_xmlReader.readNextStartElement())
-    {
-        if (m_xmlReader.name() == "height")
-            iSpace = m_xmlReader.readElementText().toInt();
-        else
-            m_xmlReader.skipCurrentElement();
-    }
-    if (!rows.empty())
-        rows.back().setSpaceHeightAfter(iSpace);
 }
 
 void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
@@ -3085,13 +3067,17 @@ void UIPhysicalLayoutReader::parseKey(UISoftKeyboardRow &row)
 void UIPhysicalLayoutReader::parseKeySpace(UISoftKeyboardRow &row)
 {
     int iWidth = row.defaultWidth();
+    int iHeight = 0;
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "width")
             iWidth = m_xmlReader.readElementText().toInt();
+        else if (m_xmlReader.name() == "height")
+            iHeight = m_xmlReader.readElementText().toInt();
         else
             m_xmlReader.skipCurrentElement();
     }
+    row.setSpaceHeightAfter(iHeight);
     /* If we have keys add the parsed space to the last key as the 'space after': */
     if (!row.keys().empty())
         row.keys().back().setSpaceWidthAfter(iWidth);

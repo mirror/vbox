@@ -149,5 +149,8 @@
             <scancode>0x30</scancode>
             <staticcaption>🔊</staticcaption>
         </key>
+        <space>
+            <height>20</height>
+        </space>
     </row>
 </physicallayout>

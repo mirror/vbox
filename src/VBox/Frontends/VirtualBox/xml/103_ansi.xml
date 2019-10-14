@@ -113,10 +113,10 @@
             <scancodeprefix>0xe1-0x1d</scancodeprefix>
             <scancode>0x45</scancode>
         </key>
+        <space>
+            <height>20</height>
+        </space>
     </row>
-    <space>
-        <height>20</height>
-    </space>
     <row>
         <key>
             <position>1</position>

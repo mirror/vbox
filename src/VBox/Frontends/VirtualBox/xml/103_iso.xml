@@ -115,10 +115,10 @@
             <scancode>0x45</scancode>
             0xe1-0x1d-0x45-0xe1-0x9d-0xc5
         </key>
+        <space>
+            <height>20</height>
+        </space>
     </row>
-    <space>
-        <height>20</height>
-    </space>
     <row>
         <key>
             <position>1</position>
