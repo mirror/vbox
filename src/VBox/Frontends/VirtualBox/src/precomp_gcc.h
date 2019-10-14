@@ -162,6 +162,7 @@
 
 /* These two are freuqently used internal headers. */
 #include "UILibraryDefs.h"
+#include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
 
 #if defined(Log) || defined(LogIsEnabled)
