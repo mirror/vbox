@@ -22,11 +22,10 @@
 #endif
 
 /* Qt includes: */
-#include <QMainWindow>
 #include <QUrl>
 
 /* GUI includes: */
-#include "QIWithRestorableGeometry.h"
+#include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
 #include "UICommon.h"
 
@@ -39,12 +38,10 @@ class UIVirtualBoxManagerWidget;
 class UIVirtualMachineItem;
 
 /* Type definitions: */
-typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
-typedef QIWithRetranslateUI<QMainWindowWithRestorableGeometry> QMainWindowWithRestorableGeometryAndRetranslateUi;
 typedef QMap<QString, QIManagerDialog*> VMLogViewerMap;
 
-/** Singleton QMainWindow extension used as VirtualBox Manager instance. */
-class UIVirtualBoxManager : public QMainWindowWithRestorableGeometryAndRetranslateUi
+/** Singleton QIMainWindow extension used as VirtualBox Manager instance. */
+class UIVirtualBoxManager : public QIWithRetranslateUI<QIMainWindow>
 {
     Q_OBJECT;
 

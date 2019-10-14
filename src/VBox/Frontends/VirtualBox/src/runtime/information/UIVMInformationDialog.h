@@ -21,11 +21,8 @@
 # pragma once
 #endif
 
-/* Qt includes: */
-#include <QMainWindow>
-
 /* GUI includes: */
-#include "QIWithRestorableGeometry.h"
+#include "QIMainWindow.h"
 #include "QIWithRetranslateUI.h"
 
 /* COM includes: */
@@ -37,14 +34,10 @@ class QITabWidget;
 class QIDialogButtonBox;
 class UIMachineWindow;
 
-/* Type definitions: */
-typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
-typedef QIWithRetranslateUI<QMainWindowWithRestorableGeometry> QMainWindowWithRestorableGeometryAndRetranslateUi;
 
-
-/** QMainWindow subclass providing user
+/** QIMainWindow subclass providing user
   * with the dialog unifying VM details and statistics. */
-class UIVMInformationDialog : public QMainWindowWithRestorableGeometryAndRetranslateUi
+class UIVMInformationDialog : public QIWithRetranslateUI<QIMainWindow>
 {
     Q_OBJECT;
 
