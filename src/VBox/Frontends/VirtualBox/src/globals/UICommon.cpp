@@ -53,6 +53,7 @@
 #endif
 
 /* GUI includes: */
+#include "QIWithRestorableGeometry.h"
 #include "UICommon.h"
 #include "VBoxLicenseViewer.h"
 #include "UIMessageCenter.h"
