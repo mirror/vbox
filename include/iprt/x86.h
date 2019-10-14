@@ -785,6 +785,8 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_AMD_EFEID_EBX_XSAVE_ER_PTR RT_BIT_32(2)
 /** Bit 4 - RDPRU - Supports the RDPRU instruction. */
 #define X86_CPUID_AMD_EFEID_EBX_RDPRU        RT_BIT_32(4)
+/** Bit 8 - MCOMMIT - Supports the MCOMMIT instruction. */
+#define X86_CPUID_AMD_EFEID_EBX_MCOMMIT      RT_BIT_32(8)
 /* AMD pipeline length: 9 feature bits ;-) */
 /** Bit 12 - IBPB - Supports the IBPB command in IA32_PRED_CMD. */
 #define X86_CPUID_AMD_EFEID_EBX_IBPB         RT_BIT_32(12)
@@ -1707,6 +1709,9 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define  MSR_K6_EFER_FFXSR                   RT_BIT_32(14)
 /** Bit 15 - TCE - Translation Cache Extension. (R/W) */
 #define  MSR_K6_EFER_TCE                     RT_BIT_32(15)
+/** Bit 17 - MCOMMIT - Commit Stores to memory. (R/W) */
+#define  MSR_K6_EFER_MCOMMIT                 RT_BIT_32(17)
+
 /** K6 STAR - SYSCALL/RET targets. */
 #define MSR_K6_STAR                         UINT32_C(0xc0000081)
 /** Shift value for getting the SYSRET CS and SS value. */
