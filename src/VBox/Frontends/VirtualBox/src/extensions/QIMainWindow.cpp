@@ -28,6 +28,11 @@
 # include "UIDesktopWidgetWatchdog.h"
 #endif
 
+/* Other VBox includes: */
+#ifdef VBOX_WS_MAC
+# include "iprt/cpp/utils.h"
+#endif
+
 
 QIMainWindow::QIMainWindow(QWidget *pParent /* = 0 */, Qt::WindowFlags enmFlags /* = 0 */)
     : QMainWindow(pParent, enmFlags)
@@ -102,7 +107,7 @@ QRect QIMainWindow::currentGeometry() const
 bool QIMainWindow::isCurrentlyMaximized() const
 {
 #ifdef VBOX_WS_MAC
-    return ::darwinIsWindowMaximized(this);
+    return ::darwinIsWindowMaximized(unconst(this));
 #else
     return isMaximized();
 #endif
