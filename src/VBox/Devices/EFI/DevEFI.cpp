@@ -2293,14 +2293,21 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Lun0.IBase, &pThis->Lun0.pDrvBase, "NvramStorage");
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        pThis->Lun0.pNvramDrv = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase, PDMINVRAMCONNECTOR);
+        AssertPtrReturn(pThis->Lun0.pNvramDrv, VERR_PDM_MISSING_INTERFACE_BELOW);
+
+        rc = nvramLoad(pThis);
+        AssertRCReturn(rc, rc);
+    }
+    if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    {
+        pThis->Lun0.pNvramDrv = NULL;
+        rc = VINF_SUCCESS; /* Missing driver is no error condition. */
+    }
+    else
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("Can't attach Nvram Storage driver"));
-
-    pThis->Lun0.pNvramDrv = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase, PDMINVRAMCONNECTOR);
-    AssertPtrReturn(pThis->Lun0.pNvramDrv, VERR_PDM_MISSING_INTERFACE_BELOW);
-
-    rc = nvramLoad(pThis);
-    AssertRCReturn(rc, rc);
 
     /*
      * Get boot args.
