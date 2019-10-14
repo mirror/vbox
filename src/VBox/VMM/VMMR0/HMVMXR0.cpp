@@ -9238,9 +9238,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         if (   !fUnrestrictedGuest
             &&  (u64GuestCr0 & X86_CR0_PG)
             && !(u64GuestCr0 & X86_CR0_PE))
-        {
             HMVMX_ERROR_BREAK(VMX_IGS_CR0_PG_PE_COMBO);
-        }
 
         /*
          * CR4.
@@ -9283,9 +9281,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /* pCtx->rip can be different than the one in the VMCS (e.g. run guest code and VM-exits that don't update it). */
         if (   !fLongModeGuest
             || !pCtx->cs.Attr.n.u1Long)
-        {
             HMVMX_CHECK_BREAK(!(u64Val & UINT64_C(0xffffffff00000000)), VMX_IGS_LONGMODE_RIP_INVALID);
-        }
         /** @todo If the processor supports N < 64 linear-address bits, bits 63:N
          *        must be identical if the "IA-32e mode guest" VM-entry
          *        control is 1 and CS.L is 1. No check applies if the
@@ -9323,18 +9319,14 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 
         if (   !fLongModeGuest
             && (u64GuestCr4 & X86_CR4_PCIDE))
-        {
             HMVMX_ERROR_BREAK(VMX_IGS_CR4_PCIDE);
-        }
 
         /** @todo CR3 field must be such that bits 63:52 and bits in the range
          *        51:32 beyond the processor's physical-address width are 0. */
 
         if (   (pVmcsInfo->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
             && (pCtx->dr[7] & X86_DR7_MBZ_MASK))
-        {
             HMVMX_ERROR_BREAK(VMX_IGS_DR7_RESERVED);
-        }
 
         rc = VMXReadVmcsNw(VMX_VMCS_HOST_SYSENTER_ESP, &u64Val);
         AssertRC(rc);
@@ -9372,9 +9364,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
                     && u8Val != 5 /* WP */
                     && u8Val != 6 /* WB */
                     && u8Val != 7 /* UC- */)
-                {
                     HMVMX_ERROR_BREAK(VMX_IGS_PAT_MSR_INVALID);
-                }
                 u64Val >>= 8;
             }
         }
@@ -9433,9 +9423,8 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
             HMVMX_CHECK_BREAK(pCtx->ss.Attr.n.u2Dpl == (pCtx->ss.Sel & X86_SEL_RPL), VMX_IGS_SS_ATTR_DPL_RPL_UNEQUAL);
             if (   !(pCtx->cr0 & X86_CR0_PE)
                 || pCtx->cs.Attr.n.u4Type == 3)
-            {
                 HMVMX_CHECK_BREAK(!pCtx->ss.Attr.n.u2Dpl, VMX_IGS_SS_ATTR_DPL_INVALID);
-            }
+
             if (!(pCtx->ss.Attr.u & X86DESCATTR_UNUSABLE))
             {
                 HMVMX_CHECK_BREAK(pCtx->ss.Attr.n.u4Type == 3 || pCtx->ss.Attr.n.u4Type == 7, VMX_IGS_SS_ATTR_TYPE_INVALID);
@@ -9588,16 +9577,12 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /* 64-bit capable CPUs. */
         HMVMX_CHECK_BREAK(X86_IS_CANONICAL(pCtx->tr.u64Base), VMX_IGS_TR_BASE_NOT_CANONICAL);
         if (fLongModeGuest)
-        {
             HMVMX_CHECK_BREAK(pCtx->tr.Attr.n.u4Type == 11,           /* 64-bit busy TSS. */
                               VMX_IGS_LONGMODE_TR_ATTR_TYPE_INVALID);
-        }
         else
-        {
             HMVMX_CHECK_BREAK(   pCtx->tr.Attr.n.u4Type == 3          /* 16-bit busy TSS. */
                               || pCtx->tr.Attr.n.u4Type == 11,        /* 32-bit busy TSS.*/
                               VMX_IGS_TR_ATTR_TYPE_INVALID);
-        }
         HMVMX_CHECK_BREAK(!pCtx->tr.Attr.n.u1DescType, VMX_IGS_TR_ATTR_S_INVALID);
         HMVMX_CHECK_BREAK(pCtx->tr.Attr.n.u1Present, VMX_IGS_TR_ATTR_P_INVALID);
         HMVMX_CHECK_BREAK(!(pCtx->tr.Attr.u & 0xf00), VMX_IGS_TR_ATTR_RESERVED);   /* Bits 11:8 MBZ. */
@@ -9643,9 +9628,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         AssertRC(rc);
         if (   u32IntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS
             || u32IntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
-        {
             HMVMX_CHECK_BREAK(u32ActivityState == VMX_VMCS_GUEST_ACTIVITY_ACTIVE, VMX_IGS_ACTIVITY_STATE_ACTIVE_INVALID);
-        }
 
         /** @todo Activity state and injecting interrupts. Left as a todo since we
          *        currently don't use activity states but ACTIVE. */
@@ -9682,10 +9665,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
                              VMX_IGS_INTERRUPTIBILITY_STATE_SMI_SMM_INVALID);
         if (   (pVmcsInfo->u32PinCtls & VMX_PIN_CTLS_VIRT_NMI)
             && VMX_ENTRY_INT_INFO_IS_XCPT_NMI(u32EntryInfo))
-        {
-            HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI),
-                              VMX_IGS_INTERRUPTIBILITY_STATE_NMI_INVALID);
-        }
+            HMVMX_CHECK_BREAK(!(u32IntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI), VMX_IGS_INTERRUPTIBILITY_STATE_NMI_INVALID);
 
         /* Pending debug exceptions. */
         rc = VMXReadVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, &u64Val);
