@@ -3089,6 +3089,7 @@ RuntimeR0Drv_SOURCES.darwin = \
 	common/misc/thread.cpp \
 	common/string/base64.cpp \
 	common/string/memchr.asm \
+	common/string/mempcpy.asm \
 	common/string/strpbrk.cpp \
 	common/string/RTStrPrintHexBytes.cpp \
 	darwin/RTErrConvertFromDarwin.cpp \
@@ -3133,8 +3134,11 @@ RuntimeR0Drv_SOURCES.darwin = \
 	r0drv/memobj-r0drv.cpp \
 	r0drv/powernotification-r0drv.c
 # - The xnu memcpy implementation in osfmk/x86_64/bcopy.s returns 'void' rather than 'void *', so use our own.
+# - The memcmp and strlen implementations are still C implementations living in osfmk/x86_64/loose_ends.c, so use our asm code.
 RuntimeR0Drv_SOURCES.darwin.amd64 = \
 	common/string/memcpy.asm \
+	common/string/strlen.asm \
+	common/string/memcmp.asm
 
 RuntimeR0Drv_SOURCES.os2 = \
 	common/path/RTPathFilenameUtf16.cpp \
