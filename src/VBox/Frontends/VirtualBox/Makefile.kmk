@@ -784,7 +784,6 @@ UICommon_QT_MOCHDRS = \
 	src/extensions/QILabelSeparator.h \
 	src/extensions/QILineEdit.h \
 	src/extensions/QIMainDialog.h \
-	src/extensions/QIMainWindow.h \
 	src/extensions/QIManagerDialog.h \
 	src/extensions/QIMenu.h \
 	src/extensions/QIMessageBox.h \
@@ -1266,7 +1265,6 @@ UICommon_SOURCES = \
 	src/extensions/QILabelSeparator.cpp \
 	src/extensions/QILineEdit.cpp \
 	src/extensions/QIMainDialog.cpp \
-	src/extensions/QIMainWindow.cpp \
 	src/extensions/QIManagerDialog.cpp \
 	src/extensions/QIMenu.cpp \
 	src/extensions/QIMessageBox.cpp \

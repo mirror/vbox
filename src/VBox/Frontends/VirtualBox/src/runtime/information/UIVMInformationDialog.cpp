@@ -78,7 +78,7 @@ void UIVMInformationDialog::invoke(UIMachineWindow *pMachineWindow)
 }
 
 UIVMInformationDialog::UIVMInformationDialog(UIMachineWindow *pMachineWindow)
-    : QIWithRetranslateUI<QIMainWindow>(0)
+    : QMainWindowWithRestorableGeometryAndRetranslateUi(0)
     , m_pTabWidget(0)
     , m_pMachineWindow(pMachineWindow)
 {

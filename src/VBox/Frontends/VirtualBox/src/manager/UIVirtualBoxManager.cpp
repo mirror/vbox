@@ -127,12 +127,12 @@ bool UIVirtualBoxManager::eventFilter(QObject *pObject, QEvent *pEvent)
 {
     /* Ignore for non-active window except for FileOpen event which should be always processed: */
     if (!isActiveWindow() && pEvent->type() != QEvent::FileOpen)
-        return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
+        return QMainWindowWithRestorableGeometryAndRetranslateUi::eventFilter(pObject, pEvent);
 
     /* Ignore for other objects: */
     if (qobject_cast<QWidget*>(pObject) &&
         qobject_cast<QWidget*>(pObject)->window() != this)
-        return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
+        return QMainWindowWithRestorableGeometryAndRetranslateUi::eventFilter(pObject, pEvent);
 
     /* Which event do we have? */
     switch (pEvent->type())
@@ -149,7 +149,7 @@ bool UIVirtualBoxManager::eventFilter(QObject *pObject, QEvent *pEvent)
     }
 
     /* Call to base-class: */
-    return QIWithRetranslateUI<QIMainWindow>::eventFilter(pObject, pEvent);
+    return QMainWindowWithRestorableGeometryAndRetranslateUi::eventFilter(pObject, pEvent);
 }
 #endif /* VBOX_WS_MAC */
 
@@ -183,13 +183,13 @@ bool UIVirtualBoxManager::event(QEvent *pEvent)
             break;
     }
     /* Call to base-class: */
-    return QIWithRetranslateUI<QIMainWindow>::event(pEvent);
+    return QMainWindowWithRestorableGeometryAndRetranslateUi::event(pEvent);
 }
 
 void UIVirtualBoxManager::showEvent(QShowEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI<QIMainWindow>::showEvent(pEvent);
+    QMainWindowWithRestorableGeometryAndRetranslateUi::showEvent(pEvent);
 
     /* Is polishing required? */
     if (!m_fPolished)
@@ -210,7 +210,7 @@ void UIVirtualBoxManager::polishEvent(QShowEvent *)
 void UIVirtualBoxManager::closeEvent(QCloseEvent *pEvent)
 {
     /* Call to base-class: */
-    QIWithRetranslateUI<QIMainWindow>::closeEvent(pEvent);
+    QMainWindowWithRestorableGeometryAndRetranslateUi::closeEvent(pEvent);
 
     /* Quit application: */
     QApplication::quit();
