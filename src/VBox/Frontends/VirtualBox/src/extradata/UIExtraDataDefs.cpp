@@ -208,6 +208,7 @@ const char *UIExtraDataDefs::GUI_SoftKeyboard_SelectedLayout  = "GUI/SoftKeyboar
 const char *UIExtraDataDefs::GUI_SoftKeyboard_Options  = "GUI/SoftKeyboardOptions";
 const char *UIExtraDataDefs::GUI_SoftKeyboard_HideNumPad = "GUI/SoftKeyboardHideNumPad";
 const char *UIExtraDataDefs::GUI_SoftKeyboard_HideOSMenuKeys = "GUI/SoftKeyboardHideOSMenuKeys";
+const char *UIExtraDataDefs::GUI_SoftKeyboard_HideMultimediaKeys = "GUI/SoftKeyboardHideMultimediaKeys";
 
 /* File Manager options: */
 const char *UIExtraDataDefs::GUI_GuestControl_FileManagerOptions = "GUI/GuestControl/FileManagerOptions";

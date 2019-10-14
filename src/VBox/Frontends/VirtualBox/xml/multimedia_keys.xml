@@ -27,50 +27,30 @@
             <scancode>0x69</scancode>
             <staticcaption>🡆</staticcaption>
         </key>
-        <key><!-- Bookmarks -->
+        <key><!-- WWW reload -->
+            <position>315</position>
+            <usageid>0x0227</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x67</scancode>
+            <staticcaption>🗘</staticcaption>
+        </key>
+        <key><!-- WWW stop -->
+            <position>314</position>
+            <usageid>0x0226</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x68</scancode>
+            <staticcaption>🗙</staticcaption>
+        </key>
+        <key><!-- WWW Search -->
             <position>313</position>
-            <usageid>0x022A</usageid>
+            <usageid>0x0221</usageid>
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
-            <scancode>0x66</scancode>
-            <staticcaption>🔖</staticcaption>
+            <scancode>0x65</scancode>
+            <staticcaption>🔍</staticcaption>
         </key>
-        <key><!-- Mail -->
-            <position>303</position>
-            <usageid>0x018A</usageid>
-            <usagepage>0x0C</usagepage>
-            <scancodeprefix>0xE0</scancodeprefix>
-            <scancode>0x6C</scancode>
-            <staticcaption>✉</staticcaption>
-        </key>
-        <space>
-            <width>25</width>
-        </space>
-        <key><!-- Mute -->
-            <position>304</position>
-            <usageid>0xE2</usageid>
-            <usagepage>0x0C</usagepage>
-            <scancodeprefix>0xE0</scancodeprefix>
-            <scancode>0x20</scancode>
-            <staticcaption>🔇</staticcaption>
-        </key>
-        <key><!-- Volume Down -->
-            <position>305</position>
-            <usageid>0xEA</usageid>
-            <usagepage>0x0C</usagepage>
-            <scancodeprefix>0xE0</scancodeprefix>
-            <scancode>0x2E</scancode>
-            <staticcaption>🔉</staticcaption>
-        </key>
-        <key><!-- Volume Up -->
-            <position>306</position>
-            <usageid>0xE9</usageid>
-            <usagepage>0x0C</usagepage>
-            <scancodeprefix>0xE0</scancodeprefix>
-            <scancode>0x30</scancode>
-            <staticcaption>🔊</staticcaption>
-        </key>
-
         <space>
             <width>25</width>
         </space>
@@ -110,6 +90,14 @@
         <space>
             <width>25</width>
         </space>
+        <key><!-- Mail -->
+            <position>303</position>
+            <usageid>0x018A</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x6C</scancode>
+            <staticcaption>✉</staticcaption>
+        </key>
         <key><!-- Calculator -->
             <position>311</position>
             <usageid>0x192</usageid>
@@ -134,6 +122,32 @@
             <scancode>0x6D</scancode>
             <staticcaption>♬</staticcaption>
         </key>
-
+        <space>
+            <width>25</width>
+        </space>
+        <key><!-- Mute -->
+            <position>304</position>
+            <usageid>0xE2</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x20</scancode>
+            <staticcaption>🔇</staticcaption>
+        </key>
+        <key><!-- Volume Down -->
+            <position>305</position>
+            <usageid>0xEA</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x2E</scancode>
+            <staticcaption>🔉</staticcaption>
+        </key>
+        <key><!-- Volume Up -->
+            <position>306</position>
+            <usageid>0xE9</usageid>
+            <usagepage>0x0C</usagepage>
+            <scancodeprefix>0xE0</scancodeprefix>
+            <scancode>0x30</scancode>
+            <staticcaption>🔊</staticcaption>
+        </key>
     </row>
 </physicallayout>

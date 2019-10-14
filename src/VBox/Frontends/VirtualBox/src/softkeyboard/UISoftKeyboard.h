@@ -84,6 +84,7 @@ private slots:
     void sltStatusBarMessage(const QString &strMessage);
     void sltShowHideOSMenuKeys(bool fShow);
     void sltShowHideNumPad(bool fShow);
+    void sltShowHideMultimediaKeys(bool fHide);
     void sltHandleColorCellClick(int iColorRow);
     void sltResetKeyboard();
 

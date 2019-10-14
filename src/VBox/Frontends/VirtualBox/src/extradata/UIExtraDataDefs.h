@@ -385,6 +385,7 @@ namespace UIExtraDataDefs
         extern const char *GUI_SoftKeyboard_Options;
         extern const char *GUI_SoftKeyboard_HideNumPad;
         extern const char *GUI_SoftKeyboard_HideOSMenuKeys;
+        extern const char *GUI_SoftKeyboard_HideMultimediaKeys;
     /** @} */
 
     /** @name File Manager options

@@ -4235,7 +4235,7 @@ bool UIExtraDataManager::softKeyboardDialogShouldBeMaximized()
     return data.size() == 5 && data[4] == GUI_Geometry_State_Max;
 }
 
-void UIExtraDataManager::setSoftKeyboardOptions(bool fHideNumPad, bool fHideOSMenuKeys)
+void UIExtraDataManager::setSoftKeyboardOptions(bool fHideNumPad, bool fHideOSMenuKeys, bool fMultimediaKeys)
 {
     QStringList data;
 
@@ -4243,11 +4243,13 @@ void UIExtraDataManager::setSoftKeyboardOptions(bool fHideNumPad, bool fHideOSMe
         data << GUI_SoftKeyboard_HideNumPad;
     if (fHideOSMenuKeys)
         data << GUI_SoftKeyboard_HideOSMenuKeys;
+    if (fMultimediaKeys)
+        data << GUI_SoftKeyboard_HideMultimediaKeys;
 
     setExtraDataStringList(GUI_SoftKeyboard_Options, data);
 }
 
-void UIExtraDataManager::softKeyboardOptions(bool &fOutHideNumPad, bool &fOutHideOSMenuKeys)
+void UIExtraDataManager::softKeyboardOptions(bool &fOutHideNumPad, bool &fOutHideOSMenuKeys, bool &fOutHideMultimediaKeys)
 {
     fOutHideNumPad = false;
     fOutHideOSMenuKeys = false;
@@ -4258,6 +4260,8 @@ void UIExtraDataManager::softKeyboardOptions(bool &fOutHideNumPad, bool &fOutHid
             fOutHideNumPad = true;
         if (data[i] == GUI_SoftKeyboard_HideOSMenuKeys)
             fOutHideOSMenuKeys = true;
+        if (data[i] == GUI_SoftKeyboard_HideMultimediaKeys)
+            fOutHideMultimediaKeys = true;
     }
 }
 

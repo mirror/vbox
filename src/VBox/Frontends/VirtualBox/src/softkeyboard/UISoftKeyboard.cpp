@@ -598,6 +598,9 @@ public:
     bool hideNumPad() const;
     void setHideNumPad(bool fHide);
 
+    bool hideMultimediaKeys() const;
+    void setHideMultimediaKeys(bool fHide);
+
     const QColor color(KeyboardColorType enmColorType) const;
     void setColor(KeyboardColorType ennmColorType, const QColor &color);
 
@@ -765,6 +768,7 @@ signals:
 
     void sigHideNumPad(bool fHide);
     void sigHideOSMenuKeys(bool fHide);
+    void sigHideMultimediaKeys(bool fHide);
     void sigColorCellClicked(int iColorRow);
     void sigCloseSettingsWidget();
 
@@ -773,6 +777,7 @@ public:
     UISoftKeyboardSettingsWidget(QWidget *pParent = 0);
     void setHideOSMenuKeys(bool fHide);
     void setHideNumPad(bool fHide);
+    void setHideMultimediaKeys(bool fHide);
     void setTableItemColor(KeyboardColorType tableRow, const QColor &color);
 
 protected:
@@ -789,6 +794,7 @@ private:
 
     QCheckBox    *m_pHideNumPadCheckBox;
     QCheckBox    *m_pShowOsMenuButtonsCheckBox;
+    QCheckBox    *m_pHideMultimediaKeysCheckBox;
     QGroupBox    *m_pColorTableGroupBox;
     QTableWidget *m_pColorSelectionTable;
     QLabel       *m_pTitleLabel;
@@ -2318,6 +2324,19 @@ void UISoftKeyboardWidget::setHideNumPad(bool fHide)
     update();
 }
 
+bool UISoftKeyboardWidget::hideMultimediaKeys() const
+{
+    return m_fHideMultimediaKeys;
+}
+
+void UISoftKeyboardWidget::setHideMultimediaKeys(bool fHide)
+{
+    if (m_fHideMultimediaKeys == fHide)
+        return;
+    m_fHideMultimediaKeys = fHide;
+    update();
+}
+
 const QColor UISoftKeyboardWidget::color(KeyboardColorType enmColorType) const
 {
     return m_colorTheme.color(enmColorType);
@@ -3325,6 +3344,7 @@ UISoftKeyboardSettingsWidget::UISoftKeyboardSettingsWidget(QWidget *pParent /* =
     : QIWithRetranslateUI<QWidget>(pParent)
     , m_pHideNumPadCheckBox(0)
     , m_pShowOsMenuButtonsCheckBox(0)
+    , m_pHideMultimediaKeysCheckBox(0)
     , m_pColorTableGroupBox(0)
     , m_pColorSelectionTable(0)
     , m_pTitleLabel(0)
@@ -3344,6 +3364,12 @@ void UISoftKeyboardSettingsWidget::setHideNumPad(bool fHide)
 {
     if (m_pHideNumPadCheckBox)
         m_pHideNumPadCheckBox->setChecked(fHide);
+}
+
+void UISoftKeyboardSettingsWidget::setHideMultimediaKeys(bool fHide)
+{
+    if (m_pHideMultimediaKeysCheckBox)
+        m_pHideMultimediaKeysCheckBox->setChecked(fHide);
 }
 
 void UISoftKeyboardSettingsWidget::setTableItemColor(KeyboardColorType tableRow, const QColor &color)
@@ -3370,6 +3396,8 @@ void UISoftKeyboardSettingsWidget::retranslateUi()
         m_pHideNumPadCheckBox->setText(UISoftKeyboard::tr("Hide NumPad"));
     if (m_pShowOsMenuButtonsCheckBox)
         m_pShowOsMenuButtonsCheckBox->setText(UISoftKeyboard::tr("Hide OS/Menu Keys"));
+    if (m_pHideMultimediaKeysCheckBox)
+        m_pHideMultimediaKeysCheckBox->setText(UISoftKeyboard::tr("Hide Multimedia Keys"));
     if (m_pColorTableGroupBox)
         m_pColorTableGroupBox->setTitle(UISoftKeyboard::tr("Button Colors"));
     if (m_pColorSelectionTable)
@@ -3413,15 +3441,18 @@ void UISoftKeyboardSettingsWidget::prepareObjects()
 
     m_pHideNumPadCheckBox = new QCheckBox;
     m_pShowOsMenuButtonsCheckBox = new QCheckBox;
+    m_pHideMultimediaKeysCheckBox = new QCheckBox;
     pSettingsLayout->addWidget(m_pHideNumPadCheckBox, 1, 0, 1, 1);
     pSettingsLayout->addWidget(m_pShowOsMenuButtonsCheckBox, 2, 0, 1, 1);
+    pSettingsLayout->addWidget(m_pHideMultimediaKeysCheckBox, 3, 0, 1, 1);
     connect(m_pHideNumPadCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigHideNumPad);
     connect(m_pShowOsMenuButtonsCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigHideOSMenuKeys);
+    connect(m_pHideMultimediaKeysCheckBox, &QCheckBox::toggled, this, &UISoftKeyboardSettingsWidget::sigHideMultimediaKeys);
 
     /* A groupbox to host the color table widget: */
     m_pColorTableGroupBox = new QGroupBox;
     QVBoxLayout *pTableGroupBoxLayout = new QVBoxLayout(m_pColorTableGroupBox);
-    pSettingsLayout->addWidget(m_pColorTableGroupBox, 3, 0, 2, 1);
+    pSettingsLayout->addWidget(m_pColorTableGroupBox, 4, 0, 2, 1);
 
     /* Creating and configuring the color table widget: */
     m_pColorSelectionTable = new QTableWidget;
@@ -3667,6 +3698,12 @@ void UISoftKeyboard::sltShowHideNumPad(bool fHide)
         m_pKeyboardWidget->setHideNumPad(fHide);
 }
 
+void UISoftKeyboard::sltShowHideMultimediaKeys(bool fHide)
+{
+    if (m_pKeyboardWidget)
+        m_pKeyboardWidget->setHideMultimediaKeys(fHide);
+}
+
 void UISoftKeyboard::sltHandleColorCellClick(int iColorRow)
 {
     if (!m_pKeyboardWidget || iColorRow >= static_cast<int>(KeyboardColorType_Max))
@@ -3767,6 +3804,7 @@ void UISoftKeyboard::prepareConnections()
 
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigHideOSMenuKeys, this, &UISoftKeyboard::sltShowHideOSMenuKeys);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigHideNumPad, this, &UISoftKeyboard::sltShowHideNumPad);
+    connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigHideMultimediaKeys, this, &UISoftKeyboard::sltShowHideMultimediaKeys);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorCellClicked, this, &UISoftKeyboard::sltHandleColorCellClick);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
 }
@@ -3789,7 +3827,8 @@ void UISoftKeyboard::saveSettings()
         gEDataManager->setSoftKeyboardColorTheme(m_pKeyboardWidget->colorsToStringList());
 
         gEDataManager->setSoftKeyboardOptions(m_pKeyboardWidget->hideNumPad(),
-                                              m_pKeyboardWidget->hideOSMenuKeys());
+                                              m_pKeyboardWidget->hideOSMenuKeys(),
+                                              m_pKeyboardWidget->hideMultimediaKeys());
         if (m_pKeyboardWidget->currentLayout())
             gEDataManager->setSoftKeyboardSelectedLayout(m_pKeyboardWidget->currentLayout()->uid());
     }
@@ -3823,7 +3862,8 @@ void UISoftKeyboard::loadSettings()
         /* Load other options from exra data: */
         bool fHideNumPad = false;
         bool fHideOSMenuKeys = false;
-        gEDataManager->softKeyboardOptions(fHideNumPad, fHideOSMenuKeys);
+        bool fHideMultimediaKeys = false;
+        gEDataManager->softKeyboardOptions(fHideNumPad, fHideOSMenuKeys, fHideMultimediaKeys);
         m_pKeyboardWidget->setHideNumPad(fHideNumPad);
         m_pKeyboardWidget->setHideOSMenuKeys(fHideOSMenuKeys);
     }
@@ -3836,6 +3876,7 @@ void UISoftKeyboard::configure()
     {
         m_pSettingsWidget->setHideOSMenuKeys(m_pKeyboardWidget->hideOSMenuKeys());
         m_pSettingsWidget->setHideNumPad(m_pKeyboardWidget->hideNumPad());
+        m_pSettingsWidget->setHideMultimediaKeys(m_pKeyboardWidget->hideMultimediaKeys());
 
         for (int i = (int)KeyboardColorType_Background;
              i < (int)KeyboardColorType_Max; ++i)
