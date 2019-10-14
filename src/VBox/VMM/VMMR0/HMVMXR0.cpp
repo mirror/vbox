@@ -1008,7 +1008,7 @@ static void hmR0VmxSetTscOffsetVmcs(PVMXVMCSINFO pVmcsInfo, uint64_t uTscOffset)
  * @param   pVmxTransient   The VMX-transient structure.
  * @param   uXcptMask       The exception(s) to add.
  */
-static void hmR0VmxAddXcptInterceptMask(PVMXTRANSIENT pVmxTransient, uint32_t uXcptMask)
+static void hmR0VmxAddXcptInterceptMask(PCVMXTRANSIENT pVmxTransient, uint32_t uXcptMask)
 {
     PVMXVMCSINFO pVmcsInfo   = pVmxTransient->pVmcsInfo;
     uint32_t     uXcptBitmap = pVmcsInfo->u32XcptBitmap;
@@ -1028,7 +1028,7 @@ static void hmR0VmxAddXcptInterceptMask(PVMXTRANSIENT pVmxTransient, uint32_t uX
  * @param   pVmxTransient   The VMX-transient structure.
  * @param   uXcpt           The exception to add.
  */
-static void hmR0VmxAddXcptIntercept(PVMXTRANSIENT pVmxTransient, uint8_t uXcpt)
+static void hmR0VmxAddXcptIntercept(PCVMXTRANSIENT pVmxTransient, uint8_t uXcpt)
 {
     Assert(uXcpt <= X86_XCPT_LAST);
     hmR0VmxAddXcptInterceptMask(pVmxTransient, RT_BIT_32(uXcpt));
@@ -1047,7 +1047,7 @@ static void hmR0VmxAddXcptIntercept(PVMXTRANSIENT pVmxTransient, uint8_t uXcpt)
  * @param   pVmxTransient   The VMX-transient structure.
  * @param   uXcptMask       The exception(s) to remove.
  */
-static int hmR0VmxRemoveXcptInterceptMask(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t uXcptMask)
+static int hmR0VmxRemoveXcptInterceptMask(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t uXcptMask)
 {
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     uint32_t u32XcptBitmap = pVmcsInfo->u32XcptBitmap;
@@ -1109,7 +1109,7 @@ static int hmR0VmxRemoveXcptInterceptMask(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTran
  * @param   pVmxTransient   The VMX-transient structure.
  * @param   uXcpt           The exception to remove.
  */
-static int hmR0VmxRemoveXcptIntercept(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, uint8_t uXcpt)
+static int hmR0VmxRemoveXcptIntercept(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint8_t uXcpt)
 {
     return hmR0VmxRemoveXcptInterceptMask(pVCpu, pVmxTransient, RT_BIT(uXcpt));
 }
@@ -2215,7 +2215,7 @@ static int hmR0VmxSetAutoLoadStoreMsrCount(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInf
  * @param   fUpdateHostMsr  Whether to update the value of the host MSR if
  *                          necessary.
  */
-static int hmR0VmxAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t idMsr, uint64_t uGuestMsrValue,
+static int hmR0VmxAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t idMsr, uint64_t uGuestMsrValue,
                                       bool fSetReadWrite, bool fUpdateHostMsr)
 {
     PVMXVMCSINFO pVmcsInfo     = pVmxTransient->pVmcsInfo;
@@ -2305,7 +2305,7 @@ static int hmR0VmxAddAutoLoadStoreMsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
  * @param   pVmxTransient   The VMX-transient structure.
  * @param   idMsr           The MSR.
  */
-static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t idMsr)
+static int hmR0VmxRemoveAutoLoadStoreMsr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t idMsr)
 {
     PVMXVMCSINFO pVmcsInfo     = pVmxTransient->pVmcsInfo;
     bool const   fIsNstGstVmcs = pVmxTransient->fIsNestedGuest;
@@ -4667,7 +4667,7 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
  * @remarks Requires EFER.
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExportGuestEntryExitCtls(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_ENTRY_EXIT_CTLS)
     {
@@ -4853,7 +4853,7 @@ DECLINLINE(void) hmR0VmxApicSetTprThreshold(PVMXVMCSINFO pVmcsInfo, uint32_t u32
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxExportGuestApicTpr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static void hmR0VmxExportGuestApicTpr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_APIC_TPR)
     {
@@ -4913,7 +4913,7 @@ static void hmR0VmxExportGuestApicTpr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
  *
  * @remarks No-long-jump zone!!!
  */
-static uint32_t hmR0VmxGetGuestIntrState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static uint32_t hmR0VmxGetGuestIntrState(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     /*
      * Check if we should inhibit interrupt delivery due to instructions like STI and MOV SS.
@@ -4969,7 +4969,7 @@ static uint32_t hmR0VmxGetGuestIntrState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxExportGuestXcptIntercepts(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static void hmR0VmxExportGuestXcptIntercepts(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_VMX_XCPT_INTERCEPTS)
     {
@@ -5038,7 +5038,7 @@ static void hmR0VmxExportGuestRsp(PVMCPUCC pVCpu)
  *
  * @remarks No-long-jump zone!!!
  */
-static void hmR0VmxExportGuestRflags(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static void hmR0VmxExportGuestRflags(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_RFLAGS)
     {
@@ -5269,7 +5269,7 @@ static void hmR0VmxDisableVmcsShadowing(PVMXVMCSINFO pVmcsInfo)
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestHwvirtState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExportGuestHwvirtState(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_HWVIRT)
     {
@@ -5333,7 +5333,7 @@ static int hmR0VmxExportGuestHwvirtState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     if (ASMAtomicUoReadU64(&pVCpu->hm.s.fCtxChanged) & HM_CHANGED_GUEST_CR0)
     {
@@ -5509,7 +5509,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
  *
  * @remarks No-long-jump zone!!!
  */
-static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     int rc  = VINF_SUCCESS;
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
@@ -6144,7 +6144,7 @@ static int hmR0VmxExportGuestSegReg(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, uin
  *          segments.
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     int          rc        = VERR_INTERNAL_ERROR_5;
     PVMCC          pVM       = pVCpu->CTX_SUFF(pVM);
@@ -6387,7 +6387,7 @@ static int hmR0VmxExportGuestSegRegsXdtr(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     AssertPtr(pVCpu);
     AssertPtr(pVmxTransient);
@@ -6529,7 +6529,7 @@ static int hmR0VmxExportGuestMsrs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
  *
  * @remarks No-long-jump zone!!!
  */
-static int hmR0VmxSelectVMRunHandler(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient)
+static int hmR0VmxSelectVMRunHandler(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
 {
     PCCPUMCTX    pCtx      = &pVCpu->cpum.GstCtx;
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
@@ -8345,7 +8345,7 @@ static VBOXSTRICTRC hmR0VmxRealModeGuestStackPush(PVMCPUCC pVCpu, uint16_t uValu
  *                          directly (registers modified by us, not by hardware on
  *                          VM-entry).
  */
-static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, PCHMEVENT pEvent, bool fStepping,
+static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, PCHMEVENT pEvent, bool fStepping,
                                            uint32_t *pfIntrState)
 {
     /* Intel spec. 24.8.3 "VM-Entry Controls for Event Injection" specifies the interruption-information field to be 32-bits. */
@@ -8580,7 +8580,7 @@ static VBOXSTRICTRC hmR0VmxInjectEventVmcs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
  * @param   pVmxTransient   The VMX-transient structure.
  * @param   pfIntrState     Where to store the VT-x guest-interruptibility state.
  */
-static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t *pfIntrState)
+static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t *pfIntrState)
 {
     Assert(pfIntrState);
     Assert(!TRPMHasTrap(pVCpu));
@@ -8729,7 +8729,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PVMXTRANSIENT pV
  *                          VINF_EM_DBG_STEPPED if the event was dispatched
  *                          directly.
  */
-static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient, uint32_t fIntrState, bool fStepping)
+static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, uint32_t fIntrState, bool fStepping)
 {
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
@@ -9037,7 +9037,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestState(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
     PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
     if (    pVCpu->CTX_SUFF(pVM)->hm.s.vmx.fUnrestrictedGuest
         || !CPUMIsGuestInRealModeEx(&pVCpu->cpum.GstCtx))
-        pVmcsInfo->RealMode. fRealOnV86Active = false;
+        pVmcsInfo->RealMode.fRealOnV86Active = false;
     else
     {
         Assert(!pVmxTransient->fIsNestedGuest);
@@ -9163,8 +9163,8 @@ static VBOXSTRICTRC hmR0VmxExportGuestStateOptimal(PVMCPUCC pVCpu, PVMXTRANSIENT
 #endif
 
     /*
-     * For many exits it's only RIP/RSP/RFLAGS that changes and hence try to export it first
-     * without going through a lot of change flag checks.
+     * For many VM-exits only RIP/RSP/RFLAGS (and HWVIRT state when executing a nested-guest)
+     * changes. First try to export only these without going through all other changed-flag checks.
      */
     VBOXSTRICTRC   rcStrict;
     uint64_t const fCtxMask     = HM_CHANGED_ALL_GUEST & ~HM_CHANGED_VMX_HOST_GUEST_SHARED_STATE;
