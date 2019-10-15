@@ -94,7 +94,6 @@
 # define HMVMX_ASSERT_READ(a_pVmxTransient, a_fReadFields) \
         do { \
             uint32_t const fVmcsFieldRead = ASMAtomicUoReadU32(&pVmxTransient->fVmcsFieldsRead); \
-            RT_UNTRUSTED_NONVOLATILE_COPY_FENCE(); \
             Assert((fVmcsFieldRead & (a_fReadFields)) == (a_fReadFields)); \
         } while (0)
 #else
