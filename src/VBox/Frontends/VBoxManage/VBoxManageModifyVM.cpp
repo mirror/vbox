@@ -2474,7 +2474,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             case MODIFYVM_CLIPBOARD_FILE_TRANSFERS:
             {
-                BOOL fEnabled;
+                BOOL fEnabled = false; /* Shut up MSC */
                 if (!RTStrICmp(ValueUnion.psz, "enabled"))
                     fEnabled = true;
                 else if (!RTStrICmp(ValueUnion.psz, "disabled"))
