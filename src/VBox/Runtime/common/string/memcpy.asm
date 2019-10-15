@@ -33,7 +33,7 @@ BEGINCODE
 ; @param    pvSrc   gcc: rsi  msc: rdx  x86:[esp+8]   wcall: edx
 ; @param    cb      gcc: rdx  msc: r8   x86:[esp+0ch] wcall: ebx
 %ifdef IN_RING0_DRV_ON_DARWIN
-.global NAME(memcpy):private_extern
+global NAME(memcpy):private_extern
 NAME(memcpy):
 %else
 RT_NOCRT_BEGINPROC memcpy
