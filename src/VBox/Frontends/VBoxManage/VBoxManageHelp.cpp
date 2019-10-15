@@ -696,10 +696,15 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            [--audioout on|off]\n"
                      "                            [--audiocontroller ac97|hda|sb16]\n"
                      "                            [--audiocodec stac9700|ad1980|stac9221|sb16]\n"
-                     "                            [--clipboard disabled|hosttoguest|guesttohost|\n"
-                     "                                         bidirectional]\n"
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+                     "                            [--clipboard-mode disabled|hosttoguest|guesttohost|\n"
+                     "                                              bidirectional]\n"
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                     "                            [--clipboard-file-transfers enabled|disabled]\n"
+# endif
+#endif
                      "                            [--draganddrop disabled|hosttoguest|guesttohost|\n"
-                     "                                         bidirectional]\n");
+                     "                                           bidirectional]\n");
         RTStrmPrintf(pStrm,
                      "                            [--vrde on|off]\n"
                      "                            [--vrdeextpack default|<name>]\n"
@@ -851,10 +856,15 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "                            usbdetach <uuid>|<address> |\n"
                      "                            audioin on|off |\n"
                      "                            audioout on|off |\n"
-                     "                            clipboard disabled|hosttoguest|guesttohost|\n"
-                     "                                      bidirectional |\n"
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+                     "                            clipboard mode disabled|hosttoguest|guesttohost|\n"
+                     "                                           bidirectional |\n"
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                     "                            clipboard filetransfers enabled|disabled |\n"
+# endif
+#endif
                      "                            draganddrop disabled|hosttoguest|guesttohost|\n"
-                     "                                      bidirectional |\n"
+                     "                                        bidirectional |\n"
                      "                            vrde on|off |\n"
                      "                            vrdeport <port> |\n"
                      "                            vrdeproperty <name=[value]> |\n"

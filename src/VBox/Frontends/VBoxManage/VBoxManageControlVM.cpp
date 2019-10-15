@@ -512,6 +512,7 @@ RTEXITCODE handleControlVM(HandlerArg *a)
                 break;
             }
         }
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
         else if (!strcmp(a->argv[1], "clipboard"))
         {
             if (a->argc <= 1 + 1)
@@ -522,26 +523,60 @@ RTEXITCODE handleControlVM(HandlerArg *a)
             }
 
             ClipboardMode_T mode = ClipboardMode_Disabled; /* Shut up MSC */
-            if (!strcmp(a->argv[2], "disabled"))
-                mode = ClipboardMode_Disabled;
-            else if (!strcmp(a->argv[2], "hosttoguest"))
-                mode = ClipboardMode_HostToGuest;
-            else if (!strcmp(a->argv[2], "guesttohost"))
-                mode = ClipboardMode_GuestToHost;
-            else if (!strcmp(a->argv[2], "bidirectional"))
-                mode = ClipboardMode_Bidirectional;
-            else
+            if (!strcmp(a->argv[2], "mode"))
             {
-                errorArgument("Invalid '%s' argument '%s'.", a->argv[1], a->argv[2]);
-                rc = E_FAIL;
-            }
-            if (SUCCEEDED(rc))
-            {
+                if (!strcmp(a->argv[3], "disabled"))
+                    mode = ClipboardMode_Disabled;
+                else if (!strcmp(a->argv[3], "hosttoguest"))
+                    mode = ClipboardMode_HostToGuest;
+                else if (!strcmp(a->argv[3], "guesttohost"))
+                    mode = ClipboardMode_GuestToHost;
+                else if (!strcmp(a->argv[3], "bidirectional"))
+                    mode = ClipboardMode_Bidirectional;
+                else
+                {
+                    errorArgument("Invalid '%s' argument '%s'.", a->argv[2], a->argv[3]);
+                    rc = E_FAIL;
+                    break;
+                }
+
                 CHECK_ERROR_BREAK(sessionMachine, COMSETTER(ClipboardMode)(mode));
                 if (SUCCEEDED(rc))
                     fNeedsSaving = true;
             }
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+            else if (!strcmp(a->argv[2], "filetransfers"))
+            {
+                if (a->argc <= 1 + 2)
+                {
+                    errorArgument("Missing argument to '%s'. Expected true / false.", a->argv[2]);
+                    rc = E_FAIL;
+                    break;
+                }
+
+                BOOL fEnabled;
+                if (!strcmp(a->argv[3], "enabled"))
+                {
+                    fEnabled = TRUE;
+                }
+                else if (!strcmp(a->argv[3], "disabled"))
+                {
+                    fEnabled = FALSE;
+                }
+                else
+                {
+                    errorArgument("Invalid '%s' argument '%s'.", a->argv[2], a->argv[3]);
+                    rc = E_FAIL;
+                    break;
+                }
+
+                CHECK_ERROR_BREAK(sessionMachine, COMSETTER(ClipboardFileTransfersEnabled)(fEnabled));
+                if (SUCCEEDED(rc))
+                    fNeedsSaving = true;
+            }
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
         }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD */
         else if (!strcmp(a->argv[1], "draganddrop"))
         {
             if (a->argc <= 1 + 1)

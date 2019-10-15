@@ -163,7 +163,12 @@ enum
     MODIFYVM_AUDIO,
     MODIFYVM_AUDIOIN,
     MODIFYVM_AUDIOOUT,
-    MODIFYVM_CLIPBOARD,
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+    MODIFYVM_CLIPBOARD_MODE,
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    MODIFYVM_CLIPBOARD_FILE_TRANSFERS,
+# endif
+#endif
     MODIFYVM_DRAGANDDROP,
     MODIFYVM_VRDPPORT,                /* VRDE: deprecated */
     MODIFYVM_VRDPADDRESS,             /* VRDE: deprecated */
@@ -353,7 +358,12 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
     { "--audioin",                  MODIFYVM_AUDIOIN,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--audioout",                 MODIFYVM_AUDIOOUT,                  RTGETOPT_REQ_BOOL_ONOFF },
-    { "--clipboard",                MODIFYVM_CLIPBOARD,                 RTGETOPT_REQ_STRING },
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+    { "--clipboard-mode",           MODIFYVM_CLIPBOARD_MODE,            RTGETOPT_REQ_STRING },
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    { "--clipboard-file-transfers", MODIFYVM_CLIPBOARD_FILE_TRANSFERS,  RTGETOPT_REQ_STRING },
+# endif
+#endif
     { "--draganddrop",              MODIFYVM_DRAGANDDROP,               RTGETOPT_REQ_STRING },
     { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },     /* deprecated */
     { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },     /* deprecated */
@@ -2437,7 +2447,8 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 break;
             }
 
-            case MODIFYVM_CLIPBOARD:
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+            case MODIFYVM_CLIPBOARD_MODE:
             {
                 ClipboardMode_T mode = ClipboardMode_Disabled; /* Shut up MSC */
                 if (!RTStrICmp(ValueUnion.psz, "disabled"))
@@ -2450,7 +2461,7 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                     mode = ClipboardMode_Bidirectional;
                 else
                 {
-                    errorArgument("Invalid --clipboard argument '%s'", ValueUnion.psz);
+                    errorArgument("Invalid --clipboard-mode argument '%s'", ValueUnion.psz);
                     rc = E_FAIL;
                 }
                 if (SUCCEEDED(rc))
@@ -2459,6 +2470,28 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 }
                 break;
             }
+
+# ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+            case MODIFYVM_CLIPBOARD_FILE_TRANSFERS:
+            {
+                BOOL fEnabled;
+                if (!RTStrICmp(ValueUnion.psz, "enabled"))
+                    fEnabled = true;
+                else if (!RTStrICmp(ValueUnion.psz, "disabled"))
+                    fEnabled = false;
+                else
+                {
+                    errorArgument("Invalid --clipboard-file-transfers argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                if (SUCCEEDED(rc))
+                {
+                    CHECK_ERROR(sessionMachine, COMSETTER(ClipboardFileTransfersEnabled)(fEnabled));
+                }
+                break;
+            }
+# endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD */
 
             case MODIFYVM_DRAGANDDROP:
             {
