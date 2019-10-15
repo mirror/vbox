@@ -157,7 +157,7 @@ static VMSVGA3DFORMATSUPPORT const  g_aFeatureReject[] =
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps);
+static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps, D3DADAPTER_IDENTIFIER9 const *pai9);
 
 
 #define D3D_RELEASE(ptr) do { \
@@ -218,10 +218,14 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     hr = pfnDirect3dCreate9Ex(D3D_SDK_VERSION, &pState->pD3D9);
     AssertReturn(hr == D3D_OK, VERR_INTERNAL_ERROR);
 #endif
-    hr = pState->pD3D9->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &pState->caps);
-    AssertReturn(hr == D3D_OK, VERR_INTERNAL_ERROR);
+    D3DADAPTER_IDENTIFIER9 ai9;
+    hr = pState->pD3D9->GetAdapterIdentifier(D3DADAPTER_DEFAULT, 0, &ai9);
+    AssertReturnStmt(hr == D3D_OK, D3D_RELEASE(pState->pD3D9), VERR_INTERNAL_ERROR);
 
-    vmsvgaDumpD3DCaps(&pState->caps);
+    hr = pState->pD3D9->GetDeviceCaps(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, &pState->caps);
+    AssertReturnStmt(hr == D3D_OK, D3D_RELEASE(pState->pD3D9), VERR_INTERNAL_ERROR);
+
+    vmsvgaDumpD3DCaps(&pState->caps, &ai9);
 
     /* Check if INTZ is supported. */
     hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
@@ -6214,9 +6218,14 @@ int vmsvga3dOcclusionQueryGetData(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pConte
     return VINF_SUCCESS;
 }
 
-static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps)
+static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps, D3DADAPTER_IDENTIFIER9 const *pai9)
 {
     bool const fBufferingSaved = RTLogRelSetBuffering(true /*fBuffered*/);
+
+    LogRel(("\nD3D9 adapter: %s %RX16:%RX16 [%s, version %d.%d.%d.%d]\n",
+            pai9->Description, pai9->VendorId, pai9->DeviceId, pai9->Driver,
+            RT_HI_U16(pai9->DriverVersion.HighPart), RT_LO_U16(pai9->DriverVersion.HighPart),
+            RT_HI_U16(pai9->DriverVersion.LowPart), RT_LO_U16(pai9->DriverVersion.LowPart)));
 
     LogRel(("\nD3D device caps: DevCaps2:\n"));
     if (pCaps->DevCaps2 & D3DDEVCAPS2_ADAPTIVETESSRTPATCH)
