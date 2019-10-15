@@ -105,36 +105,30 @@ void UIGuestProcessControlDialog::finalize()
 
 void UIGuestProcessControlDialog::loadSettings()
 {
-    const QRect desktopRect = gpDesktop->availableGeometry(this);
-    int iDefaultWidth = desktopRect.width() / 2;
-    int iDefaultHeight = desktopRect.height() * 3 / 4;
-
-    QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
+    /* Invent default window geometry: */
+    const QRect availableGeo = gpDesktop->availableGeometry(this);
+    const int iDefaultWidth = availableGeo.width() / 2;
+    const int iDefaultHeight = availableGeo.height() * 3 / 4;
+    QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
     if (centerWidget())
-        defaultGeometry.moveCenter(centerWidget()->geometry().center());
+        defaultGeo.moveCenter(centerWidget()->geometry().center());
+    else
+        defaultGeo.moveCenter(availableGeo.center());
 
     /* Load geometry from extradata: */
-    QRect geometry = gEDataManager->guestProcessControlDialogGeometry(this, defaultGeometry);
-
-    /* Restore geometry: */
+    QRect geo = gEDataManager->guestProcessControlDialogGeometry(this, defaultGeo);
     LogRel2(("GUI: UIGuestProcessControlDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
-             geometry.x(), geometry.y(), geometry.width(), geometry.height()));
-    setDialogGeometry(geometry);
+             geo.x(), geo.y(), geo.width(), geo.height()));
+    restoreGeometry(geo);
 }
 
 void UIGuestProcessControlDialog::saveSettings() const
 {
-    /* Save window geometry to extradata: */
-    const QRect saveGeometry = geometry();
-#ifdef VBOX_WS_MAC
-    /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
-    QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setGuestProcessControlDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
-#else /* !VBOX_WS_MAC */
-    gEDataManager->setGuestProcessControlDialogGeometry(saveGeometry, isMaximized());
-#endif /* !VBOX_WS_MAC */
-    LogRel2(("GUI: Guest Process Control Dialog: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
-             saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
+    /* Save geometry to extradata: */
+    const QRect geo = currentGeometry();
+    LogRel2(("GUI: UIGuestProcessControlDialog: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+    gEDataManager->setGuestProcessControlDialogGeometry(geo, isCurrentlyMaximized());
 }
 
 bool UIGuestProcessControlDialog::shouldBeMaximized() const
