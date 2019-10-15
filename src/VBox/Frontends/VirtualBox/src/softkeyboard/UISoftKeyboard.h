@@ -28,6 +28,7 @@
 #include "COMDefs.h"
 
 /* GUI includes: */
+#include "QIWithRestorableGeometry.h"
 #include "QIWithRetranslateUI.h"
 
 /* Forward declarations: */
@@ -44,7 +45,11 @@ class UISoftKeyboardWidget;
 class QSplitter;
 class QStackedWidget;
 
-class UISoftKeyboard : public QIWithRetranslateUI<QMainWindow>
+/* Type definitions: */
+typedef QIWithRestorableGeometry<QMainWindow> QMainWindowWithRestorableGeometry;
+typedef QIWithRetranslateUI<QMainWindowWithRestorableGeometry> QMainWindowWithRestorableGeometryAndRetranslateUi;
+
+class UISoftKeyboard : public QMainWindowWithRestorableGeometryAndRetranslateUi
 {
     Q_OBJECT;
 
@@ -57,6 +62,8 @@ public:
 protected:
 
     virtual void retranslateUi() /* override */;
+
+    virtual bool shouldBeMaximized() const /* override */;
 
 private slots:
 
@@ -97,7 +104,6 @@ private:
     void configure();
     void updateStatusBarMessage(const QString &strLayoutName);
     void updateLayoutSelectorList();
-    void setDialogGeometry(const QRect &geometry);
     CKeyboard& keyboard() const;
 
     UISession     *m_pSession;

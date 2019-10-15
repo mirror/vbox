@@ -3519,7 +3519,7 @@ void UISoftKeyboardSettingsWidget::sltColorCellClicked(int row, int column)
 
 UISoftKeyboard::UISoftKeyboard(QWidget *pParent,
                                UISession *pSession, QWidget *pCenterWidget, QString strMachineName /* = QString()*/)
-    :QIWithRetranslateUI<QMainWindow>(pParent)
+    : QMainWindowWithRestorableGeometryAndRetranslateUi(pParent)
     , m_pSession(pSession)
     , m_pCenterWidget(pCenterWidget)
     , m_pMainLayout(0)
@@ -3557,6 +3557,11 @@ UISoftKeyboard::~UISoftKeyboard()
 
 void UISoftKeyboard::retranslateUi()
 {
+}
+
+bool UISoftKeyboard::shouldBeMaximized() const
+{
+    return gEDataManager->softKeyboardDialogShouldBeMaximized();
 }
 
 void UISoftKeyboard::sltKeyboardLedsChange()
@@ -3826,17 +3831,13 @@ void UISoftKeyboard::prepareConnections()
 
 void UISoftKeyboard::saveSettings()
 {
-    /* Save window geometry to extradata: */
-    const QRect saveGeometry = geometry();
-#ifdef VBOX_WS_MAC
-    /* darwinIsWindowMaximized expects a non-const QWidget*. thus const_cast: */
-    QWidget *pw = const_cast<QWidget*>(qobject_cast<const QWidget*>(this));
-    gEDataManager->setSoftKeyboardDialogGeometry(saveGeometry, ::darwinIsWindowMaximized(pw));
-#else /* !VBOX_WS_MAC */
-    gEDataManager->setSoftKeyboardDialogGeometry(saveGeometry, isMaximized());
-#endif /* !VBOX_WS_MAC */
-    LogRel2(("GUI: Soft Keyboard: Geometry saved as: Origin=%dx%d, Size=%dx%d\n",
-             saveGeometry.x(), saveGeometry.y(), saveGeometry.width(), saveGeometry.height()));
+    /* Save geometry to extradata: */
+    const QRect geo = currentGeometry();
+    LogRel2(("GUI: UISoftKeyboard: Saving geometry as: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+    gEDataManager->setSoftKeyboardDialogGeometry(geo, isCurrentlyMaximized());
+
+    /* Save other settings: */
     if (m_pKeyboardWidget)
     {
         gEDataManager->setSoftKeyboardColorTheme(m_pKeyboardWidget->colorsToStringList());
@@ -3851,25 +3852,26 @@ void UISoftKeyboard::saveSettings()
 
 void UISoftKeyboard::loadSettings()
 {
+    /* Invent default window geometry: */
     float fKeyboardAspectRatio = 1.0f;
     if (m_pKeyboardWidget)
         fKeyboardAspectRatio = m_pKeyboardWidget->layoutAspectRatio();
-
-    const QRect desktopRect = gpDesktop->availableGeometry(this);
-    int iDefaultWidth = desktopRect.width() / 2;
-    int iDefaultHeight = iDefaultWidth * fKeyboardAspectRatio;
-    QRect defaultGeometry(0, 0, iDefaultWidth, iDefaultHeight);
-
-
+    const QRect availableGeo = gpDesktop->availableGeometry(this);
+    const int iDefaultWidth = availableGeo.width() / 2;
+    const int iDefaultHeight = iDefaultWidth * fKeyboardAspectRatio;
+    QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
     if (m_pCenterWidget)
-        defaultGeometry.moveCenter(m_pCenterWidget->geometry().center());
-    /* Load geometry from extradata: */
-    QRect geometry = gEDataManager->softKeyboardDialogGeometry(this, defaultGeometry);
+        defaultGeo.moveCenter(m_pCenterWidget->geometry().center());
+    else
+        defaultGeo.moveCenter(availableGeo.center());
 
-    /* Restore geometry: */
-    LogRel2(("GUI: Soft Keyboard: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
-             geometry.x(), geometry.y(), geometry.width(), geometry.height()));
-    setDialogGeometry(geometry);
+    /* Load geometry from extradata: */
+    const QRect geo = gEDataManager->softKeyboardDialogGeometry(this, defaultGeo);
+    LogRel2(("GUI: UISoftKeyboard: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
+             geo.x(), geo.y(), geo.width(), geo.height()));
+    restoreGeometry(geo);
+
+    /* Load other settings: */
     if (m_pKeyboardWidget)
     {
         m_pKeyboardWidget->colorsFromStringList(gEDataManager->softKeyboardColorTheme());
@@ -3933,22 +3935,6 @@ void UISoftKeyboard::updateLayoutSelectorList()
 CKeyboard& UISoftKeyboard::keyboard() const
 {
     return m_pSession->keyboard();
-}
-
-void UISoftKeyboard::setDialogGeometry(const QRect &geometry)
-{
-#ifdef VBOX_WS_MAC
-    /* Use the old approach for OSX: */
-    move(geometry.topLeft());
-    resize(geometry.size());
-#else /* VBOX_WS_MAC */
-    /* Use the new approach for Windows/X11: */
-    UICommon::setTopLevelGeometry(this, geometry);
-#endif /* !VBOX_WS_MAC */
-
-    /* Maximize (if necessary): */
-    if (gEDataManager->softKeyboardDialogShouldBeMaximized())
-        showMaximized();
 }
 
 #include "UISoftKeyboard.moc"
