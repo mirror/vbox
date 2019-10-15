@@ -17,7 +17,7 @@
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>
             <scancode>0x32</scancode>
-            <staticcaption></staticcaption>
+            <staticcaption>🏠</staticcaption>
         </key>
         <key><!-- WWW forward -->
             <position>302</position>
