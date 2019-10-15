@@ -310,6 +310,8 @@ public:
         SharedFolderList    mSharedFolders;
 
         ClipboardMode_T     mClipboardMode;
+        BOOL                mClipboardFileTransfersEnabled;
+
         DnDMode_T           mDnDMode;
 
         typedef std::map<Utf8Str, GuestProperty> GuestPropertyMap;
@@ -527,6 +529,7 @@ public:
     virtual HRESULT i_onSharedFolderChange() { return S_OK; }
     virtual HRESULT i_onVMProcessPriorityChange(VMProcPriority_T /* aPriority */) { return S_OK; }
     virtual HRESULT i_onClipboardModeChange(ClipboardMode_T /* aClipboardMode */) { return S_OK; }
+    virtual HRESULT i_onClipboardFileTransferModeChange(BOOL /* aEnable */) { return S_OK; }
     virtual HRESULT i_onDnDModeChange(DnDMode_T /* aDnDMode */) { return S_OK; }
     virtual HRESULT i_onBandwidthGroupChange(IBandwidthGroup * /* aBandwidthGroup */) { return S_OK; }
     virtual HRESULT i_onStorageDeviceChange(IMediumAttachment * /* mediumAttachment */, BOOL /* remove */,
@@ -928,6 +931,8 @@ private:
     HRESULT getSharedFolders(std::vector<ComPtr<ISharedFolder> > &aSharedFolders);
     HRESULT getClipboardMode(ClipboardMode_T *aClipboardMode);
     HRESULT setClipboardMode(ClipboardMode_T aClipboardMode);
+    HRESULT getClipboardFileTransfersEnabled(BOOL *aEnabled);
+    HRESULT setClipboardFileTransfersEnabled(BOOL aEnabled);
     HRESULT getDnDMode(DnDMode_T *aDnDMode);
     HRESULT setDnDMode(DnDMode_T aDnDMode);
     HRESULT getTeleporterEnabled(BOOL *aTeleporterEnabled);
@@ -1344,6 +1349,7 @@ public:
                                 IVirtualBoxErrorInfo *aError);
     HRESULT i_onSharedFolderChange();
     HRESULT i_onClipboardModeChange(ClipboardMode_T aClipboardMode);
+    HRESULT i_onClipboardFileTransferModeChange(BOOL aEnable);
     HRESULT i_onDnDModeChange(DnDMode_T aDnDMode);
     HRESULT i_onBandwidthGroupChange(IBandwidthGroup *aBandwidthGroup);
     HRESULT i_onStorageDeviceChange(IMediumAttachment *aMediumAttachment, BOOL aRemove, BOOL aSilent);

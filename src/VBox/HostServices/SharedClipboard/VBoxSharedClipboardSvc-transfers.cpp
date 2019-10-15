@@ -39,8 +39,10 @@
 /*********************************************************************************************************************************
 *   Externals                                                                                                                    *
 *********************************************************************************************************************************/
-extern SHCLEXTSTATE g_ExtState;
-extern PVBOXHGCMSVCHELPERS g_pHelpers;
+extern uint32_t             g_fTransferMode;
+extern SHCLEXTSTATE         g_ExtState;
+extern PVBOXHGCMSVCHELPERS  g_pHelpers;
+extern ClipboardClientMap   g_mapClients;
 extern ClipboardClientQueue g_listClientsDeferred;
 
 
@@ -2185,3 +2187,35 @@ int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
     return rc;
 }
 
+/**
+ * Sets the host service's (file) transfer mode.
+ *
+ * @returns VBox status code.
+ * @param   uMode               Transfer mode to set.
+ */
+int shclSvcTransferModeSet(uint32_t fMode)
+{
+    AssertReturn(!(fMode & ~VBOX_SHCL_TRANSFER_MODE_VALID_MASK), VERR_INVALID_FLAGS);
+
+    g_fTransferMode = fMode;
+
+    LogRel2(("Shared Clipboard: Transfer mode set to 0x%x\n", g_fTransferMode));
+
+    /* If file transfers are being disabled, make sure to also reset (destroy) all pending transfers. */
+    if (g_fTransferMode == VBOX_SHCL_TRANSFER_MODE_DISABLED)
+    {
+        ClipboardClientMap::const_iterator itClient = g_mapClients.begin();
+        while (itClient != g_mapClients.end())
+        {
+            PSHCLCLIENT pClient = itClient->second;
+            AssertPtr(pClient);
+
+            shclSvcClientTransfersReset(pClient);
+
+            ++itClient;
+        }
+    }
+
+    LogFlowFuncLeaveRC(VINF_SUCCESS);
+    return VINF_SUCCESS;
+}

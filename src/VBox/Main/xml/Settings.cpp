@@ -3233,6 +3233,7 @@ Hardware::Hardware() :
     strParavirtDebug(""),
     fEmulatedUSBCardReader(false),
     clipboardMode(ClipboardMode_Disabled),
+    fClipboardFileTransfersEnabled(false),
     dndMode(DnDMode_Disabled),
     ulMemoryBalloonSize(0),
     fPageFusionEnabled(false)
@@ -3326,68 +3327,69 @@ bool Hardware::areAllNetworkAdaptersDefaultSettings(SettingsVersion_T sv) const
 bool Hardware::operator==(const Hardware& h) const
 {
     return (this == &h)
-        || (   strVersion                == h.strVersion
-            && uuid                      == h.uuid
-            && fHardwareVirt             == h.fHardwareVirt
-            && fNestedPaging             == h.fNestedPaging
-            && fLargePages               == h.fLargePages
-            && fVPID                     == h.fVPID
-            && fUnrestrictedExecution    == h.fUnrestrictedExecution
-            && fHardwareVirtForce        == h.fHardwareVirtForce
-            && fUseNativeApi             == h.fUseNativeApi
-            && fPAE                      == h.fPAE
-            && enmLongMode               == h.enmLongMode
-            && fTripleFaultReset         == h.fTripleFaultReset
-            && fAPIC                     == h.fAPIC
-            && fX2APIC                   == h.fX2APIC
-            && fIBPBOnVMExit             == h.fIBPBOnVMExit
-            && fIBPBOnVMEntry            == h.fIBPBOnVMEntry
-            && fSpecCtrl                 == h.fSpecCtrl
-            && fSpecCtrlByHost           == h.fSpecCtrlByHost
-            && fL1DFlushOnSched          == h.fL1DFlushOnSched
-            && fL1DFlushOnVMEntry        == h.fL1DFlushOnVMEntry
-            && fMDSClearOnSched          == h.fMDSClearOnSched
-            && fMDSClearOnVMEntry        == h.fMDSClearOnVMEntry
-            && fNestedHWVirt             == h.fNestedHWVirt
-            && cCPUs                     == h.cCPUs
-            && fCpuHotPlug               == h.fCpuHotPlug
-            && ulCpuExecutionCap         == h.ulCpuExecutionCap
-            && uCpuIdPortabilityLevel    == h.uCpuIdPortabilityLevel
-            && strCpuProfile             == h.strCpuProfile
-            && fHPETEnabled              == h.fHPETEnabled
-            && llCpus                    == h.llCpus
-            && llCpuIdLeafs              == h.llCpuIdLeafs
-            && ulMemorySizeMB            == h.ulMemorySizeMB
-            && mapBootOrder              == h.mapBootOrder
-            && graphicsControllerType    == h.graphicsControllerType
-            && ulVRAMSizeMB              == h.ulVRAMSizeMB
-            && cMonitors                 == h.cMonitors
-            && fAccelerate3D             == h.fAccelerate3D
-            && fAccelerate2DVideo        == h.fAccelerate2DVideo
-            && firmwareType              == h.firmwareType
-            && pointingHIDType           == h.pointingHIDType
-            && keyboardHIDType           == h.keyboardHIDType
-            && chipsetType               == h.chipsetType
-            && paravirtProvider          == h.paravirtProvider
-            && strParavirtDebug          == h.strParavirtDebug
-            && fEmulatedUSBCardReader    == h.fEmulatedUSBCardReader
-            && vrdeSettings              == h.vrdeSettings
-            && biosSettings              == h.biosSettings
-            && usbSettings               == h.usbSettings
-            && llNetworkAdapters         == h.llNetworkAdapters
-            && llSerialPorts             == h.llSerialPorts
-            && llParallelPorts           == h.llParallelPorts
-            && audioAdapter              == h.audioAdapter
-            && storage                   == h.storage
-            && llSharedFolders           == h.llSharedFolders
-            && clipboardMode             == h.clipboardMode
-            && dndMode                   == h.dndMode
-            && ulMemoryBalloonSize       == h.ulMemoryBalloonSize
-            && fPageFusionEnabled        == h.fPageFusionEnabled
-            && llGuestProperties         == h.llGuestProperties
-            && ioSettings                == h.ioSettings
-            && pciAttachments            == h.pciAttachments
-            && strDefaultFrontend        == h.strDefaultFrontend);
+        || (   strVersion                     == h.strVersion
+            && uuid                           == h.uuid
+            && fHardwareVirt                  == h.fHardwareVirt
+            && fNestedPaging                  == h.fNestedPaging
+            && fLargePages                    == h.fLargePages
+            && fVPID                          == h.fVPID
+            && fUnrestrictedExecution         == h.fUnrestrictedExecution
+            && fHardwareVirtForce             == h.fHardwareVirtForce
+            && fUseNativeApi                  == h.fUseNativeApi
+            && fPAE                           == h.fPAE
+            && enmLongMode                    == h.enmLongMode
+            && fTripleFaultReset              == h.fTripleFaultReset
+            && fAPIC                          == h.fAPIC
+            && fX2APIC                        == h.fX2APIC
+            && fIBPBOnVMExit                  == h.fIBPBOnVMExit
+            && fIBPBOnVMEntry                 == h.fIBPBOnVMEntry
+            && fSpecCtrl                      == h.fSpecCtrl
+            && fSpecCtrlByHost                == h.fSpecCtrlByHost
+            && fL1DFlushOnSched               == h.fL1DFlushOnSched
+            && fL1DFlushOnVMEntry             == h.fL1DFlushOnVMEntry
+            && fMDSClearOnSched               == h.fMDSClearOnSched
+            && fMDSClearOnVMEntry             == h.fMDSClearOnVMEntry
+            && fNestedHWVirt                  == h.fNestedHWVirt
+            && cCPUs                          == h.cCPUs
+            && fCpuHotPlug                    == h.fCpuHotPlug
+            && ulCpuExecutionCap              == h.ulCpuExecutionCap
+            && uCpuIdPortabilityLevel         == h.uCpuIdPortabilityLevel
+            && strCpuProfile                  == h.strCpuProfile
+            && fHPETEnabled                   == h.fHPETEnabled
+            && llCpus                         == h.llCpus
+            && llCpuIdLeafs                   == h.llCpuIdLeafs
+            && ulMemorySizeMB                 == h.ulMemorySizeMB
+            && mapBootOrder                   == h.mapBootOrder
+            && graphicsControllerType         == h.graphicsControllerType
+            && ulVRAMSizeMB                   == h.ulVRAMSizeMB
+            && cMonitors                      == h.cMonitors
+            && fAccelerate3D                  == h.fAccelerate3D
+            && fAccelerate2DVideo             == h.fAccelerate2DVideo
+            && firmwareType                   == h.firmwareType
+            && pointingHIDType                == h.pointingHIDType
+            && keyboardHIDType                == h.keyboardHIDType
+            && chipsetType                    == h.chipsetType
+            && paravirtProvider               == h.paravirtProvider
+            && strParavirtDebug               == h.strParavirtDebug
+            && fEmulatedUSBCardReader         == h.fEmulatedUSBCardReader
+            && vrdeSettings                   == h.vrdeSettings
+            && biosSettings                   == h.biosSettings
+            && usbSettings                    == h.usbSettings
+            && llNetworkAdapters              == h.llNetworkAdapters
+            && llSerialPorts                  == h.llSerialPorts
+            && llParallelPorts                == h.llParallelPorts
+            && audioAdapter                   == h.audioAdapter
+            && storage                        == h.storage
+            && llSharedFolders                == h.llSharedFolders
+            && clipboardMode                  == h.clipboardMode
+            && fClipboardFileTransfersEnabled == h.fClipboardFileTransfersEnabled
+            && dndMode                        == h.dndMode
+            && ulMemoryBalloonSize            == h.ulMemoryBalloonSize
+            && fPageFusionEnabled             == h.fPageFusionEnabled
+            && llGuestProperties              == h.llGuestProperties
+            && ioSettings                     == h.ioSettings
+            && pciAttachments                 == h.pciAttachments
+            && strDefaultFrontend             == h.strDefaultFrontend);
 }
 
 /**
@@ -4887,6 +4889,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else
                     throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in Clipboard/@mode attribute"), strTemp.c_str());
             }
+
+            pelmHwChild->getAttributeValue("fileTransfersEnabled", hw.fClipboardFileTransfersEnabled);
         }
         else if (pelmHwChild->nameEquals("DragAndDrop"))
         {
@@ -6660,18 +6664,24 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         }
     }
 
-    if (hw.clipboardMode != ClipboardMode_Disabled)
+    xml::ElementNode *pelmClip = pelmHardware->createChild("Clipboard");
+    if (pelmClip)
     {
-        xml::ElementNode *pelmClip = pelmHardware->createChild("Clipboard");
-        const char *pcszClip;
-        switch (hw.clipboardMode)
+        if (hw.clipboardMode != ClipboardMode_Disabled)
         {
-            default: /*case ClipboardMode_Disabled:*/ pcszClip = "Disabled"; break;
-            case ClipboardMode_HostToGuest: pcszClip = "HostToGuest"; break;
-            case ClipboardMode_GuestToHost: pcszClip = "GuestToHost"; break;
-            case ClipboardMode_Bidirectional: pcszClip = "Bidirectional"; break;
+            const char *pcszClip;
+            switch (hw.clipboardMode)
+            {
+                default: /*case ClipboardMode_Disabled:*/ pcszClip = "Disabled"; break;
+                case ClipboardMode_HostToGuest: pcszClip = "HostToGuest"; break;
+                case ClipboardMode_GuestToHost: pcszClip = "GuestToHost"; break;
+                case ClipboardMode_Bidirectional: pcszClip = "Bidirectional"; break;
+            }
+            pelmClip->setAttribute("mode", pcszClip);
         }
-        pelmClip->setAttribute("mode", pcszClip);
+
+        if (hw.fClipboardFileTransfersEnabled)
+            pelmClip->setAttribute("fileTransfersEnabled", hw.fClipboardFileTransfersEnabled);
     }
 
     if (hw.dndMode != DnDMode_Disabled)

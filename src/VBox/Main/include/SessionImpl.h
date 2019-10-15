@@ -100,6 +100,7 @@ private:
                                   BOOL aSilent);
     HRESULT onVMProcessPriorityChange(VMProcPriority_T priority);
     HRESULT onClipboardModeChange(ClipboardMode_T aClipboardMode);
+    HRESULT onClipboardFileTransferModeChange(BOOL aEnabled);
     HRESULT onDnDModeChange(DnDMode_T aDndMode);
     HRESULT onCPUChange(ULONG aCpu,
                         BOOL aAdd);

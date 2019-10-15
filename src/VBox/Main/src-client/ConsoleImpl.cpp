@@ -5380,6 +5380,50 @@ HRESULT Console::i_onClipboardModeChange(ClipboardMode_T aClipboardMode)
 }
 
 /**
+ * Called by IInternalSessionControl::OnClipboardFileTransferModeChange().
+ *
+ * @note Locks this object for writing.
+ */
+HRESULT Console::i_onClipboardFileTransferModeChange(bool aEnabled)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    HRESULT rc = S_OK;
+
+    /* don't trigger the change if the VM isn't running */
+    SafeVMPtrQuiet ptrVM(this);
+    if (ptrVM.isOk())
+    {
+        if (   mMachineState == MachineState_Running
+            || mMachineState == MachineState_Teleporting
+            || mMachineState == MachineState_LiveSnapshotting)
+        {
+            int vrc = i_changeClipboardFileTransferMode(aEnabled);
+            if (RT_FAILURE(vrc))
+                rc = E_FAIL; /** @todo r=andy Set error info here? */
+        }
+        else
+            rc = i_setInvalidMachineStateError();
+        ptrVM.release();
+    }
+
+    /* notify console callbacks on success */
+    if (SUCCEEDED(rc))
+    {
+        alock.release();
+        fireClipboardFileTransferModeChangedEvent(mEventSource, aEnabled ? TRUE : FALSE);
+    }
+
+    LogFlowThisFunc(("Leaving rc=%#x\n", rc));
+    return rc;
+}
+
+/**
  * Called by IInternalSessionControl::OnDnDModeChange().
  *
  * @note Locks this object for writing.
@@ -9279,6 +9323,35 @@ int Console::i_changeClipboardMode(ClipboardMode_T aClipboardMode)
     return vrc;
 #else
     RT_NOREF(aClipboardMode);
+    return VERR_NOT_IMPLEMENTED;
+#endif
+}
+
+/**
+ * Changes the clipboard file transfer mode.
+ *
+ * @returns VBox status code.
+ * @param   aEnabled    Whether clipboard file transfers are enabled or not.
+ */
+int Console::i_changeClipboardFileTransferMode(bool aEnabled)
+{
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    VMMDev *pVMMDev = m_pVMMDev;
+    AssertPtrReturn(pVMMDev, VERR_INVALID_POINTER);
+
+    VBOXHGCMSVCPARM parm;
+    RT_ZERO(parm);
+
+    parm.type     = VBOX_HGCM_SVC_PARM_32BIT;
+    parm.u.uint32 = aEnabled ? VBOX_SHCL_TRANSFER_MODE_ENABLED : VBOX_SHCL_TRANSFER_MODE_DISABLED;
+
+    int vrc = pVMMDev->hgcmHostCall("VBoxSharedClipboard", VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1 /* cParms */, &parm);
+    if (RT_FAILURE(vrc))
+        LogRel(("Shared Clipboard: Error changing file transfer mode: %Rrc\n", vrc));
+
+    return vrc;
+#else
+    RT_NOREF(aEnabled);
     return VERR_NOT_IMPLEMENTED;
 #endif
 }

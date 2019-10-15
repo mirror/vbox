@@ -196,6 +196,7 @@ int shclSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms
 int shclSvcClientWakeup(PSHCLCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+int shclSvcTransferModeSet(uint32_t fMode);
 int shclSvcTransferStart(PSHCLCLIENT pClient, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer);
 int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 bool shclSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);

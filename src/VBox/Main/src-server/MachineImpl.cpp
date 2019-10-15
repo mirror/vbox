@@ -87,6 +87,10 @@
 # include <VBox/com/array.h>
 #endif
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD
+# include <VBox/HostServices/VBoxClipboardSvc.h>
+#endif
+
 #include "VBox/com/MultiResult.h"
 
 #include <algorithm>
@@ -213,7 +217,9 @@ Machine::HWData::HWData()
     for (size_t i = 3; i < RT_ELEMENTS(mBootOrder); ++i)
         mBootOrder[i] = DeviceType_Null;
 
-    mClipboardMode = ClipboardMode_Disabled;
+    mClipboardMode                 = ClipboardMode_Disabled;
+    mClipboardFileTransfersEnabled = FALSE;
+
     mDnDMode = DnDMode_Disabled;
 
     mFirmwareType = FirmwareType_BIOS;
@@ -2725,6 +2731,37 @@ HRESULT Machine::setClipboardMode(ClipboardMode_T aClipboardMode)
     i_setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mClipboardMode = aClipboardMode;
+
+    /** Save settings if online - @todo why is this required? -- @bugref{6818} */
+    if (Global::IsOnline(mData->mMachineState))
+        i_saveSettings(NULL);
+
+    return S_OK;
+}
+
+HRESULT Machine::getClipboardFileTransfersEnabled(BOOL *aEnabled)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aEnabled = mHWData->mClipboardFileTransfersEnabled;
+
+    return S_OK;
+}
+
+HRESULT Machine::setClipboardFileTransfersEnabled(BOOL aEnabled)
+{
+    HRESULT rc = S_OK;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    alock.release();
+    rc = i_onClipboardFileTransferModeChange(aEnabled);
+    alock.acquire();
+    if (FAILED(rc)) return rc;
+
+    i_setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mClipboardFileTransfersEnabled = aEnabled;
 
     /** Save settings if online - @todo why is this required? -- @bugref{6818} */
     if (Global::IsOnline(mData->mMachineState))
@@ -8980,7 +9017,8 @@ HRESULT Machine::i_loadHardware(const Guid *puuidRegistry,
         }
 
         // Clipboard
-        mHWData->mClipboardMode = data.clipboardMode;
+        mHWData->mClipboardMode                 = data.clipboardMode;
+        mHWData->mClipboardFileTransfersEnabled = data.fClipboardFileTransfersEnabled ? TRUE : FALSE;
 
         // drag'n'drop
         mHWData->mDnDMode = data.dndMode;
@@ -10283,7 +10321,8 @@ HRESULT Machine::i_saveHardware(settings::Hardware &data, settings::Debugging *p
         }
 
         // clipboard
-        data.clipboardMode = mHWData->mClipboardMode;
+        data.clipboardMode                  = mHWData->mClipboardMode;
+        data.fClipboardFileTransfersEnabled = RT_BOOL(mHWData->mClipboardFileTransfersEnabled);
 
         // drag'n'drop
         data.dndMode = mHWData->mDnDMode;
@@ -14260,6 +14299,30 @@ HRESULT SessionMachine::i_onClipboardModeChange(ClipboardMode_T aClipboardMode)
         return S_OK;
 
     return directControl->OnClipboardModeChange(aClipboardMode);
+}
+
+/**
+ * @note Locks this object for reading.
+ */
+HRESULT SessionMachine::i_onClipboardFileTransferModeChange(BOOL aEnable)
+{
+    LogFlowThisFunc(("\n"));
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    ComPtr<IInternalSessionControl> directControl;
+    {
+        AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+        if (mData->mSession.mLockType == LockType_VM)
+            directControl = mData->mSession.mDirectControl;
+    }
+
+    /* ignore notifications sent after #OnSessionEnd() is called */
+    if (!directControl)
+        return S_OK;
+
+    return directControl->OnClipboardFileTransferModeChange(aEnable);
 }
 
 /**

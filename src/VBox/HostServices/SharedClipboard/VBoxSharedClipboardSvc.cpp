@@ -234,7 +234,12 @@ static void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState);
 PVBOXHGCMSVCHELPERS g_pHelpers;
 
 static RTCRITSECT g_CritSect;
-static uint32_t g_uMode;
+/** Global Shared Clipboard mode. */
+static uint32_t g_uMode  = VBOX_SHCL_MODE_OFF;
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+/** Global Shared Clipboard (file) transfer mode. */
+uint32_t g_fTransferMode = VBOX_SHCL_TRANSFER_MODE_DISABLED;
+#endif
 
 /** Is the clipboard running in headless mode? */
 static bool g_fHeadless = false;
@@ -1536,7 +1541,12 @@ static DECLCALLBACK(void) svcCall(void *,
         default:
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = shclSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
+            if (g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED)
+            {
+                rc = shclSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
+            }
+            else
+                rc = VERR_ACCESS_DENIED;
 #else
             rc = VERR_NOT_IMPLEMENTED;
 #endif
@@ -1636,6 +1646,23 @@ static DECLCALLBACK(int) svcHostCall(void *,
             break;
         }
 
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        case VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE:
+        {
+            if (cParms != 1)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                uint32_t u32TransferMode;
+                rc = HGCMSvcGetU32(&paParms[0], &u32TransferMode);
+                if (RT_SUCCESS(rc))
+                    rc = shclSvcTransferModeSet(u32TransferMode);
+            }
+            break;
+        }
+#endif
         case VBOX_SHCL_HOST_FN_SET_HEADLESS:
         {
             if (cParms != 1)

@@ -1115,7 +1115,10 @@ struct Hardware
     // technically these two have no business in the hardware section, but for some
     // clever reason <Hardware> is where they are in the XML....
     SharedFoldersList   llSharedFolders;
+
     ClipboardMode_T     clipboardMode;
+    bool                fClipboardFileTransfersEnabled;
+
     DnDMode_T           dndMode;
 
     uint32_t            ulMemoryBalloonSize;

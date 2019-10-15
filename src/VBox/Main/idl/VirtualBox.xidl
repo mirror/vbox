@@ -5852,7 +5852,7 @@
 
   <interface
     name="IMachine" extends="$unknown"
-    uuid="13a7c7cb-02fd-4962-a578-5660a5035776"
+    uuid="0020076B-00D0-494E-0023-C293000086A7"
     wsmap="managed"
     wrap-hint-server-addinterfaces="IInternalMachineControl"
     wrap-hint-server="manualaddinterfaces"
@@ -6403,6 +6403,15 @@
       <desc>
         Synchronization mode between the host OS clipboard
         and the guest OS clipboard.
+      </desc>
+    </attribute>
+
+    <attribute name="clipboardFileTransfersEnabled" type="boolean">
+      <desc>
+        Sets or retrieves whether clipboard file transfers are allowed or not.
+
+        When set to @a true, clipboard file transfers between supported
+        host and guest OSes are allowed.
       </desc>
     </attribute>
 
@@ -21777,6 +21786,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
     </method>
 
+    <method name="onClipboardFileTransferModeChange">
+      <desc>
+        Notification when the shared clipboard file transfers mode changes.
+      </desc>
+      <param name="enabled" type="boolean" dir="in">
+        <desc>Flag whether clipboard file transfers are allowed or not.</desc>
+      </param>
+    </method>
+
     <method name="onDnDModeChange">
       <desc>
         Notification when the drag'n drop mode changes.
@@ -24081,9 +24099,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         See <link to="IGuestFileSizeChangedEvent">IGuestFileSizeChangedEvent</link>.
       </desc>
     </const>
+    <const name="OnClipboardFileTransferModeChanged" value="104">
+      <desc>
+        See <link to="IClipboardFileTransferModeChangedEvent">IClipboardFileTransferModeChangedEvent</link>.
+      </desc>
+    </const>
     <!-- End event marker -->
     <!-- @todo rename to 'End' as it is exclusive (we use 'last' to be inclusive). -->
-    <const name="Last" value="104">
+    <const name="Last" value="105">
       <desc>
         Must be last event, used for iterations and structures relying on numerical event values.
       </desc>
@@ -24902,6 +24925,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="clipboardMode" type="ClipboardMode" readonly="yes">
       <desc>
         The new clipboard mode.
+      </desc>
+    </attribute>
+  </interface>
+
+  <interface
+    name="IClipboardFileTransferModeChangedEvent" extends="IEvent"
+    uuid="00391758-00B1-4E9D-0000-11FA00F9D583"
+    wsmap="managed" autogen="VBoxEvent" id="OnClipboardFileTransferModeChanged"
+    >
+    <desc>
+      Notification when the shared clipboard file transfer mode changes.
+    </desc>
+    <attribute name="enabled" type="boolean" readonly="yes">
+      <desc>
+        Whether file transfers are allowed or not.
       </desc>
     </attribute>
   </interface>

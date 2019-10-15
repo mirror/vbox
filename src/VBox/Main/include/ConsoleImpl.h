@@ -189,6 +189,7 @@ public:
     HRESULT i_onCPUChange(ULONG aCPU, BOOL aRemove);
     HRESULT i_onCPUExecutionCapChange(ULONG aExecutionCap);
     HRESULT i_onClipboardModeChange(ClipboardMode_T aClipboardMode);
+    HRESULT i_onClipboardFileTransferModeChange(bool aEnabled);
     HRESULT i_onDnDModeChange(DnDMode_T aDnDMode);
     HRESULT i_onVRDEServerChange(BOOL aRestart);
     HRESULT i_onRecordingChange(BOOL fEnable);
@@ -772,6 +773,7 @@ private:
                                                           ISerialPort *pSerialPort);
 
     int i_changeClipboardMode(ClipboardMode_T aClipboardMode);
+    int i_changeClipboardFileTransferMode(bool aEnabled);
     int i_changeDnDMode(DnDMode_T aDnDMode);
 
 #ifdef VBOX_WITH_USB
