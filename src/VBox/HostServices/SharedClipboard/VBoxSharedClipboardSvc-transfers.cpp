@@ -2191,7 +2191,7 @@ int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
  * Sets the host service's (file) transfer mode.
  *
  * @returns VBox status code.
- * @param   uMode               Transfer mode to set.
+ * @param   fMode               Transfer mode to set.
  */
 int shclSvcTransferModeSet(uint32_t fMode)
 {
