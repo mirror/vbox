@@ -1817,13 +1817,22 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
         <listitem>
           <para>
-            <computeroutput>--clipboard
+            <computeroutput>--clipboard-mode
             disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
             Configues how the guest or host operating system's clipboard
             should be shared with the host or guest. See
             <xref linkend="generalsettings" />. This setting requires
             that the Guest Additions be installed in the virtual
             machine.
+          </para>
+        </listitem>
+
+        <listitem>
+          <para>
+            <computeroutput>--clipboard-file-transfers
+            enabled|disabled</computeroutput>:
+            Specifies if clipboard file transfers are allowed between host and
+            guest OSEs or not.
           </para>
         </listitem>
 
@@ -3519,12 +3528,21 @@ UUID="457af700-bc0a-4258-aa3c-13b03da171f2"
 
       <listitem>
         <para>
-          <computeroutput>clipboard
+          <computeroutput>clipboard mode
           disabled|hosttoguest|guesttohost|bidirectional</computeroutput>:
           Selects how the guest or host operating system's clipboard
           should be shared with the host or guest. See
           <xref linkend="generalsettings" />. This requires that the
           Guest Additions be installed in the virtual machine.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          <computeroutput>clipboard filetransfers
+          enabled|disabled</computeroutput>:
+          Specifies if clipboard file transfers are allowed between host and
+          guest OSEs or not.
         </para>
       </listitem>
 
