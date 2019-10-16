@@ -791,6 +791,9 @@ public:
     /** Moves attachment with certain @a uAttId from controller with certain @a uCtrOldId to one with another @a uCtrNewId. */
     void moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, const QUuid &uCtrNewId);
 
+    /** Returns device type of attachment with certain @a uAttId from controller with certain @a uCtrId. */
+    KDeviceType attachmentDeviceType(const QUuid &uCtrId, const QUuid &uAttId) const;
+
     /** Defines @a uMachineId for reference. */
     void setMachineId(const QUuid &uMachineId);
 
@@ -2613,6 +2616,30 @@ void StorageModel::moveAttachment(const QUuid &uAttId, const QUuid &uCtrOldId, c
     }
 }
 
+KDeviceType StorageModel::attachmentDeviceType(const QUuid &uCtrId, const QUuid &uAttId) const
+{
+    /* First of all we are looking for top-level (controller) item: */
+    AbstractItem *pTopLevelItem = m_pRootItem->childItemById(uCtrId);
+    if (pTopLevelItem)
+    {
+        /* Then we are looking for sub-level (attachment) item: */
+        AbstractItem *pSubLevelItem = pTopLevelItem->childItemById(uAttId);
+        if (pSubLevelItem)
+        {
+            /* And make sure this is really an attachment: */
+            AttachmentItem *pAttachmentItem = qobject_cast<AttachmentItem*>(pSubLevelItem);
+            if (pAttachmentItem)
+            {
+                /* This way we can acquire actual attachment device type: */
+                return pAttachmentItem->deviceType();
+            }
+        }
+    }
+
+    /* Null by default: */
+    return KDeviceType_Null;
+}
+
 void StorageModel::setMachineId(const QUuid &uMachineId)
 {
     m_pRootItem->setMachineId(uMachineId);
@@ -4338,8 +4365,9 @@ void UIMachineSettingsStorage::sltHandleDragMove(QDragMoveEvent *pEvent)
         || !pMimeData->hasFormat(UIMachineSettingsStorage::s_strAttachmentMimeType))
         return;
 
-    /* Get controller id: */
+    /* Get controller/attachment ids: */
     const QString strControllerId = pMimeData->data(UIMachineSettingsStorage::s_strControllerMimeType);
+    const QString strAttachmentId = pMimeData->data(UIMachineSettingsStorage::s_strAttachmentMimeType);
 
     /* Check what item we are hovering currently: */
     QModelIndex index = m_pTreeStorage->indexAt(pEvent->pos());
@@ -4347,6 +4375,10 @@ void UIMachineSettingsStorage::sltHandleDragMove(QDragMoveEvent *pEvent)
     /* And make sure this is controller item, we are supporting dropping for this kind only: */
     ControllerItem *pItemController = qobject_cast<ControllerItem*>(pItem);
     if (!pItemController || pItemController->id().toString() == strControllerId)
+        return;
+    /* Then make sure we support such attachment device type: */
+    const DeviceTypeList devicesList(m_pModelStorage->data(index, StorageModel::R_CtrDevices).value<DeviceTypeList>());
+    if (!devicesList.contains(m_pModelStorage->attachmentDeviceType(strControllerId, strAttachmentId)))
         return;
     /* Also make sure there is enough place for new attachment: */
     const bool fIsMoreAttachmentsPossible = m_pModelStorage->data(index, StorageModel::R_IsMoreAttachmentsPossible).toBool();
