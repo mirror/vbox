@@ -85,6 +85,8 @@ private slots:
     void sltKeyCaptionsEdited(UISoftKeyboardKey* pKey);
     void sltShowHideSidePanel();
     void sltShowHideSettingsWidget();
+    void sltHandleColorThemeListSelection(const QString &strColorThemeName);
+    void sltHandleKeyboardWidgetColorThemeChange();
     void sltCopyLayout();
     void sltSaveLayout();
     void sltDeleteLayout();
