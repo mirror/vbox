@@ -869,7 +869,6 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
     SHOW_UTF8_STRING("biosapic", "BIOS APIC mode:", pszAPIC);
 
     SHOW_LONG64_PROP(biosSettings,  TimeOffset,                 "biossystemtimeoffset", "Time offset:",  "ms");
-    SHOW_BOOLEAN_PROP(biosSettings, NonVolatileStorageEnabled,  "biosnvram",            "BIOS NVRAM:");
     Bstr bstrNVRAMFile;
     CHECK_ERROR2I_RET(biosSettings, COMGETTER(NonVolatileStorageFile)(bstrNVRAMFile.asOutParam()), hrcCheck);
     if (bstrNVRAMFile.isNotEmpty())

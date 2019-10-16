@@ -1749,6 +1749,10 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             Utf8Str deviceProps;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiDeviceProps", &deviceProps);
 
+            /* Get NVRAM file name */
+            Bstr bstrNVRAM;
+            hrc = biosSettings->COMGETTER(NonVolatileStorageFile)(bstrNVRAM.asOutParam());  H();
+
             /* Get graphics mode settings */
             uint32_t u32GraphicsMode = UINT32_MAX;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiGraphicsMode", &strTmp);
@@ -1812,6 +1816,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg,  "APIC",        uFwAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
             InsertConfigInteger(pCfg,  "64BitEntry",  f64BitEntry); /* boolean */
+            InsertConfigString(pCfg,   "NvramFile",   bstrNVRAM);
             if (u32GraphicsMode != UINT32_MAX)
                 InsertConfigInteger(pCfg,  "GraphicsMode",  u32GraphicsMode);
             if (!strResolution.isEmpty())
@@ -1830,21 +1835,6 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
 #ifdef DEBUG_vvl
             InsertConfigInteger(pCfg,  "PermanentSave", 1);
 #endif
-
-            BOOL fNVRAM = FALSE;
-            hrc = biosSettings->COMGETTER(NonVolatileStorageEnabled)(&fNVRAM);              H();
-            if (fNVRAM)
-            {
-                hrc = biosSettings->COMGETTER(NonVolatileStorageFile)(bstr.asOutParam());   H();
-
-                /*
-                 * NVRAM device subtree.
-                 */
-                InsertConfigNode(pDevices, "flash", &pDev);
-                InsertConfigNode(pDev,     "0", &pInst);
-                InsertConfigNode(pInst,    "Config", &pCfg);
-                InsertConfigString(pCfg,   "FlashFile", bstr);
-            }
         }
 
         /*

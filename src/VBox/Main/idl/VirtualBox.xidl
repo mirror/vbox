@@ -5196,7 +5196,7 @@
 
   <interface
     name="IBIOSSettings" extends="$unknown"
-    uuid="f13f667d-3624-4ac5-99c1-3d982ebd8d98"
+    uuid="73af4152-7e67-4144-bf34-41c38e8b4cc7"
     wsmap="managed"
     reservedMethods="1" reservedAttributes="8"
     >
@@ -5261,20 +5261,10 @@
       </desc>
     </attribute>
 
-    <attribute name="nonVolatileStorageEnabled" type="boolean">
-      <desc>
-        Controls the non-volatile memory device presence. If set, VirtualBox
-        will store the content in a file whose path can be queried with the
-        <link to="#nonVolatileStorageFile"/> attribute.
-      </desc>
-    </attribute>
-
     <attribute name="nonVolatileStorageFile" type="wstring" readonly="yes">
       <desc>
         The location of the file storing the non-volatile memory content when
         the VM is powered off.  The file does not always exist.
-
-        This feature will be realized after VirtualBox v4.3.0.
       </desc>
     </attribute>
 

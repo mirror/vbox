@@ -466,41 +466,6 @@ HRESULT BIOSSettings::setTimeOffset(LONG64 offset)
 }
 
 
-HRESULT BIOSSettings::getNonVolatileStorageEnabled(BOOL *enabled)
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *enabled = m->bd->fNVRAMEnabled;
-
-    return S_OK;
-}
-
-HRESULT BIOSSettings::setNonVolatileStorageEnabled(BOOL enable)
-{
-    /* the machine needs to be mutable */
-    AutoMutableStateDependency adep(m->pMachine);
-    if (FAILED(adep.rc())) return adep.rc();
-
-    AutoCaller autoMachineCaller(m->pMachine);
-    AssertComRCReturnRC(autoMachineCaller.rc());
-
-    {
-        AutoReadLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        m->bd.backup();
-        m->bd->fNVRAMEnabled = RT_BOOL(enable);
-        if (enable && m->bd->strNVRAMPath.isEmpty())
-            m->bd->strNVRAMPath = m->pMachine->i_getDefaultNVRAMFilename();
-    }
-
-    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
-    m->pMachine->i_setModified(Machine::IsModified_BIOS);
-
-    return S_OK;
-}
-
-
 HRESULT BIOSSettings::getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile)
 {
     Utf8Str strTmp;
@@ -509,6 +474,9 @@ HRESULT BIOSSettings::getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorag
         strTmp = m->bd->strNVRAMPath;
     }
 
+    AutoReadLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    if (strTmp.isEmpty())
+        strTmp = m->pMachine->i_getDefaultNVRAMFilename();
     if (strTmp.isNotEmpty())
         m->pMachine->i_calculateFullPath(strTmp, aNonVolatileStorageFile);
 
@@ -543,7 +511,11 @@ HRESULT BIOSSettings::i_loadSettings(const settings::BIOSSettings &data)
     m->bd.assignCopy(&data);
 
     Utf8Str strTmp(m->bd->strNVRAMPath);
-    m->pMachine->i_copyPathRelativeToMachine(strTmp, m->bd->strNVRAMPath);
+    if (strTmp.isNotEmpty())
+        m->pMachine->i_copyPathRelativeToMachine(strTmp, m->bd->strNVRAMPath);
+    if (   m->pMachine->i_getFirmwareType() == FirmwareType_BIOS
+        || m->bd->strNVRAMPath == m->pMachine->i_getDefaultNVRAMFilename())
+        m->bd->strNVRAMPath.setNull();
 
     return S_OK;
 }
@@ -633,6 +605,26 @@ void BIOSSettings::i_applyDefaults(GuestOSType *aOsType)
         m->bd->fIOAPICEnabled = aOsType->i_recommendedIOAPIC();
     else
         m->bd->fIOAPICEnabled = true;
+}
+
+void BIOSSettings::i_updateNonVolatileStorageFile(const Utf8Str &aNonVolatileStorageFile)
+{
+    /* sanity */
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid(autoCaller.rc());
+
+    AutoReadLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    Utf8Str strTmp(aNonVolatileStorageFile);
+    if (strTmp == m->pMachine->i_getDefaultNVRAMFilename())
+        strTmp.setNull();
+
+    if (strTmp == m->bd->strNVRAMPath)
+        return;
+
+    m->bd.backup();
+    m->bd->strNVRAMPath = strTmp;
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

@@ -497,6 +497,7 @@ public:
      */
     Utf8Str i_getOSTypeId() const { return mUserData->s.strOsType; }
     ChipsetType_T i_getChipsetType() const { return mHWData->mChipsetType; }
+    FirmwareType_T i_getFirmwareType() const { return mHWData->mFirmwareType; }
     ULONG i_getMonitorCount() const { return mHWData->mMonitorCount; }
     ParavirtProvider_T i_getParavirtProvider() const { return mHWData->mParavirtProvider; }
     Utf8Str i_getParavirtDebug() const { return mHWData->mParavirtDebug; }

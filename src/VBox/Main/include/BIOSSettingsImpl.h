@@ -57,6 +57,8 @@ public:
     void i_copyFrom(BIOSSettings *aThat);
     void i_applyDefaults(GuestOSType *aOsType);
 
+    void i_updateNonVolatileStorageFile(const com::Utf8Str &aNonVolatileStorageFile);
+
 private:
 
     // wrapped IBIOSettings properties
@@ -80,8 +82,6 @@ private:
     HRESULT setTimeOffset(LONG64 offset);
     HRESULT getPXEDebugEnabled(BOOL *enabled);
     HRESULT setPXEDebugEnabled(BOOL enable);
-    HRESULT getNonVolatileStorageEnabled(BOOL *enabled);
-    HRESULT setNonVolatileStorageEnabled(BOOL enable);
     HRESULT getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile);
 
     struct Data;

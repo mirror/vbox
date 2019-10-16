@@ -1144,6 +1144,10 @@ HRESULT Machine::setFirmwareType(FirmwareType_T aFirmwareType)
     i_setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mFirmwareType = aFirmwareType;
+    Utf8Str strNVRAM = i_getDefaultNVRAMFilename();
+    alock.release();
+
+    mBIOSSettings->i_updateNonVolatileStorageFile(strNVRAM);
 
     return S_OK;
 }
@@ -7352,7 +7356,7 @@ Utf8Str Machine::i_getHardeningLogFilename(void)
  * This intentionally works differently than the saved state file naming since
  * it is part of the current state. Taking a snapshot will use a similar naming
  * as for saved state, because these are actually read-only, retaining a
- * a specific state just like saved state.
+ * a specific state just like saved state. Note that this is a relative path.
  */
 
 Utf8Str Machine::i_getDefaultNVRAMFilename()
@@ -7361,11 +7365,14 @@ Utf8Str Machine::i_getDefaultNVRAMFilename()
     AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    Utf8Str strNVRAMFilePathAbs = mData->m_strConfigFileFull;
-    strNVRAMFilePathAbs.stripSuffix();
-    strNVRAMFilePathAbs += ".nvram";
-    Utf8Str strNVRAMFilePath;
-    i_copyPathRelativeToMachine(strNVRAMFilePathAbs, strNVRAMFilePath);
+
+    if (mHWData->mFirmwareType == FirmwareType_BIOS)
+        return Utf8Str::Empty;
+
+    Utf8Str strNVRAMFilePath = mData->m_strConfigFileFull;
+    strNVRAMFilePath.stripPath();
+    strNVRAMFilePath.stripSuffix();
+    strNVRAMFilePath += ".nvram";
 
     return strNVRAMFilePath;
 }
