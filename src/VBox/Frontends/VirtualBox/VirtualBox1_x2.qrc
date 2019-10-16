@@ -416,5 +416,10 @@
         <file alias="log_viewer_options_disabled_32px_x2.png">images/x2/log_viewer_options_disabled_32px_x2.png</file>
         <file alias="log_viewer_refresh_16px_x2.png">images/x2/log_viewer_refresh_16px_x2.png</file>
         <file alias="log_viewer_refresh_32px_x2.png">images/x2/log_viewer_refresh_32px_x2.png</file>
+        <file alias="log_viewer_refresh_disabled_16px_x2.png">images/x2/log_viewer_refresh_disabled_16px_x2.png</file>
+        <file alias="log_viewer_refresh_disabled_32px_x2.png">images/x2/log_viewer_refresh_disabled_32px_x2.png</file>
+        <file alias="log_viewer_reset_font_16px_x2.png">images/x2/log_viewer_reset_font_16px_x2.png</file>
+        <file alias="log_viewer_save_16px_x2.png">images/x2/log_viewer_save_16px_x2.png</file>
+        <file alias="log_viewer_save_32px_x2.png">images/x2/log_viewer_save_32px_x2.png</file>
     </qresource>
 </RCC>

@@ -655,7 +655,7 @@ QVariant UIVirtualHardwareItem::data(int iColumn, int iRole) const
                     case KVirtualSystemDescriptionType_HardDiskControllerIDE:  value = UIIconPool::iconSet(":/ide_16px.png"); break;
                     case KVirtualSystemDescriptionType_HardDiskControllerSATA: value = UIIconPool::iconSet(":/sata_16px.png"); break;
                     case KVirtualSystemDescriptionType_HardDiskControllerSCSI: value = UIIconPool::iconSet(":/scsi_16px.png"); break;
-                    case KVirtualSystemDescriptionType_HardDiskControllerSAS:  value = UIIconPool::iconSet(":/scsi_16px.png"); break;
+                    case KVirtualSystemDescriptionType_HardDiskControllerSAS:  value = UIIconPool::iconSet(":/sas_16px.png"); break;
                     case KVirtualSystemDescriptionType_HardDiskImage:          value = UIIconPool::iconSet(":/hd_16px.png"); break;
                     case KVirtualSystemDescriptionType_CDROM:                  value = UIIconPool::iconSet(":/cd_16px.png"); break;
                     case KVirtualSystemDescriptionType_Floppy:                 value = UIIconPool::iconSet(":/fd_16px.png"); break;

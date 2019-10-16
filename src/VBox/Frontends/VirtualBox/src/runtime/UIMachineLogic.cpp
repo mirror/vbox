@@ -2760,12 +2760,14 @@ void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
                 pStorageMenu = new QMenu(QString("%1 (%2)").arg(strControllerName).arg(gpConverter->toString(storageSlot)), pMenu);
                 switch (controller.GetBus())
                 {
-                    case KStorageBus_IDE:    pStorageMenu->setIcon(QIcon(":/ide_16px.png")); break;
-                    case KStorageBus_SATA:   pStorageMenu->setIcon(QIcon(":/sata_16px.png")); break;
-                    case KStorageBus_SCSI:   pStorageMenu->setIcon(QIcon(":/scsi_16px.png")); break;
-                    case KStorageBus_Floppy: pStorageMenu->setIcon(QIcon(":/floppy_16px.png")); break;
-                    case KStorageBus_SAS:    pStorageMenu->setIcon(QIcon(":/sata_16px.png")); break;
-                    case KStorageBus_USB:    pStorageMenu->setIcon(QIcon(":/usb_16px.png")); break;
+                    case KStorageBus_IDE:        pStorageMenu->setIcon(QIcon(":/ide_16px.png")); break;
+                    case KStorageBus_SATA:       pStorageMenu->setIcon(QIcon(":/sata_16px.png")); break;
+                    case KStorageBus_SCSI:       pStorageMenu->setIcon(QIcon(":/scsi_16px.png")); break;
+                    case KStorageBus_Floppy:     pStorageMenu->setIcon(QIcon(":/floppy_16px.png")); break;
+                    case KStorageBus_SAS:        pStorageMenu->setIcon(QIcon(":/sas_16px.png")); break;
+                    case KStorageBus_USB:        pStorageMenu->setIcon(QIcon(":/usb_16px.png")); break;
+                    case KStorageBus_PCIe:       pStorageMenu->setIcon(QIcon(":/ide_16px.png")); break;
+                    case KStorageBus_VirtioSCSI: pStorageMenu->setIcon(QIcon(":/virtio_scsi_16px.png")); break;
                     default: break;
                 }
                 pMenu->addMenu(pStorageMenu);

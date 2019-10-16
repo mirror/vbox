@@ -1,10 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="log_viewer_save_16px.png">images/log_viewer_save_16px.png</file>
-        <file alias="log_viewer_save_32px.png">images/log_viewer_save_32px.png</file>
-        <file alias="log_viewer_save_disabled_16px.png">images/log_viewer_save_disabled_16px.png</file>
-        <file alias="log_viewer_save_disabled_32px.png">images/log_viewer_save_disabled_32px.png</file>
-        <file alias="log_viewer_search_backward_16px.png">images/log_viewer_search_backward_16px.png</file>
         <file alias="log_viewer_search_forward_16px.png">images/log_viewer_search_forward_16px.png</file>
         <file alias="machine_16px.png">images/machine_16px.png</file>
         <file alias="machine_24px.png">images/machine_24px.png</file>
@@ -178,6 +173,11 @@
         <file alias="refresh_warning_16px.png">images/refresh_warning_16px.png</file>
         <file alias="reset_warnings_16px.png">images/reset_warnings_16px.png</file>
         <file alias="restore_16px.png">images/restore_16px.png</file>
+        <file alias="sas_16px.png">images/sas_16px.png</file>
+        <file alias="sas_add_16px.png">images/sas_add_16px.png</file>
+        <file alias="sas_add_disabled_16px.png">images/sas_add_disabled_16px.png</file>
+        <file alias="sas_collapse_16px.png">images/sas_collapse_16px.png</file>
+        <file alias="sas_expand_16px.png">images/sas_expand_16px.png</file>
         <file alias="sata_16px.png">images/sata_16px.png</file>
         <file alias="sata_add_16px.png">images/sata_add_16px.png</file>
         <file alias="sata_add_disabled_16px.png">images/sata_add_disabled_16px.png</file>
@@ -331,6 +331,11 @@
         <file alias="video_capture_on_16px.png">images/video_capture_on_16px.png</file>
         <file alias="video_capture_on_disabled_16px.png">images/video_capture_on_disabled_16px.png</file>
         <file alias="video_capture_settings_16px.png">images/video_capture_settings_16px.png</file>
+        <file alias="virtio_scsi_16px.png">images/virtio_scsi_16px.png</file>
+        <file alias="virtio_scsi_add_16px.png">images/virtio_scsi_add_16px.png</file>
+        <file alias="virtio_scsi_add_disabled_16px.png">images/virtio_scsi_add_disabled_16px.png</file>
+        <file alias="virtio_scsi_collapse_16px.png">images/virtio_scsi_collapse_16px.png</file>
+        <file alias="virtio_scsi_expand_16px.png">images/virtio_scsi_expand_16px.png</file>
         <file alias="virtual_screen_16px.png">images/virtual_screen_16px.png</file>
         <file alias="virtual_screen_disabled_16px.png">images/virtual_screen_disabled_16px.png</file>
         <file alias="vm_add_16px.png">images/vm_add_16px.png</file>

@@ -1,9 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="os_mandriva_64_x3.png">images/x3/os_mandriva_64_x3.png</file>
-        <file alias="os_mandriva_x3.png">images/x3/os_mandriva_x3.png</file>
-        <file alias="os_netbsd_64_x3.png">images/x3/os_netbsd_64_x3.png</file>
-        <file alias="os_netbsd_x3.png">images/x3/os_netbsd_x3.png</file>
         <file alias="os_netware_x3.png">images/x3/os_netware_x3.png</file>
         <file alias="os_openbsd_64_x3.png">images/x3/os_openbsd_64_x3.png</file>
         <file alias="os_openbsd_x3.png">images/x3/os_openbsd_x3.png</file>
@@ -101,6 +97,11 @@
         <file alias="refresh_warning_16px_x3.png">images/x3/refresh_warning_16px_x3.png</file>
         <file alias="reset_warnings_16px_x3.png">images/x3/reset_warnings_16px_x3.png</file>
         <file alias="restore_16px_x3.png">images/x3/restore_16px_x3.png</file>
+        <file alias="sas_16px_x3.png">images/x3/sas_16px_x3.png</file>
+        <file alias="sas_add_16px_x3.png">images/x3/sas_add_16px_x3.png</file>
+        <file alias="sas_add_disabled_16px_x3.png">images/x3/sas_add_disabled_16px_x3.png</file>
+        <file alias="sas_collapse_16px_x3.png">images/x3/sas_collapse_16px_x3.png</file>
+        <file alias="sas_expand_16px_x3.png">images/x3/sas_expand_16px_x3.png</file>
         <file alias="sata_16px_x3.png">images/x3/sata_16px_x3.png</file>
         <file alias="sata_add_16px_x3.png">images/x3/sata_add_16px_x3.png</file>
         <file alias="sata_add_disabled_16px_x3.png">images/x3/sata_add_disabled_16px_x3.png</file>
@@ -235,6 +236,11 @@
         <file alias="video_capture_on_16px_x3.png">images/x3/video_capture_on_16px_x3.png</file>
         <file alias="video_capture_on_disabled_16px_x3.png">images/x3/video_capture_on_disabled_16px_x3.png</file>
         <file alias="video_capture_settings_16px_x3.png">images/x3/video_capture_settings_16px_x3.png</file>
+        <file alias="virtio_scsi_16px_x3.png">images/x3/virtio_scsi_16px_x3.png</file>
+        <file alias="virtio_scsi_add_16px_x3.png">images/x3/virtio_scsi_add_16px_x3.png</file>
+        <file alias="virtio_scsi_add_disabled_16px_x3.png">images/x3/virtio_scsi_add_disabled_16px_x3.png</file>
+        <file alias="virtio_scsi_collapse_16px_x3.png">images/x3/virtio_scsi_collapse_16px_x3.png</file>
+        <file alias="virtio_scsi_expand_16px_x3.png">images/x3/virtio_scsi_expand_16px_x3.png</file>
         <file alias="virtual_screen_16px_x3.png">images/x3/virtual_screen_16px_x3.png</file>
         <file alias="virtual_screen_disabled_16px_x3.png">images/x3/virtual_screen_disabled_16px_x3.png</file>
         <file alias="vm_add_16px_x3.png">images/x3/vm_add_16px_x3.png</file>
