@@ -360,8 +360,15 @@ typedef struct virtio_scsi_ctrl_an
     // Device-writable part
     uint32_t  uEventActual;                                   /** event_actual                                       */
     uint8_t   uResponse;                                      /** response                                           */
-}  VIRTIOSCSI_CTRL_AN, *PVIRTIOSCSI_CTRL_AN_T;
+}  VIRTIOSCSI_CTRL_AN_T, *PVIRTIOSCSI_CTRL_AN_T;
 #pragma pack()
+
+typedef union virtio_scsi_ctrl_union
+{
+    VIRTIOSCSI_CTRL_T      scsiCtrl;
+    VIRTIOSCSI_CTRL_TMF_T  scsiCtrlTmf;
+    VIRTIOSCSI_CTRL_AN_T   scsiCtrlAsyncNotify;
+} VIRTIO_SCSI_CTRL_UNION_T, *PVIRTIO_SCSI_CTRL_UNION_T;
 
 /**
  * @name VirtIO 1.0 SCSI Host Device device specific tmf control response values
@@ -1252,12 +1259,13 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 {
     RT_NOREF2(pThis, qIdx);
 
-    uint8_t  uResponse = VIRTIOSCSI_S_OK;
+    uint8_t uResponse = VIRTIOSCSI_S_OK;
 
-    PVIRTIOSCSI_CTRL_T pScsiCtrl = (PVIRTIOSCSI_CTRL_T)RTMemAlloc(sizeof(PVIRTIOSCSI_CTRL_T));
+    PVIRTIO_SCSI_CTRL_UNION_T pScsiCtrlUnion =
+        (PVIRTIO_SCSI_CTRL_UNION_T)RTMemAlloc(sizeof(VIRTIO_SCSI_CTRL_UNION_T));
 
-    uint8_t *pb = (uint8_t *)pScsiCtrl;
-    for (size_t cb = RT_MIN(pDescChain->cbPhysSend, sizeof(PVIRTIOSCSI_CTRL_T)); cb; )
+    uint8_t *pb = (uint8_t *)pScsiCtrlUnion;
+    for (size_t cb = RT_MIN(pDescChain->cbPhysSend, sizeof(VIRTIO_SCSI_CTRL_UNION_T)); cb; )
     {
         size_t cbSeg = cb;
         RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(pDescChain->pSgPhysSend, &cbSeg);
@@ -1278,17 +1286,24 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
     RTSGBUF reqSegBuf;
 
-    switch(pScsiCtrl->uType)
+
+    switch(pScsiCtrlUnion->scsiCtrl.uType)
     {
         case VIRTIOSCSI_T_TMF: /* Task Management Functions */
         {
-            PVIRTIOSCSI_CTRL_TMF_T pScsiCtrlTmf = (PVIRTIOSCSI_CTRL_TMF_T)pScsiCtrl;
-            const char *pszTmfTypeText = virtioGetTMFTypeText(pScsiCtrlTmf->uSubtype);
-            LogFunc(("%s, VirtIO LUN: %.8Rhxs\n%*sTask Mgt Function: %s (not yet implemented)\n",
-                QUEUENAME(qIdx), pScsiCtrlTmf->uScsiLun,
-                CBQUEUENAME(qIdx) + 18, "", pszTmfTypeText));
-            RT_NOREF(pszTmfTypeText);
-            switch(pScsiCtrlTmf->uSubtype)
+            uint8_t  uTarget  = pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[1];
+            uint32_t uScsiLun = (pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[2] << 8
+                               | pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[3]) & 0x3fff;
+
+            if (LogIs3Enabled())
+            {
+                const char *pszTmfTypeText = virtioGetTMFTypeText(pScsiCtrlUnion->scsiCtrlTmf.uSubtype);
+                Log3Func(("[%s] (Target: %d LUN: %d)  Task Mgt Function: %s\n",
+                    uTarget, uScsiLun, pszTmfTypeText));
+                RT_NOREF(pszTmfTypeText);
+            }
+
+            switch(pScsiCtrlUnion->scsiCtrlTmf.uSubtype)
             {
                 case VIRTIOSCSI_T_TMF_ABORT_TASK:
                     uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
@@ -1326,7 +1341,11 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
         }
         case VIRTIOSCSI_T_AN_QUERY: /* Guest SCSI driver is querying supported async event notifications */
         {
-            PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnQuery = (PVIRTIOSCSI_CTRL_AN_T)pScsiCtrl;
+
+            PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnQuery = &pScsiCtrlUnion->scsiCtrlAsyncNotify;
+
+            uint8_t  uTarget  = pScsiCtrlAnQuery->uScsiLun[1];
+            uint32_t uScsiLun = (pScsiCtrlAnQuery->uScsiLun[2] << 8 | pScsiCtrlAnQuery->uScsiLun[3]) & 0x3fff;
 
             uSubscribedEvents &= pScsiCtrlAnQuery->uEventsRequested;
             uResponse = VIRTIOSCSI_S_FUNCTION_COMPLETE;
@@ -1334,10 +1353,12 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
             if (LogIs3Enabled())
             {
                 char szTypeText[128];
-                virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnQuery->uEventsRequested);
+                virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText),
+                    pScsiCtrlAnQuery->uEventsRequested);
+                Log3Func(("[%s] (Target: %d LUN: %d)  Asyc. Notification Queury: %s\n",
+                    uTarget, uScsiLun, szTypeText));
+                RT_NOREF(szTypeText);
 
-                LogFunc(("%s, VirtIO LUN: %.8Rhxs\n%*sAsync Query, types: %s\n",
-                    QUEUENAME(qIdx), pScsiCtrlAnQuery->uScsiLun, CBQUEUENAME(qIdx) + 30, "", szTypeText));
             }
 
             RTSGSEG aReqSegs[] = { { &uSubscribedEvents, sizeof(uSubscribedEvents) },  { &uResponse, sizeof(uResponse)  } };
@@ -1347,10 +1368,16 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
         }
         case VIRTIOSCSI_T_AN_SUBSCRIBE: /* Guest SCSI driver is subscribing to async event notification(s) */
         {
-            PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnSubscribe = (PVIRTIOSCSI_CTRL_AN_T)pScsiCtrl;
+
+            PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnSubscribe = &pScsiCtrlUnion->scsiCtrlAsyncNotify;
+
+            uint8_t  uTarget  = pScsiCtrlAnSubscribe->uScsiLun[1];
+            uint32_t uScsiLun = (pScsiCtrlAnSubscribe->uScsiLun[2] << 8
+                               | pScsiCtrlAnSubscribe->uScsiLun[3]) & 0x3fff;
 
             if (pScsiCtrlAnSubscribe->uEventsRequested & ~SUBSCRIBABLE_EVENTS)
-                LogFunc(("Unsupported bits in event subscription event mask: 0x%x\n", pScsiCtrlAnSubscribe->uEventsRequested));
+                LogFunc(("Unsupported bits in event subscription event mask: 0x%x\n",
+                    pScsiCtrlAnSubscribe->uEventsRequested));
 
             uSubscribedEvents &= pScsiCtrlAnSubscribe->uEventsRequested;
             pThis->uAsyncEvtsEnabled = uSubscribedEvents;
@@ -1359,9 +1386,10 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
             {
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnSubscribe->uEventsRequested);
+                Log3Func(("[%s] (Target: %d LUN: %d)  Asyc. Notification Subscribe: %s\n",
+                    uTarget, uScsiLun, szTypeText));
+                RT_NOREF(szTypeText);
 
-                LogFunc(("%s, VirtIO LUN: %.8Rhxs\n%*sAsync Subscribe, types: %s\n",
-                    QUEUENAME(qIdx), pScsiCtrlAnSubscribe->uScsiLun, CBQUEUENAME(qIdx) + 30, "", szTypeText));
             }
 
             /*
@@ -1379,7 +1407,8 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
             break;
         }
         default:
-            LogFunc(("Unknown control type extracted from %s: %d\n", QUEUENAME(qIdx), pScsiCtrl->uType));
+            LogFunc(("Unknown control type extracted from %s: %d\n",
+                QUEUENAME(qIdx),  &pScsiCtrlUnion->scsiCtrl.uType));
 
             uResponse = VIRTIOSCSI_S_FAILURE;
 
