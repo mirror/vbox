@@ -761,7 +761,7 @@ void ShClTransferObjOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms)
  * @param   pTransfer           Clipboard transfer to get object handle info from.
  * @param   hObj                Object handle of the object to get handle info for.
  */
-inline PSHCLOBJHANDLEINFO shClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
+DECINLINE(PSHCLOBJHANDLEINFO) shClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
 {
     PSHCLOBJHANDLEINFO pIt;
     RTListForEach(&pTransfer->lstObj, pIt, SHCLOBJHANDLEINFO, Node) /** @todo Slooow ...but works for now. */
@@ -1342,7 +1342,7 @@ int ShClTransferClose(PSHCLTRANSFER pTransfer)
  * @param   pTransfer           Clipboard transfer to get list handle info from.
  * @param   hList               List handle of the list to get handle info for.
  */
-inline PSHCLLISTHANDLEINFO shClTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
+DECINLINE(PSHCLLISTHANDLEINFO) shClTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 {
     PSHCLLISTHANDLEINFO pIt;
     RTListForEach(&pTransfer->lstList, pIt, SHCLLISTHANDLEINFO, Node) /** @todo Sloooow ... improve this. */
@@ -1360,7 +1360,7 @@ inline PSHCLLISTHANDLEINFO shClTransferListGetByHandle(PSHCLTRANSFER pTransfer, 
  * @returns New List handle on success, or SHCLLISTHANDLE_INVALID on error.
  * @param   pTransfer           Clipboard transfer to create new list handle for.
  */
-inline SHCLLISTHANDLE shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
+DECINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
 {
     return pTransfer->uListHandleNext++; /** @todo Good enough for now. Improve this later. */
 }
@@ -2104,7 +2104,7 @@ uint32_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer)
  * @param   pTransfer           Clipboard transfer to get root list entry from.
  * @param   uIdx                Index of root list entry to return.
  */
-inline PSHCLLISTROOT shClTransferRootsGetInternal(PSHCLTRANSFER pTransfer, uint32_t uIdx)
+DECLINLINE(PSHCLLISTROOT) shClTransferRootsGetInternal(PSHCLTRANSFER pTransfer, uint32_t uIdx)
 {
     if (uIdx >= pTransfer->cRoots)
         return NULL;
