@@ -35,7 +35,58 @@ technical terms if no non-technical ones are clear enough.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
+    <title>Version 6.1.0_BETA2 (2019-10-xx)</title>
 
+    <para>
+      This is a major update. The following major new features were
+      added:
+    </para>
+
+    <itemizedlist>
+
+      <listitem>
+        <para>
+          GUI: General rework directed to fix issues in various dialogs geometry save/restore.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Storage and Network settings pages bug-fixes and usability optimization.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Media enumeration fixes.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Popup messages mouse click fix.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Details pane fixes.
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+        </para>
+      </listitem>
+    </itemizedlist>
+  </sect1>
+
+  <sect1>
     <title>Version 6.1.0_BETA1 (2019-09-12)</title>
 
     <para>
