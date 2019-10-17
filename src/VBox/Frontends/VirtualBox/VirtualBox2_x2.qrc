@@ -1,8 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="log_viewer_save_disabled_16px_x2.png">images/x2/log_viewer_save_disabled_16px_x2.png</file>
-        <file alias="log_viewer_save_disabled_32px_x2.png">images/x2/log_viewer_save_disabled_32px_x2.png</file>
-        <file alias="log_viewer_search_backward_16px_x2.png">images/x2/log_viewer_search_backward_16px_x2.png</file>
         <file alias="log_viewer_search_forward_16px_x2.png">images/x2/log_viewer_search_forward_16px_x2.png</file>
         <file alias="machine_16px_x2.png">images/x2/machine_16px_x2.png</file>
         <file alias="machine_24px_x2.png">images/x2/machine_24px_x2.png</file>
@@ -128,6 +125,11 @@
         <file alias="os_winxp_x2.png">images/x2/os_winxp_x2.png</file>
         <file alias="os_xandros_64_x2.png">images/x2/os_xandros_64_x2.png</file>
         <file alias="os_xandros_x2.png">images/x2/os_xandros_x2.png</file>
+        <file alias="pcie_16px_x2.png">images/x2/pcie_16px_x2.png</file>
+        <file alias="pcie_add_16px_x2.png">images/x2/pcie_add_16px_x2.png</file>
+        <file alias="pcie_add_disabled_16px_x2.png">images/x2/pcie_add_disabled_16px_x2.png</file>
+        <file alias="pcie_collapse_16px_x2.png">images/x2/pcie_collapse_16px_x2.png</file>
+        <file alias="pcie_expand_16px_x2.png">images/x2/pcie_expand_16px_x2.png</file>
         <file alias="pin_16px_x2.png">images/x2/pin_16px_x2.png</file>
         <file alias="preview_empty_16to10_242x167px_x2.png">images/x2/preview_empty_16to10_242x167px_x2.png</file>
         <file alias="preview_empty_16to9_242x155px_x2.png">images/x2/preview_empty_16to9_242x155px_x2.png</file>

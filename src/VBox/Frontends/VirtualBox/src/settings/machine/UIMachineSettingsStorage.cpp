@@ -1044,9 +1044,9 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     m_names.insert(USBControllerNormal,          ":/usb_16px.png");
     m_names.insert(USBControllerExpand,          ":/usb_expand_16px.png");
     m_names.insert(USBControllerCollapse,        ":/usb_collapse_16px.png");
-    m_names.insert(NVMeControllerNormal,         ":/ide_16px.png");
-    m_names.insert(NVMeControllerExpand,         ":/ide_expand_16px.png");
-    m_names.insert(NVMeControllerCollapse,       ":/ide_collapse_16px.png");
+    m_names.insert(NVMeControllerNormal,         ":/pcie_16px.png");
+    m_names.insert(NVMeControllerExpand,         ":/pcie_expand_16px.png");
+    m_names.insert(NVMeControllerCollapse,       ":/pcie_collapse_16px.png");
     m_names.insert(VirtioSCSIControllerNormal,   ":/virtio_scsi_16px.png");
     m_names.insert(VirtioSCSIControllerExpand,   ":/virtio_scsi_expand_16px.png");
     m_names.insert(VirtioSCSIControllerCollapse, ":/virtio_scsi_collapse_16px.png");
@@ -1064,8 +1064,8 @@ UIIconPoolStorageSettings::UIIconPoolStorageSettings()
     m_names.insert(SASControllerAddDis,          ":/sas_add_disabled_16px.png");
     m_names.insert(USBControllerAddEn,           ":/usb_add_16px.png");
     m_names.insert(USBControllerAddDis,          ":/usb_add_disabled_16px.png");
-    m_names.insert(NVMeControllerAddEn,          ":/ide_add_16px.png");
-    m_names.insert(NVMeControllerAddDis,         ":/ide_add_disabled_16px.png");
+    m_names.insert(NVMeControllerAddEn,          ":/pcie_add_16px.png");
+    m_names.insert(NVMeControllerAddDis,         ":/pcie_add_disabled_16px.png");
     m_names.insert(VirtioSCSIControllerAddEn,    ":/virtio_scsi_add_16px.png");
     m_names.insert(VirtioSCSIControllerAddDis,   ":/virtio_scsi_add_disabled_16px.png");
     m_names.insert(FloppyControllerAddEn,        ":/floppy_add_16px.png");

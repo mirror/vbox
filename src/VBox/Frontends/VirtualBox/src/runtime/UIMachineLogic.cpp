@@ -2766,7 +2766,7 @@ void UIMachineLogic::updateMenuDevicesStorage(QMenu *pMenu)
                     case KStorageBus_Floppy:     pStorageMenu->setIcon(QIcon(":/floppy_16px.png")); break;
                     case KStorageBus_SAS:        pStorageMenu->setIcon(QIcon(":/sas_16px.png")); break;
                     case KStorageBus_USB:        pStorageMenu->setIcon(QIcon(":/usb_16px.png")); break;
-                    case KStorageBus_PCIe:       pStorageMenu->setIcon(QIcon(":/ide_16px.png")); break;
+                    case KStorageBus_PCIe:       pStorageMenu->setIcon(QIcon(":/pcie_16px.png")); break;
                     case KStorageBus_VirtioSCSI: pStorageMenu->setIcon(QIcon(":/virtio_scsi_16px.png")); break;
                     default: break;
                 }

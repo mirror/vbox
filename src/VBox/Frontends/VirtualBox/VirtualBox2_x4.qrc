@@ -1,7 +1,5 @@
 <RCC>
     <qresource suffix="/">
-        <file alias="os_netware_x4.png">images/x4/os_netware_x4.png</file>
-        <file alias="os_openbsd_64_x4.png">images/x4/os_openbsd_64_x4.png</file>
         <file alias="os_openbsd_x4.png">images/x4/os_openbsd_x4.png</file>
         <file alias="os_opensuse_64_x4.png">images/x4/os_opensuse_64_x4.png</file>
         <file alias="os_opensuse_x4.png">images/x4/os_opensuse_x4.png</file>
@@ -54,6 +52,11 @@
         <file alias="os_winxp_x4.png">images/x4/os_winxp_x4.png</file>
         <file alias="os_xandros_64_x4.png">images/x4/os_xandros_64_x4.png</file>
         <file alias="os_xandros_x4.png">images/x4/os_xandros_x4.png</file>
+        <file alias="pcie_16px_x4.png">images/x4/pcie_16px_x4.png</file>
+        <file alias="pcie_add_16px_x4.png">images/x4/pcie_add_16px_x4.png</file>
+        <file alias="pcie_add_disabled_16px_x4.png">images/x4/pcie_add_disabled_16px_x4.png</file>
+        <file alias="pcie_collapse_16px_x4.png">images/x4/pcie_collapse_16px_x4.png</file>
+        <file alias="pcie_expand_16px_x4.png">images/x4/pcie_expand_16px_x4.png</file>
         <file alias="pin_16px_x4.png">images/x4/pin_16px_x4.png</file>
         <file alias="preview_empty_16to10_242x167px_x4.png">images/x4/preview_empty_16to10_242x167px_x4.png</file>
         <file alias="preview_empty_16to9_242x155px_x4.png">images/x4/preview_empty_16to9_242x155px_x4.png</file>
