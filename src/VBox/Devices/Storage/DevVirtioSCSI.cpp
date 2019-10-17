@@ -1291,18 +1291,17 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
     {
         case VIRTIOSCSI_T_TMF: /* Task Management Functions */
         {
-            uint8_t  uTarget  = pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[1];
-            uint32_t uScsiLun = (pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[2] << 8
-                               | pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[3]) & 0x3fff;
 
             if (LogIs2Enabled())
             {
+                uint8_t  uTarget  = pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[1];
+                uint32_t uScsiLun = (pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[2] << 8
+                                   | pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[3]) & 0x3fff;
                 const char *pszTmfTypeText = virtioGetTMFTypeText(pScsiCtrlUnion->scsiCtrlTmf.uSubtype);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Task Mgt Function: %s\n",
                     uTarget, uScsiLun, pszTmfTypeText));
-                RT_NOREF(pszTmfTypeText);
+                RT_NOREF3(pszTmfTypeText, uTarget, uScsiLun);
             }
-            RT_NOREF2(uTarget, uScsiLun);
 
             switch(pScsiCtrlUnion->scsiCtrlTmf.uSubtype)
             {
@@ -1345,23 +1344,22 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
             PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnQuery = &pScsiCtrlUnion->scsiCtrlAsyncNotify;
 
-            uint8_t  uTarget  = pScsiCtrlAnQuery->uScsiLun[1];
-            uint32_t uScsiLun = (pScsiCtrlAnQuery->uScsiLun[2] << 8 | pScsiCtrlAnQuery->uScsiLun[3]) & 0x3fff;
 
             uSubscribedEvents &= pScsiCtrlAnQuery->uEventsRequested;
             uResponse = VIRTIOSCSI_S_FUNCTION_COMPLETE;
 
             if (LogIs3Enabled())
             {
+                uint8_t  uTarget  = pScsiCtrlAnQuery->uScsiLun[1];
+                uint32_t uScsiLun = (pScsiCtrlAnQuery->uScsiLun[2] << 8 | pScsiCtrlAnQuery->uScsiLun[3]) & 0x3fff;
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText),
                     pScsiCtrlAnQuery->uEventsRequested);
                 Log3Func(("[%s] (Target: %d LUN: %d)  Asyc. Notification Queury: %s\n",
                     uTarget, uScsiLun, szTypeText));
-                RT_NOREF(szTypeText);
+                RT_NOREF3(szTypeText, uTarget, uScsiLun);
 
             }
-            RT_NOREF2(uTarget, uScsiLun);
             RTSGSEG aReqSegs[] = { { &uSubscribedEvents, sizeof(uSubscribedEvents) },  { &uResponse, sizeof(uResponse)  } };
             RTSgBufInit(&reqSegBuf, aReqSegs, sizeof(aReqSegs) / sizeof(RTSGSEG));
 
@@ -1372,10 +1370,6 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
             PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnSubscribe = &pScsiCtrlUnion->scsiCtrlAsyncNotify;
 
-            uint8_t  uTarget  = pScsiCtrlAnSubscribe->uScsiLun[1];
-            uint32_t uScsiLun = (pScsiCtrlAnSubscribe->uScsiLun[2] << 8
-                               | pScsiCtrlAnSubscribe->uScsiLun[3]) & 0x3fff;
-
             if (pScsiCtrlAnSubscribe->uEventsRequested & ~SUBSCRIBABLE_EVENTS)
                 LogFunc(("Unsupported bits in event subscription event mask: 0x%x\n",
                     pScsiCtrlAnSubscribe->uEventsRequested));
@@ -1385,14 +1379,16 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
             if (LogIs2Enabled())
             {
+                uint8_t  uTarget  = pScsiCtrlAnSubscribe->uScsiLun[1];
+                uint32_t uScsiLun = (pScsiCtrlAnSubscribe->uScsiLun[2] << 8
+                                   | pScsiCtrlAnSubscribe->uScsiLun[3]) & 0x3fff;
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnSubscribe->uEventsRequested);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Async. Notification Subscribe: %s\n",
                     uTarget, uScsiLun, szTypeText));
-                RT_NOREF(szTypeText);
+                RT_NOREF3(szTypeText, uTarget, uScsiLun);
 
             }
-            RT_NOREF2(uTarget, uScsiLun);
 
             /*
              * TBD: Verify correct status code if request mask is only partially fulfillable
