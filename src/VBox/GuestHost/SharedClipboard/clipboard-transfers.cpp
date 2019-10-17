@@ -813,7 +813,7 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
                                                            SHCLOBJHANDLE_INVALID, &fOpen);
                 if (RT_SUCCESS(rc))
                 {
-                    pInfo->pszPathLocalAbs = RTStrAPrintf2("%s/%s", pTransfer->pszPathRootAbs, pOpenCreateParms->pszPath);
+                    pInfo->pszPathLocalAbs = RTPathJoinA(pTransfer->pszPathRootAbs, pOpenCreateParms->pszPath);
                     if (pInfo->pszPathLocalAbs)
                     {
                         rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
