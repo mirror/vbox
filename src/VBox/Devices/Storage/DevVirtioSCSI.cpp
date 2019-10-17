@@ -998,14 +998,17 @@ static DECLCALLBACK(int) virtioScsiIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
                                                       void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf, size_t cbCopy)
 {
     RT_NOREF(hIoReq, cbCopy);
-    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
-    PVIRTIOSCSI pThis = pTarget->pVirtioScsi;
-    PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
 
-    AssertReturn(pReq->pDescChain, VERR_INVALID_PARAMETER);
+    PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
 
     if (!pReq->cbDataIn)
         return VINF_SUCCESS;
+
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+    PVIRTIOSCSI pThis = pTarget->pVirtioScsi;
+
+    AssertReturn(pReq->pDescChain, VERR_INVALID_PARAMETER);
+
 
     PRTSGBUF pSgPhysReturn = pReq->pDescChain->pSgPhysReturn;
     RTSgBufAdvance(pSgPhysReturn, offDst);
@@ -1014,10 +1017,7 @@ static DECLCALLBACK(int) virtioScsiIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
     size_t cbRemain = pReq->cbDataIn;
 
     if (!pSgPhysReturn->idxSeg && pSgPhysReturn->cbSegLeft == pSgPhysReturn->paSegs[0].cbSeg)
-    {
-        Log(("Do advance\n"));
         RTSgBufAdvance(pSgPhysReturn, pReq->uDataInOff);
-    }
 
     while (cbRemain)
     {
@@ -1050,12 +1050,14 @@ static DECLCALLBACK(int) virtioScsiIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, P
 {
 
     RT_NOREF(hIoReq, cbCopy);
-    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
-    PVIRTIOSCSI pThis = pTarget->pVirtioScsi;
+
     PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
 
     if (!pReq->cbDataOut)
         return VINF_SUCCESS;
+
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+    PVIRTIOSCSI pThis = pTarget->pVirtioScsi;
 
     PRTSGBUF pSgPhysSend = pReq->pDescChain->pSgPhysSend;
     RTSgBufAdvance(pSgPhysSend, offSrc);
@@ -1090,7 +1092,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
 
     /* Extract command header and CDB from guest physical memory */
 
-    uint16_t cbReqHdr = sizeof(struct REQ_CMD_HDR) + pThis->virtioScsiConfig.uCdbSize;
+    size_t cbReqHdr = sizeof(struct REQ_CMD_HDR) + pThis->virtioScsiConfig.uCdbSize;
     PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAlloc(cbReqHdr);
     AssertReturn(pVirtqReq, VERR_NO_MEMORY);
     uint8_t *pb = (uint8_t *)pVirtqReq;
