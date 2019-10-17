@@ -253,7 +253,7 @@ void ShClTransferListHdrFree(PSHCLLISTHDR pListHdr)
  * @returns Duplicated transfer list header structure on success.
  * @param   pListHdr            transfer list header to duplicate.
  */
-PSHCLLISTHDR SharedClipboardTransferListHdrDup(PSHCLLISTHDR pListHdr)
+PSHCLLISTHDR ShClTransferListHdrDup(PSHCLLISTHDR pListHdr)
 {
     AssertPtrReturn(pListHdr, NULL);
 
@@ -636,7 +636,7 @@ void ShClTransferObjCtxDestroy(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
  * @returns \c true if valid, \c false if not.
  * @param   pObjCtx             transfer object context to check.
  */
-bool SharedClipboardTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
+bool ShClTransferObjCtxIsValid(PSHCLCLIENTTRANSFEROBJCTX pObjCtx)
 {
     return (   pObjCtx
             && pObjCtx->uHandle != SHCLOBJHANDLE_INVALID);
@@ -1342,7 +1342,7 @@ int ShClTransferClose(PSHCLTRANSFER pTransfer)
  * @param   pTransfer           Clipboard transfer to get list handle info from.
  * @param   hList               List handle of the list to get handle info for.
  */
-inline PSHCLLISTHANDLEINFO sharedClipboardTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
+inline PSHCLLISTHANDLEINFO shClTransferListGetByHandle(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 {
     PSHCLLISTHANDLEINFO pIt;
     RTListForEach(&pTransfer->lstList, pIt, SHCLLISTHANDLEINFO, Node) /** @todo Sloooow ... improve this. */
@@ -1360,7 +1360,7 @@ inline PSHCLLISTHANDLEINFO sharedClipboardTransferListGetByHandle(PSHCLTRANSFER 
  * @returns New List handle on success, or SHCLLISTHANDLE_INVALID on error.
  * @param   pTransfer           Clipboard transfer to create new list handle for.
  */
-inline SHCLLISTHANDLE sharedClipboardTransferListHandleNew(PSHCLTRANSFER pTransfer)
+inline SHCLLISTHANDLE shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
 {
     return pTransfer->uListHandleNext++; /** @todo Good enough for now. Improve this later. */
 }
@@ -1480,7 +1480,7 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
 
                         if (RT_SUCCESS(rc))
                         {
-                            pInfo->hList = sharedClipboardTransferListHandleNew(pTransfer);
+                            pInfo->hList = shClTransferListHandleNew(pTransfer);
 
                             RTListAppend(&pTransfer->lstList, &pInfo->Node);
                             pTransfer->cListHandles++;
@@ -1550,7 +1550,7 @@ int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGetByHandle(pTransfer, hList);
+        PSHCLLISTHANDLEINFO pInfo = shClTransferListGetByHandle(pTransfer, hList);
         if (pInfo)
         {
             switch (pInfo->enmType)
@@ -1601,7 +1601,7 @@ int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
  * @param   pHdr                List header to add file to.
  * @param   pszPath             Path of file to add.
  */
-static int sharedClipboardTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
+static int shclTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *pszPath)
 {
     uint64_t cbSize = 0;
     int rc = RTFileQuerySizeByPath(pszPath, &cbSize);
@@ -1625,7 +1625,7 @@ static int sharedClipboardTransferListHdrAddFile(PSHCLLISTHDR pHdr, const char *
  * @param   pcszDstBase         Destination base path.
  * @param   cchDstBase          Number of charaters of destination base path.
  */
-static int sharedClipboardTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs)
+static int shclTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *pcszPathAbs)
 {
     AssertPtrReturn(pcszPathAbs, VERR_INVALID_POINTER);
 
@@ -1670,7 +1670,7 @@ static int sharedClipboardTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *
                             char *pszSrc = RTPathJoinA(pcszPathAbs, pDirEntry->szName);
                             if (pszSrc)
                             {
-                                rc = sharedClipboardTransferListHdrAddFile(pHdr, pszSrc);
+                                rc = shclTransferListHdrAddFile(pHdr, pszSrc);
                                 RTStrFree(pszSrc);
                             }
                             else
@@ -1694,7 +1694,7 @@ static int sharedClipboardTransferListHdrFromDir(PSHCLLISTHDR pHdr, const char *
         }
         else if (RTFS_IS_FILE(objInfo.Attr.fMode))
         {
-            rc = sharedClipboardTransferListHdrAddFile(pHdr, pcszPathAbs);
+            rc = shclTransferListHdrAddFile(pHdr, pcszPathAbs);
         }
         else if (RTFS_IS_SYMLINK(objInfo.Attr.fMode))
         {
@@ -1728,7 +1728,7 @@ int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGetByHandle(pTransfer, hList);
+        PSHCLLISTHANDLEINFO pInfo = shClTransferListGetByHandle(pTransfer, hList);
         if (pInfo)
         {
             rc = ShClTransferListHdrInit(pHdr);
@@ -1740,7 +1740,7 @@ int ShClTransferListGetHeader(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
                     {
                         LogFlowFunc(("DirAbs: %s\n", pInfo->pszPathLocalAbs));
 
-                        rc = sharedClipboardTransferListHdrFromDir(pHdr, pInfo->pszPathLocalAbs);
+                        rc = shclTransferListHdrFromDir(pHdr, pInfo->pszPathLocalAbs);
                         break;
                     }
 
@@ -1828,7 +1828,7 @@ int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLLISTHANDLEINFO pInfo = sharedClipboardTransferListGetByHandle(pTransfer, hList);
+        PSHCLLISTHANDLEINFO pInfo = shClTransferListGetByHandle(pTransfer, hList);
         if (pInfo)
         {
             switch (pInfo->enmType)
@@ -1979,7 +1979,7 @@ bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        fIsValid = sharedClipboardTransferListGetByHandle(pTransfer, hList) != NULL;
+        fIsValid = shClTransferListGetByHandle(pTransfer, hList) != NULL;
     }
     else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
     {
@@ -2033,7 +2033,7 @@ int ShClTransferSetInterface(PSHCLTRANSFER pTransfer,
  *
  * @param   pTransfer           Transfer to clear transfer root list for.
  */
-static void sharedClipboardTransferListRootsClear(PSHCLTRANSFER pTransfer)
+static void shClTransferListRootsClear(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturnVoid(pTransfer);
 
@@ -2068,7 +2068,7 @@ void ShClTransferReset(PSHCLTRANSFER pTransfer)
 
     LogFlowFuncEnter();
 
-    sharedClipboardTransferListRootsClear(pTransfer);
+    shClTransferListRootsClear(pTransfer);
 }
 
 /**
@@ -2104,7 +2104,7 @@ uint32_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer)
  * @param   pTransfer           Clipboard transfer to get root list entry from.
  * @param   uIdx                Index of root list entry to return.
  */
-inline PSHCLLISTROOT sharedClipboardTransferRootsGetInternal(PSHCLTRANSFER pTransfer, uint32_t uIdx)
+inline PSHCLLISTROOT shClTransferRootsGetInternal(PSHCLTRANSFER pTransfer, uint32_t uIdx)
 {
     if (uIdx >= pTransfer->cRoots)
         return NULL;
@@ -2135,7 +2135,7 @@ int ShClTransferRootsEntry(PSHCLTRANSFER pTransfer,
 
     int rc;
 
-    PSHCLLISTROOT pRoot = sharedClipboardTransferRootsGetInternal(pTransfer, uIndex);
+    PSHCLLISTROOT pRoot = shClTransferRootsGetInternal(pTransfer, uIndex);
     AssertPtrReturn(pRoot, VERR_INVALID_PARAMETER);
 
     /* Make sure that we only advertise relative source paths, not absolute ones. */
@@ -2270,7 +2270,7 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
 
     int rc = VINF_SUCCESS;
 
-    sharedClipboardTransferListRootsClear(pTransfer);
+    shClTransferListRootsClear(pTransfer);
 
     char  *pszPathRootAbs = NULL;
 

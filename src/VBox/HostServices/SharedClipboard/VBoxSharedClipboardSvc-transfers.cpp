@@ -1538,7 +1538,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
                 rc = shclSvcTransferGetListHdr(cParms, paParms, &hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
-                    void    *pvData = SharedClipboardTransferListHdrDup(&hdrList);
+                    void    *pvData = ShClTransferListHdrDup(&hdrList);
                     uint32_t cbData = sizeof(SHCLLISTHDR);
 
                     const SHCLEVENTID uEvent = VBOX_SHCL_CONTEXTID_GET_EVENT(uCID);

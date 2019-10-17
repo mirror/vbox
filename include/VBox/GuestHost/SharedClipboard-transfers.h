@@ -1099,7 +1099,7 @@ void ShClTransferListHandleInfoDestroy(PSHCLLISTHANDLEINFO pInfo);
 
 int ShClTransferListHdrAlloc(PSHCLLISTHDR *ppListHdr);
 void ShClTransferListHdrFree(PSHCLLISTHDR pListHdr);
-PSHCLLISTHDR SharedClipboardTransferListHdrDup(PSHCLLISTHDR pListHdr);
+PSHCLLISTHDR ShClTransferListHdrDup(PSHCLLISTHDR pListHdr);
 int ShClTransferListHdrInit(PSHCLLISTHDR pListHdr);
 void ShClTransferListHdrDestroy(PSHCLLISTHDR pListHdr);
 void ShClTransferListHdrReset(PSHCLLISTHDR pListHdr);
