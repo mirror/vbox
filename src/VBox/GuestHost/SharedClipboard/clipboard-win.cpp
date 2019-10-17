@@ -1127,14 +1127,22 @@ int SharedClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszL
         else /* ANSI */
         {
             /* Allocate enough space (including terminator). */
-            pszFileUtf8 = (char *)RTMemAlloc((cchFile + 1) * sizeof(char));
-            if (pszFileUtf8)
+            char *pszFileANSI = (char *)RTMemAlloc((cchFile + 1) * sizeof(char));
+            UINT  cchFileANSI = 0;
+            if (pszFileANSI)
             {
-                cchFileUtf8 = DragQueryFileA(hDrop, i /* File index */,
-                                             pszFileUtf8, cchFile + 1 /* Include terminator */);
+                cchFileANSI = DragQueryFileA(hDrop, i /* File index */,
+                                             pszFileANSI, cchFile + 1 /* Include terminator */);
 
-                AssertMsg(cchFileUtf8 == cchFile, ("cchFileUtf8 (%RU16) does not match cchFile (%RU16)\n",
-                                                   cchFileUtf8, cchFile));
+                AssertMsg(cchFileANSI == cchFile, ("cchFileANSI (%RU16) does not match cchFile (%RU16)\n",
+                                                   cchFileANSI, cchFile));
+
+                /* Convert the ANSI codepage to UTF-8. */
+                rc = RTStrCurrentCPToUtf8(&pszFileUtf8, pszFileANSI);
+                if (RT_SUCCESS(rc))
+                {
+                    cchFileUtf8 = (UINT)strlen(pszFileUtf8);
+                }
             }
             else
                 rc = VERR_NO_MEMORY;
