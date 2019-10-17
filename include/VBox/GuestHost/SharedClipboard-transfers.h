@@ -786,9 +786,9 @@ typedef struct _SHCLTRANSFERSTATE
     SHCLTRANSFERID     uID;
     /** The transfer's current status. */
     SHCLTRANSFERSTATUS enmStatus;
-    /** The transfer's direction. */
+    /** The transfer's direction, seen from the perspective who created the transfer. */
     SHCLTRANSFERDIR    enmDir;
-    /** The transfer's source. */
+    /** The transfer's source, seen from the perspective who created the transfer. */
     SHCLSOURCE         enmSource;
 } SHCLTRANSFERSTATE, *PSHCLTRANSFERSTATE;
 

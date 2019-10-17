@@ -807,24 +807,56 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
             rc = ShClTransferObjHandleInfoInit(pInfo);
             if (RT_SUCCESS(rc))
             {
-                const bool fWritable = true; /** @todo Fix this. */
+                /*
+                 * Make sure the transfer direction matches the open/create parameters.
+                 */
+                if (pTransfer->State.enmDir == SHCLTRANSFERDIR_READ)
+                {
+                    if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_READ) /* Read access wanted? */
+                    {
+                        AssertMsgFailed(("Is not a write transfer, but object open flags are set to read access (0x%x)\n",
+                                         pOpenCreateParms->fCreate)); /* Should never happen. */
+                        rc = VERR_INVALID_PARAMETER;
+                    }
+                }
+                else if (pTransfer->State.enmDir == SHCLTRANSFERDIR_WRITE)
+                {
+                    if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_WRITE) /* Write access wanted? */
+                    {
+                        AssertMsgFailed(("Is not a read transfer, but object open flags are set to write access (0x%x)\n",
+                                         pOpenCreateParms->fCreate)); /* Should never happen. */
+                        rc = VERR_INVALID_PARAMETER;
+                    }
+                }
+                else
+                {
+                    AssertFailed();
+                    rc = VERR_NOT_SUPPORTED;
+                }
 
-                uint64_t fOpen;
-                rc = shClConvertFileCreateFlags(fWritable,
-                                                pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
-                                                SHCLOBJHANDLE_INVALID, &fOpen);
                 if (RT_SUCCESS(rc))
                 {
-                    rc = shClTransferResolvePathAbs(pTransfer, pOpenCreateParms->pszPath, 0 /* fFlags */, &pInfo->pszPathLocalAbs);
+                    /* Only if this is a read transfer (locally) we're able to actually write to files
+                     * (we're reading from the source). */
+                    const bool fWritable = pTransfer->State.enmDir == SHCLTRANSFERDIR_READ;
+
+                    uint64_t fOpen;
+                    rc = shClConvertFileCreateFlags(fWritable,
+                                                    pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
+                                                    SHCLOBJHANDLE_INVALID, &fOpen);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
+                        rc = shClTransferResolvePathAbs(pTransfer, pOpenCreateParms->pszPath, 0 /* fFlags */, &pInfo->pszPathLocalAbs);
                         if (RT_SUCCESS(rc))
                         {
-                            LogRel2(("Shared Clipboard: Opened file '%s'\n", pInfo->pszPathLocalAbs));
+                            rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
+                            if (RT_SUCCESS(rc))
+                            {
+                                LogRel2(("Shared Clipboard: Opened file '%s'\n", pInfo->pszPathLocalAbs));
+                            }
+                            else
+                                LogRel(("Shared Clipboard: Error opening file '%s', rc=%Rrc\n", pInfo->pszPathLocalAbs, rc));
                         }
-                        else
-                            LogRel(("Shared Clipboard: Error opening file '%s', rc=%Rrc\n", pInfo->pszPathLocalAbs, rc));
                     }
                 }
             }
