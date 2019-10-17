@@ -418,6 +418,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_IOM_GROW_MMIO_REGS,
     /** Grow the MMIO statistics tables. */
     VMMR0_DO_IOM_GROW_MMIO_STATS,
+    /** Synchronize statistics indices for I/O ports and MMIO regions. */
+    VMMR0_DO_IOM_SYNC_STATS_INDICES,
 
     /** Official call we use for testing Ring-0 APIs. */
     VMMR0_DO_TESTS = 704,

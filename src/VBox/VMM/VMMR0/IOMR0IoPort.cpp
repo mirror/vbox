@@ -270,6 +270,7 @@ VMMR0_INT_DECL(int) IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEn
     AssertReturn(cNewEntries > cOldEntries, VERR_IOM_IOPORT_IPE_1);
     AssertReturn(pGVM->iom.s.cIoPortStatsAllocation == cOldEntries, VERR_IOM_IOPORT_IPE_1);
     AssertReturn(pGVM->iom.s.cIoPortStats <= cOldEntries, VERR_IOM_IOPORT_IPE_2);
+    AssertReturn(!pGVM->iomr0.s.fIoPortStatsFrozen, VERR_WRONG_ORDER);
 
     /*
      * Allocate a new table, zero it and map it.
@@ -326,5 +327,50 @@ VMMR0_INT_DECL(int) IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEn
     }
     return rc;
 #endif /* VBOX_WITH_STATISTICS */
+}
+
+/**
+ * Called after all devices has been instantiated to copy over the statistics
+ * indices to the ring-0 I/O port registration table.
+ *
+ * This simplifies keeping statistics for I/O port ranges that are ring-3 only.
+ *
+ * After this call, IOMR0IoPortGrowStatisticsTable() will stop working.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @thread  EMT(0)
+ * @note    Only callable at VM creation time.
+ */
+VMMR0_INT_DECL(int) IOMR0IoPortSyncStatisticsIndices(PGVM pGVM)
+{
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
+
+#ifdef VBOX_WITH_STATISTICS
+    /*
+     * First, freeze the statistics array:
+     */
+    pGVM->iomr0.s.fIoPortStatsFrozen = true;
+
+    /*
+     * Second, synchronize the indices:
+     */
+    uint32_t const          cRegs        = RT_MIN(pGVM->iom.s.cIoPortRegs, pGVM->iomr0.s.cIoPortAlloc);
+    uint32_t const          cStatsAlloc  = pGVM->iomr0.s.cIoPortStatsAllocation;
+    PIOMIOPORTENTRYR0       paIoPortRegs   = pGVM->iomr0.s.paIoPortRegs;
+    IOMIOPORTENTRYR3 const *paIoPortRegsR3 = pGVM->iomr0.s.paIoPortRing3Regs;
+    AssertReturn((paIoPortRegs && paIoPortRegsR3) || cRegs == 0, VERR_IOM_IOPORT_IPE_3);
+
+    for (uint32_t i = 0 ; i < cRegs; i++)
+    {
+        uint16_t idxStats = paIoPortRegsR3[i].idxStats;
+        paIoPortRegs[i].idxStats = idxStats < cStatsAlloc ? idxStats : UINT16_MAX;
+    }
+
+#else
+    RT_NOREF(pGVM);
+#endif
+    return VINF_SUCCESS;
 }
 

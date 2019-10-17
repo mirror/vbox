@@ -180,6 +180,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/IEMAllAImplC.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMMIO.cpp \
+	VMMAll/IOMAllMmioNew.cpp \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
 	VMMAll/MMAllPagePool.cpp \
@@ -509,6 +510,7 @@ VMMR0_SOURCES   = \
 	VMMAll/IEMAllAImplC.cpp \
 	VMMAll/IOMAll.cpp \
 	VMMAll/IOMAllMMIO.cpp \
+	VMMAll/IOMAllMmioNew.cpp \
 	VMMAll/MMAll.cpp \
 	VMMAll/MMAllHyper.cpp \
 	VMMAll/MMAllPagePool.cpp \

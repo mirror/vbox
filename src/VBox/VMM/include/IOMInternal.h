@@ -306,7 +306,9 @@ typedef struct IOMMMIOENTRYR0
     R0PTRTYPE(PFNIOMMMIONEWREAD)        pfnReadCallback;
     /** Pointer to the fill callback function. */
     R0PTRTYPE(PFNIOMMMIONEWFILL)        pfnFillCallback;
-    /** The entry of the first statistics entry, UINT16_MAX if no stats. */
+    /** The entry of the first statistics entry, UINT16_MAX if no stats.
+     * @note For simplicity, this is always copied from ring-3 for all entries at
+     *       the end of VM creation. */
     uint16_t                            idxStats;
     /** Same as the handle index. */
     uint16_t                            idxSelf;
@@ -370,23 +372,31 @@ typedef IOMMMIOENTRYR3 const *PCIOMMMIOENTRYR3;
  */
 typedef struct IOMMMIOSTATSENTRY
 {
-    /** Number of accesses (subtract ReadRZToR3 and WriteRZToR3 to get the right
-     *  number). */
-    STAMCOUNTER                 Accesses;
-
-    /** Profiling read handler overhead in R3. */
-    STAMPROFILE                 ProfReadR3;
-    /** Profiling write handler overhead in R3. */
-    STAMPROFILE                 ProfWriteR3;
     /** Counting and profiling reads in R0/RC. */
     STAMPROFILE                 ProfReadRZ;
-    /** Counting and profiling writes in R0/RC. */
-    STAMPROFILE                 ProfWriteRZ;
-
+    /** Number of successful read accesses. */
+    STAMCOUNTER                 Reads;
     /** Number of reads to this address from R0/RC which was serviced in R3. */
     STAMCOUNTER                 ReadRZToR3;
+    /** Number of complicated reads. */
+    STAMCOUNTER                 ComplicatedReads;
+    /** Number of reads of 0xff or 0x00. */
+    STAMCOUNTER                 FFor00Reads;
+    /** Profiling read handler overhead in R3. */
+    STAMPROFILE                 ProfReadR3;
+
+    /** Counting and profiling writes in R0/RC. */
+    STAMPROFILE                 ProfWriteRZ;
+    /** Number of successful read accesses. */
+    STAMCOUNTER                 Writes;
     /** Number of writes to this address from R0/RC which was serviced in R3. */
     STAMCOUNTER                 WriteRZToR3;
+    /** Number of writes to this address from R0/RC which was committed in R3. */
+    STAMCOUNTER                 CommitRZToR3;
+    /** Number of complicated writes. */
+    STAMCOUNTER                 ComplicatedWrites;
+    /** Profiling write handler overhead in R3. */
+    STAMPROFILE                 ProfWriteR3;
 } IOMMMIOSTATSENTRY;
 /** Pointer to MMIO statistics entry. */
 typedef IOMMMIOSTATSENTRY *PIOMMMIOSTATSENTRY;
@@ -601,12 +611,12 @@ typedef struct IOMCPU
     {
         /** Guest physical MMIO address. */
         RTGCPHYS                        GCPhys;
-        /** The value to write. */
-        uint8_t                         abValue[128];
         /** The number of bytes to write (0 if nothing pending). */
         uint32_t                        cbValue;
-        /** Alignment padding. */
-        uint32_t                        uAlignmentPadding;
+        /** Hint. */
+        uint32_t                        idxMmioRegionHint;
+        /** The value to write. */
+        uint8_t                         abValue[128];
     } PendingMmioWrite;
 
     /** @name Caching of I/O Port and MMIO ranges and statistics.
@@ -653,7 +663,8 @@ typedef struct IOM
 
     /** MMIO physical access handler type.   */
     PGMPHYSHANDLERTYPE              hMmioHandlerType;
-    uint32_t                        u32Padding;
+    /** MMIO physical access handler type, new style.   */
+    PGMPHYSHANDLERTYPE              hNewMmioHandlerType;
 
     /** @name I/O ports
      * @note The updating of these variables is done exclusively from EMT(0).
@@ -728,32 +739,20 @@ typedef struct IOM
     /** @name MMIO statistics.
      * @{ */
     STAMPROFILE                     StatRZMMIOHandler;
-    STAMCOUNTER                     StatRZMMIOFailures;
-
-    STAMPROFILE                     StatRZInstMov;
-    STAMPROFILE                     StatRZInstCmp;
-    STAMPROFILE                     StatRZInstAnd;
-    STAMPROFILE                     StatRZInstOr;
-    STAMPROFILE                     StatRZInstXor;
-    STAMPROFILE                     StatRZInstBt;
-    STAMPROFILE                     StatRZInstTest;
-    STAMPROFILE                     StatRZInstXchg;
-    STAMPROFILE                     StatRZInstStos;
-    STAMPROFILE                     StatRZInstLods;
-#ifdef IOM_WITH_MOVS_SUPPORT
-    STAMPROFILEADV                  StatRZInstMovs;
-    STAMPROFILE                     StatRZInstMovsToMMIO;
-    STAMPROFILE                     StatRZInstMovsFromMMIO;
-    STAMPROFILE                     StatRZInstMovsMMIO;
-#endif
-    STAMCOUNTER                     StatRZInstOther;
-
+    STAMCOUNTER                     StatRZMMIOReadsToR3;
+    STAMCOUNTER                     StatRZMMIOWritesToR3;
+    STAMCOUNTER                     StatRZMMIOCommitsToR3;
+    STAMCOUNTER                     StatRZMMIODevLockContention;
+#if 0
     STAMCOUNTER                     StatRZMMIO1Byte;
     STAMCOUNTER                     StatRZMMIO2Bytes;
     STAMCOUNTER                     StatRZMMIO4Bytes;
     STAMCOUNTER                     StatRZMMIO8Bytes;
-
+#endif
     STAMCOUNTER                     StatR3MMIOHandler;
+
+    STAMCOUNTER                     StatMmioHandlerR3;
+    STAMCOUNTER                     StatMmioHandlerR0;
 
     RTUINT                          cMovsMaxBytes;
     RTUINT                          cStosMaxBytes;
@@ -790,6 +789,8 @@ typedef struct IOMR0PERVM
 #ifdef VBOX_WITH_STATISTICS
     /** The size of the paIoPortStats allocation (in entries). */
     uint32_t                        cIoPortStatsAllocation;
+    /** Prevents paIoPortStats from growing, set by IOMR0IoPortSyncStatisticsIndices(). */
+    bool                            fIoPortStatsFrozen;
     /** I/O port lookup table.   */
     R0PTRTYPE(PIOMIOPORTSTATSENTRY) paIoPortStats;
     /** Handle to the allocation backing the I/O port statistics. */
@@ -821,6 +822,8 @@ typedef struct IOMR0PERVM
 #ifdef VBOX_WITH_STATISTICS
     /** The size of the paMmioStats allocation (in entries). */
     uint32_t                        cMmioStatsAllocation;
+    /* Prevents paMmioStats from growing, set by IOMR0MmioSyncStatisticsIndices(). */
+    bool                            fMmioStatsFrozen;
     /** MMIO lookup table.   */
     R0PTRTYPE(PIOMMMIOSTATSENTRY)   paMmioStats;
     /** Handle to the allocation backing the MMIO statistics. */
@@ -840,6 +843,8 @@ void                iomMmioFreeRange(PVMCC pVM, PIOMMMIORANGE pRange);
 PIOMMMIOSTATS       iomR3MMIOStatsCreate(PVM pVM, RTGCPHYS GCPhys, const char *pszDesc);
 DECLCALLBACK(void)  iomR3IoPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 void                iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry);
+DECLCALLBACK(void)  iomR3MmioInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
+void                iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry);
 #endif /* IN_RING3 */
 #ifdef IN_RING0
 void                iomR0IoPortCleanupVM(PGVM pGVM);
@@ -847,11 +852,15 @@ void                iomR0IoPortInitPerVMData(PGVM pGVM);
 void                iomR0MmioCleanupVM(PGVM pGVM);
 void                iomR0MmioInitPerVMData(PGVM pGVM);
 #endif
+VBOXSTRICTRC        iomMmioCommonPfHandlerOld(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, PCPUMCTXCORE pCtxCore,
+                                              RTGCPHYS GCPhysFault, void *pvUser);
 
 #ifndef IN_RING3
 DECLEXPORT(FNPGMRZPHYSPFHANDLER)    iomMmioPfHandler;
+DECLEXPORT(FNPGMRZPHYSPFHANDLER)    iomMmioPfHandlerNew;
 #endif
 PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iomMmioHandler;
+PGM_ALL_CB2_PROTO(FNPGMPHYSHANDLER) iomMmioHandlerNew;
 
 /* IOM locking helpers. */
 #ifdef IOM_WITH_CRIT_SECT_RW

@@ -154,8 +154,13 @@ RT_C_DECLS_BEGIN
  * supply bytes (zero them or read them). */
 #define IOMMMIO_FLAGS_DBGSTOP_ON_COMPLICATED_WRITE      UINT32_C(0x00000200)
 
+/** Pass the absolute physical address (GC) to the callback rather than the
+ * relative one.
+ * @note New-style only, is implicit in old-style interface.  */
+#define IOMMMIO_FLAGS_ABS                               UINT32_C(0x00001000)
+
 /** Mask of valid flags. */
-#define IOMMMIO_FLAGS_VALID_MASK                        UINT32_C(0x00000373)
+#define IOMMMIO_FLAGS_VALID_MASK                        UINT32_C(0x00001373)
 /** @} */
 
 /**
@@ -398,7 +403,7 @@ typedef FNIOMMMIOFILL *PFNIOMMMIOFILL;
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
  * @param   off         Offset into the mapping of the read,
- *                      or the physical address if IOM_MMIO_F_ABS is active.
+ *                      or the physical address if IOMMMIO_FLAGS_ABS is active.
  * @param   pv          Where to store the result.
  * @param   cb          Number of bytes read.
  * @remarks Caller enters the device critical section.
@@ -415,7 +420,7 @@ typedef FNIOMMMIONEWREAD *PFNIOMMMIONEWREAD;
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
  * @param   off         Offset into the mapping of the write,
- *                      or the physical address if IOM_MMIO_F_ABS is active.
+ *                      or the physical address if IOMMMIO_FLAGS_ABS is active.
  * @param   pv          Where to fetch the result.
  * @param   cb          Number of bytes to write.
  * @remarks Caller enters the device critical section.
@@ -432,7 +437,7 @@ typedef FNIOMMMIONEWWRITE *PFNIOMMMIONEWWRITE;
  * @param   pDevIns     The device instance.
  * @param   pvUser      User argument.
  * @param   off         Offset into the mapping of the fill,
- *                      or the physical address if IOM_MMIO_F_ABS is active.
+ *                      or the physical address if IOMMMIO_FLAGS_ABS is active.
  * @param   u32Item     Byte/Word/Dword data to fill.
  * @param   cbItem      Size of data in u32Item parameter, restricted to 1/2/4 bytes.
  * @param   cItems      Number of iterations.
@@ -455,7 +460,13 @@ VMMDECL(VBOXSTRICTRC)   IOMMMIOPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT u
 VMMDECL(int)            IOMMMIOMapMMIO2Page(PVMCC pVM, RTGCPHYS GCPhys, RTGCPHYS GCPhysRemapped, uint64_t fPageFlags);
 VMMDECL(int)            IOMMMIOMapMMIOHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags);
 VMMDECL(int)            IOMMMIOResetRegion(PVMCC pVM, RTGCPHYS GCPhys);
-VMMDECL(bool)           IOMIsLockWriteOwner(PVM pVM);
+
+VMM_INT_DECL(VBOXSTRICTRC)  IOMMmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, RTGCPHYS GCPhysFault);
+VMM_INT_DECL(int)           IOMMmioMapMmio2Page(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS offRegion,
+                                                uint64_t hMmio2, RTGCPHYS offMmio2, uint64_t fPageFlags);
+VMM_INT_DECL(int)           IOMMmioMapMmioHCPage(PVMCC pVM, PVMCPUCC pVCpu, RTGCPHYS GCPhys, RTHCPHYS HCPhys, uint64_t fPageFlags);
+VMM_INT_DECL(int)           IOMMmioResetRegion(PVMCC pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion);
+
 
 /** @name IOM_IOPORT_F_XXX - Flags for IOMR3IoPortCreate() and PDMDevHlpIoPortCreateEx().
  * @{ */
@@ -463,15 +474,6 @@ VMMDECL(bool)           IOMIsLockWriteOwner(PVM pVM);
 #define IOM_IOPORT_F_ABS            RT_BIT_32(0)
 /** Valid flags for IOMR3IoPortCreate(). */
 #define IOM_IOPORT_F_VALID_MASK     UINT32_C(0x00000001)
-/** @} */
-
-/** @name IOM_MMIO_F_XXX - Flags for IOMR3MmioCreate() and PDMDevHlpMmioCreateEx().
- * @{ */
-/** Pass the absolute physical address (GC) to the callback rather than the
- * relative one. */
-#define IOM_MMIO_F_ABS              RT_BIT_32(0)
-/** Valid flags for IOMR3IoPortCreate(). */
-#define IOM_MMIO_F_VALID_MASK       UINT32_C(0x00000001)
 /** @} */
 
 #ifdef IN_RING3
@@ -573,11 +575,14 @@ VMMR0_INT_DECL(int)  IOMR0IoPortSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMI
                                              PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, void *pvUser);
 VMMR0_INT_DECL(int)  IOMR0IoPortGrowRegistrationTables(PGVM pGVM, uint64_t cMinEntries);
 VMMR0_INT_DECL(int)  IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cMinEntries);
+VMMR0_INT_DECL(int)  IOMR0IoPortSyncStatisticsIndices(PGVM pGVM);
 
 VMMR0_INT_DECL(int)  IOMR0MmioSetUpContext(PGVM pGVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
                                            PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser);
 VMMR0_INT_DECL(int)  IOMR0MmioGrowRegistrationTables(PGVM pGVM, uint64_t cMinEntries);
 VMMR0_INT_DECL(int)  IOMR0MmioGrowStatisticsTable(PGVM pGVM, uint64_t cMinEntries);
+VMMR0_INT_DECL(int)  IOMR0MmioSyncStatisticsIndices(PGVM pGVM);
+
 /** @} */
 #endif /* IN_RING0 || DOXYGEN_RUNNING */
 

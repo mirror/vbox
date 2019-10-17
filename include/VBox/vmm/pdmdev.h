@@ -2417,7 +2417,7 @@ typedef struct PDMDEVHLPR3
      * @returns VBox status.
      * @param   pDevIns     The device instance to register the ports with.
      * @param   cbRegion    The size of the region in bytes.
-     * @param   fFlags      Reserved, MBZ.
+     * @param   fFlags      Flags, IOMMMIO_FLAGS_XXX.
      * @param   pPciDev     The PCI device the range is associated with, if
      *                      applicable.
      * @param   iPciRegion  The PCI device region in the high 16-bit word and

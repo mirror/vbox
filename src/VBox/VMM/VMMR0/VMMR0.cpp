@@ -2216,6 +2216,17 @@ static int vmmR0EntryExWorker(PGVM pGVM, VMCPUID idCpu, VMMR0OPERATION enmOperat
             break;
         }
 
+        case VMMR0_DO_IOM_SYNC_STATS_INDICES:
+        {
+            if (pReqHdr || idCpu != 0)
+                return VERR_INVALID_PARAMETER;
+            rc = IOMR0IoPortSyncStatisticsIndices(pGVM);
+            if (RT_SUCCESS(rc))
+                rc = IOMR0MmioSyncStatisticsIndices(pGVM);
+            VMM_CHECK_SMAP_CHECK2(pGVM, RT_NOTHING);
+            break;
+        }
+
         /*
          * For profiling.
          */

@@ -38,23 +38,6 @@
 #include "IOMInline.h"
 
 
-/**
- * Check if this VCPU currently owns the IOM lock exclusively.
- *
- * @returns bool owner/not owner
- * @param   pVM         The cross context VM structure.
- */
-VMMDECL(bool) IOMIsLockWriteOwner(PVM pVM)
-{
-#ifdef IOM_WITH_CRIT_SECT_RW
-    return PDMCritSectRwIsInitialized(&pVM->iom.s.CritSect)
-        && PDMCritSectRwIsWriteOwner(&pVM->iom.s.CritSect);
-#else
-    return PDMCritSectIsOwner(&pVM->iom.s.CritSect);
-#endif
-}
-
-
 //#undef LOG_GROUP
 //#define LOG_GROUP LOG_GROUP_IOM_IOPORT
 

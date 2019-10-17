@@ -60,22 +60,35 @@ void iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry)
         pszDesc = pszFreeDesc = RTStrAPrintf2("%u / %s", pRegEntry->pDevIns->iInstance, pszDesc);
 
     /* Register statistics: */
-    int rc = STAMR3Register(pVM, &pStats->Accesses,    STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszDesc); AssertRC(rc);
+    int rc = STAMR3Register(pVM, &pRegEntry->idxSelf, STAMTYPE_U16, STAMVISIBILITY_ALWAYS, szName, STAMUNIT_NONE, pszDesc); AssertRC(rc);
     RTStrFree(pszFreeDesc);
 
 # define SET_NM_SUFFIX(a_sz) memcpy(&szName[cchPrefix], a_sz, sizeof(a_sz))
+    SET_NM_SUFFIX("/Read-Complicated");
+    rc = STAMR3Register(pVM, &pStats->ComplicatedReads, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
+    SET_NM_SUFFIX("/Read-FFor00");
+    rc = STAMR3Register(pVM, &pStats->FFor00Reads, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
     SET_NM_SUFFIX("/Read-R3");
     rc = STAMR3Register(pVM, &pStats->ProfReadR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
-    SET_NM_SUFFIX("/Write-R3");
-    rc = STAMR3Register(pVM, &pStats->ProfWriteR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
     SET_NM_SUFFIX("/Read-RZ");
     rc = STAMR3Register(pVM, &pStats->ProfReadRZ,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
-    SET_NM_SUFFIX("/Write-RZ");
-    rc = STAMR3Register(pVM, &pStats->ProfWriteRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
     SET_NM_SUFFIX("/Read-RZtoR3");
     rc = STAMR3Register(pVM, &pStats->ReadRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
+    SET_NM_SUFFIX("/Read-Total");
+    rc = STAMR3Register(pVM, &pStats->Reads,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
+
+    SET_NM_SUFFIX("/Write-Complicated");
+    rc = STAMR3Register(pVM, &pStats->ComplicatedWrites, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
+    SET_NM_SUFFIX("/Write-R3");
+    rc = STAMR3Register(pVM, &pStats->ProfWriteR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
+    SET_NM_SUFFIX("/Write-RZ");
+    rc = STAMR3Register(pVM, &pStats->ProfWriteRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
     SET_NM_SUFFIX("/Write-RZtoR3");
     rc = STAMR3Register(pVM, &pStats->WriteRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
+    SET_NM_SUFFIX("/Write-RZtoR3-Commit");
+    rc = STAMR3Register(pVM, &pStats->CommitRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,    NULL); AssertRC(rc);
+    SET_NM_SUFFIX("/Write-Total");
+    rc = STAMR3Register(pVM, &pStats->Writes,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
 }
 
 
@@ -110,7 +123,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
 
     AssertMsgReturn(cbRegion > 0 && !(cbRegion & PAGE_OFFSET_MASK), ("cbRegion=%RGp\n", cbRegion), VERR_OUT_OF_RANGE);
-    AssertReturn(!(fFlags & ~IOM_MMIO_F_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertReturn(!(fFlags & ~IOMMMIO_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
 
     AssertReturn(pfnWrite || pfnRead || pfnFill, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfnWrite, VERR_INVALID_POINTER);
@@ -217,6 +230,11 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
                         iFirst = i;
                     else
                     {
+                        /* Register with PGM before we shuffle the array: */
+                        rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
+                                                   (void *)(uintptr_t)hRegion, hRegion, hRegion, pRegEntry->pszDesc);
+                        AssertRCReturnStmt(rc, IOM_UNLOCK_EXCL(pVM), rc);
+
                         /* Insert after the entry we just considered: */
                         pEntry += 1;
                         if (i < cEntries)
@@ -230,6 +248,11 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
                         iEnd = i;
                     else
                     {
+                        /* Register with PGM before we shuffle the array: */
+                        rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
+                                                   (void *)(uintptr_t)hRegion, hRegion, hRegion, pRegEntry->pszDesc);
+                        AssertRCReturnStmt(rc, IOM_UNLOCK_EXCL(pVM), rc);
+
                         /* Insert at the entry we just considered: */
                         if (i < cEntries)
                             memmove(pEntry + 1, pEntry, sizeof(*pEntry) * (cEntries - i));
@@ -365,7 +388,8 @@ VMMR3_INT_DECL(int)  IOMR3MmioUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE h
                 pVM->iom.s.cMmioLookupEntries = cEntries - 1;
                 pRegEntry->GCPhysMapping = NIL_RTGCPHYS;
                 pRegEntry->fMapped       = false;
-                rc = VINF_SUCCESS;
+                rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRegEntry->cbRegion);
+                AssertRC(rc);
                 break;
             }
             else

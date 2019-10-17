@@ -267,6 +267,7 @@ VMMR0_INT_DECL(int) IOMR0MmioGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEntr
     AssertReturn(cNewEntries > cOldEntries, VERR_IOM_MMIO_IPE_1);
     AssertReturn(pGVM->iom.s.cMmioStatsAllocation == cOldEntries, VERR_IOM_MMIO_IPE_1);
     AssertReturn(pGVM->iom.s.cMmioStats <= cOldEntries, VERR_IOM_MMIO_IPE_2);
+    AssertReturn(!pGVM->iomr0.s.fMmioStatsFrozen, VERR_WRONG_ORDER);
 
     /*
      * Allocate a new table, zero it and map it.
@@ -323,5 +324,49 @@ VMMR0_INT_DECL(int) IOMR0MmioGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEntr
     }
     return rc;
 #endif /* VBOX_WITH_STATISTICS */
+}
+
+
+/**
+ * Called after all devices has been instantiated to copy over the statistics
+ * indices to the ring-0 MMIO registration table.
+ *
+ * This simplifies keeping statistics for MMIO ranges that are ring-3 only.
+ *
+ * @returns VBox status code.
+ * @param   pGVM            The global (ring-0) VM structure.
+ * @thread  EMT(0)
+ * @note    Only callable at VM creation time.
+ */
+VMMR0_INT_DECL(int) IOMR0MmioSyncStatisticsIndices(PGVM pGVM)
+{
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
+
+#ifdef VBOX_WITH_STATISTICS
+    /*
+     * First, freeze the statistics array:
+     */
+    pGVM->iomr0.s.fMmioStatsFrozen = true;
+
+    /*
+     * Second, synchronize the indices:
+     */
+    uint32_t const          cRegs        = RT_MIN(pGVM->iom.s.cMmioRegs, pGVM->iomr0.s.cMmioAlloc);
+    uint32_t const          cStatsAlloc  = pGVM->iomr0.s.cMmioStatsAllocation;
+    PIOMMMIOENTRYR0         paMmioRegs   = pGVM->iomr0.s.paMmioRegs;
+    IOMMMIOENTRYR3 const   *paMmioRegsR3 = pGVM->iomr0.s.paMmioRing3Regs;
+    AssertReturn((paMmioRegs && paMmioRegsR3) || cRegs == 0, VERR_IOM_MMIO_IPE_3);
+
+    for (uint32_t i = 0 ; i < cRegs; i++)
+    {
+        uint16_t idxStats = paMmioRegsR3[i].idxStats;
+        paMmioRegs[i].idxStats = idxStats < cStatsAlloc ? idxStats : UINT16_MAX;
+    }
+
+#else
+    RT_NOREF(pGVM);
+#endif
+    return VINF_SUCCESS;
 }
 

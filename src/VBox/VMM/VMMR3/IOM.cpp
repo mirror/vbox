@@ -137,7 +137,6 @@ static void iomR3FlushCache(PVM pVM);
 static DECLCALLBACK(int) iomR3RelocateIOPortCallback(PAVLROIOPORTNODECORE pNode, void *pvUser);
 static DECLCALLBACK(int) iomR3RelocateMMIOCallback(PAVLROGCPHYSNODECORE pNode, void *pvUser);
 #endif
-static DECLCALLBACK(void) iomR3MMIOInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static FNIOMIOPORTIN        iomR3IOPortDummyIn;
 static FNIOMIOPORTOUT       iomR3IOPortDummyOut;
 static FNIOMIOPORTINSTRING  iomR3IOPortDummyInStr;
@@ -179,69 +178,56 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
      * Allocate the trees structure.
      */
     rc = MMHyperAlloc(pVM, sizeof(*pVM->iom.s.pTreesR3), 0, MM_TAG_IOM, (void **)&pVM->iom.s.pTreesR3);
-    if (RT_SUCCESS(rc))
-    {
-        pVM->iom.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->iom.s.pTreesR3);
+    AssertRCReturn(rc, rc);
+    pVM->iom.s.pTreesR0 = MMHyperR3ToR0(pVM, pVM->iom.s.pTreesR3);
 
-        /*
-         * Register the MMIO access handler type.
-         */
-        rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_MMIO,
-                                              iomMmioHandler,
-                                              NULL, "iomMmioHandler", "iomMmioPfHandler",
-                                              NULL, "iomMmioHandler", "iomMmioPfHandler",
-                                              "MMIO", &pVM->iom.s.hMmioHandlerType);
-        AssertRC(rc);
-        if (RT_SUCCESS(rc))
-        {
+    /*
+     * Register the MMIO access handler type.
+     */
+    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_MMIO,
+                                          iomMmioHandler,
+                                          NULL, "iomMmioHandler", "iomMmioPfHandler",
+                                          NULL, "iomMmioHandler", "iomMmioPfHandler",
+                                          "MMIO", &pVM->iom.s.hMmioHandlerType);
+    AssertRCReturn(rc, rc);
 
-            /*
-             * Info.
-             */
-            DBGFR3InfoRegisterInternal(pVM, "ioport", "Dumps all IOPort ranges. No arguments.", &iomR3IoPortInfo);
-            DBGFR3InfoRegisterInternal(pVM, "mmio", "Dumps all MMIO ranges. No arguments.", &iomR3MMIOInfo);
+    rc = PGMR3HandlerPhysicalTypeRegister(pVM, PGMPHYSHANDLERKIND_MMIO,
+                                          iomMmioHandlerNew,
+                                          NULL, "iomMmioHandlerNew", "iomMmioPfHandlerNew",
+                                          NULL, "iomMmioHandlerNew", "iomMmioPfHandlerNew",
+                                          "MMIO", &pVM->iom.s.hNewMmioHandlerType);
+    AssertRCReturn(rc, rc);
 
-            /*
-             * Statistics.
-             */
-            STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the iomMmioPfHandler() body, only success calls.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZMMIO1Byte,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access1",              STAMUNIT_OCCURENCES,     "MMIO access by 1 byte counter.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZMMIO2Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access2",              STAMUNIT_OCCURENCES,     "MMIO access by 2 bytes counter.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZMMIO4Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access4",              STAMUNIT_OCCURENCES,     "MMIO access by 4 bytes counter.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZMMIO8Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access8",              STAMUNIT_OCCURENCES,     "MMIO access by 8 bytes counter.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZMMIOFailures,     STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/MMIOFailures",         STAMUNIT_OCCURENCES,     "Number of times iomMmioPfHandler() didn't service the request.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstMov,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOV",             STAMUNIT_TICKS_PER_CALL, "Profiling of the MOV instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstCmp,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/CMP",             STAMUNIT_TICKS_PER_CALL, "Profiling of the CMP instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstAnd,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/AND",             STAMUNIT_TICKS_PER_CALL, "Profiling of the AND instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstOr,           STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/OR",              STAMUNIT_TICKS_PER_CALL, "Profiling of the OR instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstXor,          STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/XOR",             STAMUNIT_TICKS_PER_CALL, "Profiling of the XOR instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstBt,           STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/BT",              STAMUNIT_TICKS_PER_CALL, "Profiling of the BT instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstTest,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/TEST",            STAMUNIT_TICKS_PER_CALL, "Profiling of the TEST instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstXchg,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/XCHG",            STAMUNIT_TICKS_PER_CALL, "Profiling of the XCHG instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstStos,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/STOS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the STOS instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstLods,         STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/LODS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the LODS instruction emulation.");
-#ifdef IOM_WITH_MOVS_SUPPORT
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstMovs,     STAMTYPE_PROFILE_ADV, "/IOM/RZ-MMIOHandler/Inst/MOVS",            STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsToMMIO,   STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/ToMMIO",     STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - Mem2MMIO.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsFromMMIO, STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/FromMMIO",   STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - MMIO2Mem.");
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstMovsMMIO,     STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler/Inst/MOVS/MMIO2MMIO",  STAMUNIT_TICKS_PER_CALL, "Profiling of the MOVS instruction emulation - MMIO2MMIO.");
+    /*
+     * Info.
+     */
+    DBGFR3InfoRegisterInternal(pVM, "ioport", "Dumps all IOPort ranges. No arguments.", &iomR3IoPortInfo);
+    DBGFR3InfoRegisterInternal(pVM, "mmio", "Dumps all MMIO ranges. No arguments.", &iomR3MmioInfo);
+
+    /*
+     * Statistics.
+     */
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the iomMmioPfHandler() body, only success calls.");
+#if 0
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIO1Byte,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access1",              STAMUNIT_OCCURENCES,     "MMIO access by 1 byte counter.");
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIO2Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access2",              STAMUNIT_OCCURENCES,     "MMIO access by 2 bytes counter.");
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIO4Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access4",              STAMUNIT_OCCURENCES,     "MMIO access by 4 bytes counter.");
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIO8Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access8",              STAMUNIT_OCCURENCES,     "MMIO access by 8 bytes counter.");
 #endif
-            STAM_REG(pVM, &pVM->iom.s.StatRZInstOther,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Inst/Other",           STAMUNIT_OCCURENCES,     "Other instructions counter.");
-            STAM_REG(pVM, &pVM->iom.s.StatR3MMIOHandler,      STAMTYPE_COUNTER, "/IOM/R3-MMIOHandler",                      STAMUNIT_OCCURENCES,     "Number of calls to iomR3MmioHandler.");
-#if 0 /* unused */
-            STAM_REG(pVM, &pVM->iom.s.StatInstIn,             STAMTYPE_COUNTER, "/IOM/IOWork/In",                           STAMUNIT_OCCURENCES,     "Counter of any IN instructions.");
-            STAM_REG(pVM, &pVM->iom.s.StatInstOut,            STAMTYPE_COUNTER, "/IOM/IOWork/Out",                          STAMUNIT_OCCURENCES,     "Counter of any OUT instructions.");
-            STAM_REG(pVM, &pVM->iom.s.StatInstIns,            STAMTYPE_COUNTER, "/IOM/IOWork/Ins",                          STAMUNIT_OCCURENCES,     "Counter of any INS instructions.");
-            STAM_REG(pVM, &pVM->iom.s.StatInstOuts,           STAMTYPE_COUNTER, "/IOM/IOWork/Outs",                         STAMUNIT_OCCURENCES,     "Counter of any OUTS instructions.");
-#endif
-        }
-    }
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIOReadsToR3,    STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/ReadsToR3",            STAMUNIT_OCCURENCES,     "Number of read deferred to ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIOWritesToR3,   STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/WritesToR3",           STAMUNIT_OCCURENCES,     "Number of writes deferred to ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIOCommitsToR3,  STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/CommitsToR3",          STAMUNIT_OCCURENCES,     "Number of commits deferred to ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatRZMMIODevLockContention, STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/DevLockContention", STAMUNIT_OCCURENCES,   "Number of device lock contention force return to ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatR3MMIOHandler,      STAMTYPE_COUNTER, "/IOM/R3-MMIOHandler",                      STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandler.");
+
+    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR3,      STAMTYPE_COUNTER, "/IOM/MmioHandlerR3",                       STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR0,      STAMTYPE_COUNTER, "/IOM/MmioHandlerR0",                       STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-0.");
 
     /* Redundant, but just in case we change something in the future */
     iomR3FlushCache(pVM);
 
-    LogFlow(("IOMR3Init: returns %Rrc\n", rc));
-    return rc;
+    LogFlow(("IOMR3Init: returns VINF_SUCCESS\n"));
+    return VINF_SUCCESS;
 }
 
 
@@ -257,12 +243,32 @@ VMMR3_INT_DECL(int) IOMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 #ifdef VBOX_WITH_STATISTICS
     if (enmWhat == VMINITCOMPLETED_RING3)
     {
+        /*
+         * Synchronize the ring-3 I/O port and MMIO statistics indices into the
+         * ring-0 tables to simplify ring-0 code.  This also make sure that any
+         * later calls to grow the statistics tables will fail.
+         */
+        int rc = VMMR3CallR0Emt(pVM, pVM->apCpusR3[0], VMMR0_DO_IOM_SYNC_STATS_INDICES, 0, NULL);
+        AssertLogRelRCReturn(rc, rc);
+
+        /*
+         * Register I/O port and MMIO stats now that we're done registering MMIO
+         * regions and won't grow the table again.
+         */
         for (uint32_t i = 0; i < pVM->iom.s.cIoPortRegs; i++)
         {
             PIOMIOPORTENTRYR3 pRegEntry = &pVM->iom.s.paIoPortRegs[i];
             if (   pRegEntry->fMapped
                 && pRegEntry->idxStats != UINT16_MAX)
                 iomR3IoPortRegStats(pVM, pRegEntry);
+        }
+
+        for (uint32_t i = 0; i < pVM->iom.s.cMmioRegs; i++)
+        {
+            PIOMMMIOENTRYR3 pRegEntry = &pVM->iom.s.paMmioRegs[i];
+            if (   pRegEntry->fMapped
+                && pRegEntry->idxStats != UINT16_MAX)
+                iomR3MmioRegStats(pVM, pRegEntry);
         }
     }
 #else
@@ -1304,7 +1310,7 @@ IOMR3MmioRegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS 
      */
     AssertMsgReturn(GCPhysStart + (cbRange - 1) >= GCPhysStart,("Wrapped! %RGp LB %RGp\n", GCPhysStart, cbRange),
                     VERR_IOM_INVALID_MMIO_RANGE);
-    AssertMsgReturn(   !(fFlags & ~IOMMMIO_FLAGS_VALID_MASK)
+    AssertMsgReturn(   !(fFlags & ~(IOMMMIO_FLAGS_VALID_MASK & ~IOMMMIO_FLAGS_ABS))
                     && (fFlags & IOMMMIO_FLAGS_READ_MODE)  <= IOMMMIO_FLAGS_READ_DWORD_QWORD
                     && (fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
                     ("%#x\n", fFlags),
@@ -1951,74 +1957,6 @@ VMMR3_INT_DECL(void) IOMR3NotifyDebugEventChange(PVM pVM, DBGFEVENT enmEvent, bo
 {
     /** @todo IOM debug events. */
     RT_NOREF3(pVM, enmEvent, fEnabled);
-}
-
-
-/**
- * Display a single MMIO range.
- *
- * @returns 0
- * @param   pNode   Pointer to MMIO R3 range.
- * @param   pvUser  Pointer to info output callback structure.
- */
-static DECLCALLBACK(int) iomR3MMIOInfoOne(PAVLROGCPHYSNODECORE pNode, void *pvUser)
-{
-    PIOMMMIORANGE pRange = (PIOMMMIORANGE)pNode;
-    PCDBGFINFOHLP pHlp = (PCDBGFINFOHLP)pvUser;
-    pHlp->pfnPrintf(pHlp,
-                    "%RGp-%RGp %RHv %RHv %RHv %RHv %RHv %s\n",
-                    pRange->Core.Key,
-                    pRange->Core.KeyLast,
-                    pRange->pDevInsR3,
-                    pRange->pfnReadCallbackR3,
-                    pRange->pfnWriteCallbackR3,
-                    pRange->pfnFillCallbackR3,
-                    pRange->pvUserR3,
-                    pRange->pszDesc);
-    pHlp->pfnPrintf(pHlp,
-                    "%*s %RHv %RHv %RHv %RHv %RHv\n",
-                    sizeof(RTGCPHYS) * 2 * 2 + 1, "R0",
-                    pRange->pDevInsR0,
-                    pRange->pfnReadCallbackR0,
-                    pRange->pfnWriteCallbackR0,
-                    pRange->pfnFillCallbackR0,
-                    pRange->pvUserR0);
-#if 0
-    pHlp->pfnPrintf(pHlp,
-                    "%*s %RRv %RRv %RRv %RRv %RRv\n",
-                    sizeof(RTGCPHYS) * 2 * 2 + 1, "RC",
-                    pRange->pDevInsRC,
-                    pRange->pfnReadCallbackRC,
-                    pRange->pfnWriteCallbackRC,
-                    pRange->pfnFillCallbackRC,
-                    pRange->pvUserRC);
-#endif
-    return 0;
-}
-
-
-/**
- * Display registered MMIO ranges to the log.
- *
- * @param   pVM         The cross context VM structure.
- * @param   pHlp        The info helpers.
- * @param   pszArgs     Arguments, ignored.
- */
-static DECLCALLBACK(void) iomR3MMIOInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs)
-{
-    NOREF(pszArgs);
-    pHlp->pfnPrintf(pHlp,
-                    "MMIO ranges (pVM=%p)\n"
-                    "%.*s %.*s %.*s %.*s %.*s %.*s %s\n",
-                    pVM,
-                    sizeof(RTGCPHYS) * 4 + 1, "GC Phys Range                    ",
-                    sizeof(RTHCPTR) * 2,      "pDevIns         ",
-                    sizeof(RTHCPTR) * 2,      "Read            ",
-                    sizeof(RTHCPTR) * 2,      "Write           ",
-                    sizeof(RTHCPTR) * 2,      "Fill            ",
-                    sizeof(RTHCPTR) * 2,      "pvUser          ",
-                                              "Description");
-    RTAvlroGCPhysDoWithAll(&pVM->iom.s.pTreesR3->MMIOTree, true, iomR3MMIOInfoOne, (void *)pHlp);
 }
 
 
