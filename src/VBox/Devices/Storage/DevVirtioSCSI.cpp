@@ -262,7 +262,7 @@ typedef struct virtio_scsi_req_cmd
 {
     /* Device-readable section */
 
-    struct REQ_CMD_HDR  cmdHdr;
+    struct REQ_CMD_HDR  ReqHdr;
     uint8_t  uCdb[1];                                           /**< cdb                                          */
 
     struct REQ_CMD_PI piHdr;                                    /** T10 Pi block integrity (optional feature)     */
@@ -549,20 +549,16 @@ typedef struct VIRTIOSCSIREQ
     PDMMEDIAEXIOREQ                hIoReq;                   /**< Handle of I/O request                             */
     PVIRTIOSCSITARGET              pTarget;                  /**< Target                                            */
     uint16_t                       qIdx;                     /**< Index of queue this request arrived on            */
-    uint32_t                       cbPiOut;                  /**< Size of T10 pi in buffer                          */
-    uint8_t                       *pbPiOut;                  /**< Address of pi out buffer                          */
-    uint8_t                       *pbDataOut;                /**< dataout                                           */
+    PVIRTIO_DESC_CHAIN_T           pDescChain;               /**< Prepared desc chain pulled from virtq avail ring  */
+    uint32_t                       cbDataIn;                 /**< size of dataout buffer                            */
     uint32_t                       cbDataOut;                /**< size of dataout buffer                            */
-    uint32_t                       cbPiIn;                   /**< Size of T10 pi buffer                             */
-    uint8_t                       *pbPiIn;                   /**< Address of pi in buffer                           */
-    uint32_t                       cbDataIn;                 /**< Size of datain buffer                             */
-    uint8_t                       *pbDataIn;                 /**< datain                                            */
+    uint16_t                       uDataInOff;               /**< Fixed size of respHdr + sense (precede datain)    */
+    uint16_t                       uDataOutOff;              /**< Fixed size of respHdr + sense (precede datain)    */
     uint32_t                       cbSense;                  /**< Size of sense buffer                              */
     size_t                         uSenseLen;                /**< Receives # bytes written into sense buffer        */
     uint8_t                       *pbSense;                  /**< Pointer to R3 sense buffer                        */
     PDMMEDIAEXIOREQSCSITXDIR       enmTxDir;                 /**< Receives transfer direction of I/O req            */
     uint8_t                        uStatus;                  /**< SCSI status code                                  */
-    PVIRTIO_DESC_CHAIN_T           pDescChain;               /**< Prepared desc chain pulled from virtq avail ring  */
 } VIRTIOSCSIREQ;
 
 DECLINLINE(bool) isBufZero(uint8_t *pv, uint32_t cb)
@@ -687,42 +683,6 @@ static DECLCALLBACK(int) virtioScsiBiosIoPortReadStr(PPDMDEVINS pDevIns, void *p
 }
 #endif
 
-/**
- * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyFromBuf}
- */
-static DECLCALLBACK(int) virtioScsiIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
-                                                      void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf, size_t cbCopy)
-{
-    RT_NOREF2(hIoReq, pInterface);
-    PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
-
-    AssertReturn(pReq->pbDataIn
-                 && offDst + cbCopy <= pReq->cbDataIn
-                 && cbCopy <= pSgBuf->cbSegLeft,  VERR_INVALID_PARAMETER);
-
-    RTSgBufCopyToBuf(pSgBuf, pReq->pbDataIn + offDst, cbCopy);
-
-    return VINF_SUCCESS;
-}
-
-/**
- * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyToBuf}
- */
-static DECLCALLBACK(int) virtioScsiIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
-                                                    void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf, size_t cbCopy)
-{
-    RT_NOREF2(hIoReq, pInterface);
-    PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
-
-    AssertReturn(pReq->pbDataOut
-                 && offSrc + cbCopy <= pReq->cbDataOut
-                 && cbCopy <= pSgBuf->cbSegLeft,  VERR_INVALID_PARAMETER);
-
-    RTSgBufCopyFromBuf(pSgBuf, pReq->pbDataOut + offSrc, cbCopy);
-
-    return VINF_SUCCESS;
-}
-
 static int virtioScsiSendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEventType, uint32_t uReason)
 {
 
@@ -797,8 +757,6 @@ static int virtioScsiSendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEv
 static void virtioScsiFreeReq(PVIRTIOSCSITARGET pTarget, PVIRTIOSCSIREQ pReq)
 {
     RTMemFree(pReq->pbSense);
-    RTMemFree(pReq->pbPiIn);
-    RTMemFree(pReq->pbDataIn);
     pTarget->pDrvMediaEx->pfnIoReqFree(pTarget->pDrvMediaEx, pReq->hIoReq);
 }
 
@@ -875,9 +833,9 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     rc = pIMediaEx->pfnIoReqQueryXferSize(pIMediaEx, hIoReq, &cbXfer);
     AssertRC(rc);
 
+    /* Masking used to deal with datatype size differences between APIs */
     Assert(!(cbXfer & 0xffffffff00000000));
     uint32_t cbXfer32 = cbXfer & 0xffffffff;
-
     struct REQ_RESP_HDR respHdr = { 0 };
     respHdr.uSenseLen = pReq->pbSense[2] == SCSI_SENSE_NONE ? 0 : (uint32_t)pReq->uSenseLen;
     AssertMsg(!(cbResidual & 0xffffffff00000000),
@@ -971,7 +929,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     if (LogIs3Enabled())
     {
         LogFunc(("cbDataIn = %u, cbDataOut = %u (cbIn = %u, cbOut = %u)\n",
-                  pReq->cbDataIn, pReq->cbDataOut, pReq->pDescChain->cbPhysDst, pReq->pDescChain->cbVirtSrc));
+                  pReq->cbDataIn, pReq->cbDataOut, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysSend));
         LogFunc(("xfer = %lu, residual = %u\n", cbXfer, cbResidual));
         const char *pszTxDirText = virtioGetTxDirText(pReq->enmTxDir);
         LogFunc(("xfer direction: %s, sense written = %d, sense size = %d\n",
@@ -983,32 +941,6 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     {
         LogFunc(("Sense: %s\n", SCSISenseText(pReq->pbSense[2])));
         LogFunc(("Sense Ext3: %s\n", SCSISenseExtText(pReq->pbSense[12], pReq->pbSense[13])));
-    }
-
-    if (LogIs12Enabled())
-    {
-        uint32_t cb = RT_MIN(cbXfer32, 256);
-        if (VIRTIO_IN_DIRECTION(pReq->enmTxDir))
-        {
-            if (!isBufZero(pReq->pbDataIn, cb))
-            {
-                Log(("datain[showing the first %d of %d total bytes xferred]:\n", cb, cbXfer32));
-                VIRTIO_HEX_DUMP(RTLOGGRPFLAGS_LEVEL_12, pReq->pbDataIn,  cb,  0, 0);
-            }
-            else
-                Log12Func(("First %d bytes transfered in this req are 0 --\n", cb));
-        }
-        else
-        if (VIRTIO_OUT_DIRECTION(pReq->enmTxDir))
-        {
-            if (!isBufZero(pReq->pbDataOut, cb))
-            {
-                Log(("dataout[showing the first %d of %d total bytes xferred]:\n", cb, cbXfer32));
-                VIRTIO_HEX_DUMP(RTLOGGRPFLAGS_LEVEL_12, pReq->pbDataOut, cb, 0, 0);
-            }
-            else
-                Log12Func(("First %d bytes transfered in this req are 0 --\n", cb));
-        }
     }
 
     int cSegs = 0;
@@ -1031,6 +963,8 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     {
         Assert(pReq->pbSense != NULL);
 
+        /* req datain bytes already in guest phys mem. via virtioScsiIoReqCopyFromBuf() */
+
         RTSGSEG aReqSegs[4];
         aReqSegs[cSegs].pvSeg = &respHdr;
         aReqSegs[cSegs++].cbSeg = sizeof(respHdr);
@@ -1038,24 +972,15 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
         aReqSegs[cSegs].pvSeg = pReq->pbSense;
         aReqSegs[cSegs++].cbSeg = pReq->cbSense; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
 
-        if (pReq->cbPiIn)
-        {
-            aReqSegs[cSegs].pvSeg = pReq->pbPiIn;
-            aReqSegs[cSegs++].cbSeg = pReq->cbPiIn;
-        }
-        if (pReq->cbDataIn)
-        {
-            aReqSegs[cSegs].pvSeg = pReq->pbDataIn;
-            aReqSegs[cSegs++].cbSeg = cbXfer;
-        }
         RTSGBUF reqSegBuf;
         RTSgBufInit(&reqSegBuf, aReqSegs, cSegs);
 
         size_t cbReqSgBuf = RTSgBufCalcTotalLength(&reqSegBuf);
-        AssertMsgReturn(cbReqSgBuf <= pReq->pDescChain->cbPhysDst,
+        AssertMsgReturn(cbReqSgBuf <= pReq->pDescChain->cbPhysReturn,
                        ("Guest expected less req data (space needed: %d, avail: %d)\n",
-                         cbReqSgBuf, pReq->pDescChain->cbPhysDst),
+                         cbReqSgBuf, pReq->pDescChain->cbPhysReturn),
                        VERR_BUFFER_OVERFLOW);
+
 
         virtioQueuePut(pThis->hVirtio, pReq->qIdx, &reqSegBuf, pReq->pDescChain, true /* fFence TBD */);
         virtioQueueSync(pThis->hVirtio, pReq->qIdx);
@@ -1072,14 +997,122 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     return VINF_SUCCESS;
 }
 
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyFromBuf}
+ *
+ * Copy virtual memory from VSCSI layer to guest physical memory
+ */
+static DECLCALLBACK(int) virtioScsiIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                      void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf, size_t cbCopy)
+{
+    RT_NOREF(hIoReq, cbCopy);
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+    PVIRTIOSCSI pThis = pTarget->pVirtioScsi;
+    PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
+
+    AssertReturn(pReq->pDescChain, VERR_INVALID_PARAMETER);
+
+    if (!pReq->cbDataIn)
+        return VINF_SUCCESS;
+
+    PRTSGBUF pSgPhysReturn = pReq->pDescChain->pSgPhysReturn;
+    RTSgBufAdvance(pSgPhysReturn, offDst);
+
+    size_t cbCopied = 0;
+    size_t cbRemain = pReq->cbDataIn;
+
+    if (!pSgPhysReturn->idxSeg && pSgPhysReturn->cbSegLeft == pSgPhysReturn->paSegs[0].cbSeg)
+    {
+        Log(("Do advance\n"));
+        RTSgBufAdvance(pSgPhysReturn, pReq->uDataInOff);
+    }
+
+    while (cbRemain)
+    {
+        PCRTSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
+        uint64_t dstSgStart = (uint64_t)paSeg->pvSeg;
+        uint64_t dstSgLen   = (uint64_t)paSeg->cbSeg;
+        uint64_t dstSgCur   = (uint64_t)pSgPhysReturn->pvSegCur;
+        cbCopied = RT_MIN((uint64_t)pSgBuf->cbSegLeft, dstSgLen - (dstSgCur - dstSgStart));
+        PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns),
+                          (RTGCPHYS)pSgPhysReturn->pvSegCur, pSgBuf->pvSegCur, cbCopied);
+        RTSgBufAdvance(pSgBuf, cbCopied);
+        RTSgBufAdvance(pSgPhysReturn, cbCopied);
+        cbRemain -= cbCopied;
+    }
+    RT_UNTRUSTED_NONVOLATILE_COPY_FENCE(); /* needed? */
+
+    Log2Func((".... Copied %lu bytes from %lu byte guest buffer, residual=%lu\n",
+         cbCopy, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysReturn - cbCopy));
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMIMEDIAEXPORT,pfnIoReqCopyToBuf}
+ *
+ * Copy guest physical memory to VSCSI layer virtual memory
+ */
+static DECLCALLBACK(int) virtioScsiIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
+                                                    void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf, size_t cbCopy)
+{
+
+    RT_NOREF(hIoReq, cbCopy);
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaExPort);
+    PVIRTIOSCSI pThis = pTarget->pVirtioScsi;
+    PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
+
+    if (!pReq->cbDataOut)
+        return VINF_SUCCESS;
+
+    PRTSGBUF pSgPhysSend = pReq->pDescChain->pSgPhysSend;
+    RTSgBufAdvance(pSgPhysSend, offSrc);
+
+    size_t cbCopied = 0;
+    size_t cbRemain = pReq->cbDataOut;
+    while (cbRemain)
+    {
+        PCRTSGSEG paSeg     = &pSgPhysSend->paSegs[pSgPhysSend->idxSeg];
+        uint64_t srcSgStart = (uint64_t)paSeg->pvSeg;
+        uint64_t srcSgLen   = (uint64_t)paSeg->cbSeg;
+        uint64_t srcSgCur   = (uint64_t)pSgPhysSend->pvSegCur;
+        cbCopied = RT_MIN((uint64_t)pSgBuf->cbSegLeft, srcSgLen - (srcSgCur - srcSgStart));
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
+                          (RTGCPHYS)pSgPhysSend->pvSegCur, pSgBuf->pvSegCur, cbCopied);
+        RTSgBufAdvance(pSgBuf, cbCopied);
+        RTSgBufAdvance(pSgPhysSend, cbCopied);
+        cbRemain -= cbCopied;
+    }
+
+    Log2Func((".... Copied %lu bytes to %lu byte guest buffer, residual=%lu\n",
+         cbCopy, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysReturn - cbCopy));
+
+    return VINF_SUCCESS;
+}
+
 static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T pDescChain)
 {
+    AssertReturn(pDescChain->cbPhysSend, VERR_INVALID_PARAMETER);
+
     ASMAtomicIncU32(&pThis->cActiveReqs);
 
-    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)pDescChain->pVirtSrc;
+    /* Extract command header and CDB from guest physical memory */
 
-    uint8_t  uTarget  = pVirtqReq->cmdHdr.uVirtioLun[1];
-    uint32_t uScsiLun = (pVirtqReq->cmdHdr.uVirtioLun[2] << 8 | pVirtqReq->cmdHdr.uVirtioLun[3]) & 0x3fff;
+    uint16_t cbReqHdr = sizeof(struct REQ_CMD_HDR) + pThis->virtioScsiConfig.uCdbSize;
+    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAlloc(cbReqHdr);
+    AssertReturn(pVirtqReq, VERR_NO_MEMORY);
+    uint8_t *pb = (uint8_t *)pVirtqReq;
+    for (size_t cb = RT_MIN(pDescChain->cbPhysSend, cbReqHdr); cb; )
+    {
+        size_t cbSeg = cb;
+        RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(pDescChain->pSgPhysSend, &cbSeg);
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, pb, cbSeg);
+        pb += cbSeg;
+        cb -= cbSeg;
+    }
+
+    uint8_t  uTarget  = pVirtqReq->ReqHdr.uVirtioLun[1];
+    uint32_t uScsiLun = (pVirtqReq->ReqHdr.uVirtioLun[2] << 8 | pVirtqReq->ReqHdr.uVirtioLun[3]) & 0x3fff;
     PVIRTIOSCSITARGET pTarget = &pThis->paTargetInstances[uTarget];
 
     LogFunc(("[%s] (Target: %d LUN: %d)  CDB: %.*Rhxs\n",
@@ -1087,29 +1120,16 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
         virtioScsiEstimateCdbLen(pVirtqReq->uCdb[0],
         pThis->virtioScsiConfig.uCdbSize), pVirtqReq->uCdb));
 
-    Log3Func(("id: %RX64, attr: %x, prio: %d, crn: %x\n",
-        pVirtqReq->cmdHdr.uId, pVirtqReq->cmdHdr.uTaskAttr, pVirtqReq->cmdHdr.uPrio, pVirtqReq->cmdHdr.uCrn));
+    Log3Func(("cmd id: %RX64, attr: %x, prio: %d, crn: %x\n",
+        pVirtqReq->ReqHdr.uId, pVirtqReq->ReqHdr.uTaskAttr, pVirtqReq->ReqHdr.uPrio, pVirtqReq->ReqHdr.uCrn));
 
     /*
      * Calculate request offsets
      */
-    uint32_t  cbPiIn = 0, cbPiOut = 0, cbPiHdr = 0;
-    off_t   piOutOff = 0;
-
-    if (pThis->fHasT10pi)
-    {
-        cbPiIn   = pVirtqReq->piHdr.uPiBytesOut;
-        cbPiOut  = pVirtqReq->piHdr.uPiBytesIn;
-        cbPiHdr  = sizeof(REQ_CMD_PI) + cbPiOut;
-        piOutOff = sizeof(REQ_CMD_HDR) + pThis->virtioScsiConfig.uCdbSize + sizeof(REQ_CMD_PI);
-    }
-
-    off_t   uDataOutOff = sizeof(REQ_CMD_HDR)  + pThis->virtioScsiConfig.uCdbSize + cbPiHdr;
-    off_t   uDataInOff  = sizeof(REQ_RESP_HDR) + pThis->virtioScsiConfig.uSenseSize + cbPiIn;
-    uint8_t *pbDataOut = (uint8_t *)((uint64_t)pVirtqReq + uDataOutOff);
-    uint32_t  cbDataOut = pDescChain->cbVirtSrc - uDataOutOff;
-    uint32_t  cbDataIn  = pDescChain->cbPhysDst - uDataInOff;
-
+    off_t uDataOutOff = sizeof(REQ_CMD_HDR)  + pThis->virtioScsiConfig.uCdbSize;
+    off_t uDataInOff  = sizeof(REQ_RESP_HDR) + pThis->virtioScsiConfig.uSenseSize;
+    uint32_t cbDataOut = pDescChain->cbPhysSend - uDataOutOff;
+    uint32_t cbDataIn  = pDescChain->cbPhysReturn - uDataInOff;
     /**
      * Handle submission errors
      */
@@ -1171,44 +1191,29 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
     /*
      * Have underlying driver allocate a req of size set during initialization of this device.
      */
-    PDMMEDIAEXIOREQ   hIoReq = NULL;
-    PVIRTIOSCSIREQ    pReq;
-    PPDMIMEDIAEX      pIMediaEx = pTarget->pDrvMediaEx;
+    PDMMEDIAEXIOREQ hIoReq = NULL;
+    PVIRTIOSCSIREQ  pReq;
+    PPDMIMEDIAEX    pIMediaEx = pTarget->pDrvMediaEx;
 
     int rc = pIMediaEx->pfnIoReqAlloc(pIMediaEx, &hIoReq, (void **)&pReq, 0 /* uIoReqId */,
                                   PDMIMEDIAEX_F_SUSPEND_ON_RECOVERABLE_ERR);
 
     AssertMsgRCReturn(rc, ("Failed to allocate I/O request, rc=%Rrc\n", rc), rc);
 
-    /*
-     * Prepare req's parameters for submission
-     */
-    if (pThis->fHasT10pi)
-    {
-        pReq->cbPiOut   = cbPiOut;
-        pReq->pbPiOut   = (uint8_t *)((uint64_t)pVirtqReq + piOutOff);
-        pReq->cbPiIn    = cbPiIn;
-        pReq->pbPiIn    = (uint8_t *)RTMemAlloc(cbPiIn);
-        AssertMsgReturn(pReq->pbPiIn, ("Out of memory allocating pi_in buffer"),  VERR_NO_MEMORY);
-    }
+    pReq->hIoReq      = hIoReq;
+    pReq->pTarget     = pTarget;
+    pReq->qIdx        = qIdx;
+    pReq->cbDataIn    = cbDataIn;
+    pReq->cbDataOut   = cbDataOut;
+    pReq->pDescChain  = pDescChain;
+    pReq->uDataInOff  = uDataInOff;
+    pReq->uDataOutOff = uDataOutOff;
 
-    pReq->hIoReq     = hIoReq;
-    pReq->pTarget    = pTarget;
-    pReq->qIdx       = qIdx;
-    pReq->cbDataOut  = cbDataOut;
-    pReq->pbDataOut  = cbDataOut ? pbDataOut : 0;
-    pReq->pDescChain = pDescChain;
-    pReq->cbSense    = pThis->virtioScsiConfig.uSenseSize;
-    pReq->pbSense    = (uint8_t *)RTMemAlloc(pReq->cbSense);
+    pReq->cbSense = pThis->virtioScsiConfig.uSenseSize;
+    pReq->pbSense = (uint8_t *)RTMemAlloc(pReq->cbSense);
     AssertMsgReturn(pReq->pbSense,  ("Out of memory allocating sense buffer"),  VERR_NO_MEMORY);
 
-    if (cbDataIn)
-    {
-        pReq->cbDataIn  = cbDataIn;
-        pReq->pbDataIn  = (uint8_t *)RTMemAlloc(cbDataIn);
-        AssertMsgReturn(pReq->pbDataIn, ("Out of memory allocating datain buffer"), VERR_NO_MEMORY);
-    }
-
+    /* Note: DrvSCSI allocates one virtual memory buffer for input and output phases of the request */
     rc = pIMediaEx->pfnIoReqSendScsiCmd(pIMediaEx, pReq->hIoReq, uScsiLun,
                                         pVirtqReq->uCdb, (size_t)pThis->virtioScsiConfig.uCdbSize,
                                         PDMMEDIAEXIOREQSCSITXDIR_UNKNOWN, &pReq->enmTxDir,
@@ -1255,7 +1260,17 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
     uint8_t  uResponse = VIRTIOSCSI_S_OK;
 
-    PVIRTIOSCSI_CTRL_T pScsiCtrl = (PVIRTIOSCSI_CTRL_T)pDescChain->pVirtSrc;
+    PVIRTIOSCSI_CTRL_T pScsiCtrl = (PVIRTIOSCSI_CTRL_T)RTMemAlloc(sizeof(PVIRTIOSCSI_CTRL_T));
+
+    uint8_t *pb = (uint8_t *)pScsiCtrl;
+    for (size_t cb = RT_MIN(pDescChain->cbPhysSend, sizeof(PVIRTIOSCSI_CTRL_T)); cb; )
+    {
+        size_t cbSeg = cb;
+        RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(pDescChain->pSgPhysSend, &cbSeg);
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, pb, cbSeg);
+        pb += cbSeg;
+        cb -= cbSeg;
+    }
 
     /*
      * Mask of events to tell guest driver this device supports
@@ -1899,7 +1914,9 @@ static DECLCALLBACK(int) virtioScsiDeviceQueryStatusLed(PPDMILEDPORTS pInterface
 static int virtioScsiCfgAccessed(PVIRTIOSCSI pThis, uint32_t uOffset,
                                     const void *pv, uint32_t cb, bool fWrite)
 {
-    int rc = VINF_SUCCESS;
+
+    AssertReturn(!pv || cb >= sizeof(uint32_t), fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00);
+
     if (MATCH_SCSI_CONFIG(uNumQueues))
         SCSI_CONFIG_ACCESSOR_READONLY(uNumQueues);
     else
@@ -1932,9 +1949,9 @@ static int virtioScsiCfgAccessed(PVIRTIOSCSI pThis, uint32_t uOffset,
     else
     {
         LogFunc(("Bad access by guest to virtio_scsi_config: uoff=%d, cb=%d\n", uOffset, cb));
-        rc = VERR_ACCESS_DENIED;
+        return fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00;
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**

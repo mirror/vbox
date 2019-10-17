@@ -187,42 +187,24 @@ int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T pp
         uDescIdx = desc.uDescIdxNext;
     } while (desc.fFlags & VIRTQ_DESC_F_NEXT);
 
-
     PRTSGBUF pSgPhysIn = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
     AssertReturn(pSgPhysIn, VERR_NO_MEMORY);
 
     RTSgBufInit(pSgPhysIn, (PCRTSGSEG)paSegsIn, cSegsIn);
 
-    void *pVirtOut = RTMemAlloc(cbOut);
-    AssertReturn(pVirtOut, VERR_NO_MEMORY);
+    PRTSGBUF pSgPhysOut = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
+    AssertReturn(pSgPhysOut, VERR_NO_MEMORY);
 
-    /* If there's any guest → device data in phys. memory pulled
-     * from queue, copy it into virtual memory to return to caller */
-
-    if (cSegsOut)
-    {
-        uint8_t *outSgVirt = (uint8_t *)pVirtOut;
-        RTSGBUF outSgPhys;
-        RTSgBufInit(&outSgPhys, (PCRTSGSEG)paSegsOut, cSegsOut);
-        for (size_t cb = cbOut; cb;)
-        {
-            size_t cbSeg = cb;
-            RTGCPHYS GCPhys = (RTGCPHYS)RTSgBufGetNextSegment(&outSgPhys, &cbSeg);
-            PDMDevHlpPhysRead(((PVIRTIOSTATE)hVirtio)->CTX_SUFF(pDevIns), GCPhys, outSgVirt, cbSeg);
-            outSgVirt = ((uint8_t *)outSgVirt) + cbSeg;
-            cb -= cbSeg;
-        }
-        RTMemFree(paSegsOut);
-    }
+    RTSgBufInit(pSgPhysOut, (PCRTSGSEG)paSegsOut, cSegsOut);
 
     PVIRTIO_DESC_CHAIN_T pDescChain = (PVIRTIO_DESC_CHAIN_T)RTMemAllocZ(sizeof(VIRTIO_DESC_CHAIN_T));
     AssertReturn(pDescChain, VERR_NO_MEMORY);
 
     pDescChain->uHeadIdx   = uHeadIdx;
-    pDescChain->cbVirtSrc  = cbOut;
-    pDescChain->pVirtSrc   = pVirtOut;
-    pDescChain->cbPhysDst  = cbIn;
-    pDescChain->pSgPhysDst = pSgPhysIn;
+    pDescChain->cbPhysSend  = cbOut;
+    pDescChain->pSgPhysSend = pSgPhysOut;
+    pDescChain->cbPhysReturn  = cbIn;
+    pDescChain->pSgPhysReturn = pSgPhysIn;
     *ppDescChain = pDescChain;
 
     Log3Func(("%s -- segs OUT: %u (%u bytes)   IN: %u (%u bytes) --\n",
@@ -239,7 +221,8 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
 
     PVIRTIOSTATE pVirtio = (PVIRTIOSTATE)hVirtio;
     PVIRTQSTATE  pVirtq = &pVirtio->virtqState[qIdx];
-    PRTSGBUF pSgPhysReturn = pDescChain->pSgPhysDst;
+    PRTSGBUF pSgPhysReturn = pDescChain->pSgPhysReturn;
+
 
     AssertMsgReturn(DRIVER_OK(pVirtio) /*&& pVirtio->uQueueEnable[qIdx]*/,
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
@@ -250,12 +233,14 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
     (void)uUsedIdx;
 
     /*
-     * Copy virtual memory s/g buffer containing data to return to the guest
-     * to phys. memory described by (IN direction ) s/g buffer of the descriptor chain
-     * (pulled from avail ring of queue), essentially giving result back to the guest driver.
-     */
+     * Copy s/g buf (virtual memory) to guest phys mem (IN direction). This virtual memory
+     * block will be small (fixed portion of response header + sense buffer area or
+     * control commands or error return values)... The bulk of req data xfers to phys mem
+     * is handled by client */
+
     size_t cbCopy = 0;
     size_t cbRemain = RTSgBufCalcTotalLength(pSgVirtReturn);
+    RTSgBufReset(pSgPhysReturn); /* Reset ptr because req data may have already been written */
     while (cbRemain)
     {
         PCRTSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
@@ -271,7 +256,7 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
     }
 
     if (fFence)
-        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE();
+        RT_UNTRUSTED_NONVOLATILE_COPY_FENCE(); /* needed? */
 
     /** If this write-ahead crosses threshold where the driver wants to get an event flag it */
     if (pVirtio->uDriverFeatures & VIRTIO_F_EVENT_IDX)
@@ -286,8 +271,8 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
     virtioWriteUsedElem(pVirtio, qIdx, pVirtq->uUsedIdx++, pDescChain->uHeadIdx,
             (uint32_t)(cbCopy & 0xffffffff));
 
-    Log2Func((".... Copied %ul bytes to %ul byte buffer, residual=%ul\n",
-         cbCopy, pDescChain->cbPhysDst, pDescChain->cbPhysDst - cbCopy));
+    Log2Func((".... Copied %lu bytes to %lu byte buffer, residual=%lu\n",
+         cbCopy, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbCopy));
 
     Log6Func(("Write ahead used_idx=%d, %s used_idx=%d\n",
          pVirtq->uUsedIdx,  QUEUENAME(qIdx), uUsedIdx));
@@ -560,7 +545,10 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
     if (MATCH_COMMON_CFG(uDeviceFeatures))
     {
         if (fWrite) /* Guest WRITE pCommonCfg>uDeviceFeatures */
+        {
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.device_feature\n"));
+            return VINF_SUCCESS;
+        }
         else /* Guest READ pCommonCfg->uDeviceFeatures */
         {
             uint32_t uIntraOff = uOffset - RT_UOFFSETOF(VIRTIO_PCI_COMMON_CFG_T, uDeviceFeatures);
@@ -580,7 +568,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
                 default:
                     LogFunc(("Guest read uDeviceFeatures with out of range selector (%d), returning 0\n",
                           pVirtio->uDeviceFeaturesSelect));
-                    return VERR_ACCESS_DENIED;
+                    return VINF_IOM_MMIO_UNUSED_00;
             }
         }
     }
@@ -603,7 +591,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
                 default:
                     LogFunc(("Guest wrote uDriverFeatures with out of range selector (%d), returning 0\n",
                          pVirtio->uDriverFeaturesSelect));
-                    return VERR_ACCESS_DENIED;
+                    return VINF_SUCCESS;
             }
         }
         else /* Guest READ pCommonCfg->udriverFeatures */
@@ -625,7 +613,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
                 default:
                     LogFunc(("Guest read uDriverFeatures with out of range selector (%d), returning 0\n",
                          pVirtio->uDriverFeaturesSelect));
-                    return VERR_ACCESS_DENIED;
+                    return VINF_IOM_MMIO_UNUSED_00;
             }
         }
     }
@@ -634,7 +622,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
         if (fWrite)
         {
             Log2Func(("Guest attempted to write readonly virtio_pci_common_cfg.num_queues\n"));
-            return VERR_ACCESS_DENIED;
+            return VINF_SUCCESS;
         }
         else
         {
@@ -711,7 +699,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t uOffs
     {
         Log2Func(("Bad guest %s access to virtio_pci_common_cfg: uOffset=%d, cb=%d\n",
             fWrite ? "write" : "read ", uOffset, cb));
-        rc = VERR_ACCESS_DENIED;
+        return fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00;
     }
     return rc;
 }
@@ -769,7 +757,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
     if (fCommonCfg)
     {
         uint32_t uOffset = GCPhysAddr - pVirtio->pGcPhysCommonCfg;
-        virtioCommonCfgAccessed(pVirtio, false /* fWrite */, uOffset, cb, (void const *)pv);
+        rc = virtioCommonCfgAccessed(pVirtio, false /* fWrite */, uOffset, cb, (void const *)pv);
     }
     else
     if (fIsr && cb == sizeof(uint8_t))
@@ -783,6 +771,7 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
        LogFunc(("Bad read access to mapped capabilities region:\n"
                 "                  pVirtio=%#p GCPhysAddr=%RGp cb=%u\n",
                 pVirtio, GCPhysAddr, cb));
+        return VINF_IOM_MMIO_UNUSED_00;
     }
     return rc;
 }
@@ -801,7 +790,6 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
 {
     RT_NOREF(pvUser);
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
-    int rc = VINF_SUCCESS;
 
     MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysDeviceCap, pVirtio->pDeviceCap,     fDevSpecific);
     MATCH_VIRTIO_CAP_STRUCT(pVirtio->pGcPhysCommonCfg, pVirtio->pCommonCfgCap,  fCommonCfg);
@@ -814,13 +802,13 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
         /*
          * Pass this MMIO write access back to the client to handle
          */
-        rc = pVirtio->virtioCallbacks.pfnVirtioDevCapWrite(pDevIns, uOffset, pv, cb);
+        (void)pVirtio->virtioCallbacks.pfnVirtioDevCapWrite(pDevIns, uOffset, pv, cb);
     }
     else
     if (fCommonCfg)
     {
         uint32_t uOffset = GCPhysAddr - pVirtio->pGcPhysCommonCfg;
-        virtioCommonCfgAccessed(pVirtio, true /* fWrite */, uOffset, cb, pv);
+        (void)virtioCommonCfgAccessed(pVirtio, true /* fWrite */, uOffset, cb, pv);
     }
     else
     if (fIsr && cb == sizeof(uint8_t))
@@ -846,7 +834,7 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
                 "                  pVirtio=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n",
                 pVirtio, GCPhysAddr, pv, cb, pv, cb));
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**

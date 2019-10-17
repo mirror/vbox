@@ -64,11 +64,11 @@ typedef void * VIRTIOHANDLE;                                     /**< Opaque han
  */
 typedef struct VIRTIO_DESC_CHAIN
 {
-    uint32_t  uHeadIdx;                                    /**< Head idx of associated desc chain        */
-    uint32_t  cbVirtSrc;                                   /**< Size of virt source buffer               */
-    void     *pVirtSrc;                                    /**< Virt mem buf holding out data from guest */
-    uint32_t  cbPhysDst;                                   /**< Total size of dst buffer                 */
-    PRTSGBUF  pSgPhysDst;                                  /**< Phys S/G buf to store result for guest   */
+    uint32_t  uHeadIdx;                                          /**< Head idx of associated desc chain        */
+    uint32_t  cbPhysSend;                                        /**< Total size of src buffer                 */
+    PRTSGBUF  pSgPhysSend;                                       /**< Phys S/G/ buf for data from guest        */
+    uint32_t  cbPhysReturn;                                      /**< Total size of dst buffer                 */
+    PRTSGBUF  pSgPhysReturn;                                     /**< Phys S/G buf to store result for guest   */
 } VIRTIO_DESC_CHAIN_T, *PVIRTIO_DESC_CHAIN_T, **PPVIRTIO_DESC_CHAIN_T;
 
 /**
