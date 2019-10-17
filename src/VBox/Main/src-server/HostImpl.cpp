@@ -373,40 +373,8 @@ HRESULT Host::init(VirtualBox *aParent)
     /* Check with SUPDrv if VT-x and AMD-V are really supported (may fail). */
     if (m->fVTSupported)
     {
-        int rc = SUPR3InitEx(false /*fUnrestricted*/, NULL);
-        if (RT_SUCCESS(rc))
-        {
-            uint32_t fVTCaps;
-            rc = SUPR3QueryVTCaps(&fVTCaps);
-            if (RT_SUCCESS(rc))
-            {
-                Assert(fVTCaps & (SUPVTCAPS_AMD_V | SUPVTCAPS_VT_X));
-                if (fVTCaps & SUPVTCAPS_NESTED_PAGING)
-                    m->fNestedPagingSupported = true;
-                else
-                    Assert(m->fNestedPagingSupported == false);
-                if (   (fVTCaps & SUPVTCAPS_AMD_V)
-                    || (fVTCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST))
-                    m->fUnrestrictedGuestSupported = true;
-                else
-                    Assert(m->fUnrestrictedGuestSupported == false);
-                /** @todo r=klaus put accurate condition here, it's still approximate. */
-                if (   (   (fVTCaps & SUPVTCAPS_AMD_V)
-                        && m->fNestedPagingSupported)
-                    || (fVTCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST))
-                    m->fNestedHWVirtSupported = true;
-            }
-            else
-            {
-                LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
-                m->fVTSupported = m->fNestedPagingSupported = m->fUnrestrictedGuestSupported
-                    = m->fNestedHWVirtSupported = false;
-            }
-            rc = SUPR3Term(false);
-            AssertRC(rc);
-        }
-        else
-            m->fRecheckVTSupported = true; /* Try again later when the driver is loaded. */
+        m->fRecheckVTSupported = true; /* Try again later when the driver is loaded; cleared by i_updateProcessorFeatures on success. */
+        i_updateProcessorFeatures();
     }
 
     /* Check for NEM in root paritition (hyper-V / windows). */
@@ -1168,6 +1136,44 @@ HRESULT Host::getProcessorDescription(ULONG aCpuId, com::Utf8Str &aDescription)
 }
 
 /**
+ * Updates fVTSupported, fNestedPagingSupported, fUnrestrictedGuestSupported and
+ * fNestedHWVirtSupported with info from SUPR3QueryVTCaps().
+ *
+ * This is repeated till we successfully open the support driver, in case it
+ * is loaded after VBoxSVC starts.
+ */
+void Host::i_updateProcessorFeatures()
+{
+    /* Perhaps the driver is available now... */
+    int rc = SUPR3InitEx(false /*fUnrestricted*/, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        uint32_t fVTCaps;
+        rc = SUPR3QueryVTCaps(&fVTCaps);
+        AssertRC(rc);
+
+        SUPR3Term(false);
+
+        AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
+        if (RT_FAILURE(rc))
+        {
+            LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
+            fVTCaps = 0;
+        }
+        m->fVTSupported                = (fVTCaps & (SUPVTCAPS_AMD_V | SUPVTCAPS_VT_X)) != 0;
+        m->fNestedPagingSupported      = (fVTCaps & SUPVTCAPS_NESTED_PAGING) != 0;
+        m->fUnrestrictedGuestSupported = (fVTCaps & (SUPVTCAPS_AMD_V | SUPVTCAPS_VTX_UNRESTRICTED_GUEST)) != 0;
+        m->fNestedHWVirtSupported      =     (fVTCaps & (SUPVTCAPS_AMD_V | SUPVTCAPS_NESTED_PAGING))
+                                          ==            (SUPVTCAPS_AMD_V | SUPVTCAPS_NESTED_PAGING)
+                                      ||     (fVTCaps & (  SUPVTCAPS_VT_X | SUPVTCAPS_NESTED_PAGING
+                                                         | SUPVTCAPS_VTX_UNRESTRICTED_GUEST | SUPVTCAPS_VTX_VMCS_SHADOWING))
+                                          ==            (  SUPVTCAPS_VT_X | SUPVTCAPS_NESTED_PAGING
+                                                         | SUPVTCAPS_VTX_UNRESTRICTED_GUEST | SUPVTCAPS_VTX_VMCS_SHADOWING);
+        m->fRecheckVTSupported = false; /* No need to try again, we cached everything. */
+    }
+}
+
+/**
  * Returns whether a host processor feature is supported or not
  *
  * @returns COM status code
@@ -1205,44 +1211,7 @@ HRESULT Host::getProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSupported)
            )
         {
             alock.release();
-
-            /* Perhaps the driver is available now... */
-            int rc = SUPR3InitEx(false /*fUnrestricted*/, NULL);
-            if (RT_SUCCESS(rc))
-            {
-                uint32_t fVTCaps;
-                rc = SUPR3QueryVTCaps(&fVTCaps);
-
-                AutoWriteLock wlock(this COMMA_LOCKVAL_SRC_POS);
-                if (RT_SUCCESS(rc))
-                {
-                    Assert(fVTCaps & (SUPVTCAPS_AMD_V | SUPVTCAPS_VT_X));
-                    if (fVTCaps & SUPVTCAPS_NESTED_PAGING)
-                        m->fNestedPagingSupported = true;
-                    else
-                        Assert(m->fNestedPagingSupported == false);
-                    if (   (fVTCaps & SUPVTCAPS_AMD_V)
-                        || (fVTCaps & SUPVTCAPS_VTX_UNRESTRICTED_GUEST))
-                        m->fUnrestrictedGuestSupported = true;
-                    else
-                        Assert(m->fUnrestrictedGuestSupported == false);
-                    /** @todo r=klaus put accurate condition here and update it as
-                     * the feature becomes available with VT-x. */
-                    if (   (fVTCaps & SUPVTCAPS_AMD_V)
-                        && m->fNestedPagingSupported)
-                        m->fNestedHWVirtSupported = true;
-                }
-                else
-                {
-                    LogRel(("SUPR0QueryVTCaps -> %Rrc\n", rc));
-                    m->fVTSupported = m->fNestedPagingSupported = m->fUnrestrictedGuestSupported
-                        = m->fNestedHWVirtSupported = false;
-                }
-                rc = SUPR3Term(false);
-                AssertRC(rc);
-                m->fRecheckVTSupported = false; /* No need to try again, we cached everything. */
-            }
-
+            i_updateProcessorFeatures();
             alock.acquire();
         }
 
