@@ -974,6 +974,10 @@ typedef struct _SHCLTRANSFER
     uint32_t                 cbMaxChunkSize;
     /** The transfer's own event source. */
     SHCLEVENTSOURCE          Events;
+    /** Current number of concurrent list handles. */
+    uint32_t                 cListHandles;
+    /** Maximum number of concurrent list handles. */
+    uint32_t                 cMaxListHandles;
     /** Next upcoming list handle. */
     SHCLLISTHANDLE           uListHandleNext;
     /** List of all list handles elated to this transfer. */
@@ -982,6 +986,10 @@ typedef struct _SHCLTRANSFER
     uint64_t                 cRoots;
     /** List of root entries of this transfer. */
     RTLISTANCHOR             lstRoots;
+    /** Current number of concurrent object handles. */
+    uint32_t                 cObjHandles;
+    /** Maximum number of concurrent object handles. */
+    uint32_t                 cMaxObjHandles;
     /** Next upcoming object handle. */
     SHCLOBJHANDLE            uObjHandleNext;
     /** Map of all objects handles related to this transfer. */

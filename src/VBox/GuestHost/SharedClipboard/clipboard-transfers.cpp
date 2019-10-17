@@ -792,6 +792,9 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
     AssertMsgReturn(pTransfer->pszPathRootAbs, ("Transfer has no root path set\n"), VERR_INVALID_PARAMETER);
     AssertMsgReturn(pOpenCreateParms->pszPath, ("No path in open/create params set\n"), VERR_INVALID_PARAMETER);
 
+    if (pTransfer->cObjHandles == pTransfer->cMaxObjHandles)
+        return VERR_SHCLPB_MAX_OBJECTS_REACHED;
+
     LogFlowFunc(("pszPath=%s, fCreate=0x%x\n", pOpenCreateParms->pszPath, pOpenCreateParms->fCreate));
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
@@ -833,6 +836,9 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
                 pInfo->enmType = SHCLOBJTYPE_FILE;
 
                 RTListAppend(&pTransfer->lstObj, &pInfo->Node);
+                pTransfer->cObjHandles++;
+
+                LogFlowFunc(("cObjHandles=%RU32\n", pTransfer->cObjHandles));
 
                 *phObj = pInfo->hObj;
             }
@@ -913,6 +919,9 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
             }
 
             RTListNodeRemove(&pInfo->Node);
+
+            Assert(pTransfer->cObjHandles);
+            pTransfer->cObjHandles--;
 
             ShClTransferObjHandleInfoDestroy(pInfo);
 
@@ -1259,6 +1268,9 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer,
     {
         pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_INITIALIZED; /* Now we're ready to run. */
 
+        pTransfer->cMaxListHandles = _4K; /** @todo Make this dynamic. */
+        pTransfer->cMaxObjHandles  = _4K; /** @todo Ditto. */
+
         if (pTransfer->Callbacks.pfnTransferInitialize)
         {
             SHCLTRANSFERCALLBACKDATA Data = { pTransfer, pTransfer->Callbacks.pvUser, pTransfer->Callbacks.cbUser };
@@ -1383,6 +1395,9 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
 
     int rc;
 
+    if (pTransfer->cListHandles == pTransfer->cMaxListHandles)
+        return VERR_SHCLPB_MAX_LISTS_REACHED;
+
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
         LogFlowFunc(("pszPath=%s\n", pOpenParms->pszPath));
@@ -1438,8 +1453,10 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
                             if (pInfo->pszPathLocalAbs)
                             {
                                 RTListAppend(&pTransfer->lstList, &pInfo->Node);
+                                pTransfer->cListHandles++;
 
-                                LogFlowFunc(("pszPathLocalAbs=%s, hList=%RU64\n", pInfo->pszPathLocalAbs, pInfo->hList));
+                                LogFlowFunc(("pszPathLocalAbs=%s, hList=%RU64, cListHandles=%RU32\n",
+                                             pInfo->pszPathLocalAbs, pInfo->hList, pTransfer->cListHandles));
 
                                 *phList = pInfo->hList;
                             }
@@ -1532,6 +1549,9 @@ int ShClTransferListClose(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList)
             }
 
             RTListNodeRemove(&pInfo->Node);
+
+            Assert(pTransfer->cListHandles);
+            pTransfer->cListHandles--;
 
             RTMemFree(pInfo);
         }

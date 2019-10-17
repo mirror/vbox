@@ -2945,12 +2945,14 @@
 #define VERR_SHCLPB_MAX_TRANSFERS_REACHED           (-7100)
 /** Maximum number of Shared Clipboard objects has been reached. */
 #define VERR_SHCLPB_MAX_OBJECTS_REACHED             (-7101)
+/** Maximum number of Shared Clipboard lists has been reached. */
+#define VERR_SHCLPB_MAX_LISTS_REACHED               (-7102)
 /** A Shared Clipboard list handle is invalid. */
-#define VERR_SHCLPB_LIST_HANDLE_INVALID             (-7102)
+#define VERR_SHCLPB_LIST_HANDLE_INVALID             (-7103)
 /** A Shared Clipboard objects handle is invalid. */
-#define VERR_SHCLPB_OBJ_HANDLE_INVALID              (-7103)
+#define VERR_SHCLPB_OBJ_HANDLE_INVALID              (-7104)
 /** A Shared Clipboard transfer ID is invalid. */
-#define VERR_SHCLPB_TRANSFER_ID_NOT_FOUND           (-7104)
+#define VERR_SHCLPB_TRANSFER_ID_NOT_FOUND           (-7105)
 /** @} */
 /* SED-END */
 
