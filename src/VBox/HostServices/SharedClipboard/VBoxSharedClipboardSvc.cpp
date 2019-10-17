@@ -18,43 +18,55 @@
 
 /** @page pg_hostclip       The Shared Clipboard Host Service
  *
- * The shared clipboard host service provides a proxy between the host's
- * clipboard and a similar proxy running on a guest.  The service is split
- * into a platform-independent core and platform-specific backends.  The
- * service defines two communication protocols - one to communicate with the
- * clipboard service running on the guest, and one to communicate with the
- * backend.  These will be described in a very skeletal fashion here.
+ * The shared clipboard host service is the host half of the clibpoard proxying
+ * between the host and the guest.  The guest parts live in VBoxClient, VBoxTray
+ * and VBoxService depending on the OS, with code shared between host and guest
+ * under src/VBox/GuestHost/SharedClipboard/.
+ *
+ * The service is split into a platform-independent core and platform-specific
+ * backends.  The service defines two communication protocols - one to
+ * communicate with the clipboard service running on the guest, and one to
+ * communicate with the backend.  These will be described in a very skeletal
+ * fashion here.
+ *
+ * r=bird: The "two communication protocols" does not seems to be factual, there
+ * is only one protocol, the first one mentioned.  It cannot be backend
+ * specific, because the guest/host protocol is platform and backend agnostic in
+ * nature.  You may call it versions, but I take a great dislike to "protocol
+ * versions" here, as you've just extended the existing protocol with a feature
+ * that allows to transfer files and directories too.  See @bugref{9437#c39}.
+ *
  *
  * @section sec_hostclip_guest_proto  The guest communication protocol
  *
- * The guest clipboard service communicates with the host service via HGCM
- * (the host service runs as an HGCM service).  The guest clipboard must
- * connect to the host service before all else (Windows hosts currently only
- * support one simultaneous connection).  Once it has connected, it can send
- * HGCM messages to the host services, some of which will receive replies from
- * the host.  The host can only reply to a guest message, it cannot initiate
- * any communication.  The guest can in theory send any number of messages in
- * parallel (see the descriptions of the messages for the practice), and the
- * host will receive these in sequence, and may reply to them at once
- * (releasing the caller in the guest) or defer the reply until later.
+ * The guest clipboard service communicates with the host service over HGCM
+ * (the host is a HGCM service).  HGCM is connection based, so the guest side
+ * has to connect before anything else can be done.  (Windows hosts currently
+ * only support one simultaneous connection.)  Once it has connected, it can
+ * send messages to the host services, some of which will receive immediate
+ * replies from the host, others which will block till a reply becomes
+ * available.  The latter is because HGCM does't allow the host to initiate
+ * communication, it must be guest triggered.  The HGCM service is single
+ * threaded, so it doesn't matter if the guest tries to send lots of requests in
+ * parallel, the service will process them one at the time.
  *
  * There are currently four messages defined.  The first is
- * VBOX_SHCL_FN_GET_HOST_MSG, which waits for a message from the
- * host. If a host message is sent while the guest is not waiting, it will be
- * queued until the guest requests it. The host code only supports a single
- * simultaneous VBOX_SHCL_FN_GET_HOST_MSG call from one guest.
+ * VBOX_SHCL_GUEST_FN_MSG_GET / VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, which waits
+ * for a message from the host.  If a host message is sent while the guest is
+ * not waiting, it will be queued until the guest requests it.  The host code
+ * only supports a single simultaneous GET call from one client guest.
  *
- * The second guest message is VBOX_SHCL_FN_FORMATS, which tells
+ * The second guest message is VBOX_SHCL_GUEST_FN_FORMATS_REPORT, which tells
  * the host that the guest has new clipboard data available.  The third is
- * VBOX_SHCL_FN_READ_DATA, which asks the host to send its
- * clipboard data and waits until it arrives.  The host supports at most one
- * simultaneous VBOX_SHCL_FN_READ_DATA call from a guest - if a
- * second call is made before the first has returned, the first will be
- * aborted.
+ * VBOX_SHCL_GUEST_FN_DATA_READ, which asks the host to send its clipboard data
+ * and waits until it arrives.  The host supports at most one simultaneous
+ * VBOX_SHCL_GUEST_FN_DATA_READ call from a guest - if a second call is made
+ * before the first has returned, the first will be aborted.
  *
- * The last guest message is VBOX_SHCL_FN_WRITE_DATA, which is
- * used to send the contents of the guest clipboard to the host.  This call
- * should be used after the host has requested data from the guest.
+ * The last guest message is VBOX_SHCL_GUEST_FN_DATA_WRITE, which is used to
+ * send the contents of the guest clipboard to the host.  This call should be
+ * used after the host has requested data from the guest.
+ *
  *
  * @section sec_hostclip_backend_proto  The communication protocol with the
  *                                      platform-specific backend
@@ -79,6 +91,7 @@
  * the host request.
  *
  * Also see the protocol changelog at VBoxShClSvc.h.
+ *
  *
  * @section sec_uri_intro               Transferring files
  *
@@ -121,6 +134,8 @@
  *
  * @todo We might use some VFS / container (IPRT?) for this instead of the
  *       host's file system directly?
+ *       bird> Yes, but may take some work as we don't have the pick and choose
+ *             kind of VFS containers implemented yet.
  *
  * @section sec_transfer_structure        Transfer handling structure
  *
@@ -128,21 +143,23 @@
  * (via VBoxTray / VBoxClient) or on the host (host service) to avoid code
  * duplication where applicable.
  *
- * Per HGCM client there is a so-called "transfer context", which in turn can have
- * one or mulitple so-called "Shared Clipboard transfer" objects. At the moment we only support
- * on concurrent Shared Clipboard transfer per transfer context. It's being used for reading from a
- * source or writing to destination, depening on its direction. An Shared Clipboard transfer
- * can have optional callbacks which might be needed by various implementations.
- * Also, transfers optionally can run in an asynchronous thread to prevent
- * blocking the UI while running.
+ * Per HGCM client there is a so-called "transfer context", which in turn can
+ * have one or mulitple so-called "Shared Clipboard transfer" objects. At the
+ * moment we only support on concurrent Shared Clipboard transfer per transfer
+ * context. It's being used for reading from a source or writing to destination,
+ * depening on its direction. An Shared Clipboard transfer can have optional
+ * callbacks which might be needed by various implementations. Also, transfers
+ * optionally can run in an asynchronous thread to prevent blocking the UI while
+ * running.
  *
- * An Shared Clipboard transfer can maintain its own clipboard area; for the host service such
- * a clipboard area is coupled to a clipboard area registered or attached with
- * VBoxSVC. This is needed because multiple transfers from multiple VMs (n:n) can
- * rely on the same clipboard area, so there needs a master keeping tracking of
- * a clipboard area. To minimize IPC traffic only the minimum de/attaching is done
- * at the moment. A clipboard area gets cleaned up (i.e. physically deleted) if
- * no references are held to it  anymore, or if VBoxSVC goes down.
+ * A Shared Clipboard transfer can maintain its own clipboard area; for the host
+ * service such a clipboard area is coupled to a clipboard area registered or
+ * attached with VBoxSVC. This is needed because multiple transfers from
+ * multiple VMs (n:n) can rely on the same clipboard area, so there needs a
+ * master keeping tracking of a clipboard area. To minimize IPC traffic only the
+ * minimum de/attaching is done at the moment. A clipboard area gets cleaned up
+ * (i.e. physically deleted) if no references are held to it  anymore, or if
+ * VBoxSVC goes down.
  *
  * @section sec_transfer_providers        Transfer providers
  *
