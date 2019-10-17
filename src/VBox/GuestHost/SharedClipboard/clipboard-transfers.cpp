@@ -2226,7 +2226,7 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
     AssertReturn(cbRoots,           VERR_INVALID_PARAMETER);
 
     if (!RTStrIsValidEncoding(pszRoots))
-        return VERR_INVALID_PARAMETER;
+        return VERR_INVALID_UTF8_ENCODING;
 
     int rc = VINF_SUCCESS;
 
