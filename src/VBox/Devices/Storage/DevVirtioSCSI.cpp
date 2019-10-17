@@ -561,14 +561,6 @@ typedef struct VIRTIOSCSIREQ
     uint8_t                        uStatus;                  /**< SCSI status code                                  */
 } VIRTIOSCSIREQ;
 
-DECLINLINE(bool) isBufZero(uint8_t *pv, uint32_t cb)
-{
-    for (uint32_t i = 0; i < cb; i++)
-        if (pv[i])
-            return false;
-    return true;
-}
-
 DECLINLINE(const char *) virtioGetTxDirText(uint32_t enmTxDir)
 {
     switch (enmTxDir)
