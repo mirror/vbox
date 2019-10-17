@@ -1016,7 +1016,6 @@ static DECLCALLBACK(int) virtioScsiIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
 
     AssertReturn(pReq->pDescChain, VERR_INVALID_PARAMETER);
 
-
     PRTSGBUF pSgPhysReturn = pReq->pDescChain->pSgPhysReturn;
     RTSgBufAdvance(pSgPhysReturn, offDst);
 
@@ -1055,7 +1054,6 @@ static DECLCALLBACK(int) virtioScsiIoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
 static DECLCALLBACK(int) virtioScsiIoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                     void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf, size_t cbCopy)
 {
-
     RT_NOREF(hIoReq, cbCopy);
 
     PVIRTIOSCSIREQ pReq = (PVIRTIOSCSIREQ)pvIoReqAlloc;
@@ -1299,7 +1297,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
                                    | pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[3]) & 0x3fff;
                 const char *pszTmfTypeText = virtioGetTMFTypeText(pScsiCtrlUnion->scsiCtrlTmf.uSubtype);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Task Mgt Function: %s\n",
-                    uTarget, uScsiLun, pszTmfTypeText));
+                    QUEUENAME(qIdx), uTarget, uScsiLun, pszTmfTypeText));
                 RT_NOREF3(pszTmfTypeText, uTarget, uScsiLun);
             }
 
@@ -1344,19 +1342,18 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
             PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnQuery = &pScsiCtrlUnion->scsiCtrlAsyncNotify;
 
-
             uSubscribedEvents &= pScsiCtrlAnQuery->uEventsRequested;
             uResponse = VIRTIOSCSI_S_FUNCTION_COMPLETE;
 
-            if (LogIs3Enabled())
+            if (LogIs2Enabled())
             {
                 uint8_t  uTarget  = pScsiCtrlAnQuery->uScsiLun[1];
                 uint32_t uScsiLun = (pScsiCtrlAnQuery->uScsiLun[2] << 8 | pScsiCtrlAnQuery->uScsiLun[3]) & 0x3fff;
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText),
                     pScsiCtrlAnQuery->uEventsRequested);
-                Log3Func(("[%s] (Target: %d LUN: %d)  Asyc. Notification Queury: %s\n",
-                    uTarget, uScsiLun, szTypeText));
+                Log2Func(("[%s] (Target: %d LUN: %d)  Async. Notification Query: %s\n",
+                    QUEUENAME(qIdx), uTarget, uScsiLun, szTypeText));
                 RT_NOREF3(szTypeText, uTarget, uScsiLun);
 
             }
@@ -1385,7 +1382,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnSubscribe->uEventsRequested);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Async. Notification Subscribe: %s\n",
-                    uTarget, uScsiLun, szTypeText));
+                    QUEUENAME(qIdx), uTarget, uScsiLun, szTypeText));
                 RT_NOREF3(szTypeText, uTarget, uScsiLun);
 
             }
