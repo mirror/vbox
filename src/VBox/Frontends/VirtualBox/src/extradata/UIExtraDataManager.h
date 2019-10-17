@@ -668,6 +668,8 @@ public:
         void softKeyboardOptions(bool &fOutShowNumPad, bool &fOutHideOSMenuKeys, bool &fOutHideMultimediaKeys);
         void setSoftKeyboardColorTheme(const QStringList &colorStringList);
         QStringList softKeyboardColorTheme();
+        void setSoftKeyboardSelectedColorTheme(const QString &strColorThemeName);
+        QString softKeyboardSelectedColorTheme();
         void setSoftKeyboardSelectedLayout(const QUuid &uLayoutUid);
         QUuid softKeyboardSelectedLayout();
     /** @} */

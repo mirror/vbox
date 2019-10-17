@@ -4276,6 +4276,16 @@ QStringList UIExtraDataManager::softKeyboardColorTheme()
     return extraDataStringList(GUI_SoftKeyboard_ColorTheme);
 }
 
+void UIExtraDataManager::setSoftKeyboardSelectedColorTheme(const QString &strColorThemeName)
+{
+    setExtraDataString(GUI_SoftKeyboard_SelectedColorTheme, strColorThemeName);
+}
+
+QString UIExtraDataManager::softKeyboardSelectedColorTheme()
+{
+    return extraDataString(GUI_SoftKeyboard_SelectedColorTheme);
+}
+
 void UIExtraDataManager::setSoftKeyboardSelectedLayout(const QUuid &uLayoutUid)
 {
     setExtraDataString(GUI_SoftKeyboard_SelectedLayout, uLayoutUid.toString());

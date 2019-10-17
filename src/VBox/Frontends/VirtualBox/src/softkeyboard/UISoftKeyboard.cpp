@@ -644,8 +644,8 @@ public:
     QColor color(KeyboardColorType enmColorType) const;
     void setColor(KeyboardColorType ennmColorType, const QColor &color);
 
-    QStringList colorsToStringList() const;
-    void colorsFromStringList(const QStringList &colorStringList);
+    QStringList colorsToStringList(const QString &strColorThemeName);
+    void colorsFromStringList(const QString &strColorThemeName, const QStringList &colorStringList);
 
     /** Unlike modifier and ordinary keys we update the state of the Lock keys thru event singals we receieve
       * from the guest OS. Parameter f???State is true if the corresponding key is locked. */
@@ -654,7 +654,7 @@ public:
 
     QStringList colorThemeNames() const;
     QString currentColorThemeName() const;
-    void setColorTheme(const QString &strColorThemeName);
+    void setColorThemeByName(const QString &strColorThemeName);
     void parentDialogDeactivated();
 
 protected:
@@ -693,7 +693,7 @@ private:
     UISoftKeyboardLayout *findLayoutByUid(const QUuid &uid);
     /** Looks under the default keyboard layout folder and add the file names to the fileList. */
     void               lookAtDefaultLayoutFolder(QStringList &fileList);
-
+    UISoftKeyboardColorTheme *colorTheme(const QString &strColorThemeName);
     UISoftKeyboardKey *m_pKeyUnderMouse;
     UISoftKeyboardKey *m_pKeyBeingEdited;
 
@@ -2498,17 +2498,20 @@ void UISoftKeyboardWidget::setColor(KeyboardColorType enmColorType, const QColor
     update();
 }
 
-QStringList UISoftKeyboardWidget::colorsToStringList() const
+QStringList UISoftKeyboardWidget::colorsToStringList(const QString &strColorThemeName)
 {
-    if (!m_currentColorTheme)
-        QStringList();
-    return m_currentColorTheme->colorsToStringList();
+    UISoftKeyboardColorTheme *pTheme = colorTheme(strColorThemeName);
+    if (!pTheme)
+        return QStringList();
+    return pTheme->colorsToStringList();
 }
 
-void UISoftKeyboardWidget::colorsFromStringList(const QStringList &colorStringList)
+void UISoftKeyboardWidget::colorsFromStringList(const QString &strColorThemeName, const QStringList &colorStringList)
 {
-    if (m_currentColorTheme)
-        m_currentColorTheme->colorsFromStringList(colorStringList);
+    UISoftKeyboardColorTheme *pTheme = colorTheme(strColorThemeName);
+    if (!pTheme)
+        return;
+    pTheme->colorsFromStringList(colorStringList);
 }
 
 void UISoftKeyboardWidget::updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState)
@@ -2535,7 +2538,7 @@ QString UISoftKeyboardWidget::currentColorThemeName() const
     return m_currentColorTheme->name();
 }
 
-void UISoftKeyboardWidget::setColorTheme(const QString &strColorThemeName)
+void UISoftKeyboardWidget::setColorThemeByName(const QString &strColorThemeName)
 {
     if (m_currentColorTheme && m_currentColorTheme->name() == strColorThemeName)
         return;
@@ -3103,6 +3106,16 @@ void UISoftKeyboardWidget::lookAtDefaultLayoutFolder(QStringList &fileList)
     QFileInfoList fileInfoList = dir.entryInfoList();
     foreach (const QFileInfo &fileInfo, fileInfoList)
         fileList << fileInfo.absoluteFilePath();
+}
+
+UISoftKeyboardColorTheme *UISoftKeyboardWidget::colorTheme(const QString &strColorThemeName)
+{
+    for (int i = 0; i < m_colorThemes.size(); ++i)
+    {
+        if (m_colorThemes[i].name() == strColorThemeName)
+            return &(m_colorThemes[i]);
+    }
+    return 0;
 }
 
 QStringList UISoftKeyboardWidget::layoutNameList() const
@@ -3878,7 +3891,7 @@ void UISoftKeyboard::sltShowHideSettingsWidget()
 void UISoftKeyboard::sltHandleColorThemeListSelection(const QString &strColorThemeName)
 {
     if (m_pKeyboardWidget)
-        m_pKeyboardWidget->setColorTheme(strColorThemeName);
+        m_pKeyboardWidget->setColorThemeByName(strColorThemeName);
 }
 
 void UISoftKeyboard::sltHandleKeyboardWidgetColorThemeChange()
@@ -4057,8 +4070,11 @@ void UISoftKeyboard::saveSettings()
     /* Save other settings: */
     if (m_pKeyboardWidget)
     {
-        gEDataManager->setSoftKeyboardColorTheme(m_pKeyboardWidget->colorsToStringList());
-
+        /* Save the changes to the 'Custom' color theme to extra data: */
+        QStringList colors = m_pKeyboardWidget->colorsToStringList("Custom");
+        colors.prepend("Custom");
+        gEDataManager->setSoftKeyboardColorTheme(colors);
+        gEDataManager->setSoftKeyboardSelectedColorTheme(m_pKeyboardWidget->currentColorThemeName());
         gEDataManager->setSoftKeyboardOptions(m_pKeyboardWidget->hideNumPad(),
                                               m_pKeyboardWidget->hideOSMenuKeys(),
                                               m_pKeyboardWidget->hideMultimediaKeys());
@@ -4091,7 +4107,12 @@ void UISoftKeyboard::loadSettings()
     /* Load other settings: */
     if (m_pKeyboardWidget)
     {
-        m_pKeyboardWidget->colorsFromStringList(gEDataManager->softKeyboardColorTheme());
+        QStringList colorTheme = gEDataManager->softKeyboardColorTheme();
+        /* The fist item is the theme name and the rest are color codes: */
+        QString strThemeName = colorTheme[0];
+        colorTheme.removeFirst();
+        m_pKeyboardWidget->colorsFromStringList(strThemeName, colorTheme);
+        m_pKeyboardWidget->setColorThemeByName(gEDataManager->softKeyboardSelectedColorTheme());
         m_pKeyboardWidget->setCurrentLayout(gEDataManager->softKeyboardSelectedLayout());
         /* Load other options from exra data: */
         bool fHideNumPad = false;

@@ -204,6 +204,7 @@ const char *UIExtraDataDefs::GUI_GuestControl_ProcessControlDialogGeometry = "GU
 /* Soft Keyboard: */
 const char *UIExtraDataDefs::GUI_SoftKeyboard_DialogGeometry = "GUI/SoftKeyboardDialogGeometry";
 const char *UIExtraDataDefs::GUI_SoftKeyboard_ColorTheme  = "GUI/SoftKeyboardColorTheme";
+const char *UIExtraDataDefs::GUI_SoftKeyboard_SelectedColorTheme  = "GUI/SoftKeyboardSelectedColorTheme";
 const char *UIExtraDataDefs::GUI_SoftKeyboard_SelectedLayout  = "GUI/SoftKeyboardSelectedLayout";
 const char *UIExtraDataDefs::GUI_SoftKeyboard_Options  = "GUI/SoftKeyboardOptions";
 const char *UIExtraDataDefs::GUI_SoftKeyboard_HideNumPad = "GUI/SoftKeyboardHideNumPad";
