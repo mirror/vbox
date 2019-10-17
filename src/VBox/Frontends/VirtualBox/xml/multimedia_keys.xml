@@ -54,7 +54,7 @@
         <space>
             <width>25</width>
         </space>
-        <key><!-- Previous -->
+        <key><!-- Previous Media Track-->
             <position>307</position>
             <usageid>0xB6</usageid>
             <usagepage>0x0C</usagepage>
@@ -62,7 +62,7 @@
             <scancode>0x10</scancode>
             <staticcaption>⏮️</staticcaption>
         </key>
-        <key><!-- Next -->
+        <key><!-- Next Media Track-->
             <position>308</position>
             <usageid>0xB5</usageid>
             <usagepage>0x0C</usagepage>
@@ -115,7 +115,7 @@
             <staticcaption>💻️️</staticcaption>
         </key>
         <key><!-- Media -->
-            <position>312</position>
+            <position>316</position>
             <usageid>0x183</usageid>
             <usagepage>0x0C</usagepage>
             <scancodeprefix>0xE0</scancodeprefix>

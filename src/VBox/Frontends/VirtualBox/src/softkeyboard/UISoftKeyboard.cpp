@@ -685,6 +685,7 @@ private:
     bool               loadPhysicalLayout(const QString &strLayoutFileName, KeyboardRegion keyboardRegion = KeyboardRegion_Main);
     bool               loadKeyboardLayout(const QString &strLayoutName);
     void               prepareObjects();
+    void               prepareColorThemes();
     UISoftKeyboardPhysicalLayout *findPhysicalLayout(const QUuid &uuid);
     /** Sets m_pKeyBeingEdited. */
     void               setKeyBeingEdited(UISoftKeyboardKey *pKey);
@@ -694,6 +695,8 @@ private:
     /** Looks under the default keyboard layout folder and add the file names to the fileList. */
     void               lookAtDefaultLayoutFolder(QStringList &fileList);
     UISoftKeyboardColorTheme *colorTheme(const QString &strColorThemeName);
+    void showKeyTooltip(UISoftKeyboardKey *pKey);
+
     UISoftKeyboardKey *m_pKeyUnderMouse;
     UISoftKeyboardKey *m_pKeyBeingEdited;
 
@@ -706,6 +709,8 @@ private:
     UISoftKeyboardPhysicalLayout          m_multiMediaKeysLayout;
     QVector<UISoftKeyboardLayout>         m_layouts;
     UISoftKeyboardLayout *m_pCurrentKeyboardLayout;
+    /** Key is the key position as read from the layout and value is the message we show as mouse hovers over the key. */
+    QMap<int, QString> m_keyTooltips;
 
     QSize m_minimumSize;
     float m_fScaleFactorX;
@@ -2153,23 +2158,8 @@ UISoftKeyboardWidget::UISoftKeyboardWidget(QWidget *pParent /* = 0 */)
     , m_fHideMultimediaKeys(false)
 {
     prepareObjects();
-
-    int iIndex = 0;
-    while (predefinedColorThemes[iIndex][0])
-    {
-        m_colorThemes << UISoftKeyboardColorTheme(predefinedColorThemes[iIndex][0],
-                                                  predefinedColorThemes[iIndex][1],
-                                                  predefinedColorThemes[iIndex][2],
-                                                  predefinedColorThemes[iIndex][3],
-                                                  predefinedColorThemes[iIndex][4],
-                                                  predefinedColorThemes[iIndex][5]);
-        ++iIndex;
-    }
-
-    UISoftKeyboardColorTheme customTheme;
-    customTheme.setName("Custom");
-    m_colorThemes.append(customTheme);
-    m_currentColorTheme = &(m_colorThemes.back());
+    prepareColorThemes();
+    retranslateUi();
 }
 
 QSize UISoftKeyboardWidget::minimumSizeHint() const
@@ -2326,11 +2316,34 @@ void UISoftKeyboardWidget::mouseReleaseEvent(QMouseEvent *pEvent)
 void UISoftKeyboardWidget::mouseMoveEvent(QMouseEvent *pEvent)
 {
     QWidget::mouseMoveEvent(pEvent);
+    UISoftKeyboardKey *pPreviousKeyUnderMouse = m_pKeyUnderMouse;
     keyUnderMouse(pEvent);
+    if (pPreviousKeyUnderMouse != m_pKeyUnderMouse)
+        showKeyTooltip(m_pKeyUnderMouse);
 }
 
 void UISoftKeyboardWidget::retranslateUi()
 {
+    m_keyTooltips[300] = UISoftKeyboard::tr("Web browser go back");
+    m_keyTooltips[301] = UISoftKeyboard::tr("Web browser go the home page");
+    m_keyTooltips[302] = UISoftKeyboard::tr("Web browser go forward");
+    m_keyTooltips[315] = UISoftKeyboard::tr("Web browser reload the current page");
+    m_keyTooltips[314] = UISoftKeyboard::tr("Web browser stop loading the page");
+    m_keyTooltips[313] = UISoftKeyboard::tr("Web browser search");
+
+    m_keyTooltips[307] = UISoftKeyboard::tr("Jump back to previous media track");
+    m_keyTooltips[308] = UISoftKeyboard::tr("Jump to next media track");
+    m_keyTooltips[309] = UISoftKeyboard::tr("Stop playing");
+    m_keyTooltips[310] = UISoftKeyboard::tr("Play or pause playing");
+
+    m_keyTooltips[303] = UISoftKeyboard::tr("Start email application");
+    m_keyTooltips[311] = UISoftKeyboard::tr("Start calculator");
+    m_keyTooltips[312] = UISoftKeyboard::tr("Show 'My Computer'");
+    m_keyTooltips[316] = UISoftKeyboard::tr("Show Media folder");
+
+    m_keyTooltips[304] = UISoftKeyboard::tr("Mute");
+    m_keyTooltips[305] = UISoftKeyboard::tr("Volume up");
+    m_keyTooltips[306] = UISoftKeyboard::tr("Volume down");
 }
 
 void UISoftKeyboardWidget::saveCurentLayoutToFile()
@@ -2558,11 +2571,6 @@ void UISoftKeyboardWidget::parentDialogDeactivated()
 {
     if (!underMouse())
         m_pKeyUnderMouse = 0;
-    else
-    {
-        printf("under %d %d\n", cursor().pos().x(), cursor().pos().y());
-
-    }
     update();
 }
 
@@ -3045,6 +3053,26 @@ void UISoftKeyboardWidget::prepareObjects()
     setMouseTracking(true);
 }
 
+void UISoftKeyboardWidget::prepareColorThemes()
+{
+    int iIndex = 0;
+    while (predefinedColorThemes[iIndex][0])
+    {
+        m_colorThemes << UISoftKeyboardColorTheme(predefinedColorThemes[iIndex][0],
+                                                  predefinedColorThemes[iIndex][1],
+                                                  predefinedColorThemes[iIndex][2],
+                                                  predefinedColorThemes[iIndex][3],
+                                                  predefinedColorThemes[iIndex][4],
+                                                  predefinedColorThemes[iIndex][5]);
+        ++iIndex;
+    }
+
+    UISoftKeyboardColorTheme customTheme;
+    customTheme.setName("Custom");
+    m_colorThemes.append(customTheme);
+    m_currentColorTheme = &(m_colorThemes.back());
+}
+
 void UISoftKeyboardWidget::setKeyBeingEdited(UISoftKeyboardKey* pKey)
 {
     if (m_pKeyBeingEdited == pKey)
@@ -3116,6 +3144,15 @@ UISoftKeyboardColorTheme *UISoftKeyboardWidget::colorTheme(const QString &strCol
             return &(m_colorThemes[i]);
     }
     return 0;
+}
+
+void UISoftKeyboardWidget::showKeyTooltip(UISoftKeyboardKey *pKey)
+{
+    if (pKey && m_keyTooltips.contains(pKey->position()))
+        sigStatusBarMessage(m_keyTooltips[pKey->position()]);
+    else
+        sigStatusBarMessage(QString());
+
 }
 
 QStringList UISoftKeyboardWidget::layoutNameList() const
@@ -4032,7 +4069,6 @@ void UISoftKeyboard::prepareConnections()
 
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigCurrentLayoutChange, this, &UISoftKeyboard::sltCurentLayoutChanged);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigKeyToEdit, this, &UISoftKeyboard::sltKeyToEditChanged);
-    connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigStatusBarMessage, this, &UISoftKeyboard::sltStatusBarMessage);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigStatusBarMessage, this, &UISoftKeyboard::sltStatusBarMessage);
     connect(m_pKeyboardWidget, &UISoftKeyboardWidget::sigCurrentColorThemeChanged, this, &UISoftKeyboard::sltHandleKeyboardWidgetColorThemeChange);
 
