@@ -30,11 +30,10 @@
 #include <VBox/GuestHost/SharedClipboard-transfers.h>
 
 
-static int sharedClipboardTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
-static int sharedClipboardTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
-static PSHCLTRANSFER sharedClipboardTransferCtxGetTransferInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
-static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode,
-                                                 SHCLOBJHANDLE handleInitial, uint64_t *pfOpen);
+static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser);
+static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs);
+static PSHCLTRANSFER shClTransferCtxGetTransferInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uIdx);
+static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode, SHCLOBJHANDLE handleInitial, uint64_t *pfOpen);
 
 /** @todo Split this file up in different modules. */
 
@@ -761,8 +760,7 @@ void ShClTransferObjOpenParmsDestroy(PSHCLOBJOPENCREATEPARMS pParms)
  * @param   pTransfer           Clipboard transfer to get object handle info from.
  * @param   hObj                Object handle of the object to get handle info for.
  */
-inline PSHCLOBJHANDLEINFO sharedClipboardTransferObjectGet(PSHCLTRANSFER pTransfer,
-                                                           SHCLOBJHANDLE hObj)
+inline PSHCLOBJHANDLEINFO shClTransferObjGet(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
 {
     PSHCLOBJHANDLEINFO pIt;
     RTListForEach(&pTransfer->lstObj, pIt, SHCLOBJHANDLEINFO, Node) /** @todo Slooow ...but works for now. */
@@ -808,9 +806,9 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
                 const bool fWritable = true; /** @todo Fix this. */
 
                 uint64_t fOpen;
-                rc = sharedClipboardConvertFileCreateFlags(fWritable,
-                                                           pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
-                                                           SHCLOBJHANDLE_INVALID, &fOpen);
+                rc = shClConvertFileCreateFlags(fWritable,
+                                                pOpenCreateParms->fCreate, pOpenCreateParms->ObjInfo.Attr.fMode,
+                                                SHCLOBJHANDLE_INVALID, &fOpen);
                 if (RT_SUCCESS(rc))
                 {
                     pInfo->pszPathLocalAbs = RTPathJoinA(pTransfer->pszPathRootAbs, pOpenCreateParms->pszPath);
@@ -876,7 +874,7 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLOBJHANDLEINFO pInfo = sharedClipboardTransferObjectGet(pTransfer, hObj);
+        PSHCLOBJHANDLEINFO pInfo = shClTransferObjGet(pTransfer, hObj);
         if (pInfo)
         {
             switch (pInfo->enmType)
@@ -961,7 +959,7 @@ int ShClTransferObjRead(PSHCLTRANSFER pTransfer,
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLOBJHANDLEINFO pInfo = sharedClipboardTransferObjectGet(pTransfer, hObj);
+        PSHCLOBJHANDLEINFO pInfo = shClTransferObjGet(pTransfer, hObj);
         if (pInfo)
         {
             switch (pInfo->enmType)
@@ -1023,7 +1021,7 @@ int ShClTransferObjWrite(PSHCLTRANSFER pTransfer,
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLOBJHANDLEINFO pInfo = sharedClipboardTransferObjectGet(pTransfer, hObj);
+        PSHCLOBJHANDLEINFO pInfo = shClTransferObjGet(pTransfer, hObj);
         if (pInfo)
         {
             switch (pInfo->enmType)
@@ -1128,7 +1126,7 @@ void ShClTransferObjDataChunkFree(PSHCLOBJDATACHUNK pDataChunk)
  *
  * @returns VBox status code.
  * @param   ppTransfer          Where to return the created Shared Clipboard transfer struct.
- *                              Must be destroyed by SharedClipboardTransferDestroy().
+ *                              Must be destroyed by ShClTransferDestroy().
  */
 int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 {
@@ -1205,7 +1203,7 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
 
     LogFlowFuncEnter();
 
-    int rc = sharedClipboardTransferThreadDestroy(pTransfer, 30 * 1000 /* Timeout in ms */);
+    int rc = shClTransferThreadDestroy(pTransfer, 30 * 1000 /* Timeout in ms */);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -2352,7 +2350,7 @@ int ShClTransferRun(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pv
                     ("Wrong status (currently is %s)\n", ShClTransferStatusToStr(pTransfer->State.enmStatus)),
                     VERR_WRONG_ORDER);
 
-    int rc = sharedClipboardTransferThreadCreate(pTransfer, pfnThreadFunc, pvUser);
+    int rc = shClTransferThreadCreate(pTransfer, pfnThreadFunc, pvUser);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -2434,7 +2432,7 @@ void ShClTransferSetCallbacks(PSHCLTRANSFER pTransfer,
  * @param   pfnThreadFunc       Thread function to use for this transfer.
  * @param   pvUser              Pointer to user-provided data.
  */
-static int sharedClipboardTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser)
+static int shClTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHREAD pfnThreadFunc, void *pvUser)
 
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
@@ -2474,7 +2472,7 @@ static int sharedClipboardTransferThreadCreate(PSHCLTRANSFER pTransfer, PFNRTTHR
  * @param   pTransfer           Clipboard transfer to destroy thread for.
  * @param   uTimeoutMs          Timeout (in ms) to wait for thread creation.
  */
-static int sharedClipboardTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs)
+static int shClTransferThreadDestroy(PSHCLTRANSFER pTransfer, RTMSINTERVAL uTimeoutMs)
 {
     AssertPtrReturn(pTransfer, VERR_INVALID_POINTER);
 
@@ -2575,7 +2573,7 @@ void ShClTransferCtxReset(PSHCLTRANSFERCTX pTransferCtx)
  * @param   pTransferCtx                Transfer context to return transfer for.
  * @param   uID                 ID of the transfer to return.
  */
-static PSHCLTRANSFER sharedClipboardTransferCtxGetTransferInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
+static PSHCLTRANSFER shClTransferCtxGetTransferInternal(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
 {
     PSHCLTRANSFER pTransfer;
     RTListForEach(&pTransferCtx->List, pTransfer, SHCLTRANSFER, Node) /** @todo Slow, but works for now. */
@@ -2596,7 +2594,7 @@ static PSHCLTRANSFER sharedClipboardTransferCtxGetTransferInternal(PSHCLTRANSFER
  */
 PSHCLTRANSFER ShClTransferCtxGetTransfer(PSHCLTRANSFERCTX pTransferCtx, uint32_t uID)
 {
-    return sharedClipboardTransferCtxGetTransferInternal(pTransferCtx, uID);
+    return shClTransferCtxGetTransferInternal(pTransferCtx, uID);
 }
 
 /**
@@ -2722,7 +2720,7 @@ int ShClTransferCtxTransferUnregister(PSHCLTRANSFERCTX pTransferCtx, uint32_t id
 
     LogFlowFunc(("idTransfer=%RU32\n", idTransfer));
 
-    PSHCLTRANSFER pTransfer = sharedClipboardTransferCtxGetTransferInternal(pTransferCtx, idTransfer);
+    PSHCLTRANSFER pTransfer = shClTransferCtxGetTransferInternal(pTransferCtx, idTransfer);
     if (pTransfer)
     {
         RTListNodeRemove(&pTransfer->Node);
@@ -2847,8 +2845,8 @@ void ShClFsObjFromIPRT(PSHCLFSOBJINFO pDst, PCRTFSOBJINFO pSrc)
  *
  * @sa Initially taken from vbsfConvertFileOpenFlags().
  */
-static int sharedClipboardConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode,
-                                                 SHCLOBJHANDLE handleInitial, uint64_t *pfOpen)
+static int shClConvertFileCreateFlags(bool fWritable, unsigned fShClFlags, RTFMODE fMode,
+                                      SHCLOBJHANDLE handleInitial, uint64_t *pfOpen)
 {
     uint64_t fOpen = 0;
     int rc = VINF_SUCCESS;
