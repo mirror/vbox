@@ -883,6 +883,8 @@ typedef SUPVMMR0REQHDR *PSUPVMMR0REQHDR;
 #define SUPVTCAPS_NESTED_PAGING             RT_BIT(2)
 /** VT-x: Unrestricted guest execution is supported. */
 #define SUPVTCAPS_VTX_UNRESTRICTED_GUEST    RT_BIT(3)
+/** VT-x: VMCS shadowing is supported. */
+#define SUPVTCAPS_VTX_VMCS_SHADOWING        RT_BIT(4)
 /** @} */
 
 /**

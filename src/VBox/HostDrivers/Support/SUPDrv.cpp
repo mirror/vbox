@@ -4399,6 +4399,8 @@ int VBOXCALL supdrvQueryVTCapsInternal(uint32_t *pfCaps)
                         *pfCaps |= SUPVTCAPS_NESTED_PAGING;
                     if (vtCaps.n.allowed1 & VMX_PROC_CTLS2_UNRESTRICTED_GUEST)
                         *pfCaps |= SUPVTCAPS_VTX_UNRESTRICTED_GUEST;
+                    if (vtCaps.n.allowed1 & VMX_PROC_CTLS2_VMCS_SHADOWING)
+                        *pfCaps |= SUPVTCAPS_VTX_VMCS_SHADOWING;
                 }
             }
         }
