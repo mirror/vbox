@@ -1144,7 +1144,7 @@ int SharedClipboardWinDropFilesToStringList(DROPFILES *pDropFiles, char **papszL
         {
             LogFlowFunc(("\tFile: %s (cchFile=%RU16)\n", pszFileUtf8, cchFileUtf8));
 
-            LogRel(("Shared Clipboard: Adding guest file '%s'\n", pszFileUtf8));
+            LogRel2((("Shared Clipboard: Adding file '%s' to transfer\n", pszFileUtf8));
 
             rc = RTStrAAppendExN(&pszFiles, 1 /* cPairs */, pszFileUtf8, strlen(pszFileUtf8));
             cchFiles += (uint32_t)strlen(pszFileUtf8);
