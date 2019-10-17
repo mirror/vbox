@@ -1371,6 +1371,8 @@ bool UIFormEditorProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex 
 
 UIFormEditorView::UIFormEditorView(QWidget * /* pParent = 0 */)
 {
+    /* Configure widget a bit: */
+    setEditTriggers(QAbstractItemView::DoubleClicked | QAbstractItemView::SelectedClicked | QAbstractItemView::EditKeyPressed);
 }
 
 int UIFormEditorView::childCount() const
