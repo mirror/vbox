@@ -2671,16 +2671,16 @@ QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
     if (pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
-    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef VBOX_WS_WIN
-    /* Make sure resulting geometry is within current bounds: */
-    if (fOk && !availableGeometry.contains(geometry))
-        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* VBOX_WS_WIN */
-
     /* As final fallback, move default-geometry to available-geometry' center: */
     if (!fOk)
         geometry.moveCenter(availableGeometry.center());
+
+    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
+#ifdef VBOX_WS_WIN
+    /* Make sure resulting geometry is within current bounds: */
+    if (!availableGeometry.contains(geometry))
+        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
+#endif /* VBOX_WS_WIN */
 
     /* Return result: */
     return geometry;
@@ -4121,19 +4121,19 @@ QRect UIExtraDataManager::sessionInformationDialogGeometry(QWidget *pWidget, QWi
     if (pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
-    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef VBOX_WS_WIN
-    /* Make sure resulting geometry is within current bounds: */
-    if (fOk && !availableGeometry.contains(geometry))
-        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* VBOX_WS_WIN */
-
     /* As a fallback, move default-geometry to pParentWidget' geometry center: */
     if (!fOk && pParentWidget)
         geometry.moveCenter(pParentWidget->geometry().center());
     /* As final fallback, move default-geometry to available-geometry' center: */
     else if (!fOk)
         geometry.moveCenter(availableGeometry.center());
+
+    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
+#ifdef VBOX_WS_WIN
+    /* Make sure resulting geometry is within current bounds: */
+    if (!availableGeometry.contains(geometry))
+        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
+#endif /* VBOX_WS_WIN */
 
     /* Return result: */
     return geometry;
@@ -4455,16 +4455,16 @@ QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget)
     const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
                                           gpDesktop->availableGeometry();
 
-    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef VBOX_WS_WIN
-    /* Make sure resulting geometry is within current bounds: */
-    if (fOk && !availableGeometry.contains(geometry))
-        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* VBOX_WS_WIN */
-
     /* As final fallback, move default-geometry to available-geometry' center: */
     if (!fOk)
         geometry.moveCenter(availableGeometry.center());
+
+    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
+#ifdef VBOX_WS_WIN
+    /* Make sure resulting geometry is within current bounds: */
+    if (!availableGeometry.contains(geometry))
+        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
+#endif /* VBOX_WS_WIN */
 
     /* Return result: */
     return geometry;
