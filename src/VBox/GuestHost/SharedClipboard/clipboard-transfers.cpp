@@ -1386,7 +1386,6 @@ static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPa
     /* Paranoia. */
     if (   !strlen(pszPath)
         || !RTStrIsValidEncoding(pszPath)
-        ||  RTStrStr(pszPath, ".")
         ||  RTStrStr(pszPath, ".."))
     {
         LogRel(("Shared Clipboard: Resolving absolute path '%s' failed, invalid\n", pszPath));
