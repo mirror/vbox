@@ -1433,7 +1433,7 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
                 MEDIUMTASKMOVE mt;// = {false, "basename", NULL, 0, 0};
                 mt.strBaseName = bstrLocation;
                 Utf8Str const &strFolder = m_vmFolders[VBox_SnapshotFolder];
-                
+
                 if (strFolder.isNotEmpty() && RTPathStartsWith(mt.strBaseName.c_str(), strFolder.c_str()))
                     mt.fSnapshot = true;
                 else
