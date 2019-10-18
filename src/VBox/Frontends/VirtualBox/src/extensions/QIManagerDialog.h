@@ -164,8 +164,8 @@ protected:
         QIDialogButtonBox *buttonBox() { return m_pButtonBox; }
         /** Returns button of passed @a enmType. */
         QPushButton *button(ButtonType enmType) { return m_buttons.value(enmType); }
-        /** Returns center widget. */
-        QWidget* centerWidget() const { return pCenterWidget; }
+        /** Returns the widget reference to center manager dialog according. */
+        QWidget *centerWidget() const { return m_pCenterWidget; }
     /** @} */
 
     /** @name Event-handling stuff.
@@ -178,8 +178,8 @@ private:
 
     /** @name General stuff.
       * @{ */
-        /** Holds the widget reference to center Host Network Manager according. */
-        QWidget *pCenterWidget;
+        /** Holds the widget reference to center manager dialog according. */
+        QWidget *m_pCenterWidget;
 
         /** Holds whether the manager had emitted command to be closed. */
         bool m_fCloseEmitted;
