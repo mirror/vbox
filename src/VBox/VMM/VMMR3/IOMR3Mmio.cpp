@@ -123,7 +123,11 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
 
     AssertMsgReturn(cbRegion > 0 && !(cbRegion & PAGE_OFFSET_MASK), ("cbRegion=%RGp\n", cbRegion), VERR_OUT_OF_RANGE);
-    AssertReturn(!(fFlags & ~IOMMMIO_FLAGS_VALID_MASK), VERR_INVALID_FLAGS);
+    AssertMsgReturn(   !(fFlags & ~IOMMMIO_FLAGS_VALID_MASK)
+                    && (fFlags & IOMMMIO_FLAGS_READ_MODE)  <= IOMMMIO_FLAGS_READ_DWORD_QWORD
+                    && (fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
+                    ("%#x\n", fFlags),
+                    VERR_INVALID_FLAGS);
 
     AssertReturn(pfnWrite || pfnRead || pfnFill, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfnWrite, VERR_INVALID_POINTER);
@@ -199,8 +203,16 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
 
     RTGCPHYS const cbRegion = pRegEntry->cbRegion;
     AssertMsgReturn(cbRegion > 0 && cbRegion <= _1T, ("cbRegion=%RGp\n", cbRegion), VERR_IOM_MMIO_IPE_1);
-    AssertReturn(GCPhys + cbRegion <= GCPhys, VERR_OUT_OF_RANGE);
     RTGCPHYS const GCPhysLast = GCPhys + cbRegion - 1;
+
+    AssertLogRelMsgReturn(!(GCPhys & PAGE_OFFSET_MASK),
+                          ("Misaligned! GCPhys=%RGp LB %RGp %s (%s[#%u])\n",
+                           GCPhys, cbRegion, pRegEntry->pszDesc, pDevIns->pReg->szName, pDevIns->iInstance),
+                          VERR_IOM_INVALID_MMIO_RANGE);
+    AssertLogRelMsgReturn(GCPhysLast > GCPhys,
+                          ("Wrapped! GCPhys=%RGp LB %RGp %s (%s[#%u])\n",
+                           GCPhys, cbRegion, pRegEntry->pszDesc, pDevIns->pReg->szName, pDevIns->iInstance),
+                          VERR_IOM_INVALID_MMIO_RANGE);
 
     /*
      * Do the mapping.
