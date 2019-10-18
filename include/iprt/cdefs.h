@@ -244,19 +244,16 @@
 #endif
 
 
-/** @def \__X86__
- * Indicates that we're compiling for the X86 architecture.
- * @deprecated
- */
-
-/** @def \__AMD64__
- * Indicates that we're compiling for the AMD64 architecture.
- * @deprecated
- */
 #if !defined(__X86__) && !defined(__AMD64__) && (defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86))
 # if defined(RT_ARCH_AMD64)
+/** Indicates that we're compiling for the AMD64 architecture.
+ * @deprecated
+ */
 #  define __AMD64__
 # elif defined(RT_ARCH_X86)
+/** Indicates that we're compiling for the X86 architecture.
+ * @deprecated
+ */
 #  define __X86__
 # else
 #  error "Check what predefined macros your compiler uses to indicate architecture."
@@ -3723,12 +3720,10 @@
 #define _(s) gettext(s)
 
 
-/** @def \__PRETTY_FUNCTION__
- *  With GNU C we'd like to use the builtin __PRETTY_FUNCTION__, so define that
- *  for the other compilers.
- */
-#if !defined(__GNUC__) && !defined(__PRETTY_FUNCTION__)
-# ifdef _MSC_VER
+#if (!defined(__GNUC__) && !defined(__PRETTY_FUNCTION__)) || defined(DOXYGEN_RUNNING)
+# if defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
+/** With GNU C we'd like to use the builtin __PRETTY_FUNCTION__, so define that
+ * for the other compilers. */
 #  define __PRETTY_FUNCTION__    __FUNCSIG__
 # else
 #  define __PRETTY_FUNCTION__    __FUNCTION__
