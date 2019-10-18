@@ -127,13 +127,9 @@ void UIVMLogViewerDialog::loadSettings()
             iDefaultWidth = iWidth;
     }
     QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
-    if (centerWidget())
-        defaultGeo.moveCenter(centerWidget()->geometry().center());
-    else
-        defaultGeo.moveCenter(availableGeo.center());
 
     /* Load geometry from extradata: */
-    const QRect geo = gEDataManager->logWindowGeometry(this, defaultGeo);
+    const QRect geo = gEDataManager->logWindowGeometry(this, centerWidget(), defaultGeo);
     LogRel2(("GUI: UIVMLogViewerDialog: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geo.x(), geo.y(), geo.width(), geo.height()));
     restoreGeometry(geo);

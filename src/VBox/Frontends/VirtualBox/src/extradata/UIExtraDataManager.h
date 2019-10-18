@@ -713,8 +713,8 @@ public:
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
     /** @name VirtualBox: Extra-data Manager window
       * @{ */
-        /** Returns Extra-data Manager geometry using @a pWidget as hint. */
-        QRect extraDataManagerGeometry(QWidget *pWidget);
+        /** Returns Extra-data Manager geometry using @a pWidget and @a pParentWidget as hint. */
+        QRect extraDataManagerGeometry(QWidget *pWidget, QWidget *pParentWidget);
         /** Returns whether Extra-data Manager should be maximized or not. */
         bool extraDataManagerShouldBeMaximized();
         /** Defines Extra-data Manager @a geometry and @a fMaximized state. */
@@ -729,8 +729,8 @@ public:
 
     /** @name Virtual Machine: Log Viewer dialog
       * @{ */
-        /** Returns log-window geometry using @a pWidget and @a defaultGeometry as hints. */
-        QRect logWindowGeometry(QWidget *pWidget, const QRect &defaultGeometry);
+        /** Returns log-window geometry using @a pWidget, @a pParentWidget and @a defaultGeometry as hints. */
+        QRect logWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
         /** Returns whether log-window should be maximized or not. */
         bool logWindowShouldBeMaximized();
         /** Defines log-window @a geometry and @a fMaximized state. */
