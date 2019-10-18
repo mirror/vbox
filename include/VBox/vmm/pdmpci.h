@@ -169,10 +169,11 @@ typedef struct PDMIPCIRAWUP
      * @returns status code
      * @param   pInterface          Pointer to this interface structure.
      * @param   Address             Guest physical address.
-     *                              @todo Why is this documented as guest physical
-     *                              address and given a host ring-0 address type?
      * @param   pvValue             Address of value to write.
      * @param   cb                  Access width.
+     *
+     * @todo Why is this @a Address documented as guest physical
+     *       address and given a host ring-0 address type?
      *
      * @thread  EMT thread.
      */
@@ -187,14 +188,14 @@ typedef struct PDMIPCIRAWUP
      * @returns status code
      * @param   pInterface          Pointer to this interface structure.
      * @param   Address             Guest physical address.
-     *                              @todo Why is this documented as guest physical
-     *                              address and given a host ring-0 address type?
      * @param   pvValue             Place to store read value.
      * @param   cb                  Access width.
      *
+     * @todo Why is this @a Address documented as guest physical
+     *       address and given a host ring-0 address type?
+     *
      * @thread  EMT thread.
      */
-
     DECLR3CALLBACKMEMBER(int, pfnMmioRead, (PPDMIPCIRAWUP pInterface,
                                             RTR0PTR       Address,
                                             void         *pvValue,
