@@ -2648,49 +2648,7 @@ void UIExtraDataManager::setVISOCreatorRecentFolder(const QString &strValue)
 
 QRect UIExtraDataManager::selectorWindowGeometry(QWidget *pWidget)
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_LastSelectorWindowPosition);
-
-    /* Parse loaded data: */
-    int iX = 0, iY = 0, iW = 0, iH = 0;
-    bool fOk = data.size() >= 4;
-    do
-    {
-        if (!fOk) break;
-        iX = data[0].toInt(&fOk);
-        if (!fOk) break;
-        iY = data[1].toInt(&fOk);
-        if (!fOk) break;
-        iW = data[2].toInt(&fOk);
-        if (!fOk) break;
-        iH = data[3].toInt(&fOk);
-    }
-    while (0);
-
-    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
-                                          gpDesktop->availableGeometry();
-
-    /* Use geometry (loaded or default): */
-    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : QRect(QPoint(0, 0), availableGeometry.size() * .50 /* % */);
-
-    /* Take hint-widget into account: */
-    if (pWidget)
-        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
-
-    /* As final fallback, move default-geometry to available-geometry' center: */
-    if (!fOk)
-        geometry.moveCenter(availableGeometry.center());
-
-    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef VBOX_WS_WIN
-    /* Make sure resulting geometry is within current bounds: */
-    if (!availableGeometry.contains(geometry))
-        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* VBOX_WS_WIN */
-
-    /* Return result: */
-    return geometry;
+    return dialogGeometry(GUI_LastSelectorWindowPosition, pWidget);
 }
 
 bool UIExtraDataManager::selectorWindowShouldBeMaximized()
@@ -4098,52 +4056,7 @@ ScalingOptimizationType UIExtraDataManager::scalingOptimizationType(const QUuid 
 
 QRect UIExtraDataManager::sessionInformationDialogGeometry(QWidget *pWidget, QWidget *pParentWidget)
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_SessionInformationDialogGeometry);
-
-    /* Parse loaded data: */
-    int iX = 0, iY = 0, iW = 0, iH = 0;
-    bool fOk = data.size() >= 4;
-    do
-    {
-        if (!fOk) break;
-        iX = data[0].toInt(&fOk);
-        if (!fOk) break;
-        iY = data[1].toInt(&fOk);
-        if (!fOk) break;
-        iW = data[2].toInt(&fOk);
-        if (!fOk) break;
-        iH = data[3].toInt(&fOk);
-    }
-    while (0);
-
-    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
-                                          gpDesktop->availableGeometry();
-
-    /* Use geometry (loaded or default): */
-    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : QRect(QPoint(0, 0), availableGeometry.size() * .50 /* % */);
-
-    /* Take hint-widget into account: */
-    if (pWidget)
-        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
-
-    /* As a fallback, move default-geometry to pParentWidget' geometry center: */
-    if (!fOk && pParentWidget)
-        geometry.moveCenter(pParentWidget->geometry().center());
-    /* As final fallback, move default-geometry to available-geometry' center: */
-    else if (!fOk)
-        geometry.moveCenter(availableGeometry.center());
-
-    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef VBOX_WS_WIN
-    /* Make sure resulting geometry is within current bounds: */
-    if (!availableGeometry.contains(geometry))
-        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* VBOX_WS_WIN */
-
-    /* Return result: */
-    return geometry;
+    return dialogGeometry(GUI_SessionInformationDialogGeometry, pWidget, pParentWidget);
 }
 
 bool UIExtraDataManager::sessionInformationDialogShouldBeMaximized()
@@ -4195,9 +4108,9 @@ QList<int> UIExtraDataManager::guestControlProcessControlSplitterHints()
     return hints;
 }
 
-QRect UIExtraDataManager::fileManagerDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
+QRect UIExtraDataManager::fileManagerDialogGeometry(QWidget *pWidget, QWidget *pParentWidget)
 {
-    return dialogGeometry(GUI_GuestControl_FileManagerDialogGeometry, pWidget, defaultGeometry);
+    return dialogGeometry(GUI_GuestControl_FileManagerDialogGeometry, pWidget, pParentWidget);
 }
 
 bool UIExtraDataManager::fileManagerDialogShouldBeMaximized()
@@ -4224,9 +4137,9 @@ QStringList UIExtraDataManager::fileManagerVisiblePanels()
     return extraDataStringList(GUI_GuestControl_FileManagerVisiblePanels);
 }
 
-QRect UIExtraDataManager::softKeyboardDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
+QRect UIExtraDataManager::softKeyboardDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
 {
-    return dialogGeometry(GUI_SoftKeyboard_DialogGeometry, pWidget, defaultGeometry);
+    return dialogGeometry(GUI_SoftKeyboard_DialogGeometry, pWidget, pParentWidget, defaultGeometry);
 }
 
 void UIExtraDataManager::setSoftKeyboardDialogGeometry(const QRect &geometry, bool fMaximized)
@@ -4368,9 +4281,9 @@ bool UIExtraDataManager::fileManagerShowHiddenObjects()
     return false;
 }
 
-QRect UIExtraDataManager::guestProcessControlDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry)
+QRect UIExtraDataManager::guestProcessControlDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
 {
-    return dialogGeometry(GUI_GuestControl_ProcessControlDialogGeometry, pWidget, defaultGeometry);
+    return dialogGeometry(GUI_GuestControl_ProcessControlDialogGeometry, pWidget, pParentWidget, defaultGeometry);
 }
 
 bool UIExtraDataManager::guestProcessControlDialogShouldBeMaximized()
@@ -4432,52 +4345,7 @@ QString UIExtraDataManager::debugFlagValue(const QString &strDebugFlagKey)
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
 QRect UIExtraDataManager::extraDataManagerGeometry(QWidget *pWidget, QWidget *pParentWidget)
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_ExtraDataManager_Geometry);
-
-    /* Parse loaded data: */
-    int iX = 0, iY = 0, iW = 0, iH = 0;
-    bool fOk = data.size() >= 4;
-    do
-    {
-        if (!fOk) break;
-        iX = data[0].toInt(&fOk);
-        if (!fOk) break;
-        iY = data[1].toInt(&fOk);
-        if (!fOk) break;
-        iW = data[2].toInt(&fOk);
-        if (!fOk) break;
-        iH = data[3].toInt(&fOk);
-    }
-    while (0);
-
-    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
-                                          gpDesktop->availableGeometry();
-
-    /* Use geometry (loaded or default): */
-    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : QRect(QPoint(0, 0), availableGeometry.size() * .50 /* % */);
-
-    /* Take hint-widget into account: */
-    if (pWidget)
-        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
-
-    /* As a fallback, move default-geometry to pParentWidget' geometry center: */
-    if (!fOk && pParentWidget)
-        geometry.moveCenter(pParentWidget->geometry().center());
-    /* As final fallback, move default-geometry to available-geometry' center: */
-    else if (!fOk)
-        geometry.moveCenter(availableGeometry.center());
-
-    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef VBOX_WS_WIN
-    /* Make sure resulting geometry is within current bounds: */
-    if (!availableGeometry.contains(geometry))
-        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* VBOX_WS_WIN */
-
-    /* Return result: */
-    return geometry;
+    return dialogGeometry(GUI_ExtraDataManager_Geometry, pWidget, pParentWidget);
 }
 
 bool UIExtraDataManager::extraDataManagerShouldBeMaximized()
@@ -4552,52 +4420,7 @@ void UIExtraDataManager::setExtraDataManagerSplitterHints(const QList<int> &hint
 
 QRect UIExtraDataManager::logWindowGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry)
 {
-    /* Get corresponding extra-data: */
-    const QStringList data = extraDataStringList(GUI_LogWindowGeometry);
-
-    /* Parse loaded data: */
-    int iX = 0, iY = 0, iW = 0, iH = 0;
-    bool fOk = data.size() >= 4;
-    do
-    {
-        if (!fOk) break;
-        iX = data[0].toInt(&fOk);
-        if (!fOk) break;
-        iY = data[1].toInt(&fOk);
-        if (!fOk) break;
-        iW = data[2].toInt(&fOk);
-        if (!fOk) break;
-        iH = data[3].toInt(&fOk);
-    }
-    while (0);
-
-    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
-                                          gpDesktop->availableGeometry();
-
-    /* Use geometry (loaded or default): */
-    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : defaultGeometry;
-
-    /* Take hint-widget into account: */
-    if (pWidget)
-        geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
-
-    /* As a fallback, move default-geometry to pParentWidget' geometry center: */
-    if (!fOk && pParentWidget)
-        geometry.moveCenter(pParentWidget->geometry().center());
-    /* As final fallback, move default-geometry to available-geometry' center: */
-    else if (!fOk)
-        geometry.moveCenter(availableGeometry.center());
-
-    /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
-#ifdef VBOX_WS_WIN
-    /* Make sure resulting geometry is within current bounds: */
-    if (!availableGeometry.contains(geometry))
-        geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));
-#endif /* VBOX_WS_WIN */
-
-    /* Return result: */
-    return geometry;
+    return dialogGeometry(GUI_LogWindowGeometry, pWidget, pParentWidget, defaultGeometry);
 }
 
 bool UIExtraDataManager::logWindowShouldBeMaximized()
@@ -4966,9 +4789,12 @@ void UIExtraDataManager::setDialogGeometry(const QString &strKey, const QRect &g
     setExtraDataStringList(strKey, data);
 }
 
-QRect UIExtraDataManager::dialogGeometry(const QString &strKey, QWidget *pWidget, const QRect &defaultGeometry)
+QRect UIExtraDataManager::dialogGeometry(const QString &strKey,
+                                         QWidget *pWidget,
+                                         QWidget *pParentWidget /* = 0 */,
+                                         const QRect &defaultGeometry /* = QRect() */)
 {
-    /* Load corresponding extra-data: */
+    /* Get corresponding extra-data: */
     const QStringList data = extraDataStringList(strKey);
 
     /* Parse loaded data: */
@@ -4987,19 +4813,30 @@ QRect UIExtraDataManager::dialogGeometry(const QString &strKey, QWidget *pWidget
     }
     while (0);
 
+    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
+    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
+                                          gpDesktop->availableGeometry();
+
     /* Use geometry (loaded or default): */
-    QRect geometry = fOk ? QRect(iX, iY, iW, iH) : defaultGeometry;
+    QRect geometry = fOk
+                   ? QRect(iX, iY, iW, iH)
+                   : !defaultGeometry.isNull()
+                   ? defaultGeometry
+                   : QRect(QPoint(0, 0), availableGeometry.size() * .50 /* % */);
 
     /* Take hint-widget into account: */
     if (pWidget)
         geometry.setSize(geometry.size().expandedTo(pWidget->minimumSizeHint()));
 
+    /* As a fallback, move default-geometry to pParentWidget' geometry center: */
+    if (!fOk && pParentWidget)
+        geometry.moveCenter(pParentWidget->geometry().center());
+    /* As final fallback, move default-geometry to available-geometry' center: */
+    else if (!fOk)
+        geometry.moveCenter(availableGeometry.center());
+
     /* In Windows Qt fails to reposition out of screen window properly, so doing it ourselves: */
 #ifdef VBOX_WS_WIN
-    /* Get available-geometry [of screen with point (iX, iY) if possible]: */
-    const QRect availableGeometry = fOk ? gpDesktop->availableGeometry(QPoint(iX, iY)) :
-                                          gpDesktop->availableGeometry();
-
     /* Make sure resulting geometry is within current bounds: */
     if (!availableGeometry.contains(geometry))
         geometry = UICommon::getNormalized(geometry, QRegion(availableGeometry));

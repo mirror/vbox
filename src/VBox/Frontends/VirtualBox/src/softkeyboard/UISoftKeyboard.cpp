@@ -4128,13 +4128,9 @@ void UISoftKeyboard::loadSettings()
     const int iDefaultWidth = availableGeo.width() / 2;
     const int iDefaultHeight = iDefaultWidth * fKeyboardAspectRatio;
     QRect defaultGeo(0, 0, iDefaultWidth, iDefaultHeight);
-    if (m_pCenterWidget)
-        defaultGeo.moveCenter(m_pCenterWidget->geometry().center());
-    else
-        defaultGeo.moveCenter(availableGeo.center());
 
     /* Load geometry from extradata: */
-    const QRect geo = gEDataManager->softKeyboardDialogGeometry(this, defaultGeo);
+    const QRect geo = gEDataManager->softKeyboardDialogGeometry(this, m_pCenterWidget, defaultGeo);
     LogRel2(("GUI: UISoftKeyboard: Restoring geometry to: Origin=%dx%d, Size=%dx%d\n",
              geo.x(), geo.y(), geo.width(), geo.height()));
     restoreGeometry(geo);

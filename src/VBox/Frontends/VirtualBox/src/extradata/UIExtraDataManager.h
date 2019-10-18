@@ -24,6 +24,7 @@
 /* Qt includes: */
 #include <QMap>
 #include <QObject>
+#include <QRect>
 #include <QSize>
 #include <QUuid>
 #ifdef VBOX_GUI_WITH_EXTRADATA_MANAGER_UI
@@ -649,10 +650,10 @@ public:
       * @{ */
         void setGuestControlProcessControlSplitterHints(const QList<int> &hints);
         QList<int> guestControlProcessControlSplitterHints();
-        QRect fileManagerDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry);
+        QRect fileManagerDialogGeometry(QWidget *pWidget, QWidget *pParentWidget);
         bool fileManagerDialogShouldBeMaximized();
         void setFileManagerDialogGeometry(const QRect &geometry, bool fMaximized);
-        QRect guestProcessControlDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry);
+        QRect guestProcessControlDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
         bool guestProcessControlDialogShouldBeMaximized();
         void setGuestProcessControlDialogGeometry(const QRect &geometry, bool fMaximized);
         void setFileManagerVisiblePanels(const QStringList &panelNameList);
@@ -661,7 +662,7 @@ public:
 
     /** @name Soft Keyboard
       * @{ */
-        QRect softKeyboardDialogGeometry(QWidget *pWidget, const QRect &defaultGeometry);
+        QRect softKeyboardDialogGeometry(QWidget *pWidget, QWidget *pParentWidget, const QRect &defaultGeometry);
         void setSoftKeyboardDialogGeometry(const QRect &geometry, bool fMaximized);
         bool softKeyboardDialogShouldBeMaximized();
         void setSoftKeyboardOptions(bool fShowNumPad, bool fHideOSMenuKeys, bool fMultimediaKeys);
@@ -816,9 +817,10 @@ private:
     /** Returns saved dialog geometry according to specified attributes.
       * @param  strKey           Brings geometry extra-data key of particular dialog.
       * @param  pWidget          Brings the widget to limit geometry bounds according to.
+      * @param  pParentWidget    Brings the widget to center geometry rectangle according to.
       * @param  defaultGeometry  Brings the default geometry which should be used to
       *                          calculate resulting geometry if saved was not found. */
-    QRect dialogGeometry(const QString &strKey, QWidget *pWidget, const QRect &defaultGeometry);
+    QRect dialogGeometry(const QString &strKey, QWidget *pWidget, QWidget *pParentWidget = 0, const QRect &defaultGeometry = QRect());
 
     /** Returns string consisting of @a strBase appended with @a uScreenIndex for the *non-primary* screen-index.
       * If @a fSameRuleForPrimary is 'true' same rule will be used for *primary* screen-index. Used for storing per-screen extra-data. */
