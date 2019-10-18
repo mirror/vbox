@@ -169,6 +169,7 @@ HRESULT MachineMoveVM::init()
     uint32_t cbBlock = 0;
     uint32_t cbSector = 0;
 
+
     int vrc = RTFsQuerySizes(strTargetFolder.c_str(), &cbTotal, &cbFree, &cbBlock, &cbSector);
     if (FAILED(vrc))
         return m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
@@ -248,7 +249,7 @@ HRESULT MachineMoveVM::init()
 
     strLogFolder = bstr_logFolder;
     if (   m_type.equals("basic")
-        && strLogFolder.contains(strSettingsFilePath))
+        && RTPathStartsWith(strLogFolder.c_str(), strSettingsFilePath.c_str()))
         m_vmFolders.insert(std::make_pair(VBox_LogFolder, strLogFolder));
 
     Utf8Str strStateFilePath;
@@ -264,7 +265,7 @@ HRESULT MachineMoveVM::init()
         strStateFilePath = bstr_stateFilePath;
         strStateFilePath.stripFilename();
         if (   m_type.equals("basic")
-            && strStateFilePath.contains(strSettingsFilePath))
+            && RTPathStartsWith(strStateFilePath.c_str(), strSettingsFilePath.c_str()))
             m_vmFolders.insert(std::make_pair(VBox_StateFolder, strStateFilePath));
     }
 
@@ -276,7 +277,7 @@ HRESULT MachineMoveVM::init()
 
     strSnapshotFolder = bstr_snapshotFolder;
     if (   m_type.equals("basic")
-        && strSnapshotFolder.contains(strSettingsFilePath))
+        && RTPathStartsWith(strSnapshotFolder.c_str(), strSettingsFilePath.c_str()))
         m_vmFolders.insert(std::make_pair(VBox_SnapshotFolder, strSnapshotFolder));
 
     if (m_pMachine->i_isSnapshotMachine())
@@ -390,7 +391,7 @@ HRESULT MachineMoveVM::init()
 
             Utf8Str name = sst.strSaveStateFile;
             /*if a state file is located in the actual VM folder it will be added to the actual list */
-            if (name.contains(strSettingsFilePath))
+            if (RTPathStartsWith(name.c_str(), strSettingsFilePath.c_str()))
             {
                 vrc = RTFileQuerySizeByPath(name.c_str(), &cbFile);
                 if (RT_SUCCESS(vrc))
@@ -1183,7 +1184,7 @@ HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATE
              * This check for the case when a new value is equal to the old one.
              * Maybe the more clever check is needed in the some corner cases.
              */
-            if (!path.contains(targetPath))
+            if (!RTPathStartsWith(path.c_str(), targetPath.c_str()))
                 m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%s",
                                                                    targetPath.c_str(),
                                                                    path.c_str() + sourcePath.length());
@@ -1432,7 +1433,8 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
                 MEDIUMTASKMOVE mt;// = {false, "basename", NULL, 0, 0};
                 mt.strBaseName = bstrLocation;
                 Utf8Str const &strFolder = m_vmFolders[VBox_SnapshotFolder];
-                if (strFolder.isNotEmpty() && mt.strBaseName.contains(strFolder)) /** @todo r=bird: contains? Shouldn't it be startsWith and take mixed slashes (windows) and stuff into account? */
+                
+                if (strFolder.isNotEmpty() && RTPathStartsWith(mt.strBaseName.c_str(), strFolder.c_str()))
                     mt.fSnapshot = true;
                 else
                     mt.fSnapshot = false;
