@@ -677,7 +677,7 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
     }
 # endif
 #else  /* IN_RING3 */
-    RT_NOREF(pRegEntry);
+    RT_NOREF(pVM, pRegEntry);
 #endif /* IN_RING3 */
 
     STAM_PROFILE_STOP(&pVM->iom.s.StatRZMMIOHandler, a);
