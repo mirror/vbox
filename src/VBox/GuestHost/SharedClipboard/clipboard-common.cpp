@@ -103,7 +103,7 @@ int ShClEventCreate(PSHCLEVENT pEvent, SHCLEVENTID uID)
 {
     AssertPtrReturn(pEvent, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("Event %RU16\n", uID));
+    LogFlowFunc(("Event %RU32\n", uID));
 
     int rc = RTSemEventCreate(&pEvent->hEventSem);
     if (RT_SUCCESS(rc))
@@ -125,7 +125,7 @@ void ShClEventDestroy(PSHCLEVENT pEvent)
     if (!pEvent)
         return;
 
-    LogFlowFunc(("Event %RU16\n", pEvent->uID));
+    LogFlowFunc(("Event %RU32\n", pEvent->uID));
 
     if (pEvent->hEventSem != NIL_RTSEMEVENT)
     {
@@ -149,7 +149,7 @@ int ShClEventSourceCreate(PSHCLEVENTSOURCE pSource, SHCLEVENTSOURCEID uID)
 {
     AssertPtrReturn(pSource, VERR_INVALID_POINTER);
 
-    LogFlowFunc(("pSource=%p, uID=%RU16\n", pSource, uID));
+    LogFlowFunc(("pSource=%p, uID=%RU32\n", pSource, uID));
 
     int rc = VINF_SUCCESS;
 
@@ -173,7 +173,7 @@ void ShClEventSourceDestroy(PSHCLEVENTSOURCE pSource)
     if (!pSource)
         return;
 
-    LogFlowFunc(("ID=%RU16\n", pSource->uID));
+    LogFlowFunc(("ID=%RU32\n", pSource->uID));
 
     PSHCLEVENT pEvIt;
     PSHCLEVENT pEvItNext;
@@ -201,7 +201,7 @@ SHCLEVENTID ShClEventIDGenerate(PSHCLEVENTSOURCE pSource)
 {
     AssertPtrReturn(pSource, 0);
 
-    LogFlowFunc(("uSource=%RU16: New event: %RU16\n", pSource->uID, pSource->uEventIDNext));
+    LogFlowFunc(("uSource=%RU16: New event: %RU32\n", pSource->uID, pSource->uEventIDNext));
 
     pSource->uEventIDNext++;
     if (pSource->uEventIDNext == VBOX_SHCL_MAX_EVENTS)
@@ -270,7 +270,7 @@ int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 
     int rc;
 
-    LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+    LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
 
     if (shclEventGet(pSource, uID) == NULL)
     {
@@ -283,7 +283,7 @@ int ShClEventRegister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
             {
                 RTListAppend(&pSource->lstEvents, &pEvent->Node);
 
-                LogFlowFunc(("Event %RU16\n", uID));
+                LogFlowFunc(("Event %RU32\n", uID));
             }
         }
         else
@@ -313,12 +313,12 @@ int ShClEventUnregister(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 
     int rc;
 
-    LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+    LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
 
     PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
     {
-        LogFlowFunc(("Event %RU16\n", pEvent->uID));
+        LogFlowFunc(("Event %RU32\n", pEvent->uID));
 
         RTListNodeRemove(&pEvent->Node);
 
@@ -393,7 +393,7 @@ int ShClEventSignal(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID,
 
     int rc;
 
-    LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+    LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
 
     PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
@@ -422,7 +422,7 @@ void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
 {
     AssertPtrReturnVoid(pSource);
 
-    LogFlowFunc(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+    LogFlowFunc(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
 
     PSHCLEVENT pEvent = shclEventGet(pSource, uID);
     if (pEvent)
@@ -431,7 +431,7 @@ void ShClEventPayloadDetach(PSHCLEVENTSOURCE pSource, SHCLEVENTID uID)
     }
 #ifdef DEBUG_andy
     else
-        AssertMsgFailed(("uSource=%RU16, uEvent=%RU16\n", pSource->uID, uID));
+        AssertMsgFailed(("uSource=%RU16, uEvent=%RU32\n", pSource->uID, uID));
 #endif
 }
 

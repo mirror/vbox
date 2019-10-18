@@ -300,7 +300,7 @@ typedef struct _VBoxShClFormatsMsg
 
         struct
         {
-            /** uint32_t, in: Context ID. */
+            /** uint64_t, in: Context ID. */
             HGCMFunctionParameter uContext;
             /** uint32_t, out:  VBOX_SHCL_FMT_*. */
             HGCMFunctionParameter uFormats;
@@ -317,7 +317,7 @@ typedef struct _VBoxShClReadDataReqMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, out: Context ID. */
+    /** uint64_t, out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, out: Requested format to read data in. */
     HGCMFunctionParameter uFormat;
@@ -365,7 +365,7 @@ typedef struct _VBoxShClWriteDataMsg
         } v0;
         struct
         {
-            /** uint32_t, out: Context ID. */
+            /** uint64_t, out: Context ID. */
             HGCMFunctionParameter uContext;
             /** uint32_t, out: Requested format to read data in. */
             HGCMFunctionParameter uFormat;
@@ -386,7 +386,7 @@ typedef struct _VBoxShClTransferStatusMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, out: Context ID. */
+    /** uint64_t, out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, out: Direction of transfer; of type SHCLTRANSFERDIR_. */
     HGCMFunctionParameter enmDir;
@@ -443,7 +443,7 @@ typedef struct _VBoxShClStatusMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in: Context ID. */
+    /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, in: Transfer status of type SHCLTRANSFERSTATUS. */
     HGCMFunctionParameter uStatus;
@@ -475,7 +475,7 @@ typedef struct _VBoxShClReplyMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, out: Context ID. */
+    /** uint64_t, out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, out: Message type of type VBOX_SHCL_REPLYMSGTYPE_XXX. */
     HGCMFunctionParameter enmType;
@@ -514,7 +514,7 @@ typedef struct _VBoxShClReplyMsg
  */
 typedef struct _VBoxShClRootListParms
 {
-    /** uint32_t, in: Context ID. s*/
+    /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, in: Roots listing flags; unused at the moment. */
     HGCMFunctionParameter fRoots;
@@ -552,7 +552,7 @@ typedef struct _VBoxShClRootListHdrMsg
  */
 typedef struct _VBoxShClRootListEntryParms
 {
-    /** uint32_t, in: Context ID. */
+    /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, in: VBOX_SHCL_INFO_FLAG_XXX. */
     HGCMFunctionParameter fInfo;
@@ -601,7 +601,7 @@ typedef struct _VBoxShClListOpenMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in: Context ID. */
+    /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, in: Listing flags (see VBOX_SHCL_LIST_FLAG_XXX). */
     HGCMFunctionParameter fList;
@@ -626,7 +626,7 @@ typedef struct _VBoxShClListCloseMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in/out: Context ID. */
+    /** uint64_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
@@ -636,7 +636,7 @@ typedef struct _VBoxShClListCloseMsg
 
 typedef struct _VBoxShClListHdrReqParms
 {
-    /** uint32_t, in: Context ID. */
+    /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
@@ -676,7 +676,7 @@ typedef struct _VBoxShClListHdrMsg
 
 typedef struct _VBoxShClListEntryReqParms
 {
-    /** uint32_t, in: Context ID. */
+    /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: List handle. */
     HGCMFunctionParameter uHandle;
@@ -723,7 +723,7 @@ typedef struct _VBoxShClObjOpenMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in/out: Context ID. */
+    /** uint64_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in/out: Object handle. */
     HGCMFunctionParameter uHandle;
@@ -744,7 +744,7 @@ typedef struct _VBoxShClObjCloseMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in/out: Context ID. */
+    /** uint64_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: SHCLOBJHANDLE of object to close. */
     HGCMFunctionParameter uHandle;
@@ -757,7 +757,7 @@ typedef struct _VBoxShClObjCloseMsg
  */
 typedef struct _VBoxShClObjReadReqParms
 {
-    /** uint32_t, in: Context ID. */
+    /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in: SHCLOBJHANDLE of object to write to. */
     HGCMFunctionParameter uHandle;
@@ -790,7 +790,7 @@ typedef struct _VBoxShClObjReadWriteMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in/out: Context ID. */
+    /** uint64_t, in/out: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint64_t, in/out: SHCLOBJHANDLE of object to write to. */
     HGCMFunctionParameter uHandle;
@@ -818,7 +818,7 @@ typedef struct _VBoxShClErrorMsg
 {
     VBGLIOCHGCMCALL hdr;
 
-    /** uint32_t, in: Context ID. */
+    /** uint64_t, in: Context ID. */
     HGCMFunctionParameter uContext;
     /** uint32_t, in: The error code (IPRT-style). */
     HGCMFunctionParameter rc;

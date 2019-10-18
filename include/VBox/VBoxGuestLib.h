@@ -603,7 +603,7 @@ typedef struct VBGLR3SHCLCMDCTX
     /** IN: HGCM client ID to use for communication. */
     uint32_t                  uClientID;
     /** IN/OUT: Context ID to retrieve or to use. */
-    uint32_t                  uContextID;
+    uint64_t                  uContextID;
     /** IN: Protocol version to use. */
     uint32_t                  uProtocolVer;
     /** IN: Protocol flags. Currently unused. */

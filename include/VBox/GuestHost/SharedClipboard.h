@@ -114,39 +114,43 @@ typedef uint16_t SHCLEVENTSOURCEID;
 /** Defines a pointer to a event source ID. */
 typedef SHCLEVENTSOURCEID *PSHCLEVENTSOURCEID;
 
+/** Defines a session ID. */
+typedef uint16_t     SHCLSESSIONID;
+/** Defines a pointer to a session ID. */
+typedef SHCLSESSIONID *PSHCLSESSIONID;
 /** Defines an event ID. */
 typedef uint32_t     SHCLEVENTID;
 /** Defines a pointer to a event source ID. */
 typedef SHCLEVENTID *PSHCLEVENTID;
 
 /** Maximum number of concurrent Shared Clipboard client sessions a VM can have. */
-#define VBOX_SHCL_MAX_SESSIONS                   32
+#define VBOX_SHCL_MAX_SESSIONS                   UINT16_MAX
 /** Maximum number of concurrent Shared Clipboard transfers a single
  *  client can have. */
-#define VBOX_SHCL_MAX_TRANSFERS                  _2K
+#define VBOX_SHCL_MAX_TRANSFERS                  UINT16_MAX
 /** Maximum number of events a single Shared Clipboard transfer can have. */
-#define VBOX_SHCL_MAX_EVENTS                     _64K
+#define VBOX_SHCL_MAX_EVENTS                     UINT32_MAX
 
 /**
- * Creates a context ID out of a client ID, a transfer ID and a count.
+ * Creates a context ID out of a client ID, a transfer ID and a count (can be an event ID).
  */
 #define VBOX_SHCL_CONTEXTID_MAKE(uSessionID, uTransferID, uEventID) \
-    (  (uint32_t)((uSessionID)  &   0x1f) << 27 \
-     | (uint32_t)((uTransferID) &  0x7ff) << 16 \
-     | (uint32_t)((uEventID)    & 0xffff)       \
+    (  (uint64_t)((uSessionID)  & 0xffff) << 48 \
+     | (uint64_t)((uTransferID) & 0xffff) << 32 \
+     | (uint32_t)((uEventID)    & 0xffffffff) \
     )
 /** Creates a context ID out of a session ID. */
 #define VBOX_SHCL_CONTEXTID_MAKE_SESSION(uSessionID) \
-    ((uint32_t)((uSessionID) & 0x1f) << 27)
+    ((uint32_t)((uSessionID) & 0xffff) << 48)
 /** Gets the session ID out of a context ID. */
 #define VBOX_SHCL_CONTEXTID_GET_SESSION(uContextID) \
-    (((uContextID) >> 27) & 0x1f)
+    (((uContextID) >> 48) & 0xffff)
 /** Gets the transfer ID out of a context ID. */
 #define VBOX_SHCL_CONTEXTID_GET_TRANSFER(uContextID) \
-    (((uContextID) >> 16) & 0x7ff)
+    (((uContextID) >> 32) & 0xffff)
 /** Gets the transfer event out of a context ID. */
 #define VBOX_SHCL_CONTEXTID_GET_EVENT(uContextID) \
-    ((uContextID) & 0xffff)
+    ((uContextID) & 0xffffffff)
 
 /**
  * Structure for maintaining a Shared Clipboard event.

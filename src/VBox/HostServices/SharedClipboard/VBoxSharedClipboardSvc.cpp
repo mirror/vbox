@@ -889,7 +889,7 @@ int shclSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
     {
         const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
 
-        HGCMSvcSetU32(&pMsgReadData->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+        HGCMSvcSetU64(&pMsgReadData->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                           pClient->Events.uID, uEvent));
         HGCMSvcSetU32(&pMsgReadData->paParms[1], pDataReq->uFmt);
         HGCMSvcSetU32(&pMsgReadData->paParms[2], pClient->State.cbChunkSize);
@@ -964,7 +964,7 @@ int shclSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
     {
         const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
 
-        HGCMSvcSetU32(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
+        HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pClient->Events.uID, uEvent));
         HGCMSvcSetU32(&pMsg->paParms[1], pFormats->uFormats);
         HGCMSvcSetU32(&pMsg->paParms[2], 0 /* fFlags */);
@@ -1041,7 +1041,7 @@ int shclSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
         {
             rc = VERR_INVALID_PARAMETER;
         }
-        else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT   /* uContext */
+        else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_64BIT   /* uContext */
                  || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT   /* uFormat */
                  || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT   /* cbData */
                  || paParms[3].type != VBOX_HGCM_SVC_PARM_PTR)    /* pvData */
@@ -1050,7 +1050,7 @@ int shclSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
         }
         else
         {
-            rc = HGCMSvcGetU32(&paParms[0], &cmdCtx.uContextID);
+            rc = HGCMSvcGetU64(&paParms[0], &cmdCtx.uContextID);
             if (RT_SUCCESS(rc))
                 rc = HGCMSvcGetU32(&paParms[1], &dataBlock.uFormat);
             if (RT_SUCCESS(rc))
@@ -1365,7 +1365,7 @@ static DECLCALLBACK(void) svcCall(void *,
                 {
                     rc = VERR_INVALID_PARAMETER;
                 }
-                else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT  /* uContextID */
+                else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_64BIT  /* uContextID */
                          || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT  /* uFormats */
                          || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT) /* fFlags */
                 {
