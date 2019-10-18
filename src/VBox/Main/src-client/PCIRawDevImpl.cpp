@@ -46,8 +46,8 @@ typedef struct DRVMAINPCIRAWDEV
 // constructor / destructor
 //
 PCIRawDev::PCIRawDev(Console *console)
-  : mpDrv(NULL),
-    mParent(console)
+  : mParent(console),
+    mpDrv(NULL)
 {
 }
 
