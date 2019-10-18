@@ -1384,12 +1384,12 @@ static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPa
     LogFlowFunc(("pszPathRootAbs=%s, pszPath=%s\n", pTransfer->pszPathRootAbs, pszPath));
 
     /* Paranoia. */
-    if (   !strlen(pTransfer->pszPathRootAbs)
-        || !RTStrIsValidEncoding(pTransfer->pszPathRootAbs)
-        || !RTStrCmp(pTransfer->pszPathRootAbs, ".")
-        || !RTStrCmp(pTransfer->pszPathRootAbs, "..")
-        || !RTPathStartsWithRoot(pTransfer->pszPathRootAbs))
+    if (   !strlen(pszPath)
+        || !RTStrIsValidEncoding(pszPath)
+        ||  RTStrStr(pszPath, ".")
+        ||  RTStrStr(pszPath, ".."))
     {
+        LogRel(("Shared Clipboard: Resolving absolute path '%s' failed, invalid\n", pszPath));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -2316,7 +2316,11 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
     {
         pTransfer->pszPathRootAbs = pszPathRootAbs;
         LogFlowFunc(("pszPathRootAbs=%s, cRoots=%zu\n", pTransfer->pszPathRootAbs, pTransfer->cRoots));
+
+        LogRel2(("Shared Clipboard: Transfer uses root '%s'\n", pTransfer->pszPathRootAbs));
     }
+    else
+        LogRel(("Shared Clipboard: Unable to set roots for transfer, rc=%Rrc\n", rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
