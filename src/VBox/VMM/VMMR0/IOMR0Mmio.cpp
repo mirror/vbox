@@ -267,7 +267,9 @@ VMMR0_INT_DECL(int) IOMR0MmioGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEntr
     AssertReturn(cNewEntries > cOldEntries, VERR_IOM_MMIO_IPE_1);
     AssertReturn(pGVM->iom.s.cMmioStatsAllocation == cOldEntries, VERR_IOM_MMIO_IPE_1);
     AssertReturn(pGVM->iom.s.cMmioStats <= cOldEntries, VERR_IOM_MMIO_IPE_2);
+#ifdef VBOX_WITH_STATISTICS
     AssertReturn(!pGVM->iomr0.s.fMmioStatsFrozen, VERR_WRONG_ORDER);
+#endif
 
     /*
      * Allocate a new table, zero it and map it.

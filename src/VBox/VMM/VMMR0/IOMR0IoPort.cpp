@@ -270,7 +270,9 @@ VMMR0_INT_DECL(int) IOMR0IoPortGrowStatisticsTable(PGVM pGVM, uint64_t cReqMinEn
     AssertReturn(cNewEntries > cOldEntries, VERR_IOM_IOPORT_IPE_1);
     AssertReturn(pGVM->iom.s.cIoPortStatsAllocation == cOldEntries, VERR_IOM_IOPORT_IPE_1);
     AssertReturn(pGVM->iom.s.cIoPortStats <= cOldEntries, VERR_IOM_IOPORT_IPE_2);
+#ifdef VBOX_WITH_STATISTICS
     AssertReturn(!pGVM->iomr0.s.fIoPortStatsFrozen, VERR_WRONG_ORDER);
+#endif
 
     /*
      * Allocate a new table, zero it and map it.
