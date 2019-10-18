@@ -98,13 +98,11 @@
 #define VIRTIOSCSI_MAX_CHANNEL_HINT                 0            /* < VirtIO specification, section 5.6.4 should be 0 */
 #define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01         /**< SSM version #                                   */
 
-
 #define PCI_DEVICE_ID_VIRTIOSCSI_HOST               0x1048       /**< Informs guest driver of type of VirtIO device   */
 #define PCI_CLASS_BASE_MASS_STORAGE                 0x01         /**< PCI Mass Storage device class                   */
 #define PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER       0x00         /**< PCI SCSI Controller subclass                    */
 #define PCI_CLASS_PROG_UNSPECIFIED                  0x00         /**< Programming interface. N/A.                     */
 #define VIRTIOSCSI_PCI_CLASS                        0x01         /**< Base class Mass Storage?                        */
-
 
 #define VIRTIOSCSI_SENSE_SIZE_DEFAULT               96          /**< VirtIO 1.0: 96 on reset, guest can change       */
 #define VIRTIOSCSI_CDB_SIZE_DEFAULT                 32          /**< VirtIO 1.0: 32 on reset, guest can change       */
@@ -623,6 +621,7 @@ DECLINLINE(const char *) virtioGetCtrlRespText(uint32_t vboxRc)
         case VIRTIOSCSI_S_BUSY:                         return "BUSY";
         case VIRTIOSCSI_S_NEXUS_FAILURE:                return "NEXUS FAILURE";
         case VIRTIOSCSI_S_TRANSPORT_FAILURE:            return "TRANSPORT FAILURE";
+        case VIRTIOSCSI_S_TARGET_FAILURE:               return "TARGET FAILURE";
         case VIRTIOSCSI_S_FAILURE:                      return "FAILURE";
         case VIRTIOSCSI_S_INCORRECT_LUN:                return "INCORRECT LUN";
         case VIRTIOSCSI_S_FUNCTION_SUCCEEDED:           return "FUNCTION SUCCEEDED";
@@ -1132,6 +1131,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
     /**
      * Handle submission errors
      */
+
     if (RT_UNLIKELY(pThis->fResetting))
     {
         Log2Func(("Aborting req submission because reset is in progress\n"));
@@ -1144,7 +1144,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
         return VINF_SUCCESS;
     }
     else
-    if (RT_UNLIKELY(uTarget >= pThis->cTargets || uScsiLun != 0))
+    if (RT_UNLIKELY(uScsiLun != 0))
     {
         Log2Func(("Error submitting request to bad target (%d) or bad LUN (%d)\n", uTarget, uScsiLun));
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
@@ -1153,13 +1153,13 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
         struct REQ_RESP_HDR respHdr = { 0 };
         respHdr.uSenseLen = sizeof(abSense);
         respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
-        respHdr.uResponse = (uTarget > pThis->cTargets) ? VIRTIOSCSI_S_BAD_TARGET : VIRTIOSCSI_S_OK;
+        respHdr.uResponse = VIRTIOSCSI_S_OK;
         respHdr.uResidual = cbDataOut + cbDataIn;
         virtioScsiReqErr(pThis, qIdx, pDescChain, &respHdr, abSense);
         return VINF_SUCCESS;
     }
     else
-    if (RT_UNLIKELY(!pTarget->fPresent))
+    if (RT_UNLIKELY(uTarget >= pThis->cTargets || !pTarget->fPresent))
     {
         Log2Func(("Error submitting request, target not present!!\n"));
         uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
@@ -1167,7 +1167,7 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
         struct REQ_RESP_HDR respHdr = { 0 };
         respHdr.uSenseLen = sizeof(abSense);
         respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
-        respHdr.uResponse = VIRTIOSCSI_S_TARGET_FAILURE;
+        respHdr.uResponse = VIRTIOSCSI_S_BAD_TARGET;
         respHdr.uResidual = cbDataIn + cbDataOut;
         virtioScsiReqErr(pThis, qIdx, pDescChain, &respHdr , abSense);
         return VINF_SUCCESS;
@@ -1289,18 +1289,27 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
     {
         case VIRTIOSCSI_T_TMF: /* Task Management Functions */
         {
-
+            uint8_t  uTarget  = pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[1];
+            uint32_t uScsiLun = (pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[2] << 8
+                               | pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[3]) & 0x3fff;
             if (LogIs2Enabled())
             {
-                uint8_t  uTarget  = pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[1];
-                uint32_t uScsiLun = (pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[2] << 8
-                                   | pScsiCtrlUnion->scsiCtrlTmf.uScsiLun[3]) & 0x3fff;
                 const char *pszTmfTypeText = virtioGetTMFTypeText(pScsiCtrlUnion->scsiCtrlTmf.uSubtype);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Task Mgt Function: %s\n",
                     QUEUENAME(qIdx), uTarget, uScsiLun, pszTmfTypeText));
                 RT_NOREF3(pszTmfTypeText, uTarget, uScsiLun);
             }
 
+            PVIRTIOSCSITARGET pTarget;
+            if (uTarget < pThis->cTargets)
+                pTarget = &pThis->paTargetInstances[uTarget];
+
+            if (uTarget >= pThis->cTargets || !pTarget->fPresent)
+                uResponse = VIRTIOSCSI_S_BAD_TARGET;
+            else
+            if (uScsiLun != 0)
+                uResponse = VIRTIOSCSI_S_INCORRECT_LUN;
+            else
             switch(pScsiCtrlUnion->scsiCtrlTmf.uSubtype)
             {
                 case VIRTIOSCSI_T_TMF_ABORT_TASK:
@@ -1322,10 +1331,12 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
                     uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
                     break;
                 case VIRTIOSCSI_T_TMF_QUERY_TASK:
-                    uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
+                    uResponse = VIRTIOSCSI_S_FUNCTION_REJECTED;
+                    //uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
                     break;
                 case VIRTIOSCSI_T_TMF_QUERY_TASK_SET:
-                    uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
+                    uResponse = VIRTIOSCSI_S_FUNCTION_REJECTED;
+                    //uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
                     break;
                 default:
                     LogFunc(("Unknown TMF type\n"));
@@ -1343,12 +1354,24 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
             PVIRTIOSCSI_CTRL_AN_T pScsiCtrlAnQuery = &pScsiCtrlUnion->scsiCtrlAsyncNotify;
 
             uSubscribedEvents &= pScsiCtrlAnQuery->uEventsRequested;
-            uResponse = VIRTIOSCSI_S_FUNCTION_COMPLETE;
+
+            uint8_t  uTarget  = pScsiCtrlAnQuery->uScsiLun[1];
+            uint32_t uScsiLun = (pScsiCtrlAnQuery->uScsiLun[2] << 8 | pScsiCtrlAnQuery->uScsiLun[3]) & 0x3fff;
+
+            PVIRTIOSCSITARGET pTarget;
+            if (uTarget < pThis->cTargets)
+                pTarget = &pThis->paTargetInstances[uTarget];
+
+            if (uTarget >= pThis->cTargets || !pTarget->fPresent)
+                uResponse = VIRTIOSCSI_S_BAD_TARGET;
+            else
+            if (uScsiLun != 0)
+                uResponse = VIRTIOSCSI_S_INCORRECT_LUN;
+            else
+                uResponse = VIRTIOSCSI_S_FUNCTION_COMPLETE;
 
             if (LogIs2Enabled())
             {
-                uint8_t  uTarget  = pScsiCtrlAnQuery->uScsiLun[1];
-                uint32_t uScsiLun = (pScsiCtrlAnQuery->uScsiLun[2] << 8 | pScsiCtrlAnQuery->uScsiLun[3]) & 0x3fff;
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText),
                     pScsiCtrlAnQuery->uEventsRequested);
@@ -1374,11 +1397,12 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
             uSubscribedEvents &= pScsiCtrlAnSubscribe->uEventsRequested;
             pThis->uAsyncEvtsEnabled = uSubscribedEvents;
 
+            uint8_t  uTarget  = pScsiCtrlAnSubscribe->uScsiLun[1];
+            uint32_t uScsiLun = (pScsiCtrlAnSubscribe->uScsiLun[2] << 8
+                               | pScsiCtrlAnSubscribe->uScsiLun[3]) & 0x3fff;
+
             if (LogIs2Enabled())
             {
-                uint8_t  uTarget  = pScsiCtrlAnSubscribe->uScsiLun[1];
-                uint32_t uScsiLun = (pScsiCtrlAnSubscribe->uScsiLun[2] << 8
-                                   | pScsiCtrlAnSubscribe->uScsiLun[3]) & 0x3fff;
                 char szTypeText[128];
                 virtioGetControlAsyncMaskText(szTypeText, sizeof(szTypeText), pScsiCtrlAnSubscribe->uEventsRequested);
                 Log2Func(("[%s] (Target: %d LUN: %d)  Async. Notification Subscribe: %s\n",
@@ -1387,15 +1411,26 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
             }
 
-            /*
-             * TBD: Verify correct status code if request mask is only partially fulfillable
-             *      and confirm when to use 'complete' vs. 'succeeded' See VirtIO 1.0 spec section 5.6.6.2
-             *      and read SAM docs*/
-            if (uSubscribedEvents == pScsiCtrlAnSubscribe->uEventsRequested)
-                uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
-            else
-                uResponse = VIRTIOSCSI_S_FUNCTION_COMPLETE;
+            PVIRTIOSCSITARGET pTarget;
+            if (uTarget < pThis->cTargets)
+                pTarget = &pThis->paTargetInstances[uTarget];
 
+            if (uTarget >= pThis->cTargets || !pTarget->fPresent)
+                uResponse = VIRTIOSCSI_S_BAD_TARGET;
+            else
+            if (uScsiLun != 0)
+                uResponse = VIRTIOSCSI_S_INCORRECT_LUN;
+            else
+            {
+                /*
+                 * TBD: Verify correct status code if request mask is only partially fulfillable
+                 *      and confirm when to use 'complete' vs. 'succeeded' See VirtIO 1.0 spec section 5.6.6.2
+                 *      and read SAM docs*/
+                if (uSubscribedEvents == pScsiCtrlAnSubscribe->uEventsRequested)
+                    uResponse = VIRTIOSCSI_S_FUNCTION_SUCCEEDED;
+                else
+                    uResponse = VIRTIOSCSI_S_FUNCTION_COMPLETE;
+            }
             RTSGSEG aReqSegs[] = { { &uSubscribedEvents, sizeof(uSubscribedEvents) },  { &uResponse, sizeof(uResponse)  } };
             RTSgBufInit(&reqSegBuf, aReqSegs, sizeof(aReqSegs) / sizeof(RTSGSEG));
 

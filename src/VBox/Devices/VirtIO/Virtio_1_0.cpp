@@ -1212,14 +1212,14 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
         if (RT_FAILURE(rc))
         {
             /* See PDMDevHlp.cpp:pdmR3DevHlp_PCIRegisterMsi */
-            Log(("Failed to configure MSI-X (%Rrc). Reverting to INTx\n", rc));
+            LogFunc(("Failed to configure MSI-X (%Rrc). Reverting to INTx\n", rc));
             pVirtio->fMsiSupport = false;
         }
         else
-            Log(("Using MSI-X for guest driver notification\n"));
+            Log2Func(("Using MSI-X for guest driver notification\n"));
     }
     else
-        Log(("MSI-X not available for VBox, using INTx notification\n"));
+        LogFunc(("MSI-X not available for VBox, using INTx notification\n"));
 
 
     /* Set offset to first capability and enable PCI dev capabilities */
