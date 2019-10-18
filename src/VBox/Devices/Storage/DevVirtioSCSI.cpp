@@ -831,7 +831,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
     rc = pIMediaEx->pfnIoReqQueryXferSize(pIMediaEx, hIoReq, &cbXfer);
     AssertRC(rc);
 
-    /* Masking used to deal with datatype size differences between APIs */
+    /* Masking used to deal with datatype size differences between APIs (Windows complains otherwise) */
     Assert(!(cbXfer & 0xffffffff00000000));
     uint32_t cbXfer32 = cbXfer & 0xffffffff;
     struct REQ_RESP_HDR respHdr = { 0 };
@@ -1300,7 +1300,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
                 RT_NOREF3(pszTmfTypeText, uTarget, uScsiLun);
             }
 
-            PVIRTIOSCSITARGET pTarget;
+            PVIRTIOSCSITARGET pTarget = NULL;
             if (uTarget < pThis->cTargets)
                 pTarget = &pThis->paTargetInstances[uTarget];
 
@@ -1358,7 +1358,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
             uint8_t  uTarget  = pScsiCtrlAnQuery->uScsiLun[1];
             uint32_t uScsiLun = (pScsiCtrlAnQuery->uScsiLun[2] << 8 | pScsiCtrlAnQuery->uScsiLun[3]) & 0x3fff;
 
-            PVIRTIOSCSITARGET pTarget;
+            PVIRTIOSCSITARGET pTarget = NULL;
             if (uTarget < pThis->cTargets)
                 pTarget = &pThis->paTargetInstances[uTarget];
 
@@ -1411,7 +1411,7 @@ static int virtioScsiCtrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN_T
 
             }
 
-            PVIRTIOSCSITARGET pTarget;
+            PVIRTIOSCSITARGET pTarget = NULL;
             if (uTarget < pThis->cTargets)
                 pTarget = &pThis->paTargetInstances[uTarget];
 
