@@ -577,7 +577,7 @@ UIPropertiesDialog::UIPropertiesDialog(QWidget *pParent, Qt::WindowFlags flags)
         m_pMainLayout->addWidget(m_pInfoEdit);
     if (m_pInfoEdit)
     {
-        //m_pInfoEdit->setReadOnly(true);
+        m_pInfoEdit->setReadOnly(true);
         m_pInfoEdit->setFrameStyle(QFrame::NoFrame);
     }
     QIDialogButtonBox *pButtonBox =
