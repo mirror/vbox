@@ -127,10 +127,12 @@ static VBOXSTRICTRC iomMmioRing3WritePending(PVMCPU pVCpu, RTGCPHYS GCPhys, void
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pRegEntry   The MMIO entry for the current context.
  * @param   GCPhys      The physical address to start writing.
+ * @param   offRegion   MMIO region offset corresponding to @a GCPhys.
  * @param   pvValue     Where to store the value.
  * @param   cbValue     The size of the value to write.
  */
-static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PIOMMMIOENTRY) pRegEntry, RTGCPHYS GCPhys,
+static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PIOMMMIOENTRY) pRegEntry,
+                                              RTGCPHYS GCPhys, RTGCPHYS offRegion,
                                               void const *pvValue, unsigned cbValue IOM_MMIO_STATS_COMMA_DECL)
 {
     AssertReturn(   (pRegEntry->fFlags & IOMMMIO_FLAGS_WRITE_MODE) != IOMMMIO_FLAGS_WRITE_PASSTHRU
@@ -197,7 +199,9 @@ static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PI
         if (fReadMissing && cbThisPart != 4)
         {
             VBOXSTRICTRC rc2 = pRegEntry->pfnReadCallback(pRegEntry->pDevIns, pRegEntry->pvUser,
-                                                          GCPhys & ~(RTGCPHYS)3, &u32MissingValue, sizeof(u32MissingValue));
+                                                          !(pRegEntry->fFlags & IOMMMIO_FLAGS_ABS)
+                                                          ? offRegion & ~(RTGCPHYS)3 : (GCPhys & ~(RTGCPHYS)3),
+                                                          &u32MissingValue, sizeof(u32MissingValue));
             switch (VBOXSTRICTRC_VAL(rc2))
             {
                 case VINF_SUCCESS:
@@ -214,7 +218,7 @@ static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PI
                 case VINF_IOM_R3_MMIO_READ:
                 case VINF_IOM_R3_MMIO_READ_WRITE:
                 case VINF_IOM_R3_MMIO_WRITE:
-                    LogFlow(("iomMmioDoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                    LogFlow(("iomMmioDoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, VBOXSTRICTRC_VAL(rc2)));
                     rc2 = iomMmioRing3WritePending(pVCpu, GCPhys, pvValue, cbValue, pRegEntry->idxSelf);
                     if (rc == VINF_SUCCESS || rc2 < rc)
                         rc = rc2;
@@ -223,7 +227,7 @@ static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PI
                 default:
                     if (RT_FAILURE(rc2))
                     {
-                        Log(("iomMmioDoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                        Log(("iomMmioDoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [read]\n", GCPhys, GCPhysStart, cbValue, VBOXSTRICTRC_VAL(rc2)));
                         return rc2;
                     }
                     AssertMsgReturn(rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST, ("%Rrc\n", rc2), VERR_IPE_UNEXPECTED_INFO_STATUS);
@@ -273,7 +277,9 @@ static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PI
          * Do DWORD write to the device.
          */
         VBOXSTRICTRC rc2 = pRegEntry->pfnWriteCallback(pRegEntry->pDevIns, pRegEntry->pvUser,
-                                                       GCPhys & ~(RTGCPHYS)3, &u32Value, sizeof(u32Value));
+                                                       !(pRegEntry->fFlags & IOMMMIO_FLAGS_ABS)
+                                                       ? offRegion & ~(RTGCPHYS)3 : GCPhys & ~(RTGCPHYS)3,
+                                                       &u32Value, sizeof(u32Value));
         switch (VBOXSTRICTRC_VAL(rc2))
         {
             case VINF_SUCCESS:
@@ -282,7 +288,7 @@ static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PI
             case VINF_IOM_R3_MMIO_READ:
             case VINF_IOM_R3_MMIO_READ_WRITE:
             case VINF_IOM_R3_MMIO_WRITE:
-                Log3(("iomMmioDoComplicatedWrite: deferring GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                Log3(("iomMmioDoComplicatedWrite: deferring GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, VBOXSTRICTRC_VAL(rc2)));
                 AssertReturn(pVCpu->iom.s.PendingMmioWrite.cbValue == 0, VERR_IOM_MMIO_IPE_1);
                 AssertReturn(cbValue + (GCPhys & 3) <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue), VERR_IOM_MMIO_IPE_2);
                 pVCpu->iom.s.PendingMmioWrite.GCPhys  = GCPhys & ~(RTGCPHYS)3;
@@ -299,7 +305,7 @@ static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PI
             default:
                 if (RT_FAILURE(rc2))
                 {
-                    Log(("iomMmioDoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, rc2));
+                    Log(("iomMmioDoComplicatedWrite: GCPhys=%RGp GCPhysStart=%RGp cbValue=%u rc=%Rrc [write]\n", GCPhys, GCPhysStart, cbValue, VBOXSTRICTRC_VAL(rc2)));
                     return rc2;
                 }
                 AssertMsgReturn(rc2 >= VINF_EM_FIRST && rc2 <= VINF_EM_LAST, ("%Rrc\n", rc2), VERR_IPE_UNEXPECTED_INFO_STATUS);
@@ -311,11 +317,12 @@ static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PI
         /*
          * Advance.
          */
-        cbValue -= cbThisPart;
+        cbValue   -= cbThisPart;
         if (!cbValue)
             break;
-        GCPhys += cbThisPart;
-        pvValue = (uint8_t const *)pvValue + cbThisPart;
+        GCPhys    += cbThisPart;
+        offRegion += cbThisPart;
+        pvValue    = (uint8_t const *)pvValue + cbThisPart;
     }
 
     return rc;
@@ -327,19 +334,20 @@ static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PI
 /**
  * Wrapper which does the write.
  */
-DECLINLINE(VBOXSTRICTRC) iomMmioDoWrite(PVMCC pVM, PVMCPU pVCpu, CTX_SUFF(PIOMMMIOENTRY) pRegEntry, RTGCPHYS GCPhysFault,
+DECLINLINE(VBOXSTRICTRC) iomMmioDoWrite(PVMCC pVM, PVMCPU pVCpu, CTX_SUFF(PIOMMMIOENTRY) pRegEntry,
+                                        RTGCPHYS GCPhys, RTGCPHYS offRegion,
                                         const void *pvData, uint32_t cb IOM_MMIO_STATS_COMMA_DECL)
 {
     VBOXSTRICTRC rcStrict;
     if (RT_LIKELY(pRegEntry->pfnWriteCallback))
     {
-        if (   (cb == 4 && !(GCPhysFault & 3))
+        if (   (cb == 4 && !(GCPhys & 3))
             || (pRegEntry->fFlags & IOMMMIO_FLAGS_WRITE_MODE) == IOMMMIO_FLAGS_WRITE_PASSTHRU
-            || (cb == 8 && !(GCPhysFault & 7) && IOMMMIO_DOES_WRITE_MODE_ALLOW_QWORD(pRegEntry->fFlags)) )
+            || (cb == 8 && !(GCPhys & 7) && IOMMMIO_DOES_WRITE_MODE_ALLOW_QWORD(pRegEntry->fFlags)) )
             rcStrict = pRegEntry->pfnWriteCallback(pRegEntry->pDevIns, pRegEntry->pvUser,
-                                                   GCPhysFault, pvData, cb);
+                                                   !(pRegEntry->fFlags & IOMMMIO_FLAGS_ABS) ? offRegion : GCPhys, pvData, cb);
         else
-            rcStrict = iomMmioDoComplicatedWrite(pVM, pVCpu, pRegEntry, GCPhysFault, pvData, cb IOM_MMIO_STATS_COMMA_ARG);
+            rcStrict = iomMmioDoComplicatedWrite(pVM, pVCpu, pRegEntry, GCPhys, offRegion, pvData, cb IOM_MMIO_STATS_COMMA_ARG);
     }
     else
         rcStrict = VINF_SUCCESS;
@@ -357,13 +365,14 @@ DECLINLINE(VBOXSTRICTRC) iomMmioDoWrite(PVMCC pVM, PVMCPU pVCpu, CTX_SUFF(PIOMMM
  *          VINF_IOM_R3_MMIO_READ, VINF_IOM_R3_MMIO_READ_WRITE or
  *          VINF_IOM_R3_MMIO_WRITE may be returned.
  *
- * @param   pVM                 The cross context VM structure.
- * @param   pRegEntry           The MMIO entry for the current context.
- * @param   GCPhys              The physical address to start reading.
- * @param   pvValue             Where to store the value.
- * @param   cbValue             The size of the value to read.
+ * @param   pVM         The cross context VM structure.
+ * @param   pRegEntry   The MMIO entry for the current context.
+ * @param   GCPhys      The physical address to start reading.
+ * @param   offRegion   MMIO region offset corresponding to @a GCPhys.
+ * @param   pvValue     Where to store the value.
+ * @param   cbValue     The size of the value to read.
  */
-static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, CTX_SUFF(PIOMMMIOENTRY) pRegEntry, RTGCPHYS GCPhys,
+static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, CTX_SUFF(PIOMMMIOENTRY) pRegEntry, RTGCPHYS GCPhys, RTGCPHYS offRegion,
                                              void *pvValue, unsigned cbValue IOM_MMIO_STATS_COMMA_DECL)
 {
     AssertReturn(   (pRegEntry->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD
@@ -404,7 +413,9 @@ static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, CTX_SUFF(PIOMMMIOENTRY) pR
          */
         uint32_t u32Value;
         VBOXSTRICTRC rcStrict2 = pRegEntry->pfnReadCallback(pRegEntry->pDevIns, pRegEntry->pvUser,
-                                                            GCPhys & ~(RTGCPHYS)3, &u32Value, sizeof(u32Value));
+                                                            !(pRegEntry->fFlags & IOMMMIO_FLAGS_ABS)
+                                                            ? offRegion & ~(RTGCPHYS)3 : GCPhys & ~(RTGCPHYS)3,
+                                                            &u32Value, sizeof(u32Value));
         switch (VBOXSTRICTRC_VAL(rcStrict2))
         {
             case VINF_SUCCESS:
@@ -469,11 +480,12 @@ static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, CTX_SUFF(PIOMMMIOENTRY) pR
         /*
          * Advance.
          */
-        cbValue -= cbThisPart;
+        cbValue   -= cbThisPart;
         if (!cbValue)
             break;
-        GCPhys += cbThisPart;
-        pvValue = (uint8_t *)pvValue + cbThisPart;
+        GCPhys    += cbThisPart;
+        offRegion += cbThisPart;
+        pvValue    = (uint8_t *)pvValue + cbThisPart;
     }
 
     return rc;
@@ -539,7 +551,7 @@ static int iomMMIODoRead00s(void *pvValue, size_t cbValue IOM_MMIO_STATS_COMMA_D
 /**
  * Wrapper which does the read.
  */
-DECLINLINE(VBOXSTRICTRC) iomMmioDoRead(PVMCC pVM, CTX_SUFF(PIOMMMIOENTRY) pRegEntry, RTGCPHYS GCPhys,
+DECLINLINE(VBOXSTRICTRC) iomMmioDoRead(PVMCC pVM, CTX_SUFF(PIOMMMIOENTRY) pRegEntry, RTGCPHYS GCPhys, RTGCPHYS offRegion,
                                        void *pvValue, uint32_t cbValue IOM_MMIO_STATS_COMMA_DECL)
 {
     VBOXSTRICTRC rcStrict;
@@ -551,10 +563,10 @@ DECLINLINE(VBOXSTRICTRC) iomMmioDoRead(PVMCC pVM, CTX_SUFF(PIOMMMIOENTRY) pRegEn
             || (    cbValue == 8
                 && !(GCPhys & 7)
                 && (pRegEntry->fFlags & IOMMMIO_FLAGS_READ_MODE) == IOMMMIO_FLAGS_READ_DWORD_QWORD ) )
-            rcStrict = pRegEntry->pfnReadCallback(pRegEntry->pDevIns, pRegEntry->pvUser, GCPhys,
-                                                  pvValue, cbValue);
+            rcStrict = pRegEntry->pfnReadCallback(pRegEntry->pDevIns, pRegEntry->pvUser,
+                                                  !(pRegEntry->fFlags & IOMMMIO_FLAGS_ABS) ? offRegion : GCPhys, pvValue, cbValue);
         else
-            rcStrict = iomMMIODoComplicatedRead(pVM, pRegEntry, GCPhys, pvValue, cbValue IOM_MMIO_STATS_COMMA_ARG);
+            rcStrict = iomMMIODoComplicatedRead(pVM, pRegEntry, GCPhys, offRegion, pvValue, cbValue IOM_MMIO_STATS_COMMA_ARG);
     }
     else
         rcStrict = VINF_IOM_MMIO_UNUSED_FF;
@@ -731,9 +743,8 @@ VMM_INT_DECL(VBOXSTRICTRC) IOMMmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint32_
     VBOXSTRICTRC rcStrict = IOM_LOCK_SHARED(pVM);
     if (RT_SUCCESS(rcStrict))
     {
-        uint16_t idxLastHint = UINT16_MAX; /** @todo dedicate hint for this bugger, since it will only be the APIC. */
         RTGCPHYS offRegion;
-        CTX_SUFF(PIOMMMIOENTRY) pRegEntry = iomMmioGetEntry(pVM, GCPhysFault, &offRegion, &idxLastHint);
+        CTX_SUFF(PIOMMMIOENTRY) pRegEntry = iomMmioGetEntry(pVM, GCPhysFault, &offRegion, &pVCpu->iom.s.idxMmioLastPhysHandler);
         if (RT_LIKELY(pRegEntry))
         {
             IOM_UNLOCK_SHARED(pVM);
@@ -797,17 +808,17 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     AssertReturn((uintptr_t)pvUser < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
 #ifdef IN_RING0
     AssertReturn((uintptr_t)pvUser < pVM->iomr0.s.cMmioAlloc, VERR_IOM_INVALID_MMIO_HANDLE);
-    CTX_SUFF(PIOMMMIOENTRY) const pRegEntry = &pVM->iomr0.s.paMmioRegs[(uintptr_t)pvUser];
+    CTX_SUFF(PIOMMMIOENTRY) const pRegEntry    = &pVM->iomr0.s.paMmioRegs[(uintptr_t)pvUser];
+    PIOMMMIOENTRYR3 const         pRegEntryR3  = &pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser];
 #else
-    CTX_SUFF(PIOMMMIOENTRY) const pRegEntry = &pVM->iom.s.paMmioRegs[(uintptr_t)pvUser];
+    CTX_SUFF(PIOMMMIOENTRY) const pRegEntry    = &pVM->iom.s.paMmioRegs[(uintptr_t)pvUser];
 #endif
 #ifdef VBOX_WITH_STATISTICS
-    PIOMMMIOSTATSENTRY const      pStats    = iomMmioGetStats(pVM, pRegEntry);  /* (Works even without ring-0 setup.) */
+    PIOMMMIOSTATSENTRY const      pStats       = iomMmioGetStats(pVM, pRegEntry);  /* (Works even without ring-0 device setup.) */
 #endif
-    PPDMDEVINS const              pDevIns   = pRegEntry->pDevIns;
+    PPDMDEVINS const              pDevIns      = pRegEntry->pDevIns;
 
-#ifndef IN_RING3
-# if defined(VBOX_STRICT)
+#ifdef VBOX_STRICT
     /*
      * Assert the right entry in strict builds.  This may yield a false positive
      * for SMP VMs if we're unlucky and the guest isn't well behaved.
@@ -815,11 +826,15 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     IOM_LOCK_SHARED(pVM);  /** @todo Need lookup that doesn't require locking... */
     RTGCPHYS offIgn;
     uint16_t idxIgn = UINT16_MAX;
-    Assert(   pRegEntry == iomMmioGetEntry(pVM, GCPhysFault, &offIgn, &idxIgn)
-           || !pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].fMapped);
-    IOM_UNLOCK_SHARED(pVM);
+# ifdef IN_RING0
+    Assert(pRegEntry == iomMmioGetEntry(pVM, GCPhysFault, &offIgn, &idxIgn) || !pRegEntryR3->fMapped);
+# else
+    Assert(pRegEntry == iomMmioGetEntry(pVM, GCPhysFault, &offIgn, &idxIgn) || !pRegEntry->fMapped);
 # endif
+    IOM_UNLOCK_SHARED(pVM);
+#endif
 
+#ifndef IN_RING3
     /*
      * If someone is doing FXSAVE, FXRSTOR, XSAVE, XRSTOR or other stuff dealing with
      * large amounts of data, just go to ring-3 where we don't need to deal with partial
@@ -827,7 +842,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
      *
      * Also drop back if the ring-0 registration entry isn't actually used.
      */
-    if (   cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue)
+    if (   RT_LIKELY(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue))
         && pRegEntry->cbRegion != 0
         && (  enmAccessType == PGMACCESSTYPE_READ
             ? pRegEntry->pfnReadCallback  != NULL || pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].pfnReadCallback == NULL
@@ -842,6 +857,34 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     }
 #endif /* !IN_RING3 */
 
+    /*
+     * If we've got an offset that's outside the region, defer to ring-3 if we
+     * can, or pretend there is nothing there.  This shouldn't happen, but can
+     * if we're unlucky with an SMP VM and the guest isn't behaving very well.
+     */
+#ifdef IN_RING0
+    RTGCPHYS const GCPhysMapping = pRegEntryR3->GCPhysMapping;
+#else
+    RTGCPHYS const GCPhysMapping = pRegEntry->GCPhysMapping;
+#endif
+    RTGCPHYS const offRegion     = GCPhysMapping - GCPhysFault;
+    if (RT_LIKELY(offRegion < pRegEntry->cbRegion && GCPhysMapping != NIL_RTGCPHYS))
+    { /* likely */ }
+    else
+    {
+        STAM_REL_COUNTER_INC(&pVM->iom.s.StatRZMMIOStaleMappings);
+        LogRelMax(64, ("iomMmioHandlerNew: Stale access at %#RGp to range #%#x currently residing at %RGp LB %RGp\n",
+                       GCPhysFault, pRegEntry->idxSelf, GCPhysMapping, pRegEntry->cbRegion));
+#ifdef IN_RING3
+        if (enmAccessType == PGMACCESSTYPE_READ)
+            iomMMIODoReadFFs(pvBuf, cbBuf IOM_MMIO_STATS_COMMA_ARG);
+        return VINF_SUCCESS;
+#else
+        STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pStats->ReadRZToR3 : &pStats->WriteRZToR3);
+        STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pVM->iom.s.StatRZMMIOReadsToR3 : &pVM->iom.s.StatRZMMIOWritesToR3);
+        return rcToRing3;
+#endif
+    }
 
     /*
      * Perform locking and the access.
@@ -857,7 +900,10 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     {
         if (enmAccessType == PGMACCESSTYPE_READ)
         {
-            rcStrict = iomMmioDoRead(pVM, pRegEntry, GCPhysFault, pvBuf, (uint32_t)cbBuf IOM_MMIO_STATS_COMMA_ARG);
+            /*
+             * Read.
+             */
+            rcStrict = iomMmioDoRead(pVM, pRegEntry, GCPhysFault, offRegion, pvBuf, (uint32_t)cbBuf IOM_MMIO_STATS_COMMA_ARG);
 
             PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 #ifndef IN_RING3
@@ -873,7 +919,10 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
         }
         else
         {
-            rcStrict = iomMmioDoWrite(pVM, pVCpu, pRegEntry, GCPhysFault, pvBuf, (uint32_t)cbBuf IOM_MMIO_STATS_COMMA_ARG);
+            /*
+             * Write.
+             */
+            rcStrict = iomMmioDoWrite(pVM, pVCpu, pRegEntry, GCPhysFault, offRegion, pvBuf, (uint32_t)cbBuf IOM_MMIO_STATS_COMMA_ARG);
             PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
 #ifndef IN_RING3
             if (rcStrict == VINF_IOM_R3_MMIO_WRITE)

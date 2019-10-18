@@ -231,9 +231,10 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
                     else
                     {
                         /* Register with PGM before we shuffle the array: */
+                        ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
                         rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
                                                    (void *)(uintptr_t)hRegion, hRegion, hRegion, pRegEntry->pszDesc);
-                        AssertRCReturnStmt(rc, IOM_UNLOCK_EXCL(pVM), rc);
+                        AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
                         /* Insert after the entry we just considered: */
                         pEntry += 1;
@@ -249,9 +250,10 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
                     else
                     {
                         /* Register with PGM before we shuffle the array: */
+                        ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
                         rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
                                                    (void *)(uintptr_t)hRegion, hRegion, hRegion, pRegEntry->pszDesc);
-                        AssertRCReturnStmt(rc, IOM_UNLOCK_EXCL(pVM), rc);
+                        AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
 
                         /* Insert at the entry we just considered: */
                         if (i < cEntries)
@@ -278,13 +280,11 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
         /*
          * Fill in the entry and bump the table size.
          */
+        pRegEntry->fMapped  = true;
         pEntry->idx         = hRegion;
         pEntry->GCPhysFirst = GCPhys;
         pEntry->GCPhysLast  = GCPhysLast;
         pVM->iom.s.cMmioLookupEntries = cEntries + 1;
-
-        pRegEntry->GCPhysMapping = GCPhys;
-        pRegEntry->fMapped       = true;
 
 #ifdef VBOX_WITH_STATISTICS
         /* Don't register stats here when we're creating the VM as the
@@ -386,10 +386,12 @@ VMMR3_INT_DECL(int)  IOMR3MmioUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE h
                 if (i + 1 < cEntries)
                     memmove(pEntry, pEntry + 1, sizeof(*pEntry) * (cEntries - i - 1));
                 pVM->iom.s.cMmioLookupEntries = cEntries - 1;
-                pRegEntry->GCPhysMapping = NIL_RTGCPHYS;
-                pRegEntry->fMapped       = false;
+
                 rc = PGMR3PhysMMIODeregister(pVM, GCPhys, pRegEntry->cbRegion);
                 AssertRC(rc);
+
+                pRegEntry->fMapped = false;
+                ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS);
                 break;
             }
             else

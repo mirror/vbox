@@ -327,8 +327,9 @@ typedef struct IOMMMIOENTRYR3
 {
     /** The number of bytes covered by this entry. */
     RTGCPHYS                            cbRegion;
-    /** The current mapping address (duplicates lookup table). */
-    RTGCPHYS                            GCPhysMapping;
+    /** The current mapping address (duplicates lookup table).
+     * This is set to NIL_RTGCPHYS if not mapped (exclusive lock + atomic). */
+    RTGCPHYS volatile                   GCPhysMapping;
     /** Pointer to user argument. */
     RTR3PTR                             pvUser;
     /** Pointer to the associated device instance. */
@@ -351,8 +352,9 @@ typedef struct IOMMMIOENTRYR3
     /** The entry of the first statistics entry, UINT16_MAX if no stats. */
     uint16_t                            idxStats;
     /** Set if mapped, clear if not.
-     * Only updated when critsect is held exclusively.   */
-    bool                                fMapped;
+     * Only updated when critsect is held exclusively.
+     * @todo remove as GCPhysMapping != NIL_RTGCPHYS serves the same purpose. */
+    bool volatile                       fMapped;
     /** Set if there is an ring-0 entry too. */
     bool                                fRing0;
     /** Set if there is an raw-mode entry too. */
@@ -630,7 +632,11 @@ typedef struct IOMCPU
     uint16_t                            idxIoPortLastReadStr;
     /** I/O port registration index for the last write string operation. */
     uint16_t                            idxIoPortLastWriteStr;
-    uint32_t                            u32Padding;
+
+    /** MMIO port registration index for the last IOMR3MmioPhysHandler call.
+     * @note pretty static as only used by APIC on AMD-V.  */
+    uint16_t                            idxMmioLastPhysHandler;
+    uint16_t                            u16Padding;
 
     R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastReadR3;
     R3PTRTYPE(PIOMIOPORTRANGER3)    pRangeLastWriteR3;
@@ -738,6 +744,7 @@ typedef struct IOM
 
     /** @name MMIO statistics.
      * @{ */
+    STAMCOUNTER                     StatRZMMIOStaleMappings;
     STAMPROFILE                     StatRZMMIOHandler;
     STAMCOUNTER                     StatRZMMIOReadsToR3;
     STAMCOUNTER                     StatRZMMIOWritesToR3;
