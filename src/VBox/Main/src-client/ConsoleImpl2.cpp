@@ -3078,7 +3078,19 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                             rc = SHAREDCLIPBOARDINST()->hostCall(VBOX_SHCL_HOST_FN_SET_HEADLESS, 1, &parm);
                             if (RT_FAILURE(rc))
                                 LogRel(("Shared Clipboard: Unable to set initial headless mode, rc=%Rrc\n", rc));
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+                            /* Setup file transfer mode. */
+                            BOOL fFileTransfersEnabled;
+                            hrc = pMachine->COMGETTER(ClipboardFileTransfersEnabled)(&fFileTransfersEnabled); H();
+                            int rc2 = i_changeClipboardFileTransferMode(RT_BOOL(fFileTransfersEnabled));
+                            if (RT_FAILURE(rc2))
+                                LogRel(("Shared Clipboard: Unable to set initial file transfers mode, rc=%Rrc\n", rc2));
+                            /* Note: Don't let the Shared Clipboard fail as a whole if file transfers aren't available. */
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
                         }
+                        else
+                            LogRel(("Shared Clipboard: Unable to set initial clipboard mode, rc=%Rrc\n", rc));
                     }
                 }
             }
