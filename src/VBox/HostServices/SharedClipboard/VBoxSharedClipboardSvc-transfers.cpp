@@ -1712,7 +1712,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
         }
 
         default:
-            LogFunc(("Not implemented\n"));
+            rc = VERR_NOT_IMPLEMENTED;
             break;
     }
 
