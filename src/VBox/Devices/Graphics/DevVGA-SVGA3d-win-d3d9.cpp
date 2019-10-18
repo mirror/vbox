@@ -34,31 +34,46 @@ typedef enum D3D9TextureType
 IDirect3DTexture9 *D3D9GetTexture(PVMSVGA3DSURFACE pSurface,
                                   D3D9TextureType enmType)
 {
-    if (enmType = D3D9TextureType_Bounce)
-        return pSurface->bounce.pTexture;
-    if (enmType = D3D9TextureType_Emulated)
-        return pSurface->emulated.pTexture;
-    return pSurface->u.pTexture;
+    IDirect3DTexture9 *p;
+    switch (enmType)
+    {
+        default: AssertFailed();
+            RT_FALL_THRU();
+        case D3D9TextureType_Texture: p = pSurface->u.pTexture; break;
+        case D3D9TextureType_Bounce: p = pSurface->bounce.pTexture; break;
+        case D3D9TextureType_Emulated: p = pSurface->emulated.pTexture; break;
+    }
+    return p;
 }
 
 IDirect3DCubeTexture9 *D3D9GetCubeTexture(PVMSVGA3DSURFACE pSurface,
                                           D3D9TextureType enmType)
 {
-    if (enmType = D3D9TextureType_Bounce)
-        return pSurface->bounce.pCubeTexture;
-    if (enmType = D3D9TextureType_Emulated)
-        return pSurface->emulated.pCubeTexture;
-    return pSurface->u.pCubeTexture;
+    IDirect3DCubeTexture9 *p;
+    switch (enmType)
+    {
+        default: AssertFailed();
+            RT_FALL_THRU();
+        case D3D9TextureType_Texture: p = pSurface->u.pCubeTexture; break;
+        case D3D9TextureType_Bounce: p = pSurface->bounce.pCubeTexture; break;
+        case D3D9TextureType_Emulated: p = pSurface->emulated.pCubeTexture; break;
+    }
+    return p;
 }
 
 IDirect3DVolumeTexture9 *D3D9GetVolumeTexture(PVMSVGA3DSURFACE pSurface,
                                               D3D9TextureType enmType)
 {
-    if (enmType = D3D9TextureType_Bounce)
-        return pSurface->bounce.pVolumeTexture;
-    if (enmType = D3D9TextureType_Emulated)
-        return pSurface->emulated.pVolumeTexture;
-    return pSurface->u.pVolumeTexture;
+    IDirect3DVolumeTexture9 *p;
+    switch (enmType)
+    {
+        default: AssertFailed();
+            RT_FALL_THRU();
+        case D3D9TextureType_Texture: p = pSurface->u.pVolumeTexture; break;
+        case D3D9TextureType_Bounce: p = pSurface->bounce.pVolumeTexture; break;
+        case D3D9TextureType_Emulated: p = pSurface->emulated.pVolumeTexture; break;
+    }
+    return p;
 }
 
 HRESULT D3D9GetTextureLevel(PVMSVGA3DSURFACE pSurface,
