@@ -271,6 +271,9 @@ ClipboardClientMap g_mapClients;
  *  to process new commands. The key is the (unique) client ID. */
 ClipboardClientQueue g_listClientsDeferred;
 
+/** Host feature mask for VBOX_SHCL_GUEST_FN_REPORT_FEATURES/VBOX_SHCL_GUEST_FN_QUERY_FEATURES. */
+static uint64_t const g_fHostFeatures0 = VBOX_SHCL_HF_NONE;
+
 
 uint32_t shclSvcGetMode(void)
 {
@@ -504,6 +507,90 @@ int shclSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
     /** @todo Catch / handle OOM? */
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Implements VBOX_SHCL_GUEST_FN_REPORT_FEATURES.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
+ * @retval  VERR_ACCESS_DENIED if not master
+ * @retval  VERR_INVALID_PARAMETER if bit 63 in the 2nd parameter isn't set.
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ *
+ * @param   pClient     The client state.
+ * @param   hCall       The client's call handle.
+ * @param   cParms      Number of parameters.
+ * @param   paParms     Array of parameters.
+ */
+int shclSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
+                                uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    /*
+     * Validate the request.
+     */
+    ASSERT_GUEST_RETURN(cParms == 2, VERR_WRONG_PARAMETER_COUNT);
+    ASSERT_GUEST_RETURN(paParms[0].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+    uint64_t const fFeatures0 = paParms[0].u.uint64;
+    ASSERT_GUEST_RETURN(paParms[1].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+    uint64_t const fFeatures1 = paParms[1].u.uint64;
+    ASSERT_GUEST_RETURN(fFeatures1 & VBOX_SHCL_GF_1_MUST_BE_ONE, VERR_INVALID_PARAMETER);
+
+    /*
+     * Do the work.
+     */
+    paParms[0].u.uint64 = g_fHostFeatures0;
+    paParms[1].u.uint64 = 0;
+
+    int rc = g_pHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
+    if (RT_SUCCESS(rc))
+    {
+        pClient->State.fGuestFeatures0 = fFeatures0;
+        pClient->State.fGuestFeatures1 = fFeatures1;
+        Log(("[Client %RU32] features: %#RX64 %#RX64\n", pClient->State.uClientID, fFeatures0, fFeatures1));
+
+        /*
+         * Forward the info to Main.
+         */
+        /** @todo Not needed yet. */
+    }
+    else
+        LogFunc(("pfnCallComplete -> %Rrc\n", rc));
+
+    return VINF_HGCM_ASYNC_EXECUTE;
+}
+
+/**
+ * Implements VBOX_SHCL_GUEST_FN_QUERY_FEATURES.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_HGCM_ASYNC_EXECUTE on success (we complete the message here).
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ *
+ * @param   hCall       The client's call handle.
+ * @param   cParms      Number of parameters.
+ * @param   paParms     Array of parameters.
+ */
+int shclSvcClientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+{
+    /*
+     * Validate the request.
+     */
+    ASSERT_GUEST_RETURN(cParms == 2, VERR_WRONG_PARAMETER_COUNT);
+    ASSERT_GUEST_RETURN(paParms[0].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+    ASSERT_GUEST_RETURN(paParms[1].type == VBOX_HGCM_SVC_PARM_64BIT, VERR_WRONG_PARAMETER_TYPE);
+    ASSERT_GUEST(paParms[1].u.uint64 & RT_BIT_64(63));
+
+    /*
+     * Do the work.
+     */
+    paParms[0].u.uint64 = g_fHostFeatures0;
+    paParms[1].u.uint64 = 0;
+    int rc = g_pHelpers->pfnCallComplete(hCall, VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        LogFunc(("pfnCallComplete -> %Rrc\n", rc));
+
+    return VINF_HGCM_ASYNC_EXECUTE;
 }
 
 /**
@@ -1322,6 +1409,18 @@ static DECLCALLBACK(void) svcCall(void *,
             break;
         }
 
+        case VBOX_SHCL_GUEST_FN_REPORT_FEATURES:
+        {
+            rc = shclSvcClientReportFeatures(pClient, callHandle, cParms, paParms);
+            break;
+        }
+
+        case VBOX_SHCL_GUEST_FN_QUERY_FEATURES:
+        {
+            rc = shclSvcClientQueryFeatures(callHandle, cParms, paParms);
+            break;
+        }
+
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT:
         {
             rc = shclSvcMsgPeek(pClient, callHandle, cParms, paParms, false /*fWait*/);
@@ -1620,7 +1719,10 @@ static void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
 {
     LogFlowFuncEnter();
 
-    pClientState->uProtocolVer = 0;
+    pClientState->uProtocolVer    = 0;
+    pClientState->fGuestFeatures0 = VBOX_SHCL_GF_NONE;
+    pClientState->fGuestFeatures1 = VBOX_SHCL_GF_NONE;
+
     pClientState->cbChunkSize  = _64K; /** Make this configurable. */
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS

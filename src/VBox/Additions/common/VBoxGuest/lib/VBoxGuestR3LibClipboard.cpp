@@ -109,6 +109,20 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx)
                 rc = VbglHGCMParmUInt32Get(&Msg.cbChunkSize, &pCtx->cbChunkSize);
 
             /** @todo Add / handle checksum + compression type. */
+
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Report features to the host.
+                 */
+                uint64_t fHostFeatures0Ignored;
+                rc = VbglR3ClipboardReportFeatures(pCtx->uClientID, VBOX_SHCL_GF_NONE /* None yet */,
+                                                   &fHostFeatures0Ignored);
+                if (RT_SUCCESS(rc))
+                    LogRel2(("Shared Clipboard: Host features: %#RX64\n", fHostFeatures0Ignored));
+                else
+                    LogRel(("Shared Clipboard: Warning! Feature reporing failed: %Rrc\n", rc));
+            }
         }
         else
         {
@@ -317,6 +331,83 @@ VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat,
         rc = rc2;
     }
     return rc;
+}
+
+/**
+ * Reports features to the host and retrieve host feature set.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID returned by VbglR3ClipboardConnect().
+ * @param   fGuestFeatures  Features to report, VBOX_SHCL_GF_XXX.
+ * @param   pfHostFeatures  Where to store the features VBOX_SHCL_HF_XXX.
+ */
+VBGLR3DECL(int) VbglR3ClipboardReportFeatures(uint32_t idClient, uint64_t fGuestFeatures, uint64_t *pfHostFeatures)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   f64Features0;
+            HGCMFunctionParameter   f64Features1;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_REPORT_FEATURES, 2);
+        VbglHGCMParmUInt64Set(&Msg.f64Features0, fGuestFeatures);
+        VbglHGCMParmUInt64Set(&Msg.f64Features1, VBOX_SHCL_GF_1_MUST_BE_ONE);
+
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
+            Assert(Msg.f64Features1.type == VMMDevHGCMParmType_64bit);
+            if (Msg.f64Features1.u.value64 & VBOX_SHCL_GF_1_MUST_BE_ONE)
+                rc = VERR_NOT_SUPPORTED;
+            else if (pfHostFeatures)
+                *pfHostFeatures = Msg.f64Features0.u.value64;
+            break;
+        }
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+
+}
+
+/**
+ * Query the host features.
+ *
+ * @returns VBox status code.
+ * @param   idClient        The client ID returned by VbglR3ClipboardConnect().
+ * @param   pfHostFeatures  Where to store the host feature, VBOX_SHCL_HF_XXX.
+ */
+VBGLR3DECL(int) VbglR3ClipboardQueryFeatures(uint32_t idClient, uint64_t *pfHostFeatures)
+{
+    int rc;
+    do
+    {
+        struct
+        {
+            VBGLIOCHGCMCALL         Hdr;
+            HGCMFunctionParameter   f64Features0;
+            HGCMFunctionParameter   f64Features1;
+        } Msg;
+        VBGL_HGCM_HDR_INIT(&Msg.Hdr, idClient, VBOX_SHCL_GUEST_FN_QUERY_FEATURES, 2);
+        VbglHGCMParmUInt64Set(&Msg.f64Features0, 0);
+        VbglHGCMParmUInt64Set(&Msg.f64Features1, RT_BIT_64(63));
+
+        rc = VbglR3HGCMCall(&Msg.Hdr, sizeof(Msg));
+        if (RT_SUCCESS(rc))
+        {
+            Assert(Msg.f64Features0.type == VMMDevHGCMParmType_64bit);
+            Assert(Msg.f64Features1.type == VMMDevHGCMParmType_64bit);
+            if (Msg.f64Features1.u.value64 & RT_BIT_64(63))
+                rc = VERR_NOT_SUPPORTED;
+            else if (pfHostFeatures)
+                *pfHostFeatures = Msg.f64Features0.u.value64;
+            break;
+        }
+    } while (rc == VERR_INTERRUPTED);
+    return rc;
+
 }
 
 /**

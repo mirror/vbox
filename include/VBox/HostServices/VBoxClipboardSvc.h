@@ -181,63 +181,111 @@
  *
  *  New since protocol v1. */
 #define VBOX_SHCL_GUEST_FN_CONNECT                5
+/** Report guest side feature flags and retrieve the host ones.
+ *
+ * The guest replies to the host what features it support in addition.
+ * In return the host will return features the host supports.
+ *
+ * Two 64-bit parameters are passed in from the
+ * guest with the guest features (VBOX_SHCL_GF_XXX), the host replies by
+ * replacing the parameter values with the host ones (VBOX_SHCL_HF_XXX).
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_ACCESS_DENIED it not master.
+ * @retval  VERR_INVALID_CLIENT_ID
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @since   6.1
+ */
+#define VBOX_SHCL_GUEST_FN_REPORT_FEATURES        6
+/** Query the host ones feature masks.
+ *
+ * That way the guest (client) can get hold of the features
+ * from the host.  Again, it is prudent to set the 127 bit and observe it being
+ * cleared on success, as older hosts might return success without doing
+ * anything.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_INVALID_CLIENT_ID
+ * @retval  VERR_WRONG_PARAMETER_COUNT
+ * @retval  VERR_WRONG_PARAMETER_TYPE
+ * @since   6.1
+ */
+#define VBOX_SHCL_GUEST_FN_QUERY_FEATURES         7
 /** Peeks at the next message, returning immediately.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT        6
+#define VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT        8
 /** Peeks at the next message, waiting for one to arrive.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT          7
+#define VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT          9
 /** Gets the next message, returning immediately.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_MSG_GET                8
+#define VBOX_SHCL_GUEST_FN_MSG_GET                10
 /** Replies to a function from the host.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_REPLY                  10
+#define VBOX_SHCL_GUEST_FN_REPLY                  11
 /** Reports the available root entries of a transfer.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ     11
+#define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_READ     12
 /** Reports the available root entries of a transfer.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE    12
+#define VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE    13
 /** Reports the available root entries of a transfer.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ   13
+#define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_READ   14
 /** Reports the available root entries of a transfer.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE  14
+#define VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE  15
 /** Opens / gets a list handle from the host.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_LIST_OPEN              15
+#define VBOX_SHCL_GUEST_FN_LIST_OPEN              16
 /** Closes a list handle from the host.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_LIST_CLOSE             16
+#define VBOX_SHCL_GUEST_FN_LIST_CLOSE             17
 /** Reads a list header from the host.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_LIST_HDR_READ          17
+#define VBOX_SHCL_GUEST_FN_LIST_HDR_READ          18
 /** Writes a list header to the host.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE         18
+#define VBOX_SHCL_GUEST_FN_LIST_HDR_WRITE         19
 /** New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ        19
+#define VBOX_SHCL_GUEST_FN_LIST_ENTRY_READ        20
 /** New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE       20
+#define VBOX_SHCL_GUEST_FN_LIST_ENTRY_WRITE       21
 /** New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_OBJ_OPEN               21
+#define VBOX_SHCL_GUEST_FN_OBJ_OPEN               22
 /** New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_OBJ_CLOSE              22
+#define VBOX_SHCL_GUEST_FN_OBJ_CLOSE              23
 /** New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_OBJ_READ               23
+#define VBOX_SHCL_GUEST_FN_OBJ_READ               24
 /** New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_OBJ_WRITE              24
+#define VBOX_SHCL_GUEST_FN_OBJ_WRITE              25
 /** Reports cancellation of the current operation to the host.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_CANCEL                 25
+#define VBOX_SHCL_GUEST_FN_CANCEL                 26
 /** Reports an error to the host.
  *  New since protocol v1. */
-#define VBOX_SHCL_GUEST_FN_ERROR                  26
+#define VBOX_SHCL_GUEST_FN_ERROR                  27
 
 /** The maximum default chunk size for a single data transfer. */
 #define VBOX_SHCL_MAX_CHUNK_SIZE                  _64K
+
+/** @name VBOX_SHCL_GF_XXX - Guest features.
+ * @sa VBOX_SHCL_GUEST_FN_REPORT_FEATURES
+ * @{ */
+/** No flags set. */
+#define VBOX_SHCL_GF_NONE                         0
+/** Bit that must be set in the 2nd parameter, will be cleared if the host reponds
+ * correctly (old hosts might not). */
+#define VBOX_SHCL_GF_1_MUST_BE_ONE                RT_BIT_64(63)
+/** @} */
+
+/** @name VBOX_GUESTCTRL_HF_XXX - Host features.
+ * @sa VBOX_SHCL_GUEST_FN_REPORT_FEATURES
+ * @{ */
+/** No flags set. */
+#define VBOX_SHCL_HF_NONE                         0
+/** @} */
 
 /*
  * HGCM parameter structures.
