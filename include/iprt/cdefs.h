@@ -244,12 +244,12 @@
 #endif
 
 
-/** @def __X86__
+/** @def \__X86__
  * Indicates that we're compiling for the X86 architecture.
  * @deprecated
  */
 
-/** @def __AMD64__
+/** @def \__AMD64__
  * Indicates that we're compiling for the AMD64 architecture.
  * @deprecated
  */
@@ -3723,7 +3723,7 @@
 #define _(s) gettext(s)
 
 
-/** @def __PRETTY_FUNCTION__
+/** @def \__PRETTY_FUNCTION__
  *  With GNU C we'd like to use the builtin __PRETTY_FUNCTION__, so define that
  *  for the other compilers.
  */

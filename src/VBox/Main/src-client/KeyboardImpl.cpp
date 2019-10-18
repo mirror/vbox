@@ -36,8 +36,9 @@
 // globals
 ////////////////////////////////////////////////////////////////////////////////
 
-/** @name Keyboard device capabilities bitfield
- * @{ */
+/**
+ * Keyboard device capabilities bitfield.
+ */
 enum
 {
     /** The keyboard device does not wish to receive keystrokes. */

@@ -269,8 +269,6 @@ typedef struct VMREQ
 /** Pointer to a VM request packet. */
 typedef VMREQ *PVMREQ;
 
-/** @} */
-
 
 #ifndef IN_RC
 /** @defgroup grp_vmm_apis_hc  VM Host Context API

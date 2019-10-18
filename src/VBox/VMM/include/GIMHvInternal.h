@@ -865,7 +865,7 @@ typedef enum GIMHVHYPERCALLPARAM
 #define GIM_HV_DEBUG_PURGE_INCOMING_DATA          RT_BIT_32(0)
 /** Guest requests purging of outgoing debug data. */
 #define GIM_HV_DEBUG_PURGE_OUTGOING_DATA          RT_BIT_32(1)
-/** @}*/
+/** @} */
 
 
 /** @name VMBus.
@@ -881,7 +881,7 @@ typedef enum GIMHVHYPERCALLPARAM
 
 /** @name SynIC.
  *  Synthetic Interrupt Controller definitions.
- */
+ * @{ */
 /** SynIC version register. */
 #define GIM_HV_SVERSION                           1
 /** Number of synthetic interrupt sources (warning, fixed in saved-states!). */
@@ -1201,8 +1201,8 @@ typedef struct GIMHV
     uint64_t                    cTscTicksPerSecond;
     /** @} */
 
-    /** @name Hypercalls. */
-    /* @{ */
+    /** @name Hypercalls.
+     * @{ */
     /** Guest address of the hypercall input parameter page. */
     RTGCPHYS                    GCPhysHypercallIn;
     /** Guest address of the hypercall output parameter page. */

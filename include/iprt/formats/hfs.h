@@ -215,7 +215,8 @@
 
 /** @} */
 
-/** @name B-tree compare types (BTHeaderRec::keyCompareType) */
+/** @name B-tree compare types (BTHeaderRec::keyCompareType)
+ * @{ */
 #define kHFSCaseFolding                 UINT8_C(0xcf)
 #define kHFSBinaryCompare               UINT8_C(0xbc)
 /** @} */

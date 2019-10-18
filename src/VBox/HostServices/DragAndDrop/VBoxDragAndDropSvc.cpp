@@ -15,7 +15,7 @@
  * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
  */
 
-/** @page pg_svc_guest_control   Drag and drop HGCM Service
+/** @page pg_svc_dnd    Drag and drop HGCM Service
  *
  * TODO
  */

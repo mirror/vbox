@@ -471,6 +471,7 @@ typedef RTASN1COREVTABLE const *PCRTASN1COREVTABLE;
 
 /** @name Helper macros for prototyping standard functions for an ASN.1 type.
  * @{ */
+
 #define RTASN1TYPE_STANDARD_PROTOTYPES_NO_GET_CORE(a_TypeNm, a_DeclMacro, a_ImplExtNm) \
     a_DeclMacro(int)  RT_CONCAT(a_ImplExtNm,_Init)(RT_CONCAT(P,a_TypeNm) pThis, PCRTASN1ALLOCATORVTABLE pAllocator); \
     a_DeclMacro(int)  RT_CONCAT(a_ImplExtNm,_Clone)(RT_CONCAT(P,a_TypeNm) pThis, RT_CONCAT(PC,a_TypeNm) pSrc, \
@@ -485,8 +486,6 @@ typedef RTASN1COREVTABLE const *PCRTASN1COREVTABLE;
                                                          PRTERRINFO pErrInfo, const char *pszErrorTag)
 
 
-/** @name Helper macros for prototyping standard functions for an ASN.1 type.
- * @{ */
 #define RTASN1TYPE_STANDARD_PROTOTYPES(a_TypeNm, a_DeclMacro, a_ImplExtNm, a_Asn1CoreNm) \
     DECL_FORCE_INLINE(PRTASN1CORE) RT_CONCAT(a_ImplExtNm,_GetAsn1Core)(RT_CONCAT(PC,a_TypeNm) pThis) \
     { return (PRTASN1CORE)&pThis->a_Asn1CoreNm; } \
@@ -1377,7 +1376,7 @@ RTASN1CONTEXTTAG_DO_TYPEDEF_AND_INLINE(7);
         if ((a_iDiff) || !RTASN1CORE_IS_PRESENT(&pMyLeftInternal->Asn1Core)) return iDiff; \
     } while (0)
 
-/** Helpers for comparing optional context tags.
+/** @name Helpers for comparing optional context tags.
  * This will return if both are not present or if their precense differs.
  * @{ */
 #define RTASN1CONTEXTTAG0_COMPARE_PRESENT_RETURN(a_iDiff, a_pLeft, a_pRight) RTASN1CONTEXTTAG_COMPARE_PRESENT_RETURN_INTERNAL(a_iDiff, a_pLeft, a_pRight, 0)

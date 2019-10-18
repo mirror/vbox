@@ -24,24 +24,6 @@
  * terms and conditions of either the GPL or the CDDL or both.
  */
 
-/** @page   pg_sup          SUP - The Support Library
- *
- * The support library is responsible for providing facilities to load
- * VMM Host Ring-0 code, to call Host VMM Ring-0 code from Ring-3 Host
- * code, to pin down physical memory, and more.
- *
- * The VMM Host Ring-0 code can be combined in the support driver if
- * permitted by kernel module license policies. If it is not combined
- * it will be externalized in a .r0 module that will be loaded using
- * the IPRT loader.
- *
- * The Ring-0 calling is done thru a generic SUP interface which will
- * transfer an argument set and call a predefined entry point in the Host
- * VMM Ring-0 code.
- *
- * See @ref grp_sup "SUP - Support APIs" for API details.
- */
-
 
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *

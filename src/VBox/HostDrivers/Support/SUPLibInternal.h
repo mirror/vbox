@@ -67,7 +67,7 @@
 /** @def SUP_HARDENED_SUID
  * Whether we're employing set-user-ID-on-execute in the hardening.
  */
-#if !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_L4)
+#if (!defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_L4)) || defined(DOXYGEN_RUNNING)
 # define SUP_HARDENED_SUID
 #else
 # undef  SUP_HARDENED_SUID

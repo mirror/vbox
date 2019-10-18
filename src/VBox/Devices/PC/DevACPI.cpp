@@ -1890,7 +1890,7 @@ PDMBOTHCBDECL(int) acpiR3SmiWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 }
 
 /**
- * @{FNIOMIOPORTOUT, ACPI_RESET_BLK}
+ * @callback_method_impl{FNIOMIOPORTOUT, ACPI_RESET_BLK}
  */
 PDMBOTHCBDECL(int) acpiR3ResetWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {

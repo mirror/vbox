@@ -325,7 +325,7 @@ static int vbsfCheckHandleAccess(SHFLCLIENTDATA *pClient, SHFLROOT root,
  * @param  fShflFlags shared folder create flags
  * @param  fMode      file attributes
  * @param  handleInitial initial handle
- * @retval pfOpen     iprt create flags
+ * @param  pfOpen     Where to return iprt create flags
  */
 static int vbsfConvertFileOpenFlags(bool fWritable, unsigned fShflFlags, RTFMODE fMode, SHFLHANDLE handleInitial, uint64_t *pfOpen)
 {
@@ -555,17 +555,19 @@ static int vbsfConvertFileOpenFlags(bool fWritable, unsigned fShflFlags, RTFMODE
  * Open a file or create and open a new one.
  *
  * @returns IPRT status code
- * @param  pClient               Data structure describing the client accessing the shared folder
- * @param  root                  The index of the shared folder in the table of mappings.
- * @param  pszPath               Path to the file or folder on the host.
- * @param  pParms @a CreateFlags Creation or open parameters, see include/VBox/shflsvc.h
- * @param  pParms @a Info        When a new file is created this specifies the initial parameters.
- *                               When a file is created or overwritten, it also specifies the
- *                               initial size.
- * @retval pParms @a Resulte     Shared folder status code, see include/VBox/shflsvc.h
- * @retval pParms @a Handle      On success the (shared folder) handle of the file opened or
- *                               created
- * @retval pParms @a Info        On success the parameters of the file opened or created
+ * @param  pClient  Data structure describing the client accessing the shared folder
+ * @param  root     The index of the shared folder in the table of mappings.
+ * @param  pszPath  Path to the file or folder on the host.
+ * @param  pParms   Input:
+ *                    - @a CreateFlags: Creation or open parameters, see include/VBox/shflsvc.h
+ *                    - @a Info:        When a new file is created this specifies the initial parameters.
+ *                                      When a file is created or overwritten, it also specifies the
+ *                                      initial size.
+ *                  Output:
+ *                    - @a Result:      Shared folder status code, see include/VBox/shflsvc.h
+ *                    - @a Handle:      On success the (shared folder) handle of the file opened or
+ *                                      created
+ *                    - @a Info:        On success the parameters of the file opened or created
  */
 static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, char *pszPath, SHFLCREATEPARMS *pParms)
 {
@@ -763,14 +765,17 @@ static int vbsfOpenFile(SHFLCLIENTDATA *pClient, SHFLROOT root, char *pszPath, S
  * Open a folder or create and open a new one.
  *
  * @returns IPRT status code
- * @param  pClient               Data structure describing the client accessing the shared folder
- * @param  root                  The index of the shared folder in the table of mappings.
- * @param  pszPath               Path to the file or folder on the host.
- * @param  pParms @a CreateFlags Creation or open parameters, see include/VBox/shflsvc.h
- * @retval pParms @a Result      Shared folder status code, see include/VBox/shflsvc.h
- * @retval pParms @a Handle      On success the (shared folder) handle of the folder opened or
- *                               created
- * @retval pParms @a Info        On success the parameters of the folder opened or created
+ * @param  pClient  Data structure describing the client accessing the shared
+ *                  folder
+ * @param  root     The index of the shared folder in the table of mappings.
+ * @param  pszPath  Path to the file or folder on the host.
+ * @param  pParms   Input: @a CreateFlags Creation or open parameters, see
+ *                  include/VBox/shflsvc.h
+ *                  Output:
+ *                    - @a Result: Shared folder status code, see include/VBox/shflsvc.h
+ *                    - @a Handle: On success the (shared folder) handle of the folder opened or
+ *                                 created
+ *                    - @a Info:   On success the parameters of the folder opened or created
  *
  * @note folders are created with fMode = 0777
  */
@@ -948,8 +953,10 @@ static int vbsfCloseFile(SHFLFILEHANDLE *pHandle)
  * @returns iprt status code (currently VINF_SUCCESS)
  * @param   pClient    client data
  * @param   pszPath    The path of the file to be looked up
- * @retval  pParms->Result Status of the operation (success or error)
- * @retval  pParms->Info   On success, information returned about the file
+ * @param   pParms     Output:
+ *                      - @a Result: Status of the operation (success or error)
+ *                      - @a Info:   On success, information returned about the
+ *                                   file
  */
 static int vbsfLookupFile(SHFLCLIENTDATA *pClient, char *pszPath, SHFLCREATEPARMS *pParms)
 {
@@ -1011,19 +1018,21 @@ void testCreate(RTTEST hTest)
  * conversion on the file name if necessary.
  *
  * @returns IPRT status code, but see note below
- * @param   pClient        Data structure describing the client accessing the shared
- *                         folder
- * @param   root           The index of the shared folder in the table of mappings.
- *                         The host path of the shared folder is found using this.
- * @param   pPath          The path of the file or folder relative to the host path
- *                         indexed by root.
- * @param   cbPath         Presumably the length of the path in pPath.  Actually
- *                         ignored, as pPath contains a length parameter.
- * @param   pParms @a Info If a new file is created or an old one overwritten, set
- *                         these attributes
- * @retval  pParms @a Result Shared folder result code, see include/VBox/shflsvc.h
- * @retval  pParms @a Handle Shared folder handle to the newly opened file
- * @retval  pParms @a Info Attributes of the file or folder opened
+ * @param   pClient     Data structure describing the client accessing the
+ *                      shared folder
+ * @param   root        The index of the shared folder in the table of mappings.
+ *                      The host path of the shared folder is found using this.
+ * @param   pPath       The path of the file or folder relative to the host path
+ *                      indexed by root.
+ * @param   cbPath      Presumably the length of the path in pPath. Actually
+ *                      ignored, as pPath contains a length parameter.
+ * @param   pParms      Input: If a new file is created or an old one
+ *                      overwritten, set the @a Info attribute.
+ *
+ *                      Output:
+ *                        - @a Result Shared folder result code, see include/VBox/shflsvc.h
+ *                        - @a Handle Shared folder handle to the newly opened file
+ *                        - @a Info Attributes of the file or folder opened
  *
  * @note This function returns success if a "non-exceptional" error occurred,
  *       such as "no such file".  In this case, the caller should check the

@@ -2459,7 +2459,7 @@ static bool gmmR0ShouldAllocatePagesInOtherChunksBecauseOfLimits(PGVM pGVM)
      * Check how close we're to the max memory limit and how many fragments
      * there are?...
      */
-    /** @todo.  */
+    /** @todo  */
 
     return false;
 }

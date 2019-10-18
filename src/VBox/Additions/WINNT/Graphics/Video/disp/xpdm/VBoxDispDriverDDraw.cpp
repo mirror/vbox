@@ -26,7 +26,7 @@ static void VBoxDispGetDDHalInfo(PVBOXDISPDEV pDev, DD_HALINFO *pHalInfo)
     /* memory info */
 
     pHalInfo->vmiData.fpPrimary = pDev->layout.offFramebuffer;
-    /*pHalInfo->vmiData.dwFlags /*unused*/
+    /*pHalInfo->vmiData.dwFlags  - unused*/
     pHalInfo->vmiData.dwDisplayWidth = pDev->mode.ulWidth;
     pHalInfo->vmiData.dwDisplayHeight = pDev->mode.ulHeight;
     pHalInfo->vmiData.lDisplayPitch = pDev->mode.lScanlineStride;

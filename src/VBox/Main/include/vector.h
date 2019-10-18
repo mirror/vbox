@@ -334,16 +334,20 @@ DECLINLINE(int) vecPushBackPtr(VECTOR_PTR *pvec, unsigned uTypeHash,
 #define VEC_SIZE_PTR VEC_SIZE_OBJ
 
 /**
+ * Iterates over a vector.
+ *
  * Iterates over the vector elements from first to last and execute the
  * following instruction or block on each iteration with @a pIterator set to
  * point to the current element (that is, a pointer to the pointer element for
  * a vector-of-pointers).  Use in the same way as a "for" statement.
- * @param pvec       pointer to the vector to be iterated over
- * @param type       the type of the vector, must match the type specified at
- *                   vector initialisation (including whitespace etc)
+ *
+ * @param pvec       Pointer to the vector to be iterated over.
+ * @param type       The type of the vector, must match the type specified at
+ *                   vector initialisation (including whitespace etc).
+ * @param pIterator  A pointer to @a type which will be set to point to the
+ *                   current vector element on each iteration.
+ *
  * @todo  can we assert the correctness of the type in some way?
- * @param pIterator  a pointer to @a type which will be set to point to the
- *                   current vector element on each iteration
  */
 #define VEC_FOR_EACH(pvec, type, pIterator) \
     for (pIterator = (type *) (pvec)->mpvaElements; \

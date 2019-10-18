@@ -81,7 +81,7 @@ int ShClUtf16LinToWin(PRTUTF16 pwszSrc, size_t cwcSrc, PRTUTF16 pwszDst, size_t 
  *
  * @param   pwszSrc  The source UTF-16 string
  * @param   cwcSrc   The length of the source string in RTUTF16 units.
- * @retval  pcwcDst  The length of the destination string in RTUTF16 units.
+ * @param   pcwcDst  The length of the destination string in RTUTF16 units.
  */
 int ShClUtf16GetLinSize(PRTUTF16 pwszSrc, size_t cwcSrc, size_t *pcwcDst);
 

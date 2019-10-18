@@ -35,6 +35,7 @@ RT_C_DECLS_BEGIN
 
 /** @defgroup grp_rt_shmem RTShMem - Shared memory.
  * @ingroup grp_rt
+ * @{
  */
 
 /** @name Open flags for RTShMemOpen().

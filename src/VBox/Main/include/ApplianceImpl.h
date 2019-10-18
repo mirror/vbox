@@ -26,7 +26,7 @@
 #include "ApplianceWrap.h"
 #include "MediumFormatImpl.h"
 
-/* Todo: This file needs massive cleanup. Split IAppliance in a public and
+/** @todo This file needs massive cleanup. Split IAppliance in a public and
  * private classes. */
 #include <iprt/tar.h>
 #include "ovfreader.h"
@@ -176,7 +176,7 @@ private:
     /** @}  */
 
     /** @name Import stuff
-     * @}
+     * @{
      */
     HRESULT i_importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 

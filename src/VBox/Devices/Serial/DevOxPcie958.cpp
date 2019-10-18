@@ -39,7 +39,7 @@
 
 
 /** @name PCI device related constants.
- * @} */
+ * @{ */
 /** The PCI device ID. */
 #define OX958_PCI_DEVICE_ID             0xc308
 /** The PCI vendor ID. */

@@ -1382,11 +1382,7 @@ DECLINLINE(bool) RTUtf16IsSurrogatePair(RTUTF16 wcHigh, RTUTF16 wcLow)
 RTDECL(int) RTUtf16PrintHexBytes(PRTUTF16 pwszBuf, size_t cwcBuf, void const *pv, size_t cb, uint32_t fFlags);
 
 /** @} */
-
-
 RT_C_DECLS_END
-
-/** @} */
 
 #endif /* !IPRT_INCLUDED_utf16_h */
 

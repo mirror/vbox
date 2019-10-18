@@ -44,7 +44,13 @@
 RT_C_DECLS_BEGIN
 
 
-/** @name Internal Device Operations, Structures and Constants.
+/** @defgroup grp_vusb_int  VUSB Internals.
+ * @ingroup grp_vusb
+ * @internal
+ * @{
+ */
+
+/** @defgroup grp_vusb_int_dev  Internal Device Operations, Structures and Constants.
  * @{
  */
 
@@ -308,7 +314,7 @@ bool vusbDevStandardRequest(PVUSBDEV pDev, int EndPt, PVUSBSETUP pSetup, void *p
 /** @} */
 
 
-/** @name Internal Hub Operations, Structures and Constants.
+/** @defgroup grp_vusb_int_hub Internal Hub Operations, Structures and Constants.
  * @{
  */
 
@@ -344,7 +350,7 @@ AssertCompileSizeAlignment(VUSBHUB, 8);
 /** @} */
 
 
-/** @name Internal Root Hub Operations, Structures and Constants.
+/** @defgroup grp_vusb_int_roothub Internal Root Hub Operations, Structures and Constants.
  * @{
  */
 
@@ -496,11 +502,11 @@ typedef enum CANCELMODE
     CANCELMODE_UNDO
 } CANCELMODE;
 
-/* @} */
+/** @} */
 
 
 
-/** @name Internal URB Operations, Structures and Constants.
+/** @defgroup grp_vusb_int_urb Internal URB Operations, Structures and Constants.
  * @{ */
 int  vusbUrbSubmit(PVUSBURB pUrb);
 void vusbUrbDoReapAsync(PRTLISTANCHOR pUrbLst, RTMSINTERVAL cMillies);
@@ -739,6 +745,7 @@ DECLINLINE(uint32_t) vusbDevRelease(PVUSBDEV pThis)
 /** Strings for the CTLSTAGE enum values. */
 extern const char * const g_apszCtlStates[4];
 
+/** @} */
 RT_C_DECLS_END
 #endif /* !VBOX_INCLUDED_SRC_USB_VUSBInternal_h */
 

@@ -84,6 +84,7 @@ RT_C_DECLS_BEGIN
  *
  * @remarks These defines also live in the 16-bit and assembly versions of this
  *          header.
+ * @{
  */
 #define VMMDEV_VERSION                      0x00010004
 #define VMMDEV_VERSION_MAJOR                (VMMDEV_VERSION >> 16)
@@ -1852,7 +1853,6 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
     return VINF_SUCCESS;
 }
 
-/** @} */
 
 /** @name VBVA ring defines.
  *
@@ -1871,7 +1871,7 @@ DECLINLINE(int) vmmdevInitRequest(VMMDevRequestHeader *req, VMMDevRequestType ty
  * off32Head. After that on each flush the host continues fetching the data
  * until the record is completed.
  *
- */
+ * @{ */
 #define VMMDEV_VBVA_RING_BUFFER_SIZE        (_4M - _1K)
 #define VMMDEV_VBVA_RING_BUFFER_THRESHOLD   (4 * _1K)
 
@@ -1964,6 +1964,7 @@ AssertCompileMemberOffset(VMMDevMemory, vbvaMemory, 16);
 
 /** @} */
 
+/** @} */
 RT_C_DECLS_END
 #pragma pack()
 

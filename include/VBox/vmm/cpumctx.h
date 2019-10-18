@@ -638,7 +638,6 @@ typedef struct CPUMCTX
         /** 0x510 - Pad to 64 byte boundary. */
         uint8_t                 abPadding0[48];
     } hwvirt;
-    /** @} */
 } CPUMCTX;
 #pragma pack()
 

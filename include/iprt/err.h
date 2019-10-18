@@ -1274,7 +1274,7 @@
 #define VERR_PKZIP_UNKNOWN_TYPE_FLAG            (-964)
 /** Found a ZIP64 Extra Information Field in a ZIP32 file. */
 #define VERR_PKZIP_ZIP64EX_IN_ZIP32             (-965)
-
+/** @} */
 
 /** @name RTZip status codes
  * @{ */
@@ -2191,7 +2191,6 @@
 #define VERR_BIGNUM_DIV_BY_ZERO                     (-24001)
 /** Negative exponent makes no sense to integer math. */
 #define VERR_BIGNUM_NEGATIVE_EXPONENT               (-24002)
-
 /** @} */
 
 /** @name RTCrDigest status codes.
@@ -2492,7 +2491,6 @@
 /** A boot catalog entry in the import ISO sets the continuation flag when
  *  we reached the ned of the boot catalog secotr. */
 #define VERR_ISOMK_IMPORT_BOOT_CAT_ENTRY_CONTINUATION_EOS           (-25157)
-
 /** @} */
 
 

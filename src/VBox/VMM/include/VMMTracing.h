@@ -118,11 +118,9 @@
 # else
 
 # endif
-#endif /* IN_RING0*/
+#endif /* IN_RING0 */
 /** @} */
 
-
-/** @} */
 
 #endif /* !VMM_INCLUDED_SRC_include_VMMTracing_h */
 

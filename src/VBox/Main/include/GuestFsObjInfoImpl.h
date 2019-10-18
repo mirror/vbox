@@ -39,7 +39,8 @@ public:
     void    FinalRelease(void);
     /** @}  */
 
-    /** @name Internal access helpers. */
+    /** @name Internal access helpers.
+     * @{ */
     const GuestFsObjData &i_getData() const { return mData; }
     /** @}  */
 

@@ -1571,7 +1571,9 @@ VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_
 VMM_INT_DECL(int) CPUMImportGuestStateOnDemand(PVMCPUCC pVCpu, uint64_t fExtrnImport);
 /** @} */
 
-#if !defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS) && defined(RT_ARCH_AMD64)
+#if (!defined(IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS) && defined(RT_ARCH_AMD64)) || defined(DOXYGEN_RUNNING)
+/** @name Inlined Guest Getters and predicates Functions.
+ * @{ */
 
 /**
  * Gets valid CR0 bits for the guest.
@@ -2514,9 +2516,9 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 #endif
 }
 
+/** @} */
 #endif /* !IPRT_WITHOUT_NAMED_UNIONS_AND_STRUCTS && RT_ARCH_AMD64 */
 
-/** @} */
 
 
 /** @name Hypervisor Register Getters.

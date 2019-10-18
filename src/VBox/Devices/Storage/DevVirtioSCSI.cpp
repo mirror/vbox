@@ -58,8 +58,7 @@
  */
 
 #define LUN0    0
-/**
- * @name VirtIO 1.0 SCSI Host feature bits (See VirtIO 1.0 specification, Section 5.6.3)
+/** @name VirtIO 1.0 SCSI Host feature bits (See VirtIO 1.0 specification, Section 5.6.3)
  * @{  */
 #define VIRTIO_SCSI_F_INOUT                RT_BIT_64(0)           /** Request is device readable AND writeable         */
 #define VIRTIO_SCSI_F_HOTPLUG              RT_BIT_64(1)           /** Host allows hotplugging SCSI LUNs & targets      */
@@ -198,8 +197,7 @@ typedef struct virtio_scsi_config
     uint32_t uMaxLun;                                            /**< max_lun          Hint to guest driver           */
 } VIRTIOSCSI_CONFIG_T, PVIRTIOSCSI_CONFIG_T;
 
-/**
- * @name VirtIO 1.0 SCSI Host Device device specific control types
+/** @name VirtIO 1.0 SCSI Host Device device specific control types
  * @{  */
 #define VIRTIOSCSI_T_NO_EVENT                       0
 #define VIRTIOSCSI_T_TRANSPORT_RESET                1
@@ -218,8 +216,7 @@ typedef struct virtio_scsi_event {
     uint32_t uReason;                                           /**< reason                                          */
 } VIRTIOSCSI_EVENT_T, *PVIRTIOSCSI_EVENT_T;
 
-/**
- * @name VirtIO 1.0 SCSI Host Device device specific event types
+/** @name VirtIO 1.0 SCSI Host Device device specific event types
  * @{  */
 #define VIRTIOSCSI_EVT_RESET_HARD                   0           /**<                                                 */
 #define VIRTIOSCSI_EVT_RESET_RESCAN                 1           /**<                                                 */
@@ -277,8 +274,7 @@ typedef struct virtio_scsi_req_cmd
 }  VIRTIOSCSI_REQ_CMD_T, *PVIRTIOSCSI_REQ_CMD_T;
 #pragma pack()
 
-/**
- * @name VirtIO 1.0 SCSI Host Device Req command-specific response values
+/** @name VirtIO 1.0 SCSI Host Device Req command-specific response values
  * @{  */
 #define VIRTIOSCSI_S_OK                             0          /**< control, command                                 */
 #define VIRTIOSCSI_S_OVERRUN                        1          /**< control                                          */
@@ -293,8 +289,7 @@ typedef struct virtio_scsi_req_cmd
 #define VIRTIOSCSI_S_INCORRECT_LUN                  12         /**< command                                          */
 /** @} */
 
-/**
- * @name VirtIO 1.0 SCSI Host Device command-specific task_attr values
+/** @name VirtIO 1.0 SCSI Host Device command-specific task_attr values
  * @{  */
 #define VIRTIOSCSI_S_SIMPLE                        0           /**<                                                  */
 #define VIRTIOSCSI_S_ORDERED                       1           /**<                                                  */
@@ -303,15 +298,14 @@ typedef struct virtio_scsi_req_cmd
 /** @} */
 
 /**
- * @name VirtIO 1.0 SCSI Host Device Control command before we know type (5.6.6.2)
- * @{  */
+ * VirtIO 1.0 SCSI Host Device Control command before we know type (5.6.6.2)
+ */
 typedef struct virtio_scsi_ctrl
 {
     uint32_t uType;
 } VIRTIOSCSI_CTRL_T, *PVIRTIOSCSI_CTRL_T;
 
-/**
- * @name VirtIO 1.0 SCSI Host Device command-specific TMF values
+/** @name VirtIO 1.0 SCSI Host Device command-specific TMF values
  * @{  */
 #define VIRTIOSCSI_T_TMF                           0           /**<                                                  */
 #define VIRTIOSCSI_T_TMF_ABORT_TASK                0           /**<                                                  */
@@ -322,7 +316,7 @@ typedef struct virtio_scsi_ctrl
 #define VIRTIOSCSI_T_TMF_LOGICAL_UNIT_RESET        5           /**<                                                  */
 #define VIRTIOSCSI_T_TMF_QUERY_TASK                6           /**<                                                  */
 #define VIRTIOSCSI_T_TMF_QUERY_TASK_SET            7           /**<                                                  */
-/*** @} */
+/** @} */
 
 #pragma pack(1)
 typedef struct virtio_scsi_ctrl_tmf
@@ -337,8 +331,7 @@ typedef struct virtio_scsi_ctrl_tmf
 } VIRTIOSCSI_CTRL_TMF_T, *PVIRTIOSCSI_CTRL_TMF_T;
 #pragma pack()
 
-/**
- * @name VirtIO 1.0 SCSI Host Device device specific tmf control response values
+/** @name VirtIO 1.0 SCSI Host Device device specific tmf control response values
  * @{  */
 #define VIRTIOSCSI_S_FUNCTION_COMPLETE            0           /**<                                                   */
 #define VIRTIOSCSI_S_FUNCTION_SUCCEEDED           10          /**<                                                   */
@@ -368,8 +361,7 @@ typedef union virtio_scsi_ctrl_union
     VIRTIOSCSI_CTRL_AN_T   scsiCtrlAsyncNotify;
 } VIRTIO_SCSI_CTRL_UNION_T, *PVIRTIO_SCSI_CTRL_UNION_T;
 
-/**
- * @name VirtIO 1.0 SCSI Host Device device specific tmf control response values
+/** @name VirtIO 1.0 SCSI Host Device device specific tmf control response values
  * @{  */
 #define VIRTIOSCSI_EVT_ASYNC_OPERATIONAL_CHANGE  2           /**<                                                   */
 #define VIRTIOSCSI_EVT_ASYNC_POWER_MGMT          4           /**<                                                   */

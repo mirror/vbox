@@ -54,7 +54,7 @@
  * Parameter list declaration for statistics entry pointer. */
 /** @def IOM_MMIO_STATS_COMMA_ARG
  * Statistics entry pointer argument. */
-#ifdef VBOX_WITH_STATISTICS
+#if defined(VBOX_WITH_STATISTICS) || defined(DOXYGEN_RUNNING)
 # define IOM_MMIO_STATS_COMMA_DECL , PIOMMMIOSTATSENTRY pStats
 # define IOM_MMIO_STATS_COMMA_ARG  , pStats
 #else
@@ -130,6 +130,7 @@ static VBOXSTRICTRC iomMmioRing3WritePending(PVMCPU pVCpu, RTGCPHYS GCPhys, void
  * @param   offRegion   MMIO region offset corresponding to @a GCPhys.
  * @param   pvValue     Where to store the value.
  * @param   cbValue     The size of the value to write.
+ * @param   pStats      Pointer to the statistics (never NULL).
  */
 static VBOXSTRICTRC iomMmioDoComplicatedWrite(PVM pVM, PVMCPU pVCpu, CTX_SUFF(PIOMMMIOENTRY) pRegEntry,
                                               RTGCPHYS GCPhys, RTGCPHYS offRegion,
@@ -371,6 +372,7 @@ DECLINLINE(VBOXSTRICTRC) iomMmioDoWrite(PVMCC pVM, PVMCPU pVCpu, CTX_SUFF(PIOMMM
  * @param   offRegion   MMIO region offset corresponding to @a GCPhys.
  * @param   pvValue     Where to store the value.
  * @param   cbValue     The size of the value to read.
+ * @param   pStats      Pointer to the statistics (never NULL).
  */
 static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, CTX_SUFF(PIOMMMIOENTRY) pRegEntry, RTGCPHYS GCPhys, RTGCPHYS offRegion,
                                              void *pvValue, unsigned cbValue IOM_MMIO_STATS_COMMA_DECL)
@@ -496,8 +498,9 @@ static VBOXSTRICTRC iomMMIODoComplicatedRead(PVM pVM, CTX_SUFF(PIOMMMIOENTRY) pR
  * Implements VINF_IOM_MMIO_UNUSED_FF.
  *
  * @returns VINF_SUCCESS.
- * @param   pvValue             Where to store the zeros.
- * @param   cbValue             How many bytes to read.
+ * @param   pvValue     Where to store the zeros.
+ * @param   cbValue     How many bytes to read.
+ * @param   pStats      Pointer to the statistics (never NULL).
  */
 static int iomMMIODoReadFFs(void *pvValue, size_t cbValue IOM_MMIO_STATS_COMMA_DECL)
 {
@@ -524,8 +527,9 @@ static int iomMMIODoReadFFs(void *pvValue, size_t cbValue IOM_MMIO_STATS_COMMA_D
  * Implements VINF_IOM_MMIO_UNUSED_00.
  *
  * @returns VINF_SUCCESS.
- * @param   pvValue             Where to store the zeros.
- * @param   cbValue             How many bytes to read.
+ * @param   pvValue     Where to store the zeros.
+ * @param   cbValue     How many bytes to read.
+ * @param   pStats      Pointer to the statistics (never NULL).
  */
 static int iomMMIODoRead00s(void *pvValue, size_t cbValue IOM_MMIO_STATS_COMMA_DECL)
 {

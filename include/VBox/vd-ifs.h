@@ -41,6 +41,9 @@
 
 RT_C_DECLS_BEGIN
 
+/** @addtogroup grp_vd
+ * @{ */
+
 /** Interface header magic. */
 #define VDINTERFACE_MAGIC UINT32_C(0x19701015)
 

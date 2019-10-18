@@ -40,7 +40,7 @@ RT_C_DECLS_BEGIN
  */
 
 
-/** AVL tree of void pointers.
+/** @name AVL tree of void pointers.
  * @{
  */
 
@@ -85,7 +85,7 @@ RTDECL(int)             RTAvlPVDestroy(PAVLPVTREE ppTree, PAVLPVCALLBACK pfnCall
 /** @} */
 
 
-/** AVL tree of unsigned long.
+/** @name AVL tree of unsigned long.
  * @{
  */
 
@@ -128,7 +128,7 @@ RTDECL(int)             RTAvlULDestroy(PPAVLULNODECORE pTree, PAVLULCALLBACK pfn
 
 
 
-/** AVL tree of void pointer ranges.
+/** @name AVL tree of void pointer ranges.
  * @{
  */
 
@@ -177,7 +177,7 @@ RTDECL(int)             RTAvlrPVDestroy(PAVLRPVTREE ppTree, PAVLRPVCALLBACK pfnC
 
 
 
-/** AVL tree of uint32_t
+/** @name AVL tree of uint32_t
  * @{
  */
 
@@ -217,6 +217,10 @@ RTDECL(int)             RTAvlU32DoWithAll(PAVLU32TREE pTree, int fFromLeft, PAVL
 RTDECL(int)             RTAvlU32Destroy(PAVLU32TREE pTree, PAVLU32CALLBACK pfnCallBack, void *pvParam);
 
 /** @} */
+
+/** @name AVL tree of uint32_t, offset based
+ * @{
+ */
 
 /**
  * AVL uint32_t type for the relative offset pointer scheme.
@@ -266,7 +270,7 @@ RTDECL(int)                   RTAvloU32Destroy(PAVLOU32TREE pTree, PAVLOU32CALLB
 /** @} */
 
 
-/** AVL tree of uint32_t, list duplicates.
+/** @name AVL tree of uint32_t, list duplicates.
  * @{
  */
 
@@ -305,7 +309,7 @@ RTDECL(int)                 RTAvllU32Destroy(PPAVLLU32NODECORE pTree, PAVLLU32CA
 /** @} */
 
 
-/** AVL tree of uint64_t
+/** @name AVL tree of uint64_t
  * @{
  */
 
@@ -347,7 +351,7 @@ RTDECL(int)             RTAvlU64Destroy(PAVLU64TREE pTree, PAVLU64CALLBACK pfnCa
 /** @} */
 
 
-/** AVL tree of uint64_t ranges.
+/** @name AVL tree of uint64_t ranges.
  * @{
  */
 
@@ -396,7 +400,7 @@ RTDECL(int)              RTAvlrU64Destroy(PAVLRU64TREE ppTree, PAVLRU64CALLBACK 
 
 
 
-/** AVL tree of RTGCPHYSes - using relative offsets internally.
+/** @name AVL tree of RTGCPHYSes - using relative offsets internally.
  * @{
  */
 
@@ -448,7 +452,7 @@ RTDECL(int)                     RTAvloGCPhysDestroy(PAVLOGCPHYSTREE pTree, PAVLO
 /** @} */
 
 
-/** AVL tree of RTGCPHYS ranges - using relative offsets internally.
+/** @name AVL tree of RTGCPHYS ranges - using relative offsets internally.
  * @{
  */
 
@@ -506,7 +510,7 @@ RTDECL(PAVLROGCPHYSNODECORE)    RTAvlroGCPhysGetRight(PAVLROGCPHYSNODECORE pNode
 /** @} */
 
 
-/** AVL tree of RTGCPTRs.
+/** @name AVL tree of RTGCPTRs.
  * @{
  */
 
@@ -547,7 +551,7 @@ RTDECL(int)                     RTAvlGCPtrDestroy(PAVLGCPTRTREE pTree, PAVLGCPTR
 /** @} */
 
 
-/** AVL tree of RTGCPTRs - using relative offsets internally.
+/** @name AVL tree of RTGCPTRs - using relative offsets internally.
  * @{
  */
 
@@ -598,7 +602,7 @@ RTDECL(int)                     RTAvloGCPtrDestroy(PAVLOGCPTRTREE pTree, PAVLOGC
 /** @} */
 
 
-/** AVL tree of RTGCPTR ranges.
+/** @name AVL tree of RTGCPTR ranges.
  * @{
  */
 
@@ -649,7 +653,7 @@ RTDECL(PAVLRGCPTRNODECORE)     RTAvlrGCPtrGetRight(     PAVLRGCPTRNODECORE pNode
 /** @} */
 
 
-/** AVL tree of RTGCPTR ranges - using relative offsets internally.
+/** @name AVL tree of RTGCPTR ranges - using relative offsets internally.
  * @{
  */
 
@@ -706,7 +710,8 @@ RTDECL(PAVLROGCPTRNODECORE)     RTAvlroGCPtrGetRight(PAVLROGCPTRNODECORE pNode);
 /** @} */
 
 
-/** AVL tree of RTGCPTR ranges (overlapping supported) - using relative offsets internally.
+/** @name AVL tree of RTGCPTR ranges (overlapping supported) - using relative
+ *        offsets internally.
  * @{
  */
 
@@ -765,7 +770,7 @@ RTDECL(PAVLROOGCPTRNODECORE)    RTAvlrooGCPtrGetNextEqual(PAVLROOGCPTRNODECORE p
 /** @} */
 
 
-/** AVL tree of RTUINTPTR.
+/** @name AVL tree of RTUINTPTR.
  * @{
  */
 
@@ -814,7 +819,7 @@ RTDECL(PAVLUINTPTRNODECORE)     RTAvlUIntPtrGetRight(  PAVLUINTPTRNODECORE pNode
 /** @} */
 
 
-/** AVL tree of RTUINTPTR ranges.
+/** @name AVL tree of RTUINTPTR ranges.
  * @{
  */
 
@@ -867,7 +872,7 @@ RTDECL(PAVLRUINTPTRNODECORE)   RTAvlrUIntPtrGetRight(   PAVLRUINTPTRNODECORE pNo
 /** @} */
 
 
-/** AVL tree of RTHCPHYSes - using relative offsets internally.
+/** @name AVL tree of RTHCPHYSes - using relative offsets internally.
  * @{
  */
 
@@ -921,7 +926,7 @@ RTDECL(int)                     RTAvloHCPhysDestroy(PAVLOHCPHYSTREE pTree, PAVLO
 
 
 
-/** AVL tree of RTIOPORTs - using relative offsets internally.
+/** @name AVL tree of RTIOPORTs - using relative offsets internally.
  * @{
  */
 
@@ -971,7 +976,7 @@ RTDECL(int)                     RTAvloIOPortDestroy(PAVLOIOPORTTREE pTree, PAVLO
 /** @} */
 
 
-/** AVL tree of RTIOPORT ranges - using relative offsets internally.
+/** @name AVL tree of RTIOPORT ranges - using relative offsets internally.
  * @{
  */
 
@@ -1023,7 +1028,7 @@ RTDECL(int)                     RTAvlroIOPortDestroy(PAVLROIOPORTTREE pTree, PAV
 /** @} */
 
 
-/** AVL tree of RTHCPHYSes.
+/** @name AVL tree of RTHCPHYSes.
  * @{
  */
 
@@ -1072,7 +1077,7 @@ RTDECL(int)                     RTAvlHCPhysDestroy(PAVLHCPHYSTREE pTree, PAVLHCP
 
 /** @} */
 
-/** AVL tree of RTGCPHYSes.
+/** @name AVL tree of RTGCPHYSes.
  * @{
  */
 
@@ -1122,7 +1127,7 @@ RTDECL(int)                     RTAvlGCPhysDestroy(PAVLGCPHYSTREE pTree, PAVLGCP
 /** @} */
 
 
-/** AVL tree of RTFOFF ranges.
+/** @name AVL tree of RTFOFF ranges.
  * @{
  */
 

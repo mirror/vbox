@@ -78,6 +78,7 @@
 
 AssertCompile(MSR_GIM_KVM_RANGE0_FIRST <= MSR_GIM_KVM_RANGE0_LAST);
 AssertCompile(MSR_GIM_KVM_RANGE1_FIRST <= MSR_GIM_KVM_RANGE1_LAST);
+/** @} */
 
 /** KVM page size.  */
 #define GIM_KVM_PAGE_SIZE                          0x1000

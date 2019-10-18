@@ -458,13 +458,15 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/** @def SUP_HARDENED_SUID
- * Whether we're employing set-user-ID-on-execute in the hardening.
- */
+/* This mess is temporary after eliminating a define duplicated in SUPLibInternal.h. */
 #if !defined(RT_OS_OS2) && !defined(RT_OS_WINDOWS) && !defined(RT_OS_L4)
-# define SUP_HARDENED_SUID
+# ifndef SUP_HARDENED_SUID
+#  error "SUP_HARDENED_SUID is NOT defined?!?"
+# endif
 #else
-# undef  SUP_HARDENED_SUID
+# ifdef SUP_HARDENED_SUID
+#  error "SUP_HARDENED_SUID is defined?!?"
+# endif
 #endif
 
 /** @def SUP_HARDENED_SYM

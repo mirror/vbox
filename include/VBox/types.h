@@ -831,8 +831,6 @@ typedef struct VBOXIDTR
 } VBOXIDTR, *PVBOXIDTR;
 #pragma pack()
 
-/** @} */
-
 
 /** @def VBOXIDTE_OFFSET
  * Return the offset of an IDT entry.

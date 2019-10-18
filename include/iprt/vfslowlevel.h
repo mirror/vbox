@@ -552,9 +552,8 @@ typedef struct RTVFSDIROPS
      * @retval  VERR_IS_A_SOCKET if @a pszEntry is a socket but @a fFlags indicates
      *          that sockets should not be opened.
      * @retval  VERR_IS_A_BLOCK_DEVICE if @a pszEntry is a block device but
-     *          @a fFlags indicates that block devices should not be opened.
-     * @retval  VERR_IS_A_BLOCK_DEVICE if @a pszEntry is a character device but
-     *          @a fFlags indicates that character devices should not be opened.
+     *          @a fFlags indicates that block devices should not be opened, or vice
+     *          versa.
      *
      * @param   pvThis      The implementation specific directory data.
      * @param   pszEntry    The name of the immediate file to open or create.

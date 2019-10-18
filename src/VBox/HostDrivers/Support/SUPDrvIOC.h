@@ -1635,6 +1635,8 @@ typedef struct SUPUCODEREV
  *
  * This queries a lot more information than merely VT-x/AMD-V basic capabilities
  * provided by SUP_IOCTL_VT_CAPS.
+ *
+ * @{
  */
 #define SUP_IOCTL_GET_HWVIRT_MSRS                       SUP_CTL_CODE_SIZE(41, SUP_IOCTL_GET_HWVIRT_MSRS_SIZE)
 #define SUP_IOCTL_GET_HWVIRT_MSRS_SIZE                  sizeof(SUPGETHWVIRTMSRS)

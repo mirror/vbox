@@ -325,7 +325,7 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
 
 
 /** @name Ring-3 HPET Helpers
- * {@
+ * @{
  */
 
 /** @interface_method_impl{PDMHPETHLPR3,pfnSetLegacyMode} */
@@ -448,7 +448,7 @@ const PDMHPETHLPR3 g_pdmR3DevHpetHlp =
 
 
 /** @name Ring-3 Raw PCI Device Helpers
- * {@
+ * @{
  */
 
 /** @interface_method_impl{PDMPCIRAWHLPR3,pfnGetRCHelpers} */

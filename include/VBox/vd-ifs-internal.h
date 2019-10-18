@@ -34,6 +34,10 @@
 
 RT_C_DECLS_BEGIN
 
+/** @addtogroup grp_vd
+ * @internal
+ * @{ */
+
 /**
  * Interface to get the parent state.
  *
@@ -683,8 +687,7 @@ DECLINLINE(PVDINTERFACETRAVERSEMETADATA) VDIfTraverseMetadataGet(PVDINTERFACE pV
     return (PVDINTERFACETRAVERSEMETADATA)pIf;
 }
 
-RT_C_DECLS_END
-
 /** @} */
+RT_C_DECLS_END
 
 #endif /* !VBOX_INCLUDED_vd_ifs_internal_h */

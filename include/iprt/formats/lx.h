@@ -39,11 +39,14 @@
 
 RT_C_DECLS_BEGIN
 
+/** @defgroup grp_rt_formats_lx     LX executable format (OS/2)
+ * @ingroup grp_rt_formats
+ * @{ */
+
 #ifndef IMAGE_OS2_SIGNATURE_LX
 /** LX signature ("LX") */
 # define IMAGE_LX_SIGNATURE  K_LE2H_U16('L' | ('X' << 8))
 #endif
-
 
 /**
  * Linear eXecutable header.
@@ -201,7 +204,7 @@ AssertCompileSize(struct e32_exe, 196);
 /** @} */
 
 
-/** @name Relocations (aka Fixups).
+/** @defgroup grp_rt_formats_lx_relocs Relocations (aka Fixups).
  * @{ */
 typedef union r32_offset
 {
@@ -240,6 +243,7 @@ typedef struct r32_rlc
 } r32_rlc;
 #pragma pack()
 AssertCompileSize(r32_rlc, 16);
+/** @} */
 
 /** @name Some attempt at size constanstants.
  * @{
@@ -286,7 +290,7 @@ AssertCompileSize(r32_rlc, 16);
 /** @} */
 
 
-/** @name The Object Table (aka segment table)
+/** @defgroup grp_rt_formats_lx_object_tab  The Object Table (aka segment table)
  * @{ */
 
 /** The Object Table Entry. */
@@ -416,7 +420,7 @@ typedef struct rsrc32
 AssertCompileSize(rsrc32, 14);
 
 
-/** @name The Entry Table (aka Export Table)
+/** @defgroup grp_rt_formats_lx_entry_tab   The Entry Table (aka Export Table)
  * @{ */
 
 /** Entry bundle.
@@ -499,7 +503,7 @@ typedef struct e32_entry
 #define FWDENT          7
 /** @} */
 
-
+/** @} */
 RT_C_DECLS_END
 
 #endif /* !IPRT_INCLUDED_formats_lx_h */

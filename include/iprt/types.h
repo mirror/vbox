@@ -1771,33 +1771,28 @@ typedef const RTGCPTR64 RT_FAR *PCRTGCPTR64;
  */
 #define NIL_RTGCPTR64           ((RTGCPTR64)0)
 
-/** Guest context pointer.
- * Keep in mind that this type is an unsigned integer in
- * HC and void pointer in GC.
- */
-#if GC_ARCH_BITS == 64
-typedef RTGCPTR64               RTGCPTR;
-/** Pointer to a guest context pointer. */
-typedef PRTGCPTR64              PRTGCPTR;
-/** Pointer to a const guest context pointer. */
-typedef PCRTGCPTR64             PCRTGCPTR;
+/** @typedef RTGCPTR
+ * Guest context pointer.
+ * Keep in mind that this type is an unsigned integer in HC and void pointer in GC. */
+/** @typedef PRTGCPTR
+ * Pointer to a guest context pointer. */
+/** @typedef PCRTGCPTR
+ * Pointer to a const guest context pointer. */
 /** @def NIL_RTGCPTR
- * NIL GC pointer.
- */
-# define NIL_RTGCPTR    NIL_RTGCPTR64
-/** Max RTGCPTR value. */
+ * NIL GC pointer.  */
+/** @def RTGCPTR_MAX
+ * Max RTGCPTR value. */
+#if GC_ARCH_BITS == 64 || defined(DOXYGEN_RUNNING)
+typedef RTGCPTR64               RTGCPTR;
+typedef PRTGCPTR64              PRTGCPTR;
+typedef PCRTGCPTR64             PCRTGCPTR;
+# define NIL_RTGCPTR            NIL_RTGCPTR64
 # define RTGCPTR_MAX            UINT64_MAX
 #elif GC_ARCH_BITS == 32
 typedef RTGCPTR32               RTGCPTR;
-/** Pointer to a guest context pointer. */
 typedef PRTGCPTR32              PRTGCPTR;
-/** Pointer to a const guest context pointer. */
 typedef PCRTGCPTR32             PCRTGCPTR;
-/** @def NIL_RTGCPTR
- * NIL GC pointer.
- */
 # define NIL_RTGCPTR            NIL_RTGCPTR32
-/** Max RTGCPTR value. */
 # define RTGCPTR_MAX            UINT32_MAX
 #else
 # error "Unsupported GC_ARCH_BITS!"
@@ -1847,9 +1842,8 @@ typedef uint32_t                RTRCPTR;
 typedef RTRCPTR         RT_FAR *PRTRCPTR;
 /** Pointer to a const raw mode context pointer. */
 typedef const RTRCPTR   RT_FAR *PCRTRCPTR;
-/** @def NIL_RTGCPTR
- * NIL RC pointer.
- */
+/** @def NIL_RTRCPTR
+ * NIL RC pointer.  */
 #ifndef IN_RC
 # define NIL_RTRCPTR            ((RTRCPTR)0)
 #else

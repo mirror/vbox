@@ -2802,7 +2802,7 @@ private:
  *
  *  If a failure happens anywhere before the user function would be normally
  *  called, it will be called anyway in special "cleanup only" mode indicated
- *  by \a aClient, \a aProgress and \aVrc arguments set to NULL. In this mode,
+ *  by \a aClient, \a aProgress and \a aVrc arguments set to NULL. In this mode,
  *  all the function is supposed to do is to cleanup its aUser argument if
  *  necessary (it's assumed that the ownership of this argument is passed to
  *  the user function once #startSVCHelperClient() returns a success, thus

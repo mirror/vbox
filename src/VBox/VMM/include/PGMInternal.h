@@ -3613,7 +3613,6 @@ typedef struct PGMCPUSTATS
     STAMCOUNTER StatR3FlushTLBSameCR3;              /**< R3: The number of times PGMFlushTLB was called with the same CR3, non-global. (flush) */
     STAMCOUNTER StatR3FlushTLBSameCR3Global;        /**< R3: The number of times PGMFlushTLB was called with the same CR3, global. (flush) */
     STAMPROFILE StatR3GstModifyPage;                /**< R3: Profiling of the PGMGstModifyPage() body */
-    /** @} */
 } PGMCPUSTATS;
 
 
@@ -3778,7 +3777,6 @@ typedef struct PGMCPU
     R3PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R3;
     /** Pointer to the page of the current active CR3 - R0 Ptr. */
     R0PTRTYPE(PPGMPOOLPAGE)         pShwPageCR3R0;
-    /** @} */
 
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */

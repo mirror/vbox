@@ -1156,7 +1156,7 @@ DECLCALLBACK(int) VBoxShClStop(void *pInstance)
     PostMessage(pCtx->Win.hWnd, WM_QUIT, 0, 0);
 
     /* Disconnect from the host service.
-    /* This will also send a VBOX_SHCL_HOST_MSG_QUIT from the host so that we can break out from our message worker. */
+     * This will also send a VBOX_SHCL_HOST_MSG_QUIT from the host so that we can break out from our message worker. */
     VbglR3ClipboardDisconnect(pCtx->CmdCtx.uClientID);
     pCtx->CmdCtx.uClientID = 0;
 

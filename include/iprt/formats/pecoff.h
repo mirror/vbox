@@ -1508,8 +1508,9 @@ typedef WIN_CERTIFICATE *PWIN_CERTIFICATE;
 typedef WIN_CERTIFICATE const *PCWIN_CERTIFICATE;
 
 /** @name WIN_CERT_REVISION_XXX - Certificate data directory revision.
- * Used WIN_CERTIFICATE::wRevision found in the
- * IMAGE_DIRECTORY_ENTRY_SECURITY data directory. */
+ * Used WIN_CERTIFICATE::wRevision found in the IMAGE_DIRECTORY_ENTRY_SECURITY
+ * data directory.
+ * @{ */
 #define WIN_CERT_REVISION_1_0               UINT16_C(0x0100)
 #define WIN_CERT_REVISION_2_0               UINT16_C(0x0200)
 /** @} */

@@ -390,7 +390,5 @@ RTDECL(int) RTLatin1ToUtf16ExTag(const char *pszLatin1, size_t cchLatin1,
 
 RT_C_DECLS_END
 
-/** @} */
-
 #endif /* !IPRT_INCLUDED_latin1_h */
 

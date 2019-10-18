@@ -241,7 +241,7 @@ BOOL CALLBACK VBoxEnumFunc(HWND hwnd, LPARAM lParam)
 
     rectVisible = rectWindow;
 
-    /* Filter out Windows XP shadow windows
+    /* Filter out Windows XP shadow windows */
     /** @todo still shows inside the guest */
     if ( szWindowText[0] == 0 &&
             (dwStyle == (WS_POPUP | WS_VISIBLE | WS_CLIPSIBLINGS)

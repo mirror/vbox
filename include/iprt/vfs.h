@@ -181,7 +181,7 @@ RTDECL(int) RTVfsQueryPathInfo(RTVFS hVfs, const char *pszPath, PRTFSOBJINFO pOb
 RTDECL(int) RTVfsQueryRangeState(RTVFS hVfs, uint64_t off, size_t cb, bool *pfUsed);
 
 
-/** @defgroup grp_vfs_obj           VFS Base Object API
+/** @defgroup grp_rt_vfs_obj        VFS Base Object API
  * @{
  */
 
@@ -441,7 +441,7 @@ RTDECL(RTVFSOBJ)        RTVfsObjFromSymlink(RTVFSSYMLINK hVfsSym);
 /** @} */
 
 
-/** @defgroup grp_vfs_fsstream      VFS Filesystem Stream API
+/** @defgroup grp_rt_vfs_fsstream   VFS Filesystem Stream API
  *
  * Filesystem streams are for tar, cpio and similar.  Any virtual filesystem can
  * be turned into a filesystem stream using RTVfsFsStrmFromVfs.
@@ -566,7 +566,7 @@ RTDECL(int)         RTVfsFsStrmEnd(RTVFSFSSTREAM hVfsFss);
 /** @} */
 
 
-/** @defgroup grp_vfs_dir           VFS Directory API
+/** @defgroup grp_rt_vfs_dir        VFS Directory API
  * @{
  */
 
@@ -757,7 +757,7 @@ RTDECL(int) RTVfsDirRewind(RTVFSDIR hVfsDir);
 /** @}  */
 
 
-/** @defgroup grp_vfs_symlink       VFS Symbolic Link API
+/** @defgroup grp_rt_vfs_symlink    VFS Symbolic Link API
  *
  * @remarks The TAR VFS and filesystem stream uses symbolic links for
  *          describing hard links as well.  The users must use RTFS_IS_SYMLINK
@@ -860,7 +860,7 @@ RTDECL(int)         RTVfsSymlinkRead(RTVFSSYMLINK hVfsSym, char *pszTarget, size
 
 
 
-/** @defgroup grp_vfs_iostream      VFS I/O Stream API
+/** @defgroup grp_rt_vfs_iostream   VFS I/O Stream API
  * @{
  */
 
@@ -1209,7 +1209,7 @@ RTDECL(int)        RTVfsIoStrmValidateUtf8Encoding(RTVFSIOSTREAM hVfsIos, uint32
 /** @} */
 
 
-/** @defgroup grp_vfs_file          VFS File API
+/** @defgroup grp_rt_vfs_file       VFS File API
  * @{
  */
 RTDECL(int)         RTVfsFileOpen(RTVFS hVfs, const char *pszFilename, uint64_t fOpen, PRTVFSFILE phVfsFile);
@@ -1466,9 +1466,6 @@ RTDECL(int)         RTVfsFileSetSize(RTVFSFILE hVfsFile, uint64_t cbSize, uint32
  * Will reference @a a_fFlags more than once.  */
 #define RTVFSFILE_SIZE_F_IS_VALID(a_fFlags) \
     ( !((a_fFlags) & ~RTVFSFILE_SIZE_F_ACTION_MASK) && ((a_fFlags) & RTVFSFILE_SIZE_F_ACTION_MASK) != 0 )
-/** @} */
-
-
 /** Mask of valid flags. */
 #define RTFILE_ALLOC_SIZE_F_VALID           (RTFILE_ALLOC_SIZE_F_KEEP_SIZE)
 /** @} */
@@ -1506,7 +1503,7 @@ RTDECL(uint64_t)    RTVfsFileGetOpenFlags(RTVFSFILE hVfsFile);
 
 
 
-/** @defgroup grp_vfs_misc          VFS Miscellaneous
+/** @defgroup grp_rt_vfs_misc       VFS Miscellaneous
  * @{
  */
 

@@ -33,11 +33,6 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 
-/** @name Internal OS/2 structures */
-
-/** @} */
-
-
 typedef enum DBGDIGGEROS2VER
 {
     DBGDIGGEROS2VER_UNKNOWN,

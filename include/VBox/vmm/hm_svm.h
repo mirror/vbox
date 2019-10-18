@@ -1155,7 +1155,7 @@ AssertCompileSizeAlignment(SVMNESTEDVMCBCACHE, 8);
         (a_pVmcbStateSave)->a_REG.u16Attr  = HMSVM_CPU_2_VMCB_SEG_ATTR((a_pCtx)->a_reg.Attr.u); \
     } while (0)
 
-/** @def HMSVM_SEG_REG_COPY_TO_VMCB
+/** @def HMSVM_SEG_REG_COPY_FROM_VMCB
  * Copies the specified segment register from the VMCB to a virtual CPU
  * context.
  *

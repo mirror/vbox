@@ -2687,12 +2687,6 @@ static NTSTATUS     VBoxDrvNtErr2NtStatus(int rc)
 }
 
 
-/**
- * Alternative version of SUPR0Printf for Windows.
- *
- * @returns 0.
- * @param   pszFormat   The format string.
- */
 SUPR0DECL(int) SUPR0Printf(const char *pszFormat, ...)
 {
     va_list va;

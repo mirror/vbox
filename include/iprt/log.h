@@ -1226,7 +1226,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 
 
 
-/** @name Release Logging
+/** @defgroup grp_rt_log_rel    Release Logging
  * @{
  */
 
@@ -1799,7 +1799,7 @@ RTDECL(bool) RTLogRelSetBuffering(bool fBuffered);
 
 
 /** @name COM port logging
- * {
+ * @{
  */
 
 #ifdef DOXYGEN_RUNNING

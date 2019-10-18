@@ -80,9 +80,9 @@ static int vboxClipboardSendData(uint32_t u32Format, void *pv, uint32_t cb)
  * @returns VBox result code
  * @param   pCtx      Our context information
  * @param   u32Format The format of the data being requested
- * @retval  ppv       On success and if pcb > 0, this will point to a buffer
+ * @param   ppv       On success and if pcb > 0, this will point to a buffer
  *                    to be freed with RTMemFree containing the data read.
- * @retval  pcb       On success, this contains the number of bytes of data
+ * @param   pcb       On success, this contains the number of bytes of data
  *                    returned
  */
 DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)

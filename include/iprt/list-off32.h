@@ -31,10 +31,10 @@
 
 #include <iprt/types.h>
 
-/* @defgroup grp_rt_list_off32 RTListOff32 - Generic Doubly Linked List based on 32-bit offset.
+/** @defgroup grp_rt_list_off32 RTListOff32 - Generic Doubly Linked List based on 32-bit offset.
  * @ingroup grp_rt
  *
- * This is the same as @link grp_rt_list, except that instead of pointers we
+ * This is the same as @link{grp_rt_list}, except that instead of pointers we
  * use 32-bit offsets.  The list implementation is circular, with a dummy node
  * as anchor.  Be careful with the dummy node when walking the list.
  *
@@ -497,9 +497,8 @@ DECLINLINE(void) RTListOff32Concatenate(PRTLISTOFF32ANCHOR pListDst, PRTLISTOFF3
     }
 }
 
-RT_C_DECLS_END
-
 /** @} */
+RT_C_DECLS_END
 
 #endif /* !IPRT_INCLUDED_list_off32_h */
 
