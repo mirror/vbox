@@ -615,7 +615,6 @@ DECLINLINE(bool) iomMmioCanHandlePfInRZ(PVMCC pVM, uint32_t uErrorCode, CTX_SUFF
  * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   uErrorCode  CPU Error code.  This is UINT32_MAX when we don't have
  *                      any error code (the EPT misconfig hack).
- * @param   pCtxCore    Trap register frame.
  * @param   GCPhysFault The GC physical address corresponding to pvFault.
  * @param   pRegEntry   The MMIO entry for the current context.
  */
