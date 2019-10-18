@@ -155,7 +155,6 @@ typedef struct PDMIPCIRAWUP
      *
      * @thread  EMT thread.
      */
-
     DECLR3CALLBACKMEMBER(int, pfnPioRead, (PPDMIPCIRAWUP pInterface,
                                            RTIOPORT      uPort,
                                            uint32_t     *puValue,
@@ -163,8 +162,10 @@ typedef struct PDMIPCIRAWUP
 
 
     /**
-     * Request MMIO write. This callback is only called if driver wants to receive MMIO via
-     * pu32Flags argument of pfnPciDeviceConstructStart().
+     * Request MMIO write.
+     *
+     * This callback is only called if driver wants to receive MMIO via pu32Flags
+     * argument of pfnPciDeviceConstructStart().
      *
      * @returns status code
      * @param   pInterface          Pointer to this interface structure.
