@@ -872,7 +872,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     { /* likely */ }
     else
     {
-        STAM_REL_COUNTER_INC(&pVM->iom.s.StatRZMMIOStaleMappings);
+        STAM_REL_COUNTER_INC(&pVM->iom.s.StatMMIOStaleMappings);
         LogRelMax(64, ("iomMmioHandlerNew: Stale access at %#RGp to range #%#x currently residing at %RGp LB %RGp\n",
                        GCPhysFault, pRegEntry->idxSelf, GCPhysMapping, pRegEntry->cbRegion));
 #ifdef IN_RING3

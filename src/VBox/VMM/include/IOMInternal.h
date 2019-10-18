@@ -744,7 +744,7 @@ typedef struct IOM
 
     /** @name MMIO statistics.
      * @{ */
-    STAMCOUNTER                     StatRZMMIOStaleMappings;
+    STAMCOUNTER                     StatMMIOStaleMappings;
     STAMPROFILE                     StatRZMMIOHandler;
     STAMCOUNTER                     StatRZMMIOReadsToR3;
     STAMCOUNTER                     StatRZMMIOWritesToR3;

@@ -207,7 +207,7 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     /*
      * Statistics.
      */
-    STAM_REL_REG(pVM, &pVM->iom.s.StatRZMMIOStaleMappings, STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                 STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
+    STAM_REL_REG(pVM, &pVM->iom.s.StatMMIOStaleMappings, STAMTYPE_PROFILE, "/IOM/MMIOStaleMappings",                STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the iomMmioPfHandler() body, only success calls.");
 #if 0
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIO1Byte,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access1",              STAMUNIT_OCCURENCES,     "MMIO access by 1 byte counter.");
