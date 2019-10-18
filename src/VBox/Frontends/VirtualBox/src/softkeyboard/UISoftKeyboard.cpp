@@ -4092,7 +4092,6 @@ void UISoftKeyboard::prepareConnections()
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorCellClicked, this, &UISoftKeyboard::sltHandleColorCellClick);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigCloseSettingsWidget, this, &UISoftKeyboard::sltShowHideSettingsWidget);
     connect(m_pSettingsWidget, &UISoftKeyboardSettingsWidget::sigColorThemeSelectionChanged, this, &UISoftKeyboard::sltHandleColorThemeListSelection);
-
 }
 
 void UISoftKeyboard::saveSettings()
