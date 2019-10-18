@@ -92,8 +92,7 @@ AUTH_VAR_LIB_CONTEXT_IN mAuthContextIn = {
 
 AUTH_VAR_LIB_CONTEXT_OUT mAuthContextOut;
 
-
-#ifdef VBOX
+#ifdef VBOX_WITH_OLD_EFIVAR
 # include <Library/PrintLib.h>
 # include <Library/TimerLib.h>
 # include "VBoxPkg.h"
@@ -2900,7 +2899,7 @@ VariableServiceGetVariable (
   OUT     VOID              *Data OPTIONAL
   )
 {
-#ifndef VBOX
+#ifndef VBOX_WITH_OLD_EFIVAR
   EFI_STATUS              Status;
   VARIABLE_POINTER_TRACK  Variable;
   UINTN                   VarDataSize;
@@ -3201,7 +3200,7 @@ VariableServiceGetNextVariableName (
   IN OUT  EFI_GUID          *VendorGuid
   )
 {
-#ifndef VBOX
+#ifndef VBOX_WITH_OLD_EFIVAR
   EFI_STATUS              Status;
   UINTN                   MaxLen;
   UINTN                   VarNameSize;
@@ -3345,7 +3344,7 @@ VariableServiceSetVariable (
   IN VOID                    *Data
   )
 {
-#ifndef VBOX
+#ifndef VBOX_WITH_OLD_EFIVAR
   VARIABLE_POINTER_TRACK              Variable;
   EFI_STATUS                          Status;
   VARIABLE_HEADER                     *NextVariable;
@@ -3825,7 +3824,7 @@ VariableServiceQueryVariableInfo (
   OUT UINT64                 *MaximumVariableSize
   )
 {
-#ifndef VBOX
+#ifndef VBOX_WITH_OLD_EFIVAR
   EFI_STATUS             Status;
 
   if(MaximumVariableStorageSize == NULL || RemainingVariableStorageSize == NULL || MaximumVariableSize == NULL || Attributes == 0) {

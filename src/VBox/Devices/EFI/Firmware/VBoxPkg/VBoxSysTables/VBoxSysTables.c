@@ -118,7 +118,7 @@ ConvertAndInstallTable(EFI_GUID* Guid, VOID* Ptr)
     EFI_STATUS  rc = EFI_SUCCESS;
 
     rc = ConvertSystemTable(Guid, &Ptr);
-    ASSERT_EFI_ERROR (rc);
+    //ASSERT_EFI_ERROR (rc);
 
     rc = gBS->InstallConfigurationTable(Guid, Ptr);
     ASSERT_EFI_ERROR (rc);
