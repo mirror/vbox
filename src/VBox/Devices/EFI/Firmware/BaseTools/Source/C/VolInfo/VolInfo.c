@@ -37,11 +37,12 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include "StringFuncs.h"
 #include "ParseInf.h"
 #include "PeCoffLib.h"
+/*
 
 #ifdef __GNUC__
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
 #endif
-
+*/
 //
 // Utility global variables
 //

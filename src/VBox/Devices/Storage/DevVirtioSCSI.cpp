@@ -91,9 +91,9 @@
 
 #define VIRTIOSCSI_REQ_QUEUE_CNT                    1            /**< Number of req queues exposed by dev.            */
 #define VIRTIOSCSI_QUEUE_CNT                        VIRTIOSCSI_REQ_QUEUE_CNT + 2
-#define VIRTIOSCSI_MAX_LUN                          256          /* < VirtIO specification, section 5.6.4             */
-#define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             128            /* < T.B.D. What is a good value for this?           */
-#define VIRTIOSCSI_MAX_SEG_COUNT                    126         /* < T.B.D. What is a good value for this?           */
+#define VIRTIOSCSI_MAX_LUN                          1            /* < VirtIO specification, section 5.6.4             */
+#define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             128          /* < T.B.D. What is a good value for this?           */
+#define VIRTIOSCSI_MAX_SEG_COUNT                    126          /* < T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SECTORS_HINT                 0x10000      /* < VirtIO specification, section 5.6.4             */
 #define VIRTIOSCSI_MAX_CHANNEL_HINT                 0            /* < VirtIO specification, section 5.6.4 should be 0 */
 #define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01         /**< SSM version #                                   */
@@ -780,24 +780,24 @@ static int virtioScsiReqErr(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN
               SCSIStatusText(pRespHdr->uStatus),  pszCtrlRespText));
     RT_NOREF(pszCtrlRespText);
 
-    RTSGSEG aReqSegs[2];
-    aReqSegs[0].cbSeg = sizeof(pRespHdr);
-    aReqSegs[0].pvSeg = pRespHdr;
-    aReqSegs[1].cbSeg = pThis->virtioScsiConfig.uSenseSize;
-    aReqSegs[1].pvSeg = abSenseBuf;
+    RTSGSEG aRespSegs[2];
+    aRespSegs[0].cbSeg = sizeof(struct REQ_RESP_HDR);
+    aRespSegs[0].pvSeg = pRespHdr;
+    aRespSegs[1].cbSeg = pThis->virtioScsiConfig.uSenseSize;
+    aRespSegs[1].pvSeg = abSenseBuf;
 
     if (pbSense && pRespHdr->uSenseLen)
         memcpy(abSenseBuf, pbSense, pRespHdr->uSenseLen);
     else
         pRespHdr->uSenseLen = 0;
 
-    RTSGBUF reqSegBuf;
-    RTSgBufInit(&reqSegBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
+    RTSGBUF respSegBuf;
+    RTSgBufInit(&respSegBuf, aRespSegs, RT_ELEMENTS(aRespSegs));
 
     if (pThis->fResetting)
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
-    virtioQueuePut(pThis->hVirtio, qIdx, &reqSegBuf, pDescChain, true /* fFence */);
+    virtioQueuePut(pThis->hVirtio, qIdx, &respSegBuf, pDescChain, true /* fFence */);
     virtioQueueSync(pThis->hVirtio, qIdx);
 
     RTMemFree(abSenseBuf);
@@ -965,7 +965,7 @@ static DECLCALLBACK(int) virtioScsiIoReqFinish(PPDMIMEDIAEXPORT pInterface, PDMM
 
         RTSGSEG aReqSegs[4];
         aReqSegs[cSegs].pvSeg = &respHdr;
-        aReqSegs[cSegs++].cbSeg = sizeof(respHdr);
+        aReqSegs[cSegs++].cbSeg = sizeof(x);
 
         aReqSegs[cSegs].pvSeg = pReq->pbSense;
         aReqSegs[cSegs++].cbSeg = pReq->cbSense; /* VirtIO 1.0 spec 5.6.4/5.6.6.1 */
@@ -1144,21 +1144,6 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
         return VINF_SUCCESS;
     }
     else
-    if (RT_UNLIKELY(uScsiLun != 0))
-    {
-        Log2Func(("Error submitting request to bad target (%d) or bad LUN (%d)\n", uTarget, uScsiLun));
-        uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
-                              0, SCSI_SENSE_ILLEGAL_REQUEST,
-                              0, 0, 0, 0, 10, SCSI_ASC_LOGICAL_UNIT_NOT_SUPPORTED, 0, 0 };
-        struct REQ_RESP_HDR respHdr = { 0 };
-        respHdr.uSenseLen = sizeof(abSense);
-        respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
-        respHdr.uResponse = VIRTIOSCSI_S_OK;
-        respHdr.uResidual = cbDataOut + cbDataIn;
-        virtioScsiReqErr(pThis, qIdx, pDescChain, &respHdr, abSense);
-        return VINF_SUCCESS;
-    }
-    else
     if (RT_UNLIKELY(uTarget >= pThis->cTargets || !pTarget->fPresent))
     {
         Log2Func(("Error submitting request, target not present!!\n"));
@@ -1170,6 +1155,21 @@ static int virtioScsiReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CH
         respHdr.uResponse = VIRTIOSCSI_S_BAD_TARGET;
         respHdr.uResidual = cbDataIn + cbDataOut;
         virtioScsiReqErr(pThis, qIdx, pDescChain, &respHdr , abSense);
+        return VINF_SUCCESS;
+    }
+    else
+    if (RT_UNLIKELY(uScsiLun != 0))
+    {
+        Log2Func(("Error submitting request to bad LUN (%d)\n", uScsiLun));
+        uint8_t abSense[] = { RT_BIT(7) | SCSI_SENSE_RESPONSE_CODE_CURR_FIXED,
+                              0, SCSI_SENSE_ILLEGAL_REQUEST,
+                              0, 0, 0, 0, 10, SCSI_ASC_LOGICAL_UNIT_NOT_SUPPORTED, 0, 0 };
+        struct REQ_RESP_HDR respHdr = { 0 };
+        respHdr.uSenseLen = sizeof(abSense);
+        respHdr.uStatus   = SCSI_STATUS_CHECK_CONDITION;
+        respHdr.uResponse = VIRTIOSCSI_S_OK;
+        respHdr.uResidual = cbDataOut + cbDataIn;
+        virtioScsiReqErr(pThis, qIdx, pDescChain, &respHdr, abSense);
         return VINF_SUCCESS;
     }
     else

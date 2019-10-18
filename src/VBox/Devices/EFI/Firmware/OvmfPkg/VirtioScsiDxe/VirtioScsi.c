@@ -337,6 +337,8 @@ ParseResponse (
   // host adapter status and function return value depend on virtio-scsi
   // response code
   //
+  DEBUG((DEBUG_VERBOSE, "virtio: Response = %d\n", Response->Response));
+
   switch (Response->Response) {
   case VIRTIO_SCSI_S_OK:
     Packet->HostAdapterStatus = EFI_EXT_SCSI_STATUS_HOST_ADAPTER_OK;
