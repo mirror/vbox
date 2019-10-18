@@ -228,7 +228,8 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
 
 #ifdef VMSVGA3D_DIRECT3D
     /* Translate the format and usage flags to D3D. */
-    pSurface->formatD3D         = vmsvga3dSurfaceFormat2D3D(format);
+    pSurface->d3dfmtRequested   = vmsvga3dSurfaceFormat2D3D(format);
+    pSurface->formatD3D         = D3D9GetActualFormat(pState, pSurface->d3dfmtRequested);
     pSurface->multiSampleTypeD3D= vmsvga3dMultipeSampleCount2D3D(multisampleCount);
     pSurface->fUsageD3D         = 0;
     if (surfaceFlags & SVGA3D_SURFACE_HINT_DYNAMIC)
@@ -244,6 +245,7 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     pSurface->enmD3DResType = VMSVGA3D_D3DRESTYPE_NONE;
     /* pSurface->u.pSurface = NULL; */
     /* pSurface->bounce.pTexture = NULL; */
+    /* pSurface->emulated.pTexture = NULL; */
 #else
     vmsvga3dSurfaceFormat2OGL(pSurface, format);
 #endif

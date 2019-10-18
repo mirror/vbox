@@ -160,15 +160,6 @@ static VMSVGA3DFORMATSUPPORT const  g_aFeatureReject[] =
 static void vmsvgaDumpD3DCaps(D3DCAPS9 *pCaps, D3DADAPTER_IDENTIFIER9 const *pai9);
 
 
-#define D3D_RELEASE(ptr) do { \
-    if (ptr)                  \
-    {                         \
-        (ptr)->Release();     \
-        (ptr) = 0;            \
-    }                         \
-} while (0)
-
-
 int vmsvga3dInit(PVGASTATE pThis)
 {
     PVMSVGA3DSTATE pState;
@@ -227,14 +218,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
 
     vmsvgaDumpD3DCaps(&pState->caps, &ai9);
 
-    /* Check if INTZ is supported. */
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
-                                          D3DDEVTYPE_HAL,
-                                          D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
-                                          0,
-                                          D3DRTYPE_TEXTURE,
-                                          FOURCC_INTZ);
-    if (hr != D3D_OK)
+    if (!D3D9CheckDeviceFormat(pState->pD3D9, 0, D3DRTYPE_TEXTURE, FOURCC_INTZ))
     {
         /* INTZ support is essential to support depth surfaces used as textures. */
         LogRel(("VMSVGA: texture format INTZ not supported!!!\n"));
@@ -242,14 +226,7 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     else
         pState->fSupportedSurfaceINTZ = true;
 
-    /* Check if NULL is supported. */
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
-                                          D3DDEVTYPE_HAL,
-                                          D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
-                                          D3DUSAGE_RENDERTARGET,
-                                          D3DRTYPE_SURFACE,
-                                          FOURCC_NULL);
-    if (hr != D3D_OK)
+    if (!D3D9CheckDeviceFormat(pState->pD3D9, D3DUSAGE_RENDERTARGET, D3DRTYPE_SURFACE, FOURCC_NULL))
     {
         /* NULL is a dummy surface which can be used as a render target to save memory. */
         LogRel(("VMSVGA: surface format NULL not supported!!!\n"));
@@ -257,39 +234,44 @@ int vmsvga3dPowerOn(PVGASTATE pThis)
     else
         pState->fSupportedSurfaceNULL = true;
 
-
-    /*  Check if DX9 depth stencil textures are supported */
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
-                                          D3DDEVTYPE_HAL,
-                                          D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
-                                          D3DUSAGE_DEPTHSTENCIL,
-                                          D3DRTYPE_TEXTURE,
-                                          D3DFMT_D16);
-    if (hr != D3D_OK)
+    /* Check if DX9 depth stencil textures are supported */
+    if (!D3D9CheckDeviceFormat(pState->pD3D9, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_TEXTURE, D3DFMT_D16))
     {
         LogRel(("VMSVGA: texture format D3DFMT_D16 not supported\n"));
     }
 
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
-                                          D3DDEVTYPE_HAL,
-                                          D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
-                                          D3DUSAGE_DEPTHSTENCIL,
-                                          D3DRTYPE_TEXTURE,
-                                          D3DFMT_D24X8);
-    if (hr != D3D_OK)
+    if (!D3D9CheckDeviceFormat(pState->pD3D9, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_TEXTURE, D3DFMT_D24X8))
     {
         LogRel(("VMSVGA: texture format D3DFMT_D24X8 not supported\n"));
     }
-    hr = pState->pD3D9->CheckDeviceFormat(D3DADAPTER_DEFAULT,
-                                          D3DDEVTYPE_HAL,
-                                          D3DFMT_X8R8G8B8,    /* assume standard 32-bit display mode */
-                                          D3DUSAGE_DEPTHSTENCIL,
-                                          D3DRTYPE_TEXTURE,
-                                          D3DFMT_D24S8);
-    if (hr != D3D_OK)
+
+    if (!D3D9CheckDeviceFormat(pState->pD3D9, D3DUSAGE_DEPTHSTENCIL, D3DRTYPE_TEXTURE, D3DFMT_D24S8))
     {
         LogRel(("VMSVGA: texture format D3DFMT_D24S8 not supported\n"));
     }
+
+    /* Check some formats must be emulated. */
+    if (D3D9CheckDeviceFormat(pState->pD3D9, 0, D3DRTYPE_TEXTURE, D3DFMT_UYVY))
+    {
+        /* Native UYVY support has better performance. */
+        LogRel(("VMSVGA: texture format D3DFMT_UYVY supported\n"));
+        pState->fSupportedFormatUYVY = true;
+    }
+
+    if (D3D9CheckDeviceFormat(pState->pD3D9, 0, D3DRTYPE_TEXTURE, D3DFMT_YUY2))
+    {
+        /* Native YUY2 support has better performance. */
+        LogRel(("VMSVGA: texture format D3DFMT_YUY2 supported\n"));
+        pState->fSupportedFormatYUY2 = true;
+    }
+
+    if (D3D9CheckDeviceFormat(pState->pD3D9, D3DUSAGE_RENDERTARGET, D3DRTYPE_TEXTURE, D3DFMT_A8B8G8R8))
+    {
+        /* Native A8B8G8R8 support is good for OpenGL application in the guest. */
+        LogRel(("VMSVGA: texture format D3DFMT_A8B8G8R8 supported\n"));
+        pState->fSupportedFormatA8B8G8R8 = true;
+    }
+
     return VINF_SUCCESS;
 }
 
@@ -405,7 +387,13 @@ static uint32_t vmsvga3dGetSurfaceFormatSupport(PVMSVGA3DSTATE pState3D, uint32_
                |  SVGA3DFORMAT_OP_CONVERT_TO_ARGB
                |  SVGA3DFORMAT_OP_SAME_FORMAT_UP_TO_ALPHA_RENDERTARGET;
         break;
-
+    /* These formats can't be used as textures on AMD drivers (Intel works).
+     * Still report them as textures to the guest and emulate them in the device.
+     */
+    case SVGA3D_DEVCAP_SURFACEFMT_UYVY:
+    case SVGA3D_DEVCAP_SURFACEFMT_YUY2:
+        result |= SVGA3DFORMAT_OP_TEXTURE;
+        break;
     }
     Log(("CAPS: %s =\n%s\n", vmsvga3dGetCapString(idx3dCaps), vmsvga3dGet3dFormatString(result)));
 
@@ -1124,16 +1112,19 @@ void vmsvga3dBackSurfaceDestroy(PVMSVGA3DSTATE pState, PVMSVGA3DSURFACE pSurface
     case VMSVGA3D_D3DRESTYPE_TEXTURE:
         D3D_RELEASE(pSurface->u.pTexture);
         D3D_RELEASE(pSurface->bounce.pTexture);
+        D3D_RELEASE(pSurface->emulated.pTexture);
         break;
 
     case VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE:
         D3D_RELEASE(pSurface->u.pCubeTexture);
         D3D_RELEASE(pSurface->bounce.pCubeTexture);
+        D3D_RELEASE(pSurface->emulated.pCubeTexture);
         break;
 
     case VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE:
         D3D_RELEASE(pSurface->u.pVolumeTexture);
         D3D_RELEASE(pSurface->bounce.pVolumeTexture);
+        D3D_RELEASE(pSurface->emulated.pVolumeTexture);
         break;
 
     case VMSVGA3D_D3DRESTYPE_VERTEX_BUFFER:
@@ -1518,6 +1509,8 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
     if (   pSurfaceSrc->u.pSurface
         && pSurfaceDest->u.pSurface)
     {
+        /// @todo should use the src context because only the shared hardware surface is required from the dst context,
+        //        while the src context may be also needed to copy data to the source bounce texture.
         const uint32_t cidDst = pSurfaceDest->idAssociatedContext;
 
         PVMSVGA3DCONTEXT pContextDst;
@@ -1582,6 +1575,45 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
                 if (   pSurfaceSrc->bounce.pTexture
                     && (pSurfaceSrc->fUsageD3D & D3DUSAGE_RENDERTARGET))
                 {
+#if 1
+                    /* Copy the source texture mipmap level to the bounce texture.
+                     * Get the data using the surface associated context.
+                     */
+                    PVMSVGA3DCONTEXT pContextSrc;
+                    rc = vmsvga3dContextFromCid(pState, pSurfaceSrc->idAssociatedContext, &pContextSrc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        hr = D3D9GetRenderTargetData(pContextSrc, pSurfaceSrc, src.face, src.mipmap);
+                        AssertMsg(hr == D3D_OK, ("D3D9GetRenderTargetData failed with %x\n", hr));
+                        if (hr == D3D_OK)
+                        {
+                            /* Copy the source bounce texture to the destination surface. */
+                            IDirect3DSurface9 *pBounceSurf;
+                            rc = vmsvga3dGetD3DSurface(pState, pContextDst, pSurfaceSrc, src.face, src.mipmap, true, &pBounceSurf);
+                            if (RT_SUCCESS(rc))
+                            {
+                                POINT pointDest;
+                                pointDest.x = clipBox.x;
+                                pointDest.y = clipBox.y;
+
+                                hr = pContextDst->pDevice->UpdateSurface(pBounceSurf, &RectSrc, pDest, &pointDest);
+                                Assert(hr == D3D_OK);
+
+                                D3D_RELEASE(pBounceSurf);
+                            }
+                            else
+                            {
+                                AssertRC(rc);
+                                hr = E_INVALIDARG;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        AssertRC(rc);
+                        hr = E_INVALIDARG;
+                    }
+#else
                     /* Copy the texture mipmap level to the bounce texture. */
 
                     /* Source is the texture, destination is the corresponding bounce texture. */
@@ -1606,6 +1638,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
 
                         D3D_RELEASE(pBounceSurf);
                     }
+#endif
                 }
                 else if (   (pSurfaceSrc->fUsageD3D & D3DUSAGE_RENDERTARGET) == 0
                          && (pSurfaceDest->fUsageD3D & D3DUSAGE_RENDERTARGET) == 0)
@@ -1798,6 +1831,9 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             AssertMsgReturn(pContext, ("Context is NULL\n"), VERR_INTERNAL_ERROR);
 
             /* Copy the new content to the actual texture object. */
+#if 1
+            HRESULT hr2 = D3D9UpdateTexture(pContext, pSurfaceDest);
+#else
             IDirect3DBaseTexture9 *pSourceTexture;
             IDirect3DBaseTexture9 *pDestinationTexture;
             if (pSurfaceDest->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE)
@@ -1811,6 +1847,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
                 pDestinationTexture = pSurfaceDest->u.pTexture;
             }
             HRESULT hr2 = pContext->pDevice->UpdateTexture(pSourceTexture, pDestinationTexture);
+#endif
             AssertMsg(hr2 == D3D_OK, ("UpdateTexture failed with %x\n", hr2)); RT_NOREF(hr2);
         }
 
@@ -2009,6 +2046,20 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
                                                       &pSurface->bounce.pTexture,
                                                       NULL);
                 AssertMsgReturn(hr == D3D_OK, ("CreateTexture (systemmem) failed with %x\n", hr), VERR_INTERNAL_ERROR);
+
+                if (pSurface->formatD3D != pSurface->d3dfmtRequested)
+                {
+                    /* Create a staging texture/render target for format conversion. */
+                    hr = pContext->pDevice->CreateTexture(cWidth,
+                                                          cHeight,
+                                                          numMipLevels,
+                                                          pSurface->fUsageD3D | D3DUSAGE_RENDERTARGET,
+                                                          pSurface->formatD3D,
+                                                          D3DPOOL_DEFAULT,
+                                                          &pSurface->emulated.pTexture,
+                                                          NULL);
+                    AssertMsgReturn(hr == D3D_OK, ("CreateTexture (emulated) failed with %x\n", hr), VERR_INTERNAL_ERROR);
+                }
             }
             else
             {
@@ -2144,9 +2195,15 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
             return VERR_INTERNAL_ERROR;
         }
     }
-    else
+    else if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE)
     {
-        IDirect3DTexture9 *pTexture = pSurface->bounce.pTexture ? pSurface->bounce.pTexture : pSurface->u.pTexture;
+        IDirect3DTexture9 *pTexture;
+        if (pSurface->bounce.pTexture)
+            pTexture = pSurface->bounce.pTexture;
+        else if (pSurface->formatD3D != pSurface->d3dfmtRequested)
+            pTexture = pSurface->emulated.pTexture;
+        else
+            pTexture = pSurface->u.pTexture;
 
         for (uint32_t i = 0; i < numMipLevels; ++i)
         {
@@ -2177,17 +2234,18 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
             pSurface->pMipmapLevels[i].fDirty = false;
         }
     }
+    else
+    {
+        AssertMsgFailedReturn(("enmD3DResType not expected %d\n", pSurface->enmD3DResType), VERR_INTERNAL_ERROR);
+    }
 
     if (pSurface->bounce.pTexture)
     {
         Log(("vmsvga3dBackCreateTexture: sync dirty texture from bounce buffer\n"));
-
         if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE)
             hr = pContext->pDevice->UpdateTexture(pSurface->bounce.pVolumeTexture, pSurface->u.pVolumeTexture);
-        else if (pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE)
-            hr = pContext->pDevice->UpdateTexture(pSurface->bounce.pCubeTexture, pSurface->u.pCubeTexture);
         else
-            hr = pContext->pDevice->UpdateTexture(pSurface->bounce.pTexture, pSurface->u.pTexture);
+            hr = D3D9UpdateTexture(pContext, pSurface);
         AssertMsgReturn(hr == D3D_OK, ("UpdateTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
         /* We will now use the bounce texture for all memory accesses, so free our surface memory buffer. */
@@ -2317,9 +2375,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
                                   SVGA3dCopyBox const *pBox, PVMSVGA3DCONTEXT pContext, int rc, int iBox)
 {
     HRESULT hr = D3D_OK;
-    const uint32_t u32SurfHints = pSurface->surfaceFlags & VMSVGA3D_SURFACE_HINT_SWITCH_MASK;
     const DWORD dwFlags = transfer == SVGA3D_READ_HOST_VRAM ? D3DLOCK_READONLY : 0;
-    // if (u32SurfHints != 0x18 && u32SurfHints != 0x60) ASMBreakpoint();
 
     AssertReturn(pSurface->enmD3DResType != VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE, VERR_NOT_IMPLEMENTED);
 
@@ -2336,28 +2392,21 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
         rc = vmsvga3dGetD3DSurface(pState, pContext, pSurface, uHostFace, uHostMipmap, true, &pSurf);
         AssertRCReturn(rc, rc);
 
-        /** @todo inefficient for VRAM buffers!! */
-        if (fTexture)
+        if (transfer == SVGA3D_READ_HOST_VRAM)
         {
-            if (pSurface->bounce.pTexture)
+            /* Texture data is copied to the host VRAM.
+             * Update the 'bounce' texture if necessary.
+             */
+            if (   fTexture
+                && pSurface->bounce.pTexture
+                && iBox == 0 /* only the first time */)
             {
-                if (   transfer == SVGA3D_READ_HOST_VRAM
-                    && RT_BOOL(u32SurfHints & SVGA3D_SURFACE_HINT_RENDERTARGET)
-                    && iBox == 0 /* only the first time */)
+                /** @todo inefficient for VRAM buffers!! */
+                if (RT_BOOL(pSurface->surfaceFlags & SVGA3D_SURFACE_HINT_RENDERTARGET))
                 {
                     /* Copy the texture mipmap level to the bounce texture. */
-
-                    /* Source is the texture, destination is the bounce texture. */
-                    IDirect3DSurface9 *pSrc;
-                    rc = vmsvga3dGetD3DSurface(pState, pContext, pSurface, uHostFace, uHostMipmap, false, &pSrc);
-                    AssertRCReturn(rc, rc);
-
-                    Assert(pSurf != pSrc);
-
-                    hr = pContext->pDevice->GetRenderTargetData(pSrc, pSurf);
-                    AssertMsgReturn(hr == D3D_OK, ("GetRenderTargetData failed with %x\n", hr), VERR_INTERNAL_ERROR);
-
-                    D3D_RELEASE(pSrc);
+                    hr = D3D9GetRenderTargetData(pContext, pSurface, uHostFace, uHostMipmap);
+                    AssertMsgReturn(hr == D3D_OK, ("D3D9GetRenderTargetData failed with %x\n", hr), VERR_INTERNAL_ERROR);
                 }
             }
         }
@@ -2421,21 +2470,22 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
 
         AssertMsgReturn(hr == D3D_OK, ("UnlockRect failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-        if (fTexture)
+        if (transfer == SVGA3D_WRITE_HOST_VRAM)
         {
-            if (pSurface->bounce.pTexture)
+            /* Data is copied to the texture. Copy updated 'bounce' texture to the actual if necessary.
+             */
+            /// @todo for the last iBox only.
+            if (   fTexture
+                && pSurface->bounce.pTexture)
             {
-                if (transfer == SVGA3D_WRITE_HOST_VRAM)
-                {
-                    LogFunc(("Sync texture from bounce buffer\n"));
+                LogFunc(("Sync texture from bounce buffer\n"));
 
-                    /* Copy the new contents to the actual texture object. */
-                    hr = pContext->pDevice->UpdateTexture(pSurface->bounce.pTexture, pSurface->u.pTexture);
-                    AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSurfaceDMA: UpdateTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
+                /* Copy the new contents to the actual texture object. */
+                hr = D3D9UpdateTexture(pContext, pSurface);
+                AssertMsgReturn(hr == D3D_OK, ("UpdateTexture failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
-                    /* Track the copy operation. */
-                    vmsvga3dSurfaceTrackUsage(pState, pContext, pSurface);
-                }
+                /* Track the copy operation. */
+                vmsvga3dSurfaceTrackUsage(pState, pContext, pSurface);
             }
         }
     }
@@ -2519,7 +2569,7 @@ int vmsvga3dBackSurfaceDMACopyBox(PVGASTATE pThis, PVMSVGA3DSTATE pState, PVMSVG
     }
     else
     {
-        AssertMsgFailed(("Unsupported surface hint 0x%08X, type %d\n", u32SurfHints, pSurface->enmD3DResType));
+        AssertMsgFailed(("Unsupported surface flags 0x%08X, type %d\n", pSurface->surfaceFlags, pSurface->enmD3DResType));
     }
 
     return rc;
@@ -5360,7 +5410,7 @@ static int vmsvga3dDrawPrimitivesSyncVertexBuffer(PVMSVGA3DCONTEXT pContext,
     bool fSync = pVertexSurface->fDirty;
     if (!pVertexSurface->u.pVertexBuffer)
     {
-        LogFunc(("Create vertex buffer fDirty=%d\n", pVertexSurface->fDirty));
+        LogFunc(("Create vertex buffer sid=%x fDirty=%d\n", pVertexSurface->id, pVertexSurface->fDirty));
 
         const DWORD Usage = D3DUSAGE_DYNAMIC | D3DUSAGE_WRITEONLY; /* possible severe performance penalty otherwise (according to d3d debug output */
         hr = pContext->pDevice->CreateVertexBuffer(pVertexSurface->pMipmapLevels[0].cbSurface,
@@ -5788,7 +5838,7 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         PVMSVGA3DSURFACE pSurface;
         int rc2 = vmsvga3dSurfaceFromSid(pState, pContext->state.aRenderTargets[SVGA3D_RT_COLOR0], &pSurface);
         if (RT_SUCCESS(rc2))
-            vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmp", "rt", "-post");
+            vmsvga3dInfoSurfaceToBitmap(NULL, pSurface, "bmpd3d", "rt", "-post");
     }
 #endif
 

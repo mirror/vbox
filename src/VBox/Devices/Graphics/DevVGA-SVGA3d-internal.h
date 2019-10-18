@@ -606,6 +606,13 @@ typedef struct VMSVGA3DSURFACE
     /** AVL tree containing VMSVGA3DSHAREDSURFACE structures. */
     AVLU32TREE              pSharedObjectTree;
     bool                    fStencilAsTexture;
+    D3DFORMAT               d3dfmtRequested;
+    union
+    {
+        IDirect3DTexture9          *pTexture;
+        IDirect3DCubeTexture9      *pCubeTexture;
+        IDirect3DVolumeTexture9    *pVolumeTexture;
+    } emulated;
 #endif
 } VMSVGA3DSURFACE;
 /** Pointer to a 3d surface. */
@@ -956,6 +963,9 @@ typedef struct VMSVGA3DSTATE
     D3DCAPS9                caps;
     bool                    fSupportedSurfaceINTZ;
     bool                    fSupportedSurfaceNULL;
+    bool                    fSupportedFormatUYVY : 1;
+    bool                    fSupportedFormatYUY2 : 1;
+    bool                    fSupportedFormatA8B8G8R8 : 1;
 # endif
     /** Window Thread. */
     R3PTRTYPE(RTTHREAD)     pWindowThread;
@@ -1263,6 +1273,34 @@ int vmsvga3dOcclusionQueryGetData(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pConte
 
 void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
                                  const char *pszPath, const char *pszNamePrefix, const char *pszNameSuffix);
+
+#ifdef VMSVGA3D_DIRECT3D
+#define D3D_RELEASE(ptr) do { \
+    if (ptr)                  \
+    {                         \
+        (ptr)->Release();     \
+        (ptr) = 0;            \
+    }                         \
+} while (0)
+
+HRESULT D3D9UpdateTexture(PVMSVGA3DCONTEXT pContext,
+                          PVMSVGA3DSURFACE pSurface);
+HRESULT D3D9GetRenderTargetData(PVMSVGA3DCONTEXT pContext,
+                                PVMSVGA3DSURFACE pSurface,
+                                uint32_t uFace,
+                                uint32_t uMipmap);
+HRESULT D3D9GetSurfaceLevel(PVMSVGA3DSURFACE pSurface,
+                            uint32_t uFace,
+                            uint32_t uMipmap,
+                            bool fBounce,
+                            IDirect3DSurface9 **ppD3DSurface);
+D3DFORMAT D3D9GetActualFormat(PVMSVGA3DSTATE pState,
+                              D3DFORMAT d3dfmt);
+bool D3D9CheckDeviceFormat(IDirect3D9 *pD3D9,
+                           DWORD Usage,
+                           D3DRESOURCETYPE RType,
+                           D3DFORMAT CheckFormat);
+#endif
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_internal_h */
 
