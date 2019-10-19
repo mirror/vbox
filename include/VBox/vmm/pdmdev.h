@@ -2271,7 +2271,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 25, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 26, 0)
 
 /**
  * PDM Device API.
@@ -2984,6 +2984,7 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int,      pfnTimerSetRelative,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, uint64_t cTicksToNext, uint64_t *pu64Now));
     DECLR3CALLBACKMEMBER(int,      pfnTimerStop,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
     DECLR3CALLBACKMEMBER(void,     pfnTimerUnlock,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerSetCritSect,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect));
     DECLR3CALLBACKMEMBER(int,      pfnTimerSave,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM));
     DECLR3CALLBACKMEMBER(int,      pfnTimerLoad,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM));
     /** @} */
@@ -6003,8 +6004,8 @@ DECLINLINE(int) PDMDevHlpSSMRegisterEx(PPDMDEVINS pDevIns, uint32_t uVersion, si
 /**
  * @copydoc PDMDEVHLPR3::pfnTMTimerCreate
  */
-DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags,
-                                       const char *pszDesc, PPTMTIMERR3 ppTimer)
+DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser,
+                                       uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     return pDevIns->pHlpR3->pfnTMTimerCreate(pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 }
@@ -6165,6 +6166,14 @@ DECLINLINE(void)     PDMDevHlpTimerUnlock(PPDMDEVINS pDevIns, TMTIMERHANDLE hTim
 }
 
 #ifdef IN_RING3
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnTimerSetCritSect
+ */
+DECLINLINE(int) PDMDevHlpTimerSetCritSect(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect)
+{
+    return pDevIns->pHlpR3->pfnTimerSetCritSect(pDevIns, hTimer, pCritSect);
+}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnTimerSave
