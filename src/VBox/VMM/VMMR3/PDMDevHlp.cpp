@@ -1923,7 +1923,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCID
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIIORegionRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                                         RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
+                                                         RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, uint32_t fFlags,
+                                                         uint64_t hHandle, PFNPCIIOREGIONMAP pfnCallback)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
@@ -1931,13 +1932,18 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
         pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
-    LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%d cbRegion=%RGp enmType=%d pfnCallback=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iRegion, cbRegion, enmType, pfnCallback));
+    LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%d cbRegion=%RGp enmType=%d fFlags=%#x, hHandle=%#RX64 pfnCallback=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iRegion, cbRegion, enmType, fFlags, hHandle, pfnCallback));
     PDMPCIDEV_ASSERT_VALID_RET(pDevIns, pPciDev);
 
     /*
      * Validate input.
      */
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    AssertLogRelMsgReturn(VMR3GetState(pVM) == VMSTATE_CREATING,
+                          ("caller='%s'/%d: %s\n", pDevIns->pReg->szName, pDevIns->iInstance, VMR3GetStateName(VMR3GetState(pVM))),
+                          VERR_WRONG_ORDER);
+
     if (iRegion >= VBOX_PCI_NUM_REGIONS)
     {
         Assert(iRegion < VBOX_PCI_NUM_REGIONS);
@@ -1983,13 +1989,41 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
             LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (enmType)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
             return VERR_INVALID_PARAMETER;
     }
-    if (!pfnCallback)
+
+    AssertMsgReturn(   pfnCallback
+                    || (   hHandle != UINT64_MAX
+                        && (fFlags & PDMPCIDEV_IORGN_F_HANDLE_MASK) != PDMPCIDEV_IORGN_F_NO_HANDLE),
+                    ("caller='%s'/%d: fFlags=%#x hHandle=%#RX64\n", pDevIns->pReg->szName, pDevIns->iInstance, fFlags, hHandle),
+                    VERR_INVALID_PARAMETER);
+
+    AssertMsgReturn(!(fFlags & ~PDMPCIDEV_IORGN_F_VALID_MASK), ("fFlags=%#x\n", fFlags), VERR_INVALID_FLAGS);
+    int rc;
+    switch (fFlags & PDMPCIDEV_IORGN_F_HANDLE_MASK)
     {
-        Assert(pfnCallback);
-        LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc (callback)\n", pDevIns->pReg->szName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
-        return VERR_INVALID_PARAMETER;
+        case PDMPCIDEV_IORGN_F_NO_HANDLE:
+            break;
+        case PDMPCIDEV_IORGN_F_IOPORT_HANDLE:
+            AssertReturn(enmType == PCI_ADDRESS_SPACE_IO, VERR_INVALID_FLAGS);
+            rc = IOMR3IoPortValidateHandle(pVM, pDevIns, (IOMIOPORTHANDLE)hHandle);
+            AssertRCReturn(rc, rc);
+            break;
+        case PDMPCIDEV_IORGN_F_MMIO_HANDLE:
+            AssertReturn(   (enmType & ~PCI_ADDRESS_SPACE_BAR64) == PCI_ADDRESS_SPACE_MEM
+                         || (enmType & ~PCI_ADDRESS_SPACE_BAR64) == PCI_ADDRESS_SPACE_MEM_PREFETCH,
+                         VERR_INVALID_FLAGS);
+            rc = IOMR3MmioValidateHandle(pVM, pDevIns, (IOMMMIOHANDLE)hHandle);
+            AssertRCReturn(rc, rc);
+            break;
+        case PDMPCIDEV_IORGN_F_MMIO2_HANDLE:
+            AssertReturn(   (enmType & ~PCI_ADDRESS_SPACE_BAR64) == PCI_ADDRESS_SPACE_MEM
+                         || (enmType & ~PCI_ADDRESS_SPACE_BAR64) == PCI_ADDRESS_SPACE_MEM_PREFETCH,
+                         VERR_INVALID_FLAGS);
+            AssertFailedReturn(VERR_NOT_SUPPORTED);
+            break;
+        default:
+            AssertFailedReturn(VERR_IPE_NOT_REACHED_DEFAULT_CASE);
+            break;
     }
-    AssertRelease(VMR3GetState(pVM) != VMSTATE_RUNNING);
 
     /*
      * We're currently restricted to page aligned MMIO regions.
@@ -2016,7 +2050,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
     PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
 
     pdmLock(pVM);
-    int rc = pBus->pfnIORegionRegister(pBus->pDevInsR3, pPciDev, iRegion, cbRegion, enmType, pfnCallback);
+    rc = pBus->pfnIORegionRegister(pBus->pDevInsR3, pPciDev, iRegion, cbRegion, enmType, fFlags, hHandle, pfnCallback);
     pdmUnlock(pVM);
 
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));

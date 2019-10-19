@@ -90,17 +90,27 @@ typedef PFNPCICONFIGWRITE *PPFNPCICONFIGWRITE;
 /**
  * Callback function for mapping an PCI I/O region.
  *
+ * This is called when a PCI I/O region is mapped, and for new-style devices
+ * also when unmapped (address set to NIL_RTGCPHYS).  For new-style devices,
+ * this callback is optional as the PCI bus calls IOM to map and unmap the
+ * regions.
+ *
+ * Old style devices have to call IOM to map the region themselves, while
+ * unmapping is done by the PCI bus like with the new style devices.
+ *
  * @returns VBox status code.
  * @param   pDevIns         Pointer to the device instance the PCI device
  *                          belongs to.
  * @param   pPciDev         Pointer to the PCI device.
  * @param   iRegion         The region number.
- * @param   GCPhysAddress   Physical address of the region. If enmType is PCI_ADDRESS_SPACE_IO, this
- *                          is an I/O port, otherwise it's a physical address.
+ * @param   GCPhysAddress   Physical address of the region.  If @a enmType is
+ *                          PCI_ADDRESS_SPACE_IO, this is an I/O port, otherwise
+ *                          it's a physical address.
  *
- *                          NIL_RTGCPHYS indicates that a MMIO2 mapping is about to be unmapped and
- *                          that the device deregister access handlers for it and update its internal
- *                          state to reflect this.
+ *                          NIL_RTGCPHYS indicates that a mapping is about to be
+ *                          unmapped and that the device deregister access
+ *                          handlers for it and update its internal state to
+ *                          reflect this.
  *
  * @param   cb              Size of the region in bytes.
  * @param   enmType         One of the PCI_ADDRESS_SPACE_* values.
@@ -212,13 +222,16 @@ typedef struct PDMPCIDEV
                                                          PFNPCIIOREGIONOLDSETTER pfnOldSetter,
                                                          PFNPCIIOREGIONSWAP pfnSwapRegion));
 
+    /** Reserved for future stuff. */
+    uint64_t au64Reserved[4 + (R3_ARCH_BITS == 32 ? 1 : 0)];
+
     /** Internal data. */
     union
     {
 #ifdef PDMPCIDEVINT_DECLARED
         PDMPCIDEVINT        s;
 #endif
-        uint8_t             padding[HC_ARCH_BITS == 32 ? 0x60 + 8 : 0x140];
+        uint8_t             padding[0x180];
     } Int;
 
     /** PCI config space.

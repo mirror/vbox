@@ -195,7 +195,7 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
                                           iomMmioHandlerNew,
                                           NULL, "iomMmioHandlerNew", "iomMmioPfHandlerNew",
                                           NULL, "iomMmioHandlerNew", "iomMmioPfHandlerNew",
-                                          "MMIO", &pVM->iom.s.hNewMmioHandlerType);
+                                          "MMIO New", &pVM->iom.s.hNewMmioHandlerType);
     AssertRCReturn(rc, rc);
 
     /*
@@ -209,20 +209,19 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
      */
     STAM_REL_REG(pVM, &pVM->iom.s.StatMMIOStaleMappings, STAMTYPE_PROFILE, "/IOM/MMIOStaleMappings",                STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the iomMmioPfHandler() body, only success calls.");
-#if 0
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIO1Byte,        STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access1",              STAMUNIT_OCCURENCES,     "MMIO access by 1 byte counter.");
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIO2Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access2",              STAMUNIT_OCCURENCES,     "MMIO access by 2 bytes counter.");
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIO4Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access4",              STAMUNIT_OCCURENCES,     "MMIO access by 4 bytes counter.");
-    STAM_REG(pVM, &pVM->iom.s.StatRZMMIO8Bytes,       STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/Access8",              STAMUNIT_OCCURENCES,     "MMIO access by 8 bytes counter.");
-#endif
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIOReadsToR3,    STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/ReadsToR3",            STAMUNIT_OCCURENCES,     "Number of read deferred to ring-3.");
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIOWritesToR3,   STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/WritesToR3",           STAMUNIT_OCCURENCES,     "Number of writes deferred to ring-3.");
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIOCommitsToR3,  STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/CommitsToR3",          STAMUNIT_OCCURENCES,     "Number of commits deferred to ring-3.");
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIODevLockContention, STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/DevLockContention", STAMUNIT_OCCURENCES,   "Number of device lock contention force return to ring-3.");
     STAM_REG(pVM, &pVM->iom.s.StatR3MMIOHandler,      STAMTYPE_COUNTER, "/IOM/R3-MMIOHandler",                      STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandler.");
 
-    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR3,      STAMTYPE_COUNTER, "/IOM/MmioHandlerR3",                       STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR0,      STAMTYPE_COUNTER, "/IOM/MmioHandlerR0",                       STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-0.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR3,      STAMTYPE_COUNTER, "/IOM/OldMmioHandlerR3",                    STAMUNIT_OCCURENCES,     "Number of calls to old iomMmioHandler from ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerR0,      STAMTYPE_COUNTER, "/IOM/OldMmioHandlerR0",                    STAMUNIT_OCCURENCES,     "Number of calls to old iomMmioHandler from ring-0.");
+
+    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerNewR3,   STAMTYPE_COUNTER, "/IOM/MmioHandlerNewR3",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerNewR0,   STAMTYPE_COUNTER, "/IOM/MmioHandlerNewR0",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-0.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioPfHandlerNew,   STAMTYPE_COUNTER, "/IOM/MmioPfHandlerNew",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioPfHandlerNew from ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioPhysHandlerNew, STAMTYPE_COUNTER, "/IOM/MmioPhysHandlerNew",                  STAMUNIT_OCCURENCES,     "Number of calls to iomMmioPhysHandler from ring-3.");
 
     /* Redundant, but just in case we change something in the future */
     iomR3FlushCache(pVM);

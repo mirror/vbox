@@ -856,12 +856,20 @@ typedef struct PDMPCIBUSREGR3
      * @param   pPciDev         The PCI device structure.
      * @param   iRegion         The region number.
      * @param   cbRegion        Size of the region.
-     * @param   enmType         PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
-     * @param   pfnCallback     Callback for doing the mapping.
+     * @param   enmType         PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or
+     *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally with
+     *                          PCI_ADDRESS_SPACE_BAR64 or'ed in.
+     * @param   fFlags          PDMPCIDEV_IORGN_F_XXX.
+     * @param   hHandle         An I/O port, MMIO or MMIO2 handle according to
+     *                          @a fFlags, UINT64_MAX if no handle is passed
+     *                          (old style).
+     * @param   pfnCallback     Callback for doing the mapping. Optional if a handle
+     *                          is given.
      * @remarks Caller enters the PDM critical section.
      */
-    DECLR3CALLBACKMEMBER(int, pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
-                                                     PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
+    DECLR3CALLBACKMEMBER(int, pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                     RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, uint32_t fFlags,
+                                                     uint64_t hHandle, PFNPCIIOREGIONMAP pfnCallback));
 
     /**
      * Register PCI configuration space read/write intercept callbacks.
@@ -929,7 +937,7 @@ typedef struct PDMPCIBUSREGR3
 /** Pointer to a PCI bus registration structure. */
 typedef PDMPCIBUSREGR3 *PPDMPCIBUSREGR3;
 /** Current PDMPCIBUSREGR3 version number. */
-#define PDM_PCIBUSREGR3_VERSION                 PDM_VERSION_MAKE(0xff86, 1, 0)
+#define PDM_PCIBUSREGR3_VERSION                 PDM_VERSION_MAKE(0xff86, 2, 0)
 
 /**
  * PCI Bus registration structure for ring-0.
@@ -2222,10 +2230,27 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 
 
 
+/** @name Flags for PCI I/O region registration
+ * @{ */
+/** No handle is passed. */
+#define PDMPCIDEV_IORGN_F_NO_HANDLE         UINT32_C(0x00000000)
+/** An I/O port handle is passed. */
+#define PDMPCIDEV_IORGN_F_IOPORT_HANDLE     UINT32_C(0x00000001)
+/** An MMIO range handle is passed. */
+#define PDMPCIDEV_IORGN_F_MMIO_HANDLE       UINT32_C(0x00000002)
+/** An MMIO2 handle is passed. */
+#define PDMPCIDEV_IORGN_F_MMIO2_HANDLE      UINT32_C(0x00000003)
+/** Handle type mask.  */
+#define PDMPCIDEV_IORGN_F_HANDLE_MASK       UINT32_C(0x00000003)
+/** Mask of valid flags.   */
+#define PDMPCIDEV_IORGN_F_VALID_MASK        UINT32_C(0x00000003)
+/** @} */
+
+
 #ifdef IN_RING3
 
 /** @name Special values for PDMDEVHLPR3::pfnPCIRegister parameters.
- * @{  */
+ * @{ */
 /** Same device number (and bus) as the previous PCI device registered with the PDM device.
  * This is handy when registering multiple PCI device functions and the device
  * number is left up to the PCI bus.  In order to facilitate one PDM device
@@ -2243,10 +2268,10 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 # define PDMPCIDEVREG_F_PCI_BRIDGE          RT_BIT_32(1)
 /** Valid flag mask. */
 # define PDMPCIDEVREG_F_VALID_MASK          UINT32_C(0x00000003)
-/** @}   */
+/** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 24, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 25, 0)
 
 /**
  * PDM Device API.
@@ -3445,12 +3470,18 @@ typedef struct PDMDEVHLPR3
      * @param   iRegion             The region number.
      * @param   cbRegion            Size of the region.
      * @param   enmType             PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
-     * @param   pfnCallback         Callback for doing the mapping.
-     * @remarks The callback will be invoked holding the PDM lock. The device lock
-     *          is NOT take because that is very likely be a lock order violation.
+     * @param   fFlags              PDMPCIDEV_IORGN_F_XXX.
+     * @param   hHandle             An I/O port, MMIO or MMIO2 handle according to
+     *                              @a fFlags, UINT64_MAX if no handle is passed
+     *                              (old style).
+     * @param   pfnCallback         Callback for doing the mapping, optional when a
+     *                              handle is specified.  The callback will be
+     *                              invoked holding only the PDM lock.  The device
+     *                              lock will _not_ be taken (due to lock order).
      */
-    DECLR3CALLBACKMEMBER(int, pfnPCIIORegionRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
-                                                      PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback));
+    DECLR3CALLBACKMEMBER(int, pfnPCIIORegionRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                      RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, uint32_t fFlags,
+                                                      uint64_t hHandle, PFNPCIIOREGIONMAP pfnCallback));
 
     /**
      * Register PCI configuration space read/write callbacks.
@@ -5117,7 +5148,7 @@ typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
  */
 typedef struct PDMDEVINSR3
 {
-    /** Structure version. PDM_DEVINS_VERSION defines the current version. */
+    /** Structure version. PDM_DEVINSR3_VERSION defines the current version. */
     uint32_t                        u32Version;
     /** Device instance number. */
     uint32_t                        iInstance;
@@ -5205,7 +5236,7 @@ typedef struct PDMDEVINSR3
 } PDMDEVINSR3;
 
 /** Current PDMDEVINSR3 version number. */
-#define PDM_DEVINSR3_VERSION        PDM_VERSION_MAKE(0xff82, 3, 0)
+#define PDM_DEVINSR3_VERSION        PDM_VERSION_MAKE(0xff82, 4, 0)
 
 /** Converts a pointer to the PDMDEVINSR3::IBase to a pointer to PDMDEVINS. */
 #define PDMIBASE_2_PDMDEV(pInterface) ( (PPDMDEVINS)((char *)(pInterface) - RT_UOFFSETOF(PDMDEVINS, IBase)) )
@@ -5283,7 +5314,7 @@ typedef struct PDMDEVINSR0
 } PDMDEVINSR0;
 
 /** Current PDMDEVINSR0 version number. */
-#define PDM_DEVINSR0_VERSION        PDM_VERSION_MAKE(0xff83, 3, 0)
+#define PDM_DEVINSR0_VERSION        PDM_VERSION_MAKE(0xff83, 4, 0)
 
 
 /**
@@ -5343,7 +5374,7 @@ typedef struct PDMDEVINSRC
 } PDMDEVINSRC;
 
 /** Current PDMDEVINSR0 version number. */
-#define PDM_DEVINSRC_VERSION        PDM_VERSION_MAKE(0xff84, 3, 0)
+#define PDM_DEVINSRC_VERSION        PDM_VERSION_MAKE(0xff84, 4, 0)
 
 
 /** @def PDM_DEVINS_VERSION
@@ -5929,9 +5960,9 @@ DECLINLINE(int) PDMDevHlpSSMRegister(PPDMDEVINS pDevIns, uint32_t uVersion, size
                                      PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVLOADEXEC pfnLoadExec)
 {
     return pDevIns->pHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, NULL /*pszBefore*/,
-                                              NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/,  NULL /*pfnLiveDone*/,
-                                              NULL /*pfnSavePrep*/, pfnSaveExec,           NULL /*pfnSaveDone*/,
-                                              NULL /*pfnLoadPrep*/, pfnLoadExec,           NULL /*pfnLoadDone*/);
+                                           NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/,  NULL /*pfnLiveDone*/,
+                                           NULL /*pfnSavePrep*/, pfnSaveExec,           NULL /*pfnSaveDone*/,
+                                           NULL /*pfnLoadPrep*/, pfnLoadExec,           NULL /*pfnLoadDone*/);
 }
 
 /**
@@ -5950,9 +5981,9 @@ DECLINLINE(int) PDMDevHlpSSMRegister3(PPDMDEVINS pDevIns, uint32_t uVersion, siz
                                       PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVLOADEXEC pfnLoadExec)
 {
     return pDevIns->pHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, NULL /*pszBefore*/,
-                                              NULL /*pfnLivePrep*/, pfnLiveExec,  NULL /*pfnLiveDone*/,
-                                              NULL /*pfnSavePrep*/, pfnSaveExec,  NULL /*pfnSaveDone*/,
-                                              NULL /*pfnLoadPrep*/, pfnLoadExec,  NULL /*pfnLoadDone*/);
+                                           NULL /*pfnLivePrep*/, pfnLiveExec,  NULL /*pfnLiveDone*/,
+                                           NULL /*pfnSavePrep*/, pfnSaveExec,  NULL /*pfnSaveDone*/,
+                                           NULL /*pfnLoadPrep*/, pfnLoadExec,  NULL /*pfnLoadDone*/);
 }
 
 /**
@@ -6434,34 +6465,6 @@ DECLINLINE(int) PDMDevHlpPCIRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, u
 }
 
 /**
- * Registers a I/O region (memory mapped or I/O ports) for the default PCI
- * device.
- *
- * @returns VBox status code.
- * @param   pDevIns             The device instance.
- * @param   iRegion             The region number.
- * @param   cbRegion            Size of the region.
- * @param   enmType             PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
- * @param   pfnCallback         Callback for doing the mapping.
- * @remarks The callback will be invoked holding the PDM lock. The device lock
- *          is NOT take because that is very likely be a lock order violation.
- */
-DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, RTGCPHYS cbRegion,
-                                             PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
-{
-    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType, pfnCallback);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnPCIIORegionRegister
- */
-DECLINLINE(int) PDMDevHlpPCIIORegionRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, int iRegion, RTGCPHYS cbRegion,
-                                               PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
-{
-    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iRegion, cbRegion, enmType, pfnCallback);
-}
-
-/**
  * Initialize MSI emulation support for the first PCI device.
  *
  * @returns VBox status code.
@@ -6480,6 +6483,80 @@ DECLINLINE(int) PDMDevHlpPCIRegisterMsiEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 {
     return pDevIns->pHlpR3->pfnPCIRegisterMsi(pDevIns, pPciDev, pMsiReg);
 }
+
+/**
+ * Registers a I/O region (memory mapped or I/O ports) for the default PCI
+ * device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The device instance.
+ * @param   iRegion             The region number.
+ * @param   cbRegion            Size of the region.
+ * @param   enmType             PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
+ * @param   pfnCallback         Callback for doing the mapping.
+ * @remarks The callback will be invoked holding the PDM lock. The device lock
+ *          is NOT take because that is very likely be a lock order violation.
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+                                             PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
+{
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType,
+                                                   PDMPCIDEV_IORGN_F_NO_HANDLE, UINT64_MAX, pfnCallback);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIIORegionRegister
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
+                                               PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
+{
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iRegion, cbRegion, enmType,
+                                                   PDMPCIDEV_IORGN_F_NO_HANDLE, UINT64_MAX, pfnCallback);
+}
+
+/**
+ * Registers a I/O port region for the default PCI device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   iRegion         The region number.
+ * @param   cbRegion        Size of the region.
+ * @param   hIoPorts        Handle to the I/O port region.
+ * @param   pfnCallback     Callback for doing the mapping, optional.  The
+ *                          callback will be invoked holding only the PDM lock.
+ *                          The device lock will _not_ be taken (due to lock
+ *                          order).
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIo(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+                                               IOMIOPORTHANDLE hIoPorts, PFNPCIIOREGIONMAP pfnCallback)
+{
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, PCI_ADDRESS_SPACE_IO,
+                                                   PDMPCIDEV_IORGN_F_IOPORT_HANDLE, hIoPorts, pfnCallback);
+}
+
+/**
+ * Registers an MMIO port region for the default PCI device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   iRegion         The region number.
+ * @param   cbRegion        Size of the region.
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   hMmioRegion     Handle to the MMIO region.
+ * @param   pfnCallback     Callback for doing the mapping, optional.  The
+ *                          callback will be invoked holding only the PDM lock.
+ *                          The device lock will _not_ be taken (due to lock
+ *                          order).
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmio(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion, PCIADDRESSSPACE enmType,
+                                                 IOMMMIOHANDLE hMmioRegion, PFNPCIIOREGIONMAP pfnCallback)
+{
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType,
+                                                   PDMPCIDEV_IORGN_F_MMIO_HANDLE, hMmioRegion, pfnCallback);
+}
+
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPCIInterceptConfigAccesses

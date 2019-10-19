@@ -124,9 +124,9 @@ static void iomR3IoPortDeregStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry, unsigned
     char   szPrefix[80];
     size_t cchPrefix;
     if (pRegEntry->cPorts > 1)
-        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewPorts/%04x-%04x/", uPort, uPort + pRegEntry->cPorts - 1);
+        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewPorts/%04x-%04x", uPort, uPort + pRegEntry->cPorts - 1);
     else
-        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewPorts/%04x/", uPort);
+        cchPrefix = RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewPorts/%04x", uPort);
     STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
 }
 
@@ -522,6 +522,24 @@ VMMR3_INT_DECL(int)  IOMR3IoPortUnmap(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHAND
 
     IOM_UNLOCK_EXCL(pVM);
     return rc;
+}
+
+
+/**
+ * Validates @a hIoPorts, making sure it belongs to @a pDevIns.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The device which allegedly owns @a hIoPorts.
+ * @param   hIoPorts    The handle to validate.
+ */
+VMMR3_INT_DECL(int)  IOMR3IoPortValidateHandle(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
+{
+    AssertPtrReturn(pDevIns, VERR_INVALID_HANDLE);
+    AssertReturn(hIoPorts < RT_MIN(pVM->iom.s.cIoPortRegs, pVM->iom.s.cIoPortAlloc), VERR_IOM_INVALID_IOPORT_HANDLE);
+    PIOMIOPORTENTRYR3 const pRegEntry = &pVM->iom.s.paIoPortRegs[hIoPorts];
+    AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_IOM_INVALID_IOPORT_HANDLE);
+    return VINF_SUCCESS;
 }
 
 

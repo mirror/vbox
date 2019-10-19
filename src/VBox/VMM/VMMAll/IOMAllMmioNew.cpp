@@ -700,6 +700,7 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
 }
 
 
+#ifndef IN_RING3
 /**
  * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
  *      \#PF access handler callback for MMIO pages.}
@@ -709,21 +710,23 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
 DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore,
                                              RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
 {
-    LogFlow(("iomMmioPfHandler: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
+    STAM_COUNTER_INC(&pVM->iom.s.StatMmioPfHandlerNew);
+    LogFlow(("iomMmioPfHandlerNew: GCPhys=%RGp uErr=%#x pvFault=%RGv rip=%RGv\n",
              GCPhysFault, (uint32_t)uErrorCode, pvFault, (RTGCPTR)pCtxCore->rip));
     RT_NOREF(pvFault, pCtxCore);
 
     /* Translate the MMIO handle to a registration entry for the current context. */
     AssertReturn((uintptr_t)pvUser < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
-#ifdef IN_RING0
+# ifdef IN_RING0
     AssertReturn((uintptr_t)pvUser < pVM->iomr0.s.cMmioAlloc, VERR_IOM_INVALID_MMIO_HANDLE);
     CTX_SUFF(PIOMMMIOENTRY) pRegEntry = &pVM->iomr0.s.paMmioRegs[(uintptr_t)pvUser];
-#else
+# else
     CTX_SUFF(PIOMMMIOENTRY) pRegEntry = &pVM->iom.s.paMmioRegs[(uintptr_t)pvUser];
-#endif
+# endif
 
     return iomMmioCommonPfHandlerNew(pVM, pVCpu, (uint32_t)uErrorCode, GCPhysFault, pRegEntry);
 }
+#endif /* !IN_RING3 */
 
 
 #ifdef IN_RING0
@@ -738,8 +741,10 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT
  * @param   uErrorCode  CPU Error code.
  * @param   GCPhysFault The GC physical address.
  */
-VMM_INT_DECL(VBOXSTRICTRC) IOMMmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, RTGCPHYS GCPhysFault)
+VMM_INT_DECL(VBOXSTRICTRC) IOMMmioPhysHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, RTGCPHYS GCPhysFault)
 {
+    STAM_COUNTER_INC(&pVM->iom.s.StatMmioPhysHandlerNew);
+
     /*
      * We don't have a range here, so look it up before calling the common function.
      */
@@ -792,7 +797,8 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
                                                  size_t cbBuf, PGMACCESSTYPE enmAccessType, PGMACCESSORIGIN enmOrigin, void *pvUser)
 {
     STAM_PROFILE_START(UnusedMacroArg, Prf);
-    STAM_COUNTER_INC(&pVM->iom.s.CTX_SUFF(StatMmioHandler));
+    STAM_COUNTER_INC(&pVM->iom.s.CTX_SUFF(StatMmioHandlerNew));
+    Log4(("iomMmioHandlerNew: GCPhysFault=%RGp cbBuf=%#x enmAccessType=%d enmOrigin=%d pvUser=%p\n", GCPhysFault, cbBuf, enmAccessType, enmOrigin, pvUser));
 
     Assert(enmAccessType == PGMACCESSTYPE_READ || enmAccessType == PGMACCESSTYPE_WRITE);
     AssertMsg(cbBuf >= 1, ("%zu\n", cbBuf));
@@ -854,6 +860,12 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
     { /* likely */ }
     else
     {
+        Log4(("iomMmioHandlerNew: to ring-3: to-big=%RTbool zero-size=%RTbool no-callback=%RTbool pDevIns=%p hRegion=%p\n",
+              !(cbBuf <= sizeof(pVCpu->iom.s.PendingMmioWrite.abValue)), !(pRegEntry->cbRegion != 0),
+              !(  enmAccessType == PGMACCESSTYPE_READ
+                ? pRegEntry->pfnReadCallback  != NULL || pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].pfnReadCallback == NULL
+                : pRegEntry->pfnWriteCallback != NULL || pVM->iomr0.s.paMmioRing3Regs[(uintptr_t)pvUser].pfnWriteCallback == NULL),
+              pDevIns, pvUser));
         STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pStats->ReadRZToR3 : &pStats->WriteRZToR3);
         STAM_COUNTER_INC(enmAccessType == PGMACCESSTYPE_READ ? &pVM->iom.s.StatRZMMIOReadsToR3 : &pVM->iom.s.StatRZMMIOWritesToR3);
         return rcToRing3;
@@ -870,7 +882,7 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iomMmioHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGC
 #else
     RTGCPHYS const GCPhysMapping = pRegEntry->GCPhysMapping;
 #endif
-    RTGCPHYS const offRegion     = GCPhysMapping - GCPhysFault;
+    RTGCPHYS const offRegion     = GCPhysFault - GCPhysMapping;
     if (RT_LIKELY(offRegion < pRegEntry->cbRegion && GCPhysMapping != NIL_RTGCPHYS))
     { /* likely */ }
     else

@@ -97,8 +97,8 @@ void iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry)
  */
 static void iomR3MmioDeregStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry, RTGCPHYS GCPhys)
 {
-    char   szPrefix[80];
-    RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewMmio/%RGp-%RGp/", GCPhys, GCPhys + pRegEntry->cbRegion - 1);
+    char szPrefix[80];
+    RTStrPrintf(szPrefix, sizeof(szPrefix), "/IOM/NewMmio/%RGp-%RGp", GCPhys, GCPhys + pRegEntry->cbRegion - 1);
     STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
 }
 
@@ -122,17 +122,21 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
 
     AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
 
-    AssertMsgReturn(cbRegion > 0 && !(cbRegion & PAGE_OFFSET_MASK), ("cbRegion=%RGp\n", cbRegion), VERR_OUT_OF_RANGE);
+    AssertMsgReturn(cbRegion > 0 && cbRegion <= MM_MMIO_64_MAX, ("cbRegion=%#RGp (max %#RGp)\n", cbRegion, MM_MMIO_64_MAX),
+                    VERR_OUT_OF_RANGE);
+    AssertMsgReturn(!(cbRegion & PAGE_OFFSET_MASK), ("cbRegion=%#RGp\n", cbRegion), VERR_UNSUPPORTED_ALIGNMENT);
+
     AssertMsgReturn(   !(fFlags & ~IOMMMIO_FLAGS_VALID_MASK)
                     && (fFlags & IOMMMIO_FLAGS_READ_MODE)  <= IOMMMIO_FLAGS_READ_DWORD_QWORD
                     && (fFlags & IOMMMIO_FLAGS_WRITE_MODE) <= IOMMMIO_FLAGS_WRITE_ONLY_DWORD_QWORD,
                     ("%#x\n", fFlags),
                     VERR_INVALID_FLAGS);
 
-    AssertReturn(pfnWrite || pfnRead || pfnFill, VERR_INVALID_PARAMETER);
+    AssertReturn(pfnWrite || pfnRead, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfnWrite, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnRead, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pfnFill, VERR_INVALID_POINTER);
+
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(*pszDesc != '\0', VERR_INVALID_POINTER);
     AssertReturn(strlen(pszDesc) < 128, VERR_INVALID_POINTER);
@@ -202,7 +206,7 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
     AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_IOM_INVALID_MMIO_HANDLE);
 
     RTGCPHYS const cbRegion = pRegEntry->cbRegion;
-    AssertMsgReturn(cbRegion > 0 && cbRegion <= _1T, ("cbRegion=%RGp\n", cbRegion), VERR_IOM_MMIO_IPE_1);
+    AssertMsgReturn(cbRegion > 0 && cbRegion <= MM_MMIO_64_MAX, ("cbRegion=%RGp\n", cbRegion), VERR_IOM_MMIO_IPE_1);
     RTGCPHYS const GCPhysLast = GCPhys + cbRegion - 1;
 
     AssertLogRelMsgReturn(!(GCPhys & PAGE_OFFSET_MASK),
@@ -287,7 +291,15 @@ VMMR3_INT_DECL(int)  IOMR3MmioMap(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRe
             }
         }
         else
+        {
+            /* First entry in the lookup table: */
+            ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, GCPhys);
+            rc = PGMR3PhysMMIORegister(pVM, GCPhys, cbRegion, pVM->iom.s.hNewMmioHandlerType,
+                                       (void *)(uintptr_t)hRegion, hRegion, hRegion, pRegEntry->pszDesc);
+            AssertRCReturnStmt(rc, ASMAtomicWriteU64(&pRegEntry->GCPhysMapping, NIL_RTGCPHYS); IOM_UNLOCK_EXCL(pVM), rc);
+
             pEntry = paEntries;
+        }
 
         /*
          * Fill in the entry and bump the table size.
@@ -450,6 +462,24 @@ VMMR3_INT_DECL(int)  IOMR3MmioReduce(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE 
 {
     RT_NOREF(pVM, pDevIns, hRegion, cbRegion);
     return VERR_NOT_IMPLEMENTED;
+}
+
+
+/**
+ * Validates @a hRegion, making sure it belongs to @a pDevIns.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The device which allegedly owns @a hRegion.
+ * @param   hRegion     The handle to validate.
+ */
+VMMR3_INT_DECL(int)  IOMR3MmioValidateHandle(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+{
+    AssertPtrReturn(pDevIns, VERR_INVALID_HANDLE);
+    AssertReturn(hRegion < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), VERR_IOM_INVALID_MMIO_HANDLE);
+    PIOMMMIOENTRYR3 const pRegEntry = &pVM->iom.s.paMmioRegs[hRegion];
+    AssertReturn(pRegEntry->pDevIns == pDevIns, VERR_IOM_INVALID_MMIO_HANDLE);
+    return VINF_SUCCESS;
 }
 
 

@@ -750,12 +750,12 @@ typedef struct IOM
     STAMCOUNTER                     StatRZMMIOWritesToR3;
     STAMCOUNTER                     StatRZMMIOCommitsToR3;
     STAMCOUNTER                     StatRZMMIODevLockContention;
-#if 0
-    STAMCOUNTER                     StatRZMMIO1Byte;
-    STAMCOUNTER                     StatRZMMIO2Bytes;
-    STAMCOUNTER                     StatRZMMIO4Bytes;
-    STAMCOUNTER                     StatRZMMIO8Bytes;
-#endif
+
+    STAMCOUNTER                     StatMmioPfHandlerNew;
+    STAMCOUNTER                     StatMmioPhysHandlerNew;
+    STAMCOUNTER                     StatMmioHandlerNewR3;
+    STAMCOUNTER                     StatMmioHandlerNewR0;
+
     STAMCOUNTER                     StatR3MMIOHandler;
 
     STAMCOUNTER                     StatMmioHandlerR3;
