@@ -6505,7 +6505,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, uint32_t iRegio
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnPCIIORegionRegister
+ * @sa PDMDEVHLPR3::pfnPCIIORegionRegister
  */
 DECLINLINE(int) PDMDevHlpPCIIORegionRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
                                                PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
