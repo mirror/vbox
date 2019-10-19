@@ -586,6 +586,7 @@ DECLINLINE(VBOXSTRICTRC) iomMmioDoRead(PVMCC pVM, CTX_SUFF(PIOMMMIOENTRY) pRegEn
 }
 
 #ifndef IN_RING3
+
 /**
  * Checks if we can handle an MMIO \#PF in R0/RC.
  */
@@ -609,7 +610,7 @@ DECLINLINE(bool) iomMmioCanHandlePfInRZ(PVMCC pVM, uint32_t uErrorCode, CTX_SUFF
     }
     return false;
 }
-#endif
+
 
 /**
  * Common worker for the \#PF handler and IOMMMIOPhysHandler (APIC+VT-x).
@@ -700,7 +701,6 @@ DECLINLINE(VBOXSTRICTRC) iomMmioCommonPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, ui
 }
 
 
-#ifndef IN_RING3
 /**
  * @callback_method_impl{FNPGMRZPHYSPFHANDLER,
  *      \#PF access handler callback for MMIO pages.}
@@ -726,8 +726,8 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT
 
     return iomMmioCommonPfHandlerNew(pVM, pVCpu, (uint32_t)uErrorCode, GCPhysFault, pRegEntry);
 }
-#endif /* !IN_RING3 */
 
+#endif /* !IN_RING3 */
 
 #ifdef IN_RING0
 /**
