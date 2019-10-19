@@ -276,6 +276,10 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_IOBUFMGMT,
     /** IOM group. */
     LOG_GROUP_IOM,
+    /** IOM group, I/O port part. */
+    LOG_GROUP_IOM_IOPORT,
+    /** IOM group, MMIO part. */
+    LOG_GROUP_IOM_MMIO,
     /** XPCOM IPC group. */
     LOG_GROUP_IPC,
     /** lwIP group. */
@@ -856,6 +860,8 @@ typedef enum VBOXLOGGROUP
     "IEM", \
     "IOBUFMGMT", \
     "IOM", \
+    "IOM_IOPORT", \
+    "IOM_MMIO", \
     "IPC", \
     "LWIP", \
     "LWIP_API_LIB", \
