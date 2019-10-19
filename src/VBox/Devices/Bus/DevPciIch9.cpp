@@ -2726,7 +2726,6 @@ static VBOXSTRICTRC devpciR3UpdateMappings(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
                 if (uNew != INVALID_PCI_ADDRESS)
                 {
                     /* The callout is optional with new style devices: */
-                    int rc;
                     if (pRegion->pfnMap)
                     {
                         rc = pRegion->pfnMap(pPciDev->Int.s.pDevInsR3, pPciDev, iRegion,
