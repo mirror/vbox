@@ -1249,6 +1249,9 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
 #else /* !IN_RING3 */
 
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
 static DECLCALLBACK(int)  rtcRZConstruct(PPDMDEVINS pDevIns)
 {
     PRTCSTATE   pThis   = PDMINS_2_DATA(pDevIns, PRTCSTATE);
