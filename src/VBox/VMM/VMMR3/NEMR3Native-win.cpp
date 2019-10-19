@@ -1286,6 +1286,8 @@ int nemR3NativeInit(PVM pVM, bool fFallback, bool fForced)
                                               "/NEM/R0Stats/cPagesInUse");
                     }
                 }
+                else
+                    rc = RTErrInfoSetF(pErrInfo, rc, "VMMR0_DO_NEM_INIT_VM failed: %Rrc", rc);
             }
         }
     }
