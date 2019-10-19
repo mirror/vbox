@@ -1078,10 +1078,15 @@ struct E1kState_st
     /** The scatter / gather buffer used for the current outgoing packet - RC. */
     RCPTRTYPE(PPDMSCATTERGATHER) pTxSgRC;
     RTRCPTR                 RCPtrAlignment;
-
 #if HC_ARCH_BITS != 32
     uint32_t                Alignment1;
 #endif
+
+    /** Handle to PCI region \#0, the MMIO region. */
+    IOMIOPORTHANDLE         hMmioRegion;
+    /** Handle to PCI region \#2, the I/O ports. */
+    IOMIOPORTHANDLE         hIoPorts;
+
     PDMCRITSECT cs;                  /**< Critical section - what is it protecting? */
     PDMCRITSECT csRx;                                     /**< RX Critical section. */
 #ifdef E1K_WITH_TX_CS
@@ -6001,15 +6006,15 @@ static int e1kRegReadUnaligned(PE1KSTATE pThis, uint32_t offReg, void *pv, uint3
  * @param   pu32        Where to store the result.
  * @thread  EMT
  */
-static int e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32)
+static VBOXSTRICTRC e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32)
 {
     Assert(!(offReg & 3));
 
     /*
      * Lookup the register and check that it's readable.
      */
-    int rc     = VINF_SUCCESS;
-    int idxReg = e1kRegLookup(offReg);
+    VBOXSTRICTRC rc     = VINF_SUCCESS;
+    int          idxReg = e1kRegLookup(offReg);
     if (RT_LIKELY(idxReg != -1))
     {
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
@@ -6053,10 +6058,10 @@ static int e1kRegReadAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t *pu32
  * @param   u32Value    The value to write.
  * @thread  EMT
  */
-static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32Value)
+static VBOXSTRICTRC e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32Value)
 {
-    int         rc    = VINF_SUCCESS;
-    int         index = e1kRegLookup(offReg);
+    VBOXSTRICTRC rc    = VINF_SUCCESS;
+    int          index = e1kRegLookup(offReg);
     if (RT_LIKELY(index != -1))
     {
         RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia because of port I/O. */
@@ -6093,58 +6098,55 @@ static int e1kRegWriteAlignedU32(PE1KSTATE pThis, uint32_t offReg, uint32_t u32V
 /* -=-=-=-=- MMIO and I/O Port Callbacks -=-=-=-=- */
 
 /**
- * @callback_method_impl{FNIOMMMIOREAD}
+ * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-PDMBOTHCBDECL(int) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, uint32_t cb)
 {
     RT_NOREF2(pvUser, cb);
     PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIORead), a);
 
-    uint32_t  offReg = GCPhysAddr - pThis->addrMMReg;
-    Assert(offReg < E1K_MM_SIZE);
+    Assert(off < E1K_MM_SIZE);
     Assert(cb == 4);
-    Assert(!(GCPhysAddr & 3));
+    Assert(!(off & 3));
 
-    int rc = e1kRegReadAlignedU32(pThis, offReg, (uint32_t *)pv);
+    VBOXSTRICTRC rcStrict = e1kRegReadAlignedU32(pThis, (uint32_t)off, (uint32_t *)pv);
 
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIORead), a);
-    return rc;
+    return rcStrict;
 }
 
 /**
- * @callback_method_impl{FNIOMMMIOWRITE}
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, uint32_t cb)
 {
     RT_NOREF2(pvUser, cb);
     PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
 
-    uint32_t offReg = GCPhysAddr - pThis->addrMMReg;
-    Assert(offReg < E1K_MM_SIZE);
+    Assert(off < E1K_MM_SIZE);
     Assert(cb == 4);
-    Assert(!(GCPhysAddr & 3));
+    Assert(!(off & 3));
 
-    int rc = e1kRegWriteAlignedU32(pThis, offReg, *(uint32_t const *)pv);
+    VBOXSTRICTRC rcStrict = e1kRegWriteAlignedU32(pThis, (uint32_t)off, *(uint32_t const *)pv);
 
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
-    return rc;
+    return rcStrict;
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PE1KSTATE   pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    int         rc;
+    PE1KSTATE    pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    VBOXSTRICTRC rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
     RT_NOREF_PV(pvUser);
 
-    uPort -= pThis->IOPortBase;
     if (RT_LIKELY(cb == 4))
-        switch (uPort)
+        switch (offPort)
         {
             case 0x00: /* IOADDR */
                 *pu32 = pThis->uSelectedReg;
@@ -6163,14 +6165,14 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
                 break;
 
             default:
-                E1kLog(("%s e1kIOPortIn: invalid port %#010x\n", pThis->szPrf, uPort));
+                E1kLog(("%s e1kIOPortIn: invalid port %#010x\n", pThis->szPrf, offPort));
                 //rc = VERR_IOM_IOPORT_UNUSED; /* Why not? */
                 rc = VINF_SUCCESS;
         }
     else
     {
-        E1kLog(("%s e1kIOPortIn: invalid op size: uPort=%RTiop cb=%08x", pThis->szPrf, uPort, cb));
-        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s e1kIOPortIn: invalid op size: uPort=%RTiop cb=%08x\n", pThis->szPrf, uPort, cb);
+        E1kLog(("%s e1kIOPortIn: invalid op size: offPort=%RTiop cb=%08x", pThis->szPrf, offPort, cb));
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s e1kIOPortIn: invalid op size: offPort=%RTiop cb=%08x\n", pThis->szPrf, offPort, cb);
     }
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIORead), a);
     return rc;
@@ -6178,20 +6180,19 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort,
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PE1KSTATE   pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    int         rc;
+    PE1KSTATE    pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    VBOXSTRICTRC rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     RT_NOREF_PV(pvUser);
 
-    E1kLog2(("%s e1kIOPortOut: uPort=%RTiop value=%08x\n", pThis->szPrf, uPort, u32));
+    E1kLog2(("%s e1kIOPortOut: offPort=%RTiop value=%08x\n", pThis->szPrf, offPort, u32));
     if (RT_LIKELY(cb == 4))
     {
-        uPort -= pThis->IOPortBase;
-        switch (uPort)
+        switch (offPort)
         {
             case 0x00: /* IOADDR */
                 pThis->uSelectedReg = u32;
@@ -6213,14 +6214,14 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort
                 break;
 
             default:
-                E1kLog(("%s e1kIOPortOut: invalid port %#010x\n", pThis->szPrf, uPort));
-                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "invalid port %#010x\n", uPort);
+                E1kLog(("%s e1kIOPortOut: invalid port %#010x\n", pThis->szPrf, offPort));
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "invalid port %#010x\n", offPort);
         }
     }
     else
     {
-        E1kLog(("%s e1kIOPortOut: invalid op size: uPort=%RTiop cb=%08x\n", pThis->szPrf, uPort, cb));
-        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s: invalid op size: uPort=%RTiop cb=%#x\n", pThis->szPrf, uPort, cb);
+        E1kLog(("%s e1kIOPortOut: invalid op size: offPort=%RTiop cb=%08x\n", pThis->szPrf, offPort, cb));
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s: invalid op size: offPort=%RTiop cb=%#x\n", pThis->szPrf, offPort, cb);
     }
 
     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatIOWrite), a);
@@ -6284,67 +6285,34 @@ static void e1kDumpState(PE1KSTATE pThis)
 
 /**
  * @callback_method_impl{FNPCIIOREGIONMAP}
+ *
+ * @todo Can remove this one later, it's realy just here for taking down
+ *       addresses for e1kInfo(), an alignment assertion and sentimentality.
  */
-static DECLCALLBACK(int) e1kMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
+static DECLCALLBACK(int) e1kR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE *);
-    RT_NOREF(pPciDev, iRegion);
+    E1kLog(("%s e1kR3Map: iRegion=%u GCPhysAddress=%RGp\n", pThis->szPrf, iRegion, GCPhysAddress));
+    RT_NOREF(pPciDev, iRegion, cb);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
-    int rc;
     switch (enmType)
     {
         case PCI_ADDRESS_SPACE_IO:
             pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
-            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, cb, NULL /*pvUser*/,
-                                         e1kIOPortOut, e1kIOPortIn, NULL, NULL, "E1000");
-            if (pThis->fR0Enabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, cb, NIL_RTR0PTR /*pvUser*/,
-                                             "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
-            if (pThis->fRCEnabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, cb, NIL_RTRCPTR /*pvUser*/,
-                                               "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
             break;
 
         case PCI_ADDRESS_SPACE_MEM:
-            /*
-             * From the spec:
-             *    For registers that should be accessed as 32-bit double words,
-             *    partial writes (less than a 32-bit double word) is ignored.
-             *    Partial reads return all 32 bits of data regardless of the
-             *    byte enables.
-             */
-#ifdef E1K_WITH_PREREG_MMIO
             pThis->addrMMReg = GCPhysAddress;
-            if (GCPhysAddress == NIL_RTGCPHYS)
-                rc = VINF_SUCCESS;
-            else
-            {
-                Assert(!(GCPhysAddress & 7));
-                rc = PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
-            }
-#else
-            pThis->addrMMReg = GCPhysAddress; Assert(!(GCPhysAddress & 7));
-            rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                       IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD,
-                                       e1kMMIOWrite, e1kMMIORead, "E1000");
-            if (pThis->fR0Enabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
-                                             "e1kMMIOWrite", "e1kMMIORead");
-            if (pThis->fRCEnabled && RT_SUCCESS(rc))
-                rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
-                                             "e1kMMIOWrite", "e1kMMIORead");
-#endif
+            Assert(!(GCPhysAddress & 7) || GCPhysAddress == NIL_RTGCPHYS);
             break;
 
         default:
             /* We should never get here */
-            AssertMsgFailed(("Invalid PCI address space param in map callback"));
-            rc = VERR_INTERNAL_ERROR;
-            break;
+            AssertMsgFailedReturn(("Invalid PCI address space param in map callback"), VERR_INTERNAL_ERROR);
     }
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -7249,7 +7217,7 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     pHlp->pfnPrintf(pHlp, "E1000 #%d: port=%RTiop mmio=%RGp mac-cfg=%RTmac %s%s%s\n",
                     pDevIns->iInstance, pThis->IOPortBase, pThis->addrMMReg,
                     &pThis->macConfigured, g_aChips[pThis->eChip].pcszName,
-                    pThis->fRCEnabled ? " GC" : "", pThis->fR0Enabled ? " R0" : "");
+                    pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
 
     e1kCsEnter(pThis, VERR_INTERNAL_ERROR); /* Not sure why but PCNet does it */
 
@@ -7606,7 +7574,7 @@ static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
  * @param   pci         Reference to PCI device structure.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kConfigurePciDev(PPDMPCIDEV pPciDev, E1KCHIP eChip)
+static void e1kR3ConfigurePciDev(PPDMPCIDEV pPciDev, E1KCHIP eChip)
 {
     Assert(eChip < RT_ELEMENTS(g_aChips));
     /* Configure PCI Device, assume 32-bit mode ******************************/
@@ -7730,16 +7698,22 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0"
-                                    "LineSpeed\0" "GCEnabled\0" "R0Enabled\0"
-                                    "ItrEnabled\0" "ItrRxEnabled\0"
-                                    "EthernetCRC\0" "GSOEnabled\0" "LinkUpDelay\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("Invalid configuration for E1000 device"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
+                                  "MAC|"
+                                  "CableConnected|"
+                                  "AdapterType|"
+                                  "LineSpeed|"
+                                  "ItrEnabled|"
+                                  "ItrRxEnabled|"
+                                  "EthernetCRC|"
+                                  "GSOEnabled|"
+                                  "LinkUpDelay", "");
 
     /** @todo LineSpeed unused! */
 
-    /* Get config params */
+    /*
+     * Get config params
+     */
     rc = CFGMR3QueryBytes(pCfg, "MAC", pThis->macConfigured.au8, sizeof(pThis->macConfigured.au8));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
@@ -7753,15 +7727,6 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'AdapterType'"));
     Assert(pThis->eChip <= E1K_CHIP_82545EM);
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fRCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the value of 'GCEnabled'"));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to get the value of 'R0Enabled'"));
 
     rc = CFGMR3QueryBoolDef(pCfg, "EthernetCRC", &pThis->fEthernetCRC, true);
     if (RT_FAILURE(rc))
@@ -7798,15 +7763,19 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     else if (pThis->cMsLinkUpDelay == 0)
         LogRel(("%s: WARNING! Link up delay is disabled!\n", pThis->szPrf));
 
-    LogRel(("%s: Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s Itr=%s ItrRx=%s TID=%s R0=%s GC=%s\n", pThis->szPrf,
+    LogRel(("%s: Chip=%s LinkUpDelay=%ums EthernetCRC=%s GSO=%s Itr=%s ItrRx=%s TID=%s R0=%s RC=%s\n", pThis->szPrf,
             g_aChips[pThis->eChip].pcszName, pThis->cMsLinkUpDelay,
             pThis->fEthernetCRC ? "on" : "off",
             pThis->fGSOEnabled ? "enabled" : "disabled",
             pThis->fItrEnabled ? "enabled" : "disabled",
             pThis->fItrRxEnabled ? "enabled" : "disabled",
             pThis->fTidEnabled ? "enabled" : "disabled",
-            pThis->fR0Enabled ? "enabled" : "disabled",
-            pThis->fRCEnabled ? "enabled" : "disabled"));
+            pDevIns->fR0Enabled ? "enabled" : "disabled",
+            pDevIns->fRCEnabled ? "enabled" : "disabled"));
+
+    /*
+     * Initialize sub-components and register everything with the VMM.
+     */
 
     /* Initialize the EEPROM. */
     pThis->eeprom.init(pThis->macConfigured);
@@ -7819,31 +7788,26 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->cs, RT_SRC_POS, "E1000#%d", iInstance);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csRx, RT_SRC_POS, "E1000#%dRX", iInstance);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 #ifdef E1K_WITH_TX_CS
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csTx, RT_SRC_POS, "E1000#%dTX", iInstance);
-    if (RT_FAILURE(rc))
-        return rc;
-#endif /* E1K_WITH_TX_CS */
+    AssertRCReturn(rc, rc);
+#endif
 
     /* Saved state registration. */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, E1K_SAVEDSTATE_VERSION, sizeof(E1KSTATE), NULL,
                                 NULL,        e1kLiveExec, NULL,
                                 e1kSavePrep, e1kSaveExec, NULL,
                                 e1kLoadPrep, e1kLoadExec, e1kLoadDone);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /* Set PCI config registers and register ourselves with the PCI bus. */
     PDMPCIDEV_ASSERT_VALID(pDevIns, pDevIns->apPciDevs[0]);
-    e1kConfigurePciDev(pDevIns->apPciDevs[0], pThis->eChip);
+    e1kR3ConfigurePciDev(pDevIns->apPciDevs[0], pThis->eChip);
     rc = PDMDevHlpPCIRegister(pDevIns, pDevIns->apPciDevs[0]);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
 #ifdef E1K_WITH_MSI
     PDMMSIREG MsiReg;
@@ -7856,38 +7820,40 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRCReturn(rc, rc);
 #endif
 
+    /*
+     * Map our registers to memory space (region 0, see e1kR3ConfigurePciDev)
+     * From the spec (regarding flags):
+     *    For registers that should be accessed as 32-bit double words,
+     *    partial writes (less than a 32-bit double word) is ignored.
+     *    Partial reads return all 32 bits of data regardless of the
+     *    byte enables.
+     */
+    rc = PDMDevHlpMmioCreateEx(pDevIns, E1K_MM_SIZE, IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD,
+                               pDevIns->apPciDevs[0], 0 /*iPciRegion*/,
+                               e1kMMIOWrite, e1kMMIORead, NULL /*pfnFill*/, NULL /*pvUser*/, "E1000", &pThis->hMmioRegion);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpPCIIORegionRegisterMmio(pDevIns, 0, E1K_MM_SIZE, PCI_ADDRESS_SPACE_MEM, pThis->hMmioRegion, e1kR3Map);
+    AssertRCReturn(rc, rc);
 
-    /* Map our registers to memory space (region 0, see e1kConfigurePCI)*/
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, E1K_MM_SIZE, PCI_ADDRESS_SPACE_MEM, e1kMap);
-    if (RT_FAILURE(rc))
-        return rc;
-#ifdef E1K_WITH_PREREG_MMIO
-    rc = PDMDevHlpMMIOExPreRegister(pDevIns, 0, E1K_MM_SIZE, IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_ONLY_DWORD, "E1000",
-                                    NULL        /*pvUserR3*/, e1kMMIOWrite, e1kMMIORead, NULL /*pfnFillR3*/,
-                                    NIL_RTR0PTR /*pvUserR0*/, pThis->fR0Enabled ? "e1kMMIOWrite" : NULL,
-                                    pThis->fR0Enabled ? "e1kMMIORead" : NULL, NULL /*pszFillR0*/,
-                                    NIL_RTRCPTR /*pvUserRC*/, pThis->fRCEnabled ? "e1kMMIOWrite" : NULL,
-                                    pThis->fRCEnabled ? "e1kMMIORead" : NULL, NULL /*pszFillRC*/);
-    AssertLogRelRCReturn(rc, rc);
-#endif
-    /* Map our registers to IO space (region 2, see e1kConfigurePCI) */
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, E1K_IOPORT_SIZE, PCI_ADDRESS_SPACE_IO, e1kMap);
-    if (RT_FAILURE(rc))
-        return rc;
+    /* Map our registers to IO space (region 2, see e1kR3ConfigurePciDev) */
+    rc = PDMDevHlpIoPortCreate(pDevIns, E1K_IOPORT_SIZE, pDevIns->apPciDevs[0], 2 /*iPciRegion*/,
+                               e1kIOPortOut, e1kIOPortIn, NULL /*pvUser*/, "E1000", NULL /*paExtDescs*/, &pThis->hIoPorts);
+    AssertRCReturn(rc, rc);
+    rc = PDMDevHlpPCIIORegionRegisterIo(pDevIns, 2, E1K_IOPORT_SIZE, pThis->hIoPorts, e1kR3Map);
+    AssertRCReturn(rc, rc);
 
     /* Create transmit queue */
+/** @todo Convert queues to be accessed via handles. Create a ring-3 task thingy for 1 item queues. */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
                               e1kTxQueueConsumer, true, "E1000-Xmit", &pThis->pTxQueueR3);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     pThis->pTxQueueR0 = PDMQueueR0Ptr(pThis->pTxQueueR3);
     pThis->pTxQueueRC = PDMQueueRCPtr(pThis->pTxQueueR3);
 
     /* Create the RX notifier signaller. */
     rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
                               e1kCanRxQueueConsumer, true, "E1000-Rcv", &pThis->pCanRxQueueR3);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     pThis->pCanRxQueueR0 = PDMQueueR0Ptr(pThis->pCanRxQueueR3);
     pThis->pCanRxQueueRC = PDMQueueRCPtr(pThis->pCanRxQueueR3);
 
@@ -7896,8 +7862,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxDelayTimer, pThis,
                                 TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "E1000 Transmit Delay Timer", &pThis->pTXDTimerR3);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
     pThis->pTXDTimerR0 = TMTimerR0Ptr(pThis->pTXDTimerR3);
     pThis->pTXDTimerRC = TMTimerRCPtr(pThis->pTXDTimerR3);
     TMR3TimerSetCritSect(pThis->pTXDTimerR3, &pThis->csTx);
@@ -8107,7 +8072,27 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int)  e1kRZConstruct(PPDMDEVINS pDevIns)
+{
+    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    //PE1KSTATER0 pThisCC = PDMINS_2_DATA_CC(pDevIns, PRTCSTATECC);
+    //pThisCC->CTX_SUFF(pDevIns) = pDevIns;
+
+    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioRegion, e1kMMIOWrite, e1kMMIORead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, e1kIOPortOut, e1kIOPortIn, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -8154,7 +8139,7 @@ const PDMDEVREG g_DeviceE1000 =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           e1kRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -8167,7 +8152,7 @@ const PDMDEVREG g_DeviceE1000 =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           e1kRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
