@@ -178,6 +178,7 @@ ln -s VBox $RPM_BUILD_ROOT/usr/bin/VBoxAutostart
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxautostart
 ln -s VBox $RPM_BUILD_ROOT/usr/bin/vboxwebsrv
 ln -s /usr/lib/virtualbox/vbox-img $RPM_BUILD_ROOT/usr/bin/vbox-img
+ln -s /usr/lib/virtualbox/vboximg-mount $RPM_BUILD_ROOT/usr/bin/vboximg-mount
 ln -s /usr/share/virtualbox/src/vboxhost $RPM_BUILD_ROOT/usr/src/vboxhost-%VER%
 mv virtualbox.desktop $RPM_BUILD_ROOT/usr/share/applications/virtualbox.desktop
 mv VBox.png $RPM_BUILD_ROOT/usr/share/pixmaps/VBox.png

@@ -305,6 +305,7 @@ endif
 	    usr/bin/VBox                        usr/bin/vboxautostart \
 	    $(if $(NOWEBSVC),,usr/bin/VBox      usr/bin/vboxwebsrv) \
 	    $(if $(NOVBOXIMG),,usr/lib/virtualbox/vbox-img usr/bin/vbox-img) \
+	    $(if $(NOVBOXIMGMOUNT),,usr/lib/virtualbox/vboximg-mount usr/bin/vboximg-mount) \
 	    usr/share/virtualbox/src/vboxhost   usr/src/vboxhost-$(ver)
 	$(if $(NOMODS),,dh_installmodules)
 	sed -e 's|%VER%|$(debver)|g' \

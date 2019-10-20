@@ -331,6 +331,12 @@ if defined(VBOX_WITH_TESTCASES) || defined(VBOX_WITH_VBOX_IMG)
 	vbox-img
 endif
 
+# vboximg-mount
+if defined(VBOX_WITH_VBOXIMGMOUNT)
+  VBOX_LNX_STRIP_BIN += \
+	vboximg-mount
+endif
+
 # EFI firmware
 ifdef VBOX_WITH_EFIFW_PACKING
  VBOX_LNX_NO_STRIP += \

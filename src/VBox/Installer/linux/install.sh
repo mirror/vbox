@@ -122,6 +122,7 @@ check_previous() {
     check_binary "/usr/bin/VBoxAutostart" "$install_dir" &&
     check_binary "/usr/bin/vboxwebsrv" "$install_dir" &&
     check_binary "/usr/bin/vbox-img" "$install_dir" &&
+    check_binary "/usr/bin/vboximg-mount" "$install_dir" &&
     check_binary "/sbin/rcvboxdrv" "$install_dir"
 }
 
@@ -326,6 +327,7 @@ if [ "$ACTION" = "install" ]; then
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxAutostart
     ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/vboxwebsrv
     ln -sf $INSTALLATION_DIR/vbox-img /usr/bin/vbox-img
+    ln -sf $INSTALLATION_DIR/vboximg-mount /usr/bin/vboximg-mount
     ln -sf $INSTALLATION_DIR/VBox.png /usr/share/pixmaps/VBox.png
     if [ -f $INSTALLATION_DIR/VBoxDTrace ]; then
         ln -sf $INSTALLATION_DIR/VBox.sh /usr/bin/VBoxDTrace

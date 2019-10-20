@@ -852,7 +852,7 @@ endif
 # windows versions (only define when buildling win.x86).
 #VBOX_WITH_MORE_NT4_COMPAT_BINARIES = 1
 # Set this to enable building of the vboximg-mount FUSE mounting utility.
-if1of ($(KBUILD_TARGET), darwin)
+if1of ($(KBUILD_TARGET), darwin linux)
  VBOX_WITH_VBOXIMGMOUNT = 1
 endif
 # Set this to enable packaging the fuse related bits into our installer.

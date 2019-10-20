@@ -78,6 +78,7 @@ rm -f \
   /usr/bin/VBoxNetNAT \
   /usr/bin/vboxwebsrv \
   /usr/bin/vbox-img \
+  /usr/bin/vboximg-mount \
   /usr/bin/VBoxAddIF \
   /usr/bin/VBoxDeleteIf \
   /usr/bin/VBoxTunctl \
