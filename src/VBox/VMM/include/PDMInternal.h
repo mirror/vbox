@@ -35,6 +35,7 @@
 #endif
 #include <VBox/vmm/pdmblkcache.h>
 #include <VBox/vmm/pdmcommon.h>
+#include <VBox/vmm/pdmtask.h>
 #include <VBox/sup.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
