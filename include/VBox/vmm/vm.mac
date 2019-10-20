@@ -125,7 +125,7 @@ struc VM
     .trpm                   resb 5248
     .selm                   resb 768
     .mm                     resb 192
-    .pdm                    resb 1920
+    .pdm                    resb 6784
     .iom                    resb 1152
     .em                     resb 256
     .nem                    resb 128
@@ -137,7 +137,7 @@ struc VM
     .vm                     resb 32
     .cfgm                   resb 8
 
-    .abAlignment2           resb 2776 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
+    .abAlignment2           resb 2008 + 256 - RTR0PTR_CB * VMM_MAX_CPU_COUNT
 
     alignb RTR0PTR_CB * VMM_MAX_CPU_COUNT ; ASSUMES VMM_MAX_CPU_COUNT is a power of two.
     .apCpusR3               RTR3PTR_RES VMM_MAX_CPU_COUNT
