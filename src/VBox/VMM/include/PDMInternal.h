@@ -975,6 +975,78 @@ typedef struct PDMQUEUE
 /** @}  */
 
 
+/** @name PDM task structures.
+ * @{ */
+
+/**
+ * A asynchronous user mode task.
+ */
+typedef struct PDMTASK
+{
+    /** Task owner type. */
+    PDMTASKTYPE volatile        enmType;
+    /** Queue flags. */
+    uint32_t volatile           fFlags;
+    /** User argument for the callback. */
+    R3PTRTYPE(void *) volatile  pvUser;
+    /** The callback (will be cast according to enmType before callout). */
+    R3PTRTYPE(PFNRT) volatile   pfnCallback;
+    /** The owner identifier. */
+    R3PTRTYPE(void *) volatile  pvOwner;
+    /** Task name. */
+    R3PTRTYPE(const char *)     pszName;
+} PDMTASK;
+/** Pointer to a PDM task. */
+typedef PDMTASK *PPDMTASK;
+
+/**
+ * A task set.
+ *
+ * This is served by one task executor thread.
+ */
+typedef struct PDMTASKSET
+{
+    /** Magic value (PDMTASKSET_MAGIC). */
+    uint32_t                u32Magic;
+    /** Set if this task set works for ring-0 and raw-mode. */
+    bool                    fRZEnabled;
+    /** Number of allocated taks. */
+    uint8_t volatile        cAllocated;
+    /** Base handle value for this set. */
+    uint16_t                uHandleBase;
+    /** The task executor thread. */
+    R3PTRTYPE(RTTHREAD)     hThread;
+    /** Event semaphore for waking up the thread when fRZEnabled is set. */
+    SUPSEMEVENT             hEventR0;
+    /** Event semaphore for waking up the thread when fRZEnabled is clear. */
+    R3PTRTYPE(RTSEMEVENT)   hEventR3;
+    /** Padding so fTriggered is in its own cacheline. */
+    uint64_t                au64Padding2[4];
+
+    /** Bitmask of triggered tasks. */
+    uint64_t volatile       fTriggered;
+    /** Shutdown thread indicator. */
+    bool volatile           fShutdown;
+    /** Padding.   */
+    bool volatile           afPadding3[3];
+    /** Task currently running, UINT32_MAX if idle. */
+    uint32_t volatile       idxRunning;
+    /** Padding so fTriggered and fShutdown are in their own cacheline. */
+    uint64_t volatile       au64Padding3[6];
+
+    /** The individual tasks.  (Unallocated tasks have NULL pvOwner.)  */
+    PDMTASK                 aTasks[64];
+} PDMTASKSET;
+AssertCompileMemberAlignment(PDMTASKSET, fTriggered, 64);
+AssertCompileMemberAlignment(PDMTASKSET, aTasks, 64);
+/** Magic value for PDMTASKSET::u32Magic. */
+#define PDMTASKSET_MAGIC        UINT32_C(0x19320314)
+/** Pointer to a task set. */
+typedef PDMTASKSET *PPDMTASKSET;
+
+/** @} */
+
+
 /**
  * Queue device helper task operation.
  */
@@ -1132,6 +1204,20 @@ typedef struct PDM
      * concurrently. */
     PDMCRITSECT                     NopCritSect;
 
+    /** The ring-0 capable task sets (max 128). */
+    PDMTASKSET                      aTaskSets[2];
+    /** Pointer to task sets (max 512). */
+    R3PTRTYPE(PPDMTASKSET)          apTaskSets[8];
+
+    /** PCI Buses. */
+    PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
+    /** The register PIC device. */
+    PDMPIC                          Pic;
+    /** The registered APIC device. */
+    PDMAPIC                         Apic;
+    /** The registered I/O APIC device. */
+    PDMIOAPIC                       IoApic;
+
     /** List of registered devices. (FIFO) */
     R3PTRTYPE(PPDMDEV)              pDevs;
     /** List of devices instances. (FIFO) */
@@ -1144,14 +1230,6 @@ typedef struct PDM
     R3PTRTYPE(PPDMDRV)              pDrvs;
     /** The registered firmware device (can be NULL). */
     R3PTRTYPE(PPDMFW)               pFirmware;
-    /** PCI Buses. */
-    PDMPCIBUS                       aPciBuses[PDM_PCI_BUSSES_MAX];
-    /** The register PIC device. */
-    PDMPIC                          Pic;
-    /** The registered APIC device. */
-    PDMAPIC                         Apic;
-    /** The registered I/O APIC device. */
-    PDMIOAPIC                       IoApic;
     /** The registered DMAC device. */
     R3PTRTYPE(PPDMDMAC)             pDmac;
     /** The registered RTC device. */
@@ -1159,6 +1237,8 @@ typedef struct PDM
     /** The registered USB HUBs. (FIFO) */
     R3PTRTYPE(PPDMUSBHUB)           pUsbHubs;
 
+    /** @name Queues
+     * @{ */
     /** Queue in which devhlp tasks are queued for R3 execution - R3 Ptr. */
     R3PTRTYPE(PPDMQUEUE)            pDevHlpQueueR3;
     /** Queue in which devhlp tasks are queued for R3 execution - R0 Ptr. */
@@ -1174,6 +1254,7 @@ typedef struct PDM
     /** Bitmask controlling the queue flushing.
      * See PDM_QUEUE_FLUSH_FLAG_ACTIVE and PDM_QUEUE_FLUSH_FLAG_PENDING. */
     uint32_t volatile               fQueueFlushing;
+    /** @} */
 
     /** The current IRQ tag (tracing purposes). */
     uint32_t volatile               uIrqTag;
@@ -1215,9 +1296,10 @@ typedef struct PDM
     /** Number of times a critical section leave request needed to be queued for ring-3 execution. */
     STAMCOUNTER                     StatQueuedCritSectLeaves;
 } PDM;
-AssertCompileMemberAlignment(PDM, GCPhysVMMDevHeap, sizeof(RTGCPHYS));
 AssertCompileMemberAlignment(PDM, CritSect, 8);
+AssertCompileMemberAlignment(PDM, aTaskSets, 64);
 AssertCompileMemberAlignment(PDM, StatQueuedCritSectLeaves, 8);
+AssertCompileMemberAlignment(PDM, GCPhysVMMDevHeap, sizeof(RTGCPHYS));
 /** Pointer to PDM VM instance data. */
 typedef PDM *PPDM;
 
@@ -1383,6 +1465,9 @@ char       *pdmR3FileR3(const char *pszFile, bool fShared);
 int         pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName);
 
 void        pdmR3QueueRelocate(PVM pVM, RTGCINTPTR offDelta);
+
+int         pdmR3TaskInit(PVM pVM);
+void        pdmR3TaskTerm(PVM pVM);
 
 int         pdmR3ThreadCreateDevice(PVM pVM, PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                     PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName);
