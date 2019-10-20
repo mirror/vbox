@@ -1309,7 +1309,7 @@ typedef E1KSTATE *PE1KSTATE;
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 /* Forward declarations ******************************************************/
-static int e1kXmitPending(PE1KSTATE pThis, bool fOnWorkerThread);
+static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread);
 
 /**
  * E1000 register read handler.
@@ -3364,7 +3364,7 @@ static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
     if (u64Elapsed > pThis->uStatMaxTxDelay)
         pThis->uStatMaxTxDelay = u64Elapsed;
 #  endif
-    int rc = e1kXmitPending(pThis, false /*fOnWorkerThread*/);
+    int rc = e1kXmitPending(pDevIns, pThis, false /*fOnWorkerThread*/);
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN, ("%Rrc\n", rc));
 }
 # endif /* E1K_TX_DELAY */
@@ -5288,10 +5288,11 @@ static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThre
  *
  * @returns VBox status code.  VERR_TRY_AGAIN is returned if we're busy.
  *
- * @param   pThis              The E1000 state.
+ * @param   pDevIns             The device instance.
+ * @param   pThis               The E1000 state.
  * @param   fOnWorkerThread     Whether we're on a worker thread or on an EMT.
  */
-static int e1kXmitPending(PE1KSTATE pThis, bool fOnWorkerThread)
+static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
 
