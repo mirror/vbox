@@ -1012,6 +1012,19 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
         hrc = taskMoveVM->deleteFiles(originalFiles);
         if (FAILED(hrc))
             Log2(("Forward scenario: can't delete all original files.\n"));
+
+        /* delete no longer needed source directories */
+        if (   taskMoveVM->m_vmFolders[VBox_SnapshotFolder].isNotEmpty()
+            && RTDirExists(taskMoveVM->m_vmFolders[VBox_SnapshotFolder].c_str()))
+            RTDirRemove(taskMoveVM->m_vmFolders[VBox_SnapshotFolder].c_str());
+
+        if (   taskMoveVM->m_vmFolders[VBox_LogFolder].isNotEmpty()
+            && RTDirExists(taskMoveVM->m_vmFolders[VBox_LogFolder].c_str()))
+            RTDirRemove(taskMoveVM->m_vmFolders[VBox_LogFolder].c_str());
+
+        if (   taskMoveVM->m_vmFolders[VBox_SettingFolder].isNotEmpty()
+            && RTDirExists(taskMoveVM->m_vmFolders[VBox_SettingFolder].c_str()))
+            RTDirRemove(taskMoveVM->m_vmFolders[VBox_SettingFolder].c_str());
     }
 
     if (!taskMoveVM->m_pProgress.isNull())
