@@ -5024,7 +5024,7 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
 
     if (!mData->mAccessible)
     {
-        // inaccessible maschines can only be unregistered; uninitialize ourselves
+        // inaccessible machines can only be unregistered; uninitialize ourselves
         // here because currently there may be no unregistered that are inaccessible
         // (this state combination is not supported). Note releasing the caller and
         // leaving the lock before calling uninit()
@@ -5040,30 +5040,14 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
     }
 
     HRESULT rc = S_OK;
+    mData->llFilesToDelete.clear();
 
-    /// @todo r=klaus this is stupid... why is the saved state always deleted?
-    // discard saved state
-    if (mData->mMachineState == MachineState_Saved)
-    {
-        // add the saved state file to the list of files the caller should delete
-        Assert(!mSSData->strStateFilePath.isEmpty());
+    if (!mSSData->strStateFilePath.isEmpty())
         mData->llFilesToDelete.push_back(mSSData->strStateFilePath);
 
-        mSSData->strStateFilePath.setNull();
-
-        // unconditionally set the machine state to powered off, we now
-        // know no session has locked the machine
-        mData->mMachineState = MachineState_PoweredOff;
-    }
-
-    size_t cSnapshots = 0;
-    if (mData->mFirstSnapshot)
-        cSnapshots = mData->mFirstSnapshot->i_getAllChildrenCount() + 1;
-    if (cSnapshots && aCleanupMode == CleanupMode_UnregisterOnly)
-        // fail now before we start detaching media
-        return setError(VBOX_E_INVALID_OBJECT_STATE,
-                        tr("Cannot unregister the machine '%s' because it has %d snapshots"),
-                           mUserData->s.strName.c_str(), cSnapshots);
+    Utf8Str strNVRAMFile = mBIOSSettings->i_getNonVolatileStorageFile();
+    if (!strNVRAMFile.isEmpty() && RTFileExists(strNVRAMFile.c_str()))
+        mData->llFilesToDelete.push_back(strNVRAMFile);
 
     // This list collects the medium objects from all medium attachments
     // which we will detach from the machine and its snapshots, in a specific
@@ -5081,15 +5065,10 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
        )
     {
         // we have media attachments: detach them all and add the Medium objects to our list
-        if (aCleanupMode != CleanupMode_UnregisterOnly)
-            i_detachAllMedia(alock, NULL /* pSnapshot */, aCleanupMode, llMedia);
-        else
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot unregister the machine '%s' because it has %d media attachments"),
-                            mUserData->s.strName.c_str(), mMediumAttachments->size());
+        i_detachAllMedia(alock, NULL /* pSnapshot */, aCleanupMode, llMedia);
     }
 
-    if (cSnapshots)
+    if (mData->mFirstSnapshot)
     {
         // add the media from the medium attachments of the snapshots to llMedia
         // as well, after the "main" machine media; Snapshot::uninitRecursively()
@@ -5100,9 +5079,9 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
         MachineState_T oldState = mData->mMachineState;
         mData->mMachineState = MachineState_DeletingSnapshot;
 
-        // make a copy of the first snapshot so the refcount does not drop to 0
-        // in beginDeletingSnapshot, which sets pFirstSnapshot to 0 (that hangs
-        // because of the AutoCaller voodoo)
+        // make a copy of the first snapshot reference so the refcount does not
+        // drop to 0 in beginDeletingSnapshot, which sets pFirstSnapshot to 0
+        // (would hang due to the AutoCaller voodoo)
         ComObjPtr<Snapshot> pFirstSnapshot = mData->mFirstSnapshot;
 
         // GO!
@@ -5124,6 +5103,11 @@ HRESULT Machine::unregister(AutoCaller &autoCaller,
 
     // machine lock no longer needed
     alock.release();
+
+    /* Make sure that the settings of the current VM are not saved, because
+     * they are rather crippled at this point to meet the cleanup expectations
+     * and there's no point destroying the VM config on disk just because. */
+    mParent->i_unmarkRegistryModified(id);
 
     // return media to caller
     aMedia.resize(llMedia.size());
@@ -5364,9 +5348,15 @@ HRESULT Machine::deleteConfig(const std::vector<ComPtr<IMedium> > &aMedia, ComPt
                         tr("Cannot delete settings of a registered machine"));
 
     // collect files to delete
-    StringsList llFilesToDelete(mData->llFilesToDelete);    // saved states pushed here by Unregister()
+    StringsList llFilesToDelete(mData->llFilesToDelete);    // saved states and NVRAM files pushed here by Unregister()
+    // machine config file
     if (mData->pMachineConfigFile->fileExists())
         llFilesToDelete.push_back(mData->m_strConfigFileFull);
+    // backup of machine config file
+    Utf8Str strTmp(mData->m_strConfigFileFull);
+    strTmp.append("-prev");
+    if (RTFileExists(strTmp.c_str()))
+        llFilesToDelete.push_back(strTmp);
 
     RTCList<ComPtr<IMedium> > llMediums;
     for (size_t i = 0; i < aMedia.size(); ++i)
@@ -7361,12 +7351,8 @@ Utf8Str Machine::i_getHardeningLogFilename(void)
 
 /**
  * Returns the default NVRAM filename based on the location of the VM config.
- * This intentionally works differently than the saved state file naming since
- * it is part of the current state. Taking a snapshot will use a similar naming
- * as for saved state, because these are actually read-only, retaining a
- * a specific state just like saved state. Note that this is a relative path.
+ * Note that this is a relative path.
  */
-
 Utf8Str Machine::i_getDefaultNVRAMFilename()
 {
     AutoCaller autoCaller(this);
@@ -7374,7 +7360,8 @@ Utf8Str Machine::i_getDefaultNVRAMFilename()
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mHWData->mFirmwareType == FirmwareType_BIOS)
+    if (   mHWData->mFirmwareType == FirmwareType_BIOS
+        || i_isSnapshotMachine())
         return Utf8Str::Empty;
 
     Utf8Str strNVRAMFilePath = mData->m_strConfigFileFull;
@@ -7385,6 +7372,34 @@ Utf8Str Machine::i_getDefaultNVRAMFilename()
     return strNVRAMFilePath;
 }
 
+/**
+ * Returns the NVRAM filename for a new snapshot. This intentionally works
+ * similarly to the saved state file naming. Note that this is usually
+ * a relative path, unless the snapshot folder is absolute.
+ */
+Utf8Str Machine::i_getSnapshotNVRAMFilename()
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (mHWData->mFirmwareType == FirmwareType_BIOS)
+        return Utf8Str::Empty;
+
+    RTTIMESPEC ts;
+    RTTimeNow(&ts);
+    RTTIME time;
+    RTTimeExplode(&time, &ts);
+
+    Utf8Str strNVRAMFilePath = mUserData->s.strSnapshotFolder;
+    strNVRAMFilePath += RTPATH_DELIMITER;
+    strNVRAMFilePath += Utf8StrFmt("%04d-%02u-%02uT%02u-%02u-%02u-%09uZ.nvram",
+                                   time.i32Year, time.u8Month, time.u8MonthDay,
+                                   time.u8Hour, time.u8Minute, time.u8Second, time.u32Nanosecond);
+
+    return strNVRAMFilePath;
+}
 
 /**
  * Composes a unique saved state filename based on the current system time. The filename is
@@ -9726,6 +9741,7 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 
         Utf8Str configFile, newConfigFile;
         Utf8Str configFilePrev, newConfigFilePrev;
+        Utf8Str NVRAMFile, newNVRAMFile;
         Utf8Str configDir, newConfigDir;
 
         do
@@ -9835,6 +9851,20 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                     newConfigFilePrev = newConfigFile;
                     newConfigFilePrev += "-prev";
                     RTFileRename(configFilePrev.c_str(), newConfigFilePrev.c_str(), 0);
+                    NVRAMFile = mBIOSSettings->i_getNonVolatileStorageFile();
+                    if (NVRAMFile.isNotEmpty())
+                    {
+                        // in the NVRAM file path, replace the old directory with the new directory
+                        if (RTPathStartsWith(NVRAMFile.c_str(), configDir.c_str()))
+                        {
+                            Utf8Str strNVRAMFile = NVRAMFile.c_str() + configDir.length();
+                            NVRAMFile = newConfigDir + strNVRAMFile;
+                        }
+                        newNVRAMFile = newConfigFile;
+                        newNVRAMFile.stripSuffix();
+                        newNVRAMFile += ".nvram";
+                        RTFileRename(NVRAMFile.c_str(), newNVRAMFile.c_str(), 0);
+                    }
                 }
             }
 
@@ -9860,11 +9890,17 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
                 Utf8Str strStateFileName = mSSData->strStateFilePath.c_str() + configDir.length();
                 mSSData->strStateFilePath = newConfigDir + strStateFileName;
             }
+            if (newNVRAMFile.isNotEmpty())
+                mBIOSSettings->i_updateNonVolatileStorageFile(newNVRAMFile);
 
-            // and do the same thing for the saved state file paths of all the online snapshots
+            // and do the same thing for the saved state file paths of all the online snapshots and NVRAM files of all snapshots
             if (mData->mFirstSnapshot)
+            {
                 mData->mFirstSnapshot->i_updateSavedStatePaths(configDir.c_str(),
                                                                newConfigDir.c_str());
+                mData->mFirstSnapshot->i_updateNVRAMPaths(configDir.c_str(),
+                                                          newConfigDir.c_str());
+            }
         }
         while (0);
 
@@ -9875,6 +9911,8 @@ HRESULT Machine::i_prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
             {
                 RTFileRename(newConfigFilePrev.c_str(), configFilePrev.c_str(), 0);
                 RTFileRename(newConfigFile.c_str(), configFile.c_str(), 0);
+                if (NVRAMFile.isNotEmpty() && newNVRAMFile.isNotEmpty())
+                    RTFileRename(newNVRAMFile.c_str(), NVRAMFile.c_str(), 0);
             }
             if (dirRenamed)
                 RTPathRename(newConfigDir.c_str(), configDir.c_str(), 0);

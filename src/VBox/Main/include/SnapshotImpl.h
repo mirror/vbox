@@ -92,6 +92,11 @@ public:
     bool i_sharesSavedStateFile(const Utf8Str &strPath,
                                 Snapshot *pSnapshotToIgnore);
 
+    void i_updateNVRAMPaths(const Utf8Str &strOldPath,
+                            const Utf8Str &strNewPath);
+    void i_updateNVRAMPathsImpl(const Utf8Str &strOldPath,
+                                const Utf8Str &strNewPath);
+
     HRESULT i_saveSnapshot(settings::Snapshot &data) const;
     HRESULT i_saveSnapshotImpl(settings::Snapshot &data) const;
     HRESULT i_saveSnapshotImplOne(settings::Snapshot &data) const;

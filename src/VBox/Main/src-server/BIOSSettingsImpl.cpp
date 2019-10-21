@@ -152,6 +152,10 @@ HRESULT BIOSSettings::initCopy(Machine *aParent, BIOSSettings *that)
     AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
     m->bd.attachCopy(that->m->bd);
 
+    // Intentionally "forget" the NVRAM file since it must be unique and set
+    // to the correct value before the copy of the settings makes sense.
+    m->bd->strNVRAMPath.setNull();
+
     autoInitSpan.setSucceeded();
 
     LogFlowThisFuncLeave();
@@ -372,8 +376,8 @@ HRESULT BIOSSettings::setIOAPICEnabled(BOOL aIOAPICEnabled)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-
     m->bd->fIOAPICEnabled = RT_BOOL(aIOAPICEnabled);
+
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
     m->pMachine->i_setModified(Machine::IsModified_BIOS);
@@ -400,8 +404,8 @@ HRESULT BIOSSettings::setAPICMode(APICMode_T aAPICMode)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-
     m->bd->apicMode = aAPICMode;
+
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
     m->pMachine->i_setModified(Machine::IsModified_BIOS);
@@ -590,6 +594,11 @@ void BIOSSettings::i_copyFrom(BIOSSettings *aThat)
 
     /* this will back up current data */
     m->bd.assignCopy(aThat->m->bd);
+
+    // Intentionally "forget" the NVRAM file since it must be unique and set
+    // to the correct value before the copy of the settings makes sense.
+    m->bd->strNVRAMPath.setNull();
+
 }
 
 void BIOSSettings::i_applyDefaults(GuestOSType *aOsType)
@@ -605,6 +614,16 @@ void BIOSSettings::i_applyDefaults(GuestOSType *aOsType)
         m->bd->fIOAPICEnabled = aOsType->i_recommendedIOAPIC();
     else
         m->bd->fIOAPICEnabled = true;
+}
+
+Utf8Str BIOSSettings::i_getNonVolatileStorageFile()
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturn(autoCaller.rc(), Utf8Str::Empty);
+
+    Utf8Str strTmp;
+    BIOSSettings::getNonVolatileStorageFile(strTmp);
+    return strTmp;
 }
 
 void BIOSSettings::i_updateNonVolatileStorageFile(const Utf8Str &aNonVolatileStorageFile)

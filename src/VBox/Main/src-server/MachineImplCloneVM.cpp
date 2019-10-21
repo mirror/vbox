@@ -55,9 +55,9 @@ typedef struct
 typedef struct
 {
     Guid                    snapshotUuid;
-    Utf8Str                 strSaveStateFile;
+    Utf8Str                 strFile;
     ULONG                   uWeight;
-} SAVESTATETASK;
+} FILECOPYTASK;
 
 // The private class
 /////////////////////////////////////////////////////////////////////////////
@@ -106,6 +106,7 @@ struct MachineCloneVMPrivate
     HRESULT createMachineList(const ComPtr<ISnapshot> &pSnapshot, RTCList< ComObjPtr<Machine> > &machineList) const;
     inline void updateProgressStats(MEDIUMTASKCHAIN &mtc, bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight) const;
     inline HRESULT addSaveState(const ComObjPtr<Machine> &machine, bool fAttachCurrent, ULONG &uCount, ULONG &uTotalWeight);
+    inline HRESULT addNVRAM(const ComObjPtr<Machine> &machine, bool fAttachCurrent, ULONG &uCount, ULONG &uTotalWeight);
     inline HRESULT queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &strBaseName) const;
     HRESULT queryMediasForMachineState(const RTCList<ComObjPtr<Machine> > &machineList,
                                        bool fAttachLinked, ULONG &uCount, ULONG &uTotalWeight);
@@ -120,11 +121,12 @@ struct MachineCloneVMPrivate
     void updateMACAddresses(settings::SnapshotsList &sl) const;
     void updateStorageLists(settings::StorageControllersList &sc, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
     void updateSnapshotStorageLists(settings::SnapshotsList &sl, const Bstr &bstrOldId, const Bstr &bstrNewId) const;
-    void updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
+    void updateSaveStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
+    void updateNVRAMFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const;
     HRESULT createDifferencingMedium(const ComObjPtr<Machine> &pMachine, const ComObjPtr<Medium> &pParent,
                                      const Utf8Str &strSnapshotFolder, RTCList<ComObjPtr<Medium> > &newMedia,
                                      ComObjPtr<Medium> *ppDiff) const;
-    static DECLCALLBACK(int) copyStateFileProgress(unsigned uPercentage, void *pvUser);
+    static DECLCALLBACK(int) copyFileProgress(unsigned uPercentage, void *pvUser);
     static void updateSnapshotHardwareUUIDs(settings::SnapshotsList &snapshot_list, const Guid &id);
 
     /* Private q and parent pointer */
@@ -140,7 +142,8 @@ struct MachineCloneVMPrivate
     CloneMode_T                 mode;
     RTCList<CloneOptions_T>     options;
     RTCList<MEDIUMTASKCHAIN>    llMedias;
-    RTCList<SAVESTATETASK>      llSaveStateFiles; /* Snapshot UUID -> File path */
+    RTCList<FILECOPYTASK>       llSaveStateFiles; /* Snapshot UUID -> File path */
+    RTCList<FILECOPYTASK>       llNVRAMFiles; /* Snapshot UUID -> File path */
 };
 
 HRESULT MachineCloneVMPrivate::createMachineList(const ComPtr<ISnapshot> &pSnapshot,
@@ -210,27 +213,64 @@ HRESULT MachineCloneVMPrivate::addSaveState(const ComObjPtr<Machine> &machine, b
     if (FAILED(rc)) return rc;
     if (!bstrSrcSaveStatePath.isEmpty())
     {
-        SAVESTATETASK sst;
+        FILECOPYTASK fct;
         if (fAttachCurrent)
         {
             /* Make this saved state part of "current state" of the target
              * machine, whether it is part of a snapshot or not. */
-            sst.snapshotUuid.clear();
+            fct.snapshotUuid.clear();
         }
         else
-            sst.snapshotUuid = machine->i_getSnapshotId();
-        sst.strSaveStateFile = bstrSrcSaveStatePath;
+            fct.snapshotUuid = machine->i_getSnapshotId();
+        fct.strFile = bstrSrcSaveStatePath;
         uint64_t cbSize;
-        int vrc = RTFileQuerySizeByPath(sst.strSaveStateFile.c_str(), &cbSize);
+        int vrc = RTFileQuerySizeByPath(fct.strFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
             return p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, p->tr("Could not query file size of '%s' (%Rrc)"),
-                                   sst.strSaveStateFile.c_str(), vrc);
-        /*  same rule as above: count both the data which needs to
+                                   fct.strFile.c_str(), vrc);
+        /* same rule as above: count both the data which needs to
          * be read and written */
-        sst.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
-        llSaveStateFiles.append(sst);
+        fct.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
+        llSaveStateFiles.append(fct);
         ++uCount;
-        uTotalWeight += sst.uWeight;
+        uTotalWeight += fct.uWeight;
+    }
+    return S_OK;
+}
+
+HRESULT MachineCloneVMPrivate::addNVRAM(const ComObjPtr<Machine> &machine, bool fAttachCurrent, ULONG &uCount, ULONG &uTotalWeight)
+{
+    Bstr bstrSrcNVRAMPath;
+    ComPtr<IBIOSSettings> pBIOSSettings;
+    HRESULT rc = machine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
+    if (FAILED(rc)) return rc;
+    rc = pBIOSSettings->COMGETTER(NonVolatileStorageFile)(bstrSrcNVRAMPath.asOutParam());
+    if (FAILED(rc)) return rc;
+    if (!bstrSrcNVRAMPath.isEmpty())
+    {
+        FILECOPYTASK fct;
+        if (fAttachCurrent)
+        {
+            /* Make this saved state part of "current state" of the target
+             * machine, whether it is part of a snapshot or not. */
+            fct.snapshotUuid.clear();
+        }
+        else
+            fct.snapshotUuid = machine->i_getSnapshotId();
+        fct.strFile = bstrSrcNVRAMPath;
+        if (!RTFileExists(fct.strFile.c_str()))
+            return S_OK;
+        uint64_t cbSize;
+        int vrc = RTFileQuerySizeByPath(fct.strFile.c_str(), &cbSize);
+        if (RT_FAILURE(vrc))
+            return p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc, p->tr("Could not query file size of '%s' (%Rrc)"),
+                                   fct.strFile.c_str(), vrc);
+        /* same rule as above: count both the data which needs to
+         * be read and written */
+        fct.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
+        llNVRAMFiles.append(fct);
+        ++uCount;
+        uTotalWeight += fct.uWeight;
     }
     return S_OK;
 }
@@ -321,8 +361,11 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineState(const RTCList<ComObjPt
             /* Append the list of images which have  to be cloned. */
             llMedias.append(mtc);
         }
-        /* Add the save state files of this machine if there is one. */
+        /* Add the save state file of this machine if there is one. */
         rc = addSaveState(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
+        if (FAILED(rc)) return rc;
+        /* Add the NVRAM file of this machine if there is one. */
+        rc = addNVRAM(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
         if (FAILED(rc)) return rc;
     }
 
@@ -427,14 +470,19 @@ HRESULT MachineCloneVMPrivate::queryMediasForMachineAndChildStates(const RTCList
 
             llMedias.append(mtc);
         }
-        /* Add the save state files of this machine if there is one. */
+        /* Add the save state file of this machine if there is one. */
         rc = addSaveState(machine, false /*fAttachCurrent*/, uCount, uTotalWeight);
         if (FAILED(rc)) return rc;
+        /* Add the NVRAM file of this machine if there is one. */
+        rc = addNVRAM(machine, false /*fAttachCurrent*/, uCount, uTotalWeight);
+        if (FAILED(rc)) return rc;
         /* If this is the newly created current state, make sure that the
-         * saved state is also attached to it. */
+         * saved state and NVRAM is also attached to it. */
         if (fCreateDiffs)
         {
             rc = addSaveState(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
+            if (FAILED(rc)) return rc;
+            rc = addNVRAM(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
             if (FAILED(rc)) return rc;
         }
     }
@@ -575,14 +623,19 @@ HRESULT MachineCloneVMPrivate::queryMediasForAllStates(const RTCList<ComObjPtr<M
             /* Append the list of images which have  to be cloned. */
             llMedias.append(mtc);
         }
-        /* Add the save state files of this machine if there is one. */
+        /* Add the save state file of this machine if there is one. */
         rc = addSaveState(machine, false /*fAttachCurrent*/, uCount, uTotalWeight);
+        if (FAILED(rc)) return rc;
+        /* Add the NVRAM file of this machine if there is one. */
+        rc = addNVRAM(machine, false /*fAttachCurrent*/, uCount, uTotalWeight);
         if (FAILED(rc)) return rc;
         /* If this is the newly created current state, make sure that the
          * saved state is also attached to it. */
         if (fCreateDiffs)
         {
             rc = addSaveState(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
+            if (FAILED(rc)) return rc;
+            rc = addNVRAM(machine, true /*fAttachCurrent*/, uCount, uTotalWeight);
             if (FAILED(rc)) return rc;
         }
     }
@@ -681,7 +734,7 @@ void MachineCloneVMPrivate::updateSnapshotStorageLists(settings::SnapshotsList &
     }
 }
 
-void MachineCloneVMPrivate::updateStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const
+void MachineCloneVMPrivate::updateSaveStateFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const
 {
     settings::SnapshotsList::iterator it;
     for (it = snl.begin(); it != snl.end(); ++it)
@@ -689,7 +742,19 @@ void MachineCloneVMPrivate::updateStateFile(settings::SnapshotsList &snl, const 
         if (it->uuid == id)
             it->strStateFile = strFile;
         else if (!it->llChildSnapshots.empty())
-            updateStateFile(it->llChildSnapshots, id, strFile);
+            updateSaveStateFile(it->llChildSnapshots, id, strFile);
+    }
+}
+
+void MachineCloneVMPrivate::updateNVRAMFile(settings::SnapshotsList &snl, const Guid &id, const Utf8Str &strFile) const
+{
+    settings::SnapshotsList::iterator it;
+    for (it = snl.begin(); it != snl.end(); ++it)
+    {
+        if (it->uuid == id)
+            it->hardware.biosSettings.strNVRAMPath = strFile;
+        else if (!it->llChildSnapshots.empty())
+            updateNVRAMFile(it->llChildSnapshots, id, strFile);
     }
 }
 
@@ -752,7 +817,7 @@ HRESULT MachineCloneVMPrivate::createDifferencingMedium(const ComObjPtr<Machine>
 }
 
 /* static */
-DECLCALLBACK(int) MachineCloneVMPrivate::copyStateFileProgress(unsigned uPercentage, void *pvUser)
+DECLCALLBACK(int) MachineCloneVMPrivate::copyFileProgress(unsigned uPercentage, void *pvUser)
 {
     ComObjPtr<Progress> pProgress = *static_cast< ComObjPtr<Progress>* >(pvUser);
 
@@ -1428,31 +1493,68 @@ HRESULT MachineCloneVM::run()
         /* Clone all save state files. */
         for (size_t i = 0; i < d->llSaveStateFiles.size(); ++i)
         {
-            SAVESTATETASK sst = d->llSaveStateFiles.at(i);
+            FILECOPYTASK fct = d->llSaveStateFiles.at(i);
             const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER,
-                                                        RTPathFilename(sst.strSaveStateFile.c_str()));
+                                                        RTPathFilename(fct.strFile.c_str()));
 
             /* Move to next sub-operation. */
             rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy save state file '%s' ..."),
-                                                        RTPathFilename(sst.strSaveStateFile.c_str())).raw(), sst.uWeight);
+                                                        RTPathFilename(fct.strFile.c_str())).raw(), fct.uWeight);
             if (FAILED(rc)) throw rc;
             /* Copy the file only if it was not copied already. */
             if (!newFiles.contains(strTrgSaveState.c_str()))
             {
-                int vrc = RTFileCopyEx(sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), 0,
-                                       MachineCloneVMPrivate::copyStateFileProgress, &d->pProgress);
+                int vrc = RTFileCopyEx(fct.strFile.c_str(), strTrgSaveState.c_str(), 0,
+                                       MachineCloneVMPrivate::copyFileProgress, &d->pProgress);
                 if (RT_FAILURE(vrc))
                     throw p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                           p->tr("Could not copy state file '%s' to '%s' (%Rrc)"),
-                                          sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), vrc);
+                                          fct.strFile.c_str(), strTrgSaveState.c_str(), vrc);
                 newFiles.append(strTrgSaveState);
             }
             /* Update the path in the configuration either for the current
              * machine state or the snapshots. */
-            if (!sst.snapshotUuid.isValid() || sst.snapshotUuid.isZero())
+            if (!fct.snapshotUuid.isValid() || fct.snapshotUuid.isZero())
                 trgMCF.strStateFile = strTrgSaveState;
             else
-                d->updateStateFile(trgMCF.llFirstSnapshot, sst.snapshotUuid, strTrgSaveState);
+                d->updateSaveStateFile(trgMCF.llFirstSnapshot, fct.snapshotUuid, strTrgSaveState);
+        }
+
+        /* Clone all NVRAM files. */
+        for (size_t i = 0; i < d->llNVRAMFiles.size(); ++i)
+        {
+            FILECOPYTASK fct = d->llNVRAMFiles.at(i);
+            Utf8Str strTrgNVRAM;
+            if (!fct.snapshotUuid.isValid() || fct.snapshotUuid.isZero())
+                strTrgNVRAM = Utf8StrFmt("%s%c%s.nvram", strTrgMachineFolder.c_str(), RTPATH_DELIMITER,
+                                         trgMCF.machineUserData.strName.c_str());
+            else
+                strTrgNVRAM = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER,
+                                         RTPathFilename(fct.strFile.c_str()));
+
+            /* Move to next sub-operation. */
+            rc = d->pProgress->SetNextOperation(BstrFmt(p->tr("Copy NVRAM file '%s' ..."),
+                                                        RTPathFilename(fct.strFile.c_str())).raw(), fct.uWeight);
+            if (FAILED(rc)) throw rc;
+            /* Copy the file only if it was not copied already. */
+            if (!newFiles.contains(strTrgNVRAM.c_str()))
+            {
+                rc = p->i_getVirtualBox()->i_ensureFilePathExists(strTrgNVRAM.c_str(), true);
+                if (FAILED(rc)) throw rc;
+                int vrc = RTFileCopyEx(fct.strFile.c_str(), strTrgNVRAM.c_str(), 0,
+                                       MachineCloneVMPrivate::copyFileProgress, &d->pProgress);
+                if (RT_FAILURE(vrc))
+                    throw p->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                          p->tr("Could not copy NVRAM file '%s' to '%s' (%Rrc)"),
+                                          fct.strFile.c_str(), strTrgNVRAM.c_str(), vrc);
+                newFiles.append(strTrgNVRAM);
+            }
+            /* Update the path in the configuration either for the current
+             * machine state or the snapshots. */
+            if (!fct.snapshotUuid.isValid() || fct.snapshotUuid.isZero())
+                trgMCF.hardwareMachine.biosSettings.strNVRAMPath = strTrgNVRAM;
+            else
+                d->updateNVRAMFile(trgMCF.llFirstSnapshot, fct.snapshotUuid, strTrgNVRAM);
         }
 
         {

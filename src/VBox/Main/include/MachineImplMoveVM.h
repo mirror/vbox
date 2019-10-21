@@ -57,9 +57,9 @@ typedef struct
 typedef struct
 {
     Guid                    snapshotUuid;
-    Utf8Str                 strSaveStateFile;
+    Utf8Str                 strFile;
     ULONG                   uWeight;
-} SAVESTATETASKMOVE;
+} SNAPFILETASKMOVE;
 
 struct fileList_t;
 
@@ -67,9 +67,11 @@ class MachineMoveVM : public ThreadTask
 {
     std::vector<ComObjPtr<Machine> >        machineList;
     RTCList<MEDIUMTASKCHAINMOVE>            m_llMedias;
-    RTCList<SAVESTATETASKMOVE>              m_llSaveStateFiles;
+    RTCList<SNAPFILETASKMOVE>               m_llSaveStateFiles;
+    RTCList<SNAPFILETASKMOVE>               m_llNVRAMFiles;
     std::map<Utf8Str, MEDIUMTASKMOVE>       m_finalMediumsMap;
-    std::map<Utf8Str, SAVESTATETASKMOVE>    m_finalSaveStateFilesMap;
+    std::map<Utf8Str, SNAPFILETASKMOVE>     m_finalSaveStateFilesMap;
+    std::map<Utf8Str, SNAPFILETASKMOVE>     m_finalNVRAMFilesMap;
     std::map<VBoxFolder_t, Utf8Str>         m_vmFolders;
 
     ComObjPtr<Machine>  m_pMachine;
@@ -115,11 +117,13 @@ private:
     HRESULT queryMediasForAllStates();
     void updateProgressStats(MEDIUMTASKCHAINMOVE &mtc, ULONG &uCount, ULONG &uTotalWeight) const;
     HRESULT addSaveState(const ComObjPtr<Machine> &machine);
+    HRESULT addNVRAM(const ComObjPtr<Machine> &machine);
     void printStateFile(settings::SnapshotsList &snl);
     HRESULT getFilesList(const Utf8Str &strRootFolder, fileList_t &filesList);
     HRESULT getFolderSize(const Utf8Str &strRootFolder, uint64_t &size);
     HRESULT deleteFiles(const RTCList<Utf8Str> &listOfFiles);
     void updatePathsToStateFiles(const Utf8Str &sourcePath, const Utf8Str &targetPath);
+    void updatePathsToNVRAMFiles(const Utf8Str &sourcePath, const Utf8Str &targetPath);
     HRESULT moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &listOfDisks, const Utf8Str &strTargetFolder = Utf8Str::Empty);
     HRESULT restoreAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &listOfDisks);
     HRESULT isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMedium);

@@ -554,6 +554,7 @@ public:
     Utf8Str i_getLogFilename(ULONG idx);
     Utf8Str i_getHardeningLogFilename(void);
     Utf8Str i_getDefaultNVRAMFilename();
+    Utf8Str i_getSnapshotNVRAMFilename();
 
     void i_composeSavedStateFilename(Utf8Str &strStateFilePath);
 

@@ -314,7 +314,7 @@ HRESULT MachineMoveVM::init()
     ULONG uCount       = 1;//looks like it should be initialized by 1. See assertion in the Progress::setNextOperation()
     ULONG uTotalWeight = 1;
 
-    /* The lists m_llMedias and m_llSaveStateFiles are filled in the queryMediasForAllStates() */
+    /* The lists m_llMedias, m_llSaveStateFiles and m_llNVRAMFiles are filled in the queryMediasForAllStates() */
     hrc = queryMediasForAllStates();
     if (FAILED(hrc))
         return hrc;
@@ -370,22 +370,22 @@ HRESULT MachineMoveVM::init()
         for (size_t i = 0; i < m_llSaveStateFiles.size(); ++i)
         {
             uint64_t cbFile = 0;
-            SAVESTATETASKMOVE &sst = m_llSaveStateFiles.at(i);
+            SNAPFILETASKMOVE &sft = m_llSaveStateFiles.at(i);
 
-            Utf8Str name = sst.strSaveStateFile;
+            Utf8Str name = sft.strFile;
             /* if a state file is located in the actual VM folder it will be added to the actual list */
             if (RTPathStartsWith(name.c_str(), strSettingsFilePath.c_str()))
             {
                 vrc = RTFileQuerySizeByPath(name.c_str(), &cbFile);
                 if (RT_SUCCESS(vrc))
                 {
-                    std::pair<std::map<Utf8Str, SAVESTATETASKMOVE>::iterator,bool> ret;
-                    ret = m_finalSaveStateFilesMap.insert(std::make_pair(name, sst));
+                    std::pair<std::map<Utf8Str, SNAPFILETASKMOVE>::iterator,bool> ret;
+                    ret = m_finalSaveStateFilesMap.insert(std::make_pair(name, sft));
                     if (ret.second == true)
                     {
                         totalStateSize += cbFile;
                         ++uCount;
-                        uTotalWeight += sst.uWeight;
+                        uTotalWeight += sft.uWeight;
                         Log2(("The state file %s was added into the moved list\n", name.c_str()));
                     }
                 }
@@ -401,6 +401,46 @@ HRESULT MachineMoveVM::init()
         }
 
         neededFreeSpace += totalStateSize;
+    }
+
+    /* Prepare data for moving ".nvram" files */
+    {
+        uint64_t totalNVRAMSize = 0;
+
+        for (size_t i = 0; i < m_llNVRAMFiles.size(); ++i)
+        {
+            uint64_t cbFile = 0;
+            SNAPFILETASKMOVE &sft = m_llNVRAMFiles.at(i);
+
+            Utf8Str name = sft.strFile;
+            /* if a NVRAM file is located in the actual VM folder it will be added to the actual list */
+            if (RTPathStartsWith(name.c_str(), strSettingsFilePath.c_str()))
+            {
+                vrc = RTFileQuerySizeByPath(name.c_str(), &cbFile);
+                if (RT_SUCCESS(vrc))
+                {
+                    std::pair<std::map<Utf8Str, SNAPFILETASKMOVE>::iterator,bool> ret;
+                    ret = m_finalNVRAMFilesMap.insert(std::make_pair(name, sft));
+                    if (ret.second == true)
+                    {
+                        totalNVRAMSize += cbFile;
+                        ++uCount;
+                        uTotalWeight += sft.uWeight;
+                        Log2(("The NVRAM file %s was added into the moved list\n", name.c_str()));
+                    }
+                }
+                else
+                {
+                    Log2(("The NVRAM file %s wasn't added into the moved list. Couldn't get the file size.\n",
+                          name.c_str()));
+                    return m_pMachine->setErrorVrc(vrc,
+                                                   m_pMachine->tr("Failed to get file size for '%s': %Rrc"),
+                                                   name.c_str(), vrc);
+                }
+            }
+        }
+
+        neededFreeSpace += totalNVRAMSize;
     }
 
     /* Prepare data for moving the log files */
@@ -642,7 +682,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
 
             /* Check if a snapshot folder is necessary and if so doesn't already
              * exists. */
-            if (   taskMoveVM->m_finalSaveStateFilesMap.size() != 0
+            if (   (   taskMoveVM->m_finalSaveStateFilesMap.size() > 0
+                    || taskMoveVM->m_finalNVRAMFilesMap.size() > 1)
                 && !RTDirExists(strTrgSnapshotFolder.c_str()))
             {
                 int vrc = RTDirCreateFullPath(strTrgSnapshotFolder.c_str(), 0700);
@@ -652,34 +693,64 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
                                                 strTrgSnapshotFolder.c_str(), vrc);
             }
 
-            std::map<Utf8Str, SAVESTATETASKMOVE>::iterator itState = taskMoveVM->m_finalSaveStateFilesMap.begin();
+            std::map<Utf8Str, SNAPFILETASKMOVE>::iterator itState = taskMoveVM->m_finalSaveStateFilesMap.begin();
             while (itState != taskMoveVM->m_finalSaveStateFilesMap.end())
             {
-                const SAVESTATETASKMOVE &sst = itState->second;
+                const SNAPFILETASKMOVE &sft = itState->second;
                 const Utf8Str &strTrgSaveState = Utf8StrFmt("%s%c%s", strTrgSnapshotFolder.c_str(), RTPATH_DELIMITER,
-                                                            RTPathFilename(sst.strSaveStateFile.c_str()));
+                                                            RTPathFilename(sft.strFile.c_str()));
 
                 /* Move to next sub-operation. */
                 hrc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(machine->tr("Copy the save state file '%s' ..."),
-                                                                        RTPathFilename(sst.strSaveStateFile.c_str())).raw(),
-                                                                sst.uWeight);
+                                                                        RTPathFilename(sft.strFile.c_str())).raw(),
+                                                                sft.uWeight);
                 if (FAILED(hrc))
                     throw hrc;
 
-                int vrc = RTFileCopyEx(sst.strSaveStateFile.c_str(), strTrgSaveState.c_str(), 0,
+                int vrc = RTFileCopyEx(sft.strFile.c_str(), strTrgSaveState.c_str(), 0,
                                        MachineMoveVM::copyFileProgress, &taskMoveVM->m_pProgress);
                 if (RT_FAILURE(vrc))
                     throw machine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                                 taskMoveVM->m_pMachine->tr("Could not copy state file '%s' to '%s' (%Rrc)"),
-                                                sst.strSaveStateFile.c_str(),
+                                                sft.strFile.c_str(),
                                                 strTrgSaveState.c_str(),
                                                 vrc);
 
                 /* save new file in case of restoring */
                 newFiles.append(strTrgSaveState);
                 /* save original file for deletion in the end */
-                originalFiles.append(sst.strSaveStateFile);
+                originalFiles.append(sft.strFile);
                 ++itState;
+            }
+
+            std::map<Utf8Str, SNAPFILETASKMOVE>::iterator itNVRAM = taskMoveVM->m_finalNVRAMFilesMap.begin();
+            while (itNVRAM != taskMoveVM->m_finalNVRAMFilesMap.end())
+            {
+                const SNAPFILETASKMOVE &sft = itNVRAM->second;
+                const Utf8Str &strTrgNVRAM = Utf8StrFmt("%s%c%s", sft.snapshotUuid.isZero() ? strTargetFolder.c_str() : strTrgSnapshotFolder.c_str(),
+                                                        RTPATH_DELIMITER, RTPathFilename(sft.strFile.c_str()));
+
+                /* Move to next sub-operation. */
+                hrc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(machine->tr("Copy the NVRAM file '%s' ..."),
+                                                                        RTPathFilename(sft.strFile.c_str())).raw(),
+                                                                sft.uWeight);
+                if (FAILED(hrc))
+                    throw hrc;
+
+                int vrc = RTFileCopyEx(sft.strFile.c_str(), strTrgNVRAM.c_str(), 0,
+                                       MachineMoveVM::copyFileProgress, &taskMoveVM->m_pProgress);
+                if (RT_FAILURE(vrc))
+                    throw machine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                                taskMoveVM->m_pMachine->tr("Could not copy NVRAM file '%s' to '%s' (%Rrc)"),
+                                                sft.strFile.c_str(),
+                                                strTrgNVRAM.c_str(),
+                                                vrc);
+
+                /* save new file in case of restoring */
+                newFiles.append(strTrgNVRAM);
+                /* save original file for deletion in the end */
+                originalFiles.append(sft.strFile);
+                ++itNVRAM;
             }
         }
 
@@ -691,6 +762,19 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
         /** @todo r=klaus: this update is not necessarily matching what the
          * above code has set as the new folders, so it needs reimplementing */
         taskMoveVM->updatePathsToStateFiles(taskMoveVM->m_vmFolders[VBox_SettingFolder],
+                                            strTargetFolder);
+
+        /*
+         * Update NVRAM file paths
+         * very important step!
+         */
+        Log2(("Update NVRAM paths\n"));
+        /** @todo r=klaus: this update is not necessarily matching what the
+         * above code has set as the new folders, so it needs reimplementing.
+         * What's good about this implementation: it does not look at the
+         * list of NVRAM files, because that only lists the existing ones,
+         * but all paths need fixing. */
+        taskMoveVM->updatePathsToNVRAMFiles(taskMoveVM->m_vmFolders[VBox_SettingFolder],
                                             strTargetFolder);
 
         /*
@@ -752,6 +836,11 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
             newFiles.append(strTargetSettingsFilePath);
             /* save original file for deletion in the end */
             originalFiles.append(strSettingsFilePath);
+
+            Utf8Str strPrevSettingsFilePath = strSettingsFilePath;
+            strPrevSettingsFilePath.append("-prev");
+            if (RTFileExists(strPrevSettingsFilePath.c_str()))
+                originalFiles.append(strPrevSettingsFilePath);
         }
 
         /* Moving Machine log files */
@@ -918,6 +1007,10 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
 
             /* Revert original paths to the state files */
             taskMoveVM->updatePathsToStateFiles(strTargetFolder,
+                                                taskMoveVM->m_vmFolders[VBox_SettingFolder]);
+
+            /* Revert original paths to the NVRAM files */
+            taskMoveVM->updatePathsToNVRAMFiles(strTargetFolder,
                                                 taskMoveVM->m_vmFolders[VBox_SettingFolder]);
 
             /* Delete all created files. Here we update progress object */
@@ -1158,6 +1251,26 @@ void MachineMoveVM::updatePathsToStateFiles(const Utf8Str &sourcePath, const Utf
                                                                targetPath.c_str(),
                                                                RTPATH_DELIMITER,
                                                                RTPathFilename(m_pMachine->mSSData->strStateFilePath.c_str()));
+    }
+}
+
+void MachineMoveVM::updatePathsToNVRAMFiles(const Utf8Str &sourcePath, const Utf8Str &targetPath)
+{
+    ComObjPtr<Snapshot> pSnapshot;
+    HRESULT rc = m_pMachine->i_findSnapshotById(Guid() /* zero */, pSnapshot, true);
+    if (SUCCEEDED(rc) && !pSnapshot.isNull())
+        pSnapshot->i_updateNVRAMPaths(sourcePath.c_str(),
+                                      targetPath.c_str());
+    ComObjPtr<BIOSSettings> pBIOSSettings(m_pMachine->mBIOSSettings);
+    const Utf8Str NVRAMFile(pBIOSSettings->i_getNonVolatileStorageFile());
+    if (NVRAMFile.isNotEmpty())
+    {
+        Utf8Str newNVRAMFile;
+        if (RTPathStartsWith(NVRAMFile.c_str(), sourcePath.c_str()))
+            newNVRAMFile = Utf8StrFmt("%s%s", targetPath.c_str(), NVRAMFile.c_str() + sourcePath.length());
+        else
+            newNVRAMFile = Utf8StrFmt("%s%c%s", targetPath.c_str(), RTPATH_DELIMITER, RTPathFilename(newNVRAMFile.c_str()));
+        pBIOSSettings->i_updateNonVolatileStorageFile(newNVRAMFile);
     }
 }
 
@@ -1419,6 +1532,10 @@ HRESULT MachineMoveVM::queryMediasForAllStates()
         /* Add the save state files of this machine if there is one. */
         rc = addSaveState(machine);
         if (FAILED(rc)) return rc;
+
+        /* Add the NVRAM files of this machine if there is one. */
+        rc = addNVRAM(machine);
+        if (FAILED(rc)) return rc;
     }
 
     /* Build up the index list of the image chain. Unfortunately we can't do
@@ -1442,23 +1559,55 @@ HRESULT MachineMoveVM::addSaveState(const ComObjPtr<Machine> &machine)
     if (FAILED(rc)) return rc;
     if (!bstrSrcSaveStatePath.isEmpty())
     {
-        SAVESTATETASKMOVE sst;
+        SNAPFILETASKMOVE sft;
 
-        sst.snapshotUuid = machine->i_getSnapshotId();
-        sst.strSaveStateFile = bstrSrcSaveStatePath;
+        sft.snapshotUuid = machine->i_getSnapshotId();
+        sft.strFile = bstrSrcSaveStatePath;
         uint64_t cbSize;
 
-        int vrc = RTFileQuerySizeByPath(sst.strSaveStateFile.c_str(), &cbSize);
+        int vrc = RTFileQuerySizeByPath(sft.strFile.c_str(), &cbSize);
         if (RT_FAILURE(vrc))
             return m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
                                             m_pMachine->tr("Could not get file size of '%s': %Rrc"),
-                                            sst.strSaveStateFile.c_str(),
+                                            sft.strFile.c_str(),
                                             vrc);
 
         /* same rule as above: count both the data which needs to
          * be read and written */
-        sst.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
-        m_llSaveStateFiles.append(sst);
+        sft.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
+        m_llSaveStateFiles.append(sft);
+    }
+    return S_OK;
+}
+
+HRESULT MachineMoveVM::addNVRAM(const ComObjPtr<Machine> &machine)
+{
+    ComPtr<IBIOSSettings> pBIOSSettings;
+    HRESULT rc = machine->COMGETTER(BIOSSettings)(pBIOSSettings.asOutParam());
+    if (FAILED(rc)) return rc;
+    Bstr bstrSrcNVRAMPath;
+    rc = pBIOSSettings->COMGETTER(NonVolatileStorageFile)(bstrSrcNVRAMPath.asOutParam());
+    if (FAILED(rc)) return rc;
+    Utf8Str strSrcNVRAMPath(bstrSrcNVRAMPath);
+    if (!strSrcNVRAMPath.isEmpty() && RTFileExists(strSrcNVRAMPath.c_str()))
+    {
+        SNAPFILETASKMOVE sft;
+
+        sft.snapshotUuid = machine->i_getSnapshotId();
+        sft.strFile = strSrcNVRAMPath;
+        uint64_t cbSize;
+
+        int vrc = RTFileQuerySizeByPath(sft.strFile.c_str(), &cbSize);
+        if (RT_FAILURE(vrc))
+            return m_pMachine->setErrorBoth(VBOX_E_IPRT_ERROR, vrc,
+                                            m_pMachine->tr("Could not get file size of '%s': %Rrc"),
+                                            sft.strFile.c_str(),
+                                            vrc);
+
+        /* same rule as above: count both the data which needs to
+         * be read and written */
+        sft.uWeight = (ULONG)(2 * (cbSize + _1M - 1) / _1M);
+        m_llNVRAMFiles.append(sft);
     }
     return S_OK;
 }
