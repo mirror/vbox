@@ -883,34 +883,34 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
                                                         uint32_t uAddress, unsigned cb, uint32_t *pu32Value)
 {
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
-    RT_NOREF(pPciDev, cb);
+    RT_NOREF(pPciDev);
 
-    uint64_t uWindowOff = (uint64_t)uAddress - (uint64_t)pVirtio->pPciCfgCap->uPciCfgData;
-    if (uWindowOff < sizeof(uint32_t))
+    LogFlowFunc(("pDevIns=%p pPciDev=%p uAddress=%#x cb=%u pu32Value=%p\n",
+                 pDevIns, pPciDev, uAddress, cb, pu32Value));
+    if (uAddress == pVirtio->uPciCfgDataOff)
     {
-        /* VirtIO 1.0 spec section 4.1.4.7 describes a required alternative access capability
+        /*
+         * VirtIO 1.0 spec section 4.1.4.7 describes a required alternative access capability
          * whereby the guest driver can specify a bar, offset, and length via the PCI configuration space
-         * (the virtio_pci_cfg_cap capability), and access data items. */
-
+         * (the virtio_pci_cfg_cap capability), and access data items.
+         */
         uint32_t uLength = pVirtio->pPciCfgCap->pciCap.uLength;
         uint32_t uOffset = pVirtio->pPciCfgCap->pciCap.uOffset;
         uint8_t  uBar    = pVirtio->pPciCfgCap->pciCap.uBar;
 
-        AssertReturn(uLength == 1 || uLength == 2 || uLength == 4, VERR_INVALID_PARAMETER);
-        AssertReturn(cb + uWindowOff <= uLength, VERR_INVALID_PARAMETER);
-
-        *pu32Value = 0xffffffff;
-        if (uBar == VIRTIO_REGION_PCI_CAP)
+        if (   (uLength != 1 && uLength != 2 && uLength != 4)
+            || cb != uLength
+            || uBar != VIRTIO_REGION_PCI_CAP)
         {
-            uint32_t pu32tmp = 0;
-            virtioR3MmioRead(pDevIns, NULL, (RTGCPHYS)((uint32_t)pVirtio->pGcPhysPciCapBase + uOffset), &pu32tmp, uLength);
-            memcpy(pu32Value + uWindowOff, &pu32tmp + uWindowOff, cb);
-            Log2Func(("virtio: Guest read  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%d, length=%d, result=%d\n",
-                      uBar, uOffset, uLength, *pu32Value));
+            Log2Func(("Guest read virtio_pci_cfg_cap.pci_cfg_data using mismatching config. Ignoring\n"));
+            *pu32Value = UINT32_MAX;
+            return VINF_SUCCESS;
         }
-        else
-            Log2Func(("Guest read virtio_pci_cfg_cap.pci_cfg_data using unconfigured BAR. Ignoring"));
-        return VINF_SUCCESS;
+
+        int rc = virtioR3MmioRead(pDevIns, NULL, pVirtio->pGcPhysPciCapBase + uOffset, pu32Value, cb);
+        Log2Func(("virtio: Guest read  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%d, length=%d, result=%d -> %Rrc\n",
+                  uBar, uOffset, uLength, *pu32Value, rc));
+        return rc;
     }
     return VINF_PDM_PCI_DO_DEFAULT;
 }
@@ -922,10 +922,11 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPD
                                                          uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
     PVIRTIOSTATE pVirtio = *PDMINS_2_DATA(pDevIns, PVIRTIOSTATE *);
-    RT_NOREF(pPciDev, cb);
+    RT_NOREF(pPciDev);
 
-    uint64_t uWindowOff = (uint64_t)uAddress - (uint64_t)pVirtio->pPciCfgCap->uPciCfgData;
-    if (uWindowOff < sizeof(uint32_t))
+    LogFlowFunc(("pDevIns=%p pPciDev=%p uAddress=%#x cb=%u u32Value=%#x\n",
+                 pDevIns, pPciDev, uAddress, cb, u32Value));
+    if (uAddress == pVirtio->uPciCfgDataOff)
     {
         /* VirtIO 1.0 spec section 4.1.4.7 describes a required alternative access capability
          * whereby the guest driver can specify a bar, offset, and length via the PCI configuration space
@@ -935,22 +936,18 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPD
         uint32_t uOffset = pVirtio->pPciCfgCap->pciCap.uOffset;
         uint8_t  uBar    = pVirtio->pPciCfgCap->pciCap.uBar;
 
-        AssertReturn(uLength == 1 || uLength == 2 || uLength == 4, VERR_INVALID_PARAMETER);
-        AssertReturn(cb == uLength && uWindowOff == 0, VERR_INVALID_PARAMETER);
-
-        if (uBar == VIRTIO_REGION_PCI_CAP)
+        if (   (uLength != 1 && uLength != 2 && uLength != 4)
+            || cb != uLength
+            || uBar != VIRTIO_REGION_PCI_CAP)
         {
-            Assert(uLength <= sizeof(u32Value));
-            virtioR3MmioWrite(pDevIns, NULL, (RTGCPHYS)((uint32_t)pVirtio->pGcPhysPciCapBase + uOffset), &u32Value, uLength);
-        }
-        else
-        {
-            Log2Func(("Guest wrote virtio_pci_cfg_cap.pci_cfg_data using unconfigured BAR. Ignoring"));
+            Log2Func(("Guest write virtio_pci_cfg_cap.pci_cfg_data using mismatching config. Ignoring\n"));
             return VINF_SUCCESS;
         }
-        Log2Func(("Guest wrote  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%x, length=%x, value=%d\n",
-                uBar, uOffset, uLength, u32Value));
-        return VINF_SUCCESS;
+
+        int rc = virtioR3MmioWrite(pDevIns, NULL, pVirtio->pGcPhysPciCapBase + uOffset, &u32Value, cb);
+        Log2Func(("Guest wrote  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%x, length=%x, value=%d -> %Rrc\n",
+                uBar, uOffset, uLength, u32Value, rc));
+        return rc;
     }
     return VINF_PDM_PCI_DO_DEFAULT;
 }
@@ -1172,6 +1169,7 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
      *  even list it as present if uLength isn't non-zero and 4-byte-aligned as the linux driver is
      *  initializing. */
 
+    pVirtio->uPciCfgDataOff = pCfg->uCapNext + RT_OFFSETOF(VIRTIO_PCI_CFG_CAP_T, uPciCfgData);
     pCfg = (PVIRTIO_PCI_CAP_T)&pPciDev->abConfig[pCfg->uCapNext];
     pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
