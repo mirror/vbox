@@ -2167,9 +2167,13 @@ void UIMessageCenter::showRuntimeError(const CConsole &console, bool fFatal, con
     }
     else
     {
+        /** @todo r=bird: This is a very annoying message as it refers to invisible text
+         * below.  User have to expand "Details" to see what actually went wrong.
+         * Probably a good idea to check strErrorId and see if we can come up with better
+         * messages here, at least for common stuff like DvdOrFloppyImageInaccesssible... */
         error(0, enmType,
-              tr("<p>The virtual machine execution may run into an error condition as described below. "
-                 "We suggest that you take an appropriate action to avert the error.</p>"),
+              tr("<p>The virtual machine execution ran into a non-fatal problem as described below. "
+                 "We suggest that you take appropriate action to prevent the problem from recurring.</p>"),
               formatted, autoConfimId.data());
     }
 
