@@ -996,6 +996,10 @@ typedef struct PDMTASK
     R3PTRTYPE(void *) volatile  pvOwner;
     /** Task name. */
     R3PTRTYPE(const char *)     pszName;
+    /** Number of times already triggered when PDMTaskTrigger was called. */
+    uint32_t volatile           cAlreadyTrigged;
+    /** Number of runs. */
+    uint32_t                    cRuns;
 } PDMTASK;
 /** Pointer to a PDM task. */
 typedef PDMTASK *PPDMTASK;

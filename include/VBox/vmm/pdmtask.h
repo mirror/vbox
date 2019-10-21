@@ -116,14 +116,20 @@ typedef FNPDMTASKINT *PFNPDMTASKINT;
  */
 typedef enum PDMTASKTYPE
 {
+    /** Invalid zero value. */
+    PDMTASKTYPE_INVALID = 0,
     /** Device consumer. */
-    PDMTASKTYPE_DEV = 1,
+    PDMTASKTYPE_DEV,
     /** Driver consumer. */
     PDMTASKTYPE_DRV,
     /** USB device consumer. */
     PDMTASKTYPE_USB,
     /** Internal consumer. */
     PDMTASKTYPE_INTERNAL,
+    /** End of valid values. */
+    PDMTASKTYPE_END,
+    /** Typical 32-bit type blowup. */
+    PDMTASKTYPE_32BIT_HACK = 0x7fffffff
 } PDMTASKTYPE;
 
 VMMR3_INT_DECL(int) PDMR3TaskCreateInternal(PVM pVM, uint32_t fFlags, const char *pszName,

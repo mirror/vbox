@@ -236,7 +236,7 @@ static DECLCALLBACK(int) pdmR3TaskThread(RTTHREAD ThreadSelf, void *pvUser)
                     PDMTASKTYPE const enmType     = pTask->enmType;
                     PFNRT  const      pfnCallback = pTask->pfnCallback;
                     void * const      pvOwner     = pTask->pvOwner;
-                    void * const      pvUser      = pTask->pvUser;
+                    void * const      pvTaskUser  = pTask->pvUser;
 
                     ASMAtomicWriteU32(&pTaskSet->idxRunning, iTask);
 
@@ -244,33 +244,34 @@ static DECLCALLBACK(int) pdmR3TaskThread(RTTHREAD ThreadSelf, void *pvUser)
                         && pfnCallback
                         && pvOwner     == pTask->pvOwner
                         && pfnCallback == pTask->pfnCallback
-                        && pvUser      == pTask->pvUser
+                        && pvTaskUser  == pTask->pvUser
                         && enmType     == pTask->enmType)
                     {
+                        pTask->cRuns += 1;
                         switch (pTask->enmType)
                         {
                             case PDMTASKTYPE_DEV:
                                 Log2(("pdmR3TaskThread: Runs dev task %s (%#x)\n", pTask->pszName, iTask + pTaskSet->uHandleBase));
-                                ((PFNPDMTASKDEV)(pfnCallback))((PPDMDEVINS)pvOwner, pvUser);
+                                ((PFNPDMTASKDEV)(pfnCallback))((PPDMDEVINS)pvOwner, pvTaskUser);
                                 break;
                             case PDMTASKTYPE_DRV:
                                 Log2(("pdmR3TaskThread: Runs drv task %s (%#x)\n", pTask->pszName, iTask + pTaskSet->uHandleBase));
-                                ((PFNPDMTASKDRV)(pfnCallback))((PPDMDRVINS)pvOwner, pvUser);
+                                ((PFNPDMTASKDRV)(pfnCallback))((PPDMDRVINS)pvOwner, pvTaskUser);
                                 break;
                             case PDMTASKTYPE_USB:
                                 Log2(("pdmR3TaskThread: Runs USB task %s (%#x)\n", pTask->pszName, iTask + pTaskSet->uHandleBase));
-                                ((PFNPDMTASKUSB)(pfnCallback))((PPDMUSBINS)pvOwner, pvUser);
+                                ((PFNPDMTASKUSB)(pfnCallback))((PPDMUSBINS)pvOwner, pvTaskUser);
                                 break;
                             case PDMTASKTYPE_INTERNAL:
                                 Log2(("pdmR3TaskThread: Runs int task %s (%#x)\n", pTask->pszName, iTask + pTaskSet->uHandleBase));
-                                ((PFNPDMTASKINT)(pfnCallback))((PVM)pvOwner, pvUser);
+                                ((PFNPDMTASKINT)(pfnCallback))((PVM)pvOwner, pvTaskUser);
                                 break;
                             default:
                                 AssertFailed();
                         }
                     }
                     else /* Note! There might be a race here during destruction. */
-                        AssertMsgFailed(("%d %p %p %p\n", enmType, pvOwner, pfnCallback, pvUser));
+                        AssertMsgFailed(("%d %p %p %p\n", enmType, pvOwner, pfnCallback, pvTaskUser));
 
                     ASMAtomicWriteU32(&pTaskSet->idxRunning, UINT32_MAX);
                 }
@@ -414,8 +415,15 @@ VMMR3_INT_DECL(int) PDMR3TaskCreateGeneric(PVM pVM, uint32_t fFlags, const char 
     ASMAtomicWritePtr(&pTask->pvOwner, pvOwner);
     pTaskSet->cAllocated += 1;
 
-    *phTask = pTaskSet->uHandleBase + (uintptr_t)(pTask - &pTaskSet->aTasks[0]);
-    LogFlow(("PDMR3TaskCreateGeneric: Allocated %#RX64 for %s\n", *phTask, pszName));
+    uint32_t const hTask = pTaskSet->uHandleBase + (uint32_t)(pTask - &pTaskSet->aTasks[0]);
+    *phTask = hTask;
+
+    STAMR3RegisterF(pVM, &pTask->cRuns, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                    "Number of times the task has been executed.", "/PDM/Tasks/%03u-%s-runs", hTask, pszName);
+    STAMR3RegisterF(pVM, (void *)&pTask->cAlreadyTrigged, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
+                    "Number of times the task was re-triggered.", "/PDM/Tasks/%03u-%s-retriggered", hTask, pszName);
+
+    LogFlow(("PDMR3TaskCreateGeneric: Allocated %u for %s\n", hTask, pszName));
     return VINF_SUCCESS;
 }
 
@@ -442,7 +450,7 @@ VMMR3_INT_DECL(int) PDMR3TaskCreateInternal(PVM pVM, uint32_t fFlags, const char
 /**
  * Worker for PDMR3TaskDestroyAllByOwner() and PDMR3TaskDestroySpecific().
  */
-static void pdmR3TaskDestroyOne(PPDMTASKSET pTaskSet, PPDMTASK pTask, size_t iTask)
+static void pdmR3TaskDestroyOne(PVM pVM, PPDMTASKSET pTaskSet, PPDMTASK pTask, size_t iTask)
 {
     AssertPtr(pTask->pvOwner);
 
@@ -461,7 +469,13 @@ static void pdmR3TaskDestroyOne(PPDMTASKSET pTaskSet, PPDMTASK pTask, size_t iTa
     /*
      * Zap it (very noisy, but whatever).
      */
-    LogFlow(("pdmR3TaskDestroyOne: Destroying %#zx %s\n", iTask + pTaskSet->uHandleBase, pTask->pszName));
+    LogFlow(("pdmR3TaskDestroyOne: Destroying %zu %s\n", iTask + pTaskSet->uHandleBase, pTask->pszName));
+    AssertPtr(pTask->pvOwner);
+
+    char szPrefix[64];
+    RTStrPrintf(szPrefix, sizeof(szPrefix), "/PDM/Tasks/%03zu-", iTask + pTaskSet->uHandleBase);
+    STAMR3DeregisterByPrefix(pVM->pUVM, szPrefix);
+
     AssertPtr(pTask->pvOwner);
     ASMAtomicWriteNullPtr(&pTask->pvOwner);
     pTask->enmType     = (PDMTASKTYPE)0;
@@ -509,7 +523,7 @@ VMMR3_INT_DECL(int) PDMR3TaskDestroyAllByOwner(PVM pVM, PDMTASKTYPE enmType, voi
                 {
                     if (   pvTaskOwner == pvOwner
                         && pTask->enmType == enmType)
-                        pdmR3TaskDestroyOne(pTaskSet, pTask, j);
+                        pdmR3TaskDestroyOne(pVM, pTaskSet, pTask, j);
                     else
                         Assert(pvTaskOwner != pvOwner);
                     cLeft--;
@@ -559,7 +573,7 @@ VMMR3_INT_DECL(int) PDMR3TaskDestroySpecific(PVM pVM, PDMTASKTYPE enmType, void 
     /*
      * Do the job.
      */
-    pdmR3TaskDestroyOne(pTaskSet, pTask, iTask);
+    pdmR3TaskDestroyOne(pVM, pTaskSet, pTask, iTask);
 
     return VINF_SUCCESS;
 }

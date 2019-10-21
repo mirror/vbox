@@ -78,7 +78,7 @@ VMM_INT_DECL(int)   PDMTaskTrigger(PVM pVM, PDMTASKTYPE enmType, void *pvOwner, 
      */
     if (!ASMAtomicBitTestAndSet(&pTaskSet->fTriggered, (uint32_t)iTask))
     {
-        Log(("PDMTaskTrigger: Triggered %#RX64 (%s)\n", hTask, R3STRING(pTask->pszName)));
+        Log(("PDMTaskTrigger: Triggered %RU64 (%s)\n", hTask, R3STRING(pTask->pszName)));
 #ifdef IN_RING3
         if (pTaskSet->hEventR3 != NIL_RTSEMEVENT)
         {
@@ -93,7 +93,8 @@ VMM_INT_DECL(int)   PDMTaskTrigger(PVM pVM, PDMTASKTYPE enmType, void *pvOwner, 
         }
         return VINF_SUCCESS;
     }
-    Log(("PDMTaskTrigger: %#RX64 (%s) was already triggered\n", hTask, R3STRING(pTask->pszName)));
+    ASMAtomicIncU32(&pTask->cAlreadyTrigged);
+    Log(("PDMTaskTrigger: %RU64 (%s) was already triggered\n", hTask, R3STRING(pTask->pszName)));
     return VINF_ALREADY_POSTED;
 }
 
@@ -110,6 +111,4 @@ VMM_INT_DECL(int)   PDMTaskTriggerInternal(PVM pVM, PDMTASKHANDLE hTask)
 {
     return PDMTaskTrigger(pVM, PDMTASKTYPE_INTERNAL, pVM, hTask);
 }
-
-
 
