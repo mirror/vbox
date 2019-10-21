@@ -21,6 +21,7 @@
 #include "inlines.h"
 #include "pciutil.h"
 #include "ebda.h"
+#include "scsi.h"
 
 
 #if DEBUG_SCSI
@@ -47,16 +48,6 @@
 #define VBSCSI_REGISTER_DEVSTAT  3
 
 #define VBSCSI_MAX_DEVICES 16 /* Maximum number of devices a SCSI device can have. */
-
-/* Command opcodes. */
-#define SCSI_SERVICE_ACT   0x9e
-#define SCSI_INQUIRY       0x12
-#define SCSI_READ_CAP_10   0x25
-#define SCSI_READ_10       0x28
-#define SCSI_WRITE_10      0x2a
-#define SCSI_READ_CAP_16   0x10    /* Not an opcode by itself, sub-action for the "Service Action" */
-#define SCSI_READ_16       0x88
-#define SCSI_WRITE_16      0x8a
 
 /* Data transfer direction. */
 #define SCSI_TXDIR_FROM_DEVICE 0
