@@ -2656,7 +2656,10 @@ es.unregisterListener(listener); </screen></para>
             <para>VirtualSystemDescriptionType::CloudPublicIP - Whether the instance will have a public IP or not.</para>
           </listitem>
           <listitem>
-            <para>VirtualSystemDescriptionType::CloudPublicSSHKey - Public SSH key which is used to connect to an instance via SSH</para>
+            <para>VirtualSystemDescriptionType::CloudPublicSSHKey - Public SSH key which is used to connect to an instance via SSH.
+            It may be one or more records with the type VirtualSystemDescriptionType::CloudPublicSSHKey in the VirtualSystemDescription.
+            But at least one should be presented otherwise user won't be able to connect to the instance via SSH.
+            </para>
           </listitem>
         </itemizedlist>
       </para>

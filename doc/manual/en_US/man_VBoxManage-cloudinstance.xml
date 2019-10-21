@@ -48,7 +48,7 @@
       <arg rep="norepeat">--boot-disk-size=<replaceable>size in GB</replaceable></arg>
       <arg rep="norepeat">--publicip=<replaceable>true/false</replaceable></arg>
       <arg rep="norepeat">--privateip=<replaceable>IP address</replaceable></arg>
-      <arg rep="norepeat">--public-ssh-key=<replaceable>key string</replaceable></arg>
+      <arg rep="repeat">--public-ssh-key=<replaceable>key string</replaceable></arg>
       <arg rep="norepeat">--launch-mode=<replaceable>NATIVE/EMULATED/PARAVIRTUALIZED</replaceable></arg>
     </cmdsynopsis>
     <cmdsynopsis id="synopsis-vboxmanage-cloudinstance-info" sepchar=" ">
@@ -147,7 +147,13 @@
           <term><option>--privateip</option></term><listitem><para>Private IP address for the created instance.</para></listitem>
         </varlistentry>
         <varlistentry>
-          <term><option>--public-ssh-key</option></term><listitem><para>Public SSH key used to connect to the instance via SSH</para></listitem>
+          <term><option>--public-ssh-key</option></term>
+            <listitem>
+              <para>Public SSH key used to connect to the instance via SSH.
+                This parameter may be repeated if you plan to use more than one key as:
+                "--public-ssh-key=firstSSHKey --public-ssh-key=secondSSHKey".
+              </para>
+            </listitem>
         </varlistentry>
         <varlistentry>
           <term><option>--launch-mode</option></term><listitem><para>The most known values here may be EMULATED, NATIVE, PARAVIRTUALIZED. </para></listitem>
