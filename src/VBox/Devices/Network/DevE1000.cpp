@@ -5603,15 +5603,6 @@ static DECLCALLBACK(void) e1kTxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
     RT_NOREF(rc, pvUser);
 }
 
-/**
- * @callback_method_impl{FNPDMTASKDEV, Handler for the wakeup signaller queue.}
- */
-static DECLCALLBACK(void) e1kCanRxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
-{
-    RT_NOREF(pvUser);
-    e1kWakeupReceive(pDevIns, PDMINS_2_DATA(pDevIns, PE1KSTATE));
-}
-
 #endif /* IN_RING3 */
 
 /**
