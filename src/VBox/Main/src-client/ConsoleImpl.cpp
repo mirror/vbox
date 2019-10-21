@@ -64,7 +64,6 @@
 #ifdef VBOX_WITH_AUDIO_RECORDING
 # include "DrvAudioRec.h"
 #endif
-#include "Nvram.h"
 #ifdef VBOX_WITH_USB_CARDREADER
 # include "UsbCardReader.h"
 #endif
@@ -404,7 +403,6 @@ Console::Console()
     , mpVmm2UserMethods(NULL)
     , m_pVMMDev(NULL)
     , mAudioVRDE(NULL)
-    , mNvram(NULL)
 #ifdef VBOX_WITH_USB_CARDREADER
     , mUsbCardReader(NULL)
 #endif
@@ -592,16 +590,6 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl, Loc
         unconst(Recording.mAudioRec) = new AudioVideoRec(this);
         AssertReturn(Recording.mAudioRec, E_FAIL);
 #endif
-        FirmwareType_T enmFirmwareType;
-        mMachine->COMGETTER(FirmwareType)(&enmFirmwareType);
-        if (   enmFirmwareType == FirmwareType_EFI
-            || enmFirmwareType == FirmwareType_EFI32
-            || enmFirmwareType == FirmwareType_EFI64
-            || enmFirmwareType == FirmwareType_EFIDUAL)
-        {
-            unconst(mNvram) = new Nvram(this);
-            AssertReturn(mNvram, E_FAIL);
-        }
 
 #ifdef VBOX_WITH_USB_CARDREADER
         unconst(mUsbCardReader) = new UsbCardReader(this);
@@ -712,12 +700,6 @@ void Console::uninit()
     {
         RTMemFree((void *)mpIfSecKeyHlp);
         mpIfSecKeyHlp = NULL;
-    }
-
-    if (mNvram)
-    {
-        delete mNvram;
-        unconst(mNvram) = NULL;
     }
 
 #ifdef VBOX_WITH_USB_CARDREADER
