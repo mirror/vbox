@@ -1047,8 +1047,6 @@ typedef struct E1KSTATE
 
     /** Transmit task. */
     PDMTASKHANDLE           hTxTask;
-    /** Rx wakeup signaller. */
-    PDMTASKHANDLE           hCanRxTask;
 
     /** Critical section - what is it protecting? */
     PDMCRITSECT             cs;
@@ -1109,7 +1107,7 @@ typedef struct E1KSTATE
     /** N/A: */
     bool volatile fMaybeOutOfSpace;
     /** EMT: Gets signalled when more RX descriptors become available. */
-    RTSEMEVENT  hEventMoreRxDescAvail;
+    SUPSEMEVENT hEventMoreRxDescAvail;
 #ifdef E1K_WITH_RXD_CACHE
     /** RX: Fetched RX descriptors. */
     E1KRXDESC   aRxDescriptors[E1K_RXD_CACHE_SIZE];
@@ -1208,7 +1206,8 @@ typedef struct E1KSTATE
     STAMPROFILE                         StatTransmitSendRZ;
     STAMPROFILE                         StatTransmitSendR3;
     STAMPROFILE                         StatRxOverflow;
-    STAMCOUNTER                         StatRxOverflowWakeup;
+    STAMCOUNTER                         StatRxOverflowWakeupRZ;
+    STAMCOUNTER                         StatRxOverflowWakeupR3;
     STAMCOUNTER                         StatTxDescCtxNormal;
     STAMCOUNTER                         StatTxDescCtxTSE;
     STAMCOUNTER                         StatTxDescLegacy;
@@ -1670,22 +1669,23 @@ DECLINLINE(void) e1kCancelTimer(PPDMDEVINS pDevIns, PE1KSTATE pThis, TMTIMERHAND
 # define e1kCsTxLeave(ps) PDMCritSectLeave(&ps->csTx)
 #endif /* E1K_WITH_TX_CS */
 
-#ifdef IN_RING3
 
 /**
  * Wakeup the RX thread.
  */
-static void e1kWakeupReceive(PPDMDEVINS pDevIns)
+static void e1kWakeupReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    if (    pThis->fMaybeOutOfSpace
-        &&  pThis->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
+    if (   pThis->fMaybeOutOfSpace
+        && pThis->hEventMoreRxDescAvail != NIL_SUPSEMEVENT)
     {
-        STAM_COUNTER_INC(&pThis->StatRxOverflowWakeup);
+        STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatRxOverflowWakeup));
         E1kLog(("%s Waking up Out-of-RX-space semaphore\n",  pThis->szPrf));
-        RTSemEventSignal(pThis->hEventMoreRxDescAvail);
+        int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEventMoreRxDescAvail);
+        AssertRC(rc);
     }
 }
+
+#ifdef IN_RING3
 
 /**
  * Hardware reset. Revert all registers to initial values.
@@ -3338,17 +3338,8 @@ static int e1kRegWriteRDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
         e1kCsRxLeave(pThis);
         if (RT_SUCCESS(rc))
         {
-/** @todo bird: Use SUPSem* for this so we can signal it in ring-0 as well
- *        without requiring any context switches.  We should also check the
- *        wait condition before bothering to queue the item as we're currently
- *        queuing thousands of items per second here in a normal transmit
- *        scenario.  Expect performance changes when fixing this! */
-#ifdef IN_RING3
             /* Signal that we have more receive descriptors available. */
-            e1kWakeupReceive(pDevIns);
-#else
-            PDMDevHlpTaskTrigger(pDevIns, pThis->hCanRxTask);
-#endif
+            e1kWakeupReceive(pDevIns, pThis);
         }
     }
     return rc;
@@ -5618,7 +5609,7 @@ static DECLCALLBACK(void) e1kTxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 static DECLCALLBACK(void) e1kCanRxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
     RT_NOREF(pvUser);
-    e1kWakeupReceive(pDevIns);
+    e1kWakeupReceive(pDevIns, PDMINS_2_DATA(pDevIns, PE1KSTATE));
 }
 
 #endif /* IN_RING3 */
@@ -6497,7 +6488,7 @@ static DECLCALLBACK(int) e1kR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInt
         }
         E1kLogRel(("E1000: e1kR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", cMillies));
         E1kLog(("%s: e1kR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", pThis->szPrf, cMillies));
-        RTSemEventWait(pThis->hEventMoreRxDescAvail, cMillies);
+        PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEventMoreRxDescAvail, cMillies);
     }
     STAM_PROFILE_STOP(&pThis->StatRxOverflow, a);
     ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, false);
@@ -7547,7 +7538,7 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 static DECLCALLBACK(void) e1kR3PowerOff(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
-    e1kWakeupReceive(pDevIns);
+    e1kWakeupReceive(pDevIns, PDMINS_2_DATA(pDevIns, PE1KSTATE));
 }
 
 /**
@@ -7579,7 +7570,7 @@ static DECLCALLBACK(void) e1kR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) e1kR3Suspend(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
-    e1kWakeupReceive(pDevIns);
+    e1kWakeupReceive(pDevIns, PDMINS_2_DATA(pDevIns, PE1KSTATE));
 }
 
 /**
@@ -7624,11 +7615,12 @@ static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
     E1kLog(("%s Destroying instance\n", pThis->szPrf));
     if (PDMCritSectIsInitialized(&pThis->cs))
     {
-        if (pThis->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
+        if (pThis->hEventMoreRxDescAvail != NIL_SUPSEMEVENT)
         {
-            RTSemEventSignal(pThis->hEventMoreRxDescAvail);
-            RTSemEventDestroy(pThis->hEventMoreRxDescAvail);
-            pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+            PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEventMoreRxDescAvail);
+            RTThreadYield();
+            PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEventMoreRxDescAvail);
+            pThis->hEventMoreRxDescAvail = NIL_SUPSEMEVENT;
         }
 #ifdef E1K_WITH_TX_CS
         PDMR3CritSectDelete(&pThis->csTx);
@@ -7729,7 +7721,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     RTStrPrintf(pThis->szPrf, sizeof(pThis->szPrf), "E1000#%d", iInstance);
     E1kLog(("%s Constructing new instance sizeof(E1KRXDESC)=%d\n", pThis->szPrf, sizeof(E1KRXDESC)));
-    pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+    pThis->hEventMoreRxDescAvail = NIL_SUPSEMEVENT;
     pThis->u16TxPktLen  = 0;
     pThis->fIPcsum      = false;
     pThis->fTCPcsum     = false;
@@ -7925,10 +7917,6 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpTaskCreate(pDevIns, PDMTASK_F_RZ, "E1000-Xmit", e1kTxTaskCallback, NULL, &pThis->hTxTask);
     AssertRCReturn(rc, rc);
 
-    /* Create the RX notifier signaller. */
-    rc = PDMDevHlpTaskCreate(pDevIns, PDMTASK_F_RZ, "E1000-Rcv", e1kCanRxTaskCallback, NULL, &pThis->hCanRxTask);
-    AssertRCReturn(rc, rc);
-
 #ifdef E1K_TX_DELAY
     /* Create Transmit Delay Timer */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
@@ -8013,7 +8001,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     else
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the network LUN"));
 
-    rc = RTSemEventCreate(&pThis->hEventMoreRxDescAvail);
+    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEventMoreRxDescAvail);
     AssertRCReturn(rc, rc);
 
     rc = e1kInitDebugHelpers();
@@ -8047,7 +8035,8 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveFilter,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive filtering",        "/Devices/E1k%d/Receive/Filter", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveStore,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive storing",          "/Devices/E1k%d/Receive/Store", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflow,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling RX overflows",        "/Devices/E1k%d/RxOverflow", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflowWakeup,   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups",          "/Devices/E1k%d/RxOverflowWakeup", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflowWakeupRZ, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups in RZ",    "/Devices/E1k%d/RxOverflowWakeupRZ", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflowWakeupR3, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups in R3",    "/Devices/E1k%d/RxOverflowWakeupR3", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in RZ",          "/Devices/E1k%d/Transmit/TotalRZ", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in R3",          "/Devices/E1k%d/Transmit/TotalR3", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitSendRZ,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in RZ",      "/Devices/E1k%d/Transmit/SendRZ", iInstance);
