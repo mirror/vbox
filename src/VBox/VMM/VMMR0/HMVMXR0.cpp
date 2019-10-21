@@ -15485,11 +15485,8 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccess(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
             Log4Func(("Linear access uAccessType=%#x GCPhys=%#RGp Off=%#x\n", uAccessType, GCPhys,
                  VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual)));
 
-            PVMCC      pVM  = pVCpu->CTX_SUFF(pVM);
-            PCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-            rcStrict = IOMMMIOPhysHandler(pVM, pVCpu,
-                                          uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ ? 0 : X86_TRAP_PF_RW,
-                                          CPUMCTX2CORE(pCtx), GCPhys);
+            rcStrict = IOMR0MmioPhysHandler(pVCpu->CTX_SUFF(pVM), pVCpu,
+                                            uAccessType == VMX_APIC_ACCESS_TYPE_LINEAR_READ ? 0 : X86_TRAP_PF_RW, GCPhys);
             Log4Func(("IOMMMIOPhysHandler returned %Rrc\n", VBOXSTRICTRC_VAL(rcStrict)));
             if (   rcStrict == VINF_SUCCESS
                 || rcStrict == VERR_PAGE_TABLE_NOT_PRESENT

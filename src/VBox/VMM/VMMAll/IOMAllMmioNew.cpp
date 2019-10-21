@@ -741,7 +741,7 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT
  * @param   uErrorCode  CPU Error code.
  * @param   GCPhysFault The GC physical address.
  */
-VMM_INT_DECL(VBOXSTRICTRC) IOMMmioPhysHandlerNew(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, RTGCPHYS GCPhysFault)
+VMM_INT_DECL(VBOXSTRICTRC) IOMR0MmioPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, uint32_t uErrorCode, RTGCPHYS GCPhysFault)
 {
     STAM_COUNTER_INC(&pVM->iom.s.StatMmioPhysHandlerNew);
 

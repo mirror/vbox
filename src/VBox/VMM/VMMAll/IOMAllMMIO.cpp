@@ -697,42 +697,6 @@ DECLEXPORT(VBOXSTRICTRC) iomMmioPfHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uE
 
 
 /**
- * Physical access handler for MMIO ranges.
- *
- * @returns VBox status code (appropriate for GC return).
- * @param   pVM         The cross context VM structure.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   uErrorCode  CPU Error code.
- * @param   pCtxCore    Trap register frame.
- * @param   GCPhysFault The GC physical address.
- */
-VMMDECL(VBOXSTRICTRC) IOMMMIOPhysHandler(PVMCC pVM, PVMCPUCC pVCpu, RTGCUINT uErrorCode, PCPUMCTXCORE pCtxCore, RTGCPHYS GCPhysFault)
-{
-    /*
-     * We don't have a range here, so look it up before calling the common function.
-     */
-    int rc2 = IOM_LOCK_SHARED(pVM); NOREF(rc2);
-#ifndef IN_RING3
-    if (rc2 == VERR_SEM_BUSY)
-        return VINF_IOM_R3_MMIO_READ_WRITE;
-#endif
-    PIOMMMIORANGE pRange = iomMmioGetRange(pVM, pVCpu, GCPhysFault);
-    if (RT_UNLIKELY(!pRange))
-    {
-        IOM_UNLOCK_SHARED(pVM);
-        return VERR_IOM_MMIO_RANGE_NOT_FOUND;
-    }
-    iomMmioRetainRange(pRange);
-    IOM_UNLOCK_SHARED(pVM);
-
-    VBOXSTRICTRC rcStrict = iomMmioCommonPfHandlerOld(pVM, pVCpu, (uint32_t)uErrorCode, pCtxCore, GCPhysFault, pRange);
-
-    iomMmioReleaseRange(pVM, pRange);
-    return VBOXSTRICTRC_VAL(rcStrict);
-}
-
-
-/**
  * @callback_method_impl{FNPGMPHYSHANDLER, MMIO page accesses}
  *
  * @remarks The @a pvUser argument points to the MMIO range entry.

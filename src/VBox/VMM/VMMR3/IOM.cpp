@@ -220,8 +220,8 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
 
     STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerNewR3,   STAMTYPE_COUNTER, "/IOM/MmioHandlerNewR3",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-3.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerNewR0,   STAMTYPE_COUNTER, "/IOM/MmioHandlerNewR0",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-0.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioPfHandlerNew,   STAMTYPE_COUNTER, "/IOM/MmioPfHandlerNew",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioPfHandlerNew from ring-3.");
-    STAM_REG(pVM, &pVM->iom.s.StatMmioPhysHandlerNew, STAMTYPE_COUNTER, "/IOM/MmioPhysHandlerNew",                  STAMUNIT_OCCURENCES,     "Number of calls to iomMmioPhysHandler from ring-3.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioPfHandlerNew,   STAMTYPE_COUNTER, "/IOM/MmioPfHandlerNew",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioPfHandlerNew.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioPhysHandlerNew, STAMTYPE_COUNTER, "/IOM/MmioPhysHandlerNew",                  STAMUNIT_OCCURENCES,     "Number of calls to IOMR0MmioPhysHandler.");
 
     /* Redundant, but just in case we change something in the future */
     iomR3FlushCache(pVM);
@@ -1912,7 +1912,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IOMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
     {
         Log5(("IOM: Dispatching pending MMIO write: %RGp LB %#x\n",
               pVCpu->iom.s.PendingMmioWrite.GCPhys, pVCpu->iom.s.PendingMmioWrite.cbValue));
-        /** @todo Try optimize this some day?  Currently easier and correcter to
+        /** @todo Try optimize this some day?  Currently easier and more correct to
          *        involve PGM here since we never know if the MMIO area is still mapped
          *        to the same location as when we wrote to it in RC/R0 context. */
         VBOXSTRICTRC rcStrictCommit = PGMPhysWrite(pVM, pVCpu->iom.s.PendingMmioWrite.GCPhys,
