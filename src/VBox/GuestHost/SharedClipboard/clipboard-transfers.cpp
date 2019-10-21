@@ -1211,7 +1211,9 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
     pTransfer->cRoots = 0;
     RTListInit(&pTransfer->lstRoots);
 
-    RT_ZERO(pTransfer->Events);
+    RTListInit(&pTransfer->Events.lstEvents);
+    pTransfer->Events.uID          = 0;
+    pTransfer->Events.uEventIDNext = 1;
 
     if (RT_SUCCESS(rc))
     {
