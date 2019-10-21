@@ -634,6 +634,8 @@
 #define VERR_TOO_MANY_POSTS                 (-357)
 /** The event semaphore has already been posted. */
 #define VERR_ALREADY_POSTED                 (-358)
+/** The event semaphore has already been posted. */
+#define VINF_ALREADY_POSTED                 (358)
 /** The event semaphore has already been reset. */
 #define VERR_ALREADY_RESET                  (-359)
 /** The semaphore is in use. */
