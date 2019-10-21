@@ -1068,6 +1068,7 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
                         case VirtualSystemDescriptionType_CloudBootVolumeId:
                         case VirtualSystemDescriptionType_CloudOCIVCNCompartment:
                         case VirtualSystemDescriptionType_CloudOCISubnetCompartment:
+                        case VirtualSystemDescriptionType_CloudPublicSSHKey:
                             /** @todo  VirtualSystemDescriptionType_Miscellaneous? */
                             break;
 
