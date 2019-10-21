@@ -1134,15 +1134,18 @@ void MachineMoveVM::updatePathsToStateFiles(const Utf8Str &sourcePath, const Utf
     if (SUCCEEDED(rc) && !pSnapshot.isNull())
         pSnapshot->i_updateSavedStatePaths(sourcePath.c_str(),
                                            targetPath.c_str());
-    if (RTPathStartsWith(m_pMachine->mSSData->strStateFilePath.c_str(), sourcePath.c_str()))
-        m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%s",
-                                                           targetPath.c_str(),
-                                                           m_pMachine->mSSData->strStateFilePath.c_str() + sourcePath.length());
-    else
-        m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%c%s",
-                                                           targetPath.c_str(),
-                                                           RTPATH_DELIMITER,
-                                                           RTPathFilename(m_pMachine->mSSData->strStateFilePath.c_str()));
+    if (m_pMachine->mSSData->strStateFilePath.isNotEmpty())
+    {
+        if (RTPathStartsWith(m_pMachine->mSSData->strStateFilePath.c_str(), sourcePath.c_str()))
+            m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%s",
+                                                               targetPath.c_str(),
+                                                               m_pMachine->mSSData->strStateFilePath.c_str() + sourcePath.length());
+        else
+            m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%c%s",
+                                                               targetPath.c_str(),
+                                                               RTPATH_DELIMITER,
+                                                               RTPathFilename(m_pMachine->mSSData->strStateFilePath.c_str()));
+    }
 }
 
 HRESULT MachineMoveVM::getFilesList(const Utf8Str &strRootFolder, fileList_t &filesList)
