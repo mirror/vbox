@@ -208,7 +208,6 @@
 
 //#undef DEBUG
 
-#define STATE_TO_DEVINS(pThis)           (((PE1KSTATE )pThis)->CTX_SUFF(pDevIns))
 #define E1K_RELOCATE(p, o) *(RTHCUINTPTR *)&p += o
 
 #define E1K_INC_CNT32(cnt) \
@@ -1018,49 +1017,13 @@ AssertCompileSize(struct E1kTcpHeader, 20);
 #define E1K_SAVEDSTATE_VERSION_VBOX_30  1
 
 /**
- * Device state structure.
+ * E1000 shared device state.
  *
- * Holds the current state of device.
- *
- * @implements  PDMINETWORKDOWN
- * @implements  PDMINETWORKCONFIG
- * @implements  PDMILEDPORTS
+ * This is shared between ring-0 and ring-3.
  */
-struct E1kState_st
+typedef struct E1KSTATE
 {
     char                    szPrf[8];                /**< Log prefix, e.g. E1000#1. */
-
-    PDMIBASE                IBase;
-    PDMINETWORKDOWN         INetworkDown;
-    PDMINETWORKCONFIG       INetworkConfig;
-    PDMILEDPORTS            ILeds;                               /**< LED interface */
-    R3PTRTYPE(PPDMIBASE)    pDrvBase;                 /**< Attached network driver. */
-    R3PTRTYPE(PPDMILEDCONNECTORS)    pLedsConnector;
-
-    PPDMDEVINSR3            pDevInsR3;                   /**< Device instance - R3. */
-    R3PTRTYPE(PPDMQUEUE)    pTxQueueR3;                   /**< Transmit queue - R3. */
-    R3PTRTYPE(PPDMQUEUE)    pCanRxQueueR3;           /**< Rx wakeup signaller - R3. */
-    PPDMINETWORKUPR3        pDrvR3;              /**< Attached network driver - R3. */
-    /** The scatter / gather buffer used for the current outgoing packet - R3. */
-    R3PTRTYPE(PPDMSCATTERGATHER) pTxSgR3;
-
-    PPDMDEVINSR0            pDevInsR0;                   /**< Device instance - R0. */
-    R0PTRTYPE(PPDMQUEUE)    pTxQueueR0;                   /**< Transmit queue - R0. */
-    R0PTRTYPE(PPDMQUEUE)    pCanRxQueueR0;           /**< Rx wakeup signaller - R0. */
-    PPDMINETWORKUPR0        pDrvR0;              /**< Attached network driver - R0. */
-    /** The scatter / gather buffer used for the current outgoing packet - R0. */
-    R0PTRTYPE(PPDMSCATTERGATHER) pTxSgR0;
-
-    PPDMDEVINSRC            pDevInsRC;                   /**< Device instance - RC. */
-    RCPTRTYPE(PPDMQUEUE)    pTxQueueRC;                   /**< Transmit queue - RC. */
-    RCPTRTYPE(PPDMQUEUE)    pCanRxQueueRC;           /**< Rx wakeup signaller - RC. */
-    PPDMINETWORKUPRC        pDrvRC;              /**< Attached network driver - RC. */
-    /** The scatter / gather buffer used for the current outgoing packet - RC. */
-    RCPTRTYPE(PPDMSCATTERGATHER) pTxSgRC;
-    RTRCPTR                 RCPtrAlignment;
-#if HC_ARCH_BITS != 32
-    uint32_t                Alignment1;
-#endif
 
     /** Handle to PCI region \#0, the MMIO region. */
     IOMIOPORTHANDLE         hMmioRegion;
@@ -1081,6 +1044,11 @@ struct E1kState_st
     TMTIMERHANDLE           hIntTimer;
     /** Link Up(/Restore) Timer. */
     TMTIMERHANDLE           hLUTimer;
+
+    /** Transmit task. */
+    PDMTASKHANDLE           hTxTask;
+    /** Rx wakeup signaller. */
+    PDMTASKHANDLE           hCanRxTask;
 
     /** Critical section - what is it protecting? */
     PDMCRITSECT             cs;
@@ -1206,8 +1174,6 @@ struct E1kState_st
     /** ?: Emulated controller type. */
     E1KCHIP     eChip;
 
-    /** EMT: EEPROM emulation */
-    E1kEEPROM   eeprom;
     /** EMT: Physical interface emulation. */
     PHY         phy;
 
@@ -1301,10 +1267,92 @@ struct E1kState_st
     uint32_t    uStatTxLarge;
     uint32_t    uStatAlign;
 #endif /* E1K_INT_STATS */
-};
-typedef struct E1kState_st E1KSTATE;
+} E1KSTATE;
 /** Pointer to the E1000 device state. */
 typedef E1KSTATE *PE1KSTATE;
+
+/**
+ * E1000 ring-3 device state
+ *
+ * @implements  PDMINETWORKDOWN
+ * @implements  PDMINETWORKCONFIG
+ * @implements  PDMILEDPORTS
+ */
+typedef struct E1KSTATER3
+{
+    PDMIBASE                IBase;
+    PDMINETWORKDOWN         INetworkDown;
+    PDMINETWORKCONFIG       INetworkConfig;
+    /** LED interface */
+    PDMILEDPORTS            ILeds;
+    /** Attached network driver. */
+    R3PTRTYPE(PPDMIBASE)    pDrvBase;
+    R3PTRTYPE(PPDMILEDCONNECTORS) pLedsConnector;
+
+    /** Pointer to the shared state. */
+    R3PTRTYPE(PE1KSTATE)    pShared;
+
+    /** Device instance. */
+    PPDMDEVINSR3            pDevInsR3;
+    /** Attached network driver. */
+    PPDMINETWORKUPR3        pDrvR3;
+    /** The scatter / gather buffer used for the current outgoing packet. */
+    R3PTRTYPE(PPDMSCATTERGATHER) pTxSgR3;
+
+    /** EMT: EEPROM emulation */
+    E1kEEPROM               eeprom;
+} E1KSTATER3;
+/** Pointer to the E1000 ring-3 device state. */
+typedef E1KSTATER3 *PE1KSTATER3;
+
+
+/**
+ * E1000 ring-0 device state
+ */
+typedef struct E1KSTATER0
+{
+    /** Device instance. */
+    PPDMDEVINSR0            pDevInsR0;
+    /** Attached network driver. */
+    PPDMINETWORKUPR0        pDrvR0;
+    /** The scatter / gather buffer used for the current outgoing packet - R0. */
+    R0PTRTYPE(PPDMSCATTERGATHER) pTxSgR0;
+} E1KSTATER0;
+/** Pointer to the E1000 ring-0 device state. */
+typedef E1KSTATER0 *PE1KSTATER0;
+
+
+/**
+ * E1000 raw-mode device state
+ */
+typedef struct E1KSTATERC
+{
+    /** Device instance. */
+    PPDMDEVINSRC            pDevInsRC;
+    /** Attached network driver. */
+    PPDMINETWORKUPRC        pDrvRC;
+    /** The scatter / gather buffer used for the current outgoing packet. */
+    RCPTRTYPE(PPDMSCATTERGATHER) pTxSgRC;
+} E1KSTATERC;
+/** Pointer to the E1000 raw-mode device state. */
+typedef E1KSTATERC *PE1KSTATERC;
+
+
+/** @def PE1KSTATECC
+ * Pointer to the instance data for the current context. */
+#ifdef IN_RING3
+typedef  E1KSTATER3  E1KSTATECC;
+typedef PE1KSTATER3 PE1KSTATECC;
+#elif defined(IN_RING0)
+typedef  E1KSTATER0  E1KSTATECC;
+typedef PE1KSTATER0 PE1KSTATECC;
+#elif defined(IN_RC)
+typedef  E1KSTATERC  E1KSTATECC;
+typedef PE1KSTATERC PE1KSTATECC;
+#else
+# error "Not IN_RING3, IN_RING0 or IN_RC"
+#endif
+
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
@@ -1644,17 +1692,18 @@ static void e1kWakeupReceive(PPDMDEVINS pDevIns)
  *
  * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
+ * @param   pThisCC     The current context instance data.
  */
-static void e1kHardReset(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+static void e1kR3HardReset(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC)
 {
     E1kLog(("%s Hard reset triggered\n", pThis->szPrf));
     /* No interrupts should survive device reset, see @bugref(9556). */
     if (pThis->fIntRaised)
     {
         /* Lower(0) INTA(0) */
-        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0);
+        PDMDevHlpPCISetIrq(pDevIns, 0, 0);
         pThis->fIntRaised = false;
-        E1kLog(("%s e1kHardReset: Lowered IRQ: ICR=%08x\n", pThis->szPrf, ICR));
+        E1kLog(("%s e1kR3HardReset: Lowered IRQ: ICR=%08x\n", pThis->szPrf, ICR));
     }
     memset(pThis->auRegs,        0, sizeof(pThis->auRegs));
     memset(pThis->aRecAddr.au32, 0, sizeof(pThis->aRecAddr.au32));
@@ -1671,12 +1720,12 @@ static void e1kHardReset(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     pThis->u16RxBSize = 2048;
 
     uint16_t u16LedCtl = 0x0602; /* LED0/LINK_UP#, LED2/LINK100# */
-    pThis->eeprom.readWord(0x2F, &u16LedCtl); /* Read LEDCTL defaults from EEPROM */
+    pThisCC->eeprom.readWord(0x2F, &u16LedCtl); /* Read LEDCTL defaults from EEPROM */
     LEDCTL = 0x07008300 | (((uint32_t)u16LedCtl & 0xCF00) << 8) | (u16LedCtl & 0xCF); /* Only LED0 and LED2 defaults come from EEPROM */
 
     /* Reset promiscuous mode */
-    if (pThis->pDrvR3)
-        pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, false);
+    if (pThisCC->pDrvR3)
+        pThisCC->pDrvR3->pfnSetPromiscuousMode(pThisCC->pDrvR3, false);
 
 #ifdef E1K_WITH_TXD_CACHE
     int rc = e1kCsTxEnter(pThis, VERR_SEM_BUSY);
@@ -1842,12 +1891,11 @@ DECLINLINE(unsigned) e1kRxDIsCacheEmpty(PE1KSTATE pThis)
  * descriptor ring.
  *
  * @returns the actual number of descriptors fetched.
+ * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
- * @param   pDesc       Pointer to descriptor union.
- * @param   addr        Physical address in guest context.
  * @thread  EMT, RX
  */
-DECLINLINE(unsigned) e1kRxDPrefetch(PE1KSTATE pThis)
+DECLINLINE(unsigned) e1kRxDPrefetch(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
     /* We've already loaded pThis->nRxDFetched descriptors past RDH. */
     unsigned nDescsAvailable    = e1kGetRxLen(pThis) - e1kRxDInCache(pThis);
@@ -1865,7 +1913,7 @@ DECLINLINE(unsigned) e1kRxDPrefetch(PE1KSTATE pThis)
     if (nDescsToFetch == 0)
         return 0;
     E1KRXDESC* pFirstEmptyDesc = &pThis->aRxDescriptors[pThis->nRxDFetched];
-    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
+    PDMDevHlpPhysRead(pDevIns,
                       ((uint64_t)RDBAH << 32) + RDBAL + nFirstNotLoaded * sizeof(E1KRXDESC),
                       pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KRXDESC));
     // uint64_t addrBase = ((uint64_t)RDBAH << 32) + RDBAL;
@@ -1881,7 +1929,7 @@ DECLINLINE(unsigned) e1kRxDPrefetch(PE1KSTATE pThis)
              nFirstNotLoaded, RDLEN, RDH, RDT));
     if (nDescsToFetch > nDescsInSingleRead)
     {
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
+        PDMDevHlpPhysRead(pDevIns,
                           ((uint64_t)RDBAH << 32) + RDBAL,
                           pFirstEmptyDesc + nDescsInSingleRead,
                           (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KRXDESC));
@@ -2140,7 +2188,7 @@ DECLINLINE(void) e1kAdvanceRDH(PPDMDEVINS pDevIns, PE1KSTATE pThis)
         E1kLog3(("%s e1kAdvanceRDH: Rx cache is empty, RDH=%x RDT=%x "
                  "iRxDCurrent=%x nRxDFetched=%x\n",
                  pThis->szPrf, RDH, RDT, pThis->iRxDCurrent, pThis->nRxDFetched));
-        e1kRxDPrefetch(pThis);
+        e1kRxDPrefetch(pDevIns, pThis);
     }
 #endif /* E1K_WITH_RXD_CACHE */
     /*
@@ -2182,10 +2230,11 @@ DECLINLINE(void) e1kAdvanceRDH(PPDMDEVINS pDevIns, PE1KSTATE pThis)
  * go out of sync with RDH which will cause trouble when EMT checks if the
  * cache is empty to do pre-fetch @bugref(6217).
  *
+ * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
  * @thread  RX
  */
-DECLINLINE(E1KRXDESC*) e1kRxDGet(PE1KSTATE pThis)
+DECLINLINE(E1KRXDESC *) e1kRxDGet(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
     Assert(e1kCsRxIsOwner(pThis));
     /* Check the cache first. */
@@ -2193,7 +2242,7 @@ DECLINLINE(E1KRXDESC*) e1kRxDGet(PE1KSTATE pThis)
         return &pThis->aRxDescriptors[pThis->iRxDCurrent];
     /* Cache is empty, reset it and check if we can fetch more. */
     pThis->iRxDCurrent = pThis->nRxDFetched = 0;
-    if (e1kRxDPrefetch(pThis))
+    if (e1kRxDPrefetch(pDevIns, pThis))
         return &pThis->aRxDescriptors[pThis->iRxDCurrent];
     /* Out of Rx descriptors. */
     return NULL;
@@ -2218,9 +2267,7 @@ DECLINLINE(void) e1kRxDPut(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KRXDESC* pDesc
     // uint64_t addr = e1kDescAddr(RDBAH, RDBAL, RDH);
     // uint32_t rdh = RDH;
     // Assert(pThis->aRxDescAddr[pDesc - pThis->aRxDescriptors] == addr);
-    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
-                          e1kDescAddr(RDBAH, RDBAL, RDH),
-                          pDesc, sizeof(E1KRXDESC));
+    PDMDevHlpPCIPhysWrite(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), pDesc, sizeof(E1KRXDESC));
     /*
      * We need to print the descriptor before advancing RDH as it may fetch new
      * descriptors into the cache.
@@ -2232,17 +2279,18 @@ DECLINLINE(void) e1kRxDPut(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KRXDESC* pDesc
 /**
  * Store a fragment of received packet at the specifed address.
  *
- * @param   pThis          The device state structure.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The device state structure.
  * @param   pDesc           The next available RX descriptor.
  * @param   pvBuf           The fragment.
  * @param   cb              The size of the fragment.
  */
-static DECLCALLBACK(void) e1kStoreRxFragment(PE1KSTATE pThis, E1KRXDESC *pDesc, const void *pvBuf, size_t cb)
+static DECLCALLBACK(void) e1kStoreRxFragment(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KRXDESC *pDesc, const void *pvBuf, size_t cb)
 {
     STAM_PROFILE_ADV_START(&pThis->StatReceiveStore, a);
     E1kLog2(("%s e1kStoreRxFragment: store fragment of %04X at %016LX, EOP=%d\n",
              pThis->szPrf, cb, pDesc->u64BufAddr, pDesc->status.fEOP));
-    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->u64BufAddr, pvBuf, cb);
+    PDMDevHlpPCIPhysWrite(pDevIns, pDesc->u64BufAddr, pvBuf, cb);
     pDesc->u16Length = (uint16_t)cb;                        Assert(pDesc->u16Length == cb);
     STAM_PROFILE_ADV_STOP(&pThis->StatReceiveStore, a);
 }
@@ -2257,7 +2305,8 @@ static DECLCALLBACK(void) e1kStoreRxFragment(PE1KSTATE pThis, E1KRXDESC *pDesc, 
  *
  * @remarks Trigger the RXT0 interrupt if it is the last fragment of the packet.
  *
- * @param   pThis          The device state structure.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           The device state structure.
  * @param   pDesc           The next available RX descriptor.
  * @param   pvBuf           The fragment.
  * @param   cb              The size of the fragment.
@@ -2266,10 +2315,10 @@ static DECLCALLBACK(void) e1kStoreRxFragment(PPDMDEVINS pDevIns, PE1KSTATE pThis
 {
     STAM_PROFILE_ADV_START(&pThis->StatReceiveStore, a);
     E1kLog2(("%s e1kStoreRxFragment: store fragment of %04X at %016LX, EOP=%d\n", pThis->szPrf, cb, pDesc->u64BufAddr, pDesc->status.fEOP));
-    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), pDesc->u64BufAddr, pvBuf, cb);
+    PDMDevHlpPCIPhysWrite(pDevIns, pDesc->u64BufAddr, pvBuf, cb);
     pDesc->u16Length = (uint16_t)cb;                        Assert(pDesc->u16Length == cb);
     /* Write back the descriptor */
-    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH), pDesc, sizeof(E1KRXDESC));
+    PDMDevHlpPCIPhysWrite(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), pDesc, sizeof(E1KRXDESC));
     e1kPrintRDesc(pThis, pDesc);
     E1kLogRel(("E1000: Wrote back RX desc, RDH=%x\n", RDH));
     /* Advance head */
@@ -2479,7 +2528,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
 # ifdef E1K_WITH_RXD_CACHE
     while (cb > 0)
     {
-        E1KRXDESC *pDesc = e1kRxDGet(pThis);
+        E1KRXDESC *pDesc = e1kRxDGet(pDevIns, pThis);
 
         if (pDesc == NULL)
         {
@@ -2499,8 +2548,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
     {
         /* Load the descriptor pointed by head */
         E1KRXDESC desc, *pDesc = &desc;
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH),
-                          &desc, sizeof(desc));
+        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
 # endif /* !E1K_WITH_RXD_CACHE */
         if (pDesc->u64BufAddr)
         {
@@ -2523,7 +2571,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
             {
                 pDesc->status.fEOP = false;
                 e1kCsRxLeave(pThis);
-                e1kStoreRxFragment(pThis, pDesc, ptr, u16RxBufferSize);
+                e1kStoreRxFragment(pDevIns, pThis, pDesc, ptr, u16RxBufferSize);
                 rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
                     return rc;
@@ -2534,7 +2582,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
             {
                 pDesc->status.fEOP = true;
                 e1kCsRxLeave(pThis);
-                e1kStoreRxFragment(pThis, pDesc, ptr, cb);
+                e1kStoreRxFragment(pDevIns, pThis, pDesc, ptr, cb);
 # ifdef E1K_WITH_RXD_CACHE
                 rc = e1kCsRxEnter(pThis, VERR_SEM_BUSY);
                 if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -2559,9 +2607,7 @@ static int e1kHandleRxPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, const void *pv
         {
             /* Write back the descriptor. */
             pDesc->status.fDD = true;
-            PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns),
-                                  e1kDescAddr(RDBAH, RDBAL, RDH),
-                                  pDesc, sizeof(E1KRXDESC));
+            PDMDevHlpPCIPhysWrite(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), pDesc, sizeof(E1KRXDESC));
             e1kAdvanceRDH(pDevIns, pThis);
         }
 # endif /* !E1K_WITH_RXD_CACHE */
@@ -2623,19 +2669,18 @@ DECLINLINE(void) e1kBringLinkUpDelayed(PPDMDEVINS pDevIns, PE1KSTATE pThis)
  *
  * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
+ * @param   pThisCC     The current context instance data.
  */
-DECLINLINE(void) e1kR3LinkUp(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+DECLINLINE(void) e1kR3LinkUp(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC)
 {
     E1kLog(("%s Link is up\n", pThis->szPrf));
     STATUS |= STATUS_LU;
     Phy::setLinkStatus(&pThis->phy, true);
     e1kRaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, ICR_LSC);
-    if (pThis->pDrvR3)
-        pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, PDMNETWORKLINKSTATE_UP);
-    /* Process pending TX descriptors (see @bugref{8942}) */
-    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pTxQueue));
-    if (RT_UNLIKELY(pItem))
-        PDMQueueInsert(pThis->CTX_SUFF(pTxQueue), pItem);
+    if (pThisCC->pDrvR3)
+        pThisCC->pDrvR3->pfnNotifyLinkChanged(pThisCC->pDrvR3, PDMNETWORKLINKSTATE_UP);
+    /* Trigger processing of pending TX descriptors (see @bugref{8942}). */
+    PDMDevHlpTaskTrigger(pDevIns, pThis->hTxTask);
 }
 
 /**
@@ -2643,8 +2688,9 @@ DECLINLINE(void) e1kR3LinkUp(PPDMDEVINS pDevIns, PE1KSTATE pThis)
  *
  * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
+ * @param   pThisCC     The current context instance data.
  */
-DECLINLINE(void) e1kR3LinkDown(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+DECLINLINE(void) e1kR3LinkDown(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC)
 {
     E1kLog(("%s Link is down\n", pThis->szPrf));
     STATUS &= ~STATUS_LU;
@@ -2652,8 +2698,8 @@ DECLINLINE(void) e1kR3LinkDown(PPDMDEVINS pDevIns, PE1KSTATE pThis)
     Phy::setLinkStatus(&pThis->phy, false);
 #endif /* E1K_LSC_ON_RESET */
     e1kRaiseInterrupt(pDevIns, pThis, VERR_SEM_BUSY, ICR_LSC);
-    if (pThis->pDrvR3)
-        pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, PDMNETWORKLINKSTATE_DOWN);
+    if (pThisCC->pDrvR3)
+        pThisCC->pDrvR3->pfnNotifyLinkChanged(pThisCC->pDrvR3, PDMNETWORKLINKSTATE_DOWN);
 }
 
 /**
@@ -2661,8 +2707,9 @@ DECLINLINE(void) e1kR3LinkDown(PPDMDEVINS pDevIns, PE1KSTATE pThis)
  *
  * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
+ * @param   pThisCC     The current context instance data.
  */
-DECLINLINE(void) e1kR3LinkDownTemp(PPDMDEVINS pDevIns, PE1KSTATE pThis)
+DECLINLINE(void) e1kR3LinkDownTemp(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC)
 {
     E1kLog(("%s Link is down temporarily\n", pThis->szPrf));
     STATUS &= ~STATUS_LU;
@@ -2675,9 +2722,9 @@ DECLINLINE(void) e1kR3LinkDownTemp(PPDMDEVINS pDevIns, PE1KSTATE pThis)
      * of sending PDMNETWORKLINKSTATE_DOWN_RESUME to this device. Earlier versions
      * of code notified the driver that the link was up! See @bugref{7057}.
      */
-    if (pThis->pDrvR3)
-        pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, PDMNETWORKLINKSTATE_DOWN);
-    e1kBringLinkUpDelayed(pThis->pDevInsR3, pThis);
+    if (pThisCC->pDrvR3)
+        pThisCC->pDrvR3->pfnNotifyLinkChanged(pThisCC->pDrvR3, PDMNETWORKLINKSTATE_DOWN);
+    e1kBringLinkUpDelayed(pDevIns, pThis);
 }
 #endif /* IN_RING3 */
 
@@ -2722,16 +2769,16 @@ static int e1kRegReadCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
  * A callback used by PHY to indicate that the link needs to be updated due to
  * reset of PHY.
  *
- * @param   pPhy        A pointer to phy member of the device state structure.
+ * @param   pDevIns     The device instance.
  * @thread  any
  */
-void e1kPhyLinkResetCallback(PPHY pPhy)
+void e1kPhyLinkResetCallback(PPDMDEVINS pDevIns)
 {
-    /* PHY is aggregated into e1000, get pThis from pPhy. */
-    PE1KSTATE pThis = RT_FROM_MEMBER(pPhy, E1KSTATE, phy);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+
     /* Make sure we have cable connected and MAC can talk to PHY */
     if (pThis->fCableConnected && (CTRL & CTRL_SLU))
-        e1kArmTimer(pThis->CTX_SUFF(pDevIns), pThis, pThis->hLUTimer, E1K_INIT_LINKUP_DELAY_US); /** @todo 9218 */
+        e1kArmTimer(pDevIns, pThis, pThis->hLUTimer, E1K_INIT_LINKUP_DELAY_US);
 }
 
 /**
@@ -2755,7 +2802,7 @@ static int e1kRegWriteCTRL(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
 #ifndef IN_RING3
         return VINF_IOM_R3_MMIO_WRITE;
 #else
-        e1kHardReset(pDevIns, pThis);
+        e1kR3HardReset(pDevIns, pThis, PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC));
 #endif
     }
     else
@@ -2797,7 +2844,7 @@ static int e1kRegWriteCTRL(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
             {
                 Log7(("%s e1kRegWriteCTRL: Phy::writeMDIO(%d)\n", pThis->szPrf, !!(value & CTRL_MDIO)));
                 /* MDIO direction pin is set to output and MDC is high, write MDIO pin value to PHY */
-                Phy::writeMDIO(&pThis->phy, !!(value & CTRL_MDIO));
+                Phy::writeMDIO(&pThis->phy, !!(value & CTRL_MDIO), pDevIns);
             }
             else
             {
@@ -2836,7 +2883,8 @@ static int e1kRegWriteEECD(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
         /* Access to EEPROM granted -- forward 4-wire bits to EEPROM device */
         /* Note: 82543GC does not need to request EEPROM access */
         STAM_PROFILE_ADV_START(&pThis->StatEEPROMWrite, a);
-        pThis->eeprom.write(value & EECD_EE_WIRES);
+        PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+        pThisCC->eeprom.write(value & EECD_EE_WIRES);
         STAM_PROFILE_ADV_STOP(&pThis->StatEEPROMWrite, a);
     }
     if (value & EECD_EE_REQ)
@@ -2877,7 +2925,8 @@ static int e1kRegReadEECD(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
             /* Note: 82543GC does not need to request EEPROM access */
             /* Access to EEPROM granted -- get 4-wire bits to EEPROM device */
             STAM_PROFILE_ADV_START(&pThis->StatEEPROMRead, a);
-            value |= pThis->eeprom.read();
+            PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+            value |= pThisCC->eeprom.read();
             STAM_PROFILE_ADV_STOP(&pThis->StatEEPROMRead, a);
         }
         *pu32Value = value;
@@ -2911,9 +2960,10 @@ static int e1kRegWriteEERD(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
     /* DONE and DATA are set only if read was triggered by START. */
     if (value & EERD_START)
     {
-        uint16_t tmp;
         STAM_PROFILE_ADV_START(&pThis->StatEEPROMRead, a);
-        if (pThis->eeprom.readWord(GET_BITS_V(value, EERD, ADDR), &tmp))
+        uint16_t    tmp;
+        PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+        if (pThisCC->eeprom.readWord(GET_BITS_V(value, EERD, ADDR), &tmp))
             SET_BITS(EERD, DATA, tmp);
         EERD |= EERD_DONE;
         STAM_PROFILE_ADV_STOP(&pThis->StatEEPROMRead, a);
@@ -2969,9 +3019,9 @@ static int e1kRegWriteMDIC(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
         STAM_COUNTER_INC(&pThis->StatPHYAccesses);
         /* Forward op to PHY */
         if (value & MDIC_OP_READ)
-            SET_BITS(MDIC, DATA, Phy::readRegister(&pThis->phy, GET_BITS_V(value, MDIC, REG)));
+            SET_BITS(MDIC, DATA, Phy::readRegister(&pThis->phy, GET_BITS_V(value, MDIC, REG), pDevIns));
         else
-            Phy::writeRegister(&pThis->phy, GET_BITS_V(value, MDIC, REG), value & MDIC_DATA_MASK);
+            Phy::writeRegister(&pThis->phy, GET_BITS_V(value, MDIC, REG), value & MDIC_DATA_MASK, pDevIns);
         /* Let software know that we are done */
         MDIC |= MDIC_READY;
     }
@@ -3177,8 +3227,9 @@ static int e1kRegWriteRCTL(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
 #ifndef IN_RING3
         return VINF_IOM_R3_MMIO_WRITE;
 #else
-        if (pThis->pDrvR3)
-            pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, fBecomePromiscous);
+        PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+        if (pThisCC->pDrvR3)
+            pThisCC->pDrvR3->pfnSetPromiscuousMode(pThisCC->pDrvR3, fBecomePromiscous);
 #endif
     }
 
@@ -3280,7 +3331,7 @@ static int e1kRegWriteRDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
          * a later point in e1kRxDGet().
          */
         if (e1kRxDIsCacheEmpty(pThis) && (RCTL & RCTL_EN))
-            e1kRxDPrefetch(pThis);
+            e1kRxDPrefetch(pDevIns, pThis);
 #endif /* E1K_WITH_RXD_CACHE */
         e1kCsRxLeave(pThis);
         if (RT_SUCCESS(rc))
@@ -3292,11 +3343,9 @@ static int e1kRegWriteRDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
  *        scenario.  Expect performance changes when fixing this! */
 #ifdef IN_RING3
             /* Signal that we have more receive descriptors available. */
-            e1kWakeupReceive(pThis->CTX_SUFF(pDevIns));
+            e1kWakeupReceive(pDevIns);
 #else
-            PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pCanRxQueue));
-            if (pItem)
-                PDMQueueInsert(pThis->CTX_SUFF(pCanRxQueue), pItem);
+            PDMDevHlpTaskTrigger(pDevIns, pThis->hCanRxTask);
 #endif
         }
     }
@@ -3355,7 +3404,7 @@ DECLINLINE(uint32_t) e1kGetTxLen(PE1KSTATE pThis)
  */
 static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PE1KSTATE pThis = (PE1KSTATE )pvUser;
+    PE1KSTATE pThis = (PE1KSTATE)pvUser;
     Assert(PDMCritSectIsOwner(&pThis->csTx));
 
     E1K_INC_ISTAT_CNT(pThis->uStatTxDelayExp);
@@ -3385,7 +3434,7 @@ static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
 {
     RT_NOREF(pDevIns);
     RT_NOREF(pTimer);
-    PE1KSTATE pThis = (PE1KSTATE )pvUser;
+    PE1KSTATE pThis = (PE1KSTATE)pvUser;
 
     E1K_INC_ISTAT_CNT(pThis->uStatTID);
     /* Cancel absolute delay timer as we have already got attention */
@@ -3409,7 +3458,7 @@ static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
 {
     RT_NOREF(pDevIns);
     RT_NOREF(pTimer);
-    PE1KSTATE pThis = (PE1KSTATE )pvUser;
+    PE1KSTATE pThis = (PE1KSTATE)pvUser;
 
     E1K_INC_ISTAT_CNT(pThis->uStatTAD);
     /* Cancel interrupt delay timer as we have already got attention */
@@ -3432,7 +3481,7 @@ static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  */
 static DECLCALLBACK(void) e1kRxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PE1KSTATE pThis = (PE1KSTATE )pvUser;
+    PE1KSTATE pThis = (PE1KSTATE)pvUser;
 
     E1K_INC_ISTAT_CNT(pThis->uStatRID);
     /* Cancel absolute delay timer as we have already got attention */
@@ -3452,7 +3501,7 @@ static DECLCALLBACK(void) e1kRxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  */
 static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PE1KSTATE pThis = (PE1KSTATE )pvUser;
+    PE1KSTATE pThis = (PE1KSTATE)pvUser;
 
     E1K_INC_ISTAT_CNT(pThis->uStatRAD);
     /* Cancel interrupt delay timer as we have already got attention */
@@ -3473,7 +3522,7 @@ static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
 static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns, pTimer);
-    PE1KSTATE pThis = (PE1KSTATE )pvUser;
+    PE1KSTATE pThis = (PE1KSTATE)pvUser;
 
     STAM_PROFILE_ADV_START(&pThis->StatLateIntTimer, a);
     STAM_COUNTER_INC(&pThis->StatLateInts);
@@ -3496,8 +3545,9 @@ static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
  */
 static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    RT_NOREF(pDevIns, pTimer);
-    PE1KSTATE pThis = (PE1KSTATE )pvUser;
+    RT_NOREF(pTimer);
+    PE1KSTATE   pThis   = (PE1KSTATE)pvUser;
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 
     /*
      * This can happen if we set the link status to down when the Link up timer was
@@ -3509,12 +3559,12 @@ static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
     {
         /* 82543GC does not have an internal PHY */
         if (pThis->eChip == E1K_CHIP_82543GC || (CTRL & CTRL_SLU))
-            e1kR3LinkUp(pDevIns, pThis);
+            e1kR3LinkUp(pDevIns, pThis, pThisCC);
     }
-#ifdef E1K_LSC_ON_RESET
+# ifdef E1K_LSC_ON_RESET
     else if (pThis->eChip == E1K_CHIP_82543GC)
-        e1kR3LinkDown(pDevIns, pThis);
-#endif /* E1K_LSC_ON_RESET */
+        e1kR3LinkDown(pDevIns, pThis, pThisCC);
+# endif /* E1K_LSC_ON_RESET */
 }
 
 #endif /* IN_RING3 */
@@ -3695,16 +3745,16 @@ DECLINLINE(bool) e1kCanDoGso(PE1KSTATE pThis, PCPDMNETWORKGSO pGso, E1KTXDAT con
  *
  * @param   pThis              The device state structure.
  */
-static void e1kXmitFreeBuf(PE1KSTATE pThis)
+static void e1kXmitFreeBuf(PE1KSTATE pThis, PE1KSTATECC pThisCC)
 {
-    PPDMSCATTERGATHER pSg = pThis->CTX_SUFF(pTxSg);
+    PPDMSCATTERGATHER pSg = pThisCC->CTX_SUFF(pTxSg);
     if (pSg)
     {
-        pThis->CTX_SUFF(pTxSg) = NULL;
+        pThisCC->CTX_SUFF(pTxSg) = NULL;
 
         if (pSg->pvAllocator != pThis)
         {
-            PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+            PPDMINETWORKUP pDrv = pThisCC->CTX_SUFF(pDrv);
             if (pDrv)
                 pDrv->pfnFreeBuf(pDrv, pSg);
         }
@@ -3730,16 +3780,16 @@ static void e1kXmitFreeBuf(PE1KSTATE pThis)
  *                              out to the max MTU size.
  * @param   fGso                Whether this is a GSO frame or not.
  */
-DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, size_t cbMin, bool fExactSize, bool fGso)
+DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, PE1KSTATECC pThisCC, size_t cbMin, bool fExactSize, bool fGso)
 {
     /* Adjust cbMin if necessary. */
     if (!fExactSize)
         cbMin = RT_MAX(cbMin, E1K_MAX_TX_PKT_SIZE);
 
     /* Deal with existing buffer (descriptor screw up, reset, etc). */
-    if (RT_UNLIKELY(pThis->CTX_SUFF(pTxSg)))
-        e1kXmitFreeBuf(pThis);
-    Assert(pThis->CTX_SUFF(pTxSg) == NULL);
+    if (RT_UNLIKELY(pThisCC->CTX_SUFF(pTxSg)))
+        e1kXmitFreeBuf(pThis, pThisCC);
+    Assert(pThisCC->CTX_SUFF(pTxSg) == NULL);
 
     /*
      * Allocate the buffer.
@@ -3747,7 +3797,7 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, size_t cbMin, bool fExactSize, 
     PPDMSCATTERGATHER pSg;
     if (RT_LIKELY(GET_BITS(RCTL, LBM) != RCTL_LBM_TCVR))
     {
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        PPDMINETWORKUP pDrv = pThisCC->CTX_SUFF(pDrv);
         if (RT_UNLIKELY(!pDrv))
             return VERR_NET_DOWN;
         int rc = pDrv->pfnAllocBuf(pDrv, cbMin, fGso ? &pThis->GsoCtx : NULL, &pSg);
@@ -3773,7 +3823,7 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, size_t cbMin, bool fExactSize, 
         pSg->aSegs[0].cbSeg = sizeof(pThis->aTxPacketFallback);
     }
 
-    pThis->CTX_SUFF(pTxSg) = pSg;
+    pThisCC->CTX_SUFF(pTxSg) = pSg;
     return VINF_SUCCESS;
 }
 #else /* E1K_WITH_TXD_CACHE */
@@ -3787,12 +3837,12 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, size_t cbMin, bool fExactSize, 
  *                              out to the max MTU size.
  * @param   fGso                Whether this is a GSO frame or not.
  */
-DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, bool fGso)
+DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, PE1KSTATECC pThisCC, bool fGso)
 {
     /* Deal with existing buffer (descriptor screw up, reset, etc). */
-    if (RT_UNLIKELY(pThis->CTX_SUFF(pTxSg)))
-        e1kXmitFreeBuf(pThis);
-    Assert(pThis->CTX_SUFF(pTxSg) == NULL);
+    if (RT_UNLIKELY(pThisCC->CTX_SUFF(pTxSg)))
+        e1kXmitFreeBuf(pThis, pThisCC);
+    Assert(pThisCC->CTX_SUFF(pTxSg) == NULL);
 
     /*
      * Allocate the buffer.
@@ -3806,7 +3856,7 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, bool fGso)
             return VINF_SUCCESS;
         }
 
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        PPDMINETWORKUP pDrv = pThisCC->CTX_SUFF(pDrv);
         if (RT_UNLIKELY(!pDrv))
             return VERR_NET_DOWN;
         int rc = pDrv->pfnAllocBuf(pDrv, pThis->cbTxAlloc, fGso ? &pThis->GsoCtx : NULL, &pSg);
@@ -3837,7 +3887,7 @@ DECLINLINE(int) e1kXmitAllocBuf(PE1KSTATE pThis, bool fGso)
     }
     pThis->cbTxAlloc = 0;
 
-    pThis->CTX_SUFF(pTxSg) = pSg;
+    pThisCC->CTX_SUFF(pTxSg) = pSg;
     return VINF_SUCCESS;
 }
 #endif /* E1K_WITH_TXD_CACHE */
@@ -3863,14 +3913,14 @@ DECLINLINE(bool) e1kXmitIsGsoBuf(PDMSCATTERGATHER const *pTxSg)
 /**
  * Load transmit descriptor from guest memory.
  *
- * @param   pThis       The device state structure.
+ * @param   pDevIns     The device instance.
  * @param   pDesc       Pointer to descriptor union.
  * @param   addr        Physical address in guest context.
  * @thread  E1000_TX
  */
-DECLINLINE(void) e1kLoadDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
+DECLINLINE(void) e1kLoadDesc(PPDMDEVINS pDevIns, E1KTXDESC *pDesc, RTGCPHYS addr)
 {
-    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), addr, pDesc, sizeof(E1KTXDESC));
+    PDMDevHlpPhysRead(pDevIns, addr, pDesc, sizeof(E1KTXDESC));
 }
 #else /* E1K_WITH_TXD_CACHE */
 /**
@@ -3880,12 +3930,11 @@ DECLINLINE(void) e1kLoadDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
  * descriptor ring.
  *
  * @returns the actual number of descriptors fetched.
+ * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
- * @param   pDesc       Pointer to descriptor union.
- * @param   addr        Physical address in guest context.
  * @thread  E1000_TX
  */
-DECLINLINE(unsigned) e1kTxDLoadMore(PE1KSTATE pThis)
+DECLINLINE(unsigned) e1kTxDLoadMore(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
     Assert(pThis->iTxDCurrent == 0);
     /* We've already loaded pThis->nTxDFetched descriptors past TDH. */
@@ -3894,14 +3943,13 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PE1KSTATE pThis)
     unsigned nDescsTotal        = TDLEN / sizeof(E1KTXDESC);
     unsigned nFirstNotLoaded    = (TDH + pThis->nTxDFetched) % nDescsTotal;
     unsigned nDescsInSingleRead = RT_MIN(nDescsToFetch, nDescsTotal - nFirstNotLoaded);
-    E1kLog3(("%s e1kTxDLoadMore: nDescsAvailable=%u nDescsToFetch=%u "
-             "nDescsTotal=%u nFirstNotLoaded=0x%x nDescsInSingleRead=%u\n",
+    E1kLog3(("%s e1kTxDLoadMore: nDescsAvailable=%u nDescsToFetch=%u nDescsTotal=%u nFirstNotLoaded=0x%x nDescsInSingleRead=%u\n",
              pThis->szPrf, nDescsAvailable, nDescsToFetch, nDescsTotal,
              nFirstNotLoaded, nDescsInSingleRead));
     if (nDescsToFetch == 0)
         return 0;
     E1KTXDESC* pFirstEmptyDesc = &pThis->aTxDescriptors[pThis->nTxDFetched];
-    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
+    PDMDevHlpPhysRead(pDevIns,
                       ((uint64_t)TDBAH << 32) + TDBAL + nFirstNotLoaded * sizeof(E1KTXDESC),
                       pFirstEmptyDesc, nDescsInSingleRead * sizeof(E1KTXDESC));
     E1kLog3(("%s Fetched %u TX descriptors at %08x%08x(0x%x), TDLEN=%08x, TDH=%08x, TDT=%08x\n",
@@ -3910,7 +3958,7 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PE1KSTATE pThis)
              nFirstNotLoaded, TDLEN, TDH, TDT));
     if (nDescsToFetch > nDescsInSingleRead)
     {
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns),
+        PDMDevHlpPhysRead(pDevIns,
                           ((uint64_t)TDBAH << 32) + TDBAL,
                           pFirstEmptyDesc + nDescsInSingleRead,
                           (nDescsToFetch - nDescsInSingleRead) * sizeof(E1KTXDESC));
@@ -3927,15 +3975,14 @@ DECLINLINE(unsigned) e1kTxDLoadMore(PE1KSTATE pThis)
  * descriptors.
  *
  * @returns true if there are descriptors in cache.
+ * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
- * @param   pDesc       Pointer to descriptor union.
- * @param   addr        Physical address in guest context.
  * @thread  E1000_TX
  */
-DECLINLINE(bool) e1kTxDLazyLoad(PE1KSTATE pThis)
+DECLINLINE(bool) e1kTxDLazyLoad(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
     if (pThis->nTxDFetched == 0)
-        return e1kTxDLoadMore(pThis) != 0;
+        return e1kTxDLoadMore(pDevIns, pThis) != 0;
     return true;
 }
 #endif /* E1K_WITH_TXD_CACHE */
@@ -3943,16 +3990,17 @@ DECLINLINE(bool) e1kTxDLazyLoad(PE1KSTATE pThis)
 /**
  * Write back transmit descriptor to guest memory.
  *
+ * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
  * @param   pDesc       Pointer to descriptor union.
  * @param   addr        Physical address in guest context.
  * @thread  E1000_TX
  */
-DECLINLINE(void) e1kWriteBackDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
+DECLINLINE(void) e1kWriteBackDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr)
 {
     /* Only the last half of the descriptor has to be written back. */
     e1kPrintTDesc(pThis, pDesc, "^^^");
-    PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), addr, pDesc, sizeof(E1KTXDESC));
+    PDMDevHlpPCIPhysWrite(pDevIns, addr, pDesc, sizeof(E1KTXDESC));
 }
 
 /**
@@ -3963,12 +4011,13 @@ DECLINLINE(void) e1kWriteBackDesc(PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS ad
  *
  * @param   pDevIns         The device instance.
  * @param   pThis           The device state structure.
+ * @param   pThisCC         The current context instance data.
  * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
+static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC, bool fOnWorkerThread)
 {
-    PPDMSCATTERGATHER   pSg     = pThis->CTX_SUFF(pTxSg);
+    PPDMSCATTERGATHER   pSg     = pThisCC->CTX_SUFF(pTxSg);
     uint32_t            cbFrame = pSg ? (uint32_t)pSg->cbUsed : 0;
     Assert(!pSg || pSg->cSegs == 1);
 
@@ -4023,7 +4072,7 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorker
         E1K_INC_CNT32(MPTC);
     /* Update octet transmit counter */
     E1K_ADD_CNT64(GOTCL, GOTCH, cbFrame);
-    if (pThis->CTX_SUFF(pDrv))
+    if (pThisCC->CTX_SUFF(pDrv))
         STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, cbFrame);
     if (cbFrame == 64)
         E1K_INC_CNT32(PTC64);
@@ -4048,8 +4097,8 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorker
     {
         e1kPacketDump(pThis, (uint8_t const *)pSg->aSegs[0].pvSeg, cbFrame, "--> Outgoing");
 
-        pThis->CTX_SUFF(pTxSg) = NULL;
-        PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+        pThisCC->CTX_SUFF(pTxSg) = NULL;
+        PPDMINETWORKUP pDrv = pThisCC->CTX_SUFF(pDrv);
         if (pDrv)
         {
             /* Release critical section to avoid deadlock in CanReceive */
@@ -4074,7 +4123,7 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorker
             e1kHandleRxPacket(pDevIns, pThis, pSg->aSegs[0].pvSeg, cbFrame, status);
             rc = VINF_SUCCESS;
         }
-        e1kXmitFreeBuf(pThis);
+        e1kXmitFreeBuf(pThis, pThisCC);
     }
     else
         rc = VERR_NET_DOWN;
@@ -4151,26 +4200,24 @@ static void e1kInsertChecksum(PE1KSTATE pThis, uint8_t *pPkt, uint16_t u16PktLen
 #ifndef E1K_WITH_TXD_CACHE
 static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS PhysAddr, uint16_t u16Len, bool fSend, bool fOnWorkerThread)
 {
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     /* TCP header being transmitted */
-    struct E1kTcpHeader *pTcpHdr = (struct E1kTcpHeader *)
-            (pThis->aTxPacketFallback + pThis->contextTSE.tu.u8CSS);
+    struct E1kTcpHeader *pTcpHdr = (struct E1kTcpHeader *)(pThis->aTxPacketFallback + pThis->contextTSE.tu.u8CSS);
     /* IP header being transmitted */
-    struct E1kIpHeader *pIpHdr = (struct E1kIpHeader *)
-            (pThis->aTxPacketFallback + pThis->contextTSE.ip.u8CSS);
+    struct E1kIpHeader *pIpHdr = (struct E1kIpHeader *)(pThis->aTxPacketFallback + pThis->contextTSE.ip.u8CSS);
 
     E1kLog3(("%s e1kFallbackAddSegment: Length=%x, remaining payload=%x, header=%x, send=%RTbool\n",
              pThis->szPrf, u16Len, pThis->u32PayRemain, pThis->u16HdrRemain, fSend));
     Assert(pThis->u32PayRemain + pThis->u16HdrRemain > 0);
 
-    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), PhysAddr,
-                      pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
+    PDMDevHlpPhysRead(pDevIns, PhysAddr, pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
     E1kLog3(("%s Dump of the segment:\n"
-            "%.*Rhxd\n"
-            "%s --- End of dump ---\n",
-            pThis->szPrf, u16Len, pThis->aTxPacketFallback + pThis->u16TxPktLen, pThis->szPrf));
+             "%.*Rhxd\n"
+             "%s --- End of dump ---\n",
+             pThis->szPrf, u16Len, pThis->aTxPacketFallback + pThis->u16TxPktLen, pThis->szPrf));
     pThis->u16TxPktLen += u16Len;
     E1kLog3(("%s e1kFallbackAddSegment: pThis->u16TxPktLen=%x\n",
-            pThis->szPrf, pThis->u16TxPktLen));
+             pThis->szPrf, pThis->u16TxPktLen));
     if (pThis->u16HdrRemain > 0)
     {
         /* The header was not complete, check if it is now */
@@ -4190,7 +4237,7 @@ static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS 
             /* Still not */
             pThis->u16HdrRemain -= u16Len;
             E1kLog3(("%s e1kFallbackAddSegment: Header is still incomplete, 0x%x bytes remain.\n",
-                    pThis->szPrf, pThis->u16HdrRemain));
+                     pThis->szPrf, pThis->u16HdrRemain));
             return;
         }
     }
@@ -4203,7 +4250,7 @@ static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS 
         /* IP Total Length = payload + headers - ethernet header */
         pIpHdr->total_len = htons(pThis->u16TxPktLen - pThis->contextTSE.ip.u8CSS);
         E1kLog3(("%s e1kFallbackAddSegment: End of packet, pIpHdr->total_len=%x\n",
-                pThis->szPrf, ntohs(pIpHdr->total_len)));
+                 pThis->szPrf, ntohs(pIpHdr->total_len)));
         /* Update IP Checksum */
         pIpHdr->chksum = 0;
         e1kInsertChecksum(pThis, pThis->aTxPacketFallback, pThis->u16TxPktLen,
@@ -4220,7 +4267,7 @@ static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS 
         }
         /* Add TCP length to partial pseudo header sum */
         uint32_t csum = pThis->u32SavedCsum
-                + htons(pThis->u16TxPktLen - pThis->contextTSE.tu.u8CSS);
+                      + htons(pThis->u16TxPktLen - pThis->contextTSE.tu.u8CSS);
         while (csum >> 16)
             csum = (csum >> 16) + (csum & 0xFFFF);
         pTcpHdr->chksum = csum;
@@ -4234,18 +4281,22 @@ static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS 
          * Transmit it. If we've use the SG already, allocate a new one before
          * we copy of the data.
          */
-        if (!pThis->CTX_SUFF(pTxSg))
-            e1kXmitAllocBuf(pThis, pThis->u16TxPktLen + (pThis->fVTag ? 4 : 0), true /*fExactSize*/, false /*fGso*/);
-        if (pThis->CTX_SUFF(pTxSg))
+        PPDMSCATTERGATHER pTxSg = pThisCC->CTX_SUFF(pTxSg);
+        if (!pTxSg)
         {
-            Assert(pThis->u16TxPktLen <= pThis->CTX_SUFF(pTxSg)->cbAvailable);
-            Assert(pThis->CTX_SUFF(pTxSg)->cSegs == 1);
-            if (pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg != pThis->aTxPacketFallback)
-                memcpy(pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->aTxPacketFallback, pThis->u16TxPktLen);
-            pThis->CTX_SUFF(pTxSg)->cbUsed         = pThis->u16TxPktLen;
-            pThis->CTX_SUFF(pTxSg)->aSegs[0].cbSeg = pThis->u16TxPktLen;
+            e1kXmitAllocBuf(pThis, pThisCC, pThis->u16TxPktLen + (pThis->fVTag ? 4 : 0), true /*fExactSize*/, false /*fGso*/);
+            pTxSg = pThisCC->CTX_SUFF(pTxSg);
         }
-        e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+        if (pTxSg)
+        {
+            Assert(pThis->u16TxPktLen <= pThisCC->CTX_SUFF(pTxSg)->cbAvailable);
+            Assert(pTxSg->cSegs == 1);
+            if (pThis->CCCTX_SUFF(pTxSg)->aSegs[0].pvSeg != pThis->aTxPacketFallback)
+                memcpy(pTxSg->aSegs[0].pvSeg, pThis->aTxPacketFallback, pThis->u16TxPktLen);
+            pTxSg->cbUsed         = pThis->u16TxPktLen;
+            pTxSg->aSegs[0].cbSeg = pThis->u16TxPktLen;
+        }
+        e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
 
         /* Update Sequence Number */
         pTcpHdr->seqno = htonl(ntohl(pTcpHdr->seqno) + pThis->u16TxPktLen
@@ -4258,30 +4309,28 @@ static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS 
 static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS PhysAddr, uint16_t u16Len, bool fSend, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     /* TCP header being transmitted */
-    struct E1kTcpHeader *pTcpHdr = (struct E1kTcpHeader *)
-            (pThis->aTxPacketFallback + pThis->contextTSE.tu.u8CSS);
+    struct E1kTcpHeader *pTcpHdr = (struct E1kTcpHeader *)(pThis->aTxPacketFallback + pThis->contextTSE.tu.u8CSS);
     /* IP header being transmitted */
-    struct E1kIpHeader *pIpHdr = (struct E1kIpHeader *)
-            (pThis->aTxPacketFallback + pThis->contextTSE.ip.u8CSS);
+    struct E1kIpHeader *pIpHdr = (struct E1kIpHeader *)(pThis->aTxPacketFallback + pThis->contextTSE.ip.u8CSS);
 
     E1kLog3(("%s e1kFallbackAddSegment: Length=%x, remaining payload=%x, header=%x, send=%RTbool\n",
              pThis->szPrf, u16Len, pThis->u32PayRemain, pThis->u16HdrRemain, fSend));
     AssertReturn(pThis->u32PayRemain + pThis->u16HdrRemain > 0, VINF_SUCCESS);
 
     if (pThis->u16TxPktLen + u16Len <= sizeof(pThis->aTxPacketFallback))
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), PhysAddr,
-                          pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
+        PDMDevHlpPhysRead(pDevIns, PhysAddr, pThis->aTxPacketFallback + pThis->u16TxPktLen, u16Len);
     else
         E1kLog(("%s e1kFallbackAddSegment: writing beyond aTxPacketFallback, u16TxPktLen=%d(0x%x) + u16Len=%d(0x%x) > %d\n",
                 pThis->szPrf, pThis->u16TxPktLen, pThis->u16TxPktLen, u16Len, u16Len, sizeof(pThis->aTxPacketFallback)));
     E1kLog3(("%s Dump of the segment:\n"
-            "%.*Rhxd\n"
-            "%s --- End of dump ---\n",
-            pThis->szPrf, u16Len, pThis->aTxPacketFallback + pThis->u16TxPktLen, pThis->szPrf));
+             "%.*Rhxd\n"
+             "%s --- End of dump ---\n",
+             pThis->szPrf, u16Len, pThis->aTxPacketFallback + pThis->u16TxPktLen, pThis->szPrf));
     pThis->u16TxPktLen += u16Len;
     E1kLog3(("%s e1kFallbackAddSegment: pThis->u16TxPktLen=%x\n",
-            pThis->szPrf, pThis->u16TxPktLen));
+             pThis->szPrf, pThis->u16TxPktLen));
     if (pThis->u16HdrRemain > 0)
     {
         /* The header was not complete, check if it is now */
@@ -4301,7 +4350,7 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
             /* Still not */
             pThis->u16HdrRemain -= u16Len;
             E1kLog3(("%s e1kFallbackAddSegment: Header is still incomplete, 0x%x bytes remain.\n",
-                    pThis->szPrf, pThis->u16HdrRemain));
+                     pThis->szPrf, pThis->u16HdrRemain));
             return rc;
         }
     }
@@ -4317,7 +4366,7 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
         /* IP Total Length = payload + headers - ethernet header */
         pIpHdr->total_len = htons(pThis->u16TxPktLen - pThis->contextTSE.ip.u8CSS);
         E1kLog3(("%s e1kFallbackAddSegment: End of packet, pIpHdr->total_len=%x\n",
-                pThis->szPrf, ntohs(pIpHdr->total_len)));
+                 pThis->szPrf, ntohs(pIpHdr->total_len)));
         /* Update IP Checksum */
         pIpHdr->chksum = 0;
         e1kInsertChecksum(pThis, pThis->aTxPacketFallback, pThis->u16TxPktLen,
@@ -4334,7 +4383,7 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
         }
         /* Add TCP length to partial pseudo header sum */
         uint32_t csum = pThis->u32SavedCsum
-                + htons(pThis->u16TxPktLen - pThis->contextTSE.tu.u8CSS);
+                      + htons(pThis->u16TxPktLen - pThis->contextTSE.tu.u8CSS);
         while (csum >> 16)
             csum = (csum >> 16) + (csum & 0xFFFF);
         pTcpHdr->chksum = csum;
@@ -4347,23 +4396,23 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
         /*
          * Transmit it.
          */
-        if (pThis->CTX_SUFF(pTxSg))
+        PPDMSCATTERGATHER pTxSg = pThisCC->CTX_SUFF(pTxSg);
+        if (pTxSg)
         {
             /* Make sure the packet fits into the allocated buffer */
-            size_t cbCopy = RT_MIN(pThis->u16TxPktLen, pThis->CTX_SUFF(pTxSg)->cbAvailable);
+            size_t cbCopy = RT_MIN(pThis->u16TxPktLen, pThisCC->CTX_SUFF(pTxSg)->cbAvailable);
 #ifdef DEBUG
-            if (pThis->u16TxPktLen > pThis->CTX_SUFF(pTxSg)->cbAvailable)
+            if (pThis->u16TxPktLen > pTxSg->cbAvailable)
                 E1kLog(("%s e1kFallbackAddSegment: truncating packet, u16TxPktLen=%d(0x%x) > cbAvailable=%d(0x%x)\n",
-                        pThis->szPrf, pThis->u16TxPktLen, pThis->u16TxPktLen,
-                        pThis->CTX_SUFF(pTxSg)->cbAvailable, pThis->CTX_SUFF(pTxSg)->cbAvailable));
+                        pThis->szPrf, pThis->u16TxPktLen, pThis->u16TxPktLen, pTxSg->cbAvailable, pTxSg->cbAvailable));
 #endif /* DEBUG */
-            Assert(pThis->CTX_SUFF(pTxSg)->cSegs == 1);
-            if (pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg != pThis->aTxPacketFallback)
-                memcpy(pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->aTxPacketFallback, cbCopy);
-            pThis->CTX_SUFF(pTxSg)->cbUsed         = cbCopy;
-            pThis->CTX_SUFF(pTxSg)->aSegs[0].cbSeg = cbCopy;
+            Assert(pTxSg->cSegs == 1);
+            if (pTxSg->aSegs[0].pvSeg != pThis->aTxPacketFallback)
+                memcpy(pTxSg->aSegs[0].pvSeg, pThis->aTxPacketFallback, cbCopy);
+            pTxSg->cbUsed         = cbCopy;
+            pTxSg->aSegs[0].cbSeg = cbCopy;
         }
-        e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+        e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
 
         /* Update Sequence Number */
         pTcpHdr->seqno = htonl(ntohl(pTcpHdr->seqno) + pThis->u16TxPktLen
@@ -4378,7 +4427,7 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
                                        pThis->contextTSE.dw3.u16MSS)
                                 + pThis->contextTSE.dw3.u8HDRLEN
                                 + (pThis->fVTag ? 4 : 0);
-            rc = e1kXmitAllocBuf(pThis, false /* fGSO */);
+            rc = e1kXmitAllocBuf(pThis, pThisCC, false /* fGSO */);
         }
     }
 
@@ -4404,7 +4453,7 @@ static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS P
  */
 static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, uint32_t cbFragment, bool fOnWorkerThread)
 {
-    PPDMSCATTERGATHER pTxSg = pThis->CTX_SUFF(pTxSg);
+    PPDMSCATTERGATHER pTxSg = pThisCC->CTX_SUFF(pTxSg);
     Assert(e1kGetDescType(pDesc) == E1K_DTYP_DATA);
     Assert(pDesc->data.cmd.fTSE);
     Assert(!e1kXmitIsGsoBuf(pTxSg));
@@ -4446,7 +4495,7 @@ static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, uint32_t cb
         if (pThis->u32PayRemain != 0)
             E1K_INC_CNT32(TSCTFC);
         pThis->u16TxPktLen = 0;
-        e1kXmitFreeBuf(pThis);
+        e1kXmitFreeBuf(pThis, PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC));
     }
 
     return false;
@@ -4471,7 +4520,7 @@ static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, uint32_t cb
 static int e1kFallbackAddToFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, bool fOnWorkerThread)
 {
 #ifdef VBOX_STRICT
-    PPDMSCATTERGATHER pTxSg = pThis->CTX_SUFF(pTxSg);
+    PPDMSCATTERGATHER pTxSg = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC)->CTX_SUFF(pTxSg);
     Assert(e1kGetDescType(pDesc) == E1K_DTYP_DATA);
     Assert(pDesc->data.cmd.fTSE);
     Assert(!e1kXmitIsGsoBuf(pTxSg));
@@ -4516,7 +4565,7 @@ static int e1kFallbackAddToFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC 
         if (pThis->u32PayRemain != 0)
             E1K_INC_CNT32(TSCTFC);
         pThis->u16TxPktLen = 0;
-        e1kXmitFreeBuf(pThis);
+        e1kXmitFreeBuf(pThis, PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC));
     }
 
     return VINF_SUCCESS; /// @todo consider rc;
@@ -4532,14 +4581,16 @@ static int e1kFallbackAddToFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC 
  *
  * @returns true on success, false on failure.
  *
+ * @param   pDevIns     The device instance.
+ * @param   pThisCC     The current context instance data.
  * @param   pThis       The device state structure.
  * @param   PhysAddr    The physical address of the descriptor buffer.
  * @param   cbFragment  Length of descriptor's buffer.
  * @thread  E1000_TX
  */
-static bool e1kAddToFrame(PE1KSTATE pThis, RTGCPHYS PhysAddr, uint32_t cbFragment)
+static bool e1kAddToFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC, RTGCPHYS PhysAddr, uint32_t cbFragment)
 {
-    PPDMSCATTERGATHER   pTxSg    = pThis->CTX_SUFF(pTxSg);
+    PPDMSCATTERGATHER   pTxSg    = pThisCC->CTX_SUFF(pTxSg);
     bool const          fGso     = e1kXmitIsGsoBuf(pTxSg);
     uint32_t const      cbNewPkt = cbFragment + pThis->u16TxPktLen;
 
@@ -4564,8 +4615,7 @@ static bool e1kAddToFrame(PE1KSTATE pThis, RTGCPHYS PhysAddr, uint32_t cbFragmen
             E1kLog(("%s e1kAddToFrame:  pTxSg->cbUsed=%d(0x%x) != u16TxPktLen=%d(0x%x)\n",
                     pThis->szPrf, pTxSg->cbUsed, pTxSg->cbUsed, pThis->u16TxPktLen, pThis->u16TxPktLen));
 
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), PhysAddr,
-                          (uint8_t *)pTxSg->aSegs[0].pvSeg + pThis->u16TxPktLen, cbFragment);
+        PDMDevHlpPhysRead(pDevIns, PhysAddr, (uint8_t *)pTxSg->aSegs[0].pvSeg + pThis->u16TxPktLen, cbFragment);
 
         pTxSg->cbUsed = cbNewPkt;
     }
@@ -4607,7 +4657,7 @@ static void e1kDescReport(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc,
     if (pDesc->legacy.cmd.fRS || pDesc->legacy.cmd.fRPS)
     {
         pDesc->legacy.dw3.fDD = 1; /* Descriptor Done */
-        e1kWriteBackDesc(pThis, pDesc, addr);
+        e1kWriteBackDesc(pDevIns, pThis, pDesc, addr);
         if (pDesc->legacy.cmd.fEOP)
         {
 //#ifdef E1K_USE_TX_TIMERS
@@ -4668,12 +4718,14 @@ static void e1kDescReport(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc,
  *
  * @param   pDevIns         The device instance.
  * @param   pThis           The device state structure.
+ * @param   pThisCC         The current context instance data.
  * @param   pDesc           Pointer to descriptor union.
  * @param   addr            Physical address of descriptor in guest memory.
  * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @thread  E1000_TX
  */
-static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr, bool fOnWorkerThread)
+static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC, E1KTXDESC *pDesc,
+                       RTGCPHYS addr, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
     uint32_t cbVTag = 0;
@@ -4764,13 +4816,13 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
                     cbVTag = 4;
                 E1kLog3(("%s About to allocate TX buffer: cbVTag=%u\n", pThis->szPrf, cbVTag));
                 if (e1kCanDoGso(pThis, &pThis->GsoCtx, &pDesc->data, &pThis->contextTSE))
-                    rc = e1kXmitAllocBuf(pThis, pThis->contextTSE.dw2.u20PAYLEN + pThis->contextTSE.dw3.u8HDRLEN + cbVTag,
-                                    true /*fExactSize*/, true /*fGso*/);
+                    rc = e1kXmitAllocBuf(pThis, pThisCC, pThis->contextTSE.dw2.u20PAYLEN + pThis->contextTSE.dw3.u8HDRLEN + cbVTag,
+                                         true /*fExactSize*/, true /*fGso*/);
                 else if (pDesc->data.cmd.fTSE)
-                    rc = e1kXmitAllocBuf(pThis, pThis->contextTSE.dw3.u16MSS + pThis->contextTSE.dw3.u8HDRLEN + cbVTag,
+                    rc = e1kXmitAllocBuf(pThis, pThisCC, , pThis->contextTSE.dw3.u16MSS + pThis->contextTSE.dw3.u8HDRLEN + cbVTag,
                                          pDesc->data.cmd.fTSE  /*fExactSize*/, false /*fGso*/);
                 else
-                    rc = e1kXmitAllocBuf(pThis, pDesc->data.cmd.u20DTALEN + cbVTag,
+                    rc = e1kXmitAllocBuf(pThis, pThisCC, pDesc->data.cmd.u20DTALEN + cbVTag,
                                          pDesc->data.cmd.fEOP  /*fExactSize*/, false /*fGso*/);
 
                 /**
@@ -4790,24 +4842,24 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
              * Add the descriptor data to the frame.  If the frame is complete,
              * transmit it and reset the u16TxPktLen field.
              */
-            if (e1kXmitIsGsoBuf(pThis->CTX_SUFF(pTxSg)))
+            if (e1kXmitIsGsoBuf(pThisCC->CTX_SUFF(pTxSg)))
             {
                 STAM_COUNTER_INC(&pThis->StatTxPathGSO);
-                bool fRc = e1kAddToFrame(pThis, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
+                bool fRc = e1kAddToFrame(pDevIns, pThis, pThisCC, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
                 if (pDesc->data.cmd.fEOP)
                 {
                     if (   fRc
-                        && pThis->CTX_SUFF(pTxSg)
-                        && pThis->CTX_SUFF(pTxSg)->cbUsed == (size_t)pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw2.u20PAYLEN)
+                        && pThisCC->CTX_SUFF(pTxSg)
+                        && pThisCC->CTX_SUFF(pTxSg)->cbUsed == (size_t)pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw2.u20PAYLEN)
                     {
-                        e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+                        e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                         E1K_INC_CNT32(TSCTC);
                     }
                     else
                     {
                         if (fRc)
                            E1kLog(("%s bad GSO/TSE %p or %u < %u\n" , pThis->szPrf,
-                                   pThis->CTX_SUFF(pTxSg), pThis->CTX_SUFF(pTxSg) ? pThis->CTX_SUFF(pTxSg)->cbUsed : 0,
+                                   pThisCC->CTX_SUFF(pTxSg), pThisCC->CTX_SUFF(pTxSg) ? pThisCC->CTX_SUFF(pTxSg)->cbUsed : 0,
                                    pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw2.u20PAYLEN));
                         e1kXmitFreeBuf(pThis);
                         E1K_INC_CNT32(TSCTFC);
@@ -4818,23 +4870,23 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
             else if (!pDesc->data.cmd.fTSE)
             {
                 STAM_COUNTER_INC(&pThis->StatTxPathRegular);
-                bool fRc = e1kAddToFrame(pThis, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
+                bool fRc = e1kAddToFrame(pDevIns, pThis, pThisCC, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
                 if (pDesc->data.cmd.fEOP)
                 {
-                    if (fRc && pThis->CTX_SUFF(pTxSg))
+                    if (fRc && pThisCC->CTX_SUFF(pTxSg))
                     {
-                        Assert(pThis->CTX_SUFF(pTxSg)->cSegs == 1);
+                        Assert(pThisCC->CTX_SUFF(pTxSg)->cSegs == 1);
                         if (pThis->fIPcsum)
-                            e1kInsertChecksum(pThis, (uint8_t *)pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
+                            e1kInsertChecksum(pThis, (uint8_t *)pThisCC->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
                                               pThis->contextNormal.ip.u8CSO,
                                               pThis->contextNormal.ip.u8CSS,
                                               pThis->contextNormal.ip.u16CSE);
                         if (pThis->fTCPcsum)
-                            e1kInsertChecksum(pThis, (uint8_t *)pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
+                            e1kInsertChecksum(pThis, (uint8_t *)pThisCC->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
                                               pThis->contextNormal.tu.u8CSO,
                                               pThis->contextNormal.tu.u8CSS,
                                               pThis->contextNormal.tu.u16CSE);
-                        e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+                        e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                     }
                     else
                         e1kXmitFreeBuf(pThis);
@@ -4871,7 +4923,7 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
                     cbVTag = 4;
                 E1kLog3(("%s About to allocate TX buffer: cbVTag=%u\n", pThis->szPrf, cbVTag));
                 /** @todo reset status bits? */
-                rc = e1kXmitAllocBuf(pThis, pDesc->legacy.cmd.u16Length + cbVTag, pDesc->legacy.cmd.fEOP, false /*fGso*/);
+                rc = e1kXmitAllocBuf(pThis, pThisCC, pDesc->legacy.cmd.u16Length + cbVTag, pDesc->legacy.cmd.fEOP, false /*fGso*/);
                 if (RT_FAILURE(rc))
                 {
                     STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF_Z(StatTransmit), a);
@@ -4883,7 +4935,7 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
             }
 
             /* Add fragment to frame. */
-            if (e1kAddToFrame(pThis, pDesc->data.u64BufAddr, pDesc->legacy.cmd.u16Length))
+            if (e1kAddToFrame(pDevIns, pThis, pThisCC, pDesc->data.u64BufAddr, pDesc->legacy.cmd.u16Length))
             {
                 E1K_INC_ISTAT_CNT(pThis->uStatDescLeg);
 
@@ -4893,7 +4945,7 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
                     pThis->fVTag       = pDesc->legacy.cmd.fVLE;
                     pThis->u16VTagTCI  = pDesc->legacy.dw3.u16Special;
                     /** @todo Offload processing goes here. */
-                    e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+                    e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                     pThis->u16TxPktLen = 0;
                 }
             }
@@ -4929,13 +4981,15 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
  *
  * @param   pDevIns         The device instance.
  * @param   pThis           The device state structure.
+ * @param   pThisCC         The current context instance data.
  * @param   pDesc           Pointer to descriptor union.
  * @param   addr            Physical address of descriptor in guest memory.
  * @param   fOnWorkerThread Whether we're on a worker thread or an EMT.
  * @param   cbPacketSize    Size of the packet as previously computed.
  * @thread  E1000_TX
  */
-static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RTGCPHYS addr, bool fOnWorkerThread)
+static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pThisCC, E1KTXDESC *pDesc,
+                       RTGCPHYS addr, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
 
@@ -4973,7 +5027,7 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
                 E1kLog2(("% Empty data descriptor, skipped.\n", pThis->szPrf));
                 if (pDesc->data.cmd.fEOP)
                 {
-                    e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+                    e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                     pThis->u16TxPktLen = 0;
                 }
             }
@@ -4983,26 +5037,26 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
                  * Add the descriptor data to the frame.  If the frame is complete,
                  * transmit it and reset the u16TxPktLen field.
                  */
-                if (e1kXmitIsGsoBuf(pThis->CTX_SUFF(pTxSg)))
+                if (e1kXmitIsGsoBuf(pThisCC->CTX_SUFF(pTxSg)))
                 {
                     STAM_COUNTER_INC(&pThis->StatTxPathGSO);
-                    bool fRc = e1kAddToFrame(pThis, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
+                    bool fRc = e1kAddToFrame(pDevIns, pThis, pThisCC, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
                     if (pDesc->data.cmd.fEOP)
                     {
                         if (   fRc
-                            && pThis->CTX_SUFF(pTxSg)
-                            && pThis->CTX_SUFF(pTxSg)->cbUsed == (size_t)pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw2.u20PAYLEN)
+                            && pThisCC->CTX_SUFF(pTxSg)
+                            && pThisCC->CTX_SUFF(pTxSg)->cbUsed == (size_t)pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw2.u20PAYLEN)
                         {
-                            e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+                            e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                             E1K_INC_CNT32(TSCTC);
                         }
                         else
                         {
                             if (fRc)
                                 E1kLog(("%s bad GSO/TSE %p or %u < %u\n" , pThis->szPrf,
-                                        pThis->CTX_SUFF(pTxSg), pThis->CTX_SUFF(pTxSg) ? pThis->CTX_SUFF(pTxSg)->cbUsed : 0,
+                                        pThisCC->CTX_SUFF(pTxSg), pThisCC->CTX_SUFF(pTxSg) ? pThisCC->CTX_SUFF(pTxSg)->cbUsed : 0,
                                         pThis->contextTSE.dw3.u8HDRLEN + pThis->contextTSE.dw2.u20PAYLEN));
-                            e1kXmitFreeBuf(pThis);
+                            e1kXmitFreeBuf(pThis, pThisCC);
                             E1K_INC_CNT32(TSCTFC);
                         }
                         pThis->u16TxPktLen = 0;
@@ -5011,26 +5065,26 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
                 else if (!pDesc->data.cmd.fTSE)
                 {
                     STAM_COUNTER_INC(&pThis->StatTxPathRegular);
-                    bool fRc = e1kAddToFrame(pThis, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
+                    bool fRc = e1kAddToFrame(pDevIns, pThis, pThisCC, pDesc->data.u64BufAddr, pDesc->data.cmd.u20DTALEN);
                     if (pDesc->data.cmd.fEOP)
                     {
-                        if (fRc && pThis->CTX_SUFF(pTxSg))
+                        if (fRc && pThisCC->CTX_SUFF(pTxSg))
                         {
-                            Assert(pThis->CTX_SUFF(pTxSg)->cSegs == 1);
+                            Assert(pThisCC->CTX_SUFF(pTxSg)->cSegs == 1);
                             if (pThis->fIPcsum)
-                                e1kInsertChecksum(pThis, (uint8_t *)pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
+                                e1kInsertChecksum(pThis, (uint8_t *)pThisCC->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
                                                   pThis->contextNormal.ip.u8CSO,
                                                   pThis->contextNormal.ip.u8CSS,
                                                   pThis->contextNormal.ip.u16CSE);
                             if (pThis->fTCPcsum)
-                                e1kInsertChecksum(pThis, (uint8_t *)pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
+                                e1kInsertChecksum(pThis, (uint8_t *)pThisCC->CTX_SUFF(pTxSg)->aSegs[0].pvSeg, pThis->u16TxPktLen,
                                                   pThis->contextNormal.tu.u8CSO,
                                                   pThis->contextNormal.tu.u8CSS,
                                                   pThis->contextNormal.tu.u16CSE);
-                            e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+                            e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                         }
                         else
-                            e1kXmitFreeBuf(pThis);
+                            e1kXmitFreeBuf(pThis, pThisCC);
                         pThis->u16TxPktLen = 0;
                     }
                 }
@@ -5055,7 +5109,7 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
             else
             {
                 /* Add fragment to frame. */
-                if (e1kAddToFrame(pThis, pDesc->data.u64BufAddr, pDesc->legacy.cmd.u16Length))
+                if (e1kAddToFrame(pDevIns, pThis, pThisCC, pDesc->data.u64BufAddr, pDesc->legacy.cmd.u16Length))
                 {
                     E1K_INC_ISTAT_CNT(pThis->uStatDescLeg);
 
@@ -5065,20 +5119,20 @@ static int e1kXmitDesc(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, RT
                         if (pDesc->legacy.cmd.fIC)
                         {
                             e1kInsertChecksum(pThis,
-                                              (uint8_t *)pThis->CTX_SUFF(pTxSg)->aSegs[0].pvSeg,
+                                              (uint8_t *)pThisCC->CTX_SUFF(pTxSg)->aSegs[0].pvSeg,
                                               pThis->u16TxPktLen,
                                               pDesc->legacy.cmd.u8CSO,
                                               pDesc->legacy.dw3.u8CSS,
                                               0);
                         }
-                        e1kTransmitFrame(pDevIns, pThis, fOnWorkerThread);
+                        e1kTransmitFrame(pDevIns, pThis, pThisCC, fOnWorkerThread);
                         pThis->u16TxPktLen = 0;
                     }
                 }
                 /* Last fragment + failure: free the buffer and reset the storage counter. */
                 else if (pDesc->legacy.cmd.fEOP)
                 {
-                    e1kXmitFreeBuf(pThis);
+                    e1kXmitFreeBuf(pThis, pThisCC);
                     pThis->u16TxPktLen = 0;
                 }
             }
@@ -5248,6 +5302,7 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
 
 static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
 {
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     int rc = VINF_SUCCESS;
 
     LogFlow(("%s e1kXmitPacket: ENTER current=%d fetched=%d\n",
@@ -5258,7 +5313,7 @@ static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThre
         E1KTXDESC *pDesc = &pThis->aTxDescriptors[pThis->iTxDCurrent];
         E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
                  pThis->szPrf, TDBAH, TDBAL + TDH * sizeof(E1KTXDESC), TDLEN, TDH, TDT));
-        rc = e1kXmitDesc(pDevIns, pThis, pDesc, e1kDescAddr(TDBAH, TDBAL, TDH), fOnWorkerThread);
+        rc = e1kXmitDesc(pDevIns, pThis, pThisCC, pDesc, e1kDescAddr(TDBAH, TDBAL, TDH), fOnWorkerThread);
         if (RT_FAILURE(rc))
             break;
         if (++TDH * sizeof(E1KTXDESC) >= TDLEN)
@@ -5295,6 +5350,7 @@ static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThre
 static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 
     /* Check if transmitter is enabled. */
     if (!(TCTL & TCTL_EN))
@@ -5325,8 +5381,8 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
             E1kLog3(("%s About to process new TX descriptor at %08x%08x, TDLEN=%08x, TDH=%08x, TDT=%08x\n",
                      pThis->szPrf, TDBAH, TDBAL + TDH * sizeof(desc), TDLEN, TDH, TDT));
 
-            e1kLoadDesc(pThis, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
-            rc = e1kXmitDesc(pThis, &desc, e1kDescAddr(TDBAH, TDBAL, TDH), fOnWorkerThread);
+            e1kLoadDesc(pDevIns, &desc, ((uint64_t)TDBAH << 32) + TDBAL + TDH * sizeof(desc));
+            rc = e1kXmitDesc(pDevIns, pThis, pThisCC, &desc, e1kDescAddr(TDBAH, TDBAL, TDH), fOnWorkerThread);
             /* If we failed to transmit descriptor we will try it again later */
             if (RT_FAILURE(rc))
                 break;
@@ -5358,7 +5414,7 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
 
 #else /* E1K_WITH_TXD_CACHE */
 
-static void e1kDumpTxDCache(PE1KSTATE pThis)
+static void e1kDumpTxDCache(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
     unsigned i, cDescs = TDLEN / sizeof(E1KTXDESC);
     uint32_t tdh = TDH;
@@ -5366,8 +5422,7 @@ static void e1kDumpTxDCache(PE1KSTATE pThis)
     for (i = 0; i < cDescs; ++i)
     {
         E1KTXDESC desc;
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), e1kDescAddr(TDBAH, TDBAL, i),
-                          &desc, sizeof(desc));
+        PDMDevHlpPhysRead(pDevIns , e1kDescAddr(TDBAH, TDBAL, i), &desc, sizeof(desc));
         if (i == tdh)
             LogRel(("E1000: >>> "));
         LogRel(("E1000: %RGp: %R[e1ktxd]\n", e1kDescAddr(TDBAH, TDBAL, i), &desc));
@@ -5397,6 +5452,7 @@ static void e1kDumpTxDCache(PE1KSTATE pThis)
  */
 static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
 {
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     int rc = VINF_SUCCESS;
 
     /* Check if transmitter is enabled. */
@@ -5405,7 +5461,7 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
     /*
      * Grab the xmit lock of the driver as well as the E1K device state.
      */
-    PPDMINETWORKUP pDrv = pThis->CTX_SUFF(pDrv);
+    PPDMINETWORKUP pDrv = pThisCC->CTX_SUFF(pDrv);
     if (pDrv)
     {
         rc = pDrv->pfnBeginXmit(pDrv, fOnWorkerThread);
@@ -5428,13 +5484,13 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
          * stuck in this loop forever.
          */
         bool fIncomplete = false;
-        while (!pThis->fLocked && e1kTxDLazyLoad(pThis))
+        while (!pThis->fLocked && e1kTxDLazyLoad(pDevIns, pThis))
         {
             while (e1kLocateTxPacket(pThis))
             {
                 fIncomplete = false;
                 /* Found a complete packet, allocate it. */
-                rc = e1kXmitAllocBuf(pThis, pThis->fGSO);
+                rc = e1kXmitAllocBuf(pThis, pThisCC, pThis->fGSO);
                 /* If we're out of bandwidth we'll come back later. */
                 if (RT_FAILURE(rc))
                     goto out;
@@ -5462,7 +5518,7 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
                 if (!fTxDCacheDumped)
                 {
                     fTxDCacheDumped = true;
-                    e1kDumpTxDCache(pThis);
+                    e1kDumpTxDCache(pDevIns, pThis);
                 }
                 pThis->iTxDCurrent = pThis->nTxDFetched = 0;
                 /*
@@ -5492,7 +5548,7 @@ static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThr
                         u8Remain * sizeof(E1KTXDESC));
                 pThis->iTxDCurrent = 0;
                 pThis->nTxDFetched = u8Remain;
-                e1kTxDLoadMore(pThis);
+                e1kTxDLoadMore(pDevIns, pThis);
                 fIncomplete = true;
             }
             else
@@ -5531,40 +5587,36 @@ out:
  */
 static DECLCALLBACK(void) e1kR3NetworkDown_XmitPending(PPDMINETWORKDOWN pInterface)
 {
-    PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
+    PE1KSTATECC pThisCC = RT_FROM_MEMBER(pInterface, E1KSTATECC, INetworkDown);
+    PE1KSTATE   pThis = pThisCC->pShared;
     /* Resume suspended transmission */
     STATUS &= ~STATUS_TXOFF;
-    e1kXmitPending(pThis->pDevInsR3, pThis, true /*fOnWorkerThread*/);
+    e1kXmitPending(pThisCC->pDevInsR3, pThis, true /*fOnWorkerThread*/);
 }
 
 /**
- * Callback for consuming from transmit queue. It gets called in R3 whenever
- * we enqueue something in R0/GC.
- *
- * @returns true
- * @param   pDevIns     Pointer to device instance structure.
- * @param   pItem       Pointer to the element being dequeued (not used).
- * @thread  ???
+ * @callback_method_impl{FNPDMTASKDEV,
+ *      Executes e1kXmitPending at the behest of ring-0/raw-mode.}
+ * @note Not executed on EMT.
  */
-static DECLCALLBACK(bool) e1kTxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
+static DECLCALLBACK(void) e1kTxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
-    NOREF(pItem);
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    E1kLog2(("%s e1kTxQueueConsumer:\n", pThis->szPrf));
+    E1kLog2(("%s e1kTxTaskCallback:\n", pThis->szPrf));
 
-    int rc = e1kXmitPending(pDevIns, pThis, false /*fOnWorkerThread*/); NOREF(rc);
+    int rc = e1kXmitPending(pDevIns, pThis, false /*fOnWorkerThread*/);
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN || rc == VERR_NET_DOWN, ("%Rrc\n", rc));
-    return true;
+
+    RT_NOREF(rc, pvUser);
 }
 
 /**
- * Handler for the wakeup signaller queue.
+ * @callback_method_impl{FNPDMTASKDEV, Handler for the wakeup signaller queue.}
  */
-static DECLCALLBACK(bool) e1kCanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
+static DECLCALLBACK(void) e1kCanRxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
-    RT_NOREF(pItem);
+    RT_NOREF(pvUser);
     e1kWakeupReceive(pDevIns);
-    return true;
 }
 
 #endif /* IN_RING3 */
@@ -5615,12 +5667,9 @@ static int e1kRegWriteTDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
         /* We failed to enter the TX critical section -- transmit as usual. */
 #endif /* E1K_TX_DELAY */
 #ifndef IN_RING3
-        if (!pThis->CTX_SUFF(pDrv))
-        {
-            PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pTxQueue));
-            if (RT_UNLIKELY(pItem))
-                PDMQueueInsert(pThis->CTX_SUFF(pTxQueue), pItem);
-        }
+        PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+        if (!pThisCC->CTX_SUFF(pDrv))
+            PDMDevHlpTaskTrigger(pDevIns, pThis->hTxTask);
         else
 #endif
         {
@@ -5973,8 +6022,7 @@ static int e1kRegReadUnaligned(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t off
         case 2: mask = 0x0000FFFF; break;
         case 1: mask = 0x000000FF; break;
         default:
-            return PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
-                                     "unsupported op size: offset=%#10x cb=%#10x\n", offReg, cb);
+            return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "unsupported op size: offset=%#10x cb=%#10x\n", offReg, cb);
     }
     if (index != -1)
     {
@@ -5985,7 +6033,7 @@ static int e1kRegReadUnaligned(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t off
             shift = (offReg - g_aE1kRegMap[index].offset) % sizeof(uint32_t) * 8;
             mask <<= shift;
             if (!mask)
-                return PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS, "Zero mask: offset=%#10x cb=%#10x\n", offReg, cb);
+                return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Zero mask: offset=%#10x cb=%#10x\n", offReg, cb);
             /*
              * Read it. Pass the mask so the handler knows what has to be read.
              * Mask out irrelevant bits.
@@ -6240,7 +6288,7 @@ static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
                         rc = VINF_IOM_R3_IOPORT_WRITE;
                 }
                 else
-                    rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                    rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS,
                                            "Spec violation: misaligned offset: %#10x, ignored.\n", pThis->uSelectedReg);
                 break;
 
@@ -6323,7 +6371,7 @@ static void e1kDumpState(PE1KSTATE pThis)
 static DECLCALLBACK(int) e1kR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                   RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE *);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     E1kLog(("%s e1kR3Map: iRegion=%u GCPhysAddress=%RGp\n", pThis->szPrf, iRegion, GCPhysAddress));
     RT_NOREF(pPciDev, iRegion, cb);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
@@ -6354,10 +6402,11 @@ static DECLCALLBACK(int) e1kR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32
  * This must be called before the pfnRecieve() method is called.
  *
  * @returns Number of bytes the device can receive.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The instance data.
  * @thread  EMT
  */
-static int e1kCanReceive(PE1KSTATE pThis)
+static int e1kCanReceive(PPDMDEVINS pDevIns, PE1KSTATE pThis)
 {
 #ifndef E1K_WITH_RXD_CACHE
     size_t cb;
@@ -6368,8 +6417,7 @@ static int e1kCanReceive(PE1KSTATE pThis)
     if (RT_UNLIKELY(RDLEN == sizeof(E1KRXDESC)))
     {
         E1KRXDESC desc;
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH),
-                          &desc, sizeof(desc));
+        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
         if (desc.status.fDD)
             cb = 0;
         else
@@ -6398,8 +6446,7 @@ static int e1kCanReceive(PE1KSTATE pThis)
     if (RT_UNLIKELY(RDLEN == sizeof(E1KRXDESC)))
     {
         E1KRXDESC desc;
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), e1kDescAddr(RDBAH, RDBAL, RDH),
-                          &desc, sizeof(desc));
+        PDMDevHlpPhysRead(pDevIns, e1kDescAddr(RDBAH, RDBAL, RDH), &desc, sizeof(desc));
         if (desc.status.fDD)
             rc = VERR_NET_NO_BUFFER_SPACE;
     }
@@ -6422,8 +6469,11 @@ static int e1kCanReceive(PE1KSTATE pThis)
  */
 static DECLCALLBACK(int) e1kR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
-    int rc = e1kCanReceive(pThis);
+    PE1KSTATECC pThisCC = RT_FROM_MEMBER(pInterface, E1KSTATECC, INetworkDown);
+    PE1KSTATE   pThis   = pThisCC->pShared;
+    PPDMDEVINS  pDevIns = pThisCC->pDevInsR3;
+
+    int rc = e1kCanReceive(pDevIns, pThis);
 
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
@@ -6434,10 +6484,10 @@ static DECLCALLBACK(int) e1kR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInt
     ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, true);
     STAM_PROFILE_START(&pThis->StatRxOverflow, a);
     VMSTATE enmVMState;
-    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pThis->CTX_SUFF(pDevIns))) == VMSTATE_RUNNING
+    while (RT_LIKELY(   (enmVMState = PDMDevHlpVMState(pDevIns)) == VMSTATE_RUNNING
                      ||  enmVMState == VMSTATE_RUNNING_LS))
     {
-        int rc2 = e1kCanReceive(pThis);
+        int rc2 = e1kCanReceive(pDevIns, pThis);
         if (RT_SUCCESS(rc2))
         {
             rc = VINF_SUCCESS;
@@ -6640,13 +6690,15 @@ static bool e1kAddressFilter(PE1KSTATE pThis, const void *pvBuf, size_t cb, E1KR
  */
 static DECLCALLBACK(int) e1kR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkDown);
-    int       rc = VINF_SUCCESS;
+    PE1KSTATECC pThisCC = RT_FROM_MEMBER(pInterface, E1KSTATECC, INetworkDown);
+    PE1KSTATE   pThis   = pThisCC->pShared;
+    PPDMDEVINS  pDevIns = pThisCC->pDevInsR3;
+    int         rc      = VINF_SUCCESS;
 
     /*
      * Drop packets if the VM is not running yet/anymore.
      */
-    VMSTATE enmVMState = PDMDevHlpVMState(STATE_TO_DEVINS(pThis));
+    VMSTATE enmVMState = PDMDevHlpVMState(pDevIns);
     if (    enmVMState != VMSTATE_RUNNING
         &&  enmVMState != VMSTATE_RUNNING_LS)
     {
@@ -6682,7 +6734,7 @@ static DECLCALLBACK(int) e1kR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface, c
     STAM_PROFILE_ADV_STOP(&pThis->StatReceiveFilter, a);
     if (fPassed)
     {
-        rc = e1kHandleRxPacket(pThis->pDevInsR3, pThis, pvBuf, cb, status);
+        rc = e1kHandleRxPacket(pDevIns, pThis, pvBuf, cb, status);
     }
     //e1kCsLeave(pThis);
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
@@ -6698,15 +6750,13 @@ static DECLCALLBACK(int) e1kR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface, c
  */
 static DECLCALLBACK(int) e1kR3QueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, ILeds);
-    int       rc     = VERR_PDM_LUN_NOT_FOUND;
-
     if (iLUN == 0)
     {
-        *ppLed = &pThis->led;
-        rc     = VINF_SUCCESS;
+        PE1KSTATECC pThisCC = RT_FROM_MEMBER(pInterface, E1KSTATECC, ILeds);
+        *ppLed = &pThisCC->pShared->led;
+        return VINF_SUCCESS;
     }
-    return rc;
+    return VERR_PDM_LUN_NOT_FOUND;
 }
 
 
@@ -6717,8 +6767,8 @@ static DECLCALLBACK(int) e1kR3QueryStatusLed(PPDMILEDPORTS pInterface, unsigned 
  */
 static DECLCALLBACK(int) e1kR3GetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
-    PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
-    pThis->eeprom.getMac(pMac);
+    PE1KSTATECC pThisCC = RT_FROM_MEMBER(pInterface, E1KSTATECC, INetworkConfig);
+    pThisCC->eeprom.getMac(pMac);
     return VINF_SUCCESS;
 }
 
@@ -6727,7 +6777,8 @@ static DECLCALLBACK(int) e1kR3GetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
  */
 static DECLCALLBACK(PDMNETWORKLINKSTATE) e1kR3GetLinkState(PPDMINETWORKCONFIG pInterface)
 {
-    PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
+    PE1KSTATECC pThisCC = RT_FROM_MEMBER(pInterface, E1KSTATECC, INetworkConfig);
+    PE1KSTATE   pThis   = pThisCC->pShared;
     if (STATUS & STATUS_LU)
         return PDMNETWORKLINKSTATE_UP;
     return PDMNETWORKLINKSTATE_DOWN;
@@ -6738,7 +6789,9 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) e1kR3GetLinkState(PPDMINETWORKCONFIG pI
  */
 static DECLCALLBACK(int) e1kR3SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
-    PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, INetworkConfig);
+    PE1KSTATECC pThisCC = RT_FROM_MEMBER(pInterface, E1KSTATECC, INetworkConfig);
+    PE1KSTATE   pThis   = pThisCC->pShared;
+    PPDMDEVINS  pDevIns = pThisCC->pDevInsR3;
 
     E1kLog(("%s e1kR3SetLinkState: enmState=%d\n", pThis->szPrf, enmState));
     switch (enmState)
@@ -6747,7 +6800,7 @@ static DECLCALLBACK(int) e1kR3SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             pThis->fCableConnected = true;
             /* If link was down, bring it up after a while. */
             if (!(STATUS & STATUS_LU))
-                e1kBringLinkUpDelayed(pThis->pDevInsR3, pThis);
+                e1kBringLinkUpDelayed(pDevIns, pThis);
             break;
         case PDMNETWORKLINKSTATE_DOWN:
             pThis->fCableConnected = false;
@@ -6756,7 +6809,7 @@ static DECLCALLBACK(int) e1kR3SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             Phy::setLinkStatus(&pThis->phy, false);
             /* If link was up, bring it down. */
             if (STATUS & STATUS_LU)
-                e1kR3LinkDown(pThis->pDevInsR3, pThis);
+                e1kR3LinkDown(pDevIns, pThis, pThisCC);
             break;
         case PDMNETWORKLINKSTATE_DOWN_RESUME:
             /*
@@ -6764,7 +6817,7 @@ static DECLCALLBACK(int) e1kR3SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
              * If it is up though, we bring it down temporarely, then bring it up again.
              */
             if (STATUS & STATUS_LU)
-                e1kR3LinkDownTemp(pThis->pDevInsR3, pThis);
+                e1kR3LinkDownTemp(pDevIns, pThis, pThisCC);
             break;
         default:
             ;
@@ -6780,13 +6833,13 @@ static DECLCALLBACK(int) e1kR3SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
  */
 static DECLCALLBACK(void *) e1kR3QueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    PE1KSTATE pThis = RT_FROM_MEMBER(pInterface, E1KSTATE, IBase);
-    Assert(&pThis->IBase == pInterface);
+    PE1KSTATECC pThisCC = RT_FROM_MEMBER(pInterface, E1KSTATECC, IBase);
+    Assert(&pThisCC->IBase == pInterface);
 
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,          &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN,   &pThisCC->INetworkDown);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThisCC->INetworkConfig);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS,      &pThisCC->ILeds);
     return NULL;
 }
 
@@ -6811,7 +6864,7 @@ static void e1kSaveConfig(PE1KSTATE pThis, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     e1kSaveConfig(pThis, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -6822,7 +6875,7 @@ static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
 
     int rc = e1kCsEnter(pThis, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -6861,10 +6914,11 @@ static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 
     e1kSaveConfig(pThis, pSSM);
-    pThis->eeprom.save(pSSM);
+    pThisCC->eeprom.save(pSSM);
     e1kDumpState(pThis);
     SSMR3PutMem(pSSM, pThis->auRegs, sizeof(pThis->auRegs));
     SSMR3PutBool(pSSM, pThis->fIntRaised);
@@ -6912,7 +6966,7 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
 
     /* If VM is being powered off unlocking will result in assertions in PGM */
     if (PDMDevHlpGetVM(pDevIns)->enmVMState == VMSTATE_RUNNING)
@@ -6930,7 +6984,7 @@ static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
 
     int rc = e1kCsEnter(pThis, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -6944,8 +6998,9 @@ static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    int       rc;
+    PE1KSTATE   pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    int         rc;
 
     if (    uVersion != E1K_SAVEDSTATE_VERSION
 #ifdef E1K_WITH_TXD_CACHE
@@ -6977,7 +7032,7 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     {
         if (uVersion > E1K_SAVEDSTATE_VERSION_VBOX_30)
         {
-            rc = pThis->eeprom.load(pSSM);
+            rc = pThisCC->eeprom.load(pSSM);
             AssertRCReturn(rc, rc);
         }
         /* the state */
@@ -7050,24 +7105,24 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     RT_NOREF(pSSM);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
 
     /* Update promiscuous mode */
-    if (pThis->pDrvR3)
-        pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3,
-                                             !!(RCTL & (RCTL_UPE | RCTL_MPE)));
+    if (pThisCC->pDrvR3)
+        pThisCC->pDrvR3->pfnSetPromiscuousMode(pThisCC->pDrvR3, !!(RCTL & (RCTL_UPE | RCTL_MPE)));
 
     /*
-    * Force the link down here, since PDMNETWORKLINKSTATE_DOWN_RESUME is never
-    * passed to us. We go through all this stuff if the link was up and we
-    * wasn't teleported.
-    */
+     * Force the link down here, since PDMNETWORKLINKSTATE_DOWN_RESUME is never
+     * passed to us. We go through all this stuff if the link was up and we
+     * wasn't teleported.
+     */
     if (    (STATUS & STATUS_LU)
         && !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)
         && pThis->cMsLinkUpDelay)
     {
-        e1kR3LinkDownTemp(pDevIns, pThis);
+        e1kR3LinkDownTemp(pDevIns, pThis, pThisCC);
     }
     return VINF_SUCCESS;
 }
@@ -7228,7 +7283,7 @@ static int e1kInitDebugHelpers(void)
 static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     unsigned  i;
     // bool        fRcvRing = false;
     // bool        fXmtRing = false;
@@ -7388,9 +7443,10 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
  */
 static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     Log(("%s e1kR3Detach:\n", pThis->szPrf));
+    RT_NOREF(fFlags);
 
     AssertLogRelReturnVoid(iLUN == 0);
 
@@ -7403,10 +7459,12 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
     /*
      * Zero some important members.
      */
-    pThis->pDrvBase = NULL;
-    pThis->pDrvR3 = NULL;
-    pThis->pDrvR0 = NIL_RTR0PTR;
-    pThis->pDrvRC = NIL_RTRCPTR;
+    pThisCC->pDrvBase = NULL;
+    pThisCC->pDrvR3   = NULL;
+#if 0 /** @todo @bugref{9218} ring-0 driver stuff */
+    pThisR0->pDrvR0   = NIL_RTR0PTR;
+    pThisRC->pDrvRC   = NIL_RTRCPTR;
+#endif
 
     PDMCritSectLeave(&pThis->cs);
 }
@@ -7425,9 +7483,10 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  */
 static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     LogFlow(("%s e1kR3Attach:\n",  pThis->szPrf));
+    RT_NOREF(fFlags);
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
@@ -7436,7 +7495,7 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     /*
      * Attach the driver.
      */
-    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
         if (rc == VINF_NAT_DNS)
@@ -7449,16 +7508,15 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgStmt(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThisCC->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
+        AssertMsgStmt(pThisCC->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
         if (RT_SUCCESS(rc))
         {
-            PPDMIBASER0 pBaseR0 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0);
-            pThis->pDrvR0 = pBaseR0 ? pBaseR0->pfnQueryInterface(pBaseR0, PDMINETWORKUP_IID) : NIL_RTR0PTR;
-
-            PPDMIBASERC pBaseRC = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC);
-            pThis->pDrvRC = pBaseRC ? pBaseRC->pfnQueryInterface(pBaseRC, PDMINETWORKUP_IID) : NIL_RTR0PTR;
+#if 0 /** @todo @bugref{9218} ring-0 driver stuff */
+            pThisR0->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIBASER0), PDMINETWORKUP);
+            pThisRC->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+#endif
         }
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
@@ -7470,12 +7528,11 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     }
 
     /*
-     * Temporary set the link down if it was up so that the guest
-     * will know that we have change the configuration of the
-     * network card
+     * Temporary set the link down if it was up so that the guest will know
+     * that we have change the configuration of the network card
      */
     if ((STATUS & STATUS_LU) && RT_SUCCESS(rc))
-        e1kR3LinkDownTemp(pDevIns, pThis);
+        e1kR3LinkDownTemp(pDevIns, pThis, pThisCC);
 
     PDMCritSectLeave(&pThis->cs);
     return rc;
@@ -7496,13 +7553,14 @@ static DECLCALLBACK(void) e1kR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) e1kR3Reset(PPDMDEVINS pDevIns)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 #ifdef E1K_TX_DELAY
     e1kCancelTimer(pDevIns, pThis, pThis->hTXDTimer);
 #endif /* E1K_TX_DELAY */
     e1kCancelTimer(pDevIns, pThis, pThis->hIntTimer);
     e1kCancelTimer(pDevIns, pThis, pThis->hLUTimer);
-    e1kXmitFreeBuf(pThis);
+    e1kXmitFreeBuf(pThis, pThisCC);
     pThis->u16TxPktLen  = 0;
     pThis->fIPcsum      = false;
     pThis->fTCPcsum     = false;
@@ -7510,7 +7568,7 @@ static DECLCALLBACK(void) e1kR3Reset(PPDMDEVINS pDevIns)
     pThis->fDelayInts   = false;
     pThis->fLocked      = false;
     pThis->u64AckedAt   = 0;
-    e1kHardReset(pDevIns, pThis);
+    e1kR3HardReset(pDevIns, pThis, pThisCC);
 }
 
 /**
@@ -7540,11 +7598,10 @@ static DECLCALLBACK(void) e1kR3Suspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) e1kR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
+    PE1KSTATERC pThisRC = PDMINS_2_DATA_RC(pDevIns, PE1KSTATERC);
+    if (pThisRC)
+        pThisRC->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     RT_NOREF(offDelta);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    pThis->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->pTxQueueRC    = PDMQueueRCPtr(pThis->pTxQueueR3);
-    pThis->pCanRxQueueRC = PDMQueueRCPtr(pThis->pCanRxQueueR3);
 }
 
 /**
@@ -7558,7 +7615,7 @@ static DECLCALLBACK(void) e1kR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     e1kDumpState(pThis);
@@ -7659,9 +7716,10 @@ static void e1kR3ConfigurePciDev(PPDMPCIDEV pPciDev, E1KCHIP eChip)
  */
 static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    int       rc;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    int         rc;
 
     /*
      * Initialize the instance data (state).
@@ -7670,9 +7728,6 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     RTStrPrintf(pThis->szPrf, sizeof(pThis->szPrf), "E1000#%d", iInstance);
     E1kLog(("%s Constructing new instance sizeof(E1KRXDESC)=%d\n", pThis->szPrf, sizeof(E1KRXDESC)));
     pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
-    pThis->pDevInsR3    = pDevIns;
-    pThis->pDevInsR0    = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->u16TxPktLen  = 0;
     pThis->fIPcsum      = false;
     pThis->fTCPcsum     = false;
@@ -7683,18 +7738,21 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     pThis->led.u32Magic = PDMLED_MAGIC;
     pThis->u32PktNo     = 1;
 
+    pThisCC->pDevInsR3  = pDevIns;
+    pThisCC->pShared    = pThis;
+
     /* Interfaces */
-    pThis->IBase.pfnQueryInterface          = e1kR3QueryInterface;
+    pThisCC->IBase.pfnQueryInterface          = e1kR3QueryInterface;
 
-    pThis->INetworkDown.pfnWaitReceiveAvail = e1kR3NetworkDown_WaitReceiveAvail;
-    pThis->INetworkDown.pfnReceive          = e1kR3NetworkDown_Receive;
-    pThis->INetworkDown.pfnXmitPending      = e1kR3NetworkDown_XmitPending;
+    pThisCC->INetworkDown.pfnWaitReceiveAvail = e1kR3NetworkDown_WaitReceiveAvail;
+    pThisCC->INetworkDown.pfnReceive          = e1kR3NetworkDown_Receive;
+    pThisCC->INetworkDown.pfnXmitPending      = e1kR3NetworkDown_XmitPending;
 
-    pThis->ILeds.pfnQueryStatusLed          = e1kR3QueryStatusLed;
+    pThisCC->ILeds.pfnQueryStatusLed          = e1kR3QueryStatusLed;
 
-    pThis->INetworkConfig.pfnGetMac         = e1kR3GetMac;
-    pThis->INetworkConfig.pfnGetLinkState   = e1kR3GetLinkState;
-    pThis->INetworkConfig.pfnSetLinkState   = e1kR3SetLinkState;
+    pThisCC->INetworkConfig.pfnGetMac         = e1kR3GetMac;
+    pThisCC->INetworkConfig.pfnGetLinkState   = e1kR3GetLinkState;
+    pThisCC->INetworkConfig.pfnSetLinkState   = e1kR3SetLinkState;
 
     /*
      * Internal validations.
@@ -7791,7 +7849,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
 
     /* Initialize the EEPROM. */
-    pThis->eeprom.init(pThis->macConfigured);
+    pThisCC->eeprom.init(pThis->macConfigured);
 
     /* Initialize internal PHY. */
     Phy::init(&pThis->phy, iInstance, pThis->eChip == E1K_CHIP_82543GC ? PHY_EPID_M881000 : PHY_EPID_M881011);
@@ -7862,19 +7920,12 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRCReturn(rc, rc);
 
     /* Create transmit queue */
-/** @todo Convert queues to be accessed via handles. Create a ring-3 task thingy for 1 item queues. */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                              e1kTxQueueConsumer, true, "E1000-Xmit", &pThis->pTxQueueR3);
+    rc = PDMDevHlpTaskCreate(pDevIns, PDMTASK_F_RZ, "E1000-Xmit", e1kTxTaskCallback, NULL, &pThis->hTxTask);
     AssertRCReturn(rc, rc);
-    pThis->pTxQueueR0 = PDMQueueR0Ptr(pThis->pTxQueueR3);
-    pThis->pTxQueueRC = PDMQueueRCPtr(pThis->pTxQueueR3);
 
     /* Create the RX notifier signaller. */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                              e1kCanRxQueueConsumer, true, "E1000-Rcv", &pThis->pCanRxQueueR3);
+    rc = PDMDevHlpTaskCreate(pDevIns, PDMTASK_F_RZ, "E1000-Rcv", e1kCanRxTaskCallback, NULL, &pThis->hCanRxTask);
     AssertRCReturn(rc, rc);
-    pThis->pCanRxQueueR0 = PDMQueueR0Ptr(pThis->pCanRxQueueR3);
-    pThis->pCanRxQueueRC = PDMQueueRCPtr(pThis->pCanRxQueueR3);
 
 #ifdef E1K_TX_DELAY
     /* Create Transmit Delay Timer */
@@ -7931,23 +7982,25 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /* Status driver */
     PPDMIBASE pBase;
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThisCC->IBase, &pBase, "Status Port");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
-    pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+    pThisCC->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
 
     /* Network driver */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Network Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
     {
         if (rc == VINF_NAT_DNS)
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
-        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgReturn(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"), VERR_PDM_MISSING_INTERFACE_BELOW);
+        pThisCC->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
+        AssertMsgReturn(pThisCC->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"), VERR_PDM_MISSING_INTERFACE_BELOW);
 
-        pThis->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASER0), PDMINETWORKUP);
-        pThis->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+#if 0 /** @todo @bugref{9218} ring-0 driver stuff */
+        pThisR0->pDrvR0 = PDMIBASER0_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIBASER0), PDMINETWORKUP);
+        pThisRC->pDrvRC = PDMIBASERC_QUERY_INTERFACE(PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMIBASERC), PDMINETWORKUP);
+#endif
     }
     else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
              || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
@@ -7959,14 +8012,12 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the network LUN"));
 
     rc = RTSemEventCreate(&pThis->hEventMoreRxDescAvail);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     rc = e1kInitDebugHelpers();
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
-    e1kHardReset(pDevIns, pThis);
+    e1kR3HardReset(pDevIns, pThis, pThisCC);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Public/Net/E1k%u/BytesReceived", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Public/Net/E1k%u/BytesTransmitted", iInstance);
@@ -8073,8 +8124,12 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 static DECLCALLBACK(int)  e1kRZConstruct(PPDMDEVINS pDevIns)
 {
     PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    //PE1KSTATER0 pThisCC = PDMINS_2_DATA_CC(pDevIns, PRTCSTATECC);
-    //pThisCC->CTX_SUFF(pDevIns) = pDevIns;
+    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+
+    pThisCC->CTX_SUFF(pDevIns)      = pDevIns;
+    /** @todo @bugref{9218} ring-0 driver stuff */
+    pThisCC->CTX_SUFF(pDrv)         = NULL;
+    pThisCC->CTX_SUFF(pTxSg)        = NULL;
 
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioRegion, e1kMMIOWrite, e1kMMIORead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
@@ -8100,8 +8155,8 @@ const PDMDEVREG g_DeviceE1000 =
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(E1KSTATE),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(E1KSTATECC),
+    /* .cbInstanceRC = */           sizeof(E1KSTATERC),
     /* .cMaxPciDevices = */         1,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Intel PRO/1000 MT Desktop Ethernet.",

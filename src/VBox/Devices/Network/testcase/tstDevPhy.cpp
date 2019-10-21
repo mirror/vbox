@@ -106,7 +106,7 @@ void PhyTest::shiftOutBits(uint32_t data, uint16_t count) {
     uint32_t mask = 0x01 << (count - 1);
 
     do {
-        Phy::writeMDIO(phy, data & mask);
+        Phy::writeMDIO(phy, data & mask, NULL /*pDevIns*/);
         mask >>= 1;
     } while (mask);
 }
