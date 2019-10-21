@@ -69,6 +69,12 @@ const int iScrollLockPosition = 125;
 const qint64 iFileSizeLimit = _256K;
 const QString strSubDirectorName("keyboardLayouts");
 
+/** Name, background color, normal font color, hover color, edited button background color, pressed button font color. */
+const char* predefinedColorThemes[][6] = {{"Clear Night","#000000", "#ffffff", "#859900", "#9b6767", "#000000"},
+    {"Gobi Dark","#002b36", "#fdf6e3", "#859900", "#cb4b16", "#002b36"},
+    {"Gobi Light","#fdf6e3", "#002b36", "#2aa198", "#cb4b16", "#bf4040"},
+    {0, 0, 0, 0, 0, 0}};
+
 typedef QPair<QLabel*, UISoftKeyboardColorButton*> ColorSelectLabelButton;
 
 enum KeyState
@@ -143,11 +149,6 @@ struct UsageCode
     LONG usagePage;
     bool fRelease;
 };
-/* Name, background color, normal font color, hover color, edited button background color, pressed button font color. */
-const char* predefinedColorThemes[][6] = {{"Clear Night","#000000", "#ffffff", "#859900", "#9b6767", "#000000"},
-    {"Gobi Dark","#002b36", "#fdf6e3", "#859900", "#cb4b16", "#002b36"},
-    {"Gobi Light","#fdf6e3", "#002b36", "#2aa198", "#cb4b16", "#bf4040"},
-    {0, 0, 0, 0, 0, 0}};
 
 
 /*********************************************************************************************************************************
@@ -574,12 +575,15 @@ public:
 
     const QString &name() const;
     void setName(const QString &strName);
-    void print();
+
+    bool isEditable() const;
+    void setIsEditable(bool fIsEditable);
 
 private:
 
     QVector<QColor> m_colors;
     QString m_strName;
+    bool    m_fIsEditable;
 };
 
 /*********************************************************************************************************************************
@@ -656,6 +660,7 @@ public:
     QString currentColorThemeName() const;
     void setColorThemeByName(const QString &strColorThemeName);
     void parentDialogDeactivated();
+    bool isColorThemeEditable() const;
 
 protected:
 
@@ -828,7 +833,7 @@ public:
     void setHideOSMenuKeys(bool fHide);
     void setHideNumPad(bool fHide);
     void setHideMultimediaKeys(bool fHide);
-    void setColorSelectionButtonBackground(KeyboardColorType enmColorType, const QColor &color);
+    void setColorSelectionButtonBackgroundAndTooltip(KeyboardColorType enmColorType, const QColor &color, bool fIsColorEditable);
     void setColorThemeNames(const QStringList &colorThemeNames);
     void setCurrentColorThemeName(const QString &strColorThemeName);
 
@@ -2052,6 +2057,7 @@ void UISoftKeyboardLayout::drawTextInRect(const UISoftKeyboardKey &key, QPainter
 
 UISoftKeyboardColorTheme::UISoftKeyboardColorTheme()
     : m_colors(QVector<QColor>(KeyboardColorType_Max))
+    , m_fIsEditable(false)
 {
     m_colors[KeyboardColorType_Background].setNamedColor("#ff878787");
     m_colors[KeyboardColorType_Font].setNamedColor("#ff000000");
@@ -2068,6 +2074,7 @@ UISoftKeyboardColorTheme::UISoftKeyboardColorTheme(const QString &strName,
                                                    const QString &strPressedButtonFontColor)
     :m_colors(QVector<QColor>(KeyboardColorType_Max))
     ,m_strName(strName)
+    , m_fIsEditable(false)
 {
     m_colors[KeyboardColorType_Background].setNamedColor(strBackgroundColor);
     m_colors[KeyboardColorType_Font].setNamedColor(strNormalFontColor);
@@ -2119,18 +2126,15 @@ void UISoftKeyboardColorTheme::setName(const QString &strName)
     m_strName = strName;
 }
 
-void UISoftKeyboardColorTheme::print()
+bool UISoftKeyboardColorTheme::isEditable() const
 {
-    printf("=====================\n");
-    printf("name: %s\n backround %s\n font %s\n hover %s\n edit %s\n pressed %s\n",
-           qPrintable(m_strName),
-           qPrintable(m_colors[KeyboardColorType_Background].name(QColor::HexRgb)),
-           qPrintable(m_colors[KeyboardColorType_Font].name(QColor::HexRgb)),
-           qPrintable(m_colors[KeyboardColorType_Hover].name(QColor::HexRgb)),
-           qPrintable(m_colors[KeyboardColorType_Edit].name(QColor::HexRgb)),
-           qPrintable(m_colors[KeyboardColorType_Pressed].name(QColor::HexRgb)));
+    return m_fIsEditable;
 }
 
+void UISoftKeyboardColorTheme::setIsEditable(bool fIsEditable)
+{
+    m_fIsEditable = fIsEditable;
+}
 
 /*********************************************************************************************************************************
 *   UISoftKeyboardWidget implementation.                                                                                  *
@@ -2572,6 +2576,13 @@ void UISoftKeyboardWidget::parentDialogDeactivated()
     if (!underMouse())
         m_pKeyUnderMouse = 0;
     update();
+}
+
+bool UISoftKeyboardWidget::isColorThemeEditable() const
+{
+    if (!m_currentColorTheme)
+        return false;
+    return m_currentColorTheme->isEditable();
 }
 
 void UISoftKeyboardWidget::deleteCurrentLayout()
@@ -3069,6 +3080,7 @@ void UISoftKeyboardWidget::prepareColorThemes()
 
     UISoftKeyboardColorTheme customTheme;
     customTheme.setName("Custom");
+    customTheme.setIsEditable(true);
     m_colorThemes.append(customTheme);
     m_currentColorTheme = &(m_colorThemes.back());
 }
@@ -3609,7 +3621,8 @@ void UISoftKeyboardSettingsWidget::setHideMultimediaKeys(bool fHide)
         m_pHideMultimediaKeysCheckBox->setChecked(fHide);
 }
 
-void UISoftKeyboardSettingsWidget::setColorSelectionButtonBackground(KeyboardColorType enmColorType, const QColor &color)
+void UISoftKeyboardSettingsWidget::setColorSelectionButtonBackgroundAndTooltip(KeyboardColorType enmColorType,
+                                                                               const QColor &color, bool fIsColorEditable)
 {
     if (m_colorSelectLabelsButtons.size() > enmColorType && m_colorSelectLabelsButtons[enmColorType].second)
     {
@@ -3618,6 +3631,7 @@ void UISoftKeyboardSettingsWidget::setColorSelectionButtonBackground(KeyboardCol
         pal.setColor(QPalette::Button, color);
         pButton->setAutoFillBackground(true);
         pButton->setPalette(pal);
+        pButton->setToolTip(fIsColorEditable ? UISoftKeyboard::tr("Click to change the color.") : UISoftKeyboard::tr("This color theme is not editable."));
         pButton->update();
     }
 }
@@ -3627,6 +3641,7 @@ void UISoftKeyboardSettingsWidget::setColorThemeNames(const QStringList &colorTh
     if (!m_pColorThemeComboBox)
         return;
     m_pColorThemeComboBox->blockSignals(true);
+    m_pColorThemeComboBox->clear();
     foreach (const QString &strName, colorThemeNames)
         m_pColorThemeComboBox->addItem(strName);
     m_pColorThemeComboBox->blockSignals(false);
@@ -3722,6 +3737,8 @@ void UISoftKeyboardSettingsWidget::prepareObjects()
     {
         QLabel *pLabel = new QLabel;
         UISoftKeyboardColorButton *pButton = new UISoftKeyboardColorButton((KeyboardColorType)i);
+        pButton->setFlat(true);
+        pButton->setMaximumWidth(3 * qApp->style()->pixelMetric(QStyle::PM_LargeIconSize));
         pColorSelectionLayout->addWidget(pLabel, i, 0, 1, 1);
         pColorSelectionLayout->addWidget(pButton, i, 1, 1, 1);
         m_colorSelectLabelsButtons.append(ColorSelectLabelButton(pLabel, pButton));
@@ -3937,7 +3954,9 @@ void UISoftKeyboard::sltHandleKeyboardWidgetColorThemeChange()
          i < (int)KeyboardColorType_Max; ++i)
     {
         KeyboardColorType enmType = (KeyboardColorType)i;
-        m_pSettingsWidget->setColorSelectionButtonBackground(enmType, m_pKeyboardWidget->color(enmType));
+        m_pSettingsWidget->setColorSelectionButtonBackgroundAndTooltip(enmType,
+                                                                       m_pKeyboardWidget->color(enmType),
+                                                                       m_pKeyboardWidget->isColorThemeEditable());
     }
 }
 
@@ -3991,6 +4010,9 @@ void UISoftKeyboard::sltHandleColorCellClick(int iColorRow)
 {
     if (!m_pKeyboardWidget || iColorRow >= static_cast<int>(KeyboardColorType_Max))
         return;
+
+    if (!m_pKeyboardWidget->isColorThemeEditable())
+        return;
     const QColor &currentColor = m_pKeyboardWidget->color(static_cast<KeyboardColorType>(iColorRow));
     QColorDialog colorDialog(currentColor, this);
 
@@ -4000,7 +4022,8 @@ void UISoftKeyboard::sltHandleColorCellClick(int iColorRow)
     if (currentColor == newColor)
         return;
     m_pKeyboardWidget->setColor(static_cast<KeyboardColorType>(iColorRow), newColor);
-    m_pSettingsWidget->setColorSelectionButtonBackground(static_cast<KeyboardColorType>(iColorRow), newColor);
+    m_pSettingsWidget->setColorSelectionButtonBackgroundAndTooltip(static_cast<KeyboardColorType>(iColorRow),
+                                                                   newColor, m_pKeyboardWidget->isColorThemeEditable());
 }
 
 void UISoftKeyboard::sltResetKeyboard()
@@ -4172,7 +4195,9 @@ void UISoftKeyboard::configure()
              i < (int)KeyboardColorType_Max; ++i)
         {
             KeyboardColorType enmType = (KeyboardColorType)i;
-            m_pSettingsWidget->setColorSelectionButtonBackground(enmType, m_pKeyboardWidget->color(enmType));
+            m_pSettingsWidget->setColorSelectionButtonBackgroundAndTooltip(enmType,
+                                                                           m_pKeyboardWidget->color(enmType),
+                                                                           m_pKeyboardWidget->isColorThemeEditable());
         }
     }
     updateLayoutSelectorList();
