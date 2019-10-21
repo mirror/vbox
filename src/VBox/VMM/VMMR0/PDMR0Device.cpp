@@ -717,10 +717,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_TaskTrigger(PPDMDEVINS pDevIns, PDMTASKHAND
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_TaskTrigger: caller='%s'/%d: hTask=%RU64\n", pDevIns->pReg->szName, pDevIns->iInstance, hTask));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = PDMTaskTrigger(pGVM, PDMTASKTYPE_DEV, pDevIns->pDevInsForR3, hTask);
+    int rc = PDMTaskTrigger(pDevIns->Internal.s.pGVM, PDMTASKTYPE_DEV, pDevIns->pDevInsForR3, hTask);
 
     LogFlow(("pdmR0DevHlp_TaskTrigger: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -732,10 +730,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventSignal(PPDMDEVINS pDevIns, SUPSE
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventSignal: caller='%s'/%d: hEvent=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEvent));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventSignal(pGVM->pSession, hEvent);
+    int rc = SUPSemEventSignal(pDevIns->Internal.s.pGVM->pSession, hEvent);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventSignal: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -748,10 +744,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventWaitNoResume(PPDMDEVINS pDevIns,
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventWaitNoResume: caller='%s'/%d: hEvent=%p cNsTimeout=%RU32\n",
              pDevIns->pReg->szName, pDevIns->iInstance, hEvent, cMillies));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventWaitNoResume(pGVM->pSession, hEvent, cMillies);
+    int rc = SUPSemEventWaitNoResume(pDevIns->Internal.s.pGVM->pSession, hEvent, cMillies);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventWaitNoResume: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -764,10 +758,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventWaitNsAbsIntr(PPDMDEVINS pDevIns
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventWaitNsAbsIntr: caller='%s'/%d: hEvent=%p uNsTimeout=%RU64\n",
              pDevIns->pReg->szName, pDevIns->iInstance, hEvent, uNsTimeout));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventWaitNsAbsIntr(pGVM->pSession, hEvent, uNsTimeout);
+    int rc = SUPSemEventWaitNsAbsIntr(pDevIns->Internal.s.pGVM->pSession, hEvent, uNsTimeout);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventWaitNsAbsIntr: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -780,10 +772,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventWaitNsRelIntr(PPDMDEVINS pDevIns
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventWaitNsRelIntr: caller='%s'/%d: hEvent=%p cNsTimeout=%RU64\n",
              pDevIns->pReg->szName, pDevIns->iInstance, hEvent, cNsTimeout));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventWaitNsRelIntr(pGVM->pSession, hEvent, cNsTimeout);
+    int rc = SUPSemEventWaitNsRelIntr(pDevIns->Internal.s.pGVM->pSession, hEvent, cNsTimeout);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventWaitNsRelIntr: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -795,10 +785,8 @@ static DECLCALLBACK(uint32_t) pdmR0DevHlp_SUPSemEventGetResolution(PPDMDEVINS pD
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventGetResolution: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    uint32_t cNsResolution = SUPSemEventGetResolution(pGVM->pSession);
+    uint32_t cNsResolution = SUPSemEventGetResolution(pDevIns->Internal.s.pGVM->pSession);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventGetResolution: caller='%s'/%d: returns %u\n", pDevIns->pReg->szName, pDevIns->iInstance, cNsResolution));
     return cNsResolution;
@@ -810,10 +798,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventMultiSignal(PPDMDEVINS pDevIns, 
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiSignal: caller='%s'/%d: hEventMulti=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventMultiSignal(pGVM->pSession, hEventMulti);
+    int rc = SUPSemEventMultiSignal(pDevIns->Internal.s.pGVM->pSession, hEventMulti);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiSignal: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -825,10 +811,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventMultiReset(PPDMDEVINS pDevIns, S
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiReset: caller='%s'/%d: hEventMulti=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventMultiReset(pGVM->pSession, hEventMulti);
+    int rc = SUPSemEventMultiReset(pDevIns->Internal.s.pGVM->pSession, hEventMulti);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiReset: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -842,10 +826,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventMultiWaitNoResume(PPDMDEVINS pDe
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiWaitNoResume: caller='%s'/%d: hEventMulti=%p cMillies=%RU32\n",
              pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti, cMillies));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventMultiWaitNoResume(pGVM->pSession, hEventMulti, cMillies);
+    int rc = SUPSemEventMultiWaitNoResume(pDevIns->Internal.s.pGVM->pSession, hEventMulti, cMillies);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiWaitNoResume: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -859,10 +841,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventMultiWaitNsAbsIntr(PPDMDEVINS pD
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiWaitNsAbsIntr: caller='%s'/%d: hEventMulti=%p uNsTimeout=%RU64\n",
              pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti, uNsTimeout));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventMultiWaitNsAbsIntr(pGVM->pSession, hEventMulti, uNsTimeout);
+    int rc = SUPSemEventMultiWaitNsAbsIntr(pDevIns->Internal.s.pGVM->pSession, hEventMulti, uNsTimeout);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiWaitNsAbsIntr: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -876,10 +856,8 @@ static DECLCALLBACK(int) pdmR0DevHlp_SUPSemEventMultiWaitNsRelIntr(PPDMDEVINS pD
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiWaitNsRelIntr: caller='%s'/%d: hEventMulti=%p cNsTimeout=%RU64\n",
              pDevIns->pReg->szName, pDevIns->iInstance, hEventMulti, cNsTimeout));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    int rc = SUPSemEventMultiWaitNsRelIntr(pGVM->pSession, hEventMulti, cNsTimeout);
+    int rc = SUPSemEventMultiWaitNsRelIntr(pDevIns->Internal.s.pGVM->pSession, hEventMulti, cNsTimeout);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiWaitNsRelIntr: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
@@ -891,10 +869,8 @@ static DECLCALLBACK(uint32_t) pdmR0DevHlp_SUPSemEventMultiGetResolution(PPDMDEVI
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiGetResolution: caller='%s'/%d:\n", pDevIns->pReg->szName, pDevIns->iInstance));
-    PGVM pGVM = pDevIns->Internal.s.pGVM;
-    VM_ASSERT_EMT(pGVM);
 
-    uint32_t cNsResolution = SUPSemEventMultiGetResolution(pGVM->pSession);
+    uint32_t cNsResolution = SUPSemEventMultiGetResolution(pDevIns->Internal.s.pGVM->pSession);
 
     LogFlow(("pdmR0DevHlp_SUPSemEventMultiGetResolution: caller='%s'/%d: returns %u\n", pDevIns->pReg->szName, pDevIns->iInstance, cNsResolution));
     return cNsResolution;
