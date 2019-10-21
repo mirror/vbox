@@ -143,13 +143,6 @@ struct UIKeyCaptions
     QString m_strShiftAltGr;
 };
 
-struct UsageCode
-{
-    LONG usageId;
-    LONG usagePage;
-    bool fRelease;
-};
-
 
 /*********************************************************************************************************************************
 *   UISoftKeyboardColorButton definition.                                                                                        *
@@ -195,7 +188,6 @@ public:
     QVector<UISoftKeyboardRow> &rows();
 
     void setLockKey(int iKeyPosition, UISoftKeyboardKey *pKey);
-    UISoftKeyboardKey *lockKey(int iKeyPosition) const;
     void updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState);
     void reset();
 
@@ -401,7 +393,6 @@ public:
     LONG scanCode() const;
 
     void addScanCodePrefix(LONG scanCode);
-    const QVector<LONG> &scanCodePrefix() const;
 
     void setUsageId(LONG usageId);
     void setUsagePage(LONG usagePage);
@@ -511,17 +502,14 @@ public:
     void setIsFromResources(bool fIsFromResources);
     bool isFromResources() const;
 
-    void updateUIKeyCaptions(int iKeyPosition, UIKeyCaptions &newCaptions);
-
     void setEditable(bool fEditable);
     bool editable() const;
 
     void setPhysicalLayoutUuid(const QUuid &uuid);
     const QUuid &physicalLayoutUuid() const;
 
-    void setKeyCapMap(const QMap<int, UIKeyCaptions> &keyCaptionsMap);
     void addOrUpdateUIKeyCaptions(int iKeyPosition, const UIKeyCaptions &keyCaptions);
-    UIKeyCaptions keyCaptions(int iKeyPosition);
+    UIKeyCaptions keyCaptions(int iKeyPosition) const;
 
     bool operator==(const UISoftKeyboardLayout &otherLayout);
 
@@ -669,10 +657,6 @@ protected:
     virtual void mouseReleaseEvent(QMouseEvent *pEvent) /* override */;
     virtual void mouseMoveEvent(QMouseEvent *pEvent) /* override */;
     virtual void retranslateUi() /* override */;
-
-private slots:
-
-    void sltPhysicalLayoutForLayoutChanged(int iIndex);
 
 private:
 
@@ -924,11 +908,6 @@ void UISoftKeyboardPhysicalLayout::setLockKey(int iKeyPosition, UISoftKeyboardKe
     m_lockKeys[iKeyPosition] = pKey;
 }
 
-UISoftKeyboardKey *UISoftKeyboardPhysicalLayout::lockKey(int iKeyPosition) const
-{
-    return m_lockKeys.value(iKeyPosition, 0);
-}
-
 void UISoftKeyboardPhysicalLayout::updateLockKeyStates(bool fCapsLockState, bool fNumLockState, bool fScrollLockState)
 {
     updateLockKeyState(fCapsLockState, m_lockKeys.value(iCapsLockPosition, 0));
@@ -1178,7 +1157,6 @@ void UIKeyboardLayoutEditor::prepareObjects()
     m_pEditorLayout->addWidget(m_pLayoutNativeNameLabel, 2, 0, 1, 1);
     m_pEditorLayout->addWidget(m_pLayoutNativeNameEdit, 2, 1, 1, 1);
     connect(m_pLayoutNativeNameEdit, &QLineEdit::textChanged, this, &UIKeyboardLayoutEditor::sltLayoutNativeNameChanged);
-
 
     m_pLayoutNameLabel = new QLabel;
     m_pLayoutNameEdit = new QLineEdit;
@@ -1594,11 +1572,6 @@ void UISoftKeyboardKey::addScanCodePrefix(LONG scanCodePrefix)
     m_scanCodePrefix << scanCodePrefix;
 }
 
-const QVector<LONG> &UISoftKeyboardKey::scanCodePrefix() const
-{
-    return m_scanCodePrefix;
-}
-
 void UISoftKeyboardKey::setSpaceWidthAfter(int iSpace)
 {
     m_iSpaceWidthAfter = iSpace;
@@ -1795,13 +1768,6 @@ UISoftKeyboardLayout::UISoftKeyboardLayout()
 {
 }
 
-void UISoftKeyboardLayout::updateUIKeyCaptions(int iKeyPosition, UIKeyCaptions &newCaptions)
-{
-    if (!m_keyCaptionsMap.contains(iKeyPosition))
-        return;
-    m_keyCaptionsMap[iKeyPosition] = newCaptions;
-}
-
 QString UISoftKeyboardLayout::nameString() const
 {
     QString strCombinedName;
@@ -1874,11 +1840,6 @@ const QUuid &UISoftKeyboardLayout::physicalLayoutUuid() const
     return m_physicalLayoutUuid;
 }
 
-void UISoftKeyboardLayout::setKeyCapMap(const QMap<int, UIKeyCaptions> &keyCaptionsMap)
-{
-    m_keyCaptionsMap = keyCaptionsMap;
-}
-
 void UISoftKeyboardLayout::addOrUpdateUIKeyCaptions(int iKeyPosition, const UIKeyCaptions &keyCaptions)
 {
     if (m_keyCaptionsMap[iKeyPosition] == keyCaptions)
@@ -1888,7 +1849,7 @@ void UISoftKeyboardLayout::addOrUpdateUIKeyCaptions(int iKeyPosition, const UIKe
     m_keyCaptionsFontSizeMap[iKeyPosition] = 0;
 }
 
-UIKeyCaptions UISoftKeyboardLayout::keyCaptions(int iKeyPosition)
+UIKeyCaptions UISoftKeyboardLayout::keyCaptions(int iKeyPosition) const
 {
     return m_keyCaptionsMap[iKeyPosition];
 }
@@ -2643,19 +2604,6 @@ void UISoftKeyboardWidget::addLayout(const UISoftKeyboardLayout &newLayout)
     m_layouts.append(newLayout);
 }
 
-void UISoftKeyboardWidget::sltPhysicalLayoutForLayoutChanged(int iIndex)
-{
-    if (!m_pCurrentKeyboardLayout)
-        return;
-    if (iIndex < 0 || iIndex >= m_physicalLayouts.size())
-        return;
-
-    if (m_pCurrentKeyboardLayout->physicalLayoutUuid() == m_physicalLayouts[iIndex].uid())
-        return;
-    m_pCurrentKeyboardLayout->setPhysicalLayoutUuid(m_physicalLayouts[iIndex].uid());
-    update();
-}
-
 void UISoftKeyboardWidget::setNewMinimumSize(const QSize &size)
 {
     m_minimumSize = size;
@@ -3214,14 +3162,11 @@ bool UIPhysicalLayoutReader::parseXMLFile(const QString &strFileName, UISoftKeyb
     int iDefaultWidth = attributes.value("defaultWidth").toInt();
     int iDefaultHeight = attributes.value("defaultHeight").toInt();
     QVector<UISoftKeyboardRow> &rows = physicalLayout.rows();
-    int iRowCount = 0;
+
     while (m_xmlReader.readNextStartElement())
     {
         if (m_xmlReader.name() == "row")
-        {
             parseRow(iDefaultWidth, iDefaultHeight, rows);
-            ++iRowCount;
-        }
         else if (m_xmlReader.name() == "name")
             physicalLayout.setName(m_xmlReader.readElementText());
         else if (m_xmlReader.name() == "id")
@@ -3820,12 +3765,6 @@ bool UISoftKeyboard::event(QEvent *pEvent)
         if (m_pKeyboardWidget)
             m_pKeyboardWidget->parentDialogDeactivated();
     }
-    else if (pEvent->type() == QEvent::WindowDeactivate)
-    {
-        if (m_pKeyboardWidget)
-            m_pKeyboardWidget->parentDialogDeactivated();
-    }
-
     return QMainWindowWithRestorableGeometryAndRetranslateUi::event(pEvent);
 }
 
