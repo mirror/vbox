@@ -29,9 +29,6 @@
 #include "VirtualBoxImpl.h"
 #include "LoggingNew.h"
 
-/* This variable is global and used in the different places so it must be cleared each time before usage to avoid failure */
-std::vector<ComObjPtr<Machine> > machineList;
-
 typedef std::multimap<Utf8Str, Utf8Str> list_t;
 typedef std::multimap<Utf8Str, Utf8Str>::const_iterator cit_t;
 typedef std::multimap<Utf8Str, Utf8Str>::iterator it_t;
@@ -291,8 +288,6 @@ HRESULT MachineMoveVM::init()
     fileList_t actualFileList;
     Utf8Str strTargetImageName;
 
-    /* Global variable (defined at the beginning of file), so clear it before usage */
-    machineList.clear();
     machineList.push_back(m_pMachine);
 
     {
@@ -310,7 +305,7 @@ HRESULT MachineMoveVM::init()
             hrc = m_pMachine->FindSnapshot(Bstr(id).raw(), pSnapshot.asOutParam());
             if (FAILED(hrc))
                 return hrc;
-            hrc = createMachineList(pSnapshot, machineList);
+            hrc = createMachineList(pSnapshot);
             if (FAILED(hrc))
                 return hrc;
         }
@@ -320,7 +315,7 @@ HRESULT MachineMoveVM::init()
     ULONG uTotalWeight = 1;
 
     /* The lists m_llMedias and m_llSaveStateFiles are filled in the queryMediasForAllStates() */
-    hrc = queryMediasForAllStates(machineList);
+    hrc = queryMediasForAllStates();
     if (FAILED(hrc))
         return hrc;
 
@@ -1321,8 +1316,7 @@ HRESULT MachineMoveVM::queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &st
     return rc;
 }
 
-HRESULT MachineMoveVM::createMachineList(const ComPtr<ISnapshot> &pSnapshot,
-                                         std::vector<ComObjPtr<Machine> > &aMachineList) const
+HRESULT MachineMoveVM::createMachineList(const ComPtr<ISnapshot> &pSnapshot)
 {
     Bstr name;
     HRESULT rc = pSnapshot->COMGETTER(Name)(name.asOutParam());
@@ -1331,29 +1325,29 @@ HRESULT MachineMoveVM::createMachineList(const ComPtr<ISnapshot> &pSnapshot,
     ComPtr<IMachine> l_pMachine;
     rc = pSnapshot->COMGETTER(Machine)(l_pMachine.asOutParam());
     if (FAILED(rc)) return rc;
-    aMachineList.push_back((Machine*)(IMachine*)l_pMachine);
+    machineList.push_back((Machine*)(IMachine*)l_pMachine);
 
     SafeIfaceArray<ISnapshot> sfaChilds;
     rc = pSnapshot->COMGETTER(Children)(ComSafeArrayAsOutParam(sfaChilds));
     if (FAILED(rc)) return rc;
     for (size_t i = 0; i < sfaChilds.size(); ++i)
     {
-        rc = createMachineList(sfaChilds[i], aMachineList);
+        rc = createMachineList(sfaChilds[i]);
         if (FAILED(rc)) return rc;
     }
 
     return rc;
 }
 
-HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machine> > &aMachineList)
+HRESULT MachineMoveVM::queryMediasForAllStates()
 {
     /* In this case we create a exact copy of the original VM. This means just
      * adding all directly and indirectly attached disk images to the worker
      * list. */
     HRESULT rc = S_OK;
-    for (size_t i = 0; i < aMachineList.size(); ++i)
+    for (size_t i = 0; i < machineList.size(); ++i)
     {
-        const ComObjPtr<Machine> &machine = aMachineList.at(i);
+        const ComObjPtr<Machine> &machine = machineList.at(i);
 
         /* Add all attachments (and their parents) of the different
          * machines to a worker list. */
