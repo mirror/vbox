@@ -119,8 +119,7 @@ private:
     HRESULT getFilesList(const Utf8Str &strRootFolder, fileList_t &filesList);
     HRESULT getFolderSize(const Utf8Str &strRootFolder, uint64_t &size);
     HRESULT deleteFiles(const RTCList<Utf8Str> &listOfFiles);
-    HRESULT updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATETASKMOVE> &listOfFiles,
-                                    const Utf8Str &sourcePath, const Utf8Str &targetPath);
+    void updatePathsToStateFiles(const Utf8Str &sourcePath, const Utf8Str &targetPath);
     HRESULT moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &listOfDisks, const Utf8Str &strTargetFolder = Utf8Str::Empty);
     HRESULT restoreAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &listOfDisks);
     HRESULT isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMedium);

@@ -686,16 +686,12 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
         /*
          * Update state file path
          * very important step!
-         * Not obvious how to do it correctly.
          */
-        {
-            Log2(("Update state file path\n"));
-            hrc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->m_finalSaveStateFilesMap,
-                                                      taskMoveVM->m_vmFolders[VBox_SettingFolder],
-                                                      strTargetFolder);
-            if (FAILED(hrc))
-                throw hrc;
-        }
+        Log2(("Update state file path\n"));
+        /** @todo r=klaus: this update is not necessarily matching what the
+         * above code has set as the new folders, so it needs reimplementing */
+        taskMoveVM->updatePathsToStateFiles(taskMoveVM->m_vmFolders[VBox_SettingFolder],
+                                            strTargetFolder);
 
         /*
          * Moving Machine settings file
@@ -921,17 +917,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
                 throw hrc;
 
             /* Revert original paths to the state files */
-            {
-                hrc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->m_finalSaveStateFilesMap,
-                                                          strTargetFolder,
-                                                          taskMoveVM->m_vmFolders[VBox_SettingFolder]);
-                if (FAILED(hrc))
-                {
-                    Log2(("Rollback scenario: can't restore the original paths to the state files. Machine settings %s can be corrupted.\n",
-                          machineData->m_strConfigFileFull.c_str()));
-                    throw hrc;
-                }
-            }
+            taskMoveVM->updatePathsToStateFiles(strTargetFolder,
+                                                taskMoveVM->m_vmFolders[VBox_SettingFolder]);
 
             /* Delete all created files. Here we update progress object */
             hrc = taskMoveVM->deleteFiles(newFiles);
@@ -1140,44 +1127,22 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &lis
     return rc;
 }
 
-HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATETASKMOVE> &listOfFiles,
-                                               const Utf8Str &sourcePath, const Utf8Str &targetPath)
+void MachineMoveVM::updatePathsToStateFiles(const Utf8Str &sourcePath, const Utf8Str &targetPath)
 {
-    HRESULT rc = S_OK;
-
-    std::map<Utf8Str, SAVESTATETASKMOVE>::const_iterator itState = listOfFiles.begin();
-    while (itState != listOfFiles.end())
-    {
-        const SAVESTATETASKMOVE &sst = itState->second;
-
-        if (sst.snapshotUuid != Guid::Empty)
-        {
-            Utf8Str strGuidMachine = sst.snapshotUuid.toString();
-            ComObjPtr<Snapshot> snapshotMachineObj;
-
-            rc = m_pMachine->i_findSnapshotById(sst.snapshotUuid, snapshotMachineObj, true);
-            if (SUCCEEDED(rc) && !snapshotMachineObj.isNull())
-                snapshotMachineObj->i_updateSavedStatePaths(sourcePath.c_str(),
-                                                            targetPath.c_str());
-
-        }
-        else
-        {
-            const Utf8Str &path = m_pMachine->mSSData->strStateFilePath;
-            /*
-             * This check for the case when a new value is equal to the old one.
-             * Maybe the more clever check is needed in the some corner cases.
-             */
-            if (!RTPathStartsWith(path.c_str(), targetPath.c_str()))
-                m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%s",
-                                                                   targetPath.c_str(),
-                                                                   path.c_str() + sourcePath.length());
-        }
-
-        ++itState;
-    }
-
-    return rc;
+    ComObjPtr<Snapshot> pSnapshot;
+    HRESULT rc = m_pMachine->i_findSnapshotById(Guid() /* zero */, pSnapshot, true);
+    if (SUCCEEDED(rc) && !pSnapshot.isNull())
+        pSnapshot->i_updateSavedStatePaths(sourcePath.c_str(),
+                                           targetPath.c_str());
+    if (RTPathStartsWith(m_pMachine->mSSData->strStateFilePath.c_str(), sourcePath.c_str()))
+        m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%s",
+                                                           targetPath.c_str(),
+                                                           m_pMachine->mSSData->strStateFilePath.c_str() + sourcePath.length());
+    else
+        m_pMachine->mSSData->strStateFilePath = Utf8StrFmt("%s%c%s",
+                                                           targetPath.c_str(),
+                                                           RTPATH_DELIMITER,
+                                                           RTPathFilename(m_pMachine->mSSData->strStateFilePath.c_str()));
 }
 
 HRESULT MachineMoveVM::getFilesList(const Utf8Str &strRootFolder, fileList_t &filesList)
