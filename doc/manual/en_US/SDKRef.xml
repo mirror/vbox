@@ -2655,6 +2655,9 @@ es.unregisterListener(listener); </screen></para>
           <listitem>
             <para>VirtualSystemDescriptionType::CloudPublicIP - Whether the instance will have a public IP or not.</para>
           </listitem>
+          <listitem>
+            <para>VirtualSystemDescriptionType::CloudPublicSSHKey - Public SSH key which is used to connect to an instance via SSH</para>
+          </listitem>
         </itemizedlist>
       </para>
     </sect1>

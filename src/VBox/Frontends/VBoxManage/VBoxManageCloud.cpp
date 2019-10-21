@@ -479,6 +479,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
         { "--subnet",         't', RTGETOPT_REQ_STRING },
         { "--privateip",      'P', RTGETOPT_REQ_STRING },
         { "--launch",         'l', RTGETOPT_REQ_STRING },
+        { "--public-ssh-key", 'k', RTGETOPT_REQ_STRING },
     };
     RTGETOPTSTATE GetState;
     RTGETOPTUNION ValueUnion;
@@ -495,7 +496,7 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                      RTEXITCODE_FAILURE);
     ComPtr<IVirtualSystemDescription> pVSD = virtualSystemDescriptions[0];
 
-    Utf8Str strDisplayName, strImageId, strBootVolumeId;
+    Utf8Str strDisplayName, strImageId, strBootVolumeId, strPublicSSHKey;
     int c;
     while ((c = RTGetOpt(&GetState, &ValueUnion)) != 0)
     {
@@ -564,12 +565,21 @@ static RTEXITCODE createCloudInstance(HandlerArg *a, int iFirst, PCLOUDCOMMONOPT
                                              Bstr(ValueUnion.psz).raw());
                     break;
                 }
+            case 'k':
+                strPublicSSHKey = ValueUnion.psz;
+                pVSD->AddDescription(VirtualSystemDescriptionType_CloudPublicSSHKey,
+                                     Bstr(ValueUnion.psz).raw(),
+                                     Bstr(ValueUnion.psz).raw());
+                break;
             case VINF_GETOPT_NOT_OPTION:
                 return errorUnknownSubcommand(ValueUnion.psz);
             default:
                 return errorGetOpt(c, &ValueUnion);
         }
     }
+
+    if (strPublicSSHKey.isEmpty())
+        RTPrintf("Warning!!! Public SSH key doesn't present in the passed arguments...\n");
 
     if (strImageId.isNotEmpty() && strBootVolumeId.isNotEmpty())
         return errorArgument("Parameters --image-id and --boot-volume-id are mutually exclusive. "
