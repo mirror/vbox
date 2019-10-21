@@ -6543,7 +6543,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                         if (nic.mode != NetworkAttachmentType_NATNetwork)
                             buildNetworkXML(NetworkAttachmentType_NATNetwork, false, *pelmDisabledNode, nic);
 #ifdef VBOX_WITH_CLOUD_NET
-                        // @todo Bump settings version!
+                        /// @todo Bump settings version!
                         if (nic.mode != NetworkAttachmentType_Cloud)
                             buildNetworkXML(NetworkAttachmentType_Cloud, false, *pelmDisabledNode, nic);
 #endif /* VBOX_WITH_CLOUD_NET */

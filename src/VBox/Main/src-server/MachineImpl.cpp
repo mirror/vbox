@@ -13307,7 +13307,7 @@ HRESULT SessionMachine::endPowerUp(LONG aResult)
 HRESULT SessionMachine::beginPoweringDown(ComPtr<IProgress> &aProgress)
 {
     LogFlowThisFuncEnter();
-    
+
 #ifdef VBOX_WITH_CLOUD_NET
     mPeer->i_disconnectFromCloudNetwork();
 #endif /* VBOX_WITH_CLOUD_NET */

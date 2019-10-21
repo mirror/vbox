@@ -202,7 +202,7 @@ public:
 
         // list of files to delete in Delete(); this list is filled by Unregister()
         std::list<Utf8Str>  llFilesToDelete;
-    
+
 #ifdef VBOX_WITH_CLOUD_NET
         GatewayInfo         mGatewayInfo;
 #endif /* VBOX_WITH_CLOUD_NET */

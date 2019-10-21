@@ -1528,7 +1528,7 @@ HRESULT VirtualBox::i_findCloudNetworkByName(const com::Utf8Str &aNetworkName,
         }
     }
     return rc;
-}                                 
+}
 #endif /* VBOX_WITH_CLOUD_NET */
 
 HRESULT VirtualBox::createCloudNetwork(const com::Utf8Str &aNetworkName,

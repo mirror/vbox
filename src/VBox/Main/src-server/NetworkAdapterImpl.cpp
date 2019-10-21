@@ -764,7 +764,7 @@ HRESULT NetworkAdapter::setCloudNetwork(const com::Utf8Str &aCloudNetwork)
         alock.release();
 
 #if 0
-        // @todo Implement dynamic re-attachment of cloud network
+        /// @todo Implement dynamic re-attachment of cloud network
         AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
         mParent->i_setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
