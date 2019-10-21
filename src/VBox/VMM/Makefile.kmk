@@ -137,6 +137,7 @@ VBoxVMM_SOURCES  = \
 	VMMR3/PDMLdr.cpp \
 	VMMR3/PDMCritSect.cpp \
 	VMMR3/PDMQueue.cpp \
+	VMMR3/PDMR3Task.cpp \
 	VMMR3/PDMThread.cpp \
 	VMMR3/PGM.cpp \
 	VMMR3/PGMDbg.cpp \
@@ -190,6 +191,7 @@ VBoxVMM_SOURCES  = \
 	VMMAll/PDMAllCritSectRw.cpp \
 	VMMAll/PDMAllCritSectBoth.cpp \
 	VMMAll/PDMAllQueue.cpp \
+	VMMAll/PDMAllTask.cpp \
 	VMMAll/PGMAll.cpp \
 	VMMAll/PGMAllHandler.cpp \
 	VMMAll/PGMAllMap.cpp \
@@ -520,6 +522,7 @@ VMMR0_SOURCES   = \
 	VMMAll/PDMAllCritSectRw.cpp \
 	VMMAll/PDMAllCritSectBoth.cpp \
 	VMMAll/PDMAllQueue.cpp \
+	VMMAll/PDMAllTask.cpp \
 	VMMAll/PGMAll.cpp \
 	VMMAll/PGMAllHandler.cpp \
 	VMMAll/PGMAllMap.cpp \

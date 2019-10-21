@@ -29,8 +29,9 @@
 # pragma once
 #endif
 
-#include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/vmm/pdmqueue.h>
+#include <VBox/vmm/pdmtask.h>
 #ifdef IN_RING3
 # include <VBox/vmm/pdmthread.h>
 #endif
@@ -3646,6 +3647,8 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnDriverDetach,(PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns, uint32_t fFlags));
 
+    /** @name Exported PDM Queue Functions
+     * @{ */
     /**
      * Create a queue.
      *
@@ -3659,14 +3662,114 @@ typedef struct PDMDEVHLPR3
      * @param   fRZEnabled          Set if the queue should work in RC and R0.
      * @param   pszName             The queue base name. The instance number will be
      *                              appended automatically.
-     * @param   ppQueue             Where to store the queue handle on success.
+     * @param   ppQueue             Where to store the queue pointer on success.
      * @thread  The emulation thread.
      * @remarks The device critical section will NOT be entered before calling the
      *          callback.  No locks will be held, but for now it's safe to assume
      *          that only one EMT will do queue callbacks at any one time.
      */
+    DECLR3CALLBACKMEMBER(int, pfnQueueCreatePtr,(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                                 PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName,
+                                                 PPDMQUEUE *ppQueue));
+
+    /**
+     * Create a queue.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   cbItem              The size of a queue item.
+     * @param   cItems              The number of items in the queue.
+     * @param   cMilliesInterval    The number of milliseconds between polling the queue.
+     *                              If 0 then the emulation thread will be notified whenever an item arrives.
+     * @param   pfnCallback         The consumer function.
+     * @param   fRZEnabled          Set if the queue should work in RC and R0.
+     * @param   pszName             The queue base name. The instance number will be
+     *                              appended automatically.
+     * @param   phQueue             Where to store the queue handle on success.
+     * @thread  EMT(0)
+     * @remarks The device critical section will NOT be entered before calling the
+     *          callback.  No locks will be held, but for now it's safe to assume
+     *          that only one EMT will do queue callbacks at any one time.
+     */
     DECLR3CALLBACKMEMBER(int, pfnQueueCreate,(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
-                                              PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue));
+                                              PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName,
+                                              PDMQUEUEHANDLE *phQueue));
+
+    DECLR3CALLBACKMEMBER(PPDMQUEUE, pfnQueueToPtr,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
+    DECLR3CALLBACKMEMBER(PPDMQUEUEITEMCORE, pfnQueueAlloc,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
+    DECLR3CALLBACKMEMBER(void, pfnQueueInsert,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem));
+    DECLR3CALLBACKMEMBER(void, pfnQueueInsertEx,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem, uint64_t cNanoMaxDelay));
+    DECLR3CALLBACKMEMBER(bool, pfnQueueFlushIfNecessary,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
+    /** @} */
+
+    /** @name PDM Task
+     * @{ */
+    /**
+     * Create an asynchronous ring-3 task.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns         The device instance.
+     * @param   fFlags          PDMTASK_F_XXX
+     * @param   pszName         The function name or similar.  Used for statistics,
+     *                          so no slashes.
+     * @param   pfnCallback     The task function.
+     * @param   pvUser          User argument for the task function.
+     * @param   phTask          Where to return the task handle.
+     * @thread  EMT(0)
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTaskCreate,(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszName,
+                                             PFNPDMTASKDEV pfnCallback, void *pvUser, PDMTASKHANDLE *phTask));
+    /**
+     * Triggers the running the given task.
+     *
+     * @returns VBox status code.
+     * @retval  VINF_ALREADY_POSTED is the task is already pending.
+     * @param   pDevIns         The device instance.
+     * @param   hTask           The task to trigger.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnTaskTrigger,(PPDMDEVINS pDevIns, PDMTASKHANDLE hTask));
+    /** @} */
+
+    /** @name SUP Event Semaphore Wrappers (single release / auto reset)
+     * These semaphores can be signalled from ring-0.
+     * @{ */
+    /** @sa SUPSemEventCreate */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventCreate,(PPDMDEVINS pDevIns, PSUPSEMEVENT phEvent));
+    /** @sa SUPSemEventClose */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventClose,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent));
+    /** @sa SUPSemEventSignal */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventSignal,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent));
+    /** @sa SUPSemEventWaitNoResume */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventWaitNoResume,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint32_t cMillies));
+    /** @sa SUPSemEventWaitNsAbsIntr */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventWaitNsAbsIntr,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint64_t uNsTimeout));
+    /** @sa SUPSemEventWaitNsRelIntr */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventWaitNsRelIntr,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint64_t cNsTimeout));
+    /** @sa SUPSemEventGetResolution */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnSUPSemEventGetResolution,(PPDMDEVINS pDevIns));
+    /** @} */
+
+    /** @name SUP Multi Event Semaphore Wrappers (multiple release / manual reset)
+     * These semaphores can be signalled from ring-0.
+     * @{ */
+    /** @sa SUPSemEventMultiCreate */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventMultiCreate,(PPDMDEVINS pDevIns, PSUPSEMEVENTMULTI phEventMulti));
+    /** @sa SUPSemEventMultiClose */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventMultiClose,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti));
+    /** @sa SUPSemEventMultiSignal */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventMultiSignal,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti));
+    /** @sa SUPSemEventMultiReset */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventMultiReset,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti));
+    /** @sa SUPSemEventMultiWaitNoResume */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventMultiWaitNoResume,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies));
+    /** @sa SUPSemEventMultiWaitNsAbsIntr */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventMultiWaitNsAbsIntr,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint64_t uNsTimeout));
+    /** @sa SUPSemEventMultiWaitNsRelIntr */
+    DECLR3CALLBACKMEMBER(int, pfnSUPSemEventMultiWaitNsRelIntr,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint64_t cNsTimeout));
+    /** @sa SUPSemEventMultiGetResolution */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnSUPSemEventMultiGetResolution,(PPDMDEVINS pDevIns));
+    /** @} */
 
     /**
      * Initializes a PDM critical section.
@@ -5058,6 +5161,61 @@ typedef struct PDMDEVHLPR0
      */
     DECLR0CALLBACKMEMBER(uint64_t, pfnTMTimeVirtGetNano,(PPDMDEVINS pDevIns));
 
+    /** @name Exported PDM Queue Functions
+     * @{ */
+    DECLR0CALLBACKMEMBER(PPDMQUEUE, pfnQueueToPtr,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
+    DECLR0CALLBACKMEMBER(PPDMQUEUEITEMCORE, pfnQueueAlloc,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
+    DECLR0CALLBACKMEMBER(void, pfnQueueInsert,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem));
+    DECLR0CALLBACKMEMBER(void, pfnQueueInsertEx,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem, uint64_t cNanoMaxDelay));
+    DECLR0CALLBACKMEMBER(bool, pfnQueueFlushIfNecessary,(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue));
+    /** @} */
+
+    /** @name PDM Task
+     * @{ */
+    /**
+     * Triggers the running the given task.
+     *
+     * @returns VBox status code.
+     * @retval  VINF_ALREADY_POSTED is the task is already pending.
+     * @param   pDevIns         The device instance.
+     * @param   hTask           The task to trigger.
+     * @thread  Any thread.
+     */
+    DECLR0CALLBACKMEMBER(int, pfnTaskTrigger,(PPDMDEVINS pDevIns, PDMTASKHANDLE hTask));
+    /** @} */
+
+    /** @name SUP Event Semaphore Wrappers (single release / auto reset)
+     * These semaphores can be signalled from ring-0.
+     * @{ */
+    /** @sa SUPSemEventSignal */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventSignal,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent));
+    /** @sa SUPSemEventWaitNoResume */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventWaitNoResume,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint32_t cMillies));
+    /** @sa SUPSemEventWaitNsAbsIntr */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventWaitNsAbsIntr,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint64_t uNsTimeout));
+    /** @sa SUPSemEventWaitNsRelIntr */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventWaitNsRelIntr,(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint64_t cNsTimeout));
+    /** @sa SUPSemEventGetResolution */
+    DECLR0CALLBACKMEMBER(uint32_t, pfnSUPSemEventGetResolution,(PPDMDEVINS pDevIns));
+    /** @} */
+
+    /** @name SUP Multi Event Semaphore Wrappers (multiple release / manual reset)
+     * These semaphores can be signalled from ring-0.
+     * @{ */
+    /** @sa SUPSemEventMultiSignal */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventMultiSignal,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti));
+    /** @sa SUPSemEventMultiReset */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventMultiReset,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti));
+    /** @sa SUPSemEventMultiWaitNoResume */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventMultiWaitNoResume,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies));
+    /** @sa SUPSemEventMultiWaitNsAbsIntr */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventMultiWaitNsAbsIntr,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint64_t uNsTimeout));
+    /** @sa SUPSemEventMultiWaitNsRelIntr */
+    DECLR0CALLBACKMEMBER(int, pfnSUPSemEventMultiWaitNsRelIntr,(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint64_t cNsTimeout));
+    /** @sa SUPSemEventMultiGetResolution */
+    DECLR0CALLBACKMEMBER(uint32_t, pfnSUPSemEventMultiGetResolution,(PPDMDEVINS pDevIns));
+    /** @} */
+
     /**
      * Gets the NOP critical section.
      *
@@ -5141,7 +5299,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 9, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 10, 0)
 
 
 /**
@@ -6730,13 +6888,205 @@ DECLINLINE(int) PDMDevHlpDriverDetach(PPDMDEVINS pDevIns, PPDMDRVINS pDrvIns, ui
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnQueueCreate
+ * @copydoc PDMDEVHLPR3::pfnQueueCreatePtr
  */
 DECLINLINE(int) PDMDevHlpQueueCreate(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                      PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PPDMQUEUE *ppQueue)
 {
-    return pDevIns->pHlpR3->pfnQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, ppQueue);
+    return pDevIns->pHlpR3->pfnQueueCreatePtr(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, ppQueue);
 }
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnQueueCreate
+ */
+DECLINLINE(int) PDMDevHlpQueueCreateNew(PPDMDEVINS pDevIns, size_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
+                                        PFNPDMQUEUEDEV pfnCallback, bool fRZEnabled, const char *pszName, PDMQUEUEHANDLE *phQueue)
+{
+    return pDevIns->pHlpR3->pfnQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fRZEnabled, pszName, phQueue);
+}
+
+#endif /* IN_RING3 */
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnQueueAlloc
+ */
+DECLINLINE(PPDMQUEUEITEMCORE) PDMDevHlpQueueAlloc(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnQueueAlloc(pDevIns, hQueue);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnQueueInsert
+ */
+DECLINLINE(void) PDMDevHlpQueueInsert(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem)
+{
+    pDevIns->CTX_SUFF(pHlp)->pfnQueueInsert(pDevIns, hQueue, pItem);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnQueueInsertEx
+ */
+DECLINLINE(void) PDMDevHlpQueueInsertEx(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue, PPDMQUEUEITEMCORE pItem, uint64_t cNanoMaxDelay)
+{
+    pDevIns->CTX_SUFF(pHlp)->pfnQueueInsertEx(pDevIns, hQueue, pItem, cNanoMaxDelay);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnQueueFlushIfNecessary
+ */
+DECLINLINE(bool) PDMDevHlpQueueFlushIfNecessary(PPDMDEVINS pDevIns, PDMQUEUEHANDLE hQueue)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnQueueFlushIfNecessary(pDevIns, hQueue);
+}
+
+#ifdef IN_RING3
+/**
+ * @copydoc PDMDEVHLPR3::pfnTaskCreate
+ */
+DECLINLINE(int) PDMDevHlpTaskCreate(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszName,
+                                    PFNPDMTASKDEV pfnCallback, void *pvUser, PDMTASKHANDLE *phTask)
+{
+    return pDevIns->pHlpR3->pfnTaskCreate(pDevIns, fFlags, pszName, pfnCallback, pvUser, phTask);
+}
+#endif
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnTaskTrigger
+ */
+DECLINLINE(int) PDMDevHlpTaskTrigger(PPDMDEVINS pDevIns, PDMTASKHANDLE hTask)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnTaskTrigger(pDevIns, hTask);
+}
+
+#ifdef IN_RING3
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventCreate
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventCreate(PPDMDEVINS pDevIns, PSUPSEMEVENT phEvent)
+{
+    return pDevIns->pHlpR3->pfnSUPSemEventCreate(pDevIns, phEvent);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventClose
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventClose(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent)
+{
+    return pDevIns->pHlpR3->pfnSUPSemEventClose(pDevIns, hEvent);
+}
+
+#endif /* IN_RING3 */
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventSignal
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventSignal(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventSignal(pDevIns, hEvent);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventWaitNoResume
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventWaitNoResume(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint32_t cMillies)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventWaitNoResume(pDevIns, hEvent, cMillies);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventWaitNsAbsIntr
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventWaitNsAbsIntr(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint64_t uNsTimeout)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventWaitNsAbsIntr(pDevIns, hEvent, uNsTimeout);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventWaitNsRelIntr
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventWaitNsRelIntr(PPDMDEVINS pDevIns, SUPSEMEVENT hEvent, uint64_t cNsTimeout)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventWaitNsRelIntr(pDevIns, hEvent, cNsTimeout);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventGetResolution
+ */
+DECLINLINE(uint32_t) PDMDevHlpSUPSemEventGetResolution(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventGetResolution(pDevIns);
+}
+
+#ifdef IN_RING3
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventMultiCreate
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventMultiCreate(PPDMDEVINS pDevIns, PSUPSEMEVENTMULTI phEventMulti)
+{
+    return pDevIns->pHlpR3->pfnSUPSemEventMultiCreate(pDevIns, phEventMulti);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventMultiClose
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventMultiClose(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti)
+{
+    return pDevIns->pHlpR3->pfnSUPSemEventMultiClose(pDevIns, hEventMulti);
+}
+
+#endif /* IN_RING3 */
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventMultiSignal
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventMultiSignal(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventMultiSignal(pDevIns, hEventMulti);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventMultiReset
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventMultiReset(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventMultiReset(pDevIns, hEventMulti);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnTaskTrigger
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventMultiWaitNoResume(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventMultiWaitNsRelIntr(pDevIns, hEventMulti, cMillies);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventMultiWaitNsAbsIntr
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventMultiWaitNsAbsIntr(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint64_t uNsTimeout)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventMultiWaitNsAbsIntr(pDevIns, hEventMulti, uNsTimeout);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventMultiWaitNsRelIntr
+ */
+DECLINLINE(int) PDMDevHlpSUPSemEventMultiWaitNsRelIntr(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint64_t cNsTimeout)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventMultiWaitNsRelIntr(pDevIns, hEventMulti, cNsTimeout);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventMultiGetResolution
+ */
+DECLINLINE(uint32_t) PDMDevHlpSUPSemEventMultiGetResolution(PPDMDEVINS pDevIns)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnSUPSemEventMultiGetResolution(pDevIns);
+}
+
+#ifdef IN_RING3
 
 /**
  * Initializes a PDM critical section.

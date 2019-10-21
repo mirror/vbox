@@ -284,7 +284,7 @@ static DECLCALLBACK(int) pdmR3TaskThread(RTTHREAD ThreadSelf, void *pvUser)
 
 
 /**
- * Worker for PDMR3TaskCreateGeneric().
+ * Worker for PDMR3TaskCreate().
  */
 DECLINLINE(PPDMTASK) pdmR3TaskAllocInSet(PPDMTASKSET pTaskSet)
 {
@@ -312,8 +312,8 @@ DECLINLINE(PPDMTASK) pdmR3TaskAllocInSet(PPDMTASKSET pTaskSet)
  * @param   phTask      Where to return the task handle.
  * @thread  EMT(0)
  */
-VMMR3_INT_DECL(int) PDMR3TaskCreateGeneric(PVM pVM, uint32_t fFlags, const char *pszName, PDMTASKTYPE enmType, void *pvOwner,
-                                           PFNRT pfnCallback, void *pvUser, PDMTASKHANDLE *phTask)
+VMMR3_INT_DECL(int) PDMR3TaskCreate(PVM pVM, uint32_t fFlags, const char *pszName, PDMTASKTYPE enmType, void *pvOwner,
+                                    PFNRT pfnCallback, void *pvUser, PDMTASKHANDLE *phTask)
 {
     /*
      * Validate input.
@@ -370,7 +370,7 @@ VMMR3_INT_DECL(int) PDMR3TaskCreateGeneric(PVM pVM, uint32_t fFlags, const char 
                 /*
                  * Try allocate a new set.
                  */
-                LogFlow(("PDMR3TaskCreateGeneric: Allocating new task set (%#u)...\n", i));
+                LogFlow(("PDMR3TaskCreate: Allocating new task set (%#u)...\n", i));
                 pTaskSet = (PPDMTASKSET)MMR3HeapAllocZ(pVM, MM_TAG_PDM, sizeof(*pTaskSet));
                 AssertReturn(pTaskSet, VERR_NO_MEMORY);
 
@@ -423,7 +423,7 @@ VMMR3_INT_DECL(int) PDMR3TaskCreateGeneric(PVM pVM, uint32_t fFlags, const char 
     STAMR3RegisterF(pVM, (void *)&pTask->cAlreadyTrigged, STAMTYPE_U32_RESET, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
                     "Number of times the task was re-triggered.", "/PDM/Tasks/%03u-%s-retriggered", hTask, pszName);
 
-    LogFlow(("PDMR3TaskCreateGeneric: Allocated %u for %s\n", hTask, pszName));
+    LogFlow(("PDMR3TaskCreate: Allocated %u for %s\n", hTask, pszName));
     return VINF_SUCCESS;
 }
 
@@ -443,7 +443,7 @@ VMMR3_INT_DECL(int) PDMR3TaskCreateGeneric(PVM pVM, uint32_t fFlags, const char 
 VMMR3_INT_DECL(int) PDMR3TaskCreateInternal(PVM pVM, uint32_t fFlags, const char *pszName,
                                             PFNPDMTASKINT pfnCallback, void *pvUser, PDMTASKHANDLE *phTask)
 {
-    return PDMR3TaskCreateGeneric(pVM, fFlags, pszName, PDMTASKTYPE_INTERNAL, pVM, (PFNRT)pfnCallback, pvUser, phTask);
+    return PDMR3TaskCreate(pVM, fFlags, pszName, PDMTASKTYPE_INTERNAL, pVM, (PFNRT)pfnCallback, pvUser, phTask);
 }
 
 

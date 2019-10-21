@@ -132,16 +132,16 @@ typedef enum PDMTASKTYPE
     PDMTASKTYPE_32BIT_HACK = 0x7fffffff
 } PDMTASKTYPE;
 
+VMMR3_INT_DECL(int) PDMR3TaskCreate(PVM pVM, uint32_t fFlags, const char *pszName, PDMTASKTYPE enmType, void *pvOwner,
+                                    PFNRT pfnCallback, void *pvUser, PDMTASKHANDLE *phTask);
 VMMR3_INT_DECL(int) PDMR3TaskCreateInternal(PVM pVM, uint32_t fFlags, const char *pszName,
                                             PFNPDMTASKINT pfnCallback, void *pvUser, PDMTASKHANDLE *phTask);
-VMMR3_INT_DECL(int) PDMR3TaskCreateGeneric(PVM pVM, uint32_t fFlags, const char *pszName, PDMTASKTYPE enmType, void *pvOwner,
-                                           PFNRT pfnCallback, void *pvUser, PDMTASKHANDLE *phTask);
-VMMR3_INT_DECL(int) PDMR3TaskDestroyInternal(PVM pVM, PDMTASKHANDLE hTask);
 VMMR3_INT_DECL(int) PDMR3TaskDestroyAllByOwner(PVM pVM, PDMTASKTYPE enmType, void *pvOwner);
 VMMR3_INT_DECL(int) PDMR3TaskDestroySpecific(PVM pVM, PDMTASKTYPE enmType, void *pvOwner, PDMTASKHANDLE hTask);
+VMMR3_INT_DECL(int) PDMR3TaskDestroyInternal(PVM pVM, PDMTASKHANDLE hTask);
 
-VMM_INT_DECL(int)   PDMTaskTrigger(PVM pVM, PDMTASKTYPE enmType, void *pvOwner, PDMTASKHANDLE hTask);
-VMM_INT_DECL(int)   PDMTaskTriggerInternal(PVM pVM, PDMTASKHANDLE hTask);
+VMM_INT_DECL(int)   PDMTaskTrigger(PVMCC pVM, PDMTASKTYPE enmType, RTR3PTR pvOwner, PDMTASKHANDLE hTask);
+VMM_INT_DECL(int)   PDMTaskTriggerInternal(PVMCC pVM, PDMTASKHANDLE hTask);
 #endif /* VBOX_IN_VMM */
 
 /** @} */

@@ -22,7 +22,7 @@
 #define LOG_GROUP LOG_GROUP_PDM_TASK
 #include "PDMInternal.h"
 #include <VBox/vmm/pdmtask.h>
-#include <VBox/vmm/vm.h>
+#include <VBox/vmm/gvm.h>
 #include <VBox/err.h>
 
 #include <VBox/log.h>
@@ -45,7 +45,7 @@
  * @param   hTask       The task to trigger.
  * @thread  Any
  */
-VMM_INT_DECL(int)   PDMTaskTrigger(PVM pVM, PDMTASKTYPE enmType, void *pvOwner, PDMTASKHANDLE hTask)
+VMM_INT_DECL(int)   PDMTaskTrigger(PVMCC pVM, PDMTASKTYPE enmType, RTR3PTR pvOwner, PDMTASKHANDLE hTask)
 {
     /*
      * Validate input and translate the handle to a task.
@@ -53,8 +53,8 @@ VMM_INT_DECL(int)   PDMTaskTrigger(PVM pVM, PDMTASKTYPE enmType, void *pvOwner, 
     AssertReturn(pvOwner, VERR_NOT_OWNER);
     AssertReturn(enmType >= PDMTASKTYPE_DEV && enmType <= PDMTASKTYPE_INTERNAL, VERR_NOT_OWNER);
 
-    size_t const iTask    = hTask % RT_ELEMENTS(pVM->pdm.s.apTaskSets[0]->aTasks);
-    size_t const iTaskSet = hTask / RT_ELEMENTS(pVM->pdm.s.apTaskSets[0]->aTasks);
+    size_t const iTask    = hTask % RT_ELEMENTS(pVM->pdm.s.aTaskSets[0].aTasks);
+    size_t const iTaskSet = hTask / RT_ELEMENTS(pVM->pdm.s.aTaskSets[0].aTasks);
 #ifdef IN_RING3
     AssertReturn(iTaskSet < RT_ELEMENTS(pVM->pdm.s.apTaskSets), VERR_INVALID_HANDLE);
     PPDMTASKSET pTaskSet  = pVM->pdm.s.apTaskSets[iTaskSet];
@@ -107,8 +107,8 @@ VMM_INT_DECL(int)   PDMTaskTrigger(PVM pVM, PDMTASKTYPE enmType, void *pvOwner, 
  * @param   hTask       The task to trigger.
  * @thread  Any
  */
-VMM_INT_DECL(int)   PDMTaskTriggerInternal(PVM pVM, PDMTASKHANDLE hTask)
+VMM_INT_DECL(int)   PDMTaskTriggerInternal(PVMCC pVM, PDMTASKHANDLE hTask)
 {
-    return PDMTaskTrigger(pVM, PDMTASKTYPE_INTERNAL, pVM, hTask);
+    return PDMTaskTrigger(pVM, PDMTASKTYPE_INTERNAL, pVM->pVMR3, hTask);
 }
 

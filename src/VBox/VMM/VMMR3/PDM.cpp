@@ -421,6 +421,8 @@ VMMR3_INT_DECL(int) PDMR3Init(PVM pVM)
      * Initialize sub components.
      */
     if (RT_SUCCESS(rc))
+        rc = pdmR3TaskInit(pVM);
+    if (RT_SUCCESS(rc))
         rc = pdmR3LdrInitU(pVM->pUVM);
 #ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     if (RT_SUCCESS(rc))
@@ -792,6 +794,11 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
      * Free modules.
      */
     pdmR3LdrTermU(pVM->pUVM);
+
+    /*
+     * Stop task threads.
+     */
+    pdmR3TaskTerm(pVM);
 
     /*
      * Destroy the PDM lock.

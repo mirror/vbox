@@ -624,8 +624,12 @@ typedef enum VBOXLOGGROUP
     LOG_GROUP_PDM_DRIVER,
     /** PDM Loader group. */
     LOG_GROUP_PDM_LDR,
-    /** PDM Loader group. */
+    /** PDM Queue group. */
     LOG_GROUP_PDM_QUEUE,
+    /** PDM Task group. */
+    LOG_GROUP_PDM_TASK,
+    /** PDM Thread group. */
+    LOG_GROUP_PDM_THREAD,
     /** PGM group. */
     LOG_GROUP_PGM,
     /** PGM dynamic mapping group. */
@@ -1035,6 +1039,8 @@ typedef enum VBOXLOGGROUP
     "PDM_DRIVER", \
     "PDM_LDR", \
     "PDM_QUEUE", \
+    "PDM_TASK", \
+    "PDM_THREAD", \
     "PGM", \
     "PGM_DYNMAP", \
     "PGM_PHYS", \

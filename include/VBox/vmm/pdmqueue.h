@@ -38,7 +38,12 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/** Pointer to a PDM queue. Also called PDM queue handle. */
+/** PDM queue handle. */
+typedef uint64_t PDMQUEUEHANDLE;
+/** NIL PDM queue handle. */
+#define NIL_PDMQUEUEHANDLE      UINT64_MAX
+
+/** Pointer to a PDM queue. */
 typedef struct PDMQUEUE *PPDMQUEUE;
 
 /** Pointer to a PDM queue item core. */
