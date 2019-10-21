@@ -613,9 +613,11 @@ void UIChart::drawCombinedPieCharts(QPainter &painter, quint64 iMaximum)
                          QSizeF(0.5 * chartRect.width(), 0.5 * chartRect.height()));
         /* Draw a doughnut chart where data series are stacked on to of each other: */
         drawCombinedDoughnutChart(painter, iMaximum, chartRect, innerRect);
+#if 0
         /* Draw a doughnut shaped chart and then pie chart inside it: */
-        // drawDoughnutChart(painter, iMaximum, 0 /* iDataIndex */, chartRect, innerRect);
-        // drawPieChart(painter, iMaximum, 1 /* iDataIndex */, innerRect, false);
+        drawDoughnutChart(painter, iMaximum, 0 /* iDataIndex */, chartRect, innerRect);
+        drawPieChart(painter, iMaximum, 1 /* iDataIndex */, innerRect, false);
+#endif
     }
     else if (fData0 && !fData1)
         drawPieChart(painter, iMaximum, 0 /* iDataIndex */, chartRect);
@@ -694,7 +696,10 @@ UIMetric::UIMetric(const QString &strName, const QString &strUnit, int iMaximumQ
 }
 
 UIMetric::UIMetric()
-    : m_iMaximumQueueSize(0)
+    : m_iMaximum(0)
+    , m_iMaximumQueueSize(0)
+    , m_fRequiresGuestAdditions(false)
+    , m_fIsInitialized(false)
 {
 }
 
