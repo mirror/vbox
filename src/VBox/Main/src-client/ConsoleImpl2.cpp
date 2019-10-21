@@ -5801,6 +5801,24 @@ int Console::i_configNetwork(const char *pszDevice,
                 break;
             }
 
+#ifdef VBOX_WITH_CLOUD_NET
+            case NetworkAttachmentType_Cloud:
+            {
+                hrc = aNetworkAdapter->COMGETTER(CloudNetwork)(bstr.asOutParam());       H();
+                if (!bstr.isEmpty())
+                {
+                    InsertConfigString(pLunL0, "Driver", "IntNet");
+                    InsertConfigNode(pLunL0, "Config", &pCfg);
+                    InsertConfigString(pCfg, "Network", BstrFmt("cloud-%ls", bstr));
+                    InsertConfigInteger(pCfg, "TrunkType", kIntNetTrunkType_WhateverNone);
+                    InsertConfigString(pCfg, "IfPolicyPromisc", pszPromiscuousGuestPolicy);
+                    networkName = bstr;
+                    trunkType = Bstr(TRUNKTYPE_WHATEVER);
+                }
+                break;
+            }
+#endif /* VBOX_WITH_CLOUD_NET */
+
             default:
                 AssertMsgFailed(("should not get here!\n"));
                 break;
@@ -5820,6 +5838,9 @@ int Console::i_configNetwork(const char *pszDevice,
             case NetworkAttachmentType_NAT:
             case NetworkAttachmentType_Generic:
             case NetworkAttachmentType_NATNetwork:
+#ifdef VBOX_WITH_CLOUD_NET
+            case NetworkAttachmentType_Cloud:
+#endif /* VBOX_WITH_CLOUD_NET */
             {
                 if (SUCCEEDED(hrc) && RT_SUCCESS(rc))
                 {

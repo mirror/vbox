@@ -118,6 +118,9 @@ endif
 ifdef VBOX_WITH_NETFLT
 VBOX_MAIN_DEFS += VBOX_WITH_NETFLT
 endif
+ifdef VBOX_WITH_CLOUD_NET
+VBOX_MAIN_DEFS += VBOX_WITH_CLOUD_NET
+endif
 ifdef VBOX_WITH_PCI_PASSTHROUGH
 VBOX_MAIN_DEFS += VBOX_WITH_PCI_PASSTHROUGH
 endif
@@ -555,6 +558,10 @@ VBoxSVC_SOURCES = \
 	../NetworkServices/Dhcpd/DhcpOptions.cpp \
 	src-server/NetworkServiceRunner.cpp \
 	src-server/NATNetworkImpl.cpp \
+	$(if $(VBOX_WITH_CLOUD_NET), \
+	src-server/CloudGateway.cpp \
+	src-server/CloudNetworkImpl.cpp \
+	,) \
 	src-server/GuestOSTypeImpl.cpp \
 	src-server/HostDnsService.cpp \
 	src-server/HostImpl.cpp \

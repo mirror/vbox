@@ -56,6 +56,10 @@ public:
     const QStringList &genericDriverList() const { return m_genericDriverList; }
     /** Returns the NAT network list. */
     const QStringList &natNetworkList() const { return m_natNetworkList; }
+#ifdef VBOX_WITH_CLOUD_NET
+    /** Returns the cloud network list. */
+    const QStringList &cloudNetworkList() const { return m_cloudNetworkList; }
+#endif /* VBOX_WITH_CLOUD_NET */
 
  public slots:
 
@@ -112,6 +116,10 @@ private:
     void refreshGenericDriverList(bool fFullRefresh = false);
     /** Repopulates NAT network list. */
     void refreshNATNetworkList();
+#ifdef VBOX_WITH_CLOUD_NET
+    /** Repopulates cloud network list. */
+    void refreshCloudNetworkList();
+#endif /* VBOX_WITH_CLOUD_NET */
 
     /** Loads generic properties from passed @a adapter. */
     static QString loadGenericProperties(const CNetworkAdapter &adapter);
@@ -140,6 +148,10 @@ private:
     QStringList  m_genericDriverListSaved;
     /** Holds the NAT network list. */
     QStringList  m_natNetworkList;
+#ifdef VBOX_WITH_CLOUD_NET
+    /** Holds the cloud network list. */
+    QStringList  m_cloudNetworkList;
+#endif /* VBOX_WITH_CLOUD_NET */
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineNetwork *m_pCache;

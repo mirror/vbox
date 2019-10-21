@@ -59,6 +59,9 @@ struct UIDataSettingsMachineNetworkAdapter
         , m_strGenericDriverName(QString())
         , m_strGenericProperties(QString())
         , m_strNATNetworkName(QString())
+#ifdef VBOX_WITH_CLOUD_NET
+        , m_strCloudNetworkName(QString())
+#endif /* VBOX_WITH_CLOUD_NET */
         , m_strMACAddress(QString())
         , m_fCableConnected(false)
     {}
@@ -78,6 +81,9 @@ struct UIDataSettingsMachineNetworkAdapter
                && (m_strGenericDriverName == other.m_strGenericDriverName)
                && (m_strGenericProperties == other.m_strGenericProperties)
                && (m_strNATNetworkName == other.m_strNATNetworkName)
+#ifdef VBOX_WITH_CLOUD_NET
+               && (m_strCloudNetworkName == other.m_strCloudNetworkName)
+#endif /* VBOX_WITH_CLOUD_NET */
                && (m_strMACAddress == other.m_strMACAddress)
                && (m_fCableConnected == other.m_fCableConnected)
                ;
@@ -110,6 +116,10 @@ struct UIDataSettingsMachineNetworkAdapter
     QString                           m_strGenericProperties;
     /** Holds the NAT network name. */
     QString                           m_strNATNetworkName;
+#ifdef VBOX_WITH_CLOUD_NET
+    /** Holds the cloud network name. */
+    QString                           m_strCloudNetworkName;
+#endif /* VBOX_WITH_CLOUD_NET */
     /** Holds the network adapter MAC address. */
     QString                           m_strMACAddress;
     /** Holds whether the network adapter is connected. */
@@ -273,6 +283,9 @@ void UIMachineSettingsNetwork::getAdapterDataFromCache(const UISettingsCacheMach
     m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_HostOnly, wipedOutString(oldAdapterData.m_strHostInterfaceName));
     m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_Generic, wipedOutString(oldAdapterData.m_strGenericDriverName));
     m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_NATNetwork, wipedOutString(oldAdapterData.m_strNATNetworkName));
+#ifdef VBOX_WITH_CLOUD_NET
+    m_pAttachmentTypeEditor->setValueName(KNetworkAttachmentType_Cloud, wipedOutString(oldAdapterData.m_strCloudNetworkName));
+#endif /* VBOX_WITH_CLOUD_NET */
     /* Handle attachment type change: */
     sltHandleAttachmentTypeChange();
 
@@ -330,6 +343,11 @@ void UIMachineSettingsNetwork::putAdapterDataToCache(UISettingsCacheMachineNetwo
         case KNetworkAttachmentType_NATNetwork:
             newAdapterData.m_strNATNetworkName = m_pAttachmentTypeEditor->valueName(KNetworkAttachmentType_NATNetwork);
             break;
+#ifdef VBOX_WITH_CLOUD_NET
+        case KNetworkAttachmentType_Cloud:
+            newAdapterData.m_strCloudNetworkName = m_pAttachmentTypeEditor->valueName(KNetworkAttachmentType_Cloud);
+            break;
+#endif /* VBOX_WITH_CLOUD_NET */
         default:
             break;
     }
@@ -413,6 +431,17 @@ bool UIMachineSettingsNetwork::validate(QList<UIValidationMessage> &messages)
             }
             break;
         }
+#ifdef VBOX_WITH_CLOUD_NET
+        case KNetworkAttachmentType_Cloud:
+        {
+            if (alternativeName().isNull())
+            {
+                message.second << tr("No cloud network name is currently specified.");
+                fPass = false;
+            }
+            break;
+        }
+#endif /* VBOX_WITH_CLOUD_NET */
         default:
             break;
     }
@@ -517,6 +546,9 @@ void UIMachineSettingsNetwork::reloadAlternatives()
     m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_HostOnly, m_pParent->hostInterfaceList());
     m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_Generic, m_pParent->genericDriverList());
     m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_NATNetwork, m_pParent->natNetworkList());
+#ifdef VBOX_WITH_CLOUD_NET
+    m_pAttachmentTypeEditor->setValueNames(KNetworkAttachmentType_Cloud, m_pParent->cloudNetworkList());
+#endif /* VBOX_WITH_CLOUD_NET */
 }
 
 void UIMachineSettingsNetwork::setAdvancedButtonState(bool fExpanded)
@@ -781,6 +813,9 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
     refreshHostInterfaceList();
     refreshGenericDriverList(true);
     refreshNATNetworkList();
+#ifdef VBOX_WITH_CLOUD_NET
+    refreshCloudNetworkList();
+#endif /* VBOX_WITH_CLOUD_NET */
 
     /* Prepare old network data: */
     UIDataSettingsMachineNetwork oldNetworkData;
@@ -804,6 +839,9 @@ void UIMachineSettingsNetworkPage::loadToCacheFrom(QVariant &data)
             oldAdapterData.m_strHostInterfaceName = wipedOutString(comAdapter.GetHostOnlyInterface());
             oldAdapterData.m_strGenericDriverName = wipedOutString(comAdapter.GetGenericDriver());
             oldAdapterData.m_strNATNetworkName = wipedOutString(comAdapter.GetNATNetwork());
+#ifdef VBOX_WITH_CLOUD_NET
+            oldAdapterData.m_strCloudNetworkName = wipedOutString(comAdapter.GetCloudNetwork());
+#endif /* VBOX_WITH_CLOUD_NET */
             oldAdapterData.m_adapterType = comAdapter.GetAdapterType();
             oldAdapterData.m_promiscuousMode = comAdapter.GetPromiscModePolicy();
             oldAdapterData.m_strMACAddress = comAdapter.GetMACAddress();
@@ -1066,6 +1104,14 @@ void UIMachineSettingsNetworkPage::refreshInternalNetworkList(bool fFullRefresh 
     }
 }
 
+#ifdef VBOX_WITH_CLOUD_NET
+void UIMachineSettingsNetworkPage::refreshCloudNetworkList()
+{
+    /* Reload cloud network list: */
+    m_cloudNetworkList = UINetworkAttachmentEditor::cloudNetworks();
+}
+#endif /* VBOX_WITH_CLOUD_NET */
+
 void UIMachineSettingsNetworkPage::refreshHostInterfaceList()
 {
     /* Reload host interfaces: */
@@ -1278,6 +1324,17 @@ bool UIMachineSettingsNetworkPage::saveAdapterData(int iSlot)
                     }
                     break;
                 }
+#ifdef VBOX_WITH_CLOUD_NET
+                case KNetworkAttachmentType_Cloud:
+                {
+                    if (fSuccess && newAdapterData.m_strCloudNetworkName != oldAdapterData.m_strCloudNetworkName)
+                    {
+                        comAdapter.SetCloudNetwork(newAdapterData.m_strCloudNetworkName);
+                        fSuccess = comAdapter.isOk();
+                    }
+                    break;
+                }
+#endif /* VBOX_WITH_CLOUD_NET */
                 default:
                     break;
             }

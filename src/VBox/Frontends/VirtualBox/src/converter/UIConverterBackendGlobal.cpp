@@ -1186,6 +1186,9 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter: strResult = "HostOnlyAdapter"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver:   strResult = "GenericDriver"; break;
         case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork:      strResult = "NATNetwork"; break;
+#ifdef VBOX_WITH_CLOUD_NET
+        case UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_CloudNetwork:    strResult = "CloudNetwork"; break;
+#endif /* VBOX_WITH_CLOUD_NET */
         default:
         {
             AssertMsgFailed(("No text for details element option type=%d", enmDetailsElementOptionTypeNetwork));
@@ -1208,6 +1211,9 @@ template<> UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork fromInternalStri
     keys << "HostOnlyAdapter"; values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
     keys << "GenericDriver";   values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
     keys << "NATNetwork";      values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork;
+#ifdef VBOX_WITH_CLOUD_NET
+    keys << "CloudNetwork";    values << UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_CloudNetwork;
+#endif /* VBOX_WITH_CLOUD_NET */
     /* Invalid type for unknown words: */
     if (!keys.contains(strDetailsElementOptionTypeNetwork, Qt::CaseInsensitive))
         return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;

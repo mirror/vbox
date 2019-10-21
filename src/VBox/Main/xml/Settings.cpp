@@ -1690,6 +1690,18 @@ NATNetwork::NATNetwork() :
 {
 }
 
+#ifdef VBOX_WITH_CLOUD_NET
+/**
+ * Constructor. Needs to set sane defaults which stand the test of time.
+ */
+CloudNetwork::CloudNetwork() :
+    fEnabled(true),
+    strProviderShortName("OCI"),
+    strProfileName("Default")
+{
+}
+#endif /* VBOX_WITH_CLOUD_NET */
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -2003,6 +2015,35 @@ void MainConfigFile::readNATNetworks(const xml::ElementNode &elmNATNetworks)
     }
 }
 
+#ifdef VBOX_WITH_CLOUD_NET
+/**
+ * Reads in the \<CloudNetworks\> chunk.
+ * @param elmCloudNetworks
+ */
+void MainConfigFile::readCloudNetworks(const xml::ElementNode &elmCloudNetworks)
+{
+    xml::NodesLoop nl1(elmCloudNetworks);
+    const xml::ElementNode *pelmNet;
+    while ((pelmNet = nl1.forAllNodes()))
+    {
+        if (pelmNet->nameEquals("CloudNetwork"))
+        {
+            CloudNetwork net;
+            if (   pelmNet->getAttributeValue("name", net.strNetworkName)
+                && pelmNet->getAttributeValue("provider", net.strProviderShortName)
+                && pelmNet->getAttributeValue("profile", net.strProfileName)
+                && pelmNet->getAttributeValue("id", net.strNetworkId)
+                && pelmNet->getAttributeValue("enabled", net.fEnabled) )
+            {
+                llCloudNetworks.push_back(net);
+            }
+            else
+                throw ConfigFileError(this, pelmNet, N_("Required CloudNetwork/@name, @provider, @profile, @id or @enabled attribute is missing"));
+        }
+    }
+}
+#endif /* VBOX_WITH_CLOUD_NET */
+
 /**
  * Creates \<USBDeviceSource\> nodes under the given parent element according to
  * the contents of the given USBDeviceSourcesList.
@@ -2228,6 +2269,10 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
                                 readDHCPServers(*pelmLevel4Child);
                             if (pelmLevel4Child->nameEquals("NATNetworks"))
                                 readNATNetworks(*pelmLevel4Child);
+#ifdef VBOX_WITH_CLOUD_NET
+                            if (pelmLevel4Child->nameEquals("CloudNetworks"))
+                                readCloudNetworks(*pelmLevel4Child);
+#endif /* VBOX_WITH_CLOUD_NET */
                         }
                     }
                     else if (pelmGlobalChild->nameEquals("USBDeviceFilters"))
@@ -2275,6 +2320,15 @@ MainConfigFile::MainConfigFile(const Utf8Str *pstrFilename)
 
 void MainConfigFile::bumpSettingsVersionIfNeeded()
 {
+#ifdef VBOX_WITH_CLOUD_NET
+    if (m->sv < SettingsVersion_v1_18)
+    {
+        // VirtualBox 6.1 adds support for cloud networks.
+        if (!llCloudNetworks.empty())
+            m->sv = SettingsVersion_v1_18;
+    }
+#endif /* VBOX_WITH_CLOUD_NET */
+
     if (m->sv < SettingsVersion_v1_16)
     {
         // VirtualBox 5.1 add support for additional USB device sources.
@@ -2361,6 +2415,27 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
             }
         }
     }
+
+#ifdef VBOX_WITH_CLOUD_NET
+    xml::ElementNode *pelmCloudNetworks;
+    /* don't create entry if no cloud networks are registered. */
+    if (!llCloudNetworks.empty())
+    {
+        pelmCloudNetworks = pelmNetServiceRegistry->createChild("CloudNetworks");
+        for (CloudNetworksList::const_iterator it = llCloudNetworks.begin();
+             it != llCloudNetworks.end();
+             ++it)
+        {
+            const CloudNetwork &n = *it;
+            xml::ElementNode *pelmThis = pelmCloudNetworks->createChild("CloudNetwork");
+            pelmThis->setAttribute("name", n.strNetworkName);
+            pelmThis->setAttribute("provider", n.strProviderShortName);
+            pelmThis->setAttribute("profile", n.strProfileName);
+            pelmThis->setAttribute("id", n.strNetworkId);
+            pelmThis->setAttribute("enabled", (n.fEnabled) ? 1 : 0);        // too bad we chose 1 vs. 0 here
+        }
+    }
+#endif /* VBOX_WITH_CLOUD_NET */
 
 
     xml::ElementNode *pelmSysProps = pelmGlobal->createChild("SystemProperties");
@@ -2858,6 +2933,9 @@ bool NetworkAdapter::areDefaultSettings(SettingsVersion_T sv) const
         && nat.areDefaultSettings()
         && strBridgedName.isEmpty()
         && strInternalNetworkName.isEmpty()
+#ifdef VBOX_WITH_CLOUD_NET
+        && strCloudNetworkName.isEmpty()
+#endif /* VBOX_WITH_CLOUD_NET */
         && strHostOnlyName.isEmpty()
         && areGenericDriverDefaultSettings()
         && strNATNetworkName.isEmpty();
@@ -2871,6 +2949,9 @@ bool NetworkAdapter::areDisabledDefaultSettings() const
     return (mode != NetworkAttachmentType_NAT ? nat.areDefaultSettings() : true)
         && (mode != NetworkAttachmentType_Bridged ? strBridgedName.isEmpty() : true)
         && (mode != NetworkAttachmentType_Internal ? strInternalNetworkName.isEmpty() : true)
+#ifdef VBOX_WITH_CLOUD_NET
+        && (mode != NetworkAttachmentType_Cloud ? strCloudNetworkName.isEmpty() : true)
+#endif /* VBOX_WITH_CLOUD_NET */
         && (mode != NetworkAttachmentType_HostOnly ? strHostOnlyName.isEmpty() : true)
         && (mode != NetworkAttachmentType_Generic ? areGenericDriverDefaultSettings() : true)
         && (mode != NetworkAttachmentType_NATNetwork ? strNATNetworkName.isEmpty() : true);
@@ -2898,6 +2979,9 @@ bool NetworkAdapter::operator==(const NetworkAdapter &n) const
             && strBridgedName        == n.strBridgedName
             && strHostOnlyName       == n.strHostOnlyName
             && strInternalNetworkName == n.strInternalNetworkName
+#ifdef VBOX_WITH_CLOUD_NET
+            && strCloudNetworkName   == n.strCloudNetworkName
+#endif /* VBOX_WITH_CLOUD_NET */
             && strGenericDriver      == n.strGenericDriver
             && genericProperties     == n.genericProperties
             && ulBootPriority        == n.ulBootPriority
@@ -3970,6 +4054,16 @@ void MachineConfigFile::readAttachedNetworkMode(const xml::ElementNode &elmMode,
         nic.strGenericDriver = "VDE";
         nic.genericProperties["network"] = strVDEName;
     }
+#ifdef VBOX_WITH_CLOUD_NET
+    else if (elmMode.nameEquals("CloudNetwork"))
+    {
+        enmAttachmentType = NetworkAttachmentType_Cloud;
+
+        // optional network name, cannot be required or we have trouble with
+        // settings which are saved before configuring the network name
+        elmMode.getAttributeValue("name", nic.strCloudNetworkName);
+    }
+#endif /* VBOX_WITH_CLOUD_NET */
 
     if (fEnabled && enmAttachmentType != NetworkAttachmentType_Null)
         nic.mode = enmAttachmentType;
@@ -6448,6 +6542,11 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                             buildNetworkXML(NetworkAttachmentType_Generic, false, *pelmDisabledNode, nic);
                         if (nic.mode != NetworkAttachmentType_NATNetwork)
                             buildNetworkXML(NetworkAttachmentType_NATNetwork, false, *pelmDisabledNode, nic);
+#ifdef VBOX_WITH_CLOUD_NET
+                        // @todo Bump settings version!
+                        if (nic.mode != NetworkAttachmentType_Cloud)
+                            buildNetworkXML(NetworkAttachmentType_Cloud, false, *pelmDisabledNode, nic);
+#endif /* VBOX_WITH_CLOUD_NET */
                     }
                     buildNetworkXML(nic.mode, true, *pelmAdapter, nic);
                 }
@@ -6933,6 +7032,19 @@ void MachineConfigFile::buildNetworkXML(NetworkAttachmentType_T mode,
                     pelmMode->setAttribute("name", nic.strNATNetworkName);
             }
             break;
+
+#ifdef VBOX_WITH_CLOUD_NET
+        case NetworkAttachmentType_Cloud:
+            // For the currently active network attachment type we have to
+            // generate the tag, otherwise the attachment type is lost.
+            if (fEnabled || !nic.strCloudNetworkName.isEmpty())
+            {
+                xml::ElementNode *pelmMode = elmParent.createChild("CloudNetwork");
+                if (!nic.strCloudNetworkName.isEmpty())
+                    pelmMode->setAttribute("name", nic.strCloudNetworkName);
+            }
+            break;
+#endif /* VBOX_WITH_CLOUD_NET */
 
         default: /*case NetworkAttachmentType_Null:*/
             break;

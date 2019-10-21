@@ -795,6 +795,8 @@ if1of ($(KBUILD_TARGET), freebsd linux)
 endif
 # Use new VBoxNetDhcpd instead of old VBoxNetDHCP
 VBOX_WITH_DHCPD = 1
+# Experimental suport for cloud network integration
+#VBOX_WITH_CLOUD_NET = 1
 ## @}
 
 

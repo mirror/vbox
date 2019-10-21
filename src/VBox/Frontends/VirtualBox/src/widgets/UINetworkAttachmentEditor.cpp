@@ -30,6 +30,9 @@
 /* COM includes: */
 #include "CHostNetworkInterface.h"
 #include "CNATNetwork.h"
+#ifdef VBOX_WITH_CLOUD_NET
+#include "CCloudNetwork.h"
+#endif /* VBOX_WITH_CLOUD_NET */
 
 
 /* static */
@@ -158,6 +161,17 @@ QStringList UINetworkAttachmentEditor::natNetworks()
         natNetworkList << comNetwork.GetNetworkName();
     return natNetworkList;
 }
+
+#ifdef VBOX_WITH_CLOUD_NET
+/* static */
+QStringList UINetworkAttachmentEditor::cloudNetworks()
+{
+    QStringList cloudNetworkList;
+    foreach (const CCloudNetwork &comNetwork, uiCommon().virtualBox().GetCloudNetworks())
+        cloudNetworkList << comNetwork.GetNetworkName();
+    return cloudNetworkList;
+}
+#endif /* VBOX_WITH_CLOUD_NET */
 
 void UINetworkAttachmentEditor::retranslateUi()
 {
@@ -337,6 +351,9 @@ void UINetworkAttachmentEditor::populateTypeCombo()
                                                   << KNetworkAttachmentType_NAT << KNetworkAttachmentType_NATNetwork
                                                   << KNetworkAttachmentType_Bridged << KNetworkAttachmentType_Internal
                                                   << KNetworkAttachmentType_HostOnly << KNetworkAttachmentType_Generic;
+#ifdef VBOX_WITH_CLOUD_NET
+    attachmentTypes.append(KNetworkAttachmentType_Cloud);
+#endif /* VBOX_WITH_CLOUD_NET */
     for (int i = 0; i < attachmentTypes.size(); ++i)
     {
         const KNetworkAttachmentType enmType = attachmentTypes.at(i);
@@ -381,6 +398,9 @@ void UINetworkAttachmentEditor::populateNameCombo()
             case KNetworkAttachmentType_Bridged:
             case KNetworkAttachmentType_HostOnly:
             case KNetworkAttachmentType_NATNetwork:
+#ifdef VBOX_WITH_CLOUD_NET
+            case KNetworkAttachmentType_Cloud:
+#endif /* VBOX_WITH_CLOUD_NET */
             {
                 /* If adapter list is empty => add 'Not selected' item: */
                 const int iIndex = m_pComboName->findData(s_strEmptyItemId);
@@ -444,6 +464,14 @@ void UINetworkAttachmentEditor::retranslateNameDescription()
                                           "using the global network settings in the virtual machine "
                                           "manager window."));
             break;
+#ifdef VBOX_WITH_CLOUD_NET
+        case KNetworkAttachmentType_Cloud:
+            m_pComboName->setWhatsThis(tr("(experimental) Holds the name of the cloud network that this network card "
+                                          "will be connected to. You can add and remove cloud networks "
+                                          "using the global network settings in the virtual machine "
+                                          "manager window."));
+            break;
+#endif /* VBOX_WITH_CLOUD_NET */
         default:
             m_pComboName->setWhatsThis(QString());
             break;
@@ -460,6 +488,9 @@ void UINetworkAttachmentEditor::revalidate()
         case KNetworkAttachmentType_HostOnly:
         case KNetworkAttachmentType_Generic:
         case KNetworkAttachmentType_NATNetwork:
+#ifdef VBOX_WITH_CLOUD_NET
+        case KNetworkAttachmentType_Cloud:
+#endif /* VBOX_WITH_CLOUD_NET */
             fSuccess = !valueName(valueType()).isEmpty();
             break;
         default:
@@ -480,6 +511,9 @@ UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork UINetworkAttachmentEditor::
         case KNetworkAttachmentType_HostOnly:   return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_HostOnlyAdapter;
         case KNetworkAttachmentType_Generic:    return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_GenericDriver;
         case KNetworkAttachmentType_NATNetwork: return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_NATNetwork;
+#ifdef VBOX_WITH_CLOUD_NET
+        case KNetworkAttachmentType_Cloud:      return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_CloudNetwork;
+#endif /* VBOX_WITH_CLOUD_NET */
         default:                                return UIExtraDataMetaDefs::DetailsElementOptionTypeNetwork_Invalid;
     }
 }

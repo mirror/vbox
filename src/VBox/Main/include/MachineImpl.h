@@ -44,6 +44,10 @@
 # include "PerformanceImpl.h"
 # include "ThreadTask.h"
 #endif
+#ifdef VBOX_WITH_CLOUD_NET
+# include "CloudNetworkImpl.h"
+# include "CloudGateway.h"
+#endif /* VBOX_WITH_CLOUD_NET */
 
 // generated header
 #include "SchemaDefs.h"
@@ -198,7 +202,11 @@ public:
 
         // list of files to delete in Delete(); this list is filled by Unregister()
         std::list<Utf8Str>  llFilesToDelete;
-    };
+    
+#ifdef VBOX_WITH_CLOUD_NET
+        GatewayInfo         mGatewayInfo;
+#endif /* VBOX_WITH_CLOUD_NET */
+};
 
     /**
      *  Saved state data.
@@ -758,6 +766,11 @@ protected:
 
     pm::CollectorGuest     *mCollectorGuest;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
+
+#ifdef VBOX_WITH_CLOUD_NET
+HRESULT i_connectToCloudNetwork(ProgressProxy *aProgress);
+HRESULT i_disconnectFromCloudNetwork();
+#endif /* VBOX_WITH_CLOUD_NET */
 
     Machine * const         mPeer;
 

@@ -70,6 +70,9 @@
 #include "NetworkServiceRunner.h"
 #include "DHCPServerImpl.h"
 #include "NATNetworkImpl.h"
+#ifdef VBOX_WITH_CLOUD_NET
+#include "CloudNetworkImpl.h"
+#endif /* VBOX_WITH_CLOUD_NET */
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
 # include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
@@ -218,6 +221,9 @@ typedef ObjectsList<GuestOSType> GuestOSTypesOList;
 typedef ObjectsList<SharedFolder> SharedFoldersOList;
 typedef ObjectsList<DHCPServer> DHCPServersOList;
 typedef ObjectsList<NATNetwork> NATNetworksOList;
+#ifdef VBOX_WITH_CLOUD_NET
+typedef ObjectsList<CloudNetwork> CloudNetworksOList;
+#endif /* VBOX_WITH_CLOUD_NET */
 
 typedef std::map<Guid, ComPtr<IProgress> > ProgressMap;
 typedef std::map<Guid, ComObjPtr<Medium> > HardDiskMap;
@@ -323,6 +329,10 @@ struct VirtualBox::Data
         , allDHCPServers(lockDHCPServers)
         , lockNATNetworks(LOCKCLASS_LISTOFOTHEROBJECTS)
         , allNATNetworks(lockNATNetworks)
+#ifdef VBOX_WITH_CLOUD_NET
+        , lockCloudNetworks(LOCKCLASS_LISTOFOTHEROBJECTS)
+        , allCloudNetworks(lockCloudNetworks)
+#endif /* VBOX_WITH_CLOUD_NET */
         , mtxProgressOperations(LOCKCLASS_PROGRESSLIST)
         , pClientWatcher(NULL)
         , threadAsyncEvent(NIL_RTTHREAD)
@@ -408,6 +418,10 @@ struct VirtualBox::Data
 
     RWLockHandle                        lockNATNetworks;
     NATNetworksOList                    allNATNetworks;
+#ifdef VBOX_WITH_CLOUD_NET
+    RWLockHandle                        lockCloudNetworks;
+    CloudNetworksOList                  allCloudNetworks;
+#endif /* VBOX_WITH_CLOUD_NET */
 
     RWLockHandle                        mtxProgressOperations;
     ProgressMap                         mapProgressOperations;
@@ -685,6 +699,24 @@ HRESULT VirtualBox::init()
             rc = i_registerNATNetwork(pNATNetwork, false /* aSaveRegistry */);
             AssertComRCThrowRC(rc);
         }
+
+#ifdef VBOX_WITH_CLOUD_NET
+        /* net services - cloud networks */
+        for (settings::CloudNetworksList::const_iterator it = m->pMainConfigFile->llCloudNetworks.begin();
+             it != m->pMainConfigFile->llCloudNetworks.end();
+             ++it)
+        {
+            ComObjPtr<CloudNetwork> pCloudNetwork;
+            rc = pCloudNetwork.createObject();
+            AssertComRCThrowRC(rc);
+            rc = pCloudNetwork->init(this, "");
+            AssertComRCThrowRC(rc);
+            rc = pCloudNetwork->i_loadSettings(*it);
+            AssertComRCThrowRC(rc);
+            m->allCloudNetworks.addChild(pCloudNetwork);
+            AssertComRCThrowRC(rc);
+        }
+#endif /* VBOX_WITH_CLOUD_NET */
 
         /* events */
         if (SUCCEEDED(rc = unconst(m->pEventSource).createObject()))
@@ -1465,6 +1497,124 @@ HRESULT VirtualBox::getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGeneric
         aGenericNetworkDrivers[i] = *it;
 
     return S_OK;
+}
+
+/**
+ * Cloud Network
+ */
+#ifdef VBOX_WITH_CLOUD_NET
+HRESULT VirtualBox::i_findCloudNetworkByName(const com::Utf8Str &aNetworkName,
+                                             ComObjPtr<CloudNetwork> *aNetwork)
+{
+    HRESULT rc = E_FAIL;
+    ComPtr<CloudNetwork> found;
+    Bstr bstrNameToFind(aNetworkName);
+
+    AutoReadLock alock(m->allCloudNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    for (CloudNetworksOList::const_iterator it = m->allCloudNetworks.begin();
+         it != m->allCloudNetworks.end();
+         ++it)
+    {
+        Bstr bstrCloudNetworkName;
+        rc = (*it)->COMGETTER(NetworkName)(bstrCloudNetworkName.asOutParam());
+        if (FAILED(rc)) return rc;
+
+        if (bstrCloudNetworkName == bstrNameToFind)
+        {
+            *aNetwork = *it;
+            rc = S_OK;
+            break;
+        }
+    }
+    return rc;
+}                                 
+#endif /* VBOX_WITH_CLOUD_NET */
+
+HRESULT VirtualBox::createCloudNetwork(const com::Utf8Str &aNetworkName,
+                                       ComPtr<ICloudNetwork> &aNetwork)
+{
+#ifdef VBOX_WITH_CLOUD_NET
+    ComObjPtr<CloudNetwork> cloudNetwork;
+    cloudNetwork.createObject();
+    HRESULT rc = cloudNetwork->init(this, aNetworkName);
+    if (FAILED(rc)) return rc;
+
+    m->allCloudNetworks.addChild(cloudNetwork);
+
+    cloudNetwork.queryInterfaceTo(aNetwork.asOutParam());
+
+    return rc;
+#else /* !VBOX_WITH_CLOUD_NET */
+    NOREF(aNetworkName);
+    NOREF(aNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_CLOUD_NET */
+}
+
+HRESULT VirtualBox::findCloudNetworkByName(const com::Utf8Str &aNetworkName,
+                                           ComPtr<ICloudNetwork> &aNetwork)
+{
+#ifdef VBOX_WITH_CLOUD_NET
+    ComObjPtr<CloudNetwork> network;
+    HRESULT hrc = i_findCloudNetworkByName(aNetworkName, &network);
+    if (SUCCEEDED(hrc))
+        network.queryInterfaceTo(aNetwork.asOutParam());
+    return hrc;
+#else /* !VBOX_WITH_CLOUD_NET */
+    NOREF(aNetworkName);
+    NOREF(aNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_CLOUD_NET */
+}
+
+HRESULT VirtualBox::removeCloudNetwork(const ComPtr<ICloudNetwork> &aNetwork)
+{
+#ifdef VBOX_WITH_CLOUD_NET
+    Bstr name;
+    HRESULT rc = aNetwork->COMGETTER(NetworkName)(name.asOutParam());
+    if (FAILED(rc))
+        return rc;
+    ICloudNetwork *p = aNetwork;
+    CloudNetwork *network = static_cast<CloudNetwork *>(p);
+
+    AutoCaller autoCaller(this);
+    AssertComRCReturnRC(autoCaller.rc());
+
+    AutoCaller cloudNetworkCaller(network);
+    AssertComRCReturnRC(cloudNetworkCaller.rc());
+
+    m->allCloudNetworks.removeChild(network);
+
+    {
+        AutoWriteLock vboxLock(this COMMA_LOCKVAL_SRC_POS);
+        rc = i_saveSettings();
+        vboxLock.release();
+
+        if (FAILED(rc))
+            m->allCloudNetworks.addChild(network);
+    }
+    return rc;
+#else /* !VBOX_WITH_CLOUD_NET */
+    NOREF(aNetwork);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_CLOUD_NET */
+}
+
+HRESULT VirtualBox::getCloudNetworks(std::vector<ComPtr<ICloudNetwork> > &aCloudNetworks)
+{
+#ifdef VBOX_WITH_CLOUD_NET
+    AutoReadLock al(m->allCloudNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+    aCloudNetworks.resize(m->allCloudNetworks.size());
+    size_t i = 0;
+    for (CloudNetworksOList::const_iterator it = m->allCloudNetworks.begin();
+         it != m->allCloudNetworks.end(); ++it)
+         (*it).queryInterfaceTo(aCloudNetworks[i++].asOutParam());
+    return S_OK;
+#else /* !VBOX_WITH_CLOUD_NET */
+    NOREF(aCloudNetworks);
+    return E_NOTIMPL;
+#endif /* !VBOX_WITH_CLOUD_NET */
 }
 
 HRESULT VirtualBox::getCloudProviderManager(ComPtr<ICloudProviderManager> &aCloudProviderManager)
@@ -4929,6 +5079,21 @@ HRESULT VirtualBox::i_saveSettings()
         }
 #endif
 
+#ifdef VBOX_WITH_CLOUD_NET
+        m->pMainConfigFile->llCloudNetworks.clear();
+        {
+            AutoReadLock cloudNetworkLock(m->allCloudNetworks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+            for (CloudNetworksOList::const_iterator it = m->allCloudNetworks.begin();
+                 it != m->allCloudNetworks.end();
+                 ++it)
+            {
+                settings::CloudNetwork n;
+                rc = (*it)->i_saveSettings(n);
+                if (FAILED(rc)) throw rc;
+                m->pMainConfigFile->llCloudNetworks.push_back(n);
+            }
+        }
+#endif /* VBOX_WITH_CLOUD_NET */
         // leave extra data alone, it's still in the config file
 
         // host data (USB filters)

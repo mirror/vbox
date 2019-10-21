@@ -1735,6 +1735,41 @@
 
 
   <!--
+  // ICloudNetwork
+  /////////////////////////////////////////////////////////////////////////
+  -->
+
+  <interface name="ICloudNetwork" extends="$unknown"
+    uuid="d8e3496e-735f-4fde-8a54-427d49409b5f"
+    wsmap="managed"
+    reservedMethods="4" reservedAttributes="3"
+    >
+
+    <attribute name="networkName" type="wstring">
+      <desc>
+        TBD: User-friendly, descriptive name of cloud subnet. For example, domain
+        names of subnet and vcn, separated by dot.
+      </desc>
+    </attribute>
+    <attribute name="enabled" type="boolean"/>
+    <attribute name="provider" type="wstring">
+      <desc>
+        Cloud provider short name.
+      </desc>
+    </attribute>
+    <attribute name="profile" type="wstring">
+      <desc>
+        Cloud profile name.
+      </desc>
+    </attribute>
+    <attribute name="networkId" type="wstring">
+      <desc>
+        Cloud network id.
+      </desc>
+    </attribute>
+  </interface>
+
+  <!--
   // IDHCPServer and associates
   /////////////////////////////////////////////////////////////////////////
   -->
@@ -2645,6 +2680,12 @@
       </desc>
     </attribute>
 
+    <attribute name="cloudNetworks" type="ICloudNetwork" safearray="yes" readonly="yes">
+      <desc>
+        Names of all configured cloud networks.
+      </desc>
+    </attribute>
+
     <attribute name="cloudProviderManager" type="ICloudProviderManager" readonly="yes">
       <desc>
         The cloud provider manager (singleton).
@@ -3382,6 +3423,28 @@
     -->
     <method name="removeNATNetwork">
       <param name="network" type="INATNetwork" dir="in"/>
+    </method>
+
+    <!-- bunch of methods to manage cloud networks -->
+    <method name="createCloudNetwork">
+      <!-- Here we create a record in cloud network array with specified name.
+      -->
+      <param name="networkName" type="wstring" dir="in"/>
+      <param name="network" type="ICloudNetwork" dir="return"/>
+    </method>
+
+    <!--
+          Returns the cloud network by name.
+    -->
+    <method name="findCloudNetworkByName">
+      <param name="networkName" type="wstring" dir="in"/>
+      <param name="network" type="ICloudNetwork" dir="return"/>
+    </method>
+    <!--
+        Deletes given cloud network.
+    -->
+    <method name="removeCloudNetwork">
+      <param name="network" type="ICloudNetwork" dir="in"/>
     </method>
 
     <method name="checkFirmwarePresent">
@@ -19317,6 +19380,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="HostOnly"              value="4"/>
     <const name="Generic"               value="5"/>
     <const name="NATNetwork"            value="6"/>
+    <const name="Cloud"                 value="7"/>
   </enum>
 
   <enum
@@ -19460,6 +19524,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="genericDriver" type="wstring">
       <desc>
         Name of the driver to use for the "Generic" network attachment type.
+      </desc>
+    </attribute>
+
+    <attribute name="cloudNetwork" type="wstring">
+      <desc>
+        Name of the cloud network the VM is attached to.
       </desc>
     </attribute>
 

@@ -84,6 +84,10 @@ public:
     static QStringList genericDrivers();
     /** Returns NAT network list. */
     static QStringList natNetworks();
+#ifdef VBOX_WITH_CLOUD_NET
+    /** Returns cloud network list. */
+    static QStringList cloudNetworks();
+#endif /* VBOX_WITH_CLOUD_NET */
 
 protected:
 

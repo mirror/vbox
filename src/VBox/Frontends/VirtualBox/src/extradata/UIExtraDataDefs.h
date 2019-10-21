@@ -717,6 +717,9 @@ public:
         DetailsElementOptionTypeNetwork_HostOnlyAdapter = RT_BIT(4),
         DetailsElementOptionTypeNetwork_GenericDriver   = RT_BIT(5),
         DetailsElementOptionTypeNetwork_NATNetwork      = RT_BIT(6),
+#ifdef VBOX_WITH_CLOUD_NET
+        DetailsElementOptionTypeNetwork_CloudNetwork    = RT_BIT(7),
+#endif /* VBOX_WITH_CLOUD_NET */
         DetailsElementOptionTypeNetwork_Default         = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeNetwork);

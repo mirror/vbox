@@ -243,6 +243,9 @@ void UIMachineAttributeSetter::setMachineAttribute(const CMachine &comConstMachi
                     case KNetworkAttachmentType_HostOnly: comAdapter.SetHostOnlyInterface(nad.m_strName); break;
                     case KNetworkAttachmentType_Generic: comAdapter.SetGenericDriver(nad.m_strName); break;
                     case KNetworkAttachmentType_NATNetwork: comAdapter.SetNATNetwork(nad.m_strName); break;
+#ifdef VBOX_WITH_CLOUD_NET
+                    case KNetworkAttachmentType_Cloud: comAdapter.SetCloudNetwork(nad.m_strName); break;
+#endif /* VBOX_WITH_CLOUD_NET */
                     default: break;
                 }
                 if (!comAdapter.isOk())

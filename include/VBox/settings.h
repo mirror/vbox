@@ -429,6 +429,24 @@ struct NATNetwork
 
 typedef std::list<NATNetwork> NATNetworksList;
 
+#ifdef VBOX_WITH_CLOUD_NET
+/**
+ * Cloud Networking settings.
+ */
+struct CloudNetwork
+{
+    CloudNetwork();
+
+    com::Utf8Str strNetworkName;
+    com::Utf8Str strProviderShortName;
+    com::Utf8Str strProfileName;
+    com::Utf8Str strNetworkId;
+    bool         fEnabled;
+};
+
+typedef std::list<CloudNetwork> CloudNetworksList;
+#endif /* VBOX_WITH_CLOUD_NET */
+
 
 class MainConfigFile : public ConfigFileBase
 {
@@ -437,6 +455,9 @@ public:
 
     void readMachineRegistry(const xml::ElementNode &elmMachineRegistry);
     void readNATNetworks(const xml::ElementNode &elmNATNetworks);
+#ifdef VBOX_WITH_CLOUD_NET
+    void readCloudNetworks(const xml::ElementNode &elmCloudNetworks);
+#endif /* VBOX_WITH_CLOUD_NET */
 
     void write(const com::Utf8Str strFilename);
 
@@ -446,6 +467,9 @@ public:
     MachinesRegistry        llMachines;
     DHCPServersList         llDhcpServers;
     NATNetworksList         llNATNetworks;
+#ifdef VBOX_WITH_CLOUD_NET
+    CloudNetworksList       llCloudNetworks;
+#endif /* VBOX_WITH_CLOUD_NET */
     StringsMap              mapExtraDataItems;
 
 private:
@@ -722,6 +746,9 @@ struct NetworkAdapter
     com::Utf8Str                        strGenericDriver;
     StringsMap                          genericProperties;
     com::Utf8Str                        strNATNetworkName;
+#ifdef VBOX_WITH_CLOUD_NET
+    com::Utf8Str                        strCloudNetworkName;
+#endif /* VBOX_WITH_CLOUD_NET */
     uint32_t                            ulBootPriority;
     com::Utf8Str                        strBandwidthGroup; // requires settings version 1.13 (VirtualBox 4.2)
 };

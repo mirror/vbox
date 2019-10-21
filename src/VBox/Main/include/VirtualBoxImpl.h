@@ -52,6 +52,9 @@ class ExtPackManager;
 #endif
 class AutostartDb;
 class NATNetwork;
+#ifdef VBOX_WITH_CLOUD_NET
+class CloudNetwork;
+#endif /* VBOX_WITH_CLOUD_NET */
 
 
 typedef std::list<ComObjPtr<SessionMachine> > SessionMachinesList;
@@ -204,6 +207,11 @@ public:
     int i_natNetworkRefInc(const Utf8Str &aNetworkName);
     int i_natNetworkRefDec(const Utf8Str &aNetworkName);
 
+#ifdef VBOX_WITH_CLOUD_NET
+    HRESULT i_findCloudNetworkByName(const com::Utf8Str &aNetworkName,
+                                     ComObjPtr<CloudNetwork> *aNetwork = NULL);
+#endif /* VBOX_WITH_CLOUD_NET */
+
     ComObjPtr<GuestOSType> i_getUnknownOSType();
 
     void i_getOpenedMachines(SessionMachinesList &aMachines,
@@ -318,6 +326,7 @@ private:
     HRESULT getExtensionPackManager(ComPtr<IExtPackManager> &aExtensionPackManager);
     HRESULT getInternalNetworks(std::vector<com::Utf8Str> &aInternalNetworks);
     HRESULT getGenericNetworkDrivers(std::vector<com::Utf8Str> &aGenericNetworkDrivers);
+    HRESULT getCloudNetworks(std::vector<ComPtr<ICloudNetwork> > &aCloudNetworks);
     HRESULT getCloudProviderManager(ComPtr<ICloudProviderManager> &aCloudProviderManager);
 
    // wrapped IVirtualBox methods
@@ -377,6 +386,11 @@ private:
     HRESULT findNATNetworkByName(const com::Utf8Str &aNetworkName,
                                  ComPtr<INATNetwork> &aNetwork);
     HRESULT removeNATNetwork(const ComPtr<INATNetwork> &aNetwork);
+    HRESULT createCloudNetwork(const com::Utf8Str &aNetworkName,
+                               ComPtr<ICloudNetwork> &aNetwork);
+    HRESULT findCloudNetworkByName(const com::Utf8Str &aNetworkName,
+                                   ComPtr<ICloudNetwork> &aNetwork);
+    HRESULT removeCloudNetwork(const ComPtr<ICloudNetwork> &aNetwork);
     HRESULT checkFirmwarePresent(FirmwareType_T aFirmwareType,
                                  const com::Utf8Str &aVersion,
                                  com::Utf8Str &aUrl,

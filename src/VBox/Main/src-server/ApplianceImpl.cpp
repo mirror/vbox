@@ -328,6 +328,7 @@ Utf8Str convertNetworkAttachmentTypeToString(NetworkAttachmentType_T type)
         case NetworkAttachmentType_Generic: strType = "Generic"; break;
         case NetworkAttachmentType_NATNetwork: strType = "NATNetwork"; break;
         case NetworkAttachmentType_Null: strType = "Null"; break;
+        case NetworkAttachmentType_Cloud: strType = "Cloud"; break;
 #ifdef VBOX_WITH_XPCOM_CPP_ENUM_HACK
         case NetworkAttachmentType_32BitHack: AssertFailedBreak(); /* (compiler warnings) */
 #endif

@@ -49,6 +49,10 @@
 #include "MachineImplMoveVM.h"
 #include "ExtPackManagerImpl.h"
 #include "MachineLaunchVMCommonWorker.h"
+#ifdef VBOX_WITH_CLOUD_NET
+#include "ApplianceImpl.h"
+#include "CloudGateway.h"
+#endif /* VBOX_WITH_CLOUD_NET */
 
 // generated header
 #include "VBoxEvents.h"
@@ -3475,6 +3479,10 @@ HRESULT Machine::launchVMProcess(const ComPtr<ISession> &aSession,
 
         if (SUCCEEDED(rc))
         {
+#ifdef VBOX_WITH_CLOUD_NET
+            i_connectToCloudNetwork(progress);
+#endif /* VBOX_WITH_CLOUD_NET */
+
             rc = i_launchVMProcess(control, strFrontend, aEnvironmentChanges, progress);
             if (SUCCEEDED(rc))
             {
@@ -7429,6 +7437,81 @@ bool Machine::i_isUSBControllerPresent()
 
     return (mUSBControllers->size() > 0);
 }
+
+#ifdef VBOX_WITH_CLOUD_NET
+HRESULT Machine::i_connectToCloudNetwork(ProgressProxy *aProgress)
+{
+    LogFlowThisFuncEnter();
+    AssertReturn(aProgress, E_FAIL);
+
+    HRESULT hrc = E_FAIL;
+    Bstr name;
+
+    LogFlowThisFunc(("Checking if cloud network needs to be connected\n"));
+    for (ULONG slot = 0; slot < mNetworkAdapters.size(); ++slot)
+    {
+        BOOL enabled;
+        hrc = mNetworkAdapters[slot]->COMGETTER(Enabled)(&enabled);
+        if (   FAILED(hrc)
+            || !enabled)
+            continue;
+
+        NetworkAttachmentType_T type;
+        hrc = mNetworkAdapters[slot]->COMGETTER(AttachmentType)(&type);
+        if (   SUCCEEDED(hrc)
+            && type == NetworkAttachmentType_Cloud)
+        {
+            if (name.isNotEmpty())
+            {
+                LogRel(("VM '%s' uses multiple cloud network attachments. '%ls' will be ignored.\n",
+                        mUserData->s.strName.c_str(), name.raw()));
+                continue;
+            }
+            hrc = mNetworkAdapters[slot]->COMGETTER(CloudNetwork)(name.asOutParam());
+            if (SUCCEEDED(hrc))
+            {
+                LogRel(("VM '%s' uses cloud network '%ls'\n",
+                        mUserData->s.strName.c_str(), name.raw()));
+            }
+        }
+    }
+    if (name.isNotEmpty())
+    {
+        LogFlowThisFunc(("Connecting to cloud network '%ls'...\n", name.raw()));
+        ComObjPtr<CloudNetwork> network;
+        hrc = mParent->i_findCloudNetworkByName(name, &network);
+        if (FAILED(hrc))
+        {
+            LogRel(("Could not find cloud network '%ls'.\n", name.raw()));
+            return hrc;
+        }
+        GatewayInfo gateways;
+        hrc = startGateways(mParent, network, gateways);
+        if (SUCCEEDED(hrc))
+        {
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+            mData->mGatewayInfo = gateways;
+        }
+    }
+    else
+        LogFlowThisFunc(("VM '%s' has no cloud network attachments.\n", mUserData->s.strName.c_str()));
+
+    LogFlowThisFuncLeave();
+    return hrc;
+}
+
+HRESULT Machine::i_disconnectFromCloudNetwork()
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    GatewayInfo gateways(mData->mGatewayInfo);
+    mData->mGatewayInfo.setNull();
+    alock.release();
+
+    HRESULT hrc = stopGateways(mParent, gateways);
+    return hrc;
+}
+#endif /* VBOX_WITH_CLOUD_NET */
+
 
 /**
  *  @note Locks this object for writing, calls the client process
@@ -13186,6 +13269,10 @@ HRESULT SessionMachine::endPowerUp(LONG aResult)
 HRESULT SessionMachine::beginPoweringDown(ComPtr<IProgress> &aProgress)
 {
     LogFlowThisFuncEnter();
+    
+#ifdef VBOX_WITH_CLOUD_NET
+    mPeer->i_disconnectFromCloudNetwork();
+#endif /* VBOX_WITH_CLOUD_NET */
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
