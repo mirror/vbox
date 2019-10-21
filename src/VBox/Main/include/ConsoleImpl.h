@@ -45,7 +45,6 @@ class AudioVRDE;
 #ifdef VBOX_WITH_AUDIO_RECORDING
 class AudioVideoRec;
 #endif
-class Nvram;
 #ifdef VBOX_WITH_USB_CARDREADER
 class UsbCardReader;
 #endif
@@ -978,7 +977,6 @@ private:
 
     VMMDev *                    m_pVMMDev;
     AudioVRDE * const           mAudioVRDE;
-    Nvram   * const             mNvram;
 #ifdef VBOX_WITH_USB_CARDREADER
     UsbCardReader * const       mUsbCardReader;
 #endif
