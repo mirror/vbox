@@ -3464,17 +3464,21 @@
  */
 /** 1 hour expressed in nanoseconds (64-bit). */
 #define RT_NS_1HOUR             UINT64_C(3600000000000)
+/** 30 minutes expressed in nanoseconds (64-bit). */
+#define RT_NS_30MIN             UINT64_C(1800000000000)
+/** 5 minutes expressed in nanoseconds (64-bit). */
+#define RT_NS_5MIN              UINT64_C(300000000000)
 /** 1 minute expressed in nanoseconds (64-bit). */
 #define RT_NS_1MIN              UINT64_C(60000000000)
-/** 45 second expressed in nanoseconds. */
+/** 45 seconds expressed in nanoseconds (64-bit). */
 #define RT_NS_45SEC             UINT64_C(45000000000)
-/** 30 second expressed in nanoseconds. */
+/** 30 seconds expressed in nanoseconds (64-bit). */
 #define RT_NS_30SEC             UINT64_C(30000000000)
-/** 20 second expressed in nanoseconds. */
+/** 20 seconds expressed in nanoseconds (64-bit). */
 #define RT_NS_20SEC             UINT64_C(20000000000)
-/** 15 second expressed in nanoseconds. */
+/** 15 seconds expressed in nanoseconds (64-bit). */
 #define RT_NS_15SEC             UINT64_C(15000000000)
-/** 10 second expressed in nanoseconds. */
+/** 10 seconds expressed in nanoseconds (64-bit). */
 #define RT_NS_10SEC             UINT64_C(10000000000)
 /** 1 second expressed in nanoseconds. */
 #define RT_NS_1SEC              UINT32_C(1000000000)
@@ -3482,6 +3486,10 @@
 #define RT_NS_100MS             UINT32_C(100000000)
 /** 10 millsecond expressed in nanoseconds. */
 #define RT_NS_10MS              UINT32_C(10000000)
+/** 8 millsecond expressed in nanoseconds. */
+#define RT_NS_8MS               UINT32_C(8000000)
+/** 2 millsecond expressed in nanoseconds. */
+#define RT_NS_2MS               UINT32_C(2000000)
 /** 1 millsecond expressed in nanoseconds. */
 #define RT_NS_1MS               UINT32_C(1000000)
 /** 100 microseconds expressed in nanoseconds. */
@@ -3508,8 +3516,24 @@
 
 /** 1 hour expressed in microseconds. */
 #define RT_US_1HOUR             UINT32_C(3600000000)
+/** 30 minutes expressed in microseconds. */
+#define RT_US_30MIN             UINT32_C(1800000000)
+/** 5 minutes expressed in microseconds. */
+#define RT_US_5MIN              UINT32_C(300000000)
 /** 1 minute expressed in microseconds. */
 #define RT_US_1MIN              UINT32_C(60000000)
+/** 45 seconds expressed in microseconds. */
+#define RT_US_45SEC             UINT32_C(45000000)
+/** 30 seconds expressed in microseconds. */
+#define RT_US_30SEC             UINT32_C(30000000)
+/** 20 seconds expressed in microseconds. */
+#define RT_US_20SEC             UINT32_C(20000000)
+/** 15 seconds expressed in microseconds. */
+#define RT_US_15SEC             UINT32_C(15000000)
+/** 10 seconds expressed in microseconds. */
+#define RT_US_10SEC             UINT32_C(10000000)
+/** 5 seconds expressed in microseconds. */
+#define RT_US_5SEC              UINT32_C(5000000)
 /** 1 second expressed in microseconds. */
 #define RT_US_1SEC              UINT32_C(1000000)
 /** 100 millsecond expressed in microseconds. */
@@ -3521,8 +3545,24 @@
 
 /** 1 hour expressed in microseconds - 64-bit type. */
 #define RT_US_1HOUR_64          UINT64_C(3600000000)
+/** 30 minutes expressed in microseconds - 64-bit type. */
+#define RT_US_30MIN_64          UINT64_C(1800000000)
+/** 5 minutes expressed in microseconds - 64-bit type. */
+#define RT_US_5MIN_64           UINT64_C(300000000)
 /** 1 minute expressed in microseconds - 64-bit type. */
 #define RT_US_1MIN_64           UINT64_C(60000000)
+/** 45 seconds expressed in microseconds - 64-bit type. */
+#define RT_US_45SEC_64          UINT64_C(45000000)
+/** 30 seconds expressed in microseconds - 64-bit type. */
+#define RT_US_30SEC_64          UINT64_C(30000000)
+/** 20 seconds expressed in microseconds - 64-bit type. */
+#define RT_US_20SEC_64          UINT64_C(20000000)
+/** 15 seconds expressed in microseconds - 64-bit type. */
+#define RT_US_15SEC_64          UINT64_C(15000000)
+/** 10 seconds expressed in microseconds - 64-bit type. */
+#define RT_US_10SEC_64          UINT64_C(10000000)
+/** 5 seconds expressed in microseconds - 64-bit type. */
+#define RT_US_5SEC_64           UINT64_C(5000000)
 /** 1 second expressed in microseconds - 64-bit type. */
 #define RT_US_1SEC_64           UINT64_C(1000000)
 /** 100 millsecond expressed in microseconds - 64-bit type. */
@@ -3534,15 +3574,47 @@
 
 /** 1 hour expressed in milliseconds. */
 #define RT_MS_1HOUR             UINT32_C(3600000)
+/** 30 minutes expressed in milliseconds. */
+#define RT_MS_30MIN             UINT32_C(1800000)
+/** 5 minutes expressed in milliseconds. */
+#define RT_MS_5MIN              UINT32_C(300000)
 /** 1 minute expressed in milliseconds. */
 #define RT_MS_1MIN              UINT32_C(60000)
+/** 45 seconds expressed in milliseconds. */
+#define RT_MS_45SEC             UINT32_C(45000)
+/** 30 seconds expressed in milliseconds. */
+#define RT_MS_30SEC             UINT32_C(30000)
+/** 20 seconds expressed in milliseconds. */
+#define RT_MS_20SEC             UINT32_C(20000)
+/** 15 seconds expressed in milliseconds. */
+#define RT_MS_15SEC             UINT32_C(15000)
+/** 10 seconds expressed in milliseconds. */
+#define RT_MS_10SEC             UINT32_C(10000)
+/** 5 seconds expressed in milliseconds. */
+#define RT_MS_5SEC              UINT32_C(5000)
 /** 1 second expressed in milliseconds. */
 #define RT_MS_1SEC              UINT32_C(1000)
 
 /** 1 hour expressed in milliseconds - 64-bit type. */
 #define RT_MS_1HOUR_64          UINT64_C(3600000)
+/** 30 minutes expressed in milliseconds - 64-bit type. */
+#define RT_MS_30MIN_64          UINT64_C(1800000)
+/** 5 minutes expressed in milliseconds - 64-bit type. */
+#define RT_MS_5MIN_64           UINT64_C(300000)
 /** 1 minute expressed in milliseconds - 64-bit type. */
 #define RT_MS_1MIN_64           UINT64_C(60000)
+/** 45 seconds expressed in milliseconds - 64-bit type. */
+#define RT_MS_45SEC_64          UINT64_C(45000)
+/** 30 seconds expressed in milliseconds - 64-bit type. */
+#define RT_MS_30SEC_64          UINT64_C(30000)
+/** 20 seconds expressed in milliseconds - 64-bit type. */
+#define RT_MS_20SEC_64          UINT64_C(20000)
+/** 15 seconds expressed in milliseconds - 64-bit type. */
+#define RT_MS_15SEC_64          UINT64_C(15000)
+/** 10 seconds expressed in milliseconds - 64-bit type. */
+#define RT_MS_10SEC_64          UINT64_C(10000)
+/** 5 seconds expressed in milliseconds - 64-bit type. */
+#define RT_MS_5SEC_64           UINT64_C(5000)
 /** 1 second expressed in milliseconds - 64-bit type. */
 #define RT_MS_1SEC_64           UINT64_C(1000)
 
