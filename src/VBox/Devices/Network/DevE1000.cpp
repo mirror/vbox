@@ -3395,7 +3395,7 @@ DECLINLINE(uint32_t) e1kGetTxLen(PE1KSTATE pThis)
  * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3TxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
     Assert(PDMCritSectIsOwner(&pThis->csTx));
@@ -3423,7 +3423,7 @@ static DECLCALLBACK(void) e1kTxDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
  * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3TxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns);
     RT_NOREF(pTimer);
@@ -3447,7 +3447,7 @@ static DECLCALLBACK(void) e1kTxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3TxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns);
     RT_NOREF(pTimer);
@@ -3472,7 +3472,7 @@ static DECLCALLBACK(void) e1kTxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kRxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3RxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
 
@@ -3492,7 +3492,7 @@ static DECLCALLBACK(void) e1kRxIntDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3RxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
 
@@ -3512,7 +3512,7 @@ static DECLCALLBACK(void) e1kRxAbsDelayTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer
  * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3LateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns, pTimer);
     PE1KSTATE pThis = (PE1KSTATE)pvUser;
@@ -3536,7 +3536,7 @@ static DECLCALLBACK(void) e1kLateIntTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, v
  * @param   pvUser      NULL.
  * @thread  EMT
  */
-static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
+static DECLCALLBACK(void) e1kR3LinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pTimer);
     PE1KSTATE   pThis   = (PE1KSTATE)pvUser;
@@ -5592,10 +5592,10 @@ static DECLCALLBACK(void) e1kR3NetworkDown_XmitPending(PPDMINETWORKDOWN pInterfa
  *      Executes e1kXmitPending at the behest of ring-0/raw-mode.}
  * @note Not executed on EMT.
  */
-static DECLCALLBACK(void) e1kTxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
+static DECLCALLBACK(void) e1kR3TxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
     PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    E1kLog2(("%s e1kTxTaskCallback:\n", pThis->szPrf));
+    E1kLog2(("%s e1kR3TxTaskCallback:\n", pThis->szPrf));
 
     int rc = e1kXmitPending(pDevIns, pThis, false /*fOnWorkerThread*/);
     AssertMsg(RT_SUCCESS(rc) || rc == VERR_TRY_AGAIN || rc == VERR_NET_DOWN, ("%Rrc\n", rc));
@@ -5639,9 +5639,9 @@ static int e1kRegWriteTDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
         {
             if (!PDMDevInsTimerIsActive(pDevIns, pThis->hTXDTimer))
             {
-#ifdef E1K_INT_STATS
+# ifdef E1K_INT_STATS
                 pThis->u64ArmedAt = RTTimeNanoTS();
-#endif
+# endif
                 e1kArmTimer(pDevIns, pThis, pThis->hTXDTimer, E1K_TX_DELAY);
             }
             E1K_INC_ISTAT_CNT(pThis->uStatTxDelayed);
@@ -5653,15 +5653,20 @@ static int e1kRegWriteTDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
 #ifndef IN_RING3
         PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
         if (!pThisCC->CTX_SUFF(pDrv))
+        {
             PDMDevHlpTaskTrigger(pDevIns, pThis->hTxTask);
+            rc = VINF_SUCCESS;
+        }
         else
 #endif
         {
             rc = e1kXmitPending(pDevIns, pThis, false /*fOnWorkerThread*/);
             if (rc == VERR_TRY_AGAIN)
                 rc = VINF_SUCCESS;
+#ifndef IN_RING3
             else if (rc == VERR_SEM_BUSY)
                 rc = VINF_IOM_R3_MMIO_WRITE;
+#endif
             AssertRC(rc);
         }
     }
@@ -7905,12 +7910,12 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRCReturn(rc, rc);
 
     /* Create transmit queue */
-    rc = PDMDevHlpTaskCreate(pDevIns, PDMTASK_F_RZ, "E1000-Xmit", e1kTxTaskCallback, NULL, &pThis->hTxTask);
+    rc = PDMDevHlpTaskCreate(pDevIns, PDMTASK_F_RZ, "E1000-Xmit", e1kR3TxTaskCallback, NULL, &pThis->hTxTask);
     AssertRCReturn(rc, rc);
 
 #ifdef E1K_TX_DELAY
     /* Create Transmit Delay Timer */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3TxDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                               "E1000 Transmit Delay Timer", &pThis->hTXDTimer);
     AssertRCReturn(rc, rc);
     rc = PDMDevHlpTimerSetCritSect(pDevIns, pThis->hTXDTimer, &pThis->csTx);
@@ -7921,13 +7926,13 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     if (pThis->fTidEnabled)
     {
         /* Create Transmit Interrupt Delay Timer */
-        rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxIntDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+        rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3TxIntDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                                   "E1000 Transmit Interrupt Delay Timer", &pThis->hTIDTimer);
         AssertRCReturn(rc, rc);
 
 # ifndef E1K_NO_TAD
         /* Create Transmit Absolute Delay Timer */
-        rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kTxAbsDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+        rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3TxIntDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                                   "E1000 Transmit Absolute Delay Timer", &pThis->hTADTimer);
         AssertRCReturn(rc, rc);
 # endif /* E1K_NO_TAD */
@@ -7936,23 +7941,23 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
 #ifdef E1K_USE_RX_TIMERS
     /* Create Receive Interrupt Delay Timer */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kRxIntDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3RxIntDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                               "E1000 Receive Interrupt Delay Timer", &pThis->hRIDTimer);
     AssertRCReturn(rc, rc);
 
     /* Create Receive Absolute Delay Timer */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kRxAbsDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3RxIntDelayTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                               "E1000 Receive Absolute Delay Timer", &pThis->hRADTimer);
     AssertRCReturn(rc, rc);
 #endif /* E1K_USE_RX_TIMERS */
 
     /* Create Late Interrupt Timer */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLateIntTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3LateIntTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                               "E1000 Late Interrupt Timer", &pThis->hIntTimer);
     AssertRCReturn(rc, rc);
 
     /* Create Link Up Timer */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLinkUpTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kR3LinkUpTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                               "E1000 Link Up Timer", &pThis->hLUTimer);
     AssertRCReturn(rc, rc);
 
