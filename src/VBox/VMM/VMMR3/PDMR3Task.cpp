@@ -399,7 +399,7 @@ VMMR3_INT_DECL(int) PDMR3TaskCreate(PVM pVM, uint32_t fFlags, const char *pszNam
      */
     if (pTaskSet->hThread == NIL_RTTHREAD)
     {
-        int rc = RTThreadCreateF(&pTaskSet->hThread, pdmR3TaskThread,  pTaskSet, 0 /*cbStack*/, RTTHREADTYPE_MSG_PUMP,
+        int rc = RTThreadCreateF(&pTaskSet->hThread, pdmR3TaskThread,  pTaskSet, 0 /*cbStack*/, RTTHREADTYPE_IO,
                                  RTTHREADFLAGS_WAITABLE, "TaskSet%u", pTaskSet->uHandleBase / RT_ELEMENTS(pTaskSet->aTasks));
         AssertLogRelRCReturn(rc, rc);
     }
