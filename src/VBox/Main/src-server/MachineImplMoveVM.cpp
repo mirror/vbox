@@ -30,7 +30,7 @@
 #include "LoggingNew.h"
 
 /* This variable is global and used in the different places so it must be cleared each time before usage to avoid failure */
-std::vector< ComObjPtr<Machine> > machineList;
+std::vector<ComObjPtr<Machine> > machineList;
 
 typedef std::multimap<Utf8Str, Utf8Str> list_t;
 typedef std::multimap<Utf8Str, Utf8Str>::const_iterator cit_t;
@@ -39,14 +39,14 @@ typedef std::pair <std::multimap<Utf8Str, Utf8Str>::iterator, std::multimap<Utf8
 
 struct fileList_t
 {
-    HRESULT add(const Utf8Str& folder, const Utf8Str& file)
+    HRESULT add(const Utf8Str &folder, const Utf8Str &file)
     {
         HRESULT rc = S_OK;
         m_list.insert(std::make_pair(folder, file));
         return rc;
     }
 
-    HRESULT add(const Utf8Str& fullPath)
+    HRESULT add(const Utf8Str &fullPath)
     {
         HRESULT rc = S_OK;
         Utf8Str folder = fullPath;
@@ -57,7 +57,7 @@ struct fileList_t
         return rc;
     }
 
-    HRESULT removeFileFromList(const Utf8Str& fullPath)
+    HRESULT removeFileFromList(const Utf8Str &fullPath)
     {
         HRESULT rc = S_OK;
         Utf8Str folder = fullPath;
@@ -80,7 +80,7 @@ struct fileList_t
         return rc;
     }
 
-    HRESULT removeFileFromList(const Utf8Str& path, const Utf8Str& fileName)
+    HRESULT removeFileFromList(const Utf8Str &path, const Utf8Str &fileName)
     {
         HRESULT rc = S_OK;
         rangeRes_t res = m_list.equal_range(path);
@@ -98,21 +98,21 @@ struct fileList_t
         return rc;
     }
 
-    HRESULT removeFolderFromList(const Utf8Str& path)
+    HRESULT removeFolderFromList(const Utf8Str &path)
     {
         HRESULT rc = S_OK;
         m_list.erase(path);
         return rc;
     }
 
-    rangeRes_t getFilesInRange(const Utf8Str& path)
+    rangeRes_t getFilesInRange(const Utf8Str &path)
     {
         rangeRes_t res;
         res = m_list.equal_range(path);
         return res;
     }
 
-    std::list<Utf8Str> getFilesInList(const Utf8Str& path)
+    std::list<Utf8Str> getFilesInList(const Utf8Str &path)
     {
         std::list<Utf8Str> list_;
         rangeRes_t res = m_list.equal_range(path);
@@ -126,13 +126,6 @@ struct fileList_t
 
 };
 
-
-#ifdef DEBUG
-void MachineMoveVM::ErrorInfoItem::logItem() const
-{
-    Log2(("(The error code is %Rrc): %s\n", m_code, m_description.c_str()));
-}
-#endif
 
 HRESULT MachineMoveVM::init()
 {
@@ -148,7 +141,7 @@ HRESULT MachineMoveVM::init()
         /** @todo r=bird: I need to add a Utf8Str method or iprt/cxx/path.h thingy
          *        for doing this.  We need this often and code like this doesn't
          *        need to be repeated and re-optimized in each instance... */
-        char* path = new char [len];
+        char *path = new char [len];
         RTStrCopy(path, len, m_targetPath.c_str());
         RTPathEnsureTrailingSeparator(path, len);
         strTargetFolder = m_targetPath = path;
@@ -200,7 +193,7 @@ HRESULT MachineMoveVM::init()
     RTFileDelete(strTempFile.c_str());
     vrc = RTDirClose(hDir); AssertRC(vrc);
 
-    Log2(("blocks: total %RTfoff, free %RTfoff ", cbTotal, cbFree));
+    Log2(("blocks: total %RTfoff, free %RTfoff\n", cbTotal, cbFree));
     Log2(("total space (Kb) %RTfoff (Mb) %RTfoff (Gb) %RTfoff\n", cbTotal/_1K, cbTotal/_1M, cbTotal/_1G));
     Log2(("total free space (Kb) %RTfoff (Mb) %RTfoff (Gb) %RTfoff\n", cbFree/_1K, cbFree/_1M, cbFree/_1G));
 
@@ -209,13 +202,8 @@ HRESULT MachineMoveVM::init()
     if (FAILED(vrc))
         return m_pMachine->setErrorVrc(vrc, "RTFsQueryProperties(%s): %Rrc", strTargetFolder.c_str(), vrc);
 
-    Log2(("disk properties:\n"
-          "remote: %RTbool\n"
-          "read only: %RTbool\n"
-          "compressed: %RTbool\n",
-          properties.fRemote,
-          properties.fReadOnly,
-          properties.fCompressed));
+    Log2(("disk properties: remote=%RTbool read only=%RTbool compressed=%RTbool\n",
+          properties.fRemote, properties.fReadOnly, properties.fCompressed));
 
     /* Get the original VM path */
     Utf8Str strSettingsFilePath;
@@ -492,7 +480,7 @@ HRESULT MachineMoveVM::init()
     /* Init Progress instance */
     {
         hrc = m_pProgress->init(m_pMachine->i_getVirtualBox(),
-                                static_cast<IMachine*>(m_pMachine) /* aInitiator */,
+                                static_cast<IMachine *>(m_pMachine) /* aInitiator */,
                                 Utf8Str(m_pMachine->tr("Moving Machine")),
                                 true /* fCancellable */,
                                 uCount,
@@ -535,7 +523,7 @@ void MachineMoveVM::printStateFile(settings::SnapshotsList &snl)
 /* static */
 DECLCALLBACK(int) MachineMoveVM::updateProgress(unsigned uPercent, void *pvUser)
 {
-    MachineMoveVM* pTask = *(MachineMoveVM**)pvUser;
+    MachineMoveVM *pTask = *(MachineMoveVM **)pvUser;
 
     if (    pTask
          && !pTask->m_pProgress.isNull())
@@ -552,7 +540,7 @@ DECLCALLBACK(int) MachineMoveVM::updateProgress(unsigned uPercent, void *pvUser)
 /* static */
 DECLCALLBACK(int) MachineMoveVM::copyFileProgress(unsigned uPercentage, void *pvUser)
 {
-    ComObjPtr<Progress> pProgress = *static_cast< ComObjPtr<Progress>* >(pvUser);
+    ComObjPtr<Progress> pProgress = *static_cast<ComObjPtr<Progress> *>(pvUser);
 
     BOOL fCanceled = false;
     HRESULT rc = pProgress->COMGETTER(Canceled)(&fCanceled);
@@ -567,12 +555,12 @@ DECLCALLBACK(int) MachineMoveVM::copyFileProgress(unsigned uPercentage, void *pv
 }
 
 /* static */
-void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
+void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM *task)
 {
     LogFlowFuncEnter();
     HRESULT hrc = S_OK;
 
-    MachineMoveVM* taskMoveVM = task;
+    MachineMoveVM *taskMoveVM = task;
     ComObjPtr<Machine> &machine = taskMoveVM->m_pMachine;
 
     AutoCaller autoCaller(machine);
@@ -636,7 +624,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
     try
     {
         /* Move all disks */
-        hrc = taskMoveVM->moveAllDisks(taskMoveVM->m_finalMediumsMap, &strTargetFolder);
+        hrc = taskMoveVM->moveAllDisks(taskMoveVM->m_finalMediumsMap, strTargetFolder);
         if (FAILED(hrc))
             throw hrc;
 
@@ -649,13 +637,13 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         {
             /* When the current snapshot folder is absolute we reset it to the
              * default relative folder. */
-            if (RTPathStartsWithRoot((*machineConfFile).machineUserData.strSnapshotFolder.c_str()))
-                (*machineConfFile).machineUserData.strSnapshotFolder = "Snapshots";
-            (*machineConfFile).strStateFile = "";
+            if (RTPathStartsWithRoot(machineConfFile->machineUserData.strSnapshotFolder.c_str()))
+                machineConfFile->machineUserData.strSnapshotFolder = "Snapshots";
+            machineConfFile->strStateFile = "";
 
             /* The absolute name of the snapshot folder. */
             strTrgSnapshotFolder = Utf8StrFmt("%s%c%s", strTargetFolder.c_str(), RTPATH_DELIMITER,
-                                              (*machineConfFile).machineUserData.strSnapshotFolder.c_str());
+                                              machineConfFile->machineUserData.strSnapshotFolder.c_str());
 
             /* Check if a snapshot folder is necessary and if so doesn't already
              * exists. */
@@ -708,8 +696,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
         {
             Log2(("Update state file path\n"));
             hrc = taskMoveVM->updatePathsToStateFiles(taskMoveVM->m_finalSaveStateFilesMap,
-                                                     taskMoveVM->m_vmFolders[VBox_SettingFolder],
-                                                     strTargetFolder);
+                                                      taskMoveVM->m_vmFolders[VBox_SettingFolder],
+                                                      strTargetFolder);
             if (FAILED(hrc))
                 throw hrc;
         }
@@ -720,10 +708,10 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
          * with actual information and only then should be moved.
          */
         {
-            Log2(("Copy Machine settings file \n"));
+            Log2(("Copy Machine settings file\n"));
 
             hrc = taskMoveVM->m_pProgress->SetNextOperation(BstrFmt(machine->tr("Copy Machine settings file '%s' ..."),
-                                                                    (*machineConfFile).machineUserData.strName.c_str()).raw(),
+                                                                    machineConfFile->machineUserData.strName.c_str()).raw(),
                                                             1);
             if (FAILED(hrc))
                 throw hrc;
@@ -802,7 +790,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                     fileList_t filesList;
                     taskMoveVM->getFilesList(taskMoveVM->m_vmFolders[VBox_LogFolder], filesList);
                     cit_t it = filesList.m_list.begin();
-                    while(it != filesList.m_list.end())
+                    while (it != filesList.m_list.end())
                     {
                         Utf8Str strFullSourceFilePath = it->first.c_str();
                         strFullSourceFilePath.append(RTPATH_DELIMITER).append(it->second.c_str());
@@ -944,8 +932,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                                                           taskMoveVM->m_vmFolders[VBox_SettingFolder]);
                 if (FAILED(hrc))
                 {
-                    Log2(("Rollback scenario: can't restore the original paths to the state files. "
-                          "Machine settings %s can be corrupted.\n", machineData->m_strConfigFileFull.c_str()));
+                    Log2(("Rollback scenario: can't restore the original paths to the state files. Machine settings %s can be corrupted.\n",
+                          machineData->m_strConfigFileFull.c_str()));
                     throw hrc;
                 }
             }
@@ -954,7 +942,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             hrc = taskMoveVM->deleteFiles(newFiles);
             if (FAILED(hrc))
             {
-                Log2(("Rollback scenario: can't delete new created files. Check the destination folder."));
+                Log2(("Rollback scenario: can't delete new created files. Check the destination folder.\n"));
                 throw hrc;
             }
 
@@ -962,7 +950,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
             int vrc = RTDirRemove(strTargetFolder.c_str());
             if (RT_FAILURE(vrc))
             {
-                Log2(("Rollback scenario: can't delete new destination folder."));
+                Log2(("Rollback scenario: can't delete new destination folder.\n"));
                 throw machine->setErrorVrc(vrc, "Rollback scenario: can't delete new destination folder.");
             }
 
@@ -973,7 +961,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                 hrc = machine->SaveSettings();
                 if (FAILED(hrc))
                 {
-                    Log2(("Rollback scenario: can't save machine settings."));
+                    Log2(("Rollback scenario: can't save machine settings.\n"));
                     throw hrc;
                 }
                 srcLock.acquire();
@@ -1003,7 +991,7 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
                 hrc = machine->mParent->i_saveSettings();
                 if (FAILED(hrc))
                 {
-                    Log2(("Rollback scenario: can't save global settings."));
+                    Log2(("Rollback scenario: can't save global settings.\n"));
                     throw hrc;
                 }
             }
@@ -1050,8 +1038,8 @@ void MachineMoveVM::i_MoveVMThreadTask(MachineMoveVM* task)
     LogFlowFuncLeave();
 }
 
-HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& listOfDisks,
-                                    const Utf8Str* strTargetFolder)
+HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE> &listOfDisks,
+                                    const Utf8Str &strTargetFolder)
 {
     HRESULT rc = S_OK;
     ComObjPtr<Machine> &machine = m_pMachine;
@@ -1059,9 +1047,10 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
 
     AutoWriteLock  machineLock(machine COMMA_LOCKVAL_SRC_POS);
 
-    try{
+    try
+    {
         std::map<Utf8Str, MEDIUMTASKMOVE>::const_iterator itMedium = listOfDisks.begin();
-        while(itMedium != listOfDisks.end())
+        while (itMedium != listOfDisks.end())
         {
             const MEDIUMTASKMOVE &mt = itMedium->second;
             ComPtr<IMedium> pMedium = mt.pMedium;
@@ -1072,9 +1061,9 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
             rc = pMedium->COMGETTER(Name)(bstrSrcName.asOutParam());
             if (FAILED(rc)) throw rc;
 
-            if (strTargetFolder != NULL && !strTargetFolder->isEmpty())
+            if (strTargetFolder.isNotEmpty())
             {
-                strTargetImageName = *strTargetFolder;
+                strTargetImageName = strTargetFolder;
                 rc = pMedium->COMGETTER(Location)(bstrLocation.asOutParam());
                 if (FAILED(rc)) throw rc;
                 strLocation = bstrLocation;
@@ -1142,13 +1131,13 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
     }
     catch(HRESULT hrc)
     {
-        Log2(("\nException during moving the disk %s\n", strLocation.c_str()));
+        Log2(("Exception during moving the disk %s\n", strLocation.c_str()));
         rc = hrc;
         machineLock.release();
     }
     catch (...)
     {
-        Log2(("\nException during moving the disk %s\n", strLocation.c_str()));
+        Log2(("Exception during moving the disk %s\n", strLocation.c_str()));
         rc = VirtualBoxBase::handleUnexpectedExceptions(m_pMachine, RT_SRC_POS);
         machineLock.release();
     }
@@ -1156,8 +1145,8 @@ HRESULT MachineMoveVM::moveAllDisks(const std::map<Utf8Str, MEDIUMTASKMOVE>& lis
     return rc;
 }
 
-HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATETASKMOVE>& listOfFiles,
-                                               const Utf8Str& sourcePath, const Utf8Str& targetPath)
+HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATETASKMOVE> &listOfFiles,
+                                               const Utf8Str &sourcePath, const Utf8Str &targetPath)
 {
     HRESULT rc = S_OK;
 
@@ -1196,7 +1185,7 @@ HRESULT MachineMoveVM::updatePathsToStateFiles(const std::map<Utf8Str, SAVESTATE
     return rc;
 }
 
-HRESULT MachineMoveVM::getFilesList(const Utf8Str& strRootFolder, fileList_t &filesList)
+HRESULT MachineMoveVM::getFilesList(const Utf8Str &strRootFolder, fileList_t &filesList)
 {
     RTDIR hDir;
     HRESULT hrc = S_OK;
@@ -1255,7 +1244,7 @@ HRESULT MachineMoveVM::getFilesList(const Utf8Str& strRootFolder, fileList_t &fi
     return hrc;
 }
 
-HRESULT MachineMoveVM::deleteFiles(const RTCList<Utf8Str>& listOfFiles)
+HRESULT MachineMoveVM::deleteFiles(const RTCList<Utf8Str> &listOfFiles)
 {
     HRESULT hrc = S_OK;
     /* Delete all created files. */
@@ -1278,7 +1267,7 @@ HRESULT MachineMoveVM::deleteFiles(const RTCList<Utf8Str>& listOfFiles)
     return hrc;
 }
 
-HRESULT MachineMoveVM::getFolderSize(const Utf8Str& strRootFolder, uint64_t& size)
+HRESULT MachineMoveVM::getFolderSize(const Utf8Str &strRootFolder, uint64_t &size)
 {
     HRESULT hrc = S_OK;
     int vrc = 0;
@@ -1292,7 +1281,7 @@ HRESULT MachineMoveVM::getFolderSize(const Utf8Str& strRootFolder, uint64_t& siz
         if (SUCCEEDED(hrc))
         {
             cit_t it = filesList.m_list.begin();
-            while(it != filesList.m_list.end())
+            while (it != filesList.m_list.end())
             {
                 uint64_t cbFile = 0;
                 Utf8Str fullPath =  it->first;
@@ -1333,7 +1322,7 @@ HRESULT MachineMoveVM::queryBaseName(const ComPtr<IMedium> &pMedium, Utf8Str &st
 }
 
 HRESULT MachineMoveVM::createMachineList(const ComPtr<ISnapshot> &pSnapshot,
-                                         std::vector< ComObjPtr<Machine> > &aMachineList) const
+                                         std::vector<ComObjPtr<Machine> > &aMachineList) const
 {
     Bstr name;
     HRESULT rc = pSnapshot->COMGETTER(Name)(name.asOutParam());
@@ -1393,7 +1382,7 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
             /* Cast to ComObjPtr<Medium> */
             ComObjPtr<Medium> pObjMedium = (Medium *)(IMedium *)pMedium;
 
-            /*Check for "read-only" medium in terms that VBox can't create this one */
+            /* Check for "read-only" medium in terms that VBox can't create this one */
             rc = isMediumTypeSupportedForMoving(pMedium);
             if (FAILED(rc))
             {
@@ -1451,11 +1440,12 @@ HRESULT MachineMoveVM::queryMediasForAllStates(const std::vector<ComObjPtr<Machi
 
             m_llMedias.append(mtc);
         }
+
         /* Add the save state files of this machine if there is one. */
         rc = addSaveState(machine);
         if (FAILED(rc)) return rc;
-
     }
+
     /* Build up the index list of the image chain. Unfortunately we can't do
      * that in the previous loop, cause there we go from child -> parent and
      * didn't know how many are between. */
@@ -1540,7 +1530,7 @@ HRESULT MachineMoveVM::isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMe
     if (FAILED(rc))
         return rc;
 
-    /*Check whether VBox is able to create this medium format or not, i.e. medium can be "read-only" */
+    /* Check whether VBox is able to create this medium format or not, i.e. medium can be "read-only" */
     Bstr bstrFormatName;
     rc = mediumFormat->COMGETTER(Name)(bstrFormatName.asOutParam());
     if (FAILED(rc))
@@ -1549,7 +1539,7 @@ HRESULT MachineMoveVM::isMediumTypeSupportedForMoving(const ComPtr<IMedium> &pMe
     Utf8Str formatName = Utf8Str(bstrFormatName);
     if (formatName.compare("VHDX", Utf8Str::CaseInsensitive) == 0)
     {
-        Log2(("Skipping medium %ls. VHDX format is supported in \"read-only\" mode only. \n", bstrLocation.raw()));
+        Log2(("Skipping medium %ls. VHDX format is supported in \"read-only\" mode only.\n", bstrLocation.raw()));
         return S_FALSE;
     }
 
