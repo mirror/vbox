@@ -1025,8 +1025,10 @@ typedef struct PDMTASKSET
     SUPSEMEVENT             hEventR0;
     /** Event semaphore for waking up the thread when fRZEnabled is clear. */
     R3PTRTYPE(RTSEMEVENT)   hEventR3;
+    /** The VM pointer.   */
+    PVM                     pVM;
     /** Padding so fTriggered is in its own cacheline. */
-    uint64_t                au64Padding2[4];
+    uint64_t                au64Padding2[3];
 
     /** Bitmask of triggered tasks. */
     uint64_t volatile       fTriggered;

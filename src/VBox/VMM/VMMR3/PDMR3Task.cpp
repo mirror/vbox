@@ -109,6 +109,7 @@ int pdmR3TaskInit(PVM pVM)
         //pTaskSet->fTriggered  = 0;
         pTaskSet->idxRunning    = UINT8_MAX;
         //pTaskSet->fShutdown   = false;
+        pTaskSet->pVM           = pVM;
 
         pVM->pdm.s.apTaskSets[i] = pTaskSet;
     }
@@ -221,13 +222,14 @@ static DECLCALLBACK(int) pdmR3TaskThread(RTTHREAD ThreadSelf, void *pvUser)
         for (;;)
         {
             uint64_t fTriggered = ASMAtomicReadU64(&pTaskSet->fTriggered);
-            unsigned iTask;
-            while ( (iTask = ASMBitFirstSetU64(fTriggered)) != 0)
+            unsigned iTask      = ASMBitFirstSetU64(fTriggered);
+            if (iTask == 0)
+                break;
+            do
             {
                 iTask--;
                 AssertBreak(iTask < RT_ELEMENTS(pTaskSet->aTasks));
 
-                fTriggered &= ~RT_BIT_64(iTask);
                 if (ASMAtomicBitTestAndClear(&pTaskSet->fTriggered, iTask))
                 {
                     PPDMTASK  pTask = &pTaskSet->aTasks[iTask];
@@ -275,8 +277,20 @@ static DECLCALLBACK(int) pdmR3TaskThread(RTTHREAD ThreadSelf, void *pvUser)
 
                     ASMAtomicWriteU32(&pTaskSet->idxRunning, UINT32_MAX);
                 }
-            }
+
+                /* Next pending task. */
+                fTriggered &= ~RT_BIT_64(iTask);
+                iTask = ASMBitFirstSetU64(fTriggered);
+            } while (iTask != 0);
         }
+
+        /*
+         * Wait.
+         */
+        if (pTaskSet->fRZEnabled)
+            SUPSemEventWaitNoResume(pTaskSet->pVM->pSession, pTaskSet->hEventR0, RT_MS_15SEC);
+        else
+            RTSemEventWaitNoResume(pTaskSet->hEventR3, RT_MS_15SEC);
     }
 
     return VINF_SUCCESS;
@@ -385,6 +399,7 @@ VMMR3_INT_DECL(int) PDMR3TaskCreate(PVM pVM, uint32_t fFlags, const char *pszNam
                 //pTaskSet->fTriggered  = 0;
                 pTaskSet->idxRunning    = UINT8_MAX;
                 //pTaskSet->fShutdown   = false;
+                pTaskSet->pVM           = pVM;
 
                 pVM->pdm.s.apTaskSets[i] = pTaskSet;
                 pTask = &pTaskSet->aTasks[0];
@@ -399,7 +414,7 @@ VMMR3_INT_DECL(int) PDMR3TaskCreate(PVM pVM, uint32_t fFlags, const char *pszNam
      */
     if (pTaskSet->hThread == NIL_RTTHREAD)
     {
-        int rc = RTThreadCreateF(&pTaskSet->hThread, pdmR3TaskThread,  pTaskSet, 0 /*cbStack*/, RTTHREADTYPE_IO,
+        int rc = RTThreadCreateF(&pTaskSet->hThread, pdmR3TaskThread, pTaskSet, 0 /*cbStack*/, RTTHREADTYPE_IO,
                                  RTTHREADFLAGS_WAITABLE, "TaskSet%u", pTaskSet->uHandleBase / RT_ELEMENTS(pTaskSet->aTasks));
         AssertLogRelRCReturn(rc, rc);
     }
