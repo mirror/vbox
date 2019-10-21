@@ -8113,12 +8113,18 @@ static DECLCALLBACK(int)  e1kRZConstruct(PPDMDEVINS pDevIns)
     PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 
+    /* Initialize context specific state data: */
     pThisCC->CTX_SUFF(pDevIns)      = pDevIns;
     /** @todo @bugref{9218} ring-0 driver stuff */
     pThisCC->CTX_SUFF(pDrv)         = NULL;
     pThisCC->CTX_SUFF(pTxSg)        = NULL;
 
-    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioRegion, e1kMMIOWrite, e1kMMIORead, NULL /*pvUser*/);
+    /* Configure critical sections the same way: */
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /* Set up MMIO and I/O port callbacks for this context: */
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioRegion, e1kMMIOWrite, e1kMMIORead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, e1kIOPortOut, e1kIOPortIn, NULL /*pvUser*/);
@@ -8137,7 +8143,7 @@ const PDMDEVREG g_DeviceE1000 =
     /* .u32version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "e1000",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_NETWORK,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
