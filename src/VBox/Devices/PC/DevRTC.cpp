@@ -231,9 +231,10 @@ typedef PRTCSTATER3 PRTCSTATECC;
 #elif defined(IN_RING0)
 typedef  RTCSTATER0  RTCSTATECC;
 typedef PRTCSTATER0 PRTCSTATECC;
-#elif defined(IN_RING0)
+#elif defined(IN_RC)
 typedef  RTCSTATERC  RTCSTATECC;
 typedef PRTCSTATERC PRTCSTATECC;
+#else
 # error "Not IN_RING3, IN_RING0 or IN_RC"
 #endif
 
