@@ -22,6 +22,7 @@
 #include "inlines.h"
 #include "pciutil.h"
 #include "vds.h"
+#include "scsi.h"
 
 #define DEBUG_VIRTIO 1
 #if DEBUG_VIRTIO
@@ -30,7 +31,7 @@
 # define DBG_VIRTIO(...)
 #endif
 
-#define SCSI_INQUIRY       0x12
+#define VBSCSI_MAX_DEVICES 16 /* Maximum number of devices a SCSI device currently supported. */
 
 /* The maximum CDB size. */
 #define VIRTIO_SCSI_CDB_SZ      16
@@ -431,6 +432,7 @@ int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far
                             uint8_t cbCDB, uint8_t __far *buffer, uint32_t length)
 {
     uint16_t idxUsedOld = virtio->Queue.UsedRing.idxNextUsed;
+    uint64_t idxNext = virtio->Queue.AvailRing.idxNextFree;
 
     _fmemset(&virtio->ScsiReqHdr, 0, sizeof(virtio->ScsiReqHdr));
     _fmemset(&virtio->ScsiReqSts, 0, sizeof(virtio->ScsiReqSts));
@@ -451,7 +453,7 @@ int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far
     /* No data out buffer, the status comes right after this in the next descriptor. */
     virtio->Queue.aDescTbl[1].GCPhysBufLow  = virtio_addr_to_phys(&virtio->ScsiReqSts);
     virtio->Queue.aDescTbl[1].GCPhysBufHigh = 0;
-    virtio->Queue.aDescTbl[1].cbBuf         = sizeof(virtio->ScsiReqHdr);
+    virtio->Queue.aDescTbl[1].cbBuf         = sizeof(virtio->ScsiReqSts);
     virtio->Queue.aDescTbl[1].fFlags        = VIRTIO_Q_DESC_F_WRITE | VIRTIO_Q_DESC_F_NEXT;
     virtio->Queue.aDescTbl[1].idxNext       = 2;
 
@@ -468,7 +470,7 @@ int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far
 
     /* Notify the device about the new command. */
     DBG_VIRTIO("VirtIO: Submitting new request, Queue.offNotify=0x%x\n", virtio->Queue.offNotify);
-    virtio_reg_notify_write_u16(virtio, virtio->Queue.offNotify, 0);
+    virtio_reg_notify_write_u16(virtio, virtio->Queue.offNotify, idxNext);
 
     /* Wait for it to complete. */
     while (idxUsedOld == virtio->Queue.UsedRing.idxNextUsed);
@@ -480,22 +482,212 @@ int virtio_scsi_cmd_data_in(virtio_t __far *virtio, uint8_t idTgt, uint8_t __far
 
 static int virtio_scsi_detect_devices(virtio_t __far *virtio)
 {
-    uint8_t     buffer[0x0200];
-    uint8_t     rc;
-    uint8_t     aCDB[16];
+    int                 i;
+    uint8_t             buffer[0x0200];
+    bio_dsk_t __far     *bios_dsk;
 
-    aCDB[0] = SCSI_INQUIRY;
-    aCDB[1] = 0;
-    aCDB[2] = 0;
-    aCDB[3] = 0;
-    aCDB[4] = 5; /* Allocation length. */
-    aCDB[5] = 0;
+    bios_dsk = read_word(0x0040, 0x000E) :> &EbdaData->bdisk;
 
-    rc = virtio_scsi_cmd_data_in(virtio, 0, aCDB, 6, buffer, 5);
-    if (rc != 0)
-        BX_PANIC("%s: SCSI_INQUIRY failed\n", __func__);
+    /* Go through target devices. */
+    for (i = 0; i < VBSCSI_MAX_DEVICES; i++)
+    {
+        uint8_t     rc;
+        uint8_t     aCDB[16];
+        uint8_t     hd_index, devcount_scsi;
 
-    return rc;
+        aCDB[0] = SCSI_INQUIRY;
+        aCDB[1] = 0;
+        aCDB[2] = 0;
+        aCDB[3] = 0;
+        aCDB[4] = 5; /* Allocation length. */
+        aCDB[5] = 0;
+
+        rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 6, buffer, 5);
+        if (rc != 0)
+            BX_PANIC("%s: SCSI_INQUIRY failed\n", __func__);
+
+        devcount_scsi = bios_dsk->scsi_devcount;
+
+        /* Check the attached device. */
+        if (   ((buffer[0] & 0xe0) == 0)
+            && ((buffer[0] & 0x1f) == 0x00))
+        {
+            DBG_VIRTIO("%s: Disk detected at %d\n", __func__, i);
+
+            /* We add the disk only if the maximum is not reached yet. */
+            if (devcount_scsi < BX_MAX_SCSI_DEVICES)
+            {
+                uint64_t    sectors, t;
+                uint32_t    sector_size, cylinders;
+                uint16_t    heads, sectors_per_track;
+                uint8_t     hdcount;
+                uint8_t     cmos_base;
+
+                /* Issue a read capacity command now. */
+                _fmemset(aCDB, 0, sizeof(aCDB));
+                aCDB[0] = SCSI_SERVICE_ACT;
+                aCDB[1] = SCSI_READ_CAP_16;
+                aCDB[13] = 32; /* Allocation length. */
+
+                rc = virtio_scsi_cmd_data_in(virtio, i, aCDB, 16, buffer, 32);
+                if (rc != 0)
+                    BX_PANIC("%s: SCSI_READ_CAPACITY failed\n", __func__);
+
+                /* The value returned is the last addressable LBA, not
+                 * the size, which what "+ 1" is for.
+                 */
+                sectors = swap_64(*(uint64_t *)buffer) + 1;
+
+                sector_size =   ((uint32_t)buffer[8] << 24)
+                              | ((uint32_t)buffer[9] << 16)
+                              | ((uint32_t)buffer[10] << 8)
+                              | ((uint32_t)buffer[11]);
+
+                /* We only support the disk if sector size is 512 bytes. */
+                if (sector_size != 512)
+                {
+                    /* Leave a log entry. */
+                    BX_INFO("Disk %d has an unsupported sector size of %u\n", i, sector_size);
+                    continue;
+                }
+
+                /* Get logical CHS geometry. */
+                switch (devcount_scsi)
+                {
+                    case 0:
+                        cmos_base = 0x90;
+                        break;
+                    case 1:
+                        cmos_base = 0x98;
+                        break;
+                    case 2:
+                        cmos_base = 0xA0;
+                        break;
+                    case 3:
+                        cmos_base = 0xA8;
+                        break;
+                    default:
+                        cmos_base = 0;
+                }
+
+                if (cmos_base && inb_cmos(cmos_base + 7))
+                {
+                    /* If provided, grab the logical geometry from CMOS. */
+                    cylinders         = inb_cmos(cmos_base + 0) + (inb_cmos(cmos_base + 1) << 8);
+                    heads             = inb_cmos(cmos_base + 2);
+                    sectors_per_track = inb_cmos(cmos_base + 7);
+                }
+                else
+                {
+                    /* Calculate default logical geometry. NB: Very different
+                     * from default ATA/SATA logical geometry!
+                     */
+                    if (sectors >= (uint32_t)4 * 1024 * 1024)
+                    {
+                        heads = 255;
+                        sectors_per_track = 63;
+                        /* Approximate x / (255 * 63) using shifts */
+                        t = (sectors >> 6) + (sectors >> 12);
+                        cylinders = (t >> 8) + (t >> 16);
+                    }
+                    else if (sectors >= (uint32_t)2 * 1024 * 1024)
+                    {
+                        heads = 128;
+                        sectors_per_track = 32;
+                        cylinders = sectors >> 12;
+                    }
+                    else
+                    {
+                        heads = 64;
+                        sectors_per_track = 32;
+                        cylinders = sectors >> 11;
+                    }
+                }
+
+                /* Calculate index into the generic disk table. */
+                hd_index = devcount_scsi + BX_MAX_ATA_DEVICES;
+
+                //bios_dsk->scsidev[devcount_scsi].io_base   = io_base;
+                bios_dsk->scsidev[devcount_scsi].target_id = i;
+                bios_dsk->devices[hd_index].type        = DSK_TYPE_SCSI;
+                bios_dsk->devices[hd_index].device      = DSK_DEVICE_HD;
+                bios_dsk->devices[hd_index].removable   = 0;
+                bios_dsk->devices[hd_index].lock        = 0;
+                bios_dsk->devices[hd_index].blksize     = sector_size;
+                bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_LBA;
+
+                /* Write LCHS/PCHS values. */
+                bios_dsk->devices[hd_index].lchs.heads = heads;
+                bios_dsk->devices[hd_index].lchs.spt   = sectors_per_track;
+                bios_dsk->devices[hd_index].pchs.heads = heads;
+                bios_dsk->devices[hd_index].pchs.spt   = sectors_per_track;
+
+                if (cylinders > 1024) {
+                    bios_dsk->devices[hd_index].lchs.cylinders = 1024;
+                    bios_dsk->devices[hd_index].pchs.cylinders = 1024;
+                } else {
+                    bios_dsk->devices[hd_index].lchs.cylinders = (uint16_t)cylinders;
+                    bios_dsk->devices[hd_index].pchs.cylinders = (uint16_t)cylinders;
+                }
+
+                BX_INFO("SCSI %d-ID#%d: LCHS=%lu/%u/%u 0x%llx sectors\n", devcount_scsi,
+                        i, (uint32_t)cylinders, heads, sectors_per_track, sectors);
+
+                bios_dsk->devices[hd_index].sectors = sectors;
+
+                /* Store the id of the disk in the ata hdidmap. */
+                hdcount = bios_dsk->hdcount;
+                bios_dsk->hdidmap[hdcount] = devcount_scsi + BX_MAX_ATA_DEVICES;
+                hdcount++;
+                bios_dsk->hdcount = hdcount;
+
+                /* Update hdcount in the BDA. */
+                hdcount = read_byte(0x40, 0x75);
+                hdcount++;
+                write_byte(0x40, 0x75, hdcount);
+
+                devcount_scsi++;
+            }
+            else
+            {
+                /* We reached the maximum of SCSI disks we can boot from. We can quit detecting. */
+                break;
+            }
+        }
+        else if (   ((buffer[0] & 0xe0) == 0)
+                 && ((buffer[0] & 0x1f) == 0x05))
+        {
+            uint8_t     cdcount;
+            uint8_t     removable;
+
+            BX_INFO("SCSI %d-ID#%d: CD/DVD-ROM\n", devcount_scsi, i);
+
+            /* Calculate index into the generic device table. */
+            hd_index = devcount_scsi + BX_MAX_ATA_DEVICES;
+
+            removable = buffer[1] & 0x80 ? 1 : 0;
+
+            //bios_dsk->scsidev[devcount_scsi].io_base   = io_base;
+            bios_dsk->scsidev[devcount_scsi].target_id = i;
+            bios_dsk->devices[hd_index].type        = DSK_TYPE_SCSI;
+            bios_dsk->devices[hd_index].device      = DSK_DEVICE_CDROM;
+            bios_dsk->devices[hd_index].removable   = removable;
+            bios_dsk->devices[hd_index].blksize     = 2048;
+            bios_dsk->devices[hd_index].translation = GEO_TRANSLATION_NONE;
+
+            /* Store the ID of the device in the BIOS cdidmap. */
+            cdcount = bios_dsk->cdcount;
+            bios_dsk->cdidmap[cdcount] = devcount_scsi + BX_MAX_ATA_DEVICES;
+            cdcount++;
+            bios_dsk->cdcount = cdcount;
+
+            devcount_scsi++;
+        }
+        else
+            DBG_VIRTIO("%s: No supported device detected at %d\n", __func__, i);
+
+        bios_dsk->scsi_devcount = devcount_scsi;
+    }
 }
 
 /**
@@ -587,13 +779,15 @@ static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCap
     /* Acknowledge presence. */
     u8DevStat |= VIRTIO_CMN_REG_DEV_STS_F_ACK;
     virtio_reg_common_write_u8(virtio, VIRTIO_COMMON_REG_DEV_STS, u8DevStat);
-    /* Our driver knows how to operatet the device. */
+    /* Our driver knows how to operate the device. */
     u8DevStat |= VIRTIO_CMN_REG_DEV_STS_F_DRV;
     virtio_reg_common_write_u8(virtio, VIRTIO_COMMON_REG_DEV_STS, u8DevStat);
 
+#if 0
     /* Read the feature bits and only program the VIRTIO_CMN_REG_DEV_FEAT_SCSI_INOUT bit if available. */
     fFeatures = virtio_reg_common_read_u32(virtio, VIRTIO_COMMON_REG_DEV_FEAT);
     fFeatures &= VIRTIO_CMN_REG_DEV_FEAT_SCSI_INOUT;
+#endif
 
     /* Check that the device is sane. */
     if (   virtio_reg_dev_cfg_read_u32(virtio, VIRTIO_DEV_CFG_REG_Q_NUM) < 1
@@ -605,7 +799,7 @@ static int virtio_scsi_hba_init(uint8_t u8Bus, uint8_t u8DevFn, uint8_t u8PciCap
         return 0;
     }
 
-    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_DEV_FEAT, fFeatures);
+    virtio_reg_common_write_u32(virtio, VIRTIO_COMMON_REG_DRV_FEAT, VIRTIO_CMN_REG_DEV_FEAT_SCSI_INOUT);
 
     /* Set the features OK bit. */
     u8DevStat |= VIRTIO_CMN_REG_DEV_STS_F_FEAT_OK;
@@ -719,6 +913,9 @@ void BIOSCALL virtio_scsi_init(void)
             int rc;
 
             DBG_VIRTIO("VirtIO SCSI HBA with all required capabilities at 0x%x\n", u8PciCapOffVirtIo);
+
+            /* Enable PCI memory, I/O, bus mastering access in command register. */
+            pci_write_config_word(u8Bus, u8DevFn, 4, 0x7);
 
             rc = virtio_scsi_hba_init(u8Bus, u8DevFn, u8PciCapOffVirtIo);
         }
