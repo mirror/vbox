@@ -508,7 +508,7 @@ int vmsvga3dSurfaceDMA(PVGASTATE pThis, SVGA3dGuestImage guest, SVGA3dSurfaceIma
     {
 #ifdef VMSVGA3D_DIRECT3D
         /* Flush the drawing pipeline for this surface as it could be used in a shared context. */
-        vmsvga3dSurfaceFlush(pThis, pSurface);
+        vmsvga3dSurfaceFlush(pSurface);
 
 #else /* VMSVGA3D_OPENGL */
         pContext = &pState->SharedCtx;

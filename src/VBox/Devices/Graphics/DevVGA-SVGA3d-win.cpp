@@ -1316,12 +1316,24 @@ static int vmsvga3dSurfaceTrackUsage(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pCo
 
     LogFunc(("track usage of sid=%x (cid=%d) for cid=%d, pQuery %p\n", pSurface->id, pSurface->idAssociatedContext, pContext->id, pSurface->pQuery));
 
-    /* Release the previous query object. */
-    D3D_RELEASE(pSurface->pQuery);
+    if (pSurface->idQueryContext == pContext->id)
+    {
+        /* Release the previous query object, if any. */
+        D3D_RELEASE(pSurface->pQuery);
+    }
+    else
+    {
+        /* Different context. There must be no pending drawing operations. If there are any, then a flush is missing. */
+        if (pSurface->pQuery)
+        {
+            /* Should not happen. */
+            AssertFailed();
 
-    /* Use the context where the texture has been created. */
-    int rc = vmsvga3dContextFromCid(pState, pSurface->idAssociatedContext, &pContext);
-    AssertRCReturn(rc, rc);
+            /* Make sure that all drawing has completed. */
+            vmsvga3dSurfaceFlush(pSurface);
+        }
+        pSurface->idQueryContext = pContext->id;
+    }
 
     HRESULT hr = pContext->pDevice->CreateQuery(D3DQUERYTYPE_EVENT, &pSurface->pQuery);
     AssertMsgReturn(hr == D3D_OK, ("vmsvga3dSurfaceTrackUsage: CreateQuery failed with %x\n", hr), VERR_INTERNAL_ERROR);
@@ -1354,9 +1366,8 @@ static int vmsvga3dSurfaceTrackUsageById(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT
 
 
 /* Wait for all drawing, that uses this surface, to finish. */
-int vmsvga3dSurfaceFlush(PVGASTATE pThis, PVMSVGA3DSURFACE pSurface)
+int vmsvga3dSurfaceFlush(PVMSVGA3DSURFACE pSurface)
 {
-    RT_NOREF(pThis);
 #ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
     HRESULT hr;
 
@@ -1375,9 +1386,10 @@ int vmsvga3dSurfaceFlush(PVGASTATE pThis, PVMSVGA3DSURFACE pSurface)
 
         RTThreadSleep(1);
     }
-    AssertMsgReturn(hr == S_OK, ("vmsvga3dSurfaceFinishDrawing: GetData failed with %x\n", hr), VERR_INTERNAL_ERROR);
 
     D3D_RELEASE(pSurface->pQuery);
+
+    AssertMsgReturn(hr == S_OK, ("vmsvga3dSurfaceFinishDrawing: GetData failed with %x\n", hr), VERR_INTERNAL_ERROR);
 #endif /* !VBOX_VMSVGA3D_WITH_WINE_OPENGL */
 
     return VINF_SUCCESS;
@@ -1518,8 +1530,8 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         AssertRCReturn(rc, rc);
 
         /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
-        vmsvga3dSurfaceFlush(pThis, pSurfaceSrc);
-        vmsvga3dSurfaceFlush(pThis, pSurfaceDest);
+        vmsvga3dSurfaceFlush(pSurfaceSrc);
+        vmsvga3dSurfaceFlush(pSurfaceDest);
 
         IDirect3DSurface9 *pSrc;
         rc = vmsvga3dGetD3DSurface(pState, pContextDst, pSurfaceSrc, src.face, src.mipmap, false, &pSrc);
@@ -1644,8 +1656,8 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
                          && (pSurfaceDest->fUsageD3D & D3DUSAGE_RENDERTARGET) == 0)
                 {
                     /* Can lock both. */
-                    vmsvga3dSurfaceFlush(pThis, pSurfaceSrc);
-                    vmsvga3dSurfaceFlush(pThis, pSurfaceDest);
+                    vmsvga3dSurfaceFlush(pSurfaceSrc);
+                    vmsvga3dSurfaceFlush(pSurfaceDest);
 
                     D3DLOCKED_RECT LockedSrcRect;
                     hr = pSrc->LockRect(&LockedSrcRect, &RectSrc, D3DLOCK_READONLY);
@@ -1778,7 +1790,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             else
             {
                 /* Must flush the context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
-                vmsvga3dSurfaceFlush(pThis, pSurfaceSrc);
+                vmsvga3dSurfaceFlush(pSurfaceSrc);
 
                 hr = pD3DSurf->LockRect(&LockedSrcRect, &RectSrc, D3DLOCK_READONLY);
                 AssertMsgReturnStmt(hr == D3D_OK, ("LockRect failed with %x\n", hr), D3D_RELEASE(pD3DSurf), VERR_INTERNAL_ERROR);
@@ -1800,7 +1812,7 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             else
             {
                 /* Must flush the context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
-                vmsvga3dSurfaceFlush(pThis, pSurfaceDest);
+                vmsvga3dSurfaceFlush(pSurfaceDest);
 
                 hr = pD3DSurf->LockRect(&LockedDestRect, &RectDest, 0);
                 AssertMsgReturnStmt(hr == D3D_OK, ("LockRect failed with %x\n", hr), D3D_RELEASE(pD3DSurf), VERR_INTERNAL_ERROR);
@@ -1849,6 +1861,9 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             HRESULT hr2 = pContext->pDevice->UpdateTexture(pSourceTexture, pDestinationTexture);
 #endif
             AssertMsg(hr2 == D3D_OK, ("UpdateTexture failed with %x\n", hr2)); RT_NOREF(hr2);
+
+            /* Track the UpdateTexture operation. */
+            vmsvga3dSurfaceTrackUsage(pState, pContext, pSurfaceDest);
         }
 
         D3D_RELEASE(pD3DSurf);
@@ -2254,6 +2269,9 @@ int vmsvga3dBackCreateTexture(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
             RTMemFree(pSurface->pMipmapLevels[i].pSurfaceData);
             pSurface->pMipmapLevels[i].pSurfaceData = NULL;
         }
+
+        /* Track the UpdateTexture operation. */
+        vmsvga3dSurfaceTrackUsage(pState, pContext, pSurface);
     }
     pSurface->fDirty = false;
 
@@ -2287,6 +2305,8 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
                                   PVMSVGA3DSURFACE pSrcSurface, uint32_t uSrcFace, uint32_t uSrcMipmap, SVGA3dBox const *pSrcBox,
                                   SVGA3dStretchBltMode enmMode, PVMSVGA3DCONTEXT pContext)
 {
+    RT_NOREF(pThis);
+
     HRESULT hr;
     int rc;
 
@@ -2294,8 +2314,8 @@ int vmsvga3dBackSurfaceStretchBlt(PVGASTATE pThis, PVMSVGA3DSTATE pState,
     AssertReturn(pDstSurface->enmD3DResType != VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE, VERR_NOT_IMPLEMENTED);
 
     /* Flush the drawing pipeline for this surface as it could be used in a shared context. */
-    vmsvga3dSurfaceFlush(pThis, pSrcSurface);
-    vmsvga3dSurfaceFlush(pThis, pDstSurface);
+    vmsvga3dSurfaceFlush(pSrcSurface);
+    vmsvga3dSurfaceFlush(pDstSurface);
 
     RECT RectSrc;
     RectSrc.left    = pSrcBox->x;
@@ -4179,7 +4199,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
         bool fTexture = false;
 
         /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
-        vmsvga3dSurfaceFlush(pThis, pRenderTarget);
+        vmsvga3dSurfaceFlush(pRenderTarget);
 
         if (pRenderTarget->surfaceFlags & SVGA3D_SURFACE_HINT_TEXTURE)
         {
@@ -4452,7 +4472,7 @@ int vmsvga3dSetTextureState(PVGASTATE pThis, uint32_t cid, uint32_t cTextureStat
                            || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE
                            || pSurface->enmD3DResType == VMSVGA3D_D3DRESTYPE_VOLUME_TEXTURE);
                     /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
-                    vmsvga3dSurfaceFlush(pThis, pSurface);
+                    vmsvga3dSurfaceFlush(pSurface);
                 }
 
 #ifndef VBOX_VMSVGA3D_WITH_WINE_OPENGL
