@@ -1117,8 +1117,8 @@ class TestVm(object):
 
         returns True if it should be skipped, False if not.
         """
-        if self.fNstHwVirt and not oTestDrv.isHostCpuAmd():
-            reporter.log('Ignoring VM %s (Nested hardware-virtualization only supported on AMD CPUs).' % (self.sVmName,));
+        if self.fNstHwVirt and not oTestDrv.hasHostNestedHwVirt():
+            reporter.log('Ignoring VM %s (Nested hardware-virtualization not support on this host).' % (self.sVmName,));
             return True;
         return False;
 
