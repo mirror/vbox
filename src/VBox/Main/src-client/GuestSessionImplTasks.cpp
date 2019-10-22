@@ -2357,11 +2357,11 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             {
                                 static struct { const char *pszDst, *pszIso; } const s_aCertFiles[] =
                                 {
-                                    { "vbox.cer",           "CERT/VBOX.CER" },
-                                    { "vbox-sha1.cer",      "CERT/VBOX_SHA1.CER" },
-                                    { "vbox-sha256.cer",    "CERT/VBOX_SHA256.CER" },
-                                    { "vbox-sha256-r3.cer", "CERT/VBOX_SHA256_R3.CER" },
-                                    { "oracle-vbox.cer",    "CERT/ORACLE_VBOX.CER" },
+                                    { "vbox.cer",           "/CERT/VBOX.CER" },
+                                    { "vbox-sha1.cer",      "/CERT/VBOX-SHA1.CER" },
+                                    { "vbox-sha256.cer",    "/CERT/VBOX-SHA256.CER" },
+                                    { "vbox-sha256-r3.cer", "/CERT/VBOX-SHA256-R3.CER" },
+                                    { "oracle-vbox.cer",    "/CERT/ORACLE-VBOX.CER" },
                                 };
                                 uint32_t fCopyCertUtil = ISOFILE_FLAG_COPY_FROM_ISO;
                                 for (uint32_t i = 0; i < RT_ELEMENTS(s_aCertFiles); i++)
@@ -2384,6 +2384,8 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                                      *             existing VBox certificates. */
                                     GuestProcessStartupInfo siCertUtilRem;
                                     siCertUtilRem.mName = "VirtualBox Certificate Utility, removing old VirtualBox certificates";
+                                    /* The argv[0] should contain full path to the executable module */
+                                    siCertUtilRem.mArguments.push_back(strUpdateDir + "VBoxCertUtil.exe");
                                     siCertUtilRem.mArguments.push_back(Utf8Str("remove-trusted-publisher"));
                                     siCertUtilRem.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
                                     siCertUtilRem.mArguments.push_back(strDstCert);
@@ -2397,6 +2399,8 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                                      *              recent certificates just copied over. */
                                     GuestProcessStartupInfo siCertUtilAdd;
                                     siCertUtilAdd.mName = "VirtualBox Certificate Utility, installing VirtualBox certificates";
+                                    /* The argv[0] should contain full path to the executable module */
+                                    siCertUtilAdd.mArguments.push_back(strUpdateDir + "VBoxCertUtil.exe");
                                     siCertUtilAdd.mArguments.push_back(Utf8Str("add-trusted-publisher"));
                                     siCertUtilAdd.mArguments.push_back(Utf8Str("--root")); /* Add root certificate as well. */
                                     siCertUtilAdd.mArguments.push_back(strDstCert);
@@ -2409,10 +2413,10 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             }
                             /* The installers in different flavors, as we don't know (and can't assume)
                              * the guest's bitness. */
-                            mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS_X86.EXE",
+                            mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS-X86.EXE",
                                                      strUpdateDir + "VBoxWindowsAdditions-x86.exe",
                                                      ISOFILE_FLAG_COPY_FROM_ISO));
-                            mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS_AMD64.EXE",
+                            mFiles.push_back(ISOFile("VBOXWINDOWSADDITIONS-AMD64.EXE",
                                                      strUpdateDir + "VBoxWindowsAdditions-amd64.exe",
                                                      ISOFILE_FLAG_COPY_FROM_ISO));
                             /* The stub loader which decides which flavor to run. */
@@ -2421,6 +2425,9 @@ int GuestSessionTaskUpdateAdditions::Run(void)
                             /* Set a running timeout of 5 minutes -- the Windows Guest Additions
                              * setup can take quite a while, so be on the safe side. */
                             siInstaller.mTimeoutMS = 5 * 60 * 1000;
+
+                            /* The argv[0] should contain full path to the executable module */
+                            siInstaller.mArguments.push_back(strUpdateDir + "VBoxWindowsAdditions.exe");
                             siInstaller.mArguments.push_back(Utf8Str("/S")); /* We want to install in silent mode. */
                             siInstaller.mArguments.push_back(Utf8Str("/l")); /* ... and logging enabled. */
                             /* Don't quit VBoxService during upgrade because it still is used for this
