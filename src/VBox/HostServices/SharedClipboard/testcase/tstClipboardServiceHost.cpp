@@ -96,109 +96,109 @@ static void testSetMode(void)
     table.pfnUnload(NULL);
 }
 
-#if 0 /* Disabled for now. */
-static void testGetHostMsg(void)
+static void testMsgAddOld(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uParm1)
+{
+    PSHCLCLIENTMSG pMsg = shclSvcMsgAlloc(uMsg, 2 /* cParms */); /* The old protocol (v0) has a fixed parameter count of 2. */
+    RTTESTI_CHECK_RETV(pMsg != NULL);
+
+    HGCMSvcSetU32(&pMsg->paParms[0], uMsg);
+    HGCMSvcSetU32(&pMsg->paParms[1], uParm1);
+
+    int rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+    RTTESTI_CHECK_RC_OK(rc);
+    rc = shclSvcClientWakeup(pClient);
+    RTTESTI_CHECK_RC_OK(rc);
+}
+
+/* Does testing of VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, needed for providing compatibility to older Guest Additions clients. */
+static void testGetHostMsgOld(void)
 {
     struct VBOXHGCMSVCPARM parms[2];
     VBOXHGCMSVCFNTABLE table;
     VBOXHGCMCALLHANDLE_TYPEDEF call;
     int rc;
 
-    RTTestISub("Setting up VBOX_SHCL_FN_GET_HOST_MSG test");
+    RTTestISub("Setting up VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD test");
     rc = setupTable(&table);
     RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
     /* Unless we are bidirectional the host message requests will be dropped. */
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_BIDIRECTIONAL);
-    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE,
-                           1, parms);
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
 
-    RTTestISub("Testing FN_GET_HOST_MSG, one format, waiting guest call.");
-    RT_ZERO(g_Client.State);
+    rc = shclSvcClientInit(&g_Client, 1 /* clientId */);
+    RTTESTI_CHECK_RC_OK(rc);
+
+    RTTestISub("Testing one format, waiting guest call.");
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
     table.pfnConnect(NULL, 1 /* clientId */, &g_Client, 0, 0);
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA,
-                                   VBOX_SHCL_FMT_UNICODETEXT);
+    testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
-    RTTestISub("Testing FN_GET_HOST_MSG, one format, no waiting guest calls.");
-    RT_ZERO(g_Client.State);
-    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA,
-                                   VBOX_SHCL_FMT_HTML);
+    RTTestISub("Testing one format, no waiting guest calls.");
+    shclSvcClientReset(&g_Client);
+    testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
-    RTTestISub("Testing FN_GET_HOST_MSG, two formats, waiting guest call.");
-    RT_ZERO(g_Client.State);
+    RTTestISub("Testing two formats, waiting guest call.");
+    shclSvcClientReset(&g_Client);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This should get updated only when the guest call completes. */
-    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA,
-                                   VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
+    testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
-    RTTestISub("Testing FN_GET_HOST_MSG, two formats, no waiting guest calls.");
-    RT_ZERO(g_Client.State);
-    sharedClipboardSvcOldReportMsg(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA,
-                                   VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
+    RTTestISub("Testing two formats, no waiting guest calls.");
+    shclSvcClientReset(&g_Client);
+    testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_UNICODETEXT);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK(parms[0].u.uint32 == VBOX_SHCL_HOST_MSG_READ_DATA);
     RTTESTI_CHECK(parms[1].u.uint32 == VBOX_SHCL_FMT_HTML);
     RTTESTI_CHECK_RC_OK(call.rc);
     call.rc = VERR_TRY_AGAIN;
-    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD,
-                  2, parms, 0);
+    table.pfnCall(NULL, &call, 1 /* clientId */, &g_Client, VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD, 2, parms, 0);
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
     table.pfnDisconnect(NULL, 1 /* clientId */, &g_Client);
     table.pfnUnload(NULL);
 }
-#endif
 
 static void testSetHeadless(void)
 {
@@ -248,7 +248,6 @@ static void testHostCall(void)
     testSetHeadless();
 }
 
-
 int main(int argc, char *argv[])
 {
     /*
@@ -268,7 +267,7 @@ int main(int argc, char *argv[])
      * Run the tests.
      */
     testHostCall();
-    /* testGetHostMsg(); Disabled */
+    testGetHostMsgOld();
 
     /*
      * Summary
