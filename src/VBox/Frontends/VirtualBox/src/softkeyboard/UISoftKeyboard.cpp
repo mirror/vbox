@@ -526,6 +526,8 @@ public:
 
     void drawTextInRect(const UISoftKeyboardKey &key, QPainter &painter);
 
+
+
 private:
 
     QMap<int, UIKeyCaptions> m_keyCaptionsMap;
@@ -2424,16 +2426,19 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
 
 void UISoftKeyboardWidget::copyCurentLayout()
 {
+
     UISoftKeyboardLayout newLayout(*(m_pCurrentKeyboardLayout));
-    QString strNewName;
-    if (!newLayout.name().isEmpty())
-        strNewName= QString("%1-%2").arg(newLayout.name()).arg(UISoftKeyboard::tr("Copy"));
-    QString strNewNativeName;
-    if (!newLayout.nativeName().isEmpty())
-        strNewNativeName= QString("%1-%2").arg(newLayout.nativeName()).arg(UISoftKeyboard::tr("Copy"));
+
+    QString strNewName = QString("%1-%2").arg(newLayout.name()).arg(UISoftKeyboard::tr("Copy"));
+    int iCount = 1;
+    while (findLayoutByName(strNewName))
+    {
+        strNewName = QString("%1-%2-%3").arg(newLayout.name()).arg(UISoftKeyboard::tr("Copy")).arg(QString::number(iCount));
+        ++iCount;
+    }
+
     newLayout.setName(strNewName);
     newLayout.setEditedBuNotSaved(true);
-    newLayout.setNativeName(strNewNativeName);
     newLayout.setEditable(true);
     newLayout.setIsFromResources(false);
     newLayout.setSourceFilePath(QString());
@@ -2943,23 +2948,16 @@ bool UISoftKeyboardWidget::loadKeyboardLayout(const QString &strLayoutFileName)
 
     UIKeyboardLayoutReader keyboardLayoutReader;
 
-    m_layouts.append(UISoftKeyboardLayout());
-    UISoftKeyboardLayout &newLayout = m_layouts.back();
-
+    UISoftKeyboardLayout newLayout;
     if (!keyboardLayoutReader.parseFile(strLayoutFileName, newLayout))
-    {
-        m_layouts.removeLast();
         return false;
-    }
 
     UISoftKeyboardPhysicalLayout *pPhysicalLayout = findPhysicalLayout(newLayout.physicalLayoutUuid());
     /* If no pyhsical layout with the UUID the keyboard layout refers is found then cancel loading the keyboard layout: */
     if (!pPhysicalLayout)
-    {
-        m_layouts.removeLast();
         return false;
-    }
-    /* Make sure we have unique layout UUIDs: */
+
+    /* Make sure we have unique lay1out UUIDs: */
     int iCount = 0;
     foreach (const UISoftKeyboardLayout &layout, m_layouts)
     {
@@ -2967,11 +2965,10 @@ bool UISoftKeyboardWidget::loadKeyboardLayout(const QString &strLayoutFileName)
             ++iCount;
     }
     if (iCount > 1)
-    {
-        m_layouts.removeLast();
         return false;
-    }
+
     newLayout.setSourceFilePath(strLayoutFileName);
+    addLayout(newLayout);
     return true;
 }
 
