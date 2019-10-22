@@ -1063,7 +1063,9 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  VBoxDD2_LIBS.darwin    += $(LIB_REM)
  VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
  VBoxDD2_LDFLAGS.linux   = $(VBOX_GCC_NO_UNDEFINED)
- if 0
+ if defined(VBOX_WITH_EFI) && 0 ## @todo need to update installers.
+  VBoxDD_DEFS           += VBOX_WITH_EFI_IN_DD2
+  VBoxDD2_DEFS          += VBOX_WITH_EFI
   VBoxDD2_SOURCES       += \
   	EFI/DevEFI-binaries.asm
   EFI/DevEFI-binaries.asm_ASINCS = $(PATH_STAGE)/$(INST_BIN)

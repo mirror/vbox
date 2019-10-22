@@ -172,7 +172,9 @@ typedef struct DEVEFI
     } ImageEvt;
 
     /** The system EFI ROM data. */
-    uint8_t                *pu8EfiRom;
+    uint8_t const          *pu8EfiRom;
+    /** The system EFI ROM data pointer to be passed to RTFileReadAllFree. */
+    uint8_t                *pu8EfiRomFree;
     /** The size of the system EFI ROM. */
     uint64_t                cbEfiRom;
     /** Offset into the actual ROM within EFI FW volume. */
@@ -313,6 +315,14 @@ static SSMFIELD const g_aEfiVariableDescFields[] =
 
 /** The EfiSystemNvDataFv GUID for NVRAM storage. */
 static const RTUUID g_UuidNvDataFv = { { 0x8d, 0x2b, 0xf1, 0xff, 0x96, 0x76, 0x8b, 0x4c, 0xa9, 0x85, 0x27, 0x47, 0x07, 0x5b, 0x4f, 0x50} };
+
+#ifdef VBOX_WITH_EFI_IN_DD2
+/** Special file name value for indicating the 32-bit built-in EFI firmware. */
+static const char g_szEfiBuiltin32[] = "VBoxEFI32.fd";
+/** Special file name value for indicating the 64-bit built-in EFI firmware. */
+static const char g_szEfiBuiltin64[] = "VBoxEFI64.fd";
+#endif
+
 
 
 
@@ -1941,10 +1951,10 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
         pThis->pszNvramFile = NULL;
     }
 
-    if (pThis->pu8EfiRom)
+    if (pThis->pu8EfiRomFree)
     {
-        RTFileReadAllFree(pThis->pu8EfiRom, (size_t)pThis->cbEfiRom + pThis->offEfiRom);
-        pThis->pu8EfiRom = NULL;
+        RTFileReadAllFree(pThis->pu8EfiRomFree, (size_t)pThis->cbEfiRom + pThis->offEfiRom);
+        pThis->pu8EfiRomFree = NULL;
     }
 
     /*
@@ -2078,20 +2088,39 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
     /*
      * Read the entire firmware volume into memory.
      */
-    void   *pvFile;
-    size_t  cbFile;
-    int rc = RTFileReadAllEx(pThis->pszEfiRomFile,
+    int     rc;
+#ifdef VBOX_WITH_EFI_IN_DD2
+    if (RTStrCmp(pThis->pszEfiRomFile, g_szEfiBuiltin32) == 0)
+    {
+        pThis->pu8EfiRomFree = NULL;
+        pThis->pu8EfiRom = g_abEfiFirmware32;
+        pThis->cbEfiRom  = g_cbEfiFirmware32;
+    }
+    else if (RTStrCmp(pThis->pszEfiRomFile, g_szEfiBuiltin64) == 0)
+    {
+        pThis->pu8EfiRomFree = NULL;
+        pThis->pu8EfiRom = g_abEfiFirmware64;
+        pThis->cbEfiRom  = g_cbEfiFirmware64;
+    }
+    else
+#endif
+    {
+        void   *pvFile;
+        size_t  cbFile;
+        rc = RTFileReadAllEx(pThis->pszEfiRomFile,
                              0 /*off*/,
                              RTFOFF_MAX /*cbMax*/,
                              RTFILE_RDALL_O_DENY_WRITE,
                              &pvFile,
                              &cbFile);
-    if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pThis->pDevIns, rc, RT_SRC_POS,
-                                   N_("Loading the EFI firmware volume '%s' failed with rc=%Rrc"),
-                                   pThis->pszEfiRomFile, rc);
-    pThis->pu8EfiRom = (uint8_t *)pvFile;
-    pThis->cbEfiRom  = cbFile;
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pThis->pDevIns, rc, RT_SRC_POS,
+                                       N_("Loading the EFI firmware volume '%s' failed with rc=%Rrc"),
+                                       pThis->pszEfiRomFile, rc);
+        pThis->pu8EfiRomFree = (uint8_t *)pvFile;
+        pThis->pu8EfiRom = (uint8_t *)pvFile;
+        pThis->cbEfiRom  = cbFile;
+    }
 
     /*
      * Validate firmware volume and figure out the load address as well as the SEC entry point.
@@ -2402,27 +2431,24 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Get the system EFI ROM file name.
      */
+#ifdef VBOX_WITH_EFI_IN_DD2
+    rc = CFGMR3QueryStringAllocDef(pCfg, "EfiRom", &pThis->pszEfiRomFile, g_szEfiBuiltin32);
+    if (RT_FAILURE(rc))
+#else
     rc = CFGMR3QueryStringAlloc(pCfg, "EfiRom", &pThis->pszEfiRomFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         pThis->pszEfiRomFile = (char *)PDMDevHlpMMHeapAlloc(pDevIns, RTPATH_MAX);
-        if (!pThis->pszEfiRomFile)
-            return VERR_NO_MEMORY;
-
+        AssertReturn(pThis->pszEfiRomFile, VERR_NO_MEMORY);
         rc = RTPathAppPrivateArchTop(pThis->pszEfiRomFile, RTPATH_MAX);
         AssertRCReturn(rc, rc);
         rc = RTPathAppend(pThis->pszEfiRomFile, RTPATH_MAX, "VBoxEFI32.fd");
         AssertRCReturn(rc, rc);
     }
     else if (RT_FAILURE(rc))
+#endif
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"EfiRom\" as a string failed"));
-    else if (!*pThis->pszEfiRomFile)
-    {
-        MMR3HeapFree(pThis->pszEfiRomFile);
-        pThis->pszEfiRomFile = NULL;
-    }
-
 
     /*
      * NVRAM processing.

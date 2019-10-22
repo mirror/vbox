@@ -283,7 +283,7 @@ DECLHIDDEN(int) flashR3LoadFromFile(PFLASHCORE pThis, const char *pszFilename)
     return VINF_SUCCESS;
 }
 
-DECLHIDDEN(int) flashR3LoadFromBuf(PFLASHCORE pThis, void *pvBuf, size_t cbBuf)
+DECLHIDDEN(int) flashR3LoadFromBuf(PFLASHCORE pThis, void const *pvBuf, size_t cbBuf)
 {
     AssertReturn(pThis->cbFlashSize >= cbBuf, VERR_BUFFER_OVERFLOW);
 
