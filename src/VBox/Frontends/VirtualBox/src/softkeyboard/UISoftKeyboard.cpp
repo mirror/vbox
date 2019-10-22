@@ -653,7 +653,8 @@ public:
     void setColorThemeByName(const QString &strColorThemeName);
     void parentDialogDeactivated();
     bool isColorThemeEditable() const;
-    bool unsavedLayoutsExist() const;
+
+    QStringList unsavedLayoutsNameList() const;
 
 protected:
 
@@ -2570,15 +2571,17 @@ bool UISoftKeyboardWidget::isColorThemeEditable() const
     return m_currentColorTheme->isEditable();
 }
 
-bool UISoftKeyboardWidget::unsavedLayoutsExist() const
+QStringList UISoftKeyboardWidget::unsavedLayoutsNameList() const
 {
+    QStringList nameList;
     foreach (const UISoftKeyboardLayout &layout, m_layouts)
     {
         if (layout.editedButNotSaved())
-            return true;
+            nameList << layout.nameString();
     }
-    return false;
+    return nameList;
 }
+
 
 void UISoftKeyboardWidget::deleteCurrentLayout()
 {
@@ -3796,10 +3799,11 @@ bool UISoftKeyboard::shouldBeMaximized() const
 
 void UISoftKeyboard::closeEvent(QCloseEvent *event)
 {
+    QStringList strNameList = m_pKeyboardWidget->unsavedLayoutsNameList();
     /* Show a warning dialog when there are not saved layouts: */
-    if (m_pKeyboardWidget && m_pKeyboardWidget->unsavedLayoutsExist())
+    if (m_pKeyboardWidget && !strNameList.empty())
     {
-        if (msgCenter().confirmSoftKeyboardClose())
+        if (msgCenter().confirmSoftKeyboardClose(strNameList))
             QMainWindowWithRestorableGeometryAndRetranslateUi::closeEvent(event);
         else
             event->ignore();
