@@ -1063,6 +1063,14 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  VBoxDD2_LIBS.darwin    += $(LIB_REM)
  VBoxDD2_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxDD2.dylib
  VBoxDD2_LDFLAGS.linux   = $(VBOX_GCC_NO_UNDEFINED)
+ if 0
+  VBoxDD2_SOURCES       += \
+  	EFI/DevEFI-binaries.asm
+  EFI/DevEFI-binaries.asm_ASINCS = $(PATH_STAGE)/$(INST_BIN)
+  EFI/DevEFI-binaries.asm_DEPS   = \
+  	$(PATH_STAGE)/$(INST_BIN)/VBoxEFI32.fd \
+  	$(PATH_STAGE)/$(INST_BIN)/VBoxEFI64.fd
+ endif
 
  $(call VBOX_SET_VER_INFO_DLL,VBoxDD2,VirtualBox VMM Devices and Drivers 2) # (last!)
 
