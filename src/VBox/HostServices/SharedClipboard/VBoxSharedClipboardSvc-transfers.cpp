@@ -1070,18 +1070,15 @@ static int shClSvcTransferGetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     return rc;
 }
 
-#if 0
 /**
  * Sets a transfer list header to HGCM service parameters.
  *
  * @returns VBox status code.
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
- * @param   pMsgCtx             Message context to use.
- * @param   pListHdr            Pointer to data to set to the HGCM parameters.
+ * @param   pListHdr            Pointer to list header to set.
  */
-static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
-                                     PVBOXSHCLMSGCTX pMsgCtx, PSHCLLISTHDR pListHdr)
+static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PSHCLLISTHDR pListHdr)
 {
     int rc;
 
@@ -1090,11 +1087,9 @@ static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
         /** @todo Set pvMetaFmt + cbMetaFmt. */
         /** @todo Calculate header checksum. */
 
-        HGCMSvcSetU64(&paParms[0], pMsgCtx->uContextID);
-        HGCMSvcSetU32(&paParms[1], pListHdr->fFeatures);
-        HGCMSvcSetU32(&paParms[2], 0 /* Features, will be returned on success */);
-        HGCMSvcSetU64(&paParms[3], pListHdr->cTotalObjects);
-        HGCMSvcSetU64(&paParms[4], pListHdr->cbTotalSize);
+        HGCMSvcSetU32(&paParms[3], pListHdr->fFeatures);
+        HGCMSvcSetU64(&paParms[4], pListHdr->cTotalObjects);
+        HGCMSvcSetU64(&paParms[5], pListHdr->cbTotalSize);
 
         rc = VINF_SUCCESS;
     }
@@ -1104,7 +1099,6 @@ static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif
 
 /**
  * Gets a transfer list entry from HGCM service parameters.
@@ -1151,29 +1145,27 @@ static int shClSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[
     return rc;
 }
 
-#if 0
 /**
- * Sets a transfer data  chunk to HGCM service parameters.
+ * Sets a Shared Clipboard list entry to HGCM service parameters.
  *
  * @returns VBox status code.
  * @param   cParms              Number of HGCM parameters supplied in \a paParms.
  * @param   paParms             Array of HGCM parameters.
- * @param   pMsgCtx             Message context to use.
- * @param   pListEntry          Pointer to data to set to the HGCM parameters.
+ * @param   pListEntry          Pointer list entry to set.
  */
 static int shClSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
-                                       PVBOXSHCLMSGCTX pMsgCtx, PSHCLLISTENTRY pListEntry)
+                                       PSHCLLISTENTRY pListEntry)
 {
     int rc;
 
+    /* Sanity. */
+    AssertReturn(ShClTransferListEntryIsValid(pListEntry), VERR_INVALID_PARAMETER);
+
     if (cParms == VBOX_SHCL_CPARMS_LIST_ENTRY)
     {
-        /** @todo Calculate chunk checksum. */
-
-        HGCMSvcSetU64(&paParms[0], pMsgCtx->uContextID);
-        HGCMSvcSetU32(&paParms[1], pListEntry->fInfo);
-        HGCMSvcSetU32(&paParms[2], pListEntry->cbInfo);
-        HGCMSvcSetPv (&paParms[3], pListEntry->pvInfo, pListEntry->cbInfo);
+        HGCMSvcSetPv (&paParms[3], pListEntry->pszName, pListEntry->cbName);
+        HGCMSvcSetU32(&paParms[4], pListEntry->cbInfo);
+        HGCMSvcSetPv (&paParms[5], pListEntry->pvInfo, pListEntry->cbInfo);
 
         rc = VINF_SUCCESS;
     }
@@ -1183,7 +1175,6 @@ static int shClSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-#endif
 
 /**
  * Gets a transfer object data chunk from HGCM service parameters.
@@ -1495,7 +1486,7 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
                 if (RT_SUCCESS(rc))
                 {
                     /* Return list handle. */
-                    HGCMSvcSetU32(&paParms[1], hList);
+                    HGCMSvcSetU64(&paParms[6], hList);
                 }
             }
             break;
@@ -1526,8 +1517,8 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             {
                 SHCLLISTHDR hdrList;
                 rc = ShClTransferListGetHeader(pTransfer, hList, &hdrList);
-                /*if (RT_SUCCESS(rc))
-                    rc = shClSvcTransferSetListHdr(cParms, paParms, &hdrList);*/
+                if (RT_SUCCESS(rc))
+                    rc = shClSvcTransferSetListHdr(cParms, paParms, &hdrList);
             }
             break;
         }
@@ -1570,7 +1561,13 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTENTRY entryList;
-                rc = ShClTransferListRead(pTransfer, hList, &entryList);
+                rc = ShClTransferListEntryInit(&entryList);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = ShClTransferListRead(pTransfer, hList, &entryList);
+                    if (RT_SUCCESS(rc))
+                        rc = shClSvcTransferSetListEntry(cParms, paParms, &entryList);
+                }
             }
             break;
         }

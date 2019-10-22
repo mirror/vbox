@@ -264,32 +264,46 @@ int SharedClipboardWinDataObject::readDir(PSHCLTRANSFER pTransfer, const Utf8Str
                     for (uint64_t o = 0; o < hdrList.cTotalObjects; o++)
                     {
                         SHCLLISTENTRY entryList;
-                        rc = ShClTransferListRead(pTransfer, hList, &entryList);
+                        rc = ShClTransferListEntryInit(&entryList);
                         if (RT_SUCCESS(rc))
                         {
-                            PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
-                            Assert(entryList.cbInfo == sizeof(SHCLFSOBJINFO));
-
-                            Utf8Str strPath = strDir + Utf8Str("\\") + Utf8Str(entryList.pszName);
-
-                            LogFlowFunc(("\t%s (%RU64 bytes) -> %s\n",
-                                         entryList.pszName, pFsObjInfo->cbObject, strPath.c_str()));
-
-                            if (RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode))
+                            rc = ShClTransferListRead(pTransfer, hList, &entryList);
+                            if (RT_SUCCESS(rc))
                             {
-                                /* Note: Directories are *not* required to be part of m_lstEntries, as we only
-                                 *       count files to transfer there. */
+                                if (ShClTransferListEntryIsValid(&entryList))
+                                {
+                                    PSHCLFSOBJINFO pFsObjInfo = (PSHCLFSOBJINFO)entryList.pvInfo;
+                                    Assert(entryList.cbInfo == sizeof(SHCLFSOBJINFO));
 
-                                rc = readDir(pTransfer, strPath.c_str());
+                                    Utf8Str strPath = strDir + Utf8Str("\\") + Utf8Str(entryList.pszName);
+
+                                    LogFlowFunc(("\t%s (%RU64 bytes) -> %s\n",
+                                                 entryList.pszName, pFsObjInfo->cbObject, strPath.c_str()));
+
+                                    if (RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode))
+                                    {
+                                        FSOBJENTRY objEntry = { strPath.c_str(), *pFsObjInfo };
+
+                                        m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
+
+                                        rc = readDir(pTransfer, strPath.c_str());
+                                    }
+                                    else if (RTFS_IS_FILE(pFsObjInfo->Attr.fMode))
+                                    {
+                                        FSOBJENTRY objEntry = { strPath.c_str(), *pFsObjInfo };
+
+                                        m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
+                                    }
+                                    else
+                                        rc = VERR_NOT_SUPPORTED;
+
+                                    /** @todo Handle symlinks. */
+                                }
+                                else
+                                    rc = VERR_INVALID_PARAMETER;
                             }
-                            else if (RTFS_IS_FILE(pFsObjInfo->Attr.fMode))
-                            {
-                                FSOBJENTRY objEntry = { strPath.c_str(), *pFsObjInfo };
 
-                                m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
-                            }
-
-                            /** @todo Handle symlinks. */
+                            ShClTransferListEntryDestroy(&entryList);
                         }
 
                         if (   RT_FAILURE(rc)
@@ -358,8 +372,9 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
                 if (RTFS_IS_DIRECTORY(pFsObjInfo->Attr.fMode))
                 {
-                    /* Note: Directories are *not* required to be part of m_lstEntries, as we only
-                     *       count files to transfer there. */
+                    FSOBJENTRY objEntry = { pRootEntry->pszName, *pFsObjInfo };
+
+                    pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
 
                     rc = pThis->readDir(pTransfer, pRootEntry->pszName);
                 }
@@ -369,6 +384,8 @@ DECLCALLBACK(int) SharedClipboardWinDataObject::readThread(RTTHREAD ThreadSelf, 
 
                     pThis->m_lstEntries.push_back(objEntry); /** @todo Can this throw? */
                 }
+                else
+                    rc = VERR_NOT_SUPPORTED;
 
                 if (ASMAtomicReadBool(&pTransfer->Thread.fStop))
                 {

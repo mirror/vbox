@@ -1031,7 +1031,7 @@ VBGLR3DECL(int) VbglR3ClipboardListCloseSend(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAN
     RT_ZERO(Msg);
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
-                       VBOX_SHCL_HOST_MSG_TRANSFER_LIST_CLOSE, VBOX_SHCL_CPARMS_LIST_CLOSE);
+                       VBOX_SHCL_GUEST_FN_LIST_CLOSE, VBOX_SHCL_CPARMS_LIST_CLOSE);
 
     Msg.uContext.SetUInt64(pCtx->uContextID);
     Msg.uHandle.SetUInt64(hList);
@@ -1160,7 +1160,7 @@ VBGLR3DECL(int) VbglR3ClipboardListHdrWrite(PVBGLR3SHCLCMDCTX pCtx, SHCLLISTHAND
 }
 
 /**
- * Sends a reuqest to read a list entry from the host.
+ * Sends a request to read a list entry from the host.
  *
  * @returns VBox status code.
  * @param   pCtx                Shared Clipboard command context to use for the connection.

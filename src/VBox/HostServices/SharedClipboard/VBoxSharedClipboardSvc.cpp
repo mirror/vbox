@@ -111,7 +111,8 @@
  *
  * - Support for VRDE (VRDP) is not implemented yet (see #9498).
  * - Unicode support on Windows hosts / guests is not enabled (yet).
- * - Symbolic links are not yet handled.
+ * - Symbolic links / Windows junctions are not allowed.
+ * - Windows alternate data streams (ADS) are not allowed.
  * - No support for ACLs yet.
  * - No (maybe never) support for NT4.
  *

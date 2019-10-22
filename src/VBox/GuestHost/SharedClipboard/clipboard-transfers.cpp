@@ -540,6 +540,8 @@ PSHCLLISTENTRY ShClTransferListEntryDup(PSHCLLISTENTRY pListEntry)
  */
 int ShClTransferListEntryInit(PSHCLLISTENTRY pListEntry)
 {
+    AssertPtrReturn(pListEntry, VERR_INVALID_POINTER);
+
     RT_BZERO(pListEntry, sizeof(SHCLLISTENTRY));
 
     pListEntry->pszName = RTStrAlloc(SHCLLISTENTRY_MAX_NAME);
@@ -587,18 +589,30 @@ void ShClTransferListEntryDestroy(PSHCLLISTENTRY pListEntry)
 }
 
 /**
- * Returns whether a given clipboard data chunk is valid or not.
+ * Returns whether a given clipboard list entry is valid or not.
  *
  * @returns \c true if valid, \c false if not.
- * @param   pListEntry          Clipboard data chunk to validate.
+ * @param   pListEntry          Clipboard list entry to validate.
  */
 bool ShClTransferListEntryIsValid(PSHCLLISTENTRY pListEntry)
 {
-    RT_NOREF(pListEntry);
+    AssertPtrReturn(pListEntry, false);
 
-    /** @todo Verify checksum. */
+    if (   !pListEntry->pszName
+        || !pListEntry->cbName
+        || strlen(pListEntry->pszName) == 0
+        || strlen(pListEntry->pszName) > pListEntry->cbName /* Includes zero termination */ - 1)
+    {
+        return false;
+    }
 
-    return true; /** @todo Implement this. */
+    if (pListEntry->cbInfo) /* cbInfo / pvInfo is optional. */
+    {
+        if (!pListEntry->pvInfo)
+            return false;
+    }
+
+    return true;
 }
 
 /**
@@ -1204,9 +1218,6 @@ int ShClTransferCreate(PSHCLTRANSFER *ppTransfer)
 
     pTransfer->pszPathRootAbs    = NULL;
 
-    pTransfer->uListHandleNext   = 1;
-    pTransfer->uObjHandleNext    = 1;
-
     pTransfer->uTimeoutMs     = 30 * 1000; /* 30s timeout by default. */
     pTransfer->cbMaxChunkSize = _64K; /** @todo Make this configurable. */
 
@@ -1259,36 +1270,16 @@ int ShClTransferDestroy(PSHCLTRANSFER pTransfer)
     if (RT_FAILURE(rc))
         return rc;
 
-    RTStrFree(pTransfer->pszPathRootAbs);
+    ShClTransferReset(pTransfer);
 
     ShClEventSourceDestroy(&pTransfer->Events);
-
-    PSHCLLISTHANDLEINFO pItList, pItListNext;
-    RTListForEachSafe(&pTransfer->lstList, pItList, pItListNext, SHCLLISTHANDLEINFO, Node)
-    {
-        ShClTransferListHandleInfoDestroy(pItList);
-
-        RTListNodeRemove(&pItList->Node);
-
-        RTMemFree(pItList);
-    }
-
-    PSHCLOBJHANDLEINFO pItObj, pItObjNext;
-    RTListForEachSafe(&pTransfer->lstObj, pItObj, pItObjNext, SHCLOBJHANDLEINFO, Node)
-    {
-        ShClTransferObjHandleInfoDestroy(pItObj);
-
-        RTListNodeRemove(&pItObj->Node);
-
-        RTMemFree(pItObj);
-    }
 
     LogFlowFuncLeave();
     return VINF_SUCCESS;
 }
 
 /**
- * Initializes a shared Clipboard transfer object.
+ * Initializes a Shared Clipboard transfer object.
  *
  * @returns VBox status code.
  * @param   pTransfer           Transfer to initialize.
@@ -1311,8 +1302,13 @@ int ShClTransferInit(PSHCLTRANSFER pTransfer,
     {
         pTransfer->State.enmStatus = SHCLTRANSFERSTATUS_INITIALIZED; /* Now we're ready to run. */
 
+        pTransfer->cListHandles    = 0;
         pTransfer->cMaxListHandles = _4K; /** @todo Make this dynamic. */
+        pTransfer->uListHandleNext = 1;
+
+        pTransfer->cObjHandles     = 0;
         pTransfer->cMaxObjHandles  = _4K; /** @todo Ditto. */
+        pTransfer->uObjHandleNext  = 1;
 
         if (pTransfer->Callbacks.pfnTransferInitialize)
         {
@@ -1966,10 +1962,15 @@ int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
                                 rc = RTStrCopy(pEntry->pszName, pEntry->cbName, pDirEntry->szName);
                                 if (RT_SUCCESS(rc))
                                 {
+                                    pEntry->cbName = (uint32_t)strlen(pEntry->pszName) + 1; /* Include termination. */
+
                                     AssertPtr(pEntry->pvInfo);
                                     Assert   (pEntry->cbInfo == sizeof(SHCLFSOBJINFO));
 
                                     ShClFsObjFromIPRT(PSHCLFSOBJINFO(pEntry->pvInfo), &pDirEntry->Info);
+
+                                    LogFlowFunc(("Entry pszName=%s, pvInfo=%p, cbInfo=%RU32\n",
+                                                 pEntry->pszName, pEntry->pvInfo, pEntry->cbInfo));
                                 }
                             }
 
@@ -2116,7 +2117,7 @@ int ShClTransferSetInterface(PSHCLTRANSFER pTransfer,
 }
 
 /**
- * Clears (resets) the root list of a shared Clipboard transfer.
+ * Clears (resets) the root list of a Shared Clipboard transfer.
  *
  * @param   pTransfer           Transfer to clear transfer root list for.
  */
@@ -2145,7 +2146,7 @@ static void shClTransferListRootsClear(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Resets a shared Clipboard transfer.
+ * Resets a Shared Clipboard transfer.
  *
  * @param   pTransfer           Clipboard transfer to reset.
  */
@@ -2156,6 +2157,26 @@ void ShClTransferReset(PSHCLTRANSFER pTransfer)
     LogFlowFuncEnter();
 
     shClTransferListRootsClear(pTransfer);
+
+    PSHCLLISTHANDLEINFO pItList, pItListNext;
+    RTListForEachSafe(&pTransfer->lstList, pItList, pItListNext, SHCLLISTHANDLEINFO, Node)
+    {
+        ShClTransferListHandleInfoDestroy(pItList);
+
+        RTListNodeRemove(&pItList->Node);
+
+        RTMemFree(pItList);
+    }
+
+    PSHCLOBJHANDLEINFO pItObj, pItObjNext;
+    RTListForEachSafe(&pTransfer->lstObj, pItObj, pItObjNext, SHCLOBJHANDLEINFO, Node)
+    {
+        ShClTransferObjHandleInfoDestroy(pItObj);
+
+        RTListNodeRemove(&pItObj->Node);
+
+        RTMemFree(pItObj);
+    }
 }
 
 /**
@@ -2269,7 +2290,7 @@ int ShClTransferRootsEntry(PSHCLTRANSFER pTransfer,
 }
 
 /**
- * Returns the root entries of a shared Clipboard transfer.
+ * Returns the root entries of a Shared Clipboard transfer.
  *
  * @returns VBox status code.
  * @param   pTransfer           Clipboard transfer to return root entries for.
@@ -2695,7 +2716,7 @@ int ShClTransferCtxInit(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Destroys a shared Clipboard transfer context struct.
+ * Destroys a Shared Clipboard transfer context struct.
  *
  * @param   pTransferCtx                Transfer context to destroy.
  */
@@ -2724,7 +2745,7 @@ void ShClTransferCtxDestroy(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Resets a shared Clipboard transfer.
+ * Resets a Shared Clipboard transfer.
  *
  * @param   pTransferCtx                Transfer context to reset.
  */
@@ -2795,7 +2816,7 @@ uint32_t ShClTransferCtxGetTotalTransfers(PSHCLTRANSFERCTX pTransferCtx)
 }
 
 /**
- * Registers a shared Clipboard transfer with a transfer context, i.e. allocates a transfer ID.
+ * Registers a Shared Clipboard transfer with a transfer context, i.e. allocates a transfer ID.
  *
  * @return  VBox status code.
  * @retval  VERR_SHCLPB_MAX_TRANSFERS_REACHED if the maximum of concurrent transfers
@@ -2848,7 +2869,7 @@ int ShClTransferCtxTransferRegister(PSHCLTRANSFERCTX pTransferCtx, PSHCLTRANSFER
 }
 
 /**
- * Registers a shared Clipboard transfer with a transfer contextby specifying an ID for the transfer.
+ * Registers a Shared Clipboard transfer with a transfer contextby specifying an ID for the transfer.
  *
  * @return  VBox status code.
  * @retval  VERR_ALREADY_EXISTS if a transfer with the given ID already exists.
