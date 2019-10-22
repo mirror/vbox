@@ -426,14 +426,23 @@ void shclSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, u
  * @param   pMsg        Message to set return parameters to.
  * @param   paDstParms  The peek parameter vector.
  * @param   cDstParms   The number of peek parameters (at least two).
+ * @param   pfRemove    Returns whether the message can be removed from the queue or not.
+ *                      This is needed for certain messages which need to stay around for more than one (guest) call.
  */
-int shclSvcMsgSetGetHostMsgOldReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
+int shclSvcMsgSetGetHostMsgOldReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms,
+                                     bool *pfRemove)
 {
     AssertPtrReturn(pMsg,           VERR_INVALID_POINTER);
     AssertPtrReturn(paDstParms,     VERR_INVALID_POINTER);
     AssertReturn   (cDstParms >= 2, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pfRemove,       VERR_INVALID_POINTER);
 
     int rc = VINF_SUCCESS;
+
+    bool fRemove = true;
+
+    LogFlowFunc(("uMsg=%RU32 (%s), cParms=%RU32\n",
+                 pMsg->uMsg, ShClHostMsgToStr(pMsg->uMsg), pMsg->cParms));
 
     switch (pMsg->uMsg)
     {
@@ -448,10 +457,32 @@ int shclSvcMsgSetGetHostMsgOldReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDst
         {
             HGCMSvcSetU32(&paDstParms[0], VBOX_SHCL_HOST_MSG_READ_DATA);
             AssertBreakStmt(pMsg->cParms >= 2, rc = VERR_INVALID_PARAMETER); /* Paranoia. */
-            uint32_t uFmt;
-            rc = HGCMSvcGetU32(&pMsg->paParms[1] /* uFormat */, &uFmt);
+            uint32_t uSrcFmt = VBOX_SHCL_FMT_NONE;
+            uint32_t uDstFmt = VBOX_SHCL_FMT_NONE;
+            rc = HGCMSvcGetU32(&pMsg->paParms[1] /* uFormat */, &uSrcFmt);
             if (RT_SUCCESS(rc))
-                HGCMSvcSetU32(&paDstParms[1], uFmt);
+            {
+                if (uSrcFmt & VBOX_SHCL_FMT_UNICODETEXT)
+                    uDstFmt = VBOX_SHCL_FMT_UNICODETEXT;
+                else if (uSrcFmt & VBOX_SHCL_FMT_BITMAP)
+                    uDstFmt = VBOX_SHCL_FMT_BITMAP;
+                else if (uSrcFmt & VBOX_SHCL_FMT_HTML)
+                    uDstFmt = VBOX_SHCL_FMT_HTML;
+                else
+                    AssertStmt(uSrcFmt == VBOX_SHCL_FMT_NONE, uSrcFmt = VBOX_SHCL_FMT_NONE);
+
+                /* Remove format we're going to return from the queued message. */
+                uSrcFmt &= ~uDstFmt;
+                HGCMSvcSetU32(&pMsg->paParms[1], uSrcFmt);
+
+                /* Only report back one format at a time. */
+                HGCMSvcSetU32(&paDstParms[1], uDstFmt);
+
+                /* If no more formats are left, the message can be removed finally. */
+                fRemove = uSrcFmt == VBOX_SHCL_FMT_NONE;
+
+                LogFlowFunc(("uSrcFmt=0x%x, fRemove=%RTbool\n", uSrcFmt, fRemove));
+            }
             break;
         }
 
@@ -471,6 +502,8 @@ int shclSvcMsgSetGetHostMsgOldReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDst
             rc = VERR_NOT_SUPPORTED;
             break;
     }
+
+    *pfRemove = fRemove;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -779,12 +812,14 @@ int shclSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cPa
                          pClient->State.uClientID, pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg),
                          pFirstMsg->cParms));
 
-            rc = shclSvcMsgSetGetHostMsgOldReturn(pFirstMsg, paParms, cParms);
+            bool fRemove;
+            rc = shclSvcMsgSetGetHostMsgOldReturn(pFirstMsg, paParms, cParms, &fRemove);
             if (RT_SUCCESS(rc))
             {
                 AssertPtr(g_pHelpers);
                 rc = g_pHelpers->pfnCallComplete(hCall, rc);
-                if (rc != VERR_CANCELLED)
+                if (   rc != VERR_CANCELLED
+                    && fRemove)
                 {
                     pClient->queueMsg.removeFirst();
                     shclSvcMsgFree(pFirstMsg);
@@ -974,13 +1009,18 @@ int shclSvcClientWakeup(PSHCLCLIENT pClient)
                 }
                 else if (pClient->Pending.uType == VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD) /* Legacy */
                 {
-                    rc = shclSvcMsgSetGetHostMsgOldReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms);
+                    bool fRemove;
+                    rc = shclSvcMsgSetGetHostMsgOldReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms,
+                                                          &fRemove);
                     if (RT_SUCCESS(rc))
                     {
-                        /* The old (legacy) protocol gets the message right when returning from peeking, so
-                         * remove the actual message from our queue right now. */
-                        pClient->queueMsg.removeFirst();
-                        shclSvcMsgFree(pFirstMsg);
+                        if (fRemove)
+                        {
+                            /* The old (legacy) protocol gets the message right when returning from peeking, so
+                             * remove the actual message from our queue right now. */
+                            pClient->queueMsg.removeFirst();
+                            shclSvcMsgFree(pFirstMsg);
+                        }
 
                         fDonePending = true;
                     }
