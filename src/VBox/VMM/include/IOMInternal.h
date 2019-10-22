@@ -852,6 +852,7 @@ DECLCALLBACK(void)  iomR3IoPortInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *psz
 void                iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry);
 DECLCALLBACK(void)  iomR3MmioInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 void                iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry);
+VBOXSTRICTRC        iomR3MmioCommitWorker(PVM pVM, PVMCPU pVCpu, PIOMMMIOENTRYR3 pRegEntry, RTGCPHYS offRegion); /* IOMAllMmioNew.cpp */
 #endif /* IN_RING3 */
 #ifdef IN_RING0
 void                iomR0IoPortCleanupVM(PGVM pGVM);
