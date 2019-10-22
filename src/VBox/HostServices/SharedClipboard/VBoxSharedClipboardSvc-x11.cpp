@@ -73,7 +73,7 @@ DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32F
 
     formatData.uFormats = u32Formats;
 
-    int rc2 = shclSvcFormatsReport(pCtx->pClient, &formatData);
+    int rc2 = shClSvcFormatsReport(pCtx->pClient, &formatData);
     AssertRC(rc2);
 }
 
@@ -141,7 +141,7 @@ int ShClSvcImplSync(PSHCLCLIENT pClient)
 
     formatData.uFormats = VBOX_SHCL_FMT_NONE;
 
-    return shclSvcFormatsReport(pClient, &formatData);
+    return shClSvcFormatsReport(pClient, &formatData);
 }
 
 /**
@@ -267,7 +267,7 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient,
     LogFlowFunc(("pClient=%p, pv=%p, cb=%RU32, uFormat=%02X\n",
                  pClient, pData->pvData, pData->cbData, pData->uFormat));
 
-    int rc = shclSvcDataReadSignal(pClient, pCmdCtx, pData);
+    int rc = shClSvcDataReadSignal(pClient, pCmdCtx, pData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -330,7 +330,7 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32F
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
     SHCLEVENTID uEvent;
-    int rc = shclSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
+    int rc = shClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;

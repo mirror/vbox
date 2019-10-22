@@ -901,6 +901,7 @@ typedef struct _SHCLERRORDATA
     int32_t rc;
 } SHCLERRORDATA, *PSHCLERRORDATA;
 
+uint32_t ShClSvcGetMode(void);
 bool ShClSvcGetHeadless(void);
 bool ShClSvcLock(void);
 void ShClSvcUnlock(void);

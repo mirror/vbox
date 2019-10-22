@@ -267,26 +267,27 @@ ClipboardClientQueue g_listClientsDeferred;
 static uint64_t const g_fHostFeatures0 = VBOX_SHCL_HF_NONE;
 
 
-uint32_t shclSvcGetMode(void)
+/**
+ * Returns the current Shared Clipboard service mode.
+ *
+ * @returns Current Shared Clipboard service mode.
+ */
+uint32_t ShClSvcGetMode(void)
 {
     return g_uMode;
 }
 
-#ifdef UNIT_TEST
-/** Testing interface, getter for clipboard mode */
-uint32_t TestClipSvcGetMode(void)
-{
-    return shclSvcGetMode();
-}
-#endif
-
-/** Getter for headless setting. Also needed by testcase. */
+/**
+ * Getter for headless setting. Also needed by testcase.
+ *
+ * @returns Whether service currently running in headless mode or not.
+ */
 bool ShClSvcGetHeadless(void)
 {
     return g_fHeadless;
 }
 
-static int shclSvcModeSet(uint32_t uMode)
+static int shClSvcModeSet(uint32_t uMode)
 {
     int rc = VERR_NOT_SUPPORTED;
 
@@ -1058,7 +1059,7 @@ int shclSvcClientWakeup(PSHCLCLIENT pClient)
  * @param   pDataReq            Data request to send to the guest.
  * @param   puEvent             Event ID for waiting for new data. Optional.
  */
-int shclSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
+int shClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
                            PSHCLEVENTID puEvent)
 {
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
@@ -1102,7 +1103,7 @@ int shclSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
     return rc;
 }
 
-int shclSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int shClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                           PSHCLDATABLOCK pData)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
@@ -1136,7 +1137,7 @@ int shclSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     return rc;
 }
 
-int shclSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
+int shClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 {
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
     AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
@@ -1161,7 +1162,7 @@ int shclSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
              * a transfer on the guest side. */
             if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST)
             {
-                rc = shclSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
+                rc = shClSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
                                           NULL /* pTransfer */);
                 if (RT_FAILURE(rc))
                     LogRel(("Shared Clipboard: Initializing host write transfer failed with %Rrc\n", rc));
@@ -1187,8 +1188,8 @@ int shclSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
 {
     LogFlowFuncEnter();
 
-    if (   shclSvcGetMode() != VBOX_SHCL_MODE_GUEST_TO_HOST
-        && shclSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
+    if (   ShClSvcGetMode() != VBOX_SHCL_MODE_GUEST_TO_HOST
+        && ShClSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
     {
         return VERR_NOT_SUPPORTED;
     }
@@ -1291,7 +1292,7 @@ static int shclSvcGetError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
     return rc;
 }
 
-int shclSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource)
+int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource)
 {
     if (!pClient) /* If no client connected (anymore), bail out. */
         return VINF_SUCCESS;
@@ -1317,7 +1318,7 @@ static int svcInit(void)
 
     if (RT_SUCCESS(rc))
     {
-        shclSvcModeSet(VBOX_SHCL_MODE_OFF);
+        shClSvcModeSet(VBOX_SHCL_MODE_OFF);
 
         rc = ShClSvcImplInit();
 
@@ -1463,7 +1464,7 @@ static DECLCALLBACK(void) svcCall(void *,
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else if (shclSvcGetMode() == VBOX_SHCL_MODE_OFF)
+            else if (ShClSvcGetMode() == VBOX_SHCL_MODE_OFF)
             {
                 rc = VERR_ACCESS_DENIED;
             }
@@ -1557,14 +1558,14 @@ static DECLCALLBACK(void) svcCall(void *,
 
             if (RT_SUCCESS(rc))
             {
-                if (   shclSvcGetMode() != VBOX_SHCL_MODE_GUEST_TO_HOST
-                    && shclSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
+                if (   ShClSvcGetMode() != VBOX_SHCL_MODE_GUEST_TO_HOST
+                    && ShClSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
                 {
                     rc = VERR_ACCESS_DENIED;
                 }
                 else if (uFormats != VBOX_SHCL_FMT_NONE) /* Only announce formats if we actually *have* formats to announce! */
                 {
-                    rc = shclSvcSetSource(pClient, SHCLSOURCE_REMOTE);
+                    rc = shClSvcSetSource(pClient, SHCLSOURCE_REMOTE);
                     if (RT_SUCCESS(rc))
                     {
                         if (g_ExtState.pfnExtension)
@@ -1610,8 +1611,8 @@ static DECLCALLBACK(void) svcCall(void *,
             }
             else
             {
-                if (   shclSvcGetMode() != VBOX_SHCL_MODE_HOST_TO_GUEST
-                    && shclSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
+                if (   ShClSvcGetMode() != VBOX_SHCL_MODE_HOST_TO_GUEST
+                    && ShClSvcGetMode() != VBOX_SHCL_MODE_BIDIRECTIONAL)
                 {
                     rc = VERR_ACCESS_DENIED;
                     break;
@@ -1657,7 +1658,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                 formatData.uFormats = g_ExtState.uDelayedFormats;
                                 Assert(formatData.uFormats != VBOX_SHCL_FMT_NONE); /* There better is *any* format here now. */
 
-                                int rc2 = shclSvcFormatsReport(pClient, &formatData);
+                                int rc2 = shClSvcFormatsReport(pClient, &formatData);
                                 AssertRC(rc2);
 
                                 g_ExtState.fDelayedAnnouncement = false;
@@ -1736,7 +1737,7 @@ static DECLCALLBACK(void) svcCall(void *,
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             if (g_fTransferMode & VBOX_SHCL_TRANSFER_MODE_ENABLED)
             {
-                rc = shclSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
+                rc = shClSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
             }
             else
                 rc = VERR_ACCESS_DENIED;
@@ -1834,7 +1835,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
 
                 rc = HGCMSvcGetU32(&paParms[0], &u32Mode);
                 if (RT_SUCCESS(rc))
-                    rc = shclSvcModeSet(u32Mode);
+                    rc = shClSvcModeSet(u32Mode);
             }
 
             break;
@@ -1852,7 +1853,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
                 uint32_t fTransferMode;
                 rc = HGCMSvcGetU32(&paParms[0], &fTransferMode);
                 if (RT_SUCCESS(rc))
-                    rc = shclSvcTransferModeSet(fTransferMode);
+                    rc = shClSvcTransferModeSet(fTransferMode);
             }
             break;
         }
@@ -1879,7 +1880,7 @@ static DECLCALLBACK(int) svcHostCall(void *,
         default:
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = shclSvcTransferHostHandler(u32Function, cParms, paParms);
+            rc = shClSvcTransferHostHandler(u32Function, cParms, paParms);
 #else
             rc = VERR_NOT_IMPLEMENTED;
 #endif
@@ -2124,7 +2125,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
 
                     formatData.uFormats = u32Format;
 
-                    rc = shclSvcFormatsReport(pClient, &formatData);
+                    rc = shClSvcFormatsReport(pClient, &formatData);
                 }
 
                 break;
@@ -2139,7 +2140,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
                 dataReq.uFmt   = u32Format;
                 dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
-                rc = shclSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
+                rc = shClSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
                 break;
             }
 

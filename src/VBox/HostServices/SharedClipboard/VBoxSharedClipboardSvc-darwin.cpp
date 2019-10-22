@@ -75,7 +75,7 @@ static int vboxClipboardChanged(SHCLCONTEXT *pCtx)
 
         formatData.uFormats = fFormats;
 
-        rc = shclSvcFormatsReport(pCtx->pClient, &formatData);
+        rc = shClSvcFormatsReport(pCtx->pClient, &formatData);
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -222,7 +222,7 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient,
     dataReq.uFmt   = pFormats->uFormats;
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
-    return shclSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
+    return shClSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
 }
 
 int ShClSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,

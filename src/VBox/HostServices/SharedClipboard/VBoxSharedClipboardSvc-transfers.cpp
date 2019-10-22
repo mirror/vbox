@@ -49,9 +49,9 @@ extern ClipboardClientQueue g_listClientsDeferred;
 /*********************************************************************************************************************************
 *   Prototypes                                                                                                                   *
 *********************************************************************************************************************************/
-static int shclSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                       PSHCLMSGCTX pMsgCtx, PSHCLLISTOPENPARMS pOpenParms);
-static int shclSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                        PSHCLMSGCTX pMsgCtx, SHCLLISTHANDLE hList);
 
 
@@ -76,7 +76,7 @@ void shclSvcClientTransfersReset(PSHCLCLIENT pClient)
     {
         PSHCLTRANSFER pTransfer = ShClTransferCtxGetTransfer(&pClient->TransferCtx, i);
         if (pTransfer)
-            shclSvcTransferAreaDetach(&pClient->State, pTransfer);
+            shClSvcTransferAreaDetach(&pClient->State, pTransfer);
     }
 
     ShClTransferCtxDestroy(&pClient->TransferCtx);
@@ -87,7 +87,7 @@ void shclSvcClientTransfersReset(PSHCLCLIENT pClient)
 *   Provider implementation                                                                                                      *
 *********************************************************************************************************************************/
 
-DECLCALLBACK(int) shclSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx)
+DECLCALLBACK(int) shClSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx)
 {
     LogFlowFuncEnter();
 
@@ -97,20 +97,20 @@ DECLCALLBACK(int) shclSvcTransferIfaceOpen(PSHCLPROVIDERCTX pCtx)
     return VINF_SUCCESS;
 }
 
-DECLCALLBACK(int) shclSvcTransferIfaceClose(PSHCLPROVIDERCTX pCtx)
+DECLCALLBACK(int) shClSvcTransferIfaceClose(PSHCLPROVIDERCTX pCtx)
 {
     LogFlowFuncEnter();
 
     PSHCLCLIENT pClient = (PSHCLCLIENT)pCtx->pvUser;
     AssertPtr(pClient);
 
-    int rc = shclSvcTransferStop(pClient, pCtx->pTransfer);
+    int rc = shClSvcTransferStop(pClient, pCtx->pTransfer);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
-DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
+DECLCALLBACK(int) shClSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     LogFlowFuncEnter();
 
@@ -228,7 +228,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTL
     return rc;
 }
 
-DECLCALLBACK(int) shclSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
+DECLCALLBACK(int) shClSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
                                                PSHCLLISTOPENPARMS pOpenParms, PSHCLLISTHANDLE phList)
 {
     LogFlowFuncEnter();
@@ -247,7 +247,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
         pMsg->Ctx.uContextID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                         uEvent);
 
-        rc = shclSvcTransferSetListOpen(pMsg->cParms, pMsg->paParms, &pMsg->Ctx, pOpenParms);
+        rc = shClSvcTransferSetListOpen(pMsg->cParms, pMsg->paParms, &pMsg->Ctx, pOpenParms);
         if (RT_SUCCESS(rc))
         {
             rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
@@ -289,7 +289,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx,
     return rc;
 }
 
-DECLCALLBACK(int) shclSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
+DECLCALLBACK(int) shClSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     LogFlowFuncEnter();
 
@@ -307,7 +307,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTH
         pMsg->Ctx.uContextID = VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID, pCtx->pTransfer->State.uID,
                                                         uEvent);
 
-        rc = shclSvcTransferSetListClose(pMsg->cParms, pMsg->paParms, &pMsg->Ctx, hList);
+        rc = shClSvcTransferSetListClose(pMsg->cParms, pMsg->paParms, &pMsg->Ctx, hList);
         if (RT_SUCCESS(rc))
         {
             rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
@@ -336,7 +336,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTH
     return rc;
 }
 
-DECLCALLBACK(int) shclSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
+DECLCALLBACK(int) shClSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
                                                   SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
     LogFlowFuncEnter();
@@ -387,7 +387,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
     return rc;
 }
 
-DECLCALLBACK(int) shclSvcTransferIfaceListHdrWrite(PSHCLPROVIDERCTX pCtx,
+DECLCALLBACK(int) shClSvcTransferIfaceListHdrWrite(PSHCLPROVIDERCTX pCtx,
                                                    SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
     RT_NOREF(pCtx, hList, pListHdr);
@@ -397,7 +397,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListHdrWrite(PSHCLPROVIDERCTX pCtx,
     return VERR_NOT_IMPLEMENTED;
 }
 
-DECLCALLBACK(int) shclSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
+DECLCALLBACK(int) shClSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
                                                     SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
 {
     LogFlowFuncEnter();
@@ -447,7 +447,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
     return rc;
 }
 
-DECLCALLBACK(int) shclSvcTransferIfaceListEntryWrite(PSHCLPROVIDERCTX pCtx,
+DECLCALLBACK(int) shClSvcTransferIfaceListEntryWrite(PSHCLPROVIDERCTX pCtx,
                                                      SHCLLISTHANDLE hList, PSHCLLISTENTRY pListEntry)
 {
     RT_NOREF(pCtx, hList, pListEntry);
@@ -457,7 +457,7 @@ DECLCALLBACK(int) shclSvcTransferIfaceListEntryWrite(PSHCLPROVIDERCTX pCtx,
     return VERR_NOT_IMPLEMENTED;
 }
 
-int shclSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
+int shClSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS pCreateParms,
                                 PSHCLOBJHANDLE phObj)
 {
     LogFlowFuncEnter();
@@ -520,7 +520,7 @@ int shclSvcTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx, PSHCLOBJOPENCREATEPARMS p
     return rc;
 }
 
-int shclSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
+int shClSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
 
@@ -575,7 +575,7 @@ int shclSvcTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
     return rc;
 }
 
-int shclSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+int shClSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                 void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbRead)
 {
     LogFlowFuncEnter();
@@ -634,7 +634,7 @@ int shclSvcTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
     return rc;
 }
 
-int shclSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
+int shClSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
                                  void *pvData, uint32_t cbData, uint32_t fFlags, uint32_t *pcbWritten)
 {
     LogFlowFuncEnter();
@@ -700,7 +700,7 @@ int shclSvcTransferIfaceObjWrite(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj,
  * @param   uMode               Service mode to check allowance for.
  * @param   uMsg                HGCM message to check allowance for.
  */
-bool shclSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
+bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
 {
     const bool fHostToGuest =    uMode == VBOX_SHCL_MODE_HOST_TO_GUEST
                               || uMode == VBOX_SHCL_MODE_BIDIRECTIONAL;
@@ -780,7 +780,7 @@ bool shclSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg)
  * @param   paParms             Array of HGCM parameters.
  * @param   pReply              Where to store the reply.
  */
-static int shclSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                    PSHCLREPLY pReply)
 {
     int rc;
@@ -873,7 +873,7 @@ static int shclSvcTransferGetReply(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
  * @param   paParms             Array of HGCM parameters.
  * @param   pRootLstHdr         Where to store the transfer root list header on success.
  */
-static int shclSvcTransferGetRootListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetRootListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                          PSHCLROOTLISTHDR pRootLstHdr)
 {
     int rc;
@@ -899,7 +899,7 @@ static int shclSvcTransferGetRootListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParm
  * @param   paParms             Array of HGCM parameters.
  * @param   pListEntry          Where to store the root list entry.
  */
-static int shclSvcTransferGetRootListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetRootListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                            PSHCLROOTLISTENTRY pListEntry)
 {
     int rc;
@@ -936,7 +936,7 @@ static int shclSvcTransferGetRootListEntry(uint32_t cParms, VBOXHGCMSVCPARM paPa
  * @param   paParms             Array of HGCM parameters.
  * @param   pOpenParms          Where to store the open parameters of the request.
  */
-static int shclSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                       PSHCLLISTOPENPARMS pOpenParms)
 {
     int rc;
@@ -980,7 +980,7 @@ static int shclSvcTransferGetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[]
  * @param   pMsgCtx             Message context to use.
  * @param   pOpenParms          List open parameters to set.
  */
-static int shclSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                       PSHCLMSGCTX pMsgCtx, PSHCLLISTOPENPARMS pOpenParms)
 {
     int rc;
@@ -1013,7 +1013,7 @@ static int shclSvcTransferSetListOpen(uint32_t cParms, VBOXHGCMSVCPARM paParms[]
  * @param   pMsgCtx             Message context to use.
  * @param   hList               Handle of list to close.
  */
-static int shclSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                        PSHCLMSGCTX pMsgCtx, SHCLLISTHANDLE hList)
 {
     int rc;
@@ -1041,7 +1041,7 @@ static int shclSvcTransferSetListClose(uint32_t cParms, VBOXHGCMSVCPARM paParms[
  * @param   phList              Where to store the list handle.
  * @param   pListHdr            Where to store the list header.
  */
-static int shclSvcTransferGetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                      PSHCLLISTHANDLE phList, PSHCLLISTHDR pListHdr)
 {
     int rc;
@@ -1080,7 +1080,7 @@ static int shclSvcTransferGetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
  * @param   pMsgCtx             Message context to use.
  * @param   pListHdr            Pointer to data to set to the HGCM parameters.
  */
-static int shclSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                      PVBOXSHCLMSGCTX pMsgCtx, PSHCLLISTHDR pListHdr)
 {
     int rc;
@@ -1115,7 +1115,7 @@ static int shclSvcTransferSetListHdr(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
  * @param   phList              Where to store the list handle.
  * @param   pListEntry          Where to store the list entry.
  */
-static int shclSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                        PSHCLLISTHANDLE phList, PSHCLLISTENTRY pListEntry)
 {
     int rc;
@@ -1161,7 +1161,7 @@ static int shclSvcTransferGetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[
  * @param   pMsgCtx             Message context to use.
  * @param   pListEntry          Pointer to data to set to the HGCM parameters.
  */
-static int shclSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+static int shClSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                                        PVBOXSHCLMSGCTX pMsgCtx, PSHCLLISTENTRY pListEntry)
 {
     int rc;
@@ -1193,7 +1193,7 @@ static int shclSvcTransferSetListEntry(uint32_t cParms, VBOXHGCMSVCPARM paParms[
  * @param   paParms             Array of HGCM parameters.
  * @param   pDataChunk          Where to store the object data chunk data.
  */
-static int shclSvcTransferGetObjDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PSHCLOBJDATACHUNK pDataChunk)
+static int shClSvcTransferGetObjDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paParms[], PSHCLOBJDATACHUNK pDataChunk)
 {
     AssertPtrReturn(paParms,    VERR_INVALID_PARAMETER);
     AssertPtrReturn(pDataChunk, VERR_INVALID_PARAMETER);
@@ -1232,7 +1232,7 @@ static int shclSvcTransferGetObjDataChunk(uint32_t cParms, VBOXHGCMSVCPARM paPar
  * @param   cParms              Number of function parameters supplied.
  * @param   paParms             Array function parameters supplied.
  */
-static int shclSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer,
+static int shClSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer,
                                       uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     RT_NOREF(pClient);
@@ -1243,7 +1243,7 @@ static int shclSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
     PSHCLREPLY pReply  = (PSHCLREPLY)RTMemAlloc(cbReply);
     if (pReply)
     {
-        rc = shclSvcTransferGetReply(cParms, paParms, pReply);
+        rc = shClSvcTransferGetReply(cParms, paParms, pReply);
         if (RT_SUCCESS(rc))
         {
             PSHCLEVENTPAYLOAD pPayload
@@ -1317,7 +1317,7 @@ static int shclSvcTransferHandleReply(PSHCLCLIENT pClient, PSHCLTRANSFER pTransf
  * @param   paParms             Array function parameters  supplied.
  * @param   tsArrival           Timestamp of arrival.
  */
-int shclSvcTransferHandler(PSHCLCLIENT pClient,
+int shClSvcTransferHandler(PSHCLCLIENT pClient,
                            VBOXHGCMCALLHANDLE callHandle,
                            uint32_t u32Function,
                            uint32_t cParms,
@@ -1330,7 +1330,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
                  pClient->State.uClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, g_ExtState.pfnExtension));
 
     /* Check if we've the right mode set. */
-    if (!shclSvcTransferMsgIsAllowed(shclSvcGetMode(), u32Function))
+    if (!shClSvcTransferMsgIsAllowed(ShClSvcGetMode(), u32Function))
     {
         LogFunc(("Wrong clipboard mode, denying access\n"));
         return VERR_ACCESS_DENIED;
@@ -1394,7 +1394,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
     {
         case VBOX_SHCL_GUEST_FN_REPLY:
         {
-            rc = shclSvcTransferHandleReply(pClient, pTransfer, cParms, paParms);
+            rc = shClSvcTransferHandleReply(pClient, pTransfer, cParms, paParms);
             break;
         }
 
@@ -1419,7 +1419,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_ROOT_LIST_HDR_WRITE:
         {
             SHCLROOTLISTHDR lstHdr;
-            rc = shclSvcTransferGetRootListHdr(cParms, paParms, &lstHdr);
+            rc = shClSvcTransferGetRootListHdr(cParms, paParms, &lstHdr);
             if (RT_SUCCESS(rc))
             {
                 void    *pvData = ShClTransferRootListHdrDup(&lstHdr);
@@ -1464,7 +1464,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_ROOT_LIST_ENTRY_WRITE:
         {
             SHCLROOTLISTENTRY lstEntry;
-            rc = shclSvcTransferGetRootListEntry(cParms, paParms, &lstEntry);
+            rc = shClSvcTransferGetRootListEntry(cParms, paParms, &lstEntry);
             if (RT_SUCCESS(rc))
             {
                 void    *pvData = ShClTransferRootListEntryDup(&lstEntry);
@@ -1487,7 +1487,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_LIST_OPEN:
         {
             SHCLLISTOPENPARMS listOpenParms;
-            rc = shclSvcTransferGetListOpen(cParms, paParms, &listOpenParms);
+            rc = shClSvcTransferGetListOpen(cParms, paParms, &listOpenParms);
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
@@ -1527,7 +1527,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
                 SHCLLISTHDR hdrList;
                 rc = ShClTransferListGetHeader(pTransfer, hList, &hdrList);
                 /*if (RT_SUCCESS(rc))
-                    rc = shclSvcTransferSetListHdr(cParms, paParms, &hdrList);*/
+                    rc = shClSvcTransferSetListHdr(cParms, paParms, &hdrList);*/
             }
             break;
         }
@@ -1539,7 +1539,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
-                rc = shclSvcTransferGetListHdr(cParms, paParms, &hList, &hdrList);
+                rc = shClSvcTransferGetListHdr(cParms, paParms, &hList, &hdrList);
                 if (RT_SUCCESS(rc))
                 {
                     void    *pvData = ShClTransferListHdrDup(&hdrList);
@@ -1582,7 +1582,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
             if (RT_SUCCESS(rc))
             {
                 SHCLLISTHANDLE hList;
-                rc = shclSvcTransferGetListEntry(cParms, paParms, &hList, &entryList);
+                rc = shClSvcTransferGetListEntry(cParms, paParms, &hList, &entryList);
                 if (RT_SUCCESS(rc))
                 {
                     void    *pvData = ShClTransferListEntryDup(&entryList);
@@ -1694,7 +1694,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
         case VBOX_SHCL_GUEST_FN_OBJ_WRITE:
         {
             SHCLOBJDATACHUNK dataChunk;
-            rc = shclSvcTransferGetObjDataChunk(cParms, paParms, &dataChunk);
+            rc = shClSvcTransferGetObjDataChunk(cParms, paParms, &dataChunk);
             if (RT_SUCCESS(rc))
             {
                 void    *pvData = ShClTransferObjDataChunkDup(&dataChunk);
@@ -1732,7 +1732,7 @@ int shclSvcTransferHandler(PSHCLCLIENT pClient,
  * @param   cParms              Number of function parameters supplied.
  * @param   paParms             Array function parameters  supplied.
  */
-int shclSvcTransferHostHandler(uint32_t u32Function,
+int shClSvcTransferHostHandler(uint32_t u32Function,
                                uint32_t cParms,
                                VBOXHGCMSVCPARM paParms[])
 {
@@ -1764,7 +1764,7 @@ int shclSvcTransferHostHandler(uint32_t u32Function,
  * @param   pClientState        Client state to use.
  * @param   pTransfer           Shared Clipboard transfer to register a clipboard area for.
  */
-int shclSvcTransferAreaRegister(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
+int shClSvcTransferAreaRegister(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClientState);
 
@@ -1813,7 +1813,7 @@ int shclSvcTransferAreaRegister(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTr
  * @param   pClientState        Client state to use.
  * @param   pTransfer           Shared Clipboard transfer to unregister a clipboard area from.
  */
-int shclSvcTransferAreaUnregister(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
+int shClSvcTransferAreaUnregister(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClientState);
 
@@ -1861,7 +1861,7 @@ int shclSvcTransferAreaUnregister(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER p
  * @param   pTransfer           Shared Clipboard transfer to attach a clipboard area to.
  * @param   uID                 ID of clipboard area to to attach to. Specify 0 to attach to the most recent one.
  */
-int shclSvcTransferAreaAttach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer,
+int shClSvcTransferAreaAttach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer,
                               SHCLAREAID uID)
 {
     RT_NOREF(pClientState);
@@ -1909,7 +1909,7 @@ int shclSvcTransferAreaAttach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTran
  * @param   pClientState        Client state to use.
  * @param   pTransfer           Shared Clipboard transfer to detach a clipboard area from.
  */
-int shclSvcTransferAreaDetach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
+int shClSvcTransferAreaDetach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClientState);
 
@@ -1951,7 +1951,7 @@ int shclSvcTransferAreaDetach(PSHCLCLIENTSTATE pClientState, PSHCLTRANSFER pTran
  * @param   rcTransfer          Result code to report. Optional and depending on status.
  * @param   puEvent             Where to store the created wait event. Optional.
  */
-int shclSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
+int shClSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCLTRANSFERSTATUS uStatus,
                               int rcTransfer, PSHCLEVENTID puEvent)
 {
     AssertPtrReturn(pClient,   VERR_INVALID_POINTER);
@@ -2005,7 +2005,7 @@ int shclSvcTransferSendStatus(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer, SHCL
  * @param   enmSource           Transfer source to start.
  * @param   ppTransfer          Where to return the created transfer on success. Optional.
  */
-int shclSvcTransferStart(PSHCLCLIENT pClient,
+int shClSvcTransferStart(PSHCLCLIENT pClient,
                          SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource,
                          PSHCLTRANSFER *ppTransfer)
 {
@@ -2034,29 +2034,29 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
 
                 if (enmDir == SHCLTRANSFERDIR_READ)
                 {
-                    rc = shclSvcTransferAreaRegister(&pClient->State, pTransfer);
+                    rc = shClSvcTransferAreaRegister(&pClient->State, pTransfer);
                     if (RT_SUCCESS(rc))
                     {
-                        creationCtx.Interface.pfnTransferOpen  = shclSvcTransferIfaceOpen;
-                        creationCtx.Interface.pfnTransferClose = shclSvcTransferIfaceClose;
+                        creationCtx.Interface.pfnTransferOpen  = shClSvcTransferIfaceOpen;
+                        creationCtx.Interface.pfnTransferClose = shClSvcTransferIfaceClose;
 
-                        creationCtx.Interface.pfnRootsGet      = shclSvcTransferIfaceGetRoots;
+                        creationCtx.Interface.pfnRootsGet      = shClSvcTransferIfaceGetRoots;
 
-                        creationCtx.Interface.pfnListOpen      = shclSvcTransferIfaceListOpen;
-                        creationCtx.Interface.pfnListClose     = shclSvcTransferIfaceListClose;
-                        creationCtx.Interface.pfnListHdrRead   = shclSvcTransferIfaceListHdrRead;
-                        creationCtx.Interface.pfnListEntryRead = shclSvcTransferIfaceListEntryRead;
+                        creationCtx.Interface.pfnListOpen      = shClSvcTransferIfaceListOpen;
+                        creationCtx.Interface.pfnListClose     = shClSvcTransferIfaceListClose;
+                        creationCtx.Interface.pfnListHdrRead   = shClSvcTransferIfaceListHdrRead;
+                        creationCtx.Interface.pfnListEntryRead = shClSvcTransferIfaceListEntryRead;
 
-                        creationCtx.Interface.pfnObjOpen       = shclSvcTransferIfaceObjOpen;
-                        creationCtx.Interface.pfnObjClose      = shclSvcTransferIfaceObjClose;
-                        creationCtx.Interface.pfnObjRead       = shclSvcTransferIfaceObjRead;
+                        creationCtx.Interface.pfnObjOpen       = shClSvcTransferIfaceObjOpen;
+                        creationCtx.Interface.pfnObjClose      = shClSvcTransferIfaceObjClose;
+                        creationCtx.Interface.pfnObjRead       = shClSvcTransferIfaceObjRead;
                     }
                 }
                 else if (enmDir == SHCLTRANSFERDIR_WRITE)
                 {
-                    creationCtx.Interface.pfnListHdrWrite   = shclSvcTransferIfaceListHdrWrite;
-                    creationCtx.Interface.pfnListEntryWrite = shclSvcTransferIfaceListEntryWrite;
-                    creationCtx.Interface.pfnObjWrite       = shclSvcTransferIfaceObjWrite;
+                    creationCtx.Interface.pfnListHdrWrite   = shClSvcTransferIfaceListHdrWrite;
+                    creationCtx.Interface.pfnListEntryWrite = shClSvcTransferIfaceListEntryWrite;
+                    creationCtx.Interface.pfnObjWrite       = shClSvcTransferIfaceObjWrite;
                 }
                 else
                     AssertFailed();
@@ -2087,7 +2087,7 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
                             if (RT_SUCCESS(rc))
                             {
                                 SHCLEVENTID uEvent;
-                                rc = shclSvcTransferSendStatus(pClient, pTransfer,
+                                rc = shClSvcTransferSendStatus(pClient, pTransfer,
                                                                SHCLTRANSFERSTATUS_INITIALIZED, VINF_SUCCESS,
                                                                &uEvent);
                                 if (RT_SUCCESS(rc))
@@ -2159,10 +2159,10 @@ int shclSvcTransferStart(PSHCLCLIENT pClient,
  * @param   pClient             Client that owns the transfer.
  * @param   pTransfer           Transfer to stop.
  */
-int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
+int shClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     SHCLEVENTID uEvent;
-    int rc = shclSvcTransferSendStatus(pClient, pTransfer,
+    int rc = shClSvcTransferSendStatus(pClient, pTransfer,
                                        SHCLTRANSFERSTATUS_STOPPED, VINF_SUCCESS,
                                        &uEvent);
     if (RT_SUCCESS(rc))
@@ -2197,7 +2197,7 @@ int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
  * @returns VBox status code.
  * @param   fMode               Transfer mode to set.
  */
-int shclSvcTransferModeSet(uint32_t fMode)
+int shClSvcTransferModeSet(uint32_t fMode)
 {
     if (fMode & ~VBOX_SHCL_TRANSFER_MODE_VALID_MASK)
         return VERR_INVALID_FLAGS;

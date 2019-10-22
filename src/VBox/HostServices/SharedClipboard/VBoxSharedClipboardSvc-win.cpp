@@ -178,7 +178,7 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT cfFormat,
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
     SHCLEVENTID uEvent = 0;
-    int rc = shclSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
+    int rc = shClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
@@ -230,7 +230,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                     /* Clipboard was updated by another application, retrieve formats and report back. */
                     rc = vboxClipboardSvcWinSyncInternal(pCtx);
                     if (RT_SUCCESS(rc))
-                        rc = shclSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
+                        rc = shClSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
                 }
                 else
                 {
@@ -272,7 +272,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
                     /* Clipboard was updated by another application, retrieve formats and report back. */
                     rc = vboxClipboardSvcWinSyncInternal(pCtx);
                     if (RT_SUCCESS(rc))
-                        shclSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
+                        shClSvcSetSource(pCtx->pClient, SHCLSOURCE_LOCAL);
                 }
                 else
                 {
@@ -356,7 +356,7 @@ static LRESULT CALLBACK vboxClipboardSvcWinWndProcMain(PSHCLCONTEXT pCtx,
             if (fFormats & VBOX_SHCL_FMT_URI_LIST)
             {
                 PSHCLTRANSFER pTransfer;
-                int rc = shclSvcTransferStart(pCtx->pClient,
+                int rc = shClSvcTransferStart(pCtx->pClient,
                                               SHCLTRANSFERDIR_READ, SHCLSOURCE_REMOTE,
                                               &pTransfer);
                 if (RT_SUCCESS(rc))
@@ -590,7 +590,7 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
         if (   RT_SUCCESS(rc)
             && Formats.uFormats != VBOX_SHCL_FMT_NONE)
         {
-            rc = shclSvcFormatsReport(pCtx->pClient, &Formats);
+            rc = shClSvcFormatsReport(pCtx->pClient, &Formats);
         }
     }
     else /* If we don't have any client data (yet), bail out. */
@@ -863,7 +863,7 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 {
     LogFlowFuncEnter();
 
-    int rc = shclSvcDataReadSignal(pClient, pCmdCtx, pData);
+    int rc = shClSvcDataReadSignal(pClient, pCmdCtx, pData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

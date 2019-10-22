@@ -66,7 +66,7 @@ static void testSetMode(void)
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_OFF);
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
-    u32Mode = TestClipSvcGetMode();
+    u32Mode = ShClSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_OFF, ("u32Mode=%u\n", (unsigned) u32Mode));
 
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 0, parms);
@@ -82,14 +82,14 @@ static void testSetMode(void)
     HGCMSvcSetU32(&parms[0], VBOX_SHCL_MODE_HOST_TO_GUEST);
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
-    u32Mode = TestClipSvcGetMode();
+    u32Mode = ShClSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_HOST_TO_GUEST, ("u32Mode=%u\n", (unsigned) u32Mode));
 
     HGCMSvcSetU32(&parms[0], 99);
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC(rc, VERR_NOT_SUPPORTED);
 
-    u32Mode = TestClipSvcGetMode();
+    u32Mode = ShClSvcGetMode();
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_OFF, ("u32Mode=%u\n", (unsigned) u32Mode));
     table.pfnUnload(NULL);
 }
