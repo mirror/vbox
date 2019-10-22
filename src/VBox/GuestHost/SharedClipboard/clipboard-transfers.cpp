@@ -800,42 +800,43 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
 
     if (pTransfer->State.enmSource == SHCLSOURCE_LOCAL)
     {
-        PSHCLOBJHANDLEINFO pInfo
-            = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
-        if (pInfo)
+        /*
+         * Make sure the transfer direction matches the open/create parameters.
+         */
+        if (pTransfer->State.enmDir == SHCLTRANSFERDIR_READ)
         {
-            rc = ShClTransferObjHandleInfoInit(pInfo);
-            if (RT_SUCCESS(rc))
+            if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_READ) /* Read access wanted? */
             {
-                /*
-                 * Make sure the transfer direction matches the open/create parameters.
-                 */
-                if (pTransfer->State.enmDir == SHCLTRANSFERDIR_READ)
-                {
-                    if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_READ) /* Read access wanted? */
-                    {
-                        AssertMsgFailed(("Is not a write transfer, but object open flags are set to read access (0x%x)\n",
-                                         pOpenCreateParms->fCreate)); /* Should never happen. */
-                        rc = VERR_INVALID_PARAMETER;
-                    }
-                }
-                else if (pTransfer->State.enmDir == SHCLTRANSFERDIR_WRITE)
-                {
-                    if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_WRITE) /* Write access wanted? */
-                    {
-                        AssertMsgFailed(("Is not a read transfer, but object open flags are set to write access (0x%x)\n",
-                                         pOpenCreateParms->fCreate)); /* Should never happen. */
-                        rc = VERR_INVALID_PARAMETER;
-                    }
-                }
-                else
-                {
-                    AssertFailed();
-                    rc = VERR_NOT_SUPPORTED;
-                }
+                AssertMsgFailed(("Is not a write transfer, but object open flags are set to read access (0x%x)\n",
+                                 pOpenCreateParms->fCreate)); /* Should never happen. */
+                rc = VERR_INVALID_PARAMETER;
+            }
+        }
+        else if (pTransfer->State.enmDir == SHCLTRANSFERDIR_WRITE)
+        {
+            if (pOpenCreateParms->fCreate & SHCL_OBJ_CF_ACCESS_WRITE) /* Write access wanted? */
+            {
+                AssertMsgFailed(("Is not a read transfer, but object open flags are set to write access (0x%x)\n",
+                                 pOpenCreateParms->fCreate)); /* Should never happen. */
+                rc = VERR_INVALID_PARAMETER;
+            }
+        }
+        else
+        {
+            AssertFailed();
+            rc = VERR_NOT_SUPPORTED;
+        }
 
+        if (RT_SUCCESS(rc))
+        {
+            PSHCLOBJHANDLEINFO pInfo
+                = (PSHCLOBJHANDLEINFO)RTMemAllocZ(sizeof(SHCLOBJHANDLEINFO));
+            if (pInfo)
+            {
+                rc = ShClTransferObjHandleInfoInit(pInfo);
                 if (RT_SUCCESS(rc))
                 {
+
                     /* Only if this is a read transfer (locally) we're able to actually write to files
                      * (we're reading from the source). */
                     const bool fWritable = pTransfer->State.enmDir == SHCLTRANSFERDIR_READ;
@@ -846,7 +847,8 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
                                                     SHCLOBJHANDLE_INVALID, &fOpen);
                     if (RT_SUCCESS(rc))
                     {
-                        rc = shClTransferResolvePathAbs(pTransfer, pOpenCreateParms->pszPath, 0 /* fFlags */, &pInfo->pszPathLocalAbs);
+                        rc = shClTransferResolvePathAbs(pTransfer, pOpenCreateParms->pszPath, 0 /* fFlags */,
+                                                        &pInfo->pszPathLocalAbs);
                         if (RT_SUCCESS(rc))
                         {
                             rc = RTFileOpen(&pInfo->u.Local.hFile, pInfo->pszPathLocalAbs, fOpen);
@@ -859,28 +861,28 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
                         }
                     }
                 }
-            }
 
-            if (RT_SUCCESS(rc))
-            {
-                pInfo->hObj    = pTransfer->uObjHandleNext++;
-                pInfo->enmType = SHCLOBJTYPE_FILE;
+                if (RT_SUCCESS(rc))
+                {
+                    pInfo->hObj    = pTransfer->uObjHandleNext++;
+                    pInfo->enmType = SHCLOBJTYPE_FILE;
 
-                RTListAppend(&pTransfer->lstObj, &pInfo->Node);
-                pTransfer->cObjHandles++;
+                    RTListAppend(&pTransfer->lstObj, &pInfo->Node);
+                    pTransfer->cObjHandles++;
 
-                LogFlowFunc(("cObjHandles=%RU32\n", pTransfer->cObjHandles));
+                    LogFlowFunc(("cObjHandles=%RU32\n", pTransfer->cObjHandles));
 
-                *phObj = pInfo->hObj;
+                    *phObj = pInfo->hObj;
+                }
+                else
+                {
+                    ShClTransferObjHandleInfoDestroy(pInfo);
+                    RTMemFree(pInfo);
+                }
             }
             else
-            {
-                ShClTransferObjHandleInfoDestroy(pInfo);
-                RTMemFree(pInfo);
-            }
+                rc = VERR_NO_MEMORY;
         }
-        else
-            rc = VERR_NO_MEMORY;
     }
     else if (pTransfer->State.enmSource == SHCLSOURCE_REMOTE)
     {
@@ -891,6 +893,8 @@ int ShClTransferObjOpen(PSHCLTRANSFER pTransfer, PSHCLOBJOPENCREATEPARMS pOpenCr
         else
             rc = VERR_NOT_SUPPORTED;
     }
+    else
+        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -971,6 +975,8 @@ int ShClTransferObjClose(PSHCLTRANSFER pTransfer, SHCLOBJHANDLE hObj)
         else
             rc = VERR_NOT_SUPPORTED;
     }
+    else
+        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1033,6 +1039,8 @@ int ShClTransferObjRead(PSHCLTRANSFER pTransfer,
         else
             rc = VERR_NOT_SUPPORTED;
     }
+    else
+        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1089,6 +1097,8 @@ int ShClTransferObjWrite(PSHCLTRANSFER pTransfer,
         else
             rc = VERR_NOT_SUPPORTED;
     }
+    else
+        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1368,6 +1378,58 @@ DECLINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
 }
 
 /**
+ * Valides whether a given path matches our set of rules or not.
+ *
+ * @returns VBox status code.
+ * @param   pszPath             Path to validate.
+ * @param   fMustExist          Whether the path to validate also must exist.
+ */
+static int shClTransferValidatePath(const char *pszPath, bool fMustExist)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!strlen(pszPath))
+        rc = VERR_INVALID_PARAMETER;
+
+    if (   RT_SUCCESS(rc)
+        && !RTStrIsValidEncoding(pszPath))
+    {
+        rc = VERR_INVALID_UTF8_ENCODING;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && RTStrStr(pszPath, ".."))
+    {
+        rc = VERR_INVALID_PARAMETER;
+    }
+
+    if (   RT_SUCCESS(rc)
+        && fMustExist)
+    {
+        RTFSOBJINFO objInfo;
+        rc = RTPathQueryInfo(pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
+            {
+                if (!RTDirExists(pszPath)) /* Path must exist. */
+                    rc = VERR_PATH_NOT_FOUND;
+            }
+            else if (RTFS_IS_FILE(objInfo.Attr.fMode))
+            {
+                if (!RTFileExists(pszPath)) /* File must exist. */
+                    rc = VERR_FILE_NOT_FOUND;
+            }
+            else /* Everything else (e.g. symbolic links) are not supported. */
+                rc = VERR_NOT_SUPPORTED;
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
  * Resolves a relative path of a specific transfer to its absolute path.
  *
  * @returns VBox status code.
@@ -1385,28 +1447,45 @@ static int shClTransferResolvePathAbs(PSHCLTRANSFER pTransfer, const char *pszPa
 
     LogFlowFunc(("pszPathRootAbs=%s, pszPath=%s\n", pTransfer->pszPathRootAbs, pszPath));
 
-    /* Paranoia. */
-    if (   !strlen(pszPath)
-        || !RTStrIsValidEncoding(pszPath)
-        ||  RTStrStr(pszPath, ".."))
+    int rc = shClTransferValidatePath(pszPath, false /* fMustExist */);
+    if (RT_SUCCESS(rc))
     {
-        LogRel(("Shared Clipboard: Resolving absolute path '%s' failed, invalid\n", pszPath));
-        return VERR_INVALID_PARAMETER;
+        char *pszPathAbs = RTPathJoinA(pTransfer->pszPathRootAbs, pszPath);
+        if (pszPathAbs)
+        {
+            char   szResolved[RTPATH_MAX + 1];
+            size_t cbResolved = sizeof(szResolved);
+            rc = RTPathAbsEx(pTransfer->pszPathRootAbs, pszPathAbs, RTPATH_STR_F_STYLE_HOST, szResolved, &cbResolved);
+
+            RTStrFree(pszPathAbs);
+
+            if (RT_SUCCESS(rc))
+            {
+                LogFlowFunc(("pszResolved=%s\n", szResolved));
+
+                rc = VERR_PATH_NOT_FOUND; /* Play safe by default. */
+
+                /* Make sure the resolved path is part of the set of root entries. */
+                PSHCLLISTROOT pListRoot;
+                RTListForEach(&pTransfer->lstRoots, pListRoot, SHCLLISTROOT, Node)
+                {
+                    if (RTPathStartsWith(szResolved, pListRoot->pszPathAbs))
+                    {
+                        rc = VINF_SUCCESS;
+                        break;
+                    }
+                }
+
+                if (RT_SUCCESS(rc))
+                    *ppszResolved = RTStrDup(szResolved);
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
     }
 
-    int rc;
-
-    char *pszResolved = RTPathJoinA(pTransfer->pszPathRootAbs, pszPath);
-    if (pszResolved)
-    {
-        LogFlowFunc(("Resolved to: %s\n", pszResolved));
-
-        *ppszResolved = pszResolved;
-
-        rc = VINF_SUCCESS;
-    }
-    else
-        rc = VERR_NO_MEMORY;
+    if (RT_FAILURE(rc))
+        LogRel(("Shared Clipboard: Resolving absolute path '%s' failed, rc=%Rrc\n", pszPath, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1440,10 +1519,10 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
             = (PSHCLLISTHANDLEINFO)RTMemAllocZ(sizeof(SHCLLISTHANDLEINFO));
         if (pInfo)
         {
-            rc = shClTransferResolvePathAbs(pTransfer, pOpenParms->pszPath, 0 /* fFlags */, &pInfo->pszPathLocalAbs);
+            rc = ShClTransferListHandleInfoInit(pInfo);
             if (RT_SUCCESS(rc))
             {
-                rc = ShClTransferListHandleInfoInit(pInfo);
+                rc = shClTransferResolvePathAbs(pTransfer, pOpenParms->pszPath, 0 /* fFlags */, &pInfo->pszPathLocalAbs);
                 if (RT_SUCCESS(rc))
                 {
                     RTFSOBJINFO objInfo;
@@ -1485,6 +1564,9 @@ int ShClTransferListOpen(PSHCLTRANSFER pTransfer, PSHCLLISTOPENPARMS pOpenParms,
 
                             RTListAppend(&pTransfer->lstList, &pInfo->Node);
                             pTransfer->cListHandles++;
+
+                            if (phList)
+                                *phList = pInfo->hList;
 
                             LogFlowFunc(("pszPathLocalAbs=%s, hList=%RU64, cListHandles=%RU32\n",
                                          pInfo->pszPathLocalAbs, pInfo->hList, pTransfer->cListHandles));
@@ -1946,6 +2028,8 @@ int ShClTransferListRead(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList,
         else
             rc = VERR_NOT_SUPPORTED;
     }
+    else
+        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1986,6 +2070,8 @@ bool ShClTransferListHandleIsValid(PSHCLTRANSFER pTransfer, SHCLLISTHANDLE hList
     {
         AssertFailed(); /** @todo Implement. */
     }
+    else
+        AssertFailedStmt(fIsValid = false);
 
     return fIsValid;
 }
@@ -2245,11 +2331,12 @@ int ShClTransferRootsGet(PSHCLTRANSFER pTransfer, PSHCLROOTLIST *ppRootList)
         else
             rc = VERR_NOT_SUPPORTED;
     }
+    else
+        AssertFailedStmt(rc = VERR_NOT_IMPLEMENTED);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
-
 
 /**
  * Sets transfer root list entries for a given transfer.
@@ -2281,16 +2368,27 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
         PSHCLLISTROOT pListRoot = (PSHCLLISTROOT)RTMemAlloc(sizeof(SHCLLISTROOT));
         AssertPtrBreakStmt(pListRoot, rc = VERR_NO_MEMORY);
 
-        pListRoot->pszPathAbs = RTStrDup(lstRootEntries.at(i).c_str());
-        AssertPtrBreakStmt(pListRoot->pszPathAbs, rc = VERR_NO_MEMORY);
+        const char *pszPathCur = RTStrDup(lstRootEntries.at(i).c_str());
 
+        LogFlowFunc(("pszPathCur=%s\n", pszPathCur));
+
+        /* No root path determined yet? */
         if (!pszPathRootAbs)
         {
-            pszPathRootAbs = RTStrDup(pListRoot->pszPathAbs);
+            pszPathRootAbs = RTStrDup(pszPathCur);
             if (pszPathRootAbs)
             {
                 RTPathStripFilename(pszPathRootAbs);
+
                 LogFlowFunc(("pszPathRootAbs=%s\n", pszPathRootAbs));
+
+                /* We don't want to have a relative directory here. */
+                if (RTPathStartsWithRoot(pszPathRootAbs))
+                {
+                    rc = shClTransferValidatePath(pszPathRootAbs, true /* Path must exist */);
+                }
+                else
+                    rc = VERR_INVALID_PARAMETER;
             }
             else
                 rc = VERR_NO_MEMORY;
@@ -2299,16 +2397,41 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
         if (RT_FAILURE(rc))
             break;
 
-        /* Make sure all entries have the same root path. */
-        if (!RTStrStartsWith(pListRoot->pszPathAbs, pszPathRootAbs))
+        pListRoot->pszPathAbs = RTStrDup(pszPathCur);
+        if (!pListRoot->pszPathAbs)
         {
-            rc = VERR_INVALID_PARAMETER;
+            rc = VERR_NO_MEMORY;
             break;
         }
 
         RTListAppend(&pTransfer->lstRoots, &pListRoot->Node);
 
         pTransfer->cRoots++;
+    }
+
+    /* No (valid) root directory found? Bail out early. */
+    if (!pszPathRootAbs)
+        rc = VERR_PATH_NOT_FOUND;
+
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Step 2:
+         * Go through the created list and make sure all entries have the same root path.
+         */
+        PSHCLLISTROOT pListRoot;
+        RTListForEach(&pTransfer->lstRoots, pListRoot, SHCLLISTROOT, Node)
+        {
+            if (!RTStrStartsWith(pListRoot->pszPathAbs, pszPathRootAbs))
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            rc = shClTransferValidatePath(pListRoot->pszPathAbs, true /* Path must exist */);
+            if (RT_FAILURE(rc))
+                break;
+        }
     }
 
     /** @todo Entry rollback on failure? */
@@ -2321,7 +2444,10 @@ int ShClTransferRootsSet(PSHCLTRANSFER pTransfer, const char *pszRoots, size_t c
         LogRel2(("Shared Clipboard: Transfer uses root '%s'\n", pTransfer->pszPathRootAbs));
     }
     else
+    {
         LogRel(("Shared Clipboard: Unable to set roots for transfer, rc=%Rrc\n", rc));
+        RTStrFree(pszPathRootAbs);
+    }
 
     LogFlowFuncLeaveRC(rc);
     return rc;
