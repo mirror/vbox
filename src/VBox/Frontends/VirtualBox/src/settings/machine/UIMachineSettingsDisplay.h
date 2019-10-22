@@ -49,10 +49,19 @@ public:
     /** Defines @a comGuestOSType. */
     void setGuestOSType(CGuestOSType comGuestOSType);
 
+#ifdef VBOX_WITH_3D_ACCELERATION
+    /** Returns whether 3D Acceleration is enabled. */
+    bool isAcceleration3DSelected() const;
+#endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /** Returns whether 2D Video Acceleration is enabled. */
     bool isAcceleration2DVideoSelected() const;
 #endif
+
+    /** Returns recommended graphics controller type. */
+    KGraphicsControllerType graphicsControllerTypeRecommended() const { return m_enmGraphicsControllerTypeRecommended; }
+    /** Returns current graphics controller type. */
+    KGraphicsControllerType graphicsControllerTypeCurrent() const;
 
 protected:
 
@@ -171,6 +180,8 @@ private:
     /** Holds whether the guest OS supports 2D Video Acceleration. */
     bool          m_f2DVideoAccelerationSupported;
 #endif
+    /** Holds recommended graphics controller type. */
+    KGraphicsControllerType  m_enmGraphicsControllerTypeRecommended;
 
     /** Holds the page data cache instance. */
     UISettingsCacheMachineDisplay *m_pCache;

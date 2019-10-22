@@ -292,6 +292,7 @@ UIMachineSettingsDisplay::UIMachineSettingsDisplay()
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_f2DVideoAccelerationSupported(false)
 #endif
+    , m_enmGraphicsControllerTypeRecommended(KGraphicsControllerType_Null)
     , m_pCache(0)
 {
     /* Prepare: */
@@ -326,10 +327,19 @@ void UIMachineSettingsDisplay::setGuestOSType(CGuestOSType comGuestOSType)
     m_f2DVideoAccelerationSupported = strGuestOSTypeFamily == "Windows";
     m_pVideoMemoryEditor->set2DVideoAccelerationSupported(m_f2DVideoAccelerationSupported);
 #endif
+    /* Acquire recommended graphics controller type: */
+    m_enmGraphicsControllerTypeRecommended = m_comGuestOSType.GetRecommendedGraphicsController();
 
     /* Revalidate: */
     revalidate();
 }
+
+#ifdef VBOX_WITH_3D_ACCELERATION
+bool UIMachineSettingsDisplay::isAcceleration3DSelected() const
+{
+    return m_pCheckbox3D->isChecked();
+}
+#endif /* VBOX_WITH_3D_ACCELERATION */
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
 bool UIMachineSettingsDisplay::isAcceleration2DVideoSelected() const
@@ -337,6 +347,11 @@ bool UIMachineSettingsDisplay::isAcceleration2DVideoSelected() const
     return m_pCheckbox2DVideo->isChecked();
 }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+
+KGraphicsControllerType UIMachineSettingsDisplay::graphicsControllerTypeCurrent() const
+{
+    return m_pGraphicsControllerEditor->value();
+}
 
 bool UIMachineSettingsDisplay::changed() const
 {
@@ -635,6 +650,27 @@ bool UIMachineSettingsDisplay::validate(QList<UIValidationMessage> &messages)
                                  "As this feature only works with Windows guest systems it will be disabled.");
         }
 #endif /* VBOX_WITH_VIDEOHWACCEL */
+
+        /* Graphics controller type test: */
+        if (!m_comGuestOSType.isNull())
+        {
+            if (m_pGraphicsControllerEditor->value() != m_enmGraphicsControllerTypeRecommended)
+            {
+#ifdef VBOX_WITH_3D_ACCELERATION
+                if (m_pCheckbox3D->isChecked())
+                    message.second << tr("The virtual machine is configured to use 3D acceleration. This will work only if you "
+                                         "pick a different graphics controller (%1). Either disable 3D acceleration or switch "
+                                         "to required graphics controller type. The latter will be done automatically if you "
+                                         "confirm your changes.")
+                                         .arg(gpConverter->toString(m_enmGraphicsControllerTypeRecommended));
+                else
+#endif /* VBOX_WITH_3D_ACCELERATION */
+                    message.second << tr("The virtual machine is configured to use a graphics controller other than the "
+                                         "recommended one (%1). Please consider switching unless you have a reason to keep the "
+                                         "currently selected graphics controller.")
+                                         .arg(gpConverter->toString(m_enmGraphicsControllerTypeRecommended));
+            }
+        }
 
         /* Serialize message: */
         if (!message.second.isEmpty())
