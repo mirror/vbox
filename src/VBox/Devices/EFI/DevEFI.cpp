@@ -176,7 +176,7 @@ typedef struct DEVEFI
     /** The size of the system EFI ROM. */
     uint64_t                cbEfiRom;
     /** Offset into the actual ROM within EFI FW volume. */
-    uint64_t                uEfiRomOfs;
+    uint64_t                offEfiRom;
     /** The name of the EFI ROM file. */
     char                   *pszEfiRomFile;
     /** Thunk page pointer. */
@@ -1943,7 +1943,7 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
 
     if (pThis->pu8EfiRom)
     {
-        RTFileReadAllFree(pThis->pu8EfiRom, (size_t)pThis->cbEfiRom + pThis->uEfiRomOfs);
+        RTFileReadAllFree(pThis->pu8EfiRom, (size_t)pThis->cbEfiRom + pThis->offEfiRom);
         pThis->pu8EfiRom = NULL;
     }
 
@@ -2042,7 +2042,7 @@ static int efiParseFirmware(PDEVEFI pThis)
                           VERR_INVALID_MAGIC);
 
     /* Found NVRAM storage, configure flash device. */
-    pThis->uEfiRomOfs  = pFwVolHdr->FvLength;
+    pThis->offEfiRom   = pFwVolHdr->FvLength;
     pThis->cbNvram     = pFwVolHdr->FvLength;
     pThis->GCPhysNvram = UINT32_C(0xfffff000) - pThis->cbEfiRom + PAGE_SIZE;
     pThis->cbEfiRom   -= pThis->cbNvram;
@@ -2104,8 +2104,73 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
 
     /*
      * Map the firmware volume into memory as shadowed ROM.
+     *
+     * This is a little complicated due to saved state legacy.  We used to have a
+     * 2MB image w/o any flash portion, divided into four 512KB mappings.
+     *
+     * We've now increased the size of the firmware to 4MB, but for saved state
+     * compatibility reasons need to use the same mappings and names (!!) for the
+     * top 2MB.
      */
     /** @todo fix PGMR3PhysRomRegister so it doesn't mess up in SUPLib when mapping a big ROM image. */
+#if 1
+    static const char * const s_apszNames[16] =
+    {
+        "EFI Firmware Volume",           "EFI Firmware Volume (Part 2)",  "EFI Firmware Volume (Part 3)",  "EFI Firmware Volume (Part 4)",
+        "EFI Firmware Volume (Part 5)",  "EFI Firmware Volume (Part 6)",  "EFI Firmware Volume (Part 7)",  "EFI Firmware Volume (Part 8)",
+        "EFI Firmware Volume (Part 9)",  "EFI Firmware Volume (Part 10)", "EFI Firmware Volume (Part 11)", "EFI Firmware Volume (Part 12)",
+        "EFI Firmware Volume (Part 13)", "EFI Firmware Volume (Part 14)", "EFI Firmware Volume (Part 15)", "EFI Firmware Volume (Part 16)",
+    };
+    AssertLogRelMsgReturn(pThis->cbEfiRom < RT_ELEMENTS(s_apszNames) * _512K,
+                          ("EFI firmware image too big: %#RX64, max %#zx\n",
+                           pThis->cbEfiRom, RT_ELEMENTS(s_apszNames) * _512K),
+                          VERR_IMAGE_TOO_BIG);
+
+    uint32_t const  cbChunk = pThis->cbNvram + pThis->cbEfiRom >= _2M ? _512K
+                            : (uint32_t)RT_ALIGN_64((pThis->cbNvram + pThis->cbEfiRom) / 4, PAGE_SIZE);
+    uint32_t        cbLeft  = pThis->cbEfiRom;           /* ASSUMES NVRAM comes first! */
+    uint32_t        off     = pThis->offEfiRom + cbLeft; /* ASSUMES NVRAM comes first! */
+    RTGCPHYS64      GCPhys  = pThis->GCLoadAddress + cbLeft;
+    AssertLogRelMsg(GCPhys == _4G, ("%RGp\n", GCPhys));
+
+    /* Compatibility mappings at the top (note that this isn't entirely the same
+       algorithm, but it will produce the same results for a power of two sized image): */
+    unsigned i = 4;
+    while (i-- > 0)
+    {
+        uint32_t const cb = RT_MIN(cbLeft, cbChunk);
+        cbLeft -= cb;
+        GCPhys -= cb;
+        off    -= cb;
+        rc = PDMDevHlpROMRegister(pThis->pDevIns, GCPhys, cb, pThis->pu8EfiRom + off, cb,
+                                  PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, s_apszNames[i]);
+        AssertRCReturn(rc, rc);
+    }
+
+    /* The rest (if any) is mapped in descending order of address and increasing name order: */
+    if (cbLeft > 0)
+    {
+        Assert(cbChunk == _512K);
+        for (i = 4; cbLeft > 0; i++)
+        {
+            uint32_t const cb = RT_MIN(cbLeft, cbChunk);
+            cbLeft -= cb;
+            GCPhys -= cb;
+            off    -= cb;
+            /** @todo Add flag to prevent saved state loading from bitching about these regions. */
+            rc = PDMDevHlpROMRegister(pThis->pDevIns, GCPhys, cb, pThis->pu8EfiRom + off, cb,
+                                      PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY
+                                      | PGMPHYS_ROM_FLAGS_MAYBE_MISSING_FROM_STATE, s_apszNames[i]);
+            AssertRCReturn(rc, rc);
+        }
+        Assert(i <= RT_ELEMENTS(s_apszNames));
+    }
+
+    /* Not sure what the purpose of this one is... */
+    rc = PDMDevHlpROMProtectShadow(pThis->pDevIns, pThis->GCLoadAddress, (uint32_t)cbChunk, PGMROMPROT_READ_RAM_WRITE_IGNORE);
+    AssertRCReturn(rc, rc);
+
+#else
     RTGCPHYS cbQuart = RT_ALIGN_64(pThis->cbEfiRom / 4, PAGE_SIZE);
     rc = PDMDevHlpROMRegister(pThis->pDevIns,
                               pThis->GCLoadAddress,
@@ -2144,6 +2209,7 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
                               "EFI Firmware Volume (Part 4)");
     if (RT_FAILURE(rc))
         return rc;
+#endif
 
     /*
      * Register MMIO region for flash device.

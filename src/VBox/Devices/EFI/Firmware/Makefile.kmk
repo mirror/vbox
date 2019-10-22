@@ -219,7 +219,7 @@ VBOX_EFI_BUILD_CMD += \
 	-D VBOX_REV=$(VBOX_SVN_REV) \
 	-D "VBOX_OUTPUT_BASE_DIR=$(VBoxEfiFirmware_0_OUTDIR)" \
 	-D "VBOX_PATH_ROOT=$(PATH_ROOT)" \
-	-D "FD_SIZE_2MB=1" \
+	-D "FD_SIZE_4MB=1" \
 	$(if $(VBOX_OSE),-D "VBOX_OSE=1") \
 	$(if-expr "$(KBUILD_VERBOSE)" != "",$(if-expr "$(KBUILD_VERBOSE)" >= 3,-v,),--silent --quiet) \
 	--no-cache \
