@@ -238,14 +238,6 @@ using namespace HGCM;
 
 
 /*********************************************************************************************************************************
-*   Prototypes                                                                                                                   *
-*********************************************************************************************************************************/
-static int shclSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID);
-static int shclSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState);
-static void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState);
-
-
-/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 PVBOXHGCMSVCHELPERS g_pHelpers;
@@ -507,6 +499,71 @@ int shclSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
     /** @todo Catch / handle OOM? */
 
     return VINF_SUCCESS;
+}
+
+/**
+ * Initializes a Shared Clipboard client.
+ *
+ * @param   pClient             Client to initialize.
+ * @param   uClientID           HGCM client ID to assign client to.
+ */
+int shclSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
+{
+    AssertPtrReturn(pClient, VERR_INVALID_POINTER);
+
+    /* Assign the client ID. */
+    pClient->State.uClientID = uClientID;
+
+    LogFlowFunc(("[Client %RU32]\n", pClient->State.uClientID));
+
+    /* Create the client's own event source. */
+    int rc = ShClEventSourceCreate(&pClient->Events, 0 /* ID, ignored */);
+    if (RT_SUCCESS(rc))
+    {
+        LogFlowFunc(("[Client %RU32] Using event source %RU32\n", uClientID, pClient->Events.uID));
+
+        /* Reset the client state. */
+        shclSvcClientStateReset(&pClient->State);
+
+        /* (Re-)initialize the client state. */
+        rc = shclSvcClientStateInit(&pClient->State, uClientID);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        if (RT_SUCCESS(rc))
+            rc = ShClTransferCtxInit(&pClient->TransferCtx);
+#endif
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Resets a Shared Clipboard client.
+ *
+ * @param   pClient             Client to reset.
+ */
+void shclSvcClientReset(PSHCLCLIENT pClient)
+{
+    if (!pClient)
+        return;
+
+    LogFlowFunc(("[Client %RU32]\n", pClient->State.uClientID));
+
+    /* Reset message queue. */
+    shclSvcMsgQueueReset(pClient);
+
+    /* Reset event source. */
+    ShClEventSourceReset(&pClient->Events);
+
+    /* Reset pending state. */
+    RT_ZERO(pClient->Pending);
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    shclSvcClientTransfersReset(pClient);
+#endif
+
+    shclSvcClientStateReset(&pClient->State);
 }
 
 /**
@@ -1272,9 +1329,7 @@ static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvCli
         pClient->Pending.uType = 0;
     }
 
-    shclSvcClientStateReset(&pClient->State);
     shclSvcClientStateDestroy(&pClient->State);
-
     ShClEventSourceDestroy(&pClient->Events);
 
     ClipboardClientMap::iterator itClient = g_mapClients.find(u32ClientID);
@@ -1295,39 +1350,21 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pvClient);
 
-    /* Assign the client ID. */
-    pClient->State.uClientID = u32ClientID;
-
-    /* Create the client's own event source. */
-    int rc = ShClEventSourceCreate(&pClient->Events, 0 /* ID, ignored */);
+    int rc = shclSvcClientInit(pClient, u32ClientID);
     if (RT_SUCCESS(rc))
     {
-        LogFlowFunc(("[Client %RU32] Using event source %RU32\n", u32ClientID, pClient->Events.uID));
-
-        /* Reset the client state. */
-        shclSvcClientStateReset(&pClient->State);
-
-        /* (Re-)initialize the client state. */
-        rc = shclSvcClientStateInit(&pClient->State, u32ClientID);
+        rc = ShClSvcImplConnect(pClient, ShClSvcGetHeadless());
         if (RT_SUCCESS(rc))
         {
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            rc = ShClTransferCtxInit(&pClient->TransferCtx);
-#endif
-            if (RT_SUCCESS(rc))
-                rc = ShClSvcImplConnect(pClient, ShClSvcGetHeadless());
-            if (RT_SUCCESS(rc))
-            {
-                /* Assign weak pointer to client map .*/
-                g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
+            /* Assign weak pointer to client map .*/
+            g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
 
-                /* For now we ASSUME that the first client ever connected is in charge for
-                 * communicating withe the service extension.
-                 *
-                 ** @todo This needs to be fixed ASAP w/o breaking older guest / host combos. */
-                if (g_ExtState.uClientID == 0)
-                    g_ExtState.uClientID = u32ClientID;
-            }
+            /* For now we ASSUME that the first client ever connected is in charge for
+             * communicating withe the service extension.
+             *
+             ** @todo This needs to be fixed ASAP w/o breaking older guest / host combos. */
+            if (g_ExtState.uClientID == 0)
+                g_ExtState.uClientID = u32ClientID;
         }
     }
 
@@ -1683,7 +1720,7 @@ static DECLCALLBACK(void) svcCall(void *,
  * @param   pClientState        Client state to initialize.
  * @param   uClientID           Client ID (HGCM) to use for this client state.
  */
-static int shclSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
+int shclSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
 {
     LogFlowFuncEnter();
 
@@ -1701,7 +1738,7 @@ static int shclSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClien
  * @returns VBox status code.
  * @param   pClientState        Client state to destroy.
  */
-static int shclSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState)
+int shclSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState)
 {
     RT_NOREF(pClientState);
 
@@ -1715,7 +1752,7 @@ static int shclSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState)
  *
  * @param   pClientState    Client state to reset.
  */
-static void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
+void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
 {
     LogFlowFuncEnter();
 
@@ -1727,8 +1764,6 @@ static void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     pClientState->Transfers.enmTransferDir = SHCLTRANSFERDIR_UNKNOWN;
-#else
-    RT_NOREF(pClientState);
 #endif
 }
 
