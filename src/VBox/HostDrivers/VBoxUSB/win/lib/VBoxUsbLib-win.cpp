@@ -210,7 +210,11 @@ static int usbLibVuDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO hDevInfo, PSP_DE
 
         strncpy(pVuDev->szName, pIfDetailData->DevicePath, sizeof (pVuDev->szName));
 
+#ifdef VBOX_WITH_NEW_USB_ENUM
+        if (!SetupDiGetDeviceRegistryPropertyA(hDevInfo, &DevInfoData, SPDRP_LOCATION_INFORMATION,
+#else
         if (!SetupDiGetDeviceRegistryPropertyA(hDevInfo, &DevInfoData, SPDRP_DRIVER,
+#endif
             NULL, /* OUT PDWORD PropertyRegDataType */
             (PBYTE)pVuDev->szDriverRegName,
             sizeof (pVuDev->szDriverRegName),
@@ -301,6 +305,7 @@ static int usbLibVuGetDevices(PVBOXUSB_DEV *ppVuDevs, uint32_t *pcVuDevs)
     return VINF_SUCCESS;
 }
 
+#ifndef VBOX_WITH_NEW_USB_ENUM
 static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_EX pConInfo, ULONG iPort, LPCSTR lpszDrvKeyName, LPCSTR lpszHubName, PVBOXUSB_STRING_DR_ENTRY pDrList)
 {
     pDev->bcdUSB = pConInfo->DeviceDescriptor.bcdUSB;
@@ -380,6 +385,87 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
 
     return VINF_SUCCESS;
 }
+#else
+static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_EX pConInfo, ULONG iPort, LPCSTR lpszLocation, LPCSTR lpszDrvKeyName, LPCSTR lpszHubName, PVBOXUSB_STRING_DR_ENTRY pDrList)
+{
+    pDev->bcdUSB = pConInfo->DeviceDescriptor.bcdUSB;
+    pDev->bDeviceClass = pConInfo->DeviceDescriptor.bDeviceClass;
+    pDev->bDeviceSubClass = pConInfo->DeviceDescriptor.bDeviceSubClass;
+    pDev->bDeviceProtocol = pConInfo->DeviceDescriptor.bDeviceProtocol;
+    pDev->idVendor = pConInfo->DeviceDescriptor.idVendor;
+    pDev->idProduct = pConInfo->DeviceDescriptor.idProduct;
+    pDev->bcdDevice = pConInfo->DeviceDescriptor.bcdDevice;
+    pDev->bBus = 0; /** @todo figure out bBus on windows... */
+    pDev->bPort = iPort;
+    /** @todo check which devices are used for primary input (keyboard & mouse) */
+    if (!lpszDrvKeyName || *lpszDrvKeyName == 0)
+        pDev->enmState = USBDEVICESTATE_UNUSED;
+    else
+        pDev->enmState = USBDEVICESTATE_USED_BY_HOST_CAPTURABLE;
+
+    /* Determine the speed the device is operating at. */
+    switch (pConInfo->Speed)
+    {
+        case UsbLowSpeed:   pDev->enmSpeed = USBDEVICESPEED_LOW;    break;
+        case UsbFullSpeed:  pDev->enmSpeed = USBDEVICESPEED_FULL;   break;
+        case UsbHighSpeed:  pDev->enmSpeed = USBDEVICESPEED_HIGH;   break;
+        default:    /* If we don't know, most likely it's something new. */
+        case UsbSuperSpeed: pDev->enmSpeed = USBDEVICESPEED_SUPER;  break;
+    }
+    /* Unfortunately USB_NODE_CONNECTION_INFORMATION_EX will not report UsbSuperSpeed, and
+     * it's not even defined in the Win7 DDK we use. So we go by the USB version, and
+     * luckily we know that USB3 must mean SuperSpeed. The USB3 spec guarantees this (9.6.1).
+     */
+    if (pDev->bcdUSB >= 0x0300)
+        pDev->enmSpeed = USBDEVICESPEED_SUPER;
+
+    pDev->pszAddress = RTStrDup(lpszLocation);
+    if (!pDev->pszAddress)
+        return VERR_NO_STR_MEMORY;
+    pDev->pszBackend = RTStrDup("host");
+    if (!pDev->pszBackend)
+    {
+        RTStrFree((char *)pDev->pszAddress);
+        return VERR_NO_STR_MEMORY;
+    }
+    pDev->pszHubName = RTStrDup(lpszHubName);
+    pDev->bNumConfigurations = 0;
+    pDev->u64SerialHash = 0;
+
+    for (; pDrList; pDrList = pDrList->pNext)
+    {
+        char **ppszString = NULL;
+        if (   pConInfo->DeviceDescriptor.iManufacturer
+            && pDrList->iDr == pConInfo->DeviceDescriptor.iManufacturer)
+            ppszString = (char **)&pDev->pszManufacturer;
+        else if (   pConInfo->DeviceDescriptor.iProduct
+                 && pDrList->iDr == pConInfo->DeviceDescriptor.iProduct)
+            ppszString = (char **)&pDev->pszProduct;
+        else if (   pConInfo->DeviceDescriptor.iSerialNumber
+                 && pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
+            ppszString = (char **)&pDev->pszSerialNumber;
+        if (ppszString)
+        {
+            int rc = RTUtf16ToUtf8((PCRTUTF16)pDrList->StrDr.bString, ppszString);
+            if (RT_SUCCESS(rc))
+            {
+                Assert(*ppszString);
+                USBLibPurgeEncoding(*ppszString);
+
+                if (pDrList->iDr == pConInfo->DeviceDescriptor.iSerialNumber)
+                    pDev->u64SerialHash = USBLibHashSerial(*ppszString);
+            }
+            else
+            {
+                AssertMsgFailed(("RTUtf16ToUtf8 failed, rc (%d), resuming\n", rc));
+                *ppszString = NULL;
+            }
+        }
+    }
+
+    return VINF_SUCCESS;
+}
+#endif
 
 static void usbLibDevStrFree(LPSTR lpszName)
 {
@@ -1065,7 +1151,7 @@ static LPCSTR usbLibGetParentInstanceID(DEVINST DevInst)
 }
 
 /* Process a single USB device that's being enumerated and grab its hub-specific data. */
-static int usbLibDevGetDevice(LPCSTR lpcszHubFile, ULONG iPort, LPCSTR Location, PUSBDEVICE *ppDevs, uint32_t *pcDevs)
+static int usbLibDevGetDevice(LPCSTR lpcszHubFile, ULONG iPort, LPCSTR lpcszLocation, LPCSTR lpcszDriverKey, PUSBDEVICE *ppDevs, uint32_t *pcDevs)
 {
     HANDLE                                  HubDevice;
     BYTE                                    abConBuf[sizeof(USB_NODE_CONNECTION_INFORMATION_EX)];
@@ -1082,6 +1168,11 @@ static int usbLibDevGetDevice(LPCSTR lpcszHubFile, ULONG iPort, LPCSTR Location,
     if (!lpcszHubFile)
     {
         LogRelFunc(("Hub path is NULL!\n"));
+        return VERR_INVALID_PARAMETER;
+    }
+    if (!lpcszLocation)
+    {
+        LogRelFunc(("Location NULL!\n"));
         return VERR_INVALID_PARAMETER;
     }
 
@@ -1148,7 +1239,7 @@ static int usbLibDevGetDevice(LPCSTR lpcszHubFile, ULONG iPort, LPCSTR Location,
     PUSBDEVICE pDev = (PUSBDEVICE)RTMemAllocZ(sizeof (*pDev));
     if (RT_LIKELY(pDev))
     {
-        rc = usbLibDevPopulate(pDev, pConInfo, iPort, Location, lpcszHubFile, pList);
+        rc = usbLibDevPopulate(pDev, pConInfo, iPort, lpcszLocation, lpcszDriverKey, lpcszHubFile, pList);
         if (RT_SUCCESS(rc))
         {
             pDev->pNext = *ppDevs;
@@ -1195,7 +1286,7 @@ static int usbLibDevGetDevice(LPCSTR lpcszHubFile, ULONG iPort, LPCSTR Location,
  * Windows Vista and later; earlier Windows version had no reliable way of cross-referencing the
  * USB IOCTL and PnP Manager data.
  */
-static int usbLibDevGetDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
+static int usbLibEnumDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
 {
     HDEVINFO            InfoSet;
     DWORD               DeviceIndex;
@@ -1204,6 +1295,7 @@ static int usbLibDevGetDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
     LPCSTR              ParentInstID;
     LPCSTR              HubPath = NULL;
     LPCSTR              Location;
+    LPCSTR              DriverKey;
 
     /* Ask for the USB PnP enumerator for all it has. */
     InfoSet = SetupDiGetClassDevs(NULL, "USB", NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
@@ -1230,16 +1322,24 @@ static int usbLibDevGetDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
             /* The location information uniquely identifies the USB device, (hub/port). */
             Location = (LPCSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_LOCATION_INFORMATION);
 
+            /* The software key aka DriverKey. This will be NULL for devices with no driver
+             * and allows us to distinguish between 'busy' (driver installed) and 'available'
+             * (no driver) devices.
+             */
+            DriverKey = (LPCSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_DRIVER);
+
             /* The device's PnP Manager "address" is the port number on the parent hub. */
             Address = (LPDWORD)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_ADDRESS);
-            if (Address && Location)
+            if (Address && Location)    /* NB: DriverKey may be NULL! */
             {
-                usbLibDevGetDevice(HubPath, *Address, Location, ppDevs, pcDevs);
+                usbLibDevGetDevice(HubPath, *Address, Location, DriverKey, ppDevs, pcDevs);
             }
             RTMemFree((void *)HubPath);
 
             if (Location)
                 RTMemFree((void *)Location);
+            if (DriverKey)
+                RTMemFree((void *)DriverKey);
             if (Address)
                 RTMemFree((void *)Address);
         }
@@ -1390,7 +1490,11 @@ static int usbLibGetDevices(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE *ppDevs, uin
     *pcDevs = 0;
 
     LogRelFunc(("Starting USB device enumeration\n"));
+#ifdef VBOX_WITH_NEW_USB_ENUM
+    int rc = usbLibEnumDevices(ppDevs, pcDevs);
+#else
     int rc = usbLibDevGetDevices(ppDevs, pcDevs);
+#endif
     AssertRC(rc);
     if (RT_SUCCESS(rc))
     {
