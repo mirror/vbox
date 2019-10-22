@@ -58,7 +58,7 @@ static void testSetMode(void)
     uint32_t u32Mode;
     int rc;
 
-    RTTestISub("Testing HOST_FN_SET_MODE");
+    RTTestISub("Testing VBOX_SHCL_HOST_FN_SET_MODE");
     rc = setupTable(&table);
     RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
 
@@ -93,6 +93,38 @@ static void testSetMode(void)
     RTTESTI_CHECK_MSG(u32Mode == VBOX_SHCL_MODE_OFF, ("u32Mode=%u\n", (unsigned) u32Mode));
     table.pfnUnload(NULL);
 }
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+static void testSetTransferMode(void)
+{
+    struct VBOXHGCMSVCPARM parms[2];
+    VBOXHGCMSVCFNTABLE table;
+
+    RTTestISub("Testing VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE");
+    int rc = setupTable(&table);
+    RTTESTI_CHECK_MSG_RETV(RT_SUCCESS(rc), ("rc=%Rrc\n", rc));
+
+    /* Invalid parameter. */
+    HGCMSvcSetU64(&parms[0], 99);
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    RTTESTI_CHECK_RC(rc, VERR_INVALID_PARAMETER);
+
+    /* Invalid mode. */
+    HGCMSvcSetU32(&parms[0], 99);
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    RTTESTI_CHECK_RC(rc, VERR_INVALID_FLAGS);
+
+    /* Enable transfers. */
+    HGCMSvcSetU32(&parms[0], VBOX_SHCL_TRANSFER_MODE_ENABLED);
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+
+    /* Disable transfers again. */
+    HGCMSvcSetU32(&parms[0], VBOX_SHCL_TRANSFER_MODE_DISABLED);
+    rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_TRANSFER_MODE, 1, parms);
+    RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+}
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 static void testMsgAddOld(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uParm1)
 {
@@ -243,6 +275,9 @@ static void testSetHeadless(void)
 static void testHostCall(void)
 {
     testSetMode();
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    testSetTransferMode();
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
     testSetHeadless();
 }
 
@@ -275,16 +310,16 @@ int main(int argc, char *argv[])
 
 int ShClSvcImplInit() { return VINF_SUCCESS; }
 void ShClSvcImplDestroy() { }
-int ShClSvcImplDisconnect(PSHCLCLIENT)
-{ return VINF_SUCCESS; }
-int ShClSvcImplConnect(PSHCLCLIENT, bool)
-{ return VINF_SUCCESS; }
-int ShClSvcImplFormatAnnounce(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLFORMATDATA)
-{ AssertFailed(); return VINF_SUCCESS; }
-int ShClSvcImplReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK, unsigned int *)
-{ AssertFailed(); return VERR_WRONG_ORDER; }
-int ShClSvcImplWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK)
-{ AssertFailed(); return VINF_SUCCESS; }
-int ShClSvcImplSync(PSHCLCLIENT)
-{ AssertFailed(); return VERR_WRONG_ORDER; }
+int ShClSvcImplDisconnect(PSHCLCLIENT) { return VINF_SUCCESS; }
+int ShClSvcImplConnect(PSHCLCLIENT, bool) { return VINF_SUCCESS; }
+int ShClSvcImplFormatAnnounce(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLFORMATDATA) { AssertFailed(); return VINF_SUCCESS; }
+int ShClSvcImplReadData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK, unsigned int *) { AssertFailed(); return VERR_WRONG_ORDER; }
+int ShClSvcImplWriteData(PSHCLCLIENT, PSHCLCLIENTCMDCTX, PSHCLDATABLOCK) { AssertFailed(); return VINF_SUCCESS; }
+int ShClSvcImplSync(PSHCLCLIENT) { AssertFailed(); return VERR_WRONG_ORDER; }
+
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+int ShClSvcImplTransferCreate(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
+int ShClSvcImplTransferDestroy(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
+int ShClSvcImplTransferGetRoots(PSHCLCLIENT, PSHCLTRANSFER) { return VINF_SUCCESS; }
+#endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 

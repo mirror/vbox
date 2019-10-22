@@ -1849,10 +1849,10 @@ static DECLCALLBACK(int) svcHostCall(void *,
             }
             else
             {
-                uint32_t u32TransferMode;
-                rc = HGCMSvcGetU32(&paParms[0], &u32TransferMode);
+                uint32_t fTransferMode;
+                rc = HGCMSvcGetU32(&paParms[0], &fTransferMode);
                 if (RT_SUCCESS(rc))
-                    rc = shclSvcTransferModeSet(u32TransferMode);
+                    rc = shclSvcTransferModeSet(fTransferMode);
             }
             break;
         }

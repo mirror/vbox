@@ -2199,7 +2199,8 @@ int shclSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
  */
 int shclSvcTransferModeSet(uint32_t fMode)
 {
-    AssertReturn(!(fMode & ~VBOX_SHCL_TRANSFER_MODE_VALID_MASK), VERR_INVALID_FLAGS);
+    if (fMode & ~VBOX_SHCL_TRANSFER_MODE_VALID_MASK)
+        return VERR_INVALID_FLAGS;
 
     g_fTransferMode = fMode;
 
