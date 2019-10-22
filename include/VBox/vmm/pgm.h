@@ -738,10 +738,15 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, u
 /** @name PGMR3PhysRegisterRom flags.
  * @{ */
 /** Inidicates that ROM shadowing should be enabled. */
-#define PGMPHYS_ROM_FLAGS_SHADOWED          RT_BIT_32(0)
+#define PGMPHYS_ROM_FLAGS_SHADOWED                  RT_BIT_32(0)
 /** Indicates that what pvBinary points to won't go away
  * and can be used for strictness checks. */
-#define PGMPHYS_ROM_FLAGS_PERMANENT_BINARY  RT_BIT_32(1)
+#define PGMPHYS_ROM_FLAGS_PERMANENT_BINARY          RT_BIT_32(1)
+/** Indicates that the ROM is allowed to be missing from saved state.
+ * @note This is a hack for EFI, see @bugref   */
+#define PGMPHYS_ROM_FLAGS_MAYBE_MISSING_FROM_STATE  RT_BIT_32(2)
+/** Valid flags.   */
+#define PGMPHYS_ROM_FLAGS_VALID_MASK                UINT32_C(0x00000007)
 /** @} */
 
 VMMR3DECL(int)      PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cb,

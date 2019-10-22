@@ -2275,12 +2275,12 @@ static DECLCALLBACK(void) pgmR3PhysInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char 
                 if (pszMore)
                     pHlp->pfnPrintf(pHlp, "    %RGp-%RGp %-20s %s\n",
                                     pCur->GCPhys + iFirstPage * X86_PAGE_SIZE,
-                                    pCur->GCPhys + iPage      * X86_PAGE_SIZE,
+                                    pCur->GCPhys + iPage      * X86_PAGE_SIZE - 1,
                                     pszType, pszMore);
                 else
                     pHlp->pfnPrintf(pHlp, "    %RGp-%RGp %s\n",
                                     pCur->GCPhys + iFirstPage * X86_PAGE_SIZE,
-                                    pCur->GCPhys + iPage      * X86_PAGE_SIZE,
+                                    pCur->GCPhys + iPage      * X86_PAGE_SIZE - 1,
                                     pszType);
 
             }

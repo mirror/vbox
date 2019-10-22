@@ -4058,7 +4058,7 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
     AssertReturn(GCPhysLast > GCPhys, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pvBinary, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
-    AssertReturn(!(fFlags & ~(PGMPHYS_ROM_FLAGS_SHADOWED | PGMPHYS_ROM_FLAGS_PERMANENT_BINARY)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~PGMPHYS_ROM_FLAGS_VALID_MASK), VERR_INVALID_PARAMETER);
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
 
     const uint32_t cPages = cb >> PAGE_SHIFT;
@@ -4374,8 +4374,7 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
  * @param   pvBinary            Pointer to the binary data backing the ROM image.
  * @param   cbBinary            The size of the binary data pvBinary points to.
  *                              This must be less or equal to @a cb.
- * @param   fFlags              Mask of flags. PGMPHYS_ROM_FLAGS_SHADOWED
- *                              and/or PGMPHYS_ROM_FLAGS_PERMANENT_BINARY.
+ * @param   fFlags              Mask of flags, PGMPHYS_ROM_FLAGS_XXX.
  * @param   pszDesc             Pointer to description string. This must not be freed.
  *
  * @remark  There is no way to remove the rom, automatically on device cleanup or
