@@ -38,52 +38,73 @@ technical terms if no non-technical ones are clear enough.
     <title>Version 6.1.0_BETA2 (2019-10-xx)</title>
 
     <para>
-      This is a major update. The following major new features were
-      added:
+        In addition, the following items were fixed and/or added:
     </para>
 
     <itemizedlist>
 
       <listitem>
         <para>
-          GUI: General rework directed to fix issues in various dialogs geometry save/restore.
+          GUI: Storage and Network settings pages bug-fixes and usability optimization
         </para>
       </listitem>
 
       <listitem>
         <para>
-          GUI: Storage and Network settings pages bug-fixes and usability optimization.
+          GUI: Media enumeration fixes
         </para>
       </listitem>
 
       <listitem>
         <para>
-          GUI: Media enumeration fixes.
+          GUI: Popup messages mouse click fix
         </para>
       </listitem>
 
       <listitem>
         <para>
-          GUI: Popup messages mouse click fix.
+          GUI: Details pane fixes
         </para>
       </listitem>
 
       <listitem>
         <para>
-          GUI: Details pane fixes.
+          GUI: Added multimedia keys to soft keyboard and other improvements
         </para>
       </listitem>
 
       <listitem>
         <para>
+          GUI: Fix and unify geometry save/restore in various dialogs
         </para>
       </listitem>
 
       <listitem>
         <para>
+          Graphics: additional texture format supportd on Windows host
         </para>
       </listitem>
+
+      <listitem>
+        <para>
+          Graphics: improved fix for flickering on Windows host
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          API: reduce the amount of leftovers from Move VM function
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: add NVRAM support
+        </para>
+      </listitem>
+
     </itemizedlist>
+
   </sect1>
 
   <sect1>
