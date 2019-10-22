@@ -1912,6 +1912,38 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IOMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
     {
         Log5(("IOM: Dispatching pending MMIO write: %RGp LB %#x\n",
               pVCpu->iom.s.PendingMmioWrite.GCPhys, pVCpu->iom.s.PendingMmioWrite.cbValue));
+
+        /* Use new MMIO handle hint and bypass PGM if it still looks right. */
+        size_t idxMmioRegionHint = pVCpu->iom.s.PendingMmioWrite.idxMmioRegionHint;
+        if (idxMmioRegionHint < pVM->iom.s.cMmioRegs)
+        {
+            PIOMMMIOENTRYR3 pRegEntry    = &pVM->iom.s.paMmioRegs[idxMmioRegionHint];
+            RTGCPHYS const GCPhysMapping = pRegEntry->GCPhysMapping;
+            RTGCPHYS const offRegion     = pVCpu->iom.s.PendingMmioWrite.GCPhys - GCPhysMapping;
+            if (offRegion < pRegEntry->cbRegion && GCPhysMapping != NIL_RTGCPHYS)
+            {
+                rcStrict = iomMmioDoWrite(pVM, pVCpu, pRegEntry, GCPhysFault, offRegion, pvBuf, (uint32_t)cbBuf IOM_MMIO_STATS_COMMA_ARG);
+                PDMCritSectLeave(pDevIns->CTX_SUFF(pCritSectRo));
+    #ifndef IN_RING3
+                if (rcStrict == VINF_IOM_R3_MMIO_WRITE)
+                    rcStrict = iomMmioRing3WritePending(pVCpu, GCPhysFault, pvBuf, cbBuf, pRegEntry->idxSelf);
+                if (rcStrict == VINF_IOM_R3_MMIO_WRITE)
+                {
+                    STAM_COUNTER_INC(&pStats->WriteRZToR3);
+                    STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOWritesToR3);
+                }
+                else if (rcStrict == VINF_IOM_R3_MMIO_COMMIT_WRITE)
+                {
+                    STAM_COUNTER_INC(&pStats->CommitRZToR3);
+                    STAM_COUNTER_INC(&pVM->iom.s.StatRZMMIOCommitsToR3);
+                }
+                else
+    #endif
+                    STAM_COUNTER_INC(&pStats->Writes);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfWrite), Prf);
+            }
+        }
+
         /** @todo Try optimize this some day?  Currently easier and more correct to
          *        involve PGM here since we never know if the MMIO area is still mapped
          *        to the same location as when we wrote to it in RC/R0 context. */

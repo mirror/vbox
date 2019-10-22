@@ -4235,29 +4235,11 @@ static int pgmR3PhysRomRegisterLocked(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
                                       | (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED ? NEM_NOTIFY_PHYS_ROM_F_SHADOW : 0);
             rc = NEMR3NotifyPhysRomRegisterEarly(pVM, GCPhys, cb, fNemNotify);
 
-            /*
-             * !HACK ALERT!  REM + (Shadowed) ROM ==> mess.
-             *
-             * If it's shadowed we'll register the handler after the ROM notification
-             * so we get the access handler callbacks that we should. If it isn't
-             * shadowed we'll do it the other way around to make REM use the built-in
-             * ROM behavior and not the handler behavior (which is to route all access
-             * to PGM atm).
-             */
-            if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
-            {
-                if (RT_SUCCESS(rc))
-                    rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
-                                                    pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
-                                                    pszDesc);
-            }
-            else
-            {
-                if (RT_SUCCESS(rc))
-                    rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
-                                                    pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
-                                                    pszDesc);
-            }
+            /* Register the ROM access handler. */
+            if (RT_SUCCESS(rc))
+                rc = PGMHandlerPhysicalRegister(pVM, GCPhys, GCPhysLast, pVM->pgm.s.hRomPhysHandlerType,
+                                                pRomNew, MMHyperCCToR0(pVM, pRomNew), MMHyperCCToRC(pVM, pRomNew),
+                                                pszDesc);
             if (RT_SUCCESS(rc))
             {
                 /*
