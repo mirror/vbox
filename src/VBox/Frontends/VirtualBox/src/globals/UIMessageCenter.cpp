@@ -2407,6 +2407,24 @@ void UIMessageCenter::cannotAddDiskEncryptionPassword(const CConsole &console)
           UIErrorString::formatErrorInfo(console));
 }
 
+bool UIMessageCenter::confirmSoftKeyboardClose() const
+{
+    return questionBinary(0, MessageType_Warning,
+                          tr("There are not saved layouts? Closing this dialog will cause loosing the changed. Proceed?"),
+                          0 /* auto-confirm id */,
+                          "Ok", "Cancel");
+
+
+
+    // bool questionBinary(QWidget *pParent, MessageType enmType,
+    //                     const QString &strMessage,
+    //                     const char *pcszAutoConfirmId = 0,
+    //                     const QString &strOkButtonText = QString(),
+    //                     const QString &strCancelButtonText = QString(),
+    //                     bool fDefaultFocusForOk = true) const;
+
+}
+
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
 bool UIMessageCenter::confirmCancelingAllNetworkRequests() const
 {

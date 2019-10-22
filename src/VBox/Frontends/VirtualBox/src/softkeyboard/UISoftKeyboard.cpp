@@ -511,12 +511,15 @@ public:
     void addOrUpdateUIKeyCaptions(int iKeyPosition, const UIKeyCaptions &keyCaptions);
     UIKeyCaptions keyCaptions(int iKeyPosition) const;
 
-    bool operator==(const UISoftKeyboardLayout &otherLayout);
+    bool operator==(const UISoftKeyboardLayout &otherLayout) const;
 
     QString baseCaption(int iKeyPosition) const;
     QString shiftCaption(int iKeyPosition) const;
     QString altGrCaption(int iKeyPosition) const;
     QString shiftAltGrCaption(int iKeyPosition) const;
+
+    void setEditedBuNotSaved(bool fEditedButNotsaved);
+    bool editedButNotSaved() const;
 
     void setUid(const QUuid &uid);
     QUuid uid() const;
@@ -536,6 +539,7 @@ private:
     QString m_strSourceFilePath;
     bool    m_fEditable;
     bool    m_fIsFromResources;
+    bool    m_fEditedButNotSaved;
     QUuid   m_uid;
 };
 
@@ -649,6 +653,7 @@ public:
     void setColorThemeByName(const QString &strColorThemeName);
     void parentDialogDeactivated();
     bool isColorThemeEditable() const;
+    bool unsavedLayoutsExist() const;
 
 protected:
 
@@ -1248,7 +1253,6 @@ QWidget *UIKeyboardLayoutEditor::prepareKeyCaptionEditWidgets()
     pCaptionEditorLayout->addWidget(m_pShiftAltGrCaptionEdit, 3, 1);
     connect(m_pShiftAltGrCaptionEdit, &QLineEdit::textChanged, this, &UIKeyboardLayoutEditor::sltCaptionsUpdate);
 
-
     QSpacerItem *pSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Expanding);
     if (pSpacer)
         pCaptionEditorLayout->addItem(pSpacer, 4, 1);
@@ -1313,7 +1317,6 @@ void UILayoutSelector::setCurrentLayout(const QUuid &layoutUid)
             continue;
         if (pItem->data(Qt::UserRole).toUuid() == layoutUid)
             pFoundItem = pItem;
-
     }
     if (!pFoundItem)
         return;
@@ -1764,6 +1767,7 @@ void UISoftKeyboardKey::reset()
 UISoftKeyboardLayout::UISoftKeyboardLayout()
     : m_fEditable(true)
     , m_fIsFromResources(false)
+    , m_fEditedButNotSaved(false)
     , m_uid(QUuid::createUuid())
 {
 }
@@ -1783,6 +1787,7 @@ QString UISoftKeyboardLayout::nameString() const
 void UISoftKeyboardLayout::setSourceFilePath(const QString& strSourceFilePath)
 {
     m_strSourceFilePath = strSourceFilePath;
+    setEditedBuNotSaved(true);
 }
 
 const QString& UISoftKeyboardLayout::sourceFilePath() const
@@ -1793,6 +1798,7 @@ const QString& UISoftKeyboardLayout::sourceFilePath() const
 void UISoftKeyboardLayout::setIsFromResources(bool fIsFromResources)
 {
     m_fIsFromResources = fIsFromResources;
+    setEditedBuNotSaved(true);
 }
 
 bool UISoftKeyboardLayout::isFromResources() const
@@ -1803,6 +1809,7 @@ bool UISoftKeyboardLayout::isFromResources() const
 void UISoftKeyboardLayout::setName(const QString &strName)
 {
     m_strName = strName;
+    setEditedBuNotSaved(true);
 }
 
 const QString &UISoftKeyboardLayout::name() const
@@ -1813,6 +1820,7 @@ const QString &UISoftKeyboardLayout::name() const
 void UISoftKeyboardLayout::setNativeName(const QString &strNativeName)
 {
     m_strNativeName = strNativeName;
+    setEditedBuNotSaved(true);
 }
 
 const QString &UISoftKeyboardLayout::nativeName() const
@@ -1823,6 +1831,7 @@ const QString &UISoftKeyboardLayout::nativeName() const
 void UISoftKeyboardLayout::setEditable(bool fEditable)
 {
     m_fEditable = fEditable;
+    setEditedBuNotSaved(true);
 }
 
 bool UISoftKeyboardLayout::editable() const
@@ -1833,6 +1842,7 @@ bool UISoftKeyboardLayout::editable() const
 void UISoftKeyboardLayout::setPhysicalLayoutUuid(const QUuid &uuid)
 {
     m_physicalLayoutUuid = uuid;
+    setEditedBuNotSaved(true);
 }
 
 const QUuid &UISoftKeyboardLayout::physicalLayoutUuid() const
@@ -1847,6 +1857,7 @@ void UISoftKeyboardLayout::addOrUpdateUIKeyCaptions(int iKeyPosition, const UIKe
     m_keyCaptionsMap[iKeyPosition] = keyCaptions;
     /* Updating the captions invalidates the cached font size. We set it to 0, thereby forcing its recomputaion: */
     m_keyCaptionsFontSizeMap[iKeyPosition] = 0;
+    setEditedBuNotSaved(true);
 }
 
 UIKeyCaptions UISoftKeyboardLayout::keyCaptions(int iKeyPosition) const
@@ -1854,7 +1865,7 @@ UIKeyCaptions UISoftKeyboardLayout::keyCaptions(int iKeyPosition) const
     return m_keyCaptionsMap[iKeyPosition];
 }
 
-bool UISoftKeyboardLayout::operator==(const UISoftKeyboardLayout &otherLayout)
+bool UISoftKeyboardLayout::operator==(const UISoftKeyboardLayout &otherLayout) const
 {
     if (m_strName != otherLayout.m_strName)
         return false;
@@ -1897,9 +1908,20 @@ QString UISoftKeyboardLayout::shiftAltGrCaption(int iKeyPosition) const
     return m_keyCaptionsMap[iKeyPosition].m_strShiftAltGr;
 }
 
+void UISoftKeyboardLayout::setEditedBuNotSaved(bool fEditedButNotsaved)
+{
+    m_fEditedButNotSaved = fEditedButNotsaved;
+}
+
+bool UISoftKeyboardLayout::editedButNotSaved() const
+{
+    return m_fEditedButNotSaved;
+}
+
 void UISoftKeyboardLayout::setUid(const QUuid &uid)
 {
     m_uid = uid;
+    setEditedBuNotSaved(true);
 }
 
 QUuid UISoftKeyboardLayout::uid() const
@@ -2395,6 +2417,7 @@ void UISoftKeyboardWidget::saveCurentLayoutToFile()
 
    xmlFile.close();
    m_pCurrentKeyboardLayout->setSourceFilePath(strFileName);
+   m_pCurrentKeyboardLayout->setEditedBuNotSaved(false);
    sigStatusBarMessage(QString("%1 %2").arg(strFileName).arg(UISoftKeyboard::tr(" is saved")));
 }
 
@@ -2408,6 +2431,7 @@ void UISoftKeyboardWidget::copyCurentLayout()
     if (!newLayout.nativeName().isEmpty())
         strNewNativeName= QString("%1-%2").arg(newLayout.nativeName()).arg(UISoftKeyboard::tr("Copy"));
     newLayout.setName(strNewName);
+    newLayout.setEditedBuNotSaved(true);
     newLayout.setNativeName(strNewNativeName);
     newLayout.setEditable(true);
     newLayout.setIsFromResources(false);
@@ -2544,6 +2568,16 @@ bool UISoftKeyboardWidget::isColorThemeEditable() const
     if (!m_currentColorTheme)
         return false;
     return m_currentColorTheme->isEditable();
+}
+
+bool UISoftKeyboardWidget::unsavedLayoutsExist() const
+{
+    foreach (const UISoftKeyboardLayout &layout, m_layouts)
+    {
+        if (layout.editedButNotSaved())
+            return true;
+    }
+    return false;
 }
 
 void UISoftKeyboardWidget::deleteCurrentLayout()
@@ -3004,6 +3038,8 @@ void UISoftKeyboardWidget::loadLayouts()
 
     if (m_layouts.isEmpty())
         return;
+    for (int i = 0; i < m_layouts.size(); ++i)
+        m_layouts[i].setEditedBuNotSaved(false);
     setCurrentLayout(&(m_layouts[0]));
 }
 
@@ -3756,6 +3792,20 @@ void UISoftKeyboard::retranslateUi()
 bool UISoftKeyboard::shouldBeMaximized() const
 {
     return gEDataManager->softKeyboardDialogShouldBeMaximized();
+}
+
+void UISoftKeyboard::closeEvent(QCloseEvent *event)
+{
+    /* Show a warning dialog when there are not saved layouts: */
+    if (m_pKeyboardWidget && m_pKeyboardWidget->unsavedLayoutsExist())
+    {
+        if (msgCenter().confirmSoftKeyboardClose())
+            QMainWindowWithRestorableGeometryAndRetranslateUi::closeEvent(event);
+        else
+            event->ignore();
+        return;
+    }
+    QMainWindowWithRestorableGeometryAndRetranslateUi::closeEvent(event);
 }
 
 bool UISoftKeyboard::event(QEvent *pEvent)
