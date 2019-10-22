@@ -145,9 +145,9 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
      * Ensure that we've got table space for it.
      */
 #ifndef VBOX_WITH_STATISTICS
-    uint16_t const idxStats        = UINT16_MAX;
+    uint16_t const idxStats      = UINT16_MAX;
 #else
-    uint32_t const idxStats        = pVM->iom.s.cMmioStats;
+    uint32_t const idxStats      = pVM->iom.s.cMmioStats;
     uint32_t const cNewMmioStats = idxStats + 1;
     AssertReturn(cNewMmioStats <= _64K, VERR_IOM_TOO_MANY_MMIO_REGISTRATIONS);
     if (cNewMmioStats > pVM->iom.s.cMmioStatsAllocation)
@@ -187,6 +187,9 @@ VMMR3_INT_DECL(int)  IOMR3MmioCreate(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS cbReg
     pVM->iom.s.paMmioRegs[idx].idxSelf            = idx;
 
     pVM->iom.s.cMmioRegs = idx + 1;
+#ifdef VBOX_WITH_STATISTICS
+    pVM->iom.s.cMmioStats = cNewMmioStats;
+#endif
     *phRegion = idx;
     return VINF_SUCCESS;
 }

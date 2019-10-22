@@ -283,6 +283,9 @@ VMMR3_INT_DECL(int)  IOMR3IoPortCreate(PVM pVM, PPDMDEVINS pDevIns, RTIOPORT cPo
     pVM->iom.s.paIoPortRegs[idx].idxSelf            = idx;
 
     pVM->iom.s.cIoPortRegs = idx + 1;
+#ifdef VBOX_WITH_STATISTICS
+    pVM->iom.s.cIoPortStats = cNewIoPortStats;
+#endif
     *phIoPorts = idx;
     return VINF_SUCCESS;
 }
