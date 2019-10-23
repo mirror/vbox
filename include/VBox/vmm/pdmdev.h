@@ -7056,7 +7056,7 @@ DECLINLINE(int) PDMDevHlpSUPSemEventMultiReset(PPDMDEVINS pDevIns, SUPSEMEVENTMU
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnTaskTrigger
+ * @copydoc PDMDEVHLPR3::pfnSUPSemEventMultiWaitNoResume
  */
 DECLINLINE(int) PDMDevHlpSUPSemEventMultiWaitNoResume(PPDMDEVINS pDevIns, SUPSEMEVENTMULTI hEventMulti, uint32_t cMillies)
 {

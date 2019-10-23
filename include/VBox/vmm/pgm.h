@@ -743,7 +743,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, u
  * and can be used for strictness checks. */
 #define PGMPHYS_ROM_FLAGS_PERMANENT_BINARY          RT_BIT_32(1)
 /** Indicates that the ROM is allowed to be missing from saved state.
- * @note This is a hack for EFI, see @bugref   */
+ * @note This is a hack for EFI, see @bugref{6940}   */
 #define PGMPHYS_ROM_FLAGS_MAYBE_MISSING_FROM_STATE  RT_BIT_32(2)
 /** Valid flags.   */
 #define PGMPHYS_ROM_FLAGS_VALID_MASK                UINT32_C(0x00000007)

@@ -2549,7 +2549,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_TaskCreate(PPDMDEVINS pDevIns, uint32_t fFl
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnTaskTrgger} */
+/** @interface_method_impl{PDMDEVHLPR3,pfnTaskTrigger} */
 static DECLCALLBACK(int) pdmR3DevHlp_TaskTrigger(PPDMDEVINS pDevIns, PDMTASKHANDLE hTask)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
