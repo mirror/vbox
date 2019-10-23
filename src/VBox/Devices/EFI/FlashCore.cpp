@@ -364,18 +364,21 @@ DECLHIDDEN(int) flashR3SsmLoadExec(PFLASHCORE pThis, PSSMHANDLE pSSM)
         SSMR3GetU8(pSSM, &pThis->cBusCycle);
 
         /* Make sure configuration didn't change behind our back. */
-        SSMR3GetU16(pSSM, &u16Val);
+        rc = SSMR3GetU16(pSSM, &u16Val);
+        AssertRCReturn(rc, rc);
         if (u16Val != pThis->cbBlockSize)
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        SSMR3GetU16(pSSM, &u16Val);
+        rc = SSMR3GetU16(pSSM, &u16Val);
+        AssertRCReturn(rc, rc);
         if (u16Val != pThis->u16FlashId)
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        SSMR3GetU32(pSSM, &u32Val);
+        rc = SSMR3GetU32(pSSM, &u32Val);
+        AssertRCReturn(rc, rc);
         if (u32Val != pThis->cbFlashSize)
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
 
         /* Suck in the flash contents. */
-        SSMR3GetMem(pSSM, pThis->pbFlash, pThis->cbFlashSize);
+        rc = SSMR3GetMem(pSSM, pThis->pbFlash, pThis->cbFlashSize);
     }
     else
         rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
