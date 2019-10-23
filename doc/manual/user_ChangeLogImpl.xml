@@ -35,7 +35,7 @@ technical terms if no non-technical ones are clear enough.
                            So, we use chapter and xpointer="xpointer(/chapter/)" with xi:include. -->
 
   <sect1>
-    <title>Version 6.1.0_BETA2 (2019-10-xx)</title>
+    <title>Version 6.1.0_BETA2 (2019-10-23)</title>
 
     <para>
         In addition, the following items were fixed and/or added:
