@@ -120,7 +120,7 @@ static int flashMemWriteByte(PFLASHCORE pThis, uint32_t off, uint8_t bCmd)
         {
             case FLASH_CMD_WRITE:
             case FLASH_CMD_ALT_WRITE:
-                uOffset = off & (pThis->cbFlashSize - 1);
+                uOffset = off;
                 if (uOffset < pThis->cbFlashSize)
                 {
                     pThis->pbFlash[uOffset] = bCmd;
@@ -134,8 +134,7 @@ static int flashMemWriteByte(PFLASHCORE pThis, uint32_t off, uint8_t bCmd)
                 if (bCmd == FLASH_CMD_ERASE_CONFIRM)
                 {
                     /* The current address determines the block to erase. */
-                    uOffset = off & (pThis->cbFlashSize - 1);
-                    uOffset = uOffset & ~(pThis->cbBlockSize - 1);
+                    uOffset = off & ~(pThis->cbBlockSize - 1);
                     memset(pThis->pbFlash + uOffset, 0xff, pThis->cbBlockSize);
                     LogFunc(("Erasing block at offset %u\n", uOffset));
                 }
@@ -161,7 +160,6 @@ static int flashMemWriteByte(PFLASHCORE pThis, uint32_t off, uint8_t bCmd)
 static int flashMemReadByte(PFLASHCORE pThis, uint32_t off, uint8_t *pbData)
 {
     uint8_t bValue;
-    unsigned uOffset;
     int rc = VINF_SUCCESS;
 
     /*
@@ -171,8 +169,10 @@ static int flashMemReadByte(PFLASHCORE pThis, uint32_t off, uint8_t *pbData)
     switch (pThis->bCmd)
     {
         case FLASH_CMD_ARRAY_READ:
-            uOffset = off & (pThis->cbFlashSize - 1);
-            bValue = pThis->pbFlash[uOffset];
+            if (off < pThis->cbFlashSize)
+                bValue = pThis->pbFlash[off];
+            else
+                bValue = 0xff; /* Play safe and return the default value of non initialized flash. */
             LogFunc(("read byte at %08RX32: %02X\n", off, bValue));
             break;
         case FLASH_CMD_STS_READ:
