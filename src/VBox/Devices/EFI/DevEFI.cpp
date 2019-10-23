@@ -271,9 +271,11 @@ typedef DEVEFI *PDEVEFI;
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
 /** The saved state version. */
-#define EFI_SSM_VERSION 2
+#define EFI_SSM_VERSION                  3
+/** The saved state version before working NVRAM support was implemented. */
+#define EFI_SSM_VERSION_PRE_PROPER_NVRAM 2
 /** The saved state version from VBox 4.2. */
-#define EFI_SSM_VERSION_4_2 1
+#define EFI_SSM_VERSION_4_2              1
 
 /** Non-volatile EFI variable. */
 #define VBOX_EFI_VARIABLE_NON_VOLATILE  UINT32_C(0x00000001)
@@ -1652,36 +1654,7 @@ static DECLCALLBACK(int) efiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     LogFlow(("efiSaveExec:\n"));
 
-    /*
-     * Set variables only used when saving state.
-     */
-    uint32_t idUniqueSavedState = 0;
-    PEFIVAR pEfiVar;
-    RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
-    {
-        pEfiVar->idUniqueSavedState = idUniqueSavedState++;
-    }
-    Assert(idUniqueSavedState == pThis->NVRAM.cVariables);
-
-    pThis->NVRAM.idUniqueCurVar = pThis->NVRAM.pCurVar
-                                ? pThis->NVRAM.pCurVar->idUniqueSavedState
-                                : UINT32_MAX;
-
-    /*
-     * Save the NVRAM state.
-     */
-    SSMR3PutStructEx(pSSM, &pThis->NVRAM,          sizeof(NVRAMDESC), 0, g_aEfiNvramDescField,     NULL);
-    SSMR3PutStructEx(pSSM, &pThis->NVRAM.VarOpBuf, sizeof(EFIVAR),    0, g_aEfiVariableDescFields, NULL);
-
-    /*
-     * Save the list variables (we saved the length above).
-     */
-    RTListForEach(&pThis->NVRAM.VarList, pEfiVar, EFIVAR, ListNode)
-    {
-        SSMR3PutStructEx(pSSM, pEfiVar, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
-    }
-
-    return VINF_SUCCESS; /* SSM knows */
+    return flashR3SsmSaveExec(&pThis->Flash, pSSM);
 }
 
 static DECLCALLBACK(int) efiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
@@ -1695,73 +1668,80 @@ static DECLCALLBACK(int) efiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     if (uPass != SSM_PASS_FINAL)
         return VERR_SSM_UNEXPECTED_PASS;
     if (   uVersion != EFI_SSM_VERSION
+        && uVersion != EFI_SSM_VERSION_PRE_PROPER_NVRAM
         && uVersion != EFI_SSM_VERSION_4_2
         )
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    /*
-     * Kill the current variables before loading anything.
-     */
-    nvramFlushDeviceVariableList(pThis);
-
-    /*
-     * Load the NVRAM state.
-     */
-    int rc = SSMR3GetStructEx(pSSM, &pThis->NVRAM, sizeof(NVRAMDESC), 0, g_aEfiNvramDescField, NULL);
-    AssertRCReturn(rc, rc);
-    pThis->NVRAM.pCurVar = NULL;
-
-    rc = SSMR3GetStructEx(pSSM, &pThis->NVRAM.VarOpBuf, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
-    AssertRCReturn(rc, rc);
-
-    /*
-     * Load variables.
-     */
-    pThis->NVRAM.pCurVar = NULL;
-    Assert(RTListIsEmpty(&pThis->NVRAM.VarList));
-    RTListInit(&pThis->NVRAM.VarList);
-    for (uint32_t i = 0; i < pThis->NVRAM.cVariables; i++)
+    int rc;
+    if (uVersion > EFI_SSM_VERSION_PRE_PROPER_NVRAM)
+        rc = flashR3SsmLoadExec(&pThis->Flash, pSSM);
+    else
     {
-        PEFIVAR pEfiVar = (PEFIVAR)RTMemAllocZ(sizeof(EFIVAR));
-        AssertReturn(pEfiVar, VERR_NO_MEMORY);
+        /*
+         * Kill the current variables before loading anything.
+         */
+        nvramFlushDeviceVariableList(pThis);
 
-        rc = SSMR3GetStructEx(pSSM, pEfiVar, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
-        if (RT_SUCCESS(rc))
+        /*
+         * Load the NVRAM state.
+         */
+        rc = SSMR3GetStructEx(pSSM, &pThis->NVRAM, sizeof(NVRAMDESC), 0, g_aEfiNvramDescField, NULL);
+        AssertRCReturn(rc, rc);
+        pThis->NVRAM.pCurVar = NULL;
+
+        rc = SSMR3GetStructEx(pSSM, &pThis->NVRAM.VarOpBuf, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+        AssertRCReturn(rc, rc);
+
+        /*
+         * Load variables.
+         */
+        pThis->NVRAM.pCurVar = NULL;
+        Assert(RTListIsEmpty(&pThis->NVRAM.VarList));
+        RTListInit(&pThis->NVRAM.VarList);
+        for (uint32_t i = 0; i < pThis->NVRAM.cVariables; i++)
         {
-            if (   pEfiVar->cbValue > sizeof(pEfiVar->abValue)
-                || pEfiVar->cbValue == 0)
-            {
-                rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-                LogRel(("EFI: Loaded invalid variable value length %#x\n", pEfiVar->cbValue));
-            }
-            uint32_t cchVarName = (uint32_t)RTStrNLen(pEfiVar->szName, sizeof(pEfiVar->szName));
-            if (cchVarName >= sizeof(pEfiVar->szName))
-            {
-                rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-                LogRel(("EFI: Loaded variable name is unterminated.\n"));
-            }
-            if (pEfiVar->cchName > cchVarName) /* No check for 0 here, busted load code in 4.2, so now storing 0 here. */
-            {
-                rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
-                LogRel(("EFI: Loaded invalid variable name length %#x (cchVarName=%#x)\n", pEfiVar->cchName, cchVarName));
-            }
-            if (RT_SUCCESS(rc))
-                pEfiVar->cchName = cchVarName;
-        }
-        AssertRCReturnStmt(rc, RTMemFree(pEfiVar), rc);
+            PEFIVAR pEfiVar = (PEFIVAR)RTMemAllocZ(sizeof(EFIVAR));
+            AssertReturn(pEfiVar, VERR_NO_MEMORY);
 
-        /* Add it (not using nvramInsertVariable to preserve saved order),
-           updating the current variable pointer while we're here. */
+            rc = SSMR3GetStructEx(pSSM, pEfiVar, sizeof(EFIVAR), 0, g_aEfiVariableDescFields, NULL);
+            if (RT_SUCCESS(rc))
+            {
+                if (   pEfiVar->cbValue > sizeof(pEfiVar->abValue)
+                    || pEfiVar->cbValue == 0)
+                {
+                    rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+                    LogRel(("EFI: Loaded invalid variable value length %#x\n", pEfiVar->cbValue));
+                }
+                uint32_t cchVarName = (uint32_t)RTStrNLen(pEfiVar->szName, sizeof(pEfiVar->szName));
+                if (cchVarName >= sizeof(pEfiVar->szName))
+                {
+                    rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+                    LogRel(("EFI: Loaded variable name is unterminated.\n"));
+                }
+                if (pEfiVar->cchName > cchVarName) /* No check for 0 here, busted load code in 4.2, so now storing 0 here. */
+                {
+                    rc = VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
+                    LogRel(("EFI: Loaded invalid variable name length %#x (cchVarName=%#x)\n", pEfiVar->cchName, cchVarName));
+                }
+                if (RT_SUCCESS(rc))
+                    pEfiVar->cchName = cchVarName;
+            }
+            AssertRCReturnStmt(rc, RTMemFree(pEfiVar), rc);
+
+            /* Add it (not using nvramInsertVariable to preserve saved order),
+               updating the current variable pointer while we're here. */
 #if 1
-        RTListAppend(&pThis->NVRAM.VarList, &pEfiVar->ListNode);
+            RTListAppend(&pThis->NVRAM.VarList, &pEfiVar->ListNode);
 #else
-        nvramInsertVariable(pThis, pEfiVar);
+            nvramInsertVariable(pThis, pEfiVar);
 #endif
-        if (pThis->NVRAM.idUniqueCurVar == pEfiVar->idUniqueSavedState)
-            pThis->NVRAM.pCurVar = pEfiVar;
+            if (pThis->NVRAM.idUniqueCurVar == pEfiVar->idUniqueSavedState)
+                pThis->NVRAM.pCurVar = pEfiVar;
+        }
     }
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
