@@ -56,9 +56,8 @@ static DECLCALLBACK(void) pdmR3TaskInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, 
                           /*  123: triggered internal 0123456789abcdef 0123456789abcdef 0x0000 SomeFunctionName */
                             " Hnd:   State     Type   pfnCallback      pvUser           Flags  Name\n",
                             i, pTaskSet->uHandleBase, ASMAtomicReadU64(&pTaskSet->fTriggered),
-                            (int)ASMAtomicReadU32(&pTaskSet->idxRunning),
                             pTaskSet->fRZEnabled ? " RZ-enabled" : "", pTaskSet->hThread != NIL_RTTHREAD ? "" : " no-thread",
-                            pTaskSet->cAllocated, RT_ELEMENTS(pTaskSet->aTasks));
+                            (int)ASMAtomicReadU32(&pTaskSet->idxRunning), pTaskSet->cAllocated, RT_ELEMENTS(pTaskSet->aTasks));
             for (unsigned j = 0; j < RT_ELEMENTS(pTaskSet->aTasks); j++)
             {
                 PPDMTASK pTask = &pTaskSet->aTasks[j];
@@ -73,7 +72,7 @@ static DECLCALLBACK(void) pdmR3TaskInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, 
                         case PDMTASKTYPE_INTERNAL:  pszType = "internal"; break;
                         default:                    pszType = "unknown "; break;
                     }
-                    pHlp->pfnPrintf(pHlp, " %3u: %s %s %p %p %#06 %s\n", pTaskSet->uHandleBase + j,
+                    pHlp->pfnPrintf(pHlp, " %3u: %s %s %p %p %#RX32 %s\n", pTaskSet->uHandleBase + j,
                                     ASMBitTest(&pTaskSet->fTriggered, j) ? "triggered"
                                     : ASMAtomicReadU32(&pTaskSet->idxRunning) == j  ? " running " : "  idle   ",
                                     pszType, pTask->pfnCallback, pTask->pvUser, pTask->fFlags, pTask->pszName);
