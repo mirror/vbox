@@ -201,6 +201,12 @@ RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWBOOL enmBoolean, bool *pfValue)
     uint8_t bValue = 0;
     DWORD cbRet = g_pfnGetFirmwareEnvironmentVariableW(pwszName, VBOX_UEFI_UUID_GLOBALS, &bValue, sizeof(bValue));
     *pfValue = cbRet != 0 && bValue != 0;
-    return cbRet != 0 || GetLastError() == ERROR_INVALID_FUNCTION ? VINF_SUCCESS : RTErrConvertFromWin32(GetLastError());
+    if (cbRet != 0)
+        return VINF_SUCCESS;
+    DWORD dwErr = GetLastError();
+    if (   dwErr == ERROR_INVALID_FUNCTION
+        || dwErr == ERROR_ENVVAR_NOT_FOUND)
+        return VINF_SUCCESS;
+    return RTErrConvertFromWin32(dwErr);
 }
 
