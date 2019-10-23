@@ -1849,10 +1849,10 @@ void SessionMachine::i_takeSnapshotHandler(TakeSnapshotTask &task)
         // Handle NVRAM file snapshotting
         Utf8Str strNVRAM = mBIOSSettings->i_getNonVolatileStorageFile();
         Utf8Str strNVRAMSnap = pSnapshotMachine->i_getSnapshotNVRAMFilename();
-        Utf8Str strNVRAMSnapAbs;
-        i_calculateFullPath(strNVRAMSnap, strNVRAMSnapAbs);
         if (strNVRAM.isNotEmpty() && strNVRAMSnap.isNotEmpty() && RTFileExists(strNVRAM.c_str()))
         {
+            Utf8Str strNVRAMSnapAbs;
+            i_calculateFullPath(strNVRAMSnap, strNVRAMSnapAbs);
             rc = VirtualBox::i_ensureFilePathExists(strNVRAMSnapAbs, true /* fCreate */);
             if (FAILED(rc))
                 throw rc;
