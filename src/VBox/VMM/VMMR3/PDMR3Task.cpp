@@ -72,7 +72,7 @@ static DECLCALLBACK(void) pdmR3TaskInfo(PVM pVM, PCDBGFINFOHLP pHlp, int cArgs, 
                         case PDMTASKTYPE_INTERNAL:  pszType = "internal"; break;
                         default:                    pszType = "unknown "; break;
                     }
-                    pHlp->pfnPrintf(pHlp, " %3u: %s %s %p %p %#RX32 %s\n", pTaskSet->uHandleBase + j,
+                    pHlp->pfnPrintf(pHlp, " %3u: %s %s %p %p %#06x %s\n", pTaskSet->uHandleBase + j,
                                     ASMBitTest(&pTaskSet->fTriggered, j) ? "triggered"
                                     : ASMAtomicReadU32(&pTaskSet->idxRunning) == j  ? " running " : "  idle   ",
                                     pszType, pTask->pfnCallback, pTask->pvUser, pTask->fFlags, pTask->pszName);
