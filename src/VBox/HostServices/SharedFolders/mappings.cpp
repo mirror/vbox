@@ -392,7 +392,9 @@ int vbsfMappingsAdd(const char *pszFolderName, PSHFLSTRING pMapName, bool fWrita
             RTFSPROPERTIES prop;
             prop.fCaseSensitive = false; /* Shut up MSC. */
             rc = RTFsQueryProperties(g_FolderMapping[i].pszFolderName, &prop);
+#ifndef DEBUG_bird /* very annoying */
             AssertRC(rc);
+#endif
             g_FolderMapping[i].fHostCaseSensitive = RT_SUCCESS(rc) ? prop.fCaseSensitive : false;
             vbsfRootHandleAdd(i);
             vbsfMappingsWakeupAllWaiters();
