@@ -207,6 +207,8 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     /*
      * Statistics.
      */
+    STAM_REG(pVM, &pVM->iom.s.StatIoPortCommits,      STAMTYPE_COUNTER, "/IOM/IoPortCommits",                       STAMUNIT_OCCURENCES,     "Number of ring-3 I/O port commits.");
+
     STAM_REL_REG(pVM, &pVM->iom.s.StatMMIOStaleMappings, STAMTYPE_PROFILE, "/IOM/MMIOStaleMappings",                STAMUNIT_TICKS_PER_CALL, "Number of times iomMmioHandlerNew got a call for a remapped range at the old mapping.");
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIOHandler,      STAMTYPE_PROFILE, "/IOM/RZ-MMIOHandler",                      STAMUNIT_TICKS_PER_CALL, "Profiling of the iomMmioPfHandler() body, only success calls.");
     STAM_REG(pVM, &pVM->iom.s.StatRZMMIOReadsToR3,    STAMTYPE_COUNTER, "/IOM/RZ-MMIOHandler/ReadsToR3",            STAMUNIT_OCCURENCES,     "Number of read deferred to ring-3.");
@@ -222,6 +224,8 @@ VMMR3_INT_DECL(int) IOMR3Init(PVM pVM)
     STAM_REG(pVM, &pVM->iom.s.StatMmioHandlerNewR0,   STAMTYPE_COUNTER, "/IOM/MmioHandlerNewR0",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioHandlerNew from ring-0.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioPfHandlerNew,   STAMTYPE_COUNTER, "/IOM/MmioPfHandlerNew",                    STAMUNIT_OCCURENCES,     "Number of calls to iomMmioPfHandlerNew.");
     STAM_REG(pVM, &pVM->iom.s.StatMmioPhysHandlerNew, STAMTYPE_COUNTER, "/IOM/MmioPhysHandlerNew",                  STAMUNIT_OCCURENCES,     "Number of calls to IOMR0MmioPhysHandler.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsDirect,  STAMTYPE_COUNTER, "/IOM/MmioCommitsDirect",                   STAMUNIT_OCCURENCES,     "Number of ring-3 MMIO commits direct to handler via handle hint.");
+    STAM_REG(pVM, &pVM->iom.s.StatMmioCommitsPgm,     STAMTYPE_COUNTER, "/IOM/MmioCommitsPgm",                      STAMUNIT_OCCURENCES,     "Number of ring-3 MMIO commits via PGM.");
 
     /* Redundant, but just in case we change something in the future */
     iomR3FlushCache(pVM);
@@ -1900,6 +1904,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IOMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
     {
         Log5(("IOM: Dispatching pending I/O port write: %#x LB %u -> %RTiop\n", pVCpu->iom.s.PendingIOPortWrite.u32Value,
               pVCpu->iom.s.PendingIOPortWrite.cbValue, pVCpu->iom.s.PendingIOPortWrite.IOPort));
+        STAM_COUNTER_INC(&pVM->iom.s.StatIoPortCommits);
         VBOXSTRICTRC rcStrictCommit = IOMIOPortWrite(pVM, pVCpu, pVCpu->iom.s.PendingIOPortWrite.IOPort,
                                                      pVCpu->iom.s.PendingIOPortWrite.u32Value,
                                                      pVCpu->iom.s.PendingIOPortWrite.cbValue);
@@ -1922,6 +1927,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IOMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
             RTGCPHYS const offRegion     = pVCpu->iom.s.PendingMmioWrite.GCPhys - GCPhysMapping;
             if (offRegion < pRegEntry->cbRegion && GCPhysMapping != NIL_RTGCPHYS)
             {
+                STAM_COUNTER_INC(&pVM->iom.s.StatMmioCommitsDirect);
                 VBOXSTRICTRC rcStrictCommit = iomR3MmioCommitWorker(pVM, pVCpu, pRegEntry, offRegion);
                 pVCpu->iom.s.PendingMmioWrite.cbValue = 0;
                 return iomR3MergeStatus(rcStrict, rcStrictCommit, VINF_IOM_R3_MMIO_COMMIT_WRITE, pVCpu);
@@ -1929,6 +1935,7 @@ VMMR3_INT_DECL(VBOXSTRICTRC) IOMR3ProcessForceFlag(PVM pVM, PVMCPU pVCpu, VBOXST
         }
 
         /* Fall back on PGM. */
+        STAM_COUNTER_INC(&pVM->iom.s.StatMmioCommitsPgm);
         VBOXSTRICTRC rcStrictCommit = PGMPhysWrite(pVM, pVCpu->iom.s.PendingMmioWrite.GCPhys,
                                                    pVCpu->iom.s.PendingMmioWrite.abValue, pVCpu->iom.s.PendingMmioWrite.cbValue,
                                                    PGMACCESSORIGIN_IOM);
