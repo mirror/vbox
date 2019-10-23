@@ -925,10 +925,11 @@ pciR3IOPortMagicPCIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
  * Common worker for pciR3SaveExec and pcibridgeR3SaveExec.
  *
  * @returns VBox status code.
+ * @param   pHlp            The device helpers.
  * @param   pBus            The bus to save.
  * @param   pSSM            The saved state handle.
  */
-static int pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
+static int pciR3CommonSaveExec(PCPDMDEVHLPR3 pHlp, PDEVPCIBUS pBus, PSSMHANDLE pSSM)
 {
     /*
      * Iterate thru all the devices.
@@ -938,20 +939,20 @@ static int pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
         PPDMPCIDEV pDev = pBus->apDevices[uDevFn];
         if (pDev)
         {
-            SSMR3PutU32(pSSM, uDevFn);
-            SSMR3PutMem(pSSM, pDev->abConfig, 256); /* Only save 256 bytes here! */
+            pHlp->pfnSSMPutU32(pSSM, uDevFn);
+            pHlp->pfnSSMPutMem(pSSM, pDev->abConfig, 256); /* Only save 256 bytes here! */
 
-            SSMR3PutS32(pSSM, pDev->Int.s.uIrqPinState);
+            pHlp->pfnSSMPutS32(pSSM, pDev->Int.s.uIrqPinState);
 
             /* Save the type an size of all the regions. */
             for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
             {
-                SSMR3PutU8(pSSM, pDev->Int.s.aIORegions[iRegion].type);
-                SSMR3PutU64(pSSM, pDev->Int.s.aIORegions[iRegion].size);
+                pHlp->pfnSSMPutU8(pSSM, pDev->Int.s.aIORegions[iRegion].type);
+                pHlp->pfnSSMPutU64(pSSM, pDev->Int.s.aIORegions[iRegion].size);
             }
         }
     }
-    return SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX); /* terminator */
 }
 
 
@@ -960,31 +961,32 @@ static int pciR3CommonSaveExec(PDEVPCIBUS pBus, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PDEVPCIROOT   pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
     /*
      * Bus state data.
      */
-    SSMR3PutU32(pSSM, pThis->uConfigReg);
-    SSMR3PutBool(pSSM, pThis->fUseIoApic);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uConfigReg);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fUseIoApic);
 
     /*
      * Save IRQ states.
      */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->Piix3.auPciLegacyIrqLevels); i++)
-        SSMR3PutU32(pSSM, pThis->Piix3.auPciLegacyIrqLevels[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->Piix3.auPciLegacyIrqLevels[i]);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
-        SSMR3PutU32(pSSM, pThis->auPciApicIrqLevels[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->auPciApicIrqLevels[i]);
 
-    SSMR3PutU32(pSSM, pThis->Piix3.iAcpiIrqLevel);
-    SSMR3PutS32(pSSM, pThis->Piix3.iAcpiIrq);
+    pHlp->pfnSSMPutU32(pSSM, pThis->Piix3.iAcpiIrqLevel);
+    pHlp->pfnSSMPutS32(pSSM, pThis->Piix3.iAcpiIrq);
 
-    SSMR3PutU32(pSSM, UINT32_MAX);      /* separator */
+    pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);      /* separator */
 
     /*
      * Join paths with pcibridgeR3SaveExec.
      */
-    return pciR3CommonSaveExec(&pThis->PciBus, pSSM);
+    return pciR3CommonSaveExec(pHlp, &pThis->PciBus, pSSM);
 }
 
 
@@ -1000,8 +1002,9 @@ static DECLCALLBACK(int) pciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    uint32_t    u32;
-    int         rc;
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+    uint32_t      u32;
+    int           rc;
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -1031,7 +1034,7 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
     for (uint32_t uDevFn = 0;; uDevFn++)
     {
         /* index / terminator */
-        rc = SSMR3GetU32(pSSM, &u32);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         if (RT_FAILURE(rc))
             return rc;
         if (u32 == UINT32_MAX)
@@ -1050,9 +1053,9 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
             {
                 LogRel(("PCI: New device in slot %#x, %s (vendor=%#06x device=%#06x)\n", uDevFn, pBus->apDevices[uDevFn]->pszNameR3,
                         PCIDevGetVendorId(pBus->apDevices[uDevFn]), PCIDevGetDeviceId(pBus->apDevices[uDevFn])));
-                if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
-                    return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("New device in slot %#x, %s (vendor=%#06x device=%#06x)"),
-                                            uDevFn, pBus->apDevices[uDevFn]->pszNameR3, PCIDevGetVendorId(pBus->apDevices[uDevFn]), PCIDevGetDeviceId(pBus->apDevices[uDevFn]));
+                if (pHlp->pfnSSMHandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+                    return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("New device in slot %#x, %s (vendor=%#06x device=%#06x)"),
+                                                   uDevFn, pBus->apDevices[uDevFn]->pszNameR3, PCIDevGetVendorId(pBus->apDevices[uDevFn]), PCIDevGetDeviceId(pBus->apDevices[uDevFn]));
             }
         }
 
@@ -1064,18 +1067,18 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
         } u;
         RT_ZERO(u.DevTmp);
         u.DevTmp.Int.s.uIrqPinState = ~0; /* Invalid value in case we have an older saved state to force a state change in pciSetIrq. */
-        SSMR3GetMem(pSSM, u.DevTmp.abConfig, 256);
+        pHlp->pfnSSMGetMem(pSSM, u.DevTmp.abConfig, 256);
         if (uVersion < VBOX_PCI_SAVED_STATE_VERSION_IRQ_STATES)
         {
             int32_t i32Temp;
             /* Irq value not needed anymore. */
-            rc = SSMR3GetS32(pSSM, &i32Temp);
+            rc = pHlp->pfnSSMGetS32(pSSM, &i32Temp);
             if (RT_FAILURE(rc))
                 return rc;
         }
         else
         {
-            rc = SSMR3GetS32(pSSM, &u.DevTmp.Int.s.uIrqPinState);
+            rc = pHlp->pfnSSMGetS32(pSSM, &u.DevTmp.Int.s.uIrqPinState);
             if (RT_FAILURE(rc))
                 return rc;
         }
@@ -1085,8 +1088,8 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
         {
             for (uint32_t iRegion = 0; iRegion < VBOX_PCI_NUM_REGIONS; iRegion++)
             {
-                SSMR3GetU8(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].type);
-                rc = SSMR3GetU64(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].size);
+                pHlp->pfnSSMGetU8(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].type);
+                rc = pHlp->pfnSSMGetU64(pSSM, &u.DevTmp.Int.s.aIORegions[iRegion].size);
                 AssertLogRelRCReturn(rc, rc);
             }
         }
@@ -1097,18 +1100,18 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
         {
             LogRel(("PCI: Device in slot %#x has been removed! vendor=%#06x device=%#06x\n", uDevFn,
                     PCIDevGetVendorId(&u.DevTmp), PCIDevGetDeviceId(&u.DevTmp)));
-            if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
-                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x has been removed! vendor=%#06x device=%#06x"),
-                                        uDevFn, PCIDevGetVendorId(&u.DevTmp), PCIDevGetDeviceId(&u.DevTmp));
+            if (pHlp->pfnSSMHandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
+                return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Device in slot %#x has been removed! vendor=%#06x device=%#06x"),
+                                               uDevFn, PCIDevGetVendorId(&u.DevTmp), PCIDevGetDeviceId(&u.DevTmp));
             continue;
         }
 
         /* match the vendor id assuming that this will never be changed. */
         if (   u.DevTmp.abConfig[0] != pDev->abConfig[0]
             || u.DevTmp.abConfig[1] != pDev->abConfig[1])
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS,
-                                    N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
-                                    uDevFn, pDev->pszNameR3, u.DevTmp.abConfig, pDev->abConfig);
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                           N_("Device in slot %#x (%s) vendor id mismatch! saved=%.4Rhxs current=%.4Rhxs"),
+                                           uDevFn, pDev->pszNameR3, u.DevTmp.abConfig, pDev->abConfig);
 
         /* commit the loaded device config. */
         rc = devpciR3CommonRestoreRegions(pSSM, pDev, u.DevTmp.Int.s.aIORegions,
@@ -1129,10 +1132,11 @@ static int pciR3CommonLoadExec(PPDMDEVINS pDevIns, PDEVPCIBUS pBus, PSSMHANDLE p
  */
 static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVPCIROOT pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-    PDEVPCIBUS  pBus  = &pThis->PciBus;
-    uint32_t    u32;
-    int         rc;
+    PDEVPCIROOT   pThis = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    PDEVPCIBUS    pBus  = &pThis->PciBus;
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    uint32_t      u32;
+    int           rc;
 
     /*
      * Check the version.
@@ -1144,24 +1148,24 @@ static DECLCALLBACK(int) pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     /*
      * Bus state data.
      */
-    SSMR3GetU32(pSSM, &pThis->uConfigReg);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->uConfigReg);
     if (uVersion >= VBOX_PCI_SAVED_STATE_VERSION_USE_IO_APIC)
-        SSMR3GetBool(pSSM, &pThis->fUseIoApic);
+        pHlp->pfnSSMGetBool(pSSM, &pThis->fUseIoApic);
 
     /* Load IRQ states. */
     if (uVersion >= VBOX_PCI_SAVED_STATE_VERSION_IRQ_STATES)
     {
         for (uint8_t i = 0; i < RT_ELEMENTS(pThis->Piix3.auPciLegacyIrqLevels); i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->Piix3.auPciLegacyIrqLevels[i]);
+            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->Piix3.auPciLegacyIrqLevels[i]);
         for (uint8_t i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->auPciApicIrqLevels[i]);
+            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->auPciApicIrqLevels[i]);
 
-        SSMR3GetU32(pSSM, &pThis->Piix3.iAcpiIrqLevel);
-        SSMR3GetS32(pSSM, &pThis->Piix3.iAcpiIrq);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->Piix3.iAcpiIrqLevel);
+        pHlp->pfnSSMGetS32(pSSM, &pThis->Piix3.iAcpiIrq);
     }
 
     /* separator */
-    rc = SSMR3GetU32(pSSM, &u32);
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     if (u32 != UINT32_MAX)
@@ -1256,9 +1260,12 @@ static DECLCALLBACK(int)   pciR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF1(iInstance);
-    Assert(iInstance == 0);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PCPDMDEVHLPR3 pHlp     = pDevIns->pHlpR3;
+    PDEVPCIBUSCC  pBusCC   = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
+    PDEVPCIROOT   pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
+    RT_NOREF(iInstance);
+    Assert(iInstance == 0);
 
     /*
      * Validate and read configuration.
@@ -1267,7 +1274,7 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
     /* query whether we got an IOAPIC */
     bool fUseIoApic;
-    int rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &fUseIoApic, false);
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "IOAPIC", &fUseIoApic, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"IOAPIC\""));
@@ -1277,9 +1284,6 @@ static DECLCALLBACK(int)   pciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Init data and register the PCI bus.
      */
-    PDEVPCIBUSCC pBusCC   = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
-    PDEVPCIROOT  pGlobals = PDMINS_2_DATA(pDevIns, PDEVPCIROOT);
-
     pGlobals->uPciBiosIo   = 0xc000;
     pGlobals->uPciBiosMmio = 0xf0000000;
     memset((void *)&pGlobals->Piix3.auPciLegacyIrqLevels, 0, sizeof(pGlobals->Piix3.auPciLegacyIrqLevels));
@@ -1614,8 +1618,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pcibridgeR3ConfigRead(PPDMDEVINSR3 pDevIns, ui
  */
 static DECLCALLBACK(int) pcibridgeR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVPCIBUS pThis = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
-    return pciR3CommonSaveExec(pThis, pSSM);
+    return pciR3CommonSaveExec(pDevIns->pHlpR3, PDMINS_2_DATA(pDevIns, PDEVPCIBUS), pSSM);
 }
 
 
@@ -1664,32 +1667,16 @@ static DECLCALLBACK(int)   pcibridgeR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-
-    /*
-     * Validate and read configuration.
-     */
-    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0" "R0Enabled\0"))
-        return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
-
-    /* check if RC code is enabled. */
-    bool fGCEnabled;
-    int rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
-
-    /* check if R0 code is enabled. */
-    bool fR0Enabled;
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
-    Log(("PCI: fGCEnabled=%RTbool fR0Enabled=%RTbool\n", fGCEnabled, fR0Enabled));
-
+    RT_NOREF(iInstance, pCfg);
     PDEVPCIBUS   pBus   = PDMINS_2_DATA(pDevIns, PDEVPCIBUS);
     PDEVPCIBUSCC pBusCC = PDMINS_2_DATA_CC(pDevIns, PDEVPCIBUSCC);
+
+    /*
+     * Validate and read configuration (none left).
+     */
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "", "");
+    Log(("PCI: fRCEnabled=%RTbool fR0Enabled=%RTbool\n", pDevIns->fRCEnabled, pDevIns->fR0Enabled));
 
     /*
      * Init data and register the PCI bus.
@@ -1710,10 +1697,9 @@ static DECLCALLBACK(int)   pcibridgeR3Construct(PPDMDEVINS pDevIns, int iInstanc
     PciBusReg.pfnConfigRead              = devpciR3CommonConfigRead;
     PciBusReg.pfnSetIrqR3                = pcibridgeSetIrq;
     PciBusReg.u32EndVersion              = PDM_PCIBUSREGCC_VERSION;
-    rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBusCC->pPciHlpR3, &pBus->iBus);
+    int rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBusCC->pPciHlpR3, &pBus->iBus);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Failed to register ourselves as a PCI Bus"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to register ourselves as a PCI Bus"));
     Assert(pBus->iBus == (uint32_t)iInstance + 1); /* Can be removed when adding support for multiple bridge implementations. */
     if (pBusCC->pPciHlpR3->u32Version != PDM_PCIHLPR3_VERSION)
         return PDMDevHlpVMSetError(pDevIns, VERR_VERSION_MISMATCH, RT_SRC_POS,
