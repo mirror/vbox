@@ -3172,14 +3172,14 @@ class TestDriver(base.TestDriver):                                              
            and self.hasHostHwVirt(fQuiet);
 
     def hasHostNestedHwVirt(self, fQuiet = False):
-       """
-       Checks if nested hardware-assisted virtualization is supported by the host.
+        """
+        Checks if nested hardware-assisted virtualization is supported by the host.
 
-       Returns True / False.
-       Raises exception on environment / host mismatch.
-       """
-       return self._hasHostCpuFeature('TESTBOX_HAS_NESTED_HWVIRT', 'ProcessorFeature_NestedHWVirt', 6.0, fQuiet) \
-          and self.hasHostHwVirt(fQuiet);
+        Returns True / False.
+        Raises exception on environment / host mismatch.
+        """
+        return self._hasHostCpuFeature('TESTBOX_HAS_NESTED_HWVIRT', 'ProcessorFeature_NestedHWVirt', 6.0, fQuiet) \
+           and self.hasHostHwVirt(fQuiet);
 
     def hasHostLongMode(self, fQuiet = False):
         """
