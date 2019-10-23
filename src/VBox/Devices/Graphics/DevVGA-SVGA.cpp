@@ -2601,7 +2601,7 @@ static DECLCALLBACK(int) vmsvgaResetGMRHandlers(PVGASTATE pThis)
 static void vmsvgaR3InstallNewCursor(PVGASTATE pThis, PVMSVGAR3STATE pSVGAState, bool fAlpha,
                                      uint32_t xHot, uint32_t yHot, uint32_t cx, uint32_t cy, uint8_t *pbData, uint32_t cbData)
 {
-    Log(("vmsvgaR3InstallNewCursor: cx=%d cy=%d xHot=%d yHot=%d fAlpha=%d cbData=%#x\n", cx, cy, xHot, yHot, fAlpha, cbData));
+    LogRel2(("vmsvgaR3InstallNewCursor: cx=%d cy=%d xHot=%d yHot=%d fAlpha=%d cbData=%#x\n", cx, cy, xHot, yHot, fAlpha, cbData));
 #ifdef LOG_ENABLED
     if (LogIs2Enabled())
     {
@@ -3333,6 +3333,7 @@ vmsvgaFIFOUpdateCursor(PVGASTATE pVGAState, PVMSVGAR3STATE  pSVGAState, uint32_t
             fFlags |= VBVA_CURSOR_SCREEN_RELATIVE;
         else if (*pfLastVisible != fVisible)
         {
+            LogRel2(("vmsvgaFIFOUpdateCursor: fVisible %d fLastVisible %d (%d,%d)\n", fVisible, *pfLastVisible, x, y));
             *pfLastVisible = fVisible;
             pVGAState->pDrv->pfnVBVAMousePointerShape(pVGAState->pDrv, RT_BOOL(fVisible), false, 0, 0, 0, 0, NULL);
             STAM_REL_COUNTER_INC(&pSVGAState->StatFifoCursorVisiblity);
