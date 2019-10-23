@@ -7016,7 +7016,7 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         rc = pHlp->pfnSSMGetU32(pSSM, &eChip);
         AssertRCReturn(rc, rc);
         if (eChip != pThis->eChip)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("The chip type differs: config=%u saved=%u"), pThis->eChip, eChip);
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("The chip type differs: config=%u saved=%u"), pThis->eChip, eChip);
     }
 
     if (uPass == SSM_PASS_FINAL)
