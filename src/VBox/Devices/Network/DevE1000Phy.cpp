@@ -33,7 +33,9 @@
 
 #include <iprt/errcore.h>
 #include <VBox/log.h>
-#include <VBox/vmm/ssm.h>
+#ifdef IN_RING3
+# include <VBox/vmm/pdmdev.h>
+#endif
 #include "DevE1000Phy.h"
 
 /* Little helpers ************************************************************/
@@ -416,12 +418,13 @@ void Phy::setLinkStatus(PPHY pPhy, bool fLinkIsUp)
  *          versioning of its own.
  *
  * @returns VBox status code.
- * @param   pSSMHandle  The handle to save the state to.
+ * @param   pHlp        Device helper table.
+ * @param   pSSM        The handle to save the state to.
  * @param   pPhy        The pointer to this instance.
  */
-int Phy::saveState(PSSMHANDLE pSSMHandle, PPHY pPhy)
+int Phy::saveState(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPHY pPhy)
 {
-    SSMR3PutMem(pSSMHandle, pPhy->au16Regs, sizeof(pPhy->au16Regs));
+    pHlp->pfnSSMPutMem(pSSM, pPhy->au16Regs, sizeof(pPhy->au16Regs));
     return VINF_SUCCESS;
 }
 
@@ -432,12 +435,13 @@ int Phy::saveState(PSSMHANDLE pSSMHandle, PPHY pPhy)
  *          versioning of its own.
  *
  * @returns VBox status code.
- * @param   pSSMHandle  The handle to save the state to.
+ * @param   pHlp        Device helper table.
+ * @param   pSSM        The handle to save the state to.
  * @param   pPhy        The pointer to this instance.
  */
-int Phy::loadState(PSSMHANDLE pSSMHandle, PPHY pPhy)
+int Phy::loadState(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM, PPHY pPhy)
 {
-    return SSMR3GetMem(pSSMHandle, pPhy->au16Regs, sizeof(pPhy->au16Regs));
+    return pHlp->pfnSSMGetMem(pSSM, pPhy->au16Regs, sizeof(pPhy->au16Regs));
 }
 
 #endif /* IN_RING3 */

@@ -714,14 +714,14 @@ struct E1kEEPROM
             return eeprom.readWord(u32Addr, pu16Value);
         }
 
-        int load(PSSMHANDLE pSSM)
+        int load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
         {
-            return eeprom.load(pSSM);
+            return eeprom.load(pHlp, pSSM);
         }
 
-        void save(PSSMHANDLE pSSM)
+        void save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
         {
-            eeprom.save(pSSM);
+            eeprom.save(pHlp, pSSM);
         }
 #endif /* IN_RING3 */
 };
@@ -6841,10 +6841,10 @@ static DECLCALLBACK(void *) e1kR3QueryInterface(struct PDMIBASE *pInterface, con
  * @param   pThis      The E1K state.
  * @param   pSSM        The handle to the saved state.
  */
-static void e1kSaveConfig(PE1KSTATE pThis, PSSMHANDLE pSSM)
+static void e1kSaveConfig(PCPDMDEVHLPR3 pHlp, PE1KSTATE pThis, PSSMHANDLE pSSM)
 {
-    SSMR3PutMem(pSSM, &pThis->macConfigured, sizeof(pThis->macConfigured));
-    SSMR3PutU32(pSSM, pThis->eChip);
+    pHlp->pfnSSMPutMem(pSSM, &pThis->macConfigured, sizeof(pThis->macConfigured));
+    pHlp->pfnSSMPutU32(pSSM, pThis->eChip);
 }
 
 /**
@@ -6853,8 +6853,7 @@ static void e1kSaveConfig(PE1KSTATE pThis, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    e1kSaveConfig(pThis, pSSM);
+    e1kSaveConfig(pDevIns->pHlpR3, PDMINS_2_DATA(pDevIns, PE1KSTATE), pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -6903,46 +6902,47 @@ static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE     pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC   pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PCPDMDEVHLPR3 pHlp    = pDevIns->pHlpR3;
 
-    e1kSaveConfig(pThis, pSSM);
-    pThisCC->eeprom.save(pSSM);
+    e1kSaveConfig(pHlp, pThis, pSSM);
+    pThisCC->eeprom.save(pHlp, pSSM);
     e1kDumpState(pThis);
-    SSMR3PutMem(pSSM, pThis->auRegs, sizeof(pThis->auRegs));
-    SSMR3PutBool(pSSM, pThis->fIntRaised);
-    Phy::saveState(pSSM, &pThis->phy);
-    SSMR3PutU32(pSSM, pThis->uSelectedReg);
-    SSMR3PutMem(pSSM, pThis->auMTA, sizeof(pThis->auMTA));
-    SSMR3PutMem(pSSM, &pThis->aRecAddr, sizeof(pThis->aRecAddr));
-    SSMR3PutMem(pSSM, pThis->auVFTA, sizeof(pThis->auVFTA));
-    SSMR3PutU64(pSSM, pThis->u64AckedAt);
-    SSMR3PutU16(pSSM, pThis->u16RxBSize);
-    //SSMR3PutBool(pSSM, pThis->fDelayInts);
-    //SSMR3PutBool(pSSM, pThis->fIntMaskUsed);
-    SSMR3PutU16(pSSM, pThis->u16TxPktLen);
+    pHlp->pfnSSMPutMem(pSSM, pThis->auRegs, sizeof(pThis->auRegs));
+    pHlp->pfnSSMPutBool(pSSM, pThis->fIntRaised);
+    Phy::saveState(pHlp, pSSM, &pThis->phy);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uSelectedReg);
+    pHlp->pfnSSMPutMem(pSSM, pThis->auMTA, sizeof(pThis->auMTA));
+    pHlp->pfnSSMPutMem(pSSM, &pThis->aRecAddr, sizeof(pThis->aRecAddr));
+    pHlp->pfnSSMPutMem(pSSM, pThis->auVFTA, sizeof(pThis->auVFTA));
+    pHlp->pfnSSMPutU64(pSSM, pThis->u64AckedAt);
+    pHlp->pfnSSMPutU16(pSSM, pThis->u16RxBSize);
+    //pHlp->pfnSSMPutBool(pSSM, pThis->fDelayInts);
+    //pHlp->pfnSSMPutBool(pSSM, pThis->fIntMaskUsed);
+    pHlp->pfnSSMPutU16(pSSM, pThis->u16TxPktLen);
 /** @todo State wrt to the TSE buffer is incomplete, so little point in
  *        saving this actually. */
-    SSMR3PutMem(pSSM, pThis->aTxPacketFallback, pThis->u16TxPktLen);
-    SSMR3PutBool(pSSM, pThis->fIPcsum);
-    SSMR3PutBool(pSSM, pThis->fTCPcsum);
-    SSMR3PutMem(pSSM, &pThis->contextTSE, sizeof(pThis->contextTSE));
-    SSMR3PutMem(pSSM, &pThis->contextNormal, sizeof(pThis->contextNormal));
-    SSMR3PutBool(pSSM, pThis->fVTag);
-    SSMR3PutU16(pSSM, pThis->u16VTagTCI);
+    pHlp->pfnSSMPutMem(pSSM, pThis->aTxPacketFallback, pThis->u16TxPktLen);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fIPcsum);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fTCPcsum);
+    pHlp->pfnSSMPutMem(pSSM, &pThis->contextTSE, sizeof(pThis->contextTSE));
+    pHlp->pfnSSMPutMem(pSSM, &pThis->contextNormal, sizeof(pThis->contextNormal));
+    pHlp->pfnSSMPutBool(pSSM, pThis->fVTag);
+    pHlp->pfnSSMPutU16(pSSM, pThis->u16VTagTCI);
 #ifdef E1K_WITH_TXD_CACHE
-#if 0
-    SSMR3PutU8(pSSM, pThis->nTxDFetched);
-    SSMR3PutMem(pSSM, pThis->aTxDescriptors,
-                pThis->nTxDFetched * sizeof(pThis->aTxDescriptors[0]));
-#else
+# if 0
+    pHlp->pfnSSMPutU8(pSSM, pThis->nTxDFetched);
+    pHlp->pfnSSMPutMem(pSSM, pThis->aTxDescriptors,
+                         pThis->nTxDFetched * sizeof(pThis->aTxDescriptors[0]));
+# else
     /*
      * There is no point in storing TX descriptor cache entries as we can simply
      * fetch them again. Moreover, normally the cache is always empty when we
      * save the state. Store zero entries for compatibility.
      */
-    SSMR3PutU8(pSSM, 0);
-#endif
+    pHlp->pfnSSMPutU8(pSSM, 0);
+# endif
 #endif /* E1K_WITH_TXD_CACHE */
 /** @todo GSO requires some more state here. */
     E1kLog(("%s State has been saved\n", pThis->szPrf));
@@ -6987,9 +6987,10 @@ static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PE1KSTATE   pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
-    int         rc;
+    PE1KSTATE       pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC     pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+    int             rc;
 
     if (    uVersion != E1K_SAVEDSTATE_VERSION
 #ifdef E1K_WITH_TXD_CACHE
@@ -7004,14 +7005,14 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     {
         /* config checks */
         RTMAC macConfigured;
-        rc = SSMR3GetMem(pSSM, &macConfigured, sizeof(macConfigured));
+        rc = pHlp->pfnSSMGetMem(pSSM, &macConfigured, sizeof(macConfigured));
         AssertRCReturn(rc, rc);
         if (   memcmp(&macConfigured, &pThis->macConfigured, sizeof(macConfigured))
             && (uPass == 0 || !PDMDevHlpVMTeleportedAndNotFullyResumedYet(pDevIns)) )
             LogRel(("%s: The mac address differs: config=%RTmac saved=%RTmac\n", pThis->szPrf, &pThis->macConfigured, &macConfigured));
 
         E1KCHIP eChip;
-        rc = SSMR3GetU32(pSSM, &eChip);
+        rc = pHlp->pfnSSMGetU32(pSSM, &eChip);
         AssertRCReturn(rc, rc);
         if (eChip != pThis->eChip)
             return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("The chip type differs: config=%u saved=%u"), pThis->eChip, eChip);
@@ -7021,35 +7022,36 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     {
         if (uVersion > E1K_SAVEDSTATE_VERSION_VBOX_30)
         {
-            rc = pThisCC->eeprom.load(pSSM);
+            rc = pThisCC->eeprom.load(pHlp, pSSM);
             AssertRCReturn(rc, rc);
         }
         /* the state */
-        SSMR3GetMem(pSSM, &pThis->auRegs, sizeof(pThis->auRegs));
-        SSMR3GetBool(pSSM, &pThis->fIntRaised);
+        pHlp->pfnSSMGetMem(pSSM, &pThis->auRegs, sizeof(pThis->auRegs));
+        pHlp->pfnSSMGetBool(pSSM, &pThis->fIntRaised);
         /** @todo PHY could be made a separate device with its own versioning */
-        Phy::loadState(pSSM, &pThis->phy);
-        SSMR3GetU32(pSSM, &pThis->uSelectedReg);
-        SSMR3GetMem(pSSM, &pThis->auMTA, sizeof(pThis->auMTA));
-        SSMR3GetMem(pSSM, &pThis->aRecAddr, sizeof(pThis->aRecAddr));
-        SSMR3GetMem(pSSM, &pThis->auVFTA, sizeof(pThis->auVFTA));
-        SSMR3GetU64(pSSM, &pThis->u64AckedAt);
-        SSMR3GetU16(pSSM, &pThis->u16RxBSize);
-        //SSMR3GetBool(pSSM, pThis->fDelayInts);
-        //SSMR3GetBool(pSSM, pThis->fIntMaskUsed);
-        SSMR3GetU16(pSSM, &pThis->u16TxPktLen);
+        Phy::loadState(pHlp, pSSM, &pThis->phy);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->uSelectedReg);
+        pHlp->pfnSSMGetMem(pSSM, &pThis->auMTA, sizeof(pThis->auMTA));
+        pHlp->pfnSSMGetMem(pSSM, &pThis->aRecAddr, sizeof(pThis->aRecAddr));
+        pHlp->pfnSSMGetMem(pSSM, &pThis->auVFTA, sizeof(pThis->auVFTA));
+        pHlp->pfnSSMGetU64(pSSM, &pThis->u64AckedAt);
+        pHlp->pfnSSMGetU16(pSSM, &pThis->u16RxBSize);
+        //pHlp->pfnSSMGetBool(pSSM, pThis->fDelayInts);
+        //pHlp->pfnSSMGetBool(pSSM, pThis->fIntMaskUsed);
+        rc = pHlp->pfnSSMGetU16(pSSM, &pThis->u16TxPktLen);
+        AssertRCReturn(rc, rc);
         if (pThis->u16TxPktLen > sizeof(pThis->aTxPacketFallback))
             pThis->u16TxPktLen = sizeof(pThis->aTxPacketFallback);
-        SSMR3GetMem(pSSM, &pThis->aTxPacketFallback[0], pThis->u16TxPktLen);
-        SSMR3GetBool(pSSM, &pThis->fIPcsum);
-        SSMR3GetBool(pSSM, &pThis->fTCPcsum);
-        SSMR3GetMem(pSSM, &pThis->contextTSE, sizeof(pThis->contextTSE));
-        rc = SSMR3GetMem(pSSM, &pThis->contextNormal, sizeof(pThis->contextNormal));
+        pHlp->pfnSSMGetMem(pSSM, &pThis->aTxPacketFallback[0], pThis->u16TxPktLen);
+        pHlp->pfnSSMGetBool(pSSM, &pThis->fIPcsum);
+        pHlp->pfnSSMGetBool(pSSM, &pThis->fTCPcsum);
+        pHlp->pfnSSMGetMem(pSSM, &pThis->contextTSE, sizeof(pThis->contextTSE));
+        rc = pHlp->pfnSSMGetMem(pSSM, &pThis->contextNormal, sizeof(pThis->contextNormal));
         AssertRCReturn(rc, rc);
         if (uVersion > E1K_SAVEDSTATE_VERSION_VBOX_41)
         {
-            SSMR3GetBool(pSSM, &pThis->fVTag);
-            rc = SSMR3GetU16(pSSM, &pThis->u16VTagTCI);
+            pHlp->pfnSSMGetBool(pSSM, &pThis->fVTag);
+            rc = pHlp->pfnSSMGetU16(pSSM, &pThis->u16VTagTCI);
             AssertRCReturn(rc, rc);
         }
         else
@@ -7060,16 +7062,16 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 #ifdef E1K_WITH_TXD_CACHE
         if (uVersion > E1K_SAVEDSTATE_VERSION_VBOX_42_VTAG)
         {
-            rc = SSMR3GetU8(pSSM, &pThis->nTxDFetched);
+            rc = pHlp->pfnSSMGetU8(pSSM, &pThis->nTxDFetched);
             AssertRCReturn(rc, rc);
             if (pThis->nTxDFetched)
-                SSMR3GetMem(pSSM, pThis->aTxDescriptors,
-                            pThis->nTxDFetched * sizeof(pThis->aTxDescriptors[0]));
+                pHlp->pfnSSMGetMem(pSSM, pThis->aTxDescriptors,
+                                     pThis->nTxDFetched * sizeof(pThis->aTxDescriptors[0]));
         }
         else
             pThis->nTxDFetched = 0;
-        /*
-         * @todo: Perhaps we should not store TXD cache as the entries can be
+        /**
+         * @todo Perhaps we should not store TXD cache as the entries can be
          * simply fetched again from guest's memory. Or can't they?
          */
 #endif /* E1K_WITH_TXD_CACHE */
@@ -7080,6 +7082,9 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
          */
         pThis->iRxDCurrent = pThis->nRxDFetched = 0;
 #endif /* E1K_WITH_RXD_CACHE */
+        rc = pHlp->pfnSSMHandleGetStatus(pSSM);
+        AssertRCReturn(rc, rc);
+
         /* derived state  */
         e1kSetupGsoCtx(&pThis->GsoCtx, &pThis->contextTSE);
 

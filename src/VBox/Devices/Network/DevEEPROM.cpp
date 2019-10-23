@@ -259,35 +259,33 @@ uint32_t EEPROM93C46::read()
     return m_u32InternalWires;
 }
 
-void EEPROM93C46::save(PSSMHANDLE pSSM)
+void EEPROM93C46::save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
 {
-    SSMR3PutU8(  pSSM, EEPROM93C46_SAVEDSTATE_VERSION);
-    SSMR3PutU8(  pSSM, m_eState);
-    SSMR3PutU8(  pSSM, m_eOp);
-    SSMR3PutBool(pSSM, m_fWriteEnabled);
-    SSMR3PutU32( pSSM, m_u32InternalWires);
-    SSMR3PutU16( pSSM, m_u16Word);
-    SSMR3PutU16( pSSM, m_u16Mask);
-    SSMR3PutU16( pSSM, m_u16Addr);
-    SSMR3PutMem( pSSM, m_au16Data, sizeof(m_au16Data));
+    pHlp->pfnSSMPutU8(  pSSM, EEPROM93C46_SAVEDSTATE_VERSION);
+    pHlp->pfnSSMPutU8(  pSSM, m_eState);
+    pHlp->pfnSSMPutU8(  pSSM, m_eOp);
+    pHlp->pfnSSMPutBool(pSSM, m_fWriteEnabled);
+    pHlp->pfnSSMPutU32( pSSM, m_u32InternalWires);
+    pHlp->pfnSSMPutU16( pSSM, m_u16Word);
+    pHlp->pfnSSMPutU16( pSSM, m_u16Mask);
+    pHlp->pfnSSMPutU16( pSSM, m_u16Addr);
+    pHlp->pfnSSMPutMem( pSSM, m_au16Data, sizeof(m_au16Data));
 }
 
-int EEPROM93C46::load(PSSMHANDLE pSSM)
+int EEPROM93C46::load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
 {
-    int rc;
     uint8_t uVersion;
-
-    rc = SSMR3GetU8(pSSM, &uVersion);
+    int rc = pHlp->pfnSSMGetU8(pSSM, &uVersion);
     AssertRCReturn(rc, rc);
     if (uVersion != EEPROM93C46_SAVEDSTATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    SSMR3GetU8(  pSSM, (uint8_t*)&m_eState);
-    SSMR3GetU8(  pSSM, (uint8_t*)&m_eOp);
-    SSMR3GetBool(pSSM, &m_fWriteEnabled);
-    SSMR3GetU32( pSSM, &m_u32InternalWires);
-    SSMR3GetU16( pSSM, &m_u16Word);
-    SSMR3GetU16( pSSM, &m_u16Mask);
-    SSMR3GetU16( pSSM, &m_u16Addr);
-    return SSMR3GetMem( pSSM, m_au16Data, sizeof(m_au16Data));
+    pHlp->pfnSSMGetU8(  pSSM, (uint8_t*)&m_eState);
+    pHlp->pfnSSMGetU8(  pSSM, (uint8_t*)&m_eOp);
+    pHlp->pfnSSMGetBool(pSSM, &m_fWriteEnabled);
+    pHlp->pfnSSMGetU32( pSSM, &m_u32InternalWires);
+    pHlp->pfnSSMGetU16( pSSM, &m_u16Word);
+    pHlp->pfnSSMGetU16( pSSM, &m_u16Mask);
+    pHlp->pfnSSMGetU16( pSSM, &m_u16Addr);
+    return pHlp->pfnSSMGetMem( pSSM, m_au16Data, sizeof(m_au16Data));
 }

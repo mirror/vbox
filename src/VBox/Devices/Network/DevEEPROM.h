@@ -74,8 +74,8 @@ struct EEPROM93C46
 
 
     /** @todo save and load methods */
-    void save(PSSMHANDLE pSSM);
-    int  load(PSSMHANDLE pSSM);
+    void save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
+    int  load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 
     /** Actual content of EEPROM */
     uint16_t m_au16Data[SIZE];

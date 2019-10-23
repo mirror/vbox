@@ -130,9 +130,9 @@ namespace Phy
     /** Set link status. */
     void     setLinkStatus(PPHY pPhy, bool fLinkIsUp);
     /** Save PHY state. */
-    int      saveState(PSSMHANDLE pSSMHandle, PPHY pPhy);
+    int      saveState(struct PDMDEVHLPR3 const *pHlp, PSSMHANDLE pSSM, PPHY pPhy);
     /** Restore previously saved PHY state. */
-    int      loadState(PSSMHANDLE pSSMHandle, PPHY pPhy);
+    int      loadState(struct PDMDEVHLPR3 const *pHlp, PSSMHANDLE pSSM, PPHY pPhy);
 }
 
 #endif /* !VBOX_INCLUDED_SRC_Network_DevE1000Phy_h */
