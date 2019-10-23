@@ -371,7 +371,7 @@ DECLHIDDEN(int) flashR3SsmLoadExec(PFLASHCORE pThis, PSSMHANDLE pSSM)
         if (u16Val != pThis->u16FlashId)
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
         SSMR3GetU32(pSSM, &u32Val);
-        if (u16Val != pThis->cbFlashSize)
+        if (u32Val != pThis->cbFlashSize)
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
 
         /* Suck in the flash contents. */
