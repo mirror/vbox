@@ -2973,7 +2973,7 @@ static DECLCALLBACK(uint32_t) pdmR3DevHlp_CritSectGetRecursion(PPDMDEVINS pDevIn
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnCritSectDelete} */
-static DECLCALLBACK(int) pdmR3DevHlp_CritSectDelete(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect)
+static DECLCALLBACK(int) pdmR3DevHlp_CritSectDelete(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     RT_NOREF(pDevIns);
@@ -5173,6 +5173,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CritSectIsInitialized,
     pdmR3DevHlp_CritSectHasWaiters,
     pdmR3DevHlp_CritSectGetRecursion,
+    pdmR3DevHlp_CritSectDelete,
     pdmR3DevHlp_ThreadCreate,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
