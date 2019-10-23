@@ -150,6 +150,11 @@ technical terms if no non-technical ones are clear enough.
       </listitem>
 
       <listitem>
+        <para>vboximg-mount: Now also available on Linux host
+        </para>
+      </listitem>
+
+      <listitem>
         <para>
           VBoxManage: More cloud functionality coverage, e.g. starting
           a cloud instance
