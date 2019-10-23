@@ -45,6 +45,20 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          Virtualization core: Improvements for nested hardware-virtualization
+          on Intel CPUs, Windows works now on outer VM (needs beta VirtualBox)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Virtualization core: Drop recompiler, i.e. running VMs now needs
+          a CPU supporting hardware virtualization
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           Runtime: Works now on hosts with many CPUs (limit now 1024)
         </para>
       </listitem>
@@ -52,6 +66,12 @@ technical terms if no non-technical ones are clear enough.
       <listitem>
         <para>
           GUI: Storage and Network settings pages bug-fixes and usability optimization
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          GUI: Show VM CPU load as part of status bar CPU indicator
         </para>
       </listitem>
 
@@ -94,15 +114,7 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          Virtualization core: Improvements for nested hardware-virtualization
-          on Intel CPUs, Windows works now on outer VM (needs beta VirtualBox)
-        </para>
-      </listitem>
-
-      <listitem>
-        <para>
-          Virtualization core: Drop recompiler, i.e. running VMs now needs
-          a CPU supporting hardware virtualization
+          Graphics: Remove 3D support for VBoxVGA (old one deprecated with 6.0)
         </para>
       </listitem>
 
@@ -120,7 +132,27 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          NAT: Fix TFTP OACK response, send only if request has options
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           API: Reduce the amount of leftovers from Move VM function
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Audio: Allow changing the host audio backend while the VM is
+          in saved state
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VBoxManage: More cloud functionality coverage, e.g. starting
+          a cloud instance
         </para>
       </listitem>
 
@@ -139,8 +171,14 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          EFI: Add NVRAM support, should improve compatibility with OSes
-          significantly
+          Windows host: Improve USB device capturing accuracy
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Switch to newer firmware code base and add NVRAM support,
+          should improve compatibility with OSes significantly
         </para>
       </listitem>
 
