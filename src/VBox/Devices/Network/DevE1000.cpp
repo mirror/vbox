@@ -7780,46 +7780,47 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Get config params
      */
-    rc = CFGMR3QueryBytes(pCfg, "MAC", pThis->macConfigured.au8, sizeof(pThis->macConfigured.au8));
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
+    rc = pHlp->pfnCFGMQueryBytes(pCfg, "MAC", pThis->macConfigured.au8, sizeof(pThis->macConfigured.au8));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get MAC address"));
-    rc = CFGMR3QueryBool(pCfg, "CableConnected", &pThis->fCableConnected);
+    rc = pHlp->pfnCFGMQueryBool(pCfg, "CableConnected", &pThis->fCableConnected);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'CableConnected'"));
-    rc = CFGMR3QueryU32(pCfg, "AdapterType", (uint32_t*)&pThis->eChip);
+    rc = pHlp->pfnCFGMQueryU32(pCfg, "AdapterType", (uint32_t*)&pThis->eChip);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'AdapterType'"));
     Assert(pThis->eChip <= E1K_CHIP_82545EM);
 
-    rc = CFGMR3QueryBoolDef(pCfg, "EthernetCRC", &pThis->fEthernetCRC, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "EthernetCRC", &pThis->fEthernetCRC, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'EthernetCRC'"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "GSOEnabled", &pThis->fGSOEnabled, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "GSOEnabled", &pThis->fGSOEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'GSOEnabled'"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "ItrEnabled", &pThis->fItrEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "ItrEnabled", &pThis->fItrEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'ItrEnabled'"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "ItrRxEnabled", &pThis->fItrRxEnabled, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "ItrRxEnabled", &pThis->fItrRxEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'ItrRxEnabled'"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "TidEnabled", &pThis->fTidEnabled, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "TidEnabled", &pThis->fTidEnabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'TidEnabled'"));
 
-    rc = CFGMR3QueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pThis->cMsLinkUpDelay, 3000); /* ms */
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "LinkUpDelay", (uint32_t*)&pThis->cMsLinkUpDelay, 3000); /* ms */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
