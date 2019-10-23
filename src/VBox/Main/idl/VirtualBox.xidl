@@ -6134,7 +6134,7 @@
       <desc>Virtual CPUID portability level, the higher number the fewer newer
         or vendor specific CPU feature is reported to the guest (via the CPUID
         instruction).  The default level of zero (0) means that all virtualized
-        feautres supported by the host is pass thru to the guest.  While the
+        features supported by the host is pass thru to the guest.  While the
         three (3) is currently the level supressing the most features.
 
         Exactly which of the CPUID features are left out by the VMM at which
