@@ -1355,6 +1355,7 @@ void UILayoutSelector::setLayoutList(const QStringList &layoutNames, QList<QUuid
         if (layoutUidList[i] == currentItemUid)
             m_pLayoutListWidget->setCurrentItem(pItem);
     }
+    m_pLayoutListWidget->sortItems();
     m_pLayoutListWidget->blockSignals(false);
 }
 
@@ -1401,6 +1402,7 @@ void UILayoutSelector::prepareObjects()
 
     m_pLayoutListWidget = new QListWidget;
     pLayout->addWidget(m_pLayoutListWidget);
+    m_pLayoutListWidget->setSortingEnabled(true);
     connect(m_pLayoutListWidget, &QListWidget::currentItemChanged, this, &UILayoutSelector::sltCurrentItemChanged);
 
     m_pLayoutListWidget->setSelectionMode(QAbstractItemView::SingleSelection);
