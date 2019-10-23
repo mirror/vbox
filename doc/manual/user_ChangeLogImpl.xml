@@ -45,6 +45,12 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
+          Runtime: Works now on hosts with many CPUs (limit now 1024)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
           GUI: Storage and Network settings pages bug-fixes and usability optimization
         </para>
       </listitem>
@@ -81,25 +87,60 @@ technical terms if no non-technical ones are clear enough.
 
       <listitem>
         <para>
-          Graphics: additional texture format supportd on Windows host
+          Cloud: More flexibility in VM export and import to Oracle Cloud
+          Infrastructure, add free-form tags to cloud images
         </para>
       </listitem>
 
       <listitem>
         <para>
-          Graphics: improved fix for flickering on Windows host
+          Virtualization core: Improvements for nested hardware-virtualization
+          on Intel CPUs, Windows works now on outer VM (needs beta VirtualBox)
         </para>
       </listitem>
 
       <listitem>
         <para>
-          API: reduce the amount of leftovers from Move VM function
+          Virtualization core: Drop recompiler, i.e. running VMs now needs
+          a CPU supporting hardware virtualization
         </para>
       </listitem>
 
       <listitem>
         <para>
-          EFI: add NVRAM support
+          Graphics: Additional texture format supportd on Windows host
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          Graphics: Improved fix for flickering on Windows host
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          API: Reduce the amount of leftovers from Move VM function
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          VBoxManage: As part of the guest control feature support moving
+          multiple source files/directories to a target directory
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          macOS host: Fix VM crashes (most visible on macOS Catalina)
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+          EFI: Add NVRAM support, should improve compatibility with OSes
+          significantly
         </para>
       </listitem>
 
