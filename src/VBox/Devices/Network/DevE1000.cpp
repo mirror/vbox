@@ -1654,19 +1654,19 @@ DECLINLINE(void) e1kCancelTimer(PPDMDEVINS pDevIns, PE1KSTATE pThis, TMTIMERHAND
 }
 #endif /* IN_RING3 */
 
-#define e1kCsEnter(ps, rc) PDMCritSectEnter(&ps->cs, rc)
-#define e1kCsLeave(ps) PDMCritSectLeave(&ps->cs)
+#define e1kCsEnter(ps, rc) PDMDevHlpCritSectEnter(pDevIns, &ps->cs, rc)
+#define e1kCsLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &ps->cs)
 
-#define e1kCsRxEnter(ps, rc) PDMCritSectEnter(&ps->csRx, rc)
-#define e1kCsRxLeave(ps) PDMCritSectLeave(&ps->csRx)
-#define e1kCsRxIsOwner(ps) PDMCritSectIsOwner(&ps->csRx)
+#define e1kCsRxEnter(ps, rc) PDMDevHlpCritSectEnter(pDevIns, &ps->csRx, rc)
+#define e1kCsRxLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &ps->csRx)
+#define e1kCsRxIsOwner(ps) PDMDevHlpCritSectIsOwner(pDevIns, &ps->csRx)
 
 #ifndef E1K_WITH_TX_CS
 # define e1kCsTxEnter(ps, rc) VINF_SUCCESS
 # define e1kCsTxLeave(ps) do { } while (0)
 #else /* E1K_WITH_TX_CS */
-# define e1kCsTxEnter(ps, rc) PDMCritSectEnter(&ps->csTx, rc)
-# define e1kCsTxLeave(ps) PDMCritSectLeave(&ps->csTx)
+# define e1kCsTxEnter(ps, rc) PDMDevHlpCritSectEnter(pDevIns, &ps->csTx, rc)
+# define e1kCsTxLeave(ps) PDMDevHlpCritSectLeave(pDevIns, &ps->csTx)
 #endif /* E1K_WITH_TX_CS */
 
 
@@ -1788,13 +1788,14 @@ static uint16_t e1kCSum16(const void *pvBuf, size_t cb)
 /**
  * Dump a packet to debug log.
  *
+ * @param   pDevIns     The device instance.
  * @param   pThis       The device state structure.
  * @param   cpPacket    The packet.
  * @param   cb          The size of the packet.
  * @param   pszText     A string denoting direction of packet transfer.
  * @thread  E1000_TX
  */
-DECLINLINE(void) e1kPacketDump(PE1KSTATE pThis, const uint8_t *cpPacket, size_t cb, const char *pszText)
+DECLINLINE(void) e1kPacketDump(PPDMDEVINS pDevIns, PE1KSTATE pThis, const uint8_t *cpPacket, size_t cb, const char *pszText)
 {
 #ifdef DEBUG
     if (RT_LIKELY(e1kCsEnter(pThis, VERR_SEM_BUSY) == VINF_SUCCESS))
@@ -4088,7 +4089,7 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pT
     int rc = VERR_NET_DOWN;
     if (pSg && pSg->pvAllocator != pThis)
     {
-        e1kPacketDump(pThis, (uint8_t const *)pSg->aSegs[0].pvSeg, cbFrame, "--> Outgoing");
+        e1kPacketDump(pDevIns, pThis, (uint8_t const *)pSg->aSegs[0].pvSeg, cbFrame, "--> Outgoing");
 
         pThisCC->CTX_SUFF(pTxSg) = NULL;
         PPDMINETWORKUP pDrv = pThisCC->CTX_SUFF(pDrv);
@@ -4105,7 +4106,7 @@ static void e1kTransmitFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, PE1KSTATECC pT
     else if (pSg)
     {
         Assert(pSg->aSegs[0].pvSeg == pThis->aTxPacketFallback);
-        e1kPacketDump(pThis, (uint8_t const *)pSg->aSegs[0].pvSeg, cbFrame, "--> Loopback");
+        e1kPacketDump(pDevIns, pThis, (uint8_t const *)pSg->aSegs[0].pvSeg, cbFrame, "--> Loopback");
 
         /** @todo do we actually need to check that we're in loopback mode here? */
         if (GET_BITS(RCTL, LBM) == RCTL_LBM_TCVR)
@@ -6707,7 +6708,7 @@ static DECLCALLBACK(int) e1kR3NetworkDown_Receive(PPDMINETWORKDOWN pInterface, c
     //if (!e1kCsEnter(pThis, RT_SRC_POS))
     //    return VERR_PERMISSION_DENIED;
 
-    e1kPacketDump(pThis, (const uint8_t*)pvBuf, cb, "<-- Incoming");
+    e1kPacketDump(pDevIns, pThis, (const uint8_t*)pvBuf, cb, "<-- Incoming");
 
     /* Update stats */
     if (RT_LIKELY(e1kCsEnter(pThis, VERR_SEM_BUSY) == VINF_SUCCESS))
@@ -7444,7 +7445,7 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
 
     AssertLogRelReturnVoid(iLUN == 0);
 
-    PDMCritSectEnter(&pThis->cs, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->cs, VERR_SEM_BUSY);
 
     /** @todo r=pritesh still need to check if i missed
      * to clean something in this function
@@ -7460,7 +7461,7 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
     pThisRC->pDrvRC   = NIL_RTRCPTR;
 #endif
 
-    PDMCritSectLeave(&pThis->cs);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->cs);
 }
 
 /**
@@ -7484,7 +7485,7 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
 
-    PDMCritSectEnter(&pThis->cs, VERR_SEM_BUSY);
+    PDMDevHlpCritSectEnter(pDevIns, &pThis->cs, VERR_SEM_BUSY);
 
     /*
      * Attach the driver.
@@ -7528,9 +7529,8 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     if ((STATUS & STATUS_LU) && RT_SUCCESS(rc))
         e1kR3LinkDownTemp(pDevIns, pThis, pThisCC);
 
-    PDMCritSectLeave(&pThis->cs);
+    PDMDevHlpCritSectLeave(pDevIns, &pThis->cs);
     return rc;
-
 }
 
 /**
@@ -7614,7 +7614,7 @@ static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
 
     e1kDumpState(pThis);
     E1kLog(("%s Destroying instance\n", pThis->szPrf));
-    if (PDMCritSectIsInitialized(&pThis->cs))
+    if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->cs))
     {
         if (pThis->hEventMoreRxDescAvail != NIL_SUPSEMEVENT)
         {
@@ -7624,10 +7624,10 @@ static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
             pThis->hEventMoreRxDescAvail = NIL_SUPSEMEVENT;
         }
 #ifdef E1K_WITH_TX_CS
-        PDMR3CritSectDelete(&pThis->csTx);
+        PDMDevHlpCritSectDelete(pDevIns, &pThis->csTx);
 #endif /* E1K_WITH_TX_CS */
-        PDMR3CritSectDelete(&pThis->csRx);
-        PDMR3CritSectDelete(&pThis->cs);
+        PDMDevHlpCritSectDelete(pDevIns, &pThis->csRx);
+        PDMDevHlpCritSectDelete(pDevIns, &pThis->cs);
     }
     return VINF_SUCCESS;
 }
