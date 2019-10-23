@@ -1255,6 +1255,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
  */
 static DECLCALLBACK(int)  rtcRZConstruct(PPDMDEVINS pDevIns)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PRTCSTATE   pThis   = PDMINS_2_DATA(pDevIns, PRTCSTATE);
     PRTCSTATER0 pThisCC = PDMINS_2_DATA_CC(pDevIns, PRTCSTATECC);
     pThisCC->CTX_SUFF(pDevIns) = pDevIns;
