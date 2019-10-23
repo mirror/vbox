@@ -2272,7 +2272,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 26, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 27, 0)
 
 /**
  * PDM Device API.
@@ -3841,6 +3841,7 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(bool,     pfnCritSectIsInitialized,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
     DECLR3CALLBACKMEMBER(bool,     pfnCritSectHasWaiters,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
     DECLR3CALLBACKMEMBER(uint32_t, pfnCritSectGetRecursion,(PPDMDEVINS pDevIns, PCPDMCRITSECT pCritSect));
+    DECLR3CALLBACKMEMBER(int,      pfnCritSectDelete,(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect));
     /** @} */
 
     /**
@@ -7244,6 +7245,15 @@ DECLINLINE(uint32_t) PDMDevHlpCritSectGetRecursion(PPDMDEVINS pDevIns, PCPDMCRIT
 #endif
 
 #ifdef IN_RING3
+
+/**
+ * @copydoc PDMR3CritSectDelete
+ * @param   pDevIns  The device instance.
+ */
+DECLINLINE(int) PDMDevHlpCritSectDelete(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect)
+{
+    return pDevIns->pHlpR3->pfnCritSectDelete(pDevIns, pCritSect);
+}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnThreadCreate
