@@ -193,6 +193,7 @@ RTDECL(int) RTSystemQueryFirmwareBoolean(RTSYSFWBOOL enmBoolean, bool *pfValue)
 
     /*
      * Do the query.
+     * Note! This will typically fail with access denied unless we're in an elevated process.
      */
     if (!g_pfnGetFirmwareEnvironmentVariableW)
         return VERR_NOT_SUPPORTED;
