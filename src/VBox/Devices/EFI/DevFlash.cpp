@@ -74,7 +74,7 @@ PDMBOTHCBDECL(int) flashMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
     RT_NOREF1(pvUser);
 
-    return flashWrite(&pThis->Core, GCPhysAddr - pThis->GCPhysFlashBase, pv, cb);
+    return VBOXSTRICTRC_TODO(flashWrite(&pThis->Core, GCPhysAddr - pThis->GCPhysFlashBase, pv, cb));
 }
 
 
@@ -84,7 +84,7 @@ PDMBOTHCBDECL(int) flashMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
     RT_NOREF1(pvUser);
 
-    return flashRead(&pThis->Core, GCPhysAddr - pThis->GCPhysFlashBase, pv, cb);
+    return VBOXSTRICTRC_TODO(flashRead(&pThis->Core, GCPhysAddr - pThis->GCPhysFlashBase, pv, cb));
 }
 
 #endif /* IN_RING3 for now */
@@ -96,7 +96,7 @@ static DECLCALLBACK(int) flashSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
 
-    int rc = flashR3SsmSaveExec(&pThis->Core, pSSM);
+    int rc = flashR3SaveExec(&pThis->Core, pDevIns, pSSM);
     if (RT_SUCCESS(rc))
         pThis->fStateSaved = true;
 
@@ -114,7 +114,7 @@ static DECLCALLBACK(int) flashLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     if (uVersion != FLASH_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    return flashR3SsmLoadExec(&pThis->Core, pSSM);
+    return flashR3LoadExec(&pThis->Core, pDevIns, pSSM);
 }
 
 /**
@@ -137,7 +137,7 @@ static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
 
     if (!pThis->fStateSaved)
     {
-        rc = flashR3SaveToFile(&pThis->Core, pThis->pszFlashFile);
+        rc = flashR3SaveToFile(&pThis->Core, pDevIns, pThis->pszFlashFile);
         if (RT_FAILURE(rc))
             LogRel(("Flash: Failed to save flash file"));
     }
@@ -148,7 +148,7 @@ static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
         pThis->pszFlashFile = NULL;
     }
 
-    flashR3Destruct(&pThis->Core);
+    flashR3Destruct(&pThis->Core, pDevIns);
     return VINF_SUCCESS;
 }
 
@@ -209,7 +209,7 @@ static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                 N_("Flash: Failed to initialize core flash device"));
 
     /* Try to load the flash content from file. */
-    rc = flashR3LoadFromFile(&pThis->Core, pThis->pszFlashFile);
+    rc = flashR3LoadFromFile(&pThis->Core, pDevIns, pThis->pszFlashFile);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Flash: Failed to load flash content from given file"));

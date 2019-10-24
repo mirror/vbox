@@ -1179,6 +1179,13 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   endif
  endif
 
+ ifdef VBOX_WITH_EFI
+  VBoxDDR0_DEFS         += VBOX_WITH_EFI
+  VBoxDDR0_SOURCES      += \
+  	EFI/DevEFI.cpp \
+  	EFI/FlashCore.cpp
+ endif
+
  if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
   VBoxDDR0_SOURCES      += \
 	Bus/DevPciRaw.cpp

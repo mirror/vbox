@@ -70,13 +70,15 @@
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 
-#ifdef IN_RING3 /* for now */
 
+/**
+ * Worker for flashWrite that deals with a single byte.
+ *
+ * @retval  VINF_SUCCESS on success, which is always the case in ring-3.
+ * @retval  VINF_IOM_R3_MMIO_WRITE can be returned when not in ring-3.
+ */
 static int flashMemWriteByte(PFLASHCORE pThis, uint32_t off, uint8_t bCmd)
 {
-    int rc = VINF_SUCCESS;
-    unsigned uOffset;
-
     /* NB: Older datasheets (e.g. 28F008SA) suggest that for two-cycle commands like byte write or
      * erase setup, the address is significant in both cycles, but do not explain what happens
      * should the addresses not match. Newer datasheets (e.g. 28F008B3) clearly say that the address
@@ -120,12 +122,15 @@ static int flashMemWriteByte(PFLASHCORE pThis, uint32_t off, uint8_t bCmd)
         {
             case FLASH_CMD_WRITE:
             case FLASH_CMD_ALT_WRITE:
-                uOffset = off;
-                if (uOffset < pThis->cbFlashSize)
+                if (off < pThis->cbFlashSize)
                 {
-                    pThis->pbFlash[uOffset] = bCmd;
+#ifdef IN_RING3
+                    pThis->pbFlash[off] = bCmd;
                     /* NB: Writes are instant and never fail. */
                     LogFunc(("wrote byte to flash at %08RX32: %02X\n", off, bCmd));
+#else
+                    return VINF_IOM_R3_MMIO_WRITE;
+#endif
                 }
                 else
                     LogFunc(("ignoring write at %08RX32: %02X\n", off, bCmd));
@@ -133,10 +138,14 @@ static int flashMemWriteByte(PFLASHCORE pThis, uint32_t off, uint8_t bCmd)
             case FLASH_CMD_ERASE_SETUP:
                 if (bCmd == FLASH_CMD_ERASE_CONFIRM)
                 {
+#ifdef IN_RING3
                     /* The current address determines the block to erase. */
-                    uOffset = off & ~(pThis->cbBlockSize - 1);
+                    unsigned uOffset = off & ~(pThis->cbBlockSize - 1);
                     memset(pThis->pbFlash + uOffset, 0xff, pThis->cbBlockSize);
                     LogFunc(("Erasing block at offset %u\n", uOffset));
+#else
+                    return VINF_IOM_R3_MMIO_WRITE;
+#endif
                 }
                 else
                 {
@@ -152,15 +161,70 @@ static int flashMemWriteByte(PFLASHCORE pThis, uint32_t off, uint8_t bCmd)
         }
         pThis->cBusCycle = 0;
     }
-    LogFlow(("flashMemWriteByte: write access at %08RX32: %#x rc=%Rrc\n", off, bCmd, rc));
-    return rc;
+    LogFlow(("flashMemWriteByte: write access at %08RX32: %#x\n", off, bCmd));
+    return VINF_SUCCESS;
 }
 
+/**
+ * Performs a write to the given flash offset.
+ *
+ * Parent device calls this from its MMIO write callback.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS on success, which is always the case in ring-3.
+ * @retval  VINF_IOM_R3_MMIO_WRITE can be returned when not in ring-3.
+ *
+ * @param   pThis               The UART core instance.
+ * @param   off                 Offset to start writing to.
+ * @param   pv                  The value to write.
+ * @param   cb                  Number of bytes to write.
+ */
+DECLHIDDEN(VBOXSTRICTRC) flashWrite(PFLASHCORE pThis, uint32_t off, const void *pv, size_t cb)
+{
+    const uint8_t *pbSrc = (const uint8_t *)pv;
 
+#ifndef IN_RING3
+    /*
+     * If multiple bytes are written, just go to ring-3 and do it there as it's
+     * too much trouble to validate the sequence in adanvce and it is usually
+     * not restartable as device state changes.
+     */
+    VBOXSTRICTRC rcStrict;
+    if (cb == 1)
+    {
+        rcStrict = flashMemWriteByte(pThis, off, *pbSrc);
+        if (rcStrict == VINF_SUCCESS)
+            LogFlow(("flashWrite: completed write at %08RX32 (LB %u)\n", off, cb));
+        else
+            LogFlow(("flashWrite: incomplete write at %08RX32 (LB %u): rc=%Rrc bCmd=%#x cBusCycle=%u\n",
+                     off, cb, VBOXSTRICTRC_VAL(rcStrict), *pbSrc, pThis->cBusCycle));
+    }
+    else
+    {
+        LogFlow(("flashWrite: deferring multi-byte write at %08RX32 (LB %u) to ring-3\n", off, cb));
+        rcStrict = VINF_IOM_R3_IOPORT_WRITE;
+    }
+    return rcStrict;
+
+#else  /* IN_RING3 */
+
+    for (uint32_t offWrite = 0; offWrite < cb; ++offWrite)
+        flashMemWriteByte(pThis, off + offWrite, pbSrc[offWrite]);
+
+    LogFlow(("flashWrite: completed write at %08RX32 (LB %u)\n", off, cb));
+    return VINF_SUCCESS;
+#endif /* IN_RING3 */
+}
+
+/**
+ * Worker for flashRead that deals with a single byte.
+ *
+ * @retval  VINF_SUCCESS on success, which is always the case in ring-3.
+ * @retval  VINF_IOM_R3_MMIO_READ can be returned when not in ring-3.
+ */
 static int flashMemReadByte(PFLASHCORE pThis, uint32_t off, uint8_t *pbData)
 {
     uint8_t bValue;
-    int rc = VINF_SUCCESS;
 
     /*
      * Reads are only defined in three states: Array read, status register read,
@@ -170,7 +234,11 @@ static int flashMemReadByte(PFLASHCORE pThis, uint32_t off, uint8_t *pbData)
     {
         case FLASH_CMD_ARRAY_READ:
             if (off < pThis->cbFlashSize)
+#ifdef IN_RING3
                 bValue = pThis->pbFlash[off];
+#else
+                return VINF_IOM_R3_MMIO_READ;
+#endif
             else
                 bValue = 0xff; /* Play safe and return the default value of non initialized flash. */
             LogFunc(("read byte at %08RX32: %02X\n", off, bValue));
@@ -187,58 +255,66 @@ static int flashMemReadByte(PFLASHCORE pThis, uint32_t off, uint8_t *pbData)
     }
     *pbData = bValue;
 
-    LogFlow(("flashMemReadByte: read access at %08RX32: %02X (cmd=%02X) rc=%Rrc\n", off, bValue, pThis->bCmd, rc));
-    return rc;
+    LogFlow(("flashMemReadByte: read access at %08RX32: %02X (cmd=%02X)\n", off, bValue, pThis->bCmd));
+    return VINF_SUCCESS;
 }
 
-DECLHIDDEN(int) flashWrite(PFLASHCORE pThis, uint32_t off, const void *pv, size_t cb)
+/**
+ * Performs a read from the given flash offset.
+ *
+ * Parent device calls this from its MMIO read callback.
+ *
+ * @returns Strict VBox status code.
+ * @retval  VINF_SUCCESS on success, which is always the case in ring-3.
+ * @retval  VINF_IOM_R3_MMIO_READ can be returned when not in ring-3.
+ *
+ * @param   pThis               The UART core instance.
+ * @param   off                 Offset to start reading from.
+ * @param   pv                  Where to store the read data.
+ * @param   cb                  Number of bytes to read.
+ */
+DECLHIDDEN(VBOXSTRICTRC) flashRead(PFLASHCORE pThis, uint32_t off, void *pv, size_t cb)
 {
-    int rc = VINF_SUCCESS;
-    const uint8_t *pu8Mem = (const uint8_t *)pv;
-
-#ifndef IN_RING3
-    if (cb > 1)
-        return VINF_IOM_R3_IOPORT_WRITE;
-#endif
-
-    for (uint32_t uOffset = 0; uOffset < cb; ++uOffset)
-    {
-        rc = flashMemWriteByte(pThis, off + uOffset, pu8Mem[uOffset]);
-        if (!RT_SUCCESS(rc))
-            break;
-    }
-
-    LogFlow(("flashWrite: completed write at %08RX32 (LB %u): rc=%Rrc\n", off, cb, rc));
-    return rc;
-}
-
-DECLHIDDEN(int) flashRead(PFLASHCORE pThis, uint32_t off, void *pv, size_t cb)
-{
-    int rc = VINF_SUCCESS;
-    uint8_t *pu8Mem = (uint8_t *)pv;
+    uint8_t *pbDst = (uint8_t *)pv;
 
     /*
-     * Reading can always be done witout going back to R3. Reads do not
-     * change the device state and we always have the data.
+     * Reads do not change the device state, so we don't need to take any
+     * precautions when we're not in ring-3 as the read can always be restarted.
      */
-    for (uint32_t uOffset = 0; uOffset < cb; ++uOffset, ++pu8Mem)
+    for (uint32_t offRead = 0; offRead < cb; ++offRead)
     {
-        rc = flashMemReadByte(pThis, off + uOffset, pu8Mem);
-        if (!RT_SUCCESS(rc))
-            break;
+#ifdef IN_RING3
+        flashMemReadByte(pThis, off + offRead, &pbDst[offRead]);
+#else
+        VBOXSTRICTRC rcStrict = flashMemReadByte(pThis, off + offRead, &pbDst[offRead]);
+        if (rcStrict != VINF_SUCCESS)
+        {
+            LogFlow(("flashRead: incomplete read at %08RX32+%#x (LB %u): rc=%Rrc bCmd=%#x\n",
+                     off, offRead, cb, VBOXSTRICTRC_VAL(rcStrict), pThis->bCmd));
+            return rcStrict;
+        }
+#endif
     }
 
-    LogFlow(("flashRead: completed read at %08RX32 (LB %u): rc=%Rrc\n", off, cb, rc));
-    return rc;
+    LogFlow(("flashRead: completed read at %08RX32 (LB %u)\n", off, cb));
+    return VINF_SUCCESS;
 }
-
-#endif /* IN_RING3 for now */
 
 #ifdef IN_RING3
 
+/**
+ * Initialiizes the given flash device instance.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pDevIns             Pointer to the owning device instance.
+ * @param   idFlashDev          The flash device ID.
+ * @param   GCPhysFlashBase     Base MMIO address where the flash is located.
+ * @param   cbFlash             Size of the flash device in bytes.
+ * @param   cbBlock             Size of a flash block.
+ */
 DECLHIDDEN(int) flashR3Init(PFLASHCORE pThis, PPDMDEVINS pDevIns, uint16_t idFlashDev, uint32_t cbFlash, uint16_t cbBlock)
 {
-    pThis->pDevIns     = pDevIns;
     pThis->u16FlashId  = idFlashDev;
     pThis->cbBlockSize = cbBlock;
     pThis->cbFlashSize = cbFlash;
@@ -256,33 +332,56 @@ DECLHIDDEN(int) flashR3Init(PFLASHCORE pThis, PPDMDEVINS pDevIns, uint16_t idFla
     return VINF_SUCCESS;
 }
 
-DECLHIDDEN(void) flashR3Destruct(PFLASHCORE pThis)
+/**
+ * Destroys the given flash device instance.
+ *
+ * @returns nothing.
+ * @param   pDevIns             The parent device instance.
+ * @param   pThis               The flash device core instance.
+ */
+DECLHIDDEN(void) flashR3Destruct(PFLASHCORE pThis, PPDMDEVINS pDevIns)
 {
     if (pThis->pbFlash)
     {
-        PDMDevHlpMMHeapFree(pThis->pDevIns, pThis->pbFlash);
+        PDMDevHlpMMHeapFree(pDevIns, pThis->pbFlash);
         pThis->pbFlash = NULL;
     }
 }
 
-DECLHIDDEN(int) flashR3LoadFromFile(PFLASHCORE pThis, const char *pszFilename)
+/**
+ * Loads the flash content from the given file.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pDevIns             The parent device instance.
+ * @param   pszFilename         The file to load the flash content from.
+ */
+DECLHIDDEN(int) flashR3LoadFromFile(PFLASHCORE pThis, PPDMDEVINS pDevIns, const char *pszFilename)
 {
     RTFILE hFlashFile = NIL_RTFILE;
 
     int rc = RTFileOpen(&hFlashFile, pszFilename, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc, N_("Failed to open flash file"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
 
     size_t cbRead = 0;
     rc = RTFileRead(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, &cbRead);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc, N_("Failed to read flash file"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to read flash file"));
     Log(("Read %zu bytes from file (asked for %u)\n.", cbRead, pThis->cbFlashSize));
 
     RTFileClose(hFlashFile);
     return VINF_SUCCESS;
 }
 
+/**
+ * Loads the flash content from the given buffer.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pvBuf               The buffer to load the content from.
+ * @param   cbBuf               Size of the buffer in bytes.
+ */
 DECLHIDDEN(int) flashR3LoadFromBuf(PFLASHCORE pThis, void const *pvBuf, size_t cbBuf)
 {
     AssertReturn(pThis->cbFlashSize >= cbBuf, VERR_BUFFER_OVERFLOW);
@@ -291,22 +390,38 @@ DECLHIDDEN(int) flashR3LoadFromBuf(PFLASHCORE pThis, void const *pvBuf, size_t c
     return VINF_SUCCESS;
 }
 
-DECLHIDDEN(int) flashR3SaveToFile(PFLASHCORE pThis, const char *pszFilename)
+/**
+ * Saves the flash content to the given file.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pDevIns             The parent device instance.
+ * @param   pszFilename         The file to save the flash content to.
+ */
+DECLHIDDEN(int) flashR3SaveToFile(PFLASHCORE pThis, PPDMDEVINS pDevIns, const char *pszFilename)
 {
     RTFILE hFlashFile = NIL_RTFILE;
 
     int rc = RTFileOpen(&hFlashFile, pszFilename, RTFILE_O_READWRITE | RTFILE_O_OPEN_CREATE | RTFILE_O_DENY_WRITE);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc, N_("Failed to open flash file"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to open flash file"));
 
     rc = RTFileWrite(hFlashFile, pThis->pbFlash, pThis->cbFlashSize, NULL);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pThis->pDevIns, rc, N_("Failed to write flash file"));
-
     RTFileClose(hFlashFile);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to write flash file"));
+
     return VINF_SUCCESS;
 }
 
+/**
+ * Saves the flash content to the given buffer.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pvBuf               The buffer to save the content to.
+ * @param   cbBuf               Size of the buffer in bytes.
+ */
 DECLHIDDEN(int) flashR3SaveToBuf(PFLASHCORE pThis, void *pvBuf, size_t cbBuf)
 {
     AssertReturn(pThis->cbFlashSize <= cbBuf, VERR_BUFFER_OVERFLOW);
@@ -315,6 +430,12 @@ DECLHIDDEN(int) flashR3SaveToBuf(PFLASHCORE pThis, void *pvBuf, size_t cbBuf)
     return VINF_SUCCESS;
 }
 
+/**
+ * Resets the dynamic part of the flash device state.
+ *
+ * @returns nothing.
+ * @param   pThis               The flash device core instance.
+ */
 DECLHIDDEN(void) flashR3Reset(PFLASHCORE pThis)
 {
     /*
@@ -325,30 +446,48 @@ DECLHIDDEN(void) flashR3Reset(PFLASHCORE pThis)
     pThis->cBusCycle = 0;
 }
 
-DECLHIDDEN(int) flashR3SsmSaveExec(PFLASHCORE pThis, PSSMHANDLE pSSM)
+/**
+ * Saves the flash device state to the given SSM handle.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pDevIns             The parent device instance.
+ * @param   pSSM                The SSM handle to save to.
+ */
+DECLHIDDEN(int) flashR3SaveExec(PFLASHCORE pThis, PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    SSMR3PutU32(pSSM, FLASH_SAVED_STATE_VERSION);
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
+    pHlp->pfnSSMPutU32(pSSM, FLASH_SAVED_STATE_VERSION);
 
     /* Save the device state. */
-    SSMR3PutU8(pSSM, pThis->bCmd);
-    SSMR3PutU8(pSSM, pThis->bStatus);
-    SSMR3PutU8(pSSM, pThis->cBusCycle);
+    pHlp->pfnSSMPutU8(pSSM, pThis->bCmd);
+    pHlp->pfnSSMPutU8(pSSM, pThis->bStatus);
+    pHlp->pfnSSMPutU8(pSSM, pThis->cBusCycle);
 
     /* Save the current configuration for validation purposes. */
-    SSMR3PutU16(pSSM, pThis->cbBlockSize);
-    SSMR3PutU16(pSSM, pThis->u16FlashId);
+    pHlp->pfnSSMPutU16(pSSM, pThis->cbBlockSize);
+    pHlp->pfnSSMPutU16(pSSM, pThis->u16FlashId);
 
     /* Save the current flash contents. */
-    SSMR3PutU32(pSSM, pThis->cbFlashSize);
-    SSMR3PutMem(pSSM, pThis->pbFlash, pThis->cbFlashSize);
-
-    return VINF_SUCCESS;
+    pHlp->pfnSSMPutU32(pSSM, pThis->cbFlashSize);
+    return pHlp->pfnSSMPutMem(pSSM, pThis->pbFlash, pThis->cbFlashSize);
 }
 
-DECLHIDDEN(int) flashR3SsmLoadExec(PFLASHCORE pThis, PSSMHANDLE pSSM)
+/**
+ * Loads the flash device state from the given SSM handle.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The flash device core instance.
+ * @param   pDevIns             The parent device instance.
+ * @param   pSSM                The SSM handle to load from.
+ */
+DECLHIDDEN(int) flashR3LoadExec(PFLASHCORE pThis, PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
     uint32_t uVersion = FLASH_SAVED_STATE_VERSION;
-    int rc = SSMR3GetU32(pSSM, &uVersion);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &uVersion);
     AssertRCReturn(rc, rc);
 
     /*
@@ -359,26 +498,26 @@ DECLHIDDEN(int) flashR3SsmLoadExec(PFLASHCORE pThis, PSSMHANDLE pSSM)
         uint16_t    u16Val;
         uint32_t    u32Val;
 
-        SSMR3GetU8(pSSM, &pThis->bCmd);
-        SSMR3GetU8(pSSM, &pThis->bStatus);
-        SSMR3GetU8(pSSM, &pThis->cBusCycle);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->bCmd);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->bStatus);
+        pHlp->pfnSSMGetU8(pSSM, &pThis->cBusCycle);
 
         /* Make sure configuration didn't change behind our back. */
-        rc = SSMR3GetU16(pSSM, &u16Val);
+        rc = pHlp->pfnSSMGetU16(pSSM, &u16Val);
         AssertRCReturn(rc, rc);
         if (u16Val != pThis->cbBlockSize)
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        rc = SSMR3GetU16(pSSM, &u16Val);
+        rc = pHlp->pfnSSMGetU16(pSSM, &u16Val);
         AssertRCReturn(rc, rc);
         if (u16Val != pThis->u16FlashId)
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
-        rc = SSMR3GetU32(pSSM, &u32Val);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32Val);
         AssertRCReturn(rc, rc);
         if (u32Val != pThis->cbFlashSize)
             return VERR_SSM_LOAD_CONFIG_MISMATCH;
 
         /* Suck in the flash contents. */
-        rc = SSMR3GetMem(pSSM, pThis->pbFlash, pThis->cbFlashSize);
+        rc = pHlp->pfnSSMGetMem(pSSM, pThis->pbFlash, pThis->cbFlashSize);
     }
     else
         rc = VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;

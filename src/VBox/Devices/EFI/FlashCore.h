@@ -56,28 +56,26 @@ RT_C_DECLS_BEGIN
  */
 typedef struct FLASHCORE
 {
-    /** Owning device instance. */
-    PPDMDEVINS          pDevIns;
     /** The current command. */
-    uint8_t             bCmd;
+    uint8_t                 bCmd;
     /** The status register. */
-    uint8_t             bStatus;
+    uint8_t                 bStatus;
     /** Current bus cycle. */
-    uint8_t             cBusCycle;
+    uint8_t                 cBusCycle;
 
-    uint8_t             uPadding0;
-
-    /* The following state does not change at runtime.*/
-    /** Manufacturer (high byte) and device (low byte) ID. */
-    uint16_t            u16FlashId;
-    /** The configured block size of the device. */
-    uint16_t            cbBlockSize;
-    /** The flash memory region size.  */
-    uint32_t            cbFlashSize;
-    /** The actual flash memory data.  */
-    uint8_t             *pbFlash;
+    /** @name The following state does not change at runtime
+     * @{ */
     /** When set, indicates the state was saved. */
-    bool                fStateSaved;
+    bool                    fStateSaved;
+    /** Manufacturer (high byte) and device (low byte) ID. */
+    uint16_t                u16FlashId;
+    /** The configured block size of the device. */
+    uint16_t                cbBlockSize;
+    /** The flash memory region size.  */
+    uint32_t                cbFlashSize;
+    /** The actual flash memory data.  */
+    R3PTRTYPE(uint8_t *)    pbFlash;
+    /** @} */
 } FLASHCORE;
 
 /** Pointer to the Flash device state. */
@@ -85,115 +83,19 @@ typedef FLASHCORE *PFLASHCORE;
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
-/**
- * Performs a write to the given flash offset.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance.
- * @param   off                 Offset to start writing to.
- * @param   pv                  The value to write.
- * @param   cb                  Number of bytes to write.
- */
-DECLHIDDEN(int) flashWrite(PFLASHCORE pThis, uint32_t off, const void *pv, size_t cb);
-
-/**
- * Performs a read from the given flash offset.
- *
- * @returns VBox status code.
- * @param   pThis               The UART core instance.
- * @param   off                 Offset to start reading from.
- * @param   pv                  Where to store the read data.
- * @param   cb                  Number of bytes to read.
- */
-DECLHIDDEN(int) flashRead(PFLASHCORE pThis, uint32_t off, void *pv, size_t cb);
+DECLHIDDEN(VBOXSTRICTRC) flashWrite(PFLASHCORE pThis, uint32_t off, const void *pv, size_t cb);
+DECLHIDDEN(VBOXSTRICTRC) flashRead(PFLASHCORE pThis, uint32_t off, void *pv, size_t cb);
 
 # ifdef IN_RING3
-
-/**
- * Initialiizes the given flash device instance.
- *
- * @returns VBox status code.
- * @param   pThis               The flash device core instance.
- * @param   pDevIns             Pointer to the owning device instance.
- * @param   idFlashDev          The flash device ID.
- * @param   GCPhysFlashBase     Base MMIO address where the flash is located.
- * @param   cbFlash             Size of the flash device in bytes.
- * @param   cbBlock             Size of a flash block.
- */
 DECLHIDDEN(int) flashR3Init(PFLASHCORE pThis, PPDMDEVINS pDevIns, uint16_t idFlashDev, uint32_t cbFlash, uint16_t cbBlock);
-
-/**
- * Destroys the given flash device instance.
- *
- * @returns nothing.
- * @param   pThis               The flash device core instance.
- */
-DECLHIDDEN(void) flashR3Destruct(PFLASHCORE pThis);
-
-/**
- * Loads the flash content from the given file.
- *
- * @returns VBox status code.
- * @param   pThis               The flash device core instance.
- * @param   pszFilename         The file to load the flash content from.
- */
-DECLHIDDEN(int) flashR3LoadFromFile(PFLASHCORE pThis, const char *pszFilename);
-
-/**
- * Loads the flash content from the given buffer.
- *
- * @returns VBox status code.
- * @param   pThis               The flash device core instance.
- * @param   pvBuf               The buffer to load the content from.
- * @param   cbBuf               Size of the buffer in bytes.
- */
+DECLHIDDEN(void) flashR3Destruct(PFLASHCORE pThis, PPDMDEVINS pDevIns);
+DECLHIDDEN(int) flashR3LoadFromFile(PFLASHCORE pThis, PPDMDEVINS pDevIns, const char *pszFilename);
 DECLHIDDEN(int) flashR3LoadFromBuf(PFLASHCORE pThis, void const *pvBuf, size_t cbBuf);
-
-/**
- * Saves the flash content to the given file.
- *
- * @returns VBox status code.
- * @param   pThis               The flash device core instance.
- * @param   pszFilename         The file to save the flash content to.
- */
-DECLHIDDEN(int) flashR3SaveToFile(PFLASHCORE pThis, const char *pszFilename);
-
-/**
- * Saves the flash content to the given buffer.
- *
- * @returns VBox status code.
- * @param   pThis               The flash device core instance.
- * @param   pvBuf               The buffer to save the content to.
- * @param   cbBuf               Size of the buffer in bytes.
- */
+DECLHIDDEN(int) flashR3SaveToFile(PFLASHCORE pThis, PPDMDEVINS pDevIns, const char *pszFilename);
 DECLHIDDEN(int) flashR3SaveToBuf(PFLASHCORE pThis, void *pvBuf, size_t cbBuf);
-
-/**
- * Resets the dynamic part of the flash device state.
- *
- * @returns nothing.
- * @param   pThis               The flash device core instance.
- */
 DECLHIDDEN(void) flashR3Reset(PFLASHCORE pThis);
-
-/**
- * Saves the flash device state to the given SSM handle.
- *
- * @returns VBox status code.
- * @param   pThis               The flash device core instance.
- * @param   pSSM                The SSM handle to save to.
- */
-DECLHIDDEN(int) flashR3SsmSaveExec(PFLASHCORE pThis, PSSMHANDLE pSSM);
-
-/**
- * Loads the flash device state from the given SSM handle.
- *
- * @returns VBox status code.
- * @param   pThis               The flash device core instance.
- * @param   pSSM                The SSM handle to load from.
- */
-DECLHIDDEN(int) flashR3SsmLoadExec(PFLASHCORE pThis, PSSMHANDLE pSSM);
-
+DECLHIDDEN(int) flashR3SaveExec(PFLASHCORE pThis, PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+DECLHIDDEN(int) flashR3LoadExec(PFLASHCORE pThis, PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 # endif /* IN_RING3 */
 
 #endif /* VBOX_DEVICE_STRUCT_TESTCASE */

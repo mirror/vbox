@@ -91,6 +91,9 @@ static PCPDMDEVREGR0 g_apVBoxDDR0DevRegs[] =
 #ifdef VBOX_WITH_NVME_IMPL
     &g_DeviceNVMe,
 #endif
+#ifdef VBOX_WITH_EFI
+    &g_DeviceEFI,
+#endif
 #ifdef VBOX_WITH_VIRTIO_SCSI
     &g_DeviceVirtioSCSI,
 #endif
