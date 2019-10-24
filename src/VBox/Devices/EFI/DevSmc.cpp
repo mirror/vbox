@@ -124,7 +124,7 @@
 #define SMC_KEYIDX_FIRST_ENUM                   2
 
 /** Macro for emitting a static DEVSMC4CHID initializer. */
-#define SMC4CH(a_sz4) { { a_sz4[0], a_sz4[1], a_sz4[2], a_sz4[3] } }
+#define SMC4CH(ch1, ch2, ch3, ch4) { { ch1, ch2, ch3, ch4 } }
 
 /**
  * Macro for comparing DEVSMC4CHID with a string value.
@@ -329,25 +329,25 @@ static DEVSMCKEYGETTER scmKeyGetZero;
 static const DEVSMCKEYDESC g_aSmcKeys[] =
 {
     /* Non-enum keys first. */
-    { SMC4CH("OSK0"), SMC4CH("ch8*"), scmKeyGetOSKs, NULL, 32, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_FUNCTION },
-    { SMC4CH("OSK1"), SMC4CH("ch8*"), scmKeyGetOSKs, NULL, 32, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_FUNCTION },
+    { SMC4CH('O','S','K','0'), SMC4CH('c','h','8','*'), scmKeyGetOSKs, NULL, 32, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_FUNCTION },
+    { SMC4CH('O','S','K','1'), SMC4CH('c','h','8','*'), scmKeyGetOSKs, NULL, 32, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_FUNCTION },
 
     /* The first enum key is the #KEY value. */
-    { SMC4CH("#KEY"), SMC4CH("ui32"), scmKeyGetKeyCount,            NULL,                       4, SMC_KEY_ATTR_READ },
+    { SMC4CH('#','K','E','Y'), SMC4CH('u','i','3','2'), scmKeyGetKeyCount,            NULL,                       4, SMC_KEY_ATTR_READ },
 # ifdef VBOX_WITH_SMC_2_x
-    { SMC4CH("$Adr"), SMC4CH("ui32"), scmKeyGetDollarAddress,       NULL,                       4, SMC_KEY_ATTR_READ },
-    { SMC4CH("$Num"), SMC4CH("ui8 "), scmKeyGetDollarNumber,        scmKeyPutDollarNumber,      1, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_WRITE | SMC_KEY_ATTR_PRIVATE },
-    { SMC4CH("BEMB"), SMC4CH("flag"), scmKeyGetOne,                 NULL,                       1, SMC_KEY_ATTR_READ },
+    { SMC4CH('$','A','d','r'), SMC4CH('u','i','3','2'), scmKeyGetDollarAddress,       NULL,                       4, SMC_KEY_ATTR_READ },
+    { SMC4CH('$','N','u','m'), SMC4CH('u','i','8',' '), scmKeyGetDollarNumber,        scmKeyPutDollarNumber,      1, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_WRITE | SMC_KEY_ATTR_PRIVATE },
+    { SMC4CH('B','E','M','B'), SMC4CH('f','l','a','g'), scmKeyGetOne,                 NULL,                       1, SMC_KEY_ATTR_READ },
 # else
-    { SMC4CH("LSOF"), SMC4CH("flag"), scmKeyGetZero,                NULL,                       1, SMC_KEY_ATTR_READ },
+    { SMC4CH('L','S','O','F'), SMC4CH('f','l','a','g'), scmKeyGetZero,                NULL,                       1, SMC_KEY_ATTR_READ },
 # endif
-    { SMC4CH("MSSD"), SMC4CH("si8 "), scmKeyGetShutdownReason,      scmKeyPutShutdownReason,    1, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_WRITE | SMC_KEY_ATTR_PRIVATE },
+    { SMC4CH('M','S','S','D'), SMC4CH('s','i','8',' '), scmKeyGetShutdownReason,      scmKeyPutShutdownReason,    1, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_WRITE | SMC_KEY_ATTR_PRIVATE },
     /* MSDS is not present on MacPro3,1 nor MacBookPro10,1, so returning not found is fine. */
 # ifdef VBOX_WITH_SMC_2_x
-    { SMC4CH("MSTf"), SMC4CH("ui8 "), scmKeyGetZero,                NULL,                       1, SMC_KEY_ATTR_READ },
+    { SMC4CH('M','S','T','f'), SMC4CH('u','i','8',' '), scmKeyGetZero,                NULL,                       1, SMC_KEY_ATTR_READ },
 # endif
-    { SMC4CH("NATJ"), SMC4CH("ui8 "), scmKeyGetNinjaTimerAction,    scmKeyPutNinjaTimerAction,  1, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_WRITE | SMC_KEY_ATTR_PRIVATE },
-    { SMC4CH("REV "), SMC4CH("{rev"), scmKeyGetRevision,            NULL,                       6, SMC_KEY_ATTR_READ },
+    { SMC4CH('N','A','T','J'), SMC4CH('u','i','8',' '), scmKeyGetNinjaTimerAction,    scmKeyPutNinjaTimerAction,  1, SMC_KEY_ATTR_READ | SMC_KEY_ATTR_WRITE | SMC_KEY_ATTR_PRIVATE },
+    { SMC4CH('R','E','V',' '), SMC4CH('{','r','e','v'), scmKeyGetRevision,            NULL,                       6, SMC_KEY_ATTR_READ },
 /** @todo MSSP, NTOK and more. */
 };
 
