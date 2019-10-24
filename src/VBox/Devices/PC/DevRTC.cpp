@@ -223,7 +223,9 @@ typedef struct RTCSTATERC
 typedef RTCSTATERC *PRTCSTATERC;
 
 
-/** @def PRTCSTATECC
+/** @typedef RTCSTATECC
+ * The instance data for the current context. */
+/** @typedef PRTCSTATECC
  * Pointer to the instance data for the current context. */
 #ifdef IN_RING3
 typedef  RTCSTATER3  RTCSTATECC;

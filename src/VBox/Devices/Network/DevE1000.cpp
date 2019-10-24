@@ -7609,8 +7609,8 @@ static DECLCALLBACK(void) e1kR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
 
     e1kDumpState(pThis);
     E1kLog(("%s Destroying instance\n", pThis->szPrf));
