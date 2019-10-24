@@ -96,6 +96,78 @@
  * There's currently a limit of 256 PCI devices per PDM device.
  *
  *
+ * @subsection sec_pdm_dev_new          New Style (6.1)
+ *
+ * VBox 6.1 changes the PDM interface for devices and they have to be converted
+ * to the new style to continue working (see @bugref{9218}).
+ *
+ * Steps for converting a PDM device to the new style:
+ *
+ * - State data needs to be split into shared, ring-3, ring-0 and raw-mode
+ *   structures.  The shared structure shall contains absolutely no pointers.
+ *
+ * - Context specific typedefs ending in CC for the structure and pointer to
+ *   it are required (copy & edit the PRTCSTATECC stuff).
+ *   The pointer to a context specific structure is obtained using the
+ *   PDMINS_2_DATA_CC macro.  The PDMINS_2_DATA macro gets the shared one.
+ *
+ * - Update the registration structure with sizeof the new structures.
+ *
+ * - MMIO handlers to FNIOMMMIONEWREAD and FNIOMMMIONEWRITE form, take care renaming
+ *   GCPhys to off and really treat it as an offset.   Return status is VBOXSTRICTRC,
+ *   which should be propagated to worker functions as far as possible.
+ *
+ * - I/O handlers to FNIOMIOPORTNEWIN and FNIOMIOPORTNEWOUT form, take care renaming
+ *   uPort/Port to offPort and really treat it as an offset.   Return status is
+ *   VBOXSTRICTRC, which should be propagated to worker functions as far as possible.
+ *
+ * - MMIO and I/O port registration must be converted, handles stored in the shared structure.
+ *
+ * - PCI devices must also update the I/O region registration and corresponding
+ *   mapping callback.   The latter is generally not needed any more, as the PCI
+ *   bus does the mapping and unmapping using the handle passed to it during registration.
+ *
+ * - If the device contains ring-0 or raw-mode optimizations:
+ *    - Make sure to replace any R0Enabled, GCEnabled, and RZEnabled with
+ *      pDevIns->fR0Enabled and pDevIns->fRCEnabled.  Removing CFGM reading and
+ *      validation of such options as well as state members for them.
+ *    - Callbacks for ring-0 and raw-mode are registered in a context contructor.
+ *      Setting up of non-default critical section handling needs to be repeated
+ *      in the ring-0/raw-mode context constructor too.   See for instance
+ *      e1kRZConstruct().
+ *
+ * - Convert all PDMCritSect calls to PDMDevHlpCritSect.
+ *   Note! pDevIns should be passed as parameter rather than put in pThisCC.
+ *
+ * - Convert all timers to the handle based ones.
+ *
+ * - Convert all queues to the handle based ones or tasks.
+ *
+ * - Set the PDM_DEVREG_FLAGS_NEW_STYLE in the registration structure.
+ *
+ * - Convert all CFGMR3Xxxx calls to pHlp->pfnCFGMXxxx.
+ *
+ * - Convert all SSMR3Xxxx calls to pHlp->pfnSSMXxxx.
+ *
+ * - Ensure that CFGM values and nodes are validated using PDMDEV_VALIDATE_CONFIG_RETURN()
+ *
+ * - Ensure that the first statement in the constructors is
+ *   @code
+           PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+     @endcode
+ *   There shall be absolutely nothing preceeding that and it is mandatory.
+ *
+ * - Ensure that the first statement in the destructors is
+ *   @code
+           PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+     @endcode
+ *   There shall be absolutely nothing preceeding that and it is mandatory.
+ *
+ * - Use 'nm -u' (tools\win.amd64\mingw-w64\r1\bin\nm.exe on windows) to check for
+ *   VBoxVMM and VMMR0 function you forgot to convert to device help calls or would
+ *   need adding as device helpers or something.
+ *
+ *
  * @section sec_pdm_special_devs    Special Devices
  *
  * Several kinds of devices interacts with the VMM and/or other device and PDM
@@ -116,7 +188,6 @@
  * since the address changes when RC is relocated.
  *
  * @see grp_pdm_device
- *
  *
  * @section sec_pdm_usbdev  The Pluggable USB Devices
  *
