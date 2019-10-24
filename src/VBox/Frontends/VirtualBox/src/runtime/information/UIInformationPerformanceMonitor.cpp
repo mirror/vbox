@@ -95,7 +95,7 @@ public:
     bool isAreaChartAllowed() const;
     void setIsAreaChartAllowed(bool fIsAreaChartAllowed);
 
-    QColor dataSeriesColor(int iDataSeriesIndex);
+    QColor dataSeriesColor(int iDataSeriesIndex, int iDark = 0);
     void setDataSeriesColor(int iDataSeriesIndex, const QColor &color);
 
     QString XAxisLabel();
@@ -124,6 +124,7 @@ private:
        void drawCombinedPieCharts(QPainter &painter, quint64 iMaximum);
        void drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
                               const QRectF &chartRect, const QRectF &innerRect);
+       /** Draws a doughnut shaped shart for two data series combines. the 2nd data is added on top of 1st. */
        void drawCombinedDoughnutChart(QPainter &painter, quint64 iMaximum,
                                       const QRectF &chartRect, const QRectF &innerRect);
 
@@ -266,11 +267,14 @@ void UIChart::setIsAreaChartAllowed(bool fIsAreaChartAllowed)
     m_fIsAreaChartAllowed = fIsAreaChartAllowed;
 }
 
-QColor UIChart::dataSeriesColor(int iDataSeriesIndex)
+QColor UIChart::dataSeriesColor(int iDataSeriesIndex, int iDark /* = 0 */)
 {
     if (iDataSeriesIndex >= DATA_SERIES_SIZE)
         return QColor();
-    return m_dataSeriesColor[iDataSeriesIndex];
+    return QColor(qMax(m_dataSeriesColor[iDataSeriesIndex].red() - iDark, 0),
+                  qMax(m_dataSeriesColor[iDataSeriesIndex].green() - iDark, 0),
+                  qMax(m_dataSeriesColor[iDataSeriesIndex].blue() - iDark, 0),
+                  m_dataSeriesColor[iDataSeriesIndex].alpha());
 }
 
 void UIChart::setDataSeriesColor(int iDataSeriesIndex, const QColor &color)
@@ -472,7 +476,7 @@ void UIChart::drawPieChart(QPainter &painter, quint64 iMaximum, int iDataIndex,
 {
     if (!m_pMetric)
         return;
-    /* First draw a doughnut shaped chart for the 1st data series */
+
     const QQueue<quint64> *data = m_pMetric->data(iDataIndex);
     if (!data || data->isEmpty())
         return;
@@ -513,7 +517,7 @@ void UIChart::drawDoughnutChart(QPainter &painter, quint64 iMaximum, int iDataIn
     painter.drawArc(chartRect, 0, 3600 * 16);
     painter.drawArc(innerRect, 0, 3600 * 16);
 
-    /* Draw a white filled circle and that the arc for data: */
+    /* Draw a white filled circle and the arc for data: */
     QPainterPath background = wholeArc(chartRect).subtracted(wholeArc(innerRect));
     painter.setPen(Qt::NoPen);
     painter.setBrush(QColor(255, 255, 255, m_iOverlayAlpha));
@@ -546,7 +550,7 @@ void UIChart::drawCombinedDoughnutChart(QPainter &painter, quint64  iMaximum,
 
     /* Draw a doughnut slice for the first data series: */
     float fAngle = 360.f * data->back() / (float)iMaximum;
-    painter.setBrush(m_dataSeriesColor[iDataIndex]);
+    painter.setBrush(dataSeriesColor(iDataIndex, 50));
     painter.drawPath(doughnutSlice(chartRect, innerRect, 90, fAngle));
 
     /* Draw another slice for 2nd data series on top of the first if necessary: */
@@ -555,7 +559,7 @@ void UIChart::drawCombinedDoughnutChart(QPainter &painter, quint64  iMaximum,
     if (data2 && !data2->isEmpty())
     {
         float fAngle2 = 360.f * data2->back() / (float)iMaximum;
-        painter.setBrush(m_dataSeriesColor[iDataIndex]);
+        painter.setBrush(dataSeriesColor(iDataIndex, 50));
         painter.drawPath(doughnutSlice(chartRect, innerRect, 90 - fAngle, fAngle2));
     }
 }
