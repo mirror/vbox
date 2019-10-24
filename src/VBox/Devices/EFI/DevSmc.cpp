@@ -78,8 +78,8 @@
 
 /** @name Apple SMC Commands.
  *  @{ */
-#define SMC_CMD_GET_KEY_VALUE                            0x10
-#define SMC_CMD_PUT_KEY                           0x11
+#define SMC_CMD_GET_KEY_VALUE                   0x10
+#define SMC_CMD_PUT_KEY                         0x11
 #define SMC_CMD_GET_KEY_BY_INDEX                0x12
 #define SMC_CMD_GET_KEY_INFO                    0x13
 /** @} */
@@ -237,6 +237,9 @@ typedef struct DEVSMC
     /** NATJ - Ninja action timer job. */
     uint8_t                 bNinjaActionTimerJob;
     /** @} */
+
+    /** The I/O port registration handle. */
+    IOMIOPORTHANDLE         hIoPorts;
 } DEVSMC;
 #ifndef _MSC_VER
 AssertCompileMembersAtSameOffset(DEVSMC, u.abRegsRW[SMC_REG_CMD],         DEVSMC, u.s.bState);
@@ -301,28 +304,25 @@ typedef DEVSMCKEYDESC const *PCDEVSMCKEYDESC;
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-#ifdef IN_RING3
 static DEVSMCKEYGETTER scmKeyGetOSKs;
 static DEVSMCKEYGETTER scmKeyGetKeyCount;
 static DEVSMCKEYGETTER scmKeyGetRevision;
-# ifdef VBOX_WITH_SMC_2_x
+#ifdef VBOX_WITH_SMC_2_x
 static DEVSMCKEYGETTER scmKeyGetDollarAddress;
 static DEVSMCKEYGETTER scmKeyGetDollarNumber;
 static DEVSMCKEYPUTTER scmKeyPutDollarNumber;
-# endif
+#endif
 static DEVSMCKEYGETTER scmKeyGetShutdownReason;
 static DEVSMCKEYPUTTER scmKeyPutShutdownReason;
 static DEVSMCKEYGETTER scmKeyGetNinjaTimerAction;
 static DEVSMCKEYPUTTER scmKeyPutNinjaTimerAction;
 static DEVSMCKEYGETTER scmKeyGetOne;
 static DEVSMCKEYGETTER scmKeyGetZero;
-#endif
 
 
 /*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
-#ifdef IN_RING3
 /**
  * Apple SMC key descriptor table.
  */
@@ -350,7 +350,6 @@ static const DEVSMCKEYDESC g_aSmcKeys[] =
     { SMC4CH("REV "), SMC4CH("{rev"), scmKeyGetRevision,            NULL,                       6, SMC_KEY_ATTR_READ },
 /** @todo MSSP, NTOK and more. */
 };
-#endif
 
 #ifdef IN_RING0
 /** Do once for the SMC ring-0 static data (g_abOsk0And1, g_fHaveOsk). */
@@ -481,15 +480,15 @@ static DECLCALLBACK(int) devR0SmcInitOnce(void *pvUserIgnored)
 
 
 /**
- * @callback_method_impl{FNPDMDEVREQHANDLERR0}
+ * @interface_method_impl{PDMDEVREGR0,pfnRequest}
  */
-PDMBOTHCBDECL(int) devR0SmcReqHandler(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg)
+static DECLCALLBACK(int) devR0SmcReqHandler(PPDMDEVINS pDevIns, uint32_t uReq, uint64_t uArg)
 {
     PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
     int     rc    = VERR_INVALID_FUNCTION;
-    RT_NOREF_PV(u64Arg);
+    RT_NOREF_PV(uArg);
 
-    if (uOperation == SMC_CALLR0_READ_OSK)
+    if (uReq == SMC_CALLR0_READ_OSK)
     {
         rc = RTOnce(&g_SmcR0Once, devR0SmcInitOnce, NULL);
         if (   RT_SUCCESS(rc)
@@ -576,7 +575,6 @@ static int getSmcKeyOs(char *pabKey, uint32_t cbKey)
 
 #endif /* IN_RING3 && RT_OS_DARWIN */
 
-#ifdef IN_RING3 /* For now. */
 
 /** @callback_method_impl{DEVSMCKEYGETTER, OSK0 and OSK1} */
 static uint8_t scmKeyGetOSKs(PDEVSMC pThis, PDEVSMCCURKEY pCurKey, uint8_t bCmd, PCDEVSMCKEYDESC pKeyDesc)
@@ -879,7 +877,7 @@ static uint8_t smcKeyPutValue(PDEVSMC pThis)
  * @param   uReg    The register number.
  * @param   pbValue Where to return the value.
  */
-static int smcRegData_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
+static VBOXSTRICTRC smcRegData_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
 {
     RT_NOREF1(uReg);
     switch (pThis->bCmd)
@@ -969,7 +967,7 @@ static int smcRegData_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
  * @param   uReg    The register number.
  * @param   bValue  The value being written.
  */
-static int smcRegData_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
+static VBOXSTRICTRC smcRegData_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
 {
     RT_NOREF1(uReg);
     switch (pThis->bCmd)
@@ -1084,7 +1082,7 @@ static int smcRegData_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
  * @param   uReg    The register number.
  * @param   bValue  The value being written.
  */
-static int smcRegCmd_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
+static VBOXSTRICTRC smcRegCmd_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
 {
     LogFlow(("smcRegCmd_w: New command: %#x (old=%#x)\n", bValue, pThis->bCmd)); NOREF(uReg);
 
@@ -1125,7 +1123,7 @@ static int smcRegCmd_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
  * @param   uReg    The register number.
  * @param   bValue  The value being written.
  */
-static int smcRegGen_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
+static VBOXSTRICTRC smcRegGen_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
 {
     Log(("smcRegGen_w: %#04x: %#x -> %#x (write)\n", uReg, pThis->u.abRegsRW[uReg], bValue));
     pThis->u.abRegsRW[uReg] = bValue;
@@ -1140,7 +1138,7 @@ static int smcRegGen_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
  * @param   uReg    The register number.
  * @param   pbValue Where to return the value.
  */
-static int smcRegGen_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
+static VBOXSTRICTRC smcRegGen_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
 {
     Log(("smcRegGen_r: %#04x: %#x (read)\n", uReg, pThis->u.abRegsRW[uReg]));
     *pbValue = pThis->u.abRegsRW[uReg];
@@ -1155,7 +1153,7 @@ static int smcRegGen_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
  * @param   uReg    The register number.
  * @param   bValue  The value being written.
  */
-static int smcRegFF_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
+static VBOXSTRICTRC smcRegFF_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
 {
     RT_NOREF3(pThis, uReg, bValue);
     Log(("SMC: %#04x: Writing %#x to unknown register!\n", uReg, bValue));
@@ -1170,7 +1168,7 @@ static int smcRegFF_w(PDEVSMC pThis, uint8_t uReg, uint8_t bValue)
  * @param   uReg    The register number.
  * @param   pbValue Where to return the value.
  */
-static int smcRegFF_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
+static VBOXSTRICTRC smcRegFF_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
 {
     RT_NOREF2(pThis, uReg);
     Log(("SMC: %#04x: Reading from unknown register!\n", uReg));
@@ -1234,8 +1232,8 @@ static int smcRegFF_r(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue)
  */
 static const struct
 {
-    int (*pfnWrite)(PDEVSMC pThis, uint8_t uReg, uint8_t bValue);
-    int (*pfnRead)(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue);
+    VBOXSTRICTRC (*pfnWrite)(PDEVSMC pThis, uint8_t uReg, uint8_t bValue);
+    VBOXSTRICTRC (*pfnRead)(PDEVSMC pThis, uint8_t uReg, uint8_t *pbValue);
 } g_aSmcRegs[SMC_REG_COUNT] =
 {
     /* [0x00] = */ { smcRegData_w,     smcRegData_r },
@@ -1273,34 +1271,42 @@ static const struct
 };
 
 
-/** @callback_method_impl{FNIOMIOPORTOUT} */
-PDMBOTHCBDECL(int) smcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) smcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF1(pvUser);
 #ifndef IN_RING3
     if (cb > 1)
+    {
+        Log3(("smcIoPortWrite: %#04x write access: %#x (LB %u) -> ring-3\n", offPort, u32, cb));
         return VINF_IOM_R3_IOPORT_WRITE;
+    }
+#endif
+#ifdef LOG_ENABLED
+    RTIOPORT const offPortLog = offPort;
+    unsigned const cbLog      = cb;
 #endif
 
     /*
      * The first register, usually only one is accessed.
      */
     PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
-    uint32_t uReg = Port - SMC_PORT_FIRST;
-    AssertReturn(uReg < RT_ELEMENTS(g_aSmcRegs), VERR_INTERNAL_ERROR_3); /* impossible*/
-    int rc = g_aSmcRegs[uReg].pfnWrite(pThis, uReg, u32);
+    AssertReturn(offPort < RT_ELEMENTS(g_aSmcRegs), VERR_INTERNAL_ERROR_3); /* impossible*/
+    VBOXSTRICTRC rc = g_aSmcRegs[offPort].pfnWrite(pThis, offPort, u32);
 
     /*
      * On the off chance that multiple registers are being read.
      */
     if (cb > 1)
     {
-        while (cb > 1 && uReg < SMC_REG_COUNT - 1)
+        while (cb > 1 && offPort < SMC_REG_COUNT - 1)
         {
             cb--;
-            uReg++;
+            offPort++;
             u32 >>= 8;
-            int rc2 = g_aSmcRegs[uReg].pfnWrite(pThis, uReg, u32);
+            VBOXSTRICTRC rc2 = g_aSmcRegs[offPort].pfnWrite(pThis, offPort, u32);
             if (rc2 != VINF_SUCCESS)
             {
                 if (   rc == VINF_SUCCESS
@@ -1311,13 +1317,15 @@ PDMBOTHCBDECL(int) smcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         }
     }
 
-    LogFlow(("smcIoPortWrite: %#04x write access: %#x (LB %u) rc=%Rrc\n", uReg, u32, cb, rc));
+    LogFlow(("smcIoPortWrite: %#04x write access: %#x (LB %u) rc=%Rrc\n", offPortLog, u32, cbLog, VBOXSTRICTRC_VAL(rc) ));
     return rc;
 }
 
 
-/** @callback_method_impl{FNIOMIOPORTIN} */
-PDMBOTHCBDECL(int) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF1(pvUser);
 #ifndef IN_RING3
@@ -1325,16 +1333,19 @@ PDMBOTHCBDECL(int) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
         return VINF_IOM_R3_IOPORT_READ;
 #endif
 
-    PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PDEVSMC        pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+#ifdef LOG_ENABLED
+    RTIOPORT const offPortLog = offPort;
+    unsigned const cbLog      = cb;
+#endif
 
     /*
      * The first register, usually only one is accessed.
      */
-    uint32_t uReg = Port - SMC_PORT_FIRST;
-    AssertReturn(uReg < RT_ELEMENTS(g_aSmcRegs), VERR_INTERNAL_ERROR_3); /* impossible*/
-    Log2(("smcIoPortRead: %#04x read access: LB %u\n", uReg, cb));
+    AssertReturn(offPort < RT_ELEMENTS(g_aSmcRegs), VERR_INTERNAL_ERROR_3); /* impossible*/
+    Log2(("smcIoPortRead: %#04x read access: LB %u\n", offPort, cb));
     uint8_t bValue = 0xff;
-    int rc = g_aSmcRegs[uReg].pfnRead(pThis, uReg, &bValue);
+    VBOXSTRICTRC rc = g_aSmcRegs[offPort].pfnRead(pThis, offPort, &bValue);
     *pu32 = bValue;
 
     /*
@@ -1345,11 +1356,11 @@ PDMBOTHCBDECL(int) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
         do
         {
             cb--;
-            uReg++;
+            offPort++;
             bValue = 0xff;
-            if (uReg < SMC_REG_COUNT)
+            if (offPort < SMC_REG_COUNT)
             {
-                int rc2 = g_aSmcRegs[uReg].pfnRead(pThis, uReg, &bValue);
+                VBOXSTRICTRC rc2 = g_aSmcRegs[offPort].pfnRead(pThis, offPort, &bValue);
                 if (rc2 != VINF_SUCCESS)
                 {
                     if (   rc == VINF_SUCCESS
@@ -1361,15 +1372,14 @@ PDMBOTHCBDECL(int) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
             *pu32 |= (uint32_t)bValue << ((4 - cb) * 8);
         } while (cb > 1);
     }
-    LogFlow(("smcIoPortRead: %#04x read access: %#x (LB %u) rc=%Rrc\n", uReg, *pu32, cb, rc));
+    LogFlow(("smcIoPortRead: %#04x read access: %#x (LB %u) rc=%Rrc\n", offPortLog, *pu32, cbLog, VBOXSTRICTRC_VAL(rc)));
     return rc;
 }
 
-#endif /* IN_RING3 for now */
 #ifdef IN_RING3
 
 /** @callback_method_impl{FNSSMDEVSAVEEXEC} */
-static DECLCALLBACK(int) smcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
+static DECLCALLBACK(int) smcR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
     RT_NOREF2(pSSM, pThis);
@@ -1381,7 +1391,7 @@ static DECLCALLBACK(int) smcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 
 /** @callback_method_impl{FNSSMDEVLOADEXEC} */
-static DECLCALLBACK(int) smcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
+static DECLCALLBACK(int) smcR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -1410,12 +1420,13 @@ static DECLCALLBACK(int) smcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)  smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
+static DECLCALLBACK(int) smcR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF1(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
-    Assert(iInstance == 0);
+    PDEVSMC         pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+
+    Assert(iInstance == 0); RT_NOREF1(iInstance);
 
     /*
      * Init the data.
@@ -1433,35 +1444,35 @@ static DECLCALLBACK(int)  smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      */
 
     /* The DeviceKey sets OSK0 and OSK1. */
-    int rc = CFGMR3QueryStringDef(pCfg, "DeviceKey", pThis->szOsk0And1, sizeof(pThis->szOsk0And1), "");
+    int rc = pHlp->pfnCFGMQueryStringDef(pCfg, "DeviceKey", pThis->szOsk0And1, sizeof(pThis->szOsk0And1), "");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"DeviceKey\" as a string failed"));
 
     /* Query the key from the OS / real hardware if asked to do so. */
     bool fGetKeyFromRealSMC;
-    rc = CFGMR3QueryBoolDef(pCfg, "GetKeyFromRealSMC", &fGetKeyFromRealSMC, false);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "GetKeyFromRealSMC", &fGetKeyFromRealSMC, false);
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"GetKeyFromRealSMC\" as a boolean failed"));
     if (fGetKeyFromRealSMC)
     {
-#ifdef RT_OS_DARWIN
+# ifdef RT_OS_DARWIN
         rc = getSmcKeyOs(pThis->szOsk0And1, sizeof(pThis->szOsk0And1));
         if (RT_FAILURE(rc))
         {
             LogRel(("SMC: Retrieving the SMC key from the OS failed (%Rrc), trying to read it from hardware\n", rc));
-#endif
-            rc = PDMDevHlpCallR0(pDevIns, SMC_CALLR0_READ_OSK, 0 /*u64Arg*/);
+# endif
+            rc = PDMDevHlpCallR0(pDevIns, SMC_CALLR0_READ_OSK, 0 /*uArg*/);
             if (RT_SUCCESS(rc))
                 LogRel(("SMC: Successfully retrieved the SMC key from hardware\n"));
             else
                 LogRel(("SMC: Retrieving the SMC key from hardware failed(%Rrc)\n", rc));
-#ifdef RT_OS_DARWIN
+# ifdef RT_OS_DARWIN
         }
         else
             LogRel(("SMC: Successfully retrieved the SMC key from the OS\n"));
-#endif
+# endif
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("Failed to query SMC value from the host"));
@@ -1470,9 +1481,8 @@ static DECLCALLBACK(int)  smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register I/O Ports
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, SMC_PORT_FIRST, SMC_REG_COUNT, NULL,
-                                 smcIoPortWrite, smcIoPortRead,
-                                 NULL, NULL, "SMC data port");
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, SMC_PORT_FIRST, SMC_REG_COUNT, smcIoPortWrite, smcIoPortRead,
+                                     "SMC data port", NULL, &pThis->hIoPorts);
     AssertRCReturn(rc, rc);
 
     /** @todo Newer versions (2.03) have an MMIO mapping as well (ACPI). */
@@ -1481,14 +1491,31 @@ static DECLCALLBACK(int)  smcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Saved state.
      */
-    rc = PDMDevHlpSSMRegister(pDevIns, SMC_SAVED_STATE_VERSION, sizeof(*pThis), smcSaveExec, smcLoadExec);
+    rc = PDMDevHlpSSMRegister(pDevIns, SMC_SAVED_STATE_VERSION, sizeof(*pThis), smcR3SaveExec, smcR3LoadExec);
     if (RT_FAILURE(rc))
         return rc;
 
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) smcRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, smcIoPortWrite, smcIoPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+    RT_NOREF(pThis);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 
 /**
@@ -1499,7 +1526,7 @@ const PDMDEVREG g_DeviceSmc =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "smc",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_ARCH,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
@@ -1512,7 +1539,7 @@ const PDMDEVREG g_DeviceSmc =
 #if defined(IN_RING3)
     /* .pszRCMod = */               "VBoxDDRC.rc",
     /* .pszR0Mod = */               "VBoxDDR0.r0",
-    /* .pfnConstruct = */           smcConstruct,
+    /* .pfnConstruct = */           smcR3Construct,
     /* .pfnDestruct = */            NULL,
     /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
@@ -1536,10 +1563,10 @@ const PDMDEVREG g_DeviceSmc =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           smcRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
-    /* .pfnRequest = */             NULL,
+    /* .pfnRequest = */             devR0SmcReqHandler,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
@@ -1549,7 +1576,7 @@ const PDMDEVREG g_DeviceSmc =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           smcRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,

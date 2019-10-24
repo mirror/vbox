@@ -3424,8 +3424,9 @@ static DECLCALLBACK(int) pdmR3DevHlp_LdrGetR0InterfaceSymbols(PPDMDEVINS pDevIns
 static DECLCALLBACK(int) pdmR3DevHlp_CallR0(PPDMDEVINS pDevIns, uint32_t uOperation, uint64_t u64Arg)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
+    PVM    pVM = pDevIns->Internal.s.pVMR3;
+    PVMCPU pVCpu = VMMGetCpu(pVM);
+    AssertReturn(pVCpu, VERR_VM_THREAD_IS_EMT);
     LogFlow(("pdmR3DevHlp_CallR0: caller='%s'/%d: uOperation=%#x u64Arg=%#RX64\n",
              pDevIns->pReg->szName, pDevIns->iInstance, uOperation, u64Arg));
 
@@ -3437,29 +3438,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_CallR0(PPDMDEVINS pDevIns, uint32_t uOperat
     int rc;
     if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
     {
-        char szSymbol[          sizeof("devR0") + sizeof(pDevIns->pReg->szName) + sizeof("ReqHandler")];
-        strcat(strcat(strcpy(szSymbol, "devR0"),         pDevIns->pReg->szName),         "ReqHandler");
-        szSymbol[sizeof("devR0") - 1] = RT_C_TO_UPPER(szSymbol[sizeof("devR0") - 1]);
-
-        PFNPDMDRVREQHANDLERR0 pfnReqHandlerR0;
-        rc = pdmR3DevGetSymbolR0Lazy(pDevIns, szSymbol, &pfnReqHandlerR0);
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Make the ring-0 call.
-             */
-            PDMDEVICECALLREQHANDLERREQ Req;
-            Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
-            Req.Hdr.cbReq       = sizeof(Req);
-            Req.pDevInsR0       = PDMDEVINS_2_R0PTR(pDevIns);
-            Req.pfnReqHandlerR0 = pfnReqHandlerR0;
-            Req.uOperation      = uOperation;
-            Req.u32Alignment    = 0;
-            Req.u64Arg          = u64Arg;
-            rc = SUPR3CallVMMR0Ex(VMCC_GET_VMR0_FOR_CALL(pVM), NIL_VMCPUID, VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER, 0, &Req.Hdr);
-        }
-        else
-            pfnReqHandlerR0 = NIL_RTR0PTR;
+        /*
+         * Make the ring-0 call.
+         */
+        PDMDEVICEGENCALLREQ Req;
+        RT_ZERO(Req.Params);
+        Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
+        Req.Hdr.cbReq       = sizeof(Req);
+        Req.pDevInsR3       = pDevIns;
+        Req.idxR0Device     = pDevIns->Internal.s.idxR0Device;
+        Req.enmCall         = PDMDEVICEGENCALL_REQUEST;
+        Req.Params.Req.uReq = uOperation;
+        Req.Params.Req.uArg = u64Arg;
+        rc = VMMR3CallR0Emt(pVM, pVCpu, VMMR0_DO_PDM_DEVICE_GEN_CALL, 0, &Req.Hdr);
     }
     else
         rc = VERR_ACCESS_DENIED;

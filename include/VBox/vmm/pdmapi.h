@@ -221,31 +221,6 @@ typedef PDMDRIVERCALLREQHANDLERREQ *PPDMDRIVERCALLREQHANDLERREQ;
 
 VMMR0_INT_DECL(int) PDMR0DriverCallReqHandler(PGVM pGVM, PPDMDRIVERCALLREQHANDLERREQ pReq);
 
-/**
- * Request buffer for PDMR0DeviceCallReqHandler / VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER.
- * @see PDMR0DeviceCallReqHandler.
- */
-typedef struct PDMDEVICECALLREQHANDLERREQ
-{
-    /** The header. */
-    SUPVMMR0REQHDR          Hdr;
-    /** The device instance. */
-    PPDMDEVINSR0            pDevInsR0;
-    /** The request handler for the device. */
-    PFNPDMDEVREQHANDLERR0   pfnReqHandlerR0;
-    /** The operation. */
-    uint32_t                uOperation;
-    /** Explicit alignment padding. */
-    uint32_t                u32Alignment;
-    /** Optional 64-bit integer argument. */
-    uint64_t                u64Arg;
-} PDMDEVICECALLREQHANDLERREQ;
-/** Pointer to a PDMR0DeviceCallReqHandler /
- * VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER request buffer. */
-typedef PDMDEVICECALLREQHANDLERREQ *PPDMDEVICECALLREQHANDLERREQ;
-
-VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PPDMDEVICECALLREQHANDLERREQ pReq);
-
 
 /**
  * Request buffer for PDMR0DeviceCreateReqHandler / VMMR0_DO_PDM_DEVICE_CREATE.
@@ -308,6 +283,7 @@ typedef enum PDMDEVICEGENCALL
     PDMDEVICEGENCALL_INVALID = 0,
     PDMDEVICEGENCALL_CONSTRUCT,
     PDMDEVICEGENCALL_DESTRUCT,
+    PDMDEVICEGENCALL_REQUEST,
     PDMDEVICEGENCALL_END,
     PDMDEVICEGENCALL_32BIT_HACK = 0x7fffffff
 } PDMDEVICEGENCALL;
@@ -326,11 +302,24 @@ typedef struct PDMDEVICEGENCALLREQ
     uint32_t                idxR0Device;
     /** The call to make. */
     PDMDEVICEGENCALL        enmCall;
+    union
+    {
+        /** PDMDEVICEGENCALL_REQUEST: */
+        struct
+        {
+            /** The request argument. */
+            uint64_t        uArg;
+            /** The request number.    */
+            uint32_t        uReq;
+        } Req;
+        /** Size padding. */
+        uint64_t            au64[3];
+    } Params;
 } PDMDEVICEGENCALLREQ;
 /** Pointer to a PDMR0DeviceGenCallReqHandler / VMMR0_DO_PDM_DEVICE_GEN_CALL request buffer. */
 typedef PDMDEVICEGENCALLREQ *PPDMDEVICEGENCALLREQ;
 
-VMMR0_INT_DECL(int) PDMR0DeviceGenCallReqHandler(PGVM pGVM, PPDMDEVICEGENCALLREQ pReq);
+VMMR0_INT_DECL(int) PDMR0DeviceGenCallReqHandler(PGVM pGVM, PPDMDEVICEGENCALLREQ pReq, VMCPUID idCpu);
 
 /**
  * Request buffer for PDMR0DeviceCompatSetCritSectReqHandler / VMMR0_DO_PDM_DEVICE_COMPAT_SET_CRITSECT

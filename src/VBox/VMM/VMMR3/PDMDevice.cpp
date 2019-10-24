@@ -478,6 +478,7 @@ int pdmR3DevInit(PVM pVM)
         if (fR0Enabled)
         {
             PDMDEVICEGENCALLREQ Req;
+            RT_ZERO(Req.Params);
             Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
             Req.Hdr.cbReq    = sizeof(Req);
             Req.enmCall      = PDMDEVICEGENCALL_CONSTRUCT;

@@ -348,8 +348,6 @@ typedef enum VMMR0OPERATION
 
     /** Call PDMR0DriverCallReqHandler. */
     VMMR0_DO_PDM_DRIVER_CALL_REQ_HANDLER = 320,
-    /** Call PDMR0DeviceCallReqHandler. */
-    VMMR0_DO_PDM_DEVICE_CALL_REQ_HANDLER,
     /** Call PDMR0DeviceCreateReqHandler. */
     VMMR0_DO_PDM_DEVICE_CREATE,
     /** Call PDMR0DeviceGenCallReqHandler. */

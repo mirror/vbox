@@ -1543,37 +1543,6 @@ static bool pdmR0IsaSetIrq(PGVM pGVM, int iIrq, int iLevel, uint32_t uTagSrc)
 
 
 /**
- * PDMDevHlpCallR0 helper.
- *
- * @returns See PFNPDMDEVREQHANDLERR0.
- * @param   pGVM    The global (ring-0) VM structure. (For validation.)
- * @param   pReq    Pointer to the request buffer.
- */
-VMMR0_INT_DECL(int) PDMR0DeviceCallReqHandler(PGVM pGVM, PPDMDEVICECALLREQHANDLERREQ pReq)
-{
-    /*
-     * Validate input and make the call.
-     */
-    int rc = GVMMR0ValidateGVM(pGVM);
-    if (RT_SUCCESS(rc))
-    {
-        AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-        AssertMsgReturn(pReq->Hdr.cbReq == sizeof(*pReq), ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(*pReq)), VERR_INVALID_PARAMETER);
-
-        PPDMDEVINS pDevIns = pReq->pDevInsR0;
-        AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
-        AssertReturn(pDevIns->Internal.s.pGVM == pGVM, VERR_INVALID_PARAMETER);
-
-        PFNPDMDEVREQHANDLERR0 pfnReqHandlerR0 = pReq->pfnReqHandlerR0;
-        AssertPtrReturn(pfnReqHandlerR0, VERR_INVALID_POINTER);
-
-        rc = pfnReqHandlerR0(pDevIns, pReq->uOperation, pReq->u64Arg);
-    }
-    return rc;
-}
-
-
-/**
  * Worker for PDMR0DeviceCreate that does the actual instantiation.
  *
  * Allocates a memory object and divides it up as follows:
@@ -1947,16 +1916,16 @@ VMMR0_INT_DECL(int) PDMR0DeviceCreateReqHandler(PGVM pGVM, PPDMDEVICECREATEREQ p
  * @returns VBox status code.
  * @param   pGVM    The global (ring-0) VM structure.
  * @param   pReq    Pointer to the request buffer.
- * @thread  EMT(0)
+ * @thread  EMT(0), except for PDMDEVICEGENCALL_REQUEST which can be any EMT.
  */
-VMMR0_INT_DECL(int) PDMR0DeviceGenCallReqHandler(PGVM pGVM, PPDMDEVICEGENCALLREQ pReq)
+VMMR0_INT_DECL(int) PDMR0DeviceGenCallReqHandler(PGVM pGVM, PPDMDEVICEGENCALLREQ pReq, VMCPUID idCpu)
 {
     /*
      * Validate the request.
      */
     AssertReturn(pReq->Hdr.cbReq == sizeof(*pReq), VERR_INVALID_PARAMETER);
 
-    int rc = GVMMR0ValidateGVMandEMT(pGVM, 0);
+    int rc = GVMMR0ValidateGVMandEMT(pGVM, idCpu);
     AssertRCReturn(rc, rc);
 
     AssertReturn(pReq->idxR0Device < pGVM->pdmr0.s.cDevInstances, VERR_INVALID_HANDLE);
@@ -1972,6 +1941,7 @@ VMMR0_INT_DECL(int) PDMR0DeviceGenCallReqHandler(PGVM pGVM, PPDMDEVICEGENCALLREQ
     {
         case PDMDEVICEGENCALL_CONSTRUCT:
             AssertMsgBreakStmt(pGVM->enmVMState < VMSTATE_CREATED, ("enmVMState=%d\n", pGVM->enmVMState), rc = VERR_INVALID_STATE);
+            AssertReturn(idCpu == 0,  VERR_VM_THREAD_NOT_EMT);
             if (pDevIns->pReg->pfnConstruct)
                 rc = pDevIns->pReg->pfnConstruct(pDevIns);
             break;
@@ -1979,11 +1949,19 @@ VMMR0_INT_DECL(int) PDMR0DeviceGenCallReqHandler(PGVM pGVM, PPDMDEVICEGENCALLREQ
         case PDMDEVICEGENCALL_DESTRUCT:
             AssertMsgBreakStmt(pGVM->enmVMState < VMSTATE_CREATED || pGVM->enmVMState >= VMSTATE_DESTROYING,
                                ("enmVMState=%d\n", pGVM->enmVMState), rc = VERR_INVALID_STATE);
+            AssertReturn(idCpu == 0,  VERR_VM_THREAD_NOT_EMT);
             if (pDevIns->pReg->pfnDestruct)
             {
                 pDevIns->pReg->pfnDestruct(pDevIns);
                 rc = VINF_SUCCESS;
             }
+            break;
+
+        case PDMDEVICEGENCALL_REQUEST:
+            if (pDevIns->pReg->pfnRequest)
+                rc = pDevIns->pReg->pfnRequest(pDevIns, pReq->Params.Req.uReq, pReq->Params.Req.uArg);
+            else
+                rc = VERR_INVALID_FUNCTION;
             break;
 
         default:

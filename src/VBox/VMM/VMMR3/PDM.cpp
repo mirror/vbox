@@ -817,6 +817,7 @@ VMMR3_INT_DECL(int) PDMR3Term(PVM pVM)
         {
             LogFlow(("pdmR3DevTerm: Destroying (ring-0) - device '%s'/%d\n", pDevIns->pReg->szName, pDevIns->iInstance));
             PDMDEVICEGENCALLREQ Req;
+            RT_ZERO(Req.Params);
             Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
             Req.Hdr.cbReq    = sizeof(Req);
             Req.enmCall      = PDMDEVICEGENCALL_DESTRUCT;

@@ -4140,22 +4140,10 @@ typedef struct PDMDEVHLPR3
                                                            const char *pszSymPrefix, const char *pszSymList));
 
     /**
-     * Call the ring-0 request handler routine of the device.
-     *
-     * For this to work, the device must be ring-0 enabled and export a request
-     * handler function.  The name of the function must be the device name in
-     * the PDMDRVREG struct prefixed with 'drvR0' and suffixed with
-     * 'ReqHandler'.  The device name will be captialized.  It shall take the
-     * exact same arguments as this function and be declared using
-     * PDMBOTHCBDECL. See FNPDMDEVREQHANDLERR0.
-     *
-     * Unlike PDMDrvHlpCallR0, this is current unsuitable for more than a call
-     * or two as the handler address will be resolved on each invocation.  This
-     * is the reason for the EMT only restriction as well.
+     * Calls the PDMDEVREGR0::pfnRequest callback (in ring-0 context).
      *
      * @returns VBox status code.
-     * @retval  VERR_SYMBOL_NOT_FOUND if the device doesn't export the required
-     *          handler function.
+     * @retval  VERR_INVALID_FUNCTION if the callback member is NULL.
      * @retval  VERR_ACCESS_DENIED if the device isn't ring-0 capable.
      *
      * @param   pDevIns             The device instance.
