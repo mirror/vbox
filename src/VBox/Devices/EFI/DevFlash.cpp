@@ -280,8 +280,8 @@ const PDMDEVREG g_DeviceFlash =
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "Flash Memory Device",
 #if defined(IN_RING3)
-    /* .pszRCMod = */               "",
-    /* .pszR0Mod = */               "",
+    /* .pszRCMod = */               "VBoxDDRC.rc",
+    /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           flashConstruct,
     /* .pfnDestruct = */            flashDestruct,
     /* .pfnRelocate = */            NULL,
