@@ -2603,9 +2603,6 @@ void UISoftKeyboardWidget::deleteCurrentLayout()
     if (!layout.editable() || layout.isFromResources())
         return;
 
-    m_layouts.remove(m_uCurrentLayoutId);
-    setCurrentLayout(m_layouts.firstKey());
-
     QDir fileToDelete;
     QString strFilePath(layout.sourceFilePath());
 
@@ -2628,6 +2625,9 @@ void UISoftKeyboardWidget::deleteCurrentLayout()
         else
             sigStatusBarMessage(QString("%1 %2 %3").arg(UISoftKeyboard::tr("Deleting the file ")).arg(strFilePath).arg(UISoftKeyboard::tr(" has failed")));
     }
+
+    m_layouts.remove(m_uCurrentLayoutId);
+    setCurrentLayout(m_layouts.firstKey());
 }
 
 void UISoftKeyboardWidget::toggleEditMode(bool fIsEditMode)
@@ -3772,7 +3772,12 @@ void UISoftKeyboard::closeEvent(QCloseEvent *event)
     /* Show a warning dialog when there are not saved layouts: */
     if (m_pKeyboardWidget && !strNameList.empty())
     {
-        if (msgCenter().confirmSoftKeyboardClose(strNameList))
+        QString strJoinedString = strNameList.join("<br/>");
+        if (msgCenter().questionBinary(this, MessageType_Warning,
+                                       tr("<p>Following layouts are edited/copied but not saved:</p>%1"
+                                          "<p>Closing this dialog will cause loosing the changes. Proceed?</p>").arg(strJoinedString),
+                                       0 /* auto-confirm id */,
+                                       "Ok", "Cancel"))
             QMainWindowWithRestorableGeometryAndRetranslateUi::closeEvent(event);
         else
             event->ignore();
@@ -3942,7 +3947,10 @@ void UISoftKeyboard::sltDeleteLayout()
         m_pKeyboardWidget->deleteCurrentLayout();
     updateLayoutSelectorList();
     if (m_pKeyboardWidget && m_pKeyboardWidget->currentLayout() && m_pLayoutSelector)
+    {
         m_pLayoutSelector->setCurrentLayout(m_pKeyboardWidget->currentLayout()->uid());
+        m_pLayoutSelector->setCurrentLayoutIsEditable(m_pKeyboardWidget->currentLayout()->editable());
+    }
 }
 
 void UISoftKeyboard::sltStatusBarMessage(const QString &strMessage)
