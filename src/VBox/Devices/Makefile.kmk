@@ -1091,6 +1091,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	Bus/MsiCommon.cpp \
  	Bus/MsixCommon.cpp \
  	EFI/DevSmc.cpp \
+ 	EFI/DevFlash.cpp \
+	EFI/FlashCore.cpp \
  	Graphics/DevVGA.cpp \
  	Input/DevPS2.cpp \
  	Input/PS2K.cpp \
@@ -1181,9 +1183,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
 
  ifdef VBOX_WITH_EFI
   VBoxDDR0_DEFS         += VBOX_WITH_EFI
-  VBoxDDR0_SOURCES      += \
-  	EFI/DevEFI.cpp \
-  	EFI/FlashCore.cpp
+  VBoxDDR0_SOURCES      += EFI/DevEFI.cpp
  endif
 
  if defined(VBOX_WITH_PCI_PASSTHROUGH_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)

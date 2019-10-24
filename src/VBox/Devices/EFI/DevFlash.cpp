@@ -42,7 +42,7 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /**
- * The flash device
+ * The flash device, shared state.
  */
 typedef struct DEVFLASH
 {
@@ -50,41 +50,53 @@ typedef struct DEVFLASH
     FLASHCORE           Core;
     /** The guest physical memory base address. */
     RTGCPHYS            GCPhysFlashBase;
-    /** The file conaining the flash content. */
-    char                *pszFlashFile;
+    /** The handle to the MMIO region. */
+    IOMMMIOHANDLE       hMmio;
 } DEVFLASH;
 /** Pointer to the Flash device state. */
 typedef DEVFLASH *PDEVFLASH;
 
+/**
+ * The flash device, ring-3 state.
+ */
+typedef struct DEVFLASHR3
+{
+    /** The file conaining the flash content. */
+    char               *pszFlashFile;
+} DEVFLASHR3;
+/** Pointer to the ring-3 Flash device state. */
+typedef DEVFLASHR3 *PDEVFLASHR3;
+
+
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 
 
-#ifdef IN_RING3 /* for now */
-
-/** @callback_method_impl{FNIOMMIWRITE, Flash memory write} */
-PDMBOTHCBDECL(int) flashMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE, Flash memory write}
+ */
+PDMBOTHCBDECL(VBOXSTRICTRC) flashMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
     RT_NOREF1(pvUser);
-
-    return VBOXSTRICTRC_TODO(flashWrite(&pThis->Core, GCPhysAddr - pThis->GCPhysFlashBase, pv, cb));
+    return flashWrite(&pThis->Core, off, pv, cb);
 }
 
 
-/** @callback_method_impl{FNIOMMIOREAD, Flash memory read} */
-PDMBOTHCBDECL(int) flashMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMMMIONEWREAD, Flash memory read}
+ */
+PDMBOTHCBDECL(VBOXSTRICTRC) flashMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
     RT_NOREF1(pvUser);
-
-    return VBOXSTRICTRC_TODO(flashRead(&pThis->Core, GCPhysAddr - pThis->GCPhysFlashBase, pv, cb));
+    return flashRead(&pThis->Core, off, pv, cb);
 }
-
-#endif /* IN_RING3 for now */
 
 #ifdef IN_RING3
 
-/** @callback_method_impl{FNSSMDEVSAVEEXEC} */
+/**
+ * @callback_method_impl{FNSSMDEVSAVEEXEC}
+ */
 static DECLCALLBACK(int) flashSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
@@ -92,7 +104,9 @@ static DECLCALLBACK(int) flashSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 
-/** @callback_method_impl{FNSSMDEVLOADEXEC} */
+/**
+ * @callback_method_impl{FNSSMDEVLOADEXEC}
+ */
 static DECLCALLBACK(int) flashLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
@@ -105,15 +119,16 @@ static DECLCALLBACK(int) flashLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
     return flashR3LoadExec(&pThis->Core, pDevIns, pSSM);
 }
 
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnReset}
  */
 static DECLCALLBACK(void) flashReset(PPDMDEVINS pDevIns)
 {
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
-
     flashR3Reset(&pThis->Core);
 }
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnDestruct}
@@ -121,21 +136,23 @@ static DECLCALLBACK(void) flashReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASH   pThis   = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASHR3 pThisR3 = PDMINS_2_DATA_CC(pDevIns, PDEVFLASHR3);
 
-    int rc = flashR3SaveToFile(&pThis->Core, pDevIns, pThis->pszFlashFile);
-    if (RT_FAILURE(rc))
-        LogRel(("Flash: Failed to save flash file: %Rrc\n", rc));
-
-    if (pThis->pszFlashFile)
+    if (pThisR3->pszFlashFile)
     {
-        PDMDevHlpMMHeapFree(pDevIns, pThis->pszFlashFile);
-        pThis->pszFlashFile = NULL;
+        int rc = flashR3SaveToFile(&pThis->Core, pDevIns, pThisR3->pszFlashFile);
+        if (RT_FAILURE(rc))
+            LogRel(("Flash: Failed to save flash file: %Rrc\n", rc));
+
+        PDMDevHlpMMHeapFree(pDevIns, pThisR3->pszFlashFile);
+        pThisR3->pszFlashFile = NULL;
     }
 
     flashR3Destruct(&pThis->Core, pDevIns);
     return VINF_SUCCESS;
 }
+
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -143,9 +160,11 @@ static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    RT_NOREF1(iInstance);
-    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
-    Assert(iInstance == 0);
+    PDEVFLASH       pThis   = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASHR3     pThisR3 = PDMINS_2_DATA_CC(pDevIns, PDEVFLASHR3);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
+
+    Assert(iInstance == 0); RT_NOREF1(iInstance);
 
     /*
      * Validate configuration.
@@ -158,43 +177,46 @@ static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     /* The default device ID is Intel 28F800SA. */
     uint16_t u16FlashId = 0;
-    int rc = CFGMR3QueryU16Def(pCfg, "DeviceId", &u16FlashId, 0xA289);
+    int rc = pHlp->pfnCFGMQueryU16Def(pCfg, "DeviceId", &u16FlashId, 0xA289);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"DeviceId\" as an integer failed"));
 
     /* The default base address is 2MB below 4GB. */
-    rc = CFGMR3QueryU64Def(pCfg, "BaseAddress", &pThis->GCPhysFlashBase, 0xFFE00000);
+    rc = pHlp->pfnCFGMQueryU64Def(pCfg, "BaseAddress", &pThis->GCPhysFlashBase, 0xFFE00000);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"BaseAddress\" as an integer failed"));
 
     /* The default flash device size is 128K. */
     uint32_t cbFlash = 0;
-    rc = CFGMR3QueryU32Def(pCfg, "Size", &cbFlash, 128 * _1K);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "Size", &cbFlash, 128 * _1K);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Size\" as an integer failed"));
 
     /* The default flash device block size is 4K. */
     uint16_t cbBlock = 0;
-    rc = CFGMR3QueryU16Def(pCfg, "BlockSize", &cbBlock, _4K);
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BlockSize", &cbBlock, _4K);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"BlockSize\" as an integer failed"));
 
-    rc = CFGMR3QueryStringAlloc(pCfg, "FlashFile", &pThis->pszFlashFile);
+    rc = pHlp->pfnCFGMQueryStringAlloc(pCfg, "FlashFile", &pThisR3->pszFlashFile);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FlashFile\" as a string failed"));
 
+    /*
+     * Initialize the flash core.
+     */
     rc = flashR3Init(&pThis->Core, pDevIns, u16FlashId, cbFlash, cbBlock);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Flash: Failed to initialize core flash device"));
 
     /* Try to load the flash content from file. */
-    rc = flashR3LoadFromFile(&pThis->Core, pDevIns, pThis->pszFlashFile);
+    rc = flashR3LoadFromFile(&pThis->Core, pDevIns, pThisR3->pszFlashFile);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Flash: Failed to load flash content from given file"));
@@ -202,10 +224,9 @@ static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Register MMIO region.
      */
-    rc = PDMDevHlpMMIORegister(pDevIns, pThis->GCPhysFlashBase, cbFlash, NULL /*pvUser*/,
-                               IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                               flashMMIOWrite, flashMMIORead,
-                               "Flash Memory");
+    rc = PDMDevHlpMmioCreateExAndMap(pDevIns, pThis->GCPhysFlashBase, cbFlash,
+                                     IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, NULL, UINT32_MAX,
+                                     flashMMIOWrite, flashMMIORead, NULL, NULL, "Flash Memory", &pThis->hMmio);
     AssertRCReturn(rc, rc);
     LogRel(("Registered %uKB flash at %RGp\n", pThis->Core.cbFlashSize / _1K, pThis->GCPhysFlashBase));
 
@@ -213,13 +234,32 @@ static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Register saved state.
      */
     rc = PDMDevHlpSSMRegister(pDevIns, FLASH_SAVED_STATE_VERSION, sizeof(*pThis), flashSaveExec, flashLoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) flashRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+
+# if 1
+    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, flashMMIOWrite, flashMMIORead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+# else
+    RT_NOREF(pDevIns, pThis); (void)&flashMMIOWrite; (void)&flashMMIORead;
+# endif
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -229,7 +269,7 @@ const PDMDEVREG g_DeviceFlash =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "flash",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_ARCH,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
@@ -266,7 +306,7 @@ const PDMDEVREG g_DeviceFlash =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           flashRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -280,7 +320,7 @@ const PDMDEVREG g_DeviceFlash =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
     /* .pfnConstruct = */           NULL,
-    /* .pfnReserved0 = */           NULL,
+    /* .pfnReserved0 = */           flashRZConstruct,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
     /* .pfnReserved3 = */           NULL,
