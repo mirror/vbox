@@ -361,7 +361,18 @@ RTEXITCODE handleImportAppliance(HandlerArg *arg)
         }
     }
 
-    if (actionType == LOCAL && strOvfFilename.isEmpty())
+    /* Last check after parsing all arguments */
+    if (strOvfFilename.isNotEmpty())
+    {
+        if (actionType == NOT_SET)
+        {
+            if (fCloud)
+                actionType = CLOUD;
+            else
+                actionType = LOCAL;
+        }
+    }
+    else
         return errorSyntax(USAGE_IMPORTAPPLIANCE, "Not enough arguments for \"import\" command.");
 
     do
