@@ -37,10 +37,6 @@
 #include "FlashCore.h"
 
 
-/*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -54,12 +50,9 @@ typedef struct DEVFLASH
     FLASHCORE           Core;
     /** The guest physical memory base address. */
     RTGCPHYS            GCPhysFlashBase;
-    /** When set, indicates the state was saved. */
-    bool                fStateSaved;
     /** The file conaining the flash content. */
     char                *pszFlashFile;
 } DEVFLASH;
-
 /** Pointer to the Flash device state. */
 typedef DEVFLASH *PDEVFLASH;
 
@@ -95,12 +88,7 @@ PDMBOTHCBDECL(int) flashMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
 static DECLCALLBACK(int) flashSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
-
-    int rc = flashR3SaveExec(&pThis->Core, pDevIns, pSSM);
-    if (RT_SUCCESS(rc))
-        pThis->fStateSaved = true;
-
-    return rc;
+    return flashR3SaveExec(&pThis->Core, pDevIns, pSSM);
 }
 
 
@@ -132,15 +120,12 @@ static DECLCALLBACK(void) flashReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
-    int rc;
 
-    if (!pThis->fStateSaved)
-    {
-        rc = flashR3SaveToFile(&pThis->Core, pDevIns, pThis->pszFlashFile);
-        if (RT_FAILURE(rc))
-            LogRel(("Flash: Failed to save flash file"));
-    }
+    int rc = flashR3SaveToFile(&pThis->Core, pDevIns, pThis->pszFlashFile);
+    if (RT_FAILURE(rc))
+        LogRel(("Flash: Failed to save flash file: %Rrc\n", rc));
 
     if (pThis->pszFlashFile)
     {
@@ -157,8 +142,8 @@ static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF1(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    RT_NOREF1(iInstance);
     PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
     Assert(iInstance == 0);
 
