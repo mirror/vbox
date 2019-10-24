@@ -1683,7 +1683,6 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 }
 
 #endif /* IN_RING3 */
-#ifdef IN_RING3 /* for now */
 
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE, Flash memory write}
@@ -1708,7 +1707,6 @@ static DECLCALLBACK(VBOXSTRICTRC) efiR3NvMmioRead(PPDMDEVINS pDevIns, void *pvUs
     return flashRead(&pThis->Flash, off, pv, cb);
 }
 
-#endif
 #ifdef IN_RING3
 
 static DECLCALLBACK(int) efiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
@@ -2686,13 +2684,13 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 static DECLCALLBACK(int)  efiRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVEFI   pThis   = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
 
-# if 0
+# if 1
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioFlash, efiR3NvMmioWrite, efiR3NvMmioRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 # else
-    RT_NOREF(pDevIns, pThis);
+    RT_NOREF(pDevIns, pThis); (void)&efiR3NvMmioRead; (void)&efiR3NvMmioWrite;
 # endif
 
     return VINF_SUCCESS;
