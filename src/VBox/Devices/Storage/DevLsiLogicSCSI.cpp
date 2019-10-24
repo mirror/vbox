@@ -5744,7 +5744,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "lsilogicscsi",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 |
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ |
                                     PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
     /* .fClass = */                 PDM_DEVREG_CLASS_STORAGE,
     /* .cMaxInstances = */          ~0U,
@@ -5818,7 +5818,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "lsilogicsas",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0 |
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ |
                                     PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION |
                                     PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION,
     /* .fClass = */                 PDM_DEVREG_CLASS_STORAGE,

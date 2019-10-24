@@ -2456,7 +2456,7 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .uReserved0 = */             0,
     /* .szName = */                 "virtio-scsi",
 #ifdef VIRTIOSCSI_GC_SUPPORT
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ
                                     | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION
                                     | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
 #else

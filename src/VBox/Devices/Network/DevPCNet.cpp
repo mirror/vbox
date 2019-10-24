@@ -5557,7 +5557,7 @@ const PDMDEVREG g_DevicePCNet =
     /* .uReserved0 = */             0,
     /* .szName = */                 "pcnet",
 #ifdef PCNET_GC_ENABLED
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
 #else
     /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
 #endif
