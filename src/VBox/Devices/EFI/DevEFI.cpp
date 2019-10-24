@@ -1683,7 +1683,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 }
 
 #endif /* IN_RING3 */
-
+#ifdef IN_RING3 /* for now */
 
 /**
  * @callback_method_impl{FNIOMMMIONEWWRITE, Flash memory write}
@@ -1708,6 +1708,7 @@ static DECLCALLBACK(VBOXSTRICTRC) efiR3NvMmioRead(PPDMDEVINS pDevIns, void *pvUs
     return flashRead(&pThis->Flash, off, pv, cb);
 }
 
+#endif
 #ifdef IN_RING3
 
 static DECLCALLBACK(int) efiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
