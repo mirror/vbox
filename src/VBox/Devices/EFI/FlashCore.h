@@ -47,6 +47,12 @@ RT_C_DECLS_BEGIN
 /** The current version of the saved state. */
 #define FLASH_SAVED_STATE_VERSION           1
 
+#if 0
+/** Enables the ring-0/raw-mode read cache optimization, giving the size in
+ *  uint64_t units. */
+#define FLASH_WITH_RZ_READ_CACHE_SIZE       32
+#endif
+
 
 /*********************************************************************************************************************************
 *   Structures and Typedefs                                                                                                      *
@@ -71,11 +77,28 @@ typedef struct FLASHCORE
     uint16_t                u16FlashId;
     /** The configured block size of the device. */
     uint16_t                cbBlockSize;
-    /** The flash memory region size.  */
-    uint32_t                cbFlashSize;
     /** The actual flash memory data.  */
     R3PTRTYPE(uint8_t *)    pbFlash;
+    /** The flash memory region size.  */
+    uint32_t                cbFlashSize;
     /** @} */
+
+#ifdef FLASH_WITH_RZ_READ_CACHE_SIZE
+    /** @name Read cache for non-ring-3 code.
+     * @{ */
+    /** The cache offset, UINT32_MAX if invalid. */
+    uint32_t                offCache;
+# if ARCH_BITS == 32
+    uint32_t                uPadding;
+# endif
+    /** The cache data. */
+    union
+    {
+        uint64_t            au64[FLASH_WITH_RZ_READ_CACHE_SIZE];
+        uint8_t             ab[FLASH_WITH_RZ_READ_CACHE_SIZE * 8];
+    } CacheData;
+    /** @} */
+#endif
 } FLASHCORE;
 
 /** Pointer to the Flash device state. */

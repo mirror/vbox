@@ -126,6 +126,12 @@ static int flashMemWriteByte(PFLASHCORE pThis, uint32_t off, uint8_t bCmd)
                 {
 #ifdef IN_RING3
                     pThis->pbFlash[off] = bCmd;
+# ifdef FLASH_WITH_RZ_READ_CACHE_SIZE
+                    uint32_t const offInCache = off - pThis->offCache;
+                    if (offInCache < sizeof(pThis->CacheData) && pThis->offCache != UINT32_MAX)
+                        pThis->CacheData.ab[offInCache] = bCmd;
+# endif
+
                     /* NB: Writes are instant and never fail. */
                     LogFunc(("wrote byte to flash at %08RX32: %02X\n", off, bCmd));
 #else
@@ -216,6 +222,52 @@ DECLHIDDEN(VBOXSTRICTRC) flashWrite(PFLASHCORE pThis, uint32_t off, const void *
 #endif /* IN_RING3 */
 }
 
+#if defined(FLASH_WITH_RZ_READ_CACHE_SIZE) && defined(IN_RING3)
+/**
+ * Fills the RZ cache with data.
+ */
+DECL_FORCE_INLINE(void) flashFillRzCache(PFLASHCORE pThis, uint32_t off)
+{
+    AssertCompile(RT_IS_POWER_OF_TWO(sizeof(pThis->CacheData)));
+    uint32_t const offCache = (off + 1) & ~(sizeof(pThis->CacheData) - 1);
+    if (offCache < pThis->cbFlashSize)
+    {
+        Log2(("flashMemReadByte: Filling RZ cache: offset %#x\n", offCache));
+# if FLASH_WITH_RZ_READ_CACHE_SIZE < 8
+        uint64_t const * const pu64Src = ((uint64_t const *)&pThis->pbFlash[offCache]);
+        pThis->CacheData.au64[0]  = pu64Src[0];
+#  if FLASH_WITH_RZ_READ_CACHE_SIZE > 1
+        pThis->CacheData.au64[1]  = pu64Src[1];
+#  endif
+#  if FLASH_WITH_RZ_READ_CACHE_SIZE > 2
+        pThis->CacheData.au64[2]  = pu64Src[2];
+#  endif
+#  if FLASH_WITH_RZ_READ_CACHE_SIZE > 3
+        pThis->CacheData.au64[3]  = pu64Src[3];
+#  endif
+#  if FLASH_WITH_RZ_READ_CACHE_SIZE > 4
+        pThis->CacheData.au64[4]  = pu64Src[4];
+#  endif
+#  if FLASH_WITH_RZ_READ_CACHE_SIZE > 5
+        pThis->CacheData.au64[5]  = pu64Src[5];
+#  endif
+#  if FLASH_WITH_RZ_READ_CACHE_SIZE > 6
+        pThis->CacheData.au64[6]  = pu64Src[6];
+#  endif
+#  if FLASH_WITH_RZ_READ_CACHE_SIZE > 7
+        pThis->CacheData.au64[7]  = pu64Src[7];
+#  endif
+#  if FLASH_WITH_RZ_READ_CACHE_SIZE > 8
+        pThis->CacheData.au64[8]  = pu64Src[8];
+#  endif
+# else
+        memcpy(pThis->CacheData.ab, &pThis->pbFlash[offCache], sizeof(pThis->CacheData.ab));
+# endif
+        pThis->offCache           = offCache;
+    }
+}
+#endif /* FLASH_WITH_RZ_READ_CACHE_SIZE && IN_RING3 */
+
 /**
  * Worker for flashRead that deals with a single byte.
  *
@@ -234,11 +286,34 @@ static int flashMemReadByte(PFLASHCORE pThis, uint32_t off, uint8_t *pbData)
     {
         case FLASH_CMD_ARRAY_READ:
             if (off < pThis->cbFlashSize)
+            {
 #ifdef IN_RING3
+# ifdef FLASH_WITH_RZ_READ_CACHE_SIZE
+                AssertCompile(RT_IS_POWER_OF_TWO(sizeof(pThis->CacheData)));
+                if (off + 1 - pThis->offCache < sizeof(pThis->CacheData) && pThis->offCache != UINT32_MAX)
+                { }
+                else
+                    flashFillRzCache(pThis, off);
+# endif
                 bValue = pThis->pbFlash[off];
 #else
+# ifdef FLASH_WITH_RZ_READ_CACHE_SIZE
+                uint32_t const offInCache = off - pThis->offCache;
+                if (offInCache < sizeof(pThis->CacheData) && pThis->offCache != UINT32_MAX)
+                {
+                    Log2(("flashMemReadByte: cache hit (at %#RX32 in cache)\n", offInCache));
+                    bValue = pThis->CacheData.ab[offInCache];
+                }
+                else
+                {
+                    Log2(("flashMemReadByte: cache miss: offInCache=%#RX32 offCache=%#RX32\n", offInCache, pThis->offCache));
+                    return VINF_IOM_R3_MMIO_READ;
+                }
+# else
                 return VINF_IOM_R3_MMIO_READ;
+# endif
 #endif
+            }
             else
                 bValue = 0xff; /* Play safe and return the default value of non initialized flash. */
             LogFunc(("read byte at %08RX32: %02X\n", off, bValue));
@@ -318,6 +393,9 @@ DECLHIDDEN(int) flashR3Init(PFLASHCORE pThis, PPDMDEVINS pDevIns, uint16_t idFla
     pThis->u16FlashId  = idFlashDev;
     pThis->cbBlockSize = cbBlock;
     pThis->cbFlashSize = cbFlash;
+#ifdef FLASH_WITH_RZ_READ_CACHE_SIZE
+    pThis->offCache    = UINT32_MAX;
+#endif
 
     /* Set up the flash data. */
     pThis->pbFlash = (uint8_t *)PDMDevHlpMMHeapAlloc(pDevIns, pThis->cbFlashSize);
