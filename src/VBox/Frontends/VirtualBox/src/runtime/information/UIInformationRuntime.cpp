@@ -175,7 +175,6 @@ UIRuntimeInfoWidget::UIRuntimeInfoWidget(QWidget *pParent, const CMachine &machi
 
 void UIRuntimeInfoWidget::retranslateUi()
 {
-
     m_strTableTitle = QApplication::translate("UIVMInformationDialog", "Runtime Attributes");
     m_strScreenResolutionLabel = QApplication::translate("UIVMInformationDialog", "Screen Resolution");
     m_strMonitorTurnedOff = QApplication::translate("UIVMInformationDialog", "turned off");
@@ -216,8 +215,8 @@ void UIRuntimeInfoWidget::insertInfoRow(InfoRow enmInfoRow, const QString& strLa
     if (iRow != -1 && iRow <= iNewRow)
         iNewRow = iRow;
     insertRow(iNewRow);
-    setItem(iNewRow, 0, new QTableWidgetItem(strLabel, enmInfoRow));
-    setItem(iNewRow, 1, new QTableWidgetItem(strInfo, enmInfoRow));
+    setItem(iNewRow, 1, new QTableWidgetItem(strLabel, enmInfoRow));
+    setItem(iNewRow, 2, new QTableWidgetItem(strInfo, enmInfoRow));
     int iMargin = 0.2 * qApp->style()->pixelMetric(QStyle::PM_LayoutTopMargin);
     setRowHeight(iNewRow, 2 * iMargin + m_iFontHeight);
 }
@@ -273,8 +272,8 @@ void UIRuntimeInfoWidget::updateScreenInfo(int iScreenID /* = -1 */)
     for (ULONG iScreen = 0; iScreen < uGuestScreens; ++iScreen)
     {
         QString strLabel = uGuestScreens > 1 ?
-            QString("%1 %2:").arg(m_strScreenResolutionLabel).arg(QString::number(iScreen)) :
-            QString("%1:").arg(m_strScreenResolutionLabel);
+            QString("%1 %2").arg(m_strScreenResolutionLabel).arg(QString::number(iScreen)) :
+            QString("%1").arg(m_strScreenResolutionLabel);
         /* Insert the screen resolution row at the top of the table. Row 0 is the title row: */
         insertInfoRow(InfoRow_Resolution, strLabel, m_screenResolutions[iScreen], iScreen + 1);
     }
@@ -296,19 +295,22 @@ void UIRuntimeInfoWidget::updateUpTime()
     RTStrPrintf(szUptime, sizeof(szUptime), "%dd %02d:%02d:%02d",
                 uUpDays, uUpHours, uUpMins, uUpSecs);
     QString strUptime = QString(szUptime);
-    updateInfoRow(InfoRow_Uptime, QString("%1:").arg(m_strUptimeLabel), strUptime);
+    updateInfoRow(InfoRow_Uptime, QString("%1").arg(m_strUptimeLabel), strUptime);
 }
 
 void UIRuntimeInfoWidget::updateTitleRow()
 {
     /* Add the title row always as 0th row: */
-    QTableWidgetItem *pTitleItem = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), m_strTableTitle, InfoRow_Title);
+    QTableWidgetItem *pTitleIcon = new QTableWidgetItem(UIIconPool::iconSet(":/state_running_16px.png"), "", InfoRow_Title);
+    QTableWidgetItem *pTitleItem = new QTableWidgetItem(m_strTableTitle, InfoRow_Title);
     QFont titleFont(font());
     titleFont.setBold(true);
     pTitleItem->setFont(titleFont);
     if (rowCount() < 1)
         insertRow(0);
-    setItem(0, 0, pTitleItem);
+    setItem(0, 0, pTitleIcon);
+    setItem(0, 1, pTitleItem);
+    resizeColumnToContents(0);
 }
 
 void UIRuntimeInfoWidget::updateOSTypeRow()
@@ -318,7 +320,7 @@ void UIRuntimeInfoWidget::updateOSTypeRow()
         strOSType = m_strNotDetected;
     else
         strOSType = uiCommon().vmGuestOSTypeDescription(strOSType);
-   updateInfoRow(InfoRow_GuestOSType, QString("%1:").arg(m_strGuestOSTypeLabel), strOSType);
+   updateInfoRow(InfoRow_GuestOSType, QString("%1").arg(m_strGuestOSTypeLabel), strOSType);
 }
 
 void UIRuntimeInfoWidget::updateVirtualizationInfo()
@@ -355,10 +357,10 @@ void UIRuntimeInfoWidget::updateVirtualizationInfo()
         m_strActive : m_strInactive;
     QString strParavirtProvider = gpConverter->toString(m_machine.GetEffectiveParavirtProvider());
 
-    updateInfoRow(InfoRow_ExecutionEngine, QString("%1:").arg(m_strExcutionEngineLabel), strExecutionEngine);
-    updateInfoRow(InfoRow_NestedPaging, QString("%1:").arg(m_strNestedPagingLabel), strNestedPaging);
-    updateInfoRow(InfoRow_UnrestrictedExecution, QString("%1:").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
-    updateInfoRow(InfoRow_Paravirtualization, QString("%1:").arg(m_strParavirtualizationLabel), strParavirtProvider);
+    updateInfoRow(InfoRow_ExecutionEngine, QString("%1").arg(m_strExcutionEngineLabel), strExecutionEngine);
+    updateInfoRow(InfoRow_NestedPaging, QString("%1").arg(m_strNestedPagingLabel), strNestedPaging);
+    updateInfoRow(InfoRow_UnrestrictedExecution, QString("%1").arg(m_strUnrestrictedExecutionLabel), strUnrestrictedExecution);
+    updateInfoRow(InfoRow_Paravirtualization, QString("%1").arg(m_strParavirtualizationLabel), strParavirtProvider);
 
 }
 
@@ -374,7 +376,7 @@ void UIRuntimeInfoWidget::updateGAsVersion()
         if (uRevision != 0)
             strGAVersion += QString(" r%1").arg(uRevision);
     }
-   updateInfoRow(InfoRow_GuestAdditions, QString("%1:").arg(m_strGuestAdditionsLabel), strGAVersion);
+   updateInfoRow(InfoRow_GuestAdditions, QString("%1").arg(m_strGuestAdditionsLabel), strGAVersion);
 }
 
 void UIRuntimeInfoWidget::updateVRDE()
@@ -382,26 +384,26 @@ void UIRuntimeInfoWidget::updateVRDE()
     int iVRDEPort = m_console.GetVRDEServerInfo().GetPort();
     QString strVRDEInfo = (iVRDEPort == 0 || iVRDEPort == -1) ?
         m_strNotAvailable : QString("%1").arg(iVRDEPort);
-   updateInfoRow(InfoRow_RemoteDesktop, QString("%1:").arg(m_strRemoteDesktopLabel), strVRDEInfo);
+   updateInfoRow(InfoRow_RemoteDesktop, QString("%1").arg(m_strRemoteDesktopLabel), strVRDEInfo);
 }
 
 void UIRuntimeInfoWidget::updateClipboardMode(KClipboardMode enmMode /* = KClipboardMode_Max */)
 {
     if (enmMode == KClipboardMode_Max)
-        updateInfoRow(InfoRow_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel),
+        updateInfoRow(InfoRow_ClipboardMode, QString("%1").arg(m_strClipboardModeLabel),
                       gpConverter->toString(m_machine.GetClipboardMode()));
     else
-        updateInfoRow(InfoRow_ClipboardMode, QString("%1:").arg(m_strClipboardModeLabel),
+        updateInfoRow(InfoRow_ClipboardMode, QString("%1").arg(m_strClipboardModeLabel),
                       gpConverter->toString(enmMode));
 }
 
 void UIRuntimeInfoWidget::updateDnDMode(KDnDMode enmMode /* = KDnDMode_Max */)
 {
     if (enmMode == KDnDMode_Max)
-        updateInfoRow(InfoRow_DnDMode, QString("%1:").arg(m_strDragAndDropLabel),
+        updateInfoRow(InfoRow_DnDMode, QString("%1").arg(m_strDragAndDropLabel),
                   gpConverter->toString(m_machine.GetDnDMode()));
     else
-        updateInfoRow(InfoRow_DnDMode, QString("%1:").arg(m_strDragAndDropLabel),
+        updateInfoRow(InfoRow_DnDMode, QString("%1").arg(m_strDragAndDropLabel),
                       gpConverter->toString(enmMode));
 }
 
@@ -426,7 +428,7 @@ void UIRuntimeInfoWidget::createInfoRows()
 {
     clear();
     setRowCount(0);
-    setColumnCount(2);
+    setColumnCount(3);
     updateTitleRow();
     updateScreenInfo();
     updateUpTime();
