@@ -550,7 +550,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repe_scas_,OP_rAX,_m,ADDR_SIZE))
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
-                if (!(uVirtAddr & (OP_SIZE - 1)))
+                if (!(uVirtAddr & (OP_SIZE / 8 - 1)))
                 {
                     IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
                     continue;
@@ -682,7 +682,7 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_repne_scas_,OP_rAX,_m,ADDR_SIZE))
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
-                if (!(uVirtAddr & (OP_SIZE - 1)))
+                if (!(uVirtAddr & (OP_SIZE / 8 - 1)))
                 {
                     IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, uEFlags);
                     continue;
@@ -983,12 +983,27 @@ IEM_CIMPL_DEF_0(RT_CONCAT4(iemCImpl_stos_,OP_rAX,_m,ADDR_SIZE))
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
-                if (!(uVirtAddr & (OP_SIZE - 1)))
+                if (!(uVirtAddr & (OP_SIZE / 8 - 1)))
                 {
                     IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pVCpu->cpum.GstCtx.eflags.u);
                     continue;
                 }
                 cLeftPage = 0;
+            }
+            /* If we got an invalid physical address in the page table, just skip
+               ahead to the next page or the counter reaches zero.  This crazy
+               optimization is for a buggy EFI firmware that's driving me nuts. */
+            else if (rcStrict == VERR_PGM_PHYS_TLB_UNASSIGNED)
+            {
+                pVCpu->cpum.GstCtx.ADDR_rCX = uCounterReg -= cLeftPage;
+                pVCpu->cpum.GstCtx.ADDR_rDI = uAddrReg    += cLeftPage * cbIncr;
+                if (uCounterReg == 0)
+                    break;
+                if (!(uVirtAddr & (OP_SIZE / 8 - 1)))
+                {
+                    IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pVCpu->cpum.GstCtx.eflags.u);
+                    continue;
+                }
             }
         }
 
@@ -1100,7 +1115,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_lods_,OP_rAX,_m,ADDR_SIZE), int8_t, iEffSeg)
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
-                if (!(uVirtAddr & (OP_SIZE - 1)))
+                if (!(uVirtAddr & (OP_SIZE / 8 - 1)))
                 {
                     IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pVCpu->cpum.GstCtx.eflags.u);
                     continue;
@@ -1383,7 +1398,7 @@ IEM_CIMPL_DEF_1(RT_CONCAT4(iemCImpl_rep_ins_op,OP_SIZE,_addr,ADDR_SIZE), bool, f
                    below. Otherwise, do the next page. */
                 if (uCounterReg == 0)
                     break;
-                if (!(uVirtAddr & (OP_SIZE - 1)))
+                if (!(uVirtAddr & (OP_SIZE / 8 - 1)))
                 {
                     IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pVCpu->cpum.GstCtx.eflags.u);
                     continue;
@@ -1664,7 +1679,7 @@ IEM_CIMPL_DEF_2(RT_CONCAT4(iemCImpl_rep_outs_op,OP_SIZE,_addr,ADDR_SIZE), uint8_
 
                 /* If unaligned, we drop thru and do the page crossing access
                    below. Otherwise, do the next page. */
-                if (!(uVirtAddr & (OP_SIZE - 1)))
+                if (!(uVirtAddr & (OP_SIZE / 8 - 1)))
                 {
                     IEM_CHECK_FF_YIELD_REPSTR_MAYBE_RETURN(pVM, pVCpu, pVCpu->cpum.GstCtx.eflags.u);
                     continue;
