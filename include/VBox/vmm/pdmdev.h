@@ -432,6 +432,9 @@ typedef PDMDEVREGR3 const *PCPDMDEVREGR3;
 /** Requires the raw-mode component, ignore configuration values. */
 #define PDM_DEVREG_FLAGS_OPT_IN_RC                      UINT32_C(0x00000040)
 
+/** Convenience: PDM_DEVREG_FLAGS_R0 + PDM_DEVREG_FLAGS_RC  */
+#define PDM_DEVREG_FLAGS_RZ                             (PDM_DEVREG_FLAGS_R0 | PDM_DEVREG_FLAGS_RC)
+
 /** @def PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT
  * The bit count for the current host.
  * @note Superfluous, but still around for hysterical raisins.  */
@@ -5851,6 +5854,35 @@ DECLINLINE(int) PDMDevHlpMmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
 {
     return pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, fFlags, pPciDev, iPciRegion,
                                             pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion);
+}
+
+/**
+ * @sa PDMDevHlpMmioCreate and PDMDevHlpMmioMap
+ */
+DECLINLINE(int) PDMDevHlpMmioCreateAndMap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cbRegion,
+                                          PPDMPCIDEV pPciDev, uint32_t iPciRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                          PFNIOMMMIONEWREAD pfnRead, void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
+{
+    int rc = pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, 0, pPciDev, iPciRegion,
+                                              pfnWrite, pfnRead, NULL, pvUser, pszDesc, phRegion);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnMmioMap(pDevIns, *phRegion, GCPhys);
+    return rc;
+}
+
+/**
+ * @sa PDMDevHlpMmioCreateEx and PDMDevHlpMmioMap
+ */
+DECLINLINE(int) PDMDevHlpMmioCreateExAndMap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cbRegion, uint32_t fFlags,
+                                            PPDMPCIDEV pPciDev, uint32_t iPciRegion, PFNIOMMMIONEWWRITE pfnWrite,
+                                            PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser,
+                                            const char *pszDesc, PIOMMMIOHANDLE phRegion)
+{
+    int rc = pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, fFlags, pPciDev, iPciRegion,
+                                              pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnMmioMap(pDevIns, *phRegion, GCPhys);
+    return rc;
 }
 
 /**
