@@ -2013,10 +2013,11 @@ int GuestProcessTool::init(GuestSession *pGuestSession, const GuestProcessStartu
             && RT_FAILURE(vrcGuest)
            )
         {
-            if (prcGuest)
-                *prcGuest = vrcGuest;
             vrc = VERR_GSTCTL_GUEST_ERROR;
         }
+        
+        if (prcGuest)
+            *prcGuest = vrcGuest;
     }
 
     LogFlowFuncLeaveRC(vrc);
