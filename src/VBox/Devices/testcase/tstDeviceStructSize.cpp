@@ -349,9 +349,6 @@ int main()
 #ifdef VBOX_WITH_USB
 # ifdef VBOX_WITH_EHCI_IMPL
     CHECK_MEMBER_ALIGNMENT(EHCI, RootHub, 8);
-#  ifdef VBOX_WITH_STATISTICS
-    CHECK_MEMBER_ALIGNMENT(EHCI, StatCanceledIsocUrbs, 8);
-#  endif
 # endif
 # ifdef VBOX_WITH_XHCI_IMPL
     CHECK_MEMBER_ALIGNMENT(XHCI, pWorkerThread, 8);
