@@ -30,7 +30,7 @@ include $(KBUILD_PATH)/subheader.kmk
 
 if !defined(VBOX_ONLY_EXTPACKS) && !defined(VBOX_ONLY_DOCS)
  # RTIsoMaker - ISO image maker - build version.
- BLDPROGS += bldRTIsoMaker
+ PROGRAMS += bldRTIsoMaker
  bldRTIsoMaker_TEMPLATE = VBoxAdvBldProg
  bldRTIsoMaker_SOURCES = \
  	RTIsoMaker.cpp \
