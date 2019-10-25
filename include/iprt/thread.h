@@ -166,7 +166,7 @@ typedef enum RTTHREADTYPE
 } RTTHREADTYPE;
 
 
-#ifndef IN_RC
+#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 
 /**
  * Checks if the IPRT thread component has been initialized.
