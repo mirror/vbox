@@ -349,8 +349,6 @@ typedef struct OHCI
     STAMCOUNTER         StatCanceledGenUrbs;
     /** Dropped URBs (endpoint halted, or URB canceled). */
     STAMCOUNTER         StatDroppedUrbs;
-    /** Profiling ohciR3FrameBoundaryTimer. */
-    STAMPROFILE         StatTimer;
 
     /** VM timer frequency used for frame timer calculations. */
     uint64_t            u64TimerHz;
@@ -3393,8 +3391,7 @@ static bool ohciR3ServiceIsochronousTdUnlink(PPDMDEVINS pDevIns, POHCI pThis, PO
 
 
 /**
- * A worker for ohciR3ServiceIsochronousEndpoint which submits the specified
- * TD.
+ * A worker for ohciR3ServiceIsochronousEndpoint which submits the specified TD.
  *
  * @returns true on success.
  * @returns false on failure to submit.
@@ -3803,6 +3800,7 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
 # endif
 }
 
+
 /**
  * Abort outstanding transfers on the bulk list.
  *
@@ -4173,6 +4171,7 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pT
     Assert(cLeft == 0);
 }
 
+
 /**
  * Generate a Start-Of-Frame event, and set a timer for End-Of-Frame.
  */
@@ -4277,6 +4276,7 @@ static void ohciR3StartOfFrame(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 # endif
 }
 
+
 /**
  * Updates the HcFmNumber and FNO registers.
  */
@@ -4286,6 +4286,7 @@ static void ohciR3BumpFrameNumber(POHCI pThis)
     if ((u16OldFmNumber ^ pThis->HcFmNumber) & RT_BIT(15))
         pThis->fno = 1;
 }
+
 
 /**
  * Callback for periodic frame processing.
@@ -4328,7 +4329,10 @@ static DECLCALLBACK(bool) ohciR3StartFrame(PVUSBIROOTHUBPORT pInterface, uint32_
     return pThis->fIdle;
 }
 
-/** @interface_method_impl{VUSBIROOTHUBPORT,pfnFrameRateChanged} */
+
+/**
+ * @interface_method_impl{VUSBIROOTHUBPORT,pfnFrameRateChanged}
+ */
 static DECLCALLBACK(void) ohciR3FrameRateChanged(PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameRate)
 {
     POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
@@ -4343,13 +4347,6 @@ static DECLCALLBACK(void) ohciR3FrameRateChanged(PVUSBIROOTHUBPORT pInterface, u
     pThis->cTicksPerUsbTick = pThis->u64TimerHz >= VUSB_BUS_HZ ? pThis->u64TimerHz / VUSB_BUS_HZ : 1;
 }
 
-/**
- * Do frame processing on frame boundary
- */
-static DECLCALLBACK(void) ohciR3FrameBoundaryTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
-{
-    RT_NOREF(pDevIns, pTimer, pvUser);
-}
 
 /**
  * Start sending SOF tokens across the USB bus, lists are processed in
@@ -4367,6 +4364,7 @@ static void ohciR3BusStart(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
     AssertRC(rc);
 }
 
+
 /**
  * Stop sending SOF tokens on the bus
  */
@@ -4376,6 +4374,7 @@ static void ohciR3BusStop(POHCICC pThisCC)
     AssertRC(rc);
     VUSBIDevPowerOff(pThisCC->RootHub.pIDev);
 }
+
 
 /**
  * Move in to resume state
