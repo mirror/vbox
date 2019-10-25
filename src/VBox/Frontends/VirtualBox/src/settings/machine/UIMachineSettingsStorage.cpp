@@ -3878,10 +3878,6 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
         {
             case UIMediumDeviceType_HardDisk:
             {
-                /* Add "Create a new virtual hard disk" action: */
-                QAction *pCreateNewHardDisk = pOpenMediumMenu->addAction(tr("Create New Hard Disk..."));
-                pCreateNewHardDisk->setIcon(iconPool()->icon(HDNewEn, HDNewDis));
-                connect(pCreateNewHardDisk, &QAction::triggered, this, &UIMachineSettingsStorage::sltCreateNewHardDisk);
                 /* Add "Choose a virtual hard disk" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Hard Disk..."));
                 /* Add recent media list: */
@@ -3924,15 +3920,6 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
                 break;
         }
     }
-}
-
-void UIMachineSettingsStorage::sltCreateNewHardDisk()
-{
-    const QUuid uMediumId = uiCommon().openMediumCreatorDialog(this, UIMediumDeviceType_HardDisk, m_strMachineSettingsFilePath,
-                                                               m_strMachineName, m_strMachineGuestOSTypeId);
-
-    if (!uMediumId.isNull())
-        m_pMediumIdHolder->setId(uMediumId);
 }
 
 void UIMachineSettingsStorage::sltUnmountDevice()

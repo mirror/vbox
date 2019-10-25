@@ -149,8 +149,6 @@ private slots:
 
     /** Prepares 'Open Medium' menu. */
     void sltPrepareOpenMediumMenu();
-    /** Mounts newly created hard-drive. */
-    void sltCreateNewHardDisk();
     /** Unmounts current device. */
     void sltUnmountDevice();
     /** Mounts existing medium. */
