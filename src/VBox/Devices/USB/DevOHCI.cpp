@@ -416,7 +416,6 @@ typedef struct OHCIR3
 /** Pointer to ring-3 OHCI state. */
 typedef OHCIR3 *POHCIR3;
 
-#if 0
 /**
  * OHCI device data, ring-0.
  */
@@ -437,7 +436,6 @@ typedef struct OHCIRC
 } OHCIRC;
 /** Pointer to raw-mode OHCI state. */
 typedef OHCIRC *POHCIRC;
-#endif
 
 
 /** @typedef RTCSTATECC
@@ -448,11 +446,11 @@ typedef OHCIRC *POHCIRC;
 typedef  OHCIR3  OHCICC;
 typedef POHCIR3 POHCICC;
 #elif defined(IN_RING0)
-//typedef  OHCIR0  OHCICC;
-//typedef POHCIR0 POHCICC;
+typedef  OHCIR0  OHCICC;
+typedef POHCIR0 POHCICC;
 #elif defined(IN_RC)
-//typedef  OHCIRC  OHCICC;
-//typedef POHCIRC POHCICC;
+typedef  OHCIRC  OHCICC;
+typedef POHCIRC POHCICC;
 #else
 # error "Not IN_RING3, IN_RING0 or IN_RC"
 #endif
@@ -6184,7 +6182,7 @@ const PDMDEVREG g_DeviceOHCI =
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(OHCI),
-    /* .cbInstanceCC = */           0,
+    /* .cbInstanceCC = */           sizeof(OHCICC),
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,
     /* .cMaxMsixVectors = */        0,
