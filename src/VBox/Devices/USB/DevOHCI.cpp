@@ -191,7 +191,7 @@ typedef OHCIHUBPORT *POHCIHUBPORT;
  * @implements  VUSBIROOTHUBPORT
  * @implements  PDMILEDPORTS
  */
-typedef struct ohci_roothub
+typedef struct OHCIROOTHUB
 {
     /** Pointer to the base interface of the VUSB RootHub. */
     R3PTRTYPE(PPDMIBASE)                pIBase;
@@ -227,7 +227,7 @@ typedef OHCIROOTHUB *POHCIROOTHUB;
 /**
  * Data used for reattaching devices on a state load.
  */
-typedef struct ohci_load
+typedef struct OHCILOAD
 {
     /** Timer used once after state load to inform the guest about new devices.
      * We do this to be sure the guest get any disconnect / reconnect on the
@@ -456,19 +456,21 @@ typedef POHCIRC POHCICC;
 #endif
 
 
-/* Standard OHCI bus speed */
+/** Standard OHCI bus speed */
 #define OHCI_DEFAULT_TIMER_FREQ     1000
 
-/* Host Controller Communications Area */
+/** Host Controller Communications Area
+ * @{  */
 #define OHCI_HCCA_NUM_INTR  32
 #define OHCI_HCCA_OFS       (OHCI_HCCA_NUM_INTR * sizeof(uint32_t))
-struct ohci_hcca
+typedef struct OCHIHCCA
 {
     uint16_t frame;
     uint16_t pad;
     uint32_t done;
-};
-AssertCompileSize(ohci_hcca, 8);
+} OCHIHCCA;
+AssertCompileSize(OCHIHCCA, 8);
+/** @} */
 
 /** @name OHCI Endpoint Descriptor
  * @{ */
@@ -636,7 +638,7 @@ AssertCompileSize(OHCIITD, 32);
 /**
  * OHCI register operator.
  */
-typedef struct ohci_opreg
+typedef struct OHCIOPREG
 {
     const char *pszName;
     VBOXSTRICTRC (*pfnRead )(PPDMDEVINS pDevIns, PCOHCI pThis, uint32_t iReg, uint32_t *pu32Value);
@@ -3985,7 +3987,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis)
  */
 static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis)
 {
-    struct ohci_hcca hcca;
+    OCHIHCCA hcca;
     ohciR3PhysRead(pDevIns, pThis->hcca + OHCI_HCCA_OFS, &hcca, sizeof(hcca));
 
     hcca.frame = RT_H2LE_U16((uint16_t)pThis->HcFmNumber);
@@ -4010,7 +4012,7 @@ static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis)
 # ifdef LOG_ENABLED
         ohciR3DumpTdQueue(pDevIns, pThis, hcca.done & ED_PTR_MASK, "DoneQueue");
 # endif
-        Assert(RT_OFFSETOF(struct ohci_hcca, done) == 4);
+        Assert(RT_OFFSETOF(OCHIHCCA, done) == 4);
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
         ohciR3InDoneQueueZap(pThis);
 # endif
