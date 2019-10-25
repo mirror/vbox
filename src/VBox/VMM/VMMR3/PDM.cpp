@@ -144,6 +144,9 @@
  * - Convert all queues to the handle based ones or tasks.
  *
  * - Set the PDM_DEVREG_FLAGS_NEW_STYLE in the registration structure.
+ *   (Functionally, this only makes a difference for PDMDevHlpSetDeviceCritSect
+ *   behavior, but it will become mandatory once all devices has been
+ *   converted.)
  *
  * - Convert all CFGMR3Xxxx calls to pHlp->pfnCFGMXxxx.
  *
