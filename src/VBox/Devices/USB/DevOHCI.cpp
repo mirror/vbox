@@ -247,8 +247,9 @@ typedef struct OHCIPAGECACHE
     /** Last read physical page address. */
     RTGCPHYS            GCPhysReadCacheAddr;
     /** Copy of last read physical page. */
-    uint8_t             au8PhysReadCache[PAGE_SIZE];
-} OHCIPAGECACHE, *POHCIPAGECACHE;
+    uint8_t             abPhysReadCache[PAGE_SIZE];
+} OHCIPAGECACHE;
+typedef OHCIPAGECACHE *POHCIPAGECACHE;
 #endif
 
 /**
@@ -407,9 +408,9 @@ typedef struct OHCIR3
 
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     /** Last read physical page for caching ED reads in the framer thread. */
-    R3PTRTYPE(POHCIPAGECACHE)  pCacheED;
+    OHCIPAGECACHE               CacheED;
     /** Last read physical page for caching TD reads in the framer thread. */
-    R3PTRTYPE(POHCIPAGECACHE)  pCacheTD;
+    OHCIPAGECACHE               CacheTD;
 #endif
 } OHCIR3;
 /** Pointer to ring-3 OHCI state. */
@@ -888,7 +889,7 @@ static void                 ohciR3RhPortPower(POHCIROOTHUB pRh, unsigned iPort, 
 static void                 ohciR3BusResume(PPDMDEVINS pDevIns, POHCI ohci, bool fHardware);
 static void                 ohciR3BusStop(POHCI pThis);
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
-static void                 ohciR3PhysReadCacheClear(POHCIPAGECACHE pPageCache);
+static void                 ohciR3PhysReadCacheInvalidate(POHCIPAGECACHE pPageCache);
 #endif
 
 static DECLCALLBACK(void)   ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb);
@@ -1281,8 +1282,8 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
     pThis->fno = 0;
 
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
-    ohciR3PhysReadCacheClear(pThisCC->pCacheED);
-    ohciR3PhysReadCacheClear(pThisCC->pCacheTD);
+    ohciR3PhysReadCacheInvalidate(&pThisCC->CacheED);
+    ohciR3PhysReadCacheInvalidate(&pThisCC->CacheTD);
 #endif
 
     /*
@@ -1427,17 +1428,7 @@ static void physReadStatsPrint(POHCIPHYSREADSTATS p)
 # endif /* VBOX_WITH_OHCI_PHYS_READ_STATS */
 # ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
 
-static POHCIPAGECACHE ohciR3PhysReadCacheAlloc(void)
-{
-    return (POHCIPAGECACHE)RTMemAlloc(sizeof(OHCIPAGECACHE));
-}
-
-static void ohciR3PhysReadCacheFree(POHCIPAGECACHE pPageCache)
-{
-    RTMemFree(pPageCache);
-}
-
-static void ohciR3PhysReadCacheClear(POHCIPAGECACHE pPageCache)
+static void ohciR3PhysReadCacheInvalidate(POHCIPAGECACHE pPageCache)
 {
     pPageCache->GCPhysReadCacheAddr = NIL_RTGCPHYS;
 }
@@ -1450,14 +1441,14 @@ static void ohciR3PhysReadCacheRead(PPDMDEVINS pDevIns, POHCIPAGECACHE pPageCach
     {
         if (PageAddr != pPageCache->GCPhysReadCacheAddr)
         {
-            PDMDevHlpPhysRead(pDevIns, PageAddr, pPageCache->au8PhysReadCache, sizeof(pPageCache->au8PhysReadCache));
+            PDMDevHlpPhysRead(pDevIns, PageAddr, pPageCache->abPhysReadCache, sizeof(pPageCache->abPhysReadCache));
             pPageCache->GCPhysReadCacheAddr = PageAddr;
 #  ifdef VBOX_WITH_OHCI_PHYS_READ_STATS
             ++g_PhysReadState.cPageReads;
 #  endif
         }
 
-        memcpy(pvBuf, &pPageCache->au8PhysReadCache[GCPhys & PAGE_OFFSET_MASK], cbBuf);
+        memcpy(pvBuf, &pPageCache->abPhysReadCache[GCPhys & PAGE_OFFSET_MASK], cbBuf);
 #  ifdef VBOX_WITH_OHCI_PHYS_READ_STATS
         ++g_PhysReadState.cCacheReads;
 #  endif
@@ -1489,7 +1480,7 @@ static void ohciR3PhysCacheUpdate(POHCIPAGECACHE pPageCache, RTGCPHYS GCPhys, co
     if (GCPhysPage == pPageCache->GCPhysReadCacheAddr)
     {
         uint32_t offPage = GCPhys & PAGE_OFFSET_MASK;
-        memcpy(&pPageCache->au8PhysReadCache[offPage], pvBuf, RT_MIN(PAGE_SIZE - offPage, cbBuf));
+        memcpy(&pPageCache->abPhysReadCache[offPage], pvBuf, RT_MIN(PAGE_SIZE - offPage, cbBuf));
     }
 }
 
@@ -1503,7 +1494,7 @@ static void ohciR3PhysCacheUpdate(POHCIPAGECACHE pPageCache, RTGCPHYS GCPhys, co
  */
 DECLINLINE(void) ohciR3CacheEdUpdate(POHCICC pThisCC, RTGCPHYS32 EdAddr, PCOHCIED pEd)
 {
-    ohciR3PhysCacheUpdate(pThisCC->pCacheED, EdAddr + RT_OFFSETOF(OHCIED, HeadP), &pEd->HeadP, sizeof(uint32_t));
+    ohciR3PhysCacheUpdate(&pThisCC->CacheED, EdAddr + RT_OFFSETOF(OHCIED, HeadP), &pEd->HeadP, sizeof(uint32_t));
 }
 
 
@@ -1517,7 +1508,7 @@ DECLINLINE(void) ohciR3CacheEdUpdate(POHCICC pThisCC, RTGCPHYS32 EdAddr, PCOHCIE
  */
 DECLINLINE(void) ohciR3CacheTdUpdate(POHCICC pThisCC, RTGCPHYS32 TdAddr, PCOHCITD pTd)
 {
-    ohciR3PhysCacheUpdate(pThisCC->pCacheTD, TdAddr, pTd, sizeof(*pTd));
+    ohciR3PhysCacheUpdate(&pThisCC->CacheTD, TdAddr, pTd, sizeof(*pTd));
 }
 
 # endif /* VBOX_WITH_OHCI_PHYS_READ_CACHE */
@@ -1533,7 +1524,7 @@ DECLINLINE(void) ohciR3ReadEd(PPDMDEVINS pDevIns, uint32_t EdAddr, POHCIED pEd)
 # endif
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
-    ohciR3PhysReadCacheRead(pDevIns, pThisCC->pCacheED, EdAddr, pEd, sizeof(*pEd));
+    ohciR3PhysReadCacheRead(pDevIns, &pThisCC->CacheED, EdAddr, pEd, sizeof(*pEd));
 #else
     ohciR3GetDWords(pDevIns, EdAddr, (uint32_t *)pEd, sizeof(*pEd) >> 2);
 #endif
@@ -1550,7 +1541,7 @@ DECLINLINE(void) ohciR3ReadTd(PPDMDEVINS pDevIns, uint32_t TdAddr, POHCITD pTd)
 # endif
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
-    ohciR3PhysReadCacheRead(pDevIns, pThisCC->pCacheTD, TdAddr, pTd, sizeof(*pTd));
+    ohciR3PhysReadCacheRead(pDevIns, &pThisCC->CacheTD, TdAddr, pTd, sizeof(*pTd));
 #else
     ohciR3GetDWords(pDevIns, TdAddr, (uint32_t *)pTd, sizeof(*pTd) >> 2);
 #endif
@@ -2528,8 +2519,8 @@ DECLINLINE(void) ohciR3Lock(POHCI pThis)
 # ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     /* Clear all caches here to avoid reading stale data from previous lock holders. */
     POHCICC pThisCC = pThis->pThisR3;
-    ohciR3PhysReadCacheClear(pThisCC->pCacheED);
-    ohciR3PhysReadCacheClear(pThisCC->pCacheTD);
+    ohciR3PhysReadCacheInvalidate(&pThisCC->CacheED);
+    ohciR3PhysReadCacheInvalidate(&pThisCC->CacheTD);
 # endif
 }
 
@@ -2548,8 +2539,8 @@ DECLINLINE(void) ohciR3Unlock(POHCI pThis)
      * already done in ohciR3Lock).
      */
     POHCICC pThisCC = pThis->pThisR3;
-    ohciR3PhysReadCacheClear(pThisCC->pCacheED);
-    ohciR3PhysReadCacheClear(pThisCC->pCacheTD);
+    ohciR3PhysReadCacheInvalidate(&pThisCC->CacheED);
+    ohciR3PhysReadCacheInvalidate(&pThisCC->CacheTD);
 # endif
 
     RTCritSectLeave(&pThis->CritSect);
@@ -3161,7 +3152,7 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
 
 # ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
-    ohciR3PhysReadCacheClear(pThisCC->pCacheTD);
+    ohciR3PhysReadCacheInvalidate(&pThisCC->CacheTD);
 # endif
 
     /* read the head */
@@ -4108,7 +4099,7 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis)
                 && (TdAddr != TailP))
             {
 # ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
-                ohciR3PhysReadCacheClear(pThisCC->pCacheTD);
+                ohciR3PhysReadCacheInvalidate(&pThisCC->CacheTD);
 # endif
                 do
                 {
@@ -5962,14 +5953,6 @@ static DECLCALLBACK(int) ohciR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     POHCI   pThis   = PDMINS_2_DATA(pDevIns, POHCI);
-#ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
-    POHCIR3 pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCIR3);
-
-    ohciR3PhysReadCacheFree(pThisCC->pCacheED);
-    pThisCC->pCacheED = NULL;
-    ohciR3PhysReadCacheFree(pThisCC->pCacheTD);
-    pThisCC->pCacheTD = NULL;
-#endif
 
     if (RTCritSectIsInitialized(&pThis->CritSect))
         RTCritSectDelete(&pThis->CritSect);
@@ -6144,13 +6127,6 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("OHCI: Failed to create critical section"));
-
-#ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
-    pThisCC->pCacheED = ohciR3PhysReadCacheAlloc();
-    pThisCC->pCacheTD = ohciR3PhysReadCacheAlloc();
-    if (pThisCC->pCacheED == NULL || pThisCC->pCacheTD == NULL)
-        return PDMDevHlpVMSetError(pDevIns, VERR_NO_MEMORY, RT_SRC_POS, N_("OHCI: Failed to allocate PhysRead cache"));
-#endif
 
     /*
      * Do a hardware reset.
