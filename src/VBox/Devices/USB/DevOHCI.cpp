@@ -1629,6 +1629,8 @@ DECLINLINE(void) ohciR3ReadITd(PPDMDEVINS pDevIns, POHCI pThis, uint32_t ITdAddr
               pITd->aPSW[6] >> 12, pITd->aPSW[6] & 0xfff,
               pITd->aPSW[7] >> 12, pITd->aPSW[7] & 0xfff));
     }
+# else
+    RT_NOREF(pThis);
 # endif
 }
 
