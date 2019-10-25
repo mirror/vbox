@@ -53,7 +53,7 @@
  * ohci_frame_boundary). Our completion routine makes use of the ED and TD
  * fields in the URB to store the physical addresses of the descriptors so
  * that they may be modified in the roothub callbacks. Our completion
- * routine (ohciRhXferComplete) carries out a number of tasks:
+ * routine (ohciR3RhXferCompletion) carries out a number of tasks:
  *      -# Retires the TD associated with the transfer, setting the
  *         relevant error code etc.
  *      -# Updates done-queue interrupt timer and potentially causes
@@ -185,13 +185,30 @@ AssertCompile(sizeof(OHCIHUBPORT) == 16); /* saved state */
 typedef OHCIHUBPORT *POHCIHUBPORT;
 
 /**
- * The OHCI root hub.
+ * The OHCI root hub, shared.
+ */
+typedef struct OHCIROOTHUB
+{
+    uint32_t                            status;
+    uint32_t                            desc_a;
+    uint32_t                            desc_b;
+#if HC_ARCH_BITS == 64
+    uint32_t                            Alignment0; /**< Align aPorts on a 8 byte boundary. */
+#endif
+    OHCIHUBPORT                         aPorts[OHCI_NDP_MAX];
+} OHCIROOTHUB;
+/** Pointer to the OHCI root hub. */
+typedef OHCIROOTHUB *POHCIROOTHUB;
+
+
+/**
+ * The OHCI root hub, ring-3 data.
  *
  * @implements  PDMIBASE
  * @implements  VUSBIROOTHUBPORT
  * @implements  PDMILEDPORTS
  */
-typedef struct OHCIROOTHUB
+typedef struct OHCIROOTHUBR3
 {
     /** Pointer to the base interface of the VUSB RootHub. */
     R3PTRTYPE(PPDMIBASE)                pIBase;
@@ -211,17 +228,11 @@ typedef struct OHCIROOTHUB
     /** Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
 
-    uint32_t                            status;
-    uint32_t                            desc_a;
-    uint32_t                            desc_b;
-#if HC_ARCH_BITS == 64
-    uint32_t                            Alignment0; /**< Align aPorts on a 8 byte boundary. */
-#endif
     OHCIHUBPORT                         aPorts[OHCI_NDP_MAX];
     R3PTRTYPE(POHCI)                    pOhci;
-} OHCIROOTHUB;
-/** Pointer to the OHCI root hub. */
-typedef OHCIROOTHUB *POHCIROOTHUB;
+} OHCIROOTHUBR3;
+/** Pointer to the OHCI ring-3 root hub data. */
+typedef OHCIROOTHUBR3 *POHCIROOTHUBR3;
 
 
 /**
@@ -267,7 +278,7 @@ typedef struct OHCI
     /** frame number overflow. */
     uint32_t            fno : 1;
 
-    /** Root hub device */
+    /** Root hub device, shared data. */
     OHCIROOTHUB         RootHub;
 
     /* OHCI registers */
@@ -383,15 +394,9 @@ typedef struct OHCI
 
     /** Critical section synchronising interrupt handling. */
     PDMCRITSECT         CsIrq;
-    /** Critical section to synchronize the framer and URB completion handler. */
-    RTCRITSECT          CritSect;
 
     /** The MMIO region handle. */
     IOMMMIOHANDLE       hMmio;
-
-    /** This is quite ugly, but the RootHub isn't easily moved to the OHCIR3
-     *  structure and it has a lot of interfaces where it's all we got.  */
-    R3PTRTYPE(struct OHCIR3 *) pThisR3;
 } OHCI;
 
 
@@ -400,18 +405,23 @@ typedef struct OHCI
  */
 typedef struct OHCIR3
 {
+    /** The root hub, ring-3 portion.   */
+    OHCIROOTHUBR3           RootHub;
     /** Pointer to the device instance - R3 ptr. */
-    PPDMDEVINSR3                pDevInsR3;
+    PPDMDEVINSR3            pDevInsR3;
 
     /** Pointer to state load data. */
-    R3PTRTYPE(POHCILOAD)        pLoad;
+    R3PTRTYPE(POHCILOAD)    pLoad;
 
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     /** Last read physical page for caching ED reads in the framer thread. */
-    OHCIPAGECACHE               CacheED;
+    OHCIPAGECACHE           CacheED;
     /** Last read physical page for caching TD reads in the framer thread. */
-    OHCIPAGECACHE               CacheTD;
+    OHCIPAGECACHE           CacheTD;
 #endif
+
+    /** Critical section to synchronize the framer and URB completion handler. */
+    RTCRITSECT              CritSect;
 } OHCIR3;
 /** Pointer to ring-3 OHCI state. */
 typedef OHCIR3 *POHCIR3;
@@ -886,8 +896,8 @@ RT_C_DECLS_BEGIN
 #ifdef IN_RING3
 /* Update host controller state to reflect a device attach */
 static void                 ohciR3RhPortPower(POHCIROOTHUB pRh, unsigned iPort, bool fPowerUp);
-static void                 ohciR3BusResume(PPDMDEVINS pDevIns, POHCI ohci, bool fHardware);
-static void                 ohciR3BusStop(POHCI pThis);
+static void                 ohciR3BusResume(PPDMDEVINS pDevIns, POHCI pOhci, POHCICC pThisCC, bool fHardware);
+static void                 ohciR3BusStop(POHCICC pThisCC);
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
 static void                 ohciR3PhysReadCacheInvalidate(POHCIPAGECACHE pPageCache);
 #endif
@@ -970,13 +980,13 @@ DECLINLINE(void) ohciR3RaiseUnrecoverableError(PPDMDEVINS pDevIns, POHCI pThis, 
 
 
 /* Carry out a hardware remote wakeup */
-static void ohciR3RemoteWakeup(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3RemoteWakeup(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
     if ((pThis->ctl & OHCI_CTL_HCFS) != OHCI_USB_SUSPEND)
         return;
     if (!(pThis->RootHub.status & OHCI_RHS_DRWE))
         return;
-    ohciR3BusResume(pDevIns, pThis, true /* hardware */);
+    ohciR3BusResume(pDevIns, pThis, pThisCC, true /* hardware */);
 }
 
 
@@ -985,10 +995,10 @@ static void ohciR3RemoteWakeup(PPDMDEVINS pDevIns, POHCI pThis)
  */
 static DECLCALLBACK(void *) ohciR3RhQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    POHCI pThis = RT_FROM_MEMBER(pInterface, OHCI, RootHub.IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->RootHub.IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, VUSBIROOTHUBPORT, &pThis->RootHub.IRhPort);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->RootHub.ILeds);
+    POHCICC pThisCC = RT_FROM_MEMBER(pInterface, OHCICC, RootHub.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->RootHub.IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, VUSBIROOTHUBPORT, &pThisCC->RootHub.IRhPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThisCC->RootHub.ILeds);
     return NULL;
 }
 
@@ -1002,18 +1012,18 @@ static DECLCALLBACK(void *) ohciR3RhQueryInterface(PPDMIBASE pInterface, const c
  */
 static DECLCALLBACK(int) ohciR3RhQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    POHCI pThis = (POHCI)((uintptr_t)pInterface - RT_OFFSETOF(OHCI, RootHub.ILeds));
+    POHCICC pThisCC = RT_FROM_MEMBER(pInterface, OHCICC, RootHub.ILeds);
     if (iLUN == 0)
     {
-        *ppLed = &pThis->RootHub.Led;
+        *ppLed = &pThisCC->RootHub.Led;
         return VINF_SUCCESS;
     }
     return VERR_PDM_LUN_NOT_FOUND;
 }
 
 
-/** Converts a OHCI.roothub.IRhPort pointer to a POHCI. */
-#define VUSBIROOTHUBPORT_2_OHCI(pInterface) ((POHCI)( (uintptr_t)(pInterface) - RT_OFFSETOF(OHCI, RootHub.IRhPort) ))
+/** Converts a OHCI.roothub.IRhPort pointer to a OHCICC one. */
+#define VUSBIROOTHUBPORT_2_OHCI(a_pInterface) RT_FROM_MEMBER(a_pInterface, OHCICC, RootHub.IRhPort)
 
 /**
  * Get the number of available ports in the hub.
@@ -1024,8 +1034,9 @@ static DECLCALLBACK(int) ohciR3RhQueryStatusLed(PPDMILEDPORTS pInterface, unsign
  */
 static DECLCALLBACK(unsigned) ohciR3RhGetAvailablePorts(PVUSBIROOTHUBPORT pInterface, PVUSBPORTBITMAP pAvailable)
 {
-    POHCI      pThis   = VUSBIROOTHUBPORT_2_OHCI(pInterface);
-    PPDMDEVINS pDevIns = pThis->pThisR3->pDevInsR3;
+    POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+    POHCI      pThis   = PDMINS_2_DATA(pDevIns, POHCI);
     unsigned   cPorts  = 0;
 
     memset(pAvailable, 0, sizeof(*pAvailable));
@@ -1065,8 +1076,9 @@ static DECLCALLBACK(uint32_t) ohciR3RhGetUSBVersions(PVUSBIROOTHUBPORT pInterfac
  */
 static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort)
 {
-    POHCI      pThis   = VUSBIROOTHUBPORT_2_OHCI(pInterface);
-    PPDMDEVINS pDevIns = pThis->pThisR3->pDevInsR3;
+    POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+    POHCI      pThis   = PDMINS_2_DATA(pDevIns, POHCI);
     VUSBSPEED  enmSpeed;
     LogFlow(("ohciR3RhAttach: pDev=%p uPort=%u\n", pDev, uPort));
     PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
@@ -1078,7 +1090,7 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
     uPort--;
     Assert(!pThis->RootHub.aPorts[uPort].pDev);
     enmSpeed = pDev->pfnGetSpeed(pDev);
-    /* Only LS/FS devices can end up here. */
+    /* Only LS/FS devices should end up here. */
     Assert(enmSpeed == VUSB_SPEED_LOW || enmSpeed == VUSB_SPEED_FULL);
 
     /*
@@ -1090,7 +1102,7 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
     pThis->RootHub.aPorts[uPort].pDev = pDev;
     ohciR3RhPortPower(&pThis->RootHub, uPort, 1 /* power on */);
 
-    ohciR3RemoteWakeup(pDevIns, pThis);
+    ohciR3RemoteWakeup(pDevIns, pThis, pThisCC);
     ohciR3SetInterrupt(pDevIns, pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
 
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
@@ -1107,8 +1119,9 @@ static DECLCALLBACK(int) ohciR3RhAttach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVI
  */
 static DECLCALLBACK(void) ohciR3RhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEVICE pDev, unsigned uPort)
 {
-    POHCI      pThis   = VUSBIROOTHUBPORT_2_OHCI(pInterface);
-    PPDMDEVINS pDevIns = pThis->pThisR3->pDevInsR3;
+    POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+    POHCI      pThis   = PDMINS_2_DATA(pDevIns, POHCI);
     RT_NOREF(pDev);
     LogFlow(("ohciR3RhDetach: pDev=%p uPort=%u\n", pDev, uPort));
     PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
@@ -1129,7 +1142,7 @@ static DECLCALLBACK(void) ohciR3RhDetach(PVUSBIROOTHUBPORT pInterface, PVUSBIDEV
     else
         pThis->RootHub.aPorts[uPort].fReg = OHCI_PORT_CSC;
 
-    ohciR3RemoteWakeup(pDevIns, pThis);
+    ohciR3RemoteWakeup(pDevIns, pThis, pThisCC);
     ohciR3SetInterrupt(pDevIns, pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
 
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
@@ -1167,8 +1180,9 @@ static DECLCALLBACK(void) ohciR3RhResetDoneOneDev(PVUSBIDEVICE pDev, int rc, voi
  */
 static DECLCALLBACK(int) ohciR3RhReset(PVUSBIROOTHUBPORT pInterface, bool fResetOnLinux)
 {
-    POHCI      pThis   = VUSBIROOTHUBPORT_2_OHCI(pInterface);
-    PPDMDEVINS pDevIns = pThis->pThisR3->pDevInsR3;
+    POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+    POHCI      pThis   = PDMINS_2_DATA(pDevIns, POHCI);
     PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     Log(("ohci: root hub reset%s\n", fResetOnLinux ? " (reset on linux)" : ""));
@@ -1237,7 +1251,7 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
          fResetOnLinux ? " (reset on linux)" : ""));
 
     /* Stop the bus in any case, disabling walking the lists. */
-    ohciR3BusStop(pThis);
+    ohciR3BusStop(pThisCC);
 
     /*
      * Cancel all outstanding URBs.
@@ -1246,7 +1260,7 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
      * suspend/reset state. Also, a real HC isn't going to send anything
      * any more when a reset has been signaled.
      */
-    pThis->RootHub.pIRhConn->pfnCancelAllUrbs(pThis->RootHub.pIRhConn);
+    pThisCC->RootHub.pIRhConn->pfnCancelAllUrbs(pThisCC->RootHub.pIRhConn);
     Assert(pThis->cInFlight == 0);
 
     /*
@@ -1293,7 +1307,7 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
      * device construction, so nothing to worry about there.)
      */
     if (fNewMode == OHCI_USB_RESET)
-        VUSBIDevReset(pThis->RootHub.pIDev, fResetOnLinux, NULL, NULL, NULL);
+        VUSBIDevReset(pThisCC->RootHub.pIDev, fResetOnLinux, NULL, NULL, NULL);
 }
 
 
@@ -2510,15 +2524,14 @@ static uint32_t ohciR3VUsbStatus2OhciStatus(VUSBSTATUS enmStatus)
  * Lock the given OHCI controller instance.
  *
  * @returns nothing.
- * @param   pThis               The OHCI controller instance to lock.
+ * @param   pThis       The OHCI controller instance to lock, ring-3 edition.
  */
-DECLINLINE(void) ohciR3Lock(POHCI pThis)
+DECLINLINE(void) ohciR3Lock(POHCICC pThisCC)
 {
-    RTCritSectEnter(&pThis->CritSect);
+    RTCritSectEnter(&pThisCC->CritSect);
 
 # ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     /* Clear all caches here to avoid reading stale data from previous lock holders. */
-    POHCICC pThisCC = pThis->pThisR3;
     ohciR3PhysReadCacheInvalidate(&pThisCC->CacheED);
     ohciR3PhysReadCacheInvalidate(&pThisCC->CacheTD);
 # endif
@@ -2529,21 +2542,20 @@ DECLINLINE(void) ohciR3Lock(POHCI pThis)
  * Unlocks the given OHCI controller instance.
  *
  * @returns nothing.
- * @param   pThis               The OHCI controller instance to unlock.
+ * @param   pThis       The OHCI controller instance to unlock, ring-3 edition.
  */
-DECLINLINE(void) ohciR3Unlock(POHCI pThis)
+DECLINLINE(void) ohciR3Unlock(POHCICC pThisCC)
 {
 # ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     /*
      * Clear all caches here to avoid leaving stale data behind (paranoia^2,
      * already done in ohciR3Lock).
      */
-    POHCICC pThisCC = pThis->pThisR3;
     ohciR3PhysReadCacheInvalidate(&pThisCC->CacheED);
     ohciR3PhysReadCacheInvalidate(&pThisCC->CacheTD);
 # endif
 
-    RTCritSectLeave(&pThis->CritSect);
+    RTCritSectLeave(&pThisCC->CritSect);
 }
 
 
@@ -2859,12 +2871,13 @@ static void ohciR3RhXferCompleteGeneralURB(PPDMDEVINS pDevIns, POHCI pThis, PVUS
  */
 static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb)
 {
-    POHCI      pThis   = VUSBIROOTHUBPORT_2_OHCI(pInterface);
-    PPDMDEVINS pDevIns = pThis->pThisR3->pDevInsR3;
+    POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+    POHCI      pThis   = PDMINS_2_DATA(pDevIns, POHCI);
     LogFlow(("%s: ohciR3RhXferCompletion: EdAddr=%#010RX32 cTds=%d TdAddr0=%#010RX32\n",
              pUrb->pszDesc, pUrb->pHci->EdAddr, pUrb->pHci->cTds, pUrb->paTds[0].TdAddr));
 
-    ohciR3Lock(pThis);
+    ohciR3Lock(pThisCC);
 
     int cFmAge = ohciR3InFlightRemoveUrb(pThis, pUrb);
 
@@ -2893,7 +2906,7 @@ static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, P
             Log(("%s: ohciR3RhXferCompletion: CANCELED {ED=%#010x cTds=%d TD0=%#010x age %d}\n",
                  pUrb->pszDesc, pUrb->pHci->EdAddr, pUrb->pHci->cTds, pUrb->paTds[0].TdAddr, cFmAge));
             STAM_COUNTER_INC(&pThis->StatDroppedUrbs);
-            ohciR3Unlock(pThis);
+            ohciR3Unlock(pThisCC);
             return;
         }
         bool fHasBeenCanceled = false;
@@ -2913,7 +2926,7 @@ static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, P
                  fHasBeenCanceled                                       ? " td canceled" : ""));
             NOREF(fHasBeenCanceled);
             STAM_COUNTER_INC(&pThis->StatDroppedUrbs);
-            ohciR3Unlock(pThis);
+            ohciR3Unlock(pThisCC);
             return;
         }
 
@@ -2930,7 +2943,7 @@ static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, P
         ohciR3WriteEd(pDevIns, pUrb->pHci->EdAddr, &Ed);
     }
 
-    ohciR3Unlock(pThis);
+    ohciR3Unlock(pThisCC);
 }
 
 
@@ -2947,8 +2960,9 @@ static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, P
  */
 static DECLCALLBACK(bool) ohciR3RhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb)
 {
-    POHCI      pThis   = VUSBIROOTHUBPORT_2_OHCI(pInterface);
-    PPDMDEVINS pDevIns = pThis->pThisR3->pDevInsR3;
+    POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+    POHCI      pThis   = PDMINS_2_DATA(pDevIns, POHCI);
 
     /*
      * Isochronous URBs can't be retried.
@@ -2965,7 +2979,7 @@ static DECLCALLBACK(bool) ohciR3RhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBU
         return true;
     }
 
-    ohciR3Lock(pThis);
+    ohciR3Lock(pThisCC);
     bool fRetire = false;
     /*
      * Check if the TDs still are valid.
@@ -2999,7 +3013,7 @@ static DECLCALLBACK(bool) ohciR3RhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBU
             Log2(("%s: ohciR3RhXferError: cErrs=%d: retrying...\n", pUrb->pszDesc, cErrs));
     }
 
-    ohciR3Unlock(pThis);
+    ohciR3Unlock(pThisCC);
     return fRetire;
 }
 
@@ -3007,8 +3021,8 @@ static DECLCALLBACK(bool) ohciR3RhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBU
 /**
  * Service a general transport descriptor.
  */
-static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint32_t EdAddr,
-                            uint32_t TdAddr, uint32_t *pNextTdAddr, const char *pszListName)
+static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, VUSBXFERTYPE enmType,
+                            PCOHCIED pEd, uint32_t EdAddr, uint32_t TdAddr, uint32_t *pNextTdAddr, const char *pszListName)
 {
     RT_NOREF(pszListName);
 
@@ -3049,7 +3063,7 @@ static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE enmTyp
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
                                   enmType, enmDir, Buf.cbTotal, 1, NULL);
     if (!pUrb)
         return false;                   /* retry later... */
@@ -3077,7 +3091,7 @@ static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE enmTyp
                 && Buf.aVecs[1].cb > (pUrb->cbData - Buf.aVecs[0].cb)))
         {
             ohciR3RaiseUnrecoverableError(pDevIns, pThis, 3);
-            VUSBIRhFreeUrb(pThis->RootHub.pIRhConn, pUrb);
+            VUSBIRhFreeUrb(pThisCC->RootHub.pIRhConn, pUrb);
             return false;
         }
 
@@ -3093,9 +3107,9 @@ static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE enmTyp
     Log(("%s: ohciR3ServiceTd: submitting TdAddr=%#010x EdAddr=%#010x cbData=%#x\n",
          pUrb->pszDesc, TdAddr, EdAddr, pUrb->cbData));
 
-    ohciR3Unlock(pThis);
-    int rc = VUSBIRhSubmitUrb(pThis->RootHub.pIRhConn, pUrb, &pThis->RootHub.Led);
-    ohciR3Lock(pThis);
+    ohciR3Unlock(pThisCC);
+    int rc = VUSBIRhSubmitUrb(pThisCC->RootHub.pIRhConn, pUrb, &pThisCC->RootHub.Led);
+    ohciR3Lock(pThisCC);
     if (RT_SUCCESS(rc))
         return true;
 
@@ -3103,7 +3117,7 @@ static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE enmTyp
     Log(("ohciR3ServiceTd: failed submitting TdAddr=%#010x EdAddr=%#010x pUrb=%p!!\n",
          TdAddr, EdAddr, pUrb));
     ohciR3InFlightRemove(pThis, TdAddr);
-    VUSBIRhFreeUrb(pThis->RootHub.pIRhConn, pUrb);
+    VUSBIRhFreeUrb(pThisCC->RootHub.pIRhConn, pUrb);
     return false;
 }
 
@@ -3111,8 +3125,8 @@ static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE enmTyp
 /**
  * Service a the head TD of an endpoint.
  */
-static bool ohciR3ServiceHeadTd(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint32_t EdAddr,
-                                const char *pszListName)
+static bool ohciR3ServiceHeadTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, VUSBXFERTYPE enmType,
+                                PCOHCIED pEd, uint32_t EdAddr, const char *pszListName)
 {
     /*
      * Read the TD, after first checking if it's already in-flight.
@@ -3123,7 +3137,7 @@ static bool ohciR3ServiceHeadTd(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE en
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
     ohciR3InDoneQueueCheck(pThis, TdAddr);
 # endif
-    return ohciR3ServiceTd(pDevIns, pThis, enmType, pEd, EdAddr, TdAddr, &TdAddr, pszListName);
+    return ohciR3ServiceTd(pDevIns, pThis, pThisCC, enmType, pEd, EdAddr, TdAddr, &TdAddr, pszListName);
 }
 
 
@@ -3220,7 +3234,7 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
                                   enmType, enmDir, cbTotal, cTds, "ohciR3ServiceTdMultiple");
     if (!pUrb)
         /* retry later... */
@@ -3265,9 +3279,9 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
     ohciR3InFlightAddUrb(pThis, pUrb);
     Log(("%s: ohciR3ServiceTdMultiple: submitting cbData=%#x EdAddr=%#010x cTds=%d TdAddr0=%#010x\n",
          pUrb->pszDesc, pUrb->cbData, EdAddr, cTds, TdAddr));
-    ohciR3Unlock(pThis);
-    int rc = VUSBIRhSubmitUrb(pThis->RootHub.pIRhConn, pUrb, &pThis->RootHub.Led);
-    ohciR3Lock(pThis);
+    ohciR3Unlock(pThisCC);
+    int rc = VUSBIRhSubmitUrb(pThisCC->RootHub.pIRhConn, pUrb, &pThisCC->RootHub.Led);
+    ohciR3Lock(pThisCC);
     if (RT_SUCCESS(rc))
         return true;
 
@@ -3275,7 +3289,7 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
     Log(("ohciR3ServiceTdMultiple: failed submitting pUrb=%p cbData=%#x EdAddr=%#010x cTds=%d TdAddr0=%#010x - rc=%Rrc\n",
          pUrb, cbTotal, EdAddr, cTds, TdAddr, rc));
     ohciR3InFlightRemoveUrb(pThis, pUrb);
-    VUSBIRhFreeUrb(pThis->RootHub.pIRhConn, pUrb);
+    VUSBIRhFreeUrb(pThisCC->RootHub.pIRhConn, pUrb);
     return false;
 }
 
@@ -3377,8 +3391,8 @@ static bool ohciR3ServiceIsochronousTdUnlink(PPDMDEVINS pDevIns, POHCI pThis, PO
  * @param   pEd     The OHCI endpoint descriptor.
  * @param   EdAddr  The endpoint descriptor address in guest memory.
  */
-static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCIITD pITd, uint32_t ITdAddr,
-                                       const unsigned R, PCOHCIED pEd, uint32_t EdAddr)
+static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC,
+                                       POHCIITD pITd, uint32_t ITdAddr, const unsigned R, PCOHCIED pEd, uint32_t EdAddr)
 {
     /*
      * Determine the endpoint direction.
@@ -3453,7 +3467,7 @@ static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCIITD
     /*
      * Allocate and initialize a new URB.
      */
-    PVUSBURB pUrb = VUSBIRhNewUrb(pThis->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
+    PVUSBURB pUrb = VUSBIRhNewUrb(pThisCC->RootHub.pIRhConn, pEd->hwinfo & ED_HWINFO_FUNCTION, NULL,
                                   VUSBXFERTYPE_ISOC, enmDir, cbTotal, 1, NULL);
     if (!pUrb)
         /* retry later... */
@@ -3511,9 +3525,9 @@ static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCIITD
     ohciR3InFlightAdd(pThis, ITdAddr, pUrb);
     Log(("%s: ohciR3ServiceIsochronousTd: submitting cbData=%#x cIsocPkts=%d EdAddr=%#010x TdAddr=%#010x SF=%#x (%#x)\n",
          pUrb->pszDesc, pUrb->cbData, pUrb->cIsocPkts, EdAddr, ITdAddr, pITd->HwInfo & ITD_HWINFO_SF, pThis->HcFmNumber));
-    ohciR3Unlock(pThis);
-    int rc = VUSBIRhSubmitUrb(pThis->RootHub.pIRhConn, pUrb, &pThis->RootHub.Led);
-    ohciR3Lock(pThis);
+    ohciR3Unlock(pThisCC);
+    int rc = VUSBIRhSubmitUrb(pThisCC->RootHub.pIRhConn, pUrb, &pThisCC->RootHub.Led);
+    ohciR3Lock(pThisCC);
     if (RT_SUCCESS(rc))
         return true;
 
@@ -3521,7 +3535,7 @@ static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCIITD
     Log(("ohciR3ServiceIsochronousTd: failed submitting pUrb=%p cbData=%#x EdAddr=%#010x cTds=%d ITdAddr0=%#010x - rc=%Rrc\n",
          pUrb, cbTotal, EdAddr, 1, ITdAddr, rc));
     ohciR3InFlightRemove(pThis, ITdAddr);
-    VUSBIRhFreeUrb(pThis->RootHub.pIRhConn, pUrb);
+    VUSBIRhFreeUrb(pThisCC->RootHub.pIRhConn, pUrb);
     return false;
 }
 
@@ -3529,7 +3543,7 @@ static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCIITD
 /**
  * Service an isochronous endpoint.
  */
-static void ohciR3ServiceIsochronousEndpoint(PPDMDEVINS pDevIns, POHCI pThis, POHCIED pEd, uint32_t EdAddr)
+static void ohciR3ServiceIsochronousEndpoint(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, POHCIED pEd, uint32_t EdAddr)
 {
     /*
      * We currently process this as if the guest follows the interrupt end point chaining
@@ -3588,7 +3602,7 @@ static void ohciR3ServiceIsochronousEndpoint(PPDMDEVINS pDevIns, POHCI pThis, PO
                 &&  (uint16_t)u32NextFrame != (uint16_t)(ITd.HwInfo & ITD_HWINFO_SF))
                 break;
             if (ohciR3InFlightFind(pThis, ITdAddr) < 0)
-                if (!ohciR3ServiceIsochronousTd(pDevIns, pThis, &ITd, ITdAddr, R < 0 ? 0 : R, pEd, EdAddr))
+                if (!ohciR3ServiceIsochronousTd(pDevIns, pThis, pThisCC, &ITd, ITdAddr, R < 0 ? 0 : R, pEd, EdAddr))
                     break;
 
             ITdAddrPrev = ITdAddr;
@@ -3677,7 +3691,7 @@ DECLINLINE(bool) ohciR3IsEdPresent(PCOHCIED pEd)
  * On the bulk list we must reassemble URBs from multiple TDs using heuristics
  * derived from USB tracing done in the guests and guest source code (when available).
  */
-static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
 # ifdef LOG_ENABLED
     if (g_fLogBulkEPs)
@@ -3759,7 +3773,7 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis)
                 uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
                 PVUSBURB pUrb = ohciR3TdInFlightUrb(pThis, TdAddr);
                 if (pUrb)
-                    pThis->RootHub.pIRhConn->pfnCancelUrbsEp(pThis->RootHub.pIRhConn, pUrb);
+                    pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
             }
         }
 
@@ -3782,7 +3796,7 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis)
  * there may be outstanding read URBs that will never get a response from the device
  * and would block further communication.
  */
-static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
 # ifdef LOG_ENABLED
     if (g_fLogBulkEPs)
@@ -3809,7 +3823,7 @@ static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis)
                 LogFlow(("ohciR3UndoBulkList: Ed=%#010RX32 Ed.TailP=%#010RX32 UNDO\n", EdAddr, Ed.TailP));
                 PVUSBURB pUrb = ohciR3TdInFlightUrb(pThis, TdAddr);
                 if (pUrb)
-                    pThis->RootHub.pIRhConn->pfnCancelUrbsEp(pThis->RootHub.pIRhConn, pUrb);
+                    pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
             }
         }
         /* next endpoint */
@@ -3824,7 +3838,7 @@ static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis)
  * The control list has complex URB assembling, but that's taken
  * care of at VUSB level (unlike the other transfer types).
  */
-static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
 # ifdef LOG_ENABLED
     if (g_fLogControlEPs)
@@ -3863,7 +3877,7 @@ static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis)
              */
             do
             {
-                if (    !ohciR3ServiceHeadTd(pDevIns, pThis, VUSBXFERTYPE_CTRL, &Ed, EdAddr, "Control")
+                if (    !ohciR3ServiceHeadTd(pDevIns, pThis, pThisCC, VUSBXFERTYPE_CTRL, &Ed, EdAddr, "Control")
                     ||  ohciR3IsTdInFlight(pThis, Ed.HeadP & ED_PTR_MASK))
                 {
                     pThis->status |= OHCI_STATUS_CLF;
@@ -3896,7 +3910,7 @@ static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis)
  * TDs using heuristics derived from USB tracing done in the guests and guest source
  * code (when available).
  */
-static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
     /*
      * Read the list head from the HCCA.
@@ -3946,7 +3960,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis)
                 /*
                  * Presently only the head ITD.
                  */
-                ohciR3ServiceIsochronousEndpoint(pDevIns, pThis, &Ed, EdAddr);
+                ohciR3ServiceIsochronousEndpoint(pDevIns, pThis, pThisCC, &Ed, EdAddr);
             }
             else
                 break;
@@ -3962,7 +3976,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis)
                 uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
                 PVUSBURB pUrb = ohciR3TdInFlightUrb(pThis, TdAddr);
                 if (pUrb)
-                    pThis->RootHub.pIRhConn->pfnCancelUrbsEp(pThis->RootHub.pIRhConn, pUrb);
+                    pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
             }
         }
         /* next end point */
@@ -4138,7 +4152,7 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis)
             if (pThis->aInFlight[i].fInactive
                 && pUrb->enmState == VUSBURBSTATE_IN_FLIGHT
                 && pUrb->enmType != VUSBXFERTYPE_CTRL)
-                pThis->RootHub.pIRhConn->pfnCancelUrbsEp(pThis->RootHub.pIRhConn, pUrb);
+                pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
         }
     }
     Assert(cLeft == 0);
@@ -4147,7 +4161,7 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis)
 /**
  * Generate a Start-Of-Frame event, and set a timer for End-Of-Frame.
  */
-static void ohciR3StartOfFrame(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3StartOfFrame(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
 # ifdef LOG_ENABLED
     const uint32_t status_old = pThis->status;
@@ -4196,24 +4210,24 @@ static void ohciR3StartOfFrame(PPDMDEVINS pDevIns, POHCI pThis)
      * Periodic EPs.
      */
     if (pThis->ctl & OHCI_CTL_PLE)
-        ohciR3ServicePeriodicList(pDevIns, pThis);
+        ohciR3ServicePeriodicList(pDevIns, pThis, pThisCC);
 
     /*
      * Control EPs.
      */
     if (    (pThis->ctl & OHCI_CTL_CLE)
         &&  (pThis->status & OHCI_STATUS_CLF) )
-        ohciR3ServiceCtrlList(pDevIns, pThis);
+        ohciR3ServiceCtrlList(pDevIns, pThis, pThisCC);
 
     /*
      * Bulk EPs.
      */
     if (    (pThis->ctl & OHCI_CTL_BLE)
         &&  (pThis->status & OHCI_STATUS_BLF))
-        ohciR3ServiceBulkList(pDevIns, pThis);
+        ohciR3ServiceBulkList(pDevIns, pThis, pThisCC);
     else if ((pThis->status & OHCI_STATUS_BLF)
         &&    pThis->fBulkNeedsCleaning)
-        ohciR3UndoBulkList(pDevIns, pThis);    /* If list disabled but not empty, abort endpoints. */
+        ohciR3UndoBulkList(pDevIns, pThis, pThisCC);    /* If list disabled but not empty, abort endpoints. */
 
 # if 0
     /*
@@ -4264,10 +4278,11 @@ static void ohciR3BumpFrameNumber(POHCI pThis)
 static DECLCALLBACK(bool) ohciR3StartFrame(PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameNo)
 {
     RT_NOREF(u32FrameNo);
-    POHCI      pThis   = VUSBIROOTHUBPORT_2_OHCI(pInterface);
-    PPDMDEVINS pDevIns = pThis->pThisR3->pDevInsR3;
+    POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+    POHCI      pThis   = PDMINS_2_DATA(pDevIns, POHCI);
 
-    ohciR3Lock(pThis);
+    ohciR3Lock(pThisCC);
 
     /* Reset idle detection flag */
     pThis->fIdle = true;
@@ -4287,21 +4302,23 @@ static DECLCALLBACK(bool) ohciR3StartFrame(PVUSBIROOTHUBPORT pInterface, uint32_
         ohciR3CancelOrphanedURBs(pDevIns, pThis);
 
         /* Start the next frame. */
-        ohciR3StartOfFrame(pDevIns, pThis);
+        ohciR3StartOfFrame(pDevIns, pThis, pThisCC);
     }
 
 # ifdef VBOX_WITH_OHCI_PHYS_READ_STATS
     physReadStatsPrint(&g_PhysReadState);
 # endif
 
-    ohciR3Unlock(pThis);
+    ohciR3Unlock(pThisCC);
     return pThis->fIdle;
 }
 
 /** @interface_method_impl{VUSBIROOTHUBPORT,pfnFrameRateChanged} */
 static DECLCALLBACK(void) ohciR3FrameRateChanged(PVUSBIROOTHUBPORT pInterface, uint32_t u32FrameRate)
 {
-    POHCI pThis = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    POHCICC    pThisCC = VUSBIROOTHUBPORT_2_OHCI(pInterface);
+    PPDMDEVINS pDevIns = pThisCC->pDevInsR3;
+    POHCI      pThis   = PDMINS_2_DATA(pDevIns, POHCI);
 
     Assert(u32FrameRate <= OHCI_DEFAULT_TIMER_FREQ);
 
@@ -4323,32 +4340,32 @@ static DECLCALLBACK(void) ohciR3FrameBoundaryTimer(PPDMDEVINS pDevIns, PTMTIMER 
  * Start sending SOF tokens across the USB bus, lists are processed in
  * next frame
  */
-static void ohciR3BusStart(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3BusStart(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
-    VUSBIDevPowerOn(pThis->RootHub.pIDev);
+    VUSBIDevPowerOn(pThisCC->RootHub.pIDev);
     pThis->dqic = 0x7;
 
     Log(("ohci: Bus started\n"));
 
     pThis->SofTime = PDMDevHlpTMTimeVirtGet(pDevIns);
-    int rc = pThis->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThis->RootHub.pIRhConn, OHCI_DEFAULT_TIMER_FREQ);
+    int rc = pThisCC->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThisCC->RootHub.pIRhConn, OHCI_DEFAULT_TIMER_FREQ);
     AssertRC(rc);
 }
 
 /**
  * Stop sending SOF tokens on the bus
  */
-static void ohciR3BusStop(POHCI pThis)
+static void ohciR3BusStop(POHCICC pThisCC)
 {
-    int rc = pThis->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThis->RootHub.pIRhConn, 0);
+    int rc = pThisCC->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThisCC->RootHub.pIRhConn, 0);
     AssertRC(rc);
-    VUSBIDevPowerOff(pThis->RootHub.pIDev);
+    VUSBIDevPowerOff(pThisCC->RootHub.pIDev);
 }
 
 /**
  * Move in to resume state
  */
-static void ohciR3BusResume(PPDMDEVINS pDevIns, POHCI pThis, bool fHardware)
+static void ohciR3BusResume(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, bool fHardware)
 {
     pThis->ctl &= ~OHCI_CTL_HCFS;
     pThis->ctl |= OHCI_USB_RESUME;
@@ -4359,7 +4376,7 @@ static void ohciR3BusResume(PPDMDEVINS pDevIns, POHCI pThis, bool fHardware)
     if (fHardware && (pThis->ctl & OHCI_CTL_RWE))
         ohciR3SetInterrupt(pDevIns, pThis, OHCI_INTR_RESUME_DETECT);
 
-    ohciR3BusStart(pDevIns, pThis);
+    ohciR3BusStart(pDevIns, pThis, pThisCC);
 }
 
 
@@ -4433,7 +4450,7 @@ static VBOXSTRICTRC HcControl_r(PPDMDEVINS pDevIns, PCOHCI pThis, uint32_t iReg,
  */
 static VBOXSTRICTRC HcControl_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg, uint32_t val)
 {
-    RT_NOREF(pDevIns, iReg);
+    RT_NOREF(iReg);
 
     /* log it. */
     uint32_t chg = pThis->ctl ^ val; NOREF(chg);
@@ -4459,33 +4476,35 @@ static VBOXSTRICTRC HcControl_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg, 
     pThis->ctl = val;
     if (new_state != old_state)
     {
+        POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
         switch (new_state)
         {
             case OHCI_USB_OPERATIONAL:
                 LogRel(("OHCI: USB Operational\n"));
-                ohciR3BusStart(pDevIns, pThis);
+                ohciR3BusStart(pDevIns, pThis,  pThisCC);
                 break;
             case OHCI_USB_SUSPEND:
-                ohciR3BusStop(pThis);
+                ohciR3BusStop(pThisCC);
                 LogRel(("OHCI: USB Suspended\n"));
                 break;
             case OHCI_USB_RESUME:
                 LogRel(("OHCI: USB Resume\n"));
-                ohciR3BusResume(pDevIns, pThis, false /* not hardware */);
+                ohciR3BusResume(pDevIns, pThis, pThisCC, false /* not hardware */);
                 break;
             case OHCI_USB_RESET:
             {
                 LogRel(("OHCI: USB Reset\n"));
-                ohciR3BusStop(pThis);
+                ohciR3BusStop(pThisCC);
                 /** @todo This should probably do a real reset, but we don't implement
                  * that correctly in the roothub reset callback yet. check it's
                  * comments and argument for more details. */
-                VUSBIDevReset(pThis->RootHub.pIDev, false /* don't do a real reset */, NULL, NULL, NULL);
+                VUSBIDevReset(pThisCC->RootHub.pIDev, false /* don't do a real reset */, NULL, NULL, NULL);
                 break;
             }
         }
     }
 #else  /* !IN_RING3 */
+    RT_NOREF(pDevIns);
     if ( new_state != old_state )
     {
         Log2(("HcControl_w: state changed -> VINF_IOM_R3_MMIO_WRITE\n"));
@@ -5278,7 +5297,7 @@ static DECLCALLBACK(void) ohciR3PortResetDone(PVUSBIDEVICE pDev, int rc, void *p
  *
  * @returns true if device was connected and the flag was cleared.
  */
-static bool ohciR3RhPortSetIfConnected(POHCIROOTHUB pRh, int iPort, uint32_t fValue, PPDMDEVINS pDevIns)
+static bool ohciR3RhPortSetIfConnected(PPDMDEVINS pDevIns, POHCI pThis, int iPort, uint32_t fValue)
 {
     /*
      * Writing a 0 has no effect
@@ -5289,17 +5308,17 @@ static bool ohciR3RhPortSetIfConnected(POHCIROOTHUB pRh, int iPort, uint32_t fVa
     /*
      * If CurrentConnectStatus is cleared we set ConnectStatusChange.
      */
-    if (!(pRh->aPorts[iPort].fReg & OHCI_PORT_CCS))
+    if (!(pThis->RootHub.aPorts[iPort].fReg & OHCI_PORT_CCS))
     {
-        pRh->aPorts[iPort].fReg |= OHCI_PORT_CSC;
-        ohciR3SetInterrupt(pDevIns, pRh->pOhci, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
+        pThis->RootHub.aPorts[iPort].fReg |= OHCI_PORT_CSC;
+        ohciR3SetInterrupt(pDevIns, pThis, OHCI_INTR_ROOT_HUB_STATUS_CHANGE);
         return false;
     }
 
-    bool fRc = !(pRh->aPorts[iPort].fReg & fValue);
+    bool fRc = !(pThis->RootHub.aPorts[iPort].fReg & fValue);
 
     /* set the bit */
-    pRh->aPorts[iPort].fReg |= fValue;
+    pThis->RootHub.aPorts[iPort].fReg |= fValue;
 
     return fRc;
 }
@@ -5347,15 +5366,15 @@ static VBOXSTRICTRC HcRhPortStatus_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t i
         Log2(("HcRhPortStatus_w(): port %u: DISABLE\n", i));
     }
 
-    if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_PES, pDevIns))
+    if (ohciR3RhPortSetIfConnected(pDevIns, pThis, i, val & OHCI_PORT_PES))
         Log2(("HcRhPortStatus_w(): port %u: ENABLE\n", i));
 
-    if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_PSS, pDevIns))
+    if (ohciR3RhPortSetIfConnected(pDevIns, pThis, i, val & OHCI_PORT_PSS))
         Log2(("HcRhPortStatus_w(): port %u: SUSPEND - not implemented correctly!!!\n", i));
 
     if (val & OHCI_PORT_PRS)
     {
-        if (ohciR3RhPortSetIfConnected(&pThis->RootHub, i, val & OHCI_PORT_PRS, pDevIns))
+        if (ohciR3RhPortSetIfConnected(pDevIns, pThis, i, val & OHCI_PORT_PRS))
         {
             PVM pVM = PDMDevHlpGetVM(pDevIns);
             p->fReg &= ~OHCI_PORT_PRSC;
@@ -5542,7 +5561,6 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     RT_NOREF(pSSM);
     POHCICC      pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
     POHCI        pThis   = PDMINS_2_DATA(pDevIns, POHCI);
-    POHCIROOTHUB pRh     = &pThis->RootHub;
     LogFlow(("ohciR3SavePrep: \n"));
 
     /*
@@ -5550,20 +5568,20 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      */
     PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
     /** @todo this won't work well when continuing after saving! */
-    for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->RootHub.aPorts); i++)
     {
-        PVUSBIDEVICE pDev = pRh->aPorts[i].pDev;
+        PVUSBIDEVICE pDev = pThis->RootHub.aPorts[i].pDev;
         if (pDev)
         {
             if (!VUSBIDevIsSavedStateSupported(pDev))
             {
-                VUSBIRhDetachDevice(pRh->pIRhConn, pDev);
+                VUSBIRhDetachDevice(pThisCC->RootHub.pIRhConn, pDev);
                 /*
                  * Save the device pointers here so we can reattach them afterwards.
                  * This will work fine even if the save fails since the Done handler is
                  * called unconditionally if the Prep handler was called.
                  */
-                pRh->aPorts[i].pDev = pDev;
+                pThis->RootHub.aPorts[i].pDev = pDev;
             }
         }
     }
@@ -5573,7 +5591,7 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      * saved state version for now so we can backport the changes to other branches.
      */
     /** @todo Do it properly for 4.4 by changing the saved state. */
-    if (VUSBIRhGetPeriodicFrameRate(pRh->pIRhConn) != 0)
+    if (VUSBIRhGetPeriodicFrameRate(pThisCC->RootHub.pIRhConn) != 0)
     {
         /* Calculate a new timer expiration so this saved state works with older releases. */
         uint64_t u64Expire = PDMDevHlpTMTimeVirtGet(pDevIns) + pThis->cTicksPerFrame;
@@ -5627,15 +5645,16 @@ static DECLCALLBACK(int) ohciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    POHCI   pThis   = PDMINS_2_DATA(pDevIns, POHCI);
+    POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
+    LogFlow(("ohciR3SaveDone:\n"));
     RT_NOREF(pSSM);
-    POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
-    LogFlow(("ohciR3SaveDone: \n"));
 
     /*
      * NULL the dev pointers.
      */
     POHCIROOTHUB pRh = &pThis->RootHub;
-    OHCIROOTHUB Rh = *pRh;
+    OHCIROOTHUB  Rh = *pRh;
     for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
     {
         if (   pRh->aPorts[i].pDev
@@ -5651,7 +5670,7 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         PVUSBIDEVICE pDev = Rh.aPorts[i].pDev;
         if (   pDev
             && !VUSBIDevIsSavedStateSupported(pDev))
-            VUSBIRhAttachDevice(pRh->pIRhConn, pDev);
+            VUSBIRhAttachDevice(pThisCC->RootHub.pIRhConn, pDev);
     }
 
     return VINF_SUCCESS;
@@ -5670,7 +5689,7 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) ohciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
-    POHCI   pThis    = PDMINS_2_DATA(pDevIns, POHCI);
+    POHCI   pThis   = PDMINS_2_DATA(pDevIns, POHCI);
     LogFlow(("ohciR3LoadPrep:\n"));
     RT_NOREF(pSSM);
 
@@ -5691,7 +5710,7 @@ static DECLCALLBACK(int) ohciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                 && !VUSBIDevIsSavedStateSupported(pDev))
             {
                 Load.apDevs[Load.cDevs++] = pDev;
-                VUSBIRhDetachDevice(pRh->pIRhConn, pDev);
+                VUSBIRhDetachDevice(pThisCC->RootHub.pIRhConn, pDev);
                 Assert(!pRh->aPorts[i].pDev);
             }
         }
@@ -5788,9 +5807,7 @@ static DECLCALLBACK(int) ohciR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(void) ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     POHCICC      pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
-    POHCI        pThis   = PDMINS_2_DATA(pDevIns, POHCI);
     POHCILOAD    pLoad   = pThisCC->pLoad;
-    POHCIROOTHUB pRh    = &pThis->RootHub;
     LogFlow(("ohciR3LoadReattachDevices:\n"));
     RT_NOREF(pTimer, pvUser);
 
@@ -5798,7 +5815,7 @@ static DECLCALLBACK(void) ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, PTMTIMER
      * Reattach devices.
      */
     for (unsigned i = 0; i < pLoad->cDevs; i++)
-        VUSBIRhAttachDevice(pRh->pIRhConn, pLoad->apDevs[i]);
+        VUSBIRhAttachDevice(pThisCC->RootHub.pIRhConn, pLoad->apDevs[i]);
 
     /*
      * Cleanup.
@@ -5842,7 +5859,8 @@ static DECLCALLBACK(void) ohciR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ohciR3Resume(PPDMDEVINS pDevIns)
 {
-    POHCI pThis = PDMINS_2_DATA(pDevIns, POHCI);
+    POHCI   pThis   = PDMINS_2_DATA(pDevIns, POHCI);
+    POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
     LogFlowFunc(("\n"));
 
     /* Restart the frame thread if the timer is active. */
@@ -5852,7 +5870,7 @@ static DECLCALLBACK(void) ohciR3Resume(PPDMDEVINS pDevIns)
         AssertRC(rc);
 
         LogFlowFunc(("Bus was active, enable periodic frame processing\n"));
-        rc = pThis->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThis->RootHub.pIRhConn, OHCI_DEFAULT_TIMER_FREQ);
+        rc = pThisCC->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThisCC->RootHub.pIRhConn, OHCI_DEFAULT_TIMER_FREQ);
         AssertRC(rc);
     }
 }
@@ -5953,9 +5971,10 @@ static DECLCALLBACK(int) ohciR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     POHCI   pThis   = PDMINS_2_DATA(pDevIns, POHCI);
+    POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
 
-    if (RTCritSectIsInitialized(&pThis->CritSect))
-        RTCritSectDelete(&pThis->CritSect);
+    if (RTCritSectIsInitialized(&pThisCC->CritSect))
+        RTCritSectDelete(&pThisCC->CritSect);
     PDMR3CritSectDelete(&pThis->CsIrq);
 
     /*
@@ -5979,7 +5998,6 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Init instance data.
      */
     pThisCC->pDevInsR3 = pDevIns;
-    pThis->pThisR3     = pThisCC;
 
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
@@ -5995,21 +6013,21 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PDMPciDevSetCapabilityList(pPciDev, 0x80);
 #endif
 
-    pThis->RootHub.pOhci                         = pThis;
-    pThis->RootHub.IBase.pfnQueryInterface       = ohciR3RhQueryInterface;
-    pThis->RootHub.IRhPort.pfnGetAvailablePorts  = ohciR3RhGetAvailablePorts;
-    pThis->RootHub.IRhPort.pfnGetUSBVersions     = ohciR3RhGetUSBVersions;
-    pThis->RootHub.IRhPort.pfnAttach             = ohciR3RhAttach;
-    pThis->RootHub.IRhPort.pfnDetach             = ohciR3RhDetach;
-    pThis->RootHub.IRhPort.pfnReset              = ohciR3RhReset;
-    pThis->RootHub.IRhPort.pfnXferCompletion     = ohciR3RhXferCompletion;
-    pThis->RootHub.IRhPort.pfnXferError          = ohciR3RhXferError;
-    pThis->RootHub.IRhPort.pfnStartFrame         = ohciR3StartFrame;
-    pThis->RootHub.IRhPort.pfnFrameRateChanged   = ohciR3FrameRateChanged;
+    pThisCC->RootHub.pOhci                         = pThis;
+    pThisCC->RootHub.IBase.pfnQueryInterface       = ohciR3RhQueryInterface;
+    pThisCC->RootHub.IRhPort.pfnGetAvailablePorts  = ohciR3RhGetAvailablePorts;
+    pThisCC->RootHub.IRhPort.pfnGetUSBVersions     = ohciR3RhGetUSBVersions;
+    pThisCC->RootHub.IRhPort.pfnAttach             = ohciR3RhAttach;
+    pThisCC->RootHub.IRhPort.pfnDetach             = ohciR3RhDetach;
+    pThisCC->RootHub.IRhPort.pfnReset              = ohciR3RhReset;
+    pThisCC->RootHub.IRhPort.pfnXferCompletion     = ohciR3RhXferCompletion;
+    pThisCC->RootHub.IRhPort.pfnXferError          = ohciR3RhXferError;
+    pThisCC->RootHub.IRhPort.pfnStartFrame         = ohciR3StartFrame;
+    pThisCC->RootHub.IRhPort.pfnFrameRateChanged   = ohciR3FrameRateChanged;
 
     /* USB LED */
-    pThis->RootHub.Led.u32Magic                  = PDMLED_MAGIC;
-    pThis->RootHub.ILeds.pfnQueryStatusLed       = ohciR3RhQueryStatusLed;
+    pThisCC->RootHub.Led.u32Magic                  = PDMLED_MAGIC;
+    pThisCC->RootHub.ILeds.pfnQueryStatusLed       = ohciR3RhQueryStatusLed;
 
 
     /*
@@ -6075,18 +6093,18 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Attach to the VBox USB RootHub Driver on LUN #0.
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->RootHub.IBase, &pThis->RootHub.pIBase, "RootHub");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->RootHub.IBase, &pThisCC->RootHub.pIBase, "RootHub");
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: No roothub driver attached to LUN #0!\n"));
         return rc;
     }
-    pThis->RootHub.pIRhConn = PDMIBASE_QUERY_INTERFACE(pThis->RootHub.pIBase, VUSBIROOTHUBCONNECTOR);
-    AssertMsgReturn(pThis->RootHub.pIRhConn,
+    pThisCC->RootHub.pIRhConn = PDMIBASE_QUERY_INTERFACE(pThisCC->RootHub.pIBase, VUSBIROOTHUBCONNECTOR);
+    AssertMsgReturn(pThisCC->RootHub.pIRhConn,
                     ("Configuration error: The driver doesn't provide the VUSBIROOTHUBCONNECTOR interface!\n"),
                     VERR_PDM_MISSING_INTERFACE);
-    pThis->RootHub.pIDev = PDMIBASE_QUERY_INTERFACE(pThis->RootHub.pIBase, VUSBIDEVICE);
-    AssertMsgReturn(pThis->RootHub.pIDev,
+    pThisCC->RootHub.pIDev = PDMIBASE_QUERY_INTERFACE(pThisCC->RootHub.pIBase, VUSBIDEVICE);
+    AssertMsgReturn(pThisCC->RootHub.pIDev,
                     ("Configuration error: The driver doesn't provide the VUSBIDEVICE interface!\n"),
                     VERR_PDM_MISSING_INTERFACE);
 
@@ -6094,9 +6112,9 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Attach status driver (optional).
      */
     PPDMIBASE pBase;
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->RootHub.IBase, &pBase, "Status Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThisCC->RootHub.IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
-        pThis->RootHub.pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+        pThisCC->RootHub.pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
@@ -6104,10 +6122,9 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     }
 
     /* Set URB parameters. */
-    rc = VUSBIRhSetUrbParams(pThis->RootHub.pIRhConn, sizeof(VUSBURBHCIINT), sizeof(VUSBURBHCITDINT));
+    rc = VUSBIRhSetUrbParams(pThisCC->RootHub.pIRhConn, sizeof(VUSBURBHCIINT), sizeof(VUSBURBHCITDINT));
     if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("OHCI: Failed to set URB parameters"));
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("OHCI: Failed to set URB parameters"));
 
     /*
      * Calculate the timer intervals.
@@ -6120,13 +6137,11 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CsIrq, RT_SRC_POS, "OHCI#%uIrq", iInstance);
     if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("OHCI: Failed to create critical section"));
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("OHCI: Failed to create critical section"));
 
-    rc = RTCritSectInit(&pThis->CritSect);
+    rc = RTCritSectInit(&pThisCC->CritSect);
     if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("OHCI: Failed to create critical section"));
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("OHCI: Failed to create critical section"));
 
     /*
      * Do a hardware reset.
