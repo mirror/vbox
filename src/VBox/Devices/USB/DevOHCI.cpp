@@ -452,22 +452,12 @@ typedef struct OHCIRC
 typedef OHCIRC *POHCIRC;
 
 
-/** @typedef RTCSTATECC
+/** @typedef OHCICC
  * The instance data for the current context. */
-/** @typedef PRTCSTATECC
+typedef CTX_SUFF(OHCI) OHCICC;
+/** @typedef POHCICC
  * Pointer to the instance data for the current context. */
-#ifdef IN_RING3
-typedef  OHCIR3  OHCICC;
-typedef POHCIR3 POHCICC;
-#elif defined(IN_RING0)
-typedef  OHCIR0  OHCICC;
-typedef POHCIR0 POHCICC;
-#elif defined(IN_RC)
-typedef  OHCIRC  OHCICC;
-typedef POHCIRC POHCICC;
-#else
-# error "Not IN_RING3, IN_RING0 or IN_RC"
-#endif
+typedef CTX_SUFF(POHCI) POHCICC;
 
 
 /** Standard OHCI bus speed */
