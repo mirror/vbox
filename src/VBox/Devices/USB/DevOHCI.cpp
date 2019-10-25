@@ -336,40 +336,6 @@ typedef struct OHCI
     /** The number of virtual time ticks per USB bus tick. */
     uint64_t            cTicksPerUsbTick;
 
-    /** Number of in-flight TDs. */
-    unsigned            cInFlight;
-    unsigned            Alignment0;    /**< Align aInFlight on a 8 byte boundary. */
-    /** Array of in-flight TDs. */
-    struct ohci_td_in_flight
-    {
-        /** Address of the transport descriptor. */
-        uint32_t    GCPhysTD;
-        /** Flag indicating an inactive (not-linked) URB. */
-        bool        fInactive;
-        /** Pointer to the URB. */
-        R3PTRTYPE(PVUSBURB) pUrb;
-    } aInFlight[257];
-
-#if HC_ARCH_BITS == 32
-    uint32_t            Alignment1;
-#endif
-
-    /** Number of in-done-queue TDs. */
-    unsigned            cInDoneQueue;
-    /** Array of in-done-queue TDs. */
-    struct ohci_td_in_done_queue
-    {
-        /** Address of the transport descriptor. */
-        uint32_t GCPhysTD;
-    } aInDoneQueue[64];
-    /** When the tail of the done queue was added.
-     * Used to calculate the age of the done queue. */
-    uint32_t            u32FmDoneQueueTail;
-#if R3_ARCH_BITS == 32
-    /** Align pLoad, the stats and the struct size correctly. */
-    uint32_t            Alignment2;
-#endif
-
     /** Detected canceled isochronous URBs. */
     STAMCOUNTER         StatCanceledIsocUrbs;
     /** Detected canceled general URBs. */
@@ -406,22 +372,56 @@ typedef struct OHCI
 typedef struct OHCIR3
 {
     /** The root hub, ring-3 portion.   */
-    OHCIROOTHUBR3           RootHub;
+    OHCIROOTHUBR3       RootHub;
     /** Pointer to the device instance - R3 ptr. */
-    PPDMDEVINSR3            pDevInsR3;
+    PPDMDEVINSR3        pDevInsR3;
 
-    /** Pointer to state load data. */
-    R3PTRTYPE(POHCILOAD)    pLoad;
+    /** Number of in-flight TDs. */
+    unsigned            cInFlight;
+    unsigned            Alignment0;    /**< Align aInFlight on a 8 byte boundary. */
+    /** Array of in-flight TDs. */
+    struct ohci_td_in_flight
+    {
+        /** Address of the transport descriptor. */
+        uint32_t            GCPhysTD;
+        /** Flag indicating an inactive (not-linked) URB. */
+        bool                fInactive;
+        /** Pointer to the URB. */
+        R3PTRTYPE(PVUSBURB) pUrb;
+    } aInFlight[257];
+
+#if HC_ARCH_BITS == 32
+    uint32_t            Alignment1;
+#endif
+
+    /** Number of in-done-queue TDs. */
+    unsigned            cInDoneQueue;
+    /** Array of in-done-queue TDs. */
+    struct ohci_td_in_done_queue
+    {
+        /** Address of the transport descriptor. */
+        uint32_t            GCPhysTD;
+    } aInDoneQueue[64];
+    /** When the tail of the done queue was added.
+     * Used to calculate the age of the done queue. */
+    uint32_t            u32FmDoneQueueTail;
+#if R3_ARCH_BITS == 32
+    /** Align pLoad, the stats and the struct size correctly. */
+    uint32_t            Alignment2;
+#endif
 
 #ifdef VBOX_WITH_OHCI_PHYS_READ_CACHE
     /** Last read physical page for caching ED reads in the framer thread. */
-    OHCIPAGECACHE           CacheED;
+    OHCIPAGECACHE       CacheED;
     /** Last read physical page for caching TD reads in the framer thread. */
-    OHCIPAGECACHE           CacheTD;
+    OHCIPAGECACHE       CacheTD;
 #endif
 
     /** Critical section to synchronize the framer and URB completion handler. */
-    RTCRITSECT              CritSect;
+    RTCRITSECT          CritSect;
+
+    /** Pointer to state load data. */
+    R3PTRTYPE(POHCILOAD) pLoad;
 } OHCIR3;
 /** Pointer to ring-3 OHCI state. */
 typedef OHCIR3 *POHCIR3;
@@ -905,9 +905,9 @@ static void                 ohciR3PhysReadCacheInvalidate(POHCIPAGECACHE pPageCa
 static DECLCALLBACK(void)   ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb);
 static DECLCALLBACK(bool)   ohciR3RhXferError(PVUSBIROOTHUBPORT pInterface, PVUSBURB pUrb);
 
-static int                  ohciR3InFlightFind(POHCI pThis, uint32_t GCPhysTD);
+static int                  ohciR3InFlightFind(POHCICC pThisCC, uint32_t GCPhysTD);
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
-static int                  ohciR3InDoneQueueFind(POHCI pThis, uint32_t GCPhysTD);
+static int                  ohciR3InDoneQueueFind(POHCICC pThisCC, uint32_t GCPhysTD);
 # endif
 static DECLCALLBACK(void)   ohciR3LoadReattachDevices(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser);
 #endif /* IN_RING3 */
@@ -1261,7 +1261,7 @@ static void ohciR3DoReset(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, uint
      * any more when a reset has been signaled.
      */
     pThisCC->RootHub.pIRhConn->pfnCancelAllUrbs(pThisCC->RootHub.pIRhConn);
-    Assert(pThis->cInFlight == 0);
+    Assert(pThisCC->cInFlight == 0);
 
     /*
      * Reset the hardware registers.
@@ -1755,7 +1755,7 @@ DECLINLINE(void) ohciR3WriteITd(PPDMDEVINS pDevIns, POHCI pThis, uint32_t ITdAdd
 /**
  * Core TD queue dumper. LOG_ENABLED builds only.
  */
-DECLINLINE(void) ohciR3DumpTdQueueCore(PPDMDEVINS pDevIns, POHCI pThis, uint32_t GCPhysHead, uint32_t GCPhysTail, bool fFull)
+DECLINLINE(void) ohciR3DumpTdQueueCore(PPDMDEVINS pDevIns, POHCICC pThisCC, uint32_t GCPhysHead, uint32_t GCPhysTail, bool fFull)
 {
     uint32_t GCPhys = GCPhysHead;
     int cMax = 100;
@@ -1763,8 +1763,8 @@ DECLINLINE(void) ohciR3DumpTdQueueCore(PPDMDEVINS pDevIns, POHCI pThis, uint32_t
     {
         OHCITD Td;
         Log4(("%#010x%s%s", GCPhys,
-              GCPhys && ohciR3InFlightFind(pThis, GCPhys) >= 0 ? "~" : "",
-              GCPhys && ohciR3InDoneQueueFind(pThis, GCPhys) >= 0 ? "^" : ""));
+              GCPhys && ohciR3InFlightFind(pThisCC, GCPhys) >= 0 ? "~" : "",
+              GCPhys && ohciR3InDoneQueueFind(pThisCC, GCPhys) >= 0 ? "^" : ""));
         if (GCPhys == 0 || GCPhys == GCPhysTail)
             break;
 
@@ -1792,18 +1792,18 @@ DECLINLINE(void) ohciR3DumpTdQueueCore(PPDMDEVINS pDevIns, POHCI pThis, uint32_t
 /**
  * Dumps a TD queue. LOG_ENABLED builds only.
  */
-DECLINLINE(void) ohciR3DumpTdQueue(PPDMDEVINS pDevIns, POHCI pThis, uint32_t GCPhysHead, const char *pszMsg)
+DECLINLINE(void) ohciR3DumpTdQueue(PPDMDEVINS pDevIns, POHCICC pThisCC, uint32_t GCPhysHead, const char *pszMsg)
 {
     if (pszMsg)
         Log4(("%s: ", pszMsg));
-    ohciR3DumpTdQueueCore(pDevIns, pThis, GCPhysHead, 0, true);
+    ohciR3DumpTdQueueCore(pDevIns, pThisCC, GCPhysHead, 0, true);
     Log4(("\n"));
 }
 
 /**
  * Core ITD queue dumper. LOG_ENABLED builds only.
  */
-DECLINLINE(void) ohciR3DumpITdQueueCore(PPDMDEVINS pDevIns, POHCI pThis, uint32_t GCPhysHead, uint32_t GCPhysTail, bool fFull)
+DECLINLINE(void) ohciR3DumpITdQueueCore(PPDMDEVINS pDevIns, POHCICC pThisCC, uint32_t GCPhysHead, uint32_t GCPhysTail, bool fFull)
 {
     RT_NOREF(fFull);
     uint32_t GCPhys = GCPhysHead;
@@ -1812,8 +1812,8 @@ DECLINLINE(void) ohciR3DumpITdQueueCore(PPDMDEVINS pDevIns, POHCI pThis, uint32_
     {
         OHCIITD ITd;
         Log4(("%#010x%s%s", GCPhys,
-              GCPhys && ohciR3InFlightFind(pThis, GCPhys) >= 0 ? "~" : "",
-              GCPhys && ohciR3InDoneQueueFind(pThis, GCPhys) >= 0 ? "^" : ""));
+              GCPhys && ohciR3InFlightFind(pThisCC, GCPhys) >= 0 ? "~" : "",
+              GCPhys && ohciR3InDoneQueueFind(pThisCC, GCPhys) >= 0 ? "^" : ""));
         if (GCPhys == 0 || GCPhys == GCPhysTail)
             break;
 
@@ -1841,7 +1841,7 @@ DECLINLINE(void) ohciR3DumpITdQueueCore(PPDMDEVINS pDevIns, POHCI pThis, uint32_
 /**
  * Dumps a ED list. LOG_ENABLED builds only.
  */
-DECLINLINE(void) ohciR3DumpEdList(PPDMDEVINS pDevIns, POHCI pThis, uint32_t GCPhysHead, const char *pszMsg, bool fTDs)
+DECLINLINE(void) ohciR3DumpEdList(PPDMDEVINS pDevIns, POHCICC pThisCC, uint32_t GCPhysHead, const char *pszMsg, bool fTDs)
 {
     RT_NOREF(fTDs);
     uint32_t GCPhys = GCPhysHead;
@@ -1875,9 +1875,9 @@ DECLINLINE(void) ohciR3DumpEdList(PPDMDEVINS pDevIns, POHCI pThis, uint32_t GCPh
         else
         {
             if (Ed.hwinfo & ED_HWINFO_ISO)
-                ohciR3DumpITdQueueCore(pDevIns, pThis, Ed.HeadP & ED_PTR_MASK, Ed.TailP & ED_PTR_MASK, false);
+                ohciR3DumpITdQueueCore(pDevIns, pThisCC, Ed.HeadP & ED_PTR_MASK, Ed.TailP & ED_PTR_MASK, false);
             else
-                ohciR3DumpTdQueueCore(pDevIns, pThis, Ed.HeadP & ED_PTR_MASK, Ed.TailP & ED_PTR_MASK, false);
+                ohciR3DumpTdQueueCore(pDevIns, pThisCC, Ed.HeadP & ED_PTR_MASK, Ed.TailP & ED_PTR_MASK, false);
             Log4(("}"));
         }
 
@@ -1891,19 +1891,19 @@ DECLINLINE(void) ohciR3DumpEdList(PPDMDEVINS pDevIns, POHCI pThis, uint32_t GCPh
 # endif /* LOG_ENABLED */
 
 
-DECLINLINE(int) ohciR3InFlightFindFree(POHCI pThis, const int iStart)
+DECLINLINE(int) ohciR3InFlightFindFree(POHCICC pThisCC, const int iStart)
 {
     unsigned i = iStart;
-    while (i < RT_ELEMENTS(pThis->aInFlight))
+    while (i < RT_ELEMENTS(pThisCC->aInFlight))
     {
-        if (pThis->aInFlight[i].GCPhysTD == 0)
+        if (pThisCC->aInFlight[i].GCPhysTD == 0)
             return i;
         i++;
     }
     i = iStart;
     while (i-- > 0)
     {
-        if (pThis->aInFlight[i].GCPhysTD == 0)
+        if (pThisCC->aInFlight[i].GCPhysTD == 0)
             return i;
     }
     return -1;
@@ -1913,37 +1913,40 @@ DECLINLINE(int) ohciR3InFlightFindFree(POHCI pThis, const int iStart)
 /**
  * Record an in-flight TD.
  *
- * @param   pThis       OHCI instance data.
+ * @param   pThis       OHCI instance data, shared edition.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   GCPhysTD    Physical address of the TD.
  * @param   pUrb        The URB.
  */
-static void ohciR3InFlightAdd(POHCI pThis, uint32_t GCPhysTD, PVUSBURB pUrb)
+static void ohciR3InFlightAdd(POHCI pThis, POHCICC pThisCC, uint32_t GCPhysTD, PVUSBURB pUrb)
 {
-    int i = ohciR3InFlightFindFree(pThis, (GCPhysTD >> 4) % RT_ELEMENTS(pThis->aInFlight));
+    int i = ohciR3InFlightFindFree(pThisCC, (GCPhysTD >> 4) % RT_ELEMENTS(pThisCC->aInFlight));
     if (i >= 0)
     {
 # ifdef LOG_ENABLED
         pUrb->pHci->u32FrameNo = pThis->HcFmNumber;
 # endif
-        pThis->aInFlight[i].GCPhysTD = GCPhysTD;
-        pThis->aInFlight[i].pUrb = pUrb;
-        pThis->cInFlight++;
+        pThisCC->aInFlight[i].GCPhysTD = GCPhysTD;
+        pThisCC->aInFlight[i].pUrb = pUrb;
+        pThisCC->cInFlight++;
         return;
     }
-    AssertMsgFailed(("Out of space cInFlight=%d!\n", pThis->cInFlight));
+    AssertMsgFailed(("Out of space cInFlight=%d!\n", pThisCC->cInFlight));
+    RT_NOREF(pThis);
 }
 
 
 /**
  * Record in-flight TDs for an URB.
  *
- * @param   pThis       OHCI instance data.
+ * @param   pThis       OHCI instance data, shared edition.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   pUrb        The URB.
  */
-static void ohciR3InFlightAddUrb(POHCI pThis, PVUSBURB pUrb)
+static void ohciR3InFlightAddUrb(POHCI pThis, POHCICC pThisCC, PVUSBURB pUrb)
 {
     for (unsigned iTd = 0; iTd < pUrb->pHci->cTds; iTd++)
-        ohciR3InFlightAdd(pThis, pUrb->paTds[iTd].TdAddr, pUrb);
+        ohciR3InFlightAdd(pThis, pThisCC, pUrb->paTds[iTd].TdAddr, pUrb);
 }
 
 
@@ -1952,20 +1955,20 @@ static void ohciR3InFlightAddUrb(POHCI pThis, PVUSBURB pUrb)
  *
  * @returns Index of the record.
  * @returns -1 if not found.
- * @param   pThis       OHCI instance data.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   GCPhysTD    Physical address of the TD.
  * @remark  This has to be fast.
  */
-static int ohciR3InFlightFind(POHCI pThis, uint32_t GCPhysTD)
+static int ohciR3InFlightFind(POHCICC pThisCC, uint32_t GCPhysTD)
 {
-    unsigned cLeft = pThis->cInFlight;
-    unsigned i = (GCPhysTD >> 4) % RT_ELEMENTS(pThis->aInFlight);
+    unsigned cLeft = pThisCC->cInFlight;
+    unsigned i = (GCPhysTD >> 4) % RT_ELEMENTS(pThisCC->aInFlight);
     const int iLast = i;
-    while (i < RT_ELEMENTS(pThis->aInFlight))
+    while (i < RT_ELEMENTS(pThisCC->aInFlight))
     {
-        if (pThis->aInFlight[i].GCPhysTD == GCPhysTD)
+        if (pThisCC->aInFlight[i].GCPhysTD == GCPhysTD)
             return i;
-        if (pThis->aInFlight[i].GCPhysTD)
+        if (pThisCC->aInFlight[i].GCPhysTD)
             if (cLeft-- <= 1)
                 return -1;
         i++;
@@ -1973,9 +1976,9 @@ static int ohciR3InFlightFind(POHCI pThis, uint32_t GCPhysTD)
     i = iLast;
     while (i-- > 0)
     {
-        if (pThis->aInFlight[i].GCPhysTD == GCPhysTD)
+        if (pThisCC->aInFlight[i].GCPhysTD == GCPhysTD)
             return i;
-        if (pThis->aInFlight[i].GCPhysTD)
+        if (pThisCC->aInFlight[i].GCPhysTD)
             if (cLeft-- <= 1)
                 return -1;
     }
@@ -1987,12 +1990,12 @@ static int ohciR3InFlightFind(POHCI pThis, uint32_t GCPhysTD)
  * Checks if a TD is in-flight.
  *
  * @returns true if in flight, false if not.
- * @param   pThis       OHCI instance data.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   GCPhysTD    Physical address of the TD.
  */
-static bool ohciR3IsTdInFlight(POHCI pThis, uint32_t GCPhysTD)
+static bool ohciR3IsTdInFlight(POHCICC pThisCC, uint32_t GCPhysTD)
 {
-    return ohciR3InFlightFind(pThis, GCPhysTD) >= 0;
+    return ohciR3InFlightFind(pThisCC, GCPhysTD) >= 0;
 }
 
 /**
@@ -2000,16 +2003,16 @@ static bool ohciR3IsTdInFlight(POHCI pThis, uint32_t GCPhysTD)
  *
  * @returns pointer to URB if TD is in flight.
  * @returns NULL if not in flight.
- * @param   pThis       OHCI instance data.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   GCPhysTD    Physical address of the TD.
  */
-static PVUSBURB ohciR3TdInFlightUrb(POHCI pThis, uint32_t GCPhysTD)
+static PVUSBURB ohciR3TdInFlightUrb(POHCICC pThisCC, uint32_t GCPhysTD)
 {
     int i;
 
-    i = ohciR3InFlightFind(pThis, GCPhysTD);
+    i = ohciR3InFlightFind(pThisCC, GCPhysTD);
     if ( i >= 0 )
-        return pThis->aInFlight[i].pUrb;
+        return pThisCC->aInFlight[i].pUrb;
     return NULL;
 }
 
@@ -2018,24 +2021,25 @@ static PVUSBURB ohciR3TdInFlightUrb(POHCI pThis, uint32_t GCPhysTD)
  *
  * @returns 0 if found. For logged builds this is the number of frames the TD has been in-flight.
  * @returns -1 if not found.
- * @param   pThis       OHCI instance data.
+ * @param   pThis       OHCI instance data, shared edition (for logging).
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   GCPhysTD    Physical address of the TD.
  */
-static int ohciR3InFlightRemove(POHCI pThis, uint32_t GCPhysTD)
+static int ohciR3InFlightRemove(POHCI pThis, POHCICC pThisCC, uint32_t GCPhysTD)
 {
-    int i = ohciR3InFlightFind(pThis, GCPhysTD);
+    int i = ohciR3InFlightFind(pThisCC, GCPhysTD);
     if (i >= 0)
     {
 # ifdef LOG_ENABLED
-        const int cFramesInFlight = pThis->HcFmNumber - pThis->aInFlight[i].pUrb->pHci->u32FrameNo;
+        const int cFramesInFlight = pThis->HcFmNumber - pThisCC->aInFlight[i].pUrb->pHci->u32FrameNo;
 # else
-        const int cFramesInFlight = 0;
+        const int cFramesInFlight = 0; RT_NOREF(pThis);
 # endif
         Log2(("ohciR3InFlightRemove: reaping TD=%#010x %d frames (%#010x-%#010x)\n",
-              GCPhysTD, cFramesInFlight, pThis->aInFlight[i].pUrb->pHci->u32FrameNo, pThis->HcFmNumber));
-        pThis->aInFlight[i].GCPhysTD = 0;
-        pThis->aInFlight[i].pUrb = NULL;
-        pThis->cInFlight--;
+              GCPhysTD, cFramesInFlight, pThisCC->aInFlight[i].pUrb->pHci->u32FrameNo, pThis->HcFmNumber));
+        pThisCC->aInFlight[i].GCPhysTD = 0;
+        pThisCC->aInFlight[i].pUrb = NULL;
+        pThisCC->cInFlight--;
         return cFramesInFlight;
     }
     AssertMsgFailed(("TD %#010x is not in flight\n", GCPhysTD));
@@ -2048,16 +2052,17 @@ static int ohciR3InFlightRemove(POHCI pThis, uint32_t GCPhysTD)
  *
  * @returns 0 if found. For logged builds this is the number of frames the TD has been in-flight.
  * @returns -1 if not found.
- * @param   pThis       OHCI instance data.
+ * @param   pThis       OHCI instance data, shared edition (for logging).
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   pUrb        The URB.
  */
-static int ohciR3InFlightRemoveUrb(POHCI pThis, PVUSBURB pUrb)
+static int ohciR3InFlightRemoveUrb(POHCI pThis, POHCICC pThisCC, PVUSBURB pUrb)
 {
-    int cFramesInFlight = ohciR3InFlightRemove(pThis, pUrb->paTds[0].TdAddr);
+    int cFramesInFlight = ohciR3InFlightRemove(pThis, pThisCC, pUrb->paTds[0].TdAddr);
     if (pUrb->pHci->cTds > 1)
     {
         for (unsigned iTd = 1; iTd < pUrb->pHci->cTds; iTd++)
-            if (ohciR3InFlightRemove(pThis, pUrb->paTds[iTd].TdAddr) < 0)
+            if (ohciR3InFlightRemove(pThis, pThisCC, pUrb->paTds[iTd].TdAddr) < 0)
                 cFramesInFlight = -1;
     }
     return cFramesInFlight;
@@ -2068,37 +2073,37 @@ static int ohciR3InFlightRemoveUrb(POHCI pThis, PVUSBURB pUrb)
 
 /**
  * Empties the in-done-queue.
- * @param   pThis       OHCI instance data.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  */
-static void ohciR3InDoneQueueZap(POHCI pThis)
+static void ohciR3InDoneQueueZap(POHCICC pThisCC)
 {
-    pThis->cInDoneQueue = 0;
+    pThisCC->cInDoneQueue = 0;
 }
 
 /**
  * Finds a TD in the in-done-queue.
  * @returns >= 0 on success.
  * @returns -1 if not found.
- * @param   pThis       OHCI instance data.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   GCPhysTD    Physical address of the TD.
  */
-static int ohciR3InDoneQueueFind(POHCI pThis, uint32_t GCPhysTD)
+static int ohciR3InDoneQueueFind(POHCICC pThisCC, uint32_t GCPhysTD)
 {
-    unsigned i = pThis->cInDoneQueue;
+    unsigned i = pThisCC->cInDoneQueue;
     while (i-- > 0)
-        if (pThis->aInDoneQueue[i].GCPhysTD == GCPhysTD)
+        if (pThisCC->aInDoneQueue[i].GCPhysTD == GCPhysTD)
             return i;
     return -1;
 }
 
 /**
  * Checks that the specified TD is not in the done queue.
- * @param   pThis       OHCI instance data.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   GCPhysTD    Physical address of the TD.
  */
-static bool ohciR3InDoneQueueCheck(POHCI pThis, uint32_t GCPhysTD)
+static bool ohciR3InDoneQueueCheck(POHCICC pThisCC, uint32_t GCPhysTD)
 {
-    int i = ohciR3InDoneQueueFind(pThis, GCPhysTD);
+    int i = ohciR3InDoneQueueFind(pThisCC, GCPhysTD);
 #  if 0
     /* This condition has been observed with the USB tablet emulation or with
      * a real USB mouse and an SMP XP guest.  I am also not sure if this is
@@ -2119,14 +2124,14 @@ static bool ohciR3InDoneQueueCheck(POHCI pThis, uint32_t GCPhysTD)
 #  if defined(VBOX_STRICT) && defined(LOG_ENABLED)
 /**
  * Adds a TD to the in-done-queue tracking, checking that it's not there already.
- * @param   pThis       OHCI instance data.
+ * @param   pThisCC     OHCI instance data, ring-3 edition.
  * @param   GCPhysTD    Physical address of the TD.
  */
-static void ohciR3InDoneQueueAdd(POHCI pThis, uint32_t GCPhysTD)
+static void ohciR3InDoneQueueAdd(POHCICC pThisCC, uint32_t GCPhysTD)
 {
-    Assert(pThis->cInDoneQueue + 1 <= RT_ELEMENTS(pThis->aInDoneQueue));
-    if (ohciR3InDoneQueueCheck(pThis, GCPhysTD))
-        pThis->aInDoneQueue[pThis->cInDoneQueue++].GCPhysTD = GCPhysTD;
+    Assert(pThisCC->cInDoneQueue + 1 <= RT_ELEMENTS(pThisCC->aInDoneQueue));
+    if (ohciR3InDoneQueueCheck(pThisCC, GCPhysTD))
+        pThisCC->aInDoneQueue[pThisCC->cInDoneQueue++].GCPhysTD = GCPhysTD;
 }
 #  endif /* VBOX_STRICT */
 # endif /* defined(VBOX_STRICT) || defined(LOG_ENABLED) */
@@ -2565,7 +2570,8 @@ DECLINLINE(void) ohciR3Unlock(POHCICC pThisCC)
  *
  * In general, all URBs should have status OK.
  */
-static void ohciR3RhXferCompleteIsochronousURB(PPDMDEVINS pDevIns, POHCI pThis, PVUSBURB pUrb /*, POHCIED pEd , int cFmAge*/)
+static void ohciR3RhXferCompleteIsochronousURB(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, PVUSBURB pUrb
+                                               /*, POHCIED pEd , int cFmAge*/)
 {
     /*
      * Copy the data back (if IN operation) and update the TDs.
@@ -2685,9 +2691,9 @@ static void ohciR3RhXferCompleteIsochronousURB(PPDMDEVINS pDevIns, POHCI pThis, 
          */
 # ifdef LOG_ENABLED
         if (!pThis->done)
-            pThis->u32FmDoneQueueTail = pThis->HcFmNumber;
+            pThisCC->u32FmDoneQueueTail = pThis->HcFmNumber;
 #  ifdef VBOX_STRICT
-        ohciR3InDoneQueueAdd(pThis, ITdAddr);
+        ohciR3InDoneQueueAdd(pThisCC, ITdAddr);
 #  endif
 # endif
         pITd->NextTD = pThis->done;
@@ -2711,6 +2717,7 @@ static void ohciR3RhXferCompleteIsochronousURB(PPDMDEVINS pDevIns, POHCI pThis, 
              R));
         ohciR3WriteITd(pDevIns, pThis, ITdAddr, pITd, "retired");
     }
+    RT_NOREF(pThisCC);
 }
 
 
@@ -2718,7 +2725,8 @@ static void ohciR3RhXferCompleteIsochronousURB(PPDMDEVINS pDevIns, POHCI pThis, 
  * Worker for ohciR3RhXferCompletion that handles the completion of
  * a URB made up of general TDs.
  */
-static void ohciR3RhXferCompleteGeneralURB(PPDMDEVINS pDevIns, POHCI pThis, PVUSBURB pUrb, POHCIED pEd, int cFmAge)
+static void ohciR3RhXferCompleteGeneralURB(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, PVUSBURB pUrb,
+                                           POHCIED pEd, int cFmAge)
 {
     RT_NOREF(cFmAge);
 
@@ -2835,9 +2843,9 @@ static void ohciR3RhXferCompleteGeneralURB(PPDMDEVINS pDevIns, POHCI pThis, PVUS
          */
 # ifdef LOG_ENABLED
         if (!pThis->done)
-            pThis->u32FmDoneQueueTail = pThis->HcFmNumber;
+            pThisCC->u32FmDoneQueueTail = pThis->HcFmNumber;
 #  ifdef VBOX_STRICT
-        ohciR3InDoneQueueAdd(pThis, TdAddr);
+        ohciR3InDoneQueueAdd(pThisCC, TdAddr);
 #  endif
 # endif
         pTd->NextTD = pThis->done;
@@ -2857,6 +2865,7 @@ static void ohciR3RhXferCompleteGeneralURB(PPDMDEVINS pDevIns, POHCI pThis, PVUS
         if (pEd->HeadP & ED_HEAD_HALTED)
             break;
     }
+    RT_NOREF(pThisCC);
 }
 
 
@@ -2879,7 +2888,7 @@ static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, P
 
     ohciR3Lock(pThisCC);
 
-    int cFmAge = ohciR3InFlightRemoveUrb(pThis, pUrb);
+    int cFmAge = ohciR3InFlightRemoveUrb(pThis, pThisCC, pUrb);
 
     /* Do nothing requiring memory access if the HC encountered an unrecoverable error. */
     if (!(pThis->intr_status & OHCI_INTR_UNRECOVERABLE_ERROR))
@@ -2935,9 +2944,9 @@ static DECLCALLBACK(void) ohciR3RhXferCompletion(PVUSBIROOTHUBPORT pInterface, P
          * When appropriate also copy data back to the guest memory.
          */
         if (pUrb->enmType == VUSBXFERTYPE_ISOC)
-            ohciR3RhXferCompleteIsochronousURB(pDevIns, pThis, pUrb /*, &Ed , cFmAge*/);
+            ohciR3RhXferCompleteIsochronousURB(pDevIns, pThis, pThisCC, pUrb /*, &Ed , cFmAge*/);
         else
-            ohciR3RhXferCompleteGeneralURB(pDevIns, pThis, pUrb, &Ed, cFmAge);
+            ohciR3RhXferCompleteGeneralURB(pDevIns, pThis, pThisCC, pUrb, &Ed, cFmAge);
 
         /* finally write back the endpoint descriptor. */
         ohciR3WriteEd(pDevIns, pUrb->pHci->EdAddr, &Ed);
@@ -3103,7 +3112,7 @@ static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, VU
     /*
      * Submit the URB.
      */
-    ohciR3InFlightAdd(pThis, TdAddr, pUrb);
+    ohciR3InFlightAdd(pThis, pThisCC, TdAddr, pUrb);
     Log(("%s: ohciR3ServiceTd: submitting TdAddr=%#010x EdAddr=%#010x cbData=%#x\n",
          pUrb->pszDesc, TdAddr, EdAddr, pUrb->cbData));
 
@@ -3116,7 +3125,7 @@ static bool ohciR3ServiceTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, VU
     /* Failure cleanup. Can happen if we're still resetting the device or out of resources. */
     Log(("ohciR3ServiceTd: failed submitting TdAddr=%#010x EdAddr=%#010x pUrb=%p!!\n",
          TdAddr, EdAddr, pUrb));
-    ohciR3InFlightRemove(pThis, TdAddr);
+    ohciR3InFlightRemove(pThis, pThisCC, TdAddr);
     VUSBIRhFreeUrb(pThisCC->RootHub.pIRhConn, pUrb);
     return false;
 }
@@ -3132,10 +3141,10 @@ static bool ohciR3ServiceHeadTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC
      * Read the TD, after first checking if it's already in-flight.
      */
     uint32_t TdAddr = pEd->HeadP & ED_PTR_MASK;
-    if (ohciR3IsTdInFlight(pThis, TdAddr))
+    if (ohciR3IsTdInFlight(pThisCC, TdAddr))
         return false;
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
-    ohciR3InDoneQueueCheck(pThis, TdAddr);
+    ohciR3InDoneQueueCheck(pThisCC, TdAddr);
 # endif
     return ohciR3ServiceTd(pDevIns, pThis, pThisCC, enmType, pEd, EdAddr, TdAddr, &TdAddr, pszListName);
 }
@@ -3276,7 +3285,7 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
     /*
      * Submit the URB.
      */
-    ohciR3InFlightAddUrb(pThis, pUrb);
+    ohciR3InFlightAddUrb(pThis, pThisCC, pUrb);
     Log(("%s: ohciR3ServiceTdMultiple: submitting cbData=%#x EdAddr=%#010x cTds=%d TdAddr0=%#010x\n",
          pUrb->pszDesc, pUrb->cbData, EdAddr, cTds, TdAddr));
     ohciR3Unlock(pThisCC);
@@ -3288,7 +3297,7 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
     /* Failure cleanup. Can happen if we're still resetting the device or out of resources. */
     Log(("ohciR3ServiceTdMultiple: failed submitting pUrb=%p cbData=%#x EdAddr=%#010x cTds=%d TdAddr0=%#010x - rc=%Rrc\n",
          pUrb, cbTotal, EdAddr, cTds, TdAddr, rc));
-    ohciR3InFlightRemoveUrb(pThis, pUrb);
+    ohciR3InFlightRemoveUrb(pThis, pThisCC, pUrb);
     VUSBIRhFreeUrb(pThisCC->RootHub.pIRhConn, pUrb);
     return false;
 }
@@ -3297,17 +3306,17 @@ static bool ohciR3ServiceTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYP
 /**
  * Service the head TD of an endpoint.
  */
-static bool ohciR3ServiceHeadTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFERTYPE enmType, PCOHCIED pEd, uint32_t EdAddr,
-                                        const char *pszListName)
+static bool ohciR3ServiceHeadTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, VUSBXFERTYPE enmType,
+                                        PCOHCIED pEd, uint32_t EdAddr, const char *pszListName)
 {
     /*
      * First, check that it's not already in-flight.
      */
     uint32_t TdAddr = pEd->HeadP & ED_PTR_MASK;
-    if (ohciR3IsTdInFlight(pThis, TdAddr))
+    if (ohciR3IsTdInFlight(pThisCC, TdAddr))
         return false;
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
-    ohciR3InDoneQueueCheck(pThis, TdAddr);
+    ohciR3InDoneQueueCheck(pThisCC, TdAddr);
 # endif
     return ohciR3ServiceTdMultiple(pDevIns, pThis, enmType, pEd, EdAddr, TdAddr, &TdAddr, pszListName);
 }
@@ -3317,7 +3326,7 @@ static bool ohciR3ServiceHeadTdMultiple(PPDMDEVINS pDevIns, POHCI pThis, VUSBXFE
  * A worker for ohciR3ServiceIsochronousEndpoint which unlinks a ITD
  * that belongs to the past.
  */
-static bool ohciR3ServiceIsochronousTdUnlink(PPDMDEVINS pDevIns, POHCI pThis, POHCIITD pITd, uint32_t ITdAddr,
+static bool ohciR3ServiceIsochronousTdUnlink(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC, POHCIITD pITd, uint32_t ITdAddr,
                                              uint32_t ITdAddrPrev, PVUSBURB pUrb, POHCIED pEd, uint32_t EdAddr)
 {
     LogFlow(("%s%sohciR3ServiceIsochronousTdUnlink: Unlinking ITD: ITdAddr=%#010x EdAddr=%#010x ITdAddrPrev=%#010x\n",
@@ -3330,9 +3339,9 @@ static bool ohciR3ServiceIsochronousTdUnlink(PPDMDEVINS pDevIns, POHCI pThis, PO
     if (ITdAddrPrev)
     {
         /* Get validate the previous TD */
-        int iInFlightPrev = ohciR3InFlightFind(pThis, ITdAddrPrev);
+        int iInFlightPrev = ohciR3InFlightFind(pThisCC, ITdAddrPrev);
         AssertMsgReturn(iInFlightPrev >= 0, ("ITdAddr=%#RX32\n", ITdAddrPrev), false);
-        PVUSBURB pUrbPrev = pThis->aInFlight[iInFlightPrev].pUrb;
+        PVUSBURB pUrbPrev = pThisCC->aInFlight[iInFlightPrev].pUrb;
         if (ohciR3HasUrbBeenCanceled(pDevIns, pThis, pUrbPrev, pEd)) /* ensures the copy is correct. */
             return false;
 
@@ -3522,7 +3531,7 @@ static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC 
     /*
      * Submit the URB.
      */
-    ohciR3InFlightAdd(pThis, ITdAddr, pUrb);
+    ohciR3InFlightAdd(pThis, pThisCC, ITdAddr, pUrb);
     Log(("%s: ohciR3ServiceIsochronousTd: submitting cbData=%#x cIsocPkts=%d EdAddr=%#010x TdAddr=%#010x SF=%#x (%#x)\n",
          pUrb->pszDesc, pUrb->cbData, pUrb->cIsocPkts, EdAddr, ITdAddr, pITd->HwInfo & ITD_HWINFO_SF, pThis->HcFmNumber));
     ohciR3Unlock(pThisCC);
@@ -3534,7 +3543,7 @@ static bool ohciR3ServiceIsochronousTd(PPDMDEVINS pDevIns, POHCI pThis, POHCICC 
     /* Failure cleanup. Can happen if we're still resetting the device or out of resources. */
     Log(("ohciR3ServiceIsochronousTd: failed submitting pUrb=%p cbData=%#x EdAddr=%#010x cTds=%d ITdAddr0=%#010x - rc=%Rrc\n",
          pUrb, cbTotal, EdAddr, 1, ITdAddr, rc));
-    ohciR3InFlightRemove(pThis, ITdAddr);
+    ohciR3InFlightRemove(pThis, pThisCC, ITdAddr);
     VUSBIRhFreeUrb(pThisCC->RootHub.pIRhConn, pUrb);
     return false;
 }
@@ -3601,7 +3610,7 @@ static void ohciR3ServiceIsochronousEndpoint(PPDMDEVINS pDevIns, POHCI pThis, PO
             if (    R < 0   /* (a future frame) */
                 &&  (uint16_t)u32NextFrame != (uint16_t)(ITd.HwInfo & ITD_HWINFO_SF))
                 break;
-            if (ohciR3InFlightFind(pThis, ITdAddr) < 0)
+            if (ohciR3InFlightFind(pThisCC, ITdAddr) < 0)
                 if (!ohciR3ServiceIsochronousTd(pDevIns, pThis, pThisCC, &ITd, ITdAddr, R < 0 ? 0 : R, pEd, EdAddr))
                     break;
 
@@ -3623,10 +3632,10 @@ static void ohciR3ServiceIsochronousEndpoint(PPDMDEVINS pDevIns, POHCI pThis, PO
              * I don't know if unlinking TDs out of order could cause similar problems,
              * time will show.
              */
-            int iInFlight = ohciR3InFlightFind(pThis, ITdAddr);
+            int iInFlight = ohciR3InFlightFind(pThisCC, ITdAddr);
             if (iInFlight >= 0)
                 ITdAddrPrev = ITdAddr;
-            else if (!ohciR3ServiceIsochronousTdUnlink(pDevIns, pThis, &ITd, ITdAddr, ITdAddrPrev, NULL, pEd, EdAddr))
+            else if (!ohciR3ServiceIsochronousTdUnlink(pDevIns, pThis, pThisCC, &ITd, ITdAddr, ITdAddrPrev, NULL, pEd, EdAddr))
             {
                 Log(("ohciR3ServiceIsochronousEndpoint: Failed unlinking old ITD.\n"));
                 break;
@@ -3695,7 +3704,7 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
 {
 # ifdef LOG_ENABLED
     if (g_fLogBulkEPs)
-        ohciR3DumpEdList(pDevIns, pThis, pThis->bulk_head, "Bulk before", true);
+        ohciR3DumpEdList(pDevIns, pThisCC, pThis->bulk_head, "Bulk before", true);
     if (pThis->bulk_cur)
         Log(("ohciR3ServiceBulkList: bulk_cur=%#010x before listprocessing!!! HCD have positioned us!!!\n", pThis->bulk_cur));
 # endif
@@ -3734,7 +3743,7 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
              * longer any need for servicing anything other than the head *URB*
              * on a bulk endpoint.
              */
-            ohciR3ServiceHeadTdMultiple(pDevIns, pThis, VUSBXFERTYPE_BULK, &Ed, EdAddr, "Bulk");
+            ohciR3ServiceHeadTdMultiple(pDevIns, pThis, pThisCC, VUSBXFERTYPE_BULK, &Ed, EdAddr, "Bulk");
 # else
             /*
              * This alternative code was used before we started reassembling URBs from
@@ -3771,7 +3780,7 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
                  * cancel outstanding URBs, if any.
                  */
                 uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
-                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThis, TdAddr);
+                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThisCC, TdAddr);
                 if (pUrb)
                     pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
             }
@@ -3784,7 +3793,7 @@ static void ohciR3ServiceBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
 
 # ifdef LOG_ENABLED
     if (g_fLogBulkEPs)
-        ohciR3DumpEdList(pDevIns, pThis, pThis->bulk_head, "Bulk after ", true);
+        ohciR3DumpEdList(pDevIns, pThisCC, pThis->bulk_head, "Bulk after ", true);
 # endif
 }
 
@@ -3800,7 +3809,7 @@ static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
 # ifdef LOG_ENABLED
     if (g_fLogBulkEPs)
-        ohciR3DumpEdList(pDevIns, pThis, pThis->bulk_head, "Bulk before", true);
+        ohciR3DumpEdList(pDevIns, pThisCC, pThis->bulk_head, "Bulk before", true);
     if (pThis->bulk_cur)
         Log(("ohciR3UndoBulkList: bulk_cur=%#010x before list processing!!! HCD has positioned us!!!\n", pThis->bulk_cur));
 # endif
@@ -3818,10 +3827,10 @@ static void ohciR3UndoBulkList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
         if (ohciR3IsEdPresent(&Ed))
         {
             uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
-            if (ohciR3IsTdInFlight(pThis, TdAddr))
+            if (ohciR3IsTdInFlight(pThisCC, TdAddr))
             {
                 LogFlow(("ohciR3UndoBulkList: Ed=%#010RX32 Ed.TailP=%#010RX32 UNDO\n", EdAddr, Ed.TailP));
-                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThis, TdAddr);
+                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThisCC, TdAddr);
                 if (pUrb)
                     pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
             }
@@ -3842,7 +3851,7 @@ static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
 {
 # ifdef LOG_ENABLED
     if (g_fLogControlEPs)
-        ohciR3DumpEdList(pDevIns, pThis, pThis->ctrl_head, "Ctrl before", true);
+        ohciR3DumpEdList(pDevIns, pThisCC, pThis->ctrl_head, "Ctrl before", true);
     if (pThis->ctrl_cur)
         Log(("ohciR3ServiceCtrlList: ctrl_cur=%010x before list processing!!! HCD have positioned us!!!\n", pThis->ctrl_cur));
 # endif
@@ -3878,7 +3887,7 @@ static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
             do
             {
                 if (    !ohciR3ServiceHeadTd(pDevIns, pThis, pThisCC, VUSBXFERTYPE_CTRL, &Ed, EdAddr, "Control")
-                    ||  ohciR3IsTdInFlight(pThis, Ed.HeadP & ED_PTR_MASK))
+                    ||  ohciR3IsTdInFlight(pThisCC, Ed.HeadP & ED_PTR_MASK))
                 {
                     pThis->status |= OHCI_STATUS_CLF;
                     break;
@@ -3898,7 +3907,7 @@ static void ohciR3ServiceCtrlList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThis
 
 # ifdef LOG_ENABLED
     if (g_fLogControlEPs)
-        ohciR3DumpEdList(pDevIns, pThis, pThis->ctrl_head, "Ctrl after ", true);
+        ohciR3DumpEdList(pDevIns, pThisCC, pThis->ctrl_head, "Ctrl after ", true);
 # endif
 }
 
@@ -3925,7 +3934,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
     {
         char sz[48];
         RTStrPrintf(sz, sizeof(sz), "Int%02x before", iList);
-        ohciR3DumpEdList(pDevIns, pThis, EdAddrHead, sz, true);
+        ohciR3DumpEdList(pDevIns, pThisCC, EdAddrHead, sz, true);
     }
 # endif
 
@@ -3953,7 +3962,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
                 /*
                  * Presently we will only process the head URB on an interrupt endpoint.
                  */
-                ohciR3ServiceHeadTdMultiple(pDevIns, pThis, VUSBXFERTYPE_INTR, &Ed, EdAddr, "Periodic");
+                ohciR3ServiceHeadTdMultiple(pDevIns, pThis, pThisCC, VUSBXFERTYPE_INTR, &Ed, EdAddr, "Periodic");
             }
             else if (pThis->ctl & OHCI_CTL_IE)
             {
@@ -3974,7 +3983,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
                  * cancel outstanding URBs, if any.
                  */
                 uint32_t TdAddr = Ed.HeadP & ED_PTR_MASK;
-                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThis, TdAddr);
+                PVUSBURB pUrb = ohciR3TdInFlightUrb(pThisCC, TdAddr);
                 if (pUrb)
                     pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
             }
@@ -3988,7 +3997,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
     {
         char sz[48];
         RTStrPrintf(sz, sizeof(sz), "Int%02x after ", iList);
-        ohciR3DumpEdList(pDevIns, pThis, EdAddrHead, sz, true);
+        ohciR3DumpEdList(pDevIns, pThisCC, EdAddrHead, sz, true);
     }
 # endif
 }
@@ -3999,7 +4008,7 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
  *
  * @param   pThis   The OHCI instance data.
  */
-static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
     OCHIHCCA hcca;
     ohciR3PhysRead(pDevIns, pThis->hcca + OHCI_HCCA_OFS, &hcca, sizeof(hcca));
@@ -4022,13 +4031,13 @@ static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis)
         pThis->dqic = 0x7;
 
         Log(("ohci: Writeback Done (%#010x) on frame %#x (age %#x)\n", hcca.done,
-             pThis->HcFmNumber, pThis->HcFmNumber - pThis->u32FmDoneQueueTail));
+             pThis->HcFmNumber, pThis->HcFmNumber - pThisCC->u32FmDoneQueueTail));
 # ifdef LOG_ENABLED
-        ohciR3DumpTdQueue(pDevIns, pThis, hcca.done & ED_PTR_MASK, "DoneQueue");
+        ohciR3DumpTdQueue(pDevIns, pThisCC, hcca.done & ED_PTR_MASK, "DoneQueue");
 # endif
         Assert(RT_OFFSETOF(OCHIHCCA, done) == 4);
 # if defined(VBOX_STRICT) || defined(LOG_ENABLED)
-        ohciR3InDoneQueueZap(pThis);
+        ohciR3InDoneQueueZap(pThisCC);
 # endif
         fWriteDoneHeadInterrupt = true;
     }
@@ -4037,6 +4046,7 @@ static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis)
     ohciR3PhysWrite(pDevIns, pThis->hcca + OHCI_HCCA_OFS, (uint8_t *)&hcca, sizeof(hcca));
     if (fWriteDoneHeadInterrupt)
         ohciR3SetInterrupt(pDevIns, pThis, OHCI_INTR_WRITE_DONE_HEAD);
+    RT_NOREF(pThisCC);
 }
 
 
@@ -4046,7 +4056,7 @@ static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis)
  * the sKip bit. Such URBs must be promptly canceled, otherwise there is a risk
  * they might "steal" data destined for another URB.
  */
-static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis)
+static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
     bool fValidHCCA = !(    pThis->hcca >= OHCI_HCCA_MASK
                         ||  pThis->hcca < ~OHCI_HCCA_MASK);
@@ -4058,15 +4068,15 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis)
     /* If the HCCA is not currently valid, or there are no in-flight URBs,
      * there's nothing to do.
      */
-    if (!fValidHCCA || !pThis->cInFlight)
+    if (!fValidHCCA || !pThisCC->cInFlight)
         return;
 
     /* Initially mark all in-flight URBs as inactive. */
-    for (i = 0, cLeft = pThis->cInFlight; cLeft && i < RT_ELEMENTS(pThis->aInFlight); i++)
+    for (i = 0, cLeft = pThisCC->cInFlight; cLeft && i < RT_ELEMENTS(pThisCC->aInFlight); i++)
     {
-        if (pThis->aInFlight[i].pUrb)
+        if (pThisCC->aInFlight[i].pUrb)
         {
-            pThis->aInFlight[i].fInactive = true;
+            pThisCC->aInFlight[i].fInactive = true;
             cLeft--;
         }
     }
@@ -4076,7 +4086,6 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis)
     /* Get hcca data to minimize calls to ohciR3GetDWords/PDMDevHlpPhysRead. */
     uint32_t au32HCCA[OHCI_HCCA_NUM_INTR];
     ohciR3GetDWords(pDevIns, pThis->hcca, au32HCCA, OHCI_HCCA_NUM_INTR);
-    POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
 # endif
 
     /* Go over all bulk/control/interrupt endpoint lists; any URB found in these lists
@@ -4118,9 +4127,9 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis)
                 do
                 {
                     ohciR3ReadTd(pDevIns, TdAddr, &Td);
-                    j = ohciR3InFlightFind(pThis, TdAddr);
+                    j = ohciR3InFlightFind(pThisCC, TdAddr);
                     if (j > -1)
-                        pThis->aInFlight[j].fInactive = false;
+                        pThisCC->aInFlight[j].fInactive = false;
                     TdAddr = Td.NextTD & ED_PTR_MASK;
                     /* See #8125.
                      * Sometimes the ED is changed by the guest between ohciR3ReadEd above and here.
@@ -4143,13 +4152,13 @@ static void ohciR3CancelOrphanedURBs(PPDMDEVINS pDevIns, POHCI pThis)
     /* In-flight URBs still marked as inactive are not used anymore and need
      * to be canceled.
      */
-    for (i = 0, cLeft = pThis->cInFlight; cLeft && i < RT_ELEMENTS(pThis->aInFlight); i++)
+    for (i = 0, cLeft = pThisCC->cInFlight; cLeft && i < RT_ELEMENTS(pThisCC->aInFlight); i++)
     {
-        if (pThis->aInFlight[i].pUrb)
+        if (pThisCC->aInFlight[i].pUrb)
         {
             cLeft--;
-            pUrb = pThis->aInFlight[i].pUrb;
-            if (pThis->aInFlight[i].fInactive
+            pUrb = pThisCC->aInFlight[i].pUrb;
+            if (   pThisCC->aInFlight[i].fInactive
                 && pUrb->enmState == VUSBURBSTATE_IN_FLIGHT
                 && pUrb->enmType != VUSBXFERTYPE_CTRL)
                 pThisCC->RootHub.pIRhConn->pfnCancelUrbsEp(pThisCC->RootHub.pIRhConn, pUrb);
@@ -4186,7 +4195,7 @@ static void ohciR3StartOfFrame(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
      * Should be done after SOF but before HC read first ED in this frame.
      */
     if (fValidHCCA)
-        ohciR3UpdateHCCA(pDevIns, pThis);
+        ohciR3UpdateHCCA(pDevIns, pThis, pThisCC);
 # endif
 
     /* "After writing to HCCA, HC will set SF in HcInterruptStatus" - guest isn't executing, so ignore the order! */
@@ -4299,7 +4308,7 @@ static DECLCALLBACK(bool) ohciR3StartFrame(PVUSBIROOTHUBPORT pInterface, uint32_
             pThis->dqic--;
 
         /* Clean up any URBs that have been removed. */
-        ohciR3CancelOrphanedURBs(pDevIns, pThis);
+        ohciR3CancelOrphanedURBs(pDevIns, pThis, pThisCC);
 
         /* Start the next frame. */
         ohciR3StartOfFrame(pDevIns, pThis, pThisCC);
