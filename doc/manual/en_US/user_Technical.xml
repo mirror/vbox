@@ -785,7 +785,7 @@
 
         <para>
           These hardware features differ between Intel and AMD
-          processors. Intel named its technology >VT-x. AMD calls theirs
+          processors. Intel named its technology VT-x. AMD calls theirs
           AMD-V. The Intel and AMD support for virtualization is very
           different in detail, but not very different in principle.
         </para>
