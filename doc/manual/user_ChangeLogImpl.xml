@@ -44,7 +44,7 @@ technical terms if no non-technical ones are clear enough.
     <itemizedlist>
 
       <listitem>
-        <para></para>
+        <para>VBoxSDL frontend: Fixed running on Windows hosts</para>
       </listitem>
 
     </itemizedlist>
