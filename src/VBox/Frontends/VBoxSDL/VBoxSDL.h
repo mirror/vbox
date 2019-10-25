@@ -33,6 +33,7 @@
 #ifdef _MSC_VER
 # pragma warning(push)
 # pragma warning(disable: 4121) /* warning C4121: 'SDL_SysWMmsg' : alignment of a member was sensitive to packing*/
+# pragma warning(disable: 4668) /* warning C4668: '__GNUC__' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif' */
 #endif
 #include <SDL.h>
 #ifdef _MSC_VER

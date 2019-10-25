@@ -112,15 +112,15 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
                      uint32_t u32FixedHeight, uint32_t u32FixedBPP,
                      bool fUpdateImage)
 {
-    int rc;
     LogFlow(("VBoxSDLFB::VBoxSDLFB\n"));
 
     mScreenId       = uScreenId;
     mfUpdateImage   = fUpdateImage;
     mScreen         = NULL;
-#ifdef VBOX_WITH_SDL13
-    mWindow         = 0;
-    mTexture        = 0;
+#ifdef VBOX_WITH_SDL2
+    mpWindow        = NULL;
+    mpTexture       = NULL;
+    mpRenderer      = NULL;
 #endif
     mSurfVRAM       = NULL;
     mfInitialized   = false;
@@ -149,7 +149,7 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
 
     mfUpdates = false;
 
-    rc = RTCritSectInit(&mUpdateLock);
+    int rc = RTCritSectInit(&mUpdateLock);
     AssertMsg(rc == VINF_SUCCESS, ("Error from RTCritSectInit!\n"));
 
     resizeGuest();
@@ -160,7 +160,22 @@ HRESULT VBoxSDLFB::init(uint32_t uScreenId,
     Log(("CoCreateFreeThreadedMarshaler hr %08X\n", hr)); NOREF(hr);
 #endif
 
-    return 0;
+#ifdef VBOX_WITH_SDL2
+    rc = SDL_GetRendererInfo(mpRenderer, &mRenderInfo);
+    if (RT_SUCCESS(rc))
+    {
+        if (fShowSDLConfig)
+            RTPrintf("Render info:\n"
+                     "  Name:                    %s\n"
+                     "  Render flags:            0x%x\n"
+                     "  SDL video driver:        %s\n",
+                     mRenderInfo.name,
+                     mRenderInfo.flags,
+                     RTEnvGet("SDL_VIDEODRIVER"));
+    }
+#endif
+
+    return rc;
 }
 
 VBoxSDLFB::~VBoxSDLFB()
@@ -183,6 +198,7 @@ VBoxSDLFB::~VBoxSDLFB()
     RTCritSectDelete(&mUpdateLock);
 }
 
+/* static */
 bool VBoxSDLFB::init(bool fShowSDLConfig)
 {
     LogFlow(("VBoxSDLFB::init\n"));
@@ -194,8 +210,12 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
     /* default to DirectX if nothing else set */
     if (!RTEnvExist("SDL_VIDEODRIVER"))
     {
-        _putenv("SDL_VIDEODRIVER=directx");
-//        _putenv("SDL_VIDEODRIVER=windib");
+# ifndef VBOX_WITH_SDL2
+        /* Always select the windib driver by default, as the directx one is known to be broken on newer Windows OSes. */
+        RTEnvSet("SDL_VIDEODRIVER", "windib");
+# else
+        RTEnvSet("SDL_VIDEODRIVER", "directx");
+# endif
     }
 #endif
 #ifdef VBOXSDL_WITH_X11
@@ -203,6 +223,7 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
      * See http://wiki.clug.org.za/wiki/QEMU_mouse_not_working */
     RTEnvSet("SDL_VIDEO_X11_DGAMOUSE", "0");
 #endif
+
     int rc = SDL_InitSubSystem(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_NOPARACHUTE);
     if (rc != 0)
     {
@@ -211,8 +232,11 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
     }
     gfSdlInitialized = true;
 
+#ifdef VBOX_WITH_SDL2
+    RT_NOREF(fShowSDLConfig);
+#else
     const SDL_VideoInfo *videoInfo = SDL_GetVideoInfo();
-    Assert(videoInfo);
+    AssertPtr(videoInfo);
     if (videoInfo)
     {
         /* output what SDL is capable of */
@@ -243,17 +267,17 @@ bool VBoxSDLFB::init(bool fShowSDLConfig)
                          videoInfo->vfmt->BitsPerPixel,
                          RTEnvGet("SDL_VIDEODRIVER"));
     }
+#endif /* !VBOX_WITH_SDL2 */
 
-    if (12320 == g_cbIco64x01)
+#ifndef VBOX_WITH_SDL2
+    gWMIcon = SDL_AllocSurface(SDL_SWSURFACE, 64, 64, 24, 0xff, 0xff00, 0xff0000, 0);
+    /** @todo make it as simple as possible. No PNM interpreter here... */
+    if (gWMIcon)
     {
-        gWMIcon = SDL_AllocSurface(SDL_SWSURFACE, 64, 64, 24, 0xff, 0xff00, 0xff0000, 0);
-        /** @todo make it as simple as possible. No PNM interpreter here... */
-        if (gWMIcon)
-        {
-            memcpy(gWMIcon->pixels, g_abIco64x01+32, g_cbIco64x01-32);
-            SDL_WM_SetIcon(gWMIcon, NULL);
-        }
+        memcpy(gWMIcon->pixels, g_abIco64x01+32, g_cbIco64x01-32);
+        SDL_WM_SetIcon(gWMIcon, NULL);
     }
+#endif
 
     return true;
 }
@@ -269,11 +293,14 @@ void VBoxSDLFB::uninit()
     {
         AssertMsg(gSdlNativeThread == RTThreadNativeSelf(), ("Wrong thread! SDL is not threadsafe!\n"));
         SDL_QuitSubSystem(SDL_INIT_VIDEO);
+
+#ifndef VBOX_WITH_SDL2
         if (gWMIcon)
         {
             SDL_FreeSurface(gWMIcon);
             gWMIcon = NULL;
         }
+#endif
     }
 }
 
@@ -580,7 +607,7 @@ STDMETHODIMP VBoxSDLFB::VideoModeSupported(ULONG width, ULONG height, ULONG bpp,
     {
         /* nope, we don't want that (but still don't freak out if it is set) */
 #ifdef DEBUG
-        printf("VBoxSDL::VideoModeSupported: we refused mode %dx%dx%d\n", width, height, bpp);
+        RTPrintf("VBoxSDL::VideoModeSupported: we refused mode %dx%dx%d\n", width, height, bpp);
 #endif
         *supported = false;
     }
@@ -770,6 +797,41 @@ void VBoxSDLFB::resizeSDL(void)
 {
     LogFlow(("VBoxSDL:resizeSDL\n"));
 
+#ifdef VBOX_WITH_SDL2
+    const int cDisplays = SDL_GetNumVideoDisplays();
+    if (cDisplays > 0)
+    {
+        for (int d = 0; d < cDisplays; d++)
+        {
+            const int cDisplayModes = SDL_GetNumDisplayModes(d);
+            for (int m = 0; m < cDisplayModes; m++)
+            {
+                SDL_DisplayMode mode = { SDL_PIXELFORMAT_UNKNOWN, 0, 0, 0, 0 };
+                if (SDL_GetDisplayMode(d, m, &mode) != 0)
+                {
+                    RTPrintf("Display #%d, mode %d:\t\t%i bpp\t%i x %i",
+                             SDL_BITSPERPIXEL(mode.format), mode.w, mode.h);
+                }
+
+                if (m == 0)
+                {
+                    /*
+                     * according to the SDL documentation, the API guarantees that
+                     * the modes are sorted from larger to smaller, so we just
+                     * take the first entry as the maximum.
+                     */
+                    mMaxScreenWidth  = mode.w;
+                    mMaxScreenHeight = mode.h;
+                }
+
+                /* Keep going. */
+            }
+        }
+    }
+    else
+        AssertFailed(); /** @todo */
+#else
+
     /*
      * We request a hardware surface from SDL so that we can perform
      * accelerated system memory to VRAM blits. The way video handling
@@ -813,6 +875,7 @@ void VBoxSDLFB::resizeSDL(void)
         mMaxScreenWidth  = ~(uint32_t)0;
         mMaxScreenHeight = ~(uint32_t)0;
     }
+#endif /* VBOX_WITH_SDL2 */
 
     uint32_t newWidth;
     uint32_t newHeight;
@@ -840,33 +903,46 @@ void VBoxSDLFB::resizeSDL(void)
     /* we don't have any extra space by default */
     mTopOffset = 0;
 
-#if defined(VBOX_WITH_SDL13)
+#ifdef VBOX_WITH_SDL2
     int sdlWindowFlags = SDL_WINDOW_SHOWN;
     if (mfResizable)
         sdlWindowFlags |= SDL_WINDOW_RESIZABLE;
-    if (!mWindow)
+    if (!mpWindow)
     {
         SDL_DisplayMode desktop_mode;
         int x = 40 + mScreenId * 20;
         int y = 40 + mScreenId * 15;
 
-        SDL_GetDesktopDisplayMode(&desktop_mode);
+        SDL_GetDesktopDisplayMode(mScreenId, &desktop_mode);
         /* create new window */
 
         char szTitle[64];
         RTStrPrintf(szTitle, sizeof(szTitle), "SDL window %d", mScreenId);
-        mWindow = SDL_CreateWindow(szTitle, x, y,
+        mpWindow = SDL_CreateWindow(szTitle, x, y,
                                    newWidth, newHeight, sdlWindowFlags);
-        if (SDL_CreateRenderer(mWindow, -1,
-                               SDL_RENDERER_SINGLEBUFFER | SDL_RENDERER_PRESENTDISCARD) < 0)
+        mpRenderer = SDL_CreateRenderer(mpWindow, -1, 0 /* SDL_RendererFlags */);
+        if (mpRenderer)
+        {
+            SDL_GetRendererInfo(mpRenderer, &mRenderInfo);
+
+            mpTexture = SDL_CreateTexture(mpRenderer, desktop_mode.format,
+                                          SDL_TEXTUREACCESS_STREAMING, newWidth, newHeight);
+            if (!mpTexture)
+                AssertReleaseFailed();
+        }
+        else
             AssertReleaseFailed();
 
-        SDL_GetRendererInfo(&mRenderInfo);
-
-        mTexture = SDL_CreateTexture(desktop_mode.format,
-                                     SDL_TEXTUREACCESS_STREAMING, newWidth, newHeight);
-        if (!mTexture)
-            AssertReleaseFailed();
+        if (12320 == g_cbIco64x01)
+        {
+            gWMIcon = SDL_CreateRGBSurface(0 /* Flags, must be 0 */, 64, 64, 24, 0xff, 0xff00, 0xff0000, 0);
+            /** @todo make it as simple as possible. No PNM interpreter here... */
+            if (gWMIcon)
+            {
+                memcpy(gWMIcon->pixels, g_abIco64x01+32, g_cbIco64x01-32);
+                SDL_SetWindowIcon(mpWindow, gWMIcon);
+            }
+        }
     }
     else
     {
@@ -875,16 +951,15 @@ void VBoxSDLFB::resizeSDL(void)
         int access;
 
         /* resize current window */
-        SDL_GetWindowSize(mWindow, &w, &h);
+        SDL_GetWindowSize(mpWindow, &w, &h);
 
         if (w != (int)newWidth || h != (int)newHeight)
-            SDL_SetWindowSize(mWindow, newWidth, newHeight);
+            SDL_SetWindowSize(mpWindow, newWidth, newHeight);
 
-        SDL_QueryTexture(mTexture, &format, &access, &w, &h);
-        SDL_SelectRenderer(mWindow);
-        SDL_DestroyTexture(mTexture);
-        mTexture = SDL_CreateTexture(format, access, newWidth, newHeight);
-        if (!mTexture)
+        SDL_QueryTexture(mpTexture, &format, &access, &w, &h);
+        SDL_DestroyTexture(mpTexture);
+        mpTexture = SDL_CreateTexture(mpRenderer, format, access, newWidth, newHeight);
+        if (!mpTexture)
             AssertReleaseFailed();
     }
 
@@ -894,16 +969,17 @@ void VBoxSDLFB::resizeSDL(void)
     uint32_t Rmask, Gmask, Bmask, Amask;
     uint32_t format;
 
-    if (SDL_QueryTexture(mTexture, &format, NULL, &w, &h) < 0)
+    if (SDL_QueryTexture(mpTexture, &format, NULL, &w, &h) < 0)
         AssertReleaseFailed();
 
     if (!SDL_PixelFormatEnumToMasks(format, &bpp, &Rmask, &Gmask, &Bmask, &Amask))
         AssertReleaseFailed();
 
-    if (SDL_QueryTexturePixels(mTexture, &pixels, &pitch) == 0)
+    if (SDL_LockTexture(mpTexture, NULL /* SDL_Rect */, &pixels, &pitch) == 0)
     {
         mScreen = SDL_CreateRGBSurfaceFrom(pixels, w, h, bpp, pitch,
                                            Rmask, Gmask, Bmask, Amask);
+        SDL_UnlockTexture(mpTexture); /** @BUGBUG See: https://bugzilla.libsdl.org/show_bug.cgi?id=1586 */
     }
     else
     {
@@ -932,13 +1008,13 @@ void VBoxSDLFB::resizeSDL(void)
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
     if (SDL_GetWMInfo(&info))
-        mWinId = (LONG64) info.info.x11.wmwindow;
+        mWinId = (LONG64) info.info.x11.wmpWindow;
 # elif defined(RT_OS_DARWIN)
     mWinId = (intptr_t)VBoxSDLGetDarwinWindowId();
 # else
     /* XXX ignore this for other architectures */
 # endif
-#endif
+#endif /* VBOX_WITH_SDL2 */
 #ifdef VBOX_SECURELABEL
     /*
      * For non fixed SDL resolution, the above call tried to add the label height
@@ -970,7 +1046,8 @@ void VBoxSDLFB::resizeSDL(void)
         if (mFixedSDLHeight > mGuestYRes + mLabelHeight)
             mCenterYOffset = (mFixedSDLHeight - (mGuestYRes + mLabelHeight)) / 2;
     }
-#endif
+#endif /* VBOX_SECURELABEL */
+
     AssertMsg(mScreen, ("Error: SDL_SetVideoMode failed!\n"));
     if (mScreen)
     {
@@ -979,8 +1056,7 @@ void VBoxSDLFB::resizeSDL(void)
         resizeUI(mScreen->w, mScreen->h);
 #endif
         if (mfShowSDLConfig)
-            RTPrintf("Resized to %dx%d, screen surface type: %s\n", mScreen->w, mScreen->h,
-                     ((mScreen->flags & SDL_HWSURFACE) == 0) ? "software" : "hardware");
+            RTPrintf("Resized to %dx%d\n", mScreen->w, mScreen->h);
     }
 }
 
@@ -1078,13 +1154,12 @@ void VBoxSDLFB::update(int x, int y, int w, int h, bool fGuestRelative)
      */
     SDL_BlitSurface(mSurfVRAM, &srcRect, mScreen, &dstRect);
     /* hardware surfaces don't need update notifications */
-#if defined(VBOX_WITH_SDL13)
+#if defined(VBOX_WITH_SDL2)
     AssertRelease(mScreen->flags & SDL_PREALLOC);
-    SDL_SelectRenderer(mWindow);
-    SDL_DirtyTexture(mTexture, 1, &dstRect);
-    AssertRelease(mRenderInfo.flags & SDL_RENDERER_PRESENTCOPY);
-    SDL_RenderCopy(mTexture, &dstRect, &dstRect);
-    SDL_RenderPresent();
+    /** @todo Do we need to update the dirty rect for the texture for SDL2 here as well? */
+    SDL_RenderClear(mpRenderer);
+    SDL_RenderCopy(mpRenderer, mpTexture, &dstRect, &dstRect);
+    SDL_RenderPresent(mpRenderer);
 #else
     if ((mScreen->flags & SDL_HWSURFACE) == 0)
         SDL_UpdateRect(mScreen, dstRect.x, dstRect.y, dstRect.w, dstRect.h);
@@ -1130,6 +1205,7 @@ void VBoxSDLFB::setFullscreen(bool fFullscreen)
  */
 void VBoxSDLFB::getFullscreenGeometry(uint32_t *width, uint32_t *height)
 {
+#ifndef VBOX_WITH_SDL2
     SDL_Rect **modes;
 
     /* Get available fullscreen/hardware modes */
@@ -1158,7 +1234,25 @@ void VBoxSDLFB::getFullscreenGeometry(uint32_t *width, uint32_t *height)
             *height = modes[0]->w;
         }
     }
+#else
+    SDL_DisplayMode dm;
+    int rc = SDL_GetDesktopDisplayMode(0, &dm); /** @BUGBUG Handle multi monitor setups! */
+    if (rc == 0)
+    {
+        *width  = dm.w;
+        *height = dm.w;
+    }
+#endif
 }
+
+#ifdef VBOX_WITH_SDL2
+int VBoxSDLFB::setWindowTitle(const char *pcszTitle)
+{
+    SDL_SetWindowTitle(mpWindow, pcszTitle);
+
+    return VINF_SUCCESS;
+}
+#endif
 
 #ifdef VBOX_SECURELABEL
 
@@ -1301,13 +1395,26 @@ VBoxSDLFBOverlay::~VBoxSDLFBOverlay()
  */
 HRESULT VBoxSDLFBOverlay::init()
 {
-    mBlendedBits = SDL_CreateRGBSurface(SDL_ANYFORMAT, mOverlayWidth, mOverlayHeight, 32,
+#ifndef VBOX_WITH_SDL2
+    Uint32 fFlags = SDL_ANYFORMAT;
+#else
+    Uint32 fFlags = 0;
+#endif
+
+    mBlendedBits = SDL_CreateRGBSurface(fFlags, mOverlayWidth, mOverlayHeight, 32,
                                         0x00ff0000, 0x0000ff00, 0x000000ff, 0);
     AssertMsgReturn(mBlendedBits != NULL, ("Failed to create an SDL surface\n"),
                     E_OUTOFMEMORY);
-    mOverlayBits = SDL_CreateRGBSurface(SDL_SWSURFACE | SDL_SRCALPHA, mOverlayWidth,
+
+#ifndef VBOX_WITH_SDL2
+    fFlags = SDL_SWSURFACE | SDL_SRCALPHA, mOverlayWidth;
+#else
+    fFlags = 0;
+#endif
+
+    mOverlayBits = SDL_CreateRGBSurface(fFlags,
                                         mOverlayHeight, 32, 0x00ff0000, 0x0000ff00,
-                                        0x000000ff, 0xff000000);
+                                        0x000000ff, 0xff000000, 0);
     AssertMsgReturn(mOverlayBits != NULL, ("Failed to create an SDL surface\n"),
                     E_OUTOFMEMORY);
     return S_OK;
@@ -1616,11 +1723,25 @@ STDMETHODIMP VBoxSDLFBOverlay::RequestResize(ULONG aScreenId, ULONG pixelFormat,
     mOverlayWidth = w;
     mOverlayHeight = h;
     SDL_FreeSurface(mOverlayBits);
-    mBlendedBits = SDL_CreateRGBSurface(SDL_ANYFORMAT, mOverlayWidth, mOverlayHeight, 32,
+
+#ifndef VBOX_WITH_SDL2
+    Uint32 fFlags = SDL_ANYFORMAT;
+#else
+    Uint32 fFlags = 0;
+#endif
+
+    mBlendedBits = SDL_CreateRGBSurface(fFlags, mOverlayWidth, mOverlayHeight, 32,
                                         0x00ff0000, 0x0000ff00, 0x000000ff, 0);
     AssertMsgReturn(mBlendedBits != NULL, ("Failed to create an SDL surface\n"),
                     E_OUTOFMEMORY);
-    mOverlayBits = SDL_CreateRGBSurface(SDL_SWSURFACE | SDL_SRCALPHA, mOverlayWidth,
+
+#ifndef VBOX_WITH_SDL2
+    fFlags = SDL_SWSURFACE | SDL_SRCALPHA;
+#else
+    fFlags = 0;
+#endif
+
+    mOverlayBits = SDL_CreateRGBSurface(fFlags, mOverlayWidth,
                                         mOverlayHeight, 32, 0x00ff0000, 0x0000ff00,
                                         0x000000ff, 0xff000000);
     AssertMsgReturn(mOverlayBits != NULL, ("Failed to create an SDL surface\n"),

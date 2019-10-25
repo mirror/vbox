@@ -49,12 +49,13 @@ VBoxSDL_SOURCES    = \
 	../Common/PasswordInput.cpp
 VBoxSDL_SOURCES.darwin = \
 	VBoxSDLMain-darwin.m \
-       Framebuffer-darwin.m
+	Framebuffer-darwin.m
 
 VBoxSDL_DEFS       =
-ifdef VBOX_WITH_SDL13
- VBoxSDL_DEFS     += VBOX_WITH_SDL13
-else
+ifdef VBOX_WITH_SDL2
+ VBoxSDL_DEFS     += VBOX_WITH_SDL2
+endif
+if !defined(VBOX_WITH_SDL2)
  ifdef VBOX_WITH_SECURELABEL
   VBoxSDL_DEFS    += VBOX_SECURELABEL
  endif
@@ -160,4 +161,3 @@ tstSDL_CXXFLAGS.linux = -O -Wall -Wno-non-virtual-dtor -Wno-long-long -fshort-wc
 
 endif # !VBOX_WITH_HARDENING || "$(KBUILD_TARGET)" != "darwin"
 include $(FILE_KBUILD_SUB_FOOTER)
-

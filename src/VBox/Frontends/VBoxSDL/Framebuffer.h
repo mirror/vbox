@@ -41,7 +41,7 @@ extern DECLSPEC SDL_Surface* (SDLCALL *pTTF_RenderUTF8_Blended)(TTF_Font *font, 
 extern DECLSPEC void (SDLCALL *pTTF_CloseFont)(TTF_Font *font);
 extern DECLSPEC void (SDLCALL *pTTF_Quit)(void);
 }
-#endif /* VBOX_SECURELABEL && !VBOX_WITH_SDL13 */
+#endif /* VBOX_SECURELABEL && !VBOX_WITH_SDL2 */
 
 class VBoxSDLFBOverlay;
 
@@ -117,8 +117,10 @@ public:
     int32_t getOriginY() { return mOriginY; }
     int32_t getXOffset() { return mCenterXOffset; }
     int32_t getYOffset() { return mCenterYOffset; }
-#ifdef VBOX_WITH_SDL13
-    bool hasWindow(SDL_WindowID id) { return mScreen && mWindow == id; }
+#ifdef VBOX_WITH_SDL2
+    SDL_Window *getWindow() { return mpWindow; }
+    bool hasWindow(uint32_t id) { return mScreen && SDL_GetWindowID(mpWindow) == id; }
+    int setWindowTitle(const char *pcszTitle);
 #endif
 #ifdef VBOX_SECURELABEL
     int  initSecureLabel(uint32_t height, char *font, uint32_t pointsize, uint32_t labeloffs);
@@ -133,11 +135,13 @@ public:
 private:
     /** current SDL framebuffer pointer (also includes screen width/height) */
     SDL_Surface *mScreen;
-#ifdef VBOX_WITH_SDL13
+#ifdef VBOX_WITH_SDL2
     /** the SDL window */
-    SDL_WindowID mWindow;
+    SDL_Window *mpWindow;
     /** the texture */
-    SDL_TextureID mTexture;
+    SDL_Texture *mpTexture;
+    /** renderer */
+    SDL_Renderer *mpRenderer;
     /** render info */
     SDL_RendererInfo mRenderInfo;
 #endif
