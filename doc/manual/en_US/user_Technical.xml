@@ -883,7 +883,7 @@
     </para>
 
     <para>
-      Most modern mainstream guest operating systems, including Windows
+      Most modern, mainstream guest operating systems, including Windows
       and Linux, ship with support for one or more paravirtualization
       interfaces. Hence, there is typically no need to install
       additional software in the guest to take advantage of this
