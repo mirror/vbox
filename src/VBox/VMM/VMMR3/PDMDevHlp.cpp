@@ -1085,6 +1085,13 @@ static DECLCALLBACK(int) pdmR3DevHlp_TimerLoad(PPDMDEVINS pDevIns, TMTIMERHANDLE
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR3,pfnTimerDestroy} */
+static DECLCALLBACK(int) pdmR3DevHlp_TimerDestroy(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    return TMR3TimerDestroy(pdmR3DevHlp_TimerToPtr(pDevIns, hTimer));
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnTMUtcNow} */
 static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_TMUtcNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 {
@@ -4560,6 +4567,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_TimerSetCritSect,
     pdmR3DevHlp_TimerSave,
     pdmR3DevHlp_TimerLoad,
+    pdmR3DevHlp_TimerDestroy,
     pdmR3DevHlp_TMUtcNow,
     CFGMR3Exists,
     CFGMR3QueryType,
@@ -5026,6 +5034,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_TimerSetCritSect,
     pdmR3DevHlp_TimerSave,
     pdmR3DevHlp_TimerLoad,
+    pdmR3DevHlp_TimerDestroy,
     pdmR3DevHlp_TMUtcNow,
     CFGMR3Exists,
     CFGMR3QueryType,

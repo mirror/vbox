@@ -2275,7 +2275,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 27, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 28, 0)
 
 /**
  * PDM Device API.
@@ -2991,6 +2991,7 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int,      pfnTimerSetCritSect,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PPDMCRITSECT pCritSect));
     DECLR3CALLBACKMEMBER(int,      pfnTimerSave,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM));
     DECLR3CALLBACKMEMBER(int,      pfnTimerLoad,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSSMHANDLE pSSM));
+    DECLR3CALLBACKMEMBER(int,      pfnTimerDestroy,(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer));
     /** @} */
 
     /**
@@ -6371,6 +6372,14 @@ DECLINLINE(int) PDMDevHlpTimerLoad(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer, PSS
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnTimerDestroy
+ */
+DECLINLINE(int) PDMDevHlpTimerDestroy(PPDMDEVINS pDevIns, TMTIMERHANDLE hTimer)
+{
+    return pDevIns->pHlpR3->pfnTimerDestroy(pDevIns, hTimer);
+}
+
+/**
  * @copydoc PDMDEVHLPR3::pfnTMUtcNow
  */
 DECLINLINE(PRTTIMESPEC) PDMDevHlpTMUtcNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
@@ -6723,7 +6732,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIo(PPDMDEVINS pDevIns, uint32_t iReg
 }
 
 /**
- * Registers an MMIO port region for the default PCI device.
+ * Registers an MMIO region for the default PCI device.
  *
  * @returns VBox status code.
  * @param   pDevIns         The device instance.
@@ -6743,6 +6752,41 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmio(PPDMDEVINS pDevIns, uint32_t iR
 {
     return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType,
                                                    PDMPCIDEV_IORGN_F_MMIO_HANDLE, hMmioRegion, pfnCallback);
+}
+
+/**
+ * Combines PDMDevHlpMmioCreate and PDMDevHlpPCIIORegionRegisterMmio, creating
+ * and registering an MMIO region for the default PCI device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance to register the ports with.
+ * @param   cbRegion        The size of the region in bytes.
+ * @param   iPciRegion      The PCI device region in the high 16-bit word and
+ *                          sub-region in the low 16-bit word.  UINT32_MAX if NA.
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   fFlags          Flags, IOMMMIO_FLAGS_XXX.
+ * @param   pfnWrite        Pointer to function which is gonna handle Write
+ *                          operations.
+ * @param   pfnRead         Pointer to function which is gonna handle Read
+ *                          operations.
+ * @param   pvUser          User argument to pass to the callbacks.
+ * @param   pszDesc         Pointer to description string. This must not be freed.
+ * @param   phRegion        Where to return the MMIO region handle.
+ *
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio(PPDMDEVINS pDevIns, uint32_t iPciRegion, RTGCPHYS cbRegion, PCIADDRESSSPACE enmType,
+                                               PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, void *pvUser,
+                                               uint32_t fFlags, const char *pszDesc, PIOMMMIOHANDLE phRegion)
+
+{
+    int rc = pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, fFlags, pDevIns->apPciDevs[0], iPciRegion,
+                                              pfnWrite, pfnRead, NULL /*pfnFill*/, pvUser, pszDesc, phRegion);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
+                                                     PDMPCIDEV_IORGN_F_MMIO_HANDLE, *phRegion, NULL /*pfnCallback*/);
+    return rc;
 }
 
 
