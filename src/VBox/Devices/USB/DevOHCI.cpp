@@ -2533,7 +2533,7 @@ static uint32_t ohciR3VUsbStatus2OhciStatus(VUSBSTATUS enmStatus)
  * Lock the given OHCI controller instance.
  *
  * @returns nothing.
- * @param   pThis       The OHCI controller instance to lock, ring-3 edition.
+ * @param   pThisCC     The OHCI controller instance to lock, ring-3 edition.
  */
 DECLINLINE(void) ohciR3Lock(POHCICC pThisCC)
 {
@@ -2551,7 +2551,7 @@ DECLINLINE(void) ohciR3Lock(POHCICC pThisCC)
  * Unlocks the given OHCI controller instance.
  *
  * @returns nothing.
- * @param   pThis       The OHCI controller instance to unlock, ring-3 edition.
+ * @param   pThisCC     The OHCI controller instance to unlock, ring-3 edition.
  */
 DECLINLINE(void) ohciR3Unlock(POHCICC pThisCC)
 {
@@ -3396,7 +3396,8 @@ static bool ohciR3ServiceIsochronousTdUnlink(PPDMDEVINS pDevIns, POHCI pThis, PO
  * @returns true on success.
  * @returns false on failure to submit.
  * @param   pDevIns The device instance.
- * @param   pThis   The OHCI controller instance data.
+ * @param   pThis   The OHCI controller instance data, shared edition.
+ * @param   pThisCC The OHCI controller instance data, ring-3 edition.
  * @param   pITd    The transfer descriptor to service.
  * @param   ITdAddr The address of the transfer descriptor in gues memory.
  * @param   R       The start packet (frame) relative to the start of frame in HwInfo.
@@ -4010,7 +4011,9 @@ static void ohciR3ServicePeriodicList(PPDMDEVINS pDevIns, POHCI pThis, POHCICC p
 /**
  * Update the HCCA.
  *
- * @param   pThis   The OHCI instance data.
+ * @param   pDevIns The device instance.
+ * @param   pThis   The OHCI controller instance data, shared edition.
+ * @param   pThisCC The OHCI controller instance data, ring-3 edition.
  */
 static void ohciR3UpdateHCCA(PPDMDEVINS pDevIns, POHCI pThis, POHCICC pThisCC)
 {
