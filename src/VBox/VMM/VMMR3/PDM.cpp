@@ -163,9 +163,9 @@
      @endcode
  *   There shall be absolutely nothing preceeding that and it is mandatory.
  *
- * - Use 'nm -u' (tools\win.amd64\mingw-w64\r1\bin\nm.exe on windows) to check for
- *   VBoxVMM and VMMR0 function you forgot to convert to device help calls or would
- *   need adding as device helpers or something.
+ * - Use 'nm -u' (tools/win.amd64/mingw-w64/r1/bin/nm.exe on windows) to check
+ *   for VBoxVMM and VMMR0 function you forgot to convert to device help calls
+ *   or would need adding as device helpers or something.
  *
  *
  * @section sec_pdm_special_devs    Special Devices
