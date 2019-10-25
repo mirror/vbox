@@ -49,27 +49,28 @@ RT_C_DECLS_BEGIN
  */
 
 #ifdef IN_RING3
+
 /** @name RTR3Init flags (RTR3INIT_XXX).
  * @{ */
 /** Try initialize SUPLib. */
-#define RTR3INIT_FLAGS_SUPLIB       RT_BIT(0)
+# define RTR3INIT_FLAGS_SUPLIB       RT_BIT(0)
 /** Initializing IPRT from a DLL. */
-#define RTR3INIT_FLAGS_DLL          RT_BIT(1)
+# define RTR3INIT_FLAGS_DLL          RT_BIT(1)
 /** We are sharing a process space, so we need to behave. */
-#define RTR3INIT_FLAGS_UNOBTRUSIVE  RT_BIT(2)
+# define RTR3INIT_FLAGS_UNOBTRUSIVE  RT_BIT(2)
 /** The caller ensures that the argument bector is UTF-8. */
-#define RTR3INIT_FLAGS_UTF8_ARGV    RT_BIT(3)
+# define RTR3INIT_FLAGS_UTF8_ARGV    RT_BIT(3)
 /** Indicates that this is a standalone application without any additional
  * shared libraries in the application directory. Mainly windows loader mess. */
-#define RTR3INIT_FLAGS_STANDALONE_APP RT_BIT(4)
+# define RTR3INIT_FLAGS_STANDALONE_APP RT_BIT(4)
 /** @} */
 
 /** @name RTR3InitEx version
  * @{ */
 /** Version 1. */
-#define RTR3INIT_VER_1              UINT32_C(1)
+# define RTR3INIT_VER_1              UINT32_C(1)
 /** The current version. */
-#define RTR3INIT_VER_CUR            RTR3INIT_VER_1
+# define RTR3INIT_VER_CUR            RTR3INIT_VER_1
 /** @} */
 
 /**
@@ -131,6 +132,7 @@ RTR3DECL(bool) RTR3InitIsInitialized(void);
  * @returns true/false.
  */
 RTR3DECL(bool) RTR3InitIsUnobtrusive(void);
+
 #endif /* IN_RING3 */
 
 

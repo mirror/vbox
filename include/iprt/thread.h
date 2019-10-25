@@ -279,7 +279,7 @@ typedef enum RTTHREADFLAGS
 RTDECL(int) RTThreadCreate(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
                            RTTHREADTYPE enmType, unsigned fFlags, const char *pszName);
 #ifndef RT_OS_LINUX /* XXX crashes genksyms at least on 32-bit Linux hosts */
-/** @copydoc RTThreadCreate */
+/** Pointer to a RTThreadCreate function. */
 typedef DECLCALLBACKPTR(int, PFNRTTHREADCREATE)(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
                                                 RTTHREADTYPE enmType, unsigned fFlags, const char *pszName);
 #endif
@@ -297,7 +297,7 @@ typedef DECLCALLBACKPTR(int, PFNRTTHREADCREATE)(PRTTHREAD pThread, PFNRTTHREAD p
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   fFlags      See RTThreadCreate.
- * @param   pszName     Thread name format.
+ * @param   pszNameFmt  Thread name format.
  * @param   va          Format arguments.
  */
 RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
@@ -315,7 +315,7 @@ RTDECL(int) RTThreadCreateV(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUs
  * @param   cbStack     See RTThreadCreate.
  * @param   enmType     See RTThreadCreate.
  * @param   fFlags      See RTThreadCreate.
- * @param   pszName     Thread name format.
+ * @param   pszNameFmt  Thread name format.
  * @param   ...         Format arguments.
  */
 RTDECL(int) RTThreadCreateF(PRTTHREAD pThread, PFNRTTHREAD pfnThread, void *pvUser, size_t cbStack,
@@ -962,7 +962,7 @@ RTR3DECL(int) RTTlsSet(RTTLS iTls, void *pvValue);
 /** @} */
 
 # endif /* IN_RING3 */
-# endif /* !IN_RC */
+#endif /* !IN_RC || defined(DOXYGEN_RUNNING) */
 
 /** @} */
 

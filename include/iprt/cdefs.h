@@ -66,7 +66,6 @@
 # define IN_RING0
 # define IN_RING3
 # define IN_RC
-# define IN_RC
 # define IN_RT_RC
 # define IN_RT_R0
 # define IN_RT_R3
@@ -310,7 +309,7 @@
  * Defines the bit count of the current context.
  */
 #if !defined(ARCH_BITS) || defined(DOXYGEN_RUNNING)
-# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64) || defined(DOXYGEN_RUNNING)
 #  define ARCH_BITS 64
 # elif !defined(__I86__) || !defined(__WATCOMC__)
 #  define ARCH_BITS 32
@@ -352,7 +351,7 @@
  * Defines the host architecture bit count.
  */
 #if !defined(HC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
-# ifndef IN_RC
+# if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 #  define HC_ARCH_BITS ARCH_BITS
 # else
 #  define HC_ARCH_BITS 32
@@ -362,8 +361,8 @@
 /** @def GC_ARCH_BITS
  * Defines the guest architecture bit count.
  */
-#if !defined(GC_ARCH_BITS) && !defined(DOXYGEN_RUNNING)
-# ifdef VBOX_WITH_64_BITS_GUESTS
+#if !defined(GC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
+# if defined(VBOX_WITH_64_BITS_GUESTS) || defined(DOXYGEN_RUNNING)
 #  define GC_ARCH_BITS  64
 # else
 #  define GC_ARCH_BITS  32
@@ -389,17 +388,6 @@
 #  define R0_ARCH_BITS ARCH_BITS
 # else
 #  define R0_ARCH_BITS HC_ARCH_BITS
-# endif
-#endif
-
-/** @def GC_ARCH_BITS
- * Defines the guest architecture bit count.
- */
-#if !defined(GC_ARCH_BITS) || defined(DOXYGEN_RUNNING)
-# ifdef IN_RC
-#  define GC_ARCH_BITS ARCH_BITS
-# else
-#  define GC_ARCH_BITS 32
 # endif
 #endif
 
@@ -729,9 +717,9 @@
  * @param   R0Type  The R0 type.
  * @remark  For pointers used only in one context use RCPTRTYPE(), R3R0PTRTYPE(), R3PTRTYPE() or R0PTRTYPE().
  */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 # define CTXTYPE(GCType, R3Type, R0Type)  GCType
-#elif defined(IN_RING3)
+#elif defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 # define CTXTYPE(GCType, R3Type, R0Type)  R3Type
 #else
 # define CTXTYPE(GCType, R3Type, R0Type)  R0Type
@@ -797,7 +785,7 @@
  * @param   var     Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 # define CTXSUFF(var)       var##GC
 # define OTHERCTXSUFF(var)  var##HC
 #else
@@ -813,9 +801,9 @@
  * @param   var     Identifier name.
  * @deprecated Use CTX_SUFF. Do NOT use this for new code.
  */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 # define CTXALLSUFF(var)    var##GC
-#elif defined(IN_RING0)
+#elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
 # define CTXALLSUFF(var)    var##R0
 #else
 # define CTXALLSUFF(var)    var##R3
@@ -830,9 +818,9 @@
  *
  * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
  */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 # define CTX_SUFF(var)      var##RC
-#elif defined(IN_RING0)
+#elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
 # define CTX_SUFF(var)      var##R0
 #else
 # define CTX_SUFF(var)      var##R3
@@ -848,7 +836,7 @@
  *
  * @remark  This will replace CTXALLSUFF and CTXSUFF before long.
  */
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 # define CTX_SUFF_Z(var)    var##R3
 #else
 # define CTX_SUFF_Z(var)    var##RZ
@@ -872,7 +860,7 @@
  * @param   last    Surname.
  * @deprecated use CTX_MID or CTX_MID_Z
  */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 # define CTXMID(first, last)        first##GC##last
 # define OTHERCTXMID(first, last)   first##HC##last
 #else
@@ -889,9 +877,9 @@
  * @param   last    Surname.
  * @deprecated use CTX_MID or CTX_MID_Z
  */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 # define CTXALLMID(first, last)     first##GC##last
-#elif defined(IN_RING0)
+#elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
 # define CTXALLMID(first, last)     first##R0##last
 #else
 # define CTXALLMID(first, last)     first##R3##last
@@ -905,9 +893,9 @@
  * @param   first   First name.
  * @param   last    Surname.
  */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 # define CTX_MID(first, last)       first##RC##last
-#elif defined(IN_RING0)
+#elif defined(IN_RING0) && !defined(DOXYGEN_RUNNING)
 # define CTX_MID(first, last)       first##R0##last
 #else
 # define CTX_MID(first, last)       first##R3##last
@@ -1417,7 +1405,7 @@
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
  */
-#ifdef IN_RING3
+#if defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 # define DECLR3CALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name) args
 #else
 # define DECLR3CALLBACKMEMBER(type, name, args)  RTR3PTR name
@@ -1429,12 +1417,12 @@
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
  */
-#ifdef IN_RC
+#if defined(IN_RC) || defined(DOXYGEN_RUNNING)
 # define DECLRCCALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name)  args
 #else
 # define DECLRCCALLBACKMEMBER(type, name, args)  RTRCPTR name
 #endif
-#ifdef IN_RC
+#if defined(IN_RC) || defined(DOXYGEN_RUNNING)
 # define DECLRGCALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name)  args
 #else
 # define DECLRGCALLBACKMEMBER(type, name, args)  RTRGPTR name
@@ -1446,7 +1434,7 @@
  * @param   name    The name of the struct/union/class member.
  * @param   args    The argument list enclosed in parentheses.
  */
-#ifdef IN_RING0
+#if defined(IN_RING0) || defined(DOXYGEN_RUNNING)
 # define DECLR0CALLBACKMEMBER(type, name, args)  DECLCALLBACKMEMBER(type, name) args
 #else
 # define DECLR0CALLBACKMEMBER(type, name, args)  RTR0PTR name
@@ -1457,9 +1445,9 @@
  * @param   type    The return type of the function declaration.
  * @remarks Don't use this macro on C++ methods.
  */
-#ifdef __GNUC__
+#if defined(__GNUC__) && !defined(DOXYGEN_RUNNING)
 # define DECLINLINE(type) static __inline__ type
-#elif defined(__cplusplus)
+#elif defined(__cplusplus) || defined(DOXYGEN_RUNNING)
 # define DECLINLINE(type) static inline type
 #elif defined(_MSC_VER)
 # define DECLINLINE(type) static _inline type

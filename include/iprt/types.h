@@ -1521,7 +1521,7 @@ typedef const RTHCPHYS  RT_FAR *PCRTHCPHYS;
 
 
 /** HC pointer. */
-#ifndef IN_RC
+#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 typedef void            RT_FAR *RTHCPTR;
 #else
 typedef RTHCUINTPTR             RTHCPTR;
@@ -1844,10 +1844,10 @@ typedef RTRCPTR         RT_FAR *PRTRCPTR;
 typedef const RTRCPTR   RT_FAR *PCRTRCPTR;
 /** @def NIL_RTRCPTR
  * NIL RC pointer.  */
-#ifndef IN_RC
-# define NIL_RTRCPTR            ((RTRCPTR)0)
-#else
+#ifdef IN_RC
 # define NIL_RTRCPTR            (NULL)
+#else
+# define NIL_RTRCPTR            ((RTRCPTR)0)
 #endif
 /** @def RTRCPTR_MAX
  * The maximum value a RTRCPTR can have. Mostly used as INVALID value.

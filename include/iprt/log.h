@@ -148,7 +148,7 @@ typedef enum RTLOGGROUP
 #endif
 
 /** Logger structure. */
-#ifdef IN_RC
+#if defined(IN_RC) && !defined(DOXYGEN_RUNNING)
 typedef struct RTLOGGERRC RTLOGGER;
 #else
 typedef struct RTLOGGER RTLOGGER;
@@ -293,7 +293,7 @@ struct RTLOGGERRC
 
 
 
-#ifndef IN_RC
+#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 
 /** Pointer to internal logger bits. */
 typedef struct RTLOGGERINTERNAL *PRTLOGGERINTERNAL;
@@ -336,7 +336,7 @@ struct RTLOGGER
 /** RTLOGGER::u32Magic value. (Avram Noam Chomsky) */
 # define RTLOGGER_MAGIC     UINT32_C(0x19281207)
 
-#endif /* !IN_RC */
+#endif /* !IN_RC || DOXYGEN_RUNNING */
 
 
 /**
@@ -1703,7 +1703,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
 /** @} */
 
 
-#ifndef IN_RC
+#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 /**
  * Sets the default release logger instance.
  *
@@ -1711,7 +1711,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup,
  * @param   pLogger     The new default release logger instance.
  */
 RTDECL(PRTLOGGER) RTLogRelSetDefaultInstance(PRTLOGGER pLogger);
-#endif /* !IN_RC */
+#endif
 
 /**
  * Gets the default release logger instance.
@@ -1938,7 +1938,7 @@ RTDECL(PRTLOGGER)   RTLogGetDefaultInstance(void);
  */
 RTDECL(PRTLOGGER)   RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup);
 
-#ifndef IN_RC
+#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
 /**
  * Sets the default logger instance.
  *
@@ -1946,7 +1946,7 @@ RTDECL(PRTLOGGER)   RTLogGetDefaultInstanceEx(uint32_t fFlagsAndGroup);
  * @param   pLogger     The new default logger instance.
  */
 RTDECL(PRTLOGGER)   RTLogSetDefaultInstance(PRTLOGGER pLogger);
-#endif /* !IN_RC */
+#endif
 
 #ifdef IN_RING0
 /**
@@ -1963,7 +1963,8 @@ RTDECL(int)         RTLogSetDefaultInstanceThread(PRTLOGGER pLogger, uintptr_t u
 #endif /* IN_RING0 */
 
 
-#ifndef IN_RC
+#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
+
 /**
  * Creates the default logger instance for a iprt users.
  *
@@ -2220,7 +2221,8 @@ RTDECL(int) RTLogGetGroupSettings(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf
  * @param   pszValue    Value to parse.
  */
 RTDECL(int) RTLogGroupSettings(PRTLOGGER pLogger, const char *pszValue);
-#endif /* !IN_RC */
+
+#endif /* !IN_RC || DOXYGEN_RUNNING */
 
 /**
  * Updates the flags for the logger instance using the specified
@@ -2259,7 +2261,8 @@ RTDECL(bool) RTLogSetBuffering(PRTLOGGER pLogger, bool fBuffered);
  */
 RTDECL(uint32_t) RTLogSetGroupLimit(PRTLOGGER pLogger, uint32_t cMaxEntriesPerGroup);
 
-#ifndef IN_RC
+#if !defined(IN_RC) || defined(DOXYGEN_RUNNING)
+
 /**
  * Get the current log flags as a string.
  *
@@ -2285,7 +2288,6 @@ RTDECL(int) RTLogDestinations(PRTLOGGER pLogger, char const *pszValue);
  *
  * @returns IPRT status code.
  * @param   pLogger             Logger instance (NULL for default logger).
- * @param   pszValue            The value to parse.
  * @param   pErrInfo            Where to return extended error info.  Optional.
  */
 RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo);
@@ -2300,7 +2302,8 @@ RTDECL(int) RTLogClearFileDelayFlag(PRTLOGGER pLogger, PRTERRINFO pErrInfo);
  *                              than 0.
  */
 RTDECL(int) RTLogGetDestinations(PRTLOGGER pLogger, char *pszBuf, size_t cchBuf);
-#endif /* !IN_RC */
+
+#endif /* !IN_RC || DOXYGEN_RUNNING */
 
 /**
  * Flushes the specified logger.
