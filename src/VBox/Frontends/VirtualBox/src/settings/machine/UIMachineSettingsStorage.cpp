@@ -3879,7 +3879,8 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             case UIMediumDeviceType_HardDisk:
             {
                 /* Add "Choose a virtual hard disk" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Hard Disk..."));
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Hard Disk..."));
+                pOpenMediumMenu->addSeparator();
                 /* Add recent media list: */
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 break;
@@ -3887,9 +3888,10 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             case UIMediumDeviceType_DVD:
             {
                 /* Add "Choose a virtual optical disk" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Optical Disk..."));
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Optical Disk..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
+                pOpenMediumMenu->addSeparator();
                 /* Add recent media list: */
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 /* Add "Eject current medium" action: */
@@ -3903,9 +3905,10 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             case UIMediumDeviceType_Floppy:
             {
                 /* Add "Choose a virtual floppy disk" action: */
-                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose Virtual Floppy Disk..."));
+                addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Floppy Disk..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
+                pOpenMediumMenu->addSeparator();
                 /* Add recent media list: */
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
                 /* Add "Eject current medium" action: */
