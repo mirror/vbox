@@ -2015,7 +2015,7 @@ int GuestProcessTool::init(GuestSession *pGuestSession, const GuestProcessStartu
         {
             vrc = VERR_GSTCTL_GUEST_ERROR;
         }
-        
+
         if (prcGuest)
             *prcGuest = vrcGuest;
     }
