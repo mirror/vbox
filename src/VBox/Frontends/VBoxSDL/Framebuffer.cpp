@@ -1008,7 +1008,7 @@ void VBoxSDLFB::resizeSDL(void)
     SDL_SysWMinfo info;
     SDL_VERSION(&info.version);
     if (SDL_GetWMInfo(&info))
-        mWinId = (LONG64) info.info.x11.wmpwindow;
+        mWinId = (LONG64) info.info.x11.wmwindow;
 # elif defined(RT_OS_DARWIN)
     mWinId = (intptr_t)VBoxSDLGetDarwinWindowId();
 # else
