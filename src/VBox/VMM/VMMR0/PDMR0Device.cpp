@@ -1916,6 +1916,7 @@ VMMR0_INT_DECL(int) PDMR0DeviceCreateReqHandler(PGVM pGVM, PPDMDEVICECREATEREQ p
  * @returns VBox status code.
  * @param   pGVM    The global (ring-0) VM structure.
  * @param   pReq    Pointer to the request buffer.
+ * @param   idCpu   The ID of the calling EMT.
  * @thread  EMT(0), except for PDMDEVICEGENCALL_REQUEST which can be any EMT.
  */
 VMMR0_INT_DECL(int) PDMR0DeviceGenCallReqHandler(PGVM pGVM, PPDMDEVICEGENCALLREQ pReq, VMCPUID idCpu)
