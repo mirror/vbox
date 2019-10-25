@@ -113,6 +113,17 @@ typedef struct VBOXUSB_DEV
 static VBOXUSBGLOBALSTATE g_VBoxUsbGlobal;
 
 
+static void usbLibVuFreeDevices(PVBOXUSB_DEV pDevInfos)
+{
+    while (pDevInfos)
+    {
+        PVBOXUSB_DEV pNext = pDevInfos->pNext;
+        RTMemFree(pDevInfos);
+        pDevInfos = pNext;
+    }
+}
+
+/* Check that a proxied device responds the way we expect it to. */
 static int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
 {
     HANDLE  hOut = INVALID_HANDLE_VALUE;
@@ -124,7 +135,7 @@ static int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
     if (hOut == INVALID_HANDLE_VALUE)
     {
         dwErr = GetLastError();
-        AssertMsgFailed(("CreateFile FAILED to open %s, dwErr=%u\n", pVuDev->szName, dwErr));
+        AssertFailed();
         LogRelFunc(("Failed to open `%s' (dwErr=%u)!\n", pVuDev->szName, dwErr));
         return VERR_GENERAL_FAILURE;
     }
@@ -138,7 +149,7 @@ static int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
         if (!DeviceIoControl(hOut, SUPUSB_IOCTL_GET_VERSION, NULL, 0,&version, sizeof(version),  &cbReturned, NULL))
         {
             dwErr = GetLastError();
-            AssertMsgFailed(("DeviceIoControl SUPUSB_IOCTL_GET_VERSION failed with LastError=%Rwa\n", dwErr));
+            AssertFailed();
             LogRelFunc(("SUPUSB_IOCTL_GET_VERSION failed on `%s' (dwErr=%u)!\n", pVuDev->szName, dwErr));
             break;
         }
@@ -149,7 +160,7 @@ static int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
 #endif
            )
         {
-            AssertMsgFailed(("Invalid version %d:%d vs %d:%d\n", version.u32Major, version.u32Minor, USBDRV_MAJOR_VERSION, USBDRV_MINOR_VERSION));
+            AssertFailed();
             LogRelFunc(("Invalid version %d:%d (%s) vs %d:%d (library)!\n", version.u32Major, version.u32Minor, pVuDev->szName, USBDRV_MAJOR_VERSION, USBDRV_MINOR_VERSION));
             break;
         }
@@ -157,7 +168,7 @@ static int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
         if (!DeviceIoControl(hOut, SUPUSB_IOCTL_IS_OPERATIONAL, NULL, 0, NULL, NULL, &cbReturned, NULL))
         {
             dwErr = GetLastError();
-            AssertMsgFailed(("DeviceIoControl SUPUSB_IOCTL_IS_OPERATIONAL failed with LastError=%Rwa\n", dwErr));
+            AssertFailed();
             LogRelFunc(("SUPUSB_IOCTL_IS_OPERATIONAL failed on `%s' (dwErr=%u)!\n", pVuDev->szName, dwErr));
             break;
         }
@@ -169,6 +180,7 @@ static int usbLibVuDeviceValidate(PVBOXUSB_DEV pVuDev)
     return rc;
 }
 
+#ifndef VBOX_WITH_NEW_USB_ENUM
 static int usbLibVuDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO hDevInfo, PSP_DEVICE_INTERFACE_DATA pIfData)
 {
     DWORD cbIfDetailData;
@@ -210,11 +222,7 @@ static int usbLibVuDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO hDevInfo, PSP_DE
 
         strncpy(pVuDev->szName, pIfDetailData->DevicePath, sizeof (pVuDev->szName));
 
-#ifdef VBOX_WITH_NEW_USB_ENUM
-        if (!SetupDiGetDeviceRegistryPropertyA(hDevInfo, &DevInfoData, SPDRP_LOCATION_INFORMATION,
-#else
         if (!SetupDiGetDeviceRegistryPropertyA(hDevInfo, &DevInfoData, SPDRP_DRIVER,
-#endif
             NULL, /* OUT PDWORD PropertyRegDataType */
             (PBYTE)pVuDev->szDriverRegName,
             sizeof (pVuDev->szDriverRegName),
@@ -233,16 +241,6 @@ static int usbLibVuDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO hDevInfo, PSP_DE
 
     RTMemFree(pIfDetailData);
     return rc;
-}
-
-static void usbLibVuFreeDevices(PVBOXUSB_DEV pDevInfos)
-{
-    while (pDevInfos)
-    {
-        PVBOXUSB_DEV pNext = pDevInfos->pNext;
-        RTMemFree(pDevInfos);
-        pDevInfos = pNext;
-    }
 }
 
 static int usbLibVuGetDevices(PVBOXUSB_DEV *ppVuDevs, uint32_t *pcVuDevs)
@@ -305,7 +303,6 @@ static int usbLibVuGetDevices(PVBOXUSB_DEV *ppVuDevs, uint32_t *pcVuDevs)
     return VINF_SUCCESS;
 }
 
-#ifndef VBOX_WITH_NEW_USB_ENUM
 static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_EX pConInfo, ULONG iPort, LPCSTR lpszDrvKeyName, LPCSTR lpszHubName, PVBOXUSB_STRING_DR_ENTRY pDrList)
 {
     pDev->bcdUSB = pConInfo->DeviceDescriptor.bcdUSB;
@@ -386,6 +383,121 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
     return VINF_SUCCESS;
 }
 #else
+
+static PSP_DEVICE_INTERFACE_DETAIL_DATA usbLibGetDevDetail(HDEVINFO InfoSet, PSP_DEVICE_INTERFACE_DATA InterfaceData, PSP_DEVINFO_DATA DevInfoData);
+static void *usbLibGetRegistryProperty(HDEVINFO InfoSet, const PSP_DEVINFO_DATA DevData, DWORD Property);
+
+/* Populate the data for a single proxied USB device. */
+static int usbLibVUsbDevicePopulate(PVBOXUSB_DEV pVuDev, HDEVINFO InfoSet, PSP_DEVICE_INTERFACE_DATA InterfaceData)
+{
+    PSP_DEVICE_INTERFACE_DETAIL_DATA    DetailData = NULL;
+    SP_DEVINFO_DATA                     DeviceData;
+    LPCSTR                              Location;
+    int                                 rc = VINF_SUCCESS;
+
+    memset(&DeviceData, 0, sizeof(DeviceData));
+    DeviceData.cbSize = sizeof(DeviceData);
+    /* The interface detail includes the device path. */
+    DetailData = usbLibGetDevDetail(InfoSet, InterfaceData, &DeviceData);
+    if (DetailData)
+    {
+        strncpy(pVuDev->szName, DetailData->DevicePath, sizeof(pVuDev->szName));
+
+        /* The location is used as a unique identifier for cross-referencing the two lists. */
+        Location = (LPCSTR)usbLibGetRegistryProperty(InfoSet, &DeviceData, SPDRP_LOCATION_INFORMATION);
+        if (Location)
+        {
+            strncpy(pVuDev->szDriverRegName, Location, sizeof(pVuDev->szDriverRegName));
+            rc = usbLibVuDeviceValidate(pVuDev);
+            LogRelFunc(("Found VBoxUSB on `%s' (rc=%d)\n", pVuDev->szName, rc));
+            AssertRC(rc);
+
+            RTMemFree((void *)Location);
+        }
+        else
+        {
+            /* Errors will be logged by usbLibGetRegistryProperty(). */
+            rc = VERR_GENERAL_FAILURE;
+        }
+
+        RTMemFree(DetailData);
+    }
+    else
+    {
+        /* Errors will be logged by usbLibGetDevDetail(). */
+        rc = VERR_GENERAL_FAILURE;
+    }
+
+
+    return rc;
+}
+
+/* Enumerate proxied USB devices (with VBoxUSB.sys loaded). */
+static int usbLibEnumVUsbDevices(PVBOXUSB_DEV *ppVuDevs, uint32_t *pcVuDevs)
+{
+    SP_DEVICE_INTERFACE_DATA    InterfaceData;
+    HDEVINFO                    InfoSet;
+    DWORD                       DeviceIndex;
+    DWORD                       dwErr;
+
+    *ppVuDevs = NULL;
+    *pcVuDevs = 0;
+
+    /* Enumerate all present devices which support the GUID_CLASS_VBOXUSB interface. */
+    InfoSet = SetupDiGetClassDevs(&GUID_CLASS_VBOXUSB, NULL, NULL,
+                                  (DIGCF_PRESENT | DIGCF_DEVICEINTERFACE));
+    if (InfoSet == INVALID_HANDLE_VALUE)
+    {
+        DWORD dwErr = GetLastError();
+        LogRelFunc(("SetupDiGetClassDevs for GUID_CLASS_VBOXUSB failed (dwErr=%u)\n", dwErr));
+        AssertFailed();
+        return VERR_GENERAL_FAILURE;
+    }
+
+    memset(&InterfaceData, 0, sizeof(InterfaceData));
+    InterfaceData.cbSize = sizeof(InterfaceData);
+    DeviceIndex = 0;
+
+    /* Loop over the enumerated list. */
+    while (SetupDiEnumDeviceInterfaces(InfoSet, NULL, &GUID_CLASS_VBOXUSB, DeviceIndex, &InterfaceData))
+    {
+        /* we've now got the IfData */
+        PVBOXUSB_DEV pVuDev = (PVBOXUSB_DEV)RTMemAllocZ(sizeof (*pVuDev));
+        if (!pVuDev)
+        {
+            AssertFailed();
+            LogRelFunc(("RTMemAllocZ failed\n"));
+            break;
+        }
+
+        int rc = usbLibVUsbDevicePopulate(pVuDev, InfoSet, &InterfaceData);
+        if (RT_SUCCESS(rc))
+        {
+            pVuDev->pNext = *ppVuDevs;
+            *ppVuDevs = pVuDev;
+            ++*pcVuDevs;
+        }
+        else    /* Skip this device but continue enumerating. */
+            AssertMsgFailed(("usbLibVuDevicePopulate failed, rc=%d\n", rc));
+
+        memset(&InterfaceData, 0, sizeof(InterfaceData));
+        InterfaceData.cbSize = sizeof(InterfaceData);
+        ++DeviceIndex;
+    }
+
+    /* Paranoia. */
+    dwErr = GetLastError();
+    if (dwErr != ERROR_NO_MORE_ITEMS)
+    {
+        LogRelFunc(("SetupDiEnumDeviceInterfaces failed (dwErr=%u)\n", dwErr));
+        AssertFailed();
+    }
+
+    SetupDiDestroyDeviceInfoList(InfoSet);
+
+    return VINF_SUCCESS;
+}
+
 static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_EX pConInfo, ULONG iPort, LPCSTR lpszLocation, LPCSTR lpszDrvKeyName, LPCSTR lpszHubName, PVBOXUSB_STRING_DR_ENTRY pDrList)
 {
     pDev->bcdUSB = pConInfo->DeviceDescriptor.bcdUSB;
@@ -1027,14 +1139,14 @@ static void *usbLibGetRegistryProperty(HDEVINFO InfoSet, const PSP_DEVINFO_DATA 
     return PropertyData;
 }
 
-/* Given a HDEVINFO and SP_DEVICE_INTERFACE_DATA, get the interface detail data. */
-static PSP_DEVICE_INTERFACE_DETAIL_DATA usbLibGetDevDetail(HDEVINFO InfoSet, PSP_DEVICE_INTERFACE_DATA InterfaceData)
+/* Given a HDEVINFO and SP_DEVICE_INTERFACE_DATA, get the interface detail data and optionally device info data. */
+static PSP_DEVICE_INTERFACE_DETAIL_DATA usbLibGetDevDetail(HDEVINFO InfoSet, PSP_DEVICE_INTERFACE_DATA InterfaceData, PSP_DEVINFO_DATA DevInfoData)
 {
     BOOL                                rc;
     DWORD                               dwReqLen;
     PSP_DEVICE_INTERFACE_DETAIL_DATA    DetailData;
 
-    rc = SetupDiGetDeviceInterfaceDetail(InfoSet, InterfaceData, NULL, 0, &dwReqLen, NULL);
+    rc = SetupDiGetDeviceInterfaceDetail(InfoSet, InterfaceData, NULL, 0, &dwReqLen, DevInfoData);
     if (!rc && (GetLastError() != ERROR_INSUFFICIENT_BUFFER))
     {
         LogRelFunc(("Failed to get interface detail size, error %ld\n", GetLastError()));
@@ -1048,7 +1160,7 @@ static PSP_DEVICE_INTERFACE_DETAIL_DATA usbLibGetDevDetail(HDEVINFO InfoSet, PSP
     memset(DetailData, 0, dwReqLen);
     DetailData->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA);
 
-    rc = SetupDiGetDeviceInterfaceDetail(InfoSet, InterfaceData, DetailData, dwReqLen, &dwReqLen, NULL);
+    rc = SetupDiGetDeviceInterfaceDetail(InfoSet, InterfaceData, DetailData, dwReqLen, &dwReqLen, DevInfoData);
     if (!rc)
     {
         LogRelFunc(("Failed to get interface detail, error %ld\n", GetLastError()));
@@ -1090,7 +1202,7 @@ static LPCSTR usbLibGetHubPathFromInstanceID(LPCSTR InstanceID)
         return NULL;
     }
 
-    DetailData = usbLibGetDevDetail(InfoSet, &InterfaceData);
+    DetailData = usbLibGetDevDetail(InfoSet, &InterfaceData, NULL);
     if (!DetailData)
     {
         SetupDiDestroyDeviceInfoList(InfoSet);
@@ -1297,7 +1409,7 @@ static int usbLibEnumDevices(PUSBDEVICE *ppDevs, uint32_t *pcDevs)
     LPCSTR              Location;
     LPCSTR              DriverKey;
 
-    /* Ask for the USB PnP enumerator for all it has. */
+    /* Ask the USB PnP enumerator for all it has. */
     InfoSet = SetupDiGetClassDevs(NULL, "USB", NULL, DIGCF_ALLCLASSES | DIGCF_PRESENT);
 
     memset(&DeviceData, 0, sizeof(DeviceData));
@@ -1428,7 +1540,7 @@ static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs,
                 DWORD dwErr = GetLastError();
 #ifdef VBOX_WITH_ANNOYING_USB_ASSERTIONS
                 /* ERROR_DEVICE_NOT_CONNECTED -> device was removed just now */
-                AssertMsg(dwErr == ERROR_DEVICE_NOT_CONNECTED, (__FUNCTION__": DeviceIoControl failed dwErr (%u)\n", dwErr));
+                AsserFailed();
 #endif
                 LogRelFunc(("SUPUSB_IOCTL_GET_DEVICE failed on '%s' (dwErr=%u)!\n", pDevInfos->szName, dwErr));
                 CloseHandle(hDev);
@@ -1444,7 +1556,7 @@ static int usbLibMonDevicesUpdate(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE pDevs,
             {
                 DWORD dwErr = GetLastError();
                 /* ERROR_DEVICE_NOT_CONNECTED -> device was removed just now */
-                AssertMsgFailed(("Monitor DeviceIoControl failed dwErr (%u)\n", dwErr));
+                AssertFailed();
                 LogRelFunc(("SUPUSBFLT_IOCTL_GET_DEVICE failed for '%s' (hDevice=%p, dwErr=%u)!\n", pDevInfos->szName, hDevice, dwErr));
                 CloseHandle(hDev);
                 break;
@@ -1500,7 +1612,11 @@ static int usbLibGetDevices(PVBOXUSBGLOBALSTATE pGlobal, PUSBDEVICE *ppDevs, uin
     {
         PVBOXUSB_DEV pDevInfos = NULL;
         uint32_t cDevInfos = 0;
+#ifdef VBOX_WITH_NEW_USB_ENUM
+        rc = usbLibEnumVUsbDevices(&pDevInfos, &cDevInfos);
+#else
         rc = usbLibVuGetDevices(&pDevInfos, &cDevInfos);
+#endif
         AssertRC(rc);
         if (RT_SUCCESS(rc))
         {
@@ -1602,14 +1718,14 @@ USBLIB_DECL(void *) USBLibAddFilter(PCUSBFILTER pFilter)
                 &cbReturned, NULL))
     {
         DWORD dwErr = GetLastError();
-        AssertMsgFailed(("DeviceIoControl failed with dwErr (%u)\n", dwErr));
+        AssertFailed();
         LogRelFunc(("SUPUSBFLT_IOCTL_ADD_FILTER failed (dwErr=%u)!\n", dwErr));
         return NULL;
     }
 
     if (RT_FAILURE(FltAddRc.rc))
     {
-        AssertMsgFailed(("Adding filter failed with %d\n", FltAddRc.rc));
+        AssertFailed();
         LogRelFunc(("Adding a USB filter failed with rc=%d!\n", FltAddRc.rc));
         return NULL;
     }
@@ -1644,7 +1760,7 @@ USBLIB_DECL(void) USBLibRemoveFilter(void *pvId)
     if (!DeviceIoControl(g_VBoxUsbGlobal.hMonitor, SUPUSBFLT_IOCTL_REMOVE_FILTER, &uId, sizeof(uId),  NULL, 0,&cbReturned, NULL))
     {
         DWORD dwErr = GetLastError();
-        AssertMsgFailed(("DeviceIoControl failed with LastError=%Rwa\n", dwErr));
+        AssertFailed();
         LogRelFunc(("SUPUSBFLT_IOCTL_REMOVE_FILTER failed (dwErr=%u)!\n", dwErr));
     }
     else
@@ -1663,7 +1779,7 @@ USBLIB_DECL(int) USBLibRunFilters(void)
                 &cbReturned, NULL))
     {
         DWORD dwErr = GetLastError();
-        AssertMsgFailed(("DeviceIoControl failed with dwErr (%u)\n", dwErr));
+        AssertFailed();
         LogRelFunc(("SUPUSBFLT_IOCTL_RUN_FILTERS failed (dwErr=%u)!\n", dwErr));
         return RTErrConvertFromWin32(dwErr);
     }
