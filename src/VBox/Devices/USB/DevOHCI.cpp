@@ -112,9 +112,16 @@
 *   Structures and Typedefs                                                                                                      *
 *********************************************************************************************************************************/
 /** The current saved state version. */
-#define OHCI_SAVED_STATE_VERSION            5   /* Introduced post-4.3. */
-/** The saved state with support of up to 8 ports. */
-#define OHCI_SAVED_STATE_VERSION_8PORTS     4   /* Introduced in 3.1 or so. */
+#define OHCI_SAVED_STATE_VERSION                OHCI_SAVED_STATE_VERSION_NO_EOF_TIMER
+/** The current saved state version.
+ * @since 6.1.0beta3/rc1  */
+#define OHCI_SAVED_STATE_VERSION_NO_EOF_TIMER   6
+/** The current saved with the start-of-frame timer.
+ * @since 4.3.x  */
+#define OHCI_SAVED_STATE_VERSION_EOF_TIMER      5
+/** The saved state with support of up to 8 ports.
+ * @since 3.1 or so  */
+#define OHCI_SAVED_STATE_VERSION_8PORTS         4
 
 
 /** Maximum supported number of Downstream Ports on the root hub. 15 ports
@@ -268,9 +275,6 @@ typedef OHCIPAGECACHE *POHCIPAGECACHE;
  */
 typedef struct OHCI
 {
-    /** The End-Of-Frame timer. */
-    TMTIMERHANDLE       hEndOfFrameTimer;
-
     /** Start of current frame. */
     uint64_t            SofTime;
     /** done queue interrupt counter */
@@ -331,6 +335,9 @@ typedef struct OHCI
     uint32_t            pstart;
     /** @} */
 
+    /** This member and all the following are not part of saved state. */
+    uint64_t            SavedStateEnd;
+
     /** The number of virtual time ticks per frame. */
     uint64_t            cTicksPerFrame;
     /** The number of virtual time ticks per USB bus tick. */
@@ -344,9 +351,6 @@ typedef struct OHCI
     STAMCOUNTER         StatDroppedUrbs;
     /** Profiling ohciR3FrameBoundaryTimer. */
     STAMPROFILE         StatTimer;
-
-    /** This member and all the following are not part of saved state. */
-    uint64_t            SavedStateEnd;
 
     /** VM timer frequency used for frame timer calculations. */
     uint64_t            u64TimerHz;
@@ -422,6 +426,8 @@ typedef struct OHCIR3
 
     /** Pointer to state load data. */
     R3PTRTYPE(POHCILOAD) pLoad;
+    /** The restored periodic frame rate. */
+    uint32_t             uRestoredPeriodicFrameRate;
 } OHCIR3;
 /** Pointer to ring-3 OHCI state. */
 typedef OHCIR3 *POHCIR3;
@@ -4490,7 +4496,7 @@ static VBOXSTRICTRC HcControl_w(PPDMDEVINS pDevIns, POHCI pThis, uint32_t iReg, 
         {
             case OHCI_USB_OPERATIONAL:
                 LogRel(("OHCI: USB Operational\n"));
-                ohciR3BusStart(pDevIns, pThis,  pThisCC);
+                ohciR3BusStart(pDevIns, pThis, pThisCC);
                 break;
             case OHCI_USB_SUSPEND:
                 ohciR3BusStop(pThisCC);
@@ -5594,22 +5600,6 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             }
         }
     }
-
-    /*
-     * If the bus was started set the timer. This is ugly but avoids changing the
-     * saved state version for now so we can backport the changes to other branches.
-     */
-    /** @todo Do it properly for 4.4 by changing the saved state. */
-    if (VUSBIRhGetPeriodicFrameRate(pThisCC->RootHub.pIRhConn) != 0)
-    {
-        /* Calculate a new timer expiration so this saved state works with older releases. */
-        uint64_t u64Expire = PDMDevHlpTMTimeVirtGet(pDevIns) + pThis->cTicksPerFrame;
-
-        LogFlowFunc(("Bus is active, setting timer to %llu\n", u64Expire));
-        int rc = PDMDevHlpTimerSet(pDevIns, pThis->hEndOfFrameTimer, u64Expire);
-        AssertRC(rc);
-    }
-
     PDMDevHlpCritSectLeave(pDevIns, pDevIns->pCritSectRoR3);
 
     /*
@@ -5634,14 +5624,15 @@ static DECLCALLBACK(int) ohciR3SavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ohciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    POHCI           pThis = PDMINS_2_DATA(pDevIns, POHCI);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
-    LogFlow(("ohciR3SaveExec: \n"));
+    POHCI   pThis   = PDMINS_2_DATA(pDevIns, POHCI);
+    POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
+    LogFlow(("ohciR3SaveExec:\n"));
 
-    int rc = pHlp->pfnSSMPutStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aOhciFields[0], NULL);
-    if (RT_SUCCESS(rc))
-        rc = PDMDevHlpTimerSave(pDevIns, pThis->hEndOfFrameTimer, pSSM);
-    return rc;
+    int rc = pDevIns->pHlpR3->pfnSSMPutStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aOhciFields[0], NULL);
+    AssertRCReturn(rc, rc);
+
+    /* Save the periodic frame rate so we can we can tell if the bus was started or not when restoring. */
+    return pDevIns->pHlpR3->pfnSSMPutU32(pSSM, VUSBIRhGetPeriodicFrameRate(pThisCC->RootHub.pIRhConn));
 }
 
 
@@ -5663,7 +5654,7 @@ static DECLCALLBACK(int) ohciR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
      * NULL the dev pointers.
      */
     POHCIROOTHUB pRh = &pThis->RootHub;
-    OHCIROOTHUB  Rh = *pRh;
+    OHCIROOTHUB  Rh  = *pRh;
     for (unsigned i = 0; i < RT_ELEMENTS(pRh->aPorts); i++)
     {
         if (   pRh->aPorts[i].pDev
@@ -5752,31 +5743,53 @@ static DECLCALLBACK(int) ohciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ohciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    POHCI           pThis = PDMINS_2_DATA(pDevIns, POHCI);
-    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
+    POHCI           pThis   = PDMINS_2_DATA(pDevIns, POHCI);
+    POHCICC         pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     int             rc;
     LogFlow(("ohciR3LoadExec:\n"));
+
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
-    if (uVersion == OHCI_SAVED_STATE_VERSION)
-    {
+    if (uVersion >= OHCI_SAVED_STATE_VERSION_EOF_TIMER)
         rc = pHlp->pfnSSMGetStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aOhciFields[0], NULL);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
     else if (uVersion == OHCI_SAVED_STATE_VERSION_8PORTS)
-    {
         rc = pHlp->pfnSSMGetStructEx(pSSM, pThis, sizeof(*pThis), 0 /*fFlags*/, &g_aOhciFields8Ports[0], NULL);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
     else
         AssertMsgFailedReturn(("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+    AssertRCReturn(rc, rc);
 
     /*
-     * Finally restore the timer.
+     * Get the frame rate / started indicator.
+     *
+     * For older versions there is a timer saved here.  We'll skip it and deduce
+     * the periodic frame rate from the host controller functional state.
      */
-    return PDMDevHlpTimerLoad(pDevIns, pThis->hEndOfFrameTimer, pSSM);
+    if (uVersion > OHCI_SAVED_STATE_VERSION_EOF_TIMER)
+    {
+        rc = pHlp->pfnSSMGetU32(pSSM, &pThisCC->uRestoredPeriodicFrameRate);
+        AssertRCReturn(rc, rc);
+    }
+    else
+    {
+        rc = pHlp->pfnSSMSkipToEndOfUnit(pSSM);
+        AssertRCReturn(rc, rc);
+
+        uint32_t fHcfs = pThis->ctl & OHCI_CTL_HCFS;
+        switch (fHcfs)
+        {
+            case OHCI_USB_OPERATIONAL:
+            case OHCI_USB_RESUME:
+                pThisCC->uRestoredPeriodicFrameRate = OHCI_DEFAULT_TIMER_FREQ;
+                break;
+            default:
+                pThisCC->uRestoredPeriodicFrameRate = 0;
+                break;
+        }
+    }
+
+    /** @todo could we restore the frame rate here instead of in ohciR3Resume? */
+    return VINF_SUCCESS;
 }
 
 
@@ -5868,18 +5881,16 @@ static DECLCALLBACK(void) ohciR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ohciR3Resume(PPDMDEVINS pDevIns)
 {
-    POHCI   pThis   = PDMINS_2_DATA(pDevIns, POHCI);
     POHCICC pThisCC = PDMINS_2_DATA_CC(pDevIns, POHCICC);
     LogFlowFunc(("\n"));
 
-    /* Restart the frame thread if the timer is active. */
-    if (PDMDevHlpTimerIsActive(pDevIns, pThis->hEndOfFrameTimer))
+    /* Restart the frame thread if it was active when the loaded state was saved. */
+    uint32_t uRestoredPeriodicFR = pThisCC->uRestoredPeriodicFrameRate;
+    pThisCC->uRestoredPeriodicFrameRate = 0;
+    if (uRestoredPeriodicFR)
     {
-        int rc = PDMDevHlpTimerStop(pDevIns, pThis->hEndOfFrameTimer);
-        AssertRC(rc);
-
-        LogFlowFunc(("Bus was active, enable periodic frame processing\n"));
-        rc = pThisCC->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThisCC->RootHub.pIRhConn, OHCI_DEFAULT_TIMER_FREQ);
+        LogFlowFunc(("Bus was active, enable periodic frame processing (rate: %u)\n", uRestoredPeriodicFR));
+        int rc = pThisCC->RootHub.pIRhConn->pfnSetPeriodicFrameProcessing(pThisCC->RootHub.pIRhConn, uRestoredPeriodicFR);
         AssertRC(rc);
     }
 }
@@ -6084,13 +6095,6 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     AssertRCReturn(rc, rc);
 
     /*
-     * Create the end-of-frame timer.
-     */
-    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, ohciR3FrameBoundaryTimer, pThis,
-                              TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "USB Frame Timer", &pThis->hEndOfFrameTimer);
-    AssertRCReturn(rc, rc);
-
-    /*
      * Register the saved state data unit.
      */
     rc = PDMDevHlpSSMRegisterEx(pDevIns, OHCI_SAVED_STATE_VERSION, sizeof(*pThis), NULL,
@@ -6136,10 +6140,10 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("OHCI: Failed to set URB parameters"));
 
     /*
-     * Calculate the timer intervals.
-     * This assumes that the VM timer doesn't change frequency during the run.
+     * Take down the virtual clock frequence for use in ohciR3FrameRateChanged().
+     * (Used to be a timer, thus the name.)
      */
-    pThis->u64TimerHz = PDMDevHlpTimerGetFreq(pDevIns, pThis->hEndOfFrameTimer);
+    pThis->u64TimerHz = PDMDevHlpTMTimeVirtGetFreq(pDevIns);
 
     /*
      * Critical sections: explain
