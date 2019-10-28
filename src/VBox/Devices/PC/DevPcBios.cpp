@@ -1215,6 +1215,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "LanBootRom\0"
                               "PXEDebug\0"
                               "UUID\0"
+                              "UuidLe\0"
                               "IOAPIC\0"
                               "APIC\0"
                               "NumCPUs\0"
@@ -1574,10 +1575,27 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"UUID\" failed"));
 
-    /* Convert the UUID to network byte order. Not entirely straightforward as parts are MSB already... */
-    uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
-    uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
-    uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+    bool fUuidLe;
+    rc = CFGMR3QueryBoolDef(pCfg, "UuidLe", &fUuidLe, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"UuidLe\" failed"));
+
+    if (!fUuidLe)
+    {
+        /*
+         * UUIDs are stored little endian actually (see chapter 7.2.1 System — UUID
+         * of the DMI/SMBIOS spec) but to not force reactivation of existing guests we have
+         * to carry this bug along... (see also DevEFI.cpp when changing this)
+         *
+         * Convert the UUID to network byte order. Not entirely straightforward as
+         * parts are MSB already...
+         */
+        uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
+        uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
+        uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+    }
+
     uint16_t cbDmiTables = 0;
     uint16_t cNumDmiTables = 0;
     rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE,

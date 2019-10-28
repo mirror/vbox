@@ -2385,6 +2385,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                   "McfgBase|"
                                   "McfgLength|"
                                   "UUID|"
+                                  "UuidLe|"
                                   "IOAPIC|"
                                   "APIC|"
                                   "DmiBIOSFirmwareMajor|"
@@ -2462,13 +2463,26 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"UUID\" failed"));
 
-    /*
-     * Convert the UUID to network byte order. Not entirely straightforward as
-     * parts are MSB already...
-     */
-    uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
-    uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
-    uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+    bool fUuidLe;
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "UuidLe", &fUuidLe, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Querying \"UuidLe\" failed"));
+
+    if (!fUuidLe)
+    {
+        /*
+         * UUIDs are stored little endian actually (see chapter 7.2.1 System — UUID
+         * of the DMI/SMBIOS spec) but to not force reactivation of existing guests we have
+         * to carry this bug along... (see also DevPcBios.cpp when changing this)
+         *
+         * Convert the UUID to network byte order. Not entirely straightforward as
+         * parts are MSB already...
+         */
+        uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
+        uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
+        uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
+    }
     memcpy(&pThisCC->aUuid, &uuid, sizeof pThisCC->aUuid);
 
     /*
