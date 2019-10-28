@@ -224,6 +224,7 @@ static DECLCALLBACK(int) pdmR3TaskThread(RTTHREAD ThreadSelf, void *pvUser)
             unsigned iTask      = ASMBitFirstSetU64(fTriggered);
             if (iTask == 0)
                 break;
+            uint32_t cShutdown = 3;
             do
             {
                 iTask--;
@@ -281,16 +282,36 @@ static DECLCALLBACK(int) pdmR3TaskThread(RTTHREAD ThreadSelf, void *pvUser)
                 fTriggered &= ~RT_BIT_64(iTask);
                 iTask = ASMBitFirstSetU64(fTriggered);
             } while (iTask != 0);
+
+            /*
+             * If we're shutting down, we'll try drain the pending tasks by
+             * looping three more times before just quitting.  We don't want
+             * to get stuck here if some stuff is misbehaving.
+             */
+            if (!ASMAtomicReadBool(&pTaskSet->fShutdown))
+            { /* likely */ }
+            else if (--cShutdown == 0)
+                break;
         }
 
         /*
-         * Wait.
+         * Wait unless we're shutting down.
          */
-        if (pTaskSet->fRZEnabled)
-            SUPSemEventWaitNoResume(pTaskSet->pVM->pSession, pTaskSet->hEventR0, RT_MS_15SEC);
-        else
-            RTSemEventWaitNoResume(pTaskSet->hEventR3, RT_MS_15SEC);
+        if (!ASMAtomicReadBool(&pTaskSet->fShutdown))
+        {
+            if (pTaskSet->fRZEnabled)
+                SUPSemEventWaitNoResume(pTaskSet->pVM->pSession, pTaskSet->hEventR0, RT_MS_15SEC);
+            else
+                RTSemEventWaitNoResume(pTaskSet->hEventR3, RT_MS_15SEC);
+        }
     }
+
+    /*
+     * Complain about pending tasks.
+     */
+    uint64_t const fTriggered = ASMAtomicReadU64(&pTaskSet->fTriggered);
+    AssertLogRelMsg(fTriggered == 0, ("fTriggered=%#RX64 - %u %s\n", fTriggered, ASMBitFirstSetU64(fTriggered) - 1,
+                                      pTaskSet->aTasks[ASMBitFirstSetU64(fTriggered) - 1].pszName));
 
     return VINF_SUCCESS;
 }
