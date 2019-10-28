@@ -87,14 +87,13 @@ typedef struct SHCLCLIENTSTATE
     uint32_t                uClientID;
     /** The client's session ID. */
     SHCLSESSIONID           uSessionID;
-    /** Optional protocol version the client uses. Set to 0 by default. */
-    uint32_t                uProtocolVer;
     /** Guest feature flags, VBOX_SHCL_GF_0_XXX. */
     uint64_t                fGuestFeatures0;
     /** Guest feature flags, VBOX_SHCL_GF_1_XXX. */
     uint64_t                fGuestFeatures1;
     /** Maximum chunk size to use for data transfers. Set to _64K by default. */
     uint32_t                cbChunkSize;
+    /** Where the transfer sources its data from. */
     SHCLSOURCE              enmSource;
     /** The client's transfers state. */
     SHCLCLIENTTRANSFERSTATE Transfers;

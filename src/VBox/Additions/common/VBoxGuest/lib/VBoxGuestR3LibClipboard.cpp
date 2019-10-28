@@ -93,8 +93,6 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx)
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
                            VBOX_SHCL_GUEST_FN_CONNECT, VBOX_SHCL_CPARMS_CONNECT);
 
-        VbglHGCMParmUInt32Set(&Msg.uProtocolVer, 0);
-        VbglHGCMParmUInt32Set(&Msg.uProtocolFlags, 0);
         VbglHGCMParmUInt32Set(&Msg.cbChunkSize, 0);
         VbglHGCMParmUInt32Set(&Msg.enmCompression, 0);
         VbglHGCMParmUInt32Set(&Msg.enmChecksumType, 0);
@@ -102,11 +100,7 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx)
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
         if (RT_SUCCESS(rc))
         {
-            rc = VbglHGCMParmUInt32Get(&Msg.uProtocolVer, &pCtx->uProtocolVer);
-            if (RT_SUCCESS(rc))
-                rc = VbglHGCMParmUInt32Get(&Msg.uProtocolFlags, &pCtx->uProtocolFlags);
-            if (RT_SUCCESS(rc))
-                rc = VbglHGCMParmUInt32Get(&Msg.cbChunkSize, &pCtx->cbChunkSize);
+            rc = VbglHGCMParmUInt32Get(&Msg.cbChunkSize, &pCtx->cbChunkSize);
 
             /** @todo Add / handle checksum + compression type. */
 
@@ -115,31 +109,32 @@ VBGLR3DECL(int) VbglR3ClipboardConnectEx(PVBGLR3SHCLCMDCTX pCtx)
                 /*
                  * Report features to the host.
                  */
-                uint64_t fHostFeatures0Ignored;
-                rc = VbglR3ClipboardReportFeatures(pCtx->uClientID, VBOX_SHCL_GF_NONE /* None yet */,
-                                                   &fHostFeatures0Ignored);
+                const uint64_t fGuestFeatures = VBOX_SHCL_GF_0_CONTEXT_ID;
+
+                rc = VbglR3ClipboardReportFeatures(pCtx->uClientID, fGuestFeatures,
+                                                   &pCtx->fHostFeatures);
                 if (RT_SUCCESS(rc))
-                    LogRel2(("Shared Clipboard: Host features: %#RX64\n", fHostFeatures0Ignored));
+                    LogRel2(("Shared Clipboard: Host features: %#RX64\n", pCtx->fHostFeatures));
                 else
                     LogRel(("Shared Clipboard: Warning! Feature reporing failed: %Rrc\n", rc));
+
+                pCtx->fUseLegacyProtocol = false;
             }
         }
         else
         {
             /* If the above call fails, make sure to use some sane defaults for
-             * the old (legacy) protocol. */
-            pCtx->uProtocolVer   = 0;
-            pCtx->uProtocolFlags = 0;
-            pCtx->cbChunkSize    = _64K;
+             * the old (legacy, VBox <= 6.1) protocol. */
+            pCtx->fUseLegacyProtocol = true;
+            pCtx->cbChunkSize        = _64K; /* Use 64KB as chunk size by default. */
 
             rc = VINF_SUCCESS; /* Failing above is not fatal. */
         }
 
-        LogFlowFunc(("uProtocolVer=%RU32, cbChunkSize=%RU32\n", pCtx->uProtocolVer, pCtx->cbChunkSize));
+        LogFlowFunc(("fHostFeatures=%#RX64, cbChunkSize=%RU32\n", pCtx->fHostFeatures, pCtx->cbChunkSize));
 
-        LogRel2(("Shared Clipboard: Client %RU32 connected, using protocol v%RU32 (cbChunkSize=%RU32)\n",
-                 pCtx->uClientID, pCtx->uProtocolVer, pCtx->cbChunkSize));
-
+        LogRel2(("Shared Clipboard: Client %RU32 connected (cbChunkSize=%RU32, fUseLegacyProtocol=%RTbool)\n",
+                 pCtx->uClientID, pCtx->cbChunkSize, pCtx->fUseLegacyProtocol));
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -193,15 +188,11 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFO
     VBoxShClFormatsMsg Msg;
     RT_ZERO(Msg);
 
-    if (pCtx->uProtocolVer >= 1)
-    {
-        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
-                           VBOX_SHCL_GUEST_FN_MSG_GET, 3);
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_MSG_GET, 3);
 
-        Msg.u.v1.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
-        Msg.u.v1.uFormats.SetUInt32(0);
-        Msg.u.v1.fFlags.SetUInt32(0);
-    }
+    Msg.u.v1.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_FORMATS_REPORT);
+    Msg.u.v1.uFormats.SetUInt32(0);
+    Msg.u.v1.fFlags.SetUInt32(0);
 
     int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
     if (RT_SUCCESS(rc))
@@ -255,7 +246,7 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATAREQ
 
 
 /**
- * Get a host message, legacy version (protocol v0). Do not use anymore.
+ * Get a host message, legacy version (which does not have VBOX_SHCL_GUEST_FN_MSG_GET). Do not use anymore.
  *
  * Note: This is the old message which still is being used for the non-URI Shared Clipboard transfers,
  *       to not break compatibility with older additions / VBox versions.
@@ -2217,7 +2208,7 @@ VBGLR3DECL(int) VbglR3ClipboardEventGetNext(uint32_t idMsg, uint32_t cParms,
     int rc;
 
 #ifdef LOG_ENABLED
-    LogFunc(("Handling idMsg=%RU32 (%s), protocol v%RU32\n", idMsg, ShClHostMsgToStr(idMsg), pCtx->uProtocolVer));
+    LogFunc(("Handling idMsg=%RU32 (%s)\n", idMsg, ShClHostMsgToStr(idMsg)));
 #endif
     switch (idMsg)
     {
@@ -2307,7 +2298,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORM
 
     LogFlowFunc(("uFormats=0x%x\n", pFormats->uFormats));
 
-    if (pCtx->uProtocolVer == 0)
+    if (pCtx->fUseLegacyProtocol)
     {
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 1);
         Msg.u.v0.uFormats.SetUInt32(pFormats->uFormats);
@@ -2401,7 +2392,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOC
 
     int rc;
 
-    if (pCtx->uProtocolVer == 0)
+    if (pCtx->fUseLegacyProtocol)
     {
         rc = VbglR3ClipboardWriteData(pCtx->uClientID, pData->uFormat, pData->pvData, pData->cbData);
     }

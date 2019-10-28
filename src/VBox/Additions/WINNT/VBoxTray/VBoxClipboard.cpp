@@ -959,7 +959,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
 
     const PSHCLWINCTX pWinCtx = &pCtx->Win;
 
-    LogRel2(("Shared Clipboard: Worker loop running, using protocol v%RU32\n", pCtx->CmdCtx.uProtocolVer));
+    LogRel2(("Shared Clipboard: Worker loop running\n"));
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
     HRESULT hr = OleInitialize(NULL);
@@ -974,8 +974,6 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
 
     int rc;
 
-    LogFlowFunc(("uProtocolVer=%RU32\n", pCtx->CmdCtx.uProtocolVer));
-
     uint32_t uMsg;
     uint32_t uFormats;
 
@@ -984,9 +982,9 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
     {
         PVBGLR3CLIPBOARDEVENT pEvent = NULL;
 
-        LogFlowFunc(("Waiting for host message (protocol v%RU32) ...\n", pCtx->CmdCtx.uProtocolVer));
+        LogFlowFunc(("Waiting for host message (fHostFeatures=%#RX64) ...\n", pCtx->CmdCtx.fHostFeatures));
 
-        if (pCtx->CmdCtx.uProtocolVer == 0) /* Legacy protocol */
+        if (pCtx->CmdCtx.fUseLegacyProtocol)
         {
             rc = VbglR3ClipboardGetHostMsgOld(pCtx->CmdCtx.uClientID, &uMsg, &uFormats);
             if (RT_FAILURE(rc))
@@ -1029,7 +1027,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
                 }
             }
         }
-        else /* Protocol >= v1. */
+        else /* Host service has peeking for messages support. */
         {
             pEvent = (PVBGLR3CLIPBOARDEVENT)RTMemAllocZ(sizeof(VBGLR3CLIPBOARDEVENT));
             AssertPtrBreakStmt(pEvent, rc = VERR_NO_MEMORY);

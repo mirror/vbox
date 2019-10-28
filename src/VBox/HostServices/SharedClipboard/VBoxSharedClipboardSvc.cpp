@@ -421,7 +421,7 @@ void shclSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, u
 /**
  * Sets the VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD return parameters.
  *
- * This function does the necessary translation between the legacy protocol (v0) and the new protocols (>= v1),
+ * This function does the necessary translation between the legacy protocol (<= VBox 6.0) and the new protocols (>= VBox 6.1),
  * as messages are always stored as >= v1 messages in the message queue.
  *
  * @returns VBox status code.
@@ -1112,9 +1112,9 @@ int shClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     AssertPtrReturn(pData,   VERR_INVALID_POINTER);
 
     SHCLEVENTID uEvent;
-    if (pClient->State.uProtocolVer == 0)
+    if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy */
     {
-        /* Protocol v0 did not have any context ID handling, so we ASSUME that the last event registered
+        /* Older Guest Additions (<= VBox 6.0) did not have any context ID handling, so we ASSUME that the last event registered
          * is the one we want to handle (as this all was a synchronous protocol anyway). */
         uEvent = ShClEventGetLast(&pClient->Events);
     }
@@ -1203,7 +1203,7 @@ int shclSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
     SHCLCLIENTCMDCTX cmdCtx;
     RT_ZERO(cmdCtx);
 
-    if (pClient->State.uProtocolVer == 0) /* Legacy protocol */
+    if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy */
     {
         if (cParms < 2)
         {
@@ -1430,8 +1430,8 @@ static DECLCALLBACK(void) svcCall(void *,
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
 
-    LogFunc(("u32ClientID=%RU32 (proto %RU32), fn=%RU32 (%s), cParms=%RU32, paParms=%p\n",
-             u32ClientID, pClient->State.uProtocolVer, u32Function, ShClGuestMsgToStr(u32Function), cParms, paParms));
+    LogFunc(("u32ClientID=%RU32, fn=%RU32 (%s), cParms=%RU32, paParms=%p\n",
+             u32ClientID, u32Function, ShClGuestMsgToStr(u32Function), cParms, paParms));
 
 #ifdef DEBUG
     uint32_t i;
@@ -1457,11 +1457,9 @@ static DECLCALLBACK(void) svcCall(void *,
             {
                 rc = VERR_INVALID_PARAMETER;
             }
-            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT  /* uProtocolVer */
-                     || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT  /* uProtocolFlags */
-                     || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT  /* cbChunkSize */
-                     || paParms[3].type != VBOX_HGCM_SVC_PARM_32BIT  /* enmCompression */
-                     || paParms[4].type != VBOX_HGCM_SVC_PARM_32BIT) /* enmChecksumType */
+            else if (   paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT  /* cbChunkSize */
+                     || paParms[1].type != VBOX_HGCM_SVC_PARM_32BIT  /* enmCompression */
+                     || paParms[2].type != VBOX_HGCM_SVC_PARM_32BIT) /* enmChecksumType */
             {
                 rc = VERR_INVALID_PARAMETER;
             }
@@ -1471,16 +1469,8 @@ static DECLCALLBACK(void) svcCall(void *,
             }
             else
             {
-                /* Update the protocol version and tell the guest. */
-                pClient->State.uProtocolVer = 1;
-
-                LogFlowFunc(("Now using protocol v%RU32\n", pClient->State.uProtocolVer));
-
-                HGCMSvcSetU32(&paParms[0], pClient->State.uProtocolVer);
-                HGCMSvcSetU32(&paParms[1], 0 /* Procotol flags, not used yet */);
-                HGCMSvcSetU32(&paParms[2], pClient->State.cbChunkSize);
-                HGCMSvcSetU32(&paParms[3], 0 /* Compression type, not used yet */);
-                HGCMSvcSetU32(&paParms[4], 0 /* Checksum type, not used yet */);
+                /* Report back supported chunk size to the guest. */
+                HGCMSvcSetU32(&paParms[0], _64K); /* Chunk size */ /** @todo Make chunk size dynamic. */
 
                 rc = VINF_SUCCESS;
             }
@@ -1522,7 +1512,7 @@ static DECLCALLBACK(void) svcCall(void *,
         {
             uint32_t uFormats = 0;
 
-            if (pClient->State.uProtocolVer == 0)
+            if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy */
             {
                 if (cParms != 1)
                 {
@@ -1798,7 +1788,6 @@ void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState)
 {
     LogFlowFuncEnter();
 
-    pClientState->uProtocolVer    = 0;
     pClientState->fGuestFeatures0 = VBOX_SHCL_GF_NONE;
     pClientState->fGuestFeatures1 = VBOX_SHCL_GF_NONE;
 
@@ -1899,16 +1888,18 @@ static DECLCALLBACK(int) svcHostCall(void *,
  */
 static SSMFIELD const s_aShClSSMClientState[] =
 {
-    SSMFIELD_ENTRY(SHCLCLIENTSTATE, uProtocolVer),
-    SSMFIELD_ENTRY(SHCLCLIENTSTATE, cbChunkSize),
-    SSMFIELD_ENTRY(SHCLCLIENTSTATE, enmSource),
+    /** Note: Saving the session ID not necessary, as they're not persistent across state save/restore. */
+    SSMFIELD_ENTRY    (SHCLCLIENTSTATE, fGuestFeatures0),
+    SSMFIELD_ENTRY    (SHCLCLIENTSTATE, fGuestFeatures1),
+    SSMFIELD_ENTRY    (SHCLCLIENTSTATE, cbChunkSize),
+    SSMFIELD_ENTRY    (SHCLCLIENTSTATE, enmSource),
     SSMFIELD_ENTRY_TERM()
 };
 
 /**
  * SSM descriptor table for the SHCLCLIENTURISTATE structure.
  */
-static SSMFIELD const s_aShClSSMClientURIState[] =
+static SSMFIELD const s_aShClSSMClientTransferState[] =
 {
     SSMFIELD_ENTRY(SHCLCLIENTTRANSFERSTATE, enmTransferDir),
     SSMFIELD_ENTRY_TERM()
@@ -1937,7 +1928,7 @@ static SSMFIELD const s_aShClSSMClientMsgCtx[] =
 
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
-    RT_NOREF(u32ClientID);
+    LogFlowFuncEnter();
 
 #ifndef UNIT_TEST
     /*
@@ -1946,6 +1937,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
      * pending request.
      * Pending requests, if any, will be completed in svcDisconnect.
      */
+    RT_NOREF(u32ClientID);
     LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
@@ -1957,7 +1949,7 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     int rc = SSMR3PutStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
     AssertRCReturn(rc, rc);
 
-    rc = SSMR3PutStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /*fFlags*/, &s_aShClSSMClientURIState[0], NULL);
+    rc = SSMR3PutStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /*fFlags*/, &s_aShClSSMClientTransferState[0], NULL);
     AssertRCReturn(rc, rc);
 
     /* Serialize the client's internal message queue. */
@@ -2025,10 +2017,11 @@ static int svcLoadStateV0(uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM,
 
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM, uint32_t uVersion)
 {
-#ifndef UNIT_TEST
-    RT_NOREF(u32ClientID, uVersion);
+    LogFlowFuncEnter();
 
-    LogFunc(("u32ClientID=%RU32\n", u32ClientID));
+#ifndef UNIT_TEST
+
+    RT_NOREF(u32ClientID, uVersion);
 
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
@@ -2037,16 +2030,21 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     uint32_t lenOrVer;
     int rc = SSMR3GetU32(pSSM, &lenOrVer);
     AssertRCReturn(rc, rc);
+
+    LogFunc(("u32ClientID=%RU32, lenOrVer=%#RX64\n", u32ClientID, lenOrVer));
+
     if (lenOrVer == VBOX_SHCL_SSM_VER_0)
     {
         return svcLoadStateV0(u32ClientID, pvClient, pSSM, uVersion);
     }
     else if (lenOrVer == VBOX_SHCL_SSM_VER_1)
     {
-        rc = SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /*fFlags*/, &s_aShClSSMClientState[0], NULL);
+        rc = SSMR3GetStructEx(pSSM, &pClient->State, sizeof(pClient->State), 0 /* fFlags */,
+                              &s_aShClSSMClientState[0], NULL);
         AssertRCReturn(rc, rc);
 
-        rc = SSMR3GetStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /*fFlags*/, &s_aShClSSMClientURIState[0], NULL);
+        rc = SSMR3GetStructEx(pSSM, &pClient->State.Transfers, sizeof(pClient->State.Transfers), 0 /* fFlags */,
+                              &s_aShClSSMClientTransferState[0], NULL);
         AssertRCReturn(rc, rc);
 
         /* Load the client's internal message queue. */
@@ -2191,20 +2189,20 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("ptable=%p\n", pTable));
+    LogFlowFunc(("pTable=%p\n", pTable));
 
-    if (!pTable)
+    if (!VALID_PTR(pTable))
     {
         rc = VERR_INVALID_PARAMETER;
     }
     else
     {
-        LogFunc(("ptable->cbSize = %d, ptable->u32Version = 0x%08X\n", pTable->cbSize, pTable->u32Version));
+        LogFunc(("pTable->cbSize = %d, ptable->u32Version = 0x%08X\n", pTable->cbSize, pTable->u32Version));
 
         if (   pTable->cbSize     != sizeof (VBOXHGCMSVCFNTABLE)
             || pTable->u32Version != VBOX_HGCM_SVC_VERSION)
         {
-            rc = VERR_INVALID_PARAMETER;
+            rc = VERR_VERSION_MISMATCH;
         }
         else
         {
@@ -2212,21 +2210,22 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pTa
 
             pTable->cbClient = sizeof(SHCLCLIENT);
 
-            pTable->pfnUnload     = svcUnload;
-            pTable->pfnConnect    = svcConnect;
-            pTable->pfnDisconnect = svcDisconnect;
-            pTable->pfnCall       = svcCall;
-            pTable->pfnHostCall   = svcHostCall;
-            pTable->pfnSaveState  = svcSaveState;
-            pTable->pfnLoadState  = svcLoadState;
-            pTable->pfnRegisterExtension  = svcRegisterExtension;
-            pTable->pfnNotify     = NULL;
-            pTable->pvService     = NULL;
+            pTable->pfnUnload            = svcUnload;
+            pTable->pfnConnect           = svcConnect;
+            pTable->pfnDisconnect        = svcDisconnect;
+            pTable->pfnCall              = svcCall;
+            pTable->pfnHostCall          = svcHostCall;
+            pTable->pfnSaveState         = svcSaveState;
+            pTable->pfnLoadState         = svcLoadState;
+            pTable->pfnRegisterExtension = svcRegisterExtension;
+            pTable->pfnNotify            = NULL;
+            pTable->pvService            = NULL;
 
             /* Service specific initialization. */
             rc = svcInit();
         }
     }
 
+    LogFlowFunc(("Returning %Rrc\n", rc));
     return rc;
 }

@@ -604,12 +604,13 @@ typedef struct VBGLR3SHCLCMDCTX
     uint32_t                  uClientID;
     /** IN/OUT: Context ID to retrieve or to use. */
     uint64_t                  uContextID;
-    /** IN: Protocol version to use. */
-    uint32_t                  uProtocolVer;
-    /** IN: Protocol flags. Currently unused. */
-    uint32_t                  uProtocolFlags;
     /** IN: Maximum chunk size (in bytes). */
     uint32_t                  cbChunkSize;
+    /** Flag indicating whether to use the legacy protocol (<= VBox 6.1) or not. 
+     *  This is determined in VbglR3ClipboardConnectEx(). */
+    bool                      fUseLegacyProtocol;
+    /** IN: Host feature flags (of type VBOX_SHCL_HF_XXX). */
+    uint64_t                  fHostFeatures;
     /** OUT: Number of parameters retrieved. */
     uint32_t                  uNumParms;
 #  ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
