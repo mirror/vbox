@@ -109,7 +109,6 @@ QList<QUuid> UIMediumSelector::selectedMediumIds() const
     return selectedIds;
 }
 
-
 void UIMediumSelector::retranslateUi()
 {
     if (m_pMainMenu)
@@ -191,7 +190,6 @@ void UIMediumSelector::prepareActions()
                                                       QString(":/%1_add_16px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_32px.png").arg(strPrefix),
                                                       QString(":/%1_add_disabled_16px.png").arg(strPrefix)));
-
     }
 
     m_pActionCreate = new QAction(this);
@@ -203,7 +201,6 @@ void UIMediumSelector::prepareActions()
                                                          QString(":/%1_create_disabled_32px.png").arg(strPrefix),
                                                          QString(":/%1_create_disabled_16px.png").arg(strPrefix)));
     }
-
 
     m_pActionRefresh = new QAction(this);
     if (m_pActionRefresh)
@@ -260,7 +257,6 @@ void UIMediumSelector::prepareConnections()
         connect(m_pChooseButton, &QPushButton::clicked, this, &UIMediumSelector::sltButtonChoose);
     if (m_pLeaveEmptyButton)
         connect(m_pLeaveEmptyButton, &QPushButton::clicked, this, &UIMediumSelector::sltButtonLeaveEmpty);
-
 
     if (m_pSearchWidget)
     {
@@ -553,10 +549,7 @@ void UIMediumSelector::selectMedium(const QUuid &uMediumID)
         return;
     UIMediumItem *pMediumItem = searchItem(0, uMediumID);
     if (pMediumItem)
-    {
         m_pTreeWidget->setCurrentItem(pMediumItem);
-
-    }
 }
 
 void UIMediumSelector::updateChooseButton()
@@ -616,7 +609,6 @@ void UIMediumSelector::showEvent(QShowEvent *pEvent)
 
     if (m_pParent)
         UICommon::centerWidget(this, m_pParent, false);
-
 }
 
 void UIMediumSelector::repopulateTreeWidget()
@@ -633,7 +625,6 @@ void UIMediumSelector::repopulateTreeWidget()
     m_pAttachedSubTreeRoot = 0;
     m_pNotAttachedSubTreeRoot = 0;
     QVector<UIMediumItem*> menuItemVector;
-
     foreach (const QUuid &uMediumID, uiCommon().mediumIDs())
     {
         UIMedium medium = uiCommon().medium(uMediumID);
@@ -672,10 +663,8 @@ void UIMediumSelector::repopulateTreeWidget()
     updateChooseButton();
     if (m_pAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pAttachedSubTreeRoot);
-
     if (m_pNotAttachedSubTreeRoot)
         m_pTreeWidget->expandItem(m_pNotAttachedSubTreeRoot);
-
     m_pTreeWidget->resizeColumnToContents(0);
 }
 
@@ -702,9 +691,7 @@ UIMediumItem* UIMediumSelector::searchItem(const QTreeWidgetItem *pParent, const
     if (!m_pTreeWidget)
         return 0;
     if (!pParent)
-    {
-        pParent = m_pTreeWidget->invisibleRootItem();
-    }
+         pParent = m_pTreeWidget->invisibleRootItem();
     if (!pParent)
         return 0;
 
