@@ -606,7 +606,7 @@ typedef struct VBGLR3SHCLCMDCTX
     uint64_t                  uContextID;
     /** IN: Maximum chunk size (in bytes). */
     uint32_t                  cbChunkSize;
-    /** Flag indicating whether to use the legacy protocol (<= VBox 6.1) or not. 
+    /** Flag indicating whether to use the legacy protocol (<= VBox 6.1) or not.
      *  This is determined in VbglR3ClipboardConnectEx(). */
     bool                      fUseLegacyProtocol;
     /** IN: Host feature flags (of type VBOX_SHCL_HF_XXX). */
