@@ -241,10 +241,10 @@ static void vmmdevSetIRQ_Legacy(PVMMDEV pThis)
     if (pThis->fu32AdditionsOk)
     {
         /* Filter unsupported events */
-        uint32_t fEvents = pThis->u32HostEventFlags & pThis->CTX_SUFF(pVMMDevRAM)->V.V1_03.u32GuestEventMask;
+        uint32_t fEvents = pThis->fHostEventFlags & pThis->CTX_SUFF(pVMMDevRAM)->V.V1_03.u32GuestEventMask;
 
-        Log(("vmmdevSetIRQ: fEvents=%#010x, u32HostEventFlags=%#010x, u32GuestEventMask=%#010x.\n",
-             fEvents, pThis->u32HostEventFlags, pThis->CTX_SUFF(pVMMDevRAM)->V.V1_03.u32GuestEventMask));
+        Log(("vmmdevSetIRQ: fEvents=%#010x, fHostEventFlags=%#010x, u32GuestEventMask=%#010x.\n",
+             fEvents, pThis->fHostEventFlags, pThis->CTX_SUFF(pVMMDevRAM)->V.V1_03.u32GuestEventMask));
 
         /* Move event flags to VMMDev RAM */
         pThis->CTX_SUFF(pVMMDevRAM)->V.V1_03.u32HostEvents = fEvents;
@@ -253,8 +253,8 @@ static void vmmdevSetIRQ_Legacy(PVMMDEV pThis)
         if (fEvents)
         {
             /* Clear host flags which will be delivered to guest. */
-            pThis->u32HostEventFlags &= ~fEvents;
-            Log(("vmmdevSetIRQ: u32HostEventFlags=%#010x\n", pThis->u32HostEventFlags));
+            pThis->fHostEventFlags &= ~fEvents;
+            Log(("vmmdevSetIRQ: fHostEventFlags=%#010x\n", pThis->fHostEventFlags));
             uIRQLevel = 1;
         }
 
@@ -277,10 +277,10 @@ static void vmmdevSetIRQ_Legacy(PVMMDEV pThis)
  */
 static void vmmdevMaybeSetIRQ(PVMMDEV pThis)
 {
-    Log3(("vmmdevMaybeSetIRQ: u32HostEventFlags=%#010x, u32GuestFilterMask=%#010x.\n",
-          pThis->u32HostEventFlags, pThis->u32GuestFilterMask));
+    Log3(("vmmdevMaybeSetIRQ: fHostEventFlags=%#010x, fGuestFilterMask=%#010x.\n",
+          pThis->fHostEventFlags, pThis->fGuestFilterMask));
 
-    if (pThis->u32HostEventFlags & pThis->u32GuestFilterMask)
+    if (pThis->fHostEventFlags & pThis->fGuestFilterMask)
     {
         /*
          * Note! No need to wait for the IRQs to be set (if we're not luck
@@ -312,19 +312,19 @@ static void vmmdevNotifyGuestWorker(PVMMDEV pThis, uint32_t fAddEvents)
 
         if (pThis->fu32AdditionsOk)
         {
-            const bool fHadEvents = (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
+            const bool fHadEvents = (pThis->fHostEventFlags & pThis->fGuestFilterMask) != 0;
 
-            Log3(("vmmdevNotifyGuestWorker: fHadEvents=%d, u32HostEventFlags=%#010x, u32GuestFilterMask=%#010x.\n",
-                  fHadEvents, pThis->u32HostEventFlags, pThis->u32GuestFilterMask));
+            Log3(("vmmdevNotifyGuestWorker: fHadEvents=%d, fHostEventFlags=%#010x, fGuestFilterMask=%#010x.\n",
+                  fHadEvents, pThis->fHostEventFlags, pThis->fGuestFilterMask));
 
-            pThis->u32HostEventFlags |= fAddEvents;
+            pThis->fHostEventFlags |= fAddEvents;
 
             if (!fHadEvents)
                 vmmdevMaybeSetIRQ(pThis);
         }
         else
         {
-            pThis->u32HostEventFlags |= fAddEvents;
+            pThis->fHostEventFlags |= fAddEvents;
             Log(("vmmdevNotifyGuestWorker: IRQ is not generated, guest has not yet reported to us.\n"));
         }
     }
@@ -332,7 +332,7 @@ static void vmmdevNotifyGuestWorker(PVMMDEV pThis, uint32_t fAddEvents)
     {
         Log3(("vmmdevNotifyGuestWorker: Old additions detected.\n"));
 
-        pThis->u32HostEventFlags |= fAddEvents;
+        pThis->fHostEventFlags |= fAddEvents;
         vmmdevSetIRQ_Legacy(pThis);
     }
 }
@@ -395,22 +395,22 @@ void VMMDevCtlSetGuestFilterMask(PVMMDEV pThis, uint32_t fOrMask, uint32_t fNotM
 {
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
-    const bool fHadEvents = (pThis->u32HostEventFlags & pThis->u32GuestFilterMask) != 0;
+    const bool fHadEvents = (pThis->fHostEventFlags & pThis->fGuestFilterMask) != 0;
 
     Log(("VMMDevCtlSetGuestFilterMask: fOrMask=%#010x, u32NotMask=%#010x, fHadEvents=%d.\n", fOrMask, fNotMask, fHadEvents));
     if (fHadEvents)
     {
-        if (!pThis->fNewGuestFilterMask)
-            pThis->u32NewGuestFilterMask = pThis->u32GuestFilterMask;
+        if (!pThis->fNewGuestFilterMaskValid)
+            pThis->fNewGuestFilterMask = pThis->fGuestFilterMask;
 
-        pThis->u32NewGuestFilterMask |= fOrMask;
-        pThis->u32NewGuestFilterMask &= ~fNotMask;
-        pThis->fNewGuestFilterMask = true;
+        pThis->fNewGuestFilterMask |= fOrMask;
+        pThis->fNewGuestFilterMask &= ~fNotMask;
+        pThis->fNewGuestFilterMaskValid = true;
     }
     else
     {
-        pThis->u32GuestFilterMask |= fOrMask;
-        pThis->u32GuestFilterMask &= ~fNotMask;
+        pThis->fGuestFilterMask |= fOrMask;
+        pThis->fGuestFilterMask &= ~fNotMask;
         vmmdevMaybeSetIRQ(pThis);
     }
 
@@ -974,10 +974,10 @@ static int vmmdevReqHandler_ReportGuestCapabilities(PVMMDEV pThis, VMMDevRequest
      */
     const uint32_t fu32Caps = pReq->caps | VMMDEV_GUEST_SUPPORTS_GRAPHICS;
 
-    if (pThis->guestCaps != fu32Caps)
+    if (pThis->fGuestCaps != fu32Caps)
     {
         /* make a copy of supplied information */
-        pThis->guestCaps = fu32Caps;
+        pThis->fGuestCaps = fu32Caps;
 
         LogRel(("VMMDev: Guest Additions capability report (legacy): (0x%x) seamless: %s, hostWindowMapping: %s, graphics: yes\n",
                 fu32Caps,
@@ -1003,17 +1003,17 @@ static int vmmdevReqHandler_SetGuestCapabilities(PVMMDEV pThis, VMMDevRequestHea
     VMMDevReqGuestCapabilities2 *pReq = (VMMDevReqGuestCapabilities2 *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    uint32_t fu32Caps = pThis->guestCaps;
+    uint32_t fu32Caps = pThis->fGuestCaps;
     fu32Caps |= pReq->u32OrMask;
     fu32Caps &= ~pReq->u32NotMask;
 
     LogRel(("VMMDev: Guest Additions capability report: (%#x -> %#x) seamless: %s, hostWindowMapping: %s, graphics: %s\n",
-            pThis->guestCaps, fu32Caps,
+            pThis->fGuestCaps, fu32Caps,
             fu32Caps & VMMDEV_GUEST_SUPPORTS_SEAMLESS ? "yes" : "no",
             fu32Caps & VMMDEV_GUEST_SUPPORTS_GUEST_HOST_WINDOW_MAPPING ? "yes" : "no",
             fu32Caps & VMMDEV_GUEST_SUPPORTS_GRAPHICS ? "yes" : "no"));
 
-    pThis->guestCaps = fu32Caps;
+    pThis->fGuestCaps = fu32Caps;
 
     if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestCapabilities)
         pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, fu32Caps);
@@ -1034,10 +1034,10 @@ static int vmmdevReqHandler_GetMouseStatus(PVMMDEV pThis, VMMDevRequestHeader *p
     VMMDevReqMouseStatus *pReq = (VMMDevReqMouseStatus *)pReqHdr;
     AssertMsgReturn(pReq->header.size == sizeof(*pReq), ("%u\n", pReq->header.size), VERR_INVALID_PARAMETER);
 
-    pReq->mouseFeatures = pThis->mouseCapabilities
+    pReq->mouseFeatures = pThis->fMouseCapabilities
                         & VMMDEV_MOUSE_MASK;
-    pReq->pointerXPos   = pThis->mouseXAbs;
-    pReq->pointerYPos   = pThis->mouseYAbs;
+    pReq->pointerXPos   = pThis->xMouseAbs;
+    pReq->pointerYPos   = pThis->yMouseAbs;
     LogRel2(("VMMDev: vmmdevReqHandler_GetMouseStatus: mouseFeatures=%#x, xAbs=%d, yAbs=%d\n",
              pReq->mouseFeatures, pReq->pointerXPos, pReq->pointerYPos));
     return VINF_SUCCESS;
@@ -1060,14 +1060,14 @@ static int vmmdevReqHandler_SetMouseStatus(PVMMDEV pThis, VMMDevRequestHeader *p
 
     bool fNotify = false;
     if (   (pReq->mouseFeatures & VMMDEV_MOUSE_NOTIFY_HOST_MASK)
-        != (  pThis->mouseCapabilities
+        != (  pThis->fMouseCapabilities
             & VMMDEV_MOUSE_NOTIFY_HOST_MASK))
         fNotify = true;
 
-    pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
-    pThis->mouseCapabilities |= (pReq->mouseFeatures & VMMDEV_MOUSE_GUEST_MASK);
+    pThis->fMouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
+    pThis->fMouseCapabilities |= (pReq->mouseFeatures & VMMDEV_MOUSE_GUEST_MASK);
 
-    LogRelFlow(("VMMDev: vmmdevReqHandler_SetMouseStatus: New host capabilities: %#x\n", pThis->mouseCapabilities));
+    LogRelFlow(("VMMDev: vmmdevReqHandler_SetMouseStatus: New host capabilities: %#x\n", pThis->fMouseCapabilities));
 
     /*
      * Notify connector if something changed.
@@ -1075,7 +1075,7 @@ static int vmmdevReqHandler_SetMouseStatus(PVMMDEV pThis, VMMDevRequestHeader *p
     if (fNotify)
     {
         LogRelFlow(("VMMDev: vmmdevReqHandler_SetMouseStatus: Notifying connector\n"));
-        pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
+        pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->fMouseCapabilities);
     }
 
     return VINF_SUCCESS;
@@ -1672,15 +1672,15 @@ static int vmmdevReqHandler_AcknowledgeEvents(PVMMDEV pThis, VMMDevRequestHeader
         /*
          * Note! This code is duplicated in vmmdevFastRequestIrqAck.
          */
-        if (pThis->fNewGuestFilterMask)
+        if (pThis->fNewGuestFilterMaskValid)
         {
-            pThis->fNewGuestFilterMask = false;
-            pThis->u32GuestFilterMask = pThis->u32NewGuestFilterMask;
+            pThis->fNewGuestFilterMaskValid = false;
+            pThis->fGuestFilterMask = pThis->fNewGuestFilterMask;
         }
 
-        pReq->events = pThis->u32HostEventFlags & pThis->u32GuestFilterMask;
+        pReq->events = pThis->fHostEventFlags & pThis->fGuestFilterMask;
 
-        pThis->u32HostEventFlags &= ~pThis->u32GuestFilterMask;
+        pThis->fHostEventFlags &= ~pThis->fGuestFilterMask;
         pThis->CTX_SUFF(pVMMDevRAM)->V.V1_04.fHaveEvents = false;
 
         PDMDevHlpPCISetIrqNoWait(pThis->CTX_SUFF(pDevIns), 0, 0);
@@ -2066,13 +2066,13 @@ static int vmmdevReqHandler_GetStatisticsChangeRequest(PVMMDEV pThis, VMMDevRequ
 
     Log(("VMMDevReq_GetStatisticsChangeRequest\n"));
     /* just pass on the information */
-    Log(("VMMDev: returning statistics interval %d seconds\n", pThis->u32StatIntervalSize));
-    pReq->u32StatInterval = pThis->u32StatIntervalSize;
+    Log(("VMMDev: returning statistics interval %d seconds\n", pThis->cSecsStatInterval));
+    pReq->u32StatInterval = pThis->cSecsStatInterval;
 
     if (pReq->eventAck == VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST)
     {
         /* Remember which mode the client has queried. */
-        pThis->u32LastStatIntervalSize= pThis->u32StatIntervalSize;
+        pThis->cSecsLastStatInterval = pThis->cSecsStatInterval;
     }
 
     return VINF_SUCCESS;
@@ -3159,15 +3159,15 @@ PDMBOTHCBDECL(int) vmmdevFastRequestIrqAck(PPDMDEVINS pDevIns, void *pvUser, RTI
                  */
                 STAM_REL_COUNTER_INC(&pThis->CTX_SUFF_Z(StatFastIrqAck));
 
-                if (pThis->fNewGuestFilterMask)
+                if (pThis->fNewGuestFilterMaskValid)
                 {
-                    pThis->fNewGuestFilterMask = false;
-                    pThis->u32GuestFilterMask = pThis->u32NewGuestFilterMask;
+                    pThis->fNewGuestFilterMaskValid = false;
+                    pThis->fGuestFilterMask = pThis->fNewGuestFilterMask;
                 }
 
-                *pu32 = pThis->u32HostEventFlags & pThis->u32GuestFilterMask;
+                *pu32 = pThis->fHostEventFlags & pThis->fGuestFilterMask;
 
-                pThis->u32HostEventFlags &= ~pThis->u32GuestFilterMask;
+                pThis->fHostEventFlags &= ~pThis->fGuestFilterMask;
                 pThis->CTX_SUFF(pVMMDevRAM)->V.V1_04.fHaveEvents = false;
 
                 PDMDevHlpPCISetIrqNoWait(pDevIns, 0, 0);
@@ -3332,23 +3332,26 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
         }
 
         /* The readable, buffered version. */
+        uint32_t offMsg = RT_MIN(pThis->offMsg, sizeof(pThis->szMsg) - 1);
         if (u32 == '\n' || u32 == '\r')
         {
-            pThis->szMsg[pThis->iMsg] = '\0';
-            if (pThis->iMsg)
-                LogRelIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("VMMDev: Guest Log: %s\n", pThis->szMsg));
-            pThis->iMsg = 0;
+            pThis->szMsg[offMsg] = '\0';
+            if (offMsg)
+                LogRelIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("VMMDev: Guest Log: %.*s\n", offMsg, pThis->szMsg));
+            pThis->offMsg = 0;
         }
         else
         {
-            if (pThis->iMsg >= sizeof(pThis->szMsg)-1)
+            if (offMsg >= sizeof(pThis->szMsg) - 1)
             {
-                pThis->szMsg[pThis->iMsg] = '\0';
-                LogRelIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR, ("VMMDev: Guest Log: %s\n", pThis->szMsg));
-                pThis->iMsg = 0;
+                pThis->szMsg[sizeof(pThis->szMsg) - 1] = '\0';
+                LogRelIt(RTLOGGRPFLAGS_LEVEL_1, LOG_GROUP_DEV_VMM_BACKDOOR,
+                         ("VMMDev: Guest Log: %.*s\n", sizeof(pThis->szMsg) - 1, pThis->szMsg));
+                offMsg = 0;
             }
-            pThis->szMsg[pThis->iMsg] = (char )u32;
-            pThis->szMsg[++pThis->iMsg] = '\0';
+            pThis->szMsg[offMsg++] = (char )u32;
+            pThis->szMsg[offMsg]   = '\0';
+            pThis->offMsg = offMsg;
         }
     }
     return VINF_SUCCESS;
@@ -3395,13 +3398,13 @@ static DECLCALLBACK(int) vmmdevAltTimeSyncRead(PPDMDEVINS pDevIns, void *pvUser,
     if (cb == 4)
     {
         if (pThis->fTimesyncBackdoorLo)
-            *pu32 = (uint32_t)pThis->hostTime;
+            *pu32 = (uint32_t)pThis->msLatchedHostTime;
         else
         {
             /* Reading the high dword gets and saves the current time. */
             RTTIMESPEC Now;
-            pThis->hostTime = RTTimeSpecGetMilli(PDMDevHlpTMUtcNow(pDevIns, &Now));
-            *pu32 = (uint32_t)(pThis->hostTime >> 32);
+            pThis->msLatchedHostTime = RTTimeSpecGetMilli(PDMDevHlpTMUtcNow(pDevIns, &Now));
+            *pu32 = (uint32_t)(pThis->msLatchedHostTime >> 32);
         }
         rc = VINF_SUCCESS;
     }
@@ -3472,9 +3475,9 @@ static DECLCALLBACK(int) vmmdevIPort_QueryAbsoluteMouse(PPDMIVMMDEVPORT pInterfa
      * here since we can assume cache coherency protocoles and int32_t alignment
      * rules making sure we won't see a halfwritten value. */
     if (pxAbs)
-        *pxAbs = ASMAtomicReadS32(&pThis->mouseXAbs); /* why the atomic read? */
+        *pxAbs = ASMAtomicReadS32(&pThis->xMouseAbs); /* why the atomic read? */
     if (pyAbs)
-        *pyAbs = ASMAtomicReadS32(&pThis->mouseYAbs);
+        *pyAbs = ASMAtomicReadS32(&pThis->yMouseAbs);
 
     return VINF_SUCCESS;
 }
@@ -3487,12 +3490,12 @@ static DECLCALLBACK(int) vmmdevIPort_SetAbsoluteMouse(PPDMIVMMDEVPORT pInterface
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
-    if (   pThis->mouseXAbs != xAbs
-        || pThis->mouseYAbs != yAbs)
+    if (   pThis->xMouseAbs != xAbs
+        || pThis->yMouseAbs != yAbs)
     {
         Log2(("vmmdevIPort_SetAbsoluteMouse : settings absolute position to x = %d, y = %d\n", xAbs, yAbs));
-        pThis->mouseXAbs = xAbs;
-        pThis->mouseYAbs = yAbs;
+        pThis->xMouseAbs = xAbs;
+        pThis->yMouseAbs = yAbs;
         VMMDevNotifyGuest(pThis, VMMDEV_EVENT_MOUSE_POSITION_CHANGED);
     }
 
@@ -3508,7 +3511,7 @@ static DECLCALLBACK(int) vmmdevIPort_QueryMouseCapabilities(PPDMIVMMDEVPORT pInt
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
     AssertPtrReturn(pfCapabilities, VERR_INVALID_PARAMETER);
 
-    *pfCapabilities = pThis->mouseCapabilities;
+    *pfCapabilities = pThis->fMouseCapabilities;
     return VINF_SUCCESS;
 }
 
@@ -3521,11 +3524,11 @@ vmmdevIPort_UpdateMouseCapabilities(PPDMIVMMDEVPORT pInterface, uint32_t fCapsAd
     PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IPort);
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
-    uint32_t fOldCaps = pThis->mouseCapabilities;
-    pThis->mouseCapabilities &= ~(fCapsRemoved & VMMDEV_MOUSE_HOST_MASK);
-    pThis->mouseCapabilities |= (fCapsAdded & VMMDEV_MOUSE_HOST_MASK)
+    uint32_t fOldCaps = pThis->fMouseCapabilities;
+    pThis->fMouseCapabilities &= ~(fCapsRemoved & VMMDEV_MOUSE_HOST_MASK);
+    pThis->fMouseCapabilities |= (fCapsAdded & VMMDEV_MOUSE_HOST_MASK)
                               | VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
-    bool fNotify = fOldCaps != pThis->mouseCapabilities;
+    bool fNotify = fOldCaps != pThis->fMouseCapabilities;
 
     LogRelFlow(("VMMDev: vmmdevIPort_UpdateMouseCapabilities: fCapsAdded=0x%x, fCapsRemoved=0x%x, fNotify=%RTbool\n", fCapsAdded,
                 fCapsRemoved, fNotify));
@@ -3718,14 +3721,14 @@ static DECLCALLBACK(int) vmmdevIPort_SetStatisticsInterval(PPDMIVMMDEVPORT pInte
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     /* Verify that the new resolution is different and that guest does not yet know about it. */
-    bool fSame = (pThis->u32LastStatIntervalSize == cSecsStatInterval);
+    bool fSame = (pThis->cSecsLastStatInterval == cSecsStatInterval);
 
-    Log(("vmmdevIPort_SetStatisticsInterval: old=%d. new=%d\n", pThis->u32LastStatIntervalSize, cSecsStatInterval));
+    Log(("vmmdevIPort_SetStatisticsInterval: old=%d. new=%d\n", pThis->cSecsLastStatInterval, cSecsStatInterval));
 
     if (!fSame)
     {
         /* we could validate the information here but hey, the guest can do that as well! */
-        pThis->u32StatIntervalSize = cSecsStatInterval;
+        pThis->cSecsStatInterval = cSecsStatInterval;
 
         /* IRQ so the guest knows what's going on */
         VMMDevNotifyGuest(pThis, VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST);
@@ -3883,15 +3886,15 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     vmmdevLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
 
-    SSMR3PutU32(pSSM, pThis->hypervisorSize);
-    SSMR3PutU32(pSSM, pThis->mouseCapabilities);
-    SSMR3PutS32(pSSM, pThis->mouseXAbs);
-    SSMR3PutS32(pSSM, pThis->mouseYAbs);
+    SSMR3PutU32(pSSM, 0 /*was pThis->hypervisorSize, which was always zero*/);
+    SSMR3PutU32(pSSM, pThis->fMouseCapabilities);
+    SSMR3PutS32(pSSM, pThis->xMouseAbs);
+    SSMR3PutS32(pSSM, pThis->yMouseAbs);
 
-    SSMR3PutBool(pSSM, pThis->fNewGuestFilterMask);
-    SSMR3PutU32(pSSM, pThis->u32NewGuestFilterMask);
-    SSMR3PutU32(pSSM, pThis->u32GuestFilterMask);
-    SSMR3PutU32(pSSM, pThis->u32HostEventFlags);
+    SSMR3PutBool(pSSM, pThis->fNewGuestFilterMaskValid);
+    SSMR3PutU32(pSSM, pThis->fNewGuestFilterMask);
+    SSMR3PutU32(pSSM, pThis->fGuestFilterMask);
+    SSMR3PutU32(pSSM, pThis->fHostEventFlags);
     /* The following is not strictly necessary as PGM restores MMIO2, keeping it for historical reasons. */
     SSMR3PutMem(pSSM, &pThis->pVMMDevRAMR3->V, sizeof(pThis->pVMMDevRAMR3->V));
 
@@ -3900,7 +3903,7 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutU32(pSSM, pThis->u32VideoAccelEnabled);
     SSMR3PutBool(pSSM, pThis->displayChangeData.fGuestSentChangeEventAck);
 
-    SSMR3PutU32(pSSM, pThis->guestCaps);
+    SSMR3PutU32(pSSM, pThis->fGuestCaps);
 
 #ifdef VBOX_WITH_HGCM
     vmmdevHGCMSaveState(pThis, pSSM);
@@ -3971,15 +3974,16 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         return VINF_SUCCESS;
 
     /* state */
-    SSMR3GetU32(pSSM, &pThis->hypervisorSize);
-    SSMR3GetU32(pSSM, &pThis->mouseCapabilities);
-    SSMR3GetS32(pSSM, &pThis->mouseXAbs);
-    SSMR3GetS32(pSSM, &pThis->mouseYAbs);
+    uint32_t uIgn;
+    SSMR3GetU32(pSSM, &uIgn);
+    SSMR3GetU32(pSSM, &pThis->fMouseCapabilities);
+    SSMR3GetS32(pSSM, &pThis->xMouseAbs);
+    SSMR3GetS32(pSSM, &pThis->yMouseAbs);
 
-    SSMR3GetBool(pSSM, &pThis->fNewGuestFilterMask);
-    SSMR3GetU32(pSSM, &pThis->u32NewGuestFilterMask);
-    SSMR3GetU32(pSSM, &pThis->u32GuestFilterMask);
-    SSMR3GetU32(pSSM, &pThis->u32HostEventFlags);
+    SSMR3GetBool(pSSM, &pThis->fNewGuestFilterMaskValid);
+    SSMR3GetU32(pSSM, &pThis->fNewGuestFilterMask);
+    SSMR3GetU32(pSSM, &pThis->fGuestFilterMask);
+    SSMR3GetU32(pSSM, &pThis->fHostEventFlags);
 
     //SSMR3GetBool(pSSM, &pThis->pVMMDevRAMR3->fHaveEvents);
     // here be dragons (probably)
@@ -3991,7 +3995,7 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     if (uVersion > 10)
         SSMR3GetBool(pSSM, &pThis->displayChangeData.fGuestSentChangeEventAck);
 
-    rc = SSMR3GetU32(pSSM, &pThis->guestCaps);
+    rc = SSMR3GetU32(pSSM, &pThis->fGuestCaps);
 
     /* Attributes which were temporarily introduced in r30072 */
     if (uVersion == 7)
@@ -4067,10 +4071,10 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
      * On a resume, we send the capabilities changed message so
      * that listeners can sync their state again
      */
-    Log(("vmmdevLoadState: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
+    Log(("vmmdevLoadState: capabilities changed (%x), informing connector\n", pThis->fMouseCapabilities));
     if (pThis->pDrv)
     {
-        pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
+        pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->fMouseCapabilities);
         if (uVersion >= 10)
             pThis->pDrv->pfnUpdatePointerShape(pThis->pDrv,
                                                /*fVisible=*/!!pThis->fHostCursorRequested,
@@ -4105,7 +4109,7 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         }
     }
     if (pThis->pDrv && pThis->pDrv->pfnUpdateGuestCapabilities)
-        pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
+        pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->fGuestCaps);
 
     return VINF_SUCCESS;
 }
@@ -4166,16 +4170,14 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /*
      * Reset the mouse integration feature bits
      */
-    if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_MASK)
+    if (pThis->fMouseCapabilities & VMMDEV_MOUSE_GUEST_MASK)
     {
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
+        pThis->fMouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
         /* notify the connector */
-        Log(("vmmdevReset: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
-        pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
+        Log(("vmmdevReset: capabilities changed (%x), informing connector\n", pThis->fMouseCapabilities));
+        pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->fMouseCapabilities);
     }
     pThis->fHostCursorRequested = false;
-
-    pThis->hypervisorSize = 0;
 
     /* re-initialize the VMMDev memory */
     if (pThis->pVMMDevRAMR3)
@@ -4202,8 +4204,8 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     pThis->fu32AdditionsOk = false;
     memset (&pThis->guestInfo, 0, sizeof (pThis->guestInfo));
     RT_ZERO(pThis->guestInfo2);
-    const bool fCapsChanged = pThis->guestCaps != 0; /* Report transition to 0. */
-    pThis->guestCaps = 0;
+    const bool fCapsChanged = pThis->fGuestCaps != 0; /* Report transition to 0. */
+    pThis->fGuestCaps = 0;
 
     /* Clear facilities. No need to tell Main as it will get a
        pfnUpdateGuestInfo callback. */
@@ -4232,7 +4234,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     pThis->cMbMemoryBalloonLast = 0;
 
     /* disabled statistics updating */
-    pThis->u32LastStatIntervalSize = 0;
+    pThis->cSecsLastStatInterval = 0;
 
 #ifdef VBOX_WITH_HGCM
     /* Clear the "HGCM event enabled" flag so the event can be automatically reenabled.  */
@@ -4252,15 +4254,15 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /*
      * Clear the event variables.
      *
-     * XXX By design we should NOT clear pThis->u32HostEventFlags because it is designed
+     * XXX By design we should NOT clear pThis->fHostEventFlags because it is designed
      *     that way so host events do not depend on guest resets. However, the pending
      *     event flags actually _were_ cleared since ages so we mask out events from
      *     clearing which we really need to survive the reset. See xtracker 5767.
      */
-    pThis->u32HostEventFlags    &= VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
-    pThis->u32GuestFilterMask    = 0;
-    pThis->u32NewGuestFilterMask = 0;
-    pThis->fNewGuestFilterMask   = 0;
+    pThis->fHostEventFlags    &= VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
+    pThis->fGuestFilterMask    = 0;
+    pThis->fNewGuestFilterMask = 0;
+    pThis->fNewGuestFilterMaskValid   = 0;
 
     /*
      * Call the update functions as required.
@@ -4268,7 +4270,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     if (fVersionChanged && pThis->pDrv && pThis->pDrv->pfnUpdateGuestInfo)
         pThis->pDrv->pfnUpdateGuestInfo(pThis->pDrv, &pThis->guestInfo);
     if (fCapsChanged && pThis->pDrv && pThis->pDrv->pfnUpdateGuestCapabilities)
-        pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
+        pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->fGuestCaps);
 
     /*
      * Generate a unique session id for this VM; it will be changed for each start, reset or restore.
@@ -4703,7 +4705,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * In this version of VirtualBox the GUI checks whether "needs host cursor"
      * changes.
      */
-    pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
+    pThis->fMouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
 
     /*
      * Statistics.

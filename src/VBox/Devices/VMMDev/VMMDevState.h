@@ -126,35 +126,28 @@ typedef struct VMMDevState
      *          PDMDEVINS structure. */
     PDMCRITSECT         CritSect;
 
-    /** hypervisor address space size */
-    uint32_t hypervisorSize;
-
     /** mouse capabilities of host and guest */
-    uint32_t mouseCapabilities;
-    /** absolute mouse position in pixels */
-    int32_t mouseXAbs;
-    int32_t mouseYAbs;
+    uint32_t            fMouseCapabilities;
+    /** @name Absolute mouse position in pixels
+     * @{ */
+    int32_t             xMouseAbs;
+    int32_t             yMouseAbs;
+    /** @} */
     /** Does the guest currently want the host pointer to be shown? */
-    uint32_t fHostCursorRequested;
+    uint32_t            fHostCursorRequested;
 
-#ifdef VBOX_WITH_RAW_MODE_KEEP
-    /** Pointer to device instance - RC pointer. */
-    PPDMDEVINSRC pDevInsRC;
-#else
-    uint32_t u32Alignment0;
-#endif
     /** Pointer to device instance - R3 poitner. */
-    PPDMDEVINSR3 pDevInsR3;
+    PPDMDEVINSR3        pDevInsR3;
     /** Pointer to device instance - R0 pointer. */
-    PPDMDEVINSR0 pDevInsR0;
+    PPDMDEVINSR0        pDevInsR0;
 
     /** LUN\#0 + Status: VMMDev port base interface. */
-    PDMIBASE IBase;
+    PDMIBASE            IBase;
     /** LUN\#0: VMMDev port interface. */
-    PDMIVMMDEVPORT IPort;
+    PDMIVMMDEVPORT      IPort;
 #ifdef VBOX_WITH_HGCM
     /** LUN\#0: HGCM port interface. */
-    PDMIHGCMPORT IHGCMPort;
+    PDMIHGCMPORT        IHGCMPort;
 //# if HC_ARCH_BITS == 32
 //    RTR3PTR      R3PtrAlignment1;
 //# endif
@@ -168,32 +161,30 @@ typedef struct VMMDevState
     R3PTRTYPE(PPDMIHGCMCONNECTOR) pHGCMDrv;
 #endif
     /** message buffer for backdoor logging. */
-    char szMsg[512];
+    char                szMsg[512];
     /** message buffer index. */
-    uint32_t iMsg;
+    uint32_t            offMsg;
     /** Alignment padding. */
-    uint32_t u32Alignment2;
+    uint32_t            u32Alignment2;
 
     /** Statistics counter for slow IRQ ACK. */
-    STAMCOUNTER StatSlowIrqAck;
+    STAMCOUNTER         StatSlowIrqAck;
     /** Statistics counter for fast IRQ ACK - R3. */
-    STAMCOUNTER StatFastIrqAckR3;
+    STAMCOUNTER         StatFastIrqAckR3;
     /** Statistics counter for fast IRQ ACK - R0 / RC. */
-    STAMCOUNTER StatFastIrqAckRZ;
-    /** IRQ number assigned to the device */
-    uint32_t irq;
-    /** Current host side event flags */
-    uint32_t u32HostEventFlags;
-    /** Mask of events guest is interested in.
+    STAMCOUNTER         StatFastIrqAckRZ;
+    /** Current host side event flags - VMMDEV_EVENT_XXX. */
+    uint32_t            fHostEventFlags;
+    /** Mask of events guest is interested in - VMMDEV_EVENT_XXX.
      * @note The HGCM events are enabled automatically by the VMMDev device when
      *       guest issues HGCM commands. */
-    uint32_t u32GuestFilterMask;
-    /** Delayed mask of guest events */
-    uint32_t u32NewGuestFilterMask;
-    /** Flag whether u32NewGuestFilterMask is valid */
-    bool fNewGuestFilterMask;
+    uint32_t            fGuestFilterMask;
+    /** Delayed mask of guest events - VMMDEV_EVENT_XXX. */
+    uint32_t            fNewGuestFilterMask;
+    /** Flag whether fNewGuestFilterMask is valid */
+    bool                fNewGuestFilterMaskValid;
     /** Alignment padding. */
-    bool afAlignment3[3];
+    bool                afAlignment3[7];
 
     /** GC physical address of VMMDev RAM area */
     RTGCPHYS32                  GCPhysVMMDevRAM;
@@ -210,114 +201,114 @@ typedef struct VMMDevState
     /** R3 pointer to VMMDev Heap RAM area. */
     R3PTRTYPE(VMMDevMemory *) pVMMDevHeapR3;
     /** GC physical address of VMMDev Heap RAM area */
-    RTGCPHYS32 GCPhysVMMDevHeap;
+    RTGCPHYS32          GCPhysVMMDevHeap;
 
     /** Information reported by guest via VMMDevReportGuestInfo generic request.
      * Until this information is reported the VMMDev refuses any other requests.
      */
-    VBoxGuestInfo guestInfo;
+    VBoxGuestInfo       guestInfo;
     /** Information report \#2, chewed a little. */
     struct
     {
-        uint32_t uFullVersion; /**< non-zero if info is present. */
-        uint32_t uRevision;
-        uint32_t fFeatures;
-        char     szName[128];
-    } guestInfo2;
+        uint32_t            uFullVersion; /**< non-zero if info is present. */
+        uint32_t            uRevision;
+        uint32_t            fFeatures;
+        char                szName[128];
+    }                   guestInfo2;
 
     /** Array of guest facility statuses. */
-    VMMDEVFACILITYSTATUSENTRY   aFacilityStatuses[32];
+    VMMDEVFACILITYSTATUSENTRY aFacilityStatuses[32];
     /** The number of valid entries in the facility status array. */
-    uint32_t                    cFacilityStatuses;
+    uint32_t            cFacilityStatuses;
 
-    /** Information reported by guest via VMMDevReportGuestCapabilities. */
-    uint32_t      guestCaps;
+    /** Information reported by guest via VMMDevReportGuestCapabilities - VMMDEV_GUEST_SUPPORTS_XXX. */
+    uint32_t            fGuestCaps;
 
     /** "Additions are Ok" indicator, set to true after processing VMMDevReportGuestInfo,
      * if additions version is compatible. This flag is here to avoid repeated comparing
      * of the version in guestInfo.
      */
-    uint32_t fu32AdditionsOk;
+    uint32_t            fu32AdditionsOk;
 
     /** Video acceleration status set by guest. */
-    uint32_t u32VideoAccelEnabled;
+    uint32_t            u32VideoAccelEnabled;
 
-    DISPLAYCHANGEDATA displayChangeData;
+    DISPLAYCHANGEDATA   displayChangeData;
 
     /** Pointer to the credentials. */
     R3PTRTYPE(VMMDEVCREDS *) pCredentials;
 
 #if HC_ARCH_BITS == 32
-    uint32_t uAlignment4;
+    uint32_t            uAlignment4;
 #endif
 
-    /* memory balloon change request */
-    uint32_t    cMbMemoryBalloon;
+    /** memory balloon change request */
+    uint32_t            cMbMemoryBalloon;
     /** The last balloon size queried by the guest additions. */
-    uint32_t    cMbMemoryBalloonLast;
+    uint32_t            cMbMemoryBalloonLast;
 
-    /* guest ram size */
-    uint64_t    cbGuestRAM;
+    /** guest ram size */
+    uint64_t            cbGuestRAM;
 
-    /* unique session id; the id will be different after each start, reset or restore of the VM. */
-    uint64_t    idSession;
+    /** unique session id; the id will be different after each start, reset or restore of the VM. */
+    uint64_t            idSession;
 
-    /* statistics interval change request */
-    uint32_t    u32StatIntervalSize, u32LastStatIntervalSize;
+    /** Statistics interval in seconds.  */
+    uint32_t            cSecsStatInterval;
+    /** The statistics interval last returned to the guest. */
+    uint32_t            cSecsLastStatInterval;
 
-    /* seamless mode change request */
-    bool fLastSeamlessEnabled, fSeamlessEnabled;
-    bool afAlignment5[1];
+    /** Whether seamless is enabled or not. */
+    bool                fSeamlessEnabled;
+    /** The last fSeamlessEnabled state returned to the guest. */
+    bool                fLastSeamlessEnabled;
+    bool                afAlignment5[1];
 
-    bool fVRDPEnabled;
-    uint32_t uVRDPExperienceLevel;
+    bool                fVRDPEnabled;
+    uint32_t            uVRDPExperienceLevel;
 
 #ifdef VMMDEV_WITH_ALT_TIMESYNC
-    uint64_t hostTime;
-    bool fTimesyncBackdoorLo;
-    bool afAlignment6[2];
+    uint64_t            msLatchedHostTime;
+    bool                fTimesyncBackdoorLo;
+    bool                afAlignment6[2];
 #else
-    bool afAlignment6[1+2];
+    bool                afAlignment6[1+2];
 #endif
+
     /** Set if GetHostTime should fail.
      * Loaded from the GetHostTimeDisabled configuration value. */
-    bool fGetHostTimeDisabled;
-
+    bool                fGetHostTimeDisabled;
     /** Set if backdoor logging should be disabled (output will be ignored then) */
-    bool fBackdoorLogDisabled;
-
+    bool                fBackdoorLogDisabled;
     /** Don't clear credentials */
-    bool fKeepCredentials;
-
+    bool                fKeepCredentials;
     /** Heap enabled. */
-    bool fHeapEnabled;
+    bool                fHeapEnabled;
 
     /** Guest Core Dumping enabled. */
-    bool fGuestCoreDumpEnabled;
-
+    bool                fGuestCoreDumpEnabled;
     /** Guest Core Dump location. */
-    char szGuestCoreDumpDir[RTPATH_MAX];
-
+    char                szGuestCoreDumpDir[RTPATH_MAX];
     /** Number of additional cores to keep around. */
-    uint32_t cGuestCoreDumps;
+    uint32_t            cGuestCoreDumps;
 
 #ifdef VBOX_WITH_HGCM
     /** List of pending HGCM requests (VBOXHGCMCMD). */
-    RTLISTANCHORR3 listHGCMCmd;
+    RTLISTANCHORR3      listHGCMCmd;
     /** Critical section to protect the list. */
-    RTCRITSECT critsectHGCMCmdList;
+    RTCRITSECT          critsectHGCMCmdList;
     /** Whether the HGCM events are already automatically enabled. */
-    uint32_t u32HGCMEnabled;
+    uint32_t            u32HGCMEnabled;
     /** Saved state version of restored commands. */
-    uint32_t u32SSMVersion;
-    RTMEMCACHE  hHgcmCmdCache;
-    STAMPROFILE StatHgcmCmdArrival;
-    STAMPROFILE StatHgcmCmdCompletion;
-    STAMPROFILE StatHgcmCmdTotal;
-    STAMCOUNTER StatHgcmLargeCmdAllocs;
-    STAMCOUNTER StatHgcmFailedPageListLocking;
+    uint32_t            u32SSMVersion;
+    RTMEMCACHE          hHgcmCmdCache;
+    STAMPROFILE         StatHgcmCmdArrival;
+    STAMPROFILE         StatHgcmCmdCompletion;
+    STAMPROFILE         StatHgcmCmdTotal;
+    STAMCOUNTER         StatHgcmLargeCmdAllocs;
+    STAMCOUNTER         StatHgcmFailedPageListLocking;
 #endif /* VBOX_WITH_HGCM */
-    STAMCOUNTER StatReqBufAllocs;
+    STAMCOUNTER         StatReqBufAllocs;
 
     /** Per CPU request 4K sized buffers, allocated as needed. */
     R3PTRTYPE(VMMDevRequestHeader *) apReqBufs[VMM_MAX_CPU_COUNT];
