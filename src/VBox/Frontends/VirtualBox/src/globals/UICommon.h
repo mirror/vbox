@@ -519,11 +519,12 @@ public:
           * @param  strMachineFolder         Passes the machine folder,
           * @param  strMachineGuestOSTypeId  Passes the type ID of machine's guest os,
           * @param  fEnableCreate            Passes whether to show/enable create action in the medium selector dialog,
+          * @param  uMachineID               Passes the machine UUID,
           * returns the return code of the UIMediumSelector::ReturnCode as int. In case of a medium selection
           *         UUID of the selected medium is stored in @param outUuid.*/
         int openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, QUuid &outUuid,
                                      const QString &strMachineFolder, const QString &strMachineName,
-                                     const QString &strMachineGuestOSTypeId, bool fEnableCreate);
+                                     const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID = QUuid());
 
         /** Creates and shows a dialog (wizard) to create a medium of type @a enmMediumType.
           * @param  parent                   Passes the parent of the dialog,

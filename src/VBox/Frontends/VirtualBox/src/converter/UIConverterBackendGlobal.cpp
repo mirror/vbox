@@ -57,6 +57,7 @@ template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>() {
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::RestrictedDialogs>() { return true; }
 template<> bool canConvert<UIToolType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
@@ -1451,6 +1452,38 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
         }
     }
     return strResult;
+}
+
+/* QString <= UIExtraDataMetaDefs::RestrictedDialogs: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::RestrictedDialogs &enmRestrictedDialogs)
+{
+    QString strResult;
+    switch (enmRestrictedDialogs)
+    {
+        case UIExtraDataMetaDefs::RestrictedDialogs_VISOCreator:     strResult = "VISOCreator"; break;
+        case UIExtraDataMetaDefs::RestrictedDialogs_All:   strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for details element option type=%d", enmRestrictedDialogs));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::RestrictedDialogs <= QString: */
+template<> UIExtraDataMetaDefs::RestrictedDialogs fromInternalString<UIExtraDataMetaDefs::RestrictedDialogs>(const QString &strRestrictedDialogs)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;                        QList<UIExtraDataMetaDefs::RestrictedDialogs> values;
+    keys << "VISOCreator";                   values << UIExtraDataMetaDefs::RestrictedDialogs_VISOCreator;
+    keys << "All";                           values << UIExtraDataMetaDefs::RestrictedDialogs_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strRestrictedDialogs, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::RestrictedDialogs_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strRestrictedDialogs, Qt::CaseInsensitive)));
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeDescription <= QString: */

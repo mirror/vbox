@@ -751,6 +751,14 @@ public:
         QStringList logViewerVisiblePanels();
     /** @} */
 
+    /** @name Restricted Dialogs
+      * @{ */
+        /** Returns a list of restricted dialogs. */
+        UIExtraDataMetaDefs::RestrictedDialogs restrictedDialogs(const QUuid &uID);
+        /** Defines restricted Runtime UI menu types. */
+        void setRestrictedDialogs(UIExtraDataMetaDefs::RestrictedDialogs types, const QUuid &uID);
+    /** @} */
+
 private slots:
 
     /** Handles 'extra-data change' event: */

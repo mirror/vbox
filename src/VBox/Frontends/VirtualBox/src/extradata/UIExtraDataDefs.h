@@ -435,6 +435,10 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_GuestControl_LogViewerVisiblePanels;
     /** @} */
 
+    /** @name Restricted dialogs
+      * @{ */
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedDialogs;
+    /** @} */
 
     /** @name Old key support stuff.
       * @{ */
@@ -773,6 +777,14 @@ public:
         DetailsElementOptionTypeDescription_Default = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeDescription);
+
+    enum RestrictedDialogs
+    {
+        RestrictedDialogs_Invalid              = 0,
+        RestrictedDialogs_VISOCreator          = RT_BIT(0),
+        RestrictedDialogs_All                  = 0xFFFF
+    };
+    Q_ENUM(RestrictedDialogs);
 };
 
 

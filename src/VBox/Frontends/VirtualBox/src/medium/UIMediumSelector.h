@@ -50,9 +50,9 @@ signals:
 
 public:
 
-    UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName = QString(),
-                     const QString &machineSettingsFilePath = QString(), const QString &strMachineGuestOSTypeId = QString(),
-                     QWidget *pParent = 0);
+    UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName,
+                     const QString &machineSettingsFilePath, const QString &strMachineGuestOSTypeId,
+                     const QUuid &uMachineID, QWidget *pParent);
     /** Disables/enables the create action and controls its visibility. */
     void         setEnableCreateAction(bool fEnable);
     QList<QUuid> selectedMediumIds() const;
@@ -151,6 +151,7 @@ private slots:
     QString               m_strMachineFolder;
     QString               m_strMachineName;
     QString               m_strMachineGuestOSTypeId;
+    QUuid                 m_uMachineID;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_medium_UIMediumSelector_h */

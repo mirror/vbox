@@ -53,9 +53,9 @@
 #endif /* VBOX_WS_MAC */
 
 
-UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName /* = QString() */,
-                                   const QString &machineSettingsFilePath /* = QString() */,
-                                   const QString &strMachineGuestOSTypeId /*= QString() */, QWidget *pParent /* = 0 */)
+UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QString &machineName,
+                                   const QString &machineSettingsFilePath, const QString &strMachineGuestOSTypeId,
+                                   const QUuid &uMachineID, QWidget *pParent)
     :QIWithRetranslateUI<QIMainDialog>(pParent)
     , m_pCentralWidget(0)
     , m_pMainLayout(0)
@@ -78,6 +78,7 @@ UIMediumSelector::UIMediumSelector(UIMediumDeviceType enmMediumType, const QStri
     , m_strMachineFolder(machineSettingsFilePath)
     , m_strMachineName(machineName)
     , m_strMachineGuestOSTypeId(strMachineGuestOSTypeId)
+    , m_uMachineID(uMachineID)
 {
     /* Start full medium-enumeration (if necessary): */
     if (!uiCommon().isFullMediumEnumerationRequested())
@@ -223,7 +224,8 @@ void UIMediumSelector::prepareMenuAndToolBar()
     m_pMainMenu->addAction(m_pActionRefresh);
 
     m_pToolBar->addAction(m_pActionAdd);
-    m_pToolBar->addAction(m_pActionCreate);
+    if (!(gEDataManager->restrictedDialogs(m_uMachineID) & UIExtraDataMetaDefs::RestrictedDialogs_VISOCreator))
+        m_pToolBar->addAction(m_pActionCreate);
     m_pToolBar->addSeparator();
     m_pToolBar->addAction(m_pActionRefresh);
 }

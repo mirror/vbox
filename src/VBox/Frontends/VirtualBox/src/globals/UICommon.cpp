@@ -2915,12 +2915,15 @@ QUuid UICommon::showCreateFloppyDiskDialog(QWidget *pParent, const QString &strD
 }
 
 int UICommon::openMediumSelectorDialog(QWidget *pParent, UIMediumDeviceType  enmMediumType, QUuid &outUuid,
-                                         const QString &strMachineFolder, const QString &strMachineName,
-                                         const QString &strMachineGuestOSTypeId, bool fEnableCreate)
+                                       const QString &strMachineFolder, const QString &strMachineName,
+                                       const QString &strMachineGuestOSTypeId, bool fEnableCreate, const QUuid &uMachineID /* = QUuid() */)
 {
+    QUuid uMachineOrGlobalId = uMachineID == QUuid() ? gEDataManager->GlobalID : uMachineID;
+
     QWidget *pDialogParent = windowManager().realParentWindow(pParent);
     QPointer<UIMediumSelector> pSelector = new UIMediumSelector(enmMediumType, strMachineName,
-                                                                strMachineFolder, strMachineGuestOSTypeId, pDialogParent);
+                                                                strMachineFolder, strMachineGuestOSTypeId,
+                                                                uMachineOrGlobalId, pDialogParent);
 
     if (!pSelector)
         return static_cast<int>(UIMediumSelector::ReturnCode_Rejected);
@@ -3182,7 +3185,7 @@ void UICommon::updateMachineStorage(const CMachine &comConstMachine, const UIMed
                 {
                     int iDialogReturn = openMediumSelectorDialog(windowManager().mainWindowShown(), target.mediumType, uMediumID,
                                                                  strMachineFolder, comConstMachine.GetName(),
-                                                                 comConstMachine.GetOSTypeId(), true /*fEnableCreate */);
+                                                                 comConstMachine.GetOSTypeId(), true /*fEnableCreate */, comConstMachine.GetId());
                     if (iDialogReturn == UIMediumSelector::ReturnCode_LeftEmpty &&
                         (target.mediumType == UIMediumDeviceType_DVD || target.mediumType == UIMediumDeviceType_Floppy))
                         fMount = false;
