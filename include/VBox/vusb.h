@@ -994,7 +994,7 @@ typedef struct VUSBIDEVICE
      * @param   fResetOnLinux   Set if we can permit a real reset and a potential logical
      *                          device reconnect on linux hosts.
      * @param   pfnDone         Pointer to the completion routine. If NULL a synchronous
-     *                          reset  is preformed not respecting the 10ms.
+     *                          reset  is performed not respecting the 10ms.
      * @param   pvUser          User argument to the completion routine.
      * @param   pVM             The cross context VM structure.  Required if pfnDone
      *                          is not NULL.
@@ -1070,7 +1070,7 @@ typedef struct VUSBIDEVICE
  * @param   fResetOnLinux   Set if we can permit a real reset and a potential logical
  *                          device reconnect on linux hosts.
  * @param   pfnDone         Pointer to the completion routine.  If NULL a
- *                          synchronous reset is preformed not respecting the
+ *                          synchronous reset is performed not respecting the
  *                          10ms.
  * @param   pvUser          User argument to the completion routine.
  * @param   pVM             The cross context VM structure.  Required if pfnDone
