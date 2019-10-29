@@ -783,6 +783,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		-E 'VBOX_WITH_WEBSERVICES=$(if $(VBOX_WITH_WEBSERVICES),yes,no)' \
 		-E 'VBOX_WITH_SDS=$(if $(VBOX_WITH_SDS),yes,no)' \
 		-E 'VBOX_WITH_UNATTENDED=$(if $(VBOX_WITH_UNATTENDED),yes,no)' \
+		-E 'VBOX_WITH_VBOX_IMG=$(if $(VBOX_WITH_VBOX_IMG),yes,no)' \
 		-E 'BUILD_TYPE=$(KBUILD_TYPE)' \
 		-E 'BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
 		-E 'VBOX_VCC_TOOL_STEM=$(VBOX_VCC_TOOL_STEM)' \
