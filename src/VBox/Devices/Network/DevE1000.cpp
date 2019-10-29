@@ -1056,12 +1056,9 @@ typedef struct E1KSTATE
     /** TX Critical section. */
     PDMCRITSECT             csTx;
 #endif /* E1K_WITH_TX_CS */
-    /** Base address of memory-mapped registers. */
-    RTGCPHYS    addrMMReg;
     /** MAC address obtained from the configuration. */
     RTMAC       macConfigured;
-    /** Base port of I/O space region. */
-    RTIOPORT    IOPortBase;
+    uint16_t    u16Padding0;
     /** EMT: Last time the interrupt was acknowledged.  */
     uint64_t    u64AckedAt;
     /** All: Used for eliminating spurious interrupts. */
@@ -6352,38 +6349,6 @@ static void e1kDumpState(PE1KSTATE pThis)
 # endif /* E1K_INT_STATS */
 }
 
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- *
- * @todo Can remove this one later, it's realy just here for taking down
- *       addresses for e1kInfo(), an alignment assertion and sentimentality.
- */
-static DECLCALLBACK(int) e1kR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    E1kLog(("%s e1kR3Map: iRegion=%u GCPhysAddress=%RGp\n", pThis->szPrf, iRegion, GCPhysAddress));
-    RT_NOREF(pPciDev, iRegion, cb);
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    switch (enmType)
-    {
-        case PCI_ADDRESS_SPACE_IO:
-            pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
-            break;
-
-        case PCI_ADDRESS_SPACE_MEM:
-            pThis->addrMMReg = GCPhysAddress;
-            Assert(!(GCPhysAddress & 7) || GCPhysAddress == NIL_RTGCPHYS);
-            break;
-
-        default:
-            /* We should never get here */
-            AssertMsgFailedReturn(("Invalid PCI address space param in map callback"), VERR_INTERNAL_ERROR);
-    }
-    return VINF_SUCCESS;
-}
-
 
 /* -=-=-=-=- PDMINETWORKDOWN -=-=-=-=- */
 
@@ -7295,8 +7260,10 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
     /*
      * Show info.
      */
-    pHlp->pfnPrintf(pHlp, "E1000 #%d: port=%RTiop mmio=%RGp mac-cfg=%RTmac %s%s%s\n",
-                    pDevIns->iInstance, pThis->IOPortBase, pThis->addrMMReg,
+    pHlp->pfnPrintf(pHlp, "E1000 #%d: port=%04x mmio=%RGp mac-cfg=%RTmac %s%s%s\n",
+                    pDevIns->iInstance,
+                    PDMDevHlpIoPortGetMappingAddress(pDevIns, pThis->hIoPorts),
+                    PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmioRegion),
                     &pThis->macConfigured, g_aChips[pThis->eChip].pcszName,
                     pDevIns->fRCEnabled ? " RC" : "", pDevIns->fR0Enabled ? " R0" : "");
 
@@ -7899,7 +7866,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                pDevIns->apPciDevs[0], 0 /*iPciRegion*/,
                                e1kMMIOWrite, e1kMMIORead, NULL /*pfnFill*/, NULL /*pvUser*/, "E1000", &pThis->hMmioRegion);
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpPCIIORegionRegisterMmio(pDevIns, 0, E1K_MM_SIZE, PCI_ADDRESS_SPACE_MEM, pThis->hMmioRegion, e1kR3Map);
+    rc = PDMDevHlpPCIIORegionRegisterMmio(pDevIns, 0, E1K_MM_SIZE, PCI_ADDRESS_SPACE_MEM, pThis->hMmioRegion, NULL);
     AssertRCReturn(rc, rc);
 
     /* Map our registers to IO space (region 2, see e1kR3ConfigurePciDev) */
@@ -7912,7 +7879,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpIoPortCreate(pDevIns, E1K_IOPORT_SIZE, pDevIns->apPciDevs[0], 2 /*iPciRegion*/,
                                e1kIOPortOut, e1kIOPortIn, NULL /*pvUser*/, "E1000", s_aExtDescs, &pThis->hIoPorts);
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpPCIIORegionRegisterIo(pDevIns, 2, E1K_IOPORT_SIZE, pThis->hIoPorts, e1kR3Map);
+    rc = PDMDevHlpPCIIORegionRegisterIo(pDevIns, 2, E1K_IOPORT_SIZE, pThis->hIoPorts, NULL);
     AssertRCReturn(rc, rc);
 
     /* Create transmit queue */
