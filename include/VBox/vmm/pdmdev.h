@@ -2275,7 +2275,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 29, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 30, 0)
 
 /**
  * PDM Device API.
@@ -2347,6 +2347,16 @@ typedef struct PDMDEVHLPR3
      *          PDMDevHlpIoPortCreate, PDMDevHlpIoPortCreateEx.
      */
     DECLR3CALLBACKMEMBER(int, pfnIoPortUnmap,(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts));
+
+    /**
+     * Gets the mapping address of the I/O port range @a hIoPorts.
+     *
+     * @returns Mapping address (0..65535) or UINT32_MAX if not mapped (or invalid
+     *          parameters).
+     * @param   pDevIns     The device instance to register the ports with.
+     * @param   hIoPorts    The I/O port range handle.
+     */
+    DECLR3CALLBACKMEMBER(uint32_t, pfnIoPortGetMappingAddress,(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts));
 
     /**
      * Register a number of I/O ports with a device.
@@ -2511,6 +2521,15 @@ typedef struct PDMDEVHLPR3
      * @param   cbRegion    The new size, must be smaller.
      */
     DECLR3CALLBACKMEMBER(int, pfnMmioReduce,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS cbRegion));
+
+    /**
+     * Gets the mapping address of the MMIO region @a hRegion.
+     *
+     * @returns Mapping address, NIL_RTGCPHYS if not mapped (or invalid parameters).
+     * @param   pDevIns     The device instance to register the ports with.
+     * @param   hRegion     The MMIO region handle.
+     */
+    DECLR3CALLBACKMEMBER(RTGCPHYS, pfnMmioGetMappingAddress,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion));
 
     /**
      * Register a Memory Mapped I/O (MMIO) region.
@@ -5798,6 +5817,15 @@ DECLINLINE(int) PDMDevHlpIoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPort
     return pDevIns->pHlpR3->pfnIoPortUnmap(pDevIns, hIoPorts);
 }
 
+/**
+ * @copydoc PDMDEVHLPR3::pfnIoPortGetMappingAddress
+ */
+DECLINLINE(uint32_t) PDMDevHlpIoPortGetMappingAddress(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
+{
+    return pDevIns->pHlpR3->pfnIoPortGetMappingAddress(pDevIns, hIoPorts);
+}
+
+
 #endif /* IN_RING3 */
 #ifndef IN_RING3
 
@@ -5898,6 +5926,14 @@ DECLINLINE(int) PDMDevHlpMmioUnmap(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
 DECLINLINE(int) PDMDevHlpMmioReduce(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS cbRegion)
 {
     return pDevIns->pHlpR3->pfnMmioReduce(pDevIns, hRegion, cbRegion);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmioGetMappingAddress
+ */
+DECLINLINE(RTGCPHYS) PDMDevHlpMmioGetMappingAddress(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+{
+    return pDevIns->pHlpR3->pfnMmioGetMappingAddress(pDevIns, hRegion);
 }
 
 #endif /* IN_RING3 */

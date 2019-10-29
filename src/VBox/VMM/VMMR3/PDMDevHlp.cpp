@@ -145,6 +145,20 @@ static DECLCALLBACK(int) pdmR3DevHlp_IoPortUnmap(PPDMDEVINS pDevIns, IOMIOPORTHA
     return rc;
 }
 
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnIoPortGetMappingAddress} */
+static DECLCALLBACK(uint32_t) pdmR3DevHlp_IoPortGetMappingAddress(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_IoPortGetMappingAddress: caller='%s'/%d: hIoPorts=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hIoPorts));
+
+    uint32_t uAddress = IOMR3IoPortGetMappingAddress(pDevIns->Internal.s.pVMR3, pDevIns, hIoPorts);
+
+    LogFlow(("pdmR3DevHlp_IoPortGetMappingAddress: caller='%s'/%d: returns %#RX32\n", pDevIns->pReg->szName, pDevIns->iInstance, uAddress));
+    return uAddress;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, RTHCPTR pvUser, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
                                                     PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc)
@@ -394,6 +408,19 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioReduce(PPDMDEVINS pDevIns, IOMMMIOHANDL
 
     LogFlow(("pdmR3DevHlp_MmioReduce: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnMmioGetMappingAddress} */
+static DECLCALLBACK(RTGCPHYS) pdmR3DevHlp_MmioGetMappingAddress(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3DevHlp_MmioGetMappingAddress: caller='%s'/%d: hRegion=%#x\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
+
+    RTGCPHYS GCPhys = IOMR3MmioGetMappingAddress(pDevIns->Internal.s.pVMR3, pDevIns, hRegion);
+
+    LogFlow(("pdmR3DevHlp_MmioGetMappingAddress: caller='%s'/%d: returns %RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
+    return GCPhys;
 }
 
 
@@ -4453,6 +4480,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_IoPortCreateEx,
     pdmR3DevHlp_IoPortMap,
     pdmR3DevHlp_IoPortUnmap,
+    pdmR3DevHlp_IoPortGetMappingAddress,
     pdmR3DevHlp_IOPortRegister,
     pdmR3DevHlp_IOPortRegisterRC,
     pdmR3DevHlp_IOPortRegisterR0,
@@ -4461,6 +4489,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_MmioMap,
     pdmR3DevHlp_MmioUnmap,
     pdmR3DevHlp_MmioReduce,
+    pdmR3DevHlp_MmioGetMappingAddress,
     pdmR3DevHlp_MMIORegister,
     pdmR3DevHlp_MMIORegisterRC,
     pdmR3DevHlp_MMIORegisterR0,
@@ -4921,6 +4950,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_IoPortCreateEx,
     pdmR3DevHlp_IoPortMap,
     pdmR3DevHlp_IoPortUnmap,
+    pdmR3DevHlp_IoPortGetMappingAddress,
     pdmR3DevHlp_IOPortRegister,
     pdmR3DevHlp_IOPortRegisterRC,
     pdmR3DevHlp_IOPortRegisterR0,
@@ -4929,6 +4959,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_MmioMap,
     pdmR3DevHlp_MmioUnmap,
     pdmR3DevHlp_MmioReduce,
+    pdmR3DevHlp_MmioGetMappingAddress,
     pdmR3DevHlp_MMIORegister,
     pdmR3DevHlp_MMIORegisterRC,
     pdmR3DevHlp_MMIORegisterR0,

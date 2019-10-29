@@ -487,6 +487,25 @@ VMMR3_INT_DECL(int)  IOMR3MmioValidateHandle(PVM pVM, PPDMDEVINS pDevIns, IOMMMI
 
 
 /**
+ * Gets the mapping address of MMIO region @a hRegion.
+ *
+ * @returns Mapping address if mapped, NIL_RTGCPHYS if not mapped or invalid
+ *          input.
+ * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The device which allegedly owns @a hRegion.
+ * @param   hRegion     The handle to validate.
+ */
+VMMR3_INT_DECL(RTGCPHYS) IOMR3MmioGetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion)
+{
+    AssertPtrReturn(pDevIns, NIL_RTGCPHYS);
+    AssertReturn(hRegion < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), NIL_RTGCPHYS);
+    PIOMMMIOENTRYR3 const pRegEntry = &pVM->iom.s.paMmioRegs[hRegion];
+    AssertReturn(pRegEntry->pDevIns == pDevIns, NIL_RTGCPHYS);
+    return pRegEntry->GCPhysMapping;
+}
+
+
+/**
  * Display a single MMIO range.
  *
  * @returns 0
