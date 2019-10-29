@@ -76,7 +76,7 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGC
 #endif
                     )
             {
-                VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+                PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
                 off &= VMMDEV_TESTING_READBACK_SIZE - 1;
                 switch (cb)
                 {
@@ -173,7 +173,7 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCP
 #endif
                     )
             {
-                VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+                PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
                 off &= 0x3f;
                 switch (cb)
                 {
@@ -243,7 +243,7 @@ PDMBOTHCBDECL(int) vmmdevTestingMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCP
  * @param   pDevIns             The PDM device instance.
  * @param   pThis               The instance VMMDev data.
  */
-static void vmmdevTestingCmdExec_ValueReg(PPDMDEVINS pDevIns, VMMDevState *pThis)
+static void vmmdevTestingCmdExec_ValueReg(PPDMDEVINS pDevIns, PVMMDEV pThis)
 {
     char *pszRegNm = strchr(pThis->TestingData.String.sz, ':');
     if (pszRegNm)
@@ -294,7 +294,7 @@ static void vmmdevTestingCmdExec_ValueReg(PPDMDEVINS pDevIns, VMMDevState *pThis
  */
 PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
     RT_NOREF_PV(pvUser);
 
     switch (uPort)
@@ -594,7 +594,7 @@ PDMBOTHCBDECL(int) vmmdevTestingIoWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 PDMBOTHCBDECL(int) vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
     RT_NOREF_PV(pvUser);
 
     switch (uPort)
@@ -683,7 +683,7 @@ PDMBOTHCBDECL(int) vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  */
 void vmmdevTestingTerminate(PPDMDEVINS pDevIns)
 {
-    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
     if (!pThis->fTestingEnabled)
         return;
 
@@ -704,8 +704,8 @@ void vmmdevTestingTerminate(PPDMDEVINS pDevIns)
  */
 int vmmdevTestingInitialize(PPDMDEVINS pDevIns)
 {
-    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
-    int          rc;
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
+    int     rc;
 
     if (!pThis->fTestingEnabled)
         return VINF_SUCCESS;

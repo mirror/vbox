@@ -118,7 +118,7 @@ typedef VMMDEVFACILITYSTATUSENTRY *PVMMDEVFACILITYSTATUSENTRY;
 /**
  * State structure for the VMM device.
  */
-typedef struct VMMDevState
+typedef struct VMMDEV
 {
     /** The critical section for this device.
      * @remarks We use this rather than the default one, it's simpler with all
@@ -407,8 +407,7 @@ typedef struct VMMDevState
     /** Timer for signalling a flatlined guest. */
     PTMTIMERR3          pFlatlinedTimer;
     /** @} */
-} VMMDevState;
-typedef VMMDevState VMMDEV;
+} VMMDEV;
 /** Pointer to the VMM device state. */
 typedef VMMDEV *PVMMDEV;
 AssertCompileMemberAlignment(VMMDEV, CritSect, 8);

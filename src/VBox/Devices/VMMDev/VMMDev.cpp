@@ -2876,7 +2876,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
     STAM_GET_TS(tsArrival);
 
     RT_NOREF2(Port, cb);
-    PVMMDEV pThis = (VMMDevState *)pvUser;
+    PVMMDEV pThis = (PVMMDEV)pvUser;
 
     /*
      * The caller has passed the guest context physical address of the request
@@ -3034,7 +3034,7 @@ PDMBOTHCBDECL(int) vmmdevFastRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RT
 {
 #ifndef IN_RING3
 # if 0 /* This functionality is offered through reading the port (vmmdevFastRequestIrqAck). Leaving it here for later. */
-    PVMMDEV pThis = (VMMDevState *)pvUser;
+    PVMMDEV pThis = (PVMMDEV)pvUser;
     Assert(PDMINS_2_DATA(pDevIns, PVMMDEV) == pThis);
     RT_NOREF2(Port, cb);
 
@@ -3131,7 +3131,7 @@ PDMBOTHCBDECL(int) vmmdevFastRequestHandler(PPDMDEVINS pDevIns, void *pvUser, RT
  */
 PDMBOTHCBDECL(int) vmmdevFastRequestIrqAck(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PVMMDEV pThis = (VMMDevState *)pvUser;
+    PVMMDEV pThis = (PVMMDEV)pvUser;
     Assert(PDMINS_2_DATA(pDevIns, PVMMDEV) == pThis);
     RT_NOREF(Port);
 
@@ -3317,7 +3317,7 @@ static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pP
 static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     RT_NOREF1(pvUser);
-    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
 
     if (!pThis->fBackdoorLogDisabled && cb == 1 && Port == RTLOG_DEBUG_PORT)
     {
@@ -3365,7 +3365,7 @@ static DECLCALLBACK(int) vmmdevBackdoorLog(PPDMDEVINS pDevIns, void *pvUser, RTI
 static DECLCALLBACK(int) vmmdevAltTimeSyncWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     RT_NOREF2(pvUser, Port);
-    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
     if (cb == 4)
     {
         /* Selects high (0) or low (1) DWORD. The high has to be read first. */
@@ -3393,7 +3393,7 @@ static DECLCALLBACK(int) vmmdevAltTimeSyncWrite(PPDMDEVINS pDevIns, void *pvUser
 static DECLCALLBACK(int) vmmdevAltTimeSyncRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF2(pvUser, Port);
-    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
+    PVMMDEV pThis = PDMINS_2_DATA(pDevIns, PVMMDEV);
     int     rc;
     if (cb == 4)
     {
@@ -4756,7 +4756,7 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     /* .fClass = */                 PDM_DEVREG_CLASS_VMM_DEV,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
-    /* .cbInstanceShared = */       sizeof(VMMDevState),
+    /* .cbInstanceShared = */       sizeof(VMMDEV),
     /* .cbInstanceCC = */           0,
     /* .cbInstanceRC = */           0,
     /* .cMaxPciDevices = */         1,

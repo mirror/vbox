@@ -1466,7 +1466,7 @@ static int vmmdevHGCMCompleteCallRequest(PVMMDEV pThis, PVBOXHGCMCMD pCmd, VMMDe
  */
 static int hgcmCompletedWorker(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmd)
 {
-    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
+    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IHGCMPort);
 #ifdef VBOX_WITH_DTRACE
     uint32_t idFunction = 0;
     uint32_t idClient   = 0;
@@ -1742,7 +1742,7 @@ DECLCALLBACK(bool) hgcmIsCmdCancelled(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCm
  */
 DECLCALLBACK(uint32_t) hgcmGetRequestor(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd)
 {
-    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
+    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IHGCMPort);
     AssertPtrReturn(pCmd, VMMDEV_REQUESTOR_LOWEST);
     if (pThis->guestInfo2.fFeatures & VBOXGSTINFO2_F_REQUESTOR_INFO)
         return pCmd->fRequestor;
@@ -1754,7 +1754,7 @@ DECLCALLBACK(uint32_t) hgcmGetRequestor(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD p
  */
 DECLCALLBACK(uint64_t) hgcmGetVMMDevSessionId(PPDMIHGCMPORT pInterface)
 {
-    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IHGCMPort);
+    PVMMDEV pThis = RT_FROM_MEMBER(pInterface, VMMDEV, IHGCMPort);
     return pThis->idSession;
 }
 

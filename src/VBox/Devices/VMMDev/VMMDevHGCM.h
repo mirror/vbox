@@ -24,12 +24,12 @@
 #include "VMMDevState.h"
 
 RT_C_DECLS_BEGIN
-int vmmdevHGCMConnect(VMMDevState *pVMMDevState, const VMMDevHGCMConnect *pHGCMConnect, RTGCPHYS GCPtr);
-int vmmdevHGCMDisconnect(VMMDevState *pVMMDevState, const VMMDevHGCMDisconnect *pHGCMDisconnect, RTGCPHYS GCPtr);
-int vmmdevHGCMCall(VMMDevState *pVMMDevState, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPtr,
+int vmmdevHGCMConnect(PVMMDEV pVMMDevState, const VMMDevHGCMConnect *pHGCMConnect, RTGCPHYS GCPtr);
+int vmmdevHGCMDisconnect(PVMMDEV pVMMDevState, const VMMDevHGCMDisconnect *pHGCMDisconnect, RTGCPHYS GCPtr);
+int vmmdevHGCMCall(PVMMDEV pVMMDevState, const VMMDevHGCMCall *pHGCMCall, uint32_t cbHGCMCall, RTGCPHYS GCPtr,
                    VMMDevRequestType enmRequestType, uint64_t tsArrival, PVMMDEVREQLOCK *ppLock);
-int vmmdevHGCMCancel(VMMDevState *pVMMDevState, const VMMDevHGCMCancel *pHGCMCancel, RTGCPHYS GCPtr);
-int vmmdevHGCMCancel2(VMMDevState *pVMMDevState, RTGCPHYS GCPtr);
+int vmmdevHGCMCancel(PVMMDEV pVMMDevState, const VMMDevHGCMCancel *pHGCMCancel, RTGCPHYS GCPtr);
+int vmmdevHGCMCancel2(PVMMDEV pVMMDevState, RTGCPHYS GCPtr);
 
 DECLCALLBACK(int)  hgcmCompleted(PPDMIHGCMPORT pInterface, int32_t result, PVBOXHGCMCMD pCmdPtr);
 DECLCALLBACK(bool) hgcmIsCmdRestored(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd);
@@ -37,9 +37,9 @@ DECLCALLBACK(bool) hgcmIsCmdCancelled(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCm
 DECLCALLBACK(uint32_t) hgcmGetRequestor(PPDMIHGCMPORT pInterface, PVBOXHGCMCMD pCmd);
 DECLCALLBACK(uint64_t) hgcmGetVMMDevSessionId(PPDMIHGCMPORT pInterface);
 
-int vmmdevHGCMSaveState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM);
-int vmmdevHGCMLoadState(VMMDevState *pVMMDevState, PSSMHANDLE pSSM, uint32_t u32Version);
-int vmmdevHGCMLoadStateDone(VMMDevState *pVMMDevState);
+int vmmdevHGCMSaveState(PVMMDEV pVMMDevState, PSSMHANDLE pSSM);
+int vmmdevHGCMLoadState(PVMMDEV pVMMDevState, PSSMHANDLE pSSM, uint32_t u32Version);
+int vmmdevHGCMLoadStateDone(PVMMDEV pVMMDevState);
 
 void vmmdevHGCMDestroy(PVMMDEV pThis);
 int  vmmdevHGCMInit(PVMMDEV pThis);
