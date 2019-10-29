@@ -872,11 +872,13 @@ static DECLCALLBACK(int) vboxNetAdpWinFactoryCreateAndConnect(PINTNETTRUNKFACTOR
     AssertMsgReturn(!(fFlags & ~(INTNETTRUNKFACTORY_FLAG_NO_PROMISC)),
                     ("%#x\n", fFlags), VERR_INVALID_PARAMETER);
 
+    DbgPrint("vboxNetAdpWinFactoryCreateAndConnect: looking for %s...\n", pszName);
     PVBOXNETADP_ADAPTER pAdapter = NULL;
     NdisAcquireSpinLock(&pGlobals->Lock);
     RTListForEach(&g_VBoxNetAdpGlobals.ListOfAdapters, pAdapter, VBOXNETADP_ADAPTER, node)
     {
         Log(("vboxNetAdpWinFactoryCreateAndConnect: evaluating adapter=%s\n", pAdapter->szName));
+        DbgPrint("vboxNetAdpWinFactoryCreateAndConnect: evaluating %s...\n", pAdapter->szName);
         if (!RTStrICmp(pszName, pAdapter->szName))
         {
             pAdapter->pSwitchPort = pSwitchPort;
@@ -891,6 +893,7 @@ static DECLCALLBACK(int) vboxNetAdpWinFactoryCreateAndConnect(PINTNETTRUNKFACTOR
     }
     NdisReleaseSpinLock(&pGlobals->Lock);
     /// @todo vboxNetAdpLogErrorEvent(IO_ERR_INTERNAL_ERROR, STATUS_SUCCESS, 6);
+    DbgPrint("vboxNetAdpWinFactoryCreateAndConnect: could not find %s\n", pszName);
     LogFlow(("<==vboxNetAdpWinFactoryCreateAndConnect: return VERR_INTNET_FLT_IF_NOT_FOUND\n"));
     return VERR_INTNET_FLT_IF_NOT_FOUND;
 }
