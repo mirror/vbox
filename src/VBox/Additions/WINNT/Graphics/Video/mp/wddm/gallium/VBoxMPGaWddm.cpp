@@ -194,6 +194,37 @@ NTSTATUS GaUpdate(PVBOXWDDM_EXT_GA pGaDevExt,
     return SvgaUpdate(pSvga, u32X, u32Y, u32Width, u32Height);
 }
 
+NTSTATUS GaDefineCursor(PVBOXWDDM_EXT_GA pGaDevExt,
+                        uint32_t u32HotspotX,
+                        uint32_t u32HotspotY,
+                        uint32_t u32Width,
+                        uint32_t u32Height,
+                        uint32_t u32AndMaskDepth,
+                        uint32_t u32XorMaskDepth,
+                        void const *pvAndMask,
+                        uint32_t cbAndMask,
+                        void const *pvXorMask,
+                        uint32_t cbXorMask)
+{
+    VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
+    return SvgaDefineCursor(pSvga, u32HotspotX, u32HotspotY, u32Width, u32Height,
+                            u32AndMaskDepth, u32XorMaskDepth,
+                            pvAndMask, cbAndMask, pvXorMask, cbXorMask);
+}
+
+NTSTATUS GaDefineAlphaCursor(PVBOXWDDM_EXT_GA pGaDevExt,
+                             uint32_t u32HotspotX,
+                             uint32_t u32HotspotY,
+                             uint32_t u32Width,
+                             uint32_t u32Height,
+                             void const *pvImage,
+                             uint32_t cbImage)
+{
+    VBOXWDDM_EXT_VMSVGA *pSvga = pGaDevExt->hw.pSvga;
+    return SvgaDefineAlphaCursor(pSvga, u32HotspotX, u32HotspotY, u32Width, u32Height,
+                                 pvImage, cbImage);
+}
+
 static NTSTATUS gaSurfaceDefine(PVBOXWDDM_EXT_GA pGaDevExt,
                                 GASURFCREATE *pCreateParms,
                                 GASURFSIZE *paSizes,

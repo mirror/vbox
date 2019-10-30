@@ -1867,6 +1867,13 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 #endif
             pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH;
             pCaps->MaxPointerHeight = VBOXWDDM_C_POINTER_MAX_HEIGHT;
+#ifdef VBOX_WITH_MESA3D
+            if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
+            {
+                pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH_LEGACY;
+                pCaps->MaxPointerHeight = VBOXWDDM_C_POINTER_MAX_HEIGHT_LEGACY;
+            }
+#endif
             pCaps->PointerCaps.Value = 3; /* Monochrome , Color*/ /* MaskedColor == Value | 4, disable for now */
             if (!g_VBoxDisplayOnly)
             {
@@ -2931,6 +2938,80 @@ static BOOLEAN vboxVddmPointerShapeToAttributes(CONST DXGKARG_SETPOINTERSHAPE* p
     return TRUE;
 }
 
+bool vboxWddmUpdatePointerShape(PVBOXMP_DEVEXT pDevExt, PVIDEO_POINTER_ATTRIBUTES pAttrs, uint32_t cbLength)
+{
+#ifdef VBOX_WITH_MESA3D
+    if (pDevExt->enmHwType != VBOXVIDEO_HWTYPE_VBOX)
+    {
+        NTSTATUS Status = STATUS_SUCCESS;
+
+        /** @todo Get rid of the unnecesary en-/decode procedure (XPDM legacy). */
+        uint32_t fFlags = pAttrs->Enable & 0x0000FFFF;
+        uint32_t xHot = (pAttrs->Enable >> 16) & 0xFF;
+        uint32_t yHot = (pAttrs->Enable >> 24) & 0xFF;
+        uint32_t cWidth = pAttrs->Width;
+        uint32_t cHeight = pAttrs->Height;
+        uint32_t cbAndMask = 0;
+        uint32_t cbXorMask = 0;
+
+        if (fFlags & VBOX_MOUSE_POINTER_SHAPE)
+        {
+            /* Size of the pointer data: sizeof(AND mask) + sizeof(XOR mask) */
+            cbAndMask = ((((cWidth + 7) / 8) * cHeight + 3) & ~3);
+            cbXorMask = cWidth * 4 * cHeight;
+
+            /* Send the shape to the host. */
+            if (fFlags & VBOX_MOUSE_POINTER_ALPHA)
+            {
+                void const *pvImage = &pAttrs->Pixels[cbAndMask];
+                Status = GaDefineAlphaCursor(pDevExt->pGa,
+                                             xHot,
+                                             yHot,
+                                             cWidth,
+                                             cHeight,
+                                             pvImage,
+                                             cbXorMask);
+            }
+            else
+            {
+                uint32_t u32AndMaskDepth = 1;
+                uint32_t u32XorMaskDepth = 32;
+
+                void const *pvAndMask = &pAttrs->Pixels[0];
+                void const *pvXorMask = &pAttrs->Pixels[cbAndMask];
+                Status = GaDefineCursor(pDevExt->pGa,
+                                        xHot,
+                                        yHot,
+                                        cWidth,
+                                        cHeight,
+                                        u32AndMaskDepth,
+                                        u32XorMaskDepth,
+                                        pvAndMask,
+                                        cbAndMask,
+                                        pvXorMask,
+                                        cbXorMask);
+            }
+        }
+
+        /** @todo Hack: Use the legacy interface to handle visibility.
+         * Eventually the VMSVGA WDDM driver should use the SVGA_FIFO_CURSOR_* interface.
+         */
+        VIDEO_POINTER_ATTRIBUTES attrs;
+        RT_ZERO(attrs);
+        attrs.Enable = pAttrs->Enable & VBOX_MOUSE_POINTER_VISIBLE;
+        if (!VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &attrs, sizeof(attrs)))
+        {
+            Status = STATUS_INVALID_PARAMETER;
+        }
+
+        return Status == STATUS_SUCCESS;
+    }
+#endif
+
+    /* VBOXVIDEO_HWTYPE_VBOX */
+    return VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), pAttrs, cbLength);
+}
+
 static void vboxWddmHostPointerEnable(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnable)
 {
     VIDEO_POINTER_ATTRIBUTES PointerAttributes;
@@ -2939,7 +3020,7 @@ static void vboxWddmHostPointerEnable(PVBOXMP_DEVEXT pDevExt, BOOLEAN fEnable)
     {
         PointerAttributes.Enable = VBOX_MOUSE_POINTER_VISIBLE;
     }
-    VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &PointerAttributes, sizeof(PointerAttributes));
+    vboxWddmUpdatePointerShape(pDevExt, &PointerAttributes, sizeof(PointerAttributes));
 }
 
 NTSTATUS
@@ -2984,7 +3065,7 @@ DxgkDdiSetPointerPosition(
     {
         if (fScreenChanged)
         {
-            BOOLEAN bResult = VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE);
+            BOOLEAN bResult = vboxWddmUpdatePointerShape(pDevExt, &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE);
             if (!bResult)
             {
                 vboxWddmHostPointerEnable(pDevExt, FALSE);
@@ -3022,7 +3103,7 @@ DxgkDdiSetPointerShape(
         if (vboxVddmPointerShapeToAttributes(pSetPointerShape, pPointerInfo))
         {
             pDevExt->PointerInfo.iLastReportedScreen = pSetPointerShape->VidPnSourceId;
-            if (VBoxMPCmnUpdatePointerShape(VBoxCommonFromDeviceExt(pDevExt), &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
+            if (vboxWddmUpdatePointerShape(pDevExt, &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
                 Status = STATUS_SUCCESS;
             else
             {

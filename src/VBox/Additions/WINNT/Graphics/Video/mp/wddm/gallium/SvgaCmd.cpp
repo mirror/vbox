@@ -72,6 +72,48 @@ void SvgaCmdUpdate(void *pvCmd, uint32_t u32X, uint32_t u32Y, uint32_t u32Width,
     pCommand->height = u32Height;
 }
 
+void SvgaCmdDefineCursor(void *pvCmd, uint32_t u32HotspotX, uint32_t u32HotspotY, uint32_t u32Width, uint32_t u32Height,
+                         uint32_t u32AndMaskDepth, uint32_t u32XorMaskDepth,
+                         void const *pvAndMask, uint32_t cbAndMask, void const *pvXorMask, uint32_t cbXorMask)
+{
+    uint32_t *pu32Id = (uint32_t *)pvCmd;
+    SVGAFifoCmdDefineCursor *pCommand = (SVGAFifoCmdDefineCursor *)&pu32Id[1];
+
+    *pu32Id = SVGA_CMD_DEFINE_CURSOR;
+
+    pCommand->id = 0;
+    pCommand->hotspotX = u32HotspotX;
+    pCommand->hotspotY = u32HotspotY;
+    pCommand->width = u32Width;
+    pCommand->height = u32Height;
+    pCommand->andMaskDepth = u32AndMaskDepth;
+    pCommand->xorMaskDepth = u32XorMaskDepth;
+
+    uint8_t *pu8AndMask = (uint8_t *)&pCommand[1];
+    memcpy(pu8AndMask, pvAndMask, cbAndMask);
+
+    uint8_t *pu8XorMask = pu8AndMask + cbAndMask;
+    memcpy(pu8XorMask, pvXorMask, cbXorMask);
+}
+
+void SvgaCmdDefineAlphaCursor(void *pvCmd, uint32_t u32HotspotX, uint32_t u32HotspotY, uint32_t u32Width, uint32_t u32Height,
+                              void const *pvImage, uint32_t cbImage)
+{
+    uint32_t *pu32Id = (uint32_t *)pvCmd;
+    SVGAFifoCmdDefineAlphaCursor *pCommand = (SVGAFifoCmdDefineAlphaCursor *)&pu32Id[1];
+
+    *pu32Id = SVGA_CMD_DEFINE_ALPHA_CURSOR;
+
+    pCommand->id = 0;
+    pCommand->hotspotX = u32HotspotX;
+    pCommand->hotspotY = u32HotspotY;
+    pCommand->width = u32Width;
+    pCommand->height = u32Height;
+
+    uint8_t *pu8Image = (uint8_t *)&pCommand[1];
+    memcpy(pu8Image, pvImage, cbImage);
+}
+
 void SvgaCmdFence(void *pvCmd, uint32_t u32Fence)
 {
     uint32_t *pu32Id = (uint32_t *)pvCmd;

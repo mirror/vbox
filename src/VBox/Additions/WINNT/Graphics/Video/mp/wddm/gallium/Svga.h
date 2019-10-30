@@ -268,6 +268,26 @@ NTSTATUS SvgaUpdate(PVBOXWDDM_EXT_VMSVGA pSvga,
                     uint32_t u32Width,
                     uint32_t u32Height);
 
+NTSTATUS SvgaDefineCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
+                          uint32_t u32HotspotX,
+                          uint32_t u32HotspotY,
+                          uint32_t u32Width,
+                          uint32_t u32Height,
+                          uint32_t u32AndMaskDepth,
+                          uint32_t u32XorMaskDepth,
+                          void const *pvAndMask,
+                          uint32_t cbAndMask,
+                          void const *pvXorMask,
+                          uint32_t cbXorMask);
+
+NTSTATUS SvgaDefineAlphaCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
+                               uint32_t u32HotspotX,
+                               uint32_t u32HotspotY,
+                               uint32_t u32Width,
+                               uint32_t u32Height,
+                               void const *pvImage,
+                               uint32_t cbImage);
+
 NTSTATUS SvgaGenDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
                             uint32_t u32Offset,
                             uint32_t u32BytesPerLine,

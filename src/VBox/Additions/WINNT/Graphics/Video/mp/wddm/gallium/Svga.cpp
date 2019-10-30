@@ -1013,6 +1013,133 @@ NTSTATUS SvgaUpdate(PVBOXWDDM_EXT_VMSVGA pSvga,
     return Status;
 }
 
+NTSTATUS SvgaGenDefineCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
+                             uint32_t u32HotspotX, uint32_t u32HotspotY, uint32_t u32Width, uint32_t u32Height,
+                             uint32_t u32AndMaskDepth, uint32_t u32XorMaskDepth,
+                             void const *pvAndMask, uint32_t cbAndMask, void const *pvXorMask, uint32_t cbXorMask,
+                             void *pvDst,
+                             uint32_t cbDst,
+                             uint32_t *pcbOut)
+{
+    RT_NOREF(pSvga);
+
+    const uint32_t cbCmd =   sizeof(uint32_t)
+                           + sizeof(SVGAFifoCmdDefineCursor)
+                           + cbAndMask
+                           + cbXorMask;
+
+    const uint32_t cbRequired = cbCmd;
+    if (pcbOut)
+    {
+        *pcbOut = cbRequired;
+    }
+
+    if (cbDst < cbRequired)
+    {
+        return STATUS_BUFFER_OVERFLOW;
+    }
+
+    SvgaCmdDefineCursor(pvDst, u32HotspotX, u32HotspotY, u32Width, u32Height,
+                        u32AndMaskDepth, u32XorMaskDepth,
+                        pvAndMask, cbAndMask, pvXorMask, cbXorMask);
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS SvgaDefineCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
+                          uint32_t u32HotspotX, uint32_t u32HotspotY, uint32_t u32Width, uint32_t u32Height,
+                          uint32_t u32AndMaskDepth, uint32_t u32XorMaskDepth,
+                          void const *pvAndMask, uint32_t cbAndMask, void const *pvXorMask, uint32_t cbXorMask)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    uint32_t cbSubmit = 0;
+    SvgaGenDefineCursor(pSvga,
+                        u32HotspotX, u32HotspotY, u32Width, u32Height,
+                        u32AndMaskDepth, u32XorMaskDepth,
+                        pvAndMask, cbAndMask, pvXorMask, cbXorMask,
+                        NULL, 0, &cbSubmit);
+
+    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    if (pvCmd)
+    {
+        Status = SvgaGenDefineCursor(pSvga,
+                                     u32HotspotX, u32HotspotY, u32Width, u32Height,
+                                     u32AndMaskDepth, u32XorMaskDepth,
+                                     pvAndMask, cbAndMask, pvXorMask, cbXorMask,
+                                     pvCmd, cbSubmit, NULL);
+        Assert(Status == STATUS_SUCCESS);
+        SvgaFifoCommit(pSvga, cbSubmit);
+    }
+    else
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    return Status;
+}
+
+NTSTATUS SvgaGenDefineAlphaCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
+                                  uint32_t u32HotspotX, uint32_t u32HotspotY, uint32_t u32Width, uint32_t u32Height,
+                                  void const *pvImage, uint32_t cbImage,
+                                  void *pvDst,
+                                  uint32_t cbDst,
+                                  uint32_t *pcbOut)
+{
+    RT_NOREF(pSvga);
+
+    const uint32_t cbCmd =   sizeof(uint32_t)
+                           + sizeof(SVGAFifoCmdDefineAlphaCursor)
+                           + cbImage;
+
+    const uint32_t cbRequired = cbCmd;
+    if (pcbOut)
+    {
+        *pcbOut = cbRequired;
+    }
+
+    if (cbDst < cbRequired)
+    {
+        return STATUS_BUFFER_OVERFLOW;
+    }
+
+    SvgaCmdDefineAlphaCursor(pvDst, u32HotspotX, u32HotspotY, u32Width, u32Height,
+                             pvImage, cbImage);
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS SvgaDefineAlphaCursor(PVBOXWDDM_EXT_VMSVGA pSvga,
+                               uint32_t u32HotspotX, uint32_t u32HotspotY, uint32_t u32Width, uint32_t u32Height,
+                               void const *pvImage, uint32_t cbImage)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    uint32_t cbSubmit = 0;
+    SvgaGenDefineAlphaCursor(pSvga,
+                             u32HotspotX, u32HotspotY, u32Width, u32Height,
+                             pvImage, cbImage,
+                             NULL, 0, &cbSubmit);
+
+    void *pvCmd = SvgaFifoReserve(pSvga, cbSubmit);
+    if (pvCmd)
+    {
+        Status = SvgaGenDefineAlphaCursor(pSvga,
+                                          u32HotspotX, u32HotspotY, u32Width, u32Height,
+                                          pvImage, cbImage,
+                                          pvCmd, cbSubmit, NULL);
+        Assert(Status == STATUS_SUCCESS);
+        SvgaFifoCommit(pSvga, cbSubmit);
+    }
+    else
+    {
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+    }
+
+    return Status;
+}
+
+
 NTSTATUS SvgaGenDefineGMRFB(PVBOXWDDM_EXT_VMSVGA pSvga,
                             uint32_t u32Offset,
                             uint32_t u32BytesPerLine,
