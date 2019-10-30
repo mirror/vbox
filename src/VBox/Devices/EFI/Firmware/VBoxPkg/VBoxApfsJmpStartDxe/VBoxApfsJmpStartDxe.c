@@ -69,10 +69,10 @@ typedef APFSJMPSTARTCTX *PAPFSJMPSTARTCTX;
 typedef const APFSJMPSTARTCTX *PCAPFSJMPSTARTCTX;
 
 #if 0
-static EFI_GUID g_ApfsDrvLoadedFromThisControllerGuid = { 0x01aaf8bc, 0x9c37, 0x4dc1, 
+static EFI_GUID g_ApfsDrvLoadedFromThisControllerGuid = { 0x01aaf8bc, 0x9c37, 0x4dc1,
                                                           { 0xb1, 0x68, 0xe9, 0x67, 0xd4, 0x2c, 0x79, 0x25 } };
 #else
-static EFI_GUID g_ApfsDrvLoadedFromThisControllerGuid = { 0x03B8D751, 0xA02F, 0x4FF8, 
+static EFI_GUID g_ApfsDrvLoadedFromThisControllerGuid = { 0x03B8D751, 0xA02F, 0x4FF8,
                                                           { 0x9B, 0x1A, 0x55, 0x24, 0xAF, 0xA3, 0x94, 0x5F } };
 #endif
 
