@@ -115,18 +115,19 @@ static BOOLEAN vboxApfsObjPhysIsChksumValid(PCAPFSOBJPHYS pObjHdr, void *pvStruc
 
 static EFI_STATUS vboxApfsJmpStartLoadAndExecEfiDriver(IN PAPFSJMPSTARTCTX pCtx, IN PCAPFSNXSUPERBLOCK pSb)
 {
-    uint32_t cbReadLeft = RT_LE2H_U32(pCtx->JmpStart.Hdr.cbEfiFile);
+    UINTN cbReadLeft = RT_LE2H_U32(pCtx->JmpStart.Hdr.cbEfiFile);
     EFI_STATUS rc = EFI_SUCCESS;
 
     void *pvApfsDrv = AllocateZeroPool(cbReadLeft);
     if (pvApfsDrv)
     {
+    	uint32_t i = 0;
         uint8_t *pbBuf = (uint8_t *)pvApfsDrv;
 
-        for (uint32_t i = 0; i < RT_LE2H_U32(pCtx->JmpStart.Hdr.cExtents) && !EFI_ERROR(rc) && cbReadLeft; i++)
+        for (i = 0; i < RT_LE2H_U32(pCtx->JmpStart.Hdr.cExtents) && !EFI_ERROR(rc) && cbReadLeft; i++)
         {
             PCAPFSPRANGE pRange = &pCtx->JmpStart.aExtents[i];
-            size_t cbRead = RT_MIN(cbReadLeft, RT_LE2H_U64(pRange->cBlocks) * pCtx->cbBlock);
+            UINTN cbRead = RT_MIN(cbReadLeft, RT_LE2H_U64(pRange->cBlocks) * pCtx->cbBlock);
 
             rc = vboxApfsJmpStartRead(pCtx, RT_LE2H_U64(pRange->PAddrStart), pbBuf, cbRead);
             pbBuf      += cbRead;
@@ -246,6 +247,8 @@ static EFI_STATUS EFIAPI
 VBoxApfsJmpStart_Start(IN EFI_DRIVER_BINDING_PROTOCOL *This, IN EFI_HANDLE ControllerHandle,
                        IN EFI_DEVICE_PATH_PROTOCOL *RemainingDevicePath OPTIONAL)
 {
+    APFSJMPSTARTCTX Ctx;
+
     /* Check whether the driver was already loaded from this controller. */
     EFI_STATUS rc = gBS->OpenProtocol(ControllerHandle,
                                       &g_ApfsDrvLoadedFromThisControllerGuid,
@@ -256,7 +259,6 @@ VBoxApfsJmpStart_Start(IN EFI_DRIVER_BINDING_PROTOCOL *This, IN EFI_HANDLE Contr
     if (!EFI_ERROR(rc))
         return EFI_UNSUPPORTED;
 
-    APFSJMPSTARTCTX Ctx;
     Ctx.cbBlock = 0; /* Will get filled when the superblock was read (starting at 0 anyway). */
     Ctx.hController = ControllerHandle;
 
