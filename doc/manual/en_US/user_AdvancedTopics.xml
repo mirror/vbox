@@ -3111,7 +3111,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
         window:
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeMenus OPTION[,OPTION...]</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus OPTION[,OPTION...]</screen>
 
       <para>
         where <computeroutput>OPTION</computeroutput> is one of the
@@ -3128,6 +3128,18 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
           <listitem>
             <para>
               Do not show any menu in the VM window.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>Application</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+               Do not show <emphasis role="bold">Application/File</emphasis> menu in the VM window.
             </para>
           </listitem>
         </varlistentry>
@@ -3154,6 +3166,18 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
             <para>
               Do not show the <emphasis role="bold">View</emphasis> menu
               in the VM window.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>Input</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+               Do not show <emphasis role="bold">Input</emphasis> menu in the VM window.
             </para>
           </listitem>
         </varlistentry>
@@ -3202,11 +3226,11 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
       </variablelist>
 
       <para>
-        This is a per-VM setting. Any combination of the above is
+        This is a per-VM or global setting. Any combination of the above is
         allowed. To restore the default behavior, use
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeMenus</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus</screen>
 
       <para>
         You can also disable, or blacklist, certain menu actions of
@@ -3215,7 +3239,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
         menu. This is only available on Mac OS X hosts.
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</screen>
 
       <para>
         where <computeroutput>OPTION</computeroutput> is one of the
@@ -3249,21 +3273,73 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
           </listitem>
         </varlistentry>
 
+        <varlistentry>
+          <term>
+            <computeroutput>Preferences</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">Preferences</emphasis>
+              menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>NetworkAccessManager</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">Network Operations Manager</emphasis>
+              menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>ResetWarnings</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">Reset All Warnings</emphasis>
+              menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>Close</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">Close</emphasis>
+              menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
       </variablelist>
 
       <para>
-        This is a per-VM setting. Any combination of the above is
+        This is a per-VM or global setting. Any combination of the above is
         allowed. To restore the default behavior, use
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeMenus</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMenus</screen>
 
       <para>
         Use the following command to disable certain actions of the
         <emphasis role="bold">Machine</emphasis> menu:
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeApplicationMenuActions OPTION[,OPTION...]</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMachineMenuActions OPTION[,OPTION...]</screen>
 
       <para>
         where <computeroutput>OPTION</computeroutput> is one of the
@@ -3305,20 +3381,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
           <listitem>
             <para>
               Do not show the <emphasis role="bold">Take
-              Snapshot</emphasis> menu item in this menu.
-            </para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
-          <term>
-            <computeroutput>TakeScreenshot</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Take
-              Screenshot</emphasis> menu item in this menu.
+              Snapshot...</emphasis> menu item in this menu.
             </para>
           </listitem>
         </varlistentry>
@@ -3331,50 +3394,24 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
           <listitem>
             <para>
               Do not show the <emphasis role="bold">Session
-              Information</emphasis> menu item in this menu.
+              Information...</emphasis> menu item in this menu.
             </para>
           </listitem>
         </varlistentry>
 
         <varlistentry>
           <term>
-            <computeroutput>MouseIntegration</computeroutput>
+            <computeroutput>FileManagerDialog</computeroutput>
           </term>
 
           <listitem>
             <para>
-              Do not show the <emphasis role="bold">Disable Mouse
-              Integration</emphasis> menu item in this menu.
+              Do not show the <emphasis role="bold">File
+              Manager...</emphasis> menu item in this menu.
             </para>
           </listitem>
         </varlistentry>
 
-        <varlistentry>
-          <term>
-            <computeroutput>TypeCAD</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Insert
-              Ctrl+Alt+Del</emphasis> menu item in this menu.
-            </para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
-          <term>
-            <computeroutput>TypeCABS</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Insert
-              Ctrl+Alt+Backspace</emphasis> menu item in this menu.
-              Available on X11 hosts only.
-            </para>
-          </listitem>
-        </varlistentry>
 
         <varlistentry>
           <term>
@@ -3383,8 +3420,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
           <listitem>
             <para>
-              Do not show the <emphasis role="bold">Pause</emphasis>
-              menu item in this menu.
+              Do not show the <emphasis role="bold">Pause</emphasis> menu item in this menu.
             </para>
           </listitem>
         </varlistentry>
@@ -3396,24 +3432,11 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
           <listitem>
             <para>
-              Do not show the <emphasis role="bold">Reset</emphasis>
-              menu item in this menu.
+              Do not show the <emphasis role="bold">Reset</emphasis> menu item in this menu.
             </para>
           </listitem>
         </varlistentry>
 
-        <varlistentry>
-          <term>
-            <computeroutput>SaveState</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Save the machine
-              state</emphasis> menu item in this menu.
-            </para>
-          </listitem>
-        </varlistentry>
 
         <varlistentry>
           <term>
@@ -3428,34 +3451,21 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
           </listitem>
         </varlistentry>
 
-        <varlistentry>
-          <term>
-            <computeroutput>PowerOff</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Power Off the
-              machine</emphasis> menu item in this menu.
-            </para>
-          </listitem>
-        </varlistentry>
-
       </variablelist>
 
       <para>
-        This is a per-VM setting. Any combination of the above is
+        This is a per-VM or global setting. Any combination of the above is
         allowed. To restore the default behavior, use
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeApplicationMenuActions</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeMachineMenuActions</screen>
 
       <para>
         Use the following command to disable certain actions of the
         <emphasis role="bold">View</emphasis> menu:
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeViewMenuActions OPTION[,OPTION...]</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeViewMenuActions OPTION[,OPTION...]</screen>
 
       <para>
         where <computeroutput>OPTION</computeroutput> is one of the
@@ -3483,8 +3493,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
           <listitem>
             <para>
-              Do not show the <emphasis role="bold">Switch to
-              Fullscreen</emphasis> menu item in this menu.
+              Do not show the <emphasis role="bold">Full-screen Mode</emphasis> menu item in this menu.
             </para>
           </listitem>
         </varlistentry>
@@ -3496,7 +3505,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
           <listitem>
             <para>
-              Do not show the <emphasis role="bold">Switch to Seamless
+              Do not show the <emphasis role="bold">Seamless
               Mode</emphasis> menu item in this menu.
             </para>
           </listitem>
@@ -3509,7 +3518,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
           <listitem>
             <para>
-              Do not show the <emphasis role="bold">Switch to Scaled
+              Do not show the <emphasis role="bold">Scaled
               Mode</emphasis> menu item in this menu.
             </para>
           </listitem>
@@ -3543,14 +3552,98 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
         <varlistentry>
           <term>
-            <computeroutput>Multiscreen</computeroutput>
+            <computeroutput>TakeScreenshot</computeroutput>
           </term>
 
           <listitem>
             <para>
               Do not show the
-              <emphasis role="bold">Multiscreen</emphasis> menu item in
-              this menu. Only visible in full screen/seamless mode.
+              <emphasis role="bold">Take Screenshot...</emphasis> menu item in
+              this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>Recording</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the
+              <emphasis role="bold">Recording</emphasis> menu item in
+              this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>VRDEServer</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the
+              <emphasis role="bold">Remote Display</emphasis> menu item in
+              this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>MenuBar</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the
+              <emphasis role="bold">Menu Bar</emphasis> menu item in
+              this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>MenuBarSettings</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the
+              <emphasis role="bold">Menu Bar Settings...</emphasis> menu item in
+              this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+              <computeroutput>StatusBar</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the
+              <emphasis role="bold">Status Bar</emphasis> menu item in
+              this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>StatusbarSettings</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the
+              <emphasis role="bold">Statusbar Settings...</emphasis> menu item in
+              this menu.
             </para>
           </listitem>
         </varlistentry>
@@ -3558,18 +3651,206 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
       </variablelist>
 
       <para>
-        This is a per-VM setting. Any combination of the above is
+        This is a per-VM or global setting. Any combination of the above is
         allowed. To restore the default behavior, use
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeViewMenuActions</screen>
+      <screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeViewMenuActions</screen>
+
+     <para>
+        Use the following command to disable certain actions of the
+        <emphasis role="bold">Input</emphasis> menu:
+      </para>
+
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeInputMenuActions OPTION[,OPTION...]</screen>
+
+      <para>
+        where <computeroutput>OPTION</computeroutput> is one of the
+        following keywords:
+      </para>
+
+      <variablelist>
+
+        <varlistentry>
+          <term>
+            <computeroutput>All</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show any menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>Keyboard</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Keyboard</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>KeyboardSettings</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Keyboard Settings...</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>SoftKeyboard</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Soft Keyboard...</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>TypeCAD</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Insert Ctrl-Alt-Del</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>TypeCABS</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Insert Ctrl-Alt-Backspace</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>TypeCtrlBreak</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Insert Ctrl-Break</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>TypeInsert</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Insert Insert</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>TypePrintScreen</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Insert Print Screen</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>TypeAltPrintScreen</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Insert Alt Print Screen</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+      <varlistentry>
+            <term>
+                <computeroutput>TypeHostKeyCombo</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Insert Host Key Combo</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>MouseIntegration</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">MouseIntegration</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+      </variablelist>
+      <para>
+        This is a per-VM or global setting. Any combination of the above is
+        allowed. To restore the default behavior, use
+      </para>
+
+      <screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeInputMenuActions</screen>
 
       <para>
         Use the following command to disable certain actions of the
-        <emphasis role="bold">View</emphasis> menu:
+        <emphasis role="bold">Devices</emphasis> menu:
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeDevicesMenuActions OPTION[,OPTION...]</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeDevicesMenuActions OPTION[,OPTION...]</screen>
 
       <para>
         where <computeroutput>OPTION</computeroutput> is one of the
@@ -3593,12 +3874,24 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
         <varlistentry>
           <term>
+            <computeroutput>HardDrives</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">Hard Disks</emphasis> menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
             <computeroutput>OpticalDevices</computeroutput>
           </term>
 
           <listitem>
             <para>
-              Do not show the <emphasis role="bold">CD/DVD
+              Do not show the <emphasis role="bold">Optical
               Devices</emphasis> menu item in this menu.
             </para>
           </listitem>
@@ -3612,7 +3905,47 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
           <listitem>
             <para>
               Do not show the <emphasis role="bold">Floppy
-              Devices</emphasis> menu item in this menu.
+              Drives</emphasis> menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>Audio</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+                Do not show the <emphasis role="bold">Audio</emphasis>
+                menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>Network</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+                Do not show the <emphasis role="bold">Network</emphasis>
+                menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+
+        <varlistentry>
+          <term>
+            <computeroutput>NetworkSettings</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">Network
+              Settings</emphasis> menu item in this menu.
             </para>
           </listitem>
         </varlistentry>
@@ -3625,7 +3958,46 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
           <listitem>
             <para>
               Do not show the <emphasis role="bold">USB
-              Devices</emphasis> menu item in this menu.
+              </emphasis> menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>WebCams</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">WebCams
+              </emphasis> menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>SharedFolders</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+                Do not show the <emphasis role="bold">Shared Folders</emphasis>
+                menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
+        <varlistentry>
+          <term>
+            <computeroutput>SharedFoldersSettings</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">Shared Folders
+              Settings...</emphasis> menu item in this menu.
             </para>
           </listitem>
         </varlistentry>
@@ -3658,45 +4030,6 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
         <varlistentry>
           <term>
-            <computeroutput>NetworkSettings</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Network
-              Settings...</emphasis> menu item in this menu.
-            </para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
-          <term>
-            <computeroutput>SharedFoldersSettings</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Shared Folders
-              Settings...</emphasis> menu item in this menu.
-            </para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
-          <term>
-            <computeroutput>VRDEServer</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Remove
-              Display</emphasis> menu item in this menu.
-            </para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
-          <term>
             <computeroutput>InstallGuestTools</computeroutput>
           </term>
 
@@ -3711,18 +4044,18 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
       </variablelist>
 
       <para>
-        This is a per-VM setting. Any combination of the above is
+        This is a per-VM or global setting. Any combination of the above is
         allowed. To restore the default behavior, use
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeDevicesMenuActions</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeDevicesMenuActions</screen>
 
       <para>
         Use the following command to disable certain actions of the
-        <emphasis role="bold">View</emphasis> menu:
+        <emphasis role="bold">Debug</emphasis> menu:
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeDebuggerMenuActions OPTION[,OPTION...]</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeDebuggerMenuActions OPTION[,OPTION...]</screen>
 
       <para>
         where <computeroutput>OPTION</computeroutput> is one of the
@@ -3799,21 +4132,34 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
           </listitem>
         </varlistentry>
 
+        <varlistentry>
+          <term>
+            <computeroutput>GuestControlConsole</computeroutput>
+          </term>
+
+          <listitem>
+            <para>
+              Do not show the <emphasis role="bold">Guest Control
+              Terminal...</emphasis> menu item in this menu.
+            </para>
+          </listitem>
+        </varlistentry>
+
       </variablelist>
 
       <para>
-        This is a per-VM setting. Any combination of the above is
+        This is a per-VM or global setting. Any combination of the above is
         allowed. To restore the default behavior, use
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeDebuggerMenuActions</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeDebuggerMenuActions</screen>
 
       <para>
         Use the following command to disable certain actions of the
         <emphasis role="bold">View</emphasis> menu:
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeHelpMenuActions OPTION[,OPTION...]</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeHelpMenuActions OPTION[,OPTION...]</screen>
 
       <para>
         where <computeroutput>OPTION</computeroutput> is one of the
@@ -3864,29 +4210,43 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
         </varlistentry>
 
         <varlistentry>
-          <term>
-            <computeroutput>ResetWarnings</computeroutput>
-          </term>
+            <term>
+                <computeroutput>BugTracker</computeroutput>
+            </term>
 
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Reset All
-              Warnings</emphasis> menu item in this menu.
-            </para>
-          </listitem>
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">VirtualBox Bug Tracker...</emphasis> menu item in
+                    this menu.
+                </para>
+            </listitem>
         </varlistentry>
 
         <varlistentry>
-          <term>
-            <computeroutput>NetworkAccessManager</computeroutput>
-          </term>
+            <term>
+                <computeroutput>Forums</computeroutput>
+            </term>
 
-          <listitem>
-            <para>
-              Do not show the <emphasis role="bold">Network Operations
-              Manager</emphasis> menu item in this menu.
-            </para>
-          </listitem>
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">VirtualBox Forums...</emphasis> menu item in this menu.
+                </para>
+            </listitem>
+        </varlistentry>
+
+        <varlistentry>
+            <term>
+                <computeroutput>Oracle</computeroutput>
+            </term>
+
+            <listitem>
+                <para>
+                    Do not show the
+                    <emphasis role="bold">Oracle Web Site...</emphasis> menu item in this menu.
+                </para>
+            </listitem>
         </varlistentry>
 
         <varlistentry>
@@ -3896,36 +4256,8 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
 
           <listitem>
             <para>
-              Do not show the <emphasis role="bold">About</emphasis>
+              Do not show the <emphasis role="bold">About VirtualBox...</emphasis>
               menu item in this menu. Only for non-Mac OS X hosts.
-            </para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
-          <term>
-            <computeroutput>Contents</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the
-              <emphasis role="bold">Contents...</emphasis> menu item in
-              this menu.
-            </para>
-          </listitem>
-        </varlistentry>
-
-        <varlistentry>
-          <term>
-            <computeroutput>Contents</computeroutput>
-          </term>
-
-          <listitem>
-            <para>
-              Do not show the
-              <emphasis role="bold">Contents...</emphasis> menu item in
-              this menu.
             </para>
           </listitem>
         </varlistentry>
@@ -3933,11 +4265,11 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
       </variablelist>
 
       <para>
-        This is a per-VM setting. Any combination of the above is
+        This is a per-VM or global setting. Any combination of the above is
         allowed. To restore the default behavior, use
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedRuntimeHelpMenuActions</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedRuntimeHelpMenuActions</screen>
 
     </sect2>
 
@@ -3949,7 +4281,7 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
         You can disable, or blacklist, certain status bar items:
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedStatusBarIndicators OPTION[,OPTION...]</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedStatusBarIndicators OPTION[,OPTION...]</screen>
 
       <para>
         where <computeroutput>OPTION</computeroutput> is one of the
@@ -4090,13 +4422,13 @@ VBoxManage setextradata "VM name" VBoxInternal2/CoreDumpLive 1</screen>
       </variablelist>
 
       <para>
-        This is a per-VM setting. Any combination of the above is
+        This is a per-VM or global setting. Any combination of the above is
         allowed. If all options are specified, no icons are displayed in
         the status bar of the VM window. To restore the default
         behavior, use
       </para>
 
-<screen>VBoxManage setextradata "VM name" GUI/RestrictedStatusBarIndicators</screen>
+<screen>VBoxManage setextradata "VM name"|global GUI/RestrictedStatusBarIndicators</screen>
 
     </sect2>
 
