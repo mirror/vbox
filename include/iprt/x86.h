@@ -1303,9 +1303,12 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
  *  "Programming the PAT", AMD spec. 7.8.2 "PAT Indexing") */
 #define MSR_IA32_CR_PAT_INIT_VAL            UINT64_C(0x0007040600070406)
 
-/** Performance counter MSRs. (Intel only) */
+/** Performance event select MSRs. (Intel only) */
 #define MSR_IA32_PERFEVTSEL0                0x186
 #define MSR_IA32_PERFEVTSEL1                0x187
+#define MSR_IA32_PERFEVTSEL2                0x188
+#define MSR_IA32_PERFEVTSEL3                0x189
+
 /** Flexible ratio, seems to be undocumented, used by XNU (tsc.c).
  * The 16th bit whether flex ratio is being used, in which case bits 15:8
  * holds a ratio that Apple takes for TSC granularity.
@@ -1317,6 +1320,10 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_PERF_STATUS                0x198
 #define MSR_IA32_PERF_CTL                   0x199
 #define MSR_IA32_THERM_STATUS               0x19c
+
+/** Offcore response event select registers. */
+#define MSR_OFFCORE_RSP_0                   0x1a6
+#define MSR_OFFCORE_RSP_1                   0x1a7
 
 /** Enable misc. processor features (R/W). */
 #define MSR_IA32_MISC_ENABLE                   0x1A0
