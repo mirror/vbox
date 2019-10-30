@@ -809,6 +809,7 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIActionPoolManager.h \
 	src/globals/UIActionPoolRuntime.h \
 	src/globals/UIAnimationFramework.h \
+	src/globals/UICommon.h \
 	src/globals/UICustomFileSystemModel.h \
 	src/globals/UIDesktopWidgetWatchdog.h \
 	src/globals/UIDialogPanel.h \
@@ -822,7 +823,6 @@ UICommon_QT_MOCHDRS = \
 	src/globals/UIThreadPool.h \
 	src/globals/UITextTable.h \
 	src/globals/UIVirtualBoxEventHandler.h \
-	src/globals/UICommon.h \
 	src/globals/VBoxUtils.h \
 	src/logviewer/UIVMLogPage.h \
 	src/logviewer/UIVMLogViewerBookmarksPanel.h \
@@ -1294,6 +1294,7 @@ UICommon_SOURCES = \
 	src/globals/UIActionPoolManager.cpp \
 	src/globals/UIActionPoolRuntime.cpp \
 	src/globals/UIAnimationFramework.cpp \
+	src/globals/UICommon.cpp \
 	src/globals/UICustomFileSystemModel.cpp \
 	src/globals/UIDefs.cpp \
 	src/globals/UIDesktopWidgetWatchdog.cpp \
@@ -1306,6 +1307,7 @@ UICommon_SOURCES = \
 	src/globals/UIMainEventListener.cpp \
 	src/globals/UIMessageCenter.cpp \
 	src/globals/UIModalWindowManager.cpp \
+	src/globals/UIMousePointerShapeData.cpp \
 	src/globals/UIPathOperations.cpp \
 	src/globals/UIPopupCenter.cpp \
 	src/globals/UIProgressEventHandler.cpp \
@@ -1314,7 +1316,6 @@ UICommon_SOURCES = \
 	src/globals/UIThreadPool.cpp \
 	src/globals/UIVersion.cpp \
 	src/globals/UIVirtualBoxEventHandler.cpp \
-	src/globals/UICommon.cpp \
 	src/logviewer/UIVMLogPage.cpp \
 	src/logviewer/UIVMLogViewerBookmarksPanel.cpp \
 	src/logviewer/UIVMLogViewerDialog.cpp \

@@ -31,6 +31,7 @@
 /* GUI includes: */
 #include "UIExtraDataDefs.h"
 #include "UIMediumDefs.h"
+#include "UIMousePointerShapeData.h"
 
 /* COM includes: */
 #include "COMEnums.h"
@@ -372,8 +373,8 @@ private slots:
 #endif /* RT_OS_DARWIN */
 
     /* Console events slots */
-    /** Handles signal about mouse pointer become @a fVisible and his shape changed to @a fAlpha, @a hotCorner, @a size and @a shape. */
-    void sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape);
+    /** Handles signal about mouse pointer @a shapeData change. */
+    void sltMousePointerShapeChange(const UIMousePointerShapeData &shapeData);
     /** Handles signal about mouse capability change to @a fSupportsAbsolute, @a fSupportsRelative, @a fSupportsMultiTouch and @a fNeedsHostCursor. */
     void sltMouseCapabilityChange(bool fSupportsAbsolute, bool fSupportsRelative, bool fSupportsMultiTouch, bool fNeedsHostCursor);
     /** Handles signal about guest request to change the cursor position to @a uX * @a uY.
@@ -443,7 +444,8 @@ private:
 #endif /* VBOX_WS_MAC */
 
     /* Common helpers: */
-    void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
+    /** Updates mouse pointer shape. */
+    void updateMousePointerShape();
     bool preprocessInitialization();
     bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
     bool postprocessInitialization();
@@ -588,6 +590,8 @@ private:
     bool m_fIsHidingHostPointer : 1;
     /** Holds whether the @a m_cursorPosition is valid and could be used by the GUI now. */
     bool m_fIsValidCursorPositionPresent : 1;
+    /** Holds the mouse pointer shape data. */
+    UIMousePointerShapeData  m_shapeData;
 
     /** Copy of IMachineDebugger::ExecutionEngine */
     KVMExecutionEngine m_enmVMExecutionEngine;

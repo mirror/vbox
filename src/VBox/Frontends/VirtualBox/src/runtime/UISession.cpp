@@ -43,6 +43,7 @@
 #include "UIMachineView.h"
 #include "UIMachineWindow.h"
 #include "UIMessageCenter.h"
+#include "UIMousePointerShapeData.h"
 #include "UIPopupCenter.h"
 #include "UIWizardFirstRun.h"
 #include "UIConsoleEventHandler.h"
@@ -605,24 +606,23 @@ void UISession::sltHandleMenuBarConfigurationChange(const QUuid &uMachineID)
 }
 #endif /* RT_OS_DARWIN */
 
-void UISession::sltMousePointerShapeChange(bool fVisible, bool fAlpha, QPoint hotCorner, QSize size, QVector<uint8_t> shape)
+void UISession::sltMousePointerShapeChange(const UIMousePointerShapeData &shapeData)
 {
-    /* In case of shape data is present: */
-    if (shape.size() > 0)
+    /* In case if shape itself is present: */
+    if (shapeData.shape().size() > 0)
     {
         /* We are ignoring visibility flag: */
         m_fIsHidingHostPointer = false;
 
-        /* And updating current cursor shape: */
-        setPointerShape(shape.data(), fAlpha,
-                        hotCorner.x(), hotCorner.y(),
-                        size.width(), size.height());
+        /* And updating current shape data: */
+        m_shapeData = shapeData;
+        updateMousePointerShape();
     }
-    /* In case of shape data is NOT present: */
+    /* In case if shape itself is NOT present: */
     else
     {
         /* Remember if we should hide the cursor: */
-        m_fIsHidingHostPointer = !fVisible;
+        m_fIsHidingHostPointer = !shapeData.isVisible();
     }
 
     /* Notify listeners about mouse capability changed: */
@@ -1652,9 +1652,14 @@ static bool isPointer1bpp(const uint8_t *pu8XorMask,
 }
 #endif /* VBOX_WS_WIN */
 
-void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
-                                uint uXHot, uint uYHot, uint uWidth, uint uHeight)
+void UISession::updateMousePointerShape()
 {
+    const bool fHasAlpha = m_shapeData.hasAlpha();
+    const uint uXHot = m_shapeData.hotPoint().x();
+    const uint uYHot = m_shapeData.hotPoint().y();
+    const uint uWidth = m_shapeData.shapeSize().width();
+    const uint uHeight = m_shapeData.shapeSize().height();
+    const uchar *pShapeData = m_shapeData.shape().constData();
     AssertMsg(pShapeData, ("Shape data must not be NULL!\n"));
 
     m_fIsValidPointerShapePresent = false;
