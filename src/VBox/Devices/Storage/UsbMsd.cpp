@@ -2196,7 +2196,7 @@ static DECLCALLBACK(bool) usbMsdIsAsyncResetDone(PPDMUSBINS pUsbIns)
 }
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnReset}
+ * @interface_method_impl{PDMUSBREG,pfnVMReset}
  */
 static DECLCALLBACK(void) usbMsdVMReset(PPDMUSBINS pUsbIns)
 {

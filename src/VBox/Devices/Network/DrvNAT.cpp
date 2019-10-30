@@ -1213,7 +1213,7 @@ static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnResume}
+ * @interface_method_impl{PDMDRVREG,pfnResume}
  */
 static DECLCALLBACK(void) drvNATResume(PPDMDRVINS pDrvIns)
 {

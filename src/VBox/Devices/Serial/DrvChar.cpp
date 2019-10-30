@@ -351,7 +351,7 @@ static DECLCALLBACK(int) drvCharIoLoopWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnReset}
+ * @interface_method_impl{PDMDRVREG,pfnReset}
  */
 static DECLCALLBACK(void) drvCharReset(PPDMDRVINS pDrvIns)
 {
