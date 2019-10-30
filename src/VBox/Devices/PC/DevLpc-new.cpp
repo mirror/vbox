@@ -78,7 +78,7 @@ typedef LPCSTATE *PLPCSTATE;
 PDMBOTHCBDECL(int) lpcMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
-    PLPCSTATE        pThis  = PDMINS_2_DATA(pDevIns, PLPCSTATE);
+    PLPCSTATE        pThis  = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
     RTGCPHYS32 const offReg = (RTGCPHYS32)GCPhysAddr - pThis->GCPhys32Rcba;
     Assert(cb == 4); Assert(!(GCPhysAddr & 3)); /* IOMMMIO_FLAGS_READ_DWORD should make sure of this */
 
@@ -110,7 +110,7 @@ PDMBOTHCBDECL(int) lpcMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
 PDMBOTHCBDECL(int) lpcMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
     RT_NOREF(pvUser, pv);
-    PLPCSTATE        pThis  = PDMINS_2_DATA(pDevIns, PLPCSTATE);
+    PLPCSTATE        pThis  = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
     RTGCPHYS32 const offReg = (RTGCPHYS32)GCPhysAddr - pThis->GCPhys32Rcba;
 
     if (cb == 4)
@@ -135,7 +135,7 @@ PDMBOTHCBDECL(int) lpcMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 static DECLCALLBACK(VBOXSTRICTRC) lpcR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                      uint32_t uAddress, unsigned cb, uint32_t *pu32Value)
 {
-    PLPCSTATE pThis = PDMINS_2_DATA(pDevIns, PLPCSTATE);
+    PLPCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     STAM_REL_COUNTER_INC(&pThis->StatPciCfgReads);
@@ -156,7 +156,7 @@ static DECLCALLBACK(VBOXSTRICTRC) lpcR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCI
 static DECLCALLBACK(VBOXSTRICTRC) lpcR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                       uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
-    PLPCSTATE pThis = PDMINS_2_DATA(pDevIns, PLPCSTATE);
+    PLPCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
 
     STAM_REL_COUNTER_INC(&pThis->StatPciCfgWrites);
@@ -180,7 +180,7 @@ static DECLCALLBACK(VBOXSTRICTRC) lpcR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPC
  */
 static DECLCALLBACK(void) lpcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PLPCSTATE  pThis   = PDMINS_2_DATA(pDevIns, PLPCSTATE);
+    PLPCSTATE  pThis   = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     RT_NOREF(pszArgs);
 
@@ -213,7 +213,7 @@ static DECLCALLBACK(void) lpcInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
 static DECLCALLBACK(int) lpcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PLPCSTATE pThis = PDMINS_2_DATA(pDevIns, PLPCSTATE);
+    PLPCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PLPCSTATE);
     Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*

@@ -259,7 +259,7 @@ static DECLCALLBACK(int) pcbiosIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIO
 static DECLCALLBACK(int) pcbiosIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     RT_NOREF1(pvUser);
-    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
 
     /*
      * Bochs BIOS char printing.
@@ -356,7 +356,7 @@ static int pcbiosRegisterShutdown(PPDMDEVINS pDevIns, PDEVPCBIOS pThis, bool fNe
  */
 static DECLCALLBACK(int) pcbiosSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     SSMR3PutStruct(pSSM, pThis, g_aPcBiosFields);
     return VINF_SUCCESS;
 }
@@ -370,7 +370,7 @@ static DECLCALLBACK(int) pcbiosSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) pcbiosLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
 
     /* Since there are legacy saved state files without any SSM data for PCBIOS
      * this is the only way to handle them correctly. */
@@ -385,7 +385,7 @@ static DECLCALLBACK(int) pcbiosLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pcbiosLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
 
     if (uVersion > PCBIOS_SSM_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -402,7 +402,7 @@ static DECLCALLBACK(int) pcbiosLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 static DECLCALLBACK(int) pcbiosLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     return pcbiosRegisterShutdown(pDevIns, pThis, pThis->fNewShutdownPort);
 }
 
@@ -443,7 +443,7 @@ static uint8_t pcbiosCmosRead(PPDMDEVINS pDevIns, unsigned off)
 static DECLCALLBACK(bool) pcbiosFw_IsHardReset(PPDMDEVINS pDevIns, uint32_t fFlags)
 {
     RT_NOREF1(fFlags);
-    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     if (pThis->fCheckShutdownStatusForSoftReset)
     {
         uint8_t bShutdownStatus = pcbiosCmosRead(pDevIns, 0xf);
@@ -473,7 +473,7 @@ static DECLCALLBACK(bool) pcbiosFw_IsHardReset(PPDMDEVINS pDevIns, uint32_t fFla
  */
 static DECLCALLBACK(void) pcbiosReset(PPDMDEVINS pDevIns)
 {
-    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
 
     if (pThis->fClearShutdownStatusOnHardReset)
     {
@@ -719,7 +719,7 @@ static uint8_t getBiosBootCode(PDEVPCBIOS pThis, unsigned iOrder)
  */
 static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
 {
-    PDEVPCBIOS      pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS      pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     uint32_t        u32;
     unsigned        i;
     PUVM            pUVM = PDMDevHlpGetUVM(pDevIns); AssertRelease(pUVM);
@@ -1035,7 +1035,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) pcbiosMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
     RT_NOREF1(enmCtx);
-    PDEVPCBIOS pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     LogFlow(("pcbiosMemSetup:\n"));
 
     if (pThis->u8IOAPIC)
@@ -1083,7 +1083,7 @@ static DECLCALLBACK(void) pcbiosMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX e
 static DECLCALLBACK(int) pcbiosDestruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS  pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     LogFlow(("pcbiosDestruct:\n"));
 
     /*
@@ -1185,7 +1185,7 @@ static int pcbiosBootFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, const char *psz
 static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVPCBIOS  pThis = PDMINS_2_DATA(pDevIns, PDEVPCBIOS);
+    PDEVPCBIOS  pThis = PDMDEVINS_2_DATA(pDevIns, PDEVPCBIOS);
     int         rc;
     int         cb;
     Assert(iInstance == 0); RT_NOREF(iInstance);

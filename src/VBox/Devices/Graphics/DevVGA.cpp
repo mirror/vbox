@@ -2878,7 +2878,7 @@ static void vga_init_expand(void)
  */
 PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
 
     NOREF(pvUser);
@@ -2898,7 +2898,7 @@ PDMBOTHCBDECL(int) vgaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  */
 PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
     NOREF(pvUser);
 
@@ -2919,7 +2919,7 @@ PDMBOTHCBDECL(int) vgaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
  */
 PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
 
     NOREF(pvUser);
@@ -2985,7 +2985,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE); NOREF(pvUser);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE); NOREF(pvUser);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
 
 #ifdef VBE_BYTEWISE_IO
@@ -3016,7 +3016,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIO
  */
 PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE); NOREF(pvUser);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE); NOREF(pvUser);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
 
 #ifdef VBE_BYTEWISE_IO
@@ -3057,7 +3057,7 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEData(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     NOREF(pvUser);
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
 
 #ifdef VBE_BYTEWISE_IO
@@ -3090,7 +3090,7 @@ PDMBOTHCBDECL(int) vgaIOPortReadVBEIndex(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
     LogFlowFunc(("Port 0x%x, u32 0x%x, cb %d\n", Port, u32, cb));
 
@@ -3162,7 +3162,7 @@ static DECLCALLBACK(int) vgaR3IOPortHGSMIWrite(PPDMDEVINS pDevIns, void *pvUser,
  */
 static DECLCALLBACK(int) vgaR3IOPortHGSMIRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
     LogFlowFunc(("Port 0x%x, cb %d\n", Port, cb));
 
@@ -3422,7 +3422,7 @@ static int vgaInternalMMIOFill(PVGASTATE pThis, void *pvUser, RTGCPHYS GCPhysAdd
  */
 PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, uint32_t u32Item, unsigned cbItem, unsigned cItems)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
 
     return vgaInternalMMIOFill(pThis, pvUser, GCPhysAddr, u32Item, cbItem, cItems);
@@ -3436,7 +3436,7 @@ PDMBOTHCBDECL(int) vgaMMIOFill(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  */
 PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryRead), a);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
     NOREF(pvUser);
@@ -3491,7 +3491,7 @@ PDMBOTHCBDECL(int) vgaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhys
  */
 PDMBOTHCBDECL(int) vgaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     uint8_t const *pbSrc = (uint8_t const *)pv;
     NOREF(pvUser);
     STAM_PROFILE_START(&pThis->CTX_MID_Z(Stat,MemoryWrite), a);
@@ -3718,7 +3718,7 @@ PDMBOTHCBDECL(int) vgaIOPortWriteBIOS(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
     NOREF(pvUser); NOREF(Port);
 
@@ -3740,7 +3740,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIO
  */
 PDMBOTHCBDECL(int) vbeIOPortReadVBEExtra(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pvUser); NOREF(Port);
     Assert(PDMCritSectIsOwner(pDevIns->CTX_SUFF(pCritSectRo)));
 
@@ -4059,7 +4059,7 @@ static void vbeShowBitmap(uint16_t cBits, uint16_t xLogo, uint16_t yLogo, uint16
  */
 PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pvUser);
     NOREF(Port);
 
@@ -4158,7 +4158,7 @@ PDMBOTHCBDECL(int) vbeIOPortWriteCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pvUser);
     NOREF(Port);
 
@@ -4197,7 +4197,7 @@ PDMBOTHCBDECL(int) vbeIOPortReadCMDLogo(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 static DECLCALLBACK(void) vgaInfoState(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     int             is_graph, double_scan;
     int             w, h, char_height, char_dots;
     int             val, vfreq_hz, hfreq_hz;
@@ -4370,7 +4370,7 @@ static void vgaInfoTextWorker(PVGASTATE pThis, PCDBGFINFOHLP pHlp,
  */
 static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
 
     /*
      * Parse args.
@@ -4443,7 +4443,7 @@ static DECLCALLBACK(void) vgaInfoText(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, co
  */
 static DECLCALLBACK(void) vgaInfoSR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
     NOREF(pszArgs);
 
@@ -4460,7 +4460,7 @@ static DECLCALLBACK(void) vgaInfoSR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
  */
 static DECLCALLBACK(void) vgaInfoCR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
     NOREF(pszArgs);
 
@@ -4484,7 +4484,7 @@ static DECLCALLBACK(void) vgaInfoCR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
  */
 static DECLCALLBACK(void) vgaInfoGR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
     NOREF(pszArgs);
 
@@ -4504,7 +4504,7 @@ static DECLCALLBACK(void) vgaInfoGR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
  */
 static DECLCALLBACK(void) vgaInfoAR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
     NOREF(pszArgs);
 
@@ -4526,7 +4526,7 @@ static DECLCALLBACK(void) vgaInfoAR(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, cons
  */
 static DECLCALLBACK(void) vgaInfoDAC(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     unsigned    i;
     NOREF(pszArgs);
 
@@ -4542,7 +4542,7 @@ static DECLCALLBACK(void) vgaInfoDAC(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
  */
 static DECLCALLBACK(void) vgaInfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp, "LFB at %RGp\n", pThis->GCPhysVRAM);
@@ -4574,7 +4574,7 @@ static DECLCALLBACK(void) vgaInfoVBE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
  */
 static DECLCALLBACK(void) vgaInfoPlanar(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     int             val1, val2;
     NOREF(pszArgs);
 
@@ -5488,7 +5488,7 @@ int vgaR3UnregisterVRAMHandler(PVGASTATE pVGAState)
 static DECLCALLBACK(int) vgaR3IORegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     RT_NOREF(cb);
     Log(("vgaR3IORegionMap: iRegion=%d GCPhysAddress=%RGp cb=%RGp enmType=%d\n", iRegion, GCPhysAddress, cb, enmType));
 
@@ -5563,7 +5563,7 @@ static DECLCALLBACK(int) vgaR3PciRegionLoadChangeHook(PPDMDEVINS pDevIns, PPDMPC
                                                       uint64_t cbRegion, PCIADDRESSSPACE enmType,
                                                       PFNPCIIOREGIONOLDSETTER pfnOldSetter, PFNPCIIOREGIONSWAP pfnSwapRegions)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
 
 # ifdef VBOX_WITH_VMSVGA
     if (pThis->fVMSVGAEnabled)
@@ -5668,7 +5668,7 @@ static void vgaR3SaveConfig(PVGASTATE pThis, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vgaR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     Assert(uPass == 0); NOREF(uPass);
     vgaR3SaveConfig(pThis, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
@@ -5708,14 +5708,14 @@ static DECLCALLBACK(int) vgaR3SaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
 
 #ifdef VBOX_WITH_VDMA
     vboxVDMASaveStateExecPrep(pThis->pVdma);
 #endif
 
     vgaR3SaveConfig(pThis, pSSM);
-    vga_save(pSSM, PDMINS_2_DATA(pDevIns, PVGASTATE));
+    vga_save(pSSM, PDMDEVINS_2_DATA(pDevIns, PVGASTATE));
 
     VGA_SAVED_STATE_PUT_MARKER(pSSM, 1);
 #ifdef VBOX_WITH_HGSMI
@@ -5760,7 +5760,7 @@ static DECLCALLBACK(int) vgaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vgaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     int         rc;
 
     if (uVersion < VGA_SAVEDSTATE_VERSION_ANCIENT || uVersion > VGA_SAVEDSTATE_VERSION)
@@ -5853,7 +5853,7 @@ static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     int rc = VINF_SUCCESS;
 
 #ifdef VBOX_WITH_HGSMI
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     rc = vboxVBVALoadStateDone(pDevIns);
     AssertRCReturn(rc, rc);
 # ifdef VBOX_WITH_VDMA
@@ -5881,7 +5881,7 @@ static DECLCALLBACK(int) vgaR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(void)  vgaR3Reset(PPDMDEVINS pDevIns)
 {
-    PVGASTATE       pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE       pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     char           *pchStart;
     char           *pchEnd;
     LogFlow(("vgaReset\n"));
@@ -5986,7 +5986,7 @@ static DECLCALLBACK(void) vgaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 # ifdef VBOX_WITH_RAW_MODE_KEEP
     if (offDelta)
     {
-        PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+        PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
         LogFlow(("vgaRelocate: offDelta = %08X\n", offDelta));
 
         pThis->vram_ptrRC += offDelta;
@@ -6005,7 +6005,7 @@ static DECLCALLBACK(void) vgaR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
 
     AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("VGA device does not support hotplugging\n"),
@@ -6077,7 +6077,7 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 static DECLCALLBACK(void)  vgaDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF1(fFlags);
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG, ("VGA device does not support hotplugging\n"));
 
     /*
@@ -6105,7 +6105,7 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     LogFlow(("vgaR3Destruct:\n"));
 
 # ifdef VBOX_WITH_VDMA
@@ -6203,7 +6203,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     ModeInfoListItem *pCurMode;
     unsigned    cb;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     PVM         pVM   = PDMDevHlpGetVM(pDevIns);
 
     Assert(iInstance == 0);
@@ -7255,7 +7255,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
 static DECLCALLBACK(void) vgaR3PowerOn(PPDMDEVINS pDevIns)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
 #ifdef VBOX_WITH_VMSVGA
     vmsvgaR3PowerOn(pDevIns);
 #endif
@@ -7264,7 +7264,7 @@ static DECLCALLBACK(void) vgaR3PowerOn(PPDMDEVINS pDevIns)
 
 static DECLCALLBACK(void) vgaR3Resume(PPDMDEVINS pDevIns)
 {
-    PVGASTATE pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVGASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVGASTATE);
     VBVAOnResume(pThis);
 }
 

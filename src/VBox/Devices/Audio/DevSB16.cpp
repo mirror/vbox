@@ -1676,7 +1676,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 {
     RT_NOREF(pDevIns);
     PSB16STATE pThis = (PSB16STATE)pvUser;
-    Assert(pThis == PDMINS_2_DATA(pDevIns, PSB16STATE));
+    Assert(pThis == PDMDEVINS_2_DATA(pDevIns, PSB16STATE));
     AssertPtr(pThis);
 
     uint64_t cTicksNow     = TMTimerGet(pTimer);
@@ -1749,7 +1749,7 @@ static DECLCALLBACK(void) sb16TimerIO(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
 static DECLCALLBACK(int) sb16LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     SSMR3PutS32(pSSM, pThis->irqCfg);
     SSMR3PutS32(pSSM, pThis->dmaCfg);
@@ -1820,7 +1820,7 @@ static int sb16Save(PSSMHANDLE pSSM, PSB16STATE pThis)
  */
 static DECLCALLBACK(int) sb16SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     sb16LiveExec(pDevIns, pSSM, 0);
     return sb16Save(pSSM, pThis);
@@ -1903,7 +1903,7 @@ static int sb16Load(PSSMHANDLE pSSM, PSB16STATE pThis)
  */
 static DECLCALLBACK(int) sb16LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     AssertMsgReturn(    uVersion == SB16_SAVE_STATE_VERSION
                     ||  uVersion == SB16_SAVE_STATE_VERSION_VBOX_30,
@@ -2217,7 +2217,7 @@ static int sb16DetachInternal(PSB16STATE pThis, PSB16DRIVER pDrv, uint32_t fFlag
  */
 static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 
@@ -2234,7 +2234,7 @@ static DECLCALLBACK(int) sb16Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t 
  */
 static DECLCALLBACK(void) sb16Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 
@@ -2333,7 +2333,7 @@ static int sb16Reattach(PSB16STATE pThis, PSB16DRIVER pDrv, uint8_t uLUN, const 
  */
 static DECLCALLBACK(void) sb16DevReset(PPDMDEVINS pDevIns)
 {
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     /* Bring back the device to initial state, and especially make
      * sure there's no interrupt or DMA activity.
@@ -2368,7 +2368,7 @@ static DECLCALLBACK(void) sb16DevReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) sb16PowerOff(PPDMDEVINS pDevIns)
 {
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     LogRel2(("SB16: Powering off ...\n"));
 
@@ -2383,7 +2383,7 @@ static DECLCALLBACK(void) sb16PowerOff(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) sb16Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns); /* this shall come first */
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     LogFlowFuncEnter();
 
@@ -2403,7 +2403,7 @@ static DECLCALLBACK(int) sb16Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 {
     RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
-    PSB16STATE pThis = PDMINS_2_DATA(pDevIns, PSB16STATE);
+    PSB16STATE pThis = PDMDEVINS_2_DATA(pDevIns, PSB16STATE);
 
     /*
      * Initialize the data so sb16Destruct runs without a hitch if we return early.

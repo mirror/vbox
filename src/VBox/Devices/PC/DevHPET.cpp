@@ -869,7 +869,7 @@ static int hpetConfigRegWrite32(HPET *pThis, uint32_t idxReg, uint32_t u32NewVal
  */
 PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    HPET      *pThis  = PDMINS_2_DATA(pDevIns, HPET*);
+    HPET      *pThis  = PDMDEVINS_2_DATA(pDevIns, HPET*);
     uint32_t const  idxReg = (uint32_t)(GCPhysAddr - HPET_BASE);
     NOREF(pvUser);
     Assert(cb == 4 || cb == 8);
@@ -943,7 +943,7 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
  */
 PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    HPET  *pThis  = PDMINS_2_DATA(pDevIns, HPET*);
+    HPET  *pThis  = PDMDEVINS_2_DATA(pDevIns, HPET*);
     uint32_t    idxReg = (uint32_t)(GCPhysAddr - HPET_BASE);
     LogFlow(("hpetMMIOWrite: cb=%u reg=%03x (%RGp) val=%llx\n",
              cb, idxReg, GCPhysAddr, cb == 4 ? *(uint32_t *)pv : cb == 8 ? *(uint64_t *)pv : 0xdeadbeef));
@@ -1057,7 +1057,7 @@ static void hpetR3TimerUpdateIrq(HPET *pThis, struct HPETTIMER *pHpetTimer)
  */
 static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    HPET *pThis      = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis      = PDMDEVINS_2_DATA(pDevIns, HPET *);
     HPETTIMER *pHpetTimer = (HPETTIMER *)pvUser;
     uint64_t   u64Period  = pHpetTimer->u64Period;
     uint64_t   u64CurTick = hpetGetTicks(pThis);
@@ -1106,7 +1106,7 @@ static DECLCALLBACK(void) hpetR3Timer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
  */
 static DECLCALLBACK(void) hpetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    HPET *pThis = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
     NOREF(pszArgs);
 
     pHlp->pfnPrintf(pHlp,
@@ -1139,7 +1139,7 @@ static DECLCALLBACK(void) hpetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
  */
 static DECLCALLBACK(int) hpetR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
-    HPET *pThis = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
     NOREF(uPass);
 
     SSMR3PutU8(pSSM, HPET_CAP_GET_TIMERS(pThis->u32Capabilities));
@@ -1153,7 +1153,7 @@ static DECLCALLBACK(int) hpetR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(int) hpetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    HPET *pThis = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
 
     /*
      * The config.
@@ -1189,7 +1189,7 @@ static DECLCALLBACK(int) hpetR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    HPET *pThis = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
 
     /*
      * Version checks.
@@ -1263,7 +1263,7 @@ static DECLCALLBACK(int) hpetR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(void) hpetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    HPET *pThis = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
     LogFlow(("hpetR3Relocate:\n"));
     NOREF(offDelta);
 
@@ -1285,7 +1285,7 @@ static DECLCALLBACK(void) hpetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  */
 static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
 {
-    HPET *pThis = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
     LogFlow(("hpetR3Reset:\n"));
 
     /*
@@ -1350,7 +1350,7 @@ static DECLCALLBACK(void) hpetR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) hpetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    HPET *pThis = PDMINS_2_DATA(pDevIns, HPET *);
+    HPET *pThis = PDMDEVINS_2_DATA(pDevIns, HPET *);
 
     /* Only one HPET device now, as we use fixed MMIO region. */
     Assert(iInstance == 0); RT_NOREF(iInstance);

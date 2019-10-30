@@ -1075,7 +1075,7 @@ static void acpiPmTimerUpdate(PPDMDEVINS pDevIns, ACPIState *pThis, uint64_t u64
  */
 static DECLCALLBACK(void) acpiR3PmTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     Assert(TMTimerIsLockOwner(pTimer));
     RT_NOREF(pvUser);
 
@@ -1729,7 +1729,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     if (cb != 4)
         return VERR_IOM_IOPORT_UNUSED;
 
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
 
     /*
      * We use the clock lock to serialize access to u64PmTimerInitial and to
@@ -1782,7 +1782,7 @@ PDMBOTHCBDECL(int) acpiPMTmrRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
 static DECLCALLBACK(void) acpiR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     pHlp->pfnPrintf(pHlp,
                     "timer: old=%08RX32, current=%08RX32\n", pThis->uPmTimeA, pThis->uPmTimeB);
 }
@@ -2495,7 +2495,7 @@ static const SSMFIELD g_AcpiSavedStateFields8[] =
  */
 static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     return SSMR3PutStruct(pSSM, pThis, &g_AcpiSavedStateFields8[0]);
 }
 
@@ -2504,7 +2504,7 @@ static DECLCALLBACK(int) acpiR3SaveState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) acpiR3LoadState(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /*
@@ -3368,7 +3368,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPC
 static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                        uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
 
     Log2(("acpi: PCI config write: 0x%x -> 0x%x (%d)\n", u32Value, uAddress, cb));
     DEVACPI_LOCK_R3(pThis);
@@ -3429,7 +3429,7 @@ static DECLCALLBACK(VBOXSTRICTRC) acpiR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMP
  */
 static DECLCALLBACK(int) acpiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     LogFlow(("acpiAttach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
 
     AssertMsgReturn(!(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
@@ -3474,7 +3474,7 @@ static DECLCALLBACK(int) acpiR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  */
 static DECLCALLBACK(void) acpiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
 
     LogFlow(("acpiDetach: pDevIns=%p iLUN=%u fFlags=%#x\n", pDevIns, iLUN, fFlags));
 
@@ -3506,7 +3506,7 @@ static DECLCALLBACK(void) acpiR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  */
 static DECLCALLBACK(void) acpiR3Resume(PPDMDEVINS pDevIns)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     if (pThis->fSetWakeupOnResume)
     {
         Log(("acpiResume: setting WAK_STS\n"));
@@ -3521,7 +3521,7 @@ static DECLCALLBACK(void) acpiR3Resume(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) acpiR3MemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
     RT_NOREF1(enmCtx);
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     acpiR3PlantTables(pThis);
 }
 
@@ -3530,7 +3530,7 @@ static DECLCALLBACK(void) acpiR3MemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX e
  */
 static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
 
     /* Play safe: make sure that the IRQ isn't stuck after a reset. */
     acpiSetIrq(pThis, 0);
@@ -3568,7 +3568,7 @@ static DECLCALLBACK(void) acpiR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) acpiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pPmTimerRC = TMTimerRCPtr(pThis->pPmTimerR3);
     NOREF(offDelta);
@@ -3580,7 +3580,7 @@ static DECLCALLBACK(void) acpiR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
     for (uint8_t i = 0; i < pThis->cCustTbls; i++)
     {
         if (pThis->apu8CustBin[i])
@@ -3598,7 +3598,7 @@ static DECLCALLBACK(int) acpiR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) acpiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    ACPIState *pThis = PDMINS_2_DATA(pDevIns, ACPIState *);
+    ACPIState *pThis = PDMDEVINS_2_DATA(pDevIns, ACPIState *);
 
     /*
      * Init data and set defaults.

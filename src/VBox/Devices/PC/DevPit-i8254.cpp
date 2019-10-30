@@ -660,7 +660,7 @@ PDMBOTHCBDECL(int) pitIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPor
     }
     RT_UNTRUSTED_VALIDATED_FENCE(); /* paranoia */
 
-    PPITSTATE   pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     PPITCHANNEL pChan = &pThis->channels[uPort];
     int ret;
 
@@ -737,7 +737,7 @@ PDMBOTHCBDECL(int) pitIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPo
     if (cb != 1)
         return VINF_SUCCESS;
 
-    PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     uPort &= 3;
     if (uPort == 3)
     {
@@ -858,7 +858,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     RT_NOREF2(pvUser, uPort);
     if (cb == 1)
     {
-        PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+        PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
         DEVPIT_LOCK_BOTH_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
 
         const uint64_t u64Now = TMTimerGet(pThis->channels[0].CTX_SUFF(pTimer));
@@ -904,7 +904,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     RT_NOREF2(pvUser, uPort);
     if (cb == 1)
     {
-        PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+        PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
         DEVPIT_LOCK_BOTH_RETURN(pThis, VERR_IGNORED);
 
         pThis->speaker_data_on = (u32 >> 1) & 1;
@@ -1008,7 +1008,7 @@ PDMBOTHCBDECL(int) pitIOPortSpeakerWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 static DECLCALLBACK(int) pitLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF1(uPass);
-    PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     SSMR3PutIOPort(pSSM, pThis->IOPortBaseCfg);
     SSMR3PutU8(    pSSM, pThis->channels[0].irq);
     SSMR3PutBool(  pSSM, pThis->fSpeakerCfg);
@@ -1021,7 +1021,7 @@ static DECLCALLBACK(int) pitLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     PDMCritSectEnter(&pThis->CritSect, VERR_IGNORED);
 
     /* The config. */
@@ -1070,7 +1070,7 @@ static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PPITSTATE   pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     int         rc;
 
     if (    uVersion != PIT_SAVED_STATE_VERSION
@@ -1162,7 +1162,7 @@ static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
     STAM_PROFILE_ADV_START(&pChan->CTX_SUFF(pPit)->StatPITHandler, a);
 
     Log(("pitTimer\n"));
-    Assert(PDMCritSectIsOwner(&PDMINS_2_DATA(pDevIns, PPITSTATE)->CritSect));
+    Assert(PDMCritSectIsOwner(&PDMDEVINS_2_DATA(pDevIns, PPITSTATE)->CritSect));
     Assert(TMTimerIsLockOwner(pTimer));
 
     pit_irq_timer_update(pChan, pChan->next_transition_time, TMTimerGet(pTimer), true);
@@ -1179,7 +1179,7 @@ static DECLCALLBACK(void) pitTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pv
 static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF1(pszArgs);
-    PPITSTATE   pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     unsigned    i;
     for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {
@@ -1237,7 +1237,7 @@ static DECLCALLBACK(void) pitNotifyHpetLegacyNotify_ModeChanged(PPDMIHPETLEGACYN
 static DECLCALLBACK(void *) pitQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDEVINS  pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
-    PPITSTATE   pThis   = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,    &pDevIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHPETLEGACYNOTIFY, &pThis->IHpetLegacyNotify);
     return NULL;
@@ -1252,7 +1252,7 @@ static DECLCALLBACK(void *) pitQueryInterface(PPDMIBASE pInterface, const char *
 static DECLCALLBACK(void) pitRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     RT_NOREF1(offDelta);
-    PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     LogFlow(("pitRelocate: \n"));
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->channels); i++)
@@ -1270,7 +1270,7 @@ static DECLCALLBACK(void) pitRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
 {
-    PPITSTATE pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     LogFlow(("pitReset: \n"));
 
     DEVPIT_R3_LOCK_BOTH(pThis);
@@ -1309,7 +1309,7 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PPITSTATE   pThis = PDMINS_2_DATA(pDevIns, PPITSTATE);
+    PPITSTATE   pThis = PDMDEVINS_2_DATA(pDevIns, PPITSTATE);
     int         rc;
     uint8_t     u8Irq;
     uint16_t    u16Base;

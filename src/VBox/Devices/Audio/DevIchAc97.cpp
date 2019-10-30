@@ -2947,7 +2947,7 @@ static int ichac97R3StreamTransfer(PAC97STATE pThis, PAC97STREAM pStream, uint32
  */
 PDMBOTHCBDECL(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32Val, unsigned cbVal)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     RT_NOREF(pvUser);
 
     DEVAC97_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
@@ -3122,7 +3122,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNABMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 PDMBOTHCBDECL(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32Val, unsigned cbVal)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     RT_NOREF(pvUser);
 
     /* Get the index of the NABMBAR register. */
@@ -3332,7 +3332,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNABMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIO
  */
 PDMBOTHCBDECL(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32Val, unsigned cbVal)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     RT_NOREF(pvUser);
 
     DEVAC97_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_READ);
@@ -3393,7 +3393,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32Val, unsigned cbVal)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     RT_NOREF(pvUser);
 
     DEVAC97_LOCK_RETURN(pThis, VINF_IOM_R3_IOPORT_WRITE);
@@ -3607,7 +3607,7 @@ PDMBOTHCBDECL(int) ichac97IOPortNAMWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 static DECLCALLBACK(int) ichac97R3IOPortMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                             RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     RTIOPORT   Port  = (RTIOPORT)GCPhysAddress;
     RT_NOREF(pPciDev, cb, enmType);
 
@@ -3687,7 +3687,7 @@ static int ichac97R3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PAC97STREAM 
  */
 static DECLCALLBACK(int) ichac97R3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
     LogFlowFuncEnter();
 
@@ -3745,7 +3745,7 @@ static int ichac97R3LoadStream(PSSMHANDLE pSSM, PAC97STREAM pStream)
  */
 static DECLCALLBACK(int) ichac97R3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
     LogRel2(("ichac97LoadExec: uVersion=%RU32, uPass=0x%x\n", uVersion, uPass));
 
@@ -3830,7 +3830,7 @@ static DECLCALLBACK(void *) ichac97R3QueryInterface(struct PDMIBASE *pInterface,
  */
 static DECLCALLBACK(void) ichac97R3PowerOff(PPDMDEVINS pDevIns)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
     LogRel2(("AC97: Powering off ...\n"));
 
@@ -3859,7 +3859,7 @@ static DECLCALLBACK(void) ichac97R3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ichac97R3Reset(PPDMDEVINS pDevIns)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
     LogRel(("AC97: Reset\n"));
 
@@ -4029,7 +4029,7 @@ static int ichac97R3DetachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint32_t 
  */
 static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
     LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 
@@ -4053,7 +4053,7 @@ static DECLCALLBACK(int) ichac97R3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint
  */
 static DECLCALLBACK(void) ichac97R3Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
     LogFunc(("uLUN=%u, fFlags=0x%x\n", uLUN, fFlags));
 
@@ -4152,7 +4152,7 @@ static int ichac97R3ReattachInternal(PAC97STATE pThis, PAC97DRIVER pDrv, uint8_t
 static DECLCALLBACK(void) ichac97R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     NOREF(offDelta);
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     for (unsigned i = 0; i < AC97_MAX_STREAMS; i++)
@@ -4165,7 +4165,7 @@ static DECLCALLBACK(void) ichac97R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDe
 static DECLCALLBACK(int) ichac97R3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns); /* this shall come first */
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
 
     LogFlowFuncEnter();
 
@@ -4189,7 +4189,7 @@ static DECLCALLBACK(int) ichac97R3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) ichac97R3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
-    PAC97STATE pThis = PDMINS_2_DATA(pDevIns, PAC97STATE);
+    PAC97STATE pThis = PDMDEVINS_2_DATA(pDevIns, PAC97STATE);
     Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*

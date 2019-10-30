@@ -484,7 +484,7 @@ static DECLCALLBACK(int) devR0SmcInitOnce(void *pvUserIgnored)
  */
 static DECLCALLBACK(int) devR0SmcReqHandler(PPDMDEVINS pDevIns, uint32_t uReq, uint64_t uArg)
 {
-    PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PDEVSMC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSMC);
     int     rc    = VERR_INVALID_FUNCTION;
     RT_NOREF_PV(uArg);
 
@@ -1292,7 +1292,7 @@ static DECLCALLBACK(VBOXSTRICTRC) smcIoPortWrite(PPDMDEVINS pDevIns, void *pvUse
     /*
      * The first register, usually only one is accessed.
      */
-    PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PDEVSMC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSMC);
     AssertReturn(offPort < RT_ELEMENTS(g_aSmcRegs), VERR_INTERNAL_ERROR_3); /* impossible*/
     VBOXSTRICTRC rc = g_aSmcRegs[offPort].pfnWrite(pThis, offPort, u32);
 
@@ -1333,7 +1333,7 @@ static DECLCALLBACK(VBOXSTRICTRC) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser
         return VINF_IOM_R3_IOPORT_READ;
 #endif
 
-    PDEVSMC        pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PDEVSMC        pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSMC);
 #ifdef LOG_ENABLED
     RTIOPORT const offPortLog = offPort;
     unsigned const cbLog      = cb;
@@ -1381,7 +1381,7 @@ static DECLCALLBACK(VBOXSTRICTRC) smcIoPortRead(PPDMDEVINS pDevIns, void *pvUser
 /** @callback_method_impl{FNSSMDEVSAVEEXEC} */
 static DECLCALLBACK(int) smcR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PDEVSMC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSMC);
     RT_NOREF2(pSSM, pThis);
 
     /** @todo */
@@ -1393,7 +1393,7 @@ static DECLCALLBACK(int) smcR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /** @callback_method_impl{FNSSMDEVLOADEXEC} */
 static DECLCALLBACK(int) smcR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PDEVSMC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSMC);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     RT_NOREF2(pSSM, pThis);
 
@@ -1423,7 +1423,7 @@ static DECLCALLBACK(int) smcR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 static DECLCALLBACK(int) smcR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVSMC         pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PDEVSMC         pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSMC);
     PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
 
     Assert(iInstance == 0); RT_NOREF1(iInstance);
@@ -1506,7 +1506,7 @@ static DECLCALLBACK(int) smcR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 static DECLCALLBACK(int) smcRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVSMC pThis = PDMINS_2_DATA(pDevIns, PDEVSMC);
+    PDEVSMC pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSMC);
 
     int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, smcIoPortWrite, smcIoPortRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);

@@ -320,7 +320,7 @@ static DECLCALLBACK(int) parallelR3NotifyInterrupt(PPDMIHOSTPARALLELPORT pInterf
  */
 PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PPARALLELPORT);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PPARALLELPORT);
     int           rc = VINF_SUCCESS;
     RT_NOREF_PV(pvUser);
 
@@ -427,7 +427,7 @@ PDMBOTHCBDECL(int) parallelIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  */
 PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT *);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
     int           rc = VINF_SUCCESS;
     RT_NOREF_PV(pvUser);
 
@@ -530,7 +530,7 @@ PDMBOTHCBDECL(int) parallelIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT *);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
     int            rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -549,7 +549,7 @@ PDMBOTHCBDECL(int) parallelIOPortWriteECP(PPDMDEVINS pDevIns, void *pvUser, RTIO
  */
 PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT *);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
     int           rc = VINF_SUCCESS;
 
     if (cb == 1)
@@ -572,7 +572,7 @@ PDMBOTHCBDECL(int) parallelIOPortReadECP(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 static DECLCALLBACK(int) parallelR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT *);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
 
     SSMR3PutS32(pSSM, pThis->iIrq);
     SSMR3PutU32(pSSM, pThis->IOBase);
@@ -586,7 +586,7 @@ static DECLCALLBACK(int) parallelR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
  */
 static DECLCALLBACK(int) parallelR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT *);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
 
     SSMR3PutU8(pSSM, pThis->regData);
     SSMR3PutU8(pSSM, pThis->regStatus);
@@ -602,7 +602,7 @@ static DECLCALLBACK(int) parallelR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) parallelR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT *);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
 
     AssertMsgReturn(uVersion == PARALLEL_SAVED_STATE_VERSION, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -655,7 +655,7 @@ static DECLCALLBACK(void *) parallelR3QueryInterface(PPDMIBASE pInterface, const
  */
 static DECLCALLBACK(void) parallelR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT *);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT *);
     pThis->pDevInsRC += offDelta;
 }
 
@@ -667,7 +667,7 @@ static DECLCALLBACK(int) parallelR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     int            rc;
-    PARALLELPORT *pThis = PDMINS_2_DATA(pDevIns, PARALLELPORT*);
+    PARALLELPORT *pThis = PDMDEVINS_2_DATA(pDevIns, PARALLELPORT*);
 
     Assert(iInstance < 4);
 

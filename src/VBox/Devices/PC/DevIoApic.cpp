@@ -589,7 +589,7 @@ static int ioapicSetData(PIOAPIC pThis, uint32_t uValue)
  */
 PDMBOTHCBDECL(int) ioapicSetEoi(PPDMDEVINS pDevIns, uint8_t u8Vector)
 {
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetEoi));
     LogFlow(("IOAPIC: ioapicSetEoi: u8Vector=%#x (%u)\n", u8Vector, u8Vector));
 
@@ -641,7 +641,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
         ioapicSignalIntrForRte(pThis, (a_idxRte)); \
     } while (0)
 
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicSetIrq: iIrq=%d iLevel=%d uTagSrc=%#x\n", iIrq, iLevel, uTagSrc));
 
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatSetIrq));
@@ -730,7 +730,7 @@ PDMBOTHCBDECL(void) ioapicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel, uint3
  */
 PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t uValue, uint32_t uTagSrc)
 {
-    PCIOAPIC pThis = PDMINS_2_DATA(pDevIns, PCIOAPIC);
+    PCIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PCIOAPIC);
     LogFlow(("IOAPIC: ioapicSendMsi: GCPhys=%#RGp uValue=%#RX32\n", GCPhys, uValue));
 
     /*
@@ -771,7 +771,7 @@ PDMBOTHCBDECL(void) ioapicSendMsi(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t 
  */
 PDMBOTHCBDECL(int) ioapicMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioRead));
     Assert(cb == 4); RT_NOREF_PV(cb); /* registered for dwords only */
     RT_NOREF_PV(pvUser);
@@ -805,7 +805,7 @@ PDMBOTHCBDECL(int) ioapicMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
  */
 PDMBOTHCBDECL(int) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     RT_NOREF_PV(pvUser);
 
     STAM_COUNTER_INC(&pThis->CTX_SUFF_Z(StatMmioWrite));
@@ -850,7 +850,7 @@ PDMBOTHCBDECL(int) ioapicMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GC
 static DECLCALLBACK(int) ioapicDbgReg_GetIndex(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     RT_NOREF(pDesc);
-    pValue->u32 = ioapicGetIndex(PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
+    pValue->u32 = ioapicGetIndex(PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC));
     return VINF_SUCCESS;
 }
 
@@ -859,7 +859,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetIndex(void *pvUser, PCDBGFREGDESC pDesc
 static DECLCALLBACK(int) ioapicDbgReg_SetIndex(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     RT_NOREF(pDesc, pfMask);
-    ioapicSetIndex(PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u8);
+    ioapicSetIndex(PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u8);
     return VINF_SUCCESS;
 }
 
@@ -868,7 +868,7 @@ static DECLCALLBACK(int) ioapicDbgReg_SetIndex(void *pvUser, PCDBGFREGDESC pDesc
 static DECLCALLBACK(int) ioapicDbgReg_GetData(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
     RT_NOREF(pDesc);
-    pValue->u32 = ioapicGetData((PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC)));
+    pValue->u32 = ioapicGetData((PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC)));
     return VINF_SUCCESS;
 }
 
@@ -877,14 +877,14 @@ static DECLCALLBACK(int) ioapicDbgReg_GetData(void *pvUser, PCDBGFREGDESC pDesc,
 static DECLCALLBACK(int) ioapicDbgReg_SetData(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     RT_NOREF(pDesc, pfMask);
-     return ioapicSetData(PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u32);
+     return ioapicSetData(PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC), pValue->u32);
 }
 
 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
 static DECLCALLBACK(int) ioapicDbgReg_GetVersion(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
-    PCIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC);
+    PCIOAPIC pThis = PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC);
     RT_NOREF(pDesc);
     pValue->u32 = ioapicGetVersion(pThis);
     return VINF_SUCCESS;
@@ -903,7 +903,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetArb(void *pvUser, PCDBGFREGDESC pDesc, 
 /** @interface_method_impl{DBGFREGDESC,pfnGet} */
 static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, PDBGFREGVAL pValue)
 {
-    PCIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC);
+    PCIOAPIC pThis = PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PCIOAPIC);
     Assert(pDesc->offRegister < RT_ELEMENTS(pThis->au64RedirTable));
     pValue->u64 = pThis->au64RedirTable[pDesc->offRegister];
     return VINF_SUCCESS;
@@ -914,7 +914,7 @@ static DECLCALLBACK(int) ioapicDbgReg_GetRte(void *pvUser, PCDBGFREGDESC pDesc, 
 static DECLCALLBACK(int) ioapicDbgReg_SetRte(void *pvUser, PCDBGFREGDESC pDesc, PCDBGFREGVAL pValue, PCDBGFREGVAL pfMask)
 {
     RT_NOREF(pfMask);
-    PIOAPIC pThis = PDMINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA((PPDMDEVINS)pvUser, PIOAPIC);
     /* No locks, no checks, just do it. */
     Assert(pDesc->offRegister < RT_ELEMENTS(pThis->au64RedirTable));
     pThis->au64RedirTable[pDesc->offRegister] = pValue->u64;
@@ -980,7 +980,7 @@ static DBGFREGDESC const g_aRegDesc[] =
 static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    PCIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PCIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3DbgInfo: pThis=%p pszArgs=%s\n", pThis, pszArgs));
 
     pHlp->pfnPrintf(pHlp, "I/O APIC at %#010x:\n", IOAPIC_MMIO_BASE_PHYSADDR);
@@ -1056,7 +1056,7 @@ static DECLCALLBACK(void) ioapicR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
  */
 static DECLCALLBACK(int) ioapicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PCIOAPIC pThis = PDMINS_2_DATA(pDevIns, PCIOAPIC);
+    PCIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PCIOAPIC);
     LogFlow(("IOAPIC: ioapicR3SaveExec\n"));
 
     SSMR3PutU32(pSSM, pThis->uIrr);
@@ -1074,7 +1074,7 @@ static DECLCALLBACK(int) ioapicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ioapicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("APIC: apicR3LoadExec: uVersion=%u uPass=%#x\n", uVersion, uPass));
 
     Assert(uPass == SSM_PASS_FINAL);
@@ -1105,7 +1105,7 @@ static DECLCALLBACK(int) ioapicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
  */
 static DECLCALLBACK(void) ioapicR3Reset(PPDMDEVINS pDevIns)
 {
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3Reset: pThis=%p\n", pThis));
 
     /* There might be devices threads calling ioapicSetIrq() in parallel, hence the lock. */
@@ -1131,7 +1131,7 @@ static DECLCALLBACK(void) ioapicR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) ioapicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     RT_NOREF(offDelta);
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3Relocate: pThis=%p offDelta=%RGi\n", pThis, offDelta));
 
     pThis->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
@@ -1145,7 +1145,7 @@ static DECLCALLBACK(void) ioapicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
 static DECLCALLBACK(int) ioapicR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3Destruct: pThis=%p\n", pThis));
 
 # ifndef IOAPIC_WITH_PDM_CRITSECT
@@ -1168,7 +1168,7 @@ static DECLCALLBACK(int) ioapicR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) ioapicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PIOAPIC pThis = PDMINS_2_DATA(pDevIns, PIOAPIC);
+    PIOAPIC pThis = PDMDEVINS_2_DATA(pDevIns, PIOAPIC);
     LogFlow(("IOAPIC: ioapicR3Construct: pThis=%p iInstance=%d\n", pThis, iInstance));
     Assert(iInstance == 0); RT_NOREF(iInstance);
 

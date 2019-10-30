@@ -215,7 +215,7 @@ static int ox958UartRegWrite(PDEVOX958 pThis, POX958UART pUart, uint32_t offUart
 PDMBOTHCBDECL(void) ox958IrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iLUN, int iLvl)
 {
     RT_NOREF(pUart);
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
 
     if (iLvl)
         ASMAtomicOrU32(&pThis->u32RegIrqStsGlob, RT_BIT_32(iLUN));
@@ -237,7 +237,7 @@ PDMBOTHCBDECL(void) ox958IrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned iL
  */
 PDMBOTHCBDECL(int) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
     uint32_t  offReg = (GCPhysAddr - pThis->GCPhysMMIO);
     int       rc = VINF_SUCCESS;
     RT_NOREF(pThis, pvUser);
@@ -307,7 +307,7 @@ PDMBOTHCBDECL(int) ox958MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
  */
 PDMBOTHCBDECL(int) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
     uint32_t  offReg = (GCPhysAddr - pThis->GCPhysMMIO);
     int       rc = VINF_SUCCESS;
     RT_NOREF1(pvUser);
@@ -366,7 +366,7 @@ PDMBOTHCBDECL(int) ox958MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCP
 static DECLCALLBACK(int) ox958R3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                     RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
     int       rc    = VINF_SUCCESS;
     RT_NOREF(pPciDev, enmType);
     Assert(pPciDev == pDevIns->apPciDevs[0]);
@@ -408,7 +408,7 @@ static DECLCALLBACK(int) ox958R3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint
 /** @interface_method_impl{PDMDEVREG,pfnDetach} */
 static DECLCALLBACK(void) ox958R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
     AssertReturnVoid(iLUN >= pThis->cUarts);
 
     RT_NOREF(fFlags);
@@ -420,7 +420,7 @@ static DECLCALLBACK(void) ox958R3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint3
 /** @interface_method_impl{PDMDEVREG,pfnAttach} */
 static DECLCALLBACK(int) ox958R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
 
     RT_NOREF(fFlags);
 
@@ -434,7 +434,7 @@ static DECLCALLBACK(int) ox958R3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
 /** @interface_method_impl{PDMDEVREG,pfnReset} */
 static DECLCALLBACK(void) ox958R3Reset(PPDMDEVINS pDevIns)
 {
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
 
     pThis->u32RegIrqStsGlob = 0x00;
     pThis->u32RegIrqEnGlob  = 0x00;
@@ -448,7 +448,7 @@ static DECLCALLBACK(void) ox958R3Reset(PPDMDEVINS pDevIns)
 /** @interface_method_impl{PDMDEVREG,pfnRelocate} */
 static DECLCALLBACK(void) ox958R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
     RT_NOREF(offDelta);
 
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
@@ -460,7 +460,7 @@ static DECLCALLBACK(void) ox958R3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelt
 /** @interface_method_impl{PDMDEVREG,pfnDestruct} */
 static DECLCALLBACK(int) ox958R3Destruct(PPDMDEVINS pDevIns)
 {
-    PDEVOX958 pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958 pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     for (uint32_t i = 0; i < pThis->cUarts; i++)
@@ -474,7 +474,7 @@ static DECLCALLBACK(int) ox958R3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) ox958R3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     RT_NOREF(iInstance);
-    PDEVOX958   pThis = PDMINS_2_DATA(pDevIns, PDEVOX958);
+    PDEVOX958   pThis = PDMDEVINS_2_DATA(pDevIns, PDEVOX958);
     bool        fRCEnabled = true;
     bool        fR0Enabled = true;
     bool        fMsiXSupported = false;

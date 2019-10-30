@@ -426,13 +426,13 @@ static uint32_t kbd_read_data(void *opaque, uint32_t addr)
 
 PS2K *KBDGetPS2KFromDevIns(PPDMDEVINS pDevIns)
 {
-    KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
     return &pThis->Kbd;
 }
 
 PS2M *KBDGetPS2MFromDevIns(PPDMDEVINS pDevIns)
 {
-    KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
     return &pThis->Aux;
 }
 
@@ -661,7 +661,7 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
 PDMBOTHCBDECL(int) kbdIOPortDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t    fluff = 0;
-    KBDState    *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState    *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
 
     NOREF(pvUser);
     switch (cb) {
@@ -698,7 +698,7 @@ PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     NOREF(pvUser);
     if (cb == 1 || cb == 2)
     {
-        KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+        KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
         rc = kbd_write_data(pThis, Port, (uint8_t)u32);
         Log2(("kbdIOPortDataWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
     }
@@ -721,7 +721,7 @@ PDMBOTHCBDECL(int) kbdIOPortDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 PDMBOTHCBDECL(int) kbdIOPortStatusRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t    fluff = 0;
-    KBDState    *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState    *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
 
     NOREF(pvUser);
     switch (cb) {
@@ -758,7 +758,7 @@ PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     NOREF(pvUser);
     if (cb == 1 || cb == 2)
     {
-        KBDState *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+        KBDState *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
         rc = kbd_write_command(pThis, Port, (uint8_t)u32);
         Log2(("kbdIOPortCommandWrite: Port=%#x cb=%d u32=%#x rc=%Rrc\n", Port, cb, u32, rc));
     }
@@ -778,7 +778,7 @@ PDMBOTHCBDECL(int) kbdIOPortCommandWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 static DECLCALLBACK(int) kbdSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    KBDState    *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState    *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
     kbd_save(pSSM, pThis);
     PS2KSaveState(&pThis->Kbd, pSSM);
     PS2MSaveState(&pThis->Aux, pSSM);
@@ -797,7 +797,7 @@ static DECLCALLBACK(int) kbdSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    KBDState    *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState    *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
     int rc;
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -814,7 +814,7 @@ static DECLCALLBACK(int) kbdLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(int) kbdLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    KBDState    *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState    *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
     int rc;
 
     rc = PS2KLoadDone(&pThis->Kbd, pSSM);
@@ -829,7 +829,7 @@ static DECLCALLBACK(int) kbdLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(void)  kbdReset(PPDMDEVINS pDevIns)
 {
-    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState   *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
 
     kbd_reset(pThis);
     PS2KReset(&pThis->Kbd);
@@ -859,7 +859,7 @@ static DECLCALLBACK(void)  kbdReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     int         rc;
-    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState   *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
 
     AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("PS/2 device does not support hotplugging\n"),
@@ -909,7 +909,7 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     /*
      * Reset the interfaces and update the controller state.
      */
-    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState   *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
     switch (iLUN)
     {
         /* LUN #0: keyboard */
@@ -939,7 +939,7 @@ static DECLCALLBACK(void)  kbdDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
  */
 static DECLCALLBACK(void) kbdRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState   *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     PS2KRelocate(&pThis->Kbd, offDelta, pDevIns);
     PS2MRelocate(&pThis->Aux, offDelta, pDevIns);
@@ -951,7 +951,7 @@ static DECLCALLBACK(void) kbdRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    KBDState   *pThis = PDMINS_2_DATA(pDevIns, KBDState *);
+    KBDState   *pThis = PDMDEVINS_2_DATA(pDevIns, KBDState *);
     int         rc;
     bool        fGCEnabled;
     bool        fR0Enabled;

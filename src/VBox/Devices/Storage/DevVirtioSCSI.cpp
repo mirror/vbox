@@ -443,7 +443,7 @@ typedef struct VIRTIOSCSITARGET
 typedef struct VIRTIOSCSI
 {
     /* Opaque handle to VirtIO common framework (must be first item
-     * in this struct so PDMINS_2_DATA macro's casting works) */
+     * in this struct so PDMDEVINS_2_DATA macro's casting works) */
     VIRTIOHANDLE                    hVirtio;
 
     /** Number of targets detected */
@@ -1458,7 +1458,7 @@ static DECLCALLBACK(int) virtioScsiWorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD p
 {
     RT_NOREF(pThread);
     uint16_t qIdx = ((uint64_t)pThread->pvUser) & 0xffff;
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     return SUPSemEventSignal(pThis->pSupDrvSession, pThis->aWorker[qIdx].hEvtProcess);
 }
 
@@ -1466,7 +1466,7 @@ static int virtioScsiWorker(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     int rc;
     uint16_t qIdx = ((uint64_t)pThread->pvUser) & 0xffff;
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PWORKER pWorker = &pThis->aWorker[qIdx];
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
@@ -1681,7 +1681,7 @@ static DECLCALLBACK(void) virtioScsiStatusChanged(VIRTIOHANDLE hVirtio, void *pC
  */
 static DECLCALLBACK(void) virtioScsiInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     bool fVerbose = false;
 
     /* Parse arguments. */
@@ -1716,7 +1716,7 @@ static DECLCALLBACK(void) virtioScsiMediumEjected(PPDMIMEDIAEXPORT pInterface)
 static DECLCALLBACK(int) virtioScsiLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     LogFunc(("callback"));
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     RT_NOREF(pThis);
     RT_NOREF(uPass);
     RT_NOREF(pSSM);
@@ -1727,7 +1727,7 @@ static DECLCALLBACK(int) virtioScsiLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 static DECLCALLBACK(int) virtioScsiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     LogFunc(("callback"));
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     RT_NOREF(pThis);
     RT_NOREF(uPass);
     RT_NOREF(pSSM);
@@ -1739,7 +1739,7 @@ static DECLCALLBACK(int) virtioScsiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 static DECLCALLBACK(int) virtioScsiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     LogFunc(("callback"));
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     RT_NOREF(pThis);
     RT_NOREF(pSSM);
@@ -1750,7 +1750,7 @@ static DECLCALLBACK(int) virtioScsiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) virtioScsiLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     LogFunc(("callback"));
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     RT_NOREF(pThis);
     RT_NOREF(pSSM);
     return VINF_SUCCESS;
@@ -1771,7 +1771,7 @@ static DECLCALLBACK(int) virtioScsiLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(bool) virtioScsiDeviceQuiesced(PPDMDEVINS pDevIns)
 {
     LogFunc(("Device I/O activity quiesced.\n"));
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     pThis->fQuiescing = false;
 
@@ -1780,7 +1780,7 @@ static DECLCALLBACK(bool) virtioScsiDeviceQuiesced(PPDMDEVINS pDevIns)
 
 static void virtioScsiQuiesceDevice(PPDMDEVINS pDevIns)
 {
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     /* Prevent worker threads from removing/processing elements from virtq's */
     pThis->fQuiescing = true;
@@ -1824,7 +1824,7 @@ static DECLCALLBACK(void) virtioScsiIoReqStateChanged(PPDMIMEDIAEXPORT pInterfac
 static DECLCALLBACK(void) virtioScsiReset(PPDMDEVINS pDevIns)
 {
     LogFunc(("\n"));
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     pThis->fResetting = true;
     virtioScsiQuiesceDevice(pDevIns);
 }
@@ -1836,7 +1836,7 @@ static DECLCALLBACK(void) virtioScsiResume(PPDMDEVINS pDevIns)
 {
     LogFunc(("\n"));
 
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     pThis->fQuiescing = false;
 
@@ -1869,7 +1869,7 @@ static DECLCALLBACK(void) virtioScsiSuspendOrPoweroff(PPDMDEVINS pDevIns)
 
     virtioScsiQuiesceDevice(pDevIns);
 
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     /* VM is halted, thus no new I/O being dumped into queues by the guest.
      * Workers have been flagged to stop pulling stuff already queued-up by the guest.
@@ -2011,7 +2011,7 @@ static int virtioScsiCfgAccessed(PVIRTIOSCSI pThis, uint32_t uOffset,
 static DECLCALLBACK(int) virtioScsiDevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, uint32_t cb)
 {
     int rc = VINF_SUCCESS;
-    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     rc = virtioScsiCfgAccessed(pThis, uOffset, pv, cb, false);
 
@@ -2030,7 +2030,7 @@ static DECLCALLBACK(int) virtioScsiDevCapRead(PPDMDEVINS pDevIns, uint32_t uOffs
 static DECLCALLBACK(int) virtioScsiDevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, uint32_t cb)
 {
     int rc = VINF_SUCCESS;
-    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     rc = virtioScsiCfgAccessed(pThis, uOffset, pv, cb, true);
 
@@ -2057,7 +2057,7 @@ static DECLCALLBACK(void) virtioScsiRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offD
 {
     LogFunc(("Relocating virtio-scsi"));
     RT_NOREF(offDelta);
-    PVIRTIOSCSI pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     pThis->pDevInsR3 = pDevIns;
 
@@ -2130,7 +2130,7 @@ static DECLCALLBACK(void *) virtioScsiDeviceQueryInterface(PPDMIBASE pInterface,
 static DECLCALLBACK(void) virtioScsiDetach(PPDMDEVINS pDevIns, unsigned iTarget, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    PVIRTIOSCSI       pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI       pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSITARGET pTarget = &pThis->paTargetInstances[iTarget];
 
     LogFunc((""));
@@ -2157,7 +2157,7 @@ static DECLCALLBACK(void) virtioScsiDetach(PPDMDEVINS pDevIns, unsigned iTarget,
  */
 static DECLCALLBACK(int)  virtioScsiAttach(PPDMDEVINS pDevIns, unsigned iTarget, uint32_t fFlags)
 {
-    PVIRTIOSCSI       pThis   = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI       pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSITARGET pTarget = &pThis->paTargetInstances[iTarget];
     int rc;
 
@@ -2200,7 +2200,7 @@ static DECLCALLBACK(int) virtioScsiDestruct(PPDMDEVINS pDevIns)
 
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
-    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     RTMemFree(pThis->paTargetInstances);
     pThis->paTargetInstances = NULL;
@@ -2220,7 +2220,7 @@ static DECLCALLBACK(int) virtioScsiConstruct(PPDMDEVINS pDevIns, int iInstance, 
 
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
-    PVIRTIOSCSI  pThis = PDMINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     int  rc = VINF_SUCCESS;
 
     pThis->pDevInsR3 = pDevIns;

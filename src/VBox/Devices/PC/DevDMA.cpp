@@ -637,7 +637,7 @@ static void dmaRunChannel(DMAState *pThis, int ctlidx, int chidx)
  */
 static DECLCALLBACK(bool) dmaRun(PPDMDEVINS pDevIns)
 {
-    DMAState    *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
     DMAControl  *dc;
     int         ctlidx, chidx, mask;
     PDMCritSectEnter(pDevIns->pCritSectRoR3, VERR_IGNORED);
@@ -669,7 +669,7 @@ static DECLCALLBACK(bool) dmaRun(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) dmaRegister(PPDMDEVINS pDevIns, unsigned uChannel,
                                       PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
 {
-    DMAState    *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
     DMAChannel  *ch = &pThis->DMAC[DMACH2C(uChannel)].ChState[uChannel & 3];
 
     LogFlow(("dmaRegister: pThis=%p uChannel=%u pfnTransferHandler=%p pvUser=%p\n", pThis, uChannel, pfnTransferHandler, pvUser));
@@ -720,7 +720,7 @@ static void dmaReverseBuf16(void *buf, unsigned len)
 static DECLCALLBACK(uint32_t) dmaReadMemory(PPDMDEVINS pDevIns, unsigned uChannel,
                                             void *pvBuffer, uint32_t off, uint32_t cbBlock)
 {
-    DMAState    *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
     DMAControl  *dc = &pThis->DMAC[DMACH2C(uChannel)];
     DMAChannel  *ch = &dc->ChState[uChannel & 3];
     uint32_t    page, pagehi;
@@ -756,7 +756,7 @@ static DECLCALLBACK(uint32_t) dmaReadMemory(PPDMDEVINS pDevIns, unsigned uChanne
 static DECLCALLBACK(uint32_t) dmaWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel,
                                              const void *pvBuffer, uint32_t off, uint32_t cbBlock)
 {
-    DMAState    *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
     DMAControl  *dc = &pThis->DMAC[DMACH2C(uChannel)];
     DMAChannel  *ch = &dc->ChState[uChannel & 3];
     uint32_t    page, pagehi;
@@ -800,7 +800,7 @@ static DECLCALLBACK(uint32_t) dmaWriteMemory(PPDMDEVINS pDevIns, unsigned uChann
  */
 static DECLCALLBACK(void) dmaSetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel)
 {
-    DMAState    *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
     DMAControl  *dc = &pThis->DMAC[DMACH2C(uChannel)];
     int         chidx;
 
@@ -820,7 +820,7 @@ static DECLCALLBACK(void) dmaSetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsi
  */
 static DECLCALLBACK(uint8_t) dmaGetChannelMode(PPDMDEVINS pDevIns, unsigned uChannel)
 {
-    DMAState *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
 
     LogFlow(("dmaGetChannelMode: pThis=%p uChannel=%u\n", pThis, uChannel));
 
@@ -836,7 +836,7 @@ static DECLCALLBACK(uint8_t) dmaGetChannelMode(PPDMDEVINS pDevIns, unsigned uCha
  */
 static DECLCALLBACK(void) dmaReset(PPDMDEVINS pDevIns)
 {
-    DMAState *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
 
     LogFlow(("dmaReset: pThis=%p\n", pThis));
 
@@ -850,7 +850,7 @@ static DECLCALLBACK(void) dmaReset(PPDMDEVINS pDevIns)
 /** Register DMA I/O port handlers. */
 static int dmaIORegister(PPDMDEVINS pDevIns, bool fHighPage)
 {
-    DMAState    *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState    *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
     DMAControl  *dc8   = &pThis->DMAC[0];
     DMAControl  *dc16  = &pThis->DMAC[1];
     int          rc;
@@ -1044,7 +1044,7 @@ static int dmaLoadController(PSSMHANDLE pSSM, DMAControl *dc, int version)
 /** @callback_method_impl{FNSSMDEVSAVEEXEC}  */
 static DECLCALLBACK(int) dmaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    DMAState *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
 
     dmaSaveController(pSSM, &pThis->DMAC[0]);
     dmaSaveController(pSSM, &pThis->DMAC[1]);
@@ -1054,7 +1054,7 @@ static DECLCALLBACK(int) dmaSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /** @callback_method_impl{FNSSMDEVLOADEXEC}  */
 static DECLCALLBACK(int) dmaLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    DMAState *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
 
     AssertMsgReturn(uVersion <= DMA_SAVESTATE_CURRENT, ("%d\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
@@ -1070,7 +1070,7 @@ static DECLCALLBACK(int) dmaConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     RT_NOREF(iInstance);
-    DMAState *pThis = PDMINS_2_DATA(pDevIns, DMAState *);
+    DMAState *pThis = PDMDEVINS_2_DATA(pDevIns, DMAState *);
 
     /*
      * Initialize data.

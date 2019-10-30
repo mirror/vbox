@@ -2684,7 +2684,7 @@ PDMBOTHCBDECL(int) buslogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
  */
 PDMBOTHCBDECL(int) buslogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     unsigned iRegister = uPort % 4;
     RT_NOREF_PV(pvUser); RT_NOREF_PV(cb);
 
@@ -2706,7 +2706,7 @@ PDMBOTHCBDECL(int) buslogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     unsigned iRegister = uPort % 4;
     uint8_t uVal = (uint8_t)u32;
     RT_NOREF2(pvUser, cb);
@@ -2799,7 +2799,7 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pThis)
 static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     Assert(cb == 1);
 
@@ -2825,7 +2825,7 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUs
 static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x uPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, uPort));
 
     /*
@@ -2861,7 +2861,7 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *
                                                       uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
     RT_NOREF(pvUser);
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
     /*
@@ -2894,7 +2894,7 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void *p
                                                      uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
     RT_NOREF(pvUser);
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
     return vboxscsiReadString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT),
@@ -2967,7 +2967,7 @@ static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode)
 static DECLCALLBACK(int) buslogicR3MmioMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                            RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC  pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     int        rc    = VINF_SUCCESS;
     RT_NOREF(pPciDev, iRegion);
 
@@ -3447,7 +3447,7 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
 static DECLCALLBACK(bool) buslogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
     RT_NOREF(pItem);
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
     AssertRC(rc);
@@ -3459,7 +3459,7 @@ static DECLCALLBACK(bool) buslogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDM
 static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     /* Save the device config. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
@@ -3471,7 +3471,7 @@ static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 /** @callback_method_impl{FNSSMDEVSAVEEXEC}  */
 static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PBUSLOGIC pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     uint32_t cReqsSuspended = 0;
 
     /* Every device first. */
@@ -3557,7 +3557,7 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) buslogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     buslogicR3RegisterISARange(pThis, pThis->uISABaseCode);
 
@@ -3588,7 +3588,7 @@ static DECLCALLBACK(int) buslogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /** @callback_method_impl{FNSSMDEVLOADEXEC}  */
 static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PBUSLOGIC   pBusLogic = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC   pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     int         rc = VINF_SUCCESS;
 
     /* We support saved states only from this and older versions. */
@@ -3826,7 +3826,7 @@ static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 static DECLCALLBACK(int) buslogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     RT_NOREF(pThread);
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
 }
 
@@ -3840,7 +3840,7 @@ static DECLCALLBACK(int) buslogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD p
 static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     static const char *apszModels[] = { "BusLogic BT-958D", "BusLogic BT-545C", "Adaptec AHA-1540B" };
-    PBUSLOGIC   pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC   pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     unsigned    i;
     bool        fVerbose = false;
 
@@ -3960,7 +3960,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
  */
 static bool buslogicR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
     {
@@ -3986,7 +3986,7 @@ static DECLCALLBACK(bool) buslogicR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDev
     if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
         return false;
 
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     ASMAtomicWriteBool(&pThis->fSignalIdle, false);
     return true;
 }
@@ -3996,7 +3996,7 @@ static DECLCALLBACK(bool) buslogicR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDev
  */
 static void buslogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     ASMAtomicWriteBool(&pThis->fSignalIdle, true);
     if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
@@ -4039,7 +4039,7 @@ static DECLCALLBACK(void) buslogicR3Suspend(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) buslogicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    PBUSLOGIC       pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC       pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     PBUSLOGICDEVICE pDevice = &pThis->aDeviceStates[iLUN];
 
     Log(("%s:\n", __FUNCTION__));
@@ -4068,7 +4068,7 @@ static DECLCALLBACK(void) buslogicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, ui
  */
 static DECLCALLBACK(int)  buslogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PBUSLOGIC       pThis   = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC       pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     PBUSLOGICDEVICE pDevice = &pThis->aDeviceStates[iLUN];
     int rc;
 
@@ -4128,7 +4128,7 @@ static DECLCALLBACK(int)  buslogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
  */
 static DECLCALLBACK(bool) buslogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
         return false;
@@ -4143,7 +4143,7 @@ static DECLCALLBACK(bool) buslogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) buslogicR3Reset(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     ASMAtomicWriteBool(&pThis->fSignalIdle, true);
     if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
@@ -4158,7 +4158,7 @@ static DECLCALLBACK(void) buslogicR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) buslogicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     RT_NOREF(offDelta);
-    PBUSLOGIC pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pNotifierQueueRC = PDMQueueRCPtr(pThis->pNotifierQueueR3);
@@ -4193,7 +4193,7 @@ static DECLCALLBACK(void) buslogicR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC  pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     PDMR3CritSectDelete(&pThis->CritSectIntr);
@@ -4212,7 +4212,7 @@ static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC  pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     int        rc = VINF_SUCCESS;
     bool       fBootable = true;
     char       achCfgStr[16];

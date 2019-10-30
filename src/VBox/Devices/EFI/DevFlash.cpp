@@ -76,7 +76,7 @@ typedef DEVFLASHR3 *PDEVFLASHR3;
  */
 PDMBOTHCBDECL(VBOXSTRICTRC) flashMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASH pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
     RT_NOREF1(pvUser);
     return flashWrite(&pThis->Core, off, pv, cb);
 }
@@ -87,7 +87,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) flashMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTG
  */
 PDMBOTHCBDECL(VBOXSTRICTRC) flashMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASH pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
     RT_NOREF1(pvUser);
     return flashRead(&pThis->Core, off, pv, cb);
 }
@@ -99,7 +99,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) flashMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGC
  */
 static DECLCALLBACK(int) flashSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASH pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
     return flashR3SaveExec(&pThis->Core, pDevIns, pSSM);
 }
 
@@ -109,7 +109,7 @@ static DECLCALLBACK(int) flashSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) flashLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASH pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
     /* Fend off unsupported versions. */
@@ -125,7 +125,7 @@ static DECLCALLBACK(int) flashLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  */
 static DECLCALLBACK(void) flashReset(PPDMDEVINS pDevIns)
 {
-    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASH pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
     flashR3Reset(&pThis->Core);
 }
 
@@ -136,8 +136,8 @@ static DECLCALLBACK(void) flashReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PDEVFLASH   pThis   = PDMINS_2_DATA(pDevIns, PDEVFLASH);
-    PDEVFLASHR3 pThisR3 = PDMINS_2_DATA_CC(pDevIns, PDEVFLASHR3);
+    PDEVFLASH   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASHR3 pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PDEVFLASHR3);
 
     if (pThisR3->pszFlashFile)
     {
@@ -160,8 +160,8 @@ static DECLCALLBACK(int) flashDestruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVFLASH       pThis   = PDMINS_2_DATA(pDevIns, PDEVFLASH);
-    PDEVFLASHR3     pThisR3 = PDMINS_2_DATA_CC(pDevIns, PDEVFLASHR3);
+    PDEVFLASH       pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASHR3     pThisR3 = PDMDEVINS_2_DATA_CC(pDevIns, PDEVFLASHR3);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     Assert(iInstance == 0); RT_NOREF1(iInstance);
@@ -247,7 +247,7 @@ static DECLCALLBACK(int) flashConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 static DECLCALLBACK(int) flashRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVFLASH pThis = PDMINS_2_DATA(pDevIns, PDEVFLASH);
+    PDEVFLASH pThis = PDMDEVINS_2_DATA(pDevIns, PDEVFLASH);
 
 # if 1
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, flashMMIOWrite, flashMMIORead, NULL /*pvUser*/);

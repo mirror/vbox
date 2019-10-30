@@ -83,7 +83,7 @@ typedef struct VIRTUALKD
 static DECLCALLBACK(int) vkdPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser, Port, cb);
-    VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
+    VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
 
     if (pThis->fOpenChannelDetected)
     {
@@ -100,7 +100,7 @@ static DECLCALLBACK(int) vkdPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT 
 static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
-    VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
+    VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
 
     if (Port == 0x5659)
     {
@@ -153,7 +153,7 @@ static DECLCALLBACK(int) vkdPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 static DECLCALLBACK(int) vkdDestruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
+    VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
 
     delete pThis->pKDClient;
     if (pThis->hLib != NIL_RTLDRMOD)
@@ -170,7 +170,7 @@ static DECLCALLBACK(int) vkdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 {
     RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    VIRTUALKD *pThis = PDMINS_2_DATA(pDevIns, VIRTUALKD *);
+    VIRTUALKD *pThis = PDMDEVINS_2_DATA(pDevIns, VIRTUALKD *);
 
     pThis->fOpenChannelDetected = false;
     pThis->fChannelDetectSuccessful = false;

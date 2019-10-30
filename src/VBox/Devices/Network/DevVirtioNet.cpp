@@ -520,7 +520,7 @@ static DECLCALLBACK(int) vnetIoCb_Reset(void *pvState)
  */
 static void vnetWakeupReceive(PPDMDEVINS pDevIns)
 {
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     if (    pThis->fMaybeOutOfSpace
         &&  pThis->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
     {
@@ -1808,7 +1808,7 @@ static void vnetSaveConfig(PVNETSTATE pThis, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) vnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     vnetSaveConfig(pThis, pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -1820,7 +1820,7 @@ static DECLCALLBACK(int) vnetLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
 static DECLCALLBACK(int) vnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
 
     int rc = vnetCsRxEnter(pThis, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -1835,7 +1835,7 @@ static DECLCALLBACK(int) vnetSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
 
     /* Save config first */
     vnetSaveConfig(pThis, pSSM);
@@ -1869,7 +1869,7 @@ static DECLCALLBACK(int) vnetSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) vnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
 
     int rc = vnetCsRxEnter(pThis, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -1884,7 +1884,7 @@ static DECLCALLBACK(int) vnetLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) vnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     int       rc;
 
     /* config checks */
@@ -1948,7 +1948,7 @@ static DECLCALLBACK(int) vnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint3
 static DECLCALLBACK(int) vnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
 
     if (pThis->pDrv)
         pThis->pDrv->pfnSetPromiscuousMode(pThis->pDrv,
@@ -1972,7 +1972,7 @@ static DECLCALLBACK(int) vnetLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) vnetMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     RT_NOREF(pPciDev, iRegion);
 
     if (enmType != PCI_ADDRESS_SPACE_IO)
@@ -2009,7 +2009,7 @@ static DECLCALLBACK(int) vnetMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_
 static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     Log(("%s vnetDetach:\n", INSTANCE(pThis)));
 
     AssertLogRelReturnVoid(iLUN == 0);
@@ -2038,7 +2038,7 @@ static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     LogFlow(("%s vnetAttach:\n",  INSTANCE(pThis)));
 
     AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
@@ -2119,7 +2119,7 @@ static DECLCALLBACK(void) vnetPowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) vnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     vpciRelocate(pDevIns, offDelta);
     pThis->pCanRxQueueRC = PDMQueueRCPtr(pThis->pCanRxQueueR3);
 #ifdef VNET_TX_DELAY
@@ -2135,7 +2135,7 @@ static DECLCALLBACK(void) vnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
 
 #ifdef VNET_TX_DELAY
     LogRel(("TxTimer stats (avg/min/max): %7d usec %7d usec %7d usec\n",
@@ -2162,7 +2162,7 @@ static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PVNETSTATE pThis = PDMINS_2_DATA(pDevIns, PVNETSTATE);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     int        rc;
 
     /* Initialize the instance data suffiencently for the destructor not to blow up. */

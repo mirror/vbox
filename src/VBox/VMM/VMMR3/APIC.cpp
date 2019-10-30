@@ -1396,7 +1396,7 @@ DECLCALLBACK(int) apicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE p
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     Assert(iInstance == 0); NOREF(iInstance);
 
-    PAPICDEV pApicDev = PDMINS_2_DATA(pDevIns, PAPICDEV);
+    PAPICDEV pApicDev = PDMDEVINS_2_DATA(pDevIns, PAPICDEV);
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     PAPIC    pApic    = VM_TO_APIC(pVM);
 

@@ -1706,7 +1706,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
  */
 PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
 {
-    PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI   pThis  = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg = uPort - pThis->IOPortBase;
     int             rc;
     RT_NOREF2(pvUser, cb);
@@ -1731,7 +1731,7 @@ PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  */
 PDMBOTHCBDECL(int) lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
 {
-    PLSILOGICSCSI   pThis   = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI   pThis   = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg  = uPort - pThis->IOPortBase;
     RT_NOREF_PV(pvUser);
     RT_NOREF_PV(cb);
@@ -1748,7 +1748,7 @@ PDMBOTHCBDECL(int) lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI   pThis  = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
     uint32_t        u32;
     int             rc;
@@ -1783,7 +1783,7 @@ PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
  */
 PDMBOTHCBDECL(int) lsilogicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PLSILOGICSCSI   pThis  = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI   pThis  = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
     Assert(!(offReg & 3)); Assert(cb == 4);
     RT_NOREF2(pvUser, cb);
@@ -1795,7 +1795,7 @@ PDMBOTHCBDECL(int) lsilogicDiagnosticWrite(PPDMDEVINS pDevIns, void *pvUser,
                                            RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
 #ifdef LOG_ENABLED
-    PLSILOGICSCSI  pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pThis, GCPhysAddr, pv, cb, pv, cb));
 #endif
 
@@ -1807,7 +1807,7 @@ PDMBOTHCBDECL(int) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, void *pvUser,
                                           RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
 #ifdef LOG_ENABLED
-    PLSILOGICSCSI  pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pThis, GCPhysAddr, pv, cb, pv, cb));
 #endif
 
@@ -3808,7 +3808,7 @@ static void lsilogicR3InitializeConfigurationPages(PLSILOGICSCSI pThis)
 static DECLCALLBACK(bool) lsilogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
     RT_NOREF(pItem);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc = VINF_SUCCESS;
 
     LogFlowFunc(("pDevIns=%#p pItem=%#p\n", pDevIns, pItem));
@@ -3851,7 +3851,7 @@ static int lsilogicR3GetCtrlTypeFromString(PLSILOGICSCSI pThis, const char *pcsz
 static DECLCALLBACK(int) lsilogicR3IsaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     Assert(cb == 1);
 
@@ -3940,7 +3940,7 @@ static int lsilogicR3PrepareBiosScsiRequest(PLSILOGICSCSI pThis)
 static DECLCALLBACK(int) lsilogicR3IsaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
 
     Assert(cb == 1);
@@ -3978,7 +3978,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *p
                                                      uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
     RT_NOREF(pvUser);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
     uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
@@ -4007,7 +4007,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortReadStr(PPDMDEVINS pDevIns, void *pv
                                                     uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
     RT_NOREF(pvUser);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
 
     uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
@@ -4023,7 +4023,7 @@ static DECLCALLBACK(int) lsilogicR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, u
                                        RTGCPHYS GCPhysAddress, RTGCPHYS cb,
                                        PCIADDRESSSPACE enmType)
 {
-    PLSILOGICSCSI pThis     = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis     = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int           rc        = VINF_SUCCESS;
     const char    *pcszCtrl = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
                               ? "LsiLogic"
@@ -4141,7 +4141,7 @@ static DECLCALLBACK(int) lsilogicR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, u
  */
 static DECLCALLBACK(void) lsilogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     bool          fVerbose = false;
 
     /*
@@ -4413,7 +4413,7 @@ static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 static DECLCALLBACK(int) lsilogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     RT_NOREF(pThread);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
 }
 
@@ -4447,7 +4447,7 @@ static void lsilogicR3Kick(PLSILOGICSCSI pThis)
 static DECLCALLBACK(int) lsilogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     SSMR3PutU32(pSSM, pThis->enmCtrlType);
     SSMR3PutU32(pSSM, pThis->cDeviceStates);
@@ -4465,7 +4465,7 @@ static DECLCALLBACK(int) lsilogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
  */
 static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     /* Every device first. */
     lsilogicR3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
@@ -4664,7 +4664,7 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) lsilogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     lsilogicR3Kick(pThis);
     return VINF_SUCCESS;
@@ -4675,7 +4675,7 @@ static DECLCALLBACK(int) lsilogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PLSILOGICSCSI   pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI   pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int             rc;
 
     if (    uVersion != LSILOGIC_SAVED_STATE_VERSION
@@ -5089,7 +5089,7 @@ static DECLCALLBACK(void *) lsilogicR3StatusQueryInterface(PPDMIBASE pInterface,
  */
 static bool lsilogicR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     for (uint32_t i = 0; i < pThis->cDeviceStates; i++)
     {
@@ -5113,7 +5113,7 @@ static DECLCALLBACK(bool) lsilogicR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDev
     if (!lsilogicR3AllAsyncIOIsFinished(pDevIns))
         return false;
 
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     ASMAtomicWriteBool(&pThis->fSignalIdle, false);
     return true;
 }
@@ -5123,7 +5123,7 @@ static DECLCALLBACK(bool) lsilogicR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDev
  */
 static void lsilogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     ASMAtomicWriteBool(&pThis->fSignalIdle, true);
     if (!lsilogicR3AllAsyncIOIsFinished(pDevIns))
@@ -5157,7 +5157,7 @@ static DECLCALLBACK(void) lsilogicR3Suspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) lsilogicR3Resume(PPDMDEVINS pDevIns)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     Log(("lsilogicR3Resume\n"));
 
@@ -5173,7 +5173,7 @@ static DECLCALLBACK(void) lsilogicR3Resume(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) lsilogicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    PLSILOGICSCSI   pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI   pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     PLSILOGICDEVICE pDevice = &pThis->paDeviceStates[iLUN];
 
     if (iLUN >= pThis->cDeviceStates)
@@ -5197,7 +5197,7 @@ static DECLCALLBACK(void) lsilogicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, ui
  */
 static DECLCALLBACK(int)  lsilogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PLSILOGICSCSI   pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI   pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     PLSILOGICDEVICE pDevice = &pThis->paDeviceStates[iLUN];
     int rc;
 
@@ -5256,7 +5256,7 @@ static DECLCALLBACK(int)  lsilogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
  */
 static void lsilogicR3ResetCommon(PPDMDEVINS pDevIns)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc;
 
     rc = lsilogicR3HardReset(pThis);
@@ -5271,7 +5271,7 @@ static void lsilogicR3ResetCommon(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(bool) lsilogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     if (!lsilogicR3AllAsyncIOIsFinished(pDevIns))
         return false;
@@ -5286,7 +5286,7 @@ static DECLCALLBACK(bool) lsilogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) lsilogicR3Reset(PPDMDEVINS pDevIns)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     ASMAtomicWriteBool(&pThis->fSignalIdle, true);
     if (!lsilogicR3AllAsyncIOIsFinished(pDevIns))
@@ -5303,7 +5303,7 @@ static DECLCALLBACK(void) lsilogicR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) lsilogicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     pThis->pDevInsRC        = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pNotificationQueueRC = PDMQueueRCPtr(pThis->pNotificationQueueR3);
@@ -5328,7 +5328,7 @@ static DECLCALLBACK(void) lsilogicR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     PDMR3CritSectDelete(&pThis->ReplyFreeQueueCritSect);
@@ -5356,7 +5356,7 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int           rc    = VINF_SUCCESS;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 

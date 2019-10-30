@@ -599,7 +599,7 @@ typedef struct PCIATAState
     bool                            Alignment0[HC_ARCH_BITS == 64 ? 5 : 1 ]; /**< Align the struct size. */
 } PCIATAState;
 
-#define ATACONTROLLER_IDX(pController) ( (pController) - PDMINS_2_DATA(CONTROLLER_2_DEVINS(pController), PCIATAState *)->aCts )
+#define ATACONTROLLER_IDX(pController) ( (pController) - PDMDEVINS_2_DATA(CONTROLLER_2_DEVINS(pController), PCIATAState *)->aCts )
 
 #define ATADEVSTATE_2_CONTROLLER(pIf)          ( (pIf)->CTX_SUFF(pController) )
 #define ATADEVSTATE_2_DEVINS(pIf)              ( (pIf)->CTX_SUFF(pDevIns) )
@@ -3552,7 +3552,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
                     /* This must be done from EMT. */
                     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
                     PPDMDEVINS pDevIns = ATADEVSTATE_2_DEVINS(s);
-                    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+                    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
                     ataR3LockLeave(pCtl);
                     rc = VMR3ReqPriorityCallWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
@@ -4964,7 +4964,7 @@ DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8
 PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
     RT_NOREF1(Port);
 
@@ -5032,7 +5032,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
     RT_NOREF1(Port);
 
@@ -5118,7 +5118,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                                          uint32_t *pcTransfers, unsigned cb)
 {
     uint32_t       i     = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl  = &pThis->aCts[i];
     RT_NOREF1(Port);
 
@@ -5207,7 +5207,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
                                           uint32_t *pcTransfers, unsigned cb)
 {
     uint32_t       i     = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl  = &pThis->aCts[i];
     RT_NOREF1(Port);
 
@@ -6100,7 +6100,7 @@ static void ataBMDMAAddrWriteHighWord(PATACONTROLLER pCtl, uint32_t addr, uint32
 PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
 
     int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
@@ -6133,7 +6133,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
 
     int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
@@ -6171,7 +6171,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                               RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     int          rc = VINF_SUCCESS;
     RT_NOREF(iRegion, cb, enmType, pPciDev);
 
@@ -6305,7 +6305,7 @@ static DECLCALLBACK(int) ataR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, con
 PDMBOTHCBDECL(int) ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
 #ifndef VBOX_LOG_ENABLED
     RT_NOREF(Port); RT_NOREF(cb); RT_NOREF(u32); RT_NOREF(pCtl);
@@ -6327,7 +6327,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIO
 PDMBOTHCBDECL(int) ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
 #ifndef VBOX_LOG_ENABLED
     RT_NOREF(Port); RT_NOREF(pCtl);
@@ -6361,7 +6361,7 @@ PDMBOTHCBDECL(int) ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
 
     Assert(i < 2);
@@ -6392,7 +6392,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
 
     Assert(i < 2);
@@ -6430,7 +6430,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
     int rc;
 
@@ -6461,7 +6461,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     uint32_t       i = (uint32_t)(uintptr_t)pvUser;
-    PCIATAState   *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[i];
     int            rc;
 
@@ -6505,7 +6505,7 @@ DECLINLINE(void) ataR3RelocBuffer(PPDMDEVINS pDevIns, ATADevState *s)
  */
 static DECLCALLBACK(void) ataR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
               ("PIIX3IDE: Device does not support hotplugging\n")); RT_NOREF(fFlags);
 
@@ -6719,7 +6719,7 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
  */
 static DECLCALLBACK(int)  ataR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER  pCtl;
     ATADevState    *pIf;
     int             rc;
@@ -6780,7 +6780,7 @@ static DECLCALLBACK(int)  ataR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  */
 static DECLCALLBACK(void) ataR3Resume(PPDMDEVINS pDevIns)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
 
     Log(("%s:\n", __FUNCTION__));
@@ -6805,7 +6805,7 @@ static DECLCALLBACK(void) ataR3Resume(PPDMDEVINS pDevIns)
  */
 static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
 {
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
         if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
@@ -6844,7 +6844,7 @@ static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) ataR3SaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF1(pSSM);
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
     /* sanity - the suspend notification will wait on the async stuff. */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
@@ -6860,7 +6860,7 @@ static DECLCALLBACK(int) ataR3SaveLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) ataR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF1(uPass);
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
     SSMR3PutU8(pSSM, pThis->u8Type);
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
@@ -6883,7 +6883,7 @@ static DECLCALLBACK(int) ataR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
  */
 static DECLCALLBACK(int) ataR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
     ataR3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
 
@@ -6979,7 +6979,7 @@ static const char *ataR3StringifyLun(unsigned iLun)
  */
 static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
     uint32_t        u32;
 
@@ -7240,7 +7240,7 @@ static DECLCALLBACK(void) ataR3Suspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(bool) ataR3IsAsyncResetDone(PPDMDEVINS pDevIns)
 {
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
     if (!ataR3AllAsyncIOIsIdle(pDevIns))
         return false;
@@ -7265,7 +7265,7 @@ static DECLCALLBACK(bool) ataR3IsAsyncResetDone(PPDMDEVINS pDevIns)
  */
 static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
 {
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
@@ -7363,7 +7363,7 @@ static DECLCALLBACK(void)  ataR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ataR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PCIATAState *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
@@ -7387,7 +7387,7 @@ static DECLCALLBACK(void) ataR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
 
     Log(("ataR3Destruct\n"));
@@ -7504,7 +7504,7 @@ static int ataR3ControllerFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, CHIPSET *p
  */
 static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
+    PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PPDMIBASE       pBase;
     int             rc;
     bool            fRCEnabled;

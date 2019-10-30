@@ -1134,7 +1134,7 @@ static bool efiInfoNvramIsUtf16(PCEFIVAR pEfiVar, bool *pfZeroTerm)
 static DECLCALLBACK(void) efiInfoNvram(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    PDEVEFIR3 pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
     PDMDevHlpCritSectEnter(pDevIns, pDevIns->pCritSectRoR3, VERR_IGNORED);
 
     pHlp->pfnPrintf(pHlp, "NVRAM variables: %u\n", pThisCC->NVRAM.cVariables);
@@ -1443,7 +1443,7 @@ static int efiPortImageEventWrite(PDEVEFIR3 pThisCC, uint32_t u32, unsigned cb)
 static DECLCALLBACK(int) efiIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser);
-    PDEVEFIR3 pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
     Log4(("EFI in: %x %x\n", Port, cb));
 
     switch (Port)
@@ -1529,7 +1529,7 @@ static const char *efiDbgPointName(EFIDBGPOINT enmDbgPoint)
 static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser);
-    PDEVEFIR3 pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
     int     rc    = VINF_SUCCESS;
     Log4(("efi: out %x %x %d\n", Port, u32, cb));
 
@@ -1687,7 +1687,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 static DECLCALLBACK(VBOXSTRICTRC) efiR3NvMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
     RT_NOREF(pvUser);
 
     return flashWrite(&pThis->Flash, off, pv, cb);
@@ -1699,7 +1699,7 @@ static DECLCALLBACK(VBOXSTRICTRC) efiR3NvMmioWrite(PPDMDEVINS pDevIns, void *pvU
  */
 static DECLCALLBACK(VBOXSTRICTRC) efiR3NvMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
     RT_NOREF(pvUser);
 
     return flashRead(&pThis->Flash, off, pv, cb);
@@ -1709,7 +1709,7 @@ static DECLCALLBACK(VBOXSTRICTRC) efiR3NvMmioRead(PPDMDEVINS pDevIns, void *pvUs
 
 static DECLCALLBACK(int) efiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
     LogFlow(("efiSaveExec:\n"));
 
     return flashR3SaveExec(&pThis->Flash, pDevIns, pSSM);
@@ -1717,8 +1717,8 @@ static DECLCALLBACK(int) efiSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
 static DECLCALLBACK(int) efiLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PDEVEFI         pThis   = PDMINS_2_DATA(pDevIns, PDEVEFI);
-    PDEVEFIR3       pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFI         pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFIR3       pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     LogFlow(("efiLoadExec: uVersion=%d uPass=%d\n", uVersion, uPass));
 
@@ -1839,7 +1839,7 @@ static void cmosWrite(PPDMDEVINS pDevIns, unsigned off, uint32_t u32Val)
  */
 static DECLCALLBACK(int) efiInitComplete(PPDMDEVINS pDevIns)
 {
-    PDEVEFIR3 pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
 
     PVM pVM                    = PDMDevHlpGetVM(pDevIns);
     uint64_t const  cbRamSize  = MMR3PhysGetRamSize(pVM);
@@ -1885,7 +1885,7 @@ static DECLCALLBACK(int) efiInitComplete(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) efiMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmCtx)
 {
     RT_NOREF(enmCtx);
-    PDEVEFIR3 pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
 
     /*
      * Re-shadow the Firmware Volume and make it RAM/RAM.
@@ -1924,8 +1924,8 @@ static DECLCALLBACK(void) efiMemSetup(PPDMDEVINS pDevIns, PDMDEVMEMSETUPCTX enmC
  */
 static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
 {
-    PDEVEFI   pThis   = PDMINS_2_DATA(pDevIns, PDEVEFI);
-    PDEVEFIR3 pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFI   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
     LogFlow(("efiReset\n"));
 
     pThisCC->iInfoSelector = 0;
@@ -1952,7 +1952,7 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) efiPowerOff(PPDMDEVINS pDevIns)
 {
-    PDEVEFIR3  pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFIR3  pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
 
     if (pThisCC->Lun0.pNvramDrv)
         nvramStore(pThisCC);
@@ -1971,8 +1971,8 @@ static DECLCALLBACK(void) efiPowerOff(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PDEVEFI   pThis   = PDMINS_2_DATA(pDevIns, PDEVEFI);
-    PDEVEFIR3 pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFI   pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFIR3 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
 
     nvramFlushDeviceVariableList(pThisCC);
 
@@ -2361,8 +2361,8 @@ static int efiParseDeviceString(PDEVEFIR3 pThisCC, const char *pszDeviceProps)
 static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVEFI         pThis   = PDMINS_2_DATA(pDevIns, PDEVEFI);
-    PDEVEFIR3       pThisCC = PDMINS_2_DATA_CC(pDevIns, PDEVEFIR3);
+    PDEVEFI         pThis   = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFIR3       pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PDEVEFIR3);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     int             rc;
 
@@ -2695,7 +2695,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 static DECLCALLBACK(int)  efiRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PDEVEFI pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    PDEVEFI pThis = PDMDEVINS_2_DATA(pDevIns, PDEVEFI);
 
 # if 1
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioFlash, efiR3NvMmioWrite, efiR3NvMmioRead, NULL /*pvUser*/);

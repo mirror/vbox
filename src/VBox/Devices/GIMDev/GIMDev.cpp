@@ -93,7 +93,7 @@ static DECLCALLBACK(int) gimDevR3DbgRecvThread(RTTHREAD hThreadSelf, void *pvUse
     AssertReturn(pDevIns, VERR_INVALID_PARAMETER);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
-    PGIMDEV pThis = PDMINS_2_DATA(pDevIns, PGIMDEV);
+    PGIMDEV pThis = PDMDEVINS_2_DATA(pDevIns, PGIMDEV);
     AssertReturn(pThis, VERR_INVALID_POINTER);
     AssertReturn(pThis->DbgSetup.cbDbgRecvBuf, VERR_INTERNAL_ERROR);
     AssertReturn(pThis->Dbg.hDbgRecvThreadSem != NIL_RTSEMEVENTMULTI, VERR_INTERNAL_ERROR_2);
@@ -202,7 +202,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     RT_NOREF2(iInstance, pCfg);
     Assert(iInstance == 0);
-    PGIMDEV pThis = PDMINS_2_DATA(pDevIns, PGIMDEV);
+    PGIMDEV pThis = PDMDEVINS_2_DATA(pDevIns, PGIMDEV);
 
     /*
      * Initialize relevant state bits.
@@ -356,7 +356,7 @@ static DECLCALLBACK(int) gimdevR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
  */
 static DECLCALLBACK(int) gimdevR3Destruct(PPDMDEVINS pDevIns)
 {
-    PGIMDEV  pThis    = PDMINS_2_DATA(pDevIns, PGIMDEV);
+    PGIMDEV  pThis    = PDMDEVINS_2_DATA(pDevIns, PGIMDEV);
     PVM      pVM      = PDMDevHlpGetVM(pDevIns);
     uint32_t cRegions = 0;
 

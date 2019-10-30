@@ -2774,7 +2774,7 @@ static int e1kRegReadCTRL(PE1KSTATE pThis, uint32_t offset, uint32_t index, uint
  */
 void e1kPhyLinkResetCallback(PPDMDEVINS pDevIns)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
 
     /* Make sure we have cable connected and MAC can talk to PHY */
     if (pThis->fCableConnected && (CTRL & CTRL_SLU))
@@ -2802,7 +2802,7 @@ static int e1kRegWriteCTRL(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
 #ifndef IN_RING3
         return VINF_IOM_R3_MMIO_WRITE;
 #else
-        e1kR3HardReset(pDevIns, pThis, PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC));
+        e1kR3HardReset(pDevIns, pThis, PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC));
 #endif
     }
     else
@@ -2883,7 +2883,7 @@ static int e1kRegWriteEECD(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
         /* Access to EEPROM granted -- forward 4-wire bits to EEPROM device */
         /* Note: 82543GC does not need to request EEPROM access */
         STAM_PROFILE_ADV_START(&pThis->StatEEPROMWrite, a);
-        PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+        PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
         pThisCC->eeprom.write(value & EECD_EE_WIRES);
         STAM_PROFILE_ADV_STOP(&pThis->StatEEPROMWrite, a);
     }
@@ -2925,7 +2925,7 @@ static int e1kRegReadEECD(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
             /* Note: 82543GC does not need to request EEPROM access */
             /* Access to EEPROM granted -- get 4-wire bits to EEPROM device */
             STAM_PROFILE_ADV_START(&pThis->StatEEPROMRead, a);
-            PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+            PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
             value |= pThisCC->eeprom.read();
             STAM_PROFILE_ADV_STOP(&pThis->StatEEPROMRead, a);
         }
@@ -2962,7 +2962,7 @@ static int e1kRegWriteEERD(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
     {
         STAM_PROFILE_ADV_START(&pThis->StatEEPROMRead, a);
         uint16_t    tmp;
-        PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+        PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
         if (pThisCC->eeprom.readWord(GET_BITS_V(value, EERD, ADDR), &tmp))
             SET_BITS(EERD, DATA, tmp);
         EERD |= EERD_DONE;
@@ -3227,7 +3227,7 @@ static int e1kRegWriteRCTL(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset,
 #ifndef IN_RING3
         return VINF_IOM_R3_MMIO_WRITE;
 #else
-        PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+        PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
         if (pThisCC->pDrvR3)
             pThisCC->pDrvR3->pfnSetPromiscuousMode(pThisCC->pDrvR3, fBecomePromiscous);
 #endif
@@ -3538,7 +3538,7 @@ static DECLCALLBACK(void) e1kR3LinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
 {
     RT_NOREF(pTimer);
     PE1KSTATE   pThis   = (PE1KSTATE)pvUser;
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 
     /*
      * This can happen if we set the link status to down when the Link up timer was
@@ -4191,7 +4191,7 @@ static void e1kInsertChecksum(PE1KSTATE pThis, uint8_t *pPkt, uint16_t u16PktLen
 #ifndef E1K_WITH_TXD_CACHE
 static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS PhysAddr, uint16_t u16Len, bool fSend, bool fOnWorkerThread)
 {
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     /* TCP header being transmitted */
     struct E1kTcpHeader *pTcpHdr = (struct E1kTcpHeader *)(pThis->aTxPacketFallback + pThis->contextTSE.tu.u8CSS);
     /* IP header being transmitted */
@@ -4300,7 +4300,7 @@ static void e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS 
 static int e1kFallbackAddSegment(PPDMDEVINS pDevIns, PE1KSTATE pThis, RTGCPHYS PhysAddr, uint16_t u16Len, bool fSend, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     /* TCP header being transmitted */
     struct E1kTcpHeader *pTcpHdr = (struct E1kTcpHeader *)(pThis->aTxPacketFallback + pThis->contextTSE.tu.u8CSS);
     /* IP header being transmitted */
@@ -4486,7 +4486,7 @@ static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, uint32_t cb
         if (pThis->u32PayRemain != 0)
             E1K_INC_CNT32(TSCTFC);
         pThis->u16TxPktLen = 0;
-        e1kXmitFreeBuf(pThis, PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC));
+        e1kXmitFreeBuf(pThis, PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC));
     }
 
     return false;
@@ -4511,7 +4511,7 @@ static bool e1kFallbackAddToFrame(PE1KSTATE pThis, E1KTXDESC *pDesc, uint32_t cb
 static int e1kFallbackAddToFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC *pDesc, bool fOnWorkerThread)
 {
 #ifdef VBOX_STRICT
-    PPDMSCATTERGATHER pTxSg = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC)->CTX_SUFF(pTxSg);
+    PPDMSCATTERGATHER pTxSg = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC)->CTX_SUFF(pTxSg);
     Assert(e1kGetDescType(pDesc) == E1K_DTYP_DATA);
     Assert(pDesc->data.cmd.fTSE);
     Assert(!e1kXmitIsGsoBuf(pTxSg));
@@ -4556,7 +4556,7 @@ static int e1kFallbackAddToFrame(PPDMDEVINS pDevIns, PE1KSTATE pThis, E1KTXDESC 
         if (pThis->u32PayRemain != 0)
             E1K_INC_CNT32(TSCTFC);
         pThis->u16TxPktLen = 0;
-        e1kXmitFreeBuf(pThis, PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC));
+        e1kXmitFreeBuf(pThis, PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC));
     }
 
     return VINF_SUCCESS; /// @todo consider rc;
@@ -5293,7 +5293,7 @@ static bool e1kLocateTxPacket(PE1KSTATE pThis)
 
 static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
 {
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     int rc = VINF_SUCCESS;
 
     LogFlow(("%s e1kXmitPacket: ENTER current=%d fetched=%d\n",
@@ -5341,7 +5341,7 @@ static int e1kXmitPacket(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThre
 static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
 {
     int rc = VINF_SUCCESS;
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 
     /* Check if transmitter is enabled. */
     if (!(TCTL & TCTL_EN))
@@ -5443,7 +5443,7 @@ static void e1kDumpTxDCache(PPDMDEVINS pDevIns, PE1KSTATE pThis)
  */
 static int e1kXmitPending(PPDMDEVINS pDevIns, PE1KSTATE pThis, bool fOnWorkerThread)
 {
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     int rc = VINF_SUCCESS;
 
     /* Check if transmitter is enabled. */
@@ -5592,7 +5592,7 @@ static DECLCALLBACK(void) e1kR3NetworkDown_XmitPending(PPDMINETWORKDOWN pInterfa
  */
 static DECLCALLBACK(void) e1kR3TxTaskCallback(PPDMDEVINS pDevIns, void *pvUser)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     E1kLog2(("%s e1kR3TxTaskCallback:\n", pThis->szPrf));
 
     int rc = e1kXmitPending(pDevIns, pThis, false /*fOnWorkerThread*/);
@@ -5649,7 +5649,7 @@ static int e1kRegWriteTDT(PPDMDEVINS pDevIns, PE1KSTATE pThis, uint32_t offset, 
         /* We failed to enter the TX critical section -- transmit as usual. */
 #endif /* E1K_TX_DELAY */
 #ifndef IN_RING3
-        PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+        PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
         if (!pThisCC->CTX_SUFF(pDrv))
         {
             PDMDevHlpTaskTrigger(pDevIns, pThis->hTxTask);
@@ -6166,7 +6166,7 @@ static VBOXSTRICTRC e1kRegWriteAlignedU32(PPDMDEVINS pDevIns, PE1KSTATE pThis, u
 static DECLCALLBACK(VBOXSTRICTRC) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, uint32_t cb)
 {
     RT_NOREF2(pvUser, cb);
-    PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis  = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIORead), a);
 
     Assert(off < E1K_MM_SIZE);
@@ -6185,7 +6185,7 @@ static DECLCALLBACK(VBOXSTRICTRC) e1kMMIORead(PPDMDEVINS pDevIns, void *pvUser, 
 static DECLCALLBACK(VBOXSTRICTRC) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, uint32_t cb)
 {
     RT_NOREF2(pvUser, cb);
-    PE1KSTATE pThis  = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis  = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatMMIOWrite), a);
 
     Assert(off < E1K_MM_SIZE);
@@ -6203,7 +6203,7 @@ static DECLCALLBACK(VBOXSTRICTRC) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
  */
 static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PE1KSTATE    pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE    pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     VBOXSTRICTRC rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIORead), a);
     RT_NOREF_PV(pvUser);
@@ -6250,7 +6250,7 @@ static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser, 
  */
 static DECLCALLBACK(VBOXSTRICTRC) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PE1KSTATE    pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE    pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     VBOXSTRICTRC rc;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatIOWrite), a);
     RT_NOREF_PV(pvUser);
@@ -6819,7 +6819,7 @@ static void e1kSaveConfig(PCPDMDEVHLPR3 pHlp, PE1KSTATE pThis, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    e1kSaveConfig(pDevIns->pHlpR3, PDMINS_2_DATA(pDevIns, PE1KSTATE), pSSM);
+    e1kSaveConfig(pDevIns->pHlpR3, PDMDEVINS_2_DATA(pDevIns, PE1KSTATE), pSSM);
     return VINF_SSM_DONT_CALL_AGAIN;
 }
 
@@ -6829,7 +6829,7 @@ static DECLCALLBACK(int) e1kLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
 
     int rc = e1kCsEnter(pThis, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -6868,8 +6868,8 @@ static DECLCALLBACK(int) e1kSavePrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PE1KSTATE     pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC   pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     PCPDMDEVHLPR3 pHlp    = pDevIns->pHlpR3;
 
     e1kSaveConfig(pHlp, pThis, pSSM);
@@ -6921,7 +6921,7 @@ static DECLCALLBACK(int) e1kSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
 
     /* If VM is being powered off unlocking will result in assertions in PGM */
     if (PDMDevHlpGetVM(pDevIns)->enmVMState == VMSTATE_RUNNING)
@@ -6939,7 +6939,7 @@ static DECLCALLBACK(int) e1kSaveDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     RT_NOREF(pSSM);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
 
     int rc = e1kCsEnter(pThis, VERR_SEM_BUSY);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
@@ -6953,8 +6953,8 @@ static DECLCALLBACK(int) e1kLoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PE1KSTATE       pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC     pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE       pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     int             rc;
 
@@ -7065,8 +7065,8 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  */
 static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     RT_NOREF(pSSM);
 
     /* Update promiscuous mode */
@@ -7243,7 +7243,7 @@ static int e1kInitDebugHelpers(void)
 static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
     unsigned  i;
     // bool        fRcvRing = false;
     // bool        fXmtRing = false;
@@ -7405,8 +7405,8 @@ static DECLCALLBACK(void) e1kInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
  */
 static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     Log(("%s e1kR3Detach:\n", pThis->szPrf));
     RT_NOREF(fFlags);
 
@@ -7445,8 +7445,8 @@ static DECLCALLBACK(void) e1kR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
  */
 static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     LogFlow(("%s e1kR3Attach:\n",  pThis->szPrf));
     RT_NOREF(fFlags);
 
@@ -7506,7 +7506,7 @@ static DECLCALLBACK(int) e1kR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 static DECLCALLBACK(void) e1kR3PowerOff(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
-    e1kWakeupReceive(pDevIns, PDMINS_2_DATA(pDevIns, PE1KSTATE));
+    e1kWakeupReceive(pDevIns, PDMDEVINS_2_DATA(pDevIns, PE1KSTATE));
 }
 
 /**
@@ -7514,8 +7514,8 @@ static DECLCALLBACK(void) e1kR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) e1kR3Reset(PPDMDEVINS pDevIns)
 {
-    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 #ifdef E1K_TX_DELAY
     e1kCancelTimer(pDevIns, pThis, pThis->hTXDTimer);
 #endif /* E1K_TX_DELAY */
@@ -7538,7 +7538,7 @@ static DECLCALLBACK(void) e1kR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) e1kR3Suspend(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
-    e1kWakeupReceive(pDevIns, PDMINS_2_DATA(pDevIns, PE1KSTATE));
+    e1kWakeupReceive(pDevIns, PDMDEVINS_2_DATA(pDevIns, PE1KSTATE));
 }
 
 /**
@@ -7577,7 +7577,7 @@ static DECLCALLBACK(void) e1kR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static DECLCALLBACK(int) e1kR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-    PE1KSTATE pThis = PDMINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
 
     e1kDumpState(pThis);
     E1kLog(("%s Destroying instance\n", pThis->szPrf));
@@ -7679,8 +7679,8 @@ static void e1kR3ConfigurePciDev(PPDMPCIDEV pPciDev, E1KCHIP eChip)
 static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
     int         rc;
 
     /*
@@ -8084,8 +8084,8 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 static DECLCALLBACK(int)  e1kRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PE1KSTATE   pThis   = PDMINS_2_DATA(pDevIns, PE1KSTATE);
-    PE1KSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PE1KSTATECC);
+    PE1KSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PE1KSTATE);
+    PE1KSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PE1KSTATECC);
 
     /* Initialize context specific state data: */
     pThisCC->CTX_SUFF(pDevIns)      = pDevIns;

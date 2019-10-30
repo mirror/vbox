@@ -2231,7 +2231,7 @@ static DECLCALLBACK(int) fdcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  */
 static DECLCALLBACK(int) fdcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    fdctrl_t *pThis = PDMINS_2_DATA(pDevIns, fdctrl_t *);
+    fdctrl_t *pThis = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     unsigned int i;
 
     /* Save the FDC I/O registers... */
@@ -2289,7 +2289,7 @@ static DECLCALLBACK(int) fdcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) fdcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    fdctrl_t *pThis = PDMINS_2_DATA(pDevIns, fdctrl_t *);
+    fdctrl_t *pThis = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     unsigned int i;
     uint32_t val32;
     uint8_t val8;
@@ -2585,7 +2585,7 @@ static int fdConfig(fdrive_t *drv, PPDMDEVINS pDevIns, bool fInit)
  */
 static DECLCALLBACK(int)  fdcAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    fdctrl_t *fdctrl = PDMINS_2_DATA(pDevIns, fdctrl_t *);
+    fdctrl_t *fdctrl = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     fdrive_t *drv;
     int rc;
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
@@ -2633,7 +2633,7 @@ static DECLCALLBACK(int)  fdcAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 static DECLCALLBACK(void) fdcDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     RT_NOREF(fFlags);
-    fdctrl_t *pThis = PDMINS_2_DATA(pDevIns, fdctrl_t *);
+    fdctrl_t *pThis = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     LogFlow (("ideDetach: iLUN=%u\n", iLUN));
 
     switch (iLUN)
@@ -2664,7 +2664,7 @@ static DECLCALLBACK(void) fdcDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
  */
 static DECLCALLBACK(void) fdcReset(PPDMDEVINS pDevIns)
 {
-    fdctrl_t *pThis = PDMINS_2_DATA (pDevIns, fdctrl_t *);
+    fdctrl_t *pThis = PDMDEVINS_2_DATA (pDevIns, fdctrl_t *);
     unsigned i;
     LogFlow (("fdcReset:\n"));
 
@@ -2681,7 +2681,7 @@ static DECLCALLBACK(void) fdcReset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     RT_NOREF(iInstance);
-    fdctrl_t      *pThis = PDMINS_2_DATA(pDevIns, fdctrl_t *);
+    fdctrl_t      *pThis = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     int            rc;
     unsigned       i, j;
     int            ii;

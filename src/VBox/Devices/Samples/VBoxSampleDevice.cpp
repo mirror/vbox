@@ -65,7 +65,7 @@ static DECLCALLBACK(int) devSampleConstruct(PPDMDEVINS pDevIns, int iInstance, P
     /*
      * Initialize the instance data so that the destructor won't mess up.
      */
-    PVBOXSAMPLEDEVICE pThis = PDMINS_2_DATA(pDevIns, PVBOXSAMPLEDEVICE);
+    PVBOXSAMPLEDEVICE pThis = PDMDEVINS_2_DATA(pDevIns, PVBOXSAMPLEDEVICE);
     pThis->Whatever = 0;
 
     /*

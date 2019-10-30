@@ -244,7 +244,7 @@ static void bms_mouse_event(MouState *pThis, int dx, int dy, int dz, int dw,
 static DECLCALLBACK(void) bmsTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pvUser);
-    MouState   *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
     uint8_t     irq_bit;
 
     /* Toggle the IRQ line if interrupts are enabled. */
@@ -443,7 +443,7 @@ PDMBOTHCBDECL(int) mouIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port
     NOREF(pvUser);
     if (cb == 1)
     {
-        MouState *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+        MouState *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
         *pu32 = bms_read_port(pThis, Port & 3);
         Log2(("mouIOPortRead: Port=%#x cb=%d *pu32=%#x\n", Port, cb, *pu32));
         return VINF_SUCCESS;
@@ -469,7 +469,7 @@ PDMBOTHCBDECL(int) mouIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
     NOREF(pvUser);
     if (cb == 1)
     {
-        MouState *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+        MouState *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
         rc = bms_write_port(pThis, Port & 3, u32);
         Log2(("mouIOPortWrite: Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
     }
@@ -489,7 +489,7 @@ PDMBOTHCBDECL(int) mouIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
  */
 static DECLCALLBACK(int) mouSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 {
-    MouState    *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    MouState    *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
 
     /* 8255A state. */
     SSMR3PutU8(pSSMHandle, pThis->port_a);
@@ -522,7 +522,7 @@ static DECLCALLBACK(int) mouSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle)
 static DECLCALLBACK(int) mouLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, uint32_t uVersion, uint32_t uPass)
 {
     int         rc;
-    MouState    *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    MouState    *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -557,7 +557,7 @@ static DECLCALLBACK(int) mouLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHandle, 
  */
 static DECLCALLBACK(void) mouReset(PPDMDEVINS pDevIns)
 {
-    MouState   *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
 
     /* Reinitialize the timer. */
     pThis->cTimerPeriodMs = BMS_IRQ_PERIOD_MS / 2;
@@ -642,7 +642,7 @@ static DECLCALLBACK(int) mouPutEventMultiTouch(PPDMIMOUSEPORT pInterface, uint8_
 static DECLCALLBACK(int) mouAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     int         rc;
-    MouState   *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
 
     AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
                     ("Bus mouse device does not support hotplugging\n"),
@@ -701,7 +701,7 @@ static DECLCALLBACK(void) mouDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
     /*
      * Reset the interfaces and update the controller state.
      */
-    MouState   *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
     switch (iLUN)
     {
         /* LUN #0: mouse */
@@ -726,7 +726,7 @@ static DECLCALLBACK(void) mouDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 static DECLCALLBACK(void) mouRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     RT_NOREF(offDelta);
-    MouState *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    MouState *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 }
 
@@ -738,7 +738,7 @@ static DECLCALLBACK(int) mouConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 {
     RT_NOREF(iInstance);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    MouState   *pThis = PDMINS_2_DATA(pDevIns, MouState *);
+    MouState   *pThis = PDMDEVINS_2_DATA(pDevIns, MouState *);
     int         rc;
     bool        fGCEnabled;
     bool        fR0Enabled;

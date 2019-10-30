@@ -358,7 +358,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIO
     if (cb != 1)
         return VERR_IOM_IOPORT_UNUSED;
 
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
     if ((offPort & 1) == 0)
         *pu32 = 0xff;
     else
@@ -418,7 +418,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
     if (cb != 1)
         return VINF_SUCCESS;
 
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
     uint32_t bank = (offPort >> 1) & 1;
     if ((offPort & 1) == 0)
     {
@@ -527,7 +527,7 @@ PDMBOTHCBDECL(VBOXSTRICTRC) rtcIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTI
 static DECLCALLBACK(void) rtcCmosBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF1(pszArgs);
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     pHlp->pfnPrintf(pHlp,
                     "First CMOS bank, offsets 0x0E - 0x7F\n"
@@ -552,7 +552,7 @@ static DECLCALLBACK(void) rtcCmosBankInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp
 static DECLCALLBACK(void) rtcCmosBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF1(pszArgs);
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     pHlp->pfnPrintf(pHlp, "Second CMOS bank, offsets 0x80 - 0xFF\n");
     for (uint16_t iCmos = CMOS_BANK2_LOWER_LIMIT; iCmos <= CMOS_BANK2_UPPER_LIMIT; iCmos++)
@@ -575,7 +575,7 @@ static DECLCALLBACK(void) rtcCmosBank2Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
 static DECLCALLBACK(void) rtcCmosClockInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF1(pszArgs);
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
     uint8_t u8Sec   = from_bcd(pThis, pThis->cmos_data[RTC_SECONDS]);
     uint8_t u8Min   = from_bcd(pThis, pThis->cmos_data[RTC_MINUTES]);
     uint8_t u8Hr    = from_bcd(pThis, pThis->cmos_data[RTC_HOURS] & 0x7f);
@@ -603,7 +603,7 @@ static DECLCALLBACK(void) rtcCmosClockInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
 static DECLCALLBACK(void) rtcTimerPeriodic(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF2(pTimer, pvUser);
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
     Assert(pTimer == PDMDevHlpTimerToPtr(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
@@ -685,7 +685,7 @@ static void rtc_next_second(struct my_tm *tm)
  */
 static DECLCALLBACK(void) rtcTimerSecond(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
@@ -748,7 +748,7 @@ static void rtc_copy_date(PRTCSTATE pThis)
  */
 static DECLCALLBACK(void) rtcTimerSecond2(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     Assert(PDMDevHlpTimerIsLockOwner(pDevIns, pThis->hPeriodicTimer));
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->CTX_SUFF(pCritSectRo)));
@@ -800,7 +800,7 @@ static DECLCALLBACK(int) rtcLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 {
     RT_NOREF1(uPass);
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
-    PRTCSTATE     pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     pHlp->pfnSSMPutU8(    pSSM, pThis->irq);
     pHlp->pfnSSMPutIOPort(pSSM, pThis->IOPortBase);
@@ -816,7 +816,7 @@ static DECLCALLBACK(int) rtcLiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
-    PRTCSTATE     pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     /* The config. */
     rtcLiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
@@ -854,7 +854,7 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
-    PRTCSTATE     pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE     pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
     int           rc;
 
     if (    uVersion != RTC_SAVED_STATE_VERSION
@@ -967,7 +967,7 @@ static void rtcCalcCRC(PRTCSTATE pThis)
  */
 static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value)
 {
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->pCritSectRoR3));
     if (iReg < RT_ELEMENTS(pThis->cmos_data))
     {
@@ -991,7 +991,7 @@ static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t
  */
 static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
 {
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
     Assert(PDMDevHlpCritSectIsOwner(pDevIns, pDevIns->pCritSectRoR3));
 
     if (iReg < RT_ELEMENTS(pThis->cmos_data))
@@ -1028,7 +1028,7 @@ static DECLCALLBACK(void) rtcHpetLegacyNotify_ModeChanged(PPDMIHPETLEGACYNOTIFY 
 static DECLCALLBACK(void *) rtcQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDEVINS  pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
-    PRTCSTATECC pThisCC = PDMINS_2_DATA_CC(pDevIns, PRTCSTATECC);
+    PRTCSTATECC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PRTCSTATECC);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,             &pDevIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHPETLEGACYNOTIFY, &pThisCC->IHpetLegacyNotify);
     return NULL;
@@ -1059,7 +1059,7 @@ static void rtc_set_date(PRTCSTATE pThis, const struct my_tm *tm)
 static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
 {
     /** @todo this should be (re)done at power on if we didn't load a state... */
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     /*
      * Set the CMOS date/time.
@@ -1116,7 +1116,7 @@ static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(void) rtcReset(PPDMDEVINS pDevIns)
 {
-    PRTCSTATE pThis = PDMINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
 
     /* Reset index values (important for second bank). */
     pThis->cmos_index[0] = 0;
@@ -1131,8 +1131,8 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PCPDMDEVHLPR3 pHlp    = pDevIns->pHlpR3;
-    PRTCSTATE     pThis   = PDMINS_2_DATA(pDevIns, PRTCSTATE);
-    PRTCSTATECC   pThisCC = PDMINS_2_DATA_CC(pDevIns, PRTCSTATECC);
+    PRTCSTATE     pThis   = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATECC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PRTCSTATECC);
     int           rc;
     Assert(iInstance == 0); RT_NOREF(iInstance);
 
@@ -1258,8 +1258,8 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 static DECLCALLBACK(int)  rtcRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PRTCSTATE   pThis   = PDMINS_2_DATA(pDevIns, PRTCSTATE);
-    PRTCSTATER0 pThisCC = PDMINS_2_DATA_CC(pDevIns, PRTCSTATECC);
+    PRTCSTATE   pThis   = PDMDEVINS_2_DATA(pDevIns, PRTCSTATE);
+    PRTCSTATER0 pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PRTCSTATECC);
     pThisCC->CTX_SUFF(pDevIns) = pDevIns;
 
     int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, rtcIOPortWrite, rtcIOPortRead, NULL /*pvUser*/);

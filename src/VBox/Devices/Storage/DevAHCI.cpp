@@ -2267,7 +2267,7 @@ static int ahciRegisterWrite(PAHCI pAhci, uint32_t offReg, uint32_t u32Value)
  */
 PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     Log2(("#%d ahciMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n", pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr));
     RT_NOREF1(pvUser);
 
@@ -2292,7 +2292,7 @@ PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
  */
 PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     Assert(cb == 4 || cb == 8);
     Assert(!(GCPhysAddr & (cb - 1)));
 
@@ -2361,7 +2361,7 @@ PDMBOTHCBDECL(int) ahciLegacyFakeRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     int   rc = VINF_SUCCESS;
     RT_NOREF2(pvUser, cb);
 
@@ -2405,7 +2405,7 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
  */
 PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     int   rc = VINF_SUCCESS;
     RT_NOREF1(pvUser);
 
@@ -2447,7 +2447,7 @@ PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 static DECLCALLBACK(int) ahciR3MMIOMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                        RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     RT_NOREF(pPciDev, iRegion, enmType);
 
     Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
@@ -2493,7 +2493,7 @@ static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPDMDEVINS pDevIns, PPDMPCID
                                                     RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(pPciDev, iRegion, enmType);
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
@@ -2533,7 +2533,7 @@ static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV 
                                                  RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
     RT_NOREF(pPciDev, iRegion, enmType);
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     Log2(("%s: registering fake I/O area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
 
@@ -4596,7 +4596,7 @@ static bool ahciR3CmdPrepare(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
 static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
     PDEVPORTNOTIFIERQUEUEITEM pNotifierItem = (PDEVPORTNOTIFIERQUEUEITEM)pItem;
-    PAHCI                     pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI                     pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     PAHCIPort                 pAhciPort = &pThis->ahciPort[pNotifierItem->iPort];
     int                       rc = VINF_SUCCESS;
 
@@ -4753,7 +4753,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
  */
 static DECLCALLBACK(int) ahciAsyncIOLoopWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     PAHCIPort pAhciPort = (PAHCIPort)pThread->pvUser;
     return SUPSemEventSignal(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
 }
@@ -4770,7 +4770,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoopWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pT
 static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     RT_NOREF(pszArgs);
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     /*
      * Show info.
@@ -4846,7 +4846,7 @@ static DECLCALLBACK(void) ahciR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
  */
 static bool ahciR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     if (pThis->cThreadsActive)
         return false;
@@ -4892,7 +4892,7 @@ static DECLCALLBACK(int) ahciR3LoadPrep(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) ahciR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     /* config. */
     SSMR3PutU32(pSSM, pThis->cPortsImpl);
@@ -4922,7 +4922,7 @@ static DECLCALLBACK(int) ahciR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
  */
 static DECLCALLBACK(int) ahciR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     uint32_t i;
     int rc;
 
@@ -5058,7 +5058,7 @@ static int ahciR3LoadLegacyEmulationState(PSSMHANDLE pSSM)
  */
 static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     uint32_t u32;
     int rc;
 
@@ -5279,7 +5279,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 static DECLCALLBACK(void) ahciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     uint32_t i;
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     pAhci->pDevInsRC += offDelta;
     pAhci->pHbaCccTimerRC = TMTimerRCPtr(pAhci->pHbaCccTimerR3);
@@ -5401,7 +5401,7 @@ static DECLCALLBACK(bool) ahciR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
     if (!ahciR3AllAsyncIOIsFinished(pDevIns))
         return false;
 
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     ASMAtomicWriteBool(&pThis->fSignalIdle, false);
     return true;
 }
@@ -5411,7 +5411,7 @@ static DECLCALLBACK(bool) ahciR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDevIns)
  */
 static void ahciR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     ASMAtomicWriteBool(&pThis->fSignalIdle, true);
     if (!ahciR3AllAsyncIOIsFinished(pDevIns))
@@ -5445,7 +5445,7 @@ static DECLCALLBACK(void) ahciR3Suspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
 {
-    PAHCI    pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI    pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     /*
      * Check if one of the ports has pending tasks.
@@ -5600,7 +5600,7 @@ static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *ps
  */
 static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PAHCI           pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI           pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     PAHCIPort       pAhciPort = &pAhci->ahciPort[iLUN];
     int             rc = VINF_SUCCESS;
 
@@ -5665,7 +5665,7 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  */
 static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PAHCI       pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI       pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     PAHCIPort   pAhciPort = &pThis->ahciPort[iLUN];
     int         rc;
 
@@ -5758,7 +5758,7 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  */
 static int ahciR3ResetCommon(PPDMDEVINS pDevIns)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     ahciHBAReset(pAhci);
 
@@ -5776,7 +5776,7 @@ static int ahciR3ResetCommon(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(bool) ahciR3IsAsyncResetDone(PPDMDEVINS pDevIns)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     if (!ahciR3AllAsyncIOIsFinished(pDevIns))
         return false;
@@ -5793,7 +5793,7 @@ static DECLCALLBACK(bool) ahciR3IsAsyncResetDone(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ahciR3Reset(PPDMDEVINS pDevIns)
 {
-    PAHCI pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     ASMAtomicWriteBool(&pThis->fSignalIdle, true);
     if (!ahciR3AllAsyncIOIsFinished(pDevIns))
@@ -5826,7 +5826,7 @@ static DECLCALLBACK(void) ahciR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
 {
-    PAHCI       pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI       pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     int         rc    = VINF_SUCCESS;
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
@@ -5866,7 +5866,7 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PAHCI      pThis = PDMINS_2_DATA(pDevIns, PAHCI);
+    PAHCI      pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     PPDMIBASE  pBase;
     int        rc = VINF_SUCCESS;
     unsigned   i = 0;

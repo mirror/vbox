@@ -3148,7 +3148,7 @@ static void hdaR3GCTLReset(PHDASTATE pThis)
  */
 PDMBOTHCBDECL(int) hdaMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PHDASTATE   pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE   pThis  = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int         rc;
     RT_NOREF_PV(pvUser);
     Assert(pThis->uAlignmentCheckMagic == HDASTATE_ALIGNMENT_CHECK_MAGIC);
@@ -3317,7 +3317,7 @@ DECLINLINE(int) hdaWriteReg(PPDMDEVINS pDevIns, PHDASTATE pThis, int idxRegDsc, 
  */
 PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PHDASTATE pThis  = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis  = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int       rc;
     RT_NOREF_PV(pvUser);
     Assert(pThis->uAlignmentCheckMagic == HDASTATE_ALIGNMENT_CHECK_MAGIC);
@@ -3463,7 +3463,7 @@ PDMBOTHCBDECL(int) hdaMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
 static DECLCALLBACK(int) hdaR3PciIoRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                              RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     RT_NOREF(pPciDev, iRegion, enmType);
 
     Assert(enmType == PCI_ADDRESS_SPACE_MEM);
@@ -3509,7 +3509,7 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
 {
     RT_NOREF(pDevIns);
 #if defined(LOG_ENABLED)
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 #endif
 
     Log2Func(("[SD%RU8]\n", pStream->u8SD));
@@ -3592,7 +3592,7 @@ static int hdaR3SaveStream(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, PHDASTREAM pStre
  */
 static DECLCALLBACK(int) hdaR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     /* Save Codec nodes states. */
     hdaCodecSaveState(pThis->pCodec, pSSM);
@@ -3960,7 +3960,7 @@ static int hdaR3LoadExecLegacy(PHDASTATE pThis, PSSMHANDLE pSSM, uint32_t uVersi
  */
 static DECLCALLBACK(int) hdaR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
 
@@ -4265,7 +4265,7 @@ static void hdaR3DbgPrintRegister(PHDASTATE pThis, PCDBGFINFOHLP pHlp, int iHdaI
  */
 static DECLCALLBACK(void) hdaR3DbgInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int iHdaRegisterIndex = hdaR3DbgLookupRegByName(pszArgs);
     if (iHdaRegisterIndex != -1)
         hdaR3DbgPrintRegister(pThis, pHlp, iHdaRegisterIndex);
@@ -4361,7 +4361,7 @@ static int hdaR3DbgLookupStrmIdx(PHDASTATE pThis, const char *pszArgs)
  */
 static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE   pThis         = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE   pThis         = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int         iHdaStreamdex = hdaR3DbgLookupStrmIdx(pThis, pszArgs);
     if (iHdaStreamdex != -1)
         hdaR3DbgPrintStream(pThis, pHlp, iHdaStreamdex);
@@ -4375,7 +4375,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoStream(PPDMDEVINS pDevIns, PCDBGFINFOHLP p
  */
 static DECLCALLBACK(void) hdaR3DbgInfoBDLE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE   pThis         = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE   pThis         = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     int         iHdaStreamdex = hdaR3DbgLookupStrmIdx(pThis, pszArgs);
     if (iHdaStreamdex != -1)
         hdaR3DbgPrintBDLE(pThis, pHlp, iHdaStreamdex);
@@ -4389,7 +4389,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoBDLE(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
  */
 static DECLCALLBACK(void) hdaR3DbgInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     if (pThis->pCodec->pfnDbgListNodes)
         pThis->pCodec->pfnDbgListNodes(pThis->pCodec, pHlp, pszArgs);
@@ -4402,7 +4402,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoCodecNodes(PPDMDEVINS pDevIns, PCDBGFINFOH
  */
 static DECLCALLBACK(void) hdaR3DbgInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     if (pThis->pCodec->pfnDbgSelector)
         pThis->pCodec->pfnDbgSelector(pThis->pCodec, pHlp, pszArgs);
@@ -4415,7 +4415,7 @@ static DECLCALLBACK(void) hdaR3DbgInfoCodecSelector(PPDMDEVINS pDevIns, PCDBGFIN
  */
 static DECLCALLBACK(void) hdaR3DbgInfoMixer(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     if (pThis->pMixer)
         AudioMixerDebug(pThis->pMixer, pHlp, pszArgs);
@@ -4577,7 +4577,7 @@ static int hdaR3DetachInternal(PHDASTATE pThis, PHDADRIVER pDrv, uint32_t fFlags
  */
 static DECLCALLBACK(int) hdaR3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     DEVHDA_LOCK_RETURN(pDevIns, pThis, VERR_IGNORED);
 
@@ -4601,7 +4601,7 @@ static DECLCALLBACK(int) hdaR3Attach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t
  */
 static DECLCALLBACK(void) hdaR3Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_t fFlags)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     DEVHDA_LOCK(pDevIns, pThis);
 
@@ -4633,7 +4633,7 @@ static DECLCALLBACK(void) hdaR3Detach(PPDMDEVINS pDevIns, unsigned uLUN, uint32_
  */
 static DECLCALLBACK(void) hdaR3PowerOff(PPDMDEVINS pDevIns)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     DEVHDA_LOCK_RETURN_VOID(pDevIns, pThis);
 
@@ -4731,7 +4731,7 @@ static int hdaR3ReattachInternal(PHDASTATE pThis, PHDADRIVER pDrv, uint8_t uLUN,
  */
 static DECLCALLBACK(void) hdaR3Reset(PPDMDEVINS pDevIns)
 {
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
 
     LogFlowFuncEnter();
 
@@ -4760,7 +4760,7 @@ static DECLCALLBACK(void) hdaR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns); /* this shall come first */
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     DEVHDA_LOCK(pDevIns, pThis); /** @todo r=bird: this will fail on early constructor failure. */
 
     PHDADRIVER pDrv;
@@ -4800,7 +4800,7 @@ static DECLCALLBACK(int) hdaR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) hdaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* this shall come first */
-    PHDASTATE pThis = PDMINS_2_DATA(pDevIns, PHDASTATE);
+    PHDASTATE pThis = PDMDEVINS_2_DATA(pDevIns, PHDASTATE);
     Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*
