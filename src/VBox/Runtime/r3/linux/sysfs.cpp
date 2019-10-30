@@ -43,7 +43,6 @@
 
 #include <unistd.h>
 #include <stdio.h>
-#include <sys/sysctl.h>
 #include <sys/stat.h>
 #include <sys/fcntl.h>
 #include <sys/sysmacros.h>
