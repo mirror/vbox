@@ -690,94 +690,32 @@ typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
  *
  * This structure provides information maintained for and during the executing of a
  * guest (or nested-guest) VMCS (VM control structure) using hardware-assisted VMX.
+ *
+ * The members here are ordered and aligned based on estimated frequency of usage
+ * and grouped to fit within a cache line in hot code paths.
  */
 typedef struct VMXVMCSINFO
 {
-    /** @name VMLAUNCH/VMRESUME information.
+    /** @name Auxiliary information.
      * @{ */
     /** Ring-0 pointer to the hardware-assisted VMX execution function. */
     PFNHMVMXSTARTVM             pfnStartVM;
-    /** @} */
-
-    /** @name VMCS and related data structures.
-     *  @{ */
-    /** Host-physical address of the VMCS. */
-    RTHCPHYS                    HCPhysVmcs;
-    /** R0 memory object for the VMCS. */
-    RTR0MEMOBJ                  hMemObjVmcs;
-    /** Host-virtual address of the VMCS. */
-    R0PTRTYPE(void *)           pvVmcs;
-
-    /** Host-physical address of the shadow VMCS. */
-    RTHCPHYS                    HCPhysShadowVmcs;
-    /** R0 memory object for the shadow VMCS. */
-    RTR0MEMOBJ                  hMemObjShadowVmcs;
-    /** Host-virtual address of the shadow VMCS. */
-    R0PTRTYPE(void *)           pvShadowVmcs;
-
-    /** Host-physical address of the virtual APIC page. */
-    RTHCPHYS                    HCPhysVirtApic;
-    /** Alignment. */
-    R0PTRTYPE(void *)           pvAlignment0;
-    /** Host-virtual address of the virtual-APIC page. */
-    R0PTRTYPE(uint8_t *)        pbVirtApic;
-
-    /** Host-physical address of the MSR bitmap. */
-    RTHCPHYS                    HCPhysMsrBitmap;
-    /** R0 memory object for the MSR bitmap. */
-    RTR0MEMOBJ                  hMemObjMsrBitmap;
-    /** Host-virtual address of the MSR bitmap. */
-    R0PTRTYPE(void *)           pvMsrBitmap;
-
-    /** Host-physical address of the VM-entry MSR-load area. */
-    RTHCPHYS                    HCPhysGuestMsrLoad;
-    /** R0 memory object of the VM-entry MSR-load area. */
-    RTR0MEMOBJ                  hMemObjGuestMsrLoad;
-    /** Host-virtual address of the VM-entry MSR-load area. */
-    R0PTRTYPE(void *)           pvGuestMsrLoad;
-
-    /** Host-physical address of the VM-exit MSR-store area. */
-    RTHCPHYS                    HCPhysGuestMsrStore;
-    /** R0 memory object of the VM-exit MSR-store area. */
-    RTR0MEMOBJ                  hMemObjGuestMsrStore;
-    /** Host-virtual address of the VM-exit MSR-store area. */
-    R0PTRTYPE(void *)           pvGuestMsrStore;
-
-    /** Host-physical address of the VM-exit MSR-load area. */
-    RTHCPHYS                    HCPhysHostMsrLoad;
-    /** R0 memory object for the VM-exit MSR-load area. */
-    RTR0MEMOBJ                  hMemObjHostMsrLoad;
-    /** Host-virtual address of the VM-exit MSR-load area. */
-    R0PTRTYPE(void *)           pvHostMsrLoad;
-
     /** Host-physical address of the EPTP. */
     RTHCPHYS                    HCPhysEPTP;
+    /** The VMCS launch state, see VMX_V_VMCS_LAUNCH_STATE_XXX. */
+    uint32_t                    fVmcsState;
+    /** The VMCS launch state of the shadow VMCS, see VMX_V_VMCS_LAUNCH_STATE_XXX. */
+    uint32_t                    fShadowVmcsState;
+    /** The host CPU for which its state has been exported to this VMCS. */
+    RTCPUID                     idHostCpuState;
+    /** The host CPU on which we last executed this VMCS. */
+    RTCPUID                     idHostCpuExec;
     /** Number of guest MSRs in the VM-entry MSR-load area. */
     uint32_t                    cEntryMsrLoad;
     /** Number of guest MSRs in the VM-exit MSR-store area. */
     uint32_t                    cExitMsrStore;
     /** Number of host MSRs in the VM-exit MSR-load area. */
     uint32_t                    cExitMsrLoad;
-    /** Padding. */
-    uint32_t                    u32Padding0;
-    /** @} */
-
-    /** @name Auxiliary information.
-     * @{ */
-    /** The VMCS launch state, see VMX_V_VMCS_LAUNCH_STATE_XXX. */
-    uint32_t                    fVmcsState;
-    /** The VMCS launch state of the shadow VMCS, see VMX_V_VMCS_LAUNCH_STATE_XXX. */
-    uint32_t                    fShadowVmcsState;
-    /** Set if guest was executing in real mode (extra checks). */
-    bool                        fWasInRealMode;
-    /** Set if the guest switched to 64-bit mode on a 32-bit host. */
-    bool                        fSwitchedTo64on32Obsolete;
-    /** Padding. */
-    bool                        afPadding0[6];
-    /** The host CPU for which its state has been exported to this VMCS. */
-    RTCPUID                     idHostCpuState;
-    /** The host CPU on which we last executed this VMCS. */
-    RTCPUID                     idHostCpuExec;
     /** @} */
 
     /** @name Cache of execution related VMCS fields.
@@ -794,22 +732,48 @@ typedef struct VMXVMCSINFO
     uint32_t                    u32ExitCtls;
     /** Exception bitmap. */
     uint32_t                    u32XcptBitmap;
-    /** CR0 guest/host mask. */
-    uint64_t                    u64Cr0Mask;
-    /** CR4 guest/host mask. */
-    uint64_t                    u64Cr4Mask;
     /** Page-fault exception error-code mask. */
     uint32_t                    u32XcptPFMask;
     /** Page-fault exception error-code match. */
     uint32_t                    u32XcptPFMatch;
+    /** Padding. */
+    uint32_t                    u32Alignment0;
     /** TSC offset. */
     uint64_t                    u64TscOffset;
     /** VMCS link pointer. */
     uint64_t                    u64VmcsLinkPtr;
+    /** CR0 guest/host mask. */
+    uint64_t                    u64Cr0Mask;
+    /** CR4 guest/host mask. */
+    uint64_t                    u64Cr4Mask;
+    /** @} */
+
+    /** @name Host-virtual address of VMCS and related data structures.
+     *  @{ */
+    /** The VMCS. */
+    R0PTRTYPE(void *)           pvVmcs;
+    /** The shadow VMCS. */
+    R0PTRTYPE(void *)           pvShadowVmcs;
+    /** The virtual-APIC page. */
+    R0PTRTYPE(uint8_t *)        pbVirtApic;
+    /** The MSR bitmap. */
+    R0PTRTYPE(void *)           pvMsrBitmap;
+    /** The VM-entry MSR-load area. */
+    R0PTRTYPE(void *)           pvGuestMsrLoad;
+    /** The VM-exit MSR-store area. */
+    R0PTRTYPE(void *)           pvGuestMsrStore;
+    /** The VM-exit MSR-load area. */
+    R0PTRTYPE(void *)           pvHostMsrLoad;
     /** @} */
 
     /** @name Real-mode emulation state.
      * @{ */
+    /** Set if guest was executing in real mode (extra checks). */
+    bool                        fWasInRealMode;
+    /** Set if the guest switched to 64-bit mode on a 32-bit host. */
+    bool                        fSwitchedTo64on32Obsolete;
+    /** Padding. */
+    bool                        afPadding0[6];
     struct
     {
         X86DESCATTR             AttrCS;
@@ -824,6 +788,40 @@ typedef struct VMXVMCSINFO
     } RealMode;
     /** @} */
 
+    /** @name Host-physical address of VMCS and related data structures.
+     *  @{ */
+    /** The VMCS. */
+    RTHCPHYS                    HCPhysVmcs;
+    /** The shadow VMCS. */
+    RTHCPHYS                    HCPhysShadowVmcs;
+    /** The virtual APIC page. */
+    RTHCPHYS                    HCPhysVirtApic;
+    /** The MSR bitmap. */
+    RTHCPHYS                    HCPhysMsrBitmap;
+    /** The VM-entry MSR-load area. */
+    RTHCPHYS                    HCPhysGuestMsrLoad;
+    /** The VM-exit MSR-store area. */
+    RTHCPHYS                    HCPhysGuestMsrStore;
+    /** The VM-exit MSR-load area. */
+    RTHCPHYS                    HCPhysHostMsrLoad;
+    /** @} */
+
+    /** @name R0-memory objects address of VMCS and related data structures.
+     *  @{ */
+    /** The VMCS. */
+    RTR0MEMOBJ                  hMemObjVmcs;
+    /** R0 memory object for the shadow VMCS. */
+    RTR0MEMOBJ                  hMemObjShadowVmcs;
+    /** R0 memory object for the MSR bitmap. */
+    RTR0MEMOBJ                  hMemObjMsrBitmap;
+    /** R0 memory object of the VM-entry MSR-load area. */
+    RTR0MEMOBJ                  hMemObjGuestMsrLoad;
+    /** R0 memory object of the VM-exit MSR-store area. */
+    RTR0MEMOBJ                  hMemObjGuestMsrStore;
+    /** R0 memory object for the VM-exit MSR-load area. */
+    RTR0MEMOBJ                  hMemObjHostMsrLoad;
+    /** @} */
+
     /** Padding. */
     uint64_t                    au64Padding[2];
 } VMXVMCSINFO;
@@ -832,9 +830,12 @@ typedef VMXVMCSINFO *PVMXVMCSINFO;
 /** Pointer to a const VMXVMCSINFO struct. */
 typedef const VMXVMCSINFO *PCVMXVMCSINFO;
 AssertCompileSizeAlignment(VMXVMCSINFO, 8);
-AssertCompileMemberAlignment(VMXVMCSINFO, fVmcsState, 8);
-AssertCompileMemberAlignment(VMXVMCSINFO, u32PinCtls, 8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pfnStartVM, 8);
+AssertCompileMemberAlignment(VMXVMCSINFO, u32PinCtls, 4);
 AssertCompileMemberAlignment(VMXVMCSINFO, u64VmcsLinkPtr, 8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pvVmcs, 8);
+AssertCompileMemberAlignment(VMXVMCSINFO, HCPhysVmcs, 8);
+AssertCompileMemberAlignment(VMXVMCSINFO, hMemObjVmcs, 8);
 
 /**
  * HM VMCPU Instance data.
