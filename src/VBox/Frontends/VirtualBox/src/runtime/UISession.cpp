@@ -1655,10 +1655,10 @@ static bool isPointer1bpp(const uint8_t *pu8XorMask,
 void UISession::updateMousePointerShape()
 {
     const bool fHasAlpha = m_shapeData.hasAlpha();
-    const uint uXHot = m_shapeData.hotPoint().x();
-    const uint uYHot = m_shapeData.hotPoint().y();
-    const uint uWidth = m_shapeData.shapeSize().width();
-    const uint uHeight = m_shapeData.shapeSize().height();
+    uint uXHot = m_shapeData.hotPoint().x();
+    uint uYHot = m_shapeData.hotPoint().y();
+    uint uWidth = m_shapeData.shapeSize().width();
+    uint uHeight = m_shapeData.shapeSize().height();
     const uchar *pShapeData = m_shapeData.shape().constData();
     AssertMsg(pShapeData, ("Shape data must not be NULL!\n"));
 
