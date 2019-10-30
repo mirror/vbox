@@ -5724,6 +5724,45 @@ typedef PDMDEVINSRC                 PDMDEVINS;
 #endif
 
 
+/** @def PDMDEVINS_2_DATA
+ * This is a safer edition of PDMINS_2_DATA that checks that the size of the
+ * target type is same as PDMDEVREG::cbInstanceShared in strict builds.
+ *
+ * @note Do no use this macro in common code working on a core structure which
+ *       device specific code has expanded.
+ */
+#if defined(VBOX_STRICT) && defined(RT_COMPILER_SUPPORTS_LAMBDA)
+# define PDMDEVINS_2_DATA(a_pDevIns, a_PtrType)  \
+    ([](PPDMDEVINS a_pLambdaDevIns) -> a_PtrType \
+    { \
+        a_PtrType pLambdaRet = (a_PtrType)(a_pLambdaDevIns)->CTX_SUFF(pvInstanceData); \
+        Assert(sizeof(*pLambdaRet) == a_pLambdaDevIns->pReg->cbInstanceShared); \
+        return pLambdaRet; \
+    }(a_pDevIns))
+#else
+# define PDMDEVINS_2_DATA(a_pDevIns, a_PtrType)  ( (a_PtrType)(a_pDevIns)->CTX_SUFF(pvInstanceData) )
+#endif
+
+/** @def PDMDEVINS_2_DATA_CC
+ * This is a safer edition of PDMINS_2_DATA_CC that checks that the size of the
+ * target type is same as PDMDEVREG::cbInstanceCC in strict builds.
+ *
+ * @note Do no use this macro in common code working on a core structure which
+ *       device specific code has expanded.
+ */
+#if defined(VBOX_STRICT) && defined(RT_COMPILER_SUPPORTS_LAMBDA)
+# define PDMDEVINS_2_DATA_CC(a_pDevIns, a_PtrType)  \
+    ([](PPDMDEVINS a_pLambdaDevIns) -> a_PtrType \
+    { \
+        a_PtrType pLambdaRet = (a_PtrType)&(a_pLambdaDevIns)->achInstanceData[0]; \
+        Assert(sizeof(*pLambdaRet) == a_pLambdaDevIns->pReg->cbInstanceCC); \
+        return pLambdaRet; \
+    }(a_pDevIns))
+#else
+# define PDMDEVINS_2_DATA_CC(a_pDevIns, a_PtrType)  ( (a_PtrType)(void *)&(a_pDevIns)->achInstanceData[0] )
+#endif
+
+
 #ifdef IN_RING3
 
 /**

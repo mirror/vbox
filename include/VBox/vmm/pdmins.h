@@ -50,11 +50,13 @@
 
 /** @def PDMINS_2_DATA
  * Gets the shared instance data for a PDM device, USB device, or driver instance.
+ * @note For devices using PDMDEVINS_2_DATA is highly recommended.
  */
 #define PDMINS_2_DATA(pIns, type)       ( (type)(pIns)->CTX_SUFF(pvInstanceData) )
 
 /** @def PDMINS_2_DATA_CC
  * Gets the current context instance data for a PDM device, USB device, or driver instance.
+ * @note For devices using PDMDEVINS_2_DATA_CC is highly recommended.
  */
 #define PDMINS_2_DATA_CC(pIns, type)    ( (type)(void *)&(pIns)->achInstanceData[0] )
 
