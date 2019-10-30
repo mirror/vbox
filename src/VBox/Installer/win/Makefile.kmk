@@ -35,7 +35,29 @@ ifdef VBOX_WITH_MSI_HACK
  include $(PATH_SUB_CURRENT)/MsiHack/Makefile.kmk
 endif
 
-
+#
+# Profile for quickly testing the actual mechanisms of our installer.
+# This leaves out most of the optional stuff to make compilation / linking much
+# faster for development cycles. Tweak to your likings if needed.
+#
+ifdef VBOX_INSTALLER_QUICK
+ VBOX_INSTALLER_LANGUAGES    := en_US
+ VBOX_WITH_ADDITIONS_PACKING :=
+ VBOX_WITH_DEBUGGER_GUI		 :=
+ VBOX_WITH_EFIFW_PACKING     :=
+ VBOX_WITH_EXTPACK			 :=
+ VBOX_WITH_NETADP     	     :=
+ VBOX_WITH_NETFLT    	     :=
+ VBOX_WITH_PYTHON            :=
+ VBOX_WITH_SDS		         :=
+ VBOX_WITH_WEBSERVICES       :=
+ VBOX_WITH_UNATTENDED        :=
+ VBOX_WITH_DOCS_PACKING      :=
+ VBOX_WITH_QTGUI	         :=
+ VBOX_WITH_USB               :=
+ VBOX_WITH_VBOX_IMG		     :=
+ VBOX_WITH_VBOXSDL           :=
+endif
 
 #
 # Globals.
@@ -60,7 +82,21 @@ endif
 #
 # List of merge modules to use.
 #
-VBOX_INSTALLER_MERGE_MODULES = App USB NetAdp NetFlt NetAdp6 NetLwf Python
+ifndef VBOX_INSTALLER_MERGE_MODULES
+ VBOX_INSTALLER_MERGE_MODULES = App
+ ifdef VBOX_WITH_NETADP
+  VBOX_INSTALLER_MERGE_MODULES += NetAdp NetAdp6
+ endif
+ ifdef VBOX_WITH_NETFLT
+  VBOX_INSTALLER_MERGE_MODULES += NetLwf NetFlt
+ endif
+ ifdef VBOX_WITH_USB
+  VBOX_INSTALLER_MERGE_MODULES += USB
+ endif
+ ifdef VBOX_WITH_PYTHON
+  VBOX_INSTALLER_MERGE_MODULES += Python
+ endif
+endif
 ifeq ($(KBUILD_TARGET_ARCH),amd64)
  VBOX_INSTALLER_MERGE_MODULES += COM32On64
 endif
@@ -624,6 +660,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		-E 'VBOX_WITH_LICENSE_DISPLAY=$(if $(VBOX_WITH_LICENSE_DISPLAY),yes,no)' \
 		-E 'VBOX_WITH_MIDL_PROXY_STUB=$(if $(VBOX_WITH_MIDL_PROXY_STUB),yes,no)' \
 		-E 'VBOX_WITH_MSM_INSTALL=$(if-expr defined(VBOX_WITH_MSM_INSTALL),yes,no)' \
+		-E 'VBOX_WITH_NETADP=$(if $(VBOX_WITH_NETADP),yes,no)' \
 		-E 'VBOX_WITH_NETFLT=$(if $(VBOX_WITH_NETFLT),yes,no)' \
 		-E 'VBOX_WITH_PYTHON=$(if $(VBOX_WITH_PYTHON),yes,no)' \
 		-E 'VBOX_WITH_QTGUI=$(if $(VBOX_WITH_QTGUI),yes,no)' \
@@ -635,9 +672,12 @@ $(if-expr "$(lang)" != "en_US",, \
 		-E 'VBOX_WITH_WEBSERVICES=$(if $(VBOX_WITH_WEBSERVICES),yes,no)' \
 		-E 'VBOX_WITH_SDS=$(if $(VBOX_WITH_SDS),yes,no)' \
 		-E 'VBOX_WITH_UNATTENDED=$(if $(VBOX_WITH_UNATTENDED),yes,no)' \
+		-E 'VBOX_WITH_USB=$(if $(VBOX_WITH_USB),yes,no)' \
 		-E 'VBOX_WITH_VBOX_IMG=$(if $(VBOX_WITH_VBOX_IMG),yes,no)' \
+		-E 'VBOX_WITH_VBOXSDL=$(if $(VBOX_WITH_VBOXSDL),yes,no)' \
 		-E 'BUILD_TYPE=$(KBUILD_TYPE)' \
 		-E 'BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
+		-E 'VBOX_INSTALLER_QUICK=$(VBOX_INSTALLER_QUICK)' \
 		-E 'VBOX_VCC_TOOL_STEM=$(VBOX_VCC_TOOL_STEM)' \
 		-- \
 		$(VBOX_PATH_WIX)/candle.exe $(filter-out $(VBOX_VERSION_STAMP),$$<) \
@@ -772,6 +812,7 @@ $(if-expr "$(lang)" != "en_US",, \
 		-E 'VBOX_WITH_LICENSE_DISPLAY=$(if $(VBOX_WITH_LICENSE_DISPLAY),yes,no)' \
 		-E 'VBOX_WITH_MIDL_PROXY_STUB=$(if $(VBOX_WITH_MIDL_PROXY_STUB),yes,no)' \
 		-E 'VBOX_WITH_MSM_INSTALL=$(if-expr defined(VBOX_WITH_MSM_INSTALL),yes,no)' \
+		-E 'VBOX_WITH_NETADP=$(if $(VBOX_WITH_NETADP),yes,no)' \
 		-E 'VBOX_WITH_NETFLT=$(if $(VBOX_WITH_NETFLT),yes,no)' \
 		-E 'VBOX_WITH_PYTHON=$(if $(VBOX_WITH_PYTHON),yes,no)' \
 		-E 'VBOX_WITH_QTGUI=$(if $(VBOX_WITH_QTGUI),yes,no)' \
@@ -784,8 +825,10 @@ $(if-expr "$(lang)" != "en_US",, \
 		-E 'VBOX_WITH_SDS=$(if $(VBOX_WITH_SDS),yes,no)' \
 		-E 'VBOX_WITH_UNATTENDED=$(if $(VBOX_WITH_UNATTENDED),yes,no)' \
 		-E 'VBOX_WITH_VBOX_IMG=$(if $(VBOX_WITH_VBOX_IMG),yes,no)' \
+		-E 'VBOX_WITH_VBOXSDL=$(if $(VBOX_WITH_VBOXSDL),yes,no)' \
 		-E 'BUILD_TYPE=$(KBUILD_TYPE)' \
 		-E 'BUILD_TARGET_ARCH=$(KBUILD_TARGET_ARCH)' \
+		-E 'VBOX_INSTALLER_QUICK=$(VBOX_INSTALLER_QUICK)' \
 		-E 'VBOX_VCC_TOOL_STEM=$(VBOX_VCC_TOOL_STEM)' \
 		-- \
 		$(VBOX_PATH_WIX)/candle.exe $(filter-out $(VBOX_VERSION_STAMP),$$<) \

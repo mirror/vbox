@@ -405,23 +405,25 @@
         </Directory>
 <?endif ?>
 
-    <!-- SDL plugins -->
+<?if $(env.VBOX_WITH_VBOXSDL) = "yes" ?>
+    <!-- SDL frontend -->
     <Component Id="cp_VBoxSDLBinaries" Guid="F09D5FD9-E176-42B0-90A9-481BB18B0CB4"
                Win64="$(var.Property_Win64)">
         <File Id="file_VBoxSDL.exe" Name="VBoxSDL.exe"
               Source="$(env.PATH_OUT)\bin\VBoxSDL.exe" />
-<?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
-        <File Id="file_VBoxSDL.dll" Name="VBoxSDL.dll"
-              Source="$(env.PATH_OUT)\bin\VBoxSDL.dll">
-        </File>
-<?endif ?>
+    <?if $(env.VBOX_WITH_HARDENING) = "yes" ?>
+            <File Id="file_VBoxSDL.dll" Name="VBoxSDL.dll"
+                  Source="$(env.PATH_OUT)\bin\VBoxSDL.dll">
+            </File>
+    <?endif ?>
         <File Id="file_SDL.dll" Name="SDL.dll"
               Source="$(env.PATH_OUT)\bin\SDL.dll" />
-<?if $(env.VBOX_WITH_SECURELABEL) = "yes" ?>
-        <File Id="file_SDL_ttf.dll" Name="SDL_ttf.dll"
-              Source="$(env.PATH_OUT)\bin\SDL_ttf.dll" />
-<?endif?>
-    </Component> <!-- SDL plugins -->
+    <?if $(env.VBOX_WITH_SECURELABEL) = "yes" ?>
+            <File Id="file_SDL_ttf.dll" Name="SDL_ttf.dll"
+                  Source="$(env.PATH_OUT)\bin\SDL_ttf.dll" />
+    <?endif?>
+    </Component> <!-- SDL frontend -->
+<?endif ?>
 
 <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
     <!-- Webservice -->

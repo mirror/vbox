@@ -25,15 +25,19 @@
     <?if $(env.VBOX_WITH_32_ON_64_MAIN_API) = "yes" ?>
         <?define Property_VBoxMergeCOM32On64 = "$(env.VBOX_WIN_INST_MERGE_COM32ON64)" ?>
     <?endif ?>
-    <?define Property_VBoxMergeUSB = "$(env.VBOX_WIN_INST_MERGE_USB)" ?>
+    <?if $(env.VBOX_WITH_USB) = "yes" ?>
+        <?define Property_VBoxMergeUSB = "$(env.VBOX_WIN_INST_MERGE_USB)" ?>
+    <?endif ?>
     <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
         <?define Property_VBoxMergeNetworkFlt = "$(env.VBOX_WIN_INST_MERGE_NETFLT)" ?>
     <?endif ?>
-    <?define Property_VBoxMergeNetworkAdp = "$(env.VBOX_WIN_INST_MERGE_NETADP)" ?>
+    <?if $(env.VBOX_WITH_NETADP) = "yes" ?>
+        <?define Property_VBoxMergeNetworkAdp  = "$(env.VBOX_WIN_INST_MERGE_NETADP)" ?>
+        <?define Property_VBoxMergeNetworkAdp6 = "$(env.VBOX_WIN_INST_MERGE_NETADP6)" ?>
+    <?endif ?>
     <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
         <?define Property_VBoxMergeNetworkLwf = "$(env.VBOX_WIN_INST_MERGE_NETLWF)" ?>
     <?endif ?>
-    <?define Property_VBoxMergeNetworkAdp6 = "$(env.VBOX_WIN_INST_MERGE_NETADP6)" ?>
     <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
         <?define Property_VBoxMergePython = "$(env.VBOX_WIN_INST_MERGE_PYTHON)" ?>
     <?endif ?>
@@ -226,7 +230,21 @@
         NOT VBOXSUN
     </Condition>-->
 
-    <CustomAction Id="ca_StartVBox" FileKey="file_VirtualBox.exe" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
+    <!-- Note: When we don't include FE/Qt, we just start *something* (e.g. Windows' calc.exe) to see if the custom action works. -->
+<?if $(env.VBOX_WITH_MSM_INSTALL) = "no" ?>
+    <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
+        <CustomAction Id="ca_StartVBox" FileKey="file_VirtualBox.exe" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
+    <?else ?>
+        <CustomAction Id="ca_StartVBox" Directory="INSTALLDIR" ExeCommand='"[INSTALLDIR]\VBoxBugReport.exe"' Return="asyncNoWait" Impersonate="yes" />
+    <?endif ?>
+<?else ?>
+    <?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
+        <CustomAction Id="ca_StartVBox" Directory="file_VBoxBugReport.exe" ExeCommand="" Return="asyncNoWait" Impersonate="yes" />
+    <?else ?>
+        <CustomAction Id="ca_StartVBox" Directory="INSTALLDIR" ExeCommand='"[INSTALLDIR]\VBoxBugReport.exe"' Return="asyncNoWait" Impersonate="yes" />
+    <?endif ?>
+<?endif ?>
+
     <CustomAction Id="ca_CheckSerial" BinaryKey="VBoxInstallHelper" DllEntry="CheckSerial" Impersonate="no"/>
 
     <CustomAction Id="ca_InstallBranding" BinaryKey="VBoxInstallHelper" DllEntry="InstallBranding" Execute="deferred" Return="check" Impersonate="no"/>
@@ -272,15 +290,17 @@
                 </Directory>
 <?endif ?>
                 <Directory Id="dir_Drivers" Name="drivers">
+<?if $(env.VBOX_WITH_USB) = "yes" ?>
                     <Directory Id="dir_USB" Name="USB">
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                         <Merge Id="msm_VBoxUSB" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeUSB)" DiskId="1" />
-<?else ?>
+    <?else ?>
                         <Directory Id="msm_VBoxUSBFolder" FileSource=".">
                             <?include VBoxMergeUSB.wxi ?>
                         </Directory>
-<?endif ?>
+    <?endif ?>
                     </Directory>
+<?endif ?>
                     <Directory Id="dir_Network" Name="network">
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
                         <Directory Id="dir_NetFlt" Name="netflt">
@@ -295,17 +315,19 @@
     <?endif ?>
                         </Directory>
 <?endif ?>
+<?if $(env.VBOX_WITH_NETADP) = "yes" ?>
                         <Directory Id="dir_NetAdp" Name="netadp">
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                             <Merge Id="msm_VBoxNetworkAdp" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp)" DiskId="1">
                             <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/>
                             </Merge>
-<?else ?>
+    <?else ?>
                             <Directory Id="msm_VBoxNetworkAdpFolder" FileSource=".">
                                 <?include VBoxMergeNetAdp.wxi ?>
                             </Directory>
-<?endif ?>
+    <?endif ?>
                         </Directory>
+<?endif ?>
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
                         <Directory Id="dir_NetLwf" Name="netlwf">
@@ -320,17 +342,20 @@
     <?endif ?>
                         </Directory>
 <?endif ?>
+
+<?if $(env.VBOX_WITH_NETADP) = "yes" ?>
                         <Directory Id="dir_NetAdp6" Name="netadp6">
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
                             <Merge Id="msm_VBoxNetworkAdp6" Language="!(loc.LANG)" SourceFile="$(var.Property_VBoxMergeNetworkAdp6)" DiskId="1">
                             <ConfigurationData Name="passedNetworkType" Value="[NETWORKTYPE]"/>
                             </Merge>
-<?else ?>
+    <?else ?>
                             <Directory Id="msm_VBoxNetworkAdp6Folder" FileSource=".">
                                 <?include VBoxMergeNetAdp6.wxi ?>
                             </Directory>
-<?endif ?>
+    <?endif ?>
                         </Directory>
+<?endif ?>
                     </Directory>
                 </Directory>
 <?if $(env.VBOX_WITH_PYTHON) = "yes" ?>
@@ -346,6 +371,8 @@
                     </Directory>
                 </Directory>
 <?endif ?>
+
+<?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
                 <!-- Set up special directory IDs for referencing to the start menu
                      or the Quick Launch bar.
                      See: http://msdn.microsoft.com/en-us/library/aa368276.aspx
@@ -392,6 +419,7 @@
                     <RegistryValue Root="HKCU" Key="$(var.Property_RegKeyInstall)"
                                    Type="string" Value="installed" KeyPath="yes" />
                 </Component>
+<?endif ?>
                 </Directory>
             </Directory>
         </Directory>
@@ -404,10 +432,13 @@
              Description="!(loc.VB_App)"
              ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
              Absent="disallow" AllowAdvertise="no" >
+
+<?if $(env.VBOX_WITH_QTGUI) = "yes" ?>
         <!-- Components which are handled only by this installer itself -->
         <ComponentRef Id="cp_StartMenuVBox" />
         <ComponentRef Id="cp_DesktopShortcut" />
         <ComponentRef Id="cp_QuickLaunchVBox" />
+<?endif ?>
         <!-- Components handled either by the installer itself or
              the merge module -->
 <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
@@ -447,8 +478,9 @@
         <ComponentRef Id="cp_VBoxPyInst" />
         <ComponentRef Id="cp_VBoxPyMod" />
     <?endif ?>
-
-    <ComponentRef Id="cp_VBoxSDLBinaries" />
+    <?if $(env.VBOX_WITH_VBOXSDL) = "yes" ?>
+        <ComponentRef Id="cp_VBoxSDLBinaries" />
+    <?endif ?>
     <?if $(env.VBOX_WITH_WEBSERVICES) = "yes" ?>
         <ComponentRef Id="cp_VBoxWebService" />
     <?endif ?>
@@ -464,25 +496,27 @@
     <ComponentRef Id="cp_VBoxDrv" />
 <?endif ?>
 
+<?if $(env.VBOX_WITH_USB) = "yes" ?>
         <Feature Id="VBoxUSB" Title="VirtualBox USB Support" Level="1"
                  Description="!(loc.VB_USBDriver)"
                  ConfigurableDirectory="INSTALLDIR" TypicalDefault="install" Display="expand"
                  Absent="allow" AllowAdvertise="no" >
-<?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
+    <?if $(env.VBOX_WITH_MSM_INSTALL) = "yes" ?>
             <MergeRef Id="msm_VBoxUSB" />
-<?else ?>
-    <?if $(env.VBOX_SIGNING_MODE) != none ?>
+    <?else ?>
+        <?if $(env.VBOX_SIGNING_MODE) != none ?>
             <ComponentRef Id="cp_USBFilterDriverCat_PreW10" />
             <ComponentRef Id="cp_USBFilterDriverCat_W10" />
-    <?endif ?>
+        <?endif ?>
             <ComponentRef Id="cp_USBFilterDriver" />
-    <?if $(env.VBOX_SIGNING_MODE) != none ?>
+        <?if $(env.VBOX_SIGNING_MODE) != none ?>
             <ComponentRef Id="cp_USBDeviceDriverCat_PreW10" />
             <ComponentRef Id="cp_USBDeviceDriverCat_W10" />
-    <?endif ?>
+        <?endif ?>
             <ComponentRef Id="cp_USBDeviceDriver" />
-<?endif ?>
+    <?endif ?>
         </Feature>
+<?endif ?>
 
 <?if $(env.VBOX_WITH_NETFLT) = "yes" ?>
         <Feature Id="VBoxNetwork" Title="VirtualBox Networking" Level="1"
