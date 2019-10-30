@@ -188,86 +188,98 @@
  *
  * A state structure for holding miscellaneous information across
  * VMX non-root operation and restored after the transition.
+ *
+ * Note: The members are ordered and aligned such that the most
+ * frequently used ones (in the guest execution loop) fall within
+ * the first cache line.
  */
 typedef struct VMXTRANSIENT
 {
-    /** The host's rflags/eflags. */
-    RTCCUINTREG         fEFlags;
+   /** Mask of currently read VMCS fields; HMVMX_READ_XXX. */
+   uint32_t            fVmcsFieldsRead;
+   /** The guest's TPR value used for TPR shadowing. */
+   uint8_t             u8GuestTpr;
+   uint8_t             abAlignment0[3];
 
-    /** The guest's TPR value used for TPR shadowing. */
-    uint8_t             u8GuestTpr;
-    /** Alignment. */
-    uint8_t             abAlignment0[7];
+   /** Whether the VM-exit was caused by a page-fault during delivery of an
+    *  external interrupt or NMI. */
+   bool                fVectoringPF;
+   /** Whether the VM-exit was caused by a page-fault during delivery of a
+    *  contributory exception or a page-fault. */
+   bool                fVectoringDoublePF;
+   /** Whether the VM-entry failed or not. */
+   bool                fVMEntryFailed;
+   /** Whether the TSC_AUX MSR needs to be removed from the auto-load/store MSR
+    *  area after VM-exit. */
+   bool                fRemoveTscAuxMsr;
+   /** Whether TSC-offsetting and VMX-preemption timer was updated before VM-entry. */
+   bool                fUpdatedTscOffsettingAndPreemptTimer;
+   /** Whether we are currently executing a nested-guest. */
+   bool                fIsNestedGuest;
+   /** Whether the guest debug state was active at the time of VM-exit. */
+   bool                fWasGuestDebugStateActive;
+   /** Whether the hyper debug state was active at the time of VM-exit. */
+   bool                fWasHyperDebugStateActive;
 
-    /** The basic VM-exit reason. */
-    uint16_t            uExitReason;
-    /** Alignment. */
-    uint16_t            u16Alignment0;
-    /** The VM-exit interruption error code. */
-    uint32_t            uExitIntErrorCode;
-    /** The VM-exit exit code qualification. */
-    uint64_t            uExitQual;
-    /** The Guest-linear address. */
-    uint64_t            uGuestLinearAddr;
-    /** The Guest-physical address. */
-    uint64_t            uGuestPhysicalAddr;
-    /** The Guest pending-debug exceptions. */
-    uint64_t            uGuestPendingDbgXcpts;
+   /** The basic VM-exit reason. */
+   uint32_t            uExitReason;
+   /** The VM-exit interruption error code. */
+   uint32_t            uExitIntErrorCode;
 
-    /** The VM-exit interruption-information field. */
-    uint32_t            uExitIntInfo;
-    /** The VM-exit instruction-length field. */
-    uint32_t            cbExitInstr;
-    /** The VM-exit instruction-information field. */
-    VMXEXITINSTRINFO    ExitInstrInfo;
-    /** Whether the VM-entry failed or not. */
-    bool                fVMEntryFailed;
-    /** Whether we are currently executing a nested-guest. */
-    bool                fIsNestedGuest;
-    /** Alignment. */
-    uint8_t             abAlignment1[2];
+   /** The host's rflags/eflags. */
+   RTCCUINTREG         fEFlags;
 
-    /** The VM-entry interruption-information field. */
-    uint32_t            uEntryIntInfo;
-    /** The VM-entry exception error code field. */
-    uint32_t            uEntryXcptErrorCode;
-    /** The VM-entry instruction length field. */
-    uint32_t            cbEntryInstr;
+   /** The VM-exit exit code qualification. */
+   uint64_t            uExitQual;
 
-    /** IDT-vectoring information field. */
-    uint32_t            uIdtVectoringInfo;
-    /** IDT-vectoring error code. */
-    uint32_t            uIdtVectoringErrorCode;
+   /** The VMCS info. object. */
+   PVMXVMCSINFO        pVmcsInfo;
 
-    /** Mask of currently read VMCS fields; HMVMX_READ_XXX. */
-    uint32_t            fVmcsFieldsRead;
+   /** The VM-exit interruption-information field. */
+   uint32_t            uExitIntInfo;
+   /** The VM-exit instruction-length field. */
+   uint32_t            cbExitInstr;
 
-    /** Whether the guest debug state was active at the time of VM-exit. */
-    bool                fWasGuestDebugStateActive;
-    /** Whether the hyper debug state was active at the time of VM-exit. */
-    bool                fWasHyperDebugStateActive;
-    /** Whether TSC-offsetting and VMX-preemption timer was updated before VM-entry. */
-    bool                fUpdatedTscOffsettingAndPreemptTimer;
-    /** Whether the VM-exit was caused by a page-fault during delivery of a
-     *  contributory exception or a page-fault. */
-    bool                fVectoringDoublePF;
-    /** Whether the VM-exit was caused by a page-fault during delivery of an
-     *  external interrupt or NMI. */
-    bool                fVectoringPF;
-    /** Whether the TSC_AUX MSR needs to be removed from the auto-load/store MSR
-     *  area after VM-exit. */
-    bool                fRemoveTscAuxMsr;
-    bool                afAlignment0[2];
+   /** The VM-exit instruction-information field. */
+   VMXEXITINSTRINFO    ExitInstrInfo;
+   /** IDT-vectoring information field. */
+   uint32_t            uIdtVectoringInfo;
 
-    /** The VMCS info. object. */
-    PVMXVMCSINFO        pVmcsInfo;
+   /** IDT-vectoring error code. */
+   uint32_t            uIdtVectoringErrorCode;
+   uint32_t            u32Alignment0;
+
+   /** The Guest-linear address. */
+   uint64_t            uGuestLinearAddr;
+
+   /** The Guest-physical address. */
+   uint64_t            uGuestPhysicalAddr;
+
+   /** The Guest pending-debug exceptions. */
+   uint64_t            uGuestPendingDbgXcpts;
+
+   /** The VM-entry interruption-information field. */
+   uint32_t            uEntryIntInfo;
+   /** The VM-entry exception error code field. */
+   uint32_t            uEntryXcptErrorCode;
+
+   /** The VM-entry instruction length field. */
+   uint32_t            cbEntryInstr;
 } VMXTRANSIENT;
-AssertCompileMemberAlignment(VMXTRANSIENT, uExitReason,               sizeof(uint64_t));
-AssertCompileMemberAlignment(VMXTRANSIENT, uExitIntInfo,              sizeof(uint64_t));
-AssertCompileMemberAlignment(VMXTRANSIENT, uEntryIntInfo,             sizeof(uint64_t));
-AssertCompileMemberAlignment(VMXTRANSIENT, fWasGuestDebugStateActive, sizeof(uint64_t));
-AssertCompileMemberAlignment(VMXTRANSIENT, pVmcsInfo,                 sizeof(uint64_t));
 AssertCompileMemberSize(VMXTRANSIENT, ExitInstrInfo, sizeof(uint32_t));
+AssertCompileMemberAlignment(VMXTRANSIENT, fVmcsFieldsRead,        8);
+AssertCompileMemberAlignment(VMXTRANSIENT, fVectoringPF,           8);
+AssertCompileMemberAlignment(VMXTRANSIENT, uExitReason,            8);
+AssertCompileMemberAlignment(VMXTRANSIENT, fEFlags,                8);
+AssertCompileMemberAlignment(VMXTRANSIENT, uExitQual,              8);
+AssertCompileMemberAlignment(VMXTRANSIENT, pVmcsInfo,              8);
+AssertCompileMemberAlignment(VMXTRANSIENT, uExitIntInfo,           8);
+AssertCompileMemberAlignment(VMXTRANSIENT, ExitInstrInfo,          8);
+AssertCompileMemberAlignment(VMXTRANSIENT, uIdtVectoringErrorCode, 8);
+AssertCompileMemberAlignment(VMXTRANSIENT, uGuestLinearAddr,       8);
+AssertCompileMemberAlignment(VMXTRANSIENT, uGuestPhysicalAddr,     8);
+AssertCompileMemberAlignment(VMXTRANSIENT, uEntryIntInfo,          8);
+AssertCompileMemberAlignment(VMXTRANSIENT, cbEntryInstr,           8);
 /** Pointer to VMX transient state. */
 typedef VMXTRANSIENT *PVMXTRANSIENT;
 /** Pointer to a const VMX transient state. */
