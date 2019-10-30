@@ -874,6 +874,7 @@
  VBoxPkg/VBoxFsDxe/VBoxHfs.inf
  VBoxPkg/VBoxSysTables/VBoxSysTables.inf
  VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
+ VBoxPkg/VBoxApfsJmpStartDxe/VBoxApfsJmpStartDxe.inf
 !endif
 
   #

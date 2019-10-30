@@ -279,6 +279,7 @@ INF VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
 INF VBoxPkg/VBoxFsDxe/VBoxHfs.inf
 INF VBoxPkg/VBoxSysTables/VBoxSysTables.inf
 INF VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
+INF VBoxPkg/VBoxApfsJmpStartDxe/VBoxApfsJmpStartDxe.inf
 INF MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
 !endif
 

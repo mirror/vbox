@@ -858,6 +858,7 @@
  VBoxPkg/VBoxFsDxe/VBoxHfs.inf
  VBoxPkg/VBoxSysTables/VBoxSysTables.inf
  VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
+ VBoxPkg/VBoxApfsJmpStartDxe/VBoxApfsJmpStartDxe.inf
  MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe.inf
  MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe.inf
 !endif
