@@ -1866,6 +1866,9 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 break;
         }
         SHOW_UTF8_STRING("clipboard", "Clipboard Mode:", psz);
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+        SHOW_BOOLEAN_PROP(machine, ClipboardFileTransfersEnabled, "clipboard_file_transfers", "Clipboard file transfers:");
+#endif
     }
 
     /* Drag and drop */
