@@ -5262,7 +5262,7 @@
     name="IBIOSSettings" extends="$unknown"
     uuid="73af4152-7e67-4144-bf34-41c38e8b4cc7"
     wsmap="managed"
-    reservedMethods="1" reservedAttributes="8"
+    reservedMethods="1" reservedAttributes="7"
     >
     <desc>
         The IBIOSSettings interface represents BIOS settings of the virtual
@@ -5329,6 +5329,16 @@
       <desc>
         The location of the file storing the non-volatile memory content when
         the VM is powered off.  The file does not always exist.
+      </desc>
+    </attribute>
+
+    <attribute name="SMBIOSUuidLittleEndian" type="boolean">
+      <desc>
+        Flag to control whether the SMBIOS system UUID is presented in little endian
+        form to the guest as mandated by the SMBIOS spec chapter 7.2.1.
+        Before VirtualBox version 6.1 it was always presented in big endian form
+        and to retain the old behavior this flag was introduced so it can be changed.
+        VMs created with VBox 6.1 will default to true for this flag.
       </desc>
     </attribute>
 

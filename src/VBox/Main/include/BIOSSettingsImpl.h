@@ -84,6 +84,8 @@ private:
     HRESULT getPXEDebugEnabled(BOOL *enabled);
     HRESULT setPXEDebugEnabled(BOOL enable);
     HRESULT getNonVolatileStorageFile(com::Utf8Str &aNonVolatileStorageFile);
+    HRESULT getSMBIOSUuidLittleEndian(BOOL *enabled);
+    HRESULT setSMBIOSUuidLittleEndian(BOOL enable);
 
     struct Data;
     Data *m;

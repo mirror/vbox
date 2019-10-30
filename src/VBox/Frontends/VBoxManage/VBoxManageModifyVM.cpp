@@ -106,6 +106,7 @@ enum
     MODIFYVM_BIOSAPIC,
     MODIFYVM_BIOSSYSTEMTIMEOFFSET,
     MODIFYVM_BIOSPXEDEBUG,
+    MODIFYVM_SYSTEMUUIDLE,
     MODIFYVM_BOOT,
     MODIFYVM_HDA,                // deprecated
     MODIFYVM_HDB,                // deprecated
@@ -299,6 +300,7 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--biossystemtimeoffset",     MODIFYVM_BIOSSYSTEMTIMEOFFSET,      RTGETOPT_REQ_INT64 },
     { "--biosapic",                 MODIFYVM_BIOSAPIC,                  RTGETOPT_REQ_STRING },
     { "--biospxedebug",             MODIFYVM_BIOSPXEDEBUG,              RTGETOPT_REQ_BOOL_ONOFF },
+    { "--system-uuid-le",           MODIFYVM_SYSTEMUUIDLE,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--boot",                     MODIFYVM_BOOT,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--hda",                      MODIFYVM_HDA,                       RTGETOPT_REQ_STRING },
     { "--hdb",                      MODIFYVM_HDB,                       RTGETOPT_REQ_STRING },
@@ -1010,6 +1012,12 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
             case MODIFYVM_BIOSPXEDEBUG:
             {
                 CHECK_ERROR(biosSettings, COMSETTER(PXEDebugEnabled)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_SYSTEMUUIDLE:
+            {
+                CHECK_ERROR(biosSettings, COMSETTER(SMBIOSUuidLittleEndian)(ValueUnion.f));
                 break;
             }
 

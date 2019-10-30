@@ -1684,6 +1684,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             hrc = biosSettings->COMGETTER(PXEDebugEnabled)(&fPXEDebug);                     H();
             InsertConfigInteger(pBiosCfg,  "PXEDebug",             fPXEDebug);
             InsertConfigBytes(pBiosCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
+            BOOL fUuidLe;
+            hrc = biosSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
+            InsertConfigInteger(pBiosCfg,  "UuidLe",               fUuidLe);
             InsertConfigNode(pBiosCfg,     "NetBoot", &pNetBootCfg);
             InsertConfigInteger(pBiosCfg,  "McfgBase",   uMcfgBase);
             InsertConfigInteger(pBiosCfg,  "McfgLength", cbMcfgLength);
@@ -1753,6 +1756,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             Bstr bstrNVRAM;
             hrc = biosSettings->COMGETTER(NonVolatileStorageFile)(bstrNVRAM.asOutParam());  H();
 
+            BOOL fUuidLe;
+            hrc = biosSettings->COMGETTER(SMBIOSUuidLittleEndian)(&fUuidLe);                H();
+
             /* Get graphics mode settings */
             uint32_t u32GraphicsMode = UINT32_MAX;
             GetExtraDataBoth(virtualBox, pMachine, "VBoxInternal2/EfiGraphicsMode", &strTmp);
@@ -1815,6 +1821,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             InsertConfigInteger(pCfg,  "IOAPIC",      fIOAPIC);
             InsertConfigInteger(pCfg,  "APIC",        uFwAPIC);
             InsertConfigBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));
+            InsertConfigInteger(pCfg,  "UuidLe",      fUuidLe);
             InsertConfigInteger(pCfg,  "64BitEntry",  f64BitEntry); /* boolean */
             InsertConfigString(pCfg,   "NvramFile",   bstrNVRAM);
             if (u32GraphicsMode != UINT32_MAX)
