@@ -43,19 +43,19 @@ endif
 ifdef VBOX_INSTALLER_QUICK
  VBOX_INSTALLER_LANGUAGES    := en_US
  VBOX_WITH_ADDITIONS_PACKING :=
- VBOX_WITH_DEBUGGER_GUI		 :=
+ VBOX_WITH_DEBUGGER_GUI      :=
  VBOX_WITH_EFIFW_PACKING     :=
- VBOX_WITH_EXTPACK			 :=
- VBOX_WITH_NETADP     	     :=
- VBOX_WITH_NETFLT    	     :=
+ VBOX_WITH_EXTPACK           :=
+ VBOX_WITH_NETADP            :=
+ VBOX_WITH_NETFLT            :=
  VBOX_WITH_PYTHON            :=
- VBOX_WITH_SDS		         :=
+ VBOX_WITH_SDS               :=
  VBOX_WITH_WEBSERVICES       :=
  VBOX_WITH_UNATTENDED        :=
  VBOX_WITH_DOCS_PACKING      :=
- VBOX_WITH_QTGUI	         :=
+ VBOX_WITH_QTGUI             :=
  VBOX_WITH_USB               :=
- VBOX_WITH_VBOX_IMG		     :=
+ VBOX_WITH_VBOX_IMG          :=
  VBOX_WITH_VBOXSDL           :=
 endif
 
