@@ -609,6 +609,9 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
 
         CASE_RET_STR(kCpumMicroarch_AMD_Unknown);
 
+        CASE_RET_STR(kCpumMicroarch_Hygon_Dhyana);
+        CASE_RET_STR(kCpumMicroarch_Hygon_Unknown);
+
         CASE_RET_STR(kCpumMicroarch_Centaur_C6);
         CASE_RET_STR(kCpumMicroarch_Centaur_C2);
         CASE_RET_STR(kCpumMicroarch_Centaur_C3);
@@ -636,9 +639,6 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_NEC_V20);
         CASE_RET_STR(kCpumMicroarch_NEC_V30);
 
-        CASE_RET_STR(kCpumMicroarch_Hygon_Dhyana);
-        CASE_RET_STR(kCpumMicroarch_Hygon_Unknown);
-
         CASE_RET_STR(kCpumMicroarch_Unknown);
 
 #undef CASE_RET_STR
@@ -656,11 +656,11 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         case kCpumMicroarch_AMD_16h_End:
         case kCpumMicroarch_AMD_Zen_End:
         case kCpumMicroarch_AMD_End:
+        case kCpumMicroarch_Hygon_End:
         case kCpumMicroarch_VIA_End:
+        case kCpumMicroarch_Shanghai_End:
         case kCpumMicroarch_Cyrix_End:
         case kCpumMicroarch_NEC_End:
-        case kCpumMicroarch_Shanghai_End:
-        case kCpumMicroarch_Hygon_End:
         case kCpumMicroarch_32BitHack:
             break;
         /* no default! */
@@ -1992,9 +1992,9 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPU
          */
         pFeatures->fLeakyFxSR = pExtLeaf
                              && (pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
-                             && (   pFeatures->enmCpuVendor == CPUMCPUVENDOR_AMD
-                                 || pFeatures->enmCpuVendor == CPUMCPUVENDOR_HYGON)
-                             && pFeatures->uFamily >= 6 /* K7 and up */;
+                             && (   (   pFeatures->enmCpuVendor == CPUMCPUVENDOR_AMD
+                                     && pFeatures->uFamily >= 6 /* K7 and up */)
+                                 || pFeatures->enmCpuVendor == CPUMCPUVENDOR_HYGON);
 
         /*
          * Max extended (/FPU) state.
@@ -2963,6 +2963,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
      * VME bug was fixed in AGESA 1.0.0.6, microcode patch level 8001126.
      */
     if (   (   pVM->cpum.s.GuestFeatures.enmMicroarch == kCpumMicroarch_AMD_Zen_Ryzen
+            /** @todo The following ASSUMES that Hygon uses the same version numbering
+             * as AMD and that they shipped buggy firmware. */
             || pVM->cpum.s.GuestFeatures.enmMicroarch == kCpumMicroarch_Hygon_Dhyana)
         && uMicrocodeRev < 0x8001126
         && !pConfig->fForceVme)
@@ -4149,15 +4151,16 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
     rc = CFGMR3QueryU32Def(pCpumCfg, "MaxCentaurLeaf", &pConfig->uMaxCentaurLeaf, UINT32_C(0xc0000004));
     AssertLogRelRCReturn(rc, rc);
 
-    bool fQueryNestedHwvirt = false;
+    bool fQueryNestedHwvirt = false
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    fQueryNestedHwvirt |= RT_BOOL(   pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
-                                  || pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON);
+                           || pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                           || pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    fQueryNestedHwvirt |= RT_BOOL(   pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL
-                                  || pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_VIA);
+                           || pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL
+                           || pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_VIA
 #endif
+                           ;
     if (fQueryNestedHwvirt)
     {
         /** @cfgm{/CPUM/NestedHWVirt, bool, false}
@@ -5699,9 +5702,9 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
     {
         /** @todo deal with no 0x80000001 on the host. */
         bool const fHostAmd  = ASMIsAmdCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx)
-                               || ASMIsHygonCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx);
+                            || ASMIsHygonCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx);
         bool const fGuestAmd = ASMIsAmdCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx)
-                               || ASMIsHygonCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx);
+                            || ASMIsHygonCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx);
 
         /* CPUID(0x80000001).ecx */
         CPUID_GST_FEATURE_WRN(Ext, uEcx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);   // -> EMU

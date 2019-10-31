@@ -695,7 +695,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000088: return "BBL_CR_D0";
         case 0x00000089: return "BBL_CR_D1";
         case 0x0000008a: return "BBL_CR_D2";
-        case 0x0000008b: return (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor ==  CPUMCPUVENDOR_HYGON) ? "AMD_K8_PATCH_LEVEL"
+        case 0x0000008b: return g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON ? "AMD_K8_PATCH_LEVEL"
                               : g_fIntelNetBurst ? "IA32_BIOS_SIGN_ID" : "BBL_CR_D3|BIOS_SIGN";
         case 0x0000008c: return "P6_UNK_0000_008c"; /* P6_M_Dothan. */
         case 0x0000008d: return "P6_UNK_0000_008d"; /* P6_M_Dothan. */
@@ -1945,7 +1945,8 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x00000047:
             return "IntelLastBranchFromToN";
 
-        case 0x0000008b: return (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON) ? "AmdK8PatchLevel" : "Ia32BiosSignId";
+        case 0x0000008b: return g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON
+                              ? "AmdK8PatchLevel" : "Ia32BiosSignId";
         case 0x0000009b: return "Ia32SmmMonitorCtl";
 
         case 0x000000a8:
@@ -3565,7 +3566,7 @@ static int reportMsr_Ia32MtrrFixedOrPat(uint32_t uMsr)
     if (   uMsr != 0x00000277
         || (  g_enmVendor == CPUMCPUVENDOR_INTEL
             ? g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First
-            : (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON)
+            : g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON
             ? g_enmMicroarch != kCpumMicroarch_AMD_K8_90nm_AMDV
             : true) )
     {

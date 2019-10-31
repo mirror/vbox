@@ -1475,9 +1475,10 @@ DECLINLINE(uint32_t) ASMGetApicIdExt8000001E(void)
  */
 DECLINLINE(bool) ASMIsIntelCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 {
-    return uEBX == UINT32_C(0x756e6547)
-        && uECX == UINT32_C(0x6c65746e)
-        && uEDX == UINT32_C(0x49656e69);
+    /* 'GenuineIntel' */
+    return uEBX == UINT32_C(0x756e6547)     /* 'Genu' */
+        && uEDX == UINT32_C(0x49656e69)     /* 'ineI' */
+        && uECX == UINT32_C(0x6c65746e);    /* 'ntel' */
 }
 
 
@@ -1505,9 +1506,10 @@ DECLINLINE(bool) ASMIsIntelCpu(void)
  */
 DECLINLINE(bool) ASMIsAmdCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 {
-    return uEBX == UINT32_C(0x68747541)
-        && uECX == UINT32_C(0x444d4163)
-        && uEDX == UINT32_C(0x69746e65);
+    /* 'AuthenticAMD' */
+    return uEBX == UINT32_C(0x68747541)     /* 'Auth' */
+        && uEDX == UINT32_C(0x69746e65)     /* 'enti' */
+        && uECX == UINT32_C(0x444d4163);    /* 'dAMD' */
 }
 
 
@@ -1535,9 +1537,10 @@ DECLINLINE(bool) ASMIsAmdCpu(void)
  */
 DECLINLINE(bool) ASMIsViaCentaurCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 {
-    return uEBX == UINT32_C(0x746e6543)
-        && uECX == UINT32_C(0x736c7561)
-        && uEDX == UINT32_C(0x48727561);
+    /* 'CentaurHauls' */
+    return uEBX == UINT32_C(0x746e6543)     /* 'Cent' */
+        && uEDX == UINT32_C(0x48727561)     /* 'aurH' */
+        && uECX == UINT32_C(0x736c7561);    /* 'auls' */
 }
 
 
@@ -1565,9 +1568,10 @@ DECLINLINE(bool) ASMIsViaCentaurCpu(void)
  */
 DECLINLINE(bool) ASMIsShanghaiCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 {
-    return uEBX == UINT32_C(0x68532020)
-        && uECX == UINT32_C(0x20206961)
-        && uEDX == UINT32_C(0x68676e61);
+    /* '  Shanghai  ' */
+    return uEBX == UINT32_C(0x68532020)     /* '  Sh' */
+        && uEDX == UINT32_C(0x68676e61)     /* 'angh' */
+        && uECX == UINT32_C(0x20206961);    /* 'ai  ' */
 }
 
 
@@ -1595,9 +1599,10 @@ DECLINLINE(bool) ASMIsShanghaiCpu(void)
  */
 DECLINLINE(bool) ASMIsHygonCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
 {
-    return uEBX == UINT32_C(0x6f677948)
-        && uECX == UINT32_C(0x656e6975)
-        && uEDX == UINT32_C(0x6e65476e);
+    /* 'HygonGenuine' */
+    return uEBX == UINT32_C(0x6f677948)     /* Hygo */
+        && uECX == UINT32_C(0x656e6975)     /* uine */
+        && uEDX == UINT32_C(0x6e65476e);    /* nGen */
 }
 
 
