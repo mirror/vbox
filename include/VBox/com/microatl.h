@@ -185,7 +185,7 @@ public:
         {
             HRESULT hrc = Lock();
             if (FAILED(hrc))
-            throw hrc;
+                throw hrc;
         }
     }
 
