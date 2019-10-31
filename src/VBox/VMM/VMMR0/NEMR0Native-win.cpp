@@ -2105,7 +2105,7 @@ NEM_TMPL_STATIC int nemR0WinImportState(PGVM pGVM, PGVMCPU pGVCpu, PCPUMCTX pCtx
         }
 # endif
 # ifdef LOG_ENABLED
-        if (enmCpuVendor != CPUMCPUVENDOR_AMD && enmCPUVendor != CPUMCPUVENDOR_HYGON)
+        if (enmCpuVendor != CPUMCPUVENDOR_AMD && enmCpuVendor != CPUMCPUVENDOR_HYGON)
         {
             Assert(pInput->Names[iReg] == HvX64RegisterIa32FeatureControl);
             if (paValues[iReg].Reg64 != pCtx->hwvirt.vmx.Msrs.u64FeatCtrl)
