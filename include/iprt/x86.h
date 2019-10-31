@@ -1237,6 +1237,14 @@ AssertCompile(X86_DR7_ANY_RW_IO(UINT32_C(0x00040000)) == 0);
 #define MSR_IA32_PMC2                       0xC3
 /** General performance counter no. 3. */
 #define MSR_IA32_PMC3                       0xC4
+/** General performance counter no. 4. */
+#define MSR_IA32_PMC4                       0xC5
+/** General performance counter no. 5. */
+#define MSR_IA32_PMC5                       0xC6
+/** General performance counter no. 6. */
+#define MSR_IA32_PMC6                       0xC7
+/** General performance counter no. 7. */
+#define MSR_IA32_PMC7                       0xC8
 
 /** Nehalem power control. */
 #define MSR_IA32_PLATFORM_INFO              0xCE
