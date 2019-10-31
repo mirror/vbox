@@ -1504,14 +1504,15 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         && !pSurfaceDest->u.pSurface
         && RT_BOOL(pSurfaceDest->surfaceFlags & SVGA3D_SURFACE_HINT_TEXTURE))
     {
-        const uint32_t cid = pSurfaceSrc->idAssociatedContext;
+        /* Create the destination texture in the same context as the source texture. */
+        uint32_t const cidSrc = pSurfaceSrc->idAssociatedContext;
 
-        PVMSVGA3DCONTEXT pContext;
-        rc = vmsvga3dContextFromCid(pState, cid, &pContext);
+        PVMSVGA3DCONTEXT pContextSrc;
+        rc = vmsvga3dContextFromCid(pState, cidSrc, &pContextSrc);
         AssertRCReturn(rc, rc);
 
-        LogFunc(("sid=%x type=%x format=%d -> create texture\n", sidDest, pSurfaceDest->surfaceFlags, pSurfaceDest->format));
-        rc = vmsvga3dBackCreateTexture(pState, pContext, cid, pSurfaceDest);
+        LogFunc(("sid=%x type=%x format=%d -> create dest texture\n", sidDest, pSurfaceDest->surfaceFlags, pSurfaceDest->format));
+        rc = vmsvga3dBackCreateTexture(pState, pContextSrc, cidSrc, pSurfaceDest);
         AssertRCReturn(rc, rc);
     }
 
@@ -1521,12 +1522,14 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
     if (   pSurfaceSrc->u.pSurface
         && pSurfaceDest->u.pSurface)
     {
-        /// @todo should use the src context because only the shared hardware surface is required from the dst context,
-        //        while the src context may be also needed to copy data to the source bounce texture.
-        const uint32_t cidDst = pSurfaceDest->idAssociatedContext;
+        /* Both surfaces in hardware. Use the src context to copy one to another, because the src context may be needed
+         * to copy data from source texture to the source bounce texture. while only the shared hardware surface is required
+         * from the dst context.
+         */
+        uint32_t const cidSrc = pSurfaceSrc->idAssociatedContext;
 
-        PVMSVGA3DCONTEXT pContextDst;
-        rc = vmsvga3dContextFromCid(pState, cidDst, &pContextDst);
+        PVMSVGA3DCONTEXT pContextSrc;
+        rc = vmsvga3dContextFromCid(pState, cidSrc, &pContextSrc);
         AssertRCReturn(rc, rc);
 
         /* Must flush the other context's 3d pipeline to make sure all drawing is complete for the surface we're about to use. */
@@ -1534,17 +1537,15 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         vmsvga3dSurfaceFlush(pSurfaceDest);
 
         IDirect3DSurface9 *pSrc;
-        rc = vmsvga3dGetD3DSurface(pState, pContextDst, pSurfaceSrc, src.face, src.mipmap, false, &pSrc);
+        rc = vmsvga3dGetD3DSurface(pState, pContextSrc, pSurfaceSrc, src.face, src.mipmap, false, &pSrc);
         AssertRCReturn(rc, rc);
 
         IDirect3DSurface9 *pDest;
-        rc = vmsvga3dGetD3DSurface(pState, pContextDst, pSurfaceDest, dest.face, dest.mipmap, false, &pDest);
+        rc = vmsvga3dGetD3DSurface(pState, pContextSrc, pSurfaceDest, dest.face, dest.mipmap, false, &pDest);
         AssertRCReturnStmt(rc, D3D_RELEASE(pSrc), rc);
 
         for (uint32_t i = 0; i < cCopyBoxes; ++i)
         {
-            HRESULT hr;
-
             SVGA3dCopyBox clipBox = pBox[i];
             vmsvgaClipCopyBox(&pMipmapLevelSrc->mipmapSize, &pMipmapLevelDest->mipmapSize, &clipBox);
             if (   !clipBox.w
@@ -1579,86 +1580,44 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             Assert(sidSrc != sidDest);
             Assert(!clipBox.srcz && !clipBox.z);
 
-            hr = pContextDst->pDevice->StretchRect(pSrc, &RectSrc, pDest, &RectDest, D3DTEXF_NONE);
+            HRESULT hr = pContextSrc->pDevice->StretchRect(pSrc, &RectSrc, pDest, &RectDest, D3DTEXF_NONE);
             if (hr != D3D_OK)
             {
-                /* This can happen for compressed texture formats. */
+                /* This can happen for compressed texture formats for example. */
                 LogFunc(("StretchRect failed with %x. Try a slow path.\n", hr));
                 if (   pSurfaceSrc->bounce.pTexture
                     && (pSurfaceSrc->fUsageD3D & D3DUSAGE_RENDERTARGET))
                 {
-#if 1
-                    /* Copy the source texture mipmap level to the bounce texture.
-                     * Get the data using the surface associated context.
-                     */
-                    PVMSVGA3DCONTEXT pContextSrc;
-                    rc = vmsvga3dContextFromCid(pState, pSurfaceSrc->idAssociatedContext, &pContextSrc);
-                    if (RT_SUCCESS(rc))
+                    /* Copy the source texture mipmap level to the source bounce texture. */
+                    hr = D3D9GetRenderTargetData(pContextSrc, pSurfaceSrc, src.face, src.mipmap);
+                    AssertMsg(hr == D3D_OK, ("D3D9GetRenderTargetData failed with %x\n", hr));
+                    if (hr == D3D_OK)
                     {
-                        hr = D3D9GetRenderTargetData(pContextSrc, pSurfaceSrc, src.face, src.mipmap);
-                        AssertMsg(hr == D3D_OK, ("D3D9GetRenderTargetData failed with %x\n", hr));
-                        if (hr == D3D_OK)
-                        {
-                            /* Copy the source bounce texture to the destination surface. */
-                            IDirect3DSurface9 *pBounceSurf;
-                            rc = vmsvga3dGetD3DSurface(pState, pContextDst, pSurfaceSrc, src.face, src.mipmap, true, &pBounceSurf);
-                            if (RT_SUCCESS(rc))
-                            {
-                                POINT pointDest;
-                                pointDest.x = clipBox.x;
-                                pointDest.y = clipBox.y;
-
-                                hr = pContextDst->pDevice->UpdateSurface(pBounceSurf, &RectSrc, pDest, &pointDest);
-                                Assert(hr == D3D_OK);
-
-                                D3D_RELEASE(pBounceSurf);
-                            }
-                            else
-                            {
-                                AssertRC(rc);
-                                hr = E_INVALIDARG;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        AssertRC(rc);
-                        hr = E_INVALIDARG;
-                    }
-#else
-                    /* Copy the texture mipmap level to the bounce texture. */
-
-                    /* Source is the texture, destination is the corresponding bounce texture. */
-                    IDirect3DSurface9 *pBounceSurf;
-                    rc = vmsvga3dGetD3DSurface(pState, pContextDst, pSurfaceSrc, src.face, src.mipmap, true, &pBounceSurf);
-                    AssertRC(rc);
-                    if (RT_SUCCESS(rc))
-                    {
-                        Assert(pSrc != pBounceSurf);
-
-                        hr = pContextDst->pDevice->GetRenderTargetData(pSrc, pBounceSurf);
-                        Assert(hr == D3D_OK);
-                        if (SUCCEEDED(hr))
+                        /* Copy the source bounce texture to the destination surface. */
+                        IDirect3DSurface9 *pSrcBounce;
+                        rc = vmsvga3dGetD3DSurface(pState, pContextSrc, pSurfaceSrc, src.face, src.mipmap, true, &pSrcBounce);
+                        if (RT_SUCCESS(rc))
                         {
                             POINT pointDest;
                             pointDest.x = clipBox.x;
                             pointDest.y = clipBox.y;
 
-                            hr = pContextDst->pDevice->UpdateSurface(pBounceSurf, &RectSrc, pDest, &pointDest);
+                            hr = pContextSrc->pDevice->UpdateSurface(pSrcBounce, &RectSrc, pDest, &pointDest);
                             Assert(hr == D3D_OK);
-                        }
 
-                        D3D_RELEASE(pBounceSurf);
+                            D3D_RELEASE(pSrcBounce);
+                        }
+                        else
+                        {
+                            AssertRC(rc);
+                            hr = E_INVALIDARG;
+                        }
                     }
-#endif
                 }
                 else if (   (pSurfaceSrc->fUsageD3D & D3DUSAGE_RENDERTARGET) == 0
                          && (pSurfaceDest->fUsageD3D & D3DUSAGE_RENDERTARGET) == 0)
                 {
                     /* Can lock both. */
-                    vmsvga3dSurfaceFlush(pSurfaceSrc);
-                    vmsvga3dSurfaceFlush(pSurfaceDest);
-
                     D3DLOCKED_RECT LockedSrcRect;
                     hr = pSrc->LockRect(&LockedSrcRect, &RectSrc, D3DLOCK_READONLY);
                     Assert(hr == D3D_OK);
@@ -1704,14 +1663,15 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
         D3D_RELEASE(pSrc);
 
         /* Track the StretchRect operation. */
-        vmsvga3dSurfaceTrackUsage(pState, pContextDst, pSurfaceSrc);
-        vmsvga3dSurfaceTrackUsage(pState, pContextDst, pSurfaceDest);
+        vmsvga3dSurfaceTrackUsage(pState, pContextSrc, pSurfaceSrc);
+        vmsvga3dSurfaceTrackUsage(pState, pContextSrc, pSurfaceDest);
     }
     else
     {
-        /*
-         * Copy from/to memory to/from a surface. Or mem->mem.
-         * Use the context of existing HW surface, if any.
+        /* One of the surfaces is in memory.
+         *
+         * Copy from/to memory to/from a HW surface. Or mem->mem.
+         * Use the context of the HW surface, if any.
          */
         PVMSVGA3DCONTEXT pContext = NULL;
         IDirect3DSurface9 *pD3DSurf = NULL;
@@ -1830,11 +1790,13 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             if (pD3DSurf)
             {
                 hr = pD3DSurf->UnlockRect();
-                AssertMsgReturn(hr == D3D_OK, ("Unlock failed with %x\n", hr), VERR_INTERNAL_ERROR);
+                AssertMsgReturnStmt(hr == D3D_OK, ("Unlock failed with %x\n", hr), D3D_RELEASE(pD3DSurf), VERR_INTERNAL_ERROR);
             }
         }
 
-        /* If the destination bounce texture has been used, then update the actual texture. */
+        D3D_RELEASE(pD3DSurf);
+
+        /* If the destination bounce texture has been used, then update the actual destination texture. */
         if (   pSurfaceDest->u.pTexture
             && pSurfaceDest->bounce.pTexture
             && (   pSurfaceDest->enmD3DResType == VMSVGA3D_D3DRESTYPE_TEXTURE
@@ -1843,30 +1805,12 @@ int vmsvga3dSurfaceCopy(PVGASTATE pThis, SVGA3dSurfaceImageId dest, SVGA3dSurfac
             AssertMsgReturn(pContext, ("Context is NULL\n"), VERR_INTERNAL_ERROR);
 
             /* Copy the new content to the actual texture object. */
-#if 1
             HRESULT hr2 = D3D9UpdateTexture(pContext, pSurfaceDest);
-#else
-            IDirect3DBaseTexture9 *pSourceTexture;
-            IDirect3DBaseTexture9 *pDestinationTexture;
-            if (pSurfaceDest->enmD3DResType == VMSVGA3D_D3DRESTYPE_CUBE_TEXTURE)
-            {
-                pSourceTexture = pSurfaceDest->bounce.pCubeTexture;
-                pDestinationTexture = pSurfaceDest->u.pCubeTexture;
-            }
-            else
-            {
-                pSourceTexture = pSurfaceDest->bounce.pTexture;
-                pDestinationTexture = pSurfaceDest->u.pTexture;
-            }
-            HRESULT hr2 = pContext->pDevice->UpdateTexture(pSourceTexture, pDestinationTexture);
-#endif
             AssertMsg(hr2 == D3D_OK, ("UpdateTexture failed with %x\n", hr2)); RT_NOREF(hr2);
 
             /* Track the UpdateTexture operation. */
             vmsvga3dSurfaceTrackUsage(pState, pContext, pSurfaceDest);
         }
-
-        D3D_RELEASE(pD3DSurf);
     }
 
     return VINF_SUCCESS;
@@ -5728,7 +5672,7 @@ int vmsvga3dShaderSetConst(PVGASTATE pThis, uint32_t cid, uint32_t reg, SVGA3dSh
             case SVGA3D_CONST_TYPE_FLOAT:
             {
                 float *pValuesF = (float *)pValues;
-                Log(("ConstantF %d: value=%d, %d, %d, %d\n", reg + i, (int)(pValuesF[i*4 + 0] * 100.0f), (int)(pValuesF[i*4 + 1] * 100.0f), (int)(pValuesF[i*4 + 2] * 100.0f), (int)(pValuesF[i*4 + 3] * 100.0f)));
+                Log(("ConstantF %d: value=%d, %d, %d, %d\n", reg + i, (int)(pValuesF[i*4 + 0] * 10000.0f), (int)(pValuesF[i*4 + 1] * 10000.0f), (int)(pValuesF[i*4 + 2] * 10000.0f), (int)(pValuesF[i*4 + 3] * 10000.0f)));
                 break;
             }
 
