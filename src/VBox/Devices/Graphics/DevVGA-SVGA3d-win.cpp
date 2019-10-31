@@ -3916,7 +3916,7 @@ int vmsvga3dSetRenderTarget(PVGASTATE pThis, uint32_t cid, SVGA3dRenderTargetTyp
     AssertReturn(pState, VERR_NO_MEMORY);
     AssertReturn((unsigned)type < SVGA3D_RT_MAX, VERR_INVALID_PARAMETER);
 
-    LogFunc(("cid=%x type=%x sid=%x\n", cid, type, target.sid));
+    LogFunc(("cid=%x type=%x sid=%x face=%u mipmap=%u\n", cid, type, target.sid, target.face, target.mipmap));
 
     PVMSVGA3DCONTEXT pContext;
     int rc = vmsvga3dContextFromCid(pState, cid, &pContext);

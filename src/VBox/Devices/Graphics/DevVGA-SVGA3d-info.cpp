@@ -339,9 +339,8 @@ static int vmsvga3dSurfaceUpdateHeapBuffers(PVMSVGA3DSTATE pState, PVMSVGA3DSURF
                             {
                                 if (pSurface->bounce.pTexture)
                                 {
-                                    if (    !pSurface->fDirty
-                                        &&  RT_BOOL(fSwitchFlags & SVGA3D_SURFACE_HINT_RENDERTARGET)
-                                        &&  i == 0 /* only the first time */)
+                                    if (   !pSurface->fDirty
+                                        && RT_BOOL(fSwitchFlags & SVGA3D_SURFACE_HINT_RENDERTARGET))
                                     {
                                         /** @todo stricter checks for associated context */
                                         uint32_t cid = pSurface->idAssociatedContext;
@@ -1928,34 +1927,36 @@ void vmsvga3dInfoSurfaceToBitmap(PCDBGFINFOHLP pHlp, PVMSVGA3DSURFACE pSurface,
                                  const char *pszPath, const char *pszNamePrefix, const char *pszNameSuffix)
 {
     static volatile uint32_t sSeq = 0;
-
-    if (!pSurface->pMipmapLevels[0].pSurfaceData)
-        return;
-
     const uint32_t u32Seq = ASMAtomicIncU32(&sSeq);
 
-    char szFilepath[4096];
-    RTStrPrintf(szFilepath, sizeof(szFilepath),
-                "%s\\%s-%u-sid%u%s.bmp",
-                pszPath, pszNamePrefix, u32Seq, pSurface->id, pszNameSuffix);
+    for (uint32_t i = 0; i < pSurface->faces[0].numMipLevels; ++i)
+    {
+        if (!pSurface->pMipmapLevels[i].pSurfaceData)
+            continue;
 
-    const uint32_t cbPixel = vmsvga3dSurfaceFormatSize(pSurface->format, NULL, NULL);
-    int rc = vmsvga3dInfoBmpWrite(szFilepath,
-                                  pSurface->pMipmapLevels[0].pSurfaceData,
-                                  pSurface->pMipmapLevels[0].mipmapSize.width,
-                                  pSurface->pMipmapLevels[0].mipmapSize.height,
-                                  cbPixel, 0xFFFFFFFF);
-    if (RT_SUCCESS(rc))
-    {
-        Log(("Bitmap: %s\n", szFilepath));
-        if (pHlp)
-            pHlp->pfnPrintf(pHlp, "Bitmap: %s\n", szFilepath);
-    }
-    else
-    {
-        Log(("Bitmap: %s %Rrc\n", szFilepath, rc));
-        if (pHlp)
-            pHlp->pfnPrintf(pHlp, "Bitmap: %s %Rrc\n", szFilepath, rc);
+        char szFilepath[4096];
+        RTStrPrintf(szFilepath, sizeof(szFilepath),
+                    "%s\\%s-%u-sid%u-%u%s.bmp",
+                    pszPath, pszNamePrefix, u32Seq, pSurface->id, i, pszNameSuffix);
+
+        const uint32_t cbPixel = vmsvga3dSurfaceFormatSize(pSurface->format, NULL, NULL);
+        int rc = vmsvga3dInfoBmpWrite(szFilepath,
+                                      pSurface->pMipmapLevels[i].pSurfaceData,
+                                      pSurface->pMipmapLevels[i].mipmapSize.width,
+                                      pSurface->pMipmapLevels[i].mipmapSize.height,
+                                      cbPixel, 0xFFFFFFFF);
+        if (RT_SUCCESS(rc))
+        {
+            Log(("Bitmap: %s\n", szFilepath));
+            if (pHlp)
+                pHlp->pfnPrintf(pHlp, "Bitmap: %s\n", szFilepath);
+        }
+        else
+        {
+            Log(("Bitmap: %s %Rrc\n", szFilepath, rc));
+            if (pHlp)
+                pHlp->pfnPrintf(pHlp, "Bitmap: %s %Rrc\n", szFilepath, rc);
+        }
     }
 
 #if 0
