@@ -51,9 +51,17 @@
 typedef struct VBOXPLAYGROUNDDEVICEFUNCTION
 {
     /** The function number. */
-    uint8_t     iFun;
+    uint8_t         iFun;
     /** Device function name. */
-    char        szName[31];
+    char            szName[31];
+    /** MMIO region \#0 name. */
+    char            szMmio0[32];
+    /** MMIO region \#2 name. */
+    char            szMmio2[32];
+    /** The MMIO region \#0 handle. */
+    IOMMMIOHANDLE   hMmio0;
+    /** The MMIO region \#2 handle. */
+    IOMMMIOHANDLE   hMmio2;
 } VBOXPLAYGROUNDDEVICEFUNCTION;
 /** Pointer to a PCI function of the playground device. */
 typedef VBOXPLAYGROUNDDEVICEFUNCTION *PVBOXPLAYGROUNDDEVICEFUNCTION;
@@ -77,50 +85,25 @@ typedef VBOXPLAYGROUNDDEVICE *PVBOXPLAYGROUNDDEVICE;
 *   Device Functions                                                                                                             *
 *********************************************************************************************************************************/
 
-PDMBOTHCBDECL(int) devPlaygroundMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) devPlaygroundMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     NOREF(pDevIns);
     NOREF(pvUser);
-    NOREF(GCPhysAddr);
+    NOREF(off);
     NOREF(pv);
     NOREF(cb);
     return VINF_SUCCESS;
 }
 
 
-PDMBOTHCBDECL(int) devPlaygroundMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) devPlaygroundMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     NOREF(pDevIns);
     NOREF(pvUser);
-    NOREF(GCPhysAddr);
+    NOREF(off);
     NOREF(pv);
     NOREF(cb);
     return VINF_SUCCESS;
-}
-
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) devPlaygroundMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                          RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    RT_NOREF(pPciDev, enmType, cb);
-
-    switch (iRegion)
-    {
-        case 0:
-        case 2:
-            Assert(   enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64)
-                   || enmType == (PCIADDRESSSPACE)(PCI_ADDRESS_SPACE_MEM_PREFETCH | PCI_ADDRESS_SPACE_BAR64));
-            if (GCPhysAddress == NIL_RTGCPHYS)
-                return VINF_SUCCESS; /* We ignore the unmap notification. */
-            return PDMDevHlpMMIOExMap(pDevIns, pPciDev, iRegion, GCPhysAddress);
-
-        default:
-            /* We should never get here */
-            AssertMsgFailedReturn(("Invalid PCI region param in map callback"), VERR_INTERNAL_ERROR);
-    }
 }
 
 
@@ -130,27 +113,41 @@ static DECLCALLBACK(int) devPlaygroundMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
 static DECLCALLBACK(int) devPlaygroundSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PVBOXPLAYGROUNDDEVICE pThis = PDMDEVINS_2_DATA(pDevIns, PVBOXPLAYGROUNDDEVICE);
+    PCPDMDEVHLPR3         pHlp  = pDevIns->pHlpR3;
 
     /* dummy (real devices would need to save their state here) */
     RT_NOREF(pThis);
 
     /* Demo of some API stuff - very unusual, think twice if there's no better
      * solution which doesn't need API interaction. */
-    HRESULT hrc = S_OK;
-    com::Bstr bstrSnapName;
-    com::Guid uuid(COM_IIDOF(ISnapshot));
-    ISnapshot *pSnap = (ISnapshot *)PDMDevHlpQueryGenericUserObject(pDevIns, uuid.raw());
-    if (pSnap)
+#if 0
+    try
     {
-        hrc = pSnap->COMGETTER(Name)(bstrSnapName.asOutParam());
-        AssertComRCReturn(hrc, VERR_INVALID_STATE);
+        HRESULT hrc = S_OK;
+        com::Bstr bstrSnapName;
+        com::Guid uuid(COM_IIDOF(ISnapshot));
+        ISnapshot *pSnap = (ISnapshot *)PDMDevHlpQueryGenericUserObject(pDevIns, uuid.raw());
+        if (pSnap)
+        {
+            hrc = pSnap->COMGETTER(Name)(bstrSnapName.asOutParam());
+            AssertComRCReturn(hrc, VERR_INVALID_STATE);
+        }
+        com::Utf8Str strSnapName(bstrSnapName);
+        pHlp->pfnSSMPutStrZ(pSSM, strSnapName.c_str());
+        LogRel(("Playground: saving state of snapshot '%s', hrc=%Rhrc\n", strSnapName.c_str(), hrc));
     }
-    com::Utf8Str strSnapName(bstrSnapName);
-    SSMR3PutStrZ(pSSM, strSnapName.c_str());
-    LogRel(("Playground: saving state of snapshot '%s', hrc=%Rhrc\n", strSnapName.c_str(), hrc));
+    catch (...)
+    {
+        AssertLogRelFailed();
+        return VERR_UNEXPECTED_EXCEPTION;
+    }
+#else
+RT_NOREF(pSSM, pHlp);
+#endif
 
     return VINF_SUCCESS;
 }
+
 
 /**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
@@ -158,6 +155,7 @@ static DECLCALLBACK(int) devPlaygroundSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pS
 static DECLCALLBACK(int) devPlaygroundLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PVBOXPLAYGROUNDDEVICE pThis = PDMDEVINS_2_DATA(pDevIns, PVBOXPLAYGROUNDDEVICE);
+    PCPDMDEVHLPR3         pHlp  = pDevIns->pHlpR3;
 
     if (uVersion > PLAYGROUND_SSM_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -168,9 +166,24 @@ static DECLCALLBACK(int) devPlaygroundLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pS
 
     /* Reading the stuff written to saved state, just a demo. */
     char szSnapName[256];
-    int rc = SSMR3GetStrZ(pSSM, szSnapName, sizeof(szSnapName));
+    int rc = pHlp->pfnSSMGetStrZ(pSSM, szSnapName, sizeof(szSnapName));
     AssertRCReturn(rc, rc);
     LogRel(("Playground: loading state of snapshot '%s'\n", szSnapName));
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @interface_method_impl{PDMDEVREG,pfnDestruct}
+ */
+static DECLCALLBACK(int) devPlaygroundDestruct(PPDMDEVINS pDevIns)
+{
+    /*
+     * Check the versions here as well since the destructor is *always* called.
+     * THIS IS ALWAYS THE FIRST STATEMENT IN A DESTRUCTOR!
+     */
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     return VINF_SUCCESS;
 }
@@ -181,13 +194,12 @@ static DECLCALLBACK(int) devPlaygroundLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pS
  */
 static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    RT_NOREF(iInstance, pCfg);
-    int rc = VINF_SUCCESS;
-
     /*
      * Check that the device instance and device helper structures are compatible.
+     * THIS IS ALWAYS THE FIRST STATEMENT IN A CONSTRUCTOR!
      */
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns); /* This must come first. */
+    Assert(iInstance == 0); RT_NOREF(iInstance);
 
     /*
      * Initialize the instance data so that the destructor won't mess up.
@@ -199,9 +211,11 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Whatever1|NumFunctions|BigBAR0MB|BigBAR0GB|BigBAR2MB|BigBAR2GB", "");
 
+    PCPDMDEVHLPR3 pHlp = pDevIns->pHlpR3;
+
     uint8_t uNumFunctions;
     AssertCompile(RT_ELEMENTS(pThis->aPciFuns) <= RT_ELEMENTS(pDevIns->apPciDevs));
-    rc = CFGMR3QueryU8Def(pCfg, "NumFunctions", &uNumFunctions, RT_ELEMENTS(pThis->aPciFuns));
+    int rc = pHlp->pfnCFGMQueryU8Def(pCfg, "NumFunctions", &uNumFunctions, RT_ELEMENTS(pThis->aPciFuns));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"NumFunctions\""));
     if ((uNumFunctions < 1) || (uNumFunctions > RT_ELEMENTS(pThis->aPciFuns)))
@@ -209,7 +223,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
 
     RTGCPHYS cbFirstBAR;
     uint16_t uBigBAR0GB;
-    rc = CFGMR3QueryU16Def(pCfg, "BigBAR0GB", &uBigBAR0GB, 0);  /* Default to nothing. */
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BigBAR0GB", &uBigBAR0GB, 0);  /* Default to nothing. */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"BigBAR0GB\""));
     if (uBigBAR0GB > 512)
@@ -220,7 +234,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
     else
     {
         uint16_t uBigBAR0MB;
-        rc = CFGMR3QueryU16Def(pCfg, "BigBAR0MB", &uBigBAR0MB, 8);  /* 8 MB default. */
+        rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BigBAR0MB", &uBigBAR0MB, 8);  /* 8 MB default. */
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"BigBAR0MB\""));
         if (uBigBAR0MB < 1 || uBigBAR0MB > 4095)
@@ -230,7 +244,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
 
     RTGCPHYS cbSecondBAR;
     uint16_t uBigBAR2GB;
-    rc = CFGMR3QueryU16Def(pCfg, "BigBAR2GB", &uBigBAR2GB, 0);  /* Default to nothing. */
+    rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BigBAR2GB", &uBigBAR2GB, 0);  /* Default to nothing. */
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"BigBAR2GB\""));
     if (uBigBAR2GB > 512)
@@ -241,7 +255,7 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
     else
     {
         uint16_t uBigBAR2MB;
-        rc = CFGMR3QueryU16Def(pCfg, "BigBAR2MB", &uBigBAR2MB, 16); /* 16 MB default. */
+        rc = pHlp->pfnCFGMQueryU16Def(pCfg, "BigBAR2MB", &uBigBAR2MB, 16); /* 16 MB default. */
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to query integer value \"BigBAR2MB\""));
         if (uBigBAR2MB < 1 || uBigBAR2MB > 4095)
@@ -275,36 +289,30 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
 
         /* First region. */
         RTGCPHYS const cbFirst = iPciFun == 0 ? cbFirstBAR : iPciFun * _4K;
-        rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, pPciDev, 0, cbFirst,
-                                            (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
-                                                              | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
-                                            devPlaygroundMap);
+        RTStrPrintf(pFun->szMmio0, sizeof(pFun->szMmio0), "PG-F%d-BAR0", iPciFun);
+        rc = PDMDevHlpMmioCreate(pDevIns, cbFirst, pPciDev, 0 /*iPciRegion*/,
+                                 devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pvUser*/,
+                                 IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, pFun->szMmio0, &pFun->hMmio0);
         AssertLogRelRCReturn(rc, rc);
-        char *pszRegionName = NULL;
-        RTStrAPrintf(&pszRegionName, "PG-F%d-BAR0", iPciFun);
-        Assert(pszRegionName);
-        rc = PDMDevHlpMMIOExPreRegister(pDevIns, pPciDev, 0, cbFirst,
-                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, pszRegionName,
-                                        NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
-                                        NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
-                                        NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
+
+        rc = PDMDevHlpPCIIORegionRegisterMmioEx(pDevIns, pPciDev, 0, cbFirst,
+                                                (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
+                                                                  | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
+                                                pFun->hMmio0, NULL);
         AssertLogRelRCReturn(rc, rc);
 
         /* Second region. */
         RTGCPHYS const cbSecond = iPciFun == 0  ? cbSecondBAR : iPciFun * _32K;
-        rc = PDMDevHlpPCIIORegionRegisterEx(pDevIns, pPciDev, 2, cbSecond,
-                                            (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
-                                                              | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
-                                            devPlaygroundMap);
+        RTStrPrintf(pFun->szMmio2, sizeof(pFun->szMmio2), "PG-F%d-BAR2", iPciFun);
+        rc = PDMDevHlpMmioCreate(pDevIns, cbSecond, pPciDev, 2 << 16 /*iPciRegion*/,
+                                 devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pvUser*/,
+                                 IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, pFun->szMmio2, &pFun->hMmio2);
         AssertLogRelRCReturn(rc, rc);
-        pszRegionName = NULL;
-        RTStrAPrintf(&pszRegionName, "PG-F%d-BAR2", iPciFun);
-        Assert(pszRegionName);
-        rc = PDMDevHlpMMIOExPreRegister(pDevIns, pPciDev, 2, cbSecond,
-                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, pszRegionName,
-                                        NULL /*pvUser*/,  devPlaygroundMMIOWrite, devPlaygroundMMIORead, NULL /*pfnFill*/,
-                                        NIL_RTR0PTR /*pvUserR0*/, NULL /*pszWriteR0*/, NULL /*pszReadR0*/, NULL /*pszFillR0*/,
-                                        NIL_RTRCPTR /*pvUserRC*/, NULL /*pszWriteRC*/, NULL /*pszReadRC*/, NULL /*pszFillRC*/);
+
+        rc = PDMDevHlpPCIIORegionRegisterMmioEx(pDevIns, pPciDev, 2, cbSecond,
+                                                (PCIADDRESSSPACE)(  PCI_ADDRESS_SPACE_MEM | PCI_ADDRESS_SPACE_BAR64
+                                                                  | (iPciFun == 0 ? PCI_ADDRESS_SPACE_MEM_PREFETCH : 0)),
+                                                pFun->hMmio2, NULL);
         AssertLogRelRCReturn(rc, rc);
 
         /* Subsequent function should use the same major as the previous one. */
@@ -323,20 +331,6 @@ static DECLCALLBACK(int) devPlaygroundConstruct(PPDMDEVINS pDevIns, int iInstanc
 
 
 /**
- * @interface_method_impl{PDMDEVREG,pfnDestruct}
- */
-static DECLCALLBACK(int) devPlaygroundDestruct(PPDMDEVINS pDevIns)
-{
-    /*
-     * Check the versions here as well since the destructor is *always* called.
-     */
-    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-
-    return VINF_SUCCESS;
-}
-
-
-/**
  * The device registration structure.
  */
 static const PDMDEVREG g_DevicePlayground =
@@ -344,7 +338,7 @@ static const PDMDEVREG g_DevicePlayground =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "playground",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_MISC,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,

@@ -5896,9 +5896,9 @@ DECLINLINE(int) PDMDevHlpIoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDL
  */
 DECLINLINE(int) PDMDevHlpMmioCreate(PPDMDEVINS pDevIns, RTGCPHYS cbRegion, PPDMPCIDEV pPciDev, uint32_t iPciRegion,
                                     PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead, void *pvUser,
-                                    const char *pszDesc, PIOMMMIOHANDLE phRegion)
+                                    uint32_t fFlags, const char *pszDesc, PIOMMMIOHANDLE phRegion)
 {
-    return pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, 0, pPciDev, iPciRegion,
+    return pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, fFlags, pPciDev, iPciRegion,
                                             pfnWrite, pfnRead, NULL, pvUser, pszDesc, phRegion);
 }
 
@@ -6816,8 +6816,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIo(PPDMDEVINS pDevIns, uint32_t iReg
  * @returns VBox status code.
  * @param   pDevIns         The device instance to register the ports with.
  * @param   cbPorts         The size of the region in I/O ports.
- * @param   iPciRegion      The PCI device region in the high 16-bit word and
- *                          sub-region in the low 16-bit word.  UINT32_MAX if NA.
+ * @param   iPciRegion      The PCI device region.
  * @param   pfnOut          Pointer to function which is gonna handle OUT
  *                          operations. Optional.
  * @param   pfnIn           Pointer to function which is gonna handle IN operations.
@@ -6834,7 +6833,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateIo(PPDMDEVINS pDevIns, uint32_t iPciRe
                                              const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 
 {
-    int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cbPorts, 0 /*fFlags*/, pDevIns->apPciDevs[0], iPciRegion,
+    int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cbPorts, 0 /*fFlags*/, pDevIns->apPciDevs[0], iPciRegion << 16,
                                                 pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, paExtDescs, phIoPorts);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbPorts, PCI_ADDRESS_SPACE_IO,
@@ -6867,14 +6866,38 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmio(PPDMDEVINS pDevIns, uint32_t iR
 }
 
 /**
+ * Registers an MMIO region for the default PCI device, extended version.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   pPciDev         The PCI device structure.
+ * @param   iRegion         The region number.
+ * @param   cbRegion        Size of the region.
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   hMmioRegion     Handle to the MMIO region.
+ * @param   pfnCallback     Callback for doing the mapping, optional.  The
+ *                          callback will be invoked holding only the PDM lock.
+ *                          The device lock will _not_ be taken (due to lock
+ *                          order).
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmioEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
+                                                   RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, IOMMMIOHANDLE hMmioRegion,
+                                                   PFNPCIIOREGIONMAP pfnCallback)
+{
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iRegion, cbRegion, enmType,
+                                                   PDMPCIDEV_IORGN_F_MMIO_HANDLE, hMmioRegion, pfnCallback);
+}
+
+/**
  * Combines PDMDevHlpMmioCreate and PDMDevHlpPCIIORegionRegisterMmio, creating
  * and registering an MMIO region for the default PCI device.
  *
  * @returns VBox status code.
  * @param   pDevIns         The device instance to register the ports with.
  * @param   cbRegion        The size of the region in bytes.
- * @param   iPciRegion      The PCI device region in the high 16-bit word and
- *                          sub-region in the low 16-bit word.  UINT32_MAX if NA.
+ * @param   iPciRegion      The PCI device region.
  * @param   enmType         PCI_ADDRESS_SPACE_MEM or
  *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
  *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
@@ -6893,7 +6916,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio(PPDMDEVINS pDevIns, uint32_t iPci
                                                uint32_t fFlags, const char *pszDesc, PIOMMMIOHANDLE phRegion)
 
 {
-    int rc = pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, fFlags, pDevIns->apPciDevs[0], iPciRegion,
+    int rc = pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, fFlags, pDevIns->apPciDevs[0], iPciRegion << 16,
                                               pfnWrite, pfnRead, NULL /*pfnFill*/, pvUser, pszDesc, phRegion);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
