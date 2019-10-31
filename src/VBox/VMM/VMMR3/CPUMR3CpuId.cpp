@@ -482,6 +482,18 @@ VMMR3DECL(CPUMMICROARCH) CPUMR3CpuIdDetermineMicroarchEx(CPUMCPUVENDOR enmVendor
         return kCpumMicroarch_Cyrix_Unknown;
     }
 
+    if (enmVendor == CPUMCPUVENDOR_HYGON)
+    {
+        switch (bFamily)
+        {
+            case 0x18:
+                return kCpumMicroarch_Hygon_Dhyana;
+            default:
+                break;
+        }
+        return kCpumMicroarch_Hygon_Unknown;
+    }
+
     return kCpumMicroarch_Unknown;
 }
 
@@ -624,6 +636,9 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         CASE_RET_STR(kCpumMicroarch_NEC_V20);
         CASE_RET_STR(kCpumMicroarch_NEC_V30);
 
+        CASE_RET_STR(kCpumMicroarch_Hygon_Dhyana);
+        CASE_RET_STR(kCpumMicroarch_Hygon_Unknown);
+
         CASE_RET_STR(kCpumMicroarch_Unknown);
 
 #undef CASE_RET_STR
@@ -645,6 +660,7 @@ VMMR3DECL(const char *) CPUMR3MicroarchName(CPUMMICROARCH enmMicroarch)
         case kCpumMicroarch_Cyrix_End:
         case kCpumMicroarch_NEC_End:
         case kCpumMicroarch_Shanghai_End:
+        case kCpumMicroarch_Hygon_End:
         case kCpumMicroarch_32BitHack:
             break;
         /* no default! */
@@ -1313,7 +1329,8 @@ VMMR3DECL(int) CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
                          && (   uEax
                              || uEbx
                              || uEdx
-                             || ASMIsAmdCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)) )
+                             || ASMIsAmdCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)
+                             || ASMIsHygonCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)) )
                     fFlags |= CPUMCPUIDLEAF_F_CONTAINS_APIC_ID;
 
                 /* The APIC bit is per-VCpu and needs flagging. */
@@ -1321,7 +1338,8 @@ VMMR3DECL(int) CPUMR3CpuIdCollectLeaves(PCPUMCPUIDLEAF *ppaLeaves, uint32_t *pcL
                     fFlags |= CPUMCPUIDLEAF_F_CONTAINS_APIC;
                 else if (   uLeaf == UINT32_C(0x80000001)
                          && (   (uEdx & X86_CPUID_AMD_FEATURE_EDX_APIC)
-                             || ASMIsAmdCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)) )
+                             || ASMIsAmdCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)
+                             || ASMIsHygonCpuEx((*ppaLeaves)[0].uEbx, (*ppaLeaves)[0].uEcx, (*ppaLeaves)[0].uEdx)) )
                     fFlags |= CPUMCPUIDLEAF_F_CONTAINS_APIC;
 
                 /* Check three times here to reduce the chance of CPU migration
@@ -1632,6 +1650,9 @@ VMMR3DECL(CPUMCPUVENDOR) CPUMR3CpuIdDetectVendorEx(uint32_t uEAX, uint32_t uEBX,
             && uEDX == UINT32_C(0x736E4978))
             return CPUMCPUVENDOR_CYRIX;
 
+        if (ASMIsHygonCpuEx(uEBX, uECX, uEDX))
+            return CPUMCPUVENDOR_HYGON;
+
         /* "Geode by NSC", example: family 5, model 9.  */
 
         /** @todo detect the other buggers... */
@@ -1659,6 +1680,7 @@ VMMR3DECL(const char *) CPUMR3CpuVendorName(CPUMCPUVENDOR enmVendor)
         case CPUMCPUVENDOR_VIA:         return "VIA";
         case CPUMCPUVENDOR_CYRIX:       return "CYRIX";
         case CPUMCPUVENDOR_SHANGHAI:    return "SHANGHAI";
+        case CPUMCPUVENDOR_HYGON:       return "HYGON";
         case CPUMCPUVENDOR_UNKNOWN:     return "UNKNOWN";
 
         case CPUMCPUVENDOR_INVALID:
@@ -1926,7 +1948,8 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPU
         pFeatures->cVmxMaxPhysAddrWidth = pFeatures->fLongMode ? pFeatures->cMaxPhysAddrWidth : 32;
 
         if (   pExtLeaf
-            && pFeatures->enmCpuVendor == CPUMCPUVENDOR_AMD)
+            && (   pFeatures->enmCpuVendor == CPUMCPUVENDOR_AMD
+                || pFeatures->enmCpuVendor == CPUMCPUVENDOR_HYGON))
         {
             /* AMD features. */
             pFeatures->fMsr            |= RT_BOOL(pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_MSR);
@@ -1969,7 +1992,8 @@ int cpumR3CpuIdExplodeFeatures(PCCPUMCPUIDLEAF paLeaves, uint32_t cLeaves, PCCPU
          */
         pFeatures->fLeakyFxSR = pExtLeaf
                              && (pExtLeaf->uEdx & X86_CPUID_AMD_FEATURE_EDX_FFXSR)
-                             && pFeatures->enmCpuVendor == CPUMCPUVENDOR_AMD
+                             && (   pFeatures->enmCpuVendor == CPUMCPUVENDOR_AMD
+                                 || pFeatures->enmCpuVendor == CPUMCPUVENDOR_HYGON)
                              && pFeatures->uFamily >= 6 /* K7 and up */;
 
         /*
@@ -2938,7 +2962,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     /* Mask out the VME capability on certain CPUs, unless overridden by fForceVme.
      * VME bug was fixed in AGESA 1.0.0.6, microcode patch level 8001126.
      */
-    if ( (pVM->cpum.s.GuestFeatures.enmMicroarch == kCpumMicroarch_AMD_Zen_Ryzen)
+    if (   (   pVM->cpum.s.GuestFeatures.enmMicroarch == kCpumMicroarch_AMD_Zen_Ryzen
+            || pVM->cpum.s.GuestFeatures.enmMicroarch == kCpumMicroarch_Hygon_Dhyana)
         && uMicrocodeRev < 0x8001126
         && !pConfig->fForceVme)
     {
@@ -3065,7 +3090,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
                                ;
 #ifdef VBOX_WITH_MULTI_CORE
         if (   pVM->cCpus > 1
-            && pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+            && (   pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                || pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON))
             pExtFeatureLeaf->uEcx |= X86_CPUID_AMD_FEATURE_ECX_CMPL; /* CmpLegacy */
 #endif
 
@@ -3659,7 +3685,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
     while ((pCurLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000007), uSubLeaf)) != NULL)
     {
         pCurLeaf->uEax = pCurLeaf->uEbx = pCurLeaf->uEcx = 0;
-        if (pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+        if (   pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+            || pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON)
         {
             /*
              * Older 64-bit linux kernels blindly assume that the AMD performance counters work
@@ -3714,7 +3741,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         pCurLeaf->uEcx = 0;
 #ifdef VBOX_WITH_MULTI_CORE
         if (   pVM->cCpus > 1
-            && pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+            && (   pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                || pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON))
             pCurLeaf->uEcx |= (pVM->cCpus - 1) & UINT32_C(0xff);
 #endif
         uSubLeaf++;
@@ -3731,7 +3759,8 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
      *        ECX - Reserved.
      *        EDX - SVM Feature identification.
      */
-    if (pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+    if (   pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+        || pCpum->GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON)
     {
         pExtFeatureLeaf = cpumR3CpuIdGetExactLeaf(pCpum, UINT32_C(0x80000001), 0);
         if (   pExtFeatureLeaf
@@ -3842,6 +3871,7 @@ static int cpumR3CpuIdSanitize(PVM pVM, PCPUM pCpum, PCPUMCPUIDCONFIG pConfig)
         else
         {
             Assert(pCpum->GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_AMD);
+            Assert(pCpum->GuestFeatures.enmCpuVendor != CPUMCPUVENDOR_HYGON);
             pCurLeaf->uEbx = 0; /* Reserved. */
             pCurLeaf->uEcx = 0; /* Reserved. */
         }
@@ -4121,7 +4151,8 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
 
     bool fQueryNestedHwvirt = false;
 #ifdef VBOX_WITH_NESTED_HWVIRT_SVM
-    fQueryNestedHwvirt |= RT_BOOL(pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD);
+    fQueryNestedHwvirt |= RT_BOOL(   pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                                  || pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON);
 #endif
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     fQueryNestedHwvirt |= RT_BOOL(   pVM->cpum.s.HostFeatures.enmCpuVendor == CPUMCPUVENDOR_INTEL
@@ -4716,7 +4747,8 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (    pLeaf
-                &&  pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+                &&  (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                     || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON))
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAE;
 
             pVM->cpum.s.GuestFeatures.fPae = 1;
@@ -4800,7 +4832,8 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   pLeaf
-                && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+                && (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                    || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON))
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx |= X86_CPUID_AMD_FEATURE_EDX_PAT;
 
             pVM->cpum.s.GuestFeatures.fPat = 1;
@@ -4940,7 +4973,8 @@ VMMR3_INT_DECL(void) CPUMR3SetGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmFea
 
                 LogRel(("CPUM: SetGuestCpuIdFeature: Enabled Speculation Control.\n"));
             }
-            else if (pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+            else if (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                     || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON)
             {
                 /* The precise details of AMD's implementation are not yet clear. */
             }
@@ -5039,7 +5073,8 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   pLeaf
-                && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+                && (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                    || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON))
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAE;
 
             pVM->cpum.s.GuestFeatures.fPae = 0;
@@ -5053,7 +5088,8 @@ VMMR3_INT_DECL(void) CPUMR3ClearGuestCpuIdFeature(PVM pVM, CPUMCPUIDFEATURE enmF
 
             pLeaf = cpumCpuIdGetLeaf(pVM, UINT32_C(0x80000001));
             if (   pLeaf
-                && pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD)
+                && (   pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_AMD
+                    || pVM->cpum.s.GuestFeatures.enmCpuVendor == CPUMCPUVENDOR_HYGON))
                 pVM->cpum.s.aGuestCpuIdPatmExt[1].uEdx = pLeaf->uEdx &= ~X86_CPUID_AMD_FEATURE_EDX_PAT;
 
             pVM->cpum.s.GuestFeatures.fPat = 0;
@@ -5662,8 +5698,10 @@ int cpumR3LoadCpuIdInner(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, PCPUMCPUID
     if (cpumR3CpuIdGetLeafLegacy(paLeaves, cLeaves, UINT32_C(0x80000001), 0, &aGuestCpuIdExt[1]))
     {
         /** @todo deal with no 0x80000001 on the host. */
-        bool const fHostAmd  = ASMIsAmdCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx);
-        bool const fGuestAmd = ASMIsAmdCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx);
+        bool const fHostAmd  = ASMIsAmdCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx)
+                               || ASMIsHygonCpuEx(aHostRawStd[0].uEbx, aHostRawStd[0].uEcx, aHostRawStd[0].uEdx);
+        bool const fGuestAmd = ASMIsAmdCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx)
+                               || ASMIsHygonCpuEx(aGuestCpuIdExt[0].uEbx, aGuestCpuIdExt[0].uEcx, aGuestCpuIdExt[0].uEdx);
 
         /* CPUID(0x80000001).ecx */
         CPUID_GST_FEATURE_WRN(Ext, uEcx, X86_CPUID_EXT_FEATURE_ECX_LAHF_SAHF);   // -> EMU

@@ -524,7 +524,7 @@ static int findMsrs(VBCPUREPMSR **ppaMsrs, uint32_t *pcMsrs, uint32_t fMsrMask)
             /* Skip 0xc0011012..13 as it seems to be bad for our health (Phenom II X6 1100T). */
             /* Ditto for 0x0000002a (EBL_CR_POWERON) and 0x00000277 (MSR_IA32_CR_PAT) on Intel (Atom 330). */
             /* And more of the same for 0x280 on Intel Pentium III. */
-            if (   ((uMsr >= 0xc0011012 && uMsr <= 0xc0011013) && g_enmVendor == CPUMCPUVENDOR_AMD)
+            if (   ((uMsr >= 0xc0011012 && uMsr <= 0xc0011013) && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
                 || (   (uMsr == 0x2a || uMsr == 0x277)
                     && g_enmVendor == CPUMCPUVENDOR_INTEL
                     && g_enmMicroarch == kCpumMicroarch_Intel_Atom_Bonnell)
@@ -695,7 +695,7 @@ static const char *getMsrNameHandled(uint32_t uMsr)
         case 0x00000088: return "BBL_CR_D0";
         case 0x00000089: return "BBL_CR_D1";
         case 0x0000008a: return "BBL_CR_D2";
-        case 0x0000008b: return g_enmVendor == CPUMCPUVENDOR_AMD ? "AMD_K8_PATCH_LEVEL"
+        case 0x0000008b: return (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor ==  CPUMCPUVENDOR_HYGON) ? "AMD_K8_PATCH_LEVEL"
                               : g_fIntelNetBurst ? "IA32_BIOS_SIGN_ID" : "BBL_CR_D3|BIOS_SIGN";
         case 0x0000008c: return "P6_UNK_0000_008c"; /* P6_M_Dothan. */
         case 0x0000008d: return "P6_UNK_0000_008d"; /* P6_M_Dothan. */
@@ -1945,7 +1945,7 @@ static const char *getMsrFnName(uint32_t uMsr, bool *pfTakesValue)
         case 0x00000047:
             return "IntelLastBranchFromToN";
 
-        case 0x0000008b: return g_enmVendor == CPUMCPUVENDOR_AMD ? "AmdK8PatchLevel" : "Ia32BiosSignId";
+        case 0x0000008b: return (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON) ? "AmdK8PatchLevel" : "Ia32BiosSignId";
         case 0x0000009b: return "Ia32SmmMonitorCtl";
 
         case 0x000000a8:
@@ -3565,7 +3565,7 @@ static int reportMsr_Ia32MtrrFixedOrPat(uint32_t uMsr)
     if (   uMsr != 0x00000277
         || (  g_enmVendor == CPUMCPUVENDOR_INTEL
             ? g_enmMicroarch >= kCpumMicroarch_Intel_Core7_First
-            : g_enmVendor == CPUMCPUVENDOR_AMD
+            : (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON)
             ? g_enmMicroarch != kCpumMicroarch_AMD_K8_90nm_AMDV
             : true) )
     {
@@ -4205,9 +4205,9 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
         /*
          * This shall be sorted by uMsr as much as possible.
          */
-        else if (uMsr == 0x00000000 && g_enmVendor == CPUMCPUVENDOR_AMD && g_enmMicroarch >= kCpumMicroarch_AMD_K8_First)
+        else if (uMsr == 0x00000000 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON) && g_enmMicroarch >= kCpumMicroarch_AMD_K8_First)
             rc = printMsrAlias(uMsr, 0x00000402, NULL);
-        else if (uMsr == 0x00000001 && g_enmVendor == CPUMCPUVENDOR_AMD && g_enmMicroarch >= kCpumMicroarch_AMD_K8_First)
+        else if (uMsr == 0x00000001 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON) && g_enmMicroarch >= kCpumMicroarch_AMD_K8_First)
             rc = printMsrAlias(uMsr, 0x00000401, NULL); /** @todo not 101% correct on Fam15h and later, 0xc0010015[McstatusWrEn] effect differs. */
         else if (uMsr == 0x0000001b)
             rc = reportMsr_Ia32ApicBase(uMsr, uValue);
@@ -4278,46 +4278,46 @@ static int produceMsrReport(VBCPUREPMSR *paMsrs, uint32_t cMsrs)
             rc = reportMsr_Amd64Efer(uMsr, uValue);
         else if (uMsr >= 0xc0000408 && uMsr <= 0xc000040f)
             rc = reportMsr_AmdFam10hMc4MiscN(&paMsrs[i], cMsrs - i, &i);
-        else if (uMsr == 0xc0010000 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010000 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdK8PerfCtlN(&paMsrs[i], cMsrs - i, &i);
-        else if (uMsr == 0xc0010004 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010004 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdK8PerfCtrN(&paMsrs[i], cMsrs - i, &i);
-        else if (uMsr == 0xc0010010 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010010 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdK8SysCfg(uMsr, uValue);
-        else if (uMsr == 0xc0010015 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010015 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdK8HwCr(uMsr, uValue);
-        else if ((uMsr == 0xc0010016 || uMsr == 0xc0010018) && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if ((uMsr == 0xc0010016 || uMsr == 0xc0010018) && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdK8IorrBaseN(uMsr, uValue);
-        else if ((uMsr == 0xc0010017 || uMsr == 0xc0010019) && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if ((uMsr == 0xc0010017 || uMsr == 0xc0010019) && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdK8IorrMaskN(uMsr, uValue);
-        else if ((uMsr == 0xc001001a || uMsr == 0xc001001d) && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if ((uMsr == 0xc001001a || uMsr == 0xc001001d) && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdK8TopMemN(uMsr, uValue);
-        else if (uMsr == 0xc0010030 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010030 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i, 6, "AmdK8CpuNameN", &i);
-        else if (uMsr >= 0xc0010044 && uMsr <= 0xc001004a && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr >= 0xc0010044 && uMsr <= 0xc001004a && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 7, "AmdK8McCtlMaskN", 0xc0010044, true /*fEarlyEndOk*/, false, 0, &i);
-        else if (uMsr == 0xc0010050 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010050 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_GenRangeFunction(&paMsrs[i], cMsrs - i, 4, "AmdK8SmiOnIoTrapN", &i);
-        else if (uMsr == 0xc0010064 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010064 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdFam10hPStateN(&paMsrs[i], cMsrs - i, &i);
-        else if (uMsr == 0xc0010070 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010070 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdFam10hCofVidControl(uMsr, uValue);
-        else if ((uMsr == 0xc0010118 || uMsr == 0xc0010119) && getMsrFnName(uMsr, NULL) && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if ((uMsr == 0xc0010118 || uMsr == 0xc0010119) && getMsrFnName(uMsr, NULL) && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = printMsrFunction(uMsr, NULL, NULL, annotateValue(uValue)); /* RAZ, write key. */
-        else if (uMsr == 0xc0010200 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010200 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdGenPerfMixedRange(&paMsrs[i], cMsrs - i, 12, &i);
-        else if (uMsr == 0xc0010230 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010230 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdGenPerfMixedRange(&paMsrs[i], cMsrs - i, 8, &i);
-        else if (uMsr == 0xc0010240 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0010240 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdGenPerfMixedRange(&paMsrs[i], cMsrs - i, 8, &i);
-        else if (uMsr == 0xc0011019 && g_enmMicroarch >= kCpumMicroarch_AMD_15h_Piledriver && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0011019 && g_enmMicroarch >= kCpumMicroarch_AMD_15h_Piledriver && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 3, "AmdK7DrXAddrMaskN", 0xc0011019 - 1,
                                               false /*fEarlyEndOk*/, false /*fNoIgnMask*/, 0, &i);
-        else if (uMsr == 0xc0011021 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0011021 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_AmdK7InstrCacheCfg(uMsr, uValue);
         else if (uMsr == 0xc0011023 && CPUMMICROARCH_IS_AMD_FAM_15H(g_enmMicroarch))
             rc = reportMsr_AmdFam15hCombUnitCfg(uMsr, uValue);
-        else if (uMsr == 0xc0011027 && g_enmVendor == CPUMCPUVENDOR_AMD)
+        else if (uMsr == 0xc0011027 && (g_enmVendor == CPUMCPUVENDOR_AMD || g_enmVendor == CPUMCPUVENDOR_HYGON))
             rc = reportMsr_GenRangeFunctionEx(&paMsrs[i], cMsrs - i, 1, "AmdK7DrXAddrMaskN", 0xc0011027,
                                               false /*fEarlyEndOk*/, false /*fNoIgnMask*/, 0, &i);
         else if (uMsr == 0xc001102c && CPUMMICROARCH_IS_AMD_FAM_15H(g_enmMicroarch))
@@ -4472,7 +4472,7 @@ static int probeMsrs(bool fHacking, const char *pszNameC, const char *pszCpuDesc
                        "/**\n"
                        " * MSR ranges for %s.\n"
                        " */\n"
-                       "static CPUMMSRRANGE const g_aMsrRanges_%s[] = \n{\n",
+                       "static CPUMMSRRANGE const g_aMsrRanges_%s[] =\n{\n",
                        pszCpuDesc,
                        pszNameC);
         rc = produceMsrReport(paMsrs, cMsrs);
@@ -4568,6 +4568,7 @@ static const char *cpuVendorToString(CPUMCPUVENDOR enmCpuVendor)
         case CPUMCPUVENDOR_VIA:         return "VIA";
         case CPUMCPUVENDOR_CYRIX:       return "Cyrix";
         case CPUMCPUVENDOR_SHANGHAI:    return "Shanghai";
+        case CPUMCPUVENDOR_HYGON:       return "Hygon";
         case CPUMCPUVENDOR_INVALID:
         case CPUMCPUVENDOR_UNKNOWN:
         case CPUMCPUVENDOR_32BIT_HACK:

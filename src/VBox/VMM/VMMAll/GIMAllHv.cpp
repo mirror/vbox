@@ -1403,7 +1403,8 @@ VMM_INT_DECL(VBOXSTRICTRC) gimHvHypercallEx(PVMCPUCC pVCpu, PCPUMCTX pCtx, unsig
                 || enmGuestCpuVendor == CPUMCPUVENDOR_VIA
                 || enmGuestCpuVendor == CPUMCPUVENDOR_SHANGHAI))
         || (   uDisOpcode == OP_VMMCALL
-            && enmGuestCpuVendor == CPUMCPUVENDOR_AMD))
+            && (   enmGuestCpuVendor == CPUMCPUVENDOR_AMD
+                || enmGuestCpuVendor == CPUMCPUVENDOR_HYGON)) )
         return gimHvHypercall(pVCpu, pCtx);
 
     RT_NOREF_PV(cbInstr);

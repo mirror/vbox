@@ -195,7 +195,8 @@ VMMR3_INT_DECL(int) NEMR3InitAfterCPUM(PVM pVM)
          * native backend can make check capabilities and adjust as needed.
          */
         CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SEP);
-        if (CPUMGetGuestCpuVendor(pVM) == CPUMCPUVENDOR_AMD)
+        if (   CPUMGetGuestCpuVendor(pVM) == CPUMCPUVENDOR_AMD
+            || CPUMGetGuestCpuVendor(pVM) == CPUMCPUVENDOR_HYGON)
             CPUMR3SetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_SYSCALL);            /* 64 bits only on Intel CPUs */
         if (pVM->nem.s.fAllow64BitGuests)
         {

@@ -1586,6 +1586,36 @@ DECLINLINE(bool) ASMIsShanghaiCpu(void)
 
 
 /**
+ * Tests if it a genuine Hygon CPU based on the ASMCpuId(0) output.
+ *
+ * @returns true/false.
+ * @param   uEBX    EBX return from ASMCpuId(0)
+ * @param   uECX    ECX return from ASMCpuId(0)
+ * @param   uEDX    EDX return from ASMCpuId(0)
+ */
+DECLINLINE(bool) ASMIsHygonCpuEx(uint32_t uEBX, uint32_t uECX, uint32_t uEDX)
+{
+    return uEBX == UINT32_C(0x6f677948)
+        && uECX == UINT32_C(0x656e6975)
+        && uEDX == UINT32_C(0x6e65476e);
+}
+
+
+/**
+ * Tests if this is a genuine Hygon CPU.
+ *
+ * @returns true/false.
+ * @remarks ASSUMES that cpuid is supported by the CPU.
+ */
+DECLINLINE(bool) ASMIsHygonCpu(void)
+{
+    uint32_t uEAX, uEBX, uECX, uEDX;
+    ASMCpuId(0, &uEAX, &uEBX, &uECX, &uEDX);
+    return ASMIsHygonCpuEx(uEBX, uECX, uEDX);
+}
+
+
+/**
  * Checks whether ASMCpuId_EAX(0x00000000) indicates a valid range.
  *
  *

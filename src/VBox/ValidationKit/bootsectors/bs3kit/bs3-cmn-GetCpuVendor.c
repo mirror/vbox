@@ -44,6 +44,8 @@ BS3_CMN_DEF(BS3CPUVENDOR, Bs3GetCpuVendor,(void))
             return BS3CPUVENDOR_VIA;
         if (ASMIsShanghaiCpuEx(uEbx, uEcx, uEdx))
             return BS3CPUVENDOR_SHANGHAI;
+        if (ASMIsHygonCpuEx(uEbx, uEcx, uEdx))
+            return BS3CPUVENDOR_HYGON;
         return BS3CPUVENDOR_UNKNOWN;
     }
     return BS3CPUVENDOR_INTEL;

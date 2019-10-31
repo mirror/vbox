@@ -400,6 +400,10 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_VENDOR_SHANGHAI_EBX   0x68532020      /*   Sh */
 #define X86_CPUID_VENDOR_SHANGHAI_ECX   0x20206961      /* ai   */
 #define X86_CPUID_VENDOR_SHANGHAI_EDX   0x68676e61      /* angh */
+
+#define X86_CPUID_VENDOR_HYGON_EBX      0x6f677948      /* Hygo */
+#define X86_CPUID_VENDOR_HYGON_ECX      0x656e6975      /* uine */
+#define X86_CPUID_VENDOR_HYGON_EDX      0x6e65476e      /* nGen */
 /** @} */
 
 

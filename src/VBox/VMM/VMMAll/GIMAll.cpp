@@ -424,6 +424,7 @@ VMM_INT_DECL(int) GIMQueryHypercallOpcodeBytes(PVM pVM, void *pvBuf, size_t cbBu
     switch (enmHostCpu)
     {
         case CPUMCPUVENDOR_AMD:
+        case CPUMCPUVENDOR_HYGON:
         {
             if (puDisOpcode)
                 *puDisOpcode = OP_VMMCALL;

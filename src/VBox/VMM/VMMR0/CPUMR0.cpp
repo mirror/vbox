@@ -722,7 +722,8 @@ static DECLCALLBACK(void) cpumR0MapLocalApicCpuProber(RTCPUID idCpu, void *pvUse
     if (   (   ASMIsIntelCpuEx(u32EBX, u32ECX, u32EDX)
             || ASMIsAmdCpuEx(u32EBX, u32ECX, u32EDX)
             || ASMIsViaCentaurCpuEx(u32EBX, u32ECX, u32EDX)
-            || ASMIsShanghaiCpuEx(u32EBX, u32ECX, u32EDX))
+            || ASMIsShanghaiCpuEx(u32EBX, u32ECX, u32EDX)
+            || ASMIsHygonCpuEx(u32EBX, u32ECX, u32EDX))
         && ASMIsValidStdRange(uMaxLeaf))
     {
         uint32_t uDummy;

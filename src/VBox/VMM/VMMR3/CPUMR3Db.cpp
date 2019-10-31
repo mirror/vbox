@@ -216,6 +216,7 @@ typedef struct CPUMDBENTRY
 
 #include "cpus/ZHAOXIN_KaiXian_KX_U5581_1_8GHz.h"
 
+#include "cpus/Hygon_C86_7185_32_core.h"
 
 
 /**
@@ -317,6 +318,10 @@ static CPUMDBENTRY const * const g_apCpumDbEntries[] =
 
 #ifdef VBOX_CPUDB_NEC_V20_h
     &g_Entry_NEC_V20,
+#endif
+
+#ifdef VBOX_CPUDB_Hygon_C86_7185_32_core_h
+    &g_Entry_Hygon_C86_7185_32_core,
 #endif
 };
 

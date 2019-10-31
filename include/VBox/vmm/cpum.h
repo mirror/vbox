@@ -97,6 +97,7 @@ typedef enum CPUMCPUVENDOR
     CPUMCPUVENDOR_VIA,
     CPUMCPUVENDOR_CYRIX,
     CPUMCPUVENDOR_SHANGHAI,
+    CPUMCPUVENDOR_HYGON,
     CPUMCPUVENDOR_UNKNOWN,
     /** 32bit hackishness. */
     CPUMCPUVENDOR_32BIT_HACK = 0x7fffffff
@@ -274,6 +275,11 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_Shanghai_Wudaokou = kCpumMicroarch_Shanghai_First,
     kCpumMicroarch_Shanghai_Unknown,
     kCpumMicroarch_Shanghai_End,
+
+    kCpumMicroarch_Hygon_First,
+    kCpumMicroarch_Hygon_Dhyana = kCpumMicroarch_Hygon_First,
+    kCpumMicroarch_Hygon_Unknown,
+    kCpumMicroarch_Hygon_End,
 
     kCpumMicroarch_Unknown,
 

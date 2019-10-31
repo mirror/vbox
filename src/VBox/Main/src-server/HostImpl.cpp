@@ -346,7 +346,8 @@ HRESULT Host::init(VirtualBox *aParent)
                 }
             }
             /* AMD-V */
-            else if (ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+            else if (   ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
+                     || ASMIsHygonCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
             {
                 if (   (fExtFeaturesEcx & X86_CPUID_AMD_FEATURE_ECX_SVM)
                     && (fFeaturesEdx    & X86_CPUID_FEATURE_EDX_MSR)

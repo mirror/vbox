@@ -881,7 +881,7 @@ void DecodeUdEdgeTest(PCCPUDECODE1UDTST paTests, unsigned cTests)
      */
     bool fIsAmd = false;
     if (g_uBs3CpuDetected & BS3CPU_F_CPUID)
-        fIsAmd = ASMIsAmdCpu();
+        fIsAmd = ASMIsAmdCpu() || ASMIsHygonCpu();
     Bs3TestPrintf("fIsAmd=%d\n", fIsAmd);
 
     /*

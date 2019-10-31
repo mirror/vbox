@@ -4149,7 +4149,8 @@ SUPR0DECL(int) SUPR0GetVTSupport(uint32_t *pfCaps)
             }
 
             /* Check if the vendor is AMD (or compatible). */
-            if (ASMIsAmdCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
+            if (   ASMIsAmdCpuEx(uVendorEbx, uVendorEcx, uVendorEdx)
+                || ASMIsHygonCpuEx(uVendorEbx, uVendorEcx, uVendorEdx))
             {
                 uint32_t fExtFeatEcx, uExtMaxId;
                 ASMCpuId(0x80000000, &uExtMaxId, &uDummy, &uDummy, &uDummy);
@@ -4511,7 +4512,8 @@ static int VBOXCALL supdrvQueryUcodeRev(uint32_t *puRevision)
                     rc = VINF_SUCCESS;
                 }
             }
-            else if (ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
+            else if (   ASMIsAmdCpuEx(uVendorEBX, uVendorECX, uVendorEDX)
+                     || ASMIsHygonCpuEx(uVendorEBX, uVendorECX, uVendorEDX))
             {
                 /* Not well documented, but at least all AMD64 CPUs support this. */
                 if (ASMGetCpuFamily(uTFMSEAX) >= 15)
