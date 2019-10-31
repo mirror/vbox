@@ -79,6 +79,7 @@ template<class X> X fromInternalInteger(const int & /* iData */) { AssertFailed(
 /* Declare global canConvert specializations: */
 template<> SHARED_LIBRARY_STUFF bool canConvert<SizeSuffix>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<StorageSlot>();
+template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DialogType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::MenuType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>();
@@ -103,7 +104,6 @@ template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElem
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>();
-template<> SHARED_LIBRARY_STUFF bool canConvert<UIExtraDataMetaDefs::RestrictedDialogs>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIToolType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<UIVisualStateType>();
 template<> SHARED_LIBRARY_STUFF bool canConvert<DetailsElementType>();
@@ -160,6 +160,8 @@ template<> SHARED_LIBRARY_STUFF QString toString(const SizeSuffix &sizeSuffix);
 template<> SHARED_LIBRARY_STUFF SizeSuffix fromString<SizeSuffix>(const QString &strSizeSuffix);
 template<> SHARED_LIBRARY_STUFF QString toString(const StorageSlot &storageSlot);
 template<> SHARED_LIBRARY_STUFF StorageSlot fromString<StorageSlot>(const QString &strStorageSlot);
+template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DialogType &enmDialogType);
+template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DialogType fromInternalString<UIExtraDataMetaDefs::DialogType>(const QString &strDialogType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::MenuType &menuType);
 template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::MenuType fromInternalString<UIExtraDataMetaDefs::MenuType>(const QString &strMenuType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::MenuApplicationActionType &menuApplicationActionType);
@@ -215,8 +217,6 @@ template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeUse
 template<> SHARED_LIBRARY_STUFF QString toString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &enmDetailsElementOptionTypeDescription);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOptionTypeDescription &enmDetailsElementOptionTypeDescription);
 template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::DetailsElementOptionTypeDescription fromInternalString<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>(const QString &strDetailsElementOptionTypeDescription);
-template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIExtraDataMetaDefs::RestrictedDialogs &enmRestrictedDialogs);
-template<> SHARED_LIBRARY_STUFF UIExtraDataMetaDefs::RestrictedDialogs fromInternalString<UIExtraDataMetaDefs::RestrictedDialogs>(const QString &strRestrictedDialogs);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIToolType &enmToolType);
 template<> SHARED_LIBRARY_STUFF UIToolType fromInternalString<UIToolType>(const QString &strToolType);
 template<> SHARED_LIBRARY_STUFF QString toInternalString(const UIVisualStateType &visualStateType);

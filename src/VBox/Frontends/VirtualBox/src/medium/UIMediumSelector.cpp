@@ -224,7 +224,7 @@ void UIMediumSelector::prepareMenuAndToolBar()
     m_pMainMenu->addAction(m_pActionRefresh);
 
     m_pToolBar->addAction(m_pActionAdd);
-    if (!(gEDataManager->restrictedDialogs(m_uMachineID) & UIExtraDataMetaDefs::RestrictedDialogs_VISOCreator))
+    if (!(gEDataManager->restrictedDialogTypes(m_uMachineID) & UIExtraDataMetaDefs::DialogType_VISOCreator))
         m_pToolBar->addAction(m_pActionCreate);
     m_pToolBar->addSeparator();
     m_pToolBar->addAction(m_pActionRefresh);

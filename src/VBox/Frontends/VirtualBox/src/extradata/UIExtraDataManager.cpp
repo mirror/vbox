@@ -1903,6 +1903,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
     return QStringList()
            << QString()
            << GUI_EventHandlingType
+           << GUI_RestrictedDialogs
            << GUI_SuppressMessages << GUI_InvertMessageOption
 #ifdef VBOX_GUI_WITH_NETWORK_MANAGER
            << GUI_PreventApplicationUpdate << GUI_UpdateDate << GUI_UpdateCheckCount
@@ -1989,8 +1990,7 @@ QStringList UIExtraDataManagerWindow::knownExtraDataKeys()
            << GUI_Dbg_Enabled << GUI_Dbg_AutoShow
 #endif /* VBOX_WITH_DEBUGGER_GUI */
            << GUI_ExtraDataManager_Geometry << GUI_ExtraDataManager_SplitterHints
-           << GUI_LogWindowGeometry
-           << GUI_RestrictedDialogs;
+           << GUI_LogWindowGeometry;
 }
 
 #endif /* VBOX_GUI_WITH_EXTRADATA_MANAGER_UI */
@@ -2274,6 +2274,53 @@ UIExtraDataManager::~UIExtraDataManager()
 EventHandlingType UIExtraDataManager::eventHandlingType()
 {
     return gpConverter->fromInternalString<EventHandlingType>(extraDataString(GUI_EventHandlingType));
+}
+
+UIExtraDataMetaDefs::DialogType UIExtraDataManager::restrictedDialogTypes(const QUuid &uID)
+{
+    /* Prepare result: */
+    UIExtraDataMetaDefs::DialogType result = UIExtraDataMetaDefs::DialogType_Invalid;
+    /* Get restricted runtime-menu-types: */
+    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedDialogs, uID))
+    {
+        UIExtraDataMetaDefs::DialogType value = gpConverter->fromInternalString<UIExtraDataMetaDefs::DialogType>(strValue);
+        if (value != UIExtraDataMetaDefs::DialogType_Invalid)
+            result = static_cast<UIExtraDataMetaDefs::DialogType>(result | value);
+    }
+    /* Return result: */
+    return result;
+}
+
+void UIExtraDataManager::setRestrictedDialogTypes(UIExtraDataMetaDefs::DialogType dialogs, const QUuid &uID)
+{
+    /* We have MenuType enum registered, so we can enumerate it: */
+    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
+    const int iEnumIndex = smo.indexOfEnumerator("DialogType");
+    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
+
+    /* Prepare result: */
+    QStringList result;
+    /* Handle DialogType_All enum-value: */
+    if (dialogs == UIExtraDataMetaDefs::DialogType_All)
+        result << gpConverter->toInternalString(dialogs);
+    else
+    {
+        /* Handle other enum-values: */
+        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
+        {
+            /* Get iterated enum-value: */
+            const UIExtraDataMetaDefs::DialogType enumValue =
+                static_cast<UIExtraDataMetaDefs::DialogType>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
+            /* Skip DialogType_Invalid & DialogType_All enum-values: */
+            if (enumValue == UIExtraDataMetaDefs::DialogType_Invalid ||
+                enumValue == UIExtraDataMetaDefs::DialogType_All)
+                continue;
+            if (dialogs & enumValue)
+                result << gpConverter->toInternalString(enumValue);
+        }
+    }
+    /* Save result: */
+    setExtraDataStringList(GUI_RestrictedDialogs, result, uID);
 }
 
 QStringList UIExtraDataManager::suppressedMessages(const QUuid &uID /* = GlobalID */)
@@ -4517,44 +4564,6 @@ void UIExtraDataManager::setLogViewerVisiblePanels(const QStringList &panelNameL
 QStringList UIExtraDataManager::logViewerVisiblePanels()
 {
     return extraDataStringList(GUI_GuestControl_LogViewerVisiblePanels);
-}
-
-UIExtraDataMetaDefs::RestrictedDialogs UIExtraDataManager::restrictedDialogs(const QUuid &uID)
-{
-    UIExtraDataMetaDefs::RestrictedDialogs result = UIExtraDataMetaDefs::RestrictedDialogs_Invalid;
-    foreach (const QString &strValue, extraDataStringList(GUI_RestrictedDialogs, uID))
-    {
-        UIExtraDataMetaDefs::RestrictedDialogs value =
-            gpConverter->fromInternalString<UIExtraDataMetaDefs::RestrictedDialogs>(strValue);
-        if (value != UIExtraDataMetaDefs::RestrictedDialogs_Invalid)
-            result = static_cast<UIExtraDataMetaDefs::RestrictedDialogs>(result | value);
-    }
-    return result;
-}
-
-void UIExtraDataManager::setRestrictedDialogs(UIExtraDataMetaDefs::RestrictedDialogs dialogs, const QUuid &uID)
-{
-    const QMetaObject &smo = UIExtraDataMetaDefs::staticMetaObject;
-    const int iEnumIndex = smo.indexOfEnumerator("RestrictedDialogs");
-    QMetaEnum metaEnum = smo.enumerator(iEnumIndex);
-
-    QStringList result;
-    if (dialogs == UIExtraDataMetaDefs::RestrictedDialogs_All)
-        result << gpConverter->toInternalString(dialogs);
-    else
-    {
-        for (int iKeyIndex = 0; iKeyIndex < metaEnum.keyCount(); ++iKeyIndex)
-        {
-            const UIExtraDataMetaDefs::RestrictedDialogs enumValue =
-                static_cast<UIExtraDataMetaDefs::RestrictedDialogs>(metaEnum.keyToValue(metaEnum.key(iKeyIndex)));
-            if (enumValue == UIExtraDataMetaDefs::RestrictedDialogs_Invalid ||
-                enumValue == UIExtraDataMetaDefs::RestrictedDialogs_All)
-                continue;
-            if (dialogs & enumValue)
-                result << gpConverter->toInternalString(enumValue);
-        }
-    }
-    setExtraDataStringList(GUI_RestrictedDialogs, result, uID);
 }
 
 void UIExtraDataManager::sltExtraDataChange(const QUuid &uMachineID, const QString &strKey, const QString &strValue)

@@ -33,6 +33,7 @@
  * These functions returns 'true' for all allowed conversions. */
 template<> bool canConvert<SizeSuffix>() { return true; }
 template<> bool canConvert<StorageSlot>() { return true; }
+template<> bool canConvert<UIExtraDataMetaDefs::DialogType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::MenuType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::MenuApplicationActionType>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::MenuHelpActionType>() { return true; }
@@ -57,7 +58,6 @@ template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUsb>() {
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeSharedFolders>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeUserInterface>() { return true; }
 template<> bool canConvert<UIExtraDataMetaDefs::DetailsElementOptionTypeDescription>() { return true; }
-template<> bool canConvert<UIExtraDataMetaDefs::RestrictedDialogs>() { return true; }
 template<> bool canConvert<UIToolType>() { return true; }
 template<> bool canConvert<UIVisualStateType>() { return true; }
 template<> bool canConvert<DetailsElementType>() { return true; }
@@ -379,6 +379,38 @@ template<> StorageSlot fromString<StorageSlot>(const QString &strStorageSlot)
 
     /* Return result: */
     return result;
+}
+
+/* QString <= UIExtraDataMetaDefs::DialogType: */
+template<> QString toInternalString(const UIExtraDataMetaDefs::DialogType &enmDialogType)
+{
+    QString strResult;
+    switch (enmDialogType)
+    {
+        case UIExtraDataMetaDefs::DialogType_VISOCreator: strResult = "VISOCreator"; break;
+        case UIExtraDataMetaDefs::DialogType_All:         strResult = "All"; break;
+        default:
+        {
+            AssertMsgFailed(("No text for dialog type=%d", enmDialogType));
+            break;
+        }
+    }
+    return strResult;
+}
+
+/* UIExtraDataMetaDefs::DialogType <= QString: */
+template<> UIExtraDataMetaDefs::DialogType fromInternalString<UIExtraDataMetaDefs::DialogType>(const QString &strDialogType)
+{
+    /* Here we have some fancy stuff allowing us
+     * to search through the keys using 'case-insensitive' rule: */
+    QStringList keys;      QList<UIExtraDataMetaDefs::DialogType> values;
+    keys << "VISOCreator"; values << UIExtraDataMetaDefs::DialogType_VISOCreator;
+    keys << "All";         values << UIExtraDataMetaDefs::DialogType_All;
+    /* Invalid type for unknown words: */
+    if (!keys.contains(strDialogType, Qt::CaseInsensitive))
+        return UIExtraDataMetaDefs::DialogType_Invalid;
+    /* Corresponding type for known words: */
+    return values.at(keys.indexOf(QRegExp(strDialogType, Qt::CaseInsensitive)));
 }
 
 /* QString <= UIExtraDataMetaDefs::MenuType: */
@@ -1452,38 +1484,6 @@ template<> QString toInternalString(const UIExtraDataMetaDefs::DetailsElementOpt
         }
     }
     return strResult;
-}
-
-/* QString <= UIExtraDataMetaDefs::RestrictedDialogs: */
-template<> QString toInternalString(const UIExtraDataMetaDefs::RestrictedDialogs &enmRestrictedDialogs)
-{
-    QString strResult;
-    switch (enmRestrictedDialogs)
-    {
-        case UIExtraDataMetaDefs::RestrictedDialogs_VISOCreator:     strResult = "VISOCreator"; break;
-        case UIExtraDataMetaDefs::RestrictedDialogs_All:   strResult = "All"; break;
-        default:
-        {
-            AssertMsgFailed(("No text for details element option type=%d", enmRestrictedDialogs));
-            break;
-        }
-    }
-    return strResult;
-}
-
-/* UIExtraDataMetaDefs::RestrictedDialogs <= QString: */
-template<> UIExtraDataMetaDefs::RestrictedDialogs fromInternalString<UIExtraDataMetaDefs::RestrictedDialogs>(const QString &strRestrictedDialogs)
-{
-    /* Here we have some fancy stuff allowing us
-     * to search through the keys using 'case-insensitive' rule: */
-    QStringList keys;                        QList<UIExtraDataMetaDefs::RestrictedDialogs> values;
-    keys << "VISOCreator";                   values << UIExtraDataMetaDefs::RestrictedDialogs_VISOCreator;
-    keys << "All";                           values << UIExtraDataMetaDefs::RestrictedDialogs_All;
-    /* Invalid type for unknown words: */
-    if (!keys.contains(strRestrictedDialogs, Qt::CaseInsensitive))
-        return UIExtraDataMetaDefs::RestrictedDialogs_Invalid;
-    /* Corresponding type for known words: */
-    return values.at(keys.indexOf(QRegExp(strRestrictedDialogs, Qt::CaseInsensitive)));
 }
 
 /* UIExtraDataMetaDefs::DetailsElementOptionTypeDescription <= QString: */

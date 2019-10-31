@@ -45,6 +45,9 @@ namespace UIExtraDataDefs
       * @{ */
         /** Holds event handling type. */
         SHARED_LIBRARY_STUFF extern const char *GUI_EventHandlingType;
+
+        /** Holds restricted dialogs. */
+        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedDialogs;
     /** @} */
 
     /** @name Messaging
@@ -435,11 +438,6 @@ namespace UIExtraDataDefs
         SHARED_LIBRARY_STUFF extern const char *GUI_GuestControl_LogViewerVisiblePanels;
     /** @} */
 
-    /** @name Restricted dialogs
-      * @{ */
-        SHARED_LIBRARY_STUFF extern const char *GUI_RestrictedDialogs;
-    /** @} */
-
     /** @name Old key support stuff.
       * @{ */
         /** Prepares obsolete keys map. */
@@ -472,6 +470,15 @@ class SHARED_LIBRARY_STUFF UIExtraDataMetaDefs : public QObject
 #endif
 
 public:
+
+    /** Common UI: Dialog types. */
+    enum DialogType
+    {
+        DialogType_Invalid     = 0,
+        DialogType_VISOCreator = RT_BIT(0),
+        DialogType_All         = 0xFFFF
+    };
+    Q_ENUM(DialogType);
 
     /** Common UI: Menu types. */
     enum MenuType
@@ -777,14 +784,6 @@ public:
         DetailsElementOptionTypeDescription_Default = 0xFFFF
     };
     Q_ENUM(DetailsElementOptionTypeDescription);
-
-    enum RestrictedDialogs
-    {
-        RestrictedDialogs_Invalid              = 0,
-        RestrictedDialogs_VISOCreator          = RT_BIT(0),
-        RestrictedDialogs_All                  = 0xFFFF
-    };
-    Q_ENUM(RestrictedDialogs);
 };
 
 
