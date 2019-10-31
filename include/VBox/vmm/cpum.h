@@ -241,6 +241,11 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_AMD_Unknown,
     kCpumMicroarch_AMD_End,
 
+    kCpumMicroarch_Hygon_First,
+    kCpumMicroarch_Hygon_Dhyana = kCpumMicroarch_Hygon_First,
+    kCpumMicroarch_Hygon_Unknown,
+    kCpumMicroarch_Hygon_End,
+
     kCpumMicroarch_VIA_First,
     kCpumMicroarch_Centaur_C6 = kCpumMicroarch_VIA_First,
     kCpumMicroarch_Centaur_C2,
@@ -257,6 +262,11 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_VIA_Unknown,
     kCpumMicroarch_VIA_End,
 
+    kCpumMicroarch_Shanghai_First,
+    kCpumMicroarch_Shanghai_Wudaokou = kCpumMicroarch_Shanghai_First,
+    kCpumMicroarch_Shanghai_Unknown,
+    kCpumMicroarch_Shanghai_End,
+
     kCpumMicroarch_Cyrix_First,
     kCpumMicroarch_Cyrix_5x86 = kCpumMicroarch_Cyrix_First,
     kCpumMicroarch_Cyrix_M1,
@@ -270,16 +280,6 @@ typedef enum CPUMMICROARCH
     kCpumMicroarch_NEC_V20 = kCpumMicroarch_NEC_First,
     kCpumMicroarch_NEC_V30,
     kCpumMicroarch_NEC_End,
-
-    kCpumMicroarch_Shanghai_First,
-    kCpumMicroarch_Shanghai_Wudaokou = kCpumMicroarch_Shanghai_First,
-    kCpumMicroarch_Shanghai_Unknown,
-    kCpumMicroarch_Shanghai_End,
-
-    kCpumMicroarch_Hygon_First,
-    kCpumMicroarch_Hygon_Dhyana = kCpumMicroarch_Hygon_First,
-    kCpumMicroarch_Hygon_Unknown,
-    kCpumMicroarch_Hygon_End,
 
     kCpumMicroarch_Unknown,
 
