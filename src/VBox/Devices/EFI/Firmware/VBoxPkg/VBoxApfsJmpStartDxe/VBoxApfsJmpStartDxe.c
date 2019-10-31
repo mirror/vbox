@@ -127,7 +127,7 @@ static EFI_STATUS vboxApfsJmpStartLoadAndExecEfiDriver(IN PAPFSJMPSTARTCTX pCtx,
         for (i = 0; i < RT_LE2H_U32(pCtx->JmpStart.Hdr.cExtents) && !EFI_ERROR(rc) && cbReadLeft; i++)
         {
             PCAPFSPRANGE pRange = &pCtx->JmpStart.aExtents[i];
-            UINTN cbRead = RT_MIN(cbReadLeft, RT_LE2H_U64(pRange->cBlocks) * pCtx->cbBlock);
+            UINTN cbRead = RT_MIN(cbReadLeft, (UINTN)RT_LE2H_U64(pRange->cBlocks) * pCtx->cbBlock);
 
             rc = vboxApfsJmpStartRead(pCtx, RT_LE2H_U64(pRange->PAddrStart), pbBuf, cbRead);
             pbBuf      += cbRead;
