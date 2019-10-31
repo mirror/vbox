@@ -190,6 +190,7 @@
   <xsd:restriction base="xsd:string">
     <xsd:enumeration value="Am79C970A"/>
     <xsd:enumeration value="Am79C973"/>
+    <xsd:enumeration value="Am79C960"/>
     <xsd:enumeration value="82540EM"/>
     <xsd:enumeration value="82543GC"/>
     <xsd:enumeration value="82545EM"/>

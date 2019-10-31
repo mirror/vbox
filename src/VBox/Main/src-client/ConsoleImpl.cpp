@@ -1515,6 +1515,7 @@ inline static const char *networkAdapterTypeToName(NetworkAdapterType_T adapterT
     {
         case NetworkAdapterType_Am79C970A:
         case NetworkAdapterType_Am79C973:
+        case NetworkAdapterType_Am79C960:
             return "pcnet";
 #ifdef VBOX_WITH_E1000
         case NetworkAdapterType_I82540EM:

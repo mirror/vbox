@@ -2469,6 +2469,7 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
             {
                 case NetworkAdapterType_Am79C970A:
                 case NetworkAdapterType_Am79C973:
+                case NetworkAdapterType_Am79C960:
                     pDev = pDevPCNet;
                     break;
 #ifdef VBOX_WITH_E1000
@@ -2561,6 +2562,9 @@ int Console::i_configConstructorInner(PUVM pUVM, PVM pVM, AutoWriteLock *pAlock)
                     break;
                 case NetworkAdapterType_Am79C973:
                     InsertConfigString(pCfg, "ChipType", "Am79C973");
+                    break;
+                case NetworkAdapterType_Am79C960:
+                    InsertConfigString(pCfg, "ChipType", "Am79C960");
                     break;
                 case NetworkAdapterType_I82540EM:
                     InsertConfigInteger(pCfg, "AdapterType", 0);

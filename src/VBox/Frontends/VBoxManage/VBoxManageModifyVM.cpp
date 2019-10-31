@@ -1468,6 +1468,10 @@ RTEXITCODE handleModifyVM(HandlerArg *a)
                 {
                     CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C973));
                 }
+                else if (!RTStrICmp(ValueUnion.psz, "Am79C960"))
+                {
+                    CHECK_ERROR(nic, COMSETTER(AdapterType)(NetworkAdapterType_Am79C960));
+                }
 #ifdef VBOX_WITH_E1000
                 else if (!RTStrICmp(ValueUnion.psz, "82540EM"))
                 {

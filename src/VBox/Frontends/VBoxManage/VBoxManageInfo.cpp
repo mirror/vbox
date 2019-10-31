@@ -1446,6 +1446,7 @@ HRESULT showVMInfo(ComPtr<IVirtualBox> pVirtualBox,
                 {
                     case NetworkAdapterType_Am79C970A:  pszNICType = "Am79C970A";   break;
                     case NetworkAdapterType_Am79C973:   pszNICType = "Am79C973";    break;
+                    case NetworkAdapterType_Am79C960:   pszNICType = "Am79C960";    break;
 #ifdef VBOX_WITH_E1000
                     case NetworkAdapterType_I82540EM:   pszNICType = "82540EM";     break;
                     case NetworkAdapterType_I82543GC:   pszNICType = "82543GC";     break;

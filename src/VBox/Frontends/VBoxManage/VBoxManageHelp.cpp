@@ -590,7 +590,7 @@ void printUsage(USAGECATEGORY enmCommand, uint64_t fSubcommandScope, PRTSTREAM p
                      "|\n"
                      "                                        generic|natnetwork"
                      "]\n"
-                     "                            [--nictype<1-N> Am79C970A|Am79C973"
+                     "                            [--nictype<1-N> Am79C970A|Am79C973|Am79C960"
 #ifdef VBOX_WITH_E1000
                   "|\n                                            82540EM|82543GC|82545EM"
 #endif

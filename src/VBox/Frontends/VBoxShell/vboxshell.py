@@ -1647,7 +1647,8 @@ def monitorVBoxCmd(ctx, args):
 
 def getAdapterType(ctx, natype):
     if (natype == ctx['global'].constants.NetworkAdapterType_Am79C970A or
-        natype == ctx['global'].constants.NetworkAdapterType_Am79C973):
+        natype == ctx['global'].constants.NetworkAdapterType_Am79C973 or
+        natype == ctx['global'].constants.NetworkAdapterType_Am79C960):
         return "pcnet"
     elif (natype == ctx['global'].constants.NetworkAdapterType_I82540EM or
           natype == ctx['global'].constants.NetworkAdapterType_I82545EM or

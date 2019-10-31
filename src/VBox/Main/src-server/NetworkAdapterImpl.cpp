@@ -236,6 +236,7 @@ HRESULT NetworkAdapter::setAdapterType(NetworkAdapterType_T aAdapterType)
     {
         case NetworkAdapterType_Am79C970A:
         case NetworkAdapterType_Am79C973:
+        case NetworkAdapterType_Am79C960:
 #ifdef VBOX_WITH_E1000
         case NetworkAdapterType_I82540EM:
         case NetworkAdapterType_I82543GC:

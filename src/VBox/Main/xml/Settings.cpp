@@ -3884,6 +3884,8 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
                 nic.type = NetworkAdapterType_Am79C970A;
             else if (strTemp == "Am79C973")
                 nic.type = NetworkAdapterType_Am79C973;
+            else if (strTemp == "Am79C960")
+                nic.type = NetworkAdapterType_Am79C960;
             else if (strTemp == "82540EM")
                 nic.type = NetworkAdapterType_I82540EM;
             else if (strTemp == "82543GC")
@@ -6497,6 +6499,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                     switch (nic.type)
                     {
                         case NetworkAdapterType_Am79C973:   pcszType = "Am79C973"; break;
+                        case NetworkAdapterType_Am79C960:   pcszType = "Am79C960"; break;
                         case NetworkAdapterType_I82540EM:   pcszType = "82540EM"; break;
                         case NetworkAdapterType_I82543GC:   pcszType = "82543GC"; break;
                         case NetworkAdapterType_I82545EM:   pcszType = "82545EM"; break;

@@ -19422,6 +19422,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <const name="Virtio"                value="6">
         <desc>Virtio network device.</desc>
     </const>
+    <const name="Am79C960"              value="7">
+        <desc>AMD PCnet-ISA/NE2100 network card (Am79C960).</desc>
+    </const>
   </enum>
 
   <enum
