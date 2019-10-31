@@ -24,7 +24,7 @@
 #include "UICommon.h"
 
 
-UIMachineSettingsSFDetails::UIMachineSettingsSFDetails(DialogType type,
+UIMachineSettingsSFDetails::UIMachineSettingsSFDetails(SFDialogType type,
                                                        bool fEnableSelector, /* for "permanent" checkbox */
                                                        const QStringList &usedNames,
                                                        QWidget *pParent /* = 0 */)

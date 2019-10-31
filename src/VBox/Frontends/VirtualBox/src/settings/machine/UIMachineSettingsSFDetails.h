@@ -35,13 +35,13 @@ class SHARED_LIBRARY_STUFF UIMachineSettingsSFDetails : public QIWithRetranslate
 
 public:
 
-    enum DialogType
+    enum SFDialogType
     {
         AddType,
         EditType
     };
 
-    UIMachineSettingsSFDetails(DialogType type,
+    UIMachineSettingsSFDetails(SFDialogType type,
                                bool fEnableSelector, /* for "permanent" checkbox */
                                const QStringList &usedNames,
                                QWidget *pParent = 0);
@@ -75,9 +75,9 @@ private slots:
 
 private:
 
-    DialogType   m_type;
-    bool         m_fUsePermanent;
-    QStringList  m_usedNames;
+    SFDialogType  m_type;
+    bool          m_fUsePermanent;
+    QStringList   m_usedNames;
 };
 
 #endif /* !FEQT_INCLUDED_SRC_settings_machine_UIMachineSettingsSFDetails_h */
