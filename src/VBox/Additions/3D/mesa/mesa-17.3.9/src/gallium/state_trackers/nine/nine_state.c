@@ -1350,26 +1350,7 @@ NineDevice9_ResolveZ( struct NineDevice9 *device )
     blit.filter = PIPE_TEX_FILTER_NEAREST;
     blit.scissor_enable = FALSE;
 
-#ifdef VBOX_WITH_MESA3D_NINE_SVGA
-    /* Flip Y because the state tracker uses the D3D texture coords:
-     * top,left=0,0; bottom,right = 1,1.
-     * While the blit draws a quad using the source as texture and sets
-     * the texcoords for destination vertices using the OpenGL coordinates:
-     * bottom,left = 0,0; top,right = 1,1.
-     */
-    {
-        struct pipe_blit_info b = blit;
-
-        b.dst.box.y = b.dst.resource->height0 - b.dst.box.y - b.dst.box.height;
-
-        b.src.box.y = b.src.resource->height0 - b.src.box.y;
-        b.src.box.height = -b.src.box.height;
-
-        context->pipe->blit(context->pipe, &b);
-    }
-#else
     context->pipe->blit(context->pipe, &blit);
-#endif
 }
 
 #define ALPHA_TO_COVERAGE_ENABLE   MAKEFOURCC('A', '2', 'M', '1')
@@ -2517,21 +2498,8 @@ CSMT_ITEM_NO_WAIT(nine_context_clear_fb,
             y2 = MIN3(y2, rect.y2, rt->desc.Height);
 
             DBG("Clearing (%u..%u)x(%u..%u)\n", x1, x2, y1, y2);
-#ifdef VBOX_WITH_MESA3D_NINE_SVGA
-            /* Flip Y because the nine state tracker uses the D3D coords:
-             * top,left=0,0; bottom,right = 1,1.
-             * While the clear_render_target draws a quad and sets the texcoords
-             * for the destination vertices using the OpenGL coordinates:
-             * bottom,left = 0,0; top,right = 1,1.
-             */
-            unsigned const height = y2 - y1;
-            y1 = cbuf->height - y1 - height;
-            pipe->clear_render_target(pipe, cbuf, &rgba,
-                                      x1, y1, x2 - x1, height, false);
-#else
             pipe->clear_render_target(pipe, cbuf, &rgba,
                                       x1, y1, x2 - x1, y2 - y1, false);
-#endif
         }
     }
     if (!(bufs & PIPE_CLEAR_DEPTHSTENCIL))
@@ -2558,21 +2526,8 @@ CSMT_ITEM_NO_WAIT(nine_context_clear_fb,
         zsbuf = NineSurface9_GetSurface(zsbuf_surf, 0);
         assert(zsbuf);
 
-#ifdef VBOX_WITH_MESA3D_NINE_SVGA
-        /* Flip Y because the nine state tracker uses the D3D coords:
-         * top,left=0,0; bottom,right = 1,1.
-         * While the clear_depth_stencil draws a quad and sets the texcoords
-         * for the destination vertices using the OpenGL coordinates:
-         * bottom,left = 0,0; top,right = 1,1.
-         */
-        unsigned const height = y2 - y1;
-        y1 = zsbuf->height - y1 - height;
-        pipe->clear_depth_stencil(pipe, zsbuf, bufs, Z, Stencil,
-                                  x1, y1, x2 - x1, height, false);
-#else
         pipe->clear_depth_stencil(pipe, zsbuf, bufs, Z, Stencil,
                                   x1, y1, x2 - x1, y2 - y1, false);
-#endif
     }
     return;
 }
@@ -2712,9 +2667,6 @@ CSMT_ITEM_NO_WAIT(nine_context_resource_copy_region,
     (void) dst;
     (void) src;
 
-#ifdef VBOX_WITH_MESA3D_NINE_SVGA
-    /* This seems to work correctly and does not require Y flip. */
-#endif
     context->pipe->resource_copy_region(context->pipe,
             dst_res, dst_level,
             dst_box->x, dst_box->y, dst_box->z,
@@ -2732,26 +2684,7 @@ CSMT_ITEM_NO_WAIT(nine_context_blit,
     (void) dst;
     (void) src;
 
-#ifdef VBOX_WITH_MESA3D_NINE_SVGA
-    /* Flip Y because the state tracker uses D3D texture coords:
-     * top,left=0,0; bottom,right = 1,1.
-     * While the blit draws a quad using the source as texture and sets
-     * texcoords for destination vertices using OpenGL coordinates:
-     * bottom,left = 0,0; top,right = 1,1.
-     */
-    {
-        struct pipe_blit_info b = *blit;
-
-        b.dst.box.y = b.dst.resource->height0 - b.dst.box.y - b.dst.box.height;
-
-        b.src.box.y = b.src.resource->height0 - b.src.box.y;
-        b.src.box.height = -b.src.box.height;
-
-        context->pipe->blit(context->pipe, &b);
-    }
-#else
     context->pipe->blit(context->pipe, blit);
-#endif
 }
 
 CSMT_ITEM_NO_WAIT(nine_context_clear_render_target,
@@ -2768,16 +2701,6 @@ CSMT_ITEM_NO_WAIT(nine_context_clear_render_target,
 
     d3dcolor_to_pipe_color_union(&rgba, color);
     surf = NineSurface9_GetSurface(surface, 0);
-#ifdef VBOX_WITH_MESA3D_NINE_SVGA
-    /* Flip Y because the nine state tracker uses D3D coords:
-     * top,left=0,0; bottom,right = 1,1.
-     * While the clear_render_target draws a quad sets texcoords
-     * for destination vertices using OpenGL coordinates:
-     * bottom,left = 0,0; top,right = 1,1.
-     */
-    /** @todo Figure out how to avoid such mismatches in a generic way. */
-    y = surf->height - y - height;
-#endif
     context->pipe->clear_render_target(context->pipe, surf, &rgba, x, y, width, height, false);
 }
 

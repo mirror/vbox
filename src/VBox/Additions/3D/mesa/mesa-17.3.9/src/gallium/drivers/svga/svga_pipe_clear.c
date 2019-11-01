@@ -351,11 +351,26 @@ svga_clear_texture(struct pipe_context *pipe,
          util_blitter_save_framebuffer(svga->blitter,
                                        &svga->curr.framebuffer);
          begin_blit(svga);
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+         /* Flip Y.
+          *
+          * util_blitter draws a quad using OpenGL coordinates: y up.
+          *
+          * But the VMSVGA device uses the D3D coords: y down.
+          */
+         unsigned dsty = dsv->height - box->y - box->height;
+         util_blitter_clear_depth_stencil(svga->blitter,
+                                          dsv, clear_flags,
+                                          depth,stencil,
+                                          box->x, dsty,
+                                          box->width, box->height);
+#else
          util_blitter_clear_depth_stencil(svga->blitter,
                                           dsv, clear_flags,
                                           depth,stencil,
                                           box->x, box->y,
                                           box->width, box->height);
+#endif
       }
    }
    else {
@@ -427,11 +442,21 @@ svga_clear_texture(struct pipe_context *pipe,
             util_blitter_save_framebuffer(svga->blitter,
                                           &svga->curr.framebuffer);
             begin_blit(svga);
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+            /* Flip Y. See comment in svga_clear_texture */
+            unsigned dsty = rtv->height - box->y - box->height;
+            util_blitter_clear_render_target(svga->blitter,
+                                             rtv,
+                                             &color,
+                                             box->x, dsty,
+                                             box->width, box->height);
+#else
             util_blitter_clear_render_target(svga->blitter,
                                              rtv,
                                              &color,
                                              box->x, box->y,
                                              box->width, box->height);
+#endif
          }
          else {
             /* clear with map/write/unmap */
@@ -500,6 +525,10 @@ svga_blitter_clear_render_target(struct svga_context *svga,
    begin_blit(svga);
    util_blitter_save_framebuffer(svga->blitter, &svga->curr.framebuffer);
 
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+   /* Flip Y. See comment in svga_clear_texture */
+   dsty = dst->height - dsty - height;
+#endif
    util_blitter_clear_render_target(svga->blitter, dst, color,
                                     dstx, dsty, width, height);
 }
@@ -565,6 +594,11 @@ svga_clear_depth_stencil(struct pipe_context *pipe,
     /* Use software fallback */
     begin_blit(svga);
     util_blitter_save_framebuffer(svga->blitter, &svga->curr.framebuffer);
+
+#ifdef VBOX_WITH_MESA3D_NINE_SVGA
+    /* Flip Y. See comment in svga_clear_texture */
+    dsty = dst->height - dsty - height;
+#endif
     util_blitter_clear_depth_stencil(svga->blitter,
                                      dst, clear_flags,
                                      depth, stencil,
