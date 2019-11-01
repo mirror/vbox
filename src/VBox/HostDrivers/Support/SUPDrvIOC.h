@@ -222,7 +222,7 @@ typedef SUPREQHDR *PSUPREQHDR;
  * @todo Pending work on next major version change:
  *          - Move SUP_IOCTL_FAST_DO_NOP and SUP_VMMR0_DO_NEM_RUN after NEM.
  */
-#define SUPDRV_IOC_VERSION                              0x002d0000
+#define SUPDRV_IOC_VERSION                              0x002d0001
 
 /** SUP_IOCTL_COOKIE. */
 typedef struct SUPCOOKIE

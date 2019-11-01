@@ -224,6 +224,8 @@ static SUPFUNC g_aFunctions[] =
     { "SUPR0ObjVerifyAccess",                   (void *)(uintptr_t)SUPR0ObjVerifyAccess },
     { "SUPR0PageAllocEx",                       (void *)(uintptr_t)SUPR0PageAllocEx },
     { "SUPR0PageFree",                          (void *)(uintptr_t)SUPR0PageFree },
+    { "SUPR0PageMapKernel",                     (void *)(uintptr_t)SUPR0PageMapKernel },
+    { "SUPR0PageProtect",                       (void *)(uintptr_t)SUPR0PageProtect },
     { "SUPR0Printf",                            (void *)(uintptr_t)SUPR0Printf },
     { "SUPR0GetSessionGVM",                     (void *)(uintptr_t)SUPR0GetSessionGVM },
     { "SUPR0GetSessionVM",                      (void *)(uintptr_t)SUPR0GetSessionVM },
