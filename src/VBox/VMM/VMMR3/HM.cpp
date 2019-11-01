@@ -2940,6 +2940,7 @@ VMMR3_INT_DECL(void) HMR3CheckError(PVM pVM, int iStatusCode)
             case VERR_VMX_INVALID_GUEST_STATE:
             {
                 LogRel(("HM: VERR_VMX_INVALID_GUEST_STATE:\n"));
+                LogRel(("HM: CPU[%u] HM error = %#RX32\n", idCpu, pVCpu->hm.s.u32HMError));
                 hmR3CheckErrorLogVmcsCtls(idCpu, pVmcsInfo);
                 break;
             }
