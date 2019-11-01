@@ -619,7 +619,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Mmio2Destroy(PPDMDEVINS pDevIns, PGMMMIO2HA
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_Mmio2Destroy: caller='%s'/%d: pPciDev=%p (%#x) hRegion=%#RX64\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
+    LogFlow(("pdmR3DevHlp_Mmio2Destroy: caller='%s'/%d: hRegion=%#RX64\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
 
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
@@ -638,7 +638,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Mmio2Destroy(PPDMDEVINS pDevIns, PGMMMIO2HA
 static DECLCALLBACK(int) pdmR3DevHlp_Mmio2Map(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_Mmio2Map: caller='%s'/%d: pPciDev=%p (%#x) hRegion=%#RX64 GCPhys=%RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, GCPhys));
+    LogFlow(("pdmR3DevHlp_Mmio2Map: caller='%s'/%d: hRegion=%#RX64 GCPhys=%RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion, GCPhys));
 
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
@@ -654,7 +654,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Mmio2Map(PPDMDEVINS pDevIns, PGMMMIO2HANDLE
 static DECLCALLBACK(int) pdmR3DevHlp_Mmio2Unmap(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_Mmio2Unmap: caller='%s'/%d: pPciDev=%p (%#x) hRegion=%#RX64\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
+    LogFlow(("pdmR3DevHlp_Mmio2Unmap: caller='%s'/%d: hRegion=%#RX64\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
 
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
