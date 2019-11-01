@@ -2541,7 +2541,7 @@ static int vmmdevReqHandler_DebugIsPageShared(PPDMDEVINS pDevIns, VMMDevRequestH
 # ifdef DEBUG
     return PGMR3SharedModuleGetPageState(PDMDevHlpGetVM(pDevIns), pReq->GCPtrPage, &pReq->fShared, &pReq->uPageFlags);
 # else
-    RT_NOREF(pThis);
+    RT_NOREF(pDevIns);
     return VERR_NOT_IMPLEMENTED;
 # endif
 }
@@ -4397,7 +4397,7 @@ static DECLCALLBACK(int) vmmdevDestruct(PPDMDEVINS pDevIns)
     /*
      * Clean up the testing device.
      */
-    vmmdevTestingTerminate(pDevIns);
+    vmmdevR3TestingTerminate(pDevIns);
 #endif
 
     return VINF_SUCCESS;
@@ -4687,7 +4687,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Initialize testing.
      */
-    rc = vmmdevTestingInitialize(pDevIns);
+    rc = vmmdevR3TestingInitialize(pDevIns);
     if (RT_FAILURE(rc))
         return rc;
 #endif
@@ -4830,6 +4830,14 @@ static DECLCALLBACK(int) vmmdevRZConstruct(PPDMDEVINS pDevIns)
 
     rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortFast, vmmdevFastRequestHandler, vmmdevFastRequestIrqAck, NULL);
     AssertRCReturn(rc, rc);
+
+# ifndef VBOX_WITHOUT_TESTING_FEATURES
+    /*
+     * Initialize testing.
+     */
+    rc = vmmdevRZTestingInitialize(pDevIns);
+    AssertRCReturn(rc, rc);
+# endif
 
     return VINF_SUCCESS;
 }

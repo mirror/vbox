@@ -684,7 +684,7 @@ vmmdevTestingIoRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
  * @returns VBox status code.
  * @param   pDevIns             The VMMDev device instance.
  */
-void vmmdevTestingTerminate(PPDMDEVINS pDevIns)
+void vmmdevR3TestingTerminate(PPDMDEVINS pDevIns)
 {
     PVMMDEV   pThis   = PDMDEVINS_2_DATA(pDevIns, PVMMDEV);
     PVMMDEVCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVMMDEVCC);
@@ -706,7 +706,7 @@ void vmmdevTestingTerminate(PPDMDEVINS pDevIns)
  * @returns VBox status code.
  * @param   pDevIns             The VMMDev device instance.
  */
-int vmmdevTestingInitialize(PPDMDEVINS pDevIns)
+int vmmdevR3TestingInitialize(PPDMDEVINS pDevIns)
 {
     PVMMDEV     pThis   = PDMDEVINS_2_DATA(pDevIns, PVMMDEV);
     PVMMDEVCC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVMMDEVCC);
@@ -748,6 +748,34 @@ int vmmdevTestingInitialize(PPDMDEVINS pDevIns)
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * Does the ring-0/raw-mode initialization of the testing part if enabled.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns             The VMMDev device instance.
+ */
+int vmmdevRZTestingInitialize(PPDMDEVINS pDevIns)
+{
+    PVMMDEV     pThis   = PDMDEVINS_2_DATA(pDevIns, PVMMDEV);
+    int         rc;
+
+    if (!pThis->fTestingEnabled)
+        return VINF_SUCCESS;
+
+    if (pThis->fTestingMMIO)
+    {
+        rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioTesting, vmmdevTestingMmioWrite, vmmdevTestingMmioRead, NULL);
+        AssertRCReturn(rc, rc);
+    }
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortTesting, vmmdevTestingIoWrite, vmmdevTestingIoRead, NULL);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 #endif /* !VBOX_WITHOUT_TESTING_FEATURES */
 
