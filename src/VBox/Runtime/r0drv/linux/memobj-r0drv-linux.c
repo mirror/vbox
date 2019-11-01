@@ -1411,7 +1411,9 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
     /*
      * Create the IPRT memory object.
      */
-    pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(sizeof(*pMemLnx), RTR0MEMOBJTYPE_MAPPING, NULL, pMemLnxToMap->Core.cb);
+    if (!cbSub)
+        cbSub = pMemLnxToMap->Core.cb - offSub;
+    pMemLnx = (PRTR0MEMOBJLNX)rtR0MemObjNew(sizeof(*pMemLnx), RTR0MEMOBJTYPE_MAPPING, NULL, cbSub);
     if (pMemLnx)
     {
         if (pMemLnxToMap->cPages)
@@ -1421,10 +1423,11 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
              * Use vmap - 2.4.22 and later.
              */
             pgprot_t fPg = rtR0MemObjLinuxConvertProt(fProt, true /* kernel */);
+            Assert(((offSub + cbSub) >> PAGE_SHIFT) <= pMemLnxToMap->cPages);
 # ifdef VM_MAP
-            pMemLnx->Core.pv = vmap(&pMemLnxToMap->apPages[0], pMemLnxToMap->cPages, VM_MAP, fPg);
+            pMemLnx->Core.pv = vmap(&pMemLnxToMap->apPages[offSub >> PAGE_SHIFT], cbSub >> PAGE_SHIFT, VM_MAP, fPg);
 # else
-            pMemLnx->Core.pv = vmap(&pMemLnxToMap->apPages[0], pMemLnxToMap->cPages, VM_ALLOC, fPg);
+            pMemLnx->Core.pv = vmap(&pMemLnxToMap->apPages[offSub >> PAGE_SHIFT], cbSub >> PAGE_SHIFT, VM_ALLOC, fPg);
 # endif
             if (pMemLnx->Core.pv)
             {
@@ -1448,7 +1451,7 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
                 if (RT_SUCCESS(rc))
                 {
                     Assert(pMemLnxToMap->Core.pv);
-                    pMemLnx->Core.pv = pMemLnxToMap->Core.pv;
+                    pMemLnx->Core.pv = (uint8_t *)pMemLnxToMap->Core.pv + offSub;
                 }
             }
 #endif
@@ -1460,8 +1463,8 @@ DECLHIDDEN(int) rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ
              */
             Assert(pMemLnxToMap->Core.enmType == RTR0MEMOBJTYPE_PHYS && !pMemLnxToMap->Core.u.Phys.fAllocated);
             pMemLnx->Core.pv = pMemLnxToMap->Core.u.Phys.uCachePolicy == RTMEM_CACHE_POLICY_MMIO
-                             ? ioremap_nocache(pMemLnxToMap->Core.u.Phys.PhysBase, pMemLnxToMap->Core.cb)
-                             : ioremap(pMemLnxToMap->Core.u.Phys.PhysBase, pMemLnxToMap->Core.cb);
+                             ? ioremap_nocache(pMemLnxToMap->Core.u.Phys.PhysBase + offSub, cbSub)
+                             : ioremap(pMemLnxToMap->Core.u.Phys.PhysBase + offSub, cbSub);
             if (pMemLnx->Core.pv)
             {
                 /** @todo fix protection. */
