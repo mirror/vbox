@@ -7879,7 +7879,7 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpIoPortCreate(pDevIns, E1K_IOPORT_SIZE, pDevIns->apPciDevs[0], 2 /*iPciRegion*/,
                                e1kIOPortOut, e1kIOPortIn, NULL /*pvUser*/, "E1000", s_aExtDescs, &pThis->hIoPorts);
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpPCIIORegionRegisterIo(pDevIns, 2, E1K_IOPORT_SIZE, pThis->hIoPorts, NULL);
+    rc = PDMDevHlpPCIIORegionRegisterIo(pDevIns, 2, E1K_IOPORT_SIZE, pThis->hIoPorts);
     AssertRCReturn(rc, rc);
 
     /* Create transmit queue */

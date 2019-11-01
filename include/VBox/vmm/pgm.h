@@ -676,6 +676,8 @@ VMMRCDECL(int)      PGMRCDynMapInit(PVM pVM);
 VMMR0_INT_DECL(int) PGMR0PhysAllocateHandyPages(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int) PGMR0PhysFlushHandyPages(PGVM pGVM, VMCPUID idCpu);
 VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu);
+VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
+                                            size_t offSub, size_t cbSub, void **ppvMapping);
 VMMR0_INT_DECL(int) PGMR0PhysSetupIoMmu(PGVM pGVM);
 VMMR0DECL(int)      PGMR0SharedModuleCheck(PVMCC pVM, PGVM pGVM, VMCPUID idCpu, PGMMSHAREDMODULE pModule, PCRTGCPTR64 paRegionsGCPtrs);
 VMMR0DECL(int)      PGMR0Trap0eHandlerNestedPaging(PGVM pGVM, PGVMCPU pGVCpu, PGMMODE enmShwPagingMode, RTGCUINT uErr, PCPUMCTXCORE pRegFrame, RTGCPHYS pvFault);
@@ -722,17 +724,18 @@ VMMR3DECL(int)      PGMR3QueryGlobalMemoryStats(PUVM pUVM, uint64_t *pcbAllocMem
 VMMR3DECL(int)      PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMPHYSHANDLERTYPE hType,
                                           RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, const char *pszDesc);
 VMMR3DECL(int)      PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb);
-VMMR3DECL(int)      PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc);
-VMMR3DECL(int)      PGMR3PhysMMIOExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cbRegion, PGMPHYSHANDLERTYPE hType,
-                                               RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC, const char *pszDesc);
-VMMR3DECL(int)      PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion);
-VMMR3DECL(int)      PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS GCPhys);
-VMMR3DECL(int)      PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS GCPhys);
-VMMR3_INT_DECL(int) PGMR3PhysMMIOExReduce(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cbRegion);
+VMMR3_INT_DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cb,
+                                           uint32_t fFlags, const char *pszDesc, void **ppv, PGMMMIO2HANDLE *phRegion);
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, PGMMMIO2HANDLE hMmio2);
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, PGMMMIO2HANDLE hMmio2, RTGCPHYS GCPhys);
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, PGMMMIO2HANDLE hMmio2, RTGCPHYS GCPhys);
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExReduce(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, PGMMMIO2HANDLE hMmio2, RTGCPHYS cbRegion);
+VMMR3_INT_DECL(int) PGMR3PhysMmio2ValidateHandle(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2);
+VMMR3_INT_DECL(RTGCPHYS) PGMR3PhysMMIOExGetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2);
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, PGMMMIO2HANDLE hMmio2, uint32_t iNewRegion);
 VMMR3DECL(bool)     PGMR3PhysMMIOExIsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys);
 VMMR3_INT_DECL(int) PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS off, PRTHCPHYS pHCPhys);
 VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTR0PTR pR0Ptr);
-VMMR3_INT_DECL(int) PGMR3PhysMMIOExChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, uint32_t iNewRegion);
 
 
 /** @name PGMR3PhysRegisterRom flags.

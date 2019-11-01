@@ -456,19 +456,19 @@ typedef struct PCNETSTATE
 
     /** Error counter for bad receive descriptors. */
     uint32_t                            uCntBadRMD;
-    /* True if raw context is enabled. */
+    /** True if raw context is enabled. */
     bool                                fGCEnabled;
-    /* True if R0 context is enabled. */
+    /** True if R0 context is enabled. */
     bool                                fR0Enabled;
-    /* Emulated device type. */
+    /** Emulated device type. */
     uint8_t                             uDevType;
-    /* Backwards compatible shared memory region. */
+    /** Backwards compatible shared memory region during state loading. */
     bool                                fSharedRegion;
-    /* Link speed to be reported through CSR68. */
+    /** Link speed to be reported through CSR68. */
     uint32_t                            u32LinkSpeed;
-    /* MS to wait before we enable the link. */
+    /** MS to wait before we enable the link. */
     uint32_t                            cMsLinkUpDelay;
-    /* Alignment padding. */
+    /** Alignment padding. */
     uint32_t                            Alignment6;
 
     STAMCOUNTER                         StatReceiveBytes;

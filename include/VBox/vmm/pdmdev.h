@@ -867,13 +867,13 @@ typedef struct PDMPCIBUSREGR3
      * @param   hHandle         An I/O port, MMIO or MMIO2 handle according to
      *                          @a fFlags, UINT64_MAX if no handle is passed
      *                          (old style).
-     * @param   pfnCallback     Callback for doing the mapping. Optional if a handle
+     * @param   pfnMapUnmap     Callback for doing the mapping. Optional if a handle
      *                          is given.
      * @remarks Caller enters the PDM critical section.
      */
     DECLR3CALLBACKMEMBER(int, pfnIORegionRegisterR3,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                      RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, uint32_t fFlags,
-                                                     uint64_t hHandle, PFNPCIIOREGIONMAP pfnCallback));
+                                                     uint64_t hHandle, PFNPCIIOREGIONMAP pfnMapUnmap));
 
     /**
      * Register PCI configuration space read/write intercept callbacks.
@@ -2246,8 +2246,10 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 #define PDMPCIDEV_IORGN_F_MMIO2_HANDLE      UINT32_C(0x00000003)
 /** Handle type mask.  */
 #define PDMPCIDEV_IORGN_F_HANDLE_MASK       UINT32_C(0x00000003)
+/** New-style (mostly wrt callbacks).  */
+#define PDMPCIDEV_IORGN_F_NEW_STYLE         UINT32_C(0x00000004)
 /** Mask of valid flags.   */
-#define PDMPCIDEV_IORGN_F_VALID_MASK        UINT32_C(0x00000003)
+#define PDMPCIDEV_IORGN_F_VALID_MASK        UINT32_C(0x00000007)
 /** @} */
 
 
@@ -2275,7 +2277,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 30, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 31, 0)
 
 /**
  * PDM Device API.
@@ -2285,6 +2287,8 @@ typedef struct PDMDEVHLPR3
     /** Structure version. PDM_DEVHLPR3_VERSION defines the current version. */
     uint32_t                        u32Version;
 
+    /** @name I/O ports
+     * @{ */
     /**
      * Creates a range of I/O ports for a device.
      *
@@ -2357,6 +2361,7 @@ typedef struct PDMDEVHLPR3
      * @param   hIoPorts    The I/O port range handle.
      */
     DECLR3CALLBACKMEMBER(uint32_t, pfnIoPortGetMappingAddress,(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts));
+    /** @}  */
 
     /**
      * Register a number of I/O ports with a device.
@@ -2446,6 +2451,8 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnIOPortDeregister,(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts));
 
+    /** @name MMIO
+     * @{ */
     /**
      * Creates a memory mapped I/O (MMIO) region for a device.
      *
@@ -2482,19 +2489,25 @@ typedef struct PDMDEVHLPR3
                                                void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion));
 
     /**
-     * Maps a memory mapped I/O (MMIO) region.
+     * Maps a memory mapped I/O (MMIO) region (into the guest physical address space).
      *
      * @returns VBox status.
      * @param   pDevIns     The device instance the region is associated with.
      * @param   hRegion     The MMIO region handle.
      * @param   GCPhys       Where to map the region.
+     * @note    An MMIO range may overlap with base memory if a lot of RAM is
+     *          configured for the VM, in  which case we'll drop the base memory
+     *          pages.  Presently we will make no attempt to preserve anything that
+     *          happens to be present in the base memory that is replaced, this is
+     *          technically incorrect but it's just not worth the effort to do
+     *          right, at least not at this point.
      * @sa      PDMDevHlpMmioUnmap, PDMDevHlpMmioCreate, PDMDevHlpMmioCreateEx,
      *          PDMDevHlpMmioSetUpContext
      */
     DECLR3CALLBACKMEMBER(int, pfnMmioMap,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, RTGCPHYS GCPhys));
 
     /**
-     * Maps a memory mapped I/O (MMIO) region.
+     * Unmaps a memory mapped I/O (MMIO) region.
      *
      * @returns VBox status.
      * @param   pDevIns     The device instance the region is associated with.
@@ -2530,6 +2543,7 @@ typedef struct PDMDEVHLPR3
      * @param   hRegion     The MMIO region handle.
      */
     DECLR3CALLBACKMEMBER(RTGCPHYS, pfnMmioGetMappingAddress,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion));
+    /** @} */
 
     /**
      * Register a Memory Mapped I/O (MMIO) region.
@@ -2613,6 +2627,119 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIODeregister,(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange));
 
+    /** @name MMIO2
+     * @{ */
+    /**
+     * Creates a MMIO2 region.
+     *
+     * As mentioned elsewhere, MMIO2 is just RAM spelled differently.  It's RAM
+     * associated with a device.  It is also non-shared memory with a permanent
+     * ring-3 mapping and page backing (presently).
+     *
+     * @returns VBox status.
+     * @param   pDevIns             The device instance.
+     * @param   pPciDev             The PCI device the region is associated with, or
+     *                              NULL if no PCI device association.
+     * @param   iPciRegion          The region number. Use the PCI region number as
+     *                              this must be known to the PCI bus device too. If
+     *                              it's not associated with the PCI device, then
+     *                              any number up to UINT8_MAX is fine.
+     * @param   cb                  The size (in bytes) of the region.
+     * @param   fFlags              Reserved for future use, must be zero.
+     * @param   ppvMapping          Where to store the address of the ring-3 mapping
+     *                              of the memory.
+     * @param   pszDesc             Pointer to description string. This must not be
+     *                              freed.
+     * @param   phRegion            Where to return the MMIO2 region handle.
+     *
+     * @thread  EMT(0)
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2Create,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iPciRegion, RTGCPHYS cbRegion,
+                                              uint32_t fFlags, const char *pszDesc, void **ppvMapping, PPGMMMIO2HANDLE phRegion));
+
+    /**
+     * Destroys a MMIO2 region, unmapping it and freeing the memory.
+     *
+     * Any physical access handlers registered for the region must be deregistered
+     * before calling this function.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   hRegion             The MMIO2 region handle.
+     * @thread  EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2Destroy,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion));
+
+    /**
+     * Maps a MMIO2 region (into the guest physical address space).
+     *
+     * @returns VBox status.
+     * @param   pDevIns     The device instance the region is associated with.
+     * @param   hRegion     The MMIO2 region handle.
+     * @param   GCPhys       Where to map the region.
+     * @note    A MMIO2 region overlap with base memory if a lot of RAM is
+     *          configured for the VM, in  which case we'll drop the base memory
+     *          pages.  Presently we will make no attempt to preserve anything that
+     *          happens to be present in the base memory that is replaced, this is
+     *          technically incorrect but it's just not worth the effort to do
+     *          right, at least not at this point.
+     * @sa      PDMDevHlpMmio2Unmap, PDMDevHlpMmio2Create, PDMDevHlpMmio2SetUpContext
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2Map,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, RTGCPHYS GCPhys));
+
+    /**
+     * Unmaps a MMIO2 region.
+     *
+     * @returns VBox status.
+     * @param   pDevIns     The device instance the region is associated with.
+     * @param   hRegion     The MMIO2 region handle.
+     * @sa      PDMDevHlpMmio2Map, PDMDevHlpMmio2Create, PDMDevHlpMmio2SetUpContext
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2Unmap,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion));
+
+    /**
+     * Reduces the length of a MMIO range.
+     *
+     * This is for implementations of PDMPCIDEV::pfnRegionLoadChangeHookR3 and will
+     * only work during saved state restore.  It will not call the PCI bus code, as
+     * that is expected to restore the saved resource configuration.
+     *
+     * It just adjusts the mapping length of the region so that when pfnMmioMap is
+     * called it will only map @a cbRegion bytes and not the value set during
+     * registration.
+     *
+     * @return VBox status code.
+     * @param   pDevIns     The device owning the range.
+     * @param   hRegion     The MMIO2 region handle.
+     * @param   cbRegion    The new size, must be smaller.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2Reduce,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, RTGCPHYS cbRegion));
+
+    /**
+     * Gets the mapping address of the MMIO region @a hRegion.
+     *
+     * @returns Mapping address, NIL_RTGCPHYS if not mapped (or invalid parameters).
+     * @param   pDevIns     The device instance to register the ports with.
+     * @param   hRegion     The MMIO2 region handle.
+     */
+    DECLR3CALLBACKMEMBER(RTGCPHYS, pfnMmio2GetMappingAddress,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion));
+
+    /**
+     * Changes the number of an MMIO2 or pre-registered MMIO region.
+     *
+     * This should only be used to deal with saved state problems, so there is no
+     * convenience inline wrapper for this method.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns     The device instance.
+     * @param   hRegion     The MMIO2 region handle.
+     * @param   iNewRegion  The new region index.
+     *
+     * @sa      @bugref{9359}
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMmio2ChangeRegionNo,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, uint32_t iNewRegion));
+    /** @} */
+
     /**
      * Allocate and register a MMIO2 region.
      *
@@ -2635,61 +2762,10 @@ typedef struct PDMDEVHLPR3
      * @param   pszDesc             Pointer to description string. This must not be
      *                              freed.
      * @thread  EMT.
+     * @deprecated
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIO2Register,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cb,
                                                 uint32_t fFlags, void **ppv, const char *pszDesc));
-
-    /**
-     * Pre-register a Memory Mapped I/O (MMIO) region.
-     *
-     * This API must be used for large PCI MMIO regions, as it handles these much
-     * more efficiently and with greater flexibility when it comes to heap usage.
-     * It is only available during device construction.
-     *
-     * To map and unmap the pre-registered region into and our of guest address
-     * space, use the PDMDevHlpMMIOExMap and PDMDevHlpMMIOExUnmap helpers.
-     *
-     * You may call PDMDevHlpMMIOExDeregister from the destructor to free the region
-     * for reasons of symmetry, but it will be automatically deregistered by PDM
-     * once the destructor returns.
-     *
-     * @returns VBox status.
-     * @param   pDevIns             The device instance to register the MMIO with.
-     * @param   pPciDev             The PCI device to associate the region with, use
-     *                              NULL to not associate it with any device.
-     * @param   iRegion             The PCI region number.  When @a pPciDev is NULL,
-     *                              this is a unique number between 0 and UINT8_MAX.
-     * @param   cbRegion            The size of the range (in bytes).
-     * @param   fFlags              Flags, IOMMMIO_FLAGS_XXX.
-     * @param   pszDesc             Pointer to description string. This must not be freed.
-     * @param   pvUser              Ring-3 user argument.
-     * @param   pfnWrite            Pointer to function which is gonna handle Write operations.
-     * @param   pfnRead             Pointer to function which is gonna handle Read operations.
-     * @param   pfnFill             Pointer to function which is gonna handle Fill/memset operations. (optional)
-     * @param   pvUserR0            Ring-0 user argument. Optional.
-     * @param   pszWriteR0          The name of the ring-0 write handler method. Optional.
-     * @param   pszReadR0           The name of the ring-0 read handler method. Optional.
-     * @param   pszFillR0           The name of the ring-0 fill/memset handler method. Optional.
-     * @param   pvUserRC            Raw-mode context user argument. Optional.  If
-     *                              unsigned value is 0x10000 or higher, it will be
-     *                              automatically relocated with the hypervisor
-     *                              guest mapping.
-     * @param   pszWriteRC          The name of the raw-mode context write handler method. Optional.
-     * @param   pszReadRC           The name of the raw-mode context read handler method. Optional.
-     * @param   pszFillRC           The name of the raw-mode context fill/memset handler method. Optional.
-     * @thread  EMT
-     *
-     * @remarks Caller enters the device critical section prior to invoking the
-     *          registered callback methods.
-     * @sa      PDMDevHlpMMIOExMap, PDMDevHlpMMIOExUnmap, PDMDevHlpMMIOExDeregister,
-     *          PDMDevHlpMMIORegisterEx
-     * @deprecated
-     */
-    DECLR3CALLBACKMEMBER(int, pfnMMIOExPreRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
-                                                    uint32_t fFlags, const char *pszDesc, RTHCPTR pvUser,
-                                                    PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                                    RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
-                                                    RTRCPTR pvUserRC, const char *pszWriteRC, const char *pszReadRC, const char *pszFillRC));
 
     /**
      * Deregisters and frees a MMIO or MMIO2 region.
@@ -2703,7 +2779,7 @@ typedef struct PDMDEVHLPR3
      *                              NULL if not associated with any.
      * @param   iRegion             The region number used during registration.
      * @thread  EMT.
-     * @deprecated for MMIO
+     * @deprecated
      */
     DECLR3CALLBACKMEMBER(int, pfnMMIOExDeregister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion));
 
@@ -3501,14 +3577,14 @@ typedef struct PDMDEVHLPR3
      * @param   hHandle             An I/O port, MMIO or MMIO2 handle according to
      *                              @a fFlags, UINT64_MAX if no handle is passed
      *                              (old style).
-     * @param   pfnCallback         Callback for doing the mapping, optional when a
+     * @param   pfnMapUnmap         Callback for doing the mapping, optional when a
      *                              handle is specified.  The callback will be
      *                              invoked holding only the PDM lock.  The device
      *                              lock will _not_ be taken (due to lock order).
      */
     DECLR3CALLBACKMEMBER(int, pfnPCIIORegionRegister,(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                       RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, uint32_t fFlags,
-                                                      uint64_t hHandle, PFNPCIIOREGIONMAP pfnCallback));
+                                                      uint64_t hHandle, PFNPCIIOREGIONMAP pfnMapUnmap));
 
     /**
      * Register PCI configuration space read/write callbacks.
@@ -4512,7 +4588,7 @@ typedef struct PDMDEVHLPR3
     /** Just a safety precaution. (PDM_DEVHLPR3_VERSION) */
     uint32_t                        u32TheEnd;
 } PDMDEVHLPR3;
-#endif /* !IN_RING3 */
+#endif /* !IN_RING3 || DOXYGEN_RUNNING */
 /** Pointer to the R3 PDM Device API. */
 typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 /** Pointer to the R3 PDM Device API, const variant. */
@@ -4582,6 +4658,27 @@ typedef struct PDMDEVHLPRC
      */
     DECLRCCALLBACKMEMBER(int, pfnMmioSetUpContextEx,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
                                                      PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser));
+
+    /**
+     * Sets up a raw-mode mapping for an MMIO2 region.
+     *
+     * The region must have been created in ring-3 first using
+     * PDMDevHlpMmio2Create().
+     *
+     * @returns VBox status.
+     * @param   pDevIns     The device instance to register the ports with.
+     * @param   hRegion     The MMIO2 region handle.
+     * @param   offSub      Start of what to map into raw-mode.  Must be page aligned.
+     * @param   cbSub       Number of bytes to map into raw-mode.  Must be page
+     *                      aligned.  Zero is an alias for everything.
+     * @param   ppvMapping  Where to return the mapping corresponding to @a offSub.
+     * @thread  EMT(0)
+     * @note    Only available at VM creation time.
+     *
+     * @sa      PDMDevHlpMmio2Create().
+     */
+    DECLRCCALLBACKMEMBER(int, pfnMmio2SetUpContext,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion,
+                                                    size_t offSub, size_t cbSub, void **ppvMapping));
 
     /**
      * Bus master physical memory read from the given PCI device.
@@ -4872,7 +4969,7 @@ typedef RGPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RGPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 8, 0)
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 9, 0)
 
 
 /**
@@ -4886,7 +4983,7 @@ typedef struct PDMDEVHLPR0
     /**
      * Sets up ring-0 callback handlers for an I/O port range.
      *
-     * The range must have been registered in ring-3 first using
+     * The range must have been created in ring-3 first using
      * PDMDevHlpIoPortCreate() or PDMDevHlpIoPortCreateEx().
      *
      * @returns VBox status.
@@ -4905,8 +5002,8 @@ typedef struct PDMDEVHLPR0
      * @remarks Caller enters the device critical section prior to invoking the
      *          registered callback methods.
      *
-     * @sa      PDMDevHlpIoPortCreate, PDMDevHlpIoPortCreateEx, PDMDevHlpIoPortMap,
-     *          PDMDevHlpIoPortUnmap.
+     * @sa      PDMDevHlpIoPortCreate(), PDMDevHlpIoPortCreateEx(),
+     *          PDMDevHlpIoPortMap(), PDMDevHlpIoPortUnmap().
      */
     DECLR0CALLBACKMEMBER(int, pfnIoPortSetUpContextEx,(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
                                                        PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
@@ -4916,8 +5013,9 @@ typedef struct PDMDEVHLPR0
     /**
      * Sets up ring-0 callback handlers for an MMIO region.
      *
-     * The region must have been registered in ring-3 first using
-     * PDMDevHlpMmioCreate() or PDMDevHlpMmioCreateEx().
+     * The region must have been created in ring-3 first using
+     * PDMDevHlpMmioCreate(), PDMDevHlpMmioCreateEx(), PDMDevHlpMmioCreateAndMap(),
+     * PDMDevHlpMmioCreateExAndMap() or PDMDevHlpPCIIORegionCreateMmio().
      *
      * @returns VBox status.
      * @param   pDevIns     The device instance to register the ports with.
@@ -4933,11 +5031,33 @@ typedef struct PDMDEVHLPR0
      * @remarks Caller enters the device critical section prior to invoking the
      *          registered callback methods.
      *
-     * @sa      PDMDevHlpMmioCreate, PDMDevHlpMmioCreateEx, PDMDevHlpMmioMap,
-     *          PDMDevHlpMmioUnmap.
+     * @sa      PDMDevHlpMmioCreate(), PDMDevHlpMmioCreateEx(), PDMDevHlpMmioMap(),
+     *          PDMDevHlpMmioUnmap().
      */
     DECLR0CALLBACKMEMBER(int, pfnMmioSetUpContextEx,(PPDMDEVINS pDevIns, IOMMMIOHANDLE hRegion, PFNIOMMMIONEWWRITE pfnWrite,
                                                      PFNIOMMMIONEWREAD pfnRead, PFNIOMMMIONEWFILL pfnFill, void *pvUser));
+
+    /**
+     * Sets up a ring-0 mapping for an MMIO2 region.
+     *
+     * The region must have been created in ring-3 first using
+     * PDMDevHlpMmio2Create().
+     *
+     * @returns VBox status.
+     * @param   pDevIns     The device instance to register the ports with.
+     * @param   hRegion     The MMIO2 region handle.
+     * @param   offSub      Start of what to map into ring-0.  Must be page aligned.
+     * @param   cbSub       Number of bytes to map into ring-0.  Must be page
+     *                      aligned.  Zero is an alias for everything.
+     * @param   ppvMapping  Where to return the mapping corresponding to @a offSub.
+     *
+     * @thread  EMT(0)
+     * @note    Only available at VM creation time.
+     *
+     * @sa      PDMDevHlpMmio2Create().
+     */
+    DECLR0CALLBACKMEMBER(int, pfnMmio2SetUpContext,(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, size_t offSub, size_t cbSub,
+                                                    void **ppvMapping));
 
     /**
      * Bus master physical memory read from the given PCI device.
@@ -5313,7 +5433,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 10, 0)
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 11, 0)
 
 
 /**
@@ -5866,7 +5986,7 @@ DECLINLINE(uint32_t) PDMDevHlpIoPortGetMappingAddress(PPDMDEVINS pDevIns, IOMIOP
 
 
 #endif /* IN_RING3 */
-#ifndef IN_RING3
+#if !defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 
 /**
  * @sa PDMDevHlpIoPortSetUpContextEx
@@ -5887,9 +6007,8 @@ DECLINLINE(int) PDMDevHlpIoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDL
     return pDevIns->CTX_SUFF(pHlp)->pfnIoPortSetUpContextEx(pDevIns, hIoPorts, pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser);
 }
 
-#endif /* !IN_RING3 */
+#endif /* !IN_RING3 || DOXYGEN_RUNNING */
 #ifdef IN_RING3
-
 
 /**
  * @sa PDMDevHlpMmioCreateEx
@@ -5918,11 +6037,11 @@ DECLINLINE(int) PDMDevHlpMmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS cbRegion,
  * @sa PDMDevHlpMmioCreate and PDMDevHlpMmioMap
  */
 DECLINLINE(int) PDMDevHlpMmioCreateAndMap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPHYS cbRegion,
-                                          PPDMPCIDEV pPciDev, uint32_t iPciRegion, PFNIOMMMIONEWWRITE pfnWrite,
-                                          PFNIOMMMIONEWREAD pfnRead, void *pvUser, const char *pszDesc, PIOMMMIOHANDLE phRegion)
+                                          PFNIOMMMIONEWWRITE pfnWrite, PFNIOMMMIONEWREAD pfnRead,
+                                          uint32_t fFlags, const char *pszDesc, PIOMMMIOHANDLE phRegion)
 {
-    int rc = pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, 0, pPciDev, iPciRegion,
-                                              pfnWrite, pfnRead, NULL, pvUser, pszDesc, phRegion);
+    int rc = pDevIns->pHlpR3->pfnMmioCreateEx(pDevIns, cbRegion, fFlags, NULL /*pPciDev*/, UINT32_MAX /*iPciRegion*/,
+                                              pfnWrite, pfnRead, NULL /*pfnFill*/, NULL /*pvUser*/, pszDesc, phRegion);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnMmioMap(pDevIns, *phRegion, GCPhys);
     return rc;
@@ -5976,7 +6095,7 @@ DECLINLINE(RTGCPHYS) PDMDevHlpMmioGetMappingAddress(PPDMDEVINS pDevIns, IOMMMIOH
 }
 
 #endif /* IN_RING3 */
-#ifndef IN_RING3
+#if !defined(IN_RING3) || defined(DOXYGEN_RUNNING)
 
 /**
  * @sa PDMDevHlpMmioSetUpContextEx
@@ -5996,7 +6115,7 @@ DECLINLINE(int) PDMDevHlpMmioSetUpContextEx(PPDMDEVINS pDevIns, IOMMMIOHANDLE hR
     return pDevIns->CTX_SUFF(pHlp)->pfnMmioSetUpContextEx(pDevIns, hRegion, pfnWrite, pfnRead, pfnFill, pvUser);
 }
 
-#endif /* !IN_RING3 */
+#endif /* !IN_RING3 || DOXYGEN_RUNNING */
 #ifdef IN_RING3
 
 /**
@@ -6105,27 +6224,68 @@ DECLINLINE(int) PDMDevHlpMMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 }
 
 /**
+ * @copydoc PDMDEVHLPR3::pfnMmio2Create
+ */
+DECLINLINE(int) PDMDevHlpMmio2Create(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iPciRegion, RTGCPHYS cbRegion,
+                                     uint32_t fFlags, const char *pszDesc, void **ppvMapping, PPGMMMIO2HANDLE phRegion)
+{
+    return pDevIns->pHlpR3->pfnMmio2Create(pDevIns, pPciDev, iPciRegion, cbRegion, fFlags, pszDesc, ppvMapping, phRegion);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmio2Map
+ */
+DECLINLINE(int) PDMDevHlpMmio2Map(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, RTGCPHYS GCPhys)
+{
+    return pDevIns->pHlpR3->pfnMmio2Map(pDevIns, hRegion, GCPhys);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmio2Unmap
+ */
+DECLINLINE(int) PDMDevHlpMmio2Unmap(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion)
+{
+    return pDevIns->pHlpR3->pfnMmio2Unmap(pDevIns, hRegion);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmio2Reduce
+ */
+DECLINLINE(int) PDMDevHlpMmio2Reduce(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, RTGCPHYS cbRegion)
+{
+    return pDevIns->pHlpR3->pfnMmio2Reduce(pDevIns, hRegion, cbRegion);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMmio2GetMappingAddress
+ */
+DECLINLINE(RTGCPHYS) PDMDevHlpMmio2GetMappingAddress(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion)
+{
+    return pDevIns->pHlpR3->pfnMmio2GetMappingAddress(pDevIns, hRegion);
+}
+
+#endif /* IN_RING3 */
+#if !defined(IN_RING3) || defined(DOXYGEN_RUNNING)
+
+/**
+ * @copydoc PDMDEVHLPR0::pfnMmio2SetUpContext
+ */
+DECLINLINE(int) PDMDevHlpMmio2SetUpContext(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion,
+                                           size_t offSub, size_t cbSub, void **ppvMapping)
+{
+    return pDevIns->CTX_SUFF(pHlp)->pfnMmio2SetUpContext(pDevIns, hRegion, offSub, cbSub, ppvMapping);
+}
+
+#endif /* !IN_RING3 || DOXYGEN_RUNNING */
+#ifdef IN_RING3
+
+/**
  * @copydoc PDMDEVHLPR3::pfnMMIO2Register
  */
 DECLINLINE(int) PDMDevHlpMMIO2Register(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cb,
                                        uint32_t fFlags, void **ppv, const char *pszDesc)
 {
     return pDevIns->pHlpR3->pfnMMIO2Register(pDevIns, pPciDev, iRegion, cb, fFlags, ppv, pszDesc);
-}
-
-/**
- * @copydoc PDMDEVHLPR3::pfnMMIOExPreRegister
- */
-DECLINLINE(int) PDMDevHlpMMIOExPreRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
-                                           uint32_t fFlags, const char *pszDesc, RTHCPTR pvUser,
-                                           PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
-                                           RTR0PTR pvUserR0, const char *pszWriteR0, const char *pszReadR0, const char *pszFillR0,
-                                           RTRCPTR pvUserRC, const char *pszWriteRC, const char *pszReadRC, const char *pszFillRC)
-{
-    return pDevIns->pHlpR3->pfnMMIOExPreRegister(pDevIns, pPciDev, iRegion, cbRegion, fFlags, pszDesc,
-                                                 pvUser, pfnWrite, pfnRead, pfnFill,
-                                                 pvUserR0, pszWriteR0, pszReadR0, pszFillR0,
-                                                 pvUserRC, pszWriteRC, pszReadRC, pszFillRC);
 }
 
 /**
@@ -6767,25 +6927,27 @@ DECLINLINE(int) PDMDevHlpPCIRegisterMsiEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev
  * @param   iRegion             The region number.
  * @param   cbRegion            Size of the region.
  * @param   enmType             PCI_ADDRESS_SPACE_MEM, PCI_ADDRESS_SPACE_IO or PCI_ADDRESS_SPACE_MEM_PREFETCH.
- * @param   pfnCallback         Callback for doing the mapping.
+ * @param   pfnMapUnmap         Callback for doing the mapping.
  * @remarks The callback will be invoked holding the PDM lock. The device lock
  *          is NOT take because that is very likely be a lock order violation.
+ * @remarks Old callback style, won't get unmap calls.
  */
 DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
-                                             PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
+                                             PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnMapUnmap)
 {
     return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType,
-                                                   PDMPCIDEV_IORGN_F_NO_HANDLE, UINT64_MAX, pfnCallback);
+                                                   PDMPCIDEV_IORGN_F_NO_HANDLE, UINT64_MAX, pfnMapUnmap);
 }
 
 /**
  * @sa PDMDEVHLPR3::pfnPCIIORegionRegister
+ * @remarks Old callback style, won't get unmap calls.
  */
 DECLINLINE(int) PDMDevHlpPCIIORegionRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion, RTGCPHYS cbRegion,
-                                               PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
+                                               PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnMapUnmap)
 {
     return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iRegion, cbRegion, enmType,
-                                                   PDMPCIDEV_IORGN_F_NO_HANDLE, UINT64_MAX, pfnCallback);
+                                                   PDMPCIDEV_IORGN_F_NO_HANDLE, UINT64_MAX, pfnMapUnmap);
 }
 
 /**
@@ -6796,18 +6958,33 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterEx(PPDMDEVINS pDevIns, PPDMPCIDEV pP
  * @param   iRegion         The region number.
  * @param   cbRegion        Size of the region.
  * @param   hIoPorts        Handle to the I/O port region.
- * @param   pfnCallback     Callback for doing the mapping, optional.  The
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIo(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion, IOMIOPORTHANDLE hIoPorts)
+{
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, PCI_ADDRESS_SPACE_IO,
+                                                   PDMPCIDEV_IORGN_F_IOPORT_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE, hIoPorts, NULL);
+}
+
+/**
+ * Registers a I/O port region for the default PCI device, custom map/unmap.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   iRegion         The region number.
+ * @param   cbRegion        Size of the region.
+ * @param   hIoPorts        Handle to the I/O port region.
+ * @param   pfnMapUnmap     Callback for doing the mapping, optional.  The
  *                          callback will be invoked holding only the PDM lock.
  *                          The device lock will _not_ be taken (due to lock
  *                          order).
  */
-DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIo(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
-                                               IOMIOPORTHANDLE hIoPorts, PFNPCIIOREGIONMAP pfnCallback)
+DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIoCustom(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+                                                     PFNPCIIOREGIONMAP pfnMapUnmap)
 {
     return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, PCI_ADDRESS_SPACE_IO,
-                                                   PDMPCIDEV_IORGN_F_IOPORT_HANDLE, hIoPorts, pfnCallback);
+                                                   PDMPCIDEV_IORGN_F_NO_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                   UINT64_MAX, pfnMapUnmap);
 }
-
 
 /**
  * Combines PDMDevHlpIoPortCreate and PDMDevHlpPCIIORegionRegisterIo, creating
@@ -6837,10 +7014,10 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateIo(PPDMDEVINS pDevIns, uint32_t iPciRe
                                                 pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, paExtDescs, phIoPorts);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbPorts, PCI_ADDRESS_SPACE_IO,
-                                                     PDMPCIDEV_IORGN_F_IOPORT_HANDLE, *phIoPorts, NULL /*pfnCallback*/);
+                                                     PDMPCIDEV_IORGN_F_IOPORT_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                     *phIoPorts, NULL /*pfnMapUnmap*/);
     return rc;
 }
-
 
 /**
  * Registers an MMIO region for the default PCI device.
@@ -6853,16 +7030,17 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateIo(PPDMDEVINS pDevIns, uint32_t iPciRe
  *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
  *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
  * @param   hMmioRegion     Handle to the MMIO region.
- * @param   pfnCallback     Callback for doing the mapping, optional.  The
+ * @param   pfnMapUnmap     Callback for doing the mapping, optional.  The
  *                          callback will be invoked holding only the PDM lock.
  *                          The device lock will _not_ be taken (due to lock
  *                          order).
  */
 DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmio(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion, PCIADDRESSSPACE enmType,
-                                                 IOMMMIOHANDLE hMmioRegion, PFNPCIIOREGIONMAP pfnCallback)
+                                                 IOMMMIOHANDLE hMmioRegion, PFNPCIIOREGIONMAP pfnMapUnmap)
 {
     return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType,
-                                                   PDMPCIDEV_IORGN_F_MMIO_HANDLE, hMmioRegion, pfnCallback);
+                                                   PDMPCIDEV_IORGN_F_MMIO_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                   hMmioRegion, pfnMapUnmap);
 }
 
 /**
@@ -6877,17 +7055,18 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmio(PPDMDEVINS pDevIns, uint32_t iR
  *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
  *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
  * @param   hMmioRegion     Handle to the MMIO region.
- * @param   pfnCallback     Callback for doing the mapping, optional.  The
+ * @param   pfnMapUnmap     Callback for doing the mapping, optional.  The
  *                          callback will be invoked holding only the PDM lock.
  *                          The device lock will _not_ be taken (due to lock
  *                          order).
  */
 DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmioEx(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                    RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, IOMMMIOHANDLE hMmioRegion,
-                                                   PFNPCIIOREGIONMAP pfnCallback)
+                                                   PFNPCIIOREGIONMAP pfnMapUnmap)
 {
     return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pPciDev, iRegion, cbRegion, enmType,
-                                                   PDMPCIDEV_IORGN_F_MMIO_HANDLE, hMmioRegion, pfnCallback);
+                                                   PDMPCIDEV_IORGN_F_MMIO_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                   hMmioRegion, pfnMapUnmap);
 }
 
 /**
@@ -6920,10 +7099,96 @@ DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio(PPDMDEVINS pDevIns, uint32_t iPci
                                               pfnWrite, pfnRead, NULL /*pfnFill*/, pvUser, pszDesc, phRegion);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
-                                                     PDMPCIDEV_IORGN_F_MMIO_HANDLE, *phRegion, NULL /*pfnCallback*/);
+                                                     PDMPCIDEV_IORGN_F_MMIO_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                     *phRegion, NULL /*pfnMapUnmap*/);
     return rc;
 }
 
+
+/**
+ * Registers an MMIO2 region for the default PCI device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance.
+ * @param   iRegion         The region number.
+ * @param   cbRegion        Size of the region.
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   hMmio2Region    Handle to the MMIO2 region.
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionRegisterMmio2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cbRegion,
+                                                  PCIADDRESSSPACE enmType, PGMMMIO2HANDLE hMmio2Region)
+{
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, NULL, iRegion, cbRegion, enmType,
+                                                   PDMPCIDEV_IORGN_F_MMIO2_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
+                                                   hMmio2Region, NULL);
+}
+
+/**
+ * Combines PDMDevHlpMmio2Create and PDMDevHlpPCIIORegionRegisterMmio2, creating
+ * and registering an MMIO2 region for the default PCI device, extended edition.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance to register the ports with.
+ * @param   cbRegion        The size of the region in bytes.
+ * @param   iPciRegion      The PCI device region.
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   pszDesc         Pointer to description string. This must not be freed.
+ * @param   ppvMapping      Where to store the address of the ring-3 mapping of
+ *                          the memory.
+ * @param   phRegion        Where to return the MMIO2 region handle.
+ *
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2(PPDMDEVINS pDevIns, uint32_t iPciRegion, RTGCPHYS cbRegion,
+                                                PCIADDRESSSPACE enmType, const char *pszDesc,
+                                                void **ppvMapping, PPGMMMIO2HANDLE phRegion)
+
+{
+    int rc = pDevIns->pHlpR3->pfnMmio2Create(pDevIns, pDevIns->apPciDevs[0], iPciRegion << 16, cbRegion, 0 /*fFlags*/,
+                                             pszDesc, ppvMapping, phRegion);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
+                                                     PDMPCIDEV_IORGN_F_MMIO2_HANDLE, *phRegion, NULL /*pfnCallback*/);
+    return rc;
+}
+
+/**
+ * Combines PDMDevHlpMmio2Create and PDMDevHlpPCIIORegionRegisterMmio2, creating
+ * and registering an MMIO2 region for the default PCI device.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns         The device instance to register the ports with.
+ * @param   cbRegion        The size of the region in bytes.
+ * @param   iPciRegion      The PCI device region.
+ * @param   enmType         PCI_ADDRESS_SPACE_MEM or
+ *                          PCI_ADDRESS_SPACE_MEM_PREFETCH, optionally or-ing in
+ *                          PCI_ADDRESS_SPACE_BAR64 or PCI_ADDRESS_SPACE_BAR32.
+ * @param   fMmio2Flags     To be defined, must be zero.
+ * @param   pfnMapUnmap     Callback for doing the mapping, optional.  The
+ *                          callback will be invoked holding only the PDM lock.
+ *                          The device lock will _not_ be taken (due to lock
+ *                          order).
+ * @param   pszDesc         Pointer to description string. This must not be freed.
+ * @param   ppvMapping      Where to store the address of the ring-3 mapping of
+ *                          the memory.
+ * @param   phRegion        Where to return the MMIO2 region handle.
+ *
+ */
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateMmio2Ex(PPDMDEVINS pDevIns, uint32_t iPciRegion, RTGCPHYS cbRegion,
+                                                  PCIADDRESSSPACE enmType, uint32_t fMmio2Flags, PFNPCIIOREGIONMAP pfnMapUnmap,
+                                                  const char *pszDesc, void **ppvMapping, PPGMMMIO2HANDLE phRegion)
+
+{
+    int rc = pDevIns->pHlpR3->pfnMmio2Create(pDevIns, pDevIns->apPciDevs[0], iPciRegion << 16, cbRegion, fMmio2Flags,
+                                             pszDesc, ppvMapping, phRegion);
+    if (RT_SUCCESS(rc))
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbRegion, enmType,
+                                                     PDMPCIDEV_IORGN_F_MMIO2_HANDLE, *phRegion, pfnMapUnmap);
+    return rc;
+}
 
 /**
  * @copydoc PDMDEVHLPR3::pfnPCIInterceptConfigAccesses
@@ -7657,7 +7922,7 @@ DECLINLINE(int) PDMDevHlpPCIBusSetUpContext(PPDMDEVINS pDevIns, CTX_SUFF(PPDMPCI
     return pDevIns->CTX_SUFF(pHlp)->pfnPCIBusSetUpContext(pDevIns, pPciBusReg, ppPciHlp);
 }
 
-#endif /* !IN_RING3 */
+#endif /* !IN_RING3 || DOXYGEN_RUNNING */
 
 /**
  * @copydoc PDMDEVHLPR3::pfnGetVM

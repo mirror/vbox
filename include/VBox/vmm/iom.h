@@ -538,20 +538,6 @@ VMMR3_INT_DECL(int)  IOMR3MmioRegisterRC(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS G
                                          RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallback);
 #endif
 VMMR3_INT_DECL(int)  IOMR3MmioDeregister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTGCPHYS cbRange);
-VMMR3_INT_DECL(int)  IOMR3MmioExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cbRange,
-                                            uint32_t fFlags, const char *pszDesc,
-                                            RTR3PTR pvUserR3,
-                                            R3PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallbackR3,
-                                            R3PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallbackR3,
-                                            R3PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallbackR3,
-                                            RTR0PTR pvUserR0,
-                                            R0PTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallbackR0,
-                                            R0PTRTYPE(PFNIOMMMIOREAD)  pfnReadCallbackR0,
-                                            R0PTRTYPE(PFNIOMMMIOFILL)  pfnFillCallbackR0,
-                                            RTRCPTR pvUserRC,
-                                            RCPTRTYPE(PFNIOMMMIOWRITE) pfnWriteCallbackRC,
-                                            RCPTRTYPE(PFNIOMMMIOREAD)  pfnReadCallbackRC,
-                                            RCPTRTYPE(PFNIOMMMIOFILL)  pfnFillCallbackRC);
 VMMR3_INT_DECL(int)  IOMR3MmioExNotifyMapped(PVM pVM, void *pvUser, RTGCPHYS GCPhys);
 VMMR3_INT_DECL(void) IOMR3MmioExNotifyUnmapped(PVM pVM, void *pvUser, RTGCPHYS GCPhys);
 VMMR3_INT_DECL(void) IOMR3MmioExNotifyDeregistered(PVM pVM, void *pvUser);

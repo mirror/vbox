@@ -2598,19 +2598,48 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
  * @param   pDevIns         The device instance owning the region.
  * @param   iSubDev         The sub-device number.
  * @param   iRegion         The region.
+ * @param   hMmio2          Handle to look up.  If NIL, use the @a iSubDev and
+ *                          @a iRegion.
  */
-DECLINLINE(PPGMREGMMIORANGE) pgmR3PhysMMIOExFind(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion)
+DECLINLINE(PPGMREGMMIO2RANGE) pgmR3PhysMMIOExFind(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
+                                                  uint32_t iRegion, PGMMMIO2HANDLE hMmio2)
 {
-    /*
-     * Search the list.  There shouldn't be many entries.
-     */
-    /** @todo Optimize this lookup! There may now be many entries and it'll
-     *        become really slow when doing MMR3HyperMapMMIO2 and similar. */
-    for (PPGMREGMMIORANGE pCur = pVM->pgm.s.pRegMmioRangesR3; pCur; pCur = pCur->pNextR3)
-        if (   pCur->pDevInsR3 == pDevIns
-            && pCur->iRegion == iRegion
-            && pCur->iSubDev == iSubDev)
-            return pCur;
+    if (hMmio2 != NIL_PGMMMIO2HANDLE)
+    {
+        if (hMmio2 <= RT_ELEMENTS(pVM->pgm.s.apMmio2RangesR3) && hMmio2 != 0)
+        {
+            PPGMREGMMIO2RANGE pCur = pVM->pgm.s.apMmio2RangesR3[hMmio2 - 1];
+            if (pCur && pCur->pDevInsR3 == pDevIns)
+            {
+                Assert(pCur->idMmio2 == hMmio2);
+                AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_MMIO2, NULL);
+                AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK, NULL);
+                return pCur;
+            }
+            Assert(!pCur);
+        }
+        for (PPGMREGMMIO2RANGE pCur = pVM->pgm.s.pRegMmioRangesR3; pCur; pCur = pCur->pNextR3)
+            if (pCur->idMmio2 == hMmio2)
+            {
+                AssertBreak(pCur->pDevInsR3 == pDevIns);
+                AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_MMIO2, NULL);
+                AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK, NULL);
+                return pCur;
+            }
+    }
+    else
+    {
+        /*
+         * Search the list.  There shouldn't be many entries.
+         */
+        /** @todo Optimize this lookup! There may now be many entries and it'll
+         *        become really slow when doing MMR3HyperMapMMIO2 and similar. */
+        for (PPGMREGMMIO2RANGE pCur = pVM->pgm.s.pRegMmioRangesR3; pCur; pCur = pCur->pNextR3)
+            if (   pCur->pDevInsR3 == pDevIns
+                && pCur->iRegion == iRegion
+                && pCur->iSubDev == iSubDev)
+                return pCur;
+    }
     return NULL;
 }
 
@@ -2623,9 +2652,9 @@ DECLINLINE(PPGMREGMMIORANGE) pgmR3PhysMMIOExFind(PVM pVM, PPDMDEVINS pDevIns, ui
 static DECLCALLBACK(bool) pgmR3PhysMMIOExRangeRelocate(PVM pVM, RTGCPTR GCPtrOld, RTGCPTR GCPtrNew,
                                                        PGMRELOCATECALL enmMode, void *pvUser)
 {
-    PPGMREGMMIORANGE pMmio = (PPGMREGMMIORANGE)pvUser;
+    PPGMREGMMIO2RANGE pMmio = (PPGMREGMMIO2RANGE)pvUser;
     Assert(pMmio->RamRange.fFlags & PGM_RAM_RANGE_FLAGS_FLOATING);
-    Assert(pMmio->RamRange.pSelfRC == GCPtrOld + PAGE_SIZE + RT_UOFFSETOF(PGMREGMMIORANGE, RamRange)); RT_NOREF_PV(GCPtrOld);
+    Assert(pMmio->RamRange.pSelfRC == GCPtrOld + PAGE_SIZE + RT_UOFFSETOF(PGMREGMMIO2RANGE, RamRange)); RT_NOREF_PV(GCPtrOld);
 
     switch (enmMode)
     {
@@ -2639,7 +2668,7 @@ static DECLCALLBACK(bool) pgmR3PhysMMIOExRangeRelocate(PVM pVM, RTGCPTR GCPtrOld
              */
             pgmLock(pVM);
 
-            pMmio->RamRange.pSelfRC = (RTRCPTR)(GCPtrNew + PAGE_SIZE + RT_UOFFSETOF(PGMREGMMIORANGE, RamRange));
+            pMmio->RamRange.pSelfRC = (RTRCPTR)(GCPtrNew + PAGE_SIZE + RT_UOFFSETOF(PGMREGMMIO2RANGE, RamRange));
 
             pgmR3PhysRelinkRamRanges(pVM);
             for (unsigned i = 0; i < PGM_RAMRANGE_TLB_ENTRIES; i++)
@@ -2672,16 +2701,16 @@ static uint16_t pgmR3PhysMMIOExCalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pc
 
     /*
      * This is the same calculation as PGMR3PhysRegisterRam does, except we'll be
-     * needing a few bytes extra the PGMREGMMIORANGE structure.
+     * needing a few bytes extra the PGMREGMMIO2RANGE structure.
      *
      * Note! In additions, we've got a 24 bit sub-page range for MMIO2 ranges, leaving
      *       us with an absolute maximum of 16777215 pages per chunk (close to 64 GB).
      */
     uint32_t cbChunk = 16U*_1M;
     uint32_t cPagesPerChunk = 1048048; /* max ~1048059 */
-    AssertCompile(sizeof(PGMREGMMIORANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
+    AssertCompile(sizeof(PGMREGMMIO2RANGE) + sizeof(PGMPAGE) * 1048048 < 16U*_1M - PAGE_SIZE * 2);
     AssertRelease(cPagesPerChunk <= PGM_MMIO2_MAX_PAGE_COUNT); /* See above note. */
-    AssertRelease(RT_UOFFSETOF_DYN(PGMREGMMIORANGE, RamRange.aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
+    AssertRelease(RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[cPagesPerChunk]) + PAGE_SIZE * 2 <= cbChunk);
     if (pcbChunk)
         *pcbChunk = cbChunk;
     if (pcPagesPerChunk)
@@ -2696,10 +2725,14 @@ static uint16_t pgmR3PhysMMIOExCalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pc
 
 
 /**
- * Worker for PGMR3PhysMMIOExPreRegister & PGMR3PhysMMIO2Register that allocates
- * and the PGMREGMMIORANGE structures and does basic initialization.
+ * Worker for PGMR3PhysMMIO2Register that allocates and the PGMREGMMIO2RANGE
+ * structures and does basic initialization.
  *
  * Caller must set type specfic members and initialize the PGMPAGE structures.
+ *
+ * This was previously also used by PGMR3PhysMMIOExPreRegister, a function for
+ * pre-registering MMIO that was later (6.1) replaced by a new handle based IOM
+ * interface.  The reference to caller and type above is purely historical.
  *
  * @returns VBox status code.
  * @param   pVM             The cross context VM structure.
@@ -2717,7 +2750,7 @@ static uint16_t pgmR3PhysMMIOExCalcChunkCount(PVM pVM, RTGCPHYS cb, uint32_t *pc
  * @thread  EMT
  */
 static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cb,
-                                 const char *pszDesc, PPGMREGMMIORANGE *ppHeadRet)
+                                 const char *pszDesc, PPGMREGMMIO2RANGE *ppHeadRet)
 {
     /*
      * Figure out how many chunks we need and of which size.
@@ -2729,7 +2762,7 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
     /*
      * Allocate the chunks.
      */
-    PPGMREGMMIORANGE *ppNext = ppHeadRet;
+    PPGMREGMMIO2RANGE *ppNext = ppHeadRet;
     *ppNext = NULL;
 
     int rc = VINF_SUCCESS;
@@ -2742,8 +2775,8 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
          * as we will be running into SUPR3PageAllocEx limitations and such.
          */
         const uint32_t   cPagesTrackedByChunk = RT_MIN(cPagesLeft, cPagesPerChunk);
-        const size_t     cbRange = RT_UOFFSETOF_DYN(PGMREGMMIORANGE, RamRange.aPages[cPagesTrackedByChunk]);
-        PPGMREGMMIORANGE pNew    = NULL;
+        const size_t     cbRange = RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[cPagesTrackedByChunk]);
+        PPGMREGMMIO2RANGE pNew    = NULL;
         if (   iChunk + 1 < cChunks
             || cbRange >= _1M)
         {
@@ -2763,9 +2796,9 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
             Assert(R0PtrChunk != NIL_RTR0PTR);
             memset(pvChunk, 0, cChunkPages << PAGE_SHIFT);
 
-            pNew = (PPGMREGMMIORANGE)pvChunk;
+            pNew = (PPGMREGMMIO2RANGE)pvChunk;
             pNew->RamRange.fFlags   = PGM_RAM_RANGE_FLAGS_FLOATING;
-            pNew->RamRange.pSelfR0  = R0PtrChunk + RT_UOFFSETOF(PGMREGMMIORANGE, RamRange);
+            pNew->RamRange.pSelfR0  = R0PtrChunk + RT_UOFFSETOF(PGMREGMMIO2RANGE, RamRange);
 
             RTMemTmpFree(paChunkPages);
         }
@@ -2792,9 +2825,9 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
         //pNew->pNext               = NULL;
         //pNew->fFlags              = 0;
         if (iChunk == 0)
-            pNew->fFlags |= PGMREGMMIORANGE_F_FIRST_CHUNK;
+            pNew->fFlags |= PGMREGMMIO2RANGE_F_FIRST_CHUNK;
         if (iChunk + 1 == cChunks)
-            pNew->fFlags |= PGMREGMMIORANGE_F_LAST_CHUNK;
+            pNew->fFlags |= PGMREGMMIO2RANGE_F_LAST_CHUNK;
         pNew->iSubDev               = iSubDev;
         pNew->iRegion               = iRegion;
         pNew->idSavedState          = UINT8_MAX;
@@ -2818,7 +2851,7 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
 
     if (RT_SUCCESS(rc))
     {
-        Assert((*ppHeadRet)->fFlags & PGMREGMMIORANGE_F_FIRST_CHUNK);
+        Assert((*ppHeadRet)->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK);
         return VINF_SUCCESS;
     }
 
@@ -2827,12 +2860,12 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
      */
     while (*ppHeadRet)
     {
-        PPGMREGMMIORANGE pFree = *ppHeadRet;
+        PPGMREGMMIO2RANGE pFree = *ppHeadRet;
         *ppHeadRet = pFree->pNextR3;
 
         if (pFree->RamRange.fFlags & PGM_RAM_RANGE_FLAGS_FLOATING)
         {
-            const size_t    cbRange     = RT_UOFFSETOF_DYN(PGMREGMMIORANGE, RamRange.aPages[pFree->RamRange.cb >> X86_PAGE_SHIFT]);
+            const size_t    cbRange     = RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[pFree->RamRange.cb >> X86_PAGE_SHIFT]);
             size_t const    cChunkPages = RT_ALIGN_Z(cbRange, PAGE_SIZE) >> PAGE_SHIFT;
             SUPR3PageFreeEx(pFree, cChunkPages);
         }
@@ -2849,7 +2882,7 @@ static int pgmR3PhysMMIOExCreate(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, 
  * @param   pVM             The cross context VM structure.
  * @param   pNew            The new MMIO / MMIO2 registration to link.
  */
-static void pgmR3PhysMMIOExLink(PVM pVM, PPGMREGMMIORANGE pNew)
+static void pgmR3PhysMMIOExLink(PVM pVM, PPGMREGMMIO2RANGE pNew)
 {
     /*
      * Link it into the list (order doesn't matter, so insert it at the head).
@@ -2857,17 +2890,17 @@ static void pgmR3PhysMMIOExLink(PVM pVM, PPGMREGMMIORANGE pNew)
      * Note! The range we're link may consist of multiple chunks, so we have to
      *       find the last one.
      */
-    PPGMREGMMIORANGE pLast = pNew;
+    PPGMREGMMIO2RANGE pLast = pNew;
     for (pLast = pNew; ; pLast = pLast->pNextR3)
     {
-        if (pLast->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+        if (pLast->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
             break;
         Assert(pLast->pNextR3);
         Assert(pLast->pNextR3->pDevInsR3 == pNew->pDevInsR3);
         Assert(pLast->pNextR3->iSubDev   == pNew->iSubDev);
         Assert(pLast->pNextR3->iRegion   == pNew->iRegion);
-        Assert((pLast->pNextR3->fFlags & PGMREGMMIORANGE_F_MMIO2) == (pNew->fFlags & PGMREGMMIORANGE_F_MMIO2));
-        Assert(pLast->pNextR3->idMmio2   == (pLast->fFlags & PGMREGMMIORANGE_F_MMIO2 ? pNew->idMmio2 + 1 : UINT8_MAX));
+        Assert((pLast->pNextR3->fFlags & PGMREGMMIO2RANGE_F_MMIO2) == (pNew->fFlags & PGMREGMMIO2RANGE_F_MMIO2));
+        Assert(pLast->pNextR3->idMmio2   == (pLast->fFlags & PGMREGMMIO2RANGE_F_MMIO2 ? pNew->idMmio2 + 1 : UINT8_MAX));
     }
 
     pgmLock(pVM);
@@ -2882,155 +2915,21 @@ static void pgmR3PhysMMIOExLink(PVM pVM, PPGMREGMMIORANGE pNew)
     {
         for (;;)
         {
-            Assert(pNew->fFlags & PGMREGMMIORANGE_F_MMIO2);
+            Assert(pNew->fFlags & PGMREGMMIO2RANGE_F_MMIO2);
             Assert(pVM->pgm.s.apMmio2RangesR3[idMmio2 - 1] == NULL);
             Assert(pVM->pgm.s.apMmio2RangesR0[idMmio2 - 1] == NIL_RTR0PTR);
             pVM->pgm.s.apMmio2RangesR3[idMmio2 - 1] = pNew;
-            pVM->pgm.s.apMmio2RangesR0[idMmio2 - 1] = pNew->RamRange.pSelfR0 - RT_UOFFSETOF(PGMREGMMIORANGE, RamRange);
-            if (pNew->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+            pVM->pgm.s.apMmio2RangesR0[idMmio2 - 1] = pNew->RamRange.pSelfR0 - RT_UOFFSETOF(PGMREGMMIO2RANGE, RamRange);
+            if (pNew->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
                 break;
             pNew = pNew->pNextR3;
         }
     }
     else
-        Assert(!(pNew->fFlags & PGMREGMMIORANGE_F_MMIO2));
+        Assert(!(pNew->fFlags & PGMREGMMIO2RANGE_F_MMIO2));
 
     pgmPhysInvalidatePageMapTLB(pVM);
     pgmUnlock(pVM);
-}
-
-
-/**
- * Allocate and pre-register an MMIO region.
- *
- * This is currently the way to deal with large MMIO regions.  It may in the
- * future be extended to be the way we deal with all MMIO regions, but that
- * means we'll have to do something about the simple list based approach we take
- * to tracking the registrations.
- *
- * @returns VBox status code.
- * @retval  VINF_SUCCESS on success, *ppv pointing to the R3 mapping of the
- *          memory.
- * @retval  VERR_ALREADY_EXISTS if the region already exists.
- *
- * @param   pVM             The cross context VM structure.
- * @param   pDevIns         The device instance owning the region.
- * @param   iSubDev         The sub-device number.
- * @param   iRegion         The region number.  If the MMIO2 memory is a PCI
- *                          I/O region this number has to be the number of that
- *                          region. Otherwise it can be any number safe
- *                          UINT8_MAX.
- * @param   cbRegion        The size of the region.  Must be page aligned.
- * @param   hType           The physical handler callback type.
- * @param   pvUserR3        User parameter for ring-3 context callbacks.
- * @param   pvUserR0        User parameter for ring-0 context callbacks.
- * @param   pvUserRC        User parameter for raw-mode context callbacks.
- * @param   pszDesc         The description.
- *
- * @thread  EMT
- *
- * @sa      PGMR3PhysMMIORegister, PGMR3PhysMMIO2Register,
- *          PGMR3PhysMMIOExMap, PGMR3PhysMMIOExUnmap, PGMR3PhysMMIOExDeregister.
- */
-VMMR3DECL(int) PGMR3PhysMMIOExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cbRegion,
-                                          PGMPHYSHANDLERTYPE hType, RTR3PTR pvUserR3, RTR0PTR pvUserR0, RTRCPTR pvUserRC,
-                                          const char *pszDesc)
-{
-    /*
-     * Validate input.
-     */
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
-    AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
-    AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
-    AssertReturn(*pszDesc, VERR_INVALID_PARAMETER);
-    AssertReturn(pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion) == NULL, VERR_ALREADY_EXISTS);
-    AssertReturn(!(cbRegion & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
-    AssertReturn(cbRegion, VERR_INVALID_PARAMETER);
-
-    const uint32_t cPages = cbRegion >> PAGE_SHIFT;
-    AssertLogRelReturn(((RTGCPHYS)cPages << PAGE_SHIFT) == cbRegion, VERR_INVALID_PARAMETER);
-    AssertLogRelReturn(cPages <= (MM_MMIO_64_MAX >> X86_PAGE_SHIFT), VERR_OUT_OF_RANGE);
-
-    /*
-     * For the 2nd+ instance, mangle the description string so it's unique.
-     */
-    if (pDevIns->iInstance > 0) /** @todo Move to PDMDevHlp.cpp and use a real string cache. */
-    {
-        pszDesc = MMR3HeapAPrintf(pVM, MM_TAG_PGM_PHYS, "%s [%u]", pszDesc, pDevIns->iInstance);
-        if (!pszDesc)
-            return VERR_NO_MEMORY;
-    }
-
-    /*
-     * Register the MMIO callbacks.
-     */
-    PPGMPHYSHANDLER pPhysHandler;
-    int rc = pgmHandlerPhysicalExCreate(pVM, hType, pvUserR3, pvUserR0, pvUserRC, pszDesc, &pPhysHandler);
-    if (RT_SUCCESS(rc))
-    {
-        /*
-         * Create the registered MMIO range record for it.
-         */
-        PPGMREGMMIORANGE pNew;
-        rc = pgmR3PhysMMIOExCreate(pVM, pDevIns, iSubDev, iRegion, cbRegion, pszDesc, &pNew);
-        if (RT_SUCCESS(rc))
-        {
-            Assert(!(pNew->fFlags & PGMREGMMIORANGE_F_MMIO2));
-
-            /*
-             * Intialize the page structures and set up physical handlers (one for each chunk).
-             */
-            for (PPGMREGMMIORANGE pCur = pNew; pCur != NULL && RT_SUCCESS(rc); pCur = pCur->pNextR3)
-            {
-                if (pCur == pNew)
-                    pCur->pPhysHandlerR3 = pPhysHandler;
-                else
-                    rc = pgmHandlerPhysicalExDup(pVM, pPhysHandler, &pCur->pPhysHandlerR3);
-
-                uint32_t iPage = pCur->RamRange.cb >> X86_PAGE_SHIFT;
-                while (iPage-- > 0)
-                    PGM_PAGE_INIT_ZERO(&pCur->RamRange.aPages[iPage], pVM, PGMPAGETYPE_MMIO);
-            }
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Update the page count stats, link the registration and we're done.
-                 */
-                pVM->pgm.s.cAllPages += cPages;
-                pVM->pgm.s.cPureMmioPages += cPages;
-
-                pgmR3PhysMMIOExLink(pVM, pNew);
-                return VINF_SUCCESS;
-            }
-
-            /*
-             * Clean up in case we're out of memory for extra access handlers.
-             */
-            while (pNew != NULL)
-            {
-                PPGMREGMMIORANGE pFree = pNew;
-                pNew = pFree->pNextR3;
-
-                if (pFree->pPhysHandlerR3)
-                {
-                    pgmHandlerPhysicalExDestroy(pVM, pFree->pPhysHandlerR3);
-                    pFree->pPhysHandlerR3 = NULL;
-                }
-
-                if (pFree->RamRange.fFlags & PGM_RAM_RANGE_FLAGS_FLOATING)
-                {
-                    const size_t    cbRange     = RT_UOFFSETOF_DYN(PGMREGMMIORANGE, RamRange.aPages[pFree->RamRange.cb >> X86_PAGE_SHIFT]);
-                    size_t const    cChunkPages = RT_ALIGN_Z(cbRange, PAGE_SIZE) >> PAGE_SHIFT;
-                    SUPR3PageFreeEx(pFree, cChunkPages);
-                }
-            }
-        }
-        else
-            pgmHandlerPhysicalExDestroy(pVM, pPhysHandler);
-    }
-    return rc;
 }
 
 
@@ -3057,29 +2956,36 @@ VMMR3DECL(int) PGMR3PhysMMIOExPreRegister(PVM pVM, PPDMDEVINS pDevIns, uint32_t 
  * @param   iSubDev         The sub-device number.
  * @param   iRegion         The region number.  If the MMIO2 memory is a PCI
  *                          I/O region this number has to be the number of that
- *                          region. Otherwise it can be any number safe
+ *                          region.  Otherwise it can be any number save
  *                          UINT8_MAX.
  * @param   cb              The size of the region.  Must be page aligned.
  * @param   fFlags          Reserved for future use, must be zero.
+ * @param   pszDesc         The description.
  * @param   ppv             Where to store the pointer to the ring-3 mapping of
  *                          the memory.
- * @param   pszDesc         The description.
+ * @param   phRegion        Where to return the MMIO2 region handle.  Optional.
  * @thread  EMT
  */
-VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cb,
-                                      uint32_t fFlags, void **ppv, const char *pszDesc)
+VMMR3_INT_DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cb,
+                                           uint32_t fFlags, const char *pszDesc, void **ppv, PGMMMIO2HANDLE *phRegion)
 {
     /*
      * Validate input.
      */
+    AssertPtrReturn(ppv, VERR_INVALID_POINTER);
+    *ppv = NULL;
+    if (phRegion)
+    {
+        AssertPtrReturn(phRegion, VERR_INVALID_POINTER);
+        *phRegion = NIL_PGMMMIO2HANDLE;
+    }
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
     AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
     AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(ppv, VERR_INVALID_POINTER);
     AssertPtrReturn(pszDesc, VERR_INVALID_POINTER);
     AssertReturn(*pszDesc, VERR_INVALID_PARAMETER);
-    AssertReturn(pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion) == NULL, VERR_ALREADY_EXISTS);
+    AssertReturn(pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion, NIL_PGMMMIO2HANDLE) == NULL, VERR_ALREADY_EXISTS);
     AssertReturn(!(cb & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(cb, VERR_INVALID_PARAMETER);
     AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
@@ -3135,18 +3041,21 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSub
                 /*
                  * Create the registered MMIO range record for it.
                  */
-                PPGMREGMMIORANGE pNew;
+                PPGMREGMMIO2RANGE pNew;
                 rc = pgmR3PhysMMIOExCreate(pVM, pDevIns, iSubDev, iRegion, cb, pszDesc, &pNew);
                 if (RT_SUCCESS(rc))
                 {
+                    if (phRegion)
+                        *phRegion = idMmio2;    /* The ID of the first chunk. */
+
                     uint32_t iSrcPage   = 0;
                     uint8_t *pbCurPages = (uint8_t *)pvPages;
-                    for (PPGMREGMMIORANGE pCur = pNew; pCur; pCur = pCur->pNextR3)
+                    for (PPGMREGMMIO2RANGE pCur = pNew; pCur; pCur = pCur->pNextR3)
                     {
                         pCur->pvR3          = pbCurPages;
                         pCur->RamRange.pvR3 = pbCurPages;
                         pCur->idMmio2       = idMmio2;
-                        pCur->fFlags       |= PGMREGMMIORANGE_F_MMIO2;
+                        pCur->fFlags       |= PGMREGMMIO2RANGE_F_MMIO2;
 
                         uint32_t iDstPage = pCur->RamRange.cb >> X86_PAGE_SHIFT;
                         while (iDstPage-- > 0)
@@ -3199,18 +3108,30 @@ VMMR3DECL(int) PGMR3PhysMMIO2Register(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSub
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance owning the region.
  * @param   iSubDev         The sub-device number.  Pass UINT32_MAX for wildcard
- *                          matching.
- * @param   iRegion         The region.  Pass UINT32_MAX for wildcard matching.
+ *                          matching or using @a hMmio2.
+ * @param   iRegion         The region.  Pass UINT32_MAX for wildcard matching
+ *                          or using @a hMmio2.
+ * @param   hMmio2          The MMIO2 handle to use instead of iSubDev and
+ *                          iRegion, pass NIL to use those two.
  */
-VMMR3DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion)
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
+                                              uint32_t iRegion, PGMMMIO2HANDLE hMmio2)
 {
     /*
      * Validate input.
      */
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
-    AssertReturn(iSubDev <= UINT8_MAX || iSubDev == UINT32_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(iRegion <= UINT8_MAX || iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
+    if (hMmio2 != NIL_PGMMMIO2HANDLE)
+    {
+        AssertReturn(iSubDev == UINT32_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
+    }
+    else
+    {
+        AssertReturn(iSubDev <= UINT8_MAX || iSubDev == UINT32_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion <= UINT8_MAX || iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
+    }
 
     /*
      * The loop here scanning all registrations will make sure that multi-chunk ranges
@@ -3219,24 +3140,30 @@ VMMR3DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
     pgmLock(pVM);
     int rc = VINF_SUCCESS;
     unsigned cFound = 0;
-    PPGMREGMMIORANGE pPrev = NULL;
-    PPGMREGMMIORANGE pCur = pVM->pgm.s.pRegMmioRangesR3;
+    PPGMREGMMIO2RANGE pPrev = NULL;
+    PPGMREGMMIO2RANGE pCur = pVM->pgm.s.pRegMmioRangesR3;
     while (pCur)
     {
+        uint32_t const fFlags = pCur->fFlags;
         if (    pCur->pDevInsR3 == pDevIns
-            &&  (   iRegion == UINT32_MAX
-                 || pCur->iRegion == iRegion)
-            &&  (   iSubDev == UINT32_MAX
-                 || pCur->iSubDev == iSubDev) )
+            &&  (  hMmio2 == NIL_PGMMMIO2HANDLE
+                 ?        (   iRegion == UINT32_MAX
+                           || pCur->iRegion == iRegion)
+                      &&  (   iSubDev == UINT32_MAX
+                           || pCur->iSubDev == iSubDev)
+                 :    pCur->idMmio2 == hMmio2
+                   && (fFlags & PGMREGMMIO2RANGE_F_MMIO2)
+                )
+           )
         {
             cFound++;
 
             /*
              * Unmap it if it's mapped.
              */
-            if (pCur->fFlags & PGMREGMMIORANGE_F_MAPPED)
+            if (fFlags & PGMREGMMIO2RANGE_F_MAPPED)
             {
-                int rc2 = PGMR3PhysMMIOExUnmap(pVM, pCur->pDevInsR3, pCur->iSubDev, pCur->iRegion, pCur->RamRange.GCPhys);
+                int rc2 = PGMR3PhysMMIOExUnmap(pVM, pCur->pDevInsR3, pCur->iSubDev, pCur->iRegion, hMmio2, pCur->RamRange.GCPhys);
                 AssertRC(rc2);
                 if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                     rc = rc2;
@@ -3245,13 +3172,13 @@ VMMR3DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
             /*
              * Must tell IOM about MMIO (first one only).
              */
-            if ((pCur->fFlags & (PGMREGMMIORANGE_F_MMIO2 | PGMREGMMIORANGE_F_FIRST_CHUNK)) == PGMREGMMIORANGE_F_MMIO2)
+            if ((fFlags & (PGMREGMMIO2RANGE_F_MMIO2 | PGMREGMMIO2RANGE_F_FIRST_CHUNK)) == PGMREGMMIO2RANGE_F_FIRST_CHUNK)
                 IOMR3MmioExNotifyDeregistered(pVM, pCur->pPhysHandlerR3->pvUserR3);
 
             /*
              * Unlink it
              */
-            PPGMREGMMIORANGE pNext = pCur->pNextR3;
+            PPGMREGMMIO2RANGE pNext = pCur->pNextR3;
             if (pPrev)
                 pPrev->pNextR3 = pNext;
             else
@@ -3269,8 +3196,9 @@ VMMR3DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
             /*
              * Free the memory.
              */
-            uint32_t const cPages = pCur->cbReal >> PAGE_SHIFT;
-            if (pCur->fFlags & PGMREGMMIORANGE_F_MMIO2)
+            const bool     fIsMmio2 = RT_BOOL(fFlags & PGMREGMMIO2RANGE_F_MMIO2);
+            uint32_t const cPages   = pCur->cbReal >> PAGE_SHIFT;
+            if (fIsMmio2)
             {
                 int rc2 = SUPR3PageFreeEx(pCur->pvR3, cPages);
                 AssertRC(rc2);
@@ -3296,10 +3224,9 @@ VMMR3DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
                       , ("%s\n", VMR3GetStateName(enmState)));
 #endif
 
-            const bool fIsMmio2 = RT_BOOL(pCur->fFlags & PGMREGMMIORANGE_F_MMIO2);
             if (pCur->RamRange.fFlags & PGM_RAM_RANGE_FLAGS_FLOATING)
             {
-                const size_t    cbRange     = RT_UOFFSETOF_DYN(PGMREGMMIORANGE, RamRange.aPages[cPages]);
+                const size_t    cbRange     = RT_UOFFSETOF_DYN(PGMREGMMIO2RANGE, RamRange.aPages[cPages]);
                 size_t const    cChunkPages = RT_ALIGN_Z(cbRange, PAGE_SIZE) >> PAGE_SHIFT;
                 SUPR3PageFreeEx(pCur, cChunkPages);
             }
@@ -3319,6 +3246,15 @@ VMMR3DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
 
             /* next */
             pCur = pNext;
+            if (hMmio2 != NIL_PGMMMIO2HANDLE)
+            {
+                if (fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
+                    break;
+                hMmio2++;
+                Assert(pCur->idMmio2 == hMmio2);
+                Assert(pCur->pDevInsR3 == pDevIns);
+                Assert(!(pCur->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK));
+            }
         }
         else
         {
@@ -3328,7 +3264,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
     }
     pgmPhysInvalidatePageMapTLB(pVM);
     pgmUnlock(pVM);
-    return !cFound && iRegion != UINT32_MAX && iSubDev != UINT32_MAX ? VERR_NOT_FOUND : rc;
+    return !cFound && (hMmio2 != NIL_PGMMMIO2HANDLE || (iRegion != UINT32_MAX && iSubDev != UINT32_MAX)) ? VERR_NOT_FOUND : rc;
 }
 
 
@@ -3344,10 +3280,16 @@ VMMR3DECL(int) PGMR3PhysMMIOExDeregister(PVM pVM, PPDMDEVINS pDevIns, uint32_t i
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance owning the region.
  * @param   iSubDev         The sub-device number of the registered region.
- * @param   iRegion         The index of the registered region.
+ *                          Pass UINT32_MAX if @a hMmio2 is given.
+ * @param   iRegion         The index of the registered region.  Pass UINT32_MAX
+ *                          if @a hMmio2 is given.
+ * @param   hMmio2          The handle of the region to map as an alternative to
+ *                          @a iSubDev and @a iRegion, pass NIL to use the
+ *                          other two.
  * @param   GCPhys          The guest-physical address to be remapped.
  */
-VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS GCPhys)
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion,
+                                       PGMMMIO2HANDLE hMmio2, RTGCPHYS GCPhys)
 {
     /*
      * Validate input.
@@ -3357,28 +3299,36 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
      */
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
-    AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+    if (hMmio2 != NIL_PGMMMIO2HANDLE)
+    {
+        AssertReturn(iSubDev == UINT32_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
+    }
+    else
+    {
+        AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+    }
     AssertReturn(GCPhys != NIL_RTGCPHYS, VERR_INVALID_PARAMETER);
     AssertReturn(GCPhys != 0, VERR_INVALID_PARAMETER);
     AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
 
-    PPGMREGMMIORANGE pFirstMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion);
+    PPGMREGMMIO2RANGE pFirstMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion, hMmio2);
     AssertReturn(pFirstMmio, VERR_NOT_FOUND);
-    Assert(pFirstMmio->fFlags & PGMREGMMIORANGE_F_FIRST_CHUNK);
+    Assert(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK);
 
-    PPGMREGMMIORANGE pLastMmio = pFirstMmio;
-    RTGCPHYS         cbRange   = 0;
+    PPGMREGMMIO2RANGE pLastMmio = pFirstMmio;
+    RTGCPHYS          cbRange   = 0;
     for (;;)
     {
-        AssertReturn(!(pLastMmio->fFlags & PGMREGMMIORANGE_F_MAPPED), VERR_WRONG_ORDER);
+        AssertReturn(!(pLastMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED), VERR_WRONG_ORDER);
         Assert(pLastMmio->RamRange.GCPhys == NIL_RTGCPHYS);
         Assert(pLastMmio->RamRange.GCPhysLast == NIL_RTGCPHYS);
         Assert(pLastMmio->pDevInsR3 == pFirstMmio->pDevInsR3);
         Assert(pLastMmio->iSubDev   == pFirstMmio->iSubDev);
         Assert(pLastMmio->iRegion   == pFirstMmio->iRegion);
         cbRange += pLastMmio->RamRange.cb;
-        if (pLastMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+        if (pLastMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
             break;
         pLastMmio = pLastMmio->pNextR3;
     }
@@ -3393,7 +3343,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
      */
     pgmLock(pVM);
 
-    AssertReturnStmt(!(pFirstMmio->fFlags & PGMREGMMIORANGE_F_MAPPED), pgmUnlock(pVM), VERR_WRONG_ORDER);
+    AssertReturnStmt(!(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED), pgmUnlock(pVM), VERR_WRONG_ORDER);
 
     bool fRamExists = false;
     PPGMRAMRANGE pRamPrev = NULL;
@@ -3426,7 +3376,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
             }
 
             /* There can only be one MMIO/MMIO2 chunk matching here! */
-            AssertLogRelMsgReturnStmt(pFirstMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK,
+            AssertLogRelMsgReturnStmt(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK,
                                       ("%RGp-%RGp (MMIOEx/%s, flags %#X) consists of multiple chunks whereas the RAM somehow doesn't!\n",
                                        GCPhys, GCPhysLast, pFirstMmio->RamRange.pszDesc, pFirstMmio->fFlags),
                                       pgmUnlock(pVM),
@@ -3447,11 +3397,11 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
      * Make the changes.
      */
     RTGCPHYS GCPhysCur = GCPhys;
-    for (PPGMREGMMIORANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
+    for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
     {
         pCurMmio->RamRange.GCPhys = GCPhysCur;
         pCurMmio->RamRange.GCPhysLast = GCPhysCur + pCurMmio->RamRange.cb - 1;
-        if (pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+        if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
         {
             Assert(pCurMmio->RamRange.GCPhysLast == GCPhysLast);
             break;
@@ -3468,12 +3418,12 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
          *
          * We replace this MMIO/ZERO pages with real pages in the MMIO2 case.
          */
-        Assert(pFirstMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK); /* Only one chunk */
+        Assert(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK); /* Only one chunk */
 
         int rc = pgmR3PhysFreePageRange(pVM, pRam, GCPhys, GCPhysLast, PGMPAGETYPE_MMIO);
         AssertRCReturnStmt(rc, pgmUnlock(pVM), rc);
 
-        if (pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+        if (pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
         {
             /* replace the pages, freeing all present RAM pages. */
             PPGMPAGE pPageSrc = &pFirstMmio->RamRange.aPages[0];
@@ -3516,7 +3466,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
         /*
          * No RAM range, insert the ones prepared during registration.
          */
-        for (PPGMREGMMIORANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
+        for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
         {
             /* Clear the tracking data of pages we're going to reactivate. */
             PPGMPAGE pPageSrc = &pCurMmio->RamRange.aPages[0];
@@ -3531,7 +3481,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
             /* link in the ram range */
             pgmR3PhysLinkRamRange(pVM, &pCurMmio->RamRange, pRamPrev);
 
-            if (pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+            if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
             {
                 Assert(pCurMmio->RamRange.GCPhysLast == GCPhysLast);
                 break;
@@ -3546,18 +3496,18 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
      * We must register access handlers for each range since the access handler
      * code refuses to deal with multiple ranges (and we can).
      */
-    if (!(pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2))
+    if (!(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2))
     {
         int rc = VINF_SUCCESS;
-        for (PPGMREGMMIORANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
+        for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
         {
-            Assert(!(pCurMmio->fFlags & PGMREGMMIORANGE_F_MAPPED));
+            Assert(!(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED));
             rc = pgmHandlerPhysicalExRegister(pVM, pCurMmio->pPhysHandlerR3, pCurMmio->RamRange.GCPhys,
                                               pCurMmio->RamRange.GCPhysLast);
             if (RT_FAILURE(rc))
                 break;
-            pCurMmio->fFlags |= PGMREGMMIORANGE_F_MAPPED; /* Use this to mark that the handler is registered. */
-            if (pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+            pCurMmio->fFlags |= PGMREGMMIO2RANGE_F_MAPPED; /* Use this to mark that the handler is registered. */
+            if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
             {
                 rc = IOMR3MmioExNotifyMapped(pVM, pFirstMmio->pPhysHandlerR3->pvUserR3, GCPhys);
                 break;
@@ -3566,11 +3516,11 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
         if (RT_FAILURE(rc))
         {
             /* Almost impossible, but try clean up properly and get out of here. */
-            for (PPGMREGMMIORANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
+            for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
             {
-                if (pCurMmio->fFlags & PGMREGMMIORANGE_F_MAPPED)
+                if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED)
                 {
-                    pCurMmio->fFlags &= ~PGMREGMMIORANGE_F_MAPPED;
+                    pCurMmio->fFlags &= ~PGMREGMMIO2RANGE_F_MAPPED;
                     pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3, fRamExists);
                 }
 
@@ -3578,7 +3528,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
                     pgmR3PhysUnlinkRamRange(pVM, &pCurMmio->RamRange);
                 else
                 {
-                    Assert(pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK); /* Only one chunk */
+                    Assert(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK); /* Only one chunk */
 
                     uint32_t cPagesLeft = pCurMmio->RamRange.cb >> PAGE_SHIFT;
                     PPGMPAGE pPageDst = &pRam->aPages[(pCurMmio->RamRange.GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
@@ -3591,7 +3541,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
 
                 pCurMmio->RamRange.GCPhys     = NIL_RTGCPHYS;
                 pCurMmio->RamRange.GCPhysLast = NIL_RTGCPHYS;
-                if (pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+                if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
                     break;
             }
 
@@ -3603,14 +3553,14 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
     /*
      * We're good, set the flags and invalid the mapping TLB.
      */
-    for (PPGMREGMMIORANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
+    for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
     {
-        pCurMmio->fFlags |= PGMREGMMIORANGE_F_MAPPED;
+        pCurMmio->fFlags |= PGMREGMMIO2RANGE_F_MAPPED;
         if (fRamExists)
-            pCurMmio->fFlags |= PGMREGMMIORANGE_F_OVERLAPPING;
+            pCurMmio->fFlags |= PGMREGMMIO2RANGE_F_OVERLAPPING;
         else
-            pCurMmio->fFlags &= ~PGMREGMMIORANGE_F_OVERLAPPING;
-        if (pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+            pCurMmio->fFlags &= ~PGMREGMMIO2RANGE_F_OVERLAPPING;
+        if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
             break;
     }
     pgmPhysInvalidatePageMapTLB(pVM);
@@ -3618,8 +3568,8 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
     /*
      * Notify NEM while holding the lock (experimental) and REM without (like always).
      */
-    uint32_t const fNemNotify = (pFirstMmio->fFlags & PGMREGMMIORANGE_F_MMIO2       ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2   : 0)
-                              | (pFirstMmio->fFlags & PGMREGMMIORANGE_F_OVERLAPPING ? NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE : 0);
+    uint32_t const fNemNotify = (pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2       ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2   : 0)
+                              | (pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_OVERLAPPING ? NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE : 0);
     int rc = NEMR3NotifyPhysMmioExMap(pVM, GCPhys, cbRange, fNemNotify, pFirstMmio->pvR3);
 
     pgmUnlock(pVM);
@@ -3635,34 +3585,46 @@ VMMR3DECL(int) PGMR3PhysMMIOExMap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev,
  * PCI config. The replacing of base memory has the same restrictions
  * as during registration, of course.
  */
-VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS GCPhys)
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion,
+                                         PGMMMIO2HANDLE hMmio2, RTGCPHYS GCPhys)
 {
     /*
      * Validate input
      */
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
-    AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(GCPhys != NIL_RTGCPHYS, VERR_INVALID_PARAMETER);
-    AssertReturn(GCPhys != 0, VERR_INVALID_PARAMETER);
-    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    if (hMmio2 != NIL_PGMMMIO2HANDLE)
+    {
+        AssertReturn(iSubDev == UINT32_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
+    }
+    else
+    {
+        AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(GCPhys != NIL_RTGCPHYS, VERR_INVALID_PARAMETER);
+    }
+    if (GCPhys != NIL_RTGCPHYS)
+    {
+        AssertReturn(GCPhys != 0, VERR_INVALID_PARAMETER);
+        AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    }
 
-    PPGMREGMMIORANGE pFirstMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion);
+    PPGMREGMMIO2RANGE pFirstMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion, hMmio2);
     AssertReturn(pFirstMmio, VERR_NOT_FOUND);
-    Assert(pFirstMmio->fFlags & PGMREGMMIORANGE_F_FIRST_CHUNK);
+    Assert(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK);
 
-    PPGMREGMMIORANGE pLastMmio = pFirstMmio;
-    RTGCPHYS         cbRange   = 0;
+    PPGMREGMMIO2RANGE pLastMmio = pFirstMmio;
+    RTGCPHYS          cbRange   = 0;
     for (;;)
     {
-        AssertReturn(pLastMmio->fFlags & PGMREGMMIORANGE_F_MAPPED, VERR_WRONG_ORDER);
-        AssertReturn(pLastMmio->RamRange.GCPhys == GCPhys + cbRange, VERR_INVALID_PARAMETER);
+        AssertReturn(pLastMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED, VERR_WRONG_ORDER);
+        AssertReturn(pLastMmio->RamRange.GCPhys == GCPhys + cbRange || GCPhys == NIL_RTGCPHYS, VERR_INVALID_PARAMETER);
         Assert(pLastMmio->pDevInsR3 == pFirstMmio->pDevInsR3);
         Assert(pLastMmio->iSubDev   == pFirstMmio->iSubDev);
         Assert(pLastMmio->iRegion   == pFirstMmio->iRegion);
         cbRange += pLastMmio->RamRange.cb;
-        if (pLastMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+        if (pLastMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
             break;
         pLastMmio = pLastMmio->pNextR3;
     }
@@ -3673,31 +3635,31 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
     int rc = pgmLock(pVM);
     AssertRCReturn(rc, rc);
     uint16_t const fOldFlags = pFirstMmio->fFlags;
-    AssertReturnStmt(fOldFlags & PGMREGMMIORANGE_F_MAPPED, pgmUnlock(pVM), VERR_WRONG_ORDER);
+    AssertReturnStmt(fOldFlags & PGMREGMMIO2RANGE_F_MAPPED, pgmUnlock(pVM), VERR_WRONG_ORDER);
 
     /*
      * If plain MMIO, we must deregister the handlers first.
      */
-    if (!(fOldFlags & PGMREGMMIORANGE_F_MMIO2))
+    if (!(fOldFlags & PGMREGMMIO2RANGE_F_MMIO2))
     {
-        PPGMREGMMIORANGE pCurMmio = pFirstMmio;
-        rc = pgmHandlerPhysicalExDeregister(pVM, pFirstMmio->pPhysHandlerR3, RT_BOOL(fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING));
+        PPGMREGMMIO2RANGE pCurMmio = pFirstMmio;
+        rc = pgmHandlerPhysicalExDeregister(pVM, pFirstMmio->pPhysHandlerR3, RT_BOOL(fOldFlags & PGMREGMMIO2RANGE_F_OVERLAPPING));
         AssertRCReturnStmt(rc, pgmUnlock(pVM), rc);
-        while (!(pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK))
+        while (!(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK))
         {
             pCurMmio = pCurMmio->pNextR3;
-            rc = pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3, RT_BOOL(fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING));
+            rc = pgmHandlerPhysicalExDeregister(pVM, pCurMmio->pPhysHandlerR3, RT_BOOL(fOldFlags & PGMREGMMIO2RANGE_F_OVERLAPPING));
             AssertRCReturnStmt(rc, pgmUnlock(pVM), VERR_PGM_PHYS_MMIO_EX_IPE);
         }
 
-        IOMR3MmioExNotifyUnmapped(pVM, pFirstMmio->pPhysHandlerR3->pvUserR3, GCPhys);
+        IOMR3MmioExNotifyUnmapped(pVM, pFirstMmio->pPhysHandlerR3->pvUserR3, pFirstMmio->RamRange.GCPhys);
     }
 
     /*
      * Unmap it.
      */
     RTGCPHYS const GCPhysRangeNotify = pFirstMmio->RamRange.GCPhys;
-    if (fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING)
+    if (fOldFlags & PGMREGMMIO2RANGE_F_OVERLAPPING)
     {
         /*
          * We've replaced RAM, replace with zero pages.
@@ -3707,7 +3669,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
          *       MMIO/MMIO2 region was mapped here.
          */
         /* Only one chunk allowed when overlapping! */
-        Assert(fOldFlags & PGMREGMMIORANGE_F_LAST_CHUNK);
+        Assert(fOldFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK);
 
         /* Restore the RAM pages we've replaced. */
         PPGMRAMRANGE pRam = pVM->pgm.s.pRamRangesXR3;
@@ -3715,7 +3677,7 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
             pRam = pRam->pNextR3;
 
         uint32_t cPagesLeft = pFirstMmio->RamRange.cb >> PAGE_SHIFT;
-        if (fOldFlags & PGMREGMMIORANGE_F_MMIO2)
+        if (fOldFlags & PGMREGMMIO2RANGE_F_MMIO2)
             pVM->pgm.s.cZeroPages += cPagesLeft;
 
         PPGMPAGE pPageDst = &pRam->aPages[(pFirstMmio->RamRange.GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
@@ -3731,20 +3693,20 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
         /* Update range state. */
         pFirstMmio->RamRange.GCPhys = NIL_RTGCPHYS;
         pFirstMmio->RamRange.GCPhysLast = NIL_RTGCPHYS;
-        pFirstMmio->fFlags &= ~(PGMREGMMIORANGE_F_OVERLAPPING | PGMREGMMIORANGE_F_MAPPED);
+        pFirstMmio->fFlags &= ~(PGMREGMMIO2RANGE_F_OVERLAPPING | PGMREGMMIO2RANGE_F_MAPPED);
     }
     else
     {
         /*
          * Unlink the chunks related to the MMIO/MMIO2 region.
          */
-        for (PPGMREGMMIORANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
+        for (PPGMREGMMIO2RANGE pCurMmio = pFirstMmio; ; pCurMmio = pCurMmio->pNextR3)
         {
             pgmR3PhysUnlinkRamRange(pVM, &pCurMmio->RamRange);
             pCurMmio->RamRange.GCPhys = NIL_RTGCPHYS;
             pCurMmio->RamRange.GCPhysLast = NIL_RTGCPHYS;
-            pCurMmio->fFlags &= ~(PGMREGMMIORANGE_F_OVERLAPPING | PGMREGMMIORANGE_F_MAPPED);
-            if (pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK)
+            pCurMmio->fFlags &= ~(PGMREGMMIO2RANGE_F_OVERLAPPING | PGMREGMMIO2RANGE_F_MAPPED);
+            if (pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK)
                 break;
         }
     }
@@ -3763,8 +3725,8 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
     /*
      * Notify NEM while holding the lock (experimental) and REM without (like always).
      */
-    uint32_t const fNemFlags = (fOldFlags & PGMREGMMIORANGE_F_MMIO2       ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2   : 0)
-                             | (fOldFlags & PGMREGMMIORANGE_F_OVERLAPPING ? NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE : 0);
+    uint32_t const fNemFlags = (fOldFlags & PGMREGMMIO2RANGE_F_MMIO2       ? NEM_NOTIFY_PHYS_MMIO_EX_F_MMIO2   : 0)
+                             | (fOldFlags & PGMREGMMIO2RANGE_F_OVERLAPPING ? NEM_NOTIFY_PHYS_MMIO_EX_F_REPLACE : 0);
     rc = NEMR3NotifyPhysMmioExUnmap(pVM, GCPhysRangeNotify, cbRange, fNemFlags);
     pgmUnlock(pVM);
     return rc;
@@ -3785,18 +3747,32 @@ VMMR3DECL(int) PGMR3PhysMMIOExUnmap(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDe
  * @param   pVM             The cross context VM structure.
  * @param   pDevIns         The device instance owning the region.
  * @param   iSubDev         The sub-device number of the registered region.
- * @param   iRegion         The index of the registered region.
+ *                          Pass UINT32_MAX if @a hMmio2 is given.
+ * @param   iRegion         The index of the registered region.  Pass UINT32_MAX
+ *                          if @a hMmio2 is given.
+ * @param   hMmio2          The handle of the region to reduce as an alternative
+ *                          to @a iSubDev and @a iRegion, pass NIL to use the
+ *                          other two.
  * @param   cbRegion        The new mapping size.
  */
-VMMR3_INT_DECL(int) PGMR3PhysMMIOExReduce(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion, RTGCPHYS cbRegion)
+VMMR3_INT_DECL(int) PGMR3PhysMMIOExReduce(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion,
+                                          PGMMMIO2HANDLE hMmio2, RTGCPHYS cbRegion)
 {
     /*
      * Validate input
      */
     VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
-    AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+    if (hMmio2 != NIL_PGMMMIO2HANDLE)
+    {
+        AssertReturn(iSubDev == UINT32_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
+    }
+    else
+    {
+        AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+    }
     AssertReturn(cbRegion >= X86_PAGE_SIZE, VERR_INVALID_PARAMETER);
     AssertReturn(!(cbRegion & X86_PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
     VMSTATE enmVmState = VMR3GetState(pVM);
@@ -3808,17 +3784,17 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExReduce(PVM pVM, PPDMDEVINS pDevIns, uint32_t 
     int rc = pgmLock(pVM);
     AssertRCReturn(rc, rc);
 
-    PPGMREGMMIORANGE pFirstMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion);
+    PPGMREGMMIO2RANGE pFirstMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion, hMmio2);
     if (pFirstMmio)
     {
-        Assert(pFirstMmio->fFlags & PGMREGMMIORANGE_F_FIRST_CHUNK);
-        if (!(pFirstMmio->fFlags & PGMREGMMIORANGE_F_MAPPED))
+        Assert(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK);
+        if (!(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED))
         {
             /*
              * NOTE! Current implementation does not support multiple ranges.
              *       Implement when there is a real world need and thus a testcase.
              */
-            AssertLogRelMsgStmt(pFirstMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK,
+            AssertLogRelMsgStmt(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK,
                                 ("%s: %#x\n", pFirstMmio->RamRange.pszDesc, pFirstMmio->fFlags),
                                 rc = VERR_NOT_SUPPORTED);
             if (RT_SUCCESS(rc))
@@ -3850,6 +3826,72 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIOExReduce(PVM pVM, PPDMDEVINS pDevIns, uint32_t 
 
 
 /**
+ * Validates @a hMmio2, making sure it belongs to @a pDevIns.
+ *
+ * @returns VBox status code.
+ * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The device which allegedly owns @a hMmio2.
+ * @param   hMmio2      The handle to validate.
+ */
+VMMR3_INT_DECL(int) PGMR3PhysMmio2ValidateHandle(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
+{
+    /*
+     * Validate input
+     */
+    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    AssertPtrReturn(pDevIns, VERR_INVALID_POINTER);
+
+    /*
+     * Just do this the simple way.  No need for locking as this is only taken at
+     */
+    pgmLock(pVM);
+    PPGMREGMMIO2RANGE pFirstMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, UINT32_MAX, UINT32_MAX, hMmio2);
+    pgmUnlock(pVM);
+    AssertReturn(pFirstMmio, VERR_INVALID_HANDLE);
+    AssertReturn(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2, VERR_INVALID_HANDLE);
+    AssertReturn(pFirstMmio->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK, VERR_INVALID_HANDLE);
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Gets the mapping address of an MMIO2 handle.
+ *
+ * @returns The mapping address, NIL_RTGCPHYS if not mapped of invalid input.
+ * @param   pVM             The cross context VM structure.
+ * @param   pVM             The cross context VM structure.
+ * @param   pDevIns         The device instance owning the region.
+ * @param   hMmio2          The handle of the region.
+ */
+VMMR3DECL(bool) PGMR3PhysMMIO2GetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
+{
+    /*
+     * Validate input
+     */
+    VM_ASSERT_EMT_RETURN(pVM, false);
+    AssertPtrReturn(pDevIns, false);
+    AssertReturn(GCPhys != NIL_RTGCPHYS, false);
+    AssertReturn(GCPhys != 0, false);
+    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), false);
+
+    /*
+     * Search the list.
+     */
+    pgmLock(pVM);
+    for (PPGMREGMMIO2RANGE pCurMmio = pVM->pgm.s.pRegMmioRangesR3; pCurMmio; pCurMmio = pCurMmio->pNextR3)
+        if (pCurMmio->RamRange.GCPhys == GCPhys)
+        {
+            Assert(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED);
+            bool fRet = RT_BOOL(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK);
+            pgmUnlock(pVM);
+            return fRet;
+        }
+    pgmUnlock(pVM);
+    return false;
+}
+
+
+/**
  * Checks if the given address is an MMIO2 or pre-registered MMIO base address
  * or not.
  *
@@ -3873,11 +3915,11 @@ VMMR3DECL(bool) PGMR3PhysMMIOExIsBase(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPh
      * Search the list.
      */
     pgmLock(pVM);
-    for (PPGMREGMMIORANGE pCurMmio = pVM->pgm.s.pRegMmioRangesR3; pCurMmio; pCurMmio = pCurMmio->pNextR3)
+    for (PPGMREGMMIO2RANGE pCurMmio = pVM->pgm.s.pRegMmioRangesR3; pCurMmio; pCurMmio = pCurMmio->pNextR3)
         if (pCurMmio->RamRange.GCPhys == GCPhys)
         {
-            Assert(pCurMmio->fFlags & PGMREGMMIORANGE_F_MAPPED);
-            bool fRet = RT_BOOL(pCurMmio->fFlags & PGMREGMMIORANGE_F_FIRST_CHUNK);
+            Assert(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED);
+            bool fRet = RT_BOOL(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK);
             pgmUnlock(pVM);
             return fRet;
         }
@@ -3912,12 +3954,12 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIO2GetHCPhys(PVM pVM, PPDMDEVINS pDevIns, uint32_
     AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
 
     pgmLock(pVM);
-    PPGMREGMMIORANGE pCurMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion);
+    PPGMREGMMIO2RANGE pCurMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion, NIL_PGMMMIO2HANDLE);
     AssertReturn(pCurMmio, VERR_NOT_FOUND);
-    AssertReturn(pCurMmio->fFlags & (PGMREGMMIORANGE_F_MMIO2 | PGMREGMMIORANGE_F_FIRST_CHUNK), VERR_WRONG_TYPE);
+    AssertReturn(pCurMmio->fFlags & (PGMREGMMIO2RANGE_F_MMIO2 | PGMREGMMIO2RANGE_F_FIRST_CHUNK), VERR_WRONG_TYPE);
 
     while (   off >= pCurMmio->RamRange.cb
-           && !(pCurMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK))
+           && !(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK))
     {
         off -= pCurMmio->RamRange.cb;
         pCurMmio = pCurMmio->pNextR3;
@@ -3959,9 +4001,9 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_
     AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
     AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
 
-    PPGMREGMMIORANGE pFirstRegMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion);
+    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion, NIL_PGMMMIO2HANDLE);
     AssertReturn(pFirstRegMmio, VERR_NOT_FOUND);
-    AssertReturn(pFirstRegMmio->fFlags & (PGMREGMMIORANGE_F_MMIO2 | PGMREGMMIORANGE_F_FIRST_CHUNK), VERR_WRONG_TYPE);
+    AssertReturn(pFirstRegMmio->fFlags & (PGMREGMMIO2RANGE_F_MMIO2 | PGMREGMMIO2RANGE_F_FIRST_CHUNK), VERR_WRONG_TYPE);
     AssertReturn(off < pFirstRegMmio->RamRange.cb, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= pFirstRegMmio->RamRange.cb, VERR_INVALID_PARAMETER);
     AssertReturn(off + cb <= pFirstRegMmio->RamRange.cb, VERR_INVALID_PARAMETER);
@@ -3972,7 +4014,7 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_
      */
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_OS2) /** @todo Fully implement RTR0MemObjMapKernelEx everywhere. */
     AssertLogRelReturn(off == 0, VERR_NOT_SUPPORTED);
-    AssertLogRelReturn(pFirstRegMmio->fFlags & PGMREGMMIORANGE_F_LAST_CHUNK, VERR_NOT_SUPPORTED);
+    AssertLogRelReturn(pFirstRegMmio->fFlags & PGMREGMMIO2RANGE_F_LAST_CHUNK, VERR_NOT_SUPPORTED);
     int rc = SUPR3PageMapKernel(pFirstRegMmio->pvR3, 0 /*off*/, pFirstRegMmio->RamRange.cb, 0 /*fFlags*/, pR0Ptr);
 #else
     int rc = SUPR3PageMapKernel(pFirstRegMmio->pvR3, off, cb, 0 /*fFlags*/, pR0Ptr);
@@ -3991,29 +4033,75 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_
  *
  * @param   pVM         The cross context VM structure.
  * @param   pDevIns     The device owning the MMIO2 memory.
- * @param   iSubDev     The sub-device number.
- * @param   iRegion     The region.
+ * @param   iSubDev     The sub-device number.  Pass UINT32_MAX if @a hMmio2 is
+ *                      given.
+ * @param   iRegion     The region.  Pass UINT32_MAX if @a hMmio2 is given.
+ * @param   hMmio2      The handle of the region to map as an alternative to
+ *                      @a iSubDev and @a iRegion, pass NIL to use the
+ *                      other two.
  * @param   iNewRegion  The new region index.
  *
+ * @thread  EMT(0)
+ * @sa      @bugref{9359}
+ */
+VMMR3_INT_DECL(RTGCPHYS) PGMR3PhysMMIOExGetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
+{
+    AssertPtrReturn(pDevIns, NIL_RTGCPHYS);
+
+    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, UINT32_MAX, UINT32_MAX, hMmio2);
+    AssertReturn(pFirstRegMmio, NIL_RTGCPHYS);
+
+    if (pFirstRegMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED)
+        return pFirstRegMmio->RamRange.GCPhys;
+    return NIL_RTGCPHYS;
+}
+
+/**
+ * Changes the region number of an MMIO2 or pre-registered MMIO region.
+ *
+ * This is only for dealing with save state issues, nothing else.
+ *
+ * @return VBox status code.
+ *
+ * @param   pVM         The cross context VM structure.
+ * @param   pDevIns     The device owning the MMIO2 memory.
+ * @param   iSubDev     The sub-device number.  Pass UINT32_MAX if @a hMmio2 is
+ *                      given.
+ * @param   iRegion     The region.  Pass UINT32_MAX if @a hMmio2 is given.
+ * @param   hMmio2      The handle of the region to map as an alternative to
+ *                      @a iSubDev and @a iRegion, pass NIL to use the
+ *                      other two.
+ * @param   iNewRegion  The new region index.
+ *
+ * @thread  EMT(0)
  * @sa      @bugref{9359}
  */
 VMMR3_INT_DECL(int) PGMR3PhysMMIOExChangeRegionNo(PVM pVM, PPDMDEVINS pDevIns, uint32_t iSubDev, uint32_t iRegion,
-                                                  uint32_t iNewRegion)
+                                                  PGMMMIO2HANDLE hMmio2, uint32_t iNewRegion)
 {
     /*
      * Validate input.
      */
-    VM_ASSERT_EMT_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     AssertPtrReturn(pDevIns, VERR_INVALID_PARAMETER);
-    AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
-    AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+    if (hMmio2 != NIL_PGMMMIO2HANDLE)
+    {
+        AssertReturn(iSubDev == UINT32_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion == UINT32_MAX, VERR_INVALID_PARAMETER);
+    }
+    else
+    {
+        AssertReturn(iSubDev <= UINT8_MAX, VERR_INVALID_PARAMETER);
+        AssertReturn(iRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
+    }
     AssertReturn(iNewRegion <= UINT8_MAX, VERR_INVALID_PARAMETER);
 
     AssertReturn(pVM->enmVMState == VMSTATE_LOADING, VERR_INVALID_STATE);
 
-    PPGMREGMMIORANGE pFirstRegMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion);
+    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iRegion, hMmio2);
     AssertReturn(pFirstRegMmio, VERR_NOT_FOUND);
-    AssertReturn(pgmR3PhysMMIOExFind(pVM, pDevIns, iSubDev, iNewRegion) == NULL, VERR_RESOURCE_IN_USE);
+    AssertReturn(pgmR3PhysMMIOExFind(pVM, pDevIns, pFirstRegMmio->iSubDev, iNewRegion, NIL_PGMMMIO2HANDLE) == NULL,
+                 VERR_RESOURCE_IN_USE);
 
     /*
      * Make the change.

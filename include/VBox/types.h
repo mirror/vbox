@@ -378,6 +378,13 @@ typedef IOMMMIOHANDLE          *PIOMMMIOHANDLE;
 /** A NIL MMIO handle. */
 #define NIL_IOMMMIOHANDLE       ((uint64_t)UINT64_MAX)
 
+/** A cross context MMIO2 range handle. */
+typedef uint64_t                PGMMMIO2HANDLE;
+/** Pointer to a cross context MMIO2 handle. */
+typedef PGMMMIO2HANDLE         *PPGMMMIO2HANDLE;
+/** A NIL MMIO2 handle. */
+#define NIL_PGMMMIO2HANDLE      ((uint64_t)UINT64_MAX)
+
 /** Pointer to a PDM Base Interface. */
 typedef struct PDMIBASE *PPDMIBASE;
 /** Pointer to a pointer to a PDM Base Interface. */

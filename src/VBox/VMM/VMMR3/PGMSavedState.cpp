@@ -640,9 +640,9 @@ static int pgmR3PrepMmio2Pages(PVM pVM)
      * ASSUME nothing changes here.
      */
     pgmLock(pVM);
-    for (PPGMREGMMIORANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
+    for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
     {
-        if (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+        if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
         {
             uint32_t const  cPages = pRegMmio->RamRange.cb >> PAGE_SHIFT;
             pgmUnlock(pVM);
@@ -681,9 +681,9 @@ static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
 {
     pgmLock(pVM);
     uint8_t id = 1;
-    for (PPGMREGMMIORANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
+    for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
     {
-        if (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+        if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
         {
             pRegMmio->idSavedState = id;
             SSMR3PutU8(pSSM, id);
@@ -714,8 +714,8 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
 {
     PGM_LOCK_ASSERT_OWNER(pVM);
 
-    for (PPGMREGMMIORANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
-        if (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+    for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
+        if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
             pRegMmio->idSavedState = UINT8_MAX;
 
     for (;;)
@@ -729,9 +729,9 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
             return rc;
         if (id == UINT8_MAX)
         {
-            for (PPGMREGMMIORANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
+            for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
                 AssertLogRelMsg(   pRegMmio->idSavedState != UINT8_MAX
-                                || !(pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2),
+                                || !(pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2),
                                 ("%s\n", pRegMmio->RamRange.pszDesc));
             return VINF_SUCCESS;        /* the end */
         }
@@ -757,13 +757,13 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
         /*
          * Locate a matching MMIO2 range.
          */
-        PPGMREGMMIORANGE pRegMmio;
+        PPGMREGMMIO2RANGE pRegMmio;
         for (pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
         {
             if (    pRegMmio->idSavedState == UINT8_MAX
                 &&  pRegMmio->iRegion == iRegion
                 &&  pRegMmio->pDevInsR3->iInstance == uInstance
-                &&  (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+                &&  (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
                 &&  !strcmp(pRegMmio->pDevInsR3->pReg->szName, szDevName))
             {
                 pRegMmio->idSavedState = id;
@@ -882,8 +882,8 @@ static void pgmR3ScanMmio2Pages(PVM pVM, uint32_t uPass)
         return;
 
     pgmLock(pVM);                       /* paranoia */
-    for (PPGMREGMMIORANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
-        if (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+    for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
+        if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
         {
             PPGMLIVESAVEMMIO2PAGE paLSPages = pRegMmio->paLSPages;
             uint32_t              cPages    = pRegMmio->RamRange.cb >> PAGE_SHIFT;
@@ -923,10 +923,10 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
          * The mop up round.
          */
         pgmLock(pVM);
-        for (PPGMREGMMIORANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3;
+        for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3;
              pRegMmio && RT_SUCCESS(rc);
              pRegMmio = pRegMmio->pNextR3)
-            if (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+            if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
             {
                 PPGMLIVESAVEMMIO2PAGE paLSPages = pRegMmio->paLSPages;
                 uint8_t const        *pbPage    = (uint8_t const *)pRegMmio->RamRange.pvR3;
@@ -981,10 +981,10 @@ static int pgmR3SaveMmio2Pages(PVM pVM, PSSMHANDLE pSSM, bool fLiveSave, uint32_
              || (uPass & 3) == 2)
     {
         pgmLock(pVM);
-        for (PPGMREGMMIORANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3;
+        for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3;
              pRegMmio && RT_SUCCESS(rc);
              pRegMmio = pRegMmio->pNextR3)
-            if (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+            if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
             {
                 PPGMLIVESAVEMMIO2PAGE paLSPages = pRegMmio->paLSPages;
                 uint8_t const        *pbPage    = (uint8_t const *)pRegMmio->RamRange.pvR3;
@@ -1056,8 +1056,8 @@ static void pgmR3DoneMmio2Pages(PVM pVM)
      * We do the freeing outside the lock in case the VM is running.
      */
     pgmLock(pVM);
-    for (PPGMREGMMIORANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
-        if (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2)
+    for (PPGMREGMMIO2RANGE pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
+        if (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2)
         {
             void *pvMmio2ToFree = pRegMmio->paLSPages;
             if (pvMmio2ToFree)
@@ -2608,7 +2608,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
     uint8_t             id       = UINT8_MAX;
     uint32_t            iPage    = UINT32_MAX - 10;
     PPGMROMRANGE        pRom     = NULL;
-    PPGMREGMMIORANGE    pRegMmio = NULL;
+    PPGMREGMMIO2RANGE    pRegMmio = NULL;
 
     /*
      * We batch up pages that should be freed instead of calling GMM for
@@ -2787,7 +2787,7 @@ static int pgmR3LoadMemory(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
                 {
                     for (pRegMmio = pVM->pgm.s.pRegMmioRangesR3; pRegMmio; pRegMmio = pRegMmio->pNextR3)
                         if (   pRegMmio->idSavedState == id
-                            && (pRegMmio->fFlags & PGMREGMMIORANGE_F_MMIO2))
+                            && (pRegMmio->fFlags & PGMREGMMIO2RANGE_F_MMIO2))
                             break;
                     AssertLogRelMsgReturn(pRegMmio, ("id=%#u iPage=%#x\n", id, iPage), VERR_PGM_SAVED_MMIO2_RANGE_NOT_FOUND);
                 }

@@ -227,6 +227,26 @@ static DECLCALLBACK(int) pdmR0DevHlp_MmioSetUpContextEx(PPDMDEVINS pDevIns, IOMM
 }
 
 
+/** @interface_method_impl{PDMDEVHLPR0,pfnMmio2SetUpContext} */
+static DECLCALLBACK(int) pdmR0DevHlp_Mmio2SetUpContext(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion,
+                                                       size_t offSub, size_t cbSub, void **ppvMapping)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR0DevHlp_Mmio2SetUpContext: caller='%s'/%d: hRegion=%#x offSub=%#zx cbSub=%#zx ppvMapping=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, hRegion, offSub, cbSub, ppvMapping));
+    *ppvMapping = NULL;
+
+    PGVM pGVM = pDevIns->Internal.s.pGVM;
+    VM_ASSERT_EMT0_RETURN(pGVM, VERR_VM_THREAD_NOT_EMT);
+    VM_ASSERT_STATE_RETURN(pGVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
+
+    int rc = PGMR0PhysMMIO2MapKernel(pGVM, pDevIns, hRegion, offSub, cbSub, ppvMapping);
+
+    LogFlow(("pdmR0DevHlp_Mmio2SetUpContext: caller='%s'/%d: returns %Rrc (%p)\n", pDevIns->pReg->szName, pDevIns->iInstance, rc, *ppvMapping));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR0,pfnPCIPhysRead} */
 static DECLCALLBACK(int) pdmR0DevHlp_PCIPhysRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, RTGCPHYS GCPhys,
                                                  void *pvBuf, size_t cbRead)
@@ -1074,6 +1094,7 @@ extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
     PDM_DEVHLPR0_VERSION,
     pdmR0DevHlp_IoPortSetUpContextEx,
     pdmR0DevHlp_MmioSetUpContextEx,
+    pdmR0DevHlp_Mmio2SetUpContext,
     pdmR0DevHlp_PCIPhysRead,
     pdmR0DevHlp_PCIPhysWrite,
     pdmR0DevHlp_PCISetIrq,

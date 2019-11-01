@@ -1469,7 +1469,7 @@ typedef struct PGMLIVESAVEMMIO2PAGE
 typedef PGMLIVESAVEMMIO2PAGE *PPGMLIVESAVEMMIO2PAGE;
 
 /**
- * A registered MMIO2 (= Device RAM) or pre-registered MMIO range.
+ * A registered MMIO2 (= Device RAM) range.
  *
  * There are a few reason why we need to keep track of these registrations.  One
  * of them is the deregistration & cleanup stuff, while another is that the
@@ -1482,15 +1482,15 @@ typedef PGMLIVESAVEMMIO2PAGE *PPGMLIVESAVEMMIO2PAGE;
  * overlap we will free all the existing RAM pages and put in the ram range
  * pages instead.
  */
-typedef struct PGMREGMMIORANGE
+typedef struct PGMREGMMIO2RANGE
 {
     /** The owner of the range. (a device) */
     PPDMDEVINSR3                        pDevInsR3;
     /** Pointer to the ring-3 mapping of the allocation, if MMIO2. */
     RTR3PTR                             pvR3;
     /** Pointer to the next range - R3. */
-    R3PTRTYPE(struct PGMREGMMIORANGE *) pNextR3;
-    /** Flags (PGMREGMMIORANGE_F_XXX). */
+    R3PTRTYPE(struct PGMREGMMIO2RANGE *) pNextR3;
+    /** Flags (PGMREGMMIO2RANGE_F_XXX). */
     uint16_t                            fFlags;
     /** The sub device number (internal PCI config (CFGM) number). */
     uint8_t                             iSubDev;
@@ -1512,30 +1512,31 @@ typedef struct PGMREGMMIORANGE
     R3PTRTYPE(PPGMLIVESAVEMMIO2PAGE)    paLSPages;
     /** The associated RAM range. */
     PGMRAMRANGE                         RamRange;
-} PGMREGMMIORANGE;
-AssertCompileMemberAlignment(PGMREGMMIORANGE, RamRange, 16);
+} PGMREGMMIO2RANGE;
+AssertCompileMemberAlignment(PGMREGMMIO2RANGE, RamRange, 16);
 /** Pointer to a MMIO2 or pre-registered MMIO range. */
-typedef PGMREGMMIORANGE *PPGMREGMMIORANGE;
+typedef PGMREGMMIO2RANGE *PPGMREGMMIO2RANGE;
 
-/** @name PGMREGMMIORANGE_F_XXX - Registered MMIO range flags.
+/** @name PGMREGMMIO2RANGE_F_XXX - Registered MMIO2 range flags.
  * @{ */
-/** Set if it's an MMIO2 range. */
-#define PGMREGMMIORANGE_F_MMIO2             UINT16_C(0x0001)
+/** Set if it's an MMIO2 range.
+ * @note Historical.  For a while we did some of the MMIO this way too.  */
+#define PGMREGMMIO2RANGE_F_MMIO2            UINT16_C(0x0001)
 /** Set if this is the first chunk in the MMIO2 range. */
-#define PGMREGMMIORANGE_F_FIRST_CHUNK       UINT16_C(0x0002)
+#define PGMREGMMIO2RANGE_F_FIRST_CHUNK      UINT16_C(0x0002)
 /** Set if this is the last chunk in the MMIO2 range. */
-#define PGMREGMMIORANGE_F_LAST_CHUNK        UINT16_C(0x0004)
+#define PGMREGMMIO2RANGE_F_LAST_CHUNK       UINT16_C(0x0004)
 /** Set if the whole range is mapped. */
-#define PGMREGMMIORANGE_F_MAPPED            UINT16_C(0x0008)
+#define PGMREGMMIO2RANGE_F_MAPPED           UINT16_C(0x0008)
 /** Set if it's overlapping, clear if not. */
-#define PGMREGMMIORANGE_F_OVERLAPPING       UINT16_C(0x0010)
+#define PGMREGMMIO2RANGE_F_OVERLAPPING      UINT16_C(0x0010)
 /** @} */
 
 
 /** @name Internal MMIO2 constants.
  * @{ */
 /** The maximum number of MMIO2 ranges. */
-#define PGM_MMIO2_MAX_RANGES                        8
+#define PGM_MMIO2_MAX_RANGES                        32
 /** The maximum number of pages in a MMIO2 range. */
 #define PGM_MMIO2_MAX_PAGE_COUNT                    UINT32_C(0x01000000)
 /** Makes a MMIO2 page ID out of a MMIO2 range ID and page index number. */
@@ -3139,9 +3140,9 @@ typedef struct PGM
     R3PTRTYPE(PPGMROMRANGE)         pRomRangesR3;
     /** Pointer to the list of MMIO2 ranges - for R3.
      * Registration order. */
-    R3PTRTYPE(PPGMREGMMIORANGE)     pRegMmioRangesR3;
+    R3PTRTYPE(PPGMREGMMIO2RANGE)    pRegMmioRangesR3;
     /** MMIO2 lookup array for ring-3.  Indexed by idMmio2 minus 1. */
-    R3PTRTYPE(PPGMREGMMIORANGE)     apMmio2RangesR3[PGM_MMIO2_MAX_RANGES];
+    R3PTRTYPE(PPGMREGMMIO2RANGE)    apMmio2RangesR3[PGM_MMIO2_MAX_RANGES];
 
     /** RAM range TLB for R0. */
     R0PTRTYPE(PPGMRAMRANGE)         apRamRangesTlbR0[PGM_RAMRANGE_TLB_ENTRIES];
@@ -3164,7 +3165,7 @@ typedef struct PGM
     /** R0 pointer corresponding to PGM::pRomRangesR3. */
     R0PTRTYPE(PPGMROMRANGE)         pRomRangesR0;
     /** MMIO2 lookup array for ring-0.  Indexed by idMmio2 minus 1. */
-    R0PTRTYPE(PPGMREGMMIORANGE)     apMmio2RangesR0[PGM_MMIO2_MAX_RANGES];
+    R0PTRTYPE(PPGMREGMMIO2RANGE)    apMmio2RangesR0[PGM_MMIO2_MAX_RANGES];
 
 #ifndef PGM_WITHOUT_MAPPINGS
     /** Pointer to the 5 page CR3 content mapping.

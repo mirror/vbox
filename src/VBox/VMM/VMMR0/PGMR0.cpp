@@ -24,6 +24,7 @@
 #include <VBox/vmm/pgm.h>
 #include <VBox/vmm/gmm.h>
 #include "PGMInternal.h"
+#include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/vmcc.h>
 #include <VBox/vmm/gvm.h>
 #include "PGMInline.h"
@@ -250,6 +251,75 @@ VMMR0_INT_DECL(int) PGMR0PhysAllocateLargeHandyPage(PGVM pGVM, VMCPUID idCpu)
         pGVM->pgm.s.cLargeHandyPages = 1;
 
     return rc;
+}
+
+
+/**
+ * Locate a MMIO2 range.
+ *
+ * @returns Pointer to the MMIO2 range.
+ * @param   pGVM        The global (ring-0) VM structure.
+ * @param   pDevIns     The device instance owning the region.
+ * @param   hMmio2      Handle to look up.
+ */
+DECLINLINE(PPGMREGMMIO2RANGE) pgmR0PhysMMIOExFind(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
+{
+    /*
+     * We use the lookup table here as list walking is tedious in ring-0 when using
+     * ring-3 pointers and this probably will require some kind of refactoring anyway.
+     */
+    if (hMmio2 <= RT_ELEMENTS(pGVM->pgm.s.apMmio2RangesR0) && hMmio2 != 0)
+    {
+        PPGMREGMMIO2RANGE pCur = pGVM->pgm.s.apMmio2RangesR0[hMmio2 - 1];
+        if (pCur && pCur->pDevInsR3 == pDevIns->pDevInsForR3)
+        {
+            Assert(pCur->idMmio2 == hMmio2);
+            AssertReturn(pCur->fFlags & PGMREGMMIO2RANGE_F_MMIO2, NULL);
+            return pCur;
+        }
+        Assert(!pCur);
+    }
+    return NULL;
+}
+
+
+/**
+ * Worker for PDMDEVHLPR0::pfnMmio2SetUpContext.
+ *
+ * @returns VBox status code.
+ * @param   pGVM        The global (ring-0) VM structure.
+ * @param   pDevIns     The device instance.
+ * @param   hMmio2      The MMIO2 region to map into ring-0 address space.
+ * @param   offSub      The offset into the region.
+ * @param   cbSub       The size of the mapping, zero meaning all the rest.
+ * @param   ppvMapping  Where to return the ring-0 mapping address.
+ */
+VMMR0_INT_DECL(int) PGMR0PhysMMIO2MapKernel(PGVM pGVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2,
+                                            size_t offSub, size_t cbSub, void **ppvMapping)
+{
+    AssertReturn(!(offSub & PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
+    AssertReturn(!(cbSub  & PAGE_OFFSET_MASK), VERR_UNSUPPORTED_ALIGNMENT);
+
+    /*
+     * Translate hRegion into a range pointer.
+     */
+    PPGMREGMMIO2RANGE pFirstRegMmio = pgmR0PhysMMIOExFind(pGVM, pDevIns, hMmio2);
+    AssertReturn(pFirstRegMmio, VERR_NOT_FOUND);
+    RTR3PTR const  pvR3   = pFirstRegMmio->pvR3;
+    RTGCPHYS const cbReal = pFirstRegMmio->cbReal;
+    pFirstRegMmio = NULL;
+    ASMCompilerBarrier();
+
+    AssertReturn(offSub < cbReal, VERR_OUT_OF_RANGE);
+    if (cbSub == 0)
+        cbSub = cbReal - offSub;
+    else
+        AssertReturn(cbSub < cbReal && cbSub + offSub <= cbReal, VERR_OUT_OF_RANGE);
+
+    /*
+     * Do the mapping.
+     */
+    return SUPR0PageMapKernel(pGVM->pSession, pvR3, (uint32_t)offSub, (uint32_t)cbSub, 0 /*fFlags*/, ppvMapping);
 }
 
 
