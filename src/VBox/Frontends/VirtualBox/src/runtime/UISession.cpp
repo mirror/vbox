@@ -1693,6 +1693,7 @@ void UISession::updateMousePointerShape()
             memcpy(image.scanLine(y), pu32SrcShapeScanline, uWidth * sizeof(uint32_t));
 
         m_cursorPixmap = QPixmap::fromImage(image);
+        updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
         m_cursor = QCursor(m_cursorPixmap, uXHot, uYHot);
     }
     else
@@ -1783,6 +1784,7 @@ void UISession::updateMousePointerShape()
             }
 
             m_cursorPixmap = QBitmap::fromImage(bitmap);
+            updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
             m_cursor = QCursor(m_cursorPixmap, QBitmap::fromImage(mask), uXHot, uYHot);
         }
         else
@@ -1814,6 +1816,7 @@ void UISession::updateMousePointerShape()
             }
 
             m_cursorPixmap = QPixmap::fromImage(image);
+            updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
             m_cursor = QCursor(m_cursorPixmap, uXHot, uYHot);
         }
     }
@@ -1884,6 +1887,60 @@ void UISession::updateMousePointerShape()
 
     /* Cache cursor pixmap size: */
     m_cursorSize = m_cursorPixmap.size();
+}
+
+void UISession::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, uint &uYHot)
+{
+#if defined(VBOX_WS_WIN)
+
+    /* Get screen-id of active machine-window: */
+    /// @todo In case of multi-monitor setup check whether parameters are screen specific.
+    const ulong uScreenID = activeMachineWindow()->screenId();
+
+    /* We want to scale the pixmap just once, so let's prepare cumulative multiplier: */
+    double dScaleMultiplier = 1.0;
+
+    /* Take into account scale-factor if necessary: */
+    const double dScaleFactor = frameBuffer(uScreenID)->scaleFactor();
+    //printf("Scale-factor: %f\n", dScaleFactor);
+    if (dScaleFactor > 1.0)
+        dScaleMultiplier *= dScaleFactor;
+
+    /* Take into account device-pixel-ratio if necessary: */
+    const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
+    const double dDevicePixelRatioActual = frameBuffer(uScreenID)->devicePixelRatioActual();
+    const bool fUseUnscaledHiDPIOutput = frameBuffer(uScreenID)->useUnscaledHiDPIOutput();
+    //printf("Device-pixel-ratio/actual: %f/%f, Unscaled HiDPI Output: %d\n",
+    //       dDevicePixelRatio, dDevicePixelRatioActual, fUseUnscaledHiDPIOutput);
+    if (dDevicePixelRatioActual > 1.0 && !fUseUnscaledHiDPIOutput)
+        dScaleMultiplier *= dDevicePixelRatioActual;
+
+    /* If scale multiplier was set: */
+    if (dScaleMultiplier > 1.0)
+    {
+        /* Scale the pixmap up: */
+        pixmap = pixmap.scaled(pixmap.width() * dScaleMultiplier, pixmap.height() * dScaleMultiplier,
+                               Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        uXHot *= dScaleMultiplier;
+        uYHot *= dScaleMultiplier;
+    }
+
+    /* If device pixel ratio was set: */
+    if (dDevicePixelRatio > 1.0)
+    {
+        /* Scale the pixmap down: */
+        pixmap.setDevicePixelRatio(dDevicePixelRatio);
+        uXHot /= dDevicePixelRatio;
+        uYHot /= dDevicePixelRatio;
+    }
+
+#else
+
+    Q_UNUSED(pixmap);
+    Q_UNUSED(uXHot);
+    Q_UNUSED(uYHot);
+
+#endif
 }
 
 bool UISession::preprocessInitialization()

@@ -443,9 +443,12 @@ private:
     void updateMenu();
 #endif /* VBOX_WS_MAC */
 
-    /* Common helpers: */
     /** Updates mouse pointer shape. */
     void updateMousePointerShape();
+    /** Updates mouse pointer @a pixmap, @a uXHot and @a uYHot according to scaling attributes. */
+    void updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, uint &uYHot);
+
+    /* Common helpers: */
     bool preprocessInitialization();
     bool mountAdHocImage(KDeviceType enmDeviceType, UIMediumDeviceType enmMediumType, const QString &strMediumName);
     bool postprocessInitialization();
