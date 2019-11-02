@@ -464,6 +464,7 @@ DECLINLINE(uint16_t) virtioReadUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 DECLINLINE(void) virtioWriteUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t fFlags)
 {
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
+    RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
     PDMDevHlpPCIPhysWrite(pVirtio->CTX_SUFF(pDevIns),
                           pVirtio->pGcPhysQueueUsed[qIdx] + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
                           &fFlags, sizeof(fFlags));
@@ -472,6 +473,7 @@ DECLINLINE(void) virtioWriteUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint3
 DECLINLINE(uint16_t) virtioReadUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t uAvailEventIdx;
+    RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
     /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPhysRead(pVirtio->CTX_SUFF(pDevIns),

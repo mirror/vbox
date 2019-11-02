@@ -277,6 +277,8 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
     Log6Func(("Write ahead used_idx=%d, %s used_idx=%d\n",
          pVirtq->uUsedIdx,  QUEUENAME(qIdx), uUsedIdx));
 
+    RTMemFree((void *)pDescChain->pSgPhysSend->paSegs);
+    RTMemFree(pDescChain->pSgPhysSend);
     RTMemFree((void *)pSgPhysReturn->paSegs);
     RTMemFree(pSgPhysReturn);
     RTMemFree(pDescChain);
@@ -313,12 +315,22 @@ int virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx)
  */
 static void virtioQueueNotified(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint16_t uNotifyIdx)
 {
-    Assert(uNotifyIdx == qIdx);
-    (void)uNotifyIdx;
+    /* See VirtIO 1.0, section 4.1.5.2 It implies that qIdx and uNotifyIdx should match.
+     * Disregarding this notification may cause throughput to stop, however there's no way to know
+     * which was queue was intended for wake-up if the two parameters disagree. */
+
+    AssertMsg(uNotifyIdx == qIdx,
+        ("Notification param disagreement. Guest kicked virtq %d's notify addr w/non-corresponding virtq idx %d\n",
+            qIdx, uNotifyIdx));
+
+//    AssertMsgReturn(uNotifyIdx == qIdx,
+//        ("Notification param disagreement. Guest kicked virtq %d's notify addr w/non-corresponding virtq idx %d\n",
+//            qIdx, uNotifyIdx));
+    RT_NOREF(uNotifyIdx);
 
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[qIdx];
     Log6Func(("%s\n", pVirtq->szVirtqName));
-    (void)pVirtq;
+    RT_NOREF(pVirtq);
 
     /** Inform client */
     pVirtio->virtioCallbacks.pfnVirtioQueueNotified((VIRTIOHANDLE)pVirtio, pVirtio->pClientContext, qIdx);
@@ -469,6 +481,7 @@ static void virtioResetDevice(PVIRTIOSTATE pVirtio)
     pVirtio->uDeviceStatus          = 0;
     pVirtio->uISR                   = 0;
 
+    virtioLowerInterrupt(pVirtio);
 
     if (!pVirtio->fMsiSupport)  /* VirtIO 1.0, 4.1.4.3 and 4.1.5.1.2 */
         pVirtio->uMsixConfig = VIRTIO_MSI_NO_VECTOR;
@@ -826,6 +839,7 @@ PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
         uint32_t uNotifyBaseOffset = GCPhysAddr - pVirtio->pGcPhysNotifyCap;
         uint16_t qIdx = uNotifyBaseOffset / VIRTIO_NOTIFY_OFFSET_MULTIPLIER;
         uint16_t uAvailDescIdx = *(uint16_t *)pv;
+
         virtioQueueNotified(pVirtio, qIdx, uAvailDescIdx);
     }
     else
@@ -1259,23 +1273,7 @@ static DECLCALLBACK(int) virtioR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     rc = SSMR3PutU32(pSSM,    pVirtio->uDeviceFeaturesSelect);
     rc = SSMR3PutU32(pSSM,    pVirtio->uDriverFeaturesSelect);
     rc = SSMR3PutU32(pSSM,    pVirtio->uNumQueues);
-    rc = SSMR3PutU32(pSSM,    pVirtio->cbDevSpecificCfg);
-    rc = SSMR3PutU64(pSSM,    pVirtio->uDeviceFeatures);
     rc = SSMR3PutU64(pSSM,    pVirtio->uDriverFeatures);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->pDevSpecificCfg);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnVirtioStatusChanged);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnVirtioQueueNotified);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnVirtioDevCapRead);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnVirtioDevCapWrite);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnSSMDevLiveExec);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnSSMDevSaveExec);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnSSMDevLoadExec);
-    rc = SSMR3PutU64(pSSM,    (uint64_t)pVirtio->virtioCallbacks.pfnSSMDevLoadDone);
-    rc = SSMR3PutGCPhys(pSSM, pVirtio->pGcPhysCommonCfg);
-    rc = SSMR3PutGCPhys(pSSM, pVirtio->pGcPhysNotifyCap);
-    rc = SSMR3PutGCPhys(pSSM, pVirtio->pGcPhysIsrCap);
-    rc = SSMR3PutGCPhys(pSSM, pVirtio->pGcPhysDeviceCap);
-    rc = SSMR3PutGCPhys(pSSM, pVirtio->pGcPhysPciCapBase);
 
     for (uint16_t i = 0; i < pVirtio->uNumQueues; i++)
     {
@@ -1315,23 +1313,8 @@ static DECLCALLBACK(int) virtioR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
         rc = SSMR3GetU32(pSSM,   &pVirtio->uDeviceFeaturesSelect);
         rc = SSMR3GetU32(pSSM,   &pVirtio->uDriverFeaturesSelect);
         rc = SSMR3GetU32(pSSM,   &pVirtio->uNumQueues);
-        rc = SSMR3GetU32(pSSM,   &pVirtio->cbDevSpecificCfg);
-        rc = SSMR3GetU64(pSSM,   &pVirtio->uDeviceFeatures);
         rc = SSMR3GetU64(pSSM,   &pVirtio->uDriverFeatures);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->pDevSpecificCfg);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnVirtioStatusChanged);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnVirtioQueueNotified);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnVirtioDevCapRead);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnVirtioDevCapWrite);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnSSMDevLiveExec);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnSSMDevSaveExec);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnSSMDevLoadExec);
-        rc = SSMR3GetU64(pSSM,   (uint64_t *)&pVirtio->virtioCallbacks.pfnSSMDevLoadDone);
-        rc = SSMR3GetGCPhys(pSSM, &pVirtio->pGcPhysCommonCfg);
-        rc = SSMR3GetGCPhys(pSSM, &pVirtio->pGcPhysNotifyCap);
-        rc = SSMR3GetGCPhys(pSSM, &pVirtio->pGcPhysIsrCap);
-        rc = SSMR3GetGCPhys(pSSM, &pVirtio->pGcPhysDeviceCap);
-        rc = SSMR3GetGCPhys(pSSM, &pVirtio->pGcPhysPciCapBase);
+
 
         for (uint16_t i = 0; i < pVirtio->uNumQueues; i++)
         {
