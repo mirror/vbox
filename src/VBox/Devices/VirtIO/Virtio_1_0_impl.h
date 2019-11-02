@@ -126,13 +126,13 @@ typedef struct virtio_pci_notify_cap
 {
     struct virtio_pci_cap pciCap;                                /**< Notification MMIO mapping capability      */
     uint32_t uNotifyOffMultiplier;                               /**< notify_off_multiplier                     */
-} VIRTIO_PCI_NOTIFY_CAP_T, *PVIRTIO_PCI_NOTIFY_CAP_T;
+}  VIRTIO_PCI_NOTIFY_CAP_T,   *PVIRTIO_PCI_NOTIFY_CAP_T;
 
 typedef struct virtio_pci_cfg_cap
 {
     struct virtio_pci_cap pciCap;                                /**< Cap. defines the BAR/off/len to access    */
     uint8_t uPciCfgData[4];                                      /**< I/O buf for above cap.                    */
-} VIRTIO_PCI_CFG_CAP_T, *PVIRTIO_PCI_CFG_CAP_T;
+} VIRTIO_PCI_CFG_CAP_T,   *PVIRTIO_PCI_CFG_CAP_T;
 
 /**
  * The core (/common) state of the VirtIO PCI device
@@ -141,52 +141,54 @@ typedef struct virtio_pci_cfg_cap
  */
 typedef struct VIRTIOSTATE
 {
-    char                        szInstance[16];                     /**< Instance name, e.g. "VIRTIOSCSI0"         */
-    R3PTRTYPE(void *)           pClientContext;                     /**< Client callback returned on callbacks     */
+    char                      szInstance[16];                    /**< Instance name, e.g. "VIRTIOSCSI0"         */
+    void *                    pClientContext;                    /**< Client callback returned on callbacks     */
 
-    PPDMDEVINSR3                pDevInsR3;                          /**< Device instance - R3                      */
+    PPDMDEVINSR3              pDevInsR3;                         /**< Device instance - R3                      */
+    PPDMDEVINSR0              pDevInsR0;                         /**< Device instance - R0                      */
+    PPDMDEVINSRC              pDevInsRC;                         /**< Device instance - RC                      */
 
-    RTGCPHYS                    pGcPhysPciCapBase;                  /**< Pointer to MMIO mapped capability data    */
-    RTGCPHYS                    pGcPhysCommonCfg;                   /**< Pointer to MMIO mapped capability data    */
-    RTGCPHYS                    pGcPhysNotifyCap;                   /**< Pointer to MMIO mapped capability data    */
-    RTGCPHYS                    pGcPhysIsrCap;                      /**< Pointer to MMIO mapped capability data    */
-    RTGCPHYS                    pGcPhysDeviceCap;                   /**< Pointer to MMIO mapped capability data    */
+    RTGCPHYS                  pGcPhysPciCapBase;                 /**< Pointer to MMIO mapped capability data    */
+    RTGCPHYS                  pGcPhysCommonCfg;                  /**< Pointer to MMIO mapped capability data    */
+    RTGCPHYS                  pGcPhysNotifyCap;                  /**< Pointer to MMIO mapped capability data    */
+    RTGCPHYS                  pGcPhysIsrCap;                     /**< Pointer to MMIO mapped capability data    */
+    RTGCPHYS                  pGcPhysDeviceCap;                  /**< Pointer to MMIO mapped capability data    */
 
-    RTGCPHYS                    pGcPhysQueueDesc[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
-    RTGCPHYS                    pGcPhysQueueAvail[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
-    RTGCPHYS                    pGcPhysQueueUsed[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q used structs   GUEST */
-    uint16_t                    uQueueNotifyOff[VIRTQ_MAX_CNT];     /**< (MMIO) per-Q notify offset           HOST */
-    uint16_t                    uQueueMsixVector[VIRTQ_MAX_CNT];    /**< (MMIO) Per-queue vector for MSI-X   GUEST */
-    uint16_t                    uQueueEnable[VIRTQ_MAX_CNT];        /**< (MMIO) Per-queue enable             GUEST */
-    uint16_t                    uQueueSize[VIRTQ_MAX_CNT];          /**< (MMIO) Per-queue size          HOST/GUEST */
-    uint16_t                    uQueueSelect;                       /**< (MMIO) queue selector               GUEST */
-    uint16_t                    padding;
-    uint64_t                    uDeviceFeatures;                    /**< (MMIO) Host features offered         HOST */
-    uint64_t                    uDriverFeatures;                    /**< (MMIO) Host features accepted       GUEST */
-    uint32_t                    uDeviceFeaturesSelect;              /**< (MMIO) hi/lo select uDeviceFeatures GUEST */
-    uint32_t                    uDriverFeaturesSelect;              /**< (MMIO) hi/lo select uDriverFeatures GUEST */
-    uint32_t                    uMsixConfig;                        /**< (MMIO) MSI-X vector                 GUEST */
-    uint32_t                    uNumQueues;                         /**< (MMIO) Actual number of queues      GUEST */
-    uint8_t                     uDeviceStatus;                      /**< (MMIO) Device Status                GUEST */
-    uint8_t                     uPrevDeviceStatus;                  /**< (MMIO) Prev Device Status           GUEST */
-    uint8_t                     uConfigGeneration;                  /**< (MMIO) Device config sequencer       HOST */
+    RTGCPHYS                  pGcPhysQueueDesc[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
+    RTGCPHYS                  pGcPhysQueueAvail[VIRTQ_MAX_CNT];  /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
+    RTGCPHYS                  pGcPhysQueueUsed[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q used structs   GUEST */
+    uint16_t                  uQueueNotifyOff[VIRTQ_MAX_CNT];    /**< (MMIO) per-Q notify offset           HOST */
+    uint16_t                  uQueueMsixVector[VIRTQ_MAX_CNT];   /**< (MMIO) Per-queue vector for MSI-X   GUEST */
+    uint16_t                  uQueueEnable[VIRTQ_MAX_CNT];       /**< (MMIO) Per-queue enable             GUEST */
+    uint16_t                  uQueueSize[VIRTQ_MAX_CNT];         /**< (MMIO) Per-queue size          HOST/GUEST */
+    uint16_t                  uQueueSelect;                      /**< (MMIO) queue selector               GUEST */
+    uint16_t                  padding;
+    uint64_t                  uDeviceFeatures;                   /**< (MMIO) Host features offered         HOST */
+    uint64_t                  uDriverFeatures;                   /**< (MMIO) Host features accepted       GUEST */
+    uint32_t                  uDeviceFeaturesSelect;             /**< (MMIO) hi/lo select uDeviceFeatures GUEST */
+    uint32_t                  uDriverFeaturesSelect;             /**< (MMIO) hi/lo select uDriverFeatures GUEST */
+    uint32_t                  uMsixConfig;                       /**< (MMIO) MSI-X vector                 GUEST */
+    uint32_t                  uNumQueues;                        /**< (MMIO) Actual number of queues      GUEST */
+    uint8_t                   uDeviceStatus;                     /**< (MMIO) Device Status                GUEST */
+    uint8_t                   uPrevDeviceStatus;                 /**< (MMIO) Prev Device Status           GUEST */
+    uint8_t                   uConfigGeneration;                 /**< (MMIO) Device config sequencer       HOST */
 
-    VIRTQSTATE                  virtqState[VIRTQ_MAX_CNT];          /**< Local impl-specific queue context         */
-    VIRTIOCALLBACKS             virtioCallbacks;                    /**< Callback vectors to client                */
+    VIRTQSTATE                virtqState[VIRTQ_MAX_CNT];         /**< Local impl-specific queue context         */
+    VIRTIOCALLBACKS           virtioCallbacks;                   /**< Callback vectors to client                */
 
-    PVIRTIO_PCI_CFG_CAP_T       pPciCfgCap;                         /**< Pointer to struct in configuration area   */
-    PVIRTIO_PCI_NOTIFY_CAP_T    pNotifyCap;                         /**< Pointer to struct in configuration area   */
-    PVIRTIO_PCI_CAP_T           pCommonCfgCap;                      /**< Pointer to struct in configuration area   */
-    PVIRTIO_PCI_CAP_T           pIsrCap;                            /**< Pointer to struct in configuration area   */
-    PVIRTIO_PCI_CAP_T           pDeviceCap;                         /**< Pointer to struct in configuration area   */
+    PVIRTIO_PCI_CFG_CAP_T     pPciCfgCap;                        /**< Pointer to struct in configuration area   */
+    PVIRTIO_PCI_NOTIFY_CAP_T  pNotifyCap;                        /**< Pointer to struct in configuration area   */
+    PVIRTIO_PCI_CAP_T         pCommonCfgCap;                     /**< Pointer to struct in configuration area   */
+    PVIRTIO_PCI_CAP_T         pIsrCap;                           /**< Pointer to struct in configuration area   */
+    PVIRTIO_PCI_CAP_T         pDeviceCap;                        /**< Pointer to struct in configuration area   */
 
-    uint32_t                    cbDevSpecificCfg;                   /**< Size of client's dev-specific config data */
-    void                       *pDevSpecificCfg;                    /**< Pointer to client's struct                */
-    void                       *pPrevDevSpecificCfg;                /**< Previous read dev-specific cfg of client  */
-    bool                        fGenUpdatePending;                  /**< If set, update cfg gen after driver reads */
-    uint8_t                     uPciCfgDataOff;
-    uint8_t                     uISR;                               /**< Interrupt Status Register.                */
-    uint8_t                     fMsiSupport;
+    uint32_t                  cbDevSpecificCfg;                  /**< Size of client's dev-specific config data */
+    void                     *pDevSpecificCfg;                   /**< Pointer to client's struct                */
+    void                     *pPrevDevSpecificCfg;               /**< Previous read dev-specific cfg of client  */
+    bool                      fGenUpdatePending;                 /**< If set, update cfg gen after driver reads */
+    uint8_t                   uPciCfgDataOff;
+    uint8_t                   uISR;                              /**< Interrupt Status Register.                */
+    uint8_t                   fMsiSupport;
 
 } VIRTIOSTATE, *PVIRTIOSTATE;
 

@@ -410,6 +410,8 @@ void virtioRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     LogFunc(("\n"));
 
     pVirtio->pDevInsR3 = pDevIns;
+    pVirtio->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    pVirtio->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
 }
 
 
@@ -1055,6 +1057,8 @@ int   virtioConstruct(PPDMDEVINS             pDevIns,
     RTStrCopy(pVirtio->szInstance, sizeof(pVirtio->szInstance), pcszInstance);
 
     pVirtio->pDevInsR3 = pDevIns;
+    pVirtio->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
+    pVirtio->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pVirtio->uDeviceStatus = 0;
     pVirtio->cbDevSpecificCfg = cbDevSpecificCfg;
     pVirtio->pDevSpecificCfg  = pDevSpecificCfg;
