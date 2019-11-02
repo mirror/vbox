@@ -541,6 +541,8 @@ typedef struct PDMIMEDIA
 typedef struct PDMMEDIAEXIOREQINT *PDMMEDIAEXIOREQ;
 /** Pointer to an I/O request handle. */
 typedef PDMMEDIAEXIOREQ *PPDMMEDIAEXIOREQ;
+/** NIL I/O request handle. */
+#define NIL_PDMMEDIAEXIOREQ     ((PDMMEDIAEXIOREQ)0)
 
 /** A I/O request ID. */
 typedef uint64_t PDMMEDIAEXIOREQID;
