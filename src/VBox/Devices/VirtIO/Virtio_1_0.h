@@ -131,7 +131,7 @@ typedef FNVIRTIODEVCAPWRITE *PFNVIRTIODEVCAPWRITE;
  * @param   pvBuf       Buffer in which to save read data
  * @param   cbRead      Number of bytes to read
  */
-typedef DECLCALLBACK(int)   FNVIRTIODEVCAPREAD(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbRead);
+typedef DECLCALLBACK(int)   FNVIRTIODEVCAPREAD(PPDMDEVINS pDevIns, uint32_t uOffset, void *pvBuf, uint32_t cbRead);
 typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
 
 
@@ -139,23 +139,14 @@ typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
  * @{ */
 typedef struct VIRTIOCALLBACKS
 {
-     DECLCALLBACKMEMBER(void, pfnVirtioStatusChanged)
-                                  (VIRTIOHANDLE hVirtio, void *pClient, uint32_t fDriverOk);
-     DECLCALLBACKMEMBER(void, pfnVirtioQueueNotified)
-                                  (VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx);
-     DECLCALLBACKMEMBER(int,  pfnVirtioDevCapRead)
-                                  (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbRead);
-     DECLCALLBACKMEMBER(int,  pfnVirtioDevCapWrite)
-                                  (PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbWrite);
-     DECLCALLBACKMEMBER(int,  pfnSSMDevLiveExec)
-                                  (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass);
-     DECLCALLBACKMEMBER(int,  pfnSSMDevSaveExec)
-                                  (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
-     DECLCALLBACKMEMBER(int,  pfnSSMDevLoadExec)
-                                  (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-     DECLCALLBACKMEMBER(int,  pfnSSMDevLoadDone)
-                                  (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
-
+     DECLCALLBACKMEMBER(void, pfnVirtioStatusChanged)(VIRTIOHANDLE hVirtio, void *pClient, uint32_t fDriverOk);
+     DECLCALLBACKMEMBER(void, pfnVirtioQueueNotified)(VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx);
+     DECLCALLBACKMEMBER(int,  pfnVirtioDevCapRead)(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbRead);
+     DECLCALLBACKMEMBER(int,  pfnVirtioDevCapWrite)(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbWrite);
+     DECLCALLBACKMEMBER(int,  pfnSSMDevLiveExec)(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass);
+     DECLCALLBACKMEMBER(int,  pfnSSMDevSaveExec)(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+     DECLCALLBACKMEMBER(int,  pfnSSMDevLoadExec)(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+     DECLCALLBACKMEMBER(int,  pfnSSMDevLoadDone)(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 } VIRTIOCALLBACKS, *PVIRTIOCALLBACKS;
 /** @} */
 
