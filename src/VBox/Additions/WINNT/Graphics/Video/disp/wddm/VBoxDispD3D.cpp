@@ -113,7 +113,8 @@ static HRESULT vboxDispAdapterInit(D3DDDIARG_OPENADAPTER const *pOpenData, VBOXW
     if (pAdapter->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
         pAdapter->u32VBox3DCaps = pAdapterInfo->u.vbox.u32VBox3DCaps;
     pAdapter->AdapterInfo = *pAdapterInfo;
-    pAdapter->f3D         = !vboxDispIsDDraw(pOpenData);
+    pAdapter->f3D         =    RT_BOOL(pAdapterInfo->u32AdapterCaps & VBOXWDDM_QAI_CAP_3D)
+                            && !vboxDispIsDDraw(pOpenData);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     pAdapter->cHeads      = pAdapterInfo->cInfos;
     for (uint32_t i = 0; i < pAdapter->cHeads; ++i)

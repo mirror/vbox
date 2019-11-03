@@ -1999,6 +1999,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 
                     pQAI->u32Version = VBOXVIDEOIF_VERSION;
                     pQAI->enmHwType = pDevExt->enmHwType;
+                    pQAI->u32AdapterCaps = pDevExt->f3DEnabled ? VBOXWDDM_QAI_CAP_3D : 0;
                     if (pDevExt->enmHwType == VBOXVIDEO_HWTYPE_VBOX)
                     {
                         pQAI->u.vbox.u32VBox3DCaps = 0;

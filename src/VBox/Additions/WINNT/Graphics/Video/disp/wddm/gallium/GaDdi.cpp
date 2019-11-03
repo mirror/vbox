@@ -4964,7 +4964,6 @@ HRESULT APIENTRY GaDdiAdapterGetCaps(HANDLE hAdapter, const D3DDDIARG_GETCAPS *p
                 }
                 else
                 {
-                    AssertFailed();
                     memset(pData->pData, 0, sizeof (D3DCAPS9));
                 }
             }

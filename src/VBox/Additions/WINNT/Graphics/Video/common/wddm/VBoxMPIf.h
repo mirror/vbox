@@ -35,7 +35,7 @@
 #include <VBox/VBoxGuestCoreTypes.h> /* for VBGLIOCHGCMCALL */
 
 /* One would increase this whenever definitions in this file are changed */
-#define VBOXVIDEOIF_VERSION 21
+#define VBOXVIDEOIF_VERSION 22
 
 /** @todo VBOXVIDEO_HWTYPE probably needs to be in VBoxVideo.h */
 typedef enum VBOXVIDEO_HWTYPE
@@ -568,12 +568,15 @@ typedef struct VBOXDISPIFESCAPE_GAFENCEUNREF
 #include <VBoxGaHWInfo.h>
 #endif /* VBOX_WITH_MESA3D */
 
+#define VBOXWDDM_QAI_CAP_3D 0x00000001 /* 3D is enabled in the VM settings. */
+
 /* D3DDDICB_QUERYADAPTERINFO::pPrivateDriverData */
 typedef struct VBOXWDDM_QAI
 {
     uint32_t            u32Version;      /* VBOXVIDEOIF_VERSION */
     uint32_t            u32Reserved;     /* Must be 0. */
     VBOXVIDEO_HWTYPE    enmHwType;       /* Hardware type. Determines what kind of data is returned. */
+    uint32_t            u32AdapterCaps;  /* VBOXWDDM_QAI_CAP_* */
     uint32_t            cInfos;          /* Number of initialized elements in aInfos (equal to number of guest
                                           * displays). 0 if VBOX_WITH_VIDEOHWACCEL is not defined. */
     VBOXVHWA_INFO       aInfos[VBOX_VIDEO_MAX_SCREENS]; /* cInfos elements are initialized. */
