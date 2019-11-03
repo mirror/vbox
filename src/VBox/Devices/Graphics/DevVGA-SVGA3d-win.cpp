@@ -5270,8 +5270,6 @@ int vmsvga3dDrawPrimitives(PVGASTATE pThis, uint32_t cid, uint32_t numVertexDecl
         }
         else
         {
-            Assert(pRange[iPrimitive].indexBias >= 0);  /** @todo */
-
             UINT numVertices;
             if (pVertexDecl[0].rangeHint.last)
             {
