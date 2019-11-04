@@ -132,6 +132,8 @@ typedef struct _VBOXMP_DEVEXT
    /* hgsmi allocation manager */
    VBOXVIDEOCM_ALLOC_MGR AllocMgr;
    /* mutex for context list operations */
+   VBOXVDMADDI_NODE aNodes[VBOXWDDM_NUM_NODES];
+   LIST_ENTRY DpcCmdQueue;
    KSPIN_LOCK ContextLock;
    KSPIN_LOCK SynchLock;
    volatile uint32_t cContexts3D;
@@ -194,6 +196,7 @@ typedef struct _VBOXMP_DEVEXT
 
 #ifdef VBOX_WDDM_MINIPORT
            VBOXVDMAINFO Vdma;
+           UINT uLastCompletedPagingBufferCmdFenceId; /* Legacy */
 # ifdef VBOXVDMA_WITH_VBVA
            VBOXVBVAINFO Vbva;
 # endif

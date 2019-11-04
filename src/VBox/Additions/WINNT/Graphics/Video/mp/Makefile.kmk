@@ -101,6 +101,7 @@ ifdef VBOX_WITH_WDDM
 
  VBoxWddm_SOURCES          = \
  	wddm/VBoxMPWddm.cpp \
+ 	wddm/VBoxMPLegacy.cpp \
 	wddm/VBoxMPVidPn.cpp \
 	wddm/VBoxMPVdma.cpp \
 	wddm/VBoxMPShgsmi.cpp \
