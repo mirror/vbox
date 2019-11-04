@@ -221,7 +221,6 @@ Var g_strAddVerBuild                    ; Installed Guest Additions: Build numbe
 Var g_strAddVerRev                      ; Installed Guest Additions: SVN revision
 Var g_strWinVersion                     ; Current Windows version we're running on
 Var g_bLogEnable                        ; Do logging when installing? "true" or "false"
-Var g_bWithWDDM                         ; Install the WDDM graphics driver instead of the XPDM one
 Var g_bCapDllCache                      ; Capability: Does the (Windows) guest have have a DLL cache which needs to be taken care of?
 Var g_bCapWDDM                          ; Capability: Is the guest able to handle/use our WDDM driver?
 
@@ -243,7 +242,7 @@ Var g_bNoGuestDrv                       ; Cmd line: Do not install the VBoxGuest
 Var g_bNoMouseDrv                       ; Cmd line: Do not install the VBoxMouse driver
 Var g_bNoStartMenuEntries               ; Cmd line: Do not create start menu entries
 Var g_bWithAutoLogon                    ; Cmd line: Install VBoxGINA / VBoxCredProv for auto logon support
-Var g_bWithD3D                          ; Cmd line: Install Direct3D support
+Var g_bWithWDDM                         ; Cmd line: Install the WDDM graphics driver instead of the XPDM one
 Var g_bOnlyExtract                      ; Cmd line: Only extract all files, do *not* install them. Only valid with param "/D" (target directory)
 Var g_bPostInstallStatus                ; Cmd line: Post the overall installation status to some external program (VBoxTray)
 
@@ -796,11 +795,21 @@ exit:
 
 SectionEnd
 
+; Start menu entries. Enabled by default and can be disabled by the user.
+Section /o $(VBOX_COMPONENT_STARTMENU) SEC04
+
+  CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url" "" "$INSTDIR\iexplore.ico"
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk" "$INSTDIR\uninst.exe"
+
+SectionEnd
+
 !ifdef USE_MUI
   ;Assign language strings to sections
   !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
     !insertmacro MUI_DESCRIPTION_TEXT   ${SEC01} $(VBOX_COMPONENT_MAIN_DESC)
     !insertmacro MUI_DESCRIPTION_TEXT   ${SEC02} $(VBOX_COMPONENT_AUTOLOGON_DESC)
+    !insertmacro MUI_DESCRIPTION_TEXT   ${SEC03} $(VBOX_COMPONENT_D3D_DESC)
     !insertmacro MUI_DESCRIPTION_TEXT   ${SEC04} $(VBOX_COMPONENT_STARTMENU_DESC)
   !insertmacro MUI_FUNCTION_DESCRIPTION_END
 !endif ; USE_MUI
@@ -808,15 +817,6 @@ SectionEnd
 Section -Content
 
   WriteIniStr "$INSTDIR\${PRODUCT_NAME}.url" "InternetShortcut" "URL" "${PRODUCT_WEB_SITE}"
-
-SectionEnd
-
-; Start menu entries. Enabled by default and can be disabled by the user.
-Section /o $(VBOX_COMPONENT_STARTMENU) SEC04
-
-  CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk" "$INSTDIR\${PRODUCT_NAME}.url" "" "$INSTDIR\iexplore.ico"
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk" "$INSTDIR\uninst.exe"
 
 SectionEnd
 
@@ -869,54 +869,20 @@ Function .onSelChange
 
   Push $0
 
-  ; Handle selection of D3D component
+  ; Handle selection of WDDM component
   SectionGetFlags ${SEC03} $0
   ${If} $0 == ${SF_SELECTED}
 
-    StrCpy $g_bWithD3D "true"
-
 !if $%VBOX_WITH_WDDM% == "1"
-    ; If we're able to use the WDDM driver just use it instead of the replaced
-    ; D3D components below
+    ; If we're able to use the WDDM driver just use it.
     ${If} $g_bCapWDDM == "true"
-      ;
-      ; Temporary solution: Since WDDM is marked as experimental yet we notify the user
-      ; that WDDM (Aero) support is available but not recommended for production use. He now
-      ; can opt-in for installing WDDM or still go for the old (XPDM) way -- safe mode still required!
-      ;
-      MessageBox MB_ICONQUESTION|MB_YESNO $(VBOX_COMPONENT_D3D_OR_WDDM) /SD IDNO IDYES d3d_install
-      ; Display an unconditional hint about needed VRAM sizes
-      ; Note: We also could use the PCI configuration space (WMI: Win32_SystemSlot Class) for querying
-      ;       the current VRAM size, but let's keep it simple for now
-      MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_HINT_VRAM) /SD IDOK
       StrCpy $g_bWithWDDM "true"
       Goto exit
     ${EndIf}
 
-d3d_install:
-
 !endif ; $%VBOX_WITH_WDDM% == "1"
 
-    ${If} $g_bForceInstall != "true"
-      ; Do not install on < XP
-      ${If}   $g_strWinVersion == "NT4"
-      ${OrIf} $g_strWinVersion == "2000"
-      ${OrIf} $g_strWinVersion == ""
-        MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NOT_SUPPORTED) /SD IDOK
-        Goto d3d_disable
-      ${EndIf}
-    ${EndIf}
-
-    ; If force flag is set skip the safe mode check
-    ${If} $g_bForceInstall != "true"
-      ; If we're not in safe mode, print a warning and don't install D3D support
-      ${If} $g_iSystemMode == '0'
-        MessageBox MB_ICONINFORMATION|MB_OK $(VBOX_COMPONENT_D3D_NO_SM) /SD IDOK
-        Goto d3d_disable
-      ${EndIf}
-    ${EndIf}
-
-  ${Else} ; D3D unselected again
+  ${Else} ; WDDM unselected again
 
     ${If}   $g_strWinVersion != "8"   ; On Windows 8 WDDM is mandatory
     ${AndIf} $g_strWinVersion != "8_1" ; ... also on Windows 8.1 / Windows 2012 Server R2
@@ -925,13 +891,6 @@ d3d_install:
     ${EndIf}
 
   ${EndIf}
-  Goto exit
-
-d3d_disable:
-
-  StrCpy $g_bWithD3D "false"
-  IntOp $0 $0 & ${SECTION_OFF} ; Unselect section again
-  SectionSetFlags ${SEC03} $0
   Goto exit
 
 exit:
@@ -999,7 +958,6 @@ Function .onInit
   StrCpy $g_bNoMouseDrv "false"
   StrCpy $g_bNoStartMenuEntries "false"
   StrCpy $g_bWithAutoLogon "false"
-  StrCpy $g_bWithD3D "false"
   StrCpy $g_bOnlyExtract "false"
   StrCpy $g_bWithWDDM "false"
   StrCpy $g_bCapDllCache "false"
@@ -1107,6 +1065,10 @@ Function .onInit
   ${OrIf} $g_strWinVersion == "10"
     IntOp $0 ${SF_SELECTED} | ${SF_RO}
     SectionSetFlags ${SEC03} $0
+  ${EndIf}
+  ; If the guest is not able to handle/use our WDDM driver, then 3D is not available
+  ${If} $g_bCapWDDM != "true"
+    SectionSetFlags ${SEC03} ${SF_RO}
   ${EndIf}
 
   ;

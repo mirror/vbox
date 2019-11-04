@@ -42,11 +42,10 @@ LangString VBOX_COMPONENT_AUTOLOGON_DESC ${LANG_ENGLISH}            "Enables aut
 LangString VBOX_COMPONENT_AUTOLOGON_WARN_3RDPARTY ${LANG_ENGLISH}   "Another installed application already provides automatic log-on support.$\r$\nIf you replace this support with that provided by VirtualBox the system could become unstable.$\r$\nAre you sure you wish to proceed?"
 
 LangString VBOX_COMPONENT_D3D  ${LANG_ENGLISH}                      "Direct3D Support (Experimental)"
-LangString VBOX_COMPONENT_D3D_DESC  ${LANG_ENGLISH}                 "Enables Direct3D support for guests (Experimental)"
+LangString VBOX_COMPONENT_D3D_DESC  ${LANG_ENGLISH}                 "Enables Direct3D and OpenGL acceleration for guests. In order to use it the virtual machine requires 256 MB of video memory and enabled 3D acceleration in the $\"Display$\" section of the virtual machine settings."
 LangString VBOX_COMPONENT_D3D_NO_SM ${LANG_ENGLISH}                 "Windows is currently not running in safe mode so Direct3D support cannot be installed."
 LangString VBOX_COMPONENT_D3D_NOT_SUPPORTED ${LANG_ENGLISH}         "The VirtualBox Direct3D support is not available on Windows $g_strWinVersion!"
-LangString VBOX_COMPONENT_D3D_OR_WDDM ${LANG_ENGLISH}               "This system supports the Windows Aero (WDDM) interface.$\r$\nVirtualBox support for this feature is experimental and should not be used on production systems yet.$\r$\n$\r$\nWould you like to install basic Direct3D support instead?"
-LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_ENGLISH}             "Please note that in order to use 3D acceleration the virtual machine requires at least 128 MB of video memory with 256 MB recommended if you wish to use it with multiple monitors.$\r$\n$\r$\nIf necessary you can change the video memory size in the $\"Display$\" section of the virtual machine settings."
+;LangString VBOX_COMPONENT_D3D_HINT_VRAM ${LANG_ENGLISH}             "Please note that in order to use 3D acceleration the virtual machine requires at least 128 MB of video memory with 256 MB recommended if you wish to use it with multiple monitors.$\r$\n$\r$\nIf necessary you can change the video memory size in the $\"Display$\" section of the virtual machine settings."
 LangString VBOX_COMPONENT_D3D_INVALID ${LANG_ENGLISH}               "The setup detected a corrupt/invalid DirectX installation.$\r$\n$\r$\nIn order to get Direct3D support working, consulting the VirtualBox manual is highly recommended.$\r$\n$\r$\nContinue anyway?"
 LangString VBOX_COMPONENT_D3D_INVALID_MANUAL ${LANG_ENGLISH}        "Shall the VirtualBox manual be displayed now to look for a solution?"
 
