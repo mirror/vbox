@@ -3268,13 +3268,11 @@ static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPDMDEVINS pDevIns, PPDMPCIDEV pP
     Assert(pPciDev == pDevIns->apPciDevs[0]);
     Assert(enmType == PCI_ADDRESS_SPACE_IO);
     Assert(iRegion == 0);
-    AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
-
 
     int rc;
     if (GCPhysAddress != NIL_RTGCPHYS)
     {
-        AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
+        AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#RGp\n", GCPhysAddress));
 
         rc = PDMDevHlpIoPortMap(pDevIns, pThis->hIoPortReq, (RTIOPORT)GCPhysAddress + VMMDEV_PORT_OFF_REQUEST);
         AssertLogRelRCReturn(rc, rc);
