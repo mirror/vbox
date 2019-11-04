@@ -1035,7 +1035,7 @@ static int virtioScsiR3ReqSubmit(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_
      * Extract command header and CDB from guest physical memory
      */
     size_t cbReqHdr = sizeof(REQ_CMD_HDR_T) + pThis->virtioScsiConfig.uCdbSize;
-    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAlloc(cbReqHdr);
+    PVIRTIOSCSI_REQ_CMD_T pVirtqReq = (PVIRTIOSCSI_REQ_CMD_T)RTMemAllocZ(cbReqHdr);
     AssertReturn(pVirtqReq, VERR_NO_MEMORY);
     uint8_t *pb = (uint8_t *)pVirtqReq;
     for (size_t cb = RT_MIN(pDescChain->cbPhysSend, cbReqHdr); cb; )
@@ -1220,6 +1220,8 @@ static int virtioScsiR3Ctrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN
      *
      *        I've changed it to RTMemAllocZ so the memory is all zeroed, but you
      *        need to consider how to deal with incorrectly sized input.
+     *
+     *        Ditto in virtioScsiR3ReqSubmit.
      */
     PVIRTIO_SCSI_CTRL_UNION_T pScsiCtrlUnion = (PVIRTIO_SCSI_CTRL_UNION_T)RTMemAllocZ(sizeof(VIRTIO_SCSI_CTRL_UNION_T));
     AssertPtrReturn(pScsiCtrlUnion, VERR_NO_MEMORY /*ignored*/);
