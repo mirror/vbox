@@ -231,7 +231,7 @@ typedef struct PDMIMEDIAPORT
 
 
     /**
-     * Queries the vendor and product ID and revision to report for INQUIRY commands in underlying devices.
+     * Queries the vendor and product ID and revision to report for INQUIRY commands in underlying devices, optional.
      *
      * @returns VBox status code.
      * @param   pInterface      Pointer to this interface.
