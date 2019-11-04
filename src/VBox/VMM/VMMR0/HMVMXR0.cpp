@@ -1857,13 +1857,17 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
                 rc = APICGetApicPageForCpu(pVCpu, &pVmcsInfo->HCPhysVirtApic, (PRTR0PTR)&pVmcsInfo->pbVirtApic, NULL /*pR3Ptr*/);
                 if (RT_FAILURE(rc))
                     return rc;
+                Assert(pVmcsInfo->pbVirtApic);
+                Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
             }
         }
         else
+        {
             pVmcsInfo->pbVirtApic = (uint8_t *)CPUMGetGuestVmxVirtApicPage(pVCpu, &pVCpu->cpum.GstCtx,
                                                                            &pVmcsInfo->HCPhysVirtApic);
-        Assert(pVmcsInfo->pbVirtApic);
-        Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
+            Assert(pVmcsInfo->pbVirtApic);
+            Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
+        }
     }
 
     return VINF_SUCCESS;
