@@ -80,7 +80,7 @@
 #define VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED       VIRTIOSCSI_HOST_SCSI_FEATURES_NONE
 
 #define VIRTIOSCSI_REQ_QUEUE_CNT                    1           /**< T.B.D. Consider increasing                      */
-#define VIRTIOSCSI_QUEUE_CNT                        VIRTIOSCSI_REQ_QUEUE_CNT + 2
+#define VIRTIOSCSI_QUEUE_CNT                        (VIRTIOSCSI_REQ_QUEUE_CNT + 2)
 #define VIRTIOSCSI_MAX_LUN                          256         /**< VirtIO specification, section 5.6.4             */
 #define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             128         /**< T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SEG_COUNT                    126         /**< T.B.D. What is a good value for this?           */
@@ -393,6 +393,18 @@ typedef struct VIRTIOSCSITARGET
 
 } VIRTIOSCSITARGET, *PVIRTIOSCSITARGET;
 
+
+/** Why we're quiescing. */
+typedef enum VIRTIOSCSIQUIESCINGFOR
+{
+    kvirtIoScsiQuiescingForInvalid = 0,
+    kvirtIoScsiQuiescingForReset,
+    kvirtIoScsiQuiescingForSuspend,
+    kvirtIoScsiQuiescingForPowerOff,
+    kvirtIoScsiQuiescingFor32BitHack = 0x7fffffff
+} VIRTIOSCSIQUIESCINGFOR;
+
+
 /**
  * PDM instance data (state) for VirtIO Host SCSI device
  *
@@ -491,6 +503,8 @@ typedef struct VIRTIOSCSI
 
     /** True if in the process of quiescing I/O */
     uint32_t                        fQuiescing;
+    /** For which purpose we're quiescing. */
+    VIRTIOSCSIQUIESCINGFOR          enmQuiescingFor;
 
 } VIRTIOSCSI, *PVIRTIOSCSI;
 
@@ -662,13 +676,13 @@ static int virtioScsiR3SendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t u
     }
 
     PVIRTIO_DESC_CHAIN_T pDescChain;
-    virtioQueueGet(&pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
+    virtioR3QueueGet(&pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
 
     RTSGBUF reqSegBuf;
     RTSGSEG aReqSegs[] = { { &event, sizeof(event) } };
     RTSgBufInit(&reqSegBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
-    virtioQueuePut( &pThis->Virtio, EVENTQ_IDX, &reqSegBuf, pDescChain, true);
+    virtioR3QueuePut( &pThis->Virtio, EVENTQ_IDX, &reqSegBuf, pDescChain, true);
     virtioQueueSync(&pThis->Virtio, EVENTQ_IDX);
 
     return VINF_SUCCESS;
@@ -718,7 +732,7 @@ static int virtioScsiR3ReqErr(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHA
     if (pThis->fResetting)
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
-    virtioQueuePut(&pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true /* fFence */);
+    virtioR3QueuePut(&pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true /* fFence */);
     virtioQueueSync(&pThis->Virtio, qIdx);
 
     RTMemFree(pabSenseBuf);
@@ -874,7 +888,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                        VERR_BUFFER_OVERFLOW);
 
 
-        virtioQueuePut(&pThis->Virtio, pReq->qIdx, &reqSegBuf, pReq->pDescChain, true /* fFence TBD */);
+        virtioR3QueuePut(&pThis->Virtio, pReq->qIdx, &reqSegBuf, pReq->pDescChain, true /* fFence TBD */);
         virtioQueueSync(&pThis->Virtio, pReq->qIdx);
 
 
@@ -1416,7 +1430,7 @@ static int virtioScsiR3Ctrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN
     }
 
     LogFunc(("Response code: %s\n", virtioGetReqRespText(bResponse)));
-    virtioQueuePut( &pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true);
+    virtioR3QueuePut( &pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true);
     virtioQueueSync(&pThis->Virtio, qIdx);
 
     return VINF_SUCCESS;
@@ -1475,7 +1489,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
         {
              Log6Func(("fetching next descriptor chain from %s\n", QUEUENAME(qIdx)));
              PVIRTIO_DESC_CHAIN_T pDescChain;
-             int rc = virtioQueueGet(&pThis->Virtio, qIdx, &pDescChain, true);
+             int rc = virtioR3QueueGet(&pThis->Virtio, qIdx, &pDescChain, true);
              if (rc == VERR_NOT_AVAILABLE)
              {
                 Log6Func(("Nothing found in %s\n", QUEUENAME(qIdx)));
@@ -2055,23 +2069,28 @@ static DECLCALLBACK(int) virtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iTarget
  */
 static DECLCALLBACK(bool) virtioScsiR3DeviceQuiesced(PPDMDEVINS pDevIns)
 {
-    LogFunc(("Device I/O activity quiesced.\n"));
     PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    LogFunc(("Device I/O activity quiesced: enmQuiescingFor=%d\n", pThis->enmQuiescingFor));
 
+    if (pThis->enmQuiescingFor == kvirtIoScsiQuiescingForReset)
+        virtioR3PropagateResetNotification(&pThis->Virtio);
+    /** @todo r=bird: Do we need other notifications here for suspend and/or poweroff? */
+
+    pThis->enmQuiescingFor = kvirtIoScsiQuiescingForInvalid;
     pThis->fQuiescing = false;
-
     return true;
 }
 
 /**
  * Worker for virtioScsiR3Reset() and virtioScsiR3SuspendOrPowerOff().
  */
-static void virtioScsiR3QuiesceDevice(PPDMDEVINS pDevIns)
+static void virtioScsiR3QuiesceDevice(PPDMDEVINS pDevIns, VIRTIOSCSIQUIESCINGFOR enmQuiscingFor)
 {
     PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     /* Prevent worker threads from removing/processing elements from virtq's */
     pThis->fQuiescing = true;
+    pThis->enmQuiescingFor = enmQuiscingFor;
 
     PDMDevHlpSetAsyncNotification(pDevIns, virtioScsiR3DeviceQuiesced);
 
@@ -2081,13 +2100,55 @@ static void virtioScsiR3QuiesceDevice(PPDMDEVINS pDevIns)
 }
 
 /**
+ * Common worker for suspend and power off.
+ */
+static void virtioScsiR3SuspendOrPowerOff(PPDMDEVINS pDevIns, VIRTIOSCSIQUIESCINGFOR enmQuiscingFor)
+{
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    virtioScsiR3QuiesceDevice(pDevIns, enmQuiscingFor);
+
+
+    /* VM is halted, thus no new I/O being dumped into queues by the guest.
+     * Workers have been flagged to stop pulling stuff already queued-up by the guest.
+     * Now tell lower-level to to suspend reqs (for example, DrvVD suspends all reqs
+     * on its wait queue, and we will get a callback as the state changes to
+     * suspended (and later, resumed) for each).
+     */
+    for (uint32_t i = 0; i < pThis->cTargets; i++)
+    {
+        PVIRTIOSCSITARGET pTarget = &pThis->paTargetInstances[i];
+        if (pTarget->pDrvBase)
+            if (pTarget->pDrvMediaEx)
+                pTarget->pDrvMediaEx->pfnNotifySuspend(pTarget->pDrvMediaEx);
+    }
+}
+
+/**
+ * @interface_method_impl{PDMDEVREGR3,pfnPowerOff}
+ */
+static DECLCALLBACK(void) virtioScsiR3PowerOff(PPDMDEVINS pDevIns)
+{
+    LogFunc(("\n"));
+    virtioScsiR3SuspendOrPowerOff(pDevIns, kvirtIoScsiQuiescingForPowerOff);
+}
+
+/**
+ * @interface_method_impl{PDMDEVREGR3,pfnSuspend}
+ */
+static DECLCALLBACK(void) virtioScsiR3Suspend(PPDMDEVINS pDevIns)
+{
+    LogFunc(("\n"));
+    virtioScsiR3SuspendOrPowerOff(pDevIns, kvirtIoScsiQuiescingForSuspend);
+}
+
+/**
  * @interface_method_impl{PDMDEVREGR3,pfnResume}
  */
 static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
 {
-    LogFunc(("\n"));
-
     PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    LogFunc(("\n"));
 
     pThis->fQuiescing = false;
 
@@ -2108,33 +2169,7 @@ static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
     }
 
     /* Ensure guest is working the queues too. */
-    virtioPropagateResumeNotification(&pThis->Virtio);
-}
-
-/**
- * @interface_method_impl{PDMDEVREGR3,pfnSuspend}
- */
-static DECLCALLBACK(void) virtioScsiR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
-{
-    LogFunc(("\n"));
-
-    virtioScsiR3QuiesceDevice(pDevIns);
-
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-    /* VM is halted, thus no new I/O being dumped into queues by the guest.
-     * Workers have been flagged to stop pulling stuff already queued-up by the guest.
-     * Now tell lower-level to to suspend reqs (for example, DrvVD suspends all reqs
-     * on its wait queue, and we will get a callback as the state changes to
-     * suspended (and later, resumed) for each).
-     */
-    for (uint32_t i = 0; i < pThis->cTargets; i++)
-    {
-        PVIRTIOSCSITARGET pTarget = &pThis->paTargetInstances[i];
-        if (pTarget->pDrvBase)
-            if (pTarget->pDrvMediaEx)
-                pTarget->pDrvMediaEx->pfnNotifySuspend(pTarget->pDrvMediaEx);
-    }
+    virtioR3PropagateResumeNotification(&pThis->Virtio);
 }
 
 /**
@@ -2145,7 +2180,9 @@ static DECLCALLBACK(void) virtioScsiR3Reset(PPDMDEVINS pDevIns)
     LogFunc(("\n"));
     PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     pThis->fResetting = true;
-    virtioScsiR3QuiesceDevice(pDevIns);
+    virtioScsiR3QuiesceDevice(pDevIns, kvirtIoScsiQuiescingForReset);
+
+    /** @todo r=bird: Shouldn't you reset the device here?!? */
 }
 
 /**
@@ -2153,13 +2190,8 @@ static DECLCALLBACK(void) virtioScsiR3Reset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) virtioScsiR3Destruct(PPDMDEVINS pDevIns)
 {
-    /*
-     * Check the versions here as well since the destructor is *always* called.
-     */
-
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
-
-    PVIRTIOSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
 
     RTMemFree(pThis->paTargetInstances);
     pThis->paTargetInstances = NULL;
@@ -2172,7 +2204,9 @@ static DECLCALLBACK(int) virtioScsiR3Destruct(PPDMDEVINS pDevIns)
             pWorker->hEvtProcess = NIL_SUPSEMEVENT;
         }
     }
-     return VINF_SUCCESS;
+
+    virtioR3Term(&pThis->Virtio, pDevIns);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -2264,16 +2298,18 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
 
+    /* Name the queues: */
     RTStrCopy(pThis->aszQueueNames[CONTROLQ_IDX], VIRTIO_MAX_QUEUE_NAME_SIZE, "controlq");
     RTStrCopy(pThis->aszQueueNames[EVENTQ_IDX],   VIRTIO_MAX_QUEUE_NAME_SIZE, "eventq");
     for (uint16_t qIdx = VIRTQ_REQ_BASE; qIdx < VIRTQ_REQ_BASE + VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
         RTStrPrintf(pThis->aszQueueNames[qIdx], VIRTIO_MAX_QUEUE_NAME_SIZE,
                     "requestq<%d>", qIdx - VIRTQ_REQ_BASE);
 
+    /* Attach the queues and create worker threads for them: */
     for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
     {
-        rc = virtioQueueAttach(&pThis->Virtio, qIdx, QUEUENAME(qIdx));
-        pThis->afQueueAttached[qIdx] = (rc == VINF_SUCCESS);
+        rc = virtioR3QueueAttach(&pThis->Virtio, qIdx, QUEUENAME(qIdx));
+        pThis->afQueueAttached[qIdx] = (rc == VINF_SUCCESS); /** @todo r=bird: This looks a bit fishy, esp. giving the following. */
 
         if (qIdx == CONTROLQ_IDX || IS_REQ_QUEUE(qIdx))
         {
@@ -2436,13 +2472,13 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               virtioScsiR3Reset,
-    /* .pfnSuspend = */             virtioScsiR3SuspendOrPowerOff,
+    /* .pfnSuspend = */             virtioScsiR3Suspend,
     /* .pfnResume = */              virtioScsiR3Resume,
     /* .pfnAttach = */              virtioScsiR3Attach,
     /* .pfnDetach = */              virtioScsiR3Detach,
     /* .pfnQueryInterface = */      NULL,
     /* .pfnInitComplete = */        NULL,
-    /* .pfnPowerOff = */            virtioScsiR3SuspendOrPowerOff,
+    /* .pfnPowerOff = */            virtioScsiR3PowerOff,
     /* .pfnSoftReset = */           NULL,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,

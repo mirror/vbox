@@ -40,11 +40,15 @@ typedef struct VIRTIOSTATE *PVIRTIOSTATE;
 #define VIRTIO_REGION_PCI_CAP               2                    /**< BAR for VirtIO Cap. MMIO (impl specific) */
 #define VIRTIO_REGION_MSIX_CAP              0                    /**< Bar for MSI-X handling                   */
 
-#define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) \
+#ifdef LOG_ENABLED
+# define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) \
     do { \
         if (LogIsItEnabled(logLevel, LOG_GROUP)) \
             virtioHexDump((pv), (cb), (base), (title)); \
     } while (0)
+#else
+# define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) do { } while (0)
+#endif
 
 
 /**
@@ -58,9 +62,9 @@ typedef struct VIRTIOSTATE *PVIRTIOSTATE;
  * client is pVirtSrc, which contains the VirtIO "OUT" (to device) buffer from the guest.
  *
  * Typical use is, When the client (worker thread) detects available data on the queue, it pulls the
- * next one of these descriptor chain structs off the queue using virtioQueueGet(), processes the
+ * next one of these descriptor chain structs off the queue using virtioR3QueueGet(), processes the
  * virtual memory buffer pVirtSrc, produces result data to pass back to the guest driver and calls
- * virtioQueuePut() to return the result data to the client.
+ * virtioR3QueuePut() to return the result data to the client.
  */
 typedef struct VIRTIO_DESC_CHAIN
 {
@@ -306,7 +310,7 @@ typedef struct VIRTIOSTATE
 /** @name API for VirtIO client
  * @{ */
 
-int virtioQueueAttach(PVIRTIOSTATE pVirtio, uint16_t idxQueue, const char *pcszName);
+int virtioR3QueueAttach(PVIRTIOSTATE pVirtio, uint16_t idxQueue, const char *pcszName);
 #if 0 /* no such function */
 /**
  * Detaches from queue and release resources
@@ -316,16 +320,15 @@ int virtioQueueAttach(PVIRTIOSTATE pVirtio, uint16_t idxQueue, const char *pcszN
  */
 int virtioQueueDetach(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
 #endif
-int virtioQueueGet(PVIRTIOSTATE pVirtio, uint16_t idxQueue, PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
-int virtioQueuePut(PVIRTIOSTATE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
-                   PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
+int  virtioR3QueueGet(PVIRTIOSTATE pVirtio, uint16_t idxQueue, PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
+int  virtioR3QueuePut(PVIRTIOSTATE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
+                      PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
 
 int virtioQueueSync(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
 bool virtioQueueIsEmpty(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
 
 void virtioQueueEnable(PVIRTIOSTATE pVirtio, uint16_t idxQueue, bool fEnabled);
 void virtioResetAll(PVIRTIOSTATE pVirtio);
-void virtioPropagateResumeNotification(PVIRTIOSTATE pVirtio);
 
 /**
  * Return queue enable state
@@ -342,7 +345,7 @@ DECLINLINE(bool) virtioIsQueueEnabled(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
 
 
 /**
- * Get name of queue, by idxQueue, assigned at virtioQueueAttach()
+ * Get name of queue, by idxQueue, assigned at virtioR3QueueAttach()
  *
  * @param   pVirtio     Pointer to the virtio state.
  * @param   idxQueue    Queue number.
@@ -365,8 +368,23 @@ DECLINLINE(uint64_t) virtioGetNegotiatedFeatures(PVIRTIOSTATE pVirtio)
     return pVirtio->uDriverFeatures;
 }
 
+/**
+ * Get VirtIO accepted host-side features
+ *
+ * @returns feature bits selected or 0 if selector out of range.
+ *
+ * @param   pState          Virtio state
+ */
+DECLINLINE(uint64_t) virtioGetAcceptedFeatures(PVIRTIOSTATE pVirtio)
+{
+    return pVirtio->uDriverFeatures;
+}
+
+
 int  virtioR3SaveExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 int  virtioR3LoadExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
+void virtioR3PropagateResetNotification(PVIRTIOSTATE pVirtio);
+void virtioR3PropagateResumeNotification(PVIRTIOSTATE pVirtio);
 void virtioR3Term(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns);
 int  virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPciParams, const char *pcszInstance,
                   uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
