@@ -43,8 +43,6 @@
 #include <iprt/cdefs.h>
 #include <iprt/formats/apfs.h>
 
-#define APFS_EFI_JMP_START_EXTENTS_MAX 32
-
 /**
  * Contains the full jump start context being worked on.
  */
@@ -58,23 +56,14 @@ typedef struct
     uint32_t     cbBlock;
     /** Controller handle. */
     EFI_HANDLE   hController;
-    /** Full jump start structure. */
-    struct
-    {
-        APFSEFIJMPSTART Hdr;
-        APFSPRANGE      aExtents[APFS_EFI_JMP_START_EXTENTS_MAX];
-    } JmpStart;
+    /** APFS UUID. */
+    APFSUUID     Uuid;
 } APFSJMPSTARTCTX;
 typedef APFSJMPSTARTCTX *PAPFSJMPSTARTCTX;
 typedef const APFSJMPSTARTCTX *PCAPFSJMPSTARTCTX;
 
-#if 0
 static EFI_GUID g_ApfsDrvLoadedFromThisControllerGuid = { 0x01aaf8bc, 0x9c37, 0x4dc1,
                                                           { 0xb1, 0x68, 0xe9, 0x67, 0xd4, 0x2c, 0x79, 0x25 } };
-#else
-static EFI_GUID g_ApfsDrvLoadedFromThisControllerGuid = { 0x03B8D751, 0xA02F, 0x4FF8,
-                                                          { 0x9B, 0x1A, 0x55, 0x24, 0xAF, 0xA3, 0x94, 0x5F } };
-#endif
 
 typedef struct APFS_DRV_LOADED_INFO
 {
@@ -108,14 +97,64 @@ static EFI_STATUS vboxApfsJmpStartRead(IN PAPFSJMPSTARTCTX pCtx, IN APFSPADDR of
     return pCtx->pDiskIo->ReadDisk(pCtx->pDiskIo, pCtx->pBlockIo->Media->MediaId, offRead * pCtx->cbBlock, cbRead, pvBuf);
 }
 
+/**
+ * Calculates the fletcher64 checksum of the given APFS block and returns TRUE if it matches the one given in the object header.
+ *
+ * @returns Flag indicating whether the checksum matched.
+ * @param   pObjHdr         The object header containing the checksum to check against.
+ * @param   pvStruct        Pointer to the struct to create the checksum of.
+ * @param   cbStruct        Size of the struct in bytes.
+ */
 static BOOLEAN vboxApfsObjPhysIsChksumValid(PCAPFSOBJPHYS pObjHdr, void *pvStruct, size_t cbStruct)
 {
-    return TRUE; /** @todo Checksum */
+    if (cbStruct % sizeof(uint32_t) == 0)
+    {
+        uint32_t *pu32Data = (uint32_t *)pvStruct + 2; /* Start after the checksum field at the beginning. */
+        size_t cWordsLeft = (cbStruct >> 2) - 2;
+
+        uint64_t u64C0 = 0;
+        uint64_t u64C1 = 0;
+        uint64_t u64ChksumFletcher64 = 0;
+        uint64_t u64Check0 = 0;
+        uint64_t u64Check1 = 0;
+
+        while (cWordsLeft)
+        {
+            u64C0 += (uint64_t)*pu32Data++;
+            u64C0 %= UINT32_C(0xffffffff);
+
+            u64C1 += u64C0;
+            u64C1 %= UINT32_C(0xffffffff);
+
+            cWordsLeft--;
+        }
+
+        u64Check0 = UINT32_C(0xffffffff) - (u64C0 + u64C1) % UINT32_C(0xffffffff);
+        u64Check1 = UINT32_C(0xffffffff) - (u64C0 + u64Check0) % UINT32_C(0xffffffff);
+
+        u64ChksumFletcher64 = (uint64_t)u64Check1 << 32 | u64Check0;
+        if (!CompareMem(&u64ChksumFletcher64, &pObjHdr->abChkSum[0], sizeof(pObjHdr->abChkSum)))
+            return TRUE;
+        else
+            DEBUG((DEBUG_INFO, "vboxApfsObjPhysIsChksumValid: Checksum mismatch, expected 0x%llx got 0x%llx", u64ChksumFletcher64, *(uint64_t *)&pObjHdr->abChkSum[0]));
+    }
+    else
+        DEBUG((DEBUG_INFO, "vboxApfsObjPhysIsChksumValid: Structure not a multiple of 32bit\n"));
+
+    return FALSE;
 }
 
-static EFI_STATUS vboxApfsJmpStartLoadAndExecEfiDriver(IN PAPFSJMPSTARTCTX pCtx, IN PCAPFSNXSUPERBLOCK pSb)
+/**
+ * Loads and starts the EFI driver contained in the given jump start structure.
+ *
+ * @returns EFI status code.
+ * @param   pCtx            APFS jump start driver context structure.
+ * @param   pJmpStart       APFS jump start structure describing the EFI file to load and start.
+ */
+static EFI_STATUS vboxApfsJmpStartLoadAndExecEfiDriver(IN PAPFSJMPSTARTCTX pCtx, IN PCAPFSEFIJMPSTART pJmpStart)
 {
-    UINTN cbReadLeft = RT_LE2H_U32(pCtx->JmpStart.Hdr.cbEfiFile);
+    PCAPFSPRANGE paExtents = (PCAPFSPRANGE)(pJmpStart + 1);
+    UINTN cbReadLeft = RT_LE2H_U32(pJmpStart->cbEfiFile);
     EFI_STATUS rc = EFI_SUCCESS;
 
     void *pvApfsDrv = AllocateZeroPool(cbReadLeft);
@@ -124,12 +163,11 @@ static EFI_STATUS vboxApfsJmpStartLoadAndExecEfiDriver(IN PAPFSJMPSTARTCTX pCtx,
         uint32_t i = 0;
         uint8_t *pbBuf = (uint8_t *)pvApfsDrv;
 
-        for (i = 0; i < RT_LE2H_U32(pCtx->JmpStart.Hdr.cExtents) && !EFI_ERROR(rc) && cbReadLeft; i++)
+        for (i = 0; i < RT_LE2H_U32(pJmpStart->cExtents) && !EFI_ERROR(rc) && cbReadLeft; i++)
         {
-            PCAPFSPRANGE pRange = &pCtx->JmpStart.aExtents[i];
-            UINTN cbRead = RT_MIN(cbReadLeft, (UINTN)RT_LE2H_U64(pRange->cBlocks) * pCtx->cbBlock);
+            UINTN cbRead = RT_MIN(cbReadLeft, (UINTN)RT_LE2H_U64(paExtents[i].cBlocks) * pCtx->cbBlock);
 
-            rc = vboxApfsJmpStartRead(pCtx, RT_LE2H_U64(pRange->PAddrStart), pbBuf, cbRead);
+            rc = vboxApfsJmpStartRead(pCtx, RT_LE2H_U64(paExtents[i].PAddrStart), pbBuf, cbRead);
             pbBuf      += cbRead;
             cbReadLeft -= cbRead;
         }
@@ -146,7 +184,7 @@ static EFI_STATUS vboxApfsJmpStartLoadAndExecEfiDriver(IN PAPFSJMPSTARTCTX pCtx,
                 EFI_HANDLE hImage;
 
                 rc = gBS->LoadImage(FALSE, gImageHandle, ParentDevicePath,
-                                    pvApfsDrv, RT_LE2H_U32(pCtx->JmpStart.Hdr.cbEfiFile),
+                                    pvApfsDrv, RT_LE2H_U32(pJmpStart->cbEfiFile),
                                     &hImage);
                 if (!EFI_ERROR(rc))
                 {
@@ -158,19 +196,18 @@ static EFI_STATUS vboxApfsJmpStartLoadAndExecEfiDriver(IN PAPFSJMPSTARTCTX pCtx,
                         if (pApfsDrvLoadedInfo)
                         {
                             pApfsDrvLoadedInfo->hController = pCtx->hController;
-                            CopyMem(&pApfsDrvLoadedInfo->GuidContainer, &pSb->Uuid, sizeof(pApfsDrvLoadedInfo->GuidContainer));
+                            CopyMem(&pApfsDrvLoadedInfo->GuidContainer, &pCtx->Uuid, sizeof(pApfsDrvLoadedInfo->GuidContainer));
 
                             rc = gBS->InstallMultipleProtocolInterfaces(&pCtx->hController, &g_ApfsDrvLoadedFromThisControllerGuid, pApfsDrvLoadedInfo, NULL);
                             if (!EFI_ERROR(rc))
                             {
                                 /* Connect the driver with the controller it came from. */
-#if 0
                                 EFI_HANDLE ahImage[2];
 
                                 ahImage[0] = hImage;
                                 ahImage[1] = NULL;
-#endif
-                                gBS->ConnectController(pCtx->hController, NULL /*&ahImage[0]*/, NULL, TRUE);
+
+                                gBS->ConnectController(pCtx->hController, &ahImage[0], NULL, TRUE);
                                 return EFI_SUCCESS;
                             }
                             else
@@ -283,31 +320,54 @@ VBoxApfsJmpStart_Start(IN EFI_DRIVER_BINDING_PROTOCOL *This, IN EFI_HANDLE Contr
 
             rc = vboxApfsJmpStartRead(&Ctx, 0, &Sb, sizeof(Sb));
             if (   !EFI_ERROR(rc)
-                && RT_LE2H_U32(Sb.u32Magic) == APFS_NX_SUPERBLOCK_MAGIC
-                && RT_LE2H_U64(Sb.PAddrEfiJmpStart) > 0
-                && vboxApfsObjPhysIsChksumValid(&Sb.ObjHdr, &Sb, sizeof(Sb)))
+                && RT_LE2H_U32(Sb.u32Magic) == APFS_NX_SUPERBLOCK_MAGIC)
             {
-                Ctx.cbBlock = RT_LE2H_U32(Sb.cbBlock);
+                uint8_t *pbBlock = (uint8_t *)AllocateZeroPool(RT_LE2H_U32(Sb.cbBlock));
 
-                DEBUG((DEBUG_INFO, "VBoxApfsJmpStart: Found APFS superblock, reading jumpstart structure from %llx\n", RT_LE2H_U64(Sb.PAddrEfiJmpStart)));
-                rc = vboxApfsJmpStartRead(&Ctx, RT_LE2H_U64(Sb.PAddrEfiJmpStart), &Ctx.JmpStart, sizeof(Ctx.JmpStart));
-                if (   !EFI_ERROR(rc)
-                    && RT_H2LE_U32(Ctx.JmpStart.Hdr.u32Magic) == APFS_EFIJMPSTART_MAGIC
-                    && RT_H2LE_U32(Ctx.JmpStart.Hdr.u32Version) == APFS_EFIJMPSTART_VERSION
-                    && vboxApfsObjPhysIsChksumValid(&Ctx.JmpStart.Hdr.ObjHdr, &Ctx.JmpStart.Hdr, sizeof(Ctx.JmpStart.Hdr))
-                    && RT_H2LE_U32(Ctx.JmpStart.Hdr.cExtents) <= APFS_EFI_JMP_START_EXTENTS_MAX)
-                    rc = vboxApfsJmpStartLoadAndExecEfiDriver(&Ctx, &Sb);
-                else
+                if (pbBlock)
                 {
-                    rc = EFI_UNSUPPORTED;
-                    DEBUG((DEBUG_INFO, "VBoxApfsJmpStart: The APFS EFI jumpstart structure is invalid\n"));
+                    PCAPFSNXSUPERBLOCK pSb = (PCAPFSNXSUPERBLOCK)pbBlock;
+
+                    /* Read in the complete block (checksums always cover the whole block and not just the structure...). */
+                    Ctx.cbBlock = RT_LE2H_U32(Sb.cbBlock);
+
+                    rc = vboxApfsJmpStartRead(&Ctx, 0, pbBlock, Ctx.cbBlock);
+                    if (   !EFI_ERROR(rc)
+                        && RT_LE2H_U64(Sb.PAddrEfiJmpStart) > 0
+                        && vboxApfsObjPhysIsChksumValid(&pSb->ObjHdr, pbBlock, Ctx.cbBlock))
+                    {
+                        PCAPFSEFIJMPSTART pJmpStart = (PCAPFSEFIJMPSTART)pbBlock;
+
+                        DEBUG((DEBUG_INFO, "VBoxApfsJmpStart: Found APFS superblock, reading jumpstart structure from %llx\n", RT_LE2H_U64(Sb.PAddrEfiJmpStart)));
+
+                        CopyMem(&Ctx.Uuid, &pSb->Uuid, sizeof(Ctx.Uuid));
+
+                        rc = vboxApfsJmpStartRead(&Ctx, RT_LE2H_U64(Sb.PAddrEfiJmpStart), pbBlock, Ctx.cbBlock);
+                        if (   !EFI_ERROR(rc)
+                            && RT_H2LE_U32(pJmpStart->u32Magic) == APFS_EFIJMPSTART_MAGIC
+                            && RT_H2LE_U32(pJmpStart->u32Version) == APFS_EFIJMPSTART_VERSION
+                            && vboxApfsObjPhysIsChksumValid(&pJmpStart->ObjHdr, pbBlock, Ctx.cbBlock)
+                            && RT_H2LE_U32(pJmpStart->cExtents) <= (Ctx.cbBlock - sizeof(*pJmpStart)) / sizeof(APFSPRANGE))
+                            rc = vboxApfsJmpStartLoadAndExecEfiDriver(&Ctx, pJmpStart);
+                        else
+                        {
+                            rc = EFI_UNSUPPORTED;
+                            DEBUG((DEBUG_INFO, "VBoxApfsJmpStart: The APFS EFI jumpstart structure is invalid\n"));
+                        }
+                    }
+                    else
+                    {
+                        DEBUG((DEBUG_INFO, "VBoxApfsJmpStart: Invalid APFS superblock -> no APFS filesystem (%r %x %llx)\n", rc, Sb.u32Magic, Sb.PAddrEfiJmpStart));
+                        rc = EFI_UNSUPPORTED;
+                    }
+
+                    FreePool(pbBlock);
                 }
+                else
+                    DEBUG((DEBUG_INFO, "VBoxApfsJmpStart: Failed to allocate memory for APFS block data (%u bytes)\n", RT_LE2H_U32(Sb.cbBlock)));
             }
             else
-            {
-                DEBUG((DEBUG_INFO, "VBoxApfsJmpStart: Invalid APFS superblock -> no APFS filesystem (%r %x %llx)\n", rc, Sb.u32Magic, Sb.PAddrEfiJmpStart));
-                rc = EFI_UNSUPPORTED;
-            }
+                DEBUG((DEBUG_INFO, "VBoxApfsJmpStart: Invalid APFS superblock -> no APFS filesystem (%r %x)\n", rc, Sb.u32Magic));
 
             gBS->CloseProtocol(ControllerHandle,
                                &gEfiDiskIoProtocolGuid,
