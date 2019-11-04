@@ -506,6 +506,9 @@ typedef struct VIRTIOSCSIREQ
 } VIRTIOSCSIREQ;
 typedef VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
 
+
+#ifdef LOG_ENABLED
+
 DECLINLINE(const char *) virtioGetTxDirText(uint32_t enmTxDir)
 {
     switch (enmTxDir)
@@ -566,7 +569,6 @@ DECLINLINE(void) virtioGetControlAsyncMaskText(char *pszOutput, uint32_t cbOutpu
                 fAsyncTypesMask & VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY        ? "DEVICE_BUSY  "        : "");
 }
 
-#ifdef LOG_ENABLED
 static uint8_t virtioScsiEstimateCdbLen(uint8_t uCmd, uint8_t cbMax)
 {
     if (uCmd < 0x1f)
@@ -581,8 +583,8 @@ static uint8_t virtioScsiEstimateCdbLen(uint8_t uCmd, uint8_t cbMax)
         return 12;
     return cbMax;
 }
-#endif /* LOG_ENABLED */
 
+#endif /* LOG_ENABLED */
 
 static int virtioScsiR3SendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t uEventType, uint32_t uReason)
 {
@@ -803,11 +805,8 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         }
     }
 
-    const char *getReqRespText = virtioGetReqRespText(respHdr.uResponse);
-    Log2Func(("status: (%d) %s,   response: (%d) %s\n",
-              pReq->uStatus, SCSIStatusText(pReq->uStatus),
-              respHdr.uResponse, getReqRespText));
-    RT_NOREF(getReqRespText);
+    Log2Func(("status: (%d) %s,   response: (%d) %s\n", pReq->uStatus, SCSIStatusText(pReq->uStatus),
+              respHdr.uResponse, virtioGetReqRespText(respHdr.uResponse)));
 
     if (RT_FAILURE(rcReq))
         Log2Func(("rcReq:  %s\n", RTErrGetDefine(rcReq)));
@@ -817,10 +816,8 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         LogFunc(("cbDataIn = %u, cbDataOut = %u (cbIn = %u, cbOut = %u)\n",
                   pReq->cbDataIn, pReq->cbDataOut, pReq->pDescChain->cbPhysReturn, pReq->pDescChain->cbPhysSend));
         LogFunc(("xfer = %lu, residual = %u\n", cbXfer, cbResidual));
-        const char *pszTxDirText = virtioGetTxDirText(pReq->enmTxDir);
         LogFunc(("xfer direction: %s, sense written = %d, sense size = %d\n",
-                 pszTxDirText, respHdr.cbSenseLen, pThis->virtioScsiConfig.uSenseSize));
-        RT_NOREF(pszTxDirText);
+                 virtioGetTxDirText(pReq->enmTxDir), respHdr.cbSenseLen, pThis->virtioScsiConfig.uSenseSize));
     }
 
     if (respHdr.cbSenseLen && LogIs2Enabled())
