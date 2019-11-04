@@ -118,10 +118,12 @@ static DECLCALLBACK(int) virtioR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
 /** @name Internal queue operations
  * @{ */
 
+#if 0 /* unused */
 DECLINLINE(int) virtqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uint16_t uDescIdxOld)
 {
     return (uint16_t)(uDescIdxNew - uEventIdx - 1) < (uint16_t)(uDescIdxNew - uDescIdxOld);
 }
+#endif
 
 /**
  * Accessor for virtq descriptor
@@ -164,6 +166,7 @@ DECLINLINE(bool) virtqIsEmpty(PVIRTIOSTATE pVirtio, uint16_t qIdx)
     return virtioReadAvailRingIdx(pVirtio, qIdx) == pVirtio->virtqState[qIdx].uAvailIdx;
 }
 
+#if 0 /* unused */
 DECLINLINE(uint16_t) virtioReadAvailFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t fFlags;
@@ -173,6 +176,7 @@ DECLINLINE(uint16_t) virtioReadAvailFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx)
                       &fFlags, sizeof(fFlags));
     return fFlags;
 }
+#endif
 
 DECLINLINE(uint16_t) virtioReadAvailUsedEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
@@ -184,9 +188,10 @@ DECLINLINE(uint16_t) virtioReadAvailUsedEvent(PVIRTIOSTATE pVirtio, uint16_t qId
                       &uUsedEventIdx, sizeof(uUsedEventIdx));
     return uUsedEventIdx;
 }
+/** @} */
 
-/**
- * Accessors for virtq used ring
+/** @name Accessors for virtq used ring
+ * @{
  */
 DECLINLINE(void) virtioWriteUsedElem(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t usedIdx, uint32_t uDescIdx, uint32_t uLen)
 {
@@ -206,7 +211,7 @@ DECLINLINE(void) virtioWriteUsedRingIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx, uin
                           &uIdx, sizeof(uIdx));
 }
 
-DECLINLINE(uint16_t)virtioReadUsedRingIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx)
+DECLINLINE(uint16_t) virtioReadUsedRingIdx(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t uIdx;
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -226,6 +231,7 @@ DECLINLINE(uint16_t) virtioReadUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx)
     return fFlags;
 }
 
+#if 0 /* unused */
 DECLINLINE(void) virtioWriteUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t fFlags)
 {
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -234,7 +240,9 @@ DECLINLINE(void) virtioWriteUsedFlags(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint3
                           pVirtio->aGCPhysQueueUsed[qIdx] + RT_UOFFSETOF(VIRTQ_USED_T, fFlags),
                           &fFlags, sizeof(fFlags));
 }
+#endif
 
+#if 0 /* unused */
 DECLINLINE(uint16_t) virtioReadUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
     uint16_t uAvailEventIdx;
@@ -246,7 +254,9 @@ DECLINLINE(uint16_t) virtioReadUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qId
                       &uAvailEventIdx, sizeof(uAvailEventIdx));
     return uAvailEventIdx;
 }
+#endif
 
+#if 0 /* unused */
 DECLINLINE(void) virtioWriteUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx, uint32_t uAvailEventIdx)
 {
     /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
@@ -255,6 +265,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PVIRTIOSTATE pVirtio, uint16_t qIdx, 
                           pVirtio->aGCPhysQueueUsed[qIdx] + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[pVirtio->uQueueSize[qIdx]]),
                           &uAvailEventIdx, sizeof(uAvailEventIdx));
 }
+#endif
 
 /** @} */
 
@@ -577,8 +588,7 @@ int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
     /**
      * Place used buffer's descriptor in used ring but don't update used ring's slot index.
      * That will be done with a subsequent client call to virtioQueueSync() */
-    virtioWriteUsedElem(pVirtio, qIdx, pVirtq->uUsedIdx++, pDescChain->uHeadIdx,
-            (uint32_t)(cbCopy & 0xffffffff));
+    virtioWriteUsedElem(pVirtio, qIdx, pVirtq->uUsedIdx++, pDescChain->uHeadIdx, (uint32_t)(cbCopy & UINT32_C(0xffffffff)));
 
     Log2Func((".... Copied %lu bytes to %lu byte buffer, residual=%lu\n",
          cbCopy, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbCopy));
