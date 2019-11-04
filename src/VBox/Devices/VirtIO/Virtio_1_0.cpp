@@ -972,9 +972,9 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t offCf
     { \
         uint32_t offIntra = offCfg - RT_OFFSETOF(VIRTIO_PCI_COMMON_CFG_T, member); \
         if (fWrite) \
-            memcpy(((char *)(pVirtio->member + idx)) + offIntra, (const char *)pv, cb); \
+            memcpy((char *)&pVirtio->member[idx] + offIntra, pv, cb); \
         else \
-            memcpy((char *)pv, (const char *)(((char *)(pVirtio->member + idx)) + offIntra), cb); \
+            memcpy(pv, (const char *)&pVirtio->member[idx] + offIntra, cb); \
         LOG_COMMON_CFG_ACCESS_INDEXED(member, idx, offIntra); \
     } while(0)
 
@@ -986,7 +986,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t offCf
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
         else \
         { \
-            memcpy((char *)pv, (const char *)(((char *)&pVirtio->member) + offIntra), cb); \
+            memcpy(pv, (const char *)&pVirtio->member + offIntra, cb); \
             LOG_COMMON_CFG_ACCESS(member, offIntra); \
         } \
     } while(0)
@@ -999,7 +999,7 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t offCf
             LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s[%d]\n", #member, idx)); \
         else \
         { \
-            memcpy((char *)pv, ((char *)(pVirtio->member + idx)) + offIntra, cb); \
+            memcpy(pv, (char const *)&pVirtio->member[idx] + offIntra, cb); \
             LOG_COMMON_CFG_ACCESS_INDEXED(member, idx, offIntra); \
         } \
     } while(0)
