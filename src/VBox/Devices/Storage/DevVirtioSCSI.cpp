@@ -1493,7 +1493,6 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
 *   Sending evnets
 *********************************************************************************************************************************/
 
-
 DECLINLINE(void) virtioScsiR3ReportEventsMissed(PVIRTIOSCSI pThis, uint16_t uTarget)
 {
     virtioScsiR3SendEvent(pThis, uTarget, VIRTIOSCSI_T_NO_EVENT | VIRTIOSCSI_T_EVENTS_MISSED, 0);
@@ -1640,6 +1639,236 @@ static DECLCALLBACK(void) virtioScsiR3StatusChanged(VIRTIOHANDLE hVirtio, void *
 
 
 /*********************************************************************************************************************************
+*   LEDs                                                                                                                         *
+*********************************************************************************************************************************/
+
+#if 0 /** @todo r=bird: LEDs are not being set it seems. */
+
+/**
+ * Turns on/off the write status LED.
+ *
+ * @param   pTarget         Pointer to the target device
+ * @param   fOn             New LED state.
+ */
+static void virtioScsiR3SetWriteLed(PVIRTIOSCSITARGET pTarget, bool fOn)
+{
+    LogFlow(("%s virtioSetWriteLed: %s\n", pTarget->pszTargetName, fOn ? "on" : "off"));
+    if (fOn)
+        pTarget->led.Asserted.s.fWriting = pTarget->led.Actual.s.fWriting = 1;
+    else
+        pTarget->led.Actual.s.fWriting = 0;
+}
+
+/**
+ * Turns on/off the read status LED.
+ *
+ * @param   pTarget         Pointer to the device state structure.
+ * @param   fOn             New LED state.
+ */
+static void virtioScsiR3SetReadLed(PVIRTIOSCSITARGET pTarget, bool fOn)
+{
+    LogFlow(("%s virtioSetReadLed: %s\n", pTarget->pszTargetName, fOn ? "on" : "off"));
+    if (fOn)
+        pTarget->led.Asserted.s.fReading = pTarget->led.Actual.s.fReading = 1;
+    else
+        pTarget->led.Actual.s.fReading = 0;
+}
+
+#endif /* unused*/
+
+/**
+ * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed, Target level.}
+ */
+static DECLCALLBACK(int) virtioScsiR3TargetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iTarget, PPDMLED *ppLed)
+{
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, ILed);
+    if (iTarget == 0)
+    {
+        *ppLed = &pTarget->led;
+        Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_LUN_NOT_FOUND;
+}
+
+/**
+ * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed, Device level.}
+ */
+static DECLCALLBACK(int) virtioScsiR3DeviceQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iTarget, PPDMLED *ppLed)
+{
+    PVIRTIOSCSI pThis = RT_FROM_MEMBER(pInterface, VIRTIOSCSI, ILeds);
+    if (iTarget < pThis->cTargets)
+    {
+        *ppLed = &pThis->paTargetInstances[iTarget].led;
+        Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_LUN_NOT_FOUND;
+}
+
+
+/*********************************************************************************************************************************
+*   PDMIMEDIAPORT (target)                                                                                                       *
+*********************************************************************************************************************************/
+
+/**
+ * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation, Target level.}
+ */
+static DECLCALLBACK(int) virtioScsiR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
+                                                         uint32_t *piInstance, uint32_t *piTarget)
+{
+    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaPort);
+    PPDMDEVINS pDevIns = pTarget->pVirtioScsi->CTX_SUFF(pDevIns);
+
+    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
+    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
+    AssertPtrReturn(piTarget, VERR_INVALID_POINTER);
+
+    *ppcszController = pDevIns->pReg->szName;
+    *piInstance = pDevIns->iInstance;
+    *piTarget = pTarget->iTarget;
+
+    return VINF_SUCCESS;
+}
+
+
+/*********************************************************************************************************************************
+*   Virtio config.                                                                                                               *
+*********************************************************************************************************************************/
+
+/**
+ * Worker for virtioScsiR3DevCapWrite and virtioScsiR3DevCapRead.
+ */
+static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *pv, uint32_t cb, bool fWrite)
+{
+    AssertReturn(pv && cb <= sizeof(uint32_t), fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00);
+
+/**
+ * Resolves to boolean true if uOffset matches a field offset and size exactly,
+ * (or if 64-bit field, if it accesses either 32-bit part as a 32-bit access)
+ * Assumption is this critereon is mandated by VirtIO 1.0, Section 4.1.3.1)
+ * (Easily re-written to allow unaligned bounded access to a field).
+ *
+ * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
+ * @result           - true or false
+ */
+#define MATCH_SCSI_CONFIG(member) \
+        (   (   RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member) == 8 \
+             && (   offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) \
+                 || offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) + sizeof(uint32_t)) \
+             && cb == sizeof(uint32_t)) \
+         || (   offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) \
+             && cb == RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member)) )
+
+#define LOG_SCSI_CONFIG_ACCESSOR(member) \
+        virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member), \
+                               pv, cb, offIntra, fWrite, false, 0);
+
+#define SCSI_CONFIG_ACCESSOR(member) \
+    do \
+    { \
+        uint32_t offIntra = offConfig - RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member); \
+        if (fWrite) \
+            memcpy((char *)&pThis->virtioScsiConfig.member + offIntra, pv, cb); \
+        else \
+            memcpy(pv, (const char *)&pThis->virtioScsiConfig.member + offIntra, cb); \
+        LOG_SCSI_CONFIG_ACCESSOR(member); \
+    } while(0)
+
+#define SCSI_CONFIG_ACCESSOR_READONLY(member) \
+    do \
+    { \
+        uint32_t offIntra = offConfig - RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member); \
+        if (fWrite) \
+            LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
+        else \
+        { \
+            memcpy(pv, (const char *)&pThis->virtioScsiConfig.member + offIntra, cb); \
+            LOG_SCSI_CONFIG_ACCESSOR(member); \
+        } \
+    } while(0)
+
+    if (MATCH_SCSI_CONFIG(            uNumQueues))
+        SCSI_CONFIG_ACCESSOR_READONLY(uNumQueues);
+    else if (MATCH_SCSI_CONFIG(       uSegMax))
+        SCSI_CONFIG_ACCESSOR_READONLY(uSegMax);
+    else if (MATCH_SCSI_CONFIG(       uMaxSectors))
+        SCSI_CONFIG_ACCESSOR_READONLY(uMaxSectors);
+    else if (MATCH_SCSI_CONFIG(       uCmdPerLun))
+        SCSI_CONFIG_ACCESSOR_READONLY(uCmdPerLun);
+    else if (MATCH_SCSI_CONFIG(       uEventInfoSize))
+        SCSI_CONFIG_ACCESSOR_READONLY(uEventInfoSize);
+    else if (MATCH_SCSI_CONFIG(       uSenseSize))
+        SCSI_CONFIG_ACCESSOR(         uSenseSize);
+    else if (MATCH_SCSI_CONFIG(       uCdbSize))
+        SCSI_CONFIG_ACCESSOR(         uCdbSize);
+    else if (MATCH_SCSI_CONFIG(       uMaxChannel))
+        SCSI_CONFIG_ACCESSOR_READONLY(uMaxChannel);
+    else if (MATCH_SCSI_CONFIG(       uMaxTarget))
+        SCSI_CONFIG_ACCESSOR_READONLY(uMaxTarget);
+    else if (MATCH_SCSI_CONFIG(       uMaxLun))
+        SCSI_CONFIG_ACCESSOR_READONLY(uMaxLun);
+    else
+    {
+        LogFunc(("Bad access by guest to virtio_scsi_config: off=%u (%#x), cb=%u\n", offConfig, offConfig, cb));
+        return fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00;
+    }
+    return VINF_SUCCESS;
+#undef SCSI_CONFIG_ACCESSOR_READONLY
+#undef SCSI_CONFIG_ACCESSOR
+#undef LOG_ACCESSOR
+#undef MATCH_SCSI_CONFIG
+}
+
+/**
+ * @callback_method_impl{FNVIRTIODEVCAPREAD}
+ */
+static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, void *pv, uint32_t cb)
+{
+    return virtioScsiR3CfgAccessed(PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI), uOffset, pv, cb, false /*fRead*/);
+}
+
+/**
+ * @callback_method_impl{FNVIRTIODEVCAPWRITE}
+ */
+static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, uint32_t cb)
+{
+    return virtioScsiR3CfgAccessed(PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI), uOffset, (void *)pv, cb, true /*fWrite*/);
+}
+
+
+/*********************************************************************************************************************************
+*   IBase for device and targets                                                                                                 *
+*********************************************************************************************************************************/
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface, Target level.}
+ */
+static DECLCALLBACK(void *) virtioScsiR3TargetQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+     PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IBase);
+     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,        &pTarget->IBase);
+     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT,   &pTarget->IMediaPort);
+     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pTarget->IMediaExPort);
+     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS,    &pTarget->ILed);
+     return NULL;
+}
+
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface, Device level.}
+ */
+static DECLCALLBACK(void *) virtioScsiR3DeviceQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PVIRTIOSCSI pThis = RT_FROM_MEMBER(pInterface, VIRTIOSCSI, IBase);
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,         &pThis->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS,     &pThis->ILeds);
+
+    return NULL;
+}
+
+
+/*********************************************************************************************************************************
 *   Misc                                                                                                                         *
 *********************************************************************************************************************************/
 
@@ -1759,334 +1988,6 @@ static DECLCALLBACK(int) virtioScsiR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 
 
 /*********************************************************************************************************************************
-*   Device Interface - Misplaced.                                                                                                *
-*********************************************************************************************************************************/
-
-/**
- * @callback_method_impl{FNPDMDEVASYNCNOTIFY}
- */
-static DECLCALLBACK(bool) virtioScsiR3DeviceQuiesced(PPDMDEVINS pDevIns)
-{
-    LogFunc(("Device I/O activity quiesced.\n"));
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-    pThis->fQuiescing = false;
-
-    return true;
-}
-
-/**
- * Worker for virtioScsiR3Reset() and virtioScsiR3SuspendOrPowerOff().
- */
-static void virtioScsiR3QuiesceDevice(PPDMDEVINS pDevIns)
-{
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-    /* Prevent worker threads from removing/processing elements from virtq's */
-    pThis->fQuiescing = true;
-
-    PDMDevHlpSetAsyncNotification(pDevIns, virtioScsiR3DeviceQuiesced);
-
-    /* If already quiesced invoke async callback.  */
-    if (!ASMAtomicReadU32(&pThis->cActiveReqs))
-        PDMDevHlpAsyncNotificationCompleted(pDevIns);
-}
-
-/**
- * @inter FNPDMDEVRESET
- */
-static DECLCALLBACK(void) virtioScsiR3Reset(PPDMDEVINS pDevIns)
-{
-    LogFunc(("\n"));
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    pThis->fResetting = true;
-    virtioScsiR3QuiesceDevice(pDevIns);
-}
-
-/**
- * @interface_method_impl{PDMDEVREG,pfnResume}
- */
-static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
-{
-    LogFunc(("\n"));
-
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-    pThis->fQuiescing = false;
-
-    /* Wake worker threads flagged to skip pulling queue entries during quiesce
-     * to ensure they re-check their queues. Active request queues may already
-     * be awake due to new reqs coming in.
-     */
-    for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
-    {
-        PVIRTIOSCSIWORKER pWorker = &pThis->aWorkers[qIdx];
-
-        if (ASMAtomicReadBool(&pWorker->fSleeping))
-        {
-            Log6Func(("waking %s worker.\n", QUEUENAME(qIdx)));
-            int rc = SUPSemEventSignal(pThis->pSupDrvSession, pWorker->hEvtProcess);
-            AssertRC(rc);
-        }
-    }
-
-    /* Ensure guest is working the queues too. */
-    virtioPropagateResumeNotification(pThis->hVirtio);
-}
-
-/**
- * @interface_method_impl{PDMDEVREG,pfnSuspend}
- */
-static DECLCALLBACK(void) virtioScsiR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
-{
-    LogFunc(("\n"));
-
-    virtioScsiR3QuiesceDevice(pDevIns);
-
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-
-    /* VM is halted, thus no new I/O being dumped into queues by the guest.
-     * Workers have been flagged to stop pulling stuff already queued-up by the guest.
-     * Now tell lower-level to to suspend reqs (for example, DrvVD suspends all reqs
-     * on its wait queue, and we will get a callback as the state changes to
-     * suspended (and later, resumed) for each).
-     */
-    for (uint32_t i = 0; i < pThis->cTargets; i++)
-    {
-        PVIRTIOSCSITARGET pTarget = &pThis->paTargetInstances[i];
-        if (pTarget->pDrvBase)
-            if (pTarget->pDrvMediaEx)
-                pTarget->pDrvMediaEx->pfnNotifySuspend(pTarget->pDrvMediaEx);
-    }
-}
-
-
-/*********************************************************************************************************************************
-*   LEDs                                                                                                                         *
-*********************************************************************************************************************************/
-
-#if 0 /** @todo r=bird: LEDs are not being set it seems. */
-
-/**
- * Turns on/off the write status LED.
- *
- * @param   pTarget         Pointer to the target device
- * @param   fOn             New LED state.
- */
-static void virtioScsiR3SetWriteLed(PVIRTIOSCSITARGET pTarget, bool fOn)
-{
-    LogFlow(("%s virtioSetWriteLed: %s\n", pTarget->pszTargetName, fOn ? "on" : "off"));
-    if (fOn)
-        pTarget->led.Asserted.s.fWriting = pTarget->led.Actual.s.fWriting = 1;
-    else
-        pTarget->led.Actual.s.fWriting = 0;
-}
-
-/**
- * Turns on/off the read status LED.
- *
- * @param   pTarget         Pointer to the device state structure.
- * @param   fOn             New LED state.
- */
-static void virtioScsiR3SetReadLed(PVIRTIOSCSITARGET pTarget, bool fOn)
-{
-    LogFlow(("%s virtioSetReadLed: %s\n", pTarget->pszTargetName, fOn ? "on" : "off"));
-    if (fOn)
-        pTarget->led.Asserted.s.fReading = pTarget->led.Actual.s.fReading = 1;
-    else
-        pTarget->led.Actual.s.fReading = 0;
-}
-
-#endif /* unused*/
-
-/**
- * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed, Target level.}
- */
-static DECLCALLBACK(int) virtioScsiR3TargetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iTarget, PPDMLED *ppLed)
-{
-    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, ILed);
-    if (iTarget == 0)
-    {
-        *ppLed = &pTarget->led;
-        Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
-        return VINF_SUCCESS;
-    }
-    return VERR_PDM_LUN_NOT_FOUND;
-}
-
-/**
- * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed, Device level.}
- */
-static DECLCALLBACK(int) virtioScsiR3DeviceQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iTarget, PPDMLED *ppLed)
-{
-    PVIRTIOSCSI pThis = RT_FROM_MEMBER(pInterface, VIRTIOSCSI, ILeds);
-    if (iTarget < pThis->cTargets)
-    {
-        *ppLed = &pThis->paTargetInstances[iTarget].led;
-        Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
-        return VINF_SUCCESS;
-    }
-    return VERR_PDM_LUN_NOT_FOUND;
-}
-
-
-/*********************************************************************************************************************************
-*   Virtio config.                                                                                                               *
-*********************************************************************************************************************************/
-
-/**
- * Worker for virtioScsiR3DevCapWrite and virtioScsiR3DevCapRead.
- */
-static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *pv, uint32_t cb, bool fWrite)
-{
-    AssertReturn(pv && cb <= sizeof(uint32_t), fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00);
-
-/**
- * Resolves to boolean true if uOffset matches a field offset and size exactly,
- * (or if 64-bit field, if it accesses either 32-bit part as a 32-bit access)
- * Assumption is this critereon is mandated by VirtIO 1.0, Section 4.1.3.1)
- * (Easily re-written to allow unaligned bounded access to a field).
- *
- * @param   member   - Member of VIRTIO_PCI_COMMON_CFG_T
- * @result           - true or false
- */
-#define MATCH_SCSI_CONFIG(member) \
-        (   (   RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member) == 8 \
-             && (   offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) \
-                 || offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) + sizeof(uint32_t)) \
-             && cb == sizeof(uint32_t)) \
-         || (   offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) \
-             && cb == RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member)) )
-
-#define LOG_SCSI_CONFIG_ACCESSOR(member) \
-        virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member), \
-                               pv, cb, offIntra, fWrite, false, 0);
-
-#define SCSI_CONFIG_ACCESSOR(member) \
-    do \
-    { \
-        uint32_t offIntra = offConfig - RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member); \
-        if (fWrite) \
-            memcpy((char *)&pThis->virtioScsiConfig.member + offIntra, pv, cb); \
-        else \
-            memcpy(pv, (const char *)&pThis->virtioScsiConfig.member + offIntra, cb); \
-        LOG_SCSI_CONFIG_ACCESSOR(member); \
-    } while(0)
-
-#define SCSI_CONFIG_ACCESSOR_READONLY(member) \
-    do \
-    { \
-        uint32_t offIntra = offConfig - RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member); \
-        if (fWrite) \
-            LogFunc(("Guest attempted to write readonly virtio_pci_common_cfg.%s\n", #member)); \
-        else \
-        { \
-            memcpy(pv, (const char *)&pThis->virtioScsiConfig.member + offIntra, cb); \
-            LOG_SCSI_CONFIG_ACCESSOR(member); \
-        } \
-    } while(0)
-
-    if (MATCH_SCSI_CONFIG(            uNumQueues))
-        SCSI_CONFIG_ACCESSOR_READONLY(uNumQueues);
-    else if (MATCH_SCSI_CONFIG(       uSegMax))
-        SCSI_CONFIG_ACCESSOR_READONLY(uSegMax);
-    else if (MATCH_SCSI_CONFIG(       uMaxSectors))
-        SCSI_CONFIG_ACCESSOR_READONLY(uMaxSectors);
-    else if (MATCH_SCSI_CONFIG(       uCmdPerLun))
-        SCSI_CONFIG_ACCESSOR_READONLY(uCmdPerLun);
-    else if (MATCH_SCSI_CONFIG(       uEventInfoSize))
-        SCSI_CONFIG_ACCESSOR_READONLY(uEventInfoSize);
-    else if (MATCH_SCSI_CONFIG(       uSenseSize))
-        SCSI_CONFIG_ACCESSOR(         uSenseSize);
-    else if (MATCH_SCSI_CONFIG(       uCdbSize))
-        SCSI_CONFIG_ACCESSOR(         uCdbSize);
-    else if (MATCH_SCSI_CONFIG(       uMaxChannel))
-        SCSI_CONFIG_ACCESSOR_READONLY(uMaxChannel);
-    else if (MATCH_SCSI_CONFIG(       uMaxTarget))
-        SCSI_CONFIG_ACCESSOR_READONLY(uMaxTarget);
-    else if (MATCH_SCSI_CONFIG(       uMaxLun))
-        SCSI_CONFIG_ACCESSOR_READONLY(uMaxLun);
-    else
-    {
-        LogFunc(("Bad access by guest to virtio_scsi_config: off=%u (%#x), cb=%u\n", offConfig, offConfig, cb));
-        return fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00;
-    }
-    return VINF_SUCCESS;
-#undef SCSI_CONFIG_ACCESSOR_READONLY
-#undef SCSI_CONFIG_ACCESSOR
-#undef LOG_ACCESSOR
-#undef MATCH_SCSI_CONFIG
-}
-
-/**
- * @callback_method_impl{FNVIRTIODEVCAPREAD}
- */
-static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, void *pv, uint32_t cb)
-{
-    return virtioScsiR3CfgAccessed(PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI), uOffset, pv, cb, false /*fRead*/);
-}
-
-/**
- * @callback_method_impl{FNVIRTIODEVCAPWRITE}
- */
-static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, uint32_t cb)
-{
-    return virtioScsiR3CfgAccessed(PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI), uOffset, (void *)pv, cb, true /*fWrite*/);
-}
-
-
-/*********************************************************************************************************************************
-*   Will move tomorrow.                                                                                                          *
-*********************************************************************************************************************************/
-
-/**
- * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation, Target level.}
- */
-static DECLCALLBACK(int) virtioScsiR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
-                                                         uint32_t *piInstance, uint32_t *piTarget)
-{
-    PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaPort);
-    PPDMDEVINS pDevIns = pTarget->pVirtioScsi->CTX_SUFF(pDevIns);
-
-    AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
-    AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
-    AssertPtrReturn(piTarget, VERR_INVALID_POINTER);
-
-    *ppcszController = pDevIns->pReg->szName;
-    *piInstance = pDevIns->iInstance;
-    *piTarget = pTarget->iTarget;
-
-    return VINF_SUCCESS;
-}
-
-/**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface, Target level.}
- */
-static DECLCALLBACK(void *) virtioScsiR3TargetQueryInterface(PPDMIBASE pInterface, const char *pszIID)
-{
-     PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IBase);
-     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,        &pTarget->IBase);
-     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAPORT,   &pTarget->IMediaPort);
-     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAEXPORT, &pTarget->IMediaExPort);
-     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS,    &pTarget->ILed);
-     return NULL;
-}
-
-/**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface, Device level.}
- */
-static DECLCALLBACK(void *) virtioScsiR3DeviceQueryInterface(PPDMIBASE pInterface, const char *pszIID)
-{
-    PVIRTIOSCSI pThis = RT_FROM_MEMBER(pInterface, VIRTIOSCSI, IBase);
-
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,         &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS,     &pThis->ILeds);
-
-    return NULL;
-}
-
-
-/*********************************************************************************************************************************
 *   Device interface.                                                                                                            *
 *********************************************************************************************************************************/
 
@@ -2154,6 +2055,104 @@ static DECLCALLBACK(int) virtioScsiR3Attach(PPDMDEVINS pDevIns, unsigned iTarget
         pTarget->pDrvBase = NULL;
     }
     return rc;
+}
+
+/**
+ * @callback_method_impl{FNPDMDEVASYNCNOTIFY}
+ */
+static DECLCALLBACK(bool) virtioScsiR3DeviceQuiesced(PPDMDEVINS pDevIns)
+{
+    LogFunc(("Device I/O activity quiesced.\n"));
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    pThis->fQuiescing = false;
+
+    return true;
+}
+
+/**
+ * Worker for virtioScsiR3Reset() and virtioScsiR3SuspendOrPowerOff().
+ */
+static void virtioScsiR3QuiesceDevice(PPDMDEVINS pDevIns)
+{
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    /* Prevent worker threads from removing/processing elements from virtq's */
+    pThis->fQuiescing = true;
+
+    PDMDevHlpSetAsyncNotification(pDevIns, virtioScsiR3DeviceQuiesced);
+
+    /* If already quiesced invoke async callback.  */
+    if (!ASMAtomicReadU32(&pThis->cActiveReqs))
+        PDMDevHlpAsyncNotificationCompleted(pDevIns);
+}
+
+/**
+ * @interface_method_impl{PDMDEVREGR3,pfnResume}
+ */
+static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
+{
+    LogFunc(("\n"));
+
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    pThis->fQuiescing = false;
+
+    /* Wake worker threads flagged to skip pulling queue entries during quiesce
+     * to ensure they re-check their queues. Active request queues may already
+     * be awake due to new reqs coming in.
+     */
+    for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_REQ_QUEUE_CNT; qIdx++)
+    {
+        PVIRTIOSCSIWORKER pWorker = &pThis->aWorkers[qIdx];
+
+        if (ASMAtomicReadBool(&pWorker->fSleeping))
+        {
+            Log6Func(("waking %s worker.\n", QUEUENAME(qIdx)));
+            int rc = SUPSemEventSignal(pThis->pSupDrvSession, pWorker->hEvtProcess);
+            AssertRC(rc);
+        }
+    }
+
+    /* Ensure guest is working the queues too. */
+    virtioPropagateResumeNotification(pThis->hVirtio);
+}
+
+/**
+ * @interface_method_impl{PDMDEVREGR3,pfnSuspend}
+ */
+static DECLCALLBACK(void) virtioScsiR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
+{
+    LogFunc(("\n"));
+
+    virtioScsiR3QuiesceDevice(pDevIns);
+
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    /* VM is halted, thus no new I/O being dumped into queues by the guest.
+     * Workers have been flagged to stop pulling stuff already queued-up by the guest.
+     * Now tell lower-level to to suspend reqs (for example, DrvVD suspends all reqs
+     * on its wait queue, and we will get a callback as the state changes to
+     * suspended (and later, resumed) for each).
+     */
+    for (uint32_t i = 0; i < pThis->cTargets; i++)
+    {
+        PVIRTIOSCSITARGET pTarget = &pThis->paTargetInstances[i];
+        if (pTarget->pDrvBase)
+            if (pTarget->pDrvMediaEx)
+                pTarget->pDrvMediaEx->pfnNotifySuspend(pTarget->pDrvMediaEx);
+    }
+}
+
+/**
+ * @interface_method_impl{PDMDEVREGR3,pfnReset}
+ */
+static DECLCALLBACK(void) virtioScsiR3Reset(PPDMDEVINS pDevIns)
+{
+    LogFunc(("\n"));
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    pThis->fResetting = true;
+    virtioScsiR3QuiesceDevice(pDevIns);
 }
 
 /**
@@ -2329,6 +2328,7 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
 
         /* IMediaPort and IMediaExPort interfaces provide callbacks for VD media and downstream driver access */
         pTarget->IMediaPort.pfnQueryDeviceLocation       = virtioScsiR3QueryDeviceLocation;
+        pTarget->IMediaPort.pfnQueryScsiInqStrings       = NULL;
         pTarget->IMediaExPort.pfnIoReqCompleteNotify     = virtioScsiR3IoReqFinish;
         pTarget->IMediaExPort.pfnIoReqCopyFromBuf        = virtioScsiR3IoReqCopyFromBuf;
         pTarget->IMediaExPort.pfnIoReqCopyToBuf          = virtioScsiR3IoReqCopyToBuf;
