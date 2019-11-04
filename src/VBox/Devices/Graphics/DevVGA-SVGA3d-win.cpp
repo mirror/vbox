@@ -5513,6 +5513,31 @@ int vmsvga3dShaderDefine(PVGASTATE pThis, uint32_t cid, uint32_t shid, SVGA3dSha
     }
     if (hr != D3D_OK)
     {
+        /* Dump the shader code. */
+        static int scLogged = 0;
+        if (scLogged < 8)
+        {
+            ++scLogged;
+
+            LogRel(("VMSVGA: Failed to create %s shader:\n", (type == SVGA3D_SHADERTYPE_VS) ? "VERTEX" : "PIXEL"));
+            const uint32_t cTokensPerLine = 8;
+            const uint32_t *paTokens = (uint32_t *)pShaderData;
+            const uint32_t cTokens = cbData / sizeof(uint32_t);
+            for (uint32_t iToken = 0; iToken < cTokens; ++iToken)
+            {
+                if ((iToken % cTokensPerLine) == 0)
+                {
+                    if (iToken == 0)
+                        LogRel(("0x%08X,", paTokens[iToken]));
+                    else
+                        LogRel(("\n0x%08X,", paTokens[iToken]));
+                }
+                else
+                    LogRel((" 0x%08X,", paTokens[iToken]));
+            }
+            LogRel(("\n"));
+        }
+
         RTMemFree(pShader->pShaderProgram);
         memset(pShader, 0, sizeof(*pShader));
         pShader->id = SVGA3D_INVALID_ID;
