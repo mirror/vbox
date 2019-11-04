@@ -286,6 +286,22 @@ typedef VMXTRANSIENT *PVMXTRANSIENT;
 typedef const VMXTRANSIENT *PCVMXTRANSIENT;
 
 /**
+ * VMX page allocation information.
+ */
+typedef struct
+{
+    uint32_t    fValid;       /**< Whether to allocate this page (e.g, based on a CPU feature). */
+    uint32_t    uPadding0;    /**< Padding to ensure array of these structs are aligned to a multiple of 8. */
+    PRTHCPHYS   pHCPhys;      /**< Where to store the host-physical address of the allocation. */
+    PRTR0PTR    ppVirt;       /**< Where to store the host-virtual address of the allocation. */
+} VMXPAGEALLOCINFO;
+/** Pointer to VMX page-allocation info. */
+typedef VMXPAGEALLOCINFO *PVMXPAGEALLOCINFO;
+/** Pointer to a const VMX page-allocation info. */
+typedef const VMXPAGEALLOCINFO *PCVMXPAGEALLOCINFO;
+AssertCompileSizeAlignment(VMXPAGEALLOCINFO, 8);
+
+/**
  * Memory operand read or write access.
  */
 typedef enum VMXMEMACCESS
@@ -1683,48 +1699,70 @@ static int hmR0VmxLeaveRootMode(PHMPHYSCPU pHostCpu)
 
 
 /**
- * Allocates and maps a physically contiguous page. The allocated page is
- * zero'd out (used by various VT-x structures).
+ * Allocates pages specified as specified by an array of VMX page allocation info
+ * objects.
  *
- * @returns IPRT status code.
- * @param   pMemObj     Pointer to the ring-0 memory object.
- * @param   ppVirt      Where to store the virtual address of the allocation.
- * @param   pHCPhys     Where to store the physical address of the allocation.
+ * The pages contents are zero'd after allocation.
+ *
+ * @returns VBox status code.
+ * @param   hMemObj         The ring-0 memory object associated with the allocation.
+ * @param   paAllocInfo     The pointer to the first element of the VMX
+ *                          page-allocation info object array.
+ * @param   cEntries        The number of elements in the @a paAllocInfo array.
  */
-static int hmR0VmxPageAllocZ(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHCPhys)
+static int hmR0VmxPagesAllocZ(RTR0MEMOBJ hMemObj, PVMXPAGEALLOCINFO paAllocInfo, uint32_t cEntries)
 {
-    AssertPtr(pMemObj);
-    AssertPtr(ppVirt);
-    AssertPtr(pHCPhys);
-    int rc = RTR0MemObjAllocCont(pMemObj, X86_PAGE_4K_SIZE, false /* fExecutable */);
-    if (RT_FAILURE(rc))
-        return rc;
-    *ppVirt  = RTR0MemObjAddress(*pMemObj);
-    *pHCPhys = RTR0MemObjGetPagePhysAddr(*pMemObj, 0 /* iPage */);
-    ASMMemZero32(*ppVirt, X86_PAGE_4K_SIZE);
+    /* Figure out how many pages to allocate. */
+    uint32_t cPages = 0;
+    for (uint32_t iPage = 0; iPage < cEntries; iPage++)
+        cPages += !!paAllocInfo[iPage].fValid;
+
+    /* Allocate the pages. */
+    if (cPages)
+    {
+        size_t const cbPages = cPages << X86_PAGE_4K_SHIFT;
+        int rc = RTR0MemObjAllocPage(&hMemObj, cbPages, false /* fExecutable */);
+        if (RT_FAILURE(rc))
+            return rc;
+
+        /* Zero the contents and assign each page to the corresponding VMX page-allocation entry. */
+        void *pvFirstPage = RTR0MemObjAddress(hMemObj);
+        ASMMemZero32(pvFirstPage, cbPages);
+
+        uint32_t iPage = 0;
+        for (uint32_t i = 0; i < cEntries; i++)
+            if (paAllocInfo[i].fValid)
+            {
+                RTHCPHYS const HCPhysPage = RTR0MemObjGetPagePhysAddr(hMemObj, iPage);
+                void          *pvPage     = (void *)((uintptr_t)pvFirstPage + (iPage << X86_PAGE_4K_SHIFT));
+                Assert(HCPhysPage && HCPhysPage != NIL_RTHCPHYS);
+                AssertPtr(pvPage);
+
+                Assert(paAllocInfo[iPage].pHCPhys);
+                Assert(paAllocInfo[iPage].ppVirt);
+                *paAllocInfo[iPage].pHCPhys = HCPhysPage;
+                *paAllocInfo[iPage].ppVirt  = pvPage;
+
+                /* Move to next page. */
+                ++iPage;
+            }
+
+        /* Make sure all valid (requested) pages have been assigned. */
+        Assert(iPage == cPages);
+    }
     return VINF_SUCCESS;
 }
 
 
 /**
- * Frees and unmaps an allocated, physical page.
+ * Frees pages allocated using hmR0VmxPagesAllocZ.
  *
- * @param   pMemObj     Pointer to the ring-0 memory object.
- * @param   ppVirt      Where to re-initialize the virtual address of allocation as
- *                      0.
- * @param   pHCPhys     Where to re-initialize the physical address of the
- *                      allocation as 0.
+ * @param   hMemObj     The ring-0 memory object associated with the allocation.
  */
-static void hmR0VmxPageFree(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHCPhys)
+DECL_FORCE_INLINE(void) hmR0VmxPagesFree(RTR0MEMOBJ hMemObj)
 {
-    AssertPtr(pMemObj);
-    AssertPtr(ppVirt);
-    AssertPtr(pHCPhys);
-    /* NULL is valid, accepted and ignored by the free function below. */
-    RTR0MemObjFree(*pMemObj, true /* fFreeMappings */);
-    *pMemObj = NIL_RTR0MEMOBJ;
-    *ppVirt  = NULL;
-    *pHCPhys = NIL_RTHCPHYS;
+    /* We can cleanup wholesale since it's all one allocation. */
+    RTR0MemObjFree(hMemObj, true /* fFreeMappings */);
 }
 
 
@@ -1733,16 +1771,11 @@ static void hmR0VmxPageFree(PRTR0MEMOBJ pMemObj, PRTR0PTR ppVirt, PRTHCPHYS pHCP
  *
  * @param   pVmcsInfo   The VMCS info. object.
  */
-static void hmR0VmxInitVmcsInfo(PVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxVmcsInfoInit(PVMXVMCSINFO pVmcsInfo)
 {
     memset(pVmcsInfo, 0, sizeof(*pVmcsInfo));
 
-    Assert(pVmcsInfo->hMemObjVmcs          == NIL_RTR0MEMOBJ);
-    Assert(pVmcsInfo->hMemObjShadowVmcs    == NIL_RTR0MEMOBJ);
-    Assert(pVmcsInfo->hMemObjMsrBitmap     == NIL_RTR0MEMOBJ);
-    Assert(pVmcsInfo->hMemObjGuestMsrLoad  == NIL_RTR0MEMOBJ);
-    Assert(pVmcsInfo->hMemObjGuestMsrStore == NIL_RTR0MEMOBJ);
-    Assert(pVmcsInfo->hMemObjHostMsrLoad   == NIL_RTR0MEMOBJ);
+    Assert(pVmcsInfo->hMemObj == NIL_RTR0MEMOBJ);
     pVmcsInfo->HCPhysVmcs          = NIL_RTHCPHYS;
     pVmcsInfo->HCPhysShadowVmcs    = NIL_RTHCPHYS;
     pVmcsInfo->HCPhysMsrBitmap     = NIL_RTHCPHYS;
@@ -1760,26 +1793,15 @@ static void hmR0VmxInitVmcsInfo(PVMXVMCSINFO pVmcsInfo)
 /**
  * Frees the VT-x structures for a VMCS info. object.
  *
- * @param   pVM         The cross context VM structure.
  * @param   pVmcsInfo   The VMCS info. object.
  */
-static void hmR0VmxFreeVmcsInfo(PVMCC pVM, PVMXVMCSINFO pVmcsInfo)
+static void hmR0VmxVmcsInfoFree(PVMXVMCSINFO pVmcsInfo)
 {
-    hmR0VmxPageFree(&pVmcsInfo->hMemObjVmcs, &pVmcsInfo->pvVmcs, &pVmcsInfo->HCPhysVmcs);
-
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    if (pVM->hm.s.vmx.fUseVmcsShadowing)
-        hmR0VmxPageFree(&pVmcsInfo->hMemObjShadowVmcs, &pVmcsInfo->pvShadowVmcs, &pVmcsInfo->HCPhysShadowVmcs);
-#endif
-
-    if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
-        hmR0VmxPageFree(&pVmcsInfo->hMemObjMsrBitmap, &pVmcsInfo->pvMsrBitmap, &pVmcsInfo->HCPhysMsrBitmap);
-
-    hmR0VmxPageFree(&pVmcsInfo->hMemObjHostMsrLoad,   &pVmcsInfo->pvHostMsrLoad,   &pVmcsInfo->HCPhysHostMsrLoad);
-    hmR0VmxPageFree(&pVmcsInfo->hMemObjGuestMsrLoad,  &pVmcsInfo->pvGuestMsrLoad,  &pVmcsInfo->HCPhysGuestMsrLoad);
-    hmR0VmxPageFree(&pVmcsInfo->hMemObjGuestMsrStore, &pVmcsInfo->pvGuestMsrStore, &pVmcsInfo->HCPhysGuestMsrStore);
-
-    hmR0VmxInitVmcsInfo(pVmcsInfo);
+    if (pVmcsInfo->hMemObj != NIL_RTR0MEMOBJ)
+    {
+        hmR0VmxPagesFree(pVmcsInfo->hMemObj);
+        hmR0VmxVmcsInfoInit(pVmcsInfo);
+    }
 }
 
 
@@ -1790,100 +1812,61 @@ static void hmR0VmxFreeVmcsInfo(PVMCC pVM, PVMXVMCSINFO pVmcsInfo)
  * @param   pVCpu           The cross context virtual CPU structure.
  * @param   pVmcsInfo       The VMCS info. object.
  * @param   fIsNstGstVmcs   Whether this is a nested-guest VMCS.
+ *
+ * @remarks The caller is expected to take care of any and all allocation failures.
+ *          This function will not perform any cleanup for failures half-way
+ *          through.
  */
 static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIsNstGstVmcs)
 {
     PVMCC pVM = pVCpu->CTX_SUFF(pVM);
 
-    /* Allocate the guest VM control structure (VMCS). */
-    int rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjVmcs, &pVmcsInfo->pvVmcs, &pVmcsInfo->HCPhysVmcs);
-    if (RT_SUCCESS(rc))
+    bool const fMsrBitmaps = RT_BOOL(pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS);
+    bool const fShadowVmcs = !fIsNstGstVmcs ? pVM->hm.s.vmx.fUseVmcsShadowing : pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing;
+    Assert(!pVM->cpum.ro.GuestFeatures.fVmxVmcsShadowing);  /* VMCS shadowing is not yet exposed to the guest. */
+    VMXPAGEALLOCINFO aAllocInfo[] = {
+        { true,        0 /* Unused */, &pVmcsInfo->HCPhysVmcs,         &pVmcsInfo->pvVmcs         },
+        { true,        0 /* Unused */, &pVmcsInfo->HCPhysGuestMsrLoad, &pVmcsInfo->pvGuestMsrLoad },
+        { true,        0 /* Unused */, &pVmcsInfo->HCPhysHostMsrLoad,  &pVmcsInfo->pvHostMsrLoad  },
+        { fMsrBitmaps, 0 /* Unused */, &pVmcsInfo->HCPhysMsrBitmap,    &pVmcsInfo->pvMsrBitmap    },
+        { fShadowVmcs, 0 /* Unused */, &pVmcsInfo->HCPhysShadowVmcs,   &pVmcsInfo->pvShadowVmcs   },
+    };
+
+    int rc = hmR0VmxPagesAllocZ(pVmcsInfo->hMemObj, &aAllocInfo[0], RT_ELEMENTS(aAllocInfo));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * We use the same page for VM-entry MSR-load and VM-exit MSR store areas.
+     * Because they contain a symmetric list of guest MSRs to load on VM-entry and store on VM-exit.
+     */
+    AssertCompile(RT_ELEMENTS(aAllocInfo) > 0);
+    Assert(pVmcsInfo->HCPhysGuestMsrLoad != NIL_RTHCPHYS);
+    pVmcsInfo->pvGuestMsrStore     = pVmcsInfo->pvGuestMsrLoad;
+    pVmcsInfo->HCPhysGuestMsrStore = pVmcsInfo->HCPhysGuestMsrLoad;
+
+    /*
+     * Get the virtual-APIC page rather than allocating them again.
+     */
+    if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW)
     {
         if (!fIsNstGstVmcs)
         {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            if (pVM->hm.s.vmx.fUseVmcsShadowing)
-                rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjShadowVmcs, &pVmcsInfo->pvShadowVmcs, &pVmcsInfo->HCPhysShadowVmcs);
-#endif
-            if (RT_SUCCESS(rc))
+            if (PDMHasApic(pVM))
             {
-                /* Get the allocated virtual-APIC page from the virtual APIC device. */
-                if (   PDMHasApic(pVCpu->CTX_SUFF(pVM))
-                    && (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW))
-                    rc = APICGetApicPageForCpu(pVCpu, &pVmcsInfo->HCPhysVirtApic, (PRTR0PTR)&pVmcsInfo->pbVirtApic, NULL /*pR3Ptr*/);
+                rc = APICGetApicPageForCpu(pVCpu, &pVmcsInfo->HCPhysVirtApic, (PRTR0PTR)&pVmcsInfo->pbVirtApic, NULL /*pR3Ptr*/);
+                if (RT_FAILURE(rc))
+                    return rc;
             }
         }
         else
-        {
-            /* We don't yet support exposing VMCS shadowing to the guest. */
-            Assert(pVmcsInfo->HCPhysShadowVmcs == NIL_RTHCPHYS);
-            Assert(!pVmcsInfo->pvShadowVmcs);
-
-            /* Get the allocated virtual-APIC page from CPUM. */
-            if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_TPR_SHADOW)
-            {
-                /** @todo NSTVMX: Get rid of this. There is no need to allocate a separate HC
-                 *        page for this. Use the one provided by the nested-guest directly. */
-                pVmcsInfo->pbVirtApic = (uint8_t *)CPUMGetGuestVmxVirtApicPage(pVCpu, &pVCpu->cpum.GstCtx,
-                                                                               &pVmcsInfo->HCPhysVirtApic);
-                Assert(pVmcsInfo->pbVirtApic);
-                Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
-            }
-        }
-
-        if (RT_SUCCESS(rc))
-        {
-            /*
-             * Allocate the MSR-bitmap if supported by the CPU. The MSR-bitmap is for
-             * transparent accesses of specific MSRs.
-             *
-             * If the condition for enabling MSR bitmaps changes here, don't forget to
-             * update HMIsMsrBitmapActive().
-             *
-             * We don't share MSR bitmaps between the guest and nested-guest as we then
-             * don't need to care about carefully restoring the guest MSR bitmap.
-             * The guest visible nested-guest MSR bitmap needs to remain unchanged.
-             * Hence, allocate a separate MSR bitmap for the guest and nested-guest.
-             * We also don't need to re-initialize the nested-guest MSR bitmap here as
-             * we do that later while merging VMCS.
-             */
-            if (pVM->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_USE_MSR_BITMAPS)
-            {
-                rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjMsrBitmap, &pVmcsInfo->pvMsrBitmap, &pVmcsInfo->HCPhysMsrBitmap);
-                if (   RT_SUCCESS(rc)
-                    && !fIsNstGstVmcs)
-                    ASMMemFill32(pVmcsInfo->pvMsrBitmap, X86_PAGE_4K_SIZE, UINT32_C(0xffffffff));
-            }
-
-            if (RT_SUCCESS(rc))
-            {
-                /*
-                 * Allocate the VM-entry MSR-load area for the guest MSRs.
-                 *
-                 * Similar to MSR-bitmaps, we do not share the auto MSR-load/store are between
-                 * the guest and nested-guest.
-                 */
-                rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjGuestMsrLoad, &pVmcsInfo->pvGuestMsrLoad,
-                                       &pVmcsInfo->HCPhysGuestMsrLoad);
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * We use the same page for VM-entry MSR-load and VM-exit MSR store areas.
-                     * These contain the guest MSRs to load on VM-entry and store on VM-exit.
-                     */
-                    Assert(pVmcsInfo->hMemObjGuestMsrStore == NIL_RTR0MEMOBJ);
-                    pVmcsInfo->pvGuestMsrStore     = pVmcsInfo->pvGuestMsrLoad;
-                    pVmcsInfo->HCPhysGuestMsrStore = pVmcsInfo->HCPhysGuestMsrLoad;
-
-                    /* Allocate the VM-exit MSR-load page for the host MSRs. */
-                    rc = hmR0VmxPageAllocZ(&pVmcsInfo->hMemObjHostMsrLoad, &pVmcsInfo->pvHostMsrLoad,
-                                           &pVmcsInfo->HCPhysHostMsrLoad);
-                }
-            }
-        }
+            pVmcsInfo->pbVirtApic = (uint8_t *)CPUMGetGuestVmxVirtApicPage(pVCpu, &pVCpu->cpum.GstCtx,
+                                                                           &pVmcsInfo->HCPhysVirtApic);
+        Assert(pVmcsInfo->pbVirtApic);
+        Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -1895,32 +1878,22 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
  */
 static void hmR0VmxStructsFree(PVMCC pVM)
 {
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjScratch, &pVM->hm.s.vmx.pbScratch, &pVM->hm.s.vmx.HCPhysScratch);
-#endif
-    hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjApicAccess, (PRTR0PTR)&pVM->hm.s.vmx.pbApicAccess, &pVM->hm.s.vmx.HCPhysApicAccess);
-
+    hmR0VmxPagesFree(pVM->hm.s.vmx.hMemObj);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (pVM->hm.s.vmx.fUseVmcsShadowing)
     {
         RTMemFree(pVM->hm.s.vmx.paShadowVmcsFields);
         RTMemFree(pVM->hm.s.vmx.paShadowVmcsRoFields);
-        hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjVmreadBitmap,  &pVM->hm.s.vmx.pvVmreadBitmap,  &pVM->hm.s.vmx.HCPhysVmreadBitmap);
-        hmR0VmxPageFree(&pVM->hm.s.vmx.hMemObjVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap, &pVM->hm.s.vmx.HCPhysVmwriteBitmap);
     }
 #endif
 
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        PVMXVMCSINFO pVmcsInfo = &pVCpu->hm.s.vmx.VmcsInfo;
-        hmR0VmxFreeVmcsInfo(pVM, pVmcsInfo);
+        hmR0VmxVmcsInfoFree(&pVCpu->hm.s.vmx.VmcsInfo);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         if (pVM->cpum.ro.GuestFeatures.fVmx)
-        {
-            pVmcsInfo = &pVCpu->hm.s.vmx.VmcsInfoNstGst;
-            hmR0VmxFreeVmcsInfo(pVM, pVmcsInfo);
-        }
+            hmR0VmxVmcsInfoFree(&pVCpu->hm.s.vmx.VmcsInfoNstGst);
 #endif
     }
 }
@@ -1931,6 +1904,8 @@ static void hmR0VmxStructsFree(PVMCC pVM)
  *
  * @returns IPRT status code.
  * @param   pVM     The cross context VM structure.
+ *
+ * @remarks This functions will cleanup on memory allocation failures.
  */
 static int hmR0VmxStructsAlloc(PVMCC pVM)
 {
@@ -1950,56 +1925,26 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
     }
 
     /*
-     * Initialize/check members up-front so we can cleanup en masse on allocation failures.
-     */
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    Assert(pVM->hm.s.vmx.hMemObjScratch == NIL_RTR0MEMOBJ);
-    Assert(pVM->hm.s.vmx.pbScratch == NULL);
-    pVM->hm.s.vmx.HCPhysScratch = NIL_RTHCPHYS;
-#endif
-
-    Assert(pVM->hm.s.vmx.hMemObjApicAccess == NIL_RTR0MEMOBJ);
-    Assert(pVM->hm.s.vmx.pbApicAccess == NULL);
-    pVM->hm.s.vmx.HCPhysApicAccess = NIL_RTHCPHYS;
-
-    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
-    {
-        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
-        hmR0VmxInitVmcsInfo(&pVCpu->hm.s.vmx.VmcsInfo);
-        hmR0VmxInitVmcsInfo(&pVCpu->hm.s.vmx.VmcsInfoNstGst);
-    }
-
-    /*
      * Allocate per-VM VT-x structures.
      */
-    int rc = VINF_SUCCESS;
+    bool const fVirtApicAccess   = RT_BOOL(pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS);
+    bool const fUseVmcsShadowing = pVM->hm.s.vmx.fUseVmcsShadowing;
+    VMXPAGEALLOCINFO aAllocInfo[] = {
+        { fVirtApicAccess,   0 /* Unused */, &pVM->hm.s.vmx.HCPhysApicAccess,    (PRTR0PTR)&pVM->hm.s.vmx.pbApicAccess },
+        { fUseVmcsShadowing, 0 /* Unused */, &pVM->hm.s.vmx.HCPhysVmreadBitmap,  &pVM->hm.s.vmx.pvVmreadBitmap         },
+        { fUseVmcsShadowing, 0 /* Unused */, &pVM->hm.s.vmx.HCPhysVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap        },
 #ifdef VBOX_WITH_CRASHDUMP_MAGIC
-    /* Allocate crash-dump magic scratch page. */
-    rc = hmR0VmxPageAllocZ(&pVM->hm.s.vmx.hMemObjScratch, &pVM->hm.s.vmx.pbScratch, &pVM->hm.s.vmx.HCPhysScratch);
-    if (RT_FAILURE(rc))
-    {
-        hmR0VmxStructsFree(pVM);
-        return rc;
-    }
-    strcpy((char *)pVM->hm.s.vmx.pbScratch, "SCRATCH Magic");
-    *(uint64_t *)(pVM->hm.s.vmx.pbScratch + 16) = UINT64_C(0xdeadbeefdeadbeef);
+        { true,              0 /* Unused */, &pVM->hm.s.vmx.HCPhysScratch,       &(PRTR0PTR)pVM->hm.s.vmx.pbScratch    },
 #endif
+    };
 
-    /* Allocate the APIC-access page for trapping APIC accesses from the guest. */
-    if (pVM->hm.s.vmx.Msrs.ProcCtls2.n.allowed1 & VMX_PROC_CTLS2_VIRT_APIC_ACCESS)
-    {
-        rc = hmR0VmxPageAllocZ(&pVM->hm.s.vmx.hMemObjApicAccess, (PRTR0PTR)&pVM->hm.s.vmx.pbApicAccess,
-                               &pVM->hm.s.vmx.HCPhysApicAccess);
-        if (RT_FAILURE(rc))
-        {
-            hmR0VmxStructsFree(pVM);
-            return rc;
-        }
-    }
+    int rc = hmR0VmxPagesAllocZ(pVM->hm.s.vmx.hMemObj, &aAllocInfo[0], RT_ELEMENTS(aAllocInfo));
+    if (RT_FAILURE(rc))
+        goto cleanup;
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* Allocate the shadow VMCS fields array, VMREAD, VMWRITE bitmaps.. */
-    if (pVM->hm.s.vmx.fUseVmcsShadowing)
+    /* Allocate the shadow VMCS-fields array. */
+    if (fUseVmcsShadowing)
     {
         Assert(!pVM->hm.s.vmx.cShadowVmcsFields);
         Assert(!pVM->hm.s.vmx.cShadowVmcsRoFields);
@@ -2007,59 +1952,74 @@ static int hmR0VmxStructsAlloc(PVMCC pVM)
         pVM->hm.s.vmx.paShadowVmcsRoFields = (uint32_t *)RTMemAllocZ(sizeof(g_aVmcsFields));
         if (RT_LIKELY(   pVM->hm.s.vmx.paShadowVmcsFields
                       && pVM->hm.s.vmx.paShadowVmcsRoFields))
-        {
-            rc = hmR0VmxPageAllocZ(&pVM->hm.s.vmx.hMemObjVmreadBitmap, &pVM->hm.s.vmx.pvVmreadBitmap,
-                                   &pVM->hm.s.vmx.HCPhysVmreadBitmap);
-            if (RT_SUCCESS(rc))
-            {
-                rc = hmR0VmxPageAllocZ(&pVM->hm.s.vmx.hMemObjVmwriteBitmap, &pVM->hm.s.vmx.pvVmwriteBitmap,
-                                       &pVM->hm.s.vmx.HCPhysVmwriteBitmap);
-            }
-        }
+        { /* likely */ }
         else
-            rc = VERR_NO_MEMORY;
-
-        if (RT_FAILURE(rc))
         {
-            hmR0VmxStructsFree(pVM);
-            return rc;
+            rc = VERR_NO_MEMORY;
+            goto cleanup;
         }
     }
 #endif
 
     /*
-     * Initialize per-VCPU VT-x structures.
+     * Allocate per-VCPU VT-x structures.
      */
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
     {
         /* Allocate the guest VMCS structures. */
         PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
         rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hm.s.vmx.VmcsInfo, false /* fIsNstGstVmcs */);
-        if (RT_SUCCESS(rc))
-        {
-#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-            /* Allocate the nested-guest VMCS structures, when the VMX feature is exposed to the guest. */
-            if (pVM->cpum.ro.GuestFeatures.fVmx)
-            {
-                rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hm.s.vmx.VmcsInfoNstGst, true /* fIsNstGstVmcs */);
-                if (RT_SUCCESS(rc))
-                { /* likely */ }
-                else
-                    break;
-            }
-#endif
-        }
-        else
-            break;
-    }
+        if (RT_FAILURE(rc))
+            goto cleanup;
 
-    if (RT_FAILURE(rc))
-    {
-        hmR0VmxStructsFree(pVM);
-        return rc;
+#ifdef VBOX_WITH_NESTED_HWVIRT_VMX
+        /* Allocate the nested-guest VMCS structures, when the VMX feature is exposed to the guest. */
+        if (pVM->cpum.ro.GuestFeatures.fVmx)
+        {
+            rc = hmR0VmxAllocVmcsInfo(pVCpu, &pVCpu->hm.s.vmx.VmcsInfoNstGst, true /* fIsNstGstVmcs */);
+            if (RT_FAILURE(rc))
+                goto cleanup;
+        }
+#endif
     }
 
     return VINF_SUCCESS;
+
+cleanup:
+    hmR0VmxStructsFree(pVM);
+    Assert(rc != VINF_SUCCESS);
+    return rc;
+}
+
+
+/**
+ * Pre-initializes non-zero fields in VMX structures that will be allocated.
+ *
+ * @param   pVM     The cross context VM structure.
+ */
+static void hmR0VmxStructsInit(PVMCC pVM)
+{
+    /* Paranoia. */
+    Assert(pVM->hm.s.vmx.pbApicAccess == NULL);
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    Assert(pVM->hm.s.vmx.pbScratch == NULL);
+#endif
+
+    /*
+     * Initialize members up-front so we can cleanup en masse on allocation failures.
+     */
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    pVM->hm.s.vmx.HCPhysScratch = NIL_RTHCPHYS;
+#endif
+    pVM->hm.s.vmx.HCPhysApicAccess    = NIL_RTHCPHYS;
+    pVM->hm.s.vmx.HCPhysVmreadBitmap  = NIL_RTHCPHYS;
+    pVM->hm.s.vmx.HCPhysVmwriteBitmap = NIL_RTHCPHYS;
+    for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+    {
+        PVMCPUCC pVCpu = VMCC_GET_CPU(pVM, idCpu);
+        hmR0VmxVmcsInfoInit(&pVCpu->hm.s.vmx.VmcsInfo);
+        hmR0VmxVmcsInfoInit(&pVCpu->hm.s.vmx.VmcsInfoNstGst);
+    }
 }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
@@ -3380,7 +3340,7 @@ static int hmR0VmxSetupShadowVmcsFieldsArrays(PVMCC pVM)
              *
              * However, if the guest can write to all fields (including read-only fields),
              * we treat it a as read/write field. Otherwise, writing to these fields would
-             * cause a VMWRITE instruction error while syncing the shadow VMCS .
+             * cause a VMWRITE instruction error while syncing the shadow VMCS.
              */
             if (   fGstVmwriteAll
                 || !VMXIsVmcsFieldReadOnly(VmcsField.u))
@@ -3405,7 +3365,7 @@ static int hmR0VmxSetupShadowVmcsFieldsArrays(PVMCC pVM)
 static void hmR0VmxSetupVmreadVmwriteBitmaps(PVMCC pVM)
 {
     /*
-     * By default, ensure guest attempts to acceses to any VMCS fields cause VM-exits.
+     * By default, ensure guest attempts to access any VMCS fields cause VM-exits.
      */
     uint32_t const cbBitmap        = X86_PAGE_4K_SIZE;
     uint8_t       *pbVmreadBitmap  = (uint8_t *)pVM->hm.s.vmx.pvVmreadBitmap;
@@ -3564,6 +3524,17 @@ DECLINLINE(int) hmR0VmxSetupVmcsAutoLoadStoreMsrAddrs(PVMXVMCSINFO pVmcsInfo)
 static void hmR0VmxSetupVmcsMsrPermissions(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo)
 {
     Assert(pVmcsInfo->u32ProcCtls & VMX_PROC_CTLS_USE_MSR_BITMAPS);
+
+    /*
+     * By default, ensure guest attempts to access any MSR cause VM-exits.
+     * This shall later be relaxed for specific MSRs as necessary.
+     *
+     * Note: For nested-guests, the entire bitmap will be merged prior to
+     * executing the nested-guest using hardware-assisted VMX and hence there
+     * is no need to perform this operation. See hmR0VmxMergeMsrBitmapNested.
+     */
+    Assert(pVmcsInfo->pvMsrBitmap);
+    ASMMemFill32(pVmcsInfo->pvMsrBitmap, X86_PAGE_4K_SIZE, UINT32_C(0xffffffff));
 
     /*
      * The guest can access the following MSRs (read, write) without causing
@@ -4192,6 +4163,7 @@ VMMR0DECL(int) VMXR0InitVM(PVMCC pVM)
     AssertPtr(pVM);
     LogFlowFunc(("pVM=%p\n", pVM));
 
+    hmR0VmxStructsInit(pVM);
     int rc = hmR0VmxStructsAlloc(pVM);
     if (RT_FAILURE(rc))
     {
@@ -4199,6 +4171,11 @@ VMMR0DECL(int) VMXR0InitVM(PVMCC pVM)
         return rc;
     }
 
+    /* Setup the crash dump page. */
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+    strcpy((char *)pVM->hm.s.vmx.pbScratch, "SCRATCH Magic");
+    *(uint64_t *)(pVM->hm.s.vmx.pbScratch + 16) = UINT64_C(0xdeadbeefdeadbeef);
+#endif
     return VINF_SUCCESS;
 }
 

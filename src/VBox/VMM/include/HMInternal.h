@@ -447,10 +447,10 @@ AssertCompileSizeAlignment(HMEVENT, 8);
  */
 typedef struct HM
 {
-    /** Set when we've initialized VMX or SVM. */
-    bool                        fInitialized;
     /** Set if nested paging is enabled. */
     bool                        fNestedPaging;
+    /** Set when we've initialized VMX or SVM. */
+    bool                        fInitialized;
     /** Set if nested paging is allowed. */
     bool                        fAllowNestedPaging;
     /** Set if large pages are enabled (requires nested paging). */
@@ -524,41 +524,21 @@ typedef struct HM
         /** The shift mask employed by the VMX-Preemption timer. */
         uint8_t                     cPreemptTimerShift;
 
-        /** Virtual address of the TSS page used for real mode emulation. */
-        R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
-        /** Virtual address of the identity page table used for real mode and protected
-         *  mode without paging emulation in EPT mode. */
-        R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
-
-        /** Physical address of the APIC-access page. */
-        RTHCPHYS                    HCPhysApicAccess;
-        /** R0 memory object for the APIC-access page. */
-        RTR0MEMOBJ                  hMemObjApicAccess;
         /** Virtual address of the APIC-access page. */
         R0PTRTYPE(uint8_t *)        pbApicAccess;
-
-        /** Physical address of the VMREAD bitmap. */
-        RTHCPHYS                    HCPhysVmreadBitmap;
-        /** Ring-0 memory object for the VMREAD bitmap. */
-        RTR0MEMOBJ                  hMemObjVmreadBitmap;
         /** Pointer to the VMREAD bitmap. */
         R0PTRTYPE(void *)           pvVmreadBitmap;
-
-        /** Physical address of the VMWRITE bitmap. */
-        RTHCPHYS                    HCPhysVmwriteBitmap;
-        /** Ring-0 memory object for the VMWRITE bitmap. */
-        RTR0MEMOBJ                  hMemObjVmwriteBitmap;
         /** Pointer to the VMWRITE bitmap. */
         R0PTRTYPE(void *)           pvVmwriteBitmap;
 
-#ifdef VBOX_WITH_CRASHDUMP_MAGIC
-        /** Physical address of the crash-dump scratch area. */
-        RTHCPHYS                    HCPhysScratch;
-        /** Ring-0 memory object for the crash-dump scratch area. */
-        RTR0MEMOBJ                  hMemObjScratch;
-        /** Pointer to the crash-dump scratch bitmap. */
-        R0PTRTYPE(uint8_t *)        pbScratch;
-#endif
+        /** Pointer to the shadow VMCS read-only fields array. */
+        R0PTRTYPE(uint32_t *)       paShadowVmcsRoFields;
+        /** Pointer to the shadow VMCS read/write fields array. */
+        R0PTRTYPE(uint32_t *)       paShadowVmcsFields;
+        /** Number of elements in the shadow VMCS read-only fields array. */
+        uint32_t                    cShadowVmcsRoFields;
+        /** Number of elements in the shadow VMCS read-write fields array. */
+        uint32_t                    cShadowVmcsFields;
 
         /** Tagged-TLB flush type. */
         VMXTLBFLUSHTYPE             enmTlbFlushType;
@@ -590,15 +570,29 @@ typedef struct HM
 
         /** Host-physical address for a failing VMXON instruction. */
         RTHCPHYS                    HCPhysVmxEnableError;
+        /** Host-physical address of the APIC-access page. */
+        RTHCPHYS                    HCPhysApicAccess;
+        /** Host-physical address of the VMREAD bitmap. */
+        RTHCPHYS                    HCPhysVmreadBitmap;
+        /** Host-physical address of the VMWRITE bitmap. */
+        RTHCPHYS                    HCPhysVmwriteBitmap;
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+        /** Host-physical address of the crash-dump scratch area. */
+        RTHCPHYS                    HCPhysScratch;
+#endif
 
-        /** Pointer to the shadow VMCS read-only fields array. */
-        R0PTRTYPE(uint32_t *)       paShadowVmcsRoFields;
-        /** Pointer to the shadow VMCS read/write fields array. */
-        R0PTRTYPE(uint32_t *)       paShadowVmcsFields;
-        /** Number of elements in the shadow VMCS read-only fields array. */
-        uint32_t                    cShadowVmcsRoFields;
-        /** Number of elements in the shadow VMCS read-write fields array. */
-        uint32_t                    cShadowVmcsFields;
+#ifdef VBOX_WITH_CRASHDUMP_MAGIC
+        /** Pointer to the crash-dump scratch bitmap. */
+        R0PTRTYPE(uint8_t *)        pbScratch;
+#endif
+        /** Virtual address of the TSS page used for real mode emulation. */
+        R3PTRTYPE(PVBOXTSS)         pRealModeTSS;
+        /** Virtual address of the identity page table used for real mode and protected
+         *  mode without paging emulation in EPT mode. */
+        R3PTRTYPE(PX86PD)           pNonPagingModeEPTPageTable;
+
+        /** Ring-0 memory object for per-VM VMX structures. */
+        RTR0MEMOBJ                  hMemObj;
     } vmx;
 
     struct
@@ -663,8 +657,10 @@ typedef struct HM
 } HM;
 /** Pointer to HM VM instance data. */
 typedef HM *PHM;
-
 AssertCompileMemberAlignment(HM, StatTprPatchSuccess, 8);
+AssertCompileMemberAlignment(HM, vmx,                 8);
+AssertCompileMemberAlignment(HM, svm,                 8);
+
 
 /**
  * VMX StartVM function.
@@ -691,8 +687,10 @@ typedef R0PTRTYPE(FNHMSVMVMRUN *) PFNHMSVMVMRUN;
  * This structure provides information maintained for and during the executing of a
  * guest (or nested-guest) VMCS (VM control structure) using hardware-assisted VMX.
  *
- * The members here are ordered and aligned based on estimated frequency of usage
- * and grouped to fit within a cache line in hot code paths.
+ * Note! The members here are ordered and aligned based on estimated frequency of
+ * usage and grouped to fit within a cache line in hot code paths. Even subtle
+ * changes here have a noticeable effect in the bootsector benchmarks. Modify with
+ * care.
  */
 typedef struct VMXVMCSINFO
 {
@@ -806,20 +804,10 @@ typedef struct VMXVMCSINFO
     RTHCPHYS                    HCPhysHostMsrLoad;
     /** @} */
 
-    /** @name R0-memory objects address of VMCS and related data structures.
+    /** @name R0-memory objects address for VMCS and related data structures.
      *  @{ */
-    /** The VMCS. */
-    RTR0MEMOBJ                  hMemObjVmcs;
-    /** R0 memory object for the shadow VMCS. */
-    RTR0MEMOBJ                  hMemObjShadowVmcs;
-    /** R0 memory object for the MSR bitmap. */
-    RTR0MEMOBJ                  hMemObjMsrBitmap;
-    /** R0 memory object of the VM-entry MSR-load area. */
-    RTR0MEMOBJ                  hMemObjGuestMsrLoad;
-    /** R0 memory object of the VM-exit MSR-store area. */
-    RTR0MEMOBJ                  hMemObjGuestMsrStore;
-    /** R0 memory object for the VM-exit MSR-load area. */
-    RTR0MEMOBJ                  hMemObjHostMsrLoad;
+    /** R0-memory object for VMCS and related data structures. */
+    RTR0MEMOBJ                  hMemObj;
     /** @} */
 
     /** Padding. */
@@ -830,35 +818,43 @@ typedef VMXVMCSINFO *PVMXVMCSINFO;
 /** Pointer to a const VMXVMCSINFO struct. */
 typedef const VMXVMCSINFO *PCVMXVMCSINFO;
 AssertCompileSizeAlignment(VMXVMCSINFO, 8);
-AssertCompileMemberAlignment(VMXVMCSINFO, pfnStartVM, 8);
-AssertCompileMemberAlignment(VMXVMCSINFO, u32PinCtls, 4);
-AssertCompileMemberAlignment(VMXVMCSINFO, u64VmcsLinkPtr, 8);
-AssertCompileMemberAlignment(VMXVMCSINFO, pvVmcs, 8);
-AssertCompileMemberAlignment(VMXVMCSINFO, HCPhysVmcs, 8);
-AssertCompileMemberAlignment(VMXVMCSINFO, hMemObjVmcs, 8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pfnStartVM,      8);
+AssertCompileMemberAlignment(VMXVMCSINFO, u32PinCtls,      4);
+AssertCompileMemberAlignment(VMXVMCSINFO, u64VmcsLinkPtr,  8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pvVmcs,          8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pvShadowVmcs,    8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pbVirtApic,      8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pvMsrBitmap,     8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pvGuestMsrLoad,  8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pvGuestMsrStore, 8);
+AssertCompileMemberAlignment(VMXVMCSINFO, pvHostMsrLoad,   8);
+AssertCompileMemberAlignment(VMXVMCSINFO, HCPhysVmcs,      8);
+AssertCompileMemberAlignment(VMXVMCSINFO, hMemObj,         8);
 
 /**
  * HM VMCPU Instance data.
  *
  * Note! If you change members of this struct, make sure to check if the
  * assembly counterpart in HMInternal.mac needs to be updated as well.
+ *
+ * Note! The members here are ordered and aligned based on estimated frequency of
+ * usage and grouped to fit within a cache line in hot code paths. Even subtle
+ * changes here have a noticeable effect in the bootsector benchmarks. Modify with
+ * care.
  */
 typedef struct HMCPU
 {
     /** Set when the TLB has been checked until we return from the world switch. */
     bool volatile               fCheckedTLBFlush;
-    /** Set if we need to flush the TLB during the world switch. */
-    bool                        fForceTLBFlush;
     /** Set when we're using VT-x or AMD-V at that moment. */
     bool                        fActive;
     /** Whether we've completed the inner HM leave function. */
     bool                        fLeaveDone;
     /** Whether we're using the hyper DR7 or guest DR7. */
     bool                        fUsingHyperDR7;
-    /** Set if XCR0 needs to be saved/restored when entering/exiting guest code
-     *  execution. */
-    bool                        fLoadSaveGuestXcr0;
 
+    /** Set if we need to flush the TLB during the world switch. */
+    bool                        fForceTLBFlush;
     /** Whether we should use the debug loop because of single stepping or special
      *  debug breakpoints / events are armed. */
     bool                        fUseDebugLoop;
@@ -867,16 +863,20 @@ typedef struct HMCPU
     bool                        fUsingDebugLoop;
     /** Set if we using the debug loop and wish to intercept RDTSC. */
     bool                        fDebugWantRdTscExit;
-    /** Whether we're executing a single instruction. */
-    bool                        fSingleInstruction;
-    /** Set if we need to clear the trap flag because of single stepping. */
-    bool                        fClearTrapFlag;
 
+    /** Set if XCR0 needs to be saved/restored when entering/exiting guest code
+     *  execution. */
+    bool                        fLoadSaveGuestXcr0;
     /** Whether \#UD needs to be intercepted (required by certain GIM providers). */
     bool                        fGIMTrapXcptUD;
     /** Whether \#GP needs to be intercept for mesa driver workaround. */
     bool                        fTrapXcptGpForLovelyMesaDrv;
-    uint8_t                     u8Alignment0[3];
+    /** Whether we're executing a single instruction. */
+    bool                        fSingleInstruction;
+
+    /** Set if we need to clear the trap flag because of single stepping. */
+    bool                        fClearTrapFlag;
+    bool                        afAlignment0[3];
 
     /** World switch exit counter. */
     uint32_t volatile           cWorldSwitchExits;
@@ -1004,16 +1004,16 @@ typedef struct HMCPU
     /** Event injection state. */
     HMEVENT                 Event;
 
-    /** The PAE PDPEs used with Nested Paging (only valid when
-     *  VMCPU_FF_HM_UPDATE_PAE_PDPES is set). */
-    X86PDPE                 aPdpes[4];
+    /** The CPU ID of the CPU currently owning the VMCS. Set in
+     * HMR0Enter and cleared in HMR0Leave. */
+    RTCPUID                 idEnteredCpu;
 
     /** Current shadow paging mode for updating CR4. */
     PGMMODE                 enmShadowMode;
 
-    /** The CPU ID of the CPU currently owning the VMCS. Set in
-     * HMR0Enter and cleared in HMR0Leave. */
-    RTCPUID                 idEnteredCpu;
+    /** The PAE PDPEs used with Nested Paging (only valid when
+     *  VMCPU_FF_HM_UPDATE_PAE_PDPES is set). */
+    X86PDPE                 aPdpes[4];
 
     /** For saving stack space, the disassembler state is allocated here instead of
      * on the stack. */
@@ -1165,9 +1165,14 @@ typedef struct HMCPU
 } HMCPU;
 /** Pointer to HM VMCPU instance data. */
 typedef HMCPU *PHMCPU;
+AssertCompileMemberAlignment(HMCPU, fCheckedTLBFlush,  4);
+AssertCompileMemberAlignment(HMCPU, fForceTLBFlush,    4);
 AssertCompileMemberAlignment(HMCPU, cWorldSwitchExits, 4);
-AssertCompileMemberAlignment(HMCPU, fCtxChanged, 8);
+AssertCompileMemberAlignment(HMCPU, fCtxChanged,       8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx, 8);
+AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfo,       8);
+AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.VmcsInfoNstGst, 8);
+AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) vmx.RestoreHost,    8);
 AssertCompileMemberAlignment(HMCPU, HM_UNION_NM(u.) svm, 8);
 AssertCompileMemberAlignment(HMCPU, Event, 8);
 
