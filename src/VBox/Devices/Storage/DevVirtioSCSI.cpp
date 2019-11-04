@@ -55,6 +55,13 @@
 #include "VBoxDD.h"
 
 
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** The current saved state version. */
+#define VIRTIOSCSI_SAVED_STATE_VERSION          UINT32_C(1)
+
+
 #define LUN0    0
 /** @name VirtIO 1.0 SCSI Host feature bits (See VirtIO 1.0 specification, Section 5.6.3)
  * @{  */
@@ -112,6 +119,10 @@
 #define VIRTIO_IS_OUT_DIRECTION(pMediaExTxDirEnumValue) \
     ((pMediaExTxDirEnumValue) == PDMMEDIAEXIOREQSCSITXDIR_TO_DEVICE)
 
+
+/*********************************************************************************************************************************
+*   Structures and Typedefs                                                                                                      *
+*********************************************************************************************************************************/
 /**
  * VirtIO SCSI Host Device device-specific configuration (see VirtIO 1.0, section 5.6.4)
  * VBox VirtIO framework issues callback to this client (device) to handle MMIO accesses
@@ -389,9 +400,8 @@ typedef struct VIRTIOSCSITARGET
  */
 typedef struct VIRTIOSCSI
 {
-    /* Opaque handle to VirtIO common framework (must be first item
-     * in this struct so PDMDEVINS_2_DATA macro's casting works) */
-    VIRTIOHANDLE                    hVirtio;
+    /** The virtio state.   */
+    VIRTIOSTATE                     Virtio;
 
     /** Number of targets detected */
     uint64_t                        cTargets;
@@ -644,7 +654,7 @@ static int virtioScsiR3SendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t u
             return VINF_SUCCESS;
     }
 
-    if (virtioQueueIsEmpty(pThis->hVirtio, EVENTQ_IDX))
+    if (virtioQueueIsEmpty(&pThis->Virtio, EVENTQ_IDX))
     {
         LogFunc(("eventq is empty, events missed (driver didn't preload queue)!\n"));
         ASMAtomicWriteBool(&pThis->fEventsMissed, true);
@@ -652,14 +662,14 @@ static int virtioScsiR3SendEvent(PVIRTIOSCSI pThis, uint16_t uTarget, uint32_t u
     }
 
     PVIRTIO_DESC_CHAIN_T pDescChain;
-    virtioQueueGet(pThis->hVirtio, EVENTQ_IDX, &pDescChain, true);
+    virtioQueueGet(&pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
 
     RTSGBUF reqSegBuf;
     RTSGSEG aReqSegs[] = { { &event, sizeof(event) } };
     RTSgBufInit(&reqSegBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
-    virtioQueuePut( pThis->hVirtio, EVENTQ_IDX, &reqSegBuf, pDescChain, true);
-    virtioQueueSync(pThis->hVirtio, EVENTQ_IDX);
+    virtioQueuePut( &pThis->Virtio, EVENTQ_IDX, &reqSegBuf, pDescChain, true);
+    virtioQueueSync(&pThis->Virtio, EVENTQ_IDX);
 
     return VINF_SUCCESS;
 }
@@ -708,8 +718,8 @@ static int virtioScsiR3ReqErr(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHA
     if (pThis->fResetting)
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
-    virtioQueuePut(pThis->hVirtio, qIdx, &reqSegBuf, pDescChain, true /* fFence */);
-    virtioQueueSync(pThis->hVirtio, qIdx);
+    virtioQueuePut(&pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true /* fFence */);
+    virtioQueueSync(&pThis->Virtio, qIdx);
 
     RTMemFree(pabSenseBuf);
 
@@ -864,8 +874,8 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                        VERR_BUFFER_OVERFLOW);
 
 
-        virtioQueuePut(pThis->hVirtio, pReq->qIdx, &reqSegBuf, pReq->pDescChain, true /* fFence TBD */);
-        virtioQueueSync(pThis->hVirtio, pReq->qIdx);
+        virtioQueuePut(&pThis->Virtio, pReq->qIdx, &reqSegBuf, pReq->pDescChain, true /* fFence TBD */);
+        virtioQueueSync(&pThis->Virtio, pReq->qIdx);
 
 
         Log2(("-----------------------------------------------------------------------------------------\n"));
@@ -1406,8 +1416,8 @@ static int virtioScsiR3Ctrl(PVIRTIOSCSI pThis, uint16_t qIdx, PVIRTIO_DESC_CHAIN
     }
 
     LogFunc(("Response code: %s\n", virtioGetReqRespText(bResponse)));
-    virtioQueuePut( pThis->hVirtio, qIdx, &reqSegBuf, pDescChain, true);
-    virtioQueueSync(pThis->hVirtio, qIdx);
+    virtioQueuePut( &pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true);
+    virtioQueueSync(&pThis->Virtio, qIdx);
 
     return VINF_SUCCESS;
 }
@@ -1437,7 +1447,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        if (virtioQueueIsEmpty(pThis->hVirtio, qIdx))
+        if (virtioQueueIsEmpty(&pThis->Virtio, qIdx))
         {
             /* Atomic interlocks avoid missing alarm while going to sleep & notifier waking the awoken */
             ASMAtomicWriteBool(&pWorker->fSleeping, true);
@@ -1465,7 +1475,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
         {
              Log6Func(("fetching next descriptor chain from %s\n", QUEUENAME(qIdx)));
              PVIRTIO_DESC_CHAIN_T pDescChain;
-             int rc = virtioQueueGet(pThis->hVirtio, qIdx, &pDescChain, true);
+             int rc = virtioQueueGet(&pThis->Virtio, qIdx, &pDescChain, true);
              if (rc == VERR_NOT_AVAILABLE)
              {
                 Log6Func(("Nothing found in %s\n", QUEUENAME(qIdx)));
@@ -1571,12 +1581,10 @@ DECLINLINE(void) virtioScsiR3ReportParamChange(PVIRTIOSCSI pThis, uint16_t uTarg
 /**
  * @callback_method_impl{FNVIRTIOQUEUENOTIFIED}
  */
-static DECLCALLBACK(void) virtioScsiR3Notified(VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx)
+static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOSTATE pVirtio, uint16_t qIdx)
 {
-    RT_NOREF(hVirtio);
-
     AssertReturnVoid(qIdx < VIRTIOSCSI_QUEUE_CNT);
-    PVIRTIOSCSI pThis = (PVIRTIOSCSI)pClient;
+    PVIRTIOSCSI pThis = RT_FROM_MEMBER(pVirtio, VIRTIOSCSI, Virtio);
     PVIRTIOSCSIWORKER pWorker = &pThis->aWorkers[qIdx];
 
     RTLogFlush(RTLogDefaultInstanceEx(RT_MAKE_U32(0, UINT16_MAX)));
@@ -1608,21 +1616,20 @@ static DECLCALLBACK(void) virtioScsiR3Notified(VIRTIOHANDLE hVirtio, void *pClie
 /**
  * @callback_method_impl{FNVIRTIOSTATUSCHANGED}
  */
-static DECLCALLBACK(void) virtioScsiR3StatusChanged(VIRTIOHANDLE hVirtio, void *pClient,  uint32_t fVirtioReady)
+static DECLCALLBACK(void) virtioScsiR3StatusChanged(PVIRTIOSTATE pVirtio,  uint32_t fVirtioReady)
 {
-    RT_NOREF(hVirtio);
-    PVIRTIOSCSI pThis = (PVIRTIOSCSI)pClient;
+    PVIRTIOSCSI pThis = RT_FROM_MEMBER(pVirtio, VIRTIOSCSI, Virtio);
 
     pThis->fVirtioReady = fVirtioReady;
 
     if (fVirtioReady)
     {
         LogFunc(("VirtIO ready\n-----------------------------------------------------------------------------------------\n"));
-        uint64_t features    = virtioGetNegotiatedFeatures(hVirtio);
-        pThis->fHasT10pi     = features & VIRTIO_SCSI_F_T10_PI;
-        pThis->fHasHotplug   = features & VIRTIO_SCSI_F_HOTPLUG;
-        pThis->fHasInOutBufs = features & VIRTIO_SCSI_F_INOUT;
-        pThis->fHasLunChange = features & VIRTIO_SCSI_F_CHANGE;
+        uint64_t fFeatures   = virtioGetNegotiatedFeatures(&pThis->Virtio);
+        pThis->fHasT10pi     = fFeatures & VIRTIO_SCSI_F_T10_PI;
+        pThis->fHasHotplug   = fFeatures & VIRTIO_SCSI_F_HOTPLUG;
+        pThis->fHasInOutBufs = fFeatures & VIRTIO_SCSI_F_INOUT;
+        pThis->fHasLunChange = fFeatures & VIRTIO_SCSI_F_CHANGE;
         pThis->fQuiescing    = false;
         pThis->fResetting    = false;
 
@@ -1895,25 +1902,17 @@ static DECLCALLBACK(void) virtioScsiR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHl
 *********************************************************************************************************************************/
 
 /**
- * @callback_method_impl{FNSSMDEVLIVEEXEC}
- */
-static DECLCALLBACK(int) virtioScsiR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
-{
-    LogFunc(("LIVE EXEC!!\n"));
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    RT_NOREF(pThis);
-    RT_NOREF(uPass);
-    RT_NOREF(pSSM);
-    return VINF_SSM_DONT_CALL_AGAIN;
-}
-
-/**
  * @callback_method_impl{FNSSMDEVLOADEXEC}
  */
 static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    LogFunc(("LOAD EXEC!!\n"));
     PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    LogFunc(("LOAD EXEC!!\n"));
+
+    AssertReturn(uPass == SSM_PASS_FINAL, VERR_SSM_UNEXPECTED_PASS);
+    AssertLogRelMsgReturn(uVersion == VIRTIOSCSI_SAVED_STATE_VERSION,
+                          ("uVersion=%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
+
     SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uNumQueues);
     SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uSegMax);
     SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uMaxSectors);
@@ -1933,10 +1932,13 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     SSMR3GetU32(pSSM, &pThis->fHasInOutBufs);
     SSMR3GetU32(pSSM, &pThis->fHasLunChange);
     SSMR3GetU32(pSSM, &pThis->fResetting);
-    SSMR3GetU32(pSSM, &pThis->fQuiescing);
-    RT_NOREF(uPass);
-    RT_NOREF(uVersion);
-    return VINF_SUCCESS;
+    int rc = SSMR3GetU32(pSSM, &pThis->fQuiescing);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Call the virtio core to let it load its state.
+     */
+    return virtioR3LoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
 }
 
 /**
@@ -1944,8 +1946,8 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
  */
 static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    LogFunc(("SAVE EXEC!!\n"));
     PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    LogFunc(("SAVE EXEC!!\n"));
 
     SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uNumQueues);
     SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uSegMax);
@@ -1971,19 +1973,10 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     SSMR3PutU32(pSSM, pThis->fResetting);
     SSMR3PutU32(pSSM, pThis->fQuiescing); /** @todo r=bird: This shall always be false, as the VM is suspended when saving, so no need to save this */
 
-    return VINF_SUCCESS;
-}
-
-/**
- * @callback_method_impl{FNSSMDEVLOADDONE}
- */
-static DECLCALLBACK(int) virtioScsiR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
-{
-    LogFunc(("callback"));
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    RT_NOREF(pThis);
-    RT_NOREF(pSSM);
-    return VINF_SUCCESS;
+    /*
+     * Call the virtio core to let it save its state.
+     */
+    return virtioR3SaveExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
 }
 
 
@@ -2115,7 +2108,7 @@ static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
     }
 
     /* Ensure guest is working the queues too. */
-    virtioPropagateResumeNotification(pThis->hVirtio);
+    virtioPropagateResumeNotification(&pThis->Virtio);
 }
 
 /**
@@ -2259,18 +2252,14 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     pThis->virtioScsiConfig.uMaxTarget      = pThis->cTargets;
     pThis->virtioScsiConfig.uMaxLun         = VIRTIOSCSI_MAX_LUN;
 
-    rc = virtioConstruct(pDevIns, pThis, &pThis->hVirtio, pVirtioPciParams, pThis->szInstance,
-                         VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
-                         virtioScsiR3DevCapRead,
-                         virtioScsiR3DevCapWrite,
-                         virtioScsiR3StatusChanged,
-                         virtioScsiR3Notified,
-                         virtioScsiR3LiveExec,
-                         virtioScsiR3SaveExec,
-                         virtioScsiR3LoadExec,
-                         virtioScsiR3LoadDone,
-                         sizeof(VIRTIOSCSI_CONFIG_T) /* cbDevSpecificCap */,
-                         (void *)&pThis->virtioScsiConfig /* pDevSpecificCap */);
+    /* Initialize the generic Virtio core: */
+    pThis->Virtio.Callbacks.pfnStatusChanged  = virtioScsiR3StatusChanged;
+    pThis->Virtio.Callbacks.pfnQueueNotified  = virtioScsiR3Notified;
+    pThis->Virtio.Callbacks.pfnDevCapRead     = virtioScsiR3DevCapRead;
+    pThis->Virtio.Callbacks.pfnDevCapWrite    = virtioScsiR3DevCapWrite;
+
+    rc = virtioR3Init(&pThis->Virtio, pDevIns, pVirtioPciParams, pThis->szInstance, VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
+                      &pThis->virtioScsiConfig /*pvDevSpecificCap*/, sizeof(pThis->virtioScsiConfig));
 
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
@@ -2283,7 +2272,7 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
 
     for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
     {
-        rc = virtioQueueAttach(pThis->hVirtio, qIdx, QUEUENAME(qIdx));
+        rc = virtioQueueAttach(&pThis->Virtio, qIdx, QUEUENAME(qIdx));
         pThis->afQueueAttached[qIdx] = (rc == VINF_SUCCESS);
 
         if (qIdx == CONTROLQ_IDX || IS_REQ_QUEUE(qIdx))
@@ -2393,8 +2382,16 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
 
+
     /*
-     * Register the debugger info callback.
+     * Register saved state.
+     */
+    rc = PDMDevHlpSSMRegister(pDevIns, VIRTIOSCSI_SAVED_STATE_VERSION, sizeof(*pThis),
+                              virtioScsiR3SaveExec, virtioScsiR3LoadExec);
+    AssertRCReturn(rc, rc);
+
+    /*
+     * Register the debugger info callback (ignore errors).
      */
     char szTmp[128];
     RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);

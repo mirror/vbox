@@ -24,8 +24,8 @@
 #include <iprt/ctype.h>
 #include <iprt/sg.h>
 
-typedef void * VIRTIOHANDLE;                                     /**< Opaque handle to the VirtIO framework */
-
+/** Pointer to the virt i/o state. */
+typedef struct VIRTIOSTATE *PVIRTIOSTATE;
 
 /**
  * Important sizing and bounds params for this impl. of VirtIO 1.0 PCI device
@@ -88,161 +88,51 @@ typedef struct VIRTIOPCIPARAMS
     uint16_t  uInterruptPin;                                     /**< PCI Cfg Interrupt pin                    */
 } VIRTIOPCIPARAMS, *PVIRTIOPCIPARAMS;
 
-/**
- * Implementation-specific client callback to notify client of significant device status
- * changes.
- *
- * @param hVirtio       Handle to VirtIO framework
- * @param fDriverOk     True if guest driver is okay (thus queues, etc... are valid)
- * @param pClient       Pointer to opaque client data (state)
- */
-typedef DECLCALLBACK(void)   FNVIRTIOSTATUSCHANGED(VIRTIOHANDLE hVirtio, void *pClient, uint32_t fDriverOk);
-typedef FNVIRTIOSTATUSCHANGED *PFNVIRTIOSTATUSCHANGED;
-
-/**
- * When guest-to-host queue notifications are enabled, the guest driver notifies the host
- * that the avail queue has buffers, and this callback informs the client.
- *
- * @param   hVirtio     Handle to the VirtIO framework
- * @param   qIdx        Index of the notified queue
- * @param   pClient     Pointer to opaque client data (state)
- */
-typedef DECLCALLBACK(void)   FNVIRTIOQUEUENOTIFIED(VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx);
-typedef FNVIRTIOQUEUENOTIFIED *PFNVIRTIOQUEUENOTIFIED;
-
- /**
- * Implementation-specific client callback to access VirtIO Device-specific capabilities
- * (other VirtIO capabilities and features are handled in VirtIO implementation)
- *
- * @param   pDevIns     The device instance.
- * @param   offset      Offset within device specific capabilities struct
- * @param   pvBuf       Buffer in which to save read data
- * @param   cbWrite     Number of bytes to write
- */
-typedef DECLCALLBACK(int)   FNVIRTIODEVCAPWRITE(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbWrite);
-typedef FNVIRTIODEVCAPWRITE *PFNVIRTIODEVCAPWRITE;
-
-/**
- * Implementation-specific client ballback to access VirtIO Device-specific capabilities
- * (other VirtIO capabilities and features are handled in VirtIO implementation)
- *
- * @param   pDevIns     The device instance.
- * @param   offset      Offset within device specific capabilities struct
- * @param   pvBuf       Buffer in which to save read data
- * @param   cbRead      Number of bytes to read
- */
-typedef DECLCALLBACK(int)   FNVIRTIODEVCAPREAD(PPDMDEVINS pDevIns, uint32_t uOffset, void *pvBuf, uint32_t cbRead);
-typedef FNVIRTIODEVCAPREAD *PFNVIRTIODEVCAPREAD;
-
-
 /** @name VirtIO port I/O callbacks.
  * @{ */
 typedef struct VIRTIOCALLBACKS
 {
-     DECLCALLBACKMEMBER(void, pfnVirtioStatusChanged)(VIRTIOHANDLE hVirtio, void *pClient, uint32_t fDriverOk);
-     DECLCALLBACKMEMBER(void, pfnVirtioQueueNotified)(VIRTIOHANDLE hVirtio, void *pClient, uint16_t qIdx);
-     DECLCALLBACKMEMBER(int,  pfnVirtioDevCapRead)(PPDMDEVINS pDevIns, uint32_t uOffset, void *pvBuf, uint32_t cbRead);
-     DECLCALLBACKMEMBER(int,  pfnVirtioDevCapWrite)(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pvBuf, uint32_t cbWrite);
-     DECLCALLBACKMEMBER(int,  pfnSSMDevLiveExec)(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass);
-     DECLCALLBACKMEMBER(int,  pfnSSMDevSaveExec)(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
-     DECLCALLBACKMEMBER(int,  pfnSSMDevLoadExec)(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
-     DECLCALLBACKMEMBER(int,  pfnSSMDevLoadDone)(PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
-} VIRTIOCALLBACKS, *PVIRTIOCALLBACKS;
-/** @} */
+     /**
+      * Implementation-specific client callback to notify client of significant device status
+      * changes.
+      *
+      * @param   pVirtio    Pointer to virtio state.
+      * @param   fDriverOk  True if guest driver is okay (thus queues, etc... are
+      *                     valid)
+      */
+     DECLCALLBACKMEMBER(void, pfnStatusChanged)(PVIRTIOSTATE pVirtio, uint32_t fDriverOk);
 
-/** API for VirtIO client */
+     /**
+      * When guest-to-host queue notifications are enabled, the guest driver notifies the host
+      * that the avail queue has buffers, and this callback informs the client.
+      *
+      * @param   pVirtio    Pointer to virtio state.
+      * @param   idxQueue   Index of the notified queue
+      */
+     DECLCALLBACKMEMBER(void, pfnQueueNotified)(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
 
-int virtioQueueAttach(VIRTIOHANDLE hVirtio, uint16_t qIdx, const char *pcszName);
+     /**
+      * Implementation-specific client callback to access VirtIO Device-specific capabilities
+      * (other VirtIO capabilities and features are handled in VirtIO implementation)
+      *
+      * @param   pDevIns    The device instance.
+      * @param   offCap     Offset within device specific capabilities struct.
+      * @param   pvBuf      Buffer in which to save read data.
+      * @param   cbToRead   Number of bytes to read.
+      */
+     DECLCALLBACKMEMBER(int,  pfnDevCapRead)(PPDMDEVINS pDevIns, uint32_t offCap, void *pvBuf, uint32_t cbToRead);
 
-/**
- * Detaches from queue and release resources
- *
- * @param hVirtio   Handle for VirtIO framework
- * @param qIdx      Queue number
- */
-int virtioQueueDetach(VIRTIOHANDLE hVirtio, uint16_t qIdx);
-
-int virtioQueueGet(VIRTIOHANDLE hVirtio, uint16_t qIdx, PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
-
-int virtioQueuePut(VIRTIOHANDLE hVirtio, uint16_t qIdx, PRTSGBUF pSgVirtReturn,
-                   PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
-
-
-int virtioQueueSync(VIRTIOHANDLE hVirtio, uint16_t qIdx);
-
-bool virtioQueueIsEmpty(VIRTIOHANDLE hVirtio, uint16_t qIdx);
-
-bool virtioIsQueueEnabled(VIRTIOHANDLE hVirtio, uint16_t qIdx);
-
-void virtioQueueEnable(VIRTIOHANDLE hVirtio, uint16_t qIdx, bool fEnabled);
-
-/**
- * Request orderly teardown of VirtIO on host and guest
- * @param hVirtio   Handle for VirtIO framework
- *
- */
-void virtioResetAll(VIRTIOHANDLE hVirtio);
-
-void virtioPropagateResumeNotification(VIRTIOHANDLE hVirtio);
-
-const char *virtioQueueGetName(VIRTIOHANDLE hVirtio, uint16_t qIdx);
-
-uint64_t virtioGetNegotiatedFeatures(VIRTIOHANDLE hVirtio);
-
-/**
- * Constructor sets up the PCI device controller and VirtIO state
- *
- * @param   pDevIns                  Device instance data
- * @param   pClientContext           Opaque client context (such as state struct)
- * @param   pVirtio                  Device State
- * @param   pPciParams               Values to populate industry standard PCI Configuration Space data structure
- * @param   pcszInstance             Device instance name
- * @param   uDevSpecificFeatures     VirtIO device-specific features offered by client
- * @param   devCapReadCallback       Client handler to call upon guest read to device specific capabilities.
- * @param   devCapWriteCallback      Client handler to call upon guest write to device specific capabilities.
- * @param   devStatusChangedCallback Client handler to call for major device status changes
- * @param   queueNotifiedCallback    Client handler for guest-to-host notifications that avail queue has ring data
- * @param   ssmLiveExecCallback      Client handler for SSM live exec
- * @param   ssmSaveExecCallback      Client handler for SSM save exec
- * @param   ssmLoadExecCallback      Client handler for SSM load exec
- * @param   ssmLoadDoneCallback      Client handler for SSM load done
- * @param   cbDevSpecificCfg         Size of virtio_pci_device_cap device-specific configuration struct
- * @param   pDevSpecificCfg          Address of client's VirtIO dev-specific configuration struct
- */
-int  virtioConstruct(PPDMDEVINS             pDevIns,
-                     void                  *pClientContext,
-                     VIRTIOHANDLE          *phVirtio,
-                     PVIRTIOPCIPARAMS       pPciParams,
-                     const char            *pcszInstance,
-                     uint64_t               uDevSpecificFeatures,
-                     PFNVIRTIODEVCAPREAD    devCapReadCallback,
-                     PFNVIRTIODEVCAPWRITE   devCapWriteCallback,
-                     PFNVIRTIOSTATUSCHANGED devStatusChangedCallback,
-                     PFNVIRTIOQUEUENOTIFIED queueNotifiedCallback,
-                     PFNSSMDEVLIVEEXEC      ssmLiveExecCallback,
-                     PFNSSMDEVSAVEEXEC      ssmSaveExecCallback,
-                     PFNSSMDEVLOADEXEC      ssmLoadExecCallback,
-                     PFNSSMDEVLOADDONE      ssmLoadDoneCallback,
-                     uint16_t               cbDevSpecificCfg,
-                     void                  *pDevSpecificCfg);
-
-void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
-                            const void *pv, uint32_t cb, uint32_t uOffset,
-                            int fWrite, int fHasIndex, uint32_t idx);
-void virtioHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle);
-
-
-/** @name Saved state versions.
- * The saved state version is changed if either common or any of specific
- * parts are changed. That is, it is perfectly possible that the version
- * of saved vnet state will increase as a result of change in vblk structure
- * for example.
- *
- * @todo r=bird: I'd like to have each device register their own SSM state and
- *       make calls into virtio for it to save itself, saving/loading its own
- *       internal version number rather than getting it from SSM.
- */
-#define VIRTIO_SAVEDSTATE_VERSION                       1
+     /**
+      * Implementation-specific client ballback to access VirtIO Device-specific capabilities
+      * (other VirtIO capabilities and features are handled in VirtIO implementation)
+      *
+      * @param   pDevIns    The device instance.
+      * @param   offCap     Offset within device specific capabilities struct.
+      * @param   pvBuf      Buffer with the bytes to write.
+      * @param   cbToWrite  Number of bytes to write.
+      */
+     DECLCALLBACKMEMBER(int,  pfnDevCapWrite)(PPDMDEVINS pDevIns, uint32_t offCap, const void *pvBuf, uint32_t cbWrite);
+} VIRTIOCALLBACKS;
 /** @} */
 
 #define VIRTIO_F_VERSION_1                  RT_BIT_64(32)        /**< Required feature bit for 1.0 devices      */
@@ -349,14 +239,10 @@ typedef struct virtio_pci_cfg_cap
 
 /**
  * The core (/common) state of the VirtIO PCI device
- *
- * @implements  PDMILEDPORTS
  */
 typedef struct VIRTIOSTATE
 {
     char                        szInstance[16];                     /**< Instance name, e.g. "VIRTIOSCSI0"         */
-    R3PTRTYPE(void *)           pClientContext;                     /**< Client callback returned on callbacks     */
-
     PPDMDEVINSR3                pDevInsR3;                          /**< Device instance - R3                      */
 
     RTGCPHYS                    GCPhysPciCapBase;                   /**< Pointer to MMIO mapped capability data    */
@@ -379,13 +265,17 @@ typedef struct VIRTIOSTATE
     uint32_t                    uDeviceFeaturesSelect;              /**< (MMIO) hi/lo select uDeviceFeatures GUEST */
     uint32_t                    uDriverFeaturesSelect;              /**< (MMIO) hi/lo select uDriverFeatures GUEST */
     uint32_t                    uMsixConfig;                        /**< (MMIO) MSI-X vector                 GUEST */
-    uint32_t                    uNumQueues;                         /**< (MMIO) Actual number of queues      GUEST */
+    uint32_t                    uNumQueues;                         /**< (MMIO) Actual number of queues      GUEST
+                                                                     * @todo r=bird: This value is always VIRTQ_MAX_CNT
+                                                                     * and only used in for loops.  Guest always see
+                                                                     * VIRTQ_MAX_CNT regardless of this value, so
+                                                                     * what's the point of having this? */
     uint8_t                     uDeviceStatus;                      /**< (MMIO) Device Status                GUEST */
     uint8_t                     uPrevDeviceStatus;                  /**< (MMIO) Prev Device Status           GUEST */
     uint8_t                     uConfigGeneration;                  /**< (MMIO) Device config sequencer       HOST */
 
     VIRTQSTATE                  virtqState[VIRTQ_MAX_CNT];          /**< Local impl-specific queue context         */
-    VIRTIOCALLBACKS             virtioCallbacks;                    /**< Callback vectors to client                */
+    VIRTIOCALLBACKS             Callbacks;                          /**< Callback vectors to client                */
 
     PVIRTIO_PCI_CFG_CAP_T       pPciCfgCap;                         /**< Pointer to struct in configuration area   */
     PVIRTIO_PCI_NOTIFY_CAP_T    pNotifyCap;                         /**< Pointer to struct in configuration area   */
@@ -394,14 +284,15 @@ typedef struct VIRTIOSTATE
     PVIRTIO_PCI_CAP_T           pDeviceCap;                         /**< Pointer to struct in configuration area   */
 
     uint32_t                    cbDevSpecificCfg;                   /**< Size of client's dev-specific config data */
-    void                       *pDevSpecificCfg;                    /**< Pointer to client's struct                */
-    void                       *pPrevDevSpecificCfg;                /**< Previous read dev-specific cfg of client  */
+    void                       *pvDevSpecificCfg;                   /**< Pointer to client's struct                */
+    void                       *pvPrevDevSpecificCfg;               /**< Previous read dev-specific cfg of client  */
     bool                        fGenUpdatePending;                  /**< If set, update cfg gen after driver reads */
     uint8_t                     uPciCfgDataOff;
     uint8_t                     uISR;                               /**< Interrupt Status Register.                */
     uint8_t                     fMsiSupport;
 
-} VIRTIOSTATE, *PVIRTIOSTATE;
+} VIRTIOSTATE;
+
 
 /** virtq related flags */
 #define VIRTQ_DESC_F_NEXT                               1        /**< Indicates this descriptor chains to next  */
@@ -410,6 +301,81 @@ typedef struct VIRTIOSTATE
 
 #define VIRTQ_USED_F_NO_NOTIFY                          1        /**< Dev to Drv: Don't notify when buf added   */
 #define VIRTQ_AVAIL_F_NO_INTERRUPT                      1        /**< Drv to Dev: Don't notify when buf eaten   */
+
+
+/** @name API for VirtIO client
+ * @{ */
+
+int virtioQueueAttach(PVIRTIOSTATE pVirtio, uint16_t idxQueue, const char *pcszName);
+#if 0 /* no such function */
+/**
+ * Detaches from queue and release resources
+ *
+ * @param hVirtio   Handle for VirtIO framework
+ * @param idxQueue      Queue number
+ */
+int virtioQueueDetach(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
+#endif
+int virtioQueueGet(PVIRTIOSTATE pVirtio, uint16_t idxQueue, PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
+int virtioQueuePut(PVIRTIOSTATE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
+                   PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
+
+int virtioQueueSync(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
+bool virtioQueueIsEmpty(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
+
+void virtioQueueEnable(PVIRTIOSTATE pVirtio, uint16_t idxQueue, bool fEnabled);
+void virtioResetAll(PVIRTIOSTATE pVirtio);
+void virtioPropagateResumeNotification(PVIRTIOSTATE pVirtio);
+
+/**
+ * Return queue enable state
+ *
+ * @param   pVirtio     Pointer to the virtio state.
+ * @param   idxQueue    Queue number.
+ * @param   fEnabled    Flag indicating whether to enable queue or not
+ */
+DECLINLINE(bool) virtioIsQueueEnabled(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+{
+    Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
+    return pVirtio->uQueueEnable[idxQueue] != 0;
+}
+
+
+/**
+ * Get name of queue, by idxQueue, assigned at virtioQueueAttach()
+ *
+ * @param   pVirtio     Pointer to the virtio state.
+ * @param   idxQueue    Queue number.
+ *
+ * @returns Pointer to read-only queue name.
+ */
+DECLINLINE(const char *) virtioQueueGetName(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+{
+    Assert((size_t)idxQueue < RT_ELEMENTS(pVirtio->virtqState));
+    return pVirtio->virtqState[idxQueue].szVirtqName;
+}
+
+/**
+ * Get the features VirtIO is running withnow.
+ *
+ * @returns Features the guest driver has accepted, finalizing the operational features
+ */
+DECLINLINE(uint64_t) virtioGetNegotiatedFeatures(PVIRTIOSTATE pVirtio)
+{
+    return pVirtio->uDriverFeatures;
+}
+
+int  virtioR3SaveExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
+int  virtioR3LoadExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
+void virtioR3Term(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns);
+int  virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPciParams, const char *pcszInstance,
+                  uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
+
+void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
+                            const void *pv, uint32_t cb, uint32_t uOffset,
+                            int fWrite, int fHasIndex, uint32_t idx);
+void virtioHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle);
+/** @} */
 
 
 #endif /* !VBOX_INCLUDED_SRC_VirtIO_Virtio_1_0_h */
