@@ -20670,7 +20670,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUSBDevice" extends="$unknown"
-    uuid="202c8c43-2d2d-4866-acf7-56ffae36f1f9"
+    uuid="7ea6ec18-ed43-48e6-a12c-6988c5c9e3ff"
     wsmap="managed"
     reservedAttributes="4"
     >
@@ -20732,14 +20732,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <attribute name="version" type="unsigned short" readonly="yes">
       <desc>
         The major USB version of the device - 1, 2 or 3.
-      </desc>
-    </attribute>
-
-    <attribute name="portVersion" type="unsigned short" readonly="yes">
-      <desc>
-        The major USB version of the host USB port the device is
-        physically connected to - 1, 2 or 3. For devices not connected to
-        anything this will have the same value as the version attribute.
       </desc>
     </attribute>
 

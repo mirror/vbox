@@ -445,8 +445,6 @@ static HRESULT listUsbHost(const ComPtr<IVirtualBox> &pVirtualBox)
             CHECK_ERROR_RET(dev, COMGETTER(Port)(&usPort), 1);
             USHORT usVersion;
             CHECK_ERROR_RET(dev, COMGETTER(Version)(&usVersion), 1);
-            USHORT usPortVersion;
-            CHECK_ERROR_RET(dev, COMGETTER(PortVersion)(&usPortVersion), 1);
             USBConnectionSpeed_T enmSpeed;
             CHECK_ERROR_RET(dev, COMGETTER(Speed)(&enmSpeed), 1);
 
