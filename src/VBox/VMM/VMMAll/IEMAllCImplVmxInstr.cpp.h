@@ -1325,13 +1325,17 @@ IEM_STATIC uint32_t iemVmxCalcPreemptTimer(PVMCPUCC pVCpu)
      *    NewPt  = 2 - 2 = 0
      */
     IEM_CTX_ASSERT(pVCpu, CPUMCTX_EXTRN_HWVIRT);
-    uint64_t const uCurTick        = TMCpuTickGetNoCheck(pVCpu);
-    uint64_t const uEntryTick      = pVCpu->cpum.GstCtx.hwvirt.vmx.uEntryTick;
-    uint64_t const uDelta          = uCurTick - uEntryTick;
     uint32_t const uVmcsPreemptVal = pVmcs->u32PreemptTimer;
-    uint32_t const uPreemptTimer   = uVmcsPreemptVal
-                                   - ASMDivU64ByU32RetU32(uDelta, uVmcsPreemptVal * RT_BIT(VMX_V_PREEMPT_TIMER_SHIFT));
-    return uPreemptTimer;
+    if (uVmcsPreemptVal > 0)
+    {
+        uint64_t const uCurTick        = TMCpuTickGetNoCheck(pVCpu);
+        uint64_t const uEntryTick      = pVCpu->cpum.GstCtx.hwvirt.vmx.uEntryTick;
+        uint64_t const uDelta          = uCurTick - uEntryTick;
+        uint32_t const uPreemptTimer   = uVmcsPreemptVal
+                                       - ASMDivU64ByU32RetU32(uDelta, uVmcsPreemptVal * RT_BIT(VMX_V_PREEMPT_TIMER_SHIFT));
+        return uPreemptTimer;
+    }
+    return 0;
 }
 
 
