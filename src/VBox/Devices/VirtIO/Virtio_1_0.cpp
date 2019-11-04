@@ -214,6 +214,7 @@ DECLINLINE(void) virtioWriteUsedRingIdx(PVIRTIOSTATE pVirtio, uint16_t idxQueue,
                           &uIdx, sizeof(uIdx));
 }
 
+#ifdef LOG_ENABLED
 DECLINLINE(uint16_t) virtioReadUsedRingIdx(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
 {
     uint16_t uIdx;
@@ -223,6 +224,7 @@ DECLINLINE(uint16_t) virtioReadUsedRingIdx(PVIRTIOSTATE pVirtio, uint16_t idxQue
                       &uIdx, sizeof(uIdx));
     return uIdx;
 }
+#endif
 
 DECLINLINE(uint16_t) virtioReadUsedFlags(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
 {
