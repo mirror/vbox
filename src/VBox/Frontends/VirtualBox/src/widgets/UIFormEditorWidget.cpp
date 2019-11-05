@@ -483,6 +483,11 @@ public:
     /** Constructs the Form Editor proxy-model passing @a pParent to the base-class. */
     UIFormEditorProxyModel(QObject *pParent = 0);
 
+    /** Returns the number of children. */
+    int childCount() const;
+    /** Returns the child item with @a iIndex. */
+    QITableViewRow *childItem(int iIndex) const;
+
 protected:
 
     /** Returns whether item in the row indicated by the given @a iSourceRow and @a srcParenIdx should be included in the model. */
@@ -1349,6 +1354,24 @@ UIFormEditorProxyModel::UIFormEditorProxyModel(QObject *pParent /* = 0 */)
 {
 }
 
+int UIFormEditorProxyModel::childCount() const
+{
+    return rowCount();
+}
+
+QITableViewRow *UIFormEditorProxyModel::childItem(int iIndex) const
+{
+    /* Make sure iIndex within the bounds: */
+    AssertReturn(iIndex >= 0 && iIndex < rowCount(), 0);
+    /* Acquire actual index of source model: */
+    const QModelIndex i = sourceModel()->index(iIndex, 0);
+    AssertReturn(i.isValid(), 0);
+    /* Get packed item pointer: */
+    UIFormEditorRow *pItem = static_cast<UIFormEditorRow*>(i.internalPointer());
+    AssertReturn(pItem, 0);
+    return pItem;
+}
+
 bool UIFormEditorProxyModel::filterAcceptsRow(int iSourceRow, const QModelIndex &sourceParent) const
 {
     /* Acquire actual index of source model: */
@@ -1379,14 +1402,14 @@ int UIFormEditorView::childCount() const
 {
     /* Redirect request to model: */
     AssertPtrReturn(model(), 0);
-    return qobject_cast<UIFormEditorModel*>(model())->childCount();
+    return qobject_cast<UIFormEditorProxyModel*>(model())->childCount();
 }
 
 QITableViewRow *UIFormEditorView::childItem(int iIndex) const
 {
     /* Redirect request to model: */
     AssertPtrReturn(model(), 0);
-    return qobject_cast<UIFormEditorModel*>(model())->childItem(iIndex);
+    return qobject_cast<UIFormEditorProxyModel*>(model())->childItem(iIndex);
 }
 
 
