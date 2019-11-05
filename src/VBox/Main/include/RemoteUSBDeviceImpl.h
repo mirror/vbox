@@ -78,7 +78,7 @@ private:
     HRESULT getAddress(com::Utf8Str &aAddress);
     HRESULT getPort(USHORT *aPort);
     HRESULT getVersion(USHORT *aVersion);
-    HRESULT getPortVersion(USHORT *aPortVersion);
+    HRESULT getPortPath(com::Utf8Str &aAddress);
     HRESULT getSpeed(USBConnectionSpeed_T *aSpeed);
     HRESULT getRemote(BOOL *aRemote);
     HRESULT getBackend(com::Utf8Str &aBackend);
@@ -91,7 +91,7 @@ private:
     struct Data
     {
         Data() : vendorId(0), productId(0), revision(0), port(0), version(1),
-                 portVersion(1), speed(USBConnectionSpeed_Null), dirty(FALSE),
+                 speed(USBConnectionSpeed_Null), dirty(FALSE),
                  devId(0), clientId(0) {}
 
         const Guid id;
@@ -108,8 +108,8 @@ private:
         const Utf8Str backend;
 
         const uint16_t port;
+        const Utf8Str portPath;
         const uint16_t version;
-        const uint16_t portVersion;
         const USBConnectionSpeed_T speed;
 
         USBDeviceState_T state;

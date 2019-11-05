@@ -20670,7 +20670,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IUSBDevice" extends="$unknown"
-    uuid="7ea6ec18-ed43-48e6-a12c-6988c5c9e3ff"
+    uuid="6dc83c2c-81a9-4005-9d52-fc45a78bf3f5"
     wsmap="managed"
     reservedAttributes="4"
     >
@@ -20719,13 +20719,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     </attribute>
 
     <attribute name="address" type="wstring" readonly="yes">
-      <desc>Host specific address of the device.</desc>
+      <desc>
+        Host-specific address of the device, uniquely
+        identifying a physically connected device in the system.
+        Note that the address of a USB device may change across
+        device re-plugs and host suspend/resume cycles or reboots.
+      </desc>
     </attribute>
 
     <attribute name="port" type="unsigned short" readonly="yes">
       <desc>
-        Host USB port number the device is physically
+        Host USB port number on the hub the device is physically
         connected to.
+      </desc>
+    </attribute>
+
+    <attribute name="portPath" type="wstring" readonly="yes">
+      <desc>
+        Host-specific identifier of the port (including hub) the USB
+        device is physically connected to. Note that hubs may be
+        dynamically added and removed, and that hub enumeration may not
+        be consistent across host reboots.
       </desc>
     </attribute>
 

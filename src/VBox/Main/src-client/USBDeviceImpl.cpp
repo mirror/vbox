@@ -95,6 +95,9 @@ HRESULT OUSBDevice::init(IUSBDevice *aUSBDevice)
     hrc = aUSBDevice->COMGETTER(Port)(&unconst(mData.port));
     ComAssertComRCRet(hrc, hrc);
 
+    hrc = aUSBDevice->COMGETTER(PortPath)(bstr.asOutParam());
+    ComAssertComRCRet(hrc, hrc);
+
     hrc = aUSBDevice->COMGETTER(Version)(&unconst(mData.version));
     ComAssertComRCRet(hrc, hrc);
 
@@ -142,6 +145,7 @@ void OUSBDevice::uninit()
     unconst(mData.backend).setNull();
 
     unconst(mData.port) = 0;
+    unconst(mData.portPath).setNull();
     unconst(mData.version) = 1;
 
     unconst(mData.remote) = FALSE;
@@ -272,6 +276,14 @@ HRESULT OUSBDevice::getPort(USHORT *aPort)
 {
     /* this is const, no need to lock */
     *aPort = mData.port;
+
+    return S_OK;
+}
+
+HRESULT OUSBDevice::getPortPath(com::Utf8Str &aPortPath)
+{
+    /* this is const, no need to lock */
+    aPortPath = mData.portPath;
 
     return S_OK;
 }

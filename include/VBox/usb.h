@@ -129,6 +129,8 @@ typedef struct USBDEVICE
     uint8_t         bBus;
     /** The port number. */
     uint8_t         bPort;
+    /** The hub+port path. */
+    char           *pszPortPath;
 #if defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
     /** Device number. */
     uint8_t         bDevNum;

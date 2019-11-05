@@ -1835,6 +1835,7 @@ static int pcnetCalcPacketLen(PPCNETSTATE pThis, unsigned cb)
     TMD tmd;
     unsigned cbPacket = cb;
     uint32_t iDesc = CSR_XMTRC(pThis);
+    uint32_t iFirstDesc = iDesc;
 
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTxLenCalc), a);
     do
@@ -1844,6 +1845,9 @@ static int pcnetCalcPacketLen(PPCNETSTATE pThis, unsigned cb)
             iDesc = CSR_XMTRL(pThis);
         else
             iDesc--;
+
+        if (iDesc == iFirstDesc)
+            break;
 
         RTGCPHYS32 addrDesc = pcnetTdraAddr(pThis, iDesc);
 
@@ -2483,6 +2487,7 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
      */
     int         rc;
     unsigned    cFlushIrq = 0;
+    int         cMax = 32;
     STAM_PROFILE_ADV_START(&pThis->CTX_SUFF_Z(StatTransmit), a);
     do
     {
@@ -2717,6 +2722,8 @@ static int pcnetAsyncTransmit(PPCNETSTATE pThis, bool fOnWorkerThread)
 
         STAM_COUNTER_INC(&pThis->aStatXmitChainCounts[RT_MIN(cBuffers,
                                                       RT_ELEMENTS(pThis->aStatXmitChainCounts)) - 1]);
+        if (--cMax == 0)
+            break;
     } while (CSR_TXON(pThis));          /* transfer on */
 
     if (cFlushIrq)

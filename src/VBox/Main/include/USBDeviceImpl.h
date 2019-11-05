@@ -56,6 +56,7 @@ private:
     HRESULT getSerialNumber(com::Utf8Str &aSerialNumber);
     HRESULT getAddress(com::Utf8Str &aAddress);
     HRESULT getPort(USHORT *aPort);
+    HRESULT getPortPath(com::Utf8Str &aPortPath);
     HRESULT getVersion(USHORT *aVersion);
     HRESULT getSpeed(USBConnectionSpeed_T *aSpeed);
     HRESULT getRemote(BOOL *aRemote);
@@ -90,6 +91,8 @@ private:
         const com::Utf8Str backend;
         /** The host port number. */
         const USHORT port;
+        /** The host port path. */
+        const com::Utf8Str portPath;
         /** The major USB version number of the device. */
         const USHORT version;
         /** The speed at which the device is communicating. */

@@ -258,6 +258,7 @@ private:
     HRESULT getSerialNumber(com::Utf8Str &aSerialNumber);
     HRESULT getAddress(com::Utf8Str &aAddress);
     HRESULT getPort(USHORT *aPort);
+    HRESULT getPortPath(com::Utf8Str &aPortPath);
     HRESULT getVersion(USHORT *aVersion);
     HRESULT getPortVersion(USHORT *aPortVersion);
     HRESULT getSpeed(USBConnectionSpeed_T *aSpeed);

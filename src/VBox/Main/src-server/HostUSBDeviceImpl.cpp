@@ -208,6 +208,16 @@ HRESULT HostUSBDevice::getPort(USHORT *aPort)
 }
 
 
+HRESULT HostUSBDevice::getPortPath(com::Utf8Str &aPortPath)
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    aPortPath = mUsb->pszPortPath;
+
+    return S_OK;
+}
+
+
 HRESULT HostUSBDevice::getVersion(USHORT *aVersion)
 {
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
