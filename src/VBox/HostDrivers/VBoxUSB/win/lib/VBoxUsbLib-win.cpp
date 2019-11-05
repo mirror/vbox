@@ -498,8 +498,65 @@ static int usbLibEnumVUsbDevices(PVBOXUSB_DEV *ppVuDevs, uint32_t *pcVuDevs)
     return VINF_SUCCESS;
 }
 
+static uint16_t usbLibParseHexNumU16(LPCSTR *ppStr)
+{
+    const char  *pStr = *ppStr;
+    char        c;
+    uint16_t    num = 0;
+    unsigned    u;
+
+    for (int i = 0; i < 4; ++i)
+    {
+        if (!*pStr)     /* Just in case the string is too short. */
+            break;
+
+        c = *pStr;
+        u = c >= 'A' ? c - 'A' + 10 : c - '0';  /* Hex digit to number. */
+        num |= u << (12 - 4 * i);
+        pStr++;
+    }
+    *ppStr = pStr;
+
+    return num;
+}
+
+static bool usbLibParseLocation(LPCSTR LocStr, uint16_t *pBus, uint16_t *pPort)
+{
+#define PORT_PREFIX "Port_#"
+#define BUS_PREFIX  ".Hub_#"
+
+    *pBus = *pPort = 0xFFFF;
+
+    /* The Location Information is in the format Port_#xxxx.Hub_#xxxx, with 'xxxx'
+     * being 16-bit hexadecimal numbers. It should be reliable on Windows Vista and
+     * later. Note that while the port corresponds to the port number aka address,
+     * the hub nomber has no discernible relationship to how Windows enumerates hubs.
+     */
+
+    if (strncmp(LocStr, PORT_PREFIX, strlen(PORT_PREFIX)))
+        return false;
+
+    /* Point to the start of the port number and parse it. */
+    LocStr += strlen(PORT_PREFIX);
+    *pPort = usbLibParseHexNumU16(&LocStr);
+
+    if (strncmp(LocStr, BUS_PREFIX, strlen(BUS_PREFIX)))
+        return false;
+
+    /* Point to the start of the hub/bus number and parse it. */
+    LocStr += strlen(BUS_PREFIX);
+    *pBus = usbLibParseHexNumU16(&LocStr);
+
+    return true;
+#undef PORT_PREFIX
+#undef BUS_PREFIX
+}
+
 static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_EX pConInfo, ULONG iPort, LPCSTR lpszLocation, LPCSTR lpszDrvKeyName, LPCSTR lpszHubName, PVBOXUSB_STRING_DR_ENTRY pDrList)
 {
+    uint16_t    uPort;
+    uint16_t    uBus;
+
     pDev->bcdUSB = pConInfo->DeviceDescriptor.bcdUSB;
     pDev->bDeviceClass = pConInfo->DeviceDescriptor.bDeviceClass;
     pDev->bDeviceSubClass = pConInfo->DeviceDescriptor.bDeviceSubClass;
@@ -507,8 +564,21 @@ static int usbLibDevPopulate(PUSBDEVICE pDev, PUSB_NODE_CONNECTION_INFORMATION_E
     pDev->idVendor = pConInfo->DeviceDescriptor.idVendor;
     pDev->idProduct = pConInfo->DeviceDescriptor.idProduct;
     pDev->bcdDevice = pConInfo->DeviceDescriptor.bcdDevice;
-    pDev->bBus = 0; /** @todo figure out bBus on windows... */
-    pDev->bPort = iPort;
+
+    /* Parse the bus (hub) and port out of the location. */
+    if (usbLibParseLocation(lpszLocation, &uBus, &uPort))
+    {
+        Assert(uPort == iPort);
+        pDev->bBus  = uBus;
+        pDev->bPort = uPort;
+    }
+    else
+    {
+        /* Shouldn't happen but fall back to semi-sane values. */
+        pDev->bBus  = 0;
+        pDev->bPort = iPort;
+    }
+
     /** @todo check which devices are used for primary input (keyboard & mouse) */
     if (!lpszDrvKeyName || *lpszDrvKeyName == 0)
         pDev->enmState = USBDEVICESTATE_UNUSED;
