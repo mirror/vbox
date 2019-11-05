@@ -1801,18 +1801,18 @@ static DECLCALLBACK(int) virtioScsiR3DeviceQueryStatusLed(PPDMILEDPORTS pInterfa
  * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation, Target level.}
  */
 static DECLCALLBACK(int) virtioScsiR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
-                                                         uint32_t *piInstance, uint32_t *piTarget)
+                                                         uint32_t *piInstance, uint32_t *piLUN)
 {
     PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, IMediaPort);
     PPDMDEVINS        pDevIns = pTarget->pDevIns;
 
     AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
     AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
-    AssertPtrReturn(piTarget, VERR_INVALID_POINTER);
+    AssertPtrReturn(piLUN, VERR_INVALID_POINTER);
 
     *ppcszController = pDevIns->pReg->szName;
     *piInstance = pDevIns->iInstance;
-    *piTarget = pTarget->iTarget;
+    *piLUN = pTarget->iTarget;
 
     return VINF_SUCCESS;
 }
@@ -1821,13 +1821,6 @@ static DECLCALLBACK(int) virtioScsiR3QueryDeviceLocation(PPDMIMEDIAPORT pInterfa
 /*********************************************************************************************************************************
 *   Virtio config.                                                                                                               *
 *********************************************************************************************************************************/
-
-/**
- * Worker for virtioScsiR3DevCapWrite and virtioScsiR3DevCapRead.
- */
-static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *pv, uint32_t cb, bool fWrite)
-{
-    AssertReturn(pv && cb <= sizeof(uint32_t), fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00);
 
 /**
  * Resolves to boolean true if uOffset matches a field offset and size exactly,
@@ -1878,6 +1871,13 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *
         } \
     } while(0)
 
+/**
+ * Worker for virtioScsiR3DevCapWrite and virtioScsiR3DevCapRead.
+ */
+static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *pv, uint32_t cb, bool fWrite)
+{
+    AssertReturn(pv && cb <= sizeof(uint32_t), fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00);
+
     if (MATCH_SCSI_CONFIG(            uNumQueues))
         SCSI_CONFIG_ACCESSOR_READONLY(uNumQueues);
     else if (MATCH_SCSI_CONFIG(       uSegMax))
@@ -1904,11 +1904,12 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *
         return fWrite ? VINF_SUCCESS : VINF_IOM_MMIO_UNUSED_00;
     }
     return VINF_SUCCESS;
+}
+
 #undef SCSI_CONFIG_ACCESSOR_READONLY
 #undef SCSI_CONFIG_ACCESSOR
 #undef LOG_ACCESSOR
 #undef MATCH_SCSI_CONFIG
-}
 
 /**
  * @callback_method_impl{VIRTIOCORER3,pfnDevCapRead}
