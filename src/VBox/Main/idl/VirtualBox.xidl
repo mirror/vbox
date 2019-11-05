@@ -18502,17 +18502,17 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="VHWA" value="0x02" wsmap="suppress">
+    <const name="VHWA" value="0x02">
       <desc>
         Supports VHWA interface. If set, then
-        <link to="IFramebuffer::processVHWACommand"/> can be called.
+        IFramebuffer::processVHWACommand can be called. <!-- no link, otherwise trouble with javadoc -->
       </desc>
     </const>
 
-    <const name="VisibleRegion" value="0x04" wsmap="suppress">
+    <const name="VisibleRegion" value="0x04">
       <desc>
         Supports visible region. If set, then
-        <link to="IFramebuffer::setVisibleRegion"/> can be called.
+        IFramebuffer::setVisibleRegion can be called. <!-- no link, otherwise trouble with javadoc -->
       </desc>
     </const>
 
