@@ -10325,7 +10325,7 @@
     </attribute>
 
     <attribute name="alias" type="wstring" readonly="yes">
-      <desc>An alias which can be used for <link to="IConsole::webcamAttach"/></desc>
+      <desc>An alias which can be used for <link to="IEmulatedUSB::webcamAttach"/></desc>
     </attribute>
 
   </interface>
