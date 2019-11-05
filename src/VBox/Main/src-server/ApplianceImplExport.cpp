@@ -90,6 +90,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
         // store the machine object so we can dump the XML in Appliance::Write()
         pNewDesc->m->pMachine = this;
 
+#ifdef VBOX_WITH_USB
         // first, call the COM methods, as they request locks
         BOOL fUSBEnabled = FALSE;
         com::SafeIfaceArray<IUSBController> usbControllers;
@@ -107,6 +108,7 @@ HRESULT Machine::exportTo(const ComPtr<IAppliance> &aAppliance, const com::Utf8S
                     fUSBEnabled = TRUE;
             }
         }
+#endif /* VBOX_WITH_USB */
 
         // request the machine lock while accessing internal members
         AutoReadLock alock1(this COMMA_LOCKVAL_SRC_POS);

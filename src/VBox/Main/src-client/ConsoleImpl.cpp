@@ -2790,6 +2790,7 @@ HRESULT Console::attachUSBDevice(const com::Guid &aId, const com::Utf8Str &aCapt
     return mControl->CaptureUSBDevice(Bstr(aId.toString()).raw(), Bstr(aCaptureFilename).raw());
 
 #else   /* !VBOX_WITH_USB */
+    RT_NOREF(aId, aCaptureFilename);
     return setError(VBOX_E_PDM_ERROR, tr("The virtual machine does not have a USB controller"));
 #endif  /* !VBOX_WITH_USB */
 }
@@ -2852,6 +2853,7 @@ HRESULT Console::detachUSBDevice(const com::Guid &aId, ComPtr<IUSBDevice> &aDevi
 
 
 #else   /* !VBOX_WITH_USB */
+    RT_NOREF(aId, aDevice);
     return setError(VBOX_E_PDM_ERROR, tr("The virtual machine does not have a USB controller"));
 #endif  /* !VBOX_WITH_USB */
 }
@@ -2884,6 +2886,7 @@ HRESULT Console::findUSBDeviceByAddress(const com::Utf8Str &aName, ComPtr<IUSBDe
     return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND, tr("Could not find a USB device with address '%s'"), aName.c_str());
 
 #else   /* !VBOX_WITH_USB */
+    RT_NOREF(aName, aDevice);
     return E_NOTIMPL;
 #endif  /* !VBOX_WITH_USB */
 }
@@ -2916,6 +2919,7 @@ HRESULT Console::findUSBDeviceById(const com::Guid &aId, ComPtr<IUSBDevice> &aDe
     return setErrorNoLog(VBOX_E_OBJECT_NOT_FOUND, tr("Could not find a USB device with uuid {%RTuuid}"), Guid(aId).raw());
 
 #else   /* !VBOX_WITH_USB */
+    RT_NOREF(aId, aDevice);
     return E_NOTIMPL;
 #endif  /* !VBOX_WITH_USB */
 }
@@ -5849,6 +5853,7 @@ HRESULT Console::i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *
     return rc;
 
 #else   /* !VBOX_WITH_USB */
+    RT_NOREF(aDevice, aError, aMaskedIfs, aCaptureFilename);
     return E_FAIL;
 #endif  /* !VBOX_WITH_USB */
 }
@@ -5860,7 +5865,7 @@ HRESULT Console::i_onUSBDeviceAttach(IUSBDevice *aDevice, IVirtualBoxErrorInfo *
  * @note Locks this object for writing.
  */
 HRESULT Console::i_onUSBDeviceDetach(IN_BSTR aId,
-                                   IVirtualBoxErrorInfo *aError)
+                                     IVirtualBoxErrorInfo *aError)
 {
 #ifdef VBOX_WITH_USB
     Guid Uuid(aId);
@@ -5941,6 +5946,7 @@ HRESULT Console::i_onUSBDeviceDetach(IN_BSTR aId,
     return rc;
 
 #else   /* !VBOX_WITH_USB */
+    RT_NOREF(aId, aError);
     return E_FAIL;
 #endif  /* !VBOX_WITH_USB */
 }

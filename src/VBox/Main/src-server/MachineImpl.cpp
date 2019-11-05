@@ -13425,7 +13425,7 @@ HRESULT SessionMachine::captureUSBDevice(const com::Guid &aId, const com::Utf8St
     AssertReturn(service, E_FAIL);
     return service->captureDeviceForVM(this, aId.ref(), aCaptureFilename);
 #else
-    NOREF(aId);
+    RT_NOREF(aId, aCaptureFilename);
     return E_NOTIMPL;
 #endif
 }

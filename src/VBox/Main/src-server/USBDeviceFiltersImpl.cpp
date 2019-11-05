@@ -515,6 +515,8 @@ HRESULT USBDeviceFilters::i_loadSettings(const settings::USB &data)
         m->llDeviceFilters->push_back(pFilter);
         pFilter->mInList = true;
     }
+#else
+    RT_NOREF(data);
 #endif /* VBOX_WITH_USB */
 
     return S_OK;
@@ -568,6 +570,8 @@ HRESULT USBDeviceFilters::i_saveSettings(settings::USB &data)
 
         data.llDeviceFilters.push_back(f);
     }
+#else
+    RT_NOREF(data);
 #endif /* VBOX_WITH_USB */
 
     return S_OK;

@@ -974,10 +974,7 @@ HRESULT Host::getUSBDevices(std::vector<ComPtr<IHostUSBDevice> > &aUSBDevices)
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
-    NOREF(aUSBDevices);
-# ifndef RT_OS_WINDOWS
-    NOREF(aUSBDevices);
-# endif
+    RT_NOREF(aUSBDevices);
     ReturnComNotImplemented();
 #endif
 }
@@ -1031,10 +1028,7 @@ HRESULT Host::getUSBDeviceFilters(std::vector<ComPtr<IHostUSBDeviceFilter> > &aU
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
-    NOREF(aUSBDeviceFilters);
-# ifndef RT_OS_WINDOWS
-    NOREF(aUSBDeviceFilters);
-# endif
+    RT_NOREF(aUSBDeviceFilters);
     ReturnComNotImplemented();
 #endif
 }
@@ -1546,8 +1540,7 @@ HRESULT Host::createUSBDeviceFilter(const com::Utf8Str &aName,
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
-    NOREF(aName);
-    NOREF(aFilter);
+    RT_NOREF(aName, aFilter);
     ReturnComNotImplemented();
 #endif
 }
@@ -1607,8 +1600,7 @@ HRESULT Host::insertUSBDeviceFilter(ULONG aPosition,
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
-    NOREF(aPosition);
-    NOREF(aFilter);
+    RT_NOREF(aPosition, aFilter);
     ReturnComNotImplemented();
 #endif
 }
@@ -1661,7 +1653,7 @@ HRESULT Host::removeUSBDeviceFilter(ULONG aPosition)
     /* Note: The GUI depends on this method returning E_NOTIMPL with no
      * extended error info to indicate that USB is simply not available
      * (w/o treating it as a failure), for example, as in OSE. */
-    NOREF(aPosition);
+    RT_NOREF(aPosition);
     ReturnComNotImplemented();
 #endif
 }
@@ -1850,8 +1842,7 @@ HRESULT Host::findUSBDeviceByAddress(const com::Utf8Str &aName,
                          aName.c_str());
 
 #else   /* !VBOX_WITH_USB */
-    NOREF(aName);
-    NOREF(aDevice);
+    RT_NOREF(aName, aDevice);
     return E_NOTIMPL;
 #endif  /* !VBOX_WITH_USB */
 }
@@ -1885,8 +1876,7 @@ HRESULT Host::findUSBDeviceById(const com::Guid &aId,
                          aId.raw());
 
 #else   /* !VBOX_WITH_USB */
-    NOREF(aId);
-    NOREF(aDevice);
+    RT_NOREF(aId, aDevice);
     return E_NOTIMPL;
 #endif  /* !VBOX_WITH_USB */
 }
@@ -1928,6 +1918,7 @@ HRESULT Host::addUSBDeviceSource(const com::Utf8Str &aBackend, const com::Utf8St
     /* The USB proxy service will do the locking. */
     return m->pUSBProxyService->addUSBDeviceSource(aBackend, aId, aAddress, aPropertyNames, aPropertyValues);
 #else
+    RT_NOREF(aBackend, aId, aAddress, aPropertyNames, aPropertyValues);
     ReturnComNotImplemented();
 #endif
 }
@@ -1938,6 +1929,7 @@ HRESULT Host::removeUSBDeviceSource(const com::Utf8Str &aId)
     /* The USB proxy service will do the locking. */
     return m->pUSBProxyService->removeUSBDeviceSource(aId);
 #else
+    RT_NOREF(aId);
     ReturnComNotImplemented();
 #endif
 }
@@ -1979,7 +1971,7 @@ HRESULT Host::i_loadSettings(const settings::Host &data)
 
     rc = m->pUSBProxyService->i_loadSettings(data.llUSBDeviceSources);
 #else
-    NOREF(data);
+    RT_NOREF(data);
 #endif /* VBOX_WITH_USB */
     return rc;
 }
@@ -2008,7 +2000,7 @@ HRESULT Host::i_saveSettings(settings::Host &data)
 
     return m->pUSBProxyService->i_saveSettings(data.llUSBDeviceSources);
 #else
-    NOREF(data);
+    RT_NOREF(data);
     return S_OK;
 #endif /* VBOX_WITH_USB */
 
@@ -2391,7 +2383,7 @@ HRESULT Host::i_buildFloppyDrivesList(MediaList &list)
                     list.push_back(hostFloppyDriveObj);
             }
 #else
-    NOREF(list);
+    RT_NOREF(list);
     /* PORTME */
 #endif
     }

@@ -1058,6 +1058,7 @@ DECLCALLBACK(int) ConsoleVRDPServer::VRDPCallbackUSB(void *pvCallback, void *pvI
 #ifdef VBOX_WITH_USB
     return USBClientResponseCallback(pvIntercept, u32ClientId, u8Code, pvRet, cbRet);
 #else
+    RT_NOREF(pvCallback, pvIntercept, u32ClientId, u8Code, pvRet, cbRet);
     return VERR_NOT_SUPPORTED;
 #endif
 }
@@ -3393,6 +3394,8 @@ void ConsoleVRDPServer::USBBackendCreate(uint32_t u32ClientId, void **ppvInterce
             pRemoteUSBBackend->Release();
         }
     }
+#else
+    RT_NOREF(u32ClientId, ppvIntercept);
 #endif /* VBOX_WITH_USB */
 }
 
@@ -3424,6 +3427,8 @@ void ConsoleVRDPServer::USBBackendDelete(uint32_t u32ClientId)
         /* Here the instance has been excluded from the list and can be dereferenced. */
         pRemoteUSBBackend->Release();
     }
+#else
+    RT_NOREF(u32ClientId);
 #endif
 }
 
@@ -3462,7 +3467,8 @@ void *ConsoleVRDPServer::USBBackendRequestPointer(uint32_t u32ClientId, const Gu
     {
         return pRemoteUSBBackend->GetBackendCallbackPointer();
     }
-
+#else
+    RT_NOREF(u32ClientId, pGuid);
 #endif
     return NULL;
 }
@@ -3491,6 +3497,8 @@ void ConsoleVRDPServer::USBBackendReleasePointer(const Guid *pGuid)
             pRemoteUSBBackend->Release();
         }
     }
+#else
+    RT_NOREF(pGuid);
 #endif
 }
 
@@ -3600,6 +3608,8 @@ void ConsoleVRDPServer::usbBackendRemoveFromList(RemoteUSBBackend *pRemoteUSBBac
     pRemoteUSBBackend->pNext = pRemoteUSBBackend->pPrev = NULL;
 
     unlockConsoleVRDPServer();
+#else
+    RT_NOREF(pRemoteUSBBackend);
 #endif
 }
 
