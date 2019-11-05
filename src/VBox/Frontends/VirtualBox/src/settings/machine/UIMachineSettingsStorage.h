@@ -153,6 +153,8 @@ private slots:
     void sltUnmountDevice();
     /** Mounts existing medium. */
     void sltChooseExistingMedium();
+    /** Mounts a medium from a disk file. */
+    void sltChooseDiskFile();
     /** Mounts existing host-drive. */
     void sltChooseHostDrive();
     /** Mounts one of recent media. */
@@ -219,8 +221,10 @@ private:
     /** Returns current devices count for passed @a enmType. */
     uint32_t deviceCount(KDeviceType enmType) const;
 
-    /** Adds 'Choose Existing Medium' action into passed @a pOpenMediumMenu under passed @a strActionName. */
+    /** Adds 'Choose/Create Medium' action into passed @a pOpenMediumMenu under passed @a strActionName. */
     void addChooseExistingMediumAction(QMenu *pOpenMediumMenu, const QString &strActionName);
+    /** Adds 'Choose Disk File' action into passed @a pOpenMediumMenu under passed @a strActionName. */
+    void addChooseDiskFileAction(QMenu *pOpenMediumMenu, const QString &strActionName);
     /** Adds 'Choose Host Drive' actions into passed @a pOpenMediumMenu. */
     void addChooseHostDriveActions(QMenu *pOpenMediumMenu);
     /** Adds 'Choose Recent Medium' actions of passed @a enmRecentMediumType into passed @a pOpenMediumMenu. */

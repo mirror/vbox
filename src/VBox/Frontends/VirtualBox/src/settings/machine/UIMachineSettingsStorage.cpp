@@ -3880,6 +3880,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             {
                 /* Add "Choose a virtual hard disk" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Hard Disk..."));
+                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a disk file..."));
                 pOpenMediumMenu->addSeparator();
                 /* Add recent media list: */
                 addRecentMediumActions(pOpenMediumMenu, m_pMediumIdHolder->type());
@@ -3889,6 +3890,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             {
                 /* Add "Choose a virtual optical disk" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Optical Disk..."));
+                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a disk file..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 pOpenMediumMenu->addSeparator();
@@ -3906,6 +3908,7 @@ void UIMachineSettingsStorage::sltPrepareOpenMediumMenu()
             {
                 /* Add "Choose a virtual floppy disk" action: */
                 addChooseExistingMediumAction(pOpenMediumMenu, tr("Choose/Create a Virtual Floppy Disk..."));
+                addChooseDiskFileAction(pOpenMediumMenu, tr("Choose a disk file..."));
                 /* Add "Choose a physical drive" actions: */
                 addChooseHostDriveActions(pOpenMediumMenu);
                 pOpenMediumMenu->addSeparator();
@@ -3947,6 +3950,16 @@ void UIMachineSettingsStorage::sltChooseExistingMedium()
         (m_pMediumIdHolder->type() != UIMediumDeviceType_DVD && m_pMediumIdHolder->type() != UIMediumDeviceType_Floppy))
         return;
 
+    m_pMediumIdHolder->setId(uMediumId);
+}
+
+void UIMachineSettingsStorage::sltChooseDiskFile()
+{
+    const QString strMachineFolder(QFileInfo(m_strMachineSettingsFilePath).absolutePath());
+
+    QUuid uMediumId = uiCommon().openMediumWithFileOpenDialog(m_pMediumIdHolder->type(), this, strMachineFolder);
+    if (uMediumId.isNull())
+        return;
     m_pMediumIdHolder->setId(uMediumId);
 }
 
@@ -4922,6 +4935,13 @@ void UIMachineSettingsStorage::addChooseExistingMediumAction(QMenu *pOpenMediumM
     QAction *pChooseExistingMedium = pOpenMediumMenu->addAction(strActionName);
     pChooseExistingMedium->setIcon(iconPool()->icon(ChooseExistingEn, ChooseExistingDis));
     connect(pChooseExistingMedium, &QAction::triggered, this, &UIMachineSettingsStorage::sltChooseExistingMedium);
+}
+
+void UIMachineSettingsStorage::addChooseDiskFileAction(QMenu *pOpenMediumMenu, const QString &strActionName)
+{
+    QAction *pChooseDiskFile = pOpenMediumMenu->addAction(strActionName);
+    pChooseDiskFile->setIcon(iconPool()->icon(ChooseExistingEn, ChooseExistingDis));
+    connect(pChooseDiskFile, &QAction::triggered, this, &UIMachineSettingsStorage::sltChooseDiskFile);
 }
 
 void UIMachineSettingsStorage::addChooseHostDriveActions(QMenu *pOpenMediumMenu)
