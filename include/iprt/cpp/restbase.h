@@ -895,6 +895,13 @@ public:
         return cloneWorker(new (std::nothrow) RTCRestStringEnum());
     }
 
+    /** Copy assignment operator. */
+    RTCRestStringEnum &operator=(RTCRestStringEnum const &a_rThat) RT_NOEXCEPT
+    {
+        RTCRestStringEnumBase::operator=(a_rThat);
+        return *this;
+    }
+
     /**
      * Gets the enum value.
      * @returns enum value.
