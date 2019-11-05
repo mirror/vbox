@@ -110,6 +110,7 @@ VBOX_PATH_NAT_SRC := $(PATH_SUB_CURRENT)
   VBoxNetLwipNAT_SOURCES += pxping_win.c # unprivileged Icmp API
  else
   VBoxNetLwipNAT_SOURCES += pxping.c     # raw sockets
+  VBoxNetLwipNAT_CFLAGS  += -Wno-address-of-packed-member # Needed for GCC 9.
  endif
 
  VBoxNetLwipNAT_SOURCES.darwin  += rtmon_bsd.c
