@@ -242,6 +242,17 @@ typedef struct virtio_pci_cfg_cap
 } VIRTIO_PCI_CFG_CAP_T, *PVIRTIO_PCI_CFG_CAP_T;
 
 /**
+ * PCI capability data locations (PCI CFG and MMIO).
+ */
+typedef struct VIRTIO_PCI_CAP_LOCATIONS_T
+{
+    uint16_t        offMmio;
+    uint16_t        cbMmio;
+    uint16_t        offPci;
+    uint16_t        cbPci;
+} VIRTIO_PCI_CAP_LOCATIONS_T;
+
+/**
  * The core (/common) state of the VirtIO PCI device
  */
 typedef struct VIRTIOSTATE
@@ -249,11 +260,13 @@ typedef struct VIRTIOSTATE
     char                        szInstance[16];                     /**< Instance name, e.g. "VIRTIOSCSI0"         */
     PPDMDEVINSR3                pDevInsR3;                          /**< Device instance - R3                      */
 
+#if 0
     RTGCPHYS                    GCPhysPciCapBase;                   /**< Pointer to MMIO mapped capability data    */
     RTGCPHYS                    GCPhysCommonCfg;                    /**< Pointer to MMIO mapped capability data    */
     RTGCPHYS                    GCPhysNotifyCap;                    /**< Pointer to MMIO mapped capability data    */
     RTGCPHYS                    GCPhysIsrCap;                       /**< Pointer to MMIO mapped capability data    */
     RTGCPHYS                    GCPhysDeviceCap;                    /**< Pointer to MMIO mapped capability data    */
+#endif
 
     RTGCPHYS                    aGCPhysQueueDesc[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
     RTGCPHYS                    aGCPhysQueueAvail[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
@@ -281,11 +294,20 @@ typedef struct VIRTIOSTATE
     VIRTQSTATE                  virtqState[VIRTQ_MAX_CNT];          /**< Local impl-specific queue context         */
     VIRTIOCALLBACKS             Callbacks;                          /**< Callback vectors to client                */
 
-    PVIRTIO_PCI_CFG_CAP_T       pPciCfgCap;                         /**< Pointer to struct in configuration area   */
-    PVIRTIO_PCI_NOTIFY_CAP_T    pNotifyCap;                         /**< Pointer to struct in configuration area   */
-    PVIRTIO_PCI_CAP_T           pCommonCfgCap;                      /**< Pointer to struct in configuration area   */
-    PVIRTIO_PCI_CAP_T           pIsrCap;                            /**< Pointer to struct in configuration area   */
-    PVIRTIO_PCI_CAP_T           pDeviceCap;                         /**< Pointer to struct in configuration area   */
+    R3PTRTYPE(PVIRTIO_PCI_CFG_CAP_T)    pPciCfgCap;                         /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_NOTIFY_CAP_T) pNotifyCap;                         /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pCommonCfgCap;                      /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pIsrCap;                            /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pDeviceCap;                         /**< Pointer to struct in the PCI configuration area. */
+
+    /** @name The locations of the capability structures in PCI config space and the BAR.
+     * @{ */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocPciCfgCap;                      /**< VIRTIO_PCI_CFG_CAP_T  */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocNotifyCap;                      /**< VIRTIO_PCI_NOTIFY_CAP_T */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocCommonCfgCap;                   /**< VIRTIO_PCI_CAP_T */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocIsrCap;                         /**< VIRTIO_PCI_CAP_T */
+    VIRTIO_PCI_CAP_LOCATIONS_T  LocDeviceCap;                      /**< VIRTIO_PCI_CAP_T + custom data.  */
+    /** @} */
 
     uint32_t                    cbDevSpecificCfg;                   /**< Size of client's dev-specific config data */
     void                       *pvDevSpecificCfg;                   /**< Pointer to client's struct                */
@@ -295,6 +317,9 @@ typedef struct VIRTIOSTATE
     uint8_t                     uISR;                               /**< Interrupt Status Register.                */
     uint8_t                     fMsiSupport;
 
+
+    /** The MMIO handle for the PCI capability region (\#2). */
+    IOMMMIOHANDLE               hMmioPciCap;
 } VIRTIOSTATE;
 
 

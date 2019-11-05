@@ -81,12 +81,12 @@
 
 #define VIRTIOSCSI_REQ_QUEUE_CNT                    1           /**< T.B.D. Consider increasing                      */
 #define VIRTIOSCSI_QUEUE_CNT                        (VIRTIOSCSI_REQ_QUEUE_CNT + 2)
+#define VIRTIOSCSI_MAX_TARGETS                      256         /**< @todo r=bird: I just picked a number at random.  Please put something sensible here. */
 #define VIRTIOSCSI_MAX_LUN                          256         /**< VirtIO specification, section 5.6.4             */
 #define VIRTIOSCSI_MAX_COMMANDS_PER_LUN             128         /**< T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SEG_COUNT                    126         /**< T.B.D. What is a good value for this?           */
 #define VIRTIOSCSI_MAX_SECTORS_HINT                 0x10000     /**< VirtIO specification, section 5.6.4             */
 #define VIRTIOSCSI_MAX_CHANNEL_HINT                 0           /**< VirtIO specification, section 5.6.4 should be 0 */
-#define VIRTIOSCSI_SAVED_STATE_MINOR_VERSION        0x01        /**< SSM version #                                   */
 
 #define PCI_DEVICE_ID_VIRTIOSCSI_HOST               0x1048      /**< Informs guest driver of type of VirtIO device   */
 #define PCI_CLASS_BASE_MASS_STORAGE                 0x01        /**< PCI Mass Storage device class                   */
@@ -415,9 +415,12 @@ typedef struct VIRTIOSCSI
     /** The virtio state.   */
     VIRTIOSTATE                     Virtio;
 
-    /** Number of targets detected */
-    uint64_t                        cTargets;
+    bool                            fBootable;
+    bool                            afPadding[3];
 
+    /** Number of targets in paTargetInstances. */
+    uint32_t                        cTargets;
+    /** Array of per-target data. */
     R3PTRTYPE(PVIRTIOSCSITARGET)    paTargetInstances;
 #if HC_ARCH_BITS == 32
     RTR3PTR                         R3PtrPadding0;
@@ -426,9 +429,6 @@ typedef struct VIRTIOSCSI
     /** Per device-bound virtq worker-thread contexts (eventq slot unused) */
     VIRTIOSCSIWORKER                aWorkers[VIRTIOSCSI_QUEUE_CNT];
 
-    bool                            fBootable;
-    bool                            fRCEnabled;
-    bool                            fR0Enabled;
     /** Instance name */
     char                            szInstance[16];
 
@@ -530,6 +530,8 @@ typedef struct VIRTIOSCSIREQ
 } VIRTIOSCSIREQ;
 typedef VIRTIOSCSIREQ *PVIRTIOSCSIREQ;
 
+
+#ifdef IN_RING3 /* spans most of the file, at the moment. */
 
 #ifdef LOG_ENABLED
 
@@ -2195,6 +2197,7 @@ static DECLCALLBACK(int) virtioScsiR3Destruct(PPDMDEVINS pDevIns)
 
     RTMemFree(pThis->paTargetInstances);
     pThis->paTargetInstances = NULL;
+
     for (unsigned qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
     {
         PVIRTIOSCSIWORKER pWorker = &pThis->aWorkers[qIdx];
@@ -2215,64 +2218,46 @@ static DECLCALLBACK(int) virtioScsiR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PVIRTIOSCSI   pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
-    PVIRTIOSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
-    int  rc = VINF_SUCCESS;
-
+    /*
+     * Quick initialization of the state data, making sure that the destructor always works.
+     */
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
     pThis->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
 
     LogFunc(("PDM device instance: %d\n", iInstance));
-    RTStrPrintf((char *)pThis->szInstance, sizeof(pThis->szInstance), "VIRTIOSCSI%d", iInstance);
+    RTStrPrintf(pThis->szInstance, sizeof(pThis->szInstance), "VIRTIOSCSI%d", iInstance);
 
-    /* Usable defaults */
-    pThis->cTargets = 1;
+    pThis->IBase.pfnQueryInterface = virtioScsiR3DeviceQueryInterface;
 
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg,"NumTargets\0"
-                                   "Bootable\0"
-                                /* "GCEnabled\0"    TBD */
-                                /* "R0Enabled\0"    TBD */
-    ))
-    return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("virtio-scsi configuration error: unknown option specified"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "NumTargets|Bootable", "");
 
-    rc = CFGMR3QueryIntegerDef(pCfg, "NumTargets", &pThis->cTargets, true);
+    int rc = pHlp->pfnCFGMQueryU32Def(pCfg, "NumTargets", &pThis->cTargets, 1);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("virtio-scsi configuration error: failed to read NumTargets as integer"));
-    LogFunc(("NumTargets=%d\n", pThis->cTargets));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi configuration error: failed to read NumTargets as integer"));
+    if (pThis->cTargets < 1 || pThis->cTargets > VIRTIOSCSI_MAX_TARGETS)
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("virtio-scsi configuration error: NumTargets=%u is out of range (1..%u)"),
+                                   pThis->cTargets, VIRTIOSCSI_MAX_TARGETS);
 
-    rc = CFGMR3QueryBoolDef(pCfg, "Bootable", &pThis->fBootable, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Bootable", &pThis->fBootable, true);
     if (RT_FAILURE(rc))
-         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("virtio-scsi configuration error: failed to read Bootable as boolean"));
-    LogFunc(("Bootable=%RTbool (unimplemented)\n", pThis->fBootable));
+         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi configuration error: failed to read Bootable as boolean"));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, false);
-    if (RT_FAILURE(rc))
-         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("virtio-scsi configuration error: failed to read R0Enabled as boolean"));
+    LogRel(("%s: Targets=%u Bootable=%RTbool (unimplemented) R0Enabled=%RTbool RCEnabled=%RTbool\n",
+            pThis->szInstance, pThis->cTargets, pThis->fBootable, pDevIns->fR0Enabled, pDevIns->fRCEnabled));
 
-    rc = CFGMR3QueryBoolDef(pCfg, "RCEnabled", &pThis->fRCEnabled, false);
-    if (RT_FAILURE(rc))
-         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("virtio-scsi configuration error: failed to read RCEnabled as boolean"));
 
-    VIRTIOPCIPARAMS virtioPciParams, *pVirtioPciParams = &virtioPciParams;
-    pVirtioPciParams->uDeviceId      = PCI_DEVICE_ID_VIRTIOSCSI_HOST;
-    pVirtioPciParams->uClassBase     = PCI_CLASS_BASE_MASS_STORAGE;
-    pVirtioPciParams->uClassSub      = PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER;
-    pVirtioPciParams->uClassProg     = PCI_CLASS_PROG_UNSPECIFIED;
-    pVirtioPciParams->uSubsystemId   = PCI_DEVICE_ID_VIRTIOSCSI_HOST;  /* Virtio 1.0 spec allows PCI Device ID here */
-    pVirtioPciParams->uInterruptLine = 0x00;
-    pVirtioPciParams->uInterruptPin  = 0x01;
-
-    pThis->IBase.pfnQueryInterface = virtioScsiR3DeviceQueryInterface;
+    /*
+     * Do core virtio initialization.
+     */
 
     /* Configure virtio_scsi_config that transacts via VirtIO implementation's Dev. Specific Cap callbacks */
     pThis->virtioScsiConfig.uNumQueues      = VIRTIOSCSI_REQ_QUEUE_CNT;
@@ -2292,11 +2277,26 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     pThis->Virtio.Callbacks.pfnDevCapRead     = virtioScsiR3DevCapRead;
     pThis->Virtio.Callbacks.pfnDevCapWrite    = virtioScsiR3DevCapWrite;
 
-    rc = virtioR3Init(&pThis->Virtio, pDevIns, pVirtioPciParams, pThis->szInstance, VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
+    VIRTIOPCIPARAMS VirtioPciParams;
+    VirtioPciParams.uDeviceId           = PCI_DEVICE_ID_VIRTIOSCSI_HOST;
+    VirtioPciParams.uClassBase          = PCI_CLASS_BASE_MASS_STORAGE;
+    VirtioPciParams.uClassSub           = PCI_CLASS_SUB_SCSI_STORAGE_CONTROLLER;
+    VirtioPciParams.uClassProg          = PCI_CLASS_PROG_UNSPECIFIED;
+    VirtioPciParams.uSubsystemId        = PCI_DEVICE_ID_VIRTIOSCSI_HOST;  /* Virtio 1.0 spec allows PCI Device ID here */
+    VirtioPciParams.uSubsystemVendorId  = DEVICE_PCI_VENDOR_ID_VIRTIO;   /** @todo r=bird: was uninitialized, but not used by core virtio code. so, drop it from the struct? */
+    VirtioPciParams.uRevisionId         = DEVICE_PCI_REVISION_ID_VIRTIO; /** @todo r=bird: was uninitialized, but not used by core virtio code. so, drop it from the struct? */
+    VirtioPciParams.uInterruptLine      = 0x00;
+    VirtioPciParams.uInterruptPin       = 0x01;
+
+    rc = virtioR3Init(&pThis->Virtio, pDevIns, &VirtioPciParams, pThis->szInstance, VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
                       &pThis->virtioScsiConfig /*pvDevSpecificCap*/, sizeof(pThis->virtioScsiConfig));
 
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
+
+    /*
+     * Initialize queues.
+     */
 
     /* Name the queues: */
     RTStrCopy(pThis->aszQueueNames[CONTROLQ_IDX], VIRTIO_MAX_QUEUE_NAME_SIZE, "controlq");
@@ -2329,9 +2329,11 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
          }
     }
 
-    /* Initialize per device instance. */
+    /*
+     * Initialize per device instances (targets).
+     */
 
-    Log2Func(("Found %d targets attached to controller\n", pThis->cTargets));
+    Log2Func(("Probing %d targets ...\n", pThis->cTargets));
 
     pThis->paTargetInstances = (PVIRTIOSCSITARGET)RTMemAllocZ(sizeof(VIRTIOSCSITARGET) * pThis->cTargets);
     if (!pThis->paTargetInstances)
@@ -2412,10 +2414,13 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
         }
     }
 
-    /* Status driver */
+    /*
+     * Status driver (optional).
+     */
     PPDMIBASE pUpBase;
+    AssertCompile(PDM_STATUS_LUN >= VIRTIOSCSI_MAX_TARGETS);
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pUpBase, "Status Port");
-    if (RT_FAILURE(rc))
+    if (RT_FAILURE(rc) && rc != VERR_PDM_NO_ATTACHED_DRIVER)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
 
 
@@ -2430,11 +2435,27 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
      * Register the debugger info callback (ignore errors).
      */
     char szTmp[128];
-    RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);
+    RTStrPrintf(szTmp, sizeof(szTmp), "%s%u", pDevIns->pReg->szName, pDevIns->iInstance);
     PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "virtio-scsi info", virtioScsiR3Info);
 
     return rc;
 }
+
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) virtioScsiRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+
+    return virtioRZInit(&pThis->virtio, pDevIns);
+}
+
+#endif /* !IN_RING3 */
+
 
 /**
  * The device registration structure.
@@ -2444,16 +2465,9 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "virtio-scsi",
-
-#ifdef VIRTIOSCSI_GC_SUPPORT
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS /** @todo | PDM_DEVREG_FLAGS_RZ */
                                     | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION
                                     | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
-#else
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS
-                                    | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION
-                                    | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
-#endif
     /* .fClass = */                 PDM_DEVREG_CLASS_MISC,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
@@ -2490,7 +2504,7 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           virtioScsiRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -2503,7 +2517,7 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           virtioScsiRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,

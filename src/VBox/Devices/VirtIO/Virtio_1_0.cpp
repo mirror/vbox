@@ -23,6 +23,7 @@
 
 #include <VBox/log.h>
 #include <VBox/msi.h>
+#include <VBox/AssertGuest.h>
 #include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
@@ -54,12 +55,16 @@
  * @todo r=bird: Make this a predicate macro (I will probably simplify this a
  *       lot later when 'GCPhysAddr' becomes an 'off').
  */
-#define MATCH_VIRTIO_CAP_STRUCT(a_GCPhysCapData, a_pCfgCap, a_fMatched) \
+#define MATCH_VIRTIO_CAP_STRUCT_OLD(a_GCPhysCapData, a_pCfgCap, a_fMatched) \
         bool const a_fMatched = (a_GCPhysCapData) != 0 \
                              && (a_pCfgCap) != NULL \
                              && GCPhysAddr >= (RTGCPHYS)(a_GCPhysCapData) \
                              && GCPhysAddr < ((RTGCPHYS)(a_GCPhysCapData) + ((PVIRTIO_PCI_CAP_T)(a_pCfgCap))->uLength) \
                              && cb <= ((PVIRTIO_PCI_CAP_T)a_pCfgCap)->uLength
+
+#define MATCHES_VIRTIO_CAP_STRUCT(a_offAccess, a_cbAccess, a_offIntraVar, a_LocCapData) \
+    (   ((a_offIntraVar) = (uint32_t)((a_offAccess) - (a_LocCapData).offMmio)) < (uint32_t)(a_LocCapData).cbMmio \
+     && (a_offIntraVar) + (uint32_t)(a_cbAccess) <= (uint32_t)(a_LocCapData).cbMmio )
 
 #define IS_DRIVER_OK(pVirtio) (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
 
@@ -735,6 +740,7 @@ static void virtior3QueueNotified(PVIRTIOSTATE pVirtio, uint16_t idxQueue, uint1
 //                     idxQueue, uNotifyIdx));
     RT_NOREF(uNotifyIdx);
 
+    AssertReturnVoid(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
     Log6Func(("%s\n", pVirtq->szVirtqName));
     RT_NOREF(pVirtq);
@@ -1170,41 +1176,39 @@ static int virtioCommonCfgAccessed(PVIRTIOSTATE pVirtio, int fWrite, off_t offCf
 }
 
 /**
- * Memory mapped I/O Handler for PCI Capabilities read operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMMMIONEWREAD,
+ * Memory mapped I/O Handler for PCI Capabilities read operations.}
  */
-PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PVIRTIOSTATE pVirtio = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
     Assert(pVirtio == (PVIRTIOSTATE)pvUser); RT_NOREF(pvUser);
-    int rc = VINF_SUCCESS;
 
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->GCPhysDeviceCap, pVirtio->pDeviceCap,     fDevSpecific);
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->GCPhysCommonCfg, pVirtio->pCommonCfgCap,  fCommonCfg);
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->GCPhysIsrCap,    pVirtio->pIsrCap,        fIsr);
+    /** @todo r=bird: This code does not handle reads spanning more than one
+     * capability structure/area.   How does that match the spec?   For instance
+     * if the guest uses a 64-bit MOV instruction on this MMIO region, you'll
+     * see cb=8 here.  Same if it uses 16 or 32 byte reads.  Intel allows all
+     * this, so question is how it's supposed to be handled.  At a minimum there
+     * must be an explanation of that here.
+     */
 
-    if (fDevSpecific)
+    uint32_t offIntra;
+    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocDeviceCap))
     {
-        uint32_t uOffset = GCPhysAddr - pVirtio->GCPhysDeviceCap;
+#ifdef IN_RING3
         /*
          * Callback to client to manage device-specific configuration.
          */
-        rc = pVirtio->Callbacks.pfnDevCapRead(pDevIns, uOffset, pv, cb);
+        VBOXSTRICTRC rcStrict = pVirtio->Callbacks.pfnDevCapRead(pDevIns, offIntra, pv, cb);
 
         /*
          * Additionally, anytime any part of the device-specific configuration (which our client maintains)
          * is READ it needs to be checked to see if it changed since the last time any part was read, in
          * order to maintain the config generation (see VirtIO 1.0 spec, section 4.1.4.3.1)
          */
-        bool fDevSpecificFieldChanged = !!memcmp((char *)pVirtio->pvDevSpecificCfg + uOffset,
-                                                 (char *)pVirtio->pvPrevDevSpecificCfg + uOffset, cb);
+        bool fDevSpecificFieldChanged = !!memcmp((char *)pVirtio->pvDevSpecificCfg + offIntra,
+                                                 (char *)pVirtio->pvPrevDevSpecificCfg + offIntra,
+                                                 RT_MIN(cb, pVirtio->cbDevSpecificCfg - offIntra));
 
         memcpy(pVirtio->pvPrevDevSpecificCfg, pVirtio->pvDevSpecificCfg, pVirtio->cbDevSpecificCfg);
 
@@ -1217,132 +1221,86 @@ PDMBOTHCBDECL(int) virtioR3MmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS G
                       pVirtio->fGenUpdatePending ? "<update was pending>" : ""));
             pVirtio->fGenUpdatePending = false;
         }
+        return rcStrict;
+#else
+        return VINF_IOM_R3_MMIO_READ;
+#endif
     }
-    else
-    if (fCommonCfg)
-    {
-        uint32_t uOffset = GCPhysAddr - pVirtio->GCPhysCommonCfg;
-        rc = virtioCommonCfgAccessed(pVirtio, false /* fWrite */, uOffset, cb, pv);
-    }
-    else
-    if (fIsr && cb == sizeof(uint8_t))
+
+    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocCommonCfgCap))
+        return virtioCommonCfgAccessed(pVirtio, false /* fWrite */, offIntra, cb, pv);
+
+    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocIsrCap) && cb == sizeof(uint8_t))
     {
         *(uint8_t *)pv = pVirtio->uISR;
         Log6Func(("Read and clear ISR\n"));
         pVirtio->uISR = 0; /* VirtIO specification requires reads of ISR to clear it */
         virtioLowerInterrupt(pVirtio);
+        return VINF_SUCCESS;
     }
-    else
-    {
-       LogFunc(("Bad read access to mapped capabilities region:\n"
-                "                  pVirtio=%#p GCPhysAddr=%RGp cb=%u\n",
-                pVirtio, GCPhysAddr, cb));
-        return VINF_IOM_MMIO_UNUSED_00;
-    }
-    return rc;
+
+    ASSERT_GUEST_MSG_FAILED(("Bad read access to mapped capabilities region: off=%RGp cb=%u\n", off, cb));
+    return VINF_IOM_MMIO_UNUSED_00;
 }
 
 /**
- * Memory mapped I/O Handler for PCI Capabilities write operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the write starts.
- * @param   pv          Where to fetch the result.
- * @param   cb          Number of bytes to write.
+ * @callback_method_impl{FNIOMMMIONEWREAD,
+ * Memory mapped I/O Handler for PCI Capabilities write operations.}
  */
-PDMBOTHCBDECL(int) virtioR3MmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) virtioMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PVIRTIOSTATE pVirtio = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
     Assert(pVirtio == (PVIRTIOSTATE)pvUser); RT_NOREF(pvUser);
 
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->GCPhysDeviceCap, pVirtio->pDeviceCap,     fDevSpecific);
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->GCPhysCommonCfg, pVirtio->pCommonCfgCap,  fCommonCfg);
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->GCPhysIsrCap,    pVirtio->pIsrCap,        fIsr);
-    MATCH_VIRTIO_CAP_STRUCT(pVirtio->GCPhysNotifyCap, pVirtio->pNotifyCap,     fNotify);
+    /** @todo r=bird: This code does not handle writes spanning more than one
+     * capability structure/area.   How does that match the spec?   For instance
+     * if the guest uses a 64-bit MOV instruction on this MMIO region, you'll
+     * see cb=8 here.  Same if it uses 16 or 32 byte reads.  Intel allows all
+     * this, so question is how it's supposed to be handled.  At a minimum there
+     * must be an explanation of that here.
+     */
 
-    if (fDevSpecific)
+    uint32_t offIntra;
+    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocDeviceCap))
     {
-        uint32_t uOffset = GCPhysAddr - pVirtio->GCPhysDeviceCap;
+#ifdef IN_RING3
         /*
          * Pass this MMIO write access back to the client to handle
          */
-        (void)pVirtio->Callbacks.pfnDevCapWrite(pDevIns, uOffset, pv, cb);
+        return pVirtio->Callbacks.pfnDevCapWrite(pDevIns, offIntra, pv, cb);
+#else
+        return VINF_IOM_R3_MMIO_WRITE;
+#endif
     }
-    else
-    if (fCommonCfg)
-    {
-        uint32_t uOffset = GCPhysAddr - pVirtio->GCPhysCommonCfg;
-        (void)virtioCommonCfgAccessed(pVirtio, true /* fWrite */, uOffset, cb, (void *)pv);
-    }
-    else
-    if (fIsr && cb == sizeof(uint8_t))
+
+    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocCommonCfgCap))
+        return virtioCommonCfgAccessed(pVirtio, true /* fWrite */, offIntra, cb, (void *)pv);
+
+    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocIsrCap) && cb == sizeof(uint8_t))
     {
         pVirtio->uISR = *(uint8_t *)pv;
         Log6Func(("Setting uISR = 0x%02x (virtq interrupt: %d, dev confg interrupt: %d)\n",
                   pVirtio->uISR & 0xff,
                   pVirtio->uISR & VIRTIO_ISR_VIRTQ_INTERRUPT,
                   RT_BOOL(pVirtio->uISR & VIRTIO_ISR_DEVICE_CONFIG)));
+        return VINF_SUCCESS;
     }
-    else
-    /* This *should* be guest driver dropping index of a new descriptor in avail ring */
-    if (fNotify && cb == sizeof(uint16_t))
-    {
-        uint32_t uNotifyBaseOffset = GCPhysAddr - pVirtio->GCPhysNotifyCap;
-        uint16_t idxQueue = uNotifyBaseOffset / VIRTIO_NOTIFY_OFFSET_MULTIPLIER;
-        uint16_t uAvailDescIdx = *(uint16_t *)pv;
 
-        virtior3QueueNotified(pVirtio, idxQueue, uAvailDescIdx);
-    }
-    else
+    /* This *should* be guest driver dropping index of a new descriptor in avail ring */
+    if (MATCHES_VIRTIO_CAP_STRUCT(off, cb, offIntra, pVirtio->LocNotifyCap) && cb == sizeof(uint16_t))
     {
-       Log2Func(("Bad write access to mapped capabilities region:\n"
-                "                  pVirtio=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n",
-                pVirtio, GCPhysAddr, pv, cb, pv, cb));
+#ifdef IN_RING3
+        virtior3QueueNotified(pVirtio, offIntra / VIRTIO_NOTIFY_OFFSET_MULTIPLIER, *(uint16_t *)pv);
+#else
+        return VINF_IOM_R3_MMIO_WRITE;
+#endif
     }
+
+    ASSERT_GUEST_MSG_FAILED(("Bad write access to mapped capabilities region: off=%RGp pv=%#p{%.*Rhxs} cb=%u\n", off, pv, cb, pv, cb));
     return VINF_SUCCESS;
 }
 
 #ifdef IN_RING3
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) virtioR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                     RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    PVIRTIOSTATE pVirtio = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
-    int          rc      = VINF_SUCCESS;
-
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-    Assert(cb >= 32);
-    RT_NOREF3(pPciDev, iRegion, enmType);
-
-    if (iRegion == VIRTIO_REGION_PCI_CAP)
-    {
-        /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-        rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, pVirtio,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   virtioR3MmioWrite, virtioR3MmioRead,
-                                   "virtio-scsi MMIO");
-
-        if (RT_FAILURE(rc))
-        {
-            Log2Func(("virtio: PCI Capabilities failed to map GCPhysAddr=%RGp cb=%RGp, region=%d\n", GCPhysAddress, cb, iRegion));
-            return rc;
-        }
-        Log2Func(("virtio: PCI Capabilities mapped at GCPhysAddr=%RGp cb=%RGp, region=%d\n", GCPhysAddress, cb, iRegion));
-        pVirtio->GCPhysPciCapBase = GCPhysAddress;
-        pVirtio->GCPhysCommonCfg  = GCPhysAddress + pVirtio->pCommonCfgCap->uOffset;
-        pVirtio->GCPhysNotifyCap  = GCPhysAddress + pVirtio->pNotifyCap->pciCap.uOffset;
-        pVirtio->GCPhysIsrCap     = GCPhysAddress + pVirtio->pIsrCap->uOffset;
-        if (pVirtio->pvPrevDevSpecificCfg)
-            pVirtio->GCPhysDeviceCap = GCPhysAddress + pVirtio->pDeviceCap->uOffset;
-    }
-    return rc;
-}
 
 /**
  * @callback_method_impl{FNPCICONFIGREAD}
@@ -1370,15 +1328,15 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
             || cb != uLength
             || uBar != VIRTIO_REGION_PCI_CAP)
         {
-            Log2Func(("Guest read virtio_pci_cfg_cap.pci_cfg_data using mismatching config. Ignoring\n"));
+            ASSERT_GUEST_MSG_FAILED(("Guest read virtio_pci_cfg_cap.pci_cfg_data using mismatching config. Ignoring\n"));
             *pu32Value = UINT32_MAX;
             return VINF_SUCCESS;
         }
 
-        int rc = virtioR3MmioRead(pDevIns, pVirtio, pVirtio->GCPhysPciCapBase + uOffset, pu32Value, cb);
+        VBOXSTRICTRC rcStrict = virtioMmioRead(pDevIns, pVirtio, uOffset, pu32Value, cb);
         Log2Func(("virtio: Guest read  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%d, length=%d, result=%d -> %Rrc\n",
-                  uBar, uOffset, uLength, *pu32Value, rc));
-        return rc;
+                  uBar, uOffset, uLength, *pu32Value, VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
     }
     return VINF_PDM_PCI_DO_DEFAULT;
 }
@@ -1407,14 +1365,14 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPD
             || cb != uLength
             || uBar != VIRTIO_REGION_PCI_CAP)
         {
-            Log2Func(("Guest write virtio_pci_cfg_cap.pci_cfg_data using mismatching config. Ignoring\n"));
+            ASSERT_GUEST_MSG_FAILED(("Guest write virtio_pci_cfg_cap.pci_cfg_data using mismatching config. Ignoring\n"));
             return VINF_SUCCESS;
         }
 
-        int rc = virtioR3MmioWrite(pDevIns, pVirtio, pVirtio->GCPhysPciCapBase + uOffset, &u32Value, cb);
+        VBOXSTRICTRC rcStrict = virtioMmioWrite(pDevIns, pVirtio, uOffset, &u32Value, cb);
         Log2Func(("Guest wrote  virtio_pci_cfg_cap.pci_cfg_data, bar=%d, offset=%x, length=%x, value=%d -> %Rrc\n",
-                uBar, uOffset, uLength, u32Value, rc));
-        return rc;
+                  uBar, uOffset, uLength, u32Value, VBOXSTRICTRC_VAL(rcStrict)));
+        return rcStrict;
     }
     return VINF_PDM_PCI_DO_DEFAULT;
 }
@@ -1528,7 +1486,9 @@ int virtioR3LoadExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
         pHlp->pfnSSMGetU16(pSSM, &pVirtio->uQueueSize[idxQueue]);
         pHlp->pfnSSMGetU16(pSSM, &pVirtio->virtqState[idxQueue].uAvailIdx);
         pHlp->pfnSSMGetU16(pSSM, &pVirtio->virtqState[idxQueue].uUsedIdx);
-        pHlp->pfnSSMGetMem(pSSM,  pVirtio->virtqState[idxQueue].szVirtqName, sizeof(pVirtio->virtqState[idxQueue].szVirtqName));
+        rc = pHlp->pfnSSMGetMem(pSSM, pVirtio->virtqState[idxQueue].szVirtqName,
+                                sizeof(pVirtio->virtqState[idxQueue].szVirtqName));
+        AssertRCReturn(rc, rc);
     }
 
     return VINF_SUCCESS;
@@ -1665,7 +1625,14 @@ int virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPci
      * Unlike Common, Notify, ISR and Device capabilities, it is accessed directly via PCI Config region.
      * therefore does not contribute to the capabilities region (BAR) the other capabilities use.
      */
-#define CFGADDR2IDX(addr) ((uint8_t)(((uintptr_t)(addr) - (uintptr_t)&pPciDev->abConfig[0])))
+#define CFG_ADDR_2_IDX(addr) ((uint8_t)(((uintptr_t)(addr) - (uintptr_t)&pPciDev->abConfig[0])))
+#define SET_PCI_CAP_LOC(a_pPciDev, a_pCfg, a_LocCap, a_uMmioLengthAlign) \
+        do { \
+            (a_LocCap).offMmio = (a_pCfg)->uOffset; \
+            (a_LocCap).cbMmio  = RT_ALIGN_T((a_pCfg)->uLength, a_uMmioLengthAlign, uint16_t); \
+            (a_LocCap).offPci  = (uint16_t)(uintptr_t)((uint8_t *)(a_pCfg) - &(a_pPciDev)->abConfig[0]); \
+            (a_LocCap).cbPci   = (a_pCfg)->uCapLen; \
+        } while (0)
 
     PVIRTIO_PCI_CAP_T pCfg;
     uint32_t cbRegion = 0;
@@ -1675,11 +1642,12 @@ int virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPci
     pCfg->uCfgType = VIRTIO_PCI_CAP_COMMON_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
-    pCfg->uCapNext = CFGADDR2IDX(pCfg) + pCfg->uCapLen;
+    pCfg->uCapNext = CFG_ADDR_2_IDX(pCfg) + pCfg->uCapLen;
     pCfg->uBar     = VIRTIO_REGION_PCI_CAP;
     pCfg->uOffset  = RT_ALIGN_32(0, 4); /* reminder, in case someone changes offset */
     pCfg->uLength  = sizeof(VIRTIO_PCI_COMMON_CFG_T);
     cbRegion += pCfg->uLength;
+    SET_PCI_CAP_LOC(pPciDev, pCfg, pVirtio->LocCommonCfgCap, 2);
     pVirtio->pCommonCfgCap = pCfg;
 
     /*
@@ -1690,12 +1658,15 @@ int virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPci
     pCfg->uCfgType = VIRTIO_PCI_CAP_NOTIFY_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_NOTIFY_CAP_T);
-    pCfg->uCapNext = CFGADDR2IDX(pCfg) + pCfg->uCapLen;
+    pCfg->uCapNext = CFG_ADDR_2_IDX(pCfg) + pCfg->uCapLen;
     pCfg->uBar     = VIRTIO_REGION_PCI_CAP;
     pCfg->uOffset  = pVirtio->pCommonCfgCap->uOffset + pVirtio->pCommonCfgCap->uLength;
-    pCfg->uOffset  = RT_ALIGN_32(pCfg->uOffset, 2);
+    pCfg->uOffset  = RT_ALIGN_32(pCfg->uOffset, 2); /** @todo r=bird: Why is this word aligned rather than dword?  If there is a
+                                                     * theoretical chance we won't allways be on a dword boundrary here, the
+                                                     * read/write really will need to handle cross capability reads. */
     pCfg->uLength  = VIRTQ_MAX_CNT * VIRTIO_NOTIFY_OFFSET_MULTIPLIER + 2;  /* will change in VirtIO 1.1 */
     cbRegion += pCfg->uLength;
+    SET_PCI_CAP_LOC(pPciDev, pCfg, pVirtio->LocNotifyCap, 1);
     pVirtio->pNotifyCap = (PVIRTIO_PCI_NOTIFY_CAP_T)pCfg;
     pVirtio->pNotifyCap->uNotifyOffMultiplier = VIRTIO_NOTIFY_OFFSET_MULTIPLIER;
 
@@ -1709,11 +1680,12 @@ int virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPci
     pCfg->uCfgType = VIRTIO_PCI_CAP_ISR_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
-    pCfg->uCapNext = CFGADDR2IDX(pCfg) + pCfg->uCapLen;
+    pCfg->uCapNext = CFG_ADDR_2_IDX(pCfg) + pCfg->uCapLen;
     pCfg->uBar     = VIRTIO_REGION_PCI_CAP;
-    pCfg->uOffset  = pVirtio->pNotifyCap->pciCap.uOffset + pVirtio->pNotifyCap->pciCap.uLength;
+    pCfg->uOffset  = pVirtio->pNotifyCap->pciCap.uOffset + pVirtio->pNotifyCap->pciCap.uLength; /** @todo r=bird: This probably is _not_ dword aligned, given that the previous structure is 0x32 (50) bytes long. */
     pCfg->uLength  = sizeof(uint8_t);
     cbRegion += pCfg->uLength;
+    SET_PCI_CAP_LOC(pPciDev, pCfg, pVirtio->LocIsrCap, 4);
     pVirtio->pIsrCap = pCfg;
 
     /*  PCI Cfg capability (VirtIO 1.0 spec, section 4.1.4.7)
@@ -1728,11 +1700,12 @@ int virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPci
     pCfg->uCfgType = VIRTIO_PCI_CAP_PCI_CFG;
     pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CFG_CAP_T);
-    pCfg->uCapNext = (pVirtio->fMsiSupport || pVirtio->pvDevSpecificCfg) ? CFGADDR2IDX(pCfg) + pCfg->uCapLen : 0;
+    pCfg->uCapNext = (pVirtio->fMsiSupport || pVirtio->pvDevSpecificCfg) ? CFG_ADDR_2_IDX(pCfg) + pCfg->uCapLen : 0;
     pCfg->uBar     = 0;
     pCfg->uOffset  = 0;
     pCfg->uLength  = 0;
     cbRegion += pCfg->uLength;
+    SET_PCI_CAP_LOC(pPciDev, pCfg, pVirtio->LocPciCfgCap, 1);
     pVirtio->pPciCfgCap = (PVIRTIO_PCI_CFG_CAP_T)pCfg;
 
     if (pVirtio->pvDevSpecificCfg)
@@ -1743,14 +1716,17 @@ int virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPci
         pCfg->uCfgType = VIRTIO_PCI_CAP_DEVICE_CFG;
         pCfg->uCapVndr = VIRTIO_PCI_CAP_ID_VENDOR;
         pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
-        pCfg->uCapNext = pVirtio->fMsiSupport ? CFGADDR2IDX(pCfg) + pCfg->uCapLen : 0;
+        pCfg->uCapNext = pVirtio->fMsiSupport ? CFG_ADDR_2_IDX(pCfg) + pCfg->uCapLen : 0;
         pCfg->uBar     = VIRTIO_REGION_PCI_CAP;
         pCfg->uOffset  = pVirtio->pIsrCap->uOffset + pVirtio->pIsrCap->uLength;
         pCfg->uOffset  = RT_ALIGN_32(pCfg->uOffset, 4);
         pCfg->uLength  = cbDevSpecificCfg;
         cbRegion += pCfg->uLength;
-        pVirtio->pDeviceCap = pCfg;
+        SET_PCI_CAP_LOC(pPciDev, pCfg, pVirtio->LocDeviceCap, 4);
+        //pVirtio->pDeviceCap = pCfg;
     }
+    else
+        Assert(pVirtio->LocDeviceCap.cbMmio == 0 && pVirtio->LocDeviceCap.cbPci == 0);
 
     if (pVirtio->fMsiSupport)
     {
@@ -1782,12 +1758,31 @@ int virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPci
      * 'unknown' device-specific capability without querying the capability to figure
      *  out size, so pad with an extra page */
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, VIRTIO_REGION_PCI_CAP,  RT_ALIGN_32(cbRegion + PAGE_SIZE, PAGE_SIZE),
-                                      PCI_ADDRESS_SPACE_MEM, virtioR3Map);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: cannot register PCI Capabilities address space"));
+    rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, VIRTIO_REGION_PCI_CAP, RT_ALIGN_32(cbRegion + PAGE_SIZE, PAGE_SIZE),
+                                        PCI_ADDRESS_SPACE_MEM, virtioMmioWrite, virtioMmioRead, pVirtio,
+                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU, "virtio-scsi MMIO",
+                                        &pVirtio->hMmioPciCap);
+    AssertLogRelRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio: cannot register PCI Capabilities address space")));
 
     return rc;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * Sets up the core ring-0/raw-mode virtio bits.
+ *
+ * @returns VBox status code.
+ * @param   pVirtio     Pointer to the virtio state.  This must be the first
+ *                      member in the shared device instance data!
+ * @param   pDevIns     The device instance.
+ */
+int virtioRZInit(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns)
+{
+    int rc = PDMDevHlpMmioSetUpContext(pDevIns, pVirtio->hMmioPciCap, virtioMmioWrite, virtioMmioRead, pVirtio);
+    AssertRCReturn(rc, rc);
+    return rc;
+}
+
+#endif /* !IN_RING3 */
+
