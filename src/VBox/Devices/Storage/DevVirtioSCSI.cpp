@@ -1653,7 +1653,7 @@ DECLINLINE(void) virtioScsiR3ReportParamChange(PPDMDEVINS pDevIns, PVIRTIOSCSI p
 #endif
 
 /**
- * @callback_method_impl{FNVIRTIOQUEUENOTIFIED}
+ * @callback_method_impl{VIRTIOCORER3,pfnQueueNotified}
  */
 static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint16_t qIdx)
 {
@@ -1691,7 +1691,7 @@ static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOCORE pVirtio, PVIRTIOCOREC
 }
 
 /**
- * @callback_method_impl{FNVIRTIOSTATUSCHANGED}
+ * @callback_method_impl{VIRTIOCORER3,pfnStatusChanged}
  */
 static DECLCALLBACK(void) virtioScsiR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint32_t fVirtioReady)
 {
@@ -1764,10 +1764,10 @@ static void virtioScsiR3SetReadLed(PVIRTIOSCSITARGET pTarget, bool fOn)
 /**
  * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed, Target level.}
  */
-static DECLCALLBACK(int) virtioScsiR3TargetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iTarget, PPDMLED *ppLed)
+static DECLCALLBACK(int) virtioScsiR3TargetQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
     PVIRTIOSCSITARGET pTarget = RT_FROM_MEMBER(pInterface, VIRTIOSCSITARGET, ILed);
-    if (iTarget == 0)
+    if (iLUN == 0)
     {
         *ppLed = &pTarget->led;
         Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
@@ -1779,13 +1779,13 @@ static DECLCALLBACK(int) virtioScsiR3TargetQueryStatusLed(PPDMILEDPORTS pInterfa
 /**
  * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed, Device level.}
  */
-static DECLCALLBACK(int) virtioScsiR3DeviceQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iTarget, PPDMLED *ppLed)
+static DECLCALLBACK(int) virtioScsiR3DeviceQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
     PVIRTIOSCSICC pThisCC = RT_FROM_MEMBER(pInterface, VIRTIOSCSICC, ILeds);
     PVIRTIOSCSI   pThis   = PDMDEVINS_2_DATA(pThisCC->pDevIns, PVIRTIOSCSI);
-    if (iTarget < pThis->cTargets)
+    if (iLUN < pThis->cTargets)
     {
-        *ppLed = &pThisCC->paTargetInstances[iTarget].led;
+        *ppLed = &pThisCC->paTargetInstances[iLUN].led;
         Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
         return VINF_SUCCESS;
     }
@@ -1911,7 +1911,7 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *
 }
 
 /**
- * @callback_method_impl{FNVIRTIODEVCAPREAD}
+ * @callback_method_impl{VIRTIOCORER3,pfnDevCapRead}
  */
 static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOffset, void *pv, uint32_t cb)
 {
@@ -1919,7 +1919,7 @@ static DECLCALLBACK(int) virtioScsiR3DevCapRead(PPDMDEVINS pDevIns, uint32_t uOf
 }
 
 /**
- * @callback_method_impl{FNVIRTIODEVCAPWRITE}
+ * @callback_method_impl{VIRTIOCORER3,pfnDevCapWrite}
  */
 static DECLCALLBACK(int) virtioScsiR3DevCapWrite(PPDMDEVINS pDevIns, uint32_t uOffset, const void *pv, uint32_t cb)
 {
