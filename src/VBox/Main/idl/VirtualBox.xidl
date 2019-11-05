@@ -1895,16 +1895,16 @@
     <const name="NISDomain"               value="40"><desc>The NIS (Sun Network Information Services) domain name (string).</desc></const>
     <const name="NISServers"              value="41"><desc>Space separated list of IPv4 NIS server addresses.</desc></const>
     <const name="NTPServers"              value="42"><desc>Space separated list of IPv4 NTP (RFC1035) server addresses.</desc></const>
-    <const name="VendorSpecificInfo"      value="43"><desc>Vendor specific information. Only accessible using <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
+    <const name="VendorSpecificInfo"      value="43"><desc>Vendor specific information. Only accessible using <link to="DHCPOptionEncoding_Hex"/>.</desc></const>
     <const name="NetBIOSNameServers"      value="44"><desc>Space separated list of IPv4 NetBIOS name server (NBNS) addresses (RFC1001,RFC1002).</desc></const>
     <const name="NetBIOSDatagramServers"  value="45"><desc>Space separated list of IPv4 NetBIOS datagram distribution server (NBDD) addresses (RFC1001,RFC1002).</desc></const>
     <const name="NetBIOSNodeType"         value="46"><desc>NetBIOS node type (RFC1001,RFC1002): 1=B-node, 2=P-node, 4=M-node, and 8=H-node (8-bit decimal value).</desc></const>
-    <const name="NetBIOSScope"            value="47"><desc>NetBIOS scope (RFC1001,RFC1002). Only accessible using <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
+    <const name="NetBIOSScope"            value="47"><desc>NetBIOS scope (RFC1001,RFC1002). Only accessible using <link to="DHCPOptionEncoding_Hex"/>.</desc></const>
     <const name="XWindowsFontServers"     value="48"><desc>Space separated list of IPv4 X windows font server addresses.</desc></const>
     <const name="XWindowsDisplayManager"  value="49"><desc>Space separated list of IPv4 X windows display manager addresses.</desc></const>
     <!-- Options 50 thru 59 are considered DHCP internal and currently not settable. -->
     <const name="NetWareIPDomainName"     value="62"><desc>Netware IP domain name (RFC2242) (string).</desc></const>
-    <const name="NetWareIPInformation"    value="63"><desc>Netware IP information (RFC2242). Only accessible using <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
+    <const name="NetWareIPInformation"    value="63"><desc>Netware IP information (RFC2242). Only accessible using <link to="DHCPOptionEncoding_Hex"/>.</desc></const>
     <const name="NISPlusDomain"           value="64"><desc>The NIS+ domain name (string).</desc></const>
     <const name="NISPlusServers"          value="65"><desc>Space separated list of IPv4 NIS+ server addresses.</desc></const>
     <const name="TFTPServerName"          value="66"><desc>TFTP server name (string).</desc></const>
@@ -1919,10 +1919,10 @@
     <const name="StreetTalkServers"       value="75"><desc>Space separated list of IPv4 StreetTalk server addresses.</desc></const>
     <const name="STDAServers"             value="76"><desc>Space separated list of IPv4 StreetTalk directory assistance (STDA) server addresses.</desc></const>
     <!-- 77 is client only -->
-    <const name="SLPDirectoryAgent"       value="78"><desc>Addresses of one or more service location protocol (SLP) directory agent, and an indicator of whether their use is mandatory. Only accessible using <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
-    <const name="SLPServiceScope"         value="79"><desc>List of service scopes for the service location protocol (SLP) and whether using the list is mandator. Only accessible using <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
+    <const name="SLPDirectoryAgent"       value="78"><desc>Addresses of one or more service location protocol (SLP) directory agent, and an indicator of whether their use is mandatory. Only accessible using <link to="DHCPOptionEncoding_Hex"/>.</desc></const>
+    <const name="SLPServiceScope"         value="79"><desc>List of service scopes for the service location protocol (SLP) and whether using the list is mandator. Only accessible using <link to="DHCPOptionEncoding_Hex"/>.</desc></const>
     <!-- 80 is client only -->
-    <const name="DomainSearch"            value="119"><desc>Domain search list, see RFC3397 and section 4.1.4 in RFC1035 for encoding.  Only accessible using <link to="DHCPOptionEncoding::Hex"/>.</desc></const>
+    <const name="DomainSearch"            value="119"><desc>Domain search list, see RFC3397 and section 4.1.4 in RFC1035 for encoding.  Only accessible using <link to="DHCPOptionEncoding_Hex"/>.</desc></const>
   </enum>
 
   <enum
@@ -2212,14 +2212,14 @@
       <param name="name"   dir="in" type="wstring">
         <desc>
           Meaning depends on the @a scope:
-            - Ignored when the @a scope is <link to="DHCPConfigScope::Global"/>.
-            - A VM name or UUID for <link to="DHCPConfigScope::MachineNIC"/>.
-            - A MAC address for <link to="DHCPConfigScope::MAC"/>.
-            - A group name for <link to="DHCPConfigScope::Group"/>.
+            - Ignored when the @a scope is <link to="DHCPConfigScope_Global"/>.
+            - A VM name or UUID for <link to="DHCPConfigScope_MachineNIC"/>.
+            - A MAC address for <link to="DHCPConfigScope_MAC"/>.
+            - A group name for <link to="DHCPConfigScope_Group"/>.
         </desc>
       </param>
       <param name="slot"   dir="in" type="unsigned long">
-        <desc>The NIC slot when @a scope is set to <link to="DHCPConfigScope::MachineNIC"/>,
+        <desc>The NIC slot when @a scope is set to <link to="DHCPConfigScope_MachineNIC"/>,
           must be zero for all other scope values.
         </desc>
       </param>
@@ -2292,7 +2292,7 @@
       <param name="value"     dir="in" type="wstring">
         <desc>The DHCP option value.  The exact format depends on the DHCP
           @a option value and @a encoding, see see <link to="DHCPOption"/>
-          for the <link to="DHCPOptionEncoding::Normal"/> format.
+          for the <link to="DHCPOptionEncoding_Normal"/> format.
          </desc>
       </param>
     </method>
@@ -2323,7 +2323,7 @@
       <param name="value"     dir="return" type="wstring">
         <desc>The value of the requested DHCP option. The exact format depends on
           the DHCP @a option value and the @a encoding, see <link to="DHCPOption"/>
-          for the <link to="DHCPOptionEncoding::Normal"/> format.
+          for the <link to="DHCPOptionEncoding_Normal"/> format.
         </desc>
       </param>
     </method>
@@ -2434,20 +2434,20 @@
 
     <attribute name="MACAddress" type="wstring" readonly="yes">
       <desc>
-        The MAC address.  If a <link to="DHCPConfigScope::MachineNIC"/> config, this
+        The MAC address.  If a <link to="DHCPConfigScope_MachineNIC"/> config, this
         will be queried via the VM ID.
       </desc>
     </attribute>
 
     <attribute name="machineId" type="uuid" mod="string" readonly="yes">
       <desc>
-        The virtual machine ID if a <link to="DHCPConfigScope::MachineNIC"/> config,
-        null UUID for <link to="DHCPConfigScope::MAC"/>.
+        The virtual machine ID if a <link to="DHCPConfigScope_MachineNIC"/> config,
+        null UUID for <link to="DHCPConfigScope_MAC"/>.
       </desc>
     </attribute>
 
     <attribute name="slot" type="unsigned long" readonly="yes">
-      <desc>The NIC slot number of the VM if a <link to="DHCPConfigScope::MachineNIC"/> config.</desc>
+      <desc>The NIC slot number of the VM if a <link to="DHCPConfigScope_MachineNIC"/> config.</desc>
     </attribute>
 
     <attribute name="fixedAddress" type="wstring" readonly="no">
@@ -11190,7 +11190,7 @@
     </attribute>
     <attribute name="proxyURL" type="wstring" readonly="no">
       <desc>
-        Proxy server URL for the <link to="ProxyMode::Manual" /> proxy mode.
+        Proxy server URL for the <link to="ProxyMode_Manual" /> proxy mode.
 
         The format is: [{type}"://"][{userid}[@{password}]:]{server}[":"{port}]
 
@@ -11201,12 +11201,12 @@
 
         The port number defaults to 80 for http, 443 for https and 1080 for the socks ones.
 
-        <note>The password is currently stored as plain text!  Use the <link to="ProxyMode::System" />
+        <note>The password is currently stored as plain text!  Use the <link to="ProxyMode_System" />
         mode if you consider the proxy password to be sensitive.</note>
 
-        An empty string will cause the behavior to be identical to <link to="ProxyMode::System" />.
+        An empty string will cause the behavior to be identical to <link to="ProxyMode_System" />.
         For compatibility with libproxy, an URL starting with "direct://" will cause
-        <link to="ProxyMode::NoProxy" /> behavior.
+        <link to="ProxyMode_NoProxy" /> behavior.
       </desc>
     </attribute>
 
@@ -15529,7 +15529,9 @@
           Waiting time has expired.
         </result>
       </desc>
-      <param name="progressOther" type="IProgress" dir="in" />
+      <param name="progressOther" type="IProgress" dir="in">
+        <desc>Other progress object to be "cloned".</desc>
+      </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
         <desc>Timeout (in ms). Pass 0 for an infinite timeout.</desc>
       </param>
@@ -18500,14 +18502,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </const>
 
-    <const name="VHWA" value="0x02">
+    <const name="VHWA" value="0x02" wsmap="suppress">
       <desc>
         Supports VHWA interface. If set, then
         <link to="IFramebuffer::processVHWACommand"/> can be called.
       </desc>
     </const>
 
-    <const name="VisibleRegion" value="0x04">
+    <const name="VisibleRegion" value="0x04" wsmap="suppress">
       <desc>
         Supports visible region. If set, then
         <link to="IFramebuffer::setVisibleRegion"/> can be called.
@@ -18614,24 +18616,38 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Gets called by the display object where this buffer is
         registered.
       </desc>
-      <param name="x" type="unsigned long" dir="in"/>
-      <param name="y" type="unsigned long" dir="in"/>
-      <param name="width" type="unsigned long" dir="in"/>
-      <param name="height" type="unsigned long" dir="in"/>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>X position of update.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>Y position of update.</desc>
+      </param>
+      <param name="width" type="unsigned long" dir="in">
+        <desc>Width of update.</desc>
+      </param>
+      <param name="height" type="unsigned long" dir="in">
+        <desc>Height of update.</desc>
+      </param>
     </method>
 
     <method name="notifyUpdateImage">
       <desc>
         Informs about an update and provides 32bpp bitmap.
       </desc>
-      <param name="x" type="unsigned long" dir="in"/>
-      <param name="y" type="unsigned long" dir="in"/>
-      <param name="width" type="unsigned long" dir="in"/>
-      <param name="height" type="unsigned long" dir="in"/>
+      <param name="x" type="unsigned long" dir="in">
+        <desc>X position of update.</desc>
+      </param>
+      <param name="y" type="unsigned long" dir="in">
+        <desc>Y position of update.</desc>
+      </param>
+      <param name="width" type="unsigned long" dir="in">
+        <desc>Width of update.</desc>
+      </param>
+      <param name="height" type="unsigned long" dir="in">
+        <desc>Height of update.</desc>
+      </param>
       <param name="image" type="octet" dir="in" safearray="yes">
-        <desc>
-          Array with 32BPP image data.
-        </desc>
+        <desc>Array with 32BPP image data.</desc>
       </param>
     </method>
 
@@ -22072,15 +22088,27 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         </result>
 
       </desc>
-      <param name="name" type="wstring" dir="in"/>
-      <param name="value" type="wstring" dir="in"/>
-      <param name="flags" type="wstring" dir="in"/>
+      <param name="name" type="wstring" dir="in">
+        <desc>Name of guest property.</desc>
+      </param>
+      <param name="value" type="wstring" dir="in">
+        <desc>Value of guest property.</desc>
+      </param>
+      <param name="flags" type="wstring" dir="in">
+        <desc>Flags of guest property.</desc>
+      </param>
       <param name="accessMode" type="unsigned long" dir="in">
         <desc>0 = get, 1 = set, 2 = delete.</desc>
       </param>
-      <param name="retValue" type="wstring" dir="out"/>
-      <param name="retTimestamp" type="long long" dir="out"/>
-      <param name="retFlags" type="wstring" dir="out"/>
+      <param name="retValue" type="wstring" dir="out">
+        <desc>When getting: Value of guest property.</desc>
+      </param>
+      <param name="retTimestamp" type="long long" dir="out">
+        <desc>When getting: Timestamp of guest property.</desc>
+      </param>
+      <param name="retFlags" type="wstring" dir="out">
+        <desc>When getting: Flags of guest property.</desc>
+      </param>
     </method>
 
     <method name="enumerateGuestProperties" const="yes">
@@ -26665,7 +26693,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Returns the list of the instances in the Cloud.
       </desc>
-      <param name="machineState" type="CloudMachineState" dir="in" safearray="yes"/>
+      <param name="machineState" type="CloudMachineState" dir="in" safearray="yes">
+        <desc>State of each VM.</desc>
+      </param>
       <param name="returnNames" type="IStringArray" dir="out">
         <desc>VM names.</desc>
       </param>
@@ -26683,7 +26713,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>
         Returns the list of the images in the Cloud.
       </desc>
-      <param name="imageState" type="CloudImageState" dir="in" safearray="yes"/>
+      <param name="imageState" type="CloudImageState" dir="in" safearray="yes">
+        <desc>State of each image.</desc>
+      </param>
       <param name="returnNames" type="IStringArray" dir="out">
         <desc>Images names.</desc>
       </param>
