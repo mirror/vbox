@@ -419,12 +419,12 @@ typedef enum VIRTIOSCSIQUIESCINGFOR
 /**
  * VirtIO Host SCSI device state, shared edition.
  *
- * @extends     VIRTIOSTATE
+ * @extends     VIRTIOCORE
  */
 typedef struct VIRTIOSCSI
 {
-    /** The virtio state.   */
-    VIRTIOSTATE                     Virtio;
+    /** The core virtio state.   */
+    VIRTIOCORE                      Virtio;
 
     bool                            fBootable;
     bool                            afPadding0[3];
@@ -491,12 +491,12 @@ typedef VIRTIOSCSI *PVIRTIOSCSI;
 /**
  * VirtIO Host SCSI device state, ring-3 edition.
  *
- * @extends     VIRTIOSTATER3
+ * @extends     VIRTIOCORER3
  */
 typedef struct VIRTIOSCSIR3
 {
-    /** The virtio ring-3 state. */
-    VIRTIOSTATER3                   Virtio;
+    /** The core virtio ring-3 state. */
+    VIRTIOCORER3                    Virtio;
 
     /** Array of per-target data. */
     R3PTRTYPE(PVIRTIOSCSITARGET)    paTargetInstances;
@@ -538,8 +538,8 @@ typedef VIRTIOSCSIR3 *PVIRTIOSCSIR3;
  */
 typedef struct VIRTIOSCSIR0
 {
-    /** The virtio ring-0 state. */
-    VIRTIOSTATER0                   Virtio;
+    /** The core virtio ring-0 state. */
+    VIRTIOCORER0                    Virtio;
 } VIRTIOSCSIR0;
 /** Pointer to the ring-0 state of the VirtIO Host SCSI device. */
 typedef VIRTIOSCSIR0 *PVIRTIOSCSIR0;
@@ -550,8 +550,8 @@ typedef VIRTIOSCSIR0 *PVIRTIOSCSIR0;
  */
 typedef struct VIRTIOSCSIRC
 {
-    /** The virtio raw-mode state. */
-    VIRTIOSTATERC                   Virtio;
+    /** The core virtio raw-mode state. */
+    VIRTIOCORERC                    Virtio;
 } VIRTIOSCSIRC;
 /** Pointer to the ring-0 state of the VirtIO Host SCSI device. */
 typedef VIRTIOSCSIRC *PVIRTIOSCSIRC;
@@ -727,7 +727,7 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
             return VINF_SUCCESS;
     }
 
-    if (virtioQueueIsEmpty(pDevIns, &pThis->Virtio, EVENTQ_IDX))
+    if (virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, EVENTQ_IDX))
     {
         LogFunc(("eventq is empty, events missed (driver didn't preload queue)!\n"));
         ASMAtomicWriteBool(&pThis->fEventsMissed, true);
@@ -735,14 +735,14 @@ static int virtioScsiR3SendEvent(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, uint16_t
     }
 
     PVIRTIO_DESC_CHAIN_T pDescChain;
-    virtioR3QueueGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
+    virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, EVENTQ_IDX, &pDescChain, true);
 
     RTSGBUF reqSegBuf;
     RTSGSEG aReqSegs[] = { { &event, sizeof(event) } };
     RTSgBufInit(&reqSegBuf, aReqSegs, RT_ELEMENTS(aReqSegs));
 
-    virtioR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &reqSegBuf, pDescChain, true);
-    virtioQueueSync(pDevIns, &pThis->Virtio, EVENTQ_IDX);
+    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, EVENTQ_IDX, &reqSegBuf, pDescChain, true);
+    virtioCoreQueueSync(pDevIns, &pThis->Virtio, EVENTQ_IDX);
 
     return VINF_SUCCESS;
 }
@@ -793,8 +793,8 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
     if (pThis->fResetting)
         pRespHdr->uResponse = VIRTIOSCSI_S_RESET;
 
-    virtioR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true /* fFence */);
-    virtioQueueSync(pDevIns, &pThis->Virtio, qIdx);
+    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true /* fFence */);
+    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx);
 
     RTMemFree(pabSenseBuf);
 
@@ -949,8 +949,8 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
                        VERR_BUFFER_OVERFLOW);
 
 
-        virtioR3QueuePut(pDevIns, &pThis->Virtio, pReq->qIdx, &reqSegBuf, pReq->pDescChain, true /* fFence TBD */);
-        virtioQueueSync(pDevIns, &pThis->Virtio, pReq->qIdx);
+        virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, pReq->qIdx, &reqSegBuf, pReq->pDescChain, true /* fFence TBD */);
+        virtioCoreQueueSync(pDevIns, &pThis->Virtio, pReq->qIdx);
 
 
         Log2(("-----------------------------------------------------------------------------------------\n"));
@@ -1489,8 +1489,8 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     }
 
     LogFunc(("Response code: %s\n", virtioGetReqRespText(bResponse)));
-    virtioR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true);
-    virtioQueueSync(pDevIns, &pThis->Virtio, qIdx);
+    virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, &reqSegBuf, pDescChain, true);
+    virtioCoreQueueSync(pDevIns, &pThis->Virtio, qIdx);
 
     return VINF_SUCCESS;
 }
@@ -1520,7 +1520,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        if (virtioQueueIsEmpty(pDevIns, &pThis->Virtio, qIdx))
+        if (virtioCoreQueueIsEmpty(pDevIns, &pThis->Virtio, qIdx))
         {
             /* Atomic interlocks avoid missing alarm while going to sleep & notifier waking the awoken */
             ASMAtomicWriteBool(&pWorkerR3->fSleeping, true);
@@ -1548,7 +1548,7 @@ static DECLCALLBACK(int) virtioScsiR3WorkerThread(PPDMDEVINS pDevIns, PPDMTHREAD
         {
              Log6Func(("fetching next descriptor chain from %s\n", QUEUENAME(qIdx)));
              PVIRTIO_DESC_CHAIN_T pDescChain;
-             int rc = virtioR3QueueGet(pDevIns, &pThis->Virtio, qIdx, &pDescChain, true);
+             int rc = virtioCoreR3QueueGet(pDevIns, &pThis->Virtio, qIdx, &pDescChain, true);
              if (rc == VERR_NOT_AVAILABLE)
              {
                 Log6Func(("Nothing found in %s\n", QUEUENAME(qIdx)));
@@ -1655,7 +1655,7 @@ DECLINLINE(void) virtioScsiR3ReportParamChange(PPDMDEVINS pDevIns, PVIRTIOSCSI p
 /**
  * @callback_method_impl{FNVIRTIOQUEUENOTIFIED}
  */
-static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, uint16_t qIdx)
+static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint16_t qIdx)
 {
     PVIRTIOSCSI         pThis     = RT_FROM_MEMBER(pVirtio, VIRTIOSCSI, Virtio);
     PVIRTIOSCSICC       pThisCC   = RT_FROM_MEMBER(pVirtioCC, VIRTIOSCSICC, Virtio);
@@ -1693,7 +1693,7 @@ static DECLCALLBACK(void) virtioScsiR3Notified(PVIRTIOSTATE pVirtio, PVIRTIOSTAT
 /**
  * @callback_method_impl{FNVIRTIOSTATUSCHANGED}
  */
-static DECLCALLBACK(void) virtioScsiR3StatusChanged(PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, uint32_t fVirtioReady)
+static DECLCALLBACK(void) virtioScsiR3StatusChanged(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint32_t fVirtioReady)
 {
     PVIRTIOSCSI     pThis     = RT_FROM_MEMBER(pVirtio, VIRTIOSCSI, Virtio);
     PVIRTIOSCSICC   pThisCC   = RT_FROM_MEMBER(pVirtioCC, VIRTIOSCSICC, Virtio);
@@ -1703,7 +1703,7 @@ static DECLCALLBACK(void) virtioScsiR3StatusChanged(PVIRTIOSTATE pVirtio, PVIRTI
     if (fVirtioReady)
     {
         LogFunc(("VirtIO ready\n-----------------------------------------------------------------------------------------\n"));
-        uint64_t fFeatures   = virtioGetNegotiatedFeatures(&pThis->Virtio);
+        uint64_t fFeatures   = virtioCoreGetNegotiatedFeatures(&pThis->Virtio);
         pThis->fHasT10pi     = fFeatures & VIRTIO_SCSI_F_T10_PI;
         pThis->fHasHotplug   = fFeatures & VIRTIO_SCSI_F_HOTPLUG;
         pThis->fHasInOutBufs = fFeatures & VIRTIO_SCSI_F_INOUT;
@@ -1848,7 +1848,7 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *
 
 #ifdef LOG_ENABLED
 # define LOG_SCSI_CONFIG_ACCESSOR(member) \
-        virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member), \
+        virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member), \
                                pv, cb, offIntra, fWrite, false, 0);
 #else
 # define LOG_SCSI_CONFIG_ACCESSOR(member) do { } while (0)
@@ -2023,7 +2023,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     /*
      * Call the virtio core to let it load its state.
      */
-    return virtioR3LoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
+    return virtioCoreR3LoadExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
 }
 
 /**
@@ -2065,7 +2065,7 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     /*
      * Call the virtio core to let it save its state.
      */
-    return virtioR3SaveExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
+    return virtioCoreR3SaveExec(&pThis->Virtio, pDevIns->pHlpR3, pSSM);
 }
 
 
@@ -2158,7 +2158,7 @@ static DECLCALLBACK(bool) virtioScsiR3DeviceQuiesced(PPDMDEVINS pDevIns)
     LogFunc(("Device I/O activity quiesced: enmQuiescingFor=%d\n", pThisCC->enmQuiescingFor));
 
     if (pThisCC->enmQuiescingFor == kvirtIoScsiQuiescingForReset)
-        virtioR3PropagateResetNotification(pDevIns, &pThis->Virtio);
+        virtioCoreR3PropagateResetNotification(pDevIns, &pThis->Virtio);
     /** @todo r=bird: Do we need other notifications here for suspend and/or poweroff? */
 
     pThisCC->enmQuiescingFor = kvirtIoScsiQuiescingForInvalid;
@@ -2254,7 +2254,7 @@ static DECLCALLBACK(void) virtioScsiR3Resume(PPDMDEVINS pDevIns)
     }
 
     /* Ensure guest is working the queues too. */
-    virtioR3PropagateResumeNotification(pDevIns, &pThis->Virtio);
+    virtioCoreR3PropagateResumeNotification(pDevIns, &pThis->Virtio);
 }
 
 /**
@@ -2292,7 +2292,7 @@ static DECLCALLBACK(int) virtioScsiR3Destruct(PPDMDEVINS pDevIns)
         }
     }
 
-    virtioR3Term(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
+    virtioCoreR3Term(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
     return VINF_SUCCESS;
 }
 
@@ -2355,10 +2355,10 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     pThis->virtioScsiConfig.uMaxLun         = VIRTIOSCSI_MAX_LUN;
 
     /* Initialize the generic Virtio core: */
-    pThisCC->Virtio.Callbacks.pfnStatusChanged  = virtioScsiR3StatusChanged;
-    pThisCC->Virtio.Callbacks.pfnQueueNotified  = virtioScsiR3Notified;
-    pThisCC->Virtio.Callbacks.pfnDevCapRead     = virtioScsiR3DevCapRead;
-    pThisCC->Virtio.Callbacks.pfnDevCapWrite    = virtioScsiR3DevCapWrite;
+    pThisCC->Virtio.pfnStatusChanged        = virtioScsiR3StatusChanged;
+    pThisCC->Virtio.pfnQueueNotified        = virtioScsiR3Notified;
+    pThisCC->Virtio.pfnDevCapRead           = virtioScsiR3DevCapRead;
+    pThisCC->Virtio.pfnDevCapWrite          = virtioScsiR3DevCapWrite;
 
     VIRTIOPCIPARAMS VirtioPciParams;
     VirtioPciParams.uDeviceId           = PCI_DEVICE_ID_VIRTIOSCSI_HOST;
@@ -2371,10 +2371,9 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     VirtioPciParams.uInterruptLine      = 0x00;
     VirtioPciParams.uInterruptPin       = 0x01;
 
-    rc = virtioR3Init(pDevIns, &pThis->Virtio, &pThisCC->Virtio, &VirtioPciParams, pThis->szInstance,
-                      VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
-                      &pThis->virtioScsiConfig /*pvDevSpecificCap*/, sizeof(pThis->virtioScsiConfig));
-
+    rc = virtioCoreR3Init(pDevIns, &pThis->Virtio, &pThisCC->Virtio, &VirtioPciParams, pThis->szInstance,
+                          VIRTIOSCSI_HOST_SCSI_FEATURES_OFFERED,
+                          &pThis->virtioScsiConfig /*pvDevSpecificCap*/, sizeof(pThis->virtioScsiConfig));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("virtio-scsi: failed to initialize VirtIO"));
 
@@ -2392,7 +2391,7 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
     /* Attach the queues and create worker threads for them: */
     for (uint16_t qIdx = 0; qIdx < VIRTIOSCSI_QUEUE_CNT; qIdx++)
     {
-        rc = virtioR3QueueAttach(&pThis->Virtio, qIdx, QUEUENAME(qIdx));
+        rc = virtioCoreR3QueueAttach(&pThis->Virtio, qIdx, QUEUENAME(qIdx));
         pThis->afQueueAttached[qIdx] = (rc == VINF_SUCCESS); /** @todo r=bird: This looks a bit fishy, esp. giving the following. */
 
         if (qIdx == CONTROLQ_IDX || IS_REQ_QUEUE(qIdx))
@@ -2535,7 +2534,7 @@ static DECLCALLBACK(int) virtioScsiRZConstruct(PPDMDEVINS pDevIns)
     PVIRTIOSCSI   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
 
-    return virtioRZInit(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
+    return virtioCoreRZInit(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
 }
 
 #endif /* !IN_RING3 */

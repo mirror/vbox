@@ -107,8 +107,8 @@ typedef struct virt_used
 /*********************************************************************************************************************************
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
-static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue, bool fForce);
-static int  virtioKick(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint8_t uCause, uint16_t uVec, bool fForce);
+static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce);
+static int  virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uVec, bool fForce);
 
 /** @name Internal queue operations
  * @{ */
@@ -123,7 +123,7 @@ DECLINLINE(int) virtqIsEventNeeded(uint16_t uEventIdx, uint16_t uDescIdxNew, uin
 /**
  * Accessor for virtq descriptor
  */
-DECLINLINE(void) virtioReadDesc(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue,
+DECLINLINE(void) virtioReadDesc(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                                 uint32_t idxDesc, PVIRTQ_DESC_T pDesc)
 {
     //Log(("%s virtioQueueReadDesc: ring=%p idx=%u\n", INSTANCE(pState), pVirtQ, idx));
@@ -137,7 +137,7 @@ DECLINLINE(void) virtioReadDesc(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16
 /**
  * Accessors for virtq avail ring
  */
-DECLINLINE(uint16_t) virtioReadAvailDescIdx(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue, uint32_t availIdx)
+DECLINLINE(uint16_t) virtioReadAvailDescIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t availIdx)
 {
     uint16_t uDescIdx;
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -149,7 +149,7 @@ DECLINLINE(uint16_t) virtioReadAvailDescIdx(PPDMDEVINS pDevIns, PVIRTIOSTATE pVi
     return uDescIdx;
 }
 
-DECLINLINE(uint16_t) virtioReadAvailRingIdx(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+DECLINLINE(uint16_t) virtioReadAvailRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t uIdx = 0;
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -159,13 +159,13 @@ DECLINLINE(uint16_t) virtioReadAvailRingIdx(PPDMDEVINS pDevIns, PVIRTIOSTATE pVi
     return uIdx;
 }
 
-DECLINLINE(bool) virtqIsEmpty(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+DECLINLINE(bool) virtqIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     return virtioReadAvailRingIdx(pDevIns, pVirtio, idxQueue) == pVirtio->virtqState[idxQueue].uAvailIdx;
 }
 
 #if 0 /* unused */
-DECLINLINE(uint16_t) virtioReadAvailFlags(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+DECLINLINE(uint16_t) virtioReadAvailFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t fFlags;
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -176,7 +176,7 @@ DECLINLINE(uint16_t) virtioReadAvailFlags(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirt
 }
 #endif
 
-DECLINLINE(uint16_t) virtioReadAvailUsedEvent(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+DECLINLINE(uint16_t) virtioReadAvailUsedEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t uUsedEventIdx;
     /* VirtIO 1.0 uUsedEventIdx (used_event) immediately follows ring */
@@ -191,7 +191,7 @@ DECLINLINE(uint16_t) virtioReadAvailUsedEvent(PPDMDEVINS pDevIns, PVIRTIOSTATE p
 /** @name Accessors for virtq used ring
  * @{
  */
-DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue,
+DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
                                      uint32_t usedIdx, uint32_t uDescIdx, uint32_t uLen)
 {
     VIRTQ_USED_ELEM_T elem = { uDescIdx,  uLen };
@@ -202,7 +202,7 @@ DECLINLINE(void) virtioWriteUsedElem(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, u
                           &elem, sizeof(elem));
 }
 
-DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue, uint16_t uIdx)
+DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint16_t uIdx)
 {
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     PDMDevHlpPCIPhysWrite(pDevIns,
@@ -211,7 +211,7 @@ DECLINLINE(void) virtioWriteUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio
 }
 
 #ifdef LOG_ENABLED
-DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t uIdx = 0;
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -222,7 +222,7 @@ DECLINLINE(uint16_t) virtioReadUsedRingIdx(PPDMDEVINS pDevIns, PVIRTIOSTATE pVir
 }
 #endif
 
-DECLINLINE(uint16_t) virtioReadUsedFlags(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+DECLINLINE(uint16_t) virtioReadUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t fFlags = 0;
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -233,7 +233,7 @@ DECLINLINE(uint16_t) virtioReadUsedFlags(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirti
 }
 
 #if 0 /* unused */
-DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue, uint32_t fFlags)
+DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t fFlags)
 {
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
     RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
@@ -244,7 +244,7 @@ DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, 
 #endif
 
 #if 0 /* unused */
-DECLINLINE(uint16_t) virtioReadUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+DECLINLINE(uint16_t) virtioReadUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t uAvailEventIdx;
     RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
@@ -258,7 +258,7 @@ DECLINLINE(uint16_t) virtioReadUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOSTATE p
 #endif
 
 #if 0 /* unused */
-DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue, uint32_t uAvailEventIdx)
+DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t uAvailEventIdx)
 {
     /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -282,7 +282,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOSTATE pVir
  * @param   pszTitle    Optional title. If present displays title that lists
  *                      provided text with value of cb to indicate size next to it.
  */
-void virtioHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle)
+void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle)
 {
     if (pszTitle)
         Log(("%s [%d bytes]:\n", pszTitle, cb));
@@ -325,7 +325,7 @@ void virtioHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitl
  * @param   fHasIndex   True if the member is indexed
  * @param   idx         The index if fHasIndex
  */
-void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
+void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
                             const void *pv, uint32_t cb, uint32_t uOffset, int fWrite,
                             int fHasIndex, uint32_t idx)
 {
@@ -407,7 +407,7 @@ DECLINLINE(void) virtioLogDeviceStatus(uint8_t bStatus)
  *
  * @returns VBox status code.
  */
-int virtioR3QueueAttach(PVIRTIOSTATE pVirtio, uint16_t idxQueue, const char *pcszName)
+int virtioCoreR3QueueAttach(PVIRTIOCORE pVirtio, uint16_t idxQueue, const char *pcszName)
 {
     LogFunc(("%s\n", pcszName));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
@@ -423,7 +423,7 @@ int virtioR3QueueAttach(PVIRTIOSTATE pVirtio, uint16_t idxQueue, const char *pcs
 /**
  * See API comments in header file for description
  */
-int virtioQueueSkip(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+int virtioQueueSkip(PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
@@ -431,7 +431,7 @@ int virtioQueueSkip(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[idxQueue],
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
-    if (virtioQueueIsEmpty(pVirtio, idxQueue))
+    if (virtioCoreQueueIsEmpty(pVirtio, idxQueue))
         return VERR_NOT_AVAILABLE;
 
     Log2Func(("%s avail_idx=%u\n", pVirtq->szVirtqName, pVirtq->uAvailIdx));
@@ -451,7 +451,7 @@ int virtioQueueSkip(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
  * @retval true  Queue is empty or unavailable.
  * @retval false Queue is available and has entries
  */
-bool virtioQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+bool virtioCoreQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     if (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
         return virtqIsEmpty(pDevIns, pVirtio, idxQueue);
@@ -466,7 +466,7 @@ bool virtioQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQu
  *
  * Additionally it converts the OUT desc chain data to a contiguous virtual
  * memory buffer for easy consumption by the caller. The caller must return the
- * descriptor chain pointer via virtioR3QueuePut() and then call virtioQueueSync()
+ * descriptor chain pointer via virtioCoreR3QueuePut() and then call virtioCoreQueueSync()
  * at some point to return the data to the guest and complete the transaction.
  *
  * @param   pDevIns     The device instance.
@@ -481,8 +481,8 @@ bool virtioQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQu
  * @retval  VERR_INVALID_STATE   VirtIO not in ready state (asserted).
  * @retval  VERR_NOT_AVAILABLE   If the queue is empty.
  */
-int virtioR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue,
-                     PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove)
+int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue,
+                         PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove)
 {
     AssertReturn(ppDescChain, VERR_INVALID_PARAMETER);
 
@@ -594,7 +594,7 @@ int virtioR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue
  * (as needed) of the virtual memory buffer.
  *
  * @note This does a write-ahead to the used ring of the guest's queue. The data
- *       written won't be seen by the guest until the next call to virtioQueueSync()
+ *       written won't be seen by the guest until the next call to virtioCoreQueueSync()
  *
  *
  * @param   pDevIns         The device instance (for reading).
@@ -615,8 +615,8 @@ int virtioR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue
  * @retval  VERR_INVALID_STATE VirtIO not in ready state
  * @retval  VERR_NOT_AVAILABLE Queue is empty
  */
-int virtioR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
-                     PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence)
+int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
+                         PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence)
 {
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
@@ -662,7 +662,7 @@ int virtioR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue
 
     /*
      * Place used buffer's descriptor in used ring but don't update used ring's slot index.
-     * That will be done with a subsequent client call to virtioQueueSync() */
+     * That will be done with a subsequent client call to virtioCoreQueueSync() */
     virtioWriteUsedElem(pDevIns, pVirtio, idxQueue, pVirtq->uUsedIdx++, pDescChain->uHeadIdx, (uint32_t)cbCopy);
 
     Log2Func((".... Copied %zu bytes to %u byte buffer, residual=%zu\n",
@@ -685,7 +685,7 @@ int virtioR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue
 /**
  * Updates the indicated virtq's "used ring" descriptor index to match the
  * current write-head index, thus exposing the data added to the used ring by all
- * virtioR3QueuePut() calls since the last sync. This should be called after one or
+ * virtioCoreR3QueuePut() calls since the last sync. This should be called after one or
  * more virtQueuePut() calls to inform the guest driver there is data in the queue.
  * Explicit notifications (e.g. interrupt or MSI-X) will be sent to the guest,
  * depending on VirtIO features negotiated and conditions, otherwise the guest
@@ -700,7 +700,7 @@ int virtioR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue
  * @retval  VINF_SUCCESS       Success
  * @retval  VERR_INVALID_STATE VirtIO not in ready state
  */
-int virtioQueueSync(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+int virtioCoreQueueSync(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
@@ -720,7 +720,7 @@ int virtioQueueSync(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
 #ifdef IN_RING3
 /**
  */
-static void virtioR3QueueNotified(PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, uint16_t idxQueue, uint16_t uNotifyIdx)
+static void virtioR3QueueNotified(PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, uint16_t idxQueue, uint16_t uNotifyIdx)
 {
     /* See VirtIO 1.0, section 4.1.5.2 It implies that idxQueue and uNotifyIdx should match.
      * Disregarding this notification may cause throughput to stop, however there's no way to know
@@ -739,7 +739,7 @@ static void virtioR3QueueNotified(PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC
     Log6Func(("%s\n", pVirtio->virtqState[idxQueue].szVirtqName));
 
     /* Inform client */
-    pVirtioCC->Callbacks.pfnQueueNotified(pVirtio, pVirtioCC, idxQueue);
+    pVirtioCC->pfnQueueNotified(pVirtio, pVirtioCC, idxQueue);
 }
 #endif /* IN_RING3 */
 
@@ -759,7 +759,7 @@ static void virtioR3QueueNotified(PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC
  *                      indicates spurious interrupts are harmless to guest driver's state,
  *                      as they only cause the guest driver to [re]scan queues for work to do.
  */
-static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue, bool fForce)
+static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fForce)
 {
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
@@ -796,7 +796,7 @@ static void virtioNotifyGuestDriver(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, ui
  * @param   uVec        MSI-X vector, if enabled
  * @param   uForce      True of out-of-band
  */
-static int virtioKick(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint8_t uCause, uint16_t uMsixVector, bool fForce)
+static int virtioKick(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint8_t uCause, uint16_t uMsixVector, bool fForce)
 {
    if (fForce)
        Log6Func(("reason: resumed after suspend\n"));
@@ -831,7 +831,7 @@ static void virtioLowerInterrupt(PPDMDEVINS pDevIns)
     PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
 }
 
-static void virtioResetQueue(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
+static void virtioResetQueue(PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtQ = &pVirtio->virtqState[idxQueue];
@@ -846,7 +846,7 @@ static void virtioResetQueue(PVIRTIOSTATE pVirtio, uint16_t idxQueue)
         pVirtio->uQueueMsixVector[idxQueue] = VIRTIO_MSI_NO_VECTOR;
 }
 
-static void virtioResetDevice(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio)
+static void virtioResetDevice(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio)
 {
     Log2Func(("\n"));
     pVirtio->uDeviceFeaturesSelect  = 0;
@@ -873,7 +873,7 @@ static void virtioResetDevice(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio)
  * @param   idxQueue    Queue number
  * @param   fEnabled    Flag indicating whether to enable queue or not
  */
-void virtioQueueEnable(PVIRTIOSTATE pVirtio, uint16_t idxQueue, bool fEnabled)
+void virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled)
 {
     if (fEnabled)
         pVirtio->uQueueSize[idxQueue] = VIRTQ_MAX_SIZE;
@@ -887,7 +887,7 @@ void virtioQueueEnable(PVIRTIOSTATE pVirtio, uint16_t idxQueue, bool fEnabled)
  * Initiate orderly reset procedure.
  * Invoked by client to reset the device and driver (see VirtIO 1.0 section 2.1.1/2.1.2)
  */
-void virtioResetAll(PVIRTIOSTATE pVirtio)
+void virtioCoreResetAll(PVIRTIOCORE pVirtio)
 {
     LogFunc(("VIRTIO RESET REQUESTED!!!\n"));
     pVirtio->uDeviceStatus |= VIRTIO_STATUS_DEVICE_NEEDS_RESET;
@@ -904,12 +904,12 @@ void virtioResetAll(PVIRTIOSTATE pVirtio)
  * Invoked by this implementation when guest driver resets the device.
  * The driver itself will not  until the device has read the status change.
  */
-static void virtioGuestR3WasReset(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC)
+static void virtioGuestR3WasReset(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC)
 {
     LogFunc(("Guest reset the device\n"));
 
     /* Let the client know */
-    pVirtioCC->Callbacks.pfnStatusChanged(pVirtio, pVirtioCC, 0);
+    pVirtioCC->pfnStatusChanged(pVirtio, pVirtioCC, 0);
     virtioResetDevice(pDevIns, pVirtio);
 }
 #endif /* IN_RING3 */
@@ -927,7 +927,7 @@ static void virtioGuestR3WasReset(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIR
  * @param   cb          Number of bytes to read or write
  * @param   pv          Pointer to location to write to or read from
  */
-static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC,
+static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC,
                                    int fWrite, uint32_t offCfg, unsigned cb, void *pv)
 {
 /**
@@ -951,10 +951,10 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVI
 
 #ifdef LOG_ENABLED
 # define LOG_COMMON_CFG_ACCESS(member, a_offIntra) \
-    virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
+    virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
                            pv, cb, a_offIntra, fWrite, false, 0);
 # define LOG_COMMON_CFG_ACCESS_INDEXED(member, idx, a_offIntra) \
-    virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
+    virtioCoreLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIO_PCI_COMMON_CFG_T, member), \
                            pv, cb, a_offIntra, fWrite, true, idx);
 #else
 # define LOG_COMMON_CFG_ACCESS(member, a_offIntra)              do { } while (0)
@@ -1124,7 +1124,7 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVI
             if (pVirtio->uDeviceStatus == 0)
                 virtioGuestR3WasReset(pDevIns, pVirtio, pVirtioCC);
             if (fStatusChanged)
-                pVirtioCC->Callbacks.pfnStatusChanged(pVirtio, pVirtioCC, fNewStatus & VIRTIO_STATUS_DRIVER_OK);
+                pVirtioCC->pfnStatusChanged(pVirtio, pVirtioCC, fNewStatus & VIRTIO_STATUS_DRIVER_OK);
 #endif
             /*
              * Save the current status for the next write so we can see what changed.
@@ -1201,9 +1201,9 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVI
  */
 static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    PVIRTIOSTATE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
-    PVIRTIOSTATECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOSTATECC);
-    Assert(pVirtio == (PVIRTIOSTATE)pvUser); RT_NOREF(pvUser);
+    PVIRTIOCORE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOCORE);
+    PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
+    Assert(pVirtio == (PVIRTIOCORE)pvUser); RT_NOREF(pvUser);
 
     /** @todo r=bird: This code does not handle reads spanning more than one
      * capability structure/area.   How does that match the spec?   For instance
@@ -1220,7 +1220,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUse
         /*
          * Callback to client to manage device-specific configuration.
          */
-        VBOXSTRICTRC rcStrict = pVirtioCC->Callbacks.pfnDevCapRead(pDevIns, offIntra, pv, cb);
+        VBOXSTRICTRC rcStrict = pVirtioCC->pfnDevCapRead(pDevIns, offIntra, pv, cb);
 
         /*
          * Additionally, anytime any part of the device-specific configuration (which our client maintains)
@@ -1270,9 +1270,9 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioRead(PPDMDEVINS pDevIns, void *pvUse
  */
 static DECLCALLBACK(VBOXSTRICTRC) virtioMmioWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    PVIRTIOSTATE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
-    PVIRTIOSTATECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOSTATECC);
-    Assert(pVirtio == (PVIRTIOSTATE)pvUser); RT_NOREF(pvUser);
+    PVIRTIOCORE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOCORE);
+    PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
+    Assert(pVirtio == (PVIRTIOCORE)pvUser); RT_NOREF(pvUser);
 
     /** @todo r=bird: This code does not handle writes spanning more than one
      * capability structure/area.   How does that match the spec?   For instance
@@ -1289,7 +1289,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioWrite(PPDMDEVINS pDevIns, void *pvUs
         /*
          * Pass this MMIO write access back to the client to handle
          */
-        return pVirtioCC->Callbacks.pfnDevCapWrite(pDevIns, offIntra, pv, cb);
+        return pVirtioCC->pfnDevCapWrite(pDevIns, offIntra, pv, cb);
 #else
         return VINF_IOM_R3_MMIO_WRITE;
 #endif
@@ -1330,8 +1330,8 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioWrite(PPDMDEVINS pDevIns, void *pvUs
 static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                         uint32_t uAddress, unsigned cb, uint32_t *pu32Value)
 {
-    PVIRTIOSTATE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
-    PVIRTIOSTATECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOSTATECC);
+    PVIRTIOCORE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOCORE);
+    PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
     RT_NOREF(pPciDev);
 
     LogFlowFunc(("pDevIns=%p pPciDev=%p uAddress=%#x cb=%u pu32Value=%p\n",
@@ -1370,8 +1370,8 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigRead(PPDMDEVINS pDevIns, PPDM
 static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                          uint32_t uAddress, unsigned cb, uint32_t u32Value)
 {
-    PVIRTIOSTATE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOSTATE);
-    PVIRTIOSTATECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOSTATECC);
+    PVIRTIOCORE   pVirtio   = PDMINS_2_DATA(pDevIns, PVIRTIOCORE);
+    PVIRTIOCORECC pVirtioCC = PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC);
     RT_NOREF(pPciDev);
 
     LogFlowFunc(("pDevIns=%p pPciDev=%p uAddress=%#x cb=%u u32Value=%#x\n", pDevIns, pPciDev, uAddress, cb, u32Value));
@@ -1414,7 +1414,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioR3PciConfigWrite(PPDMDEVINS pDevIns, PPD
  * @param   pSSM        The saved state handle.
  * @returns VBox status code.
  */
-int virtioR3SaveExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
+int virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
 {
     pHlp->pfnSSMPutU64(pSSM, VIRTIO_SAVEDSTATE_MARKER);
     pHlp->pfnSSMPutU32(pSSM, VIRTIO_SAVEDSTATE_VERSION);
@@ -1428,7 +1428,7 @@ int virtioR3SaveExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutU32(pSSM,    pVirtio->uDeviceFeaturesSelect);
     pHlp->pfnSSMPutU32(pSSM,    pVirtio->uDriverFeaturesSelect);
     pHlp->pfnSSMPutU64(pSSM,    pVirtio->uDriverFeatures);
-    Assert(pVirtio->uNumQueues == VIRTQ_MAX_CNT); /** @todo r=bird: See todo in struct & virtioR3LoadExec. */
+    Assert(pVirtio->uNumQueues == VIRTQ_MAX_CNT); /** @todo r=bird: See todo in struct & virtioCoreR3LoadExec. */
     pHlp->pfnSSMPutU32(pSSM,    pVirtio->uNumQueues);
 
     for (uint32_t i = 0; i < pVirtio->uNumQueues; i++)
@@ -1457,7 +1457,7 @@ int virtioR3SaveExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
  * @param   pSSM        The saved state handle.
  * @returns VBox status code.
  */
-int virtioR3LoadExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
+int virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
 {
     /*
      * Check the marker and (embedded) version number.
@@ -1529,7 +1529,7 @@ int virtioR3LoadExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
  * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.
  */
-void virtioR3PropagateResetNotification(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio)
+void virtioCoreR3PropagateResetNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio)
 {
     /** @todo r=bird: You probably need to do something here.  See
      *        virtioScsiR3Reset. */
@@ -1545,7 +1545,7 @@ void virtioR3PropagateResetNotification(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio
  * during suspend/quiescing and a notification was missed, to prevent the guest
  * from stalling after suspend.
  */
-void virtioR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio)
+void virtioCoreR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio)
 {
     virtioNotifyGuestDriver(pDevIns, pVirtio, 0 /* idxQueue */, true /* fForce */);
 }
@@ -1558,7 +1558,7 @@ void virtioR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirti
  * @param   pVirtio     Pointer to the shared virtio state.
  * @param   pVirtioCC   Pointer to the ring-3 virtio state.
  */
-void virtioR3Term(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC)
+void virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC)
 {
     if (pVirtioCC->pbPrevDevSpecificCfg)
     {
@@ -1589,16 +1589,23 @@ void virtioR3Term(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirt
  * @param   pvDevSpecificCfg        Address of client's dev-specific
  *                                  configuration struct.
  */
-int virtioR3Init(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
-                 const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg)
+int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
+                     const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg)
 {
     /*
      * The pVirtio state must be the first member of the shared device instance
      * data, otherwise we cannot get our bearings in the PCI configuration callbacks.
      */
-    AssertLogRelReturn(pVirtio == PDMINS_2_DATA(pDevIns, PVIRTIOSTATE), VERR_STATE_CHANGED);
-    AssertLogRelReturn(pVirtioCC == PDMINS_2_DATA_CC(pDevIns, PVIRTIOSTATECC), VERR_STATE_CHANGED);
+    AssertLogRelReturn(pVirtio == PDMINS_2_DATA(pDevIns, PVIRTIOCORE), VERR_STATE_CHANGED);
+    AssertLogRelReturn(pVirtioCC == PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC), VERR_STATE_CHANGED);
 
+    /*
+     * Caller must initialize these.
+     */
+    AssertReturn(pVirtioCC->pfnStatusChanged, VERR_INVALID_POINTER);
+    AssertReturn(pVirtioCC->pfnQueueNotified, VERR_INVALID_POINTER);
+    AssertReturn(pVirtioCC->pfnDevCapRead,    VERR_INVALID_POINTER);
+    AssertReturn(pVirtioCC->pfnDevCapWrite,   VERR_INVALID_POINTER);
 
 #if 0 /* Until pdmR3DvHlp_PCISetIrq() impl is fixed and Assert that limits vec to 0 is removed */
 # ifdef VBOX_WITH_MSI_DEVICES
@@ -1808,10 +1815,10 @@ int virtioR3Init(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirti
  * @param   pVirtioCC   Pointer to the current context virtio state.  This must be the
  *                      first member in the currenct context's device instance data!
  */
-int virtioRZInit(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC)
+int virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC)
 {
-    AssertLogRelReturn(pVirtio == PDMINS_2_DATA(pDevIns, PVIRTIOSTATE), VERR_STATE_CHANGED);
-    AssertLogRelReturn(pVirtioCC == PDMINS_2_DATA_CC(pDevIns, PVIRTIOSTATECC), VERR_STATE_CHANGED);
+    AssertLogRelReturn(pVirtio == PDMINS_2_DATA(pDevIns, PVIRTIOCORE), VERR_STATE_CHANGED);
+    AssertLogRelReturn(pVirtioCC == PDMINS_2_DATA_CC(pDevIns, PVIRTIOCORECC), VERR_STATE_CHANGED);
 
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pVirtio->hMmioPciCap, virtioMmioWrite, virtioMmioRead, pVirtio);
     AssertRCReturn(rc, rc);
