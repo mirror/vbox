@@ -24,8 +24,17 @@
 #include <iprt/ctype.h>
 #include <iprt/sg.h>
 
-/** Pointer to the virt i/o state. */
+/** Pointer to the shared VirtIO state. */
 typedef struct VIRTIOSTATE *PVIRTIOSTATE;
+/** Pointer to the ring-3 VirtIO state. */
+typedef struct VIRTIOSTATER3 *PVIRTIOSTATER3;
+/** Pointer to the ring-0 VirtIO state. */
+typedef struct VIRTIOSTATER0 *PVIRTIOSTATER0;
+/** Pointer to the raw-mode VirtIO state. */
+typedef struct VIRTIOSTATERC *PVIRTIOSTATERC;
+/** Pointer to the instance data for the current context. */
+typedef CTX_SUFF(PVIRTIOSTATE) PVIRTIOSTATECC;
+
 
 /**
  * Important sizing and bounds params for this impl. of VirtIO 1.0 PCI device
@@ -100,20 +109,22 @@ typedef struct VIRTIOCALLBACKS
       * Implementation-specific client callback to notify client of significant device status
       * changes.
       *
-      * @param   pVirtio    Pointer to virtio state.
+      * @param   pVirtio    Pointer to the shared virtio state.
+      * @param   pVirtioCC  Pointer to the ring-3 virtio state.
       * @param   fDriverOk  True if guest driver is okay (thus queues, etc... are
       *                     valid)
       */
-     DECLCALLBACKMEMBER(void, pfnStatusChanged)(PVIRTIOSTATE pVirtio, uint32_t fDriverOk);
+     DECLCALLBACKMEMBER(void, pfnStatusChanged)(PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, uint32_t fDriverOk);
 
      /**
       * When guest-to-host queue notifications are enabled, the guest driver notifies the host
       * that the avail queue has buffers, and this callback informs the client.
       *
-      * @param   pVirtio    Pointer to virtio state.
+      * @param   pVirtio    Pointer to the shared virtio state.
+      * @param   pVirtioCC  Pointer to the ring-3 virtio state.
       * @param   idxQueue   Index of the notified queue
       */
-     DECLCALLBACKMEMBER(void, pfnQueueNotified)(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
+     DECLCALLBACKMEMBER(void, pfnQueueNotified)(PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, uint16_t idxQueue);
 
      /**
       * Implementation-specific client callback to access VirtIO Device-specific capabilities
@@ -253,20 +264,11 @@ typedef struct VIRTIO_PCI_CAP_LOCATIONS_T
 } VIRTIO_PCI_CAP_LOCATIONS_T;
 
 /**
- * The core (/common) state of the VirtIO PCI device
+ * The core/common state of the VirtIO PCI devices, shared edition.
  */
 typedef struct VIRTIOSTATE
 {
     char                        szInstance[16];                     /**< Instance name, e.g. "VIRTIOSCSI0"         */
-    PPDMDEVINSR3                pDevInsR3;                          /**< Device instance - R3                      */
-
-#if 0
-    RTGCPHYS                    GCPhysPciCapBase;                   /**< Pointer to MMIO mapped capability data    */
-    RTGCPHYS                    GCPhysCommonCfg;                    /**< Pointer to MMIO mapped capability data    */
-    RTGCPHYS                    GCPhysNotifyCap;                    /**< Pointer to MMIO mapped capability data    */
-    RTGCPHYS                    GCPhysIsrCap;                       /**< Pointer to MMIO mapped capability data    */
-    RTGCPHYS                    GCPhysDeviceCap;                    /**< Pointer to MMIO mapped capability data    */
-#endif
 
     RTGCPHYS                    aGCPhysQueueDesc[VIRTQ_MAX_CNT];    /**< (MMIO) PhysAdr per-Q desc structs   GUEST */
     RTGCPHYS                    aGCPhysQueueAvail[VIRTQ_MAX_CNT];   /**< (MMIO) PhysAdr per-Q avail structs  GUEST */
@@ -292,13 +294,6 @@ typedef struct VIRTIOSTATE
     uint8_t                     uConfigGeneration;                  /**< (MMIO) Device config sequencer       HOST */
 
     VIRTQSTATE                  virtqState[VIRTQ_MAX_CNT];          /**< Local impl-specific queue context         */
-    VIRTIOCALLBACKS             Callbacks;                          /**< Callback vectors to client                */
-
-    R3PTRTYPE(PVIRTIO_PCI_CFG_CAP_T)    pPciCfgCap;                         /**< Pointer to struct in the PCI configuration area. */
-    R3PTRTYPE(PVIRTIO_PCI_NOTIFY_CAP_T) pNotifyCap;                         /**< Pointer to struct in the PCI configuration area. */
-    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pCommonCfgCap;                      /**< Pointer to struct in the PCI configuration area. */
-    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pIsrCap;                            /**< Pointer to struct in the PCI configuration area. */
-    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pDeviceCap;                         /**< Pointer to struct in the PCI configuration area. */
 
     /** @name The locations of the capability structures in PCI config space and the BAR.
      * @{ */
@@ -309,9 +304,6 @@ typedef struct VIRTIOSTATE
     VIRTIO_PCI_CAP_LOCATIONS_T  LocDeviceCap;                      /**< VIRTIO_PCI_CAP_T + custom data.  */
     /** @} */
 
-    uint32_t                    cbDevSpecificCfg;                   /**< Size of client's dev-specific config data */
-    void                       *pvDevSpecificCfg;                   /**< Pointer to client's struct                */
-    void                       *pvPrevDevSpecificCfg;               /**< Previous read dev-specific cfg of client  */
     bool                        fGenUpdatePending;                  /**< If set, update cfg gen after driver reads */
     uint8_t                     uPciCfgDataOff;
     uint8_t                     uISR;                               /**< Interrupt Status Register.                */
@@ -321,6 +313,49 @@ typedef struct VIRTIOSTATE
     /** The MMIO handle for the PCI capability region (\#2). */
     IOMMMIOHANDLE               hMmioPciCap;
 } VIRTIOSTATE;
+
+
+/**
+ * The core/common state of the VirtIO PCI devices, ring-3 edition.
+ */
+typedef struct VIRTIOSTATER3
+{
+    VIRTIOCALLBACKS             Callbacks;                          /**< Callback vectors to client                */
+
+    R3PTRTYPE(PVIRTIO_PCI_CFG_CAP_T)    pPciCfgCap;                 /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_NOTIFY_CAP_T) pNotifyCap;                 /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pCommonCfgCap;              /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pIsrCap;                    /**< Pointer to struct in the PCI configuration area. */
+    R3PTRTYPE(PVIRTIO_PCI_CAP_T)        pDeviceCap;                 /**< Pointer to struct in the PCI configuration area. */
+
+    uint32_t                    cbDevSpecificCfg;                   /**< Size of client's dev-specific config data */
+    R3PTRTYPE(uint8_t *)        pbDevSpecificCfg;                   /**< Pointer to client's struct                */
+    R3PTRTYPE(uint8_t *)        pbPrevDevSpecificCfg;               /**< Previous read dev-specific cfg of client  */
+    bool                        fGenUpdatePending;                  /**< If set, update cfg gen after driver reads */
+} VIRTIOSTATER3;
+
+
+/**
+ * The core/common state of the VirtIO PCI devices, ring-0 edition.
+ */
+typedef struct VIRTIOSTATER0
+{
+    uint64_t                    uUnusedAtTheMoment;
+} VIRTIOSTATER0;
+
+
+/**
+ * The core/common state of the VirtIO PCI devices, raw-mode edition.
+ */
+typedef struct VIRTIOSTATERC
+{
+    uint64_t                    uUnusedAtTheMoment;
+} VIRTIOSTATERC;
+
+
+/** @typedef VIRTIOSTATECC
+ * The instance data for the current context. */
+typedef CTX_SUFF(VIRTIOSTATE) VIRTIOSTATECC;
 
 
 /** virtq related flags */
@@ -345,15 +380,17 @@ int virtioR3QueueAttach(PVIRTIOSTATE pVirtio, uint16_t idxQueue, const char *pcs
  */
 int virtioQueueDetach(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
 #endif
-int  virtioR3QueueGet(PVIRTIOSTATE pVirtio, uint16_t idxQueue, PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
-int  virtioR3QueuePut(PVIRTIOSTATE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
+int  virtioR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue,
+                      PPVIRTIO_DESC_CHAIN_T ppDescChain, bool fRemove);
+int  virtioR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue, PRTSGBUF pSgVirtReturn,
                       PVIRTIO_DESC_CHAIN_T pDescChain, bool fFence);
-
-int virtioQueueSync(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
-bool virtioQueueIsEmpty(PVIRTIOSTATE pVirtio, uint16_t idxQueue);
-
+int  virtioQueueSync(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue);
+bool virtioQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue);
 void virtioQueueEnable(PVIRTIOSTATE pVirtio, uint16_t idxQueue, bool fEnabled);
+
+#if 0 /** @todo unused */
 void virtioResetAll(PVIRTIOSTATE pVirtio);
+#endif
 
 /**
  * Return queue enable state
@@ -408,11 +445,11 @@ DECLINLINE(uint64_t) virtioGetAcceptedFeatures(PVIRTIOSTATE pVirtio)
 
 int  virtioR3SaveExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
 int  virtioR3LoadExec(PVIRTIOSTATE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
-void virtioR3PropagateResetNotification(PVIRTIOSTATE pVirtio);
-void virtioR3PropagateResumeNotification(PVIRTIOSTATE pVirtio);
-void virtioR3Term(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns);
-int  virtioR3Init(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns, PVIRTIOPCIPARAMS pPciParams, const char *pcszInstance,
-                  uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
+void virtioR3PropagateResetNotification(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio);
+void virtioR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio);
+void virtioR3Term(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC);
+int  virtioR3Init(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
+                  const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
 
 void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
                             const void *pv, uint32_t cb, uint32_t uOffset,
