@@ -2354,7 +2354,7 @@
 
   <interface
     name="IDHCPGlobalConfig" extends="IDHCPConfig"
-    uuid="5d7bb1ea-27ed-4e01-3859-4302dd55f796"
+    uuid="46735de7-f4c4-4020-a185-0d2881bcfa8b"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="4"
     >
@@ -2362,7 +2362,6 @@
       The global DHCP server configuration, see <link to="IDHCPServer::globalConfig"/>.
     </desc>
 
-    <attribute name="midlDoesNotLikeEmptyInterfaces" readonly="yes" type="boolean"/>
   </interface>
 
   <interface
@@ -10316,6 +10315,7 @@
     <desc>
       Represents one of host's video capture devices, for example a webcam.
     </desc>
+
     <attribute name="name" type="wstring" readonly="yes">
       <desc>User friendly name.</desc>
     </attribute>
@@ -10325,14 +10325,28 @@
     </attribute>
 
     <attribute name="alias" type="wstring" readonly="yes">
-      <desc>An alias which can be used for IConsole::webcamAttach</desc>
+      <desc>An alias which can be used for <link to="IConsole::webcamAttach"/></desc>
     </attribute>
 
   </interface>
 
   <interface
+    name="IHostUpdate" extends="$unknown"
+    uuid="6fa2671b-0547-448e-bc7c-94e9e173bf57"
+    wsmap="managed"
+    reservedMethods="12" reservedAttributes="24"
+    >
+
+    <desc>
+      Represents the state of the update checking logic (a singleton returned
+      by <link to="IHost::update" /> attribute).
+    </desc>
+
+  </interface>
+
+  <interface
     name="IHost" extends="$unknown"
-    uuid="dbe11e5f-7f10-46e7-94c4-1e95bf4b6627"
+    uuid="16ced992-5fdc-4aba-aff5-6a39bbd7c38b"
     wsmap="managed"
     reservedMethods="6" reservedAttributes="12"
     >
@@ -10829,6 +10843,10 @@
         <desc>The identifier used when the source was added.</desc>
       </param>
     </method>
+
+    <attribute name="update" type="IHostUpdate" readonly="yes">
+      <desc>List of floppy drives available on the host.</desc>
+    </attribute>
 
   </interface>
 
@@ -18484,13 +18502,15 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <const name="VHWA" value="0x02">
       <desc>
-        Supports VHWA interface. If set, then IFramebuffer::processVHWACommand can be called.
+        Supports VHWA interface. If set, then
+        <link to="IFramebuffer::processVHWACommand"/> can be called.
       </desc>
     </const>
 
     <const name="VisibleRegion" value="0x04">
       <desc>
-        Supports visible region. If set, then IFramebuffer::setVisibleRegion can be called.
+        Supports visible region. If set, then
+        <link to="IFramebuffer::setVisibleRegion"/> can be called.
       </desc>
     </const>
 
@@ -18834,7 +18854,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed"
     >
     <desc>
-      How IDisplay::setScreenLayout method should work.
+      How <link to="IDisplay::setScreenLayout"/> method should work.
     </desc>
 
     <const name="Apply" value="0">

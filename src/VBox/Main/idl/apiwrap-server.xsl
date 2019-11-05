@@ -518,8 +518,8 @@ private:
         </xsl:call-template>
     </xsl:variable>
 
-    <!-- interface santiy check, prevents crashes -->
-    <xsl:if test="(count(attribute) + count(method)) = 0">
+    <!-- interface sanity check, prevents crashes -->
+    <xsl:if test="(count(attribute) + count(method) + sum(@reservedMethods[number()= number()]) + sum(@reservedAttributes[number()= number()])) = 0">
         <xsl:message terminate="yes">
             Interface <xsl:value-of select="@name"/> is empty which causes midl generated proxy
             stubs to crash. Please add a dummy:<xsl:value-of select="$G_sNewLine"/>

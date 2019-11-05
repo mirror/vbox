@@ -1934,6 +1934,14 @@ HRESULT Host::removeUSBDeviceSource(const com::Utf8Str &aId)
 #endif
 }
 
+
+HRESULT Host::getUpdate(ComPtr<IHostUpdate> &aUpdate)
+{
+    RT_NOREF(aUpdate);
+    ReturnComNotImplemented();
+}
+
+
 // public methods only for internal purposes
 ////////////////////////////////////////////////////////////////////////////////
 
