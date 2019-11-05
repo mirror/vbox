@@ -1467,8 +1467,6 @@ VOID GaDxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
         return;
     }
 
-    pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
-
     /* Scan fence objects and mark all with u32FenceId < u32LastCompletedFenceId as SIGNALED */
     const uint32_t u32LastCompletedFenceId = ASMAtomicReadU32(&pGaDevExt->u32LastCompletedFenceId);
 

@@ -1715,9 +1715,6 @@ VOID DxgkDdiDpcRoutineLegacy(
             &bRet);
     AssertNtStatusSuccess(Status); NOREF(Status);
 
-//    if (context.data.bNotifyDpc)
-    pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
-
     if (!vboxVtListIsEmpty(&context.data.CtlList))
     {
         int rc = VBoxSHGSMICommandPostprocessCompletion (&VBoxCommonFromDeviceExt(pDevExt)->guestCtx.heapCtx, &context.data.CtlList);

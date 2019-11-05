@@ -1032,7 +1032,7 @@ NTSTATUS DxgkDdiStartDevice(
                         /// @todo This enables legacy code which is shared with VMSVGA, for example displays setup.
                         //  Must be removed eventually.
                         pDevExt->fCmdVbvaEnabled = TRUE;
-                        pDevExt->fComplexTopologiesEnabled = FALSE; /** @todo Enable after implementing multimonitor support. */
+                        pDevExt->fComplexTopologiesEnabled = TRUE; /** @todo Implement clones support. */
                     }
                 }
 #endif /* VBOX_WITH_MESA3D */
@@ -4610,7 +4610,25 @@ static NTSTATUS DxgkDdiNotifySurpriseRemoval(
     return STATUS_SUCCESS;
 }
 
-static NTSTATUS vboxWddmInitDisplayOnlyDriver(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING pRegistryPath, VBOXVIDEO_HWTYPE enmHwType)
+static BOOLEAN DxgkDdiInterruptRoutine(const PVOID MiniportDeviceContext,
+                                       ULONG MessageNumber)
+{
+    BOOLEAN const fVMSVGA = GaDxgkDdiInterruptRoutine(MiniportDeviceContext, MessageNumber);
+    BOOLEAN const fHGSMI = DxgkDdiInterruptRoutineLegacy(MiniportDeviceContext, MessageNumber);
+    return fVMSVGA || fHGSMI;
+}
+
+static VOID DxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
+{
+    PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
+
+    GaDxgkDdiDpcRoutine(MiniportDeviceContext);
+    DxgkDdiDpcRoutineLegacy(MiniportDeviceContext);
+
+    pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+}
+
+static NTSTATUS vboxWddmInitDisplayOnlyDriver(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING pRegistryPath)
 {
     KMDDOD_INITIALIZATION_DATA DriverInitializationData = {'\0'};
 
@@ -4621,18 +4639,8 @@ static NTSTATUS vboxWddmInitDisplayOnlyDriver(IN PDRIVER_OBJECT pDriverObject, I
     DriverInitializationData.DxgkDdiStopDevice = DxgkDdiStopDevice;
     DriverInitializationData.DxgkDdiRemoveDevice = DxgkDdiRemoveDevice;
     DriverInitializationData.DxgkDdiDispatchIoRequest = DxgkDdiDispatchIoRequest;
-#ifdef VBOX_WITH_MESA3D
-    if (enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
-    {
-        DriverInitializationData.DxgkDdiInterruptRoutine = GaDxgkDdiInterruptRoutine;
-        DriverInitializationData.DxgkDdiDpcRoutine = GaDxgkDdiDpcRoutine;
-    }
-    else
-#endif
-    {
-        DriverInitializationData.DxgkDdiInterruptRoutine = DxgkDdiInterruptRoutineLegacy;
-        DriverInitializationData.DxgkDdiDpcRoutine = DxgkDdiDpcRoutineLegacy;
-    }
+    DriverInitializationData.DxgkDdiInterruptRoutine = DxgkDdiInterruptRoutine;
+    DriverInitializationData.DxgkDdiDpcRoutine = DxgkDdiDpcRoutine;
     DriverInitializationData.DxgkDdiQueryChildRelations = DxgkDdiQueryChildRelations;
     DriverInitializationData.DxgkDdiQueryChildStatus = DxgkDdiQueryChildStatus;
     DriverInitializationData.DxgkDdiQueryDeviceDescriptor = DxgkDdiQueryDeviceDescriptor;
@@ -4697,12 +4705,12 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     DriverInitializationData.DxgkDdiStopDevice = DxgkDdiStopDevice;
     DriverInitializationData.DxgkDdiRemoveDevice = DxgkDdiRemoveDevice;
     DriverInitializationData.DxgkDdiDispatchIoRequest = DxgkDdiDispatchIoRequest;
+    DriverInitializationData.DxgkDdiInterruptRoutine  = DxgkDdiInterruptRoutine;
+    DriverInitializationData.DxgkDdiDpcRoutine        = DxgkDdiDpcRoutine;
 
 #ifdef VBOX_WITH_MESA3D
     if (enmHwType == VBOXVIDEO_HWTYPE_VMSVGA)
     {
-        DriverInitializationData.DxgkDdiInterruptRoutine  = GaDxgkDdiInterruptRoutine;
-        DriverInitializationData.DxgkDdiDpcRoutine        = GaDxgkDdiDpcRoutine;
         DriverInitializationData.DxgkDdiPatch             = GaDxgkDdiPatch;
         DriverInitializationData.DxgkDdiSubmitCommand     = GaDxgkDdiSubmitCommand;
         DriverInitializationData.DxgkDdiPreemptCommand    = GaDxgkDdiPreemptCommand;
@@ -4714,8 +4722,6 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     else
 #endif
     {
-        DriverInitializationData.DxgkDdiInterruptRoutine  = DxgkDdiInterruptRoutineLegacy;
-        DriverInitializationData.DxgkDdiDpcRoutine        = DxgkDdiDpcRoutineLegacy;
         DriverInitializationData.DxgkDdiPatch             = DxgkDdiPatchLegacy;
         DriverInitializationData.DxgkDdiSubmitCommand     = DxgkDdiSubmitCommandLegacy;
         DriverInitializationData.DxgkDdiPreemptCommand    = DxgkDdiPreemptCommandLegacy;
@@ -4947,7 +4953,7 @@ DriverEntry(
         {
             if (g_VBoxDisplayOnly)
             {
-                Status = vboxWddmInitDisplayOnlyDriver(DriverObject, RegistryPath, enmHwType);
+                Status = vboxWddmInitDisplayOnlyDriver(DriverObject, RegistryPath);
             }
             else
             {
