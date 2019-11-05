@@ -67,6 +67,14 @@ RTCRestObjectBase::~RTCRestObjectBase()
 }
 
 
+/** Copy assignment operator. */
+RTCRestObjectBase &RTCRestObjectBase::operator=(RTCRestObjectBase const &a_rThat) RT_NOEXCEPT
+{
+    m_fNullIndicator = a_rThat.m_fNullIndicator;
+    return *this;
+}
+
+
 int RTCRestObjectBase::setNull() RT_NOEXCEPT
 {
     int rc = resetToDefault();

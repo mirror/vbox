@@ -153,6 +153,9 @@ public:
     RTCRestObjectBase(RTCRestObjectBase const &a_rThat) RT_NOEXCEPT;
     virtual ~RTCRestObjectBase();
 
+    /** Copy assignment operator. */
+    RTCRestObjectBase &operator=(RTCRestObjectBase const &a_rThat) RT_NOEXCEPT;
+
     /**
      * Create a copy of this object.
      *
