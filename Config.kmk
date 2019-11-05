@@ -6716,6 +6716,8 @@ ifdef VBOX_WITH_QTGUI
    TEMPLATE_VBOXQTGUIEXE_DEFS     += PIC
    TEMPLATE_VBOXQTGUIEXE_CFLAGS   += -fPIC
    TEMPLATE_VBOXQTGUIEXE_CXXFLAGS += -fPIC
+   # Needed for GCC 9. Even system's Qt 5.12.4 (on Ubuntu 19.10) did not have this fixed yet.
+   TEMPLATE_VBOXQTGUIEXE_CXXFLAGS.linux = -Wno-deprecated-copy $(TEMPLATE_VBOXQTGUIEXE_CXXFLAGS)
    TEMPLATE_VBOXQTGUIEXE_LDFLAGS  += -fPIC
  endif # not darwin, os2 or win
 
