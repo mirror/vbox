@@ -1991,32 +1991,33 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 {
     PVIRTIOSCSI     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSICC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     LogFunc(("LOAD EXEC!!\n"));
 
     AssertReturn(uPass == SSM_PASS_FINAL, VERR_SSM_UNEXPECTED_PASS);
     AssertLogRelMsgReturn(uVersion == VIRTIOSCSI_SAVED_STATE_VERSION,
                           ("uVersion=%u\n", uVersion), VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION);
 
-    SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uNumQueues);
-    SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uSegMax);
-    SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uMaxSectors);
-    SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uCmdPerLun);
-    SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uEventInfoSize);
-    SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uSenseSize);
-    SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uCdbSize);
-    SSMR3GetU16(pSSM, &pThis->virtioScsiConfig.uMaxChannel);
-    SSMR3GetU16(pSSM, &pThis->virtioScsiConfig.uMaxTarget);
-    SSMR3GetU32(pSSM, &pThis->virtioScsiConfig.uMaxLun);
-    SSMR3GetU32(pSSM, &pThis->fAsyncEvtsEnabled);
-    SSMR3GetU32(pSSM, (uint32_t *)&pThis->cActiveReqs);
-    SSMR3GetBool(pSSM, &pThis->fEventsMissed);
-    SSMR3GetU32(pSSM, &pThis->fVirtioReady);
-    SSMR3GetU32(pSSM, &pThis->fHasT10pi);
-    SSMR3GetU32(pSSM, &pThis->fHasHotplug);
-    SSMR3GetU32(pSSM, &pThis->fHasInOutBufs);
-    SSMR3GetU32(pSSM, &pThis->fHasLunChange);
-    SSMR3GetU32(pSSM, &pThis->fResetting);
-    int rc = SSMR3GetU32(pSSM, &pThisCC->fQuiescing);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uNumQueues);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uSegMax);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uMaxSectors);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uCmdPerLun);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uEventInfoSize);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uSenseSize);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uCdbSize);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->virtioScsiConfig.uMaxChannel);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->virtioScsiConfig.uMaxTarget);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uMaxLun);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->fAsyncEvtsEnabled);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->cActiveReqs);
+    pHlp->pfnSSMGetBool(pSSM, &pThis->fEventsMissed);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->fVirtioReady);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->fHasT10pi);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->fHasHotplug);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->fHasInOutBufs);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->fHasLunChange);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->fResetting);
+    int rc = pHlp->pfnSSMGetU32(pSSM, &pThisCC->fQuiescing);
     AssertRCReturn(rc, rc);
 
     /*
@@ -2032,31 +2033,34 @@ static DECLCALLBACK(int) virtioScsiR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
 {
     PVIRTIOSCSI     pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
     PVIRTIOSCSICC   pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     LogFunc(("SAVE EXEC!!\n"));
 
-    SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uNumQueues);
-    SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uSegMax);
-    SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uMaxSectors);
-    SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uCmdPerLun);
-    SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uEventInfoSize);
-    SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uSenseSize);
-    SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uCdbSize);
-    SSMR3PutU16(pSSM, pThis->virtioScsiConfig.uMaxChannel);
-    SSMR3PutU16(pSSM, pThis->virtioScsiConfig.uMaxTarget);
-    SSMR3PutU32(pSSM, pThis->virtioScsiConfig.uMaxLun);
-    SSMR3PutU32(pSSM, pThis->fAsyncEvtsEnabled);
-    SSMR3PutU32(pSSM, (uint32_t)pThis->cActiveReqs); /** @todo r=bird: Shouldn't this be zero?  I don't think we can have
-                                                      * outstanding requests when the VM is suspended (which we are when this
-                                                      * function is called), and more importantely, I don't understand how they
-                                                      * would be restored by virtioScsiR3LoadExec. */
-    SSMR3PutBool(pSSM, pThis->fEventsMissed);
-    SSMR3PutU32(pSSM, pThis->fVirtioReady);
-    SSMR3PutU32(pSSM, pThis->fHasT10pi);
-    SSMR3PutU32(pSSM, pThis->fHasHotplug);
-    SSMR3PutU32(pSSM, pThis->fHasInOutBufs);
-    SSMR3PutU32(pSSM, pThis->fHasLunChange);
-    SSMR3PutU32(pSSM, pThis->fResetting);
-    SSMR3PutU32(pSSM, pThisCC->fQuiescing); /** @todo r=bird: This shall always be false, as the VM is suspended when saving, so no need to save this */
+    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uNumQueues);
+    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uSegMax);
+    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uMaxSectors);
+    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uCmdPerLun);
+    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uEventInfoSize);
+    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uSenseSize);
+    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uCdbSize);
+    pHlp->pfnSSMPutU16(pSSM, pThis->virtioScsiConfig.uMaxChannel);
+    pHlp->pfnSSMPutU16(pSSM, pThis->virtioScsiConfig.uMaxTarget);
+    pHlp->pfnSSMPutU32(pSSM, pThis->virtioScsiConfig.uMaxLun);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fAsyncEvtsEnabled);
+    /** @todo r=bird: Shouldn't this be zero?  I don't think we can have
+     * outstanding requests when the VM is suspended (which we are when this
+     * function is called), and more importantely, I don't understand how they
+     * would be restored by virtioScsiR3LoadExec. */
+    pHlp->pfnSSMPutU32(pSSM, (uint32_t)pThis->cActiveReqs);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fEventsMissed);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fVirtioReady);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fHasT10pi);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fHasHotplug);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fHasInOutBufs);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fHasLunChange);
+    pHlp->pfnSSMPutU32(pSSM, pThis->fResetting);
+    /** @todo r=bird: This shall always be false, as the VM is suspended when saving, so no need to save this */
+    pHlp->pfnSSMPutU32(pSSM, pThisCC->fQuiescing);
 
     /*
      * Call the virtio core to let it save its state.
@@ -2528,9 +2532,10 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
 static DECLCALLBACK(int) virtioScsiRZConstruct(PPDMDEVINS pDevIns)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PVIRTIOSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSI   pThis   = PDMDEVINS_2_DATA(pDevIns, PVIRTIOSCSI);
+    PVIRTIOSCSICC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PVIRTIOSCSICC);
 
-    return virtioRZInit(&pThis->virtio, pDevIns);
+    return virtioRZInit(pDevIns, &pThis->Virtio, &pThisCC->Virtio);
 }
 
 #endif /* !IN_RING3 */
@@ -2544,15 +2549,15 @@ const PDMDEVREG g_DeviceVirtioSCSI =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "virtio-scsi",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS /** @todo | PDM_DEVREG_FLAGS_RZ */
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS /** @todo | PDM_DEVREG_FLAGS_RZ */ | PDM_DEVREG_FLAGS_NEW_STYLE
                                     | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION
                                     | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION,
-    /* .fClass = */                 PDM_DEVREG_CLASS_MISC,
+    /* .fClass = */                 PDM_DEVREG_CLASS_STORAGE,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(VIRTIOSCSI),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(VIRTIOSCSICC),
+    /* .cbInstanceRC = */           sizeof(VIRTIOSCSIRC),
     /* .cMaxPciDevices = */         1,
     /* .cMaxMsixVectors = */        VBOX_MSIX_MAX_ENTRIES,
     /* .pszDescription = */         "Virtio Host SCSI.\n",

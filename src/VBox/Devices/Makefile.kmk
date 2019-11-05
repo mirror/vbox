@@ -517,11 +517,11 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	Storage/DevLsiLogicSCSI.cpp
  endif
 
-  if defined(VBOX_WITH_NVME_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
-   VBoxDD_DEFS          += VBOX_WITH_NVME_IMPL
-   VBoxDD_SOURCES       += \
+ if defined(VBOX_WITH_NVME_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
+  VBoxDD_DEFS          += VBOX_WITH_NVME_IMPL
+  VBoxDD_SOURCES       += \
  	Storage/DevNVMe.cpp
-  endif
+ endif
 
  ifdef VBOX_WITH_VIRTIO_SCSI
   VBoxDD_DEFS           += VBOX_WITH_VIRTIO_SCSI
@@ -1025,7 +1025,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   if defined(VBOX_WITH_NVME_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
    VBoxDDGC_DEFS       += VBOX_WITH_NVME_IMPL
    VBoxDDGC_SOURCES    += \
-  	Storage/DevNVMe.cpp
+   	Storage/DevNVMe.cpp
   endif
 
   if1of ($(VBOX_LDR_FMT32), pe lx)
@@ -1107,11 +1107,11 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  	Storage/DevATA.cpp \
  	Network/DevPCNet.cpp \
  	Serial/DevSerial.cpp \
-  	Serial/DevOxPcie958.cpp \
-  	Serial/UartCore.cpp \
+ 	Serial/DevOxPcie958.cpp \
+ 	Serial/UartCore.cpp \
  	Parallel/DevParallel.cpp \
-	GIMDev/GIMDev.cpp \
-  	VMMDev/VMMDev.cpp \
+ 	GIMDev/GIMDev.cpp \
+ 	VMMDev/VMMDev.cpp \
  	VMMDev/VMMDevTesting.cpp \
  	Network/DrvIntNet.cpp \
  	Network/DrvDedicatedNic.cpp
@@ -1212,7 +1212,14 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
  if defined(VBOX_WITH_NVME_IMPL) && !defined(VBOX_WITH_EXTPACK_PUEL)
   VBoxDDR0_DEFS       += VBOX_WITH_NVME_IMPL
   VBoxDDR0_SOURCES    += \
- 	Storage/DevNVMe.cpp
+  	Storage/DevNVMe.cpp
+ endif
+
+ if defined(VBOX_WITH_VIRTIO_SCSI) && 0 ## @todo Enable this and comment in the _RZ flag in the registration structure.
+  VBoxDDR0_DEFS         += VBOX_WITH_VIRTIO_SCSI
+  VBoxDDR0_SOURCES      += \
+  	VirtIO/Virtio_1_0.cpp \
+  	Storage/DevVirtioSCSI.cpp
  endif
 
  ifdef VBOX_WITH_HGSMI

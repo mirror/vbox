@@ -450,6 +450,7 @@ void virtioR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirti
 void virtioR3Term(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC);
 int  virtioR3Init(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
                   const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
+int  virtioRZInit(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC);
 
 void virtioLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
                             const void *pv, uint32_t cb, uint32_t uOffset,

@@ -30,6 +30,7 @@
 #include <iprt/mem.h>
 #include <iprt/assert.h>
 #include <iprt/sg.h>
+#include <iprt/string.h>
 #include <VBox/vmm/pdmdev.h>
 #include "Virtio_1_0.h"
 
@@ -37,44 +38,30 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-#define INSTANCE(a_pVirtio)                 (a_pVirtio)->szInstance
-#define QUEUENAME(a_pVirtio, a_idxQueue)    ((a_pVirtio)->virtqState[(a_idxQueue)].szVirtqName)
+#define INSTANCE(a_pVirtio)                 ((a_pVirtio)->szInstance)
+#define QUEUE_NAME(a_pVirtio, a_idxQueue)   ((a_pVirtio)->virtqState[(a_idxQueue)].szVirtqName)
+#define IS_DRIVER_OK(a_pVirtio)             ((a_pVirtio)->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
 
 /**
- * This macro returns true if the implied parameter GCPhysAddr address and access length are
- * within the range of the mapped capability struct specified with the explicit parameters.
+ * This macro returns true if the @a a_offAccess and access length (@a
+ * a_cbAccess) are within the range of the mapped capability struct described by
+ * @a a_LocCapData.
  *
- * @param[in]  a_GCPhysCapData  Pointer to MMIO mapped capability struct
- * @param[in]  a_pCfgCap        Pointer to capability in PCI configuration area
- * @param[out] a_fMatched       True if GCPhysAddr is within the physically mapped capability.
- *
- * Implied parameters:
- *     - GCPhysAddr     - [input, implied] Physical address accessed (via MMIO callback)
- *     - cb             - [input, implied] Number of bytes to access
- *
- * @todo r=bird: Make this a predicate macro (I will probably simplify this a
- *       lot later when 'GCPhysAddr' becomes an 'off').
+ * @param[in]  a_offAccess      The offset into the MMIO bar of the access.
+ * @param[in]  a_cbAccess       The access size.
+ * @param[out] a_offIntraVar    The variable to return the intra-capability
+ *                              offset into.  ASSUMES this is uint32_t.
+ * @param[in]  a_LocCapData     The capability location info.
  */
-#define MATCH_VIRTIO_CAP_STRUCT_OLD(a_GCPhysCapData, a_pCfgCap, a_fMatched) \
-        bool const a_fMatched = (a_GCPhysCapData) != 0 \
-                             && (a_pCfgCap) != NULL \
-                             && GCPhysAddr >= (RTGCPHYS)(a_GCPhysCapData) \
-                             && GCPhysAddr < ((RTGCPHYS)(a_GCPhysCapData) + ((PVIRTIO_PCI_CAP_T)(a_pCfgCap))->uLength) \
-                             && cb <= ((PVIRTIO_PCI_CAP_T)a_pCfgCap)->uLength
-
 #define MATCHES_VIRTIO_CAP_STRUCT(a_offAccess, a_cbAccess, a_offIntraVar, a_LocCapData) \
     (   ((a_offIntraVar) = (uint32_t)((a_offAccess) - (a_LocCapData).offMmio)) < (uint32_t)(a_LocCapData).cbMmio \
      && (a_offIntraVar) + (uint32_t)(a_cbAccess) <= (uint32_t)(a_LocCapData).cbMmio )
-
-#define IS_DRIVER_OK(pVirtio) (pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK)
 
 
 /** Marks the start of the virtio saved state (just for sanity). */
 #define VIRTIO_SAVEDSTATE_MARKER                        UINT64_C(0x1133557799bbddff)
 /** The current saved state version for the virtio core. */
 #define VIRTIO_SAVEDSTATE_VERSION                       UINT32_C(1)
-
-
 
 
 /*********************************************************************************************************************************
@@ -555,13 +542,13 @@ int virtioR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue
 
         if (desc.fFlags & VIRTQ_DESC_F_WRITE)
         {
-            Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUENAME(pVirtio, idxQueue), uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
+            Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUE_NAME(pVirtio, idxQueue), uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
             cbIn += desc.cb;
             pSeg = &(paSegsIn[cSegsIn++]);
         }
         else
         {
-            Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUENAME(pVirtio, idxQueue), uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
+            Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUE_NAME(pVirtio, idxQueue), uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
             cbOut += desc.cb;
             pSeg = &(paSegsOut[cSegsOut++]);
         }
@@ -639,7 +626,7 @@ int virtioR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
     Log3Func(("Copying client data to %s, desc chain (head desc_idx %d)\n",
-              QUEUENAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
+              QUEUE_NAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
 
     /*
      * Copy s/g buf (virtual memory) to guest phys mem (IN direction). This virtual memory
@@ -682,7 +669,7 @@ int virtioR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue
               cbCopy, pDescChain->cbPhysReturn, pDescChain->cbPhysReturn - cbCopy));
 
     Log6Func(("Write ahead used_idx=%u, %s used_idx=%u\n",
-              pVirtq->uUsedIdx, QUEUENAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
+              pVirtq->uUsedIdx, QUEUE_NAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue)));
 
     RTMemFree((void *)pDescChain->pSgPhysSend->paSegs);
     RTMemFree(pDescChain->pSgPhysSend);
@@ -722,7 +709,7 @@ int virtioQueueSync(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint16_t idxQueue)
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
 
     Log6Func(("Updating %s used_idx from %u to %u\n",
-              QUEUENAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue), pVirtq->uUsedIdx));
+              QUEUE_NAME(pVirtio, idxQueue), virtioReadUsedRingIdx(pDevIns, pVirtio, idxQueue), pVirtq->uUsedIdx));
 
     virtioWriteUsedRingIdx(pDevIns, pVirtio, idxQueue, pVirtq->uUsedIdx);
     virtioNotifyGuestDriver(pDevIns, pVirtio, idxQueue, false);
@@ -840,6 +827,7 @@ static int virtioKick(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, uint8_t uCause, 
  */
 static void virtioLowerInterrupt(PPDMDEVINS pDevIns)
 {
+    /** @todo r=bird: MSI?   */
     PDMDevHlpPCISetIrq(pDevIns, 0, PDM_IRQ_LEVEL_LOW);
 }
 
@@ -939,7 +927,8 @@ static void virtioGuestR3WasReset(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIR
  * @param   cb          Number of bytes to read or write
  * @param   pv          Pointer to location to write to or read from
  */
-static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC, int fWrite, off_t offCfg, unsigned cb, void *pv)
+static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC,
+                                   int fWrite, uint32_t offCfg, unsigned cb, void *pv)
 {
 /**
  * This macro resolves to boolean true if the implied parameters, offCfg and cb,
@@ -1200,6 +1189,9 @@ static int virtioCommonCfgAccessed(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVI
 #undef LOG_COMMON_CFG_ACCESS_INDEXED
 #undef LOG_COMMON_CFG_ACCESS
 #undef MATCH_COMMON_CFG
+#ifndef IN_RING3
+    RT_NOREF(pDevIns, pVirtioCC);
+#endif
     return rc;
 }
 
@@ -1810,12 +1802,17 @@ int virtioR3Init(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirti
  * Sets up the core ring-0/raw-mode virtio bits.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pVirtio     Pointer to the shared virtio state.  This must be the first
  *                      member in the shared device instance data!
- * @param   pDevIns     The device instance.
+ * @param   pVirtioCC   Pointer to the current context virtio state.  This must be the
+ *                      first member in the currenct context's device instance data!
  */
-int virtioRZInit(PVIRTIOSTATE pVirtio, PPDMDEVINS pDevIns)
+int virtioRZInit(PPDMDEVINS pDevIns, PVIRTIOSTATE pVirtio, PVIRTIOSTATECC pVirtioCC)
 {
+    AssertLogRelReturn(pVirtio == PDMINS_2_DATA(pDevIns, PVIRTIOSTATE), VERR_STATE_CHANGED);
+    AssertLogRelReturn(pVirtioCC == PDMINS_2_DATA_CC(pDevIns, PVIRTIOSTATECC), VERR_STATE_CHANGED);
+
     int rc = PDMDevHlpMmioSetUpContext(pDevIns, pVirtio->hMmioPciCap, virtioMmioWrite, virtioMmioRead, pVirtio);
     AssertRCReturn(rc, rc);
     return rc;
