@@ -1783,9 +1783,13 @@ static int virtioScsiR3CfgAccessed(PVIRTIOSCSI pThis, uint32_t offConfig, void *
          || (   offConfig == RT_UOFFSETOF(VIRTIOSCSI_CONFIG_T, member) \
              && cb == RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member)) )
 
-#define LOG_SCSI_CONFIG_ACCESSOR(member) \
+#ifdef LOG_ENABLED
+# define LOG_SCSI_CONFIG_ACCESSOR(member) \
         virtioLogMappedIoValue(__FUNCTION__, #member, RT_SIZEOFMEMB(VIRTIOSCSI_CONFIG_T, member), \
                                pv, cb, offIntra, fWrite, false, 0);
+#else
+# define LOG_SCSI_CONFIG_ACCESSOR(member) do { } while (0)
+#endif
 
 #define SCSI_CONFIG_ACCESSOR(member) \
     do \
