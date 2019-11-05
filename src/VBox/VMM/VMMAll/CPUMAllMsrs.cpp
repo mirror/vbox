@@ -1262,7 +1262,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrRd_Ia32X2ApicN(PVMCPUCC pVCpu, uint32_t
     RT_NOREF_PV(pRange);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (   CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
-        && CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
+        && CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
     {
         VBOXSTRICTRC rcStrict = IEMExecVmxVirtApicAccessMsr(pVCpu, idMsr, puValue, false /* fWrite */);
         if (rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)
@@ -1282,7 +1282,7 @@ static DECLCALLBACK(VBOXSTRICTRC) cpumMsrWr_Ia32X2ApicN(PVMCPUCC pVCpu, uint32_t
     RT_NOREF_PV(pRange); RT_NOREF_PV(uRawValue);
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     if (   CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest)
-        && CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
+        && CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VIRT_X2APIC_MODE))
     {
         VBOXSTRICTRC rcStrict = IEMExecVmxVirtApicAccessMsr(pVCpu, idMsr, &uValue, true /* fWrite */);
         if (rcStrict == VINF_VMX_MODIFIES_BEHAVIOR)

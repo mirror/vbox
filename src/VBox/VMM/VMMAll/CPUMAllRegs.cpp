@@ -1883,7 +1883,7 @@ VMM_INT_DECL(bool) CPUMIsGuestPhysIntrEnabled(PVMCPU pVCpu)
     }
 
     if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
-        return CPUMIsGuestVmxPhysIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
+        return CPUMIsGuestVmxPhysIntrEnabled(&pVCpu->cpum.s.Guest);
 
     Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest));
     return CPUMIsGuestSvmPhysIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
@@ -1901,13 +1901,14 @@ VMM_INT_DECL(bool) CPUMIsGuestPhysIntrEnabled(PVMCPU pVCpu)
  */
 VMM_INT_DECL(bool) CPUMIsGuestVirtIntrEnabled(PVMCPU pVCpu)
 {
-    Assert(CPUMIsGuestInNestedHwvirtMode(&pVCpu->cpum.s.Guest));
+    PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
+    Assert(CPUMIsGuestInNestedHwvirtMode(pCtx));
 
-    if (CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.s.Guest))
-        return CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
+    if (CPUMIsGuestInVmxNonRootMode(pCtx))
+        return CPUMIsGuestVmxVirtIntrEnabled(pCtx);
 
-    Assert(CPUMIsGuestInSvmNestedHwVirtMode(&pVCpu->cpum.s.Guest));
-    return CPUMIsGuestSvmVirtIntrEnabled(pVCpu, &pVCpu->cpum.s.Guest);
+    Assert(CPUMIsGuestInSvmNestedHwVirtMode(pCtx));
+    return CPUMIsGuestSvmVirtIntrEnabled(pVCpu, pCtx);
 }
 
 
@@ -2011,14 +2012,14 @@ VMM_INT_DECL(bool) CPUMIsGuestNmiBlocking(PCVMCPU pVCpu)
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (   !CPUMIsGuestInNestedHwvirtMode(pCtx)
         ||  CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
-        || !CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI))
+        || !CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_VIRT_NMI))
         return VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_BLOCK_NMIS);
 
     /*
      * Return the state of virtual-NMI blocking, if we are executing a
      * VMX nested-guest with virtual-NMIs enabled.
      */
-    return CPUMIsGuestVmxVirtNmiBlocking(pVCpu, pCtx);
+    return CPUMIsGuestVmxVirtNmiBlocking(pCtx);
 }
 
 
@@ -2043,7 +2044,7 @@ VMM_INT_DECL(void) CPUMSetGuestNmiBlocking(PVMCPU pVCpu, bool fBlock)
     PCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (   !CPUMIsGuestInNestedHwvirtMode(pCtx)
         ||  CPUMIsGuestInSvmNestedHwVirtMode(pCtx)
-        || !CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI))
+        || !CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_VIRT_NMI))
     {
         if (fBlock)
         {
@@ -2062,7 +2063,7 @@ VMM_INT_DECL(void) CPUMSetGuestNmiBlocking(PVMCPU pVCpu, bool fBlock)
      * Set the state of virtual-NMI blocking, if we are executing a
      * VMX nested-guest with virtual-NMIs enabled.
      */
-    return CPUMSetGuestVmxVirtNmiBlocking(pVCpu, pCtx, fBlock);
+    return CPUMSetGuestVmxVirtNmiBlocking(pCtx, fBlock);
 }
 
 
@@ -2212,7 +2213,7 @@ VMM_INT_DECL(uint64_t) CPUMApplyNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uTs
     {
         PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
         Assert(pVmcs);
-        if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
+        if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
             return uTscValue + pVmcs->u64TscOffset.u;
         return uTscValue;
     }
@@ -2247,7 +2248,7 @@ VMM_INT_DECL(uint64_t) CPUMRemoveNestedGuestTscOffset(PCVMCPU pVCpu, uint64_t uT
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
     if (CPUMIsGuestInVmxNonRootMode(pCtx))
     {
-        if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
+        if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_USE_TSC_OFFSETTING))
         {
             PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
             Assert(pVmcs);
@@ -2749,10 +2750,10 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmcsFieldValid(PVMCC pVM, uint64_t u64VmcsField
 VMM_INT_DECL(bool) CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess)
 {
     PCCPUMCTX pCtx = &pVCpu->cpum.s.Guest;
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_UNCOND_IO_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_UNCOND_IO_EXIT))
         return true;
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_USE_IO_BITMAPS))
+    if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_USE_IO_BITMAPS))
     {
         uint8_t const *pbIoBitmap = (uint8_t const *)pCtx->hwvirt.vmx.CTX_SUFF(pvIoBitmap);
         Assert(pbIoBitmap);
@@ -2780,7 +2781,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxMovToCr3InterceptSet(PVMCPU pVCpu, uint64_t uNe
      */
     PCCPUMCTX  pCtx  = &pVCpu->cpum.s.Guest;
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_CR3_LOAD_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_CR3_LOAD_EXIT))
     {
         uint32_t const uCr3TargetCount = pVmcs->u32Cr3TargetCount;
         Assert(uCr3TargetCount <= VMX_V_CR3_TARGET_COUNT);
@@ -2820,7 +2821,7 @@ VMM_INT_DECL(bool) CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32
     /*
      * Without VMCS shadowing, all VMREAD and VMWRITE instructions are intercepted.
      */
-    if (!CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VMCS_SHADOWING))
+    if (!CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.s.Guest, VMX_PROC_CTLS2_VMCS_SHADOWING))
         return true;
 
     /*

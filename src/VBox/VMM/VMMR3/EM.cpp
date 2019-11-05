@@ -1499,8 +1499,8 @@ static int emR3VmxNstGstIntrIntercept(PVMCPU pVCpu)
 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
     /* Handle the "external interrupt" VM-exit intercept. */
-    if (    CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
-        && !CPUMIsGuestVmxExitCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
+    if (    CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.GstCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+        && !CPUMIsGuestVmxExitCtlsSet(&pVCpu->cpum.GstCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
     {
         VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
         AssertMsg(   rcStrict != VINF_PGM_CHANGE_MODE
@@ -1938,9 +1938,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                  * See Intel spec. 26.7.6 "NMI-Window Exiting".
                  */
                 if (    VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
-                    && !CPUMIsGuestVmxVirtNmiBlocking(pVCpu, &pVCpu->cpum.GstCtx))
+                    && !CPUMIsGuestVmxVirtNmiBlocking(&pVCpu->cpum.GstCtx))
                 {
-                    Assert(CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT));
+                    Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT));
                     Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
                     rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* uExitQual */));
                     AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
@@ -1959,7 +1959,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                 {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                     if (   fInVmxNonRootMode
-                        && CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_NMI_EXIT))
+                        && CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.GstCtx, VMX_PIN_CTLS_NMI_EXIT))
                     {
                         rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexitXcptNmi(pVCpu));
                         Assert(rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE);
@@ -2003,9 +2003,9 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                  * Takes priority over external interrupts.
                  */
                 else if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
-                         && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
+                         && CPUMIsGuestVmxVirtIntrEnabled(&pVCpu->cpum.GstCtx))
                 {
-                    Assert(CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT));
+                    Assert(CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT));
                     Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
                     rc2 = VBOXSTRICTRC_VAL(IEMExecVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* uExitQual */));
                     AssertMsg(   rc2 != VINF_VMX_INTERCEPT_NOT_ACTIVE
@@ -2030,7 +2030,7 @@ int emR3ForcedActions(PVM pVM, PVMCPU pVCpu, int rc)
                      */
                     if (   fInVmxNonRootMode
                         && VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INTERRUPT_NESTED_GUEST)
-                        && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
+                        && CPUMIsGuestVmxVirtIntrEnabled(&pVCpu->cpum.GstCtx))
                     {
                         /** @todo NSTVMX: virtual-interrupt delivery. */
                         rc2 = VINF_SUCCESS;

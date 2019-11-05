@@ -2023,16 +2023,14 @@ DECLINLINE(void) CPUMGuestSvmUpdateNRip(PVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t cb
  * executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uPinCtls    The Pin-based VM-execution controls to check.
  *
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uPinCtl.
  */
-DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uPinCtls)
+DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PCCPUMCTX pCtx, uint32_t uPinCtls)
 {
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2044,16 +2042,14 @@ DECLINLINE(bool) CPUMIsGuestVmxPinCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_
  * when executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uProcCtls   The Processor-based VM-execution controls to check.
  *
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uProcCtls.
  */
-DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls)
+DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PCCPUMCTX pCtx, uint32_t uProcCtls)
 {
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2065,7 +2061,6 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32
  * are set when executing a nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uProcCtls2  The Secondary Processor-based VM-execution controls to
  *                      check.
@@ -2073,9 +2068,8 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uProcCtls2.
  */
-DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uProcCtls2)
+DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PCCPUMCTX pCtx, uint32_t uProcCtls2)
 {
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2087,16 +2081,14 @@ DECLINLINE(bool) CPUMIsGuestVmxProcCtls2Set(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint3
  * nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uExitCtls   The VM-exit controls to check.
  *
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uExitCtls.
  */
-DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uExitCtls)
+DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PCCPUMCTX pCtx, uint32_t uExitCtls)
 {
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2108,16 +2100,14 @@ DECLINLINE(bool) CPUMIsGuestVmxExitCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32
  * nested-guest.
  *
  * @returns @c true if set, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uEntryCtls  The VM-entry controls to check.
  *
  * @remarks This does not check if all given controls are set if more than one
  *          control is passed in @a uEntryCtls.
  */
-DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint32_t uEntryCtls)
+DECLINLINE(bool) CPUMIsGuestVmxEntryCtlsSet(PCCPUMCTX pCtx, uint32_t uEntryCtls)
 {
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2158,17 +2148,15 @@ DECLINLINE(void) CPUMSetGuestVmxInterceptEvents(PCPUMCTX pCtx, bool fInterceptEv
  * function.
  *
  * @returns @c true if the exception causes a VM-exit, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uVector     The exception vector.
  * @param   uErrCode    The error code associated with the exception. Pass 0 if not
  *                      applicable.
  */
-DECLINLINE(bool) CPUMIsGuestVmxXcptInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t uVector, uint32_t uErrCode)
+DECLINLINE(bool) CPUMIsGuestVmxXcptInterceptSet(PCCPUMCTX pCtx, uint8_t uVector, uint32_t uErrCode)
 {
     Assert(uVector <= X86_XCPT_LAST);
 
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2246,12 +2234,10 @@ DECLINLINE(void) CPUMSetGuestVmxVmFail(PCPUMCTX pCtx, VMXINSTRERR enmInsErr)
  * nested-guest.
  *
  * @returns The APIC-access page guest-physical address.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx    Pointer to the context.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCCPUMCTX pCtx)
 {
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2262,11 +2248,10 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxApicAccessPageAddr(PCVMCPU pVCpu, PCCPUMCTX 
  * Gets the nested-guest CR0 subject to the guest/host mask and the read-shadow.
  *
  * @returns The nested-guest CR0.
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx            Pointer to the context.
  * @param   fGstHostMask    The CR0 guest/host mask to use.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint64_t fGstHostMask)
+DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCCPUMCTX pCtx, uint64_t fGstHostMask)
 {
     /*
      * For each CR0 bit owned by the host, the corresponding bit from the
@@ -2275,7 +2260,6 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx, uin
      *
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2288,11 +2272,10 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr0(PCVMCPU pVCpu, PCCPUMCTX pCtx, uin
  * Gets the nested-guest CR4 subject to the guest/host mask and the read-shadow.
  *
  * @returns The nested-guest CR4.
- * @param   pVCpu           The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx            Pointer to the context.
  * @param   fGstHostMask    The CR4 guest/host mask to use.
  */
-DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint64_t fGstHostMask)
+DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCCPUMCTX pCtx, uint64_t fGstHostMask)
 {
     /*
      * For each CR4 bit owned by the host, the corresponding bit from the
@@ -2301,7 +2284,6 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCVMCPU pVCpu, PCCPUMCTX pCtx, uin
      *
      * See Intel Spec. 25.3 "Changes To Instruction Behavior In VMX Non-root Operation".
      */
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2314,11 +2296,10 @@ DECLINLINE(uint64_t) CPUMGetGuestVmxMaskedCr4(PCVMCPU pVCpu, PCCPUMCTX pCtx, uin
  * Checks whether the LMSW access causes a VM-exit or not.
  *
  * @returns @c true if the LMSW access causes a VM-exit, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   uNewMsw     The LMSW source operand (the Machine Status Word).
  */
-DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint16_t uNewMsw)
+DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCCPUMCTX pCtx, uint16_t uNewMsw)
 {
     /*
      * LMSW VM-exits are subject to the CR0 guest/host mask and the CR0 read shadow.
@@ -2326,7 +2307,6 @@ DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, u
      * See Intel spec. 24.6.6 "Guest/Host Masks and Read Shadows for CR0 and CR4".
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2362,12 +2342,11 @@ DECLINLINE(bool) CPUMIsGuestVmxLmswInterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, u
  * Checks whether the Mov-to-CR0/CR4 access causes a VM-exit or not.
  *
  * @returns @c true if the Mov CRX access causes a VM-exit, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   iCrReg      The control register number (must be 0 or 4).
  * @param   uNewCrX     The CR0/CR4 value being written.
  */
-DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCVMCPU pVCpu, PCCPUMCTX pCtx, uint8_t iCrReg, uint64_t uNewCrX)
+DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCCPUMCTX pCtx, uint8_t iCrReg, uint64_t uNewCrX)
 {
     /*
      * For any CR0/CR4 bit owned by the host (in the CR0/CR4 guest/host mask), if the
@@ -2376,7 +2355,6 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCVMCPU pVCpu, PCCPUMCTX 
      *
      * See Intel spec. 25.1.3 "Instructions That Cause VM Exits Conditionally".
      */
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     PCVMXVVMCS pVmcs = pCtx->hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
@@ -2408,12 +2386,10 @@ DECLINLINE(bool) CPUMIsGuestVmxMovToCr0Cr4InterceptSet(PCVMCPU pVCpu, PCCPUMCTX 
  * Returns whether the guest has an active, current VMCS.
  *
  * @returns @c true if the guest has an active, current VMCS, @c false otherwise.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
- * @param   pCtx        Pointer to the context.
+ * @param   pCtx    Pointer to the context.
  */
-DECLINLINE(bool) CPUMIsGuestVmxCurrentVmcsValid(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxCurrentVmcsValid(PCCPUMCTX pCtx)
 {
-    RT_NOREF(pVCpu);
     RTGCPHYS const GCPhysVmcs = pCtx->hwvirt.vmx.GCPhysVmcs;
     return RT_BOOL(GCPhysVmcs != NIL_RTGCPHYS);
 }
@@ -2422,14 +2398,12 @@ DECLINLINE(bool) CPUMIsGuestVmxCurrentVmcsValid(PCVMCPU pVCpu, PCCPUMCTX pCtx)
  * Gets the nested-guest virtual-APIC page.
  *
  * @returns The virtual-APIC page.
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        Pointer to the context.
  * @param   pHCPhys     Where to store the host-physical address of the virtual-APIC
  *                      page.
  */
-DECLINLINE(void *) CPUMGetGuestVmxVirtApicPage(PCVMCPU pVCpu, PCCPUMCTX pCtx, PRTHCPHYS pHCPhysVirtApicPage)
+DECLINLINE(void *) CPUMGetGuestVmxVirtApicPage(PCCPUMCTX pCtx, PRTHCPHYS pHCPhysVirtApicPage)
 {
-    RT_NOREF(pVCpu);
     Assert(pHCPhysVirtApicPage);
     Assert(pCtx->hwvirt.enmHwvirt == CPUMHWVIRT_VMX);
     *pHCPhysVirtApicPage = pCtx->hwvirt.vmx.HCPhysVirtApicPage;
@@ -2443,16 +2417,13 @@ DECLINLINE(void *) CPUMGetGuestVmxVirtApicPage(PCVMCPU pVCpu, PCCPUMCTX pCtx, PR
  * interrupts.
  *
  * @returns @c true if it's ready, @c false otherwise.
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
-    RT_NOREF2(pVCpu, pCtx);
     AssertReleaseFailedReturn(false);
 #else
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
 #endif
@@ -2462,22 +2433,20 @@ DECLINLINE(bool) CPUMIsGuestVmxPhysIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
  * Checks whether the VMX nested-guest is blocking virtual-NMIs.
  *
  * @returns @c true if it's blocked, @c false otherwise.
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxVirtNmiBlocking(PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
-    RT_NOREF2(pVCpu, pCtx);
+    RT_NOREF(pCtx);
     AssertReleaseFailedReturn(false);
 #else
     /*
      * Return the state of virtual-NMI blocking, if we are executing a
      * VMX nested-guest with virtual-NMIs enabled.
      */
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
-    Assert(CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI));
+    Assert(CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_VIRT_NMI));
     return pCtx->hwvirt.vmx.fVirtNmiBlocking;
 #endif
 }
@@ -2485,19 +2454,17 @@ DECLINLINE(bool) CPUMIsGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCCPUMCTX pCtx)
 /**
  * Sets or clears VMX nested-guest virtual-NMI blocking.
  *
- * @param   pVCpu       The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx        The guest-CPU context.
  * @param   fBlocking   Whether virtual-NMI blocking is in effect or not.
  */
-DECLINLINE(void) CPUMSetGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCPUMCTX pCtx, bool fBlocking)
+DECLINLINE(void) CPUMSetGuestVmxVirtNmiBlocking(PCPUMCTX pCtx, bool fBlocking)
 {
 #ifdef IN_RC
-    RT_NOREF3(pVCpu, pCtx, fBlocking);
+    RT_NOREF2(pCtx, fBlocking);
     AssertReleaseFailedReturnVoid();
 #else
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
-    Assert(CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_VIRT_NMI));
+    Assert(CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_VIRT_NMI));
     pCtx->hwvirt.vmx.fVirtNmiBlocking = fBlocking;
 #endif
 }
@@ -2507,16 +2474,14 @@ DECLINLINE(void) CPUMSetGuestVmxVirtNmiBlocking(PCVMCPU pVCpu, PCPUMCTX pCtx, bo
  * (those injected with the "virtual-interrupt delivery" feature).
  *
  * @returns @c true if it's ready, @c false otherwise.
- * @param   pVCpu   The cross context virtual CPU structure of the calling EMT.
  * @param   pCtx    The guest-CPU context.
  */
-DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCVMCPU pVCpu, PCCPUMCTX pCtx)
+DECLINLINE(bool) CPUMIsGuestVmxVirtIntrEnabled(PCCPUMCTX pCtx)
 {
 #ifdef IN_RC
-    RT_NOREF2(pVCpu, pCtx);
+    RT_NOREF2(pCtx);
     AssertReleaseFailedReturn(false);
 #else
-    RT_NOREF(pVCpu);
     Assert(CPUMIsGuestInVmxNonRootMode(pCtx));
     return RT_BOOL(pCtx->eflags.u & X86_EFL_IF);
 #endif

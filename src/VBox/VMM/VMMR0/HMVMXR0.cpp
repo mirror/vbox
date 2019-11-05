@@ -996,7 +996,7 @@ static void hmR0VmxRemoveProcCtlsVmcs(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransien
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
         bool const fRemoveCtls = !pVmxTransient->fIsNestedGuest
                                ? true
-                               : !CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uProcCtls);
+                               : !CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, uProcCtls);
 #else
         NOREF(pVCpu);
         bool const fRemoveCtls = true;
@@ -1863,8 +1863,7 @@ static int hmR0VmxAllocVmcsInfo(PVMCPUCC pVCpu, PVMXVMCSINFO pVmcsInfo, bool fIs
         }
         else
         {
-            pVmcsInfo->pbVirtApic = (uint8_t *)CPUMGetGuestVmxVirtApicPage(pVCpu, &pVCpu->cpum.GstCtx,
-                                                                           &pVmcsInfo->HCPhysVirtApic);
+            pVmcsInfo->pbVirtApic = (uint8_t *)CPUMGetGuestVmxVirtApicPage(&pVCpu->cpum.GstCtx, &pVmcsInfo->HCPhysVirtApic);
             Assert(pVmcsInfo->pbVirtApic);
             Assert(pVmcsInfo->HCPhysVirtApic && pVmcsInfo->HCPhysVirtApic != NIL_RTHCPHYS);
         }
@@ -4592,9 +4591,9 @@ static bool hmR0VmxShouldSwapEferMsr(PCVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransie
      * the nested-guest.
      */
     if (   pVmxTransient->fIsNestedGuest
-        && (   CPUMIsGuestVmxEntryCtlsSet(pVCpu, pCtx, VMX_ENTRY_CTLS_LOAD_EFER_MSR)
-            || CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_SAVE_EFER_MSR)
-            || CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_LOAD_EFER_MSR)))
+        && (   CPUMIsGuestVmxEntryCtlsSet(pCtx, VMX_ENTRY_CTLS_LOAD_EFER_MSR)
+            || CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_SAVE_EFER_MSR)
+            || CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_LOAD_EFER_MSR)))
         return true;
 # else
     RT_NOREF(pVmxTransient);
@@ -5302,7 +5301,7 @@ static int hmR0VmxExportGuestHwvirtState(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTran
             PVMXVMCSINFO pVmcsInfo = pVmxTransient->pVmcsInfo;
             if (   CPUMIsGuestInVmxRootMode(&pVCpu->cpum.GstCtx)
                 && !CPUMIsGuestInVmxNonRootMode(&pVCpu->cpum.GstCtx)
-                && CPUMIsGuestVmxCurrentVmcsValid(pVCpu, &pVCpu->cpum.GstCtx))
+                && CPUMIsGuestVmxCurrentVmcsValid(&pVCpu->cpum.GstCtx))
             {
                 /* Paranoia. */
                 Assert(!pVmxTransient->fIsNestedGuest);
@@ -5482,7 +5481,7 @@ static int hmR0VmxExportGuestCR0(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient)
              */
             HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_CR0);
             uint64_t       u64GuestCr0  = pVCpu->cpum.GstCtx.cr0;
-            uint64_t const u64ShadowCr0 = CPUMGetGuestVmxMaskedCr0(pVCpu, &pVCpu->cpum.GstCtx, pVmcsInfo->u64Cr0Mask);
+            uint64_t const u64ShadowCr0 = CPUMGetGuestVmxMaskedCr0(&pVCpu->cpum.GstCtx, pVmcsInfo->u64Cr0Mask);
             Assert(!RT_HI_U32(u64GuestCr0));
             Assert(u64GuestCr0 & X86_CR0_NE);
 
@@ -5651,7 +5650,7 @@ static VBOXSTRICTRC hmR0VmxExportGuestCR3AndCR4(PVMCPUCC pVCpu, PCVMXTRANSIENT p
         uint64_t       u64GuestCr4  = pCtx->cr4;
         uint64_t const u64ShadowCr4 = !pVmxTransient->fIsNestedGuest
                                     ? pCtx->cr4
-                                    : CPUMGetGuestVmxMaskedCr4(pVCpu, pCtx, pVmcsInfo->u64Cr4Mask);
+                                    : CPUMGetGuestVmxMaskedCr4(pCtx, pVmcsInfo->u64Cr4Mask);
         Assert(!RT_HI_U32(u64GuestCr4));
 
         /*
@@ -8609,7 +8608,7 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             if (   fIsNestedGuest
-                && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_NMI_EXIT))
+                && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_NMI_EXIT))
                 return IEMExecVmxVmexitXcptNmi(pVCpu);
 #endif
             hmR0VmxSetPendingXcptNmi(pVCpu);
@@ -8640,8 +8639,8 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
         {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
             if (    fIsNestedGuest
-                &&  CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
-                && !CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
+                &&  CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+                && !CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
             {
                 VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, 0 /* uVector */, true /* fIntPending */);
                 Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
@@ -8654,8 +8653,8 @@ static VBOXSTRICTRC hmR0VmxEvaluatePendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT p
             {
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
                 if (   fIsNestedGuest
-                    && CPUMIsGuestVmxPinCtlsSet(pVCpu, pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
-                    && CPUMIsGuestVmxExitCtlsSet(pVCpu, pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
+                    && CPUMIsGuestVmxPinCtlsSet(pCtx, VMX_PIN_CTLS_EXT_INT_EXIT)
+                    && CPUMIsGuestVmxExitCtlsSet(pCtx, VMX_EXIT_CTLS_ACK_EXT_INT))
                 {
                     VBOXSTRICTRC rcStrict = IEMExecVmxVmexitExtInt(pVCpu, u8Interrupt, false /* fIntPending */);
                     Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
@@ -16182,7 +16181,7 @@ HMVMX_EXIT_DECL hmR0VmxExitXcptOrNmiNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
             hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
 
             PCCPUMCTX pCtx = &pVCpu->cpum.GstCtx;
-            bool const fIntercept = CPUMIsGuestVmxXcptInterceptSet(pVCpu, pCtx, VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo),
+            bool const fIntercept = CPUMIsGuestVmxXcptInterceptSet(pCtx, VMX_EXIT_INT_INFO_VECTOR(uExitIntInfo),
                                                                    pVmxTransient->uExitIntErrorCode);
             if (fIntercept)
             {
@@ -16265,7 +16264,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitIntWindowNested(PVMCPUCC pVCpu, PVMXTRANSIENT pV
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INT_WINDOW_EXIT))
         return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
     return hmR0VmxExitIntWindow(pVCpu, pVmxTransient);
 }
@@ -16278,7 +16277,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitNmiWindowNested(PVMCPUCC pVCpu, PVMXTRANSIENT pV
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_NMI_WINDOW_EXIT))
         return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, 0 /* uExitQual */);
     return hmR0VmxExitIntWindow(pVCpu, pVmxTransient);
 }
@@ -16318,7 +16317,7 @@ HMVMX_EXIT_DECL hmR0VmxExitHltNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransient
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_HLT_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_HLT_EXIT))
     {
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbExitInstr);
@@ -16334,7 +16333,7 @@ HMVMX_EXIT_DECL hmR0VmxExitInvlpgNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
     {
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         hmR0VmxReadExitQualVmcs(pVmxTransient);
@@ -16357,7 +16356,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdpmcNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDPMC_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDPMC_EXIT))
     {
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbExitInstr);
@@ -16414,7 +16413,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
     {
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbExitInstr);
@@ -16451,7 +16450,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
             {
                 case 0:
                 case 4:
-                    fIntercept = CPUMIsGuestVmxMovToCr0Cr4InterceptSet(pVCpu, &pVCpu->cpum.GstCtx, iCrReg, uNewCrX);
+                    fIntercept = CPUMIsGuestVmxMovToCr0Cr4InterceptSet(&pVCpu->cpum.GstCtx, iCrReg, uNewCrX);
                     break;
 
                 case 3:
@@ -16459,7 +16458,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
                     break;
 
                 case 8:
-                    fIntercept = CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_CR8_LOAD_EXIT);
+                    fIntercept = CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_CR8_LOAD_EXIT);
                     break;
 
                 default:
@@ -16495,7 +16494,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
                 static const uint32_t s_auCrXReadIntercepts[] = { 0, 0, 0, VMX_PROC_CTLS_CR3_STORE_EXIT, 0,
                                                                   0, 0, 0, VMX_PROC_CTLS_CR8_STORE_EXIT };
                 uint32_t const uIntercept = s_auCrXReadIntercepts[iCrReg];
-                if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, uIntercept))
+                if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, uIntercept))
                 {
                     VMXVEXITINFO ExitInfo;
                     RT_ZERO(ExitInfo);
@@ -16552,7 +16551,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovCRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
             else
                 GCPtrEffDst = NIL_RTGCPTR;
 
-            if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uNewMsw))
+            if (CPUMIsGuestVmxLmswInterceptSet(&pVCpu->cpum.GstCtx, uNewMsw))
             {
                 VMXVEXITINFO ExitInfo;
                 RT_ZERO(ExitInfo);
@@ -16591,7 +16590,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMovDRxNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MOV_DR_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MOV_DR_EXIT))
     {
         hmR0VmxReadExitQualVmcs(pVmxTransient);
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
@@ -16674,7 +16673,7 @@ HMVMX_EXIT_DECL hmR0VmxExitRdmsrNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     uint32_t fMsrpm;
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
         fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
     else
         fMsrpm = VMXMSRPM_EXIT_RD;
@@ -16696,7 +16695,7 @@ HMVMX_EXIT_DECL hmR0VmxExitWrmsrNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
     uint32_t fMsrpm;
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_MSR_BITMAPS))
         fMsrpm = CPUMGetVmxMsrPermission(pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pvMsrBitmap), pVCpu->cpum.GstCtx.ecx);
     else
         fMsrpm = VMXMSRPM_EXIT_WR;
@@ -16717,7 +16716,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMwaitNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MWAIT_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MWAIT_EXIT))
     {
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbExitInstr);
@@ -16751,7 +16750,7 @@ HMVMX_EXIT_DECL hmR0VmxExitMonitorNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MONITOR_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_MONITOR_EXIT))
     {
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbExitInstr);
@@ -16772,8 +16771,8 @@ HMVMX_EXIT_DECL hmR0VmxExitPauseNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
      *        to check for the intercepts here. Just call VM-exit... */
 
     /* The CPU would have already performed the necessary CPL checks for PAUSE-loop exiting. */
-    if (   CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_PAUSE_EXIT)
-        || CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_PAUSE_LOOP_EXIT))
+    if (   CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_PAUSE_EXIT)
+        || CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_PAUSE_LOOP_EXIT))
     {
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbExitInstr);
@@ -16790,7 +16789,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitTprBelowThresholdNested(PVMCPUCC pVCpu, PVMXTRAN
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_TPR_SHADOW))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_USE_TPR_SHADOW))
     {
         hmR0VmxReadGuestPendingDbgXctps(pVmxTransient);
         VMXVEXITINFO ExitInfo;
@@ -16816,7 +16815,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicAccessNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTr
     hmR0VmxReadIdtVectoringErrorCodeVmcs(pVmxTransient);
     hmR0VmxReadExitQualVmcs(pVmxTransient);
 
-    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
+    Assert(CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
 
     Log4Func(("at offset %#x type=%u\n", VMX_EXIT_QUAL_APIC_ACCESS_OFFSET(pVmxTransient->uExitQual),
               VMX_EXIT_QUAL_APIC_ACCESS_TYPE(pVmxTransient->uExitQual)));
@@ -16843,7 +16842,7 @@ HMVMX_EXIT_DECL hmR0VmxExitApicWriteNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTra
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_APIC_REG_VIRT));
+    Assert(CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_APIC_REG_VIRT));
     hmR0VmxReadExitQualVmcs(pVmxTransient);
     return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, pVmxTransient->uExitQual);
 }
@@ -16857,7 +16856,7 @@ HMVMX_EXIT_DECL hmR0VmxExitVirtEoiNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_INT_DELIVERY));
+    Assert(CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_VIRT_INT_DELIVERY));
     hmR0VmxReadExitQualVmcs(pVmxTransient);
     return IEMExecVmxVmexit(pVCpu, pVmxTransient->uExitReason, pVmxTransient->uExitQual);
 }
@@ -16870,9 +16869,9 @@ HMVMX_EXIT_DECL hmR0VmxExitRdtscpNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_RDTSC_EXIT))
     {
-        Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_RDTSCP));
+        Assert(CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_RDTSCP));
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbExitInstr);
     }
@@ -16887,7 +16886,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitWbinvdNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxT
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_WBINVD_EXIT))
+    if (CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_WBINVD_EXIT))
     {
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         return IEMExecVmxVmexitInstr(pVCpu, pVmxTransient->uExitReason, pVmxTransient->cbExitInstr);
@@ -16903,9 +16902,9 @@ HMVMX_EXIT_DECL hmR0VmxExitInvpcidNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTrans
 {
     HMVMX_VALIDATE_NESTED_EXIT_HANDLER_PARAMS(pVCpu, pVmxTransient);
 
-    if (CPUMIsGuestVmxProcCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
+    if (CPUMIsGuestVmxProcCtlsSet(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS_INVLPG_EXIT))
     {
-        Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, &pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_INVPCID));
+        Assert(CPUMIsGuestVmxProcCtls2Set(&pVCpu->cpum.GstCtx, VMX_PROC_CTLS2_INVPCID));
         hmR0VmxReadExitInstrLenVmcs(pVmxTransient);
         hmR0VmxReadExitQualVmcs(pVmxTransient);
         hmR0VmxReadExitInstrInfoVmcs(pVmxTransient);
@@ -16957,11 +16956,11 @@ HMVMX_EXIT_DECL hmR0VmxExitInstrNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     switch (pVmxTransient->uExitReason)
     {
         case VMX_EXIT_ENCLS:
-            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_ENCLS_EXIT));
+            Assert(CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_ENCLS_EXIT));
             break;
 
         case VMX_EXIT_VMFUNC:
-            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_VMFUNC));
+            Assert(CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_VMFUNC));
             break;
     }
 #endif
@@ -16987,27 +16986,27 @@ HMVMX_EXIT_DECL hmR0VmxExitInstrWithInfoNested(PVMCPUCC pVCpu, PVMXTRANSIENT pVm
     {
         case VMX_EXIT_GDTR_IDTR_ACCESS:
         case VMX_EXIT_LDTR_TR_ACCESS:
-            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT));
+            Assert(CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_DESC_TABLE_EXIT));
             break;
 
         case VMX_EXIT_RDRAND:
-            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_RDRAND_EXIT));
+            Assert(CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_RDRAND_EXIT));
             break;
 
         case VMX_EXIT_RDSEED:
-            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_RDSEED_EXIT));
+            Assert(CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_RDSEED_EXIT));
             break;
 
         case VMX_EXIT_XSAVES:
         case VMX_EXIT_XRSTORS:
             /** @todo NSTVMX: Verify XSS-bitmap. */
-            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_XSAVES_XRSTORS));
+            Assert(CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_XSAVES_XRSTORS));
             break;
 
         case VMX_EXIT_UMWAIT:
         case VMX_EXIT_TPAUSE:
-            Assert(CPUMIsGuestVmxProcCtlsSet(pVCpu, pCtx, VMX_PROC_CTLS_RDTSC_EXIT));
-            Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, pCtx, VMX_PROC_CTLS2_USER_WAIT_PAUSE));
+            Assert(CPUMIsGuestVmxProcCtlsSet(pCtx, VMX_PROC_CTLS_RDTSC_EXIT));
+            Assert(CPUMIsGuestVmxProcCtls2Set(pCtx, VMX_PROC_CTLS2_USER_WAIT_PAUSE));
             break;
     }
 #endif

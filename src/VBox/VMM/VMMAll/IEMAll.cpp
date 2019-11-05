@@ -397,20 +397,20 @@ typedef enum IEMXCPTCLASS
  * Check if the nested-guest has the given Pin-based VM-execution control set.
  */
 # define IEM_VMX_IS_PINCTLS_SET(a_pVCpu, a_PinCtl) \
-    (CPUMIsGuestVmxPinCtlsSet((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_PinCtl)))
+    (CPUMIsGuestVmxPinCtlsSet(IEM_GET_CTX(a_pVCpu), (a_PinCtl)))
 
 /**
  * Check if the nested-guest has the given Processor-based VM-execution control set.
  */
 #define IEM_VMX_IS_PROCCTLS_SET(a_pVCpu, a_ProcCtl) \
-    (CPUMIsGuestVmxProcCtlsSet((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_ProcCtl)))
+    (CPUMIsGuestVmxProcCtlsSet(IEM_GET_CTX(a_pVCpu), (a_ProcCtl)))
 
 /**
  * Check if the nested-guest has the given Secondary Processor-based VM-execution
  * control set.
  */
 #define IEM_VMX_IS_PROCCTLS2_SET(a_pVCpu, a_ProcCtl2) \
-    (CPUMIsGuestVmxProcCtls2Set((a_pVCpu), IEM_GET_CTX(a_pVCpu), (a_ProcCtl2)))
+    (CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(a_pVCpu), (a_ProcCtl2)))
 
 /**
  * Invokes the VMX VM-exit handler for an instruction intercept.
@@ -5445,7 +5445,7 @@ iemRaiseXcptOrInt(PVMCPUCC    pVCpu,
         /* If virtual-NMI blocking is in effect for the nested-guest, guest NMIs are not blocked. */
         if (pVCpu->cpum.GstCtx.hwvirt.vmx.fVirtNmiBlocking)
         {
-            Assert(CPUMIsGuestVmxPinCtlsSet(pVCpu, &pVCpu->cpum.GstCtx, VMX_PIN_CTLS_VIRT_NMI));
+            Assert(CPUMIsGuestVmxPinCtlsSet(&pVCpu->cpum.GstCtx, VMX_PIN_CTLS_VIRT_NMI));
             fBlockNmi = false;
         }
     }
@@ -13819,13 +13819,13 @@ static VBOXSTRICTRC iemHandleNestedInstructionBoundraryFFs(PVMCPUCC pVCpu, VBOXS
         {
             Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
             if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)
-                && CPUMIsGuestVmxVirtNmiBlocking(pVCpu, &pVCpu->cpum.GstCtx))
+                && CPUMIsGuestVmxVirtNmiBlocking(&pVCpu->cpum.GstCtx))
             {
                 rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_NMI_WINDOW, 0 /* u64ExitQual */);
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW));
             }
             else if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW)
-                     && CPUMIsGuestVmxVirtIntrEnabled(pVCpu, &pVCpu->cpum.GstCtx))
+                     && CPUMIsGuestVmxVirtIntrEnabled(&pVCpu->cpum.GstCtx))
             {
                 rcStrict = iemVmxVmexit(pVCpu, VMX_EXIT_INT_WINDOW, 0 /* u64ExitQual */);
                 Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_INT_WINDOW));
@@ -14260,7 +14260,7 @@ VMMDECL(VBOXSTRICTRC) IEMExecLots(PVMCPUCC pVCpu, uint32_t cMaxInstructions, uin
         if (!CPUMIsGuestInNestedHwvirtMode(IEM_GET_CTX(pVCpu)))
             fIntrEnabled = pVCpu->cpum.GstCtx.eflags.Bits.u1IF;
         else if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
-            fIntrEnabled = CPUMIsGuestVmxPhysIntrEnabled(pVCpu, IEM_GET_CTX(pVCpu));
+            fIntrEnabled = CPUMIsGuestVmxPhysIntrEnabled(IEM_GET_CTX(pVCpu));
         else
         {
             Assert(CPUMIsGuestInSvmNestedHwVirtMode(IEM_GET_CTX(pVCpu)));
@@ -16230,8 +16230,8 @@ PGM_ALL_CB2_DECL(VBOXSTRICTRC) iemVmxApicAccessPageHandler(PVMCC pVM, PVMCPUCC p
     RTGCPHYS const GCPhysAccessBase = GCPhysFault & ~(RTGCPHYS)PAGE_OFFSET_MASK;
     if (CPUMIsGuestInVmxNonRootMode(IEM_GET_CTX(pVCpu)))
     {
-        Assert(CPUMIsGuestVmxProcCtls2Set(pVCpu, IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
-        Assert(CPUMGetGuestVmxApicAccessPageAddr(pVCpu, IEM_GET_CTX(pVCpu)) == GCPhysAccessBase);
+        Assert(CPUMIsGuestVmxProcCtls2Set(IEM_GET_CTX(pVCpu), VMX_PROC_CTLS2_VIRT_APIC_ACCESS));
+        Assert(CPUMGetGuestVmxApicAccessPageAddr(IEM_GET_CTX(pVCpu)) == GCPhysAccessBase);
 
         /** @todo NSTVMX: How are we to distinguish instruction fetch accesses here?
          *        Currently they will go through as read accesses. */

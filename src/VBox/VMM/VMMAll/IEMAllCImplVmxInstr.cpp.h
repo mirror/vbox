@@ -2843,7 +2843,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrLmsw(PVMCPUCC pVCpu, uint32_t uGuestCr0
     Assert(pu16NewMsw);
 
     uint16_t const uNewMsw = *pu16NewMsw;
-    if (CPUMIsGuestVmxLmswInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uNewMsw))
+    if (CPUMIsGuestVmxLmswInterceptSet(&pVCpu->cpum.GstCtx, uNewMsw))
     {
         Log2(("lmsw: Guest intercept -> VM-exit\n"));
 
@@ -2959,7 +2959,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitInstrMovToCr0Cr4(PVMCPUCC pVCpu, uint8_t iCr
     Assert(iGReg < X86_GREG_COUNT);
 
     uint64_t const uNewCrX = *puNewCrX;
-    if (CPUMIsGuestVmxMovToCr0Cr4InterceptSet(pVCpu, &pVCpu->cpum.GstCtx, iCrReg, uNewCrX))
+    if (CPUMIsGuestVmxMovToCr0Cr4InterceptSet(&pVCpu->cpum.GstCtx, iCrReg, uNewCrX))
     {
         Log2(("mov_Cr_Rd: (CR%u) Guest intercept -> VM-exit\n", iCrReg));
 
@@ -3697,7 +3697,7 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitEvent(PVMCPUCC pVCpu, uint8_t uVector, uint3
     if (   !(fFlags & IEM_XCPT_FLAGS_T_SOFT_INT)
         ||  (fFlags & (IEM_XCPT_FLAGS_BP_INSTR | IEM_XCPT_FLAGS_OF_INSTR | IEM_XCPT_FLAGS_ICEBP_INSTR)))
     {
-        fIntercept = CPUMIsGuestVmxXcptInterceptSet(pVCpu, &pVCpu->cpum.GstCtx, uVector, uErrCode);
+        fIntercept = CPUMIsGuestVmxXcptInterceptSet(&pVCpu->cpum.GstCtx, uVector, uErrCode);
     }
     else
     {
