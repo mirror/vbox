@@ -176,6 +176,7 @@ struct BootNic
     }
 };
 
+#ifndef VBOX_WITH_EFI_IN_DD2
 static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str *pEfiRomFile)
 {
     Bstr aFilePath, empty;
@@ -194,6 +195,7 @@ static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str *
 
     return VINF_SUCCESS;
 }
+#endif
 
 /**
  * @throws HRESULT on extra data retrival error.
