@@ -6153,25 +6153,25 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      */
     ohciR3DoReset(pDevIns, pThis, pThisCC, OHCI_USB_RESET, false /* don't reset devices */);
 
-#ifdef VBOX_WITH_STATISTICS
+# ifdef VBOX_WITH_STATISTICS
     /*
      * Register statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCanceledIsocUrbs, STAMTYPE_COUNTER, "/Devices/OHCI/CanceledIsocUrbs", STAMUNIT_OCCURENCES,     "Detected canceled isochronous URBs.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCanceledGenUrbs,  STAMTYPE_COUNTER, "/Devices/OHCI/CanceledGenUrbs",  STAMUNIT_OCCURENCES,     "Detected canceled general URBs.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDroppedUrbs,      STAMTYPE_COUNTER, "/Devices/OHCI/DroppedUrbs",      STAMUNIT_OCCURENCES,     "Dropped URBs (endpoint halted, or URB canceled).");
-#endif
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCanceledIsocUrbs, STAMTYPE_COUNTER, "CanceledIsocUrbs", STAMUNIT_OCCURENCES, "Detected canceled isochronous URBs.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCanceledGenUrbs,  STAMTYPE_COUNTER, "CanceledGenUrbs",  STAMUNIT_OCCURENCES, "Detected canceled general URBs.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatDroppedUrbs,      STAMTYPE_COUNTER, "DroppedUrbs",      STAMUNIT_OCCURENCES, "Dropped URBs (endpoint halted, or URB canceled).");
+# endif
 
     /*
      * Register debugger info callbacks.
      */
     PDMDevHlpDBGFInfoRegister(pDevIns, "ohci", "OHCI control registers.", ohciR3InfoRegs);
 
-#if 0/*def DEBUG_bird*/
+# if 0/*def DEBUG_bird*/
 //  g_fLogInterruptEPs = true;
     g_fLogControlEPs = true;
     g_fLogBulkEPs = true;
-#endif
+# endif
 
     return VINF_SUCCESS;
 }
