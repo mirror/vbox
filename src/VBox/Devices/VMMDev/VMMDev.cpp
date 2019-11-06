@@ -4765,15 +4765,15 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Statistics.
      */
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks,    STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Memory balloon size",                           "/Devices/VMMDev/BalloonChunks");
+                           "Memory balloon size",                           "BalloonChunks");
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatFastIrqAckR3,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Fast IRQ acknowledgments handled in ring-3.",   "/Devices/VMMDev/FastIrqAckR3");
+                           "Fast IRQ acknowledgments handled in ring-3.",   "FastIrqAckR3");
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatFastIrqAckRZ,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Fast IRQ acknowledgments handled in ring-0 or raw-mode.", "/Devices/VMMDev/FastIrqAckRZ");
+                           "Fast IRQ acknowledgments handled in ring-0 or raw-mode.", "FastIrqAckRZ");
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatSlowIrqAck,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Slow IRQ acknowledgments (old style).",         "/Devices/VMMDev/SlowIrqAck");
+                           "Slow IRQ acknowledgments (old style).",         "SlowIrqAck");
     PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->StatReqBufAllocs,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Times a larger request buffer was required.",   "/Devices/VMMDev/LargeReqBufAllocs");
+                           "Times a larger request buffer was required.",   "LargeReqBufAllocs");
 #ifdef VBOX_WITH_HGCM
     PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->StatHgcmCmdArrival,    STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL,
                            "Profiling HGCM call arrival processing",        "/HGCM/MsgArrival");
@@ -4784,7 +4784,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->StatHgcmLargeCmdAllocs,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
                            "Times the allocation cache could not be used.", "/HGCM/LargeCmdAllocs");
     PDMDevHlpSTAMRegisterF(pDevIns, &pThisCC->StatHgcmFailedPageListLocking,STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
-                           "Times no-bounce page list locking failed.", "/HGCM/FailedPageListLocking");
+                           "Times no-bounce page list locking failed.",     "/HGCM/FailedPageListLocking");
 #endif
 
     /*
