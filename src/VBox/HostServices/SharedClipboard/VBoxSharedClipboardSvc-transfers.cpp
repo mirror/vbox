@@ -2201,7 +2201,8 @@ int shClSvcTransferModeSet(uint32_t fMode)
 
     g_fTransferMode = fMode;
 
-    LogRel2(("Shared Clipboard: Transfer mode set to 0x%x\n", g_fTransferMode));
+    LogRel2(("Shared Clipboard: File transfers are now %s\n",
+             g_fTransferMode != VBOX_SHCL_TRANSFER_MODE_DISABLED ? "enabled" : "disabled"));
 
     /* If file transfers are being disabled, make sure to also reset (destroy) all pending transfers. */
     if (g_fTransferMode == VBOX_SHCL_TRANSFER_MODE_DISABLED)
