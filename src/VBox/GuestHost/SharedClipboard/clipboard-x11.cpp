@@ -76,9 +76,9 @@ enum CLIPFORMAT
     TEXT,  /* Treat this as Utf8, but it may really be ascii */
     UTF8,
     BMP,
-    HTML,
+    HTML
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    URI_LIST,
+    , URI_LIST
 #endif
 };
 
