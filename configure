@@ -312,7 +312,7 @@ test_compile()
 test_execute()
 {
   echo "executing the binary" >> $LOG
-  $ODIR.tmp_out > $ODIR.test_execute.log
+  $ODIR.tmp_out > $ODIR.test_execute.log 2>&1
   rc=$?
   cat $ODIR.test_execute.log | tee -a $LOG
   if [ $rc -ne 0 ]; then
@@ -333,7 +333,7 @@ test_execute_path()
   ## Set this to non-empty to make this test non-fatal.
   local_nofail="${2}"
   echo "executing the binary (LD_LIBRARY_PATH=$1)" >> $LOG
-  LD_LIBRARY_PATH="${local_path}" $ODIR.tmp_out > $ODIR.test_execute.log
+  LD_LIBRARY_PATH="${local_path}" $ODIR.tmp_out > $ODIR.test_execute.log 2>&1
   rc=$?
   cat $ODIR.test_execute.log | tee -a $LOG
   if [ $rc -ne 0 ]; then
