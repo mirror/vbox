@@ -596,17 +596,6 @@ static DECLCALLBACK(void) vnetR3LinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
         pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, PDMNETWORKLINKSTATE_UP);
 }
 
-
-/**
- * @callback_method_impl{FNPDMQUEUEDEV, Handler for the wakeup signaller queue.}
- */
-static DECLCALLBACK(bool) vnetR3CanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
-{
-    RT_NOREF(pItem);
-    vnetWakeupReceive(pDevIns);
-    return true;
-}
-
 #endif /* IN_RING3 */
 
 /**
