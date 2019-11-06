@@ -21,7 +21,11 @@
 # pragma once
 #endif
 
-#include <iprt/ctype.h>
+#include <iprt/types.h>
+
+
+/** Pointer to the core (/common) state of a VirtIO PCI device. */
+typedef struct VPCISTATE *PVPCISTATE;
 
 
 /** @name Saved state versions.
@@ -119,10 +123,11 @@ typedef VRING *PVRING;
 /**
  * Queue callback (consumer?).
  *
- * @param   pvState         Pointer to the VirtIO PCI core state, VPCISTATE.
+ * @param   pDevIns         The device instance.
+ * @param   pVPciState      Pointer to the VirtIO PCI core state.
  * @param   pQueue          Pointer to the queue structure.
  */
-typedef DECLCALLBACK(void) FNVPCIQUEUECALLBACK(void *pvState, struct VQueue *pQueue);
+typedef DECLCALLBACK(void) FNVPCIQUEUECALLBACK(PPDMDEVINS pDevIns, PVPCISTATE pVPciState, struct VQueue *pQueue);
 /** Pointer to a VQUEUE callback function. */
 typedef FNVPCIQUEUECALLBACK *PFNVPCIQUEUECALLBACK;
 
@@ -168,7 +173,7 @@ enum VirtioDeviceType
  *
  * @implements  PDMILEDPORTS
  */
-typedef struct VPCIState_st
+typedef struct VPCISTATE
 {
     PDMCRITSECT            cs;      /**< Critical section - what is it protecting? */
     /* Read-only part, never changes after initialization. */
@@ -212,7 +217,7 @@ typedef struct VPCIState_st
     uint32_t               nQueues;       /**< Actual number of queues used. */
     VQUEUE                 Queues[VIRTIO_MAX_NQUEUES];
 
-#if defined(VBOX_WITH_STATISTICS)
+#ifdef VBOX_WITH_STATISTICS
     STAMPROFILEADV         StatIOReadR3;
     STAMPROFILEADV         StatIOReadR0;
     STAMPROFILEADV         StatIOReadRC;
@@ -224,25 +229,20 @@ typedef struct VPCIState_st
     STAMPROFILE            StatCsR3;
     STAMPROFILE            StatCsR0;
     STAMPROFILE            StatCsRC;
-#endif /* VBOX_WITH_STATISTICS */
+#endif
 } VPCISTATE;
-/** Pointer to the core (/common) state of a VirtIO PCI device. */
-typedef VPCISTATE *PVPCISTATE;
-
-typedef DECLCALLBACK(uint32_t) FNGETHOSTFEATURES(void *pvState);
-typedef FNGETHOSTFEATURES *PFNGETHOSTFEATURES;
 
 /** @name VirtIO port I/O callbacks.
  * @{ */
 typedef struct VPCIIOCALLBACKS
 {
-     DECLCALLBACKMEMBER(uint32_t, pfnGetHostFeatures)(void *pvState);
-     DECLCALLBACKMEMBER(uint32_t, pfnGetHostMinimalFeatures)(void *pvState);
-     DECLCALLBACKMEMBER(void,     pfnSetHostFeatures)(void *pvState, uint32_t fFeatures);
-     DECLCALLBACKMEMBER(int,      pfnGetConfig)(void *pvState, uint32_t offCfg, uint32_t cb, void *pvData);
-     DECLCALLBACKMEMBER(int,      pfnSetConfig)(void *pvState, uint32_t offCfg, uint32_t cb, void *pvData);
-     DECLCALLBACKMEMBER(int,      pfnReset)(void *pvState);
-     DECLCALLBACKMEMBER(void,     pfnReady)(void *pvState);
+     DECLCALLBACKMEMBER(uint32_t, pfnGetHostFeatures)(PVPCISTATE pVPciState);
+     DECLCALLBACKMEMBER(uint32_t, pfnGetHostMinimalFeatures)(PVPCISTATE pVPciState);
+     DECLCALLBACKMEMBER(void,     pfnSetHostFeatures)(PVPCISTATE pVPciState, uint32_t fFeatures);
+     DECLCALLBACKMEMBER(int,      pfnGetConfig)(PVPCISTATE pVPciState, uint32_t offCfg, uint32_t cb, void *pvData);
+     DECLCALLBACKMEMBER(int,      pfnSetConfig)(PVPCISTATE pVPciState, uint32_t offCfg, uint32_t cb, void *pvData);
+     DECLCALLBACKMEMBER(int,      pfnReset)(PVPCISTATE pVPciState);
+     DECLCALLBACKMEMBER(void,     pfnReady)(PVPCISTATE pVPciState);
 } VPCIIOCALLBACKS;
 /** Pointer to a const VirtIO port I/O callback structure. */
 typedef const VPCIIOCALLBACKS *PCVPCIIOCALLBACKS;
@@ -250,18 +250,18 @@ typedef const VPCIIOCALLBACKS *PCVPCIIOCALLBACKS;
 
 int vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause);
 int vpciIOPortIn(PPDMDEVINS         pDevIns,
-                 void              *pvUser,
+                 PVPCISTATE         pState,
                  RTIOPORT           port,
                  uint32_t          *pu32,
                  unsigned           cb,
                  PCVPCIIOCALLBACKS  pCallbacks);
 
-int vpciIOPortOut(PPDMDEVINS                pDevIns,
-                  void                     *pvUser,
-                  RTIOPORT                  port,
-                  uint32_t                  u32,
-                  unsigned                  cb,
-                  PCVPCIIOCALLBACKS         pCallbacks);
+int vpciIOPortOut(PPDMDEVINS        pDevIns,
+                  PVPCISTATE        pState,
+                  RTIOPORT          port,
+                  uint32_t          u32,
+                  unsigned          cb,
+                  PCVPCIIOCALLBACKS pCallbacks);
 
 void  vpciSetWriteLed(PVPCISTATE pState, bool fOn);
 void  vpciSetReadLed(PVPCISTATE pState, bool fOn);

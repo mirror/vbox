@@ -395,9 +395,12 @@ DECLINLINE(void) vnetPrintFeatures(PVNETSTATE pThis, uint32_t fFeatures, const c
 #endif /* !LOG_ENABLED */
 }
 
-static DECLCALLBACK(uint32_t) vnetIoCb_GetHostFeatures(void *pvState)
+/**
+ * @interface_method_impl{VPCIIOCALLBACKS,pfnGetHostFeatures}
+ */
+static DECLCALLBACK(uint32_t) vnetIoCb_GetHostFeatures(PVPCISTATE pVPciState)
 {
-    RT_NOREF_PV(pvState);
+    RT_NOREF_PV(pVPciState);
 
     /* We support:
      * - Host-provided MAC address
@@ -428,23 +431,32 @@ static DECLCALLBACK(uint32_t) vnetIoCb_GetHostFeatures(void *pvState)
          ;
 }
 
-static DECLCALLBACK(uint32_t) vnetIoCb_GetHostMinimalFeatures(void *pvState)
+/**
+ * @interface_method_impl{VPCIIOCALLBACKS,pfnGetHostMinimalFeatures}
+ */
+static DECLCALLBACK(uint32_t) vnetIoCb_GetHostMinimalFeatures(PVPCISTATE pVPciState)
 {
-    RT_NOREF_PV(pvState);
+    RT_NOREF_PV(pVPciState);
     return VNET_F_MAC;
 }
 
-static DECLCALLBACK(void) vnetIoCb_SetHostFeatures(void *pvState, uint32_t fFeatures)
+/**
+ * @interface_method_impl{VPCIIOCALLBACKS,pfnSetHostFeatures}
+ */
+static DECLCALLBACK(void) vnetIoCb_SetHostFeatures(PVPCISTATE pVPciState, uint32_t fFeatures)
 {
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
     /** @todo Nothing to do here yet */
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
     LogFlow(("%s vnetIoCb_SetHostFeatures: uFeatures=%x\n", INSTANCE(pThis), fFeatures));
     vnetPrintFeatures(pThis, fFeatures, "The guest negotiated the following features");
 }
 
-static DECLCALLBACK(int) vnetIoCb_GetConfig(void *pvState, uint32_t offCfg, uint32_t cb, void *data)
+/**
+ * @interface_method_impl{VPCIIOCALLBACKS,pfnGetConfig}
+ */
+static DECLCALLBACK(int) vnetIoCb_GetConfig(PVPCISTATE pVPciState, uint32_t offCfg, uint32_t cb, void *data)
 {
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
     if (offCfg + cb > sizeof(struct VNetPCIConfig))
     {
         Log(("%s vnetIoCb_GetConfig: Read beyond the config structure is attempted (offCfg=%#x cb=%x).\n", INSTANCE(pThis), offCfg, cb));
@@ -454,15 +466,17 @@ static DECLCALLBACK(int) vnetIoCb_GetConfig(void *pvState, uint32_t offCfg, uint
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) vnetIoCb_SetConfig(void *pvState, uint32_t offCfg, uint32_t cb, void *data)
+/**
+ * @interface_method_impl{VPCIIOCALLBACKS,pfnSetConfig}
+ */
+static DECLCALLBACK(int) vnetIoCb_SetConfig(PVPCISTATE pVPciState, uint32_t offCfg, uint32_t cb, void *data)
 {
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
     if (offCfg + cb > sizeof(struct VNetPCIConfig))
     {
         Log(("%s vnetIoCb_SetConfig: Write beyond the config structure is attempted (offCfg=%#x cb=%x).\n", INSTANCE(pThis), offCfg, cb));
         if (offCfg < sizeof(struct VNetPCIConfig))
-            memcpy((uint8_t *)&pThis->config + offCfg, data,
-                   sizeof(struct VNetPCIConfig) - offCfg);
+            memcpy((uint8_t *)&pThis->config + offCfg, data, sizeof(struct VNetPCIConfig) - offCfg);
         return VINF_SUCCESS;
     }
     memcpy((uint8_t *)&pThis->config + offCfg, data, cb);
@@ -470,13 +484,13 @@ static DECLCALLBACK(int) vnetIoCb_SetConfig(void *pvState, uint32_t offCfg, uint
 }
 
 /**
- * Hardware reset. Revert all registers to initial values.
+ * @interface_method_impl{VPCIIOCALLBACKS,pfnReset}
  *
- * @param   pThis      The device state structure.
+ * Hardware reset. Revert all registers to initial values.
  */
-static DECLCALLBACK(int) vnetIoCb_Reset(void *pvState)
+static DECLCALLBACK(int) vnetIoCb_Reset(PVPCISTATE pVPciState)
 {
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
     Log(("%s Reset triggered\n", INSTANCE(pThis)));
 
     int rc = vnetCsRxEnter(pThis, VERR_SEM_BUSY);
@@ -609,13 +623,13 @@ static DECLCALLBACK(bool) vnetR3CanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUE
 #endif /* IN_RING3 */
 
 /**
- * This function is called when the driver becomes ready.
+ * @interface_method_impl{VPCIIOCALLBACKS,pfnReady}
  *
- * @param   pThis      The device state structure.
+ * This function is called when the driver becomes ready.
  */
-static DECLCALLBACK(void) vnetIoCb_Ready(void *pvState)
+static DECLCALLBACK(void) vnetIoCb_Ready(PVPCISTATE pVPciState)
 {
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
     Log(("%s Driver became ready, waking up RX thread...\n", INSTANCE(pThis)));
 /**
  * @todo r=bird: We can wake stuff up from ring-0 too, see vmsvga, nvme,
@@ -654,7 +668,9 @@ static const VPCIIOCALLBACKS g_IOCallbacks =
  */
 PDMBOTHCBDECL(int) vnetIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t *pu32, unsigned cb)
 {
-    return vpciIOPortIn(pDevIns, pvUser, port, pu32, cb, &g_IOCallbacks);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
+    RT_NOREF(pvUser);
+    return vpciIOPortIn(pDevIns, &pThis->VPCI, port, pu32, cb, &g_IOCallbacks);
 }
 
 
@@ -663,7 +679,9 @@ PDMBOTHCBDECL(int) vnetIOPortIn(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port,
  */
 PDMBOTHCBDECL(int) vnetIOPortOut(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT port, uint32_t u32, unsigned cb)
 {
-    return vpciIOPortOut(pDevIns, pvUser, port, u32, cb, &g_IOCallbacks);
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
+    RT_NOREF(pvUser);
+    return vpciIOPortOut(pDevIns, &pThis->VPCI, port, u32, cb, &g_IOCallbacks);
 }
 
 
@@ -1117,12 +1135,12 @@ static DECLCALLBACK(int) vnetR3NetworkConfig_SetLinkState(PPDMINETWORKCONFIG pIn
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) vnetR3QueueReceive(void *pvState, PVQUEUE pQueue)
+static DECLCALLBACK(void) vnetR3QueueReceive(PPDMDEVINS pDevIns, PVPCISTATE pVPciState, PVQUEUE pQueue)
 {
-    RT_NOREF(pQueue);
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
+    RT_NOREF(pThis, pQueue);
     Log(("%s Receive buffers has been added, waking up receive thread.\n", INSTANCE(pThis)));
-    vnetR3WakeupReceive(pThis->VPCI.CTX_SUFF(pDevIns));
+    vnetR3WakeupReceive(pDevIns);
 }
 
 /**
@@ -1428,9 +1446,10 @@ static DECLCALLBACK(void) vnetR3NetworkDown_XmitPending(PPDMINETWORKDOWN pInterf
 
 # ifdef VNET_TX_DELAY
 
-static DECLCALLBACK(void) vnetR3QueueTransmit(void *pvState, PVQUEUE pQueue)
+static DECLCALLBACK(void) vnetR3QueueTransmit(PPDMDEVINS pDevIns, PVPCISTATE pVPciState, PVQUEUE pQueue)
 {
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
+    RT_NOREF(pDevIns);
 
     if (TMTimerIsActive(pThis->CTX_SUFF(pTxTimer)))
     {
@@ -1512,7 +1531,7 @@ static DECLCALLBACK(int) vnetR3TxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hTxEvent, RT_INDEFINITE_WAIT);
+        rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hTxEvent, RT_INDEFINITE_WAIT);
         if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
             break;
         STAM_COUNTER_INC(&pThis->StatTransmitByThread);
@@ -1537,28 +1556,26 @@ static DECLCALLBACK(int) vnetR3TxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
  * @param   pDevIns     The device instance.
  * @param   pThread     The send thread.
  */
-static DECLCALLBACK(int) vnetTxThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+static DECLCALLBACK(int) vnetR3TxThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    RT_NOREF(pDevIns);
     PVNETSTATE pThis = (PVNETSTATE)pThread->pvUser;
-    return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hTxEvent);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTxEvent);
 }
 
 static int vnetR3CreateTxThreadAndEvent(PPDMDEVINS pDevIns, PVNETSTATE pThis)
 {
-    int rc = SUPSemEventCreate(pThis->pSupDrvSession, &pThis->hTxEvent);
+    int rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hTxEvent);
     if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("VNET: Failed to create SUP event semaphore"));
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("VNET: Failed to create SUP event semaphore"));
+
     rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pTxThread, pThis, vnetR3TxThread,
-                               vnetTxThreadWakeUp, 0, RTTHREADTYPE_IO, INSTANCE(pThis));
+                               vnetR3TxThreadWakeUp, 0, RTTHREADTYPE_IO, INSTANCE(pThis));
     if (RT_FAILURE(rc))
-        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
-                                   N_("VNET: Failed to create worker thread %s"), INSTANCE(pThis));
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS, N_("VNET: Failed to create worker thread %s"), INSTANCE(pThis));
     return VINF_SUCCESS;
 }
 
-static void vnetR3DestroyTxThreadAndEvent(PVNETSTATE pThis)
+static void vnetR3DestroyTxThreadAndEvent(PPDMDEVINS pDevIns, PVNETSTATE pThis)
 {
     if (pThis->pTxThread)
     {
@@ -1571,18 +1588,18 @@ static void vnetR3DestroyTxThreadAndEvent(PVNETSTATE pThis)
     }
     if (pThis->hTxEvent != NIL_SUPSEMEVENT)
     {
-        SUPSemEventClose(pThis->pSupDrvSession, pThis->hTxEvent);
+        PDMDevHlpSUPSemEventClose(pDevIns, pThis->hTxEvent);
         pThis->hTxEvent = NIL_SUPSEMEVENT;
     }
 }
 
-static DECLCALLBACK(void) vnetR3QueueTransmit(void *pvState, PVQUEUE pQueue)
+static DECLCALLBACK(void) vnetR3QueueTransmit(PPDMDEVINS pDevIns, PVPCISTATE pVPciState, PVQUEUE pQueue)
 {
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
 
     Log(("vnetR3QueueTransmit: disable kicking and wake up TX thread\n"));
     vringSetNotification(&pThis->VPCI, &pQueue->VRing, false);
-    SUPSemEventSignal(pThis->pSupDrvSession, pThis->hTxEvent);
+    PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hTxEvent);
 }
 
 # endif /* !VNET_TX_DELAY */
@@ -1734,10 +1751,9 @@ static uint8_t vnetR3ControlVlan(PVNETSTATE pThis, PVNETCTLHDR pCtlHdr, PVQUEUEE
 }
 
 
-static DECLCALLBACK(void) vnetR3QueueControl(void *pvState, PVQUEUE pQueue)
+static DECLCALLBACK(void) vnetR3QueueControl(PPDMDEVINS pDevIns, PVPCISTATE pVPciState, PVQUEUE pQueue)
 {
-    PVNETSTATE pThis = (PVNETSTATE)pvState;
-    uint8_t u8Ack;
+    PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
     VQUEUEELEM elem;
     while (vqueueGet(&pThis->VPCI, pQueue, &elem))
     {
@@ -1755,30 +1771,27 @@ static DECLCALLBACK(void) vnetR3QueueControl(void *pvState, PVQUEUE pQueue)
             break; /* Skip the element and hope the next one is good. */
         }
 
+        uint8_t    bAck;
         VNETCTLHDR CtlHdr;
-        PDMDevHlpPhysRead(pThis->VPCI.CTX_SUFF(pDevIns),
-                          elem.aSegsOut[0].addr,
-                          &CtlHdr, sizeof(CtlHdr));
+        PDMDevHlpPhysRead(pDevIns, elem.aSegsOut[0].addr, &CtlHdr, sizeof(CtlHdr));
         switch (CtlHdr.u8Class)
         {
             case VNET_CTRL_CLS_RX_MODE:
-                u8Ack = vnetR3ControlRx(pThis, &CtlHdr, &elem);
+                bAck = vnetR3ControlRx(pThis, &CtlHdr, &elem);
                 break;
             case VNET_CTRL_CLS_MAC:
-                u8Ack = vnetR3ControlMac(pThis, &CtlHdr, &elem);
+                bAck = vnetR3ControlMac(pThis, &CtlHdr, &elem);
                 break;
             case VNET_CTRL_CLS_VLAN:
-                u8Ack = vnetR3ControlVlan(pThis, &CtlHdr, &elem);
+                bAck = vnetR3ControlVlan(pThis, &CtlHdr, &elem);
                 break;
             default:
-                u8Ack = VNET_ERROR;
+                bAck = VNET_ERROR;
         }
-        Log(("%s Processed control message %u, ack=%u.\n", INSTANCE(pThis), CtlHdr.u8Class, u8Ack));
-        PDMDevHlpPCIPhysWrite(pThis->VPCI.CTX_SUFF(pDevIns),
-                              elem.aSegsIn[elem.nIn - 1].addr,
-                              &u8Ack, sizeof(u8Ack));
+        Log(("%s Processed control message %u, ack=%u.\n", INSTANCE(pThis), CtlHdr.u8Class, bAck));
+        PDMDevHlpPCIPhysWrite(pDevIns, elem.aSegsIn[elem.nIn - 1].addr, &bAck, sizeof(bAck));
 
-        vqueuePut(&pThis->VPCI, pQueue, &elem, sizeof(u8Ack));
+        vqueuePut(&pThis->VPCI, pQueue, &elem, sizeof(bAck));
         vqueueSync(&pThis->VPCI, pQueue);
     }
 }
@@ -2006,9 +2019,10 @@ static DECLCALLBACK(void) vnetR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
         return;
     }
 
-    vnetR3DestroyTxThreadAndEvent(pThis);
+    vnetR3DestroyTxThreadAndEvent(pDevIns, pThis);
+
     /*
-     * Zero some important members.
+     * Zero important members.
      */
     pThis->pDrvBase = NULL;
     pThis->pDrv = NULL;
@@ -2123,9 +2137,9 @@ static DECLCALLBACK(int) vnetR3Destruct(PPDMDEVINS pDevIns)
     PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
 
 #ifdef VNET_TX_DELAY
-    LogRel(("TxTimer stats (avg/min/max): %7d usec %7d usec %7d usec\n",
-            pThis->u32AvgDiff, pThis->u32MinDiff, pThis->u32MaxDiff));
-#endif /* VNET_TX_DELAY */
+    LogRel(("TxTimer stats (avg/min/max): %7d usec %7d usec %7d usec\n", pThis->u32AvgDiff, pThis->u32MinDiff, pThis->u32MaxDiff));
+#endif
+
     Log(("%s Destroying instance\n", INSTANCE(pThis)));
     if (pThis->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
     {
@@ -2155,6 +2169,10 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Initialize the instance data suffiencently for the destructor not to blow up.
      */
     pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+#ifndef VNET_TX_DELAY
+    pThis->hTxEvent              = NIL_SUPSEMEVENT;
+    pThis->pTxThread             = NULL;
+#endif
 
     /* Do our own locking. */
     rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
@@ -2189,12 +2207,10 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the value of 'LinkUpDelay'"));
     Assert(pThis->cMsLinkUpDelay <= 300000); /* less than 5 minutes */
     if (pThis->cMsLinkUpDelay > 5000 || pThis->cMsLinkUpDelay < 100)
-        LogRel(("%s WARNING! Link up delay is set to %u seconds!\n",
-                INSTANCE(pThis), pThis->cMsLinkUpDelay / 1000));
-    Log(("%s Link up delay is set to %u seconds\n",
-         INSTANCE(pThis), pThis->cMsLinkUpDelay / 1000));
+        LogRel(("%s WARNING! Link up delay is set to %u seconds!\n", INSTANCE(pThis), pThis->cMsLinkUpDelay / 1000));
+    Log(("%s Link up delay is set to %u seconds\n", INSTANCE(pThis), pThis->cMsLinkUpDelay / 1000));
 
-    vnetPrintFeatures(pThis, vnetIoCb_GetHostFeatures(pThis), "Device supports the following features");
+    vnetPrintFeatures(pThis, vnetIoCb_GetHostFeatures(&pThis->VPCI), "Device supports the following features");
 
     /* Initialize PCI config space */
     memcpy(pThis->config.mac.au8, pThis->macConfigured.au8, sizeof(pThis->config.mac.au8));
@@ -2243,11 +2259,7 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 "VirtioNet Link Up Timer", &pThis->pLinkUpTimer);
     AssertRCReturn(rc, rc);
 
-#ifndef VNET_TX_DELAY
-    pThis->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
-    pThis->hTxEvent       = NIL_SUPSEMEVENT;
-    pThis->pTxThread      = NULL;
-#else /* VNET_TX_DELAY */
+#ifdef VNET_TX_DELAY
     /* Create Transmit Delay Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetR3TxTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "VirtioNet TX Delay Timer", &pThis->pTxTimerR3);
@@ -2285,7 +2297,7 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = RTSemEventCreate(&pThis->hEventMoreRxDescAvail);
     AssertRCReturn(rc, rc);
 
-    rc = vnetIoCb_Reset(pThis);
+    rc = vnetIoCb_Reset(&pThis->VPCI);
     AssertRCReturn(rc, rc);
 
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Public/Net/VNet%u/BytesReceived", iInstance);

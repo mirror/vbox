@@ -361,10 +361,9 @@ void vpciReset(PVPCISTATE pState)
 }
 
 
-DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState,
-                                         PFNGETHOSTFEATURES pfnGetHostFeatures)
+DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState, PCVPCIIOCALLBACKS  pCallbacks)
 {
-    return pfnGetHostFeatures(pState)
+    return pCallbacks->pfnGetHostFeatures(pState)
         | VPCI_F_NOTIFY_ON_EMPTY;
 }
 
@@ -374,7 +373,7 @@ DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState,
  * @returns VBox status code.
  *
  * @param   pDevIns     The device instance.
- * @param   pvUser      Pointer to the device state structure.
+ * @param   pState      The VPCI core state.
  * @param   Port        Port number used for the IN operation.
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
@@ -382,16 +381,14 @@ DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState,
  * @thread  EMT
  */
 int vpciIOPortIn(PPDMDEVINS         pDevIns,
-                 void              *pvUser,
+                 PVPCISTATE         pState,
                  RTIOPORT           Port,
                  uint32_t          *pu32,
                  unsigned           cb,
                  PCVPCIIOCALLBACKS  pCallbacks)
 {
-    VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
-    int         rc     = VINF_SUCCESS;
     STAM_PROFILE_ADV_START(&pState->CTX_SUFF(StatIORead), a);
-    RT_NOREF_PV(pvUser);
+    int rc = VINF_SUCCESS;
 
     /*
      * We probably do not need to enter critical section when reading registers
@@ -414,8 +411,7 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
     {
         case VPCI_HOST_FEATURES:
             /* Tell the guest what features we support. */
-            *pu32 = vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures)
-                    | VPCI_F_BAD_FEATURE;
+            *pu32 = vpciGetHostFeatures(pState, pCallbacks) | VPCI_F_BAD_FEATURE;
             break;
 
         case VPCI_GUEST_FEATURES:
@@ -472,25 +468,23 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
  * @returns VBox status code.
  *
  * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
+ * @param   pState      The VPCI core state.
  * @param   Port        Port number used for the IN operation.
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  * @param   pCallbacks  Pointer to the callbacks.
  * @thread  EMT
  */
-int vpciIOPortOut(PPDMDEVINS                pDevIns,
-                  void                     *pvUser,
-                  RTIOPORT                  Port,
-                  uint32_t                  u32,
-                  unsigned                  cb,
-                  PCVPCIIOCALLBACKS         pCallbacks)
+int vpciIOPortOut(PPDMDEVINS         pDevIns,
+                  PVPCISTATE         pState,
+                  RTIOPORT           Port,
+                  uint32_t           u32,
+                  unsigned           cb,
+                  PCVPCIIOCALLBACKS  pCallbacks)
 {
-    VPCISTATE  *pState = PDMINS_2_DATA(pDevIns, VPCISTATE *);
-    int         rc     = VINF_SUCCESS;
-    bool        fHasBecomeReady;
     STAM_PROFILE_ADV_START(&pState->CTX_SUFF(StatIOWrite), a);
-    RT_NOREF_PV(pvUser);
+    int  rc = VINF_SUCCESS;
+    bool fHasBecomeReady;
 
     Port -= pState->IOPortBase;
     Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", INSTANCE(pState), Port, cb*2, u32));
@@ -499,9 +493,9 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
     {
         case VPCI_GUEST_FEATURES:
         {
-            const uint32_t uHostFeatures = vpciGetHostFeatures(pState, pCallbacks->pfnGetHostFeatures);
+            const uint32_t fHostFeatures = vpciGetHostFeatures(pState, pCallbacks);
 
-            if (RT_LIKELY((u32 & ~uHostFeatures) == 0))
+            if (RT_LIKELY((u32 & ~fHostFeatures) == 0))
             {
                 pState->uGuestFeatures = u32;
             }
@@ -521,8 +515,8 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
                 else
                 {
                     Log(("%s Guest asked for features host does not support! (host=%x guest=%x)\n",
-                         INSTANCE(pState), uHostFeatures, u32));
-                    pState->uGuestFeatures = u32 & uHostFeatures;
+                         INSTANCE(pState), fHostFeatures, u32));
+                    pState->uGuestFeatures = u32 & fHostFeatures;
                 }
             }
             pCallbacks->pfnSetHostFeatures(pState, pState->uGuestFeatures);
@@ -564,7 +558,7 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
                     // rc = vpciCsEnter(pState, VERR_SEM_BUSY);
                     // if (RT_LIKELY(rc == VINF_SUCCESS))
                     // {
-                        pState->Queues[u32].pfnCallback(pState, &pState->Queues[u32]);
+                        pState->Queues[u32].pfnCallback(pDevIns, pState, &pState->Queues[u32]);
                     //     vpciCsLeave(pState);
                     // }
                 }
