@@ -329,42 +329,43 @@ void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint
                             const void *pv, uint32_t cb, uint32_t uOffset, int fWrite,
                             int fHasIndex, uint32_t idx)
 {
+    if (!LogIs6Enabled())
+        return;
 
-#define FMTHEX(fmtout, val, cNybbles) \
-    fmtout[cNybbles] = '\0'; \
-    for (uint8_t i = 0; i < cNybbles; i++) \
-        fmtout[(cNybbles - i) - 1] = "0123456789abcdef"[(val >> (i * 4)) & 0xf];
-
-#define MAX_STRING   64
-    char pszIdx[MAX_STRING] = { 0 };
-    char pszDepiction[MAX_STRING] = { 0 };
-    char pszFormattedVal[MAX_STRING] = { 0 };
+    char szIdx[16];
     if (fHasIndex)
-        RTStrPrintf(pszIdx, sizeof(pszIdx), "[%d]", idx);
+        RTStrPrintf(szIdx, sizeof(szIdx), "[%d]", idx);
+    else
+        szIdx[0] = '\0';
+
     if (cb == 1 || cb == 2 || cb == 4 || cb == 8)
     {
-        /* manually padding with 0's instead of \b due to different impl of %x precision than printf() */
-        uint64_t val = 0;
-        memcpy((char *)&val, pv, cb);
-        FMTHEX(pszFormattedVal, val, cb * 2);
+        char szDepiction[64];
+        size_t cchDepiction;
         if (uOffset != 0 || cb != uMemberSize) /* display bounds if partial member access */
-            RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%s%s[%d:%d]",
-                        pszMember, pszIdx, uOffset, uOffset + cb - 1);
+            cchDepiction = RTStrPrintf(szDepiction, sizeof(szDepiction), "%s%s[%d:%d]",
+                                       pszMember, szIdx, uOffset, uOffset + cb - 1);
         else
-            RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%s%s", pszMember, pszIdx);
-        RTStrPrintf(pszDepiction, sizeof(pszDepiction), "%-30s", pszDepiction);
-        uint32_t first = 0;
-        for (uint8_t i = 0; i < sizeof(pszDepiction); i++)
-            if (pszDepiction[i] == ' ' && first++)
-                pszDepiction[i] = '.';
-        Log6Func(("%s: Guest %s %s 0x%s\n",
-                  pszFunc, fWrite ? "wrote" : "read ", pszDepiction, pszFormattedVal));
+            cchDepiction = RTStrPrintf(szDepiction, sizeof(szDepiction), "%s%s", pszMember, szIdx);
+
+        /* padding */
+        if (cchDepiction < 30)
+            szDepiction[cchDepiction++] = ' ';
+        while (cchDepiction < 30)
+            szDepiction[cchDepiction++] = '.';
+        szDepiction[cchDepiction] = '\0';
+
+        RTUINT64U uValue;
+        uValue.u = 0;
+        memcpy(uValue.au8, pv, cb);
+        Log6Func(("%s: Guest %s %s %#0*RX64\n",
+                  pszFunc, fWrite ? "wrote" : "read ", szDepiction, 2 + cb * 2, uValue.u));
     }
     else /* odd number or oversized access, ... log inline hex-dump style */
     {
         Log6Func(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n",
                   pszFunc, fWrite ? "wrote" : "read ", pszMember,
-                  pszIdx, uOffset, uOffset + cb, cb, pv));
+                  szIdx, uOffset, uOffset + cb, cb, pv));
     }
     RT_NOREF2(fWrite, pszFunc);
 }
@@ -1313,6 +1314,7 @@ static DECLCALLBACK(VBOXSTRICTRC) virtioMmioWrite(PPDMDEVINS pDevIns, void *pvUs
     {
 #ifdef IN_RING3
         virtioR3QueueNotified(pVirtio, pVirtioCC, offIntra / VIRTIO_NOTIFY_OFFSET_MULTIPLIER, *(uint16_t *)pv);
+        return VINF_SUCCESS;
 #else
         return VINF_IOM_R3_MMIO_WRITE;
 #endif

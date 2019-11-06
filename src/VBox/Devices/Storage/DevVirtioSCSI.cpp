@@ -2478,9 +2478,6 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
                             rc);
 
             pTarget->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIANOTIFY);
-            AssertMsgReturn(VALID_PTR(pTarget->pMediaNotify),
-                            ("virtio-scsi configuration error: LUN#%u: Failed to get set Media notify obj!\n", iTarget),
-                            VERR_PDM_MISSING_INTERFACE);
 
         }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
