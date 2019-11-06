@@ -24,21 +24,14 @@
 #include <iprt/param.h>
 #include <iprt/uuid.h>
 #include <VBox/vmm/pdmdev.h>
+#include <VBox/AssertGuest.h>
 #include "Virtio.h"
 
-#define INSTANCE(pState) pState->szInstance
-#define IFACE_TO_STATE(pIface, ifaceName) ((VPCISTATE *)((char*)(pIface) - RT_UOFFSETOF(VPCISTATE, ifaceName)))
 
-#ifdef LOG_ENABLED
-# define QUEUENAME(s, q) (q->pcszName)
-#endif
-
-
-
-#ifndef VBOX_DEVICE_STRUCT_TESTCASE
-
-//RT_C_DECLS_BEGIN
-//RT_C_DECLS_END
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+#define INSTANCE(pThis) (pThis->szInstance)
 
 
 static void vqueueReset(PVQUEUE pQueue)
@@ -67,75 +60,65 @@ static void vqueueInit(PVQUEUE pQueue, uint32_t uPageNumber)
 // {
 // }
 
-void vringReadDesc(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex, PVRINGDESC pDesc)
+void vringReadDesc(PPDMDEVINS pDevIns, PVRING pVRing, uint32_t uIndex, PVRINGDESC pDesc)
 {
-    //Log(("%s vringReadDesc: ring=%p idx=%u\n", INSTANCE(pState), pVRing, uIndex));
-    PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
+    //Log(("%s vringReadDesc: ring=%p idx=%u\n", INSTANCE(pThis), pVRing, uIndex));
+    PDMDevHlpPhysRead(pDevIns,
                       pVRing->addrDescriptors + sizeof(VRINGDESC) * (uIndex % pVRing->uSize),
                       pDesc, sizeof(VRINGDESC));
+    /** @todo r=bird: Why exactly are we sometimes using PDMDevHlpPhysRead rather
+     *        than PDMDevHlpPCIPhysRead? */
 }
 
-uint16_t vringReadAvail(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex)
+uint16_t vringReadAvail(PPDMDEVINS pDevIns, PVRING pVRing, uint32_t uIndex)
 {
-    uint16_t tmp;
-
-    PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
-                      pVRing->addrAvail + RT_UOFFSETOF_DYN(VRINGAVAIL, auRing[uIndex % pVRing->uSize]),
+    uint16_t tmp = 0;
+    PDMDevHlpPhysRead(pDevIns, pVRing->addrAvail + RT_UOFFSETOF_DYN(VRINGAVAIL, auRing[uIndex % pVRing->uSize]),
                       &tmp, sizeof(tmp));
     return tmp;
 }
 
-uint16_t vringReadAvailFlags(PVPCISTATE pState, PVRING pVRing)
+uint16_t vringReadAvailFlags(PPDMDEVINS pDevIns, PVRING pVRing)
 {
-    uint16_t tmp;
-
-    PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
-                      pVRing->addrAvail + RT_UOFFSETOF(VRINGAVAIL, uFlags),
-                      &tmp, sizeof(tmp));
+    uint16_t tmp = 0;
+    PDMDevHlpPhysRead(pDevIns, pVRing->addrAvail + RT_UOFFSETOF(VRINGAVAIL, uFlags), &tmp, sizeof(tmp));
     return tmp;
 }
 
-void vringSetNotification(PVPCISTATE pState, PVRING pVRing, bool fEnabled)
+void vringSetNotification(PPDMDEVINS pDevIns, PVRING pVRing, bool fEnabled)
 {
-    uint16_t tmp;
-
-    PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
-                      pVRing->addrUsed + RT_UOFFSETOF(VRINGUSED, uFlags),
-                      &tmp, sizeof(tmp));
+    uint16_t fState = 0;
+    PDMDevHlpPhysRead(pDevIns, pVRing->addrUsed + RT_UOFFSETOF(VRINGUSED, uFlags), &fState, sizeof(fState));
 
     if (fEnabled)
-        tmp &= ~ VRINGUSED_F_NO_NOTIFY;
+        fState &= ~ VRINGUSED_F_NO_NOTIFY;
     else
-        tmp |= VRINGUSED_F_NO_NOTIFY;
+        fState |= VRINGUSED_F_NO_NOTIFY;
 
-    PDMDevHlpPCIPhysWrite(pState->CTX_SUFF(pDevIns),
-                          pVRing->addrUsed + RT_UOFFSETOF(VRINGUSED, uFlags),
-                          &tmp, sizeof(tmp));
+    PDMDevHlpPCIPhysWrite(pDevIns, pVRing->addrUsed + RT_UOFFSETOF(VRINGUSED, uFlags), &fState, sizeof(fState));
 }
 
-bool vqueueSkip(PVPCISTATE pState, PVQUEUE pQueue)
+bool vqueueSkip(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue)
 {
-    if (vqueueIsEmpty(pState, pQueue))
+    if (vqueueIsEmpty(pDevIns, pQueue))
         return false;
 
-    Log2(("%s vqueueSkip: %s avail_idx=%u\n", INSTANCE(pState),
-          QUEUENAME(pState, pQueue), pQueue->uNextAvailIndex));
+    Log2(("%s vqueueSkip: %s avail_idx=%u\n", INSTANCE(pThis), pQueue->szName, pQueue->uNextAvailIndex));
     pQueue->uNextAvailIndex++;
     return true;
 }
 
-bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, bool fRemove)
+bool vqueueGet(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM pElem, bool fRemove)
 {
-    if (vqueueIsEmpty(pState, pQueue))
+    if (vqueueIsEmpty(pDevIns, pQueue))
         return false;
 
     pElem->nIn = pElem->nOut = 0;
 
-    Log2(("%s vqueueGet: %s avail_idx=%u\n", INSTANCE(pState),
-          QUEUENAME(pState, pQueue), pQueue->uNextAvailIndex));
+    Log2(("%s vqueueGet: %s avail_idx=%u\n", INSTANCE(pThis), pQueue->szName, pQueue->uNextAvailIndex));
 
     VRINGDESC desc;
-    uint16_t  idx = vringReadAvail(pState, &pQueue->VRing, pQueue->uNextAvailIndex);
+    uint16_t  idx = vringReadAvail(pDevIns, &pQueue->VRing, pQueue->uNextAvailIndex);
     if (fRemove)
         pQueue->uNextAvailIndex++;
     pElem->uIndex = idx;
@@ -156,27 +139,27 @@ bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, bool fRemov
             if (ASMAtomicIncU32(&s_cMessages) == ASMAtomicReadU32(&s_cThreshold))
             {
                 LogRel(("%s: too many linked descriptors; check if the guest arranges descriptors in a loop.\n",
-                        INSTANCE(pState)));
+                        INSTANCE(pThis)));
                 if (ASMAtomicReadU32(&s_cMessages) != 1)
                     LogRel(("%s: (the above error has occured %u times so far)\n",
-                            INSTANCE(pState), ASMAtomicReadU32(&s_cMessages)));
+                            INSTANCE(pThis), ASMAtomicReadU32(&s_cMessages)));
                 ASMAtomicWriteU32(&s_cThreshold, ASMAtomicReadU32(&s_cThreshold) * 10);
             }
             break;
         }
         RT_UNTRUSTED_VALIDATED_FENCE();
 
-        vringReadDesc(pState, &pQueue->VRing, idx, &desc);
+        vringReadDesc(pDevIns, &pQueue->VRing, idx, &desc);
         if (desc.u16Flags & VRINGDESC_F_WRITE)
         {
-            Log2(("%s vqueueGet: %s IN  seg=%u desc_idx=%u addr=%p cb=%u\n", INSTANCE(pState),
-                  QUEUENAME(pState, pQueue), pElem->nIn, idx, desc.u64Addr, desc.uLen));
+            Log2(("%s vqueueGet: %s IN  seg=%u desc_idx=%u addr=%p cb=%u\n", INSTANCE(pThis),
+                  pQueue->szName, pElem->nIn, idx, desc.u64Addr, desc.uLen));
             pSeg = &pElem->aSegsIn[pElem->nIn++];
         }
         else
         {
-            Log2(("%s vqueueGet: %s OUT seg=%u desc_idx=%u addr=%p cb=%u\n", INSTANCE(pState),
-                  QUEUENAME(pState, pQueue), pElem->nOut, idx, desc.u64Addr, desc.uLen));
+            Log2(("%s vqueueGet: %s OUT seg=%u desc_idx=%u addr=%p cb=%u\n", INSTANCE(pThis),
+                  pQueue->szName, pElem->nOut, idx, desc.u64Addr, desc.uLen));
             pSeg = &pElem->aSegsOut[pElem->nOut++];
         }
 
@@ -187,46 +170,42 @@ bool vqueueGet(PVPCISTATE pState, PVQUEUE pQueue, PVQUEUEELEM pElem, bool fRemov
         idx = desc.u16Next;
     } while (desc.u16Flags & VRINGDESC_F_NEXT);
 
-    Log2(("%s vqueueGet: %s head_desc_idx=%u nIn=%u nOut=%u\n", INSTANCE(pState),
-          QUEUENAME(pState, pQueue), pElem->uIndex, pElem->nIn, pElem->nOut));
+    Log2(("%s vqueueGet: %s head_desc_idx=%u nIn=%u nOut=%u\n", INSTANCE(pThis),
+          pQueue->szName, pElem->uIndex, pElem->nIn, pElem->nOut));
     return true;
 }
 
-uint16_t vringReadUsedIndex(PVPCISTATE pState, PVRING pVRing)
+#ifdef LOG_ENABLED
+static uint16_t vringReadUsedIndex(PPDMDEVINS pDevIns, PVRING pVRing)
 {
-    uint16_t tmp;
-    PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns),
-                      pVRing->addrUsed + RT_UOFFSETOF(VRINGUSED, uIndex),
-                      &tmp, sizeof(tmp));
+    uint16_t tmp = 0;
+    PDMDevHlpPhysRead(pDevIns, pVRing->addrUsed + RT_UOFFSETOF(VRINGUSED, uIndex), &tmp, sizeof(tmp));
     return tmp;
 }
+#endif
 
-void vringWriteUsedIndex(PVPCISTATE pState, PVRING pVRing, uint16_t u16Value)
+static void vringWriteUsedIndex(PPDMDEVINS pDevIns, PVRING pVRing, uint16_t u16Value)
 {
-    PDMDevHlpPCIPhysWrite(pState->CTX_SUFF(pDevIns),
+    PDMDevHlpPCIPhysWrite(pDevIns,
                           pVRing->addrUsed + RT_UOFFSETOF(VRINGUSED, uIndex),
                           &u16Value, sizeof(u16Value));
 }
 
-void vringWriteUsedElem(PVPCISTATE pState, PVRING pVRing, uint32_t uIndex, uint32_t uId, uint32_t uLen)
+static void vringWriteUsedElem(PPDMDEVINS pDevIns, PVRING pVRing, uint32_t uIndex, uint32_t uId, uint32_t uLen)
 {
     VRINGUSEDELEM elem;
 
     elem.uId = uId;
     elem.uLen = uLen;
-    PDMDevHlpPCIPhysWrite(pState->CTX_SUFF(pDevIns),
+    PDMDevHlpPCIPhysWrite(pDevIns,
                           pVRing->addrUsed + RT_UOFFSETOF_DYN(VRINGUSED, aRing[uIndex % pVRing->uSize]),
                           &elem, sizeof(elem));
 }
 
 
-void vqueuePut(PVPCISTATE pState, PVQUEUE pQueue,
-               PVQUEUEELEM pElem, uint32_t uTotalLen, uint32_t uReserved)
+void vqueuePut(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM pElem, uint32_t uTotalLen, uint32_t uReserved)
 {
-    Log2(("%s vqueuePut: %s"
-          " desc_idx=%u acb=%u (%u)\n",
-          INSTANCE(pState), QUEUENAME(pState, pQueue),
-          pElem->uIndex, uTotalLen, uReserved));
+    Log2(("%s vqueuePut: %s desc_idx=%u acb=%u (%u)\n", INSTANCE(pThis), pQueue->szName, pElem->uIndex, uTotalLen, uReserved));
 
     Assert(uReserved < uTotalLen);
 
@@ -251,14 +230,10 @@ void vqueuePut(PVPCISTATE pState, PVQUEUE pQueue,
          */
         if (pElem->aSegsIn[i].pv != NULL)
         {
-            Log2(("%s vqueuePut: %s"
-                  " used_idx=%u seg=%u addr=%p pv=%p cb=%u acb=%u\n",
-                  INSTANCE(pState), QUEUENAME(pState, pQueue),
-                  pQueue->uNextUsedIndex, i,
-                  (void *)pElem->aSegsIn[i].addr, pElem->aSegsIn[i].pv,
-                  pElem->aSegsIn[i].cb, cbSegLen));
+            Log2(("%s vqueuePut: %s used_idx=%u seg=%u addr=%RGp pv=%p cb=%u acb=%u\n", INSTANCE(pThis), pQueue->szName,
+                  pQueue->uNextUsedIndex, i, pElem->aSegsIn[i].addr, pElem->aSegsIn[i].pv, pElem->aSegsIn[i].cb, cbSegLen));
 
-            PDMDevHlpPCIPhysWrite(pState->CTX_SUFF(pDevIns),
+            PDMDevHlpPCIPhysWrite(pDevIns,
                                   pElem->aSegsIn[i].addr + cbSkip,
                                   pElem->aSegsIn[i].pv,
                                   cbSegLen);
@@ -268,102 +243,98 @@ void vqueuePut(PVPCISTATE pState, PVQUEUE pQueue,
         cbLen -= cbSegLen;
     }
 
-    Log2(("%s vqueuePut: %s"
-          " used_idx=%u guest_used_idx=%u id=%u len=%u\n",
-          INSTANCE(pState), QUEUENAME(pState, pQueue),
-          pQueue->uNextUsedIndex, vringReadUsedIndex(pState, &pQueue->VRing),
-          pElem->uIndex, uTotalLen));
+    Log2(("%s vqueuePut: %s used_idx=%u guest_used_idx=%u id=%u len=%u\n", INSTANCE(pThis), pQueue->szName,
+          pQueue->uNextUsedIndex, vringReadUsedIndex(pDevIns, &pQueue->VRing), pElem->uIndex, uTotalLen));
 
-    vringWriteUsedElem(pState, &pQueue->VRing,
+    vringWriteUsedElem(pDevIns, &pQueue->VRing,
                        pQueue->uNextUsedIndex++,
                        pElem->uIndex, uTotalLen);
 }
 
 
-void vqueueNotify(PVPCISTATE pState, PVQUEUE pQueue)
+void vqueueNotify(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue)
 {
-    LogFlow(("%s vqueueNotify: %s availFlags=%x guestFeatures=%x vqueue is %sempty\n",
-             INSTANCE(pState), QUEUENAME(pState, pQueue),
-             vringReadAvailFlags(pState, &pQueue->VRing),
-             pState->uGuestFeatures, vqueueIsEmpty(pState, pQueue)?"":"not "));
-    if (!(vringReadAvailFlags(pState, &pQueue->VRing) & VRINGAVAIL_F_NO_INTERRUPT)
-        || ((pState->uGuestFeatures & VPCI_F_NOTIFY_ON_EMPTY) && vqueueIsEmpty(pState, pQueue)))
+    uint16_t const fAvail = vringReadAvailFlags(pDevIns, &pQueue->VRing);
+    LogFlow(("%s vqueueNotify: %s availFlags=%x guestFeatures=%x vqueue is %sempty\n", INSTANCE(pThis), pQueue->szName,
+             fAvail, pThis->uGuestFeatures, vqueueIsEmpty(pDevIns, pQueue)?"":"not "));
+    if (   !(fAvail & VRINGAVAIL_F_NO_INTERRUPT)
+        || ((pThis->uGuestFeatures & VPCI_F_NOTIFY_ON_EMPTY) && vqueueIsEmpty(pDevIns, pQueue)))
     {
-        int rc = vpciRaiseInterrupt(pState, VERR_INTERNAL_ERROR, VPCI_ISR_QUEUE);
+        int rc = vpciRaiseInterrupt(pDevIns, pThis, VERR_INTERNAL_ERROR, VPCI_ISR_QUEUE);
         if (RT_FAILURE(rc))
-            Log(("%s vqueueNotify: Failed to raise an interrupt (%Rrc).\n", INSTANCE(pState), rc));
+            Log(("%s vqueueNotify: Failed to raise an interrupt (%Rrc).\n", INSTANCE(pThis), rc));
     }
     else
-    {
-        STAM_COUNTER_INC(&pState->StatIntsSkipped);
-    }
+        STAM_COUNTER_INC(&pThis->StatIntsSkipped);
 
 }
 
-void vqueueSync(PVPCISTATE pState, PVQUEUE pQueue)
+void vqueueSync(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue)
 {
-    Log2(("%s vqueueSync: %s old_used_idx=%u new_used_idx=%u\n", INSTANCE(pState),
-          QUEUENAME(pState, pQueue), vringReadUsedIndex(pState, &pQueue->VRing), pQueue->uNextUsedIndex));
-    vringWriteUsedIndex(pState, &pQueue->VRing, pQueue->uNextUsedIndex);
-    vqueueNotify(pState, pQueue);
+    Log2(("%s vqueueSync: %s old_used_idx=%u new_used_idx=%u\n", INSTANCE(pThis),
+          pQueue->szName, vringReadUsedIndex(pDevIns, &pQueue->VRing), pQueue->uNextUsedIndex));
+    vringWriteUsedIndex(pDevIns, &pQueue->VRing, pQueue->uNextUsedIndex);
+    vqueueNotify(pDevIns, pThis, pQueue);
 }
 
 
 /**
  * Raise interrupt.
  *
- * @param   pState      The device state structure.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The shared virtio core instance data.
  * @param   rcBusy      Status code to return when the critical section is busy.
  * @param   u8IntCause  Interrupt cause bit mask to set in PCI ISR port.
  */
-int vpciRaiseInterrupt(VPCISTATE *pState, int rcBusy, uint8_t u8IntCause)
+int vpciRaiseInterrupt(PPDMDEVINS pDevIns, PVPCISTATE pThis, int rcBusy, uint8_t u8IntCause)
 {
     RT_NOREF_PV(rcBusy);
-    // int rc = vpciCsEnter(pState, rcBusy);
+    // int rc = vpciCsEnter(pThis, rcBusy);
     // if (RT_UNLIKELY(rc != VINF_SUCCESS))
     //     return rc;
 
-    STAM_COUNTER_INC(&pState->StatIntsRaised);
-    LogFlow(("%s vpciRaiseInterrupt: u8IntCause=%x\n",
-             INSTANCE(pState), u8IntCause));
+    STAM_COUNTER_INC(&pThis->StatIntsRaised);
+    LogFlow(("%s vpciRaiseInterrupt: u8IntCause=%x\n", INSTANCE(pThis), u8IntCause));
 
-    pState->uISR |= u8IntCause;
-    PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 1);
-    // vpciCsLeave(pState);
+    pThis->uISR |= u8IntCause;
+    PDMDevHlpPCISetIrq(pDevIns, 0, 1);
+    // vpciCsLeave(pThis);
     return VINF_SUCCESS;
 }
 
 /**
  * Lower interrupt.
  *
- * @param   pState      The device state structure.
+ * @param   pDevIns     The device instance.
+ * @param   pThis       The shared virtio core instance data.
  */
-static void vpciLowerInterrupt(VPCISTATE *pState)
+static void vpciLowerInterrupt(PPDMDEVINS pDevIns, PVPCISTATE pThis)
 {
-    LogFlow(("%s vpciLowerInterrupt\n", INSTANCE(pState)));
-    PDMDevHlpPCISetIrq(pState->CTX_SUFF(pDevIns), 0, 0);
+    LogFlow(("%s vpciLowerInterrupt\n", INSTANCE(pThis)));
+    RT_NOREF(pThis);
+    PDMDevHlpPCISetIrq(pDevIns, 0, 0);
 }
 
 
-void vpciReset(PVPCISTATE pState)
+void vpciReset(PPDMDEVINS pDevIns, PVPCISTATE pThis)
 {
     /* No interrupts should survive device reset, see @bugref(9556). */
-    if (pState->uISR)
-        vpciLowerInterrupt(pState);
+    if (pThis->uISR)
+        vpciLowerInterrupt(pDevIns, pThis);
 
-    pState->uGuestFeatures = 0;
-    pState->uQueueSelector = 0;
-    pState->uStatus        = 0;
-    pState->uISR           = 0;
+    pThis->uGuestFeatures = 0;
+    pThis->uQueueSelector = 0;
+    pThis->uStatus        = 0;
+    pThis->uISR           = 0;
 
-    for (unsigned i = 0; i < pState->nQueues; i++)
-        vqueueReset(&pState->Queues[i]);
+    for (unsigned i = 0; i < pThis->cQueues; i++)
+        vqueueReset(&pThis->Queues[i]);
 }
 
 
-DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState, PCVPCIIOCALLBACKS  pCallbacks)
+DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pThis, PCVPCIIOCALLBACKS  pCallbacks)
 {
-    return pCallbacks->pfnGetHostFeatures(pState)
+    return pCallbacks->pfnGetHostFeatures(pThis)
         | VPCI_F_NOTIFY_ON_EMPTY;
 }
 
@@ -373,22 +344,21 @@ DECLINLINE(uint32_t) vpciGetHostFeatures(PVPCISTATE pState, PCVPCIIOCALLBACKS  p
  * @returns VBox status code.
  *
  * @param   pDevIns     The device instance.
- * @param   pState      The VPCI core state.
- * @param   Port        Port number used for the IN operation.
+ * @param   pThis       The shared virtio core instance data.
+ * @param   offPort     The offset into the I/O range of the port being read.
  * @param   pu32        Where to store the result.
  * @param   cb          Number of bytes read.
  * @param   pCallbacks  Pointer to the callbacks.
  * @thread  EMT
  */
 int vpciIOPortIn(PPDMDEVINS         pDevIns,
-                 PVPCISTATE         pState,
-                 RTIOPORT           Port,
+                 PVPCISTATE         pThis,
+                 RTIOPORT           offPort,
                  uint32_t          *pu32,
                  unsigned           cb,
                  PCVPCIIOCALLBACKS  pCallbacks)
 {
-    STAM_PROFILE_ADV_START(&pState->CTX_SUFF(StatIORead), a);
-    int rc = VINF_SUCCESS;
+    STAM_PROFILE_ADV_START(&pThis->CTX_SUFF(StatIORead), a);
 
     /*
      * We probably do not need to enter critical section when reading registers
@@ -399,65 +369,70 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
      * here we gain the ability to deliver RX packets to the guest while TX is
      * holding cs transmitting queued packets.
      *
-    rc = vpciCsEnter(pState, VINF_IOM_R3_IOPORT_READ);
+    int rc = vpciCsEnter(pThis, VINF_IOM_R3_IOPORT_READ);
     if (RT_UNLIKELY(rc != VINF_SUCCESS))
     {
-        STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF(StatIORead), a);
+        STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF(StatIORead), a);
         return rc;
         }*/
+    int rc = VINF_SUCCESS;
 
-    Port -= pState->IOPortBase;
-    switch (Port)
+    switch (offPort)
     {
         case VPCI_HOST_FEATURES:
             /* Tell the guest what features we support. */
-            *pu32 = vpciGetHostFeatures(pState, pCallbacks) | VPCI_F_BAD_FEATURE;
+            ASSERT_GUEST_MSG(cb == 4, ("%d\n", cb));
+            *pu32 = vpciGetHostFeatures(pThis, pCallbacks) | VPCI_F_BAD_FEATURE;
             break;
 
         case VPCI_GUEST_FEATURES:
-            *pu32 = pState->uGuestFeatures;
+            ASSERT_GUEST_MSG(cb == 4, ("%d\n", cb));
+            *pu32 = pThis->uGuestFeatures;
             break;
 
         case VPCI_QUEUE_PFN:
-            *pu32 = pState->Queues[pState->uQueueSelector].uPageNumber;
+            ASSERT_GUEST_MSG(cb == 4, ("%d\n", cb));
+            *pu32 = pThis->Queues[pThis->uQueueSelector].uPageNumber;
             break;
 
         case VPCI_QUEUE_NUM:
-            Assert(cb == 2);
-            *(uint16_t*)pu32 = pState->Queues[pState->uQueueSelector].VRing.uSize;
+            ASSERT_GUEST_MSG(cb == 2, ("%d\n", cb));
+            *pu32 = pThis->Queues[pThis->uQueueSelector].VRing.uSize;
             break;
 
         case VPCI_QUEUE_SEL:
-            Assert(cb == 2);
-            *(uint16_t*)pu32 = pState->uQueueSelector;
+            ASSERT_GUEST_MSG(cb == 2, ("%d\n", cb));
+            *pu32 = pThis->uQueueSelector;
             break;
 
         case VPCI_STATUS:
-            Assert(cb == 1);
-            *(uint8_t*)pu32 = pState->uStatus;
+            ASSERT_GUEST_MSG(cb == 1, ("%d\n", cb));
+            *pu32 = pThis->uStatus;
             break;
 
         case VPCI_ISR:
-            Assert(cb == 1);
-            *(uint8_t*)pu32 = pState->uISR;
-            pState->uISR = 0; /* read clears all interrupts */
-            vpciLowerInterrupt(pState);
+            ASSERT_GUEST_MSG(cb == 1, ("%d\n", cb));
+            *pu32 = pThis->uISR;
+            pThis->uISR = 0; /* read clears all interrupts */
+            vpciLowerInterrupt(pDevIns, pThis);
             break;
 
         default:
-            if (Port >= VPCI_CONFIG)
-                rc = pCallbacks->pfnGetConfig(pState, Port - VPCI_CONFIG, cb, pu32);
+            if (offPort >= VPCI_CONFIG)
+                rc = pCallbacks->pfnGetConfig(pThis, offPort - VPCI_CONFIG, cb, pu32);
             else
             {
-                *pu32 = 0xFFFFFFFF;
+                *pu32 = UINT32_MAX;
                 rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortIn: no valid port at offset port=%RTiop cb=%08x\n",
-                                       INSTANCE(pState), Port, cb);
+                                       INSTANCE(pThis), offPort, cb);
             }
             break;
     }
-    Log3(("%s vpciIOPortIn:  At %RTiop in  %0*x\n", INSTANCE(pState), Port, cb*2, *pu32));
-    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF(StatIORead), a);
-    //vpciCsLeave(pState);
+    Log3(("%s vpciIOPortIn:  At %RTiop in  %0*x\n", INSTANCE(pThis), offPort, cb*2, *pu32));
+
+    //vpciCsLeave(pThis);
+
+    STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF(StatIORead), a);
     return rc;
 }
 
@@ -468,37 +443,35 @@ int vpciIOPortIn(PPDMDEVINS         pDevIns,
  * @returns VBox status code.
  *
  * @param   pDevIns     The device instance.
- * @param   pState      The VPCI core state.
- * @param   Port        Port number used for the IN operation.
+ * @param   pThis       The shared virtio core instance data.
+ * @param   offPort     The offset into the I/O range of the port being written.
  * @param   u32         The value to output.
  * @param   cb          The value size in bytes.
  * @param   pCallbacks  Pointer to the callbacks.
  * @thread  EMT
  */
 int vpciIOPortOut(PPDMDEVINS         pDevIns,
-                  PVPCISTATE         pState,
-                  RTIOPORT           Port,
+                  PVPCISTATE         pThis,
+                  PVPCISTATECC       pThisCC,
+                  RTIOPORT           offPort,
                   uint32_t           u32,
                   unsigned           cb,
                   PCVPCIIOCALLBACKS  pCallbacks)
 {
-    STAM_PROFILE_ADV_START(&pState->CTX_SUFF(StatIOWrite), a);
+    STAM_PROFILE_ADV_START(&pThis->CTX_SUFF(StatIOWrite), a);
     int  rc = VINF_SUCCESS;
     bool fHasBecomeReady;
 
-    Port -= pState->IOPortBase;
-    Log3(("%s virtioIOPortOut: At %RTiop out          %0*x\n", INSTANCE(pState), Port, cb*2, u32));
+    Log3(("%s virtioIOPortOut: At offPort=%RTiop out  %0*x\n", INSTANCE(pThis), offPort, cb*2, u32));
 
-    switch (Port)
+    switch (offPort)
     {
         case VPCI_GUEST_FEATURES:
         {
-            const uint32_t fHostFeatures = vpciGetHostFeatures(pState, pCallbacks);
+            const uint32_t fHostFeatures = vpciGetHostFeatures(pThis, pCallbacks);
 
             if (RT_LIKELY((u32 & ~fHostFeatures) == 0))
-            {
-                pState->uGuestFeatures = u32;
-            }
+                pThis->uGuestFeatures = u32;
             else
             {
                 /*
@@ -509,17 +482,17 @@ int vpciIOPortOut(PPDMDEVINS         pDevIns,
                 if (u32 & VPCI_F_BAD_FEATURE)
                 {
                     Log(("%s WARNING! Guest failed to negotiate properly (guest=%x)\n",
-                         INSTANCE(pState), u32));
-                    pState->uGuestFeatures = pCallbacks->pfnGetHostMinimalFeatures(pState);
+                         INSTANCE(pThis), u32));
+                    pThis->uGuestFeatures = pCallbacks->pfnGetHostMinimalFeatures(pThis);
                 }
                 else
                 {
                     Log(("%s Guest asked for features host does not support! (host=%x guest=%x)\n",
-                         INSTANCE(pState), fHostFeatures, u32));
-                    pState->uGuestFeatures = u32 & fHostFeatures;
+                         INSTANCE(pThis), fHostFeatures, u32));
+                    pThis->uGuestFeatures = u32 & fHostFeatures;
                 }
             }
-            pCallbacks->pfnSetHostFeatures(pState, pState->uGuestFeatures);
+            pCallbacks->pfnSetHostFeatures(pThis, pThis->uGuestFeatures);
             break;
         }
 
@@ -530,57 +503,59 @@ int vpciIOPortOut(PPDMDEVINS         pDevIns,
              * Note that we provide the size of the queue to the guest via
              * VIRTIO_PCI_QUEUE_NUM.
              */
-            pState->Queues[pState->uQueueSelector].uPageNumber = u32;
+            pThis->Queues[pThis->uQueueSelector].uPageNumber = u32;
             if (u32)
-                vqueueInit(&pState->Queues[pState->uQueueSelector], u32);
+                vqueueInit(&pThis->Queues[pThis->uQueueSelector], u32);
             else
-                rc = pCallbacks->pfnReset(pState);
+                rc = pCallbacks->pfnReset(pDevIns);
             break;
 
         case VPCI_QUEUE_SEL:
-            Assert(cb == 2);
+            ASSERT_GUEST_MSG(cb == 2, ("cb=%u\n", cb));
             u32 &= 0xFFFF;
-            if (u32 < pState->nQueues)
-                pState->uQueueSelector = u32;
+            if (u32 < pThis->cQueues)
+                pThis->uQueueSelector = u32;
             else
-                Log3(("%s vpciIOPortOut: Invalid queue selector %08x\n", INSTANCE(pState), u32));
+                Log3(("%s vpciIOPortOut: Invalid queue selector %08x\n", INSTANCE(pThis), u32));
             break;
 
         case VPCI_QUEUE_NOTIFY:
 #ifdef IN_RING3
-            Assert(cb == 2);
+            ASSERT_GUEST_MSG(cb == 2, ("cb=%u\n", cb));
             u32 &= 0xFFFF;
-            if (u32 < pState->nQueues)
+            if (u32 < pThis->cQueues)
             {
                 RT_UNTRUSTED_VALIDATED_FENCE();
-                if (pState->Queues[u32].VRing.addrDescriptors)
+                if (pThis->Queues[u32].VRing.addrDescriptors)
                 {
-                    // rc = vpciCsEnter(pState, VERR_SEM_BUSY);
+
+                    // rc = vpciCsEnter(pThis, VERR_SEM_BUSY);
                     // if (RT_LIKELY(rc == VINF_SUCCESS))
                     // {
-                        pState->Queues[u32].pfnCallback(pDevIns, pState, &pState->Queues[u32]);
-                    //     vpciCsLeave(pState);
+                        pThisCC->Queues[u32].pfnCallback(pDevIns, &pThis->Queues[u32]);
+                    //     vpciCsLeave(pThis);
                     // }
                 }
                 else
                     Log(("%s The queue (#%d) being notified has not been initialized.\n",
-                         INSTANCE(pState), u32));
+                         INSTANCE(pThis), u32));
             }
             else
-                Log(("%s Invalid queue number (%d)\n", INSTANCE(pState), u32));
+                Log(("%s Invalid queue number (%d)\n", INSTANCE(pThis), u32));
 #else
+            RT_NOREF(pThisCC);
             rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
             break;
 
         case VPCI_STATUS:
-            Assert(cb == 1);
+            ASSERT_GUEST_MSG(cb == 1, ("cb=%u\n", cb));
             u32 &= 0xFF;
-            fHasBecomeReady = !(pState->uStatus & VPCI_STATUS_DRV_OK) && (u32 & VPCI_STATUS_DRV_OK);
-            pState->uStatus = u32;
+            fHasBecomeReady = !(pThis->uStatus & VPCI_STATUS_DRV_OK) && (u32 & VPCI_STATUS_DRV_OK);
+            pThis->uStatus = u32;
             /* Writing 0 to the status port triggers device reset. */
             if (u32 == 0)
-                rc = pCallbacks->pfnReset(pState);
+                rc = pCallbacks->pfnReset(pDevIns);
             else if (fHasBecomeReady)
             {
                 /* Older hypervisors were lax and did not enforce bus mastering. Older guests
@@ -591,94 +566,83 @@ int vpciIOPortOut(PPDMDEVINS         pDevIns,
                 PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
                 PDMPciDevSetCommand(pPciDev, PDMPciDevGetCommand(pPciDev) | PCI_COMMAND_BUSMASTER);
 
-                pCallbacks->pfnReady(pState);
+                pCallbacks->pfnReady(pDevIns);
             }
             break;
 
         default:
-            if (Port >= VPCI_CONFIG)
-                rc = pCallbacks->pfnSetConfig(pState, Port - VPCI_CONFIG, cb, &u32);
+            if (offPort >= VPCI_CONFIG)
+                rc = pCallbacks->pfnSetConfig(pThis, offPort - VPCI_CONFIG, cb, &u32);
             else
-                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortOut: no valid port at offset Port=%RTiop cb=%08x\n",
-                                       INSTANCE(pState), Port, cb);
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s vpciIOPortOut: no valid port at offset offPort=%RTiop cb=%08x\n",
+                                       INSTANCE(pThis), offPort, cb);
             break;
     }
 
-    STAM_PROFILE_ADV_STOP(&pState->CTX_SUFF(StatIOWrite), a);
+    STAM_PROFILE_ADV_STOP(&pThis->CTX_SUFF(StatIOWrite), a);
     return rc;
 }
 
 #ifdef IN_RING3
 
 /**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ * Handles common IBase.pfnQueryInterface requests.
  */
-void *vpciQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
+void *vpciR3QueryInterface(PVPCISTATECC pThisCC, const char *pszIID)
 {
-    VPCISTATE *pThis = IFACE_TO_STATE(pInterface, IBase);
-    Assert(&pThis->IBase == pInterface);
-
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThisCC->ILeds);
     return NULL;
 }
 
 /**
- * Gets the pointer to the status LED of a unit.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure.
- * @param   iLUN            The unit which status LED we desire.
- * @param   ppLed           Where to store the LED pointer.
- * @thread  EMT
+ * @interface_method_impl{PDMILEDPORTS,pfnQueryStatusLed}
  */
-static DECLCALLBACK(int) vpciQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
+static DECLCALLBACK(int) vpciR3QueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    VPCISTATE *pState = IFACE_TO_STATE(pInterface, ILeds);
-    int        rc     = VERR_PDM_LUN_NOT_FOUND;
-
+    PVPCISTATECC pThisCC = RT_FROM_MEMBER(pInterface, VPCISTATECC, ILeds);
     if (iLUN == 0)
     {
-        *ppLed = &pState->led;
-        rc     = VINF_SUCCESS;
+        *ppLed = &pThisCC->pShared->led;
+        return VINF_SUCCESS;
     }
-    return rc;
+    return VERR_PDM_LUN_NOT_FOUND;
 }
 
 /**
  * Turns on/off the write status LED.
  *
  * @returns VBox status code.
- * @param   pState          Pointer to the device state structure.
+ * @param   pThis          Pointer to the device state structure.
  * @param   fOn             New LED state.
  */
-void vpciSetWriteLed(PVPCISTATE pState, bool fOn)
+void vpciR3SetWriteLed(PVPCISTATE pThis, bool fOn)
 {
-    LogFlow(("%s vpciSetWriteLed: %s\n", INSTANCE(pState), fOn?"on":"off"));
+    LogFlow(("%s vpciR3SetWriteLed: %s\n", INSTANCE(pThis), fOn?"on":"off"));
     if (fOn)
-        pState->led.Asserted.s.fWriting = pState->led.Actual.s.fWriting = 1;
+        pThis->led.Asserted.s.fWriting = pThis->led.Actual.s.fWriting = 1;
     else
-        pState->led.Actual.s.fWriting = fOn;
+        pThis->led.Actual.s.fWriting = fOn;
 }
 
 /**
  * Turns on/off the read status LED.
  *
  * @returns VBox status code.
- * @param   pState          Pointer to the device state structure.
+ * @param   pThis          Pointer to the device state structure.
  * @param   fOn             New LED state.
  */
-void vpciSetReadLed(PVPCISTATE pState, bool fOn)
+void vpciR3SetReadLed(PVPCISTATE pThis, bool fOn)
 {
-    LogFlow(("%s vpciSetReadLed: %s\n", INSTANCE(pState), fOn?"on":"off"));
+    LogFlow(("%s vpciR3SetReadLed: %s\n", INSTANCE(pThis), fOn?"on":"off"));
     if (fOn)
-        pState->led.Asserted.s.fReading = pState->led.Actual.s.fReading = 1;
+        pThis->led.Asserted.s.fReading = pThis->led.Actual.s.fReading = 1;
     else
-        pState->led.Actual.s.fReading = fOn;
+        pThis->led.Actual.s.fReading = fOn;
 }
 
 
-#if 0 /* unused */
+# if 0 /* unused */
 /**
  * Sets 32-bit register in PCI configuration space.
  * @param   refPciDev   The PCI device.
@@ -691,79 +655,84 @@ DECLINLINE(void) vpciCfgSetU32(PDMPCIDEV& refPciDev, uint32_t uOffset, uint32_t 
     Assert(uOffset+sizeof(u32Value) <= sizeof(refPciDev.config));
     *(uint32_t*)&refPciDev.config[uOffset] = u32Value;
 }
-#endif /* unused */
+# endif /* unused */
 
-
-#ifdef DEBUG
-static void vpciDumpState(PVPCISTATE pState, const char *pcszCaller)
-{
-    Log2(("vpciDumpState: (called from %s)\n"
-          "  uGuestFeatures = 0x%08x\n"
-          "  uQueueSelector = 0x%04x\n"
-          "  uStatus        = 0x%02x\n"
-          "  uISR           = 0x%02x\n",
-          pcszCaller,
-          pState->uGuestFeatures,
-          pState->uQueueSelector,
-          pState->uStatus,
-          pState->uISR));
-
-    for (unsigned i = 0; i < pState->nQueues; i++)
-        Log2((" %s queue:\n"
-              "  VRing.uSize           = %u\n"
-              "  VRing.addrDescriptors = %p\n"
-              "  VRing.addrAvail       = %p\n"
-              "  VRing.addrUsed        = %p\n"
-              "  uNextAvailIndex       = %u\n"
-              "  uNextUsedIndex        = %u\n"
-              "  uPageNumber           = %x\n",
-              pState->Queues[i].pcszName,
-              pState->Queues[i].VRing.uSize,
-              pState->Queues[i].VRing.addrDescriptors,
-              pState->Queues[i].VRing.addrAvail,
-              pState->Queues[i].VRing.addrUsed,
-              pState->Queues[i].uNextAvailIndex,
-              pState->Queues[i].uNextUsedIndex,
-              pState->Queues[i].uPageNumber));
-}
-#else
-# define vpciDumpState(x, s)  do {} while (0)
-#endif
 
 /**
- * Saves the state of device.
+ * Dumps the state (useful for both logging and info items).
+ */
+void vpcR3iDumpStateWorker(PVPCISTATE pThis, PCDBGFINFOHLP pHlp)
+{
+
+    pHlp->pfnPrintf(pHlp,
+                    "  uGuestFeatures = 0x%08x\n"
+                    "  uQueueSelector = 0x%04x\n"
+                    "  uStatus        = 0x%02x\n"
+                    "  uISR           = 0x%02x\n",
+                    pThis->uGuestFeatures,
+                    pThis->uQueueSelector,
+                    pThis->uStatus,
+                    pThis->uISR);
+
+    for (unsigned i = 0; i < pThis->cQueues; i++)
+        pHlp->pfnPrintf(pHlp,
+                        " %s queue:\n"
+                        "  VRing.uSize           = %u\n"
+                        "  VRing.addrDescriptors = %p\n"
+                        "  VRing.addrAvail       = %p\n"
+                        "  VRing.addrUsed        = %p\n"
+                        "  uNextAvailIndex       = %u\n"
+                        "  uNextUsedIndex        = %u\n"
+                        "  uPageNumber           = %x\n",
+                        pThis->Queues[i].szName,
+                        pThis->Queues[i].VRing.uSize,
+                        pThis->Queues[i].VRing.addrDescriptors,
+                        pThis->Queues[i].VRing.addrAvail,
+                        pThis->Queues[i].VRing.addrUsed,
+                        pThis->Queues[i].uNextAvailIndex,
+                        pThis->Queues[i].uNextUsedIndex,
+                        pThis->Queues[i].uPageNumber);
+}
+
+# ifdef LOG_ENABLED
+void vpciR3DumpState(PVPCISTATE pThis, const char *pcszCaller)
+{
+    if (LogIs2Enabled())
+    {
+        Log2(("vpciR3DumpState: (called from %s)\n", pcszCaller));
+        vpcR3iDumpStateWorker(pThis, DBGFR3InfoLogHlp());
+    }
+}
+# else
+#  define vpciR3DumpState(x, s)  do {} while (0)
+# endif
+
+/**
+ * Saved the core virtio state.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
+ * @param   pHlp        The device helpers.
+ * @param   pThis       The shared virtio core instance data.
  * @param   pSSM        The handle to the saved state.
  */
-int vpciSaveExec(PVPCISTATE pState, PSSMHANDLE pSSM)
+int vpciR3SaveExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM)
 {
-    int rc;
+    vpciR3DumpState(pThis, "vpciR3SaveExec");
 
-    vpciDumpState(pState, "vpciSaveExec");
-
-    rc = SSMR3PutU32(pSSM, pState->uGuestFeatures);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU16(pSSM, pState->uQueueSelector);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU8( pSSM, pState->uStatus);
-    AssertRCReturn(rc, rc);
-    rc = SSMR3PutU8( pSSM, pState->uISR);
-    AssertRCReturn(rc, rc);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uGuestFeatures);
+    pHlp->pfnSSMPutU16(pSSM, pThis->uQueueSelector);
+    pHlp->pfnSSMPutU8( pSSM, pThis->uStatus);
+    pHlp->pfnSSMPutU8( pSSM, pThis->uISR);
 
     /* Save queue states */
-    rc = SSMR3PutU32(pSSM, pState->nQueues);
+    int rc = pHlp->pfnSSMPutU32(pSSM, pThis->cQueues);
     AssertRCReturn(rc, rc);
-    for (unsigned i = 0; i < pState->nQueues; i++)
+    for (unsigned i = 0; i < pThis->cQueues; i++)
     {
-        rc = SSMR3PutU16(pSSM, pState->Queues[i].VRing.uSize);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU32(pSSM, pState->Queues[i].uPageNumber);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU16(pSSM, pState->Queues[i].uNextAvailIndex);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3PutU16(pSSM, pState->Queues[i].uNextUsedIndex);
+        pHlp->pfnSSMPutU16(pSSM, pThis->Queues[i].VRing.uSize);
+        pHlp->pfnSSMPutU32(pSSM, pThis->Queues[i].uPageNumber);
+        pHlp->pfnSSMPutU16(pSSM, pThis->Queues[i].uNextAvailIndex);
+        rc = pHlp->pfnSSMPutU16(pSSM, pThis->Queues[i].uNextUsedIndex);
         AssertRCReturn(rc, rc);
     }
 
@@ -774,58 +743,56 @@ int vpciSaveExec(PVPCISTATE pState, PSSMHANDLE pSSM)
  * Loads a saved device state.
  *
  * @returns VBox status code.
- * @param   pDevIns     The device instance.
+ * @param   pHlp        The device helpers.
+ * @param   pThis       The shared virtio core instance data.
  * @param   pSSM        The handle to the saved state.
  * @param   uVersion    The data unit version number.
  * @param   uPass       The data pass.
+ * @param   cQueues     The default queue count (for old states).
  */
-int vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t nQueues)
+int vpciR3LoadExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t cQueues)
 {
     int rc;
 
     if (uPass == SSM_PASS_FINAL)
     {
         /* Restore state data */
-        rc = SSMR3GetU32(pSSM, &pState->uGuestFeatures);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU16(pSSM, &pState->uQueueSelector);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU8( pSSM, &pState->uStatus);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU8( pSSM, &pState->uISR);
-        AssertRCReturn(rc, rc);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->uGuestFeatures);
+        pHlp->pfnSSMGetU16(pSSM, &pThis->uQueueSelector);
+        pHlp->pfnSSMGetU8( pSSM, &pThis->uStatus);
+        pHlp->pfnSSMGetU8( pSSM, &pThis->uISR);
 
         /* Restore queues */
         if (uVersion > VIRTIO_SAVEDSTATE_VERSION_3_1_BETA1)
         {
-            rc = SSMR3GetU32(pSSM, &pState->nQueues);
+            rc = pHlp->pfnSSMGetU32(pSSM, &pThis->cQueues);
             AssertRCReturn(rc, rc);
         }
         else
-            pState->nQueues = nQueues;
-        AssertLogRelMsgReturn(pState->nQueues <= VIRTIO_MAX_NQUEUES, ("%#x\n", pState->nQueues), VERR_SSM_LOAD_CONFIG_MISMATCH);
-        AssertLogRelMsgReturn(pState->uQueueSelector < pState->nQueues || (pState->nQueues == 0 && pState->uQueueSelector),
-                              ("uQueueSelector=%u nQueues=%u\n", pState->uQueueSelector, pState->nQueues),
+            pThis->cQueues = cQueues;
+        AssertLogRelMsgReturn(pThis->cQueues <= VIRTIO_MAX_NQUEUES, ("%#x\n", pThis->cQueues), VERR_SSM_LOAD_CONFIG_MISMATCH);
+        AssertLogRelMsgReturn(pThis->uQueueSelector < pThis->cQueues || (pThis->cQueues == 0 && pThis->uQueueSelector),
+                              ("uQueueSelector=%u cQueues=%u\n", pThis->uQueueSelector, pThis->cQueues),
                               VERR_SSM_LOAD_CONFIG_MISMATCH);
 
-        for (unsigned i = 0; i < pState->nQueues; i++)
+        for (unsigned i = 0; i < pThis->cQueues; i++)
         {
-            rc = SSMR3GetU16(pSSM, &pState->Queues[i].VRing.uSize);
+            rc = pHlp->pfnSSMGetU16(pSSM, &pThis->Queues[i].VRing.uSize);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetU32(pSSM, &pState->Queues[i].uPageNumber);
+            rc = pHlp->pfnSSMGetU32(pSSM, &pThis->Queues[i].uPageNumber);
             AssertRCReturn(rc, rc);
 
-            if (pState->Queues[i].uPageNumber)
-                vqueueInit(&pState->Queues[i], pState->Queues[i].uPageNumber);
+            if (pThis->Queues[i].uPageNumber)
+                vqueueInit(&pThis->Queues[i], pThis->Queues[i].uPageNumber);
 
-            rc = SSMR3GetU16(pSSM, &pState->Queues[i].uNextAvailIndex);
+            rc = pHlp->pfnSSMGetU16(pSSM, &pThis->Queues[i].uNextAvailIndex);
             AssertRCReturn(rc, rc);
-            rc = SSMR3GetU16(pSSM, &pState->Queues[i].uNextUsedIndex);
+            rc = pHlp->pfnSSMGetU16(pSSM, &pThis->Queues[i].uNextUsedIndex);
             AssertRCReturn(rc, rc);
         }
     }
 
-    vpciDumpState(pState, "vpciLoadExec");
+    vpciR3DumpState(pThis, "vpciLoadExec");
 
     return VINF_SUCCESS;
 }
@@ -838,9 +805,7 @@ int vpciLoadExec(PVPCISTATE pState, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t
  * @param   uClass       Class of PCI device (network, etc)
  * @thread  EMT
  */
-static DECLCALLBACK(void) vpciConfigure(PPDMPCIDEV pPciDev,
-                                        uint16_t uDeviceId,
-                                        uint16_t uClass)
+static void vpciConfigure(PPDMPCIDEV pPciDev, uint16_t uDeviceId, uint16_t uClass)
 {
     /* Configure PCI Device, assume 32-bit mode ******************************/
     PDMPciDevSetVendorId(pPciDev,                           DEVICE_PCI_VENDOR_ID);
@@ -856,59 +821,43 @@ static DECLCALLBACK(void) vpciConfigure(PPDMPCIDEV pPciDev,
     /* Interrupt Pin: INTA# */
     PDMPciDevSetByte(pPciDev, VBOX_PCI_INTERRUPT_PIN,       0x01);
 
-#ifdef VBOX_WITH_MSI_DEVICES
+# ifdef VBOX_WITH_MSI_DEVICES
     PDMPciDevSetCapabilityList(pPciDev,                     0x80);
     PDMPciDevSetStatus(pPciDev,                             VBOX_PCI_STATUS_CAP_LIST);
-#endif
+# endif
 }
 
-#ifdef VBOX_WITH_STATISTICS
-/* WARNING! This function must never be used in multithreaded context! */
-static const char *vpciCounter(const char *pszDevFmt,
-                               const char *pszCounter)
+
+int vpciR3Init(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVPCISTATECC pThisCC, uint16_t uDeviceId, uint16_t uClass, uint32_t cQueues)
 {
-    static char s_szCounterName[80];
-
-    RTStrPrintf(s_szCounterName, sizeof(s_szCounterName),
-                "/Devices/%s/%s", pszDevFmt, pszCounter);
-
-    return s_szCounterName;
-}
-#endif
-
-/// @todo header
-int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
-                  int iInstance, const char *pcszNameFmt,
-                  uint16_t uDeviceId, uint16_t uClass,
-                  uint32_t nQueues)
-{
-    /* Init handles and log related stuff. */
-    RTStrPrintf(pState->szInstance, sizeof(pState->szInstance),
-                pcszNameFmt, iInstance);
-
-    pState->pDevInsR3    = pDevIns;
-    pState->pDevInsR0    = PDMDEVINS_2_R0PTR(pDevIns);
-    pState->pDevInsRC    = PDMDEVINS_2_RCPTR(pDevIns);
-    pState->led.u32Magic = PDMLED_MAGIC;
-
-    pState->ILeds.pfnQueryStatusLed = vpciQueryStatusLed;
+    /* Init data members. */
+    pThis->cQueues                   = cQueues;
+    pThis->led.u32Magic              = PDMLED_MAGIC;
+    pThisCC->pShared                 = pThis;
+    pThisCC->ILeds.pfnQueryStatusLed = vpciR3QueryStatusLed;
+    AssertReturn(pThisCC->IBase.pfnQueryInterface, VERR_INVALID_POINTER);
+    AssertReturn(pThis->szInstance[0], VERR_INVALID_PARAMETER);
+    AssertReturn(strlen(pThis->szInstance) < sizeof(pThis->szInstance), VERR_INVALID_PARAMETER);
 
     /* Initialize critical section. */
-    int rc = PDMDevHlpCritSectInit(pDevIns, &pState->cs, RT_SRC_POS, "%s", pState->szInstance);
-    if (RT_FAILURE(rc))
-        return rc;
+    int rc = PDMDevHlpCritSectInit(pDevIns, &pThis->cs, RT_SRC_POS, "%s", pThis->szInstance);
+    AssertRCReturn(rc, rc);
 
+    /*
+     * Set up the PCI device.
+     */
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
+
     /* Set PCI config registers */
     vpciConfigure(pPciDev, uDeviceId, uClass);
+
     /* Register PCI device */
     rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
-#ifdef VBOX_WITH_MSI_DEVICES
-#if 0
+# ifdef VBOX_WITH_MSI_DEVICES
+#  if 0
     {
         PDMMSIREG aMsiReg;
 
@@ -919,35 +868,39 @@ int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
         aMsiReg.iMsixBar = 0;
         rc = PDMDevHlpPCIRegisterMsi(pDevIns, &aMsiReg);
         if (RT_FAILURE (rc))
-            PCIDevSetCapabilityList(&pState->pciDevice, 0x0);
+            PCIDevSetCapabilityList(&pThis->pciDevice, 0x0);
     }
-#endif
-#endif
+#  endif
+# endif
 
-    /* Status driver */
+    /*
+     * Attach the status driver (optional).
+     */
     PPDMIBASE pBase;
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pState->IBase, &pBase, "Status Port");
-    if (RT_FAILURE(rc))
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThisCC->IBase, &pBase, "Status Port");
+    if (RT_SUCCESS(rc))
+        pThisCC->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+    else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
-    pState->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
 
-    pState->nQueues = nQueues;
+    /*
+     * Statistics.
+     */
+# ifdef VBOX_WITH_STATISTICS
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOReadR3,    STAMTYPE_PROFILE, "IO/ReadR3",          STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOReadR0,    STAMTYPE_PROFILE, "IO/ReadR0",          STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R0");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOReadRC,    STAMTYPE_PROFILE, "IO/ReadRC",          STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in RC");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOWriteR3,   STAMTYPE_PROFILE, "IO/WriteR3",         STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOWriteR0,   STAMTYPE_PROFILE, "IO/WriteR0",         STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R0");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOWriteRC,   STAMTYPE_PROFILE, "IO/WriteRC",         STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RC");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIntsRaised,  STAMTYPE_COUNTER, "Interrupts/Raised",  STAMUNIT_OCCURENCES,     "Number of raised interrupts");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIntsSkipped, STAMTYPE_COUNTER, "Interrupts/Skipped", STAMUNIT_OCCURENCES,     "Number of skipped interrupts");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCsR3,        STAMTYPE_PROFILE, "Cs/CsR3",            STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCsR0,        STAMTYPE_PROFILE, "Cs/CsR0",            STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in R0");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatCsRC,        STAMTYPE_PROFILE, "Cs/CsRC",            STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in RC");
+# endif /* VBOX_WITH_STATISTICS */
 
-#if defined(VBOX_WITH_STATISTICS)
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadR3,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R3",      vpciCounter(pcszNameFmt, "IO/ReadR3"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadR0,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R0",      vpciCounter(pcszNameFmt, "IO/ReadR0"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOReadRC,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in RC",      vpciCounter(pcszNameFmt, "IO/ReadRC"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteR3,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3",     vpciCounter(pcszNameFmt, "IO/WriteR3"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteR0,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R0",     vpciCounter(pcszNameFmt, "IO/WriteR0"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIOWriteRC,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RC",     vpciCounter(pcszNameFmt, "IO/WriteRC"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsRaised,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of raised interrupts",   vpciCounter(pcszNameFmt, "Interrupts/Raised"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatIntsSkipped,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of skipped interrupts",   vpciCounter(pcszNameFmt, "Interrupts/Skipped"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsR3,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in R3",      vpciCounter(pcszNameFmt, "Cs/CsR3"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsR0,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in R0",      vpciCounter(pcszNameFmt, "Cs/CsR0"), iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatCsRC,               STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling CS wait in RC",      vpciCounter(pcszNameFmt, "Cs/CsRC"), iInstance);
-#endif /* VBOX_WITH_STATISTICS */
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -956,72 +909,49 @@ int vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
  * We need to free non-VM resources only.
  *
  * @returns VBox status code.
- * @param   pState      The device state structure.
+ * @param   pThis      The shared virtio core instance data.
  */
-int vpciDestruct(VPCISTATE* pState)
+int vpciR3Term(PPDMDEVINS pDevIns, PVPCISTATE pThis)
 {
-    Log(("%s Destroying PCI instance\n", INSTANCE(pState)));
+    Log(("%s Destroying PCI instance\n", INSTANCE(pThis)));
 
-    if (PDMCritSectIsInitialized(&pState->cs))
-        PDMR3CritSectDelete(&pState->cs);
+    if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->cs))
+        PDMDevHlpCritSectDelete(pDevIns, &pThis->cs);
 
     return VINF_SUCCESS;
 }
 
-/**
- * Device relocation callback.
- *
- * When this callback is called the device instance data, and if the
- * device have a GC component, is being relocated, or/and the selectors
- * have been changed. The device must use the chance to perform the
- * necessary pointer relocations and data updates.
- *
- * Before the GC code is executed the first time, this function will be
- * called with a 0 delta so GC pointer calculations can be one in one place.
- *
- * @param   pDevIns     Pointer to the device instance.
- * @param   offDelta    The relocation delta relative to the old location.
- *
- * @remark  A relocation CANNOT fail.
- */
-void vpciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+PVQUEUE vpciR3AddQueue(PVPCISTATE pThis, PVPCISTATECC pThisCC, unsigned uSize,
+                       PFNVPCIQUEUECALLBACK pfnCallback, const char *pcszName)
 {
-    RT_NOREF(offDelta);
-    VPCISTATE *pState = PDMINS_2_DATA(pDevIns, VPCISTATE*);
-    pState->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    // TBD
-}
-
-PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize, PFNVPCIQUEUECALLBACK pfnCallback, const char *pcszName)
-{
-    PVQUEUE pQueue = NULL;
     /* Find an empty queue slot */
-    for (unsigned i = 0; i < pState->nQueues; i++)
+    for (unsigned i = 0; i < pThis->cQueues; i++)
     {
-        if (pState->Queues[i].VRing.uSize == 0)
+        if (pThis->Queues[i].VRing.uSize == 0)
         {
-            pQueue = &pState->Queues[i];
-            break;
+            PVQUEUE pQueue = &pThis->Queues[i];
+            pQueue->VRing.uSize = uSize;
+            pQueue->VRing.addrDescriptors = 0;
+            pQueue->uPageNumber = 0;
+            int rc = RTStrCopy(pQueue->szName, sizeof(pQueue->szName), pcszName);
+            AssertRC(rc);
+            pThisCC->Queues[i].pfnCallback = pfnCallback;
+            return pQueue;
         }
     }
-
-    if (!pQueue)
-    {
-        Log(("%s Too many queues being added, no empty slots available!\n", INSTANCE(pState)));
-    }
-    else
-    {
-        pQueue->VRing.uSize = uSize;
-        pQueue->VRing.addrDescriptors = 0;
-        pQueue->uPageNumber = 0;
-        pQueue->pfnCallback = pfnCallback;
-        pQueue->pcszName = pcszName;
-    }
-
-    return pQueue;
+    AssertMsgFailedReturn(("%s Too many queues being added, no empty slots available!\n", INSTANCE(pThis)), NULL);
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
 
-#endif /* VBOX_DEVICE_STRUCT_TESTCASE */
+/**
+ * Does ring-0/raw-mode initialization.
+ */
+int vpciRZInit(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVPCISTATECC pThisCC)
+{
+    RT_NOREF(pDevIns, pThis, pThisCC);
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
