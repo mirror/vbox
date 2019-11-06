@@ -7978,99 +7978,102 @@ static DECLCALLBACK(int) e1kR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
     e1kR3HardReset(pDevIns, pThis, pThisCC);
 
+    /*
+     * Register statistics.
+     */
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Public/Net/E1k%u/BytesReceived", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Public/Net/E1k%u/BytesTransmitted", iInstance);
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/E1k%d/ReceiveBytes", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/E1k%d/TransmitBytes", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "ReceiveBytes");
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "TransmitBytes");
 
 #if defined(VBOX_WITH_STATISTICS)
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in RZ",         "/Devices/E1k%d/MMIO/ReadRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in R3",         "/Devices/E1k%d/MMIO/ReadR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOWriteRZ,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in RZ",        "/Devices/E1k%d/MMIO/WriteRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOWriteR3,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in R3",        "/Devices/E1k%d/MMIO/WriteR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatEEPROMRead,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling EEPROM reads",             "/Devices/E1k%d/EEPROM/Read", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatEEPROMWrite,        STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling EEPROM writes",            "/Devices/E1k%d/EEPROM/Write", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOReadRZ,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in RZ",           "/Devices/E1k%d/IO/ReadRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOReadR3,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R3",           "/Devices/E1k%d/IO/ReadR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOWriteRZ,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RZ",          "/Devices/E1k%d/IO/WriteRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIOWriteR3,          STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3",          "/Devices/E1k%d/IO/WriteR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatLateIntTimer,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling late int timer",           "/Devices/E1k%d/LateInt/Timer", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatLateInts,           STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of late interrupts",          "/Devices/E1k%d/LateInt/Occured", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIntsRaised,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of raised interrupts",        "/Devices/E1k%d/Interrupts/Raised", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatIntsPrevented,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of prevented interrupts",     "/Devices/E1k%d/Interrupts/Prevented", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceive,            STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive",                  "/Devices/E1k%d/Receive/Total", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveCRC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive checksumming",     "/Devices/E1k%d/Receive/CRC", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveFilter,      STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive filtering",        "/Devices/E1k%d/Receive/Filter", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveStore,       STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling receive storing",          "/Devices/E1k%d/Receive/Store", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflow,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_OCCURENCE, "Profiling RX overflows",        "/Devices/E1k%d/RxOverflow", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflowWakeupRZ, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups in RZ",    "/Devices/E1k%d/RxOverflowWakeupRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatRxOverflowWakeupR3, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups in R3",    "/Devices/E1k%d/RxOverflowWakeupR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitRZ,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in RZ",          "/Devices/E1k%d/Transmit/TotalRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitR3,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in R3",          "/Devices/E1k%d/Transmit/TotalR3", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitSendRZ,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in RZ",      "/Devices/E1k%d/Transmit/SendRZ", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitSendR3,     STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in R3",      "/Devices/E1k%d/Transmit/SendR3", iInstance);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMMIOReadRZ,         STAMTYPE_PROFILE, "MMIO/ReadRZ",          STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in RZ");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMMIOReadR3,         STAMTYPE_PROFILE, "MMIO/ReadR3",          STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMMIOWriteRZ,        STAMTYPE_PROFILE, "MMIO/WriteRZ",         STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in RZ");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatMMIOWriteR3,        STAMTYPE_PROFILE, "MMIO/WriteR3",         STAMUNIT_TICKS_PER_CALL, "Profiling MMIO writes in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEEPROMRead,         STAMTYPE_PROFILE, "EEPROM/Read",          STAMUNIT_TICKS_PER_CALL, "Profiling EEPROM reads");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatEEPROMWrite,        STAMTYPE_PROFILE, "EEPROM/Write",         STAMUNIT_TICKS_PER_CALL, "Profiling EEPROM writes");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOReadRZ,           STAMTYPE_PROFILE, "IO/ReadRZ",            STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in RZ");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOReadR3,           STAMTYPE_PROFILE, "IO/ReadR3",            STAMUNIT_TICKS_PER_CALL, "Profiling IO reads in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOWriteRZ,          STAMTYPE_PROFILE, "IO/WriteRZ",           STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in RZ");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIOWriteR3,          STAMTYPE_PROFILE, "IO/WriteR3",           STAMUNIT_TICKS_PER_CALL, "Profiling IO writes in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLateIntTimer,       STAMTYPE_PROFILE, "LateInt/Timer",        STAMUNIT_TICKS_PER_CALL, "Profiling late int timer");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatLateInts,           STAMTYPE_COUNTER, "LateInt/Occured",      STAMUNIT_OCCURENCES,     "Number of late interrupts");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIntsRaised,         STAMTYPE_COUNTER, "Interrupts/Raised",    STAMUNIT_OCCURENCES,     "Number of raised interrupts");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatIntsPrevented,      STAMTYPE_COUNTER, "Interrupts/Prevented", STAMUNIT_OCCURENCES,     "Number of prevented interrupts");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatReceive,            STAMTYPE_PROFILE, "Receive/Total",        STAMUNIT_TICKS_PER_CALL, "Profiling receive");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatReceiveCRC,         STAMTYPE_PROFILE, "Receive/CRC",          STAMUNIT_TICKS_PER_CALL, "Profiling receive checksumming");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatReceiveFilter,      STAMTYPE_PROFILE, "Receive/Filter",       STAMUNIT_TICKS_PER_CALL, "Profiling receive filtering");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatReceiveStore,       STAMTYPE_PROFILE, "Receive/Store",        STAMUNIT_TICKS_PER_CALL, "Profiling receive storing");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRxOverflow,         STAMTYPE_PROFILE, "RxOverflow",           STAMUNIT_TICKS_PER_OCCURENCE, "Profiling RX overflows");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRxOverflowWakeupRZ, STAMTYPE_COUNTER, "RxOverflowWakeupRZ",   STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups in RZ");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRxOverflowWakeupR3, STAMTYPE_COUNTER, "RxOverflowWakeupR3",   STAMUNIT_OCCURENCES,     "Nr of RX overflow wakeups in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTransmitRZ,         STAMTYPE_PROFILE, "Transmit/TotalRZ",     STAMUNIT_TICKS_PER_CALL, "Profiling transmits in RZ");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTransmitR3,         STAMTYPE_PROFILE, "Transmit/TotalR3",     STAMUNIT_TICKS_PER_CALL, "Profiling transmits in R3");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTransmitSendRZ,     STAMTYPE_PROFILE, "Transmit/SendRZ",      STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in RZ");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTransmitSendR3,     STAMTYPE_PROFILE, "Transmit/SendR3",      STAMUNIT_TICKS_PER_CALL, "Profiling send transmit in R3");
 
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxDescCtxNormal,    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of normal context descriptors","/Devices/E1k%d/TxDesc/ContexNormal", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxDescCtxTSE,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TSE context descriptors",  "/Devices/E1k%d/TxDesc/ContextTSE", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxDescData,         STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TX data descriptors",      "/Devices/E1k%d/TxDesc/Data", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxDescLegacy,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TX legacy descriptors",    "/Devices/E1k%d/TxDesc/Legacy", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxDescTSEData,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of TX TSE data descriptors",  "/Devices/E1k%d/TxDesc/TSEData", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxPathFallback,     STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Fallback TSE descriptor path",       "/Devices/E1k%d/TxPath/Fallback", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxPathGSO,          STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "GSO TSE descriptor path",            "/Devices/E1k%d/TxPath/GSO", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTxPathRegular,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Regular descriptor path",            "/Devices/E1k%d/TxPath/Normal", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatPHYAccesses,        STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Number of PHY accesses",             "/Devices/E1k%d/PHYAccesses", iInstance);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxDescCtxNormal,    STAMTYPE_COUNTER, "TxDesc/ContexNormal",  STAMUNIT_OCCURENCES,     "Number of normal context descriptors");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxDescCtxTSE,       STAMTYPE_COUNTER, "TxDesc/ContextTSE",    STAMUNIT_OCCURENCES,     "Number of TSE context descriptors");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxDescData,         STAMTYPE_COUNTER, "TxDesc/Data",          STAMUNIT_OCCURENCES,     "Number of TX data descriptors");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxDescLegacy,       STAMTYPE_COUNTER, "TxDesc/Legacy",        STAMUNIT_OCCURENCES,     "Number of TX legacy descriptors");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxDescTSEData,      STAMTYPE_COUNTER, "TxDesc/TSEData",       STAMUNIT_OCCURENCES,     "Number of TX TSE data descriptors");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxPathFallback,     STAMTYPE_COUNTER, "TxPath/Fallback",      STAMUNIT_OCCURENCES,     "Fallback TSE descriptor path");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxPathGSO,          STAMTYPE_COUNTER, "TxPath/GSO",           STAMUNIT_OCCURENCES,     "GSO TSE descriptor path");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatTxPathRegular,      STAMTYPE_COUNTER, "TxPath/Normal",        STAMUNIT_OCCURENCES,     "Regular descriptor path");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatPHYAccesses,        STAMTYPE_COUNTER, "PHYAccesses",          STAMUNIT_OCCURENCES,     "Number of PHY accesses");
     for (unsigned iReg = 0; iReg < E1K_NUM_OF_REGS; iReg++)
     {
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegReads[iReg],   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                               g_aE1kRegMap[iReg].name, "/Devices/E1k%d/Regs/%s-Reads", iInstance, g_aE1kRegMap[iReg].abbrev);
+                               g_aE1kRegMap[iReg].name, "Regs/%s-Reads", g_aE1kRegMap[iReg].abbrev);
         PDMDevHlpSTAMRegisterF(pDevIns, &pThis->aStatRegWrites[iReg],   STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,
-                               g_aE1kRegMap[iReg].name, "/Devices/E1k%d/Regs/%s-Writes", iInstance, g_aE1kRegMap[iReg].abbrev);
+                               g_aE1kRegMap[iReg].name, "Regs/%s-Writes", g_aE1kRegMap[iReg].abbrev);
     }
 #endif /* VBOX_WITH_STATISTICS */
 
 #ifdef E1K_INT_STATS
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->u64ArmedAt,             STAMTYPE_U64,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "u64ArmedAt",                         "/Devices/E1k%d/u64ArmedAt", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatMaxTxDelay,        STAMTYPE_U64,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatMaxTxDelay",                    "/Devices/E1k%d/uStatMaxTxDelay", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatInt,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatInt",                           "/Devices/E1k%d/uStatInt", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntTry,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntTry",                        "/Devices/E1k%d/uStatIntTry", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntLower,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntLower",                      "/Devices/E1k%d/uStatIntLower", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatNoIntICR,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatNoIntICR",                      "/Devices/E1k%d/uStatNoIntICR", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->iStatIntLost,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "iStatIntLost",                       "/Devices/E1k%d/iStatIntLost", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->iStatIntLostOne,        STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "iStatIntLostOne",                    "/Devices/E1k%d/iStatIntLostOne", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntIMS,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntIMS",                        "/Devices/E1k%d/uStatIntIMS", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntSkip,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntSkip",                       "/Devices/E1k%d/uStatIntSkip", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntLate,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntLate",                       "/Devices/E1k%d/uStatIntLate", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntMasked,         STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntMasked",                     "/Devices/E1k%d/uStatIntMasked", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntEarly,          STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntEarly",                      "/Devices/E1k%d/uStatIntEarly", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntRx,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntRx",                         "/Devices/E1k%d/uStatIntRx", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntTx,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntTx",                         "/Devices/E1k%d/uStatIntTx", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntICS,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntICS",                        "/Devices/E1k%d/uStatIntICS", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntRDTR,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntRDTR",                       "/Devices/E1k%d/uStatIntRDTR", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntRXDMT0,         STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntRXDMT0",                     "/Devices/E1k%d/uStatIntRXDMT0", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatIntTXQE,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatIntTXQE",                       "/Devices/E1k%d/uStatIntTXQE", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxNoRS,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxNoRS",                        "/Devices/E1k%d/uStatTxNoRS", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxIDE,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxIDE",                         "/Devices/E1k%d/uStatTxIDE", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxDelayed,         STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxDelayed",                     "/Devices/E1k%d/uStatTxDelayed", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxDelayExp,        STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxDelayExp",                    "/Devices/E1k%d/uStatTxDelayExp", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTAD,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTAD",                           "/Devices/E1k%d/uStatTAD", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTID,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTID",                           "/Devices/E1k%d/uStatTID", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatRAD,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatRAD",                           "/Devices/E1k%d/uStatRAD", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatRID,               STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatRID",                           "/Devices/E1k%d/uStatRID", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatRxFrm,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatRxFrm",                         "/Devices/E1k%d/uStatRxFrm", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxFrm,             STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxFrm",                         "/Devices/E1k%d/uStatTxFrm", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatDescCtx,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatDescCtx",                       "/Devices/E1k%d/uStatDescCtx", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatDescDat,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatDescDat",                       "/Devices/E1k%d/uStatDescDat", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatDescLeg,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatDescLeg",                       "/Devices/E1k%d/uStatDescLeg", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx1514,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx1514",                        "/Devices/E1k%d/uStatTx1514", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx2962,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx2962",                        "/Devices/E1k%d/uStatTx2962", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx4410,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx4410",                        "/Devices/E1k%d/uStatTx4410", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx5858,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx5858",                        "/Devices/E1k%d/uStatTx5858", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx7306,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx7306",                        "/Devices/E1k%d/uStatTx7306", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx8754,            STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx8754",                        "/Devices/E1k%d/uStatTx8754", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx16384,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx16384",                       "/Devices/E1k%d/uStatTx16384", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTx32768,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTx32768",                       "/Devices/E1k%d/uStatTx32768", iInstance);
-    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->uStatTxLarge,           STAMTYPE_U32,     STAMVISIBILITY_ALWAYS, STAMUNIT_NS,             "uStatTxLarge",                       "/Devices/E1k%d/uStatTxLarge", iInstance);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->u64ArmedAt,      STAMTYPE_U64, "u64ArmedAt",      STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatMaxTxDelay, STAMTYPE_U64, "uStatMaxTxDelay", STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatInt,        STAMTYPE_U32, "uStatInt",        STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntTry,     STAMTYPE_U32, "uStatIntTry",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntLower,   STAMTYPE_U32, "uStatIntLower",   STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatNoIntICR,   STAMTYPE_U32, "uStatNoIntICR",   STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->iStatIntLost,    STAMTYPE_U32, "iStatIntLost",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->iStatIntLostOne, STAMTYPE_U32, "iStatIntLostOne", STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntIMS,     STAMTYPE_U32, "uStatIntIMS",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntSkip,    STAMTYPE_U32, "uStatIntSkip",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntLate,    STAMTYPE_U32, "uStatIntLate",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntMasked,  STAMTYPE_U32, "uStatIntMasked",  STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntEarly,   STAMTYPE_U32, "uStatIntEarly",   STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntRx,      STAMTYPE_U32, "uStatIntRx",      STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntTx,      STAMTYPE_U32, "uStatIntTx",      STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntICS,     STAMTYPE_U32, "uStatIntICS",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntRDTR,    STAMTYPE_U32, "uStatIntRDTR",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntRXDMT0,  STAMTYPE_U32, "uStatIntRXDMT0",  STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatIntTXQE,    STAMTYPE_U32, "uStatIntTXQE",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTxNoRS,     STAMTYPE_U32, "uStatTxNoRS",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTxIDE,      STAMTYPE_U32, "uStatTxIDE",      STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTxDelayed,  STAMTYPE_U32, "uStatTxDelayed",  STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTxDelayExp, STAMTYPE_U32, "uStatTxDelayExp", STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTAD,        STAMTYPE_U32, "uStatTAD",        STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTID,        STAMTYPE_U32, "uStatTID",        STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatRAD,        STAMTYPE_U32, "uStatRAD",        STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatRID,        STAMTYPE_U32, "uStatRID",        STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatRxFrm,      STAMTYPE_U32, "uStatRxFrm",      STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTxFrm,      STAMTYPE_U32, "uStatTxFrm",      STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatDescCtx,    STAMTYPE_U32, "uStatDescCtx",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatDescDat,    STAMTYPE_U32, "uStatDescDat",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatDescLeg,    STAMTYPE_U32, "uStatDescLeg",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTx1514,     STAMTYPE_U32, "uStatTx1514",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTx2962,     STAMTYPE_U32, "uStatTx2962",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTx4410,     STAMTYPE_U32, "uStatTx4410",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTx5858,     STAMTYPE_U32, "uStatTx5858",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTx7306,     STAMTYPE_U32, "uStatTx7306",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTx8754,     STAMTYPE_U32, "uStatTx8754",     STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTx16384,    STAMTYPE_U32, "uStatTx16384",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTx32768,    STAMTYPE_U32, "uStatTx32768",    STAMUNIT_NS, NULL);
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->uStatTxLarge,    STAMTYPE_U32, "uStatTxLarge",    STAMUNIT_NS, NULL);
 #endif /* E1K_INT_STATS */
 
     return VINF_SUCCESS;
