@@ -2058,13 +2058,14 @@ static DECLCALLBACK(int) vnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
     {
         if (rc == VINF_NAT_DNS)
         {
-#ifdef RT_OS_LINUX
+            /** @todo r=bird: Who the heck put this crap here?!?   */
+# ifdef RT_OS_LINUX
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <tt>nameserver</tt> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
-#else
+# else
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
-#endif
+# endif
         }
         pThisCC->pDrv = PDMIBASE_QUERY_INTERFACE(pThisCC->pDrvBase, PDMINETWORKUP);
         AssertMsgStmt(pThisCC->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
@@ -2121,9 +2122,9 @@ static DECLCALLBACK(int) vnetR3Destruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
 
-#ifdef VNET_TX_DELAY
+# ifdef VNET_TX_DELAY
     LogRel(("TxTimer stats (avg/min/max): %7d usec %7d usec %7d usec\n", pThis->u32AvgDiff, pThis->u32MinDiff, pThis->u32MaxDiff));
-#endif
+# endif
 
     Log(("%s Destroying instance\n", INSTANCE(pThis)));
     if (pThis->hEventMoreRxDescAvail != NIL_SUPSEMEVENT)
@@ -2157,10 +2158,10 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     RTStrPrintf(pThis->VPCI.szInstance, sizeof(pThis->VPCI.szInstance), "VNet%d", iInstance);
     pThisCC->pDevIns                = pDevIns;
     pThis->hEventMoreRxDescAvail    = NIL_SUPSEMEVENT;
-#ifndef VNET_TX_DELAY
+# ifndef VNET_TX_DELAY
     pThis->hTxEvent                 = NIL_SUPSEMEVENT;
     pThisCC->pTxThread              = NULL;
-#endif
+# endif
 
     /* Initialize state structure */
     pThis->u32PktNo     = 1;
@@ -2246,7 +2247,7 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               "VirtioNet Link Up Timer", &pThisCC->hLinkUpTimer);
     AssertRCReturn(rc, rc);
 
-#ifdef VNET_TX_DELAY
+# ifdef VNET_TX_DELAY
     /* Create Transmit Delay Timer */
     rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetR3TxTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                               "VirtioNet TX Delay Timer", &pThis->hTxTimer);
@@ -2254,7 +2255,7 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
     pThis->u32i = pThis->u32AvgDiff = pThis->u32MaxDiff = 0;
     pThis->u32MinDiff = UINT32_MAX;
-#endif /* VNET_TX_DELAY */
+# endif /* VNET_TX_DELAY */
 
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThisCC->VPCI.IBase, &pThisCC->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))
