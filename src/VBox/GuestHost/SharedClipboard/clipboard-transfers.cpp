@@ -2202,6 +2202,7 @@ uint32_t ShClTransferRootsCount(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, 0);
 
+    LogFlowFunc(("[Transfer %RU16] cRoots=%RU64\n", pTransfer->State.uID, pTransfer->cRoots));
     return (uint32_t)pTransfer->cRoots;
 }
 
@@ -2497,6 +2498,7 @@ SHCLTRANSFERDIR ShClTransferGetDir(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLTRANSFERDIR_UNKNOWN);
 
+    LogFlowFunc(("[Transfer %RU16] enmDir=%RU32\n", pTransfer->State.uID, pTransfer->State.enmDir));
     return pTransfer->State.enmDir;
 }
 
@@ -2510,6 +2512,7 @@ SHCLSOURCE ShClTransferGetSource(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLSOURCE_INVALID);
 
+    LogFlowFunc(("[Transfer %RU16] enmSource=%RU32\n", pTransfer->State.uID, pTransfer->State.enmSource));
     return pTransfer->State.enmSource;
 }
 
@@ -2523,6 +2526,7 @@ SHCLTRANSFERSTATUS ShClTransferGetStatus(PSHCLTRANSFER pTransfer)
 {
     AssertPtrReturn(pTransfer, SHCLTRANSFERSTATUS_NONE);
 
+    LogFlowFunc(("[Transfer %RU16] enmStatus=%RU32\n", pTransfer->State.uID, pTransfer->State.enmStatus));
     return pTransfer->State.enmStatus;
 }
 

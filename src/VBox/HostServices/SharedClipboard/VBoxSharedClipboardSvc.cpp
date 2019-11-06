@@ -1731,9 +1731,12 @@ static DECLCALLBACK(void) svcCall(void *,
                 rc = shClSvcTransferHandler(pClient, callHandle, u32Function, cParms, paParms, tsArrival);
             }
             else
+            {
+                LogRel2(("Shared Clipboard: File transfers are disabled for this VM\n"));
                 rc = VERR_ACCESS_DENIED;
+            }
 #else
-            rc = VERR_NOT_IMPLEMENTED;
+            rc = VERR_NOT_SUPPORTED;
 #endif
             break;
         }

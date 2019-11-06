@@ -73,8 +73,10 @@ DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32F
 
     formatData.uFormats = u32Formats;
 
-    int rc2 = shClSvcFormatsReport(pCtx->pClient, &formatData);
-    AssertRC(rc2);
+    int rc = shClSvcFormatsReport(pCtx->pClient, &formatData);
+    RT_NOREF(rc);
+
+    LogFlowFuncLeaveRC(rc);
 }
 
 int ShClSvcImplInit(void)
@@ -181,14 +183,10 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 {
     RT_NOREF(pCmdCtx);
 
-#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST) /* No transfer support yet. */
-        return VINF_SUCCESS;
-#endif
+    int rc = ClipAnnounceFormatToX11(pClient->State.pCtx->pBackend, pFormats->uFormats);
 
-    ClipAnnounceFormatToX11(pClient->State.pCtx->pBackend, pFormats->uFormats);
-
-    return VINF_SUCCESS;
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /** Structure describing a request for clipoard data from the guest. */
@@ -355,18 +353,30 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32F
 int ShClSvcImplTransferCreate(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
-    return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
-    return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     RT_NOREF(pClient, pTransfer);
-    return VINF_SUCCESS;
+
+    int rc = VINF_SUCCESS;
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 #endif
