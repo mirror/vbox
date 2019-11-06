@@ -207,6 +207,9 @@ typedef struct VPCISTATE
     /** Shared queue data. */
     VQUEUE                  Queues[VIRTIO_MAX_NQUEUES];
 
+    STAMCOUNTER             StatIntsRaised;
+    STAMCOUNTER             StatIntsSkipped;
+
 #ifdef VBOX_WITH_STATISTICS
     STAMPROFILEADV          StatIOReadR3;
     STAMPROFILEADV          StatIOReadR0;
@@ -214,8 +217,6 @@ typedef struct VPCISTATE
     STAMPROFILEADV          StatIOWriteR3;
     STAMPROFILEADV          StatIOWriteR0;
     STAMPROFILEADV          StatIOWriteRC;
-    STAMCOUNTER             StatIntsRaised;
-    STAMCOUNTER             StatIntsSkipped;
     STAMPROFILE             StatCsR3;
     STAMPROFILE             StatCsR0;
     STAMPROFILE             StatCsRC;
@@ -328,7 +329,6 @@ DECLINLINE(uint16_t) vringReadAvailIndex(PPDMDEVINS pDevIns, PVRING pVRing)
 bool vqueueSkip(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue);
 bool vqueueGet(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM pElem, bool fRemove = true);
 void vqueuePut(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM pElem, uint32_t uLen, uint32_t uReserved = 0);
-void vqueueNotify(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue);
 void vqueueSync(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue);
 
 DECLINLINE(bool) vqueuePeek(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM pElem)
