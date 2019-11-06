@@ -326,8 +326,8 @@ void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *psz
  * @param   idx         The index if fHasIndex
  */
 void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
-                            const void *pv, uint32_t cb, uint32_t uOffset, int fWrite,
-                            int fHasIndex, uint32_t idx)
+                                const void *pv, uint32_t cb, uint32_t uOffset, int fWrite,
+                                int fHasIndex, uint32_t idx)
 {
     if (!LogIs6Enabled())
         return;
