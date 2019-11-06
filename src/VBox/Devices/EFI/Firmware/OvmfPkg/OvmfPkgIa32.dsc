@@ -73,6 +73,11 @@
 !if $(TOOL_CHAIN_TAG) != "XCODE5"
   GCC:*_*_*_CC_FLAGS                   = -mno-mmx -mno-sse
 !endif
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  MSFT:*_*_IA32_GENFW_FLAGS  = --keepexceptiontable
+  GCC:*_*_IA32_GENFW_FLAGS   = --keepexceptiontable
+  INTEL:*_*_IA32_GENFW_FLAGS = --keepexceptiontable
+!endif
 
   #
   # Disable deprecated APIs.
@@ -96,6 +101,13 @@
     GCC:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=32 -DHC_ARCH_BITS=32 -DVBOX_REV=$(VBOX_REV)
    MSFT:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=32 -DHC_ARCH_BITS=32 -DVBOX_REV=$(VBOX_REV)
   INTEL:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=32 -DHC_ARCH_BITS=32 -DVBOX_REV=$(VBOX_REV)
+!ifdef $(SOURCE_DEBUG_ENABLE)
+  # Get much better source-level debugging
+    GCC:DEBUG_*_*_CC_FLAGS =     -DVBOX_SOURCE_DEBUG_ENABLE
+   MSFT:DEBUG_*_*_CC_FLAGS = /Od -DVBOX_SOURCE_DEBUG_ENABLE
+  INTEL:DEBUG_*_*_CC_FLAGS =     -DVBOX_SOURCE_DEBUG_ENABLE
+!endif
+
 [BuildOptions.X64]
     GCC:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=64 -DHC_ARCH_BITS=64 -DVBOX_REV=$(VBOX_REV)
    MSFT:*_*_*_CC_FLAGS = -DVBOX -DIPRT_NO_CRT -DRT_OS_UEFI -DARCH_BITS=64 -DHC_ARCH_BITS=64 -DVBOX_REV=$(VBOX_REV)
@@ -254,10 +266,8 @@
 !endif
   ReportStatusCodeLib|MdeModulePkg/Library/PeiReportStatusCodeLib/PeiReportStatusCodeLib.inf
   ExtractGuidedSectionLib|MdePkg/Library/BaseExtractGuidedSectionLib/BaseExtractGuidedSectionLib.inf
-!ifdef $(VBOX)
 !ifdef $(SOURCE_DEBUG_ENABLE)
   DebugAgentLib|SourceLevelDebugPkg/Library/DebugAgent/SecPeiDebugAgentLib.inf
-!endif
 !endif
   HobLib|MdePkg/Library/PeiHobLib/PeiHobLib.inf
   PeiServicesLib|MdePkg/Library/PeiServicesLib/PeiServicesLib.inf
@@ -282,8 +292,8 @@
 !endif
   PeCoffLib|MdePkg/Library/BasePeCoffLib/BasePeCoffLib.inf
 !else
-  DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
   PeCoffLib|VBoxPkg/Library/VBoxPeCoffLib/VBoxPeCoffLib.inf
+  DebugLib|VBoxPkg/Library/VBoxDebugLib/VBoxDebugLib.inf
 !endif
 
 [LibraryClasses.common.PEIM]
