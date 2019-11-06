@@ -3855,43 +3855,6 @@ VMMR3_INT_DECL(int) PGMR3PhysMmio2ValidateHandle(PVM pVM, PPDMDEVINS pDevIns, PG
 
 
 /**
- * Gets the mapping address of an MMIO2 handle.
- *
- * @returns The mapping address, NIL_RTGCPHYS if not mapped of invalid input.
- * @param   pVM             The cross context VM structure.
- * @param   pVM             The cross context VM structure.
- * @param   pDevIns         The device instance owning the region.
- * @param   hMmio2          The handle of the region.
- */
-VMMR3DECL(bool) PGMR3PhysMMIO2GetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
-{
-    /*
-     * Validate input
-     */
-    VM_ASSERT_EMT_RETURN(pVM, false);
-    AssertPtrReturn(pDevIns, false);
-    AssertReturn(GCPhys != NIL_RTGCPHYS, false);
-    AssertReturn(GCPhys != 0, false);
-    AssertReturn(!(GCPhys & PAGE_OFFSET_MASK), false);
-
-    /*
-     * Search the list.
-     */
-    pgmLock(pVM);
-    for (PPGMREGMMIO2RANGE pCurMmio = pVM->pgm.s.pRegMmioRangesR3; pCurMmio; pCurMmio = pCurMmio->pNextR3)
-        if (pCurMmio->RamRange.GCPhys == GCPhys)
-        {
-            Assert(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_MAPPED);
-            bool fRet = RT_BOOL(pCurMmio->fFlags & PGMREGMMIO2RANGE_F_FIRST_CHUNK);
-            pgmUnlock(pVM);
-            return fRet;
-        }
-    pgmUnlock(pVM);
-    return false;
-}
-
-
-/**
  * Checks if the given address is an MMIO2 or pre-registered MMIO base address
  * or not.
  *
@@ -4025,26 +3988,15 @@ VMMR3_INT_DECL(int) PGMR3PhysMMIO2MapKernel(PVM pVM, PPDMDEVINS pDevIns, uint32_
 
 
 /**
- * Changes the region number of an MMIO2 or pre-registered MMIO region.
+ * Gets the mapping address of an MMIO2 region.
  *
- * This is only for dealing with save state issues, nothing else.
- *
- * @return VBox status code.
+ * @returns Mapping address, NIL_RTGCPHYS if not mapped or invalid handle.
  *
  * @param   pVM         The cross context VM structure.
- * @param   pDevIns     The device owning the MMIO2 memory.
- * @param   iSubDev     The sub-device number.  Pass UINT32_MAX if @a hMmio2 is
- *                      given.
- * @param   iRegion     The region.  Pass UINT32_MAX if @a hMmio2 is given.
- * @param   hMmio2      The handle of the region to map as an alternative to
- *                      @a iSubDev and @a iRegion, pass NIL to use the
- *                      other two.
- * @param   iNewRegion  The new region index.
- *
- * @thread  EMT(0)
- * @sa      @bugref{9359}
+ * @param   pDevIns     The device owning the MMIO2 handle.
+ * @param   hMmio2      The region handle.
  */
-VMMR3_INT_DECL(RTGCPHYS) PGMR3PhysMMIOExGetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
+VMMR3_INT_DECL(RTGCPHYS) PGMR3PhysMmio2GetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, PGMMMIO2HANDLE hMmio2)
 {
     AssertPtrReturn(pDevIns, NIL_RTGCPHYS);
 
