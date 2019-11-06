@@ -1223,7 +1223,6 @@ static int vmmdevReqHandler_GetHypervisorInfo(PPDMDEVINS pDevIns, VMMDevRequestH
  *
  * @returns VBox status code that the guest should see.
  * @param   pDevIns         The device instance.
- * @param   pThis           The VMMDev shared instance data.
  * @param   pReqHdr         The header of the request to handle.
  */
 static int vmmdevReqHandler_SetHypervisorInfo(PPDMDEVINS pDevIns, VMMDevRequestHeader *pReqHdr)
@@ -1674,7 +1673,7 @@ static int vmmdevReqHandler_VideoModeSupported2(PVMMDEVCC pThisCC, VMMDevRequest
  * Handles VMMDevReq_GetHeightReduction.
  *
  * @returns VBox status code that the guest should see.
- * @param   pThis           The VMMDev ring-3 instance data.
+ * @param   pThisCC         The VMMDev ring-3 instance data.
  * @param   pReqHdr         The header of the request to handle.
  */
 static int vmmdevReqHandler_GetHeightReduction(PVMMDEVCC pThisCC, VMMDevRequestHeader *pReqHdr)
@@ -2609,7 +2608,6 @@ static int vmmdevReqHandler_WriteCoreDump(PPDMDEVINS pDevIns, PVMMDEV pThis, VMM
  * Sets request status to VINF_HGCM_ASYNC_EXECUTE.
  *
  * @param   pDevIns         The device instance.
- * @param   pThis           The VMM device instance data.
  * @param   GCPhysReqHdr    The guest physical address of the request.
  * @param   pLock           Pointer to the request locking info.  NULL if not
  *                          locked.
@@ -4919,4 +4917,5 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
     /* .u32VersionEnd = */          PDM_DEVREG_VERSION
 };
 
-#endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+#endif /* !VBOX_DEV1679
+ICE_STRUCT_TESTCASE */
