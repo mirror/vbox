@@ -1244,8 +1244,8 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register statistics.
      */
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCIrq,      STAMTYPE_COUNTER, "/TM/RTC/Irq",      STAMUNIT_OCCURENCES,  "The number of times a RTC interrupt was triggered.");
-    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCTimerCB,  STAMTYPE_COUNTER, "/TM/RTC/TimerCB",  STAMUNIT_OCCURENCES,  "The number of times the RTC timer callback ran.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCIrq,      STAMTYPE_COUNTER, "Irq",      STAMUNIT_OCCURENCES,  "The number of times a RTC interrupt was triggered.");
+    PDMDevHlpSTAMRegister(pDevIns, &pThis->StatRTCTimerCB,  STAMTYPE_COUNTER, "TimerCB",  STAMUNIT_OCCURENCES,  "The number of times the RTC timer callback ran.");
 
     return VINF_SUCCESS;
 }
