@@ -2644,12 +2644,12 @@ typedef struct PDMDEVHLPR3
      *                              this must be known to the PCI bus device too. If
      *                              it's not associated with the PCI device, then
      *                              any number up to UINT8_MAX is fine.
-     * @param   cb                  The size (in bytes) of the region.
+     * @param   cbRegion            The size (in bytes) of the region.
      * @param   fFlags              Reserved for future use, must be zero.
-     * @param   ppvMapping          Where to store the address of the ring-3 mapping
-     *                              of the memory.
      * @param   pszDesc             Pointer to description string. This must not be
      *                              freed.
+     * @param   ppvMapping          Where to store the address of the ring-3 mapping
+     *                              of the memory.
      * @param   phRegion            Where to return the MMIO2 region handle.
      *
      * @thread  EMT(0)
@@ -6004,7 +6004,7 @@ DECLINLINE(int) PDMDevHlpIoPortSetUpContext(PPDMDEVINS pDevIns, IOMIOPORTHANDLE 
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnIoPortCreateEx
+ * @copydoc PDMDEVHLPR0::pfnIoPortSetUpContextEx
  */
 DECLINLINE(int) PDMDevHlpIoPortSetUpContextEx(PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts,
                                               PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
@@ -6978,7 +6978,6 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIo(PPDMDEVINS pDevIns, uint32_t iReg
  * @param   pDevIns         The device instance.
  * @param   iRegion         The region number.
  * @param   cbRegion        Size of the region.
- * @param   hIoPorts        Handle to the I/O port region.
  * @param   pfnMapUnmap     Callback for doing the mapping, optional.  The
  *                          callback will be invoked holding only the PDM lock.
  *                          The device lock will _not_ be taken (due to lock

@@ -687,17 +687,17 @@ static DECLCALLBACK(RTGCPHYS) pdmR3DevHlp_Mmio2GetMappingAddress(PPDMDEVINS pDev
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    LogFlow(("pdmR3DevHlp_Mmio2ChangeRegionNo: caller='%s'/%d: hRegion=%#RX6r\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
+    LogFlow(("pdmR3DevHlp_Mmio2GetMappingAddress: caller='%s'/%d: hRegion=%#RX6r\n", pDevIns->pReg->szName, pDevIns->iInstance, hRegion));
     VM_ASSERT_EMT0_RETURN(pVM, NIL_RTGCPHYS);
 
     RTGCPHYS GCPhys = PGMR3PhysMmio2GetMappingAddress(pVM, pDevIns, hRegion);
 
-    LogFlow(("pdmR3DevHlp_Mmio2ChangeRegionNo: caller='%s'/%d: returns %RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
+    LogFlow(("pdmR3DevHlp_Mmio2GetMappingAddress: caller='%s'/%d: returns %RGp\n", pDevIns->pReg->szName, pDevIns->iInstance, GCPhys));
     return GCPhys;
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnMMIOExChangeRegionNo
+ * @copydoc PDMDEVHLPR3::pfnMmio2ChangeRegionNo
  */
 static DECLCALLBACK(int) pdmR3DevHlp_Mmio2ChangeRegionNo(PPDMDEVINS pDevIns, PGMMMIO2HANDLE hRegion, uint32_t iNewRegion)
 {
@@ -2019,7 +2019,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegisterMsi(PPDMDEVINS pDevIns, PPDMPCID
 /** @interface_method_impl{PDMDEVHLPR3,pfnPCIIORegionRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                          RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, uint32_t fFlags,
-                                                         uint64_t hHandle, PFNPCIIOREGIONMAP pfnCallback)
+                                                         uint64_t hHandle, PFNPCIIOREGIONMAP pfnMapUnmap)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR3;
@@ -2027,8 +2027,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
     if (!pPciDev) /* NULL is an alias for the default PCI device. */
         pPciDev = pDevIns->apPciDevs[0];
     AssertReturn(pPciDev, VERR_PDM_NOT_PCI_DEVICE);
-    LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%d cbRegion=%RGp enmType=%d fFlags=%#x, hHandle=%#RX64 pfnCallback=%p\n",
-             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iRegion, cbRegion, enmType, fFlags, hHandle, pfnCallback));
+    LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: pPciDev=%p:{%#x} iRegion=%d cbRegion=%RGp enmType=%d fFlags=%#x, hHandle=%#RX64 pfnMapUnmap=%p\n",
+             pDevIns->pReg->szName, pDevIns->iInstance, pPciDev, pPciDev->uDevFn, iRegion, cbRegion, enmType, fFlags, hHandle, pfnMapUnmap));
     PDMPCIDEV_ASSERT_VALID_RET(pDevIns, pPciDev);
 
     /*
@@ -2085,7 +2085,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
             return VERR_INVALID_PARAMETER;
     }
 
-    AssertMsgReturn(   pfnCallback
+    AssertMsgReturn(   pfnMapUnmap
                     || (   hHandle != UINT64_MAX
                         && (fFlags & PDMPCIDEV_IORGN_F_HANDLE_MASK) != PDMPCIDEV_IORGN_F_NO_HANDLE),
                     ("caller='%s'/%d: fFlags=%#x hHandle=%#RX64\n", pDevIns->pReg->szName, pDevIns->iInstance, fFlags, hHandle),
@@ -2146,7 +2146,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, PPD
     PPDMPCIBUS      pBus   = &pVM->pdm.s.aPciBuses[idxBus];
 
     pdmLock(pVM);
-    rc = pBus->pfnIORegionRegister(pBus->pDevInsR3, pPciDev, iRegion, cbRegion, enmType, fFlags, hHandle, pfnCallback);
+    rc = pBus->pfnIORegionRegister(pBus->pDevInsR3, pPciDev, iRegion, cbRegion, enmType, fFlags, hHandle, pfnMapUnmap);
     pdmUnlock(pVM);
 
     LogFlow(("pdmR3DevHlp_PCIIORegionRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
