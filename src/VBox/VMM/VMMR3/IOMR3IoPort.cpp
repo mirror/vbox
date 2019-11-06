@@ -558,7 +558,7 @@ VMMR3_INT_DECL(int)  IOMR3IoPortValidateHandle(PVM pVM, PPDMDEVINS pDevIns, IOMI
 VMMR3_INT_DECL(uint32_t) IOMR3IoPortGetMappingAddress(PVM pVM, PPDMDEVINS pDevIns, IOMIOPORTHANDLE hIoPorts)
 {
     AssertPtrReturn(pDevIns, UINT32_MAX);
-    AssertReturn(hIoPorts < RT_MIN(pVM->iom.s.cMmioRegs, pVM->iom.s.cMmioAlloc), UINT32_MAX);
+    AssertReturn(hIoPorts < RT_MIN(pVM->iom.s.cIoPortRegs, pVM->iom.s.cIoPortAlloc), UINT32_MAX);
     IOMIOPORTENTRYR3 volatile * const pRegEntry = &pVM->iom.s.paIoPortRegs[hIoPorts];
     AssertReturn(pRegEntry->pDevIns == pDevIns, UINT32_MAX);
     for (uint32_t iTry = 0; ; iTry++)
