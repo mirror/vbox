@@ -29,6 +29,8 @@
 /*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
+#include <Library/BaseLib.h>
+
 #include "VBoxDebugLib.h"
 #include "DevEFI.h"
 #include "iprt/asm.h"
@@ -58,25 +60,25 @@ size_t VBoxPrintHex(UINT64 uValue, size_t cbType)
     switch (cbType)
     {
         case 8:
-            vboxPrintHexChar(s_szHex[(uValue >> 60) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 56) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 52) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 48) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 44) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 40) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 36) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 32) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 60) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 56) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 52) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 48) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 44) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 40) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 36) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 32) & 0xf]);
         case 4:
-            vboxPrintHexChar(s_szHex[(uValue >> 28) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 24) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 20) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >> 16) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 28) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 24) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 20) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 16) & 0xf]);
         case 2:
-            vboxPrintHexChar(s_szHex[(uValue >> 12) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue >>  8) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue, 12) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue,  8) & 0xf]);
         case 1:
-            vboxPrintHexChar(s_szHex[(uValue >>  4) & 0xf]);
-            vboxPrintHexChar(s_szHex[(uValue      ) & 0xf]);
+            vboxPrintHexChar(s_szHex[RShiftU64(uValue,  4) & 0xf]);
+            vboxPrintHexChar(s_szHex[         (uValue    ) & 0xf]);
             break;
     }
     return cbType * 2;
