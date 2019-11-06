@@ -2277,7 +2277,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 31, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 32, 0)
 
 /**
  * PDM Device API.
@@ -3482,29 +3482,6 @@ typedef struct PDMDEVHLPR3
 
     /**
      * Same as pfnSTAMRegister except that the name is specified in a
-     * RTStrPrintf like fashion.
-     *
-     * @returns VBox status.
-     * @param   pDevIns             Device instance of the DMA.
-     * @param   pvSample            Pointer to the sample.
-     * @param   enmType             Sample type. This indicates what pvSample is
-     *                              pointing at.
-     * @param   enmVisibility       Visibility type specifying whether unused
-     *                              statistics should be visible or not.
-     * @param   enmUnit             Sample unit.
-     * @param   pszDesc             Sample description.
-     * @param   pszName             Sample name format string, unix path style.  If
-     *                              this does not start with a '/', the default
-     *                              prefix will be prepended, otherwise it will be
-     *                              used as-is.
-     * @param   ...                 Arguments to the format string.
-     */
-    DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterF,(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType,
-                                                 STAMVISIBILITY enmVisibility, STAMUNIT enmUnit, const char *pszDesc,
-                                                 const char *pszName, ...) RT_IPRT_FORMAT_ATTR(7, 8));
-
-    /**
-     * Same as pfnSTAMRegister except that the name is specified in a
      * RTStrPrintfV like fashion.
      *
      * @returns VBox status.
@@ -3972,6 +3949,19 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(int, pfnThreadCreate,(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                                PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
+
+    /**
+     * Destroys a PDM thread.
+     *
+     * @returns VBox status code.
+     *          This reflects the success off destroying the thread and not the exit code
+     *          of the thread as this is stored in *pRcThread.
+     * @param   pDevIns             The device instance.
+     * @param   pThread             The thread to destroy.
+     * @param   pRcThread           Where to store the thread exit code. Optional.
+     * @thread  The emulation thread (EMT).
+     */
+    DECLR3CALLBACKMEMBER(int, pfnThreadDestroy,(PPDMDEVINS pDevIns, PPDMTHREAD pThread, int *pRcThread));
 
     /**
      * Set up asynchronous handling of a suspend, reset or power off notification.
@@ -6868,7 +6858,23 @@ DECLINLINE(void) PDMDevHlpSTAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMT
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnSTAMRegisterF
+ * Same as pfnSTAMRegister except that the name is specified in a
+ * RTStrPrintf like fashion.
+ *
+ * @returns VBox status.
+ * @param   pDevIns             Device instance of the DMA.
+ * @param   pvSample            Pointer to the sample.
+ * @param   enmType             Sample type. This indicates what pvSample is
+ *                              pointing at.
+ * @param   enmVisibility       Visibility type specifying whether unused
+ *                              statistics should be visible or not.
+ * @param   enmUnit             Sample unit.
+ * @param   pszDesc             Sample description.
+ * @param   pszName             Sample name format string, unix path style.  If
+ *                              this does not start with a '/', the default
+ *                              prefix will be prepended, otherwise it will be
+ *                              used as-is.
+ * @param   ...                 Arguments to the format string.
  */
 DECLINLINE(void) RT_IPRT_FORMAT_ATTR(7, 8) PDMDevHlpSTAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType,
                                                                   STAMVISIBILITY enmVisibility, STAMUNIT enmUnit,
@@ -7731,6 +7737,14 @@ DECLINLINE(int) PDMDevHlpThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, 
                                       PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
     return pDevIns->pHlpR3->pfnThreadCreate(pDevIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnThreadDestroy
+ */
+DECLINLINE(int) PDMDevHlpThreadDestroy(PPDMDEVINS pDevIns, PPDMTHREAD pThread, int *pRcThread)
+{
+    return pDevIns->pHlpR3->pfnThreadDestroy(pDevIns, pThread, pRcThread);
 }
 
 /**

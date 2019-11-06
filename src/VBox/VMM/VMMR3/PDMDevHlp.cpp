@@ -1720,27 +1720,6 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvS
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegisterF} */
-static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
-                                                    STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    PVM pVM = pDevIns->Internal.s.pVMR3;
-    VM_ASSERT_EMT(pVM);
-
-    int     rc;
-    va_list va;
-    va_start(va, pszName);
-    if (*pszName == '/')
-        rc = STAMR3RegisterV(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
-    else /* Provide default device statistics prefix: */
-        rc = STAMR3RegisterF(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc,
-                                 "/Devices/%s#%u/%N", pDevIns->pReg->szName, pDevIns->iInstance, pszName, &va);
-    AssertRC(rc);
-    va_end(va);
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegisterV} */
 static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
                                                     STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args)
@@ -3083,6 +3062,20 @@ static DECLCALLBACK(int) pdmR3DevHlp_ThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREA
 
     LogFlow(("pdmR3DevHlp_ThreadCreate: caller='%s'/%d: returns %Rrc *ppThread=%RTthrd\n", pDevIns->pReg->szName, pDevIns->iInstance,
             rc, *ppThread));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLPR3,pfnThreadDestroy} */
+static DECLCALLBACK(int) pdmR3DevHlp_ThreadDestroy(PPDMDEVINS pDevIns, PPDMTHREAD pThread, int *pRcThread)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_ThreadDestroy: caller='%s'/%d: pThread=%p pRcThread=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pThread, pRcThread));
+
+    int rc = PDMR3ThreadDestroy(pThread, pRcThread);
+
+    LogFlow(("pdmR3DevHlp_ThreadDestroy: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 
@@ -4741,7 +4734,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_DBGFRegRegister,
     pdmR3DevHlp_DBGFTraceBuf,
     pdmR3DevHlp_STAMRegister,
-    pdmR3DevHlp_STAMRegisterF,
     pdmR3DevHlp_STAMRegisterV,
     pdmR3DevHlp_PCIRegister,
     pdmR3DevHlp_PCIRegisterMsi,
@@ -4799,6 +4791,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CritSectGetRecursion,
     pdmR3DevHlp_CritSectDelete,
     pdmR3DevHlp_ThreadCreate,
+    pdmR3DevHlp_ThreadDestroy,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
     pdmR3DevHlp_RTCRegister,
@@ -5217,7 +5210,6 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_DBGFRegRegister,
     pdmR3DevHlp_DBGFTraceBuf,
     pdmR3DevHlp_STAMRegister,
-    pdmR3DevHlp_STAMRegisterF,
     pdmR3DevHlp_STAMRegisterV,
     pdmR3DevHlp_PCIRegister,
     pdmR3DevHlp_PCIRegisterMsi,
@@ -5275,6 +5267,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CritSectGetRecursion,
     pdmR3DevHlp_CritSectDelete,
     pdmR3DevHlp_ThreadCreate,
+    pdmR3DevHlp_ThreadDestroy,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
     pdmR3DevHlp_RTCRegister,
