@@ -63,12 +63,6 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
-/* The serialisation mechanism looks like it is not needed (everything using it
- * runs on one thread, and the flag is always cleared at the end of calls which
- * use it).  So we will remove it after the 5.2 series. */
-#if (VBOX_VERSION_MAJOR * 100000 + VBOX_VERSION_MINOR * 1000 + VBOX_VERION_BUILD >= 502051)
-# define VBOX_AFTER_5_2
-#endif
 
 
 /*********************************************************************************************************************************
@@ -266,14 +260,6 @@ struct _CLIPBACKEND
     void (*fixesSelectInput)(Display *, Window, Atom, unsigned long);
     /** The first XFixes event number */
     int fixesEventBase;
-#ifndef VBOX_AFTER_5_2
-    /** The Xt Intrinsics can only handle one outstanding clipboard operation
-     * at a time, so we keep track of whether one is in process. */
-    bool fBusy;
-    /** We can't handle a clipboard update event while we are busy, so remember
-     * it for later. */
-    bool fUpdateNeeded;
-#endif
 };
 
 /**
@@ -670,22 +656,14 @@ static void clipQueryX11CBFormats(CLIPBACKEND *pCtx);
 static void clipUpdateX11Targets(CLIPBACKEND *pCtx, CLIPX11FORMAT *pTargets, size_t cTargets)
 {
     LogFlowFuncEnter();
-#ifndef VBOX_AFTER_5_2
-    pCtx->fBusy = false;
-    if (pCtx->fUpdateNeeded)
-    {
-        /* We may already be out of date. */
-        pCtx->fUpdateNeeded = false;
-        clipQueryX11CBFormats(pCtx);
-        return;
-    }
-#endif
+
     if (pTargets == NULL)
     {
         /* No data available */
         clipReportEmptyX11CB(pCtx);
         return;
     }
+
     clipGetFormatsFromTargets(pCtx, pTargets, cTargets);
     clipReportFormatsToVBox(pCtx);
 }
@@ -774,15 +752,6 @@ static void clipConvertX11Targets(Widget widget, XtPointer pClient,
 static void clipQueryX11CBFormats(CLIPBACKEND *pCtx)
 {
     LogFlowFuncEnter();
-
-#ifndef VBOX_AFTER_5_2
-    if (pCtx->fBusy)
-    {
-        pCtx->fUpdateNeeded = true;
-        return;
-    }
-    pCtx->fBusy = true;
-#endif
 
 #ifndef TESTCASE
     XtGetSelectionValue(pCtx->widget,
@@ -1988,27 +1957,25 @@ typedef struct _CLIPREADX11CBREQ CLIPREADX11CBREQ;
 static void clipConvertX11CB(void *pClient, void *pvSrc, unsigned cbSrc)
 {
     CLIPREADX11CBREQ *pReq = (CLIPREADX11CBREQ *) pClient;
+
     LogFlowFunc(("pReq->mFormat=%02X, pReq->mTextFormat=%u, "
                  "pReq->mBitmapFormat=%u, pReq->mHtmlFormat=%u, pReq->mCtx=%p\n",
                  pReq->mFormat, pReq->mTextFormat, pReq->mBitmapFormat,
                  pReq->mHtmlFormat, pReq->mCtx));
+
     AssertPtr(pReq->mCtx);
     Assert(pReq->mFormat != 0);  /* sanity */
+
     int rc = VINF_SUCCESS;
-#ifndef VBOX_AFTER_5_2
-    CLIPBACKEND *pCtx = pReq->mCtx;
-#endif
+
     void *pvDest = NULL;
     uint32_t cbDest = 0;
 
-#ifndef VBOX_AFTER_5_2
-    pCtx->fBusy = false;
-    if (pCtx->fUpdateNeeded)
-        clipQueryX11CBFormats(pCtx);
-#endif
     if (pvSrc == NULL)
+    {
         /* The clipboard selection may have changed before we could get it. */
         rc = VERR_NO_DATA;
+    }
     else if (pReq->mFormat == VBOX_SHCL_FMT_UNICODETEXT)
     {
         /* In which format is the clipboard data? */
@@ -2185,16 +2152,6 @@ static void vboxClipboardReadX11Worker(void *pUserData,
 
     int rc = VERR_NO_DATA; /* VBox thinks we have data and we don't. */
 
-#ifndef VBOX_AFTER_5_2
-    bool fBusy = pCtx->fBusy;
-    pCtx->fBusy = true;
-    if (fBusy)
-    {
-        /* If the clipboard is busy just fend off the request. */
-        rc = VERR_TRY_AGAIN;
-    }
-    else
-#endif
     if (pReq->mFormat == VBOX_SHCL_FMT_UNICODETEXT)
     {
         pReq->mTextFormat = pCtx->X11TextFormat;
@@ -2236,9 +2193,6 @@ static void vboxClipboardReadX11Worker(void *pUserData,
     else
     {
         rc = VERR_NOT_IMPLEMENTED;
-#ifndef VBOX_AFTER_5_2
-        pCtx->fBusy = false;
-#endif
     }
 
     if (RT_FAILURE(rc))
