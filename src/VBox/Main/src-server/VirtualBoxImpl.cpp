@@ -1633,44 +1633,40 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
 
     static const struct
     {
-        FirmwareType_T type;
-        const char*    fileName;
-        const char*    url;
+        FirmwareType_T  enmType;
+        bool            fBuiltIn;
+        const char     *pszFileName;
+        const char     *pszUrl;
     }
     firmwareDesc[] =
     {
-        {
-            /* compiled-in firmware */
-            FirmwareType_BIOS,    NULL,             NULL
-        },
-        {
-            FirmwareType_EFI32,   "VBoxEFI32.fd",   "http://virtualbox.org/firmware/VBoxEFI32.fd"
-        },
-        {
-            FirmwareType_EFI64,   "VBoxEFI64.fd",   "http://virtualbox.org/firmware/VBoxEFI64.fd"
-        },
-        {
-            FirmwareType_EFIDUAL, "VBoxEFIDual.fd", "http://virtualbox.org/firmware/VBoxEFIDual.fd"
-        }
+        {   FirmwareType_BIOS,    true,  NULL,             NULL },
+#ifdef VBOX_WITH_EFI_IN_DD2
+        {   FirmwareType_EFI32,   true,  "VBoxEFI32.fd",   NULL },
+        {   FirmwareType_EFI64,   true,  "VBoxEFI64.fd",   NULL },
+        {   FirmwareType_EFIDUAL, true,  "VBoxEFIDual.fd", NULL },
+#else
+        {   FirmwareType_EFI32,   false, "VBoxEFI32.fd",   "http://virtualbox.org/firmware/VBoxEFI32.fd" },
+        {   FirmwareType_EFI64,   false, "VBoxEFI64.fd",   "http://virtualbox.org/firmware/VBoxEFI64.fd" },
+        {   FirmwareType_EFIDUAL, false, "VBoxEFIDual.fd", "http://virtualbox.org/firmware/VBoxEFIDual.fd" },
+#endif
     };
 
     for (size_t i = 0; i < sizeof(firmwareDesc) / sizeof(firmwareDesc[0]); i++)
     {
-        if (aFirmwareType != firmwareDesc[i].type)
+        if (aFirmwareType != firmwareDesc[i].enmType)
             continue;
 
         /* compiled-in firmware */
-        if (firmwareDesc[i].fileName == NULL)
+        if (firmwareDesc[i].fBuiltIn)
         {
+            aFile = firmwareDesc[i].pszFileName;
             *aResult = TRUE;
             break;
         }
 
-        Utf8Str shortName, fullName;
-
-        shortName = Utf8StrFmt("Firmware%c%s",
-                               RTPATH_DELIMITER,
-                               firmwareDesc[i].fileName);
+        Utf8Str    fullName;
+        Utf8StrFmt shortName("Firmware%c%s", RTPATH_DELIMITER, firmwareDesc[i].pszFileName);
         int rc = i_calculateFullPath(shortName, fullName);
         AssertRCReturn(rc, VBOX_E_IPRT_ERROR);
         if (RTFileExists(fullName.c_str()))
@@ -1680,22 +1676,19 @@ HRESULT VirtualBox::checkFirmwarePresent(FirmwareType_T aFirmwareType,
             break;
         }
 
-        char pszVBoxPath[RTPATH_MAX];
-        rc = RTPathExecDir(pszVBoxPath, RTPATH_MAX);
+        char szVBoxPath[RTPATH_MAX];
+        rc = RTPathExecDir(szVBoxPath, RTPATH_MAX);
         AssertRCReturn(rc, VBOX_E_IPRT_ERROR);
-        fullName = Utf8StrFmt("%s%c%s",
-                              pszVBoxPath,
-                              RTPATH_DELIMITER,
-                              firmwareDesc[i].fileName);
-        if (RTFileExists(fullName.c_str()))
+        rc = RTPathAppend(szVBoxPath, sizeof(szVBoxPath), firmwareDesc[i].pszFileName);
+        if (RTFileExists(szVBoxPath))
         {
             *aResult = TRUE;
-            aFile = fullName;
+            aFile = szVBoxPath;
             break;
         }
 
         /** @todo account for version in the URL */
-        aUrl = firmwareDesc[i].url;
+        aUrl = firmwareDesc[i].pszUrl;
         *aResult = FALSE;
 
         /* Assume single record per firmware type */
