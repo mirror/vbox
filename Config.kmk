@@ -527,10 +527,14 @@ endif
 VBOX_WITH_INTEL_PXE =
 # Enable EFI support
 VBOX_WITH_EFI = 1
+# Embed the EFI firmwares in VBoxDD2.dll/dylib/so.
+VBOX_WITH_EFI_IN_DD2 = 1
 # Fetch EFI firmware image from the build server
 #VBOX_WITH_EFIFW_FROM_BUILD_SERVER = 1
 # Include the EFI firmware into the package
-VBOX_WITH_EFIFW_PACKING = 1
+ifndef VBOX_WITH_EFI_IN_DD2
+ VBOX_WITH_EFIFW_PACKING = 1
+endif
 # Enable setuid wrapper for Solaris host DVD.
 #VBOX_WITH_SUID_WRAPPER = 1
 # Enable the virtual SATA/AHCI controller
