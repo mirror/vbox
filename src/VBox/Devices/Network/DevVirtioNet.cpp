@@ -130,13 +130,6 @@ typedef struct VNetState_st
     R3PTRTYPE(PPDMIBASE)    pDrvBase;                 /**< Attached network driver. */
     R3PTRTYPE(PPDMINETWORKUP) pDrv;    /**< Connector of attached network driver. */
 
-    R3PTRTYPE(PPDMQUEUE)    pCanRxQueueR3;           /**< Rx wakeup signaller - R3. */
-    R0PTRTYPE(PPDMQUEUE)    pCanRxQueueR0;           /**< Rx wakeup signaller - R0. */
-    RCPTRTYPE(PPDMQUEUE)    pCanRxQueueRC;           /**< Rx wakeup signaller - RC. */
-# if HC_ARCH_BITS == 64
-    uint32_t                padding;
-# endif
-
     /**< Link Up(/Restore) Timer. */
     PTMTIMERR3              pLinkUpTimer;
 
@@ -202,7 +195,7 @@ typedef struct VNetState_st
     /* Receive-blocking-related fields ***************************************/
 
     /** EMT: Gets signalled when more RX descriptors become available. */
-    RTSEMEVENT              hEventMoreRxDescAvail;
+    SUPSEMEVENT             hEventMoreRxDescAvail;
 
     /** @name Statistic
      * @{ */
@@ -528,30 +521,24 @@ static DECLCALLBACK(int) vnetIoCb_Reset(PVPCISTATE pVPciState)
 #endif
 }
 
-#ifdef IN_RING3
 
 /**
  * Wakeup the RX thread.
  */
-static void vnetR3WakeupReceive(PPDMDEVINS pDevIns)
+static void vnetWakeupReceive(PPDMDEVINS pDevIns)
 {
     PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     if (    pThis->fMaybeOutOfSpace
-        &&  pThis->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
+        &&  pThis->hEventMoreRxDescAvail != NIL_SUPSEMEVENT)
     {
         STAM_COUNTER_INC(&pThis->StatRxOverflowWakeup);
         Log(("%s Waking up Out-of-RX-space semaphore\n",  INSTANCE(pThis)));
-/**
- * @todo r=bird: We can wake stuff up from ring-0 too, see vmsvga, nvme,
- *        buslogic, lsilogic, ata, ahci, xhci.  Also, please address similar
- *        TODO in E1000.
- *
- *        The API Is SUPSem*, btw.
- */
-        RTSemEventSignal(pThis->hEventMoreRxDescAvail);
+        int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEventMoreRxDescAvail);
+        AssertRC(rc);
     }
 }
 
+#ifdef IN_RING3
 
 /**
  * Helper function that raises an interrupt if the guest is ready to receive it.
@@ -602,7 +589,7 @@ static DECLCALLBACK(void) vnetR3LinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
         return;
     STATUS |= VNET_S_LINK_UP;
     vnetR3RaiseInterrupt(pThis, VERR_SEM_BUSY, VPCI_ISR_CONFIG);
-    vnetR3WakeupReceive(pDevIns);
+    vnetWakeupReceive(pDevIns);
     vnetR3CsLeave(pThis);
     Log(("%s vnetR3LinkUpTimer: Link is up\n", INSTANCE(pThis)));
     if (pThis->pDrv)
@@ -616,7 +603,7 @@ static DECLCALLBACK(void) vnetR3LinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer,
 static DECLCALLBACK(bool) vnetR3CanRxQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
 {
     RT_NOREF(pItem);
-    vnetR3WakeupReceive(pDevIns);
+    vnetWakeupReceive(pDevIns);
     return true;
 }
 
@@ -631,20 +618,7 @@ static DECLCALLBACK(void) vnetIoCb_Ready(PVPCISTATE pVPciState)
 {
     PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
     Log(("%s Driver became ready, waking up RX thread...\n", INSTANCE(pThis)));
-/**
- * @todo r=bird: We can wake stuff up from ring-0 too, see vmsvga, nvme,
- *        buslogic, lsilogic, ata, ahci, xhci.  Also, please address similar
- *        TODO in E1000.
- *
- *        The API Is SUPSem*, btw.
- */
-#ifdef IN_RING3
-    vnetR3WakeupReceive(pThis->VPCI.CTX_SUFF(pDevIns));
-#else
-    PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pCanRxQueue));
-    if (pItem)
-        PDMQueueInsert(pThis->CTX_SUFF(pCanRxQueue), pItem);
-#endif
+    vnetWakeupReceive(pThis->VPCI.CTX_SUFF(pDevIns));
 }
 
 
@@ -731,12 +705,14 @@ static int vnetR3CanReceive(PVNETSTATE pThis)
 static DECLCALLBACK(int) vnetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
     PVNETSTATE pThis = RT_FROM_MEMBER(pInterface, VNETSTATE, INetworkDown);
+    PPDMDEVINS pDevIns = pThis->VPCI.pDevInsR3;
     LogFlow(("%s vnetR3NetworkDown_WaitReceiveAvail(cMillies=%u)\n", INSTANCE(pThis), cMillies));
-    int rc = vnetR3CanReceive(pThis);
 
+    int rc = vnetR3CanReceive(pThis);
     if (RT_SUCCESS(rc))
         return VINF_SUCCESS;
-    if (RT_UNLIKELY(cMillies == 0))
+
+    if (cMillies == 0)
         return VERR_NET_NO_BUFFER_SPACE;
 
     rc = VERR_INTERRUPTED;
@@ -754,7 +730,9 @@ static DECLCALLBACK(int) vnetR3NetworkDown_WaitReceiveAvail(PPDMINETWORKDOWN pIn
             break;
         }
         Log(("%s vnetR3NetworkDown_WaitReceiveAvail: waiting cMillies=%u...\n", INSTANCE(pThis), cMillies));
-        RTSemEventWait(pThis->hEventMoreRxDescAvail, cMillies);
+        rc2 = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEventMoreRxDescAvail, cMillies);
+        if (RT_FAILURE(rc2) && rc2 != VERR_TIMEOUT && rc2 != VERR_INTERRUPTED)
+            RTThreadSleep(1);
     }
     STAM_PROFILE_STOP(&pThis->StatRxOverflow, a);
     ASMAtomicXchgBool(&pThis->fMaybeOutOfSpace, false);
@@ -1140,7 +1118,7 @@ static DECLCALLBACK(void) vnetR3QueueReceive(PPDMDEVINS pDevIns, PVPCISTATE pVPc
     PVNETSTATE pThis = RT_FROM_MEMBER(pVPciState, VNETSTATE, VPCI);
     RT_NOREF(pThis, pQueue);
     Log(("%s Receive buffers has been added, waking up receive thread.\n", INSTANCE(pThis)));
-    vnetR3WakeupReceive(pDevIns);
+    vnetWakeupReceive(pDevIns);
 }
 
 /**
@@ -2099,7 +2077,7 @@ static DECLCALLBACK(int) vnetR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
 static DECLCALLBACK(void) vnetR3Suspend(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
-    vnetR3WakeupReceive(pDevIns);
+    vnetWakeupReceive(pDevIns);
 }
 
 
@@ -2109,7 +2087,7 @@ static DECLCALLBACK(void) vnetR3Suspend(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) vnetR3PowerOff(PPDMDEVINS pDevIns)
 {
     /* Poke thread waiting for buffer space. */
-    vnetR3WakeupReceive(pDevIns);
+    vnetWakeupReceive(pDevIns);
 }
 
 
@@ -2118,13 +2096,11 @@ static DECLCALLBACK(void) vnetR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) vnetR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
-    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     vpciRelocate(pDevIns, offDelta);
-    pThis->pCanRxQueueRC = PDMQueueRCPtr(pThis->pCanRxQueueR3);
 #ifdef VNET_TX_DELAY
-    pThis->pTxTimerRC    = TMTimerRCPtr(pThis->pTxTimerR3);
-#endif /* VNET_TX_DELAY */
-    // TBD
+    PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
+    pThis->pTxTimerRC = TMTimerRCPtr(pThis->pTxTimerR3);
+#endif
 }
 
 
@@ -2141,11 +2117,11 @@ static DECLCALLBACK(int) vnetR3Destruct(PPDMDEVINS pDevIns)
 #endif
 
     Log(("%s Destroying instance\n", INSTANCE(pThis)));
-    if (pThis->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
+    if (pThis->hEventMoreRxDescAvail != NIL_SUPSEMEVENT)
     {
-        RTSemEventSignal(pThis->hEventMoreRxDescAvail);
-        RTSemEventDestroy(pThis->hEventMoreRxDescAvail);
-        pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+        PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEventMoreRxDescAvail);
+        PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEventMoreRxDescAvail);
+        pThis->hEventMoreRxDescAvail = NIL_SUPSEMEVENT;
     }
 
     // if (PDMCritSectIsInitialized(&pThis->csRx))
@@ -2168,7 +2144,7 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Initialize the instance data suffiencently for the destructor not to blow up.
      */
-    pThis->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+    pThis->hEventMoreRxDescAvail = NIL_SUPSEMEVENT;
 #ifndef VNET_TX_DELAY
     pThis->hTxEvent              = NIL_SUPSEMEVENT;
     pThis->pTxThread             = NULL;
@@ -2247,13 +2223,6 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                 vnetR3LoadPrep, vnetR3LoadExec, vnetR3LoadDone);
     AssertRCReturn(rc, rc);
 
-    /* Create the RX notifier signaller. */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                              vnetR3CanRxQueueConsumer, true, "VNet-Rcv", &pThis->pCanRxQueueR3);
-    AssertRCReturn(rc, rc);
-    pThis->pCanRxQueueR0 = PDMQueueR0Ptr(pThis->pCanRxQueueR3);
-    pThis->pCanRxQueueRC = PDMQueueRCPtr(pThis->pCanRxQueueR3);
-
     /* Create Link Up Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, vnetR3LinkUpTimer, pThis, TMTIMER_FLAGS_NO_CRIT_SECT,
                                 "VirtioNet Link Up Timer", &pThis->pLinkUpTimer);
@@ -2294,7 +2263,7 @@ static DECLCALLBACK(int) vnetR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     else
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the network LUN"));
 
-    rc = RTSemEventCreate(&pThis->hEventMoreRxDescAvail);
+    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEventMoreRxDescAvail);
     AssertRCReturn(rc, rc);
 
     rc = vnetIoCb_Reset(&pThis->VPCI);
