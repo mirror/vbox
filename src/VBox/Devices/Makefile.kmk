@@ -1070,8 +1070,8 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
   	EFI/DevEFI-binaries.asm
   EFI/DevEFI-binaries.asm_ASINCS = $(PATH_STAGE)/$(INST_BIN)
   EFI/DevEFI-binaries.asm_DEPS   = \
-  	$(PATH_STAGE)/$(INST_BIN)/VBoxEFI32.fd \
-  	$(PATH_STAGE)/$(INST_BIN)/VBoxEFI64.fd
+  	$(PATH_STAGE)/$(INST_BIN)VBoxEFI32.fd \
+  	$(PATH_STAGE)/$(INST_BIN)VBoxEFI64.fd
  endif
 
  $(call VBOX_SET_VER_INFO_DLL,VBoxDD2,VirtualBox VMM Devices and Drivers 2) # (last!)
