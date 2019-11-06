@@ -3466,15 +3466,15 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(RTTRACEBUF, pfnDBGFTraceBuf,(PPDMDEVINS pDevIns));
 
     /**
-     * Registers a statistics sample if statistics are enabled.
+     * Registers a statistics sample.
      *
      * @param   pDevIns             Device instance of the DMA.
      * @param   pvSample            Pointer to the sample.
      * @param   enmType             Sample type. This indicates what pvSample is
      *                              pointing at.
-     * @param   pszName             Sample name. The name is on this form
-     *                              "/<component>/<sample>". Further nesting is
-     *                              possible.
+     * @param   pszName             Sample name, unix path style.  If this does not
+     *                              start with a '/', the default prefix will be
+     *                              prepended, otherwise it will be used as-is.
      * @param   enmUnit             Sample unit.
      * @param   pszDesc             Sample description.
      */
@@ -3493,7 +3493,10 @@ typedef struct PDMDEVHLPR3
      *                              statistics should be visible or not.
      * @param   enmUnit             Sample unit.
      * @param   pszDesc             Sample description.
-     * @param   pszName             The sample name format string.
+     * @param   pszName             Sample name format string, unix path style.  If
+     *                              this does not start with a '/', the default
+     *                              prefix will be prepended, otherwise it will be
+     *                              used as-is.
      * @param   ...                 Arguments to the format string.
      */
     DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterF,(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType,
@@ -3513,7 +3516,10 @@ typedef struct PDMDEVHLPR3
      *                              statistics should be visible or not.
      * @param   enmUnit             Sample unit.
      * @param   pszDesc             Sample description.
-     * @param   pszName             The sample name format string.
+     * @param   pszName             Sample name format string, unix path style.  If
+     *                              this does not start with a '/', the default
+     *                              prefix will be prepended, otherwise it will be
+     *                              used as-is.
      * @param   args                Arguments to the format string.
      */
     DECLR3CALLBACKMEMBER(void, pfnSTAMRegisterV,(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType,

@@ -1710,10 +1710,14 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvS
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
 
-    STAM_REG(pVM, pvSample, enmType, pszName, enmUnit, pszDesc);
-    RT_NOREF_PV(pVM); RT_NOREF6(pDevIns, pvSample, enmType, pszName, enmUnit, pszDesc);
+    int rc;
+    if (*pszName == '/')
+        rc = STAMR3Register(pVM, pvSample, enmType, STAMVISIBILITY_ALWAYS, pszName, enmUnit, pszDesc);
+    else /* Provide default device statistics prefix: */
+        rc = STAMR3RegisterF(pVM, pvSample, enmType, STAMVISIBILITY_ALWAYS, enmUnit, pszDesc,
+                             "/Devices/%s#%u/%s", pDevIns->pReg->szName, pDevIns->iInstance, pszName);
+    AssertRC(rc);
 }
-
 
 
 /** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegisterF} */
@@ -1724,13 +1728,16 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterF(PPDMDEVINS pDevIns, void *pv
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
 
-    va_list args;
-    va_start(args, pszName);
-    int rc = STAMR3RegisterV(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
-    va_end(args);
+    int     rc;
+    va_list va;
+    va_start(va, pszName);
+    if (*pszName == '/')
+        rc = STAMR3RegisterV(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
+    else /* Provide default device statistics prefix: */
+        rc = STAMR3RegisterF(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc,
+                                 "/Devices/%s#%u/%N", pDevIns->pReg->szName, pDevIns->iInstance, pszName, &va);
     AssertRC(rc);
-
-    NOREF(pVM);
+    va_end(va);
 }
 
 
@@ -1742,10 +1749,19 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pv
     PVM pVM = pDevIns->Internal.s.pVMR3;
     VM_ASSERT_EMT(pVM);
 
-    int rc = STAMR3RegisterV(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
+    int rc;
+    if (*pszName == '/')
+        rc = STAMR3RegisterV(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, args);
+    else
+    {
+        /* Provide default device statistics prefix: */
+        va_list vaCopy;
+        va_copy(vaCopy, args);
+        rc = STAMR3RegisterF(pVM, pvSample, enmType, enmVisibility, enmUnit, pszDesc,
+                             "/Devices/%s#%u/%N", pDevIns->pReg->szName, pDevIns->iInstance, pszName, &vaCopy);
+        va_end(vaCopy);
+    }
     AssertRC(rc);
-
-    NOREF(pVM);
 }
 
 
