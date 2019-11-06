@@ -211,7 +211,7 @@ DECLCALLBACK(int)  devpcibridgeR3CommonRegisterDevice(PPDMDEVINS pDevIns, PPDMPC
                                                       uint8_t uPciDevNo, uint8_t uPciFunNo, const char *pszName);
 DECLCALLBACK(int)  devpciR3CommonIORegionRegister(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
                                                   RTGCPHYS cbRegion, PCIADDRESSSPACE enmType, uint32_t fFlags,
-                                                  uint64_t hHandle, PFNPCIIOREGIONMAP pfnCallback);
+                                                  uint64_t hHandle, PFNPCIIOREGIONMAP pfnMapUnmap);
 DECLCALLBACK(void) devpciR3CommonInterceptConfigAccesses(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
                                                          PFNPCICONFIGREAD pfnRead, PFNPCICONFIGWRITE pfnWrite);
 DECLCALLBACK(VBOXSTRICTRC) devpciR3CommonConfigRead(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev,
