@@ -52,7 +52,7 @@ typedef struct CTX_SUFF(VPCISTATE) VPCISTATECC;
 #define DEVICE_PCI_VENDOR_ID                0x1AF4
 #define DEVICE_PCI_BASE_ID                  0x1000
 #define DEVICE_PCI_SUBSYSTEM_VENDOR_ID      0x1AF4
-#define DEVICE_PCI_SUBSYSTEM_BASE_ID       1
+#define DEVICE_PCI_SUBSYSTEM_BASE_ID        1
 
 #define VIRTIO_MAX_NQUEUES                  3
 
@@ -74,18 +74,18 @@ typedef struct CTX_SUFF(VPCISTATE) VPCISTATECC;
 #define VPCI_STATUS_DRV_OK                  0x04
 #define VPCI_STATUS_FAILED                  0x80
 
-#define VPCI_F_NOTIFY_ON_EMPTY              0x01000000
-#define VPCI_F_ANY_LAYOUT                   0x08000000
-#define VPCI_F_RING_INDIRECT_DESC           0x10000000
-#define VPCI_F_RING_EVENT_IDX               0x20000000
-#define VPCI_F_BAD_FEATURE                  0x40000000
+#define VPCI_F_NOTIFY_ON_EMPTY              UINT32_C(0x01000000)
+#define VPCI_F_ANY_LAYOUT                   UINT32_C(0x08000000)
+#define VPCI_F_RING_INDIRECT_DESC           UINT32_C(0x10000000)
+#define VPCI_F_RING_EVENT_IDX               UINT32_C(0x20000000)
+#define VPCI_F_BAD_FEATURE                  UINT32_C(0x40000000)
 
 #define VRINGDESC_MAX_SIZE                  (2 * 1024 * 1024)
 #define VRINGDESC_F_NEXT                    0x01
 #define VRINGDESC_F_WRITE                   0x02
 #define VRINGDESC_F_INDIRECT                0x04
 
-typedef struct VRingDesc
+typedef struct VRINGDESC
 {
     uint64_t u64Addr;
     uint32_t uLen;
@@ -94,16 +94,16 @@ typedef struct VRingDesc
 } VRINGDESC;
 typedef VRINGDESC *PVRINGDESC;
 
-#define VRINGAVAIL_F_NO_INTERRUPT 0x01
+#define VRINGAVAIL_F_NO_INTERRUPT           0x01
 
-typedef struct VRingAvail
+typedef struct VRINGAVAIL
 {
     uint16_t uFlags;
     uint16_t uNextFreeIndex;
     uint16_t auRing[1];
 } VRINGAVAIL;
 
-typedef struct VRingUsedElem
+typedef struct VRINGUSEDELEM
 {
     uint32_t uId;
     uint32_t uLen;
@@ -119,9 +119,9 @@ typedef struct VRingUsed
 } VRINGUSED;
 typedef VRINGUSED *PVRINGUSED;
 
-#define VRING_MAX_SIZE 1024
+#define VRING_MAX_SIZE                      1024
 
-typedef struct VRing
+typedef struct VRING
 {
     uint16_t   uSize;
     uint16_t   padding[3];
@@ -157,18 +157,18 @@ typedef struct VQUEUER3
 } VQUEUER3;
 typedef VQUEUER3 *PVQUEUER3;
 
-typedef struct VQueueElemSeg
+typedef struct VQUEUESEG
 {
     RTGCPHYS addr;
     void    *pv;
     uint32_t cb;
 } VQUEUESEG;
 
-typedef struct VQueueElem
+typedef struct VQUEUEELEM
 {
     uint32_t  uIndex;
-    uint32_t  nIn;
-    uint32_t  nOut;
+    uint32_t  cIn;
+    uint32_t  cOut;
     VQUEUESEG aSegsIn[VRING_MAX_SIZE];
     VQUEUESEG aSegsOut[VRING_MAX_SIZE];
 } VQUEUEELEM;
@@ -281,20 +281,20 @@ typedef const VPCIIOCALLBACKS *PCVPCIIOCALLBACKS;
 int   vpciR3Init(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVPCISTATECC pThisCC, uint16_t uDeviceId, uint16_t uClass, uint32_t cQueues);
 int   vpciRZInit(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVPCISTATECC pThisCC);
 int   vpciR3Term(PPDMDEVINS pDevIns, PVPCISTATE pThis);
+PVQUEUE vpciR3AddQueue(PVPCISTATE pThis, PVPCISTATECC pThisCC, unsigned uSize, PFNVPCIQUEUECALLBACK pfnCallback, const char *pcszName);
+void *vpciR3QueryInterface(PVPCISTATECC pThisCC, const char *pszIID);
+void  vpciR3SetWriteLed(PVPCISTATE pThis, bool fOn);
+void  vpciR3SetReadLed(PVPCISTATE pThis, bool fOn);
+int   vpciR3SaveExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM);
+int   vpciR3LoadExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t cQueues);
+void  vpciR3DumpStateWorker(PVPCISTATE pThis, PCDBGFINFOHLP pHlp);
 
+void  vpciReset(PPDMDEVINS pDevIns, PVPCISTATE pThis);
 int   vpciRaiseInterrupt(PPDMDEVINS pDevIns, PVPCISTATE pThis, int rcBusy, uint8_t u8IntCause);
 int   vpciIOPortIn(PPDMDEVINS pDevIns, PVPCISTATE pThis, RTIOPORT offPort,
                    uint32_t *pu32, unsigned cb,PCVPCIIOCALLBACKS pCallbacks);
 int   vpciIOPortOut(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVPCISTATECC pThisCC, RTIOPORT offPort,
                     uint32_t u32, unsigned cb, PCVPCIIOCALLBACKS pCallbacks);
-
-void  vpciR3SetWriteLed(PVPCISTATE pThis, bool fOn);
-void  vpciR3SetReadLed(PVPCISTATE pThis, bool fOn);
-int   vpciR3SaveExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM);
-int   vpciR3LoadExec(PCPDMDEVHLPR3 pHlp, PVPCISTATE pThis, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass, uint32_t cQueues);
-void  vpciReset(PPDMDEVINS pDevIns, PVPCISTATE pThis);
-void *vpciR3QueryInterface(PVPCISTATECC pThisCC, const char *pszIID);
-PVQUEUE vpciR3AddQueue(PVPCISTATE pThis, PVPCISTATECC pThisCC, unsigned uSize, PFNVPCIQUEUECALLBACK pfnCallback, const char *pcszName);
 
 #define VPCI_CS
 DECLINLINE(int) vpciCsEnter(PPDMDEVINS pDevIns, PVPCISTATE pThis, int rcBusy)
@@ -346,6 +346,5 @@ DECLINLINE(bool) vqueueIsEmpty(PPDMDEVINS pDevIns, PVQUEUE pQueue)
     return vringReadAvailIndex(pDevIns, &pQueue->VRing) == pQueue->uNextAvailIndex;
 }
 
-void vpcR3iDumpStateWorker(PVPCISTATE pThis, PCDBGFINFOHLP pHlp);
-
 #endif /* !VBOX_INCLUDED_SRC_VirtIO_Virtio_h */
+

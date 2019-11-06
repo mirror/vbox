@@ -937,7 +937,7 @@ static int vnetR3HandleRxPacket(PPDMDEVINS pDevIns, PVNETSTATE pThis, PVNETSTATE
             return VERR_INTERNAL_ERROR;
         }
 
-        if (elem.nIn < 1)
+        if (elem.cIn < 1)
         {
             Log(("%s vnetR3HandleRxPacket: No writable descriptors in receive queue!\n", INSTANCE(pThis)));
             return VERR_INTERNAL_ERROR;
@@ -962,7 +962,7 @@ static int vnetR3HandleRxPacket(PPDMDEVINS pDevIns, PVNETSTATE pThis, PVNETSTATE
             }
             uElemSize += cbHdr;
         }
-        while (nSeg < elem.nIn && uOffset < cb)
+        while (nSeg < elem.cIn && uOffset < cb)
         {
             unsigned int uSize = (unsigned int)RT_MIN(elem.aSegsIn[nSeg].cb - (nSeg?0:cbReserved),
                                                       cb - uOffset);
@@ -1372,10 +1372,10 @@ static void vnetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVNETSTATE pThis, P
     while (vqueuePeek(pDevIns, &pThis->VPCI, pQueue, &elem))
     {
         unsigned int uOffset = 0;
-        if (elem.nOut < 2 || elem.aSegsOut[0].cb != cbHdr)
+        if (elem.cOut < 2 || elem.aSegsOut[0].cb != cbHdr)
         {
             Log(("%s vnetR3QueueTransmit: The first segment is not the header! (%u < 2 || %u != %u).\n",
-                 INSTANCE(pThis), elem.nOut, elem.aSegsOut[0].cb, cbHdr));
+                 INSTANCE(pThis), elem.cOut, elem.aSegsOut[0].cb, cbHdr));
             break; /* For now we simply ignore the header, but it must be there anyway! */
         }
         RT_UNTRUSTED_VALIDATED_FENCE();
@@ -1385,7 +1385,7 @@ static void vnetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVNETSTATE pThis, P
         STAM_PROFILE_ADV_START(&pThis->StatTransmit, a);
 
         /* Compute total frame size. */
-        for (unsigned int i = 1; i < elem.nOut && uSize < VNET_MAX_FRAME_SIZE; i++)
+        for (unsigned int i = 1; i < elem.cOut && uSize < VNET_MAX_FRAME_SIZE; i++)
             uSize += elem.aSegsOut[i].cb;
         Log5(("%s vnetR3TransmitPendingPackets: complete frame is %u bytes.\n", INSTANCE(pThis), uSize));
         Assert(uSize <= VNET_MAX_FRAME_SIZE);
@@ -1411,7 +1411,7 @@ static void vnetR3TransmitPendingPackets(PPDMDEVINS pDevIns, PVNETSTATE pThis, P
                 pSgBuf->cbUsed = uSize;
 
                 /* Assemble a complete frame. */
-                for (unsigned int i = 1; i < elem.nOut && uSize > 0; i++)
+                for (unsigned int i = 1; i < elem.cOut && uSize > 0; i++)
                 {
                     unsigned int cbSegment = RT_MIN(uSize, elem.aSegsOut[i].cb);
                     PDMDevHlpPhysRead(pDevIns, elem.aSegsOut[i].addr,
@@ -1661,12 +1661,12 @@ static uint8_t vnetR3ControlMac(PPDMDEVINS pDevIns, PVNETSTATE pThis, PVNETCTLHD
     uint32_t nMacs = 0;
 
     if (   pCtlHdr->u8Command != VNET_CTRL_CMD_MAC_TABLE_SET
-        || pElem->nOut != 3
+        || pElem->cOut != 3
         || pElem->aSegsOut[1].cb < sizeof(nMacs)
         || pElem->aSegsOut[2].cb < sizeof(nMacs))
     {
         Log(("%s vnetR3ControlMac: Segment layout is wrong (u8Command=%u nOut=%u cb1=%u cb2=%u)\n",
-             INSTANCE(pThis), pCtlHdr->u8Command, pElem->nOut, pElem->aSegsOut[1].cb, pElem->aSegsOut[2].cb));
+             INSTANCE(pThis), pCtlHdr->u8Command, pElem->cOut, pElem->aSegsOut[1].cb, pElem->aSegsOut[2].cb));
         return VNET_ERROR;
     }
 
@@ -1736,10 +1736,10 @@ static uint8_t vnetR3ControlVlan(PPDMDEVINS pDevIns, PVNETSTATE pThis, PVNETCTLH
     uint8_t  u8Ack = VNET_OK;
     uint16_t u16Vid;
 
-    if (pElem->nOut != 2 || pElem->aSegsOut[1].cb != sizeof(u16Vid))
+    if (pElem->cOut != 2 || pElem->aSegsOut[1].cb != sizeof(u16Vid))
     {
         Log(("%s vnetR3ControlVlan: Segment layout is wrong (u8Command=%u nOut=%u cb=%u)\n",
-             INSTANCE(pThis), pCtlHdr->u8Command, pElem->nOut, pElem->aSegsOut[1].cb));
+             INSTANCE(pThis), pCtlHdr->u8Command, pElem->cOut, pElem->aSegsOut[1].cb));
         return VNET_ERROR;
     }
 
@@ -1780,17 +1780,17 @@ static DECLCALLBACK(void) vnetR3QueueControl(PPDMDEVINS pDevIns, PVQUEUE pQueue)
     VQUEUEELEM      elem;
     while (vqueueGet(pDevIns, &pThis->VPCI, pQueue, &elem))
     {
-        if (elem.nOut < 1 || elem.aSegsOut[0].cb < sizeof(VNETCTLHDR))
+        if (elem.cOut < 1 || elem.aSegsOut[0].cb < sizeof(VNETCTLHDR))
         {
             Log(("%s vnetR3QueueControl: The first 'out' segment is not the header! (%u < 1 || %u < %u).\n",
-                 INSTANCE(pThis), elem.nOut, elem.aSegsOut[0].cb,sizeof(VNETCTLHDR)));
+                 INSTANCE(pThis), elem.cOut, elem.aSegsOut[0].cb,sizeof(VNETCTLHDR)));
             break; /* Skip the element and hope the next one is good. */
         }
-        if (   elem.nIn < 1
-            || elem.aSegsIn[elem.nIn - 1].cb < sizeof(VNETCTLACK))
+        if (   elem.cIn < 1
+            || elem.aSegsIn[elem.cIn - 1].cb < sizeof(VNETCTLACK))
         {
             Log(("%s vnetR3QueueControl: The last 'in' segment is too small to hold the acknowledge! (%u < 1 || %u < %u).\n",
-                 INSTANCE(pThis), elem.nIn, elem.aSegsIn[elem.nIn - 1].cb, sizeof(VNETCTLACK)));
+                 INSTANCE(pThis), elem.cIn, elem.aSegsIn[elem.cIn - 1].cb, sizeof(VNETCTLACK)));
             break; /* Skip the element and hope the next one is good. */
         }
 
@@ -1812,7 +1812,7 @@ static DECLCALLBACK(void) vnetR3QueueControl(PPDMDEVINS pDevIns, PVQUEUE pQueue)
                 bAck = VNET_ERROR;
         }
         Log(("%s Processed control message %u, ack=%u.\n", INSTANCE(pThis), CtlHdr.u8Class, bAck));
-        PDMDevHlpPCIPhysWrite(pDevIns, elem.aSegsIn[elem.nIn - 1].addr, &bAck, sizeof(bAck));
+        PDMDevHlpPCIPhysWrite(pDevIns, elem.aSegsIn[elem.cIn - 1].addr, &bAck, sizeof(bAck));
 
         vqueuePut(pDevIns, &pThis->VPCI, pQueue, &elem, sizeof(bAck));
         vqueueSync(pDevIns, &pThis->VPCI, pQueue);
@@ -1828,7 +1828,7 @@ static DECLCALLBACK(void) vnetR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, int
 {
     PVNETSTATE pThis = PDMDEVINS_2_DATA(pDevIns, PVNETSTATE);
     RT_NOREF(cArgs, papszArgs);
-    vpcR3iDumpStateWorker(&pThis->VPCI, pHlp);
+    vpciR3DumpStateWorker(&pThis->VPCI, pHlp);
 }
 
 

@@ -112,7 +112,7 @@ bool vqueueGet(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM
     if (vqueueIsEmpty(pDevIns, pQueue))
         return false;
 
-    pElem->nIn = pElem->nOut = 0;
+    pElem->cIn = pElem->cOut = 0;
 
     Log2(("%s vqueueGet: %s avail_idx=%u\n", INSTANCE(pThis), pQueue->szName, pQueue->uNextAvailIndex));
 
@@ -131,7 +131,7 @@ bool vqueueGet(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM
          * cannot possibly get a sequence of linked descriptors exceeding the
          * total number of descriptors in the ring (see @bugref{8620}).
          */
-        if (pElem->nIn + pElem->nOut >= VRING_MAX_SIZE)
+        if (pElem->cIn + pElem->cOut >= VRING_MAX_SIZE)
         {
             static volatile uint32_t s_cMessages  = 0;
             static volatile uint32_t s_cThreshold = 1;
@@ -152,14 +152,14 @@ bool vqueueGet(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM
         if (desc.u16Flags & VRINGDESC_F_WRITE)
         {
             Log2(("%s vqueueGet: %s IN  seg=%u desc_idx=%u addr=%p cb=%u\n", INSTANCE(pThis),
-                  pQueue->szName, pElem->nIn, idx, desc.u64Addr, desc.uLen));
-            pSeg = &pElem->aSegsIn[pElem->nIn++];
+                  pQueue->szName, pElem->cIn, idx, desc.u64Addr, desc.uLen));
+            pSeg = &pElem->aSegsIn[pElem->cIn++];
         }
         else
         {
             Log2(("%s vqueueGet: %s OUT seg=%u desc_idx=%u addr=%p cb=%u\n", INSTANCE(pThis),
-                  pQueue->szName, pElem->nOut, idx, desc.u64Addr, desc.uLen));
-            pSeg = &pElem->aSegsOut[pElem->nOut++];
+                  pQueue->szName, pElem->cOut, idx, desc.u64Addr, desc.uLen));
+            pSeg = &pElem->aSegsOut[pElem->cOut++];
         }
 
         pSeg->addr = desc.u64Addr;
@@ -170,7 +170,7 @@ bool vqueueGet(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM
     } while (desc.u16Flags & VRINGDESC_F_NEXT);
 
     Log2(("%s vqueueGet: %s head_desc_idx=%u nIn=%u nOut=%u\n", INSTANCE(pThis),
-          pQueue->szName, pElem->uIndex, pElem->nIn, pElem->nOut));
+          pQueue->szName, pElem->uIndex, pElem->cIn, pElem->cOut));
     return true;
 }
 
@@ -211,7 +211,7 @@ void vqueuePut(PPDMDEVINS pDevIns, PVPCISTATE pThis, PVQUEUE pQueue, PVQUEUEELEM
     uint32_t cbLen = uTotalLen - uReserved;
     uint32_t cbSkip = uReserved;
 
-    for (unsigned i = 0; i < pElem->nIn && cbLen > 0; ++i)
+    for (unsigned i = 0; i < pElem->cIn && cbLen > 0; ++i)
     {
         if (cbSkip >= pElem->aSegsIn[i].cb) /* segment completely skipped? */
         {
@@ -658,7 +658,7 @@ DECLINLINE(void) vpciCfgSetU32(PDMPCIDEV& refPciDev, uint32_t uOffset, uint32_t 
 /**
  * Dumps the state (useful for both logging and info items).
  */
-void vpcR3iDumpStateWorker(PVPCISTATE pThis, PCDBGFINFOHLP pHlp)
+void vpciR3DumpStateWorker(PVPCISTATE pThis, PCDBGFINFOHLP pHlp)
 {
 
     pHlp->pfnPrintf(pHlp,
@@ -697,7 +697,7 @@ void vpciR3DumpState(PVPCISTATE pThis, const char *pcszCaller)
     if (LogIs2Enabled())
     {
         Log2(("vpciR3DumpState: (called from %s)\n", pcszCaller));
-        vpcR3iDumpStateWorker(pThis, DBGFR3InfoLogHlp());
+        vpciR3DumpStateWorker(pThis, DBGFR3InfoLogHlp());
     }
 }
 # else
