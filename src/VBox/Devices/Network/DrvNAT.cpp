@@ -1814,8 +1814,6 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
                 LogRel(("NAT#%d: Failed to install DNS change notifier. The guest might loose DNS access when switching networks on the host\n",
                          pDrvIns->iInstance));
 #endif
-
-            /* might return VINF_NAT_DNS */
             return rc;
         }
 
