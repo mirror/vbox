@@ -218,7 +218,7 @@ protected:
     QStackedWidget *m_pSettingsWidget;
 
     /** Holds the file selector label instance. */
-    QLabel    *m_pFileSelectorLabel;
+    QLabel                  *m_pFileSelectorLabel;
     /** Holds the file selector instance. */
     UIEmptyFilePathSelector *m_pFileSelector;
 
