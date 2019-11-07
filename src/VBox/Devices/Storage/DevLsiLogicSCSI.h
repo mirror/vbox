@@ -68,7 +68,6 @@
 /**
  * A SAS address.
  */
-#pragma pack(1)
 typedef union SASADDRESS
 {
     /** 64bit view. */
@@ -80,7 +79,6 @@ typedef union SASADDRESS
     /** Byte view. */
     uint8_t     u8Address[8];
 } SASADDRESS, *PSASADDRESS;
-#pragma pack()
 AssertCompileSize(SASADDRESS, 8);
 
 /**
@@ -99,7 +97,6 @@ typedef enum LSILOGICCTRLTYPE
 /**
  * A simple SG element for a 64bit address.
  */
-#pragma pack(1)
 typedef struct MptSGEntrySimple64
 {
     /** Length of the buffer this entry describes. */
@@ -123,13 +120,11 @@ typedef struct MptSGEntrySimple64
     /** Upper 32bits of the address of the data buffer. */
     unsigned u32DataBufferAddressHigh: 32;
 } MptSGEntrySimple64, *PMptSGEntrySimple64;
-#pragma pack()
 AssertCompileSize(MptSGEntrySimple64, 12);
 
 /**
  * A simple SG element for a 32bit address.
  */
-#pragma pack(1)
 typedef struct MptSGEntrySimple32
 {
     /** Length of the buffer this entry describes. */
@@ -151,13 +146,11 @@ typedef struct MptSGEntrySimple32
     /** Lower 32bits of the address of the data buffer. */
     unsigned u32DataBufferAddressLow: 32;
 } MptSGEntrySimple32, *PMptSGEntrySimple32;
-#pragma pack()
 AssertCompileSize(MptSGEntrySimple32, 8);
 
 /**
  * A chain SG element.
  */
-#pragma pack(1)
 typedef struct MptSGEntryChain
 {
     /** Size of the segment. */
@@ -182,7 +175,6 @@ typedef struct MptSGEntryChain
     /** Upper 32bits of the address of the data buffer. */
     unsigned u32SegmentAddressHigh: 32;
 } MptSGEntryChain, *PMptSGEntryChain;
-#pragma pack()
 AssertCompileSize(MptSGEntryChain, 12);
 
 typedef union MptSGEntryUnion
@@ -196,7 +188,6 @@ typedef union MptSGEntryUnion
  * MPT Fusion message header - Common for all message frames.
  * This is filled in by the guest.
  */
-#pragma pack(1)
 typedef struct MptMessageHdr
 {
     /** Function dependent data. */
@@ -212,7 +203,6 @@ typedef struct MptMessageHdr
     /** Message context - Unique ID from the guest unmodified by the device. */
     uint32_t    u32MessageContext;
 } MptMessageHdr, *PMptMessageHdr;
-#pragma pack()
 AssertCompileSize(MptMessageHdr, 12);
 
 /** Defined function codes found in the message header. */
@@ -255,7 +245,6 @@ static const char * const g_apszMPTFunctionNames[] =
  * Default reply message.
  * Send from the device to the guest upon completion of a request.
  */
- #pragma pack(1)
 typedef struct MptDefaultReplyMessage
 {
     /** Function dependent data. */
@@ -277,13 +266,11 @@ typedef struct MptDefaultReplyMessage
     /** Additional log info. */
     uint32_t    u32IOCLogInfo;
 } MptDefaultReplyMessage, *PMptDefaultReplyMessage;
-#pragma pack()
 AssertCompileSize(MptDefaultReplyMessage, 20);
 
 /**
  * IO controller init request.
  */
-#pragma pack(1)
 typedef struct MptIOCInitRequest
 {
     /** Which system send this init request. */
@@ -314,13 +301,11 @@ typedef struct MptIOCInitRequest
     /** Upper 32bit of the sense buffer. */
     uint32_t    u32SenseBufferHighAddr;
 } MptIOCInitRequest, *PMptIOCInitRequest;
-#pragma pack()
 AssertCompileSize(MptIOCInitRequest, 24);
 
 /**
  * IO controller init reply.
  */
-#pragma pack(1)
 typedef struct MptIOCInitReply
 {
     /** Which subsystem send this init request. */
@@ -348,13 +333,11 @@ typedef struct MptIOCInitReply
     /** IO controller log information. */
     uint32_t    u32IOCLogInfo;
 } MptIOCInitReply, *PMptIOCInitReply;
-#pragma pack()
 AssertCompileSize(MptIOCInitReply, 20);
 
 /**
  * IO controller facts request.
  */
-#pragma pack(1)
 typedef struct MptIOCFactsRequest
 {
     /** Reserved. */
@@ -370,13 +353,11 @@ typedef struct MptIOCFactsRequest
     /** Message context ID. */
     uint32_t    u32MessageContext;
 } MptIOCFactsRequest, *PMptIOCFactsRequest;
-#pragma pack()
 AssertCompileSize(MptIOCFactsRequest, 12);
 
 /**
  * IO controller facts reply.
  */
-#pragma pack(1)
 typedef struct MptIOCFactsReply
 {
     /** Message version. */
@@ -438,13 +419,11 @@ typedef struct MptIOCFactsReply
     /** Firmware version */
     uint32_t    u32FWVersion;
 } MptIOCFactsReply, *PMptIOCFactsReply;
-#pragma pack()
 AssertCompileSize(MptIOCFactsReply, 60);
 
 /**
  * Port facts request
  */
-#pragma pack(1)
 typedef struct MptPortFactsRequest
 {
     /** Reserved */
@@ -462,13 +441,11 @@ typedef struct MptPortFactsRequest
     /** Message context ID. */
     uint32_t    u32MessageContext;
 } MptPortFactsRequest, *PMptPortFactsRequest;
-#pragma pack()
 AssertCompileSize(MptPortFactsRequest, 12);
 
 /**
  * Port facts reply.
  */
-#pragma pack(1)
 typedef struct MptPortFactsReply
 {
     /** Reserved. */
@@ -512,13 +489,11 @@ typedef struct MptPortFactsReply
     /** Reserved. */
     uint32_t    u32Reserved;
 } MptPortFactsReply, *PMptPortFactsReply;
-#pragma pack()
 AssertCompileSize(MptPortFactsReply, 40);
 
 /**
  * Port Enable request.
  */
-#pragma pack(1)
 typedef struct MptPortEnableRequest
 {
     /** Reserved. */
@@ -536,13 +511,11 @@ typedef struct MptPortEnableRequest
     /** Message context ID. */
     uint32_t    u32MessageContext;
 } MptPortEnableRequest, *PMptPortEnableRequest;
-#pragma pack()
 AssertCompileSize(MptPortEnableRequest, 12);
 
 /**
  * Port enable reply.
  */
-#pragma pack(1)
 typedef struct MptPortEnableReply
 {
     /** Reserved. */
@@ -566,13 +539,11 @@ typedef struct MptPortEnableReply
     /** IO controller log information. */
     uint32_t    u32IOCLogInfo;
 } MptPortEnableReply, *PMptPortEnableReply;
-#pragma pack()
 AssertCompileSize(MptPortEnableReply, 20);
 
 /**
  * Event notification request.
  */
-#pragma pack(1)
 typedef struct MptEventNotificationRequest
 {
     /** Switch - Turns event notification on and off. */
@@ -590,13 +561,11 @@ typedef struct MptEventNotificationRequest
     /** Message context ID. */
     uint32_t    u32MessageContext;
 } MptEventNotificationRequest, *PMptEventNotificationRequest;
-#pragma pack()
 AssertCompileSize(MptEventNotificationRequest, 12);
 
 /**
  * Event notification reply.
  */
-#pragma pack(1)
 typedef struct MptEventNotificationReply
 {
     /** Event data length. */
@@ -626,7 +595,6 @@ typedef struct MptEventNotificationReply
     /** Event data. */
     uint32_t    u32EventData;
 } MptEventNotificationReply, *PMptEventNotificationReply;
-#pragma pack()
 AssertCompileSize(MptEventNotificationReply, 32);
 
 #define MPT_EVENT_EVENT_CHANGE (0x0000000a)
@@ -634,7 +602,6 @@ AssertCompileSize(MptEventNotificationReply, 32);
 /**
  * FW download request.
  */
-#pragma pack(1)
 typedef struct MptFWDownloadRequest
 {
     /** Switch - Turns event notification on and off. */
@@ -652,7 +619,6 @@ typedef struct MptFWDownloadRequest
     /** Message context ID. */
     uint32_t    u32MessageContext;
 } MptFWDownloadRequest, *PMptFWDownloadRequest;
-#pragma pack()
 AssertCompileSize(MptFWDownloadRequest, 12);
 
 #define MPT_FW_DOWNLOAD_REQUEST_IMAGE_TYPE_RESERVED 0
@@ -663,7 +629,6 @@ AssertCompileSize(MptFWDownloadRequest, 12);
 /**
  * FW download reply.
  */
-#pragma pack(1)
 typedef struct MptFWDownloadReply
 {
     /** Reserved. */
@@ -685,13 +650,11 @@ typedef struct MptFWDownloadReply
     /** IO controller log information. */
     uint32_t    u32IOCLogInfo;
 } MptFWDownloadReply, *PMptFWDownloadReply;
-#pragma pack()
 AssertCompileSize(MptFWDownloadReply, 20);
 
 /**
  * FW upload request.
  */
-#pragma pack(1)
 typedef struct MptFWUploadRequest
 {
     /** Requested image type. */
@@ -709,13 +672,11 @@ typedef struct MptFWUploadRequest
     /** Message context ID. */
     uint32_t    u32MessageContext;
 } MptFWUploadRequest, *PMptFWUploadRequest;
-#pragma pack()
 AssertCompileSize(MptFWUploadRequest, 12);
 
 /**
  * FW upload reply.
  */
-#pragma pack(1)
 typedef struct MptFWUploadReply
 {
     /** Image type. */
@@ -741,13 +702,11 @@ typedef struct MptFWUploadReply
     /** Uploaded image size. */
     uint32_t    u32ActualImageSize;
 } MptFWUploadReply, *PMptFWUploadReply;
-#pragma pack()
 AssertCompileSize(MptFWUploadReply, 24);
 
 /**
  * SCSI IO Request
  */
-#pragma pack(1)
 typedef struct MptSCSIIORequest
 {
     /** Target ID */
@@ -779,7 +738,6 @@ typedef struct MptSCSIIORequest
     /** Sense buffer low 32bit address. */
     uint32_t    u32SenseBufferLowAddress;
 } MptSCSIIORequest, *PMptSCSIIORequest;
-#pragma pack()
 AssertCompileSize(MptSCSIIORequest, 48);
 
 #define MPT_SCSIIO_REQUEST_CONTROL_TXDIR_GET(x) (((x) & 0x3000000) >> 24)
@@ -790,7 +748,6 @@ AssertCompileSize(MptSCSIIORequest, 48);
 /**
  * SCSI IO error reply.
  */
-#pragma pack(1)
 typedef struct MptSCSIIOErrorReply
 {
     /** Target ID */
@@ -826,7 +783,6 @@ typedef struct MptSCSIIOErrorReply
     /** Response information */
     uint32_t    u32ResponseInfo;
 } MptSCSIIOErrorReply, *PMptSCSIIOErrorReply;
-#pragma pack()
 AssertCompileSize(MptSCSIIOErrorReply, 32);
 
 #define MPT_SCSI_IO_ERROR_SCSI_STATE_AUTOSENSE_VALID (0x01)
@@ -842,7 +798,6 @@ AssertCompileSize(MptSCSIIOErrorReply, 32);
 /**
  * SCSI task management request.
  */
-#pragma pack(1)
 typedef struct MptSCSITaskManagementRequest
 {
     /** Target ID */
@@ -870,13 +825,11 @@ typedef struct MptSCSITaskManagementRequest
     /** Task message context ID. */
     uint32_t    u32TaskMessageContext;
 } MptSCSITaskManagementRequest, *PMptSCSITaskManagementRequest;
-#pragma pack()
 AssertCompileSize(MptSCSITaskManagementRequest, 52);
 
 /**
  * SCSI task management reply.
  */
-#pragma pack(1)
 typedef struct MptSCSITaskManagementReply
 {
     /** Target ID */
@@ -906,13 +859,11 @@ typedef struct MptSCSITaskManagementReply
     /** Termination count */
     uint32_t    u32TerminationCount;
 } MptSCSITaskManagementReply, *PMptSCSITaskManagementReply;
-#pragma pack()
 AssertCompileSize(MptSCSITaskManagementReply, 24);
 
 /**
  * Page address for SAS expander page types.
  */
-#pragma pack(1)
 typedef union MptConfigurationPageAddressSASExpander
 {
     struct
@@ -927,12 +878,11 @@ typedef union MptConfigurationPageAddressSASExpander
         uint8_t     u8Reserved;
     } Form1;
 } MptConfigurationPageAddressSASExpander, *PMptConfigurationPageAddressSASExpander;
-#pragma pack()
+AssertCompileSize(MptConfigurationPageAddressSASExpander, 4);
 
 /**
  * Page address for SAS device page types.
  */
-#pragma pack(1)
 typedef union MptConfigurationPageAddressSASDevice
 {
     struct
@@ -945,14 +895,13 @@ typedef union MptConfigurationPageAddressSASDevice
         uint8_t     u8TargetID;
         uint8_t     u8Bus;
         uint8_t     u8Reserved;
-    } Form1;
+    } Form1; /**< r=bird: only three bytes? */
 } MptConfigurationPageAddressSASDevice, *PMptConfigurationPageAddressSASDevice;
-#pragma pack()
+AssertCompileSize(MptConfigurationPageAddressSASDevice, 4);
 
 /**
  * Page address for SAS PHY page types.
  */
-#pragma pack(1)
 typedef union MptConfigurationPageAddressSASPHY
 {
     struct
@@ -966,23 +915,21 @@ typedef union MptConfigurationPageAddressSASPHY
         uint16_t    u16Reserved;
     } Form1;
 } MptConfigurationPageAddressSASPHY, *PMptConfigurationPageAddressSASPHY;
-#pragma pack()
+AssertCompileSize(MptConfigurationPageAddressSASPHY, 4);
 
 /**
  * Page address for SAS Enclosure page types.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageAddressSASEnclosure
 {
     uint16_t    u16Handle;
     uint16_t    u16Reserved;
 } MptConfigurationPageAddressSASEnclosure, *PMptConfigurationPageAddressSASEnclosure;
-#pragma pack()
+AssertCompileSize(MptConfigurationPageAddressSASEnclosure, 4);
 
 /**
  * Union of all possible address types.
  */
-#pragma pack(1)
 typedef union MptConfigurationPageAddress
 {
     /** 32bit view. */
@@ -1008,7 +955,6 @@ typedef union MptConfigurationPageAddress
     MptConfigurationPageAddressSASPHY       SASPHY;
     MptConfigurationPageAddressSASEnclosure SASEnclosure;
 } MptConfigurationPageAddress, *PMptConfigurationPageAddress;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageAddress, 4);
 
 #define MPT_CONFIGURATION_PAGE_ADDRESS_GET_SAS_FORM(x) (((x).u32PageAddress >> 28) & 0x0f)
@@ -1016,7 +962,6 @@ AssertCompileSize(MptConfigurationPageAddress, 4);
 /**
  * Configuration request
  */
-#pragma pack(1)
 typedef struct MptConfigurationRequest
 {
     /** Action code. */
@@ -1050,7 +995,6 @@ typedef struct MptConfigurationRequest
     /** Simple SG element describing the buffer. */
     MptSGEntrySimple64          SimpleSGElement;
 } MptConfigurationRequest, *PMptConfigurationRequest;
-#pragma pack()
 AssertCompileSize(MptConfigurationRequest, 40);
 
 /** Possible action codes. */
@@ -1072,7 +1016,6 @@ AssertCompileSize(MptConfigurationRequest, 40);
 /**
  * Configuration reply.
  */
-#pragma pack(1)
 typedef struct MptConfigurationReply
 {
     /** Action code. */
@@ -1106,7 +1049,6 @@ typedef struct MptConfigurationReply
     /** Type of the page being accessed. */
     uint8_t    u8PageType;
 } MptConfigurationReply, *PMptConfigurationReply;
-#pragma pack()
 AssertCompileSize(MptConfigurationReply, 24);
 
 /** Additional I/O controller status codes for the configuration reply. */
@@ -1159,7 +1101,6 @@ AssertCompileSize(MptReplyUnion, 60);
 /**
  * Firmware image header.
  */
-#pragma pack(1)
 typedef struct FwImageHdr
 {
     /** ARM branch instruction. */
@@ -1205,7 +1146,6 @@ typedef struct FwImageHdr
     /** ASCII string of vendor name. */
     uint8_t     aszVendorName[256];
 } FwImageHdr, *PFwImageHdr;
-#pragma pack()
 AssertCompileSize(FwImageHdr, 584);
 
 /** First part of the signature. */
@@ -1256,7 +1196,6 @@ AssertCompileSize(FwImageHdr, 584);
 /**
  * Configuration Page header - Common to all pages.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageHeader
 {
     /** Version of the page. */
@@ -1268,13 +1207,11 @@ typedef struct MptConfigurationPageHeader
     /** Type of the page. */
     uint8_t     u8PageType;
 } MptConfigurationPageHeader, *PMptConfigurationPageHeader;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageHeader, 4);
 
 /**
  * Extended configuration page header - Common to all extended pages.
  */
-#pragma pack(1)
 typedef struct MptExtendedConfigurationPageHeader
 {
     /** Version of the page. */
@@ -1292,14 +1229,12 @@ typedef struct MptExtendedConfigurationPageHeader
     /** Reserved */
     uint8_t     u8Reserved2;
 } MptExtendedConfigurationPageHeader, *PMptExtendedConfigurationPageHeader;
-#pragma pack()
 AssertCompileSize(MptExtendedConfigurationPageHeader, 8);
 
 /**
  * Manufacturing page 0. - Readonly.
  */
-#pragma pack(1)
-typedef struct MptConfigurationPageManufacturing0
+typedef struct MptConfigurationPageManufacturing0 /**< @todo r=bird: This and a series of other structs could save a lot of 'u.' typing by promoting the inner 'u' union... */
 {
     /** Union. */
     union
@@ -1324,13 +1259,11 @@ typedef struct MptConfigurationPageManufacturing0
         } fields;
     } u;
 } MptConfigurationPageManufacturing0, *PMptConfigurationPageManufacturing0;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing0, 76);
 
 /**
  * Manufacturing page 1. - Readonly Persistent.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing1
 {
     /** Union */
@@ -1348,13 +1281,11 @@ typedef struct MptConfigurationPageManufacturing1
         } fields;
     } u;
 } MptConfigurationPageManufacturing1, *PMptConfigurationPageManufacturing1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing1, 260);
 
 /**
  * Manufacturing page 2. - Readonly.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing2
 {
     /** Union. */
@@ -1377,13 +1308,11 @@ typedef struct MptConfigurationPageManufacturing2
         } fields;
     } u;
 } MptConfigurationPageManufacturing2, *PMptConfigurationPageManufacturing2;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing2, 8);
 
 /**
  * Manufacturing page 3. - Readonly.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing3
 {
     /** Union. */
@@ -1406,13 +1335,11 @@ typedef struct MptConfigurationPageManufacturing3
         } fields;
     } u;
 } MptConfigurationPageManufacturing3, *PMptConfigurationPageManufacturing3;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing3, 8);
 
 /**
  * Manufacturing page 4. - Readonly.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing4
 {
     /** Union. */
@@ -1450,13 +1377,12 @@ typedef struct MptConfigurationPageManufacturing4
         } fields;
     } u;
 } MptConfigurationPageManufacturing4, *PMptConfigurationPageManufacturing4;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing4, 84);
 
 /**
  * Manufacturing page 5 - Readonly.
  */
-#pragma pack(1)
+#pragma pack(1) /* u64BaseWWID is at offset 4, which isn't natural for uint64_t. */
 typedef struct MptConfigurationPageManufacturing5
 {
     /** Union. */
@@ -1469,7 +1395,8 @@ typedef struct MptConfigurationPageManufacturing5
         {
             /** The omnipresent header. */
             MptConfigurationPageHeader    Header;
-            /** Base WWID. */
+            /** Base WWID.
+             * @note Not aligned on 8-byte boundrary  */
             uint64_t                      u64BaseWWID;
             /** Flags */
             uint8_t                       u8Flags;
@@ -1490,7 +1417,6 @@ AssertCompileSize(MptConfigurationPageManufacturing5, 24+64);
 /**
  * Manufacturing page 6 - Readonly.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing6
 {
     /** Union. */
@@ -1507,13 +1433,11 @@ typedef struct MptConfigurationPageManufacturing6
         } fields;
     } u;
 } MptConfigurationPageManufacturing6, *PMptConfigurationPageManufacturing6;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing6, 4);
 
 /**
  * Manufacutring page 7 - PHY element.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing7PHY
 {
     /** Pinout */
@@ -1527,13 +1451,11 @@ typedef struct MptConfigurationPageManufacturing7PHY
     /** Slot */
     uint16_t                  u16Slot;
 } MptConfigurationPageManufacturing7PHY, *PMptConfigurationPageManufacturing7PHY;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing7PHY, 24);
 
 /**
  * Manufacturing page 7 - Readonly.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing7
 {
     /** Union. */
@@ -1561,7 +1483,6 @@ typedef struct MptConfigurationPageManufacturing7
         } fields;
     } u;
 } MptConfigurationPageManufacturing7, *PMptConfigurationPageManufacturing7;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing7, 36+sizeof(MptConfigurationPageManufacturing7PHY));
 
 #define LSILOGICSCSI_MANUFACTURING7_GET_SIZE(ports) (sizeof(MptConfigurationPageManufacturing7) + ((ports) - 1) * sizeof(MptConfigurationPageManufacturing7PHY))
@@ -1593,7 +1514,6 @@ AssertCompileSize(MptConfigurationPageManufacturing7, 36+sizeof(MptConfiguration
 /**
  * Manufacturing page 8 - Readonly.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing8
 {
     /** Union. */
@@ -1610,13 +1530,11 @@ typedef struct MptConfigurationPageManufacturing8
         } fields;
     } u;
 } MptConfigurationPageManufacturing8, *PMptConfigurationPageManufacturing8;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing8, 4);
 
 /**
  * Manufacturing page 9 - Readonly.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing9
 {
     /** Union. */
@@ -1633,13 +1551,11 @@ typedef struct MptConfigurationPageManufacturing9
         } fields;
     } u;
 } MptConfigurationPageManufacturing9, *PMptConfigurationPageManufacturing9;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing9, 4);
 
 /**
  * Manufacturing page 10 - Readonly.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageManufacturing10
 {
     /** Union. */
@@ -1656,13 +1572,12 @@ typedef struct MptConfigurationPageManufacturing10
         } fields;
     } u;
 } MptConfigurationPageManufacturing10, *PMptConfigurationPageManufacturing10;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageManufacturing10, 4);
 
 /**
  * IO Unit page 0. - Readonly.
  */
-#pragma pack(1)
+#pragma pack(1) /* u64UniqueIdentifier is at offset 4, which isn't natural for uint64_t. */
 typedef struct MptConfigurationPageIOUnit0
 {
     /** Union. */
@@ -1686,7 +1601,6 @@ AssertCompileSize(MptConfigurationPageIOUnit0, 12);
 /**
  * IO Unit page 1. - Read/Write.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOUnit1
 {
     /** Union. */
@@ -1714,13 +1628,11 @@ typedef struct MptConfigurationPageIOUnit1
         } fields;
     } u;
 } MptConfigurationPageIOUnit1, *PMptConfigurationPageIOUnit1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOUnit1, 8);
 
 /**
  * Adapter Ordering.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOUnit2AdapterOrdering
 {
     /** PCI bus number. */
@@ -1736,13 +1648,11 @@ typedef struct MptConfigurationPageIOUnit2AdapterOrdering
     /** Reserved. */
     unsigned    u8Reserved:       8;
 } MptConfigurationPageIOUnit2AdapterOrdering, *PMptConfigurationPageIOUnit2AdapterOrdering;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOUnit2AdapterOrdering, 4);
 
 /**
  * IO Unit page 2. - Read/Write.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOUnit2
 {
     /** Union. */
@@ -1776,13 +1686,11 @@ typedef struct MptConfigurationPageIOUnit2
         } fields;
     } u;
 } MptConfigurationPageIOUnit2, *PMptConfigurationPageIOUnit2;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOUnit2, 28);
 
 /*
  * IO Unit page 3. - Read/Write.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOUnit3
 {
     /** Union. */
@@ -1802,13 +1710,11 @@ typedef struct MptConfigurationPageIOUnit3
         } fields;
     } u;
 } MptConfigurationPageIOUnit3, *PMptConfigurationPageIOUnit3;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOUnit3, 8);
 
 /*
  * IO Unit page 4. - Readonly for everyone except the BIOS.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOUnit4
 {
     /** Union. */
@@ -1828,13 +1734,11 @@ typedef struct MptConfigurationPageIOUnit4
         } fields;
     } u;
 } MptConfigurationPageIOUnit4, *PMptConfigurationPageIOUnit4;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOUnit4, 20);
 
 /**
  * IOC page 0. - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOC0
 {
     /** Union. */
@@ -1868,13 +1772,11 @@ typedef struct MptConfigurationPageIOC0
         } fields;
     } u;
 } MptConfigurationPageIOC0, *PMptConfigurationPageIOC0;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOC0, 28);
 
 /**
  * IOC page 1. - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOC1
 {
     /** Union. */
@@ -1902,13 +1804,11 @@ typedef struct MptConfigurationPageIOC1
         } fields;
     } u;
 } MptConfigurationPageIOC1, *PMptConfigurationPageIOC1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOC1, 16);
 
 /**
  * IOC page 2. - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOC2
 {
     /** Union. */
@@ -1947,13 +1847,11 @@ typedef struct MptConfigurationPageIOC2
         } fields;
     } u;
 } MptConfigurationPageIOC2, *PMptConfigurationPageIOC2;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOC2, 12);
 
 /**
  * IOC page 3. - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOC3
 {
     /** Union. */
@@ -1973,13 +1871,11 @@ typedef struct MptConfigurationPageIOC3
         } fields;
     } u;
 } MptConfigurationPageIOC3, *PMptConfigurationPageIOC3;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOC3, 8);
 
 /**
  * IOC page 4. - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOC4
 {
     /** Union. */
@@ -2002,13 +1898,11 @@ typedef struct MptConfigurationPageIOC4
         } fields;
     } u;
 } MptConfigurationPageIOC4, *PMptConfigurationPageIOC4;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOC4, 8);
 
 /**
  * IOC page 6. - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageIOC6
 {
     /** Union. */
@@ -2049,13 +1943,11 @@ typedef struct MptConfigurationPageIOC6
         } fields;
     } u;
 } MptConfigurationPageIOC6, *PMptConfigurationPageIOC6;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageIOC6, 60);
 
 /**
  * BIOS page 1 - Read/write.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageBIOS1
 {
     /** Union. */
@@ -2093,7 +1985,6 @@ typedef struct MptConfigurationPageBIOS1
         } fields;
     } u;
 } MptConfigurationPageBIOS1, *PMptConfigurationPageBIOS1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageBIOS1, 48);
 
 #define LSILOGICSCSI_BIOS1_BIOSOPTIONS_BIOS_DISABLE              RT_BIT(0)
@@ -2147,7 +2038,6 @@ AssertCompileSize(MptConfigurationPageBIOS1, 48);
 /**
  * BIOS page 2 - Read/write.
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageBIOS2
 {
     /** Union. */
@@ -2205,6 +2095,7 @@ typedef struct MptConfigurationPageBIOS2
                     /** Reserved */
                     uint32_t              au32Reserved2[56];
                 } PCIAddressBusTargetLUN;
+#if 0 /** @todo r=bird: The u16PCISlotNo member looks like it has the wrong type, but I cannot immediately locate specs and check. */
                 /** Device for PCISlotNo:Bus:Target:LUN */
                 struct
                 {
@@ -2221,6 +2112,7 @@ typedef struct MptConfigurationPageBIOS2
                     /** Reserved */
                     uint32_t              au32Reserved2[56];
                 } PCIAddressBusSlotLUN;
+#endif
                 /** Device for FC channel world wide name */
                 struct
                 {
@@ -2263,7 +2155,7 @@ typedef struct MptConfigurationPageBIOS2
         } fields;
     } u;
 } MptConfigurationPageBIOS2, *PMptConfigurationPageBIOS2;
-#pragma pack()
+AssertCompileMemberAlignment(MptConfigurationPageBIOS2, u.fields, 8);
 AssertCompileSize(MptConfigurationPageBIOS2, 384);
 
 #define LSILOGICSCSI_BIOS2_BOOT_DEVICE_FORM_SET(x)                 ((x) & 0x0F)
@@ -2278,7 +2170,7 @@ AssertCompileSize(MptConfigurationPageBIOS2, 384);
 /**
  * BIOS page 4 - Read/Write (Where is 3? - not defined in the spec)
  */
-#pragma pack(1)
+#pragma pack(1) /* u64ReassignmentBaseWWID starts at offset 4, which isn't normally natural for uint64_t.  */
 typedef struct MptConfigurationPageBIOS4
 {
     /** Union. */
@@ -2302,7 +2194,6 @@ AssertCompileSize(MptConfigurationPageBIOS4, 12);
 /**
  * SCSI-SPI port page 0. - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSCSISPIPort0
 {
     /** Union. */
@@ -2342,13 +2233,11 @@ typedef struct MptConfigurationPageSCSISPIPort0
         } fields;
     } u;
 } MptConfigurationPageSCSISPIPort0, *PMptConfigurationPageSCSISPIPort0;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSCSISPIPort0, 12);
 
 /**
  * SCSI-SPI port page 1. - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSCSISPIPort1
 {
     /** Union. */
@@ -2372,13 +2261,11 @@ typedef struct MptConfigurationPageSCSISPIPort1
         } fields;
     } u;
 } MptConfigurationPageSCSISPIPort1, *PMptConfigurationPageSCSISPIPort1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSCSISPIPort1, 12);
 
 /**
  * Device settings for one device.
  */
-#pragma pack(1)
 typedef struct MptDeviceSettings
 {
     /** Timeout for I/O in seconds. */
@@ -2400,13 +2287,11 @@ typedef struct MptDeviceSettings
     /** Reserved. */
     unsigned    u10Reserved:          10;
 } MptDeviceSettings, *PMptDeviceSettings;
-#pragma pack()
 AssertCompileSize(MptDeviceSettings, 4);
 
 /**
  * SCSI-SPI port page 2. - Read/Write for the BIOS
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSCSISPIPort2
 {
     /** Union. */
@@ -2448,13 +2333,11 @@ typedef struct MptConfigurationPageSCSISPIPort2
         } fields;
     } u;
 } MptConfigurationPageSCSISPIPort2, *PMptConfigurationPageSCSISPIPort2;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSCSISPIPort2, 76);
 
 /**
  * SCSI-SPI device page 0. - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSCSISPIDevice0
 {
     /** Union. */
@@ -2501,13 +2384,11 @@ typedef struct MptConfigurationPageSCSISPIDevice0
         } fields;
     } u;
 } MptConfigurationPageSCSISPIDevice0, *PMptConfigurationPageSCSISPIDevice0;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSCSISPIDevice0, 12);
 
 /**
  * SCSI-SPI device page 1. - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSCSISPIDevice1
 {
     /** Union. */
@@ -2522,43 +2403,41 @@ typedef struct MptConfigurationPageSCSISPIDevice1
             MptConfigurationPageHeader    Header;
             /** Requested Parameters. */
             /** Information Units enable. */
-            bool                  fInformationUnitsEnable: 1;
+            unsigned              fInformationUnitsEnable: 1;
             /** Dual Transfers Enable. */
-            bool                  fDTEnable:               1;
+            unsigned              fDTEnable:               1;
             /** QAS enable. */
-            bool                  fQASEnable:              1;
+            unsigned              fQASEnable:              1;
             /** Reserved. */
-            unsigned              u5Reserved1:              5;
+            unsigned              u5Reserved1:             5;
             /** Synchronous Transfer period. */
             unsigned              u8NegotiatedSynchronousTransferPeriod: 8;
             /** Synchronous offset. */
             unsigned              u8NegotiatedSynchronousOffset: 8;
             /** Reserved. */
-            unsigned              u5Reserved2:              5;
+            unsigned              u5Reserved2:             5;
             /** Width - 0 for narrow and 1 for wide. */
-            bool                  fWide:                   1;
+            unsigned              fWide:                   1;
             /** Reserved. */
-            bool                  fReserved1:              1;
+            unsigned              fReserved1:              1;
             /** AIP enable. */
-            bool                  fAIPEnable:              1;
+            unsigned              fAIPEnable:              1;
             /** Reserved. */
-            bool                  fReserved2:              1;
+            unsigned              fReserved2:              1;
             /** WDTR disallowed. */
-            bool                  fWDTRDisallowed:         1;
+            unsigned              fWDTRDisallowed:         1;
             /** SDTR disallowed. */
-            bool                  fSDTRDisallowed:         1;
+            unsigned              fSDTRDisallowed:         1;
             /** Reserved. */
             unsigned              u29Reserved:            29;
         } fields;
     } u;
 } MptConfigurationPageSCSISPIDevice1, *PMptConfigurationPageSCSISPIDevice1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSCSISPIDevice1, 16);
 
 /**
  * SCSI-SPI device page 2. - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSCSISPIDevice2
 {
     /** Union. */
@@ -2604,13 +2483,11 @@ typedef struct MptConfigurationPageSCSISPIDevice2
         } fields;
     } u;
 } MptConfigurationPageSCSISPIDevice2, *PMptConfigurationPageSCSISPIDevice2;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSCSISPIDevice2, 16);
 
 /**
  * SCSI-SPI device page 3 (Revision G). - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSCSISPIDevice3
 {
     /** Union. */
@@ -2634,13 +2511,11 @@ typedef struct MptConfigurationPageSCSISPIDevice3
         } fields;
     } u;
 } MptConfigurationPageSCSISPIDevice3, *PMptConfigurationPageSCSISPIDevice3;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSCSISPIDevice3, 12);
 
 /**
  * PHY entry for the SAS I/O unit page 0
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSASIOUnit0PHY
 {
     /** Port number */
@@ -2660,13 +2535,11 @@ typedef struct MptConfigurationPageSASIOUnit0PHY
     /** Discovery status */
     uint32_t                          u32DiscoveryStatus;
 } MptConfigurationPageSASIOUnit0PHY, *PMptConfigurationPageSASIOUnit0PHY;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSASIOUnit0PHY, 16);
 
 /**
  * SAS I/O  Unit page 0 - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSASIOUnit0
 {
     /** Union. */
@@ -2692,7 +2565,6 @@ typedef struct MptConfigurationPageSASIOUnit0
         } fields;
     } u;
 } MptConfigurationPageSASIOUnit0, *PMptConfigurationPageSASIOUnit0;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSASIOUnit0, 8+2+2+1+3+sizeof(MptConfigurationPageSASIOUnit0PHY));
 
 #define LSILOGICSCSI_SASIOUNIT0_GET_SIZE(ports) (sizeof(MptConfigurationPageSASIOUnit0) + ((ports) - 1) * sizeof(MptConfigurationPageSASIOUnit0PHY))
@@ -2751,7 +2623,6 @@ AssertCompileSize(MptConfigurationPageSASIOUnit0, 8+2+2+1+3+sizeof(MptConfigurat
 /**
  * PHY entry for the SAS I/O unit page 1
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSASIOUnit1PHY
 {
     /** Port number */
@@ -2769,13 +2640,11 @@ typedef struct MptConfigurationPageSASIOUnit1PHY
     /** Reserved */
     uint16_t                          u16Reserved;
 } MptConfigurationPageSASIOUnit1PHY, *PMptConfigurationPageSASIOUnit1PHY;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSASIOUnit1PHY, 12);
 
 /**
  * SAS I/O  Unit page 1 - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSASIOUnit1
 {
     /** Union. */
@@ -2809,7 +2678,6 @@ typedef struct MptConfigurationPageSASIOUnit1
         } fields;
     } u;
 } MptConfigurationPageSASIOUnit1, *PMptConfigurationPageSASIOUnit1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSASIOUnit1, 8+12+sizeof(MptConfigurationPageSASIOUnit1PHY));
 
 #define LSILOGICSCSI_SASIOUNIT1_GET_SIZE(ports) (sizeof(MptConfigurationPageSASIOUnit1) + ((ports) - 1) * sizeof(MptConfigurationPageSASIOUnit1PHY))
@@ -2883,7 +2751,6 @@ AssertCompileSize(MptConfigurationPageSASIOUnit1, 8+12+sizeof(MptConfigurationPa
 /**
  * SAS I/O unit page 2 - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSASIOUnit2
 {
     /** Union. */
@@ -2915,7 +2782,6 @@ typedef struct MptConfigurationPageSASIOUnit2
         } fields;
     } u;
 } MptConfigurationPageSASIOUnit2, *PMptConfigurationPageSASIOUnit2;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSASIOUnit2, 20);
 
 #define LSILOGICSCSI_SASIOUNIT2_STATUS_PERSISTENT_MAP_TBL_FULL       RT_BIT(0)
@@ -2936,7 +2802,6 @@ AssertCompileSize(MptConfigurationPageSASIOUnit2, 20);
 /**
  * SAS I/O unit page 3 - Read/Write
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSASIOUnit3
 {
     /** Union. */
@@ -2962,13 +2827,12 @@ typedef struct MptConfigurationPageSASIOUnit3
         } fields;
     } u;
 } MptConfigurationPageSASIOUnit3, *PMptConfigurationPageSASIOUnit3;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSASIOUnit3, 44);
 
 /**
  * SAS PHY page 0 - Readonly
  */
-#pragma pack(1)
+#pragma pack(1) /* SASAddress starts at offset 12, which isn't typically natural for uint64_t (inside it). */
 typedef struct MptConfigurationPageSASPHY0
 {
     /** Union. */
@@ -3031,7 +2895,6 @@ AssertCompileSize(MptConfigurationPageSASPHY0, 36);
 /**
  * SAS PHY page 1 - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSASPHY1
 {
     /** Union. */
@@ -3053,13 +2916,12 @@ typedef struct MptConfigurationPageSASPHY1
         } fields;
     } u;
 } MptConfigurationPageSASPHY1, *PMptConfigurationPageSASPHY1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSASPHY1, 28);
 
 /**
  * SAS Device page 0 - Readonly
  */
-#pragma pack(1)
+#pragma pack(1) /* SASAddress starts at offset 12, which isn't typically natural for uint64_t (inside it). */
 typedef struct MptConfigurationPageSASDevice0
 {
     /** Union. */
@@ -3130,7 +2992,7 @@ AssertCompileSize(MptConfigurationPageSASDevice0, 36);
 /**
  * SAS Device page 1 - Readonly
  */
-#pragma pack(1)
+#pragma pack(1) /* SASAddress starts at offset 12, which isn't typically natural for uint64_t (inside it). */
 typedef struct MptConfigurationPageSASDevice1
 {
     /** Union. */
@@ -3166,7 +3028,7 @@ AssertCompileSize(MptConfigurationPageSASDevice1, 48);
 /**
  * SAS Device page 2 - Read/Write persistent
  */
-#pragma pack(1)
+#pragma pack(1) /* Because of a uint64_t inside SASAddress, the struct size would be 24 without packing. */
 typedef struct MptConfigurationPageSASDevice2
 {
     /** Union. */
@@ -3207,7 +3069,7 @@ typedef struct MptSASDevice
 /**
  * SAS Expander page 0 - Readonly
  */
-#pragma pack(1)
+#pragma pack(1) /* SASAddress starts at offset 12, which isn't typically natural for uint64_t (inside it). */
 typedef struct MptConfigurationPageSASExpander0
 {
     /** Union. */
@@ -3255,7 +3117,6 @@ AssertCompileSize(MptConfigurationPageSASExpander0, 36);
 /**
  * SAS Expander page 1 - Readonly
  */
-#pragma pack(1)
 typedef struct MptConfigurationPageSASExpander1
 {
     /** Union. */
@@ -3307,7 +3168,6 @@ typedef struct MptConfigurationPageSASExpander1
         } fields;
     } u;
 } MptConfigurationPageSASExpander1, *PMptConfigurationPageSASExpander1;
-#pragma pack()
 AssertCompileSize(MptConfigurationPageSASExpander1, 40);
 
 /**
@@ -3375,21 +3235,20 @@ typedef struct MptPHY
     MptConfigurationPageSASPHY1     SASPHYPage1;
 } MptPHY, *PMptPHY;
 
-#pragma pack(1)
 typedef struct MptConfigurationPagesSas
 {
-    /** Size of the manufacturing page 7 */
-    uint32_t                            cbManufacturingPage7;
     /** Pointer to the manufacturing page 7 */
     PMptConfigurationPageManufacturing7 pManufacturingPage7;
+    /** Size of the manufacturing page 7 */
+    uint32_t                            cbManufacturingPage7;
     /** Size of the I/O unit page 0 */
     uint32_t                            cbSASIOUnitPage0;
     /** Pointer to the I/O unit page 0 */
     PMptConfigurationPageSASIOUnit0     pSASIOUnitPage0;
-    /** Size of the I/O unit page 1 */
-    uint32_t                            cbSASIOUnitPage1;
     /** Pointer to the I/O unit page 1 */
     PMptConfigurationPageSASIOUnit1     pSASIOUnitPage1;
+    /** Size of the I/O unit page 1 */
+    uint32_t                            cbSASIOUnitPage1;
     /** I/O unit page 2 */
     MptConfigurationPageSASIOUnit2      SASIOUnitPage2;
     /** I/O unit page 3 */
@@ -3402,12 +3261,16 @@ typedef struct MptConfigurationPagesSas
 
     /** Number of devices detected. */
     uint32_t                            cDevices;
+    uint32_t                            u32Padding;
     /** Pointer to the first SAS device. */
     R3PTRTYPE(PMptSASDevice)            pSASDeviceHead;
     /** Pointer to the last SAS device. */
     R3PTRTYPE(PMptSASDevice)            pSASDeviceTail;
 } MptConfigurationPagesSas, *PMptConfigurationPagesSas;
-#pragma pack()
+AssertCompile(RTASSERT_OFFSET_OF(MptConfigurationPagesSas,cbSASIOUnitPage0) + 4 == RTASSERT_OFFSET_OF(MptConfigurationPagesSas, pSASIOUnitPage0));
+AssertCompile(RTASSERT_OFFSET_OF(MptConfigurationPagesSas,cPHYs)            + 4 == RTASSERT_OFFSET_OF(MptConfigurationPagesSas, paPHYs));
+AssertCompile(RTASSERT_OFFSET_OF(MptConfigurationPagesSas,cDevices)         + 8 == RTASSERT_OFFSET_OF(MptConfigurationPagesSas, pSASDeviceHead));
+
 
 /**
  * Structure of all supported pages for both controllers.
@@ -3453,8 +3316,8 @@ typedef struct MptConfigurationPagesSupported
  * Initializes a page header.
  */
 #define MPT_CONFIG_PAGE_HEADER_INIT(pg, type, nr, flags) \
-    (pg)->u.fields.Header.u8PageType   = flags; \
-    (pg)->u.fields.Header.u8PageNumber = nr; \
+    (pg)->u.fields.Header.u8PageType   = (flags); \
+    (pg)->u.fields.Header.u8PageNumber = (nr); \
     (pg)->u.fields.Header.u8PageLength = sizeof(type) / 4
 
 #define MPT_CONFIG_PAGE_HEADER_INIT_MANUFACTURING(pg, type, nr, flags) \
@@ -3473,10 +3336,10 @@ typedef struct MptConfigurationPagesSupported
  * Initializes a extended page header.
  */
 #define MPT_CONFIG_EXTENDED_PAGE_HEADER_INIT(pg, cb, nr, flags, exttype) \
-    (pg)->u.fields.ExtHeader.u8PageType   = flags | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED; \
-    (pg)->u.fields.ExtHeader.u8PageNumber = nr; \
-    (pg)->u.fields.ExtHeader.u8ExtPageType = exttype; \
-    (pg)->u.fields.ExtHeader.u16ExtPageLength = cb / 4
+    (pg)->u.fields.ExtHeader.u8PageType   = (flags) | MPT_CONFIGURATION_PAGE_TYPE_EXTENDED; \
+    (pg)->u.fields.ExtHeader.u8PageNumber = (nr); \
+    (pg)->u.fields.ExtHeader.u8ExtPageType = (exttype); \
+    (pg)->u.fields.ExtHeader.u16ExtPageLength = (cb) / 4
 
 /**
  * Possible SG element types.
