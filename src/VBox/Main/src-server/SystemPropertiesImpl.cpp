@@ -1246,7 +1246,7 @@ HRESULT SystemProperties::getSupportedRecordingVideoCodecs(std::vector<Recording
     return S_OK;
 }
 
-HRESULT SystemProperties::getSupportedRecordingVideoScalingMethods(std::vector<RecordingVideoScalingMethod_T> &aSupportedRecordingVideoScalingMethods)
+HRESULT SystemProperties::getSupportedRecordingVSMethods(std::vector<RecordingVideoScalingMethod_T> &aSupportedRecordingVideoScalingMethods)
 {
     static const RecordingVideoScalingMethod_T aRecordingVideoScalingMethods[] =
     {
@@ -1262,7 +1262,7 @@ HRESULT SystemProperties::getSupportedRecordingVideoScalingMethods(std::vector<R
     return S_OK;
 }
 
-HRESULT SystemProperties::getSupportedRecordingVideoRateControlModes(std::vector<RecordingVideoRateControlMode_T> &aSupportedRecordingVideoRateControlModes)
+HRESULT SystemProperties::getSupportedRecordingVRCModes(std::vector<RecordingVideoRateControlMode_T> &aSupportedRecordingVideoRateControlModes)
 {
     static const RecordingVideoRateControlMode_T aRecordingVideoRateControlModes[] =
     {

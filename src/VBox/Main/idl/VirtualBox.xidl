@@ -11287,14 +11287,14 @@
       </desc>
     </attribute>
 
-    <attribute name="supportedRecordingVideoScalingMethods" type="RecordingVideoScalingMethod" safearray="yes" readonly="yes">
+    <attribute name="supportedRecordingVSMethods" type="RecordingVideoScalingMethod" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="RecordingVideoScalingMethod"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
 
-    <attribute name="supportedRecordingVideoRateControlModes" type="RecordingVideoRateControlMode" safearray="yes" readonly="yes">
+    <attribute name="supportedRecordingVRCModes" type="RecordingVideoRateControlMode" safearray="yes" readonly="yes">
       <desc>
         Returns an array of officially supported values for enum <link to="RecordingVideoRateControlMode"/>,
         in the sense of what is e.g. worth offering in the VirtualBox GUI.
