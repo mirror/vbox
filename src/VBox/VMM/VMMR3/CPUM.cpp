@@ -1996,6 +1996,12 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
     pGuestFeat->fVmxEntryInjectSoftInt    = (pBaseFeat->fVmxEntryInjectSoftInt    & EmuFeat.fVmxEntryInjectSoftInt   );
 
+    if (HMIsSubjectToVmxPreemptTimerErratum())
+    {
+        Log(("CPUM: VMX-preemption timer erratum detected. Cannot expose VMX-preemption timer feature to guests."));
+        pGuestFeat->fVmxPreemptTimer = 0;
+    }
+
     /* Paranoia. */
     if (!pGuestFeat->fVmxSecondaryExecCtls)
     {

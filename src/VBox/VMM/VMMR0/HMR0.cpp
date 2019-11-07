@@ -291,50 +291,6 @@ static DECLCALLBACK(int) hmR0DummyExportHostState(PVMCPUCC pVCpu)
 
 
 /**
- * Checks if the CPU is subject to the "VMX-Preemption Timer Does Not Count
- * Down at the Rate Specified" erratum.
- *
- * Errata names and related steppings:
- *      - BA86   - D0.
- *      - AAX65  - C2.
- *      - AAU65  - C2, K0.
- *      - AAO95  - B1.
- *      - AAT59  - C2.
- *      - AAK139 - D0.
- *      - AAM126 - C0, C1, D0.
- *      - AAN92  - B1.
- *      - AAJ124 - C0, D0.
- *      - AAP86  - B1.
- *
- * Steppings: B1, C0, C1, C2, D0, K0.
- *
- * @returns true if subject to it, false if not.
- */
-static bool hmR0InitIntelIsSubjectToVmxPreemptTimerErratum(void)
-{
-    uint32_t u = ASMCpuId_EAX(1);
-    u &= ~(RT_BIT_32(14) | RT_BIT_32(15) | RT_BIT_32(28) | RT_BIT_32(29) | RT_BIT_32(30) | RT_BIT_32(31));
-    if (   u == UINT32_C(0x000206E6) /* 323344.pdf - BA86   - D0 - Intel Xeon Processor 7500 Series */
-        || u == UINT32_C(0x00020652) /* 323056.pdf - AAX65  - C2 - Intel Xeon Processor L3406 */
-                                     /* 322814.pdf - AAT59  - C2 - Intel CoreTM i7-600, i5-500, i5-400 and i3-300 Mobile Processor Series */
-                                     /* 322911.pdf - AAU65  - C2 - Intel CoreTM i5-600, i3-500 Desktop Processor Series and Intel Pentium Processor G6950 */
-        || u == UINT32_C(0x00020655) /* 322911.pdf - AAU65  - K0 - Intel CoreTM i5-600, i3-500 Desktop Processor Series and Intel Pentium Processor G6950 */
-        || u == UINT32_C(0x000106E5) /* 322373.pdf - AAO95  - B1 - Intel Xeon Processor 3400 Series */
-                                     /* 322166.pdf - AAN92  - B1 - Intel CoreTM i7-800 and i5-700 Desktop Processor Series */
-                                     /* 320767.pdf - AAP86  - B1 - Intel Core i7-900 Mobile Processor Extreme Edition Series, Intel Core i7-800 and i7-700 Mobile Processor Series */
-        || u == UINT32_C(0x000106A0) /* 321333.pdf - AAM126 - C0 - Intel Xeon Processor 3500 Series Specification */
-        || u == UINT32_C(0x000106A1) /* 321333.pdf - AAM126 - C1 - Intel Xeon Processor 3500 Series Specification */
-        || u == UINT32_C(0x000106A4) /* 320836.pdf - AAJ124 - C0 - Intel Core i7-900 Desktop Processor Extreme Edition Series and Intel Core i7-900 Desktop Processor Series */
-        || u == UINT32_C(0x000106A5) /* 321333.pdf - AAM126 - D0 - Intel Xeon Processor 3500 Series Specification */
-                                     /* 321324.pdf - AAK139 - D0 - Intel Xeon Processor 5500 Series Specification */
-                                     /* 320836.pdf - AAJ124 - D0 - Intel Core i7-900 Desktop Processor Extreme Edition Series and Intel Core i7-900 Desktop Processor Series */
-        )
-        return true;
-    return false;
-}
-
-
-/**
  * Intel specific initialization code.
  *
  * @returns VBox status code (will only fail if out of memory).
@@ -486,7 +442,7 @@ static int hmR0InitIntel(void)
                 uint64_t const uVmxMiscMsr = g_HmR0.hwvirt.Msrs.u.vmx.u64Misc;
                 g_HmR0.hwvirt.u.vmx.fUsePreemptTimer   = true;
                 g_HmR0.hwvirt.u.vmx.cPreemptTimerShift = RT_BF_GET(uVmxMiscMsr, VMX_BF_MISC_PREEMPT_TIMER_TSC);
-                if (hmR0InitIntelIsSubjectToVmxPreemptTimerErratum())
+                if (HMIsSubjectToVmxPreemptTimerErratum())
                     g_HmR0.hwvirt.u.vmx.cPreemptTimerShift = 0; /* This is about right most of the time here. */
             }
         }

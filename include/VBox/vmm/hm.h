@@ -131,6 +131,7 @@ VMM_INT_DECL(void)              HMGetSvmMsrsFromHwvirtMsrs(PCSUPHWVIRTMSRS pMsrs
  * based purely on the Intel VT-x specification (used by IEM/REM and HM) can be
  * found in CPUM.
  * @{ */
+VMM_INT_DECL(bool)              HMIsSubjectToVmxPreemptTimerErratum(void);
 VMM_INT_DECL(bool)              HMCanExecuteVmxGuest(PVMCC pVM, PVMCPUCC pVCpu, PCCPUMCTX pCtx);
 VMM_INT_DECL(TRPMEVENT)         HMVmxEventTypeToTrpmEventType(uint32_t uIntInfo);
 VMM_INT_DECL(uint32_t)          HMTrpmEventTypeToVmxEventType(uint8_t uVector, TRPMEVENT enmTrpmEvent, bool fIcebp);
