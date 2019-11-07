@@ -1998,7 +1998,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
 
     if (HMIsSubjectToVmxPreemptTimerErratum())
     {
-        Log(("CPUM: VMX-preemption timer erratum detected. Cannot expose VMX-preemption timer feature to guests."));
+        Log(("CPUM: VMX-preemption timer erratum detected. Cannot expose VMX-preemption timer feature to guests.\n"));
         pGuestFeat->fVmxPreemptTimer = 0;
     }
 
