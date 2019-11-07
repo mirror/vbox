@@ -1268,7 +1268,7 @@
     <const name="SharedFolder"      value="6">
       <desc>Shared folder device.</desc>
     </const>
-    <const name="Graphics3D"          value="7">
+    <const name="Graphics3D"        value="7">
       <desc>Graphics device 3D activity.</desc>
     </const>
   </enum>
@@ -3498,7 +3498,6 @@
     <const name="Cloud" value="2" />
     <const name="S3" value="3" />
     <const name="WebDav" value="4" />
-    <const name="OCI" value="5" />
   </enum>
 
   <interface
@@ -10871,7 +10870,7 @@
   <interface
     name="ISystemProperties"
     extends="$unknown"
-    uuid="d55176e5-6730-4e9e-fc1f-a59b1f44f78f"
+    uuid="297ea744-607e-4b8b-841f-23a6eb749a67"
     wsmap="managed"
     reservedMethods="4" reservedAttributes="16"
     >
@@ -11188,6 +11187,7 @@
     <attribute name="proxyMode" type="ProxyMode" readonly="no">
       <desc> The proxy mode setting: System, NoProxy or Manual.</desc>
     </attribute>
+
     <attribute name="proxyURL" type="wstring" readonly="no">
       <desc>
         Proxy server URL for the <link to="ProxyMode_Manual" /> proxy mode.
@@ -11207,6 +11207,195 @@
         An empty string will cause the behavior to be identical to <link to="ProxyMode_System" />.
         For compatibility with libproxy, an URL starting with "direct://" will cause
         <link to="ProxyMode_NoProxy" /> behavior.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedParavirtProviders" type="ParavirtProvider" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="ParavirtProvider"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedClipboardModes" type="ClipboardMode" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="ClipboardMode"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedDnDModes" type="DnDMode" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="DnDMode"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedFirmwareTypes" type="FirmwareType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="FirmwareType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedPointingHIDTypes" type="PointingHIDType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="PointingHIDType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedKeyboardHIDTypes" type="KeyboardHIDType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="KeyboardHIDType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedVFSTypes" type="VFSType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="VFSType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedImportOptions" type="ImportOptions" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="ImportOptions"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedExportOptions" type="ExportOptions" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="ExportOptions"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedRecordingAudioCodecs" type="RecordingAudioCodec" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="RecordingAudioCodec"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedRecordingVideoCodecs" type="RecordingVideoCodec" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="RecordingVideoCodec"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedRecordingVideoScalingMethods" type="RecordingVideoScalingMethod" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="RecordingVideoScalingMethod"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedRecordingVideoRateControlModes" type="RecordingVideoRateControlMode" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="RecordingVideoRateControlMode"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedGraphicsControllerTypes" type="GraphicsControllerType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="GraphicsControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedCloneOptions" type="CloneOptions" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="CloneOptions"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedAutostopTypes" type="AutostopType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="AutostopType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedVMProcPriorities" type="VMProcPriority" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="VMProcPriority"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedNetworkAttachmentTypes" type="NetworkAttachmentType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="NetworkAttachmentType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedNetworkAdapterTypes" type="NetworkAdapterType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="NetworkAdapterType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedPortModes" type="PortMode" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="PortMode"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedUartTypes" type="UartType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="UartType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedUSBControllerTypes" type="USBControllerType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="USBControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedAudioDriverTypes" type="AudioDriverType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="AudioDriverType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedAudioControllerTypes" type="AudioControllerType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="AudioControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedStorageBuses" type="StorageBus" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="StorageBus"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedStorageControllerTypes" type="StorageControllerType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="StorageControllerType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
+      </desc>
+    </attribute>
+
+    <attribute name="supportedChipsetTypes" type="ChipsetType" safearray="yes" readonly="yes">
+      <desc>
+        Returns an array of officially supported values for enum <link to="ChipsetType"/>,
+        in the sense of what is e.g. worth offering in the VirtualBox GUI.
       </desc>
     </attribute>
 
@@ -26607,7 +26796,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
     <method name="exportVM">
       <desc>
-        Export local VM into the OCI cloud, creating a custom image.
+        Export local VM into the cloud, creating a custom image.
       </desc>
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>
@@ -26657,7 +26846,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="getImportDescriptionForm">
       <desc>
         Returns a form for editing the virtual system description for
-        import from OCI.
+        import from cloud.
       </desc>
       <param name="description" type="IVirtualSystemDescription" dir="in">
         <desc>

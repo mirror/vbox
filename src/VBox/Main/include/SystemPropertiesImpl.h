@@ -112,6 +112,33 @@ private:
     HRESULT setProxyMode(ProxyMode_T aProxyMode);
     HRESULT getProxyURL(com::Utf8Str &aProxyURL);
     HRESULT setProxyURL(const com::Utf8Str &aProxyURL);
+    HRESULT getSupportedParavirtProviders(std::vector<ParavirtProvider_T> &aSupportedParavirtProviders);
+    HRESULT getSupportedClipboardModes(std::vector<ClipboardMode_T> &aSupportedClipboardModes);
+    HRESULT getSupportedDnDModes(std::vector<DnDMode_T> &aSupportedDnDModes);
+    HRESULT getSupportedFirmwareTypes(std::vector<FirmwareType_T> &aSupportedFirmwareTypes);
+    HRESULT getSupportedPointingHIDTypes(std::vector<PointingHIDType_T> &aSupportedPointingHIDTypes);
+    HRESULT getSupportedKeyboardHIDTypes(std::vector<KeyboardHIDType_T> &aSupportedKeyboardHIDTypes);
+    HRESULT getSupportedVFSTypes(std::vector<VFSType_T> &aSupportedVFSTypes);
+    HRESULT getSupportedImportOptions(std::vector<ImportOptions_T> &aSupportedImportOptions);
+    HRESULT getSupportedExportOptions(std::vector<ExportOptions_T> &aSupportedExportOptions);
+    HRESULT getSupportedRecordingAudioCodecs(std::vector<RecordingAudioCodec_T> &aSupportedRecordingAudioCodecs);
+    HRESULT getSupportedRecordingVideoCodecs(std::vector<RecordingVideoCodec_T> &aSupportedRecordingVideoCodecs);
+    HRESULT getSupportedRecordingVideoScalingMethods(std::vector<RecordingVideoScalingMethod_T> &aSupportedRecordingVideoScalingMethods);
+    HRESULT getSupportedRecordingVideoRateControlModes(std::vector<RecordingVideoRateControlMode_T> &aSupportedRecordingVideoRateControlModes);
+    HRESULT getSupportedGraphicsControllerTypes(std::vector<GraphicsControllerType_T> &aSupportedGraphicsControllerTypes);
+    HRESULT getSupportedCloneOptions(std::vector<CloneOptions_T> &aSupportedCloneOptions);
+    HRESULT getSupportedAutostopTypes(std::vector<AutostopType_T> &aSupportedAutostopTypes);
+    HRESULT getSupportedVMProcPriorities(std::vector<VMProcPriority_T> &aSupportedVMProcPriorities);
+    HRESULT getSupportedNetworkAttachmentTypes(std::vector<NetworkAttachmentType_T> &aSupportedNetworkAttachmentTypes);
+    HRESULT getSupportedNetworkAdapterTypes(std::vector<NetworkAdapterType_T> &aSupportedNetworkAdapterTypes);
+    HRESULT getSupportedPortModes(std::vector<PortMode_T> &aSupportedPortModes);
+    HRESULT getSupportedUartTypes(std::vector<UartType_T> &aSupportedUartTypes);
+    HRESULT getSupportedUSBControllerTypes(std::vector<USBControllerType_T> &aSupportedUSBControllerTypes);
+    HRESULT getSupportedAudioDriverTypes(std::vector<AudioDriverType_T> &aSupportedAudioDriverTypes);
+    HRESULT getSupportedAudioControllerTypes(std::vector<AudioControllerType_T> &aSupportedAudioControllerTypes);
+    HRESULT getSupportedStorageBuses(std::vector<StorageBus_T> &aSupportedStorageBuses);
+    HRESULT getSupportedStorageControllerTypes(std::vector<StorageControllerType_T> &aSupportedStorageControllerTypes);
+    HRESULT getSupportedChipsetTypes(std::vector<ChipsetType_T> &aSupportedChipsetTypes);
 
     // wrapped ISystemProperties methods
     HRESULT getMaxNetworkAdapters(ChipsetType_T aChipset,

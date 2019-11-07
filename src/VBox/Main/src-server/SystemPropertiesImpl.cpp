@@ -1079,6 +1079,459 @@ HRESULT SystemProperties::setProxyURL(const com::Utf8Str &aProxyURL)
     return mParent->i_saveSettings();
 }
 
+HRESULT SystemProperties::getSupportedParavirtProviders(std::vector<ParavirtProvider_T> &aSupportedParavirtProviders)
+{
+    static const ParavirtProvider_T aParavirtProviders[] =
+    {
+        ParavirtProvider_None,
+        ParavirtProvider_Default,
+        ParavirtProvider_Legacy,
+        ParavirtProvider_Minimal,
+        ParavirtProvider_HyperV,
+        ParavirtProvider_KVM,
+    };
+    aSupportedParavirtProviders.assign(aParavirtProviders,
+                                       aParavirtProviders + RT_ELEMENTS(aParavirtProviders));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedClipboardModes(std::vector<ClipboardMode_T> &aSupportedClipboardModes)
+{
+    static const ClipboardMode_T aClipboardModes[] =
+    {
+        ClipboardMode_Disabled,
+        ClipboardMode_HostToGuest,
+        ClipboardMode_GuestToHost,
+        ClipboardMode_Bidirectional,
+    };
+    aSupportedClipboardModes.assign(aClipboardModes,
+                                    aClipboardModes + RT_ELEMENTS(aClipboardModes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedDnDModes(std::vector<DnDMode_T> &aSupportedDnDModes)
+{
+    static const DnDMode_T aDnDModes[] =
+    {
+        DnDMode_Disabled,
+        DnDMode_HostToGuest,
+        DnDMode_GuestToHost,
+        DnDMode_Bidirectional,
+    };
+    aSupportedDnDModes.assign(aDnDModes,
+                              aDnDModes + RT_ELEMENTS(aDnDModes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedFirmwareTypes(std::vector<FirmwareType_T> &aSupportedFirmwareTypes)
+{
+    static const FirmwareType_T aFirmwareTypes[] =
+    {
+        FirmwareType_BIOS,
+        FirmwareType_EFI,
+        FirmwareType_EFI32,
+        FirmwareType_EFI64,
+        FirmwareType_EFIDUAL,
+    };
+    aSupportedFirmwareTypes.assign(aFirmwareTypes,
+                                   aFirmwareTypes + RT_ELEMENTS(aFirmwareTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedPointingHIDTypes(std::vector<PointingHIDType_T> &aSupportedPointingHIDTypes)
+{
+    static const PointingHIDType_T aPointingHIDTypes[] =
+    {
+        PointingHIDType_None,
+        PointingHIDType_PS2Mouse,
+#ifdef DEBUG
+        PointingHIDType_USBMouse,
+#endif
+        PointingHIDType_USBTablet,
+#ifdef DEBUG
+        PointingHIDType_ComboMouse,
+#endif
+        PointingHIDType_USBMultiTouch,
+    };
+    aSupportedPointingHIDTypes.assign(aPointingHIDTypes,
+                                      aPointingHIDTypes + RT_ELEMENTS(aPointingHIDTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedKeyboardHIDTypes(std::vector<KeyboardHIDType_T> &aSupportedKeyboardHIDTypes)
+{
+    static const KeyboardHIDType_T aKeyboardHIDTypes[] =
+    {
+        KeyboardHIDType_None,
+        KeyboardHIDType_PS2Keyboard,
+        KeyboardHIDType_USBKeyboard,
+#ifdef DEBUG
+        KeyboardHIDType_ComboKeyboard,
+#endif
+    };
+    aSupportedKeyboardHIDTypes.assign(aKeyboardHIDTypes,
+                                      aKeyboardHIDTypes + RT_ELEMENTS(aKeyboardHIDTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedVFSTypes(std::vector<VFSType_T> &aSupportedVFSTypes)
+{
+    static const VFSType_T aVFSTypes[] =
+    {
+        VFSType_File,
+        VFSType_Cloud,
+        VFSType_S3,
+#ifdef DEBUG
+        VFSType_WebDav,
+#endif
+    };
+    aSupportedVFSTypes.assign(aVFSTypes,
+                              aVFSTypes + RT_ELEMENTS(aVFSTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedImportOptions(std::vector<ImportOptions_T> &aSupportedImportOptions)
+{
+    static const ImportOptions_T aImportOptions[] =
+    {
+        ImportOptions_KeepAllMACs,
+        ImportOptions_KeepNATMACs,
+        ImportOptions_ImportToVDI,
+    };
+    aSupportedImportOptions.assign(aImportOptions,
+                                   aImportOptions + RT_ELEMENTS(aImportOptions));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedExportOptions(std::vector<ExportOptions_T> &aSupportedExportOptions)
+{
+    static const ExportOptions_T aExportOptions[] =
+    {
+        ExportOptions_CreateManifest,
+        ExportOptions_ExportDVDImages,
+        ExportOptions_StripAllMACs,
+        ExportOptions_StripAllNonNATMACs,
+    };
+    aSupportedExportOptions.assign(aExportOptions,
+                                   aExportOptions + RT_ELEMENTS(aExportOptions));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedRecordingAudioCodecs(std::vector<RecordingAudioCodec_T> &aSupportedRecordingAudioCodecs)
+{
+    static const RecordingAudioCodec_T aRecordingAudioCodecs[] =
+    {
+#ifdef DEBUG
+        RecordingAudioCodec_WavPCM,
+#endif
+        RecordingAudioCodec_Opus,
+    };
+    aSupportedRecordingAudioCodecs.assign(aRecordingAudioCodecs,
+                                          aRecordingAudioCodecs + RT_ELEMENTS(aRecordingAudioCodecs));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedRecordingVideoCodecs(std::vector<RecordingVideoCodec_T> &aSupportedRecordingVideoCodecs)
+{
+    static const RecordingVideoCodec_T aRecordingVideoCodecs[] =
+    {
+        RecordingVideoCodec_VP8,
+#ifdef DEBUG
+        RecordingVideoCodec_VP9,
+        RecordingVideoCodec_AV1,
+#endif
+    };
+    aSupportedRecordingVideoCodecs.assign(aRecordingVideoCodecs,
+                                          aRecordingVideoCodecs + RT_ELEMENTS(aRecordingVideoCodecs));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedRecordingVideoScalingMethods(std::vector<RecordingVideoScalingMethod_T> &aSupportedRecordingVideoScalingMethods)
+{
+    static const RecordingVideoScalingMethod_T aRecordingVideoScalingMethods[] =
+    {
+        RecordingVideoScalingMethod_None,
+#ifdef DEBUG
+        RecordingVideoScalingMethod_NearestNeighbor,
+        RecordingVideoScalingMethod_Bilinear,
+        RecordingVideoScalingMethod_Bicubic,
+#endif
+    };
+    aSupportedRecordingVideoScalingMethods.assign(aRecordingVideoScalingMethods,
+                                                  aRecordingVideoScalingMethods + RT_ELEMENTS(aRecordingVideoScalingMethods));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedRecordingVideoRateControlModes(std::vector<RecordingVideoRateControlMode_T> &aSupportedRecordingVideoRateControlModes)
+{
+    static const RecordingVideoRateControlMode_T aRecordingVideoRateControlModes[] =
+    {
+        RecordingVideoRateControlMode_CBR,
+#ifdef DEBUG
+        RecordingVideoRateControlMode_VBR,
+#endif
+    };
+    aSupportedRecordingVideoRateControlModes.assign(aRecordingVideoRateControlModes,
+                                                    aRecordingVideoRateControlModes + RT_ELEMENTS(aRecordingVideoRateControlModes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedGraphicsControllerTypes(std::vector<GraphicsControllerType_T> &aSupportedGraphicsControllerTypes)
+{
+    static const GraphicsControllerType_T aGraphicsControllerTypes[] =
+    {
+        GraphicsControllerType_VBoxVGA,
+        GraphicsControllerType_VMSVGA,
+        GraphicsControllerType_VBoxSVGA,
+    };
+    aSupportedGraphicsControllerTypes.assign(aGraphicsControllerTypes,
+                                             aGraphicsControllerTypes + RT_ELEMENTS(aGraphicsControllerTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedCloneOptions(std::vector<CloneOptions_T> &aSupportedCloneOptions)
+{
+    static const CloneOptions_T aCloneOptions[] =
+    {
+        CloneOptions_Link,
+        CloneOptions_KeepAllMACs,
+        CloneOptions_KeepNATMACs,
+        CloneOptions_KeepDiskNames,
+        CloneOptions_KeepHwUUIDs,
+    };
+    aSupportedCloneOptions.assign(aCloneOptions,
+                                  aCloneOptions + RT_ELEMENTS(aCloneOptions));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedAutostopTypes(std::vector<AutostopType_T> &aSupportedAutostopTypes)
+{
+    static const AutostopType_T aAutostopTypes[] =
+    {
+        AutostopType_Disabled,
+        AutostopType_SaveState,
+        AutostopType_PowerOff,
+        AutostopType_AcpiShutdown,
+    };
+    aSupportedAutostopTypes.assign(aAutostopTypes,
+                                   aAutostopTypes + RT_ELEMENTS(aAutostopTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedVMProcPriorities(std::vector<VMProcPriority_T> &aSupportedVMProcPriorities)
+{
+    static const VMProcPriority_T aVMProcPriorities[] =
+    {
+        VMProcPriority_Default,
+        VMProcPriority_Flat,
+        VMProcPriority_Low,
+        VMProcPriority_Normal,
+        VMProcPriority_High,
+    };
+    aSupportedVMProcPriorities.assign(aVMProcPriorities,
+                                      aVMProcPriorities + RT_ELEMENTS(aVMProcPriorities));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedNetworkAttachmentTypes(std::vector<NetworkAttachmentType_T> &aSupportedNetworkAttachmentTypes)
+{
+    static const NetworkAttachmentType_T aNetworkAttachmentTypes[] =
+    {
+        NetworkAttachmentType_NAT,
+        NetworkAttachmentType_Bridged,
+        NetworkAttachmentType_Internal,
+        NetworkAttachmentType_HostOnly,
+        NetworkAttachmentType_Generic,
+        NetworkAttachmentType_NATNetwork,
+#ifdef DEBUG
+        NetworkAttachmentType_Cloud,
+#endif
+    };
+    aSupportedNetworkAttachmentTypes.assign(aNetworkAttachmentTypes,
+                                            aNetworkAttachmentTypes + RT_ELEMENTS(aNetworkAttachmentTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedNetworkAdapterTypes(std::vector<NetworkAdapterType_T> &aSupportedNetworkAdapterTypes)
+{
+    static const NetworkAdapterType_T aNetworkAdapterTypes[] =
+    {
+        NetworkAdapterType_Am79C970A,
+        NetworkAdapterType_Am79C973,
+        NetworkAdapterType_I82540EM,
+        NetworkAdapterType_I82543GC,
+        NetworkAdapterType_I82545EM,
+        NetworkAdapterType_Virtio,
+        NetworkAdapterType_Am79C960,
+    };
+    aSupportedNetworkAdapterTypes.assign(aNetworkAdapterTypes,
+                                         aNetworkAdapterTypes + RT_ELEMENTS(aNetworkAdapterTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedPortModes(std::vector<PortMode_T> &aSupportedPortModes)
+{
+    static const PortMode_T aPortModes[] =
+    {
+        PortMode_Disconnected,
+        PortMode_HostPipe,
+        PortMode_HostDevice,
+        PortMode_RawFile,
+        PortMode_TCP,
+    };
+    aSupportedPortModes.assign(aPortModes,
+                               aPortModes + RT_ELEMENTS(aPortModes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedUartTypes(std::vector<UartType_T> &aSupportedUartTypes)
+{
+    static const UartType_T aUartTypes[] =
+    {
+        UartType_U16450,
+        UartType_U16550A,
+        UartType_U16750,
+    };
+    aSupportedUartTypes.assign(aUartTypes,
+                               aUartTypes + RT_ELEMENTS(aUartTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedUSBControllerTypes(std::vector<USBControllerType_T> &aSupportedUSBControllerTypes)
+{
+    static const USBControllerType_T aUSBControllerTypesWithoutExtPack[] =
+    {
+        USBControllerType_OHCI,
+    };
+    static const USBControllerType_T aUSBControllerTypesWithExtPack[] =
+    {
+        USBControllerType_OHCI,
+        USBControllerType_EHCI,
+        USBControllerType_XHCI,
+    };
+    bool fExtPack = false;
+# ifdef VBOX_WITH_EXTPACK
+    static const char *s_pszUsbExtPackName = "Oracle VM VirtualBox Extension Pack";
+    if (mParent->i_getExtPackManager()->i_isExtPackUsable(s_pszUsbExtPackName))
+# endif
+    {
+        fExtPack = true;
+    }
+
+    if (fExtPack)
+        aSupportedUSBControllerTypes.assign(aUSBControllerTypesWithExtPack,
+                                            aUSBControllerTypesWithExtPack + RT_ELEMENTS(aUSBControllerTypesWithExtPack));
+    else
+        aSupportedUSBControllerTypes.assign(aUSBControllerTypesWithoutExtPack,
+                                            aUSBControllerTypesWithoutExtPack + RT_ELEMENTS(aUSBControllerTypesWithoutExtPack));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedAudioDriverTypes(std::vector<AudioDriverType_T> &aSupportedAudioDriverTypes)
+{
+    static const AudioDriverType_T aAudioDriverTypes[] =
+    {
+#ifdef RT_OS_WINDOWS
+# if 0 /* deprecated for many years now */
+        AudioDriverType_WinMM,
+# endif
+        AudioDriverType_DirectSound,
+#endif
+#ifdef RT_OS_DARWIN
+        AudioDriverType_CoreAudio,
+#endif
+#ifdef RT_OS_OS2
+        AudioDriverType_MMPM,
+#endif
+#ifdef RT_OS_SOLARIS
+# if 0 /* deprecated for many years now */
+        AudioDriverType_SolAudio,
+# endif
+#endif
+#ifdef VBOX_WITH_AUDIO_ALSA
+        AudioDriverType_ALSA,
+#endif
+#ifdef VBOX_WITH_AUDIO_OSS
+        AudioDriverType_OSS,
+#endif
+#ifdef VBOX_WITH_AUDIO_PULSE
+        AudioDriverType_Pulse,
+#endif
+    };
+    aSupportedAudioDriverTypes.assign(aAudioDriverTypes,
+                                      aAudioDriverTypes + RT_ELEMENTS(aAudioDriverTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedAudioControllerTypes(std::vector<AudioControllerType_T> &aSupportedAudioControllerTypes)
+{
+    static const AudioControllerType_T aAudioControllerTypes[] =
+    {
+        AudioControllerType_AC97,
+        AudioControllerType_SB16,
+        AudioControllerType_HDA,
+    };
+    aSupportedAudioControllerTypes.assign(aAudioControllerTypes,
+                                          aAudioControllerTypes + RT_ELEMENTS(aAudioControllerTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedStorageBuses(std::vector<StorageBus_T> &aSupportedStorageBuses)
+{
+    static const StorageBus_T aStorageBuses[] =
+    {
+        StorageBus_IDE,
+        StorageBus_SATA,
+        StorageBus_SCSI,
+        StorageBus_Floppy,
+        StorageBus_SAS,
+        StorageBus_USB,
+        StorageBus_PCIe,
+#ifdef DEBUG
+        StorageBus_VirtioSCSI,
+#endif
+    };
+    aSupportedStorageBuses.assign(aStorageBuses,
+                                  aStorageBuses + RT_ELEMENTS(aStorageBuses));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedStorageControllerTypes(std::vector<StorageControllerType_T> &aSupportedStorageControllerTypes)
+{
+    static const StorageControllerType_T aStorageControllerTypes[] =
+    {
+        StorageControllerType_LsiLogic,
+        StorageControllerType_BusLogic,
+        StorageControllerType_IntelAhci,
+        StorageControllerType_PIIX3,
+        StorageControllerType_PIIX4,
+        StorageControllerType_ICH6,
+        StorageControllerType_I82078,
+        StorageControllerType_LsiLogicSas,
+        StorageControllerType_USB,
+        StorageControllerType_NVMe,
+#ifdef DEBUG
+        StorageControllerType_VirtioSCSI,
+#endif
+    };
+    aSupportedStorageControllerTypes.assign(aStorageControllerTypes,
+                                            aStorageControllerTypes + RT_ELEMENTS(aStorageControllerTypes));
+    return S_OK;
+}
+
+HRESULT SystemProperties::getSupportedChipsetTypes(std::vector<ChipsetType_T> &aSupportedChipsetTypes)
+{
+    static const ChipsetType_T aChipsetTypes[] =
+    {
+        ChipsetType_PIIX3,
+        ChipsetType_ICH9,
+    };
+    aSupportedChipsetTypes.assign(aChipsetTypes,
+                                  aChipsetTypes + RT_ELEMENTS(aChipsetTypes));
+    return S_OK;
+}
+
+
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
