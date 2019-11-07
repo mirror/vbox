@@ -198,6 +198,7 @@ typedef struct LSILOGICSCSI
     bool                 fGCEnabled;
     /** Flag whether the R0 part of the device is enabled. */
     bool                 fR0Enabled;
+    bool                 afPaddingMinus1[2+4];
 
     /** The state the controller is currently in. */
     LSILOGICSTATE        enmState;
@@ -213,13 +214,6 @@ typedef struct LSILOGICSCSI
     bool                 fEventNotificationEnabled;
     /** Flag whether the diagnostic address and RW registers are enabled. */
     bool                 fDiagRegsEnabled;
-
-    /** Queue to send tasks to R3. - R3 ptr */
-    R3PTRTYPE(PPDMQUEUE) pNotificationQueueR3;
-    /** Queue to send tasks to R3. - R0 ptr */
-    R0PTRTYPE(PPDMQUEUE) pNotificationQueueR0;
-    /** Queue to send tasks to R3. - RC ptr */
-    RCPTRTYPE(PPDMQUEUE) pNotificationQueueRC;
 
     /** Number of device states allocated. */
     uint32_t             cDeviceStates;
@@ -1316,15 +1310,9 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
             {
                 if (ASMAtomicReadBool(&pThis->fWrkThreadSleeping))
                 {
-#ifdef IN_RC
-                    PPDMQUEUEITEMCORE pNotificationItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
-                    AssertPtr(pNotificationItem);
-                    PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), pNotificationItem);
-#else
                     LogFlowFunc(("Signal event semaphore\n"));
                     rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
                     AssertRC(rc);
-#endif
                 }
             }
             break;
@@ -3803,23 +3791,6 @@ static void lsilogicR3InitializeConfigurationPages(PLSILOGICSCSI pThis)
 }
 
 /**
- * @callback_method_impl{FNPDMQUEUEDEV, Transmit queue consumer.}
- */
-static DECLCALLBACK(bool) lsilogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
-{
-    RT_NOREF(pItem);
-    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("pDevIns=%#p pItem=%#p\n", pDevIns, pItem));
-
-    rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
-    AssertRC(rc);
-
-    return true;
-}
-
-/**
  * Sets the emulated controller type from a given string.
  *
  * @returns VBox status code.
@@ -3959,10 +3930,10 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWrite(PPDMDEVINS pDevIns, void *pvUs
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
-        /* Send a notifier to the PDM queue that there are pending requests. */
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
-        AssertMsg(pItem, ("Allocating item for queue failed\n"));
-        PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), (PPDMQUEUEITEMCORE)pItem);
+        /* Notify the worker thread that there are pending requests. */
+        LogFlowFunc(("Signal event semaphore\n"));
+        rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+        AssertRC(rc);
     }
     else if (RT_FAILURE(rc))
         AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
@@ -3988,10 +3959,10 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *p
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
-        /* Send a notifier to the PDM queue that there are pending requests. */
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
-        AssertMsg(pItem, ("Allocating item for queue failed\n"));
-        PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), (PPDMQUEUEITEMCORE)pItem);
+        /* Notify the worker thread that there are pending requests. */
+        LogFlowFunc(("Signal event semaphore\n"));
+        rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+        AssertRC(rc);
     }
     else if (RT_FAILURE(rc))
         AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
@@ -4429,10 +4400,10 @@ static void lsilogicR3Kick(PLSILOGICSCSI pThis)
 {
     if (pThis->fNotificationSent)
     {
-        /* Send a notifier to the PDM queue that there are pending requests. */
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotificationQueue));
-        AssertMsg(pItem, ("Allocating item for queue failed\n"));
-        PDMQueueInsert(pThis->CTX_SUFF(pNotificationQueue), (PPDMQUEUEITEMCORE)pItem);
+        /* Notify the worker thread that there are pending requests. */
+        LogFlowFunc(("Signal event semaphore\n"));
+        int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+        AssertRC(rc);
     }
 }
 
@@ -4448,14 +4419,15 @@ static DECLCALLBACK(int) lsilogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 {
     RT_NOREF(uPass);
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
-    SSMR3PutU32(pSSM, pThis->enmCtrlType);
-    SSMR3PutU32(pSSM, pThis->cDeviceStates);
-    SSMR3PutU32(pSSM, pThis->cPorts);
+    pHlp->pfnSSMPutU32(pSSM, pThis->enmCtrlType);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cDeviceStates);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cPorts);
 
     /* Save the device config. */
     for (unsigned i = 0; i < pThis->cDeviceStates; i++)
-        SSMR3PutBool(pSSM, pThis->paDeviceStates[i].pDrvBase != NULL);
+        pHlp->pfnSSMPutBool(pSSM, pThis->paDeviceStates[i].pDrvBase != NULL);
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -4466,6 +4438,7 @@ static DECLCALLBACK(int) lsilogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
 
     /* Every device first. */
     lsilogicR3LiveExec(pDevIns, pSSM, SSM_PASS_FINAL);
@@ -4475,7 +4448,7 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
         AssertMsg(!pDevice->cOutstandingRequests,
                   ("There are still outstanding requests on this device\n"));
-        SSMR3PutU32(pSSM, pDevice->cOutstandingRequests);
+        pHlp->pfnSSMPutU32(pSSM, pDevice->cOutstandingRequests);
 
         /* Query all suspended requests and store them in the request queue. */
         if (pDevice->pDrvMediaEx)
@@ -4519,143 +4492,139 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     /* Now the main device state. */
-    SSMR3PutU32   (pSSM, pThis->enmState);
-    SSMR3PutU32   (pSSM, pThis->enmWhoInit);
-    SSMR3PutU32   (pSSM, pThis->enmDoorbellState);
-    SSMR3PutBool  (pSSM, pThis->fDiagnosticEnabled);
-    SSMR3PutBool  (pSSM, pThis->fNotificationSent);
-    SSMR3PutBool  (pSSM, pThis->fEventNotificationEnabled);
-    SSMR3PutU32   (pSSM, pThis->uInterruptMask);
-    SSMR3PutU32   (pSSM, pThis->uInterruptStatus);
+    pHlp->pfnSSMPutU32(pSSM, pThis->enmState);
+    pHlp->pfnSSMPutU32(pSSM, pThis->enmWhoInit);
+    pHlp->pfnSSMPutU32(pSSM, pThis->enmDoorbellState);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fDiagnosticEnabled);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fNotificationSent);
+    pHlp->pfnSSMPutBool(pSSM, pThis->fEventNotificationEnabled);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uInterruptMask);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uInterruptStatus);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aMessage); i++)
-        SSMR3PutU32   (pSSM, pThis->aMessage[i]);
-    SSMR3PutU32   (pSSM, pThis->iMessage);
-    SSMR3PutU32   (pSSM, pThis->cMessage);
-    SSMR3PutMem   (pSSM, &pThis->ReplyBuffer, sizeof(pThis->ReplyBuffer));
-    SSMR3PutU32   (pSSM, pThis->uNextReplyEntryRead);
-    SSMR3PutU32   (pSSM, pThis->cReplySize);
-    SSMR3PutU16   (pSSM, pThis->u16IOCFaultCode);
-    SSMR3PutU32   (pSSM, pThis->u32HostMFAHighAddr);
-    SSMR3PutU32   (pSSM, pThis->u32SenseBufferHighAddr);
-    SSMR3PutU8    (pSSM, pThis->cMaxDevices);
-    SSMR3PutU8    (pSSM, pThis->cMaxBuses);
-    SSMR3PutU16   (pSSM, pThis->cbReplyFrame);
-    SSMR3PutU32   (pSSM, pThis->iDiagnosticAccess);
-    SSMR3PutU32   (pSSM, pThis->cReplyQueueEntries);
-    SSMR3PutU32   (pSSM, pThis->cRequestQueueEntries);
-    SSMR3PutU32   (pSSM, pThis->uReplyFreeQueueNextEntryFreeWrite);
-    SSMR3PutU32   (pSSM, pThis->uReplyFreeQueueNextAddressRead);
-    SSMR3PutU32   (pSSM, pThis->uReplyPostQueueNextEntryFreeWrite);
-    SSMR3PutU32   (pSSM, pThis->uReplyPostQueueNextAddressRead);
-    SSMR3PutU32   (pSSM, pThis->uRequestQueueNextEntryFreeWrite);
-    SSMR3PutU32   (pSSM, pThis->uRequestQueueNextAddressRead);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aMessage[i]);
+    pHlp->pfnSSMPutU32(pSSM, pThis->iMessage);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cMessage);
+    pHlp->pfnSSMPutMem(pSSM, &pThis->ReplyBuffer, sizeof(pThis->ReplyBuffer));
+    pHlp->pfnSSMPutU32(pSSM, pThis->uNextReplyEntryRead);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cReplySize);
+    pHlp->pfnSSMPutU16(pSSM, pThis->u16IOCFaultCode);
+    pHlp->pfnSSMPutU32(pSSM, pThis->u32HostMFAHighAddr);
+    pHlp->pfnSSMPutU32(pSSM, pThis->u32SenseBufferHighAddr);
+    pHlp->pfnSSMPutU8(pSSM, pThis->cMaxDevices);
+    pHlp->pfnSSMPutU8(pSSM, pThis->cMaxBuses);
+    pHlp->pfnSSMPutU16(pSSM, pThis->cbReplyFrame);
+    pHlp->pfnSSMPutU32(pSSM, pThis->iDiagnosticAccess);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cReplyQueueEntries);
+    pHlp->pfnSSMPutU32(pSSM, pThis->cRequestQueueEntries);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uReplyFreeQueueNextEntryFreeWrite);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uReplyFreeQueueNextAddressRead);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uReplyPostQueueNextEntryFreeWrite);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uReplyPostQueueNextAddressRead);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uRequestQueueNextEntryFreeWrite);
+    pHlp->pfnSSMPutU32(pSSM, pThis->uRequestQueueNextAddressRead);
 
     for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-        SSMR3PutU32(pSSM, pThis->pReplyFreeQueueBaseR3[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->pReplyFreeQueueBaseR3[i]);
     for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-        SSMR3PutU32(pSSM, pThis->pReplyPostQueueBaseR3[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->pReplyPostQueueBaseR3[i]);
     for (unsigned i = 0; i < pThis->cRequestQueueEntries; i++)
-        SSMR3PutU32(pSSM, pThis->pRequestQueueBaseR3[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->pRequestQueueBaseR3[i]);
 
-    SSMR3PutU16   (pSSM, pThis->u16NextHandle);
+    pHlp->pfnSSMPutU16(pSSM, pThis->u16NextHandle);
 
     /* Save diagnostic memory register and data regions. */
-    SSMR3PutU32   (pSSM, pThis->u32DiagMemAddr);
-    SSMR3PutU32   (pSSM, lsilogicR3MemRegionsCount(pThis));
+    pHlp->pfnSSMPutU32(pSSM, pThis->u32DiagMemAddr);
+    pHlp->pfnSSMPutU32(pSSM, lsilogicR3MemRegionsCount(pThis));
 
     PLSILOGICMEMREGN pIt;
     RTListForEach(&pThis->ListMemRegns, pIt, LSILOGICMEMREGN, NodeList)
     {
-        SSMR3PutU32(pSSM, pIt->u32AddrStart);
-        SSMR3PutU32(pSSM, pIt->u32AddrEnd);
-        SSMR3PutMem(pSSM, &pIt->au32Data[0], (pIt->u32AddrEnd - pIt->u32AddrStart + 1) * sizeof(uint32_t));
+        pHlp->pfnSSMPutU32(pSSM, pIt->u32AddrStart);
+        pHlp->pfnSSMPutU32(pSSM, pIt->u32AddrEnd);
+        pHlp->pfnSSMPutMem(pSSM, &pIt->au32Data[0], (pIt->u32AddrEnd - pIt->u32AddrStart + 1) * sizeof(uint32_t));
     }
 
     PMptConfigurationPagesSupported pPages = pThis->pConfigurationPages;
 
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage0, sizeof(MptConfigurationPageManufacturing0));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage1, sizeof(MptConfigurationPageManufacturing1));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage2, sizeof(MptConfigurationPageManufacturing2));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage3, sizeof(MptConfigurationPageManufacturing3));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage4, sizeof(MptConfigurationPageManufacturing4));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage5, sizeof(MptConfigurationPageManufacturing5));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage6, sizeof(MptConfigurationPageManufacturing6));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage8, sizeof(MptConfigurationPageManufacturing8));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage9, sizeof(MptConfigurationPageManufacturing9));
-    SSMR3PutMem   (pSSM, &pPages->ManufacturingPage10, sizeof(MptConfigurationPageManufacturing10));
-    SSMR3PutMem   (pSSM, &pPages->IOUnitPage0, sizeof(MptConfigurationPageIOUnit0));
-    SSMR3PutMem   (pSSM, &pPages->IOUnitPage1, sizeof(MptConfigurationPageIOUnit1));
-    SSMR3PutMem   (pSSM, &pPages->IOUnitPage2, sizeof(MptConfigurationPageIOUnit2));
-    SSMR3PutMem   (pSSM, &pPages->IOUnitPage3, sizeof(MptConfigurationPageIOUnit3));
-    SSMR3PutMem   (pSSM, &pPages->IOUnitPage4, sizeof(MptConfigurationPageIOUnit4));
-    SSMR3PutMem   (pSSM, &pPages->IOCPage0, sizeof(MptConfigurationPageIOC0));
-    SSMR3PutMem   (pSSM, &pPages->IOCPage1, sizeof(MptConfigurationPageIOC1));
-    SSMR3PutMem   (pSSM, &pPages->IOCPage2, sizeof(MptConfigurationPageIOC2));
-    SSMR3PutMem   (pSSM, &pPages->IOCPage3, sizeof(MptConfigurationPageIOC3));
-    SSMR3PutMem   (pSSM, &pPages->IOCPage4, sizeof(MptConfigurationPageIOC4));
-    SSMR3PutMem   (pSSM, &pPages->IOCPage6, sizeof(MptConfigurationPageIOC6));
-    SSMR3PutMem   (pSSM, &pPages->BIOSPage1, sizeof(MptConfigurationPageBIOS1));
-    SSMR3PutMem   (pSSM, &pPages->BIOSPage2, sizeof(MptConfigurationPageBIOS2));
-    SSMR3PutMem   (pSSM, &pPages->BIOSPage4, sizeof(MptConfigurationPageBIOS4));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage0, sizeof(MptConfigurationPageManufacturing0));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage1, sizeof(MptConfigurationPageManufacturing1));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage2, sizeof(MptConfigurationPageManufacturing2));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage3, sizeof(MptConfigurationPageManufacturing3));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage4, sizeof(MptConfigurationPageManufacturing4));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage5, sizeof(MptConfigurationPageManufacturing5));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage6, sizeof(MptConfigurationPageManufacturing6));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage8, sizeof(MptConfigurationPageManufacturing8));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage9, sizeof(MptConfigurationPageManufacturing9));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->ManufacturingPage10, sizeof(MptConfigurationPageManufacturing10));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOUnitPage0, sizeof(MptConfigurationPageIOUnit0));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOUnitPage1, sizeof(MptConfigurationPageIOUnit1));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOUnitPage2, sizeof(MptConfigurationPageIOUnit2));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOUnitPage3, sizeof(MptConfigurationPageIOUnit3));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOUnitPage4, sizeof(MptConfigurationPageIOUnit4));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOCPage0, sizeof(MptConfigurationPageIOC0));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOCPage1, sizeof(MptConfigurationPageIOC1));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOCPage2, sizeof(MptConfigurationPageIOC2));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOCPage3, sizeof(MptConfigurationPageIOC3));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOCPage4, sizeof(MptConfigurationPageIOC4));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->IOCPage6, sizeof(MptConfigurationPageIOC6));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->BIOSPage1, sizeof(MptConfigurationPageBIOS1));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->BIOSPage2, sizeof(MptConfigurationPageBIOS2));
+    pHlp->pfnSSMPutMem(pSSM, &pPages->BIOSPage4, sizeof(MptConfigurationPageBIOS4));
 
     /* Device dependent pages */
     if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
     {
         PMptConfigurationPagesSpi pSpiPages = &pPages->u.SpiPages;
 
-        SSMR3PutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage0, sizeof(MptConfigurationPageSCSISPIPort0));
-        SSMR3PutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage1, sizeof(MptConfigurationPageSCSISPIPort1));
-        SSMR3PutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage2, sizeof(MptConfigurationPageSCSISPIPort2));
+        pHlp->pfnSSMPutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage0, sizeof(MptConfigurationPageSCSISPIPort0));
+        pHlp->pfnSSMPutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage1, sizeof(MptConfigurationPageSCSISPIPort1));
+        pHlp->pfnSSMPutMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage2, sizeof(MptConfigurationPageSCSISPIPort2));
 
         for (unsigned i = 0; i < RT_ELEMENTS(pSpiPages->aBuses[0].aDevicePages); i++)
         {
-            SSMR3PutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage0, sizeof(MptConfigurationPageSCSISPIDevice0));
-            SSMR3PutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage1, sizeof(MptConfigurationPageSCSISPIDevice1));
-            SSMR3PutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage2, sizeof(MptConfigurationPageSCSISPIDevice2));
-            SSMR3PutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage3, sizeof(MptConfigurationPageSCSISPIDevice3));
+            pHlp->pfnSSMPutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage0, sizeof(MptConfigurationPageSCSISPIDevice0));
+            pHlp->pfnSSMPutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage1, sizeof(MptConfigurationPageSCSISPIDevice1));
+            pHlp->pfnSSMPutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage2, sizeof(MptConfigurationPageSCSISPIDevice2));
+            pHlp->pfnSSMPutMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage3, sizeof(MptConfigurationPageSCSISPIDevice3));
         }
     }
     else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
     {
         PMptConfigurationPagesSas pSasPages = &pPages->u.SasPages;
 
-        SSMR3PutU32(pSSM, pSasPages->cbManufacturingPage7);
-        SSMR3PutU32(pSSM, pSasPages->cbSASIOUnitPage0);
-        SSMR3PutU32(pSSM, pSasPages->cbSASIOUnitPage1);
+        pHlp->pfnSSMPutU32(pSSM, pSasPages->cbManufacturingPage7);
+        pHlp->pfnSSMPutU32(pSSM, pSasPages->cbSASIOUnitPage0);
+        pHlp->pfnSSMPutU32(pSSM, pSasPages->cbSASIOUnitPage1);
 
-        SSMR3PutMem(pSSM, pSasPages->pManufacturingPage7, pSasPages->cbManufacturingPage7);
-        SSMR3PutMem(pSSM, pSasPages->pSASIOUnitPage0, pSasPages->cbSASIOUnitPage0);
-        SSMR3PutMem(pSSM, pSasPages->pSASIOUnitPage1, pSasPages->cbSASIOUnitPage1);
+        pHlp->pfnSSMPutMem(pSSM, pSasPages->pManufacturingPage7, pSasPages->cbManufacturingPage7);
+        pHlp->pfnSSMPutMem(pSSM, pSasPages->pSASIOUnitPage0, pSasPages->cbSASIOUnitPage0);
+        pHlp->pfnSSMPutMem(pSSM, pSasPages->pSASIOUnitPage1, pSasPages->cbSASIOUnitPage1);
 
-        SSMR3PutMem(pSSM, &pSasPages->SASIOUnitPage2, sizeof(MptConfigurationPageSASIOUnit2));
-        SSMR3PutMem(pSSM, &pSasPages->SASIOUnitPage3, sizeof(MptConfigurationPageSASIOUnit3));
+        pHlp->pfnSSMPutMem(pSSM, &pSasPages->SASIOUnitPage2, sizeof(MptConfigurationPageSASIOUnit2));
+        pHlp->pfnSSMPutMem(pSSM, &pSasPages->SASIOUnitPage3, sizeof(MptConfigurationPageSASIOUnit3));
 
-        SSMR3PutU32(pSSM, pSasPages->cPHYs);
+        pHlp->pfnSSMPutU32(pSSM, pSasPages->cPHYs);
         for (unsigned i = 0; i < pSasPages->cPHYs; i++)
         {
-            SSMR3PutMem(pSSM, &pSasPages->paPHYs[i].SASPHYPage0, sizeof(MptConfigurationPageSASPHY0));
-            SSMR3PutMem(pSSM, &pSasPages->paPHYs[i].SASPHYPage1, sizeof(MptConfigurationPageSASPHY1));
+            pHlp->pfnSSMPutMem(pSSM, &pSasPages->paPHYs[i].SASPHYPage0, sizeof(MptConfigurationPageSASPHY0));
+            pHlp->pfnSSMPutMem(pSSM, &pSasPages->paPHYs[i].SASPHYPage1, sizeof(MptConfigurationPageSASPHY1));
         }
 
         /* The number of devices first. */
-        SSMR3PutU32(pSSM, pSasPages->cDevices);
+        pHlp->pfnSSMPutU32(pSSM, pSasPages->cDevices);
 
-        PMptSASDevice pCurr = pSasPages->pSASDeviceHead;
-
-        while (pCurr)
+        for (PMptSASDevice pCurr = pSasPages->pSASDeviceHead; pCurr; pCurr = pCurr->pNext)
         {
-            SSMR3PutMem(pSSM, &pCurr->SASDevicePage0, sizeof(MptConfigurationPageSASDevice0));
-            SSMR3PutMem(pSSM, &pCurr->SASDevicePage1, sizeof(MptConfigurationPageSASDevice1));
-            SSMR3PutMem(pSSM, &pCurr->SASDevicePage2, sizeof(MptConfigurationPageSASDevice2));
-
-            pCurr = pCurr->pNext;
+            pHlp->pfnSSMPutMem(pSSM, &pCurr->SASDevicePage0, sizeof(MptConfigurationPageSASDevice0));
+            pHlp->pfnSSMPutMem(pSSM, &pCurr->SASDevicePage1, sizeof(MptConfigurationPageSASDevice1));
+            pHlp->pfnSSMPutMem(pSSM, &pCurr->SASDevicePage2, sizeof(MptConfigurationPageSASDevice2));
         }
     }
     else
         AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
 
     vboxscsiR3SaveExec(&pThis->VBoxSCSI, pSSM);
-    return SSMR3PutU32(pSSM, UINT32_MAX);
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);
 }
 
 /**
@@ -4676,6 +4645,7 @@ static DECLCALLBACK(int) lsilogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PLSILOGICSCSI   pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     int             rc;
 
     if (    uVersion != LSILOGIC_SAVED_STATE_VERSION
@@ -4691,33 +4661,31 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         LSILOGICCTRLTYPE enmCtrlType;
         uint32_t cDeviceStates, cPorts;
 
-        rc = SSMR3GetU32(pSSM, (uint32_t *)&enmCtrlType);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU32(pSSM, &cDeviceStates);
-        AssertRCReturn(rc, rc);
-        rc = SSMR3GetU32(pSSM, &cPorts);
+        pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&enmCtrlType);
+        pHlp->pfnSSMGetU32(pSSM, &cDeviceStates);
+        rc = pHlp->pfnSSMGetU32(pSSM, &cPorts);
         AssertRCReturn(rc, rc);
 
         if (enmCtrlType != pThis->enmCtrlType)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Target config mismatch (Controller type): config=%d state=%d"),
-                                    pThis->enmCtrlType, enmCtrlType);
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Target config mismatch (Controller type): config=%d state=%d"),
+                                           pThis->enmCtrlType, enmCtrlType);
         if (cDeviceStates != pThis->cDeviceStates)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Target config mismatch (Device states): config=%u state=%u"),
-                                    pThis->cDeviceStates, cDeviceStates);
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Target config mismatch (Device states): config=%u state=%u"),
+                                           pThis->cDeviceStates, cDeviceStates);
         if (cPorts != pThis->cPorts)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Target config mismatch (Ports): config=%u state=%u"),
-                                    pThis->cPorts, cPorts);
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Target config mismatch (Ports): config=%u state=%u"),
+                                           pThis->cPorts, cPorts);
     }
     if (uVersion > LSILOGIC_SAVED_STATE_VERSION_VBOX_30)
     {
         for (unsigned i = 0; i < pThis->cDeviceStates; i++)
         {
             bool fPresent;
-            rc = SSMR3GetBool(pSSM, &fPresent);
+            rc = pHlp->pfnSSMGetBool(pSSM, &fPresent);
             AssertRCReturn(rc, rc);
             if (fPresent != (pThis->paDeviceStates[i].pDrvBase != NULL))
-                return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Target %u config mismatch: config=%RTbool state=%RTbool"),
-                                         i, pThis->paDeviceStates[i].pDrvBase != NULL, fPresent);
+                return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Target %u config mismatch: config=%RTbool state=%RTbool"),
+                                               i, pThis->paDeviceStates[i].pDrvBase != NULL, fPresent);
         }
     }
     if (uPass != SSM_PASS_FINAL)
@@ -4730,11 +4698,11 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 
         AssertMsg(!pDevice->cOutstandingRequests,
                   ("There are still outstanding requests on this device\n"));
-        SSMR3GetU32(pSSM, (uint32_t *)&pDevice->cOutstandingRequests);
+        pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pDevice->cOutstandingRequests);
     }
     /* Now the main device state. */
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->enmState);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->enmWhoInit);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->enmState);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->enmWhoInit);
     if (uVersion <= LSILOGIC_SAVED_STATE_VERSION_BOOL_DOORBELL)
     {
         bool fDoorbellInProgress = false;
@@ -4743,37 +4711,38 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
          * The doorbell status flag distinguishes only between
          * doorbell not in use or a Function handshake is currently in progress.
          */
-        SSMR3GetBool  (pSSM, &fDoorbellInProgress);
+        pHlp->pfnSSMGetBool  (pSSM, &fDoorbellInProgress);
         if (fDoorbellInProgress)
             pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_FN_HANDSHAKE;
         else
             pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_NOT_IN_USE;
     }
     else
-        SSMR3GetU32(pSSM, (uint32_t *)&pThis->enmDoorbellState);
-    SSMR3GetBool  (pSSM, &pThis->fDiagnosticEnabled);
-    SSMR3GetBool  (pSSM, &pThis->fNotificationSent);
-    SSMR3GetBool  (pSSM, &pThis->fEventNotificationEnabled);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uInterruptMask);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uInterruptStatus);
+        pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->enmDoorbellState);
+    pHlp->pfnSSMGetBool(pSSM, &pThis->fDiagnosticEnabled);
+    pHlp->pfnSSMGetBool(pSSM, &pThis->fNotificationSent);
+    pHlp->pfnSSMGetBool(pSSM, &pThis->fEventNotificationEnabled);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uInterruptMask);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uInterruptStatus);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aMessage); i++)
-        SSMR3GetU32   (pSSM, &pThis->aMessage[i]);
-    SSMR3GetU32   (pSSM, &pThis->iMessage);
-    SSMR3GetU32   (pSSM, &pThis->cMessage);
-    SSMR3GetMem   (pSSM, &pThis->ReplyBuffer, sizeof(pThis->ReplyBuffer));
-    SSMR3GetU32   (pSSM, &pThis->uNextReplyEntryRead);
-    SSMR3GetU32   (pSSM, &pThis->cReplySize);
-    SSMR3GetU16   (pSSM, &pThis->u16IOCFaultCode);
-    SSMR3GetU32   (pSSM, &pThis->u32HostMFAHighAddr);
-    SSMR3GetU32   (pSSM, &pThis->u32SenseBufferHighAddr);
-    SSMR3GetU8    (pSSM, &pThis->cMaxDevices);
-    SSMR3GetU8    (pSSM, &pThis->cMaxBuses);
-    SSMR3GetU16   (pSSM, &pThis->cbReplyFrame);
-    SSMR3GetU32   (pSSM, &pThis->iDiagnosticAccess);
+        pHlp->pfnSSMGetU32   (pSSM, &pThis->aMessage[i]);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->iMessage);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->cMessage);
+    pHlp->pfnSSMGetMem(pSSM, &pThis->ReplyBuffer, sizeof(pThis->ReplyBuffer));
+    pHlp->pfnSSMGetU32(pSSM, &pThis->uNextReplyEntryRead);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->cReplySize);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->u16IOCFaultCode);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->u32HostMFAHighAddr);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->u32SenseBufferHighAddr);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->cMaxDevices);
+    pHlp->pfnSSMGetU8(pSSM, &pThis->cMaxBuses);
+    pHlp->pfnSSMGetU16(pSSM, &pThis->cbReplyFrame);
+    pHlp->pfnSSMGetU32(pSSM, &pThis->iDiagnosticAccess);
 
     uint32_t cReplyQueueEntries, cRequestQueueEntries;
-    SSMR3GetU32   (pSSM, &cReplyQueueEntries);
-    SSMR3GetU32   (pSSM, &cRequestQueueEntries);
+    pHlp->pfnSSMGetU32(pSSM, &cReplyQueueEntries);
+    rc = pHlp->pfnSSMGetU32(pSSM, &cRequestQueueEntries);
+    AssertRCReturn(rc, rc);
 
     if (   cReplyQueueEntries != pThis->cReplyQueueEntries
         || cRequestQueueEntries != pThis->cRequestQueueEntries)
@@ -4788,12 +4757,12 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             return rc;
     }
 
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uReplyFreeQueueNextEntryFreeWrite);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uReplyFreeQueueNextAddressRead);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uReplyPostQueueNextEntryFreeWrite);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uReplyPostQueueNextAddressRead);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uRequestQueueNextEntryFreeWrite);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pThis->uRequestQueueNextAddressRead);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyFreeQueueNextEntryFreeWrite);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyFreeQueueNextAddressRead);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyPostQueueNextEntryFreeWrite);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyPostQueueNextAddressRead);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uRequestQueueNextEntryFreeWrite);
+    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uRequestQueueNextAddressRead);
 
     PMptConfigurationPagesSupported pPages = pThis->pConfigurationPages;
 
@@ -4803,9 +4772,9 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         MptConfigurationPagesSupported_SSM_V2 ConfigPagesV2;
 
         if (pThis->enmCtrlType != LSILOGICCTRLTYPE_SCSI_SPI)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: Expected SPI SCSI controller"));
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: Expected SPI SCSI controller"));
 
-        SSMR3GetMem(pSSM, &ConfigPagesV2,
+        pHlp->pfnSSMGetMem(pSSM, &ConfigPagesV2,
                     sizeof(MptConfigurationPagesSupported_SSM_V2));
 
         pPages->ManufacturingPage0 = ConfigPagesV2.ManufacturingPage0;
@@ -4840,29 +4809,29 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     {
         /* Queue content */
         for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->pReplyFreeQueueBaseR3[i]);
+            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->pReplyFreeQueueBaseR3[i]);
         for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->pReplyPostQueueBaseR3[i]);
+            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->pReplyPostQueueBaseR3[i]);
         for (unsigned i = 0; i < pThis->cRequestQueueEntries; i++)
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->pRequestQueueBaseR3[i]);
+            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->pRequestQueueBaseR3[i]);
 
-        SSMR3GetU16(pSSM, &pThis->u16NextHandle);
+        pHlp->pfnSSMGetU16(pSSM, &pThis->u16NextHandle);
 
         if (uVersion > LSILOGIC_SAVED_STATE_VERSION_PRE_DIAG_MEM)
         {
 
             /* Save diagnostic memory register and data regions. */
-            SSMR3GetU32(pSSM, &pThis->u32DiagMemAddr);
+            pHlp->pfnSSMGetU32(pSSM, &pThis->u32DiagMemAddr);
             uint32_t cMemRegions = 0;
-            rc = SSMR3GetU32(pSSM, &cMemRegions);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cMemRegions);
             AssertLogRelRCReturn(rc, rc);
 
             while (cMemRegions)
             {
                 uint32_t u32AddrStart = 0;
-                SSMR3GetU32(pSSM, &u32AddrStart);
+                pHlp->pfnSSMGetU32(pSSM, &u32AddrStart);
                 uint32_t u32AddrEnd = 0;
-                rc = SSMR3GetU32(pSSM, &u32AddrEnd);
+                rc = pHlp->pfnSSMGetU32(pSSM, &u32AddrEnd);
                 AssertLogRelRCReturn(rc, rc);
 
                 uint32_t         cRegion = u32AddrEnd - u32AddrStart + 1;
@@ -4871,7 +4840,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
                 {
                     pRegion->u32AddrStart = u32AddrStart;
                     pRegion->u32AddrEnd = u32AddrEnd;
-                    SSMR3GetMem(pSSM, &pRegion->au32Data[0], cRegion * sizeof(uint32_t));
+                    pHlp->pfnSSMGetMem(pSSM, &pRegion->au32Data[0], cRegion * sizeof(uint32_t));
                     lsilogicR3MemRegionInsert(pThis, pRegion);
                     pThis->cbMemRegns += cRegion * sizeof(uint32_t);
                 }
@@ -4879,53 +4848,53 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
                 {
                     /* Leave a log message but continue. */
                     LogRel(("LsiLogic: Out of memory while restoring the state, might not work as expected\n"));
-                    SSMR3Skip(pSSM, cRegion * sizeof(uint32_t));
+                    pHlp->pfnSSMSkip(pSSM, cRegion * sizeof(uint32_t));
                 }
                 cMemRegions--;
             }
         }
 
         /* Configuration pages */
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage0, sizeof(MptConfigurationPageManufacturing0));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage1, sizeof(MptConfigurationPageManufacturing1));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage2, sizeof(MptConfigurationPageManufacturing2));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage3, sizeof(MptConfigurationPageManufacturing3));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage4, sizeof(MptConfigurationPageManufacturing4));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage5, sizeof(MptConfigurationPageManufacturing5));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage6, sizeof(MptConfigurationPageManufacturing6));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage8, sizeof(MptConfigurationPageManufacturing8));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage9, sizeof(MptConfigurationPageManufacturing9));
-        SSMR3GetMem(pSSM, &pPages->ManufacturingPage10, sizeof(MptConfigurationPageManufacturing10));
-        SSMR3GetMem(pSSM, &pPages->IOUnitPage0, sizeof(MptConfigurationPageIOUnit0));
-        SSMR3GetMem(pSSM, &pPages->IOUnitPage1, sizeof(MptConfigurationPageIOUnit1));
-        SSMR3GetMem(pSSM, &pPages->IOUnitPage2, sizeof(MptConfigurationPageIOUnit2));
-        SSMR3GetMem(pSSM, &pPages->IOUnitPage3, sizeof(MptConfigurationPageIOUnit3));
-        SSMR3GetMem(pSSM, &pPages->IOUnitPage4, sizeof(MptConfigurationPageIOUnit4));
-        SSMR3GetMem(pSSM, &pPages->IOCPage0, sizeof(MptConfigurationPageIOC0));
-        SSMR3GetMem(pSSM, &pPages->IOCPage1, sizeof(MptConfigurationPageIOC1));
-        SSMR3GetMem(pSSM, &pPages->IOCPage2, sizeof(MptConfigurationPageIOC2));
-        SSMR3GetMem(pSSM, &pPages->IOCPage3, sizeof(MptConfigurationPageIOC3));
-        SSMR3GetMem(pSSM, &pPages->IOCPage4, sizeof(MptConfigurationPageIOC4));
-        SSMR3GetMem(pSSM, &pPages->IOCPage6, sizeof(MptConfigurationPageIOC6));
-        SSMR3GetMem(pSSM, &pPages->BIOSPage1, sizeof(MptConfigurationPageBIOS1));
-        SSMR3GetMem(pSSM, &pPages->BIOSPage2, sizeof(MptConfigurationPageBIOS2));
-        SSMR3GetMem(pSSM, &pPages->BIOSPage4, sizeof(MptConfigurationPageBIOS4));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage0, sizeof(MptConfigurationPageManufacturing0));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage1, sizeof(MptConfigurationPageManufacturing1));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage2, sizeof(MptConfigurationPageManufacturing2));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage3, sizeof(MptConfigurationPageManufacturing3));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage4, sizeof(MptConfigurationPageManufacturing4));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage5, sizeof(MptConfigurationPageManufacturing5));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage6, sizeof(MptConfigurationPageManufacturing6));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage8, sizeof(MptConfigurationPageManufacturing8));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage9, sizeof(MptConfigurationPageManufacturing9));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->ManufacturingPage10, sizeof(MptConfigurationPageManufacturing10));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOUnitPage0, sizeof(MptConfigurationPageIOUnit0));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOUnitPage1, sizeof(MptConfigurationPageIOUnit1));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOUnitPage2, sizeof(MptConfigurationPageIOUnit2));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOUnitPage3, sizeof(MptConfigurationPageIOUnit3));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOUnitPage4, sizeof(MptConfigurationPageIOUnit4));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOCPage0, sizeof(MptConfigurationPageIOC0));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOCPage1, sizeof(MptConfigurationPageIOC1));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOCPage2, sizeof(MptConfigurationPageIOC2));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOCPage3, sizeof(MptConfigurationPageIOC3));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOCPage4, sizeof(MptConfigurationPageIOC4));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->IOCPage6, sizeof(MptConfigurationPageIOC6));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->BIOSPage1, sizeof(MptConfigurationPageBIOS1));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->BIOSPage2, sizeof(MptConfigurationPageBIOS2));
+        pHlp->pfnSSMGetMem(pSSM, &pPages->BIOSPage4, sizeof(MptConfigurationPageBIOS4));
 
         /* Device dependent pages */
         if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
         {
             PMptConfigurationPagesSpi pSpiPages = &pPages->u.SpiPages;
 
-            SSMR3GetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage0, sizeof(MptConfigurationPageSCSISPIPort0));
-            SSMR3GetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage1, sizeof(MptConfigurationPageSCSISPIPort1));
-            SSMR3GetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage2, sizeof(MptConfigurationPageSCSISPIPort2));
+            pHlp->pfnSSMGetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage0, sizeof(MptConfigurationPageSCSISPIPort0));
+            pHlp->pfnSSMGetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage1, sizeof(MptConfigurationPageSCSISPIPort1));
+            pHlp->pfnSSMGetMem(pSSM, &pSpiPages->aPortPages[0].SCSISPIPortPage2, sizeof(MptConfigurationPageSCSISPIPort2));
 
             for (unsigned i = 0; i < RT_ELEMENTS(pSpiPages->aBuses[0].aDevicePages); i++)
             {
-                SSMR3GetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage0, sizeof(MptConfigurationPageSCSISPIDevice0));
-                SSMR3GetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage1, sizeof(MptConfigurationPageSCSISPIDevice1));
-                SSMR3GetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage2, sizeof(MptConfigurationPageSCSISPIDevice2));
-                SSMR3GetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage3, sizeof(MptConfigurationPageSCSISPIDevice3));
+                pHlp->pfnSSMGetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage0, sizeof(MptConfigurationPageSCSISPIDevice0));
+                pHlp->pfnSSMGetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage1, sizeof(MptConfigurationPageSCSISPIDevice1));
+                pHlp->pfnSSMGetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage2, sizeof(MptConfigurationPageSCSISPIDevice2));
+                pHlp->pfnSSMGetMem(pSSM, &pSpiPages->aBuses[0].aDevicePages[i].SCSISPIDevicePage3, sizeof(MptConfigurationPageSCSISPIDevice3));
             }
         }
         else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
@@ -4933,9 +4902,10 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             uint32_t cbPage0, cbPage1, cPHYs, cbManufacturingPage7;
             PMptConfigurationPagesSas pSasPages = &pPages->u.SasPages;
 
-            SSMR3GetU32(pSSM, &cbManufacturingPage7);
-            SSMR3GetU32(pSSM, &cbPage0);
-            SSMR3GetU32(pSSM, &cbPage1);
+            pHlp->pfnSSMGetU32(pSSM, &cbManufacturingPage7);
+            pHlp->pfnSSMGetU32(pSSM, &cbPage0);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cbPage1);
+            AssertRCReturn(rc, rc);
 
             if (   (cbPage0 != pSasPages->cbSASIOUnitPage0)
                 || (cbPage1 != pSasPages->cbSASIOUnitPage1)
@@ -4946,34 +4916,39 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             AssertPtr(pSasPages->pSASIOUnitPage0);
             AssertPtr(pSasPages->pSASIOUnitPage1);
 
-            SSMR3GetMem(pSSM, pSasPages->pManufacturingPage7, pSasPages->cbManufacturingPage7);
-            SSMR3GetMem(pSSM, pSasPages->pSASIOUnitPage0, pSasPages->cbSASIOUnitPage0);
-            SSMR3GetMem(pSSM, pSasPages->pSASIOUnitPage1, pSasPages->cbSASIOUnitPage1);
+            pHlp->pfnSSMGetMem(pSSM, pSasPages->pManufacturingPage7, pSasPages->cbManufacturingPage7);
+            pHlp->pfnSSMGetMem(pSSM, pSasPages->pSASIOUnitPage0, pSasPages->cbSASIOUnitPage0);
+            pHlp->pfnSSMGetMem(pSSM, pSasPages->pSASIOUnitPage1, pSasPages->cbSASIOUnitPage1);
 
-            SSMR3GetMem(pSSM, &pSasPages->SASIOUnitPage2, sizeof(MptConfigurationPageSASIOUnit2));
-            SSMR3GetMem(pSSM, &pSasPages->SASIOUnitPage3, sizeof(MptConfigurationPageSASIOUnit3));
+            pHlp->pfnSSMGetMem(pSSM, &pSasPages->SASIOUnitPage2, sizeof(MptConfigurationPageSASIOUnit2));
+            pHlp->pfnSSMGetMem(pSSM, &pSasPages->SASIOUnitPage3, sizeof(MptConfigurationPageSASIOUnit3));
 
-            SSMR3GetU32(pSSM, &cPHYs);
+            rc = pHlp->pfnSSMGetU32(pSSM, &cPHYs);
+            AssertRCReturn(rc, rc);
             if (cPHYs != pSasPages->cPHYs)
                 return VERR_SSM_LOAD_CONFIG_MISMATCH;
 
             AssertPtr(pSasPages->paPHYs);
             for (unsigned i = 0; i < pSasPages->cPHYs; i++)
             {
-                SSMR3GetMem(pSSM, &pSasPages->paPHYs[i].SASPHYPage0, sizeof(MptConfigurationPageSASPHY0));
-                SSMR3GetMem(pSSM, &pSasPages->paPHYs[i].SASPHYPage1, sizeof(MptConfigurationPageSASPHY1));
+                pHlp->pfnSSMGetMem(pSSM, &pSasPages->paPHYs[i].SASPHYPage0, sizeof(MptConfigurationPageSASPHY0));
+                pHlp->pfnSSMGetMem(pSSM, &pSasPages->paPHYs[i].SASPHYPage1, sizeof(MptConfigurationPageSASPHY1));
             }
 
             /* The number of devices first. */
-            SSMR3GetU32(pSSM, &pSasPages->cDevices);
+            rc = pHlp->pfnSSMGetU32(pSSM, &pSasPages->cDevices);
+            AssertRCReturn(rc, rc);
 
             PMptSASDevice pCurr = pSasPages->pSASDeviceHead;
 
             for (unsigned i = 0; i < pSasPages->cDevices; i++)
             {
-                SSMR3GetMem(pSSM, &pCurr->SASDevicePage0, sizeof(MptConfigurationPageSASDevice0));
-                SSMR3GetMem(pSSM, &pCurr->SASDevicePage1, sizeof(MptConfigurationPageSASDevice1));
-                SSMR3GetMem(pSSM, &pCurr->SASDevicePage2, sizeof(MptConfigurationPageSASDevice2));
+                AssertReturn(pCurr, VERR_SSM_LOAD_CONFIG_MISMATCH);
+
+                pHlp->pfnSSMGetMem(pSSM, &pCurr->SASDevicePage0, sizeof(MptConfigurationPageSASDevice0));
+                pHlp->pfnSSMGetMem(pSSM, &pCurr->SASDevicePage1, sizeof(MptConfigurationPageSASDevice1));
+                rc = pHlp->pfnSSMGetMem(pSSM, &pCurr->SASDevicePage2, sizeof(MptConfigurationPageSASDevice2));
+                AssertRCReturn(rc, rc);
 
                 pCurr = pCurr->pNext;
             }
@@ -4988,12 +4963,11 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     if (RT_FAILURE(rc))
     {
         LogRel(("LsiLogic: Failed to restore BIOS state: %Rrc.\n", rc));
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("LsiLogic: Failed to restore BIOS state\n"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic: Failed to restore BIOS state\n"));
     }
 
     uint32_t u32;
-    rc = SSMR3GetU32(pSSM, &u32);
+    rc = pHlp->pfnSSMGetU32(pSSM, &u32);
     if (RT_FAILURE(rc))
         return rc;
     AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
@@ -5306,7 +5280,6 @@ static DECLCALLBACK(void) lsilogicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offD
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
     pThis->pDevInsRC        = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->pNotificationQueueRC = PDMQueueRCPtr(pThis->pNotificationQueueR3);
 
     /* Relocate queues. */
     pThis->pReplyFreeQueueBaseRC += offDelta;
@@ -5357,6 +5330,7 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
+    PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
     int           rc    = VINF_SUCCESS;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
@@ -5370,47 +5344,33 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Validate and read configuration.
      */
-    rc = CFGMR3AreValuesValid(pCfg, "GCEnabled\0"
-                                    "R0Enabled\0"
-                                    "ReplyQueueDepth\0"
-                                    "RequestQueueDepth\0"
-                                    "ControllerType\0"
-                                    "NumPorts\0"
-                                    "Bootable\0");
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("LsiLogic configuration error: unknown option specified"));
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("LsiLogic configuration error: failed to read GCEnabled as boolean"));
-    Log(("%s: fGCEnabled=%d\n", __FUNCTION__, pThis->fGCEnabled));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns,
+                                  "ReplyQueueDepth|"
+                                  "RequestQueueDepth|"
+                                  "ControllerType|"
+                                  "NumPorts|"
+                                  "Bootable",
+                                  "");
 
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("LsiLogic configuration error: failed to read R0Enabled as boolean"));
-    Log(("%s: fR0Enabled=%d\n", __FUNCTION__, pThis->fR0Enabled));
+    pThis->fGCEnabled = pDevIns->fRCEnabled;
+    pThis->fR0Enabled = pDevIns->fR0Enabled;
 
-    rc = CFGMR3QueryU32Def(pCfg, "ReplyQueueDepth",
-                           &pThis->cReplyQueueEntries,
-                           LSILOGICSCSI_REPLY_QUEUE_DEPTH_DEFAULT);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "ReplyQueueDepth",
+                                  &pThis->cReplyQueueEntries, LSILOGICSCSI_REPLY_QUEUE_DEPTH_DEFAULT);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read ReplyQueue as integer"));
     Log(("%s: ReplyQueueDepth=%u\n", __FUNCTION__, pThis->cReplyQueueEntries));
 
-    rc = CFGMR3QueryU32Def(pCfg, "RequestQueueDepth",
-                           &pThis->cRequestQueueEntries,
-                           LSILOGICSCSI_REQUEST_QUEUE_DEPTH_DEFAULT);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "RequestQueueDepth",
+                                  &pThis->cRequestQueueEntries, LSILOGICSCSI_REQUEST_QUEUE_DEPTH_DEFAULT);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read RequestQueue as integer"));
     Log(("%s: RequestQueueDepth=%u\n", __FUNCTION__, pThis->cRequestQueueEntries));
 
     char *pszCtrlType;
-    rc = CFGMR3QueryStringAllocDef(pCfg, "ControllerType",
-                                   &pszCtrlType, LSILOGICSCSI_PCI_SPI_CTRLNAME);
+    rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "ControllerType", &pszCtrlType, LSILOGICSCSI_PCI_SPI_CTRLNAME);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read ControllerType as string"));
@@ -5424,13 +5384,10 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                 pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "SPI" : "SAS",
                 iInstance);
 
-
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("LsiLogic configuration error: failed to determine controller type from string"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic configuration error: failed to determine controller type from string"));
 
-    rc = CFGMR3QueryU8(pCfg, "NumPorts",
-                       &pThis->cPorts);
+    rc = pHlp->pfnCFGMQueryU8(pCfg, "NumPorts", &pThis->cPorts);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
@@ -5445,7 +5402,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                                 N_("LsiLogic configuration error: failed to read NumPorts as integer"));
 
     bool fBootable;
-    rc = CFGMR3QueryBoolDef(pCfg, "Bootable", &fBootable, true);
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Bootable", &fBootable, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read Bootable as boolean"));
@@ -5552,18 +5509,6 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, LSILOGIC_PCI_SPACE_MEM_SIZE, PCI_ADDRESS_SPACE_MEM, lsilogicR3Map);
     if (RT_FAILURE(rc))
         return rc;
-
-    /* Initialize task queue. (Need two items to handle SMP guest concurrency.) */
-    char szTaggedText[64];
-    RTStrPrintf(szTaggedText, sizeof(szTaggedText), "%s-Task", szDevTag);
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
-                              lsilogicR3NotifyQueueConsumer, true,
-                              szTaggedText,
-                              &pThis->pNotificationQueueR3);
-    if (RT_FAILURE(rc))
-        return rc;
-    pThis->pNotificationQueueR0 = PDMQueueR0Ptr(pThis->pNotificationQueueR3);
-    pThis->pNotificationQueueRC = PDMQueueRCPtr(pThis->pNotificationQueueR3);
 
     /*
      * We need one entry free in the queue.
