@@ -1842,22 +1842,9 @@ void UISession::updateMousePointerShape()
 
     /* Create cursor-pixmap from the image: */
     m_cursorPixmap = QPixmap::fromImage(image);
+    updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
 
-# if defined(VBOX_WS_MAC)
-    /* Adjust device-pixel-ratio: */
-    /// @todo In case of multi-monitor setup check whether device-pixel-ratio and cursor are screen specific.
-    /* Get screen-id of main-window: */
-    const ulong uScreenID = activeMachineWindow()->screenId();
-    /* Get device-pixel-ratio: */
-    const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
-    /* Adjust device-pixel-ratio if necessary: */
-    if (dDevicePixelRatio > 1.0 && frameBuffer(uScreenID)->useUnscaledHiDPIOutput())
-    {
-        uXHot /= dDevicePixelRatio;
-        uYHot /= dDevicePixelRatio;
-        m_cursorPixmap.setDevicePixelRatio(dDevicePixelRatio);
-    }
-# elif defined(VBOX_WS_X11)
+# if defined(VBOX_WS_X11)
     /* Adjust device-pixel-ratio: */
     /// @todo In case of multi-monitor setup check whether device-pixel-ratio and cursor are screen specific.
     /* Get screen-id of main-window: */
@@ -1891,7 +1878,38 @@ void UISession::updateMousePointerShape()
 
 void UISession::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, uint &uYHot)
 {
-#if defined(VBOX_WS_WIN)
+#if defined(VBOX_WS_MAC)
+
+    /* Get screen-id of active machine-window: */
+    /// @todo In case of multi-monitor setup check whether parameters are screen specific.
+    const ulong uScreenID = activeMachineWindow()->screenId();
+
+    /* Take into account scale-factor if necessary: */
+    const double dScaleFactor = frameBuffer(uScreenID)->scaleFactor();
+    //printf("Scale-factor: %f\n", dScaleFactor);
+    if (dScaleFactor > 1.0)
+    {
+        /* Scale the pixmap up: */
+        pixmap = pixmap.scaled(pixmap.width() * dScaleFactor, pixmap.height() * dScaleFactor,
+                               Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+        uXHot *= dScaleFactor;
+        uYHot *= dScaleFactor;
+    }
+
+    /* Take into account device-pixel-ratio if necessary: */
+    const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
+    const bool fUseUnscaledHiDPIOutput = frameBuffer(uScreenID)->useUnscaledHiDPIOutput();
+    //printf("Device-pixel-ratio: %f, Unscaled HiDPI Output: %d\n",
+    //       dDevicePixelRatio, fUseUnscaledHiDPIOutput);
+    if (dDevicePixelRatio > 1.0 && fUseUnscaledHiDPIOutput)
+    {
+        /* Scale the pixmap down: */
+        pixmap.setDevicePixelRatio(dDevicePixelRatio);
+        uXHot /= dDevicePixelRatio;
+        uYHot /= dDevicePixelRatio;
+    }
+
+#elif defined(VBOX_WS_WIN)
 
     /* Get screen-id of active machine-window: */
     /// @todo In case of multi-monitor setup check whether parameters are screen specific.
