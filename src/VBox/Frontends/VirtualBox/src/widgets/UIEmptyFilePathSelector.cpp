@@ -216,11 +216,18 @@ void UIEmptyFilePathSelector::choose()
 {
     QString path = mPath;
 
+    /* Check whether we have file-name information available: */
+    const QString strFileName = QFileInfo(path).fileName();
+
     /* Preparing initial directory. */
     QString initDir = path.isNull() ? mHomeDir :
         QIFileDialog::getFirstExistingDir (path);
     if (initDir.isNull())
         initDir = mHomeDir;
+
+    /* Append file-name information if any: */
+    if (!strFileName.isEmpty())
+        initDir = QDir(initDir).absoluteFilePath(strFileName);
 
     switch (mMode)
     {
