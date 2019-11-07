@@ -1149,12 +1149,12 @@ void UIInformationPerformanceMonitor::prepareMetrics()
     {
         /* Network metric: */
         UIMetric networkMetric(m_strNetworkMetricName, "B", iMaximumQueueSize);
-        networkMetric.setQueryPrefix("Devices");
+        networkMetric.setQueryPrefix("Public");
         QStringList networkDeviceList;
         networkDeviceList << "E1k" <<"VNet" << "PCNet";
         networkMetric.setDeviceTypeList(networkDeviceList);
         QStringList networkMetricDataSubStringList;
-        networkMetricDataSubStringList << "ReceiveBytes" << "TransmitBytes";
+        networkMetricDataSubStringList << "BytesReceived" << "BytesTransmitted";
         networkMetric.setMetricDataSubString(networkMetricDataSubStringList);
         m_metrics.insert(m_strNetworkMetricName, networkMetric);
     }
