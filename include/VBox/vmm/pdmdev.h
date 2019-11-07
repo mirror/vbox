@@ -2277,7 +2277,7 @@ typedef const PDMRTCHLP *PCPDMRTCHLP;
 /** @} */
 
 /** Current PDMDEVHLPR3 version number. */
-#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 32, 0)
+#define PDM_DEVHLPR3_VERSION                    PDM_VERSION_MAKE_PP(0xffe7, 33, 0)
 
 /**
  * PDM Device API.
@@ -3950,18 +3950,15 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnThreadCreate,(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                                PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
-    /**
-     * Destroys a PDM thread.
-     *
-     * @returns VBox status code.
-     *          This reflects the success off destroying the thread and not the exit code
-     *          of the thread as this is stored in *pRcThread.
-     * @param   pDevIns             The device instance.
-     * @param   pThread             The thread to destroy.
-     * @param   pRcThread           Where to store the thread exit code. Optional.
-     * @thread  The emulation thread (EMT).
-     */
-    DECLR3CALLBACKMEMBER(int, pfnThreadDestroy,(PPDMDEVINS pDevIns, PPDMTHREAD pThread, int *pRcThread));
+    /** @name Exported PDM Thread Functions
+     * @{ */
+    DECLR3CALLBACKMEMBER(int, pfnThreadDestroy,(PPDMTHREAD pThread, int *pRcThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadIAmSuspending,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadIAmRunning,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadSleep,(PPDMTHREAD pThread, RTMSINTERVAL cMillies));
+    DECLR3CALLBACKMEMBER(int, pfnThreadSuspend,(PPDMTHREAD pThread));
+    DECLR3CALLBACKMEMBER(int, pfnThreadResume,(PPDMTHREAD pThread));
+    /** @} */
 
     /**
      * Set up asynchronous handling of a suspend, reset or power off notification.
@@ -7740,11 +7737,57 @@ DECLINLINE(int) PDMDevHlpThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, 
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnThreadDestroy
+ * @copydoc PDMR3ThreadDestroy
+ * @param   pDevIns     The device instance.
  */
 DECLINLINE(int) PDMDevHlpThreadDestroy(PPDMDEVINS pDevIns, PPDMTHREAD pThread, int *pRcThread)
 {
-    return pDevIns->pHlpR3->pfnThreadDestroy(pDevIns, pThread, pRcThread);
+    return pDevIns->pHlpR3->pfnThreadDestroy(pThread, pRcThread);
+}
+
+/**
+ * @copydoc PDMR3ThreadIAmSuspending
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(int) PDMDevHlpThreadIAmSuspending(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    return pDevIns->pHlpR3->pfnThreadIAmSuspending(pThread);
+}
+
+/**
+ * @copydoc PDMR3ThreadIAmRunning
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(int) PDMDevHlpThreadIAmRunning(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    return pDevIns->pHlpR3->pfnThreadIAmRunning(pThread);
+}
+
+/**
+ * @copydoc PDMR3ThreadSleep
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(int) PDMDevHlpThreadSleep(PPDMDEVINS pDevIns, PPDMTHREAD pThread, RTMSINTERVAL cMillies)
+{
+    return pDevIns->pHlpR3->pfnThreadSleep(pThread, cMillies);
+}
+
+/**
+ * @copydoc PDMR3ThreadSuspend
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(int) PDMDevHlpThreadSuspend(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    return pDevIns->pHlpR3->pfnThreadSuspend(pThread);
+}
+
+/**
+ * @copydoc PDMR3ThreadResume
+ * @param   pDevIns     The device instance.
+ */
+DECLINLINE(int) PDMDevHlpThreadResume(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
+{
+    return pDevIns->pHlpR3->pfnThreadResume(pThread);
 }
 
 /**

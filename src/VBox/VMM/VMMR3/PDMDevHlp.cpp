@@ -3066,20 +3066,6 @@ static DECLCALLBACK(int) pdmR3DevHlp_ThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREA
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnThreadDestroy} */
-static DECLCALLBACK(int) pdmR3DevHlp_ThreadDestroy(PPDMDEVINS pDevIns, PPDMTHREAD pThread, int *pRcThread)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns); RT_NOREF(pDevIns);
-    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
-    LogFlow(("pdmR3DevHlp_ThreadDestroy: caller='%s'/%d: pThread=%p pRcThread=%p\n", pDevIns->pReg->szName, pDevIns->iInstance, pThread, pRcThread));
-
-    int rc = PDMR3ThreadDestroy(pThread, pRcThread);
-
-    LogFlow(("pdmR3DevHlp_ThreadDestroy: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
-    return rc;
-}
-
-
 /** @interface_method_impl{PDMDEVHLPR3,pfnSetAsyncNotification} */
 static DECLCALLBACK(int) pdmR3DevHlp_SetAsyncNotification(PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify)
 {
@@ -4791,7 +4777,12 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CritSectGetRecursion,
     pdmR3DevHlp_CritSectDelete,
     pdmR3DevHlp_ThreadCreate,
-    pdmR3DevHlp_ThreadDestroy,
+    PDMR3ThreadDestroy,
+    PDMR3ThreadIAmSuspending,
+    PDMR3ThreadIAmRunning,
+    PDMR3ThreadSleep,
+    PDMR3ThreadSuspend,
+    PDMR3ThreadResume,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
     pdmR3DevHlp_RTCRegister,
@@ -5267,7 +5258,12 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CritSectGetRecursion,
     pdmR3DevHlp_CritSectDelete,
     pdmR3DevHlp_ThreadCreate,
-    pdmR3DevHlp_ThreadDestroy,
+    PDMR3ThreadDestroy,
+    PDMR3ThreadIAmSuspending,
+    PDMR3ThreadIAmRunning,
+    PDMR3ThreadSleep,
+    PDMR3ThreadSuspend,
+    PDMR3ThreadResume,
     pdmR3DevHlp_SetAsyncNotification,
     pdmR3DevHlp_AsyncNotificationCompleted,
     pdmR3DevHlp_RTCRegister,
