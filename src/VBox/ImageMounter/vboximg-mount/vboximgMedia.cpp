@@ -80,7 +80,9 @@ typedef struct MEDIUMINFO
 
 char *vboximgScaledSize(size_t size)
 {
-    uint64_t exp = log2((double)size);
+    uint64_t exp = 0;
+    if (size > 0)
+        exp = log2((double)size);
     char scaledMagnitude = ((char []){ ' ', 'K', 'M', 'G', 'T', 'P' })[exp / 10];
      /* This workaround is because IPRT RT*Printf* funcs don't handle floating point format specifiers */
     double cbScaled = (double)size / pow(2, (double)(((uint64_t)(exp / 10)) * 10));
