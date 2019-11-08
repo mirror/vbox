@@ -31,8 +31,13 @@
 #define LSILOGIC_BIOS_IO_PORT       0x434
 #define LSILOGIC_SAS_BIOS_IO_PORT   0x438
 
-#define LSILOGICSCSI_REQUEST_QUEUE_DEPTH_DEFAULT 256
-#define LSILOGICSCSI_REPLY_QUEUE_DEPTH_DEFAULT   256
+#define LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MIN        8       /**< (bird just picked this out thin air) */
+#define LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MAX        1024    /**< (bird just picked this out thin air) */
+#define LSILOGICSCSI_REQUEST_QUEUE_DEPTH_DEFAULT    256
+
+#define LSILOGICSCSI_REPLY_QUEUE_DEPTH_MIN          8       /**< (bird just picked this out thin air) */
+#define LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX          1024    /**< (bird just picked this out thin air) */
+#define LSILOGICSCSI_REPLY_QUEUE_DEPTH_DEFAULT      256
 
 #define LSILOGICSCSI_MAXIMUM_CHAIN_DEPTH 3
 

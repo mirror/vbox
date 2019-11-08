@@ -268,11 +268,10 @@ typedef struct LSILOGICSCSI
      *  to diagnostic memory. */
     uint32_t              iDiagnosticAccess;
 
-    /** Number entries allocated for the reply queue. */
+    /** Number entries configured for the reply queue. */
     uint32_t              cReplyQueueEntries;
-    /** Number entries allocated for the outstanding request queue. */
+    /** Number entries configured for the outstanding request queue. */
     uint32_t              cRequestQueueEntries;
-
 
     /** Critical section protecting the reply post queue. */
     PDMCRITSECT           ReplyPostQueueCritSect;
@@ -285,28 +284,12 @@ typedef struct LSILOGICSCSI
      * concurrent write access from the guest. */
     PDMCRITSECT           ReplyFreeQueueWriteCritSect;
 
-    /** Pointer to the start of the reply free queue - R3. */
-    R3PTRTYPE(volatile uint32_t *) pReplyFreeQueueBaseR3;
-    /** Pointer to the start of the reply post queue - R3. */
-    R3PTRTYPE(volatile uint32_t *) pReplyPostQueueBaseR3;
-    /** Pointer to the start of the request queue - R3. */
-    R3PTRTYPE(volatile uint32_t *) pRequestQueueBaseR3;
-
-    /** Pointer to the start of the reply queue - R0. */
-    R0PTRTYPE(volatile uint32_t *) pReplyFreeQueueBaseR0;
-    /** Pointer to the start of the reply queue - R0. */
-    R0PTRTYPE(volatile uint32_t *) pReplyPostQueueBaseR0;
-    /** Pointer to the start of the request queue - R0. */
-    R0PTRTYPE(volatile uint32_t *) pRequestQueueBaseR0;
-
-    /** Pointer to the start of the reply queue - RC. */
-    RCPTRTYPE(volatile uint32_t *) pReplyFreeQueueBaseRC;
-    /** Pointer to the start of the reply queue - RC. */
-    RCPTRTYPE(volatile uint32_t *) pReplyPostQueueBaseRC;
-    /** Pointer to the start of the request queue - RC. */
-    RCPTRTYPE(volatile uint32_t *) pRequestQueueBaseRC;
-    /** End these RC pointers on a 64-bit boundrary. */
-    RTRCPTR                        RCPtrPadding1;
+    /** The reply free qeueue (only the first cReplyQueueEntries are used). */
+    uint32_t volatile       aReplyFreeQueue[LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX];
+    /** The reply post qeueue (only the first cReplyQueueEntries are used). */
+    uint32_t volatile       aReplyPostQueue[LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX];
+    /** The request qeueue (only the first cRequestQueueEntries are used). */
+    uint32_t volatile       aRequestQueue[LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MAX];
 
     /** Next free entry in the reply queue the guest can write a address to. */
     volatile uint32_t              uReplyFreeQueueNextEntryFreeWrite;
@@ -672,7 +655,7 @@ static void lsilogicR3FinishContextReply(PLSILOGICSCSI pThis, uint32_t u32Messag
     }
 
     /* We have a context reply. */
-    ASMAtomicWriteU32(&pThis->CTX_SUFF(pReplyPostQueueBase)[pThis->uReplyPostQueueNextEntryFreeWrite], u32MessageContext);
+    ASMAtomicWriteU32(&pThis->aReplyPostQueue[pThis->uReplyPostQueueNextEntryFreeWrite], u32MessageContext);
     ASMAtomicIncU32(&pThis->uReplyPostQueueNextEntryFreeWrite);
     pThis->uReplyPostQueueNextEntryFreeWrite %= pThis->cReplyQueueEntries;
 
@@ -728,7 +711,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
             return;
         }
 
-        uint32_t u32ReplyFrameAddressLow = pThis->CTX_SUFF(pReplyFreeQueueBase)[pThis->uReplyFreeQueueNextAddressRead];
+        uint32_t u32ReplyFrameAddressLow = pThis->aReplyFreeQueue[pThis->uReplyFreeQueueNextAddressRead];
 
         pThis->uReplyFreeQueueNextAddressRead++;
         pThis->uReplyFreeQueueNextAddressRead %= pThis->cReplyQueueEntries;
@@ -756,7 +739,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         }
 
         /* We have a address reply. Set the 31th bit to indicate that. */
-        ASMAtomicWriteU32(&pThis->CTX_SUFF(pReplyPostQueueBase)[pThis->uReplyPostQueueNextEntryFreeWrite],
+        ASMAtomicWriteU32(&pThis->aReplyPostQueue[pThis->uReplyPostQueueNextEntryFreeWrite],
                           RT_BIT(31) | (u32ReplyFrameAddressLow >> 1));
         ASMAtomicIncU32(&pThis->uReplyPostQueueNextEntryFreeWrite);
         pThis->uReplyPostQueueNextEntryFreeWrite %= pThis->cReplyQueueEntries;
@@ -1277,7 +1260,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
             if (rc != VINF_SUCCESS)
                 return rc;
             /* Add the entry to the reply free queue. */
-            ASMAtomicWriteU32(&pThis->CTX_SUFF(pReplyFreeQueueBase)[pThis->uReplyFreeQueueNextEntryFreeWrite], u32);
+            ASMAtomicWriteU32(&pThis->aReplyFreeQueue[pThis->uReplyFreeQueueNextEntryFreeWrite], u32);
             pThis->uReplyFreeQueueNextEntryFreeWrite++;
             pThis->uReplyFreeQueueNextEntryFreeWrite %= pThis->cReplyQueueEntries;
             PDMCritSectLeave(&pThis->ReplyFreeQueueWriteCritSect);
@@ -1291,7 +1274,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
 
             uint32_t uNextWrite = ASMAtomicReadU32(&pThis->uRequestQueueNextEntryFreeWrite);
 
-            ASMAtomicWriteU32(&pThis->CTX_SUFF(pRequestQueueBase)[uNextWrite], u32);
+            ASMAtomicWriteU32(&pThis->aRequestQueue[uNextWrite], u32);
 
             /*
              * Don't update the value in place. It can happen that we get preempted
@@ -1556,7 +1539,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
 
             if (idxReplyPostQueueWrite != idxReplyPostQueueRead)
             {
-                u32 = pThis->CTX_SUFF(pReplyPostQueueBase)[idxReplyPostQueueRead];
+                u32 = pThis->aReplyPostQueue[idxReplyPostQueueRead];
                 idxReplyPostQueueRead++;
                 idxReplyPostQueueRead %= pThis->cReplyQueueEntries;
                 ASMAtomicWriteU32(&pThis->uReplyPostQueueNextAddressRead, idxReplyPostQueueRead);
@@ -1615,13 +1598,13 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
                 case LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_LOW:
                     if (pThis->uReplyFreeQueueNextEntryFreeWrite != pThis->uReplyFreeQueueNextAddressRead)
                     {
-                        u32 |= pThis->CTX_SUFF(pReplyFreeQueueBase)[pThis->uReplyFreeQueueNextAddressRead] & UINT32_C(0xffff);
+                        u32 |= pThis->aReplyFreeQueue[pThis->uReplyFreeQueueNextAddressRead] & UINT32_C(0xffff);
                         pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_HIGH;
                         lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_SYSTEM_DOORBELL);
                     }
                     break;
                 case LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_HIGH:
-                    u32 |= pThis->CTX_SUFF(pReplyFreeQueueBase)[pThis->uReplyFreeQueueNextAddressRead] >> 16;
+                    u32 |= pThis->aReplyFreeQueue[pThis->uReplyFreeQueueNextAddressRead] >> 16;
                     pThis->uReplyFreeQueueNextAddressRead++;
                     pThis->uReplyFreeQueueNextAddressRead %= pThis->cReplyQueueEntries;
                     pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_RFR_NEXT_FRAME_LOW;
@@ -4170,17 +4153,17 @@ static DECLCALLBACK(void) lsilogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
     if (fVerbose)
     {
         for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-            pHlp->pfnPrintf(pHlp, "RFQ[%u]=%#x\n", i, pThis->pReplyFreeQueueBaseR3[i]);
+            pHlp->pfnPrintf(pHlp, "RFQ[%u]=%#x\n", i, pThis->aReplyFreeQueue[i]);
 
         pHlp->pfnPrintf(pHlp, "\n");
 
         for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-            pHlp->pfnPrintf(pHlp, "RPQ[%u]=%#x\n", i, pThis->pReplyPostQueueBaseR3[i]);
+            pHlp->pfnPrintf(pHlp, "RPQ[%u]=%#x\n", i, pThis->aReplyPostQueue[i]);
 
         pHlp->pfnPrintf(pHlp, "\n");
 
         for (unsigned i = 0; i < pThis->cRequestQueueEntries; i++)
-            pHlp->pfnPrintf(pHlp, "ReqQ[%u]=%#x\n", i, pThis->pRequestQueueBaseR3[i]);
+            pHlp->pfnPrintf(pHlp, "ReqQ[%u]=%#x\n", i, pThis->aRequestQueue[i]);
     }
 
     /*
@@ -4195,62 +4178,6 @@ static DECLCALLBACK(void) lsilogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
         pHlp->pfnPrintf(pHlp, "Device[%u]: device-attached=%RTbool cOutstandingRequests=%u\n",
                         i, pDevice->pDrvBase != NULL, pDevice->cOutstandingRequests);
     }
-}
-
-/**
- * Allocate the queues.
- *
- * @returns VBox status code.
- *
- * @param   pThis       Pointer to the LsiLogic device state.
- */
-static int lsilogicR3QueuesAlloc(PLSILOGICSCSI pThis)
-{
-    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
-    uint32_t cbQueues;
-
-    Assert(!pThis->pReplyFreeQueueBaseR3);
-
-    cbQueues  = 2*pThis->cReplyQueueEntries * sizeof(uint32_t);
-    cbQueues += pThis->cRequestQueueEntries * sizeof(uint32_t);
-    int rc = MMHyperAlloc(pVM, cbQueues, 1, MM_TAG_PDM_DEVICE_USER,
-                          (void **)&pThis->pReplyFreeQueueBaseR3);
-    if (RT_FAILURE(rc))
-        return VERR_NO_MEMORY;
-    pThis->pReplyFreeQueueBaseR0 = MMHyperR3ToR0(pVM, (void *)pThis->pReplyFreeQueueBaseR3);
-    pThis->pReplyFreeQueueBaseRC = MMHyperR3ToRC(pVM, (void *)pThis->pReplyFreeQueueBaseR3);
-
-    pThis->pReplyPostQueueBaseR3 = pThis->pReplyFreeQueueBaseR3 + pThis->cReplyQueueEntries;
-    pThis->pReplyPostQueueBaseR0 = MMHyperR3ToR0(pVM, (void *)pThis->pReplyPostQueueBaseR3);
-    pThis->pReplyPostQueueBaseRC = MMHyperR3ToRC(pVM, (void *)pThis->pReplyPostQueueBaseR3);
-
-    pThis->pRequestQueueBaseR3   = pThis->pReplyPostQueueBaseR3 + pThis->cReplyQueueEntries;
-    pThis->pRequestQueueBaseR0   = MMHyperR3ToR0(pVM, (void *)pThis->pRequestQueueBaseR3);
-    pThis->pRequestQueueBaseRC   = MMHyperR3ToRC(pVM, (void *)pThis->pRequestQueueBaseR3);
-
-    return VINF_SUCCESS;
-}
-
-/**
- * Free the hyper memory used or the queues.
- *
- * @returns nothing.
- *
- * @param   pThis       Pointer to the LsiLogic device state.
- */
-static void lsilogicR3QueuesFree(PLSILOGICSCSI pThis)
-{
-    PVM pVM = PDMDevHlpGetVM(pThis->pDevInsR3);
-    int rc = VINF_SUCCESS;
-
-    AssertPtr(pThis->pReplyFreeQueueBaseR3);
-
-    rc = MMHyperFree(pVM, (void *)pThis->pReplyFreeQueueBaseR3);
-    AssertRC(rc);
-
-    pThis->pReplyFreeQueueBaseR3 = NULL;
-    pThis->pReplyPostQueueBaseR3 = NULL;
-    pThis->pRequestQueueBaseR3   = NULL;
 }
 
 
@@ -4296,7 +4223,7 @@ static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
                && (pThis->uRequestQueueNextAddressRead != uRequestQueueNextEntryWrite))
         {
             MptRequestUnion GuestRequest;
-            uint32_t  u32RequestMessageFrameDesc = pThis->CTX_SUFF(pRequestQueueBase)[pThis->uRequestQueueNextAddressRead];
+            uint32_t  u32RequestMessageFrameDesc = pThis->aRequestQueue[pThis->uRequestQueueNextAddressRead];
             RTGCPHYS  GCPhysMessageFrameAddr = LSILOGIC_RTGCPHYS_FROM_U32(pThis->u32HostMFAHighAddr,
                                                                           (u32RequestMessageFrameDesc & ~0x07));
 
@@ -4467,7 +4394,7 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
                     if (!pReq->fBIOS)
                     {
                         /* Write only the lower 32bit part of the address. */
-                        ASMAtomicWriteU32(&pThis->CTX_SUFF(pRequestQueueBase)[pThis->uRequestQueueNextEntryFreeWrite],
+                        ASMAtomicWriteU32(&pThis->aRequestQueue[pThis->uRequestQueueNextEntryFreeWrite],
                                           pReq->GCPhysMessageFrameAddr & UINT32_C(0xffffffff));
 
                         pThis->uRequestQueueNextEntryFreeWrite++;
@@ -4524,11 +4451,11 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutU32(pSSM, pThis->uRequestQueueNextAddressRead);
 
     for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-        pHlp->pfnSSMPutU32(pSSM, pThis->pReplyFreeQueueBaseR3[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aReplyFreeQueue[i]);
     for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-        pHlp->pfnSSMPutU32(pSSM, pThis->pReplyPostQueueBaseR3[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aReplyPostQueue[i]);
     for (unsigned i = 0; i < pThis->cRequestQueueEntries; i++)
-        pHlp->pfnSSMPutU32(pSSM, pThis->pRequestQueueBaseR3[i]);
+        pHlp->pfnSSMPutU32(pSSM, pThis->aRequestQueue[i]);
 
     pHlp->pfnSSMPutU16(pSSM, pThis->u16NextHandle);
 
@@ -4747,14 +4674,15 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     if (   cReplyQueueEntries != pThis->cReplyQueueEntries
         || cRequestQueueEntries != pThis->cRequestQueueEntries)
     {
-        LogFlow(("Reallocating queues cReplyQueueEntries=%u cRequestQueuEntries=%u\n",
-                 cReplyQueueEntries, cRequestQueueEntries));
-        lsilogicR3QueuesFree(pThis);
+        LogRel(("Changing queue sizes: cReplyQueueEntries=%u cRequestQueuEntries=%u\n", cReplyQueueEntries, cRequestQueueEntries));
+        if (   cReplyQueueEntries   > RT_ELEMENTS(pThis->aReplyFreeQueue)
+            || cReplyQueueEntries   <  LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MIN
+            || cRequestQueueEntries > RT_ELEMENTS(pThis->aRequestQueue)
+            || cRequestQueueEntries <  LSILOGICSCSI_REPLY_QUEUE_DEPTH_MIN)
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Out of bounds: cReplyQueueEntries=%u cRequestQueueEntries=%u"),
+                                           cReplyQueueEntries, cRequestQueueEntries);
         pThis->cReplyQueueEntries = cReplyQueueEntries;
         pThis->cRequestQueueEntries = cRequestQueueEntries;
-        rc = lsilogicR3QueuesAlloc(pThis);
-        if (RT_FAILURE(rc))
-            return rc;
     }
 
     pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyFreeQueueNextEntryFreeWrite);
@@ -4774,8 +4702,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         if (pThis->enmCtrlType != LSILOGICCTRLTYPE_SCSI_SPI)
             return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Config mismatch: Expected SPI SCSI controller"));
 
-        pHlp->pfnSSMGetMem(pSSM, &ConfigPagesV2,
-                    sizeof(MptConfigurationPagesSupported_SSM_V2));
+        pHlp->pfnSSMGetMem(pSSM, &ConfigPagesV2, sizeof(MptConfigurationPagesSupported_SSM_V2));
 
         pPages->ManufacturingPage0 = ConfigPagesV2.ManufacturingPage0;
         pPages->ManufacturingPage1 = ConfigPagesV2.ManufacturingPage1;
@@ -4809,11 +4736,11 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     {
         /* Queue content */
         for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->pReplyFreeQueueBaseR3[i]);
+            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->aReplyFreeQueue[i]);
         for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->pReplyPostQueueBaseR3[i]);
+            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->aReplyPostQueue[i]);
         for (unsigned i = 0; i < pThis->cRequestQueueEntries; i++)
-            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->pRequestQueueBaseR3[i]);
+            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->aRequestQueue[i]);
 
         pHlp->pfnSSMGetU16(pSSM, &pThis->u16NextHandle);
 
@@ -5278,13 +5205,8 @@ static DECLCALLBACK(void) lsilogicR3Reset(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) lsilogicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-
-    pThis->pDevInsRC        = PDMDEVINS_2_RCPTR(pDevIns);
-
-    /* Relocate queues. */
-    pThis->pReplyFreeQueueBaseRC += offDelta;
-    pThis->pReplyPostQueueBaseRC += offDelta;
-    pThis->pRequestQueueBaseRC   += offDelta;
+    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
+    RT_NOREF(offDelta);
 }
 
 /**
@@ -5360,13 +5282,24 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read ReplyQueue as integer"));
+    if (   pThis->cReplyQueueEntries < LSILOGICSCSI_REPLY_QUEUE_DEPTH_MIN
+        || pThis->cReplyQueueEntries > LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX - 1 /* see +1 later in the function */)
+        return PDMDevHlpVMSetError(pDevIns, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                                   N_("LsiLogic configuration error: 'ReplyQueueDepth' = %u is out of ranage (%u..%u)"),
+                                   pThis->cReplyQueueEntries, LSILOGICSCSI_REPLY_QUEUE_DEPTH_MIN,
+                                   LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX - 1);
     Log(("%s: ReplyQueueDepth=%u\n", __FUNCTION__, pThis->cReplyQueueEntries));
 
     rc = pHlp->pfnCFGMQueryU32Def(pCfg, "RequestQueueDepth",
                                   &pThis->cRequestQueueEntries, LSILOGICSCSI_REQUEST_QUEUE_DEPTH_DEFAULT);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("LsiLogic configuration error: failed to read RequestQueue as integer"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic configuration error: failed to read RequestQueue as integer"));
+    if (   pThis->cRequestQueueEntries < LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MIN
+        || pThis->cRequestQueueEntries > LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MAX - 1 /* see +1 later in the function */)
+        return PDMDevHlpVMSetError(pDevIns, VERR_OUT_OF_RANGE, RT_SRC_POS,
+                                   N_("LsiLogic configuration error: 'RequestQueue' = %u is out of ranage (%u..%u)"),
+                                   pThis->cRequestQueueEntries, LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MIN,
+                                   LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MIN - 1);
     Log(("%s: RequestQueueDepth=%u\n", __FUNCTION__, pThis->cRequestQueueEntries));
 
     char *pszCtrlType;
@@ -5514,15 +5447,15 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * We need one entry free in the queue.
      */
     pThis->cReplyQueueEntries++;
+    AssertLogRelReturn(pThis->cReplyQueueEntries <= RT_ELEMENTS(pThis->aReplyFreeQueue), VERR_INTERNAL_ERROR_3);
+    AssertLogRelReturn(pThis->cReplyQueueEntries <= RT_ELEMENTS(pThis->aReplyPostQueue), VERR_INTERNAL_ERROR_3);
+
     pThis->cRequestQueueEntries++;
+    AssertLogRelReturn(pThis->cRequestQueueEntries <= RT_ELEMENTS(pThis->aRequestQueue), VERR_INTERNAL_ERROR_3);
 
     /*
-     * Allocate memory for the queues.
+     * Device states.
      */
-    rc = lsilogicR3QueuesAlloc(pThis);
-    if (RT_FAILURE(rc))
-        return rc;
-
     if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
         pThis->cDeviceStates = pThis->cPorts * LSILOGICSCSI_PCI_SPI_DEVICES_PER_BUS_MAX;
     else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
