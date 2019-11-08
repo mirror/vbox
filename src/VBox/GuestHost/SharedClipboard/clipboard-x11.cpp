@@ -654,7 +654,7 @@ static void clipGetFormatsFromTargets(CLIPBACKEND *pCtx,
 #endif
 }
 
-static void clipQueryX11FormatsCallback(CLIPBACKEND *pCtx);
+static DECLCALLBACK(void) clipQueryX11FormatsCallback(CLIPBACKEND *pCtx);
 
 /**
  * Updates the context's information about targets currently supported by X11,
@@ -687,10 +687,10 @@ static void clipUpdateX11Targets(CLIPBACKEND *pCtx, CLIPX11FORMAT *pTargets, siz
  * @note  This function is treated as API glue, and as such is not part of any
  *        unit test.  So keep it simple, be paranoid and log everything.
  */
-static DECLCALLBACK(void) clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
-                                                        Atom * /* selection */, Atom *atomType,
-                                                        XtPointer pValue, long unsigned int *pcLen,
-                                                        int *piFormat)
+static void clipConvertX11TargetsCallback(Widget widget, XtPointer pClient,
+                                          Atom * /* selection */, Atom *atomType,
+                                          XtPointer pValue, long unsigned int *pcLen,
+                                          int *piFormat)
 {
     RT_NOREF(piFormat);
 
@@ -3030,7 +3030,7 @@ int main()
     long unsigned int cLen = 0;
     int format = 8;
     clipConvertX11TargetsCallback(NULL, (XtPointer) pCtx, NULL, &atom, NULL, &cLen,
-                          &format);
+                                  &format);
     RTTEST_CHECK_MSG(hTest, tstClipQueryFormats() == 0,
                      (hTest, "Wrong targets reported: %02X\n",
                       tstClipQueryFormats()));
