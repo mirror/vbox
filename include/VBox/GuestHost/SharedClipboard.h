@@ -118,18 +118,30 @@ typedef SHCLEVENTSOURCEID *PSHCLEVENTSOURCEID;
 typedef uint16_t     SHCLSESSIONID;
 /** Defines a pointer to a session ID. */
 typedef SHCLSESSIONID *PSHCLSESSIONID;
+/** Defines a NIL session ID. */
+#define NIL_SHCLSESSIONID                        UINT16_MAX
+
+/** Defines a transfer ID. */
+typedef uint16_t     SHCLTRANSFERID;
+/** Defines a pointer to a transfer ID. */
+typedef SHCLTRANSFERID *PSHCLTRANSFERID;
+/** Defines a NIL transfer ID. */
+#define NIL_SHCLTRANSFERID                       UINT16_MAX
+
 /** Defines an event ID. */
 typedef uint32_t     SHCLEVENTID;
 /** Defines a pointer to a event source ID. */
 typedef SHCLEVENTID *PSHCLEVENTID;
+/** Defines a NIL event ID. */
+#define NIL_SHCLEVENTID                          UINT32_MAX
 
 /** Maximum number of concurrent Shared Clipboard client sessions a VM can have. */
-#define VBOX_SHCL_MAX_SESSIONS                   UINT16_MAX
+#define VBOX_SHCL_MAX_SESSIONS                   UINT16_MAX - 1
 /** Maximum number of concurrent Shared Clipboard transfers a single
  *  client can have. */
-#define VBOX_SHCL_MAX_TRANSFERS                  UINT16_MAX
+#define VBOX_SHCL_MAX_TRANSFERS                  UINT16_MAX - 1
 /** Maximum number of events a single Shared Clipboard transfer can have. */
-#define VBOX_SHCL_MAX_EVENTS                     UINT32_MAX
+#define VBOX_SHCL_MAX_EVENTS                     UINT32_MAX - 1
 
 /**
  * Creates a context ID out of a client ID, a transfer ID and a count (can be an event ID).

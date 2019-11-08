@@ -1167,6 +1167,23 @@ typedef struct _SHCLERRORDATA
     int32_t rc;
 } SHCLERRORDATA, *PSHCLERRORDATA;
 
+/** Opaque client structure for API access. */
+struct _SHCLCLIENT;
+typedef struct _SHCLCLIENT SHCLCLIENT, *PSHCLCLIENT;
+
+/** Opaque client structure for API access. */
+struct _SHCLCLIENTCMDCTX;
+typedef struct _SHCLCLIENTCMDCTX SHCLCLIENTCMDCTX, *PSHCLCLIENTCMDCTX;
+
+/** @name Public service functions, accessible by the backends.
+ *        Locking is between the (host) service thread and the platform-dependent (window) thread.
+ * @{
+ */
+int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq, PSHCLEVENTID puEvent);
+int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData);
+int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats);
+/** @} */
+
 uint32_t ShClSvcGetMode(void);
 bool ShClSvcGetHeadless(void);
 bool ShClSvcLock(void);
