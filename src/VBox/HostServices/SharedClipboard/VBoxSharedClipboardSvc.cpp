@@ -1060,12 +1060,14 @@ int shclSvcClientWakeup(PSHCLCLIENT pClient)
  * @param   pDataReq            Data request to send to the guest.
  * @param   puEvent             Event ID for waiting for new data. Optional.
  */
-int shClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
+int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
                            PSHCLEVENTID puEvent)
 {
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
     AssertPtrReturn(pDataReq, VERR_INVALID_POINTER);
     /* puEvent is optional. */
+
+    LogFlowFuncEnter();
 
     int rc;
 
@@ -1104,12 +1106,14 @@ int shClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
     return rc;
 }
 
-int shClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
+int ShClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
                           PSHCLDATABLOCK pData)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
     AssertPtrReturn(pCmdCtx, VERR_INVALID_POINTER);
     AssertPtrReturn(pData,   VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
 
     SHCLEVENTID uEvent;
     if (!(pClient->State.fGuestFeatures0 & VBOX_SHCL_GF_0_CONTEXT_ID)) /* Legacy */
@@ -1138,10 +1142,12 @@ int shClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
     return rc;
 }
 
-int shClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
+int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 {
     AssertPtrReturn(pClient,  VERR_INVALID_POINTER);
     AssertPtrReturn(pFormats, VERR_INVALID_POINTER);
+
+    LogFlowFuncEnter();
 
     int rc;
 
@@ -1649,7 +1655,7 @@ static DECLCALLBACK(void) svcCall(void *,
                                 formatData.uFormats = g_ExtState.uDelayedFormats;
                                 Assert(formatData.uFormats != VBOX_SHCL_FMT_NONE); /* There better is *any* format here now. */
 
-                                int rc2 = shClSvcFormatsReport(pClient, &formatData);
+                                int rc2 = ShClSvcFormatsReport(pClient, &formatData);
                                 AssertRC(rc2);
 
                                 g_ExtState.fDelayedAnnouncement = false;
@@ -2127,7 +2133,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
 
                     formatData.uFormats = u32Format;
 
-                    rc = shClSvcFormatsReport(pClient, &formatData);
+                    rc = ShClSvcFormatsReport(pClient, &formatData);
                 }
 
                 break;
@@ -2142,7 +2148,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
                 dataReq.uFmt   = u32Format;
                 dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
-                rc = shClSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
+                rc = ShClSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);
                 break;
             }
 

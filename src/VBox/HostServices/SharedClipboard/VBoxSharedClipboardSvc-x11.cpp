@@ -49,35 +49,12 @@ struct _SHCLCONTEXT
     /** Pointer to the opaque X11 backend structure */
     CLIPBACKEND         *pBackend;
     /** Pointer to the VBox host client data structure. */
-    PSHCLCLIENT pClient;
+    PSHCLCLIENT          pClient;
     /** We set this when we start shutting down as a hint not to post any new
      * requests. */
     bool                 fShuttingDown;
 };
 
-
-/**
- * Report formats available in the X11 clipboard to VBox.
- * @param  pCtx                 Opaque context pointer for the glue code.
- * @param  u32Formats           The formats available.
- */
-DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
-{
-    LogFlowFunc(("pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
-
-    if (u32Formats == VBOX_SHCL_FMT_NONE) /* No formats to report? Bail out early. */
-        return;
-
-    SHCLFORMATDATA formatData;
-    RT_ZERO(formatData);
-
-    formatData.uFormats = u32Formats;
-
-    int rc = shClSvcFormatsReport(pCtx->pClient, &formatData);
-    RT_NOREF(rc);
-
-    LogFlowFuncLeaveRC(rc);
-}
 
 int ShClSvcImplInit(void)
 {
@@ -143,7 +120,7 @@ int ShClSvcImplSync(PSHCLCLIENT pClient)
 
     formatData.uFormats = VBOX_SHCL_FMT_NONE;
 
-    return shClSvcFormatsReport(pClient, &formatData);
+    return ShClSvcFormatsReport(pClient, &formatData);
 }
 
 /**
@@ -192,14 +169,14 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 /** Structure describing a request for clipoard data from the guest. */
 struct _CLIPREADCBREQ
 {
-    /** Where to write the returned data to. Weak pointer! */
+    /** User-supplied data pointer, based on the request type. */
     void                *pv;
-    /** The size of the buffer in pv. */
+    /** The size (in bytes) of the the user-supplied pointer in pv. */
     uint32_t             cb;
     /** The actual size of the data written. */
     uint32_t            *pcbActual;
     /** The request's event ID. */
-    SHCLEVENTID uEvent;
+    SHCLEVENTID          uEvent;
 };
 
 /**
@@ -228,10 +205,10 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
         pReq->pcbActual = pcbActual;
         pReq->uEvent    = uEvent;
 
-        rc = ClipRequestDataFromX11(pClient->State.pCtx->pBackend, pData->uFormat, pReq);
+        rc = ShClEventRegister(&pClient->Events, uEvent);
         if (RT_SUCCESS(rc))
         {
-            rc = ShClEventRegister(&pClient->Events, uEvent);
+            rc = ClipRequestDataFromX11(pClient->State.pCtx->pBackend, pData->uFormat, pReq);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
@@ -243,9 +220,9 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
 
                     Assert(pData->cbData == pPayload->cbData); /* Sanity. */
                 }
-
-                ShClEventUnregister(&pClient->Events, uEvent);
             }
+
+            ShClEventUnregister(&pClient->Events, uEvent);
         }
     }
     else
@@ -265,35 +242,75 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient,
     LogFlowFunc(("pClient=%p, pv=%p, cb=%RU32, uFormat=%02X\n",
                  pClient, pData->pvData, pData->cbData, pData->uFormat));
 
-    int rc = shClSvcDataReadSignal(pClient, pCmdCtx, pData);
+    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, pData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
 /**
+ * Reports formats available in the X11 clipboard to VBox.
+ *
+ * @note   Runs in Xt event thread.
+ *
+ * @param  pCtx                 Opaque context pointer for the glue code.
+ * @param  u32Formats           The formats available.
+ */
+DECLCALLBACK(void) ClipReportX11FormatsCallback(PSHCLCONTEXT pCtx, uint32_t u32Formats)
+{
+    LogFlowFunc(("pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
+
+    if (u32Formats == VBOX_SHCL_FMT_NONE) /* No formats to report? Bail out early. */
+        return;
+
+    SHCLFORMATDATA formatData;
+    RT_ZERO(formatData);
+
+    formatData.uFormats = u32Formats;
+
+    int rc = ShClSvcFormatsReport(pCtx->pClient, &formatData);
+    RT_NOREF(rc);
+
+    LogFlowFuncLeaveRC(rc);
+}
+
+/**
  * Completes a request from the host service for reading the X11 clipboard data.
  * The data should be written to the buffer provided in the initial request.
  *
+ * @note   Runs in Xt event thread.
+ *
  * @param  pCtx                 Request context information.
- * @param  rc                   The completion status of the request.
- * @param  pReq                 Request.
- * @param  pv                   Address.
- * @param  cb                   Size.
+ * @param  rcCompletion         The completion status of the request.
+ * @param  pReq                 Request to complete.
+ * @param  pv                   Address of data from completed request. Optional.
+ * @param  cb                   Size (in bytes) of data from completed request. Optional.
  *
  * @todo   Change this to deal with the buffer issues rather than offloading them onto the caller.
  */
-void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc,
-                                        CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
+DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcCompletion,
+                                                      CLIPREADCBREQ *pReq, void *pv, uint32_t cb)
 {
-    AssertMsgRC(rc, ("Clipboard data completion from X11 failed with %Rrc\n", rc));
+    RT_NOREF(rcCompletion);
 
-    PSHCLEVENTPAYLOAD pPayload;
-    int rc2 = ShClPayloadAlloc(pReq->uEvent, pv, cb, &pPayload);
-    if (RT_SUCCESS(rc2))
+    LogFlowFunc(("rcCompletion=%Rrc, pReq=%p, pv=%p, cb=%RU32, uEvent=%RU32\n", rcCompletion, pReq, pv, cb, pReq->uEvent));
+
+    AssertMsgRC(rcCompletion, ("Clipboard data completion from X11 failed with %Rrc\n", rcCompletion));
+
+    if (pReq->uEvent != NIL_SHCLEVENTID)
+    {
+        int rc2;
+
+        PSHCLEVENTPAYLOAD pPayload = NULL;
+        if (pv && cb)
+        {
+            rc2 = ShClPayloadAlloc(pReq->uEvent, pv, cb, &pPayload);
+            AssertRC(rc2);
+        }
+
         rc2 = ShClEventSignal(&pCtx->pClient->Events, pReq->uEvent, pPayload);
-
-    AssertRC(rc);
+        AssertRC(rc2);
+    }
 
     RTMemFree(pReq);
 }
@@ -301,15 +318,16 @@ void ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc,
 /**
  * Reads clipboard data from the guest and passes it to the X11 clipboard.
  *
- * @param  pCtx      Pointer to the host clipboard structure
+ * @note   Runs in Xt event thread.
+ *
+ * @param  pCtx      Pointer to the host clipboard structure.
  * @param  u32Format The format in which the data should be transferred
  * @param  ppv       On success and if pcb > 0, this will point to a buffer
  *                   to be freed with RTMemFree containing the data read.
  * @param  pcb       On success, this contains the number of bytes of data
- *                   returned
- * @note   Host glue code.
+ *                   returned.
  */
-DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ClipRequestDataForX11Callback(PSHCLCONTEXT pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
 {
     LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p\n", pCtx, u32Format, ppv));
 
@@ -328,7 +346,7 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32F
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
     SHCLEVENTID uEvent;
-    int rc = shClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
+    int rc = ShClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
@@ -372,9 +390,38 @@ int ShClSvcImplTransferDestroy(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 
 int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
-    RT_NOREF(pClient, pTransfer);
+    LogFlowFuncEnter();
 
-    int rc = VINF_SUCCESS;
+    int rc;
+
+    CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
+    if (pReq)
+    {
+        pReq->pv        = pTransfer;
+        pReq->cb        = sizeof(SHCLTRANSFER);
+        pReq->uEvent    = NIL_SHCLEVENTID; /* No event handling needed. */
+
+    #if 0
+        SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
+
+        rc = ShClEventRegister(&pClient->Events, uEvent);
+        if (RT_SUCCESS(rc))
+        {
+    #endif
+            rc = ClipRequestDataFromX11(pClient->State.pCtx->pBackend, VBOX_SHCL_FMT_URI_LIST, pReq);
+    #if 0
+            if (RT_SUCCESS(rc))
+            {
+                /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
+                rc = ShClEventWait(&pClient->Events, uEvent, 30 * 1000, NULL /* pPayload */);
+            }
+
+            ShClEventUnregister(&pClient->Events, uEvent);
+        }
+    #endif
+    }
+    else
+        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;

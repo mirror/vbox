@@ -178,7 +178,7 @@ static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT cfFormat,
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
     SHCLEVENTID uEvent = 0;
-    int rc = shClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
+    int rc = ShClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
     if (RT_SUCCESS(rc))
     {
         PSHCLEVENTPAYLOAD pPayload;
@@ -590,7 +590,7 @@ static int vboxClipboardSvcWinSyncInternal(PSHCLCONTEXT pCtx)
         if (   RT_SUCCESS(rc)
             && Formats.uFormats != VBOX_SHCL_FMT_NONE)
         {
-            rc = shClSvcFormatsReport(pCtx->pClient, &Formats);
+            rc = ShClSvcFormatsReport(pCtx->pClient, &Formats);
         }
     }
     else /* If we don't have any client data (yet), bail out. */
@@ -863,7 +863,7 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 {
     LogFlowFuncEnter();
 
-    int rc = shClSvcDataReadSignal(pClient, pCmdCtx, pData);
+    int rc = ShClSvcDataReadSignal(pClient, pCmdCtx, pData);
 
     LogFlowFuncLeaveRC(rc);
     return rc;

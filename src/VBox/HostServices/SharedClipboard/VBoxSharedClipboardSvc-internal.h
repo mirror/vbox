@@ -178,13 +178,6 @@ typedef struct _SHCLEXTSTATE
     uint32_t       uDelayedFormats;
 } SHCLEXTSTATE, *PSHCLEXTSTATE;
 
-/*
- * The service functions. Locking is between the service thread and the platform-dependent (window) thread.
- */
-int shClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq, PSHCLEVENTID puEvent);
-int shClSvcDataReadSignal(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx, PSHCLDATABLOCK pData);
-int shClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats);
-
 int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource);
 
 void shclSvcMsgQueueReset(PSHCLCLIENT pClient);
