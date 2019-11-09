@@ -361,8 +361,6 @@ typedef struct LSILOGICSCSI
         uint8_t                      u8Padding[2 * sizeof(RTUINTPTR)];
     };
 
-    /** The support driver session handle. */
-    R3R0PTRTYPE(PSUPDRVSESSION)      pSupDrvSession;
     /** Worker thread. */
     R3PTRTYPE(PPDMTHREAD)            pThreadWrk;
     /** The event semaphore the processing thread waits on. */
@@ -642,7 +640,7 @@ static void lsilogicR3FinishContextReply(PLSILOGICSCSI pThis, uint32_t u32Messag
     AssertMsg(pThis->enmDoorbellState == LSILOGICDOORBELLSTATE_NOT_IN_USE, ("We are in a doorbell function\n"));
 
     /* Write message context ID into reply post queue. */
-    rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
+    rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
     AssertRC(rc);
 
     /* Check for a entry in the queue. */
@@ -650,7 +648,7 @@ static void lsilogicR3FinishContextReply(PLSILOGICSCSI pThis, uint32_t u32Messag
     {
         /* Set error code. */
         lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INSUFFICIENT_RESOURCES);
-        PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
+        PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect);
         return;
     }
 
@@ -662,7 +660,7 @@ static void lsilogicR3FinishContextReply(PLSILOGICSCSI pThis, uint32_t u32Messag
     /* Set interrupt. */
     lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
 
-    PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
+    PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect);
 }
 
 
@@ -699,7 +697,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
 # ifdef IN_RING3
         int rc;
         /* Grab a free reply message from the queue. */
-        rc = PDMCritSectEnter(&pThis->ReplyFreeQueueCritSect, VINF_SUCCESS);
+        rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->ReplyFreeQueueCritSect, VINF_SUCCESS);
         AssertRC(rc);
 
         /* Check for a free reply frame. */
@@ -707,7 +705,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         {
             /* Set error code. */
             lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INSUFFICIENT_RESOURCES);
-            PDMCritSectLeave(&pThis->ReplyFreeQueueCritSect);
+            PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyFreeQueueCritSect);
             return;
         }
 
@@ -716,7 +714,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         pThis->uReplyFreeQueueNextAddressRead++;
         pThis->uReplyFreeQueueNextAddressRead %= pThis->cReplyQueueEntries;
 
-        PDMCritSectLeave(&pThis->ReplyFreeQueueCritSect);
+        PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyFreeQueueCritSect);
 
         /* Build 64bit physical address. */
         RTGCPHYS GCPhysReplyMessage = LSILOGIC_RTGCPHYS_FROM_U32(pThis->u32HostMFAHighAddr, u32ReplyFrameAddressLow);
@@ -726,7 +724,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhysReplyMessage, pReply, cbReplyCopied);
 
         /* Write low 32bits of reply frame into post reply queue. */
-        rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
+        rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect, VINF_SUCCESS);
         AssertRC(rc);
 
         /* Check for a entry in the queue. */
@@ -734,7 +732,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         {
             /* Set error code. */
             lsilogicSetIOCFaultCode(pThis, LSILOGIC_IOCSTATUS_INSUFFICIENT_RESOURCES);
-            PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
+            PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect);
             return;
         }
 
@@ -753,7 +751,7 @@ static void lsilogicFinishAddressReply(PLSILOGICSCSI pThis, PMptReplyUnion pRepl
         /* Set interrupt. */
         lsilogicSetInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
 
-        PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
+        PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect);
 # else
         AssertMsgFailed(("This is not allowed to happen.\n"));
 # endif
@@ -1256,19 +1254,19 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
     {
         case LSILOGIC_REG_REPLY_QUEUE:
         {
-            int rc = PDMCritSectEnter(&pThis->ReplyFreeQueueWriteCritSect, VINF_IOM_R3_MMIO_WRITE);
+            int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->ReplyFreeQueueWriteCritSect, VINF_IOM_R3_MMIO_WRITE);
             if (rc != VINF_SUCCESS)
                 return rc;
             /* Add the entry to the reply free queue. */
             ASMAtomicWriteU32(&pThis->aReplyFreeQueue[pThis->uReplyFreeQueueNextEntryFreeWrite], u32);
             pThis->uReplyFreeQueueNextEntryFreeWrite++;
             pThis->uReplyFreeQueueNextEntryFreeWrite %= pThis->cReplyQueueEntries;
-            PDMCritSectLeave(&pThis->ReplyFreeQueueWriteCritSect);
+            PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyFreeQueueWriteCritSect);
             break;
         }
         case LSILOGIC_REG_REQUEST_QUEUE:
         {
-            int rc = PDMCritSectEnter(&pThis->RequestQueueCritSect, VINF_IOM_R3_MMIO_WRITE);
+            int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->RequestQueueCritSect, VINF_IOM_R3_MMIO_WRITE);
             if (rc != VINF_SUCCESS)
                 return rc;
 
@@ -1285,7 +1283,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
             uNextWrite++;
             uNextWrite %= pThis->cRequestQueueEntries;
             ASMAtomicWriteU32(&pThis->uRequestQueueNextEntryFreeWrite, uNextWrite);
-            PDMCritSectLeave(&pThis->RequestQueueCritSect);
+            PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->RequestQueueCritSect);
 
             /* Send notification to R3 if there is not one sent already. Do this
              * only if the worker thread is not sleeping or might go sleeping. */
@@ -1294,7 +1292,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
                 if (ASMAtomicReadBool(&pThis->fWrkThreadSleeping))
                 {
                     LogFlowFunc(("Signal event semaphore\n"));
-                    rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+                    rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
                     AssertRC(rc);
                 }
             }
@@ -1530,7 +1528,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
     {
         case LSILOGIC_REG_REPLY_QUEUE:
         {
-            rc = PDMCritSectEnter(&pThis->ReplyPostQueueCritSect, VINF_IOM_R3_MMIO_READ);
+            rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect, VINF_IOM_R3_MMIO_READ);
             if (rc != VINF_SUCCESS)
                 break;
 
@@ -1550,7 +1548,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
                 u32 = UINT32_C(0xffffffff);
                 lsilogicClearInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
             }
-            PDMCritSectLeave(&pThis->ReplyPostQueueCritSect);
+            PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect);
 
             Log(("%s: Returning address %#x\n", __FUNCTION__, u32));
             break;
@@ -3915,7 +3913,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWrite(PPDMDEVINS pDevIns, void *pvUs
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
         /* Notify the worker thread that there are pending requests. */
         LogFlowFunc(("Signal event semaphore\n"));
-        rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+        rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
         AssertRC(rc);
     }
     else if (RT_FAILURE(rc))
@@ -3944,7 +3942,7 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *p
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
         /* Notify the worker thread that there are pending requests. */
         LogFlowFunc(("Signal event semaphore\n"));
-        rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+        rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
         AssertRC(rc);
     }
     else if (RT_FAILURE(rc))
@@ -4197,7 +4195,7 @@ static DECLCALLBACK(int) lsilogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
         if (!fNotificationSent)
         {
             Assert(ASMAtomicReadBool(&pThis->fWrkThreadSleeping));
-            rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hEvtProcess, RT_INDEFINITE_WAIT);
+            rc = PDMDevHlpSUPSemEventWaitNoResume(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess, RT_INDEFINITE_WAIT);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                 break;
@@ -4312,7 +4310,7 @@ static DECLCALLBACK(int) lsilogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD p
 {
     RT_NOREF(pThread);
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+    return PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
 }
 
 
@@ -4329,7 +4327,7 @@ static void lsilogicR3Kick(PLSILOGICSCSI pThis)
     {
         /* Notify the worker thread that there are pending requests. */
         LogFlowFunc(("Signal event semaphore\n"));
-        int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+        int rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
         AssertRC(rc);
     }
 }
@@ -5223,20 +5221,20 @@ static DECLCALLBACK(void) lsilogicR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
 {
-    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
-    PDMR3CritSectDelete(&pThis->ReplyFreeQueueCritSect);
-    PDMR3CritSectDelete(&pThis->ReplyPostQueueCritSect);
-    PDMR3CritSectDelete(&pThis->RequestQueueCritSect);
-    PDMR3CritSectDelete(&pThis->ReplyFreeQueueWriteCritSect);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->ReplyFreeQueueCritSect);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->ReplyPostQueueCritSect);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->RequestQueueCritSect);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->ReplyFreeQueueWriteCritSect);
 
     RTMemFree(pThis->paDeviceStates);
     pThis->paDeviceStates = NULL;
 
     if (pThis->hEvtProcess != NIL_SUPSEMEVENT)
     {
-        SUPSemEventClose(pThis->pSupDrvSession, pThis->hEvtProcess);
+        PDMDevHlpSUPSemEventClose(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
         pThis->hEvtProcess = NIL_SUPSEMEVENT;
     }
 
@@ -5251,10 +5249,10 @@ static DECLCALLBACK(int) lsilogicR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
     PCPDMDEVHLPR3 pHlp  = pDevIns->pHlpR3;
     int           rc    = VINF_SUCCESS;
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Initialize enought of the state to make the destructure not trip up.
@@ -5302,23 +5300,20 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                                    LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MIN - 1);
     Log(("%s: RequestQueueDepth=%u\n", __FUNCTION__, pThis->cRequestQueueEntries));
 
-    char *pszCtrlType;
-    rc = pHlp->pfnCFGMQueryStringAllocDef(pCfg, "ControllerType", &pszCtrlType, LSILOGICSCSI_PCI_SPI_CTRLNAME);
+    char szCtrlType[64];
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "ControllerType", szCtrlType, sizeof(szCtrlType), LSILOGICSCSI_PCI_SPI_CTRLNAME);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read ControllerType as string"));
-    Log(("%s: ControllerType=%s\n", __FUNCTION__, pszCtrlType));
-
-    rc = lsilogicR3GetCtrlTypeFromString(pThis, pszCtrlType);
-    MMR3HeapFree(pszCtrlType);
+    Log(("%s: ControllerType=%s\n", __FUNCTION__, szCtrlType));
+    rc = lsilogicR3GetCtrlTypeFromString(pThis, szCtrlType);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic configuration error: failed to determine controller type from string"));
 
     char szDevTag[20];
     RTStrPrintf(szDevTag, sizeof(szDevTag), "LSILOGIC%s-%u",
                 pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "SPI" : "SAS",
                 iInstance);
-
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic configuration error: failed to determine controller type from string"));
 
     rc = pHlp->pfnCFGMQueryU8(pCfg, "NumPorts", &pThis->cPorts);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -5374,7 +5369,6 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->pDevInsR3 = pDevIns;
     pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
     pThis->IBase.pfnQueryInterface = lsilogicR3StatusQueryInterface;
     pThis->ILeds.pfnQueryStatusLed = lsilogicR3StatusQueryStatusLed;
 
@@ -5461,7 +5455,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
         pThis->cDeviceStates = pThis->cPorts * LSILOGICSCSI_PCI_SAS_DEVICES_PER_PORT_MAX;
     else
-        AssertMsgFailed(("Invalid controller type: %d\n", pThis->enmCtrlType));
+        AssertLogRelMsgFailedReturn(("Invalid controller type: %d\n", pThis->enmCtrlType), VERR_INTERNAL_ERROR_4);
 
     /*
      * Create event semaphore and worker thread.
@@ -5472,7 +5466,7 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("LsiLogic: Failed to create worker thread %s"), szDevTag);
 
-    rc = SUPSemEventCreate(pThis->pSupDrvSession, &pThis->hEvtProcess);
+    rc = PDMDevHlpSUPSemEventCreate(pThis->CTX_SUFF(pDevIns), &pThis->hEvtProcess);
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("LsiLogic: Failed to create SUP event semaphore"));
