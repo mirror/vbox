@@ -6993,7 +6993,29 @@ VMMR3DECL(int) SSMR3GetBool(PSSMHANDLE pSSM, bool *pfBool)
     if (RT_SUCCESS(rc))
     {
         Assert(u8 <= 1);
-        *pfBool = !!u8;
+        *pfBool = RT_BOOL(u8);
+    }
+    return rc;
+}
+
+
+/**
+ * Loads a volatile boolean item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pfBool          Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetBoolV(PSSMHANDLE pSSM, bool volatile *pfBool)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    uint8_t u8; /* see SSMR3PutBool */
+    int rc = ssmR3DataRead(pSSM, &u8, sizeof(u8));
+    if (RT_SUCCESS(rc))
+    {
+        Assert(u8 <= 1);
+        *pfBool = RT_BOOL(u8);
     }
     return rc;
 }
@@ -7015,6 +7037,21 @@ VMMR3DECL(int) SSMR3GetU8(PSSMHANDLE pSSM, uint8_t *pu8)
 
 
 /**
+ * Loads a volatile 8-bit unsigned integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pu8             Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetU8V(PSSMHANDLE pSSM, uint8_t volatile *pu8)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pu8, sizeof(*pu8));
+}
+
+
+/**
  * Loads a 8-bit signed integer item from the current data unit.
  *
  * @returns VBox status code.
@@ -7026,6 +7063,21 @@ VMMR3DECL(int) SSMR3GetS8(PSSMHANDLE pSSM, int8_t *pi8)
     SSM_ASSERT_READABLE_RET(pSSM);
     SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi8, sizeof(*pi8));
+}
+
+
+/**
+ * Loads a volatile 8-bit signed integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pi8             Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetS8V(PSSMHANDLE pSSM, int8_t volatile *pi8)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pi8, sizeof(*pi8));
 }
 
 
@@ -7045,6 +7097,21 @@ VMMR3DECL(int) SSMR3GetU16(PSSMHANDLE pSSM, uint16_t *pu16)
 
 
 /**
+ * Loads a volatile 16-bit unsigned integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pu16            Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetU16V(PSSMHANDLE pSSM, uint16_t volatile *pu16)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pu16, sizeof(*pu16));
+}
+
+
+/**
  * Loads a 16-bit signed integer item from the current data unit.
  *
  * @returns VBox status code.
@@ -7056,6 +7123,21 @@ VMMR3DECL(int) SSMR3GetS16(PSSMHANDLE pSSM, int16_t *pi16)
     SSM_ASSERT_READABLE_RET(pSSM);
     SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi16, sizeof(*pi16));
+}
+
+
+/**
+ * Loads a volatile 16-bit signed integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pi16            Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetS16V(PSSMHANDLE pSSM, int16_t volatile *pi16)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pi16, sizeof(*pi16));
 }
 
 
@@ -7075,6 +7157,21 @@ VMMR3DECL(int) SSMR3GetU32(PSSMHANDLE pSSM, uint32_t *pu32)
 
 
 /**
+ * Loads a volatile 32-bit unsigned integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pu32            Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetU32V(PSSMHANDLE pSSM, uint32_t volatile *pu32)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pu32, sizeof(*pu32));
+}
+
+
+/**
  * Loads a 32-bit signed integer item from the current data unit.
  *
  * @returns VBox status code.
@@ -7086,6 +7183,21 @@ VMMR3DECL(int) SSMR3GetS32(PSSMHANDLE pSSM, int32_t *pi32)
     SSM_ASSERT_READABLE_RET(pSSM);
     SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi32, sizeof(*pi32));
+}
+
+
+/**
+ * Loads a volatile 32-bit signed integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pi32            Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetS32V(PSSMHANDLE pSSM, int32_t volatile *pi32)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pi32, sizeof(*pi32));
 }
 
 
@@ -7105,6 +7217,21 @@ VMMR3DECL(int) SSMR3GetU64(PSSMHANDLE pSSM, uint64_t *pu64)
 
 
 /**
+ * Loads a volatile 64-bit unsigned integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pu64            Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetU64V(PSSMHANDLE pSSM, uint64_t volatile *pu64)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pu64, sizeof(*pu64));
+}
+
+
+/**
  * Loads a 64-bit signed integer item from the current data unit.
  *
  * @returns VBox status code.
@@ -7116,6 +7243,21 @@ VMMR3DECL(int) SSMR3GetS64(PSSMHANDLE pSSM, int64_t *pi64)
     SSM_ASSERT_READABLE_RET(pSSM);
     SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi64, sizeof(*pi64));
+}
+
+
+/**
+ * Loads a volatile 64-bit signed integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pi64            Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetS64V(PSSMHANDLE pSSM, int64_t volatile *pi64)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pi64, sizeof(*pi64));
 }
 
 
@@ -7135,6 +7277,21 @@ VMMR3DECL(int) SSMR3GetU128(PSSMHANDLE pSSM, uint128_t *pu128)
 
 
 /**
+ * Loads a volatile 128-bit unsigned integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pu128           Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetU128V(PSSMHANDLE pSSM, uint128_t volatile *pu128)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pu128, sizeof(*pu128));
+}
+
+
+/**
  * Loads a 128-bit signed integer item from the current data unit.
  *
  * @returns VBox status code.
@@ -7146,6 +7303,21 @@ VMMR3DECL(int) SSMR3GetS128(PSSMHANDLE pSSM, int128_t *pi128)
     SSM_ASSERT_READABLE_RET(pSSM);
     SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pi128, sizeof(*pi128));
+}
+
+
+/**
+ * Loads a volatile 128-bit signed integer item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pi128           Where to store the item.
+ */
+VMMR3DECL(int) SSMR3GetS128V(PSSMHANDLE pSSM, int128_t volatile *pi128)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pi128, sizeof(*pi128));
 }
 
 
@@ -7225,6 +7397,21 @@ VMMR3DECL(int) SSMR3GetGCPhys32(PSSMHANDLE pSSM, PRTGCPHYS32 pGCPhys)
 
 
 /**
+ * Loads a 32 bits GC physical address item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pGCPhys         Where to store the GC physical address.
+ */
+VMMR3DECL(int) SSMR3GetGCPhys32V(PSSMHANDLE pSSM, RTGCPHYS32 volatile *pGCPhys)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pGCPhys, sizeof(*pGCPhys));
+}
+
+
+/**
  * Loads a 64 bits GC physical address item from the current data unit.
  *
  * @returns VBox status code.
@@ -7236,6 +7423,21 @@ VMMR3DECL(int) SSMR3GetGCPhys64(PSSMHANDLE pSSM, PRTGCPHYS64 pGCPhys)
     SSM_ASSERT_READABLE_RET(pSSM);
     SSM_CHECK_CANCELLED_RET(pSSM);
     return ssmR3DataRead(pSSM, pGCPhys, sizeof(*pGCPhys));
+}
+
+
+/**
+ * Loads a volatile 64 bits GC physical address item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pGCPhys         Where to store the GC physical address.
+ */
+VMMR3DECL(int) SSMR3GetGCPhys64V(PSSMHANDLE pSSM, RTGCPHYS64 volatile *pGCPhys)
+{
+    SSM_ASSERT_READABLE_RET(pSSM);
+    SSM_CHECK_CANCELLED_RET(pSSM);
+    return ssmR3DataRead(pSSM, (void *)pGCPhys, sizeof(*pGCPhys));
 }
 
 
@@ -7278,6 +7480,18 @@ VMMR3DECL(int) SSMR3GetGCPhys(PSSMHANDLE pSSM, PRTGCPHYS pGCPhys)
     /* 32-bit saved, 64-bit load: clear the high part. */
     *pGCPhys = 0;
     return ssmR3DataRead(pSSM, pGCPhys, sizeof(uint32_t));
+}
+
+/**
+ * Loads a volatile GC physical address item from the current data unit.
+ *
+ * @returns VBox status code.
+ * @param   pSSM            The saved state handle.
+ * @param   pGCPhys         Where to store the GC physical address.
+ */
+VMMR3DECL(int) SSMR3GetGCPhysV(PSSMHANDLE pSSM, RTGCPHYS volatile *pGCPhys)
+{
+    return SSMR3GetGCPhys(pSSM, (PRTGCPHYS)pGCPhys);
 }
 
 
