@@ -2463,9 +2463,9 @@ void vmsvga3dOglSetPackParams(PVMSVGA3DSTATE pState, PVMSVGA3DCONTEXT pContext, 
      * Save (ignore errors, setting the defaults we want and avoids restore).
      */
     pSave->iAlignment = 1;
-    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_ALIGNMENT, &pSave->iAlignment), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_PACK_ALIGNMENT, &pSave->iAlignment), pState, pContext);
     pSave->cxRow = 0;
-    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_UNPACK_ROW_LENGTH, &pSave->cxRow), pState, pContext);
+    VMSVGA3D_ASSERT_GL_CALL(glGetIntegerv(GL_PACK_ROW_LENGTH, &pSave->cxRow), pState, pContext);
 
 #ifdef VMSVGA3D_PARANOID_TEXTURE_PACKING
     pSave->cyImage = 0;
