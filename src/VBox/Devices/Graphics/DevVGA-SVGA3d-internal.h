@@ -356,6 +356,7 @@ typedef void (APIENTRYP PFNGLGETPROGRAMIVARBPROC) (GLenum target, GLenum pname, 
  *          VERR_INTERNAL_ERROR in strict builds and just barge on ahead in
  *          release builds.
  */
+/** @todo Rename to VMSVGA3D_CHECK_LAST_ERROR_RETURN */
 # ifdef VBOX_STRICT
 #  define VMSVGA3D_CHECK_LAST_ERROR(pState, pContext) do {                   \
     Assert((pState)->idActiveContext == (pContext)->id);                    \
@@ -560,6 +561,9 @@ typedef struct VMSVGA3DSURFACE
     } oglId;
     GLenum                  targetGL;  /* GL_TEXTURE_* */
     GLenum                  bindingGL; /* GL_TEXTURE_BINDING_* */
+    /* Emulated formats */
+    bool                    fEmulated; /* Whether the texture format is emulated. */
+    GLuint                  idEmulated; /* GL name of the intermediate texture. */
 #endif
     SVGA3dSurfaceFace       faces[SVGA3D_MAX_SURFACE_FACES];
     uint32_t                cFaces;
@@ -939,6 +943,10 @@ static SSMFIELD const g_aVMSVGA3DCONTEXTFields[] =
 #endif /* VMSVGA3D_INCL_STRUCTURE_DESCRIPTORS */
 
 
+#ifdef VMSVGA3D_OPENGL
+typedef struct VMSVGA3DFORMATCONVERTOR *PVMSVGA3DFORMATCONVERTOR;
+#endif
+
 /**
  * VMSVGA3d state data.
  *
@@ -1051,6 +1059,24 @@ typedef struct VMSVGA3DSTATE
         PFNGLCOMPRESSEDTEXIMAGE3DPROC                   glCompressedTexImage3D;
         PFNGLCOMPRESSEDTEXSUBIMAGE2DPROC                glCompressedTexSubImage2D;
         PFNGLCOMPRESSEDTEXSUBIMAGE3DPROC                glCompressedTexSubImage3D;
+        PFNGLDRAWBUFFERSPROC                            glDrawBuffers;
+        PFNGLCREATESHADERPROC                           glCreateShader;
+        PFNGLSHADERSOURCEPROC                           glShaderSource;
+        PFNGLCOMPILESHADERPROC                          glCompileShader;
+        PFNGLGETSHADERIVPROC                            glGetShaderiv;
+        PFNGLGETSHADERINFOLOGPROC                       glGetShaderInfoLog;
+        PFNGLCREATEPROGRAMPROC                          glCreateProgram;
+        PFNGLATTACHSHADERPROC                           glAttachShader;
+        PFNGLLINKPROGRAMPROC                            glLinkProgram;
+        PFNGLGETPROGRAMIVPROC                           glGetProgramiv;
+        PFNGLGETPROGRAMINFOLOGPROC                      glGetProgramInfoLog;
+        PFNGLUSEPROGRAMPROC                             glUseProgram;
+        PFNGLGETUNIFORMLOCATIONPROC                     glGetUniformLocation;
+        PFNGLUNIFORM1IPROC                              glUniform1i;
+        PFNGLUNIFORM4FVPROC                             glUniform4fv;
+        PFNGLDETACHSHADERPROC                           glDetachShader;
+        PFNGLDELETESHADERPROC                           glDeleteShader;
+        PFNGLDELETEPROGRAMPROC                          glDeleteProgram;
     } ext;
 
     struct
@@ -1091,6 +1117,9 @@ typedef struct VMSVGA3DSTATE
 # ifdef VMSVGA3D_OPENGL
     /** The shared context. */
     VMSVGA3DCONTEXT         SharedCtx;
+
+    /** Conversion of emulated formats. Resources are created on the SharedCtx. */
+    PVMSVGA3DFORMATCONVERTOR pConv;
 # endif
 #endif /* VMSVGA3D_OPENGL */
 } VMSVGA3DSTATE;
@@ -1302,6 +1331,25 @@ bool D3D9CheckDeviceFormat(IDirect3D9 *pD3D9,
                            DWORD Usage,
                            D3DRESOURCETYPE RType,
                            D3DFORMAT CheckFormat);
+#endif
+
+#ifdef VMSVGA3D_OPENGL
+void vmsvga3dOnSharedContextDefine(PVMSVGA3DSTATE pState);
+void vmsvga3dOnSharedContextDestroy(PVMSVGA3DSTATE pState);
+
+DECLINLINE(GLuint) GLTextureId(PVMSVGA3DSURFACE pSurface)
+{
+    return pSurface->fEmulated ? pSurface->idEmulated : pSurface->oglId.texture;
+}
+
+void FormatConvUpdateTexture(PVMSVGA3DSTATE pState,
+                             PVMSVGA3DCONTEXT pCurrentContext,
+                             PVMSVGA3DSURFACE pSurface,
+                             uint32_t iMipmap);
+void FormatConvReadTexture(PVMSVGA3DSTATE pState,
+                           PVMSVGA3DCONTEXT pCurrentContext,
+                           PVMSVGA3DSURFACE pSurface,
+                           uint32_t iMipmap);
 #endif
 
 #endif /* !VBOX_INCLUDED_SRC_Graphics_DevVGA_SVGA3d_internal_h */
