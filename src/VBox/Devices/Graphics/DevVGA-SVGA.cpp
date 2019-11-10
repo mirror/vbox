@@ -8,7 +8,6 @@
  *  - Log2 for hex dump of cursor data.
  *  - Log3 for hex dump of shader code.
  *  - Log4 for hex dumps of 3D data.
- *  - Log5 for info about GMR pages.
  */
 
 /*
@@ -3933,8 +3932,6 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 if (pCmd->numPages == 0)
                     break;
 
-                /** @todo Move to a separate function vmsvgaGMRRemap() */
-
                 /* Calc new total page count so we can use it instead of cMaxPages for allocations below. */
                 uint32_t const cNewTotalPages = RT_MAX(pGMR->cbTotal >> X86_PAGE_SHIFT, pCmd->offsetPages + pCmd->numPages);
 
@@ -4023,19 +4020,19 @@ static DECLCALLBACK(int) vmsvgaFIFOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                         {
                             Assert(paDescs[iDescriptor].numPages);
                             paDescs[iDescriptor].numPages++;
-                            Log5Func(("Page %x GCPhys=%RGp successor\n", i, GCPhys));
+                            LogFlow(("Page %x GCPhys=%RGp successor\n", i, GCPhys));
                         }
                         else
                         {
                             iDescriptor++;
                             paDescs[iDescriptor].GCPhys   = GCPhys;
                             paDescs[iDescriptor].numPages = 1;
-                            Log5Func(("Page %x GCPhys=%RGp\n", i, paDescs[iDescriptor].GCPhys));
+                            LogFlow(("Page %x GCPhys=%RGp\n", i, paDescs[iDescriptor].GCPhys));
                         }
                     }
 
                     pGMR->cbTotal = cNewTotalPages << X86_PAGE_SHIFT;
-                    Log5Func(("Nr of descriptors %x; cbTotal=%#x\n", iDescriptor + 1, cNewTotalPages));
+                    LogFlow(("Nr of descriptors %x; cbTotal=%#x\n", iDescriptor + 1, cNewTotalPages));
                     pGMR->numDescriptors = iDescriptor + 1;
                 }
 
@@ -5043,7 +5040,7 @@ int vmsvgaGMRTransfer(PVGASTATE pThis, const SVGA3dTransferType enmTransferType,
 
             RTGCPHYS const GCPhys = paDesc[iDesc].GCPhys + offGmrCurrent - offDesc;
 
-            Log5Func(("%s phys=%RGp\n", (enmTransferType == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", GCPhys));
+            LogFlowFunc(("%s phys=%RGp\n", (enmTransferType == SVGA3D_WRITE_HOST_VRAM) ? "READ" : "WRITE", GCPhys));
 
             if (enmTransferType == SVGA3D_WRITE_HOST_VRAM)
                 rc = PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, pbCurrentHost, cbToCopy);
