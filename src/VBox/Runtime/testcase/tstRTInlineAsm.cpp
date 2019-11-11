@@ -219,7 +219,7 @@ void tstASMCpuId(void)
         } while (ASMGetApicId() != idApic);
 
         CHECKVAL(uEDX2, idExtApic, "%x");
-        if (idApic != (uint8_t)idExtApic)
+        if (idApic != (uint8_t)idExtApic && uECX2 != 0)
             RTTestIFailed("ASMGetApicIdExt0B() -> %#x vs ASMGetApicId() -> %#x", idExtApic, idApic);
     }
     if (ASMCpuId_EAX(UINT32_C(0x80000000)) >= UINT32_C(0x8000001E))
