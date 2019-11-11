@@ -64,16 +64,16 @@
 #define LSILOGIC_SAVED_STATE_VERSION_VBOX_30        1
 
 /** Maximum number of entries in the release log. */
-#define MAX_REL_LOG_ERRORS 1024
+#define MAX_REL_LOG_ERRORS                          1024
 
-#define LSILOGIC_RTGCPHYS_FROM_U32(Hi, Lo)         ( (RTGCPHYS)RT_MAKE_U64(Lo, Hi) )
+#define LSILOGIC_RTGCPHYS_FROM_U32(Hi, Lo)          ( (RTGCPHYS)RT_MAKE_U64(Lo, Hi) )
 
 /** Upper number a buffer is freed if it was too big before. */
-#define LSILOGIC_MAX_ALLOC_TOO_MUCH 20
+#define LSILOGIC_MAX_ALLOC_TOO_MUCH                 20
 
 /** Maximum size of the memory regions (prevents teh guest from DOSing the host by
  * allocating loadds of memory). */
-#define LSILOGIC_MEMORY_REGIONS_MAX (_1M)
+#define LSILOGIC_MEMORY_REGIONS_MAX                 _1M
 
 
 /*********************************************************************************************************************************
@@ -110,13 +110,13 @@ typedef LSILOGICR3MEMCOPYCALLBACK *PLSILOGICR3MEMCOPYCALLBACK;
 typedef struct LSILOGICSCSIREPLY
 {
     /** Lower 32 bits of the reply address in memory. */
-    uint32_t      u32HostMFALowAddress;
+    uint32_t        u32HostMFALowAddress;
     /** Full address of the reply in guest memory. */
-    RTGCPHYS      GCPhysReplyAddress;
+    RTGCPHYS        GCPhysReplyAddress;
     /** Size of the reply. */
-    uint32_t      cbReply;
+    uint32_t        cbReply;
     /** Different views to the reply depending on the request type. */
-    MptReplyUnion Reply;
+    MptReplyUnion   Reply;
 } LSILOGICSCSIREPLY;
 /** Pointer to reply data. */
 typedef LSILOGICSCSIREPLY *PLSILOGICSCSIREPLY;
@@ -127,13 +127,13 @@ typedef LSILOGICSCSIREPLY *PLSILOGICSCSIREPLY;
 typedef struct LSILOGICMEMREGN
 {
     /** List node. */
-    RTLISTNODE    NodeList;
+    RTLISTNODE      NodeList;
     /** 32bit address the region starts to describe. */
-    uint32_t      u32AddrStart;
+    uint32_t        u32AddrStart;
     /** 32bit address the region ends (inclusive). */
-    uint32_t      u32AddrEnd;
+    uint32_t        u32AddrEnd;
     /** Data for this region - variable. */
-    uint32_t      au32Data[1];
+    uint32_t        au32Data[1];
 } LSILOGICMEMREGN;
 /** Pointer to a memory region. */
 typedef LSILOGICMEMREGN *PLSILOGICMEMREGN;
@@ -148,33 +148,33 @@ typedef LSILOGICMEMREGN *PLSILOGICMEMREGN;
 typedef struct LSILOGICDEVICE
 {
     /** Pointer to the owning lsilogic device instance. - R3 pointer */
-    R3PTRTYPE(PLSILOGICSCSI)      pLsiLogicR3;
+    R3PTRTYPE(PLSILOGICSCSI)    pLsiLogicR3;
 
     /** LUN of the device. */
-    uint32_t                      iLUN;
+    uint32_t                    iLUN;
     /** Number of outstanding tasks on the port. */
-    volatile uint32_t             cOutstandingRequests;
+    volatile uint32_t           cOutstandingRequests;
 
 #if HC_ARCH_BITS == 64
-    uint32_t                      Alignment0;
+    uint32_t                    Alignment0;
 #endif
 
     /** Our base interface. */
-    PDMIBASE                      IBase;
+    PDMIBASE                    IBase;
     /** Media port interface. */
-    PDMIMEDIAPORT                 IMediaPort;
+    PDMIMEDIAPORT               IMediaPort;
     /** Extended media port interface. */
-    PDMIMEDIAEXPORT               IMediaExPort;
+    PDMIMEDIAEXPORT             IMediaExPort;
     /** Led interface. */
-    PDMILEDPORTS                  ILed;
+    PDMILEDPORTS                ILed;
     /** Pointer to the attached driver's base interface. */
-    R3PTRTYPE(PPDMIBASE)          pDrvBase;
+    R3PTRTYPE(PPDMIBASE)        pDrvBase;
     /** Pointer to the attached driver's media interface. */
-    R3PTRTYPE(PPDMIMEDIA)         pDrvMedia;
+    R3PTRTYPE(PPDMIMEDIA)       pDrvMedia;
     /** Pointer to the attached driver's extended media interface. */
-    R3PTRTYPE(PPDMIMEDIAEX)       pDrvMediaEx;
+    R3PTRTYPE(PPDMIMEDIAEX)     pDrvMediaEx;
     /** The status LED state for this device. */
-    PDMLED                        Led;
+    PDMLED                      Led;
 
 } LSILOGICDEVICE;
 /** Pointer to a device state. */
@@ -183,198 +183,197 @@ typedef LSILOGICDEVICE *PLSILOGICDEVICE;
 /** Pointer to a task state. */
 typedef struct LSILOGICREQ *PLSILOGICREQ;
 
+
 /**
- * Device instance data for the emulated SCSI controller.
+ * Shared instance data for the LsiLogic emulation.
  */
 typedef struct LSILOGICSCSI
 {
     /** Pointer to the device instance. - R3 ptr. */
-    PPDMDEVINSR3         pDevInsR3;
+    PPDMDEVINSR3                pDevInsR3;
     /** Pointer to the device instance. - R0 ptr. */
-    PPDMDEVINSR0         pDevInsR0;
+    PPDMDEVINSR0                pDevInsR0;
     /** Pointer to the device instance. - RC ptr. */
-    PPDMDEVINSRC         pDevInsRC;
+    PPDMDEVINSRC                pDevInsRC;
 
     /** Flag whether the GC part of the device is enabled. */
-    bool                 fGCEnabled;
+    bool                        fGCEnabled;
     /** Flag whether the R0 part of the device is enabled. */
-    bool                 fR0Enabled;
-    bool                 afPaddingMinus1[2+4];
+    bool                        fR0Enabled;
+    bool                        afPaddingMinus1[2+4];
 
     /** The state the controller is currently in. */
-    LSILOGICSTATE        enmState;
+    LSILOGICSTATE               enmState;
     /** Who needs to init the driver to get into operational state. */
-    LSILOGICWHOINIT      enmWhoInit;
+    LSILOGICWHOINIT             enmWhoInit;
     /** Flag whether we are in doorbell function. */
-    LSILOGICDOORBELLSTATE enmDoorbellState;
+    LSILOGICDOORBELLSTATE       enmDoorbellState;
     /** Flag whether diagnostic access is enabled. */
-    bool                 fDiagnosticEnabled;
+    bool                        fDiagnosticEnabled;
     /** Flag whether a notification was send to R3. */
-    bool                 fNotificationSent;
+    bool                        fNotificationSent;
     /** Flag whether the guest enabled event notification from the IOC. */
-    bool                 fEventNotificationEnabled;
+    bool                        fEventNotificationEnabled;
     /** Flag whether the diagnostic address and RW registers are enabled. */
-    bool                 fDiagRegsEnabled;
+    bool                        fDiagRegsEnabled;
 
     /** Number of device states allocated. */
-    uint32_t             cDeviceStates;
+    uint32_t                    cDeviceStates;
 
     /** States for attached devices. */
-    R3PTRTYPE(PLSILOGICDEVICE) paDeviceStates;
+    R3PTRTYPE(PLSILOGICDEVICE)  paDeviceStates;
 #if HC_ARCH_BITS == 32
-    RTR3PTR                 R3PtrPadding0;
+    RTR3PTR                     R3PtrPadding0;
 #endif
 
     /** Interrupt mask. */
-    volatile uint32_t     uInterruptMask;
+    volatile uint32_t           uInterruptMask;
     /** Interrupt status register. */
-    volatile uint32_t     uInterruptStatus;
+    volatile uint32_t           uInterruptStatus;
 
     /** Buffer for messages which are passed through the doorbell using the
      * handshake method. */
-    uint32_t              aMessage[sizeof(MptConfigurationRequest)]; /** @todo r=bird: Looks like 4 tims the required size? Please explain in comment if this correct... */
+    uint32_t                    aMessage[sizeof(MptConfigurationRequest)]; /** @todo r=bird: Looks like 4 times the required size? Please explain in comment if this correct... */
     /** Actual position in the buffer. */
-    uint32_t              iMessage;
+    uint32_t                    iMessage;
     /** Size of the message which is given in the doorbell message in dwords. */
-    uint32_t              cMessage;
+    uint32_t                    cMessage;
 
     /** Reply buffer.
      * @note 60 bytes  */
-    MptReplyUnion         ReplyBuffer;
+    MptReplyUnion               ReplyBuffer;
     /** Next entry to read. */
-    uint32_t              uNextReplyEntryRead;
+    uint32_t                    uNextReplyEntryRead;
     /** Size of the reply in the buffer in 16bit words. */
-    uint32_t              cReplySize;
+    uint32_t                    cReplySize;
 
     /** The fault code of the I/O controller if we are in the fault state. */
-    uint16_t              u16IOCFaultCode;
-    uint16_t              u16Padding0b;
-
-    /** MMIO address the device is mapped to. */
-    RTGCPHYS              GCPhysMMIOBase;
+    uint16_t                    u16IOCFaultCode;
+    uint16_t                    u16Padding0b;
 
     /** Upper 32 bits of the message frame address to locate requests in guest memory. */
-    uint32_t              u32HostMFAHighAddr;
+    uint32_t                    u32HostMFAHighAddr;
     /** Upper 32 bits of the sense buffer address. */
-    uint32_t              u32SenseBufferHighAddr;
+    uint32_t                    u32SenseBufferHighAddr;
     /** Maximum number of devices the driver reported he can handle. */
-    uint8_t               cMaxDevices;
-    /** Maximum number of buses the driver reported he can handle. */
-    uint8_t               cMaxBuses;
+    uint8_t                     cMaxDevices;
+    /** Maximum number of       buses the driver reported he can handle. */
+    uint8_t                     cMaxBuses;
     /** Current size of reply message frames in the guest. */
-    uint16_t              cbReplyFrame;
+    uint16_t                    cbReplyFrame;
 
     /** Next key to write in the sequence to get access
      *  to diagnostic memory. */
-    uint32_t              iDiagnosticAccess;
+    uint32_t                    iDiagnosticAccess;
 
     /** Number entries configured for the reply queue. */
-    uint32_t              cReplyQueueEntries;
+    uint32_t                    cReplyQueueEntries;
     /** Number entries configured for the outstanding request queue. */
-    uint32_t              cRequestQueueEntries;
+    uint32_t                    cRequestQueueEntries;
 
     /** Critical section protecting the reply post queue. */
-    PDMCRITSECT           ReplyPostQueueCritSect;
+    PDMCRITSECT                 ReplyPostQueueCritSect;
     /** Critical section protecting the reply free queue. */
-    PDMCRITSECT           ReplyFreeQueueCritSect;
+    PDMCRITSECT                 ReplyFreeQueueCritSect;
     /** Critical section protecting the request queue against
      * concurrent access from the guest. */
-    PDMCRITSECT           RequestQueueCritSect;
+    PDMCRITSECT                 RequestQueueCritSect;
     /** Critical section protecting the reply free queue against
      * concurrent write access from the guest. */
-    PDMCRITSECT           ReplyFreeQueueWriteCritSect;
+    PDMCRITSECT                 ReplyFreeQueueWriteCritSect;
 
     /** The reply free qeueue (only the first cReplyQueueEntries are used). */
-    uint32_t volatile       aReplyFreeQueue[LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX];
+    uint32_t volatile           aReplyFreeQueue[LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX];
     /** The reply post qeueue (only the first cReplyQueueEntries are used). */
-    uint32_t volatile       aReplyPostQueue[LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX];
+    uint32_t volatile           aReplyPostQueue[LSILOGICSCSI_REPLY_QUEUE_DEPTH_MAX];
     /** The request qeueue (only the first cRequestQueueEntries are used). */
-    uint32_t volatile       aRequestQueue[LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MAX];
+    uint32_t volatile           aRequestQueue[LSILOGICSCSI_REQUEST_QUEUE_DEPTH_MAX];
 
     /** Next free entry in the reply queue the guest can write a address to. */
-    volatile uint32_t              uReplyFreeQueueNextEntryFreeWrite;
+    volatile uint32_t           uReplyFreeQueueNextEntryFreeWrite;
     /** Next valid entry the controller can read a valid address for reply frames from. */
-    volatile uint32_t              uReplyFreeQueueNextAddressRead;
+    volatile uint32_t           uReplyFreeQueueNextAddressRead;
 
     /** Next free entry in the reply queue the guest can write a address to. */
-    volatile uint32_t              uReplyPostQueueNextEntryFreeWrite;
+    volatile uint32_t           uReplyPostQueueNextEntryFreeWrite;
     /** Next valid entry the controller can read a valid address for reply frames from. */
-    volatile uint32_t              uReplyPostQueueNextAddressRead;
+    volatile uint32_t           uReplyPostQueueNextAddressRead;
 
     /** Next free entry the guest can write a address to a request frame to. */
-    volatile uint32_t              uRequestQueueNextEntryFreeWrite;
+    volatile uint32_t           uRequestQueueNextEntryFreeWrite;
     /** Next valid entry the controller can read a valid address for request frames from. */
-    volatile uint32_t              uRequestQueueNextAddressRead;
+    volatile uint32_t           uRequestQueueNextAddressRead;
 
     /** Emulated controller type */
-    LSILOGICCTRLTYPE               enmCtrlType;
+    LSILOGICCTRLTYPE            enmCtrlType;
     /** Handle counter */
-    uint16_t                       u16NextHandle;
+    uint16_t                    u16NextHandle;
 
     /** Number of ports this controller has. */
-    uint8_t                        cPorts;
+    uint8_t                     cPorts;
 
     /** BIOS emulation. */
-    VBOXSCSI                       VBoxSCSI;
+    VBOXSCSI                    VBoxSCSI;
 
     /** Status LUN: The base interface. */
-    PDMIBASE                       IBase;
+    PDMIBASE                    IBase;
     /** Status LUN: Leds interface. */
-    PDMILEDPORTS                   ILeds;
+    PDMILEDPORTS                ILeds;
     /** Status LUN: Partner of ILeds. */
-    R3PTRTYPE(PPDMILEDCONNECTORS)  pLedsConnector;
+    R3PTRTYPE(PPDMILEDCONNECTORS) pLedsConnector;
     /** Status LUN: Media Notifys. */
-    R3PTRTYPE(PPDMIMEDIANOTIFY)    pMediaNotify;
+    R3PTRTYPE(PPDMIMEDIANOTIFY) pMediaNotify;
     /** Pointer to the configuration page area. */
     R3PTRTYPE(PMptConfigurationPagesSupported) pConfigurationPages;
 
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
-    bool volatile                    fSignalIdle;
+    bool volatile               fSignalIdle;
     /** Flag whether we have tasks which need to be processed again- */
-    bool volatile                    fRedo;
+    bool volatile               fRedo;
     /** Flag whether the worker thread is sleeping. */
-    volatile bool                    fWrkThreadSleeping;
+    volatile bool               fWrkThreadSleeping;
     /** Flag whether a request from the BIOS is pending which the
      * worker thread needs to process. */
-    volatile bool                    fBiosReqPending;
+    volatile bool               fBiosReqPending;
 #if HC_ARCH_BITS == 64
     /** Alignment padding. */
-    bool                             afPadding2[4];
+    bool                        afPadding2[4];
 #endif
     /** List of tasks which can be redone. */
     R3PTRTYPE(volatile PLSILOGICREQ) pTasksRedoHead;
 
     /** Current address to read from or write to in the diagnostic memory region. */
-    uint32_t                         u32DiagMemAddr;
+    uint32_t                    u32DiagMemAddr;
     /** Current size of the memory regions. */
-    uint32_t                         cbMemRegns;
+    uint32_t                    cbMemRegns;
 
 #if HC_ARCH_BITS ==32
-    uint32_t                         u32Padding3;
+    uint32_t                    u32Padding3;
 #endif
 
     union
     {
         /** List of memory regions - PLSILOGICMEMREGN. */
-        RTLISTANCHOR                 ListMemRegns;
-        uint8_t                      u8Padding[2 * sizeof(RTUINTPTR)];
+        RTLISTANCHOR            ListMemRegns;
+        uint8_t                 u8Padding[2 * sizeof(RTUINTPTR)];
     };
 
     /** Worker thread. */
-    R3PTRTYPE(PPDMTHREAD)            pThreadWrk;
+    R3PTRTYPE(PPDMTHREAD)       pThreadWrk;
     /** The event semaphore the processing thread waits on. */
-    SUPSEMEVENT                      hEvtProcess;
+    SUPSEMEVENT                 hEvtProcess;
 
     /** PCI Region \#0: I/O ports register access. */
-    IOMIOPORTHANDLE                 hIoPortsReg;
+    IOMIOPORTHANDLE             hIoPortsReg;
     /** PCI Region \#1: MMIO register access. */
-    IOMMMIOHANDLE                   hMmioReg;
+    IOMMMIOHANDLE               hMmioReg;
     /** PCI Region \#2: MMIO diag. */
-    IOMMMIOHANDLE                   hMmioDiag;
+    IOMMMIOHANDLE               hMmioDiag;
     /** ISA Ports for the BIOS (when booting is configured). */
-    IOMIOPORTHANDLE                 hIoPortsBios;
+    IOMIOPORTHANDLE             hIoPortsBios;
 } LSILOGISCSI;
+
 
 /**
  * Task state object which holds all necessary data while
@@ -383,26 +382,26 @@ typedef struct LSILOGICSCSI
 typedef struct LSILOGICREQ
 {
     /** I/O request handle. */
-    PDMMEDIAEXIOREQ            hIoReq;
+    PDMMEDIAEXIOREQ             hIoReq;
     /** Next in the redo list. */
-    PLSILOGICREQ               pRedoNext;
+    PLSILOGICREQ                pRedoNext;
     /** Target device. */
-    PLSILOGICDEVICE            pTargetDevice;
+    PLSILOGICDEVICE             pTargetDevice;
     /** The message request from the guest. */
-    MptRequestUnion            GuestRequest;
+    MptRequestUnion             GuestRequest;
     /** Address of the message request frame in guests memory.
      *  Used to read the S/G entries in the second step. */
-    RTGCPHYS                   GCPhysMessageFrameAddr;
+    RTGCPHYS                    GCPhysMessageFrameAddr;
     /** Physical start address of the S/G list. */
-    RTGCPHYS                   GCPhysSgStart;
+    RTGCPHYS                    GCPhysSgStart;
     /** Chain offset */
-    uint32_t                   cChainOffset;
+    uint32_t                    cChainOffset;
     /** Pointer to the sense buffer. */
-    uint8_t                    abSenseBuffer[18];
+    uint8_t                     abSenseBuffer[18];
     /** Flag whether the request was issued from the BIOS. */
-    bool                       fBIOS;
+    bool                        fBIOS;
     /** SCSI status code. */
-    uint8_t                    u8ScsiSts;
+    uint8_t                     u8ScsiSts;
 } LSILOGICREQ;
 
 
