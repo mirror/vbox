@@ -87,7 +87,11 @@ else
 fi
 
 KERN_VER=`uname -r`
-MODULE_LIST="vboxdrv vboxnetflt vboxnetadp vboxpci"
+if test -e "${MODULE_SRC}/vboxpci"; then
+    MODULE_LIST="vboxdrv vboxnetflt vboxnetadp vboxpci"
+else
+    MODULE_LIST="vboxdrv vboxnetflt vboxnetadp"
+fi
 # Secure boot state.
 case "`mokutil --sb-state 2>/dev/null`" in
     *"disabled in shim"*) unset HAVE_SEC_BOOT;;
@@ -324,7 +328,7 @@ See the documenatation for your Linux distribution." console
     if ! $MODPROBE vboxnetadp > /dev/null 2>&1; then
         failure "modprobe vboxnetadp failed. Please use 'dmesg' to find out why"
     fi
-    if ! $MODPROBE vboxpci > /dev/null 2>&1; then
+    if test -e "${MODULE_SRC}/vboxpci" && ! $MODPROBE vboxpci > /dev/null 2>&1; then
         failure "modprobe vboxpci failed. Please use 'dmesg' to find out why"
     fi
     # Create the /dev/vboxusb directory if the host supports that method
@@ -476,14 +480,16 @@ setup()
         module_build_log "$myerr"
         failure "Look at $LOG to find out what went wrong"
     fi
-    log "Building the PCI pass-through module."
-    if ! myerr=`$BUILDINTMP \
-        --use-module-symvers /tmp/vboxdrv-Module.symvers \
-        --module-source "$MODULE_SRC/vboxpci" \
-        --no-print-directory install 2>&1`; then
-        log "Error building the module:"
-        module_build_log "$myerr"
-        failure "Look at $LOG to find out what went wrong"
+    if test -e "$MODULE_SRC/vboxpci"; then
+        log "Building the PCI pass-through module."
+        if ! myerr=`$BUILDINTMP \
+            --use-module-symvers /tmp/vboxdrv-Module.symvers \
+            --module-source "$MODULE_SRC/vboxpci" \
+            --no-print-directory install 2>&1`; then
+            log "Error building the module:"
+            module_build_log "$myerr"
+            failure "Look at $LOG to find out what went wrong"
+        fi
     fi
     rm -f /etc/vbox/module_not_compiled
     depmod -a
