@@ -682,6 +682,8 @@ class TestCaseData(ModelDataBase):
             'sOsVersion':           oTestBoxData.sOsVersion,
             'sCpuVendor':           oTestBoxData.sCpuVendor,
             'sCpuArch':             oTestBoxData.sCpuArch,
+            'iCpuFamily':           oTestBoxData.getCpuFamily(),
+            'iCpuModel':            oTestBoxData.getCpuModel(),
             'cCpus':                oTestBoxData.cCpus,
             'fCpuHwVirt':           oTestBoxData.fCpuHwVirt,
             'fCpuNestedPaging':     oTestBoxData.fCpuNestedPaging,
