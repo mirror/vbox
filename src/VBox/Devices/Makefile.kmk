@@ -305,6 +305,7 @@ VBOX_WITH_VMSVGA3D_DYNAMIC_LOAD = 1
    VBoxDD_DEFS          += VMSVGA3D_OPENGL
    VBoxDD_SOURCES       += \
    	Graphics/DevVGA-SVGA3d-ogl.cpp \
+   	Graphics/DevVGA-SVGA3d-glHlp.cpp \
    	$(VBoxDD_0_OUTDIR)/VBoxSVGA3DLazyLoad.asm
    VBoxDD_SOURCES.darwin += \
    	$(VBoxDD_0_OUTDIR)/VBoxSVGA3DObjCLazyLoad.asm

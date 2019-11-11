@@ -247,6 +247,8 @@ int vmsvga3dSurfaceDefine(PVGASTATE pThis, uint32_t sid, uint32_t surfaceFlags, 
     /* pSurface->bounce.pTexture = NULL; */
     /* pSurface->emulated.pTexture = NULL; */
 #else
+    /* pSurface->fEmulated = false; */
+    /* pSurface->idEmulated = OPENGL_INVALID_ID; */
     vmsvga3dSurfaceFormat2OGL(pSurface, format);
 #endif
 
