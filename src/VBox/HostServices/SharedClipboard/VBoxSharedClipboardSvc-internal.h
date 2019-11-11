@@ -73,6 +73,31 @@ typedef struct SHCLCLIENTTRANSFERSTATE
 } SHCLCLIENTTRANSFERSTATE, *PSHCLCLIENTTRANSFERSTATE;
 
 /**
+ * Structure for holding a single POD (plain old data) transfer.
+ * This mostly is plain text, but also can be stuff like bitmap (BMP) or other binary data.
+ */
+typedef struct SHCLCLIENTPODSTATE
+{
+    /** POD transfer direction. */
+    SHCLTRANSFERDIR         enmDir;
+    /** Format of the data to be read / written. */
+    SHCLFORMAT              uFormat;
+    /** How much data (in bytes) to read/write for the current operation. */
+    uint64_t                cbToReadWriteTotal;
+    /** How much data (in bytes) already has been read/written for the current operation. */
+    uint64_t                cbReadWritten;
+    /** Timestamp (in ms) of Last read/write operation. */
+    uint64_t                tsLastReadWrittenMs;
+} SHCLCLIENTPODSTATE, *PSHCLCLIENTPODSTATE;
+
+/** No Shared Clipboard client flags defined. */
+#define SHCLCLIENTSTATE_FLAGS_NONE              0
+/** Client has a guest read operation active. */
+#define SHCLCLIENTSTATE_FLAGS_READ_ACTIVE       RT_BIT(0)
+/** Client has a guest write operation active. */
+#define SHCLCLIENTSTATE_FLAGS_WRITE_ACTIVE      RT_BIT(1)
+
+/**
  * Structure for keeping generic client state data within the Shared Clipboard host service.
  * This structure needs to be serializable by SSM (must be a POD type).
  */
@@ -95,6 +120,10 @@ typedef struct SHCLCLIENTSTATE
     uint32_t                cbChunkSize;
     /** Where the transfer sources its data from. */
     SHCLSOURCE              enmSource;
+    /** Client state flags of type SHCLCLIENTSTATE_FLAGS_. */
+    uint32_t                fFlags;
+    /** POD (plain old data) state. */
+    SHCLCLIENTPODSTATE      POD;
     /** The client's transfers state. */
     SHCLCLIENTTRANSFERSTATE Transfers;
 } SHCLCLIENTSTATE, *PSHCLCLIENTSTATE;

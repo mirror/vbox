@@ -648,24 +648,6 @@ protected:
 };
 
 /**
- * Enumeration specifying an Shared Clipboard transfer direction.
- */
-typedef enum _SHCLTRANSFERDIR
-{
-    /** Unknown transfer directory. */
-    SHCLTRANSFERDIR_UNKNOWN = 0,
-    /** Read transfer (from source). */
-    SHCLTRANSFERDIR_READ,
-    /** Write transfer (to target). */
-    SHCLTRANSFERDIR_WRITE,
-    /** The usual 32-bit hack. */
-    SHCLTRANSFERDIR_32BIT_HACK = 0x7fffffff
-} SHCLTRANSFERDIR, *PSHCLTRANSFERDIR;
-
-struct _SHCLTRANSFER;
-typedef struct _SHCLTRANSFER SHCLTRANSFER;
-
-/**
  * Structure for handling a single transfer object context.
  */
 typedef struct _SHCLCLIENTTRANSFEROBJCTX

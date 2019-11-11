@@ -351,23 +351,24 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             else
             {
                 const uint32_t cbPrealloc = _4K;
-                uint32_t cb = 0;
+                      uint32_t cb         = 0;
 
                 /* Preallocate a buffer, most of small text transfers will fit into it. */
                 HANDLE hMem = GlobalAlloc(GMEM_DDESHARE | GMEM_MOVEABLE, cbPrealloc);
-                LogFlowFunc(("Preallocated handle hMem = %p\n", hMem));
-
                 if (hMem)
                 {
                     void *pMem = GlobalLock(hMem);
-                    LogFlowFunc(("Locked pMem = %p, GlobalSize = %ld\n", pMem, GlobalSize(hMem)));
-
                     if (pMem)
                     {
-                        /* Read the host data to the preallocated buffer. */
-                        int rc = VbglR3ClipboardReadData(pCtx->CmdCtx.uClientID, fFormat, pMem, cbPrealloc, &cb);
-                        LogFlowFunc(("VbglR3ClipboardReadData returned with rc = %Rrc\n",  rc));
+                        SHCLDATABLOCK dataBlock;
+                        RT_ZERO(dataBlock);
 
+                        dataBlock.cbData  = cbPrealloc;
+                        dataBlock.pvData  = pMem;
+                        dataBlock.uFormat = fFormat;
+
+                        /* Read the host data to the preallocated buffer. */
+                        int rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, &dataBlock, &cb);
                         if (RT_SUCCESS(rc))
                         {
                             if (cb == 0)
@@ -383,30 +384,30 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                             {
                                 GlobalUnlock(hMem);
 
+                                LogRel2(("Shared Clipboard: Buffer too small (%RU32), needs %RU32 bytes\n", cbPrealloc, cb));
+
                                 /* The preallocated buffer is too small, adjust the size. */
                                 hMem = GlobalReAlloc(hMem, cb, 0);
-                                LogFlowFunc(("Reallocated hMem = %p\n", hMem));
-
                                 if (hMem)
                                 {
                                     pMem = GlobalLock(hMem);
-                                    LogFlowFunc(("Locked pMem = %p, GlobalSize = %ld\n", pMem, GlobalSize(hMem)));
-
                                     if (pMem)
                                     {
+                                        dataBlock.cbData  = cb;
+                                        dataBlock.pvData  = pMem;
+
                                         /* Read the host data to the preallocated buffer. */
                                         uint32_t cbNew = 0;
-                                        rc = VbglR3ClipboardReadData(pCtx->CmdCtx.uClientID, fFormat, pMem, cb, &cbNew);
-                                        LogFlowFunc(("VbglR3ClipboardReadData returned with rc = %Rrc, cb = %d, cbNew = %d\n",
-                                                     rc, cb, cbNew));
-
-                                        if (RT_SUCCESS(rc)
+                                        rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, &dataBlock, &cbNew);
+                                        if (   RT_SUCCESS(rc)
                                             && cbNew <= cb)
                                         {
                                             cb = cbNew;
                                         }
                                         else
                                         {
+                                            LogRel(("Shared Clipboard: Receiving host data failed with %Rrc\n", rc));
+
                                             GlobalUnlock(hMem);
                                             GlobalFree(hMem);
                                             hMem = NULL;
@@ -414,10 +415,14 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                     }
                                     else
                                     {
+                                        LogRel(("Shared Clipboard: Error locking reallocated host data buffer\n"));
+
                                         GlobalFree(hMem);
                                         hMem = NULL;
                                     }
                                 }
+                                else
+                                    LogRel(("Shared Clipboard: No memory for reallocating host data buffer\n"));
                             }
 
                             if (hMem)
@@ -432,6 +437,9 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                     HRESULT hrc = StringCbLengthW((LPWSTR)pMem, cb, &cbActual);
                                     if (FAILED(hrc))
                                     {
+                                        LogRel(("Shared Clipboard: Received host data is invalid (%RU32 vs. %zu)\n",
+                                                cb, cbActual));
+
                                         /* Discard invalid data. */
                                         GlobalUnlock(hMem);
                                         GlobalFree(hMem);
@@ -452,28 +460,33 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                                 GlobalUnlock(hMem);
 
                                 hMem = GlobalReAlloc(hMem, cb, 0);
-                                LogFlowFunc(("Reallocated hMem = %p\n", hMem));
-
                                 if (hMem)
                                 {
                                     /* 'hMem' contains the host clipboard data.
                                      * size is 'cb' and format is 'format'. */
                                     HANDLE hClip = SetClipboardData(cfFormat, hMem);
-                                    LogFlowFunc(("WM_RENDERFORMAT hClip = %p\n", hClip));
-
                                     if (hClip)
                                     {
                                         /* The hMem ownership has gone to the system. Finish the processing. */
                                         break;
                                     }
+                                    else
+                                        LogRel(("Shared Clipboard: Setting host data buffer to clipboard failed with %ld\n",
+                                                GetLastError()));
 
                                     /* Cleanup follows. */
                                 }
+                                else
+                                    LogRel(("Shared Clipboard: No memory for allocating final host data buffer\n"));
                             }
                         }
+
                         if (hMem)
                             GlobalUnlock(hMem);
                     }
+                    else
+                        LogRel(("Shared Clipboard: No memory for allocating host data buffer\n"));
+
                     if (hMem)
                         GlobalFree(hMem);
                 }
@@ -628,9 +641,6 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
 
                     /* Requested clipboard format is not available, send empty data. */
                     VbglR3ClipboardWriteData(pCtx->CmdCtx.uClientID, VBOX_SHCL_FMT_NONE, NULL, 0);
-#ifdef DEBUG_andy
-                    AssertFailed();
-#endif
                 }
 
                 SharedClipboardWinClose();
@@ -982,7 +992,8 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
     {
         PVBGLR3CLIPBOARDEVENT pEvent = NULL;
 
-        LogFlowFunc(("Waiting for host message (fHostFeatures=%#RX64) ...\n", pCtx->CmdCtx.fHostFeatures));
+        LogFlowFunc(("Waiting for host message (fUseLegacyProtocol=%RTbool, fHostFeatures=%#RX64) ...\n",
+                     pCtx->CmdCtx.fUseLegacyProtocol, pCtx->CmdCtx.fHostFeatures));
 
         if (pCtx->CmdCtx.fUseLegacyProtocol)
         {
@@ -1024,6 +1035,12 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
                     default:
                         rc = VERR_NOT_SUPPORTED;
                         break;
+                }
+
+                if (RT_SUCCESS(rc))
+                {
+                    /* Copy over our command context to the event. */
+                    pEvent->cmdCtx = pCtx->CmdCtx;
                 }
             }
         }

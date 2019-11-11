@@ -169,13 +169,19 @@ static int vboxClipboardSvcWinDataSet(PSHCLCONTEXT pCtx, UINT cfFormat, void *pv
 static int vboxClipboardSvcWinDataRead(PSHCLCONTEXT pCtx, UINT cfFormat,
                                        void **ppvData, uint32_t *pcbData)
 {
-    LogFlowFunc(("cfFormat=%u\n", cfFormat));
-
     SHCLDATAREQ dataReq;
     RT_ZERO(dataReq);
 
     dataReq.uFmt   = SharedClipboardWinClipboardFormatToVBox(cfFormat);
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
+
+    LogFlowFunc(("cfFormat=%u -> uFmt=0x%x\n", cfFormat, dataReq.uFmt));
+
+    if (dataReq.uFmt == VBOX_SHCL_FMT_NONE)
+    {
+        LogRel2(("Shared Clipbaord: Windows format %u not supported, ingoring\n", cfFormat));
+        return VERR_NOT_SUPPORTED;
+    }
 
     SHCLEVENTID uEvent = 0;
     int rc = ShClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);

@@ -33,6 +33,24 @@
 #include <iprt/list.h>
 #include <iprt/types.h>
 
+/**
+ * Enumeration specifying an Shared Clipboard transfer direction.
+ */
+typedef enum _SHCLTRANSFERDIR
+{
+    /** Unknown transfer directory. */
+    SHCLTRANSFERDIR_UNKNOWN = 0,
+    /** Read transfer (from source). */
+    SHCLTRANSFERDIR_READ,
+    /** Write transfer (to target). */
+    SHCLTRANSFERDIR_WRITE,
+    /** The usual 32-bit hack. */
+    SHCLTRANSFERDIR_32BIT_HACK = 0x7fffffff
+} SHCLTRANSFERDIR, *PSHCLTRANSFERDIR;
+
+struct _SHCLTRANSFER;
+typedef struct _SHCLTRANSFER SHCLTRANSFER;
+
 /** A single Shared Clipboard format. */
 typedef uint32_t SHCLFORMAT;
 /** Pointer to a single Shared Clipboard format. */

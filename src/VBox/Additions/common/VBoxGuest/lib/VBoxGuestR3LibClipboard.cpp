@@ -210,7 +210,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFO
 
 
 /**
- * Receives a host request to read clipboard data request from the guest.
+ * Receives a host request to read clipboard data from the guest.
  *
  * @returns VBox status code.
  * @param   pCtx                Shared Clipboard command context to use for the connection.
@@ -224,9 +224,10 @@ VBGLR3DECL(int) VbglR3ClipboardReadDataRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATAREQ
     VBoxShClReadDataReqMsg Msg;
 
     VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID,
-                       VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_READ_DATA);
+                       VBOX_SHCL_GUEST_FN_MSG_GET, VBOX_SHCL_CPARMS_READ_DATA_REQ);
 
     Msg.uContext.SetUInt64(VBOX_SHCL_HOST_MSG_READ_DATA);
+    Msg.fFlags.SetUInt32(0);
     Msg.uFormat.SetUInt32(0);
     Msg.cbSize.SetUInt32(0);
 
@@ -289,38 +290,103 @@ VBGLR3DECL(int) VbglR3ClipboardGetHostMsgOld(HGCMCLIENTID idClient, uint32_t *pi
 /**
  * Reads data from the host clipboard.
  *
+ * Legacy function, do not use anymore.
+ *
  * @returns VBox status code.
  * @retval  VINF_BUFFER_OVERFLOW    If there is more data available than the caller provided buffer space for.
  *
  * @param   idClient        The client id returned by VbglR3ClipboardConnect().
  * @param   fFormat         The format we're requesting the data in.
- * @param   pv              Where to store the data.
- * @param   cb              The size of the buffer pointed to by pv.
- * @param   pcb             The actual size of the host clipboard data. May be larger than cb.
+ * @param   pvData          Where to store the data.
+ * @param   cbData          The size of the buffer pointed to by \a pvData.
+ * @param   pcbRead         The actual size of the host clipboard data. May be larger than \a cbData.
  */
-VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb, uint32_t *pcb)
+VBGLR3DECL(int) VbglR3ClipboardReadData(HGCMCLIENTID idClient, uint32_t fFormat, void *pvData, uint32_t cbData,
+                                        uint32_t *pcbRead)
 {
     VBoxShClReadDataMsg Msg;
 
-    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHCL_GUEST_FN_DATA_READ, VBOX_SHCL_CPARMS_READ_DATA);
-    VbglHGCMParmUInt32Set(&Msg.format, fFormat);
-    VbglHGCMParmPtrSet(&Msg.ptr, pv, cb);
-    VbglHGCMParmUInt32Set(&Msg.size, 0);
+    LogFlowFuncEnter();
 
-    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg));
+    VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHCL_GUEST_FN_DATA_READ, 3);
+
+    VbglHGCMParmUInt32Set(&Msg.u.v0.format, fFormat);
+    VbglHGCMParmPtrSet(&Msg.u.v0.ptr, pvData, cbData);
+    VbglHGCMParmUInt32Set(&Msg.u.v0.size, 0);
+
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
     if (RT_SUCCESS(rc))
     {
-        uint32_t cbActual;
-        int rc2 = VbglHGCMParmUInt32Get(&Msg.size, &cbActual);
-        if (RT_SUCCESS(rc2))
+        uint32_t cbRead;
+        rc = VbglHGCMParmUInt32Get(&Msg.u.v0.size, &cbRead);
+        if (RT_SUCCESS(rc))
         {
-            *pcb = cbActual;
-            if (cbActual > cb)
-                return VINF_BUFFER_OVERFLOW;
-            return rc;
+            LogFlowFunc(("cbRead=%RU32\n", cbRead));
+
+            if (cbRead > cbData)
+                rc = VINF_BUFFER_OVERFLOW;
+
+            *pcbRead = cbRead;
         }
-        rc = rc2;
     }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
+/**
+ * Reads clipboard data from the host clipboard.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_BUFFER_OVERFLOW    If there is more data available than the caller provided buffer space for.
+ *
+ * @param   pCtx                The command context returned by VbglR3ClipboardConnectEx().
+ * @param   pData               Where to store the clipboard data read.
+ * @param   pcbRead             The actual size of the host clipboard data.
+ */
+VBGLR3DECL(int) VbglR3ClipboardReadDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOCK pData, uint32_t *pcbRead)
+{
+    AssertPtrReturn(pCtx,  VERR_INVALID_POINTER);
+    AssertPtrReturn(pData, VERR_INVALID_POINTER);
+
+    int rc;
+
+    LogFlowFuncEnter();
+
+    if (pCtx->fUseLegacyProtocol)
+    {
+        rc = VbglR3ClipboardReadData(pCtx->uClientID, pData->uFormat, pData->pvData, pData->cbData, pcbRead);
+    }
+    else
+    {
+        VBoxShClReadDataMsg Msg;
+
+        VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_DATA_READ, VBOX_SHCL_CPARMS_READ_DATA);
+
+        VbglHGCMParmUInt64Set(&Msg.u.v1.uContext, pCtx->uContextID);
+        VbglHGCMParmUInt32Set(&Msg.u.v1.fFlags, 0);
+        VbglHGCMParmUInt32Set(&Msg.u.v1.uFormat, pData->uFormat);
+        VbglHGCMParmUInt32Set(&Msg.u.v1.cbData, pData->cbData);
+        VbglHGCMParmPtrSet(&Msg.u.v1.pvData, pData->pvData, pData->cbData);
+
+        rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v1));
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t cbRead;
+            rc = VbglHGCMParmUInt32Get(&Msg.u.v1.cbData, &cbRead);
+            if (RT_SUCCESS(rc))
+            {
+                LogFlowFunc(("cbRead=%RU32\n", cbRead));
+
+                if (cbRead > pData->cbData)
+                    rc = VINF_BUFFER_OVERFLOW;
+
+                *pcbRead = cbRead;
+            }
+        }
+    }
+
+    LogFlowFuncLeaveRC(rc);
     return rc;
 }
 
@@ -2339,11 +2405,16 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReport(HGCMCLIENTID idClient, uint32_t fFo
     VBGL_HGCM_HDR_INIT(&Msg.hdr, idClient, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 1);
     VbglHGCMParmUInt32Set(&Msg.u.v0.uFormats, fFormats);
 
-    return VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
+    int rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
 }
 
 /**
- * Sends guest clipboard data to the host. Legacy function kept for compatibility, do not use anymore.
+ * Sends guest clipboard data to the host.
+ *
+ * Legacy function kept for compatibility, do not use anymore.
  *
  * This is usually called in reply to a VBOX_SHCL_HOST_MSG_READ_DATA message
  * from the host.
@@ -2356,9 +2427,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReport(HGCMCLIENTID idClient, uint32_t fFo
  */
 VBGLR3DECL(int) VbglR3ClipboardWriteData(HGCMCLIENTID idClient, uint32_t fFormat, void *pv, uint32_t cb)
 {
-    AssertReturn   (idClient, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pv,       VERR_INVALID_POINTER);
-    AssertReturn   (cb,       VERR_INVALID_PARAMETER);
+    LogFlowFuncEnter();
 
     VBoxShClWriteDataMsg Msg;
     RT_ZERO(Msg);
@@ -2392,6 +2461,8 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOC
 
     int rc;
 
+    LogFlowFuncEnter();
+
     if (pCtx->fUseLegacyProtocol)
     {
         rc = VbglR3ClipboardWriteData(pCtx->uClientID, pData->uFormat, pData->pvData, pData->cbData);
@@ -2408,6 +2479,7 @@ VBGLR3DECL(int) VbglR3ClipboardWriteDataEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLDATABLOC
 
         Msg.u.v1.uContext.SetUInt64(pCtx->uContextID);
         Msg.u.v1.uFormat.SetUInt32(pData->uFormat);
+        Msg.u.v1.fFlags.SetUInt32(0);
         Msg.u.v1.cbData.SetUInt32(pData->cbData);
         Msg.u.v1.pvData.SetPtr(pData->pvData, pData->cbData);
 
