@@ -67,6 +67,9 @@ extern struct netif *g_proxy_netif;
 void proxy_init(struct netif *, struct proxy_options *);
 SOCKET proxy_connected_socket(int, int, ipX_addr_t *, u16_t);
 SOCKET proxy_bound_socket(int, int, struct sockaddr *);
+#ifdef RT_OS_LINUX
+int proxy_fixup_accepted_socket(SOCKET);
+#endif
 void proxy_reset_socket(SOCKET);
 int proxy_sendto(SOCKET, struct pbuf *, void *, size_t);
 void proxy_lwip_post(struct tcpip_msg *);

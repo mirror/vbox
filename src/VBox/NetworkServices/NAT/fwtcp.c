@@ -238,6 +238,13 @@ fwtcp_pmgr_listen(struct pollmgr_handler *handler, SOCKET fd, int revents)
         return POLLIN;
     }
 
+#ifdef RT_OS_LINUX
+    status = proxy_fixup_accepted_socket(newsock);
+    if (status < 0) {
+        proxy_reset_socket(newsock);
+        return POLLIN;
+    }
+#endif
 
     if (ss.ss_family == PF_INET) {
         struct sockaddr_in *peer4 = (struct sockaddr_in *)&ss;
