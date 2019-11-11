@@ -5520,7 +5520,12 @@ static DECLCALLBACK(int) lsilogicRZConstruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
-    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsReg, lsilogicIOPortWrite, lsilogicIOPortRead, NULL /*pvUser*/);
+    /* Replicate the critsect configuration: */
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    /* Setup callbacks for this context: */
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsReg, lsilogicIOPortWrite, lsilogicIOPortRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 
     rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioReg, lsilogicMMIOWrite, lsilogicMMIORead, NULL /*pvUser*/);
