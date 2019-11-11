@@ -3280,8 +3280,8 @@ static void lsilogicR3InitializeConfigurationPagesSpi(PLSILOGICSCSI pThis, PLSIL
     PMptConfigurationPagesSpi pPages = &pThisCC->pConfigurationPages->u.SpiPages;
 
     AssertMsg(pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI, ("Controller is not the SPI SCSI one\n"));
-
     LogFlowFunc(("pThis=%#p\n", pThis));
+    RT_NOREF(pThis);
 
     /* Clear everything first. */
     memset(pPages, 0, sizeof(MptConfigurationPagesSpi));
