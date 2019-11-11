@@ -4613,7 +4613,12 @@ static NTSTATUS DxgkDdiNotifySurpriseRemoval(
 static BOOLEAN DxgkDdiInterruptRoutine(const PVOID MiniportDeviceContext,
                                        ULONG MessageNumber)
 {
+#ifdef VBOX_WITH_MESA3D
     BOOLEAN const fVMSVGA = GaDxgkDdiInterruptRoutine(MiniportDeviceContext, MessageNumber);
+#else
+    BOOLEAN const fVMSVGA = FALSE;
+#endif
+
     BOOLEAN const fHGSMI = DxgkDdiInterruptRoutineLegacy(MiniportDeviceContext, MessageNumber);
     return fVMSVGA || fHGSMI;
 }
@@ -4622,7 +4627,9 @@ static VOID DxgkDdiDpcRoutine(const PVOID MiniportDeviceContext)
 {
     PVBOXMP_DEVEXT pDevExt = (PVBOXMP_DEVEXT)MiniportDeviceContext;
 
+#ifdef VBOX_WITH_MESA3D
     GaDxgkDdiDpcRoutine(MiniportDeviceContext);
+#endif
     DxgkDdiDpcRoutineLegacy(MiniportDeviceContext);
 
     pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
@@ -4722,6 +4729,8 @@ static NTSTATUS vboxWddmInitFullGraphicsDriver(IN PDRIVER_OBJECT pDriverObject, 
     else
 #endif
     {
+        RT_NOREF(enmHwType);
+
         DriverInitializationData.DxgkDdiPatch             = DxgkDdiPatchLegacy;
         DriverInitializationData.DxgkDdiSubmitCommand     = DxgkDdiSubmitCommandLegacy;
         DriverInitializationData.DxgkDdiPreemptCommand    = DxgkDdiPreemptCommandLegacy;
