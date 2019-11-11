@@ -170,7 +170,7 @@ my_wildcard()
     else
         MY_FOLDER="$1-All.lst"
     fi
-    EXCLUDES="*.log;*.kup;*~;*.bak;*.bak?;*.pyc;*.exe;*.sys;*.dll;*.o;*.obj;*.lib;*.a;*.ko;*.class;*.cvsignore;*.done;*.project;*.actionScriptProperties;*.scm-settings;*.svnpatch.rej;*.svn-base;.svn/*;*.gitignore;*.gitattributes;*.gitmodules;*.swagger-codegen-ignore"
+    EXCLUDES="*.log;*.kup;*~;*.bak;*.bak?;*.pyc;*.exe;*.sys;*.dll;*.o;*.obj;*.lib;*.a;*.ko;*.class;*.cvsignore;*.done;*.project;*.actionScriptProperties;*.scm-settings;*.svnpatch.rej;*.svn-base;.svn/*;*.gitignore;*.gitattributes;*.gitmodules;*.swagger-codegen-ignore;*.png;*.bmp;*.jpg"
     echo '        <F N="'"${2}"'/*" Recurse="1" Excludes="'"${EXCLUDES}"'"/>' >> "${MY_FOLDER}"
 }
 
@@ -1042,7 +1042,6 @@ my_generate_project "VMM"           "src/VBox/VMM"                          --be
     "include/VBox/vmm/patm.*" \
     "include/VBox/vmm/pdm*.h" \
     "include/VBox/vmm/pgm.*" \
-    "include/VBox/vmm/rem.h" \
     "include/VBox/vmm/selm.*" \
     "include/VBox/vmm/ssm.h" \
     "include/VBox/vmm/stam.*" \
@@ -1050,18 +1049,6 @@ my_generate_project "VMM"           "src/VBox/VMM"                          --be
     "include/VBox/vmm/trpm.*" \
     "include/VBox/vmm/vm.*" \
     "include/VBox/vmm/vmm.*"
-
-# src/recompiler
-my_generate_project "REM"           "src/recompiler"                        --begin-incs \
-    "include" \
-    "src/recompiler" \
-    "src/recompiler/target-i386" \
-    "src/recompiler/tcg/i386" \
-    "src/recompiler/Sun/crt" \
-    --end-includes \
-    "src/recompiler" \
-    "src/VBox/VMM/include/REMInternal.h" \
-    "src/VBox/VMM/VMMAll/REMAll.cpp"
 
 # src/VBox/Additions
 my_generate_project "Add-darwin"    "src/VBox/Additions/darwin"             --begin-incs "include" "src/VBox/Additions/darwin"              --end-includes "src/VBox/Additions/darwin"
@@ -1179,7 +1166,7 @@ my_generate_project "bldprogs"      "src/bldprogs"                          --be
 my_generate_project "zlib"          "src/libs/zlib-1.2.11"                  --begin-incs "include"                                          --end-includes "src/libs/zlib-1.2.11/*.c" "src/libs/zlib-1.2.11/*.h"
 my_generate_project "liblzf"        "src/libs/liblzf-3.4"                   --begin-incs "include"                                          --end-includes "src/libs/liblzf-3.4"
 my_generate_project "libpng"        "src/libs/libpng-1.6.36"                --begin-incs "include"                                          --end-includes "src/libs/libpng-1.6.36/*.c" "src/libs/libpng-1.6.36/*.h"
-my_generate_project "openssl"       "src/libs/openssl-1.1.1c"               --begin-incs "include" "src/libs/openssl-1.1.1c/crypto"         --end-includes "src/libs/openssl-1.1.1c"
+my_generate_project "openssl"       "src/libs/openssl-1.1.1d"               --begin-incs "include" "src/libs/openssl-1.1.1d/crypto"         --end-includes "src/libs/openssl-1.1.1d"
 my_generate_project "curl"          "src/libs/curl-7.64.0"                  --begin-incs "include" "src/libs/curl-7.64.0/include"           --end-includes "src/libs/curl-7.64.0"
 
 # webtools
