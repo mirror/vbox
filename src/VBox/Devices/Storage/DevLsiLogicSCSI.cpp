@@ -25,6 +25,7 @@
 #include <VBox/vmm/pdmqueue.h>
 #include <VBox/vmm/pdmthread.h>
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/AssertGuest.h>
 #include <VBox/scsi.h>
 #include <VBox/sup.h>
 #include <iprt/assert.h>
@@ -247,9 +248,8 @@ typedef struct LSILOGICSCSI
 
     /** The fault code of the I/O controller if we are in the fault state. */
     uint16_t              u16IOCFaultCode;
+    uint16_t              u16Padding0b;
 
-    /** I/O port address the device is mapped to. */
-    RTIOPORT              IOPortBase;
     /** MMIO address the device is mapped to. */
     RTGCPHYS              GCPhysMMIOBase;
 
@@ -366,6 +366,14 @@ typedef struct LSILOGICSCSI
     /** The event semaphore the processing thread waits on. */
     SUPSEMEVENT                      hEvtProcess;
 
+    /** PCI Region \#0: I/O ports register access. */
+    IOMIOPORTHANDLE                 hIoPortsReg;
+    /** PCI Region \#1: MMIO register access. */
+    IOMMMIOHANDLE                   hMmioReg;
+    /** PCI Region \#2: MMIO diag. */
+    IOMMMIOHANDLE                   hMmioDiag;
+    /** ISA Ports for the BIOS (when booting is configured). */
+    IOMIOPORTHANDLE                 hIoPortsBios;
 } LSILOGISCSI;
 
 /**
@@ -1242,31 +1250,32 @@ static int lsilogicR3ProcessMessageRequest(PLSILOGICSCSI pThis, PMptMessageHdr p
 /**
  * Writes a value to a register at a given offset.
  *
- * @returns VBox status code.
+ * @returns Strict VBox status code.
+ * @param   pDevIns     The devie instance.
  * @param   pThis       Pointer to the LsiLogic device state.
  * @param   offReg      Offset of the register to write.
  * @param   u32         The value being written.
  */
-static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t u32)
+static VBOXSTRICTRC lsilogicRegisterWrite(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, uint32_t offReg, uint32_t u32)
 {
     LogFlowFunc(("pThis=%#p offReg=%#x u32=%#x\n", pThis, offReg, u32));
     switch (offReg)
     {
         case LSILOGIC_REG_REPLY_QUEUE:
         {
-            int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->ReplyFreeQueueWriteCritSect, VINF_IOM_R3_MMIO_WRITE);
+            int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->ReplyFreeQueueWriteCritSect, VINF_IOM_R3_MMIO_WRITE);
             if (rc != VINF_SUCCESS)
                 return rc;
             /* Add the entry to the reply free queue. */
             ASMAtomicWriteU32(&pThis->aReplyFreeQueue[pThis->uReplyFreeQueueNextEntryFreeWrite], u32);
             pThis->uReplyFreeQueueNextEntryFreeWrite++;
             pThis->uReplyFreeQueueNextEntryFreeWrite %= pThis->cReplyQueueEntries;
-            PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyFreeQueueWriteCritSect);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->ReplyFreeQueueWriteCritSect);
             break;
         }
         case LSILOGIC_REG_REQUEST_QUEUE:
         {
-            int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->RequestQueueCritSect, VINF_IOM_R3_MMIO_WRITE);
+            int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->RequestQueueCritSect, VINF_IOM_R3_MMIO_WRITE);
             if (rc != VINF_SUCCESS)
                 return rc;
 
@@ -1283,7 +1292,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
             uNextWrite++;
             uNextWrite %= pThis->cRequestQueueEntries;
             ASMAtomicWriteU32(&pThis->uRequestQueueNextEntryFreeWrite, uNextWrite);
-            PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->RequestQueueCritSect);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->RequestQueueCritSect);
 
             /* Send notification to R3 if there is not one sent already. Do this
              * only if the worker thread is not sleeping or might go sleeping. */
@@ -1292,7 +1301,7 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
                 if (ASMAtomicReadBool(&pThis->fWrkThreadSleeping))
                 {
                     LogFlowFunc(("Signal event semaphore\n"));
-                    rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
+                    rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
                     AssertRC(rc);
                 }
             }
@@ -1513,11 +1522,12 @@ static int lsilogicRegisterWrite(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t 
  * Reads the content of a register at a given offset.
  *
  * @returns VBox status code.
+ * @param   pDevIns     The device instance.
  * @param   pThis       Pointer to the LsiLogic device state.
  * @param   offReg      Offset of the register to read.
  * @param   pu32        Where to store the content of the register.
  */
-static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *pu32)
+static VBOXSTRICTRC lsilogicRegisterRead(PPDMDEVINS pDevIns, PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *pu32)
 {
     int rc = VINF_SUCCESS;
     uint32_t u32 = 0;
@@ -1528,7 +1538,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
     {
         case LSILOGIC_REG_REPLY_QUEUE:
         {
-            rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect, VINF_IOM_R3_MMIO_READ);
+            rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->ReplyPostQueueCritSect, VINF_IOM_R3_MMIO_READ);
             if (rc != VINF_SUCCESS)
                 break;
 
@@ -1548,7 +1558,7 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
                 u32 = UINT32_C(0xffffffff);
                 lsilogicClearInterrupt(pThis, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
             }
-            PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->ReplyPostQueueCritSect);
+            PDMDevHlpCritSectLeave(pDevIns, &pThis->ReplyPostQueueCritSect);
 
             Log(("%s: Returning address %#x\n", __FUNCTION__, u32));
             break;
@@ -1671,59 +1681,57 @@ static int lsilogicRegisterRead(PLSILOGICSCSI pThis, uint32_t offReg, uint32_t *
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+lsilogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PLSILOGICSCSI   pThis  = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t        offReg = uPort - pThis->IOPortBase;
-    int             rc;
+    VBOXSTRICTRC    rcStrict;
     RT_NOREF2(pvUser, cb);
 
-    if (!(offReg & 3))
+    if (!(offPort & 3))
     {
-        rc = lsilogicRegisterWrite(pThis, offReg, u32);
-        if (rc == VINF_IOM_R3_MMIO_WRITE)
-            rc = VINF_IOM_R3_IOPORT_WRITE;
+        rcStrict = lsilogicRegisterWrite(pDevIns, pThis, offPort, u32);
+        if (rcStrict == VINF_IOM_R3_MMIO_WRITE)
+            rcStrict = VINF_IOM_R3_IOPORT_WRITE;
     }
     else
     {
-        Log(("lsilogicIOPortWrite: Ignoring misaligned write - offReg=%#x u32=%#x cb=%#x\n", offReg, u32, cb));
-        rc = VINF_SUCCESS;
+        Log(("lsilogicIOPortWrite: Ignoring misaligned write - offPort=%#x u32=%#x cb=%#x\n", offPort, u32, cb));
+        rcStrict = VINF_SUCCESS;
     }
 
-    return rc;
+    return rcStrict;
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(int) lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+lsilogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PLSILOGICSCSI   pThis   = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t        offReg  = uPort - pThis->IOPortBase;
     RT_NOREF_PV(pvUser);
     RT_NOREF_PV(cb);
 
-    int rc = lsilogicRegisterRead(pThis, offReg & ~(uint32_t)3, pu32);
-    if (rc == VINF_IOM_R3_MMIO_READ)
-        rc = VINF_IOM_R3_IOPORT_READ;
+    VBOXSTRICTRC rcStrict = lsilogicRegisterRead(pDevIns, pThis, offPort & ~(uint32_t)3, pu32);
+    if (rcStrict == VINF_IOM_R3_MMIO_READ)
+        rcStrict = VINF_IOM_R3_IOPORT_READ;
 
-    return rc;
+    return rcStrict;
 }
 
 /**
- * @callback_method_impl{FNIOMMMIOWRITE}
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
     PLSILOGICSCSI   pThis  = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
     uint32_t        u32;
-    int             rc;
     RT_NOREF_PV(pvUser);
 
-    /* See comments in lsilogicR3Map regarding size and alignment. */
+    /* See comments in lsilogicR3Construct regarding size and alignment. */
     if (cb == 4)
         u32 = *(uint32_t const *)pv;
     else
@@ -1734,53 +1742,50 @@ PDMBOTHCBDECL(int) lsilogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
             u32 = *(uint16_t const *)pv;
         else
             u32 = *(uint8_t const *)pv;
-        Log(("lsilogicMMIOWrite: Non-DWORD write access - offReg=%#x u32=%#x cb=%#x\n", offReg, u32, cb));
+        Log(("lsilogicMMIOWrite: Non-DWORD write access - off=%#RGp u32=%#x cb=%#x\n", off, u32, cb));
     }
 
-    if (!(offReg & 3))
-        rc = lsilogicRegisterWrite(pThis, offReg, u32);
+    VBOXSTRICTRC rcStrict;
+    if (!(off & 3))
+        rcStrict = lsilogicRegisterWrite(pDevIns, pThis, (uint32_t)off, u32);
     else
     {
-        Log(("lsilogicIOPortWrite: Ignoring misaligned write - offReg=%#x u32=%#x cb=%#x\n", offReg, u32, cb));
-        rc = VINF_SUCCESS;
+        Log(("lsilogicMMIOWrite: Ignoring misaligned write - off=%#RGp u32=%#x cb=%#x\n", off, u32, cb));
+        rcStrict = VINF_SUCCESS;
     }
-    return rc;
+    return rcStrict;
 }
 
 /**
- * @callback_method_impl{FNIOMMMIOREAD}
+ * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-PDMBOTHCBDECL(int) lsilogicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) lsilogicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
     PLSILOGICSCSI   pThis  = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    uint32_t        offReg = GCPhysAddr - pThis->GCPhysMMIOBase;
-    Assert(!(offReg & 3)); Assert(cb == 4);
+    Assert(!(off & 3)); Assert(cb == 4); /* If any of these trigger you've changed the registration flags or IOM is busted.  */
     RT_NOREF2(pvUser, cb);
 
-    return lsilogicRegisterRead(pThis, offReg, (uint32_t *)pv);
+    return lsilogicRegisterRead(pDevIns, pThis, off, (uint32_t *)pv);
 }
 
-PDMBOTHCBDECL(int) lsilogicDiagnosticWrite(PPDMDEVINS pDevIns, void *pvUser,
-                                           RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
+ */
+static DECLCALLBACK(VBOXSTRICTRC)
+lsilogicDiagnosticWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-#ifdef LOG_ENABLED
-    PLSILOGICSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pThis, GCPhysAddr, pv, cb, pv, cb));
-#endif
-
-    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
+    RT_NOREF(pDevIns, pvUser, off, pv, cb);
+    LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI), off, pv, cb, pv, cb));
     return VINF_SUCCESS;
 }
 
-PDMBOTHCBDECL(int) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, void *pvUser,
-                                          RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+/**
+ * @callback_method_impl{FNIOMMMIONEWREAD}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-#ifdef LOG_ENABLED
-    PLSILOGICSCSI  pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    LogFlowFunc(("pThis=%#p GCPhysAddr=%RGp pv=%#p{%.*Rhxs} cb=%u\n", pThis, GCPhysAddr, pv, cb, pv, cb));
-#endif
-
-    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
+    RT_NOREF(pDevIns, pvUser, off, pv, cb);
+    LogFlowFunc(("pThis=%#p off=%RGp pv=%#p{%.*Rhxs} cb=%u\n", PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI), off, pv, cb, pv, cb));
     return VINF_SUCCESS;
 }
 
@@ -3800,20 +3805,18 @@ static int lsilogicR3GetCtrlTypeFromString(PLSILOGICSCSI pThis, const char *pcsz
 /**
  * @callback_method_impl{FNIOMIOPORTIN, Legacy ISA port.}
  */
-static DECLCALLBACK(int) lsilogicR3IsaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+lsilogicR3IsaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
 
-    Assert(cb == 1);
+    ASSERT_GUEST(cb == 1);
 
-    uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                      ? Port - LSILOGIC_BIOS_IO_PORT
-                      : Port - LSILOGIC_SAS_BIOS_IO_PORT;
-    int rc = vboxscsiReadRegister(&pThis->VBoxSCSI, iRegister, pu32);
+    int rc = vboxscsiReadRegister(&pThis->VBoxSCSI, offPort, pu32);
+    AssertMsg(rc == VINF_SUCCESS, ("Unexpected BIOS register read status: %Rrc\n", rc));
 
-    Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
-          __FUNCTION__, pu32, 1, pu32, iRegister, rc));
+    Log2(("%s: pu32=%p:{%.*Rhxs} offPort=%d rc=%Rrc\n", __FUNCTION__, pu32, 1, pu32, offPort, rc));
 
     return rc;
 }
@@ -3887,15 +3890,16 @@ static int lsilogicR3PrepareBiosScsiRequest(PLSILOGICSCSI pThis)
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT, Legacy ISA port.}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Legacy ISA port.}
  */
-static DECLCALLBACK(int) lsilogicR3IsaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+lsilogicR3IsaIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     RT_NOREF(pvUser, cb);
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, Port));
+    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, offPort));
 
-    Assert(cb == 1);
+    ASSERT_GUEST(cb == 1);
 
     /*
      * If there is already a request form the BIOS pending ignore this write
@@ -3904,39 +3908,33 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWrite(PPDMDEVINS pDevIns, void *pvUs
     if (ASMAtomicReadBool(&pThis->fBiosReqPending))
         return VINF_SUCCESS;
 
-    uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                      ? Port - LSILOGIC_BIOS_IO_PORT
-                      : Port - LSILOGIC_SAS_BIOS_IO_PORT;
-    int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, iRegister, (uint8_t)u32);
+    int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, offPort, (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
         /* Notify the worker thread that there are pending requests. */
         LogFlowFunc(("Signal event semaphore\n"));
-        rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
+        rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
         AssertRC(rc);
     }
-    else if (RT_FAILURE(rc))
-        AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
+    else
+        AssertMsg(rc == VINF_SUCCESS, ("Unexpected BIOS register write status: %Rrc\n", rc));
 
     return VINF_SUCCESS;
 }
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUTSTRING,
+ * @callback_method_impl{FNIOMIOPORTNEWOUTSTRING,
  * Port I/O Handler for primary port range OUT string operations.}
  */
-static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
-                                                     uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort,
+                                                              uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
     RT_NOREF(pvUser);
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
+    Log2(("#%d %s: pvUser=%#p cb=%d offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, offPort));
 
-    uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                      ? Port - LSILOGIC_BIOS_IO_PORT
-                      : Port - LSILOGIC_SAS_BIOS_IO_PORT;
-    int rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, iRegister, pbSrc, pcTransfers, cb);
+    int rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, offPort, pbSrc, pcTransfers, cb);
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
@@ -3945,8 +3943,8 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *p
         rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pThis->hEvtProcess);
         AssertRC(rc);
     }
-    else if (RT_FAILURE(rc))
-        AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
+    else
+        AssertMsg(rc == VINF_SUCCESS, ("Unexpected BIOS register write status: %Rrc\n", rc));
 
     return VINF_SUCCESS;
 }
@@ -3955,136 +3953,15 @@ static DECLCALLBACK(int) lsilogicR3IsaIOPortWriteStr(PPDMDEVINS pDevIns, void *p
  * @callback_method_impl{FNIOMIOPORTINSTRING,
  * Port I/O Handler for primary port range IN string operations.}
  */
-static DECLCALLBACK(int) lsilogicR3IsaIOPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
-                                                    uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) lsilogicR3IsaIOPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort,
+                                                             uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
     RT_NOREF(pvUser);
     PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
+    LogFlowFunc(("#%d %s: pvUser=%#p cb=%d offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, offPort));
 
-    uint8_t iRegister = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                      ? Port - LSILOGIC_BIOS_IO_PORT
-                      : Port - LSILOGIC_SAS_BIOS_IO_PORT;
-    return vboxscsiReadString(pDevIns, &pThis->VBoxSCSI, iRegister, pbDst, pcTransfers, cb);
-}
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) lsilogicR3Map(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                       RTGCPHYS GCPhysAddress, RTGCPHYS cb,
-                                       PCIADDRESSSPACE enmType)
-{
-    PLSILOGICSCSI pThis     = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
-    int           rc        = VINF_SUCCESS;
-    const char    *pcszCtrl = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                              ? "LsiLogic"
-                              : "LsiLogicSas";
-    const char    *pcszDiag = pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI
-                              ? "LsiLogicDiag"
-                              : "LsiLogicSasDiag";
-    RT_NOREF(pPciDev);
-
-    Log2(("%s: registering area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
-
-    AssertMsg(   (enmType == PCI_ADDRESS_SPACE_MEM && cb >= LSILOGIC_PCI_SPACE_MEM_SIZE)
-              || (enmType == PCI_ADDRESS_SPACE_IO  && cb >= LSILOGIC_PCI_SPACE_IO_SIZE),
-              ("PCI region type and size do not match\n"));
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    if (enmType == PCI_ADDRESS_SPACE_MEM && iRegion == 1)
-    {
-        /*
-         * Non-4-byte read access to LSILOGIC_REG_REPLY_QUEUE may cause real strange behavior
-         * because the data is part of a physical guest address.  But some drivers use 1-byte
-         * access to scan for SCSI controllers.  So, we simplify our code by telling IOM to
-         * read DWORDs.
-         *
-         * Regarding writes, we couldn't find anything specific in the specs about what should
-         * happen. So far we've ignored unaligned writes and assumed the missing bytes of
-         * byte and word access to be zero. We suspect that IOMMMIO_FLAGS_WRITE_ONLY_DWORD
-         * or IOMMMIO_FLAGS_WRITE_DWORD_ZEROED would be the most appropriate here, but since we
-         * don't have real hw to test one, the old behavior is kept exactly like it used to be.
-         */
-        /** @todo Check out unaligned writes and non-dword writes on real LsiLogic
-         *        hardware. */
-        rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   lsilogicMMIOWrite, lsilogicMMIORead, pcszCtrl);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (pThis->fR0Enabled)
-        {
-            rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
-                                         "lsilogicMMIOWrite", "lsilogicMMIORead");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        if (pThis->fGCEnabled)
-        {
-            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
-                                         "lsilogicMMIOWrite", "lsilogicMMIORead");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        pThis->GCPhysMMIOBase = GCPhysAddress;
-    }
-    else if (enmType == PCI_ADDRESS_SPACE_MEM && iRegion == 2)
-    {
-        /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-        rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   lsilogicDiagnosticWrite, lsilogicDiagnosticRead, pcszDiag);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (pThis->fR0Enabled)
-        {
-            rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
-                                         "lsilogicDiagnosticWrite", "lsilogicDiagnosticRead");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        if (pThis->fGCEnabled)
-        {
-            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
-                                         "lsilogicDiagnosticWrite", "lsilogicDiagnosticRead");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-    }
-    else if (enmType == PCI_ADDRESS_SPACE_IO)
-    {
-        rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, LSILOGIC_PCI_SPACE_IO_SIZE,
-                                     NULL, lsilogicIOPortWrite, lsilogicIOPortRead, NULL, NULL, pcszCtrl);
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (pThis->fR0Enabled)
-        {
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, LSILOGIC_PCI_SPACE_IO_SIZE,
-                                           0, "lsilogicIOPortWrite", "lsilogicIOPortRead", NULL, NULL, pcszCtrl);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        if (pThis->fGCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, LSILOGIC_PCI_SPACE_IO_SIZE,
-                                           0, "lsilogicIOPortWrite", "lsilogicIOPortRead", NULL, NULL, pcszCtrl);
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
-    }
-    else
-        AssertMsgFailed(("Invalid enmType=%d iRegion=%d\n", enmType, iRegion));
-
+    int rc = vboxscsiReadString(pDevIns, &pThis->VBoxSCSI, offPort, pbDst, pcTransfers, cb);
+    AssertMsg(rc == VINF_SUCCESS, ("Unexpected BIOS register read status: %Rrc\n", rc));
     return rc;
 }
 
@@ -4106,10 +3983,11 @@ static DECLCALLBACK(void) lsilogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
      * Show info.
      */
     pHlp->pfnPrintf(pHlp,
-                    "%s#%d: port=%RTiop mmio=%RGp max-devices=%u GC=%RTbool R0=%RTbool\n",
+                    "%s#%d: port=%04x mmio=%RGp max-devices=%u GC=%RTbool R0=%RTbool\n",
                     pDevIns->pReg->szName,
                     pDevIns->iInstance,
-                    pThis->IOPortBase, pThis->GCPhysMMIOBase,
+                    PDMDevHlpIoPortGetMappingAddress(pDevIns, pThis->hIoPortsReg),
+                    PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmioReg),
                     pThis->cDeviceStates,
                     pThis->fGCEnabled ? true : false,
                     pThis->fR0Enabled ? true : false);
@@ -5260,6 +5138,10 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->hEvtProcess = NIL_SUPSEMEVENT;
     pThis->fBiosReqPending = false;
     RTListInit(&pThis->ListMemRegns);
+    pThis->hMmioReg = NIL_IOMMMIOHANDLE;
+    pThis->hMmioDiag = NIL_IOMMMIOHANDLE;
+    pThis->hIoPortsReg = NIL_IOMIOPORTHANDLE;
+    pThis->hIoPortsBios = NIL_IOMIOPORTHANDLE;
 
     /*
      * Validate and read configuration.
@@ -5425,17 +5307,42 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     }
 # endif
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, LSILOGIC_PCI_SPACE_IO_SIZE, PCI_ADDRESS_SPACE_IO, lsilogicR3Map);
-    if (RT_FAILURE(rc))
-        return rc;
+    /* Region #0: I/O ports. */
+    rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 0 /*iPciRegion*/, LSILOGIC_PCI_SPACE_IO_SIZE,
+                                      lsilogicIOPortWrite, lsilogicIOPortRead, NULL /*pvUser*/,
+                                      pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "LsiLogic" : "LsiLogicSas",
+                                      NULL /*paExtDesc*/, &pThis->hIoPortsReg);
+    AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, LSILOGIC_PCI_SPACE_MEM_SIZE, PCI_ADDRESS_SPACE_MEM, lsilogicR3Map);
-    if (RT_FAILURE(rc))
-        return rc;
+    /* Region #1: MMIO.
+     *
+     * Non-4-byte read access to LSILOGIC_REG_REPLY_QUEUE may cause real strange behavior
+     * because the data is part of a physical guest address.  But some drivers use 1-byte
+     * access to scan for SCSI controllers.  So, we simplify our code by telling IOM to
+     * read DWORDs.
+     *
+     * Regarding writes, we couldn't find anything specific in the specs about what should
+     * happen. So far we've ignored unaligned writes and assumed the missing bytes of
+     * byte and word access to be zero. We suspect that IOMMMIO_FLAGS_WRITE_ONLY_DWORD
+     * or IOMMMIO_FLAGS_WRITE_DWORD_ZEROED would be the most appropriate here, but since we
+     * don't have real hw to test one, the old behavior is kept exactly like it used to be.
+     */
+    /** @todo Check out unaligned writes and non-dword writes on real LsiLogic
+     *        hardware. */
+    rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 1 /*iPciRegion*/, LSILOGIC_PCI_SPACE_MEM_SIZE, PCI_ADDRESS_SPACE_MEM,
+                                        lsilogicMMIOWrite, lsilogicMMIORead, NULL /*pvUser*/,
+                                        IOMMMIO_FLAGS_READ_DWORD | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                        pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "LsiLogic" : "LsiLogicSas",
+                                        &pThis->hMmioReg);
+    AssertRCReturn(rc, rc);
 
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 2, LSILOGIC_PCI_SPACE_MEM_SIZE, PCI_ADDRESS_SPACE_MEM, lsilogicR3Map);
-    if (RT_FAILURE(rc))
-        return rc;
+    /* Region #2: MMIO - Diag. */
+    rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 2 /*iPciRegion*/, LSILOGIC_PCI_SPACE_MEM_SIZE, PCI_ADDRESS_SPACE_MEM,
+                                        lsilogicDiagnosticWrite, lsilogicDiagnosticRead, NULL /*pvUser*/,
+                                        IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                        pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI ? "LsiLogicDiag" : "LsiLogicSasDiag",
+                                        &pThis->hMmioDiag);
+    AssertRCReturn(rc, rc);
 
     /*
      * We need one entry free in the queue.
@@ -5546,11 +5453,10 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
         pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
     }
-    else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot attach to status driver"));
-    }
+    else
+        AssertMsgReturn(rc == VERR_PDM_NO_ATTACHED_DRIVER,
+                        ("Failed to attach to status driver. rc=%Rrc\n", rc),
+                        PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot attach to status driver")));
 
     /* Initialize the SCSI emulation for the BIOS. */
     rc = vboxscsiInitialize(&pThis->VBoxSCSI);
@@ -5563,20 +5469,18 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (fBootable)
     {
         if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
-            rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_BIOS_IO_PORT, 4, NULL,
-                                         lsilogicR3IsaIOPortWrite, lsilogicR3IsaIOPortRead,
-                                         lsilogicR3IsaIOPortWriteStr, lsilogicR3IsaIOPortReadStr,
-                                         "LsiLogic BIOS");
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, LSILOGIC_BIOS_IO_PORT, 4,
+                                               lsilogicR3IsaIOPortWrite, lsilogicR3IsaIOPortRead,
+                                               lsilogicR3IsaIOPortWriteStr, lsilogicR3IsaIOPortReadStr, NULL /*pvUser*/,
+                                               "LsiLogic BIOS", NULL /*paExtDesc*/, &pThis->hIoPortsBios);
         else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
-            rc = PDMDevHlpIOPortRegister(pDevIns, LSILOGIC_SAS_BIOS_IO_PORT, 4, NULL,
-                                         lsilogicR3IsaIOPortWrite, lsilogicR3IsaIOPortRead,
-                                         lsilogicR3IsaIOPortWriteStr, lsilogicR3IsaIOPortReadStr,
-                                         "LsiLogic SAS BIOS");
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, LSILOGIC_SAS_BIOS_IO_PORT, 4,
+                                               lsilogicR3IsaIOPortWrite, lsilogicR3IsaIOPortRead,
+                                               lsilogicR3IsaIOPortWriteStr, lsilogicR3IsaIOPortReadStr, NULL /*pvUser*/,
+                                               "LsiLogic SAS BIOS", NULL /*paExtDesc*/, &pThis->hIoPortsBios);
         else
-            AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
-
-        if (RT_FAILURE(rc))
-            return PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers"));
+            AssertMsgFailedReturn(("Invalid controller type %d\n", pThis->enmCtrlType), VERR_INTERNAL_ERROR_3);
+        AssertRCReturn(rc, PDMDEV_SET_ERROR(pDevIns, rc, N_("LsiLogic cannot register legacy I/O handlers")));
     }
 
     /* Register save state handlers. */
@@ -5606,7 +5510,29 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     return rc;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) lsilogicRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PLSILOGICSCSI pThis = PDMDEVINS_2_DATA(pDevIns, PLSILOGICSCSI);
+
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsReg, lsilogicIOPortWrite, lsilogicIOPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioReg, lsilogicMMIOWrite, lsilogicMMIORead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmioDiag, lsilogicDiagnosticWrite, lsilogicDiagnosticRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure - SPI SCSI controller.
@@ -5654,7 +5580,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           lsilogicRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -5667,7 +5593,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           lsilogicRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
@@ -5729,7 +5655,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           lsilogicRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -5742,7 +5668,7 @@ const PDMDEVREG g_DeviceLsiLogicSAS =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           lsilogicRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
