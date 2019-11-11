@@ -7066,10 +7066,10 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
         SSMR3GetU8(pSSM, &pThis->aCts[i].iAIOIf);
         SSMR3GetU8(pSSM, &pThis->aCts[i].uAsyncIOState);
         SSMR3GetBool(pSSM, &pThis->aCts[i].fChainedTransfer);
-        SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fReset);
-        SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fRedo);
-        SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fRedoIdle);
-        SSMR3GetBool(pSSM, (bool *)&pThis->aCts[i].fRedoDMALastDesc);
+        SSMR3GetBool(pSSM, &pThis->aCts[i].fReset);
+        SSMR3GetBool(pSSM, &pThis->aCts[i].fRedo);
+        SSMR3GetBool(pSSM, &pThis->aCts[i].fRedoIdle);
+        SSMR3GetBool(pSSM, &pThis->aCts[i].fRedoDMALastDesc);
         SSMR3GetMem(pSSM, &pThis->aCts[i].BmDma, sizeof(pThis->aCts[i].BmDma));
         SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].GCPhysFirstDMADesc);
         SSMR3GetGCPhys32(pSSM, &pThis->aCts[i].GCPhysLastDMADesc);
@@ -7141,7 +7141,7 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             /** @todo triple-check this hack after passthrough is working */
             SSMR3GetU8(pSSM, &pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
             if (uVersion > ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS)
-                SSMR3GetU32(pSSM, (uint32_t*)&pThis->aCts[i].aIfs[j].MediaEventStatus);
+                SSMR3GetU32V(pSSM, &pThis->aCts[i].aIfs[j].MediaEventStatus);
             else
                 pThis->aCts[i].aIfs[j].MediaEventStatus = ATA_EVENT_STATUS_UNCHANGED;
             SSMR3GetMem(pSSM, &pThis->aCts[i].aIfs[j].Led, sizeof(pThis->aCts[i].aIfs[j].Led));

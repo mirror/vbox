@@ -262,7 +262,9 @@ uint32_t EEPROM93C46::read()
 void EEPROM93C46::save(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
 {
     pHlp->pfnSSMPutU8(  pSSM, EEPROM93C46_SAVEDSTATE_VERSION);
+    Assert((uint32_t)m_eState < UINT32_C(256));
     pHlp->pfnSSMPutU8(  pSSM, m_eState);
+    Assert((uint32_t)m_eOp < UINT32_C(256));
     pHlp->pfnSSMPutU8(  pSSM, m_eOp);
     pHlp->pfnSSMPutBool(pSSM, m_fWriteEnabled);
     pHlp->pfnSSMPutU32( pSSM, m_u32InternalWires);
@@ -280,8 +282,8 @@ int EEPROM93C46::load(PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM)
     if (uVersion != EEPROM93C46_SAVEDSTATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
-    pHlp->pfnSSMGetU8(  pSSM, (uint8_t*)&m_eState);
-    pHlp->pfnSSMGetU8(  pSSM, (uint8_t*)&m_eOp);
+    PDMDEVHLP_SSM_GET_ENUM8_RET(pHlp, pSSM, m_eState, EEPROM93C46::State);
+    PDMDEVHLP_SSM_GET_ENUM8_RET(pHlp, pSSM, m_eOp, EEPROM93C46::OP);
     pHlp->pfnSSMGetBool(pSSM, &m_fWriteEnabled);
     pHlp->pfnSSMGetU32( pSSM, &m_u32InternalWires);
     pHlp->pfnSSMGetU16( pSSM, &m_u16Word);

@@ -3513,7 +3513,7 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutBool  (pSSM, pBusLogic->fStrictRoundRobinMode);
     SSMR3PutBool  (pSSM, pBusLogic->fExtendedLunCCBFormat);
 
-    vboxscsiR3SaveExec(&pBusLogic->VBoxSCSI, pSSM);
+    vboxscsiR3SaveExec(pDevIns->pHlpR3, &pBusLogic->VBoxSCSI, pSSM);
 
     SSMR3PutU32(pSSM, cReqsSuspended);
 
@@ -3609,16 +3609,16 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Target %u config mismatch: config=%RTbool state=%RTbool"), i, pDevice->fPresent, fPresent);
 
         if (uPass == SSM_PASS_FINAL)
-            SSMR3GetU32(pSSM, (uint32_t *)&pDevice->cOutstandingRequests);
+            SSMR3GetU32V(pSSM, &pDevice->cOutstandingRequests);
     }
 
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
 
     /* Now the main device state. */
-    SSMR3GetU8    (pSSM, (uint8_t *)&pBusLogic->regStatus);
-    SSMR3GetU8    (pSSM, (uint8_t *)&pBusLogic->regInterrupt);
-    SSMR3GetU8    (pSSM, (uint8_t *)&pBusLogic->regGeometry);
+    SSMR3GetU8V   (pSSM, &pBusLogic->regStatus);
+    SSMR3GetU8V   (pSSM, &pBusLogic->regInterrupt);
+    SSMR3GetU8V   (pSSM, &pBusLogic->regGeometry);
     SSMR3GetMem   (pSSM, &pBusLogic->LocalRam, sizeof(pBusLogic->LocalRam));
     SSMR3GetU8    (pSSM, &pBusLogic->uOperationCode);
     if (uVersion > BUSLOGIC_SAVED_STATE_MINOR_PRE_CMDBUF_RESIZE)
@@ -3638,14 +3638,14 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         SSMR3GetBool  (pSSM, &pBusLogic->fMbxIs24Bit);
     SSMR3GetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxOutgoingBase);
     SSMR3GetU32   (pSSM, &pBusLogic->uMailboxOutgoingPositionCurrent);
-    SSMR3GetU32   (pSSM, (uint32_t *)&pBusLogic->cMailboxesReady);
-    SSMR3GetBool  (pSSM, (bool *)&pBusLogic->fNotificationSent);
+    SSMR3GetU32V  (pSSM, &pBusLogic->cMailboxesReady);
+    SSMR3GetBoolV (pSSM, &pBusLogic->fNotificationSent);
     SSMR3GetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxIncomingBase);
     SSMR3GetU32   (pSSM, &pBusLogic->uMailboxIncomingPositionCurrent);
     SSMR3GetBool  (pSSM, &pBusLogic->fStrictRoundRobinMode);
     SSMR3GetBool  (pSSM, &pBusLogic->fExtendedLunCCBFormat);
 
-    rc = vboxscsiR3LoadExec(&pBusLogic->VBoxSCSI, pSSM);
+    rc = vboxscsiR3LoadExec(pDevIns->pHlpR3, &pBusLogic->VBoxSCSI, pSSM);
     if (RT_FAILURE(rc))
     {
         LogRel(("BusLogic: Failed to restore BIOS state: %Rrc.\n", rc));

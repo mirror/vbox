@@ -5173,7 +5173,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         SSMR3GetU32(pSSM, &pThis->uCccNr);
         SSMR3GetU32(pSSM, &pThis->uCccCurrentNr);
 
-        SSMR3GetU32(pSSM, (uint32_t *)&pThis->u32PortsInterrupted);
+        SSMR3GetU32V(pSSM, &pThis->u32PortsInterrupted);
         SSMR3GetBool(pSSM, &pThis->fReset);
         SSMR3GetBool(pSSM, &pThis->f64BitAddr);
         SSMR3GetBool(pSSM, &pThis->fR0Enabled);
@@ -5190,9 +5190,9 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCLBU);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regFB);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regFBU);
-            SSMR3GetGCPhys(pSSM, (RTGCPHYS *)&pThis->ahciPort[i].GCPhysAddrClb);
-            SSMR3GetGCPhys(pSSM, (RTGCPHYS *)&pThis->ahciPort[i].GCPhysAddrFb);
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].regIS);
+            SSMR3GetGCPhysV(pSSM, &pThis->ahciPort[i].GCPhysAddrClb);
+            SSMR3GetGCPhysV(pSSM, &pThis->ahciPort[i].GCPhysAddrFb);
+            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].regIS);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regIE);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regCMD);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regTFD);
@@ -5200,8 +5200,8 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSSTS);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSCTL);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].regSERR);
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].regSACT);
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].regCI);
+            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].regSACT);
+            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].regCI);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cCylinders);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cHeads);
             SSMR3GetU32(pSSM, &pThis->ahciPort[i].PCHSGeometry.cSectors);
@@ -5220,11 +5220,11 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
             }
             SSMR3GetBool(pSSM, &pThis->ahciPort[i].fPoweredOn);
             SSMR3GetBool(pSSM, &pThis->ahciPort[i].fSpunUp);
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32TasksFinished);
-            SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32QueuedTasksFinished);
+            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].u32TasksFinished);
+            SSMR3GetU32V(pSSM, &pThis->ahciPort[i].u32QueuedTasksFinished);
 
             if (uVersion >= AHCI_SAVED_STATE_VERSION_IDE_EMULATION)
-                SSMR3GetU32(pSSM, (uint32_t *)&pThis->ahciPort[i].u32CurrentCommandSlot);
+                SSMR3GetU32V(pSSM, &pThis->ahciPort[i].u32CurrentCommandSlot);
 
             if (uVersion > AHCI_SAVED_STATE_VERSION_PRE_ATAPI)
             {

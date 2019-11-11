@@ -463,7 +463,7 @@ void vboxscsiSetRequestRedo(PVBOXSCSI pVBoxSCSI)
     }
 }
 
-DECLHIDDEN(int) vboxscsiR3LoadExec(PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM)
+DECLHIDDEN(int) vboxscsiR3LoadExec(PCPDMDEVHLPR3 pHlp, PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM)
 {
     SSMR3GetU8  (pSSM, &pVBoxSCSI->regIdentify);
     SSMR3GetU8  (pSSM, &pVBoxSCSI->uTargetDevice);
@@ -490,8 +490,8 @@ DECLHIDDEN(int) vboxscsiR3LoadExec(PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM)
     SSMR3GetU8  (pSSM, &pVBoxSCSI->iCDB);
     SSMR3GetU32 (pSSM, &pVBoxSCSI->cbBufLeft);
     SSMR3GetU32 (pSSM, &pVBoxSCSI->iBuf);
-    SSMR3GetBool(pSSM, (bool *)&pVBoxSCSI->fBusy);
-    SSMR3GetU8  (pSSM, (uint8_t *)&pVBoxSCSI->enmState);
+    SSMR3GetBoolV(pSSM, &pVBoxSCSI->fBusy);
+    PDMDEVHLP_SSM_GET_ENUM8_RET(pHlp, pSSM, pVBoxSCSI->enmState, VBOXSCSISTATE);
 
     /*
      * Old saved states only save the size of the buffer left to read/write.
@@ -512,8 +512,9 @@ DECLHIDDEN(int) vboxscsiR3LoadExec(PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
-DECLHIDDEN(int) vboxscsiR3SaveExec(PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM)
+DECLHIDDEN(int) vboxscsiR3SaveExec(PCPDMDEVHLPR3 pHlp, PVBOXSCSI pVBoxSCSI, PSSMHANDLE pSSM)
 {
+    RT_NOREF(pHlp);
     SSMR3PutU8    (pSSM, pVBoxSCSI->regIdentify);
     SSMR3PutU8    (pSSM, pVBoxSCSI->uTargetDevice);
     SSMR3PutU8    (pSSM, pVBoxSCSI->uTxDir);

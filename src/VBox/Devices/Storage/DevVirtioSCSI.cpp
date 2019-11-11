@@ -2010,7 +2010,7 @@ static DECLCALLBACK(int) virtioScsiR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSS
     pHlp->pfnSSMGetU16(pSSM, &pThis->virtioScsiConfig.uMaxTarget);
     pHlp->pfnSSMGetU32(pSSM, &pThis->virtioScsiConfig.uMaxLun);
     pHlp->pfnSSMGetU32(pSSM, &pThis->fAsyncEvtsEnabled);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->cActiveReqs);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->cActiveReqs);
     pHlp->pfnSSMGetBool(pSSM, &pThis->fEventsMissed);
     pHlp->pfnSSMGetU32(pSSM, &pThis->fVirtioReady);
     pHlp->pfnSSMGetU32(pSSM, &pThis->fHasT10pi);

@@ -4548,7 +4548,7 @@ static DECLCALLBACK(int) lsilogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     else
         AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
 
-    vboxscsiR3SaveExec(&pThis->VBoxSCSI, pSSM);
+    vboxscsiR3SaveExec(pHlp, &pThis->VBoxSCSI, pSSM);
     return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);
 }
 
@@ -4586,7 +4586,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         LSILOGICCTRLTYPE enmCtrlType;
         uint32_t cDeviceStates, cPorts;
 
-        pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&enmCtrlType);
+        PDMDEVHLP_SSM_GET_ENUM32_RET(pHlp, pSSM, enmCtrlType, LSILOGICCTRLTYPE);
         pHlp->pfnSSMGetU32(pSSM, &cDeviceStates);
         rc = pHlp->pfnSSMGetU32(pSSM, &cPorts);
         AssertRCReturn(rc, rc);
@@ -4623,34 +4623,34 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 
         AssertMsg(!pDevice->cOutstandingRequests,
                   ("There are still outstanding requests on this device\n"));
-        pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pDevice->cOutstandingRequests);
+        pHlp->pfnSSMGetU32V(pSSM, &pDevice->cOutstandingRequests);
     }
     /* Now the main device state. */
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->enmState);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->enmWhoInit);
+    PDMDEVHLP_SSM_GET_ENUM32_RET(pHlp, pSSM, pThis->enmState, LSILOGICSTATE);
+    PDMDEVHLP_SSM_GET_ENUM32_RET(pHlp, pSSM, pThis->enmWhoInit, LSILOGICWHOINIT);
     if (uVersion <= LSILOGIC_SAVED_STATE_VERSION_BOOL_DOORBELL)
     {
-        bool fDoorbellInProgress = false;
-
         /*
          * The doorbell status flag distinguishes only between
          * doorbell not in use or a Function handshake is currently in progress.
          */
-        pHlp->pfnSSMGetBool  (pSSM, &fDoorbellInProgress);
+        bool fDoorbellInProgress = false;
+        rc = pHlp->pfnSSMGetBool(pSSM, &fDoorbellInProgress);
+        AssertRCReturn(rc, rc);
         if (fDoorbellInProgress)
             pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_FN_HANDSHAKE;
         else
             pThis->enmDoorbellState = LSILOGICDOORBELLSTATE_NOT_IN_USE;
     }
     else
-        pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->enmDoorbellState);
+        PDMDEVHLP_SSM_GET_ENUM32_RET(pHlp, pSSM, pThis->enmDoorbellState, LSILOGICDOORBELLSTATE);
     pHlp->pfnSSMGetBool(pSSM, &pThis->fDiagnosticEnabled);
     pHlp->pfnSSMGetBool(pSSM, &pThis->fNotificationSent);
     pHlp->pfnSSMGetBool(pSSM, &pThis->fEventNotificationEnabled);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uInterruptMask);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uInterruptStatus);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->uInterruptMask);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->uInterruptStatus);
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aMessage); i++)
-        pHlp->pfnSSMGetU32   (pSSM, &pThis->aMessage[i]);
+        pHlp->pfnSSMGetU32(pSSM, &pThis->aMessage[i]);
     pHlp->pfnSSMGetU32(pSSM, &pThis->iMessage);
     pHlp->pfnSSMGetU32(pSSM, &pThis->cMessage);
     pHlp->pfnSSMGetMem(pSSM, &pThis->ReplyBuffer, sizeof(pThis->ReplyBuffer));
@@ -4683,12 +4683,12 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         pThis->cRequestQueueEntries = cRequestQueueEntries;
     }
 
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyFreeQueueNextEntryFreeWrite);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyFreeQueueNextAddressRead);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyPostQueueNextEntryFreeWrite);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uReplyPostQueueNextAddressRead);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uRequestQueueNextEntryFreeWrite);
-    pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->uRequestQueueNextAddressRead);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->uReplyFreeQueueNextEntryFreeWrite);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->uReplyFreeQueueNextAddressRead);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->uReplyPostQueueNextEntryFreeWrite);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->uReplyPostQueueNextAddressRead);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->uRequestQueueNextEntryFreeWrite);
+    pHlp->pfnSSMGetU32V(pSSM, &pThis->uRequestQueueNextAddressRead);
 
     PMptConfigurationPagesSupported pPages = pThis->pConfigurationPages;
 
@@ -4734,11 +4734,11 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     {
         /* Queue content */
         for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->aReplyFreeQueue[i]);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->aReplyFreeQueue[i]);
         for (unsigned i = 0; i < pThis->cReplyQueueEntries; i++)
-            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->aReplyPostQueue[i]);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->aReplyPostQueue[i]);
         for (unsigned i = 0; i < pThis->cRequestQueueEntries; i++)
-            pHlp->pfnSSMGetU32(pSSM, (uint32_t *)&pThis->aRequestQueue[i]);
+            pHlp->pfnSSMGetU32V(pSSM, &pThis->aRequestQueue[i]);
 
         pHlp->pfnSSMGetU16(pSSM, &pThis->u16NextHandle);
 
@@ -4884,7 +4884,7 @@ static DECLCALLBACK(int) lsilogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
             AssertMsgFailed(("Invalid controller type %d\n", pThis->enmCtrlType));
     }
 
-    rc = vboxscsiR3LoadExec(&pThis->VBoxSCSI, pSSM);
+    rc = vboxscsiR3LoadExec(pHlp, &pThis->VBoxSCSI, pSSM);
     if (RT_FAILURE(rc))
     {
         LogRel(("LsiLogic: Failed to restore BIOS state: %Rrc.\n", rc));

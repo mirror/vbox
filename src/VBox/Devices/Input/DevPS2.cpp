@@ -540,8 +540,8 @@ static int kbd_load(PSSMHANDLE pSSM, KBDState *s, uint32_t version_id)
     SSMR3GetU8(pSSM, &s->mode);
     if (version_id <= 5)
     {
-        SSMR3GetU32(pSSM, (uint32_t *)&u32Dummy);
-        SSMR3GetU32(pSSM, (uint32_t *)&u32Dummy);
+        SSMR3GetU32(pSSM, &u32Dummy);
+        SSMR3GetU32(pSSM, &u32Dummy);
     }
     else
     {

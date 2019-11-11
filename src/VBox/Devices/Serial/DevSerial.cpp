@@ -178,8 +178,7 @@ static DECLCALLBACK(int) serialR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, u
     {
         SSMR3GetU8(    pSSM, &bIrq);
         SSMR3GetIOPort(pSSM, &PortBase);
-        rc = SSMR3GetU32(   pSSM, (uint32_t *)&enmType);
-        AssertRCReturn(rc, rc);
+        PDMDEVHLP_SSM_GET_ENUM32_RET(pDevIns->pHlpR3, pSSM, enmType, UARTTYPE);
         if (uPass == SSM_PASS_FINAL)
         {
             rc = uartR3LoadExec(&pThis->UartCore, pSSM, uVersion, uPass, NULL, NULL);

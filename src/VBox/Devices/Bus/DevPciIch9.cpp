@@ -1767,7 +1767,7 @@ static DECLCALLBACK(int) ich9pciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, 
      * Load IRQ states.
      */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->auPciApicIrqLevels); i++)
-        SSMR3GetU32(pSSM, (uint32_t*)&pThis->auPciApicIrqLevels[i]);
+        SSMR3GetU32V(pSSM, &pThis->auPciApicIrqLevels[i]);
 
     /* separator */
     rc = SSMR3GetU32(pSSM, &u32);

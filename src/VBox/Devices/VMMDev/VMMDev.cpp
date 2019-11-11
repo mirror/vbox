@@ -4101,9 +4101,9 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
      */
     if (uVersion >= VMMDEV_SAVED_STATE_VERSION_HEARTBEAT)
     {
-        pHlp->pfnSSMGetBool(pSSM, (bool *)&pThis->fHeartbeatActive);
-        pHlp->pfnSSMGetBool(pSSM, (bool *)&pThis->fFlatlined);
-        pHlp->pfnSSMGetU64(pSSM, (uint64_t *)&pThis->nsLastHeartbeatTS);
+        pHlp->pfnSSMGetBoolV(pSSM, &pThis->fHeartbeatActive);
+        pHlp->pfnSSMGetBoolV(pSSM, &pThis->fFlatlined);
+        pHlp->pfnSSMGetU64V(pSSM, &pThis->nsLastHeartbeatTS);
         rc = PDMDevHlpTimerLoad(pDevIns, pThis->hFlatlinedTimer, pSSM);
         AssertRCReturn(rc, rc);
         if (pThis->fFlatlined)
