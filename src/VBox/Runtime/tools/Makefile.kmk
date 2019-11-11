@@ -207,6 +207,11 @@ if !defined(VBOX_ONLY_BUILD)
  RTFuzzClient_TEMPLATE = VBoxR3Tool
  RTFuzzClient_SOURCES = RTFuzzClient.cpp
 
+ # RTEfiFatExtract - Extracting single files from a fat EFI binary.
+ PROGRAMS += RTEfiFatExtract
+ RTEfiFatExtract_TEMPLATE = VBoxR3Tool
+ RTEfiFatExtract_SOURCES = RTEfiFatExtract.cpp
+
  if1of ($(KBUILD_TARGET), darwin linux solaris win)
   # RTKrnlModInfo - our lsmod/kextstat clone (for testing the RTKrnlMod code).
   PROGRAMS += RTKrnlModInfo
