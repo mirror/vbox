@@ -158,7 +158,7 @@ class WuiHlpForm(object):
         return self._add(u'          <input name="%s" id="%s" type="text"%s value="%s">%s\n'
                          u'        </div></div>\n'
                          u'      </li>\n'
-                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(sValue), sPostHtml ));
+                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeAttr(unicode(sValue)), sPostHtml ));
 
     def addTextRO(self, sName, sValue, sLabel, sSubClass = 'string', sExtraAttribs = '', sPostHtml = ''):
         """Adds a read-only text input."""
@@ -169,7 +169,7 @@ class WuiHlpForm(object):
                          u'%s\n'
                          u'        </div></div>\n'
                          u'      </li>\n'
-                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeElem(unicode(sValue)), sPostHtml ));
+                         % ( escapeAttr(sName), escapeAttr(sName), sExtraAttribs, escapeAttr(unicode(sValue)), sPostHtml ));
 
     def addWideText(self, sName, sValue, sLabel, sExtraAttribs = '', sPostHtml = ''):
         """Adds a wide text input."""
