@@ -8134,6 +8134,25 @@ DECLINLINE(void *) PDMDevHlpQueryGenericUserObject(PPDMDEVINS pDevIns, PCRTUUID 
     return pDevIns->pHlpR3->pfnQueryGenericUserObject(pDevIns, pUuid);
 }
 
+/** Wrapper around SSMR3GetU32 for simplifying getting enum values saved as uint32_t. */
+# define PDMDEVHLP_SSM_GET_ENUM32_RET(a_pHlp, a_pSSM, a_enmDst, a_EnumType) \
+    do { \
+        uint32_t u32GetEnumTmp = 0; \
+        int rcGetEnum32Tmp = (a_pHlp)->pfnSSMGetU32((a_pSSM), &u32GetEnumTmp); \
+        AssertRCReturn(rcGetEnum32Tmp, rcGetEnum32Tmp); \
+        (a_enmDst) = (a_EnumType)u32GetEnumTmp; \
+        AssertCompile(sizeof(a_EnumType) == sizeof(u32GetEnumTmp)); \
+    } while (0)
+
+/** Wrapper around SSMR3GetU8 for simplifying getting enum values saved as uint8_t. */
+# define PDMDEVHLP_SSM_GET_ENUM8_RET(a_pHlp, a_pSSM, a_enmDst, a_EnumType) \
+    do { \
+        uint8_t bGetEnumTmp = 0; \
+        int rcGetEnum32Tmp = (a_pHlp)->pfnSSMGetU8((a_pSSM), &bGetEnumTmp); \
+        AssertRCReturn(rcGetEnum32Tmp, rcGetEnum32Tmp); \
+        (a_enmDst) = (a_EnumType)bGetEnumTmp; \
+    } while (0)
+
 #endif /* IN_RING3 */
 
 /** Pointer to callbacks provided to the VBoxDeviceRegister() call. */

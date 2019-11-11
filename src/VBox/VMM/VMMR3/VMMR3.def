@@ -275,9 +275,13 @@ EXPORTS
     SSMR3DeregisterExternal
     SSMR3DeregisterInternal
     SSMR3GetBool
+    SSMR3GetBoolV
     SSMR3GetGCPhys
+    SSMR3GetGCPhysV
     SSMR3GetGCPhys32
+    SSMR3GetGCPhys32V
     SSMR3GetGCPhys64
+    SSMR3GetGCPhys64V
     SSMR3GetGCPtr
     SSMR3GetGCUInt
     SSMR3GetGCUIntPtr
@@ -286,10 +290,15 @@ EXPORTS
     SSMR3GetMem
     SSMR3GetRCPtr
     SSMR3GetS128
+    SSMR3GetS128V
     SSMR3GetS16
+    SSMR3GetS16V
     SSMR3GetS32
+    SSMR3GetS32V
     SSMR3GetS64
+    SSMR3GetS64V
     SSMR3GetS8
+    SSMR3GetS8V
     SSMR3GetSInt
     SSMR3GetSel
     SSMR3GetStrZ
@@ -297,10 +306,15 @@ EXPORTS
     SSMR3GetStruct
     SSMR3GetStructEx
     SSMR3GetU128
+    SSMR3GetU128V
     SSMR3GetU16
+    SSMR3GetU16V
     SSMR3GetU32
+    SSMR3GetU32V
     SSMR3GetU64
+    SSMR3GetU64V
     SSMR3GetU8
+    SSMR3GetU8V
     SSMR3GetUInt
     SSMR3HandleGetAfter
     SSMR3HandleGetStatus
