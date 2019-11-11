@@ -979,7 +979,7 @@ VMMR3_INT_DECL(int) gimR3HvLoad(PVM pVM, PSSMHANDLE pSSM)
         SSMR3GetU64(pSSM, &pHv->uDbgSendBufferMsr);
         SSMR3GetU64(pSSM, &pHv->uDbgRecvBufferMsr);
         SSMR3GetU64(pSSM, &pHv->uDbgStatusMsr);
-        SSMR3GetU32(pSSM, (uint32_t *)&pHv->enmDbgReply);
+        SSM_GET_ENUM32_RET(pSSM, pHv->enmDbgReply, GIMHVDEBUGREPLY);
         SSMR3GetU32(pSSM, &pHv->uDbgBootpXId);
         rc = SSMR3GetU32(pSSM, &pHv->DbgGuestIp4Addr.u);
         AssertRCReturn(rc, rc);

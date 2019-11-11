@@ -486,9 +486,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 
         if (uVersion > EM_SAVED_STATE_VERSION_PRE_SMP)
         {
-            AssertCompile(sizeof(pVCpu->em.s.enmPrevState) == sizeof(uint32_t));
-            rc = SSMR3GetU32(pSSM, (uint32_t *)&pVCpu->em.s.enmPrevState);
-            AssertRCReturn(rc, rc);
+            SSM_GET_ENUM32_RET(pSSM, pVCpu->em.s.enmPrevState, EMSTATE);
             Assert(pVCpu->em.s.enmPrevState != EMSTATE_SUSPENDED);
 
             pVCpu->em.s.enmState = EMSTATE_SUSPENDED;

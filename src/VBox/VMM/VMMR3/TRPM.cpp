@@ -288,8 +288,8 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
         {
             PTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
-            SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
-            SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
+            SSMR3GetU32(pSSM,      &pTrpmCpu->uActiveVector);
+            SSM_GET_ENUM32_RET(pSSM, pTrpmCpu->enmActiveType, TRPMEVENT);
             SSMR3GetU32(pSSM,       &pTrpmCpu->uActiveErrorCode);
             SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
             SSMR3GetU8(pSSM,        &pTrpmCpu->cbInstr);
@@ -307,8 +307,8 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
             {
                 RTGCUINT GCUIntErrCode;
                 PTRPMCPU pTrpmCpu = &pVM->apCpusR3[i]->trpm.s;
-                SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
-                SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
+                SSMR3GetU32(pSSM,      &pTrpmCpu->uActiveVector);
+                SSM_GET_ENUM32_RET(pSSM,  pTrpmCpu->enmActiveType, TRPMEVENT);
                 SSMR3GetGCUInt(pSSM,    &GCUIntErrCode);
                 SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
                 SSMR3Skip(pSSM,          sizeof(RTGCUINT));      /* uSavedVector    - No longer used. */
@@ -331,8 +331,8 @@ static DECLCALLBACK(int) trpmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion,
         {
             RTGCUINT GCUIntErrCode;
             PTRPMCPU pTrpmCpu = &pVM->apCpusR3[0]->trpm.s;
-            SSMR3GetUInt(pSSM,      &pTrpmCpu->uActiveVector);
-            SSMR3GetUInt(pSSM,      (uint32_t *)&pTrpmCpu->enmActiveType);
+            SSMR3GetU32(pSSM,      &pTrpmCpu->uActiveVector);
+            SSM_GET_ENUM32_RET(pSSM, pTrpmCpu->enmActiveType, TRPMEVENT);
             SSMR3GetGCUInt(pSSM,    &GCUIntErrCode);
             SSMR3GetGCUIntPtr(pSSM, &pTrpmCpu->uActiveCR2);
             pTrpmCpu->uActiveErrorCode = GCUIntErrCode;
