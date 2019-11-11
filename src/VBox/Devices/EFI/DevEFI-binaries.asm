@@ -44,7 +44,7 @@ type g_abEfiFirmware32 object
 size g_cbEfiFirmware32 4
 type g_cbEfiFirmware32 object
 
-size g_abEfiFirmware64 end_32_firmware - NAME(g_abEfiFirmware64)
+size g_abEfiFirmware64 end_64_firmware - NAME(g_abEfiFirmware64)
 type g_abEfiFirmware64 object
 size g_cbEfiFirmware64 4
 type g_cbEfiFirmware64 object
