@@ -9239,7 +9239,10 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
 
         /*
          * Guest-interruptibility state.
-         * Read this first so as to record its value for ring-3 propagation.
+         *
+         * Read this first so that any check that fails prior to those that actually
+         * require the guest-interruptibility state would still reflect the correct
+         * VMCS value and avoids causing further confusion.
          */
         rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INT_STATE, &u32IntrState);
         AssertRC(rc);
