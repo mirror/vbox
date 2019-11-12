@@ -537,7 +537,7 @@ typedef struct ATACONTROLLER
     bool volatile       fSignalIdle;
     uint8_t             Alignment3[1]; /**< Explicit padding of the 1 byte gap. */
     /** Magic delay before triggering interrupts in DMA mode. */
-    uint32_t            DelayIRQMillies;
+    uint32_t            msDelayIRQ;
     /** The event semaphore the thread is waiting on during suspended I/O. */
     RTSEMEVENT          SuspendIOSem;
     /** The lock protecting the request queue. */
@@ -3954,7 +3954,7 @@ static bool ataR3InitDevParmSS(ATADevState *s)
     LogRel(("ATA: LUN#%d: INITIALIZE DEVICE PARAMETERS: %u logical sectors, %u heads\n",
             s->iLUN, s->uATARegNSector, s->uATARegSelect & 0x0f));
     ataR3LockLeave(pCtl);
-    RTThreadSleep(pCtl->DelayIRQMillies);
+    RTThreadSleep(pCtl->msDelayIRQ);
     ataR3LockEnter(pCtl);
     ataR3CmdOK(s, ATA_STAT_SEEK);
     ataHCSetIRQ(s);
@@ -3968,7 +3968,7 @@ static bool ataR3RecalibrateSS(ATADevState *s)
 
     LogFlowFunc(("\n"));
     ataR3LockLeave(pCtl);
-    RTThreadSleep(pCtl->DelayIRQMillies);
+    RTThreadSleep(pCtl->msDelayIRQ);
     ataR3LockEnter(pCtl);
     ataR3CmdOK(s, ATA_STAT_SEEK);
     ataHCSetIRQ(s);
@@ -5758,7 +5758,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 /* The infamous delay IRQ hack. */
                 if (   iOriginalSourceSink == ATAFN_SS_WRITE_SECTORS
                     && s->cbTotalTransfer == 0
-                    && pCtl->DelayIRQMillies)
+                    && pCtl->msDelayIRQ)
                 {
                     /* Delay IRQ for writing. Required to get the Win2K
                      * installation work reliably (otherwise it crashes,
@@ -5766,7 +5766,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                      * solution has been found. */
                     Log(("%s: delay IRQ hack\n", __FUNCTION__));
                     ataR3LockLeave(pCtl);
-                    RTThreadSleep(pCtl->DelayIRQMillies);
+                    RTThreadSleep(pCtl->msDelayIRQ);
                     ataR3LockEnter(pCtl);
                 }
 
@@ -7387,11 +7387,11 @@ static DECLCALLBACK(void) ataR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
  */
 static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     int             rc;
 
     Log(("ataR3Destruct\n"));
-    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     /*
      * Tell the async I/O threads to terminate.
@@ -7479,7 +7479,7 @@ static int ataR3ControllerFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, CHIPSET *p
 {
     char szType[20];
 
-    int rc = CFGMR3QueryStringDef(pCfg, "Type", &szType[0], sizeof(szType), "PIIX4");
+    int rc = pDevIns->pHlpR3->pfnCFGMQueryStringDef(pCfg, "Type", &szType[0], sizeof(szType), "PIIX4");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"Type\" as a string failed"));
@@ -7504,15 +7504,14 @@ static int ataR3ControllerFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, CHIPSET *p
  */
 static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PCIATAState    *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
     PPDMIBASE       pBase;
     int             rc;
-    bool            fRCEnabled;
-    bool            fR0Enabled;
-    uint32_t        DelayIRQMillies;
+    uint32_t        msDelayIRQ;
 
     Assert(iInstance == 0);
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Initialize NIL handle values (for the destructor).
@@ -7527,33 +7526,13 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "GCEnabled\0"
-                              "R0Enabled\0"
-                              "IRQDelay\0"
-                              "Type\0")
-        /** @todo || invalid keys */)
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("PIIX3 configuration error: unknown option specified"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQDelay|Type", "");
 
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fRCEnabled, true);
+    rc = pHlp->pfnCFGMQueryU32Def(pCfg, "IRQDelay", &msDelayIRQ, 0);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read GCEnabled as boolean"));
-    Log(("%s: fRCEnabled=%d\n", __FUNCTION__, fRCEnabled));
-
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read R0Enabled as boolean"));
-    Log(("%s: fR0Enabled=%d\n", __FUNCTION__, fR0Enabled));
-
-    rc = CFGMR3QueryU32Def(pCfg, "IRQDelay", &DelayIRQMillies, 0);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("PIIX3 configuration error: failed to read IRQDelay as integer"));
-    Log(("%s: DelayIRQMillies=%d\n", __FUNCTION__, DelayIRQMillies));
-    Assert(DelayIRQMillies < 50);
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 configuration error: failed to read IRQDelay as integer"));
+    Log(("%s: msDelayIRQ=%d\n", __FUNCTION__, msDelayIRQ));
+    Assert(msDelayIRQ < 50);
 
     CHIPSET enmChipset = CHIPSET_PIIX3;
     rc = ataR3ControllerFromCfg(pDevIns, pCfg, &enmChipset);
@@ -7577,7 +7556,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      * When adding more IDE chipsets, don't forget to update pci_bios_init_device()
      * as it explicitly checks for PCI id for IDE controllers.
      */
-    switch (pThis->u8Type)
+    switch (enmChipset)
     {
         case CHIPSET_ICH6:
             PDMPciDevSetDeviceId(pPciDev, 0x269e); /* ICH6 IDE */
@@ -7609,7 +7588,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             PDMPciDevSetDeviceId(pPciDev, 0x7010); /* PIIX3 IDE */
             break;
         default:
-            AssertMsgFailed(("Unsupported IDE chipset type: %d\n", pThis->u8Type));
+            AssertMsgFailed(("Unsupported IDE chipset type: %d\n", enmChipset));
     }
 
     /** @todo
@@ -7631,14 +7610,14 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMPciDevSetHeaderType(pPciDev, 0x00);
 
     pThis->pDevIns          = pDevIns;
-    pThis->fRCEnabled       = fRCEnabled;
-    pThis->fR0Enabled       = fR0Enabled;
+    pThis->fRCEnabled       = pDevIns->fRCEnabled;
+    pThis->fR0Enabled       = pDevIns->fR0Enabled;
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
         pThis->aCts[i].pDevInsR3 = pDevIns;
         pThis->aCts[i].pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
         pThis->aCts[i].pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-        pThis->aCts[i].DelayIRQMillies = (uint32_t)DelayIRQMillies;
+        pThis->aCts[i].msDelayIRQ = msDelayIRQ;
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
         {
             ATADevState *pIf = &pThis->aCts[i].aIfs[j];
@@ -7835,9 +7814,9 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                         RTStrPrintf(szSerial, sizeof(szSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
 
                     /* Get user config if present using defaults otherwise. */
-                    PCFGMNODE pCfgNode = CFGMR3GetChild(pCfg, s_apszCFGMKeys[i][j]);
-                    rc = CFGMR3QueryStringDef(pCfgNode, "SerialNumber", pIf->szSerialNumber, sizeof(pIf->szSerialNumber),
-                                              szSerial);
+                    PCFGMNODE pCfgNode = pHlp->pfnCFGMGetChild(pCfg, s_apszCFGMKeys[i][j]);
+                    rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "SerialNumber", pIf->szSerialNumber, sizeof(pIf->szSerialNumber),
+                                                     szSerial);
                     if (RT_FAILURE(rc))
                     {
                         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
@@ -7847,8 +7826,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                   N_("PIIX3 configuration error: failed to read \"SerialNumber\" as string"));
                     }
 
-                    rc = CFGMR3QueryStringDef(pCfgNode, "FirmwareRevision", pIf->szFirmwareRevision, sizeof(pIf->szFirmwareRevision),
-                                              "1.0");
+                    rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "FirmwareRevision", pIf->szFirmwareRevision,
+                                                     sizeof(pIf->szFirmwareRevision), "1.0");
                     if (RT_FAILURE(rc))
                     {
                         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
@@ -7858,8 +7837,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                     N_("PIIX3 configuration error: failed to read \"FirmwareRevision\" as string"));
                     }
 
-                    rc = CFGMR3QueryStringDef(pCfgNode, "ModelNumber", pIf->szModelNumber, sizeof(pIf->szModelNumber),
-                                              pIf->fATAPI ? "VBOX CD-ROM" : "VBOX HARDDISK");
+                    rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ModelNumber", pIf->szModelNumber, sizeof(pIf->szModelNumber),
+                                                     pIf->fATAPI ? "VBOX CD-ROM" : "VBOX HARDDISK");
                     if (RT_FAILURE(rc))
                     {
                         if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
@@ -7872,8 +7851,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                     /* There are three other identification strings for CD drives used for INQUIRY */
                     if (pIf->fATAPI)
                     {
-                        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIVendorId", pIf->szInquiryVendorId, sizeof(pIf->szInquiryVendorId),
-                                                  "VBOX");
+                        rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ATAPIVendorId", pIf->szInquiryVendorId,
+                                                         sizeof(pIf->szInquiryVendorId), "VBOX");
                         if (RT_FAILURE(rc))
                         {
                             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
@@ -7883,8 +7862,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                         N_("PIIX3 configuration error: failed to read \"ATAPIVendorId\" as string"));
                         }
 
-                        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIProductId", pIf->szInquiryProductId, sizeof(pIf->szInquiryProductId),
-                                                  "CD-ROM");
+                        rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ATAPIProductId", pIf->szInquiryProductId,
+                                                         sizeof(pIf->szInquiryProductId), "CD-ROM");
                         if (RT_FAILURE(rc))
                         {
                             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
@@ -7894,8 +7873,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                         N_("PIIX3 configuration error: failed to read \"ATAPIProductId\" as string"));
                         }
 
-                        rc = CFGMR3QueryStringDef(pCfgNode, "ATAPIRevision", pIf->szInquiryRevision, sizeof(pIf->szInquiryRevision),
-                                                  "1.0");
+                        rc = pHlp->pfnCFGMQueryStringDef(pCfgNode, "ATAPIRevision", pIf->szInquiryRevision,
+                                                         sizeof(pIf->szInquiryRevision), "1.0");
                         if (RT_FAILURE(rc))
                         {
                             if (rc == VERR_CFGM_NOT_ENOUGH_SPACE)
@@ -7905,7 +7884,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                         N_("PIIX3 configuration error: failed to read \"ATAPIRevision\" as string"));
                         }
 
-                        rc = CFGMR3QueryBoolDef(pCfgNode, "OverwriteInquiry", &pIf->fOverwriteInquiry, true);
+                        rc = pHlp->pfnCFGMQueryBoolDef(pCfgNode, "OverwriteInquiry", &pIf->fOverwriteInquiry, true);
                         if (RT_FAILURE(rc))
                             return PDMDEV_SET_ERROR(pDevIns, rc,
                                         N_("PIIX3 configuration error: failed to read \"OverwriteInquiry\" as boolean"));
@@ -7957,7 +7936,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                          ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, NULL, NULL, "ATA I/O Base 2 - Empty Bus");
             AssertLogRelRCReturn(rc, rc);
 
-            if (fRCEnabled)
+            if (pDevIns->fRCEnabled)
             {
                 rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTGCPTR)i,
                                                "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 1 - Empty Bus");
@@ -7967,7 +7946,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                 AssertLogRelRCReturn(rc, rc);
             }
 
-            if (fR0Enabled)
+            if (pDevIns->fR0Enabled)
             {
                 rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTR0PTR)i,
                                                "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 1 - Empty Bus");
@@ -7988,7 +7967,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                          ataIOPortWrite1Other, ataIOPortRead1Other, NULL, NULL, "ATA I/O Base 1 - Other");
 
             AssertLogRelRCReturn(rc, rc);
-            if (fRCEnabled)
+            if (pDevIns->fRCEnabled)
             {
                 rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTGCPTR)i,
                                                "ataIOPortWrite1Data", "ataIOPortRead1Data",
@@ -7999,7 +7978,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                 AssertLogRelRCReturn(rc, rc);
             }
 
-            if (fR0Enabled)
+            if (pDevIns->fR0Enabled)
             {
     #if 0
                 rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
@@ -8020,14 +7999,14 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
             if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers"));
 
-            if (fRCEnabled)
+            if (pDevIns->fRCEnabled)
             {
                 rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
                                                "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
                 if (RT_FAILURE(rc))
                     return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (GC)"));
             }
-            if (fR0Enabled)
+            if (pDevIns->fR0Enabled)
             {
                 rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTR0PTR)i,
                                                "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
