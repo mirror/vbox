@@ -1138,7 +1138,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
     if (uType == 0xc1 && uTarget == 0x01)
     {
         LogRel(("* * * REPORT LUNS LU ACCESSED * * * "));
-        uScsiLun == 0xff; /* Force rejection. todo: figure out right way to handle, r=paul */
+        uScsiLun = 0xff; /* Force rejection. todo: figure out right way to handle, r=paul */
     }
     else
     if (uType != 1)
