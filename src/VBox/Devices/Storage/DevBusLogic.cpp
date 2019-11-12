@@ -25,6 +25,7 @@
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmstorageifs.h>
 #include <VBox/vmm/pdmcritsect.h>
+#include <VBox/AssertGuest.h>
 #include <VBox/scsi.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -341,8 +342,7 @@ typedef struct BUSLOGIC
     bool                            fR0Enabled;
     /** Whether RC is enabled. */
     bool                            fGCEnabled;
-    /** Base address of the I/O ports. */
-    RTIOPORT                        IOPortBase;
+    bool                            afPadding[2];
 
     /** Base address of the memory mapping. */
     RTGCPHYS                        MMIOBase;
@@ -486,6 +486,10 @@ typedef struct BUSLOGIC
 # endif
 #endif
 
+    /** ISA compatibility I/O ports. */
+    IOMIOPORTHANDLE                 hIoPortsIsa;
+    /** PCI Region \#0: I/O ports. */
+    IOMIOPORTHANDLE                 hIoPortsPci;
 } BUSLOGIC;
 /** Pointer to the shared BusLogic device emulation state. */
 typedef BUSLOGIC *PBUSLOGIC;
@@ -1008,7 +1012,7 @@ typedef BUSLOGICR3MEMCOPYCALLBACK *PBUSLOGICR3MEMCOPYCALLBACK;
 *   Internal Functions                                                                                                           *
 *********************************************************************************************************************************/
 #ifdef IN_RING3
-static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode);
+static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, uint8_t uBaseCode);
 #endif
 
 
@@ -1147,9 +1151,7 @@ static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
 
     /* Guest-initiated HBA reset does not affect ISA port I/O. */
     if (fResetIO)
-    {
-        buslogicR3RegisterISARange(pBusLogic, pBusLogic->uDefaultISABaseCode);
-    }
+        buslogicR3RegisterISARange(pBusLogic->CTX_SUFF(pDevIns), pBusLogic, pBusLogic->uDefaultISABaseCode);
     buslogicR3InitializeLocalRam(pBusLogic);
     vboxscsiInitialize(&pBusLogic->VBoxSCSI);
 
@@ -1813,9 +1815,9 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
              * violates the PCI spec, as this address is not reported through PCI.
              * However, it is required for compatibility with old drivers.
              */
-#ifdef IN_RING3
+#ifdef IN_RING3 /* We can do this from ring-0 now, but we'd like to see the LogRel, so we keep going back to ring-3 anyway. */
             Log(("ISA I/O for PCI (code %x)\n", pBusLogic->aCommandBuffer[0]));
-            buslogicR3RegisterISARange(pBusLogic, pBusLogic->aCommandBuffer[0]);
+            buslogicR3RegisterISARange(pBusLogic->CTX_SUFF(pDevIns), pBusLogic, pBusLogic->aCommandBuffer[0]);
             pBusLogic->cbReplyParametersLeft = 0;
             fSuppressIrq = true;
             break;
@@ -2659,51 +2661,36 @@ PDMBOTHCBDECL(int) buslogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS 
 }
 
 /**
- * Port I/O Handler for IN operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(int) buslogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+buslogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    unsigned iRegister = uPort % 4;
-    RT_NOREF_PV(pvUser); RT_NOREF_PV(cb);
+    unsigned iRegister = offPort % 4;
+    RT_NOREF(pvUser, cb);
 
-    Assert(cb == 1);
+    ASSERT_GUEST(cb == 1);
 
     return buslogicRegisterRead(pBusLogic, iRegister, pu32);
 }
 
 /**
- * Port I/O Handler for OUT operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    unsigned iRegister = uPort % 4;
-    uint8_t uVal = (uint8_t)u32;
-    RT_NOREF2(pvUser, cb);
+    unsigned iRegister = offPort % 4;
+    RT_NOREF(pvUser, cb);
 
-    Assert(cb == 1);
+    ASSERT_GUEST(cb == 1);
 
-    int rc = buslogicRegisterWrite(pDevIns, pBusLogic, iRegister, (uint8_t)uVal);
+    int rc = buslogicRegisterWrite(pDevIns, pBusLogic, iRegister, (uint8_t)u32);
 
-    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x uPort=%#x rc=%Rrc\n",
-          pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, uPort, rc));
+    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x offPort=%#x rc=%Rrc\n",
+          pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, offPort, rc));
 
     return rc;
 }
@@ -2890,10 +2877,11 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void *p
  * Update the ISA I/O range.
  *
  * @returns nothing.
+ * @param   pDevIns         The device instance.
  * @param   pBusLogic       Pointer to the BusLogic device instance.
  * @param   uBaseCode       Encoded ISA I/O base; only low 3 bits are used.
  */
-static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode)
+static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, uint8_t uBaseCode)
 {
     uint8_t     uCode = uBaseCode & MAX_ISA_BASE;
     uint16_t    uNewBase = g_aISABases[uCode];
@@ -2901,13 +2889,15 @@ static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode)
 
     LogFlowFunc(("ISA I/O code %02X, new base %X\n", uBaseCode, uNewBase));
 
-    /* Check if the same port range is already registered. */
+    /* Check if the same port range actually changed. */
     if (uNewBase != pBusLogic->IOISABase)
     {
-        /* Unregister the old range, if any. */
+        /* Unmap the old range, if necessary. */
         if (pBusLogic->IOISABase)
-            rc = PDMDevHlpIOPortDeregister(pBusLogic->CTX_SUFF(pDevIns), pBusLogic->IOISABase, 4);
-
+        {
+            rc = PDMDevHlpIoPortUnmap(pDevIns, pBusLogic->hIoPortsIsa);
+            AssertRC(rc);
+        }
         if (RT_SUCCESS(rc))
         {
             pBusLogic->IOISABase = 0;   /* First mark as unregistered. */
@@ -2916,10 +2906,7 @@ static int buslogicR3RegisterISARange(PBUSLOGIC pBusLogic, uint8_t uBaseCode)
             if (uNewBase)
             {
                 /* Register the new range if requested. */
-                rc = PDMDevHlpIOPortRegister(pBusLogic->CTX_SUFF(pDevIns), uNewBase, 4, NULL,
-                                             buslogicIOPortWrite, buslogicIOPortRead,
-                                             NULL, NULL,
-                                             "BusLogic ISA");
+                rc = PDMDevHlpIoPortMap(pDevIns, pBusLogic->hIoPortsIsa, uNewBase);
                 if (RT_SUCCESS(rc))
                 {
                     pBusLogic->IOISABase = uNewBase;
@@ -2987,31 +2974,6 @@ static DECLCALLBACK(int) buslogicR3MmioMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDe
         }
 
         pThis->MMIOBase = GCPhysAddress;
-    }
-    else if (enmType == PCI_ADDRESS_SPACE_IO)
-    {
-        rc = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress, 32,
-                                     NULL, buslogicIOPortWrite, buslogicIOPortRead, NULL, NULL, "BusLogic PCI");
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (pThis->fR0Enabled)
-        {
-            rc = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress, 32,
-                                           0, "buslogicIOPortWrite", "buslogicIOPortRead", NULL, NULL, "BusLogic PCI");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        if (pThis->fGCEnabled)
-        {
-            rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, 32,
-                                           0, "buslogicIOPortWrite", "buslogicIOPortRead", NULL, NULL, "BusLogic PCI");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        pThis->IOPortBase = (RTIOPORT)GCPhysAddress;
     }
     else
         AssertMsgFailed(("Invalid enmType=%d\n", enmType));
@@ -3526,7 +3488,7 @@ static DECLCALLBACK(int) buslogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     RT_NOREF(pSSM);
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
-    buslogicR3RegisterISARange(pThis, pThis->uISABaseCode);
+    buslogicR3RegisterISARange(pDevIns, pThis, pThis->uISABaseCode);
 
     /* Kick of any requests we might need to redo. */
     if (pThis->VBoxSCSI.fBusy)
@@ -3826,8 +3788,8 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
                         pThis->IOISABase,
                         pThis->uIsaIrq);
     else
-        pHlp->pfnPrintf(pHlp, "PCI I/O=%RTiop ISA I/O=%RTiop MMIO=%RGp IRQ=%u ",
-                        pThis->IOPortBase, pThis->IOISABase, pThis->MMIOBase,
+        pHlp->pfnPrintf(pHlp, "PCI I/O=%04x ISA I/O=%RTiop MMIO=%RGp IRQ=%u ",
+                        PDMDevHlpIoPortGetMappingAddress(pDevIns, pThis->hIoPortsPci), pThis->IOISABase, pThis->MMIOBase,
                         PCIDevGetInterruptLine(pDevIns->apPciDevs[0]));
     pHlp->pfnPrintf(pHlp, "GC=%RTbool R0=%RTbool\n",
                     !!pThis->fGCEnabled, !!pThis->fR0Enabled);
@@ -4276,12 +4238,12 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (!pThis->uIsaIrq)
     {
         rc = PDMDevHlpPCIRegister(pDevIns, pPciDev);
-        if (RT_FAILURE(rc))
-            return rc;
+        AssertRCReturn(rc, rc);
 
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 0, 32, PCI_ADDRESS_SPACE_IO, buslogicR3MmioMap);
-        if (RT_FAILURE(rc))
-            return rc;
+        rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 0 /*iPciRegion*/, 32 /*cPorts*/,
+                                          buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/,
+                                          "BusLogic PCI", NULL /*paExtDescs*/, &pThis->hIoPortsPci);
+        AssertRCReturn(rc, rc);
 
         rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 32, PCI_ADDRESS_SPACE_MEM, buslogicR3MmioMap);
         if (RT_FAILURE(rc))
@@ -4300,7 +4262,12 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     }
 
     /* Set up the compatibility I/O range. */
-    rc = buslogicR3RegisterISARange(pThis, pThis->uDefaultISABaseCode);
+    rc = PDMDevHlpIoPortCreate(pDevIns, 4 /*cPorts*/, NULL /*pPciDev*/, UINT32_MAX /*iPciRegion*/,
+                               buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/,
+                               "BusLogic ISA", NULL /*paExtDescs*/, &pThis->hIoPortsIsa);
+    AssertRCReturn(rc, rc);
+
+    rc = buslogicR3RegisterISARange(pDevIns, pThis, pThis->uDefaultISABaseCode);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register ISA I/O handlers"));
 
@@ -4426,7 +4393,24 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     return rc;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) buslogicRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsPci, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -4475,7 +4459,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           buslogicRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -4488,7 +4472,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           buslogicRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
