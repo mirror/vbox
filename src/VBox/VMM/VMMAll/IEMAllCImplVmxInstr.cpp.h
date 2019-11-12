@@ -359,8 +359,9 @@ uint16_t const g_aoffVmcsMap[16][VMX_V_VMCS_MAX_INDEX + 1] =
         /*    19 */ RT_UOFFSETOF(VMXVVMCS, u32GuestActivityState),
         /*    20 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSmBase),
         /*    21 */ RT_UOFFSETOF(VMXVVMCS, u32GuestSysenterCS),
-        /*    22 */ RT_UOFFSETOF(VMXVVMCS, u32PreemptTimer),
-        /* 23-25 */ UINT16_MAX, UINT16_MAX, UINT16_MAX
+        /*    22 */ UINT16_MAX,
+        /*    23 */ RT_UOFFSETOF(VMXVVMCS, u32PreemptTimer),
+        /* 24-25 */ UINT16_MAX, UINT16_MAX
     },
     /* VMX_VMCSFIELD_WIDTH_32BIT | VMX_VMCSFIELD_TYPE_HOST_STATE: */
     {
@@ -2603,15 +2604,17 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexit(PVMCPUCC pVCpu, uint32_t uExitReason, uint6
     }
 
     /*
+     * Stop any running VMX-preemption timer if necessary.
+     */
+    if (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
+        CPUMStopGuestVmxPremptTimer(pVCpu);
+
+    /*
      * Clear any pending VMX nested-guest force-flags.
-     * These force-flags have no effect on guest execution and will
+     * These force-flags have no effect on (outer) guest execution and will
      * be re-evaluated and setup on the next nested-guest VM-entry.
      */
-    VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER
-                             | VMCPU_FF_VMX_MTF
-                             | VMCPU_FF_VMX_APIC_WRITE
-                             | VMCPU_FF_VMX_INT_WINDOW
-                             | VMCPU_FF_VMX_NMI_WINDOW);
+    VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_VMX_ALL_MASK);
 
     /* Restore the host (outer guest) state. */
     VBOXSTRICTRC rcStrict = iemVmxVmexitLoadHostState(pVCpu, uExitReason);
@@ -3476,30 +3479,18 @@ IEM_STATIC VBOXSTRICTRC iemVmxVmexitPreemptTimer(PVMCPUCC pVCpu)
 {
     PVMXVVMCS pVmcs = pVCpu->cpum.GstCtx.hwvirt.vmx.CTX_SUFF(pVmcs);
     Assert(pVmcs);
+    Assert(VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
+    Assert(pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER);
 
-    /* The VM-exit is subject to "Activate VMX-preemption timer" being set. */
-    if (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
-    {
-        /* Import the hardware virtualization state (for nested-guest VM-entry TSC-tick). */
-        IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_HWVIRT);
+    /* Import the hardware virtualization state (for nested-guest VM-entry TSC-tick). */
+    IEM_CTX_IMPORT_RET(pVCpu, CPUMCTX_EXTRN_HWVIRT);
 
-        /*
-         * Calculate the current VMX-preemption timer value.
-         * Only if the value has reached zero, we cause the VM-exit.
-         */
-        uint32_t uPreemptTimer = iemVmxCalcPreemptTimer(pVCpu);
-        if (!uPreemptTimer)
-        {
-            /* Save the VMX-preemption timer value (of 0) back in to the VMCS if the CPU supports this feature. */
-            if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER)
-                pVmcs->u32PreemptTimer = 0;
+    /* Save the VMX-preemption timer value (of 0) back in to the VMCS if the CPU supports this feature. */
+    if (pVmcs->u32ExitCtls & VMX_EXIT_CTLS_SAVE_PREEMPT_TIMER)
+        pVmcs->u32PreemptTimer = 0;
 
-            /* Cause the VMX-preemption timer VM-exit. The Exit qualification MBZ. */
-            return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER, 0 /* u64ExitQual */);
-        }
-    }
-
-    return VINF_VMX_INTERCEPT_NOT_ACTIVE;
+    /* Cause the VMX-preemption timer VM-exit. The Exit qualification MBZ. */
+    return iemVmxVmexit(pVCpu, VMX_EXIT_PREEMPT_TIMER, 0 /* u64ExitQual */);
 }
 
 
@@ -7084,11 +7075,28 @@ IEM_STATIC void iemVmxVmentrySetupPreemptTimer(PVMCPUCC pVCpu, const char *pszIn
     Assert(pVmcs);
     if (pVmcs->u32PinCtls & VMX_PIN_CTLS_PREEMPT_TIMER)
     {
-        uint64_t const uEntryTick = TMCpuTickGetNoCheck(pVCpu);
-        pVCpu->cpum.GstCtx.hwvirt.vmx.uEntryTick = uEntryTick;
-        VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
+        /*
+         * If the timer is 0, we must cause a VM-exit before executing the first
+         * nested-guest instruction. So we can flag as though the timer has already
+         * expired and we will check and cause a VM-exit at the right priority elsewhere
+         * in the code.
+         */
+        uint64_t uEntryTick;
+        uint32_t const uPreemptTimer = pVmcs->u32PreemptTimer;
+        if (uPreemptTimer)
+        {
+            int rc = CPUMStartGuestVmxPremptTimer(pVCpu, uPreemptTimer, VMX_V_PREEMPT_TIMER_SHIFT, &uEntryTick);
+            AssertRC(rc);
+            Log(("%s: VM-entry set up VMX-preemption timer at %#RX64\n", pszInstr, uEntryTick));
+        }
+        else
+        {
+            uEntryTick = TMCpuTickGetNoCheck(pVCpu);
+            VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
+            Log(("%s: VM-entry set up VMX-preemption timer at %#RX64 to expire immediately!\n", pszInstr, uEntryTick));
+        }
 
-        Log(("%s: VM-entry set up VMX-preemption timer at %#RX64\n", pszInstr, uEntryTick));
+        pVCpu->cpum.GstCtx.hwvirt.vmx.uEntryTick = uEntryTick;
     }
     else
         Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
@@ -7234,7 +7242,7 @@ IEM_STATIC void iemVmxVmentryInitReadOnlyFields(PVMCPUCC pVCpu)
     /*
      * Any VMCS field which we do not establish on every VM-exit but may potentially
      * be used on the VM-exit path of a nested hypervisor -and- is not explicitly
-     * specified to be undefined needs to be initialized here.
+     * specified to be undefined, needs to be initialized here.
      *
      * Thus, it is especially important to clear the Exit qualification field
      * since it must be zero for VM-exits where it is not used. Similarly, the
@@ -7583,7 +7591,7 @@ IEM_STATIC void iemVmxVmreadNoCheck(PCVMXVVMCS pVmcs, uint64_t *pu64Dst, uint64_
     uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_INDEX);
     Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
-    Assert(offField < VMX_V_VMCS_SIZE);
+    AssertMsg(offField < VMX_V_VMCS_SIZE, ("%u field=%#RX64 uWidth=%#x uType=%#x uWidthType=%#x uIndex=%u\n", offField, u64VmcsField, uWidth, uType, uWidthType, uIndex));
     AssertCompile(VMX_V_SHADOW_VMCS_SIZE == VMX_V_VMCS_SIZE);
 
     /*

@@ -1403,6 +1403,12 @@ DECLINLINE(void) cpumR3ResetVmxHwVirtState(PVMCPU pVCpu)
     pCtx->hwvirt.vmx.fInVmxRootMode    = false;
     pCtx->hwvirt.vmx.fInVmxNonRootMode = false;
     /* Don't reset diagnostics here. */
+
+    /* Stop any VMX-preemption timer. */
+    CPUMStopGuestVmxPremptTimer(pVCpu);
+
+    /* Clear all nested-guest FFs. */
+    VMCPU_FF_CLEAR_MASK(pVCpu, VMCPU_FF_VMX_ALL_MASK);
 }
 
 
@@ -1863,7 +1869,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxExtIntExit            = 1;
     EmuFeat.fVmxNmiExit               = 1;
     EmuFeat.fVmxVirtNmi               = 0;
-    EmuFeat.fVmxPreemptTimer          = 0;  /** @todo NSTVMX: enable this. */
+    EmuFeat.fVmxPreemptTimer          = 0;  /* Currently disabled on purpose, see @bugref{9180#c}. */
     EmuFeat.fVmxPostedInt             = 0;
     EmuFeat.fVmxIntWindowExit         = 1;
     EmuFeat.fVmxTscOffsetting         = 1;
@@ -1917,7 +1923,7 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     EmuFeat.fVmxExitLoadPatMsr        = 0;
     EmuFeat.fVmxExitSaveEferMsr       = 1;
     EmuFeat.fVmxExitLoadEferMsr       = 1;
-    EmuFeat.fVmxSavePreemptTimer      = 0;
+    EmuFeat.fVmxSavePreemptTimer      = 0;  /* Cannot be enabled if VMX-preemption timer is disabled. */
     EmuFeat.fVmxExitSaveEferLma       = 1;  /* Cannot be disabled if unrestricted guest is enabled. */
     EmuFeat.fVmxIntelPt               = 0;
     EmuFeat.fVmxVmwriteAll            = 0;  /** @todo NSTVMX: enable this when nested VMCS shadowing is enabled. */
@@ -1996,10 +2002,12 @@ void cpumR3InitVmxGuestFeaturesAndMsrs(PVM pVM, PCVMXMSRS pHostVmxMsrs, PVMXMSRS
     pGuestFeat->fVmxVmwriteAll            = (pBaseFeat->fVmxVmwriteAll            & EmuFeat.fVmxVmwriteAll           );
     pGuestFeat->fVmxEntryInjectSoftInt    = (pBaseFeat->fVmxEntryInjectSoftInt    & EmuFeat.fVmxEntryInjectSoftInt   );
 
-    if (HMIsSubjectToVmxPreemptTimerErratum())
+    if (   !pVM->cpum.s.fNestedVmxPreemptTimer
+        || HMIsSubjectToVmxPreemptTimerErratum())
     {
-        Log(("CPUM: VMX-preemption timer erratum detected. Cannot expose VMX-preemption timer feature to guests.\n"));
-        pGuestFeat->fVmxPreemptTimer = 0;
+        LogRel(("CPUM: Warning! VMX-preemption timer not exposed to guest due to forced CFGM setting or CPU erratum.\n"));
+        pGuestFeat->fVmxPreemptTimer     = 0;
+        pGuestFeat->fVmxSavePreemptTimer = 0;
     }
 
     /* Paranoia. */
@@ -2079,6 +2087,23 @@ static int cpumR3GetHostHwvirtMsrs(PCPUMMSRS pMsrs)
         LogRel(("CPUM: No hardware-virtualization capability detected\n"));
 
     return VINF_SUCCESS;
+}
+
+
+/**
+ * Callback that fires when the nested VMX-preemption timer expired.
+ *
+ * @param   pVM     The cross context VM structure.
+ * @param   pTimer  Pointer to timer.
+ * @param   pvUser  Opaque pointer to the virtual-CPU.
+ */
+static DECLCALLBACK(void) cpumR3VmxPreemptTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+{
+    RT_NOREF2(pVM, pTimer);
+    Assert(pvUser);
+
+    PVMCPU pVCpu = (PVMCPUR3)pvUser;
+    VMCPU_FF_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER);
 }
 
 
@@ -2242,6 +2267,9 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
      * Allocate memory required by the guest hardware-virtualization structures.
      * This must be done after initializing CPUID/MSR features as we access the
      * the VMX/SVM guest features below.
+     *
+     * In the case of nested VT-x, we also need to create the per-VCPU
+     * VMX preemption timers.
      */
     if (pVM->cpum.s.GuestFeatures.fVmx)
         rc = cpumR3AllocVmxHwVirtState(pVM);
@@ -2294,7 +2322,16 @@ VMMR3DECL(int) CPUMR3Term(PVM pVM)
 #endif
 
     if (pVM->cpum.s.GuestFeatures.fVmx)
+    {
+        for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+        {
+            PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+            int rc = TMR3TimerDestroy(pVCpu->cpum.s.pNestedVmxPreemptTimerR3); AssertRC(rc);
+            pVCpu->cpum.s.pNestedVmxPreemptTimerR0 = NIL_RTR0PTR;
+        }
+
         cpumR3FreeVmxHwVirtState(pVM);
+    }
     else if (pVM->cpum.s.GuestFeatures.fSvm)
         cpumR3FreeSvmHwVirtState(pVM);
     return VINF_SUCCESS;
@@ -4508,6 +4545,19 @@ VMMR3DECL(int) CPUMR3InitCompleted(PVM pVM, VMINITCOMPLETED enmWhat)
 
             /* Register statistic counters for MSRs. */
             cpumR3MsrRegStats(pVM);
+
+            /* Create VMX-preemption timer for nested guests if required. */
+            if (pVM->cpum.s.GuestFeatures.fVmx)
+            {
+                for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
+                {
+                    PVMCPU pVCpu = pVM->apCpusR3[idCpu];
+                    int rc = TMR3TimerCreateInternal(pVM, TMCLOCK_VIRTUAL_SYNC, cpumR3VmxPreemptTimerCallback, pVCpu,
+                                                     "Nested Guest VMX-preempt. timer", &pVCpu->cpum.s.pNestedVmxPreemptTimerR3);
+                    AssertLogRelRCReturn(rc, rc);
+                    pVCpu->cpum.s.pNestedVmxPreemptTimerR0 = TMTimerR0Ptr(pVCpu->cpum.s.pNestedVmxPreemptTimerR3);
+                }
+            }
             break;
         }
 

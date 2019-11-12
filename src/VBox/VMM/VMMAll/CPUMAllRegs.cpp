@@ -2345,6 +2345,61 @@ VMM_INT_DECL(uint64_t) CPUMGetGuestCR4ValidMask(PVM pVM)
 
 
 /**
+ * Starts a VMX-preemption timer to expire as specified by the nested hypervisor.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu           The cross context virtual CPU structure of the calling thread.
+ * @param   uTimer          The VMCS preemption timer value.
+ * @param   cShift          The VMX-preemption timer shift (usually based on guest
+ *                          VMX MSR rate).
+ * @param   pu64EntryTick   Where to store the current tick when the timer is
+ *                          programmed.
+ * @thread  EMT(pVCpu)
+ */
+VMM_INT_DECL(int) CPUMStartGuestVmxPremptTimer(PVMCPUCC pVCpu, uint32_t uTimer, uint8_t cShift, uint64_t *pu64EntryTick)
+{
+    Assert(uTimer);
+    Assert(cShift <= 31);
+    Assert(pu64EntryTick);
+    VMCPU_ASSERT_EMT(pVCpu);
+    uint64_t const cTicksToNext = uTimer << cShift;
+    return TMTimerSetRelative(pVCpu->cpum.s.CTX_SUFF(pNestedVmxPreemptTimer), cTicksToNext, pu64EntryTick);
+}
+
+
+/**
+ * Stops the VMX-preemption timer from firing.
+ *
+ * @returns VBox status code.
+ * @param   pVCpu   The cross context virtual CPU structure of the calling thread.
+ * @thread  EMT.
+ *
+ * @remarks This can be called during VM reset, so we cannot assume it will be on
+ *          the EMT corresponding to @c pVCpu.
+ */
+VMM_INT_DECL(int) CPUMStopGuestVmxPremptTimer(PVMCPUCC pVCpu)
+{
+    /*
+     * CPUM gets initialized before TM, so we defer creation of timers till CPUMR3InitCompleted().
+     * However, we still get called during CPUMR3Init() and hence we need to check if we  have
+     * a valid timer object before trying to stop it.
+     */
+    PTMTIMER pTimer = pVCpu->cpum.s.CTX_SUFF(pNestedVmxPreemptTimer);
+    if (!pTimer)
+        return VERR_NOT_FOUND;
+
+    int rc = TMTimerLock(pTimer, VERR_IGNORED);
+    if (rc == VINF_SUCCESS)
+    {
+        if (TMTimerIsActive(pTimer))
+            TMTimerStop(pTimer);
+        TMTimerUnlock(pTimer);
+    }
+    return rc;
+}
+
+
+/**
  * Gets the read and write permission bits for an MSR in an MSR bitmap.
  *
  * @returns VMXMSRPM_XXX - the MSR permission.

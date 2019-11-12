@@ -4182,6 +4182,15 @@ static int cpumR3CpuIdReadConfig(PVM pVM, PCPUMCPUIDCONFIG pConfig, PCFGMNODE pC
             LogRel(("CPUM: WARNING! Can't turn on nested VT-x/AMD-V when NEM is used!\n"));
             pConfig->fNestedHWVirt = false;
         }
+
+        /** @cfgm{/CPUM/NestedVmxPreemptTimer, bool, true}
+         * Whether to expose the VMX-preemption timer feature to the guest (if also
+         * supported by the host hardware). The default is true, and when disabled will
+         * prevent exposing the VMX-preemption timer feature to the guest even if the host
+         * supports it.
+         */
+        rc = CFGMR3QueryBoolDef(pCpumCfg, "NestedVmxPreemptTimer", &pVM->cpum.s.fNestedVmxPreemptTimer, true);
+        AssertLogRelRCReturn(rc, rc);
     }
 
     /*

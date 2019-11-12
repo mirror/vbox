@@ -261,6 +261,9 @@ struc CPUMCPU
     ;
     ; Other stuff.
     ;
+    .pNestedVmxPreemptTimerR0   RTR0PTR_RES    1
+    .pNestedVmxPreemptTimerR3   RTR3PTR_RES    1
+
     .fUseFlags            resd    1
     .fChanged             resd    1
     .u32RetCode           resd    1
@@ -273,10 +276,10 @@ struc CPUMCPU
     .abPadding3           resb    (4 + RTR0PTR_CB + 1)
 %endif
 
-    .fRemEntered          resb    1
-    .fCpuIdApicFeatureVisible resb 1
+    .fRemEntered                resb    1
+    .fCpuIdApicFeatureVisible   resb    1
 
-    .abPadding2           resb    (64 - 16 - RTR0PTR_CB - 4 - 1 - 2 + 4)
+    .abPadding2           resb    (64 - (RTR0PTR_CB + RTR3PTR_CB + 12 + 4 + RTR0PTR_CB + 1 + 2))
 
     ;
     ; Host context state

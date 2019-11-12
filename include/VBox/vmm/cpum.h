@@ -1510,6 +1510,8 @@ VMM_INT_DECL(bool)      CPUMIsGuestVmxVmcsFieldValid(PVMCC pVM, uint64_t u64Vmcs
 VMM_INT_DECL(bool)      CPUMIsGuestVmxIoInterceptSet(PCVMCPU pVCpu, uint16_t u16Port, uint8_t cbAccess);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxMovToCr3InterceptSet(PVMCPU pVCpu, uint64_t uNewCr3);
 VMM_INT_DECL(bool)      CPUMIsGuestVmxVmreadVmwriteInterceptSet(PCVMCPU pVCpu, uint32_t uExitReason, uint64_t u64FieldEnc);
+VMM_INT_DECL(int)       CPUMStartGuestVmxPremptTimer(PVMCPUCC pVCpu, uint32_t uTimer, uint8_t cShift, uint64_t *pu64EntryTick);
+VMM_INT_DECL(int)       CPUMStopGuestVmxPremptTimer(PVMCPUCC pVCpu);
 VMM_INT_DECL(uint32_t)  CPUMGetVmxMsrPermission(void const *pvMsrBitmap, uint32_t idMsr);
 /** @} */
 

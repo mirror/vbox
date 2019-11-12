@@ -7663,14 +7663,15 @@ VMMR0DECL(int) VMXR0ImportStateOnDemand(PVMCPUCC pVCpu, uint64_t fWhat)
  * @retval VINF_EM_NO_MEMORY PGM is out of memory, we need to return
  *         to the EM loop.
  *
- * @param   pVCpu       The cross context virtual CPU structure.
- * @param   fStepping   Whether we are single-stepping the guest using the
- *                      hypervisor debugger.
+ * @param   pVCpu           The cross context virtual CPU structure.
+ * @param   pVmxTransient   The VMX-transient structure.
+ * @param   fStepping       Whether we are single-stepping the guest using the
+ *                          hypervisor debugger.
  *
  * @remarks This might cause nested-guest VM-exits, caller must check if the guest
  *          is no longer in VMX non-root mode.
  */
-static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPUCC pVCpu, bool fStepping)
+static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransient, bool fStepping)
 {
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
@@ -7742,15 +7743,44 @@ static VBOXSTRICTRC hmR0VmxCheckForceFlags(PVMCPUCC pVCpu, bool fStepping)
     }
 
 #ifdef VBOX_WITH_NESTED_HWVIRT_VMX
-    /* Pending nested-guest APIC-write (has highest priority among nested-guest FFs). */
-    if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+    /*
+     * Pending nested-guest events.
+     *
+     * Please note the priority of these events are specified and important.
+     * See Intel spec. 29.4.3.2 "APIC-Write Emulation".
+     * See Intel spec. 6.9 "Priority Among Simultaneous Exceptions And Interrupts".
+     */
+    if (pVmxTransient->fIsNestedGuest)
     {
-        Log4Func(("Pending nested-guest APIC-write\n"));
-        VBOXSTRICTRC rcStrict = IEMExecVmxVmexitApicWrite(pVCpu);
-        Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
-        return rcStrict;
+        /* Pending nested-guest APIC-write. */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_APIC_WRITE))
+        {
+            Log4Func(("Pending nested-guest APIC-write\n"));
+            VBOXSTRICTRC rcStrict = IEMExecVmxVmexitApicWrite(pVCpu);
+            Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+            return rcStrict;
+        }
+
+        /* Pending nested-guest monitor-trap flag (MTF). */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_MTF))
+        {
+            Log4Func(("Pending nested-guest MTF\n"));
+            VBOXSTRICTRC rcStrict = IEMExecVmxVmexit(pVCpu, VMX_EXIT_MTF, 0 /* uExitQual */);
+            Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+            return rcStrict;
+        }
+
+        /* Pending nested-guest VMX-preemption timer expired. */
+        if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
+        {
+            Log4Func(("Pending nested-guest MTF\n"));
+            VBOXSTRICTRC rcStrict = IEMExecVmxVmexitPreemptTimer(pVCpu);
+            Assert(rcStrict != VINF_VMX_INTERCEPT_NOT_ACTIVE);
+            return rcStrict;
+        }
     }
-    /** @todo VMCPU_FF_VMX_MTF, VMCPU_FF_VMX_PREEMPT_TIMER */
+#else
+    NOREF(pVmxTransient);
 #endif
 
     return VINF_SUCCESS;
@@ -10243,7 +10273,7 @@ static VBOXSTRICTRC hmR0VmxPreRunGuest(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransie
     /*
      * Check and process force flag actions, some of which might require us to go back to ring-3.
      */
-    VBOXSTRICTRC rcStrict = hmR0VmxCheckForceFlags(pVCpu, fStepping);
+    VBOXSTRICTRC rcStrict = hmR0VmxCheckForceFlags(pVCpu, pVmxTransient, fStepping);
     if (rcStrict == VINF_SUCCESS)
     {
         /* FFs don't get set all the time. */

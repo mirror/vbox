@@ -520,7 +520,7 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 #define VMCPU_FF_IOM                        RT_BIT_64(VMCPU_FF_IOM_BIT)
 #define VMCPU_FF_IOM_BIT                    29
 /* 30 used to be VMCPU_FF_CPUM */
-/** VMX-preemption timer in effect. */
+/** VMX-preemption timer expired. */
 #define VMCPU_FF_VMX_PREEMPT_TIMER          RT_BIT_64(VMCPU_FF_VMX_PREEMPT_TIMER_BIT)
 #define VMCPU_FF_VMX_PREEMPT_TIMER_BIT      31
 /** Pending MTF (Monitor Trap Flag) event.  */
@@ -637,6 +637,10 @@ AssertCompileSizeAlignment(VMCPU, 4096);
 /** High priority ring-0 VMCPU pre HM-mode execution mask, single stepping. */
 #define VMCPU_FF_HP_R0_PRE_HM_STEP_MASK         (VMCPU_FF_HP_R0_PRE_HM_MASK & ~(  VMCPU_FF_TO_R3 | VMCPU_FF_TIMER \
                                                                                 | VMCPU_FF_PDM_CRITSECT | VMCPU_FF_REQUEST) )
+
+/** All the VMX nested-guest flags. */
+#define VMCPU_FF_VMX_ALL_MASK                   (  VMCPU_FF_VMX_PREEMPT_TIMER | VMCPU_FF_VMX_MTF | VMCPU_FF_VMX_APIC_WRITE \
+                                                 | VMCPU_FF_VMX_INT_WINDOW | VMCPU_FF_VMX_NMI_WINDOW )
 
 /** All the forced VM flags. */
 #define VM_FF_ALL_MASK                          (UINT32_MAX)

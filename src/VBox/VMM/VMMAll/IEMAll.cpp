@@ -13791,18 +13791,8 @@ static VBOXSTRICTRC iemHandleNestedInstructionBoundraryFFs(PVMCPUCC pVCpu, VBOXS
         if (VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER))
         {
             rcStrict = iemVmxVmexitPreemptTimer(pVCpu);
-            if (rcStrict == VINF_VMX_INTERCEPT_NOT_ACTIVE)
-                rcStrict = VINF_SUCCESS;
-            else
-            {
-                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
-                Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
-                return rcStrict;
-            }
+            Assert(!VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_PREEMPT_TIMER));
         }
-        else
-            rcStrict = VINF_SUCCESS;
-
         /*
          * Check remaining intercepts.
          *
@@ -13813,9 +13803,9 @@ static VBOXSTRICTRC iemHandleNestedInstructionBoundraryFFs(PVMCPUCC pVCpu, VBOXS
          * See Intel spec. 26.7.6 "NMI-Window Exiting".
          * See Intel spec. 26.7.5 "Interrupt-Window Exiting and Virtual-Interrupt Delivery".
          */
-        if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW)
-            && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
-            && !TRPMHasTrap(pVCpu))
+        else if (   VMCPU_FF_IS_ANY_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW | VMCPU_FF_VMX_INT_WINDOW)
+                 && !VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS)
+                 && !TRPMHasTrap(pVCpu))
         {
             Assert(CPUMIsGuestVmxInterceptEvents(&pVCpu->cpum.GstCtx));
             if (   VMCPU_FF_IS_SET(pVCpu, VMCPU_FF_VMX_NMI_WINDOW)

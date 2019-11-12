@@ -363,7 +363,12 @@ typedef struct CPUM
 
     /** The host MXCSR mask (determined at init). */
     uint32_t                fHostMxCsrMask;
-    uint8_t                 abPadding1[20+8];
+    /** Nested VMX: Whether to expose VMX-preemption timer to the guest. */
+    bool                    fNestedVmxPreemptTimer;
+    uint8_t                 abPadding1[3];
+
+    /** Align to 64-byte boundary. */
+    uint8_t                 abPadding2[20+4];
 
     /** Host CPU feature information.
      * Externaly visible via the VM structure, aligned on 64-byte boundrary. */
@@ -416,6 +421,11 @@ typedef struct CPUMCPU
      */
     CPUMCTXMSRS             GuestMsrs;
 
+    /** Nested VMX: VMX-preemption timer - R0 ptr. */
+    PTMTIMERR0              pNestedVmxPreemptTimerR0;
+    /** Nested VMX: VMX-preemption timer - R3 ptr. */
+    PTMTIMERR3              pNestedVmxPreemptTimerR3;
+
     /** Use flags.
      * These flags indicates both what is to be used and what has been used.
      */
@@ -453,8 +463,8 @@ typedef struct CPUMCPU
      *  when loading state, so we won't save it.) */
     bool                    fCpuIdApicFeatureVisible;
 
-    /** Align the next member on a 64-byte boundrary. */
-    uint8_t                 abPadding2[64 - 16 - 8 - 4 - 1 - 2 + 4];
+    /** Align the next member on a 64-byte boundary. */
+    uint8_t                 abPadding2[64 - (16 + 12 + 4 + 8 + 1 + 2)];
 
     /** Saved host context.  Only valid while inside RC or HM contexts.
      * Must be aligned on a 64-byte boundary. */
