@@ -126,10 +126,8 @@ typedef struct BUSLOGICDEVICE
 
     /** Number of outstanding tasks on the port. */
     volatile uint32_t               cOutstandingRequests;
-
-#if HC_ARCH_BITS == 64
-    uint32_t                        u32Alignment1;
-#endif
+    /** The device name. */
+    char                            szName[12];
 } BUSLOGICDEVICE, *PBUSLOGICDEVICE;
 
 /**
@@ -436,15 +434,7 @@ typedef struct BUSLOGIC
     bool                            fStrictRoundRobinMode;
     /** Whether the extended LUN CCB format is enabled for 32 possible logical units. */
     bool                            fExtendedLunCCBFormat;
-
-    /** Queue to send tasks to R3. - HC ptr */
-    R3PTRTYPE(PPDMQUEUE)            pNotifierQueueR3;
-    /** Queue to send tasks to R3. - HC ptr */
-    R0PTRTYPE(PPDMQUEUE)            pNotifierQueueR0;
-    /** Queue to send tasks to R3. - RC ptr */
-    RCPTRTYPE(PPDMQUEUE)            pNotifierQueueRC;
-
-    uint32_t                        Alignment2;
+    bool                            afAlignment2[2];
 
     /** Critical section protecting access to the interrupt status register. */
     PDMCRITSECT                     CritSectIntr;
@@ -2478,10 +2468,9 @@ static int buslogicRegisterWrite(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, unsign
                     ASMAtomicIncU32(&pBusLogic->cMailboxesReady);
                     if (!ASMAtomicXchgBool(&pBusLogic->fNotificationSent, true))
                     {
-                        /* Send new notification to the queue. */
-                        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pBusLogic->CTX_SUFF(pNotifierQueue));
-                        AssertMsg(pItem, ("Allocating item for queue failed\n"));
-                        PDMQueueInsert(pBusLogic->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+                        /* Wake up the worker thread. */
+                        int rc2 = PDMDevHlpSUPSemEventSignal(pDevIns, pBusLogic->hEvtProcess);
+                        AssertRC(rc2);
                     }
                 }
 
@@ -2839,10 +2828,9 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvU
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
-        /* Send a notifier to the PDM queue that there are pending requests. */
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotifierQueue));
-        AssertMsg(pItem, ("Allocating item for queue failed\n"));
-        PDMQueueInsert(pThis->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+        /* Wake up the worker thread now that there are pending requests. */
+        int rc2 = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
+        AssertRC(rc2);
         rc = VINF_SUCCESS;
     }
     else if (RT_FAILURE(rc))
@@ -2873,10 +2861,9 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
-        /* Send a notifier to the PDM queue that there are pending requests. */
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pNotifierQueue));
-        AssertMsg(pItem, ("Allocating item for queue failed\n"));
-        PDMQueueInsert(pThis->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+        /* Wake up the worker thread now taht there are pending requests. */
+        int rc2 = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
+        AssertRC(rc2);
     }
     else if (RT_FAILURE(rc))
         AssertMsgFailed(("Writing BIOS register failed %Rrc\n", rc));
@@ -4159,7 +4146,6 @@ static DECLCALLBACK(void) buslogicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offD
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->pNotifierQueueRC = PDMQueueRCPtr(pThis->pNotifierQueueR3);
 
     for (uint32_t i = 0; i < BUSLOGIC_MAX_DEVICES; i++)
     {
@@ -4335,14 +4321,8 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register ISA I/O handlers"));
 
-    /* Initialize task queue. */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 5, 0,
-                              buslogicR3NotifyQueueConsumer, true, "BusLogicTask", &pThis->pNotifierQueueR3);
-    if (RT_FAILURE(rc))
-        return rc;
-    pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);
-    pThis->pNotifierQueueRC = PDMQueueRCPtr(pThis->pNotifierQueueR3);
 
+    /* Init the interrupt critsect. */
     rc = PDMDevHlpCritSectInit(pDevIns, &pThis->CritSectIntr, RT_SRC_POS, "BusLogic-Intr#%u", pDevIns->iInstance);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic: cannot create critical section"));
@@ -4367,12 +4347,7 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /* Initialize per device state. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
     {
-        char szName[24];
         PBUSLOGICDEVICE pDevice = &pThis->aDeviceStates[i];
-
-        char *pszName;
-        if (RTStrAPrintf(&pszName, "Device%u", i) < 0)
-            AssertLogRelFailedReturn(VERR_NO_MEMORY);
 
         /* Initialize static parts of the device. */
         pDevice->iLUN = i;
@@ -4390,9 +4365,10 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
         pDevice->IMediaExPort.pfnIoReqStateChanged       = buslogicR3IoReqStateChanged;
         pDevice->IMediaExPort.pfnMediumEjected           = buslogicR3MediumEjected;
         pDevice->ILed.pfnQueryStatusLed                  = buslogicR3DeviceQueryStatusLed;
+        RTStrPrintf(pDevice->szName, sizeof(pDevice->szName), "Device%u", i);
 
         /* Attach SCSI driver. */
-        rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, pszName);
+        rc = PDMDevHlpDriverAttach(pDevIns, pDevice->iLUN, &pDevice->IBase, &pDevice->pDrvBase, pDevice->szName);
         if (RT_SUCCESS(rc))
         {
             /* Query the media interface. */
@@ -4422,11 +4398,11 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
             pDevice->pDrvMedia   = NULL;
             pDevice->pDrvMediaEx = NULL;
             rc = VINF_SUCCESS;
-            Log(("BusLogic: no driver attached to device %s\n", szName));
+            Log(("BusLogic: no driver attached to device %s\n", pDevice->szName));
         }
         else
         {
-            AssertLogRelMsgFailed(("BusLogic: Failed to attach %s\n", szName));
+            AssertLogRelMsgFailed(("BusLogic: Failed to attach %s\n", pDevice->szName));
             return rc;
         }
     }
