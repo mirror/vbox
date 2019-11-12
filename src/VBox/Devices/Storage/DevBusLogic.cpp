@@ -478,8 +478,6 @@ typedef struct BUSLOGIC
      * worker thread needs to process. */
     volatile bool                   fBiosReqPending;
 
-    /** The support driver session handle. */
-    R3R0PTRTYPE(PSUPDRVSESSION)     pSupDrvSession;
     /** Worker thread. */
     R3PTRTYPE(PPDMTHREAD)           pThreadWrk;
     /** The event semaphore the processing thread waits on. */
@@ -3449,7 +3447,7 @@ static DECLCALLBACK(bool) buslogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDM
     RT_NOREF(pItem);
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
-    int rc = SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+    int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
     AssertRC(rc);
 
     return true;
@@ -3782,7 +3780,7 @@ static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
         if (!fNotificationSent)
         {
             Assert(ASMAtomicReadBool(&pThis->fWrkThreadSleeping));
-            rc = SUPSemEventWaitNoResume(pThis->pSupDrvSession, pThis->hEvtProcess, RT_INDEFINITE_WAIT);
+            rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtProcess, RT_INDEFINITE_WAIT);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
                 break;
@@ -3827,7 +3825,7 @@ static DECLCALLBACK(int) buslogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD p
 {
     RT_NOREF(pThread);
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    return SUPSemEventSignal(pThis->pSupDrvSession, pThis->hEvtProcess);
+    return PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
 }
 
 /**
@@ -4200,7 +4198,7 @@ static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
 
     if (pThis->hEvtProcess != NIL_SUPSEMEVENT)
     {
-        SUPSemEventClose(pThis->pSupDrvSession, pThis->hEvtProcess);
+        PDMDevHlpSUPSemEventClose(pDevIns, pThis->hEvtProcess);
         pThis->hEvtProcess = NIL_SUPSEMEVENT;
     }
 
@@ -4215,8 +4213,6 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PBUSLOGIC       pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
-    int             rc = VINF_SUCCESS;
-    char            szCfgStr[16];
 
     /*
      * Init instance data (do early because of constructor).
@@ -4253,12 +4249,13 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     pThis->fR0Enabled = pDevIns->fR0Enabled;
 
     bool fBootable = true;
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Bootable", &fBootable, true);
+    int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Bootable", &fBootable, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic configuration error: failed to read Bootable as boolean"));
     Log(("%s: fBootable=%RTbool\n", __FUNCTION__, fBootable));
 
     /* Figure out the emulated device type. */
+    char szCfgStr[16];
     rc = pHlp->pfnCFGMQueryStringDef(pCfg, "AdapterType", szCfgStr, sizeof(szCfgStr), "BT-958D");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic configuration error: failed to read AdapterType as string"));
@@ -4353,7 +4350,7 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Create event semaphore and worker thread.
      */
-    rc = SUPSemEventCreate(pThis->pSupDrvSession, &pThis->hEvtProcess);
+    rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pThis->hEvtProcess);
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("BusLogic: Failed to create SUP event semaphore"));
