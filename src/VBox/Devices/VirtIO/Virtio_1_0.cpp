@@ -266,8 +266,6 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
 
 /** @} */
 
-#ifdef LOG_ENABLED
-
 void virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pGcSgBuf);
@@ -378,6 +376,8 @@ RTGCPHYS virtioCoreSgBufGetNextSegment(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg)
     return virtioCoreSgBufGet(pGcSgBuf, pcbSeg);
 }
 
+#ifdef LOG_ENABLED
+
 /**
  * Does a formatted hex dump using Log(()), recommend using VIRTIO_HEX_DUMP() macro to
  * control enabling of logging efficiently.
@@ -410,6 +410,8 @@ void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *psz
     Log(("\n"));
     RT_NOREF2(uBase, pv);
 }
+
+#endif /* LOG_ENABLED */
 
 /**
  * Log memory-mapped I/O input or output value.
@@ -476,7 +478,6 @@ void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint
     RT_NOREF2(fWrite, pszFunc);
 }
 
-#endif /* LOG_ENABLED */
 
 /**
  * Makes the MMIO-mapped Virtio uDeviceStatus registers non-cryptic
