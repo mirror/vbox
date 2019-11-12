@@ -463,15 +463,9 @@ static void fd_revalidate(fdrive_t *drv)
 
 static void fdctrl_reset(fdctrl_t *fdctrl, int do_irq);
 static void fdctrl_reset_fifo(fdctrl_t *fdctrl);
-static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
-                                                       void *opaque,
-                                                       unsigned nchan,
-                                                       uint32_t dma_pos,
-                                                       uint32_t dma_len);
 static void fdctrl_raise_irq(fdctrl_t *fdctrl, uint8_t status0);
 static fdrive_t *get_cur_drv(fdctrl_t *fdctrl);
 
-static void fdctrl_result_timer(void *opaque);
 static uint32_t fdctrl_read_statusA(fdctrl_t *fdctrl);
 static uint32_t fdctrl_read_statusB(fdctrl_t *fdctrl);
 static uint32_t fdctrl_read_dor(fdctrl_t *fdctrl);
@@ -654,7 +648,7 @@ struct fdctrl_t {
     uint8_t dma_chann;
     uint16_t io_base;
     /* Controller state */
-    struct TMTIMER *result_timer;
+    TMTIMERHANDLE hResultTimer;
     uint8_t sra;
     uint8_t srb;
     uint8_t dor;
@@ -1397,14 +1391,13 @@ static int blk_read(fdrive_t *drv, int64_t sector_num, uint8_t *buf, int nb_sect
     return rc;
 }
 
-/* handlers for DMA transfers */
-static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
-                                                       void *opaque,
-                                                       unsigned nchan,
-                                                       uint32_t dma_pos,
-                                                       uint32_t dma_len)
+/**
+ * @callback_method_impl{FNDMATRANSFERHANDLER, handlers for DMA transfers}
+ */
+static DECLCALLBACK(uint32_t) fdctrl_transfer_handler(PPDMDEVINS pDevIns, void *pvUser,
+                                                      unsigned uChannel, uint32_t off, uint32_t cb)
 {
-    RT_NOREF(pDevIns, dma_pos);
+    RT_NOREF(pDevIns, off);
     fdctrl_t *fdctrl;
     fdrive_t *cur_drv;
     int rc;
@@ -1412,7 +1405,7 @@ static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
     uint32_t start_pos, rel_pos;
     uint8_t status0 = 0x00, status1 = 0x00, status2 = 0x00;
 
-    fdctrl = (fdctrl_t *)opaque;
+    fdctrl = (fdctrl_t *)pvUser;
     if (fdctrl->msr & FD_MSR_RQM) {
         FLOPPY_DPRINTF("Not in DMA transfer mode !\n");
         return 0;
@@ -1421,8 +1414,8 @@ static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
     if (fdctrl->data_dir == FD_DIR_SCANE || fdctrl->data_dir == FD_DIR_SCANL ||
         fdctrl->data_dir == FD_DIR_SCANH)
         status2 = FD_SR2_SNS;
-    if (dma_len > fdctrl->data_len)
-        dma_len = fdctrl->data_len;
+    if (cb > fdctrl->data_len)
+        cb = fdctrl->data_len;
     if (cur_drv->pDrvMedia == NULL)
     {
         if (fdctrl->data_dir == FD_DIR_WRITE)
@@ -1448,15 +1441,13 @@ static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
     }
 
     rel_pos = fdctrl->data_pos % FD_SECTOR_LEN;
-    for (start_pos = fdctrl->data_pos; fdctrl->data_pos < dma_len;) {
-        len = dma_len - fdctrl->data_pos;
+    for (start_pos = fdctrl->data_pos; fdctrl->data_pos < cb;) {
+        len = cb - fdctrl->data_pos;
         if (len + rel_pos > FD_SECTOR_LEN)
             len = FD_SECTOR_LEN - rel_pos;
-        FLOPPY_DPRINTF("copy %d bytes (%d %d %d) %d pos %d %02x "
-                       "(%d-0x%08x 0x%08x)\n", len, dma_len, fdctrl->data_pos,
-                       fdctrl->data_len, GET_CUR_DRV(fdctrl), cur_drv->head,
-                       cur_drv->track, cur_drv->sect, fd_sector(cur_drv),
-                       fd_sector(cur_drv) * FD_SECTOR_LEN);
+        FLOPPY_DPRINTF("copy %d bytes (%d %d %d) %d pos %d %02x (%d-0x%08x 0x%08x)\n",
+                       len, cb, fdctrl->data_pos, fdctrl->data_len, GET_CUR_DRV(fdctrl), cur_drv->head,
+                       cur_drv->track, cur_drv->sect, fd_sector(cur_drv), fd_sector(cur_drv) * FD_SECTOR_LEN);
         if (fdctrl->data_dir != FD_DIR_FORMAT &&
             (fdctrl->data_dir != FD_DIR_WRITE ||
             len < FD_SECTOR_LEN || rel_pos != 0)) {
@@ -1475,7 +1466,7 @@ static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
             /* READ commands */
             {
                 uint32_t read;
-                int rc2 = PDMDevHlpDMAWriteMemory(fdctrl->pDevIns, nchan,
+                int rc2 = PDMDevHlpDMAWriteMemory(fdctrl->pDevIns, uChannel,
                                                   fdctrl->fifo + rel_pos,
                                                   fdctrl->data_pos,
                                                   len, &read);
@@ -1486,7 +1477,7 @@ static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
             /* WRITE commands */
             {
                 uint32_t written;
-                int rc2 = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, nchan,
+                int rc2 = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, uChannel,
                                                  fdctrl->fifo + rel_pos,
                                                  fdctrl->data_pos,
                                                  len, &written);
@@ -1508,7 +1499,7 @@ static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
                 uint8_t  filler = fdctrl->fifo[5];
                 uint32_t written;
                 int      sct;
-                int rc2 = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, nchan,
+                int rc2 = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, uChannel,
                                                  fdctrl->fifo + rel_pos,
                                                  fdctrl->data_pos,
                                                  len, &written);
@@ -1537,8 +1528,8 @@ static DECLCALLBACK(uint32_t) fdctrl_transfer_handler (PPDMDEVINS pDevIns,
                 uint8_t tmpbuf[FD_SECTOR_LEN];
                 int ret;
                 uint32_t read;
-                int rc2 = PDMDevHlpDMAReadMemory (fdctrl->pDevIns, nchan, tmpbuf,
-                                                  fdctrl->data_pos, len, &read);
+                int rc2 = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, uChannel, tmpbuf,
+                                                 fdctrl->data_pos, len, &read);
                 AssertMsg(RT_SUCCESS(rc2), ("DMAReadMemory -> %Rrc2\n", rc2)); NOREF(rc2);
                 ret = memcmp(tmpbuf, fdctrl->fifo + rel_pos, len);
                 if (ret == 0) {
@@ -1817,7 +1808,7 @@ static void fdctrl_handle_readid(fdctrl_t *fdctrl, int direction)
 
     fdctrl->msr &= ~FD_MSR_RQM;
     cur_drv->head = (fdctrl->fifo[1] >> 2) & 1;
-    TMTimerSetMillies(fdctrl->result_timer, 1000 / 50);
+    PDMDevHlpTimerSetMillies(fdctrl->pDevIns, fdctrl->hResultTimer, 1000 / 50);
 }
 
 static void fdctrl_handle_format_track(fdctrl_t *fdctrl, int direction)
@@ -2148,10 +2139,17 @@ static void fdctrl_write_data(fdctrl_t *fdctrl, uint32_t value)
     }
 }
 
-static void fdctrl_result_timer(void *opaque)
+
+/* -=-=-=-=-=-=-=-=- Timer Callback -=-=-=-=-=-=-=-=- */
+
+/**
+ * @callback_method_impl{FNTMTIMERDEV}
+ */
+static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
-    fdctrl_t *fdctrl = (fdctrl_t *)opaque;
+    fdctrl_t *fdctrl = PDMDEVINS_2_DATA(pDevIns, fdctrl_t *);
     fdrive_t *cur_drv = get_cur_drv(fdctrl);
+    RT_NOREF(pTimer, pvUser);
 
     /* Pretend we are spinning.
      * This is needed for Coherent, which uses READ ID to check for
@@ -2177,19 +2175,6 @@ static void fdctrl_result_timer(void *opaque)
     }
     else
         fdctrl_stop_transfer(fdctrl, 0x00, 0x00, 0x00);
-}
-
-
-/* -=-=-=-=-=-=-=-=- Timer Callback -=-=-=-=-=-=-=-=- */
-
-/**
- * @callback_method_impl{FNTMTIMERDEV}
- */
-static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
-{
-    RT_NOREF(pDevIns, pTimer);
-    fdctrl_t *fdctrl = (fdctrl_t *)pvUser;
-    fdctrl_result_timer(fdctrl);
 }
 
 
@@ -2281,7 +2266,7 @@ static DECLCALLBACK(int) fdcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         pHlp->pfnSSMPutU8(pSSM, d->track);
         pHlp->pfnSSMPutU8(pSSM, d->sect);
     }
-    return TMR3TimerSave (pThis->result_timer, pSSM);
+    return pHlp->pfnTimerSave(pDevIns, pThis->hResultTimer, pSSM);
 }
 
 
@@ -2429,7 +2414,7 @@ static DECLCALLBACK(int) fdcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
             pHlp->pfnSSMGetU8(pSSM, &d->sect);
         }
     }
-    return TMR3TimerLoad(pThis->result_timer, pSSM);
+    return pHlp->pfnTimerLoad(pDevIns, pThis->hResultTimer, pSSM);
 }
 
 
@@ -2741,24 +2726,23 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     {
         fdrive_t *pDrv = &pThis->drives[i];
 
-        pDrv->drive   = FDRIVE_DRV_NONE;
-        pDrv->iLUN    = i;
-        pDrv->pDevIns = pDevIns;
+        pDrv->drive                         = FDRIVE_DRV_NONE;
+        pDrv->iLUN                          = i;
+        pDrv->pDevIns                       = pDevIns;
 
         pDrv->IBase.pfnQueryInterface       = fdQueryInterface;
         pDrv->IMountNotify.pfnMountNotify   = fdMountNotify;
         pDrv->IMountNotify.pfnUnmountNotify = fdUnmountNotify;
         pDrv->IPort.pfnQueryDeviceLocation  = fdQueryDeviceLocation;
-        pDrv->Led.u32Magic = PDMLED_MAGIC;
+        pDrv->Led.u32Magic                  = PDMLED_MAGIC;
     }
 
     /*
      * Create the FDC timer.
      */
-    rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdcTimerCallback, pThis,
-                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Timer", &pThis->result_timer);
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpTimerCreate(pDevIns, TMCLOCK_VIRTUAL, fdcTimerCallback, pThis,
+                                TMTIMER_FLAGS_DEFAULT_CRIT_SECT, "FDC Timer", &pThis->hResultTimer);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register DMA channel.
@@ -2766,8 +2750,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     if (pThis->dma_chann != 0xff)
     {
         rc = PDMDevHlpDMARegister(pDevIns, pThis->dma_chann, &fdctrl_transfer_handler, pThis);
-        if (RT_FAILURE(rc))
-            return rc;
+        AssertRCReturn(rc, rc);
     }
 
     /*
@@ -2792,8 +2775,7 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      * Register the saved state data unit.
      */
     rc = PDMDevHlpSSMRegister(pDevIns, FDC_SAVESTATE_CURRENT, sizeof(*pThis), fdcSaveExec, fdcLoadExec);
-    if (RT_FAILURE(rc))
-        return rc;
+    AssertRCReturn(rc, rc);
 
     /*
      * Attach the status port (optional).
@@ -2810,14 +2792,10 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
      */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->drives); i++)
     {
-        fdrive_t *pDrv = &pThis->drives[i];
-        rc = fdConfig(pDrv, pDevIns, true /*fInit*/);
-        if (   RT_FAILURE(rc)
-            && rc != VERR_PDM_NO_ATTACHED_DRIVER)
-        {
-            AssertMsgFailed(("Configuration error: failed to configure drive %d, rc=%Rrc\n", i, rc));
-            return rc;
-        }
+        rc = fdConfig(&pThis->drives[i], pDevIns, true /*fInit*/);
+        AssertMsgReturn(RT_SUCCESS(rc) || rc == VERR_PDM_NO_ATTACHED_DRIVER,
+                        ("Configuration error: failed to configure drive %d, rc=%Rrc\n", i, rc),
+                        rc);
     }
 
     fdctrl_reset(pThis, 0);
