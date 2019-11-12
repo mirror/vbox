@@ -949,13 +949,13 @@ typedef struct HMCPU
             /** VT-x error-reporting (mainly for ring-3 propagation). */
             struct
             {
+                RTCPUID                 idCurrentCpu;
+                RTCPUID                 idEnteredCpu;
                 RTHCPHYS                HCPhysCurrentVmcs;
                 uint32_t                u32VmcsRev;
                 uint32_t                u32InstrError;
                 uint32_t                u32ExitReason;
-                uint32_t                u32Alignment0;
-                RTCPUID                 idEnteredCpu;
-                RTCPUID                 idCurrentCpu;
+                uint32_t                u32GuestIntrState;
             } LastError;
             /** @} */
         } vmx;

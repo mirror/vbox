@@ -2550,7 +2550,7 @@ static void hmR0VmxLazyRestoreHostMsrs(PVMCPUCC pVCpu)
  * @param   pVmcsInfo       The VMCS info. object.
  * @param   fIsNstGstVmcs   Whether this is a nested-guest VMCS.
  */
-static int hmR0VmxCheckVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, bool fIsNstGstVmcs)
+static int hmR0VmxCheckCachedVmcsCtls(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo, bool fIsNstGstVmcs)
 {
     const char * const pcszVmcs = fIsNstGstVmcs ? "Nested-guest VMCS" : "VMCS";
 
@@ -9228,15 +9228,25 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
                                                 if (!(expr)) { uError = (err); break; } \
                                             } while (0)
 
-    int        rc;
-    PVMCC        pVM    = pVCpu->CTX_SUFF(pVM);
+    PVMCC      pVM    = pVCpu->CTX_SUFF(pVM);
     PCPUMCTX   pCtx   = &pVCpu->cpum.GstCtx;
     uint32_t   uError = VMX_IGS_ERROR;
-    uint32_t   u32Val;
+    uint32_t   u32IntrState = 0;
     bool const fUnrestrictedGuest = pVM->hm.s.vmx.fUnrestrictedGuest;
-
     do
     {
+        int rc;
+
+        /*
+         * Guest-interruptibility state.
+         * Read this first so as to record its value for ring-3 propagation.
+         */
+        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INT_STATE, &u32IntrState);
+        AssertRC(rc);
+
+        uint32_t u32Val;
+        uint64_t u64Val;
+
         /*
          * CR0.
          */
@@ -9274,7 +9284,6 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
         /*
          * IA32_DEBUGCTL MSR.
          */
-        uint64_t u64Val;
         rc = VMXReadVmcs64(VMX_VMCS64_GUEST_DEBUGCTL_FULL, &u64Val);
         AssertRC(rc);
         if (   (pVmcsInfo->u32EntryCtls & VMX_ENTRY_CTLS_LOAD_DEBUG)
@@ -9641,9 +9650,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
                              VMX_IGS_ACTIVITY_STATE_INVALID);
         HMVMX_CHECK_BREAK(   !(pCtx->ss.Attr.n.u2Dpl)
                           || u32ActivityState != VMX_VMCS_GUEST_ACTIVITY_HLT, VMX_IGS_ACTIVITY_STATE_HLT_INVALID);
-        uint32_t u32IntrState;
-        rc = VMXReadVmcs32(VMX_VMCS32_GUEST_INT_STATE, &u32IntrState);
-        AssertRC(rc);
+
         if (   u32IntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS
             || u32IntrState == VMX_VMCS_GUEST_INT_STATE_BLOCK_STI)
             HMVMX_CHECK_BREAK(u32ActivityState == VMX_VMCS_GUEST_ACTIVITY_ACTIVE, VMX_IGS_ACTIVITY_STATE_ACTIVE_INVALID);
@@ -9757,6 +9764,7 @@ static uint32_t hmR0VmxCheckGuestState(PVMCPUCC pVCpu, PCVMXVMCSINFO pVmcsInfo)
     } while (0);
 
     pVCpu->hm.s.u32HMError = uError;
+    pVCpu->hm.s.vmx.LastError.u32GuestIntrState = u32IntrState;
     return uError;
 
 #undef HMVMX_ERROR_BREAK
@@ -10633,7 +10641,7 @@ static void hmR0VmxPreRunGuestCommitted(PVMCPUCC pVCpu, PVMXTRANSIENT pVmxTransi
     Assert(pVCpu->hm.s.vmx.fUpdatedHostAutoMsrs);
     hmR0VmxCheckAutoLoadStoreMsrs(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest);
     hmR0VmxCheckHostEferMsr(pVCpu, pVmcsInfo);
-    AssertRC(hmR0VmxCheckVmcsCtls(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest));
+    AssertRC(hmR0VmxCheckCachedVmcsCtls(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest));
 #endif
 
 #ifdef HMVMX_ALWAYS_CHECK_GUEST_STATE
@@ -14623,7 +14631,7 @@ HMVMX_EXIT_NSRC_DECL hmR0VmxExitErrInvalidGuestState(PVMCPUCC pVCpu, PVMXTRANSIE
     int rc = hmR0VmxImportGuestState(pVCpu, pVmcsInfo, HMVMX_CPUMCTX_EXTRN_ALL);
     AssertRCReturn(rc, rc);
 
-    rc = hmR0VmxCheckVmcsCtls(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest);
+    rc = hmR0VmxCheckCachedVmcsCtls(pVCpu, pVmcsInfo, pVmxTransient->fIsNestedGuest);
     if (RT_FAILURE(rc))
         return rc;
 
