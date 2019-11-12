@@ -2544,8 +2544,47 @@ BOOL vboxWddmPointerCopyColorData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShap
     ULONG x, y;
     BYTE *pSrc, *pDst, bit;
 
-    srcMaskW = pSetPointerShape->Width;
-    srcMaskH = pSetPointerShape->Height;
+    /* Windows always uses the maximum pointer size VBOXWDDM_C_POINTER_MAX_*
+     * Exclude zero pixels (which are transparent anyway) from the right and the bottom of the bitmap.
+     */
+    DWORD *pdwScanline = (DWORD *)pSetPointerShape->pPixels;
+    LONG iLastNonZeroScanline = -1;
+    LONG iMaxNonZeroPixel = -1;
+    for (y = 0; y < pSetPointerShape->Height; ++y)
+    {
+        LONG iLastNonZeroPixel = -1;
+        for (x = 0; x < pSetPointerShape->Width; ++x)
+        {
+            if (pdwScanline[x])
+                iLastNonZeroPixel = x;
+        }
+
+        iMaxNonZeroPixel = RT_MAX(iMaxNonZeroPixel, iLastNonZeroPixel);
+
+        if (iLastNonZeroPixel >= 0)
+        {
+            /* Scanline contains non-zero pixels. */
+            iLastNonZeroScanline = y;
+        }
+
+        pdwScanline = (DWORD *)((uint8_t *)pdwScanline + pSetPointerShape->Pitch);
+    }
+
+    /* Both variabled are zero based indexes, add 1 for width and height. */
+    srcMaskW = iMaxNonZeroPixel + 1;
+    srcMaskH = iLastNonZeroScanline + 1;
+
+    /* Align to 4 pixels. Bitmap is 16 bytes aligned (in case the host can't deal with unaligned data). */
+    srcMaskW = RT_ALIGN_T(srcMaskW, 4, ULONG);
+    srcMaskH = RT_ALIGN_T(srcMaskH, 4, ULONG);
+
+    /* Do not send bitmaps with zero dimensions. Actually make the min size 32x32. */
+    srcMaskW = RT_MAX(32, srcMaskW);
+    srcMaskH = RT_MAX(32, srcMaskH);
+
+    /* Make it square. */
+    srcMaskW = RT_MAX(srcMaskW, srcMaskH);
+    srcMaskH = srcMaskW;
 
     /* truncate masks if we exceed supported size */
     pPointerAttributes->Width = min(srcMaskW, VBOXWDDM_C_POINTER_MAX_WIDTH);
