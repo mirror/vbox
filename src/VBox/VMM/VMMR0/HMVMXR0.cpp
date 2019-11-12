@@ -5079,23 +5079,6 @@ static void hmR0VmxExportGuestRflags(PVMCPUCC pVCpu, PCVMXTRANSIENT pVmxTransien
         int rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_RFLAGS, fEFlags.u32);
         AssertRC(rc);
 
-        /*
-         * Setup pending debug exceptions if the guest is single-stepping using EFLAGS.TF.
-         *
-         * We must avoid setting any automatic debug exceptions delivery when single-stepping
-         * through the hypervisor debugger using EFLAGS.TF.
-         */
-        if (   !pVmxTransient->fIsNestedGuest
-            && !pVCpu->hm.s.fSingleInstruction
-            &&  fEFlags.Bits.u1TF)
-        {
-            /** @todo r=ramshankar: Warning!! We ASSUME EFLAGS.TF will not cleared on
-             *        premature trips to ring-3 esp since IEM does not yet handle it. */
-            rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, VMX_VMCS_GUEST_PENDING_DEBUG_XCPT_BS);
-            AssertRC(rc);
-        }
-        /* else: for nested-guest currently handling while merging controls. */
-
         ASMAtomicUoAndU64(&pVCpu->hm.s.fCtxChanged, ~HM_CHANGED_GUEST_RFLAGS);
         Log4Func(("eflags=%#RX32\n", fEFlags.u32));
     }
@@ -8155,8 +8138,8 @@ static int hmR0VmxExitToRing3(PVMCPUCC pVCpu, VBOXSTRICTRC rcExit)
         Assert(!pVCpu->hm.s.Event.fPending);
 
         /* Clear the events from the VMCS. */
-        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);
-        AssertRC(rc);
+        int rc = VMXWriteVmcs32(VMX_VMCS32_CTRL_ENTRY_INTERRUPTION_INFO, 0);    AssertRC(rc);
+        rc     = VMXWriteVmcs32(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, 0);         AssertRC(rc);
     }
 #ifdef VBOX_STRICT
     else
@@ -8739,13 +8722,24 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
     HMVMX_ASSERT_PREEMPT_SAFE(pVCpu);
     Assert(VMMRZCallRing3IsEnabled(pVCpu));
 
-    bool const fBlockMovSS = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS);
-    bool const fBlockSti   = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI);
-
-    Assert(!fBlockSti || !(ASMAtomicUoReadU64(&pVCpu->cpum.GstCtx.fExtrn) & CPUMCTX_EXTRN_RFLAGS));
-    Assert(!fBlockSti || pVCpu->cpum.GstCtx.eflags.Bits.u1IF);     /* Cannot set block-by-STI when interrupts are disabled. */
-    Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI));    /* We don't support block-by-SMI yet.*/
-    Assert(!TRPMHasTrap(pVCpu));
+#ifdef VBOX_STRICT
+    /*
+     * Verify guest-interruptibility state.
+     *
+     * We put this in a scoped block so we do not accidentally use fBlockSti or fBlockMovSS,
+     * since injecting an event may modify the interruptibility state and we must thus always
+     * use fIntrState.
+     */
+    {
+        bool const fBlockMovSS = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS);
+        bool const fBlockSti   = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI);
+        Assert(!fBlockSti || !(ASMAtomicUoReadU64(&pVCpu->cpum.GstCtx.fExtrn) & CPUMCTX_EXTRN_RFLAGS));
+        Assert(!fBlockSti || pVCpu->cpum.GstCtx.eflags.Bits.u1IF);     /* Cannot set block-by-STI when interrupts are disabled. */
+        Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_SMI));    /* We don't support block-by-SMI yet.*/
+        Assert(!TRPMHasTrap(pVCpu));
+        NOREF(fBlockMovSS); NOREF(fBlockSti);
+    }
+#endif
 
     VBOXSTRICTRC rcStrict = VINF_SUCCESS;
     if (pVCpu->hm.s.Event.fPending)
@@ -8761,17 +8755,15 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
 #ifdef VBOX_STRICT
         if (uIntType == VMX_ENTRY_INT_INFO_TYPE_EXT_INT)
         {
-            bool const fBlockInt = !(pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_IF);
-            Assert(!fBlockInt);
-            Assert(!fBlockSti);
-            Assert(!fBlockMovSS);
+            Assert(pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_IF);
+            Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI));
+            Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS));
         }
         else if (uIntType == VMX_ENTRY_INT_INFO_TYPE_NMI)
         {
-            bool const fBlockNmi = RT_BOOL(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI);
-            Assert(!fBlockSti);
-            Assert(!fBlockMovSS);
-            Assert(!fBlockNmi);
+            Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_NMI));
+            Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_STI));
+            Assert(!(fIntrState & VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS));
         }
 #endif
         Log4(("Injecting pending event vcpu[%RU32] u64IntInfo=%#RX64 Type=%#RX32\n", pVCpu->idCpu, pVCpu->hm.s.Event.u64IntInfo,
@@ -8793,10 +8785,42 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
     }
 
     /*
-     * Update the guest-interruptibility state.
+     * Deliver any pending debug exceptions if the guest is single-stepping using EFLAGS.TF and
+     * is an interrupt shadow (block-by-STI or block-by-MOV SS).
+     */
+    if (   (fIntrState & (VMX_VMCS_GUEST_INT_STATE_BLOCK_STI | VMX_VMCS_GUEST_INT_STATE_BLOCK_MOVSS))
+        && !pVmxTransient->fIsNestedGuest)
+    {
+        HMVMX_CPUMCTX_ASSERT(pVCpu, CPUMCTX_EXTRN_RFLAGS);
+
+        if (!pVCpu->hm.s.fSingleInstruction)
+        {
+            /*
+             * Set or clear the BS bit depending on whether the trap flag is active or not. We need
+             * to do both since we clear the BS bit from the VMCS while exiting to ring-3.
+             */
+            Assert(!DBGFIsStepping(pVCpu));
+            uint8_t const fTrapFlag = !!(pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_TF);
+            int rc = VMXWriteVmcsNw(VMX_VMCS_GUEST_PENDING_DEBUG_XCPTS, fTrapFlag << VMX_BF_VMCS_PENDING_DBG_XCPT_BS_SHIFT);
+            AssertRC(rc);
+        }
+        else if (pVCpu->cpum.GstCtx.eflags.u32 & X86_EFL_TF)
+        {
+            /*
+             * We must not deliver a debug exception when single-stepping in the hypervisor debugger
+             * using EFLAGS.T. Instead, clear interrupt inhibition.
+             */
+            Assert(!(pVCpu->CTX_SUFF(pVM)->hm.s.vmx.Msrs.ProcCtls.n.allowed1 & VMX_PROC_CTLS_MONITOR_TRAP_FLAG));
+            fIntrState = 0;
+        }
+    }
+    /* else: for nested-guest currently handling while merging controls. */
+
+    /*
+     * Finally, update the guest-interruptibility state.
      *
-     * This is required for the real-on-v86 software interrupt injection case above, as well as
-     * updates to the guest state from ring-3 or IEM/REM.
+     * This is required for the real-on-v86 software interrupt injection, for
+     * pending debug exceptions as well as updates to the guest state from ring-3 (IEM).
      */
     int rc = VMXWriteVmcs32(VMX_VMCS32_GUEST_INT_STATE, fIntrState);
     AssertRC(rc);
@@ -8809,7 +8833,6 @@ static VBOXSTRICTRC hmR0VmxInjectPendingEvent(PVMCPUCC pVCpu, PCVMXTRANSIENT pVm
      */
 
     Assert(rcStrict == VINF_SUCCESS || rcStrict == VINF_EM_RESET || (rcStrict == VINF_EM_DBG_STEPPED && fStepping));
-    NOREF(fBlockMovSS); NOREF(fBlockSti);
     return rcStrict;
 }
 
