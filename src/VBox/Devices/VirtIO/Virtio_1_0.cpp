@@ -596,10 +596,10 @@ int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq  = &pVirtio->virtqState[idxQueue];
 
-    PVIRTIOSGSEG paSegsIn = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
+    PCVIRTIOSGSEG paSegsIn = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
     AssertReturn(paSegsIn, VERR_NO_MEMORY);
 
-    PVIRTIOSGSEG paSegsOut = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
+    PCVIRTIOSGSEG paSegsOut = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
     AssertReturn(paSegsOut, VERR_NO_MEMORY);
 
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[idxQueue],
@@ -651,13 +651,13 @@ int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
         {
             Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUE_NAME(pVirtio, idxQueue), uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
             cbIn += desc.cb;
-            pSeg = &(paSegsIn[cSegsIn++]);
+            pSeg = (PVIRTIOSGSEG)&(paSegsIn[cSegsIn++]);
         }
         else
         {
             Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUE_NAME(pVirtio, idxQueue), uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
             cbOut += desc.cb;
-            pSeg = &(paSegsOut[cSegsOut++]);
+            pSeg = (PVIRTIOSGSEG)&(paSegsOut[cSegsOut++]);
         }
 
         pSeg->pGcSeg = desc.GCPhysBuf;
@@ -669,12 +669,12 @@ int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
     PVIRTIOSGBUF pSgPhysIn = (PVIRTIOSGBUF)RTMemAllocZ(sizeof(VIRTIOSGBUF));
     AssertReturn(pSgPhysIn, VERR_NO_MEMORY);
 
-    virtioCoreSgBufInit(pSgPhysIn, (PCVIRTIOSGSEG)paSegsIn, cSegsIn);
+    virtioCoreSgBufInit(pSgPhysIn, paSegsIn, cSegsIn);
 
     PVIRTIOSGBUF pSgPhysOut = (PVIRTIOSGBUF)RTMemAllocZ(sizeof(VIRTIOSGBUF));
     AssertReturn(pSgPhysOut, VERR_NO_MEMORY);
 
-    virtioCoreSgBufInit(pSgPhysOut, (PCVIRTIOSGSEG)paSegsOut, cSegsOut);
+    virtioCoreSgBufInit(pSgPhysOut, paSegsOut, cSegsOut);
 
     PVIRTIO_DESC_CHAIN_T pDescChain = (PVIRTIO_DESC_CHAIN_T)RTMemAllocZ(sizeof(VIRTIO_DESC_CHAIN_T));
     AssertReturn(pDescChain, VERR_NO_MEMORY);

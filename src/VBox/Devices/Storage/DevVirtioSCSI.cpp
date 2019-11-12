@@ -1163,7 +1163,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
      * Handle submission errors
      */
 
-    if (RT_LIKELY(fBadLUNFormat
+    if (RT_LIKELY(!fBadLUNFormat
                   || (uTarget < pThis->cTargets
                   &&  pThisCC->paTargetInstances[uTarget].fPresent
                   &&  pThisCC->paTargetInstances[uTarget].pDrvMediaEx)))
