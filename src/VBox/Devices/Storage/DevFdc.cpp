@@ -48,6 +48,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_FDC
 #include <VBox/vmm/pdmdev.h>
 #include <VBox/vmm/pdmstorageifs.h>
+#include <VBox/AssertGuest.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
@@ -689,11 +690,15 @@ struct fdctrl_t {
     PDMILEDPORTS ILeds;
     /** Status LUN: The Partner of ILeds. */
     PPDMILEDCONNECTORS pLedsConnector;
+
+    /** I/O ports: 0x3f1..0x3f5 */
+    IOMIOPORTHANDLE hIoPorts1;
+    /** I/O port:  0x3f7 */
+    IOMIOPORTHANDLE hIoPorts2;
 };
 
-static uint32_t fdctrl_read (void *opaque, uint32_t reg)
+static uint32_t fdctrl_read (fdctrl_t *fdctrl, uint32_t reg)
 {
-    fdctrl_t *fdctrl = (fdctrl_t *)opaque;
     uint32_t retval;
 
     switch (reg) {
@@ -719,7 +724,7 @@ static uint32_t fdctrl_read (void *opaque, uint32_t reg)
         retval = fdctrl_read_dir(fdctrl);
         break;
     default:
-        retval = (uint32_t)(-1);
+        retval = UINT32_MAX;
         break;
     }
     FLOPPY_DPRINTF("read reg%d: 0x%02x\n", reg & 7, retval);
@@ -727,10 +732,8 @@ static uint32_t fdctrl_read (void *opaque, uint32_t reg)
     return retval;
 }
 
-static void fdctrl_write (void *opaque, uint32_t reg, uint32_t value)
+static void fdctrl_write (fdctrl_t *fdctrl, uint32_t reg, uint32_t value)
 {
-    fdctrl_t *fdctrl = (fdctrl_t *)opaque;
-
     FLOPPY_DPRINTF("write reg%d: 0x%02x\n", reg & 7, value);
 
     switch (reg) {
@@ -2181,28 +2184,63 @@ static DECLCALLBACK(void) fdcTimerCallback(PPDMDEVINS pDevIns, PTMTIMER pTimer, 
 /* -=-=-=-=-=-=-=-=- I/O Port Access Handlers -=-=-=-=-=-=-=-=- */
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Handling 0x3f1..0x3f5 acceses.}
  */
-static DECLCALLBACK(int) fdcIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort1Write(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF(pDevIns);
+    RT_NOREF(pvUser);
+
     if (cb == 1)
-        fdctrl_write (pvUser, uPort & 7, u32);
+        fdctrl_write(PDMDEVINS_2_DATA(pDevIns, fdctrl_t *), offPort + 1, u32);
     else
-        AssertMsgFailed(("uPort=%#x cb=%d u32=%#x\n", uPort, cb, u32));
+        ASSERT_GUEST_MSG_FAILED(("offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
     return VINF_SUCCESS;
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Handling 0x3f1..0x3f5 acceses.}
  */
-static DECLCALLBACK(int) fdcIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort1Read(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF(pDevIns);
+    RT_NOREF(pvUser);
+
     if (cb == 1)
     {
-        *pu32 = fdctrl_read (pvUser, uPort & 7);
+        *pu32 = fdctrl_read(PDMDEVINS_2_DATA(pDevIns, fdctrl_t *), offPort + 1);
+        return VINF_SUCCESS;
+    }
+    return VERR_IOM_IOPORT_UNUSED;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, Handling 0x3f7 access.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort2Write(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
+{
+    RT_NOREF(offPort, pvUser);
+    Assert(offPort == 0);
+
+    if (cb == 1)
+        fdctrl_write(PDMDEVINS_2_DATA(pDevIns, fdctrl_t *), 7, u32);
+    else
+        ASSERT_GUEST_MSG_FAILED(("offPort=%#x cb=%d u32=%#x\n", offPort, cb, u32));
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @callback_method_impl{FNIOMIOPORTNEWIN, Handling 0x3f7 access.}
+ */
+static DECLCALLBACK(VBOXSTRICTRC) fdcIoPort2Read(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
+{
+    RT_NOREF(pvUser, offPort);
+    Assert(offPort == 0);
+
+    if (cb == 1)
+    {
+        *pu32 = fdctrl_read(PDMDEVINS_2_DATA(pDevIns, fdctrl_t *), 7);
         return VINF_SUCCESS;
     }
     return VERR_IOM_IOPORT_UNUSED;
@@ -2755,18 +2793,34 @@ static DECLCALLBACK(int) fdcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     /*
      * IO / MMIO.
+     *
+     * We must skip I/O port 0x3f6 as it is the ATA alternate status register.
+     * Why we skip registering status register A, though, isn't as clear.
      */
     if (!fMemMapped)
     {
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->io_base + 0x1, 5, pThis,
-                                     fdcIoPortWrite, fdcIoPortRead, NULL, NULL, "FDC#1");
-        if (RT_FAILURE(rc))
-            return rc;
+        static const IOMIOPORTDESC s_aDescs[] =
+        {
+            { "SRA", NULL, "Status register A", NULL },
+            { "SRB", NULL, "Status register B", NULL },
+            { "DOR", "DOR", "Digital output register", "Digital output register"},
+            { "TDR", "TDR", "Tape driver register", "Tape driver register"},
+            { "MSR", "DSR", "Main status register", "Datarate select register" },
+            { "FIFO", "FIFO", "Data FIFO", "Data FIFO" },
+            { "ATA", "ATA", NULL, NULL },
+            { "DIR", "CCR", "Digital input register", "Configuration control register"},
+            { NULL, NULL, NULL, NULL }
+        };
 
-        rc = PDMDevHlpIOPortRegister(pDevIns, pThis->io_base + 0x7, 1, pThis,
-                                     fdcIoPortWrite, fdcIoPortRead, NULL, NULL, "FDC#2");
-        if (RT_FAILURE(rc))
-            return rc;
+        /* 0x3f1..0x3f5 */
+        rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->io_base + 0x1, 5, fdcIoPort1Write, fdcIoPort1Read,
+                                         "FDC#1", &s_aDescs[1], &pThis->hIoPorts1);
+        AssertRCReturn(rc, rc);
+
+        /* 0x3f7 */
+        rc = PDMDevHlpIoPortCreateAndMap(pDevIns, pThis->io_base + 0x7, 1, fdcIoPort2Write, fdcIoPort2Read,
+                                         "FDC#2", &s_aDescs[7], &pThis->hIoPorts2);
+        AssertRCReturn(rc, rc);
     }
     else
         AssertMsgFailedReturn(("Memory mapped floppy not support by now\n"), VERR_NOT_SUPPORTED);
@@ -2815,7 +2869,7 @@ const PDMDEVREG g_DeviceFloppyController =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "i82078",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_STORAGE,
     /* .cMaxInstances = */          1,
     /* .uSharedVersion = */         42,
