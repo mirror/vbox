@@ -926,8 +926,8 @@ void UIInformationPerformanceMonitor::retranslateUi()
     iMaximum = qMax(iMaximum, m_strVMExitLabelTotal.length());
 
     /* Compute the maximum label string length and set it as a fixed width to labels to prevent always changing widths: */
-    /* Add m_iDecimalCount plus 3 characters for the number and 3 for unit string: */
-    iMaximum += (iDecimalCount + 6);
+    /* Add m_iDecimalCount plus 4 characters for the number and 3 for unit string: */
+    iMaximum += (iDecimalCount + 7);
     if (!m_infoLabels.isEmpty())
     {
         QLabel *pLabel = m_infoLabels.begin().value();
