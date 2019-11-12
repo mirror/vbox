@@ -442,6 +442,7 @@ DECLINLINE(uint64_t) virtioCoreGetAcceptedFeatures(PVIRTIOCORE pVirtio)
     return pVirtio->uDriverFeatures;
 }
 
+
 DECLINLINE(size_t) virtioCoreSgBufCalcTotalLength(PCVIRTIOSGBUF pGcSgBuf)
 {
     size_t   cb = 0;
@@ -457,8 +458,11 @@ void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint
 
 void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle);
 
-RTGCPHYS virtioCoreSgBufGetNextSegment(PVIRTIOSGBUF pSgBuf, size_t *pcbSeg);
-RTGCPHYS virtioCoreSgBufAdvance(PVIRTIOSGBUF pSgBuf, size_t cbAdvance);
+void     virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs);
+void     virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf);
+RTGCPHYS virtioCoreSgBufGetNextSegment(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg);
+RTGCPHYS virtioCoreSgBufAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance);
+
 void     virtioCoreSgBufInit(PVIRTIOSGBUF pSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs);
 size_t   virtioCoreSgBufCalcTotalLength(PCVIRTIOSGBUF pGcSgBuf);
 void     virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf);
