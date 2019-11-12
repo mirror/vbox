@@ -7591,7 +7591,8 @@ IEM_STATIC void iemVmxVmreadNoCheck(PCVMXVVMCS pVmcs, uint64_t *pu64Dst, uint64_
     uint8_t  const uIndex     = RT_BF_GET(VmcsField.u, VMX_BF_VMCSFIELD_INDEX);
     Assert(uIndex <= VMX_V_VMCS_MAX_INDEX);
     uint16_t const offField   = g_aoffVmcsMap[uWidthType][uIndex];
-    AssertMsg(offField < VMX_V_VMCS_SIZE, ("%u field=%#RX64 uWidth=%#x uType=%#x uWidthType=%#x uIndex=%u\n", offField, u64VmcsField, uWidth, uType, uWidthType, uIndex));
+    AssertMsg(offField < VMX_V_VMCS_SIZE, ("off=%u field=%#RX64 width=%#x type=%#x index=%#x (%u)\n", offField, u64VmcsField,
+                                           uWidth, uType, uWidthType, uIndex, uIndex));
     AssertCompile(VMX_V_SHADOW_VMCS_SIZE == VMX_V_VMCS_SIZE);
 
     /*
