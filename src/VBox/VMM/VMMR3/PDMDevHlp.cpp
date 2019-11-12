@@ -356,6 +356,11 @@ static DECLCALLBACK(int) pdmR3DevHlp_MmioCreateEx(PPDMDEVINS pDevIns, RTGCPHYS c
     VM_ASSERT_EMT0_RETURN(pVM, VERR_VM_THREAD_NOT_EMT);
     VM_ASSERT_STATE_RETURN(pVM, VMSTATE_CREATING, VERR_VM_INVALID_VM_STATE);
 
+    /* HACK ALERT! Round the size up to page size.  The PCI bus should do something similar before mapping it. */
+    /** @todo It's possible we need to do dummy MMIO fill-in of the PCI bus or
+     *        guest adds more alignment to an region. */
+    cbRegion = RT_ALIGN_T(cbRegion, PAGE_SIZE, RTGCPHYS);
+
     int rc = IOMR3MmioCreate(pVM, pDevIns, cbRegion, fFlags, pPciDev, iPciRegion,
                              pfnWrite, pfnRead, pfnFill, pvUser, pszDesc, phRegion);
 
