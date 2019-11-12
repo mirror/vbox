@@ -485,6 +485,8 @@ typedef struct BUSLOGIC
 
     /** ISA compatibility I/O ports. */
     IOMIOPORTHANDLE                 hIoPortsIsa;
+    /** BIOS I/O ports for booting, optional.   */
+    IOMIOPORTHANDLE                 hIoPortsBios;
     /** PCI Region \#0: I/O ports. */
     IOMIOPORTHANDLE                 hIoPortsPci;
     /** PCI Region \#1: MMIO (32 bytes, but probably rounded up to 4KB). */
@@ -2743,47 +2745,32 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pThis)
 
 
 /**
- * Port I/O Handler for IN operations - BIOS port.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   uPort       Port number used for the IN operation.
- * @param   pu32        Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMIOPORTNEWIN, BIOS port.}
  */
-static DECLCALLBACK(int) buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    RT_NOREF(pvUser, cb);
     PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    RT_NOREF(pvUser, cb);
 
-    Assert(cb == 1);
+    ASSERT_GUEST(cb == 1);
 
-    int rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, (uPort - BUSLOGIC_BIOS_IO_PORT), pu32);
+    int rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, offPort, pu32);
 
-    //Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
-    //      __FUNCTION__, pu32, 1, pu32, (uPort - BUSLOGIC_BIOS_IO_PORT), rc));
+    //Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n", __FUNCTION__, pu32, 1, pu32, offPort, rc));
 
     return rc;
 }
 
 /**
- * Port I/O Handler for OUT operations - BIOS port.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   uPort       Port number used for the IN operation.
- * @param   u32         The value to output.
- * @param   cb          The value size in bytes.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT, BIOS port.}
  */
-static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    RT_NOREF(pvUser, cb);
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x uPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, uPort));
+    Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, offPort));
+    RT_NOREF(pvUser, cb);
 
     /*
      * If there is already a request form the BIOS pending ignore this write
@@ -2792,9 +2779,9 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvU
     if (ASMAtomicReadBool(&pThis->fBiosReqPending))
         return VINF_SUCCESS;
 
-    Assert(cb == 1);
+    ASSERT_GUEST(cb == 1);
 
-    int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, (uPort - BUSLOGIC_BIOS_IO_PORT), (uint8_t)u32);
+    int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, offPort, (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
@@ -2810,15 +2797,14 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvU
 }
 
 /**
- * Port I/O Handler for primary port range OUT string operations.
- * @see FNIOMIOPORTOUTSTRING for details.
+ * @callback_method_impl{FNIOMIOPORTNEWOUTSTRING, BIOS port.}
  */
-static DECLCALLBACK(int) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
-                                                      uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort,
+                                                               uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
-    RT_NOREF(pvUser);
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    Log2(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
+    Log2(("#%d %s: pvUser=%#p cb=%d offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, offPort));
+    RT_NOREF(pvUser);
 
     /*
      * If there is already a request form the BIOS pending ignore this write
@@ -2827,7 +2813,7 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *
     if (ASMAtomicReadBool(&pThis->fBiosReqPending))
         return VINF_SUCCESS;
 
-    int rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT), pbSrc, pcTransfers, cb);
+    int rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, offPort, pbSrc, pcTransfers, cb);
     if (rc == VERR_MORE_DATA)
     {
         ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
@@ -2842,18 +2828,16 @@ static DECLCALLBACK(int) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *
 }
 
 /**
- * Port I/O Handler for primary port range IN string operations.
- * @see FNIOMIOPORTINSTRING for details.
+ * @callback_method_impl{FNIOMIOPORTNEWINSTRING, BIOS port.}
  */
-static DECLCALLBACK(int) buslogicR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port,
-                                                     uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) buslogicR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort,
+                                                              uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
-    RT_NOREF(pvUser);
     PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    LogFlowFunc(("#%d %s: pvUser=%#p cb=%d Port=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, Port));
+    LogFlowFunc(("#%d %s: pvUser=%#p cb=%d offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, offPort));
+    RT_NOREF(pvUser);
 
-    return vboxscsiReadString(pDevIns, &pBusLogic->VBoxSCSI, (Port - BUSLOGIC_BIOS_IO_PORT),
-                              pbDst, pcTransfers, cb);
+    return vboxscsiReadString(pDevIns, &pBusLogic->VBoxSCSI, offPort, pbDst, pcTransfers, cb);
 }
 
 /**
@@ -2989,6 +2973,9 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
     return VINF_SUCCESS;
 }
 
+/**
+ * @interface_method_impl{PDMIMEDIAPORT,pfnQueryDeviceLocation}
+ */
 static DECLCALLBACK(int) buslogicR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
                                                        uint32_t *piInstance, uint32_t *piLUN)
 {
@@ -4191,10 +4178,10 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (fBootable)
     {
         /* Register I/O port space for BIOS access. */
-        rc = PDMDevHlpIOPortRegister(pDevIns, BUSLOGIC_BIOS_IO_PORT, 4, NULL,
-                                     buslogicR3BiosIoPortWrite, buslogicR3BiosIoPortRead,
-                                     buslogicR3BiosIoPortWriteStr, buslogicR3BiosIoPortReadStr,
-                                     "BusLogic BIOS");
+        rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, BUSLOGIC_BIOS_IO_PORT, 4 /*cPorts*/,
+                                           buslogicR3BiosIoPortWrite, buslogicR3BiosIoPortRead,
+                                           buslogicR3BiosIoPortWriteStr, buslogicR3BiosIoPortReadStr, NULL /*pvUser*/,
+                                           "BusLogic BIOS" , NULL /*paExtDesc*/, &pThis->hIoPortsBios);
         if (RT_FAILURE(rc))
             return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register BIOS I/O handlers"));
     }
