@@ -3420,26 +3420,6 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
     return rc;
 }
 
-/**
- * Transmit queue consumer
- * Queue a new async task.
- *
- * @returns Success indicator.
- *          If false the item will not be removed and the flushing will stop.
- * @param   pDevIns     The device instance.
- * @param   pItem       The item to consume. Upon return this item will be freed.
- */
-static DECLCALLBACK(bool) buslogicR3NotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
-{
-    RT_NOREF(pItem);
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    int rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
-    AssertRC(rc);
-
-    return true;
-}
-
 /** @callback_method_impl{FNSSMDEVLIVEEXEC}  */
 static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
