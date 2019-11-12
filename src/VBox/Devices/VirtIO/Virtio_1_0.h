@@ -71,7 +71,7 @@ typedef PVIRTIOSGSEG *PPVIRTIOSGSEG;
 
 typedef struct VIRTIOSGBUF
 {
-    PCVIRTIOSGSEG paSegs;                                       /**< Pointer to the scatter/gather array       */
+    PVIRTIOSGSEG paSegs;                                       /**< Pointer to the scatter/gather array       */
     unsigned  cSegs;                                            /**< Number of segments                        */
     unsigned  idxSeg;                                           /**< Current segment we are in                 */
     RTGCPHYS  pGcSegCur;                                        /**< Ptr to byte within the current seg        */
@@ -405,7 +405,6 @@ DECLINLINE(bool) virtioCoreIsQueueEnabled(PVIRTIOCORE pVirtio, uint16_t idxQueue
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     return pVirtio->uQueueEnable[idxQueue] != 0;
 }
-
 
 /**
  * Get name of queue, by idxQueue, assigned at virtioCoreR3QueueAttach()

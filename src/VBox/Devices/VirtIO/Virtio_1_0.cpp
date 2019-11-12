@@ -268,7 +268,7 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
 
 #ifdef LOG_ENABLED
 
-void virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PCVIRTIOSGSEG paSegs, size_t cSegs)
+void virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs)
 {
     AssertPtr(pGcSgBuf);
     Assert(   (cSegs > 0 && VALID_PTR(paSegs))
@@ -596,10 +596,10 @@ int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq  = &pVirtio->virtqState[idxQueue];
 
-    PCVIRTIOSGSEG paSegsIn = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
+    PVIRTIOSGSEG paSegsIn = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
     AssertReturn(paSegsIn, VERR_NO_MEMORY);
 
-    PCVIRTIOSGSEG paSegsOut = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
+    PVIRTIOSGSEG paSegsOut = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
     AssertReturn(paSegsOut, VERR_NO_MEMORY);
 
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[idxQueue],
@@ -746,7 +746,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
     virtioCoreSgBufReset(pSgPhysReturn); /* Reset ptr because req data may have already been written */
     while (cbRemain)
     {
-        PCVIRTIOSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
+        PVIRTIOSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
         uint64_t dstSgStart = (uint64_t)paSeg->pGcSeg;
         uint64_t dstSgLen   = (uint64_t)paSeg->cbSeg;
         uint64_t dstSgCur   = (uint64_t)pSgPhysReturn->pGcSegCur;
