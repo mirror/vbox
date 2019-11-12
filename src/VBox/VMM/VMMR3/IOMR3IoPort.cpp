@@ -46,6 +46,7 @@
  */
 void iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry)
 {
+    bool const           fDoRZ      = pRegEntry->fRing0 || pRegEntry->fRawMode;
     PIOMIOPORTSTATSENTRY pStats     = &pVM->iom.s.paIoPortStats[pRegEntry->idxStats];
     PCIOMIOPORTDESC      pExtDesc   = pRegEntry->paExtDescs;
     unsigned             uPort      = pRegEntry->uPort;
@@ -89,24 +90,30 @@ void iomR3IoPortRegStats(PVM pVM, PIOMIOPORTENTRYR3 pRegEntry)
         rc = STAMR3Register(pVM, &pStats->InR3,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszInDesc); AssertRC(rc);
         SET_NM_SUFFIX("Out-R3");
         rc = STAMR3Register(pVM, &pStats->OutR3,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszOutDesc); AssertRC(rc);
-        SET_NM_SUFFIX("In-RZ");
-        rc = STAMR3Register(pVM, &pStats->InRZ,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszInDesc); AssertRC(rc);
-        SET_NM_SUFFIX("Out-RZ");
-        rc = STAMR3Register(pVM, &pStats->OutRZ,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszOutDesc); AssertRC(rc);
-        SET_NM_SUFFIX("In-RZtoR3");
-        rc = STAMR3Register(pVM, &pStats->InRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
-        SET_NM_SUFFIX("Out-RZtoR3");
-        rc = STAMR3Register(pVM, &pStats->OutRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
+        if (fDoRZ)
+        {
+            SET_NM_SUFFIX("In-RZ");
+            rc = STAMR3Register(pVM, &pStats->InRZ,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszInDesc); AssertRC(rc);
+            SET_NM_SUFFIX("Out-RZ");
+            rc = STAMR3Register(pVM, &pStats->OutRZ,     STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, pszOutDesc); AssertRC(rc);
+            SET_NM_SUFFIX("In-RZtoR3");
+            rc = STAMR3Register(pVM, &pStats->InRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
+            SET_NM_SUFFIX("Out-RZtoR3");
+            rc = STAMR3Register(pVM, &pStats->OutRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
+        }
 
         /* Profiling */
         SET_NM_SUFFIX("In-R3-Prof");
         rc = STAMR3Register(pVM, &pStats->ProfInR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszInDesc); AssertRC(rc);
         SET_NM_SUFFIX("Out-R3-Prof");
         rc = STAMR3Register(pVM, &pStats->ProfOutR3, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszOutDesc); AssertRC(rc);
-        SET_NM_SUFFIX("In-RZ-Prof");
-        rc = STAMR3Register(pVM, &pStats->ProfInRZ,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszInDesc); AssertRC(rc);
-        SET_NM_SUFFIX("Out-RZ-Prof");
-        rc = STAMR3Register(pVM, &pStats->ProfOutRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszOutDesc); AssertRC(rc);
+        if (fDoRZ)
+        {
+            SET_NM_SUFFIX("In-RZ-Prof");
+            rc = STAMR3Register(pVM, &pStats->ProfInRZ,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszInDesc); AssertRC(rc);
+            SET_NM_SUFFIX("Out-RZ-Prof");
+            rc = STAMR3Register(pVM, &pStats->ProfOutRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, pszOutDesc); AssertRC(rc);
+        }
 
         pStats++;
         uPort++;
