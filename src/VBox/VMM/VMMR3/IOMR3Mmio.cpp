@@ -46,7 +46,8 @@
  */
 void iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry)
 {
-    PIOMMMIOSTATSENTRY   pStats      = &pVM->iom.s.paMmioStats[pRegEntry->idxStats];
+    bool const           fDoRZ  = pRegEntry->fRing0 || pRegEntry->fRawMode;
+    PIOMMMIOSTATSENTRY   pStats = &pVM->iom.s.paMmioStats[pRegEntry->idxStats];
 
     /* Format the prefix: */
     char                 szName[80];
@@ -70,10 +71,13 @@ void iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry)
     rc = STAMR3Register(pVM, &pStats->FFor00Reads, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
     SET_NM_SUFFIX("/Read-R3");
     rc = STAMR3Register(pVM, &pStats->ProfReadR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
-    SET_NM_SUFFIX("/Read-RZ");
-    rc = STAMR3Register(pVM, &pStats->ProfReadRZ,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
-    SET_NM_SUFFIX("/Read-RZtoR3");
-    rc = STAMR3Register(pVM, &pStats->ReadRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
+    if (fDoRZ)
+    {
+        SET_NM_SUFFIX("/Read-RZ");
+        rc = STAMR3Register(pVM, &pStats->ProfReadRZ,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
+        SET_NM_SUFFIX("/Read-RZtoR3");
+        rc = STAMR3Register(pVM, &pStats->ReadRZToR3,  STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
+    }
     SET_NM_SUFFIX("/Read-Total");
     rc = STAMR3Register(pVM, &pStats->Reads,       STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
 
@@ -81,12 +85,15 @@ void iomR3MmioRegStats(PVM pVM, PIOMMMIOENTRYR3 pRegEntry)
     rc = STAMR3Register(pVM, &pStats->ComplicatedWrites, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES, NULL); AssertRC(rc);
     SET_NM_SUFFIX("/Write-R3");
     rc = STAMR3Register(pVM, &pStats->ProfWriteR3,  STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
-    SET_NM_SUFFIX("/Write-RZ");
-    rc = STAMR3Register(pVM, &pStats->ProfWriteRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
-    SET_NM_SUFFIX("/Write-RZtoR3");
-    rc = STAMR3Register(pVM, &pStats->WriteRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
-    SET_NM_SUFFIX("/Write-RZtoR3-Commit");
-    rc = STAMR3Register(pVM, &pStats->CommitRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,    NULL); AssertRC(rc);
+    if (fDoRZ)
+    {
+        SET_NM_SUFFIX("/Write-RZ");
+        rc = STAMR3Register(pVM, &pStats->ProfWriteRZ, STAMTYPE_PROFILE, STAMVISIBILITY_USED, szName, STAMUNIT_TICKS_PER_CALL, NULL); AssertRC(rc);
+        SET_NM_SUFFIX("/Write-RZtoR3");
+        rc = STAMR3Register(pVM, &pStats->WriteRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
+        SET_NM_SUFFIX("/Write-RZtoR3-Commit");
+        rc = STAMR3Register(pVM, &pStats->CommitRZToR3, STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,    NULL); AssertRC(rc);
+    }
     SET_NM_SUFFIX("/Write-Total");
     rc = STAMR3Register(pVM, &pStats->Writes,      STAMTYPE_COUNTER, STAMVISIBILITY_USED, szName, STAMUNIT_OCCURENCES,     NULL); AssertRC(rc);
 }
