@@ -3424,11 +3424,12 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
 static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
     RT_NOREF(uPass);
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC       pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
 
     /* Save the device config. */
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
-        SSMR3PutBool(pSSM, pThis->aDeviceStates[i].fPresent);
+        pHlp->pfnSSMPutBool(pSSM, pThis->aDeviceStates[i].fPresent);
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -3436,8 +3437,9 @@ static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 /** @callback_method_impl{FNSSMDEVSAVEEXEC}  */
 static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    uint32_t cReqsSuspended = 0;
+    PBUSLOGIC       pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+    uint32_t        cReqsSuspended = 0;
 
     /* Every device first. */
     for (unsigned i = 0; i < RT_ELEMENTS(pBusLogic->aDeviceStates); i++)
@@ -3446,41 +3448,41 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
         AssertMsg(!pDevice->cOutstandingRequests,
                   ("There are still outstanding requests on this device\n"));
-        SSMR3PutBool(pSSM, pDevice->fPresent);
-        SSMR3PutU32(pSSM, pDevice->cOutstandingRequests);
+        pHlp->pfnSSMPutBool(pSSM, pDevice->fPresent);
+        pHlp->pfnSSMPutU32(pSSM, pDevice->cOutstandingRequests);
 
         if (pDevice->fPresent)
             cReqsSuspended += pDevice->pDrvMediaEx->pfnIoReqGetSuspendedCount(pDevice->pDrvMediaEx);
     }
     /* Now the main device state. */
-    SSMR3PutU8    (pSSM, pBusLogic->regStatus);
-    SSMR3PutU8    (pSSM, pBusLogic->regInterrupt);
-    SSMR3PutU8    (pSSM, pBusLogic->regGeometry);
-    SSMR3PutMem   (pSSM, &pBusLogic->LocalRam, sizeof(pBusLogic->LocalRam));
-    SSMR3PutU8    (pSSM, pBusLogic->uOperationCode);
-    SSMR3PutMem   (pSSM, &pBusLogic->aCommandBuffer, sizeof(pBusLogic->aCommandBuffer));
-    SSMR3PutU8    (pSSM, pBusLogic->iParameter);
-    SSMR3PutU8    (pSSM, pBusLogic->cbCommandParametersLeft);
-    SSMR3PutBool  (pSSM, pBusLogic->fUseLocalRam);
-    SSMR3PutMem   (pSSM, pBusLogic->aReplyBuffer, sizeof(pBusLogic->aReplyBuffer));
-    SSMR3PutU8    (pSSM, pBusLogic->iReply);
-    SSMR3PutU8    (pSSM, pBusLogic->cbReplyParametersLeft);
-    SSMR3PutBool  (pSSM, pBusLogic->fIRQEnabled);
-    SSMR3PutU8    (pSSM, pBusLogic->uISABaseCode);
-    SSMR3PutU32   (pSSM, pBusLogic->cMailbox);
-    SSMR3PutBool  (pSSM, pBusLogic->fMbxIs24Bit);
-    SSMR3PutGCPhys(pSSM, pBusLogic->GCPhysAddrMailboxOutgoingBase);
-    SSMR3PutU32   (pSSM, pBusLogic->uMailboxOutgoingPositionCurrent);
-    SSMR3PutU32   (pSSM, pBusLogic->cMailboxesReady);
-    SSMR3PutBool  (pSSM, pBusLogic->fNotificationSent);
-    SSMR3PutGCPhys(pSSM, pBusLogic->GCPhysAddrMailboxIncomingBase);
-    SSMR3PutU32   (pSSM, pBusLogic->uMailboxIncomingPositionCurrent);
-    SSMR3PutBool  (pSSM, pBusLogic->fStrictRoundRobinMode);
-    SSMR3PutBool  (pSSM, pBusLogic->fExtendedLunCCBFormat);
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->regStatus);
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->regInterrupt);
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->regGeometry);
+    pHlp->pfnSSMPutMem   (pSSM, &pBusLogic->LocalRam, sizeof(pBusLogic->LocalRam));
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->uOperationCode);
+    pHlp->pfnSSMPutMem   (pSSM, &pBusLogic->aCommandBuffer, sizeof(pBusLogic->aCommandBuffer));
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->iParameter);
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->cbCommandParametersLeft);
+    pHlp->pfnSSMPutBool  (pSSM, pBusLogic->fUseLocalRam);
+    pHlp->pfnSSMPutMem   (pSSM, pBusLogic->aReplyBuffer, sizeof(pBusLogic->aReplyBuffer));
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->iReply);
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->cbReplyParametersLeft);
+    pHlp->pfnSSMPutBool  (pSSM, pBusLogic->fIRQEnabled);
+    pHlp->pfnSSMPutU8    (pSSM, pBusLogic->uISABaseCode);
+    pHlp->pfnSSMPutU32   (pSSM, pBusLogic->cMailbox);
+    pHlp->pfnSSMPutBool  (pSSM, pBusLogic->fMbxIs24Bit);
+    pHlp->pfnSSMPutGCPhys(pSSM, pBusLogic->GCPhysAddrMailboxOutgoingBase);
+    pHlp->pfnSSMPutU32   (pSSM, pBusLogic->uMailboxOutgoingPositionCurrent);
+    pHlp->pfnSSMPutU32   (pSSM, pBusLogic->cMailboxesReady);
+    pHlp->pfnSSMPutBool  (pSSM, pBusLogic->fNotificationSent);
+    pHlp->pfnSSMPutGCPhys(pSSM, pBusLogic->GCPhysAddrMailboxIncomingBase);
+    pHlp->pfnSSMPutU32   (pSSM, pBusLogic->uMailboxIncomingPositionCurrent);
+    pHlp->pfnSSMPutBool  (pSSM, pBusLogic->fStrictRoundRobinMode);
+    pHlp->pfnSSMPutBool  (pSSM, pBusLogic->fExtendedLunCCBFormat);
 
     vboxscsiR3SaveExec(pDevIns->pHlpR3, &pBusLogic->VBoxSCSI, pSSM);
 
-    SSMR3PutU32(pSSM, cReqsSuspended);
+    pHlp->pfnSSMPutU32(pSSM, cReqsSuspended);
 
     /* Save the physical CCB address of all suspended requests. */
     for (unsigned i = 0; i < RT_ELEMENTS(pBusLogic->aDeviceStates) && cReqsSuspended; i++)
@@ -3501,7 +3503,7 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
                 for (;;)
                 {
-                    SSMR3PutU32(pSSM, (uint32_t)pReq->GCPhysAddrCCB);
+                    pHlp->pfnSSMPutU32(pSSM, (uint32_t)pReq->GCPhysAddrCCB);
 
                     cThisReqsSuspended--;
                     if (!cThisReqsSuspended)
@@ -3515,7 +3517,7 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         }
     }
 
-    return SSMR3PutU32(pSSM, UINT32_MAX);
+    return pHlp->pfnSSMPutU32(pSSM, UINT32_MAX);
 }
 
 /** @callback_method_impl{FNSSMDEVLOADDONE}  */
@@ -3553,8 +3555,9 @@ static DECLCALLBACK(int) buslogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /** @callback_method_impl{FNSSMDEVLOADEXEC}  */
 static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
-    PBUSLOGIC   pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    int         rc = VINF_SUCCESS;
+    PBUSLOGIC       pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+    int             rc = VINF_SUCCESS;
 
     /* We support saved states only from this and older versions. */
     if (uVersion > BUSLOGIC_SAVED_STATE_MINOR_VERSION)
@@ -3568,47 +3571,47 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         AssertMsg(!pDevice->cOutstandingRequests,
                   ("There are still outstanding requests on this device\n"));
         bool fPresent;
-        rc = SSMR3GetBool(pSSM, &fPresent);
+        rc = pHlp->pfnSSMGetBool(pSSM, &fPresent);
         AssertRCReturn(rc, rc);
         if (pDevice->fPresent != fPresent)
-            return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Target %u config mismatch: config=%RTbool state=%RTbool"), i, pDevice->fPresent, fPresent);
+            return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("Target %u config mismatch: config=%RTbool state=%RTbool"), i, pDevice->fPresent, fPresent);
 
         if (uPass == SSM_PASS_FINAL)
-            SSMR3GetU32V(pSSM, &pDevice->cOutstandingRequests);
+            pHlp->pfnSSMGetU32V(pSSM, &pDevice->cOutstandingRequests);
     }
 
     if (uPass != SSM_PASS_FINAL)
         return VINF_SUCCESS;
 
     /* Now the main device state. */
-    SSMR3GetU8V   (pSSM, &pBusLogic->regStatus);
-    SSMR3GetU8V   (pSSM, &pBusLogic->regInterrupt);
-    SSMR3GetU8V   (pSSM, &pBusLogic->regGeometry);
-    SSMR3GetMem   (pSSM, &pBusLogic->LocalRam, sizeof(pBusLogic->LocalRam));
-    SSMR3GetU8    (pSSM, &pBusLogic->uOperationCode);
+    pHlp->pfnSSMGetU8V   (pSSM, &pBusLogic->regStatus);
+    pHlp->pfnSSMGetU8V   (pSSM, &pBusLogic->regInterrupt);
+    pHlp->pfnSSMGetU8V   (pSSM, &pBusLogic->regGeometry);
+    pHlp->pfnSSMGetMem   (pSSM, &pBusLogic->LocalRam, sizeof(pBusLogic->LocalRam));
+    pHlp->pfnSSMGetU8    (pSSM, &pBusLogic->uOperationCode);
     if (uVersion > BUSLOGIC_SAVED_STATE_MINOR_PRE_CMDBUF_RESIZE)
-        SSMR3GetMem   (pSSM, &pBusLogic->aCommandBuffer, sizeof(pBusLogic->aCommandBuffer));
+        pHlp->pfnSSMGetMem(pSSM, &pBusLogic->aCommandBuffer, sizeof(pBusLogic->aCommandBuffer));
     else
-        SSMR3GetMem   (pSSM, &pBusLogic->aCommandBuffer, BUSLOGIC_COMMAND_SIZE_OLD);
-    SSMR3GetU8    (pSSM, &pBusLogic->iParameter);
-    SSMR3GetU8    (pSSM, &pBusLogic->cbCommandParametersLeft);
-    SSMR3GetBool  (pSSM, &pBusLogic->fUseLocalRam);
-    SSMR3GetMem   (pSSM, pBusLogic->aReplyBuffer, sizeof(pBusLogic->aReplyBuffer));
-    SSMR3GetU8    (pSSM, &pBusLogic->iReply);
-    SSMR3GetU8    (pSSM, &pBusLogic->cbReplyParametersLeft);
-    SSMR3GetBool  (pSSM, &pBusLogic->fIRQEnabled);
-    SSMR3GetU8    (pSSM, &pBusLogic->uISABaseCode);
-    SSMR3GetU32   (pSSM, &pBusLogic->cMailbox);
+        pHlp->pfnSSMGetMem(pSSM, &pBusLogic->aCommandBuffer, BUSLOGIC_COMMAND_SIZE_OLD);
+    pHlp->pfnSSMGetU8    (pSSM, &pBusLogic->iParameter);
+    pHlp->pfnSSMGetU8    (pSSM, &pBusLogic->cbCommandParametersLeft);
+    pHlp->pfnSSMGetBool  (pSSM, &pBusLogic->fUseLocalRam);
+    pHlp->pfnSSMGetMem   (pSSM, pBusLogic->aReplyBuffer, sizeof(pBusLogic->aReplyBuffer));
+    pHlp->pfnSSMGetU8    (pSSM, &pBusLogic->iReply);
+    pHlp->pfnSSMGetU8    (pSSM, &pBusLogic->cbReplyParametersLeft);
+    pHlp->pfnSSMGetBool  (pSSM, &pBusLogic->fIRQEnabled);
+    pHlp->pfnSSMGetU8    (pSSM, &pBusLogic->uISABaseCode);
+    pHlp->pfnSSMGetU32   (pSSM, &pBusLogic->cMailbox);
     if (uVersion > BUSLOGIC_SAVED_STATE_MINOR_PRE_24BIT_MBOX)
-        SSMR3GetBool  (pSSM, &pBusLogic->fMbxIs24Bit);
-    SSMR3GetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxOutgoingBase);
-    SSMR3GetU32   (pSSM, &pBusLogic->uMailboxOutgoingPositionCurrent);
-    SSMR3GetU32V  (pSSM, &pBusLogic->cMailboxesReady);
-    SSMR3GetBoolV (pSSM, &pBusLogic->fNotificationSent);
-    SSMR3GetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxIncomingBase);
-    SSMR3GetU32   (pSSM, &pBusLogic->uMailboxIncomingPositionCurrent);
-    SSMR3GetBool  (pSSM, &pBusLogic->fStrictRoundRobinMode);
-    SSMR3GetBool  (pSSM, &pBusLogic->fExtendedLunCCBFormat);
+        pHlp->pfnSSMGetBool(pSSM, &pBusLogic->fMbxIs24Bit);
+    pHlp->pfnSSMGetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxOutgoingBase);
+    pHlp->pfnSSMGetU32   (pSSM, &pBusLogic->uMailboxOutgoingPositionCurrent);
+    pHlp->pfnSSMGetU32V  (pSSM, &pBusLogic->cMailboxesReady);
+    pHlp->pfnSSMGetBoolV (pSSM, &pBusLogic->fNotificationSent);
+    pHlp->pfnSSMGetGCPhys(pSSM, &pBusLogic->GCPhysAddrMailboxIncomingBase);
+    pHlp->pfnSSMGetU32   (pSSM, &pBusLogic->uMailboxIncomingPositionCurrent);
+    pHlp->pfnSSMGetBool  (pSSM, &pBusLogic->fStrictRoundRobinMode);
+    pHlp->pfnSSMGetBool  (pSSM, &pBusLogic->fExtendedLunCCBFormat);
 
     rc = vboxscsiR3LoadExec(pDevIns->pHlpR3, &pBusLogic->VBoxSCSI, pSSM);
     if (RT_FAILURE(rc))
@@ -3623,7 +3626,7 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
         /* Check if there are pending tasks saved. */
         uint32_t cTasks = 0;
 
-        SSMR3GetU32(pSSM, &cTasks);
+        pHlp->pfnSSMGetU32(pSSM, &cTasks);
 
         if (cTasks)
         {
@@ -3636,7 +3639,7 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
                 {
                     uint32_t u32PhysAddrCCB;
 
-                    rc = SSMR3GetU32(pSSM, &u32PhysAddrCCB);
+                    rc = pHlp->pfnSSMGetU32(pSSM, &u32PhysAddrCCB);
                     if (RT_FAILURE(rc))
                         break;
 
@@ -3651,7 +3654,7 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     if (RT_SUCCESS(rc))
     {
         uint32_t u32;
-        rc = SSMR3GetU32(pSSM, &u32);
+        rc = pHlp->pfnSSMGetU32(pSSM, &u32);
         if (RT_SUCCESS(rc))
             AssertMsgReturn(u32 == UINT32_MAX, ("%#x\n", u32), VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
     }
