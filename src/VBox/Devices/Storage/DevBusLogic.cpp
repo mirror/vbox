@@ -94,45 +94,42 @@
 typedef struct BUSLOGICDEVICE
 {
     /** Pointer to the owning buslogic device instance. - R3 pointer */
-    R3PTRTYPE(struct BUSLOGIC *)  pBusLogicR3;
+    R3PTRTYPE(struct BUSLOGIC *)    pBusLogicR3;
     /** Pointer to the owning buslogic device instance. - R0 pointer */
-    R0PTRTYPE(struct BUSLOGIC *)  pBusLogicR0;
+    R0PTRTYPE(struct BUSLOGIC *)    pBusLogicR0;
     /** Pointer to the owning buslogic device instance. - RC pointer */
-    RCPTRTYPE(struct BUSLOGIC *)  pBusLogicRC;
+    RCPTRTYPE(struct BUSLOGIC *)    pBusLogicRC;
+
+    /** LUN of the device. */
+    uint32_t                        iLUN;
 
     /** Flag whether device is present. */
-    bool                          fPresent;
-    /** LUN of the device. */
-    RTUINT                        iLUN;
-
-#if HC_ARCH_BITS == 64
-    uint32_t                      Alignment0;
-#endif
+    bool                            fPresent;
+    bool                            afAlignment[HC_ARCH_BITS == 64 ? 3 : 7];
 
     /** Our base interface. */
-    PDMIBASE                      IBase;
+    PDMIBASE                        IBase;
     /** Media port interface. */
-    PDMIMEDIAPORT                 IMediaPort;
+    PDMIMEDIAPORT                   IMediaPort;
     /** Extended media port interface. */
-    PDMIMEDIAEXPORT               IMediaExPort;
+    PDMIMEDIAEXPORT                 IMediaExPort;
     /** Led interface. */
-    PDMILEDPORTS                  ILed;
+    PDMILEDPORTS                    ILed;
     /** Pointer to the attached driver's base interface. */
-    R3PTRTYPE(PPDMIBASE)          pDrvBase;
+    R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Pointer to the attached driver's media interface. */
-    R3PTRTYPE(PPDMIMEDIA)         pDrvMedia;
+    R3PTRTYPE(PPDMIMEDIA)           pDrvMedia;
     /** Pointer to the attached driver's extended media interface. */
-    R3PTRTYPE(PPDMIMEDIAEX)       pDrvMediaEx;
+    R3PTRTYPE(PPDMIMEDIAEX)         pDrvMediaEx;
     /** The status LED state for this device. */
-    PDMLED                        Led;
-
-#if HC_ARCH_BITS == 64
-    uint32_t                      Alignment1;
-#endif
+    PDMLED                          Led;
 
     /** Number of outstanding tasks on the port. */
-    volatile uint32_t             cOutstandingRequests;
+    volatile uint32_t               cOutstandingRequests;
 
+#if HC_ARCH_BITS == 64
+    uint32_t                        u32Alignment1;
+#endif
 } BUSLOGICDEVICE, *PBUSLOGICDEVICE;
 
 /**
@@ -329,7 +326,7 @@ enum BL_DEVICE_TYPE
 typedef struct BUSLOGICREQ *PBUSLOGICREQ;
 
 /**
- * Main BusLogic device state.
+ * The shared BusLogic device emulation state.
  *
  * @implements  PDMILEDPORTS
  */
@@ -501,7 +498,10 @@ typedef struct BUSLOGIC
 # endif
 #endif
 
-} BUSLOGIC, *PBUSLOGIC;
+} BUSLOGIC;
+/** Pointer to the shared BusLogic device emulation state. */
+typedef BUSLOGIC *PBUSLOGIC;
+
 
 /** Register offsets in the I/O port space. */
 #define BUSLOGIC_REGISTER_CONTROL   0 /**< Writeonly */
@@ -4193,8 +4193,8 @@ static DECLCALLBACK(void) buslogicR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC  pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+    PBUSLOGIC  pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     PDMR3CritSectDelete(&pThis->CritSectIntr);
 
@@ -4212,11 +4212,11 @@ static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
-    PBUSLOGIC  pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    int        rc = VINF_SUCCESS;
-    bool       fBootable = true;
-    char       achCfgStr[16];
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PBUSLOGIC       pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+    int             rc = VINF_SUCCESS;
+    char            szCfgStr[16];
 
     /*
      * Init instance data (do early because of constructor).
@@ -4247,51 +4247,35 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfg,
-                              "GCEnabled\0"
-                              "R0Enabled\0"
-                              "Bootable\0"
-                              "AdapterType\0"
-                              "ISACompat\0"))
-        return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
-                                N_("BusLogic configuration error: unknown option specified"));
+    PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Bootable|AdapterType|ISACompat", "");
 
-    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("BusLogic configuration error: failed to read GCEnabled as boolean"));
-    Log(("%s: fGCEnabled=%d\n", __FUNCTION__, pThis->fGCEnabled));
+    pThis->fGCEnabled = pDevIns->fRCEnabled;
+    pThis->fR0Enabled = pDevIns->fR0Enabled;
 
-    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
+    bool fBootable = true;
+    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Bootable", &fBootable, true);
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("BusLogic configuration error: failed to read R0Enabled as boolean"));
-    Log(("%s: fR0Enabled=%d\n", __FUNCTION__, pThis->fR0Enabled));
-    rc = CFGMR3QueryBoolDef(pCfg, "Bootable", &fBootable, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("BusLogic configuration error: failed to read Bootable as boolean"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic configuration error: failed to read Bootable as boolean"));
     Log(("%s: fBootable=%RTbool\n", __FUNCTION__, fBootable));
 
     /* Figure out the emulated device type. */
-    rc = CFGMR3QueryStringDef(pCfg, "AdapterType", achCfgStr, sizeof(achCfgStr), "BT-958D");
+    rc = pHlp->pfnCFGMQueryStringDef(pCfg, "AdapterType", szCfgStr, sizeof(szCfgStr), "BT-958D");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("BusLogic configuration error: failed to read AdapterType as string"));
-    Log(("%s: AdapterType=%s\n", __FUNCTION__, achCfgStr));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic configuration error: failed to read AdapterType as string"));
+    Log(("%s: AdapterType=%s\n", __FUNCTION__, szCfgStr));
 
     /* Grok the AdapterType setting. */
-    if (!strcmp(achCfgStr, "BT-958D"))          /* Default PCI device, 32-bit and 24-bit addressing. */
+    if (!strcmp(szCfgStr, "BT-958D"))          /* Default PCI device, 32-bit and 24-bit addressing. */
     {
         pThis->uDevType = DEV_BT_958D;
         pThis->uDefaultISABaseCode = ISA_BASE_DISABLED;
     }
-    else if (!strcmp(achCfgStr, "BT-545C"))     /* ISA device, 24-bit addressing only. */
+    else if (!strcmp(szCfgStr, "BT-545C"))     /* ISA device, 24-bit addressing only. */
     {
         pThis->uDevType = DEV_BT_545C;
         pThis->uIsaIrq = 11;
     }
-    else if (!strcmp(achCfgStr, "AHA-1540B"))   /* Competitor ISA device. */
+    else if (!strcmp(szCfgStr, "AHA-1540B"))   /* Competitor ISA device. */
     {
         pThis->uDevType = DEV_AHA_1540B;
         pThis->uIsaIrq = 11;
@@ -4302,20 +4286,19 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
 
     /* Only the first instance defaults to having the ISA compatibility ports enabled. */
     if (iInstance == 0)
-        rc = CFGMR3QueryStringDef(pCfg, "ISACompat", achCfgStr, sizeof(achCfgStr), "Alternate");
+        rc = pHlp->pfnCFGMQueryStringDef(pCfg, "ISACompat", szCfgStr, sizeof(szCfgStr), "Alternate");
     else
-        rc = CFGMR3QueryStringDef(pCfg, "ISACompat", achCfgStr, sizeof(achCfgStr), "Disabled");
+        rc = pHlp->pfnCFGMQueryStringDef(pCfg, "ISACompat", szCfgStr, sizeof(szCfgStr), "Disabled");
     if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("BusLogic configuration error: failed to read ISACompat as string"));
-    Log(("%s: ISACompat=%s\n", __FUNCTION__, achCfgStr));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic configuration error: failed to read ISACompat as string"));
+    Log(("%s: ISACompat=%s\n", __FUNCTION__, szCfgStr));
 
     /* Grok the ISACompat setting. */
-    if (!strcmp(achCfgStr, "Disabled"))
+    if (!strcmp(szCfgStr, "Disabled"))
         pThis->uDefaultISABaseCode = ISA_BASE_DISABLED;
-    else if (!strcmp(achCfgStr, "Primary"))
+    else if (!strcmp(szCfgStr, "Primary"))
         pThis->uDefaultISABaseCode = 0;     /* I/O base at 330h. */
-    else if (!strcmp(achCfgStr, "Alternate"))
+    else if (!strcmp(szCfgStr, "Alternate"))
         pThis->uDefaultISABaseCode = 1;     /* I/O base at 334h. */
     else
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
