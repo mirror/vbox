@@ -84,7 +84,6 @@ typedef struct virtq_avail
     uint16_t  fFlags;                                            /**< flags      avail ring drv to dev flags    */
     uint16_t  uIdx;                                              /**< idx        Index of next free ring slot   */
     uint16_t  auRing[RT_FLEXIBLE_ARRAY];                         /**< ring       Ring: avail drv to dev bufs    */
-    /* uint16_t  uUsedEventIdx;                                     - used_event (if VIRTQ_USED_F_EVENT_IDX)    */
 } VIRTQ_AVAIL_T, *PVIRTQ_AVAIL_T;
 
 typedef struct virtq_used_elem
@@ -98,9 +97,6 @@ typedef struct virt_used
     uint16_t  fFlags;                                            /**< flags       used ring host-to-guest flags */
     uint16_t  uIdx;                                              /**< idx         Index of next ring slot       */
     VIRTQ_USED_ELEM_T aRing[RT_FLEXIBLE_ARRAY];                  /**< ring        Ring: used dev to drv bufs    */
-    /** @todo r=bird: From the usage, this member shouldn't be here and will only
-     * confuse compilers . */
-    /* uint16_t  uAvailEventIdx;                                    - avail_event if (VIRTQ_USED_F_EVENT_IDX)   */
 } VIRTQ_USED_T, *PVIRTQ_USED_T;
 
 
@@ -272,6 +268,116 @@ DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirt
 
 #ifdef LOG_ENABLED
 
+void virtioCoreSgBufInit(PVIRTIOSGBUF pGcSgBuf, PCVIRTIOSGSEG paSegs, size_t cSegs)
+{
+    AssertPtr(pGcSgBuf);
+    Assert(   (cSegs > 0 && VALID_PTR(paSegs))
+           || (!cSegs && !paSegs));
+    Assert(cSegs < (~(unsigned)0 >> 1));
+
+    pGcSgBuf->paSegs = paSegs;
+    pGcSgBuf->cSegs  = (unsigned)cSegs;
+    pGcSgBuf->idxSeg = 0;
+    if (cSegs && paSegs)
+    {
+        pGcSgBuf->pGcSegCur = paSegs[0].pGcSeg;
+        pGcSgBuf->cbSegLeft = paSegs[0].cbSeg;
+    }
+    else
+    {
+        pGcSgBuf->pGcSegCur = 0;
+        pGcSgBuf->cbSegLeft = 0;
+    }
+}
+
+static RTGCPHYS virtioCoreSgBufGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
+{
+    size_t cbData;
+    RTGCPHYS pGcBuf;
+    /* Check that the S/G buffer has memory left. */
+    if (RT_LIKELY(pGcSgBuf->idxSeg < pGcSgBuf->cSegs && pGcSgBuf->cbSegLeft))
+    { /* likely */ }
+    else
+    {
+        *pcbData = 0;
+        return 0;
+    }
+
+    AssertMsg(    pGcSgBuf->cbSegLeft <= 128 * _1M
+            && (RTGCPHYS)pGcSgBuf->pGcSegCur >= (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg
+            && (RTGCPHYS)pGcSgBuf->pGcSegCur + pGcSgBuf->cbSegLeft <=
+                   (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg + pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg,
+              ("pGcSgBuf->idxSeg=%d pGcSgBuf->cSegs=%d pGcSgBuf->pGcSegCur=%p pGcSgBuf->cbSegLeft=%zd "
+               "pGcSgBuf->paSegs[%d].pGcSeg=%p pGcSgBuf->paSegs[%d].cbSeg=%zd\n",
+               pGcSgBuf->idxSeg, pGcSgBuf->cSegs, pGcSgBuf->pGcSegCur, pGcSgBuf->cbSegLeft,
+               pGcSgBuf->idxSeg, pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg, pGcSgBuf->idxSeg,
+               pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg));
+
+    cbData = RT_MIN(*pcbData, pGcSgBuf->cbSegLeft);
+    pGcBuf = pGcSgBuf->pGcSegCur;
+    pGcSgBuf->cbSegLeft -= cbData;
+    if (!pGcSgBuf->cbSegLeft)
+    {
+        pGcSgBuf->idxSeg++;
+
+        if (pGcSgBuf->idxSeg < pGcSgBuf->cSegs)
+        {
+            pGcSgBuf->pGcSegCur = pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg;
+            pGcSgBuf->cbSegLeft = pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg;
+        }
+        *pcbData = cbData;
+    }
+    else
+        pGcSgBuf->pGcSegCur = pGcSgBuf->pGcSegCur + cbData;
+
+    return pGcBuf;
+}
+
+void virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf)
+{
+    AssertPtrReturnVoid(pGcSgBuf);
+
+    pGcSgBuf->idxSeg = 0;
+    if (pGcSgBuf->cSegs)
+    {
+        pGcSgBuf->pGcSegCur  = pGcSgBuf->paSegs[0].pGcSeg;
+        pGcSgBuf->cbSegLeft = pGcSgBuf->paSegs[0].cbSeg;
+    }
+    else
+    {
+        pGcSgBuf->pGcSegCur  = 0;
+        pGcSgBuf->cbSegLeft = 0;
+    }
+}
+
+RTGCPHYS virtioCoreSgBufAdvance(PVIRTIOSGBUF pGcSgBuf, size_t cbAdvance)
+{
+    AssertReturn(pGcSgBuf, 0);
+
+    size_t cbLeft = cbAdvance;
+    while (cbLeft)
+    {
+        size_t cbThisAdvance = cbLeft;
+        virtioCoreSgBufGet(pGcSgBuf, &cbThisAdvance);
+        if (!cbThisAdvance)
+            break;
+
+        cbLeft -= cbThisAdvance;
+    }
+    return cbAdvance - cbLeft;
+}
+
+RTGCPHYS virtioCoreSgBufGetNextSegment(PVIRTIOSGBUF pGcSgBuf, size_t *pcbSeg)
+{
+    AssertReturn(pGcSgBuf, 0);
+    AssertPtrReturn(pcbSeg, 0);
+
+    if (!*pcbSeg)
+        *pcbSeg = pGcSgBuf->cbSegLeft;
+
+    return virtioCoreSgBufGet(pGcSgBuf, pcbSeg);
+}
+
 /**
  * Does a formatted hex dump using Log(()), recommend using VIRTIO_HEX_DUMP() macro to
  * control enabling of logging efficiently.
@@ -358,12 +464,12 @@ void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint
         RTUINT64U uValue;
         uValue.u = 0;
         memcpy(uValue.au8, pv, cb);
-        Log6Func(("%s: Guest %s %s %#0*RX64\n",
+        Log6(("%s: Guest %s %s %#0*RX64\n",
                   pszFunc, fWrite ? "wrote" : "read ", szDepiction, 2 + cb * 2, uValue.u));
     }
     else /* odd number or oversized access, ... log inline hex-dump style */
     {
-        Log6Func(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n",
+        Log6(("%s: Guest %s %s%s[%d:%d]: %.*Rhxs\n",
                   pszFunc, fWrite ? "wrote" : "read ", pszMember,
                   szIdx, uOffset, uOffset + cb, cb, pv));
     }
@@ -490,10 +596,10 @@ int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq  = &pVirtio->virtqState[idxQueue];
 
-    PRTSGSEG paSegsIn = (PRTSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(RTSGSEG));
+    PVIRTIOSGSEG paSegsIn = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
     AssertReturn(paSegsIn, VERR_NO_MEMORY);
 
-    PRTSGSEG paSegsOut = (PRTSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(RTSGSEG));
+    PVIRTIOSGSEG paSegsOut = (PVIRTIOSGSEG)RTMemAlloc(VIRTQ_MAX_SIZE * sizeof(VIRTIOSGSEG));
     AssertReturn(paSegsOut, VERR_NO_MEMORY);
 
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) && pVirtio->uQueueEnable[idxQueue],
@@ -516,7 +622,7 @@ int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
 
     do
     {
-        RTSGSEG *pSeg;
+        PVIRTIOSGSEG pSeg;
 
         /*
          * Malicious guests may go beyond paSegsIn or paSegsOut boundaries by linking
@@ -554,28 +660,28 @@ int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
             pSeg = &(paSegsOut[cSegsOut++]);
         }
 
-        pSeg->pvSeg = (void *)desc.GCPhysBuf;
+        pSeg->pGcSeg = desc.GCPhysBuf;
         pSeg->cbSeg = desc.cb;
 
         uDescIdx = desc.uDescIdxNext;
     } while (desc.fFlags & VIRTQ_DESC_F_NEXT);
 
-    PRTSGBUF pSgPhysIn = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
+    PVIRTIOSGBUF pSgPhysIn = (PVIRTIOSGBUF)RTMemAllocZ(sizeof(VIRTIOSGBUF));
     AssertReturn(pSgPhysIn, VERR_NO_MEMORY);
 
-    RTSgBufInit(pSgPhysIn, (PCRTSGSEG)paSegsIn, cSegsIn);
+    virtioCoreSgBufInit(pSgPhysIn, (PCVIRTIOSGSEG)paSegsIn, cSegsIn);
 
-    PRTSGBUF pSgPhysOut = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
+    PVIRTIOSGBUF pSgPhysOut = (PVIRTIOSGBUF)RTMemAllocZ(sizeof(VIRTIOSGBUF));
     AssertReturn(pSgPhysOut, VERR_NO_MEMORY);
 
-    RTSgBufInit(pSgPhysOut, (PCRTSGSEG)paSegsOut, cSegsOut);
+    virtioCoreSgBufInit(pSgPhysOut, (PCVIRTIOSGSEG)paSegsOut, cSegsOut);
 
     PVIRTIO_DESC_CHAIN_T pDescChain = (PVIRTIO_DESC_CHAIN_T)RTMemAllocZ(sizeof(VIRTIO_DESC_CHAIN_T));
     AssertReturn(pDescChain, VERR_NO_MEMORY);
 
-    pDescChain->uHeadIdx   = uHeadIdx;
-    pDescChain->cbPhysSend  = cbOut;
-    pDescChain->pSgPhysSend = pSgPhysOut;
+    pDescChain->uHeadIdx      = uHeadIdx;
+    pDescChain->cbPhysSend    = cbOut;
+    pDescChain->pSgPhysSend   = pSgPhysOut;
     pDescChain->cbPhysReturn  = cbIn;
     pDescChain->pSgPhysReturn = pSgPhysIn;
     *ppDescChain = pDescChain;
@@ -621,7 +727,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
 {
     Assert(idxQueue < RT_ELEMENTS(pVirtio->virtqState));
     PVIRTQSTATE pVirtq = &pVirtio->virtqState[idxQueue];
-    PRTSGBUF pSgPhysReturn = pDescChain->pSgPhysReturn;
+    PVIRTIOSGBUF pSgPhysReturn = pDescChain->pSgPhysReturn;
 
     AssertMsgReturn(IS_DRIVER_OK(pVirtio) /*&& pVirtio->uQueueEnable[idxQueue]*/,
                     ("Guest driver not in ready state.\n"), VERR_INVALID_STATE);
@@ -637,17 +743,17 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
 
     size_t cbCopy = 0;
     size_t cbRemain = RTSgBufCalcTotalLength(pSgVirtReturn);
-    RTSgBufReset(pSgPhysReturn); /* Reset ptr because req data may have already been written */
+    virtioCoreSgBufReset(pSgPhysReturn); /* Reset ptr because req data may have already been written */
     while (cbRemain)
     {
-        PCRTSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
-        uint64_t dstSgStart = (uint64_t)paSeg->pvSeg;
+        PCVIRTIOSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
+        uint64_t dstSgStart = (uint64_t)paSeg->pGcSeg;
         uint64_t dstSgLen   = (uint64_t)paSeg->cbSeg;
-        uint64_t dstSgCur   = (uint64_t)pSgPhysReturn->pvSegCur;
+        uint64_t dstSgCur   = (uint64_t)pSgPhysReturn->pGcSegCur;
         cbCopy = RT_MIN((uint64_t)pSgVirtReturn->cbSegLeft, dstSgLen - (dstSgCur - dstSgStart));
-        PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)pSgPhysReturn->pvSegCur, pSgVirtReturn->pvSegCur, cbCopy);
+        PDMDevHlpPhysWrite(pDevIns, (RTGCPHYS)pSgPhysReturn->pGcSegCur, pSgVirtReturn->pvSegCur, cbCopy);
         RTSgBufAdvance(pSgVirtReturn, cbCopy);
-        RTSgBufAdvance(pSgPhysReturn, cbCopy);
+        virtioCoreSgBufAdvance(pSgPhysReturn, cbCopy);
         cbRemain -= cbCopy;
     }
 
@@ -687,7 +793,7 @@ int virtioCoreR3QueuePut(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
  * Updates the indicated virtq's "used ring" descriptor index to match the
  * current write-head index, thus exposing the data added to the used ring by all
  * virtioCoreR3QueuePut() calls since the last sync. This should be called after one or
- * more virtQueuePut() calls to inform the guest driver there is data in the queue.
+ * more virtioCoreR3QueuePut() calls to inform the guest driver there is data in the queue.
  * Explicit notifications (e.g. interrupt or MSI-X) will be sent to the guest,
  * depending on VirtIO features negotiated and conditions, otherwise the guest
  * will detect the update by polling. (see VirtIO 1.0
@@ -883,7 +989,9 @@ void virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled
 }
 #endif
 
-#if 0 /** @todo r=bird: This isn't invoked by anyone. Why? */
+#if 0 /** @todo r=bird: This isn't invoked by anyone. Why?
+          For this and the previous I was just trying to provide flexibility
+          for other devices that might use this code r=paul */
 /**
  * Initiate orderly reset procedure.
  * Invoked by client to reset the device and driver (see VirtIO 1.0 section 2.1.1/2.1.2)
@@ -1699,9 +1807,9 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     pCfg->uCapNext = CFG_ADDR_2_IDX(pCfg) + pCfg->uCapLen;
     pCfg->uBar     = VIRTIO_REGION_PCI_CAP;
     pCfg->uOffset  = pVirtioCC->pCommonCfgCap->uOffset + pVirtioCC->pCommonCfgCap->uLength;
-    pCfg->uOffset  = RT_ALIGN_32(pCfg->uOffset, 2); /** @todo r=bird: Why is this word aligned rather than dword?  If there is a
-                                                     * theoretical chance we won't allways be on a dword boundrary here, the
-                                                     * read/write really will need to handle cross capability reads. */
+    pCfg->uOffset  = RT_ALIGN_32(pCfg->uOffset, 4);
+
+
     pCfg->uLength  = VIRTQ_MAX_CNT * VIRTIO_NOTIFY_OFFSET_MULTIPLIER + 2;  /* will change in VirtIO 1.1 */
     cbRegion += pCfg->uLength;
     SET_PCI_CAP_LOC(pPciDev, pCfg, pVirtio->LocNotifyCap, 1);
@@ -1720,7 +1828,8 @@ int virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVir
     pCfg->uCapLen  = sizeof(VIRTIO_PCI_CAP_T);
     pCfg->uCapNext = CFG_ADDR_2_IDX(pCfg) + pCfg->uCapLen;
     pCfg->uBar     = VIRTIO_REGION_PCI_CAP;
-    pCfg->uOffset  = pVirtioCC->pNotifyCap->pciCap.uOffset + pVirtioCC->pNotifyCap->pciCap.uLength; /** @todo r=bird: This probably is _not_ dword aligned, given that the previous structure is 0x32 (50) bytes long. */
+    pCfg->uOffset  = pVirtioCC->pNotifyCap->pciCap.uOffset + pVirtioCC->pNotifyCap->pciCap.uLength;
+    pCfg->uOffset  = RT_ALIGN_32(pCfg->uOffset, 4);
     pCfg->uLength  = sizeof(uint8_t);
     cbRegion += pCfg->uLength;
     SET_PCI_CAP_LOC(pPciDev, pCfg, pVirtio->LocIsrCap, 4);

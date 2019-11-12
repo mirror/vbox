@@ -59,35 +59,38 @@ typedef CTX_SUFF(PVIRTIOCORE) PVIRTIOCORECC;
 # define VIRTIO_HEX_DUMP(logLevel, pv, cb, base, title) do { } while (0)
 #endif
 
+typedef struct VIRTIOSGSEG                                      /**< An S/G entry                              */
+{
+    RTGCPHYS pGcSeg;                                            /**< Pointer to the segment buffer             */
+    size_t  cbSeg;                                              /**< Size of the segment buffer                */
+} VIRTIOSGSEG;
 
-/**
- * The following structure holds the pre-processed context of descriptor chain pulled from a virtio queue
- * to conduct a transaction between the client of this virtio implementation and the guest VM's virtio driver.
- * It contains the head index of the descriptor chain, the output data from the client that has been
- * converted to a contiguous virtual memory and a physical memory scatter-gather buffer for use by by
- * the virtio framework to complete the transaction in the final phase of round-trip processing.
- *
- * The client should not modify the contents of this buffer. The primary field of interest to the
- * client is pVirtSrc, which contains the VirtIO "OUT" (to device) buffer from the guest.
- *
- * Typical use is, When the client (worker thread) detects available data on the queue, it pulls the
- * next one of these descriptor chain structs off the queue using virtioCoreR3QueueGet(), processes the
- * virtual memory buffer pVirtSrc, produces result data to pass back to the guest driver and calls
- * virtioCoreR3QueuePut() to return the result data to the client.
- */
+typedef VIRTIOSGSEG *PVIRTIOSGSEG;
+typedef const VIRTIOSGSEG *PCVIRTIOSGSEG;
+typedef PVIRTIOSGSEG *PPVIRTIOSGSEG;
+
+typedef struct VIRTIOSGBUF
+{
+    PCVIRTIOSGSEG paSegs;                                       /**< Pointer to the scatter/gather array       */
+    unsigned  cSegs;                                            /**< Number of segments                        */
+    unsigned  idxSeg;                                           /**< Current segment we are in                 */
+    RTGCPHYS  pGcSegCur;                                        /**< Ptr to byte within the current seg        */
+    size_t    cbSegLeft;                                        /**< # of bytes left in the current segment    */
+} VIRTIOSGBUF;
+
+typedef VIRTIOSGBUF *PVIRTIOSGBUF;
+typedef const VIRTIOSGBUF *PCVIRTIOSGBUF;
+typedef PVIRTIOSGBUF *PPVIRTIOSGBUF;
+
 typedef struct VIRTIO_DESC_CHAIN
 {
-    uint32_t  uHeadIdx;                                          /**< Head idx of associated desc chain        */
-    uint32_t  cbPhysSend;                                        /**< Total size of src buffer                 */
-    PRTSGBUF  pSgPhysSend;                                       /**< Phys S/G/ buf for data from guest        */
-    uint32_t  cbPhysReturn;                                      /**< Total size of dst buffer                 */
-    PRTSGBUF  pSgPhysReturn;                                     /**< Phys S/G buf to store result for guest   */
+    uint32_t     uHeadIdx;                                        /**< Head idx of associated desc chain        */
+    uint32_t     cbPhysSend;                                      /**< Total size of src buffer                 */
+    PVIRTIOSGBUF pSgPhysSend;                                     /**< Phys S/G/ buf for data from guest        */
+    uint32_t     cbPhysReturn;                                    /**< Total size of dst buffer                 */
+    PVIRTIOSGBUF pSgPhysReturn;                                   /**< Phys S/G buf to store result for guest   */
 } VIRTIO_DESC_CHAIN_T, *PVIRTIO_DESC_CHAIN_T, **PPVIRTIO_DESC_CHAIN_T;
 
-/**
- * The following structure is used to pass the PCI parameters from the consumer
- * to this generic VirtIO framework. This framework provides the Vendor ID as Virtio.
- */
 typedef struct VIRTIOPCIPARAMS
 {
     uint16_t  uDeviceId;                                         /**< PCI Cfg Device ID                        */
@@ -95,12 +98,9 @@ typedef struct VIRTIOPCIPARAMS
     uint16_t  uClassSub;                                         /**< PCI Cfg Subclass                         */
     uint16_t  uClassProg;                                        /**< PCI Cfg Programming Interface Class      */
     uint16_t  uSubsystemId;                                      /**< PCI Cfg Card Manufacturer Vendor ID      */
-    uint16_t  uSubsystemVendorId;                                /**< PCI Cfg Chipset Manufacturer Vendor ID   */
-    uint16_t  uRevisionId;                                       /**< PCI Cfg Revision ID                      */
     uint16_t  uInterruptLine;                                    /**< PCI Cfg Interrupt line                   */
     uint16_t  uInterruptPin;                                     /**< PCI Cfg Interrupt pin                    */
 } VIRTIOPCIPARAMS, *PVIRTIOPCIPARAMS;
-
 
 #define VIRTIO_F_VERSION_1                  RT_BIT_64(32)        /**< Required feature bit for 1.0 devices      */
 
@@ -387,6 +387,13 @@ bool virtioCoreQueueIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t id
 void virtioCoreQueueEnable(PVIRTIOCORE pVirtio, uint16_t idxQueue, bool fEnabled);
 
 /**
+ * Reset the device and driver (see VirtIO 1.0 section 2.1.1/2.1.2)
+ *
+ * @param   pVirtio     Pointer to the virtio state.
+ */
+void virtioCoreResetAll(PVIRTIOCORE pVirtio);
+
+/**
  * Return queue enable state
  *
  * @param   pVirtio     Pointer to the virtio state.
@@ -436,24 +443,34 @@ DECLINLINE(uint64_t) virtioCoreGetAcceptedFeatures(PVIRTIOCORE pVirtio)
     return pVirtio->uDriverFeatures;
 }
 
+DECLINLINE(size_t) virtioCoreSgBufCalcTotalLength(PCVIRTIOSGBUF pGcSgBuf)
+{
+    size_t   cb = 0;
+    unsigned i  = pGcSgBuf->cSegs;
+    while (i-- > 0)
+        cb += pGcSgBuf->paSegs[i].cbSeg;
+    return cb;
+}
 
 void virtioCoreLogMappedIoValue(const char *pszFunc, const char *pszMember, uint32_t uMemberSize,
                                 const void *pv, uint32_t cb, uint32_t uOffset,
                                 int fWrite, int fHasIndex, uint32_t idx);
+
 void virtioCoreHexDump(uint8_t *pv, uint32_t cb, uint32_t uBase, const char *pszTitle);
 
-
-int  virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
-int  virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
-#if 0 /** @todo unused */
-void virtioCoreResetAll(PVIRTIOCORE pVirtio);
-#endif
-void virtioCoreR3PropagateResetNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
-void virtioCoreR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
-void virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
-int  virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
+RTGCPHYS virtioCoreSgBufGetNextSegment(PVIRTIOSGBUF pSgBuf, size_t *pcbSeg);
+RTGCPHYS virtioCoreSgBufAdvance(PVIRTIOSGBUF pSgBuf, size_t cbAdvance);
+void     virtioCoreSgBufInit(PVIRTIOSGBUF pSgBuf, PVIRTIOSGSEG paSegs, size_t cSegs);
+size_t   virtioCoreSgBufCalcTotalLength(PCVIRTIOSGBUF pGcSgBuf);
+void     virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf);
+int      virtioCoreR3SaveExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
+int      virtioCoreR3LoadExec(PVIRTIOCORE pVirtio, PCPDMDEVHLPR3 pHlp, PSSMHANDLE pSSM);
+void     virtioCoreR3PropagateResetNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
+void     virtioCoreR3PropagateResumeNotification(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio);
+void     virtioCoreR3Term(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
+int      virtioCoreR3Init(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC, PVIRTIOPCIPARAMS pPciParams,
                       const char *pcszInstance, uint64_t fDevSpecificFeatures, void *pvDevSpecificCfg, uint16_t cbDevSpecificCfg);
-int  virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
+int      virtioCoreRZInit(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, PVIRTIOCORECC pVirtioCC);
 /** @} */
 
 
