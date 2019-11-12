@@ -3860,6 +3860,7 @@ lsilogicR3IsaIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint
  *
  * @returns VBox status code.
  * @param   pThis       Pointer to the shared LsiLogic device state.
+ * @param   pThisCC     Pointer to the ring-3 LsiLogic device state.
  */
 static int lsilogicR3PrepareBiosScsiRequest(PLSILOGICSCSI pThis, PLSILOGICSCSICC pThisCC)
 {
