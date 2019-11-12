@@ -1252,7 +1252,7 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAd
     MbxIn.u.in.uTargetDeviceStatus = uDeviceStatus;
     MbxIn.u.in.uCompletionCode     = uMailboxCompletionCode;
 
-    int rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pBusLogic->CTX_SUFF(pDevIns), &pBusLogic->CritSectIntr, VINF_SUCCESS);
     AssertRC(rc);
 
     RTGCPHYS GCPhysAddrMailboxIncoming = pBusLogic->GCPhysAddrMailboxIncomingBase
@@ -1305,7 +1305,7 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAd
 
     buslogicSetInterrupt(pBusLogic, false, BL_INTR_IMBL);
 
-    PDMCritSectLeave(&pBusLogic->CritSectIntr);
+    PDMDevHlpCritSectLeave(pBusLogic->CTX_SUFF(pDevIns), &pBusLogic->CritSectIntr);
 }
 
 # ifdef LOG_ENABLED
@@ -2440,7 +2440,7 @@ static int buslogicRegisterWrite(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, unsign
                 break;
             }
 
-            rc = PDMCritSectEnter(&pBusLogic->CritSectIntr, VINF_IOM_R3_IOPORT_WRITE);
+            rc = PDMDevHlpCritSectEnter(pDevIns, &pBusLogic->CritSectIntr, VINF_IOM_R3_IOPORT_WRITE);
             if (rc != VINF_SUCCESS)
                 return rc;
 
@@ -2452,7 +2452,7 @@ static int buslogicRegisterWrite(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, unsign
             if (uVal & BL_CTRL_RINT)
                 buslogicClearInterrupt(pBusLogic);
 
-            PDMCritSectLeave(&pBusLogic->CritSectIntr);
+            PDMDevHlpCritSectLeave(pDevIns, &pBusLogic->CritSectIntr);
 
             break;
         }
@@ -4163,7 +4163,7 @@ static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PBUSLOGIC  pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
-    PDMR3CritSectDelete(&pThis->CritSectIntr);
+    PDMDevHlpCritSectDelete(pDevIns, &pThis->CritSectIntr);
 
     if (pThis->hEvtProcess != NIL_SUPSEMEVENT)
     {
