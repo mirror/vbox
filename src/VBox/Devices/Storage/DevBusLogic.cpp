@@ -344,9 +344,6 @@ typedef struct BUSLOGIC
     bool                            fGCEnabled;
     bool                            afPadding[2];
 
-    /** Base address of the memory mapping. */
-    RTGCPHYS                        MMIOBase;
-
     /** Status register - Readonly. */
     volatile uint8_t                regStatus;
     /** Interrupt register - Readonly. */
@@ -490,6 +487,8 @@ typedef struct BUSLOGIC
     IOMIOPORTHANDLE                 hIoPortsIsa;
     /** PCI Region \#0: I/O ports. */
     IOMIOPORTHANDLE                 hIoPortsPci;
+    /** PCI Region \#1: MMIO (32 bytes, but probably rounded up to 4KB). */
+    IOMMMIOHANDLE                   hMmio;
 } BUSLOGIC;
 /** Pointer to the shared BusLogic device emulation state. */
 typedef BUSLOGIC *PBUSLOGIC;
@@ -2621,42 +2620,26 @@ static int buslogicRegisterWrite(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, unsign
 }
 
 /**
- * Memory mapped I/O Handler for read operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to store the result.
- * @param   cb          Number of bytes read.
+ * @callback_method_impl{FNIOMMMIONEWREAD}
  */
-PDMBOTHCBDECL(int) buslogicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) buslogicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void *pv, unsigned cb)
 {
-    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
+    RT_NOREF(pDevIns, pvUser, off, pv, cb);
 
     /* the linux driver does not make use of the MMIO area. */
-    AssertMsgFailed(("MMIO Read\n"));
+    ASSERT_GUEST_MSG_FAILED(("MMIO Read: %RGp LB %u\n", off, cb));
     return VINF_SUCCESS;
 }
 
 /**
- * Memory mapped I/O Handler for write operations.
- *
- * @returns VBox status code.
- *
- * @param   pDevIns     The device instance.
- * @param   pvUser      User argument.
- * @param   GCPhysAddr  Physical address (in GC) where the read starts.
- * @param   pv          Where to fetch the result.
- * @param   cb          Number of bytes to write.
+ * @callback_method_impl{FNIOMMMIONEWWRITE}
  */
-PDMBOTHCBDECL(int) buslogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC) buslogicMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS off, void const *pv, unsigned cb)
 {
-    RT_NOREF_PV(pDevIns); RT_NOREF_PV(pvUser); RT_NOREF_PV(GCPhysAddr); RT_NOREF_PV(pv); RT_NOREF_PV(cb);
+    RT_NOREF(pDevIns, pvUser, off, pv, cb);
 
     /* the linux driver does not make use of the MMIO area. */
-    AssertMsgFailed(("MMIO Write\n"));
+    ASSERT_GUEST_MSG_FAILED(("MMIO Write: %RGp LB %u: %.*Rhxs\n", off, cb, cb, pv));
     return VINF_SUCCESS;
 }
 
@@ -2932,54 +2915,6 @@ static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, u
     return rc;
 }
 
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) buslogicR3MmioMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                           RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    PBUSLOGIC  pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    int        rc    = VINF_SUCCESS;
-    RT_NOREF(pPciDev, iRegion);
-
-    Log2(("%s: registering MMIO area at GCPhysAddr=%RGp cb=%RGp\n", __FUNCTION__, GCPhysAddress, cb));
-
-    Assert(cb >= 32);
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    if (enmType == PCI_ADDRESS_SPACE_MEM)
-    {
-        /* We use the assigned size here, because we currently only support page aligned MMIO ranges. */
-        rc = PDMDevHlpMMIORegister(pDevIns, GCPhysAddress, cb, NULL /*pvUser*/,
-                                   IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
-                                   buslogicMMIOWrite, buslogicMMIORead, "BusLogic MMIO");
-        if (RT_FAILURE(rc))
-            return rc;
-
-        if (pThis->fR0Enabled)
-        {
-            rc = PDMDevHlpMMIORegisterR0(pDevIns, GCPhysAddress, cb, NIL_RTR0PTR /*pvUser*/,
-                                         "buslogicMMIOWrite", "buslogicMMIORead");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        if (pThis->fGCEnabled)
-        {
-            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, NIL_RTRCPTR /*pvUser*/,
-                                         "buslogicMMIOWrite", "buslogicMMIORead");
-            if (RT_FAILURE(rc))
-                return rc;
-        }
-
-        pThis->MMIOBase = GCPhysAddress;
-    }
-    else
-        AssertMsgFailed(("Invalid enmType=%d\n", enmType));
-
-    return rc;
-}
 
 static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
 {
@@ -3789,7 +3724,8 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
                         pThis->uIsaIrq);
     else
         pHlp->pfnPrintf(pHlp, "PCI I/O=%04x ISA I/O=%RTiop MMIO=%RGp IRQ=%u ",
-                        PDMDevHlpIoPortGetMappingAddress(pDevIns, pThis->hIoPortsPci), pThis->IOISABase, pThis->MMIOBase,
+                        PDMDevHlpIoPortGetMappingAddress(pDevIns, pThis->hIoPortsPci), pThis->IOISABase,
+                        PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio),
                         PCIDevGetInterruptLine(pDevIns->apPciDevs[0]));
     pHlp->pfnPrintf(pHlp, "GC=%RTbool R0=%RTbool\n",
                     !!pThis->fGCEnabled, !!pThis->fR0Enabled);
@@ -4245,9 +4181,11 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                                           "BusLogic PCI", NULL /*paExtDescs*/, &pThis->hIoPortsPci);
         AssertRCReturn(rc, rc);
 
-        rc = PDMDevHlpPCIIORegionRegister(pDevIns, 1, 32, PCI_ADDRESS_SPACE_MEM, buslogicR3MmioMap);
-        if (RT_FAILURE(rc))
-            return rc;
+        rc = PDMDevHlpPCIIORegionCreateMmio(pDevIns, 1 /*iPciRegion*/, 32 /*cbRegion*/, PCI_ADDRESS_SPACE_MEM,
+                                            buslogicMMIOWrite, buslogicMMIORead, NULL /*pvUser*/,
+                                            IOMMMIO_FLAGS_READ_PASSTHRU | IOMMMIO_FLAGS_WRITE_PASSTHRU,
+                                            "BusLogic MMIO", &pThis->hMmio);
+        AssertRCReturn(rc, rc);
     }
 
     if (fBootable)
@@ -4404,6 +4342,9 @@ static DECLCALLBACK(int) buslogicRZConstruct(PPDMDEVINS pDevIns)
     PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsPci, buslogicIOPortWrite, buslogicIOPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpMmioSetUpContext(pDevIns, pThis->hMmio, buslogicMMIOWrite, buslogicMMIORead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
 
     return VINF_SUCCESS;
