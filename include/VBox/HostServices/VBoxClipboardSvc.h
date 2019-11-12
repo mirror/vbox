@@ -65,14 +65,15 @@
  * The saved state versions.
  * We're using it as a version field with the high bit set.
  */
-/** Latest Shared Clipboard SSM version. */
-#define VBOX_SHCL_SSM_VER_LATEST     2
 /** Adds the client's POD state and client state flags. */
 #define VBOX_SHCL_SSM_VER_2          UINT32_C(0x80000004)
 /** New saved state (since VBox 6.1 Beta 2). */
 #define VBOX_SHCL_SSM_VER_1          UINT32_C(0x80000003)
 /** Older saved states (VBox < 6.1). Includes legacy protocol state. */
 #define VBOX_SHCL_SSM_VER_0          UINT32_C(0x80000002)
+
+/** Latest Shared Clipboard SSM version. */
+#define VBOX_SHCL_SSM_VER_LATEST     VBOX_SHCL_SSM_VER_2
 
 /*
  * The Shared Clipboard modes of operation.
