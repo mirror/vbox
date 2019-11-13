@@ -49,6 +49,13 @@
 
 
 /*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
+/** The maximum device instance (total) size. */
+#define PDM_MAX_DEVICE_INSTANCE_SIZE    _4M
+
+
+/*********************************************************************************************************************************
 *   Global Variables                                                                                                             *
 *********************************************************************************************************************************/
 RT_C_DECLS_BEGIN
@@ -1638,6 +1645,10 @@ static int pdmR0DeviceCreateWorker(PGVM pGVM, PCPDMDEVREGR0 pDevReg, uint32_t iI
     uint32_t const cPciDevs    = RT_MIN(pDevReg->cMaxPciDevices, 8);
     uint32_t const cbPciDevs   = cbPciDev * cPciDevs;
     uint32_t const cbTotal     = RT_ALIGN_32(cbRing0 + cbRing3 + cbRC + cbShared + cbCritSect + cbPciDevs, PAGE_SIZE);
+    AssertLogRelMsgReturn(cbTotal <= PDM_MAX_DEVICE_INSTANCE_SIZE,
+                          ("Instance of '%s' is too big: cbTotal=%u, max %u\n",
+                           pDevReg->szName, cbTotal, PDM_MAX_DEVICE_INSTANCE_SIZE),
+                          VERR_OUT_OF_RANGE);
 
     RTR0MEMOBJ hMemObj;
     int rc = RTR0MemObjAllocPage(&hMemObj, cbTotal, false /*fExecutable*/);
@@ -1823,8 +1834,9 @@ VMMR0_INT_DECL(int) PDMR0DeviceCreateReqHandler(PGVM pGVM, PPDMDEVICECREATEREQ p
     size_t const cchModName = RTStrNLen(pReq->szModName, sizeof(pReq->szModName));
     AssertReturn(cchModName < sizeof(pReq->szModName), VERR_NO_STRING_TERMINATOR);
     AssertReturn(cchModName > 0, VERR_EMPTY_STRING);
-    AssertReturn(pReq->cbInstanceR3 <= _2M, VERR_OUT_OF_RANGE);
-    AssertReturn(pReq->cbInstanceRC <= _512K, VERR_OUT_OF_RANGE);
+    AssertReturn(pReq->cbInstanceShared <= PDM_MAX_DEVICE_INSTANCE_SIZE, VERR_OUT_OF_RANGE);
+    AssertReturn(pReq->cbInstanceR3 <= PDM_MAX_DEVICE_INSTANCE_SIZE, VERR_OUT_OF_RANGE);
+    AssertReturn(pReq->cbInstanceRC <= PDM_MAX_DEVICE_INSTANCE_SIZE, VERR_OUT_OF_RANGE);
     AssertReturn(pReq->iInstance < 1024, VERR_OUT_OF_RANGE);
     AssertReturn(pReq->iInstance < pReq->cMaxInstances, VERR_OUT_OF_RANGE);
     AssertReturn(pReq->cMaxPciDevices <= 8, VERR_OUT_OF_RANGE);
