@@ -17,31 +17,6 @@
 
 
 /*********************************************************************************************************************************
-*   Defined Constants And Macros                                                                                                 *
-*********************************************************************************************************************************/
-/** Temporary instrumentation for tracking down potential virtual disk
- * write performance issues. */
-#undef VBOX_INSTRUMENT_DMA_WRITES
-
-/** @name The SSM saved state versions.
- * @{
- */
-/** The current saved state version. */
-#define ATA_SAVED_STATE_VERSION                         20
-/** The saved state version used by VirtualBox 3.0.
- * This lacks the config part and has the type at the and.  */
-#define ATA_SAVED_STATE_VERSION_VBOX_30                 19
-#define ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE          18
-#define ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE      16
-#define ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS    17
-/** @} */
-
-/** Values read from an empty (with no devices attached) ATA bus. */
-#define ATA_EMPTY_BUS_DATA      0x7F
-#define ATA_EMPTY_BUS_DATA_32   0x7F7F7F7F
-
-
-/*********************************************************************************************************************************
 *   Header Files                                                                                                                 *
 *********************************************************************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_IDE
@@ -75,6 +50,27 @@
 /*********************************************************************************************************************************
 *   Defined Constants And Macros                                                                                                 *
 *********************************************************************************************************************************/
+/** Temporary instrumentation for tracking down potential virtual disk
+ * write performance issues. */
+#undef VBOX_INSTRUMENT_DMA_WRITES
+
+/** @name The SSM saved state versions.
+ * @{
+ */
+/** The current saved state version. */
+#define ATA_SAVED_STATE_VERSION                         20
+/** The saved state version used by VirtualBox 3.0.
+ * This lacks the config part and has the type at the and.  */
+#define ATA_SAVED_STATE_VERSION_VBOX_30                 19
+#define ATA_SAVED_STATE_VERSION_WITH_BOOL_TYPE          18
+#define ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE      16
+#define ATA_SAVED_STATE_VERSION_WITHOUT_EVENT_STATUS    17
+/** @} */
+
+/** Values read from an empty (with no devices attached) ATA bus. */
+#define ATA_EMPTY_BUS_DATA      0x7F
+#define ATA_EMPTY_BUS_DATA_32   0x7F7F7F7F
+
 /**
  * Maximum number of sectors to transfer in a READ/WRITE MULTIPLE request.
  * Set to 1 to disable multi-sector read support. According to the ATA
@@ -82,6 +78,11 @@
  * value. Thus the only valid values are 1, 2, 4, 8, 16, 32, 64 and 128.
  */
 #define ATA_MAX_MULT_SECTORS 128
+
+/** The maxium I/O buffer size (for sanity). */
+#define ATA_MAX_SECTOR_SIZE         _4K
+/** The maxium I/O buffer size (for sanity). */
+#define ATA_MAX_IO_BUFFER_SIZE      (ATA_MAX_MULT_SECTORS * ATA_MAX_SECTOR_SIZE)
 
 /**
  * Fastest PIO mode supported by the drive.
@@ -1709,13 +1710,14 @@ static int ataR3WriteSectors(ATADevState *s, uint64_t u64Sector,
 
 static void ataR3ReadWriteSectorsBT(ATADevState *s)
 {
+    uint32_t const cbSector = RT_MAX(s->cbSector, 1);
     uint32_t cSectors;
 
-    cSectors = s->cbTotalTransfer / s->cbSector;
+    cSectors = s->cbTotalTransfer / cbSector;
     if (cSectors > s->cSectorsPerIRQ)
-        s->cbElementaryTransfer = s->cSectorsPerIRQ * s->cbSector;
+        s->cbElementaryTransfer = s->cSectorsPerIRQ * cbSector;
     else
-        s->cbElementaryTransfer = cSectors * s->cbSector;
+        s->cbElementaryTransfer = cSectors * cbSector;
     if (s->uTxDir == PDMMEDIATXDIR_TO_DEVICE)
         ataR3CmdOK(s, 0);
 }
@@ -1723,12 +1725,13 @@ static void ataR3ReadWriteSectorsBT(ATADevState *s)
 
 static bool ataR3ReadSectorsSS(ATADevState *s)
 {
-    int rc;
+    uint32_t const cbSector = RT_MAX(s->cbSector, 1);
     uint32_t cSectors;
     uint64_t iLBA;
     bool fRedo;
+    int rc;
 
-    cSectors = s->cbElementaryTransfer / s->cbSector;
+    cSectors = s->cbElementaryTransfer / cbSector;
     Assert(cSectors);
     iLBA = ataR3GetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
@@ -1761,12 +1764,13 @@ static bool ataR3ReadSectorsSS(ATADevState *s)
 
 static bool ataR3WriteSectorsSS(ATADevState *s)
 {
-    int rc;
-    uint32_t cSectors;
+    uint32_t const cbSector = RT_MAX(s->cbSector, 1);
     uint64_t iLBA;
+    uint32_t cSectors;
     bool fRedo;
+    int rc;
 
-    cSectors = s->cbElementaryTransfer / s->cbSector;
+    cSectors = s->cbElementaryTransfer / cbSector;
     Assert(cSectors);
     iLBA = ataR3GetSector(s);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iLBA));
@@ -1871,7 +1875,7 @@ static bool atapiR3ReadSS(ATADevState *s)
     uint64_t cbBlockRegion = 0;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
-    cbTransfer = RT_MIN(s->cbTotalTransfer, s->cbIOBuffer);
+    cbTransfer = RT_MIN(s->cbTotalTransfer, RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE));
     cSectors = cbTransfer / s->cbATAPISector;
     Assert(cSectors * s->cbATAPISector <= cbTransfer);
     Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, s->iATAPILBA));
@@ -1989,7 +1993,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
     uint32_t cbTransfer;
     PSTAMPROFILEADV pProf = NULL;
 
-    cbTransfer = RT_MIN(s->cbAtapiPassthroughTransfer, s->cbIOBuffer);
+    cbTransfer = RT_MIN(s->cbAtapiPassthroughTransfer, RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE));
 
     if (s->uTxDir == PDMMEDIATXDIR_TO_DEVICE)
         Log3(("ATAPI PT data write (%d): %.*Rhxs\n", cbTransfer, cbTransfer, s->CTX_SUFF(pbIOBuffer)));
@@ -2042,8 +2046,13 @@ static bool atapiR3PassthroughSS(ATADevState *s)
 # endif
 
     if (pProf) { STAM_PROFILE_ADV_START(pProf, b); }
+
+    Assert(s->cbATAPISector);
+    const uint32_t cbATAPISector = RT_MAX(s->cbATAPISector, 1);                     /* paranoia */
+    const uint32_t cbIOBuffer    = RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE);   /* ditto */
+
     if (   cbTransfer > SCSI_MAX_BUFFER_SIZE
-        || s->cbElementaryTransfer > s->cbIOBuffer)
+        || s->cbElementaryTransfer > cbIOBuffer)
     {
         /* Linux accepts commands with up to 100KB of data, but expects
          * us to handle commands with up to 128KB of data. The usual
@@ -2053,9 +2062,8 @@ static bool atapiR3PassthroughSS(ATADevState *s)
         uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
         uint32_t cSectorsMax; /**< Maximum amount of sectors to read without exceeding the I/O buffer. */
 
-        Assert(s->cbATAPISector);
-        cSectorsMax = cbTransfer / s->cbATAPISector;
-        Assert(cSectorsMax * s->cbATAPISector <= s->cbIOBuffer);
+        cSectorsMax = cbTransfer / cbATAPISector;
+        AssertStmt(cSectorsMax * s->cbATAPISector <= cbIOBuffer, cSectorsMax = cbIOBuffer / cbATAPISector);
 
         switch (s->aATAPICmd[0])
         {
@@ -2091,11 +2099,11 @@ static bool atapiR3PassthroughSS(ATADevState *s)
         cReqSectors = 0;
         for (uint32_t i = cSectorsMax; i > 0; i -= cReqSectors)
         {
-            if (i * s->cbATAPISector > SCSI_MAX_BUFFER_SIZE)
-                cReqSectors = SCSI_MAX_BUFFER_SIZE / s->cbATAPISector;
+            if (i * cbATAPISector > SCSI_MAX_BUFFER_SIZE)
+                cReqSectors = SCSI_MAX_BUFFER_SIZE / cbATAPISector;
             else
                 cReqSectors = i;
-            cbCurrTX = s->cbATAPISector * cReqSectors;
+            cbCurrTX = cbATAPISector * cReqSectors;
             switch (s->aATAPICmd[0])
             {
                 case SCSI_READ_10:
@@ -2123,7 +2131,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
             if (rc != VINF_SUCCESS)
                 break;
             iATAPILBA += cReqSectors;
-            pbBuf += s->cbATAPISector * cReqSectors;
+            pbBuf += cbATAPISector * cReqSectors;
         }
 
         if (RT_SUCCESS(rc))
@@ -2215,7 +2223,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
              * Reply with the same amount of data as the real drive
              * but only if the command wasn't split.
              */
-            if (s->cbAtapiPassthroughTransfer < s->cbIOBuffer)
+            if (s->cbAtapiPassthroughTransfer < cbIOBuffer)
                 s->cbTotalTransfer = cbTransfer;
 
             if (   s->aATAPICmd[0] == SCSI_INQUIRY
@@ -2735,8 +2743,9 @@ static const ATAPIR3FEATDESC s_aAtapiR3Features[] =
 
 static bool atapiR3GetConfigurationSS(ATADevState *s)
 {
+    uint32_t const cbIOBuffer = RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE);
     uint8_t *pbBuf = s->CTX_SUFF(pbIOBuffer);
-    uint32_t cbBuf = s->cbIOBuffer;
+    uint32_t cbBuf = cbIOBuffer;
     uint32_t cbCopied = 0;
     uint16_t u16Sfn = scsiBE2H_U16(&s->aATAPICmd[2]);
     uint8_t u8Rt = s->aATAPICmd[1] & 0x03;
@@ -2786,7 +2795,7 @@ static bool atapiR3GetConfigurationSS(ATADevState *s)
     }
 
     /* Set data length now - the field is not included in the final length. */
-    scsiH2BE_U32(s->CTX_SUFF(pbIOBuffer), s->cbIOBuffer - cbBuf - 4);
+    scsiH2BE_U32(s->CTX_SUFF(pbIOBuffer), cbIOBuffer - cbBuf - 4);
 
     /* Other profiles we might want to add in the future: 0x40 (BD-ROM) and 0x50 (HDDVD-ROM) */
     s->iSourceSink = ATAFN_SS_NULL;
@@ -2955,7 +2964,7 @@ static bool atapiR3ModeSenseCDStatusSS(ATADevState *s)
     pbBuf[15] = 0; /* no subchannel reads supported, no separate audio volume control, no changer etc. */
     scsiH2BE_U16(&pbBuf[16], 5632); /* (obsolete) claim 32x speed support */
     scsiH2BE_U16(&pbBuf[18], 2); /* number of audio volume levels */
-    scsiH2BE_U16(&pbBuf[20], s->cbIOBuffer / _1K); /* buffer size supported in Kbyte */
+    scsiH2BE_U16(&pbBuf[20], RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE) / _1K); /* buffer size supported in Kbyte */
     scsiH2BE_U16(&pbBuf[22], 5632); /* (obsolete) current read speed 32x */
     pbBuf[24] = 0; /* reserved */
     pbBuf[25] = 0; /* reserved for digital audio (see idx 15) */
@@ -4887,15 +4896,16 @@ DECLINLINE(void) ataHCPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
  */
 DECL_NO_INLINE(static, void) ataCopyPioData124Slow(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc, uint32_t cbCopy)
 {
-    uint32_t const offStart = pIf->iIOBufferPIODataStart;
-    uint32_t const offNext  = offStart + cbCopy;
+    uint32_t const offStart   = pIf->iIOBufferPIODataStart;
+    uint32_t const offNext    = offStart + cbCopy;
+    uint32_t const cbIOBuffer = RT_MIN(pIf->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE);
 
-    if (offStart + cbCopy > pIf->cbIOBuffer)
+    if (offStart + cbCopy > cbIOBuffer)
     {
         Log(("%s: cbCopy=%#x offStart=%#x cbIOBuffer=%#x offNext=%#x (iIOBufferPIODataEnd=%#x)\n",
-             __FUNCTION__, cbCopy, offStart, pIf->cbIOBuffer, offNext, pIf->iIOBufferPIODataEnd));
-        if (offStart < pIf->cbIOBuffer)
-            cbCopy = pIf->cbIOBuffer - offStart;
+             __FUNCTION__, cbCopy, offStart, cbIOBuffer, offNext, pIf->iIOBufferPIODataEnd));
+        if (offStart < cbIOBuffer)
+            cbCopy = cbIOBuffer - offStart;
         else
             cbCopy = 0;
     }
@@ -4940,7 +4950,7 @@ DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8
     Assert(cbCopy == 1 || cbCopy == 2 || cbCopy == 4);
     uint32_t const offStart = pIf->iIOBufferPIODataStart;
     if (RT_LIKELY(   !(offStart & (cbCopy - 1))
-                  && offStart + cbCopy <= pIf->cbIOBuffer))
+                  && offStart + cbCopy <= RT_MIN(pIf->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE)))
     {
         switch (cbCopy)
         {
@@ -5150,7 +5160,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 if (cAvailable > cRequested)
                     cAvailable = cRequested;
                 uint32_t const cbTransfer = cAvailable * cb;
-                if (   offStart + cbTransfer <= s->cbIOBuffer
+                if (   offStart + cbTransfer <= RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE)
                     && cbTransfer > 0)
                 {
                     /*
@@ -5239,7 +5249,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
                 if (cAvailable > cRequested)
                     cAvailable = cRequested;
                 uint32_t const cbTransfer = cAvailable * cb;
-                if (   offStart + cbTransfer <= s->cbIOBuffer
+                if (   offStart + cbTransfer <= RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE)
                     && cbTransfer)
                 {
                     /*
@@ -6575,7 +6585,7 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         return VERR_INTERNAL_ERROR;
     }
     pIf->fATAPI = enmType == PDMMEDIATYPE_DVD || enmType == PDMMEDIATYPE_CDROM;
-    pIf->fATAPIPassthrough = pIf->fATAPI ? (pIf->pDrvMedia->pfnSendCmd != NULL) : false;
+    pIf->fATAPIPassthrough = pIf->fATAPI && pIf->pDrvMedia->pfnSendCmd != NULL;
 
     /*
      * Allocate I/O buffer.
@@ -6583,7 +6593,12 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     if (pIf->fATAPI)
         pIf->cbSector = 2048; /* Not required for ATAPI, one medium can have multiple sector sizes. */
     else
+    {
         pIf->cbSector = pIf->pDrvMedia->pfnGetSectorSize(pIf->pDrvMedia);
+        AssertLogRelMsgReturn(pIf->cbSector > 0 && pIf->cbSector <= ATA_MAX_SECTOR_SIZE,
+                              ("Unsupported sector size on LUN#%u: %#x (%d)\n", pIf->iLUN, pIf->cbSector, pIf->cbSector),
+                              VERR_OUT_OF_RANGE);
+    }
 
     PVM pVM = PDMDevHlpGetVM(pDevIns);
     if (pIf->cbIOBuffer)
@@ -6591,9 +6606,9 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
         /* Buffer is (probably) already allocated. Validate the fields,
          * because memory corruption can also overwrite pIf->cbIOBuffer. */
         if (pIf->fATAPI)
-            AssertRelease(pIf->cbIOBuffer == _128K);
+            AssertReleaseReturn(pIf->cbIOBuffer == _128K, VERR_BUFFER_OVERFLOW);
         else
-            AssertRelease(pIf->cbIOBuffer == ATA_MAX_MULT_SECTORS * pIf->cbSector);
+            AssertReleaseReturn(pIf->cbIOBuffer == ATA_MAX_MULT_SECTORS * pIf->cbSector, VERR_BUFFER_OVERFLOW);
         Assert(pIf->pbIOBufferR3);
         Assert(pIf->pbIOBufferR0 == MMHyperR3ToR0(pVM, pIf->pbIOBufferR3));
         Assert(pIf->pbIOBufferRC == MMHyperR3ToRC(pVM, pIf->pbIOBufferR3));
@@ -6604,6 +6619,9 @@ static int ataR3ConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
             pIf->cbIOBuffer = _128K;
         else
             pIf->cbIOBuffer = ATA_MAX_MULT_SECTORS * pIf->cbSector;
+        AssertLogRelMsgReturn(pIf->cbIOBuffer <= ATA_MAX_IO_BUFFER_SIZE,
+                              ("LUN#%u: cbIOBuffer=%#x (%u)\n", pIf->iLUN, pIf->cbIOBuffer, pIf->cbIOBuffer),
+                              VERR_BUFFER_OVERFLOW);
         Assert(!pIf->pbIOBufferR3);
         rc = MMR3HyperAllocOnceNoRel(pVM, pIf->cbIOBuffer, 0, MM_TAG_PDM_DEVICE_USER, (void **)&pIf->pbIOBufferR3);
         if (RT_FAILURE(rc))
@@ -7145,26 +7163,36 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             else
                 pThis->aCts[i].aIfs[j].MediaEventStatus = ATA_EVENT_STATUS_UNCHANGED;
             pHlp->pfnSSMGetMem(pSSM, &pThis->aCts[i].aIfs[j].Led, sizeof(pThis->aCts[i].aIfs[j].Led));
-            pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].cbIOBuffer);
-            if (pThis->aCts[i].aIfs[j].cbIOBuffer)
+
+            uint32_t cbIOBuffer = 0;
+            rc = pHlp->pfnSSMGetU32(pSSM, &cbIOBuffer);
+            AssertRCReturn(rc, rc);
+
+            if (cbIOBuffer)
             {
-                if (pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer))
-                    pHlp->pfnSSMGetMem(pSSM, pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer), pThis->aCts[i].aIfs[j].cbIOBuffer);
+                if (   pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer)
+                    && cbIOBuffer <= ATA_MAX_IO_BUFFER_SIZE
+                    && cbIOBuffer <= pThis->aCts[i].aIfs[j].cbIOBuffer)
+                {
+                    pThis->aCts[i].aIfs[j].cbIOBuffer = cbIOBuffer;
+                    pHlp->pfnSSMGetMem(pSSM, pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer), cbIOBuffer);
+                }
                 else
                 {
-                    LogRel(("ATA: No buffer for %d/%d\n", i, j));
+                    LogRel(("ATA: %u/%u: Restoring cbIOBuffer=%u, only prepared %u!\n", i, j, cbIOBuffer, pThis->aCts[i].aIfs[j].cbIOBuffer));
                     if (pHlp->pfnSSMHandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
-                        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS, N_("No buffer for %d/%d"), i, j);
+                        return pHlp->pfnSSMSetCfgError(pSSM, RT_SRC_POS,
+                                                       N_("ATA: %u/%u: Restoring cbIOBuffer=%u, only prepared %u"),
+                                                       i, j, cbIOBuffer, pThis->aCts[i].aIfs[j].cbIOBuffer);
 
                     /* skip the buffer if we're loading for the debugger / animator. */
-                    uint8_t u8Ignored;
-                    size_t cbLeft = pThis->aCts[i].aIfs[j].cbIOBuffer;
-                    while (cbLeft-- > 0)
-                        pHlp->pfnSSMGetU8(pSSM, &u8Ignored);
+                    pHlp->pfnSSMSkip(pSSM, cbIOBuffer);
                 }
             }
             else
-                Assert(pThis->aCts[i].aIfs[j].CTX_SUFF(pbIOBuffer) == NULL);
+                AssertLogRelMsgStmt(pThis->aCts[i].aIfs[j].cbIOBuffer == 0,
+                                    ("ATA: %u/%u: cbIOBuffer=%u restoring zero!\n", i, j, pThis->aCts[i].aIfs[j].cbIOBuffer),
+                                    pThis->aCts[i].aIfs[j].cbIOBuffer = 0);
         }
     }
     if (uVersion <= ATA_SAVED_STATE_VERSION_VBOX_30)
