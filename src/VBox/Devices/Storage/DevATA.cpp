@@ -525,8 +525,6 @@ typedef struct ATACONTROLLER
     RTTHREAD            AsyncIOThread;
     /** The event semaphore the thread is waiting on for requests. */
     SUPSEMEVENT         hAsyncIOSem;
-    /** The support driver session handle. */
-    PSUPDRVSESSION      pSupDrvSession;
     /** The request queue for the AIO thread. One element is always unused. */
     ATARequest          aAsyncIORequests[4];
     /** The position at which to insert a new request for the AIO thread. */
@@ -846,7 +844,7 @@ static void ataHCAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     rc = PDMHCCritSectScheduleExitEvent(&pCtl->lock, pCtl->hAsyncIOSem);
     if (RT_FAILURE(rc))
     {
-        rc = SUPSemEventSignal(pCtl->pSupDrvSession, pCtl->hAsyncIOSem);
+        rc = PDMDevHlpSUPSemEventSignal(pCtl->CTX_SUFF(pDevIns), pCtl->hAsyncIOSem);
         AssertRC(rc);
     }
 }
@@ -5500,10 +5498,11 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 {
     RT_NOREF1(hThreadSelf);
     const ATARequest *pReq;
-    uint64_t        u64TS = 0; /* shut up gcc */
+    uint64_t        u64TS   = 0; /* shut up gcc */
     uint64_t        uWait;
-    int             rc   = VINF_SUCCESS;
-    PATACONTROLLER  pCtl = (PATACONTROLLER)pvUser;
+    PATACONTROLLER  pCtl    = (PATACONTROLLER)pvUser;
+    PPDMDEVINSR3    pDevIns = pCtl->CTX_SUFF(pDevIns);
+    int             rc      = VINF_SUCCESS;
     ATADevState     *s;
 
     pReq = NULL;
@@ -5532,7 +5531,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
         {
             if (pCtl->fSignalIdle)
                 ataR3AsyncSignalIdle(pCtl);
-            rc = SUPSemEventWaitNoResume(pCtl->pSupDrvSession, pCtl->hAsyncIOSem, RT_INDEFINITE_WAIT);
+            rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pCtl->hAsyncIOSem, RT_INDEFINITE_WAIT);
             /* Continue if we got a signal by RTThreadPoke().
              * We will get notified if there is a request to process.
              */
@@ -5980,7 +5979,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
     /* Signal the ultimate idleness. */
     RTThreadUserSignal(pCtl->AsyncIOThread);
     if (pCtl->fSignalIdle)
-        PDMDevHlpAsyncNotificationCompleted(pCtl->pDevInsR3);
+        PDMDevHlpAsyncNotificationCompleted(pDevIns);
 
     /* Cleanup the state.  */
     /* Do not destroy request lock yet, still needed for proper shutdown. */
@@ -7402,7 +7401,7 @@ static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
         if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
         {
             ASMAtomicWriteU32(&pThis->aCts[i].fShutdown, true);
-            rc = SUPSemEventSignal(pThis->aCts[i].pSupDrvSession, pThis->aCts[i].hAsyncIOSem);
+            rc = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->aCts[i].hAsyncIOSem);
             AssertRC(rc);
             rc = RTSemEventSignal(pThis->aCts[i].SuspendIOSem);
             AssertRC(rc);
@@ -7435,7 +7434,7 @@ static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
             PDMR3CritSectDelete(&pThis->aCts[i].AsyncIORequestLock);
         if (pThis->aCts[i].hAsyncIOSem != NIL_SUPSEMEVENT)
         {
-            SUPSemEventClose(pThis->aCts[i].pSupDrvSession, pThis->aCts[i].hAsyncIOSem);
+            PDMDevHlpSUPSemEventClose(pDevIns, pThis->aCts[i].hAsyncIOSem);
             pThis->aCts[i].hAsyncIOSem = NIL_SUPSEMEVENT;
         }
         if (pThis->aCts[i].SuspendIOSem != NIL_RTSEMEVENT)
@@ -7753,8 +7752,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
          * Start the worker thread.
          */
         pCtl->uAsyncIOState = ATA_AIO_NEW;
-        pCtl->pSupDrvSession = PDMDevHlpGetSupDrvSession(pDevIns);
-        rc = SUPSemEventCreate(pCtl->pSupDrvSession, &pCtl->hAsyncIOSem);
+        rc = PDMDevHlpSUPSemEventCreate(pDevIns, &pCtl->hAsyncIOSem);
         AssertLogRelRCReturn(rc, rc);
         rc = RTSemEventCreate(&pCtl->SuspendIOSem);
         AssertLogRelRCReturn(rc, rc);
@@ -7981,14 +7979,14 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 
             if (pDevIns->fR0Enabled)
             {
-    #if 0
+#if 0
                 rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
                                                "ataIOPortWrite1Data", "ataIOPortRead1Data", NULL, NULL, "ATA I/O Base 1 - Data");
-    #else
+#else
                 rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
                                                "ataIOPortWrite1Data", "ataIOPortRead1Data",
                                                "ataIOPortWriteStr1Data", "ataIOPortReadStr1Data", "ATA I/O Base 1 - Data");
-    #endif
+#endif
                 AssertLogRelRCReturn(rc, rc);
                 rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTR0PTR)i,
                                                "ataIOPortWrite1Other", "ataIOPortRead1Other", NULL, NULL, "ATA I/O Base 1 - Other");
