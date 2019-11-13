@@ -166,9 +166,8 @@ void UISlidingToolBar::prepareContents()
                 QPalette pal2 = m_pWidget->palette();
                 pal2.setColor(QPalette::Window, palette().color(QPalette::Window));
                 m_pWidget->setPalette(pal2);
-                UIMenuBarEditorWidget *pEditorWidget = qobject_cast<UIMenuBarEditorWidget*>(m_pWidget);
-                if (pEditorWidget)
-                    connect(pEditorWidget, &UIMenuBarEditorWidget::sigCancelClicked, this, &UISlidingToolBar::close);
+                /* Using abstract (old-style) connection here(!) since the base classes can be different: */
+                connect(m_pWidget, SIGNAL(sigCancelClicked()), this, SLOT(close()));
                 /* Add child-widget into area: */
                 m_pWidget->setParent(m_pArea);
             }
