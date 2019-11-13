@@ -94,19 +94,17 @@
  */
 typedef struct BUSLOGICDEVICE
 {
-    /** Pointer to the owning buslogic device instance. - R3 pointer */
-    R3PTRTYPE(struct BUSLOGIC *)    pBusLogicR3;
-    /** Pointer to the owning buslogic device instance. - R0 pointer */
-    R0PTRTYPE(struct BUSLOGIC *)    pBusLogicR0;
-    /** Pointer to the owning buslogic device instance. - RC pointer */
-    RCPTRTYPE(struct BUSLOGIC *)    pBusLogicRC;
+    /** The ring-3 device instance (for getting our bearings when arriving in an
+     * interface method). */
+    PPDMDEVINSR3                    pDevIns;
 
     /** LUN of the device. */
     uint32_t                        iLUN;
 
-    /** Flag whether device is present. */
+    /** Flag whether device is present.
+     * @note This is mirrored in BUSLOGIC::afDevicePresent. */
     bool                            fPresent;
-    bool                            afAlignment[HC_ARCH_BITS == 64 ? 3 : 7];
+    bool                            afAlignment[3];
 
     /** Our base interface. */
     PDMIBASE                        IBase;
@@ -326,24 +324,9 @@ typedef struct BUSLOGICREQ *PBUSLOGICREQ;
 
 /**
  * The shared BusLogic device emulation state.
- *
- * @implements  PDMILEDPORTS
  */
 typedef struct BUSLOGIC
 {
-    /** Pointer to the device instance - HC ptr */
-    PPDMDEVINSR3                    pDevInsR3;
-    /** Pointer to the device instance - R0 ptr */
-    PPDMDEVINSR0                    pDevInsR0;
-    /** Pointer to the device instance - RC ptr. */
-    PPDMDEVINSRC                    pDevInsRC;
-
-    /** Whether R0 is enabled. */
-    bool                            fR0Enabled;
-    /** Whether RC is enabled. */
-    bool                            fGCEnabled;
-    bool                            afPadding[2];
-
     /** Status register - Readonly. */
     volatile uint8_t                regStatus;
     /** Interrupt register - Readonly. */
@@ -353,41 +336,27 @@ typedef struct BUSLOGIC
     /** Pending (delayed) interrupt. */
     uint8_t                         uPendingIntr;
 
-    /** Local RAM for the fetch hostadapter local RAM request.
-     *  I don't know how big the buffer really is but the maximum
-     *  seems to be 256 bytes because the offset and count field in the command request
-     *  are only one byte big.
-     */
-    HostAdapterLocalRam             LocalRam;
-
     /** Command code the guest issued. */
     uint8_t                         uOperationCode;
-    /** Buffer for the command parameters the adapter is currently receiving from the guest.
-     *  Size of the largest command which is possible.
-     */
-    uint8_t                         aCommandBuffer[BUSLOGIC_COMMAND_SIZE_MAX]; /* Size of the biggest request. */
     /** Current position in the command buffer. */
     uint8_t                         iParameter;
     /** Parameters left until the command is complete. */
     uint8_t                         cbCommandParametersLeft;
+    /** Buffer for the command parameters the adapter is currently receiving from the guest.
+     *  Size of the largest command which is possible.  */
+    uint8_t                         aCommandBuffer[BUSLOGIC_COMMAND_SIZE_MAX]; /* Size of the biggest request. */
 
-    /** Whether we are using the RAM or reply buffer. */
-    bool                            fUseLocalRam;
-    /** Buffer to store reply data from the controller to the guest. */
-    uint8_t                         aReplyBuffer[BUSLOGIC_REPLY_SIZE_MAX]; /* Size of the biggest reply. */
-    /** Position in the buffer we are reading next. */
+    /** Only for LOG_ENABLED builds! */
+    volatile uint32_t               cInMailboxesReadyIfLogEnabled;
+
+    /** Position in the buffer we are reading next.
+     * @note aligned on 64 byte boundrary for cache-line mojo.  Means IOISABase
+     *       is at offset 130. */
     uint8_t                         iReply;
     /** Bytes left until the reply buffer is empty. */
     uint8_t                         cbReplyParametersLeft;
-
-    /** Flag whether IRQs are enabled. */
-    bool                            fIRQEnabled;
-    /** Flag whether 24-bit mailboxes are in use (default is 32-bit). */
-    bool                            fMbxIs24Bit;
-    /** ISA I/O port base (encoded in FW-compatible format). */
-    uint8_t                         uISABaseCode;
-    /** ISA IRQ, non-zero if in ISA mode. */
-    uint8_t                         uIsaIrq;
+    /** Buffer to store reply data from the controller to the guest. */
+    uint8_t                         aReplyBuffer[BUSLOGIC_REPLY_SIZE_MAX]; /* Size of the biggest reply. */
 
     /** ISA I/O port base (disabled if zero). */
     RTIOPORT                        IOISABase;
@@ -398,17 +367,24 @@ typedef struct BUSLOGIC
 
     /** Signature index for Adaptec models. */
     uint8_t                         uAhaSigIdx;
-    uint8_t                         Alignment[7];
+
+    /** Whether we are using the RAM or reply buffer. */
+    bool                            fUseLocalRam;
+
+    /** Flag whether IRQs are enabled. */
+    bool                            fIRQEnabled;
+    /** Flag whether 24-bit mailboxes are in use (default is 32-bit). */
+    bool                            fMbxIs24Bit;
+    /** ISA I/O port base (encoded in FW-compatible format). */
+    uint8_t                         uISABaseCode;
+    /** ISA IRQ, non-zero if in ISA mode. */
+    uint8_t                         uIsaIrq;
 
     /** Number of mailboxes the guest set up. */
     uint32_t                        cMailbox;
 
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment0;
-#endif
-
-    /** Time when HBA reset was last initiated. */  /**< @todo does this need to be saved? */
-    uint64_t                        u64ResetTime;
+    /** Time when HBA reset was last initiated. */
+    uint64_t                        u64ResetTime;   /**< @todo does this need to be saved? */
     /** Physical base address of the outgoing mailboxes. */
     RTGCPHYS                        GCPhysAddrMailboxOutgoingBase;
     /** Current outgoing mailbox position. */
@@ -418,23 +394,56 @@ typedef struct BUSLOGIC
     /** Whether a notification to R3 was sent. */
     volatile bool                   fNotificationSent;
 
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment1;
-#endif
-
-    /** Physical base address of the incoming mailboxes. */
-    RTGCPHYS                        GCPhysAddrMailboxIncomingBase;
-    /** Current incoming mailbox position. */
-    uint32_t                        uMailboxIncomingPositionCurrent;
-
     /** Whether strict round robin is enabled. */
     bool                            fStrictRoundRobinMode;
     /** Whether the extended LUN CCB format is enabled for 32 possible logical units. */
     bool                            fExtendedLunCCBFormat;
-    bool                            afAlignment2[2];
+    bool                            fAlignment2;
+
+    /** Current incoming mailbox position. */
+    uint32_t                        uMailboxIncomingPositionCurrent;
+    /** Physical base address of the incoming mailboxes. */
+    RTGCPHYS                        GCPhysAddrMailboxIncomingBase;
 
     /** Critical section protecting access to the interrupt status register. */
     PDMCRITSECT                     CritSectIntr;
+
+    /** Device presence indicators.
+     * @note Copy of BUSLOGICDEVICE::fPresent accessible from ring-0. */
+    bool                            afDevicePresent[BUSLOGIC_MAX_DEVICES];
+
+    /** The event semaphore the processing thread waits on. */
+    SUPSEMEVENT                     hEvtProcess;
+
+    /** ISA compatibility I/O ports. */
+    IOMIOPORTHANDLE                 hIoPortsIsa;
+    /** BIOS I/O ports for booting, optional.   */
+    IOMIOPORTHANDLE                 hIoPortsBios;
+    /** PCI Region \#0: I/O ports. */
+    IOMIOPORTHANDLE                 hIoPortsPci;
+    /** PCI Region \#1: MMIO (32 bytes, but probably rounded up to 4KB). */
+    IOMMMIOHANDLE                   hMmio;
+
+    /** Local RAM for the fetch hostadapter local RAM request.
+     *  I don't know how big the buffer really is but the maximum
+     *  seems to be 256 bytes because the offset and count field in the command request
+     *  are only one byte big.
+     */
+    HostAdapterLocalRam             LocalRam;
+} BUSLOGIC;
+/** Pointer to the shared BusLogic device emulation state. */
+typedef BUSLOGIC *PBUSLOGIC;
+
+
+/**
+ * The ring-3 BusLogic device emulation state.
+ *
+ * @implements  PDMILEDPORTS
+ */
+typedef struct BUSLOGICR3
+{
+    /** The device instance - only for getting our bearings in interface methods. */
+    PPDMDEVINSR3                    pDevIns;
 
     /** Device state for BIOS access. */
     VBOXSCSI                        VBoxSCSI;
@@ -452,10 +461,6 @@ typedef struct BUSLOGIC
     /** Status LUN: Media Notifys. */
     R3PTRTYPE(PPDMIMEDIANOTIFY)     pMediaNotify;
 
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment3;
-#endif
-
     /** Indicates that PDMDevHlpAsyncNotificationCompleted should be called when
      * a port is entering the idle state. */
     bool volatile                   fSignalIdle;
@@ -467,33 +472,42 @@ typedef struct BUSLOGIC
 
     /** Worker thread. */
     R3PTRTYPE(PPDMTHREAD)           pThreadWrk;
-    /** The event semaphore the processing thread waits on. */
-    SUPSEMEVENT                     hEvtProcess;
 
     /** Pointer to the array of addresses to redo. */
     R3PTRTYPE(PRTGCPHYS)            paGCPhysAddrCCBRedo;
     /** Number of addresses the redo array holds. */
     uint32_t                        cReqsRedo;
+} BUSLOGICR3;
+/** Pointer to the ring-3 BusLogic device emulation state. */
+typedef BUSLOGICR3 *PBUSLOGICR3;
 
-#ifdef LOG_ENABLED
-    volatile uint32_t               cInMailboxesReady;
-#else
-# if HC_ARCH_BITS == 64
-    uint32_t                        Alignment4;
-# endif
-#endif
 
-    /** ISA compatibility I/O ports. */
-    IOMIOPORTHANDLE                 hIoPortsIsa;
-    /** BIOS I/O ports for booting, optional.   */
-    IOMIOPORTHANDLE                 hIoPortsBios;
-    /** PCI Region \#0: I/O ports. */
-    IOMIOPORTHANDLE                 hIoPortsPci;
-    /** PCI Region \#1: MMIO (32 bytes, but probably rounded up to 4KB). */
-    IOMMMIOHANDLE                   hMmio;
-} BUSLOGIC;
-/** Pointer to the shared BusLogic device emulation state. */
-typedef BUSLOGIC *PBUSLOGIC;
+/**
+ * The ring-0 BusLogic device emulation state.
+ */
+typedef struct BUSLOGICR0
+{
+    uint64_t                        uUnused;
+} BUSLOGICR0;
+/** Pointer to the ring-0 BusLogic device emulation state. */
+typedef BUSLOGICR0 *PBUSLOGICR0;
+
+
+/**
+ * The raw-mode BusLogic device emulation state.
+ */
+typedef struct BUSLOGICRC
+{
+    uint64_t                        uUnused;
+} BUSLOGICRC;
+/** Pointer to the raw-mode BusLogic device emulation state. */
+typedef BUSLOGICRC *PBUSLOGICRC;
+
+
+/** The current context BusLogic device emulation state. */
+typedef CTX_SUFF(BUSLOGIC) BUSLOGICCC;
+/** Pointer to the current context BusLogic device emulation state. */
+typedef CTX_SUFF(PBUSLOGIC) PBUSLOGICCC;
 
 
 /** Register offsets in the I/O port space. */
@@ -990,20 +1004,21 @@ typedef struct BUSLOGICREQ
  * Memory buffer callback.
  *
  * @returns nothing.
- * @param   pThis    The BusLogic controller instance.
- * @param   GCPhys   The guest physical address of the memory buffer.
- * @param   pSgBuf   The pointer to the host R3 S/G buffer.
- * @param   cbCopy   How many bytes to copy between the two buffers.
- * @param   pcbSkip  Initially contains the amount of bytes to skip
- *                   starting from the guest physical address before
- *                   accessing the S/G buffer and start copying data.
- *                   On return this contains the remaining amount if
- *                   cbCopy < *pcbSkip or 0 otherwise.
+ * @param   pDevIns The device instance.
+ * @param   pThis   The BusLogic controller instance.
+ * @param   GCPhys  The guest physical address of the memory buffer.
+ * @param   pSgBuf  The pointer to the host R3 S/G buffer.
+ * @param   cbCopy  How many bytes to copy between the two buffers.
+ * @param   pcbSkip Initially contains the amount of bytes to skip
+ *                  starting from the guest physical address before
+ *                  accessing the S/G buffer and start copying data.
+ *                  On return this contains the remaining amount if
+ *                  cbCopy < *pcbSkip or 0 otherwise.
  */
-typedef DECLCALLBACK(void) BUSLOGICR3MEMCOPYCALLBACK(PBUSLOGIC pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf, size_t cbCopy,
-                                                     size_t *pcbSkip);
+typedef DECLCALLBACK(void) FNBUSLOGICR3MEMCOPYCALLBACK(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys,
+                                                       PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip);
 /** Pointer to a memory copy buffer callback. */
-typedef BUSLOGICR3MEMCOPYCALLBACK *PBUSLOGICR3MEMCOPYCALLBACK;
+typedef FNBUSLOGICR3MEMCOPYCALLBACK *PFNBUSLOGICR3MEMCOPYCALLBACK;
 #endif
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -1021,11 +1036,12 @@ static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, u
  * Assert IRQ line of the BusLogic adapter.
  *
  * @returns nothing.
- * @param   pBusLogic       Pointer to the BusLogic device instance.
+ * @param   pDevIns         The device instance.
+ * @param   pBusLogic       Pointer to the shared BusLogic instance data.
  * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of fIRQEnabled
  * @param   uIrqType        Type of interrupt being generated.
  */
-static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t uIrqType)
+static void buslogicSetInterrupt(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t uIrqType)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
 
@@ -1050,9 +1066,9 @@ static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t
     if (pBusLogic->fIRQEnabled && !fSuppressIrq)
     {
         if (!pBusLogic->uIsaIrq)
-            PDMDevHlpPCISetIrq(pBusLogic->CTX_SUFF(pDevIns), 0, 1);
+            PDMDevHlpPCISetIrq(pDevIns, 0, 1);
         else
-            PDMDevHlpISASetIrq(pBusLogic->CTX_SUFF(pDevIns), pBusLogic->uIsaIrq, 1);
+            PDMDevHlpISASetIrq(pDevIns, pBusLogic->uIsaIrq, 1);
     }
 }
 
@@ -1060,22 +1076,23 @@ static void buslogicSetInterrupt(PBUSLOGIC pBusLogic, bool fSuppressIrq, uint8_t
  * Deasserts the interrupt line of the BusLogic adapter.
  *
  * @returns nothing.
- * @param   pBusLogic  Pointer to the BusLogic device instance.
+ * @param   pDevIns         The device instance.
+ * @param   pBusLogic       Pointer to the shared BusLogic instance data.
  */
-static void buslogicClearInterrupt(PBUSLOGIC pBusLogic)
+static void buslogicClearInterrupt(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
 {
     LogFlowFunc(("pBusLogic=%#p, clearing %#02x (pending %#02x)\n",
                  pBusLogic, pBusLogic->regInterrupt, pBusLogic->uPendingIntr));
     pBusLogic->regInterrupt = 0;
     pBusLogic->regStatus &= ~BL_STAT_CMDINV;
     if (!pBusLogic->uIsaIrq)
-        PDMDevHlpPCISetIrq(pBusLogic->CTX_SUFF(pDevIns), 0, 0);
+        PDMDevHlpPCISetIrq(pDevIns, 0, 0);
     else
-        PDMDevHlpISASetIrq(pBusLogic->CTX_SUFF(pDevIns), pBusLogic->uIsaIrq, 0);
+        PDMDevHlpISASetIrq(pDevIns, pBusLogic->uIsaIrq, 0);
     /* If there's another pending interrupt, report it now. */
     if (pBusLogic->uPendingIntr)
     {
-        buslogicSetInterrupt(pBusLogic, false, pBusLogic->uPendingIntr);
+        buslogicSetInterrupt(pDevIns, pBusLogic, false, pBusLogic->uPendingIntr);
         pBusLogic->uPendingIntr = 0;
     }
 }
@@ -1126,10 +1143,12 @@ static void buslogicR3InitializeLocalRam(PBUSLOGIC pBusLogic)
  * Do a hardware reset of the buslogic adapter.
  *
  * @returns VBox status code.
- * @param   pBusLogic Pointer to the BusLogic device instance.
- * @param   fResetIO  Flag determining whether ISA I/O should be reset.
+ * @param   pDevIns     The device instance.
+ * @param   pBusLogic   Pointer to the shared BusLogic instance data.
+ * @param   pThisCC     Pointer to the ring-3 BusLogic instance data.
+ * @param   fResetIO    Flag determining whether ISA I/O should be reset.
  */
-static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
+static int buslogicR3HwReset(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, PBUSLOGICCC pThisCC, bool fResetIO)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
 
@@ -1148,13 +1167,13 @@ static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
 
     /* Clear any active/pending interrupts. */
     pBusLogic->uPendingIntr = 0;
-    buslogicClearInterrupt(pBusLogic);
+    buslogicClearInterrupt(pDevIns, pBusLogic);
 
     /* Guest-initiated HBA reset does not affect ISA port I/O. */
     if (fResetIO)
-        buslogicR3RegisterISARange(pBusLogic->CTX_SUFF(pDevIns), pBusLogic, pBusLogic->uDefaultISABaseCode);
+        buslogicR3RegisterISARange(pDevIns, pBusLogic, pBusLogic->uDefaultISABaseCode);
     buslogicR3InitializeLocalRam(pBusLogic);
-    vboxscsiInitialize(&pBusLogic->VBoxSCSI);
+    vboxscsiInitialize(&pThisCC->VBoxSCSI);
 
     return VINF_SUCCESS;
 }
@@ -1165,10 +1184,11 @@ static int buslogicR3HwReset(PBUSLOGIC pBusLogic, bool fResetIO)
  * Resets the command state machine for the next command and notifies the guest.
  *
  * @returns nothing.
- * @param   pBusLogic       Pointer to the BusLogic device instance
+ * @param   pDevIns         The device instance.
+ * @param   pBusLogic       Pointer to the shared BusLogic instance data.
  * @param   fSuppressIrq    Flag to suppress IRQ generation regardless of current state
  */
-static void buslogicCommandComplete(PBUSLOGIC pBusLogic, bool fSuppressIrq)
+static void buslogicCommandComplete(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, bool fSuppressIrq)
 {
     LogFlowFunc(("pBusLogic=%#p\n", pBusLogic));
     Assert(pBusLogic->uOperationCode != BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND);
@@ -1182,7 +1202,7 @@ static void buslogicCommandComplete(PBUSLOGIC pBusLogic, bool fSuppressIrq)
     {
         /* Notify that the command is complete. */
         pBusLogic->regStatus &= ~BL_STAT_DIRRDY;
-        buslogicSetInterrupt(pBusLogic, fSuppressIrq, BL_INTR_CMDC);
+        buslogicSetInterrupt(pDevIns, pBusLogic, fSuppressIrq, BL_INTR_CMDC);
     }
 
     pBusLogic->uOperationCode = 0xff;
@@ -1193,17 +1213,18 @@ static void buslogicCommandComplete(PBUSLOGIC pBusLogic, bool fSuppressIrq)
  * Memory write helper to handle PCI/ISA differences.
  *
  * @returns nothing.
- * @param   pThis       Pointer to the BusLogic device instance
+ * @param   pDevIns     The device instance.
+ * @param   pThis       Pointer to the shared BusLogic instance data.
  * @param   GCPhys      Guest physical memory address
  * @param   pvBuf       Host side buffer address
  * @param   cbWrite     Number of bytes to write
  */
-static void blPhysWrite(PBUSLOGIC pThis, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+static void blPhysWrite(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     if (!pThis->uIsaIrq)
-        PDMDevHlpPCIPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhys, pvBuf, cbWrite);
+        PDMDevHlpPCIPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
     else
-        PDMDevHlpPhysWrite(pThis->CTX_SUFF(pDevIns), GCPhys, pvBuf, cbWrite);
+        PDMDevHlpPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
 #if defined(IN_RING3)
@@ -1212,14 +1233,16 @@ static void blPhysWrite(PBUSLOGIC pThis, RTGCPHYS GCPhys, const void *pvBuf, siz
  * Initiates a hard reset which was issued from the guest.
  *
  * @returns nothing
- * @param   pBusLogic   Pointer to the BusLogic device instance.
+ * @param   pDevIns     The device instance.
+ * @param   pBusLogic   Pointer to the shared BusLogic instance data.
+ * @param   pThisCC     Pointer to the ring-3 BusLogic instance data.
  * @param   fHardReset  Flag initiating a hard (vs. soft) reset.
  */
-static void buslogicR3InitiateReset(PBUSLOGIC pBusLogic, bool fHardReset)
+static void buslogicR3InitiateReset(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, PBUSLOGICCC pThisCC, bool fHardReset)
 {
     LogFlowFunc(("pBusLogic=%#p fHardReset=%d\n", pBusLogic, fHardReset));
 
-    buslogicR3HwReset(pBusLogic, false);
+    buslogicR3HwReset(pDevIns, pBusLogic, pThisCC, false);
 
     if (fHardReset)
     {
@@ -1228,7 +1251,7 @@ static void buslogicR3InitiateReset(PBUSLOGIC pBusLogic, bool fHardReset)
         pBusLogic->regStatus &= ~BL_STAT_HARDY;
 
         /* Remember when the guest initiated a reset (after we're done resetting). */
-        pBusLogic->u64ResetTime = PDMDevHlpTMTimeVirtGetNano(pBusLogic->CTX_SUFF(pDevIns));
+        pBusLogic->u64ResetTime = PDMDevHlpTMTimeVirtGetNano(pDevIns);
     }
 }
 
@@ -1237,14 +1260,15 @@ static void buslogicR3InitiateReset(PBUSLOGIC pBusLogic, bool fHardReset)
  * Send a mailbox with set status codes to the guest.
  *
  * @returns nothing.
- * @param   pBusLogic                 Pointer to the BusLogic device instance.
- * @param   GCPhysAddrCCB             The physical guest address of the CCB the mailbox is for.
- * @param   pCCBGuest                 The command control block.
- * @param   uHostAdapterStatus        The host adapter status code to set.
- * @param   uDeviceStatus             The target device status to set.
- * @param   uMailboxCompletionCode    Completion status code to set in the mailbox.
+ * @param   pDevIns                 The device instance.
+ * @param   pBusLogic               Pointer to the shared BusLogic instance data.
+ * @param   GCPhysAddrCCB           The physical guest address of the CCB the mailbox is for.
+ * @param   pCCBGuest               The command control block.
+ * @param   uHostAdapterStatus      The host adapter status code to set.
+ * @param   uDeviceStatus           The target device status to set.
+ * @param   uMailboxCompletionCode  Completion status code to set in the mailbox.
  */
-static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAddrCCB,
+static void buslogicR3SendIncomingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAddrCCB,
                                           PCCBU pCCBGuest, uint8_t uHostAdapterStatus,
                                           uint8_t uDeviceStatus, uint8_t uMailboxCompletionCode)
 {
@@ -1255,7 +1279,7 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAd
     MbxIn.u.in.uTargetDeviceStatus = uDeviceStatus;
     MbxIn.u.in.uCompletionCode     = uMailboxCompletionCode;
 
-    int rc = PDMDevHlpCritSectEnter(pBusLogic->CTX_SUFF(pDevIns), &pBusLogic->CritSectIntr, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pDevIns, &pBusLogic->CritSectIntr, VINF_SUCCESS);
     AssertRC(rc);
 
     RTGCPHYS GCPhysAddrMailboxIncoming = pBusLogic->GCPhysAddrMailboxIncomingBase
@@ -1271,13 +1295,13 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAd
         pCCBGuest->c.uHostAdapterStatus = uHostAdapterStatus;
         pCCBGuest->c.uDeviceStatus      = uDeviceStatus;
         /* Rewrite CCB up to the CDB; perhaps more than necessary. */
-        blPhysWrite(pBusLogic, GCPhysAddrCCB, pCCBGuest, RT_UOFFSETOF(CCBC, abCDB));
+        blPhysWrite(pDevIns, pBusLogic, GCPhysAddrCCB, pCCBGuest, RT_UOFFSETOF(CCBC, abCDB));
     }
 
 # ifdef RT_STRICT
     uint8_t     uCode;
     unsigned    uCodeOffs = pBusLogic->fMbxIs24Bit ? RT_OFFSETOF(Mailbox24, uCmdState) : RT_OFFSETOF(Mailbox32, u.out.uActionCode);
-    PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrMailboxIncoming + uCodeOffs, &uCode, sizeof(uCode));
+    PDMDevHlpPhysRead(pDevIns, GCPhysAddrMailboxIncoming + uCodeOffs, &uCode, sizeof(uCode));
     Assert(uCode == BUSLOGIC_MAILBOX_INCOMING_COMPLETION_FREE);
 # endif
 
@@ -1289,12 +1313,12 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAd
         Mbx24.uCmdState = MbxIn.u.in.uCompletionCode;
         U32_TO_ADDR(Mbx24.aPhysAddrCCB, MbxIn.u32PhysAddrCCB);
         Log(("24-bit mailbox: completion code=%u, CCB at %RGp\n", Mbx24.uCmdState, (RTGCPHYS)ADDR_TO_U32(Mbx24.aPhysAddrCCB)));
-        blPhysWrite(pBusLogic, GCPhysAddrMailboxIncoming, &Mbx24, sizeof(Mailbox24));
+        blPhysWrite(pDevIns, pBusLogic, GCPhysAddrMailboxIncoming, &Mbx24, sizeof(Mailbox24));
     }
     else
     {
         Log(("32-bit mailbox: completion code=%u, CCB at %RGp\n", MbxIn.u.in.uCompletionCode, GCPhysAddrCCB));
-        blPhysWrite(pBusLogic, GCPhysAddrMailboxIncoming, &MbxIn, sizeof(Mailbox32));
+        blPhysWrite(pDevIns, pBusLogic, GCPhysAddrMailboxIncoming, &MbxIn, sizeof(Mailbox32));
     }
 
     /* Advance to next mailbox position. */
@@ -1303,12 +1327,12 @@ static void buslogicR3SendIncomingMailbox(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAd
         pBusLogic->uMailboxIncomingPositionCurrent = 0;
 
 # ifdef LOG_ENABLED
-    ASMAtomicIncU32(&pBusLogic->cInMailboxesReady);
+    ASMAtomicIncU32(&pBusLogic->cInMailboxesReadyIfLogEnabled);
 # endif
 
-    buslogicSetInterrupt(pBusLogic, false, BL_INTR_IMBL);
+    buslogicSetInterrupt(pDevIns, pBusLogic, false, BL_INTR_IMBL);
 
-    PDMDevHlpCritSectLeave(pBusLogic->CTX_SUFF(pDevIns), &pBusLogic->CritSectIntr);
+    PDMDevHlpCritSectLeave(pDevIns, &pBusLogic->CritSectIntr);
 }
 
 # ifdef LOG_ENABLED
@@ -1496,11 +1520,13 @@ static int buslogicR3QueryDataBufferSize(PPDMDEVINS pDevIns, PCCBU pCCBGuest, bo
 /**
  * Copy from guest to host memory worker.
  *
- * @copydoc BUSLOGICR3MEMCOPYCALLBACK
+ * @copydoc FNBUSLOGICR3MEMCOPYCALLBACK
  */
-static DECLCALLBACK(void) buslogicR3CopyBufferFromGuestWorker(PBUSLOGIC pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
-                                                              size_t cbCopy, size_t *pcbSkip)
+static DECLCALLBACK(void) buslogicR3CopyBufferFromGuestWorker(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys,
+                                                              PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip)
 {
+    RT_NOREF(pThis);
+
     size_t cbSkipped = RT_MIN(cbCopy, *pcbSkip);
     cbCopy   -= cbSkipped;
     GCPhys   += cbSkipped;
@@ -1512,7 +1538,7 @@ static DECLCALLBACK(void) buslogicR3CopyBufferFromGuestWorker(PBUSLOGIC pThis, R
         void *pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
 
         AssertPtr(pvSeg);
-        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhys, pvSeg, cbSeg);
+        PDMDevHlpPhysRead(pDevIns, GCPhys, pvSeg, cbSeg);
         GCPhys += cbSeg;
         cbCopy -= cbSeg;
     }
@@ -1521,10 +1547,10 @@ static DECLCALLBACK(void) buslogicR3CopyBufferFromGuestWorker(PBUSLOGIC pThis, R
 /**
  * Copy from host to guest memory worker.
  *
- * @copydoc BUSLOGICR3MEMCOPYCALLBACK
+ * @copydoc FNBUSLOGICR3MEMCOPYCALLBACK
  */
-static DECLCALLBACK(void) buslogicR3CopyBufferToGuestWorker(PBUSLOGIC pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf,
-                                                            size_t cbCopy, size_t *pcbSkip)
+static DECLCALLBACK(void) buslogicR3CopyBufferToGuestWorker(PPDMDEVINS pDevIns, PBUSLOGIC pThis, RTGCPHYS GCPhys,
+                                                            PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip)
 {
     size_t cbSkipped = RT_MIN(cbCopy, *pcbSkip);
     cbCopy   -= cbSkipped;
@@ -1537,7 +1563,7 @@ static DECLCALLBACK(void) buslogicR3CopyBufferToGuestWorker(PBUSLOGIC pThis, RTG
         void *pvSeg = RTSgBufGetNextSegment(pSgBuf, &cbSeg);
 
         AssertPtr(pvSeg);
-        blPhysWrite(pThis, GCPhys, pvSeg, cbSeg);
+        blPhysWrite(pDevIns, pThis, GCPhys, pvSeg, cbSeg);
         GCPhys += cbSeg;
         cbCopy -= cbSeg;
     }
@@ -1547,18 +1573,18 @@ static DECLCALLBACK(void) buslogicR3CopyBufferToGuestWorker(PBUSLOGIC pThis, RTG
  * Walks the guest S/G buffer calling the given copy worker for every buffer.
  *
  * @returns The amout of bytes actually copied.
- * @param   pThis                  Pointer to the Buslogic device state.
- * @param   pReq                   Pointe to the request state.
- * @param   pfnCopyWorker          The copy method to apply for each guest buffer.
- * @param   pSgBuf                 The host S/G buffer.
- * @param   cbSkip                 How many bytes to skip in advance before starting to copy.
- * @param   cbCopy                 How many bytes to copy.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           Pointer to the Buslogic device state.
+ * @param   pReq            Pointe to the request state.
+ * @param   pfnCopyWorker   The copy method to apply for each guest buffer.
+ * @param   pSgBuf          The host S/G buffer.
+ * @param   cbSkip          How many bytes to skip in advance before starting to copy.
+ * @param   cbCopy          How many bytes to copy.
  */
-static size_t buslogicR3SgBufWalker(PBUSLOGIC pThis, PBUSLOGICREQ pReq,
-                                    PBUSLOGICR3MEMCOPYCALLBACK pfnCopyWorker,
+static size_t buslogicR3SgBufWalker(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICREQ pReq,
+                                    PFNBUSLOGICR3MEMCOPYCALLBACK pfnCopyWorker,
                                     PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
 {
-    PPDMDEVINS pDevIns = pThis->CTX_SUFF(pDevIns);
     uint32_t   cbDataCCB;
     uint32_t   u32PhysAddrCCB;
     size_t     cbCopied = 0;
@@ -1628,7 +1654,7 @@ static size_t buslogicR3SgBufWalker(PBUSLOGIC pThis, PBUSLOGICREQ pReq,
 
                     Log(("%s: GCPhysAddrDataBase=%RGp cbCopyThis=%zu\n", __FUNCTION__, GCPhysAddrDataBase, cbCopyThis));
 
-                    pfnCopyWorker(pThis, GCPhysAddrDataBase, pSgBuf, cbCopyThis, &cbSkip);
+                    pfnCopyWorker(pDevIns, pThis, GCPhysAddrDataBase, pSgBuf, cbCopyThis, &cbSkip);
                     cbCopied += cbCopyThis;
                     cbCopy   -= cbCopyThis;
                 }
@@ -1653,7 +1679,7 @@ static size_t buslogicR3SgBufWalker(PBUSLOGIC pThis, PBUSLOGICREQ pReq,
             Log(("GCPhysAddrDataBase=0x%RGp\n", GCPhysAddrDataBase));
 
             /* Copy the data into the guest memory. */
-            pfnCopyWorker(pThis, GCPhysAddrDataBase, pSgBuf, RT_MIN(cbDataCCB, cbCopy), &cbSkip);
+            pfnCopyWorker(pDevIns, pThis, GCPhysAddrDataBase, pSgBuf, RT_MIN(cbDataCCB, cbCopy), &cbSkip);
             cbCopied += RT_MIN(cbDataCCB, cbCopy);
         }
     }
@@ -1665,34 +1691,34 @@ static size_t buslogicR3SgBufWalker(PBUSLOGIC pThis, PBUSLOGICREQ pReq,
  * Copies a data buffer into the S/G buffer set up by the guest.
  *
  * @returns Amount of bytes copied to the guest.
- * @param   pThis          The BusLogic controller device instance.
- * @param   pReq           Request structure.
- * @param   pSgBuf         The S/G buffer to copy from.
- * @param   cbSkip         How many bytes to skip in advance before starting to copy.
- * @param   cbCopy         How many bytes to copy.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           Pointer to the shared BusLogic instance data.
+ * @param   pReq            Request structure.
+ * @param   pSgBuf          The S/G buffer to copy from.
+ * @param   cbSkip          How many bytes to skip in advance before starting to copy.
+ * @param   cbCopy          How many bytes to copy.
  */
-static size_t buslogicR3CopySgBufToGuest(PBUSLOGIC pThis, PBUSLOGICREQ pReq, PRTSGBUF pSgBuf,
-                                         size_t cbSkip, size_t cbCopy)
+static size_t buslogicR3CopySgBufToGuest(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICREQ pReq,
+                                         PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
 {
-    return buslogicR3SgBufWalker(pThis, pReq, buslogicR3CopyBufferToGuestWorker,
-                                 pSgBuf, cbSkip, cbCopy);
+    return buslogicR3SgBufWalker(pDevIns, pThis, pReq, buslogicR3CopyBufferToGuestWorker, pSgBuf, cbSkip, cbCopy);
 }
 
 /**
  * Copies the guest S/G buffer into a host data buffer.
  *
  * @returns Amount of bytes copied from the guest.
- * @param   pThis          The BusLogic controller device instance.
- * @param   pReq           Request structure.
- * @param   pSgBuf         The S/G buffer to copy into.
- * @param   cbSkip         How many bytes to skip in advance before starting to copy.
- * @param   cbCopy         How many bytes to copy.
+ * @param   pDevIns         The device instance.
+ * @param   pThis           Pointer to the shared BusLogic instance data.
+ * @param   pReq            Request structure.
+ * @param   pSgBuf          The S/G buffer to copy into.
+ * @param   cbSkip          How many bytes to skip in advance before starting to copy.
+ * @param   cbCopy          How many bytes to copy.
  */
-static size_t buslogicR3CopySgBufFromGuest(PBUSLOGIC pThis, PBUSLOGICREQ pReq, PRTSGBUF pSgBuf,
-                                           size_t cbSkip, size_t cbCopy)
+static size_t buslogicR3CopySgBufFromGuest(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICREQ pReq,
+                                           PRTSGBUF pSgBuf, size_t cbSkip, size_t cbCopy)
 {
-    return buslogicR3SgBufWalker(pThis, pReq, buslogicR3CopyBufferFromGuestWorker,
-                                 pSgBuf, cbSkip, cbCopy);
+    return buslogicR3SgBufWalker(pDevIns, pThis, pReq, buslogicR3CopyBufferFromGuestWorker, pSgBuf, cbSkip, cbCopy);
 }
 
 /** Convert sense buffer length taking into account shortcut values. */
@@ -1725,7 +1751,8 @@ static void buslogicR3SenseBufferFree(PBUSLOGICREQ pReq, bool fCopy)
     /* Copy the sense buffer into guest memory if requested. */
     if (fCopy && cbSenseBuffer)
     {
-        PBUSLOGIC   pThis = pReq->pTargetDevice->CTX_SUFF(pBusLogic);
+        PPDMDEVINS  pDevIns = pReq->pTargetDevice->pDevIns;
+        PBUSLOGIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
         RTGCPHYS    GCPhysAddrSenseBuffer;
 
         /* With 32-bit CCBs, the (optional) sense buffer physical address is provided separately.
@@ -1741,7 +1768,7 @@ static void buslogicR3SenseBufferFree(PBUSLOGICREQ pReq, bool fCopy)
             GCPhysAddrSenseBuffer = pReq->CCBGuest.n.u32PhysAddrSenseData;
 
         Log3(("%s: sense buffer: %.*Rhxs\n", __FUNCTION__, cbSenseBuffer, pReq->pbSenseBuffer));
-        blPhysWrite(pThis, GCPhysAddrSenseBuffer, pReq->pbSenseBuffer, cbSenseBuffer);
+        blPhysWrite(pDevIns, pThis, GCPhysAddrSenseBuffer, pReq->pbSenseBuffer, cbSenseBuffer);
     }
 
     RTMemFree(pReq->pbSenseBuffer);
@@ -1776,7 +1803,7 @@ static int buslogicR3SenseBufferAlloc(PBUSLOGICREQ pReq)
  *
  * @returns VBox status code.
  * @param   pDevIns     The PDM device instance.
- * @param   pBusLogic   Pointer to the BusLogic device instance.
+ * @param   pBusLogic   Pointer to the shared BusLogic instance data.
  */
 static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
 {
@@ -1818,7 +1845,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
              */
 #ifdef IN_RING3 /* We can do this from ring-0 now, but we'd like to see the LogRel, so we keep going back to ring-3 anyway. */
             Log(("ISA I/O for PCI (code %x)\n", pBusLogic->aCommandBuffer[0]));
-            buslogicR3RegisterISARange(pBusLogic->CTX_SUFF(pDevIns), pBusLogic, pBusLogic->aCommandBuffer[0]);
+            buslogicR3RegisterISARange(pDevIns, pBusLogic, pBusLogic->aCommandBuffer[0]);
             pBusLogic->cbReplyParametersLeft = 0;
             fSuppressIrq = true;
             break;
@@ -2141,7 +2168,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
             memset(pBusLogic->aReplyBuffer, 0, 8);
             for (int i = 0; i < 8; ++i)
             {
-                if (pBusLogic->aDeviceStates[i].fPresent)
+                if (pBusLogic->afDevicePresent[i])
                     pBusLogic->aReplyBuffer[i] = 1;
             }
             pBusLogic->aReplyBuffer[7] = 0;     /* HA hardcoded at ID 7. */
@@ -2152,7 +2179,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
             memset(pBusLogic->aReplyBuffer, 0, 8);
             for (int i = 0; i < 8; ++i)
             {
-                if (pBusLogic->aDeviceStates[i + 8].fPresent)
+                if (pBusLogic->afDevicePresent[i + 8])
                     pBusLogic->aReplyBuffer[i] = 1;
             }
             pBusLogic->cbReplyParametersLeft = 8;
@@ -2162,9 +2189,9 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
             /* Each bit which is set in the 16bit wide variable means a present device. */
             uint16_t u16TargetsPresentMask = 0;
 
-            for (uint8_t i = 0; i < RT_ELEMENTS(pBusLogic->aDeviceStates); i++)
+            for (uint8_t i = 0; i < RT_ELEMENTS(pBusLogic->afDevicePresent); i++)
             {
-                if (pBusLogic->aDeviceStates[i].fPresent)
+                if (pBusLogic->afDevicePresent[i])
                     u16TargetsPresentMask |= (1 << i);
             }
             pBusLogic->aReplyBuffer[0] = (uint8_t)u16TargetsPresentMask;
@@ -2260,7 +2287,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
             addr.lo  = pBusLogic->aCommandBuffer[2];
             GCPhysFifoBuf = (RTGCPHYS)ADDR_TO_U32(addr);
             Log(("Write busmaster FIFO at: %04X\n", ADDR_TO_U32(addr)));
-            PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysFifoBuf,
+            PDMDevHlpPhysRead(pDevIns, GCPhysFifoBuf,
                               &pBusLogic->LocalRam.u8View[64], 64);
             break;
         }
@@ -2275,7 +2302,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
             addr.lo  = pBusLogic->aCommandBuffer[2];
             GCPhysFifoBuf = (RTGCPHYS)ADDR_TO_U32(addr);
             Log(("Read busmaster FIFO at: %04X\n", ADDR_TO_U32(addr)));
-            blPhysWrite(pBusLogic, GCPhysFifoBuf, &pBusLogic->LocalRam.u8View[64], 64);
+            blPhysWrite(pDevIns, pBusLogic, GCPhysFifoBuf, &pBusLogic->LocalRam.u8View[64], 64);
             break;
         }
         default:
@@ -2309,7 +2336,7 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
     if (pBusLogic->cbReplyParametersLeft)
         pBusLogic->regStatus |= BL_STAT_DIRRDY;
     else if (!pBusLogic->cbCommandParametersLeft)
-        buslogicCommandComplete(pBusLogic, fSuppressIrq);
+        buslogicCommandComplete(pDevIns, pBusLogic, fSuppressIrq);
 
     return rc;
 }
@@ -2318,13 +2345,14 @@ static int buslogicProcessCommand(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic)
  * Read a register from the BusLogic adapter.
  *
  * @returns VBox status code.
- * @param   pBusLogic    Pointer to the BusLogic instance data.
- * @param   iRegister    The index of the register to read.
- * @param   pu32         Where to store the register content.
+ * @param   pDevIns     The device instance.
+ * @param   pBusLogic   Pointer to the shared BusLogic instance data.
+ * @param   iRegister   The index of the register to read.
+ * @param   pu32        Where to store the register content.
  */
-static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_t *pu32)
+static int buslogicRegisterRead(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, unsigned iRegister, uint32_t *pu32)
 {
-    static const char achAhaSig[] = "ADAP";
+    static const char s_szAhaSig[] = "ADAP";
     int rc = VINF_SUCCESS;
 
     switch (iRegister)
@@ -2342,7 +2370,7 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
              */
             if (pBusLogic->regStatus & BL_STAT_DACT)
             {
-                uint64_t    u64AccessTime = PDMDevHlpTMTimeVirtGetNano(pBusLogic->CTX_SUFF(pDevIns));
+                uint64_t    u64AccessTime = PDMDevHlpTMTimeVirtGetNano(pDevIns);
 
                 pBusLogic->regStatus &= ~BL_STAT_DACT;
                 pBusLogic->regStatus |= BL_STAT_HARDY;
@@ -2378,9 +2406,9 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
                      * NB: Some commands do not set the CMDC bit / raise completion interrupt.
                      */
                     if (pBusLogic->uOperationCode == BUSLOGICCOMMAND_FETCH_HOST_ADAPTER_LOCAL_RAM)
-                        buslogicCommandComplete(pBusLogic, true /* fSuppressIrq */);
+                        buslogicCommandComplete(pDevIns, pBusLogic, true /* fSuppressIrq */);
                     else
-                        buslogicCommandComplete(pBusLogic, false);
+                        buslogicCommandComplete(pDevIns, pBusLogic, false);
                 }
             }
             LogFlowFunc(("data=%02x, iReply=%d, cbReplyParametersLeft=%u\n", *pu32,
@@ -2396,8 +2424,9 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
         {
             if (pBusLogic->uDevType == DEV_AHA_1540B)
             {
-                *pu32 = achAhaSig[pBusLogic->uAhaSigIdx];
-                pBusLogic->uAhaSigIdx = (pBusLogic->uAhaSigIdx + 1) & 3;
+                uint8_t off = pBusLogic->uAhaSigIdx & 3;
+                *pu32 = s_szAhaSig[off];
+                pBusLogic->uAhaSigIdx = (off + 1) & 3;
             }
             else
                 *pu32 = pBusLogic->regGeometry;
@@ -2418,7 +2447,7 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
  *
  * @returns VBox status code.
  * @param   pDevIns     The PDM device instance.
- * @param   pBusLogic   Pointer to the BusLogic instance data.
+ * @param   pBusLogic   Pointer to the shared BusLogic instance data.
  * @param   iRegister   The index of the register to read.
  * @param   uVal        The value to write.
  */
@@ -2436,7 +2465,7 @@ static int buslogicRegisterWrite(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, unsign
                 bool    fHardReset = !!(uVal & BL_CTRL_RHARD);
 
                 LogRel(("BusLogic: %s reset\n", fHardReset ? "hard" : "soft"));
-                buslogicR3InitiateReset(pBusLogic, fHardReset);
+                buslogicR3InitiateReset(pDevIns, pBusLogic, PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC), fHardReset);
 #else
                 rc = VINF_IOM_R3_IOPORT_WRITE;
 #endif
@@ -2448,12 +2477,12 @@ static int buslogicRegisterWrite(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, unsign
                 return rc;
 
 #ifdef LOG_ENABLED
-            uint32_t cMailboxesReady = ASMAtomicXchgU32(&pBusLogic->cInMailboxesReady, 0);
+            uint32_t cMailboxesReady = ASMAtomicXchgU32(&pBusLogic->cInMailboxesReadyIfLogEnabled, 0);
             Log(("%u incoming mailboxes were ready when this interrupt was cleared\n", cMailboxesReady));
 #endif
 
             if (uVal & BL_CTRL_RINT)
-                buslogicClearInterrupt(pBusLogic);
+                buslogicClearInterrupt(pDevIns, pBusLogic);
 
             PDMDevHlpCritSectLeave(pDevIns, &pBusLogic->CritSectIntr);
 
@@ -2657,7 +2686,7 @@ buslogicIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t 
 
     ASSERT_GUEST(cb == 1);
 
-    return buslogicRegisterRead(pBusLogic, iRegister, pu32);
+    return buslogicRegisterRead(pDevIns, pBusLogic, iRegister, pu32);
 }
 
 /**
@@ -2682,7 +2711,7 @@ buslogicIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t
 
 #ifdef IN_RING3
 
-static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pThis)
+static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGICCC pThisCC)
 {
     uint32_t uTargetDevice;
     uint32_t uLun;
@@ -2690,13 +2719,13 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pThis)
     size_t cbCdb;
     size_t cbBuf;
 
-    int rc = vboxscsiSetupRequest(&pThis->VBoxSCSI, &uLun, &pbCdb, &cbCdb, &cbBuf, &uTargetDevice);
+    int rc = vboxscsiSetupRequest(&pThisCC->VBoxSCSI, &uLun, &pbCdb, &cbCdb, &cbBuf, &uTargetDevice);
     AssertMsgRCReturn(rc, ("Setting up SCSI request failed rc=%Rrc\n", rc), rc);
 
-    if (   uTargetDevice < RT_ELEMENTS(pThis->aDeviceStates)
-        && pThis->aDeviceStates[uTargetDevice].pDrvBase)
+    if (   uTargetDevice < RT_ELEMENTS(pThisCC->aDeviceStates)
+        && pThisCC->aDeviceStates[uTargetDevice].pDrvBase)
     {
-        PBUSLOGICDEVICE pTgtDev = &pThis->aDeviceStates[uTargetDevice];
+        PBUSLOGICDEVICE pTgtDev = &pThisCC->aDeviceStates[uTargetDevice];
         PDMMEDIAEXIOREQ hIoReq;
         PBUSLOGICREQ pReq;
 
@@ -2717,7 +2746,7 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pThis)
         {
             uint8_t u8ScsiSts = pReq->u8ScsiSts;
             pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
-            rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, u8ScsiSts);
+            rc = vboxscsiRequestFinished(&pThisCC->VBoxSCSI, u8ScsiSts);
         }
         else if (rc == VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
             rc = VINF_SUCCESS;
@@ -2735,9 +2764,9 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pThis)
     ScsiInquiryData.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_UNKNOWN;
     ScsiInquiryData.u3PeripheralQualifier = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_NOT_CONNECTED_NOT_SUPPORTED;
 
-    memcpy(pThis->VBoxSCSI.pbBuf, &ScsiInquiryData, 5);
+    memcpy(pThisCC->VBoxSCSI.pbBuf, &ScsiInquiryData, 5);
 
-    rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, SCSI_STATUS_OK);
+    rc = vboxscsiRequestFinished(&pThisCC->VBoxSCSI, SCSI_STATUS_OK);
     AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
 
     return rc;
@@ -2750,12 +2779,12 @@ static int buslogicR3PrepareBIOSSCSIRequest(PBUSLOGIC pThis)
 static DECLCALLBACK(VBOXSTRICTRC)
 buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
-    PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
     RT_NOREF(pvUser, cb);
 
     ASSERT_GUEST(cb == 1);
 
-    int rc = vboxscsiReadRegister(&pBusLogic->VBoxSCSI, offPort, pu32);
+    int rc = vboxscsiReadRegister(&pThisCC->VBoxSCSI, offPort, pu32);
 
     //Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n", __FUNCTION__, pu32, 1, pu32, offPort, rc));
 
@@ -2768,7 +2797,8 @@ buslogicR3BiosIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uin
 static DECLCALLBACK(VBOXSTRICTRC)
 buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
     Log2(("#%d %s: pvUser=%#p cb=%d u32=%#x offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, u32, offPort));
     RT_NOREF(pvUser, cb);
 
@@ -2776,15 +2806,15 @@ buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
      * If there is already a request form the BIOS pending ignore this write
      * because it should not happen.
      */
-    if (ASMAtomicReadBool(&pThis->fBiosReqPending))
+    if (ASMAtomicReadBool(&pThisCC->fBiosReqPending))
         return VINF_SUCCESS;
 
     ASSERT_GUEST(cb == 1);
 
-    int rc = vboxscsiWriteRegister(&pThis->VBoxSCSI, offPort, (uint8_t)u32);
+    int rc = vboxscsiWriteRegister(&pThisCC->VBoxSCSI, offPort, (uint8_t)u32);
     if (rc == VERR_MORE_DATA)
     {
-        ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
+        ASMAtomicXchgBool(&pThisCC->fBiosReqPending, true);
         /* Wake up the worker thread now that there are pending requests. */
         int rc2 = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
         AssertRC(rc2);
@@ -2802,7 +2832,8 @@ buslogicR3BiosIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, ui
 static DECLCALLBACK(VBOXSTRICTRC) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort,
                                                                uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
     Log2(("#%d %s: pvUser=%#p cb=%d offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, offPort));
     RT_NOREF(pvUser);
 
@@ -2810,13 +2841,13 @@ static DECLCALLBACK(VBOXSTRICTRC) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIn
      * If there is already a request form the BIOS pending ignore this write
      * because it should not happen.
      */
-    if (ASMAtomicReadBool(&pThis->fBiosReqPending))
+    if (ASMAtomicReadBool(&pThisCC->fBiosReqPending))
         return VINF_SUCCESS;
 
-    int rc = vboxscsiWriteString(pDevIns, &pThis->VBoxSCSI, offPort, pbSrc, pcTransfers, cb);
+    int rc = vboxscsiWriteString(pDevIns, &pThisCC->VBoxSCSI, offPort, pbSrc, pcTransfers, cb);
     if (rc == VERR_MORE_DATA)
     {
-        ASMAtomicXchgBool(&pThis->fBiosReqPending, true);
+        ASMAtomicXchgBool(&pThisCC->fBiosReqPending, true);
         /* Wake up the worker thread now taht there are pending requests. */
         int rc2 = PDMDevHlpSUPSemEventSignal(pDevIns, pThis->hEvtProcess);
         AssertRC(rc2);
@@ -2833,11 +2864,11 @@ static DECLCALLBACK(VBOXSTRICTRC) buslogicR3BiosIoPortWriteStr(PPDMDEVINS pDevIn
 static DECLCALLBACK(VBOXSTRICTRC) buslogicR3BiosIoPortReadStr(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort,
                                                               uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
-    PBUSLOGIC pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
     LogFlowFunc(("#%d %s: pvUser=%#p cb=%d offPort=%#x\n", pDevIns->iInstance, __FUNCTION__, pvUser, cb, offPort));
     RT_NOREF(pvUser);
 
-    return vboxscsiReadString(pDevIns, &pBusLogic->VBoxSCSI, offPort, pbDst, pcTransfers, cb);
+    return vboxscsiReadString(pDevIns, &pThisCC->VBoxSCSI, offPort, pbDst, pcTransfers, cb);
 }
 
 /**
@@ -2845,7 +2876,7 @@ static DECLCALLBACK(VBOXSTRICTRC) buslogicR3BiosIoPortReadStr(PPDMDEVINS pDevIns
  *
  * @returns nothing.
  * @param   pDevIns         The device instance.
- * @param   pBusLogic       Pointer to the BusLogic device instance.
+ * @param   pBusLogic       Pointer to the shared BusLogic instance data.
  * @param   uBaseCode       Encoded ISA I/O base; only low 3 bits are used.
  */
 static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, uint8_t uBaseCode)
@@ -2900,7 +2931,7 @@ static int buslogicR3RegisterISARange(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, u
 }
 
 
-static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
+static int buslogicR3ReqComplete(PPDMDEVINS pDevIns, PBUSLOGIC pThis, PBUSLOGICCC pThisCC, PBUSLOGICREQ pReq, int rcReq)
 {
     RT_NOREF(rcReq);
     PBUSLOGICDEVICE pTgtDev = pReq->pTargetDevice;
@@ -2913,7 +2944,7 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
     {
         uint8_t u8ScsiSts = pReq->u8ScsiSts;
         pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
-        int rc = vboxscsiRequestFinished(&pThis->VBoxSCSI, u8ScsiSts);
+        int rc = vboxscsiRequestFinished(&pThisCC->VBoxSCSI, u8ScsiSts);
         AssertMsgRC(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc));
     }
     else
@@ -2950,15 +2981,15 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
 
         pTgtDev->pDrvMediaEx->pfnIoReqFree(pTgtDev->pDrvMediaEx, pReq->hIoReq);
         if (u8ScsiSts == SCSI_STATUS_OK)
-            buslogicR3SendIncomingMailbox(pThis, GCPhysAddrCCB, &CCBGuest,
-                                        BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
-                                        BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
-                                        BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR);
+            buslogicR3SendIncomingMailbox(pDevIns, pThis, GCPhysAddrCCB, &CCBGuest,
+                                          BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
+                                          BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
+                                          BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITHOUT_ERROR);
         else if (u8ScsiSts == SCSI_STATUS_CHECK_CONDITION)
-            buslogicR3SendIncomingMailbox(pThis, GCPhysAddrCCB, &CCBGuest,
-                                        BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
-                                        BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_CHECK_CONDITION,
-                                        BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
+            buslogicR3SendIncomingMailbox(pDevIns, pThis, GCPhysAddrCCB, &CCBGuest,
+                                          BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
+                                          BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_CHECK_CONDITION,
+                                          BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
         else
             AssertMsgFailed(("invalid completion status %u\n", u8ScsiSts));
 
@@ -2967,8 +2998,8 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
 #endif
     }
 
-    if (pTgtDev->cOutstandingRequests == 0 && pThis->fSignalIdle)
-        PDMDevHlpAsyncNotificationCompleted(pThis->pDevInsR3);
+    if (pTgtDev->cOutstandingRequests == 0 && pThisCC->fSignalIdle)
+        PDMDevHlpAsyncNotificationCompleted(pDevIns);
 
     return VINF_SUCCESS;
 }
@@ -2979,8 +3010,8 @@ static int buslogicR3ReqComplete(PBUSLOGIC pThis, PBUSLOGICREQ pReq, int rcReq)
 static DECLCALLBACK(int) buslogicR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, const char **ppcszController,
                                                        uint32_t *piInstance, uint32_t *piLUN)
 {
-    PBUSLOGICDEVICE pBusLogicDevice = RT_FROM_MEMBER(pInterface, BUSLOGICDEVICE, IMediaPort);
-    PPDMDEVINS pDevIns = pBusLogicDevice->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
+    PBUSLOGICDEVICE pTgtDev = RT_FROM_MEMBER(pInterface, BUSLOGICDEVICE, IMediaPort);
+    PPDMDEVINS      pDevIns = pTgtDev->pDevIns;
 
     AssertPtrReturn(ppcszController, VERR_INVALID_POINTER);
     AssertPtrReturn(piInstance, VERR_INVALID_POINTER);
@@ -2988,7 +3019,7 @@ static DECLCALLBACK(int) buslogicR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface
 
     *ppcszController = pDevIns->pReg->szName;
     *piInstance = pDevIns->iInstance;
-    *piLUN = pBusLogicDevice->iLUN;
+    *piLUN = pTgtDev->iLUN;
 
     return VINF_SUCCESS;
 }
@@ -3000,15 +3031,19 @@ static DECLCALLBACK(int) buslogicR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterface,
                                                     void *pvIoReqAlloc, uint32_t offDst, PRTSGBUF pSgBuf,
                                                     size_t cbCopy)
 {
-    RT_NOREF1(hIoReq);
     PBUSLOGICDEVICE pTgtDev = RT_FROM_MEMBER(pInterface, BUSLOGICDEVICE, IMediaExPort);
-    PBUSLOGICREQ pReq = (PBUSLOGICREQ)pvIoReqAlloc;
+    PPDMDEVINS      pDevIns = pTgtDev->pDevIns;
+    PBUSLOGICREQ    pReq    = (PBUSLOGICREQ)pvIoReqAlloc;
+    RT_NOREF(hIoReq);
 
     size_t cbCopied = 0;
-    if (RT_UNLIKELY(pReq->fBIOS))
-        cbCopied = vboxscsiCopyToBuf(&pTgtDev->CTX_SUFF(pBusLogic)->VBoxSCSI, pSgBuf, offDst, cbCopy);
+    if (RT_LIKELY(!pReq->fBIOS))
+        cbCopied = buslogicR3CopySgBufToGuest(pDevIns, PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC), pReq, pSgBuf, offDst, cbCopy);
     else
-        cbCopied = buslogicR3CopySgBufToGuest(pTgtDev->CTX_SUFF(pBusLogic), pReq, pSgBuf, offDst, cbCopy);
+    {
+        PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+        cbCopied = vboxscsiCopyToBuf(&pThisCC->VBoxSCSI, pSgBuf, offDst, cbCopy);
+    }
     return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_OVERFLOW;
 }
 
@@ -3019,15 +3054,19 @@ static DECLCALLBACK(int) buslogicR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface, P
                                                   void *pvIoReqAlloc, uint32_t offSrc, PRTSGBUF pSgBuf,
                                                   size_t cbCopy)
 {
-    RT_NOREF1(hIoReq);
+    RT_NOREF(hIoReq);
     PBUSLOGICDEVICE pTgtDev = RT_FROM_MEMBER(pInterface, BUSLOGICDEVICE, IMediaExPort);
-    PBUSLOGICREQ pReq = (PBUSLOGICREQ)pvIoReqAlloc;
+    PPDMDEVINS      pDevIns = pTgtDev->pDevIns;
+    PBUSLOGICREQ    pReq    = (PBUSLOGICREQ)pvIoReqAlloc;
 
     size_t cbCopied = 0;
-    if (RT_UNLIKELY(pReq->fBIOS))
-        cbCopied = vboxscsiCopyFromBuf(&pTgtDev->CTX_SUFF(pBusLogic)->VBoxSCSI, pSgBuf, offSrc, cbCopy);
+    if (RT_LIKELY(!pReq->fBIOS))
+        cbCopied = buslogicR3CopySgBufFromGuest(pDevIns, PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC), pReq, pSgBuf, offSrc, cbCopy);
     else
-        cbCopied = buslogicR3CopySgBufFromGuest(pTgtDev->CTX_SUFF(pBusLogic), pReq, pSgBuf, offSrc, cbCopy);
+    {
+        PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+        cbCopied = vboxscsiCopyFromBuf(&pThisCC->VBoxSCSI, pSgBuf, offSrc, cbCopy);
+    }
     return cbCopied == cbCopy ? VINF_SUCCESS : VERR_PDM_MEDIAEX_IOBUF_UNDERRUN;
 }
 
@@ -3039,7 +3078,9 @@ static DECLCALLBACK(int) buslogicR3IoReqCompleteNotify(PPDMIMEDIAEXPORT pInterfa
 {
     RT_NOREF(hIoReq);
     PBUSLOGICDEVICE pTgtDev = RT_FROM_MEMBER(pInterface, BUSLOGICDEVICE, IMediaExPort);
-    buslogicR3ReqComplete(pTgtDev->CTX_SUFF(pBusLogic), (PBUSLOGICREQ)pvIoReqAlloc, rcReq);
+    PPDMDEVINS      pDevIns = pTgtDev->pDevIns;
+    buslogicR3ReqComplete(pDevIns, PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC), PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC),
+                          (PBUSLOGICREQ)pvIoReqAlloc, rcReq);
     return VINF_SUCCESS;
 }
 
@@ -3049,17 +3090,20 @@ static DECLCALLBACK(int) buslogicR3IoReqCompleteNotify(PPDMIMEDIAEXPORT pInterfa
 static DECLCALLBACK(void) buslogicR3IoReqStateChanged(PPDMIMEDIAEXPORT pInterface, PDMMEDIAEXIOREQ hIoReq,
                                                       void *pvIoReqAlloc, PDMMEDIAEXIOREQSTATE enmState)
 {
-    RT_NOREF3(hIoReq, pvIoReqAlloc, enmState);
+    RT_NOREF(hIoReq, pvIoReqAlloc, enmState);
     PBUSLOGICDEVICE pTgtDev = RT_FROM_MEMBER(pInterface, BUSLOGICDEVICE, IMediaExPort);
 
     switch (enmState)
     {
         case PDMMEDIAEXIOREQSTATE_SUSPENDED:
         {
+            PPDMDEVINS  pDevIns = pTgtDev->pDevIns;
+            PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+
             /* Make sure the request is not accounted for so the VM can suspend successfully. */
             uint32_t cTasksActive = ASMAtomicDecU32(&pTgtDev->cOutstandingRequests);
-            if (!cTasksActive && pTgtDev->CTX_SUFF(pBusLogic)->fSignalIdle)
-                PDMDevHlpAsyncNotificationCompleted(pTgtDev->CTX_SUFF(pBusLogic)->pDevInsR3);
+            if (!cTasksActive && pThisCC->fSignalIdle)
+                PDMDevHlpAsyncNotificationCompleted(pDevIns);
             break;
         }
         case PDMMEDIAEXIOREQSTATE_ACTIVE:
@@ -3077,18 +3121,19 @@ static DECLCALLBACK(void) buslogicR3IoReqStateChanged(PPDMIMEDIAEXPORT pInterfac
 static DECLCALLBACK(void) buslogicR3MediumEjected(PPDMIMEDIAEXPORT pInterface)
 {
     PBUSLOGICDEVICE pTgtDev = RT_FROM_MEMBER(pInterface, BUSLOGICDEVICE, IMediaExPort);
-    PBUSLOGIC pThis = pTgtDev->CTX_SUFF(pBusLogic);
+    PPDMDEVINS      pDevIns = pTgtDev->pDevIns;
+    PBUSLOGICCC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
 
-    if (pThis->pMediaNotify)
+    if (pThisCC->pMediaNotify)
     {
-        int rc = VMR3ReqCallNoWait(PDMDevHlpGetVM(pThis->CTX_SUFF(pDevIns)), VMCPUID_ANY,
-                                   (PFNRT)pThis->pMediaNotify->pfnEjected, 2,
-                                   pThis->pMediaNotify, pTgtDev->iLUN);
+        int rc = VMR3ReqCallNoWait(PDMDevHlpGetVM(pDevIns), VMCPUID_ANY,
+                                   (PFNRT)pThisCC->pMediaNotify->pfnEjected, 2,
+                                   pThisCC->pMediaNotify, pTgtDev->iLUN);
         AssertRC(rc);
     }
 }
 
-static int buslogicR3DeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAddrCCB)
+static int buslogicR3DeviceSCSIRequestSetup(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, PBUSLOGICCC pThisCC, RTGCPHYS GCPhysAddrCCB)
 {
     int rc = VINF_SUCCESS;
     uint8_t uTargetIdCCB;
@@ -3096,13 +3141,13 @@ static int buslogicR3DeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, RTGCPHYS GCPhys
 
     /* Fetch the CCB from guest memory. */
     /** @todo How much do we really have to read? */
-    PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB,
+    PDMDevHlpPhysRead(pDevIns, GCPhysAddrCCB,
                       &CCBGuest, sizeof(CCB32));
 
     uTargetIdCCB = pBusLogic->fMbxIs24Bit ? CCBGuest.o.uTargetId : CCBGuest.n.uTargetId;
-    if (RT_LIKELY(uTargetIdCCB < RT_ELEMENTS(pBusLogic->aDeviceStates)))
+    if (RT_LIKELY(uTargetIdCCB < RT_ELEMENTS(pThisCC->aDeviceStates)))
     {
-        PBUSLOGICDEVICE pTgtDev = &pBusLogic->aDeviceStates[uTargetIdCCB];
+        PBUSLOGICDEVICE pTgtDev = &pThisCC->aDeviceStates[uTargetIdCCB];
 
 #ifdef LOG_ENABLED
         buslogicR3DumpCCBInfo(&CCBGuest, pBusLogic->fMbxIs24Bit);
@@ -3131,7 +3176,7 @@ static int buslogicR3DeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, RTGCPHYS GCPhys
                 AssertMsgRC(rc, ("Mapping sense buffer failed rc=%Rrc\n", rc));
 
                 size_t cbBuf = 0;
-                rc = buslogicR3QueryDataBufferSize(pBusLogic->CTX_SUFF(pDevIns), &pReq->CCBGuest, pReq->fIs24Bit, &cbBuf);
+                rc = buslogicR3QueryDataBufferSize(pDevIns, &pReq->CCBGuest, pReq->fIs24Bit, &cbBuf);
                 AssertRC(rc);
 
                 uint32_t uLun = pReq->fIs24Bit ? pReq->CCBGuest.o.uLogicalUnit
@@ -3153,22 +3198,22 @@ static int buslogicR3DeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, RTGCPHYS GCPhys
                                                                enmXferDir, NULL, cbBuf, pReq->pbSenseBuffer, cbSense, NULL,
                                                                &pReq->u8ScsiSts, 30 * RT_MS_1SEC);
                 if (rc != VINF_PDM_MEDIAEX_IOREQ_IN_PROGRESS)
-                    buslogicR3ReqComplete(pBusLogic, pReq, rc);
+                    buslogicR3ReqComplete(pDevIns, pBusLogic, pThisCC, pReq, rc);
             }
             else
-                buslogicR3SendIncomingMailbox(pBusLogic, GCPhysAddrCCB, &CCBGuest,
+                buslogicR3SendIncomingMailbox(pDevIns, pBusLogic, GCPhysAddrCCB, &CCBGuest,
                                               BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_SCSI_SELECTION_TIMEOUT,
                                               BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
                                               BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
         }
         else
-            buslogicR3SendIncomingMailbox(pBusLogic, GCPhysAddrCCB, &CCBGuest,
+            buslogicR3SendIncomingMailbox(pDevIns, pBusLogic, GCPhysAddrCCB, &CCBGuest,
                                           BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_SCSI_SELECTION_TIMEOUT,
                                           BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
                                           BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
     }
     else
-        buslogicR3SendIncomingMailbox(pBusLogic, GCPhysAddrCCB, &CCBGuest,
+        buslogicR3SendIncomingMailbox(pDevIns, pBusLogic, GCPhysAddrCCB, &CCBGuest,
                                       BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_INVALID_COMMAND_PARAMETER,
                                       BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
                                       BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
@@ -3176,28 +3221,27 @@ static int buslogicR3DeviceSCSIRequestSetup(PBUSLOGIC pBusLogic, RTGCPHYS GCPhys
     return rc;
 }
 
-static int buslogicR3DeviceSCSIRequestAbort(PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAddrCCB)
+static int buslogicR3DeviceSCSIRequestAbort(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, RTGCPHYS GCPhysAddrCCB)
 {
-    int      rc = VINF_SUCCESS;
     uint8_t  uTargetIdCCB;
     CCBU     CCBGuest;
 
-    PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCPhysAddrCCB,
+    PDMDevHlpPhysRead(pDevIns, GCPhysAddrCCB,
                       &CCBGuest, sizeof(CCB32));
 
     uTargetIdCCB = pBusLogic->fMbxIs24Bit ? CCBGuest.o.uTargetId : CCBGuest.n.uTargetId;
-    if (RT_LIKELY(uTargetIdCCB < RT_ELEMENTS(pBusLogic->aDeviceStates)))
-        buslogicR3SendIncomingMailbox(pBusLogic, GCPhysAddrCCB, &CCBGuest,
+    if (RT_LIKELY(uTargetIdCCB < RT_ELEMENTS(pBusLogic->afDevicePresent)))
+        buslogicR3SendIncomingMailbox(pDevIns, pBusLogic, GCPhysAddrCCB, &CCBGuest,
                                       BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_ABORT_QUEUE_GENERATED,
                                       BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
                                       BUSLOGIC_MAILBOX_INCOMING_COMPLETION_ABORTED_NOT_FOUND);
     else
-        buslogicR3SendIncomingMailbox(pBusLogic, GCPhysAddrCCB, &CCBGuest,
+        buslogicR3SendIncomingMailbox(pDevIns, pBusLogic, GCPhysAddrCCB, &CCBGuest,
                                       BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_INVALID_COMMAND_PARAMETER,
                                       BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
                                       BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 /**
@@ -3205,10 +3249,10 @@ static int buslogicR3DeviceSCSIRequestAbort(PBUSLOGIC pBusLogic, RTGCPHYS GCPhys
  * 32-bit format.
  *
  * @returns Mailbox guest physical address.
- * @param   pBusLogic    Pointer to the BusLogic instance data.
+ * @param   pBusLogic    Pointer to the shared BusLogic instance data.
  * @param   pMbx         Pointer to the mailbox to read into.
  */
-static RTGCPHYS buslogicR3ReadOutgoingMailbox(PBUSLOGIC pBusLogic, PMailbox32 pMbx)
+static RTGCPHYS buslogicR3ReadOutgoingMailbox(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, PMailbox32 pMbx)
 {
     RTGCPHYS    GCMailbox;
 
@@ -3217,14 +3261,14 @@ static RTGCPHYS buslogicR3ReadOutgoingMailbox(PBUSLOGIC pBusLogic, PMailbox32 pM
         Mailbox24   Mbx24;
 
         GCMailbox = pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->uMailboxOutgoingPositionCurrent * sizeof(Mailbox24));
-        PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCMailbox, &Mbx24, sizeof(Mailbox24));
+        PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
         pMbx->u32PhysAddrCCB    = ADDR_TO_U32(Mbx24.aPhysAddrCCB);
         pMbx->u.out.uActionCode = Mbx24.uCmdState;
     }
     else
     {
         GCMailbox = pBusLogic->GCPhysAddrMailboxOutgoingBase + (pBusLogic->uMailboxOutgoingPositionCurrent * sizeof(Mailbox32));
-        PDMDevHlpPhysRead(pBusLogic->CTX_SUFF(pDevIns), GCMailbox, pMbx, sizeof(Mailbox32));
+        PDMDevHlpPhysRead(pDevIns, GCMailbox, pMbx, sizeof(Mailbox32));
     }
 
     return GCMailbox;
@@ -3234,9 +3278,11 @@ static RTGCPHYS buslogicR3ReadOutgoingMailbox(PBUSLOGIC pBusLogic, PMailbox32 pM
  * Read mailbox from the guest and execute command.
  *
  * @returns VBox status code.
- * @param   pBusLogic    Pointer to the BusLogic instance data.
+ * @param   pDevIns         The device instance.
+ * @param   pBusLogic       Pointer to the shared BusLogic instance data.
+ * @param   pThisCC         Pointer to the ring-3 BusLogic instance data.
  */
-static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
+static int buslogicR3ProcessMailboxNext(PPDMDEVINS pDevIns, PBUSLOGIC pBusLogic, PBUSLOGICCC pThisCC)
 {
     RTGCPHYS     GCPhysAddrMailboxCurrent;
     Mailbox32    MailboxGuest;
@@ -3250,7 +3296,7 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
         do
         {
             /* Fetch mailbox from guest memory. */
-            GCPhysAddrMailboxCurrent = buslogicR3ReadOutgoingMailbox(pBusLogic, &MailboxGuest);
+            GCPhysAddrMailboxCurrent = buslogicR3ReadOutgoingMailbox(pDevIns, pBusLogic, &MailboxGuest);
 
             /* Check the next mailbox. */
             buslogicR3OutgoingMailboxAdvance(pBusLogic);
@@ -3260,7 +3306,7 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
     else
     {
         /* Fetch mailbox from guest memory. */
-        GCPhysAddrMailboxCurrent = buslogicR3ReadOutgoingMailbox(pBusLogic, &MailboxGuest);
+        GCPhysAddrMailboxCurrent = buslogicR3ReadOutgoingMailbox(pDevIns, pBusLogic, &MailboxGuest);
     }
 
     /*
@@ -3283,14 +3329,14 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
     /* We got the mailbox, mark it as free in the guest. */
     uint8_t uActionCode = BUSLOGIC_MAILBOX_OUTGOING_ACTION_FREE;
     unsigned uCodeOffs = pBusLogic->fMbxIs24Bit ? RT_OFFSETOF(Mailbox24, uCmdState) : RT_OFFSETOF(Mailbox32, u.out.uActionCode);
-    blPhysWrite(pBusLogic, GCPhysAddrMailboxCurrent + uCodeOffs, &uActionCode, sizeof(uActionCode));
+    blPhysWrite(pDevIns, pBusLogic, GCPhysAddrMailboxCurrent + uCodeOffs, &uActionCode, sizeof(uActionCode));
 
     if (MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_START_COMMAND)
-        rc = buslogicR3DeviceSCSIRequestSetup(pBusLogic, (RTGCPHYS)MailboxGuest.u32PhysAddrCCB);
+        rc = buslogicR3DeviceSCSIRequestSetup(pDevIns, pBusLogic, pThisCC, (RTGCPHYS)MailboxGuest.u32PhysAddrCCB);
     else if (MailboxGuest.u.out.uActionCode == BUSLOGIC_MAILBOX_OUTGOING_ACTION_ABORT_COMMAND)
     {
         LogFlow(("Aborting mailbox\n"));
-        rc = buslogicR3DeviceSCSIRequestAbort(pBusLogic, (RTGCPHYS)MailboxGuest.u32PhysAddrCCB);
+        rc = buslogicR3DeviceSCSIRequestAbort(pDevIns, pBusLogic, (RTGCPHYS)MailboxGuest.u32PhysAddrCCB);
     }
     else
         AssertMsgFailed(("Invalid outgoing mailbox action code %u\n", MailboxGuest.u.out.uActionCode));
@@ -3307,13 +3353,13 @@ static int buslogicR3ProcessMailboxNext(PBUSLOGIC pBusLogic)
 /** @callback_method_impl{FNSSMDEVLIVEEXEC}  */
 static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uPass)
 {
+    PBUSLOGICCC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
     RT_NOREF(uPass);
-    PBUSLOGIC       pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
 
     /* Save the device config. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
-        pHlp->pfnSSMPutBool(pSSM, pThis->aDeviceStates[i].fPresent);
+    for (unsigned i = 0; i < RT_ELEMENTS(pThisCC->aDeviceStates); i++)
+        pHlp->pfnSSMPutBool(pSSM, pThisCC->aDeviceStates[i].fPresent);
 
     return VINF_SSM_DONT_CALL_AGAIN;
 }
@@ -3321,14 +3367,15 @@ static DECLCALLBACK(int) buslogicR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 /** @callback_method_impl{FNSSMDEVSAVEEXEC}  */
 static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
-    PBUSLOGIC       pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+    PBUSLOGIC       pBusLogic      = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC     pThisCC        = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+    PCPDMDEVHLPR3   pHlp           = pDevIns->pHlpR3;
     uint32_t        cReqsSuspended = 0;
 
     /* Every device first. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pBusLogic->aDeviceStates); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThisCC->aDeviceStates); i++)
     {
-        PBUSLOGICDEVICE pDevice = &pBusLogic->aDeviceStates[i];
+        PBUSLOGICDEVICE pDevice = &pThisCC->aDeviceStates[i];
 
         AssertMsg(!pDevice->cOutstandingRequests,
                   ("There are still outstanding requests on this device\n"));
@@ -3364,14 +3411,14 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     pHlp->pfnSSMPutBool  (pSSM, pBusLogic->fStrictRoundRobinMode);
     pHlp->pfnSSMPutBool  (pSSM, pBusLogic->fExtendedLunCCBFormat);
 
-    vboxscsiR3SaveExec(pDevIns->pHlpR3, &pBusLogic->VBoxSCSI, pSSM);
+    vboxscsiR3SaveExec(pDevIns->pHlpR3, &pThisCC->VBoxSCSI, pSSM);
 
     pHlp->pfnSSMPutU32(pSSM, cReqsSuspended);
 
     /* Save the physical CCB address of all suspended requests. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pBusLogic->aDeviceStates) && cReqsSuspended; i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThisCC->aDeviceStates) && cReqsSuspended; i++)
     {
-        PBUSLOGICDEVICE pDevice = &pBusLogic->aDeviceStates[i];
+        PBUSLOGICDEVICE pDevice = &pThisCC->aDeviceStates[i];
         if (pDevice->fPresent)
         {
             uint32_t cThisReqsSuspended = pDevice->pDrvMediaEx->pfnIoReqGetSuspendedCount(pDevice->pDrvMediaEx);
@@ -3407,30 +3454,31 @@ static DECLCALLBACK(int) buslogicR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 /** @callback_method_impl{FNSSMDEVLOADDONE}  */
 static DECLCALLBACK(int) buslogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 {
+    PBUSLOGIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
     RT_NOREF(pSSM);
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
 
     buslogicR3RegisterISARange(pDevIns, pThis, pThis->uISABaseCode);
 
     /* Kick of any requests we might need to redo. */
-    if (pThis->VBoxSCSI.fBusy)
+    if (pThisCC->VBoxSCSI.fBusy)
     {
 
         /* The BIOS had a request active when we got suspended. Resume it. */
-        int rc = buslogicR3PrepareBIOSSCSIRequest(pThis);
+        int rc = buslogicR3PrepareBIOSSCSIRequest(pThisCC);
         AssertRC(rc);
     }
-    else if (pThis->cReqsRedo)
+    else if (pThisCC->cReqsRedo)
     {
-        for (unsigned i = 0; i < pThis->cReqsRedo; i++)
+        for (unsigned i = 0; i < pThisCC->cReqsRedo; i++)
         {
-            int rc = buslogicR3DeviceSCSIRequestSetup(pThis, pThis->paGCPhysAddrCCBRedo[i]);
+            int rc = buslogicR3DeviceSCSIRequestSetup(pDevIns, pThis, pThisCC, pThisCC->paGCPhysAddrCCBRedo[i]);
             AssertRC(rc);
         }
 
-        RTMemFree(pThis->paGCPhysAddrCCBRedo);
-        pThis->paGCPhysAddrCCBRedo = NULL;
-        pThis->cReqsRedo = 0;
+        RTMemFree(pThisCC->paGCPhysAddrCCBRedo);
+        pThisCC->paGCPhysAddrCCBRedo = NULL;
+        pThisCC->cReqsRedo = 0;
     }
 
     return VINF_SUCCESS;
@@ -3440,17 +3488,18 @@ static DECLCALLBACK(int) buslogicR3LoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
     PBUSLOGIC       pBusLogic = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
-    int             rc = VINF_SUCCESS;
+    PBUSLOGICCC     pThisCC   = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+    PCPDMDEVHLPR3   pHlp      = pDevIns->pHlpR3;
+    int             rc        = VINF_SUCCESS;
 
     /* We support saved states only from this and older versions. */
     if (uVersion > BUSLOGIC_SAVED_STATE_MINOR_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /* Every device first. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pBusLogic->aDeviceStates); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThisCC->aDeviceStates); i++)
     {
-        PBUSLOGICDEVICE pDevice = &pBusLogic->aDeviceStates[i];
+        PBUSLOGICDEVICE pDevice = &pThisCC->aDeviceStates[i];
 
         AssertMsg(!pDevice->cOutstandingRequests,
                   ("There are still outstanding requests on this device\n"));
@@ -3497,12 +3546,11 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
     pHlp->pfnSSMGetBool  (pSSM, &pBusLogic->fStrictRoundRobinMode);
     pHlp->pfnSSMGetBool  (pSSM, &pBusLogic->fExtendedLunCCBFormat);
 
-    rc = vboxscsiR3LoadExec(pDevIns->pHlpR3, &pBusLogic->VBoxSCSI, pSSM);
+    rc = vboxscsiR3LoadExec(pDevIns->pHlpR3, &pThisCC->VBoxSCSI, pSSM);
     if (RT_FAILURE(rc))
     {
         LogRel(("BusLogic: Failed to restore BIOS state: %Rrc.\n", rc));
-        return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("BusLogic: Failed to restore BIOS state\n"));
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic: Failed to restore BIOS state\n"));
     }
 
     if (uVersion > BUSLOGIC_SAVED_STATE_MINOR_PRE_ERROR_HANDLING)
@@ -3514,20 +3562,19 @@ static DECLCALLBACK(int) buslogicR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM,
 
         if (cTasks)
         {
-            pBusLogic->paGCPhysAddrCCBRedo = (PRTGCPHYS)RTMemAllocZ(cTasks * sizeof(RTGCPHYS));
-            if (RT_LIKELY(pBusLogic->paGCPhysAddrCCBRedo))
+            pThisCC->paGCPhysAddrCCBRedo = (PRTGCPHYS)RTMemAllocZ(cTasks * sizeof(RTGCPHYS));
+            if (RT_LIKELY(pThisCC->paGCPhysAddrCCBRedo))
             {
-                pBusLogic->cReqsRedo = cTasks;
+                pThisCC->cReqsRedo = cTasks;
 
                 for (uint32_t i = 0; i < cTasks; i++)
                 {
                     uint32_t u32PhysAddrCCB;
 
                     rc = pHlp->pfnSSMGetU32(pSSM, &u32PhysAddrCCB);
-                    if (RT_FAILURE(rc))
-                        break;
+                    AssertRCBreak(rc);
 
-                    pBusLogic->paGCPhysAddrCCBRedo[i] = u32PhysAddrCCB;
+                    pThisCC->paGCPhysAddrCCBRedo[i] = u32PhysAddrCCB;
                 }
             }
             else
@@ -3590,10 +3637,10 @@ static DECLCALLBACK(void *) buslogicR3DeviceQueryInterface(PPDMIBASE pInterface,
  */
 static DECLCALLBACK(int) buslogicR3StatusQueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    PBUSLOGIC pBusLogic = RT_FROM_MEMBER(pInterface, BUSLOGIC, ILeds);
+    PBUSLOGICCC pThisCC = RT_FROM_MEMBER(pInterface, BUSLOGICCC, ILeds);
     if (iLUN < BUSLOGIC_MAX_DEVICES)
     {
-        *ppLed = &pBusLogic->aDeviceStates[iLUN].Led;
+        *ppLed = &pThisCC->aDeviceStates[iLUN].Led;
         Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
         return VINF_SUCCESS;
     }
@@ -3605,35 +3652,32 @@ static DECLCALLBACK(int) buslogicR3StatusQueryStatusLed(PPDMILEDPORTS pInterface
  */
 static DECLCALLBACK(void *) buslogicR3StatusQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PBUSLOGIC pThis = RT_FROM_MEMBER(pInterface, BUSLOGIC, IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
+    PBUSLOGICCC pThisCC = RT_FROM_MEMBER(pInterface, BUSLOGICCC, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThisCC->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThisCC->ILeds);
     return NULL;
 }
 
 /**
- * The worker thread processing requests from the guest.
- *
- * @returns VBox status code.
- * @param   pDevIns         The device instance.
- * @param   pThread         The thread structure.
+ * @callback_method_impl{FNPDMTHREADWAKEUPDEV}
  */
 static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
-    RT_NOREF(pDevIns);
-    PBUSLOGIC pThis = (PBUSLOGIC)pThread->pvUser;
-    int rc = VINF_SUCCESS;
+    PBUSLOGIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
 
     if (pThread->enmState == PDMTHREADSTATE_INITIALIZING)
         return VINF_SUCCESS;
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
-        ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, true);
+        int rc;
+
+        ASMAtomicWriteBool(&pThisCC->fWrkThreadSleeping, true);
         bool fNotificationSent = ASMAtomicXchgBool(&pThis->fNotificationSent, false);
         if (!fNotificationSent)
         {
-            Assert(ASMAtomicReadBool(&pThis->fWrkThreadSleeping));
+            Assert(ASMAtomicReadBool(&pThisCC->fWrkThreadSleeping));
             rc = PDMDevHlpSUPSemEventWaitNoResume(pDevIns, pThis->hEvtProcess, RT_INDEFINITE_WAIT);
             AssertLogRelMsgReturn(RT_SUCCESS(rc) || rc == VERR_INTERRUPTED, ("%Rrc\n", rc), rc);
             if (RT_UNLIKELY(pThread->enmState != PDMTHREADSTATE_RUNNING))
@@ -3642,14 +3686,14 @@ static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
             ASMAtomicWriteBool(&pThis->fNotificationSent, false);
         }
 
-        ASMAtomicWriteBool(&pThis->fWrkThreadSleeping, false);
+        ASMAtomicWriteBool(&pThisCC->fWrkThreadSleeping, false);
 
         /* Check whether there is a BIOS request pending and process it first. */
-        if (ASMAtomicReadBool(&pThis->fBiosReqPending))
+        if (ASMAtomicReadBool(&pThisCC->fBiosReqPending))
         {
-            rc = buslogicR3PrepareBIOSSCSIRequest(pThis);
+            rc = buslogicR3PrepareBIOSSCSIRequest(pThisCC);
             AssertRC(rc);
-            ASMAtomicXchgBool(&pThis->fBiosReqPending, false);
+            ASMAtomicXchgBool(&pThisCC->fBiosReqPending, false);
         }
         else
         {
@@ -3658,7 +3702,7 @@ static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
             /* Process mailboxes. */
             do
             {
-                rc = buslogicR3ProcessMailboxNext(pThis);
+                rc = buslogicR3ProcessMailboxNext(pDevIns, pThis, pThisCC);
                 AssertMsg(RT_SUCCESS(rc) || rc == VERR_NO_DATA, ("Processing mailbox failed rc=%Rrc\n", rc));
             } while (RT_SUCCESS(rc));
         }
@@ -3669,11 +3713,7 @@ static DECLCALLBACK(int) buslogicR3Worker(PPDMDEVINS pDevIns, PPDMTHREAD pThread
 
 
 /**
- * Unblock the worker thread so it can respond to a state change.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pThread     The send thread.
+ * @callback_method_impl{FNPDMTHREADWAKEUPDEV}
  */
 static DECLCALLBACK(int) buslogicR3WorkerWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
@@ -3714,8 +3754,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
                         PDMDevHlpIoPortGetMappingAddress(pDevIns, pThis->hIoPortsPci), pThis->IOISABase,
                         PDMDevHlpMmioGetMappingAddress(pDevIns, pThis->hMmio),
                         PCIDevGetInterruptLine(pDevIns->apPciDevs[0]));
-    pHlp->pfnPrintf(pHlp, "GC=%RTbool R0=%RTbool\n",
-                    !!pThis->fGCEnabled, !!pThis->fR0Enabled);
+    pHlp->pfnPrintf(pHlp, "RC=%RTbool R0=%RTbool\n", pDevIns->fRCEnabled, pDevIns->fR0Enabled);
 
     /* Print mailbox state. */
     if (pThis->regStatus & BL_STAT_INREQ)
@@ -3752,7 +3791,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (24-bit) at %06X:\n", GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
-                PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx24, sizeof(Mailbox24));
+                PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
                 pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %06X action code %02X", i, ADDR_TO_U32(Mbx24.aPhysAddrCCB), Mbx24.uCmdState);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
                 GCMailbox += sizeof(Mailbox24);
@@ -3763,7 +3802,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             pHlp->pfnPrintf(pHlp, " Incoming mailbox entries (24-bit) at %06X:\n", GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
-                PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx24, sizeof(Mailbox24));
+                PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx24, sizeof(Mailbox24));
                 pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %06X completion code %02X", i, ADDR_TO_U32(Mbx24.aPhysAddrCCB), Mbx24.uCmdState);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxIncomingPositionCurrent == i ? " *" : "");
                 GCMailbox += sizeof(Mailbox24);
@@ -3779,7 +3818,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (32-bit) at %08X:\n", (uint32_t)GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
-                PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx32, sizeof(Mailbox32));
+                PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx32, sizeof(Mailbox32));
                 pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %08X action code %02X", i, Mbx32.u32PhysAddrCCB, Mbx32.u.out.uActionCode);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
                 GCMailbox += sizeof(Mailbox32);
@@ -3790,7 +3829,7 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
             pHlp->pfnPrintf(pHlp, " Outgoing mailbox entries (32-bit) at %08X:\n", (uint32_t)GCMailbox);
             for (i = 0; i < pThis->cMailbox; ++i)
             {
-                PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCMailbox, &Mbx32, sizeof(Mailbox32));
+                PDMDevHlpPhysRead(pDevIns, GCMailbox, &Mbx32, sizeof(Mailbox32));
                 pHlp->pfnPrintf(pHlp, "  slot %03d: CCB at %08X completion code %02X BTSTAT %02X SDSTAT %02X", i,
                                 Mbx32.u32PhysAddrCCB, Mbx32.u.in.uCompletionCode, Mbx32.u.in.uHostAdapterStatus, Mbx32.u.in.uTargetDeviceStatus);
                 pHlp->pfnPrintf(pHlp, "%s\n", pThis->uMailboxOutgoingPositionCurrent == i ? " *" : "");
@@ -3813,11 +3852,11 @@ static DECLCALLBACK(void) buslogicR3Info(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp,
  */
 static bool buslogicR3AllAsyncIOIsFinished(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThisCC->aDeviceStates); i++)
     {
-        PBUSLOGICDEVICE pThisDevice = &pThis->aDeviceStates[i];
+        PBUSLOGICDEVICE pThisDevice = &pThisCC->aDeviceStates[i];
         if (pThisDevice->pDrvBase)
         {
             if (pThisDevice->cOutstandingRequests != 0)
@@ -3839,8 +3878,8 @@ static DECLCALLBACK(bool) buslogicR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDev
     if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
         return false;
 
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+    ASMAtomicWriteBool(&pThisCC->fSignalIdle, false);
     return true;
 }
 
@@ -3849,20 +3888,22 @@ static DECLCALLBACK(bool) buslogicR3IsAsyncSuspendOrPowerOffDone(PPDMDEVINS pDev
  */
 static void buslogicR3SuspendOrPowerOff(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
 
-    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    ASMAtomicWriteBool(&pThisCC->fSignalIdle, true);
     if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
         PDMDevHlpSetAsyncNotification(pDevIns, buslogicR3IsAsyncSuspendOrPowerOffDone);
     else
     {
-        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+        ASMAtomicWriteBool(&pThisCC->fSignalIdle, false);
         AssertMsg(!pThis->fNotificationSent, ("The PDM Queue should be empty at this point\n"));
+        RT_NOREF(pThis);
     }
 
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThisCC->aDeviceStates); i++)
     {
-        PBUSLOGICDEVICE pThisDevice = &pThis->aDeviceStates[i];
+        PBUSLOGICDEVICE pThisDevice = &pThisCC->aDeviceStates[i];
         if (pThisDevice->pDrvMediaEx)
             pThisDevice->pDrvMediaEx->pfnNotifySuspend(pThisDevice->pDrvMediaEx);
     }
@@ -3891,11 +3932,12 @@ static DECLCALLBACK(void) buslogicR3Suspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) buslogicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    RT_NOREF(fFlags);
-    PBUSLOGIC       pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    PBUSLOGICDEVICE pDevice = &pThis->aDeviceStates[iLUN];
-
+    PBUSLOGIC       pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+    PBUSLOGICDEVICE pDevice = &pThisCC->aDeviceStates[iLUN];
     Log(("%s:\n", __FUNCTION__));
+    RT_NOREF(fFlags);
+
 
     AssertMsg(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
               ("BusLogic: Device does not support hotplugging\n"));
@@ -3903,6 +3945,7 @@ static DECLCALLBACK(void) buslogicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, ui
     /*
      * Zero some important members.
      */
+    pThis->afDevicePresent[iLUN] = false;
     pDevice->fPresent    = false;
     pDevice->pDrvBase    = NULL;
     pDevice->pDrvMedia   = NULL;
@@ -3922,7 +3965,8 @@ static DECLCALLBACK(void) buslogicR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, ui
 static DECLCALLBACK(int)  buslogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
     PBUSLOGIC       pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    PBUSLOGICDEVICE pDevice = &pThis->aDeviceStates[iLUN];
+    PBUSLOGICCC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+    PBUSLOGICDEVICE pDevice = &pThisCC->aDeviceStates[iLUN];
     int rc;
 
     AssertMsgReturn(fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG,
@@ -3958,6 +4002,7 @@ static DECLCALLBACK(int)  buslogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
         AssertMsgRCReturn(rc, ("BusLogic configuration error: LUN#%u: Failed to set I/O request size!", pDevice->iLUN),
                           rc);
 
+        pThis->afDevicePresent[iLUN] = true;
         pDevice->fPresent = true;
     }
     else
@@ -3965,6 +4010,7 @@ static DECLCALLBACK(int)  buslogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
 
     if (RT_FAILURE(rc))
     {
+        pThis->afDevicePresent[iLUN] = false;
         pDevice->fPresent    = false;
         pDevice->pDrvBase    = NULL;
         pDevice->pDrvMedia   = NULL;
@@ -3981,13 +4027,14 @@ static DECLCALLBACK(int)  buslogicR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, ui
  */
 static DECLCALLBACK(bool) buslogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
 
     if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
         return false;
-    ASMAtomicWriteBool(&pThis->fSignalIdle, false);
+    ASMAtomicWriteBool(&pThisCC->fSignalIdle, false);
 
-    buslogicR3HwReset(pThis, true);
+    buslogicR3HwReset(pDevIns, pThis, pThisCC, true);
     return true;
 }
 
@@ -3996,32 +4043,17 @@ static DECLCALLBACK(bool) buslogicR3IsAsyncResetDone(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) buslogicR3Reset(PPDMDEVINS pDevIns)
 {
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGIC   pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
 
-    ASMAtomicWriteBool(&pThis->fSignalIdle, true);
+    ASMAtomicWriteBool(&pThisCC->fSignalIdle, true);
     if (!buslogicR3AllAsyncIOIsFinished(pDevIns))
         PDMDevHlpSetAsyncNotification(pDevIns, buslogicR3IsAsyncResetDone);
     else
     {
-        ASMAtomicWriteBool(&pThis->fSignalIdle, false);
-        buslogicR3HwReset(pThis, true);
+        ASMAtomicWriteBool(&pThisCC->fSignalIdle, false);
+        buslogicR3HwReset(pDevIns, pThis, pThisCC, true);
     }
-}
-
-static DECLCALLBACK(void) buslogicR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    RT_NOREF(offDelta);
-    PBUSLOGIC pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-
-    for (uint32_t i = 0; i < BUSLOGIC_MAX_DEVICES; i++)
-    {
-        PBUSLOGICDEVICE pDevice = &pThis->aDeviceStates[i];
-
-        pDevice->pBusLogicRC = PDMINS_2_DATA_RCPTR(pDevIns);
-    }
-
 }
 
 /**
@@ -4065,17 +4097,16 @@ static DECLCALLBACK(int) buslogicR3Destruct(PPDMDEVINS pDevIns)
 static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
-    PBUSLOGIC       pThis = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
-    PCPDMDEVHLPR3   pHlp = pDevIns->pHlpR3;
+    PBUSLOGIC       pThis   = PDMDEVINS_2_DATA(pDevIns, PBUSLOGIC);
+    PBUSLOGICCC     pThisCC = PDMDEVINS_2_DATA_CC(pDevIns, PBUSLOGICCC);
+    PCPDMDEVHLPR3   pHlp    = pDevIns->pHlpR3;
 
     /*
      * Init instance data (do early because of constructor).
      */
-    pThis->pDevInsR3 = pDevIns;
-    pThis->pDevInsR0 = PDMDEVINS_2_R0PTR(pDevIns);
-    pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
-    pThis->IBase.pfnQueryInterface = buslogicR3StatusQueryInterface;
-    pThis->ILeds.pfnQueryStatusLed = buslogicR3StatusQueryStatusLed;
+    pThisCC->pDevIns = pDevIns;
+    pThisCC->IBase.pfnQueryInterface = buslogicR3StatusQueryInterface;
+    pThisCC->ILeds.pfnQueryStatusLed = buslogicR3StatusQueryStatusLed;
 
     PPDMPCIDEV pPciDev = pDevIns->apPciDevs[0];
     PDMPCIDEV_ASSERT_VALID(pDevIns, pPciDev);
@@ -4098,9 +4129,6 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * Validate and read configuration.
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "Bootable|AdapterType|ISACompat", "");
-
-    pThis->fGCEnabled = pDevIns->fRCEnabled;
-    pThis->fR0Enabled = pDevIns->fR0Enabled;
 
     bool fBootable = true;
     int rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "Bootable", &fBootable, true);
@@ -4213,22 +4241,20 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     char szDevTag[20];
     RTStrPrintf(szDevTag, sizeof(szDevTag), "BUSLOGIC-%u", iInstance);
 
-    rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pThreadWrk, pThis, buslogicR3Worker,
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThisCC->pThreadWrk, pThis, buslogicR3Worker,
                                buslogicR3WorkerWakeUp, 0, RTTHREADTYPE_IO, szDevTag);
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("BusLogic: Failed to create worker thread %s"), szDevTag);
 
     /* Initialize per device state. */
-    for (unsigned i = 0; i < RT_ELEMENTS(pThis->aDeviceStates); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThisCC->aDeviceStates); i++)
     {
-        PBUSLOGICDEVICE pDevice = &pThis->aDeviceStates[i];
+        PBUSLOGICDEVICE pDevice = &pThisCC->aDeviceStates[i];
 
         /* Initialize static parts of the device. */
         pDevice->iLUN = i;
-        pDevice->pBusLogicR3 = pThis;
-        pDevice->pBusLogicR0 = PDMINS_2_DATA_R0PTR(pDevIns);
-        pDevice->pBusLogicRC = PDMINS_2_DATA_RCPTR(pDevIns);
+        pDevice->pDevIns = pDevIns;
         pDevice->Led.u32Magic = PDMLED_MAGIC;
         pDevice->IBase.pfnQueryInterface                 = buslogicR3DeviceQueryInterface;
         pDevice->IMediaPort.pfnQueryDeviceLocation       = buslogicR3QueryDeviceLocation;
@@ -4264,10 +4290,12 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
                                            N_("Buslogic configuration error: LUN#%u: Failed to set I/O request size!"),
                                            pDevice->iLUN);
 
+            pThis->afDevicePresent[i] = true;
             pDevice->fPresent = true;
         }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         {
+            pThis->afDevicePresent[i] = false;
             pDevice->fPresent    = false;
             pDevice->pDrvBase    = NULL;
             pDevice->pDrvMedia   = NULL;
@@ -4286,17 +4314,15 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
      * Attach status driver (optional).
      */
     PPDMIBASE pBase;
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThisCC->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
-        pThis->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
+        pThisCC->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
+        pThisCC->pMediaNotify = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIANOTIFY);
     }
-    else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
-    {
-        AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot attach to status driver"));
-    }
+    else
+        AssertMsgReturn(rc == VERR_PDM_NO_ATTACHED_DRIVER, ("Failed to attach to status driver. rc=%Rrc\n", rc),
+                        PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot attach to status driver")));
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, BUSLOGIC_SAVED_STATE_MINOR_VERSION, sizeof(*pThis), NULL,
                                 NULL, buslogicR3LiveExec, NULL,
@@ -4312,7 +4338,7 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     RTStrPrintf(szTmp, sizeof(szTmp), "%s%d", pDevIns->pReg->szName, pDevIns->iInstance);
     PDMDevHlpDBGFInfoRegister(pDevIns, szTmp, "BusLogic HBA info", buslogicR3Info);
 
-    rc = buslogicR3HwReset(pThis, true);
+    rc = buslogicR3HwReset(pDevIns, pThis, pThisCC, true);
     AssertMsgRC(rc, ("hardware reset of BusLogic host adapter failed rc=%Rrc\n", rc));
 
     return rc;
@@ -4348,15 +4374,15 @@ const PDMDEVREG g_DeviceBusLogic =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "buslogic",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ |
-                                    PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION |
-                                    PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE
+                                    | PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION | PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION
+                                    | PDM_DEVREG_FLAGS_FIRST_RESET_NOTIFICATION,
     /* .fClass = */                 PDM_DEVREG_CLASS_STORAGE,
     /* .cMaxInstances = */          ~0U,
     /* .uSharedVersion = */         42,
     /* .cbInstanceShared = */       sizeof(BUSLOGIC),
-    /* .cbInstanceCC = */           0,
-    /* .cbInstanceRC = */           0,
+    /* .cbInstanceCC = */           sizeof(BUSLOGICCC),
+    /* .cbInstanceRC = */           sizeof(BUSLOGICRC),
     /* .cMaxPciDevices = */         1,
     /* .cMaxMsixVectors = */        0,
     /* .pszDescription = */         "BusLogic BT-958 SCSI host adapter.\n",
@@ -4365,7 +4391,7 @@ const PDMDEVREG g_DeviceBusLogic =
     /* .pszR0Mod = */               "VBoxDDR0.r0",
     /* .pfnConstruct = */           buslogicR3Construct,
     /* .pfnDestruct = */            buslogicR3Destruct,
-    /* .pfnRelocate = */            buslogicR3Relocate,
+    /* .pfnRelocate = */            NULL,
     /* .pfnMemSetup = */            NULL,
     /* .pfnPowerOn = */             NULL,
     /* .pfnReset = */               buslogicR3Reset,
