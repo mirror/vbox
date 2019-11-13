@@ -169,7 +169,8 @@ int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
     pClient->State.pCtx->pClient = pClient;
 
     ShClSvcUnlock();
-    return rc;
+
+    return VINF_SUCCESS;
 }
 
 int ShClSvcImplSync(PSHCLCLIENT pClient)
