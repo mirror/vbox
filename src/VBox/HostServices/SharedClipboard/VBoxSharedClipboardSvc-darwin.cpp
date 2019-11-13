@@ -168,9 +168,6 @@ int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
     pClient->State.pCtx = &g_ctx;
     pClient->State.pCtx->pClient = pClient;
 
-    /* Initially sync the host clipboard content with the client. */
-    int rc = ShClSvcImplSync(pClient);
-
     ShClSvcUnlock();
     return rc;
 }

@@ -659,20 +659,6 @@ int ShClSvcImplConnect(PSHCLCLIENT pClient, bool fHeadless)
 
         pClient->State.pCtx = pCtx;
         pClient->State.pCtx->pClient = pClient;
-
-        /* Sync the host clipboard content with the client. */
-        rc = ShClSvcImplSync(pClient);
-        if (rc == VINF_NO_CHANGE)
-        {
-            /*
-             * The sync could return VINF_NO_CHANGE if nothing has changed on the host, but older
-             * Guest Additions rely on the fact that only VINF_SUCCESS indicates a successful connect
-             * to the host service (instead of using RT_SUCCESS()).
-             *
-             * So implicitly set VINF_SUCCESS here to not break older Guest Additions.
-             */
-            rc = VINF_SUCCESS;
-        }
     }
     else
         rc = VERR_NO_MEMORY;

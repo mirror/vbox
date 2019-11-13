@@ -1612,15 +1612,32 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
         rc = ShClSvcImplConnect(pClient, ShClSvcGetHeadless());
         if (RT_SUCCESS(rc))
         {
-            /* Assign weak pointer to client map .*/
-            g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
+            /* Sync the host clipboard content with the client. */
+            rc = ShClSvcImplSync(pClient);
+            if (rc == VINF_NO_CHANGE)
+            {
+                /*
+                 * The sync could return VINF_NO_CHANGE if nothing has changed on the host, but older
+                 * Guest Additions rely on the fact that only VINF_SUCCESS indicates a successful connect
+                 * to the host service (instead of using RT_SUCCESS()).
+                 *
+                 * So implicitly set VINF_SUCCESS here to not break older Guest Additions.
+                 */
+                rc = VINF_SUCCESS;
+            }
 
-            /* For now we ASSUME that the first client ever connected is in charge for
-             * communicating withe the service extension.
-             *
-             ** @todo This needs to be fixed ASAP w/o breaking older guest / host combos. */
-            if (g_ExtState.uClientID == 0)
-                g_ExtState.uClientID = u32ClientID;
+            if (RT_SUCCESS(rc))
+            {
+                /* Assign weak pointer to client map .*/
+                g_mapClients[u32ClientID] = pClient; /** @todo Handle OOM / collisions? */
+
+                /* For now we ASSUME that the first client ever connected is in charge for
+                 * communicating withe the service extension.
+                 *
+                 ** @todo This needs to be fixed ASAP w/o breaking older guest / host combos. */
+                if (g_ExtState.uClientID == 0)
+                    g_ExtState.uClientID = u32ClientID;
+            }
         }
     }
 

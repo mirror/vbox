@@ -236,7 +236,7 @@ bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
 void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
-/** @name Platform-dependent implementations for the Shared Clipboard host service.
+/** @name Platform-dependent implementations for the Shared Clipboard host service, called *only* by the host service.
  * @{
  */
 /**
