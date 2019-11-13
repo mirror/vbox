@@ -1843,25 +1843,6 @@ void UISession::updateMousePointerShape()
     /* Create cursor-pixmap from the image: */
     m_cursorPixmap = QPixmap::fromImage(image);
     updateMousePointerPixmapScaling(m_cursorPixmap, uXHot, uYHot);
-
-# if defined(VBOX_WS_X11)
-    /* Adjust device-pixel-ratio: */
-    /// @todo In case of multi-monitor setup check whether device-pixel-ratio and cursor are screen specific.
-    /* Get screen-id of main-window: */
-    const ulong uScreenID = activeMachineWindow()->screenId();
-    /* Get device-pixel-ratio: */
-    const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
-    /* Adjust device-pixel-ratio if necessary: */
-    if (dDevicePixelRatio > 1.0 && !frameBuffer(uScreenID)->useUnscaledHiDPIOutput())
-    {
-        uXHot *= dDevicePixelRatio;
-        uYHot *= dDevicePixelRatio;
-        m_cursorPixmap = m_cursorPixmap.scaled(m_cursorPixmap.width() * dDevicePixelRatio, m_cursorPixmap.height() * dDevicePixelRatio,
-                                               Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
-    }
-# endif /* VBOX_WS_X11 */
-
-    /* Set the new cursor: */
     m_cursor = QCursor(m_cursorPixmap, uXHot, uYHot);
     m_fIsValidPointerShapePresent = true;
     NOREF(srcShapePtrScan);
@@ -1909,7 +1890,7 @@ void UISession::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, ui
         uYHot /= dDevicePixelRatio;
     }
 
-#elif defined(VBOX_WS_WIN)
+#elif defined(VBOX_WS_WIN) || defined(VBOX_WS_X11)
 
     /* Get screen-id of active machine-window: */
     /// @todo In case of multi-monitor setup check whether parameters are screen specific.
@@ -1925,7 +1906,9 @@ void UISession::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, ui
         dScaleMultiplier *= dScaleFactor;
 
     /* Take into account device-pixel-ratio if necessary: */
+# ifdef VBOX_WS_WIN
     const double dDevicePixelRatio = frameBuffer(uScreenID)->devicePixelRatio();
+# endif
     const double dDevicePixelRatioActual = frameBuffer(uScreenID)->devicePixelRatioActual();
     const bool fUseUnscaledHiDPIOutput = frameBuffer(uScreenID)->useUnscaledHiDPIOutput();
     //printf("Device-pixel-ratio/actual: %f/%f, Unscaled HiDPI Output: %d\n",
@@ -1943,6 +1926,7 @@ void UISession::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, ui
         uYHot *= dScaleMultiplier;
     }
 
+# ifdef VBOX_WS_WIN
     /* If device pixel ratio was set: */
     if (dDevicePixelRatio > 1.0)
     {
@@ -1951,6 +1935,7 @@ void UISession::updateMousePointerPixmapScaling(QPixmap &pixmap, uint &uXHot, ui
         uXHot /= dDevicePixelRatio;
         uYHot /= dDevicePixelRatio;
     }
+# endif
 
 #else
 
