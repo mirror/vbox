@@ -305,7 +305,7 @@ RTDECL(int) RTReqPoolCreate(uint32_t cMaxThreads, RTMSINTERVAL cMsMinIdle,
                             const char *pszName, PRTREQPOOL phPool);
 
 /**
- * Retainsa reference to a request thread pool.
+ * Retains a reference to a request thread pool.
  *
  * @returns The new reference count, UINT32_MAX on invalid handle (asserted).
  * @param   hPool           The request thread pool handle.
