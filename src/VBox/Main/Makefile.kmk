@@ -447,18 +447,14 @@ VBoxSVC_USES    += gccprecomp
 VBoxSVC_PCH_HDR := $(PATH_SUB_CURRENT)/src-server/xpcom/precomp_gcc.h
  endif
 endif
-## r=bird: If you really think you might need VBOX_WITH_RECORDING and VBOX_WITH_AUDIO_RECORDING both here and for
-##         VBoxC, you shall obviously put them in VBOX_MAIN_DEFS!  So, one way or the other they they disappear from here...
 VBoxSVC_DEFS = \
-       IN_VBOXSVC \
+	IN_VBOXSVC \
 	VBOX_MAIN_SETTINGS_ADDONS \
 	IN_VMM_STATIC \
 	$(VBOX_MAIN_DEFS) \
 	$(if $(VBOX_WITH_VBOXSDL),VBOX_WITH_VBOXSDL,) \
 	$(if $(VBOX_WITH_HEADLESS),VBOX_WITH_HEADLESS,) \
 	$(if $(VBOX_WITH_QTGUI),VBOX_WITH_QTGUI,) \
-	$(if $(VBOX_WITH_AUDIO_RECORDING),VBOX_WITH_AUDIO_RECORDING,) \
-	$(if $(VBOX_WITH_RECORDING),VBOX_WITH_RECORDING,) \
 	$(if $(VBOX_WITH_AHCI),VBOX_WITH_AHCI,) \
 	$(if $(VBOX_WITH_LSILOGIC),VBOX_WITH_LSILOGIC,) \
 	$(if $(VBOX_WITH_LINUX_COMPILER_H),VBOX_WITH_LINUX_COMPILER_H,) \
