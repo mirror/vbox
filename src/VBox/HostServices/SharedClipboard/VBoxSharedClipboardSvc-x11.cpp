@@ -208,7 +208,7 @@ int ShClSvcImplReadData(PSHCLCLIENT pClient,
         rc = ShClEventRegister(&pClient->Events, uEvent);
         if (RT_SUCCESS(rc))
         {
-            rc = ClipRequestDataFromX11(pClient->State.pCtx->pBackend, pData->uFormat, pReq);
+            rc = ClipReadDataFromX11(pClient->State.pCtx->pBackend, pData->uFormat, pReq);
             if (RT_SUCCESS(rc))
             {
                 PSHCLEVENTPAYLOAD pPayload;
@@ -408,7 +408,7 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
         if (RT_SUCCESS(rc))
         {
     #endif
-            rc = ClipRequestDataFromX11(pClient->State.pCtx->pBackend, VBOX_SHCL_FMT_URI_LIST, pReq);
+            rc = ClipReadDataFromX11(pClient->State.pCtx->pBackend, VBOX_SHCL_FMT_URI_LIST, pReq);
     #if 0
             if (RT_SUCCESS(rc))
             {

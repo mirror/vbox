@@ -137,6 +137,7 @@ typedef struct _SHCLCLIENT
 {
     /** General client state data. */
     SHCLCLIENTSTATE          State;
+    RTCRITSECT               CritSect;
     /** The client's message queue (FIFO). */
     RTCList<SHCLCLIENTMSG *> queueMsg;
     /** The client's own event source.
@@ -209,29 +210,30 @@ typedef struct _SHCLEXTSTATE
 
 int shClSvcSetSource(PSHCLCLIENT pClient, SHCLSOURCE enmSource);
 
-void shclSvcMsgQueueReset(PSHCLCLIENT pClient);
-PSHCLCLIENTMSG shclSvcMsgAlloc(uint32_t uMsg, uint32_t cParms);
-void shclSvcMsgFree(PSHCLCLIENTMSG pMsg);
-void shclSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms);
-int shclSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend);
-int shclSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fWait);
-int shclSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+void shClSvcMsgQueueReset(PSHCLCLIENT pClient);
+PSHCLCLIENTMSG shClSvcMsgAlloc(uint32_t uMsg, uint32_t cParms);
+void shClSvcMsgFree(PSHCLCLIENTMSG pMsg);
+void shClSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms);
+int shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend);
+int shClSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[], bool fWait);
+int shClSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
 
-int shclSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID);
-void shclSvcClientReset(PSHCLCLIENT pClient);
+int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID);
+void shClSvcClientDestroy(PSHCLCLIENT pClient);
+void shClSvcClientReset(PSHCLCLIENT pClient);
 
-int shclSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID);
-int shclSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState);
+int shClSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID);
+int shClSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState);
 void shclSvcClientStateReset(PSHCLCLIENTSTATE pClientState);
 
-int shclSvcClientWakeup(PSHCLCLIENT pClient);
+int shClSvcClientWakeup(PSHCLCLIENT pClient);
 
 # ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 int shClSvcTransferModeSet(uint32_t fMode);
 int shClSvcTransferStart(PSHCLCLIENT pClient, SHCLTRANSFERDIR enmDir, SHCLSOURCE enmSource, PSHCLTRANSFER *ppTransfer);
 int shClSvcTransferStop(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer);
 bool shClSvcTransferMsgIsAllowed(uint32_t uMode, uint32_t uMsg);
-void shclSvcClientTransfersReset(PSHCLCLIENT pClient);
+void shClSvcClientTransfersReset(PSHCLCLIENT pClient);
 #endif /* VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS */
 
 /** @name Platform-dependent implementations for the Shared Clipboard host service.

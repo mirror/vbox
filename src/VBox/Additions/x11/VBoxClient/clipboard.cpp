@@ -262,7 +262,7 @@ int vboxClipboardMain(void)
                     else
                     {
                         pReq->u32Format = fFormats;
-                        ClipRequestDataFromX11(g_ctx.pBackend, fFormats,
+                        ClipReadDataFromX11(g_ctx.pBackend, fFormats,
                                                pReq);
                     }
                     break;

@@ -95,7 +95,7 @@ int SharedClipboardSvcImplDisconnect(PSHCLCLIENT pClient)
  * @param pFormats              Clipboard formats the guest is offering.
  */
 int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                       PSHCLFORMATDATA pFormats)
+                                         PSHCLFORMATDATA pFormats)
 {
     RT_NOREF(pClient, pCmdCtx, pFormats);
     return VINF_SUCCESS;
@@ -110,7 +110,7 @@ int SharedClipboardSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX 
  * @param pcbActual     Where to store the actual amount of data available.
  */
 int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                 PSHCLDATABLOCK pData, uint32_t *pcbActual)
+                                   PSHCLDATABLOCK pData, uint32_t *pcbActual)
 {
     RT_NOREF(pClient, pCmdCtx, pData);
 
@@ -121,7 +121,7 @@ int SharedClipboardSvcImplReadData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCt
 }
 
 int SharedClipboardSvcImplWriteData(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
-                                  PSHCLDATABLOCK pData)
+                                    PSHCLDATABLOCK pData)
 {
     RT_NOREF(pClient, pCmdCtx, pData);
     return VERR_NOT_IMPLEMENTED;

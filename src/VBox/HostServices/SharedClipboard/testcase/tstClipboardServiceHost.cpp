@@ -128,15 +128,15 @@ static void testSetTransferMode(void)
 
 static void testMsgAddOld(PSHCLCLIENT pClient, uint32_t uMsg, uint32_t uParm1)
 {
-    PSHCLCLIENTMSG pMsg = shclSvcMsgAlloc(uMsg, 2 /* cParms */); /* The old protocol (v0) has a fixed parameter count of 2. */
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(uMsg, 2 /* cParms */); /* The old protocol (v0) has a fixed parameter count of 2. */
     RTTESTI_CHECK_RETV(pMsg != NULL);
 
     HGCMSvcSetU32(&pMsg->paParms[0], uMsg);
     HGCMSvcSetU32(&pMsg->paParms[1], uParm1);
 
-    int rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+    int rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
     RTTESTI_CHECK_RC_OK(rc);
-    rc = shclSvcClientWakeup(pClient);
+    rc = shClSvcClientWakeup(pClient);
     RTTESTI_CHECK_RC_OK(rc);
 }
 
@@ -156,7 +156,7 @@ static void testGetHostMsgOld(void)
     rc = table.pfnHostCall(NULL, VBOX_SHCL_HOST_FN_SET_MODE, 1, parms);
     RTTESTI_CHECK_RC_OK(rc);
 
-    rc = shclSvcClientInit(&g_Client, 1 /* clientId */);
+    rc = shClSvcClientInit(&g_Client, 1 /* clientId */);
     RTTESTI_CHECK_RC_OK(rc);
 
     RTTestISub("Testing one format, waiting guest call.");
@@ -175,7 +175,7 @@ static void testGetHostMsgOld(void)
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
     RTTestISub("Testing one format, no waiting guest calls.");
-    shclSvcClientReset(&g_Client);
+    shClSvcClientReset(&g_Client);
     testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
@@ -189,7 +189,7 @@ static void testGetHostMsgOld(void)
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
     RTTestISub("Testing two formats, waiting guest call.");
-    shclSvcClientReset(&g_Client);
+    shClSvcClientReset(&g_Client);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);
     call.rc = VERR_TRY_AGAIN;
@@ -209,7 +209,7 @@ static void testGetHostMsgOld(void)
     RTTESTI_CHECK_RC(call.rc, VERR_TRY_AGAIN);  /* This call should not complete yet. */
 
     RTTestISub("Testing two formats, no waiting guest calls.");
-    shclSvcClientReset(&g_Client);
+    shClSvcClientReset(&g_Client);
     testMsgAddOld(&g_Client, VBOX_SHCL_HOST_MSG_READ_DATA, VBOX_SHCL_FMT_UNICODETEXT | VBOX_SHCL_FMT_HTML);
     HGCMSvcSetU32(&parms[0], 0);
     HGCMSvcSetU32(&parms[1], 0);

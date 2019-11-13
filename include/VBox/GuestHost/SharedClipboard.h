@@ -277,7 +277,7 @@ extern void ClipDestructX11(CLIPBACKEND *pBackend);
 extern int ClipStartX11(CLIPBACKEND *pBackend, bool grab);
 extern int ClipStopX11(CLIPBACKEND *pBackend);
 extern int ClipAnnounceFormatToX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormats);
-extern int ClipRequestDataFromX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormat, CLIPREADCBREQ *pReq);
+extern int ClipReadDataFromX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormat, CLIPREADCBREQ *pReq);
 /** @} */
 
 /** @name Shared Clipboard APIs (as callbacks) exported by the X11/VBox frontend.

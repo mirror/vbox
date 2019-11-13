@@ -335,7 +335,7 @@ void ShClSvcUnlock(void)
  *
  * @param   pClient             Pointer to the client data structure to reset message queue for.
  */
-void shclSvcMsgQueueReset(PSHCLCLIENT pClient)
+void shClSvcMsgQueueReset(PSHCLCLIENT pClient)
 {
     LogFlowFuncEnter();
 
@@ -353,7 +353,7 @@ void shclSvcMsgQueueReset(PSHCLCLIENT pClient)
  * @param   uMsg                Message type of message to allocate.
  * @param   cParms              Number of HGCM parameters to allocate.
  */
-PSHCLCLIENTMSG shclSvcMsgAlloc(uint32_t uMsg, uint32_t cParms)
+PSHCLCLIENTMSG shClSvcMsgAlloc(uint32_t uMsg, uint32_t cParms)
 {
     PSHCLCLIENTMSG pMsg = (PSHCLCLIENTMSG)RTMemAlloc(sizeof(SHCLCLIENTMSG));
     if (pMsg)
@@ -378,7 +378,7 @@ PSHCLCLIENTMSG shclSvcMsgAlloc(uint32_t uMsg, uint32_t cParms)
  * @param   pMsg                Clipboard message to free.
  *                              The pointer will be invalid after calling this function.
  */
-void shclSvcMsgFree(PSHCLCLIENTMSG pMsg)
+void shClSvcMsgFree(PSHCLCLIENTMSG pMsg)
 {
     if (!pMsg)
         return;
@@ -399,7 +399,7 @@ void shclSvcMsgFree(PSHCLCLIENTMSG pMsg)
  * @param   cDstParms   The number of peek parameters (at least two).
  * @remarks ASSUMES the parameters has been cleared by clientMsgPeek.
  */
-void shclSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
+void shClSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms)
 {
     Assert(cDstParms >= 2);
     if (paDstParms[0].type == VBOX_HGCM_SVC_PARM_32BIT)
@@ -431,7 +431,7 @@ void shclSvcMsgSetPeekReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, u
  * @param   pfRemove    Returns whether the message can be removed from the queue or not.
  *                      This is needed for certain messages which need to stay around for more than one (guest) call.
  */
-int shclSvcMsgSetGetHostMsgOldReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms,
+int shClSvcMsgSetGetHostMsgOldReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDstParms, uint32_t cDstParms,
                                      bool *pfRemove)
 {
     AssertPtrReturn(pMsg,           VERR_INVALID_POINTER);
@@ -521,7 +521,7 @@ int shclSvcMsgSetGetHostMsgOldReturn(PSHCLCLIENTMSG pMsg, PVBOXHGCMSVCPARM paDst
  * @param   pMsg                Pointer to message to add. The queue then owns the pointer.
  * @param   fAppend             Whether to append or prepend the message to the queue.
  */
-int shclSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
+int shClSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
 {
     AssertPtrReturn(pMsg, VERR_INVALID_POINTER);
 
@@ -544,7 +544,7 @@ int shclSvcMsgAdd(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg, bool fAppend)
  * @param   pClient             Client to initialize.
  * @param   uClientID           HGCM client ID to assign client to.
  */
-int shclSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
+int shClSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
 {
     AssertPtrReturn(pClient, VERR_INVALID_POINTER);
 
@@ -553,22 +553,26 @@ int shclSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
 
     LogFlowFunc(("[Client %RU32]\n", pClient->State.uClientID));
 
-    /* Create the client's own event source. */
-    int rc = ShClEventSourceCreate(&pClient->Events, 0 /* ID, ignored */);
+    int rc = RTCritSectInit(&pClient->CritSect);
     if (RT_SUCCESS(rc))
     {
-        LogFlowFunc(("[Client %RU32] Using event source %RU32\n", uClientID, pClient->Events.uID));
+        /* Create the client's own event source. */
+        rc = ShClEventSourceCreate(&pClient->Events, 0 /* ID, ignored */);
+        if (RT_SUCCESS(rc))
+        {
+            LogFlowFunc(("[Client %RU32] Using event source %RU32\n", uClientID, pClient->Events.uID));
 
-        /* Reset the client state. */
-        shclSvcClientStateReset(&pClient->State);
+            /* Reset the client state. */
+            shclSvcClientStateReset(&pClient->State);
 
-        /* (Re-)initialize the client state. */
-        rc = shclSvcClientStateInit(&pClient->State, uClientID);
+            /* (Re-)initialize the client state. */
+            rc = shClSvcClientStateInit(&pClient->State, uClientID);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-        if (RT_SUCCESS(rc))
-            rc = ShClTransferCtxInit(&pClient->TransferCtx);
+            if (RT_SUCCESS(rc))
+                rc = ShClTransferCtxInit(&pClient->TransferCtx);
 #endif
+        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -576,11 +580,52 @@ int shclSvcClientInit(PSHCLCLIENT pClient, uint32_t uClientID)
 }
 
 /**
+ * Destroys a Shared Clipboard client.
+ *
+ * @param   pClient             Client to destroy.
+ */
+void shClSvcClientDestroy(PSHCLCLIENT pClient)
+{
+    AssertPtrReturnVoid(pClient);
+
+    LogFlowFunc(("[Client %RU32]\n", pClient->State.uClientID));
+
+    /* Make sure to send a quit message to the guest so that it can terminate gracefully. */
+    if (pClient->Pending.uType)
+    {
+        if (pClient->Pending.cParms >= 2)
+        {
+            HGCMSvcSetU32(&pClient->Pending.paParms[0], VBOX_SHCL_HOST_MSG_QUIT);
+            HGCMSvcSetU32(&pClient->Pending.paParms[1], 0);
+        }
+        g_pHelpers->pfnCallComplete(pClient->Pending.hHandle, VINF_SUCCESS);
+        pClient->Pending.uType = 0;
+    }
+
+    ShClEventSourceDestroy(&pClient->Events);
+
+    shClSvcClientStateDestroy(&pClient->State);
+
+    int rc2 = RTCritSectDelete(&pClient->CritSect);
+    AssertRC(rc2);
+
+    ClipboardClientMap::iterator itClient = g_mapClients.find(pClient->State.uClientID);
+    if (itClient != g_mapClients.end())
+    {
+        g_mapClients.erase(itClient);
+    }
+    else
+        AssertFailed();
+
+    LogFlowFuncLeave();
+}
+
+/**
  * Resets a Shared Clipboard client.
  *
  * @param   pClient             Client to reset.
  */
-void shclSvcClientReset(PSHCLCLIENT pClient)
+void shClSvcClientReset(PSHCLCLIENT pClient)
 {
     if (!pClient)
         return;
@@ -588,7 +633,7 @@ void shclSvcClientReset(PSHCLCLIENT pClient)
     LogFlowFunc(("[Client %RU32]\n", pClient->State.uClientID));
 
     /* Reset message queue. */
-    shclSvcMsgQueueReset(pClient);
+    shClSvcMsgQueueReset(pClient);
 
     /* Reset event source. */
     ShClEventSourceReset(&pClient->Events);
@@ -597,7 +642,7 @@ void shclSvcClientReset(PSHCLCLIENT pClient)
     RT_ZERO(pClient->Pending);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    shclSvcClientTransfersReset(pClient);
+    shClSvcClientTransfersReset(pClient);
 #endif
 
     shclSvcClientStateReset(&pClient->State);
@@ -617,7 +662,7 @@ void shclSvcClientReset(PSHCLCLIENT pClient)
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int shclSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
+int shClSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
                                 uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
@@ -665,7 +710,7 @@ int shclSvcClientReportFeatures(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall,
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int shclSvcClientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int shClSvcClientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the request.
@@ -703,7 +748,7 @@ int shclSvcClientQueryFeatures(VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHG
  * @param   fWait       Set if we should wait for a message, clear if to return
  *                      immediately.
  */
-int shclSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[],
+int shClSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[],
                    bool fWait)
 {
     /*
@@ -750,7 +795,7 @@ int shclSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParm
         PSHCLCLIENTMSG pFirstMsg = pClient->queueMsg.first();
         if (pFirstMsg)
         {
-            shclSvcMsgSetPeekReturn(pFirstMsg, paParms, cParms);
+            shClSvcMsgSetPeekReturn(pFirstMsg, paParms, cParms);
             LogFlowFunc(("[Client %RU32] VBOX_SHCL_GUEST_FN_MSG_PEEK_XXX -> VINF_SUCCESS (idMsg=%u (%s), cParms=%u)\n",
                          pClient->State.uClientID, pFirstMsg->uMsg, ShClHostMsgToStr(pFirstMsg->uMsg),
                          pFirstMsg->cParms));
@@ -792,7 +837,7 @@ int shclSvcMsgPeek(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParm
  * @param   cParms      Number of parameters.
  * @param   paParms     Array of parameters.
  */
-int shclSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int shClSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc;
 
@@ -817,7 +862,7 @@ int shclSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cPa
                          pFirstMsg->cParms));
 
             bool fRemove;
-            rc = shclSvcMsgSetGetHostMsgOldReturn(pFirstMsg, paParms, cParms, &fRemove);
+            rc = shClSvcMsgSetGetHostMsgOldReturn(pFirstMsg, paParms, cParms, &fRemove);
             if (RT_SUCCESS(rc))
             {
                 AssertPtr(g_pHelpers);
@@ -826,7 +871,7 @@ int shclSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cPa
                     && fRemove)
                 {
                     pClient->queueMsg.removeFirst();
-                    shclSvcMsgFree(pFirstMsg);
+                    shClSvcMsgFree(pFirstMsg);
 
                     rc = VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
                 }
@@ -870,7 +915,7 @@ int shclSvcMsgGetOld(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cPa
  * @param   cParms       Number of parameters.
  * @param   paParms      Array of parameters.
  */
-int shclSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
+int shClSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     /*
      * Validate the request.
@@ -960,7 +1005,7 @@ int shclSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms
                 if (rc != VERR_CANCELLED)
                 {
                     pClient->queueMsg.removeFirst();
-                    shclSvcMsgFree(pFirstMsg);
+                    shClSvcMsgFree(pFirstMsg);
                 }
 
                 return VINF_HGCM_ASYNC_EXECUTE; /* The caller must not complete it. */
@@ -985,7 +1030,7 @@ int shclSvcMsgGet(PSHCLCLIENT pClient, VBOXHGCMCALLHANDLE hCall, uint32_t cParms
  *
  * @param   pClient             Client to wake up.
  */
-int shclSvcClientWakeup(PSHCLCLIENT pClient)
+int shClSvcClientWakeup(PSHCLCLIENT pClient)
 {
     int rc = VINF_NO_CHANGE;
 
@@ -1008,13 +1053,13 @@ int shclSvcClientWakeup(PSHCLCLIENT pClient)
 
                 if (pClient->Pending.uType == VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT)
                 {
-                    shclSvcMsgSetPeekReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms);
+                    shClSvcMsgSetPeekReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms);
                     fDonePending = true;
                 }
                 else if (pClient->Pending.uType == VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD) /* Legacy, Guest Additions < 6.1. */
                 {
                     bool fRemove;
-                    rc = shclSvcMsgSetGetHostMsgOldReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms,
+                    rc = shClSvcMsgSetGetHostMsgOldReturn(pFirstMsg, pClient->Pending.paParms, pClient->Pending.cParms,
                                                           &fRemove);
                     if (RT_SUCCESS(rc))
                     {
@@ -1023,7 +1068,7 @@ int shclSvcClientWakeup(PSHCLCLIENT pClient)
                             /* The old (legacy) protocol gets the message right when returning from peeking, so
                              * remove the actual message from our queue right now. */
                             pClient->queueMsg.removeFirst();
-                            shclSvcMsgFree(pFirstMsg);
+                            shClSvcMsgFree(pFirstMsg);
                         }
 
                         fDonePending = true;
@@ -1073,7 +1118,7 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
 
     int rc;
 
-    PSHCLCLIENTMSG pMsgReadData = shclSvcMsgAlloc(VBOX_SHCL_HOST_MSG_READ_DATA,
+    PSHCLCLIENTMSG pMsgReadData = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_READ_DATA,
                                                   VBOX_SHCL_CPARMS_READ_DATA_REQ);
     if (pMsgReadData)
     {
@@ -1087,13 +1132,13 @@ int ShClSvcDataReadRequest(PSHCLCLIENT pClient, PSHCLDATAREQ pDataReq,
         HGCMSvcSetU32(&pMsgReadData->paParms[2], pDataReq->uFmt);
         HGCMSvcSetU32(&pMsgReadData->paParms[3], pClient->State.cbChunkSize);
 
-        rc = shclSvcMsgAdd(pClient, pMsgReadData, true /* fAppend */);
+        rc = shClSvcMsgAdd(pClient, pMsgReadData, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
             rc = ShClEventRegister(&pClient->Events, uEvent);
             if (RT_SUCCESS(rc))
             {
-                rc = shclSvcClientWakeup(pClient);
+                rc = shClSvcClientWakeup(pClient);
                 if (RT_SUCCESS(rc))
                 {
                     if (puEvent)
@@ -1156,7 +1201,7 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 
     int rc;
 
-    PSHCLCLIENTMSG pMsg = shclSvcMsgAlloc(VBOX_SHCL_HOST_MSG_FORMATS_REPORT, 3);
+    PSHCLCLIENTMSG pMsg = shClSvcMsgAlloc(VBOX_SHCL_HOST_MSG_FORMATS_REPORT, 3);
     if (pMsg)
     {
         const SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
@@ -1166,7 +1211,7 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
         HGCMSvcSetU32(&pMsg->paParms[1], pFormats->uFormats);
         HGCMSvcSetU32(&pMsg->paParms[2], 0 /* fFlags */);
 
-        rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+        rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
         if (RT_SUCCESS(rc))
         {
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
@@ -1184,7 +1229,7 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 #endif
                 pClient->State.fFlags |= SHCLCLIENTSTATE_FLAGS_READ_ACTIVE;
 
-                rc = shclSvcClientWakeup(pClient);
+                rc = shClSvcClientWakeup(pClient);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             }
 #endif
@@ -1463,7 +1508,7 @@ int shClSvcGetDataWrite(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM pa
  * @param   paParms             Array of HGCM parameters.
  * @param   pRc                 Where to store the received error code.
  */
-static int shclSvcGetError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
+static int shClSvcGetError(uint32_t cParms, VBOXHGCMSVCPARM paParms[], int *pRc)
 {
     AssertPtrReturn(paParms, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pRc,     VERR_INVALID_PARAMETER);
@@ -1536,39 +1581,20 @@ static DECLCALLBACK(int) svcUnload(void *)
 
 static DECLCALLBACK(int) svcDisconnect(void *, uint32_t u32ClientID, void *pvClient)
 {
+    RT_NOREF(u32ClientID);
+
     LogFunc(("u32ClientID=%RU32\n", u32ClientID));
 
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pClient);
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    shclSvcClientTransfersReset(pClient);
+    shClSvcClientTransfersReset(pClient);
 #endif
 
     ShClSvcImplDisconnect(pClient);
 
-    /* Make sure to send a quit message to the guest so that it can terminate gracefully. */
-    if (pClient->Pending.uType)
-    {
-        if (pClient->Pending.cParms >= 2)
-        {
-            HGCMSvcSetU32(&pClient->Pending.paParms[0], VBOX_SHCL_HOST_MSG_QUIT);
-            HGCMSvcSetU32(&pClient->Pending.paParms[1], 0);
-        }
-        g_pHelpers->pfnCallComplete(pClient->Pending.hHandle, VINF_SUCCESS);
-        pClient->Pending.uType = 0;
-    }
-
-    shclSvcClientStateDestroy(&pClient->State);
-    ShClEventSourceDestroy(&pClient->Events);
-
-    ClipboardClientMap::iterator itClient = g_mapClients.find(u32ClientID);
-    if (itClient != g_mapClients.end())
-    {
-        g_mapClients.erase(itClient);
-    }
-    else
-        AssertFailed();
+    shClSvcClientDestroy(pClient);
 
     return VINF_SUCCESS;
 }
@@ -1580,7 +1606,7 @@ static DECLCALLBACK(int) svcConnect(void *, uint32_t u32ClientID, void *pvClient
     PSHCLCLIENT pClient = (PSHCLCLIENT)pvClient;
     AssertPtr(pvClient);
 
-    int rc = shclSvcClientInit(pClient, u32ClientID);
+    int rc = shClSvcClientInit(pClient, u32ClientID);
     if (RT_SUCCESS(rc))
     {
         rc = ShClSvcImplConnect(pClient, ShClSvcGetHeadless());
@@ -1638,7 +1664,7 @@ static DECLCALLBACK(void) svcCall(void *,
     {
         case VBOX_SHCL_GUEST_FN_GET_HOST_MSG_OLD:
         {
-            rc = shclSvcMsgGetOld(pClient, callHandle, cParms, paParms);
+            rc = shClSvcMsgGetOld(pClient, callHandle, cParms, paParms);
             break;
         }
 
@@ -1671,31 +1697,31 @@ static DECLCALLBACK(void) svcCall(void *,
 
         case VBOX_SHCL_GUEST_FN_REPORT_FEATURES:
         {
-            rc = shclSvcClientReportFeatures(pClient, callHandle, cParms, paParms);
+            rc = shClSvcClientReportFeatures(pClient, callHandle, cParms, paParms);
             break;
         }
 
         case VBOX_SHCL_GUEST_FN_QUERY_FEATURES:
         {
-            rc = shclSvcClientQueryFeatures(callHandle, cParms, paParms);
+            rc = shClSvcClientQueryFeatures(callHandle, cParms, paParms);
             break;
         }
 
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_NOWAIT:
         {
-            rc = shclSvcMsgPeek(pClient, callHandle, cParms, paParms, false /*fWait*/);
+            rc = shClSvcMsgPeek(pClient, callHandle, cParms, paParms, false /*fWait*/);
             break;
         }
 
         case VBOX_SHCL_GUEST_FN_MSG_PEEK_WAIT:
         {
-            rc = shclSvcMsgPeek(pClient, callHandle, cParms, paParms, true /*fWait*/);
+            rc = shClSvcMsgPeek(pClient, callHandle, cParms, paParms, true /*fWait*/);
             break;
         }
 
         case VBOX_SHCL_GUEST_FN_MSG_GET:
         {
-            rc = shclSvcMsgGet(pClient, callHandle, cParms, paParms);
+            rc = shClSvcMsgGet(pClient, callHandle, cParms, paParms);
             break;
         }
 
@@ -1801,7 +1827,7 @@ static DECLCALLBACK(void) svcCall(void *,
             /* Reset client state and start over. */
             shclSvcClientStateReset(&pClient->State);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-            shclSvcClientTransfersReset(pClient);
+            shClSvcClientTransfersReset(pClient);
 #endif
             /** @todo Do we need to do anything else here? */
             break;
@@ -1810,7 +1836,7 @@ static DECLCALLBACK(void) svcCall(void *,
         case VBOX_SHCL_GUEST_FN_ERROR:
         {
             int rcGuest;
-            rc = shclSvcGetError(cParms,paParms, &rcGuest);
+            rc = shClSvcGetError(cParms,paParms, &rcGuest);
             if (RT_SUCCESS(rc))
             {
                 LogRel(("Shared Clipboard: Error from guest side: %Rrc\n", rcGuest));
@@ -1818,7 +1844,7 @@ static DECLCALLBACK(void) svcCall(void *,
                 /* Reset client state and start over. */
                 shclSvcClientStateReset(&pClient->State);
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-                shclSvcClientTransfersReset(pClient);
+                shClSvcClientTransfersReset(pClient);
 #endif
             }
             break;
@@ -1856,7 +1882,7 @@ static DECLCALLBACK(void) svcCall(void *,
  * @param   pClientState        Client state to initialize.
  * @param   uClientID           Client ID (HGCM) to use for this client state.
  */
-int shclSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
+int shClSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
 {
     LogFlowFuncEnter();
 
@@ -1874,7 +1900,7 @@ int shclSvcClientStateInit(PSHCLCLIENTSTATE pClientState, uint32_t uClientID)
  * @returns VBox status code.
  * @param   pClientState        Client state to destroy.
  */
-int shclSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState)
+int shClSvcClientStateDestroy(PSHCLCLIENTSTATE pClientState)
 {
     RT_NOREF(pClientState);
 
@@ -2229,7 +2255,7 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
                 AssertRCReturn(rc, rc);
             }
 
-            rc = shclSvcMsgAdd(pClient, pMsg, true /* fAppend */);
+            rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
             AssertRCReturn(rc, rc);
         }
     }
