@@ -51,6 +51,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <iprt/utf16.h>
+#include <iprt/uri.h>
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
 # include <iprt/cpp/list.h>
@@ -2118,19 +2119,23 @@ static void clipConvertDataFromX11CallbackWorker(void *pClient, void *pvSrc, uns
                 if (RT_SUCCESS(RTStrValidateEncodingEx((char *)pvSrc, cbSrc, 0)))
                 {
                     /* URI lists on X are string separated with "\r\n". */
-                    RTCList<RTCString> lstRootEntries = RTCString((char *)pvSrc, cbSrc - 1).split("\r\n");
+                    RTCList<RTCString> lstRootEntries = RTCString((char *)pvSrc, cbSrc).split("\r\n");
                     for (size_t i = 0; i < lstRootEntries.size(); ++i)
                     {
-                        const char *pcszEntry = lstRootEntries.at(i).c_str();
-                        AssertPtrBreakStmt(pcszEntry, VERR_INVALID_POINTER);
+                        char *pszEntry = RTUriFilePath(lstRootEntries.at(i).c_str());
+                        AssertPtrBreakStmt(pszEntry, VERR_INVALID_PARAMETER);
 
-                        rc = RTStrAAppend((char **)&pvDst, pcszEntry);
+                        LogFlowFunc(("URI list entry '%s'\n", pszEntry));
+
+                        rc = RTStrAAppend((char **)&pvDst, pszEntry);
                         AssertRCBreakStmt(rc, VERR_NO_MEMORY);
-                        cbDst += (uint32_t)strlen(pcszEntry);
+                        cbDst += (uint32_t)strlen(pszEntry);
 
                         rc = RTStrAAppend((char **)&pvDst, "\r\n");
                         AssertRCBreakStmt(rc, VERR_NO_MEMORY);
                         cbDst += (uint32_t)strlen("\r\n");
+
+                        RTStrFree(pszEntry);
                     }
 
                     if (cbDst)

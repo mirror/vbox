@@ -1374,27 +1374,27 @@ DECLINLINE(SHCLLISTHANDLE) shClTransferListHandleNew(PSHCLTRANSFER pTransfer)
 }
 
 /**
- * Valides whether a given path matches our set of rules or not.
+ * Validates whether a given path matches our set of rules or not.
  *
  * @returns VBox status code.
- * @param   pszPath             Path to validate.
+ * @param   pcszPath            Path to validate.
  * @param   fMustExist          Whether the path to validate also must exist.
  */
-static int shClTransferValidatePath(const char *pszPath, bool fMustExist)
+static int shClTransferValidatePath(const char *pcszPath, bool fMustExist)
 {
     int rc = VINF_SUCCESS;
 
-    if (!strlen(pszPath))
+    if (!strlen(pcszPath))
         rc = VERR_INVALID_PARAMETER;
 
     if (   RT_SUCCESS(rc)
-        && !RTStrIsValidEncoding(pszPath))
+        && !RTStrIsValidEncoding(pcszPath))
     {
         rc = VERR_INVALID_UTF8_ENCODING;
     }
 
     if (   RT_SUCCESS(rc)
-        && RTStrStr(pszPath, ".."))
+        && RTStrStr(pcszPath, ".."))
     {
         rc = VERR_INVALID_PARAMETER;
     }
@@ -1403,23 +1403,29 @@ static int shClTransferValidatePath(const char *pszPath, bool fMustExist)
         && fMustExist)
     {
         RTFSOBJINFO objInfo;
-        rc = RTPathQueryInfo(pszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
+        rc = RTPathQueryInfo(pcszPath, &objInfo, RTFSOBJATTRADD_NOTHING);
         if (RT_SUCCESS(rc))
         {
             if (RTFS_IS_DIRECTORY(objInfo.Attr.fMode))
             {
-                if (!RTDirExists(pszPath)) /* Path must exist. */
+                if (!RTDirExists(pcszPath)) /* Path must exist. */
                     rc = VERR_PATH_NOT_FOUND;
             }
             else if (RTFS_IS_FILE(objInfo.Attr.fMode))
             {
-                if (!RTFileExists(pszPath)) /* File must exist. */
+                if (!RTFileExists(pcszPath)) /* File must exist. */
                     rc = VERR_FILE_NOT_FOUND;
             }
             else /* Everything else (e.g. symbolic links) are not supported. */
+            {
+                LogRel2(("Shared Clipboard: Path '%s' contains a symbolic link or junktion, which are not supported\n", pcszPath));
                 rc = VERR_NOT_SUPPORTED;
+            }
         }
     }
+
+    if (RT_FAILURE(rc))
+        LogRel2(("Shared Clipboard: Validating path '%s' failed: %Rrc\n", pcszPath, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;

@@ -1394,6 +1394,18 @@ int shClSvcTransferHandler(PSHCLCLIENT pClient,
             if (cParms != VBOX_SHCL_CPARMS_ROOT_LIST_HDR_READ)
                 break;
 
+            if (   ShClTransferGetSource(pTransfer) == SHCLSOURCE_LOCAL
+                && ShClTransferGetDir(pTransfer)    == SHCLTRANSFERDIR_WRITE)
+            {
+                /* Get roots if this is a local write transfer (host -> guest). */
+                rc = ShClSvcImplTransferGetRoots(pClient, pTransfer);
+            }
+            else
+            {
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
             SHCLROOTLISTHDR rootListHdr;
             RT_ZERO(rootListHdr);
 
@@ -1754,6 +1766,23 @@ int shClSvcTransferHostHandler(uint32_t u32Function,
     return rc;
 }
 
+int shClSvcTransferHostMsgHandler(PSHCLCLIENT pClient, PSHCLCLIENTMSG pMsg)
+{
+    RT_NOREF(pClient);
+
+    int rc;
+
+    switch (pMsg->uMsg)
+    {
+        default:
+            rc = VINF_SUCCESS;
+            break;
+    }
+
+    LogFlowFuncLeaveRC(rc);
+    return rc;
+}
+
 /**
  * Registers an clipboard transfer area.
  *
@@ -2072,12 +2101,6 @@ int shClSvcTransferStart(PSHCLCLIENT pClient,
                         rc = ShClTransferInit(pTransfer, uTransferID, enmDir, enmSource);
                         if (RT_SUCCESS(rc))
                         {
-                            if (   enmSource == SHCLSOURCE_LOCAL
-                                && enmDir    == SHCLTRANSFERDIR_WRITE) /* Get roots if this is a local write transfer. */
-                            {
-                                rc = ShClSvcImplTransferGetRoots(pClient, pTransfer);
-                            }
-
                             if (RT_SUCCESS(rc))
                                 rc = ShClTransferStart(pTransfer);
 

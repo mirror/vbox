@@ -392,36 +392,32 @@ int ShClSvcImplTransferGetRoots(PSHCLCLIENT pClient, PSHCLTRANSFER pTransfer)
 {
     LogFlowFuncEnter();
 
-    int rc;
+    SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
 
-    CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
-    if (pReq)
+    int rc = ShClEventRegister(&pClient->Events, uEvent);
+    if (RT_SUCCESS(rc))
     {
-        pReq->pv        = pTransfer;
-        pReq->cb        = sizeof(SHCLTRANSFER);
-        pReq->uEvent    = NIL_SHCLEVENTID; /* No event handling needed. */
-
-    #if 0
-        SHCLEVENTID uEvent = ShClEventIDGenerate(&pClient->Events);
-
-        rc = ShClEventRegister(&pClient->Events, uEvent);
-        if (RT_SUCCESS(rc))
+        CLIPREADCBREQ *pReq = (CLIPREADCBREQ *)RTMemAllocZ(sizeof(CLIPREADCBREQ));
+        if (pReq)
         {
-    #endif
+            pReq->uEvent = uEvent;
+
             rc = ClipReadDataFromX11(pClient->State.pCtx->pBackend, VBOX_SHCL_FMT_URI_LIST, pReq);
-    #if 0
             if (RT_SUCCESS(rc))
             {
                 /* X supplies the data asynchronously, so we need to wait for data to arrive first. */
-                rc = ShClEventWait(&pClient->Events, uEvent, 30 * 1000, NULL /* pPayload */);
+                PSHCLEVENTPAYLOAD pPayload;
+                rc = ShClEventWait(&pClient->Events, uEvent, 30 * 1000, &pPayload);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = ShClTransferRootsSet(pTransfer,
+                                              (char *)pPayload->pvData, pPayload->cbData + 1 /* Include termination */);
+                }
             }
-
-            ShClEventUnregister(&pClient->Events, uEvent);
         }
-    #endif
+
+        ShClEventUnregister(&pClient->Events, uEvent);
     }
-    else
-        rc = VERR_NO_MEMORY;
 
     LogFlowFuncLeaveRC(rc);
     return rc;
