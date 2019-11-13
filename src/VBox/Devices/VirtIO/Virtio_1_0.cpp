@@ -84,6 +84,7 @@ typedef struct virtq_avail
     uint16_t  fFlags;                                            /**< flags      avail ring drv to dev flags    */
     uint16_t  uIdx;                                              /**< idx        Index of next free ring slot   */
     uint16_t  auRing[RT_FLEXIBLE_ARRAY];                         /**< ring       Ring: avail drv to dev bufs    */
+    /* uint16_t  uUsedEventIdx;                                     - used_event (if VIRTQ_USED_F_EVENT_IDX)    */
 } VIRTQ_AVAIL_T, *PVIRTQ_AVAIL_T;
 
 typedef struct virtq_used_elem
@@ -97,6 +98,7 @@ typedef struct virt_used
     uint16_t  fFlags;                                            /**< flags       used ring host-to-guest flags */
     uint16_t  uIdx;                                              /**< idx         Index of next ring slot       */
     VIRTQ_USED_ELEM_T aRing[RT_FLEXIBLE_ARRAY];                  /**< ring        Ring: used dev to drv bufs    */
+    /* uint16_t  uAvailEventIdx;                                    - avail_event if (VIRTQ_USED_F_EVENT_IDX)   */
 } VIRTQ_USED_T, *PVIRTQ_USED_T;
 
 
@@ -160,7 +162,7 @@ DECLINLINE(bool) virtqIsEmpty(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t 
     return virtioReadAvailRingIdx(pDevIns, pVirtio, idxQueue) == pVirtio->virtqState[idxQueue].uAvailIdx;
 }
 
-#if 0 /* unused */
+#if 0 /* unused - Will be used when VIRTIO_F_EVENT_IDX optional feature is implemented, VirtIO 1.0, 2.4.7 */
 DECLINLINE(uint16_t) virtioReadAvailFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
 {
     uint16_t fFlags;
@@ -228,7 +230,7 @@ DECLINLINE(uint16_t) virtioReadUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio
     return fFlags;
 }
 
-#if 0 /* unused */
+#if 0 /* unused - This may eventually be used to set no-notify for the ring as an optimization */
 DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t fFlags)
 {
     AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
@@ -239,21 +241,7 @@ DECLINLINE(void) virtioWriteUsedFlags(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, u
 }
 #endif
 
-#if 0 /* unused */
-DECLINLINE(uint16_t) virtioReadUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue)
-{
-    uint16_t uAvailEventIdx;
-    RT_UNTRUSTED_VALIDATED_FENCE(); /* VirtIO 1.0, Section 3.2.1.4.1 */
-    /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
-    AssertMsg(pVirtio->uDeviceStatus & VIRTIO_STATUS_DRIVER_OK, ("Called with guest driver not ready\n"));
-    PDMDevHlpPhysRead(pDevIns,
-                      pVirtio->aGCPhysQueueUsed[idxQueue] + RT_UOFFSETOF_DYN(VIRTQ_USED_T, aRing[pVirtio->uQueueSize[idxQueue]]),
-                      &uAvailEventIdx, sizeof(uAvailEventIdx));
-    return uAvailEventIdx;
-}
-#endif
-
-#if 0 /* unused */
+#if 0 /* unused - *May* be used when VIRTIO_F_EVENT_IDX optional feature is implemented VirtIO 1.0, 2.4.9.2*/
 DECLINLINE(void) virtioWriteUsedAvailEvent(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQueue, uint32_t uAvailEventIdx)
 {
     /** VirtIO 1.0 uAvailEventIdx (avail_event) immediately follows ring */
@@ -301,7 +289,7 @@ static RTGCPHYS virtioCoreSgBufGet(PVIRTIOSGBUF pGcSgBuf, size_t *pcbData)
         return 0;
     }
 
-    AssertMsg(    pGcSgBuf->cbSegLeft <= 128 * _1M
+    AssertMsg(  pGcSgBuf->cbSegLeft <= 128 * _1M
             && (RTGCPHYS)pGcSgBuf->pGcSegCur >= (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg
             && (RTGCPHYS)pGcSgBuf->pGcSegCur + pGcSgBuf->cbSegLeft <=
                    (RTGCPHYS)pGcSgBuf->paSegs[pGcSgBuf->idxSeg].pGcSeg + pGcSgBuf->paSegs[pGcSgBuf->idxSeg].cbSeg,
@@ -338,12 +326,12 @@ void virtioCoreSgBufReset(PVIRTIOSGBUF pGcSgBuf)
     pGcSgBuf->idxSeg = 0;
     if (pGcSgBuf->cSegs)
     {
-        pGcSgBuf->pGcSegCur  = pGcSgBuf->paSegs[0].pGcSeg;
+        pGcSgBuf->pGcSegCur = pGcSgBuf->paSegs[0].pGcSeg;
         pGcSgBuf->cbSegLeft = pGcSgBuf->paSegs[0].cbSeg;
     }
     else
     {
-        pGcSgBuf->pGcSegCur  = 0;
+        pGcSgBuf->pGcSegCur = 0;
         pGcSgBuf->cbSegLeft = 0;
     }
 }
@@ -652,13 +640,13 @@ int virtioCoreR3QueueGet(PPDMDEVINS pDevIns, PVIRTIOCORE pVirtio, uint16_t idxQu
         {
             Log3Func(("%s IN  desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUE_NAME(pVirtio, idxQueue), uDescIdx, cSegsIn, desc.GCPhysBuf, desc.cb));
             cbIn += desc.cb;
-            pSeg = (PVIRTIOSGSEG)&(paSegsIn[cSegsIn++]);
+            pSeg = &(paSegsIn[cSegsIn++]);
         }
         else
         {
             Log3Func(("%s OUT desc_idx=%u seg=%u addr=%RGp cb=%u\n", QUEUE_NAME(pVirtio, idxQueue), uDescIdx, cSegsOut, desc.GCPhysBuf, desc.cb));
             cbOut += desc.cb;
-            pSeg = (PVIRTIOSGSEG)&(paSegsOut[cSegsOut++]);
+            pSeg = &(paSegsOut[cSegsOut++]);
         }
 
         pSeg->pGcSeg = desc.GCPhysBuf;

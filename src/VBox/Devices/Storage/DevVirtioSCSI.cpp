@@ -766,7 +766,10 @@ static int virtioScsiR3ReqErr(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSI
     Log2Func(("   status: %s    response: %s\n", SCSIStatusText(pRespHdr->uStatus), virtioGetReqRespText(pRespHdr->uResponse)));
 
     PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
+    AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
+
     PRTSGSEG paReqSegs  = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
+    AssertReturn(paReqSegs, VERR_NO_MEMORY);
 
     paReqSegs[0].cbSeg = sizeof(pRespHdr);
     paReqSegs[0].pvSeg = pRespHdr;
@@ -925,7 +928,10 @@ static DECLCALLBACK(int) virtioScsiR3IoReqFinish(PPDMIMEDIAEXPORT pInterface, PD
         /* req datain bytes already in guest phys mem. via virtioScsiIoReqCopyFromBuf() */
 
         PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
+        AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
+
         PRTSGSEG paReqSegs  = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
+        AssertReturn(paReqSegs, VERR_NO_MEMORY);
 
         paReqSegs[cSegs].pvSeg = &respHdr;
         paReqSegs[cSegs++].cbSeg = sizeof(respHdr);
@@ -988,7 +994,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyFromBuf(PPDMIMEDIAEXPORT pInterfac
 
     while (cbRemain)
     {
-        PCVIRTIOSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
+        PVIRTIOSGSEG paSeg = &pSgPhysReturn->paSegs[pSgPhysReturn->idxSeg];
         uint64_t dstSgStart = (uint64_t)paSeg->pGcSeg;
         uint64_t dstSgLen   = (uint64_t)paSeg->cbSeg;
         uint64_t dstSgCur   = (uint64_t)pSgPhysReturn->pGcSegCur;
@@ -1029,7 +1035,7 @@ static DECLCALLBACK(int) virtioScsiR3IoReqCopyToBuf(PPDMIMEDIAEXPORT pInterface,
     size_t cbRemain = pReq->cbDataOut;
     while (cbRemain)
     {
-        PCVIRTIOSGSEG paSeg     = &pSgPhysSend->paSegs[pSgPhysSend->idxSeg];
+        PVIRTIOSGSEG paSeg  = &pSgPhysSend->paSegs[pSgPhysSend->idxSeg];
         uint64_t srcSgStart = (uint64_t)paSeg->pGcSeg;
         uint64_t srcSgLen   = (uint64_t)paSeg->cbSeg;
         uint64_t srcSgCur   = (uint64_t)pSgPhysSend->pGcSegCur;
@@ -1164,7 +1170,7 @@ static int virtioScsiR3ReqSubmit(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOS
      */
 
     if (RT_LIKELY(!fBadLUNFormat
-                  || (uTarget < pThis->cTargets
+                  && (uTarget < pThis->cTargets
                   &&  pThisCC->paTargetInstances[uTarget].fPresent
                   &&  pThisCC->paTargetInstances[uTarget].pDrvMediaEx)))
     { /*  likely */ }
@@ -1358,6 +1364,7 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
                                 | VIRTIOSCSI_EVT_ASYNC_DEVICE_BUSY;
 
     PRTSGSEG paReqSegs = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 2);
+    AssertReturn(paReqSegs, VERR_NO_MEMORY);
 
     switch (pScsiCtrlUnion->scsiCtrl.uType)
     {
@@ -1505,6 +1512,8 @@ static int virtioScsiR3Ctrl(PPDMDEVINS pDevIns, PVIRTIOSCSI pThis, PVIRTIOSCSICC
     LogFunc(("Response code: %s\n", virtioGetReqRespText(bResponse)));
 
     PRTSGBUF pReqSegBuf = (PRTSGBUF)RTMemAllocZ(sizeof(RTSGBUF));
+    AssertReturn(pReqSegBuf, VERR_NO_MEMORY);
+
     RTSgBufInit(pReqSegBuf, paReqSegs, cSegs);
 
     virtioCoreR3QueuePut(pDevIns, &pThis->Virtio, qIdx, pReqSegBuf, pDescChain, true);
@@ -2159,7 +2168,7 @@ static DECLCALLBACK(bool) virtioScsiR3DeviceQuiesced(PPDMDEVINS pDevIns)
         virtioCoreR3PropagateResetNotification(pDevIns, &pThis->Virtio);
     /** @todo r=bird: Do we need other notifications here for suspend and/or poweroff? */
 
-//    pThisCC->enm  = kvirtIoScsiQuiescingForInvalid;
+//    pThisCC->enmQuiescingFor  = kvirtIoScsiQuiescingForInvalid;
     pThisCC->fQuiescing = false;
     return true;
 }
@@ -2460,7 +2469,6 @@ static DECLCALLBACK(int) virtioScsiR3Construct(PPDMDEVINS pDevIns, int iInstance
             AssertMsgReturn(VALID_PTR(pTarget->pDrvMedia),
                             ("virtio-scsi configuration error: LUN#%d missing basic media interface!\n", iTarget),
                             VERR_PDM_MISSING_INTERFACE);
-
             /* Get the extended media interface. */
             pTarget->pDrvMediaEx = PDMIBASE_QUERY_INTERFACE(pTarget->pDrvBase, PDMIMEDIAEX);
             AssertMsgReturn(VALID_PTR(pTarget->pDrvMediaEx),
