@@ -127,12 +127,33 @@ InitGlobalDescriptorTable (
   GDT_ENTRIES *gdt;
   IA32_DESCRIPTOR gdtPtr;
 
+#ifndef VBOX
   //
   // Allocate Runtime Data for the GDT
   //
-  gdt = AllocateReservedPool (sizeof (GdtTemplate) + 8); /* VBox: Required for OS X (tested with 32-bit 10.6), original uses AllocateRuntimePool here. */
+  gdt = AllocateRuntimePool (sizeof (GdtTemplate) + 8);
   ASSERT (gdt != NULL);
   gdt = ALIGN_POINTER (gdt, 8);
+#else
+   /*
+    * With previous versions of the EDK2 changing AllocateRuntimePool to AllocateReservedPool
+    * was enough to get earlier mac OS versions (Tiger up until at least Snow Leopard) not overwriting the GDT
+    * when freeing not required EFI memory ranges anymore.
+    * With the current version however the memory map (memmap command in EFI shell) returned to boot.efi
+    * will have the Runtime flag always cleared no matter what. boot.efi overwrites the memory and
+    * the VM triple faults because of the invalid GDT.
+    * Using the AllocatePages() method with EfiRuntimeServicesData works around that and the GDT memory
+    * has the proper Runtime flag set so boot.efi will leave it alone.
+    */
+  EFI_STATUS Status;
+  EFI_PHYSICAL_ADDRESS PhysicalAddress = SIZE_4GB - 1;
+  Status = gBS->AllocatePages(AllocateMaxAddress,
+                              EfiRuntimeServicesData,
+                              1,
+                              &PhysicalAddress);
+  ASSERT(!EFI_ERROR(Status));
+  gdt = ALIGN_POINTER ((void *)(UINTN)PhysicalAddress, 8);
+#endif
 
   //
   // Initialize all GDT entries
