@@ -3249,6 +3249,7 @@ static int buslogicR3DeviceSCSIRequestAbort(PPDMDEVINS pDevIns, PBUSLOGIC pBusLo
  * 32-bit format.
  *
  * @returns Mailbox guest physical address.
+ * @param   pDevIns      The device instance.
  * @param   pBusLogic    Pointer to the shared BusLogic instance data.
  * @param   pMbx         Pointer to the mailbox to read into.
  */
