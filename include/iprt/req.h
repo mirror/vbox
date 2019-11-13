@@ -74,7 +74,7 @@ typedef enum RTREQTYPE
  */
 typedef enum RTREQFLAGS
 {
-    /** The request returns a iprt status code. */
+    /** The request returns a IPRT status code. */
     RTREQFLAGS_IPRT_STATUS  = 0,
     /** The request is a void request and have no status code. */
     RTREQFLAGS_VOID         = 1,
@@ -98,7 +98,7 @@ typedef RTREQ *PRTREQ;
 /**
  * Create a request packet queue
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  * @param   phQueue         Where to store the request queue handle.
  */
 RTDECL(int) RTReqQueueCreate(PRTREQQUEUE phQueue);
@@ -106,7 +106,7 @@ RTDECL(int) RTReqQueueCreate(PRTREQQUEUE phQueue);
 /**
  * Destroy a request packet queue
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  * @param   hQueue          The request queue.
  */
 RTDECL(int) RTReqQueueDestroy(RTREQQUEUE hQueue);
@@ -114,7 +114,7 @@ RTDECL(int) RTReqQueueDestroy(RTREQQUEUE hQueue);
 /**
  * Process one or more request packets
  *
- * @returns iprt status code.  Any non-VINF_SUCCESS returns from request
+ * @returns IPRT status code.  Any non-VINF_SUCCESS returns from request
  *          processing is immediately propagated to the caller.
  * @retval  VERR_TIMEOUT if @a cMillies was reached without the packet being
  *          added.
@@ -170,7 +170,7 @@ RTDECL(int) RTReqQueueCall(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMilli
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using RTReqRelease().
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
@@ -196,7 +196,7 @@ RTDECL(int) RTReqQueueCallVoid(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cM
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using RTReqRelease().
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
@@ -224,7 +224,7 @@ RTDECL(int) RTReqQueueCallEx(RTREQQUEUE hQueue, PRTREQ *ppReq, RTMSINTERVAL cMil
  * use RT_INDEFINITE_WAIT.
  * The returned request packet must be freed using RTReqRelease().
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
@@ -267,7 +267,7 @@ RTDECL(bool) RTReqQueueIsBusy(RTREQQUEUE hQueue);
  * The caller allocates a request packet, fills in the request data
  * union and queues the request.
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  *
  * @param   hQueue          The request queue.
  * @param   enmType         Package type.
@@ -419,7 +419,7 @@ typedef enum RTREQPOOLSTAT
 } RTREQPOOLSTAT;
 
 /**
- * Read a statistics value from the request thread pool.
+ * Reads a statistics value from the request thread pool.
  *
  * @returns The value, UINT64_MAX if an invalid parameter was given.
  * @param   hPool           The request thread pool handle.
@@ -432,7 +432,7 @@ RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat);
  *
  * This is mostly for internal use, please use the convenience methods.
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  *
  * @param   hPool           The request thread pool handle.
  * @param   enmType         Package type.
@@ -441,7 +441,7 @@ RTDECL(uint64_t) RTReqPoolGetStat(RTREQPOOL hPool, RTREQPOOLSTAT enmStat);
 RTDECL(int) RTReqPoolAlloc(RTREQPOOL hPool, RTREQTYPE enmType, PRTREQ *phReq);
 
 /**
- * Call a function on a worker thread.
+ * Calls a function on a worker thread.
  *
  * @returns IPRT status code.
  * @param   hPool           The request thread pool handle.
@@ -459,11 +459,11 @@ RTDECL(int) RTReqPoolAlloc(RTREQPOOL hPool, RTREQTYPE enmType, PRTREQ *phReq);
  *          arguments (use pointers to these instead).  In general anything
  *          that's larger than an uintptr_t is problematic.
  */
-RTDECL(int) RTReqPoolCallEx( RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
+RTDECL(int) RTReqPoolCallEx(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, ...);
 
 
 /**
- * Call a function on a worker thread.
+ * Calls a function on a worker thread.
  *
  * @returns IPRT status code.
  * @param   hPool           The request thread pool handle.
@@ -482,7 +482,7 @@ RTDECL(int) RTReqPoolCallEx( RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phR
 RTDECL(int) RTReqPoolCallExV(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phReq, uint32_t fFlags, PFNRT pfnFunction, unsigned cArgs, va_list va);
 
 /**
- * Call a function on a worker thread, wait for it to return.
+ * Calls a function on a worker thread, wait for it to return.
  *
  * @returns IPRT status code returned by @a pfnFunction or request pool error.
  * @param   hPool           The request thread pool handle.
@@ -497,7 +497,7 @@ RTDECL(int) RTReqPoolCallExV(RTREQPOOL hPool, RTMSINTERVAL cMillies, PRTREQ *phR
 RTDECL(int) RTReqPoolCallWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
 
 /**
- * Call a function on a worker thread, don't wait for it to return.
+ * Calls a function on a worker thread, don't wait for it to return.
  *
  * @returns IPRT status code.
  * @param   hPool           The request thread pool handle.
@@ -513,7 +513,7 @@ RTDECL(int) RTReqPoolCallWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs
 RTDECL(int) RTReqPoolCallNoWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned cArgs, ...);
 
 /**
- * Call a void function on a worker thread.
+ * Calls a void function on a worker thread.
  *
  * @returns IPRT status code.
  * @param   hPool           The request thread pool handle.
@@ -542,7 +542,7 @@ RTDECL(int) RTReqPoolCallVoidNoWait(RTREQPOOL hPool, PFNRT pfnFunction, unsigned
 
 
 /**
- * Retainsa reference to a request.
+ * Retains a reference to a request.
  *
  * @returns The new reference count, UINT32_MAX on invalid handle (asserted).
  * @param   hReq            The request handle.
@@ -560,16 +560,16 @@ RTDECL(uint32_t) RTReqRetain(PRTREQ hReq);
 RTDECL(uint32_t) RTReqRelease(PRTREQ hReq);
 
 /**
- * Queue a request.
+ * Queues a request.
  *
- * The quest must be allocated using RTReqQueueAlloc() or RTReqPoolAlloc() and
+ * The request must be allocated using RTReqQueueAlloc() or RTReqPoolAlloc() and
  * contain all the required data.
  *
  * If it's desired to poll on the completion of the request set cMillies
  * to 0 and use RTReqWait() to check for completion. In the other case
  * use RT_INDEFINITE_WAIT.
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
@@ -582,9 +582,9 @@ RTDECL(int) RTReqSubmit(PRTREQ pReq, RTMSINTERVAL cMillies);
 
 
 /**
- * Wait for a request to be completed.
+ * Waits for a request to be completed.
  *
- * @returns iprt status code.
+ * @returns IPRT status code.
  *          Will not return VERR_INTERRUPTED.
  * @returns VERR_TIMEOUT if cMillies was reached without the packet being completed.
  *
@@ -595,11 +595,11 @@ RTDECL(int) RTReqSubmit(PRTREQ pReq, RTMSINTERVAL cMillies);
 RTDECL(int) RTReqWait(PRTREQ pReq, RTMSINTERVAL cMillies);
 
 /**
- * Get the status of the request.
+ * Gets the status of the request.
  *
- * @returns Status code in the IPRT tradition.
+ * @returns IPRT status code.
  *
- * @param   pReq            The request.
+ * @param   pReq            The request to get the status for.
  */
 RTDECL(int) RTReqGetStatus(PRTREQ pReq);
 
