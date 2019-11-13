@@ -47,6 +47,13 @@ technical terms if no non-technical ones are clear enough.
         <para>VBoxSDL frontend: Fixed running on Windows hosts</para>
       </listitem>
 
+      <listitem>
+        <para>
+          Shared Clipboard: Implemented experimental support for file transfers
+          for Linux hosts on Windows guests (disabled by default)
+        </para>
+      </listitem>
+
     </itemizedlist>
   </sect1>
 
