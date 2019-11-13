@@ -1664,7 +1664,7 @@ VBGLR3DECL(int) VbglR3ClipboardObjWriteSend(PVBGLR3SHCLCMDCTX pCtx, SHCLOBJHANDL
 *   Transfer interface implementations                                                                                           *
 *********************************************************************************************************************************/
 
-static int vbglR3ClipboardTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOTLIST *ppRootList)
 {
     LogFlowFuncEnter();
 
@@ -1677,8 +1677,8 @@ static int vbglR3ClipboardTransferIfaceGetRoots(PSHCLPROVIDERCTX pCtx, PSHCLROOT
     return rc;
 }
 
-static int vbglR3ClipboardTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
-                                                PSHCLLISTHANDLE phList)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLISTOPENPARMS pOpenParms,
+                                                              PSHCLLISTHANDLE phList)
 {
     LogFlowFuncEnter();
 
@@ -1691,7 +1691,7 @@ static int vbglR3ClipboardTransferIfaceListOpen(PSHCLPROVIDERCTX pCtx, PSHCLLIST
     return rc;
 }
 
-static int vbglR3ClipboardTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLISTHANDLE hList)
 {
     LogFlowFuncEnter();
 
@@ -1704,8 +1704,8 @@ static int vbglR3ClipboardTransferIfaceListClose(PSHCLPROVIDERCTX pCtx, SHCLLIST
     return rc;
 }
 
-static int vbglR3ClipboardTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
-                                                   SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
+                                                                 SHCLLISTHANDLE hList, PSHCLLISTHDR pListHdr)
 {
     LogFlowFuncEnter();
 
@@ -1727,8 +1727,8 @@ static int vbglR3ClipboardTransferIfaceListHdrRead(PSHCLPROVIDERCTX pCtx,
     return rc;
 }
 
-static int vbglR3ClipboardTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
-                                                     SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
+                                                                   SHCLLISTHANDLE hList, PSHCLLISTENTRY pEntry)
 {
     LogFlowFuncEnter();
 
@@ -1741,8 +1741,8 @@ static int vbglR3ClipboardTransferIfaceListEntryRead(PSHCLPROVIDERCTX pCtx,
     return rc;
 }
 
-static int vbglR3ClipboardTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx,
-                                               PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx,
+                                                             PSHCLOBJOPENCREATEPARMS pCreateParms, PSHCLOBJHANDLE phObj)
 {
     LogFlowFuncEnter();
 
@@ -1755,7 +1755,7 @@ static int vbglR3ClipboardTransferIfaceObjOpen(PSHCLPROVIDERCTX pCtx,
     return rc;
 }
 
-static int vbglR3ClipboardTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHANDLE hObj)
 {
     LogFlowFuncEnter();
 
@@ -1768,9 +1768,9 @@ static int vbglR3ClipboardTransferIfaceObjClose(PSHCLPROVIDERCTX pCtx, SHCLOBJHA
     return rc;
 }
 
-static int vbglR3ClipboardTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx,
-                                               SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
-                                               uint32_t fFlags, uint32_t *pcbRead)
+static DECLCALLBACK(int) vbglR3ClipboardTransferIfaceObjRead(PSHCLPROVIDERCTX pCtx,
+                                                             SHCLOBJHANDLE hObj, void *pvData, uint32_t cbData,
+                                                             uint32_t fFlags, uint32_t *pcbRead)
 {
     LogFlowFuncEnter();
 
