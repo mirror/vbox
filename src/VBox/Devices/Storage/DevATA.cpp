@@ -5003,12 +5003,11 @@ DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8
  */
 PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF1(Port);
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
     Assert(Port == pCtl->IOPortBase1);
     Assert(cb == 2 || cb == 4); /* Writes to the data port may be 16-bit or 32-bit. */
 
@@ -5073,12 +5072,11 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  */
 PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF1(Port);
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
     Assert(Port == pCtl->IOPortBase1);
 
     /* Reads from the data register may be 16-bit or 32-bit. Byte accesses are
@@ -5161,12 +5159,11 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
 PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t *pbDst,
                                          uint32_t *pcTransfers, unsigned cb)
 {
-    uint32_t       i     = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl  = &pThis->aCts[i];
+    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF1(Port);
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
     Assert(Port == pCtl->IOPortBase1);
     Assert(*pcTransfers > 0);
 
@@ -5252,12 +5249,11 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t const *pbSrc,
                                           uint32_t *pcTransfers, unsigned cb)
 {
-    uint32_t       i     = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl  = &pThis->aCts[i];
+    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     RT_NOREF1(Port);
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
     Assert(Port == pCtl->IOPortBase1);
     Assert(*pcTransfers > 0);
 
@@ -6150,9 +6146,8 @@ static void ataBMDMAAddrWriteHighWord(PATACONTROLLER pCtl, uint32_t addr, uint32
  */
 PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
     int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
@@ -6183,9 +6178,8 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
     int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
@@ -6355,14 +6349,13 @@ static DECLCALLBACK(int) ataR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, con
  */
 PDMBOTHCBDECL(int) ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 #ifndef VBOX_LOG_ENABLED
     RT_NOREF(Port); RT_NOREF(cb); RT_NOREF(u32); RT_NOREF(pCtl);
 #endif
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
     Assert(!pCtl->aIfs[0].pDrvMedia && !pCtl->aIfs[1].pDrvMedia);
 
     /* This is simply a black hole, writes on unpopulated IDE channels elicit no response. */
@@ -6377,14 +6370,13 @@ PDMBOTHCBDECL(int) ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIO
  */
 PDMBOTHCBDECL(int) ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 #ifndef VBOX_LOG_ENABLED
     RT_NOREF(Port); RT_NOREF(pCtl);
 #endif
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
     Assert(cb <= 4);
     Assert(!pCtl->aIfs[0].pDrvMedia && !pCtl->aIfs[1].pDrvMedia);
 
@@ -6411,11 +6403,10 @@ PDMBOTHCBDECL(int) ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOP
  */
 PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
     Assert(Port != pCtl->IOPortBase1);
 
     int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
@@ -6442,11 +6433,10 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
  */
 PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
     Assert(Port != pCtl->IOPortBase1);
 
     int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
@@ -6480,12 +6470,11 @@ PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
  */
 PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     int rc;
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
 
     if (cb == 1)
     {
@@ -6511,12 +6500,11 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
  */
 PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    uint32_t       i = (uint32_t)(uintptr_t)pvUser;
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[i];
+    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     int            rc;
 
-    Assert(i < 2);
+    Assert((uintptr_t)pvUser < 2);
 
     if (cb == 1)
     {
