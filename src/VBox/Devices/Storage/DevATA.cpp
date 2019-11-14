@@ -85,6 +85,9 @@
 /** The maxium I/O buffer size (for sanity). */
 #define ATA_MAX_IO_BUFFER_SIZE      (ATA_MAX_MULT_SECTORS * ATA_MAX_SECTOR_SIZE)
 
+/** Mask to be applied to all indexing into ATACONTROLLER::aIfs. */
+#define ATA_SELECTED_IF_MASK        1
+
 /**
  * Fastest PIO mode supported by the drive.
  */
@@ -1076,7 +1079,7 @@ static void ataHCSetIRQ(ATADevState *s)
              * line is asserted. It monitors the line for a rising edge. */
             pCtl->BmDma.u8Status |= BM_STATUS_INT;
             /* Only actually set the IRQ line if updating the currently selected drive. */
-            if (s == &pCtl->aIfs[pCtl->iSelectedIf])
+            if (s == &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK])
             {
                 /** @todo experiment with adaptive IRQ delivery: for reads it is
                  * better to wait for IRQ delivery, as it reduces latency. */
@@ -1107,7 +1110,7 @@ static void ataUnsetIRQ(ATADevState *s)
         {
             Log2(("%s: LUN#%d deasserting IRQ\n", __FUNCTION__, s->iLUN));
             /* Only actually unset the IRQ line if updating the currently selected drive. */
-            if (s == &pCtl->aIfs[pCtl->iSelectedIf])
+            if (s == &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK])
             {
                 if (pCtl->irq == 16)
                     PDMDevHlpPCISetIrq(pDevIns, 0, 0);
@@ -4391,7 +4394,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
 
 static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 {
-    Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN, addr, val));
+    Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN, addr, val));
     addr &= 7;
     switch (addr)
     {
@@ -4441,23 +4444,23 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         case 6: /* drive/head */
             pCtl->aIfs[0].uATARegSelect = (val & ~0x10) | 0xa0;
             pCtl->aIfs[1].uATARegSelect = (val | 0x10) | 0xa0;
-            if (((val >> 4) & 1) != pCtl->iSelectedIf)
+            if (((val >> 4) & ATA_SELECTED_IF_MASK) != pCtl->iSelectedIf)
             {
                 PPDMDEVINS pDevIns = CONTROLLER_2_DEVINS(pCtl);
 
                 /* select another drive */
-                pCtl->iSelectedIf = (val >> 4) & 1;
+                uintptr_t const iSelectedIf = (val >> 4) & ATA_SELECTED_IF_MASK;
+                pCtl->iSelectedIf = (uint8_t)iSelectedIf;
                 /* The IRQ line is multiplexed between the two drives, so
                  * update the state when switching to another drive. Only need
                  * to update interrupt line if it is enabled and there is a
                  * state change. */
-                if (    !(pCtl->aIfs[pCtl->iSelectedIf].uATARegDevCtl & ATA_DEVCTL_DISABLE_IRQ)
-                    &&  (   pCtl->aIfs[pCtl->iSelectedIf].fIrqPending
-                         !=  pCtl->aIfs[pCtl->iSelectedIf ^ 1].fIrqPending))
+                if (    !(pCtl->aIfs[iSelectedIf].uATARegDevCtl & ATA_DEVCTL_DISABLE_IRQ)
+                    &&  pCtl->aIfs[iSelectedIf].fIrqPending != pCtl->aIfs[iSelectedIf ^ 1].fIrqPending)
                 {
-                    if (pCtl->aIfs[pCtl->iSelectedIf].fIrqPending)
+                    if (pCtl->aIfs[iSelectedIf].fIrqPending)
                     {
-                        Log2(("%s: LUN#%d asserting IRQ (drive select change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
+                        Log2(("%s: LUN#%d asserting IRQ (drive select change)\n", __FUNCTION__, pCtl->aIfs[iSelectedIf].iLUN));
                         /* The BMDMA unit unconditionally sets BM_STATUS_INT if
                          * the interrupt line is asserted. It monitors the line
                          * for a rising edge. */
@@ -4469,7 +4472,7 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
                     }
                     else
                     {
-                        Log2(("%s: LUN#%d deasserting IRQ (drive select change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
+                        Log2(("%s: LUN#%d deasserting IRQ (drive select change)\n", __FUNCTION__, pCtl->aIfs[iSelectedIf].iLUN));
                         if (pCtl->irq == 16)
                             PDMDevHlpPCISetIrq(pDevIns, 0, 0);
                         else
@@ -4480,16 +4483,19 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
             break;
         default:
         case 7: /* command */
+        {
             /* ignore commands to non-existent device */
-            if (pCtl->iSelectedIf && !pCtl->aIfs[pCtl->iSelectedIf].pDrvMedia)
+            uintptr_t iSelectedIf = pCtl->iSelectedIf & ATA_SELECTED_IF_MASK;
+            if (iSelectedIf && !pCtl->aIfs[iSelectedIf].pDrvMedia)
                 break;
 #ifndef IN_RING3
             /* Don't do anything complicated in GC */
             return VINF_IOM_R3_IOPORT_WRITE;
 #else /* IN_RING3 */
-            ataUnsetIRQ(&pCtl->aIfs[pCtl->iSelectedIf]);
-            ataR3ParseCmd(&pCtl->aIfs[pCtl->iSelectedIf], val);
+            ataUnsetIRQ(&pCtl->aIfs[iSelectedIf]);
+            ataR3ParseCmd(&pCtl->aIfs[iSelectedIf], val);
 #endif /* !IN_RING3 */
+        }
     }
     return VINF_SUCCESS;
 }
@@ -4497,7 +4503,7 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 
 static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 {
-    ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+    ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
     uint32_t    val;
     bool        fHOB;
 
@@ -4675,7 +4681,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
  */
 static uint32_t ataStatusRead(PATACONTROLLER pCtl, uint32_t addr)
 {
-    ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+    ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
     uint32_t val;
     RT_NOREF1(addr);
 
@@ -4684,7 +4690,7 @@ static uint32_t ataStatusRead(PATACONTROLLER pCtl, uint32_t addr)
         val = 0;    /* Device 1 selected, Device 0 responding for it. */
     else
         val = s->uATARegStatus;
-    Log2(("%s: LUN#%d read addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN, addr, val));
+    Log2(("%s: LUN#%d read addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN, addr, val));
     return val;
 }
 
@@ -4696,7 +4702,7 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         return VINF_IOM_R3_IOPORT_WRITE; /* The RESET stuff is too complicated for RC+R0. */
 #endif /* !IN_RING3 */
 
-    Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN, addr, val));
+    Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN, addr, val));
     /* RESET is common for both drives attached to a controller. */
     if (   !(pCtl->aIfs[0].uATARegDevCtl & ATA_DEVCTL_RESET)
         && (val & ATA_DEVCTL_RESET))
@@ -4767,11 +4773,11 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
     /* Change of interrupt disable flag. Update interrupt line if interrupt
      * is pending on the current interface. */
     if (   ((val ^ pCtl->aIfs[0].uATARegDevCtl) & ATA_DEVCTL_DISABLE_IRQ)
-        && pCtl->aIfs[pCtl->iSelectedIf].fIrqPending)
+        && pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].fIrqPending)
     {
         if (!(val & ATA_DEVCTL_DISABLE_IRQ))
         {
-            Log2(("%s: LUN#%d asserting IRQ (interrupt disable change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
+            Log2(("%s: LUN#%d asserting IRQ (interrupt disable change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN));
             /* The BMDMA unit unconditionally sets BM_STATUS_INT if the
              * interrupt line is asserted. It monitors the line for a rising
              * edge. */
@@ -4783,7 +4789,7 @@ static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
         }
         else
         {
-            Log2(("%s: LUN#%d deasserting IRQ (interrupt disable change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf].iLUN));
+            Log2(("%s: LUN#%d deasserting IRQ (interrupt disable change)\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN));
             if (pCtl->irq == 16)
                 PDMDevHlpPCISetIrq(CONTROLLER_2_DEVINS(pCtl), 0, 0);
             else
@@ -4806,7 +4812,7 @@ static void ataHCPIOTransfer(PATACONTROLLER pCtl)
 {
     ATADevState *s;
 
-    s = &pCtl->aIfs[pCtl->iAIOIf];
+    s = &pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK];
     Log3(("%s: if=%p\n", __FUNCTION__, s));
 
     if (s->cbTotalTransfer && s->iIOBufferCur > s->iIOBufferEnd)
@@ -4845,9 +4851,9 @@ static void ataHCPIOTransfer(PATACONTROLLER pCtl)
             s->cbElementaryTransfer = s->cbTotalTransfer;
 
         Log2(("%s: %s tx_size=%d elem_tx_size=%d index=%d end=%d\n",
-             __FUNCTION__, s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE ? "T2I" : "I2T",
-             s->cbTotalTransfer, s->cbElementaryTransfer,
-             s->iIOBufferCur, s->iIOBufferEnd));
+              __FUNCTION__, s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE ? "T2I" : "I2T",
+              s->cbTotalTransfer, s->cbElementaryTransfer,
+              s->iIOBufferCur, s->iIOBufferEnd));
         ataHCPIOTransferStart(s, s->iIOBufferCur, s->cbElementaryTransfer);
         s->cbTotalTransfer -= s->cbElementaryTransfer;
         s->iIOBufferCur += s->cbElementaryTransfer;
@@ -5009,7 +5015,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc == VINF_SUCCESS)
     {
-        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
         uint32_t const iIOBufferPIODataStart = RT_MIN(s->iIOBufferPIODataStart, sizeof(s->abIOBuffer));
         uint32_t const iIOBufferPIODataEnd   = RT_MIN(s->iIOBufferPIODataEnd,   sizeof(s->abIOBuffer));
 
@@ -5084,7 +5090,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
-        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+        ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
 
         if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
         {
@@ -5170,7 +5176,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
         rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
-            ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+            ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
 
             uint32_t const offStart = s->iIOBufferPIODataStart;
             uint32_t const offEnd   = s->iIOBufferPIODataEnd;
@@ -5261,7 +5267,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
         rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
-            ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+            ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
 
             uint32_t const offStart = s->iIOBufferPIODataStart;
             uint32_t const offEnd   = s->iIOBufferPIODataEnd;
@@ -5347,7 +5353,7 @@ static void ataR3DMATransferStop(ATADevState *s)
 static void ataR3DMATransfer(PATACONTROLLER pCtl)
 {
     PPDMDEVINS pDevIns = CONTROLLER_2_DEVINS(pCtl);
-    ATADevState *s = &pCtl->aIfs[pCtl->iAIOIf];
+    ATADevState *s = &pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK];
     bool fRedo;
     RTGCPHYS32 GCPhysDesc;
     uint32_t cbTotalTransfer, cbElementaryTransfer;
@@ -5631,7 +5637,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
             case ATA_AIO_NEW:
 
                 pCtl->iAIOIf = pReq->u.t.iIf;
-                s = &pCtl->aIfs[pCtl->iAIOIf];
+                s = &pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK];
                 s->cbTotalTransfer = pReq->u.t.cbTotalTransfer;
                 s->uTxDir = pReq->u.t.uTxDir;
                 s->iBeginTransfer = pReq->u.t.iBeginTransfer;
@@ -5775,7 +5781,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
             case ATA_AIO_DMA:
             {
                 BMDMAState *bm = &pCtl->BmDma;
-                s = &pCtl->aIfs[pCtl->iAIOIf]; /* Do not remove or there's an instant crash after loading the saved state */
+                s = &pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK]; /* Do not remove or there's an instant crash after loading the saved state */
                 ATAFNSS iOriginalSourceSink = (ATAFNSS)s->iSourceSink; /* Used by the hack below, but gets reset by then. */
 
                 if (s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE)
@@ -5829,7 +5835,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
             }
 
             case ATA_AIO_PIO:
-                s = &pCtl->aIfs[pCtl->iAIOIf]; /* Do not remove or there's an instant crash after loading the saved state */
+                s = &pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK]; /* Do not remove or there's an instant crash after loading the saved state */
 
                 if (s->iSourceSink != ATAFN_SS_NULL)
                 {
@@ -5931,7 +5937,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                 /* Abort the current command no matter what. There cannot be
                  * any command activity on the other drive otherwise using
                  * one thread per controller wouldn't work at all. */
-                s = &pCtl->aIfs[pReq->u.a.iIf];
+                s = &pCtl->aIfs[pReq->u.a.iIf & ATA_SELECTED_IF_MASK];
 
                 pCtl->uAsyncIOState = ATA_AIO_NEW;
                 /* Do not change the DMA registers, they are not affected by the
@@ -5968,17 +5974,18 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
 
             u64TS = RTTimeNanoTS() - u64TS;
             uWait = u64TS / 1000;
+            uintptr_t const iAIOIf = pCtl->iAIOIf & ATA_SELECTED_IF_MASK;
             Log(("%s: Ctl#%d: LUN#%d finished I/O transaction in %d microseconds\n",
-                 __FUNCTION__, ATACONTROLLER_IDX(pCtl), pCtl->aIfs[pCtl->iAIOIf].iLUN, (uint32_t)(uWait)));
+                 __FUNCTION__, ATACONTROLLER_IDX(pCtl), pCtl->aIfs[iAIOIf].iLUN, (uint32_t)(uWait)));
             /* Mark command as finished. */
-            pCtl->aIfs[pCtl->iAIOIf].u64CmdTS = 0;
+            pCtl->aIfs[iAIOIf].u64CmdTS = 0;
 
             /*
              * Release logging of command execution times depends on the
              * command type. ATAPI commands often take longer (due to CD/DVD
              * spin up time etc.) so the threshold is different.
              */
-            if (pCtl->aIfs[pCtl->iAIOIf].uATARegCommand != ATA_PACKET)
+            if (pCtl->aIfs[iAIOIf].uATARegCommand != ATA_PACKET)
             {
                 if (uWait > 8 * 1000 * 1000)
                 {
@@ -5989,7 +5996,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                      * timing errors (which are often caused by the host).
                      */
                     LogRel(("PIIX3 ATA: execution time for ATA command %#04x was %d seconds\n",
-                            pCtl->aIfs[pCtl->iAIOIf].uATARegCommand, uWait / (1000 * 1000)));
+                            pCtl->aIfs[iAIOIf].uATARegCommand, uWait / (1000 * 1000)));
                 }
             }
             else
@@ -6003,7 +6010,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                      * timing errors (which are often caused by the host).
                      */
                     LogRel(("PIIX3 ATA: execution time for ATAPI command %#04x was %d seconds\n",
-                            pCtl->aIfs[pCtl->iAIOIf].abATAPICmd[0], uWait / (1000 * 1000)));
+                            pCtl->aIfs[iAIOIf].abATAPICmd[0], uWait / (1000 * 1000)));
                 }
             }
 
@@ -6073,11 +6080,11 @@ static void ataBMDMACmdWriteB(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 
         /* Do not start DMA transfers if there's a PIO transfer going on,
          * or if there is already a transfer started on this controller. */
-        if (   !pCtl->aIfs[pCtl->iSelectedIf].fDMA
+        if (   !pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].fDMA
             || (uOldBmDmaStatus & BM_STATUS_DMAING))
             return;
 
-        if (pCtl->aIfs[pCtl->iAIOIf].uATARegStatus & ATA_STAT_DRQ)
+        if (pCtl->aIfs[pCtl->iAIOIf & ATA_SELECTED_IF_MASK].uATARegStatus & ATA_STAT_DRQ)
         {
             Log2(("%s: Ctl#%d: message to async I/O thread, continuing DMA transfer\n", __FUNCTION__, ATACONTROLLER_IDX(pCtl)));
             ataHCAsyncIOPutRequest(pCtl, &g_ataDMARequest);
@@ -7097,8 +7104,16 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             return VERR_INTERNAL_ERROR_4;
         }
 
-        pHlp->pfnSSMGetU8(pSSM, &pThis->aCts[i].iSelectedIf);
-        pHlp->pfnSSMGetU8(pSSM, &pThis->aCts[i].iAIOIf);
+        rc = pHlp->pfnSSMGetU8(pSSM, &pThis->aCts[i].iSelectedIf);
+        AssertRCReturn(rc, rc);
+        AssertLogRelMsgStmt(pThis->aCts[i].iSelectedIf == (pThis->aCts[i].iSelectedIf & ATA_SELECTED_IF_MASK),
+                            ("iSelectedIf = %d\n", pThis->aCts[i].iSelectedIf),
+                            pThis->aCts[i].iSelectedIf &= ATA_SELECTED_IF_MASK);
+        rc = pHlp->pfnSSMGetU8(pSSM, &pThis->aCts[i].iAIOIf);
+        AssertRCReturn(rc, rc);
+        AssertLogRelMsgStmt(pThis->aCts[i].iAIOIf == (pThis->aCts[i].iAIOIf & ATA_SELECTED_IF_MASK),
+                            ("iAIOIf = %d\n", pThis->aCts[i].iAIOIf),
+                            pThis->aCts[i].iAIOIf &= ATA_SELECTED_IF_MASK);
         pHlp->pfnSSMGetU8(pSSM, &pThis->aCts[i].uAsyncIOState);
         pHlp->pfnSSMGetBool(pSSM, &pThis->aCts[i].fChainedTransfer);
         pHlp->pfnSSMGetBool(pSSM, &pThis->aCts[i].fReset);
