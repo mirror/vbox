@@ -246,13 +246,14 @@ static void atapiTrackListEntryCreateFromCueSheetEntry(PTRACK pTrack, const uint
  * Update the track list from a SEND CUE SHEET request.
  *
  * @returns VBox status code.
- * @param   pTrackList    Track list to update.
- * @param   pbCDB         CDB of the SEND CUE SHEET request.
- * @param   pvBuf         The CUE sheet.
+ * @param   pTrackList  Track list to update.
+ * @param   pbCDB       CDB of the SEND CUE SHEET request.
+ * @param   pvBuf       The CUE sheet.
+ * @param   cbBuf       The buffer size (max).
  */
-static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
+static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf, size_t cbBuf)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
     unsigned cbCueSheet = scsiBE2H_U24(pbCDB + 6);
     unsigned cTracks = cbCueSheet / 8;
 
@@ -263,6 +264,7 @@ static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, const uin
     {
         const uint8_t *pbCueSheet = (uint8_t *)pvBuf;
         PTRACK pTrack = pTrackList->paTracks;
+        AssertLogRelReturn(cTracks <= cbBuf, VERR_BUFFER_OVERFLOW);
 
         for (unsigned i = 0; i < cTracks; i++)
         {
@@ -277,9 +279,9 @@ static int atapiTrackListUpdateFromSendCueSheet(PTRACKLIST pTrackList, const uin
     return rc;
 }
 
-static int atapiTrackListUpdateFromSendDvdStructure(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
+static int atapiTrackListUpdateFromSendDvdStructure(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf, size_t cbBuf)
 {
-    RT_NOREF(pTrackList, pbCDB, pvBuf);
+    RT_NOREF(pTrackList, pbCDB, pvBuf, cbBuf);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -297,7 +299,7 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
                                                 bool fMSF, const uint8_t *pbBuf, uint32_t cbBuffer)
 {
     RT_NOREF(iTrack, cbBuffer); /** @todo unused parameters */
-    int rc = VINF_SUCCESS;
+    int rc;
     unsigned cbToc = scsiBE2H_U16(pbBuf);
     uint8_t iTrackFirst = pbBuf[2];
     unsigned cTracks;
@@ -350,10 +352,10 @@ static int atapiTrackListUpdateFromFormattedToc(PTRACKLIST pTrackList, uint8_t i
     return rc;
 }
 
-static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
+static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf, size_t cbBuf)
 {
-    int rc = VINF_SUCCESS;
-    uint16_t cbBuffer = scsiBE2H_U16(&pbCDB[7]);
+    int rc;
+    uint16_t cbBuffer = (uint16_t)RT_MIN(scsiBE2H_U16(&pbCDB[7]), cbBuf);
     bool fMSF = (pbCDB[1] & 0x2) != 0;
     uint8_t uFmt = pbCDB[2] & 0xf;
     uint8_t iTrack = pbCDB[6];
@@ -379,21 +381,24 @@ static int atapiTrackListUpdateFromReadTocPmaAtip(PTRACKLIST pTrackList, const u
     return rc;
 }
 
-static int atapiTrackListUpdateFromReadTrackInformation(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
+static int atapiTrackListUpdateFromReadTrackInformation(PTRACKLIST pTrackList, const uint8_t *pbCDB,
+                                                        const void *pvBuf, size_t cbBuf)
 {
-    RT_NOREF(pTrackList, pbCDB, pvBuf);
+    RT_NOREF(pTrackList, pbCDB, pvBuf, cbBuf);
     return VERR_NOT_IMPLEMENTED;
 }
 
-static int atapiTrackListUpdateFromReadDvdStructure(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
+static int atapiTrackListUpdateFromReadDvdStructure(PTRACKLIST pTrackList, const uint8_t *pbCDB,
+                                                    const void *pvBuf, size_t cbBuf)
 {
-    RT_NOREF(pTrackList, pbCDB, pvBuf);
+    RT_NOREF(pTrackList, pbCDB, pvBuf, cbBuf);
     return VERR_NOT_IMPLEMENTED;
 }
 
-static int atapiTrackListUpdateFromReadDiscInformation(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
+static int atapiTrackListUpdateFromReadDiscInformation(PTRACKLIST pTrackList, const uint8_t *pbCDB,
+                                                       const void *pvBuf, size_t cbBuf)
 {
-    RT_NOREF(pTrackList, pbCDB, pvBuf);
+    RT_NOREF(pTrackList, pbCDB, pvBuf, cbBuf);
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -481,20 +486,29 @@ static void atapiTrackListDump(PTRACKLIST pTrackList)
 
 #endif /* LOG_ENABLED */
 
+/**
+ * Creates an empty track list handle.
+ *
+ * @returns VBox status code.
+ * @param   ppTrackList Where to store the track list handle on success.
+ */
 DECLHIDDEN(int) ATAPIPassthroughTrackListCreateEmpty(PTRACKLIST *ppTrackList)
 {
-    int rc = VERR_NO_MEMORY;
     PTRACKLIST pTrackList = (PTRACKLIST)RTMemAllocZ(sizeof(TRACKLIST));
-
     if (pTrackList)
     {
-        rc = VINF_SUCCESS;
         *ppTrackList = pTrackList;
+        return VINF_SUCCESS;
     }
-
-    return rc;
+    return VERR_NO_MEMORY;
 }
 
+/**
+ * Destroys the allocated task list handle.
+ *
+ * @returns nothing.
+ * @param   pTrackList  The track list handle to destroy.
+ */
 DECLHIDDEN(void) ATAPIPassthroughTrackListDestroy(PTRACKLIST pTrackList)
 {
     if (pTrackList->paTracks)
@@ -502,6 +516,12 @@ DECLHIDDEN(void) ATAPIPassthroughTrackListDestroy(PTRACKLIST pTrackList)
     RTMemFree(pTrackList);
 }
 
+/**
+ * Clears all tracks from the given task list.
+ *
+ * @returns nothing.
+ * @param   pTrackList  The track list to clear.
+ */
 DECLHIDDEN(void) ATAPIPassthroughTrackListClear(PTRACKLIST pTrackList)
 {
     AssertPtrReturnVoid(pTrackList);
@@ -513,29 +533,38 @@ DECLHIDDEN(void) ATAPIPassthroughTrackListClear(PTRACKLIST pTrackList)
         pTrackList->paTracks[i].fFlags |= TRACK_FLAGS_UNDETECTED;
 }
 
-DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf)
+/**
+ * Updates the track list from the given CDB and data buffer.
+ *
+ * @returns VBox status code.
+ * @param   pTrackList  The track list to update.
+ * @param   pCDB        The CDB buffer.
+ * @param   pvBuf       The data buffer.
+ * @param   cbBuf       The buffer isze.
+ */
+DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, const uint8_t *pbCDB, const void *pvBuf, size_t cbBuf)
 {
-    int rc = VINF_SUCCESS;
+    int rc;
 
     switch (pbCDB[0])
     {
         case SCSI_SEND_CUE_SHEET:
-            rc = atapiTrackListUpdateFromSendCueSheet(pTrackList, pbCDB, pvBuf);
+            rc = atapiTrackListUpdateFromSendCueSheet(pTrackList, pbCDB, pvBuf, cbBuf);
             break;
         case SCSI_SEND_DVD_STRUCTURE:
-            rc = atapiTrackListUpdateFromSendDvdStructure(pTrackList, pbCDB, pvBuf);
+            rc = atapiTrackListUpdateFromSendDvdStructure(pTrackList, pbCDB, pvBuf, cbBuf);
             break;
         case SCSI_READ_TOC_PMA_ATIP:
-            rc = atapiTrackListUpdateFromReadTocPmaAtip(pTrackList, pbCDB, pvBuf);
+            rc = atapiTrackListUpdateFromReadTocPmaAtip(pTrackList, pbCDB, pvBuf, cbBuf);
             break;
         case SCSI_READ_TRACK_INFORMATION:
-            rc = atapiTrackListUpdateFromReadTrackInformation(pTrackList, pbCDB, pvBuf);
+            rc = atapiTrackListUpdateFromReadTrackInformation(pTrackList, pbCDB, pvBuf, cbBuf);
             break;
         case SCSI_READ_DVD_STRUCTURE:
-            rc = atapiTrackListUpdateFromReadDvdStructure(pTrackList, pbCDB, pvBuf);
+            rc = atapiTrackListUpdateFromReadDvdStructure(pTrackList, pbCDB, pvBuf, cbBuf);
             break;
         case SCSI_READ_DISC_INFORMATION:
-            rc = atapiTrackListUpdateFromReadDiscInformation(pTrackList, pbCDB, pvBuf);
+            rc = atapiTrackListUpdateFromReadDiscInformation(pTrackList, pbCDB, pvBuf, cbBuf);
             break;
         default:
             LogRel(("ATAPI: Invalid opcode %#x while determining media layout\n", pbCDB[0]));
@@ -549,6 +578,13 @@ DECLHIDDEN(int) ATAPIPassthroughTrackListUpdate(PTRACKLIST pTrackList, const uin
     return rc;
 }
 
+/**
+ * Return the sector size from the track matching the LBA in the given track list.
+ *
+ * @returns Sector size.
+ * @param   pTrackList  The track list to use.
+ * @param   iAtapiLba   The start LBA to get the sector size for.
+ */
 DECLHIDDEN(uint32_t) ATAPIPassthroughTrackListGetSectorSizeFromLba(PTRACKLIST pTrackList, uint32_t iAtapiLba)
 {
     PTRACK pTrack = NULL;
@@ -643,6 +679,21 @@ static uint8_t atapiPassthroughCmdErrorSimple(uint8_t *pbSense, size_t cbSense, 
 }
 
 
+/**
+ * Parses the given CDB and returns whether it is safe to pass it through to the host drive.
+ *
+ * @returns Flag whether passing the CDB through to the host drive is safe.
+ * @param   pbCdb       The CDB to parse.
+ * @param   cbCdb       Size of the CDB in bytes.
+ * @param   cbBuf       Size of the guest buffer.
+ * @param   pTrackList  The track list for the current medium if available (optional).
+ * @param   pbSense     Pointer to the sense buffer.
+ * @param   cbSense     Size of the sense buffer.
+ * @param   penmTxDir   Where to store the transfer direction (guest to host or vice versa).
+ * @param   pcbXfer     Where to store the transfer size encoded in the CDB.
+ * @param   pcbSector   Where to store the sector size used for the transfer.
+ * @param   pu8ScsiSts  Where to store the SCSI status code.
+ */
 DECLHIDDEN(bool) ATAPIPassthroughParseCdb(const uint8_t *pbCdb, size_t cbCdb, size_t cbBuf,
                                           PTRACKLIST pTrackList, uint8_t *pbSense, size_t cbSense,
                                           PDMMEDIATXDIR *penmTxDir, size_t *pcbXfer,

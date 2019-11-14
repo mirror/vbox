@@ -39,6 +39,7 @@
 #include <VBox/vmm/pgm.h>
 
 #include <VBox/sup.h>
+#include <VBox/AssertGuest.h>
 #include <VBox/scsi.h>
 #include <VBox/scsiinline.h>
 #include <VBox/ata.h>
@@ -1650,18 +1651,22 @@ static int ataR3ReadSectors(ATADevState *s, uint64_t u64Sector, void *pvBuf,
 {
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
+    uint32_t const cbSector = s->cbSector;
+    uint32_t cbToRead = cSectors * cbSector;
+    Assert(pvBuf == &s->abIOBuffer[0]);
+    AssertReturn(cbToRead <= sizeof(s->abIOBuffer), VERR_BUFFER_OVERFLOW);
 
     ataR3LockLeave(pCtl);
 
     STAM_PROFILE_ADV_START(&s->StatReads, r);
     s->Led.Asserted.s.fReading = s->Led.Actual.s.fReading = 1;
-    rc = s->pDrvMedia->pfnRead(s->pDrvMedia, u64Sector * s->cbSector, pvBuf, cSectors * s->cbSector);
+    rc = s->pDrvMedia->pfnRead(s->pDrvMedia, u64Sector * cbSector, pvBuf, cbToRead);
     s->Led.Actual.s.fReading = 0;
     STAM_PROFILE_ADV_STOP(&s->StatReads, r);
     Log4(("ataR3ReadSectors: rc=%Rrc cSectors=%#x u64Sector=%llu\n%.*Rhxd\n",
-          rc, cSectors, u64Sector, cSectors * s->cbSector, pvBuf));
+          rc, cSectors, u64Sector, cbToRead, pvBuf));
 
-    STAM_REL_COUNTER_ADD(&s->StatBytesRead, cSectors * s->cbSector);
+    STAM_REL_COUNTER_ADD(&s->StatBytesRead, cbToRead);
 
     if (RT_SUCCESS(rc))
         *pfRedo = false;
@@ -1678,6 +1683,10 @@ static int ataR3WriteSectors(ATADevState *s, uint64_t u64Sector,
 {
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     int rc;
+    uint32_t const cbSector = s->cbSector;
+    uint32_t cbToWrite = cSectors * cbSector;
+    Assert(pvBuf == &s->abIOBuffer[0]);
+    AssertReturn(cbToWrite <= sizeof(s->abIOBuffer), VERR_BUFFER_OVERFLOW);
 
     ataR3LockLeave(pCtl);
 
@@ -1687,7 +1696,7 @@ static int ataR3WriteSectors(ATADevState *s, uint64_t u64Sector,
     if (s->fDMA)
         STAM_PROFILE_ADV_START(&s->StatInstrVDWrites, vw);
 # endif
-    rc = s->pDrvMedia->pfnWrite(s->pDrvMedia, u64Sector * s->cbSector, pvBuf, cSectors * s->cbSector);
+    rc = s->pDrvMedia->pfnWrite(s->pDrvMedia, u64Sector * cbSector, pvBuf, cbToWrite);
 # ifdef VBOX_INSTRUMENT_DMA_WRITES
     if (s->fDMA)
         STAM_PROFILE_ADV_STOP(&s->StatInstrVDWrites, vw);
@@ -1695,9 +1704,9 @@ static int ataR3WriteSectors(ATADevState *s, uint64_t u64Sector,
     s->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&s->StatWrites, w);
     Log4(("ataR3WriteSectors: rc=%Rrc cSectors=%#x u64Sector=%llu\n%.*Rhxd\n",
-          rc, cSectors, u64Sector, cSectors * s->cbSector, pvBuf));
+          rc, cSectors, u64Sector, cbToWrite, pvBuf));
 
-    STAM_REL_COUNTER_ADD(&s->StatBytesWritten, cSectors * s->cbSector);
+    STAM_REL_COUNTER_ADD(&s->StatBytesWritten, cbToWrite);
 
     if (RT_SUCCESS(rc))
         *pfRedo = false;
@@ -1871,19 +1880,21 @@ static void atapiR3PassthroughCmdBT(ATADevState *s)
 static bool atapiR3ReadSS(ATADevState *s)
 {
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
-    int rc = VINF_SUCCESS;
-    uint32_t cbTransfer, cSectors;
+    int rc;
     uint64_t cbBlockRegion = 0;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
-    cbTransfer = RT_MIN(s->cbTotalTransfer, RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE));
-    cSectors = cbTransfer / s->cbATAPISector;
-    Assert(cSectors * s->cbATAPISector <= cbTransfer);
-    Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, s->iATAPILBA));
+    uint32_t const iATAPILBA     = s->iATAPILBA;
+    uint32_t const cbTransfer    = RT_MIN(s->cbTotalTransfer, RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE));
+    uint32_t const cbATAPISector = s->cbATAPISector;
+    uint32_t const cSectors      = cbTransfer / cbATAPISector;
+    Assert(cSectors * cbATAPISector <= cbTransfer);
+    Log(("%s: %d sectors at LBA %d\n", __FUNCTION__, cSectors, iATAPILBA));
+    AssertLogRelReturn(cSectors * cbATAPISector <= sizeof(s->abIOBuffer), false);
 
     ataR3LockLeave(pCtl);
 
-    rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, s->iATAPILBA, NULL, NULL,
+    rc = s->pDrvMedia->pfnQueryRegionPropertiesForLba(s->pDrvMedia, iATAPILBA, NULL, NULL,
                                                       &cbBlockRegion, NULL);
     if (RT_SUCCESS(rc))
     {
@@ -1891,17 +1902,19 @@ static bool atapiR3ReadSS(ATADevState *s)
         s->Led.Asserted.s.fReading = s->Led.Actual.s.fReading = 1;
 
         /* If the region block size and requested sector matches we can just pass the request through. */
-        if (cbBlockRegion == s->cbATAPISector)
-            rc = s->pDrvMedia->pfnRead(s->pDrvMedia, (uint64_t)s->iATAPILBA * s->cbATAPISector,
-                                       s->abIOBuffer, s->cbATAPISector * cSectors);
+        if (cbBlockRegion == cbATAPISector)
+            rc = s->pDrvMedia->pfnRead(s->pDrvMedia, (uint64_t)iATAPILBA * cbATAPISector,
+                                       s->abIOBuffer, cbATAPISector * cSectors);
         else
         {
-            if (cbBlockRegion == 2048 && s->cbATAPISector == 2352)
+            uint32_t const iEndSector = iATAPILBA + cSectors;
+            ASSERT_GUEST(iEndSector >= iATAPILBA);
+            if (cbBlockRegion == 2048 && cbATAPISector == 2352)
             {
                 /* Generate the sync bytes. */
                 uint8_t *pbBuf = s->abIOBuffer;
 
-                for (uint32_t i = s->iATAPILBA; i < s->iATAPILBA + cSectors; i++)
+                for (uint32_t i = iATAPILBA; i < iEndSector; i++)
                 {
                     /* Sync bytes, see 4.2.3.8 CD Main Channel Block Formats */
                     *pbBuf++ = 0x00;
@@ -1918,7 +1931,7 @@ static bool atapiR3ReadSS(ATADevState *s)
                         break;
                     pbBuf += 2048;
                     /**
-                     * @todo: maybe compute ECC and parity, layout is:
+                     * @todo maybe compute ECC and parity, layout is:
                      * 2072 4   EDC
                      * 2076 172 P parity symbols
                      * 2248 104 Q parity symbols
@@ -1927,12 +1940,12 @@ static bool atapiR3ReadSS(ATADevState *s)
                     pbBuf += 280;
                 }
             }
-            else if (cbBlockRegion == 2352 && s->cbATAPISector == 2048)
+            else if (cbBlockRegion == 2352 && cbATAPISector == 2048)
             {
                 /* Read only the user data portion. */
                 uint8_t *pbBuf = s->abIOBuffer;
 
-                for (uint32_t i = s->iATAPILBA; i < s->iATAPILBA + cSectors; i++)
+                for (uint32_t i = iATAPILBA; i < iEndSector; i++)
                 {
                     uint8_t abTmp[2352];
                     rc = s->pDrvMedia->pfnRead(s->pDrvMedia, (uint64_t)i * 2352, &abTmp[0], 2352);
@@ -1943,6 +1956,8 @@ static bool atapiR3ReadSS(ATADevState *s)
                     pbBuf += 2048;
                 }
             }
+            else
+                ASSERT_GUEST_MSG_FAILED(("Unsupported: cbBlockRegion=%u cbATAPISector=%u\n", cbBlockRegion, cbATAPISector));
         }
         s->Led.Actual.s.fReading = 0;
         STAM_PROFILE_ADV_STOP(&s->StatReads, r);
@@ -1952,7 +1967,7 @@ static bool atapiR3ReadSS(ATADevState *s)
 
     if (RT_SUCCESS(rc))
     {
-        STAM_REL_COUNTER_ADD(&s->StatBytesRead, s->cbATAPISector * cSectors);
+        STAM_REL_COUNTER_ADD(&s->StatBytesRead, cbATAPISector * cSectors);
 
         /* The initial buffer end value has been set up based on the total
          * transfer size. But the I/O buffer size limits what can actually be
@@ -1961,12 +1976,12 @@ static bool atapiR3ReadSS(ATADevState *s)
         if (cbTransfer >= s->cbTotalTransfer)
             s->iSourceSink = ATAFN_SS_NULL;
         atapiR3CmdOK(s);
-        s->iATAPILBA += cSectors;
+        s->iATAPILBA = iATAPILBA + cSectors;
     }
     else
     {
         if (s->cErrors++ < MAX_LOG_REL_ERRORS)
-            LogRel(("PIIX3 ATA: LUN#%d: CD-ROM read error, %d sectors at LBA %d\n", s->iLUN, cSectors, s->iATAPILBA));
+            LogRel(("PIIX3 ATA: LUN#%d: CD-ROM read error, %d sectors at LBA %d\n", s->iLUN, cSectors, iATAPILBA));
 
         /*
          * Check if we got interrupted. We don't need to set status variables
@@ -2127,6 +2142,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                     scsiLBA2MSF(aATAPICmd + 6, iATAPILBA + cReqSectors);
                     break;
             }
+            AssertLogRelReturn(pbBuf - &s->abIOBuffer[0] + cbCurrTX <= sizeof(s->abIOBuffer), false);
             rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, aATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
                                           pbBuf, &cbCurrTX, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
             if (rc != VINF_SUCCESS)
@@ -2169,8 +2185,11 @@ static bool atapiR3PassthroughSS(ATADevState *s)
         }
     }
     else
+    {
+        AssertLogRelReturn(cbTransfer <= sizeof(s->abIOBuffer), false);
         rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, s->aATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
                                       s->abIOBuffer, &cbTransfer, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
+    }
     if (pProf) { STAM_PROFILE_ADV_STOP(pProf, b); }
 
     ataR3LockEnter(pCtl);
@@ -2202,7 +2221,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                     rc = ATAPIPassthroughTrackListCreateEmpty(&s->pTrackList);
 
                 if (RT_SUCCESS(rc))
-                    rc = ATAPIPassthroughTrackListUpdate(s->pTrackList, s->aATAPICmd, s->abIOBuffer);
+                    rc = ATAPIPassthroughTrackListUpdate(s->pTrackList, s->aATAPICmd, s->abIOBuffer, sizeof(s->abIOBuffer));
 
                 if (   RT_FAILURE(rc)
                     && s->cErrors++ < MAX_LOG_REL_ERRORS)
@@ -2279,15 +2298,13 @@ static bool atapiR3PassthroughSS(ATADevState *s)
     return false;
 }
 
-/** @todo Revise ASAP. */
 static bool atapiR3ReadDVDStructureSS(ATADevState *s)
 {
     uint8_t *buf = s->abIOBuffer;
     int media = s->aATAPICmd[1];
     int format = s->aATAPICmd[7];
 
-    uint16_t max_len = scsiBE2H_U16(&s->aATAPICmd[8]);
-
+    uint16_t max_len = (uint16_t)RT_MIN(scsiBE2H_U16(&s->aATAPICmd[8]), sizeof(s->abIOBuffer));
     memset(buf, 0, max_len);
 
     switch (format) {
@@ -2428,8 +2445,7 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
         case 0xc0: /** @todo Write protection status */
         default:
             s->iSourceSink = ATAFN_SS_NULL;
-            atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST,
-                                SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
+            atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
             return false;
     }
 
@@ -2494,7 +2510,7 @@ static bool atapiR3ReadTrackInformationSS(ATADevState *s)
     uint32_t u32LogAddr = scsiBE2H_U32(&s->aATAPICmd[2]);
     uint8_t u8LogAddrType = s->aATAPICmd[1] & 0x03;
 
-    int rc = VINF_SUCCESS;
+    int rc;
     uint64_t u64LbaStart = 0;
     uint32_t uRegion = 0;
     uint64_t cBlocks = 0;
@@ -2989,7 +3005,8 @@ static bool atapiR3RequestSenseSS(ATADevState *s)
     uint8_t *pbBuf = s->abIOBuffer;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
-    memset(pbBuf, '\0', s->cbElementaryTransfer);
+    memset(pbBuf, '\0', RT_MIN(s->cbElementaryTransfer, sizeof(s->abIOBuffer)));
+    AssertCompile(sizeof(s->abIOBuffer) >= sizeof(s->abATAPISense));
     memcpy(pbBuf, s->abATAPISense, RT_MIN(s->cbElementaryTransfer, sizeof(s->abATAPISense)));
     s->iSourceSink = ATAFN_SS_NULL;
     atapiR3CmdOK(s);
@@ -3023,7 +3040,12 @@ static bool atapiR3ReadTOCNormalSS(ATADevState *s)
     uint8_t iStartTrack;
     bool fMSF;
     uint32_t cbSize;
+
+    /* Track fields are 8-bit and 1-based, so cut the track count at 255,
+       avoiding any potentially buffer overflow issues below. */
     uint32_t cTracks = s->pDrvMedia->pfnGetRegionCount(s->pDrvMedia);
+    AssertStmt(cTracks <= UINT8_MAX, cTracks = UINT8_MAX);
+    AssertCompile(sizeof(s->abIOBuffer) >= 2 + 256 + 8);
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     fMSF = (s->aATAPICmd[1] >> 1) & 1;
@@ -4018,7 +4040,7 @@ static bool ataR3TrimSS(ATADevState *s)
     uint64_t *pu64Range = (uint64_t *)&s->abIOBuffer[0];
     bool fRedo = false;
 
-    cRangesMax = s->cbElementaryTransfer / sizeof(uint64_t);
+    cRangesMax = RT_MIN(s->cbElementaryTransfer, sizeof(s->abIOBuffer)) / sizeof(uint64_t);
     Assert(cRangesMax);
 
     while (cRangesMax-- > 0)
@@ -4027,7 +4049,7 @@ static bool ataR3TrimSS(ATADevState *s)
             break;
 
         rc = ataR3TrimSectors(s, *pu64Range & ATA_RANGE_LBA_MASK,
-                            ATA_RANGE_LENGTH_GET(*pu64Range), &fRedo);
+                              ATA_RANGE_LENGTH_GET(*pu64Range), &fRedo);
         if (RT_FAILURE(rc))
             break;
 
@@ -4894,11 +4916,12 @@ DECLINLINE(void) ataHCPIOTransferFinish(PATACONTROLLER pCtl, ATADevState *s)
  * @param   pIf         The device interface to work with.
  * @param   pbDst       The destination buffer.
  * @param   pbSrc       The source buffer.
+ * @param   offStart    The start offset (iIOBufferPIODataStart).
  * @param   cbCopy      The number of bytes to copy, either 1, 2 or 4 bytes.
  */
-DECL_NO_INLINE(static, void) ataCopyPioData124Slow(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc, uint32_t cbCopy)
+DECL_NO_INLINE(static, void) ataCopyPioData124Slow(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc,
+                                                   uint32_t offStart, uint32_t cbCopy)
 {
-    uint32_t const offStart   = pIf->iIOBufferPIODataStart;
     uint32_t const offNext    = offStart + cbCopy;
     uint32_t const cbIOBuffer = RT_MIN(pIf->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE);
 
@@ -4938,9 +4961,10 @@ DECL_NO_INLINE(static, void) ataCopyPioData124Slow(ATADevState *pIf, uint8_t *pb
  * @param   pIf         The device interface to work with.
  * @param   pbDst       The destination buffer.
  * @param   pbSrc       The source buffer.
+ * @param   offStart    The start offset (iIOBufferPIODataStart).
  * @param   cbCopy      The number of bytes to copy, either 1, 2 or 4 bytes.
  */
-DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc, uint32_t cbCopy)
+DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8_t *pbSrc, uint32_t offStart, uint32_t cbCopy)
 {
     /*
      * Quick bounds checking can be done by checking that the abIOBuffer offset
@@ -4950,7 +4974,6 @@ DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8
      * IO buffer size too.
      */
     Assert(cbCopy == 1 || cbCopy == 2 || cbCopy == 4);
-    uint32_t const offStart = pIf->iIOBufferPIODataStart;
     if (RT_LIKELY(   !(offStart & (cbCopy - 1))
                   && offStart + cbCopy <= RT_MIN(pIf->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE)))
     {
@@ -4963,7 +4986,7 @@ DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8
         pIf->iIOBufferPIODataStart = offStart + cbCopy;
     }
     else
-        ataCopyPioData124Slow(pIf, pbDst, pbSrc, cbCopy);
+        ataCopyPioData124Slow(pIf, pbDst, pbSrc, offStart, cbCopy);
 }
 
 
@@ -4986,40 +5009,42 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     if (rc == VINF_SUCCESS)
     {
         ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
+        uint32_t const iIOBufferPIODataStart = RT_MIN(s->iIOBufferPIODataStart, sizeof(s->abIOBuffer));
+        uint32_t const iIOBufferPIODataEnd   = RT_MIN(s->iIOBufferPIODataEnd,   sizeof(s->abIOBuffer));
 
-        if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
+        if (iIOBufferPIODataStart < iIOBufferPIODataEnd)
         {
             Assert(s->uTxDir == PDMMEDIATXDIR_TO_DEVICE);
-            uint8_t       *pbDst = &s->abIOBuffer[s->iIOBufferPIODataStart];
+            uint8_t       *pbDst = &s->abIOBuffer[iIOBufferPIODataStart];
             uint8_t const *pbSrc = (uint8_t const *)&u32;
 
 #ifdef IN_RC
             /* Raw-mode: The ataHCPIOTransfer following the last transfer unit
                requires I/O thread signalling, we must go to ring-3 for that. */
-            if (s->iIOBufferPIODataStart + cb < s->iIOBufferPIODataEnd)
-                ataCopyPioData124(s, pbDst, pbSrc, cb);
+            if (iIOBufferPIODataStart + cb < iIOBufferPIODataEnd)
+                ataCopyPioData124(s, pbDst, pbSrc, iIOBufferPIODataStart, cb);
             else
                 rc = VINF_IOM_R3_IOPORT_WRITE;
 
 #elif defined(IN_RING0)
             /* Ring-0: We can do I/O thread signalling here, however for paranoid reasons
                triggered by a special case in ataHCPIOTransferFinish, we take extra care here. */
-            if (s->iIOBufferPIODataStart + cb < s->iIOBufferPIODataEnd)
-                ataCopyPioData124(s, pbDst, pbSrc, cb);
+            if (iIOBufferPIODataStart + cb < iIOBufferPIODataEnd)
+                ataCopyPioData124(s, pbDst, pbSrc, iIOBufferPIODataStart, cb);
             else if (s->uTxDir == PDMMEDIATXDIR_TO_DEVICE) /* paranoia */
             {
-                ataCopyPioData124(s, pbDst, pbSrc, cb);
+                ataCopyPioData124(s, pbDst, pbSrc, iIOBufferPIODataStart, cb);
                 ataHCPIOTransferFinish(pCtl, s);
             }
             else
             {
-                Log(("%s: Unexpected\n",__FUNCTION__));
+                Log(("%s: Unexpected\n", __FUNCTION__));
                 rc = VINF_IOM_R3_IOPORT_WRITE;
             }
 
 #else  /* IN_RING 3*/
-            ataCopyPioData124(s, pbDst, pbSrc, cb);
-            if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+            ataCopyPioData124(s, pbDst, pbSrc, iIOBufferPIODataStart, cb);
+            if (s->iIOBufferPIODataStart >= iIOBufferPIODataEnd)
                 ataHCPIOTransferFinish(pCtl, s);
 #endif /* IN_RING 3*/
         }
@@ -5063,14 +5088,16 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         if (s->iIOBufferPIODataStart < s->iIOBufferPIODataEnd)
         {
             Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
-            uint8_t const *pbSrc = &s->abIOBuffer[s->iIOBufferPIODataStart];
+            uint32_t const iIOBufferPIODataStart = RT_MIN(s->iIOBufferPIODataStart, sizeof(s->abIOBuffer));
+            uint32_t const iIOBufferPIODataEnd   = RT_MIN(s->iIOBufferPIODataEnd,   sizeof(s->abIOBuffer));
+            uint8_t const *pbSrc = &s->abIOBuffer[iIOBufferPIODataStart];
             uint8_t       *pbDst = (uint8_t *)pu32;
 
 #ifdef IN_RC
             /* All but the last transfer unit is simple enough for RC, but
              * sending a request to the async IO thread is too complicated. */
-            if (s->iIOBufferPIODataStart + cbActual < s->iIOBufferPIODataEnd)
-                ataCopyPioData124(s, pbDst, pbSrc, cbActual);
+            if (iIOBufferPIODataStart + cbActual < iIOBufferPIODataEnd)
+                ataCopyPioData124(s, pbDst, pbSrc, iIOBufferPIODataStart, cbActual);
             else
                 rc = VINF_IOM_R3_IOPORT_READ;
 
@@ -5079,13 +5106,13 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
                case in ataHCPIOTransfer that does a LogRel and would (but not from
                here) call directly into the driver code.  We detect that odd case
                here cand return to ring-3 to handle it. */
-            if (s->iIOBufferPIODataStart + cbActual < s->iIOBufferPIODataEnd)
-                ataCopyPioData124(s, pbDst, pbSrc, cbActual);
+            if (iIOBufferPIODataStart + cbActual < iIOBufferPIODataEnd)
+                ataCopyPioData124(s, pbDst, pbSrc, iIOBufferPIODataStart, cbActual);
             else if (   s->cbTotalTransfer == 0
                      || s->iSourceSink != ATAFN_SS_NULL
                      || s->iIOBufferCur <= s->iIOBufferEnd)
             {
-                ataCopyPioData124(s, pbDst, pbSrc, cbActual);
+                ataCopyPioData124(s, pbDst, pbSrc, iIOBufferPIODataStart, cbActual);
                 ataHCPIOTransferFinish(pCtl, s);
             }
             else
@@ -5095,8 +5122,8 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             }
 
 #else  /* IN_RING3 */
-            ataCopyPioData124(s, pbDst, pbSrc, cbActual);
-            if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+            ataCopyPioData124(s, pbDst, pbSrc, iIOBufferPIODataStart, cbActual);
+            if (s->iIOBufferPIODataStart >= iIOBufferPIODataEnd)
                 ataHCPIOTransferFinish(pCtl, s);
 #endif /* IN_RING3 */
 
@@ -5145,7 +5172,8 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
             ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
 
             uint32_t const offStart = s->iIOBufferPIODataStart;
-            if (offStart < s->iIOBufferPIODataEnd)
+            uint32_t const offEnd   = s->iIOBufferPIODataEnd;
+            if (offStart < offEnd)
             {
                 /*
                  * Figure how much we can copy.  Usually it's the same as the request.
@@ -5153,7 +5181,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                  * thread communication.  In R0 we let the non-string callback handle it,
                  * and ditto for overflows/dummy data.
                  */
-                uint32_t cAvailable = (s->iIOBufferPIODataEnd - offStart) / cb;
+                uint32_t cAvailable = (offEnd - offStart) / cb;
 #ifndef IN_RING3
                 if (cAvailable > 0)
                     cAvailable--;
@@ -5162,8 +5190,10 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 if (cAvailable > cRequested)
                     cAvailable = cRequested;
                 uint32_t const cbTransfer = cAvailable * cb;
-                if (   offStart + cbTransfer <= RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE)
-                    && cbTransfer > 0)
+                uint32_t const offEndThisXfer = offStart + cbTransfer;
+                if (   offEndThisXfer <= RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE)
+                    && offStart       <  RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE) /* paranoia */
+                    && cbTransfer     >  0)
                 {
                     /*
                      * Do the transfer.
@@ -5172,10 +5202,9 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     memcpy(pbDst, pbSrc, cbTransfer);
                     Log3(("%s: addr=%#x cb=%#x cbTransfer=%#x val=%.*Rhxd\n",
                           __FUNCTION__, Port, cb, cbTransfer, cbTransfer, pbSrc));
-                    s->iIOBufferPIODataStart = offStart + cbTransfer;
-
+                    s->iIOBufferPIODataStart = offEndThisXfer;
 #ifdef IN_RING3
-                    if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+                    if (offEndThisXfer >= offEnd)
                         ataHCPIOTransferFinish(pCtl, s);
 #endif
                     *pcTransfers = cRequested - cAvailable;
@@ -5234,7 +5263,8 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
             ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf];
 
             uint32_t const offStart = s->iIOBufferPIODataStart;
-            if (offStart < s->iIOBufferPIODataEnd)
+            uint32_t const offEnd   = s->iIOBufferPIODataEnd;
+            if (offStart < offEnd)
             {
                 /*
                  * Figure how much we can copy.  Usually it's the same as the request.
@@ -5242,7 +5272,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
                  * thread communication.  In R0 we let the non-string callback handle it,
                  * and ditto for overflows/dummy data.
                  */
-                uint32_t cAvailable = (s->iIOBufferPIODataEnd - offStart) / cb;
+                uint32_t cAvailable = (offEnd - offStart) / cb;
 #ifndef IN_RING3
                 if (cAvailable)
                     cAvailable--;
@@ -5251,8 +5281,10 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
                 if (cAvailable > cRequested)
                     cAvailable = cRequested;
                 uint32_t const cbTransfer = cAvailable * cb;
-                if (   offStart + cbTransfer <= RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE)
-                    && cbTransfer)
+                uint32_t const offEndThisXfer = offStart + cbTransfer;
+                if (   offEndThisXfer <= RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE)
+                    && offStart       <  RT_MIN(s->cbIOBuffer, ATA_MAX_IO_BUFFER_SIZE) /* paranoia */
+                    && cbTransfer     >  0)
                 {
                     /*
                      * Do the transfer.
@@ -5260,10 +5292,9 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
                     void *pvDst = &s->abIOBuffer[offStart];
                     memcpy(pvDst, pbSrc, cbTransfer);
                     Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, pvDst));
-                    s->iIOBufferPIODataStart = offStart + cbTransfer;
-
+                    s->iIOBufferPIODataStart = offEndThisXfer;
 #ifdef IN_RING3
-                    if (s->iIOBufferPIODataStart >= s->iIOBufferPIODataEnd)
+                    if (offEndThisXfer >= offEnd)
                         ataHCPIOTransferFinish(pCtl, s);
 #endif
                     *pcTransfers = cRequested - cAvailable;
@@ -5330,9 +5361,9 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
         Assert(s->cbTotalTransfer);
     uTxDir = (PDMMEDIATXDIR)s->uTxDir;
     cbTotalTransfer = s->cbTotalTransfer;
-    cbElementaryTransfer = s->cbElementaryTransfer;
-    iIOBufferCur = s->iIOBufferCur;
-    iIOBufferEnd = s->iIOBufferEnd;
+    cbElementaryTransfer = RT_MIN(s->cbElementaryTransfer, sizeof(s->abIOBuffer));
+    iIOBufferEnd = RT_MIN(s->iIOBufferEnd, sizeof(s->abIOBuffer));
+    iIOBufferCur = RT_MIN(RT_MIN(s->iIOBufferCur, sizeof(s->abIOBuffer)), iIOBufferEnd);
 
     /* The DMA loop is designed to hold the lock only when absolutely
      * necessary. This avoids long freezes should the guest access the
@@ -5363,7 +5394,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
             PDMDevHlpPhysRead(pDevIns, GCPhysDesc, &DMADesc, sizeof(BMDMADesc));
             GCPhysBuffer = RT_LE2H_U32(DMADesc.GCPhysBuffer);
             cbBuffer = RT_LE2H_U32(DMADesc.cbBuffer);
-            fLastDesc = !!(cbBuffer & 0x80000000);
+            fLastDesc = RT_BOOL(cbBuffer & UINT32_C(0x80000000));
             cbBuffer &= 0xfffe;
             if (cbBuffer == 0)
                 cbBuffer = 0x10000;
@@ -5375,9 +5406,10 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
         {
             if (RT_LIKELY(!fRedo))
             {
-                uint32_t cbXfer = RT_MIN(cbBuffer, iIOBufferEnd - iIOBufferCur);
+                uint32_t cbXfer = RT_MIN(RT_MIN(cbBuffer, iIOBufferEnd - iIOBufferCur),
+                                         sizeof(s->abIOBuffer) - RT_MIN(iIOBufferCur, sizeof(s->abIOBuffer)));
                 Log2(("%s: DMA desc %#010x: addr=%#010x size=%#010x orig_size=%#010x\n", __FUNCTION__,
-                       (int)GCPhysDesc, GCPhysBuffer, cbBuffer, RT_LE2H_U32(DMADesc.cbBuffer) & 0xfffe));
+                      (int)GCPhysDesc, GCPhysBuffer, cbBuffer, RT_LE2H_U32(DMADesc.cbBuffer) & 0xfffe));
 
                 if (uTxDir == PDMMEDIATXDIR_FROM_DEVICE)
                     PDMDevHlpPCIPhysWrite(pDevIns, GCPhysBuffer, &s->abIOBuffer[iIOBufferCur], cbXfer);
@@ -5424,7 +5456,7 @@ static void ataR3DMATransfer(PATACONTROLLER pCtl)
                         if (uTxDir == PDMMEDIATXDIR_TO_DEVICE && cbElementaryTransfer > cbTotalTransfer)
                             cbElementaryTransfer = cbTotalTransfer;
                         iIOBufferCur = 0;
-                        iIOBufferEnd = cbElementaryTransfer;
+                        iIOBufferEnd = RT_MIN(cbElementaryTransfer, sizeof(s->abIOBuffer));
                     }
                     pCtl->fRedo = fRedo;
                 }
@@ -7152,9 +7184,10 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
             if (cbIOBuffer)
             {
-                if (   cbIOBuffer <= ATA_MAX_IO_BUFFER_SIZE
-                    && cbIOBuffer <= pThis->aCts[i].aIfs[j].cbIOBuffer)
+                if (cbIOBuffer <= sizeof(pThis->aCts[i].aIfs[j].abIOBuffer))
                 {
+                    if (pThis->aCts[i].aIfs[j].cbIOBuffer != cbIOBuffer)
+                        LogRel(("ATA: %u/%u: Restoring cbIOBuffer=%u; constructor set up %u!\n", i, j, cbIOBuffer, pThis->aCts[i].aIfs[j].cbIOBuffer));
                     pThis->aCts[i].aIfs[j].cbIOBuffer = cbIOBuffer;
                     pHlp->pfnSSMGetMem(pSSM, pThis->aCts[i].aIfs[j].abIOBuffer, cbIOBuffer);
                 }

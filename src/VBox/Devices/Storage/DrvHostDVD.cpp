@@ -329,7 +329,7 @@ static DECLCALLBACK(int) drvHostDvdIoReqSendScsiCmd(PPDMIMEDIAEX pInterface, PDM
                         rc = ATAPIPassthroughTrackListCreateEmpty(&pThis->pTrackList);
 
                     if (RT_SUCCESS(rc))
-                        rc = ATAPIPassthroughTrackListUpdate(pThis->pTrackList, pbCdb, pvBuf);
+                        rc = ATAPIPassthroughTrackListUpdate(pThis->pTrackList, pbCdb, pvBuf, cbXfer);
 
                     if (RT_FAILURE(rc))
                         LogRelMax(10, ("HostDVD#%u: Error (%Rrc) while updating the tracklist during %s, burning the disc might fail\n",
