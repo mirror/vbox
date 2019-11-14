@@ -146,6 +146,13 @@
 #define BM_CMD_WRITE     0x08
 /** @} */
 
+/** Number of I/O ports per bus-master DMA controller. */
+#define BM_DMA_CTL_IOPORTS          8
+/** Mask corresponding to BM_DMA_CTL_IOPORTS. */
+#define BM_DMA_CTL_IOPORTS_MASK     7
+/** Shift count corresponding to BM_DMA_CTL_IOPORTS. */
+#define BM_DMA_CTL_IOPORTS_SHIFT    3
+
 /** @} */
 
 
@@ -601,6 +608,8 @@ typedef struct PCIATAState
     /** Flag indicating chipset being emulated. */
     uint8_t                         u8Type;
     bool                            Alignment0[HC_ARCH_BITS == 64 ? 5 : 1 ]; /**< Align the struct size. */
+    /** PCI region \#4: Bus-master DMA I/O ports. */
+    IOMIOPORTHANDLE                 hIoPortsBmDma;
 } PCIATAState;
 
 #define ATACONTROLLER_IDX(pController) ( (pController) - PDMDEVINS_2_DATA(CONTROLLER_2_DEVINS(pController), PCIATAState *)->aCts )
@@ -627,8 +636,6 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
 PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
-PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb);
 RT_C_DECLS_END
 
 
@@ -6138,125 +6145,86 @@ static void ataBMDMAAddrWriteHighWord(PATACONTROLLER pCtl, uint32_t addr, uint32
     pCtl->BmDma.GCPhysAddr = (RT_LOWORD(val) << 16) | RT_LOWORD(pCtl->BmDma.GCPhysAddr);
 }
 
-#define VAL(port, size)   ( ((port) & 7) | ((size) << 3) )
+/** Helper for ataBMDMAIOPortRead and ataBMDMAIOPortWrite.  */
+#define VAL(port, size)   ( ((port) & BM_DMA_CTL_IOPORTS_MASK) | ((size) << BM_DMA_CTL_IOPORTS_SHIFT) )
 
 /**
- * Port I/O Handler for bus master DMA IN operations.
- * @see FNIOMIOPORTIN for details.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Port I/O Handler for bus-master DMA IN operations - both controllers.}
  */
-PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &pThis->aCts[(offPort >> BM_DMA_CTL_IOPORTS_SHIFT) % RT_ELEMENTS(pThis->aCts)];
+    RT_NOREF(pvUser);
 
-    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
-    if (rc != VINF_SUCCESS)
-        return rc;
-    switch (VAL(Port, cb))
+    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    if (rc == VINF_SUCCESS)
     {
-        case VAL(0, 1): *pu32 = ataBMDMACmdReadB(pCtl, Port); break;
-        case VAL(0, 2): *pu32 = ataBMDMACmdReadB(pCtl, Port); break;
-        case VAL(2, 1): *pu32 = ataBMDMAStatusReadB(pCtl, Port); break;
-        case VAL(2, 2): *pu32 = ataBMDMAStatusReadB(pCtl, Port); break;
-        case VAL(4, 4): *pu32 = ataBMDMAAddrReadL(pCtl, Port); break;
-        case VAL(0, 4):
-            /* The SCO OpenServer tries to read 4 bytes starting from offset 0. */
-            *pu32 = ataBMDMACmdReadB(pCtl, Port) | (ataBMDMAStatusReadB(pCtl, Port) << 16);
-            break;
-        default:
-            AssertMsgFailed(("%s: Unsupported read from port %x size=%d\n", __FUNCTION__, Port, cb));
-            rc = VERR_IOM_IOPORT_UNUSED;
-            break;
+        switch (VAL(offPort, cb))
+        {
+            case VAL(0, 1): *pu32 = ataBMDMACmdReadB(pCtl, offPort); break;
+            case VAL(0, 2): *pu32 = ataBMDMACmdReadB(pCtl, offPort); break;
+            case VAL(2, 1): *pu32 = ataBMDMAStatusReadB(pCtl, offPort); break;
+            case VAL(2, 2): *pu32 = ataBMDMAStatusReadB(pCtl, offPort); break;
+            case VAL(4, 4): *pu32 = ataBMDMAAddrReadL(pCtl, offPort); break;
+            case VAL(0, 4):
+                /* The SCO OpenServer tries to read 4 bytes starting from offset 0. */
+                *pu32 = ataBMDMACmdReadB(pCtl, offPort) | (ataBMDMAStatusReadB(pCtl, offPort) << 16);
+                break;
+            default:
+                ASSERT_GUEST_MSG_FAILED(("Unsupported read from port %x size=%d\n", offPort, cb));
+                rc = VERR_IOM_IOPORT_UNUSED;
+                break;
+        }
+        PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
-    PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     return rc;
 }
 
 /**
- * Port I/O Handler for bus master DMA OUT operations.
- * @see FNIOMIOPORTOUT for details.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Port I/O Handler for bus-master DMA OUT operations - both controllers.}
  */
-PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
+    PATACONTROLLER pCtl  = &pThis->aCts[(offPort >> BM_DMA_CTL_IOPORTS_SHIFT) % RT_ELEMENTS(pThis->aCts)];
+    RT_NOREF(pvUser);
 
-    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
-    if (rc != VINF_SUCCESS)
-        return rc;
-    switch (VAL(Port, cb))
+    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    if (rc == VINF_SUCCESS)
     {
-        case VAL(0, 1):
+        switch (VAL(offPort, cb))
+        {
+            case VAL(0, 1):
 #ifdef IN_RC
-            if (u32 & BM_CMD_START)
-            {
-                rc = VINF_IOM_R3_IOPORT_WRITE;
-                break;
-            }
+                if (u32 & BM_CMD_START)
+                {
+                    rc = VINF_IOM_R3_IOPORT_WRITE;
+                    break;
+                }
 #endif
-            ataBMDMACmdWriteB(pCtl, Port, u32);
-            break;
-        case VAL(2, 1): ataBMDMAStatusWriteB(pCtl, Port, u32); break;
-        case VAL(4, 4): ataBMDMAAddrWriteL(pCtl, Port, u32); break;
-        case VAL(4, 2): ataBMDMAAddrWriteLowWord(pCtl, Port, u32); break;
-        case VAL(6, 2): ataBMDMAAddrWriteHighWord(pCtl, Port, u32); break;
-        default:        AssertMsgFailed(("%s: Unsupported write to port %x size=%d val=%x\n", __FUNCTION__, Port, cb, u32)); break;
+                ataBMDMACmdWriteB(pCtl, offPort, u32);
+                break;
+            case VAL(2, 1): ataBMDMAStatusWriteB(pCtl, offPort, u32); break;
+            case VAL(4, 4): ataBMDMAAddrWriteL(pCtl, offPort, u32); break;
+            case VAL(4, 2): ataBMDMAAddrWriteLowWord(pCtl, offPort, u32); break;
+            case VAL(6, 2): ataBMDMAAddrWriteHighWord(pCtl, offPort, u32); break;
+            default:
+                ASSERT_GUEST_MSG_FAILED(("Unsupported write to port %x size=%d val=%x\n", offPort, cb, u32));
+                break;
+        }
+        PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
-    PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     return rc;
 }
 
 #undef VAL
 
 #ifdef IN_RING3
-
-/**
- * @callback_method_impl{FNPCIIOREGIONMAP}
- */
-static DECLCALLBACK(int) ataR3BMDMAIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV pPciDev, uint32_t iRegion,
-                                              RTGCPHYS GCPhysAddress, RTGCPHYS cb, PCIADDRESSSPACE enmType)
-{
-    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    int          rc = VINF_SUCCESS;
-    RT_NOREF(iRegion, cb, enmType, pPciDev);
-
-    Assert(enmType == PCI_ADDRESS_SPACE_IO);
-    Assert(iRegion == 4);
-    AssertMsg(RT_ALIGN(GCPhysAddress, 8) == GCPhysAddress, ("Expected 8 byte alignment. GCPhysAddress=%#x\n", GCPhysAddress));
-    Assert(pPciDev == pDevIns->apPciDevs[0]);
-
-    /* Register the port range. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
-    {
-        int rc2 = PDMDevHlpIOPortRegister(pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
-                                          (RTHCPTR)(uintptr_t)i, ataBMDMAIOPortWrite, ataBMDMAIOPortRead,
-                                          NULL, NULL, "ATA Bus Master DMA");
-        AssertRC(rc2);
-        if (rc2 < rc)
-            rc = rc2;
-
-        if (pThis->fRCEnabled)
-        {
-            rc2 = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
-                                            (RTGCPTR)i, "ataBMDMAIOPortWrite", "ataBMDMAIOPortRead",
-                                            NULL, NULL, "ATA Bus Master DMA");
-            AssertRC(rc2);
-            if (rc2 < rc)
-                rc = rc2;
-        }
-        if (pThis->fR0Enabled)
-        {
-            rc2 = PDMDevHlpIOPortRegisterR0(pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
-                                            (RTR0PTR)i, "ataBMDMAIOPortWrite", "ataBMDMAIOPortRead",
-                                            NULL, NULL, "ATA Bus Master DMA");
-            AssertRC(rc2);
-            if (rc2 < rc)
-                rc = rc2;
-        }
-    }
-    return rc;
-}
-
 
 /* -=-=-=-=-=- PCIATAState::IBase  -=-=-=-=-=- */
 
@@ -7648,7 +7616,7 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMPciDevSetWord(pPciDev, 0x42, 0x8000); /* enable IDE1 */
 
     PDMPciDevSetCommand(   pPciDev, PCI_COMMAND_IOACCESS | PCI_COMMAND_MEMACCESS | PCI_COMMAND_BUSMASTER);
-    PDMPciDevSetClassProg( pPciDev, 0x8a); /* programming interface = PCI_IDE bus master is supported */
+    PDMPciDevSetClassProg( pPciDev, 0x8a); /* programming interface = PCI_IDE bus-master is supported */
     PDMPciDevSetClassSub(  pPciDev, 0x01); /* class_sub = PCI_IDE */
     PDMPciDevSetClassBase( pPciDev, 0x01); /* class_base = PCI_mass_storage */
     PDMPciDevSetHeaderType(pPciDev, 0x00);
@@ -7701,9 +7669,12 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpPCIRegisterEx(pDevIns, pPciDev, PDMPCIDEVREG_F_NOT_MANDATORY_NO, 1 /*uPciDevNo*/, 1 /*uPciDevFn*/, "piix3ide");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register PCI device"));
-    rc = PDMDevHlpPCIIORegionRegister(pDevIns, 4, 0x10, PCI_ADDRESS_SPACE_IO, ataR3BMDMAIORangeMap);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register PCI I/O region for BMDMA"));
+
+    /* Region #4: I/O ports for the two bus-master DMA controllers. */
+    rc = PDMDevHlpPCIIORegionCreateIo(pDevIns, 4 /*iPciRegion*/, 0x10 /*cPorts*/,
+                                      ataBMDMAIOPortWrite, ataBMDMAIOPortRead, NULL /*pvUser*/, "ATA Bus Master DMA",
+                                      NULL /*paExtDescs*/, &pThis->hIoPortsBmDma);
+    AssertRCReturn(rc, rc);
 
     /*
      * Register stats, create critical sections.
@@ -8069,7 +8040,24 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     return ataR3ResetCommon(pDevIns, true /*fConstruct*/);
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) ataRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+
+    int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsBmDma, ataBMDMAIOPortWrite, ataBMDMAIOPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -8123,7 +8111,7 @@ const PDMDEVREG g_DevicePIIX3IDE =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           ataRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -8136,7 +8124,7 @@ const PDMDEVREG g_DevicePIIX3IDE =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           ataRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
