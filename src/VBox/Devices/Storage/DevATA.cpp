@@ -823,20 +823,20 @@ static const ATARequest g_ataResetCRequest = { ATA_AIO_RESET_CLEARED,  { { 0, 0,
 # ifdef IN_RING3
 static void ataR3AsyncIOClearRequests(PATACONTROLLER pCtl)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     pCtl->AsyncIOReqHead = 0;
     pCtl->AsyncIOReqTail = 0;
 
-    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
+    rc = PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock);
     AssertRC(rc);
 }
 # endif /* IN_RING3 */
 
 static void ataHCAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     Assert((pCtl->AsyncIOReqHead + 1) % RT_ELEMENTS(pCtl->aAsyncIORequests) != pCtl->AsyncIOReqTail);
@@ -844,10 +844,10 @@ static void ataHCAsyncIOPutRequest(PATACONTROLLER pCtl, const ATARequest *pReq)
     pCtl->AsyncIOReqHead++;
     pCtl->AsyncIOReqHead %= RT_ELEMENTS(pCtl->aAsyncIORequests);
 
-    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
+    rc = PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock);
     AssertRC(rc);
 
-    rc = PDMHCCritSectScheduleExitEvent(&pCtl->lock, pCtl->hAsyncIOSem);
+    rc = PDMDevHlpCritSectScheduleExitEvent(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, pCtl->hAsyncIOSem);
     if (RT_FAILURE(rc))
     {
         rc = PDMDevHlpSUPSemEventSignal(pCtl->CTX_SUFF(pDevIns), pCtl->hAsyncIOSem);
@@ -861,7 +861,7 @@ static const ATARequest *ataR3AsyncIOGetCurrentRequest(PATACONTROLLER pCtl)
 {
     const ATARequest *pReq;
 
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     if (pCtl->AsyncIOReqHead != pCtl->AsyncIOReqTail)
@@ -869,7 +869,7 @@ static const ATARequest *ataR3AsyncIOGetCurrentRequest(PATACONTROLLER pCtl)
     else
         pReq = NULL;
 
-    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
+    rc = PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock);
     AssertRC(rc);
     return pReq;
 }
@@ -885,7 +885,7 @@ static const ATARequest *ataR3AsyncIOGetCurrentRequest(PATACONTROLLER pCtl)
  */
 static void ataR3AsyncIORemoveCurrentRequest(PATACONTROLLER pCtl, ATAAIO ReqType)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     if (pCtl->AsyncIOReqHead != pCtl->AsyncIOReqTail && pCtl->aAsyncIORequests[pCtl->AsyncIOReqTail].ReqType == ReqType)
@@ -894,7 +894,7 @@ static void ataR3AsyncIORemoveCurrentRequest(PATACONTROLLER pCtl, ATAAIO ReqType
         pCtl->AsyncIOReqTail %= RT_ELEMENTS(pCtl->aAsyncIORequests);
     }
 
-    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
+    rc = PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock);
     AssertRC(rc);
 }
 
@@ -908,7 +908,7 @@ static void ataR3AsyncIORemoveCurrentRequest(PATACONTROLLER pCtl, ATAAIO ReqType
  */
 static void ataR3AsyncIODumpRequests(PATACONTROLLER pCtl)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     LogRel(("PIIX3 ATA: Ctl#%d: request queue dump (topmost is current):\n", ATACONTROLLER_IDX(pCtl)));
@@ -947,7 +947,7 @@ static void ataR3AsyncIODumpRequests(PATACONTROLLER pCtl)
         curr = (curr + 1) % RT_ELEMENTS(pCtl->aAsyncIORequests);
     } while (curr != pCtl->AsyncIOReqTail);
 
-    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
+    rc = PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock);
     AssertRC(rc);
 }
 
@@ -961,7 +961,7 @@ static void ataR3AsyncIODumpRequests(PATACONTROLLER pCtl)
  */
 static bool ataR3AsyncIOIsIdle(PATACONTROLLER pCtl, bool fStrict)
 {
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     bool fIdle = pCtl->fRedoIdle;
@@ -970,7 +970,7 @@ static bool ataR3AsyncIOIsIdle(PATACONTROLLER pCtl, bool fStrict)
     if (fStrict)
         fIdle &= (pCtl->uAsyncIOState == ATA_AIO_NEW);
 
-    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
+    rc = PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock);
     AssertRC(rc);
     return fIdle;
 }
@@ -992,7 +992,7 @@ static void ataR3StartTransfer(ATADevState *s, uint32_t cbTotalTransfer, uint8_t
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     ATARequest Req;
 
-    Assert(PDMCritSectIsOwner(&pCtl->lock));
+    Assert(PDMDevHlpCritSectIsOwner(pCtl->CTX_SUFF(pDevIns), &pCtl->lock));
 
     /* Do not issue new requests while the RESET line is asserted. */
     if (pCtl->fReset)
@@ -1043,7 +1043,7 @@ static void ataR3AbortCurrentCommand(ATADevState *s, bool fResetDrive)
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
     ATARequest Req;
 
-    Assert(PDMCritSectIsOwner(&pCtl->lock));
+    Assert(PDMDevHlpCritSectIsOwner(pCtl->CTX_SUFF(pDevIns), &pCtl->lock));
 
     /* Do not issue new requests while the RESET line is asserted. */
     if (pCtl->fReset)
@@ -1188,7 +1188,7 @@ static void ataHCPIOTransferLimitATAPI(ATADevState *s)
 DECLINLINE(void) ataR3LockEnter(PATACONTROLLER pCtl)
 {
     STAM_PROFILE_START(&pCtl->StatLockWait, a);
-    PDMCritSectEnter(&pCtl->lock, VINF_SUCCESS);
+    PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_SUCCESS);
     STAM_PROFILE_STOP(&pCtl->StatLockWait, a);
 }
 
@@ -1200,7 +1200,7 @@ DECLINLINE(void) ataR3LockEnter(PATACONTROLLER pCtl)
  */
 DECLINLINE(void) ataR3LockLeave(PATACONTROLLER pCtl)
 {
-    PDMCritSectLeave(&pCtl->lock);
+    PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
 }
 
 static uint32_t ataR3GetNSectors(ATADevState *s)
@@ -1617,7 +1617,7 @@ static void ataR3WarningISCSI(PPDMDEVINS pDevIns)
 static bool ataR3IsRedoSetWarning(ATADevState *s, int rc)
 {
     PATACONTROLLER pCtl = ATADEVSTATE_2_CONTROLLER(s);
-    Assert(!PDMCritSectIsOwner(&pCtl->lock));
+    Assert(!PDMDevHlpCritSectIsOwner(pCtl->CTX_SUFF(pDevIns), &pCtl->lock));
     if (rc == VERR_DISK_FULL)
     {
         pCtl->fRedoIdle = true;
@@ -5011,7 +5011,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     Assert(Port == pCtl->IOPortBase1);
     Assert(cb == 2 || cb == 4); /* Writes to the data port may be 16-bit or 32-bit. */
 
-    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc == VINF_SUCCESS)
     {
         ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
@@ -5058,7 +5058,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
             Log2(("%s: DUMMY data\n", __FUNCTION__));
 
         Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, Port, cb, &u32, rc));
-        PDMCritSectLeave(&pCtl->lock);
+        PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
     else
         Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, Port, rc));
@@ -5085,7 +5085,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     uint32_t cbActual = cb != 1 ? cb : 2;
     *pu32 = 0;
 
-    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
         ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
@@ -5143,7 +5143,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
         }
         Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, Port, cb, pu32, rc));
 
-        PDMCritSectLeave(&pCtl->lock);
+        PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
     else
         Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, Port, rc));
@@ -5170,7 +5170,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
     int rc;
     if (cb == 2 || cb == 4)
     {
-        rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+        rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
             ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
@@ -5226,7 +5226,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                 *pcTransfers = 0;
             }
 
-            PDMCritSectLeave(&pCtl->lock);
+            PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
         }
     }
     /*
@@ -5260,7 +5260,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
     int rc;
     if (cb == 2 || cb == 4)
     {
-        rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+        rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
             ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
@@ -5311,7 +5311,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
                 *pcTransfers = 0;
             }
 
-            PDMCritSectLeave(&pCtl->lock);
+            PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
         }
     }
     /*
@@ -5519,7 +5519,7 @@ static void ataR3AsyncSignalIdle(PATACONTROLLER pCtl)
      * Take the lock here and recheck the idle indicator to avoid
      * unnecessary work and racing ataR3WaitForAsyncIOIsIdle.
      */
-    int rc = PDMCritSectEnter(&pCtl->AsyncIORequestLock, VINF_SUCCESS);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock, VINF_SUCCESS);
     AssertRC(rc);
 
     if (    pCtl->fSignalIdle
@@ -5529,7 +5529,7 @@ static void ataR3AsyncSignalIdle(PATACONTROLLER pCtl)
         RTThreadUserSignal(pCtl->AsyncIOThread); /* for ataR3Construct/ataR3ResetCommon. */
     }
 
-    rc = PDMCritSectLeave(&pCtl->AsyncIORequestLock);
+    rc = PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->AsyncIORequestLock);
     AssertRC(rc);
 }
 
@@ -6149,7 +6149,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
-    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc != VINF_SUCCESS)
         return rc;
     switch (VAL(Port, cb))
@@ -6168,7 +6168,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             rc = VERR_IOM_IOPORT_UNUSED;
             break;
     }
-    PDMCritSectLeave(&pCtl->lock);
+    PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     return rc;
 }
 
@@ -6181,7 +6181,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
-    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
     switch (VAL(Port, cb))
@@ -6202,7 +6202,7 @@ PDMBOTHCBDECL(int) ataBMDMAIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
         case VAL(6, 2): ataBMDMAAddrWriteHighWord(pCtl, Port, u32); break;
         default:        AssertMsgFailed(("%s: Unsupported write to port %x size=%d val=%x\n", __FUNCTION__, Port, cb, u32)); break;
     }
-    PDMCritSectLeave(&pCtl->lock);
+    PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     return rc;
 }
 
@@ -6409,7 +6409,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
     Assert((uintptr_t)pvUser < 2);
     Assert(Port != pCtl->IOPortBase1);
 
-    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc == VINF_SUCCESS)
     {
         /* Writes to the other command block ports should be 8-bit only. If they
@@ -6421,7 +6421,7 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
         rc = ataIOPortWriteU8(pCtl, Port, u32);
 
-        PDMCritSectLeave(&pCtl->lock);
+        PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
     return rc;
 }
@@ -6439,7 +6439,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
     Assert((uintptr_t)pvUser < 2);
     Assert(Port != pCtl->IOPortBase1);
 
-    int rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
         /* Reads from the other command block registers should be 8-bit only.
@@ -6458,7 +6458,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
             *pu32 = pad;
             Log(("ataIOPortRead1: suspect read from port %x size=%d\n", Port, cb));
         }
-        PDMCritSectLeave(&pCtl->lock);
+        PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
     return rc;
 }
@@ -6478,11 +6478,11 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 
     if (cb == 1)
     {
-        rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+        rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
             rc = ataControlWrite(pCtl, Port, u32);
-            PDMCritSectLeave(&pCtl->lock);
+            PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
         }
     }
     else
@@ -6508,11 +6508,11 @@ PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
 
     if (cb == 1)
     {
-        rc = PDMCritSectEnter(&pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+        rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
             *pu32 = ataStatusRead(pCtl, Port);
-            PDMCritSectLeave(&pCtl->lock);
+            PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
         }
     }
     else
@@ -6843,9 +6843,9 @@ static bool ataR3AllAsyncIOIsIdle(PPDMDEVINS pDevIns)
             if (!fRc)
             {
                 /* Make it signal PDM & itself when its done */
-                PDMCritSectEnter(&pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
+                PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
                 ASMAtomicWriteBool(&pThis->aCts[i].fSignalIdle, true);
-                PDMCritSectLeave(&pThis->aCts[i].AsyncIORequestLock);
+                PDMDevHlpCritSectLeave(pDevIns, &pThis->aCts[i].AsyncIORequestLock);
 
                 fRc = ataR3AsyncIOIsIdle(&pThis->aCts[i], false /*fStrict*/);
                 if (!fRc)
@@ -7293,10 +7293,10 @@ static DECLCALLBACK(bool) ataR3IsAsyncResetDone(PPDMDEVINS pDevIns)
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
         for (uint32_t j = 0; j < RT_ELEMENTS(pThis->aCts[i].aIfs); j++)
             ataR3ResetDevice(&pThis->aCts[i].aIfs[j]);
-        PDMCritSectLeave(&pThis->aCts[i].lock);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->aCts[i].lock);
     }
     return true;
 }
@@ -7315,7 +7315,7 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
 
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        PDMCritSectEnter(&pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
+        PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].lock, VERR_INTERNAL_ERROR);
 
         pThis->aCts[i].iSelectedIf = 0;
         pThis->aCts[i].iAIOIf = 0;
@@ -7335,7 +7335,7 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
         ataHCAsyncIOPutRequest(&pThis->aCts[i], &g_ataResetARequest);
         ataHCAsyncIOPutRequest(&pThis->aCts[i], &g_ataResetCRequest);
 
-        PDMCritSectLeave(&pThis->aCts[i].lock);
+        PDMDevHlpCritSectLeave(pDevIns, &pThis->aCts[i].lock);
     }
 
     int rcRet = VINF_SUCCESS;
@@ -7361,14 +7361,14 @@ static int ataR3ResetCommon(PPDMDEVINS pDevIns, bool fConstruct)
         {
             if (pThis->aCts[i].AsyncIOThread != NIL_RTTHREAD)
             {
-                int rc = PDMCritSectEnter(&pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
+                int rc = PDMDevHlpCritSectEnter(pDevIns, &pThis->aCts[i].AsyncIORequestLock, VERR_IGNORED);
                 AssertRC(rc);
 
                 ASMAtomicWriteBool(&pThis->aCts[i].fSignalIdle, true);
                 rc = RTThreadUserReset(pThis->aCts[i].AsyncIOThread);
                 AssertRC(rc);
 
-                rc = PDMCritSectLeave(&pThis->aCts[i].AsyncIORequestLock);
+                rc = PDMDevHlpCritSectLeave(pDevIns, &pThis->aCts[i].AsyncIORequestLock);
                 AssertRC(rc);
 
                 if (!ataR3AsyncIOIsIdle(&pThis->aCts[i], false /*fStrict*/))
@@ -7474,8 +7474,8 @@ static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
      */
     for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
     {
-        if (PDMCritSectIsInitialized(&pThis->aCts[i].AsyncIORequestLock))
-            PDMR3CritSectDelete(&pThis->aCts[i].AsyncIORequestLock);
+        if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->aCts[i].AsyncIORequestLock))
+            PDMDevHlpCritSectDelete(pDevIns, &pThis->aCts[i].AsyncIORequestLock);
         if (pThis->aCts[i].hAsyncIOSem != NIL_SUPSEMEVENT)
         {
             PDMDevHlpSUPSemEventClose(pDevIns, pThis->aCts[i].hAsyncIOSem);
@@ -7805,8 +7805,8 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         rc = RTThreadCreateF(&pCtl->AsyncIOThread, ataR3AsyncIOThread, (void *)pCtl, 128*1024 /*cbStack*/,
                              RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "ATA-%u", i);
         AssertLogRelRCReturn(rc, rc);
-        Assert(  pCtl->AsyncIOThread != NIL_RTTHREAD    && pCtl->hAsyncIOSem != NIL_SUPSEMEVENT
-               && pCtl->SuspendIOSem != NIL_RTSEMEVENT  && PDMCritSectIsInitialized(&pCtl->AsyncIORequestLock));
+        Assert(   pCtl->AsyncIOThread != NIL_RTTHREAD   && pCtl->hAsyncIOSem != NIL_SUPSEMEVENT
+               && pCtl->SuspendIOSem  != NIL_RTSEMEVENT && PDMDevHlpCritSectIsInitialized(pDevIns, &pCtl->AsyncIORequestLock));
         Log(("%s: controller %d AIO thread id %#x; sem %p susp_sem %p\n", __FUNCTION__, i, pCtl->AsyncIOThread, pCtl->hAsyncIOSem, pCtl->SuspendIOSem));
 
         for (uint32_t j = 0; j < RT_ELEMENTS(pCtl->aIfs); j++)
