@@ -273,7 +273,7 @@ typedef struct ATADevState
     /** ATAPI current sector size. */
     uint32_t                            cbATAPISector;
     /** ATAPI current command. */
-    uint8_t                             aATAPICmd[ATAPI_PACKET_SIZE];
+    uint8_t                             abATAPICmd[ATAPI_PACKET_SIZE];
     /** ATAPI sense data. */
     uint8_t                             abATAPISense[ATAPI_SENSE_SIZE];
     /** HACK: Countdown till we report a newly unmounted drive as mounted. */
@@ -2037,7 +2037,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
 
     memset(szBuf, 0, sizeof(szBuf));
 
-    switch (s->aATAPICmd[0])
+    switch (s->abATAPICmd[0])
     {
         case SCSI_MODE_SELECT_10:
         {
@@ -2073,7 +2073,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
         /* Linux accepts commands with up to 100KB of data, but expects
          * us to handle commands with up to 128KB of data. The usual
          * imbalance of powers. */
-        uint8_t aATAPICmd[ATAPI_PACKET_SIZE];
+        uint8_t abATAPICmd[ATAPI_PACKET_SIZE];
         uint32_t iATAPILBA, cSectors, cReqSectors, cbCurrTX;
         uint8_t *pbBuf = s->abIOBuffer;
         uint32_t cSectorsMax; /**< Maximum amount of sectors to read without exceeding the I/O buffer. */
@@ -2081,29 +2081,29 @@ static bool atapiR3PassthroughSS(ATADevState *s)
         cSectorsMax = cbTransfer / cbATAPISector;
         AssertStmt(cSectorsMax * s->cbATAPISector <= cbIOBuffer, cSectorsMax = cbIOBuffer / cbATAPISector);
 
-        switch (s->aATAPICmd[0])
+        switch (s->abATAPICmd[0])
         {
             case SCSI_READ_10:
             case SCSI_WRITE_10:
             case SCSI_WRITE_AND_VERIFY_10:
-                iATAPILBA = scsiBE2H_U32(s->aATAPICmd + 2);
-                cSectors = scsiBE2H_U16(s->aATAPICmd + 7);
+                iATAPILBA = scsiBE2H_U32(s->abATAPICmd + 2);
+                cSectors = scsiBE2H_U16(s->abATAPICmd + 7);
                 break;
             case SCSI_READ_12:
             case SCSI_WRITE_12:
-                iATAPILBA = scsiBE2H_U32(s->aATAPICmd + 2);
-                cSectors = scsiBE2H_U32(s->aATAPICmd + 6);
+                iATAPILBA = scsiBE2H_U32(s->abATAPICmd + 2);
+                cSectors = scsiBE2H_U32(s->abATAPICmd + 6);
                 break;
             case SCSI_READ_CD:
-                iATAPILBA = scsiBE2H_U32(s->aATAPICmd + 2);
-                cSectors = scsiBE2H_U24(s->aATAPICmd + 6);
+                iATAPILBA = scsiBE2H_U32(s->abATAPICmd + 2);
+                cSectors = scsiBE2H_U24(s->abATAPICmd + 6);
                 break;
             case SCSI_READ_CD_MSF:
-                iATAPILBA = scsiMSF2LBA(s->aATAPICmd + 3);
-                cSectors = scsiMSF2LBA(s->aATAPICmd + 6) - iATAPILBA;
+                iATAPILBA = scsiMSF2LBA(s->abATAPICmd + 3);
+                cSectors = scsiMSF2LBA(s->abATAPICmd + 6) - iATAPILBA;
                 break;
             default:
-                AssertMsgFailed(("Don't know how to split command %#04x\n", s->aATAPICmd[0]));
+                AssertMsgFailed(("Don't know how to split command %#04x\n", s->abATAPICmd[0]));
                 if (s->cErrors++ < MAX_LOG_REL_ERRORS)
                     LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough split error\n", s->iLUN));
                 atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
@@ -2111,7 +2111,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                 return false;
         }
         cSectorsMax = RT_MIN(cSectorsMax, cSectors);
-        memcpy(aATAPICmd, s->aATAPICmd, ATAPI_PACKET_SIZE);
+        memcpy(abATAPICmd, s->abATAPICmd, ATAPI_PACKET_SIZE);
         cReqSectors = 0;
         for (uint32_t i = cSectorsMax; i > 0; i -= cReqSectors)
         {
@@ -2120,30 +2120,30 @@ static bool atapiR3PassthroughSS(ATADevState *s)
             else
                 cReqSectors = i;
             cbCurrTX = cbATAPISector * cReqSectors;
-            switch (s->aATAPICmd[0])
+            switch (s->abATAPICmd[0])
             {
                 case SCSI_READ_10:
                 case SCSI_WRITE_10:
                 case SCSI_WRITE_AND_VERIFY_10:
-                    scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                    scsiH2BE_U16(aATAPICmd + 7, cReqSectors);
+                    scsiH2BE_U32(abATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U16(abATAPICmd + 7, cReqSectors);
                     break;
                 case SCSI_READ_12:
                 case SCSI_WRITE_12:
-                    scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                    scsiH2BE_U32(aATAPICmd + 6, cReqSectors);
+                    scsiH2BE_U32(abATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U32(abATAPICmd + 6, cReqSectors);
                     break;
                 case SCSI_READ_CD:
-                    scsiH2BE_U32(aATAPICmd + 2, iATAPILBA);
-                    scsiH2BE_U24(aATAPICmd + 6, cReqSectors);
+                    scsiH2BE_U32(abATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U24(abATAPICmd + 6, cReqSectors);
                     break;
                 case SCSI_READ_CD_MSF:
-                    scsiLBA2MSF(aATAPICmd + 3, iATAPILBA);
-                    scsiLBA2MSF(aATAPICmd + 6, iATAPILBA + cReqSectors);
+                    scsiLBA2MSF(abATAPICmd + 3, iATAPILBA);
+                    scsiLBA2MSF(abATAPICmd + 6, iATAPILBA + cReqSectors);
                     break;
             }
             AssertLogRelReturn((uintptr_t)(pbBuf - &s->abIOBuffer[0]) + cbCurrTX <= sizeof(s->abIOBuffer), false);
-            rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, aATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
+            rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, abATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
                                           pbBuf, &cbCurrTX, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
             if (rc != VINF_SUCCESS)
                 break;
@@ -2154,29 +2154,29 @@ static bool atapiR3PassthroughSS(ATADevState *s)
         if (RT_SUCCESS(rc))
         {
             /* Adjust ATAPI command for the next call. */
-            switch (s->aATAPICmd[0])
+            switch (s->abATAPICmd[0])
             {
                 case SCSI_READ_10:
                 case SCSI_WRITE_10:
                 case SCSI_WRITE_AND_VERIFY_10:
-                    scsiH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
-                    scsiH2BE_U16(s->aATAPICmd + 7, cSectors - cSectorsMax);
+                    scsiH2BE_U32(s->abATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U16(s->abATAPICmd + 7, cSectors - cSectorsMax);
                     break;
                 case SCSI_READ_12:
                 case SCSI_WRITE_12:
-                    scsiH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
-                    scsiH2BE_U32(s->aATAPICmd + 6, cSectors - cSectorsMax);
+                    scsiH2BE_U32(s->abATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U32(s->abATAPICmd + 6, cSectors - cSectorsMax);
                     break;
                 case SCSI_READ_CD:
-                    scsiH2BE_U32(s->aATAPICmd + 2, iATAPILBA);
-                    scsiH2BE_U24(s->aATAPICmd + 6, cSectors - cSectorsMax);
+                    scsiH2BE_U32(s->abATAPICmd + 2, iATAPILBA);
+                    scsiH2BE_U24(s->abATAPICmd + 6, cSectors - cSectorsMax);
                     break;
                 case SCSI_READ_CD_MSF:
-                    scsiLBA2MSF(s->aATAPICmd + 3, iATAPILBA);
-                    scsiLBA2MSF(s->aATAPICmd + 6, iATAPILBA + cSectors - cSectorsMax);
+                    scsiLBA2MSF(s->abATAPICmd + 3, iATAPILBA);
+                    scsiLBA2MSF(s->abATAPICmd + 6, iATAPILBA + cSectors - cSectorsMax);
                     break;
                 default:
-                    AssertMsgFailed(("Don't know how to split command %#04x\n", s->aATAPICmd[0]));
+                    AssertMsgFailed(("Don't know how to split command %#04x\n", s->abATAPICmd[0]));
                     if (s->cErrors++ < MAX_LOG_REL_ERRORS)
                         LogRel(("PIIX3 ATA: LUN#%d: CD-ROM passthrough split error\n", s->iLUN));
                     atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
@@ -2187,7 +2187,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
     else
     {
         AssertLogRelReturn(cbTransfer <= sizeof(s->abIOBuffer), false);
-        rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, s->aATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
+        rc = s->pDrvMedia->pfnSendCmd(s->pDrvMedia, s->abATAPICmd, ATAPI_PACKET_SIZE, (PDMMEDIATXDIR)s->uTxDir,
                                       s->abIOBuffer, &cbTransfer, abATAPISense, sizeof(abATAPISense), 30000 /**< @todo timeout */);
     }
     if (pProf) { STAM_PROFILE_ADV_STOP(pProf, b); }
@@ -2212,7 +2212,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
     if (RT_SUCCESS(rc))
     {
         /* Do post processing for certain commands. */
-        switch (s->aATAPICmd[0])
+        switch (s->abATAPICmd[0])
         {
             case SCSI_SEND_CUE_SHEET:
             case SCSI_READ_TOC_PMA_ATIP:
@@ -2221,12 +2221,12 @@ static bool atapiR3PassthroughSS(ATADevState *s)
                     rc = ATAPIPassthroughTrackListCreateEmpty(&s->pTrackList);
 
                 if (RT_SUCCESS(rc))
-                    rc = ATAPIPassthroughTrackListUpdate(s->pTrackList, s->aATAPICmd, s->abIOBuffer, sizeof(s->abIOBuffer));
+                    rc = ATAPIPassthroughTrackListUpdate(s->pTrackList, s->abATAPICmd, s->abIOBuffer, sizeof(s->abIOBuffer));
 
                 if (   RT_FAILURE(rc)
                     && s->cErrors++ < MAX_LOG_REL_ERRORS)
                     LogRel(("ATA: Error (%Rrc) while updating the tracklist during %s, burning the disc might fail\n",
-                            rc, s->aATAPICmd[0] == SCSI_SEND_CUE_SHEET ? "SEND CUE SHEET" : "READ TOC/PMA/ATIP"));
+                            rc, s->abATAPICmd[0] == SCSI_SEND_CUE_SHEET ? "SEND CUE SHEET" : "READ TOC/PMA/ATIP"));
                 break;
             }
             case SCSI_SYNCHRONIZE_CACHE:
@@ -2246,7 +2246,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
             if (s->cbAtapiPassthroughTransfer < cbIOBuffer)
                 s->cbTotalTransfer = cbTransfer;
 
-            if (   s->aATAPICmd[0] == SCSI_INQUIRY
+            if (   s->abATAPICmd[0] == SCSI_INQUIRY
                 && s->fOverwriteInquiry)
             {
                 /* Make sure that the real drive cannot be identified.
@@ -2278,7 +2278,7 @@ static bool atapiR3PassthroughSS(ATADevState *s)
     {
         if (s->cErrors < MAX_LOG_REL_ERRORS)
         {
-            uint8_t u8Cmd = s->aATAPICmd[0];
+            uint8_t u8Cmd = s->abATAPICmd[0];
             do
             {
                 /* don't log superfluous errors */
@@ -2301,10 +2301,11 @@ static bool atapiR3PassthroughSS(ATADevState *s)
 static bool atapiR3ReadDVDStructureSS(ATADevState *s)
 {
     uint8_t *buf = s->abIOBuffer;
-    int media = s->aATAPICmd[1];
-    int format = s->aATAPICmd[7];
+    int media = s->abATAPICmd[1];
+    int format = s->abATAPICmd[7];
 
-    uint16_t max_len = (uint16_t)RT_MIN(scsiBE2H_U16(&s->aATAPICmd[8]), sizeof(s->abIOBuffer));
+    AssertCompile(sizeof(s->abIOBuffer) > UINT16_MAX /* want a RT_MIN() below, but clang takes offence at always false stuff */);
+    uint16_t max_len = scsiBE2H_U16(&s->abATAPICmd[8]);
     memset(buf, 0, max_len);
 
     switch (format) {
@@ -2337,7 +2338,7 @@ static bool atapiR3ReadDVDStructureSS(ATADevState *s)
                 {
                     case 0x0: /* Physical format information */
                     {
-                        int layer = s->aATAPICmd[6];
+                        int layer = s->abATAPICmd[6];
                         uint64_t total_sectors;
 
                         if (layer != 0)
@@ -2507,8 +2508,8 @@ static bool atapiR3ReadDiscInformationSS(ATADevState *s)
 static bool atapiR3ReadTrackInformationSS(ATADevState *s)
 {
     uint8_t *pbBuf = s->abIOBuffer;
-    uint32_t u32LogAddr = scsiBE2H_U32(&s->aATAPICmd[2]);
-    uint8_t u8LogAddrType = s->aATAPICmd[1] & 0x03;
+    uint32_t u32LogAddr = scsiBE2H_U32(&s->abATAPICmd[2]);
+    uint8_t u8LogAddrType = s->abATAPICmd[1] & 0x03;
 
     int rc;
     uint64_t u64LbaStart = 0;
@@ -2764,8 +2765,8 @@ static bool atapiR3GetConfigurationSS(ATADevState *s)
     uint8_t *pbBuf = s->abIOBuffer;
     uint32_t cbBuf = cbIOBuffer;
     uint32_t cbCopied = 0;
-    uint16_t u16Sfn = scsiBE2H_U16(&s->aATAPICmd[2]);
-    uint8_t u8Rt = s->aATAPICmd[1] & 0x03;
+    uint16_t u16Sfn = scsiBE2H_U16(&s->abATAPICmd[2]);
+    uint8_t u8Rt = s->abATAPICmd[1] & 0x03;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 80);
@@ -2828,7 +2829,7 @@ static bool atapiR3GetEventStatusNotificationSS(ATADevState *s)
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 8);
 
-    if (!(s->aATAPICmd[1] & 1))
+    if (!(s->abATAPICmd[1] & 1))
     {
         /* no asynchronous operation supported */
         atapiR3CmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_INV_FIELD_IN_CMD_PACKET);
@@ -3048,8 +3049,8 @@ static bool atapiR3ReadTOCNormalSS(ATADevState *s)
     AssertCompile(sizeof(s->abIOBuffer) >= 2 + 256 + 8);
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
-    fMSF = (s->aATAPICmd[1] >> 1) & 1;
-    iStartTrack = s->aATAPICmd[6];
+    fMSF = (s->abATAPICmd[1] >> 1) & 1;
+    iStartTrack = s->abATAPICmd[6];
     if (iStartTrack == 0)
         iStartTrack = 1;
 
@@ -3135,7 +3136,7 @@ static bool atapiR3ReadTOCMultiSS(ATADevState *s)
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
     Assert(s->cbElementaryTransfer <= 12);
-    fMSF = (s->aATAPICmd[1] >> 1) & 1;
+    fMSF = (s->abATAPICmd[1] >> 1) & 1;
     /* multi session: only a single session defined */
     /** @todo double-check this stuff against what a real drive says for a CD-ROM (not a CD-R)
      * with only a single data session. Maybe solve the problem with "cdrdao read-toc" not being
@@ -3181,8 +3182,8 @@ static bool atapiR3ReadTOCRawSS(ATADevState *s)
     uint32_t cbSize;
 
     Assert(s->uTxDir == PDMMEDIATXDIR_FROM_DEVICE);
-    fMSF = (s->aATAPICmd[1] >> 1) & 1;
-    iStartTrack = s->aATAPICmd[6];
+    fMSF = (s->abATAPICmd[1] >> 1) & 1;
+    iStartTrack = s->abATAPICmd[6];
 
     q = pbBuf + 2;
     *q++ = 1; /* first session */
@@ -3263,7 +3264,7 @@ static bool atapiR3ReadTOCRawSS(ATADevState *s)
 
 static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
 {
-    const uint8_t *pbPacket = s->aATAPICmd;
+    const uint8_t *pbPacket = s->abATAPICmd;
     uint32_t cbMax;
     uint32_t cSectors, iATAPILBA;
 
@@ -3726,7 +3727,7 @@ static void atapiR3ParseCmdVirtualATAPI(ATADevState *s)
  */
 static void atapiR3ParseCmdPassthrough(ATADevState *s)
 {
-    const uint8_t *pbPacket = &s->aATAPICmd[0];
+    const uint8_t *pbPacket = &s->abATAPICmd[0];
 
     /* Some cases we have to handle here. */
     if (   pbPacket[0] == SCSI_GET_EVENT_STATUS_NOTIFICATION
@@ -3749,7 +3750,7 @@ static void atapiR3ParseCmdPassthrough(ATADevState *s)
         if (pbPacket[0] == SCSI_FORMAT_UNIT || pbPacket[0] == SCSI_GET_PERFORMANCE)
             cbBuf = s->uATARegLCyl | (s->uATARegHCyl << 8); /* use ATAPI transfer length */
 
-        bool fPassthrough = ATAPIPassthroughParseCdb(pbPacket, sizeof(s->aATAPICmd), cbBuf, s->pTrackList,
+        bool fPassthrough = ATAPIPassthroughParseCdb(pbPacket, sizeof(s->abATAPICmd), cbBuf, s->pTrackList,
                                                      &s->abATAPISense[0], sizeof(s->abATAPISense), &uTxDir, &cbTransfer,
                                                      &cbATAPISector, &u8ScsiSts);
         if (fPassthrough)
@@ -3796,7 +3797,7 @@ static void atapiR3ParseCmd(ATADevState *s)
 {
     const uint8_t *pbPacket;
 
-    pbPacket = s->aATAPICmd;
+    pbPacket = s->abATAPICmd;
 # ifdef DEBUG
     Log(("%s: LUN#%d DMA=%d CMD=%#04x \"%s\"\n", __FUNCTION__, s->iLUN, s->fDMA, pbPacket[0], SCSICmdText(pbPacket[0])));
 # else /* !DEBUG */
@@ -3814,7 +3815,7 @@ static void atapiR3ParseCmd(ATADevState *s)
 static bool ataR3PacketSS(ATADevState *s)
 {
     s->fDMA = !!(s->uATARegFeature & 1);
-    memcpy(s->aATAPICmd, s->abIOBuffer, ATAPI_PACKET_SIZE);
+    memcpy(s->abATAPICmd, s->abIOBuffer, ATAPI_PACKET_SIZE);
     s->uTxDir = PDMMEDIATXDIR_NONE;
     s->cbTotalTransfer = 0;
     s->cbElementaryTransfer = 0;
@@ -6002,7 +6003,7 @@ static DECLCALLBACK(int) ataR3AsyncIOThread(RTTHREAD hThreadSelf, void *pvUser)
                      * timing errors (which are often caused by the host).
                      */
                     LogRel(("PIIX3 ATA: execution time for ATAPI command %#04x was %d seconds\n",
-                            pCtl->aIfs[pCtl->iAIOIf].aATAPICmd[0], uWait / (1000 * 1000)));
+                            pCtl->aIfs[pCtl->iAIOIf].abATAPICmd[0], uWait / (1000 * 1000)));
                 }
             }
 
@@ -6978,7 +6979,7 @@ static DECLCALLBACK(int) ataR3SaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].iIOBufferPIODataEnd);
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].iATAPILBA);
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].cbATAPISector);
-            pHlp->pfnSSMPutMem(pSSM, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
+            pHlp->pfnSSMPutMem(pSSM, &pThis->aCts[i].aIfs[j].abATAPICmd, sizeof(pThis->aCts[i].aIfs[j].abATAPICmd));
             pHlp->pfnSSMPutMem(pSSM, &pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
             pHlp->pfnSSMPutU8(pSSM, pThis->aCts[i].aIfs[j].cNotifiedMediaChange);
             pHlp->pfnSSMPutU32(pSSM, pThis->aCts[i].aIfs[j].MediaEventStatus);
@@ -7156,7 +7157,7 @@ static DECLCALLBACK(int) ataR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
             pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].iIOBufferPIODataEnd);
             pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].iATAPILBA);
             pHlp->pfnSSMGetU32(pSSM, &pThis->aCts[i].aIfs[j].cbATAPISector);
-            pHlp->pfnSSMGetMem(pSSM, &pThis->aCts[i].aIfs[j].aATAPICmd, sizeof(pThis->aCts[i].aIfs[j].aATAPICmd));
+            pHlp->pfnSSMGetMem(pSSM, &pThis->aCts[i].aIfs[j].abATAPICmd, sizeof(pThis->aCts[i].aIfs[j].abATAPICmd));
             if (uVersion > ATA_SAVED_STATE_VERSION_WITHOUT_FULL_SENSE)
                 pHlp->pfnSSMGetMem(pSSM, pThis->aCts[i].aIfs[j].abATAPISense, sizeof(pThis->aCts[i].aIfs[j].abATAPISense));
             else
