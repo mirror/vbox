@@ -2537,6 +2537,140 @@ DxgkDdiSetPalette(
     return STATUS_SUCCESS;
 }
 
+/** Find which area of a 32 bit mouse pointer bitmap is actually used.
+ * Zero pixels on the right and the bottom of the bitmap are considered unused.
+ *
+ * @param pPixels               The bitmap.
+ * @param Pitch                 The bitmap scanline size in bytes.
+ * @param Width                 The bitmap width.
+ * @param Height                The bitmap height.
+ * @param piMaxFilledPixel      Where to store the maximum index of non-zero pixel within a scanline.
+ * @param piMaxFilledScanline   Where to store the zero based index of the last scanline with non-zero pixels.
+ */
+static void vboxWddmPointerFindDimensionsColor(void const *pPixels, UINT Pitch, UINT Width, UINT Height,
+                                               LONG *piMaxFilledPixel, LONG *piMaxFilledScanline)
+{
+    /* Windows always uses the maximum pointer size VBOXWDDM_C_POINTER_MAX_*
+     * Exclude zero pixels (which are transparent anyway) from the right and the bottom of the bitmap.
+     */
+    DWORD const *pdwScanline = (DWORD *)pPixels;
+    LONG iMaxFilledScanline = -1;
+    LONG iMaxFilledPixel = -1;
+    for (ULONG y = 0; y < Height; ++y)
+    {
+        LONG iLastFilledPixel = -1;
+        for (ULONG x = 0; x < Width; ++x)
+        {
+            if (pdwScanline[x])
+                iLastFilledPixel = x;
+        }
+
+        iMaxFilledPixel = RT_MAX(iMaxFilledPixel, iLastFilledPixel);
+
+        if (iLastFilledPixel >= 0)
+        {
+            /* Scanline contains non-zero pixels. */
+            iMaxFilledScanline = y;
+        }
+
+        pdwScanline = (DWORD *)((uint8_t *)pdwScanline + Pitch);
+    }
+
+    *piMaxFilledPixel = iMaxFilledPixel;
+    *piMaxFilledScanline = iMaxFilledScanline;
+}
+
+/** Find which area of a 1 bit AND/XOR mask bitmap is actually used, i.e. filled with actual data.
+ * For the AND mask the bytes with a value 0xff on the right and the bottom of the bitmap are considered unused.
+ * For the XOR mask the blank value is 0x00.
+ *
+ * @param pPixels             The 1bit bitmap.
+ * @param Pitch               The 1bit bitmap scanline size in bytes.
+ * @param Width               The bitmap width.
+ * @param Height              The bitmap height.
+ * @param Blank               The value of the unused bytes in the supplied bitmap.
+ * @param piMaxFilledPixel    Where to store the maximum index of a filled pixel within a scanline.
+ * @param piMaxFilledScanline Where to store the zero based index of the last scanline with filled pixels.
+ */
+static void vboxWddmPointerFindDimensionsMono(void const *pPixels, UINT Pitch, UINT Width, UINT Height, BYTE Blank,
+                                              LONG *piMaxFilledPixel, LONG *piMaxFilledScanline)
+{
+    /* Windows always uses the maximum pointer size VBOXWDDM_C_POINTER_MAX_*
+     * Exclude the blank pixels (which are transparent anyway) from the right and the bottom of the bitmap.
+     */
+    BYTE const *pbScanline = (BYTE *)pPixels;
+    LONG iMaxFilledScanline = -1;
+    LONG iMaxFilledByte = -1;
+    for (ULONG y = 0; y < Height; ++y)
+    {
+        LONG iLastFilledByte = -1;
+        for (ULONG x = 0; x < Width / 8; ++x)
+        {
+            if (pbScanline[x] != Blank)
+                iLastFilledByte = x;
+        }
+
+        iMaxFilledByte = RT_MAX(iMaxFilledByte, iLastFilledByte);
+
+        if (iLastFilledByte >= 0)
+        {
+            /* Scanline contains filled pixels. */
+            iMaxFilledScanline = y;
+        }
+
+        pbScanline += Pitch;
+    }
+
+    *piMaxFilledPixel = iMaxFilledByte * 8;
+    *piMaxFilledScanline = iMaxFilledScanline;
+}
+
+/** Adjust the width and the height of the mouse pointer bitmap.
+ * See comments in the function for the adjustment criteria.
+ *
+ * @param iMaxX   The index of the rightmost pixel which we want to keep.
+ * @param iMaxY   The index of the bottom-most pixel which we want to keep.
+ * @param XHot    The mouse pointer hot spot.
+ * @param YHot    The mouse pointer hot spot.
+ * @param pWidth  Where to store the bitmap width.
+ * @param pHeight Where to store the bitmap height.
+ */
+static void vboxWddmPointerAdjustDimensions(LONG iMaxX, LONG iMaxY, UINT XHot, UINT YHot,
+                                            ULONG *pWidth, ULONG *pHeight)
+{
+    /* Both input parameters are zero based indexes, add 1 to get a width and a height. */
+    ULONG W = iMaxX + 1;
+    ULONG H = iMaxY + 1;
+
+    /* Always include the hotspot point. */
+    W = RT_MAX(XHot, W);
+    H = RT_MAX(YHot, H);
+
+    /* Align to 8 pixels, because the XOR/AND pointers are aligned like that.
+     * The AND mask has one bit per pixel with 8 bits per byte.
+     * In case the host can't deal with unaligned data.
+     */
+    W = RT_ALIGN_T(W, 8, ULONG);
+    H = RT_ALIGN_T(H, 8, ULONG);
+
+    /* Do not send bitmaps with zero dimensions. Actually make the min size 32x32. */
+    W = RT_MAX(32, W);
+    H = RT_MAX(32, H);
+
+    /* Make it square. Some hosts are known to require square pointers. */
+    W = RT_MAX(W, H);
+    H = W;
+
+    /* Do not exceed the supported size.
+     * Actually this should not be necessary because Windows never creates such pointers.
+     */
+    W = RT_MIN(W, VBOXWDDM_C_POINTER_MAX_WIDTH);
+    H = RT_MIN(H, VBOXWDDM_C_POINTER_MAX_HEIGHT);
+
+    *pWidth = W;
+    *pHeight = H;
+}
+
 BOOL vboxWddmPointerCopyColorData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape, PVIDEO_POINTER_ATTRIBUTES pPointerAttributes)
 {
     ULONG srcMaskW, srcMaskH;
@@ -2547,48 +2681,18 @@ BOOL vboxWddmPointerCopyColorData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShap
     /* Windows always uses the maximum pointer size VBOXWDDM_C_POINTER_MAX_*
      * Exclude zero pixels (which are transparent anyway) from the right and the bottom of the bitmap.
      */
-    DWORD *pdwScanline = (DWORD *)pSetPointerShape->pPixels;
-    LONG iLastNonZeroScanline = -1;
-    LONG iMaxNonZeroPixel = -1;
-    for (y = 0; y < pSetPointerShape->Height; ++y)
-    {
-        LONG iLastNonZeroPixel = -1;
-        for (x = 0; x < pSetPointerShape->Width; ++x)
-        {
-            if (pdwScanline[x])
-                iLastNonZeroPixel = x;
-        }
+    LONG iMaxFilledPixel;
+    LONG iMaxFilledScanline;
+    vboxWddmPointerFindDimensionsColor(pSetPointerShape->pPixels, pSetPointerShape->Pitch,
+                                       pSetPointerShape->Width, pSetPointerShape->Height,
+                                       &iMaxFilledPixel, &iMaxFilledScanline);
 
-        iMaxNonZeroPixel = RT_MAX(iMaxNonZeroPixel, iLastNonZeroPixel);
+    vboxWddmPointerAdjustDimensions(iMaxFilledPixel, iMaxFilledScanline,
+                                    pSetPointerShape->XHot, pSetPointerShape->YHot,
+                                    &srcMaskW, &srcMaskH);
 
-        if (iLastNonZeroPixel >= 0)
-        {
-            /* Scanline contains non-zero pixels. */
-            iLastNonZeroScanline = y;
-        }
-
-        pdwScanline = (DWORD *)((uint8_t *)pdwScanline + pSetPointerShape->Pitch);
-    }
-
-    /* Both variabled are zero based indexes, add 1 for width and height. */
-    srcMaskW = iMaxNonZeroPixel + 1;
-    srcMaskH = iLastNonZeroScanline + 1;
-
-    /* Align to 4 pixels. Bitmap is 16 bytes aligned (in case the host can't deal with unaligned data). */
-    srcMaskW = RT_ALIGN_T(srcMaskW, 4, ULONG);
-    srcMaskH = RT_ALIGN_T(srcMaskH, 4, ULONG);
-
-    /* Do not send bitmaps with zero dimensions. Actually make the min size 32x32. */
-    srcMaskW = RT_MAX(32, srcMaskW);
-    srcMaskH = RT_MAX(32, srcMaskH);
-
-    /* Make it square. */
-    srcMaskW = RT_MAX(srcMaskW, srcMaskH);
-    srcMaskH = srcMaskW;
-
-    /* truncate masks if we exceed supported size */
-    pPointerAttributes->Width = min(srcMaskW, VBOXWDDM_C_POINTER_MAX_WIDTH);
-    pPointerAttributes->Height = min(srcMaskH, VBOXWDDM_C_POINTER_MAX_HEIGHT);
+    pPointerAttributes->Width = srcMaskW;
+    pPointerAttributes->Height = srcMaskH;
     pPointerAttributes->WidthInBytes = pPointerAttributes->Width * 4;
 
     /* cnstruct and mask from alpha color channel */
@@ -2641,12 +2745,31 @@ BOOL vboxWddmPointerCopyMonoData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape
     ULONG x, y;
     BYTE *pSrc, *pDst, bit;
 
-    srcMaskW = pSetPointerShape->Width;
-    srcMaskH = pSetPointerShape->Height;
+    /* Windows always uses the maximum pointer size VBOXWDDM_C_POINTER_MAX_*
+     * Exclude unused pixels (which are transparent anyway) from the right and the bottom of the bitmap.
+     */
+    LONG iMaxFilledPixelAND;
+    LONG iMaxFilledScanlineAND;
+    vboxWddmPointerFindDimensionsMono(pSetPointerShape->pPixels, pSetPointerShape->Pitch,
+                                      pSetPointerShape->Width, pSetPointerShape->Height, 0xff,
+                                      &iMaxFilledPixelAND, &iMaxFilledScanlineAND);
 
-    /* truncate masks if we exceed supported size */
-    pPointerAttributes->Width = min(srcMaskW, VBOXWDDM_C_POINTER_MAX_WIDTH);
-    pPointerAttributes->Height = min(srcMaskH, VBOXWDDM_C_POINTER_MAX_HEIGHT);
+    LONG iMaxFilledPixelXOR;
+    LONG iMaxFilledScanlineXOR;
+    vboxWddmPointerFindDimensionsMono((BYTE *)pSetPointerShape->pPixels + pSetPointerShape->Height * pSetPointerShape->Pitch,
+                                      pSetPointerShape->Pitch,
+                                      pSetPointerShape->Width, pSetPointerShape->Height, 0x00,
+                                      &iMaxFilledPixelXOR, &iMaxFilledScanlineXOR);
+
+    LONG iMaxFilledPixel = RT_MAX(iMaxFilledPixelAND, iMaxFilledPixelXOR);
+    LONG iMaxFilledScanline = RT_MAX(iMaxFilledScanlineAND, iMaxFilledScanlineXOR);
+
+    vboxWddmPointerAdjustDimensions(iMaxFilledPixel, iMaxFilledScanline,
+                                    pSetPointerShape->XHot, pSetPointerShape->YHot,
+                                    &srcMaskW, &srcMaskH);
+
+    pPointerAttributes->Width = srcMaskW;
+    pPointerAttributes->Height = srcMaskH;
     pPointerAttributes->WidthInBytes = pPointerAttributes->Width * 4;
 
     /* copy AND mask */
@@ -2660,7 +2783,7 @@ BOOL vboxWddmPointerCopyMonoData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape
     }
 
     /* convert XOR mask to RGB0 DIB, it start in pPointerAttributes->Pixels should be 4bytes aligned */
-    pSrc = (BYTE*)pSetPointerShape->pPixels + srcMaskH*pSetPointerShape->Pitch;
+    pSrc = (BYTE*)pSetPointerShape->pPixels + pSetPointerShape->Height*pSetPointerShape->Pitch;
     pDst = pPointerAttributes->Pixels + RT_ALIGN_T(dstBytesPerLine*pPointerAttributes->Height, 4, ULONG);
     dstBytesPerLine = pPointerAttributes->Width * 4;
 
