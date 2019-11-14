@@ -73,6 +73,12 @@ RT_C_DECLS_BEGIN
 # define PDMCRITSECTRW_STRICT
 #endif
 
+/** The maximum device instance (total) size, ring-0/raw-mode capable devices. */
+#define PDM_MAX_DEVICE_INSTANCE_SIZE    _4M
+/** The maximum device instance (total) size, ring-3 only devices. */
+#define PDM_MAX_DEVICE_INSTANCE_SIZE_R3 _8M
+
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *

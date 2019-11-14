@@ -380,6 +380,10 @@ int pdmR3DevInit(PVM pVM)
             uint32_t const cPciDevs    = RT_MIN(pReg->cMaxPciDevices, 1024);
             uint32_t const cbPciDevs   = cbPciDev * cPciDevs;
             cb += cbPciDevs;
+            AssertLogRelMsgReturn(cb <= PDM_MAX_DEVICE_INSTANCE_SIZE_R3,
+                                  ("Device %s total instance size is to big: %u, max %u\n",
+                                   pReg->szName, cb, PDM_MAX_DEVICE_INSTANCE_SIZE_R3),
+                                  VERR_ALLOCATION_TOO_BIG);
 
             rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DEVICE, cb, (void **)&pDevIns);
             AssertLogRelMsgRCReturn(rc, ("Failed to allocate %zu bytes of instance data for device '%s'. rc=%Rrc\n",
@@ -771,10 +775,13 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
     AssertMsgReturn(pReg->cMaxInstances > 0,
                     ("Max instances %u! (Device %s)\n", pReg->cMaxInstances, pReg->szName),
                     VERR_PDM_INVALID_DEVICE_REGISTRATION);
-    AssertMsgReturn(pReg->cbInstanceShared <= (uint32_t)(pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M),
-                    ("Instance size %d bytes! (Device %s)\n", pReg->cbInstanceShared, pReg->szName),
+    uint32_t const cbMaxInstance = pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)
+                                 ? PDM_MAX_DEVICE_INSTANCE_SIZE : PDM_MAX_DEVICE_INSTANCE_SIZE_R3;
+    AssertMsgReturn(pReg->cbInstanceShared <= cbMaxInstance,
+                    ("Instance size %u bytes! (Max %u; Device %s)\n", pReg->cbInstanceShared, cbMaxInstance, pReg->szName),
                     VERR_PDM_INVALID_DEVICE_REGISTRATION);
-    AssertMsgReturn(pReg->cbInstanceCC <= _2M, ("Instance size %d bytes! (Device %s)\n", pReg->cbInstanceCC, pReg->szName),
+    AssertMsgReturn(pReg->cbInstanceCC <= cbMaxInstance,
+                    ("Instance size %d bytes! (Max %u; Device %s)\n", pReg->cbInstanceCC, cbMaxInstance, pReg->szName),
                     VERR_PDM_INVALID_DEVICE_REGISTRATION);
     AssertMsgReturn(pReg->pfnConstruct,
                     ("No constructor! (Device %s)\n", pReg->szName),
