@@ -554,6 +554,17 @@ typedef struct ATACONTROLLER
     /** Timestamp we started the reset. */
     uint64_t            u64ResetTime;
 
+    /** The first port in the first I/O port range, regular operation. */
+    IOMIOPORTHANDLE     hIoPorts1First;
+    /** The other ports in the first I/O port range, regular operation. */
+    IOMIOPORTHANDLE     hIoPorts1Other;
+    /** The second I/O port range, regular operation. */
+    IOMIOPORTHANDLE     hIoPorts2;
+    /** The first I/O port range, empty controller operation. */
+    IOMIOPORTHANDLE     hIoPortsEmpty1;
+    /** The second I/O port range, empty controller operation. */
+    IOMIOPORTHANDLE     hIoPortsEmpty2;
+
     /* Statistics */
     STAMCOUNTER         StatAsyncOps;
     uint64_t            StatAsyncMinWait;
@@ -561,7 +572,7 @@ typedef struct ATACONTROLLER
     STAMCOUNTER         StatAsyncTimeUS;
     STAMPROFILEADV      StatAsyncTime;
     STAMPROFILE         StatLockWait;
-    uint8_t             abAlignment4[3440];
+    uint8_t             abAlignment4[3400];
 } ATACONTROLLER, *PATACONTROLLER;
 AssertCompileMemberAlignment(ATACONTROLLER, lock, 8);
 AssertCompileMemberAlignment(ATACONTROLLER, aIfs, 8);
@@ -619,25 +630,6 @@ typedef struct PCIATAState
 #define CONTROLLER_2_DEVINS(pController)       ( (pController)->CTX_SUFF(pDevIns) )
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
-
-
-/*********************************************************************************************************************************
-*   Internal Functions                                                                                                           *
-*********************************************************************************************************************************/
-RT_C_DECLS_BEGIN
-
-PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t const *pbSrc,
-                                          uint32_t *pcTransfers, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t *pbDst,
-                                         uint32_t *pcTransfers, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb);
-PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *u32, unsigned cb);
-RT_C_DECLS_END
-
 
 
 #ifdef IN_RING3
@@ -4399,7 +4391,7 @@ static void ataR3ParseCmd(ATADevState *s, uint8_t cmd)
  *     See ATAPI-6 clause 9.16.2 and Table 15 in clause 7.1.
  */
 
-static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
+static VBOXSTRICTRC ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 {
     Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN, addr, val));
     addr &= 7;
@@ -4508,7 +4500,7 @@ static int ataIOPortWriteU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
 }
 
 
-static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
+static VBOXSTRICTRC ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 {
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
     uint32_t    val;
@@ -4526,8 +4518,7 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
              * table 16 in ATA-6 specification.
              */
             if (((addr & 7) != 1) && pCtl->aIfs[0].fATAPI) {
-                Log2(("%s: addr=%#x, val=0: LUN#%d not attached/LUN#%d ATAPI\n", __FUNCTION__, addr,
-                                s->iLUN, pCtl->aIfs[0].iLUN));
+                Log2(("%s: addr=%#x, val=0: LUN#%d not attached/LUN#%d ATAPI\n", __FUNCTION__, addr, s->iLUN, pCtl->aIfs[0].iLUN));
                 *pu32 = 0;
                 return VINF_SUCCESS;
             }
@@ -4686,30 +4677,30 @@ static int ataIOPortReadU8(PATACONTROLLER pCtl, uint32_t addr, uint32_t *pu32)
 /*
  * Read the Alternate status register. Does not affect interrupts.
  */
-static uint32_t ataStatusRead(PATACONTROLLER pCtl, uint32_t addr)
+static uint32_t ataStatusRead(PATACONTROLLER pCtl, uint32_t uIoPortForLog)
 {
     ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
     uint32_t val;
-    RT_NOREF1(addr);
+    RT_NOREF1(uIoPortForLog);
 
     Assert(pCtl->aIfs[0].pDrvMedia || pCtl->aIfs[1].pDrvMedia); /* Channel must not be empty. */
     if (pCtl->iSelectedIf == 1 && !s->pDrvMedia)
         val = 0;    /* Device 1 selected, Device 0 responding for it. */
     else
         val = s->uATARegStatus;
-    Log2(("%s: LUN#%d read addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN, addr, val));
+    Log2(("%s: LUN#%d read addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN, uIoPortForLog, val));
     return val;
 }
 
-static int ataControlWrite(PATACONTROLLER pCtl, uint32_t addr, uint32_t val)
+static int ataControlWrite(PATACONTROLLER pCtl, uint32_t val, uint32_t uIoPortForLog)
 {
-    RT_NOREF1(addr);
+    RT_NOREF1(uIoPortForLog);
 #ifndef IN_RING3
     if ((val ^ pCtl->aIfs[0].uATARegDevCtl) & ATA_DEVCTL_RESET)
         return VINF_IOM_R3_IOPORT_WRITE; /* The RESET stuff is too complicated for RC+R0. */
 #endif /* !IN_RING3 */
 
-    Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN, addr, val));
+    Log2(("%s: LUN#%d write addr=%#x val=%#04x\n", __FUNCTION__, pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK].iLUN, uIoPortForLog, val));
     /* RESET is common for both drives attached to a controller. */
     if (   !(pCtl->aIfs[0].uATARegDevCtl & ATA_DEVCTL_RESET)
         && (val & ATA_DEVCTL_RESET))
@@ -5005,20 +4996,22 @@ DECLINLINE(void) ataCopyPioData124(ATADevState *pIf, uint8_t *pbDst, const uint8
 
 
 /**
- * Port I/O Handler for primary port range OUT operations.
- * @see FNIOMIOPORTOUT for details.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Port I/O Handler for primary port range OUT operations.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
-    RT_NOREF1(Port);
+    RT_NOREF1(offPort);
 
     Assert((uintptr_t)pvUser < 2);
-    Assert(Port == pCtl->IOPortBase1);
+    Assert(offPort == pCtl->IOPortBase1);
     Assert(cb == 2 || cb == 4); /* Writes to the data port may be 16-bit or 32-bit. */
 
-    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc == VINF_SUCCESS)
     {
         ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
@@ -5064,27 +5057,29 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
         else
             Log2(("%s: DUMMY data\n", __FUNCTION__));
 
-        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, Port, cb, &u32, rc));
+        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, offPort + pCtl->IOPortBase1, cb, &u32, rc));
         PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
     else
-        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, Port, rc));
+        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, offPort + pCtl->IOPortBase1, rc));
     return rc;
 }
 
 
 /**
- * Port I/O Handler for primary port range IN operations.
- * @see FNIOMIOPORTIN for details.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ * Port I/O Handler for primary port range IN operations.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
-    RT_NOREF1(Port);
+    RT_NOREF1(offPort);
 
     Assert((uintptr_t)pvUser < 2);
-    Assert(Port == pCtl->IOPortBase1);
+    Assert(offPort == pCtl->IOPortBase1);
 
     /* Reads from the data register may be 16-bit or 32-bit. Byte accesses are
        upgraded to word. */
@@ -5092,7 +5087,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
     uint32_t cbActual = cb != 1 ? cb : 2;
     *pu32 = 0;
 
-    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
         ATADevState *s = &pCtl->aIfs[pCtl->iSelectedIf & ATA_SELECTED_IF_MASK];
@@ -5148,33 +5143,34 @@ PDMBOTHCBDECL(int) ataIOPortRead1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
             Log2(("%s: DUMMY data\n", __FUNCTION__));
             memset(pu32, 0xff, cb);
         }
-        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, Port, cb, pu32, rc));
+        Log3(("%s: addr=%#x val=%.*Rhxs rc=%d\n", __FUNCTION__, offPort, cb, pu32, rc));
 
         PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
     else
-        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, Port, rc));
+        Log3(("%s: addr=%#x -> %d\n", __FUNCTION__, offPort, rc));
 
     return rc;
 }
 
 
 /**
- * Port I/O Handler for primary port range IN string operations.
- * @see FNIOMIOPORTINSTRING for details.
+ * @callback_method_impl{FNIOMIOPORTNEWINSTRING,
+ * Port I/O Handler for primary port range IN string operations.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t *pbDst,
-                                         uint32_t *pcTransfers, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_t *pbDst, uint32_t *pcTransfers, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
-    RT_NOREF1(Port);
+    RT_NOREF1(offPort);
 
     Assert((uintptr_t)pvUser < 2);
-    Assert(Port == pCtl->IOPortBase1);
+    Assert(offPort == pCtl->IOPortBase1);
     Assert(*pcTransfers > 0);
 
-    int rc;
+    VBOXSTRICTRC rc;
     if (cb == 2 || cb == 4)
     {
         rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
@@ -5212,7 +5208,7 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
                     uint8_t const *pbSrc = &s->abIOBuffer[offStart];
                     memcpy(pbDst, pbSrc, cbTransfer);
                     Log3(("%s: addr=%#x cb=%#x cbTransfer=%#x val=%.*Rhxd\n",
-                          __FUNCTION__, Port, cb, cbTransfer, cbTransfer, pbSrc));
+                          __FUNCTION__, offPort, cb, cbTransfer, cbTransfer, pbSrc));
                     s->iIOBufferPIODataStart = offEndThisXfer;
 #ifdef IN_RING3
                     if (offEndThisXfer >= offEnd)
@@ -5250,21 +5246,22 @@ PDMBOTHCBDECL(int) ataIOPortReadStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOP
 
 
 /**
- * Port I/O Handler for primary port range OUT string operations.
- * @see FNIOMIOPORTOUTSTRING for details.
+ * @callback_method_impl{FNIOMIOPORTNEWOUTSTRING,
+ * Port I/O Handler for primary port range OUT string operations.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint8_t const *pbSrc,
-                                          uint32_t *pcTransfers, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint8_t const *pbSrc, uint32_t *pcTransfers, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl  = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
-    RT_NOREF1(Port);
+    RT_NOREF1(offPort);
 
     Assert((uintptr_t)pvUser < 2);
-    Assert(Port == pCtl->IOPortBase1);
+    Assert(offPort == pCtl->IOPortBase1);
     Assert(*pcTransfers > 0);
 
-    int rc;
+    VBOXSTRICTRC rc;
     if (cb == 2 || cb == 4)
     {
         rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
@@ -5301,7 +5298,7 @@ PDMBOTHCBDECL(int) ataIOPortWriteStr1Data(PPDMDEVINS pDevIns, void *pvUser, RTIO
                      */
                     void *pvDst = &s->abIOBuffer[offStart];
                     memcpy(pvDst, pbSrc, cbTransfer);
-                    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, Port, cbTransfer, pvDst));
+                    Log3(("%s: addr=%#x val=%.*Rhxs\n", __FUNCTION__, offPort + pCtl->IOPortBase1, cbTransfer, pvDst));
                     s->iIOBufferPIODataStart = offEndThisXfer;
 #ifdef IN_RING3
                     if (offEndThisXfer >= offEnd)
@@ -6312,41 +6309,45 @@ static DECLCALLBACK(int) ataR3QueryDeviceLocation(PPDMIMEDIAPORT pInterface, con
 
 
 /**
- * Port I/O Handler for OUT operations on unpopulated IDE channels.
- * @see FNIOMIOPORTOUT for details.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Port I/O Handler for OUT operations on unpopulated IDE channels.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortWriteEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
-    PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
-    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
-#ifndef VBOX_LOG_ENABLED
-    RT_NOREF(Port); RT_NOREF(cb); RT_NOREF(u32); RT_NOREF(pCtl);
-#endif
+    RT_NOREF(pDevIns, pvUser, offPort, u32, cb);
 
+#ifdef VBOX_STRICT
+    PCIATAState *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
+    PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
     Assert((uintptr_t)pvUser < 2);
     Assert(!pCtl->aIfs[0].pDrvMedia && !pCtl->aIfs[1].pDrvMedia);
+#endif
 
     /* This is simply a black hole, writes on unpopulated IDE channels elicit no response. */
-    LogFunc(("Empty bus: Ignoring write to port %x val=%x size=%d\n", Port, u32, cb));
+    LogFunc(("Empty bus: Ignoring write to port %x val=%x size=%d\n", offPort, u32, cb));
     return VINF_SUCCESS;
 }
 
 
 /**
- * Port I/O Handler for IN operations on unpopulated IDE channels.
- * @see FNIOMIOPORTIN for details.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ * Port I/O Handler for IN operations on unpopulated IDE channels.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
+    RT_NOREF(offPort, pvUser);
+
+#ifdef VBOX_STRICT
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
-#ifndef VBOX_LOG_ENABLED
-    RT_NOREF(Port); RT_NOREF(pCtl);
-#endif
-
     Assert((uintptr_t)pvUser < 2);
     Assert(cb <= 4);
     Assert(!pCtl->aIfs[0].pDrvMedia && !pCtl->aIfs[1].pDrvMedia);
+#endif
 
     /*
      * Reads on unpopulated IDE channels behave in a unique way. Newer ATA specifications
@@ -6360,24 +6361,25 @@ PDMBOTHCBDECL(int) ataIOPortReadEmptyBus(PPDMDEVINS pDevIns, void *pvUser, RTIOP
      * is quite complicated enough already.
      */
     *pu32 = ATA_EMPTY_BUS_DATA_32 >> ((4 - cb) * 8);
-    LogFunc(("Empty bus: port %x val=%x size=%d\n", Port, *pu32, cb));
+    LogFunc(("Empty bus: port %x val=%x size=%d\n", offPort, *pu32, cb));
     return VINF_SUCCESS;
 }
 
 
 /**
- * Port I/O Handler for primary port range OUT operations.
- * @see FNIOMIOPORTOUT for details.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Port I/O Handler for primary port range OUT operations.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
     Assert((uintptr_t)pvUser < 2);
-    Assert(Port != pCtl->IOPortBase1);
 
-    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
+    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
     if (rc == VINF_SUCCESS)
     {
         /* Writes to the other command block ports should be 8-bit only. If they
@@ -6385,9 +6387,9 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
          * on a real PIIX4 system.
          */
         if (cb > 1)
-            Log(("ataIOPortWrite1: suspect write to port %x val=%x size=%d\n", Port, u32, cb));
+            Log(("ataIOPortWrite1: suspect write to port %x val=%x size=%d\n", offPort, u32, cb));
 
-        rc = ataIOPortWriteU8(pCtl, Port, u32);
+        rc = ataIOPortWriteU8(pCtl, offPort, u32);
 
         PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
@@ -6396,25 +6398,26 @@ PDMBOTHCBDECL(int) ataIOPortWrite1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
 
 
 /**
- * Port I/O Handler for primary port range IN operations.
- * @see FNIOMIOPORTIN for details.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ * Port I/O Handler for primary port range IN operations.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
 
     Assert((uintptr_t)pvUser < 2);
-    Assert(Port != pCtl->IOPortBase1);
 
-    int rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
+    VBOXSTRICTRC rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
     if (rc == VINF_SUCCESS)
     {
         /* Reads from the other command block registers should be 8-bit only.
          * If they are not, the low byte is propagated to the high bits.
          * Undocumented, but observed on a real PIIX4 system.
          */
-        rc = ataIOPortReadU8(pCtl, Port, pu32);
+        rc = ataIOPortReadU8(pCtl, offPort, pu32);
         if (cb > 1)
         {
             uint32_t    pad;
@@ -6424,7 +6427,7 @@ PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
             pad = pad | (pad << 8);
             pad = pad | (pad << 16);
             *pu32 = pad;
-            Log(("ataIOPortRead1: suspect read from port %x size=%d\n", Port, cb));
+            Log(("ataIOPortRead1: suspect read from port %x size=%d\n", offPort, cb));
         }
         PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
     }
@@ -6433,10 +6436,12 @@ PDMBOTHCBDECL(int) ataIOPortRead1Other(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
 
 
 /**
- * Port I/O Handler for secondary port range OUT operations.
- * @see FNIOMIOPORTOUT for details.
+ * @callback_method_impl{FNIOMIOPORTNEWOUT,
+ * Port I/O Handler for secondary port range OUT operations.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
@@ -6449,13 +6454,13 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_WRITE);
         if (rc == VINF_SUCCESS)
         {
-            rc = ataControlWrite(pCtl, Port, u32);
+            rc = ataControlWrite(pCtl, u32, offPort);
             PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
         }
     }
     else
     {
-        Log(("ataIOPortWrite2: ignoring write to port %x size=%d!\n", Port, cb));
+        Log(("ataIOPortWrite2: ignoring write to port %x+%x size=%d!\n", offPort, pCtl->IOPortBase2, cb));
         rc = VINF_SUCCESS;
     }
     return rc;
@@ -6463,10 +6468,12 @@ PDMBOTHCBDECL(int) ataIOPortWrite2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
 
 
 /**
- * Port I/O Handler for secondary port range IN operations.
- * @see FNIOMIOPORTIN for details.
+ * @callback_method_impl{FNIOMIOPORTNEWIN,
+ * Port I/O Handler for secondary port range IN operations.}
+ * @note    offPort is an absolute port number!
  */
-PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PCIATAState   *pThis = PDMDEVINS_2_DATA(pDevIns, PCIATAState *);
     PATACONTROLLER pCtl = &pThis->aCts[(uintptr_t)pvUser % RT_ELEMENTS(pThis->aCts)];
@@ -6479,13 +6486,13 @@ PDMBOTHCBDECL(int) ataIOPortRead2(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Por
         rc = PDMDevHlpCritSectEnter(pCtl->CTX_SUFF(pDevIns), &pCtl->lock, VINF_IOM_R3_IOPORT_READ);
         if (rc == VINF_SUCCESS)
         {
-            *pu32 = ataStatusRead(pCtl, Port);
+            *pu32 = ataStatusRead(pCtl, offPort);
             PDMDevHlpCritSectLeave(pCtl->CTX_SUFF(pDevIns), &pCtl->lock);
         }
     }
     else
     {
-        Log(("ataIOPortRead2: ignoring read from port %x size=%d!\n", Port, cb));
+        Log(("ataIOPortRead2: ignoring read from port %x+%x size=%d!\n", offPort, pCtl->IOPortBase2, cb));
         rc = VERR_IOM_IOPORT_UNUSED;
     }
     return rc;
@@ -7533,6 +7540,11 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         pThis->aCts[i].hAsyncIOSem = NIL_SUPSEMEVENT;
         pThis->aCts[i].SuspendIOSem = NIL_RTSEMEVENT;
         pThis->aCts[i].AsyncIOThread = NIL_RTTHREAD;
+        pThis->aCts[i].hIoPorts1First = NIL_IOMIOPORTHANDLE;
+        pThis->aCts[i].hIoPorts1Other = NIL_IOMIOPORTHANDLE;
+        pThis->aCts[i].hIoPorts2 = NIL_IOMIOPORTHANDLE;
+        pThis->aCts[i].hIoPortsEmpty1 = NIL_IOMIOPORTHANDLE;
+        pThis->aCts[i].hIoPortsEmpty2 = NIL_IOMIOPORTHANDLE;
     }
 
     /*
@@ -7939,96 +7951,38 @@ static DECLCALLBACK(int) ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         if (!pThis->aCts[i].aIfs[0].pDrvMedia && !pThis->aCts[i].aIfs[1].pDrvMedia)
         {
             /* No device present on this ATA bus; requires special handling. */
-            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTHCPTR)(uintptr_t)i,
-                                         ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, NULL, NULL, "ATA I/O Base 1 - Empty Bus");
-
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, pThis->aCts[i].IOPortBase1, 8 /*cPorts*/, IOM_IOPORT_F_ABS,
+                                               ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, NULL, NULL, (RTHCPTR)(uintptr_t)i,
+                                               "ATA I/O Base 1 - Empty Bus", NULL /*paExtDescs*/, &pThis->aCts[i].hIoPortsEmpty1);
             AssertLogRelRCReturn(rc, rc);
-            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTHCPTR)(uintptr_t)i,
-                                         ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, NULL, NULL, "ATA I/O Base 2 - Empty Bus");
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, pThis->aCts[i].IOPortBase2, 1 /*cPorts*/, IOM_IOPORT_F_ABS,
+                                               ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, NULL, NULL, (RTHCPTR)(uintptr_t)i,
+                                                "ATA I/O Base 2 - Empty Bus", NULL /*paExtDescs*/, &pThis->aCts[i].hIoPortsEmpty2);
             AssertLogRelRCReturn(rc, rc);
-
-            if (pDevIns->fRCEnabled)
-            {
-                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTGCPTR)i,
-                                               "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 1 - Empty Bus");
-                AssertLogRelRCReturn(rc, rc);
-                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
-                                               "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 2 - Empty Bus");
-                AssertLogRelRCReturn(rc, rc);
-            }
-
-            if (pDevIns->fR0Enabled)
-            {
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTR0PTR)i,
-                                               "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 1 - Empty Bus");
-                AssertLogRelRCReturn(rc, rc);
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTR0PTR)i,
-                                               "ataIOPortWriteEmptyBus", "ataIOPortReadEmptyBus", NULL, NULL, "ATA I/O Base 2 - Empty Bus");
-                AssertLogRelRCReturn(rc, rc);
-            }
         }
         else
         {
             /* At least one device present, register regular handlers. */
-            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTHCPTR)(uintptr_t)i,
-                                         ataIOPortWrite1Data, ataIOPortRead1Data,
-                                         ataIOPortWriteStr1Data, ataIOPortReadStr1Data, "ATA I/O Base 1 - Data");
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, pThis->aCts[i].IOPortBase1, 1 /*cPorts*/, IOM_IOPORT_F_ABS,
+                                               ataIOPortWrite1Data, ataIOPortRead1Data,
+                                               ataIOPortWriteStr1Data, ataIOPortReadStr1Data, (RTHCPTR)(uintptr_t)i,
+                                               "ATA I/O Base 1 - Data", NULL /*paExtDescs*/, &pThis->aCts[i].hIoPorts1First);
             AssertLogRelRCReturn(rc, rc);
-            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTHCPTR)(uintptr_t)i,
-                                         ataIOPortWrite1Other, ataIOPortRead1Other, NULL, NULL, "ATA I/O Base 1 - Other");
-
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7 /*cPorts*/, IOM_IOPORT_F_ABS,
+                                               ataIOPortWrite1Other, ataIOPortRead1Other, NULL, NULL, (RTHCPTR)(uintptr_t)i,
+                                               "ATA I/O Base 1 - Other", NULL /*paExtDescs*/, &pThis->aCts[i].hIoPorts1Other);
             AssertLogRelRCReturn(rc, rc);
-            if (pDevIns->fRCEnabled)
-            {
-                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTGCPTR)i,
-                                               "ataIOPortWrite1Data", "ataIOPortRead1Data",
-                                               "ataIOPortWriteStr1Data", "ataIOPortReadStr1Data", "ATA I/O Base 1 - Data");
-                AssertLogRelRCReturn(rc, rc);
-                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTGCPTR)i,
-                                               "ataIOPortWrite1Other", "ataIOPortRead1Other", NULL, NULL, "ATA I/O Base 1 - Other");
-                AssertLogRelRCReturn(rc, rc);
-            }
 
-            if (pDevIns->fR0Enabled)
-            {
-#if 0
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
-                                               "ataIOPortWrite1Data", "ataIOPortRead1Data", NULL, NULL, "ATA I/O Base 1 - Data");
-#else
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1, 1, (RTR0PTR)i,
-                                               "ataIOPortWrite1Data", "ataIOPortRead1Data",
-                                               "ataIOPortWriteStr1Data", "ataIOPortReadStr1Data", "ATA I/O Base 1 - Data");
-#endif
-                AssertLogRelRCReturn(rc, rc);
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase1 + 1, 7, (RTR0PTR)i,
-                                               "ataIOPortWrite1Other", "ataIOPortRead1Other", NULL, NULL, "ATA I/O Base 1 - Other");
-                AssertLogRelRCReturn(rc, rc);
-            }
 
-            rc = PDMDevHlpIOPortRegister(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTHCPTR)(uintptr_t)i,
-                                         ataIOPortWrite2, ataIOPortRead2, NULL, NULL, "ATA I/O Base 2");
-            if (RT_FAILURE(rc))
-                return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers"));
-
-            if (pDevIns->fRCEnabled)
-            {
-                rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
-                                               "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
-                if (RT_FAILURE(rc))
-                    return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (GC)"));
-            }
-            if (pDevIns->fR0Enabled)
-            {
-                rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTR0PTR)i,
-                                               "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
-                if (RT_FAILURE(rc))
-                    return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (R0)"));
-            }
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, pThis->aCts[i].IOPortBase2, 1 /*cPorts*/, IOM_IOPORT_F_ABS,
+                                               ataIOPortWrite2, ataIOPortRead2, NULL, NULL, (RTHCPTR)(uintptr_t)i,
+                                               "ATA I/O Base 2", NULL /*paExtDescs*/, &pThis->aCts[i].hIoPorts2);
+            AssertLogRelRCReturn(rc, rc);
         }
     }
 
     rc = PDMDevHlpSSMRegisterEx(pDevIns, ATA_SAVED_STATE_VERSION, sizeof(*pThis) + cbTotalBuffer, NULL,
-                                NULL,            ataR3LiveExec, NULL,
+                                NULL,              ataR3LiveExec, NULL,
                                 ataR3SaveLoadPrep, ataR3SaveExec, NULL,
                                 ataR3SaveLoadPrep, ataR3LoadExec, NULL);
     if (RT_FAILURE(rc))
@@ -8052,6 +8006,33 @@ static DECLCALLBACK(int) ataRZConstruct(PPDMDEVINS pDevIns)
 
     int rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPortsBmDma, ataBMDMAIOPortWrite, ataBMDMAIOPortRead, NULL /*pvUser*/);
     AssertRCReturn(rc, rc);
+
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->aCts); i++)
+    {
+        if (pThis->aCts[i].hIoPorts1First != NIL_IOMIOPORTHANDLE)
+        {
+            rc = PDMDevHlpIoPortSetUpContextEx(pDevIns, pThis->aCts[i].hIoPorts1First,
+                                               ataIOPortWrite1Data, ataIOPortRead1Data,
+                                               ataIOPortWriteStr1Data, ataIOPortReadStr1Data, (RTHCPTR)(uintptr_t)i);
+            AssertLogRelRCReturn(rc, rc);
+            rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aCts[i].hIoPorts1Other,
+                                             ataIOPortWrite1Other, ataIOPortRead1Other, (RTHCPTR)(uintptr_t)i);
+            AssertLogRelRCReturn(rc, rc);
+            rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aCts[i].hIoPorts2,
+                                             ataIOPortWrite2, ataIOPortRead2, (RTHCPTR)(uintptr_t)i);
+            AssertLogRelRCReturn(rc, rc);
+        }
+        else
+        {
+            rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aCts[i].hIoPortsEmpty1,
+                                             ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, (void *)(uintptr_t)i /*pvUser*/);
+            AssertRCReturn(rc, rc);
+
+            rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->aCts[i].hIoPortsEmpty2,
+                                             ataIOPortWriteEmptyBus, ataIOPortReadEmptyBus, (void *)(uintptr_t)i /*pvUser*/);
+            AssertRCReturn(rc, rc);
+        }
+    }
 
     return VINF_SUCCESS;
 }
