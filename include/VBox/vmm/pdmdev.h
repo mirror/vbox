@@ -5949,12 +5949,12 @@ DECLINLINE(int) PDMDevHlpIoPortCreateAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, R
 /**
  * Combines PDMDevHlpIoPortCreateEx() & PDMDevHlpIoPortMap().
  */
-DECLINLINE(int) PDMDevHlpIoPortCreateExAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts,
+DECLINLINE(int) PDMDevHlpIoPortCreateExAndMap(PPDMDEVINS pDevIns, RTIOPORT Port, RTIOPORT cPorts, uint32_t fFlags,
                                               PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn,
                                               PFNIOMIOPORTNEWOUTSTRING pfnOutStr, PFNIOMIOPORTNEWINSTRING pfnInStr, void *pvUser,
                                               const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 {
-    int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0, NULL, UINT32_MAX,
+    int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, fFlags, NULL, UINT32_MAX,
                                                 pfnOut, pfnIn, pfnOutStr, pfnInStr, pvUser, pszDesc, paExtDescs, phIoPorts);
     if (RT_SUCCESS(rc))
         rc = pDevIns->pHlpR3->pfnIoPortMap(pDevIns, *phIoPorts, Port);
@@ -7031,7 +7031,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIoCustom(PPDMDEVINS pDevIns, uint32_
  *
  * @returns VBox status code.
  * @param   pDevIns         The device instance to register the ports with.
- * @param   cbPorts         The size of the region in I/O ports.
+ * @param   cPorts          The count of I/O ports in the region (the size).
  * @param   iPciRegion      The PCI device region.
  * @param   pfnOut          Pointer to function which is gonna handle OUT
  *                          operations. Optional.
@@ -7044,15 +7044,15 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegisterIoCustom(PPDMDEVINS pDevIns, uint32_
  * @param   phIoPorts       Where to return the I/O port range handle.
  *
  */
-DECLINLINE(int) PDMDevHlpPCIIORegionCreateIo(PPDMDEVINS pDevIns, uint32_t iPciRegion, RTIOPORT cbPorts,
+DECLINLINE(int) PDMDevHlpPCIIORegionCreateIo(PPDMDEVINS pDevIns, uint32_t iPciRegion, RTIOPORT cPorts,
                                              PFNIOMIOPORTNEWOUT pfnOut, PFNIOMIOPORTNEWIN pfnIn, void *pvUser,
                                              const char *pszDesc, PCIOMIOPORTDESC paExtDescs, PIOMIOPORTHANDLE phIoPorts)
 
 {
-    int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cbPorts, 0 /*fFlags*/, pDevIns->apPciDevs[0], iPciRegion << 16,
+    int rc = pDevIns->pHlpR3->pfnIoPortCreateEx(pDevIns, cPorts, 0 /*fFlags*/, pDevIns->apPciDevs[0], iPciRegion << 16,
                                                 pfnOut, pfnIn, NULL, NULL, pvUser, pszDesc, paExtDescs, phIoPorts);
     if (RT_SUCCESS(rc))
-        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cbPorts, PCI_ADDRESS_SPACE_IO,
+        rc = pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, pDevIns->apPciDevs[0], iPciRegion, cPorts, PCI_ADDRESS_SPACE_IO,
                                                      PDMPCIDEV_IORGN_F_IOPORT_HANDLE | PDMPCIDEV_IORGN_F_NEW_STYLE,
                                                      *phIoPorts, NULL /*pfnMapUnmap*/);
     return rc;

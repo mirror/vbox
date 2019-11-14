@@ -4207,7 +4207,7 @@ static DECLCALLBACK(int) buslogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (fBootable)
     {
         /* Register I/O port space for BIOS access. */
-        rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, BUSLOGIC_BIOS_IO_PORT, 4 /*cPorts*/,
+        rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, BUSLOGIC_BIOS_IO_PORT, 4 /*cPorts*/, 0 /*fFlags*/,
                                            buslogicR3BiosIoPortWrite, buslogicR3BiosIoPortRead,
                                            buslogicR3BiosIoPortWriteStr, buslogicR3BiosIoPortReadStr, NULL /*pvUser*/,
                                            "BusLogic BIOS" , NULL /*paExtDesc*/, &pThis->hIoPortsBios);

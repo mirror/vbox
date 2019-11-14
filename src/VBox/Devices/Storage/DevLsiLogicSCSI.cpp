@@ -5493,12 +5493,12 @@ static DECLCALLBACK(int) lsilogicR3Construct(PPDMDEVINS pDevIns, int iInstance, 
     if (fBootable)
     {
         if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SPI)
-            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, LSILOGIC_BIOS_IO_PORT, 4,
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, LSILOGIC_BIOS_IO_PORT, 4 /*cPorts*/, 0 /*fFlags*/,
                                                lsilogicR3IsaIOPortWrite, lsilogicR3IsaIOPortRead,
                                                lsilogicR3IsaIOPortWriteStr, lsilogicR3IsaIOPortReadStr, NULL /*pvUser*/,
                                                "LsiLogic BIOS", NULL /*paExtDesc*/, &pThis->hIoPortsBios);
         else if (pThis->enmCtrlType == LSILOGICCTRLTYPE_SCSI_SAS)
-            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, LSILOGIC_SAS_BIOS_IO_PORT, 4,
+            rc = PDMDevHlpIoPortCreateExAndMap(pDevIns, LSILOGIC_SAS_BIOS_IO_PORT, 4 /*cPorts*/, 0 /*fFlags*/,
                                                lsilogicR3IsaIOPortWrite, lsilogicR3IsaIOPortRead,
                                                lsilogicR3IsaIOPortWriteStr, lsilogicR3IsaIOPortReadStr, NULL /*pvUser*/,
                                                "LsiLogic SAS BIOS", NULL /*paExtDesc*/, &pThis->hIoPortsBios);
