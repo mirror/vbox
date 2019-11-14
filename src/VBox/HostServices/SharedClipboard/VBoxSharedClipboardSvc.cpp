@@ -1208,7 +1208,7 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 
         HGCMSvcSetU64(&pMsg->paParms[0], VBOX_SHCL_CONTEXTID_MAKE(pClient->State.uSessionID,
                                                                   pClient->Events.uID, uEvent));
-        HGCMSvcSetU32(&pMsg->paParms[1], pFormats->uFormats);
+        HGCMSvcSetU32(&pMsg->paParms[1], pFormats->Formats);
         HGCMSvcSetU32(&pMsg->paParms[2], 0 /* fFlags */);
 
         rc = shClSvcMsgAdd(pClient, pMsg, true /* fAppend */);
@@ -1217,7 +1217,7 @@ int ShClSvcFormatsReport(PSHCLCLIENT pClient, PSHCLFORMATDATA pFormats)
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
             /* If this is an URI list, create a transfer locally and also tell the guest to create
              * a transfer on the guest side. */
-            if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST)
+            if (pFormats->Formats & VBOX_SHCL_FMT_URI_LIST)
             {
                 rc = shClSvcTransferStart(pClient, SHCLTRANSFERDIR_WRITE, SHCLSOURCE_LOCAL,
                                           NULL /* pTransfer */);
@@ -1353,8 +1353,8 @@ int shClSvcGetDataRead(PSHCLCLIENT pClient, uint32_t cParms, VBOXHGCMSVCPARM paP
                 SHCLFORMATDATA formatData;
                 RT_ZERO(formatData);
 
-                formatData.uFormats = g_ExtState.uDelayedFormats;
-                Assert(formatData.uFormats != VBOX_SHCL_FMT_NONE); /* There better is *any* format here now. */
+                formatData.Formats = g_ExtState.uDelayedFormats;
+                Assert(formatData.Formats != VBOX_SHCL_FMT_NONE); /* There better is *any* format here now. */
 
                 int rc2 = ShClSvcFormatsReport(pClient, &formatData);
                 AssertRC(rc2);
@@ -1810,8 +1810,8 @@ static DECLCALLBACK(void) svcCall(void *,
                         SHCLFORMATDATA formatData;
                         RT_ZERO(formatData);
 
-                        formatData.uFormats = uFormats;
-                        Assert(formatData.uFormats != VBOX_SHCL_FMT_NONE); /* Sanity. */
+                        formatData.Formats = uFormats;
+                        Assert(formatData.Formats != VBOX_SHCL_FMT_NONE); /* Sanity. */
 
                         rc = ShClSvcImplFormatAnnounce(pClient, &cmdCtx, &formatData);
                         if (RT_SUCCESS(rc))
@@ -2322,7 +2322,7 @@ static DECLCALLBACK(int) extCallback(uint32_t u32Function, uint32_t u32Format, v
                     SHCLFORMATDATA formatData;
                     RT_ZERO(formatData);
 
-                    formatData.uFormats = u32Format;
+                    formatData.Formats = u32Format;
 
                     rc = ShClSvcFormatsReport(pClient, &formatData);
                 }

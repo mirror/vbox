@@ -458,7 +458,7 @@ int SharedClipboardWinGetFormats(PSHCLWINCTX pCtx, PSHCLFORMATDATA pFormats)
     {
         LogFlowFunc(("fFormats=0x%08X\n", fFormats));
 
-        pFormats->uFormats = fFormats;
+        pFormats->Formats = fFormats;
         pFormats->fFlags   = 0; /** @todo Handle flags. */
     }
 

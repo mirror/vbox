@@ -73,7 +73,7 @@ static int vboxClipboardChanged(SHCLCONTEXT *pCtx)
         SHCLFORMATDATA formatData;
         RT_ZERO(formatData);
 
-        formatData.uFormats = fFormats;
+        formatData.Formats = fFormats;
 
         rc = ShClSvcFormatsReport(pCtx->pClient, &formatData);
     }
@@ -201,23 +201,23 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient,
 {
     RT_NOREF(pCmdCtx);
 
-    LogFlowFunc(("uFormats=%02X\n", pFormats->uFormats));
+    LogFlowFunc(("uFormats=%02X\n", pFormats->Formats));
 
-    if (pFormats->uFormats == VBOX_SHCL_FMT_NONE)
+    if (pFormats->Formats == VBOX_SHCL_FMT_NONE)
     {
         /* This is just an automatism, not a genuine announcement */
         return VINF_SUCCESS;
     }
 
 #ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
-    if (pFormats->uFormats & VBOX_SHCL_FMT_URI_LIST) /* No transfer support yet. */
+    if (pFormats->Formats & VBOX_SHCL_FMT_URI_LIST) /* No transfer support yet. */
         return VINF_SUCCESS;
 #endif
 
     SHCLDATAREQ dataReq;
     RT_ZERO(dataReq);
 
-    dataReq.uFmt   = pFormats->uFormats;
+    dataReq.uFmt   = pFormats->Formats;
     dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
 
     return ShClSvcDataReadRequest(pClient, &dataReq, NULL /* puEvent */);

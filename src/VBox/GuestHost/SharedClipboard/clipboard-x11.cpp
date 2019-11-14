@@ -251,7 +251,7 @@ struct _CLIPBACKEND
     CLIPX11FORMAT X11URIListFormat;
 #endif
     /** What formats does VBox have on offer? */
-    uint32_t vboxFormats;
+    SHCLFORMATS vboxFormats;
     /** Cache of the last unicode data that we received */
     void *pvUnicodeCache;
     /** Size of the unicode data in the cache */
@@ -1099,11 +1099,17 @@ CLIPBACKEND *ClipConstructX11(SHCLCONTEXT *pFrontend, bool fHeadless)
  */
 void ClipDestructX11(CLIPBACKEND *pCtx)
 {
+    if (!pCtx)
+        return;
+
     if (pCtx->fHaveX11)
+    {
         /* We set this to NULL when the event thread exits.  It really should
          * have exited at this point, when we are about to unload the code from
          * memory. */
         Assert(pCtx->widget == NULL);
+    }
+
     RTMemFree(pCtx);
 }
 
@@ -1250,16 +1256,17 @@ static int clipCreateX11Targets(CLIPBACKEND *pCtx, Atom *atomTypeReturn,
  * This is a wrapper around ClipRequestDataForX11Callback that will cache the
  * data returned.
  */
-static int clipReadVBoxShCl(CLIPBACKEND *pCtx, uint32_t u32Format,
+static int clipReadVBoxShCl(CLIPBACKEND *pCtx, SHCLFORMAT Format,
                             void **ppv, uint32_t *pcb)
 {
+    LogFlowFunc(("pCtx=%p, Format=%02X, ppv=%p, pcb=%p\n", pCtx, Format, ppv, pcb));
+
     int rc = VINF_SUCCESS;
-    LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p, pcb=%p\n", pCtx,
-                 u32Format, ppv, pcb));
-    if (u32Format == VBOX_SHCL_FMT_UNICODETEXT)
+
+    if (Format == VBOX_SHCL_FMT_UNICODETEXT)
     {
         if (pCtx->pvUnicodeCache == NULL)
-            rc = ClipRequestDataForX11Callback(pCtx->pFrontend, u32Format,
+            rc = ClipRequestDataForX11Callback(pCtx->pFrontend, Format,
                                                &pCtx->pvUnicodeCache,
                                                &pCtx->cbUnicodeCache);
         if (RT_SUCCESS(rc))
@@ -1271,7 +1278,7 @@ static int clipReadVBoxShCl(CLIPBACKEND *pCtx, uint32_t u32Format,
         }
     }
     else
-        rc = ClipRequestDataForX11Callback(pCtx->pFrontend, u32Format,
+        rc = ClipRequestDataForX11Callback(pCtx->pFrontend, Format,
                                            ppv, pcb);
     if (RT_SUCCESS(rc))
         LogFlowFunc(("*ppv=%.*ls, *pcb=%u\n", *pcb, *ppv, *pcb));
@@ -1488,9 +1495,11 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
     int rc = VINF_SUCCESS;
 
     CLIPX11FORMAT x11Format = clipFindX11FormatByAtom(pCtx, *atomTarget);
-    CLIPFORMAT format = clipRealFormatForX11Format(x11Format);
+    CLIPFORMAT clipFormat = clipRealFormatForX11Format(x11Format);
 
-    if (   ((format == UTF8) || (format == TEXT))
+    LogFlowFunc(("fFormats=0x%x, x11Format=%u, clipFormat=%u\n", pCtx->vboxFormats, x11Format, clipFormat));
+
+    if (   ((clipFormat == UTF8) || (clipFormat == TEXT))
         && (pCtx->vboxFormats & VBOX_SHCL_FMT_UNICODETEXT))
     {
         void    *pv = NULL;
@@ -1498,17 +1507,17 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
         rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_UNICODETEXT, &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && ((format == UTF8) || (format == TEXT)))
+        if (RT_SUCCESS(rc) && ((clipFormat == UTF8) || (clipFormat == TEXT)))
             rc = clipWinTxtToUtf8ForX11CB(XtDisplay(pCtx->widget),
                                           (PRTUTF16)pv, cb, atomTarget,
                                           atomTypeReturn, pValReturn,
                                           pcLenReturn, piFormatReturn);
         if (RT_SUCCESS(rc))
-            clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, format);
+            clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, clipFormat);
 
         RTMemFree(pv);
     }
-    else if (   (format == BMP)
+    else if (   (clipFormat == BMP)
              && (pCtx->vboxFormats & VBOX_SHCL_FMT_BITMAP))
     {
         void    *pv = NULL;
@@ -1516,7 +1525,7 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
         rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_BITMAP, &pv, &cb);
         if (RT_SUCCESS(rc) && (cb == 0))
             rc = VERR_NO_DATA;
-        if (RT_SUCCESS(rc) && (format == BMP))
+        if (RT_SUCCESS(rc) && (clipFormat == BMP))
         {
             /* Create a full BMP from it */
             rc = ShClDibToBmp(pv, cb, (void **)pValReturn,
@@ -1533,7 +1542,7 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
 
         RTMemFree(pv);
     }
-    else if (  (format == HTML)
+    else if (  (clipFormat == HTML)
             && (pCtx->vboxFormats & VBOX_SHCL_FMT_HTML))
     {
         void    *pv = NULL;
@@ -1556,13 +1565,52 @@ static int clipConvertVBoxCBForX11(CLIPBACKEND *pCtx, Atom *atomTarget,
                                            atomTypeReturn, pValReturn,
                                            pcLenReturn, piFormatReturn);
             if (RT_SUCCESS(rc))
-                clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, format);
+                clipTrimTrailingNul(*(XtPointer *)pValReturn, pcLenReturn, clipFormat);
 
             RTMemFree(pv);
         }
     }
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    else if (pCtx->vboxFormats & VBOX_SHCL_FMT_URI_LIST)
+    {
+        switch (clipFormat)
+        {
+            case TEXT:
+                RT_FALL_THROUGH();
+            case UTF8:
+            {
+                void    *pv = NULL;
+                uint32_t cb = 0;
+                rc = clipReadVBoxShCl(pCtx, VBOX_SHCL_FMT_URI_LIST, &pv, &cb);
+
+                RTMemFree(pv);
+                break;
+            }
+
+            case URI_LIST:
+            {
+                break;
+            }
+
+            default:
+                rc = VERR_NOT_SUPPORTED;
+                break;
+        }
+    }
+#endif
     else
+    {
+        *atomTypeReturn = XT_CONVERT_FAIL;
+        *pValReturn     = (XtPointer)NULL;
+        *pcLenReturn    = 0;
+        *piFormatReturn = 0;
+
         rc = VERR_NOT_SUPPORTED;
+    }
+
+    if (RT_FAILURE(rc))
+        LogRel2(("Shared Clipboard: Converting format 0x%x for X11 (x11Format=%u, clipFormat=%u) failed, rc=%Rrc\n",
+                 pCtx->vboxFormats, x11Format, clipFormat, rc));
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -1586,10 +1634,10 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
     int rc = VINF_SUCCESS;
 
     if (!pCtx)
-        return false;
+        return False;
 
     if (!clipIsSupportedSelectionType(pCtx, *atomSelection))
-        return false;
+        return False;
 
     if (*atomTarget == clipGetAtom(pCtx, "TARGETS"))
         rc = clipCreateX11Targets(pCtx, atomTypeReturn, pValReturn,
@@ -1598,8 +1646,8 @@ static Boolean clipXtConvertSelectionProc(Widget widget, Atom *atomSelection,
         rc = clipConvertVBoxCBForX11(pCtx, atomTarget, atomTypeReturn,
                                      pValReturn, pcLenReturn, piFormatReturn);
 
-    LogFlowFunc(("returning, internal status code %Rrc\n", rc));
-    return RT_SUCCESS(rc);
+    LogFlowFunc(("returning %RTbool, internal status code %Rrc\n", RT_SUCCESS(rc), rc));
+    return RT_SUCCESS(rc) ? True : False;
 }
 
 /**
@@ -1610,7 +1658,7 @@ typedef struct _CLIPNEWVBOXFORMATS
     /** Context information for the X11 clipboard. */
     CLIPBACKEND *pCtx;
     /** Formats supported by VBox. */
-    SHCLFORMATS  formats;
+    SHCLFORMATS  Formats;
 } CLIPNEWVBOXFORMATS, *PCLIPNEWVBOXFORMATS;
 
 /** Invalidates the local cache of the data in the VBox clipboard. */
@@ -1626,12 +1674,14 @@ static void clipInvalidateVBoxCBCache(CLIPBACKEND *pCtx)
 /**
  * Takes possession of the X11 clipboard (and middle-button selection).
  */
-static void clipGrabX11CB(CLIPBACKEND *pCtx, uint32_t u32Formats)
+static void clipGrabX11CB(CLIPBACKEND *pCtx, SHCLFORMATS Formats)
 {
+    LogFlowFuncEnter();
+
     if (XtOwnSelection(pCtx->widget, clipGetAtom(pCtx, "CLIPBOARD"),
                        CurrentTime, clipXtConvertSelectionProc, NULL, 0))
     {
-        pCtx->vboxFormats = u32Formats;
+        pCtx->vboxFormats = Formats;
         /* Grab the middle-button paste selection too. */
         XtOwnSelection(pCtx->widget, clipGetAtom(pCtx, "PRIMARY"),
                        CurrentTime, clipXtConvertSelectionProc, NULL, 0);
@@ -1662,7 +1712,7 @@ static void clipAnnounceFormatToX11Worker(void *pUserData,
     CLIPNEWVBOXFORMATS *pFormats = (CLIPNEWVBOXFORMATS *)pUserData;
     CLIPBACKEND *pCtx = pFormats->pCtx;
 
-    uint32_t fFormats = pFormats->formats;
+    uint32_t fFormats = pFormats->Formats;
 
     RTMemFree(pFormats);
 
@@ -1679,9 +1729,9 @@ static void clipAnnounceFormatToX11Worker(void *pUserData,
  * Announces new clipboard formats to the host.
  *
  * @returns VBox status code.
- * @param   u32Formats          Clipboard formats offered.
+ * @param   Formats             Clipboard formats offered.
  */
-int ClipAnnounceFormatToX11(CLIPBACKEND *pCtx, uint32_t u32Formats)
+int ClipAnnounceFormatToX11(CLIPBACKEND *pCtx, uint32_t Formats)
 {
     /*
      * Immediately return if we are not connected to the X server.
@@ -1696,7 +1746,7 @@ int ClipAnnounceFormatToX11(CLIPBACKEND *pCtx, uint32_t u32Formats)
     if (pFormats)
     {
         pFormats->pCtx    = pCtx;
-        pFormats->formats = u32Formats;
+        pFormats->Formats = Formats;
 
         rc = clipQueueToEventThread(pCtx, clipAnnounceFormatToX11Worker,
                                     (XtPointer) pFormats);
@@ -2288,12 +2338,12 @@ static void clipReadDataFromX11Worker(void *pvUserData, void * /* interval */)
  *
  * @returns VBox status code.
  * @param  pCtx                 Context data for the clipboard backend.
- * @param  u32Format            The format that the VBox would like to receive the data in.
+ * @param  Format               The format that the VBox would like to receive the data in.
  * @param  pReq                 Read callback request to use. Must be free'd in the callback.
  *
  * @note   We allocate a request structure which must be freed by the worker.
  */
-int ClipReadDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format, CLIPREADCBREQ *pReq)
+int ClipReadDataFromX11(CLIPBACKEND *pCtx, SHCLFORMAT Format, CLIPREADCBREQ *pReq)
 {
     /*
      * Immediately return if we are not connected to the X server.
@@ -2307,7 +2357,7 @@ int ClipReadDataFromX11(CLIPBACKEND *pCtx, uint32_t u32Format, CLIPREADCBREQ *pR
     if (pX11Req)
     {
         pX11Req->mpCtx   = pCtx;
-        pX11Req->mFormat = u32Format;
+        pX11Req->mFormat = Format;
         pX11Req->mpReq   = pReq;
 
         /* We use this to schedule a worker function on the event thread. */
@@ -2385,9 +2435,9 @@ static int tstClipSetVBoxUtf16(CLIPBACKEND *pCtx, int retval,
 }
 
 /* Return the data in the simulated VBox clipboard. */
-DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t Format, void **ppv, uint32_t *pcb)
 {
-    RT_NOREF(pCtx, u32Format);
+    RT_NOREF(pCtx, Format);
     *pcb = g_tstVBoxDataCb;
     if (g_tstVBoxDataPv != NULL)
     {
@@ -2502,13 +2552,13 @@ void tstClipRequestData(CLIPBACKEND *pCtx, CLIPX11FORMAT target, void *closure)
         RTMemFree(pValue);
 }
 
-/* The formats currently on offer from X11 via the shared clipboard */
+/* The formats currently on offer from X11 via the shared clipboard. */
 static uint32_t g_fX11Formats = 0;
 
-DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
+DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, SHCLFORMATS Formats)
 {
     RT_NOREF(pCtx);
-    g_fX11Formats = u32Formats;
+    g_fX11Formats = Formats;
 }
 
 static uint32_t tstClipQueryFormats(void)
@@ -3144,15 +3194,15 @@ int main()
 # include <iprt/env.h>
 # include <iprt/test.h>
 
-DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb)
 {
-    RT_NOREF(pCtx, u32Format, ppv, pcb);
+    RT_NOREF(pCtx, Format, ppv, pcb);
     return VERR_NO_DATA;
 }
 
-DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats)
+DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, SHCLFORMATS Formats)
 {
-    RT_NOREF(pCtx, u32Formats);
+    RT_NOREF(pCtx, Formats);
 }
 
 DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb)

@@ -118,7 +118,7 @@ int ShClSvcImplSync(PSHCLCLIENT pClient)
     SHCLFORMATDATA formatData;
     RT_ZERO(formatData);
 
-    formatData.uFormats = VBOX_SHCL_FMT_NONE;
+    formatData.Formats = VBOX_SHCL_FMT_NONE;
 
     return ShClSvcFormatsReport(pClient, &formatData);
 }
@@ -160,7 +160,7 @@ int ShClSvcImplFormatAnnounce(PSHCLCLIENT pClient, PSHCLCLIENTCMDCTX pCmdCtx,
 {
     RT_NOREF(pCmdCtx);
 
-    int rc = ClipAnnounceFormatToX11(pClient->State.pCtx->pBackend, pFormats->uFormats);
+    int rc = ClipAnnounceFormatToX11(pClient->State.pCtx->pBackend, pFormats->Formats);
 
     LogFlowFuncLeaveRC(rc);
     return rc;
@@ -254,19 +254,19 @@ int ShClSvcImplWriteData(PSHCLCLIENT pClient,
  * @note   Runs in Xt event thread.
  *
  * @param  pCtx                 Opaque context pointer for the glue code.
- * @param  u32Formats           The formats available.
+ * @param  Formats              The formats available.
  */
-DECLCALLBACK(void) ClipReportX11FormatsCallback(PSHCLCONTEXT pCtx, uint32_t u32Formats)
+DECLCALLBACK(void) ClipReportX11FormatsCallback(PSHCLCONTEXT pCtx, uint32_t Formats)
 {
-    LogFlowFunc(("pCtx=%p, u32Formats=%02X\n", pCtx, u32Formats));
+    LogFlowFunc(("pCtx=%p, Formats=%02X\n", pCtx, Formats));
 
-    if (u32Formats == VBOX_SHCL_FMT_NONE) /* No formats to report? Bail out early. */
+    if (Formats == VBOX_SHCL_FMT_NONE) /* No formats to report? Bail out early. */
         return;
 
     SHCLFORMATDATA formatData;
     RT_ZERO(formatData);
 
-    formatData.uFormats = u32Formats;
+    formatData.Formats = Formats;
 
     int rc = ShClSvcFormatsReport(pCtx->pClient, &formatData);
     RT_NOREF(rc);
@@ -321,15 +321,15 @@ DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(PSHCLCONTEXT pCtx, int rcC
  * @note   Runs in Xt event thread.
  *
  * @param  pCtx      Pointer to the host clipboard structure.
- * @param  u32Format The format in which the data should be transferred
+ * @param  Format    The format in which the data should be transferred.
  * @param  ppv       On success and if pcb > 0, this will point to a buffer
  *                   to be freed with RTMemFree containing the data read.
  * @param  pcb       On success, this contains the number of bytes of data
  *                   returned.
  */
-DECLCALLBACK(int) ClipRequestDataForX11Callback(PSHCLCONTEXT pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb)
+DECLCALLBACK(int) ClipRequestDataForX11Callback(PSHCLCONTEXT pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb)
 {
-    LogFlowFunc(("pCtx=%p, u32Format=%02X, ppv=%p\n", pCtx, u32Format, ppv));
+    LogFlowFunc(("pCtx=%p, Format=0x%x\n", pCtx, Format));
 
     if (pCtx->fShuttingDown)
     {
@@ -338,29 +338,40 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(PSHCLCONTEXT pCtx, uint32_t u32F
         return VERR_WRONG_ORDER;
     }
 
-    /* Request data from the guest. */
-    SHCLDATAREQ dataReq;
-    RT_ZERO(dataReq);
+    int rc;
 
-    dataReq.uFmt   = u32Format;
-    dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
-
-    SHCLEVENTID uEvent;
-    int rc = ShClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
-    if (RT_SUCCESS(rc))
+#ifdef VBOX_WITH_SHARED_CLIPBOARD_TRANSFERS
+    if (Format == VBOX_SHCL_FMT_URI_LIST)
     {
-        PSHCLEVENTPAYLOAD pPayload;
-        rc = ShClEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
+        rc = 0;
+    }
+    else
+#endif
+    {
+        /* Request data from the guest. */
+        SHCLDATAREQ dataReq;
+        RT_ZERO(dataReq);
+
+        dataReq.uFmt   = Format;
+        dataReq.cbSize = _64K; /** @todo Make this more dynamic. */
+
+        SHCLEVENTID uEvent;
+        rc = ShClSvcDataReadRequest(pCtx->pClient, &dataReq, &uEvent);
         if (RT_SUCCESS(rc))
         {
-            *ppv = pPayload->pvData;
-            *pcb = pPayload->cbData;
+            PSHCLEVENTPAYLOAD pPayload;
+            rc = ShClEventWait(&pCtx->pClient->Events, uEvent, 30 * 1000, &pPayload);
+            if (RT_SUCCESS(rc))
+            {
+                *ppv = pPayload->pvData;
+                *pcb = pPayload->cbData;
 
-            /* Detach the payload, as the caller then will own the data. */
-            ShClEventPayloadDetach(&pCtx->pClient->Events, uEvent);
+                /* Detach the payload, as the caller then will own the data. */
+                ShClEventPayloadDetach(&pCtx->pClient->Events, uEvent);
+            }
+
+            ShClEventUnregister(&pCtx->pClient->Events, uEvent);
         }
-
-        ShClEventUnregister(&pCtx->pClient->Events, uEvent);
     }
 
     LogFlowFuncLeaveRC(rc);

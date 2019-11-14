@@ -109,7 +109,7 @@ typedef struct _SHCLDATAREQ
 typedef struct _SHCLFORMATDATA
 {
     /** Available format(s) as bit map. */
-    SHCLFORMATS uFormats;
+    SHCLFORMATS Formats;
     /** Formats flags. Currently unused. */
     uint32_t    fFlags;
 } SHCLFORMATDATA, *PSHCLFORMATDATA;
@@ -283,8 +283,8 @@ extern int ClipReadDataFromX11(CLIPBACKEND *pBackend, SHCLFORMATS vboxFormat, CL
 /** @name Shared Clipboard APIs (as callbacks) exported by the X11/VBox frontend.
  *  @{
  */
-extern DECLCALLBACK(int)  ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, uint32_t u32Format, void **ppv, uint32_t *pcb);
-extern DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, uint32_t u32Formats);
+extern DECLCALLBACK(int)  ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, SHCLFORMAT Format, void **ppv, uint32_t *pcb);
+extern DECLCALLBACK(void) ClipReportX11FormatsCallback(SHCLCONTEXT *pCtx, SHCLFORMATS Formats);
 extern DECLCALLBACK(void) ClipRequestFromX11CompleteCallback(SHCLCONTEXT *pCtx, int rc, CLIPREADCBREQ *pReq, void *pv, uint32_t cb);
 /** @} */
 #endif /* !VBOX_INCLUDED_GuestHost_SharedClipboard_h */

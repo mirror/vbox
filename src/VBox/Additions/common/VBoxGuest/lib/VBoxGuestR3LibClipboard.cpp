@@ -199,7 +199,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportRecv(PVBGLR3SHCLCMDCTX pCtx, PSHCLFO
     {
         rc = Msg.u.v1.uContext.GetUInt64(&pCtx->uContextID);
         if (RT_SUCCESS(rc))
-            rc = Msg.u.v1.uFormats.GetUInt32(&pFormats->uFormats);
+            rc = Msg.u.v1.uFormats.GetUInt32(&pFormats->Formats);
         if (RT_SUCCESS(rc))
             rc = Msg.u.v1.fFlags.GetUInt32(&pFormats->fFlags);
     }
@@ -2362,12 +2362,12 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORM
 
     int rc;
 
-    LogFlowFunc(("uFormats=0x%x\n", pFormats->uFormats));
+    LogFlowFunc(("uFormats=0x%x\n", pFormats->Formats));
 
     if (pCtx->fUseLegacyProtocol)
     {
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 1);
-        Msg.u.v0.uFormats.SetUInt32(pFormats->uFormats);
+        Msg.u.v0.uFormats.SetUInt32(pFormats->Formats);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v0));
     }
@@ -2376,7 +2376,7 @@ VBGLR3DECL(int) VbglR3ClipboardFormatsReportEx(PVBGLR3SHCLCMDCTX pCtx, PSHCLFORM
         VBGL_HGCM_HDR_INIT(&Msg.hdr, pCtx->uClientID, VBOX_SHCL_GUEST_FN_FORMATS_REPORT, 3);
 
         Msg.u.v1.uContext.SetUInt64(pCtx->uContextID);
-        Msg.u.v1.uFormats.SetUInt32(pFormats->uFormats);
+        Msg.u.v1.uFormats.SetUInt32(pFormats->Formats);
         Msg.u.v1.fFlags.SetUInt32(pFormats->fFlags);
 
         rc = VbglR3HGCMCall(&Msg.hdr, sizeof(Msg.hdr) + sizeof(Msg.u.v1));

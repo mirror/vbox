@@ -256,7 +256,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     int rc = SharedClipboardWinGetFormats(pWinCtx, &Formats);
                     if (RT_SUCCESS(rc))
                     {
-                        LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats 0x%x\n", Formats.uFormats));
+                        LogFunc(("WM_CLIPBOARDUPDATE: Reporting formats 0x%x\n", Formats.Formats));
                         rc = VbglR3ClipboardFormatsReportEx(&pCtx->CmdCtx, &Formats);
                     }
                 }
@@ -302,7 +302,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
                     SHCLFORMATDATA Formats;
                     rc = SharedClipboardWinGetFormats(pWinCtx, &Formats);
                     if (RT_SUCCESS(rc)
-                        && Formats.uFormats != VBOX_SHCL_FMT_NONE)
+                        && Formats.Formats != VBOX_SHCL_FMT_NONE)
                     {
                         rc = VbglR3ClipboardFormatsReportEx(&pCtx->CmdCtx, &Formats);
                     }
@@ -514,7 +514,7 @@ static LRESULT vboxClipboardWinProcessMsg(PSHCLCONTEXT pCtx, HWND hwnd, UINT msg
             AssertPtr(pEvent);
             Assert(pEvent->enmType == VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS);
 
-            const SHCLFORMATS fFormats = pEvent->u.ReportedFormats.uFormats;
+            const SHCLFORMATS fFormats = pEvent->u.ReportedFormats.Formats;
 
             if (fFormats != VBOX_SHCL_FMT_NONE) /* Could arrive with some older GA versions. */
             {
@@ -1015,7 +1015,7 @@ DECLCALLBACK(int) VBoxShClWorker(void *pInstance, bool volatile *pfShutdown)
                     case VBOX_SHCL_HOST_MSG_FORMATS_REPORT:
                     {
                         pEvent->enmType = VBGLR3CLIPBOARDEVENTTYPE_REPORT_FORMATS;
-                        pEvent->u.ReportedFormats.uFormats = uFormats;
+                        pEvent->u.ReportedFormats.Formats = uFormats;
                         break;
                     }
 
