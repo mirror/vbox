@@ -890,7 +890,7 @@ static int ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort, int rcBusy)
 {
     Log(("P%u: %s: Setting interrupt\n", iPort, __FUNCTION__));
 
-    int rc = PDMCritSectEnter(&pAhci->lock, rcBusy);
+    int rc = PDMDevHlpCritSectEnter(pAhci->CTX_SUFF(pDevIns), &pAhci->lock, rcBusy);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -929,7 +929,7 @@ static int ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort, int rcBusy)
         }
     }
 
-    PDMCritSectLeave(&pAhci->lock);
+    PDMDevHlpCritSectLeave(pAhci->CTX_SUFF(pDevIns), &pAhci->lock);
     return VINF_SUCCESS;
 }
 
@@ -1611,7 +1611,7 @@ static int HbaInterruptStatus_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
     RT_NOREF1(iReg);
     Log(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
-    int rc = PDMCritSectEnter(&pAhci->lock, VINF_IOM_R3_MMIO_WRITE);
+    int rc = PDMDevHlpCritSectEnter(pAhci->CTX_SUFF(pDevIns), &pAhci->lock, VINF_IOM_R3_MMIO_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
@@ -1663,7 +1663,7 @@ static int HbaInterruptStatus_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
         PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 1);
     }
 
-    PDMCritSectLeave(&pAhci->lock);
+    PDMDevHlpCritSectLeave(pAhci->CTX_SUFF(pDevIns), &pAhci->lock);
     return VINF_SUCCESS;
 }
 
@@ -1674,13 +1674,13 @@ static int HbaInterruptStatus_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF1(iReg);
 
-    int rc = PDMCritSectEnter(&pAhci->lock, VINF_IOM_R3_MMIO_READ);
+    int rc = PDMDevHlpCritSectEnter(pAhci->CTX_SUFF(pDevIns), &pAhci->lock, VINF_IOM_R3_MMIO_READ);
     if (rc != VINF_SUCCESS)
         return rc;
 
     uint32_t u32PortsInterrupted = ASMAtomicXchgU32(&pAhci->u32PortsInterrupted, 0);
 
-    PDMCritSectLeave(&pAhci->lock);
+    PDMDevHlpCritSectLeave(pAhci->CTX_SUFF(pDevIns), &pAhci->lock);
     Log(("%s: read regHbaIs=%#010x u32PortsInterrupted=%#010x\n", __FUNCTION__, pAhci->regHbaIs, u32PortsInterrupted));
 
     pAhci->regHbaIs |= u32PortsInterrupted;
@@ -4552,7 +4552,9 @@ static bool ahciR3CmdPrepare(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     return fContinue;
 }
 
-/* The async IO thread for one port. */
+/**
+ * @callback_method_impl{FNPDMTHREADDEV, The async IO thread for one port.}
+ */
 static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     RT_NOREF(pDevIns);
@@ -4689,11 +4691,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 }
 
 /**
- * Unblock the async I/O thread so it can respond to a state change.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   pThread     The send thread.
+ * @callback_method_impl{FNPDMTHREADWAKEUPDEV}
  */
 static DECLCALLBACK(int) ahciAsyncIOLoopWakeUp(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
@@ -5555,7 +5553,7 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
     {
         int rcThread;
         /* Destroy the thread. */
-        rc = PDMR3ThreadDestroy(pAhciPort->pAsyncIOThread, &rcThread);
+        rc = PDMDevHlpThreadDestroy(pDevIns, pAhciPort->pAsyncIOThread, &rcThread);
         if (RT_FAILURE(rc) || RT_FAILURE(rcThread))
             AssertMsgFailed(("%s Failed to destroy async IO thread rc=%Rrc rcThread=%Rrc\n", __FUNCTION__, rc, rcThread));
 
@@ -5763,16 +5761,16 @@ static DECLCALLBACK(void) ahciR3PowerOff(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
     PAHCI       pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     int         rc    = VINF_SUCCESS;
-    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     /*
      * At this point the async I/O thread is suspended and will not enter
      * this module again. So, no coordination is needed here and PDM
      * will take care of terminating and cleaning up the thread.
      */
-    if (PDMCritSectIsInitialized(&pThis->lock))
+    if (PDMDevHlpCritSectIsInitialized(pDevIns, &pThis->lock))
     {
         TMR3TimerDestroy(pThis->CTX_SUFF(pHbaCccTimer));
         pThis->CTX_SUFF(pHbaCccTimer) = NULL;
@@ -5792,7 +5790,7 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
                 RTStrFree(pAhciPort->pszDesc);
         }
 
-        PDMR3CritSectDelete(&pThis->lock);
+        PDMDevHlpCritSectDelete(pDevIns, &pThis->lock);
     }
 
     return rc;
@@ -5803,13 +5801,13 @@ static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     PAHCI           pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     PCPDMDEVHLPR3   pHlp  = pDevIns->pHlpR3;
     PPDMIBASE       pBase;
     int             rc = VINF_SUCCESS;
     unsigned        i = 0;
     uint32_t        cbTotalBufferSize = 0;
-    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     LogFlowFunc(("pThis=%#p\n", pThis));
 
