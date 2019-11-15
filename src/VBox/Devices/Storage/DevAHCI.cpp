@@ -791,8 +791,8 @@ typedef AHCIR3MEMCOPYCALLBACK *PAHCIR3MEMCOPYCALLBACK;
 typedef struct ahci_opreg
 {
     const char *pszName;
-    int (*pfnRead )(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value);
-    int (*pfnWrite)(PAHCI pAhci, uint32_t iReg, uint32_t u32Value);
+    int (*pfnRead )(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value);
+    int (*pfnWrite)(PAHCI pThis, uint32_t iReg, uint32_t u32Value);
 } AHCIOPREG;
 
 /**
@@ -801,8 +801,8 @@ typedef struct ahci_opreg
 typedef struct pAhciPort_opreg
 {
     const char *pszName;
-    int (*pfnRead )(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value);
-    int (*pfnWrite)(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value);
+    int (*pfnRead )(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value);
+    int (*pfnWrite)(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value);
 } AHCIPORTOPREG;
 
 
@@ -869,39 +869,39 @@ RT_C_DECLS_END
 /**
  * Update PCI IRQ levels
  */
-static void ahciHbaClearInterrupt(PAHCI pAhci)
+static void ahciHbaClearInterrupt(PAHCI pThis)
 {
     Log(("%s: Clearing interrupt\n", __FUNCTION__));
-    PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 0);
+    PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0);
 }
 
 /**
  * Updates the IRQ level and sets port bit in the global interrupt status register of the HBA.
  */
-static int ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort, int rcBusy)
+static int ahciHbaSetInterrupt(PAHCI pThis, uint8_t iPort, int rcBusy)
 {
     Log(("P%u: %s: Setting interrupt\n", iPort, __FUNCTION__));
 
-    int rc = PDMDevHlpCritSectEnter(pAhci->CTX_SUFF(pDevIns), &pAhci->lock, rcBusy);
+    int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->lock, rcBusy);
     if (rc != VINF_SUCCESS)
         return rc;
 
-    if (pAhci->regHbaCtrl & AHCI_HBA_CTRL_IE)
+    if (pThis->regHbaCtrl & AHCI_HBA_CTRL_IE)
     {
-        if ((pAhci->regHbaCccCtl & AHCI_HBA_CCC_CTL_EN) && (pAhci->regHbaCccPorts & (1 << iPort)))
+        if ((pThis->regHbaCccCtl & AHCI_HBA_CCC_CTL_EN) && (pThis->regHbaCccPorts & (1 << iPort)))
         {
-            pAhci->uCccCurrentNr++;
-            if (pAhci->uCccCurrentNr >= pAhci->uCccNr)
+            pThis->uCccCurrentNr++;
+            if (pThis->uCccCurrentNr >= pThis->uCccNr)
             {
                 /* Reset command completion coalescing state. */
-                PDMDevHlpTimerSetMillies(pAhci->CTX_SUFF(pDevIns), pAhci->hHbaCccTimer, pAhci->uCccTimeout);
-                pAhci->uCccCurrentNr = 0;
+                PDMDevHlpTimerSetMillies(pThis->CTX_SUFF(pDevIns), pThis->hHbaCccTimer, pThis->uCccTimeout);
+                pThis->uCccCurrentNr = 0;
 
-                pAhci->u32PortsInterrupted |= (1 << pAhci->uCccPortNr);
-                if (!(pAhci->u32PortsInterrupted & ~(1 << pAhci->uCccPortNr)))
+                pThis->u32PortsInterrupted |= (1 << pThis->uCccPortNr);
+                if (!(pThis->u32PortsInterrupted & ~(1 << pThis->uCccPortNr)))
                 {
                     Log(("P%u: %s: Fire interrupt\n", iPort, __FUNCTION__));
-                    PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 1);
+                    PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 1);
                 }
             }
         }
@@ -912,16 +912,16 @@ static int ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort, int rcBusy)
              * and we need to send a new notification.
              * Otherwise an interrupt is still pending.
              */
-            ASMAtomicOrU32((volatile uint32_t *)&pAhci->u32PortsInterrupted, (1 << iPort));
-            if (!(pAhci->u32PortsInterrupted & ~(1 << iPort)))
+            ASMAtomicOrU32((volatile uint32_t *)&pThis->u32PortsInterrupted, (1 << iPort));
+            if (!(pThis->u32PortsInterrupted & ~(1 << iPort)))
             {
                 Log(("P%u: %s: Fire interrupt\n", iPort, __FUNCTION__));
-                PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 1);
+                PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 1);
             }
         }
     }
 
-    PDMDevHlpCritSectLeave(pAhci->CTX_SUFF(pDevIns), &pAhci->lock);
+    PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->lock);
     return VINF_SUCCESS;
 }
 
@@ -933,9 +933,9 @@ static int ahciHbaSetInterrupt(PAHCI pAhci, uint8_t iPort, int rcBusy)
 static DECLCALLBACK(void) ahciCccTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void *pvUser)
 {
     RT_NOREF(pDevIns, pTimer);
-    PAHCI pAhci = (PAHCI)pvUser;
+    PAHCI pThis = (PAHCI)pvUser;
 
-    int rc = ahciHbaSetInterrupt(pAhci, pAhci->uCccPortNr, VERR_IGNORED);
+    int rc = ahciHbaSetInterrupt(pThis, pThis->uCccPortNr, VERR_IGNORED);
     AssertRC(rc);
 }
 
@@ -1004,17 +1004,17 @@ static void ahciPortResetFinish(PAHCIPort pAhciPort)
  * Kicks the I/O thread from RC or R0.
  *
  * @returns nothing.
- * @param   pAhci     The AHCI controller instance.
+ * @param   pThis     The AHCI controller instance.
  * @param   pAhciPort The port to kick.
  */
-static void ahciIoThreadKick(PAHCI pAhci, PAHCIPort pAhciPort)
+static void ahciIoThreadKick(PAHCI pThis, PAHCIPort pAhciPort)
 {
     LogFlowFunc(("Signal event semaphore\n"));
-    int rc = PDMDevHlpSUPSemEventSignal(pAhci->CTX_SUFF(pDevIns), pAhciPort->hEvtProcess);
+    int rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pAhciPort->hEvtProcess);
     AssertRC(rc);
 }
 
-static int PortCmdIssue_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortCmdIssue_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF1(iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
@@ -1036,7 +1036,7 @@ static int PortCmdIssue_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
 
         /* Send a notification to R3 if u32TasksNew was 0 before our write. */
         if (ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping))
-            ahciIoThreadKick(pAhci, pAhciPort);
+            ahciIoThreadKick(pThis, pAhciPort);
         else
             ahciLog(("%s: Worker thread busy, no need to kick.\n", __FUNCTION__));
     }
@@ -1048,9 +1048,9 @@ static int PortCmdIssue_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
     return VINF_SUCCESS;
 }
 
-static int PortCmdIssue_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortCmdIssue_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
 
     uint32_t uCIValue = ASMAtomicXchgU32(&pAhciPort->u32TasksFinished, 0);
     ahciLog(("%s: read regCI=%#010x uCIValue=%#010x\n", __FUNCTION__, pAhciPort->regCI, uCIValue));
@@ -1061,9 +1061,9 @@ static int PortCmdIssue_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
     return VINF_SUCCESS;
 }
 
-static int PortSActive_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortSActive_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regSACT |= u32Value;
@@ -1071,9 +1071,9 @@ static int PortSActive_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32
     return VINF_SUCCESS;
 }
 
-static int PortSActive_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortSActive_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
 
     uint32_t u32TasksFinished = ASMAtomicXchgU32(&pAhciPort->u32QueuedTasksFinished, 0);
     pAhciPort->regSACT &= ~u32TasksFinished;
@@ -1086,9 +1086,9 @@ static int PortSActive_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32
     return VINF_SUCCESS;
 }
 
-static int PortSError_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortSError_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     if (   (u32Value & AHCI_PORT_SERR_X)
@@ -1108,17 +1108,17 @@ static int PortSError_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_
     return VINF_SUCCESS;
 }
 
-static int PortSError_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortSError_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regSERR=%#010x\n", __FUNCTION__, pAhciPort->regSERR));
     *pu32Value = pAhciPort->regSERR;
     return VINF_SUCCESS;
 }
 
-static int PortSControl_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortSControl_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
     ahciLog(("%s: IPM=%d SPD=%d DET=%d\n", __FUNCTION__,
              AHCI_PORT_SCTL_IPM_GET(u32Value), AHCI_PORT_SCTL_SPD_GET(u32Value), AHCI_PORT_SCTL_DET_GET(u32Value)));
@@ -1130,7 +1130,7 @@ static int PortSControl_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
     if ((u32Value & AHCI_PORT_SCTL_DET) == AHCI_PORT_SCTL_DET_INIT)
     {
         if (!ASMAtomicXchgBool(&pAhciPort->fPortReset, true))
-            LogRel(("AHCI#%u: Port %d reset\n", pAhci->CTX_SUFF(pDevIns)->iInstance,
+            LogRel(("AHCI#%u: Port %d reset\n", pThis->CTX_SUFF(pDevIns)->iInstance,
                     pAhciPort->iLUN));
 
         pAhciPort->regSSTS = 0;
@@ -1144,21 +1144,21 @@ static int PortSControl_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
              && pAhciPort->pDrvBase)
     {
         /* Do the port reset here, so the guest sees the new status immediately. */
-        if (pAhci->fLegacyPortResetMethod)
+        if (pThis->fLegacyPortResetMethod)
         {
             ahciPortResetFinish(pAhciPort);
             pAhciPort->regSCTL = u32Value; /* Update after finishing the reset, so the I/O thread doesn't get a chance to do the reset. */
         }
         else
         {
-            if (!pAhci->fTigerHack)
+            if (!pThis->fTigerHack)
                 pAhciPort->regSSTS = 0x1;   /* Indicate device presence detected but communication not established. */
             else
                 pAhciPort->regSSTS = 0x0;   /* Indicate no device detected after COMRESET. [tiger hack] */
             pAhciPort->regSCTL = u32Value;  /* Update before kicking the I/O thread. */
 
             /* Kick the thread to finish the reset. */
-            ahciIoThreadKick(pAhci, pAhciPort);
+            ahciIoThreadKick(pThis, pAhciPort);
         }
     }
     else /* Just update the value if there is no device attached. */
@@ -1168,9 +1168,9 @@ static int PortSControl_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
 #endif
 }
 
-static int PortSControl_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortSControl_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regSCTL=%#010x\n", __FUNCTION__, pAhciPort->regSCTL));
     ahciLog(("%s: IPM=%d SPD=%d DET=%d\n", __FUNCTION__,
              AHCI_PORT_SCTL_IPM_GET(pAhciPort->regSCTL), AHCI_PORT_SCTL_SPD_GET(pAhciPort->regSCTL),
@@ -1180,9 +1180,9 @@ static int PortSControl_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint3
     return VINF_SUCCESS;
 }
 
-static int PortSStatus_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortSStatus_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regSSTS=%#010x\n", __FUNCTION__, pAhciPort->regSSTS));
     ahciLog(("%s: IPM=%d SPD=%d DET=%d\n", __FUNCTION__,
              AHCI_PORT_SSTS_IPM_GET(pAhciPort->regSSTS), AHCI_PORT_SSTS_SPD_GET(pAhciPort->regSSTS),
@@ -1192,17 +1192,17 @@ static int PortSStatus_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32
     return VINF_SUCCESS;
 }
 
-static int PortSignature_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortSignature_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regSIG=%#010x\n", __FUNCTION__, pAhciPort->regSIG));
     *pu32Value = pAhciPort->regSIG;
     return VINF_SUCCESS;
 }
 
-static int PortTaskFileData_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortTaskFileData_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regTFD=%#010x\n", __FUNCTION__, pAhciPort->regTFD));
     ahciLog(("%s: ERR=%x BSY=%d DRQ=%d ERR=%d\n", __FUNCTION__,
              (pAhciPort->regTFD >> 8), (pAhciPort->regTFD & AHCI_PORT_TFD_BSY) >> 7,
@@ -1214,9 +1214,9 @@ static int PortTaskFileData_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, u
 /**
  * Read from the port command register.
  */
-static int PortCmd_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortCmd_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regCMD=%#010x\n", __FUNCTION__, pAhciPort->regCMD | AHCI_PORT_CMD_CCS_SHIFT(pAhciPort->u32CurrentCommandSlot)));
     ahciLog(("%s: ICC=%d ASP=%d ALPE=%d DLAE=%d ATAPI=%d CPD=%d ISP=%d HPCP=%d PMA=%d CPS=%d CR=%d FR=%d ISS=%d CCS=%d FRE=%d CLO=%d POD=%d SUD=%d ST=%d\n",
              __FUNCTION__, (pAhciPort->regCMD & AHCI_PORT_CMD_ICC) >> 28, (pAhciPort->regCMD & AHCI_PORT_CMD_ASP) >> 27,
@@ -1237,7 +1237,7 @@ static int PortCmd_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *
  * Write to the port command register.
  * This is the register where all the data transfer is started
  */
-static int PortCmd_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortCmd_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF1(iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
@@ -1284,7 +1284,7 @@ static int PortCmd_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u
                 {
                     ASMAtomicOrU32(&pAhciPort->u32TasksNew, pAhciPort->regCI);
                     LogFlowFunc(("Signal event semaphore\n"));
-                    int rc = PDMDevHlpSUPSemEventSignal(pAhci->CTX_SUFF(pDevIns), pAhciPort->hEvtProcess);
+                    int rc = PDMDevHlpSUPSemEventSignal(pThis->CTX_SUFF(pDevIns), pAhciPort->hEvtProcess);
                     AssertRC(rc);
                 }
             }
@@ -1385,9 +1385,9 @@ static int PortCmd_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u
 /**
  * Read from the port interrupt enable register.
  */
-static int PortIntrEnable_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortIntrEnable_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regIE=%#010x\n", __FUNCTION__, pAhciPort->regIE));
     ahciLog(("%s: CPDE=%d TFEE=%d HBFE=%d HBDE=%d IFE=%d INFE=%d OFE=%d IPME=%d PRCE=%d DIE=%d PCE=%d DPE=%d UFE=%d SDBE=%d DSE=%d PSE=%d DHRE=%d\n",
              __FUNCTION__, (pAhciPort->regIE & AHCI_PORT_IE_CPDE) >> 31, (pAhciPort->regIE & AHCI_PORT_IE_TFEE) >> 30,
@@ -1406,7 +1406,7 @@ static int PortIntrEnable_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uin
 /**
  * Write to the port interrupt enable register.
  */
-static int PortIntrEnable_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortIntrEnable_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF1(iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
@@ -1428,7 +1428,7 @@ static int PortIntrEnable_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uin
 
     int rc = VINF_SUCCESS;
     if (u32Value & u32IntrStatus)
-        rc = ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VINF_IOM_R3_MMIO_WRITE);
+        rc = ahciHbaSetInterrupt(pThis, pAhciPort->iLUN, VINF_IOM_R3_MMIO_WRITE);
 
     if (rc == VINF_SUCCESS)
         pAhciPort->regIE = u32Value;
@@ -1439,9 +1439,9 @@ static int PortIntrEnable_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uin
 /**
  * Read from the port interrupt status register.
  */
-static int PortIntrSts_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortIntrSts_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regIS=%#010x\n", __FUNCTION__, pAhciPort->regIS));
     ahciLog(("%s: CPDS=%d TFES=%d HBFS=%d HBDS=%d IFS=%d INFS=%d OFS=%d IPMS=%d PRCS=%d DIS=%d PCS=%d DPS=%d UFS=%d SDBS=%d DSS=%d PSS=%d DHRS=%d\n",
              __FUNCTION__, (pAhciPort->regIS & AHCI_PORT_IS_CPDS) >> 31, (pAhciPort->regIS & AHCI_PORT_IS_TFES) >> 30,
@@ -1460,9 +1460,9 @@ static int PortIntrSts_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32
 /**
  * Write to the port interrupt status register.
  */
-static int PortIntrSts_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortIntrSts_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
     ASMAtomicAndU32(&pAhciPort->regIS, ~(u32Value & AHCI_PORT_IS_READONLY));
 
@@ -1472,9 +1472,9 @@ static int PortIntrSts_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32
 /**
  * Read from the port FIS base address upper 32bit register.
  */
-static int PortFisAddrUp_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortFisAddrUp_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regFBU=%#010x\n", __FUNCTION__, pAhciPort->regFBU));
     *pu32Value = pAhciPort->regFBU;
     return VINF_SUCCESS;
@@ -1483,9 +1483,9 @@ static int PortFisAddrUp_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint
 /**
  * Write to the port FIS base address upper 32bit register.
  */
-static int PortFisAddrUp_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortFisAddrUp_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regFBU = u32Value;
@@ -1497,9 +1497,9 @@ static int PortFisAddrUp_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint
 /**
  * Read from the port FIS base address register.
  */
-static int PortFisAddr_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortFisAddr_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regFB=%#010x\n", __FUNCTION__, pAhciPort->regFB));
     *pu32Value = pAhciPort->regFB;
     return VINF_SUCCESS;
@@ -1508,9 +1508,9 @@ static int PortFisAddr_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32
 /**
  * Write to the port FIS base address register.
  */
-static int PortFisAddr_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortFisAddr_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     Assert(!(u32Value & ~AHCI_PORT_FB_RESERVED));
@@ -1524,9 +1524,9 @@ static int PortFisAddr_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32
 /**
  * Write to the port command list base address upper 32bit register.
  */
-static int PortCmdLstAddrUp_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortCmdLstAddrUp_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     pAhciPort->regCLBU = u32Value;
@@ -1538,9 +1538,9 @@ static int PortCmdLstAddrUp_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, u
 /**
  * Read from the port command list base address upper 32bit register.
  */
-static int PortCmdLstAddrUp_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortCmdLstAddrUp_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regCLBU=%#010x\n", __FUNCTION__, pAhciPort->regCLBU));
     *pu32Value = pAhciPort->regCLBU;
     return VINF_SUCCESS;
@@ -1549,9 +1549,9 @@ static int PortCmdLstAddrUp_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, u
 /**
  * Read from the port command list base address register.
  */
-static int PortCmdLstAddr_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortCmdLstAddr_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: read regCLB=%#010x\n", __FUNCTION__, pAhciPort->regCLB));
     *pu32Value = pAhciPort->regCLB;
     return VINF_SUCCESS;
@@ -1560,9 +1560,9 @@ static int PortCmdLstAddr_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uin
 /**
  * Write to the port command list base address register.
  */
-static int PortCmdLstAddr_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortCmdLstAddr_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF2(pAhci, iReg);
+    RT_NOREF2(pThis, iReg);
     ahciLog(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
     Assert(!(u32Value & ~AHCI_PORT_CLB_RESERVED));
@@ -1576,46 +1576,46 @@ static int PortCmdLstAddr_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uin
 /**
  * Read from the global Version register.
  */
-static int HbaVersion_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
+static int HbaVersion_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF1(iReg);
-    Log(("%s: read regHbaVs=%#010x\n", __FUNCTION__, pAhci->regHbaVs));
-    *pu32Value = pAhci->regHbaVs;
+    Log(("%s: read regHbaVs=%#010x\n", __FUNCTION__, pThis->regHbaVs));
+    *pu32Value = pThis->regHbaVs;
     return VINF_SUCCESS;
 }
 
 /**
  * Read from the global Ports implemented register.
  */
-static int HbaPortsImplemented_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
+static int HbaPortsImplemented_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF1(iReg);
-    Log(("%s: read regHbaPi=%#010x\n", __FUNCTION__, pAhci->regHbaPi));
-    *pu32Value = pAhci->regHbaPi;
+    Log(("%s: read regHbaPi=%#010x\n", __FUNCTION__, pThis->regHbaPi));
+    *pu32Value = pThis->regHbaPi;
     return VINF_SUCCESS;
 }
 
 /**
  * Write to the global interrupt status register.
  */
-static int HbaInterruptStatus_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
+static int HbaInterruptStatus_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF1(iReg);
     Log(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
-    int rc = PDMDevHlpCritSectEnter(pAhci->CTX_SUFF(pDevIns), &pAhci->lock, VINF_IOM_R3_MMIO_WRITE);
+    int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->lock, VINF_IOM_R3_MMIO_WRITE);
     if (rc != VINF_SUCCESS)
         return rc;
 
-    pAhci->regHbaIs &= ~(u32Value);
+    pThis->regHbaIs &= ~(u32Value);
 
     /*
      * Update interrupt status register and check for ports who
      * set the interrupt inbetween.
      */
     bool fClear = true;
-    pAhci->regHbaIs |= ASMAtomicXchgU32(&pAhci->u32PortsInterrupted, 0);
-    if (!pAhci->regHbaIs)
+    pThis->regHbaIs |= ASMAtomicXchgU32(&pThis->u32PortsInterrupted, 0);
+    if (!pThis->regHbaIs)
     {
         unsigned i = 0;
 
@@ -1624,12 +1624,12 @@ static int HbaInterruptStatus_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
         {
             if (u32Value & 0x01)
             {
-                PAHCIPort pAhciPort = &pAhci->ahciPort[i];
+                PAHCIPort pAhciPort = &pThis->ahciPort[i];
 
                 if (pAhciPort->regIE & pAhciPort->regIS)
                 {
                     Log(("%s: Interrupt status of port %u set -> Set interrupt again\n", __FUNCTION__, i));
-                    ASMAtomicOrU32(&pAhci->u32PortsInterrupted, 1 << i);
+                    ASMAtomicOrU32(&pThis->u32PortsInterrupted, 1 << i);
                     fClear = false;
                     break;
                 }
@@ -1642,53 +1642,53 @@ static int HbaInterruptStatus_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
         fClear = false;
 
     if (fClear)
-        ahciHbaClearInterrupt(pAhci);
+        ahciHbaClearInterrupt(pThis);
     else
     {
-        Log(("%s: Not clearing interrupt: u32PortsInterrupted=%#010x\n", __FUNCTION__, pAhci->u32PortsInterrupted));
+        Log(("%s: Not clearing interrupt: u32PortsInterrupted=%#010x\n", __FUNCTION__, pThis->u32PortsInterrupted));
         /*
          * We need to set the interrupt again because the I/O APIC does not set it again even if the
          * line is still high.
          * We need to clear it first because the PCI bus only calls the interrupt controller if the state changes.
          */
-        PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 0);
-        PDMDevHlpPCISetIrq(pAhci->CTX_SUFF(pDevIns), 0, 1);
+        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 0);
+        PDMDevHlpPCISetIrq(pThis->CTX_SUFF(pDevIns), 0, 1);
     }
 
-    PDMDevHlpCritSectLeave(pAhci->CTX_SUFF(pDevIns), &pAhci->lock);
+    PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->lock);
     return VINF_SUCCESS;
 }
 
 /**
  * Read from the global interrupt status register.
  */
-static int HbaInterruptStatus_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
+static int HbaInterruptStatus_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF1(iReg);
 
-    int rc = PDMDevHlpCritSectEnter(pAhci->CTX_SUFF(pDevIns), &pAhci->lock, VINF_IOM_R3_MMIO_READ);
+    int rc = PDMDevHlpCritSectEnter(pThis->CTX_SUFF(pDevIns), &pThis->lock, VINF_IOM_R3_MMIO_READ);
     if (rc != VINF_SUCCESS)
         return rc;
 
-    uint32_t u32PortsInterrupted = ASMAtomicXchgU32(&pAhci->u32PortsInterrupted, 0);
+    uint32_t u32PortsInterrupted = ASMAtomicXchgU32(&pThis->u32PortsInterrupted, 0);
 
-    PDMDevHlpCritSectLeave(pAhci->CTX_SUFF(pDevIns), &pAhci->lock);
-    Log(("%s: read regHbaIs=%#010x u32PortsInterrupted=%#010x\n", __FUNCTION__, pAhci->regHbaIs, u32PortsInterrupted));
+    PDMDevHlpCritSectLeave(pThis->CTX_SUFF(pDevIns), &pThis->lock);
+    Log(("%s: read regHbaIs=%#010x u32PortsInterrupted=%#010x\n", __FUNCTION__, pThis->regHbaIs, u32PortsInterrupted));
 
-    pAhci->regHbaIs |= u32PortsInterrupted;
+    pThis->regHbaIs |= u32PortsInterrupted;
 
 #ifdef LOG_ENABLED
     Log(("%s:", __FUNCTION__));
     unsigned i;
-    for (i = 0; i < pAhci->cPortsImpl; i++)
+    for (i = 0; i < pThis->cPortsImpl; i++)
     {
-        if ((pAhci->regHbaIs >> i) & 0x01)
+        if ((pThis->regHbaIs >> i) & 0x01)
             Log((" P%d", i));
     }
     Log(("\n"));
 #endif
 
-    *pu32Value = pAhci->regHbaIs;
+    *pu32Value = pThis->regHbaIs;
 
     return VINF_SUCCESS;
 }
@@ -1696,7 +1696,7 @@ static int HbaInterruptStatus_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
 /**
  * Write to the global control register.
  */
-static int HbaControl_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
+static int HbaControl_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF1(iReg);
     Log(("%s: write u32Value=%#010x\n"
@@ -1706,24 +1706,24 @@ static int HbaControl_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
          (u32Value & AHCI_HBA_CTRL_HR)));
 
 #ifndef IN_RING3
-    RT_NOREF2(pAhci, u32Value);
+    RT_NOREF2(pThis, u32Value);
     return VINF_IOM_R3_MMIO_WRITE;
 #else
     /*
      * Increase the active thread counter because we might set the host controller
      * reset bit.
      */
-    ASMAtomicIncU32(&pAhci->cThreadsActive);
-    ASMAtomicWriteU32(&pAhci->regHbaCtrl, (u32Value & AHCI_HBA_CTRL_RW_MASK) | AHCI_HBA_CTRL_AE);
+    ASMAtomicIncU32(&pThis->cThreadsActive);
+    ASMAtomicWriteU32(&pThis->regHbaCtrl, (u32Value & AHCI_HBA_CTRL_RW_MASK) | AHCI_HBA_CTRL_AE);
 
     /*
      * Do the HBA reset if requested and there is no other active thread at the moment,
      * the work is deferred to the last active thread otherwise.
      */
-    uint32_t cThreadsActive = ASMAtomicDecU32(&pAhci->cThreadsActive);
+    uint32_t cThreadsActive = ASMAtomicDecU32(&pThis->cThreadsActive);
     if (   (u32Value & AHCI_HBA_CTRL_HR)
         && !cThreadsActive)
-        ahciHBAReset(pAhci);
+        ahciHBAReset(pThis);
 
     return VINF_SUCCESS;
 #endif
@@ -1732,43 +1732,43 @@ static int HbaControl_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
 /**
  * Read the global control register.
  */
-static int HbaControl_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
+static int HbaControl_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF1(iReg);
     Log(("%s: read regHbaCtrl=%#010x\n"
          "%s: AE=%d IE=%d HR=%d\n",
-         __FUNCTION__, pAhci->regHbaCtrl,
-         __FUNCTION__, (pAhci->regHbaCtrl & AHCI_HBA_CTRL_AE) >> 31, (pAhci->regHbaCtrl & AHCI_HBA_CTRL_IE) >> 1,
-         (pAhci->regHbaCtrl & AHCI_HBA_CTRL_HR)));
-    *pu32Value = pAhci->regHbaCtrl;
+         __FUNCTION__, pThis->regHbaCtrl,
+         __FUNCTION__, (pThis->regHbaCtrl & AHCI_HBA_CTRL_AE) >> 31, (pThis->regHbaCtrl & AHCI_HBA_CTRL_IE) >> 1,
+         (pThis->regHbaCtrl & AHCI_HBA_CTRL_HR)));
+    *pu32Value = pThis->regHbaCtrl;
     return VINF_SUCCESS;
 }
 
 /**
  * Read the global capabilities register.
  */
-static int HbaCapabilities_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
+static int HbaCapabilities_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF1(iReg);
     Log(("%s: read regHbaCap=%#010x\n"
          "%s: S64A=%d SNCQ=%d SIS=%d SSS=%d SALP=%d SAL=%d SCLO=%d ISS=%d SNZO=%d SAM=%d SPM=%d PMD=%d SSC=%d PSC=%d NCS=%d NP=%d\n",
-          __FUNCTION__, pAhci->regHbaCap,
-          __FUNCTION__, (pAhci->regHbaCap & AHCI_HBA_CAP_S64A) >> 31, (pAhci->regHbaCap & AHCI_HBA_CAP_SNCQ) >> 30,
-          (pAhci->regHbaCap & AHCI_HBA_CAP_SIS) >> 28, (pAhci->regHbaCap & AHCI_HBA_CAP_SSS) >> 27,
-          (pAhci->regHbaCap & AHCI_HBA_CAP_SALP) >> 26, (pAhci->regHbaCap & AHCI_HBA_CAP_SAL) >> 25,
-          (pAhci->regHbaCap & AHCI_HBA_CAP_SCLO) >> 24, (pAhci->regHbaCap & AHCI_HBA_CAP_ISS) >> 20,
-          (pAhci->regHbaCap & AHCI_HBA_CAP_SNZO) >> 19, (pAhci->regHbaCap & AHCI_HBA_CAP_SAM) >> 18,
-          (pAhci->regHbaCap & AHCI_HBA_CAP_SPM) >> 17, (pAhci->regHbaCap & AHCI_HBA_CAP_PMD) >> 15,
-          (pAhci->regHbaCap & AHCI_HBA_CAP_SSC) >> 14, (pAhci->regHbaCap & AHCI_HBA_CAP_PSC) >> 13,
-          (pAhci->regHbaCap & AHCI_HBA_CAP_NCS) >> 8, (pAhci->regHbaCap & AHCI_HBA_CAP_NP)));
-    *pu32Value = pAhci->regHbaCap;
+          __FUNCTION__, pThis->regHbaCap,
+          __FUNCTION__, (pThis->regHbaCap & AHCI_HBA_CAP_S64A) >> 31, (pThis->regHbaCap & AHCI_HBA_CAP_SNCQ) >> 30,
+          (pThis->regHbaCap & AHCI_HBA_CAP_SIS) >> 28, (pThis->regHbaCap & AHCI_HBA_CAP_SSS) >> 27,
+          (pThis->regHbaCap & AHCI_HBA_CAP_SALP) >> 26, (pThis->regHbaCap & AHCI_HBA_CAP_SAL) >> 25,
+          (pThis->regHbaCap & AHCI_HBA_CAP_SCLO) >> 24, (pThis->regHbaCap & AHCI_HBA_CAP_ISS) >> 20,
+          (pThis->regHbaCap & AHCI_HBA_CAP_SNZO) >> 19, (pThis->regHbaCap & AHCI_HBA_CAP_SAM) >> 18,
+          (pThis->regHbaCap & AHCI_HBA_CAP_SPM) >> 17, (pThis->regHbaCap & AHCI_HBA_CAP_PMD) >> 15,
+          (pThis->regHbaCap & AHCI_HBA_CAP_SSC) >> 14, (pThis->regHbaCap & AHCI_HBA_CAP_PSC) >> 13,
+          (pThis->regHbaCap & AHCI_HBA_CAP_NCS) >> 8, (pThis->regHbaCap & AHCI_HBA_CAP_NP)));
+    *pu32Value = pThis->regHbaCap;
     return VINF_SUCCESS;
 }
 
 /**
  * Write to the global command completion coalescing control register.
  */
-static int HbaCccCtl_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
+static int HbaCccCtl_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF1(iReg);
     Log(("%s: write u32Value=%#010x\n"
@@ -1777,15 +1777,15 @@ static int HbaCccCtl_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
          __FUNCTION__, AHCI_HBA_CCC_CTL_TV_GET(u32Value), AHCI_HBA_CCC_CTL_CC_GET(u32Value),
          AHCI_HBA_CCC_CTL_INT_GET(u32Value), (u32Value & AHCI_HBA_CCC_CTL_EN)));
 
-    pAhci->regHbaCccCtl = u32Value;
-    pAhci->uCccTimeout  = AHCI_HBA_CCC_CTL_TV_GET(u32Value);
-    pAhci->uCccPortNr   = AHCI_HBA_CCC_CTL_INT_GET(u32Value);
-    pAhci->uCccNr       = AHCI_HBA_CCC_CTL_CC_GET(u32Value);
+    pThis->regHbaCccCtl = u32Value;
+    pThis->uCccTimeout  = AHCI_HBA_CCC_CTL_TV_GET(u32Value);
+    pThis->uCccPortNr   = AHCI_HBA_CCC_CTL_INT_GET(u32Value);
+    pThis->uCccNr       = AHCI_HBA_CCC_CTL_CC_GET(u32Value);
 
     if (u32Value & AHCI_HBA_CCC_CTL_EN)
-        PDMDevHlpTimerSetMillies(pAhci->CTX_SUFF(pDevIns), pAhci->hHbaCccTimer, pAhci->uCccTimeout); /* Arm the timer */
+        PDMDevHlpTimerSetMillies(pThis->CTX_SUFF(pDevIns), pThis->hHbaCccTimer, pThis->uCccTimeout); /* Arm the timer */
     else
-        PDMDevHlpTimerStop(pAhci->CTX_SUFF(pDevIns), pAhci->hHbaCccTimer);
+        PDMDevHlpTimerStop(pThis->CTX_SUFF(pDevIns), pThis->hHbaCccTimer);
 
     return VINF_SUCCESS;
 }
@@ -1793,27 +1793,27 @@ static int HbaCccCtl_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
 /**
  * Read the global command completion coalescing control register.
  */
-static int HbaCccCtl_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
+static int HbaCccCtl_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF1(iReg);
     Log(("%s: read regHbaCccCtl=%#010x\n"
          "%s: TV=%d CC=%d INT=%d EN=%d\n",
-         __FUNCTION__, pAhci->regHbaCccCtl,
-         __FUNCTION__, AHCI_HBA_CCC_CTL_TV_GET(pAhci->regHbaCccCtl), AHCI_HBA_CCC_CTL_CC_GET(pAhci->regHbaCccCtl),
-         AHCI_HBA_CCC_CTL_INT_GET(pAhci->regHbaCccCtl), (pAhci->regHbaCccCtl & AHCI_HBA_CCC_CTL_EN)));
-    *pu32Value = pAhci->regHbaCccCtl;
+         __FUNCTION__, pThis->regHbaCccCtl,
+         __FUNCTION__, AHCI_HBA_CCC_CTL_TV_GET(pThis->regHbaCccCtl), AHCI_HBA_CCC_CTL_CC_GET(pThis->regHbaCccCtl),
+         AHCI_HBA_CCC_CTL_INT_GET(pThis->regHbaCccCtl), (pThis->regHbaCccCtl & AHCI_HBA_CCC_CTL_EN)));
+    *pu32Value = pThis->regHbaCccCtl;
     return VINF_SUCCESS;
 }
 
 /**
  * Write to the global command completion coalescing ports register.
  */
-static int HbaCccPorts_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
+static int HbaCccPorts_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
     RT_NOREF1(iReg);
     Log(("%s: write u32Value=%#010x\n", __FUNCTION__, u32Value));
 
-    pAhci->regHbaCccPorts = u32Value;
+    pThis->regHbaCccPorts = u32Value;
 
     return VINF_SUCCESS;
 }
@@ -1821,32 +1821,32 @@ static int HbaCccPorts_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
 /**
  * Read the global command completion coalescing ports register.
  */
-static int HbaCccPorts_r(PAHCI pAhci, uint32_t iReg, uint32_t *pu32Value)
+static int HbaCccPorts_r(PAHCI pThis, uint32_t iReg, uint32_t *pu32Value)
 {
     RT_NOREF1(iReg);
-    Log(("%s: read regHbaCccPorts=%#010x\n", __FUNCTION__, pAhci->regHbaCccPorts));
+    Log(("%s: read regHbaCccPorts=%#010x\n", __FUNCTION__, pThis->regHbaCccPorts));
 
 #ifdef LOG_ENABLED
     Log(("%s:", __FUNCTION__));
     unsigned i;
-    for (i = 0; i < pAhci->cPortsImpl; i++)
+    for (i = 0; i < pThis->cPortsImpl; i++)
     {
-        if ((pAhci->regHbaCccPorts >> i) & 0x01)
+        if ((pThis->regHbaCccPorts >> i) & 0x01)
             Log((" P%d", i));
     }
     Log(("\n"));
 #endif
 
-    *pu32Value = pAhci->regHbaCccPorts;
+    *pu32Value = pThis->regHbaCccPorts;
     return VINF_SUCCESS;
 }
 
 /**
  * Invalid write to global register
  */
-static int HbaInvalid_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
+static int HbaInvalid_w(PAHCI pThis, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF3(pAhci, iReg, u32Value);
+    RT_NOREF3(pThis, iReg, u32Value);
     Log(("%s: Write denied!!! iReg=%u u32Value=%#010x\n", __FUNCTION__, iReg, u32Value));
     return VINF_SUCCESS;
 }
@@ -1854,9 +1854,9 @@ static int HbaInvalid_w(PAHCI pAhci, uint32_t iReg, uint32_t u32Value)
 /**
  * Invalid Port write.
  */
-static int PortInvalid_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
+static int PortInvalid_w(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
 {
-    RT_NOREF4(pAhci, pAhciPort, iReg, u32Value);
+    RT_NOREF4(pThis, pAhciPort, iReg, u32Value);
     ahciLog(("%s: Write denied!!! iReg=%u u32Value=%#010x\n", __FUNCTION__, iReg, u32Value));
     return VINF_SUCCESS;
 }
@@ -1864,9 +1864,9 @@ static int PortInvalid_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32
 /**
  * Invalid Port read.
  */
-static int PortInvalid_r(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
+static int PortInvalid_r(PAHCI pThis, PAHCIPort pAhciPort, uint32_t iReg, uint32_t *pu32Value)
 {
-    RT_NOREF4(pAhci, pAhciPort, iReg, pu32Value);
+    RT_NOREF4(pThis, pAhciPort, iReg, pu32Value);
     ahciLog(("%s: Read denied!!! iReg=%u\n", __FUNCTION__, iReg));
     return VINF_SUCCESS;
 }
@@ -2073,12 +2073,12 @@ static void ahciHBAReset(PAHCI pThis)
  *
  * @returns VBox status code.
  *
- * @param   pAhci       The AHCI instance.
+ * @param   pThis       The AHCI instance.
  * @param   uReg        The register to write.
  * @param   pv          Where to store the result.
  * @param   cb          Number of bytes read.
  */
-static int ahciRegisterRead(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
+static int ahciRegisterRead(PAHCI pThis, uint32_t uReg, void *pv, unsigned cb)
 {
     int rc = VINF_SUCCESS;
     uint32_t iReg;
@@ -2094,7 +2094,7 @@ static int ahciRegisterRead(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
         if (iReg < RT_ELEMENTS(g_aOpRegs))
         {
             const AHCIOPREG *pReg = &g_aOpRegs[iReg];
-            rc = pReg->pfnRead(pAhci, iReg, (uint32_t *)pv);
+            rc = pReg->pfnRead(pThis, iReg, (uint32_t *)pv);
         }
         else
         {
@@ -2115,11 +2115,11 @@ static int ahciRegisterRead(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
 
         Log3(("%s: Trying to read from port %u and register %u\n", __FUNCTION__, iPort, iReg));
 
-        if (RT_LIKELY(   iPort < pAhci->cPortsImpl
+        if (RT_LIKELY(   iPort < pThis->cPortsImpl
                       && iReg < RT_ELEMENTS(g_aPortOpRegs)))
         {
             const AHCIPORTOPREG *pPortReg = &g_aPortOpRegs[iReg];
-            rc = pPortReg->pfnRead(pAhci, &pAhci->ahciPort[iPort], iReg, (uint32_t *)pv);
+            rc = pPortReg->pfnRead(pThis, &pThis->ahciPort[iPort], iReg, (uint32_t *)pv);
         }
         else
         {
@@ -2163,11 +2163,11 @@ static int ahciRegisterRead(PAHCI pAhci, uint32_t uReg, void *pv, unsigned cb)
  *
  * @returns VBox status code.
  *
- * @param   pAhci       The AHCI instance.
+ * @param   pThis       The AHCI instance.
  * @param   offReg      The offset of the register to write to.
  * @param   u32Value    The value to write.
  */
-static int ahciRegisterWrite(PAHCI pAhci, uint32_t offReg, uint32_t u32Value)
+static int ahciRegisterWrite(PAHCI pThis, uint32_t offReg, uint32_t u32Value)
 {
     int rc;
     uint32_t iReg;
@@ -2183,7 +2183,7 @@ static int ahciRegisterWrite(PAHCI pAhci, uint32_t offReg, uint32_t u32Value)
         if (iReg < RT_ELEMENTS(g_aOpRegs))
         {
             const AHCIOPREG *pReg = &g_aOpRegs[iReg];
-            rc = pReg->pfnWrite(pAhci, iReg, u32Value);
+            rc = pReg->pfnWrite(pThis, iReg, u32Value);
         }
         else
         {
@@ -2200,11 +2200,11 @@ static int ahciRegisterWrite(PAHCI pAhci, uint32_t offReg, uint32_t u32Value)
         iPort   =  offReg / AHCI_PORT_REGISTER_SIZE;
         iReg    = (offReg % AHCI_PORT_REGISTER_SIZE) >> 2;
         Log3(("%s: Trying to write to port %u and register %u\n", __FUNCTION__, iPort, iReg));
-        if (RT_LIKELY(   iPort < pAhci->cPortsImpl
+        if (RT_LIKELY(   iPort < pThis->cPortsImpl
                       && iReg < RT_ELEMENTS(g_aPortOpRegs)))
         {
             const AHCIPORTOPREG *pPortReg = &g_aPortOpRegs[iReg];
-            rc = pPortReg->pfnWrite(pAhci, &pAhci->ahciPort[iPort], iReg, u32Value);
+            rc = pPortReg->pfnWrite(pThis, &pThis->ahciPort[iPort], iReg, u32Value);
         }
         else
         {
@@ -2229,11 +2229,11 @@ static int ahciRegisterWrite(PAHCI pAhci, uint32_t offReg, uint32_t u32Value)
  */
 PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void *pv, unsigned cb)
 {
-    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     Log2(("#%d ahciMMIORead: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n", pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr));
     RT_NOREF1(pvUser);
 
-    int rc = ahciRegisterRead(pAhci, GCPhysAddr - pAhci->MMIOBase, pv, cb);
+    int rc = ahciRegisterRead(pThis, GCPhysAddr - pThis->MMIOBase, pv, cb);
 
     Log2(("#%d ahciMMIORead: return pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp rc=%Rrc\n",
           pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr, rc));
@@ -2254,7 +2254,7 @@ PDMBOTHCBDECL(int) ahciMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
  */
 PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhysAddr, void const *pv, unsigned cb)
 {
-    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     Assert(cb == 4 || cb == 8);
     Assert(!(GCPhysAddr & (cb - 1)));
 
@@ -2271,13 +2271,13 @@ PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
          * which can cause errors in the guest.
          */
         int rc = VINF_SUCCESS;
-        if (!pAhci->f8ByteMMIO4BytesWrittenSuccessfully)
+        if (!pThis->f8ByteMMIO4BytesWrittenSuccessfully)
         {
             rc = ahciMMIOWrite(pDevIns, pvUser, GCPhysAddr, pv, 4);
             if (rc != VINF_SUCCESS)
                 return rc;
 
-            pAhci->f8ByteMMIO4BytesWrittenSuccessfully = true;
+            pThis->f8ByteMMIO4BytesWrittenSuccessfully = true;
         }
 
         rc = ahciMMIOWrite(pDevIns, pvUser, GCPhysAddr + 4, (uint8_t *)pv + 4, 4);
@@ -2286,14 +2286,14 @@ PDMBOTHCBDECL(int) ahciMMIOWrite(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPh
          * 8byte MMIO access.
          */
         if (rc == VINF_SUCCESS)
-            pAhci->f8ByteMMIO4BytesWrittenSuccessfully = false;
+            pThis->f8ByteMMIO4BytesWrittenSuccessfully = false;
 
         return rc;
     }
 
     /* Do the access. */
     Log2(("#%d ahciMMIOWrite: pvUser=%p:{%.*Rhxs} cb=%d GCPhysAddr=%RGp\n", pDevIns->iInstance, pv, cb, pv, cb, GCPhysAddr));
-    return ahciRegisterWrite(pAhci, GCPhysAddr - pAhci->MMIOBase, *(uint32_t const *)pv);
+    return ahciRegisterWrite(pThis, GCPhysAddr - pThis->MMIOBase, *(uint32_t const *)pv);
 }
 
 PDMBOTHCBDECL(int) ahciLegacyFakeWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
@@ -2323,26 +2323,26 @@ PDMBOTHCBDECL(int) ahciLegacyFakeRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT
  */
 PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t u32, unsigned cb)
 {
-    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     int   rc = VINF_SUCCESS;
     RT_NOREF2(pvUser, cb);
 
-    if (Port - pAhci->IOPortBase >= 8)
+    if (Port - pThis->IOPortBase >= 8)
     {
-        unsigned iReg = (Port - pAhci->IOPortBase - 8) / 4;
+        unsigned iReg = (Port - pThis->IOPortBase - 8) / 4;
 
         Assert(cb == 4);
 
         if (iReg == 0)
         {
             /* Write the index register. */
-            pAhci->regIdx = u32;
+            pThis->regIdx = u32;
         }
         else
         {
             /** @todo range check? */
             Assert(iReg == 1);
-            rc = ahciRegisterWrite(pAhci, pAhci->regIdx, u32);
+            rc = ahciRegisterWrite(pThis, pThis->regIdx, u32);
             if (rc == VINF_IOM_R3_MMIO_WRITE)
                 rc = VINF_IOM_R3_IOPORT_WRITE;
         }
@@ -2367,26 +2367,26 @@ PDMBOTHCBDECL(int) ahciIdxDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
  */
 PDMBOTHCBDECL(int) ahciIdxDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Port, uint32_t *pu32, unsigned cb)
 {
-    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
     int   rc = VINF_SUCCESS;
     RT_NOREF1(pvUser);
 
-    if (Port - pAhci->IOPortBase >= 8)
+    if (Port - pThis->IOPortBase >= 8)
     {
-        unsigned iReg = (Port - pAhci->IOPortBase - 8) / 4;
+        unsigned iReg = (Port - pThis->IOPortBase - 8) / 4;
 
         Assert(cb == 4);
 
         if (iReg == 0)
         {
             /* Read the index register. */
-            *pu32 = pAhci->regIdx;
+            *pu32 = pThis->regIdx;
         }
         else
         {
             Assert(iReg == 1);
             /** @todo range check? */
-            rc = ahciRegisterRead(pAhci, pAhci->regIdx, pu32, cb);
+            rc = ahciRegisterRead(pThis, pThis->regIdx, pu32, cb);
             if (rc == VINF_IOM_R3_MMIO_READ)
                 rc = VINF_IOM_R3_IOPORT_READ;
             else if (rc == VINF_IOM_MMIO_UNUSED_00)
@@ -2538,10 +2538,10 @@ static DECLCALLBACK(int) ahciR3IdxDataIORangeMap(PPDMDEVINS pDevIns, PPDMPCIDEV 
  */
 static DECLCALLBACK(int) ahciR3Status_QueryStatusLed(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed)
 {
-    PAHCI pAhci = PDMILEDPORTS_2_PAHCI(pInterface);
+    PAHCI pThis = PDMILEDPORTS_2_PAHCI(pInterface);
     if (iLUN < AHCI_MAX_NR_PORTS_IMPL)
     {
-        *ppLed = &pAhci->ahciPort[iLUN].Led;
+        *ppLed = &pThis->ahciPort[iLUN].Led;
         Assert((*ppLed)->u32Magic == PDMLED_MAGIC);
         return VINF_SUCCESS;
     }
@@ -3072,7 +3072,7 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, size_t cbTransfer, uint8_t 
 {
     uint8_t abPioSetupFis[20];
     bool fAssertIntr = false;
-    PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
+    PAHCI pThis = pAhciPort->CTX_SUFF(pAhci);
 
     ahciLog(("%s: building PIO setup Fis\n", __FUNCTION__));
 
@@ -3118,7 +3118,7 @@ static void ahciSendPioSetupFis(PAHCIPort pAhciPort, size_t cbTransfer, uint8_t 
 
         if (fAssertIntr)
         {
-            int rc = ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VERR_IGNORED);
+            int rc = ahciHbaSetInterrupt(pThis, pAhciPort->iLUN, VERR_IGNORED);
             AssertRC(rc);
         }
     }
@@ -3137,7 +3137,7 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, uint32_t uTag, uint8_t *pCmdFis,
 {
     uint8_t d2hFis[20];
     bool fAssertIntr = false;
-    PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
+    PAHCI pThis = pAhciPort->CTX_SUFF(pAhci);
 
     ahciLog(("%s: building D2H Fis\n", __FUNCTION__));
 
@@ -3187,7 +3187,7 @@ static void ahciSendD2HFis(PAHCIPort pAhciPort, uint32_t uTag, uint8_t *pCmdFis,
 
         if (fAssertIntr)
         {
-            int rc = ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VERR_IGNORED);
+            int rc = ahciHbaSetInterrupt(pThis, pAhciPort->iLUN, VERR_IGNORED);
             AssertRC(rc);
         }
     }
@@ -3205,7 +3205,7 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, bool fI
 {
     uint32_t sdbFis[2];
     bool fAssertIntr = false;
-    PAHCI pAhci = pAhciPort->CTX_SUFF(pAhci);
+    PAHCI pThis = pAhciPort->CTX_SUFF(pAhci);
     PAHCIREQ pTaskErr = ASMAtomicReadPtrT(&pAhciPort->pTaskErr, PAHCIREQ);
 
     ahciLog(("%s: Building SDB FIS\n", __FUNCTION__));
@@ -3254,7 +3254,7 @@ static void ahciSendSDBFis(PAHCIPort pAhciPort, uint32_t uFinishedTasks, bool fI
 
         if (fAssertIntr)
         {
-            int rc = ahciHbaSetInterrupt(pAhci, pAhciPort->iLUN, VERR_IGNORED);
+            int rc = ahciHbaSetInterrupt(pThis, pAhciPort->iLUN, VERR_IGNORED);
             AssertRC(rc);
         }
     }
@@ -4551,7 +4551,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
     RT_NOREF(pDevIns);
     PAHCIPort pAhciPort = (PAHCIPort)pThread->pvUser;
-    PAHCI     pAhci     = pAhciPort->CTX_SUFF(pAhci);
+    PAHCI     pThis     = pAhciPort->CTX_SUFF(pAhci);
     int       rc        = VINF_SUCCESS;
 
     ahciLog(("%s: Port %d entering async IO loop.\n", __FUNCTION__, pAhciPort->iLUN));
@@ -4579,12 +4579,12 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
         }
 
         ASMAtomicWriteBool(&pAhciPort->fWrkThreadSleeping, false);
-        ASMAtomicIncU32(&pAhci->cThreadsActive);
+        ASMAtomicIncU32(&pThis->cThreadsActive);
 
         /* Check whether the thread should be suspended. */
-        if (pAhci->fSignalIdle)
+        if (pThis->fSignalIdle)
         {
-            if (!ASMAtomicDecU32(&pAhci->cThreadsActive))
+            if (!ASMAtomicDecU32(&pThis->cThreadsActive))
                 PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
             continue;
         }
@@ -4593,12 +4593,12 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
          * Check whether the global host controller bit is set and go to sleep immediately again
          * if it is set.
          */
-        u32RegHbaCtrl = ASMAtomicReadU32(&pAhci->regHbaCtrl);
+        u32RegHbaCtrl = ASMAtomicReadU32(&pThis->regHbaCtrl);
         if (   u32RegHbaCtrl & AHCI_HBA_CTRL_HR
-            && !ASMAtomicDecU32(&pAhci->cThreadsActive))
+            && !ASMAtomicDecU32(&pThis->cThreadsActive))
         {
-            ahciHBAReset(pAhci);
-            if (pAhci->fSignalIdle)
+            ahciHBAReset(pThis);
+            if (pThis->fSignalIdle)
                 PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
             continue;
         }
@@ -4668,13 +4668,13 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
          * Check whether a host controller reset is pending and execute the reset
          * if this is the last active thread.
          */
-        u32RegHbaCtrl = ASMAtomicReadU32(&pAhci->regHbaCtrl);
-        uint32_t cThreadsActive = ASMAtomicDecU32(&pAhci->cThreadsActive);
+        u32RegHbaCtrl = ASMAtomicReadU32(&pThis->regHbaCtrl);
+        uint32_t cThreadsActive = ASMAtomicDecU32(&pThis->cThreadsActive);
         if (   (u32RegHbaCtrl & AHCI_HBA_CTRL_HR)
             && !cThreadsActive)
-            ahciHBAReset(pAhci);
+            ahciHBAReset(pThis);
 
-        if (!cThreadsActive && pAhci->fSignalIdle)
+        if (!cThreadsActive && pThis->fSignalIdle)
             PDMDevHlpAsyncNotificationCompleted(pAhciPort->pDevInsR3);
     } /* While running */
 
@@ -5217,14 +5217,14 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
 static DECLCALLBACK(void) ahciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 {
     uint32_t i;
-    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
-    pAhci->pDevInsRC += offDelta;
+    pThis->pDevInsRC += offDelta;
 
     /* Relocate every port. */
-    for (i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
+    for (i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
     {
-        PAHCIPort pAhciPort = &pAhci->ahciPort[i];
+        PAHCIPort pAhciPort = &pThis->ahciPort[i];
         pAhciPort->pAhciRC += offDelta;
         pAhciPort->pDevInsRC += offDelta;
     }
@@ -5528,13 +5528,13 @@ static int ahciR3VpdInit(PPDMDEVINS pDevIns, PAHCIPort pAhciPort, const char *ps
  */
 static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
 {
-    PAHCI           pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPort       pAhciPort = &pAhci->ahciPort[iLUN];
+    PAHCI           pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCIPort       pAhciPort = &pThis->ahciPort[iLUN];
     int             rc = VINF_SUCCESS;
 
     Log(("%s:\n", __FUNCTION__));
 
-    AssertMsg(iLUN < pAhci->cPortsImpl, ("iLUN=%u", iLUN));
+    AssertMsg(iLUN < pThis->cPortsImpl, ("iLUN=%u", iLUN));
     AssertMsgReturnVoid(   pAhciPort->fHotpluggable
                         || (fFlags & PDM_TACH_FLAGS_NOT_HOT_PLUG),
                         ("AHCI: Port %d is not marked hotpluggable\n", pAhciPort->iLUN));
@@ -5684,13 +5684,13 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
  */
 static int ahciR3ResetCommon(PPDMDEVINS pDevIns)
 {
-    PAHCI pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
-    ahciHBAReset(pAhci);
+    ahciHBAReset(pThis);
 
     /* Hardware reset for the ports. */
-    for (uint32_t i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
-        ahciPortHwReset(&pAhci->ahciPort[i]);
+    for (uint32_t i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
+        ahciPortHwReset(&pThis->ahciPort[i]);
     return VINF_SUCCESS;
 }
 
