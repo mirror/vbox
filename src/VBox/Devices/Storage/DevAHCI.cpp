@@ -137,7 +137,6 @@
 /**
  * Command Header.
  */
-#pragma pack(1)
 typedef struct
 {
     /** Description Information. */
@@ -151,7 +150,6 @@ typedef struct
     /** Reserved */
     uint32_t           u32Reserved[4];
 } CmdHdr;
-#pragma pack()
 AssertCompileSize(CmdHdr, 32);
 
 /* Defines for the command header. */
@@ -447,10 +445,10 @@ typedef struct AHCIPort
     uint32_t                        u32Alignment5;
 
 } AHCIPort;
+AssertCompileSizeAlignment(AHCIPort, 8);
 /** Pointer to the state of an AHCI port. */
 typedef AHCIPort *PAHCIPort;
 
-AssertCompileSizeAlignment(AHCIPort, 8);
 
 /**
  * Main AHCI device state.
@@ -592,10 +590,10 @@ typedef struct AHCI
     /** The support driver session handle. */
     R3R0PTRTYPE(PSUPDRVSESSION)     pSupDrvSession;
 } AHCI;
+AssertCompileMemberAlignment(AHCI, ahciPort, 8);
 /** Pointer to the state of an AHCI device. */
 typedef AHCI *PAHCI;
 
-AssertCompileMemberAlignment(AHCI, ahciPort, 8);
 
 /**
  * Scatter gather list entry.
@@ -628,8 +626,7 @@ AssertCompileSize(SGLEntry, 16);
  *                   On return this contains the remaining amount if
  *                   cbCopy < *pcbSkip or 0 otherwise.
  */
-typedef DECLCALLBACK(void) AHCIR3MEMCOPYCALLBACK(PAHCI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf, size_t cbCopy,
-                                                 size_t *pcbSkip);
+typedef DECLCALLBACK(void) AHCIR3MEMCOPYCALLBACK(PAHCI pThis, RTGCPHYS GCPhys, PRTSGBUF pSgBuf, size_t cbCopy, size_t *pcbSkip);
 /** Pointer to a memory copy buffer callback. */
 typedef AHCIR3MEMCOPYCALLBACK *PAHCIR3MEMCOPYCALLBACK;
 #endif
@@ -834,6 +831,10 @@ typedef struct pAhciPort_opreg
     int (*pfnWrite)(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value);
 } AHCIPORTOPREG;
 
+
+/*********************************************************************************************************************************
+*   Internal Functions                                                                                                           *
+*********************************************************************************************************************************/
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
 RT_C_DECLS_BEGIN
 #ifdef IN_RING3
@@ -846,6 +847,10 @@ static bool ahciCancelActiveTasks(PAHCIPort pAhciPort);
 #endif
 RT_C_DECLS_END
 
+
+/*********************************************************************************************************************************
+*   Defined Constants And Macros                                                                                                 *
+*********************************************************************************************************************************/
 #define PDMIBASE_2_PAHCIPORT(pInterface)         ( (PAHCIPort)((uintptr_t)(pInterface) - RT_UOFFSETOF(AHCIPort, IBase)) )
 #define PDMIMEDIAPORT_2_PAHCIPORT(pInterface)    ( (PAHCIPort)((uintptr_t)(pInterface) - RT_UOFFSETOF(AHCIPort, IPort)) )
 #define PDMIBASE_2_PAHCI(pInterface)             ( (PAHCI)((uintptr_t)(pInterface) - RT_UOFFSETOF(AHCI, IBase)) )
@@ -884,6 +889,8 @@ RT_C_DECLS_END
 # endif
 
 #endif
+
+
 
 /**
  * Update PCI IRQ levels
