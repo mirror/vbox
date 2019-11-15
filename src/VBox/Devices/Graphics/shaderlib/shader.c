@@ -518,7 +518,7 @@ static HRESULT shader_get_registers_used(IWineD3DBaseShader *iface, const struct
             {
                 /* Mark input registers used. */
                 case WINED3DSPR_INPUT:
-                    if (reg_idx >= MAX_REG_INPUT)
+                    if (reg_idx >= max(MAX_ATTRIBS, MAX_REG_INPUT))
                     {
                         ERR("Invalid input register index %d.\n", reg_idx);
                         return E_INVALIDARG;
