@@ -53,6 +53,9 @@
 # include "VBoxUtils-darwin.h"
 #endif
 
+/* External includes: */
+# include <math.h>
+
 /* Forward declarations: */
 class UISoftKeyboardColorButton;
 class UISoftKeyboardLayout;
@@ -143,13 +146,16 @@ struct UIKeyCaptions
     QString m_strShiftAltGr;
 };
 
-QPointF linearInterpolation(qreal t, const QPointF &p0, const QPointF &p1)
+/** Returns a QPointF which lies on the line [p0, p1] and with a distance @p fDistance to p0. */
+QPointF pointInBetween(qreal fDistance, const QPointF &p0, const QPointF &p1)
 {
-    if (t < 0)
-        return p0;
-    if (t> 1)
-        return p1;
-    return QPointF((1 - t) * p0 + t * p1);
+    QPointF vectorP0P1 = p1 - p0;
+    qreal length = sqrt(vectorP0P1.x() * vectorP0P1.x() + vectorP0P1.y() * vectorP0P1.y());
+    if (length == 0)
+        return QPointF();
+    /* Normalize the vector and add it to starting point: */
+    vectorP0P1 = (fDistance /length) * vectorP0P1 + p0;
+    return vectorP0P1;
 }
 
 
@@ -449,6 +455,7 @@ public:
 private:
 
     void updateState(bool fPressed);
+    /** Creates a path out of points m_points with rounded corners. */
     void computePainterPath();
 
     QRect    m_keyGeometry;
@@ -1712,12 +1719,12 @@ void UISoftKeyboardKey::computePainterPath()
 {
     if (m_points.size() < 3)
         return;
-    double d = 0.1;
-    m_painterPath = QPainterPath(linearInterpolation(d, m_points[0], m_points[1]));
+    qreal fRadius = 5;
+    m_painterPath = QPainterPath(pointInBetween(fRadius, m_points[0], m_points[1]));
     for (int i = 0; i < m_points.size(); ++i)
     {
-        QPointF p0 = linearInterpolation(1-d, m_points[i], m_points[(i+1)%m_points.size()]);
-        QPointF p1 = linearInterpolation(d, m_points[(i+1)%m_points.size()], m_points[(i+2)%m_points.size()]);
+        QPointF p0 = pointInBetween(fRadius, m_points[(i+1)%m_points.size()], m_points[i]);
+        QPointF p1 = pointInBetween(fRadius, m_points[(i+1)%m_points.size()], m_points[(i+2)%m_points.size()]);
         m_painterPath.lineTo(p0);
         m_painterPath.quadTo(m_points[(i+1)%m_points.size()], p1);
     }
