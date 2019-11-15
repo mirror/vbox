@@ -49,18 +49,13 @@ typedef struct DEVSERIAL
     PPDMDEVINSR0                    pDevInsR0;
     /** Pointer to the device instance - RC Ptr. */
     PPDMDEVINSRC                    pDevInsRC;
-    /** Alignment. */
-    RTRCPTR                         Alignment0;
-    /** Flag whether the R0 portion of this device is enabled. */
-    bool                            fR0Enabled;
-    /** Flag whether the RC portion of this device is enabled. */
-    bool                            fRCEnabled;
-    /** Alignment. */
-    bool                            afAlignment1[2];
     /** The IRQ value. */
     uint8_t                         uIrq;
+    uint8_t                         bAlignment;
     /** The base I/O port the device is registered at. */
     RTIOPORT                        PortBase;
+    /** The I/O ports registration. */
+    IOMIOPORTHANDLE                 hIoPorts;
 
     /** The UART core. */
     UARTCORE                        UartCore;
@@ -83,26 +78,28 @@ PDMBOTHCBDECL(void) serialIrqReq(PPDMDEVINS pDevIns, PUARTCORE pUart, unsigned i
 /* -=-=-=-=-=-=-=-=- I/O Port Access Handlers -=-=-=-=-=-=-=-=- */
 
 /**
- * @callback_method_impl{FNIOMIOPORTOUT}
+ * @callback_method_impl{FNIOMIOPORTNEWOUT}
  */
-PDMBOTHCBDECL(int) serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t u32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+serialIoPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t u32, unsigned cb)
 {
     PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
     RT_NOREF_PV(pvUser);
 
-    return uartRegWrite(&pThis->UartCore, uPort - pThis->PortBase, u32, cb);
+    return uartRegWrite(&pThis->UartCore, offPort, u32, cb);
 }
 
 
 /**
- * @callback_method_impl{FNIOMIOPORTIN}
+ * @callback_method_impl{FNIOMIOPORTNEWIN}
  */
-PDMBOTHCBDECL(int) serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT uPort, uint32_t *pu32, unsigned cb)
+static DECLCALLBACK(VBOXSTRICTRC)
+serialIoPortRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT offPort, uint32_t *pu32, unsigned cb)
 {
     PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
     RT_NOREF_PV(pvUser);
 
-    return uartRegRead(&pThis->UartCore, uPort - pThis->PortBase, pu32, cb);
+    return uartRegRead(&pThis->UartCore, offPort, pu32, cb);
 }
 
 
@@ -325,14 +322,6 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
      */
     PDMDEV_VALIDATE_CONFIG_RETURN(pDevIns, "IRQ|IOBase|YieldOnLSRRead|UartType", "");
 
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "GCEnabled", &pThis->fRCEnabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"GCEnabled\" value"));
-
-    rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
-    if (RT_FAILURE(rc))
-        return PDMDEV_SET_ERROR(pDevIns, rc, N_("Configuration error: Failed to get the \"R0Enabled\" value"));
-
     bool fYieldOnLSRRead = false;
     rc = pHlp->pfnCFGMQueryBoolDef(pCfg, "YieldOnLSRRead", &fYieldOnLSRRead, false);
     if (RT_FAILURE(rc))
@@ -392,11 +381,9 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Register the I/O ports.
      */
-    rc = PDMDevHlpIOPortRegister(pDevIns, uIoBase, 8, 0,
-                                 serialIoPortWrite, serialIoPortRead,
-                                 NULL, NULL, "SERIAL");
-    if (RT_FAILURE(rc))
-        return rc;
+    rc = PDMDevHlpIoPortCreateAndMap(pDevIns, uIoBase, 8 /*cPorts*/, serialIoPortWrite, serialIoPortRead,
+                                     "SERIAL", NULL /*paExtDescs*/, &pThis->hIoPorts);
+    AssertRCReturn(rc, rc);
 
     PVM pVM = PDMDevHlpGetVM(pDevIns);
     RTR0PTR pfnSerialIrqReqR0 = NIL_RTR0PTR;
@@ -405,9 +392,7 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 #ifdef VBOX_WITH_RAW_MODE_KEEP
     if (pDevIns->fRCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, uIoBase, 8, 0, "serialIoPortWrite", "serialIoPortRead", NULL, NULL, "SERIAL");
-        if (   RT_SUCCESS(rc)
-            && VM_IS_RAW_MODE_ENABLED(pVM)) /** @todo this dynamic symbol resolving will be reworked later! */
+        if (VM_IS_RAW_MODE_ENABLED(pVM)) /** @todo this dynamic symbol resolving will be reworked later! */
             rc = PDMR3LdrGetSymbolRC(pVM, pDevIns->pReg->pszRCMod, "serialIrqReq", &pfnSerialIrqReqRC);
         if (RT_FAILURE(rc))
             return rc;
@@ -416,9 +401,8 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
 
     if (pDevIns->fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, uIoBase, 8, 0, "serialIoPortWrite", "serialIoPortRead", NULL, NULL, "SERIAL");
-        if (RT_SUCCESS(rc)) /** @todo this dynamic symbol resolving will be reworked later! */
-            rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->pszR0Mod, "serialIrqReq", &pfnSerialIrqReqR0);
+        /** @todo this dynamic symbol resolving will be reworked later! */
+        rc = PDMR3LdrGetSymbolR0(pVM, pDevIns->pReg->pszR0Mod, "serialIrqReq", &pfnSerialIrqReqR0);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -441,7 +425,26 @@ static DECLCALLBACK(int) serialR3Construct(PPDMDEVINS pDevIns, int iInstance, PC
     return VINF_SUCCESS;
 }
 
-#endif /* IN_RING3 */
+#else  /* !IN_RING3 */
+
+/**
+ * @callback_method_impl{PDMDEVREGR0,pfnConstruct}
+ */
+static DECLCALLBACK(int) serialRZConstruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PDEVSERIAL pThis = PDMDEVINS_2_DATA(pDevIns, PDEVSERIAL);
+
+    int rc = PDMDevHlpSetDeviceCritSect(pDevIns, PDMDevHlpCritSectGetNop(pDevIns));
+    AssertRCReturn(rc, rc);
+
+    rc = PDMDevHlpIoPortSetUpContext(pDevIns, pThis->hIoPorts, serialIoPortWrite, serialIoPortRead, NULL /*pvUser*/);
+    AssertRCReturn(rc, rc);
+
+    return VINF_SUCCESS;
+}
+
+#endif /* !IN_RING3 */
 
 /**
  * The device registration structure.
@@ -451,7 +454,7 @@ const PDMDEVREG g_DeviceSerialPort =
     /* .u32Version = */             PDM_DEVREG_VERSION,
     /* .uReserved0 = */             0,
     /* .szName = */                 "serial",
-    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ,
+    /* .fFlags = */                 PDM_DEVREG_FLAGS_DEFAULT_BITS | PDM_DEVREG_FLAGS_RZ | PDM_DEVREG_FLAGS_NEW_STYLE,
     /* .fClass = */                 PDM_DEVREG_CLASS_SERIAL,
     /* .cMaxInstances = */          UINT32_MAX,
     /* .uSharedVersion = */         42,
@@ -488,7 +491,7 @@ const PDMDEVREG g_DeviceSerialPort =
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RING0)
     /* .pfnEarlyConstruct = */      NULL,
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           serialRZConstruct,
     /* .pfnDestruct = */            NULL,
     /* .pfnFinalDestruct = */       NULL,
     /* .pfnRequest = */             NULL,
@@ -501,7 +504,7 @@ const PDMDEVREG g_DeviceSerialPort =
     /* .pfnReserved6 = */           NULL,
     /* .pfnReserved7 = */           NULL,
 #elif defined(IN_RC)
-    /* .pfnConstruct = */           NULL,
+    /* .pfnConstruct = */           serialRZConstruct,
     /* .pfnReserved0 = */           NULL,
     /* .pfnReserved1 = */           NULL,
     /* .pfnReserved2 = */           NULL,
