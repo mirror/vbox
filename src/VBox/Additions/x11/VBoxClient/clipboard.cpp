@@ -115,15 +115,17 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, SHCLFORMAT Fo
             if (dataBlock.pvData)
             {
                 rc = VbglR3ClipboardReadDataEx(&pCtx->CmdCtx, &dataBlock, &cbRead);
-                if (    RT_SUCCESS(rc)
-                     && (rc != VINF_BUFFER_OVERFLOW))
-                {
-                    *pcb = cbRead; /* Actual bytes read. */
-                    *ppv = dataBlock.pvData;
-                }
+                if (rc == VINF_BUFFER_OVERFLOW)
+                    rc = VERR_BUFFER_OVERFLOW;
             }
             else
                 rc = VERR_NO_MEMORY;
+        }
+
+        if (RT_SUCCESS(rc))
+        {
+            *pcb = cbRead; /* Actual bytes read. */
+            *ppv = dataBlock.pvData;
         }
 
         /*
@@ -132,11 +134,8 @@ DECLCALLBACK(int) ClipRequestDataForX11Callback(SHCLCONTEXT *pCtx, SHCLFORMAT Fo
          * changed half-way through the operation.  Since we can't say whether or
          * not this is actually an error, we just return size 0.
          */
-        if (   RT_FAILURE(rc)
-            || (VINF_BUFFER_OVERFLOW == rc))
-        {
+        if (RT_FAILURE(rc))
             RTMemFree(dataBlock.pvData);
-        }
     }
 
     LogFlowFuncLeaveRC(rc);
@@ -252,7 +251,7 @@ static int vboxClipboardConnect(void)
  */
 int vboxClipboardMain(void)
 {
-    LogRel2(("Worker loop running\n"));
+    LogRel(("Worker loop running\n"));
 
     int rc;
 
