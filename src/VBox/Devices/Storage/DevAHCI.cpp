@@ -521,18 +521,6 @@ typedef struct AHCI
     uint32_t                        Alignment4;
 #endif
 
-    /** Queue to send tasks to R3. - HC ptr */
-    R3PTRTYPE(PPDMQUEUE)            pNotifierQueueR3;
-    /** Queue to send tasks to R3. - HC ptr */
-    R0PTRTYPE(PPDMQUEUE)            pNotifierQueueR0;
-    /** Queue to send tasks to R3. - RC ptr */
-    RCPTRTYPE(PPDMQUEUE)            pNotifierQueueRC;
-
-#if HC_ARCH_BITS == 64
-    uint32_t                        Alignment5;
-#endif
-
-
     /** Which port number is used to mark an CCC interrupt */
     uint8_t                         uCccPortNr;
 
@@ -1035,20 +1023,9 @@ static void ahciPortResetFinish(PAHCIPort pAhciPort)
  */
 static void ahciIoThreadKick(PAHCI pAhci, PAHCIPort pAhciPort)
 {
-#ifdef IN_RC
-    PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(pAhci->CTX_SUFF(pNotifierQueue));
-    AssertMsg(VALID_PTR(pItem), ("Allocating item for queue failed\n"));
-
-    if (pItem)
-    {
-        pItem->iPort = pAhciPort->iLUN;
-        PDMQueueInsert(pAhci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
-    }
-#else
     LogFlowFunc(("Signal event semaphore\n"));
     int rc = SUPSemEventSignal(pAhci->pSupDrvSession, pAhciPort->hEvtProcess);
     AssertRC(rc);
-#endif
 }
 
 static int PortCmdIssue_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u32Value)
@@ -1320,17 +1297,9 @@ static int PortCmd_w(PAHCI pAhci, PAHCIPort pAhciPort, uint32_t iReg, uint32_t u
                     && ASMAtomicReadBool(&pAhciPort->fWrkThreadSleeping))
                 {
                     ASMAtomicOrU32(&pAhciPort->u32TasksNew, pAhciPort->regCI);
-#ifdef IN_RC
-                    PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(pAhci->CTX_SUFF(pNotifierQueue));
-                    AssertMsg(VALID_PTR(pItem), ("Allocating item for queue failed\n"));
-
-                    pItem->iPort = pAhciPort->iLUN;
-                    PDMQueueInsert(pAhci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
-#else
                     LogFlowFunc(("Signal event semaphore\n"));
                     int rc = SUPSemEventSignal(pAhci->pSupDrvSession, pAhciPort->hEvtProcess);
                     AssertRC(rc);
-#endif
                 }
             }
             else
@@ -4591,30 +4560,6 @@ static bool ahciR3CmdPrepare(PAHCIPort pAhciPort, PAHCIREQ pAhciReq)
     return fContinue;
 }
 
-/**
- * Transmit queue consumer
- * Queue a new async task.
- *
- * @returns Success indicator.
- *          If false the item will not be removed and the flushing will stop.
- * @param   pDevIns     The device instance.
- * @param   pItem       The item to consume. Upon return this item will be freed.
- */
-static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE pItem)
-{
-    PDEVPORTNOTIFIERQUEUEITEM pNotifierItem = (PDEVPORTNOTIFIERQUEUEITEM)pItem;
-    PAHCI                     pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
-    PAHCIPort                 pAhciPort = &pThis->ahciPort[pNotifierItem->iPort];
-    int                       rc = VINF_SUCCESS;
-
-    ahciLog(("%s: Got notification from GC\n", __FUNCTION__));
-    /* Notify the async IO thread. */
-    rc = SUPSemEventSignal(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
-    AssertRC(rc);
-
-    return true;
-}
-
 /* The async IO thread for one port. */
 static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
 {
@@ -5290,7 +5235,6 @@ static DECLCALLBACK(void) ahciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 
     pAhci->pDevInsRC += offDelta;
     pAhci->pHbaCccTimerRC = TMTimerRCPtr(pAhci->pHbaCccTimerR3);
-    pAhci->pNotifierQueueRC = PDMQueueRCPtr(pAhci->pNotifierQueueR3);
 
     /* Relocate every port. */
     for (i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
@@ -5452,29 +5396,27 @@ static DECLCALLBACK(void) ahciR3Suspend(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(void) ahciR3Resume(PPDMDEVINS pDevIns)
 {
-    PAHCI    pAhci = PDMDEVINS_2_DATA(pDevIns, PAHCI);
+    PAHCI pThis = PDMDEVINS_2_DATA(pDevIns, PAHCI);
 
     /*
      * Check if one of the ports has pending tasks.
      * Queue a notification item again in this case.
      */
-    for (unsigned i = 0; i < RT_ELEMENTS(pAhci->ahciPort); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->ahciPort); i++)
     {
-        PAHCIPort pAhciPort = &pAhci->ahciPort[i];
+        PAHCIPort pAhciPort = &pThis->ahciPort[i];
 
         if (pAhciPort->u32TasksRedo)
         {
-            PDEVPORTNOTIFIERQUEUEITEM pItem = (PDEVPORTNOTIFIERQUEUEITEM)PDMQueueAlloc(pAhci->CTX_SUFF(pNotifierQueue));
-            AssertMsg(pItem, ("Allocating item for queue failed\n"));
-
             pAhciPort->u32TasksNew |= pAhciPort->u32TasksRedo;
             pAhciPort->u32TasksRedo = 0;
 
             Assert(pAhciPort->fRedo);
             pAhciPort->fRedo = false;
 
-            pItem->iPort = pAhci->ahciPort[i].iLUN;
-            PDMQueueInsert(pAhci->CTX_SUFF(pNotifierQueue), (PPDMQUEUEITEMCORE)pItem);
+            /* Notify the async IO thread. */
+            int rc = SUPSemEventSignal(pThis->pSupDrvSession, pAhciPort->hEvtProcess);
+            AssertRC(rc);
         }
     }
 
@@ -5645,9 +5587,7 @@ static DECLCALLBACK(void) ahciR3Detach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
         ASMAtomicAndU32(&pAhciPort->regCMD, ~(AHCI_PORT_CMD_CPS | AHCI_PORT_CMD_CR));
         ASMAtomicOrU32(&pAhciPort->regIS, AHCI_PORT_IS_CPDS | AHCI_PORT_IS_PRCS | AHCI_PORT_IS_PCS);
         ASMAtomicOrU32(&pAhciPort->regSERR, AHCI_PORT_SERR_X | AHCI_PORT_SERR_N);
-        if (   (pAhciPort->regIE & AHCI_PORT_IE_CPDE)
-            || (pAhciPort->regIE & AHCI_PORT_IE_PCE)
-            || (pAhciPort->regIE & AHCI_PORT_IE_PRCE))
+        if (pAhciPort->regIE & (AHCI_PORT_IE_CPDE | AHCI_PORT_IE_PCE | AHCI_PORT_IE_PRCE))
             ahciHbaSetInterrupt(pAhciPort->CTX_SUFF(pAhci), pAhciPort->iLUN, VERR_IGNORED);
     }
 
@@ -6104,18 +6044,6 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /* Status LUN. */
     pThis->IBase.pfnQueryInterface = ahciR3Status_QueryInterface;
     pThis->ILeds.pfnQueryStatusLed = ahciR3Status_QueryStatusLed;
-
-    /*
-     * Create the notification queue.
-     *
-     * We need 2 items for every port because of SMP races.
-     */
-    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(DEVPORTNOTIFIERQUEUEITEM), AHCI_MAX_NR_PORTS_IMPL * 2, 0,
-                              ahciNotifyQueueConsumer, true, "AHCI-Xmit", &pThis->pNotifierQueueR3);
-    if (RT_FAILURE(rc))
-        return rc;
-    pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);
-    pThis->pNotifierQueueRC = PDMQueueRCPtr(pThis->pNotifierQueueR3);
 
     /* Initialize static members on every port. */
     for (i = 0; i < AHCI_MAX_NR_PORTS_IMPL; i++)
